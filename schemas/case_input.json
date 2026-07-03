@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "case_input",
+  "description": "케이스 메타데이터. 컷오프 기준 = first_revelation_date (AAER 발행일 아님). status: draft-v0, 본인 서명 대기",
+  "type": "object",
+  "required": [
+    "case_id", "ticker", "company_name", "group",
+    "aaer_no", "aaer_date", "aaer_url",
+    "manipulation_period_start", "manipulation_period_end",
+    "first_revelation_date", "revelation_source",
+    "cutoff_date", "scheme_type", "scheme_summary"
+  ],
+  "properties": {
+    "case_id": { "type": "string", "pattern": "^(T|C)[0-9]{2}$", "description": "T=실험군(treated), C=대조군(control). 예: T01, C05" },
+    "ticker": { "type": "string" },
+    "company_name": { "type": "string" },
+    "cik": { "type": "string", "description": "EDGAR CIK, 선행 0 포함 10자리" },
+    "group": { "type": "string", "enum": ["treatment", "control"] },
+    "aaer_no": { "type": ["string", "null"], "description": "대조군은 null" },
+    "aaer_date": { "type": ["string", "null"], "format": "date" },
+    "aaer_url": { "type": ["string", "null"], "format": "uri" },
+    "manipulation_period_start": { "type": ["string", "null"], "format": "date" },
+    "manipulation_period_end": { "type": ["string", "null"], "format": "date" },
+    "first_revelation_date": {
+      "type": "string", "format": "date",
+      "description": "시장이 처음 안 날 (정정공시, 조사 공개, 공매도 리포트, 언론 보도 중 최초). 대조군은 매칭된 실험군 케이스의 날짜를 복사해 동일 시점 스냅샷 비교"
+    },
+    "revelation_source": { "type": "string", "description": "최초 폭로의 근거 문서/사건 + 링크" },
+    "cutoff_date": { "type": "string", "format": "date", "description": "파이프라인 입력 허용 상한. 원칙: first_revelation_date 전일" },
+    "scheme_type": {
+      "type": "array", "minItems": 1,
+      "items": { "type": "string", "enum": [
+        "revenue_recognition", "expense_capitalization", "inventory",
+        "reserves_smoothing", "related_party", "asset_overstatement",
+        "liability_understatement", "disclosure_only", "document_forgery", "other"
+      ] },
+      "description": "대조군은 빈 배열 대신 [\"other\"] 금지 — 대조군은 이 필드 생략 가능하도록 group으로 분기해 검증"
+    },
+    "scheme_summary": { "type": "string", "description": "AAER 원문 기반 한 줄 요약 (대조군: 선정 사유)" },
+    "ab_classification": {
+      "type": ["string", "null"], "enum": ["A", "B", "borderline", null],
+      "description": "폭로 전 공개 데이터 감지 가능성 판정. Claude 1차 + 본인 서명 후에만 기입 (§7)"
+    },
+    "ab_signed_off": { "type": "boolean", "default": false, "description": "본인 서명 여부" },
+    "pre_revelation_quarters_available": { "type": ["integer", "null"], "description": "폭로 전 확보 가능한 분기 공시 수" },
+    "xbrl_available": { "type": ["boolean", "null"] },
+    "notes": { "type": "string" }
+  }
+}
