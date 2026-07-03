@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "score_record",
-  "description": "케이스당 채점 기록. §7 협업 모델 반영: Claude 1차 판정 + 인간 서명/오버라이드. status: draft-v0, 본인 서명 대기",
+  "description": "케이스당 채점 기록. §7 협업 모델 반영: Claude 1차 판정 + 인간 서명/오버라이드. status: v1 (2026-07-03 사용자 일괄 승인)",
   "type": "object",
   "required": ["case_id", "run_id", "scored_against_protocol_version", "item_scores", "case_verdict", "sign_off"],
   "properties": {

@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "llm_output",
-  "description": "피평가자 파이프라인의 케이스당 출력. §5-4 강제: 체크리스트 + 원문 인용. 이 스키마 파싱 실패 = 파이프라인 오류로 귀속. status: draft-v0, 본인 서명 대기",
+  "description": "피평가자 파이프라인의 케이스당 출력. §5-4 강제: 체크리스트 + 원문 인용. 이 스키마 파싱 실패 = 파이프라인 오류로 귀속. status: v1 (2026-07-03 사용자 일괄 승인)",
   "type": "object",
   "required": ["case_id", "run_id", "model", "pipeline_version", "run_timestamp", "checklist", "overall"],
   "properties": {
