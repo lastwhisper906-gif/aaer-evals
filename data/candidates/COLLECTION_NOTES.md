@@ -59,6 +59,10 @@
 
 ## 5. 케이스별 필드 신뢰도 요약
 
+> **주의 (2026-07-05 추가)**: 아래 표는 Stage 3 수집 당시(재검증 **이전**) 스냅샷이다 — 역사적
+> 기록으로 보존하며 갱신하지 않는다. 현행 값은 `candidates.json`, 정정 내역은
+> `reverification_diff.md` 참조 (예: PUDA 12→16, LOGI 19→24, null 13건 실측 채움).
+
 (핵심 필드만: 전량은 raw_research.json의 confidence 객체. H=high M=medium L=low)
 
 | ID | Ticker | AAER# | 폭로일 | scheme | 분기수 | XBRL | 특이사항 |
