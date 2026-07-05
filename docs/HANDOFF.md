@@ -33,12 +33,24 @@
   GP-2에 표본 점검 3건(T25/T07/T18) 보강 — 점검 지시문의 세 날짜는 폭로일이 아니라
   **컷오프일**이었음(혼동 주의).
 
-## 월요일 세션이 할 일
+## ★ 게이트 완료 (2026-07-05 심야 유도 서명 세션 — 월요일 안건 소진)
+
+- **GP-0~GP-9 + 실행 규약 3조항 전부 서명 완료** (GATE_PACKAGE.md 서명란에 전문).
+  폭로일 원칙 A 서명 → 5건 이동(T02/T12/T13/T19/T26), A/B 기준 v1 고정(G1 = 연차≥2
+  AND 총≥6, 40-F 포함), T16 AAER-4105 기입, 30건 ab_classification 기입·서명.
+- **킬 스위치: A형 23 / B형 7 → GO 선언** (borderline T01/T09는 본인 판정 B 확정).
+  1차 표: `scoring/ab_first_pass.md`.
+- **실험군 8 제안안**: `scoring/treatment_group_proposal.md` — 선정 기준+8건+스왑 후보.
+  **확정 아님** — 다음 세션이 맑은 눈으로 서명할 것.
+
+## 다음 세션이 할 일
 
 1. `python tools/verify_manifest.py` → PASS 확인 (실패 시 fetch_primary_sources.py 재실행 후 재검증)
-2. **GATE_PACKAGE.md의 GP-0 → GP-9 순서대로 검토·서명** (킬 스위치 GP-6은 GP-8·GP-9까지
-   본 뒤 마지막에). 각 항목에 근거·선택지·영향 표가 붙어 있음 — 근거가 부족하면 서명하지
-   말고 보강 지시.
+2. **실험군 8 선정 기준·명단 서명** (`scoring/treatment_group_proposal.md`) — 특히
+   기준 6(중국 RTO T06 포함 여부)과 비전형 3건 제외에 동의하는지.
+3. 대조군 8 후보 수집 지시 (GP-8 장르/섹터 매칭, GP-9 컷오프 복사).
+4. 후속 확인 2건: T13 폭로일(2014-05-13)의 EDGAR vehicle / T04 전신 CIK(0001170565)
+   submissions 재수집(fetch EXTRA_CIKS 추가) + 매니페스트 재생성.
 3. 서명 후: Claude에게 A/B 기준 1차 적용 표(케이스 × 질문 + 인용) 작성 지시 가능 (서명 전 금지).
 4. 오버라이드는 `scoring/overrides.md` OV-NNN, 서명은 GATE_PACKAGE 서명란 + 커밋.
 

@@ -15,6 +15,11 @@
 | **B형** | 5 | T03 T05 T15 T27 T30 |
 | **borderline** | 2 | T01 T09 |
 
+> **인간 확정 (2026-07-05)**: borderline 2건(T01/T09)은 본인 판정으로 **B형** 확정
+> (이중장부 = D1 문언의 예시 그대로, 보수 채택) → **최종 A형 23 / B형 7.**
+> **킬 스위치: A형 23 ≥ 8 → GO 선언** (GATE_PACKAGE GP-6 판정란 기록).
+> candidates.json 30건에 ab_classification/ab_signed_off 기입 완료.
+
 킬 스위치 문턱: **A형 ≥8 GO / 5~7 스코프 축소 / <5 STOP** → 1차 집계 23은 GO 문턱의
 약 3배. borderline 2건을 B로 쳐도, A형 중 판단 여지가 있는 3~4건(T18/T20/T25 특성 주석
 참조)을 전부 빼도 문턱 위.
