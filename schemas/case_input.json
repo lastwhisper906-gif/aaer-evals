@@ -1,14 +1,24 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "case_input",
-  "description": "케이스 메타데이터. 컷오프 기준 = first_revelation_date (AAER 발행일 아님). status: v1 (2026-07-03 사용자 일괄 승인)",
+  "description": "케이스 메타데이터. 컷오프 기준 = first_revelation_date (AAER 발행일 아님). status: v1.1 (2026-07-05 사용자 개별 서명: 기간 패턴 완화 · scheme_type if/then 분기 · matched_case_id 추가. v1은 2026-07-03 일괄 승인 — 이력: orientation_check.md 불일치 #1/#4/#6)",
   "type": "object",
   "required": [
     "case_id", "ticker", "company_name", "group",
     "aaer_no", "aaer_date", "aaer_url",
     "manipulation_period_start", "manipulation_period_end",
     "first_revelation_date", "revelation_source",
-    "cutoff_date", "scheme_type", "scheme_summary"
+    "cutoff_date", "scheme_summary"
+  ],
+  "allOf": [
+    {
+      "if": { "required": ["group"], "properties": { "group": { "const": "treatment" } } },
+      "then": { "required": ["scheme_type"], "not": { "required": ["matched_case_id"] } }
+    },
+    {
+      "if": { "required": ["group"], "properties": { "group": { "const": "control" } } },
+      "then": { "required": ["matched_case_id"], "not": { "required": ["scheme_type"] } }
+    }
   ],
   "properties": {
     "case_id": { "type": "string", "pattern": "^(T|C)[0-9]{2}$", "description": "T=실험군(treated), C=대조군(control). 예: T01, C05" },
@@ -19,8 +29,11 @@
     "aaer_no": { "type": ["string", "null"], "description": "대조군은 null" },
     "aaer_date": { "type": ["string", "null"], "format": "date" },
     "aaer_url": { "type": ["string", "null"], "format": "uri" },
-    "manipulation_period_start": { "type": ["string", "null"], "format": "date" },
-    "manipulation_period_end": { "type": ["string", "null"], "format": "date" },
+    "manipulation_period_start": {
+      "type": ["string", "null"], "pattern": "^\\d{4}(-\\d{2})?(-\\d{2})?$",
+      "description": "YYYY | YYYY-MM | YYYY-MM-DD — 원문이 주는 정밀도 그대로 기록, 일자를 지어내지 않는다 (COLLECTION_NOTES §4 보수 원칙의 스키마 반영)"
+    },
+    "manipulation_period_end": { "type": ["string", "null"], "pattern": "^\\d{4}(-\\d{2})?(-\\d{2})?$" },
     "first_revelation_date": {
       "type": "string", "format": "date",
       "description": "시장이 처음 안 날 (정정공시, 조사 공개, 공매도 리포트, 언론 보도 중 최초). 대조군은 매칭된 실험군 케이스의 날짜를 복사해 동일 시점 스냅샷 비교"
@@ -34,7 +47,11 @@
         "reserves_smoothing", "related_party", "asset_overstatement",
         "liability_understatement", "disclosure_only", "document_forgery", "other"
       ] },
-      "description": "대조군은 빈 배열 대신 [\"other\"] 금지 — 대조군은 이 필드 생략 가능하도록 group으로 분기해 검증"
+      "description": "실험군 전용 (allOf의 if/then이 강제: treatment는 필수, control은 필드 자체 금지 — 정답 오염 방지)"
+    },
+    "matched_case_id": {
+      "type": "string", "pattern": "^T[0-9]{2}$",
+      "description": "대조군 전용 (control은 필수, treatment는 필드 금지): 매칭된 실험군 case_id. first_revelation_date/cutoff_date 복사의 원천 — 동일 시점 스냅샷 비교의 증적"
     },
     "scheme_summary": { "type": "string", "description": "AAER 원문 기반 한 줄 요약 (대조군: 선정 사유)" },
     "ab_classification": {

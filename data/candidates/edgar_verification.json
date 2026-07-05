@@ -1,0 +1,2487 @@
+{
+  "_meta": {
+    "purpose": "deterministic EDGAR recomputation for primary-source re-verification",
+    "convention": "10-K/10-K405/10-KT + 10-Q/10-QT, no /A, no SB forms, filingDate strictly before first_revelation_date",
+    "source": "data.sec.gov submissions API, fetched via tools/fetch_primary_sources.py",
+    "errors": []
+  },
+  "cases": [
+    {
+      "case_id": "T01",
+      "ticker": "RINO",
+      "ciks": [
+        "0001394220"
+      ],
+      "first_revelation_date": "2010-11-10",
+      "recorded_quarters": 11,
+      "recorded_xbrl": false,
+      "raw_10k": 3,
+      "raw_10q": 8,
+      "raw_total": 11,
+      "sb_forms_excluded": 0,
+      "amendments_excluded": 6,
+      "fpi_pre_revelation": {
+        "20-F": 0,
+        "40-F": 0,
+        "6-K": 0
+      },
+      "xbrl_any_counted": false,
+      "xbrl_count": 0,
+      "first_counted": "2008-04-01",
+      "last_counted": "2010-08-16",
+      "revelation_window_filings": [
+        {
+          "form": "10-K/A",
+          "filingDate": "2010-10-29",
+          "reportDate": "2009-12-31",
+          "cik": "0001394220",
+          "accession": "0001144204-10-056336",
+          "primaryDocument": "v200252_10ka.htm"
+        },
+        {
+          "form": "10-Q",
+          "filingDate": "2010-11-15",
+          "reportDate": "2010-09-30",
+          "cik": "0001394220",
+          "accession": "0001144204-10-061019",
+          "primaryDocument": "v202485_10q.htm"
+        },
+        {
+          "form": "8-K",
+          "filingDate": "2010-11-19",
+          "reportDate": "2010-11-18",
+          "cik": "0001394220",
+          "accession": "0001144204-10-062216",
+          "primaryDocument": "v203390_8-k.htm"
+        },
+        {
+          "form": "8-K",
+          "filingDate": "2010-11-19",
+          "reportDate": "2010-11-17",
+          "cik": "0001394220",
+          "accession": "0001144204-10-062163",
+          "primaryDocument": "v203177_8k.htm"
+        },
+        {
+          "form": "UPLOAD",
+          "filingDate": "2010-11-24",
+          "reportDate": "",
+          "cik": "0001394220",
+          "accession": "0000000000-10-070699",
+          "primaryDocument": "filename1.pdf"
+        }
+      ]
+    },
+    {
+      "case_id": "T02",
+      "ticker": "CSC",
+      "ciks": [
+        "0000023082"
+      ],
+      "first_revelation_date": "2011-01-28",
+      "recorded_quarters": null,
+      "recorded_xbrl": true,
+      "raw_10k": 17,
+      "raw_10q": 51,
+      "raw_total": 68,
+      "sb_forms_excluded": 0,
+      "amendments_excluded": 19,
+      "fpi_pre_revelation": {
+        "20-F": 0,
+        "40-F": 0,
+        "6-K": 0
+      },
+      "xbrl_any_counted": true,
+      "xbrl_count": 6,
+      "first_counted": "1994-02-14",
+      "last_counted": "2010-11-10",
+      "revelation_window_filings": [
+        {
+          "form": "4/A",
+          "filingDate": "2011-01-18",
+          "reportDate": "2011-01-07",
+          "cik": "0000023082",
+          "accession": "0001225208-11-003204",
+          "primaryDocument": "xslF345X03/doc4a.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2011-01-18",
+          "reportDate": "2011-01-15",
+          "cik": "0000023082",
+          "accession": "0001225208-11-003196",
+          "primaryDocument": "xslF345X03/doc4.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2011-01-18",
+          "reportDate": "2010-07-15",
+          "cik": "0000023082",
+          "accession": "0001225208-11-003195",
+          "primaryDocument": "xslF345X03/doc4.xml"
+        },
+        {
+          "form": "8-K",
+          "filingDate": "2011-02-01",
+          "reportDate": "2011-01-31",
+          "cik": "0000023082",
+          "accession": "0000023082-11-000002",
+          "primaryDocument": "form8-k.htm"
+        },
+        {
+          "form": "SC 13G/A",
+          "filingDate": "2011-02-03",
+          "reportDate": "",
+          "cik": "0000023082",
+          "accession": "0001086364-11-002674",
+          "primaryDocument": "computersciencescorp123110.txt"
+        },
+        {
+          "form": "10-Q",
+          "filingDate": "2011-02-09",
+          "reportDate": "2010-12-31",
+          "cik": "0000023082",
+          "accession": "0000023082-11-000014",
+          "primaryDocument": "form10_q.htm"
+        },
+        {
+          "form": "8-K",
+          "filingDate": "2011-02-09",
+          "reportDate": "2011-02-09",
+          "cik": "0000023082",
+          "accession": "0000023082-11-000011",
+          "primaryDocument": "form8k.htm"
+        },
+        {
+          "form": "SC 13G/A",
+          "filingDate": "2011-02-10",
+          "reportDate": "",
+          "cik": "0000023082",
+          "accession": "0001193125-11-030620",
+          "primaryDocument": "dsc13ga.htm"
+        },
+        {
+          "form": "8-K",
+          "filingDate": "2011-02-10",
+          "reportDate": "2011-02-07",
+          "cik": "0000023082",
+          "accession": "0000023082-11-000016",
+          "primaryDocument": "form8k.htm"
+        },
+        {
+          "form": "SC 13G/A",
+          "filingDate": "2011-02-10",
+          "reportDate": "",
+          "cik": "0000023082",
+          "accession": "0000932471-11-001219",
+          "primaryDocument": "computersciencescorp_amd1.htm"
+        }
+      ]
+    },
+    {
+      "case_id": "T03",
+      "ticker": "CCME",
+      "ciks": [
+        "0001399067"
+      ],
+      "first_revelation_date": "2011-01-30",
+      "recorded_quarters": 4,
+      "recorded_xbrl": false,
+      "raw_10k": 3,
+      "raw_10q": 9,
+      "raw_total": 12,
+      "sb_forms_excluded": 0,
+      "amendments_excluded": 1,
+      "fpi_pre_revelation": {
+        "20-F": 0,
+        "40-F": 0,
+        "6-K": 0
+      },
+      "xbrl_any_counted": false,
+      "xbrl_count": 0,
+      "first_counted": "2008-03-31",
+      "last_counted": "2010-11-09",
+      "operating_start_applied": "2009-10-01",
+      "adjusted_total": 5,
+      "revelation_window_filings": []
+    },
+    {
+      "case_id": "T04",
+      "ticker": "WFT",
+      "ciks": [
+        "0001453090"
+      ],
+      "first_revelation_date": "2011-03-01",
+      "recorded_quarters": null,
+      "recorded_xbrl": true,
+      "raw_10k": 1,
+      "raw_10q": 6,
+      "raw_total": 7,
+      "sb_forms_excluded": 0,
+      "amendments_excluded": 3,
+      "fpi_pre_revelation": {
+        "20-F": 0,
+        "40-F": 0,
+        "6-K": 0
+      },
+      "xbrl_any_counted": true,
+      "xbrl_count": 4,
+      "first_counted": "2009-05-07",
+      "last_counted": "2010-11-02",
+      "revelation_window_filings": [
+        {
+          "form": "4",
+          "filingDate": "2011-02-17",
+          "reportDate": "2011-02-15",
+          "cik": "0001453090",
+          "accession": "0001188797-11-000022",
+          "primaryDocument": "xslF345X03/edgar.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2011-02-17",
+          "reportDate": "2011-02-15",
+          "cik": "0001453090",
+          "accession": "0001188797-11-000020",
+          "primaryDocument": "xslF345X03/edgar.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2011-02-17",
+          "reportDate": "2011-02-15",
+          "cik": "0001453090",
+          "accession": "0001188797-11-000019",
+          "primaryDocument": "xslF345X03/edgar.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2011-02-17",
+          "reportDate": "2011-02-15",
+          "cik": "0001453090",
+          "accession": "0001188797-11-000018",
+          "primaryDocument": "xslF345X03/edgar.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2011-02-17",
+          "reportDate": "2011-02-15",
+          "cik": "0001453090",
+          "accession": "0001188797-11-000017",
+          "primaryDocument": "xslF345X03/edgar.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2011-02-17",
+          "reportDate": "2011-02-15",
+          "cik": "0001453090",
+          "accession": "0001188797-11-000016",
+          "primaryDocument": "xslF345X03/edgar.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2011-02-17",
+          "reportDate": "2011-02-15",
+          "cik": "0001453090",
+          "accession": "0001188797-11-000015",
+          "primaryDocument": "xslF345X03/edgar.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2011-02-17",
+          "reportDate": "2011-02-15",
+          "cik": "0001453090",
+          "accession": "0001188797-11-000014",
+          "primaryDocument": "xslF345X03/edgar.xml"
+        },
+        {
+          "form": "8-K",
+          "filingDate": "2011-02-22",
+          "reportDate": "2011-02-15",
+          "cik": "0001453090",
+          "accession": "0000950123-11-016557",
+          "primaryDocument": "h79847e8vk.htm"
+        },
+        {
+          "form": "UPLOAD",
+          "filingDate": "2011-02-23",
+          "reportDate": "",
+          "cik": "0001453090",
+          "accession": "0000000000-11-011608",
+          "primaryDocument": "filename1.pdf"
+        },
+        {
+          "form": "NT 10-K",
+          "filingDate": "2011-03-01",
+          "reportDate": "2010-12-31",
+          "cik": "0001453090",
+          "accession": "0000950123-11-020824",
+          "primaryDocument": "h80088ant10vk.htm"
+        },
+        {
+          "form": "8-K",
+          "filingDate": "2011-03-01",
+          "reportDate": "2011-02-28",
+          "cik": "0001453090",
+          "accession": "0000950123-11-020815",
+          "primaryDocument": "h80204e8vk.htm"
+        },
+        {
+          "form": "4",
+          "filingDate": "2011-03-02",
+          "reportDate": "2011-03-02",
+          "cik": "0001453090",
+          "accession": "0001188797-11-000026",
+          "primaryDocument": "xslF345X03/edgar.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2011-03-02",
+          "reportDate": "2011-02-28",
+          "cik": "0001453090",
+          "accession": "0001188797-11-000025",
+          "primaryDocument": "xslF345X03/edgar.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2011-03-02",
+          "reportDate": "2011-02-28",
+          "cik": "0001453090",
+          "accession": "0001188797-11-000024",
+          "primaryDocument": "xslF345X03/edgar.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2011-03-02",
+          "reportDate": "2011-02-28",
+          "cik": "0001453090",
+          "accession": "0001188797-11-000023",
+          "primaryDocument": "xslF345X03/edgar.xml"
+        },
+        {
+          "form": "UPLOAD",
+          "filingDate": "2011-03-06",
+          "reportDate": "",
+          "cik": "0001453090",
+          "accession": "0000000000-11-014032",
+          "primaryDocument": "filename1.pdf"
+        },
+        {
+          "form": "10-K",
+          "filingDate": "2011-03-08",
+          "reportDate": "2010-12-31",
+          "cik": "0001453090",
+          "accession": "0000950123-11-023232",
+          "primaryDocument": "h80088e10vk.htm"
+        },
+        {
+          "form": "10-K/A",
+          "filingDate": "2011-03-11",
+          "reportDate": "2010-12-31",
+          "cik": "0001453090",
+          "accession": "0000950123-11-024819",
+          "primaryDocument": "h80088be10vkza.htm"
+        },
+        {
+          "form": "CORRESP",
+          "filingDate": "2011-03-11",
+          "reportDate": "",
+          "cik": "0001453090",
+          "accession": "0000950123-11-024772",
+          "primaryDocument": "filename1.htm"
+        },
+        {
+          "form": "8-K",
+          "filingDate": "2011-03-15",
+          "reportDate": "2011-03-10",
+          "cik": "0001453090",
+          "accession": "0000950123-11-025602",
+          "primaryDocument": "h80501e8vk.htm"
+        }
+      ]
+    },
+    {
+      "case_id": "T05",
+      "ticker": "KEYP",
+      "ciks": [
+        "0001326396"
+      ],
+      "first_revelation_date": "2011-04-01",
+      "recorded_quarters": 3,
+      "recorded_xbrl": false,
+      "raw_10k": 3,
+      "raw_10q": 9,
+      "raw_total": 12,
+      "sb_forms_excluded": 0,
+      "amendments_excluded": 8,
+      "fpi_pre_revelation": {
+        "20-F": 0,
+        "40-F": 0,
+        "6-K": 0
+      },
+      "xbrl_any_counted": false,
+      "xbrl_count": 0,
+      "first_counted": "2008-03-31",
+      "last_counted": "2010-11-15",
+      "revelation_window_filings": [
+        {
+          "form": "8-K",
+          "filingDate": "2011-04-01",
+          "reportDate": "2011-04-01",
+          "cik": "0001326396",
+          "accession": "0001213900-11-001790",
+          "primaryDocument": "f8k040111_keyuan.htm"
+        },
+        {
+          "form": "NT 10-K",
+          "filingDate": "2011-04-01",
+          "reportDate": "2010-12-31",
+          "cik": "0001326396",
+          "accession": "0001213900-11-001757",
+          "primaryDocument": "extf10k2010_keyuan.htm"
+        },
+        {
+          "form": "UPLOAD",
+          "filingDate": "2011-04-08",
+          "reportDate": "",
+          "cik": "0001326396",
+          "accession": "0000000000-11-022213",
+          "primaryDocument": "filename1.pdf"
+        },
+        {
+          "form": "8-K",
+          "filingDate": "2011-04-12",
+          "reportDate": "2011-04-07",
+          "cik": "0001326396",
+          "accession": "0001213900-11-001907",
+          "primaryDocument": "f8k040711_keyuan.htm"
+        },
+        {
+          "form": "CORRESP",
+          "filingDate": "2011-04-15",
+          "reportDate": "",
+          "cik": "0001326396",
+          "accession": "0001213900-11-001994",
+          "primaryDocument": "filename1.htm"
+        },
+        {
+          "form": "8-K/A",
+          "filingDate": "2011-04-15",
+          "reportDate": "2011-04-01",
+          "cik": "0001326396",
+          "accession": "0001213900-11-001992",
+          "primaryDocument": "f8k040111a_keyuan.htm"
+        }
+      ]
+    },
+    {
+      "case_id": "T06",
+      "ticker": "PUDA",
+      "ciks": [
+        "0001162747"
+      ],
+      "first_revelation_date": "2011-04-08",
+      "recorded_quarters": 12,
+      "recorded_xbrl": false,
+      "raw_10k": 4,
+      "raw_10q": 12,
+      "raw_total": 16,
+      "sb_forms_excluded": 0,
+      "amendments_excluded": 0,
+      "fpi_pre_revelation": {
+        "20-F": 0,
+        "40-F": 0,
+        "6-K": 0
+      },
+      "xbrl_any_counted": false,
+      "xbrl_count": 0,
+      "first_counted": "2007-05-21",
+      "last_counted": "2011-03-16",
+      "revelation_window_filings": [
+        {
+          "form": "8-K",
+          "filingDate": "2011-04-12",
+          "reportDate": "2011-04-06",
+          "cik": "0001162747",
+          "accession": "0001144204-11-021568",
+          "primaryDocument": "v218153_8k.htm"
+        }
+      ]
+    },
+    {
+      "case_id": "T07",
+      "ticker": "MON",
+      "ciks": [
+        "0001110783"
+      ],
+      "first_revelation_date": "2011-06-29",
+      "recorded_quarters": 41,
+      "recorded_xbrl": true,
+      "raw_10k": 11,
+      "raw_10q": 32,
+      "raw_total": 43,
+      "sb_forms_excluded": 0,
+      "amendments_excluded": 0,
+      "fpi_pre_revelation": {
+        "20-F": 0,
+        "40-F": 0,
+        "6-K": 0
+      },
+      "xbrl_any_counted": true,
+      "xbrl_count": 6,
+      "first_counted": "2000-11-30",
+      "last_counted": "2011-04-07",
+      "revelation_window_filings": [
+        {
+          "form": "11-K",
+          "filingDate": "2011-06-17",
+          "reportDate": "2010-12-31",
+          "cik": "0001110783",
+          "accession": "0000950123-11-059809",
+          "primaryDocument": "c65107e11vk.htm"
+        },
+        {
+          "form": "8-K",
+          "filingDate": "2011-06-29",
+          "reportDate": "2011-06-29",
+          "cik": "0001110783",
+          "accession": "0001110783-11-000055",
+          "primaryDocument": "form8k.htm"
+        },
+        {
+          "form": "10-Q",
+          "filingDate": "2011-06-30",
+          "reportDate": "2011-05-31",
+          "cik": "0001110783",
+          "accession": "0000950123-11-063281",
+          "primaryDocument": "c65290e10vq.htm"
+        }
+      ]
+    },
+    {
+      "case_id": "T08",
+      "ticker": "MILL",
+      "ciks": [
+        "0000785968"
+      ],
+      "first_revelation_date": "2011-07-28",
+      "recorded_quarters": null,
+      "recorded_xbrl": false,
+      "raw_10k": 3,
+      "raw_10q": 13,
+      "raw_total": 16,
+      "sb_forms_excluded": 0,
+      "amendments_excluded": 1,
+      "fpi_pre_revelation": {
+        "20-F": 0,
+        "40-F": 0,
+        "6-K": 0
+      },
+      "xbrl_any_counted": false,
+      "xbrl_count": 0,
+      "first_counted": "1996-08-08",
+      "last_counted": "2011-03-22",
+      "revelation_window_filings": [
+        {
+          "form": "NT 10-K",
+          "filingDate": "2011-07-15",
+          "reportDate": "2011-04-30",
+          "cik": "0000785968",
+          "accession": "0001161697-11-000658",
+          "primaryDocument": "form_12b-25.htm"
+        },
+        {
+          "form": "UPLOAD",
+          "filingDate": "2011-07-26",
+          "reportDate": "",
+          "cik": "0000785968",
+          "accession": "0000000000-11-045169",
+          "primaryDocument": "filename1.pdf"
+        },
+        {
+          "form": "10-K",
+          "filingDate": "2011-07-29",
+          "reportDate": "2011-04-30",
+          "cik": "0000785968",
+          "accession": "0000943440-11-000404",
+          "primaryDocument": "mill_10k.htm"
+        },
+        {
+          "form": "8-K",
+          "filingDate": "2011-08-01",
+          "reportDate": "2011-08-01",
+          "cik": "0000785968",
+          "accession": "0001157523-11-004503",
+          "primaryDocument": "a6814505.htm"
+        },
+        {
+          "form": "8-K",
+          "filingDate": "2011-08-01",
+          "reportDate": "2011-07-28",
+          "cik": "0000785968",
+          "accession": "0000943440-11-000410",
+          "primaryDocument": "mill_8k.htm"
+        },
+        {
+          "form": "UPLOAD",
+          "filingDate": "2011-08-02",
+          "reportDate": "",
+          "cik": "0000785968",
+          "accession": "0000000000-11-046807",
+          "primaryDocument": "filename1.pdf"
+        },
+        {
+          "form": "8-K",
+          "filingDate": "2011-08-05",
+          "reportDate": "2011-08-01",
+          "cik": "0000785968",
+          "accession": "0000943440-11-000444",
+          "primaryDocument": "mill_8k.htm"
+        },
+        {
+          "form": "CORRESP",
+          "filingDate": "2011-08-08",
+          "reportDate": "",
+          "cik": "0000785968",
+          "accession": "0000943440-11-000449",
+          "primaryDocument": "filename1.htm"
+        },
+        {
+          "form": "UPLOAD",
+          "filingDate": "2011-08-09",
+          "reportDate": "",
+          "cik": "0000785968",
+          "accession": "0000000000-11-048218",
+          "primaryDocument": "filename1.pdf"
+        },
+        {
+          "form": "10-K/A",
+          "filingDate": "2011-08-09",
+          "reportDate": "2011-04-30",
+          "cik": "0000785968",
+          "accession": "0000943440-11-000448",
+          "primaryDocument": "mill_10ka.htm"
+        }
+      ]
+    },
+    {
+      "case_id": "T09",
+      "ticker": "FEED",
+      "ciks": [
+        "0001331427"
+      ],
+      "first_revelation_date": "2011-09-29",
+      "recorded_quarters": 15,
+      "recorded_xbrl": true,
+      "raw_10k": 4,
+      "raw_10q": 11,
+      "raw_total": 15,
+      "sb_forms_excluded": 0,
+      "amendments_excluded": 5,
+      "fpi_pre_revelation": {
+        "20-F": 0,
+        "40-F": 0,
+        "6-K": 0
+      },
+      "xbrl_any_counted": false,
+      "xbrl_count": 0,
+      "first_counted": "2008-03-14",
+      "last_counted": "2011-08-09",
+      "revelation_window_filings": [
+        {
+          "form": "4",
+          "filingDate": "2011-09-16",
+          "reportDate": "2011-09-14",
+          "cik": "0001331427",
+          "accession": "0001144204-11-053624",
+          "primaryDocument": "xslF345X03/v235149_4.xml"
+        },
+        {
+          "form": "8-K",
+          "filingDate": "2011-09-21",
+          "reportDate": "2011-09-15",
+          "cik": "0001331427",
+          "accession": "0001144204-11-054161",
+          "primaryDocument": "v235365_8k.htm"
+        },
+        {
+          "form": "8-K",
+          "filingDate": "2011-09-29",
+          "reportDate": "2011-09-25",
+          "cik": "0001331427",
+          "accession": "0001144204-11-055607",
+          "primaryDocument": "v236105_8k.htm"
+        }
+      ]
+    },
+    {
+      "case_id": "T10",
+      "ticker": "DMND",
+      "ciks": [
+        "0001320947"
+      ],
+      "first_revelation_date": "2011-11-01",
+      "recorded_quarters": null,
+      "recorded_xbrl": true,
+      "raw_10k": 7,
+      "raw_10q": 18,
+      "raw_total": 25,
+      "sb_forms_excluded": 0,
+      "amendments_excluded": 2,
+      "fpi_pre_revelation": {
+        "20-F": 0,
+        "40-F": 0,
+        "6-K": 0
+      },
+      "xbrl_any_counted": false,
+      "xbrl_count": 0,
+      "first_counted": "2005-10-27",
+      "last_counted": "2011-09-15",
+      "revelation_window_filings": [
+        {
+          "form": "425",
+          "filingDate": "2011-10-25",
+          "reportDate": "",
+          "cik": "0001320947",
+          "accession": "0001193125-11-278819",
+          "primaryDocument": "d247089d425.htm"
+        },
+        {
+          "form": "8-K",
+          "filingDate": "2011-10-27",
+          "reportDate": "2011-10-27",
+          "cik": "0001320947",
+          "accession": "0001193125-11-284390",
+          "primaryDocument": "d247805d8k.htm"
+        },
+        {
+          "form": "425",
+          "filingDate": "2011-10-27",
+          "reportDate": "",
+          "cik": "0001320947",
+          "accession": "0001193125-11-284393",
+          "primaryDocument": "d247805d8k.htm"
+        },
+        {
+          "form": "425",
+          "filingDate": "2011-10-27",
+          "reportDate": "",
+          "cik": "0001320947",
+          "accession": "0001193125-11-284367",
+          "primaryDocument": "d247812d425.htm"
+        },
+        {
+          "form": "8-K",
+          "filingDate": "2011-11-01",
+          "reportDate": "2011-11-01",
+          "cik": "0001320947",
+          "accession": "0001193125-11-290765",
+          "primaryDocument": "d251266d8k.htm"
+        },
+        {
+          "form": "425",
+          "filingDate": "2011-11-01",
+          "reportDate": "",
+          "cik": "0001320947",
+          "accession": "0001193125-11-290766",
+          "primaryDocument": "d251266d8k.htm"
+        }
+      ]
+    },
+    {
+      "case_id": "T11",
+      "ticker": "OFIX",
+      "ciks": [
+        "0000884624"
+      ],
+      "first_revelation_date": "2013-07-29",
+      "recorded_quarters": 43,
+      "recorded_xbrl": true,
+      "raw_10k": 11,
+      "raw_10q": 31,
+      "raw_total": 42,
+      "sb_forms_excluded": 0,
+      "amendments_excluded": 5,
+      "fpi_pre_revelation": {
+        "20-F": 5,
+        "40-F": 0,
+        "6-K": 4
+      },
+      "xbrl_any_counted": true,
+      "xbrl_count": 8,
+      "first_counted": "2003-03-31",
+      "last_counted": "2013-05-09",
+      "revelation_window_filings": [
+        {
+          "form": "CORRESP",
+          "filingDate": "2013-07-24",
+          "reportDate": "",
+          "cik": "0000884624",
+          "accession": "0001193125-13-300760",
+          "primaryDocument": "filename1.htm"
+        },
+        {
+          "form": "UPLOAD",
+          "filingDate": "2013-07-30",
+          "reportDate": "",
+          "cik": "0000884624",
+          "accession": "0000000000-13-041646",
+          "primaryDocument": "filename1.pdf"
+        },
+        {
+          "form": "8-K",
+          "filingDate": "2013-07-30",
+          "reportDate": "2013-07-29",
+          "cik": "0000884624",
+          "accession": "0001193125-13-308166",
+          "primaryDocument": "d575499d8k.htm"
+        },
+        {
+          "form": "8-K",
+          "filingDate": "2013-08-07",
+          "reportDate": "2013-08-05",
+          "cik": "0000884624",
+          "accession": "0001193125-13-322803",
+          "primaryDocument": "d579773d8k.htm"
+        },
+        {
+          "form": "NT 10-Q",
+          "filingDate": "2013-08-09",
+          "reportDate": "2013-06-30",
+          "cik": "0000884624",
+          "accession": "0001193125-13-329387",
+          "primaryDocument": "d559495dnt10q.htm"
+        }
+      ]
+    },
+    {
+      "case_id": "T12",
+      "ticker": "LOGI",
+      "ciks": [
+        "0001032975"
+      ],
+      "first_revelation_date": "2014-05-21",
+      "recorded_quarters": 19,
+      "recorded_xbrl": true,
+      "raw_10k": 6,
+      "raw_10q": 18,
+      "raw_total": 24,
+      "sb_forms_excluded": 0,
+      "amendments_excluded": 4,
+      "fpi_pre_revelation": {
+        "20-F": 11,
+        "40-F": 0,
+        "6-K": 97
+      },
+      "xbrl_any_counted": true,
+      "xbrl_count": 13,
+      "first_counted": "2008-05-30",
+      "last_counted": "2014-01-30",
+      "revelation_window_filings": [
+        {
+          "form": "4",
+          "filingDate": "2014-05-22",
+          "reportDate": "2014-05-14",
+          "cik": "0001032975",
+          "accession": "0001181431-14-020945",
+          "primaryDocument": "xslF345X03/rrd410149.xml"
+        },
+        {
+          "form": "8-K",
+          "filingDate": "2014-05-22",
+          "reportDate": "2014-05-21",
+          "cik": "0001032975",
+          "accession": "0001193125-14-208777",
+          "primaryDocument": "d732233d8k.htm"
+        },
+        {
+          "form": "NT 10-K",
+          "filingDate": "2014-05-22",
+          "reportDate": "2014-03-31",
+          "cik": "0001032975",
+          "accession": "0001193125-14-208712",
+          "primaryDocument": "d732289dnt10k.htm"
+        },
+        {
+          "form": "SD",
+          "filingDate": "2014-05-30",
+          "reportDate": "",
+          "cik": "0001032975",
+          "accession": "0001193125-14-220034",
+          "primaryDocument": "d734435dsd.htm"
+        }
+      ]
+    },
+    {
+      "case_id": "T13",
+      "ticker": "HTZ",
+      "ciks": [
+        "0001657853",
+        "0001364479"
+      ],
+      "first_revelation_date": "2014-06-06",
+      "recorded_quarters": null,
+      "recorded_xbrl": true,
+      "raw_10k": 8,
+      "raw_10q": 21,
+      "raw_total": 29,
+      "sb_forms_excluded": 0,
+      "amendments_excluded": 2,
+      "fpi_pre_revelation": {
+        "20-F": 0,
+        "40-F": 0,
+        "6-K": 0
+      },
+      "xbrl_any_counted": true,
+      "xbrl_count": 15,
+      "first_counted": "2007-03-30",
+      "last_counted": "2014-03-19",
+      "revelation_window_filings": [
+        {
+          "form": "3",
+          "filingDate": "2014-05-27",
+          "reportDate": "2014-05-16",
+          "cik": "0001364479",
+          "accession": "0001140361-14-023038",
+          "primaryDocument": "xslF345X02/doc1.xml"
+        },
+        {
+          "form": "8-K",
+          "filingDate": "2014-06-03",
+          "reportDate": "2014-05-28",
+          "cik": "0001364479",
+          "accession": "0001104659-14-043696",
+          "primaryDocument": "a14-14667_18k.htm"
+        },
+        {
+          "form": "3",
+          "filingDate": "2014-06-04",
+          "reportDate": "2014-06-02",
+          "cik": "0001364479",
+          "accession": "0001140361-14-024487",
+          "primaryDocument": "xslF345X02/doc1.xml"
+        },
+        {
+          "form": "8-K",
+          "filingDate": "2014-06-06",
+          "reportDate": "2014-06-03",
+          "cik": "0001364479",
+          "accession": "0001104659-14-044345",
+          "primaryDocument": "a14-14905_18k.htm"
+        }
+      ]
+    },
+    {
+      "case_id": "T14",
+      "ticker": "PWE",
+      "ciks": [
+        "0001334388"
+      ],
+      "first_revelation_date": "2014-07-29",
+      "recorded_quarters": null,
+      "recorded_xbrl": false,
+      "raw_10k": 0,
+      "raw_10q": 0,
+      "raw_total": 0,
+      "sb_forms_excluded": 0,
+      "amendments_excluded": 0,
+      "fpi_pre_revelation": {
+        "20-F": 0,
+        "40-F": 8,
+        "6-K": 276
+      },
+      "xbrl_any_counted": false,
+      "xbrl_count": 0,
+      "first_counted": null,
+      "last_counted": null,
+      "revelation_window_filings": [
+        {
+          "form": "6-K",
+          "filingDate": "2014-07-30",
+          "reportDate": "2014-07-28",
+          "cik": "0001334388",
+          "accession": "0000912282-14-000444",
+          "primaryDocument": "pennwest6k_072814.htm"
+        },
+        {
+          "form": "6-K",
+          "filingDate": "2014-08-04",
+          "reportDate": "2014-08-04",
+          "cik": "0001334388",
+          "accession": "0000912282-14-000459",
+          "primaryDocument": "pennwest6k_08042014.htm"
+        }
+      ]
+    },
+    {
+      "case_id": "T15",
+      "ticker": "RATE",
+      "ciks": [
+        "0001518222"
+      ],
+      "first_revelation_date": "2014-09-15",
+      "recorded_quarters": 13,
+      "recorded_xbrl": true,
+      "raw_10k": 3,
+      "raw_10q": 10,
+      "raw_total": 13,
+      "sb_forms_excluded": 0,
+      "amendments_excluded": 0,
+      "fpi_pre_revelation": {
+        "20-F": 0,
+        "40-F": 0,
+        "6-K": 0
+      },
+      "xbrl_any_counted": true,
+      "xbrl_count": 13,
+      "first_counted": "2011-08-15",
+      "last_counted": "2014-08-08",
+      "revelation_window_filings": [
+        {
+          "form": "4",
+          "filingDate": "2014-09-10",
+          "reportDate": "2014-09-09",
+          "cik": "0001518222",
+          "accession": "0001214659-14-006418",
+          "primaryDocument": "xslF345X03/marketforms-25681.xml"
+        },
+        {
+          "form": "SC 13G/A",
+          "filingDate": "2014-09-10",
+          "reportDate": "",
+          "cik": "0001518222",
+          "accession": "0000902219-14-001064",
+          "primaryDocument": "sec_filing.htm"
+        },
+        {
+          "form": "8-K",
+          "filingDate": "2014-09-15",
+          "reportDate": "2014-09-15",
+          "cik": "0001518222",
+          "accession": "0001518222-14-000033",
+          "primaryDocument": "rate-20140915x8k.htm"
+        },
+        {
+          "form": "3",
+          "filingDate": "2014-09-22",
+          "reportDate": "2014-09-14",
+          "cik": "0001518222",
+          "accession": "0001214659-14-006537",
+          "primaryDocument": "xslF345X02/marketforms-25991.xml"
+        },
+        {
+          "form": "UPLOAD",
+          "filingDate": "2014-09-25",
+          "reportDate": "",
+          "cik": "0001518222",
+          "accession": "0000000000-14-048185",
+          "primaryDocument": "filename1.pdf"
+        }
+      ]
+    },
+    {
+      "case_id": "T16",
+      "ticker": "ICON",
+      "ciks": [
+        "0000857737"
+      ],
+      "first_revelation_date": "2015-08-10",
+      "recorded_quarters": null,
+      "recorded_xbrl": true,
+      "raw_10k": 18,
+      "raw_10q": 55,
+      "raw_total": 73,
+      "sb_forms_excluded": 0,
+      "amendments_excluded": 15,
+      "fpi_pre_revelation": {
+        "20-F": 0,
+        "40-F": 0,
+        "6-K": 0
+      },
+      "xbrl_any_counted": true,
+      "xbrl_count": 19,
+      "first_counted": "1997-06-16",
+      "last_counted": "2015-05-08",
+      "revelation_window_filings": [
+        {
+          "form": "4",
+          "filingDate": "2015-08-10",
+          "reportDate": "2015-08-06",
+          "cik": "0000857737",
+          "accession": "0000899243-15-002754",
+          "primaryDocument": "xslF345X03/doc4.xml"
+        },
+        {
+          "form": "NT 10-Q",
+          "filingDate": "2015-08-10",
+          "reportDate": "2015-06-30",
+          "cik": "0000857737",
+          "accession": "0001193125-15-285044",
+          "primaryDocument": "d92960dnt10q.htm"
+        },
+        {
+          "form": "8-K",
+          "filingDate": "2015-08-11",
+          "reportDate": "2015-08-05",
+          "cik": "0000857737",
+          "accession": "0001193125-15-286548",
+          "primaryDocument": "d68313d8k.htm"
+        },
+        {
+          "form": "10-Q",
+          "filingDate": "2015-08-12",
+          "reportDate": "2015-06-30",
+          "cik": "0000857737",
+          "accession": "0001564590-15-007123",
+          "primaryDocument": "icon-10q_20150630.htm"
+        },
+        {
+          "form": "8-K",
+          "filingDate": "2015-08-12",
+          "reportDate": "2015-08-10",
+          "cik": "0000857737",
+          "accession": "0001193125-15-288213",
+          "primaryDocument": "d11999d8k.htm"
+        }
+      ]
+    },
+    {
+      "case_id": "T17",
+      "ticker": "MRVL",
+      "ciks": [
+        "0001058057"
+      ],
+      "first_revelation_date": "2015-09-11",
+      "recorded_quarters": null,
+      "recorded_xbrl": true,
+      "raw_10k": 15,
+      "raw_10q": 45,
+      "raw_total": 60,
+      "sb_forms_excluded": 0,
+      "amendments_excluded": 2,
+      "fpi_pre_revelation": {
+        "20-F": 0,
+        "40-F": 0,
+        "6-K": 0
+      },
+      "xbrl_any_counted": true,
+      "xbrl_count": 24,
+      "first_counted": "2000-09-12",
+      "last_counted": "2015-06-04",
+      "revelation_window_filings": [
+        {
+          "form": "8-K",
+          "filingDate": "2015-09-11",
+          "reportDate": "2015-09-11",
+          "cik": "0001058057",
+          "accession": "0001193125-15-317843",
+          "primaryDocument": "d10775d8k.htm"
+        },
+        {
+          "form": "NT 10-Q",
+          "filingDate": "2015-09-11",
+          "reportDate": "2015-08-01",
+          "cik": "0001058057",
+          "accession": "0001193125-15-317840",
+          "primaryDocument": "d64331dnt10q.htm"
+        },
+        {
+          "form": "8-K",
+          "filingDate": "2015-09-16",
+          "reportDate": "2015-09-14",
+          "cik": "0001058057",
+          "accession": "0001193125-15-321468",
+          "primaryDocument": "d65926d8k.htm"
+        },
+        {
+          "form": "8-K",
+          "filingDate": "2015-09-24",
+          "reportDate": "2015-09-23",
+          "cik": "0001058057",
+          "accession": "0001193125-15-327440",
+          "primaryDocument": "d19855d8k.htm"
+        }
+      ]
+    },
+    {
+      "case_id": "T18",
+      "ticker": "VRX",
+      "ciks": [
+        "0000885590"
+      ],
+      "first_revelation_date": "2015-10-19",
+      "recorded_quarters": null,
+      "recorded_xbrl": true,
+      "raw_10k": 6,
+      "raw_10q": 17,
+      "raw_total": 23,
+      "sb_forms_excluded": 0,
+      "amendments_excluded": 0,
+      "fpi_pre_revelation": {
+        "20-F": 13,
+        "40-F": 0,
+        "6-K": 204
+      },
+      "xbrl_any_counted": true,
+      "xbrl_count": 21,
+      "first_counted": "2010-02-26",
+      "last_counted": "2015-07-28",
+      "revelation_window_filings": [
+        {
+          "form": "SC TO-T/A",
+          "filingDate": "2015-10-05",
+          "reportDate": "",
+          "cik": "0000885590",
+          "accession": "0001193125-15-337608",
+          "primaryDocument": "d80971dsctota.htm"
+        },
+        {
+          "form": "SC TO-T/A",
+          "filingDate": "2015-10-05",
+          "reportDate": "",
+          "cik": "0000885590",
+          "accession": "0001193125-15-336829",
+          "primaryDocument": "d70292dsctota.htm"
+        },
+        {
+          "form": "8-K",
+          "filingDate": "2015-10-06",
+          "reportDate": "2015-10-05",
+          "cik": "0000885590",
+          "accession": "0001193125-15-337744",
+          "primaryDocument": "d83478d8k.htm"
+        },
+        {
+          "form": "SC TO-T/A",
+          "filingDate": "2015-10-09",
+          "reportDate": "",
+          "cik": "0000885590",
+          "accession": "0001193125-15-341018",
+          "primaryDocument": "d59879dsctota.htm"
+        },
+        {
+          "form": "SC TO-T/A",
+          "filingDate": "2015-10-15",
+          "reportDate": "",
+          "cik": "0000885590",
+          "accession": "0001193125-15-344325",
+          "primaryDocument": "d88702dsctota.htm"
+        },
+        {
+          "form": "8-K",
+          "filingDate": "2015-10-19",
+          "reportDate": "2015-10-19",
+          "cik": "0000885590",
+          "accession": "0001193125-15-346156",
+          "primaryDocument": "d29357d8k.htm"
+        },
+        {
+          "form": "4",
+          "filingDate": "2015-10-22",
+          "reportDate": "2015-10-21",
+          "cik": "0000885590",
+          "accession": "0000885590-15-000075",
+          "primaryDocument": "xslF345X03/primary_doc.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2015-10-22",
+          "reportDate": "2015-10-20",
+          "cik": "0000885590",
+          "accession": "0000885590-15-000074",
+          "primaryDocument": "xslF345X03/primary_doc.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2015-10-22",
+          "reportDate": "2015-10-20",
+          "cik": "0000885590",
+          "accession": "0000885590-15-000073",
+          "primaryDocument": "xslF345X03/primary_doc.xml"
+        },
+        {
+          "form": "8-K",
+          "filingDate": "2015-10-26",
+          "reportDate": "2015-10-25",
+          "cik": "0000885590",
+          "accession": "0001193125-15-353241",
+          "primaryDocument": "d73217d8k.htm"
+        },
+        {
+          "form": "10-Q",
+          "filingDate": "2015-10-26",
+          "reportDate": "2015-09-30",
+          "cik": "0000885590",
+          "accession": "0000885590-15-000077",
+          "primaryDocument": "valeantq32015.htm"
+        }
+      ]
+    },
+    {
+      "case_id": "T19",
+      "ticker": "OSIR",
+      "ciks": [
+        "0001360886"
+      ],
+      "first_revelation_date": "2015-11-16",
+      "recorded_quarters": null,
+      "recorded_xbrl": true,
+      "raw_10k": 9,
+      "raw_10q": 28,
+      "raw_total": 37,
+      "sb_forms_excluded": 0,
+      "amendments_excluded": 1,
+      "fpi_pre_revelation": {
+        "20-F": 0,
+        "40-F": 0,
+        "6-K": 0
+      },
+      "xbrl_any_counted": true,
+      "xbrl_count": 17,
+      "first_counted": "2006-09-15",
+      "last_counted": "2015-08-10",
+      "revelation_window_filings": [
+        {
+          "form": "8-K",
+          "filingDate": "2015-11-06",
+          "reportDate": "2015-11-06",
+          "cik": "0001360886",
+          "accession": "0001104659-15-076444",
+          "primaryDocument": "a15-22540_18k.htm"
+        },
+        {
+          "form": "NT 10-Q",
+          "filingDate": "2015-11-10",
+          "reportDate": "2015-09-30",
+          "cik": "0001360886",
+          "accession": "0001104659-15-077466",
+          "primaryDocument": "a15-17960_3nt10q.htm"
+        },
+        {
+          "form": "10-Q",
+          "filingDate": "2015-11-16",
+          "reportDate": "2015-09-30",
+          "cik": "0001360886",
+          "accession": "0001558370-15-002707",
+          "primaryDocument": "osir-20150930x10q.htm"
+        },
+        {
+          "form": "4",
+          "filingDate": "2015-11-20",
+          "reportDate": "2015-11-20",
+          "cik": "0001360886",
+          "accession": "0001179110-15-015240",
+          "primaryDocument": "xslF345X03/edgar.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2015-11-20",
+          "reportDate": "2015-11-18",
+          "cik": "0001360886",
+          "accession": "0001179110-15-015239",
+          "primaryDocument": "xslF345X03/edgar.xml"
+        },
+        {
+          "form": "8-K",
+          "filingDate": "2015-11-20",
+          "reportDate": "2015-11-20",
+          "cik": "0001360886",
+          "accession": "0001104659-15-080467",
+          "primaryDocument": "a15-23865_18k.htm"
+        }
+      ]
+    },
+    {
+      "case_id": "T20",
+      "ticker": "BRX",
+      "ciks": [
+        "0001581068"
+      ],
+      "first_revelation_date": "2016-02-08",
+      "recorded_quarters": 9,
+      "recorded_xbrl": true,
+      "raw_10k": 2,
+      "raw_10q": 7,
+      "raw_total": 9,
+      "sb_forms_excluded": 0,
+      "amendments_excluded": 0,
+      "fpi_pre_revelation": {
+        "20-F": 0,
+        "40-F": 0,
+        "6-K": 0
+      },
+      "xbrl_any_counted": true,
+      "xbrl_count": 9,
+      "first_counted": "2013-12-03",
+      "last_counted": "2015-10-26",
+      "revelation_window_filings": [
+        {
+          "form": "8-K",
+          "filingDate": "2016-02-08",
+          "reportDate": "2016-02-05",
+          "cik": "0001581068",
+          "accession": "0001193125-16-453080",
+          "primaryDocument": "d121667d8k.htm"
+        },
+        {
+          "form": "SC 13G",
+          "filingDate": "2016-02-09",
+          "reportDate": "",
+          "cik": "0001581068",
+          "accession": "0000215457-16-004931",
+          "primaryDocument": "brixmor.property.g.2015.txt"
+        },
+        {
+          "form": "SC 13G/A",
+          "filingDate": "2016-02-10",
+          "reportDate": "",
+          "cik": "0001581068",
+          "accession": "0000932471-16-011097",
+          "primaryDocument": "brixmorpropertygroupinc.htm"
+        },
+        {
+          "form": "5",
+          "filingDate": "2016-02-12",
+          "reportDate": "2015-12-31",
+          "cik": "0001581068",
+          "accession": "0001123292-16-001714",
+          "primaryDocument": "xslF345X03/edgar.xml"
+        },
+        {
+          "form": "SC 13G/A",
+          "filingDate": "2016-02-16",
+          "reportDate": "",
+          "cik": "0001581068",
+          "accession": "0001193125-16-465261",
+          "primaryDocument": "d86788dsc13ga.htm"
+        },
+        {
+          "form": "SC 13G",
+          "filingDate": "2016-02-16",
+          "reportDate": "",
+          "cik": "0001581068",
+          "accession": "0000914208-16-000806",
+          "primaryDocument": "SEC13G_Filing.htm"
+        },
+        {
+          "form": "SC 13G",
+          "filingDate": "2016-02-16",
+          "reportDate": "",
+          "cik": "0001581068",
+          "accession": "0001284812-16-000363",
+          "primaryDocument": "brx13gbody-123115.txt"
+        },
+        {
+          "form": "8-K",
+          "filingDate": "2016-02-16",
+          "reportDate": "2016-02-12",
+          "cik": "0001581068",
+          "accession": "0001193125-16-463971",
+          "primaryDocument": "d282067d8k.htm"
+        },
+        {
+          "form": "4",
+          "filingDate": "2016-02-17",
+          "reportDate": "2016-02-15",
+          "cik": "0001581068",
+          "accession": "0001123292-16-001769",
+          "primaryDocument": "xslF345X03/edgar.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2016-02-17",
+          "reportDate": "2016-02-15",
+          "cik": "0001581068",
+          "accession": "0001123292-16-001768",
+          "primaryDocument": "xslF345X03/edgar.xml"
+        },
+        {
+          "form": "3",
+          "filingDate": "2016-02-17",
+          "reportDate": "2016-02-07",
+          "cik": "0001581068",
+          "accession": "0001123292-16-001767",
+          "primaryDocument": "xslF345X02/edgar.xml"
+        },
+        {
+          "form": "3",
+          "filingDate": "2016-02-17",
+          "reportDate": "2016-02-07",
+          "cik": "0001581068",
+          "accession": "0001123292-16-001766",
+          "primaryDocument": "xslF345X02/edgar.xml"
+        },
+        {
+          "form": "3",
+          "filingDate": "2016-02-17",
+          "reportDate": "2016-02-12",
+          "cik": "0001581068",
+          "accession": "0001123292-16-001765",
+          "primaryDocument": "xslF345X02/edgar.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2016-02-19",
+          "reportDate": "2016-02-17",
+          "cik": "0001581068",
+          "accession": "0001123292-16-001779",
+          "primaryDocument": "xslF345X03/edgar.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2016-02-19",
+          "reportDate": "2016-02-18",
+          "cik": "0001581068",
+          "accession": "0001123292-16-001778",
+          "primaryDocument": "xslF345X03/edgar.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2016-02-19",
+          "reportDate": "2016-02-18",
+          "cik": "0001581068",
+          "accession": "0001123292-16-001777",
+          "primaryDocument": "xslF345X03/edgar.xml"
+        }
+      ]
+    },
+    {
+      "case_id": "T21",
+      "ticker": "SCOR",
+      "ciks": [
+        "0001158172"
+      ],
+      "first_revelation_date": "2016-02-29",
+      "recorded_quarters": 34,
+      "recorded_xbrl": true,
+      "raw_10k": 8,
+      "raw_10q": 26,
+      "raw_total": 34,
+      "sb_forms_excluded": 0,
+      "amendments_excluded": 9,
+      "fpi_pre_revelation": {
+        "20-F": 0,
+        "40-F": 0,
+        "6-K": 0
+      },
+      "xbrl_any_counted": true,
+      "xbrl_count": 18,
+      "first_counted": "2007-08-13",
+      "last_counted": "2015-11-06",
+      "revelation_window_filings": [
+        {
+          "form": "4",
+          "filingDate": "2016-02-17",
+          "reportDate": "2016-02-15",
+          "cik": "0001158172",
+          "accession": "0001310932-16-000024",
+          "primaryDocument": "xslF345X03/wf-form4_145575288373745.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2016-02-17",
+          "reportDate": "2016-02-15",
+          "cik": "0001158172",
+          "accession": "0001562691-16-000074",
+          "primaryDocument": "xslF345X03/wf-form4_145575237909560.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2016-02-17",
+          "reportDate": "2016-02-15",
+          "cik": "0001158172",
+          "accession": "0001543898-16-000020",
+          "primaryDocument": "xslF345X03/wf-form4_145575219099516.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2016-02-17",
+          "reportDate": "2016-02-15",
+          "cik": "0001158172",
+          "accession": "0001400954-16-000072",
+          "primaryDocument": "xslF345X03/wf-form4_145575207608788.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2016-02-17",
+          "reportDate": "2016-02-15",
+          "cik": "0001158172",
+          "accession": "0001254384-16-000032",
+          "primaryDocument": "xslF345X03/wf-form4_145575187648733.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2016-02-17",
+          "reportDate": "2016-02-15",
+          "cik": "0001158172",
+          "accession": "0001633412-16-000082",
+          "primaryDocument": "xslF345X03/wf-form4_145575164893058.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2016-02-17",
+          "reportDate": "2016-02-15",
+          "cik": "0001158172",
+          "accession": "0001400956-16-000025",
+          "primaryDocument": "xslF345X03/wf-form4_145575140436868.xml"
+        },
+        {
+          "form": "8-K",
+          "filingDate": "2016-02-17",
+          "reportDate": "2016-02-17",
+          "cik": "0001158172",
+          "accession": "0001158172-16-000136",
+          "primaryDocument": "a20170217stockrepurchase8k.htm"
+        },
+        {
+          "form": "8-K",
+          "filingDate": "2016-02-17",
+          "reportDate": "2016-02-17",
+          "cik": "0001158172",
+          "accession": "0001158172-16-000134",
+          "primaryDocument": "a2015q48-k.htm"
+        },
+        {
+          "form": "4",
+          "filingDate": "2016-02-18",
+          "reportDate": "2016-02-15",
+          "cik": "0001158172",
+          "accession": "0001466605-16-000004",
+          "primaryDocument": "xslF345X03/wf-form4_145584574754804.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2016-02-18",
+          "reportDate": "2016-02-15",
+          "cik": "0001158172",
+          "accession": "0001562691-16-000076",
+          "primaryDocument": "xslF345X03/wf-form4_145584554393368.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2016-02-18",
+          "reportDate": "2016-02-15",
+          "cik": "0001158172",
+          "accession": "0001543898-16-000022",
+          "primaryDocument": "xslF345X03/wf-form4_145584527504210.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2016-02-18",
+          "reportDate": "2016-02-15",
+          "cik": "0001158172",
+          "accession": "0001400954-16-000074",
+          "primaryDocument": "xslF345X03/wf-form4_145584512455827.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2016-02-18",
+          "reportDate": "2016-02-15",
+          "cik": "0001158172",
+          "accession": "0001254384-16-000034",
+          "primaryDocument": "xslF345X03/wf-form4_145584496335933.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2016-02-18",
+          "reportDate": "2016-02-15",
+          "cik": "0001158172",
+          "accession": "0001633412-16-000084",
+          "primaryDocument": "xslF345X03/wf-form4_145584471780601.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2016-02-18",
+          "reportDate": "2016-02-15",
+          "cik": "0001158172",
+          "accession": "0001400956-16-000027",
+          "primaryDocument": "xslF345X03/wf-form4_145584459087470.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2016-02-18",
+          "reportDate": "2016-02-15",
+          "cik": "0001158172",
+          "accession": "0001310932-16-000026",
+          "primaryDocument": "xslF345X03/wf-form4_145584443830721.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2016-02-22",
+          "reportDate": "2016-02-18",
+          "cik": "0001158172",
+          "accession": "0001400956-16-000029",
+          "primaryDocument": "xslF345X03/wf-form4_145618958807250.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2016-02-22",
+          "reportDate": "2016-02-18",
+          "cik": "0001158172",
+          "accession": "0001254384-16-000036",
+          "primaryDocument": "xslF345X03/wf-form4_145618659745008.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2016-02-22",
+          "reportDate": "2016-02-18",
+          "cik": "0001158172",
+          "accession": "0001633412-16-000086",
+          "primaryDocument": "xslF345X03/wf-form4_145618644938781.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2016-02-22",
+          "reportDate": "2016-02-18",
+          "cik": "0001158172",
+          "accession": "0001310932-16-000028",
+          "primaryDocument": "xslF345X03/wf-form4_145618604410565.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2016-02-22",
+          "reportDate": "2016-02-18",
+          "cik": "0001158172",
+          "accession": "0001562691-16-000078",
+          "primaryDocument": "xslF345X03/wf-form4_145618564811000.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2016-02-22",
+          "reportDate": "2016-02-18",
+          "cik": "0001158172",
+          "accession": "0001543898-16-000024",
+          "primaryDocument": "xslF345X03/wf-form4_145618526423117.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2016-02-22",
+          "reportDate": "2016-02-18",
+          "cik": "0001158172",
+          "accession": "0001400954-16-000076",
+          "primaryDocument": "xslF345X03/wf-form4_145618487424255.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2016-02-24",
+          "reportDate": "2016-02-22",
+          "cik": "0001158172",
+          "accession": "0001562691-16-000080",
+          "primaryDocument": "xslF345X03/wf-form4_145634947723551.xml"
+        },
+        {
+          "form": "NT 10-K",
+          "filingDate": "2016-02-29",
+          "reportDate": "2015-12-31",
+          "cik": "0001158172",
+          "accession": "0001193125-16-485483",
+          "primaryDocument": "d130967dnt10k.htm"
+        },
+        {
+          "form": "3/A",
+          "filingDate": "2016-03-04",
+          "reportDate": "2016-01-29",
+          "cik": "0001158172",
+          "accession": "0001466605-16-000006",
+          "primaryDocument": "xslF345X02/wf-form3a_145712965581591.xml"
+        },
+        {
+          "form": "3/A",
+          "filingDate": "2016-03-04",
+          "reportDate": "2016-01-29",
+          "cik": "0001158172",
+          "accession": "0001158172-16-000139",
+          "primaryDocument": "xslF345X02/wf-form3a_145712919356761.xml"
+        },
+        {
+          "form": "3/A",
+          "filingDate": "2016-03-04",
+          "reportDate": "2016-01-29",
+          "cik": "0001158172",
+          "accession": "0001499730-16-000007",
+          "primaryDocument": "xslF345X02/wf-form3a_145712902451600.xml"
+        },
+        {
+          "form": "3/A",
+          "filingDate": "2016-03-04",
+          "reportDate": "2016-01-29",
+          "cik": "0001158172",
+          "accession": "0001443849-16-000006",
+          "primaryDocument": "xslF345X02/wf-form3a_145712890581873.xml"
+        },
+        {
+          "form": "8-K",
+          "filingDate": "2016-03-07",
+          "reportDate": "2016-03-07",
+          "cik": "0001158172",
+          "accession": "0001193125-16-494245",
+          "primaryDocument": "d154159d8k.htm"
+        },
+        {
+          "form": "NT 10-K/A",
+          "filingDate": "2016-03-07",
+          "reportDate": "2015-12-31",
+          "cik": "0001158172",
+          "accession": "0001193125-16-494215",
+          "primaryDocument": "d149391dnt10ka.htm"
+        }
+      ]
+    },
+    {
+      "case_id": "T22",
+      "ticker": "TNGO",
+      "ciks": [
+        "0001182325"
+      ],
+      "first_revelation_date": "2016-03-07",
+      "recorded_quarters": 17,
+      "recorded_xbrl": true,
+      "raw_10k": 4,
+      "raw_10q": 14,
+      "raw_total": 18,
+      "sb_forms_excluded": 0,
+      "amendments_excluded": 1,
+      "fpi_pre_revelation": {
+        "20-F": 0,
+        "40-F": 0,
+        "6-K": 0
+      },
+      "xbrl_any_counted": true,
+      "xbrl_count": 18,
+      "first_counted": "2011-09-09",
+      "last_counted": "2015-11-09",
+      "revelation_window_filings": [
+        {
+          "form": "4",
+          "filingDate": "2016-02-23",
+          "reportDate": "2016-02-19",
+          "cik": "0001182325",
+          "accession": "0001179110-16-019844",
+          "primaryDocument": "xslF345X03/edgar.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2016-02-23",
+          "reportDate": "2016-02-19",
+          "cik": "0001182325",
+          "accession": "0001179110-16-019843",
+          "primaryDocument": "xslF345X03/edgar.xml"
+        },
+        {
+          "form": "8-K",
+          "filingDate": "2016-03-07",
+          "reportDate": "2016-03-04",
+          "cik": "0001182325",
+          "accession": "0001104659-16-102988",
+          "primaryDocument": "a16-5958_18k.htm"
+        },
+        {
+          "form": "4",
+          "filingDate": "2016-03-10",
+          "reportDate": "2016-03-08",
+          "cik": "0001182325",
+          "accession": "0001209191-16-107714",
+          "primaryDocument": "xslF345X03/doc4.xml"
+        },
+        {
+          "form": "NT 10-K",
+          "filingDate": "2016-03-15",
+          "reportDate": "2015-12-31",
+          "cik": "0001182325",
+          "accession": "0001104659-16-105201",
+          "primaryDocument": "a15-23491_4nt10k.htm"
+        },
+        {
+          "form": "SC 13D",
+          "filingDate": "2016-03-18",
+          "reportDate": "",
+          "cik": "0001182325",
+          "accession": "0000902664-16-006476",
+          "primaryDocument": "p16-0949sc13d.htm"
+        }
+      ]
+    },
+    {
+      "case_id": "T23",
+      "ticker": "HAIN",
+      "ciks": [
+        "0000910406"
+      ],
+      "first_revelation_date": "2016-08-15",
+      "recorded_quarters": null,
+      "recorded_xbrl": true,
+      "raw_10k": 19,
+      "raw_10q": 60,
+      "raw_total": 79,
+      "sb_forms_excluded": 0,
+      "amendments_excluded": 6,
+      "fpi_pre_revelation": {
+        "20-F": 0,
+        "40-F": 0,
+        "6-K": 1
+      },
+      "xbrl_any_counted": true,
+      "xbrl_count": 23,
+      "first_counted": "1996-11-14",
+      "last_counted": "2016-05-10",
+      "revelation_window_filings": [
+        {
+          "form": "8-K",
+          "filingDate": "2016-08-15",
+          "reportDate": "2016-08-15",
+          "cik": "0000910406",
+          "accession": "0000910406-16-000121",
+          "primaryDocument": "hain8k-081516.htm"
+        }
+      ]
+    },
+    {
+      "case_id": "T24",
+      "ticker": "CGI",
+      "ciks": [
+        "0000865941"
+      ],
+      "first_revelation_date": "2017-04-05",
+      "recorded_quarters": null,
+      "recorded_xbrl": true,
+      "raw_10k": 21,
+      "raw_10q": 63,
+      "raw_total": 84,
+      "sb_forms_excluded": 0,
+      "amendments_excluded": 10,
+      "fpi_pre_revelation": {
+        "20-F": 0,
+        "40-F": 0,
+        "6-K": 0
+      },
+      "xbrl_any_counted": true,
+      "xbrl_count": 22,
+      "first_counted": "1996-05-13",
+      "last_counted": "2017-02-10",
+      "revelation_window_filings": []
+    },
+    {
+      "case_id": "T25",
+      "ticker": "GE",
+      "ciks": [
+        "0000040545"
+      ],
+      "first_revelation_date": "2017-07-21",
+      "recorded_quarters": null,
+      "recorded_xbrl": true,
+      "raw_10k": 24,
+      "raw_10q": 70,
+      "raw_total": 94,
+      "sb_forms_excluded": 0,
+      "amendments_excluded": 13,
+      "fpi_pre_revelation": {
+        "20-F": 0,
+        "40-F": 0,
+        "6-K": 0
+      },
+      "xbrl_any_counted": true,
+      "xbrl_count": 32,
+      "first_counted": "1994-03-11",
+      "last_counted": "2017-05-05",
+      "revelation_window_filings": [
+        {
+          "form": "UPLOAD",
+          "filingDate": "2017-07-13",
+          "reportDate": "",
+          "cik": "0000040545",
+          "accession": "0000000000-17-024592",
+          "primaryDocument": "filename1.pdf"
+        },
+        {
+          "form": "SC 13D",
+          "filingDate": "2017-07-13",
+          "reportDate": "",
+          "cik": "0000040545",
+          "accession": "0000947871-17-000550",
+          "primaryDocument": "ss51105_sc13d.htm"
+        },
+        {
+          "form": "8-K",
+          "filingDate": "2017-07-21",
+          "reportDate": "2017-07-21",
+          "cik": "0000040545",
+          "accession": "0000040545-17-000042",
+          "primaryDocument": "ge2q20178-k.htm"
+        },
+        {
+          "form": "4",
+          "filingDate": "2017-07-25",
+          "reportDate": "2017-07-24",
+          "cik": "0000040545",
+          "accession": "0001231205-17-000079",
+          "primaryDocument": "xslF345X03/edgar.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2017-07-25",
+          "reportDate": "2017-07-24",
+          "cik": "0000040545",
+          "accession": "0001231205-17-000078",
+          "primaryDocument": "xslF345X03/edgar.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2017-07-26",
+          "reportDate": "2017-07-24",
+          "cik": "0000040545",
+          "accession": "0001231205-17-000081",
+          "primaryDocument": "xslF345X03/edgar.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2017-07-26",
+          "reportDate": "2017-07-24",
+          "cik": "0000040545",
+          "accession": "0001231205-17-000080",
+          "primaryDocument": "xslF345X03/edgar.xml"
+        },
+        {
+          "form": "CORRESP",
+          "filingDate": "2017-07-26",
+          "reportDate": "",
+          "cik": "0000040545",
+          "accession": "0000040545-17-000047",
+          "primaryDocument": "filename1.htm"
+        },
+        {
+          "form": "4",
+          "filingDate": "2017-07-27",
+          "reportDate": "2017-07-25",
+          "cik": "0000040545",
+          "accession": "0001231205-17-000082",
+          "primaryDocument": "xslF345X03/edgar.xml"
+        },
+        {
+          "form": "S-8",
+          "filingDate": "2017-07-28",
+          "reportDate": "",
+          "cik": "0000040545",
+          "accession": "0001206774-17-002232",
+          "primaryDocument": "ge3290041-s8.htm"
+        },
+        {
+          "form": "IRANNOTICE",
+          "filingDate": "2017-07-28",
+          "reportDate": "",
+          "cik": "0000040545",
+          "accession": "0000040545-17-000054",
+          "primaryDocument": "irannotice.htm"
+        },
+        {
+          "form": "10-Q",
+          "filingDate": "2017-07-28",
+          "reportDate": "2017-06-30",
+          "cik": "0000040545",
+          "accession": "0000040545-17-000053",
+          "primaryDocument": "ge2q201710-q.htm"
+        },
+        {
+          "form": "4",
+          "filingDate": "2017-07-31",
+          "reportDate": "2017-07-27",
+          "cik": "0000040545",
+          "accession": "0001231205-17-000085",
+          "primaryDocument": "xslF345X03/edgar.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2017-07-31",
+          "reportDate": "2017-07-27",
+          "cik": "0000040545",
+          "accession": "0001231205-17-000084",
+          "primaryDocument": "xslF345X03/edgar.xml"
+        },
+        {
+          "form": "4",
+          "filingDate": "2017-07-31",
+          "reportDate": "2017-07-27",
+          "cik": "0000040545",
+          "accession": "0001231205-17-000083",
+          "primaryDocument": "xslF345X03/edgar.xml"
+        },
+        {
+          "form": "3",
+          "filingDate": "2017-08-03",
+          "reportDate": "2017-08-01",
+          "cik": "0000040545",
+          "accession": "0001231205-17-000086",
+          "primaryDocument": "xslF345X02/edgar.xml"
+        },
+        {
+          "form": "13F-HR",
+          "filingDate": "2017-08-04",
+          "reportDate": "2017-06-30",
+          "cik": "0000040545",
+          "accession": "0001140361-17-030273",
+          "primaryDocument": "xslForm13F_X01/primary_doc.xml"
+        }
+      ]
+    },
+    {
+      "case_id": "T26",
+      "ticker": "MDXG",
+      "ciks": [
+        "0001376339"
+      ],
+      "first_revelation_date": "2017-09-20",
+      "recorded_quarters": null,
+      "recorded_xbrl": true,
+      "raw_10k": 10,
+      "raw_10q": 28,
+      "raw_total": 38,
+      "sb_forms_excluded": 0,
+      "amendments_excluded": 8,
+      "fpi_pre_revelation": {
+        "20-F": 0,
+        "40-F": 0,
+        "6-K": 0
+      },
+      "xbrl_any_counted": true,
+      "xbrl_count": 25,
+      "first_counted": "2008-06-27",
+      "last_counted": "2017-07-31",
+      "revelation_window_filings": [
+        {
+          "form": "8-K/A",
+          "filingDate": "2017-10-02",
+          "reportDate": "2015-10-12",
+          "cik": "0001376339",
+          "accession": "0001376339-17-000124",
+          "primaryDocument": "mdxg2017102820178-klocdocu.htm"
+        }
+      ]
+    },
+    {
+      "case_id": "T27",
+      "ticker": "WAGE",
+      "ciks": [
+        "0001158863"
+      ],
+      "first_revelation_date": "2018-03-01",
+      "recorded_quarters": 22,
+      "recorded_xbrl": true,
+      "raw_10k": 5,
+      "raw_10q": 17,
+      "raw_total": 22,
+      "sb_forms_excluded": 0,
+      "amendments_excluded": 1,
+      "fpi_pre_revelation": {
+        "20-F": 0,
+        "40-F": 0,
+        "6-K": 0
+      },
+      "xbrl_any_counted": true,
+      "xbrl_count": 22,
+      "first_counted": "2012-08-09",
+      "last_counted": "2017-11-08",
+      "revelation_window_filings": [
+        {
+          "form": "NT 10-K",
+          "filingDate": "2018-03-02",
+          "reportDate": "2017-12-31",
+          "cik": "0001158863",
+          "accession": "0001193125-18-068117",
+          "primaryDocument": "d516397dnt10k.htm"
+        }
+      ]
+    },
+    {
+      "case_id": "T28",
+      "ticker": "KHC",
+      "ciks": [
+        "0001637459"
+      ],
+      "first_revelation_date": "2019-02-21",
+      "recorded_quarters": 14,
+      "recorded_xbrl": true,
+      "raw_10k": 3,
+      "raw_10q": 11,
+      "raw_total": 14,
+      "sb_forms_excluded": 0,
+      "amendments_excluded": 2,
+      "fpi_pre_revelation": {
+        "20-F": 0,
+        "40-F": 0,
+        "6-K": 0
+      },
+      "xbrl_any_counted": true,
+      "xbrl_count": 14,
+      "first_counted": "2015-08-10",
+      "last_counted": "2018-11-02",
+      "revelation_window_filings": [
+        {
+          "form": "8-K",
+          "filingDate": "2019-02-08",
+          "reportDate": "2019-02-06",
+          "cik": "0001637459",
+          "accession": "0001637459-19-000007",
+          "primaryDocument": "item502form8-k.htm"
+        },
+        {
+          "form": "8-K",
+          "filingDate": "2019-02-21",
+          "reportDate": "2019-02-21",
+          "cik": "0001637459",
+          "accession": "0001637459-19-000010",
+          "primaryDocument": "form8-kq42018.htm"
+        },
+        {
+          "form": "8-K",
+          "filingDate": "2019-02-28",
+          "reportDate": "2019-02-28",
+          "cik": "0001637459",
+          "accession": "0001637459-19-000020",
+          "primaryDocument": "february2019form8-k.htm"
+        },
+        {
+          "form": "NT 10-K",
+          "filingDate": "2019-02-28",
+          "reportDate": "2018-12-29",
+          "cik": "0001637459",
+          "accession": "0001637459-19-000019",
+          "primaryDocument": "nt10-k.htm"
+        }
+      ]
+    },
+    {
+      "case_id": "T29",
+      "ticker": "UAA",
+      "ciks": [
+        "0001336917"
+      ],
+      "first_revelation_date": "2019-11-03",
+      "recorded_quarters": 55,
+      "recorded_xbrl": true,
+      "raw_10k": 14,
+      "raw_10q": 41,
+      "raw_total": 55,
+      "sb_forms_excluded": 0,
+      "amendments_excluded": 1,
+      "fpi_pre_revelation": {
+        "20-F": 0,
+        "40-F": 0,
+        "6-K": 0
+      },
+      "xbrl_any_counted": true,
+      "xbrl_count": 37,
+      "first_counted": "2006-03-15",
+      "last_counted": "2019-08-01",
+      "revelation_window_filings": [
+        {
+          "form": "8-K",
+          "filingDate": "2019-10-22",
+          "reportDate": "2019-10-17",
+          "cik": "0001336917",
+          "accession": "0001336917-19-000065",
+          "primaryDocument": "ua-20191017.htm"
+        },
+        {
+          "form": "8-K",
+          "filingDate": "2019-11-04",
+          "reportDate": "2019-11-04",
+          "cik": "0001336917",
+          "accession": "0001336917-19-000069",
+          "primaryDocument": "ua-20191104.htm"
+        },
+        {
+          "form": "10-Q",
+          "filingDate": "2019-11-08",
+          "reportDate": "2019-09-30",
+          "cik": "0001336917",
+          "accession": "0001336917-19-000075",
+          "primaryDocument": "ua-20190930.htm"
+        },
+        {
+          "form": "4",
+          "filingDate": "2019-11-12",
+          "reportDate": "2019-11-07",
+          "cik": "0001336917",
+          "accession": "0001246360-19-002400",
+          "primaryDocument": "xslF345X03/form.xml"
+        },
+        {
+          "form": "8-K",
+          "filingDate": "2019-11-14",
+          "reportDate": "2019-11-13",
+          "cik": "0001336917",
+          "accession": "0001336917-19-000081",
+          "primaryDocument": "ua-20191113.htm"
+        }
+      ]
+    },
+    {
+      "case_id": "T30",
+      "ticker": "LK",
+      "ciks": [
+        "0001767582"
+      ],
+      "first_revelation_date": "2020-01-31",
+      "recorded_quarters": 2,
+      "recorded_xbrl": false,
+      "raw_10k": 0,
+      "raw_10q": 0,
+      "raw_total": 0,
+      "sb_forms_excluded": 0,
+      "amendments_excluded": 0,
+      "fpi_pre_revelation": {
+        "20-F": 0,
+        "40-F": 0,
+        "6-K": 6
+      },
+      "xbrl_any_counted": false,
+      "xbrl_count": 0,
+      "first_counted": null,
+      "last_counted": null,
+      "revelation_window_filings": [
+        {
+          "form": "SC 13G/A",
+          "filingDate": "2020-01-17",
+          "reportDate": "",
+          "cik": "0001767582",
+          "accession": "0000905718-20-000066",
+          "primaryDocument": "luckin_13gam4jan102020.htm"
+        },
+        {
+          "form": "SC 13G/A",
+          "filingDate": "2020-01-17",
+          "reportDate": "",
+          "cik": "0001767582",
+          "accession": "0000905718-20-000064",
+          "primaryDocument": "luckin_13gam3dec312019.htm"
+        },
+        {
+          "form": "6-K",
+          "filingDate": "2020-01-17",
+          "reportDate": "2020-01-31",
+          "cik": "0001767582",
+          "accession": "0001104659-20-005111",
+          "primaryDocument": "a20-3727_16k.htm"
+        },
+        {
+          "form": "SC 13G",
+          "filingDate": "2020-01-31",
+          "reportDate": "",
+          "cik": "0001767582",
+          "accession": "0000019617-20-000191",
+          "primaryDocument": "Luckin_Coffee_Inc.htm"
+        },
+        {
+          "form": "6-K",
+          "filingDate": "2020-02-03",
+          "reportDate": "2020-02-29",
+          "cik": "0001767582",
+          "accession": "0001104659-20-009486",
+          "primaryDocument": "a20-6511_16k.htm"
+        },
+        {
+          "form": "SC 13G/A",
+          "filingDate": "2020-02-10",
+          "reportDate": "",
+          "cik": "0001767582",
+          "accession": "0000950103-20-002562",
+          "primaryDocument": "dp121190_sc13ga-sunying.htm"
+        },
+        {
+          "form": "SC 13G",
+          "filingDate": "2020-02-10",
+          "reportDate": "",
+          "cik": "0001767582",
+          "accession": "0000950103-20-002561",
+          "primaryDocument": "dp121189_sc13g-sunying.htm"
+        },
+        {
+          "form": "SC 13G",
+          "filingDate": "2020-02-10",
+          "reportDate": "",
+          "cik": "0001767582",
+          "accession": "0001104659-20-013381",
+          "primaryDocument": "a20-6901_5sc13g.htm"
+        },
+        {
+          "form": "SC 13G/A",
+          "filingDate": "2020-02-10",
+          "reportDate": "",
+          "cik": "0001767582",
+          "accession": "0001422848-20-000001",
+          "primaryDocument": "edglk.txt"
+        },
+        {
+          "form": "SC 13G/A",
+          "filingDate": "2020-02-10",
+          "reportDate": "",
+          "cik": "0001767582",
+          "accession": "0001562230-20-000001",
+          "primaryDocument": "edglk.txt"
+        },
+        {
+          "form": "SC 13G",
+          "filingDate": "2020-02-12",
+          "reportDate": "",
+          "cik": "0001767582",
+          "accession": "0001193125-20-032488",
+          "primaryDocument": "d844435dsc13g.htm"
+        },
+        {
+          "form": "SC 13G",
+          "filingDate": "2020-02-13",
+          "reportDate": "",
+          "cik": "0001767582",
+          "accession": "0000935836-20-000103",
+          "primaryDocument": "luckin13g.htm"
+        },
+        {
+          "form": "SC 13G",
+          "filingDate": "2020-02-13",
+          "reportDate": "",
+          "cik": "0001767582",
+          "accession": "0001104659-20-019820",
+          "primaryDocument": "tm207907d1_sc13g.htm"
+        },
+        {
+          "form": "SC 13G/A",
+          "filingDate": "2020-02-14",
+          "reportDate": "",
+          "cik": "0001767582",
+          "accession": "0000899140-20-000164",
+          "primaryDocument": "p021220a.htm"
+        },
+        {
+          "form": "SC 13G",
+          "filingDate": "2020-02-14",
+          "reportDate": "",
+          "cik": "0001767582",
+          "accession": "0000950103-20-002818",
+          "primaryDocument": "dp121192_sc13g-luzheng.htm"
+        },
+        {
+          "form": "SC 13G",
+          "filingDate": "2020-02-14",
+          "reportDate": "",
+          "cik": "0001767582",
+          "accession": "0000950103-20-002817",
+          "primaryDocument": "dp121191_sc13g-qian.htm"
+        },
+        {
+          "form": "SC 13G/A",
+          "filingDate": "2020-02-14",
+          "reportDate": "",
+          "cik": "0001767582",
+          "accession": "0000895421-20-000237",
+          "primaryDocument": "LuckinCoffee.txt"
+        },
+        {
+          "form": "SC 13G/A",
+          "filingDate": "2020-02-14",
+          "reportDate": "",
+          "cik": "0001767582",
+          "accession": "0001104659-20-021076",
+          "primaryDocument": "tm207797-2_sc13ga.htm"
+        }
+      ]
+    }
+  ]
+}

@@ -1,9 +1,9 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "llm_output",
-  "description": "피평가자 파이프라인의 케이스당 출력. §5-4 강제: 체크리스트 + 원문 인용. 이 스키마 파싱 실패 = 파이프라인 오류로 귀속. status: v1 (2026-07-03 사용자 일괄 승인)",
+  "description": "피평가자 파이프라인의 케이스당 출력. §5-4 강제: 체크리스트 + 원문 인용. 이 스키마 파싱 실패 = 파이프라인 오류로 귀속. status: v1.1 (2026-07-05 사용자 서명: documents_used를 required로 승격 — 유일한 컷오프 증적이 선택 필드였던 불일치 #2 해소)",
   "type": "object",
-  "required": ["case_id", "run_id", "model", "pipeline_version", "run_timestamp", "checklist", "overall"],
+  "required": ["case_id", "run_id", "model", "pipeline_version", "run_timestamp", "documents_used", "checklist", "overall"],
   "properties": {
     "case_id": { "type": "string" },
     "run_id": { "type": "string", "description": "재현용 실행 식별자" },
@@ -12,6 +12,7 @@
     "run_timestamp": { "type": "string", "format": "date-time" },
     "documents_used": {
       "type": "array",
+      "minItems": 1,
       "items": {
         "type": "object",
         "required": ["accession_no", "form_type", "filing_date"],
