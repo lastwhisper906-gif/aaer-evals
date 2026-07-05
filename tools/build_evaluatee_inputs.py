@@ -10,7 +10,8 @@ data/evaluatee/cases.json을 생성한다. 물리적 분리가 방어의 핵심:
 서명 결정 — scoring/overrides.md):
   1. case_id의 T/C 접두사가 그룹 소속(=정답)을 인코딩 → 중립 ID(case_NN)로
      치환 + 고정 시드 셔플(순번-그룹 상관 차단). 원본 매핑은 채점 전용
-     data/scoring/id_mapping.json (피평가자 경로 밖).
+     scoring/id_mapping.json (피평가자가 볼 수 없는 인간 전용 구역 — 이 파일은
+     데이터가 아니라 채점 인프라(정답 열쇠)라는 성격 판단, 사용자 검토 2026-07-05).
   2. company_name의 후신 사명(n/k/a, "now …")은 정의상 컷오프 이후 정보(§5-1
      위반이 필드 값 안에) → 컷오프 시점 사명만 남긴다. f/k/a(과거 정보)는 유지.
   부수 정정: 복합 티커("UAA/UA")는 주 상장 티커만 ("A/B" → "A").
@@ -27,7 +28,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[1]
 CANDIDATES = REPO / "data" / "candidates" / "candidates.json"
 DEST = REPO / "data" / "evaluatee" / "cases.json"
-MAPPING_DEST = REPO / "data" / "scoring" / "id_mapping.json"
+MAPPING_DEST = REPO / "scoring" / "id_mapping.json"
 
 # schemas/evaluatee_input.json required와 1:1 — 여기 필드를 늘리려면 스키마 개정(=서명) 필요
 WHITELIST = ["case_id", "ticker", "cik", "company_name", "cutoff_date"]
@@ -76,7 +77,7 @@ def build() -> tuple[dict, dict]:
                        "(candidates.json은 ground truth — PROJECT.md §7 역할 분리)",
             "generated_by": "tools/build_evaluatee_inputs.py (결정론 — 재생성 대조는 CI)",
             "id_convention": "중립 ID(case_NN), 고정 시드 셔플 — 원본 매핑은 채점 전용 "
-                             "data/scoring/id_mapping.json (OV-001)",
+                             "scoring/id_mapping.json (OV-001)",
             "name_convention": "company_name은 컷오프 시점 사명만 — 후신 사명(n/k/a 등) "
                                "제거, f/k/a 유지 (OV-002)",
             "ticker_convention": "복합 티커는 주 상장 티커만 ('A/B' → 'A')",

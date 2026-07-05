@@ -6,7 +6,7 @@
 >
 > **피평가자 입력 스펙 변경 이력 (§5-6 — 블라인드 테스트 전 최후 변경 창, 2026-07-05 심야)**:
 > 사용자 표본 점검(§7)이 값 수준 누출 2건을 발견, 서명 결정으로 정정 (commit `d63c9d8`):
-> ① case_id 중립화(T/C 접두사가 그룹 소속 인코딩 — OV-001, 매핑은 `data/scoring/id_mapping.json`)
+> ① case_id 중립화(T/C 접두사가 그룹 소속 인코딩 — OV-001, 매핑은 `scoring/id_mapping.json`)
 > ② company_name 후신 사명 제거(컷오프 이후 정보 — OV-002) ③ 복합 티커 정규화(T29).
 > 스키마 evaluatee_input v1.1 + 방어 ④(값 수준 스캔) 신설. 상세: `scoring/overrides.md`.
 > 관련 신설 한계 문서: `docs/methodology_limitations.md` (L-1 암기 한계 + memorization_suspect
