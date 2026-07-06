@@ -148,6 +148,7 @@ EXTRA_DOCS = {
 # Additional registrant CIKs whose filings belong to a case (multi-CIK issuers).
 EXTRA_CIKS = {
     "T13": ["0001364479"],  # predecessor Hertz Global Holdings (now Herc), filed the misstated 10-Ks
+    "T04": ["0001170565"],  # predecessor Weatherford International Ltd. (Bermuda), FY2002–2009-02 filings
 }
 
 
