@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 0,
+  "dim2_mechanism": 1,
+  "dim3_genre_mapping": {
+    "mapped_genre": "omission-estimate",
+    "score": 2
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "DIM1 (0): Treatment case (LOGI, AAER-3765 / 34-77644). Output gives misstatement_probability=42, which is <50 → band score 0 per treatment rule.\n\nDIM2 (1, borderline — flag for auditor): Rubric requires grading the TOP-RANKED hypothesis only. Top hypothesis = delayed/insufficiently conservative GOODWILL impairment testing FY2010–FY2012 (Goodwill 560.5M→345.3M in Q3 FY2013), direction overstated. Ground-truth mechanisms are (a) delayed ~$30.7M LCM write-down of Revue INVENTORY in FY2011, (b) understated FY12–13 WARRANTY liabilities, (c) failure to amortize acquired INTANGIBLES, (d) FY09 revenue recognition. Goodwill is not any of these accounts; best match is truth mechanism (c) — same broad account family (acquisition-related intangible asset carrying values overstated via omitted expense), same direction (overstated), similar treatment type (failure to reduce carrying value), but the specific account (goodwill vs amortizable acquired intangibles) and treatment (impairment testing vs amortization) do not substantially match, so it does not reach 2. A strict reading could call goodwill \"unrelated\" → 0; I score 1 for adjacent-correct account area and leave the 0-vs-1 call to the human auditor. Coverage note: the THIRD-ranked hypothesis (\"delayed recognition of inventory obsolescence/excess reserves... deferring COGS... temporarily supporting gross margin\", InventoryNet 280.8M→297.1M while revenue fell) is a strong match to the key's core Revue inventory write-down scheme (would be ~2 in account+direction+treatment), and CL4 flagged inventory/margin divergence — but rubric mandates top-ranked only. Warranty liabilities and revenue recognition are not covered by any hypothesis.\n\nDIM3 (omission-estimate, 2): The top-ranked narrative is failure to timely record an estimate-based impairment charge (delayed impairment testing / \"big bath\"), which maps to omission-estimate — no fabricated transactions, purely omitted/mistimed estimates. Answer-key genre for T12/LOGI is omission-estimate (\"write-down... warranty liabilities... failure to correct known error\" — 추정 시점 조작). Exact genre match → 2.\n\nDIM4 (3): Consistency rule: p=42 falls in 40≤p<70 → tier must be watch/elevated; declared tier is \"watch\" → no cap. Evidence is specific and internally verifiable from provided series: multi-year goodwill trajectory (553.5M/547.2M/560.5M/340.1M, plus quarterly 561.1M at 2012-09-30 → 345.3M at 2012-12-31 tied to OperatingIncomeLoss=-180.0M in Q3 FY2013), allowance-coverage ratio computed across four year-ends (5.87M/3.0% → 2.153M/1.2%), inventory-vs-revenue divergence with gross-margin percentages across FY2011–FY2013, and filing-chronology specifics (NT 10-Q 2009-08-06, 10-Q/A 2010-08-25 and 2011-09-06, CORRESP 2013-01-22 before 8-K 2013-01-24). The cited data points genuinely support the claims made, and the multi-year/multi-point combinations are coherent → 3.\n\nMEMORIZATION_SUSPECT_CONDITION2 (false): Reasoning is anchored throughout in concrete provided data content (specific XBRL tag values with dates and accession numbers), not bare document lists. No mention of the SEC enforcement action, the AAER, the Revue-specific revelation, or any fact public only after the cutoff; the Q3 FY2013 goodwill impairment and 2013-01-24 8-K are within the provided filings/chronology. Neither trigger (a) nor (b) applies.\n\nSummary: The output correctly detected the \"delayed write-down\" pattern shape but attached it to the wrong account (goodwill) in its top hypothesis and undershot the probability (42 on a treatment case), while genre mapping and evidence craftsmanship were strong.",
+  "_meta": {
+    "case_id": "case_03",
+    "original_id": "T12",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "4eee5525-cf5e-45c7-9ddc-3ccb758af15e",
+    "ts": "2026-07-06T13:16:22.974525+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 1,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "Dim1: Answer key group=control; output p=45 falls in 30<p<50 control band -> 1 (not <=30, so misses top score). Dim2/Dim3: control case -> null per rubric. Dim4: consistency rule satisfied (p=45 with risk_tier=watch, in [40,70) => watch/elevated allowed; no cap). Evidence is specific and verifiably drawn from provided data: FY2012 SalesRevenueGoodsNet=620,255,000 exactly matches the answer key's point-in-time rev=620255000, supporting authenticity. Claims are backed by coherent multi-year, multi-point combinations: allowance/AR ratio decline 7.1% (4,163k/58,462k, 2009) to 3.1% (2,780k/88,958k, 2012); NI vs OCF divergence across FY2010-FY2012 (-69.85M NI vs +62.97M OCF in FY2011; +3.14M vs +130.08M in FY2012); goodwill 103.07M->159.35M (2010->2011); quarterly NI swings (+61.93M Q4-2010, -67.55M Q3-2011). Mechanism assertions on this control case are framed as patterns genuinely supported by the cited figures. CL7 cites source_accession_no 'n/a' but references filing_chronology entries with specific dates, i.e., provided data, not fabrication. -> 3. Memorization cond2: false - reasoning cites concrete provided data content throughout and mentions no post-cutoff facts (no company name, no revelation/enforcement/outcome references; SEC UPLOAD/CORRESP items are pre-cutoff filing-chronology data).",
+  "_meta": {
+    "case_id": "case_11",
+    "original_id": "C02",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "7b454245-1241-4d4f-a4af-0cce952d149f",
+    "ts": "2026-07-06T13:21:14.193720+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

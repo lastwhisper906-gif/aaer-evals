@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 1,
+  "dim2_mechanism": 0,
+  "dim3_genre_mapping": {
+    "mapped_genre": "active",
+    "score": 2
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "Dim1=1: treatment case, output misstatement_probability=68, which falls in 50<=p<70 band. Dim2=0: top-ranked hypothesis names AccountsReceivableNetCurrent and Revenues/SalesRevenueGoodsNet with 'premature revenue recognition... or channel stuffing'; answer key (AAER-4248) describes a procurement expense-management scheme understating COST OF GOODS SOLD via prematurely recognized supplier discounts/rebates (prebate/clawback/price-phasing). Revenue/AR is an unrelated account area to COGS/supplier-rebate accruals. Coverage note: hypotheses 2 (NI/OCF gap from non-cash gain) and 3 (doubtful-accounts allowance release) also miss COGS/procurement entirely, so no hypothesis covers the true mechanism. Dim3=2: top-ranked narrative (premature revenue recognition/channel stuffing) maps to 'active'; answer-key genre is active(cost) — exact match at the active/omission-estimate/mixed level, despite the wrong account. Dim4=3: evidence cites specific provided data points with accessions and values (e.g., AR 2,024,782,503 on 2018-03-31 vs 3,781,921,342 on 2018-06-30 against ~6% revenue growth; FY2017 NetIncomeLoss 21,331,975,819 vs OCF 1,022,088,486; two 10-Q/A amendments 0001637459-17-000116/-117 filed same day as 10-Q -118), which genuinely support the claims and are combined coherently across multiple years and filings (2013-2018 series, allowance trend, filing chronology). Consistency rule satisfied: p=68 with risk_tier='elevated' (watch/elevated required), so no cap. memorization_suspect_condition2=false: reasoning points at concrete provided data content throughout and does not mention any post-cutoff facts (no reference to the June 2019 restatement, $208M correction, or SEC enforcement).",
+  "_meta": {
+    "case_id": "case_12",
+    "original_id": "T28",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "cd053c62-8442-4a12-b4e0-351ffb5ca3f9",
+    "ts": "2026-07-06T13:31:08.455248+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

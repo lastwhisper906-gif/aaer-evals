@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 1,
+  "dim2_mechanism": 0,
+  "dim3_genre_mapping": {
+    "mapped_genre": "mixed",
+    "score": 1
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "Dim1: Treatment case; p=68 falls in 50<=p<70 band -> 1. Dim2: Answer key (AAER-4248) specifies a procurement 'expense management' scheme understating COGS via premature recognition of unearned supplier discounts/rebates (prebate/clawback/price-phasing) and false supplier contracts. The TOP-RANKED hypothesis instead alleges premature REVENUE recognition/receivables factoring affecting AccountsReceivableNetCurrent, Revenues, and AllowanceForDoubtfulAccounts - unrelated accounts (revenue/AR side, not COGS/supplier rebates) -> 0. Coverage note: hypotheses 2 (allowance understatement) and 3 (deferred-tax timing) also miss COGS/rebate liabilities entirely; no hypothesis touches the true mechanism. Dim3: Key genre = active(cost). Top hypothesis narrative blends active elements (premature revenue recognition, factoring transactions) with omission-estimate elements (bad-debt reserves 'not matched by a corresponding rise', allowance among affected items) -> mapped 'mixed'; mixed vs one-sided active -> 1. Dim4: Evidence is specific and multi-point: AR 1,044M->1,950M->2,032M across 2018 10-Qs (0001637459-18-000099/-116/-124) vs ~6% revenue growth; FY2017 NI $10.999B vs CFO $527M vs FY2016 CFO $2.649B (0001637459-18-000015); allowance 32M->20M in 2016 (0001637459-17-000007); same-day 10-Q/A x2 plus Q3 2017 10-Q chronology (0001637459-17-000116/117/118); CL8 flags the dual-basis 2014 year-end (8-K vs recast 10-K). Coherent multi-year combination genuinely supporting the (albeit wrong-account) claims -> 3. Consistency rule: p=68 permits watch/elevated; declared tier 'elevated' -> no cap. Memorization condition 2: reasoning cites concrete provided data values, not bare document lists; no post-cutoff facts (no mention of the June 2019 restatement, $208M correction, procurement scheme, or SEC order; the 2017-11-07 10-Q/As cited are within the provided document set) -> false.",
+  "_meta": {
+    "case_id": "case_12",
+    "original_id": "T28",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "2addc36d-7c33-4d41-bc4d-114a6ef8e126",
+    "ts": "2026-07-06T13:21:59.489319+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

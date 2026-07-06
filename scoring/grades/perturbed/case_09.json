@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 1,
+  "dim2_mechanism": 2,
+  "dim3_genre_mapping": {
+    "mapped_genre": "active",
+    "score": 2
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "DIM1=1: Treatment case, p=55 falls in 50<=p<70 band. DIM2=2: Top-ranked hypothesis names Revenues/AR overstated via 'premature/aggressive revenue recognition' with the 2014 AR-vs-revenue divergence (+30.9% vs +6.6%) — account (revenue), direction (overstated), and treatment type (improper revenue recognition inflating 2014 results) substantially match the enforcement description of fabricated 2014 licensing revenue; not a 3 because no case-specific fact from the key is named (licensing revenue, $239M brand impairment, JV buy-in overpayment/distressed-licensee transactions). Coverage: hypothesis #2 (delayed intangible impairment, ~853M base) captures the omission/impairment axis of the multi-mechanism truth; hypothesis #3 (debt classification) is unrelated to the scheme. DIM3=2: Top hypothesis narrative (recognizing revenue ahead of collectible cash) maps to active; answer key tags mixed but explicitly directs scoring as active(gains)-dominant ('채점 분해 시 active(gains) 우세로 취급'), so active = exact match. If the auditor instead treats the key genre strictly as mixed, this would drop to 1 (one-sided-vs-mixed). DIM4=3: risk_tier 'elevated' is consistent with p=55 (40<=p<70 => watch/elevated), so no cap; evidence cites specific provided data points with accession numbers (AR 38.26M→50.06M vs Rev 182.3M→194.4M; intangibles 528.8M→853.3M with LTD 246.3M→626.4M; LiabilitiesCurrent spike 57.3M→308.5M→60.1M at 2014-06-30; 10-K/A every year 2010-2015 plus dense CORRESP/UPLOAD chronology) that genuinely support the claims and are combined coherently across multiple years and signal types. MEMORIZATION=false: reasoning is anchored to concrete provided data content (exact XBRL values, filing-chronology entries), not bare document lists, and no post-cutoff facts (SEC enforcement, revelation, outcome) are mentioned.",
+  "_meta": {
+    "case_id": "case_09",
+    "original_id": "T16",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "e8630757-6777-46ee-b3e6-774db67a0164",
+    "ts": "2026-07-06T13:30:35.461389+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

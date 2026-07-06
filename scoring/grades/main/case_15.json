@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 2,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "Dim1: Answer key group=control; output misstatement_probability=22, which satisfies p<=30 -> 2. Dim2: control case -> null per rubric (output correctly lists no mechanism hypotheses). Dim3: control -> nulls. Dim4: Consistency check passes (p=22 <40 with risk_tier='watch', within clear/watch band, so no cap at 1). Evidence is specific and data-grounded: CL1 cites AR 73,574k (2010-12-31) vs 67,429k (2014-12-31) against revenue 250,726k (2010) vs 312,062k (2014), showing AR shrinking while revenue grew; CL3 cites paired NI/OCF figures for 2009 (18,866k vs 43,099k) and 2014 (10,865k vs 28,795k); CL5 cites quarterly NI volatility including losses (-66k Q1-2014, -224k Q1-2015). Top_signals coherently combine multi-year trends (AR/revenue ~29%->~22% over 2010-2014; OCF>NI every year 2009-2014; 2007 NT-filing cluster + 2012 10-K/A chronology), and the output honestly marks CL6 as insufficient_data given missing allowance disclosures. This meets the '2 plus coherent multi-year/multi-point combination' bar -> 3. Memorization_condition2: false — reasoning points at concrete provided data values (not bare document lists), and no post-cutoff revelation/enforcement/outcome facts appear; the 'stock-option restatement wave' remark is a generic era observation anchored to the provided 2006-2007 filing chronology, not case-specific outcome knowledge.",
+  "_meta": {
+    "case_id": "case_15",
+    "original_id": "C07",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "f87082cd-9702-431b-8833-e15635676d8f",
+    "ts": "2026-07-06T13:26:02.745108+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

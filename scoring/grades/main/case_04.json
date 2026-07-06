@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 2,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "Control case (answer key: T28 KHC control, SIC 2040, rev=15,740,400,000, FYE 0530 — matches output's cited GIS FY2018 figures). dim1: output gives misstatement_probability=25; control band p<=30 -> 2. dim2/dim3: control -> null per rubric. dim4: consistency rule satisfied (p=25 <40 with tier 'watch', allowed clear/watch — no cap). Evidence is specific and multi-point/multi-year: goodwill 8,747.2M->14,065M and intangibles 4,530.4M->7,445.1M vs revenue +0.8% (15,619.8M->15,740.4M), NI-vs-OCF comparisons for FY2015 and FY2018 (1,221.3M vs 2,542.8M; 2,131M vs 2,841M), allowance decline 29.6M->24.3M against receivables growth 1,360.8M->1,430.1M, and coverage check spanning FY2008 (8-K historical data) to FY2018. Mechanism assertions on this control are hedged and grounded: the goodwill/intangibles step-change is attributed to purchase accounting for the Blue Buffalo acquisition, supported by the cited Assets jump 22,240.6M (2018-02-25) -> 30,624M (2018-05-27) and disclosed in the FY2018 10-K within documents_used — a benign, data-supported explanation rather than a fraud claim. Coherent multi-year combination -> 3. memorization_suspect_condition2: false — reasoning cites concrete provided data values throughout (not mere document listing), and Blue Buffalo closed April 2018, disclosed in the FY2018 10-K filed 2018-06-29, inside the document window ending 2018-12-19; no post-cutoff revelation/enforcement/outcome facts are referenced.",
+  "_meta": {
+    "case_id": "case_04",
+    "original_id": "C08",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "93bc1a5f-fcd4-4dd7-8cd9-0cc06fd66ab1",
+    "ts": "2026-07-06T13:16:53.530765+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

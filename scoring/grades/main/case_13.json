@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 1,
+  "dim2_mechanism": 0,
+  "dim3_genre_mapping": {
+    "mapped_genre": "active",
+    "score": 2
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "DIM1=1: Treatment case; output gives misstatement_probability=55, which falls in 50<=p<70 band. DIM2=0: Rubric grades TOP-RANKED hypothesis only. Top hypothesis is stock-option backdating affecting GeneralAndAdministrativeExpense/StockholdersEquity with understated direction, tied to 2006-2007 NT filings and a 2009 G&A spike — unrelated accounts vs. the answer key's pull-in revenue-acceleration scheme (revenue recognition + nondisclosure, period 2014-11~2015-05). Coverage note for auditor: hypothesis #2 ('Possible premature revenue recognition... consistent with pulling forward sales', affected_line_items Revenues/AccountsReceivableNetCurrent) substantially matches the enforcement description and would have scored ~2 had it been ranked first; it targets FY2013 rather than the FY2015 window. DIM3=2: Top-ranked narrative (backdating/misdating option grants requiring restatement) is active manipulation of accounting inputs → mapped 'active'; answer-key genre_tag_row is active(revenue) → exact genre match despite wrong account area (dim3 is genre-only). DIM4=3: Consistency rule satisfied (p=55 with risk_tier='watch', watch/elevated required — no cap). Evidence cites specific provided data points that genuinely support claims: AR 330,238k(2013-02-02)→453,496k(2014-02-01) +37.3% vs revenue +7.4%; InventoryNet +38.9%; allowance 7,366k→2,663k (-63.9%) vs modest AR decline; NT 10-Q/NT 10-K/amendment cluster 2006-2007 from filing_chronology; G&A 102,728k anomaly vs ~25-30M adjacent quarters; plus an explicitly acknowledged offsetting signal (OCF 729M vs NI 307M/435M, FY2012 and FY2014). This is a coherent multi-year, multi-statement combination → 3. MEMORIZATION_COND2=false: reasoning anchors on concrete provided data values with accession numbers (not bare document lists), and no post-cutoff facts (no mention of SEC order AAER-4076, press release 2019-175, revelation, or outcome; NT-filing/backdating-era references were public pre-cutoff).",
+  "_meta": {
+    "case_id": "case_13",
+    "original_id": "T17",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "75443301-0608-4974-959d-2e5a94f003cc",
+    "ts": "2026-07-06T13:22:37.501189+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

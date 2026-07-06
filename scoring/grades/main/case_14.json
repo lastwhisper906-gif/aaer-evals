@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 1,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "CONTROL case (answer key: control for T12 LOGI, SIC 3812, FYE 1226, rev=2715675000). dim1: output gives misstatement_probability=32; control band 30<p<50 → 1 (misses the p<=30 band for a 2 by a small margin). dim2: control case → null per rubric; note the output correctly provides an empty mechanism_hypotheses list, which is appropriate for p=32 (<40, no hypothesis required). dim3: control → nulls. dim4: evidence is specific and genuinely tied to provided data — e.g., CL6 cites a coherent multi-year warranty accrual decline (87424000 FY2009 → 37301000 FY2012) against stable revenue in the 2.7–2.9B range; CL3 cites NI vs OCF for FY2009 and FY2012; CL4 combines inventory, revenue, and gross-margin points across FY2009–FY2012; the cited FY2012 revenue (2715675000) exactly matches the answer key's point-in-time size figure, supporting citation authenticity. Multiple checklist items combine multi-year data points coherently, and top_signals synthesize them (warranty accrual as % of revenue trend, margin expansion FY2011→FY2012, goodwill vs total asset growth). Risk tier consistency: p=32 (<40) requires clear/watch; declared tier is 'watch' → consistent, no cap. Score 3 (specific + coherent multi-year combination). memorization_suspect_condition2: false — the reasoning points to concrete provided data content (specific XBRL-style tags with values and dates) rather than merely listing documents, and mentions no post-cutoff facts (no revelation/enforcement/outcome references; all cited filings are pre-cutoff 2009–2013).",
+  "_meta": {
+    "case_id": "case_14",
+    "original_id": "C03",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "fb15a22e-0365-4f9e-80da-03177f04ea5a",
+    "ts": "2026-07-06T13:22:58.051964+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 0,
+  "dim2_mechanism": 2,
+  "dim3_genre_mapping": {
+    "mapped_genre": "active",
+    "score": 2
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "DIM1 (0): Treatment case; output gives misstatement_probability=45, which is <50, so per the treatment band rule (p>=70→2; 50<=p<70→1; p<50→0) it scores 0 despite the fraud being real. DIM2 (2): Top-ranked hypothesis targets SalesRevenueNet/AccountsReceivableNetCurrent with direction 'overstated' via 'premature or aggressive revenue recognition ... sales being booked ahead of cash collection.' Answer key (AAER-3845/33-10281) describes overstated distributor revenue via improper recognition on contingent/return-eligible sales — account area (revenue), direction (overstated), and treatment type (recognizing revenue before criteria met) substantially match → 2. It does NOT reach 3: no case-specific facts (distributor channel, contingent sales terms, implants shipped without instruments, discounts-as-expense) are named. Coverage note: ground truth is single-type (revenue_recognition); the output's secondary hypotheses (cash-flow timing, inventory valuation) are extraneous but not graded. DIM3 (2): Top hypothesis narrative (actively booking revenue prematurely, overstating revenue/AR) maps to 'active'; answer-key genre row is 'active(revenue)' — exact match → 2. DIM4 (3): Evidence cites concrete provided data points that genuinely support claims: AR 79.7M→90.2M (+13%) while revenue 282.2M→277.5M (-1.7%); NI vs OCF divergence in both FY2011 (-0.64M NI vs +38.9M OCF) and FY2012 (30.8M NI vs 6.7M OCF); inventory 53.3M→55.3M into Q1 2013 against -13.6% YoY Q1 revenue; goodwill inconsistency 107.9M vs 43.9M flagged with accession numbers. This is a coherent multi-year, multi-point combination → 3. Consistency rule check: p=45 with risk_tier='watch' satisfies 40<=p<70 => watch/elevated, so no cap. MEMORIZATION (false): Reasoning is anchored in concrete provided XBRL-style data values (not bare document listings), and no post-cutoff facts (SEC order, revelation, outcome) appear anywhere in the output.",
+  "_meta": {
+    "case_id": "case_02",
+    "original_id": "T11",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "b38b3898-20d7-4a58-954e-5c8571b7d2b6",
+    "ts": "2026-07-06T13:27:36.406299+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

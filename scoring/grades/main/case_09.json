@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 1,
+  "dim2_mechanism": 1,
+  "dim3_genre_mapping": {
+    "mapped_genre": "active",
+    "score": 1
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "DIM1=1: Treatment case with misstatement_probability=65; 50<=65<70 -> 1. DIM2=1: Top-ranked hypothesis = overstated licensing Revenues via acceleration/front-loading of recognition (AR +30.8% vs revenue +6.6% FY2014; deferred revenue shrinking). Best-match truth axis is 'fabricated licensing revenue in 2014' (revenue_recognition): account area (licensing revenue) and direction (overstated) match, but treatment type (premature recognition of real royalties) does not substantially match fabrication, and no case-specific key fact (JV buy-in overpayment gains per 소장 ¶45/¶58-59, $239M+ brand impairment non-recognition, distressed-licensee prop-up transactions) is named -> correct account area only = 1. Coverage: hypothesis #2 (non-operating gains sustaining margins) loosely approaches the JV-gains axis; hypothesis #3 frames soft-asset growth as cost capitalization rather than failure to impair; neither is top-ranked so not graded. DIM3=1: Top-ranked narrative (actively pulling revenue forward) maps to 'active'; answer-key genre is 'mixed' (active(gains) 우세 + omission-estimate impairment axis). One-sided active vs mixed key -> 1. Auditor note: key's '채점 분해 시 active(gains) 우세' caveat could arguably justify 2, but the output's active narrative is revenue front-loading, not gains recognition, so the mechanical one-sided-vs-mixed score is applied. DIM4=3: Evidence cites specific, dated provided data points with accession numbers (AR 90,777k->118,774k; Revenues 432,626k->461,243k; DeferredRevenueCurrent 29,126k->22,470k; OtherAssetsNoncurrent 24,082k->63,334k; Q1-2015 ~66% net margin on 18% revenue decline; annual 10-K/A amendments 2011-2015 and CORRESP/UPLOAD chronology) that genuinely support the claims and are combined coherently across multiple years and statement lines. Consistency rule satisfied (p=65, tier=elevated; 40<=p<70 permits watch/elevated), so no cap. MEMORIZATION=false: Reasoning anchors on concrete provided data content throughout and mentions no post-cutoff facts (no reference to SEC enforcement, LR-24682, revelation, or outcome).",
+  "_meta": {
+    "case_id": "case_09",
+    "original_id": "T16",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "9e7bc784-4cfa-4e84-a627-12e9bd5803e4",
+    "ts": "2026-07-06T13:20:05.095918+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

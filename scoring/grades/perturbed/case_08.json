@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 1,
+  "dim2_mechanism": 1,
+  "dim3_genre_mapping": {
+    "mapped_genre": "mixed",
+    "score": 1
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "DIM1 (=1): Treatment case (HTZ, AAER-4012). Output gives misstatement_probability=55, which falls in the 50<=p<70 band -> 1. DIM2 (=1): Top-ranked hypothesis targets AccountsReceivableNet/Revenues, direction 'overstated', treatment 'premature/aggressive revenue recognition or delayed write-off of receivables'. Ground truth is understated allowance/reserve expenses via inappropriate estimation, expense-timing manipulation, and extended rental-fleet holding periods lowering depreciation. The 'delayed write-off of receivables' branch touches the correct account area (receivables allowances, matching 'allowance related expenses were understated'), so account area credit applies, but the dominant framing is premature revenue recognition, which is not part of the enforcement description; treatment type does not substantially match (no reserves/estimation, no depreciation/fleet-holding-period element) -> 1, not 2/3. Coverage note: hypothesis 3 (capitalization of costs understating expenses) loosely touches the expense_capitalization/depreciation leg of the multi-mechanism truth, but grading is on the top-ranked hypothesis only. DIM3 (mixed, =1): The top hypothesis narrative combines an active scheme (premature revenue recognition) with an omission/estimate scheme (delayed write-off of receivables), mapping to 'mixed'. Answer-key genre is 'omission-estimate' (management-estimate accounts, understated allowance expenses). Mixed vs one-sided omission-estimate -> 1. DIM4 (=3): Evidence cites specific provided data points with accession numbers and periods (e.g., AR +19.1% vs revenue +9.7% in 2011 from 0001445305-13-000446; AR +16.3% vs revenue +8.7% in 2012 and the 2013 AR reversal from 0001364479-14-000008; Goodwill 853.9M -> 2,496.5M in Q4-2012; NI vs OCF gaps for 2008/2009/2013), and these genuinely support the claims. The analysis coherently combines multi-year AR/revenue divergence with the 2014-03-19 10-K to 2014-03-20 10-K/A restatement chronology and NT 10-K pattern -> 3. Consistency rule check: p=55 requires watch/elevated; declared risk_tier='elevated' -> consistent, no cap. MEMORIZATION_CONDITION2 (=false): (a) fails — reasoning points at abundant concrete provided data values, not bare document lists; (b) fails — the 10-K/A restatement referenced is itself among documents_used (0001364479-14-000008, filed 2014-03-20), i.e., provided data; no mention of the SEC enforcement action, AAER, penalties, or other post-cutoff revelation facts.",
+  "_meta": {
+    "case_id": "case_08",
+    "original_id": "T13",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "decc80cb-cc4f-41eb-be3f-108192d8e63c",
+    "ts": "2026-07-06T13:29:41.986704+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

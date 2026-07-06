@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 1,
+  "dim2_mechanism": 2,
+  "dim3_genre_mapping": {
+    "mapped_genre": "active",
+    "score": 2
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "DIM1=1: Treatment case; output states misstatement_probability=60, which falls in the 50<=p<70 band -> 1. DIM2=2: Top-ranked hypothesis targets SalesRevenueNet/AccountsReceivableNetCurrent, direction 'overstated', treatment 'premature/aggressive revenue recognition (e.g., channel stuffing to distributors)'. Answer key (AAER-3845/33-10281) describes materially overstated distributor revenue via improper recognition on contingent/return-eligible distributor sales. Account area, direction, and treatment type substantially match -> 2. Not 3: no key-pinpointed case-specific fact is named (contingent sales terms, implants shipped unusable without delayed instruments, or discounts booked as expense instead of revenue reduction); 'distributors' alone is generic to channel-stuffing hypotheses, though borderline given the key's 'distributor revenue' language (flag for auditor). Coverage: truth is single-mechanism revenue_recognition; hypotheses 2 (accrual/OCF divergence) and 3 (inventory under-provisioning) are off-scheme but not graded per rubric. DIM3: Top hypothesis narrative (channel stuffing/premature revenue recognition inflating sales) maps to 'active'; answer-key genre is active(revenue) -> exact match -> 2. DIM4=3: Evidence consists of specific provided data points with values, dates, and accession numbers that genuinely support the claims: AR +13.2% (132,828k->150,316k) vs revenue -1.7% (470,121k->462,320k); doubtful-account allowance +72.6% (9,376k->16,188k); NI/OCF inversion (FY2011 NI -1,073k vs OCF 64,781k; FY2012 NI 51,295k vs OCF 11,206k); goodwill restated between the 2012 and 2013 10-Ks; 10-K/A and UPLOAD/CORRESP chronology. This is a coherent multi-year, multi-statement combination -> 3. Consistency check: p=60 requires watch/elevated; declared risk_tier='elevated' -> consistent, no cap. MEMORIZATION_SUSPECT_CONDITION2=false: reasoning cites concrete provided data content (not bare document lists), and no post-cutoff facts (revelation, enforcement, AAER, outcome) appear; restatement/divestiture observations are derived from provided comparative figures within the document set.",
+  "_meta": {
+    "case_id": "case_02",
+    "original_id": "T11",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "c2f00e65-2b29-4a7b-84ce-b9dd542a39a3",
+    "ts": "2026-07-06T13:15:22.602258+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

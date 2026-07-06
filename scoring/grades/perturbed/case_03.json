@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 0,
+  "dim2_mechanism": 1,
+  "dim3_genre_mapping": {
+    "mapped_genre": "omission-estimate",
+    "score": 2
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "DIM1 (0): Treatment case with misstatement_probability=45. Rubric: treatment p<50 -> 0. Mechanical.\n\nDIM2 (1): Top-ranked hypothesis is delayed goodwill/intangible impairment (\"Goodwill carried at prior levels... suddenly written down by roughly $240M... Q3 FY2013... carrying values may have been overstated\"). Answer key (AAER-3765): core scheme is delayed ~$30.7M LCM write-down of Revue set-top-box INVENTORY in FY11, plus understated warranty liabilities, failure to amortize acquired intangibles, and FY09 revenue recognition. Best-match truth component for the top hypothesis is the intangibles item: the hypothesis touches the intangible-asset area with correct direction (overstated assets/income), so correct account area -> 1. But treatment type does not substantially match: the key describes failure to AMORTIZE acquired intangibles, whereas the hypothesis alleges delayed goodwill impairment testing; and the central inventory-write-down mechanism appears only as the THIRD-ranked hypothesis (which, notably, does identify the right pattern: inventory +5.8% vs revenue -2.0%, potentially inadequate write-downs — this would have scored 2 if top-ranked). Coverage note: hypothesis 3 covers the inventory scheme generically (wrong year focus, FY2012 vs FY2011, no Revue/discontinued-product specifics); warranty liabilities and revenue recognition are uncovered; no case-specific fact from the key (Revue, ~$30.7M, ~27% operating income inflation) is named anywhere -> not 3.\n\nDIM3 (2): Top hypothesis narrative = failure to take/timely record an impairment estimate (delayed write-down of carrying values) -> maps to omission-estimate. Answer key genre for T12/LOGI = omission-estimate. Exact match -> 2.\n\nDIM4 (3): Evidence quotes are concrete provided data points with values, dates, and accession numbers that genuinely support each claim: goodwill 625,540,084.32 (2012-09-30) -> 384,984,535.43 (2012-12-31) alongside OperatingIncomeLoss -200,698,384.12 in the same quarter; allowance coverage decline 6.54M/217.7M (2010) -> 2.40M/200.2M (2013); inventory 313.1M->331.2M vs revenue 2,634.3M->2,582.3M. This is a coherent multi-year, multi-point combination -> 3. Consistency rule: p=45 requires watch/elevated; declared risk_tier=\"watch\" -> no cap.\n\nMEMORIZATION_SUSPECT_CONDITION2 (false): Reasoning is anchored throughout in concrete provided data content (specific XBRL-style values and periods), not bare document lists; no post-cutoff facts (no mention of SEC order, AAER, Revue by name, restatement outcome, or enforcement).\n\nSummary: The output correctly flagged inventory/reserve anomalies but ranked a goodwill-impairment narrative first and set probability at 45 on a treatment case, costing dim1 and limiting dim2 to account-area credit; genre mapping and evidence discipline were strong.",
+  "_meta": {
+    "case_id": "case_03",
+    "original_id": "T12",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "7e8a320e-64ef-4e12-80d5-b2d712f22e2b",
+    "ts": "2026-07-06T13:28:08.330485+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

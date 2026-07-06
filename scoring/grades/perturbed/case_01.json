@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 0,
+  "dim2_mechanism": 1,
+  "dim3_genre_mapping": {
+    "mapped_genre": "active",
+    "score": 2
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "DIM1 (treatment, p=45): Answer key marks this a treatment case (SEC Order 33-10692/AAER-4091, revenue overstated ~$50M). Output's misstatement_probability=45 < 50, so per treatment banding p<50 -> 0.\n\nDIM2 (top-ranked hypothesis only): Top hypothesis targets [\"AccountsReceivableNetCurrent\",\"Revenues\"], direction \"overstated\", treatment \"premature or aggressive revenue recognition... channel stuffing, bill-and-hold arrangements, or extended payment terms.\" Account area (revenue) and direction (overstated) match the key's revenue_recognition/overstatement scheme, but the treatment type does not substantially match the enforcement-order description: the key specifies improperly VALUED non-monetary data-exchange (barter) transactions ($34.5M) plus undisclosed linked/side-agreement monetary contracts (~$12M) to beat consensus. Channel stuffing / bill-and-hold / pull-forward timing schemes are a different revenue-recognition mechanism, and no case-specific fact (barter/data-exchange, side agreements, ~$50M, consensus-beating streak) is named. Also note the hypothesis anchors on FY2013 AR growth, largely preceding the key's manipulation window (2014-02 to 2016-02). Correct account area only -> 1. Coverage note: the multi-mechanism truth (barter valuation + side agreements) is not covered by any of the three hypotheses; hypotheses 2 (allowance) and 3 (NI/OCF divergence) are unrelated to the actual scheme.\n\nDIM3: Top hypothesis narrative (premature/aggressive revenue recognition, channel stuffing, bill-and-hold) is an active fabrication/inflation scheme -> maps to \"active\". Answer-key genre tag row: \"active(revenue)\". Exact match -> 2.\n\nDIM4: Evidence citations are specific provided data points with accession numbers and dates that genuinely support the claims: AR $84.6M (2012-12-31) vs $111.5M (2013-12-31) against revenue $315.9M -> $355.1M (~32% vs ~12% growth); allowance $2.57M (2014-12-31) dropping to $0.0 at 2015-03-31 and 2015-09-30 against $96-103M AR; NI/OCF divergence tracked across 2011, 2012, and 2014 (e.g., -$12.26M NI vs +$61.28M OCF in 2014). This is a coherent multi-year, multi-point combination -> 3. Consistency check: p=45 requires watch/elevated; declared risk_tier=\"watch\" -> consistent, no cap.\n\nMEMORIZATION_SUSPECT_CONDITION2: false. The reasoning points at concrete provided data content (specific XBRL values, period ends, accession numbers) rather than merely listing documents, and mentions no post-cutoff facts (no reference to the SEC order, restatement, revelation, or outcome).",
+  "_meta": {
+    "case_id": "case_01",
+    "original_id": "T21",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "bfd1d3e4-f01e-443c-95c3-f3f9b603b396",
+    "ts": "2026-07-06T13:27:07.524444+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

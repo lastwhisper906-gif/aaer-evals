@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 2,
+  "dim2_mechanism": 0,
+  "dim3_genre_mapping": {
+    "mapped_genre": "omission-estimate",
+    "score": 2
+  },
+  "dim4_evidence_quality": 2,
+  "memorization_suspect_condition2": false,
+  "rationale": "Dim1=2: treatment case, p=78 >= 70. Dim2=0: top-ranked hypothesis targets Goodwill/IntangibleAssets via Dollar Thrifty PPA/capitalization revisions; answer key (AAER-4012) pinpoints allowance/reserve estimation errors, expense timing, and extended rental-fleet holding periods lowering depreciation. Acquisition goodwill/intangibles are unrelated accounts to all three truth mechanisms, and the cited goodwill jump (454.7M -> 1,329.3M between Q3 2012 10-Q and FY2012 10-K/A) is explained by the Nov 2012 acquisition the output itself names. Lower-ranked hypotheses (AR/revenue overstatement; vague multi-account timing_shift) also fail to reach reserves/allowances or fleet depreciation, so coverage of the multi-mechanism truth is essentially zero. Dim3=2: top narrative (PPA estimate revisions/corrections of capitalized balances) maps to omission-estimate, matching the key's omission-estimate genre exactly; auditor note - an 'active improper capitalization' reading would instead score 0. Dim4=2: evidence cites specific provided data (exact goodwill/intangible/AR/revenue values FY2011-2013, NT 10-K dates 2009/2013/2014, 10-K 2014-03-19 followed by 10-K/A 2014-03-20) that genuinely support an elevated-risk claim; risk_tier 'elevated' is consistent with p=78 (no cap). Not 3 because the multi-point combination is partly incoherent: the flagship goodwill/intangible signal is self-refuted by the acknowledged acquisition. Memorization=false: reasoning anchors on concrete provided data content and mentions no post-cutoff revelation/enforcement/outcome facts.",
+  "_meta": {
+    "case_id": "case_08",
+    "original_id": "T13",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "df8287cd-d52e-4cb8-9b53-c9bdc0d18089",
+    "ts": "2026-07-06T13:19:15.360444+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

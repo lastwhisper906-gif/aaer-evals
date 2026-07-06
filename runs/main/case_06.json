@@ -1,0 +1,231 @@
+{
+  "case_id": "case_06",
+  "run_id": "original-case_06-r1",
+  "model": "claude-sonnet-5",
+  "pipeline_version": "eafc32b5c4c2ab608a974c6c65b19dc193dee264",
+  "run_timestamp": "2026-07-06T12:57:08.416939+00:00",
+  "documents_used": [
+    {
+      "accession_no": "0000950123-10-001322",
+      "form_type": "10-Q",
+      "filing_date": "2010-01-08"
+    },
+    {
+      "accession_no": "0000950123-10-033175",
+      "form_type": "10-Q",
+      "filing_date": "2010-04-08"
+    },
+    {
+      "accession_no": "0000950123-10-063363",
+      "form_type": "10-Q",
+      "filing_date": "2010-07-02"
+    },
+    {
+      "accession_no": "0000950123-11-033772",
+      "form_type": "10-Q",
+      "filing_date": "2011-04-07"
+    },
+    {
+      "accession_no": "0000950123-11-034037",
+      "form_type": "8-K",
+      "filing_date": "2011-04-08"
+    },
+    {
+      "accession_no": "0000950123-11-034042",
+      "form_type": "8-K",
+      "filing_date": "2011-04-08"
+    }
+  ],
+  "checklist": [
+    {
+      "item_id": "CL1",
+      "question": "Did receivables grow materially faster than revenue across consecutive periods?",
+      "finding": "no_flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "AccountsReceivableNetCurrent=2093000000 (2010-02-28)",
+          "source_accession_no": "0000950123-10-033175",
+          "location": "10-Q balance sheet"
+        },
+        {
+          "quote": "AccountsReceivableNetCurrent=2377000000 (2011-02-28)",
+          "source_accession_no": "0000950123-11-033772",
+          "location": "10-Q balance sheet"
+        },
+        {
+          "quote": "SalesRevenueNet=4129000000 (2010-12-01 to 2011-02-28)",
+          "source_accession_no": "0000950123-11-033772",
+          "location": "10-Q income statement"
+        },
+        {
+          "quote": "AccountsReceivableNetCurrent=2012000000 (2009-11-30)",
+          "source_accession_no": "0000950123-10-001322",
+          "location": "10-Q balance sheet"
+        },
+        {
+          "quote": "AccountsReceivableNetCurrent=1698000000 (2010-11-30)",
+          "source_accession_no": "0000950123-11-034042",
+          "location": "8-K restated financials"
+        },
+        {
+          "quote": "SalesRevenueGoodsNet=1697000000 (2009-09-01 to 2009-11-30)",
+          "source_accession_no": "0000950123-10-001322",
+          "location": "10-Q income statement"
+        }
+      ]
+    },
+    {
+      "item_id": "CL2",
+      "question": "Did non-current 'soft' assets (intangibles, other assets, capitalized items) grow materially faster than the business overall?",
+      "finding": "no_flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "Goodwill=3218000000 (2009-08-31); Goodwill=3204000000 (2010-08-31)",
+          "source_accession_no": "0000950123-11-034037",
+          "location": "8-K balance sheet"
+        },
+        {
+          "quote": "IntangibleAssetsNetExcludingGoodwill=1371000000 (2009-08-31); =1263000000 (2010-08-31)",
+          "source_accession_no": "0000950123-11-034042",
+          "location": "8-K balance sheet"
+        },
+        {
+          "quote": "OtherAssetsNoncurrent=496000000 (2009-08-31); =565000000 (2011-02-28)",
+          "source_accession_no": "0000950123-11-033772",
+          "location": "10-Q balance sheet"
+        }
+      ]
+    },
+    {
+      "item_id": "CL3",
+      "question": "Is there a persistent divergence between net income and operating cash flow?",
+      "finding": "no_flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "NetIncomeLoss=2109000000 (2008-09-01 to 2009-08-31); NetCashProvidedByUsedInOperatingActivities=2246000000 (2008-09-01 to 2009-08-31)",
+          "source_accession_no": "0000950123-11-034037",
+          "location": "8-K cash flow statement"
+        },
+        {
+          "quote": "NetIncomeLoss=1109000000 (2009-09-01 to 2010-08-31); NetCashProvidedByUsedInOperatingActivities=1398000000 (2009-09-01 to 2010-08-31)",
+          "source_accession_no": "0000950123-11-034037",
+          "location": "8-K cash flow statement"
+        },
+        {
+          "quote": "NetIncomeLoss=-19000000 (2009-09-01 to 2009-11-30); NetCashProvidedByUsedInOperatingActivities=-1403000000 (2009-09-01 to 2009-11-30)",
+          "source_accession_no": "0000950123-11-034042",
+          "location": "8-K cash flow statement (seasonal working-capital build)"
+        }
+      ]
+    },
+    {
+      "item_id": "CL4",
+      "question": "Do inventory levels or gross margins show trends inconsistent with revenue?",
+      "finding": "flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "CostOfGoodsSold=4962000000 (2008-09-01 to 2009-08-31); CostOfGoodsSold=5416000000 (2009-09-01 to 2010-08-31)",
+          "source_accession_no": "0000950123-11-034037",
+          "location": "8-K income statement"
+        },
+        {
+          "quote": "SalesRevenueNet=11724000000 (2008-09-01 to 2009-08-31); SalesRevenueNet=10502000000 (2009-09-01 to 2010-08-31)",
+          "source_accession_no": "0000950123-11-034037",
+          "location": "8-K income statement"
+        },
+        {
+          "quote": "GrossProfit=6762000000 (2008-09-01 to 2009-08-31) [57.7% margin]; GrossProfit=5086000000 (2009-09-01 to 2010-08-31) [48.4% margin]",
+          "source_accession_no": "0000950123-11-034037",
+          "location": "8-K income statement"
+        }
+      ]
+    },
+    {
+      "item_id": "CL5",
+      "question": "Is the earnings trajectory unusually smooth relative to the volatility of revenue and cash flow?",
+      "finding": "no_flag",
+      "confidence": "high",
+      "evidence": [
+        {
+          "quote": "NetIncomeLoss=-19000000 (2009-09-01 to 2009-11-30); NetIncomeLoss=887000000 (2009-12-01 to 2010-02-28); NetIncomeLoss=384000000 (2010-03-01 to 2010-05-31); NetIncomeLoss=-143000000 (2010-06-01 to 2010-08-31)",
+          "source_accession_no": "0000950123-11-034037",
+          "location": "8-K quarterly income statement series"
+        },
+        {
+          "quote": "NetIncomeLoss=6000000 (2010-09-01 to 2010-11-30); NetIncomeLoss=1017000000 (2010-12-01 to 2011-02-28)",
+          "source_accession_no": "0000950123-11-033772",
+          "location": "10-Q income statement"
+        }
+      ]
+    },
+    {
+      "item_id": "CL6",
+      "question": "Did liability, allowance, or reserve balances decline (or fail to grow) despite growing business activity?",
+      "finding": "flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "AllowanceForDoubtfulAccountsReceivableCurrent=217000000 (2007-08-31); =162000000 (2009-08-31); =143000000 (2010-08-31); =126000000 (2010-11-30); =111000000 (2011-02-28)",
+          "source_accession_no": "0000950123-11-034042",
+          "location": "8-K / 10-Q allowance rollforward disclosures"
+        },
+        {
+          "quote": "AccountsReceivableNetCurrent=1590000000 (2010-08-31) rising to AccountsReceivableNetCurrent=2377000000 (2011-02-28), a 49.5% increase, while the allowance fell from 143000000 to 111000000 over the same span",
+          "source_accession_no": "0000950123-11-033772",
+          "location": "10-Q balance sheet / allowance note"
+        }
+      ]
+    },
+    {
+      "item_id": "CL7",
+      "question": "Does the filing chronology show irregularities (late filings/NT forms, amendments, unusual 8-K frequency)?",
+      "finding": "no_flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "No NT 10-K or NT 10-Q filings appear in the chronology; periodic reports (10-K, 10-Q) were filed on a regular cadence through the review window",
+          "source_accession_no": "N/A",
+          "location": "filing_chronology list"
+        },
+        {
+          "quote": "8-K/A filings occur periodically (e.g., 2009-09-15, 2010-04-07, 2010-08-31) but no 10-K/A or 10-Q/A restatement filings are present in the chronology",
+          "source_accession_no": "N/A",
+          "location": "filing_chronology list"
+        }
+      ]
+    },
+    {
+      "item_id": "CL8",
+      "question": "Is the provided data sufficient in coverage and length for the above assessments?",
+      "finding": "insufficient_data",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "Most XBRL tag histories begin only around FY2007-2009 (e.g., AllowanceForDoubtfulAccountsReceivableCurrent starts 2007-08-31; DebtCurrent starts 2009-08-31; Goodwill starts 2008-08-31), limiting multi-year trend depth",
+          "source_accession_no": "0000950123-11-034037",
+          "location": "aggregated point-in-time series"
+        },
+        {
+          "quote": "No detailed segment revenue, litigation/warranty reserve, or tax reconciliation data are provided, restricting deeper forensic checks beyond the core statements",
+          "source_accession_no": "N/A",
+          "location": "data set scope"
+        }
+      ]
+    }
+  ],
+  "misstatement_probability": 28,
+  "mechanism_hypotheses": [],
+  "overall": {
+    "risk_tier": "watch",
+    "top_signals": [
+      "Allowance for doubtful accounts declined steadily (AllowanceForDoubtfulAccountsReceivableCurrent=217000000 (2007-08-31) → 111000000 (2011-02-28)) even as receivables surged (AccountsReceivableNetCurrent=1590000000 (2010-08-31) → 2377000000 (2011-02-28)), shrinking reserve coverage from ~9.0% to ~4.7% of AR - a pattern consistent with, but not proof of, reserve release used to support earnings.",
+      "Gross margin compressed sharply (GrossProfit implied margin 57.7% in FY2009 vs 48.4% in FY2010) driven by CostOfGoodsSold rising 9.1% (CostOfGoodsSold=4962000000 (FY2009) → 5416000000 (FY2010)) while SalesRevenueNet fell 10.4% (11724000000 (FY2009) → 10502000000 (FY2010)); plausibly explained by well-known glyphosate/Roundup pricing pressure rather than misstatement, but the direction is unusual enough to watch.",
+      "Earnings and operating cash flow are both highly volatile on a quarterly basis in a manner consistent with genuine agricultural seasonality (e.g., NetIncomeLoss=-19000000 and NetCashProvidedByUsedInOperatingActivities=-1403000000 for Q1 FY2010, reversing sharply in Q2), which argues against artificial income smoothing and reduces overall concern.",
+      "No NT filings, 10-K/A, or 10-Q/A restatements appear in the filing chronology through the cutoff, which is a mitigating factor against a high misstatement probability."
+    ]
+  }
+}

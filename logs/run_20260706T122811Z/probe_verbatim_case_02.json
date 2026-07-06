@@ -1,0 +1,59 @@
+{
+  "ts": "2026-07-06T12:28:20.808945+00:00",
+  "harness_pin": "2.1.201",
+  "flags": [
+    "claude",
+    "-p",
+    "--model",
+    "claude-sonnet-5",
+    "--output-format",
+    "json",
+    "--max-turns",
+    "2",
+    "--setting-sources",
+    "",
+    "--strict-mcp-config",
+    "--tools",
+    "",
+    "--disallowedTools",
+    "Bash,Read,Edit,Write,Glob,Grep,WebFetch,WebSearch,Task,NotebookEdit",
+    "--system-prompt",
+    "Without any documents: state Orthofix International N.V.'s exact reported total revenue and net income (USD) for the fiscal year ending immediately before 2013-07-28, and the filing date of that annual report. If you do not know, set known=false and use nulls.",
+    "--json-schema",
+    "{\"type\": \"object\", \"additionalProperties\": false, \"required\": [\"revenue\", \"net_income\", \"filing_date\", \"known\"], \"properties\": {\"revenue\": {\"type\": [\"number\", \"null\"]}, \"net_income\": {\"type\": [\"number\", \"null\"]}, \"filing_date\": {\"type\": [\"string\", \"null\"]}, \"known\": {\"type\": \"boolean\"}}}"
+  ],
+  "model_requested": "claude-sonnet-5",
+  "served_models": [
+    "claude-sonnet-5"
+  ],
+  "pin_ok": true,
+  "ok": true,
+  "fail_reason": null,
+  "session_id": "40faccec-8951-4955-a834-ab2e57fe6cb9",
+  "usage": {
+    "input_tokens": 798,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "output_tokens": 321,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [],
+    "speed": "standard"
+  },
+  "total_cost_usd_reference_only": 0.007209,
+  "attempts": 1,
+  "wall_seconds": 3.9,
+  "freeze": {
+    "head": "05a7b73ec63e0602a2dd4df47d321a94e2bd3f69",
+    "clean_tree": false
+  },
+  "raw_tail": null
+}

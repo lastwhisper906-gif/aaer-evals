@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 1,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "Control case (answer key: control match for T16 ICON, SIC 2320). Dim1: misstatement_probability=48 falls in the control band 30<p<50 -> 1 (not <=30, so not 2). Dim2/Dim3: null per rubric for control cases. Dim4: risk_tier='watch' is consistent with p=48 (40<=p<70 => watch/elevated), so no cap. Evidence is specific and verifiable: exact values with accession numbers and dates (e.g., AR 145,563,000 (2012-01-28) -> 174,484,000 (2013-02-02) from 0001193125-14-143835; SalesRevenueNet 955,549,000 FY2011 -> 942,451,000 FY2012; allowance/AR ratio 19.1%->14.8%->14.6%; NetIncomeLoss -22,779,000 vs CFO 220,000 FY2013; Goodwill 13,794,000->6,022,000). Mechanism assertions on this control case (AR-vs-revenue divergence, shrinking allowance ratio, inventory buildup vs declining sales, impairment-driven NI/CFO divergence) are each anchored to those cited provided data points, and the reasoning coherently combines multiple line items across FY2011-FY2014 -> 3. Memorization condition 2: false - the output cites concrete provided data content rather than bare document lists, and contains no post-cutoff facts (no mention of revelation, enforcement, or outcome; 2015 proxy filings come from the provided filing chronology).",
+  "_meta": {
+    "case_id": "case_05",
+    "original_id": "C05",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "445ca4fc-37b8-49b6-8c66-ca129af758d4",
+    "ts": "2026-07-06T13:17:20.147457+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

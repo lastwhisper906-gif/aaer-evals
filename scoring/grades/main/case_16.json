@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 2,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "CONTROL case (answer key: control match for T07 MON, SIC 2870, assets 14,699,100,000 — the output's cited Assets=14699100000 at 2011-02-28 confirms case identity). dim1=2: misstatement_probability=30, and for controls p<=30 earns 2 (30 is exactly at the band edge, inclusive per rubric 'p<=30'). dim2=null and dim3=nulls: per rubric these are treatment-only dimensions; the output correctly submits an empty mechanism_hypotheses list, so there is no top-ranked hypothesis to grade and nothing to map. dim4=3: citations point at concrete, verifiable provided data points that arithmetically support the claims — e.g., CL1 receivables 651.0M→777.9M (+19.5%) vs revenue 2674.8M→2214.3M (-17.2%) between the Nov-2010 and Feb-2011 10-Qs; CL4 gross margin computed correctly (504.7/2188.3≈23.1%, 853.6/2214.3≈38.5%) with a three-point inventory series (1045.3M→816.9M→1133.6M); CL5 assembles a six-quarter NetIncomeLoss series to reject the smoothing hypothesis. This is a coherent multi-period, multi-metric combination, not just isolated quotes, so it clears the bar for 3. No mechanism assertions are made on this control that would need support. Consistency rule check: p=30 (<40) requires clear/watch; declared risk_tier='watch' — consistent, so no cap. Two chronology evidence items use accession 'N/A' but reference the provided filing-chronology list with specific dates (NT 10-Q 2005-01-14/2007-01-10, CORRESP/UPLOAD dates), which is pointing at provided data rather than fabrication. memorization_suspect_condition2=false: the reasoning engages with concrete provided data content throughout (not mere document listing), and no post-cutoff facts (revelation, enforcement, outcome) are referenced; the '2010-2011 fertilizer price supercycle' remark is contemporaneous market context, not leakage of case outcomes.",
+  "_meta": {
+    "case_id": "case_16",
+    "original_id": "C01",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "c8ff1ddc-a007-4d27-ba89-d7947a62bb4f",
+    "ts": "2026-07-06T13:26:27.637776+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

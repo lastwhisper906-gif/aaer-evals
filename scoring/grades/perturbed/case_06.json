@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 1,
+  "dim2_mechanism": 0,
+  "dim3_genre_mapping": {
+    "mapped_genre": "omission-estimate",
+    "score": 0
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "dim1=1: treatment case with p=58, which falls in the 50<=p<70 band. dim2=0: top-ranked hypothesis is bad-debt under-reserving (AllowanceForDoubtfulAccountsReceivableCurrent vs AR growth); ground truth is deferred rebate-cost recognition (incl. side agreements) and rebates misclassified as SG&A rather than revenue reductions (AAER-3741). The doubtful-accounts allowance is not the correct account area for either truth mechanism (rebate accruals/revenue reductions/SG&A-COGS); SG&A appears only incidentally in affected_line_items while the mechanism narrative is entirely about bad-debt reserves. Coverage note: hypothesis #2 (premature revenue recognition/AR spike) loosely touches the revenue_recognition scheme type, and hypothesis #3 (COGS-vs-opex reclassification behind the 57.7%->48.4% margin swing) is the closest to the true rebate-cost misclassification, but per rubric only the top-ranked hypothesis is scored. dim3=0: top hypothesis maps to omission-estimate (reserve release/under-accrual); answer-key genre is active(cost); wrong genre. dim4=3: evidence quotes specific provided data points with values, accessions, and locations (allowance trend 2007-08-31 294.1M -> 2011-02-28 150.4M; AR 2.11B -> 3.22B; FY2009/FY2010 gross margin 57.7% vs 48.4%; 2010-05-31 AR spike 4.38B vs adjacent quarters; recast 8-Ks of 2011-04-08 followed by 424B5/FWP/424B2 on 2011-04-12/13), combined coherently across multiple years and statement lines. Consistency rule satisfied: p=58 with risk_tier=elevated (watch/elevated required), so no cap. Auditor flag: value 193810011.85 appears both as 2010-08-31 allowance (CL6) and Q4 FY2010 NetIncomeLoss (CL5) - possible copy artifact to verify against provided series. memorization_suspect_condition2=false: reasoning cites concrete provided data content rather than bare document lists, and mentions no post-cutoff facts (no SEC order/restatement/enforcement references; cited 8-Ks are within documents_used).",
+  "_meta": {
+    "case_id": "case_06",
+    "original_id": "T07",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "b534719b-679f-44b0-9e71-400483ebc316",
+    "ts": "2026-07-06T13:29:00.861709+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

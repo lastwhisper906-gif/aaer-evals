@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 0,
+  "dim2_mechanism": 0,
+  "dim3_genre_mapping": {
+    "mapped_genre": "omission-estimate",
+    "score": 0
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "dim1=0: Treatment case (answer key: MRVL undisclosed 'pull-in' revenue scheme per AAER-4076), but output gives misstatement_probability=42 (<50) -> 0 per treatment band. dim2=0: Top-ranked hypothesis is a disproportionate release of AllowanceForDoubtfulAccountsReceivableCurrent (17.93M -> 6.48M) reducing bad-debt expense in FY2011 (period ended 2012-01-28). Ground truth is revenue_recognition (acceleration of future-quarter sales into the current quarter) plus disclosure omission during 2014-11 to 2015-05. Reserve/allowance accounts are not the revenue account area, and the flagged period predates the manipulation window by ~3 years -> unrelated accounts, 0. Coverage note: the third-ranked hypothesis ('AccountsReceivableNetCurrent, Revenues ... aggressive revenue recognition' incl. FY2013 AR +37.3% vs revenue +7.4%) is materially closer to the true mechanism, but rubric grades top-ranked only; p=42>=40 requires a hypothesis and one exists, so the 0 is for unrelated accounts, not absence. dim3=0: Top-ranked narrative (allowance release / under-reserving = estimate manipulation) maps to omission-estimate; answer-key genre is active(revenue) (timing manipulation of real sales) -> wrong genre. dim4=3: Evidence quotes are specific provided data points that genuinely support each claim (allowance -64% vs AR -11.4% FY2011->FY2012; inventory +44.3% vs revenue -6.1% FY2010->FY2011; gross margin ~59.8% Q1 FY2010 vs ~48.4% Q1 FY2014; AR +60.6% vs revenue -4.8% FY2008->FY2009; NI vs OCF FY2010/FY2014; NT 10-Q/NT 10-K filings 2006-2007 from filing_chronology), and they are combined coherently across multiple years and signal families in top_signals. Consistency rule satisfied: p=42 with risk_tier='watch' (40<=p<70 => watch/elevated), so no cap. memorization_suspect_condition2=false: reasoning is anchored in concrete provided data content (specific XBRL values/periods), not bare document lists, and mentions no post-cutoff facts (no reference to the SEC order, 'pull-in' terminology, revelation, or outcome).",
+  "_meta": {
+    "case_id": "case_13",
+    "original_id": "T17",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "6148d356-f7bd-44ba-8ddb-7ad25a245cd4",
+    "ts": "2026-07-06T13:31:50.346291+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

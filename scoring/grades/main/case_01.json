@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 1,
+  "dim2_mechanism": 1,
+  "dim3_genre_mapping": {
+    "mapped_genre": "mixed",
+    "score": 1
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "DIM1 (band=1): Treatment case; output gives misstatement_probability=55, which falls in 50<=p<70 → 1 per rubric. DIM2 (=1): Top-ranked hypothesis targets Revenues/AccountsReceivableNetCurrent/Allowance with direction 'overstated' — correct account area (revenue overstatement matches the key's 'overstated revenue by approximately $50 million'). However, the proposed treatment type is 'premature/aggressive revenue recognition or delayed write-off of receivables' inferred from AR-vs-revenue divergence; the actual scheme per 33-10692 was improper valuation of non-monetary data-exchange (barter) transactions ($34.5M) plus undisclosed linked/side-agreement monetary contracts (~$12M). The treatment type does not substantially match, so score stays at 1 (account area + direction, but not treatment). Coverage note (multi-mechanism truth): neither of the two truth components (barter valuation, side agreements) is captured by any of the three hypotheses; the FY2013 focus also predates the manipulation window (2014-02 to 2016-02). DIM3 (mixed vs active → 1): The top hypothesis narrative blends an active scheme (premature/aggressive revenue recognition) with an omission/estimate element (delayed write-off of receivables; allowance not scaling with AR). Mapped genre = mixed; answer-key genre = active(revenue); one-sided-vs-mixed → 1. DIM4 (=3): Evidence citations are concrete provided data points with accession numbers that genuinely support the claims (e.g., AR 68,348,000→90,040,000 vs Revenues 255,193,000→286,860,000 for the DSO divergence; NetIncomeLoss vs operating cash flow for FY2011/FY2012/FY2014; the 10-day 10-Q→10-Q/A gap in May 2013; $0 allowance quarters in 2015 against $77-98M AR). The reasoning coherently combines multi-year and multi-account series (AR/revenue growth mismatch across FY2012-FY2013, NI-vs-OCF divergence across 2010-2014, quarterly allowance anomalies in 2015), meeting the bar for 3. Consistency rule: p=55 with risk_tier='elevated' satisfies 40<=p<70 => watch/elevated, so no cap applies. MEMORIZATION_SUSPECT_CONDITION2 = false: the reasoning points at specific provided data content (not bare document lists), and nothing references post-cutoff facts — no mention of the SEC order, restatement, revelation, or outcome.",
+  "_meta": {
+    "case_id": "case_01",
+    "original_id": "T21",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "66d0fb5c-bb93-445f-af80-7da1f432fb8f",
+    "ts": "2026-07-06T13:14:42.091755+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}
