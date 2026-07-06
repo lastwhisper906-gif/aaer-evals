@@ -1,65 +1,74 @@
-# 실행 런북 — Phase 3 (requires credentials)
+# 실행 런북 — Phase 3+ (구독 헤드리스 경로, freeze 개정 #2)
 
 > Authored by Claude Code, pending human audit (GA-001 (b), D15).
 > 전제: freeze 커밋 `82a7717` 이후 기준 무변경 (러너가 clean tree를 강제).
-> **자격 증명**: `ant auth login` 또는 `export ANTHROPIC_API_KEY=...` +
-> `pip install anthropic` (.venv). 이 두 가지가 이 런북의 유일한 외부 전제다.
-> 비용 추정: 호출 34회 (프로브 16 + 파일럿 2 + 본 16 + 교란 8 — 프로브 verbatim 8 별도)
-> × 페이로드 ~20-60K 입력 토큰 — sonnet-5 기준 대략 $10-25; 채점 26회 fable-5 ~$15-40.
+> **실행층 = Claude Code 구독 헤드리스** (`claude -p`, freeze 개정 #2 —
+> `scoring/decisions_log.md` 참조). 하네스 핀 v2.1.201.
+> **자격 증명 = 구독 OAuth 전용**: 대화형 세션에서 `claude /status` → Auth가
+> **Claude Max** 구독인지 확인. API 키는 설정·요구·문서화 금지 (RP-04 R1/R2,
+> GLOBAL INVARIANT 4). 러너가 환경에 ANTHROPIC_API_KEY 부재를 assert한다.
+> 비용: 구독에 흡수 — `total_cost_usd`는 참고 기록일 뿐 과금 알람으로 쓰지 않는다.
+
+## 격리 모델 (모든 모델 호출 공통 — pipeline/cli_client.py)
+
+- 호출별 작업 디렉토리 = 저장소 밖 임시 디렉토리 (fresh, 종료 후 삭제).
+- `CLAUDE_CONFIG_DIR=<빈 임시 디렉토리>` — 전역 설정·메모리·훅·MCP 로딩 차단.
+- 플래그: `--max-turns 1 --disallowedTools "Bash,Read,Edit,Write,Glob,Grep,WebFetch,WebSearch,Task,NotebookEdit" --json-schema <스키마> --output-format json`.
+- 파싱: `structured_output` 필드 → 기존 스키마 검증기 통과 필수.
+- 로그: `logs/run_<ts>/` 케이스별 JSON — 플래그 전체·session_id·modelUsage(서빙
+  모델 — 핀 불일치는 해당 케이스 FAIL)·토큰·total_cost_usd(참고)·freeze 해시.
+
+## 재개 의미론 (idempotent run)
+
+러너는 **멱등**이다: `outputs/<case_id>.json`이 존재하고 스키마를 통과하면 skip.
+- 중단(레이트 리밋 포함) 시: 러너가 정확한 재개 명령을 stdout에 출력하고 중단.
+  재개 = **같은 명령을 다시 실행** (완료분은 자동 skip).
+- 스키마 실패·빈 응답: 동일 입력 1회 재시도, 2연속 실패 = 해당 케이스 FAIL 기록
+  후 다음 케이스 계속 (전체 중단 없음).
+- 실행 전 clean tree 필수 — dirty tree면 러너가 거부 (freeze-commit-then-run).
 
 ## 순서 (역순 금지 — D7 분기가 본 실행 해석을 결정)
 
 ```bash
-source .venv/bin/activate && pip install anthropic
+source .venv/bin/activate
 python tools/verify_manifest.py                      # PASS 확인
+
+# 0. 파일럿 + 격리 게이트 (Phase 3/4 — 본 실행 사전 조건)
+python pipeline/runner.py --cases pilot/cases_pilot.json --out pilot/runs
+#    + 격리 프로브·--verbose 오염 트레이스 grep — 게이트 5항목 전부 PASS여야 본 실행
 
 # 1. 인지 프로브 (교란 페이로드, 실험군 8) → D7 분기
 python pipeline/probe_runner.py --recognition --cases scoring/perturbed_cases.json
-#    → scoring/probe_results/recognition/ 판독: 실명 일치 수 n
-#    n>=3: CONTAMINATED — 본 분석 = 교란 실행, 원본은 부록 상한 (전 보고서 헤드라인 명시)
+#    n>=3: CONTAMINATED — 본 분석 = 교란 실행, 원본은 부록 상한
 #    n<3 : 본 분석 = 원본 실행, delta = 암기 기여 추정
-#    분기 결정을 logs/run_log.md + RP-03에 문서화
 
-# 2. 축어 회상 프로브 (원본 필드만, 실험군 8) → 케이스별 잔여 위험 등급
+# 2. 축어 회상 프로브 (원본 필드만, 실험군 8)
 python pipeline/probe_runner.py --verbatim --cases scoring/perturbed_cases.json
 
-# 3. 파일럿 (VRX/GE — pilot/ 격리, 본 실험 디렉토리 금지)
-python pipeline/runner.py --cases pilot/cases_pilot.json --out pilot/runs
-python scoring/grader_runner.py --runs pilot/runs --out pilot/grades   # 매핑은 id_mapping_pilot
-#    항목별 정답 키 대조 → 파이프라인 결함 발견 시 코드 수정(테스트 통과 + run log 기재)
-#    → pilot/runs 비우고 재실행 clean 확인 후 본 실행
-
-# 4. 본 실행 (원본 16 + 교란 8, 변형당 1회 — D5)
+# 3. 본 실행 (원본 16 + 교란 8, 변형당 1회 — D5, 동시성 3)
 python pipeline/runner.py --cases data/evaluatee/cases.json --out runs/main
 python pipeline/runner.py --cases scoring/perturbed_cases.json --perturbed --out runs/perturbed
 
-# 5. 채점 (grader = fable-5, 폴백 opus-4-8 로그)
+# 4. 채점 (grader = fable-5, 폴백 opus-4-8 로그 — 중립 ID 유지)
 python scoring/grader_runner.py --runs runs/main --out scoring/grades/main
 python scoring/grader_runner.py --runs runs/perturbed --out scoring/grades/perturbed
 
-# 6. 스키마 검증 + Brier/판별 통계 (결정론)
-#    각 runs/*.json을 schemas/llm_output.json으로 검증 — 실패는 파이프라인 오류 귀속
-python tools/brier.py <(python - <<'PY'
-import json,glob;print(json.dumps([{"case_id":json.load(open(f))["case_id"],
-"p":json.load(open(f))["misstatement_probability"]} for f in sorted(glob.glob("runs/main/case_*.json"))]))
-PY
-)
+# 5. 스키마 검증 + Brier/판별 통계 (결정론) — 채점 커밋 후에만 id_mapping 개봉
 ```
 
 ## 실행 중 의무 기록 (SR 11-7 제3자 모델 규칙)
 
-- `logs/api_run_log.jsonl`: 호출별 response.model(서버 보고 문자열)·request id·토큰·
-  시간·freeze 상태 — 러너가 자동 기록. 실행 후 이 파일 커밋.
-- 파일럿 결함 수정 시: 코드 diff + 사유를 run_log.md에 기재 (post-freeze 코드 수정 규약).
-- grader 폴백 발동 시: _meta.fallback_used=true 건수를 RP-03에 집계.
+- `logs/run_<ts>/`: 호출별 서빙 모델·session_id·토큰·시간·freeze 해시 — 자동 기록,
+  실행 후 커밋. 시크릿·토큰은 로그·커밋 어디에도 남기지 않는다.
+- grader 폴백 발동 시: `_meta.fallback_used=true` 건수를 RP-05에 집계.
+- 카나리 GUID의 응답 내 출현 여부를 케이스별 기록.
 
-## 실행 후 → 분석 (RP-03, 3-5 ①~⑦)
+## 실행 후 → 분석 (RP-05, 사전 등록 절차)
 
-① 케이스별 판정+인용+근거 등급 (grades + 잔여 위험 등급 병기) ② Loop-3: **skipped —
-no sealed predictions** (run_log 2026-07-06) ③ LLM vs 4스크린+Piotroski (사전 기준선
-docs/baseline_screens.md §3 — 누락 장르 커버 여부가 핵심 질문) ④ 원본−교란 delta
-(또는 D7 오염 분기 보고) ⑤ 오류 1차 분류 (error_taxonomy R1→R2→R3; MODEL 전건 인간
-감사 플래그) ⑥ 장르 비대칭 ⑦ D10 조건부 평가 (데이터로만).
+① 케이스별 판정+인용+근거 등급 ② Loop-3: **skipped — no sealed predictions**
+③ LLM vs 4스크린+Piotroski (사전 기준선 docs/baseline_screens.md §3) ④ 원본−교란
+delta (또는 D7 오염 분기 보고) ⑤ 오류 1차 분류 (R1→R2→R3) ⑥ 장르 비대칭
+⑦ D10 조건부 평가. 실패 기준: rank-sum p≥0.20 ∨ 중위 분리<10pp ∨ 퇴화 분포.
 
 보고 언어 제약(3-6): 정밀도 % 헤드라인 금지 / n=8 ±35pp / 상한 명기 / D5 단일 실행
 문구 / 선택·생존 편향 문단 / "Claude 기반 단일 파이프라인 한정" / 오염 프로브 문서

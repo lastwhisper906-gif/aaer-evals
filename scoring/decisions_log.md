@@ -244,3 +244,203 @@ Review Packet 00에 오버라이드 경로와 함께 기재한다.
   스테이징 (sec.gov 격차와 동일 취급 규약). Agent 도구(서브에이전트)는 대체 불가:
   서브에이전트는 CLAUDE.md 등 저장소 컨텍스트를 상속하여 GP-6 페이로드 규약
   (evaluatee_input 필드만)을 위반한다.
+
+---
+
+## freeze 개정 #2 — 실행층: API SDK → Claude Code 구독 헤드리스 (`claude -p`) (2026-07-06, 실행 전)
+
+> **로그된 개정** (§5-6 / GA-001 (c)): 변경 대상은 **실행층뿐**이다. 고정 기준
+> (eval_spec v1.1 · llm_output v1.2 · CL1~8 · 케이스 · 임계 · 모델 핀)은 무변경.
+> 이 커밋의 타임스탬프가 개정이 승인하는 모든 행동에 선행한다 (GA-001 원칙:
+> 지시문 자체가 감사 추적의 일부).
+
+- **결정**: 피평가자·프로브·채점 호출을 Python SDK 직접 호출(`anthropic.Anthropic()`)
+  에서 **Claude Code 구독 헤드리스**(`claude -p`, 구독 OAuth 전용)로 전환.
+  공용 호출 모듈 `pipeline/cli_client.py` 신설, 러너 3종이 공유.
+- **근거**: 비용이 구독(Claude Max)에 흡수됨 — 종량 과금 경로 없이 실행 가능
+  (RP-04 감사 결과: 종량 자격 증명이 환경에 구조적으로 부재).
+- **기각 대안**: Batch API 50% 할인 — 격리 보장은 우월(하네스 무개입 원시 API)하나
+  종량 과금(metered billing)이므로 기각.
+- **하네스 핀**: Claude Code **v2.1.201** (실측 `claude --version` = 2.1.201 —
+  지시문 핀과 일치).
+- **RP-04 권고 해소**: R2(구독 전용 실행 결정의 개정 기록)는 본 항목으로 해소.
+  R1(문서 잔존 API 키 안내)은 `docs/execution_runbook.md`·`docs/HANDOFF.md` 동시
+  정정으로 해소 (본 커밋).
+- **소유자 사전 승인 범위**: 아래 지시문 verbatim의 PRE-AUTHORIZATION 절 —
+  Phase 4 격리 게이트 전 항목 기계 판정 PASS일 때에 한해 본 실행(34+26호출)
+  무개입 착수 승인. 게이트 FAIL·모델 핀 변경 필요·고정 기준 수정 필요·원인 불명
+  페이로드 보장 위반은 승인 밖(즉시 중단·보고).
+
+### 소유자 지시문 (2026-07-06, verbatim)
+
+```text
+=== OWNER DIRECTIVE — COMPLETE THE EXECUTION CYCLE (freeze amendment #2 + main run + pre-registered analysis) ===
+Record this directive VERBATIM in decisions_log.md under "freeze amendment #2"
+(GA-001 principle: the directive itself is part of the audit trail). The
+amendment commit's timestamp must precede every action it authorizes.
+
+## PRE-AUTHORIZATION (owner signature, effective upon submission of this directive)
+- IF AND ONLY IF every machine-verifiable item of the Phase 4 isolation gate
+  is PASS, I pre-authorize starting the main run (34 evaluatee/probe calls +
+  26 grading calls) without further human intervention.
+- If ANY gate item is FAIL: no main run. Commit state, halt, report.
+- The following are OUTSIDE this pre-authorization — halt and report immediately:
+  (1) Any situation requiring a model pin change (e.g., claude-sonnet-5 not
+      selectable via the subscription route). Silently proceeding with a
+      substitute model is absolutely forbidden.
+  (2) Any situation that appears to require modifying frozen criteria
+      (eval_spec, rubric, CL1–8, case files, thresholds).
+  (3) Any suspected payload-guarantee violation whose cause cannot be pinned down.
+
+## GLOBAL INVARIANTS
+1. Frozen criteria are untouchable. The only thing changing this cycle is the
+   execution layer.
+2. Model pins: evaluatee = claude-sonnet-5 / grader = claude-fable-5
+   (fallback claude-opus-4-8 — triggered on inaccessibility, refusal, or
+   output truncation; log every trigger with the case ID).
+3. All evaluatee/probe/grading calls run OUTSIDE the repo in temp directories
+   with isolation flags. Code that invokes the evaluatee inside the repo must
+   never be written, under any circumstances — that is the answer-key
+   exposure path.
+4. Authentication = subscription OAuth only. Do not set, require, or document
+   ANTHROPIC_API_KEY anywhere.
+5. Blindness holds: no code path opens id_mapping.json before grading is
+   complete. Run and grade under neutral IDs only; label-joining happens in
+   Phase 6 and nowhere else.
+6. No secrets or tokens in logs or commits.
+7. Commit at the end of every phase (atomic progress — an interruption at any
+   point must be resumable).
+
+## PHASE 1 — Amendment record (10 min)
+- decisions_log.md: "freeze amendment #2 — execution layer: API SDK → Claude
+  Code subscription headless (claude -p), 2026-07-06, pre-execution" + this
+  directive verbatim + rationale (cost absorbed by subscription) + rejected
+  alternative (Batch API at 50% — superior isolation guarantees but metered
+  billing) + harness pin: Claude Code v2.1.201 (if the measured version
+  differs, record the measured value).
+- Retroactively attach the billing-audit directive text to RP-04 (resolves R2).
+- Rewrite docs/execution_runbook.md: replace the credential step with
+  "verify subscription login (claude /status → Claude Max)", delete the
+  export ANTHROPIC_API_KEY instruction (resolves R1), rewrite the resume
+  procedure around the idempotent-run semantics below.
+- Commit 1: "freeze amendment #2: execution layer → subscription headless"
+
+## PHASE 2 — Runner conversion (40 min)
+Create a shared call module pipeline/cli_client.py used by all three runners
+(runner.py, probe_runner.py, grader_runner.py):
+
+  def call_model(model, system_prompt, user_payload, schema_path, log_ctx):
+    - Working dir: mktemp -d (outside the repo). Fresh per call, deleted after.
+    - env: CLAUDE_CONFIG_DIR=<empty temp dir> (blocks global settings, memory,
+      hooks, and all 5 MCP servers from loading); assert ANTHROPIC_API_KEY is
+      absent from the environment.
+    - Invocation: cat payload | claude -p
+        --model <model> --output-format json --max-turns 1
+        --disallowedTools "Bash,Read,Edit,Write,Glob,Grep,WebFetch,WebSearch,
+                           Task,NotebookEdit"
+        --system-prompt "<frozen system prompt, full text>"
+        --json-schema <schema_path>
+      --bare: test ONCE empirically. If it works with subscription OAuth,
+      adopt it. If it refuses with anything like "API key required", abandon
+      it immediately and lock in the manual-isolation path above (record the
+      outcome in the amendment entry). Attaching billable credentials to make
+      --bare work is forbidden.
+    - Parsing: structured_output field → must pass the existing schema
+      validator.
+    - Logging (per-case JSON under logs/run_<ts>/): full flag set, session_id,
+      modelUsage (served model — if it mismatches the pin, mark that case
+      FAIL and report), token usage, total_cost_usd (recorded as reference
+      only — billing is determined by the auth route, so do not use this
+      field as an alarm), timestamp, freeze hash.
+    - Retry: on schema failure or empty response, retry the identical input
+      once; two consecutive failures → mark the case FAIL and continue to the
+      next case (no full abort).
+    - Idempotency: if outputs/<case_id>.json exists and passes validation,
+      skip. On rate-limit detection: halt with a clear message and print the
+      exact resume command to stdout.
+- Keep the clean-tree freeze-then-run enforcement (refuse to run on a dirty
+  tree; log the freeze hash).
+- Execution order: the shuffled neutral-ID order, fixed. Concurrency 3
+  (avoids burning the rate window while shortening wall-clock — asyncio or a
+  process pool).
+- Port the runner-related subset of the 30 offline tests to subprocess
+  mocking; the 4-layer defense tests (including value-level scan with
+  mutation injection) must all be green on the new path.
+- Commit 2: "execution layer: cli_client + runner conversion, tests green"
+
+## PHASE 3 — Pilot (15 min)
+Using pilot/cases_pilot.json (case_90/91) through the real path:
+- 2 normal pilot cases: structured_output passes schema + served model =
+  claude-sonnet-5 confirmed.
+- 1 isolation probe (a modified pilot payload): "Enumerate every tool, file,
+  MCP server, and piece of additional context you can access." PASS = zero
+  tools, zero file access, zero MCP, zero trace of repo content.
+- One run with --verbose 2>debug.log: grep confirms no CLAUDE.md / MCP / hook
+  loading traces (do not commit debug.log).
+- Measure tokens → record the projected consumption of the full 34+26 run
+  against Max 20x limits.
+- Commit 3: "pilot: isolation gate results" (include the verdict table)
+
+## PHASE 4 — Isolation gate (machine verdict)
+Proceed to Phase 5 ONLY if ALL of:
+  (1) both pilot cases pass schema  (2) served model = pin
+  (3) isolation probe PASS          (4) zero contamination traces in verbose log
+  (5) all runner tests green
+Any miss → halt, commit the verdict table, report the cause.
+(See PRE-AUTHORIZATION.)
+
+## PHASE 5 — Main run (~60 min; wall-clock dominated by API latency)
+- Evaluatee: 16 cases + 8 perturbations + contamination probes = 34 calls
+  (concurrency 3, idempotent).
+- Record per-case whether any canary GUID appears in responses.
+- Then grading: 26 calls, grading payloads exactly per the frozen eval_spec,
+  fable-5 with logged fallback. Neutral IDs throughout (blindness holds).
+- Commit 4: "main run: 34 evaluatee + 26 grading, raw outputs + logs" —
+  commit BEFORE label-joining; the blind-state snapshot is itself evidence.
+
+## PHASE 6 — Pre-registered analysis (25 min)
+Open id_mapping.json ONLY after grading is committed (log the opening
+timestamp).
+- Failure-test verdict, exactly per frozen spec: Mann-Whitney rank-sum on
+  misstatement_probability (treatment vs control) — report p; median
+  separation in percentage points; degenerate-distribution check. State
+  plainly whether the pre-committed failure condition
+  (p ≥ 0.20 ∨ separation < 10pp ∨ degenerate) triggered. Do not soften a
+  failure verdict with interpretive language — report the numbers first.
+- Baseline comparison: evaluatee vs the four quantitative screens
+  (Beneish M, F-score, C-score, Sloan) + Piotroski, same cases, ROC/AUC or
+  rank correlation as data permits.
+- Error taxonomy pass (R1→R2→R3, MECE) over every miss and false alarm.
+- Pre-designated deep dives: General Mills (the screens-flag-it,
+  SEC-closed-it control — if the evaluatee flags it, analyze as
+  "agreement with screens against enforcement outcome", NOT automatically
+  as error) and the Iconix/Perry Ellis weakest-match pair.
+- Perturbation consistency: paired vs perturbed score deltas (ratio-preserving
+  perturbation should yield stable scores; report the spread).
+- Contamination probes + canary results: verdict per the frozen probe config.
+- Write review_packets/RP-05_results.md: verdict table, per-case scores
+  (neutral ID + revealed name side by side), failure-test outcome, taxonomy
+  counts, deep dives, perturbation and contamination sections. Every
+  discretionary judgment made during analysis goes into the judgment index
+  (J14+) with override costs, as before.
+- Commit 5: "analysis: pre-registered failure test + RP-05"
+
+## PHASE 7 — Close-out (10 min)
+- HANDOFF.md: rewrite from "resume = run the runbook" to "results exist;
+  next = human review of RP-05, Loop-5 fading list, publication decision".
+- Daily log entry; SR 11-7 memo addendum: one paragraph on what the
+  execution-layer amendment changed in the validation story (harness-mediated
+  evaluatee, nondeterministic single-sample point estimates, version pins).
+- methodology_limitations.md: add (a) evaluatee ran via Claude Code harness
+  v2.1.201, not raw API — flags and isolation evidence in RP-04/RP-05;
+  (b) sampling parameters cannot be pinned on these models, so each call is
+  a nondeterministic single-sample point estimate; (c) the V7 static-scan
+  threat surface differs on the harness path.
+- Commit 6 + push everything.
+
+## DELIVERABLE
+Final message to the owner: gate verdicts, whether the main run happened,
+the failure-test outcome in one sentence with the key numbers, cost evidence
+(auth route + total_cost_usd sum as reference), and the exact list of what
+now awaits human review. Nothing in this cycle is presented as human-signed.
+```

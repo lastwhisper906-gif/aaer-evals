@@ -45,3 +45,25 @@
 
 **게이트 판단은 인간이 한다** — 본 감사는 판정표 1~5 전 항목에서 종량 과금 경로가
 닫혀 있음을 확인했고(WARN 1건은 A로 판별), R1/R2 정리 후 A~C 확인이 남은 조건이다.
+
+---
+
+## 부록 (2026-07-06 사후 첨부) — 지시문 소급 첨부 및 R1/R2 해소
+
+> Authored by Claude Code, pending human audit (GA-001 (b), D15).
+
+- **R2 해소**: 구독 전용 실행 결정이 `scoring/decisions_log.md`의 **freeze 개정 #2**
+  로 기록됨 (실행 형태 = Claude Code 구독 헤드리스 `claude -p`, 하네스 핀 v2.1.201,
+  러너 구동 방법 = `pipeline/cli_client.py` 공용 모듈). 소유자 지시문(2026-07-06)
+  전문이 해당 항목에 verbatim 수록 — 그 지시문의 GLOBAL INVARIANTS 4항이 본 감사의
+  전제("구독 OAuth 전용, ANTHROPIC_API_KEY 설정·요구·문서화 금지")를 소유자 서명
+  수준으로 확정한다.
+- **R1 해소**: `docs/execution_runbook.md`·`docs/HANDOFF.md`의
+  `export ANTHROPIC_API_KEY` 안내 삭제, 구독 로그인 확인 절차로 교체 (동일 커밋).
+- **원 감사 지시문 원문의 소급 첨부 (정직 기록 — J13)**: 본 감사(커밋 `fd2592d`)를
+  명령한 감사 지시문의 원문 텍스트는 저장소·세션에 보존되어 있지 않다 (이전 세션
+  종료로 소실). D15(기록 날조 금지)에 따라 원문 재구성 대신 격차를 기록한다.
+  보존된 것: ① 감사 결과 본문(위) ② 커밋 `fd2592d` 타임스탬프 ③ 2026-07-06 소유자
+  지시문의 "Retroactively attach the billing-audit directive text to RP-04
+  (resolves R2)" 문장 — 소유자가 해당 감사를 자신의 지시로 사후 인수(ratify)한
+  증거로 이 문장을 첨부한다.

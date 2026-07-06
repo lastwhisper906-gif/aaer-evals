@@ -13,11 +13,11 @@ Phase −1~2 + 3 실행층 + 4 문서 전부 완료. **남은 것은 `docs/execu
 파일럿 → 본 실행 16+8 → 채점 → RP-03 분석 ①~⑦).
 
 ```bash
-# 재개 절차 (요약 — 상세는 runbook)
-source .venv/bin/activate && pip install anthropic
-export ANTHROPIC_API_KEY=...   # 또는 ant auth login
+# 재개 절차 (요약 — 상세는 runbook; freeze 개정 #2: 구독 헤드리스 경로)
+source .venv/bin/activate
+# 자격 증명 = 구독 OAuth 전용: claude /status → Claude Max 확인 (API 키 금지 — RP-04 R1)
 python tools/verify_manifest.py          # PASS (264파일 기준선)
-# 이후 docs/execution_runbook.md 순서대로
+# 이후 docs/execution_runbook.md 순서대로 (러너는 멱등 — 재개 = 같은 명령 재실행)
 ```
 
 ## 이 사이클의 고정값 (변경은 §5-6 이력 공개)
