@@ -104,8 +104,18 @@ def build_manifest() -> dict:
         }
         if path.suffix == ".txt":  # pdf/html에서 로컬 추출한 파생물
             entry["derived_from"] = str(rel)[: -len(".txt")]
-        elif rel.parts[1] == "edgar":
-            entry["source_url"] = f"https://data.sec.gov/submissions/{path.name}"
+        elif ticker == "_aaer_index":
+            entry["source_url"] = ("https://www.sec.gov/enforcement-litigation/"
+                                   "accounting-auditing-enforcement-releases")
+        elif ticker == "_controls" or (len(rel.parts) > 2 and rel.parts[1] in ("edgar", "xbrl")):
+            # data.sec.gov 계열: 파일명이 URL을 결정한다 (fetch_xbrl_facts/control_screening 규약)
+            name = path.name
+            if name.startswith("companyfacts_"):
+                entry["source_url"] = f"https://data.sec.gov/api/xbrl/companyfacts/{name[len('companyfacts_'):]}"
+            elif len(rel.parts) > 2 and rel.parts[1] == "xbrl":
+                entry["source_url"] = f"https://data.sec.gov/api/xbrl/companyfacts/{name}"
+            else:
+                entry["source_url"] = f"https://data.sec.gov/submissions/{name}"
         else:
             for u in by_ticker.get(ticker, []):
                 if path.name in url_basenames(u):
