@@ -58,6 +58,13 @@
 - 해석 노트: D8 소유자 결정의 예측("내용 기반 재식별은 어차피 발생")이 실측으로
   확인됨 — 교란은 암기 *측정* 장치이지 제거 장치가 아니다.
 
+## 2026-07-06 — Phase 6: 라벨 결합 개봉 기록
+
+- **id_mapping.json 개봉 = 2026-07-06T13:32:37Z** — 채점 완료 커밋 `03b91aa`
+  (블라인드 상태 스냅샷) **이후**. 개봉 주체: 분석 세션 (analyze_rp05.py +
+  RP-05 작성). 채점 단계의 개봉은 grader_runner의 기계적 정답 키 결합뿐
+  (stdout 중립 ID 전용 — grade 파일 _meta에만 원본 ID 기록).
+
 ## 2026-07-06 — Phase 3-1 (D16 확인)
 - **Loop 3 skipped — no sealed predictions** (본 실행 전 봉인 커밋 부재 실측:
   scoring/loop3/predictions.md 없음, 봉인 커밋 git 이력 없음). 분석 ②는 skip 노트로 대체.

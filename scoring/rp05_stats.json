@@ -1,0 +1,620 @@
+{
+  "primary": {
+    "label": "PRIMARY (D7 branch: perturbed T vs original C)",
+    "treatment_p": [
+      45,
+      45,
+      45,
+      58,
+      55,
+      55,
+      68,
+      42
+    ],
+    "control_p": [
+      25,
+      48,
+      25,
+      58,
+      45,
+      32,
+      22,
+      30
+    ],
+    "median_t": 50.0,
+    "median_c": 31.0,
+    "separation_pp": 19.0,
+    "sd_all16": 13.18,
+    "rank_sum": 87.0,
+    "U": 51.0,
+    "auc": 0.7969,
+    "p_one_sided_exact": 0.0226,
+    "brier": 0.1914,
+    "brier_baseline_p50": 0.25,
+    "failure_b_triggers": {
+      "p>=0.20": false,
+      "separation<10pp": false,
+      "degenerate(sd<5pp)": false
+    },
+    "failure_b": false
+  },
+  "appendix": {
+    "label": "APPENDIX upper bound (original T vs original C)",
+    "treatment_p": [
+      55,
+      60,
+      42,
+      28,
+      78,
+      65,
+      68,
+      55
+    ],
+    "control_p": [
+      25,
+      48,
+      25,
+      58,
+      45,
+      32,
+      22,
+      30
+    ],
+    "median_t": 57.5,
+    "median_c": 31.0,
+    "separation_pp": 26.5,
+    "sd_all16": 17.0,
+    "rank_sum": 90.0,
+    "U": 54.0,
+    "auc": 0.8438,
+    "p_one_sided_exact": 0.0094,
+    "brier": 0.1768,
+    "brier_baseline_p50": 0.25,
+    "failure_b_triggers": {
+      "p>=0.20": false,
+      "separation<10pp": false,
+      "degenerate(sd<5pp)": false
+    },
+    "failure_b": false
+  },
+  "failure_a_dim4zero_primary": [],
+  "failure_a_primary": false,
+  "failure_a_dim4zero_appendix": [],
+  "memorization_suspect_flags": [],
+  "perturbation": {
+    "k": {
+      "case_12": 1.939,
+      "case_08": 1.878,
+      "case_13": 2.434,
+      "case_01": 1.238,
+      "case_06": 1.355,
+      "case_09": 0.421,
+      "case_02": 0.6,
+      "case_03": 1.115
+    },
+    "delta_orig_minus_pert": {
+      "case_01": 10,
+      "case_02": 15,
+      "case_03": -3,
+      "case_06": -30,
+      "case_08": 23,
+      "case_09": 10,
+      "case_12": 0,
+      "case_13": 13
+    },
+    "delta_mean": 4.8,
+    "delta_median": 10.0,
+    "delta_range": [
+      -30,
+      23
+    ]
+  },
+  "per_case": {
+    "case_01": {
+      "original_id": "T21",
+      "ticker": "SCOR",
+      "group": "treatment",
+      "p_original": 55,
+      "p_perturbed": 45,
+      "grade_main": {
+        "dim1_probability_band": 1,
+        "dim2_mechanism": 1,
+        "dim4_evidence_quality": 3,
+        "memorization_suspect_condition2": false
+      },
+      "grade_main_d3": {
+        "mapped_genre": "mixed",
+        "score": 1
+      },
+      "grade_pert": {
+        "dim1_probability_band": 0,
+        "dim2_mechanism": 1,
+        "dim4_evidence_quality": 3,
+        "d3": {
+          "mapped_genre": "active",
+          "score": 2
+        }
+      }
+    },
+    "case_02": {
+      "original_id": "T11",
+      "ticker": "OFIX",
+      "group": "treatment",
+      "p_original": 60,
+      "p_perturbed": 45,
+      "grade_main": {
+        "dim1_probability_band": 1,
+        "dim2_mechanism": 2,
+        "dim4_evidence_quality": 3,
+        "memorization_suspect_condition2": false
+      },
+      "grade_main_d3": {
+        "mapped_genre": "active",
+        "score": 2
+      },
+      "grade_pert": {
+        "dim1_probability_band": 0,
+        "dim2_mechanism": 2,
+        "dim4_evidence_quality": 3,
+        "d3": {
+          "mapped_genre": "active",
+          "score": 2
+        }
+      }
+    },
+    "case_03": {
+      "original_id": "T12",
+      "ticker": "LOGI",
+      "group": "treatment",
+      "p_original": 42,
+      "p_perturbed": 45,
+      "grade_main": {
+        "dim1_probability_band": 0,
+        "dim2_mechanism": 1,
+        "dim4_evidence_quality": 3,
+        "memorization_suspect_condition2": false
+      },
+      "grade_main_d3": {
+        "mapped_genre": "omission-estimate",
+        "score": 2
+      },
+      "grade_pert": {
+        "dim1_probability_band": 0,
+        "dim2_mechanism": 1,
+        "dim4_evidence_quality": 3,
+        "d3": {
+          "mapped_genre": "omission-estimate",
+          "score": 2
+        }
+      }
+    },
+    "case_04": {
+      "original_id": "C08",
+      "ticker": "GIS",
+      "group": "control",
+      "p_original": 25,
+      "p_perturbed": null,
+      "grade_main": {
+        "dim1_probability_band": 2,
+        "dim2_mechanism": null,
+        "dim4_evidence_quality": 3,
+        "memorization_suspect_condition2": false
+      },
+      "grade_main_d3": {
+        "mapped_genre": null,
+        "score": null
+      },
+      "grade_pert": null
+    },
+    "case_05": {
+      "original_id": "C05",
+      "ticker": "PERY",
+      "group": "control",
+      "p_original": 48,
+      "p_perturbed": null,
+      "grade_main": {
+        "dim1_probability_band": 1,
+        "dim2_mechanism": null,
+        "dim4_evidence_quality": 3,
+        "memorization_suspect_condition2": false
+      },
+      "grade_main_d3": {
+        "mapped_genre": null,
+        "score": null
+      },
+      "grade_pert": null
+    },
+    "case_06": {
+      "original_id": "T07",
+      "ticker": "MON",
+      "group": "treatment",
+      "p_original": 28,
+      "p_perturbed": 58,
+      "grade_main": {
+        "dim1_probability_band": 0,
+        "dim2_mechanism": 0,
+        "dim4_evidence_quality": 3,
+        "memorization_suspect_condition2": false
+      },
+      "grade_main_d3": {
+        "mapped_genre": null,
+        "score": 0
+      },
+      "grade_pert": {
+        "dim1_probability_band": 1,
+        "dim2_mechanism": 0,
+        "dim4_evidence_quality": 3,
+        "d3": {
+          "mapped_genre": "omission-estimate",
+          "score": 0
+        }
+      }
+    },
+    "case_07": {
+      "original_id": "C06",
+      "ticker": "XLNX",
+      "group": "control",
+      "p_original": 25,
+      "p_perturbed": null,
+      "grade_main": {
+        "dim1_probability_band": 2,
+        "dim2_mechanism": null,
+        "dim4_evidence_quality": 3,
+        "memorization_suspect_condition2": false
+      },
+      "grade_main_d3": {
+        "mapped_genre": null,
+        "score": null
+      },
+      "grade_pert": null
+    },
+    "case_08": {
+      "original_id": "T13",
+      "ticker": "HTZ",
+      "group": "treatment",
+      "p_original": 78,
+      "p_perturbed": 55,
+      "grade_main": {
+        "dim1_probability_band": 2,
+        "dim2_mechanism": 0,
+        "dim4_evidence_quality": 2,
+        "memorization_suspect_condition2": false
+      },
+      "grade_main_d3": {
+        "mapped_genre": "omission-estimate",
+        "score": 2
+      },
+      "grade_pert": {
+        "dim1_probability_band": 1,
+        "dim2_mechanism": 1,
+        "dim4_evidence_quality": 3,
+        "d3": {
+          "mapped_genre": "mixed",
+          "score": 1
+        }
+      }
+    },
+    "case_09": {
+      "original_id": "T16",
+      "ticker": "ICON",
+      "group": "treatment",
+      "p_original": 65,
+      "p_perturbed": 55,
+      "grade_main": {
+        "dim1_probability_band": 1,
+        "dim2_mechanism": 1,
+        "dim4_evidence_quality": 3,
+        "memorization_suspect_condition2": false
+      },
+      "grade_main_d3": {
+        "mapped_genre": "active",
+        "score": 1
+      },
+      "grade_pert": {
+        "dim1_probability_band": 1,
+        "dim2_mechanism": 2,
+        "dim4_evidence_quality": 3,
+        "d3": {
+          "mapped_genre": "active",
+          "score": 2
+        }
+      }
+    },
+    "case_10": {
+      "original_id": "C04",
+      "ticker": "R",
+      "group": "control",
+      "p_original": 58,
+      "p_perturbed": null,
+      "grade_main": {
+        "dim1_probability_band": 0,
+        "dim2_mechanism": null,
+        "dim4_evidence_quality": 2,
+        "memorization_suspect_condition2": false
+      },
+      "grade_main_d3": {
+        "mapped_genre": null,
+        "score": null
+      },
+      "grade_pert": null
+    },
+    "case_11": {
+      "original_id": "C02",
+      "ticker": "NUVA",
+      "group": "control",
+      "p_original": 45,
+      "p_perturbed": null,
+      "grade_main": {
+        "dim1_probability_band": 1,
+        "dim2_mechanism": null,
+        "dim4_evidence_quality": 3,
+        "memorization_suspect_condition2": false
+      },
+      "grade_main_d3": {
+        "mapped_genre": null,
+        "score": null
+      },
+      "grade_pert": null
+    },
+    "case_12": {
+      "original_id": "T28",
+      "ticker": "KHC",
+      "group": "treatment",
+      "p_original": 68,
+      "p_perturbed": 68,
+      "grade_main": {
+        "dim1_probability_band": 1,
+        "dim2_mechanism": 0,
+        "dim4_evidence_quality": 3,
+        "memorization_suspect_condition2": false
+      },
+      "grade_main_d3": {
+        "mapped_genre": "mixed",
+        "score": 1
+      },
+      "grade_pert": {
+        "dim1_probability_band": 1,
+        "dim2_mechanism": 0,
+        "dim4_evidence_quality": 3,
+        "d3": {
+          "mapped_genre": "active",
+          "score": 2
+        }
+      }
+    },
+    "case_13": {
+      "original_id": "T17",
+      "ticker": "MRVL",
+      "group": "treatment",
+      "p_original": 55,
+      "p_perturbed": 42,
+      "grade_main": {
+        "dim1_probability_band": 1,
+        "dim2_mechanism": 0,
+        "dim4_evidence_quality": 3,
+        "memorization_suspect_condition2": false
+      },
+      "grade_main_d3": {
+        "mapped_genre": "active",
+        "score": 2
+      },
+      "grade_pert": {
+        "dim1_probability_band": 0,
+        "dim2_mechanism": 0,
+        "dim4_evidence_quality": 3,
+        "d3": {
+          "mapped_genre": "omission-estimate",
+          "score": 0
+        }
+      }
+    },
+    "case_14": {
+      "original_id": "C03",
+      "ticker": "GRMN",
+      "group": "control",
+      "p_original": 32,
+      "p_perturbed": null,
+      "grade_main": {
+        "dim1_probability_band": 1,
+        "dim2_mechanism": null,
+        "dim4_evidence_quality": 3,
+        "memorization_suspect_condition2": false
+      },
+      "grade_main_d3": {
+        "mapped_genre": null,
+        "score": null
+      },
+      "grade_pert": null
+    },
+    "case_15": {
+      "original_id": "C07",
+      "ticker": "FORR",
+      "group": "control",
+      "p_original": 22,
+      "p_perturbed": null,
+      "grade_main": {
+        "dim1_probability_band": 2,
+        "dim2_mechanism": null,
+        "dim4_evidence_quality": 3,
+        "memorization_suspect_condition2": false
+      },
+      "grade_main_d3": {
+        "mapped_genre": null,
+        "score": null
+      },
+      "grade_pert": null
+    },
+    "case_16": {
+      "original_id": "C01",
+      "ticker": "MOS",
+      "group": "control",
+      "p_original": 30,
+      "p_perturbed": null,
+      "grade_main": {
+        "dim1_probability_band": 2,
+        "dim2_mechanism": null,
+        "dim4_evidence_quality": 3,
+        "memorization_suspect_condition2": false
+      },
+      "grade_main_d3": {
+        "mapped_genre": null,
+        "score": null
+      },
+      "grade_pert": null
+    }
+  },
+  "baselines_auc": {
+    "M": {
+      "auc": 0.571,
+      "n_treat": 6,
+      "n_ctrl": 7
+    },
+    "F": {
+      "auc": 0.542,
+      "n_treat": 6,
+      "n_ctrl": 4
+    },
+    "C": {
+      "auc": 0.571,
+      "n_treat": 8,
+      "n_ctrl": 7
+    },
+    "Sloan_abs": {
+      "auc": 0.589,
+      "n_treat": 8,
+      "n_ctrl": 7
+    },
+    "Piotroski": {
+      "auc": null,
+      "note": "실험군 미계산 — 대조군 전용 값만 존재 (AUC 불능)"
+    },
+    "evaluatee_primary": {
+      "auc": 0.7969,
+      "n_treat": 8,
+      "n_ctrl": 8
+    },
+    "evaluatee_appendix": {
+      "auc": 0.8438,
+      "n_treat": 8,
+      "n_ctrl": 8
+    }
+  },
+  "screen_values": {
+    "treatment": {
+      "T21": {
+        "M": -3.2920438197280086,
+        "F": 0.5074354766531907,
+        "C": 2,
+        "Sloan": -0.16560607222264817,
+        "Piotroski": null
+      },
+      "T11": {
+        "M": -1.5270821152956189,
+        "F": 1.626433492399362,
+        "C": 4,
+        "Sloan": 0.06633116939523624,
+        "Piotroski": null
+      },
+      "T12": {
+        "M": -4.009151041765871,
+        "F": 0.3685984969434358,
+        "C": 1,
+        "Sloan": -0.21366090871524065,
+        "Piotroski": null
+      },
+      "T07": {
+        "M": -2.426106855927867,
+        "F": null,
+        "C": 4,
+        "Sloan": -0.01617054610564011,
+        "Piotroski": null
+      },
+      "T13": {
+        "M": null,
+        "F": null,
+        "C": 0,
+        "Sloan": -0.1355576592334393,
+        "Piotroski": null
+      },
+      "T16": {
+        "M": null,
+        "F": 0.7003029385249269,
+        "C": 4,
+        "Sloan": -0.0034108641163674595,
+        "Piotroski": null
+      },
+      "T28": {
+        "M": -1.8267496918962767,
+        "F": 0.6419185060457099,
+        "C": 5,
+        "Sloan": 0.0870085413273954,
+        "Piotroski": null
+      },
+      "T17": {
+        "M": -2.785483950734183,
+        "F": 1.226011859099635,
+        "C": 2,
+        "Sloan": -0.051800567726035536,
+        "Piotroski": null
+      }
+    },
+    "control": {
+      "C08": {
+        "M": -2.3789080104570326,
+        "F": 1.6628088692667498,
+        "C": 6,
+        "Sloan": -0.027080321759992067,
+        "Piotroski": 4
+      },
+      "C05": {
+        "M": -3.1935606088760755,
+        "F": 0.4688313209530917,
+        "C": 1,
+        "Sloan": -0.13266710928316247,
+        "Piotroski": 5
+      },
+      "C06": {
+        "M": -2.7110987137513325,
+        "F": null,
+        "C": 2,
+        "Sloan": -0.02869814987075526,
+        "Piotroski": 8
+      },
+      "C04": {
+        "M": -2.9631357331384183,
+        "F": 0.6532145612507625,
+        "C": 3,
+        "Sloan": -0.11310377270284544,
+        "Piotroski": 6
+      },
+      "C02": {
+        "M": -2.8165705153029155,
+        "F": null,
+        "C": 1,
+        "Sloan": -0.11099146740743752,
+        "Piotroski": 6
+      },
+      "C03": {
+        "M": -2.6944546092798998,
+        "F": null,
+        "C": 4,
+        "Sloan": -0.030642609592504658,
+        "Piotroski": 6
+      },
+      "C07": {
+        "M": -2.8277160754126656,
+        "F": 0.3908864735388269,
+        "C": 0,
+        "Sloan": -0.04879515695140487,
+        "Piotroski": 7
+      },
+      "C01": {
+        "M": null,
+        "F": null,
+        "C": null,
+        "Sloan": null,
+        "Piotroski": null
+      }
+    }
+  }
+}
