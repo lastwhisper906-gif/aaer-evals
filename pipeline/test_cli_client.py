@@ -33,7 +33,8 @@ payload = sys.stdin.read()
 n = len([f for f in os.listdir(stub_dir) if f.startswith("call_")])
 with open(os.path.join(stub_dir, f"call_{n:02d}.json"), "w") as f:
     json.dump({"argv": sys.argv[1:], "cwd": os.getcwd(),
-               "config_dir": os.environ.get("CLAUDE_CONFIG_DIR"),
+               "env_nonessential": os.environ.get("DISABLE_NON_ESSENTIAL_MODEL_CALLS"),
+               "env_traffic": os.environ.get("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"),
                "stdin": payload}, f)
 responses = json.load(open(os.path.join(stub_dir, "responses.json")))
 r = responses[min(n, len(responses) - 1)]
@@ -93,17 +94,16 @@ def test_pinned_flags_isolated_cwd_and_config(stub, tmp_path):
     assert argv[0] == "-p"
     for flag, val in [("--model", "claude-sonnet-5"), ("--output-format", "json"),
                       ("--max-turns", "1"),
+                      ("--setting-sources", ""), ("--tools", ""),
                       ("--disallowedTools", cli_client.DISALLOWED_TOOLS),
                       ("--system-prompt", "SYSTEM PROMPT")]:
         assert argv[argv.index(flag) + 1] == val, flag
     assert json.loads(argv[argv.index("--json-schema") + 1]) == SCHEMA
     assert "--strict-mcp-config" in argv, "MCP 0개 강제 플래그 누락"
     assert call["stdin"] == '{"case": 1}'
-    # 격리: 작업 디렉토리·설정 디렉토리 모두 저장소 밖 + 설정 디렉토리는 호출 후 삭제
+    # 격리: 작업 디렉토리는 저장소 밖 임시 + 하우스키핑 모델 호출 차단 env
     assert not Path(call["cwd"]).resolve().is_relative_to(REPO)
-    cfg = Path(call["config_dir"])
-    assert not cfg.resolve().is_relative_to(Path.home() / ".claude")
-    assert not cfg.exists(), "임시 CLAUDE_CONFIG_DIR가 호출 후 삭제되지 않음"
+    assert call["env_nonessential"] == "1" and call["env_traffic"] == "1"
     # 로그 계약 (SR 11-7)
     log = json.loads((tmp_path / "logs" / "t.json").read_text(encoding="utf-8"))
     assert log["session_id"] == "sess-test" and log["pin_ok"] is True

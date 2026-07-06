@@ -295,6 +295,22 @@ Review Packet 00에 오버라이드 경로와 함께 기재한다.
   (격리 프로브 + verbose 트레이스 grep)이 실증한다 — 기제를 신뢰하지 않고
   결과를 검사한다.
 
+### 격리 기제 최종 확정 (2026-07-06, 파일럿 2차 — J13-c)
+
+- **실증 2**: 최소 인증 시드(J13-b)도 "Not logged in" — 비기본 CLAUDE_CONFIG_DIR
+  에서는 키체인 자격 증명 해석이 성립하지 않음 (logs/run_20260706T120836Z).
+  CLAUDE_CONFIG_DIR 계열 기제 전체 기각. 자격 증명 파일 복사(토큰 이동)는
+  INVARIANT 6 위험으로 시도하지 않음.
+- **최종 기제 (플래그 기반 격리)**: 기본 설정 디렉토리(=RP-04가 감사한 구성) 유지 +
+  `--setting-sources ""`(설정·훅 미로딩) + `--strict-mcp-config`(MCP 0) +
+  `--tools ""`(내장 도구 0) + `--system-prompt` 전면 대체(메모리·CLAUDE.md 조립
+  자체가 없음) + cwd = repo 밖 임시 디렉토리 + env
+  `DISABLE_NON_ESSENTIAL_MODEL_CALLS=1`/`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1`
+  (하우스키핑 haiku 호출 제거 — 실증: modelUsage가 핀 단독이 됨).
+- **인증 실증**: 이 구성으로 sonnet-5 응답 정상 수신 (subscriptionType=max,
+  `claude auth status` = claude.ai 구독 OAuth).
+- 격리의 최종 판정은 여전히 Phase 4 게이트 (프로브 + 트레이스 grep) 소관.
+
 ### 소유자 지시문 (2026-07-06, verbatim)
 
 ```text

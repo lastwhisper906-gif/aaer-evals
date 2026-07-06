@@ -3,11 +3,14 @@
 러너 3종(runner / probe_runner / grader_runner)이 공유하는 유일한 호출 경로.
 설계 계약 (decisions_log "freeze 개정 #2"의 소유자 지시문 PHASE 2):
 
-  격리:
+  격리 (플래그 기반 — CLAUDE_CONFIG_DIR 방식은 구독 OAuth 차단이 실증되어 기각,
+  decisions_log 개정 #2 부록 J13-b/c):
   - 호출별 작업 디렉토리 = 저장소 밖 fresh 임시 디렉토리 (호출 후 삭제).
-  - CLAUDE_CONFIG_DIR = 빈 임시 디렉토리 — 전역 설정·메모리·훅·MCP 로딩 차단.
+  - --setting-sources "" + --strict-mcp-config + --tools "" + --system-prompt 대체
+    → 설정·훅·MCP·내장 도구·메모리·CLAUDE.md 전면 차단 (게이트가 프로브로 실증).
   - ANTHROPIC_API_KEY가 환경에 존재하면 즉시 예외 (구독 OAuth 전용 — INVARIANT 4).
-  - 도구 전면 차단 플래그 + --max-turns 1 + --json-schema 구조화 출력.
+  - 하우스키핑 모델 호출 차단 env → 서빙 모델 = 핀 단독.
+  - --max-turns 1 + --json-schema 구조화 출력.
   - 송출 전 페이로드 가드: forbid_markers가 주어지면 페이로드에 마커가 하나라도
     있으면 호출 없이 예외 (정답지·카나리의 피평가자 유출 차단 — 값 수준 스캔).
 
@@ -120,25 +123,17 @@ def guard_payload(payload: str, forbid_markers: list[str]) -> None:
         raise PayloadGuardError(f"페이로드 금지 마커 {hits} — 송출 중단 (호출 미발생)")
 
 
-# 최소 인증 시드에 복사를 허용하는 키 — 이 밖의 키(설정·MCP·프로젝트·캐시)는 절대
-# 복사하지 않는다. 토큰은 macOS 키체인에 있어 파일로는 이동하지 않는다 (INVARIANT 6).
-AUTH_SEED_KEYS = ("oauthAccount", "hasCompletedOnboarding", "hasAvailableSubscription")
-
-
-def seed_subscription_auth(cfg_dir: str) -> None:
-    """빈 CLAUDE_CONFIG_DIR는 구독 로그인 상태(.claude.json)를 차단함이 실증됨
-    (2026-07-06 파일럿, decisions_log 개정 #2 부록). 최소 시드: oauthAccount 계열
-    3키만 복사 — settings/hooks/MCP/memory/projects는 여전히 부재 = 격리 유지."""
-    src = Path.home() / ".claude.json"
-    if not src.is_file():
-        raise RuntimeError("~/.claude.json 없음 — 구독 로그인 상태를 찾을 수 없다 "
-                           "(대화형 세션에서 claude /login 후 재실행)")
-    full = json.loads(src.read_text(encoding="utf-8"))
-    seed = {k: full[k] for k in AUTH_SEED_KEYS if k in full}
-    if "oauthAccount" not in seed:
-        raise RuntimeError("~/.claude.json에 oauthAccount 부재 — 구독 OAuth 미로그인")
-    (Path(cfg_dir) / ".claude.json").write_text(
-        json.dumps(seed, ensure_ascii=False), encoding="utf-8")
+# 격리 = 플래그 기반 (2026-07-06 실증 확정 — decisions_log 개정 #2 부록 J13-c):
+# CLAUDE_CONFIG_DIR 격리(빈 디렉토리·최소 시드 모두)는 구독 OAuth를 차단함이 실증되어
+# 기각. 대신 기본 설정 디렉토리(=RP-04가 감사한 그 구성) + 플래그 전면 차단:
+#   --setting-sources ""  → 설정 미로딩 (hooks·env 주입 차단)
+#   --strict-mcp-config   → MCP 0개
+#   --tools ""            → 내장 도구 0개
+#   --system-prompt       → 기본 시스템 프롬프트 조립(메모리·CLAUDE.md) 전면 대체
+#   cwd = repo 밖 임시     → 프로젝트 컨텍스트 원천 부재
+# + 하우스키핑 모델 호출 차단 env (서빙 모델 = 핀 단독임을 게이트가 검증):
+ISOLATION_ENV = {"DISABLE_NON_ESSENTIAL_MODEL_CALLS": "1",
+                 "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"}
 
 
 def _served_models(model_usage: dict) -> list[str]:
@@ -174,7 +169,9 @@ def call_model(model: str,
            "--model", model,
            "--output-format", "json",
            "--max-turns", "1",
-           "--strict-mcp-config",  # --mcp-config 미제공 + 이 플래그 = MCP 0개 강제
+           "--setting-sources", "",   # user/project/local 설정 미로딩 → hooks·env 주입 차단
+           "--strict-mcp-config",     # --mcp-config 미제공 + 이 플래그 = MCP 0개 강제
+           "--tools", "",             # 내장 도구 전면 비활성 (disallowedTools는 이중 방어)
            "--disallowedTools", DISALLOWED_TOOLS,
            "--system-prompt", system_prompt,
            "--json-schema", json.dumps(schema, ensure_ascii=False)]
@@ -188,10 +185,8 @@ def call_model(model: str,
 
     for attempts in (1, 2):
         work_dir = tempfile.mkdtemp(prefix="aaer-run-")
-        cfg_dir = tempfile.mkdtemp(prefix="aaer-cfg-")
         env = dict(os.environ)
-        env["CLAUDE_CONFIG_DIR"] = cfg_dir
-        seed_subscription_auth(cfg_dir)
+        env.update(ISOLATION_ENV)
         try:
             proc = subprocess.run(cmd, input=user_payload, cwd=work_dir, env=env,
                                   capture_output=True, text=True,
@@ -232,7 +227,6 @@ def call_model(model: str,
             return result
         finally:
             shutil.rmtree(work_dir, ignore_errors=True)
-            shutil.rmtree(cfg_dir, ignore_errors=True)
 
     wall = time.monotonic() - t0
     result = _finish(model, last.get("obj") or {}, None, last["fail_reason"], attempts, wall,
