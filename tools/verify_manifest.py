@@ -93,6 +93,8 @@ def build_manifest() -> dict:
             continue
         rel = path.relative_to(DATA_DIR)
         ticker = rel.parts[0]
+        if ticker == "_rp08":  # 자체 매니페스트 관할 (verify()의 주석 참조)
+            continue
         entry = {
             "path": str(rel),
             "size": path.stat().st_size,
@@ -181,6 +183,10 @@ def verify(m: dict) -> list[str]:
         str(p.relative_to(DATA_DIR)): p
         for p in DATA_DIR.rglob("*")
         if p.is_file() and p.name != ".DS_Store"
+        # _rp08(RP-08 대조군 풀 원시)은 자체 기준선이 별도 커밋됨 —
+        # runs/rp08/control_pool_raw/MANIFEST.sha256 (validate_control_input 층2가
+        # 전수 재해시 검증). 이중 관할을 피하기 위해 이 매니페스트의 스코프 밖.
+        and p.relative_to(DATA_DIR).parts[0] != "_rp08"
     }
     recorded = {f["path"]: f for f in m["files"]}
     for path in sorted(recorded.keys() - on_disk.keys()):

@@ -31,6 +31,13 @@ runs/hardening/ 커밋. 발행 수치 재현·블라인드·매니페스트는 C
    강도 서열 확인 (RP-06 §5).
 6. **발행 결정** (소유자 확정 사항 — §7). GO 시 README.md가 발행 관문
    (보고 언어 제약 3-6 적용 완료 상태).
+7. **RP-08 아침 게이트** (2026-07-07 야간 산출, D19 사전 승인) —
+   `review_packets/RP-08_selection_memo.md` §0 순서대로: 메모 통독 →
+   스팟체크 3건(T12 Fortinet → T17 First Solar → T28 Campbell) →
+   `docs/CONTROL_CRITERIA_v1.md` 서명/수정 (v1.1 개정 후보 2건 포함) →
+   `runs/rp08/control_group_PROPOSED.json` 서명/기각. **서명 전 채점
+   파이프라인 진입 금지** (status 필드 강제). 기각 재실행은 분 단위
+   (memo §0 명령). ①~⑥과 독립 — RP-05 결과·RP-01 확정 대조군 불변.
 
 ## 유예 등록부 (DEFERRED — 실행 금지, 소유자 지시로만 개시)
 
