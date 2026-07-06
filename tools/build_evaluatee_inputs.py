@@ -36,7 +36,14 @@ WHITELIST = ["case_id", "ticker", "cik", "company_name", "cutoff_date"]
 # 중립 ID 셔플 시드 — 고정값이어야 재생성 대조가 성립한다. 시드 자체는 비밀이
 # 아니다(매핑 파일이 이미 채점 전용 경로에 평문으로 존재): 방어선은 시드의
 # 은닉이 아니라 피평가자에게 매핑·candidates.json을 주지 않는 물리적 분리다.
-NEUTRAL_ID_SEED = 20260705
+NEUTRAL_ID_SEED = 20260706  # v1.2 재셔플 (2-7: 대조군 편입 후 순번-그룹 상관 재차단)
+
+# v1.2 실험 집합 (freeze 대상): 실험군 8 (소유자 확정 2026-07-06) + 대조군 8 (D17 선정).
+# 30건 풀 전체가 아니라 이 16건만 피평가자 파일에 들어간다.
+EXPERIMENT_CASE_IDS = [
+    "T07", "T11", "T12", "T13", "T16", "T17", "T21", "T28",
+    "C01", "C02", "C03", "C04", "C05", "C06", "C07", "C08",
+]
 
 # 컷오프 이후 정보(후신 사명) 제거 — "(n/k/a …)", "(now …)", "; n/k/a …" 꼴.
 # f/k/a(개명 '이전' 사명 = 과거 정보)는 서명 결정대로 유지.
@@ -55,6 +62,8 @@ def primary_ticker(ticker: str) -> str:
 def build() -> tuple[dict, dict]:
     """(피평가자 파일 payload, 채점용 ID 매핑 payload)를 반환. 둘 다 결정론."""
     candidates = json.loads(CANDIDATES.read_text(encoding="utf-8"))["candidates"]
+    candidates = [c for c in candidates if c["case_id"] in EXPERIMENT_CASE_IDS]
+    assert len(candidates) == len(EXPERIMENT_CASE_IDS), "실험 집합 16건 미충족 — candidates.json 확인"
     ordered = sorted(candidates, key=lambda c: c["case_id"])
     random.Random(NEUTRAL_ID_SEED).shuffle(ordered)
 

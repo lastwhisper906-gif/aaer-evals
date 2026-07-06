@@ -87,14 +87,16 @@ def _iso(s):
     return datetime.date.fromisoformat(s)
 
 
-def load_facts(ticker: str, cutoff: datetime.date):
+def load_facts(ticker: str, cutoff: datetime.date, xbrl_dir=None):
     """companyfacts JSON들(다중 CIK 합산) → point-in-time fact 테이블.
 
     반환: {tag: {end_date: {"val": v, "filed": d, "accn": a, "form": f, "start": s}}}
     같은 (tag, end)는 filed <= cutoff 중 최신 filed 승리 (tie: accn 사전순 최대).
+    xbrl_dir 지정 시(대조군 후보 등) 그 디렉토리의 *CIK*.json을 사용.
     """
-    xbrl_dir = DATA_DIR / ticker / "xbrl"
-    files = sorted(xbrl_dir.glob("CIK*.json"))
+    if xbrl_dir is None:
+        xbrl_dir = DATA_DIR / ticker / "xbrl"
+    files = sorted(Path(xbrl_dir).glob("*CIK*.json"))
     if not files:
         raise FileNotFoundError(f"{xbrl_dir}: companyfacts 없음 — tools/fetch_xbrl_facts.py 실행")
     table: dict[str, dict] = {}
@@ -308,6 +310,39 @@ def montier_c(v_t, v_p):
     return flags, (sum(known) if known else None), [k for k, v in flags.items() if v is None]
 
 
+def piotroski(v_t, v_p, v_pp):
+    """Piotroski F-Score 9점 (2-6: '재무 건전한데 M-플래그' 대조군 식별용).
+
+    판정 불능 항목은 None(합산 제외)로 보고. avg TA는 기말 2개 평균, t-2 결측 시 근사.
+    """
+    ta_t, ta_p = v_t["total_assets"], v_p["total_assets"]
+    ta_pp = v_pp["total_assets"] if v_pp else None
+    avg_t = (ta_t + ta_p) / 2 if None not in (ta_t, ta_p) else None
+    avg_p = ((ta_p + ta_pp) / 2 if ta_pp is not None else ta_p)
+    roa_t = _div(v_t["ni"], avg_t)
+    roa_p = _div(v_p["ni"], avg_p)
+    cfo_ta = _div(v_t["cfo"], avg_t)
+    gm = lambda v: _div((v["sales"] - v["cogs"]) if None not in (v["sales"], v["cogs"]) else None, v["sales"])  # noqa: E731
+    turn = lambda v, ta: _div(v["sales"], ta)  # noqa: E731
+    lev_t = _div(v_t["lt_debt"], avg_t)
+    lev_p = _div(v_p["lt_debt"], avg_p)
+    liq_t = _div(v_t["current_assets"], v_t["current_liabilities"])
+    liq_p = _div(v_p["current_assets"], v_p["current_liabilities"])
+    checks = {
+        "f1_roa_pos": None if roa_t is None else roa_t > 0,
+        "f2_cfo_pos": None if cfo_ta is None else cfo_ta > 0,
+        "f3_roa_up": None if None in (roa_t, roa_p) else roa_t > roa_p,
+        "f4_accrual": None if None in (cfo_ta, roa_t) else cfo_ta > roa_t,
+        "f5_lev_down": None if None in (lev_t, lev_p) else lev_t <= lev_p,
+        "f6_liq_up": None if None in (liq_t, liq_p) else liq_t > liq_p,
+        "f7_no_issue": (v_t["issue_stock"] or 0) == 0,
+        "f8_margin_up": None if None in (gm(v_t), gm(v_p)) else gm(v_t) > gm(v_p),
+        "f9_turnover_up": None if None in (turn(v_t, avg_t), turn(v_p, avg_p)) else turn(v_t, avg_t) > turn(v_p, avg_p),
+    }
+    known = [v for v in checks.values() if v is not None]
+    return checks, (sum(known) if known else None), [k for k, v in checks.items() if v is None]
+
+
 def sloan(v_t, v_p):
     if None in (v_t["ni"], v_t["cfo"], v_t["total_assets"], v_p["total_assets"]):
         return None
@@ -339,6 +374,7 @@ def run_case(case: dict) -> dict:
     b_vars, m, b_miss = beneish(v_t, v_p, notes)
     f_vars, f, f_miss = dechow_f(v_t, v_p, v_pp, notes)
     c_flags, c, c_miss = montier_c(v_t, v_p)
+    p_checks, pio, p_miss = piotroski(v_t, v_p, v_pp)
     s = sloan(v_t, v_p)
 
     result.update({
@@ -350,6 +386,7 @@ def run_case(case: dict) -> dict:
                      "flag_1_4": None if f is None else f > 1.4},
         "montier_c": {"flags": c_flags, "c_score": c, "undetermined": c_miss,
                       "flag_ge_4": None if c is None else c >= 4},
+        "piotroski": {"checks": p_checks, "f_score_9": pio, "undetermined": p_miss},
         "sloan_accruals": {"value": s,
                            "flag_gt_0_10": None if s is None else abs(s) > 0.10,
                            "convention": "|accruals/avgTA| > 0.10 (상위 십분위 관행 근사)"},
