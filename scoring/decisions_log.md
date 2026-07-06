@@ -506,3 +506,182 @@ the failure-test outcome in one sentence with the key numbers, cost evidence
 (auth route + total_cost_usd sum as reference), and the exact list of what
 now awaits human review. Nothing in this cycle is presented as human-signed.
 ```
+
+---
+
+## 소유자 지시 addendum — RP-06 결정-핵심 강화 사이클 (2026-07-06, 결과 후, verbatim)
+
+> **성격**: 소유자 지시에 의한 **post-results addendum** — freeze 개정이 아니다
+> (고정 기준 무변경). RP-05 §1 사전 등록 판정은 **불변(IMMUTABLE)** — 본 사이클의
+> 어떤 작업도 이를 재계산·재서술·재구성하지 않는다. 신규 결과는 전부
+> `review_packets/RP-06_hardening.md` / `runs/hardening/`.
+> 이 커밋의 타임스탬프가 본 지시문이 승인하는 모든 행동에 선행한다 (GA-001 원칙).
+>
+> **착수 전 실측 (사전 승인 조건 대조)**: 하네스 `claude --version` = **2.1.201**
+> (핀 일치 — 격리 구성 무변경 조건 성립) · `ANTHROPIC_API_KEY` 환경 부재 확인 ·
+> 작업 트리 clean · 인증 = 구독 OAuth. 격리 구성은 J13-c 최종 확정분을 그대로
+> 사용한다 (`pipeline/cli_client.py` 무수정 — 본 사이클 스크립트는 전부 그 위의
+> 얇은 래퍼).
+
+```text
+=== OWNER DIRECTIVE — DECISION-CRITICAL HARDENING (RP-06: robustness, verification, publication readiness) ===
+Record this directive VERBATIM in decisions_log.md as an owner-directed
+post-results addendum (NOT a freeze amendment — no frozen criterion changes).
+RP-05 §1 is IMMUTABLE: nothing in this cycle recomputes, rewords, or reframes
+the pre-registered verdict. All new results go to
+review_packets/RP-06_hardening.md.
+
+Scope rule for this cycle: only work that (a) informs or defends one of the
+two pending owner decisions — publication framing, grade finalization — or
+(b) makes the results third-party verifiable. Anything else goes to the
+deferred register, not into this cycle.
+
+## PRE-AUTHORIZATION (owner signature, effective upon submission of this directive)
+- I pre-authorize 78 new model calls total (A1: 8, A2: 6, A3: 64),
+  subscription OAuth only, using EXACTLY the J13-c final isolation
+  configuration (--setting-sources "" --strict-mcp-config --tools ""
+  --system-prompt full replacement, temp cwd outside the repo,
+  nonessential-traffic-disable env vars) and the frozen model pins
+  (evaluatee claude-sonnet-5; grader claude-fable-5 with logged
+  claude-opus-4-8 fallback; A2 uses claude-opus-4-8 by design).
+- Sequencing is mandatory: A3 runs only after A1 completes, because A3's
+  decomposition analysis consumes A1's recognition verdict.
+- Outside this authorization — halt and report immediately: any
+  isolation-config change, any pin change, anything that would touch frozen
+  criteria or RP-05 §1.
+
+## GLOBAL RULES
+- Same invariants as the amendment #2 cycle: assert ANTHROPIC_API_KEY absent
+  on every call; all model calls outside the repo; neutral IDs on all
+  payloads; no secrets in logs or commits; idempotent execution (skip
+  validated outputs, clear resume message on rate-limit halt); atomic commit
+  at the end of every item.
+- Every discretionary judgment → judgment index (J20+) with override costs.
+- Existing runs/ outputs are read-only. New outputs → runs/hardening/.
+
+## PHASE A — Model calls (78 total, in this order)
+
+### A1 — Recognition probes on PERTURBED treatment inputs (8 calls; run first)
+RP-05 measured recognition on original inputs only (6/8 → D7). Run the
+frozen recognition-probe protocol, UNMODIFIED, on the perturbed treatment
+inputs.
+- If recognition persists: the caveat is mandatory — perturbation disrupts
+  memorized NUMBERS, not IDENTITY recognition. Write it verbatim into RP-06
+  and methodology_limitations, and flag that the publication claim must
+  carry it.
+- If recognition drops: quantify the drop; this strengthens the
+  perturbed-primary framing.
+- If the frozen probe protocol is ambiguous about perturbed inputs: apply it
+  unmodified, log the interpretation as J20+, do not redesign the probe.
+- Either outcome is valuable. Report what is, not what flatters the project.
+
+### A2 — Cross-family grader agreement spot-check (6 calls)
+Regrade with claude-opus-4-8, identical frozen grading payloads: the 5
+MODEL-attributed error cases from RP-05 §6 + 1 randomly selected non-flagged
+case (log the RNG seed). Report band agreement rate, score deltas, and any
+error-attribution flips. Outputs are labeled SPOT-CHECK evidence for the
+owner's finalization step — never merged into scoring/grades/.
+
+### A3 — Sampling-variance quantification, k=5 (64 calls; only after A1)
+Resolves L-3 and informs the publication decision itself: the current
+headline rests on one draw per case from a nondeterministic model.
+4 additional draws per case on the PERTURBED inputs, all 16 cases (the
+existing draw counts as draw 1).
+- Per case: mean, σ, min–max across 5 draws — this per-case uncertainty band
+  is also a core feature of the future monitor product; present it as a
+  table keyed by neutral ID + revealed name.
+- Recompute the failure-test statistics (rank-sum p, median separation, AUC)
+  (i) per draw and (ii) on per-case median scores → report each statistic's
+  distribution across draws as the sampling-uncertainty band. State plainly
+  whether the RP-05 headline survives re-drawing.
+- Decomposition, using A1's verdict: compare within-case sampling σ against
+  the original-vs-perturbed deltas from RP-05 §3 and conclude whether the
+  delta instability (−30/+23pp) is explained by sampling noise, by
+  memorization disruption, or remains unresolved at k=5. Do not overclaim —
+  if unresolved, say so and state what k would resolve it.
+- Framing everywhere: "post-hoc robustness analysis quantifying L-3". The
+  RP-05 §1 pre-registered verdict stands unchanged regardless of outcome;
+  what this analysis changes is the confidence the owner can attach to it.
+
+## PHASE B — Zero-call value work
+
+### B1 — Grading finalization workbench → review_packets/RP-06_grading_workbench.md
+One compact section per graded case (26): neutral ID + revealed name,
+evaluatee misstatement_probability + top-3 ranked hypotheses, grade + rubric
+band + grader rationale (≤5 quoted lines), A2 delta where applicable,
+error-taxonomy tag, and an empty owner sign-off line
+(☐ finalize / ☐ override + reason).
+- The 5 MODEL-attributed cases: prepend a SKEPTICAL-REVIEW flag with one
+  sentence on what self-serving grading would look like in that specific case.
+- The 2 UNCLASSIFIED errors: propose a classification each with evidence
+  excerpts, clearly marked PROPOSAL — the decision is the owner's.
+- Optimize for review speed: a clean case should be clearable in under two
+  minutes.
+
+### B2 — tools/reproduce_analysis.py (third-party verifiability)
+Recomputes every number in RP-05 §1–§5 (p, separation, σ, AUC, baseline
+comparison) purely from committed runs/ artifacts — zero API calls,
+deterministic, prints a PASS/FAIL diff against the published values. Extend
+it to cover the A3 statistics once they exist. CI-wired: this test depends
+only on committed artifacts, so under the f4f8f73 schema-only convention it
+must NOT be skipped in CI.
+
+### B3 — tools/verify_blindness.py (integrity verifier, CI-wired)
+(a) git-history proof that the grading commit (03b91aa) precedes any
+    artifact containing label joins;
+(b) forbidden-substring / company-name / ticker scan over all evaluatee
+    payload records and grade records (reuse the frozen forbidden list);
+(c) canary GUIDs absent from all model outputs, including runs/hardening/;
+(d) sha256 manifest of everything under runs/ → runs/MANIFEST.sha256,
+    committed — tamper-evidence for the raw data.
+
+### B4 — README.md (currently absent — the publication front door)
+One page: purpose (the conflict-of-interest white space one paragraph);
+headline stated PERTURBED-FIRST — AUC 0.797, p=0.0226, 19.0pp — with D7 6/8
+disclosed in the same sentence, plus the A3 uncertainty band and, if A1
+requires it, the identity-recognition caveat; governance map (PROJECT.md →
+CLAUDE.md → decisions_log → GATE_PACKAGE → review_packets); "reproduce our
+numbers" instructions (B2/B3); limitations pointer; and an honest "what this
+is not" paragraph (n=16, single analyst, harness-mediated evaluatee,
+nondeterministic sampling, not investment advice).
+
+### B5 — Audit-trail closures
+(a) methodology_limitations, J13-e entry: add the causal line — currentDate
+    injection weakens point-in-time framing on the harness path; the
+    consequence (memorized retrieval) was directly measured by the
+    recognition probes and D7 fired, so the design absorbed the risk.
+(b) sr11-7_memo.md addendum: one paragraph on f4f8f73 — the only
+    post-results code change; CI payload-discipline tests now skip without
+    the corpus, enforcement moved to the local pre-run gate; B2/B3 restore
+    CI-side, artifact-only enforcement.
+(c) review_packets/INDEX.md: resolve the RP-03 numbering gap from git
+    history — one explanatory line if intentional, restore the packet if
+    not. Silent gaps are audit smells. Investigate history before writing
+    the explanation.
+(d) overrides.md: draft the J13-b/c ratification entry (third isolation
+    mechanism adopted under execution-layer discretion after both pinned
+    mechanisms were empirically rejected; isolation gate 5/5 PASS as the
+    evidence), marked "PENDING OWNER SIGNATURE — UNSIGNED", with a
+    signature block. Do not sign it. Do not mark it resolved.
+
+### B6 — HANDOFF.md: the single ordered owner queue
+① sign B5(d) ② confirm Console dashboard $0.00 (check C) ③ workbench
+review, MODEL-5 cases first ④ finalize 26 grades ⑤ read A1/A3 outcomes and
+set the publication framing (including whether the identity caveat joins the
+headline) ⑥ publication decision. State explicitly that everything else in
+the repo is now machine-verified (B2/B3) or owner-pending.
+
+## DEFERRED REGISTER (record in HANDOFF, do not execute)
+- D-1: paper / public monitor write-up draft — after queue steps ④ and ⑤,
+  not before (framing depends on A1/A3 and finalized grades).
+- D-2: k escalation beyond 5 — only if A3's pooled decomposition is
+  inconclusive AND publication is GO.
+
+## DELIVERABLE
+Final report to the owner: per-item completion status; four sentences —
+A1 verdict (does perturbation de-identify?), A2 agreement rate, A3 headline
+survival under re-drawing + uncertainty band, and what the owner queue now
+blocks on; total call count + total_cost_usd sum (reference only — billing
+is determined by the auth route); git-diff proof that RP-05 §1 and
+scoring/grades/ are untouched.
+```
