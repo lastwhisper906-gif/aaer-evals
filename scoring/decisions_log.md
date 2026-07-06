@@ -685,3 +685,24 @@ blocks on; total call count + total_cost_usd sum (reference only — billing
 is determined by the auth route); git-diff proof that RP-05 §1 and
 scoring/grades/ are untouched.
 ```
+
+## D19 — RP-08 대조군 재선정: 야간 실행 소유자 사전 승인 (2026-07-07, 서명 후행 구조)
+
+소유자 지시(2026-07-07 세션 지시문, "OWNER DECISION ON RECORD")에 따라 기록:
+소유자는 **미서명 DRAFT 기준(docs/CONTROL_CRITERIA_v1.md) 하에서의 야간 대조군
+선정 실행을 명시 승인**했고, 소유자 서명이 선정에 **선행하지 않고 후행**함을
+수용했다. 이 인가를 보상하는 무결성 설계 (지시문 원문의 4항):
+
+1. 기준은 **어떤 풀 조회보다 먼저 커밋** (타임스탬프 증명 — 본 결정과 criteria가
+   같은 커밋에 들어가며, 풀 수집 산출물은 이후 커밋에만 존재).
+2. 선정은 채점 존재 이전에 완결 (이번 실행에서 피평가자 호출 0건).
+3. 선정 그룹은 **PROPOSED 상태 전용** — 소유자 서명 전 어떤 채점 파이프라인에도
+   진입 불가 (사용 전 거부권 게이트).
+4. 모든 선정 판단은 개별 서면 근거 (review_packets/RP-08_selection_memo.md).
+
+아침 게이트(소유자): 메모 검토 → [DISCRETIONARY] 스팟체크 → CONTROL_CRITERIA_v1
+서명 또는 수정 → control_group_PROPOSED 서명 또는 기각. 기각 경로 비용: 분 단위
+재실행 명령이 criteria §6에 명시.
+
+범위 주석: 본 결정은 RP-01 확정 대조군·RP-05 결과(불변)를 건드리지 않는다.
+D17은 소유자가 v1 기준에 서명하는 경우에 한해 RP-08 용도로 대체된다.
