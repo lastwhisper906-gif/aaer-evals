@@ -1,50 +1,61 @@
-# HANDOFF.md — 세션 인수인계 (최종 갱신: 2026-07-06, 실행 사이클 완결)
+# HANDOFF.md — 세션 인수인계 (최종 갱신: 2026-07-07, RP-06 강화 사이클 완결)
 
-> 다음 세션: CLAUDE.md → PROJECT.md → 이 문서 → `review_packets/RP-05_results.md`.
-> 이번 사이클 거버넌스: GA-001 (비동기 review packet) + freeze 개정 #2 (실행층 =
-> Claude Code v2.1.201 구독 헤드리스 — 소유자 지시문 verbatim은 decisions_log).
+> 다음 세션: CLAUDE.md → PROJECT.md → 이 문서 → `review_packets/RP-06_hardening.md`.
+> 거버넌스: GA-001 + freeze 개정 #2 + **RP-06 소유자 addendum** (decisions_log
+> 말미 verbatim — 기준 무변경, RP-05 §1 불변).
 
-## 현재 위치: **결과가 존재한다. 다음은 실행이 아니라 인간 검토다.**
+## 현재 위치: **저장소의 나머지는 전부 기계 검증(B2/B3) 또는 소유자 대기다.**
 
-본 실행 완료 (2026-07-06): 피평가자/프로브 34 + 채점 26 호출, 전 산출물 커밋.
+RP-05 결과(불변) 위에 RP-06 강화 사이클 완료: A1 인지 재추첨 8 + A2 교차
+채점 6 + A3 표본분산 k=5 64 = **78호출 (FAIL 0 · 핀 불일치 0)**, 전 산출물
+runs/hardening/ 커밋. 발행 수치 재현·블라인드·매니페스트는 CI가 매 push
+검증한다 (`tools/reproduce_analysis.py` 100/100 · `tools/verify_blindness.py`).
 
-- **헤드라인 (의무 문구)**: 인지 프로브 6/8 → **D7 CONTAMINATED** — 본 분석 =
-  교란 실행. 그 기준으로 **사전 등록 실패 조건 미발동** (rank-sum p=0.0226,
-  중위 분리 19.0pp, 퇴화 없음). 원본 입력 결과는 부록 상한 전용.
-- 전 수치는 잔여 오염 하의 상한 · 변형당 1회(D5) · n=8+8 (±35pp) · Claude 기반
-  단일 파이프라인 한정. 재현: `python scoring/analyze_rp05.py`.
+## 소유자 대기열 (이 순서 그대로 — 유일한 미결 목록)
 
-## 인간 검토 대기열 (우선순위)
+1. **RAT-001 서명** — `scoring/overrides.md` 말미의 J13-b/c 격리 기제 추인
+   초안 (**UNSIGNED**). 추인 또는 기각+조치 지정.
+2. **Console 대시보드 $0.00 확인** (RP-04 check C) — 구독 외 종량 과금
+   부재의 소유자측 확인. (참고 합계: RP-06 total_cost_usd $24.83 — 기록
+   전용, 과금은 구독 OAuth 경로.)
+3. **워크벤치 검토** — `review_packets/RP-06_grading_workbench.md`,
+   **MODEL 귀속 5건(⚑ SKEPTICAL-REVIEW) 먼저**, UNCLASSIFIED 2건(MRVL)의
+   DATA(설계) PROPOSAL 판정 포함. 참고: A2 교차 채점 밴드 일치 6/6 ·
+   Ryder 오탐은 k=5 중 최대값 1회 관측 (RP-06 §3-2 각주 자료).
+4. **채점 26건 확정** — human_finalized=False → true 갱신, 오버라이드는
+   overrides.md 기록 ("채점: Claude 보조 + 인간 최종 확정").
+5. **A1/A3 판독 → 발행 프레이밍 확정** — RP-06 §1/§3: **정체 인지
+   주의문("perturbation disrupts memorized NUMBERS, not IDENTITY
+   recognition")은 README 헤드라인 문장에 이미 병기** — 유지 여부가 소유자
+   결정. A3 밴드 문구(p·AUC 강건 / 분리 4/5 / delta 분해 부분 해소)의 주장
+   강도 서열 확인 (RP-06 §5).
+6. **발행 결정** (소유자 확정 사항 — §7). GO 시 README.md가 발행 관문
+   (보고 언어 제약 3-6 적용 완료 상태).
 
-1. **RP-05 전체** — 특히 §6 오류 귀속 1차 (MODEL 5건: 자기변호 편향 최대 구역),
-   §1 비대칭 프로토콜(J14), §7 딥다이브 2건.
-2. **J13a~g** (실행층 전환 재량 7건 — decisions_log 개정 #2 부록) + **J14~J19**
-   (분석 재량 — RP-05 §9). 색인: `review_packets/INDEX.md`.
-3. 채점 26건 human_finalized=False → 인간 확정 ("채점: Claude 보조 + 인간 최종
-   확정").
-4. **Loop-5 fading 목록** (daily_log 2026-07-06 1차 세션분) — 차기 사이클 이관.
-5. **발행 결정** (소유자 확정 사항 — §7). 발행 시 보고 언어 제약(3-6) 전부 적용.
+## 유예 등록부 (DEFERRED — 실행 금지, 소유자 지시로만 개시)
 
-## 이 사이클의 고정값 (불변)
+- **D-1**: 논문/공개 모니터 write-up 초안 — 대기열 ④·⑤ **이후에만**
+  (프레이밍이 A1/A3와 확정 채점에 의존).
+- **D-2**: k>5 에스컬레이션 — A3 분해가 미해결(케이스 단위 delta 4/8 잡음
+  분리 불능; 병목은 **원본 쪽 k=1**이므로 실체는 원본 재추첨 +32호출)이고
+  **동시에** 발행 GO일 때만.
 
-- freeze `82a7717` + 로그된 개정 2건 (#1 CL1~8, #2 실행층). 기준 무변경.
-- 모델 실측: 피평가자 claude-sonnet-5 단독 서빙 / 채점자 claude-fable-5 (폴백 0).
-  하네스 핀 v2.1.201. 인증 = 구독 OAuth (Max) — API 키 없음 (RP-04 + 개정 #2).
-- 실험 16 = 실험군 8 (T07 MON·T11 OFIX·T12 LOGI·T13 HTZ·T16 ICON·T17 MRVL·
-  T21 SCOR·T28 KHC) + 대조군 8 (C01 MOS~C08 GIS). 중립 ID 시드 20260706.
-- 원시 데이터: runs/ · scoring/grades/ · scoring/probe_results/ · logs/run_*/ ·
-  scoring/rp05_stats.json. 블라인드 증거: 채점 커밋 03b91aa < 매핑 개봉 13:32:37Z.
+## 이 사이클의 고정값 (불변 — 이전과 동일 + RP-06 추가분)
 
-## 재실행이 필요해지는 경우만 (그 외 실행 금지)
-
-- 대칭 교란 검증 (J14 오버라이드): 대조군 교란 8 + 채점 8 호출 — runbook 절차
-  동일, 러너는 멱등. 실행 전 격리 게이트 재검증 필수 (L-4).
-- 채점 인간 오버라이드 시: `scoring/overrides.md`에 케이스 ID·사유 기록.
+- freeze `82a7717` + 로그된 개정 2건 + RP-06 addendum (기준 무변경 —
+  `git diff 9dfcf44..HEAD -- review_packets/RP-05_results.md scoring/grades/`
+  = 공백으로 증명).
+- 모델 실측: 피평가자 claude-sonnet-5 단독 서빙 (72호출) / 채점 fable-5
+  (본채점, 폴백 0) · opus-4-8 (A2 스팟체크 6호출 — 설계 고정). 하네스
+  v2.1.201 재확인. 인증 = 구독 OAuth, API 키 부재 전 호출 assert.
+- 원시: runs/ (MANIFEST.sha256 변조 증거) · scoring/grades/ (무변경) ·
+  runs/hardening/ (신규 — probe_recognition·regrade_opus·draws, 본채점 비병합).
 
 ## 금지·주의 (유효 지속)
 
-- 세션 내 피평가자 판정 생성 금지 — 러너 경유만. 파일럿/프로브/본 실험 디렉토리
-  혼입 금지. freeze 후 기준 변경 = 로그된 개정 + 재실행 노트.
-- 보고 언어: % 헤드라인 금지 / 상한 명기 / 오염 헤드라인 명시 / BOUND-not-eliminate
-  헤더 / 선택·생존 편향 문단 / §5-5 한정 문구 / L-2~L-4 (하네스·비결정론) 인용.
+- 세션 내 피평가자 판정 생성 금지 — 러너 경유만. runs/hardening 출력을
+  scoring/grades/ 에 병합 금지 (SPOT-CHECK 라벨).
+- 보고 언어 제약 전부 유지 (% 헤드라인 금지 / 상한 명기 / 오염 명시 /
+  BOUND-not-eliminate / 선택·생존 편향 / **L-5 정체 인지 주의문 헤드라인
+  병기** / L-2~L-4 인용).
 - 로컬 커밋은 기록이 아니다 — push까지.
