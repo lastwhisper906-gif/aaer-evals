@@ -41,6 +41,23 @@
 - case_90: d1=1 d2=2 d4=3 mem2=False / case_91: d1=1 d2=1 d4=3 mem2=False.
 - 채점자 폴백 발동 0건. 파일럿 산출물은 pilot/ 격리 유지 (본 실험 디렉토리 혼입 없음).
 
+## 2026-07-06 — Phase 5: 오염 프로브 → D7 분기 판정 (본 실행 전)
+
+> These controls BOUND memorization risk; they do not eliminate it.
+> 판정 규칙·정규화는 실행 전 커밋 (`72eefef` probe_verdict.py). 원시 출력:
+> `scoring/probe_results/{recognition,verbatim}/` (중립 ID).
+
+- **인지 프로브: 6/8 실명 지목** (comScore·Logitech·Hertz·Iconix·Kraft Heinz·
+  Marvell — 익명화+상수배 재스케일+날짜 원본 페이로드에서). guess 원문은
+  probe_results에 전건 보존.
+- **D7 판정 (사전 등록 9f0fb42, 임계 ≥3): CONTAMINATED.**
+  분기 효력: ① 본 분석 = **교란 실행 전용** ② 원본 입력 결과 = 부록 상한(upper
+  bound) 전용 ③ 전 보고서 헤드라인에 오염 명시.
+- 축어 회상: 완전 회상 0/8 (case_03·case_12 revenue만 ±2% 내, NI 실패 —
+  known=true 2건 한정). 잔여 위험 등급: MED 6건 / LOW 2건 (probe_verdict 출력).
+- 해석 노트: D8 소유자 결정의 예측("내용 기반 재식별은 어차피 발생")이 실측으로
+  확인됨 — 교란은 암기 *측정* 장치이지 제거 장치가 아니다.
+
 ## 2026-07-06 — Phase 3-1 (D16 확인)
 - **Loop 3 skipped — no sealed predictions** (본 실행 전 봉인 커밋 부재 실측:
   scoring/loop3/predictions.md 없음, 봉인 커밋 git 이력 없음). 분석 ②는 skip 노트로 대체.
