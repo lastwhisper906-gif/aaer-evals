@@ -93,7 +93,7 @@ def test_pinned_flags_isolated_cwd_and_config(stub, tmp_path):
     argv = call["argv"]
     assert argv[0] == "-p"
     for flag, val in [("--model", "claude-sonnet-5"), ("--output-format", "json"),
-                      ("--max-turns", "1"),
+                      ("--max-turns", "2"),  # 구조화 출력 도구 왕복 1턴 포함 (J13-d)
                       ("--setting-sources", ""), ("--tools", ""),
                       ("--disallowedTools", cli_client.DISALLOWED_TOOLS),
                       ("--system-prompt", "SYSTEM PROMPT")]:

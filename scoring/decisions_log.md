@@ -311,6 +311,19 @@ Review Packet 00에 오버라이드 경로와 함께 기재한다.
   `claude auth status` = claude.ai 구독 OAuth).
 - 격리의 최종 판정은 여전히 Phase 4 게이트 (프로브 + 트레이스 grep) 소관.
 
+### 실행층 플래그 조정 2건 (2026-07-06, 파일럿 실증 — J13-d/e)
+
+- **J13-d — `--max-turns 1 → 2`**: `--json-schema` 구조화 출력은 내부
+  StructuredOutput 도구 호출 1턴을 소모 — max-turns 1에서 간헐적
+  `error_max_turns` (is_error=true, structured_output 부재) 실증. 도구 전면
+  차단 상태에서 2턴째는 구조화 출력 마무리 외 불가능하므로 단발 호출 의도는
+  유지된다. 지시문 핀 플래그의 실행층 조정 — 고정 기준 무관.
+- **J13-e — 하네스 주입 컨텍스트 실측 (격리 프로브 발견)**: `--system-prompt`
+  전면 대체 후에도 하네스가 system-reminder 블록(userEmail·currentDate)을
+  주입함이 프로브 자백으로 확인. 저장소 내용·정답지·도구·MCP 아님. 실험군·
+  대조군 동일 적용(동일 프로토콜 §5-2 유지). GP-6 "페이로드 외 컨텍스트 0"의
+  하네스 경로 한정 편차로 methodology_limitations에 기재 (Phase 7).
+
 ### 소유자 지시문 (2026-07-06, verbatim)
 
 ```text

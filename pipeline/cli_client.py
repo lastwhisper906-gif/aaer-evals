@@ -168,7 +168,10 @@ def call_model(model: str,
     cmd = [CLAUDE_BIN, "-p",
            "--model", model,
            "--output-format", "json",
-           "--max-turns", "1",
+           # --json-schema 구조화 출력은 내부적으로 StructuredOutput 도구 호출 1턴을
+           # 소모한다 — max-turns 1은 간헐적 error_max_turns 실증 (J13-d). 도구가
+           # 전면 차단된 상태라 2턴째는 구조화 출력 마무리 외에 아무것도 될 수 없다.
+           "--max-turns", "2",
            "--setting-sources", "",   # user/project/local 설정 미로딩 → hooks·env 주입 차단
            "--strict-mcp-config",     # --mcp-config 미제공 + 이 플래그 = MCP 0개 강제
            "--tools", "",             # 내장 도구 전면 비활성 (disallowedTools는 이중 방어)
