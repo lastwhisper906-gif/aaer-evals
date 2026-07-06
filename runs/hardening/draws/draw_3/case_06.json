@@ -1,0 +1,263 @@
+{
+  "case_id": "case_06",
+  "run_id": "perturbed-case_06-r1",
+  "model": "claude-sonnet-5",
+  "pipeline_version": "5052f015277136762a956045c05e1e998e6f1de7",
+  "run_timestamp": "2026-07-06T15:17:20.254785+00:00",
+  "documents_used": [
+    {
+      "accession_no": "0000950123-10-001322",
+      "form_type": "10-Q",
+      "filing_date": "2010-01-08"
+    },
+    {
+      "accession_no": "0000950123-10-033175",
+      "form_type": "10-Q",
+      "filing_date": "2010-04-08"
+    },
+    {
+      "accession_no": "0000950123-10-063363",
+      "form_type": "10-Q",
+      "filing_date": "2010-07-02"
+    },
+    {
+      "accession_no": "0000950123-11-033772",
+      "form_type": "10-Q",
+      "filing_date": "2011-04-07"
+    },
+    {
+      "accession_no": "0000950123-11-034037",
+      "form_type": "8-K",
+      "filing_date": "2011-04-08"
+    },
+    {
+      "accession_no": "0000950123-11-034042",
+      "form_type": "8-K",
+      "filing_date": "2011-04-08"
+    }
+  ],
+  "checklist": [
+    {
+      "item_id": "CL1",
+      "question": "Did receivables grow materially faster than revenue across consecutive periods?",
+      "finding": "flag",
+      "confidence": "high",
+      "evidence": [
+        {
+          "quote": "AccountsReceivableNetCurrent=2836673809.8 (2010-02-28) -> 4381732645.52 (2010-05-31), a 54.5% increase",
+          "source_accession_no": "0000950123-11-034037",
+          "location": "AccountsReceivableNetCurrent instant values"
+        },
+        {
+          "quote": "SalesRevenueNet=5272174448.22 (2009-12-01/2010-02-28) -> 4014442343.35 (2010-03-01/2010-05-31), a 23.9% decrease",
+          "source_accession_no": "0000950123-11-034037",
+          "location": "SalesRevenueNet quarterly values"
+        },
+        {
+          "quote": "AccountsReceivableNetCurrent=4381732645.52 (2010-05-31) reverts to 2154950481.41 (2010-08-31), a 50.8% drop in one quarter",
+          "source_accession_no": "0000950123-11-034042",
+          "location": "AccountsReceivableNetCurrent instant values"
+        }
+      ]
+    },
+    {
+      "item_id": "CL2",
+      "question": "Did non-current 'soft' assets (intangibles, other assets, capitalized items) grow materially faster than the business overall?",
+      "finding": "no_flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "Goodwill=4244845853.94 (2008-08-31) -> 4499645030.36 (2011-02-28), ~6% growth over 2.5 years",
+          "source_accession_no": "0000950123-11-034037",
+          "location": "Goodwill instant values"
+        },
+        {
+          "quote": "IntangibleAssetsNetExcludingGoodwill=1858136547.17 (2009-08-31) -> 1711762552.21 (2010-08-31), a decline (amortization), not a build-up",
+          "source_accession_no": "0000950123-11-034037",
+          "location": "IntangibleAssetsNetExcludingGoodwill instant values"
+        },
+        {
+          "quote": "OtherAssetsNoncurrent=672236125.02 (2009-08-31) -> 765752844.02 (2011-02-28), modest ~14% growth over 18 months, roughly in line with balance sheet growth",
+          "source_accession_no": "0000950123-11-034037",
+          "location": "OtherAssetsNoncurrent instant values"
+        }
+      ]
+    },
+    {
+      "item_id": "CL3",
+      "question": "Is there a persistent divergence between net income and operating cash flow?",
+      "finding": "no_flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "NetIncomeLoss=2743157090.8 vs NetCashProvidedByUsedInOperatingActivities=3845027997.32 (FY2008, 2007-09-01/2008-08-31)",
+          "source_accession_no": "0000950123-11-034037",
+          "location": "Annual NetIncomeLoss / NetCashProvidedByUsedInOperatingActivities"
+        },
+        {
+          "quote": "NetIncomeLoss=2858358846.09 vs NetCashProvidedByUsedInOperatingActivities=3044036969.33 (FY2009, 2008-09-01/2009-08-31)",
+          "source_accession_no": "0000950123-11-034037",
+          "location": "Annual NetIncomeLoss / NetCashProvidedByUsedInOperatingActivities"
+        },
+        {
+          "quote": "NetIncomeLoss=1503044077.91 vs NetCashProvidedByUsedInOperatingActivities=1894730045.91 (FY2010, 2009-09-01/2010-08-31)",
+          "source_accession_no": "0000950123-11-034037",
+          "location": "Annual NetIncomeLoss / NetCashProvidedByUsedInOperatingActivities"
+        }
+      ]
+    },
+    {
+      "item_id": "CL4",
+      "question": "Do inventory levels or gross margins show trends inconsistent with revenue?",
+      "finding": "flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "GrossProfit=9164638462.43 / SalesRevenueNet=15889710342.14 = 57.7% margin (FY2009, 2008-09-01/2009-08-31)",
+          "source_accession_no": "0000950123-11-034037",
+          "location": "Annual GrossProfit / SalesRevenueNet"
+        },
+        {
+          "quote": "GrossProfit=6893130910.96 / SalesRevenueNet=14233515695.42 = 48.4% margin (FY2010, 2009-09-01/2010-08-31), a 9.3pp compression vs FY2009 despite only ~10% revenue decline",
+          "source_accession_no": "0000950123-11-034037",
+          "location": "Annual GrossProfit / SalesRevenueNet"
+        },
+        {
+          "quote": "InventoryNet=3976493529.84 (2009-08-31) rising to 4824920574.72 (2009-11-30) then falling to 3712207150.04 (2010-08-31) - seasonal pattern generally consistent with revenue seasonality, but the margin compression noted above is inconsistent with stable inventory turns",
+          "source_accession_no": "0000950123-11-034037",
+          "location": "InventoryNet instant values"
+        }
+      ]
+    },
+    {
+      "item_id": "CL5",
+      "question": "Is the earnings trajectory unusually smooth relative to the volatility of revenue and cash flow?",
+      "finding": "no_flag",
+      "confidence": "high",
+      "evidence": [
+        {
+          "quote": "NetIncomeLoss ranges from -315788340.99 (2009-06-01/2009-08-31) to 1480003726.85 (2008-12-01/2009-02-28), tracking strong revenue seasonality (SalesRevenueNet peaks in Dec-Feb quarters, e.g. 5468695089.6 and 5272174448.22)",
+          "source_accession_no": "0000950123-11-034037",
+          "location": "Quarterly NetIncomeLoss and SalesRevenueNet"
+        }
+      ]
+    },
+    {
+      "item_id": "CL6",
+      "question": "Did liability, allowance, or reserve balances decline (or fail to grow) despite growing business activity?",
+      "finding": "flag",
+      "confidence": "high",
+      "evidence": [
+        {
+          "quote": "AllowanceForDoubtfulAccountsReceivableCurrent=219560992.45 (2009-08-31) declining to 193810011.85 (2010-08-31) and further to 150439939.27 (2011-02-28)",
+          "source_accession_no": "0000950123-11-034042",
+          "location": "AllowanceForDoubtfulAccountsReceivableCurrent instant values"
+        },
+        {
+          "quote": "AccountsReceivableNetCurrent=2108869779.29 (2009-08-31) growing to 3221583203.96 (2011-02-28), implying allowance/AR ratio fell from ~10.4% to ~4.7% over the same window",
+          "source_accession_no": "0000950123-11-033772",
+          "location": "AccountsReceivableNetCurrent vs AllowanceForDoubtfulAccountsReceivableCurrent instant values"
+        }
+      ]
+    },
+    {
+      "item_id": "CL7",
+      "question": "Does the filing chronology show irregularities (late filings/NT forms, amendments, unusual 8-K frequency)?",
+      "finding": "flag",
+      "confidence": "low",
+      "evidence": [
+        {
+          "quote": "8-K filed 2011-04-08 (accession 0000950123-11-034037) and a second 8-K filed the same date (accession 0000950123-11-034042) both containing recast multi-year (FY2008-FY2010) financial statement data, filed one day after the 10-Q (2011-04-07, accession 0000950123-11-033772)",
+          "source_accession_no": "0000950123-11-034037",
+          "location": "filing_chronology / financial_series_point_in_time filed dates"
+        },
+        {
+          "quote": "8-K/A filed 2010-08-31 and 8-K/A filed 2010-04-07, indicating amendments to previously filed 8-Ks in the same reporting window",
+          "source_accession_no": "n/a",
+          "location": "filing_chronology list"
+        }
+      ]
+    },
+    {
+      "item_id": "CL8",
+      "question": "Is the provided data sufficient in coverage and length for the above assessments?",
+      "finding": "no_flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "Quarterly and annual data available from FY2008 (2007-09-01) through Q2 FY2011 (2011-02-28) across Assets, Revenue, NetIncomeLoss, CashFlow, AR, Inventory and reserve accounts, providing ~3.5 years of trend data",
+          "source_accession_no": "0000950123-11-034037",
+          "location": "financial_series_point_in_time full series"
+        },
+        {
+          "quote": "Some concepts (e.g., ShortTermInvestments, DebtCurrent, LongTermDebtCurrent) have only sparse/single data points limiting trend analysis for those specific items",
+          "source_accession_no": "0000950123-11-033772",
+          "location": "ShortTermInvestments / DebtCurrent / LongTermDebtCurrent series"
+        }
+      ]
+    }
+  ],
+  "misstatement_probability": 52,
+  "mechanism_hypotheses": [
+    {
+      "affected_line_items": [
+        "AccountsReceivableNetCurrent",
+        "SalesRevenueNet"
+      ],
+      "direction": "overstated",
+      "accounting_treatment": "Possible premature revenue recognition, channel stuffing, or a receivable reclassification/timing shift causing a sharp one-quarter spike in receivables disconnected from revenue trend, which then reversed the following quarter",
+      "rationale_evidence": [
+        {
+          "quote": "AccountsReceivableNetCurrent=4381732645.52 (2010-05-31) vs 2836673809.8 (2010-02-28), a 54.5% jump while SalesRevenueNet fell from 5272174448.22 to 4014442343.35 over the same quarter",
+          "source_accession_no": "0000950123-11-034037",
+          "location": "AccountsReceivableNetCurrent / SalesRevenueNet quarterly series"
+        },
+        {
+          "quote": "AccountsReceivableNetCurrent reverted to 2154950481.41 by 2010-08-31, a 50.8% decline in the subsequent quarter",
+          "source_accession_no": "0000950123-11-034042",
+          "location": "AccountsReceivableNetCurrent instant values"
+        }
+      ]
+    },
+    {
+      "affected_line_items": [
+        "AllowanceForDoubtfulAccountsReceivableCurrent",
+        "NetIncomeLoss",
+        "SellingGeneralAndAdministrativeExpense"
+      ],
+      "direction": "understated",
+      "accounting_treatment": "Reduction of bad-debt reserve as a percentage of receivables (reserve release) could be understating current-period bad debt/allowance expense and thereby overstating net income and receivable quality",
+      "rationale_evidence": [
+        {
+          "quote": "AllowanceForDoubtfulAccountsReceivableCurrent=219560992.45 (2009-08-31) declining to 150439939.27 (2011-02-28) while AccountsReceivableNetCurrent grew from 2108869779.29 to 3221583203.96 over the same window, cutting the reserve ratio roughly in half",
+          "source_accession_no": "0000950123-11-034042",
+          "location": "AllowanceForDoubtfulAccountsReceivableCurrent / AccountsReceivableNetCurrent instant values"
+        }
+      ]
+    },
+    {
+      "affected_line_items": [
+        "CostOfGoodsSold",
+        "GrossProfit"
+      ],
+      "direction": "timing_shift",
+      "accounting_treatment": "Possible shift in cost/markdown recognition timing or reclassification between COGS and operating expenses contributing to a large gross-margin swing not proportionate to the revenue decline",
+      "rationale_evidence": [
+        {
+          "quote": "GrossProfit/SalesRevenueNet = 57.7% (FY2009: GrossProfit=9164638462.43, SalesRevenueNet=15889710342.14) vs 48.4% (FY2010: GrossProfit=6893130910.96, SalesRevenueNet=14233515695.42), a 9.3 percentage point compression against only a ~10% revenue decline",
+          "source_accession_no": "0000950123-11-034037",
+          "location": "Annual GrossProfit and SalesRevenueNet"
+        }
+      ]
+    }
+  ],
+  "overall": {
+    "risk_tier": "watch",
+    "top_signals": [
+      "Sharp one-quarter receivables spike (AccountsReceivableNetCurrent +54.5% while revenue fell 23.9%) that fully reversed the next quarter",
+      "Allowance for doubtful accounts falling from ~10.4% to ~4.7% of receivables even as receivables grew",
+      "Gross margin compression of ~9.3pp between FY2009 and FY2010 not proportionate to revenue decline",
+      "Two same-day 8-Ks (2011-04-08) recasting multi-year financials filed immediately after the 10-Q, alongside 8-K/A amendments, raising minor chronology irregularity concerns"
+    ]
+  }
+}

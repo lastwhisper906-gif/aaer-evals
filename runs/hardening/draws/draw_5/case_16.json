@@ -1,0 +1,237 @@
+{
+  "case_id": "case_16",
+  "run_id": "original-case_16-r1",
+  "model": "claude-sonnet-5",
+  "pipeline_version": "5052f015277136762a956045c05e1e998e6f1de7",
+  "run_timestamp": "2026-07-06T15:51:17.170971+00:00",
+  "documents_used": [
+    {
+      "accession_no": "0001193125-10-240904",
+      "form_type": "10-Q/A",
+      "filing_date": "2010-10-29"
+    },
+    {
+      "accession_no": "0001193125-11-002810",
+      "form_type": "10-Q",
+      "filing_date": "2011-01-06"
+    },
+    {
+      "accession_no": "0001193125-11-084494",
+      "form_type": "10-Q",
+      "filing_date": "2011-03-31"
+    }
+  ],
+  "checklist": [
+    {
+      "item_id": "CL1",
+      "question": "Did receivables grow materially faster than revenue across consecutive periods?",
+      "finding": "flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "ReceivablesNetCurrent=651000000 (2010-11-30) to ReceivablesNetCurrent=777900000 (2011-02-28), +19.5% QoQ",
+          "source_accession_no": "0001193125-11-084494",
+          "location": "10-Q Balance Sheet (Feb 2011)"
+        },
+        {
+          "quote": "SalesRevenueGoodsNet=2674800000 (Q ended 2010-11-30) to SalesRevenueGoodsNet=2214300000 (Q ended 2011-02-28), -17.2% QoQ",
+          "source_accession_no": "0001193125-11-084494",
+          "location": "10-Q Income Statement (Feb 2011)"
+        }
+      ]
+    },
+    {
+      "item_id": "CL2",
+      "question": "Did non-current 'soft' assets (intangibles, other assets, capitalized items) grow materially faster than the business overall?",
+      "finding": "no_flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "Goodwill=1763200000 (2010-05-31) to Goodwill=1828800000 (2011-02-28), +3.7% over 3 quarters",
+          "source_accession_no": "0001193125-11-084494",
+          "location": "10-Q Balance Sheet"
+        },
+        {
+          "quote": "Assets=12707700000 (2010-05-31) to Assets=14699100000 (2011-02-28), +15.7% over same period",
+          "source_accession_no": "0001193125-11-084494",
+          "location": "10-Q Balance Sheet"
+        }
+      ]
+    },
+    {
+      "item_id": "CL3",
+      "question": "Is there a persistent divergence between net income and operating cash flow?",
+      "finding": "no_flag",
+      "confidence": "low",
+      "evidence": [
+        {
+          "quote": "NetCashProvidedByUsedInOperatingActivities=172400000 vs NetIncomeLoss=100600000 (quarter ended 2009-08-31)",
+          "source_accession_no": "0001193125-10-240904",
+          "location": "10-Q/A Cash Flow Statement"
+        },
+        {
+          "quote": "NetCashProvidedByUsedInOperatingActivities=556200000 vs NetIncomeLoss=297700000 (quarter ended 2010-08-31)",
+          "source_accession_no": "0001193125-10-240904",
+          "location": "10-Q/A Cash Flow Statement"
+        }
+      ]
+    },
+    {
+      "item_id": "CL4",
+      "question": "Do inventory levels or gross margins show trends inconsistent with revenue?",
+      "finding": "flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "InventoryNet=816900000 (2010-11-30) to InventoryNet=1133600000 (2011-02-28), +38.8% QoQ",
+          "source_accession_no": "0001193125-11-084494",
+          "location": "10-Q Balance Sheet"
+        },
+        {
+          "quote": "SalesRevenueGoodsNet=2674800000 (Q ended 2010-11-30) to SalesRevenueGoodsNet=2214300000 (Q ended 2011-02-28), -17.2% QoQ while inventory rose sharply",
+          "source_accession_no": "0001193125-11-084494",
+          "location": "10-Q Income Statement"
+        },
+        {
+          "quote": "GrossProfit/Revenue margin rose from 23.1% (Q ended 2010-08-31: GrossProfit=504700000, SalesRevenueGoodsNet=2188300000) to 38.6% (Q ended 2011-02-28: GrossProfit=853600000, SalesRevenueGoodsNet=2214300000)",
+          "source_accession_no": "0001193125-11-084494",
+          "location": "10-Q Income Statement"
+        }
+      ]
+    },
+    {
+      "item_id": "CL5",
+      "question": "Is the earnings trajectory unusually smooth relative to the volatility of revenue and cash flow?",
+      "finding": "no_flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "NetIncomeLoss=297700000 (Q1 FY2011), NetIncomeLoss=1025600000 (Q2 FY2011), NetIncomeLoss=542100000 (Q3 FY2011) - highly volatile, mirroring revenue swings of 2188300000, 2674800000, 2214300000",
+          "source_accession_no": "0001193125-11-002810",
+          "location": "10-Q Income Statement (Nov 2010)"
+        }
+      ]
+    },
+    {
+      "item_id": "CL6",
+      "question": "Did liability, allowance, or reserve balances decline (or fail to grow) despite growing business activity?",
+      "finding": "no_flag",
+      "confidence": "low",
+      "evidence": [
+        {
+          "quote": "AccountsPayableCurrent=552500000 (2010-05-31) to AccountsPayableCurrent=645400000 (2011-02-28), net increase of 16.8% over the period, tracking asset growth of 15.7%",
+          "source_accession_no": "0001193125-11-084494",
+          "location": "10-Q Balance Sheet"
+        },
+        {
+          "quote": "LiabilitiesCurrent=1303900000 (2010-05-31) to LiabilitiesCurrent=1534500000 (2011-02-28), +17.7%",
+          "source_accession_no": "0001193125-11-084494",
+          "location": "10-Q Balance Sheet"
+        }
+      ]
+    },
+    {
+      "item_id": "CL7",
+      "question": "Does the filing chronology show irregularities (late filings/NT forms, amendments, unusual 8-K frequency)?",
+      "finding": "flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "10-Q filed 2010-10-12 for quarter ended 2010-08-31, followed by 10-Q/A filed 2010-10-29 (only 17 days later)",
+          "source_accession_no": "0001193125-10-240904",
+          "location": "Filing chronology"
+        },
+        {
+          "quote": "NT 10-Q filed 2005-01-14",
+          "source_accession_no": "N/A",
+          "location": "Filing chronology"
+        },
+        {
+          "quote": "NT 10-K filed 2007-07-31",
+          "source_accession_no": "N/A",
+          "location": "Filing chronology"
+        }
+      ]
+    },
+    {
+      "item_id": "CL8",
+      "question": "Is the provided data sufficient in coverage and length for the above assessments?",
+      "finding": "flag",
+      "confidence": "high",
+      "evidence": [
+        {
+          "quote": "NetCashProvidedByUsedInOperatingActivities data provided only for quarters ended 2009-08-31 and 2010-08-31; no continuous quarterly cash flow series through FY2011",
+          "source_accession_no": "0001193125-10-240904",
+          "location": "Cash Flow data series"
+        },
+        {
+          "quote": "No full annual 10-K balance sheet/income statement figures included in the point-in-time series; only quarterly 10-Q data from mid-2009 through Feb 2011 provided",
+          "source_accession_no": "0001193125-11-084494",
+          "location": "Overall data series coverage"
+        }
+      ]
+    }
+  ],
+  "mechanism_hypotheses": [
+    {
+      "affected_line_items": [
+        "AccountsPayableCurrent",
+        "InventoryNet",
+        "PropertyPlantAndEquipmentNet",
+        "Goodwill",
+        "CashAndCashEquivalentsAtCarryingValue (as of 2010-08-31)"
+      ],
+      "direction": "timing_shift",
+      "accounting_treatment": "A 10-Q/A was filed only ~17 days after the original 10-Q for the quarter ended 2010-08-31, indicating a correction/restatement of previously reported balance sheet and/or cash flow figures. The specific line items and direction of correction cannot be determined from the point-in-time data alone (only the amended values are shown), but the rapid amendment itself is evidence that the originally filed figures required correction.",
+      "rationale_evidence": [
+        {
+          "quote": "10-Q filed 2010-10-12 for quarter ended 2010-08-31; 10-Q/A filed 2010-10-29",
+          "source_accession_no": "0001193125-10-240904",
+          "location": "Filing chronology / 10-Q/A cover"
+        }
+      ]
+    },
+    {
+      "affected_line_items": [
+        "NetIncomeLoss",
+        "ProfitLoss",
+        "OperatingIncomeLoss"
+      ],
+      "direction": "overstated",
+      "accounting_treatment": "Net income for the quarter ended 2010-11-30 (NetIncomeLoss=1,025,600,000) represents a ~38% net margin on revenue of 2,674,800,000, far above the surrounding quarters (Q1 FY2011 margin ~13.6%, Q3 FY2011 margin ~24.5%), suggesting a large one-time or non-operating item (e.g., tax benefit, equity-method gain, or deferred tax valuation release) that may not reflect sustainable operating performance and could be a source of earnings management or aggressive recognition if not fully substantiated by disclosed one-time items.",
+      "rationale_evidence": [
+        {
+          "quote": "NetIncomeLoss=1025600000 (quarter ended 2010-11-30) vs SalesRevenueGoodsNet=2674800000 (same quarter), implying ~38% net margin versus ~13.6% (Q1 FY2011) and ~24.5% (Q3 FY2011)",
+          "source_accession_no": "0001193125-11-002810",
+          "location": "10-Q Income Statement (Jan 2011 filing)"
+        }
+      ]
+    },
+    {
+      "affected_line_items": [
+        "ReceivablesNetCurrent",
+        "InventoryNet",
+        "SalesRevenueGoodsNet"
+      ],
+      "direction": "overstated",
+      "accounting_treatment": "In the quarter ended 2011-02-28, receivables grew 19.5% and inventory grew 38.8% quarter-over-quarter while revenue declined 17.2% versus the prior quarter, a divergence that could indicate premature revenue/receivable recognition, channel stuffing, or a slowdown in end-market demand not yet reflected in inventory write-downs (though this may also reflect normal seasonal restocking ahead of spring planting in the fertilizer business).",
+      "rationale_evidence": [
+        {
+          "quote": "ReceivablesNetCurrent=777900000 (2011-02-28) vs 651000000 (2010-11-30); InventoryNet=1133600000 (2011-02-28) vs 816900000 (2010-11-30); SalesRevenueGoodsNet=2214300000 (Q ended 2011-02-28) vs 2674800000 (Q ended 2010-11-30)",
+          "source_accession_no": "0001193125-11-084494",
+          "location": "10-Q Balance Sheet and Income Statement (Mar 2011 filing)"
+        }
+      ]
+    }
+  ],
+  "misstatement_probability": 42,
+  "overall": {
+    "risk_tier": "watch",
+    "top_signals": [
+      "Rapid 10-Q/A amendment filed only 17 days after the original 10-Q for the quarter ended 2010-08-31, indicating a correction to previously reported figures",
+      "Unusually high net income margin (~38%) in the quarter ended 2010-11-30 relative to surrounding quarters, suggesting a large non-recurring item not fully explained by available data",
+      "Divergence between receivables/inventory growth (+19.5%/+38.8% QoQ) and declining revenue (-17.2% QoQ) in the quarter ended 2011-02-28",
+      "Data coverage is limited (only ~6 quarters of point-in-time data, sparse cash flow statement coverage), constraining the ability to assess trend persistence and confirm whether flagged divergences are seasonal/industry-driven or indicative of misstatement"
+    ]
+  }
+}
