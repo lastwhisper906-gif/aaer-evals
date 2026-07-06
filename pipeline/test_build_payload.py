@@ -1,9 +1,21 @@
-"""페이로드 빌더의 방법론 규율 테스트 (컷오프·누출·교란 결정론)."""
+"""페이로드 빌더의 방법론 규율 테스트 (컷오프·누출·교란 결정론).
+
+데이터 의존: ~/aaer-data 로컬 코퍼스 (191.8MB, git 밖 — data/README.md 규약).
+CI 러너에는 코퍼스가 없으므로 명시적 skip — CI의 verify_manifest --schema-only
+관행과 동일. 이 규율 테스트의 강제 지점은 로컬 실행 게이트(러너 실행 전
+전체 green 확인)다.
+"""
 import datetime
 import json
 from pathlib import Path
 
+import pytest
+
 import build_payload as bp
+
+pytestmark = pytest.mark.skipif(
+    not bp.DATA_DIR.exists(),
+    reason="~/aaer-data 코퍼스 부재 (CI runner) — 로컬 실행 게이트에서 강제")
 
 REPO = Path(__file__).resolve().parent.parent
 FORBIDDEN_PAYLOAD_SUBSTRINGS = [
