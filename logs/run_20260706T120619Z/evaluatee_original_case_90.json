@@ -1,0 +1,52 @@
+{
+  "ts": "2026-07-06T12:06:21.527902+00:00",
+  "harness_pin": "2.1.201",
+  "flags": [
+    "claude",
+    "-p",
+    "--model",
+    "claude-sonnet-5",
+    "--output-format",
+    "json",
+    "--max-turns",
+    "1",
+    "--disallowedTools",
+    "Bash,Read,Edit,Write,Glob,Grep,WebFetch,WebSearch,Task,NotebookEdit",
+    "--system-prompt",
+    "You are analyzing the financial reporting quality of Valeant Pharmaceuticals International, Inc. (VRX, CIK 0000885590) using only the structured data provided below, which reflects public filings avai...[1764 chars]",
+    "--json-schema",
+    "{\"type\": \"object\", \"additionalProperties\": false, \"required\": [\"checklist\", \"misstatement_probability\", \"mechanism_hypotheses\", \"overall\"], \"properties\": {\"checklist\": {\"type\": \"array\", \"items\": {\"typ...[1821 chars]"
+  ],
+  "model_requested": "claude-sonnet-5",
+  "served_models": [],
+  "pin_ok": false,
+  "ok": false,
+  "fail_reason": "error",
+  "session_id": "d0e963a2-9582-4135-8d3f-bbaac9f76c03",
+  "usage": {
+    "input_tokens": 0,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "output_tokens": 0,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "",
+    "iterations": [],
+    "speed": "standard"
+  },
+  "total_cost_usd_reference_only": 0,
+  "attempts": 2,
+  "wall_seconds": 2.0,
+  "freeze": {
+    "head": "3969cfbaa6628aa260beeb7e7f802f3515b847e0",
+    "clean_tree": false
+  },
+  "raw_tail": "Not logged in · Please run /login"
+}

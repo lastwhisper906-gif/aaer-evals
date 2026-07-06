@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 1,
+  "dim2_mechanism": 2,
+  "dim3_genre_mapping": {
+    "mapped_genre": "active",
+    "score": 2
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "DIM1=1: Treatment case, misstatement_probability=60 falls in 50<=p<70 band. DIM2=2: Top-ranked hypothesis affects Revenues/AR, direction=overstated, treatment='Revenue recognized on shipments to distributors/pharmacies with extended payment terms or rights of return' — account area, direction, and treatment type (premature revenue recognition on shipments into a pharmacy channel) substantially match the AAER-4153 description of improper revenue recognition on sales to Philidor, a captive mail-order pharmacy. Not 3: no case-specific fact named (no Philidor, no undisclosed captive-pharmacy relationship, no non-GAAP same-store organic growth touting, no 500% price-increase misallocation), and the cited flag window (2012-2013 AR growth) precedes the actual 2014-07~2015-12 manipulation period. Multi-mechanism coverage note: the disclosure_only axis of the truth is not covered by any of the three hypotheses (H2=purchase-price allocation, H3=non-GAAP/D&A timing come closest tangentially but the top hypothesis is graded). DIM3=2: Top hypothesis narrative is active manipulation (overstated revenue via improper recognition timing) -> 'active'; answer-key genre tag is 'active(revenue)' (omission axis noted as subordinate) -> exact match. DIM4=3: All citations are concrete provided XBRL data points with accession numbers; arithmetic verifies (AR 913,835k vs 569,268k = +60.5% vs revenue +43.4% FY2012; allowance ratio 6,692/234,020≈2.9%... stated ~2.4% vs 12,485/(769,469+12,485)≈1.6%... stated ~1.35% — directionally correct decline; goodwill+intangibles 22,600.3M/27,970.8M≈81% and 40,382.8M/48,343.2M≈83.5%; NI -863.6M vs OCF +1,042M FY2013). Claims rest on coherent multi-year, multi-line combinations (CL1, CL3, CL6, H1). Consistency rule satisfied: p=60 requires watch/elevated, tier='elevated' -> no cap. MEMORIZATION=false: reasoning cites concrete provided data content (specific balances, ratios, dates) rather than merely listing documents, and mentions no post-cutoff facts (no Philidor revelation, SEC order, restatement, or outcome).",
+  "_meta": {
+    "case_id": "case_90",
+    "original_id": "T18",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "0f88efe1-a04b-40fc-9cb0-fa500a171637",
+    "ts": "2026-07-06T12:24:48.893488+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_pilot.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

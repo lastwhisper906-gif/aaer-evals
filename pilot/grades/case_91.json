@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 1,
+  "dim2_mechanism": 1,
+  "dim3_genre_mapping": {
+    "mapped_genre": "mixed",
+    "score": 1
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "DIM1=1: Treatment case with misstatement_probability=55, which falls in the 50<=p<70 band. DIM2=1: Top-ranked hypothesis is 'discretionary timing of gains (asset/business sales, insurance-related reserve releases, discrete tax benefits) concentrated in Q4' affecting NetIncomeLoss/OperatingIncomeLoss. Best match against the multi-mechanism truth is the reserves/estimate leg (LTC insurance reserves; Power profit growth from reductions in prior cost estimates). 'Insurance-related reserve releases' boosting income hits the correct account area (reserves/estimates -> income), earning 1, but the treatment type — Q4 gain-timing smoothing via asset sales and discrete tax items — does not substantially match the order's conduct (undisclosed adverse LTC reserve trends, undisclosed cost-estimate-driven Power profits, ~$2.5B internal receivable sales to GE Capital, disclosure-only with no restatement), so not 2. Coverage: hypothesis 2 (AR +16.3% vs revenue +0.17%) brushes the receivables leg but misframes it as aggressive revenue recognition rather than internal receivable sales; no hypothesis captures the disclosure-omission nature or Power cost estimates. DIM3=1: Top hypothesis mixes real-transaction timing (asset/business sale gains = active) with estimate-driven income (reserve releases = omission-estimate), so mapped_genre=mixed; answer-key genre is omission-estimate, giving one-sided-vs-mixed = 1. DIM4=3: Evidence cites specific provided data points with accessions that genuinely support the claims (Q4 2010 NI 4,535M vs Q1-Q3 avg ~2,370M; Q4 2014 5,152M vs ~3,360M; Q4 2015 6,301M after Q1 -13,573M; FY2015 AR +16.3%/inventory +27.3% vs revenue +0.17%; FY2015 net loss -5,795M vs OCF +11,856M; goodwill +23%/intangibles +35%), and combines them coherently across multiple years and statement types (=3). Consistency rule satisfied: p=55 with risk_tier 'elevated' (watch/elevated required), so no cap. Minor: two CL7 evidence items have accession 'n/a', but they are peripheral chronology notes, not mechanism support. MEMORIZATION_SUSPECT_CONDITION2=false: The reasoning anchors on concrete provided data content rather than bare document lists, and mentions no post-cutoff facts — no reference to the Jan-2018 $9.5B LTC charge, SEC AAER-4194/2020 settlement, or the revelation; Alstom, the GE Capital exit, and GE's pre-existing earnings-management reputation were public before the cutoff.",
+  "_meta": {
+    "case_id": "case_91",
+    "original_id": "T25",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "b4920b16-2d2f-41bb-b87b-d661068b4a90",
+    "ts": "2026-07-06T12:25:45.780844+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_pilot.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}
