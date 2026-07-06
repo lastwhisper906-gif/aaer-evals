@@ -1,26 +1,27 @@
-"""오염 프로브 러너 (Phase 3-2) — scoring/probes.md 설계의 실행부.
+"""오염 프로브 러너 (freeze 개정 #2 — 구독 헤드리스 경로) — scoring/probes.md 설계의 실행부.
 
   python pipeline/probe_runner.py --recognition --cases <교란 대상 케이스 파일>
   python pipeline/probe_runner.py --verbatim   --cases <원본 케이스 파일>
 
-출력: scoring/probe_results/{recognition,verbatim}/{case_id}.json + api_run_log.
+출력: scoring/probe_results/{recognition,verbatim}/{case_id}.json + logs/run_<ts>/.
 판정(일치 여부)은 채점 쪽 스크립트가 수행 — 이 러너는 모델 응답 수집만.
 헤더 의무: these controls BOUND memorization risk; they do not eliminate it.
+멱등: 출력 존재+스키마 통과 = skip. 레이트 리밋 = 재개 명령 출력 후 중단.
 """
 from __future__ import annotations
 
 import argparse
 import datetime
 import json
+import shlex
 import sys
-import time
 from pathlib import Path
 
 import build_payload as bp
-from runner import EVALUATEE_MODEL, freeze_state
+import cli_client
+from runner import EVALUATEE_MODEL
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-LOG = REPO_ROOT / "logs" / "api_run_log.jsonl"
 
 RECOG_SCHEMA = {"type": "object", "additionalProperties": False,
                 "required": ["company_guess", "confidence"],
@@ -41,24 +42,37 @@ VERBATIM_TASK = ("Without any documents: state {company_name}'s exact reported t
                  "If you do not know, set known=false and use nulls.")
 
 
-def call(client, system: str, user: str, schema: dict) -> tuple[dict, object, float]:
-    t0 = time.monotonic()
-    resp = client.messages.create(model=EVALUATEE_MODEL, max_tokens=2000, system=system,
-                                  output_config={"format": {"type": "json_schema", "schema": schema}},
-                                  messages=[{"role": "user", "content": user}])
-    text = next(b.text for b in resp.content if b.type == "text")
-    return json.loads(text), resp, time.monotonic() - t0
+def probe_case(kind: str, case: dict, out: Path, log_dir: Path) -> dict:
+    cid = case["case_id"]
+    out_path = out / f"{cid}.json"
+    schema = RECOG_SCHEMA if kind == "recognition" else VERBATIM_SCHEMA
+    if cli_client.output_is_valid(out_path, schema):
+        return {"case_id": cid, "status": "skip (멱등)"}
 
+    if kind == "recognition":
+        payload = bp.build_payload(case, perturb=True)
+        payload.pop("_k_internal")
+        system, user = RECOG_TASK, json.dumps(payload, ensure_ascii=False)
+        markers = cli_client.EVALUATEE_FORBIDDEN_MARKERS
+    else:
+        system = VERBATIM_TASK.format(company_name=case["company_name"],
+                                      cutoff_date=case["cutoff_date"])
+        user = "Answer now."
+        markers = cli_client.EVALUATEE_FORBIDDEN_MARKERS
 
-def log_row(kind, case_id, resp, wall):
-    with LOG.open("a", encoding="utf-8") as f:
-        f.write(json.dumps({
-            "ts": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-            "probe": kind, "case_id": case_id, "model_reported": resp.model,
-            "request_id": getattr(resp, "_request_id", None),
-            "input_tokens": resp.usage.input_tokens, "output_tokens": resp.usage.output_tokens,
-            "wall_seconds": round(wall, 1), "freeze": freeze_state(),
-        }, ensure_ascii=False) + "\n")
+    r = cli_client.call_model(EVALUATEE_MODEL, system, user, schema,
+                              log_dir=log_dir, log_name=f"probe_{kind}_{cid}",
+                              forbid_markers=markers)
+    if not r.ok:
+        return {"case_id": cid, "status": f"FAIL ({r.fail_reason})"}
+    out.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(r.structured, ensure_ascii=False, indent=2),
+                        encoding="utf-8")
+    if kind == "recognition":
+        return {"case_id": cid, "status": f"OK guess={r.structured['company_guess']!r} "
+                f"({r.structured['confidence']})"}
+    return {"case_id": cid, "status": f"OK known={r.structured['known']} "
+            f"rev={r.structured['revenue']}"}
 
 
 def main() -> int:
@@ -68,37 +82,32 @@ def main() -> int:
     ap.add_argument("--cases", default=str(bp.EVALUATEE_CASES))
     args = ap.parse_args()
 
-    import anthropic
-    client = anthropic.Anthropic()
+    cli_client.assert_no_metered_credentials()
+    cli_client.require_clean_tree()
+
     cases = json.loads(Path(args.cases).read_text(encoding="utf-8"))["cases"]
     out_root = REPO_ROOT / "scoring" / "probe_results"
+    ts = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    log_dir = REPO_ROOT / "logs" / f"run_{ts}"
+    resume_cmd = "python pipeline/probe_runner.py " + " ".join(
+        shlex.quote(a) for a in sys.argv[1:])
 
-    if args.recognition:
-        out = out_root / "recognition"
-        out.mkdir(parents=True, exist_ok=True)
-        for case in cases:
-            payload = bp.build_payload(case, perturb=True)
-            payload.pop("_k_internal")
-            result, resp, wall = call(
-                client, RECOG_TASK,
-                json.dumps(payload, ensure_ascii=False), RECOG_SCHEMA)
-            (out / f"{case['case_id']}.json").write_text(
-                json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
-            log_row("recognition", case["case_id"], resp, wall)
-            print(f"{case['case_id']}: guess={result['company_guess']!r} ({result['confidence']})")
-
-    if args.verbatim:
-        out = out_root / "verbatim"
-        out.mkdir(parents=True, exist_ok=True)
-        for case in cases:
-            task = VERBATIM_TASK.format(company_name=case["company_name"],
-                                        cutoff_date=case["cutoff_date"])
-            result, resp, wall = call(client, task, "Answer now.", VERBATIM_SCHEMA)
-            (out / f"{case['case_id']}.json").write_text(
-                json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
-            log_row("verbatim", case["case_id"], resp, wall)
-            print(f"{case['case_id']}: known={result['known']} rev={result['revenue']}")
-    return 0
+    kinds = [k for k, on in (("recognition", args.recognition),
+                             ("verbatim", args.verbatim)) if on]
+    failures = 0
+    try:
+        for kind in kinds:
+            out = out_root / kind
+            for case in cases:  # 순차 (프로브는 8건 — 동시성 불요)
+                res = probe_case(kind, case, out, log_dir)
+                if res["status"].startswith("FAIL"):
+                    failures += 1
+                print(f"[{kind}] {res['case_id']}: {res['status']}", flush=True)
+    except cli_client.RateLimitedError as e:
+        print(f"\nHALT — {e}", file=sys.stderr)
+        print(f"재개 명령 (완료분 자동 skip):\n  {resume_cmd}")
+        return 3
+    return 0 if failures == 0 else 2
 
 
 if __name__ == "__main__":
