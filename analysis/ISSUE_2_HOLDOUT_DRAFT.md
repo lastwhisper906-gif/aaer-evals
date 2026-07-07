@@ -52,19 +52,33 @@ nuance WMK makes explicit: the model **knows the company** (identity is availabl
 but **not the revelation**. That is exactly the holdout premise — under this frame,
 identity now adds information rather than contamination.
 
-## 3. What this does and does not yet show
+## 3. What the scoring shows (conclusion rule H2)
 
-- **Shows**: three unmemorizable cases exist and pass the gate (N=3). The
-  pre-committed rule H3 ("if N < 3 after gates, STOP the claim") therefore does
-  **not** fire on N grounds. The clean test is feasible.
-- **Does not yet show**: whether the LLM can *analytically detect* these from
-  pre-revelation financials. That requires scoring each admitted case (identity
-  frame primary) against matched clean controls that pass the same non-recognition
-  gate, then the pre-committed small-N exact permutation test. **That scoring has
-  not been run in this cycle (INCOMPLETE).** Conclusion rule H1 (permutation
-  p < 0.05 → "analytical detection on unmemorizable events", G2-provisional caveat
-  mandatory) / H2 (per-case scores reported beside wave-1 distributions, no
-  pooling) will be evaluated after scoring.
+Each admitted case was scored identity-visible (memorization of the revelation is
+impossible by construction; the gate proved non-recognition) on pre-revelation
+point-in-time data (cutoff = day before the 8-K). Results (`analysis/holdout_summary.md`):
+
+| company (G2) | cutoff | LLM p | flagged (≥50)? | grade d1/d2 | Beneish M / Dechow F |
+|---|---|---|---|---|---|
+| **Hub Group** (unrecorded payables, exec terminations) | 2026-02-04 | **70** | **yes** | 2 / 1 | uncomputable / uncomputable |
+| Weis Markets (inventory overstatement, whistleblower) | 2026-02-19 | 32 | no | 0 / 0 | uncomputable / 0.25 |
+| Genie Energy (captive-insurance liability error) | 2026-03-11 | 42 | no | 0 / 0 | −2.05 / 0.36 |
+
+- **H3's N<3 STOP does not fire** (N=3 admitted).
+- **H1 not claimed**: at N=3, a fraud-vs-control permutation is structurally
+  underpowered; we make no significance claim (H1's qualification isn't met).
+- **H2 fires** (per-case, no pooling): Hub Group's 70 sits at the top of the fraud
+  range (wave-1 median 57.5, wave-2 58; controls ~34); Weis (32) reads control-like;
+  Genie (42) is borderline. On genuinely unmemorizable events, **detection is real
+  on the strongest fraud-like case but modest and mixed** (1 of 3 flagged). The
+  mechanical screens could not even compute Hub Group's M/F — so the LLM's flag is
+  **not** a Beneish/Dechow echo.
+
+This is the honest crux: strip memorization entirely, and the score does not
+collapse to noise — the most fraud-like case is still caught — but the signal is
+weaker than on memorized cases. That independently confirms Issue #0's R3 headline
+("separation is part memory, part analysis") on the axis where memory is impossible.
+N is tiny; this is directional existence evidence, not a capability estimate.
 
 ## 4. Labeling honesty and limitations
 

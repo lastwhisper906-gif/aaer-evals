@@ -19,12 +19,21 @@
 - **P2.1 RECOGNITION GATE** (`0d64a7a`, freeze): 후보 3/3 knows_event=False →
   admit (N=3, H3-STOP 비발동). 양성대조 HTZ·KHC = knows_event=True high (계기
   검증). transcript `runs/holdout/recognition/`.
-- **P3 산출물**: `review_packets/RP-11_expansion_holdout.md`,
-  `analysis/ISSUE_1_WAVE2_DRAFT.md`, `analysis/ISSUE_2_HOLDOUT_DRAFT.md`,
-  ISSUE_0에 companion 포인터 1줄(결론 무변경). make verify green.
-- **INCOMPLETE (재개 = RP-11 §6)**: wave-2 대조군 선정·페이로드·채점·프로브·
-  채점자 전건; 홀드아웃 채점(H1/H2). 채점 발사는 소유자 게이트.
-- **비용(참고, 구독 흡수)**: recognition gate 5호출 $0.059, pin_ok 5/5.
+- **wave-2 채점 완료 (소유자 발사 승인)**: 대조군 23 선정 → 32 채점(9v23)+교란 9
+  +프로브 64+채점자 32 (human_finalized=**false**) 동결 → **발동 규칙 R4 (능력
+  시연)**: p=0.00116, AUC 0.829, R1/R2/R3 전부 비발동, 이름 프로브 25%(wave-1
+  50%의 절반). `analysis/wave2_summary.md`.
+- **홀드아웃 채점 완료 → H2**: 암기 불가 3사 per-case — HUBG p=70(탐지 d1=2) ·
+  WMK 32 · GNE 42. N=3 → H1 과소검정(미주장), H2 병기. HUBG 기계 M/F 계산불능 →
+  복제 아님. `analysis/holdout_summary.md`.
+- **서사**: wave-1 R3(암기) → wave-2 R4(잔여능력) → 홀드아웃(암기 불가, HUBG
+  잔존) — 암기 제거 축에서 Issue #0 확증.
+- **P3 산출물**: RP-11 갱신 · Issue #1(R4)/#2(H2) 초안 갱신 · ISSUE_0 companion
+  포인터. make verify green (402 files · reproduce 100/100 · pytest 76).
+- **INCOMPLETE**: 홀드아웃 매칭 대조군 + H1 순열 (N=3 과소검정 — 후보 누적 후 재개).
+- **소유자 게이트**: wave-2 32 + 홀드아웃 3 grades human_finalized=false 확정 ·
+  Issue #0/#1/#2 발행 결정 (초안, 미발행).
+- **비용(참고, 구독 흡수)**: recognition 5 $0.059 + wave-2 ~137 + 홀드아웃 6 호출.
 
 ## (이전) RP-10 — Issue #0 발행 게이트 (불변, 유지)
 
