@@ -1,0 +1,59 @@
+{
+  "ts": "2026-07-07T03:59:14.410643+00:00",
+  "harness_pin": "2.1.201",
+  "flags": [
+    "claude",
+    "-p",
+    "--model",
+    "claude-sonnet-5",
+    "--output-format",
+    "json",
+    "--max-turns",
+    "2",
+    "--setting-sources",
+    "",
+    "--strict-mcp-config",
+    "--tools",
+    "",
+    "--disallowedTools",
+    "Bash,Read,Edit,Write,Glob,Grep,WebFetch,WebSearch,Task,NotebookEdit",
+    "--system-prompt",
+    "You are analyzing the financial reporting quality of The Kraft Heinz Company (KHC, CIK 0001637459) using only the structured data provided below, which reflects public filings available on or before 2...[1744 chars]",
+    "--json-schema",
+    "{\"type\": \"object\", \"additionalProperties\": false, \"required\": [\"checklist\", \"misstatement_probability\", \"mechanism_hypotheses\", \"overall\"], \"properties\": {\"checklist\": {\"type\": \"array\", \"items\": {\"typ...[1821 chars]"
+  ],
+  "model_requested": "claude-sonnet-5",
+  "served_models": [
+    "claude-sonnet-5"
+  ],
+  "pin_ok": true,
+  "ok": true,
+  "fail_reason": null,
+  "session_id": "eeb47531-8769-4372-a528-8b947485fb88",
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 47203,
+    "cache_read_input_tokens": 1116,
+    "output_tokens": 11247,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 47203,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [],
+    "speed": "standard"
+  },
+  "total_cost_usd_reference_only": 0.4522638,
+  "attempts": 1,
+  "wall_seconds": 104.0,
+  "freeze": {
+    "head": "f5589896d9aa7586f22e2f039f0ce626d9801666",
+    "clean_tree": false
+  },
+  "raw_tail": null
+}

@@ -1,0 +1,316 @@
+{
+  "case_id": "case_03",
+  "run_id": "original-case_03-r1",
+  "model": "claude-sonnet-5",
+  "pipeline_version": "f5589896d9aa7586f22e2f039f0ce626d9801666",
+  "run_timestamp": "2026-07-07T03:56:09.335851+00:00",
+  "documents_used": [
+    {
+      "accession_no": "0001032975-10-000019",
+      "form_type": "10-Q/A",
+      "filing_date": "2010-08-25"
+    },
+    {
+      "accession_no": "0001032975-10-000034",
+      "form_type": "10-Q",
+      "filing_date": "2010-11-08"
+    },
+    {
+      "accession_no": "0001047469-12-006385",
+      "form_type": "10-K",
+      "filing_date": "2012-05-30"
+    },
+    {
+      "accession_no": "0001047469-13-006614",
+      "form_type": "10-K",
+      "filing_date": "2013-05-30"
+    },
+    {
+      "accession_no": "0001104659-11-061563",
+      "form_type": "10-Q",
+      "filing_date": "2011-11-07"
+    },
+    {
+      "accession_no": "0001104659-12-006942",
+      "form_type": "10-Q",
+      "filing_date": "2012-02-06"
+    },
+    {
+      "accession_no": "0001104659-12-054707",
+      "form_type": "10-Q",
+      "filing_date": "2012-08-06"
+    },
+    {
+      "accession_no": "0001104659-12-074325",
+      "form_type": "10-Q",
+      "filing_date": "2012-11-06"
+    },
+    {
+      "accession_no": "0001104659-13-007557",
+      "form_type": "10-Q",
+      "filing_date": "2013-02-05"
+    },
+    {
+      "accession_no": "0001193125-11-025852",
+      "form_type": "10-Q",
+      "filing_date": "2011-02-07"
+    },
+    {
+      "accession_no": "0001193125-11-153485",
+      "form_type": "10-K",
+      "filing_date": "2011-05-27"
+    },
+    {
+      "accession_no": "0001193125-11-241116",
+      "form_type": "10-Q/A",
+      "filing_date": "2011-09-06"
+    }
+  ],
+  "checklist": [
+    {
+      "item_id": "CL1",
+      "question": "Did receivables grow materially faster than revenue across consecutive periods?",
+      "finding": "no_flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "AccountsReceivableNetCurrent=258,294,000 (2011-03-31) vs 195,247,000 (2010-03-31)",
+          "source_accession_no": "0001047469-12-006385",
+          "location": "Balance Sheet - Accounts Receivable, Net"
+        },
+        {
+          "quote": "SalesRevenueNet=2,362,886,000 (FY2011, 2010-04-01 to 2011-03-31) vs 1,966,748,000 (FY2010, 2009-04-01 to 2010-03-31)",
+          "source_accession_no": "0001047469-13-006614",
+          "location": "Income Statement - Net Sales"
+        },
+        {
+          "quote": "AccountsReceivableNetCurrent=179,565,000 (2013-03-31) vs 223,104,000 (2012-03-31), declining faster than SalesRevenueNet=2,099,883,000 (FY2013) vs 2,316,203,000 (FY2012)",
+          "source_accession_no": "0001047469-13-006614",
+          "location": "Balance Sheet and Income Statement, FY2013 10-K"
+        }
+      ]
+    },
+    {
+      "item_id": "CL2",
+      "question": "Did non-current 'soft' assets (intangibles, other assets, capitalized items) grow materially faster than the business overall?",
+      "finding": "no_flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "IntangibleAssetsNetExcludingGoodwill=95,396,000 (2010-03-31) declining steadily to 26,024,000 (2013-03-31)",
+          "source_accession_no": "0001047469-13-006614",
+          "location": "Balance Sheet - Intangible Assets, net"
+        },
+        {
+          "quote": "OtherAssetsNoncurrent=65,930,000 (2010-03-31) vs 75,796,000 (2013-03-31), roughly flat relative to revenue changes",
+          "source_accession_no": "0001047469-13-006614",
+          "location": "Balance Sheet - Other Assets, Noncurrent"
+        },
+        {
+          "quote": "Goodwill=560,523,000 (2012-03-31) fell to 340,132,000 (2013-03-31) -- a decrease, not disproportionate growth",
+          "source_accession_no": "0001047469-13-006614",
+          "location": "Balance Sheet - Goodwill"
+        }
+      ]
+    },
+    {
+      "item_id": "CL3",
+      "question": "Is there a persistent divergence between net income and operating cash flow?",
+      "finding": "no_flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "NetIncomeLoss=64,957,000 (FY2010, 2009-04-01 to 2010-03-31) vs NetCashProvidedByUsedInOperatingActivities=365,259,000 (FY2010)",
+          "source_accession_no": "0001193125-11-153485",
+          "location": "Cash Flow Statement / Income Statement FY2010"
+        },
+        {
+          "quote": "NetIncomeLossAvailableToCommonStockholdersBasic=-228,137,000 (FY2013) vs NetCashProvidedByUsedInOperatingActivitiesContinuingOperations=116,990,000 (FY2013)",
+          "source_accession_no": "0001047469-13-006614",
+          "location": "Cash Flow Statement / Income Statement FY2013 10-K"
+        }
+      ]
+    },
+    {
+      "item_id": "CL4",
+      "question": "Do inventory levels or gross margins show trends inconsistent with revenue?",
+      "finding": "flag",
+      "confidence": "low",
+      "evidence": [
+        {
+          "quote": "InventoryNet=297,072,000 (2012-03-31) vs 280,814,000 (2011-03-31), +5.8% increase",
+          "source_accession_no": "0001047469-13-006614",
+          "location": "Balance Sheet - Inventory, FY2012 vs FY2011"
+        },
+        {
+          "quote": "SalesRevenueNet=2,316,203,000 (FY2012, 2011-04-01 to 2012-03-31) vs 2,362,886,000 (FY2011), -2.0% decline",
+          "source_accession_no": "0001047469-13-006614",
+          "location": "Income Statement - Net Sales FY2012 vs FY2011"
+        },
+        {
+          "quote": "GrossProfit=776,589,000 (FY2012) / SalesRevenueNet=2,316,203,000 = 33.5% margin vs GrossProfit=836,506,000 (FY2011) / SalesRevenueNet=2,362,886,000 = 35.4% margin",
+          "source_accession_no": "0001047469-13-006614",
+          "location": "Income Statement - Gross Profit FY2012 vs FY2011"
+        }
+      ]
+    },
+    {
+      "item_id": "CL5",
+      "question": "Is the earnings trajectory unusually smooth relative to the volatility of revenue and cash flow?",
+      "finding": "no_flag",
+      "confidence": "high",
+      "evidence": [
+        {
+          "quote": "NetIncomeLoss=-37,365,000 (Q1 FY2010, 2009-04-01 to 2009-06-30) vs 57,086,000 (Q3 FY2010, 2009-10-01 to 2009-12-31)",
+          "source_accession_no": "0001032975-10-000019",
+          "location": "Income Statement - quarterly Net Income"
+        },
+        {
+          "quote": "NetIncomeLossAvailableToCommonStockholdersBasic=-194,943,000 (Q3 FY2013, 2012-10-01 to 2012-12-31) vs 54,865,000 (Q2 FY2013, 2012-07-01 to 2012-09-30)",
+          "source_accession_no": "0001104659-13-007557",
+          "location": "Income Statement - quarterly Net Income FY2013"
+        }
+      ]
+    },
+    {
+      "item_id": "CL6",
+      "question": "Did liability, allowance, or reserve balances decline (or fail to grow) despite growing business activity?",
+      "finding": "flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "AllowanceForDoubtfulAccountsReceivableCurrent=5,870,000 (2010-03-31) declined to 2,153,000 (2013-03-31), a 63% reduction",
+          "source_accession_no": "0001047469-13-006614",
+          "location": "Balance Sheet Notes - Allowance for Doubtful Accounts"
+        },
+        {
+          "quote": "AccountsReceivableNetCurrent=195,247,000 (2010-03-31) vs 179,565,000 (2013-03-31), only an 8% reduction over the same period, far less than the allowance decline",
+          "source_accession_no": "0001047469-13-006614",
+          "location": "Balance Sheet - Accounts Receivable, Net"
+        }
+      ]
+    },
+    {
+      "item_id": "CL7",
+      "question": "Does the filing chronology show irregularities (late filings/NT forms, amendments, unusual 8-K frequency)?",
+      "finding": "flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "NT 10-Q filing_date=2009-08-06 preceding the 10-Q filed 2009-08-10",
+          "source_accession_no": "N/A",
+          "location": "Filing chronology - NT 10-Q"
+        },
+        {
+          "quote": "10-Q/A filing_date=2010-08-25 (accession 0001032975-10-000019) amending the quarter ended 2010-06-30",
+          "source_accession_no": "0001032975-10-000019",
+          "location": "Filing chronology - 10-Q/A"
+        },
+        {
+          "quote": "10-Q/A filing_date=2011-09-06 (accession 0001193125-11-241116) amending the quarter ended 2011-06-30",
+          "source_accession_no": "0001193125-11-241116",
+          "location": "Filing chronology - 10-Q/A"
+        }
+      ]
+    },
+    {
+      "item_id": "CL8",
+      "question": "Is the provided data sufficient in coverage and length for the above assessments?",
+      "finding": "no_flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "Quarterly and annual data available for SalesRevenueNet, GrossProfit, NetIncomeLoss, InventoryNet, AccountsReceivableNetCurrent, Goodwill, and Allowance for Doubtful Accounts spanning FY2009 through FY2013 (e.g., SalesRevenueNet=2,208,832,000 (FY2009) through SalesRevenueNet=2,099,883,000 (FY2013))",
+          "source_accession_no": "0001047469-13-006614",
+          "location": "Multiple statements, 10-K filed 2013-05-30"
+        },
+        {
+          "quote": "NetCashProvidedByUsedInFinancingActivities and NetCashProvidedByUsedInInvestingActivities series are incomplete for FY2012 and FY2013 annual periods, limiting full cash-flow-based analysis for the most recent years",
+          "source_accession_no": "0001193125-11-153485",
+          "location": "Cash Flow Statement series gaps"
+        }
+      ]
+    }
+  ],
+  "misstatement_probability": 40,
+  "mechanism_hypotheses": [
+    {
+      "affected_line_items": [
+        "Goodwill",
+        "OperatingIncomeLoss",
+        "NetIncomeLoss"
+      ],
+      "direction": "overstated",
+      "accounting_treatment": "Possible delayed recognition of goodwill impairment in periods prior to FY2013, resulting in an overstated goodwill/asset base that was later corrected via a large non-cash impairment charge concentrated in Q3 FY2013, which drove the annual net loss.",
+      "rationale_evidence": [
+        {
+          "quote": "Goodwill=560,523,000 (2012-03-31) fell to 345,313,000 (2012-12-31) and 340,132,000 (2013-03-31)",
+          "source_accession_no": "0001104659-13-007557",
+          "location": "Balance Sheet - Goodwill, Q3 FY2013 10-Q"
+        },
+        {
+          "quote": "OperatingIncomeLoss=-180,017,000 (Q3 FY2013, 2012-10-01 to 2012-12-31) and NetIncomeLossAvailableToCommonStockholdersBasic=-194,943,000 (same period)",
+          "source_accession_no": "0001104659-13-007557",
+          "location": "Income Statement - Q3 FY2013 10-Q"
+        },
+        {
+          "quote": "OperatingIncomeLoss=-252,434,000 (FY2013 annual, 2012-04-01 to 2013-03-31) vs 71,981,000 (FY2012 annual)",
+          "source_accession_no": "0001047469-13-006614",
+          "location": "Income Statement - FY2013 10-K"
+        }
+      ]
+    },
+    {
+      "affected_line_items": [
+        "AllowanceForDoubtfulAccountsReceivableCurrent",
+        "AccountsReceivableNetCurrent",
+        "NetIncomeLoss"
+      ],
+      "direction": "overstated",
+      "accounting_treatment": "Reduction of the bad-debt allowance at a rate far exceeding the decline in receivables balances could indicate reserve releases that modestly inflated net receivables and earnings in the periods when the company was still profitable (FY2011-FY2012), ahead of the later loss year.",
+      "rationale_evidence": [
+        {
+          "quote": "AllowanceForDoubtfulAccountsReceivableCurrent=5,870,000 (2010-03-31) declining to 4,086,000 (2011-03-31), 2,472,000 (2012-03-31), 2,153,000 (2013-03-31)",
+          "source_accession_no": "0001047469-13-006614",
+          "location": "Notes to Financial Statements - Allowance for Doubtful Accounts"
+        },
+        {
+          "quote": "AccountsReceivableNetCurrent=195,247,000 (2010-03-31), 258,294,000 (2011-03-31), 223,104,000 (2012-03-31), 179,565,000 (2013-03-31) - a much smaller relative decline than the allowance",
+          "source_accession_no": "0001047469-13-006614",
+          "location": "Balance Sheet - Accounts Receivable, Net"
+        }
+      ]
+    },
+    {
+      "affected_line_items": [
+        "InventoryNet",
+        "CostOfGoodsAndServicesSold",
+        "GrossProfit"
+      ],
+      "direction": "overstated",
+      "accounting_treatment": "Inventory build-up in FY2012 amid a revenue decline and gross-margin contraction could indicate insufficiently reserved excess/obsolete inventory, potentially understating cost of goods sold and overstating inventory value in that period.",
+      "rationale_evidence": [
+        {
+          "quote": "InventoryNet=297,072,000 (2012-03-31) vs 280,814,000 (2011-03-31), a 5.8% increase while SalesRevenueNet declined from 2,362,886,000 (FY2011) to 2,316,203,000 (FY2012)",
+          "source_accession_no": "0001047469-13-006614",
+          "location": "Balance Sheet / Income Statement, FY2012 vs FY2011"
+        },
+        {
+          "quote": "GrossProfit margin fell from 35.4% (GrossProfit=836,506,000 / SalesRevenueNet=2,362,886,000, FY2011) to 33.5% (GrossProfit=776,589,000 / SalesRevenueNet=2,316,203,000, FY2012)",
+          "source_accession_no": "0001047469-13-006614",
+          "location": "Income Statement, FY2012 vs FY2011"
+        }
+      ]
+    }
+  ],
+  "overall": {
+    "risk_tier": "watch",
+    "top_signals": [
+      "Large goodwill impairment (~$220M, Goodwill=560,523,000 (2012-03-31) to 340,132,000 (2013-03-31)) concentrated in Q3 FY2013, raising questions about the timeliness of prior impairment testing",
+      "Allowance for doubtful accounts fell 63% (5,870,000 to 2,153,000, 2010-03-31 to 2013-03-31) far outpacing an 8% decline in gross receivables, suggesting possible reserve releases",
+      "Two 10-Q/A amendments (2010-08-25 and 2011-09-06) and one NT 10-Q (2009-08-06) indicate some reporting/filing friction, though not clearly tied to misstatement",
+      "Inventory grew 5.8% in FY2012 despite a 2.0% revenue decline, alongside gross margin compression from 35.4% to 33.5%",
+      "Earnings are highly volatile (not smoothed) and operating cash flow generally exceeds net income, both of which are mitigating factors against classic earnings-management red flags"
+    ]
+  }
+}

@@ -1,0 +1,227 @@
+{
+  "case_id": "case_06",
+  "run_id": "original-case_06-r1",
+  "model": "claude-sonnet-5",
+  "pipeline_version": "f5589896d9aa7586f22e2f039f0ce626d9801666",
+  "run_timestamp": "2026-07-07T03:57:30.344836+00:00",
+  "documents_used": [
+    {
+      "accession_no": "0000950123-10-001322",
+      "form_type": "10-Q",
+      "filing_date": "2010-01-08"
+    },
+    {
+      "accession_no": "0000950123-10-033175",
+      "form_type": "10-Q",
+      "filing_date": "2010-04-08"
+    },
+    {
+      "accession_no": "0000950123-10-063363",
+      "form_type": "10-Q",
+      "filing_date": "2010-07-02"
+    },
+    {
+      "accession_no": "0000950123-11-033772",
+      "form_type": "10-Q",
+      "filing_date": "2011-04-07"
+    },
+    {
+      "accession_no": "0000950123-11-034037",
+      "form_type": "8-K",
+      "filing_date": "2011-04-08"
+    },
+    {
+      "accession_no": "0000950123-11-034042",
+      "form_type": "8-K",
+      "filing_date": "2011-04-08"
+    }
+  ],
+  "checklist": [
+    {
+      "item_id": "CL1",
+      "question": "Did receivables grow materially faster than revenue across consecutive periods?",
+      "finding": "flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "AccountsReceivableNetCurrent=1556000000 (2009-08-31)",
+          "source_accession_no": "0000950123-11-034037",
+          "location": "AccountsReceivableNetCurrent, FY2009 year-end"
+        },
+        {
+          "quote": "AccountsReceivableNetCurrent=1590000000 (2010-08-31)",
+          "source_accession_no": "0000950123-11-034042",
+          "location": "AccountsReceivableNetCurrent, FY2010 year-end"
+        },
+        {
+          "quote": "SalesRevenueNet=11724000000 (2008-09-01 to 2009-08-31)",
+          "source_accession_no": "0000950123-11-034037",
+          "location": "SalesRevenueNet, FY2009 annual"
+        },
+        {
+          "quote": "SalesRevenueNet=10502000000 (2009-09-01 to 2010-08-31)",
+          "source_accession_no": "0000950123-11-034037",
+          "location": "SalesRevenueNet, FY2010 annual (year-end AR rose ~2.2% while FY revenue fell ~10.4%; intra-year AR is highly seasonal, e.g. 3233M at 2010-05-31, limiting confidence this reflects misstatement rather than timing)"
+        }
+      ]
+    },
+    {
+      "item_id": "CL2",
+      "question": "Did non-current 'soft' assets (intangibles, other assets, capitalized items) grow materially faster than the business overall?",
+      "finding": "no_flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "IntangibleAssetsNetExcludingGoodwill=1371000000 (2009-08-31)",
+          "source_accession_no": "0000950123-11-034037",
+          "location": "IntangibleAssetsNetExcludingGoodwill FY2009"
+        },
+        {
+          "quote": "IntangibleAssetsNetExcludingGoodwill=1263000000 (2010-08-31)",
+          "source_accession_no": "0000950123-11-034042",
+          "location": "IntangibleAssetsNetExcludingGoodwill FY2010"
+        },
+        {
+          "quote": "Goodwill=3218000000 (2009-08-31)",
+          "source_accession_no": "0000950123-11-034037",
+          "location": "Goodwill FY2009"
+        },
+        {
+          "quote": "Goodwill=3204000000 (2010-08-31)",
+          "source_accession_no": "0000950123-11-034042",
+          "location": "Goodwill FY2010 (intangibles declined ~7.9%, goodwill roughly flat -0.4%, versus revenue decline of 10.4%; OtherAssetsNoncurrent grew modestly 496M->524M from a small base) - no soft-asset outpacing observed"
+        }
+      ]
+    },
+    {
+      "item_id": "CL3",
+      "question": "Is there a persistent divergence between net income and operating cash flow?",
+      "finding": "no_flag",
+      "confidence": "high",
+      "evidence": [
+        {
+          "quote": "NetIncomeLoss=2024000000 (2007-09-01 to 2008-08-31); NetCashProvidedByUsedInOperatingActivities=2837000000 (2007-09-01 to 2008-08-31)",
+          "source_accession_no": "0000950123-11-034037",
+          "location": "FY2008 annual NI vs OCF"
+        },
+        {
+          "quote": "NetIncomeLoss=2109000000 (2008-09-01 to 2009-08-31); NetCashProvidedByUsedInOperatingActivities=2246000000 (2008-09-01 to 2009-08-31)",
+          "source_accession_no": "0000950123-11-034037",
+          "location": "FY2009 annual NI vs OCF"
+        },
+        {
+          "quote": "NetIncomeLoss=1109000000 (2009-09-01 to 2010-08-31); NetCashProvidedByUsedInOperatingActivities=1398000000 (2009-09-01 to 2010-08-31)",
+          "source_accession_no": "0000950123-11-034037",
+          "location": "FY2010 annual NI vs OCF - OCF meets or exceeds NI in every available fiscal year, inconsistent with earnings inflation"
+        }
+      ]
+    },
+    {
+      "item_id": "CL4",
+      "question": "Do inventory levels or gross margins show trends inconsistent with revenue?",
+      "finding": "flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "GrossProfit=6762000000 (2008-09-01 to 2009-08-31); SalesRevenueNet=11724000000 (2008-09-01 to 2009-08-31)",
+          "source_accession_no": "0000950123-11-034037",
+          "location": "FY2009 gross margin ~57.7%"
+        },
+        {
+          "quote": "GrossProfit=5086000000 (2009-09-01 to 2010-08-31); SalesRevenueNet=10502000000 (2009-09-01 to 2010-08-31)",
+          "source_accession_no": "0000950123-11-034037",
+          "location": "FY2010 gross margin ~48.4%"
+        },
+        {
+          "quote": "InventoryNet=2934000000 (2009-08-31); InventoryNet=2739000000 (2010-08-31)",
+          "source_accession_no": "0000950123-11-034042",
+          "location": "InventoryNet FY2009 vs FY2010 declined only 6.6% vs 10.4% revenue decline; gross margin compressed sharply from ~57.7% to ~48.4%, indicating margin/turnover pressure likely tied to real pricing dynamics rather than smoothing"
+        }
+      ]
+    },
+    {
+      "item_id": "CL5",
+      "question": "Is the earnings trajectory unusually smooth relative to the volatility of revenue and cash flow?",
+      "finding": "no_flag",
+      "confidence": "high",
+      "evidence": [
+        {
+          "quote": "NetIncomeLoss=-19000000 (2009-09-01 to 2009-11-30); NetIncomeLoss=887000000 (2009-12-01 to 2010-02-28)",
+          "source_accession_no": "0000950123-11-034037",
+          "location": "Quarterly NI swings FY2010"
+        },
+        {
+          "quote": "NetIncomeLoss=-143000000 (2010-06-01 to 2010-08-31); NetIncomeLoss=6000000 (2010-09-01 to 2010-11-30)",
+          "source_accession_no": "0000950123-11-034042",
+          "location": "Quarterly NI swings around FY2010/2011 - large swings including losses track seasonal revenue pattern, indicating no artificial smoothing"
+        }
+      ]
+    },
+    {
+      "item_id": "CL6",
+      "question": "Did liability, allowance, or reserve balances decline (or fail to grow) despite growing business activity?",
+      "finding": "flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "AllowanceForDoubtfulAccountsReceivableCurrent=218000000 (2008-08-31)",
+          "source_accession_no": "0000950123-11-034037",
+          "location": "Allowance FY2008"
+        },
+        {
+          "quote": "AllowanceForDoubtfulAccountsReceivableCurrent=143000000 (2010-08-31)",
+          "source_accession_no": "0000950123-11-034042",
+          "location": "Allowance FY2010"
+        },
+        {
+          "quote": "AllowanceForDoubtfulAccountsReceivableCurrent=111000000 (2011-02-28)",
+          "source_accession_no": "0000950123-11-033772",
+          "location": "Allowance Q2 FY2011"
+        },
+        {
+          "quote": "AccountsReceivableNetCurrent=2377000000 (2011-02-28)",
+          "source_accession_no": "0000950123-11-033772",
+          "location": "AR Q2 FY2011 - allowance fell ~49% (218M->111M) from FY2008 to Feb-2011 even as gross AR grew (2377M vs 2093M a year earlier), coverage ratio dropping from ~14% to under 5%, possibly indicating reserve release supporting earnings"
+        }
+      ]
+    },
+    {
+      "item_id": "CL7",
+      "question": "Does the filing chronology show irregularities (late filings/NT forms, amendments, unusual 8-K frequency)?",
+      "finding": "no_flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "8-K/A filed 2009-09-15; 8-K/A filed 2010-04-07; 8-K/A filed 2010-08-31",
+          "source_accession_no": "N/A",
+          "location": "filing_chronology - no NT 10-Q/10-K or 10-K/A restatements observed; periodic reports filed on regular schedule; a few 8-K/A amendments are not unusual for a company of this size"
+        }
+      ]
+    },
+    {
+      "item_id": "CL8",
+      "question": "Is the provided data sufficient in coverage and length for the above assessments?",
+      "finding": "insufficient_data",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "SalesRevenueNet start 2007-09-01 end 2008-08-31 value 11365000000",
+          "source_accession_no": "0000950123-11-034037",
+          "location": "Earliest annual revenue data point (FY2008) - dataset provides only ~3 full fiscal years of income statement data (FY2008-FY2010) plus partial FY2011 quarters, missing tax, segment, and reserve footnote detail needed for deeper forensic review"
+        }
+      ]
+    }
+  ],
+  "misstatement_probability": 30,
+  "mechanism_hypotheses": [],
+  "overall": {
+    "risk_tier": "watch",
+    "top_signals": [
+      "Declining allowance for doubtful accounts (218M FY2008 -> 143M FY2010 -> 111M at 2011-02-28) even as gross accounts receivable grew into 2011 (2377M at 2011-02-28 vs 2093M a year earlier), suggesting possible reserve release supporting reported results",
+      "Year-end accounts receivable grew slightly (1556M FY2009 -> 1590M FY2010) while annual revenue fell materially (11724M -> 10502M), an unusual divergence though partly explainable by seasonality",
+      "Sharp gross margin compression (57.7% FY2009 -> 48.4% FY2010) alongside inventory declining less than revenue, indicating real margin/cost pressure rather than a smoothing artifact",
+      "Offsetting positive signals: operating cash flow met or exceeded net income in every available fiscal year (e.g., OCF=2837M vs NI=2024M in FY2008; OCF=1398M vs NI=1109M in FY2010), and quarterly earnings show natural, unsmoothed seasonal volatility consistent with the agricultural business cycle",
+      "No NT filings, restatements, or unusual 8-K spikes were observed in the filing chronology through the cutoff date"
+    ]
+  }
+}

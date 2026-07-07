@@ -1,0 +1,377 @@
+{
+  "framing": "post-hoc robustness completion (RP-07 D-2) — RP-05 §1 pre-registered verdict stands unchanged regardless of outcome",
+  "k": 5,
+  "per_case": {
+    "case_01": {
+      "ticker": "SCOR",
+      "company": "Comscore, Inc.",
+      "orig_draws": [
+        55,
+        58,
+        60,
+        55,
+        58
+      ],
+      "orig_mean": 57.2,
+      "orig_sd": 1.94,
+      "orig_range_pp": 5,
+      "pert_draws": [
+        45,
+        45,
+        45,
+        50,
+        42
+      ],
+      "pert_mean": 45.4,
+      "pert_sd": 2.58
+    },
+    "case_02": {
+      "ticker": "OFIX",
+      "company": "Orthofix International N.V.",
+      "orig_draws": [
+        60,
+        85,
+        60,
+        70,
+        78
+      ],
+      "orig_mean": 70.6,
+      "orig_sd": 9.87,
+      "orig_range_pp": 25,
+      "pert_draws": [
+        45,
+        55,
+        60,
+        60,
+        50
+      ],
+      "pert_mean": 54,
+      "pert_sd": 5.83
+    },
+    "case_03": {
+      "ticker": "LOGI",
+      "company": "Logitech International S.A.",
+      "orig_draws": [
+        42,
+        40,
+        48,
+        42,
+        40
+      ],
+      "orig_mean": 42.4,
+      "orig_sd": 2.94,
+      "orig_range_pp": 8,
+      "pert_draws": [
+        45,
+        50,
+        45,
+        45,
+        48
+      ],
+      "pert_mean": 46.6,
+      "pert_sd": 2.06
+    },
+    "case_06": {
+      "ticker": "MON",
+      "company": "Monsanto Company",
+      "orig_draws": [
+        28,
+        30,
+        45,
+        60,
+        32
+      ],
+      "orig_mean": 39,
+      "orig_sd": 12.07,
+      "orig_range_pp": 32,
+      "pert_draws": [
+        58,
+        48,
+        52,
+        58,
+        58
+      ],
+      "pert_mean": 54.8,
+      "pert_sd": 4.12
+    },
+    "case_08": {
+      "ticker": "HTZ",
+      "company": "Hertz Global Holdings, Inc.",
+      "orig_draws": [
+        78,
+        85,
+        90,
+        65,
+        72
+      ],
+      "orig_mean": 78,
+      "orig_sd": 8.92,
+      "orig_range_pp": 25,
+      "pert_draws": [
+        55,
+        45,
+        45,
+        52,
+        42
+      ],
+      "pert_mean": 47.8,
+      "pert_sd": 4.87
+    },
+    "case_09": {
+      "ticker": "ICON",
+      "company": "Iconix Brand Group, Inc.",
+      "orig_draws": [
+        65,
+        65,
+        68,
+        62,
+        68
+      ],
+      "orig_mean": 65.6,
+      "orig_sd": 2.24,
+      "orig_range_pp": 6,
+      "pert_draws": [
+        55,
+        60,
+        45,
+        58,
+        48
+      ],
+      "pert_mean": 53.2,
+      "pert_sd": 5.78
+    },
+    "case_12": {
+      "ticker": "KHC",
+      "company": "The Kraft Heinz Company",
+      "orig_draws": [
+        68,
+        78,
+        68,
+        68,
+        60
+      ],
+      "orig_mean": 68.4,
+      "orig_sd": 5.71,
+      "orig_range_pp": 18,
+      "pert_draws": [
+        68,
+        82,
+        68,
+        62,
+        72
+      ],
+      "pert_mean": 70.4,
+      "pert_sd": 6.62
+    },
+    "case_13": {
+      "ticker": "MRVL",
+      "company": "Marvell Technology Group, Ltd.",
+      "orig_draws": [
+        55,
+        65,
+        62,
+        58,
+        45
+      ],
+      "orig_mean": 57,
+      "orig_sd": 6.9,
+      "orig_range_pp": 20,
+      "pert_draws": [
+        42,
+        25,
+        33,
+        50,
+        58
+      ],
+      "pert_mean": 41.6,
+      "pert_sd": 11.74
+    }
+  },
+  "delta_decomposition_completed": [
+    {
+      "case_id": "case_01",
+      "ticker": "SCOR",
+      "delta_draw1": 10,
+      "delta_mean_orig_minus_pert": 11.8,
+      "inside_noise_sd_orig": 1.94,
+      "inside_noise_sd_pert": 2.58,
+      "noise_sd_delta_single_draw": 3.23,
+      "delta_draw1_within_2sd_noise": false,
+      "se_delta_mean": 1.44,
+      "outside_signal_delta_mean_beyond_2se": true
+    },
+    {
+      "case_id": "case_02",
+      "ticker": "OFIX",
+      "delta_draw1": 15,
+      "delta_mean_orig_minus_pert": 16.6,
+      "inside_noise_sd_orig": 9.87,
+      "inside_noise_sd_pert": 5.83,
+      "noise_sd_delta_single_draw": 11.46,
+      "delta_draw1_within_2sd_noise": true,
+      "se_delta_mean": 5.13,
+      "outside_signal_delta_mean_beyond_2se": true
+    },
+    {
+      "case_id": "case_03",
+      "ticker": "LOGI",
+      "delta_draw1": -3,
+      "delta_mean_orig_minus_pert": -4.2,
+      "inside_noise_sd_orig": 2.94,
+      "inside_noise_sd_pert": 2.06,
+      "noise_sd_delta_single_draw": 3.59,
+      "delta_draw1_within_2sd_noise": true,
+      "se_delta_mean": 1.61,
+      "outside_signal_delta_mean_beyond_2se": true
+    },
+    {
+      "case_id": "case_06",
+      "ticker": "MON",
+      "delta_draw1": -30,
+      "delta_mean_orig_minus_pert": -15.8,
+      "inside_noise_sd_orig": 12.07,
+      "inside_noise_sd_pert": 4.12,
+      "noise_sd_delta_single_draw": 12.75,
+      "delta_draw1_within_2sd_noise": false,
+      "se_delta_mean": 5.7,
+      "outside_signal_delta_mean_beyond_2se": true
+    },
+    {
+      "case_id": "case_08",
+      "ticker": "HTZ",
+      "delta_draw1": 23,
+      "delta_mean_orig_minus_pert": 30.2,
+      "inside_noise_sd_orig": 8.92,
+      "inside_noise_sd_pert": 4.87,
+      "noise_sd_delta_single_draw": 10.16,
+      "delta_draw1_within_2sd_noise": false,
+      "se_delta_mean": 4.55,
+      "outside_signal_delta_mean_beyond_2se": true
+    },
+    {
+      "case_id": "case_09",
+      "ticker": "ICON",
+      "delta_draw1": 10,
+      "delta_mean_orig_minus_pert": 12.4,
+      "inside_noise_sd_orig": 2.24,
+      "inside_noise_sd_pert": 5.78,
+      "noise_sd_delta_single_draw": 6.2,
+      "delta_draw1_within_2sd_noise": true,
+      "se_delta_mean": 2.77,
+      "outside_signal_delta_mean_beyond_2se": true
+    },
+    {
+      "case_id": "case_12",
+      "ticker": "KHC",
+      "delta_draw1": 0,
+      "delta_mean_orig_minus_pert": -2.0,
+      "inside_noise_sd_orig": 5.71,
+      "inside_noise_sd_pert": 6.62,
+      "noise_sd_delta_single_draw": 8.74,
+      "delta_draw1_within_2sd_noise": true,
+      "se_delta_mean": 3.91,
+      "outside_signal_delta_mean_beyond_2se": false
+    },
+    {
+      "case_id": "case_13",
+      "ticker": "MRVL",
+      "delta_draw1": 13,
+      "delta_mean_orig_minus_pert": 15.4,
+      "inside_noise_sd_orig": 6.9,
+      "inside_noise_sd_pert": 11.74,
+      "noise_sd_delta_single_draw": 13.62,
+      "delta_draw1_within_2sd_noise": true,
+      "se_delta_mean": 6.09,
+      "outside_signal_delta_mean_beyond_2se": true
+    }
+  ],
+  "n_outside_signal": 7,
+  "n_delta_draw1_explained_by_noise": 5,
+  "original_vs_control_per_draw": [
+    {
+      "p": 0.0094,
+      "auc": 0.8438,
+      "median_t": 57.5,
+      "median_c": 31.0,
+      "separation_pp": 26.5,
+      "sd_all16": 17.0,
+      "brier": 0.1768,
+      "failure_b_triggers": {},
+      "draw": 1,
+      "separation<10pp": false
+    },
+    {
+      "p": 0.0012,
+      "auc": 0.9297,
+      "median_t": 65.0,
+      "median_c": 26.0,
+      "separation_pp": 39.0,
+      "sd_all16": 22.79,
+      "brier": 0.131,
+      "failure_b_triggers": {},
+      "draw": 2,
+      "separation<10pp": false
+    },
+    {
+      "p": 0.0005,
+      "auc": 0.9531,
+      "median_t": 61.0,
+      "median_c": 36.0,
+      "separation_pp": 25.0,
+      "sd_all16": 18.36,
+      "brier": 0.1488,
+      "failure_b_triggers": {},
+      "draw": 3,
+      "separation<10pp": false
+    },
+    {
+      "p": 0.0005,
+      "auc": 0.9531,
+      "median_t": 61.0,
+      "median_c": 28.5,
+      "separation_pp": 32.5,
+      "sd_all16": 17.88,
+      "brier": 0.1401,
+      "failure_b_triggers": {},
+      "draw": 4,
+      "separation<10pp": false
+    },
+    {
+      "p": 0.0026,
+      "auc": 0.8984,
+      "median_t": 59.0,
+      "median_c": 27.5,
+      "separation_pp": 31.5,
+      "sd_all16": 18.25,
+      "brier": 0.1579,
+      "failure_b_triggers": {},
+      "draw": 5,
+      "separation<10pp": false
+    }
+  ],
+  "separation_families": {
+    "perturbed_treat_vs_original_ctrl_k5": [
+      19.0,
+      23.0,
+      9.0,
+      26.5,
+      21.5
+    ],
+    "original_treat_vs_original_ctrl_k5": [
+      26.5,
+      39.0,
+      25.0,
+      32.5,
+      31.5
+    ],
+    "note": "전자 = RP-06 A3 (draw3=9.0pp 사건의 프레임), 후자 = 본 완결"
+  },
+  "draw3_event": {
+    "observed": 9.0,
+    "pert_family_mean": 19.8,
+    "pert_family_sd": 6.62,
+    "z_of_draw3": -1.63,
+    "orig_family_min": 25.0,
+    "any_orig_family_below_10": false
+  }
+}
