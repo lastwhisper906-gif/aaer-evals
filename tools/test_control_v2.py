@@ -92,3 +92,11 @@ def test_sic_tier_ordering():
 def test_probe_runner_is_concurrent():
     src = (Path(__file__).parents[1] / "pipeline/probe_runner.py").read_text(encoding="utf-8")
     assert "ThreadPoolExecutor" in src and "--concurrency" in src
+
+
+def test_s0_gate_has_no_exclusion_power():
+    """S0-v2 개정 회귀 방지: 조잡 게이트가 eligible을 끄는 코드 부재 (우선순위 전용)."""
+    src = (Path(__file__).parent / "control_v2.py").read_text(encoding="utf-8")
+    fetch_c = src.split("def cmd_fetch")[1].split("def cmd_validate")[0]
+    assert "조잡 게이트 |log|" not in fetch_c
+    assert "COARSE_BAND" not in src

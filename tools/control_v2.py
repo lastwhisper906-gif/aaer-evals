@@ -23,7 +23,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from rp08_common import (BIG_DIR, CASES, COARSE_BAND, FRAME_TAGS, SIZE_BAND,
+from rp08_common import (BIG_DIR, CASES, FRAME_TAGS, SIZE_BAND,
                          TIE_DELTA, fye_month_dist, pit_size, screen_submissions,
                          sha256_file, treatment_ciks, RP01_DISQUALIFIED_CIKS,
                          MIN_10K, MIN_10Q, HISTORY_Y)
@@ -214,15 +214,10 @@ def cmd_fetch() -> int:
                 continue
             fv = fmap.get(cik)
             rec["coarse_rev"] = fv
-            if fv and fv > 0:
-                dist = abs(math.log(fv / spec["rev_pit"]))
-                rec["coarse_dist"] = round(dist, 4)
-                if dist > COARSE_BAND:
-                    rec["eligible"] = False
-                    rec["fails"] = [f"S0 조잡 게이트 |log|={dist:.2f} > log6 (frames CY{cy})"]
-                    continue
-            else:
-                rec["coarse_dist"] = None
+            # S0-v2 개정: 조잡 게이트는 제외 권한 없음 — 우선순위 전용
+            # (frames CY는 비달력 FYE에서 체계 오차 — GIS 오배제 실측, criteria §S0-v2)
+            rec["coarse_dist"] = (round(abs(math.log(fv / spec["rev_pit"])), 4)
+                                  if fv and fv > 0 else None)
             ranked.append(rec)
         ranked.sort(key=lambda r: (r["coarse_dist"] if r["coarse_dist"] is not None else 0.0,
                                    r["cik"]))
