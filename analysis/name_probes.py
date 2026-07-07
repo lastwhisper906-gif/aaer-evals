@@ -24,16 +24,16 @@ def main() -> int:
         (REPO / "data/candidates/candidates_v2_controls.json").read_text())["candidates"]}
 
     rows = []
-    for sub, mapping, cands, grp in (
-            ("recognition", m2, cands2, "control"),
-            ("recognition_treatment", m1, cands1, "fraud")):
-        d = REPO / "scoring/probe_results_v2" / sub
-        if not d.is_dir():
-            print(f"[대기] {d} 부재 — 해당 절반 미실행")
-            continue
-        for p in sorted(d.glob("case_*.json")):
-            j = json.loads(p.read_text())
-            cid = p.stem
+    d = REPO / "scoring/probe_results_v2/recognition"
+    for p in sorted(d.glob("case_*.json")):
+        j = json.loads(p.read_text())
+        cid = p.stem
+        num = int(cid.split("_")[1])
+        if num <= 16:
+            mapping, cands, grp = m1, cands1, "fraud"
+        else:
+            mapping, cands, grp = m2, cands2, "control"
+        if True:
             truth = cands[mapping[cid]]
             hit = name_match(j["company_guess"], truth)
             rows.append({"case_id": cid, "group": grp,
