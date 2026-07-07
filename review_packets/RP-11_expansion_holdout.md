@@ -17,11 +17,14 @@
   채점순서(`9438b0c`), 홀드아웃 기준(`62d2fda`).
 - **wave-2 로스터 = 규칙+게이트가 확정**: A형 23 − 채점 8 − 오염 2 − G-XBRL 실패
   4 = **생존 9** (`190783b`).
+- **wave-2 전 파이프라인 실행 완료 → 발동 규칙 R4 (능력 시연)**: 채점 32(9v23)
+  +교란 9+프로브 64+채점자 32 동결. 순열 p=0.00116, AUC 0.829, R1/R2/R3 전부
+  비발동. wave-1(R3 암기)과 대조되는 결과 (§2.4).
 - **홀드아웃 RECOGNITION GATE 실행·freeze**: 후보 3/3 **비인지 실증** → N=3,
   H3-STOP 비발동 (`0d64a7a`). 계기는 양성 대조 2건으로 검증.
-- **INCOMPLETE**: wave-2 채점·프로브·채점자 전건, 홀드아웃 채점(H1/H2). 재개
-  명령 §6.
-- make verify **green** (reproduce 100/100 · blindness PASS · manifest 328 ·
+- **INCOMPLETE**: 홀드아웃 채점(H1/H2) — 컷오프 후 3사+대조군 채점 (§3.4).
+  wave-2는 완료.
+- make verify **green** (reproduce 100/100 · blindness PASS · manifest 396 ·
   pytest 76).
 
 ## 1. P0 저장소 무결성 (완료)
@@ -65,16 +68,30 @@ ICON·MRVL·SCOR·KHC) = 15 − worked-example 오염 2 (**VRX·GE** — 채점 
   다 채점 해석 시 참조.
 - WFT 전신 CIK(0001170565) companyfacts 404 — XBRL 시대 이전, 주 CIK가 커버.
 
-### 2.4 발동 결론 규칙
-**미결(INCOMPLETE)** — wave-2 채점 점수가 없으므로 R1-R4 판정 불가. §6 재개 후
-`ANALYSIS_PLAN_WAVE2 §4`로 standalone 1차 판정, pooled 2차 병기. **wave-1
-동결 결과에 의존해 wave-2 규칙을 대리 판정하지 않는다.**
+### 2.4 발동 결론 규칙 (실행 완료 — **R4 발동**)
+소유자 발사 승인 후 전 파이프라인 실행 완료: 대조군 선정 23 → 채점 32(실험군
+9+대조군 23) → 교란 draw 9 → 인지 프로브 32 → verbatim 프로브 32 → 채점자 32
+(human_finalized=false). 전건 동결. 분석 `analysis/wave2_summary.md` +
+`wave2_results.json` (`python analysis/wave2_analyze.py` 재현):
 
-### 2.5 INCOMPLETE 명세 (wave-2)
-대조군 선정(순수함수, 생존 9 대상 2-3/케이스, 기존 22 dedup) · 페이로드 빌드 ·
-채점 9+대조군 · 인지/이름 프로브 · 교란 draw 9 · 채점자. **미발사.** 사유:
-시간·컨텍스트 예산 절단 (degradation §5). 데이터(생존 9 XBRL)는 fetch·freeze
-완료 — 재개는 대조군 선정부터.
+- **R1 비발동**: 순열 p = **0.00116** (평균차 +20.6pp, fraud 55.2 vs control 34.7).
+- **R2 비발동**: ρ(LLM,M)=0.337 · ρ(LLM,F)=0.265 (< 0.7).
+- **R3 비발동**: 정체-교란 초과 **3/9** (CSC·BRX·UAA) — 과반 미달 (wave-1 5/8 대조).
+- ⇒ **R4 발동 (능력 시연)**. Cliff δ 0.657 · AUC 0.829 [0.616, 0.983] · Fisher
+  7/9 vs 5/23 · FPR 21.7% CP[7.5%, 43.7%]. 이름 프로브 정답률 **25%**(wave-1
+  50%의 절반 — 덜 유명한 표본, 암기 약함 → R3 비발동과 정합).
+- **pooled 2차 (17 vs 45, 병기 전용)**: p = 3.0e-05 · AUC 0.831 (wave-1 동결
+  재사용·재채점 없음; standalone R4가 헤드라인).
+
+**핵심**: wave-1(유명 사건)=R3(암기 얽힘) → wave-2(덜 유명)=R4(잔여 능력). 컷오프
+후 홀드아웃이 능력 질문의 독립 검증. N=9 단일 파이프라인 한정 (R4 프레이밍 제약).
+
+### 2.5 wave-2 대조군 (게이트 확정)
+동결 `control_v2` 순수 함수(드라이버 `tools/wave2_controls.py`, 케이스 스펙 유도
++ decade sic_supp) → **23 선정** (2-3/케이스, 우수한 산업 매칭: CGI→Saia·Marten
+트럭 · HAIN→Flowers·Darling 식품 · UAA→Levi·Ralph Lauren 의류 · BRX→REIT 3사).
+런북 `tools/run_wave2_scoring.py` (동결 파이프라인 무수정 재사용, WFT 폭로-후
+사명 누출 수정). 발사 중 레이트리밋 1회 → 멱등 재개.
 
 ## 3. P2 Holdout — RECOGNITION GATE 실행·admit, 채점 INCOMPLETE
 

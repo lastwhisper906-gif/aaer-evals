@@ -11,10 +11,9 @@
 
 Issue #0 rests on N = 8 fraud cases. The obvious first strengthening is more cases,
 drawn by the *same* frozen rules — no cherry-picking. This issue records the
-mechanical expansion. **Its statistical result is not yet in: the wave-2 scoring
-has not been run in this cycle (INCOMPLETE).** What *is* done is the part that must
-precede any score — the pre-registration and the roster decision — so that the
-eventual result cannot be accused of post-hoc selection.
+mechanical expansion and its result. The pre-registration and roster decision were
+committed **before any score existed** (`9438b0c`), so the result (§5: conclusion
+rule R4 fired) cannot be accused of post-hoc selection.
 
 ## 2. The roster is a rule, not a choice
 
@@ -67,15 +66,29 @@ fraud case is pre-committed (first casualty of the time-degradation ladder). A
 memorization-stratified comparison (perturbation Δ, recognition + name-prediction
 probes) is pre-specified.
 
-## 5. Status and next step (honest)
+## 5. Result — conclusion rule **R4 (capability)** fired
 
-- **Done**: pre-registration, worked-example exclusions, gate-decided roster of 9,
-  survivor XBRL fetched and integrity-manifested.
-- **INCOMPLETE**: control selection (frozen pure function, 2–3 per case, deduped
-  against the existing 22), payload build, scoring + probes + graders
-  (human_finalized=false), and the standalone/pooled analysis. Resume procedure:
-  `review_packets/RP-11_expansion_holdout.md` §6. Until scored, **no conclusion
-  rule has fired** and this issue makes no separation claim.
+Full pipeline executed (23 controls selected by the frozen pure function; 32 scored;
+9 perturbed; 64 recognition/verbatim probes; 32 grades, human_finalized=false).
+Standalone primary (9 fraud vs 23 control), reproducible via
+`python analysis/wave2_analyze.py`:
+
+- **R1 no** — permutation p = **0.00116** (mean diff +20.6pp, 55.2 vs 34.7).
+- **R2 no** — Spearman ρ(LLM, M) = 0.337, ρ(LLM, F) = 0.265 (both < 0.7).
+- **R3 no** — identity-perturbation crossed only **3/9** (CSC, BRX, UAA); below the
+  memorization-majority bar. Wave-1 was 5/8.
+- ⇒ **R4 fires**: capability demonstration on this curated set (AUC 0.829
+  [0.616, 0.983], Cliff δ 0.657, flags 7/9 vs 5/23, FPR 21.7% CP [7.5%, 43.7%]).
+  Framing constraint (R4): **no benchmark-comparable accuracy/AUC claim**.
+
+**The contrast is the finding.** Wave-1's famous cases fired R3 (memorization
+entangled). Wave-2's less-famous cases fire R4 — the separation survives both the
+memorization check and the mechanical-baseline check, and the name-prediction probe
+identifies only **25%** of wave-2 firms (vs wave-1's 50%), confirming weaker
+memorization. Two misses (CSC, BRX) are themselves memorization-crossed cases.
+Pooled secondary (17 vs 45, wave-1 frozen scores reused, **never a standalone
+headline**): p = 3.0e-05, AUC 0.831. Full write-up: `analysis/wave2_summary.md`;
+grades await human finalization.
 
 ## 6. Framing
 
