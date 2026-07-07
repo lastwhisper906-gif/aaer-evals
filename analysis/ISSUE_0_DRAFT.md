@@ -189,8 +189,9 @@ accuracy/AUC claim** (pre-committed rule R4's framing constraint).
    (footnotes, MD&A text) are outside the input space; the Monsanto miss is
    partly this limit.
 5. **Single-model dependency**: one evaluatee (claude-sonnet-5), one pipeline;
-   the grading is Claude-assisted with human finalization. No cross-model
-   check has run yet.
+   the grading is Claude-assisted with human finalization. A cross-model check
+   (E4) is pre-registered as **EXPLORATORY** (`analysis/CROSSMODEL_PLAN.md`,
+   claude-opus-4-8) — footnote only, not yet executed.
 6. **Prompt sensitivity**: one frozen prompt/schema; k=5 redraws bound
    sampling noise (per-case σ up to 12pp) but not prompt variation.
 7. **Base-rate translation**: at ~0.7% real-world fraud prevalence, even the
@@ -206,8 +207,8 @@ accuracy/AUC claim** (pre-committed rule R4's framing constraint).
   `docs/FUTURE_HOLDOUT_CANDIDATES.md` (Tier 2 — post-release revelations — is
   empty as of 2026-07-07 and fills with time).
 - Frozen-pipeline forward watchlist with timestamped, falsifiable predictions.
-- Cross-model disagreement check; earliness trajectories per
-  `docs/EARLINESS_DESIGN.md`.
+- Cross-model disagreement check (E4, **EXPLORATORY** — `analysis/CROSSMODEL_PLAN.md`);
+  earliness trajectories (E2) per `docs/EARLINESS_DESIGN.md` / `analysis/EARLINESS_PLAN.md`.
 
 ## 9. Framing and disclaimers
 

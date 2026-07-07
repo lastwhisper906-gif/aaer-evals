@@ -7,3 +7,4 @@ verify:
 	.venv/bin/python tools/reproduce_analysis.py
 	.venv/bin/python tools/verify_blindness.py
 	.venv/bin/python tools/verify_manifest.py
+	.venv/bin/python tools/lint_publication.py

@@ -67,16 +67,19 @@ point-in-time data (cutoff = day before the 8-K). Results (`analysis/holdout_sum
 - **H3's N<3 STOP does not fire** (N=3 admitted).
 - **H1 not claimed**: at N=3, a fraud-vs-control permutation is structurally
   underpowered; we make no significance claim (H1's qualification isn't met).
-- **H2 fires** (per-case, no pooling): Hub Group's 70 sits at the top of the fraud
-  range (wave-1 median 57.5, wave-2 58; controls ~34); Weis (32) reads control-like;
-  Genie (42) is borderline. On genuinely unmemorizable events, **detection is real
-  on the strongest fraud-like case but modest and mixed** (1 of 3 flagged). The
-  mechanical screens could not even compute Hub Group's M/F — so the LLM's flag is
-  **not** a Beneish/Dechow echo.
+- **H2 fires** (per-case, no pooling): Hub Group's 70 sits at the top of the
+  treatment (confirmed-AAER) score range (wave-1 median 57.5, wave-2 58; controls
+  ~34); Weis (32) reads control-like; Genie (42) is borderline. On genuinely
+  unmemorizable events, **detection is real on the strongest misstatement-like case
+  but modest and mixed** (1 of 3 flagged). The mechanical screens could not even
+  compute Hub Group's M/F — so the LLM's flag is **not** a Beneish/Dechow echo.
+  (Honest caveat, P1: HUBG's flag is tier-correct but mechanism-mismatched — dim2=1,
+  anchored on a stale 2018 amendment cluster, not the 2026 event; risk-screening,
+  not forensic-mechanism detection.)
 
 This is the honest crux: strip memorization entirely, and the score does not
-collapse to noise — the most fraud-like case is still caught — but the signal is
-weaker than on memorized cases. That independently confirms Issue #0's R3 headline
+collapse to noise — the most misstatement-like case is still caught — but the signal
+is weaker than on memorized cases. That independently confirms Issue #0's R3 headline
 ("separation is part memory, part analysis") on the axis where memory is impossible.
 N is tiny; this is directional existence evidence, not a capability estimate.
 
@@ -88,8 +91,9 @@ N is tiny; this is directional existence evidence, not a capability estimate.
   non-reliance event", never "fraud".
 - Scheme-type honesty (recorded, not used to exclude): WMK (inventory overstatement
   + whistleblower) and HUBG (unrecorded payable / expense understatement + executive
-  terminations) read fraud-like; GNE (captive-insurance liability accounting) reads
-  more error-like. This matters for interpreting any future detection result.
+  terminations) read misstatement-like (aggressive-accounting profile); GNE
+  (captive-insurance liability accounting) reads more error-like. This matters for
+  interpreting any future detection result. (G2 provisional — "fraud" not used, §6.)
 - HUBG sits only 5 days past the cutoff; it cleared the required direct
   recent-history screen (this gate), but the training-data boundary is inherently
   fuzzy and this caveat travels with any HUBG result.

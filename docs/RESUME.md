@@ -13,7 +13,8 @@
 | Phase 1 P1 오류해부 | 0 | 0 | 0 | 590556d |
 | Phase 1 P3 워크벤치 RP-13 | 0 | 0 | 0 | 00644f9 |
 | Phase 2 P2 종합 | 0 | 0 | 0 | c9c9889 |
-| Phase 2 E1-E5 사전등록 | 0 | 0 | 0 | (this) |
+| Phase 2 E1-E5 사전등록 | 0 | 0 | 0 | c1b85a7 |
+| P4 발행정합(README+lint) | 0 | 0 | 0 | (this) |
 
 ## 재개 순서 (die-anywhere)
 
