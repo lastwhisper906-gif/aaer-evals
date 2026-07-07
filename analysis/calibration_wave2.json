@@ -1,0 +1,52 @@
+{
+  "n": 32,
+  "n_fraud": 9,
+  "n_control": 23,
+  "ece_10bin": 0.179,
+  "wave1_ece_10bin_reference": 0.209,
+  "delta_vs_wave1": -0.03,
+  "confidence_correctness_auroc": 0.746,
+  "threshold_accuracy": "25/32",
+  "reliability_diagram_10bin": [
+    null,
+    {
+      "n": 2,
+      "mean_pred": 0.15,
+      "frac_pos": 0.0
+    },
+    {
+      "n": 10,
+      "mean_pred": 0.233,
+      "frac_pos": 0.1
+    },
+    {
+      "n": 2,
+      "mean_pred": 0.325,
+      "frac_pos": 0.0
+    },
+    {
+      "n": 6,
+      "mean_pred": 0.427,
+      "frac_pos": 0.167
+    },
+    {
+      "n": 9,
+      "mean_pred": 0.554,
+      "frac_pos": 0.444
+    },
+    {
+      "n": 1,
+      "mean_pred": 0.65,
+      "frac_pos": 1.0
+    },
+    {
+      "n": 2,
+      "mean_pred": 0.73,
+      "frac_pos": 1.0
+    },
+    null,
+    null
+  ],
+  "interpretation": "ECE 0.179 vs wave-1 0.209 — 동일 차수. 보정이 실질적으로 개선되지 않았다(여전히 ~0.18 미보정). null-ish, 보고 대상.",
+  "note": "동결 wave-2 점수 재사용, 재채점 없음. 정의는 calibration.py와 동일."
+}

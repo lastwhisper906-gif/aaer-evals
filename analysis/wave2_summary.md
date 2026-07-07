@@ -48,8 +48,10 @@ wave-2 STANDALONE(실험군 9 vs 대조군 23):
 - **미탐 2**: **CSC**(p=20) · **BRX**(p=40) — 공교롭게 정체-교란 초과 3건 중
   2건(암기 얽힘 케이스가 오히려 미탐). BRX는 REIT(표준 매출 태그 결측 — 커버리지
   주석), CSC는 대형 IT서비스 다분기.
-- **거짓양성 5/23** (dim1=0, p≥50): ADAM·AORT·IOVA·LEVI·LPSN. 사실→추론 승격
-  단계의 오탐(수치 날조 아님) — wave-1 오탐 taxonomy와 동형으로 후속 분류.
+- **거짓양성 5/23** (dim1=0, p≥50): IOVA·ADAM·LEVI·LPSN·AORT. **전건 근거됨(dim4
+  상단) — 환각(i) 아니라 실재 수치의 양성 오독(ii-a)**. 전수 해부(taxonomy 4분류·
+  verbatim 인용·CSC/BRX 미탐 비대칭·HUBG tier적중/기제빗나감·ECE 0.179):
+  **`analysis/error_analysis_wave2_holdout.md` (P1, 이 스텁 해소)**.
 
 ## 4. 암기 계층화 (ANALYSIS_PLAN_WAVE2 §9)
 
