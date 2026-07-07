@@ -1,0 +1,59 @@
+{
+  "ts": "2026-07-07T12:44:12.938390+00:00",
+  "harness_pin": "2.1.201",
+  "flags": [
+    "claude",
+    "-p",
+    "--model",
+    "claude-sonnet-5",
+    "--output-format",
+    "json",
+    "--max-turns",
+    "2",
+    "--setting-sources",
+    "",
+    "--strict-mcp-config",
+    "--tools",
+    "",
+    "--disallowedTools",
+    "Bash,Read,Edit,Write,Glob,Grep,WebFetch,WebSearch,Task,NotebookEdit",
+    "--system-prompt",
+    "Without any documents: state IOVANCE BIOTHERAPEUTICS, INC.'s exact reported total revenue and net income (USD) for the fiscal year ending immediately before 2015-11-05, and the filing date of that annual report. If you do not know, set known=false and use nulls.",
+    "--json-schema",
+    "{\"type\": \"object\", \"additionalProperties\": false, \"required\": [\"revenue\", \"net_income\", \"filing_date\", \"known\"], \"properties\": {\"revenue\": {\"type\": [\"number\", \"null\"]}, \"net_income\": {\"type\": [\"number\", \"null\"]}, \"filing_date\": {\"type\": [\"string\", \"null\"]}, \"known\": {\"type\": \"boolean\"}}}"
+  ],
+  "model_requested": "claude-sonnet-5",
+  "served_models": [
+    "claude-sonnet-5"
+  ],
+  "pin_ok": true,
+  "ok": true,
+  "fail_reason": null,
+  "session_id": "dda7fce0-2af6-458c-bc0a-ba707f38b342",
+  "usage": {
+    "input_tokens": 811,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "output_tokens": 210,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [],
+    "speed": "standard"
+  },
+  "total_cost_usd_reference_only": 0.005582999999999999,
+  "attempts": 1,
+  "wall_seconds": 3.8,
+  "freeze": {
+    "head": "eba481c05965e65775d081ed3e2c084319463f3d",
+    "clean_tree": false
+  },
+  "raw_tail": null
+}
