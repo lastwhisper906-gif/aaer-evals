@@ -40,10 +40,10 @@
 - `pytest pipeline/ tools/ scoring/` **74 passed** (신규: control_v2 규칙 10 +
   grader --candidates 스텁 정합).
 - `tools/reproduce_analysis.py` **PASS 100/100** (발행 수치 재현).
-- `tools/verify_manifest.py` PASS. `tools/verify_blindness.py`: 감사 시점
-  일시 FAIL(d) = **v2 풀 수집 진행 중 신규 파일의 매니페스트 미기재** —
-  수집 완료 후 `--write-manifest` 재생성으로 해소 (Stage 2 산출물 커밋에
-  포함). 실명/카나리 스캔 자체는 통과 (WARN 2건은 기존 등록된 비누출 어휘).
+- `tools/verify_manifest.py` PASS. `tools/verify_blindness.py`: 수집 완료 후
+  `--write-manifest` 재생성 → **PASS** (감사 중 관측된 일시 FAIL(d)은 수집
+  진행 중 신규 파일의 미기재 — 해소 확인). 실명/카나리 스캔 통과 (WARN
+  2건은 기존 등록된 비누출 어휘).
 
 ### 관찰 (결함 아님, 기록)
 

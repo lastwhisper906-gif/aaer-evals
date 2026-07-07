@@ -11,9 +11,10 @@
 - [x] Stage 1 — RP-07 D-2 종결 (8b21be9): 32호출 FAIL 0 · **draw-3 = 표본 잡음**
   (원본 프레임 5/5 ≥25pp) · delta 분해 7/8 실효 (HTZ +30 vs MON −16 대칭) —
   `review_packets/RP-07_robustness_closure.md`
-- [~] Stage 2 — CONTROL_CRITERIA_v2 커밋 (b22e84e, freeze-then-run) →
-  풀 재수집 진행/완료 → validate → select → runs/rp09/control_group_v2.json
-  → 메모 표+3픽+웹스크린 블록 (재개 시: `python3 tools/control_v2.py fetch` 멱등)
+- [x] Stage 2 — CONTROL_CRITERIA_v2 (b22e84e + S0 개정) → 풀 재수집·4층 검증
+  PASS(격리 0) → **22선정** (`runs/rp09/control_group_v2.json`, 복원 3/3:
+  GRMN·FORR·GIS) → 메모 `review_packets/RP-09_control_v2_memo.md` (표 22 ·
+  3픽: ADI·CPB·UPBD · 웹스크린 블록)
 - [x] Stage 3 — 채점 준비 패키지 (fe8b767): 런북 `tools/run_control_v2_scoring.py`
   (게이트 `RP-09-FINAL: YES` in overrides.md) · 프로브 분석 계획 사전 등록 ·
   검정력 사전 계산 (rp09_power.json) · probe_runner 병렬화 — **발사 안 함**
