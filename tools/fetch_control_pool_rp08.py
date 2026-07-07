@@ -4,8 +4,10 @@
   A. 케이스별 1차 SIC의 EDGAR 등록자 전수 열거 (browse-edgar atom, 전 페이지)
      → runs/rp08/control_pool_raw/sic_lists/ (원문 커밋 대상, 소형 텍스트)
   B. 후보별 submissions JSON (+구형 청크) → ~/aaer-data/_rp08/submissions/
-     (대용량, git 밖 — data/README 규약) → E1/E3/E5/E6a/E7/E8 + E4(로컬 AAER
-     색인) 스크린 → 케이스별 자격자 <5면 보충 SIC를 선언 순서대로 확장 (§2)
+     (대용량, git 밖 — data/README 규약) → E1/E3/E5/E6a/E7/E8/E9 + E4(로컬 AAER
+     색인) 스크린 → 케이스별 **규모 밴드 내** 자격자 <5면 보충 SIC를 선언
+     순서대로 확장 (§2/§2-a, v1.1 — 밴드 판정은 frames 조잡 매출 |log|≤log4,
+     frames 미적중은 미산입)
   C. XBRL frames 조잡 게이트 (S0, |log|≤log6, 미적중은 통과) → 조잡 거리
      오름차순 상위 25/케이스만 companyfacts 조회 → ~/aaer-data/_rp08/facts/
   D. pool_extract.json (선정 스크립트의 입력) + provenance.jsonl + MANIFEST.sha256
@@ -27,8 +29,8 @@ import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from rp08_common import (BIG_DIR, CASES, COARSE_BAND, FRAME_TAGS, MANIFEST,
-                         MIN_ELIGIBLE, N_PIT, PROVENANCE, RAW_DIR, aaer_hits,
-                         eligibility, screen_submissions, sha256_file,
+                         MIN_ELIGIBLE, N_PIT, PROVENANCE, RAW_DIR, SIZE_BAND,
+                         aaer_hits, eligibility, screen_submissions, sha256_file,
                          treatment_ciks)
 
 UA = {"User-Agent": "chaeper lastwhisper906@gmail.com"}
@@ -104,6 +106,27 @@ def sic_ciks(sic: str) -> list:
     return dedup
 
 
+# ── frames 조잡 매출 맵 (§2-a 확장 카운트 + C단계 S0 게이트 공용) ─────────
+_frames_cache = {}
+
+
+def frames_map(cy: int) -> dict:
+    fmap = _frames_cache.get(cy)
+    if fmap is None:
+        fmap = {}
+        for tag in reversed(FRAME_TAGS):  # 우선순위 높은 태그가 나중에 덮어씀
+            try:
+                p = fetch_to(f"https://data.sec.gov/api/xbrl/frames/us-gaap/{tag}/USD/CY{cy}.json",
+                             BIG_DIR / f"frames/{tag}_CY{cy}.json")
+                for d in json.loads(p.read_text())["data"]:
+                    fmap[str(d["cik"]).zfill(10)] = d["val"]
+            except Exception as e:  # noqa: BLE001
+                # 연도에 태그 frame 부재(예: ASC606 태그의 2018년 이전) = 스킵
+                print(f"  frames {tag} CY{cy} 불가: {e}", flush=True)
+        _frames_cache[cy] = fmap
+    return fmap
+
+
 # ── B. submissions + 스크린 ──────────────────────────────────────────────
 def load_submissions(cik10: str):
     base = BIG_DIR / "submissions"
@@ -128,6 +151,7 @@ def main() -> int:
     overrides = json.loads(overrides_p.read_text()) if overrides_p.exists() else {}
 
     pool = {"_meta": {"criteria": "docs/CONTROL_CRITERIA_v1.md",
+                      "criteria_version": "v1.1",
                       "aaer_index_fetched_at": idx["fetched_at"],
                       "aaer_index_entries": len(idx["entries"]),
                       "started_at": datetime.datetime.now(datetime.timezone.utc).isoformat()},
@@ -138,12 +162,13 @@ def main() -> int:
         if only and tid != only:
             continue
         cutoff = datetime.date.fromisoformat(spec["cutoff"])
+        fmap_b = frames_map(cutoff.year - 1)  # §2-a 확장 카운트용 (v1.1)
         sics_used, candidates = [], {}
-        eligible_n = 0
+        inband_n = 0  # 밴드 내 자격자 (frames |log|≤log4, 미적중 미산입)
         plan = spec["sic_primary"] + spec["sic_supp"]
         for i, sic in enumerate(plan):
             is_supp = sic in spec["sic_supp"]
-            if is_supp and eligible_n >= MIN_ELIGIBLE:
+            if is_supp and inband_n >= MIN_ELIGIBLE:
                 break
             print(f"\n[{tid}] SIC {sic} {'(보충)' if is_supp else '(1차)'} 열거", flush=True)
             listing = sic_ciks(sic)
@@ -179,29 +204,18 @@ def main() -> int:
                             "e4_hits": hits[:5], "e4_hit_count": len(hits)})
                 candidates[cik] = rec
                 if ok:
-                    eligible_n += 1
-            print(f"  누적 자격자 {eligible_n}", flush=True)
+                    fv = fmap_b.get(cik)
+                    if fv and fv > 0 and abs(math.log(fv / spec["rev_pit"])) <= SIZE_BAND:
+                        inband_n += 1
+            print(f"  누적 밴드 내 자격자 {inband_n}", flush=True)
         pool["cases"][tid] = {"cutoff": spec["cutoff"], "sics_used": sics_used,
                               "candidates": candidates}
 
     # ── C. frames 조잡 게이트 + companyfacts ─────────────────────────────
-    frames_cache = {}
     for tid, cdata in pool["cases"].items():
         spec = CASES[tid]
         cy = datetime.date.fromisoformat(spec["cutoff"]).year - 1
-        fmap = frames_cache.get(cy)
-        if fmap is None:
-            fmap = {}
-            for tag in reversed(FRAME_TAGS):  # 우선순위 높은 태그가 나중에 덮어씀
-                try:
-                    p = fetch_to(f"https://data.sec.gov/api/xbrl/frames/us-gaap/{tag}/USD/CY{cy}.json",
-                                 BIG_DIR / f"frames/{tag}_CY{cy}.json")
-                    for d in json.loads(p.read_text())["data"]:
-                        fmap[str(d["cik"]).zfill(10)] = d["val"]
-                except Exception as e:  # noqa: BLE001
-                    # 연도에 태그 frame 부재(예: ASC606 태그의 2018년 이전) = 스킵
-                    print(f"  frames {tag} CY{cy} 불가: {e}", flush=True)
-            frames_cache[cy] = fmap
+        fmap = frames_map(cy)
         ranked = []
         for cik, rec in cdata["candidates"].items():
             if not rec.get("eligible"):

@@ -57,7 +57,7 @@ SIZE_BAND = math.log(4)    # S1
 TIE_DELTA = 0.05           # S2
 N_PIT = 25                 # S0 companyfacts 조회 상한 (케이스당)
 N_ALT = 3                  # S3 대안 순위 기록 수
-MIN_ELIGIBLE = 5           # §2 보충 SIC 발동 임계
+MIN_ELIGIBLE = 5           # §2-a 보충 SIC 발동 임계 (v1.1: 규모 밴드 내 자격자 기준)
 
 ANNUAL = {"10-K", "10-K405", "10-KT"}
 QUARTER = {"10-Q", "10-QT"}
@@ -160,6 +160,7 @@ def screen_submissions(blocks: list, meta: dict, cutoff: datetime.date) -> dict:
         "sic": meta.get("sic"), "sic_desc": meta.get("sicDescription"),
         "name": meta.get("name"), "fye": meta.get("fiscalYearEnd"),
         "former_names": [f.get("name", "") for f in meta.get("formerNames", [])],
+        "tickers": sorted(set(meta.get("tickers") or [])),  # E9 (v1.1)
     }
 
 
@@ -189,6 +190,11 @@ def eligibility(rec: dict, cutoff: datetime.date, e4_hits: list,
         fails.append("E6a 제출 이력 <3년")
     if rec["cik"] in RP01_DISQUALIFIED_CIKS:
         fails.append(f"E8 RP-01 실격 승계: {RP01_DISQUALIFIED_CIKS[rec['cik']]}")
+    if "tickers" not in rec:
+        # v1 시대 추출물 — 무침묵 통과 금지, 재수집을 강제하는 소리 나는 실패
+        fails.append("E9 판정 불능 (tickers 필드 부재 — v1.1 풀 재수집 필요)")
+    elif not rec["tickers"]:
+        fails.append("E9 상장 보통주 부재 (tickers 공백, v1.1)")
     return (not fails), fails, disc
 
 

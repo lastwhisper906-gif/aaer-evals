@@ -27,7 +27,7 @@ QUARANTINE = RAW_DIR.parent / "quarantine/quarantine.json"
 REQUIRED_CAND_FIELDS = ["cik", "sic_pool", "eligible", "fails"]
 SCREENED_FIELDS = ["pre_cutoff_10K", "pre_cutoff_10Q", "xbrl_pre_cutoff",
                    "active_in_window", "item_402_in_window", "first_counted",
-                   "former_names", "e4_hit_count"]
+                   "former_names", "e4_hit_count", "tickers"]  # tickers: E9 (v1.1)
 
 
 def check(problems: list, cond: bool, layer: str, what: str, detail: str = ""):

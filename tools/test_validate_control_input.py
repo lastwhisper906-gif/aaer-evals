@@ -40,7 +40,7 @@ def build_fixture(tmp_path):
                 "xbrl_pre_cutoff": True, "active_in_window": True,
                 "item_402_in_window": [], "first_counted": "1994-03-30",
                 "former_names": [], "e4_hit_count": 0, "e4_hits": [],
-                "pit_fetched": True,
+                "tickers": ["R"], "pit_fetched": True,
             }}}}}
     (raw / "pool_extract.json").write_text(json.dumps(pool, ensure_ascii=False))
 
