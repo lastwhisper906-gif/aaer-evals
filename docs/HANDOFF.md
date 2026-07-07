@@ -8,13 +8,21 @@
 
 - [x] **Stage 0** — 채점 26건 human_finalized=true (D21, 인가: 986a893).
   이 커밋부터 scoring/grades/ + pilot/grades/ **I3 동결**. 실험군 정답 평가 종결.
-- [ ] Stage 1 — RP-07 D-2 원본 재추첨 32호출 + delta 분해 + draw-3 판정
-- [ ] Stage 2 — CONTROL_CRITERIA_v2 + 재선정 (16–24) → runs/rp09/control_group_v2.json
-- [ ] Stage 3 — 채점 준비 패키지 (런북·대조군 프로브·검정력 사전 계산·병렬화) — 발사 금지
-- [ ] Stage 4 — docs/EARLINESS_DESIGN.md
-- [ ] Stage 5 — docs/FUTURE_HOLDOUT_CANDIDATES.md
-- [ ] Stage 6 — 증분 감사 docs/AUDIT_STATE.md
+- [x] Stage 1 — RP-07 D-2 종결 (8b21be9): 32호출 FAIL 0 · **draw-3 = 표본 잡음**
+  (원본 프레임 5/5 ≥25pp) · delta 분해 7/8 실효 (HTZ +30 vs MON −16 대칭) —
+  `review_packets/RP-07_robustness_closure.md`
+- [~] Stage 2 — CONTROL_CRITERIA_v2 커밋 (b22e84e, freeze-then-run) →
+  풀 재수집 진행/완료 → validate → select → runs/rp09/control_group_v2.json
+  → 메모 표+3픽+웹스크린 블록 (재개 시: `python3 tools/control_v2.py fetch` 멱등)
+- [x] Stage 3 — 채점 준비 패키지 (fe8b767): 런북 `tools/run_control_v2_scoring.py`
+  (게이트 `RP-09-FINAL: YES` in overrides.md) · 프로브 분석 계획 사전 등록 ·
+  검정력 사전 계산 (rp09_power.json) · probe_runner 병렬화 — **발사 안 함**
+- [x] Stage 4 — docs/EARLINESS_DESIGN.md (MON 부적격 플래그, 112–160호출 추정)
+- [x] Stage 5 — docs/FUTURE_HOLDOUT_CANDIDATES.md (Tier2 공집합 — 월간 재조사)
+- [x] Stage 6 — docs/AUDIT_STATE.md (I1–I3 PASS · pytest 74 · reproduce 100/100)
 - [ ] Final — 소유자 단일 결정: "control_group_v2 승인 + 채점 발사: YES / AMEND"
+  (YES 시: overrides.md에 `RP-09-FINAL: YES` 줄 기록·커밋 →
+  `python3 tools/run_control_v2_scoring.py --launch`)
 
 ## 이전 사이클 위치 (참고): RP-06 완결 + RP-08 v1.1 산출물 커밋 (ed2e132)
 
