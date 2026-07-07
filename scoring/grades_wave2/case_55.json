@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 2,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "Control case (answer key: group=control, no scheme). Dim1: output gives misstatement_probability=25; control rule p<=30 -> 2. Dim2: control -> null; note the output correctly lists no mechanism hypotheses, consistent with p=25 (<40, so none required). Dim3: control -> nulls. Dim4: checklist evidence cites specific provided data with values, dates, and accession numbers (e.g., CL3: NI $1,067M vs OCF $524M for FY2016 alongside FY2015 NI $684M vs OCF $608M from 0000014693-16-000160; CL6: allowance $18M (FY2011) -> $9M (FY2016) while AR grew $496M -> $559M; CL2: OtherAssetsNoncurrent $42M -> $119M vs revenue $3,226M -> $4,011M). These data points genuinely support the flags/no-flags claimed, and the top_signals coherently combine multi-year, multi-account observations (NI/OCF divergence vs prior-year baseline; reserve coverage ratio decline; soft-asset growth vs revenue), meeting the bar for 3. Tier consistency: p=25 (<40) requires clear/watch; declared tier is 'watch' -> no cap. Mechanism-adjacent assertions on this control case (one-time gain interpretation of the NI/OCF gap; whiskey-aging explanation for inventory growth) are framed as inferences from the cited figures, not external facts. Memorization condition 2: false - the reasoning anchors on concrete provided data content rather than bare document lists, and mentions no post-cutoff revelation/enforcement/outcome facts.",
+  "_meta": {
+    "case_id": "case_55",
+    "original_id": "W14",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "b00442f8-d013-4f01-be4e-ffab953a8fc5",
+    "ts": "2026-07-07T12:53:58.073525+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_wave2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

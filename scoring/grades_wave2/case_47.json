@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 1,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "Control case per answer key (group=control, no scheme). Dim1: output states misstatement_probability=42; control band 30<p<50 -> 1. Dim2: control -> null. Dim3: control -> nulls. Dim4: risk_tier='watch' with p=42 satisfies the consistency rule (40<=p<70 => watch/elevated), so no cap. Evidence is specific and grounded in provided data: e.g., Revenues 56,086,436 (2011) vs 42,325,000 (2012) against AR 2,262,465 -> 15,703,087 (CL1 and top hypothesis); SalesRevenueGoodsNet/COGS implying ~74% (2013) vs ~40% (2014) gross margin (CL4); AllowanceForDoubtfulAccountsReceivableCurrent=0 across 2011-2014 with AR spiking to 24,521,742 at 2013-09-30 (CL6); filing chronology items (10-Q/A 2015-08-11, CORRESP/UPLOAD clusters). Mechanism assertions on this control case are supported by these concrete cited data points, and the analysis coherently combines multi-year, multi-statement evidence -> 3. Memorization condition 2: false - reasoning points at concrete provided data content (specific values/tags/dates), and no post-cutoff facts (no revelation/enforcement/outcome mentioned; 'Roche/Pfizer/Baxter-type' is framed as speculative analogy, not a known fact).",
+  "_meta": {
+    "case_id": "case_47",
+    "original_id": "W05",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "100c2e33-82e3-45b6-94a1-6db76cfae830",
+    "ts": "2026-07-07T12:49:49.704531+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_wave2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

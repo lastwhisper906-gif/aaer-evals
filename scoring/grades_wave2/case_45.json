@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 2,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "Dim1: Answer key marks this a control case; output's misstatement_probability=28, which is <=30, so band score = 2 per the control rule. Dim2: Control case -> null per rubric; note the output correctly provides no mechanism_hypotheses (none required at p=28<40). Dim3: Control case -> nulls per rubric. Dim4: Score 3. Checklist evidence cites specific provided data points that genuinely support the claims: CL1 quantifies receivables vs revenue growth (269683000 vs 235911000 receivables, +14.3%, against revenue 3778505000 vs 3748973000, +0.8%); CL3 supports 'no divergence' with NetIncomeLoss=175739000 vs OCF=313970000 (FY2014) and 189191000 vs 324233000 (FY2015); CL2 tracks Goodwill 201682000->464926000 and intangibles 103080000->862073000 over 2010-2016 vs 1.45x revenue growth. Top_signals coherently combine multi-year balance sheet, income statement, and cash-flow points, and correctly frame receivables/soft-asset growth as acquisition-driven with mitigating conservative cash-flow pattern - a coherent multi-year, multi-point synthesis. Consistency rule: p=28 (<40) requires clear/watch; declared risk_tier='watch' -> consistent, no cap. Minor flaw (CL2 first evidence cites one accession for two documents) is not fabrication and does not undermine the score. Memorization_condition2: false - reasoning points at concrete provided data content throughout (specific values/dates/accessions) rather than merely listing documents, and mentions no post-cutoff facts such as revelation or enforcement.",
+  "_meta": {
+    "case_id": "case_45",
+    "original_id": "W13",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "f0041c0e-07a2-4005-af68-3e17ed109276",
+    "ts": "2026-07-07T12:48:40.504270+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_wave2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 1,
+  "dim2_mechanism": 1,
+  "dim3_genre_mapping": {
+    "mapped_genre": "omission-estimate",
+    "score": 0
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "DIM1=1: Treatment case; output p=58, which falls in 50<=p<70 band per rubric. DIM2=1: Top-ranked hypothesis is under-reserving of the allowance for doubtful accounts (allowance $2.661M->$0.896M while AR grew $166.7M->$320.2M), overstating net receivables/net income. Answer key describes revenue recognition via undocumented end-of-quarter distributor incentives (return rights, cash payments up to $500K, discounts, extended terms) to pull sales forward. The top hypothesis is in the receivables/revenue-adjacent account area, so 'correct account area' (1) applies, but the treatment type (bad-debt reserve estimate) and mechanism do not substantially match pull-forward revenue with undocumented incentives, so it does not reach 2. Coverage note: hypothesis #2 explicitly posits 'channel-stuffing of distributors,' a much closer match to the enforcement description, but rubric restricts grading to the top-ranked hypothesis. DIM3=0: Top hypothesis narrative is an estimate/reserve manipulation -> maps to omission-estimate; answer-key scheme is an active scheme (sales personnel affirmatively offering incentives to accelerate revenue). Omission-estimate vs active = wrong genre. DIM4=3: Evidence cites specific provided data points with accession numbers and exact values (e.g., allowance vs AR trend FY2012-FY2015; gross margin 27.75%->23.01% FY2012-FY2015; inventory growth 34.2% vs revenue 25.9% in FY2013; intangibles +140% vs revenue +57% FY2011-FY2013), genuinely supporting the claims and coherently combined across multiple years and statement areas. Consistency rule satisfied: p=58 with risk_tier='elevated' (watch/elevated required for 40<=p<70), so no cap. MEMORIZATION=false: Reasoning anchors on concrete provided data content (specific balances/ratios/periods), not bare document lists, and cites only pre-cutoff filings (latest 2016-05-10); no mention of the August 2016 revelation, the 2018 SEC enforcement (AAER-3997 / PR 2018-277), or outcomes.",
+  "_meta": {
+    "case_id": "case_59",
+    "original_id": "T23",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "62431d8e-e9f2-47a2-95bf-c0289ee174c7",
+    "ts": "2026-07-07T12:56:08.791996+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_wave2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 2,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "dim1=2: control case with misstatement_probability=25, which is <=30 (control band for full credit). dim2=null: control case per rubric; note output correctly provides no mechanism_hypotheses and none is required since p=25<40. dim3=nulls: control case per rubric. dim4=3: consistency rule satisfied (p=25<40 with risk_tier='watch', within clear/watch allowance, so no cap). Evidence is specific and genuinely supports claims: CL1 cites exact AR balances (910,120,000 at 2019-05-31; 818,009,000 at 2018-06-01) vs revenues (6,892,303,000 FY2019; 6,476,632,000 FY2018) with accession numbers; CL2 ties Goodwill +118% (2,782,335,000 vs 1,276,076,000) to disclosed G&K acquisition vs +11% revenue; CL3 quantifies FY2016 NI/OCF inversion (693.5M vs 465.8M) traced to an anomalous Q2 quarter (345.1M); CL6 computes allowance/AR ratios across 2010/2017/2019 (3.95%/2.79%/4.15%). Top signals coherently combine multi-year points (DSO ~41-44 to ~48-50 days, ASC 606 reclassification, tax reform) to justify the low-risk conclusion - meeting the '2 plus coherent multi-year/multi-point combination' bar for 3. memorization_suspect_condition2=false: reasoning points at concrete provided data content throughout (not bare document lists), and no post-cutoff facts (no revelation/enforcement/outcome) are mentioned; acquisition/ASC 606/tax reform are events disclosed within the provided 2010-2019 filing window.",
+  "_meta": {
+    "case_id": "case_58",
+    "original_id": "W23",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "da17f7e1-df85-416d-b65e-6a6dc43f5254",
+    "ts": "2026-07-07T12:55:24.228999+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_wave2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

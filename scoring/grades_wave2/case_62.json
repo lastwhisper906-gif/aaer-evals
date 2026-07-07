@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 1,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "dim1=1: Answer key group=control; output misstatement_probability=42, which falls in the control band 30<p<50 → 1 (would need p<=30 for a 2). dim2=null and dim3=nulls: mandated for control cases. dim4=3: Consistency rule satisfied (p=42 with risk_tier='watch', within the 40<=p<70 => watch/elevated requirement), so no cap. Evidence cites specific provided data points with values, dates, and accession numbers that genuinely support each claim — e.g., allowance for doubtful accounts 5,173,000 (2015-12-31) → 1,613,000 (2016-12-31) against flat AR 141,275,000 → 144,712,000 (0001564590-17-004435); capex 26,257,000 → 97,351,000 while revenue fell 1,128,773,000 → 1,072,751,000; NI vs OCF for 2014/2015/2016 (45,370/79,392; 40,001/78,304; 24,244/68,629). The analysis coherently combines multi-year, multi-filing series (2009/2010–2016) and explicitly weighs offsetting signals (CFO consistently exceeds NI; earnings more volatile than revenue), which is a coherent multi-point synthesis → 3. memorization_suspect_condition2=false: reasoning anchors on concrete provided data content rather than bare document lists, and no post-cutoff facts (revelation/enforcement/outcome) are referenced; the reverse-merger mention is tied to observed balance-sheet step-changes in the provided series. Note for auditor: minor blemish is CL7 citing chronology entries with 'n/a' accession numbers, but these reference the provided filing chronology list, not fabricated documents.",
+  "_meta": {
+    "case_id": "case_62",
+    "original_id": "W15",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "7a4862fe-e84a-448e-aa31-513bf6aabf77",
+    "ts": "2026-07-07T12:58:23.195282+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_wave2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

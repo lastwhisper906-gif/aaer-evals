@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 2,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "Control case per answer key. dim1: p=25 <=30 -> 2. dim2/dim3: control -> null (output correctly has empty mechanism_hypotheses, appropriate since p<40). dim4: evidence is specific and verifiably tied to provided data (e.g., CL3 NI=64,215,000 vs OCF=275,172,000 FY2014 and NI=78,531,000 vs OCF=421,348,000 FY2015 from 0000916540-16-000038; CL6 allowance 10,835,000->9,732,000 vs AR 409,779,000->371,392,000). Top signals form a coherent multi-year synthesis: the NI/OCF gap is reconciled against the D&A step-change (~269.9M FY2015) following the VION merger, and goodwill/asset tripling (701.6M->1,476.5M goodwill; 3.24B->5.55B assets, 2013->2014) is attributed to the merger with a post-merger stability check (~26% soft-asset share), plus correct scoping of the 2006 amendment cluster as outside the window -> 3. Consistency rule satisfied: p=25 (<40) with risk_tier=watch, no cap. memorization_suspect_condition2 false: reasoning cites concrete provided data values rather than bare document lists, and no post-cutoff revelation/enforcement/outcome facts appear (VION merger is disclosed in the in-window filings).",
+  "_meta": {
+    "case_id": "case_57",
+    "original_id": "W12",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "acfaf015-109d-4bef-be49-20bc57e45cd3",
+    "ts": "2026-07-07T12:54:52.769234+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_wave2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

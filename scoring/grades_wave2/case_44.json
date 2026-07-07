@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 0,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "Control case (answer key group='control'). Dim1: output gives misstatement_probability=55; control rubric assigns 0 for p>=50. Dim2: null (control). Dim3: nulls (control). Dim4: consistency check first — p=55 requires watch/elevated tier and output declares 'elevated', so no cap. Evidence is specific and grounded in provided data: exact NI-vs-CFO figures for FY2012–FY2014 (e.g., ProfitLoss=136,191,000 vs CFO=37,551,000 in FY2014 vs near 1:1 in FY2012), the full 2013–2014 quarterly NetIncomeLoss series supporting the smoothness observation, and the quarterly-vs-annual InterestExpense inconsistency (Q4-2013 68,584,000 vs annual 6,655,000), all with accession numbers and period tags. Mechanism assertions on this control case are hedged ('possible understatement/mis-tagging', 'potential income smoothing') and each is backed by cited data points rather than fabrication; the output also candidly flags data-coverage gaps (CL1/CL2/CL4/CL8 insufficient_data). This is a coherent multi-year, multi-concept combination → 3. Memorization condition 2: false — reasoning points at concrete provided data content throughout and mentions no post-cutoff facts (no revelation/enforcement/outcome references). Note for auditor: the main defect is calibration (p=55 on a clean company, apparently driven by likely XBRL tagging artifacts in the InterestExpense series), which is fully captured by the dim1 score of 0.",
+  "_meta": {
+    "case_id": "case_44",
+    "original_id": "W08",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "d30b2cd3-116d-4dc7-9daf-6848afd9d5a7",
+    "ts": "2026-07-07T12:48:14.135516+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_wave2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

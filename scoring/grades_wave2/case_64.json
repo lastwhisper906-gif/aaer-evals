@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 2,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "dim1: Answer key marks this a CONTROL case. Output gives misstatement_probability=20, which satisfies the control band p<=30, so dim1=2. dim2: Control case -> null per rubric; note the output correctly lists no mechanism_hypotheses (empty array), consistent with p=20<40. dim3: Control case -> nulls (answer key genre_tag_row is null). dim4: Evidence is specific and quantitatively grounded in provided data throughout: CL1 cites AccountsReceivableNetCurrent 124,222k (2015) vs 135,083k (2016) against flat revenue 1,221,311k -> 1,218,481k; CL3 cites NI vs OCF pairs for FY2014-FY2016 (e.g., 48,024k vs 145,776k in FY2016); CL6 combines AP decline (50,799k -> 42,388k) with +11.7% revenue growth (1,139,094k -> 1,272,321k); CL5 contrasts revenue and operating-income/net-income trajectories across FY2014-FY2016. These form a coherent multi-year, multi-point combination that genuinely supports the low-risk conclusion (e.g., strong OCF>NI noted as a quality positive in a high-D&A trucking model), and the top_signals tie flags together with specific figures. No mechanism assertions are made that would need support. Consistency rule: p=20 (<40) requires clear/watch; declared risk_tier is \"watch\" — consistent, so no cap. dim4=3. memorization_suspect_condition2: false — the reasoning points at concrete provided data content (specific tagged concepts with values and dates), not mere document listing, and mentions no post-cutoff facts (the SEC comment-letter exchanges cited are 2012/2016 filing-chronology items within the provided window; no revelation/enforcement/outcome is referenced). Minor nit: CL7 evidence uses accession \"n/a\" for chronology items, but this is a chronology observation rather than a fabricated citation and does not undermine the score.",
+  "_meta": {
+    "case_id": "case_64",
+    "original_id": "W16",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "82eefa53-52ca-49bd-b285-e350d90c0b25",
+    "ts": "2026-07-07T12:59:06.493654+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_wave2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

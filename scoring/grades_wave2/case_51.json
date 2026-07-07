@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 2,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "dim1=2: Answer key group is control; output misstatement_probability=20, which is <=30, earning the top control band per rubric. dim2=null and dim3=nulls: control case per rubric; output correctly provides an empty mechanism_hypotheses list (also consistent with p=20<40, where no hypothesis is required). dim4=3: Consistency rule satisfied (p=20<40 requires clear/watch; declared tier is 'watch'), so no cap applies. Evidence is specific and genuinely supports the claims: CL3 cites NI vs OCF for FY2008-2010 (e.g., NetIncomeLoss=779.4M vs OCF=1,185.6M in 2009) showing OCF exceeding NI; CL5 cites quarterly NI series for 2009-2010 showing real volatility against smoothing; CL2 cites flat goodwill (336.2M across 2008-2010) and PP&E growth matched by capex; CL6's flag is backed by the full AccountsPayableCurrent series (195.8M -> 32.8M -> 163.5M) and plausibly tied to the documented 2009-12-23 8-K12B redomiciliation. The output also honestly marks CL1/CL4 insufficient_data given missing revenue/COGS concepts rather than fabricating support. Multiple data points are combined coherently across three fiscal years, meeting the bar for 3. memorization_suspect_condition2=false: reasoning points at concrete provided data content (specific balances, quarterly series, filing dates) rather than merely listing documents, and mentions no post-cutoff revelation/enforcement/outcome facts; the 'offshore-drilling downturn' reference is contemporaneous industry context, not case-outcome knowledge.",
+  "_meta": {
+    "case_id": "case_51",
+    "original_id": "W02",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "a191bb0e-a1a2-4f2a-aa7c-ef505532d8dc",
+    "ts": "2026-07-07T12:51:41.161167+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_wave2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

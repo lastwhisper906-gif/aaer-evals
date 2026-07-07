@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 0,
+  "dim2_mechanism": 2,
+  "dim3_genre_mapping": {
+    "mapped_genre": "mixed",
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "Dim1=0: treatment case with misstatement_probability=40, which is <50 (band: p<50 -> 0). Dim2=2: top-ranked hypothesis asserts overstatement of OtherAssetsNoncurrent/Goodwill via 'continued capitalization of costs (deferred contract costs, capitalized software, or transition/setup costs on outsourcing contracts)' and under-impairment; this substantially matches the answer key's expense_capitalization ('improperly capitalized prepaid costs') and asset_overstatement ('overstated assets') in account area, direction (overstated), and treatment type. No case-specific fact from the order (UK NHS contract, Australian cookie-jar reserves, Nordic client disputes) is named, so not 3. Coverage note: revenue_recognition/POC appears only in the second-ranked hypothesis; reserves_smoothing is uncovered (CL6 = insufficient_data). Dim3: top hypothesis maps to 'mixed' (active capitalization of costs + omission-type failure to impair), but the answer key's genre_tag_row is null, so no ground-truth genre exists; score = null. Dim4=3: risk_tier 'watch' is consistent with p=40 (40<=p<70 => watch/elevated), so no cap; evidence cites specific provided data points that genuinely support claims (OtherAssetsNoncurrent 615M->773M +25.7% vs Revenues 16,740M->16,128M -3.7%; ReceivablesNetCurrent 3,786M->3,849M; three-year NI vs OCF series FY2008-FY2010; quarterly NI/revenue volatility series; NT/amendment/CORRESP chronology), with coherent multi-year and multi-point combinations and an honest identification of a likely XBRL tagging error in the allowance series rather than over-claiming it. Memorization condition 2 = false: the reasoning repeatedly points at concrete provided data content (specific tagged values, dates, accession 0000023082-10-000036) and mentions no post-cutoff facts (no reference to the SEC order 33-9804/AAER-3662, the revelation, or enforcement outcome).",
+  "_meta": {
+    "case_id": "case_52",
+    "original_id": "T02",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "b07f6ba9-30df-4957-8a03-38ad410cacdd",
+    "ts": "2026-07-07T12:52:26.110717+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_wave2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

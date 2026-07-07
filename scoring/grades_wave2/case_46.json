@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 1,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "Dim1: Control case per answer key; output p=42, and control rule gives 1 for 30<p<50. Dim2/Dim3: null per rubric (control case); noted that the output nonetheless proposes mechanism hypotheses, graded only via dim4. Dim4: Consistency rule satisfied (p=42 with risk_tier='watch', within 40<=p<70 => watch/elevated), so no cap. Evidence is specific and genuinely supports claims: CL4/hypothesis 1 combine InventoryNet 8,044,336 (FY2010) -> 14,202,000 (FY2015, +76.6%) vs revenue 120,766,450 -> 138,850,000 (+15.0%) plus a computed gross-margin decline (29.5% FY2013 -> 26.5% FY2014, from GrossProfit/SalesRevenueNet figures); CL1/hypothesis 2 pair matched-quarter receivables vs revenue (e.g., ReceivablesNetCurrent 22,307,000 vs 19,255,000; SalesRevenueNet 37,220,000 vs 34,441,000, Q3 2016 vs Q3 2015) with accession numbers; CL3/CL6 support no_flag findings with specific OCF-vs-NI and allowance-ratio data, and OCF>NI is correctly listed as a mitigant. This constitutes specific supported claims plus a coherent multi-year/multi-point combination -> 3. Caveat for human auditor: the 10-K/A + CORRESP chronology claim (CL7, hypothesis 3) is cited with accession 'N/A' and cannot be verified against the documents_used list; if that chronology was not in provided data, dim4 should be reconsidered downward. Memorization condition 2: false - reasoning points at concrete provided data values (not bare document lists), and no post-cutoff facts (revelation/enforcement/outcome) are mentioned; the 2016-08-18 amendment predates the last used filing (2016-11-09).",
+  "_meta": {
+    "case_id": "case_46",
+    "original_id": "W19",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "2286d9c5-1ce1-4559-9674-e81f5a8da461",
+    "ts": "2026-07-07T12:49:21.056817+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_wave2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

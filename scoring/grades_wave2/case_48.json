@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 0,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "Control case (answer key group=control). dim1: output gives misstatement_probability=55; control rubric says p>=50 -> 0. dim2/dim3: control -> null per rubric. dim4: no consistency-cap violation (p=55 with risk_tier 'elevated' satisfies 40<=p<70 => watch/elevated). Evidence is specific and verifiable against provided data: allowance flat at 708,000 for seven quarter-ends (2012-03-31 to 2013-09-30) vs AR growth 17,780,000 -> 32,726,000 with accession 0001445305-13-002824; NI vs OCF for FY2012-FY2014 (6,355,000/28,009,000; -3,499,000/16,958,000; -7,348,000/15,673,000) from 0001628280-15-001726; goodwill 35,783,000 -> 80,848,000 in H2 2014; CORRESP/UPLOAD/10-K/A sequence cited from filing_chronology. Mechanism assertions on this control case are anchored to these provided data points, and the analysis coherently combines multi-year, multi-point series -> 3. Minor interpretive flaw noted (treating positive OCF > negative NI as an overstatement flag is the atypical direction) but citations are genuine and supportive. memorization_suspect_condition2: false - reasoning cites concrete provided data content rather than bare document lists, and no post-cutoff facts (no revelation/enforcement/outcome mentioned; 10-K/A 2016-01-22 is in provided chronology and predates the 2016-03-06 cutoff).",
+  "_meta": {
+    "case_id": "case_48",
+    "original_id": "W09",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "3d0b7164-fae4-4643-b0e5-ac22ab9fef33",
+    "ts": "2026-07-07T12:50:21.239798+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_wave2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 1,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "DIM1 (band=1): Answer key group is 'control'. Output misstatement_probability=45, which falls in the control band 30<p<50 -> score 1. The output over-flags a clean company (5 of 7 substantive checklist items flagged) but stays below the 50 threshold, avoiding a full false positive.\n\nDIM2 (null): Control case -> mechanism dimension is null per rubric; the three mechanism hypotheses (AR/revenue recognition, purchase-accounting goodwill allocation, cutoff/timing) are not graded against any scheme since no scheme exists in the key (scheme_summary/scheme_type are null).\n\nDIM3 (nulls): Control case -> genre mapping is null/null per rubric (answer key genre_tag_row is null).\n\nDIM4 (=3): Evidence is specific and internally coherent. Checklist items and mechanism assertions cite concrete provided data points with values, dates, accession numbers, and statement locations: e.g., CL1 combines AccountsReceivableNetCurrent (4,946,132 at 2013-12-31; 7,760,000 at 2014-12-31; 14,690,994 at 2015-03-31) against Revenues (68,169,623 FY2013 vs 63,548,349 FY2014; 20,816,276 Q1 2015); CL6 tracks a flat 10,000 allowance from 2011-03-31 to 2014-09-30 against >5x AR growth; CL2 documents the Q1->Q2 2014 goodwill jump (994,000 -> 14,174,045) and intangibles (5,915,105 -> 16,119,764); CL7 cites specific NT 10-K / CORRESP / UPLOAD chronology dates. The mechanism assertions on this control case are grounded in these same provided figures (derived AR/revenue ratios, allowance-to-AR proportions), not invented facts. This is a coherent multi-year, multi-concept combination (2011-2015, balance sheet + income statement + cash flow + filing chronology) -> 3. Consistency rule check: p=45 requires watch/elevated; declared risk_tier='watch' -> consistent, no cap applied.\n\nMEMORIZATION_SUSPECT_CONDITION2 (false): The reasoning points extensively at concrete provided data content (specific XBRL-style values with periods and accessions), so condition (a) fails; and no post-cutoff facts (revelation, enforcement action, restatement outcome) are mentioned - the 'restated prior-period column' reference is to a provided filing column label, not an outcome-era fact - so condition (b) fails.",
+  "_meta": {
+    "case_id": "case_68",
+    "original_id": "W03",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "88915d2d-3a80-4481-9f20-5924029805c0",
+    "ts": "2026-07-07T13:01:58.822515+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_wave2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

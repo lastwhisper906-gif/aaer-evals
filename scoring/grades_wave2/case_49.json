@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 0,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "Control case (answer_key.group=control). Dim1: output's misstatement_probability=58, which is >=50 on a control case -> 0 per rubric. Dim2/Dim3: treatment-only dimensions -> null for control. Dim4: consistency rule satisfied (p=58 in [40,70) with declared risk_tier 'elevated'), so no cap. Evidence is specific and grounded in provided data: exact NI vs OCF figures (CL3: NetIncomeLoss=-25,381,363 vs OCF=-3,662,192 for 2013; -12,034,709 vs -8,633,247 for 2014, from 0001144204-15-016315), an XBRL sign inconsistency in the same filing, AccruedLiabilitiesCurrent 1,518,225->327,847 alongside R&D 1,329,367->2,704,597 (CL6), a 2010-2014 annual NetIncomeLoss series plus quarterly swings (CL5), and a dated NT/amendment chronology (CL7). Mechanism hypotheses on this control case are supported by these cited data points rather than external facts, and the output coherently combines multi-year/multi-point evidence -> 3. Memorization condition 2: false - reasoning points at concrete provided data content (specific tagged values, periods, filing dates) and mentions no post-cutoff facts (no revelation/enforcement/outcome references).",
+  "_meta": {
+    "case_id": "case_49",
+    "original_id": "W04",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "cf6c8c46-3414-40f7-b8c4-3732894065ae",
+    "ts": "2026-07-07T12:50:47.711697+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_wave2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

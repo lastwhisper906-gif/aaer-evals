@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 1,
+  "dim2_mechanism": 2,
+  "dim3_genre_mapping": {
+    "mapped_genre": "mixed",
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "DIM1=1: Treatment case; output p=55, which falls in 50<=p<70 band. DIM2=2: Top-ranked hypothesis names revenue (SalesRevenueServicesNet) and AR accounts, direction overstated, treatment 'premature or aggressive revenue recognition (billing ahead of service delivery)' plus under-provisioned bad-debt allowance — this substantially matches the enforcement description (premature recognition of revenue for unperformed work; bad-debt reserve violations). Not a 3: no case-specific pinpointed fact from the key is named (no ~$40M/$566M magnitude, customer prepayments booked as revenue, contingent-fee revenue, business partner's loan recorded as revenue, or falsified records to auditors). Coverage: hypothesis 2 also hits the bad-debt reserve element but places it in 2010-2012, before the 2013-01 manipulation start; loan-as-revenue and document forgery are uncovered. DIM3: Top hypothesis maps to 'mixed' (active premature recognition + omission-estimate under-reserving), but the answer key's genre_tag_row is null, so there is no key genre to compare against; score set to null for the human auditor to finalize. DIM4=3: No cap — p=55 with risk_tier 'watch' satisfies the consistency rule. Evidence cites specific provided data points that genuinely support the mechanism claims: AR 43,273k->56,948k (+31.6%) vs revenue 188,914k->212,476k (+12.5%) FY2013->FY2014 (accession 0001047469-15-002289); AR +16.3% vs revenue +3.8% through Q3 2015 (0001104659-15-077269); allowance 245k->102k while AR grew 14,295k->33,223k (2010-2012). These are combined coherently across multiple years and quarterly points (annual AR/revenue divergence, allowance-ratio decline, Q2-Q3 2015 loss swing) qualifying for 3. Noted weakness (does not defeat the score): CL3 flags NI-vs-OCF 'divergence' where OCF exceeds NI (e.g., FY2013 NI 4,962k vs OCF 21,413k), which is directionally the benign pattern. MEMORIZATION_COND2=false: reasoning anchors on concrete provided data values throughout (not mere document listing) and mentions no post-cutoff facts — no reference to the SEC complaint, LR-24255, restatement, or enforcement outcome; hypothesis 3 explicitly reasons only from pre-cutoff data.",
+  "_meta": {
+    "case_id": "case_40",
+    "original_id": "T22",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "1fade4ef-5569-4b27-bfd1-291a81e763af",
+    "ts": "2026-07-07T12:46:08.725861+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_wave2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

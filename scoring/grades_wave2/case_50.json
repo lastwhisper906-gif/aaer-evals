@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 2,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "Dim1: Answer key group=control; output misstatement_probability=15, which is <=30, so control band score = 2. Dim2: Control case -> null per rubric; output correctly provides an empty mechanism_hypotheses list, consistent with p=15 (<40, no hypothesis required). Dim3: Control case -> nulls per rubric; answer key genre_tag_row is null and there is no top-ranked hypothesis to map. Dim4: Consistency rule satisfied (p=15 <40 with risk_tier='watch', which is within clear/watch; no cap). Evidence is specific and multi-year: CL1 pairs AR (9,948k->13,652k->17,558k->19,409k, 2012-2015) against revenues (70,247k->129,755k) with accession citations; CL2 tracks goodwill (0->35,386k->105,257k) and intangibles vs total assets/revenue; CL4 computes stable gross margins (~72.7% FY2013 vs ~71.6% FY2015); CL5/CL6 combine NI trend, allowance (94k->68k), AP (8,605k->7,621k) and COGS (+42%) over the same window; top_signals coherently synthesize losses + revenue growth + equity raises (StockholdersEquity 12,500k->186,685k) into a growth-stage-company interpretation supporting the low probability. This is specific data genuinely supporting claims plus coherent multi-year/multi-point combination -> 3. The output also flags a genuine coverage gap (CL8: financing/investing cash-flow series end FY2013) rather than overclaiming. Memorization condition2: false - reasoning cites concrete provided data content (specific balances, periods, accession numbers), not mere document listing, and mentions no post-cutoff facts (no revelation/enforcement/outcome, appropriate for a control case).",
+  "_meta": {
+    "case_id": "case_50",
+    "original_id": "W20",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "a17b5a86-3a3b-4f13-876b-69930e672ce3",
+    "ts": "2026-07-07T12:51:14.763943+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_wave2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

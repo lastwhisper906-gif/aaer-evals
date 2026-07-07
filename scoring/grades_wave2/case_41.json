@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 2,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "Control case (answer key: group=control). dim1: output gives misstatement_probability=22; control rule p<=30 -> 2. dim2/dim3: control -> null per rubric; output appropriately has an empty mechanism_hypotheses list, so no unsupported mechanism assertions to penalize. dim4: consistency rule satisfied (p=22 <40 with risk_tier='watch', allowed). Evidence is specific and arithmetically checks out: CL1 AR 15,348K->25,314K (~65%) vs revenue 103,732K->132,274K (~27%) matches the stated top signal; CL6 combines 2010 vs 2015 allowance (157K->303K, ~1.9x) against AR growth (11,069K->36,348K, ~3.3x); CL3 uses FY2015 NI 8,621K vs OCF 34,917K plus deferred revenue 65,098K and correctly reads the divergence as mitigating; CL2 links goodwill 41,914K->83,073K to the ~98,014K stock issuance as acquisition-driven. Multiple years and multiple statement lines are combined coherently -> dim4=3. memorization_suspect_condition2=false: reasoning cites concrete provided data values (not bare document lists) and mentions no post-cutoff revelation/enforcement/outcome facts; the 8-K/A and 10-K/A references come from the provided filing chronology.",
+  "_meta": {
+    "case_id": "case_41",
+    "original_id": "W10",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "93703cef-2118-4b46-a21d-eec66a8e677b",
+    "ts": "2026-07-07T12:46:35.049290+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_wave2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

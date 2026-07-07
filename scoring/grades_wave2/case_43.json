@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 1,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "dim1=1: Answer key group=control; output misstatement_probability=45, which falls in the 30<p<50 control band (not <=30 for full credit, not >=50 for zero). dim2=null and dim3 nulls: rubric mandates nulls for control cases. dim4=3: risk_tier consistency check passes (p=45 with tier 'watch' satisfies 40<=p<70 => watch/elevated, so no cap at 1). Evidence is specific and genuinely supports claims: e.g., CL1 pairs AccountsReceivableNetCurrent 702,712,000->1,002,974,000 (+42.7%) against SalesRevenueNet +35.5% from the same 10-Q (0000950123-10-101722); CL3 combines FY2009 NetIncomeLoss=-85,546,000 vs OCF=1,616,972,000 with FY2008 comparison and D&A=668,415,000 reconciliation from the FY2009 10-K. Mechanism assertions on this control case are hedged and data-anchored (goodwill jump 164,078,000->463,427,000 explicitly attributed to a Q3 2010 acquisition PPA; LongTermDebtCurrent reclassification explicitly flagged as possibly legitimate maturity proximity), so they do not misuse citations. Coherent multi-year/multi-point combination is present (2008/2009 annual NI-vs-OCF, 2008->2010 inventory trend, quarterly NetIncomeLoss series in CL5, goodwill-vs-revenue same-period cross-check), earning 3 rather than 2. memorization_suspect_condition2=false: the output cites concrete provided data content (specific values, dates, accession numbers) rather than merely listing documents, and mentions no post-cutoff facts (no revelation/enforcement/outcome references).",
+  "_meta": {
+    "case_id": "case_43",
+    "original_id": "W01",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "e1134c36-b835-4339-ba9c-66383b9a74a6",
+    "ts": "2026-07-07T12:47:39.724467+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_wave2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

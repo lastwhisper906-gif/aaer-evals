@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 1,
+  "dim2_mechanism": 2,
+  "dim3_genre_mapping": {
+    "mapped_genre": "active",
+    "score": 1
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "dim1=1: treatment case with p=55, falling in the 50<=p<70 band. dim2=2: the TOP-RANKED hypothesis targets Revenues/SalesRevenueNet and AccountsReceivableNetCurrent, direction 'overstated', with treatment 'premature/aggressive revenue recognition or sell-in shipment to distributors... inflate current-period revenue/receivables at the expense of future periods.' This substantially matches the key's pull-forward of existing customer orders (correct account + direction + acceleration-of-sales treatment type), but names no case-specific pinpointed fact from the key (~$408M magnitude, six consecutive quarters Q3 2015-Q4 2016, meeting analyst estimates, MD&A non-disclosure), so not 3. Coverage: the disclosure_only/omission component of the multi-part truth is uncovered by any hypothesis. dim3: top hypothesis narrative is active conduct (deliberate sell-in/premature recognition) -> mapped 'active'; key scheme is mixed (active pull-forward + omission of disclosure/revenue-uncertainty in MD&A, scheme_type includes disclosure_only) -> one-sided-vs-mixed = 1. dim4=3: evidence cites specific provided data points that genuinely support claims (AR 279,835,000->433,638,000 (+55.0%) vs revenue +32.2% FY2015; NI 232,573,000 vs OCF 14,541,000 FY2015; inventory +26.3% vs revenue +3.1% FY2017 with margin 46.6%->45.2%, then -12.0% unwind FY2018), combined coherently across FY2014-FY2018 into a multi-year acceleration/unwind pattern; risk_tier 'elevated' with p=55 satisfies the consistency rule (40<=p<70 => watch/elevated), so no cap. memorization_suspect_condition2=false: reasoning points at concrete provided data content (specific XBRL values tied to accessions), not mere document listing, and mentions no post-cutoff facts (no SEC order, revelation, or outcome referenced).",
+  "_meta": {
+    "case_id": "case_66",
+    "original_id": "T29",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "2b8b8dbc-0306-49d2-9fa7-b4d859aa0ff4",
+    "ts": "2026-07-07T13:00:51.226607+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_wave2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

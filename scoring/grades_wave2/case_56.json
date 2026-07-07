@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 1,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "CONTROL case (answer key: group=control, no scheme). dim1: output gives misstatement_probability=35, which falls in the control band 30<p<50 -> score 1 (a probability <=30 would have earned 2; 35 is a near-miss). dim2/dim3: control case, so mechanism and genre dimensions are null per rubric; note the output correctly lists mechanism_hypotheses=[] and does not push a fraud mechanism, consistent with control status. dim4: score 3. Evidence citations are specific and tied to concrete provided data: CL3 cites exact NetIncomeLoss vs OCF figures for 2011 (258,142,000 vs 28,884,000) and 2012 (181,024,000 vs 6,768,000) with accession numbers (0001193125-14-057078, 0000950123-15-002980); CL5 cites full quarterly NetIncomeLoss sequences for 2011 and 2012; CL6/CL8 cite dated balance-sheet points (Assets 322,343,000 at 2012-12-31 vs 9,851,868,000 at 2015-09-30) and identify data-coverage gaps (no receivables/intangibles/reserve concepts, Revenues series ending 2014Q4). The top_signals section coherently combines multi-year points (2010 negative stockholders' equity of -411,187,000, the NI/OCF divergence in 2011-2012, and the asset trajectory 4.12B->322M->9.85B) into a plausible non-fraud explanation (Capital Trust -> Blackstone Mortgage Trust recapitalization/CDO deconsolidation), i.e., mechanism-type assertions on this control case are genuinely supported by the cited data rather than asserted. Consistency cap: p=35 (<40) requires tier clear/watch; declared risk_tier='watch' complies, so no cap. memorization_suspect_condition2: false — the reasoning points at concrete provided data content (specific values, dates, accessions) rather than merely listing documents, and mentions no post-cutoff facts (no revelation/enforcement/outcome references; the restructuring narrative is derivable from the pre-cutoff filings and data provided).",
+  "_meta": {
+    "case_id": "case_56",
+    "original_id": "W07",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "7894319a-6162-43b4-9e47-36206011c919",
+    "ts": "2026-07-07T12:54:23.487822+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_wave2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

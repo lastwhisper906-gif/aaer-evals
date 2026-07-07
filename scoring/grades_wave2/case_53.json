@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 2,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "Control case per answer key (group=control, no scheme/genre). dim1: output's misstatement_probability=15 <=30, so band score 2. dim2: null (control). dim3: nulls (control); note mechanism_hypotheses is empty, appropriately so given p<40. dim4: risk_tier='clear' is consistent with p=15 (<40 => clear/watch), so no cap. Evidence cites concrete provided data points with values and dates: CL1 pairs AR (66,239K in 2012 vs 59,385K in 2011; 69,199K in 2016 vs 70,597K in 2015) against revenue trends; CL3 explains OCF>>NI (133,566K vs 33,464K in 2016) via the 82,445K depreciation add-back; CL6 tracks allowance 475K->305K->275K (2014-2016) vs revenue; CL5 contrasts quarterly NI smoothness with annual NI variability; CL7 documents consistent 10-K filing cadence 2012-2017 with no NT/amendments. The top_signals coherently combine these multi-year, multi-point observations and correctly size minor anomalies (OtherAssetsNoncurrent 0.6M->3.4M; allowance decline) against ~$650M assets/~$670M revenue, supporting the low-risk conclusion. This meets dim4=3 (specific, supportive, coherent multi-year combination). memorization_suspect_condition2=false: the reasoning points at concrete provided data content throughout (not bare document lists) and mentions no post-cutoff facts (no revelation/enforcement/outcome), as expected for a control case.",
+  "_meta": {
+    "case_id": "case_53",
+    "original_id": "W17",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "17cbbc01-741a-4b4f-9fe3-aa3daf92ea91",
+    "ts": "2026-07-07T12:52:53.168780+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_wave2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

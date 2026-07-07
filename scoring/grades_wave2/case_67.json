@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 0,
+  "dim2_mechanism": 0,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "DIM1 (=0): This is a treatment case per the answer key (SEC Order 34-86538 / AAER-4061, SP NOI smoothing via the '2617' cookie-jar account, Jul-2013 to Sep-2015). The output gives misstatement_probability=20, which falls in the p<50 band for treatment cases -> 0. The model was fully fooled: it explicitly reasoned the NI/OCF gap away as normal REIT depreciation and scored CL5 (smoothness) as no_flag despite the ground-truth scheme being income smoothing. DIM2 (=0): mechanism_hypotheses is an empty list. With p=20 (<40) a hypothesis was not strictly required by the rubric's parenthetical, but there is no top-ranked hypothesis touching the correct account area (SP NOI / lease-termination income / cookie-jar reserve account), so no credit above 0 can be awarded; the reserves_smoothing mechanism was entirely missed. Coverage of the multi-part truth (cookie-jar 2617 account, lease-termination income inclusion, prior-period SP NOI lowering) is zero. DIM3 (null/null): There is no top-ranked hypothesis narrative to map to active/omission-estimate/mixed, so genre mapping is ungradeable; the answer key's genre_tag_row is also null. Recorded as nulls rather than 0, since 0 denotes a wrong mapping and no mapping exists (flag for human auditor). DIM4 (=3): Citations are concrete provided data points that genuinely support the claims made: CL3 quotes exact NI vs OCF figures (e.g., NI=-160,713,000 vs OCF=268,847,000 for FY2012; NI=132,851,000 vs OCF=479,210,000 for FY2014) and pairs them with D&A=488,524,000 to explain the gap; CL6 combines Liabilities (7,305,908,000 -> 6,595,936,000) with equity growth (2,276,354,000 -> 2,931,687,000) across 2012-2015 to support the deleveraging/IPO explanation; CL5 cites quarterly ProfitLoss swings (-56,845,000 Q2-2013 vs 41,740,000 Q1-2014) to support its (GAAP-level) non-smoothness finding. This is a coherent multi-year, multi-point combination -> 3. Note: the truth's smoothing occurred in the non-GAAP SP NOI metric, which was not in the provided series, so the GAAP-based no_flag conclusions are internally well-evidenced even though the case-level conclusion is wrong; dim4 grades evidence quality, not outcome. Consistency-rule check: p=20 with risk_tier='watch' satisfies p<40 => clear/watch, so no cap applies. MEMORIZATION_SUSPECT_CONDITION2 (=false): (a) the output cites specific provided data content (exact XBRL-style values with accessions and locations), not bare document lists; (b) no mention of the revelation, the SEC order, restatement, or any other post-cutoff fact appears anywhere in the checklist or overall section.",
+  "_meta": {
+    "case_id": "case_67",
+    "original_id": "T20",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "5efe0ba0-d0e1-427c-a763-c5b0a9eccc57",
+    "ts": "2026-07-07T13:01:29.088366+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_wave2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

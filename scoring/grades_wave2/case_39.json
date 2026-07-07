@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 1,
+  "dim2_mechanism": 2,
+  "dim3_genre_mapping": {
+    "mapped_genre": "mixed",
+    "score": 1
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "DIM1=1: Treatment case; output gives misstatement_probability=58, which falls in the 50<=p<70 band -> 1 (not >=70, so not 2). DIM2=2: Top-ranked hypothesis names 'premature or aggressive revenue recognition (extended payment terms, bill-and-hold, channel stuffing)' affecting AccountsReceivableNetCurrent/Revenues/SalesRevenueGoodsNet/NetIncomeLoss, direction 'overstated'. Answer key (AAER-3905): revenue inflated via inflated prices, backdated documents shifting revenue earlier, premature recognition on consignment deliveries, fictitious transaction. Account area (revenue/AR), direction (overstated), and treatment type (premature revenue recognition) substantially match the enforcement description -> 2. No case-specific pinpointed fact from the key (consignment, backdating, inflated pricing data, fictitious transaction) is named, so not 3. Coverage: multi-mechanism truth (revenue_recognition + document_forgery); best match graded is the revenue_recognition leg; document_forgery/backdating is not covered by any hypothesis. DIM3=1: Top hypothesis narrative blends active manipulation (premature revenue recognition/channel stuffing) with an estimate omission element ('understating the allowance for doubtful accounts... thereby overstating net receivables and net income') -> maps to 'mixed'. Answer-key scheme (inflated prices, backdated documents, premature consignment recognition, fictitious transaction) is active. One-sided(active)-vs-mixed mismatch -> 1. DIM4=3: Evidence consists of specific provided data points with values/dates/accession numbers that genuinely support claims: AR $21.446M (2014-09-30, acc 0001104659-14-078750) to $38.598M (2015-06-30, acc 0001104659-15-057928) with implied DSO ~113->~148; allowance drop $1.3M (2015-03-31) to $261K (2015-06-30) while gross AR grew; inventory $1.929M (2013-12-31) to $10.924M (2014-12-31) (~466%) vs revenue $24.308M->$59.867M (~146%); NI vs OCF divergence in both 2011 (+$14.9M vs -$20.4M) and 2013 (+$41.6M vs -$13.3M); NT 10-K chronology 2014/2015. This is a coherent multi-year, multi-point combination -> 3. Consistency rule check: p=58 requires watch/elevated; risk_tier='elevated' -> consistent, no cap. MEMORIZATION_SUSPECT_CONDITION2=false: reasoning points at concrete provided data content (specific XBRL values, periods, filing chronology entries), not mere document lists, and contains no facts public only after the cutoff (no mention of the SEC action, restatement, revelation, or outcome).",
+  "_meta": {
+    "case_id": "case_39",
+    "original_id": "T19",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "160b41b2-beb9-45ff-a5dc-e5c9ba916756",
+    "ts": "2026-07-07T12:45:20.104273+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_wave2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 2,
+  "dim2_mechanism": 0,
+  "dim3_genre_mapping": {
+    "mapped_genre": "mixed",
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "Dim1=2: treatment case, p=74 >= 70. Dim2=0: top-ranked hypothesis alleges premature revenue recognition / delayed write-down of trade receivables (Revenues, ReceivablesNetCurrent, Allowance) — unrelated to the answer key's mechanism of manual post-closing income-tax provision plugs understating tax expense and creating a phantom ~$461M income-tax receivable (SEC order 33-10221 para.24,30,39,43-44). Coverage note: hypothesis #3 names 'Income tax accounts', direction NetIncomeLoss overstated / tax liabilities understated, which substantially matches account+direction and would likely score 2 if top-ranked, but rubric grades top-ranked only. Dim3: top hypothesis maps to 'mixed' (active premature revenue recognition + omission/estimate delayed write-down), but answer-key genre_tag_row is null, so no key genre exists to score against → score null; flag for human auditor. Dim4=3: risk_tier 'elevated' is consistent with p=74 (no cap). Evidence cites specific, arithmetically verifiable provided data points (Goodwill 3,530,915K→4,159,206K = +17.8%; receivables +2.5% vs revenue −8.1%; NI>OCF by ~$200-290M in 2007-2008 reversing in 2009; gross margin ~20.6%→~8.0%) and combines multi-year annual, quarterly, and filing-chronology signals coherently. Memorization=false: reasoning is anchored in concrete provided values (not mere document listing) and never mentions the restatement, enforcement order, or outcome. Borderline: CL7 cites CORRESP/UPLOAD entries dated 2011-01-26/2011-02-23, after the last used document (2010-11-02); they are cited from the provided 'Filing chronology' and are not revelation/enforcement/outcome facts, so condition 2 is not mechanically triggered, but auditor should confirm those chronology entries were in the provided data.",
+  "_meta": {
+    "case_id": "case_65",
+    "original_id": "T04",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "23355a7c-e2b1-48bf-b71d-1f8801345a10",
+    "ts": "2026-07-07T13:00:10.583247+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_wave2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

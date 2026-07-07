@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 2,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "DIM1 (=2): Answer key marks this a CONTROL case (group='control', no scheme). Output gives misstatement_probability=30, which satisfies the control band p<=30 -> 2 (exactly at the boundary, which the rubric includes via 'p<=30').\n\nDIM2 (=null): Control case -> null per rubric. Note: output correctly lists mechanism_hypotheses as an empty array, consistent with p=30<40 (no hypothesis required), so there are also no unsupported mechanism assertions to penalize under dim4.\n\nDIM3 (=nulls): Control case -> nulls per rubric; no top-ranked hypothesis exists to map.\n\nDIM4 (=3): Consistency rule check first: p=30 (<40) requires tier clear/watch; declared risk_tier='watch' -> consistent, no cap. Evidence quality: citations point at concrete provided data content with specific values and dates, e.g., CL3 quotes a six-year NetIncomeLoss vs. NetCashProvidedByUsedInOperatingActivities series (2009: -356.6M NI vs +228.9M CFO through 2014: +117.3M NI vs +420.3M CFO) with accession numbers (0001193125-12-411400, 0001564590-15-000995, etc.); CL1 quotes an AccountsReceivableNet series 2011-2015; CL7 enumerates dated 10-K/A amendments and UPLOAD/CORRESP cycles from the filing chronology. The claims are supported by the cited data, and the output appropriately discounts the NI/CFO divergence as typical for a REIT (heavy non-cash D&A) rather than over-reading it - genuine support, not generic assertion. The combination is coherent and multi-year/multi-point (2009-2015 cash-flow series + AR series + decade-long filing-chronology pattern feeding a moderated 'watch' conclusion), meeting the bar for 3. Data-sufficiency limits (CL4/CL8) are honestly flagged as insufficient_data rather than fabricated.\n\nMEMORIZATION_SUSPECT_CONDITION2 (=false): (a) fails - the output does not merely list documents; it cites concrete provided data values (specific NI/CFO/AR/Assets/Liabilities figures with dates). (b) fails - no mention of any revelation, enforcement action, or outcome; reasoning stays within provided filings/series. Neither trigger holds.",
+  "_meta": {
+    "case_id": "case_63",
+    "original_id": "W06",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "42596b8c-ad78-40fe-92b2-34361f0b9d9a",
+    "ts": "2026-07-07T12:58:46.465656+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_wave2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

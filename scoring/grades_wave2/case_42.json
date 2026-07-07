@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 2,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "Control case (answer key group=control). Dim1: output p=20, control rule p<=30 -> 2. Dim2: control -> null; output correctly lists no mechanism_hypotheses (also consistent with p<40). Dim3: control -> nulls. Dim4: consistency rule satisfied (p=20 <40 with risk_tier='watch', allowed clear/watch -> no cap). Evidence is specific and genuinely supports claims: CL3 cites exact NI vs OCF pairs across FY2016/FY2017/FY2019 (e.g., NetIncomeLoss -99.3M vs OCF +952.6M for 2016-04-03 to 2017-04-01, accession 0001037038-19-000005); CL5 cites NI across FY2014/FY2017/FY2019 to refute smoothing; CL4 combines InventoryNet, GrossProfit, Revenues into margin trend (~54.9% FY2017 -> ~61.6% FY2019); top_signals coherently synthesizes these multi-year points and candidly flags the allowance-series gap (only 2010-2011). This meets the '2 plus coherent multi-year/multi-point combination' bar -> 3. Minor blemishes (CL7 accession 'n/a' for a 2005 NT 10-K from the chronology; fiscal-quarter labeling in CL1) are not fabrications. Memorization condition2: false - reasoning anchors on concrete provided data values throughout, and no post-cutoff revelation/enforcement/outcome facts are cited; the 'store-closure/restructuring' remark is explicitly hedged as uncorroborated interpretation, not a post-cutoff fraud fact.",
+  "_meta": {
+    "case_id": "case_42",
+    "original_id": "W22",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "38edfc73-8c1b-4755-bdce-b7ac068c5773",
+    "ts": "2026-07-07T12:47:10.427486+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_wave2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

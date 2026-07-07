@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 0,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 2,
+  "memorization_suspect_condition2": false,
+  "rationale": "DIM1 (=0): Answer key marks this a CONTROL case (group='control', no scheme). Output gives misstatement_probability=55. Control banding: p>=50 -> 0. 55 >= 50, so score 0. DIM2 (=null): Control case; mechanism dimension is not graded per rubric. DIM3 (=nulls): Control case; genre mapping not graded. DIM4 (=2): Consistency rule check first: p=55 requires tier watch/elevated; declared risk_tier='elevated' is consistent, so no cap. The evidence is largely specific and arithmetically verifiable against the cited filings: e.g., CL1 cites AccountsReceivableNetCurrent=722,001,000 (2019-08-25) vs 487,240,000 (2018-08-26) = +48.2% against quarterly revenue 1,447,081,000 vs 1,394,153,000 = +3.8% (acc. 0000094845-19-000039), with parallel Q1/Q2 FY2019 comparisons; CL6 computes allowance ratios (9,438,000/722,001,000 = 1.31% vs 9,113,000/487,240,000 = 1.87%); CL3 cites NI 146,577,000 vs OCF 55,822,000 for Q1 FY2019 (acc. 0000094845-19-000016). These specific data points genuinely support the stated claims (the mechanism assertions on this control case are anchored to real cited figures), warranting at least 2. I withheld 3 despite the multi-quarter combination because of citation-quality defects: CL7's second evidence item ('NT 10-Q filed 2003-10-09') carries source_accession_no='n/a', is outside the provided document list, and is unverifiable (possible fabrication/irrelevance); the 'March 2019 IPO' claim in top_signals is likewise not sourced to any provided document. These flaws weaken the coherence needed for a 3. MEMORIZATION_SUSPECT_CONDITION2 (=false): The reasoning does point at concrete provided data content throughout (specific balance-sheet/income-statement values with accession numbers), so condition (a) fails. For (b), no revelation/enforcement/outcome facts are mentioned; the March 2019 IPO reference was public before the last provided filing (2019-10-08) and is not a post-cutoff revelation, so condition (b) also fails. Note: this is a control case where the output over-flagged (p=55, 'elevated' tier) based on real but benign working-capital divergences; dim1 penalizes this per the rubric while dim4 credits the genuine specificity of the cited data.",
+  "_meta": {
+    "case_id": "case_54",
+    "original_id": "W21",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "a9fabb7e-4b89-4951-870d-504f420cf225",
+    "ts": "2026-07-07T12:53:30.962427+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_wave2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

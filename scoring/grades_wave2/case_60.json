@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 1,
+  "dim2_mechanism": 2,
+  "dim3_genre_mapping": {
+    "mapped_genre": "active",
+    "score": 2
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "Dim1=1: treatment case, p=65 falls in 50<=p<70 band. Dim2=2: top-ranked hypothesis names the correct account area (SalesRevenueGoodsNet/AR), correct direction (overstated), and correct treatment type ('premature or aggressive revenue recognition... recording sales to distributors/consignees as final revenue'), substantially matching the answer key's premature revenue recognition / channel-stuffing-to-distributors scheme. Not a 3: no case-specific pinpointed fact from the key (five distributors, undisclosed side arrangements allowing returns, payment conditioned on resale to end users, concealment from auditors/audit committee) is explicitly named; 'distributors/consignees' is generic. Coverage note: hypothesis 3 also flags channel-stuffing via the 2016 inventory build, reinforcing the same single-mechanism truth. Dim3=2: top hypothesis maps to 'active' (aggressive/premature revenue booking); answer-key scheme (channel-stuffing with concealed side agreements) is active-genre; exact match. Dim4=3: citations are specific and mutually reinforcing across multiple years — AR +101.5% (26.67M->53.76M FY14->FY15) vs revenue +58.6%, implied DSO ~61->~94 days into 2016, NI 29.4M vs OCF 18.8M FY2015 plus NI-positive/OCF-negative Q1 2016, inventory +145.5% vs revenue +29.3% in 9M2016 — a coherent multi-year, multi-signal combination that genuinely supports the mechanism claims. Consistency rule satisfied: p=65 with risk_tier 'elevated' (watch/elevated required), so no cap. Memorization_suspect_condition2=false: the reasoning cites concrete provided data content (specific balances, growth rates, DSO computations tied to accession numbers) rather than merely listing documents, and mentions no post-cutoff facts (no reference to the revelation, SEC complaint LR-24678, or enforcement outcome).",
+  "_meta": {
+    "case_id": "case_60",
+    "original_id": "T26",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "0d0e4e04-3b1b-4478-b640-7adbdc15bce5",
+    "ts": "2026-07-07T12:56:43.692285+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_wave2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

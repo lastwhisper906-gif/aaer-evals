@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 2,
+  "dim2_mechanism": 2,
+  "dim3_genre_mapping": {
+    "mapped_genre": "mixed",
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "DIM1 (=2): Treatment case per answer key. Output states misstatement_probability=72, which is >=70, so band score = 2.\n\nDIM2 (=2): Top-ranked hypothesis targets OtherAssetsNoncurrent, PropertyPlantAndEquipmentNet, Goodwill, NetIncomeLoss, direction 'overstated', with treatment described as capitalization/deferral tied to 'revenue-equipment transactions... consistent with deferred recognition of losses or overstated asset values later reversed.' Ground truth (LR-24459) is avoidance of ~$20M used-truck impairment losses via inflated-price truck purchases/sales, overstating asset values and income. Match assessment: account area overlaps (PropertyPlantAndEquipmentNet is where revenue equipment/trucks sit, and the hypothesis explicitly invokes 'revenue-equipment transactions'), direction matches (assets and income overstated), and treatment type substantially matches (deferred recognition of losses / overstated asset values ≈ avoided impairment charges). That satisfies the level-2 bar. It does NOT reach 3: no case-specific facts from the key (third-party dealer, >1,000 trucks, 2-3x fair value pricing, ~$20M / two-thirds of pre-tax income, FY2016 10-K specificity) are named. Caveat noted for the auditor: the hypothesis's evidentiary emphasis is on OtherAssetsNoncurrent/Goodwill swings rather than revenue-equipment carrying values directly, so the 2 is at the borderline; the 'revenue-equipment transactions' language and PP&E inclusion are what pull it above a 1. Coverage note (multi-mechanism truth is single-mechanism here): hypotheses 2 (receivables/revenue) and 3 (NI-vs-OCF divergence) do not match the truth mechanism; only H1 does.\n\nDIM3 (mapped=mixed, score=null): Top hypothesis narrative combines an active-treatment element (capitalizing costs/gains into other assets/goodwill 'rather than expensing') with an omission/estimate element ('deferred recognition of losses,' overstated asset values not written down), so it maps to 'mixed.' The answer key's genre_tag_row is null, so no key genre exists to score against; per the rubric's requirement to score 'against the answer-key genre,' I return score=null and flag for the human auditor. (If the auditor infers a key genre from the scheme summary—active sham transactions used to avoid an impairment estimate, itself arguably 'mixed'—the mapping would score 2; if the key genre is deemed 'omission-estimate' for avoided impairment, it would score 1.)\n\nDIM4 (=3): Citations reference specific accession numbers with concrete numeric data points that genuinely support the claims: NI +$24.844M vs. operating cash flow -$5.211M for FY2016 (10-K 0001008886-16-000363) and NI +$11.367M vs. OCF -$22.807M for Q1 FY2016; OtherAssetsNoncurrent trajectory $1.531M (2012) → $46.607M (9/2016) → $9.698M (12/2016); AR $77.6M→$105.97M→$130.9M vs. revenue $613.6M→$759.3M→$900.8M (FY2013-15) with allowance flat/declining ($1.045M on $64.7M AR in 2011 vs. $1.002M on $130.9M in 2015). These are coherent multi-year, multi-statement combinations (income vs. cash flow, balance-sheet asset swings, receivables vs. revenue trends), satisfying the '2 plus coherent multi-point combination' bar for 3. Consistency rule: p=72 requires risk_tier 'elevated'; output declares 'elevated' — no cap triggered.\n\nMEMORIZATION_SUSPECT_CONDITION2 (=false): (a) fails — the reasoning points extensively at concrete provided data content (specific XBRL values with periods and accessions), not bare document lists. (b) fails — no mention of post-cutoff facts (no SEC complaint, restatement, enforcement, or outcome references); the NT 10-Q / 10-Q chronology cited (Feb 2017) is within the provided filing window ending 2017-02-10.",
+  "_meta": {
+    "case_id": "case_61",
+    "original_id": "T24",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "34368529-d42f-4a97-a3fc-07276df18a11",
+    "ts": "2026-07-07T12:57:53.686177+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_wave2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}
