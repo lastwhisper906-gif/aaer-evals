@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 2,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "dim1: Answer key group=control. Output misstatement_probability=30; control rule p<=30 -> 2. Score 2. dim2: Control case -> null per rubric; output correctly asserts no mechanism_hypotheses (empty list), consistent with p=30<40 so no hypothesis required. dim3: Control -> nulls (answer key genre_tag_row=null; no top-ranked hypothesis exists). dim4: Consistency rule check first: p=30 (<40) requires tier clear/watch; declared risk_tier='watch' -> no cap. Evidence is specific and concrete throughout: exact XBRL-style values with accession numbers (e.g., CL1: AR 40,550,000->53,402,000 vs revenue 359,449,000->394,288,000; CL3: OCF 34,015,000 vs NI 23,044,000 in 2011 and 46,938,000 vs 19,710,000 in 2012; CL6: allowance 593,000->464,000->892,000 across 2010-2012). The top_signals combine multiple years and multiple data points coherently — e.g., the AR/inventory growth flags are cross-referenced against the Q4 2012 acquisition (Goodwill 61,144,000->175,108,000; LongTermDebt 30,737,000->237,566,000) to explain divergence as purchase-accounting effects, and quarterly NI volatility (loss quarter in Q3 2010, Q4 2012 drop to 641,000) is used to reject smoothing. Any implicit mechanism assertions on this control case (acquisition-driven balance growth, routine 8-K/A pro forma amendments) are supported by cited provided data. This meets the '2 plus coherent multi-year/multi-point combination' bar -> 3. memorization_suspect_condition2: false — the reasoning points at concrete provided data content (specific balances, flows, dates) rather than merely listing documents, and mentions no post-cutoff facts (no revelation/enforcement/outcome references; latest cited data is Q1 2013 filing within the document set).",
+  "_meta": {
+    "case_id": "case_22",
+    "original_id": "V06",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "6990bc7d-c273-4684-a3ec-f63eec968490",
+    "ts": "2026-07-07T06:07:26.499195+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_v2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

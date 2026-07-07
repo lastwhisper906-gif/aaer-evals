@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 1,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "Dim1: Answer key group=control. Output p=32. Control bands: p<=30 -> 2; 30<p<50 -> 1; p>=50 -> 0. p=32 is in (30,50), so score 1 (narrowly missed the p<=30 band). Dim2/Dim3: control case -> null per rubric; note the output appropriately lists no mechanism hypotheses (consistent with p<40, no hypothesis required). Dim4: Consistency rule satisfied (p=32 <40 with risk_tier='watch' -> clear/watch allowed), so no cap. Evidence is specific and data-grounded: e.g., CL1 cites AR 49.7M (2011-01-01) -> 57.0M (2011-12-31) -> 67.9M (2012-12-29) against Revenues 405.4M -> 439.0M -> 493.2M with accession numbers 0001193125-12-065799 / 0001193125-13-061008; CL6 computes allowance ratio 3.46% -> 2.88%; CL3 contrasts NI (63.7M/62.3M) vs CFO (79.0M/75.4M) for FY2011/FY2012; CL5 cites quarterly NI sequence for 2011. Top_signals coherently combine multi-year DSO trend, allowance ratio decline, margin trend (70.4% -> 66.1%), and CFO>=NI as an explicit mitigating signal - a coherent multi-year/multi-point combination -> 3. Minor blemish: CL7's NT 11-K evidence cites source_accession_no 'n/a' (filing-chronology metadata), not enough to deem fabricated. Memorization condition2: false - reasoning cites concrete provided data values throughout (not a bare document list) and mentions no post-cutoff facts (no revelation/enforcement/outcome references; control case has none in key).",
+  "_meta": {
+    "case_id": "case_34",
+    "original_id": "V04",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "e4d0419f-631e-44f8-a5bc-258dfeafb759",
+    "ts": "2026-07-07T06:13:16.961148+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_v2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

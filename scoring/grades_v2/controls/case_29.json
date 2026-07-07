@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 1,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "Control case (answer key group=control). Dim1: output p=42; control banding 30<42<50 -> 1. Dim2/Dim3: null per rubric for control cases. Dim4: risk_tier 'watch' is consistent with p=42 (40<=p<70 => watch/elevated), so no cap. Evidence is specific and arithmetically verified: PP&E net +64.5% (204,551k->336,498k) vs revenue +12.8% (2,751,956k->3,104,183k); capex +57% vs depreciation +16%; OCF -38% (217,898k->134,342k) vs NI -29% (181,703k->128,238k); implied Q4-2013 NI 12,479k correctly computed from FY total less Q1-Q3. Citations reference concrete accessions/locations and combine multi-year (FY2008-Q1 2014) and quarterly points coherently (e.g., 10-K/A filed 2012-04-20 vs original 10-K 2011-02-25 derived from provided chronology). Mechanism assertions on this control case are grounded in the cited data (the 'restatement' framing is an inference from filing metadata, not a fabricated fact) -> 3. Memorization condition 2: false - reasoning points at concrete provided data content throughout, and no post-cutoff facts (revelation/enforcement/outcome) are mentioned; SEC CORRESP/UPLOAD items come from the provided filing chronology.",
+  "_meta": {
+    "case_id": "case_29",
+    "original_id": "V11",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "33bf9223-1c93-4529-8697-d98b5f77a428",
+    "ts": "2026-07-07T06:10:42.975846+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_v2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

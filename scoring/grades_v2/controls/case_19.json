@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 2,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "Control case per answer key (group='control', no scheme). Dim1: output gives misstatement_probability=30; control rule p<=30 -> 2 (boundary inclusive), so 2. Dim2: control -> null; output appropriately lists empty mechanism_hypotheses. Dim3: control -> nulls. Dim4: evidence is specific and verifiable-format XBRL data points with values/dates/accessions (e.g., Goodwill 2115M (2017-07-30) -> 4580M (2018-07-29); ReceivablesNetCurrent 605M -> 785M vs revenue 7890M -> 8685M; NetIncomeLoss -393M quarter 2018-01-29 to 2018-04-29 vs stable OCF 1305M FY2018; ProceedsFromIssuanceOfLongTermDebt 6224M and LongTermDebt 2499M -> 8595M). Top_signals coherently combine multi-year balance sheet, income statement, cash flow, and filing-chronology points to support a benign explanation (debt-funded acquisition, non-cash impairments, activist proxy contest) for the flagged ratios, which supports the low-probability call. Consistency rule: p=30 (<40) requires clear/watch; risk_tier='watch' -> no cap. Score 3. Memorization condition 2: false - reasoning points at concrete provided data content rather than just listing documents, and the acquisition/activist references are grounded in in-window provided data (debt issuance and Goodwill jump in FY2018 10-K figures; SC 13D 2018-08-09 and DFAN14A/DEFC14A entries in filing_chronology), not post-cutoff revelation/enforcement facts (control case has none anyway).",
+  "_meta": {
+    "case_id": "case_19",
+    "original_id": "V22",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "45e3139c-a916-4367-b257-e1b034d26acd",
+    "ts": "2026-07-07T06:06:15.593041+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_v2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

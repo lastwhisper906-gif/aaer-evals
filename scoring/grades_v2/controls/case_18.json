@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 2,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "dim1: Answer key marks this a CONTROL case. Output gives misstatement_probability=22, which is <=30, so per the control banding rule this scores 2. dim2/dim3: Control case, so both are null per rubric; note the output correctly provides an empty mechanism_hypotheses list, consistent with a low-probability control assessment. dim4: Consistency rule check first — p=22 (<40) requires tier clear/watch; output declares risk_tier='watch', so no cap applies. The evidence is specific and multi-point: checklist items cite concrete XBRL values with periods and accession numbers (e.g., CL3: FY2013 CFO $2.926B vs NI $1.855B and FY2017 CFO $2.415B vs NI $1.658B supporting the no-flag on income/cash-flow divergence; CL6: allowance for doubtful accounts $15.8M in 2010 growing to $28.4M in 2018 vs receivables $1,041.6M→$1,684.2M, supporting adequate reserve growth). The two 'flag' items (CL1 receivables vs revenue, CL2 goodwill/intangible step-changes) are then coherently contextualized in top_signals: the 2011 goodwill jump ($6.75B→$8.30B) and 2018 intangibles jump ($4.53B→$7.45B) are attributed to disclosed acquisitions/purchase accounting rather than manipulation, and the CFO>NI pattern is used as an offsetting earnings-quality positive. This is a coherent multi-year, multi-point combination genuinely supporting the low-risk conclusion, with no mechanism assertions on this control case that lack support → 3. memorization_suspect_condition2: false. The reasoning points at concrete provided data content (specific balance-sheet/income/cash-flow values with dates and accessions), so condition (a) fails; and it cites no post-cutoff facts — the acquisition references (Yoplait 2011, Blue Buffalo 2018) correspond to events disclosed within the provided 2009–2018 filing window (including the 2018 8-K/A filings the output ties them to), not to any post-cutoff revelation/enforcement/outcome, so condition (b) fails.",
+  "_meta": {
+    "case_id": "case_18",
+    "original_id": "V21",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "f70228f8-d2f3-4eef-a939-e6b76725e7ea",
+    "ts": "2026-07-07T06:05:45.675877+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_v2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 2,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "dim1: Answer key group=control; output misstatement_probability=30. Control rule: p<=30 -> 2. Score 2. dim2: Control case -> null per rubric; output correctly lists no mechanism_hypotheses (also consistent with p=30<40, so no hypothesis required). dim3: Control -> nulls. dim4: Citations are specific, quantitative, and internally verifiable provided data points: CL1 computes receivables/revenue ratio shift (553.9M/2188.3M ≈ 25% at 2010-08-31 vs 777.9M/2214.3M ≈ 35% at 2011-02-28, arithmetic checks out); CL4 gross margin calc (504.7/2188.3=23.1% vs 853.6/2214.3=38.5%) is correct; CL3/CL8 honestly flag insufficient OCF coverage with the exact two quarters provided; CL7 cites concrete filing dates (10-Q 2010-10-12 amended 2010-10-29). The top_signals coherently combine multi-quarter balance-sheet trends, filing chronology, and margin/earnings volatility across FY2010-FY2011, meeting the '2 plus coherent multi-point combination' bar -> 3. Consistency rule: p=30 (<40) requires clear/watch; risk_tier='watch' complies, so no cap. No mechanism assertions were made on this control case that would need support. memorization_suspect_condition2: false — reasoning points at concrete provided data content (specific XBRL-style values, dates, accessions) rather than merely listing documents, and mentions no post-cutoff facts (no revelation/enforcement/outcome); the 'fertilizer price cycle' remark is generic industry context, not a post-cutoff disclosure.",
+  "_meta": {
+    "case_id": "case_35",
+    "original_id": "V02",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "5a3749de-92ad-42fd-9942-ee190f3e9cd8",
+    "ts": "2026-07-07T06:13:38.184625+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_v2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

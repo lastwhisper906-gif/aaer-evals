@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 2,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "dim1: Answer key marks this as a CONTROL case. Output gives misstatement_probability=30, which satisfies the control band p<=30 -> score 2.\n\ndim2: Control case -> null per rubric (mechanism grading applies to treatment cases only). Note the output does offer three mechanism hypotheses, but they are framed as risk areas with hedged language, and control cases are not graded on mechanism.\n\ndim3: Control case -> mapped_genre null, score null per rubric.\n\ndim4: Score 3. Risk tier consistency check: p=30 (<40) requires clear/watch; declared tier is 'watch' -> consistent, no cap. Evidence quality: citations point at concrete provided data with specific values and periods that arithmetically check out — e.g., AR 270.0M (2012-01-01) -> 350.3M (2012-12-30) = +29.7% vs revenue 1,941.9M -> 2,127.3M = +9.55% (CL1); Goodwill 717.8M -> 990.2M = +38% (CL2); NetIncomeLoss=40.4M vs operating cash flow -56.7M in Q1 2013 and NI=35.7M vs OCF -19.7M in Q1 2012 (CL3, hypothesis 3); gross margin computation 198.4/547.4=36.3% vs 155.0/468.1=33.1% (CL4). The output coherently combines multi-year, multi-point data (quarterly 2011 comparatives, FY2011 vs FY2012 annual figures, Q1 2012 vs Q1 2013 seasonality, filing chronology of CORRESP/UPLOAD 2010-2013), and the mechanism assertions on this control case are appropriately hedged (e.g., goodwill growth 'largely explainable by purchase accounting') and genuinely supported by the cited data points. This meets the bar for 3 (specific support plus coherent multi-year combination).\n\nmemorization_suspect_condition2: false. The reasoning does not merely list documents — it cites concrete provided data content (specific XBRL line-item values with dates and accession numbers) throughout. It mentions no post-cutoff facts (no revelation, enforcement action, or outcome is referenced); conclusions rest on in-window filing data and SEC correspondence chronology within 2010-2013.",
+  "_meta": {
+    "case_id": "case_17",
+    "original_id": "V07",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "0bf345b1-60ce-4d7b-af3f-67d6edeaee8a",
+    "ts": "2026-07-07T06:05:19.319796+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_v2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

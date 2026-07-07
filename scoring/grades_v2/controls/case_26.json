@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 1,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "dim1: Answer key group is 'control'. Output misstatement_probability=42, which falls in the control band 30<p<50 -> score 1 (not the p<=30 band that would earn 2; the model retained moderate suspicion on a clean company).\n\ndim2: Control case -> null per rubric (mechanism scoring applies to treatment cases only). Note for auditor: the top-ranked hypothesis (upfront recognition of fixed-fee patent licenses driving AR/revenue/OCF timing decoupling) is asserted on a control case; its evidentiary support is assessed under dim4.\n\ndim3: Control case -> mapped_genre null, score null per rubric.\n\ndim4: Score 3. Consistency rule check: p=42 with risk_tier='watch' satisfies 40<=p<70 => watch/elevated, so no cap. The cited data points are concrete, sourced to specific accession numbers/locations, and genuinely support the claims made: CL1/top_signal AR growth (28.079M at 2011-12-31 -> 169.874M at 2012-12-31, i.e., ~+505%) vs revenue growth (301.742M FY2011 -> 663.063M FY2012, ~+120%); CL3 NI/OCF divergence (FY2011 NI 89.468M vs OCF -34.338M; FY2013 NI 35.683M vs OCF 218.175M); CL6 deferred revenue decline (193.409M 2009 -> 60.176M 2013) against revenue levels (297.404M FY2009 -> 325.361M FY2013). These are combined coherently across multiple years and multiple line items into a consistent 'lumpy license timing' narrative, and mechanism assertions on this control case are framed as timing/volatility interpretations supported by the cited series rather than unsupported fraud claims. The output also honestly flags data gaps (CL8) and labels chronology-only items ('not provided in series') rather than fabricating accession numbers. This meets 2 (specific supportive data) plus coherent multi-year/multi-point combination -> 3.\n\nmemorization_suspect_condition2: false. The reasoning points at concrete provided data content (specific balances, revenues, cash flows with dates and accession numbers), not a bare document list, and mentions no post-cutoff facts (no revelation/enforcement/outcome references; the 10-K/A and 10-Q/A cited are filings within the provided chronology).",
+  "_meta": {
+    "case_id": "case_26",
+    "original_id": "V12",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "c0caa05c-d4c6-43af-b52e-8aedd03d3be9",
+    "ts": "2026-07-07T06:09:09.479571+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_v2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 1,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "dim1=1: Control case (answer key group=control); output p=45 falls in 30<p<50 band → 1 per control rubric (p<=30 would earn 2). dim2=null and dim3=nulls: rubric mandates nulls for control cases. dim4=3: Consistency rule satisfied (p=45 with tier 'watch', within the 40<=p<70 => watch/elevated requirement, so no cap). Evidence is specific and genuinely supports the (hedged) claims: InventoryNet 81,739,000 (2012-09-30) → 92,225,000 (2013-03-31) vs SalesRevenueNet 82,748,000 → 70,547,000 for the inventory-reserve hypothesis; OtherAssetsNoncurrent 2,468,000 (2011-06-30) → 12,418,000 (2013-03-31) for the capitalization hypothesis; FY2011/FY2012 ProfitLoss vs operating cash flow in CL3; dated chronology entries (10-K 2012-09-10, 10-K/A 2013-03-25, DEF 14A 2012-10-19, NT 10-K 2011-09-13) for the amendment signal. The output coherently combines multi-year and multi-quarter points across balance sheet, income statement, cash flow, and chronology, and transparently flags coverage gaps (CL8: no AR series, OCF truncated) — meeting the bar for 3. Minor note: some top_signals figures (LongTermDebt 197,658,000 vs 81,565,000; StockholdersEquity 240,327,000 → 122,045,000) lack an explicit evidence quote, but they are presented as provided-data values with dates and nothing indicates fabrication. memorization_suspect_condition2=false: reasoning cites concrete provided data content (not mere document lists) and references no post-cutoff facts (no revelation/enforcement/outcome); the 10-K/A speculation is derived solely from the provided filing chronology.",
+  "_meta": {
+    "case_id": "case_24",
+    "original_id": "V05",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "db196f02-8796-4170-8b86-6b8bb38d3592",
+    "ts": "2026-07-07T06:08:24.997859+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_v2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

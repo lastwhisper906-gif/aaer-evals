@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 0,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "dim1=0: Answer key marks this a CONTROL case; output assigns misstatement_probability=65, which falls in the p>=50 band for controls -> 0. dim2=null and dim3=nulls: mechanism and genre dimensions apply to treatment cases only; this is control. dim4=3: consistency rule satisfied (p=65 with risk_tier='elevated' is within watch/elevated band, so no cap at 1). The evidence cited is specific and drawn from the provided data: goodwill series 40,549K (2011-09-30, acc 0001047469-13-010744) -> 150,768K (2011-12-31, acc 0001104659-12-007807) -> 209,656K (2014-09-30) -> 122,640K (2014-12-31) -> 64,073K (2015-09-30); inventory 35,771K -> 71,640K -> 78,478K -> 25,510K against revenue 505,856K -> 495,661K -> 397,125K; FY2014 NI 30,390K vs OCF 11,856K and FY2015 NI -104,815K vs OCF +43,491K; allowance 2,396K -> 471K with AR 10,041K -> 6,194K. These are coherent multi-year, multi-statement combinations that genuinely support the descriptive patterns asserted in the mechanism hypotheses (the misstatement inference is wrong for a control firm, which is penalized in dim1, but the evidence quality itself is high). memorization_suspect_condition2=false: the reasoning anchors on concrete provided data values throughout (not bare document lists) and mentions no post-cutoff facts such as enforcement actions, revelations, or outcomes.",
+  "_meta": {
+    "case_id": "case_30",
+    "original_id": "V20",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "0a370eb5-ca22-40a4-a0fe-79b9960c91b7",
+    "ts": "2026-07-07T06:11:12.529221+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_v2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 0,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 2,
+  "memorization_suspect_condition2": false,
+  "rationale": "Dim1=0: answer key group=control; output misstatement_probability=55, which is >=50, so per the control banding (p>=50 -> 0) it scores 0. Dim2=null and Dim3=nulls: control case, mechanism and genre-mapping dimensions do not apply per rubric. Dim4=2: consistency rule satisfied (p=55 with risk_tier='elevated', within watch/elevated band, so no cap). The output cites specific provided data points that genuinely show the claimed patterns: DeferredRevenueCurrent 152,903,000 (2013-12-31) -> 144,568,000 (2014-12-31) vs SalesRevenueServicesNet 312,062,000 (FY2014) for hypothesis 2, and AccountsPayableCurrent 3,644,000 (2010) -> 1,223,000 (2011) -> 772,000 (2012) for hypothesis 3, each with accession numbers and locations. However, it does not reach 3 because the top-ranked hypothesis (pre-2007 stock-based compensation understatement/backdating) is supported only by filing-chronology metadata (NT 10-K/NT 10-Qs 2007, 10-Q/A 2006-02-24 and 2006-02-28, all source_accession_no='n/a') plus a generic era inference, with no financial data content tied to that mechanism; the multi-point evidence therefore does not cohere around the leading claim. Memorization_suspect_condition2=false: the reasoning points at concrete provided data values (not bare document lists), and no post-cutoff case-specific facts (revelation, enforcement, outcome) are mentioned — the 'era's widespread stock-option backdating investigations' reference is generic historical context, not a case-specific disclosure.",
+  "_meta": {
+    "case_id": "case_33",
+    "original_id": "V18",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "c35f6500-d809-484a-a6c9-6f3bca9ebb1d",
+    "ts": "2026-07-07T06:12:46.800553+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_v2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

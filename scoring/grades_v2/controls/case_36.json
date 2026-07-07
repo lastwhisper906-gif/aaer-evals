@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 1,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "dim1: Answer key marks this a CONTROL case (group=control, no scheme). Output gives misstatement_probability=45, which falls in the control band 30<p<50 -> score 1. A cleaner run would have landed at p<=30 for the full 2 points; the output over-weights soft signals (warranty ratio, allowance build-up) on a company with no ground-truth misstatement.\n\ndim2: Control case -> null per rubric (mechanism graded on treatment only). Note for auditor: the output does advance three mechanism hypotheses (warranty under-accrual, thin AR allowance, ProfitLoss/NetIncomeLoss XBRL divergence); these are speculative on a control case but that is penalized only via dim1's mid-band score, not dim2.\n\ndim3: Control case -> mapped_genre=null, score=null per rubric.\n\ndim4: Score 3. Consistency check first: p=45 requires risk_tier watch/elevated; output declares 'watch' -> no cap. The evidence is specific and quantitative, not generic: CL3 cites concrete paired figures (FY2012 NetIncomeLoss=-144,021K vs operating cash flow +107,089K; FY2009 -581,154K vs +7,421K) with accession numbers; CL6 and mechanism hypothesis 1 combine warranty accrual (40,196K at 2009-10-31 -> 55,132K at 2012-10-31) against revenue (652,629K FY2009 -> 1,833,923K FY2012) to compute a ratio decline (~6.2% -> ~3.0%); hypothesis 2 tracks the AR allowance across four dates (117K in 2010, 900K mid-2011, 1,600K in 2013) against a 343,582K AR balance. These are coherent multi-year, multi-point combinations drawn from the provided XBRL data, and the arithmetic checks out, satisfying the '2 plus coherent multi-year combination' bar for 3. The output also appropriately hedges the ProfitLoss/NetIncomeLoss divergence as a possible data-extraction artifact rather than asserting it as fact.\n\nmemorization_suspect_condition2: false. The reasoning is anchored in concrete provided data content (specific XBRL values, dates, accession numbers) rather than merely listing documents, and it cites no post-cutoff facts (no revelation, enforcement action, or outcome is mentioned; the Nortel MEN acquisition reference is a pre-cutoff fact disclosed in the filings themselves). Neither trigger (a) nor (b) applies.",
+  "_meta": {
+    "case_id": "case_36",
+    "original_id": "V08",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "8dedb2e0-a41d-40b0-9b5b-f511028f0af1",
+    "ts": "2026-07-07T06:14:03.963708+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_v2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

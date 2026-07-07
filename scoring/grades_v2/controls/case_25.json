@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 2,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "dim1: Answer key group = control. Output misstatement_probability = 28, which satisfies the control rule p<=30 -> 2. Score 2.\n\ndim2: Control case -> null per rubric. Consistently, the output lists mechanism_hypotheses: [] and asserts no misstatement mechanism, which is appropriate for a control.\n\ndim3: Control case -> nulls per rubric (no top-ranked hypothesis exists to map; mechanism_hypotheses is empty).\n\ndim4: Citations are specific XBRL data points with values, dates, and accession numbers that genuinely support each checklist claim: e.g., CL3 compares NetIncomeLoss=703950000 vs OCF=1094456000 (FY2009), 584603000 vs 770637000 (FY2010), 542403000 vs 684745000 (FY2012) — a coherent multi-year combination supporting the no_flag on income/cash-flow divergence; CL6 tracks ProductWarrantyAccrualClassifiedCurrent from 87424000 (FY2009, ~3.0% of revenue) to 37301000 (FY2012, ~1.37%) and allowance decline 42409000 (2008) -> 30224000 (2011); CL5 combines the FY2008->FY2009 revenue decline (-15.7%) with the modest net income change and subsequent OCF trajectory. Top_signals reuse these concrete figures (goodwill 129066000 -> 179475000 vs flat revenue; inventory/revenue 10.5% -> 14.4% with margin 49.0% -> 53.0%). This is level-2 specificity plus coherent multi-year/multi-point synthesis -> 3. Consistency rule check: p=28 (<40) requires clear/watch; declared risk_tier = \"watch\" — consistent, so no cap. Minor imperfections (some quotes attributed to a single 10-K accession that spans two fiscal-year values, e.g., CL5) do not amount to fabrication.\n\nmemorization_suspect_condition2: false. The reasoning points at concrete provided data content (specific XBRL tags, values, dates) rather than merely listing documents, and no post-cutoff facts (revelation/enforcement/outcome) are mentioned; the 10-Q/A amendments cited in CL7 are within the provided filing set with filing dates given.",
+  "_meta": {
+    "case_id": "case_25",
+    "original_id": "V09",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "505cc679-581f-4bfc-8f3b-bf61ebcf02a3",
+    "ts": "2026-07-07T06:08:46.917476+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_v2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

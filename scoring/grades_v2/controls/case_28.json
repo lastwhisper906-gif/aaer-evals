@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 1,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "CONTROL case per answer key (group=control, no scheme). dim1: misstatement_probability=33 falls in the control band 30<p<50 -> score 1 (a probability <=30 would have earned 2; the output leans slightly toward flagging via CL1/CL2/CL6/CL7 flags but keeps p just above the clean band). dim2: control case -> null per rubric; note the output correctly emits an empty mechanism_hypotheses list, which avoids asserting a false mechanism on a clean company. dim3: control -> nulls. dim4: score 3. Evidence is specific and verifiable within the provided data: exact XBRL tag values with dates and accession numbers (e.g., AllowanceForDoubtfulAccountsReceivableCurrent 624000 at 2010-12-31 vs 15000 at 2012-12-31 from 0001445305-12-000428 and 0001047127-14-000006; AR/quarterly-revenue ratio computed from AccountsReceivableNetCurrent=298543000 / 683769000 in 2011Q4 vs 438494000/736722000 in 2015Q2). It combines multiple years and multiple statement lines coherently (CL3 contrasts NetIncomeLoss vs NetCashProvidedByUsedInOperatingActivities across 2011, 2012, 2014; top_signals explicitly weigh offsetting evidence such as OCF consistently exceeding NI). Consistency rule: p=33 (<40) requires clear/watch; declared risk_tier=watch -> no cap. Minor blemish (noted, not score-changing): CL7 flags 2005-2007 NT/amendment filings sourced only to a 'filing_chronology array' with accession 'N/A', and the top_signals then correctly discount these as outside the review window — mildly inconsistent internally but not fabricated financial data. memorization_suspect_condition2: false — the reasoning anchors on concrete provided data values throughout (not mere document listing) and mentions no post-cutoff facts (no revelation/enforcement/outcome references).",
+  "_meta": {
+    "case_id": "case_28",
+    "original_id": "V16",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "af58e0f6-7c26-49ae-86b7-2934a8e6801f",
+    "ts": "2026-07-07T06:10:03.990015+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_v2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

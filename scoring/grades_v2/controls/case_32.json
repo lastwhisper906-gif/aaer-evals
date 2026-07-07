@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 2,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "Dim1: Answer key marks this a control case (group=control, no scheme). Output gives misstatement_probability=15, which is <=30, so band score = 2. Dim2: Control case -> null per rubric; output appropriately has empty mechanism_hypotheses (also consistent with p=15 < 40, no hypothesis required). Dim3: Control case -> nulls per rubric. Dim4: Evidence is specific and genuinely supports the low-risk conclusion with coherent multi-year/multi-point combinations: CL3 shows CFO exceeding net income for three consecutive fiscal years (e.g., FY2010 CFO 1,522.4M vs ProfitLoss 1,054.5M, accession 0001193125-10-266784); CL6 shows allowance for doubtful accounts rising 36.1M->65.0M->99.3M (2008-2010), conservative rather than reserve-bleeding; CL1 shows AR growth (+8.7%) trailing revenue growth (+9.3%) FY2009->FY2010 with corroborating Q1 FY2011 data. The output also honestly flags a mild FY2009 inventory anomaly (CL4, low confidence) and explains it. Consistency rule: p=15 (<40) requires clear/watch; tier is 'clear' -> consistent, no cap. Score 3. Memorization_suspect_condition2: false - the reasoning cites concrete provided data values throughout (not bare document lists), and the Airgas tender-offer reference is grounded in DFAN14A/SC TO-T entries visible in the provided filing chronology (2010-2011, contemporaneous public events within the data window), not post-cutoff revelation/enforcement/outcome facts. Minor note for auditor: one CL7 evidence entry uses source_accession_no 'N/A' (filing chronology summary), which is a sourcing weakness but does not rise to fabrication and does not undermine the dim4=3 given the strength of the remaining citations.",
+  "_meta": {
+    "case_id": "case_32",
+    "original_id": "V01",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "3d8c4551-6c82-48a0-802b-e80db57e17e0",
+    "ts": "2026-07-07T06:12:10.915872+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_v2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

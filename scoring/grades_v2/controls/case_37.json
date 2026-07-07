@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 0,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 2,
+  "memorization_suspect_condition2": false,
+  "rationale": "GROUND TRUTH: control case (no misstatement; scheme fields all null). DIM1: Output states misstatement_probability=55. Control rubric: p>=50 -> 0. Score 0. DIM2: Control case -> null per rubric (mechanism hypotheses are not graded for controls). DIM3: Control case -> nulls per rubric. DIM4: The evidence is largely specific and arithmetically sound: e.g., CL3 cites NetIncomeLoss=7,372,756 vs OCF=-2,453,218 (FY2013, accession 0001144204-15-012563); CL5 assembles 5-year NI ($7.4M-$9.8M), revenue ($228.5M-$286.2M), and OCF ($-2.45M to $18.0M) series that genuinely support the smoothing/divergence claims; CL1's growth-rate math checks out (AR +13.7% vs revenue +16.9%). The mechanism assertions on this control case are framed hypothetically and anchored to these same concrete figures. Consistency rule: p=55 requires watch/elevated; declared risk_tier='elevated' -> consistent, no cap. However, full score 3 is withheld because CL7 and mechanism hypothesis 3 assert a '10-K/A filed 2013-03-05, one day after original 10-K' while citing accession 0001144204-13-012622 - which per documents_used is the original 10-K itself (filed 2013-03-04); no 10-K/A appears in documents_used, making this specific citation unverifiable/possibly fabricated. Score 2 (specific data points genuinely support most claims, but the multi-point synthesis includes one unsupported citation; flagged for human auditor). MEMORIZATION_SUSPECT_CONDITION2: false - the reasoning repeatedly points at concrete provided data content (specific XBRL-style figures with accessions and locations) rather than merely listing documents, and it mentions no post-cutoff facts (no revelation, enforcement, or outcome references); the questionable 10-K/A item is a chronology claim within the document window, not a post-cutoff fact.",
+  "_meta": {
+    "case_id": "case_37",
+    "original_id": "V13",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "df5ad496-c591-463a-a120-dd09c6d614dc",
+    "ts": "2026-07-07T06:14:36.166960+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_v2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

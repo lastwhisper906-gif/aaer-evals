@@ -35,7 +35,7 @@ def main() -> int:
             mapping, cands, grp = m2, cands2, "control"
         if True:
             truth = cands[mapping[cid]]
-            hit = name_match(j["company_guess"], truth)
+            hit = name_match(j["company_guess"], truth["company_name"])
             rows.append({"case_id": cid, "group": grp,
                          "truth_ticker": truth["ticker"].split("/")[0],
                          "guess": j["company_guess"], "confidence": j["confidence"],

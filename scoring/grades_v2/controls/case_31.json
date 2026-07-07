@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 1,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "DIM1: Answer key group='control'. Output misstatement_probability=42, which falls in the control band 30<p<50 → 1 (not low enough for the full 2, which requires p<=30). DIM2: Control case → null per rubric (mechanism graded only on treatment cases). DIM3: Control case → nulls per rubric. DIM4: Consistency check first: p=42 requires tier watch/elevated; declared risk_tier='watch' → no cap. Evidence is specific and verifiable-in-form: exact line-item values with dates and accession numbers (AR 631M 2008-12-31 → 950M 2011-03-31; allowance 25M→18M→12M→9M across 2008–Q1 2011; NI vs OCF pairs FY2008–FY2010: 281/586, 498/596, 377/452; quarterly NI series -20M/109M/398M for 2009). Mechanism assertions on this control case are hedged (explicitly offering benign explanations like post-recession credit improvement, seasonal inventory build) and tied to the same concrete data, so they do not constitute unsupported claims. The analysis coherently combines multiple line items across multiple years, including countervailing no-flag evidence (OCF consistently > NI, shrinking intangibles/other assets, earnings volatility tracking revenue volatility) → meets 3 (specific data genuinely supporting claims plus coherent multi-year/multi-point combination). MEMORIZATION_COND2: false — reasoning cites concrete provided data content (specific balances, computed ratios such as allowance falling from ~4.0% to ~0.95% of AR) rather than merely listing documents, and no post-cutoff facts (no mention of revelation, enforcement action, or outcome) appear anywhere in the output.",
+  "_meta": {
+    "case_id": "case_31",
+    "original_id": "V03",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "632662e1-1790-4cec-a6c8-3ba17092ff4c",
+    "ts": "2026-07-07T06:11:38.367811+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_v2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

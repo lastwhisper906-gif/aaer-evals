@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 1,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "Dim1: Control case; output p=33 falls in 30<p<50 band -> 1 (would need p<=30 for 2). Dim2/Dim3: control -> null per rubric; output correctly lists no mechanism hypotheses. Dim4: Consistency rule satisfied (p=33 <40 with tier 'watch', allowed) so no cap. Evidence is specific and multi-point: exact goodwill/intangibles jump Q3->Q4 2010 (217,204,000->355,842,000; 37,356,000->72,269,000) against flat quarterly revenue (1,316,948,000 vs 1,313,426,000), correctly interpreted as a discrete acquisition; multi-year NI vs OCF comparison (2009: 61,945,000 vs 984,956,000; 2013: 237,792,000 vs 1,223,082,000) correctly read as a leasing-business quality positive; full 2011 quarterly NI/revenue seasonality path; allowance (13,808,000->16,955,000) vs receivables (598,661,000->777,370,000) growth 2009-2013; concrete 10-K/A chronology (2012-02-16 original vs 2012-03-19 amendment) hedged as possibly administrative. Coherent multi-year combination supports the low-probability call -> 3. Minor blemish: one CL7 evidence item ('NT 11-K filed 1996-07-01', source 'n/a') is unverifiable, but it is a marginal aside and does not dominate the citation base. Memorization condition2: reasoning anchors on concrete provided data (not bare document lists) and mentions no post-cutoff revelation/enforcement/outcome facts -> false.",
+  "_meta": {
+    "case_id": "case_27",
+    "original_id": "V10",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "b6d0ff5e-6d56-44a0-9974-1634badfe118",
+    "ts": "2026-07-07T06:09:41.744025+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_v2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

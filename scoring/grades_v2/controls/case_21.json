@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 2,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "Control case (answer key group=control). Dim1: output states misstatement_probability=18, which is <=30 for a control case -> 2. Dim2/Dim3: treatment-only dimensions -> null; output appropriately has empty mechanism_hypotheses (consistent with p<40, no hypothesis required). Dim4: evidence is specific and multi-point/multi-year — CL3 cites NetIncomeLoss=38,640,000 vs OCF=61,792,000 (FY2013) and 43,599,000 vs 60,489,000 (FY2015) showing persistent OCF>NI; CL6 combines allowance decline (3,386,000->2,792,000) with AR growth (86,368,000->88,577,000) and revenue growth (304,704,000->312,832,000); CL1 tracks AR vs revenue 2011-2014 with accession-numbered citations; top_signals coherently synthesize these into a balanced low-risk conclusion -> 3. Consistency rule: p=18 (<40) requires clear/watch; declared risk_tier='watch' -> no cap. Memorization condition 2: false — reasoning cites concrete provided data values (balances, dates, accession numbers) rather than merely listing documents, and contains no post-cutoff facts (no mention of revelation, enforcement, or outcome).",
+  "_meta": {
+    "case_id": "case_21",
+    "original_id": "V19",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "4a2b25c8-8308-4fb1-a0ec-830b651ddbb9",
+    "ts": "2026-07-07T06:07:09.125252+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_v2.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}
