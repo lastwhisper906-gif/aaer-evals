@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 0,
+  "dim2_mechanism": 0,
+  "dim3_genre_mapping": {
+    "mapped_genre": "omission-estimate",
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "DIM1=0: Treatment case; output gives misstatement_probability=32, which is <50 (treatment band: p<50 -> 0). DIM2=0: Answer key mechanism is inventory overstatement (~$22M cumulative, FY2022-2025, meat-processing plant). Top-ranked hypothesis targets AccountsReceivableNetCurrent/Revenues via allowance-for-doubtful-accounts under-recognition — an unrelated account area. Notably, CL4 examined inventory directly (InventoryNet 293,274K in 2022 vs 308,895K in 2024) and returned no_flag, i.e., the true mechanism's account was checked and cleared. Second hypothesis (accrued liabilities/NetIncomeLoss) also does not match; coverage of the true mechanism is zero. DIM3=null: Top hypothesis narrative maps to omission-estimate (under-provisioning of allowance estimate), but the answer key genre_tag_row is null (G2 PROVISIONAL, non-reliance/restatement event, not confirmed fraud), so no key genre exists to score against; mapped_genre recorded for auditor. DIM4=3: Evidence cites specific provided data points with accession numbers (AR 50,863K->65,092K->81,567K vs flat revenue ~$4.71-4.79B; accrued liabilities 57,431K->34,196K; NI vs OCF for FY2022/FY2024), and top_signals combine them into coherent multi-year trends (DSO ~3.9->~6.2 days; accrued/revenue ~1.22%->~0.71%). Consistency rule satisfied: p=32 (<40) with risk_tier=watch, so no cap. Evidence genuinely supports the claims asserted (dim4 grades evidence quality, not mechanism correctness). MEMORIZATION_COND2=false: Reasoning is anchored in concrete provided data values throughout (not a bare document list), and no post-cutoff facts (whistleblower, 8-K Item 4.02, restatement, plant) appear anywhere in the output.",
+  "_meta": {
+    "case_id": "case_72",
+    "original_id": "case_72",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "72409942-359b-42e5-9e2e-d540637634e6",
+    "ts": "2026-07-07T13:19:40.720408+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_holdout.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

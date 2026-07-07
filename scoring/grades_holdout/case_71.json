@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 2,
+  "dim2_mechanism": 1,
+  "dim3_genre_mapping": {
+    "mapped_genre": "omission-estimate",
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "DIM1 (=2): Treatment case; output gives misstatement_probability = 70, which meets the p>=70 band -> 2.\n\nDIM2 (=1): Answer key mechanism: purchased transportation costs ~$77M understated / unrecorded accounts payable, FY2023-24 10-Ks misstated (8-K Item 4.02, 2026-02-05). The TOP-RANKED hypothesis instead centers on the historical 2018-01-05 amendment cluster (10-K/A FY2015 + three 10-Q/A for Q1-Q3 2017) as a generic ASC 250 restatement, with direction 'timing_shift' and affected items 'Net income (FY2013-FY2017)', 'Operating income/cost of services', and vague 'balance sheet accounts'. It targets the wrong period and does not name accounts payable, unrecorded liabilities, or purchased transportation specifically. However, 'operating income/cost of services' overlaps the correct account area (purchased transportation is a cost-of-services expense line for this issuer), so it earns 1 (correct account area) but not 2: direction ('timing_shift' vs. understatement of expenses/liabilities) and treatment type (generic restatement vs. unrecorded AP) do not substantially match, and no case-specific fact from the key ($77M, FY2023-24 scope, CFO/COO termination) appears. Coverage note (multi-mechanism truth: expense understatement + liability understatement): neither leg is explicitly covered; the second-ranked hypothesis (goodwill/intangible impairment risk) is unrelated to the truth.\n\nDIM3 (score=null, mapped_genre='omission-estimate'): Top-ranked narrative — a multi-period error correction / timing shift of expenses without any alleged active fabrication — maps most naturally to omission-estimate. However, the answer key's genre_tag_row is null (G2 PROVISIONAL, non-confirmed-fraud restatement event), so there is no key genre to score against; score left null for the human auditor rather than guessing.\n\nDIM4 (=3): Consistency rule satisfied: p=70 => elevated required; risk_tier='elevated', so no cap. Evidence is specific and verifiable against provided data: CL1/CL3/CL6 cite concrete XBRL values with accessions and period tags (e.g., FY2023 NI $167,528K vs OCF $422,158K from 0000950170-25-026866); the 2018-01-05 10-K/A and three 10-Q/A accessions cited for CL7 and the top mechanism (0001564590-18-000122/-123/-124/-126) all appear in documents_used with matching dates; mechanism 2 builds a coherent multi-year goodwill series (2016 $262.4M -> 2023 $733.7M) against multi-year revenue (FY2022 $5.34B -> FY2024 $3.95B). This is specific data genuinely supporting the claims plus coherent multi-year/multi-point combination -> 3. Minor blemish (not disqualifying): CL7 evidence mentions '8-K/8-K/A filed 2018-01-05' under a 10-K/A accession number, an inferred rather than directly cited item.\n\nMEMORIZATION_SUSPECT_CONDITION2 (=false): (a) fails — the reasoning repeatedly points at concrete provided data content (specific XBRL values, filing dates, accession numbers), not bare document lists. (b) fails — no mention of any post-cutoff fact: the output never references the 2026-02-05 Item 4.02 8-K, the ~$77M purchased-transportation understatement, or the CFO/COO terminations; the restatement it discusses (2018-01-05 amendments) is pre-cutoff and present in the provided document set. The TCJA remark in CL5 is generic pre-cutoff context.",
+  "_meta": {
+    "case_id": "case_71",
+    "original_id": "case_71",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "6f8756dd-7eec-48a3-94c9-b1894f3cc10f",
+    "ts": "2026-07-07T13:19:05.976164+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_holdout.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

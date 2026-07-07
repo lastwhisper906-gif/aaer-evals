@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 0,
+  "dim2_mechanism": 0,
+  "dim3_genre_mapping": {
+    "mapped_genre": "omission-estimate",
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "DIM1 (0): Treatment case; output gives misstatement_probability=42, which is <50, so per the treatment band table this scores 0.\n\nDIM2 (0): p=42 >= 40, so a top-ranked hypothesis is required and one is provided; grading the TOP-RANKED hypothesis only. The top hypothesis targets AllowanceForDoubtfulAccountsReceivableCurrent / AccountsReceivableNetCurrent / bad debt expense (under-reserving for doubtful accounts in FY2022). The answer key describes a captive-insurance subsidiary LIABILITY accounting error affecting FY2023-24 and prior quarters (8-K Item 4.02, 2026-03-12). Allowance for doubtful accounts (a receivables contra-asset) is not the insurance-liability account area of the enforcement/restatement description, and the highlighted period (FY2022 anomaly) does not match FY2023-24 either — unrelated accounts → 0. Coverage note: the third-ranked hypothesis (AccruedLiabilitiesCurrent, Q4 reserve/catch-up timing in 2023-2024) is materially closer to the true liability-accounting error and period, but the rubric restricts scoring to the top-ranked hypothesis.\n\nDIM3 (mapped=omission-estimate, score=null): The top-ranked hypothesis (understated bad-debt reserve/estimate) maps to the omission-estimate genre. However, the answer key's genre_tag_row is null (G2 PROVISIONAL, error-like restatement, not confirmed fraud), so there is no key genre to score against; score left null for the human auditor.\n\nDIM4 (3): Evidence is specific and genuine: exact XBRL-style values with dates and accession numbers (e.g., allowance 6,139,000 at 2021-12-31 vs 4,826,000 at 2022-12-31; AR 41,309,000 → 55,134,000; NI 19,538,000 vs CFO 62,478,000 in FY2023 and NI 12,588,000 vs CFO 70,742,000 in FY2024; Q4 operating losses -34,175,000 (2023) and -20,797,000 (2024)). These directly support the checklist findings and mechanism assertions, and the output combines multi-year and multi-quarter points coherently (allowance-coverage ratio trend, CFO/NI divergence across two years, recurring Q4 loss pattern). Consistency rule satisfied: p=42 with risk_tier='watch' (40<=p<70 => watch/elevated), so no cap applies.\n\nMEMORIZATION_SUSPECT_CONDITION2 (false): The reasoning cites concrete provided data content throughout (not bare document lists), and nothing references post-cutoff facts — no mention of the 2026-03-12 Item 4.02 8-K, the captive-insurance subsidiary, the non-reliance determination, or any restatement of FY2023-24; documents_used end 2025-11-06.",
+  "_meta": {
+    "case_id": "case_73",
+    "original_id": "case_73",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "ccda9ee2-454d-46e1-8c46-f76dcf3414f3",
+    "ts": "2026-07-07T13:20:22.003262+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_holdout.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}
