@@ -91,4 +91,10 @@ runs/hardening/ 커밋. 발행 수치 재현·블라인드·매니페스트는 C
 - 보고 언어 제약 전부 유지 (% 헤드라인 금지 / 상한 명기 / 오염 명시 /
   BOUND-not-eliminate / 선택·생존 편향 / **L-5 정체 인지 주의문 헤드라인
   병기** / L-2~L-4 인용).
-- 로컬 커밋은 기록이 아니다 — push까지.
+- 로컬 커밋은 기록이 아니다 — push까지. **push도 끝이 아니다 — CI green까지**
+  (push 후 `gh run list -L1` 확인. 2026-07-07 실측: be95e75~b22e84e 구간 CI가
+  연속 실패했는데 아무도 몰랐다).
+- **runs/ 아래 파일을 추가·수정하는 모든 커밋은 커밋 전에
+  `python tools/verify_blindness.py --write-manifest` 를 포함**해야 한다 —
+  verify_blindness (d)가 runs/ 전체를 전역 MANIFEST와 대조하므로, 하위
+  디렉토리 전용 매니페스트(_rp08 등)만 갱신하면 CI가 깨진다 (위 실측의 원인).
