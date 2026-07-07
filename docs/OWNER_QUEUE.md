@@ -31,3 +31,23 @@
 - **상태**: OPEN — 소유자 한 줄 회신 대기 (A/B/C).
 
 ---
+
+## Q-E02 — wave-2 name-ID rate 발행 규약: 21.9%(동결 규칙) vs 25%(사람 판독) — **OPEN**
+
+- **질문**: wave-2 이름 예측(name-ID) rate를 발행물에 어느 값으로 쓸까?
+- **발견 (P2 synthesis)**: 동결 `name_match` 규칙 = **21.9%(7/32)**; wave2_summary.md
+  산문은 **25%(8/32)**. 차이는 단일 경계 케이스 **DAR(Darling Ingredients)** — 프로브
+  응답 "Darling International Inc. (now Darling Ingredients Inc.)"는 명백한 정체 인식이나
+  동결 규칙이 구명(舊名) 미처리로 False 판정. (fraud는 양쪽 3/9 동일.)
+- **옵션**:
+  - **(A) 기본** — 동결 규칙 **21.9%**를 1차 발행값, 25%는 각주 병기(방법론:
+    "동결 판정 규칙 재해석 금지", name_probes.py 헤더). synthesis.json은 이미 이 형태.
+  - **(B)** 산문 25%를 유지하고 name_match 규칙을 rename-aware로 개정 후 **재동결**
+    (재채점 = 프레임 변경, freeze-then-run 재실행 필요 — 비용/이력공개 대상).
+  - **(C)** DAR를 "인식"으로 수기 오버라이드 계수(8/32=25%)하고 overrides.md 기록.
+- **세션 기본 조치**: **(A)** — synthesis는 21.9% 1차 + 25% 병기. wave2_summary.md
+  산문 25%는 **무단 수정 안 함**(재채점 금지); 본 큐 해소 시 소유자 규약대로 정합.
+- **정성 불변**: 어느 값이든 name-ID 50%→~22–25%→0% 반감 서사·R4 결론 불변.
+- **상태**: OPEN.
+
+---
