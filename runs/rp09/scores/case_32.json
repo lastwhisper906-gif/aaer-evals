@@ -1,0 +1,217 @@
+{
+  "case_id": "case_32",
+  "run_id": "original-case_32-r1",
+  "model": "claude-sonnet-5",
+  "pipeline_version": "5dedf3cda880c0c5ebe4062a19387ca24a63611f",
+  "run_timestamp": "2026-07-07T05:41:02.626307+00:00",
+  "documents_used": [
+    {
+      "accession_no": "0000950123-09-025125",
+      "form_type": "10-Q",
+      "filing_date": "2009-07-24"
+    },
+    {
+      "accession_no": "0000950123-09-066095",
+      "form_type": "10-K",
+      "filing_date": "2009-11-25"
+    },
+    {
+      "accession_no": "0000950123-10-005134",
+      "form_type": "10-Q",
+      "filing_date": "2010-01-26"
+    },
+    {
+      "accession_no": "0000950123-10-037984",
+      "form_type": "10-Q",
+      "filing_date": "2010-04-26"
+    },
+    {
+      "accession_no": "0001193125-10-165951",
+      "form_type": "10-Q",
+      "filing_date": "2010-07-26"
+    },
+    {
+      "accession_no": "0001193125-10-266784",
+      "form_type": "10-K",
+      "filing_date": "2010-11-23"
+    },
+    {
+      "accession_no": "0001193125-11-014122",
+      "form_type": "10-Q",
+      "filing_date": "2011-01-26"
+    },
+    {
+      "accession_no": "0001193125-11-109451",
+      "form_type": "10-Q",
+      "filing_date": "2011-04-26"
+    }
+  ],
+  "checklist": [
+    {
+      "item_id": "CL1",
+      "question": "Did receivables grow materially faster than revenue across consecutive periods?",
+      "finding": "no_flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "AccountsReceivableNetCurrent=1,363,200,000 (2009-09-30); AccountsReceivableNetCurrent=1,481,900,000 (2010-09-30) -> +8.7% growth",
+          "source_accession_no": "0001193125-10-266784",
+          "location": "10-K FY2009/2010 balance sheet"
+        },
+        {
+          "quote": "SalesRevenueNet=8,256,200,000 (FY2009); SalesRevenueNet=9,026,000,000 (FY2010) -> +9.3% growth",
+          "source_accession_no": "0001193125-10-266784",
+          "location": "10-K FY2010 income statement"
+        },
+        {
+          "quote": "AccountsReceivableNetCurrent=1,377,800,000 (2009-12-31) vs 1,485,700,000 (2010-12-31) -> +7.8%; SalesRevenueNet=2,173,500,000 (Q1 FY2010) vs 2,391,700,000 (Q1 FY2011) -> +10.0%",
+          "source_accession_no": "0001193125-11-014122",
+          "location": "10-Q Q1 FY2011"
+        }
+      ]
+    },
+    {
+      "item_id": "CL2",
+      "question": "Did non-current 'soft' assets (intangibles, other assets, capitalized items) grow materially faster than the business overall?",
+      "finding": "no_flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "Goodwill=928,100,000 (2008-09-30); Goodwill=916,000,000 (2009-09-30); Goodwill=914,600,000 (2010-09-30)",
+          "source_accession_no": "0001193125-10-266784",
+          "location": "10-K balance sheet"
+        },
+        {
+          "quote": "IntangibleAssetsNetExcludingGoodwill=289,600,000 (2008-09-30); IntangibleAssetsNetExcludingGoodwill=262,600,000 (2009-09-30); IntangibleAssetsNetExcludingGoodwill=285,700,000 (2010-09-30)",
+          "source_accession_no": "0001193125-10-266784",
+          "location": "10-K balance sheet"
+        },
+        {
+          "quote": "OtherAssetsNoncurrent=504,100,000 (2008-09-30); OtherAssetsNoncurrent=438,000,000 (2009-09-30); OtherAssetsNoncurrent=537,300,000 (2010-09-30) - modest fluctuation, no sustained outsized growth vs revenue growth of 9.3% FY2010",
+          "source_accession_no": "0001193125-11-109451",
+          "location": "10-Q Q2 FY2011 balance sheet"
+        }
+      ]
+    },
+    {
+      "item_id": "CL3",
+      "question": "Is there a persistent divergence between net income and operating cash flow?",
+      "finding": "no_flag",
+      "confidence": "high",
+      "evidence": [
+        {
+          "quote": "ProfitLoss=938,100,000 (FY2008); NetCashProvidedByUsedInOperatingActivities=1,658,800,000 (FY2008)",
+          "source_accession_no": "0001193125-10-266784",
+          "location": "10-K cash flow statement"
+        },
+        {
+          "quote": "ProfitLoss=642,700,000 (FY2009); NetCashProvidedByUsedInOperatingActivities=1,329,400,000 (FY2009)",
+          "source_accession_no": "0001193125-10-266784",
+          "location": "10-K cash flow statement"
+        },
+        {
+          "quote": "ProfitLoss=1,054,500,000 (FY2010); NetCashProvidedByUsedInOperatingActivities=1,522,400,000 (FY2010)",
+          "source_accession_no": "0001193125-10-266784",
+          "location": "10-K cash flow statement"
+        }
+      ]
+    },
+    {
+      "item_id": "CL4",
+      "question": "Do inventory levels or gross margins show trends inconsistent with revenue?",
+      "finding": "flag",
+      "confidence": "low",
+      "evidence": [
+        {
+          "quote": "SalesRevenueNet=10,414,500,000 (FY2008) fell to SalesRevenueNet=8,256,200,000 (FY2009), a 20.7% decline, while InventoryNet=503,700,000 (2008-09-30) actually rose slightly to InventoryNet=509,600,000 (2009-09-30)",
+          "source_accession_no": "0001193125-10-266784",
+          "location": "10-K FY2009 balance sheet/income statement"
+        },
+        {
+          "quote": "GrossProfit=2,214,100,000 (FY2009) on SalesRevenueNet=8,256,200,000 (26.8% margin) rising to GrossProfit=2,523,000,000 (FY2010) on SalesRevenueNet=9,026,000,000 (27.95% margin) - margin expansion is plausible given recovery, not itself alarming",
+          "source_accession_no": "0001193125-10-266784",
+          "location": "10-K FY2010 income statement"
+        }
+      ]
+    },
+    {
+      "item_id": "CL5",
+      "question": "Is the earnings trajectory unusually smooth relative to the volatility of revenue and cash flow?",
+      "finding": "no_flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "NetIncomeLoss quarterly FY2009: 68,600,000 (Q1), 205,600,000 (Q2), 113,200,000 (Q3), 243,900,000 (Q4) - significant volatility tracking recession recovery",
+          "source_accession_no": "0001193125-10-266784",
+          "location": "10-K FY2009 quarterly data"
+        },
+        {
+          "quote": "NetIncomeLoss quarterly FY2010: 251,800,000 (Q1), 252,000,000 (Q2), 253,200,000 (Q3), 272,100,000 (Q4) - relatively flat despite SalesRevenueNet rising from 2,173,500,000 (Q1) to 2,351,200,000 (Q4), a modest smoothing pattern but not extreme given rising D&A and SG&A absorbing revenue gains",
+          "source_accession_no": "0001193125-11-014122",
+          "location": "10-Q/10-K quarterly data"
+        }
+      ]
+    },
+    {
+      "item_id": "CL6",
+      "question": "Did liability, allowance, or reserve balances decline (or fail to grow) despite growing business activity?",
+      "finding": "no_flag",
+      "confidence": "high",
+      "evidence": [
+        {
+          "quote": "AllowanceForDoubtfulAccountsReceivableCurrent=36,100,000 (2008-09-30); =65,000,000 (2009-09-30); =99,300,000 (2010-09-30) - allowance grew substantially, more conservative not less",
+          "source_accession_no": "0001193125-10-266784",
+          "location": "10-K allowance disclosure"
+        },
+        {
+          "quote": "Liabilities=8,099,100,000 (2009-09-30) declined to Liabilities=7,808,300,000 (2010-09-30) coinciding with debt paydown: LongTermDebtNoncurrent=3,715,600,000 (2009-09-30) vs 3,659,800,000 (2010-09-30) and LongTermDebtCurrent=452,100,000 (2009-09-30) vs 182,500,000 (2010-09-30) - explained by scheduled debt maturities/repayment, not reserve reduction",
+          "source_accession_no": "0001193125-10-266784",
+          "location": "10-K debt schedule"
+        }
+      ]
+    },
+    {
+      "item_id": "CL7",
+      "question": "Does the filing chronology show irregularities (late filings/NT forms, amendments, unusual 8-K frequency)?",
+      "finding": "no_flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "10-K filings filed timely: 10-K filed 2009-11-25 (accession 0000950123-09-066095), 10-K filed 2010-11-23 (accession 0001193125-10-266784); no NT 10-K or NT 10-Q forms appear in chronology for the 2008-2011 window",
+          "source_accession_no": "0001193125-10-266784",
+          "location": "filing chronology"
+        },
+        {
+          "quote": "Elevated volume of DFAN14A/SC TO-T/A/CORRESP/UPLOAD filings during 2010 (e.g. filing_date 2010-02-05 through 2011-02-16) reflects the well-known contested tender offer for Airgas, not financial-statement irregularities",
+          "source_accession_no": "N/A",
+          "location": "filing chronology 2010-2011"
+        }
+      ]
+    },
+    {
+      "item_id": "CL8",
+      "question": "Is the provided data sufficient in coverage and length for the above assessments?",
+      "finding": "no_flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "Data spans FY2007 through Q2 FY2011 (through 2011-03-31) with both annual and quarterly granularity across Assets, Liabilities, Revenue, NetIncomeLoss, cash flow statement line items, inventory, receivables, and allowance accounts",
+          "source_accession_no": "0001193125-11-109451",
+          "location": "aggregated financial_series_point_in_time"
+        }
+      ]
+    }
+  ],
+  "misstatement_probability": 15,
+  "mechanism_hypotheses": [],
+  "overall": {
+    "risk_tier": "clear",
+    "top_signals": [
+      "Operating cash flow consistently exceeded net income across FY2008-FY2010 (e.g., NetCashProvidedByUsedInOperatingActivities=1,522,400,000 vs ProfitLoss=1,054,500,000 in FY2010), a favorable pattern inconsistent with earnings management via accruals",
+      "Allowance for doubtful accounts nearly tripled from 36.1M (2008) to 99.3M (2010), indicating conservative reserve-building rather than reserve depletion to inflate earnings",
+      "Receivables growth (8.7% FY2009->FY2010) roughly tracked or trailed revenue growth (9.3%), showing no channel-stuffing signature",
+      "Mild anomaly: inventory failed to decline in FY2009 despite a 20.7% revenue drop, a low-confidence flag worth monitoring but plausible given industrial gas business model (fixed production assets, long-term contracts)",
+      "Heavy 2010 filing activity (DFAN14A/SC TO-T/A/CORRESP) is fully explained by the public, well-documented hostile tender offer for Airgas and not by any late-filing or restatement irregularity"
+    ]
+  }
+}

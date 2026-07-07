@@ -1,0 +1,395 @@
+{
+  "case_id": "case_26",
+  "run_id": "original-case_26-r1",
+  "model": "claude-sonnet-5",
+  "pipeline_version": "91ea8049a7dd88c4cf8d7d00b48394ebad8c323e",
+  "run_timestamp": "2026-07-07T05:38:23.618120+00:00",
+  "documents_used": [
+    {
+      "accession_no": "0000950123-10-070245",
+      "form_type": "10-Q",
+      "filing_date": "2010-07-30"
+    },
+    {
+      "accession_no": "0000950123-10-098121",
+      "form_type": "10-Q",
+      "filing_date": "2010-10-29"
+    },
+    {
+      "accession_no": "0000950123-11-029705",
+      "form_type": "10-K/A",
+      "filing_date": "2011-03-28"
+    },
+    {
+      "accession_no": "0000950123-11-040979",
+      "form_type": "10-Q",
+      "filing_date": "2011-04-28"
+    },
+    {
+      "accession_no": "0001405495-11-000008",
+      "form_type": "10-Q",
+      "filing_date": "2011-07-29"
+    },
+    {
+      "accession_no": "0001405495-11-000012",
+      "form_type": "10-Q",
+      "filing_date": "2011-10-28"
+    },
+    {
+      "accession_no": "0001405495-12-000009",
+      "form_type": "10-K",
+      "filing_date": "2012-02-27"
+    },
+    {
+      "accession_no": "0001405495-12-000013",
+      "form_type": "10-Q",
+      "filing_date": "2012-04-26"
+    },
+    {
+      "accession_no": "0001405495-12-000020",
+      "form_type": "10-Q",
+      "filing_date": "2012-07-27"
+    },
+    {
+      "accession_no": "0001405495-12-000028",
+      "form_type": "10-Q",
+      "filing_date": "2012-10-25"
+    },
+    {
+      "accession_no": "0001405495-13-000010",
+      "form_type": "10-K",
+      "filing_date": "2013-02-26"
+    },
+    {
+      "accession_no": "0001405495-13-000013",
+      "form_type": "10-Q",
+      "filing_date": "2013-04-25"
+    },
+    {
+      "accession_no": "0001405495-13-000027",
+      "form_type": "10-Q",
+      "filing_date": "2013-07-26"
+    },
+    {
+      "accession_no": "0001405495-13-000040",
+      "form_type": "10-Q",
+      "filing_date": "2013-10-31"
+    },
+    {
+      "accession_no": "0001405495-14-000010",
+      "form_type": "10-K",
+      "filing_date": "2014-02-24"
+    },
+    {
+      "accession_no": "0001405495-14-000017",
+      "form_type": "10-Q",
+      "filing_date": "2014-05-01"
+    },
+    {
+      "accession_no": "0001405495-14-000040",
+      "form_type": "10-Q",
+      "filing_date": "2014-08-07"
+    },
+    {
+      "accession_no": "0001405495-14-000050",
+      "form_type": "10-Q",
+      "filing_date": "2014-10-30"
+    },
+    {
+      "accession_no": "0001405495-15-000010",
+      "form_type": "10-K",
+      "filing_date": "2015-02-19"
+    },
+    {
+      "accession_no": "0001405495-15-000019",
+      "form_type": "10-Q",
+      "filing_date": "2015-04-29"
+    },
+    {
+      "accession_no": "0001405495-15-000034",
+      "form_type": "10-Q",
+      "filing_date": "2015-07-30"
+    }
+  ],
+  "checklist": [
+    {
+      "item_id": "CL1",
+      "question": "Did receivables grow materially faster than revenue across consecutive periods?",
+      "finding": "flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "AccountsReceivableNet=28,079,000 (2011-12-31)",
+          "source_accession_no": "0001405495-13-000010",
+          "location": "financial_series_point_in_time.AccountsReceivableNet"
+        },
+        {
+          "quote": "AccountsReceivableNet=169,874,000 (2012-12-31)",
+          "source_accession_no": "0001405495-14-000010",
+          "location": "financial_series_point_in_time.AccountsReceivableNet"
+        },
+        {
+          "quote": "Revenues=301,742,000 (FY2011)",
+          "source_accession_no": "0001405495-14-000010",
+          "location": "financial_series_point_in_time.Revenues"
+        },
+        {
+          "quote": "Revenues=663,063,000 (FY2012)",
+          "source_accession_no": "0001405495-15-000010",
+          "location": "financial_series_point_in_time.Revenues"
+        }
+      ]
+    },
+    {
+      "item_id": "CL2",
+      "question": "Did non-current 'soft' assets (intangibles, other assets, capitalized items) grow materially faster than the business overall?",
+      "finding": "no_flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "OtherAssetsNoncurrent=44,942,000 (2009-12-31)",
+          "source_accession_no": "0000950123-11-029705",
+          "location": "financial_series_point_in_time.OtherAssetsNoncurrent"
+        },
+        {
+          "quote": "OtherAssetsNoncurrent=805,000 (2015-06-30)",
+          "source_accession_no": "0001405495-15-000034",
+          "location": "financial_series_point_in_time.OtherAssetsNoncurrent"
+        },
+        {
+          "quote": "Assets=908,485,000 (2009-12-31)",
+          "source_accession_no": "0000950123-11-029705",
+          "location": "financial_series_point_in_time.Assets"
+        },
+        {
+          "quote": "Assets=1,461,122,000 (2015-06-30)",
+          "source_accession_no": "0001405495-15-000034",
+          "location": "financial_series_point_in_time.Assets"
+        }
+      ]
+    },
+    {
+      "item_id": "CL3",
+      "question": "Is there a persistent divergence between net income and operating cash flow?",
+      "finding": "flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "NetIncomeLoss=89,468,000 (FY2011)",
+          "source_accession_no": "0001405495-14-000010",
+          "location": "financial_series_point_in_time.NetIncomeLoss"
+        },
+        {
+          "quote": "NetCashProvidedByUsedInOperatingActivities=-34,338,000 (FY2011)",
+          "source_accession_no": "0001405495-14-000010",
+          "location": "financial_series_point_in_time.NetCashProvidedByUsedInOperatingActivities"
+        },
+        {
+          "quote": "NetIncomeLoss=35,683,000 (FY2013)",
+          "source_accession_no": "0001405495-15-000010",
+          "location": "financial_series_point_in_time.NetIncomeLoss"
+        },
+        {
+          "quote": "NetCashProvidedByUsedInOperatingActivities=218,175,000 (FY2013)",
+          "source_accession_no": "0001405495-15-000010",
+          "location": "financial_series_point_in_time.NetCashProvidedByUsedInOperatingActivities"
+        }
+      ]
+    },
+    {
+      "item_id": "CL4",
+      "question": "Do inventory levels or gross margins show trends inconsistent with revenue?",
+      "finding": "insufficient_data",
+      "confidence": "low",
+      "evidence": [
+        {
+          "quote": "CostOfGoodsSold=15,600,000 (Q3 2012)",
+          "source_accession_no": "0001405495-12-000028",
+          "location": "financial_series_point_in_time.CostOfGoodsSold"
+        }
+      ]
+    },
+    {
+      "item_id": "CL5",
+      "question": "Is the earnings trajectory unusually smooth relative to the volatility of revenue and cash flow?",
+      "finding": "no_flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "NetIncomeLoss=235,669,000 (Q3 2012)",
+          "source_accession_no": "0001405495-14-000010",
+          "location": "financial_series_point_in_time.NetIncomeLoss"
+        },
+        {
+          "quote": "NetIncomeLoss=10,930,000 (Q1 2012)",
+          "source_accession_no": "0001405495-14-000010",
+          "location": "financial_series_point_in_time.NetIncomeLoss"
+        },
+        {
+          "quote": "Revenues=434,010,000 (Q3 2012)",
+          "source_accession_no": "0001405495-14-000010",
+          "location": "financial_series_point_in_time.Revenues"
+        },
+        {
+          "quote": "Revenues=69,305,000 (Q1 2012)",
+          "source_accession_no": "0001405495-14-000010",
+          "location": "financial_series_point_in_time.Revenues"
+        }
+      ]
+    },
+    {
+      "item_id": "CL6",
+      "question": "Did liability, allowance, or reserve balances decline (or fail to grow) despite growing business activity?",
+      "finding": "flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "DeferredRevenueCurrent=193,409,000 (2009-12-31)",
+          "source_accession_no": "0000950123-11-029705",
+          "location": "financial_series_point_in_time.DeferredRevenueCurrent"
+        },
+        {
+          "quote": "DeferredRevenueCurrent=60,176,000 (2013-12-31)",
+          "source_accession_no": "0001405495-15-000010",
+          "location": "financial_series_point_in_time.DeferredRevenueCurrent"
+        },
+        {
+          "quote": "Revenues=297,404,000 (FY2009)",
+          "source_accession_no": "0001405495-12-000009",
+          "location": "financial_series_point_in_time.Revenues"
+        },
+        {
+          "quote": "Revenues=325,361,000 (FY2013)",
+          "source_accession_no": "0001405495-15-000010",
+          "location": "financial_series_point_in_time.Revenues"
+        }
+      ]
+    },
+    {
+      "item_id": "CL7",
+      "question": "Does the filing chronology show irregularities (late filings/NT forms, amendments, unusual 8-K frequency)?",
+      "finding": "flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "10-K/A filed 2011-03-28",
+          "source_accession_no": "0000950123-11-029705",
+          "location": "filing_chronology"
+        },
+        {
+          "quote": "10-Q/A filed 2009-12-09",
+          "source_accession_no": "not provided in series (chronology only)",
+          "location": "filing_chronology"
+        },
+        {
+          "quote": "CT ORDER filed 2009-03-13",
+          "source_accession_no": "not provided in series (chronology only)",
+          "location": "filing_chronology"
+        }
+      ]
+    },
+    {
+      "item_id": "CL8",
+      "question": "Is the provided data sufficient in coverage and length for the above assessments?",
+      "finding": "flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "IntangibleAssetsNetExcludingGoodwill data only available for 2009-12-31 through 2010-09-30",
+          "source_accession_no": "0000950123-10-098121",
+          "location": "financial_series_point_in_time.IntangibleAssetsNetExcludingGoodwill"
+        },
+        {
+          "quote": "No AllowanceForDoubtfulAccounts or InventoryNet series provided in dataset",
+          "source_accession_no": "n/a",
+          "location": "financial_series_point_in_time (absence of series)"
+        }
+      ]
+    }
+  ],
+  "misstatement_probability": 42,
+  "mechanism_hypotheses": [
+    {
+      "affected_line_items": [
+        "Revenues",
+        "AccountsReceivableNet",
+        "NetCashProvidedByUsedInOperatingActivities"
+      ],
+      "direction": "timing_shift",
+      "accounting_treatment": "Large fixed-fee patent license agreements appear to be recognized largely upfront (driving quarter-to-quarter revenue spikes such as Q3 2012), while cash is collected over subsequent periods in installments, producing large swings in accounts receivable and a decoupling of net income from operating cash flow (e.g., negative operating cash flow in FY2011 despite positive net income, and operating cash flow far exceeding net income in FY2013-FY2014). This creates risk that revenue/receivables in a given period are overstated relative to economic collection, or that cash-flow-based diligence would understate true earnings quality in the period following recognition.",
+      "rationale_evidence": [
+        {
+          "quote": "AccountsReceivableNet=169,874,000 (2012-12-31)",
+          "source_accession_no": "0001405495-14-000010",
+          "location": "financial_series_point_in_time.AccountsReceivableNet"
+        },
+        {
+          "quote": "NetCashProvidedByUsedInOperatingActivities=-34,338,000 (FY2011)",
+          "source_accession_no": "0001405495-14-000010",
+          "location": "financial_series_point_in_time.NetCashProvidedByUsedInOperatingActivities"
+        },
+        {
+          "quote": "Revenues=434,010,000 (Q3 2012)",
+          "source_accession_no": "0001405495-14-000010",
+          "location": "financial_series_point_in_time.Revenues"
+        }
+      ]
+    },
+    {
+      "affected_line_items": [
+        "DeferredRevenueCurrent",
+        "Revenues"
+      ],
+      "direction": "overstated",
+      "accounting_treatment": "Deferred (unearned) revenue balance shrank steadily from 2009 to 2013 (193.4M to 60.2M) even as annual revenue grew intermittently and remained well above 2009 levels by 2012-2014, which is consistent with a shift toward recognizing larger portions of multi-year license fees immediately (reducing the deferred revenue liability) rather than ratably, potentially accelerating revenue recognition into earlier periods and increasing balance-sheet/earnings volatility.",
+      "rationale_evidence": [
+        {
+          "quote": "DeferredRevenueCurrent=193,409,000 (2009-12-31)",
+          "source_accession_no": "0000950123-11-029705",
+          "location": "financial_series_point_in_time.DeferredRevenueCurrent"
+        },
+        {
+          "quote": "DeferredRevenueCurrent=60,176,000 (2013-12-31)",
+          "source_accession_no": "0001405495-15-000010",
+          "location": "financial_series_point_in_time.DeferredRevenueCurrent"
+        },
+        {
+          "quote": "Revenues=663,063,000 (FY2012)",
+          "source_accession_no": "0001405495-15-000010",
+          "location": "financial_series_point_in_time.Revenues"
+        }
+      ]
+    },
+    {
+      "affected_line_items": [
+        "NetIncomeLoss",
+        "Assets",
+        "Liabilities"
+      ],
+      "direction": "timing_shift",
+      "accounting_treatment": "A 10-K/A was filed in March 2011 restating/amending the FY2009 10-K (and a 10-Q/A was filed in December 2009), indicating at least one instance of post-filing correction to previously reported figures; while the specific line items amended are not detailed in the provided series, such amendments are a marker of elevated restatement/correction risk that increases the prior probability of a material misstatement having occurred in the amended period(s).",
+      "rationale_evidence": [
+        {
+          "quote": "10-K/A filed 2011-03-28",
+          "source_accession_no": "0000950123-11-029705",
+          "location": "filing_chronology"
+        },
+        {
+          "quote": "10-Q/A filed 2009-12-09",
+          "source_accession_no": "not provided in series (chronology only)",
+          "location": "filing_chronology"
+        }
+      ]
+    }
+  ],
+  "overall": {
+    "risk_tier": "watch",
+    "top_signals": [
+      "Accounts receivable grew far faster than revenue in FY2012 (AR +505% vs revenue +120%) reflecting lumpy license payment timing",
+      "Operating cash flow went negative in FY2011 (-34.3M) despite positive net income (89.5M), and swung to far exceed net income in FY2013-FY2014, indicating recurring NI/OCF decoupling tied to license cash-collection timing",
+      "Deferred revenue liability declined steadily from 193.4M (2009) to 60.2M (2013) even as revenue grew in intervening years, consistent with accelerated/upfront revenue recognition on multi-year license deals",
+      "A 10-K/A (FY2009) and a 10-Q/A were filed, indicating at least one historical amendment to previously filed financial statements",
+      "Data gaps (intangible asset detail only through 2010, no allowance/inventory series) limit ability to fully corroborate or refute the above patterns"
+    ]
+  }
+}

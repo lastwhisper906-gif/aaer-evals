@@ -1,0 +1,59 @@
+{
+  "ts": "2026-07-07T05:42:32.427447+00:00",
+  "harness_pin": "2.1.201",
+  "flags": [
+    "claude",
+    "-p",
+    "--model",
+    "claude-sonnet-5",
+    "--output-format",
+    "json",
+    "--max-turns",
+    "2",
+    "--setting-sources",
+    "",
+    "--strict-mcp-config",
+    "--tools",
+    "",
+    "--disallowedTools",
+    "Bash,Read,Edit,Write,Glob,Grep,WebFetch,WebSearch,Task,NotebookEdit",
+    "--system-prompt",
+    "You are analyzing the financial reporting quality of MASIMO CORP (MASI, CIK 0000937556) using only the structured data provided below, which reflects public filings available on or before 2013-07-28. ...[1733 chars]",
+    "--json-schema",
+    "{\"type\": \"object\", \"additionalProperties\": false, \"required\": [\"checklist\", \"misstatement_probability\", \"mechanism_hypotheses\", \"overall\"], \"properties\": {\"checklist\": {\"type\": \"array\", \"items\": {\"typ...[1821 chars]"
+  ],
+  "model_requested": "claude-sonnet-5",
+  "served_models": [
+    "claude-sonnet-5"
+  ],
+  "pin_ok": true,
+  "ok": true,
+  "fail_reason": null,
+  "session_id": "2b04a64e-cc05-48c9-9805-9e2f2fb7682b",
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 40584,
+    "cache_read_input_tokens": 1116,
+    "output_tokens": 10357,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 40584,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [],
+    "speed": "standard"
+  },
+  "total_cost_usd_reference_only": 0.3991998,
+  "attempts": 1,
+  "wall_seconds": 92.6,
+  "freeze": {
+    "head": "334ee4a69d4a0f4d4ad0d46b7321cbe370baa898",
+    "clean_tree": false
+  },
+  "raw_tail": null
+}
