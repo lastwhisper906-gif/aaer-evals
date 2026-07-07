@@ -1,0 +1,92 @@
+{
+  "original": {
+    "mean_diff": 20.57,
+    "perm_p": 0.0011599884001159987,
+    "cliff": 0.657,
+    "auc": 0.829,
+    "auc_ci": [
+      0.616,
+      0.983
+    ],
+    "fraud_mean": 55.2,
+    "control_mean": 34.7,
+    "fraud_median": 58,
+    "control_median": 30,
+    "fraud_scores": [
+      20,
+      40,
+      55,
+      55,
+      58,
+      58,
+      65,
+      72,
+      74
+    ],
+    "control_scores": [
+      15,
+      15,
+      20,
+      20,
+      20,
+      22,
+      25,
+      25,
+      25,
+      28,
+      28,
+      30,
+      35,
+      42,
+      42,
+      42,
+      45,
+      45,
+      50,
+      55,
+      55,
+      55,
+      58
+    ]
+  },
+  "perturbed": {
+    "mean_diff": 15.79,
+    "perm_p": 0.004269957300426995,
+    "auc": 0.79
+  },
+  "flags": {
+    "fraud": "7/9",
+    "control_fp": "5/23",
+    "fpr_pct": 21.7
+  },
+  "baselines": {
+    "rho_llm_m": 0.337,
+    "rho_llm_f": 0.265,
+    "m_computable": 20,
+    "f_computable": 17
+  },
+  "R3_memorization": {
+    "crossed": 3,
+    "n": 9,
+    "cases": [
+      "T02",
+      "T20",
+      "T29"
+    ],
+    "fires": false
+  },
+  "conclusion_rule_standalone": {
+    "R1_null": false,
+    "R2_baseline": false,
+    "R3_memorization": false,
+    "fired": "R4"
+  },
+  "pooled_secondary": {
+    "n_fraud": 17,
+    "n_control": 45,
+    "mean_diff": 20.19,
+    "perm_p": 2.999970000299997e-05,
+    "auc": 0.831,
+    "note": "SECONDARY ONLY — never standalone headline (DO NOT). wave-1 frozen scores reused, not re-scored."
+  }
+}
