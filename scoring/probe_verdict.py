@@ -43,6 +43,11 @@ def name_match(guess: str, truth: str) -> bool:
     if g == t:
         return True
     # 어두 접두열 (통용 사명: 'Orthofix' vs 'Orthofix International N.V.')
+    # 주의(감사 B17): 이 규칙은 원리상 단일 공통 토큰을 과매칭할 수 있다("Apple" ⊂
+    # "Apple Hospitality REIT"). 그러나 커밋된 프로브 데이터의 실제 매치는 전부 정당한
+    # 인식이라 어떤 동결 판정도 이 영향을 받지 않는다(test_probe_verdict가 회귀 고정).
+    # 규칙을 조이려면(예: 큐레이션 예외 목록) 단일토큰 정당 매치('liveperson' 등)를
+    # 깨지 않아야 하고, name-ID rate가 바뀌므로 재채점=owner-gate(Q-E02).
     shorter, longer = (g, t) if len(g) <= len(t) else (t, g)
     return longer[:len(shorter)] == shorter
 
