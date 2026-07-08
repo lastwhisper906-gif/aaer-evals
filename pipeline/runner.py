@@ -25,6 +25,8 @@ import shlex
 import sys
 from pathlib import Path
 
+import jsonschema
+
 import build_payload as bp
 import cli_client
 from cli_client import EVALUATEE_FORBIDDEN_MARKERS, freeze_state
@@ -34,6 +36,13 @@ EVALUATEE_MODEL = "claude-sonnet-5"  # D6 pin (사유는 채점 쪽 문서)
 FULL_OUTPUT_SCHEMA = json.loads(
     (REPO_ROOT / "schemas" / "llm_output.json").read_text(encoding="utf-8"))
 CANARY_MARKERS = ("9fa11f98", "a2d69cfe")
+_FULL_VALIDATOR = jsonschema.Draft7Validator(FULL_OUTPUT_SCHEMA)
+
+
+def _full_output_error(full: dict) -> str | None:
+    """조립된 케이스 출력이 정식 llm_output.json 계약을 만족하는가 — 첫 위반 메시지 or None."""
+    errs = sorted(_FULL_VALIDATOR.iter_errors(full), key=lambda e: list(e.path))
+    return errs[0].message if errs else None
 
 TASK = """You are analyzing the financial reporting quality of {company_name} ({ticker}{cik_part}) \
 using only the structured data provided below, which reflects public filings available on or \
@@ -77,7 +86,7 @@ MODEL_SCHEMA = {
                                    "source_accession_no": {"type": "string"},
                                    "location": {"type": "string"}}}},
             }}},
-        "misstatement_probability": {"type": "integer"},
+        "misstatement_probability": {"type": "integer", "minimum": 0, "maximum": 100},
         "mechanism_hypotheses": {"type": "array", "items": {
             "type": "object", "additionalProperties": False,
             "required": ["affected_line_items", "direction", "accounting_treatment", "rationale_evidence"],
@@ -147,6 +156,13 @@ def run_case(case: dict, perturb: bool, out_dir: Path, log_dir: Path) -> dict:
         "documents_used": sorted(accessions.values(), key=lambda d: d["accession_no"]),
         **r.structured,
     }
+    # 계약 강제(fail-closed): 조립된 full을 정식 llm_output.json 스키마로 검증한 뒤에만
+    # 기록한다. MODEL_SCHEMA(호출시)는 minItems·documents_used·"p>=40 ⇒ mechanism" 조건을
+    # 담지 않아, 계약 위반 출력이 OK로 저장되고 멱등(output_is_valid=FULL_OUTPUT_SCHEMA)이
+    # 깨져 재-미터링되던 결함을 차단. 검증 실패 = FAIL, 미기록.
+    full_err = _full_output_error(full)
+    if full_err:
+        return {"case_id": cid, "status": f"FAIL (full_schema: {full_err[:120]})"}
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(full, ensure_ascii=False, indent=2), encoding="utf-8")
     return {"case_id": cid, "status": f"OK p={full['misstatement_probability']} "
