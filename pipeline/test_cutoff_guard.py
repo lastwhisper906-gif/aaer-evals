@@ -110,3 +110,44 @@ def test_accession_crosscheck_missing_submissions_fails_closed(env, tmp_path):
                       registry_path=env["registry"], log_path=env["log"],
                       edgar_data_dir=tmp_path / "empty")
     assert read_log(env["log"])[-1]["reason"] == "edgar_crosscheck_unavailable"
+
+
+# --- v2: EDGAR 출처 문서는 accession 필수 (filing-date 교차검증 의무화) ---
+
+def test_edgar_sourced_without_accession_fails_closed(env):
+    # EDGAR 출처를 선언(edgar_sourced=True)했는데 accession_no가 없으면 차단 —
+    # 호출자 자기신고 doc_date만으로는 통과 불가. allowed/blocked 로그로 차단 증거 남김.
+    with pytest.raises(CutoffGuardError, match="accession_no 필수"):
+        load(env, "2014-01-01", edgar_sourced=True)  # accession_no 미제공
+    entry = read_log(env["log"])[-1]
+    assert entry["verdict"] == "blocked" and entry["reason"] == "edgar_accession_required"
+
+
+def test_edgar_sourced_with_accession_after_cutoff_still_blocked(env):
+    # accession은 있으나 EDGAR filingDate가 cutoff 이후면 여전히 차단(기존 동작 보존).
+    # 픽스처의 ACCESSION filingDate=2014-01-01은 cutoff 이내라, cutoff 이후 filing을 하나 추가.
+    sub = env["edgar"] / "AAA" / "edgar" / "CIK0001234567.json"
+    late_acc = "0001234567-14-000009"
+    sub.write_text(json.dumps({"filings": {"recent": {
+        "accessionNumber": [ACCESSION, late_acc],
+        "filingDate": ["2014-01-01", "2014-07-07"],  # 2014-07-07 > cutoff(2014-06-05)
+        "form": ["10-K", "10-K"],
+    }, "files": []}}), encoding="utf-8")
+    with pytest.raises(CutoffViolationError):
+        load(env, "2014-07-07", accession_no=late_acc, edgar_sourced=True)
+    assert read_log(env["log"])[-1]["reason"] == "cutoff_violation"
+
+
+def test_edgar_sourced_with_valid_accession_and_date_allowed(env):
+    # accession + EDGAR filingDate(2014-01-01) <= cutoff → 허용 + 교차검증 로그.
+    assert load(env, "2014-01-01", accession_no=ACCESSION, edgar_sourced=True) == "10-K body"
+    entry = read_log(env["log"])[-1]
+    assert entry["verdict"] == "allowed" and "cross-checked" in entry["reason"]
+    assert entry["accession_no"] == ACCESSION
+
+
+def test_non_edgar_call_without_accession_still_allowed(env):
+    # 회귀: edgar_sourced 기본(False)·accession_no=None인 비-EDGAR 호출은 여전히 허용
+    # (tools/build_earliness_snapshots.guard_snapshot의 날짜 경계검사와 동형).
+    assert load(env, "2014-01-01") == "10-K body"
+    assert read_log(env["log"])[-1]["verdict"] == "allowed"

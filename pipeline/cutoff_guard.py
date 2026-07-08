@@ -112,13 +112,19 @@ def _log(log_path, record: dict) -> None:
 
 
 def load_document(case_id: str, path_or_url: str, doc_date, *,
-                  accession_no: str | None = None,
+                  accession_no: str | None = None, edgar_sourced: bool = False,
                   registry_path=DEFAULT_REGISTRY, log_path=DEFAULT_LOG,
                   edgar_data_dir=DEFAULT_EDGAR_DATA, loader=None):
     """게이트웨이. 허용/차단 모든 시도를 log_path에 기록하고, 위반은 예외로 중단.
 
     accession_no가 주어지면(EDGAR 문서) doc_date를 로컬 submissions JSON의
     filingDate와 대조한다 — 호출자 자기신고만으로는 통과하지 못한다.
+
+    edgar_sourced=True(진짜 EDGAR 문서 로드)이면 accession_no가 **필수**이며
+    filing-date 교차검증도 필수다 — accession 없이 호출자 자기신고 doc_date만으로는
+    통과할 수 없다(fail-closed). 기본값 False는 비-EDGAR 경계검사(예: earliness
+    스냅샷 날짜 검증, path_or_url="earliness_snapshot:...")를 위해 기존 동작을
+    그대로 보존한다 — 그런 호출은 accession_no 없이도 허용된다.
     """
     def attempt(verdict: str, reason: str) -> None:
         record = {"case_id": case_id, "doc": str(path_or_url),
@@ -139,6 +145,13 @@ def load_document(case_id: str, path_or_url: str, doc_date, *,
         raise CutoffGuardError(f"case={case_id}: cutoff_date 미확정(UNRESOLVED) — fail-closed") from None
 
     parsed = _parse_date(doc_date, "doc_date")
+
+    if edgar_sourced and accession_no is None:
+        attempt("blocked", "edgar_accession_required")
+        raise CutoffGuardError(
+            f"case={case_id}: EDGAR 출처 문서(edgar_sourced=True)는 accession_no 필수 — "
+            "호출자 자기신고 doc_date만으로는 통과 불가, filing-date 교차검증 강제(fail-closed)"
+        )
 
     if accession_no is not None:
         try:
