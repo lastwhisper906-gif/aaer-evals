@@ -20,7 +20,8 @@
 | E3 draw-3 + 분석 (R4 유지) | 9 | 0 | 18 | f74bb94 |
 | E3 fold-in (summary/synthesis) | 0 | 0 | 18 | 39ffc16 |
 | P5 재현성(REPRODUCING+rescan) | 0 | 0 | 18 | b909cb6 |
-| P6 RP-13 패킷 + HANDOFF/INDEX | 0 | 0 | 18 | (this) |
+| P6 RP-13 패킷 + HANDOFF/INDEX | 0 | 0 | 18 | 80ad1df |
+| **재개 세션 #2 (2026-07-08 야간)** — 캐시 부재로 미실행 | **0** | **0** | **18** | (this) |
 
 ## 세션 종료 상태 (2026-07-08)
 
@@ -56,3 +57,37 @@ E1 보류(§5-1, Q-E03) · E2/E4/E5 launch-ready(Q-E01). 소유자 액션 4 =
 
 세션이 지금 죽으면: `git log --oneline -5` 로 마지막 push 확인 → 이 파일의
 가계부·Phase 상태에서 다음 미완 유닛부터. 미터링 발사 전이면 spend 없음.
+
+---
+
+## 재개 세션 #2 종료 요약 (2026-07-08 야간, 무인 ~14h 창)
+
+**결론: 미터링 플랜 전량 미실행. 환경 precondition 미충족(하드 스톱). 미터링 18/320 불변(0 소비).**
+
+- **소유자 인가 반영**: 프롬프트 verbatim 인가로 Q-E01 옵션 C(E2/E4/E5 발사)+D-2(E5
+  k=3)+E2 원본프레임 partial 승인, E1·홀드아웃 확장 HELD 확인. → 실행 시도했으나 아래
+  블로커로 착수 불가.
+- **하드 스톱 사유 (Q-E04)**: fresh ephemeral 컨테이너에 **`~/aaer-data` PIT 캐시 부재**
+  (git 밖 402파일/372MB 외부 SEC 데이터, 미커밋). 모든 유닛의 `build_payload`가 API 호출
+  **이전에** `FileNotFoundError`. 캐시 재생성=네트워크 fetch=미션 최상위 금지·§5-1 정지
+  규칙. 무인 fetch 안 함. **미터링 0.**
+- **부가 (Q-E05)**: E2 조기성 하네스는 "launch-ready"가 아니라 **미구현**(EARLINESS_DESIGN
+  §5 "설계만"). 사전등록(기준)만 완료. Q-E04로 어차피 실행 무의미 → 구현·발사 모두 감독 이관.
+- **불변식 3 전부 무침해**: BLINDNESS/CUTOFF/IMMUTABILITY — 아무 실행도 없었으므로 runs/·
+  frozen grades·published draw-1·blindness/cutoff 경로 **1바이트도 안 건드림**. 문서 2건
+  (OWNER_QUEUE Q-E04/E05, 본 RESUME)만 갱신.
+- **로컬 검증 (committed-artifact, 0-미터링)**: `reproduce_analysis` **PASS 100/100** ·
+  `lint_publication` **PASS**. `verify_blindness`는 이 clone이 **shallow**(50커밋)라 채점커밋
+  `03b91aa` git-이력 검사가 오브젝트 부재로 중단 — **블라인드 위반 아님**(80ad1df CI green
+  통과 이력). `pytest`의 test_build_payload 등은 캐시 의존이라 이 환경에서 미실행.
+- **소유자 다음 결정**(`review_packets/RP-13_final_packet.md` §7 + OWNER_QUEUE):
+  1. **Q-E04**: 감독 세션에서 신뢰 `~/aaer-data` 복원(매니페스트 sha256 대조) 후 재개 —
+     E5 draw-2/3·E4는 기존 러너로 즉시 launch-ready, E2는 Q-E05 구현 선행.
+  2. **Q-E05**: E2 조기성 하네스 구현(스냅샷 그리드+스냅샷별 cutoff_guard) — 감독 하.
+  3. 기존 미해결 Q-E01(spend, C 인가됨)·Q-E02(name-ID 21.9 vs 25)·Q-E03(E1 감독)·
+     RP-13 §7 소유자 액션 4(채점 확정·발행·E4 EXPLORATORY·Console $0.00) 유지.
+- **재개 명령(캐시 복원 후)**: E5 draw-2 = `python pipeline/runner.py --cases
+  data/evaluatee/cases_wave2.json --out runs/wave2/mainscore_redraw/draw_2` (identity
+  frame, --perturbed 없음, 32사 전건); draw-3 = 동일 `--out .../draw_3`. E4 =
+  `analysis/CROSSMODEL_PLAN.md` 서브셋 `--model claude-opus-4-8`. E2 = Q-E05 하네스 선구현.
+  전건 verify_blindness --write-manifest → commit → push → CI green → 본 가계부 갱신.

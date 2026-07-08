@@ -66,3 +66,62 @@
 - **상태**: OPEN.
 
 ---
+
+## Q-E04 — 무인 실행 환경에 PIT 캐시(`~/aaer-data`) 부재 → 미터링 플랜 전량 실행 불가 — **OPEN**
+
+- **발견 (2026-07-08 야간 OWNER-GATE-E 재개 세션, 전 사전점검 단계)**: 이 세션은
+  신규 임시(ephemeral) 컨테이너에서 저장소만 fresh clone된 상태로 시작됐다. 그런데
+  미터링 플랜의 **모든** 유닛(E2 조기성·E5 본채점 재추첨 draw-2/3·E4 교차모델)은
+  피평가자 페이로드 생성을 위해 `pipeline/build_payload.load_pit_series` →
+  `~/aaer-data/{ticker}/xbrl` 로컬 SEC companyfacts 캐시를 읽는다. **이 컨테이너에
+  `/root/aaer-data`가 존재하지 않는다** (git 밖 자산, `data/README.md` 규약대로
+  미커밋; `data/manifests/aaer_data_manifest.json` = 402파일 372MB 외부 SEC 데이터).
+  실측: `build_payload.build_payload(cases_wave2[0])` → `FileNotFoundError:
+  /root/aaer-data/ADAM/xbrl: companyfacts 없음` — **API 호출 이전에** 실패. 즉 어떤
+  피평가자/채점자 호출도 발생 불가. **미터링 0 소비 (누계 18/320 불변).**
+- **왜 무인 자가복구 안 함**: 캐시 재생성 = `tools/fetch_xbrl_facts.py` +
+  `fetch_primary_sources.py`로 data.sec.gov에서 402파일 네트워크 fetch. 이는 미션의
+  최상위 금지("신규 회사 데이터를 네트워크로 fetch해야 하면 STOP·기록·이동 —
+  single most important don't")·§5-1 look-ahead 정지 규칙에 정면으로 해당한다.
+  추가로, 지금(2026-07) 재fetch한 companyfacts는 정정(restatement)·수정으로 **동결
+  매니페스트 sha256과 불일치**할 수 있어 PIT 재구성의 바이트 동일성을 보장 못 한다
+  (재현성 오염 위험). → 무인 fetch 부적합, E1/홀드아웃과 동급 감독 대상.
+- **부수 관측(환경, 미조치)**: 이 clone은 **shallow**(50커밋, `.git/shallow`)라
+  `tools/verify_blindness.py`의 채점커밋 `03b91aa` git-이력 검사가 로컬에서 오브젝트
+  부재로 중단된다 — **블라인드 위반 아님**(80ad1df에서 CI green으로 통과). 순수
+  환경 아티팩트. `reproduce_analysis`(100/100)·`lint_publication` 로컬 PASS.
+- **옵션**:
+  - **(A 기본)** 이 무인 세션에서 미터링 플랜 전량 **미실행 동결**. 네트워크 fetch
+    안 함. 캐시 복원(신뢰 캐시를 `~/aaer-data`에 재배치, 또는 매니페스트 대조 하
+    감독 fetch)이 된 **감독 세션**에서 `docs/RESUME.md`의 재개 명령대로 발사.
+  - **(B)** 소유자가 신뢰 `~/aaer-data` 스냅샷(동결 매니페스트 sha256 일치)을 컨테이너에
+    제공 → 그때 E5/E4는 기존 러너 재사용으로 즉시 launch-ready, E2는 조기성 하네스
+    구현이 선행 필요(아래 Q-E05).
+  - **(C)** 소유자가 명시적으로 "감독 하 재fetch 승인" — 매니페스트 sha256 대조 +
+    컷오프 재검증을 통과분만 채용. (무인 아님.)
+- **세션 기본 조치 (답 없을 시)**: **(A)** — 미터링 0, 네트워크 fetch 0, 프로즌 불침해,
+  전 유닛 동결 이관. 본 세션은 여기서 clean stop.
+- **상태**: OPEN — 환경 precondition 미충족. 소유자/감독 세션 사안.
+
+---
+
+## Q-E05 — E2 조기성 하네스가 **미구현**(설계만) — 발사 전 구현+오프라인 검증 필요 — **OPEN**
+
+- **발견**: 미션은 E2(조기성)를 "launch-ready"로 기술하나, E5/E4와 달리 E2는 기존
+  러너로 바로 못 돈다. 스냅샷 그리드(스냅샷 j 컷오프 = 컷오프 이전 j번째 최신
+  10-K/10-Q filed일 +1일) 생성기 + 스냅샷별 케이스 파일 + 스냅샷별 cutoff_guard
+  "allowed" 기록 통합이 **존재하지 않는다**. `docs/EARLINESS_DESIGN.md` §5는 이를
+  명시적으로 "설계만, 실행 없음"으로 두고, 실행 전 소유자 결정 3건을 열거했다(그
+  3건은 `analysis/EARLINESS_PLAN.md`가 사전등록으로 이미 해소: 교란만·k=1·RP-01 8).
+  즉 **사전등록(기준)은 완료, 구현(코드)은 미완**. Q-E04로 어차피 이번 세션 실행 불가.
+- **look-ahead 성격**: E2는 E1과 달리 **데이터가 이미 캐시(로컬)**이고 스냅샷 컷오프는
+  결정론적 날짜 계산이라 **오프라인·0-미터링으로 기계 검증 가능**(각 스냅샷
+  load_pit_series 반환에 filed>컷오프 항목 0 + 스냅샷 컷오프 ≤ 폭로 컷오프를
+  test_build_payload 패턴으로 강제). 따라서 E1-급 금지 대상은 아니나, **신규 하네스를
+  무인·무검토로 짜서 예산 절반(~160호출)을 그 산출에 쓰는 것**은 부적합.
+- **옵션**: (A 기본) 감독 세션에서 하네스 구현 → 오프라인 컷오프 검증 CI green →
+  그 후 발사. (B) 소유자가 "무인 구현+airtight 오프라인 검증 후 발사" 승인.
+- **세션 기본 조치**: **(A)** — 구현/발사 모두 이관. 본 세션 미착수(Q-E04로 무의미).
+- **상태**: OPEN.
+
+---
