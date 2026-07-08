@@ -54,6 +54,10 @@
 - **B18 완료** (canary hard-fail, 커밋 bfd1558) · **B2 완료** (현행 헤드라인 CI 재계산,
   `tools/reproduce_headline.py` + CI/make verify, bfd1558) · **B17 완료** (name_match 회귀
   테스트 + 한계 문서화, 규칙 무변경 = 동결 name-ID 불침해, c8dd35c).
+- **B10·B12·B14 초안 완료** (소유자 검토 대상 — `analysis/DRAFT_audit_B10_B12_B14.md`
+  + `analysis/calibration_ci.py`): **B10 ECE 0.209 [부트스트랩 95% CI 0.16–0.35]**(구간
+  병기 권고, 결론 유지) · **B12 교란프레임 flag 6/8→4/8·Fisher p=0.06**(AUC 0.86과 병기
+  권고) · **B14 베이스라인 complete-case(22/30) 한정** 명시 권고. 반영은 소유자.
 - **B7·B8 초안 완료** (소유자 검토 대상 — `analysis/DRAFT_audit_B7_B8.md` +
   `r3_bootstrap.py`·`name_id_split.py`): **B7 결과 P(R3 count≥5)=0.60** (5/8 헤드라인이
   재추첨의 60%에서만 성립) · **B8 결과 fraud-side name-ID 37.5%→33.3%(거의 불변)**,
