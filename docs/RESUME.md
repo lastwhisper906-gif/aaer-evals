@@ -116,7 +116,13 @@ E1 보류(§5-1, Q-E03) · E2/E4/E5 launch-ready(Q-E01). 소유자 액션 4 =
   `analysis/CROSSMODEL_PLAN.md` 서브셋 `--model claude-opus-4-8`. E2 = Q-E05 하네스 선구현.
   전건 verify_blindness --write-manifest → commit → push → CI green → 본 가계부 갱신.
 
-## 하드닝 세션 (2026-07-08, ZERO metered) — 진행 중
-- 브랜치 `hardening/2026-07-08`, 베이스 94c8487(pre-flight green). 미터링 0·네트워크 0·frozen 불침해.
-- Track 2 완료: 채점자 일치도 SPOT-CHECK(N=6, 플래그뒤집힘 0) → analysis/grader_agreement.{md,csv}, Q-E08.
-- Track 3 완료: cutoff_guard EDGAR accession 교차검증 의무화(edgar_sourced 플래그, 기존 caller 불변) + 테스트 4.
+## 하드닝 세션 (2026-07-08, ZERO metered) — **완료**
+- 브랜치 `hardening/2026-07-08`, 베이스 94c8487(pre-flight green). 미터링 0·네트워크 0·frozen 불침해·git 격리.
+- **미터링 누계 19/320 불변** (이 세션 evaluatee 0 · grader 0). fable-5 소진 → grader-free 설계.
+- Track 1 완료(fe5d551): 임계 민감도 스윕 t∈{40..60} → **t=50 ±5 ROBUST**(뒤집힘 0), t=50 2×2·Fisher·AUC frozen 정확 일치. analysis/threshold_sensitivity.{md,csv}+sweep.py+fig+test(7). Q-E10(정보성).
+- Track 2 완료(cceac7e): 채점자 일치도 SPOT-CHECK(N=6, 플래그뒤집힘 0, pooled 0.875) → analysis/grader_agreement.{md,csv}. Q-E08.
+- Track 3 완료(973070f): cutoff_guard EDGAR accession 교차검증 의무화(edgar_sourced 플래그, 기존 caller 불변) + 테스트 4. analysis/cutoff_hardening.md.
+- Track 4 완료(775ce7d): 재현성·격리 재감사 — 검증기 5종 PASS·불변3 코드강제 추적·신설 테스트 18. analysis/reaudit_2026-07-08.md. Q-E09(F1).
+- **중앙 인증(CI 미러)**: pytest 152 passed 4 skipped · verify 배터리 전량 PASS · reproduce_analysis 100/100. CI #74/#75 green, #76(T1) 발행.
+- 종료 문서: analysis/SESSION_2026-07-08_SUMMARY.md · docs/OWNER_DECISIONS_2026-07-08.md(Q-E08/E09/E10 통합).
+- **소유자 다음 액션**: Q-E08/E09/E10 회신(전부 비차단·정보성) + 기존 Q-E01~E07. 발행·서명 자가결정 없음.
