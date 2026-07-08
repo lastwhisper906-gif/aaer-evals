@@ -1,7 +1,8 @@
 # Issue #0 — Can an LLM detect accounting fraud from public financial data before public revelation?
 
 > **DRAFT — not published. Owner sign-off required (RP-10 final gate).**
-> Scoring: Claude-assisted, human-finalized. All grading and selection criteria
+> Scoring: Claude-assisted; human finalization pending (grades human_finalized=false
+> until owner sign-off). All grading and selection criteria
 > were committed before the corresponding results existed; commit hashes below
 > are the reader's verification path. This result is specific to a single
 > Claude-based pipeline (evaluatee: claude-sonnet-5, pinned).

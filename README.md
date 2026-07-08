@@ -96,13 +96,17 @@ wave-2 0.337/0.265), 잔차 분리가 살아남는다 → 사전 커밋 R2 **비
 
 ```bash
 pip install -r requirements.txt
-python tools/reproduce_analysis.py   # 발행 수치 전건 재계산 → PASS/FAIL (100/100)
+python tools/reproduce_analysis.py   # RP-05 파일럿 수치 재현 (100/100 항목, 커밋 산출물만)
 python tools/verify_blindness.py     # 채점 선행 이력 증명 · 실명/카나리 스캔 · runs/ sha256
-python tools/verify_manifest.py      # 데이터 매니페스트 대조 (402 파일)
-python analysis/synthesis.py         # 교차-웨이브 종합 (결정론, seed 20260708)
+python tools/verify_manifest.py      # 데이터 매니페스트 대조 (402 파일, full은 캐시 필요)
+python analysis/synthesis.py         # 교차-웨이브 종합 (결정론 seed 20260708; 베이스라인은 캐시 필요)
 ```
 
-셋 다 커밋 산출물만 사용한다 (API 호출 0, 원문 코퍼스 불요) — CI가 매 push 검증한다.
+reproduce_analysis·verify_blindness·lint_publication은 커밋 산출물만 사용(API 0, 코퍼스
+불요) — CI가 매 push 검증한다. **범위 주의**: reproduce_analysis는 RP-05 파일럿(8v8) 수치를
+재계산 대조하며, 현행 8v22·wave-2 헤드라인(p=0.00114·AUC 0.824 등)은 `analysis/stats.py`
+(`make analysis`) 산출이고 CI 전건 재계산 대상은 아직 아니다(감사 B2 — 확장은 리서치 항목).
+verify_manifest full·synthesis 베이스라인은 `~/aaer-data` 캐시 필요.
 원시: `runs/`(sha256 매니페스트) · `scoring/grades*/` · `scoring/probe_results*/` ·
 `logs/run_*/`(호출별 서빙 모델·격리 플래그·freeze 해시).
 

@@ -110,4 +110,3 @@ pipeline; the grading is Claude-assisted with human finalization.
 *Companion: Issue #0 (`analysis/ISSUE_0_DRAFT.md`, the memorization finding this
 holdout is designed to escape) and Issue #1 (wave-2 expansion). Gate packet:
 `review_packets/RP-11_expansion_holdout.md`.*
-</content>

@@ -1,7 +1,8 @@
 # Issue #1 (DRAFT) — Wave 2: expanding the fraud case set from 8 to a gate-decided roster
 
 > **DRAFT — not published. Owner sign-off required. Companion to Issue #0.**
-> Scoring: Claude-assisted, human-finalized. All roster rules and the analysis plan
+> Scoring: Claude-assisted; human finalization pending (grades human_finalized=false
+> until owner sign-off). All roster rules and the analysis plan
 > were committed **before any wave-2 score existed** (`9438b0c`); commit hashes are
 > the reader's verification path. Single Claude-based pipeline (evaluatee:
 > claude-sonnet-5, pinned). Wave-2 is an **independent sample**; frozen wave-1
@@ -99,4 +100,3 @@ grading Claude-assisted with human finalization.
 
 *Companion: Issue #0 (`analysis/ISSUE_0_DRAFT.md`) and Issue #2 (holdout). Gate
 packet: `review_packets/RP-11_expansion_holdout.md`.*
-</content>

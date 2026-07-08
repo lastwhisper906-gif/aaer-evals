@@ -10,7 +10,7 @@
 |---|---|---|
 | `reproduce_analysis.py` (발행 수치 100/100) | ✅ 완전 포터블 | 커밋된 분석 산출물만 재계산 |
 | `lint_publication.py` (발행 정합) | ✅ 완전 포터블 | 커밋 문서·json만 |
-| `pytest` (76) | ✅ 완전 포터블 | 코드·픽스처만 |
+| `pytest` (113 passed·4 skipped, 스냅샷) | ✅ 완전 포터블 | 코드·픽스처만 |
 | `verify_manifest.py --schema-only` | ✅ 완전 포터블 | 매니페스트 자체 정합 |
 | `verify_blindness.py` | ✅ 완전 포터블 | runs/ 커밋 산출물 + git 이력 |
 | `make analysis`·`synthesis.py`·`calibration*.py` | ⚠️ **XBRL 캐시 필요** | `screens.run_case`가 `~/aaer-data` PIT 조회 |
@@ -28,13 +28,14 @@ git clone <repo> && cd aaer-evals
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 .venv/bin/python tools/reproduce_analysis.py            # → PASS 100/100
 .venv/bin/python tools/lint_publication.py              # → PASS
-.venv/bin/python -m pytest pipeline/ tools/ scoring/ -q # → 76 passed
+.venv/bin/python -m pytest pipeline/ tools/ scoring/ -q # → 113 passed 4 skipped (스냅샷, 증가 가능)
 .venv/bin/python tools/verify_manifest.py --schema-only # → PASS (402 파일 스키마)
 .venv/bin/python tools/verify_blindness.py              # → PASS (이력·카나리·runs)
 ```
 
-**2026-07-08 fresh-clone 실측 (HEAD ef63cfc 기준, temp dir)**: reproduce PASS 100/100 ·
-lint PASS · pytest **76 passed** · manifest --schema-only PASS(402) · blindness PASS.
+**2026-07-08 실측 (감사 후 스냅샷, temp dir)**: reproduce PASS 100/100 · lint PASS ·
+pytest **113 passed 4 skipped** · manifest --schema-only PASS(402) · blindness PASS.
+(pytest 수는 커밋마다 증가하는 스냅샷 — 정확 값보다 전건 PASS 여부가 기준.)
 
 ## 2. 캐시 포함 전체 경로 (`~/aaer-data` 있을 때)
 
