@@ -70,19 +70,29 @@ def neighbor_moves_within_band(trajectory: list[tuple[float, float]],
 
 # ---------- I/O 래퍼 (채점 산출물 있을 때만) ----------
 
-def _snapshot0_p(case_id: str) -> int | None:
-    for d in (REPO / "runs" / "main", REPO / "runs" / "wave2" / "scores"):
+# 스냅샷0(t=0, 폭로 컷오프) 재사용 소스 — **프레임 일관 필수**: 교란 궤적의 t=0은
+# 교란 본실행 점수여야 한다(정체 프레임 runs/main과 섞으면 안 됨). Unit 4 원본 궤적만
+# 정체 프레임 점수 사용.
+SNAPSHOT0_SOURCES = {
+    "perturbed": (REPO / "runs" / "perturbed", REPO / "runs" / "wave2" / "perturbed"),
+    "original": (REPO / "runs" / "main", REPO / "runs" / "wave2" / "scores"),
+}
+
+
+def _snapshot0_p(case_id: str, frame: str) -> int | None:
+    for d in SNAPSHOT0_SOURCES[frame]:
         f = d / f"{case_id}.json"
         if f.is_file():
             return json.loads(f.read_text(encoding="utf-8"))["misstatement_probability"]
-    return None
+    return None  # 예: 교란 프레임 대조군 — runs/perturbed는 fraud만 (OWNER_QUEUE Q-E06)
 
 
 def assemble_trajectory(base_case_id: str, revelation: dt.date, snapshot_dir: Path,
-                        snapshot_cases: list[dict]) -> list[tuple[float, float]]:
-    """스냅샷0(본실행 재사용) + 채점된 스냅샷 j → [(t, p)] 궤적."""
+                        snapshot_cases: list[dict], frame: str = "perturbed") -> list[tuple[float, float]]:
+    """스냅샷0(프레임 일관 본실행 재사용) + 채점된 스냅샷 j → [(t, p)] 궤적.
+    frame='perturbed'(헤드라인) | 'original'(Unit 4). 스냅샷0 부재 시 t=0 생략(j=1부터)."""
     traj: list[tuple[float, float]] = []
-    p0 = _snapshot0_p(base_case_id)
+    p0 = _snapshot0_p(base_case_id, frame)
     if p0 is not None:
         traj.append((0.0, float(p0)))
     for sc in snapshot_cases:

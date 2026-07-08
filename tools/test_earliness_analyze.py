@@ -44,3 +44,29 @@ def test_noise_band():
     traj = [(0, 50), (2, 52), (4, 40)]  # 50->52 (밴드 내), 52->40 (밴드 밖)
     # t 오름차순: (0,50)->(2,52) diff 2 <=6.3 True ; (2,52)->(4,40) diff 12 >6.3 False
     assert ea.neighbor_moves_within_band(traj) == [True, False]
+
+
+def test_snapshot0_frame_consistency(tmp_path, monkeypatch):
+    import json
+    pert = tmp_path / "perturbed"; ident = tmp_path / "main"
+    pert.mkdir(); ident.mkdir()
+    (pert / "case_39.json").write_text(json.dumps({"misstatement_probability": 58}))
+    (ident / "case_39.json").write_text(json.dumps({"misstatement_probability": 90}))
+    monkeypatch.setattr(ea, "SNAPSHOT0_SOURCES",
+                        {"perturbed": (pert,), "original": (ident,)})
+    # 교란 궤적의 t=0은 교란 본실행(58)이어야 한다 — 정체(90) 아님 (프레임 일관 버그 회귀)
+    assert ea._snapshot0_p("case_39", "perturbed") == 58
+    assert ea._snapshot0_p("case_39", "original") == 90
+    assert ea._snapshot0_p("case_04", "perturbed") is None  # 교란 본실행 부재(대조군)
+
+
+def test_assemble_trajectory_omits_missing_snapshot0(tmp_path, monkeypatch):
+    import json
+    import datetime as dt
+    snapdir = tmp_path / "snaps"; snapdir.mkdir()
+    (snapdir / "case_04_s1.json").write_text(json.dumps({"misstatement_probability": 30}))
+    monkeypatch.setattr(ea, "SNAPSHOT0_SOURCES", {"perturbed": (tmp_path / "none",)})
+    traj = ea.assemble_trajectory(
+        "case_04", dt.date(2019, 2, 20), snapdir,
+        [{"case_id": "case_04_s1", "cutoff_date": "2018-11-01"}], frame="perturbed")
+    assert len(traj) == 1 and traj[0][1] == 30.0 and traj[0][0] > 0  # t=0 생략, j=1만

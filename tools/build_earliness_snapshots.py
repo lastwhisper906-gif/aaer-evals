@@ -91,16 +91,40 @@ def _meta(case: dict) -> dict:
             "company_name": case["company_name"], "revelation_cutoff": case["cutoff_date"]}
 
 
-def build_case_grid(elig: dict, *, max_snapshots: int, day_offset: int) -> eg.Grid:
-    """케이스의 스냅샷 그리드 (캐시 필요). load_filing_chronology = filed<=폭로컷오프."""
+def _residual_at(chrono: list[dict], cutoff) -> tuple[int, int]:
+    """스냅샷 컷오프 시점의 잔존 제출 수 · 10-K 수 (§1 최소 요건 판정용)."""
+    import datetime as dt
+    res = [r for r in chrono if dt.date.fromisoformat(r["filing_date"]) <= cutoff]
+    tenk = sum(1 for r in res if r["form"].upper().startswith("10-K"))
+    return len(res), tenk
+
+
+def filter_min_data(grid: eg.Grid, chrono: list[dict], *, min_filings: int) -> eg.Grid:
+    """§1 스냅샷 최소 요건 — 잔존 제출 ≥min_filings 및 10-K ≥1 아니면 drop(insufficient_data).
+    MON 본실행 수준 바닥. 깊은(이른) 스냅샷일수록 잔존이 적어 자연히 이 필터에 걸린다."""
+    kept, dropped = [], list(grid.dropped)
+    for s in grid.snapshots:
+        n, tenk = _residual_at(chrono, s.cutoff)
+        if n < min_filings or tenk < 1:
+            dropped.append(eg.DroppedSnapshot(s.j, s.boundary_filed, "insufficient_data"))
+        else:
+            kept.append(s)
+    return eg.Grid(snapshots=kept, dropped=dropped, max_depth=grid.max_depth)
+
+
+def build_case_grid(elig: dict, *, max_snapshots: int, day_offset: int,
+                    min_filings: int = MIN_RESIDUAL_FILINGS) -> eg.Grid:
+    """케이스의 스냅샷 그리드 (캐시 필요). load_filing_chronology = filed<=폭로컷오프.
+    §1 최소 요건(잔존 ≥6, 10-K ≥1) 미달 스냅샷은 insufficient_data로 drop."""
     import datetime as dt
     rev = dt.date.fromisoformat(elig["revelation_cutoff"])
     chrono = bp.load_filing_chronology(elig["ticker"], rev)  # [{form, filing_date}]
     periodic = [dt.date.fromisoformat(r["filing_date"]) for r in chrono
                 if eg.is_periodic_filing(r["form"])]
     allf = [dt.date.fromisoformat(r["filing_date"]) for r in chrono]
-    return eg.compute_snapshot_grid(periodic, allf, rev,
+    grid = eg.compute_snapshot_grid(periodic, allf, rev,
                                     max_snapshots=max_snapshots, day_offset=day_offset)
+    return filter_min_data(grid, chrono, min_filings=min_filings)
 
 
 def snapshot_case(elig: dict, snap: eg.Snapshot) -> dict:

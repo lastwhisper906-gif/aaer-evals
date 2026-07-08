@@ -70,7 +70,7 @@ def test_build_case_grid_on_synthetic_cache(tmp_path, monkeypatch):
     monkeypatch.setattr(bp, "DATA_DIR", root)
     e = {"case_id": "case_99", "ticker": "TST", "cik": "1",
          "company_name": "T", "revelation_cutoff": "2015-01-01"}
-    grid = be.build_case_grid(e, max_snapshots=8, day_offset=1)
+    grid = be.build_case_grid(e, max_snapshots=8, day_offset=1, min_filings=1)  # 그리드 로직만 격리
     # 정기 제출 4건(10-K/10-Q) → 최신 8/1(10-K)이 j=1. 8-K(6/15)는 경계 아님.
     assert [s.boundary_filed.isoformat() for s in grid.snapshots] == \
         ["2014-08-01", "2014-05-01", "2013-08-01", "2013-03-01"]
@@ -93,6 +93,31 @@ def test_guard_snapshot_allows_within_revelation(tmp_path):
           "cutoff_date": "2015-08-01"}
     assert be.guard_snapshot(reg, "case_39", sc, log) == "allowed"
     assert '"verdict": "allowed"' in log.read_text(encoding="utf-8")  # smoke-test 요건 a
+
+
+def test_filter_min_data_drops_shallow_and_no_10k():
+    snaps = [be.eg.Snapshot(1, dt.date(2015, 8, 2), dt.date(2015, 8, 1)),
+             be.eg.Snapshot(2, dt.date(2015, 3, 2), dt.date(2015, 3, 1)),
+             be.eg.Snapshot(3, dt.date(2014, 3, 2), dt.date(2014, 3, 1))]
+    grid = be.eg.Grid(snapshots=snaps, dropped=[], max_depth=3)
+    chrono = ([{"form": "10-K", "filing_date": "2014-03-01"}] +
+              [{"form": "10-Q", "filing_date": f"2014-{m:02d}-01"} for m in range(4, 13)] +
+              [{"form": "10-K", "filing_date": "2015-03-01"},
+               {"form": "10-Q", "filing_date": "2015-06-01"}])
+    out = be.filter_min_data(grid, chrono, min_filings=6)
+    kept = [s.j for s in out.snapshots]
+    assert kept == [1, 2]                       # j=3 (2014-03-02): 잔존 1건 <6 → drop
+    assert (3, "insufficient_data") in {(d.j, d.reason) for d in out.dropped}
+
+
+def test_filter_min_data_requires_a_10k():
+    # 잔존 ≥6 이어도 10-K가 하나도 없으면 drop (§1 "10-K ≥1").
+    snaps = [be.eg.Snapshot(1, dt.date(2015, 8, 2), dt.date(2015, 8, 1))]
+    grid = be.eg.Grid(snapshots=snaps, dropped=[], max_depth=1)
+    chrono = [{"form": "10-Q", "filing_date": f"2015-0{m}-01"} for m in range(1, 8)]  # 7건, 10-K 0
+    out = be.filter_min_data(grid, chrono, min_filings=6)
+    assert out.snapshots == []
+    assert out.dropped[0].reason == "insufficient_data"
 
 
 def test_guard_snapshot_fails_closed_past_revelation(tmp_path):
