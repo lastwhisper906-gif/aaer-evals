@@ -115,3 +115,8 @@ E1 보류(§5-1, Q-E03) · E2/E4/E5 launch-ready(Q-E01). 소유자 액션 4 =
   frame, --perturbed 없음, 32사 전건); draw-3 = 동일 `--out .../draw_3`. E4 =
   `analysis/CROSSMODEL_PLAN.md` 서브셋 `--model claude-opus-4-8`. E2 = Q-E05 하네스 선구현.
   전건 verify_blindness --write-manifest → commit → push → CI green → 본 가계부 갱신.
+
+## 하드닝 세션 (2026-07-08, ZERO metered) — 진행 중
+- 브랜치 `hardening/2026-07-08`, 베이스 94c8487(pre-flight green). 미터링 0·네트워크 0·frozen 불침해.
+- Track 2 완료: 채점자 일치도 SPOT-CHECK(N=6, 플래그뒤집힘 0) → analysis/grader_agreement.{md,csv}, Q-E08.
+- Track 3 완료: cutoff_guard EDGAR accession 교차검증 의무화(edgar_sourced 플래그, 기존 caller 불변) + 테스트 4.
