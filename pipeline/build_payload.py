@@ -141,14 +141,20 @@ def build_payload(case: dict, perturb: bool = False) -> dict:
     cutoff = _iso(case["cutoff_date"])
     series = load_pit_series(case["ticker"], cutoff)
     chronology = load_filing_chronology(case["ticker"], cutoff)
-    fields = dict(case)
+    # base_id: 조기성 스냅샷(EARLINESS_PLAN §2)에서 한 케이스의 모든 스냅샷이 동일한
+    # 교란 k·동일 마스킹 정체를 공유해 "궤적 내 점 비교"가 성립하도록 하는 선택적 시드.
+    # 부재 시 case_id로 폴백 = 기존 동작 완전 동일(하위호환). base_id 자체는 페이로드
+    # 밖으로 새지 않는다(제어 필드). 출력 파일명·run_id는 러너가 top-level case_id 사용.
+    base_id = case.get("base_id", case["case_id"])
+    fields = {k2: v for k2, v in case.items() if k2 != "base_id"}
+    fields["case_id"] = base_id
     k = 1.0
     if perturb:
-        k = perturb_factor(case["case_id"])
+        k = perturb_factor(base_id)
         fields = {
-            "case_id": case["case_id"],
-            "ticker": f"XX{case['case_id'][-2:]}",
-            "company_name": f"Company {case['case_id'].upper()}",
+            "case_id": base_id,
+            "ticker": f"XX{base_id[-2:]}",
+            "company_name": f"Company {base_id.upper()}",
             "cutoff_date": case["cutoff_date"],
             # cik 제공하지 않음 (probes.md ② 규칙 1)
         }
