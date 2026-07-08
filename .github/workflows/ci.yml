@@ -23,6 +23,8 @@ jobs:
         run: python tools/verify_manifest.py --schema-only
       - name: RP-05 발행 수치 재현 (커밋 산출물만 의존 — skip 금지, RP-06 B2)
         run: python tools/reproduce_analysis.py
+      - name: 현행 헤드라인 재계산 (8v22 primary/secondary + wave-2, 동결 점수 ↔ committed JSON — 감사 B2)
+        run: python tools/reproduce_headline.py
       - name: 블라인드·카나리·runs 매니페스트 검증 (커밋 산출물만 의존 — skip 금지, RP-06 B3)
         run: python tools/verify_blindness.py
       - name: 발행 정합 린트 (0% 오탐·G2-fraud·대조군주어·pooled·EXPLORATORY·stale — P4)

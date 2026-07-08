@@ -137,6 +137,12 @@ def run_case(case: dict, perturb: bool, out_dir: Path, log_dir: Path) -> dict:
     (log_dir / f"runmeta_{variant}_{cid}.json").write_text(
         json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
 
+    # 카나리 GUID가 피평가자 출력에 등장 = 암기/누출 신호. 입력 가드(guard_payload)가 막는
+    # '반입'과 달리 '출력 누출'은 즉시 무효 처리한다(fail-closed, B18). verify_blindness의
+    # downstream 포착보다 탐지 즉시 앞단에서 FAIL — 오염 출력이 runs/에 기록되지 않게.
+    if canary_hit:
+        return {"case_id": cid, "status": "FAIL (canary_in_output — 암기 누출 신호)"}
+
     if not r.ok:
         return {"case_id": cid, "status": f"FAIL ({r.fail_reason})"}
 

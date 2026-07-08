@@ -50,3 +50,24 @@ def test_empty_evidence_fails():
 def test_p_below_40_allows_empty_mechanism():
     # p<40 이면 mechanism 비어도 계약상 허용 (조건부가 과잉 차단하지 않음)
     assert runner._full_output_error(_valid_full(p=20, mechs=0)) is None
+
+
+def test_canary_in_output_fails_the_case(tmp_path, monkeypatch):
+    """B18: 카나리 GUID가 피평가자 출력에 등장하면 run_case가 FAIL(누출 앞단 차단)."""
+    from cli_client import CallResult
+    log_dir = tmp_path / "log"; log_dir.mkdir()
+    payload = {"variant": "perturbed",
+               "case": {"company_name": "Company X", "ticker": "XX99",
+                        "case_id": "case_99", "cutoff_date": "2020-01-01"},
+               "financial_series_point_in_time": {}, "filing_chronology": [], "_k_internal": 1.0}
+    monkeypatch.setattr(runner.bp, "build_payload", lambda case, perturb=False: dict(payload))
+    monkeypatch.setattr(runner.cli_client, "output_is_valid", lambda *a, **k: False)
+    leaked = CallResult(ok=True, structured={"misstatement_probability": 50, "x": "9fa11f98"},
+                        fail_reason=None, served_models=["claude-sonnet-5"], pin_ok=True,
+                        session_id=None, usage=None, total_cost_usd=None, attempts=1,
+                        wall_seconds=1.0, raw_result_text=None)
+    monkeypatch.setattr(runner.cli_client, "call_model", lambda *a, **k: leaked)
+    res = runner.run_case({"case_id": "case_99", "ticker": "XX99", "cik": "1",
+                           "cutoff_date": "2020-01-01"}, True, tmp_path / "out", log_dir)
+    assert res["status"].startswith("FAIL (canary")
+    assert not (tmp_path / "out" / "case_99.json").exists()  # 오염 출력 미기록
