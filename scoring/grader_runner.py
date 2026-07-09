@@ -153,6 +153,8 @@ def main() -> int:
                     help="RP-09: v2 대조군은 data/candidates/candidates_v2_controls.json")
     ap.add_argument("--mapping", default="scoring/id_mapping.json",
                     help="파일럿은 scoring/id_mapping_pilot.json")
+    ap.add_argument("--pattern", default="case_*.json",
+                    help="runs 파일 글롭 (E1 홀드아웃 대조군은 hc_*.json — 기본 무변경)")
     args = ap.parse_args()
 
     cli_client.assert_no_metered_credentials()
@@ -169,7 +171,7 @@ def main() -> int:
 
     failures = 0
     try:
-        for run_file in sorted((REPO / args.runs).glob("case_*.json")):
+        for run_file in sorted((REPO / args.runs).glob(args.pattern)):
             output = json.loads(run_file.read_text(encoding="utf-8"))
             neutral = output["case_id"]
             status = grade_one(neutral, mapping[neutral], output, out_dir, log_dir, note,

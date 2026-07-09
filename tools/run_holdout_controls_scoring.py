@@ -152,6 +152,7 @@ def main():
     elif a.stage == "grade":
         run([py, "scoring/grader_runner.py", "--runs", "runs/holdout/controls/scores",
              "--out", "scoring/grades_holdout_controls",
+             "--pattern", "hc_*.json",
              "--mapping", str(MAP_DEST.relative_to(REPO)),
              "--candidates", str(CAND_DEST.relative_to(REPO))])
     return 0

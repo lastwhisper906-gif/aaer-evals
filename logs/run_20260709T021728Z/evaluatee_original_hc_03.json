@@ -1,0 +1,59 @@
+{
+  "ts": "2026-07-09T02:20:02.576256+00:00",
+  "harness_pin": "2.1.201",
+  "flags": [
+    "claude",
+    "-p",
+    "--model",
+    "claude-sonnet-5",
+    "--output-format",
+    "json",
+    "--max-turns",
+    "2",
+    "--setting-sources",
+    "",
+    "--strict-mcp-config",
+    "--tools",
+    "",
+    "--disallowedTools",
+    "Bash,Read,Edit,Write,Glob,Grep,WebFetch,WebSearch,Task,NotebookEdit",
+    "--system-prompt",
+    "You are analyzing the financial reporting quality of GridAI Technologies Corp. (GRDX, CIK 0001604191) using only the structured data provided below, which reflects public filings available on or befor...[1747 chars]",
+    "--json-schema",
+    "{\"type\": \"object\", \"additionalProperties\": false, \"required\": [\"checklist\", \"misstatement_probability\", \"mechanism_hypotheses\", \"overall\"], \"properties\": {\"checklist\": {\"type\": \"array\", \"items\": {\"typ...[1821 chars]"
+  ],
+  "model_requested": "claude-sonnet-5",
+  "served_models": [
+    "claude-sonnet-5"
+  ],
+  "pin_ok": true,
+  "ok": true,
+  "fail_reason": null,
+  "session_id": "4148798f-4106-4d4f-b620-6ce3b3e92f87",
+  "usage": {
+    "input_tokens": 4,
+    "cache_creation_input_tokens": 90431,
+    "cache_read_input_tokens": 78293,
+    "output_tokens": 17962,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 90431,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [],
+    "speed": "standard"
+  },
+  "total_cost_usd_reference_only": 0.8355159000000001,
+  "attempts": 1,
+  "wall_seconds": 153.6,
+  "freeze": {
+    "head": "c47a1554b619559e77c5fbefcb78a79eea37a3da",
+    "clean_tree": false
+  },
+  "raw_tail": null
+}

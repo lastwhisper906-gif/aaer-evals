@@ -1,0 +1,554 @@
+{
+  "case_id": "hc_03",
+  "run_id": "original-hc_03-r1",
+  "model": "claude-sonnet-5",
+  "pipeline_version": "c47a1554b619559e77c5fbefcb78a79eea37a3da",
+  "run_timestamp": "2026-07-09T02:20:02.681738+00:00",
+  "documents_used": [
+    {
+      "accession_no": "0001104659-25-114181",
+      "form_type": "10-Q",
+      "filing_date": "2025-11-19"
+    },
+    {
+      "accession_no": "0001140361-22-012347",
+      "form_type": "10-K",
+      "filing_date": "2022-03-31"
+    },
+    {
+      "accession_no": "0001410578-22-001818",
+      "form_type": "10-Q",
+      "filing_date": "2022-05-23"
+    },
+    {
+      "accession_no": "0001410578-22-002519",
+      "form_type": "10-Q",
+      "filing_date": "2022-08-15"
+    },
+    {
+      "accession_no": "0001410578-22-003295",
+      "form_type": "10-Q",
+      "filing_date": "2022-11-14"
+    },
+    {
+      "accession_no": "0001410578-23-000299",
+      "form_type": "10-K",
+      "filing_date": "2023-03-20"
+    },
+    {
+      "accession_no": "0001410578-23-001056",
+      "form_type": "10-Q",
+      "filing_date": "2023-05-12"
+    },
+    {
+      "accession_no": "0001410578-23-001882",
+      "form_type": "10-Q",
+      "filing_date": "2023-08-14"
+    },
+    {
+      "accession_no": "0001410578-23-002410",
+      "form_type": "10-Q",
+      "filing_date": "2023-11-13"
+    },
+    {
+      "accession_no": "0001410578-24-000364",
+      "form_type": "10-K",
+      "filing_date": "2024-03-29"
+    },
+    {
+      "accession_no": "0001410578-24-000826",
+      "form_type": "10-Q",
+      "filing_date": "2024-05-14"
+    },
+    {
+      "accession_no": "0001410578-24-001685",
+      "form_type": "10-Q",
+      "filing_date": "2024-10-21"
+    },
+    {
+      "accession_no": "0001410578-24-001914",
+      "form_type": "10-Q",
+      "filing_date": "2024-11-13"
+    },
+    {
+      "accession_no": "0001410578-25-000673",
+      "form_type": "10-K/A",
+      "filing_date": "2025-04-09"
+    },
+    {
+      "accession_no": "0001410578-25-001311",
+      "form_type": "10-Q",
+      "filing_date": "2025-05-15"
+    },
+    {
+      "accession_no": "0001410578-25-001790",
+      "form_type": "10-Q",
+      "filing_date": "2025-08-14"
+    },
+    {
+      "accession_no": "0001654954-16-004305",
+      "form_type": "10-Q",
+      "filing_date": "2016-11-25"
+    },
+    {
+      "accession_no": "0001654954-17-002925",
+      "form_type": "10-K",
+      "filing_date": "2017-03-31"
+    },
+    {
+      "accession_no": "0001654954-17-004617",
+      "form_type": "10-Q",
+      "filing_date": "2017-05-15"
+    },
+    {
+      "accession_no": "0001654954-17-007518",
+      "form_type": "10-Q",
+      "filing_date": "2017-08-14"
+    },
+    {
+      "accession_no": "0001654954-17-010488",
+      "form_type": "10-Q",
+      "filing_date": "2017-11-13"
+    },
+    {
+      "accession_no": "0001654954-18-002715",
+      "form_type": "10-K",
+      "filing_date": "2018-03-16"
+    },
+    {
+      "accession_no": "0001654954-18-005247",
+      "form_type": "10-Q",
+      "filing_date": "2018-05-14"
+    },
+    {
+      "accession_no": "0001654954-18-008831",
+      "form_type": "10-Q",
+      "filing_date": "2018-08-13"
+    },
+    {
+      "accession_no": "0001654954-18-012327",
+      "form_type": "10-Q",
+      "filing_date": "2018-11-09"
+    },
+    {
+      "accession_no": "0001654954-19-003863",
+      "form_type": "10-K",
+      "filing_date": "2019-04-01"
+    },
+    {
+      "accession_no": "0001654954-19-006140",
+      "form_type": "10-Q",
+      "filing_date": "2019-05-15"
+    },
+    {
+      "accession_no": "0001654954-19-009273",
+      "form_type": "10-Q",
+      "filing_date": "2019-08-13"
+    },
+    {
+      "accession_no": "0001654954-19-012997",
+      "form_type": "10-Q",
+      "filing_date": "2019-11-14"
+    },
+    {
+      "accession_no": "0001654954-20-003530",
+      "form_type": "10-K",
+      "filing_date": "2020-03-30"
+    },
+    {
+      "accession_no": "0001654954-20-005632",
+      "form_type": "10-Q",
+      "filing_date": "2020-05-15"
+    },
+    {
+      "accession_no": "0001654954-20-009182",
+      "form_type": "10-Q",
+      "filing_date": "2020-08-14"
+    },
+    {
+      "accession_no": "0001654954-20-012500",
+      "form_type": "10-Q",
+      "filing_date": "2020-11-16"
+    },
+    {
+      "accession_no": "0001654954-21-003659",
+      "form_type": "10-K",
+      "filing_date": "2021-03-31"
+    },
+    {
+      "accession_no": "0001654954-21-006184",
+      "form_type": "10-Q",
+      "filing_date": "2021-05-24"
+    },
+    {
+      "accession_no": "0001654954-21-009097",
+      "form_type": "10-Q",
+      "filing_date": "2021-08-16"
+    },
+    {
+      "accession_no": "0001851734-21-000108",
+      "form_type": "10-Q/A",
+      "filing_date": "2021-11-16"
+    }
+  ],
+  "checklist": [
+    {
+      "item_id": "CL1",
+      "question": "Did receivables grow materially faster than revenue across consecutive periods?",
+      "finding": "flag",
+      "confidence": "high",
+      "evidence": [
+        {
+          "quote": "AccountsReceivableNetCurrent=1,104,134 (2017-12-31)",
+          "source_accession_no": "0001654954-19-003863",
+          "location": "10-K FY2018 balance sheet, prior-year comparative"
+        },
+        {
+          "quote": "AccountsReceivableNetCurrent=3,172,676 (2018-12-31)",
+          "source_accession_no": "0001654954-20-003530",
+          "location": "10-K FY2019 balance sheet, prior-year comparative"
+        },
+        {
+          "quote": "Revenues=0 (2018-12-31)",
+          "source_accession_no": "0001654954-20-003530",
+          "location": "10-K FY2019 income statement, prior-year comparative"
+        },
+        {
+          "quote": "Revenues=0 (2019-12-31)",
+          "source_accession_no": "0001654954-20-003530",
+          "location": "10-K FY2019 income statement"
+        },
+        {
+          "quote": "AccountsReceivableNetCurrent=2,637,303 (2019-12-31)",
+          "source_accession_no": "0001654954-21-003659",
+          "location": "10-K FY2020 balance sheet, prior-year comparative"
+        }
+      ]
+    },
+    {
+      "item_id": "CL2",
+      "question": "Did non-current 'soft' assets (intangibles, other assets, capitalized items) grow materially faster than the business overall?",
+      "finding": "flag",
+      "confidence": "high",
+      "evidence": [
+        {
+          "quote": "Goodwill=1,684,182 (2023-12-31)",
+          "source_accession_no": "0001410578-25-001790",
+          "location": "10-Q Q2 2025 balance sheet, prior-year comparative"
+        },
+        {
+          "quote": "Goodwill=20,038,508 (2024-03-31)",
+          "source_accession_no": "0001410578-24-000826",
+          "location": "10-Q Q1 2024 balance sheet"
+        },
+        {
+          "quote": "Goodwill=1,684,182 (2024-06-30)",
+          "source_accession_no": "0001410578-24-001685",
+          "location": "10-Q Q2 2024 balance sheet"
+        },
+        {
+          "quote": "IntangibleAssetsNetExcludingGoodwill=63,365,486 (2024-03-31)",
+          "source_accession_no": "0001410578-24-000826",
+          "location": "10-Q Q1 2024 balance sheet"
+        },
+        {
+          "quote": "Assets=6,883,195 (2023-12-31)",
+          "source_accession_no": "0001410578-25-000673",
+          "location": "10-K/A FY2023 balance sheet"
+        },
+        {
+          "quote": "Assets=91,133,902 (2024-03-31)",
+          "source_accession_no": "0001410578-24-000826",
+          "location": "10-Q Q1 2024 balance sheet"
+        },
+        {
+          "quote": "Goodwill=25,796,163 (2025-09-30)",
+          "source_accession_no": "0001104659-25-114181",
+          "location": "10-Q Q3 2025 balance sheet"
+        }
+      ]
+    },
+    {
+      "item_id": "CL3",
+      "question": "Is there a persistent divergence between net income and operating cash flow?",
+      "finding": "flag",
+      "confidence": "high",
+      "evidence": [
+        {
+          "quote": "NetIncomeLoss=4,391,331 (2022-07-01 to 2022-09-30)",
+          "source_accession_no": "0001410578-22-003295",
+          "location": "10-Q Q3 2022 income statement"
+        },
+        {
+          "quote": "NetCashProvidedByUsedInOperatingActivities=-22,344,079 (2022-01-01 to 2022-12-31)",
+          "source_accession_no": "0001410578-24-000364",
+          "location": "10-K FY2022 cash flow statement"
+        },
+        {
+          "quote": "NetIncomeLoss=5,567,606 (2024-01-01 to 2024-03-31)",
+          "source_accession_no": "0001410578-25-001311",
+          "location": "10-Q Q1 2025 income statement, prior-year comparative"
+        },
+        {
+          "quote": "NetCashProvidedByUsedInOperatingActivities=-3,746,956 (2024-01-01 to 2024-03-31)",
+          "source_accession_no": "0001410578-25-001311",
+          "location": "10-Q Q1 2025 cash flow statement, prior-year comparative"
+        },
+        {
+          "quote": "NetCashProvidedByUsedInOperatingActivities=-9,217,823 (2024-01-01 to 2024-12-31)",
+          "source_accession_no": "0001410578-25-000673",
+          "location": "10-K/A FY2024 cash flow statement"
+        }
+      ]
+    },
+    {
+      "item_id": "CL4",
+      "question": "Do inventory levels or gross margins show trends inconsistent with revenue?",
+      "finding": "insufficient_data",
+      "confidence": "high",
+      "evidence": [
+        {
+          "quote": "Revenues=0 (2018-12-31)",
+          "source_accession_no": "0001654954-20-003530",
+          "location": "10-K FY2019 income statement"
+        },
+        {
+          "quote": "Revenues=0 (2019-12-31)",
+          "source_accession_no": "0001654954-20-003530",
+          "location": "10-K FY2019 income statement"
+        }
+      ]
+    },
+    {
+      "item_id": "CL5",
+      "question": "Is the earnings trajectory unusually smooth relative to the volatility of revenue and cash flow?",
+      "finding": "no_flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "NetIncomeLoss=-58,537,849 (2021-01-01 to 2021-12-31)",
+          "source_accession_no": "0001410578-23-000299",
+          "location": "10-K FY2021 income statement"
+        },
+        {
+          "quote": "NetIncomeLoss=-14,629,642 (2022-01-01 to 2022-12-31)",
+          "source_accession_no": "0001410578-24-000364",
+          "location": "10-K FY2022 income statement"
+        },
+        {
+          "quote": "NetIncomeLoss=4,391,331 (2022-07-01 to 2022-09-30)",
+          "source_accession_no": "0001410578-22-003295",
+          "location": "10-Q Q3 2022 income statement"
+        }
+      ]
+    },
+    {
+      "item_id": "CL6",
+      "question": "Did liability, allowance, or reserve balances decline (or fail to grow) despite growing business activity?",
+      "finding": "flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "Liabilities=19,611,526 (2021-12-31)",
+          "source_accession_no": "0001410578-23-000299",
+          "location": "10-K FY2021 balance sheet"
+        },
+        {
+          "quote": "Liabilities=2,697,547 (2022-12-31)",
+          "source_accession_no": "0001410578-24-000364",
+          "location": "10-K FY2022 balance sheet"
+        },
+        {
+          "quote": "Liabilities=27,605,144 (2024-12-31)",
+          "source_accession_no": "0001104659-25-114181",
+          "location": "10-Q Q3 2025 balance sheet, prior-year comparative"
+        },
+        {
+          "quote": "Liabilities=45,808,262 (2025-09-30)",
+          "source_accession_no": "0001104659-25-114181",
+          "location": "10-Q Q3 2025 balance sheet"
+        }
+      ]
+    },
+    {
+      "item_id": "CL7",
+      "question": "Does the filing chronology show irregularities (late filings/NT forms, amendments, unusual 8-K frequency)?",
+      "finding": "flag",
+      "confidence": "high",
+      "evidence": [
+        {
+          "quote": "NT 10-Q filing_date=2021-05-18",
+          "source_accession_no": "n/a",
+          "location": "filing chronology"
+        },
+        {
+          "quote": "NT 10-Q filing_date=2022-05-17",
+          "source_accession_no": "n/a",
+          "location": "filing chronology"
+        },
+        {
+          "quote": "NT 10-Q filing_date=2024-08-15",
+          "source_accession_no": "n/a",
+          "location": "filing chronology"
+        },
+        {
+          "quote": "NT 10-K filing_date=2025-04-01",
+          "source_accession_no": "n/a",
+          "location": "filing chronology"
+        },
+        {
+          "quote": "10-K/A filing_date=2025-04-09",
+          "source_accession_no": "0001410578-25-000673",
+          "location": "filing chronology"
+        },
+        {
+          "quote": "NT 10-Q filing_date=2025-11-17",
+          "source_accession_no": "n/a",
+          "location": "filing chronology"
+        },
+        {
+          "quote": "SEC STAFF ACTION filing_date=2025-09-26",
+          "source_accession_no": "n/a",
+          "location": "filing chronology"
+        }
+      ]
+    },
+    {
+      "item_id": "CL8",
+      "question": "Is the provided data sufficient in coverage and length for the above assessments?",
+      "finding": "insufficient_data",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "Revenues=0 (2018-12-31)",
+          "source_accession_no": "0001654954-20-003530",
+          "location": "10-K FY2019 income statement - only two revenue data points provided in entire series"
+        },
+        {
+          "quote": "Revenues=0 (2019-12-31)",
+          "source_accession_no": "0001654954-20-003530",
+          "location": "10-K FY2019 income statement - no inventory concept provided anywhere in series"
+        }
+      ]
+    }
+  ],
+  "misstatement_probability": 78,
+  "mechanism_hypotheses": [
+    {
+      "affected_line_items": [
+        "Goodwill",
+        "IntangibleAssetsNetExcludingGoodwill",
+        "Assets"
+      ],
+      "direction": "overstated",
+      "accounting_treatment": "Business combination / purchase price allocation (ASC 805) irregularity: goodwill and intangibles spike ~12x in a single quarter (Q1 2024) then goodwill reverts to the prior small balance the very next quarter while total Assets remain ~$85-91M for several subsequent quarters, and Goodwill later re-spikes to $25.8M in Q3 2025 - a pattern inconsistent with normal, one-time acquisition accounting and suggestive of misallocated purchase price, unsupported intangible valuations, or failure to record/complete an impairment/reclassification consistently across periods.",
+      "rationale_evidence": [
+        {
+          "quote": "Goodwill=1,684,182 (2023-12-31)",
+          "source_accession_no": "0001410578-25-001790",
+          "location": "10-Q Q2 2025 balance sheet, prior-year comparative"
+        },
+        {
+          "quote": "Goodwill=20,038,508 (2024-03-31)",
+          "source_accession_no": "0001410578-24-000826",
+          "location": "10-Q Q1 2024 balance sheet"
+        },
+        {
+          "quote": "IntangibleAssetsNetExcludingGoodwill=63,365,486 (2024-03-31)",
+          "source_accession_no": "0001410578-24-000826",
+          "location": "10-Q Q1 2024 balance sheet"
+        },
+        {
+          "quote": "Goodwill=1,684,182 (2024-06-30)",
+          "source_accession_no": "0001410578-24-001685",
+          "location": "10-Q Q2 2024 balance sheet"
+        },
+        {
+          "quote": "Assets=91,133,902 (2024-03-31)",
+          "source_accession_no": "0001410578-24-000826",
+          "location": "10-Q Q1 2024 balance sheet"
+        },
+        {
+          "quote": "Goodwill=25,796,163 (2025-09-30)",
+          "source_accession_no": "0001104659-25-114181",
+          "location": "10-Q Q3 2025 balance sheet"
+        }
+      ]
+    },
+    {
+      "affected_line_items": [
+        "AccountsReceivableNetCurrent",
+        "Revenues"
+      ],
+      "direction": "overstated",
+      "accounting_treatment": "Receivables recognized/growing to material levels ($1.1M-$3.2M) while reported Revenues are $0 in the only two periods for which the Revenues concept is disclosed (FY2018, FY2019), suggesting either premature/improper receivable recognition unlinked to revenue-generating activity, misclassification of non-trade (e.g., related-party or financing) receivables as trade AR, or incomplete/inconsistent revenue recognition disclosure that masks the true relationship between billed amounts and recognized revenue.",
+      "rationale_evidence": [
+        {
+          "quote": "AccountsReceivableNetCurrent=3,172,676 (2018-12-31)",
+          "source_accession_no": "0001654954-20-003530",
+          "location": "10-K FY2019 balance sheet, prior-year comparative"
+        },
+        {
+          "quote": "Revenues=0 (2018-12-31)",
+          "source_accession_no": "0001654954-20-003530",
+          "location": "10-K FY2019 income statement, prior-year comparative"
+        },
+        {
+          "quote": "AccountsReceivableNetCurrent=2,637,303 (2019-12-31)",
+          "source_accession_no": "0001654954-21-003659",
+          "location": "10-K FY2020 balance sheet, prior-year comparative"
+        },
+        {
+          "quote": "Revenues=0 (2019-12-31)",
+          "source_accession_no": "0001654954-20-003530",
+          "location": "10-K FY2019 income statement"
+        }
+      ]
+    },
+    {
+      "affected_line_items": [
+        "NetIncomeLoss",
+        "OperatingIncomeLoss"
+      ],
+      "direction": "overstated",
+      "accounting_treatment": "Episodic large positive net income/operating income in isolated quarters (Q3 2022, Q1 2024) amid an otherwise continuous multi-year pattern of large losses and negative operating cash flow, with the positive quarters not translating into positive full-year or same-quarter operating cash flow - consistent with non-cash gains (e.g., fair value remeasurement of warrant/derivative liabilities, gain on debt extinguishment/settlement) being recorded within operating income rather than being cash-generative, artificially improving the reported earnings trend in specific periods.",
+      "rationale_evidence": [
+        {
+          "quote": "NetIncomeLoss=4,391,331 (2022-07-01 to 2022-09-30)",
+          "source_accession_no": "0001410578-22-003295",
+          "location": "10-Q Q3 2022 income statement"
+        },
+        {
+          "quote": "OperatingIncomeLoss=4,389,530 (2022-07-01 to 2022-09-30)",
+          "source_accession_no": "0001410578-22-003295",
+          "location": "10-Q Q3 2022 income statement"
+        },
+        {
+          "quote": "NetCashProvidedByUsedInOperatingActivities=-22,344,079 (2022-01-01 to 2022-12-31)",
+          "source_accession_no": "0001410578-24-000364",
+          "location": "10-K FY2022 cash flow statement"
+        },
+        {
+          "quote": "NetIncomeLoss=5,567,606 (2024-01-01 to 2024-03-31)",
+          "source_accession_no": "0001410578-25-001311",
+          "location": "10-Q Q1 2025 income statement, prior-year comparative"
+        },
+        {
+          "quote": "NetCashProvidedByUsedInOperatingActivities=-3,746,956 (2024-01-01 to 2024-03-31)",
+          "source_accession_no": "0001410578-25-001311",
+          "location": "10-Q Q1 2025 cash flow statement, prior-year comparative"
+        }
+      ]
+    }
+  ],
+  "overall": {
+    "risk_tier": "elevated",
+    "top_signals": [
+      "Material accounts receivable balances ($1.1M-$3.2M) reported in years where the Revenues concept is disclosed as $0 (FY2018, FY2019), indicating a disconnect between billed/receivable amounts and recognized revenue.",
+      "Goodwill and intangible assets spike roughly 12x in Q1 2024 (Goodwill=$20.04M, IntangibleAssetsNetExcludingGoodwill=$63.37M) then goodwill reverts to the prior ~$1.68M level the very next quarter while Assets stay elevated near $85-91M for multiple quarters, and goodwill re-spikes to $25.8M by Q3 2025 - a pattern inconsistent with normal one-time purchase accounting.",
+      "Isolated quarters of large positive net income/operating income (Q3 2022: +$4.39M; Q1 2024: +$5.57M) embedded within an otherwise persistent multi-year pattern of large losses, with full-year and same-quarter operating cash flow remaining sharply negative, suggesting non-cash/non-operating gains are driving reported profitability in specific periods.",
+      "Frequent late-filing notifications (multiple NT 10-Q and an NT 10-K) and numerous 10-K/A and 10-Q/A amendments across 2018-2025, plus a 'SEC STAFF ACTION' filing in September 2025, indicating recurring financial reporting/process control issues.",
+      "Extreme volatility in Liabilities and StockholdersEquity (e.g., Liabilities swinging from $19.6M to $2.7M year-over-year, and equity swinging between large positive and negative balances), inconsistent with a stable, organically growing (essentially pre-revenue) business."
+    ]
+  }
+}
