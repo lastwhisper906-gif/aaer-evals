@@ -37,11 +37,20 @@ RECOG_DIR = "runs/holdout/controls/recognition"
 CASE_ORDER = ["case_73", "case_71", "case_72"]
 
 
+GATE_FAILURES = REPO / "runs/holdout/controls/recognition/gate_failures.json"
+
+
 def rows():
     sel = json.loads(SEL.read_text(encoding="utf-8"))["selections"]
+    dropped = (json.loads(GATE_FAILURES.read_text(encoding="utf-8"))
+               if GATE_FAILURES.exists() else {})  # {case_id: [ticker,...]} — §2 탈락 기록
     out, n = [], 0
     for cid in CASE_ORDER:
-        for s in sel[cid]["selected"]:  # S2 랭크순 유지
+        bad = set(dropped.get(cid, []))
+        pool = sel[cid]["selected"] + sel[cid].get("alternates", [])  # S2 랭크순 승격
+        take = [s for s in pool
+                if (s.get("tickers") or ["UNK"])[0].upper() not in bad][:3]
+        for s in take:
             n += 1
             out.append({
                 "hc": f"hc_{n:02d}", "case_of": cid,
