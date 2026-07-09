@@ -781,3 +781,7 @@ c44bd59a…)는 **서명 없이 superseded** (채점 미진입 상태 폐기). v
 ## D29 — Phase 6: 영어 발행 표면 (2026-07-09, JSON 1줄)
 
 {"decision":"D29","date":"2026-07-09","action":"영어 README 전환 (무호출)","items":["git mv README.md→README.ko.md + 영어 README.md 신규 (Phase 1/3/4 최종 수치 반영: 57+9 확정, E1 HUBG만 분리·FPR 2/9, k=5 5/5 robust; standalone-유의성 백본 구조 그대로)","lint DOCS에 README.ko.md 추가 (하드코딩 리스트의 무음 탈락 맹점 폐쇄)","영어 맹점 자가 검열: zero/no-false-positives 문구 부재, G2 3사 문장 provisional/restatement 동반, EXPLORATORY 병기 확인","이슈 초안 3종은 원래 영어로 확인 — _EN 중복본 불요 (계획 항목 무효화 기록)"],"github_metadata":"repo description+topics는 기설정 (bg job fd9d67c4에서 완료 확인)","gates":"lint(양 README+canon)·reproduce 100/100·pytest·blindness green"}
+
+## D30 — repo rename aaer-project → aaer-evals (2026-07-10, JSON 1줄)
+
+{"decision":"D30","date":"2026-07-10","action":"gh repo rename — lastwhisper906-gif/aaer-project → lastwhisper906-gif/aaer-evals (소유자 승인, README 제목·로컬 디렉토리 일치화)","redirect":"GitHub 구이름 자동 리다이렉트; 로컬 remote URL 갱신 + fetch/CI 확인 완료","in_repo_refs":"저장소 내 aaer-project 자기참조 0건 (grep 확인)","note":"CI 확인 명령은 이제 gh run list --repo lastwhisper906-gif/aaer-evals"}

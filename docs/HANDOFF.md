@@ -1,4 +1,25 @@
-# HANDOFF.md — 세션 인수인계 (최종 갱신: 2026-07-09, RP-13 확정 — 채점 57건 human_finalized=true)
+# HANDOFF.md — 세션 인수인계 (최종 갱신: 2026-07-10, 6-약점 교정 계획 전 Phase 완료)
+
+## 6-약점 교정 세션 완료 요약 (2026-07-09~10, 소유자 입회 — D24~D30)
+
+- **Phase 1** 채점 57건 확정(D24, 오버라이드 0 + 고무도장 점검) → 이후 E1 9건
+  추가 확정(D26) — **계류 채점 0**.
+- **Phase 2** E5 §7 개정(홀드아웃 k=5 arm) + Q-E03 RESOLVED + 도구 4종 사전 커밋(D25).
+- **Phase 3 (E1)** 감독 fetch→선정 9사→비인지 게이트(FWRD 탈락→XPO 승격)→채점:
+  **HUBG 70만 매칭 대조군 상회** (RXO 42·BCO 30·XPO 20); WMK·GNE 분리 미검출;
+  FPR 2/9 CP[2.8%,60%] (D26). holdout_summary §5 해소 + ISSUE_2 §3b.
+- **Phase 4 (k=5)** HUBG **5/5 draw p≥50 [58–76] → 사전 규칙상 robust**;
+  WMK/GNE 0/5 (D27). 발행 수치 draw-1 불변.
+- **Phase 5** README/synthesis 백본 = standalone 유의성(0.00114/0.00116),
+  AUC 비교 2차 강등 + CI 본문 병기; L-6 기입; lint canon() 배선 (D28).
+- **Phase 6** 영어 README.md + README.ko.md 분리·린트 편입 (D29);
+  **repo rename aaer-project→aaer-evals** (D30, GitHub 자동 리다이렉트).
+- 미터링 세션 총 42 호출 (E1 30 [추정 18–27 +3: FWRD 탈락 1 + 비멱등 재실행 2] +
+  redraw 12). CI 전 push green.
+- 잔여 소유자 액션: ② 3-이슈 발행 결정 ③ E4 EXPLORATORY 문단 ④ Console $0.00
+  (RP-13_final_packet §7). E2·E4·E5(wave-2 arm)는 launch-ready 동결 (Q-E01).
+- 별도 계류: 원격 브랜치 `hardening/2026-07-08` (~3.9k줄, 소유자 검토 대기 —
+  main 기준 진행 결정, 2026-07-09).
 
 > 다음 세션: CLAUDE.md → PROJECT.md → 이 문서 → `review_packets/RP-13_final_packet.md`
 > → `review_packets/RP-13_grading_workbench.md` → `RP-11_expansion_holdout.md`.
