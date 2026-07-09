@@ -123,6 +123,13 @@ def probe(case):
     bad = []
     for hc in hcs:
         c = cases[hc]
+        done = REPO / RECOG_DIR / f"{c['ticker']}.json"
+        if done.exists():  # 멱등 — 기존 transcript 재호출 금지 (RXO/BCO 재실행 교훈)
+            rec = json.loads(done.read_text(encoding="utf-8"))
+            if rec["knows_event"]:
+                bad.append(c["ticker"])
+            print(f"  {c['ticker']}: skip (기존 transcript, knows_event={rec['knows_event']})")
+            continue
         r = subprocess.run([py, "tools/holdout_probe.py", "--ticker", c["ticker"],
                             "--company", c["company_name"], "--out", RECOG_DIR], cwd=REPO)
         if r.returncode == 3:
