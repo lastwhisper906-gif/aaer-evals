@@ -1,0 +1,301 @@
+{
+  "case_id": "hc_04",
+  "run_id": "original-hc_04-r1",
+  "model": "claude-sonnet-5",
+  "pipeline_version": "acd0c0baae3c63d40a7a20783ae5e1a827b353fc",
+  "run_timestamp": "2026-07-09T02:28:03.776301+00:00",
+  "documents_used": [
+    {
+      "accession_no": "0001929561-22-000022",
+      "form_type": "10-Q",
+      "filing_date": "2022-11-30"
+    },
+    {
+      "accession_no": "0001929561-23-000032",
+      "form_type": "10-K",
+      "filing_date": "2023-02-24"
+    },
+    {
+      "accession_no": "0001929561-23-000057",
+      "form_type": "10-Q",
+      "filing_date": "2023-05-03"
+    },
+    {
+      "accession_no": "0001929561-23-000074",
+      "form_type": "10-Q",
+      "filing_date": "2023-08-02"
+    },
+    {
+      "accession_no": "0001929561-23-000093",
+      "form_type": "10-Q",
+      "filing_date": "2023-11-07"
+    },
+    {
+      "accession_no": "0001929561-24-000032",
+      "form_type": "10-K",
+      "filing_date": "2024-02-13"
+    },
+    {
+      "accession_no": "0001929561-24-000082",
+      "form_type": "10-Q",
+      "filing_date": "2024-05-07"
+    },
+    {
+      "accession_no": "0001929561-24-000102",
+      "form_type": "10-Q",
+      "filing_date": "2024-08-07"
+    },
+    {
+      "accession_no": "0001929561-24-000127",
+      "form_type": "10-Q",
+      "filing_date": "2024-11-07"
+    },
+    {
+      "accession_no": "0001929561-25-000044",
+      "form_type": "10-K",
+      "filing_date": "2025-02-27"
+    },
+    {
+      "accession_no": "0001929561-25-000082",
+      "form_type": "10-Q",
+      "filing_date": "2025-05-07"
+    },
+    {
+      "accession_no": "0001929561-25-000102",
+      "form_type": "10-Q",
+      "filing_date": "2025-08-07"
+    },
+    {
+      "accession_no": "0001929561-25-000113",
+      "form_type": "10-Q",
+      "filing_date": "2025-11-06"
+    }
+  ],
+  "checklist": [
+    {
+      "item_id": "CL1",
+      "question": "Did receivables grow materially faster than revenue across consecutive periods?",
+      "finding": "flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "AccountsReceivableNetCurrent=725000000 (2024-06-30) -> 1138000000 (2024-09-30)",
+          "source_accession_no": "0001929561-24-000127",
+          "location": "10-Q balance sheet, period end 2024-09-30"
+        },
+        {
+          "quote": "RevenueFromContractWithCustomerExcludingAssessedTax=930000000 (2024-04-01/2024-06-30) -> 1040000000 (2024-07-01/2024-09-30)",
+          "source_accession_no": "0001929561-24-000127",
+          "location": "10-Q income statement, Q3 2024"
+        },
+        {
+          "quote": "AccountsReceivableNetCurrent=900000000 (2022-12-31) -> 1227000000 (2024-12-31), a 36% increase, while RevenueFromContractWithCustomerExcludingAssessedTax=4796000000 (2022 annual) -> 4550000000 (2024 annual), a 5% decrease",
+          "source_accession_no": "0001929561-25-000044",
+          "location": "10-K FY2024 filed 2025-02-27; 10-K FY2022 restated in 0001929561-25-000044"
+        }
+      ]
+    },
+    {
+      "item_id": "CL2",
+      "question": "Did non-current 'soft' assets (intangibles, other assets, capitalized items) grow materially faster than the business overall?",
+      "finding": "flag",
+      "confidence": "high",
+      "evidence": [
+        {
+          "quote": "Goodwill=630000000 (2024-06-30) -> 1027000000 (2024-09-30)",
+          "source_accession_no": "0001929561-24-000127",
+          "location": "10-Q balance sheet Q3 2024"
+        },
+        {
+          "quote": "IntangibleAssetsNetExcludingGoodwill=62000000 (2024-06-30) -> 565000000 (2024-09-30)",
+          "source_accession_no": "0001929561-24-000127",
+          "location": "10-Q balance sheet Q3 2024"
+        },
+        {
+          "quote": "Assets=1813000000 (2024-06-30) -> 3392000000 (2024-09-30), nearly doubling in one quarter, while RevenueFromContractWithCustomerExcludingAssessedTax grew only 930000000 -> 1040000000 (12% q/q) over the same period",
+          "source_accession_no": "0001929561-24-000127",
+          "location": "10-Q balance sheet and income statement Q3 2024"
+        }
+      ]
+    },
+    {
+      "item_id": "CL3",
+      "question": "Is there a persistent divergence between net income and operating cash flow?",
+      "finding": "flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "NetIncomeLoss=-290000000 (2024 annual) vs NetCashProvidedByUsedInOperatingActivities=-12000000 (2024 annual), a $278M gap",
+          "source_accession_no": "0001929561-25-000044",
+          "location": "10-K FY2024 cash flow statement"
+        },
+        {
+          "quote": "NetIncomeLoss=92000000 (2022 annual) vs NetCashProvidedByUsedInOperatingActivities=310000000 (2022 annual), a $218M gap",
+          "source_accession_no": "0001929561-25-000044",
+          "location": "10-K FY2024 comparative cash flow statement"
+        },
+        {
+          "quote": "NetIncomeLoss=-243000000 (2024-07-01 to 2024-09-30) coincides with the Coyote acquisition quarter (Goodwill and Intangibles jumped in same quarter)",
+          "source_accession_no": "0001929561-25-000113",
+          "location": "10-Q filed 2025-11-06, Q3 2024 comparative data"
+        }
+      ]
+    },
+    {
+      "item_id": "CL4",
+      "question": "Do inventory levels or gross margins show trends inconsistent with revenue?",
+      "finding": "insufficient_data",
+      "confidence": "low",
+      "evidence": [
+        {
+          "quote": "No InventoryNet, CostOfGoodsAndServicesSold, or PurchasedTransportationExpense concepts were provided in the dataset for RXO (a non-asset-based freight brokerage, which typically does not report inventory)",
+          "source_accession_no": "0001929561-25-000044",
+          "location": "Data set - absence of inventory/COGS tags across all filings provided"
+        }
+      ]
+    },
+    {
+      "item_id": "CL5",
+      "question": "Is the earnings trajectory unusually smooth relative to the volatility of revenue and cash flow?",
+      "finding": "no_flag",
+      "confidence": "high",
+      "evidence": [
+        {
+          "quote": "NetIncomeLoss=150000000 (2021 annual) -> 92000000 (2022 annual) -> 4000000 (2023 annual) -> -290000000 (2024 annual)",
+          "source_accession_no": "0001929561-25-000044",
+          "location": "10-K FY2024 five-year comparative NetIncomeLoss series"
+        },
+        {
+          "quote": "Quarterly NetIncomeLoss swung from -15000000 (Q1 2024) to -7000000 (Q2 2024) to -243000000 (Q3 2024)",
+          "source_accession_no": "0001929561-25-000113",
+          "location": "10-Q filed 2025-11-06, quarterly comparative data"
+        }
+      ]
+    },
+    {
+      "item_id": "CL6",
+      "question": "Did liability, allowance, or reserve balances decline (or fail to grow) despite growing business activity?",
+      "finding": "flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "AllowanceForDoubtfulAccountsReceivableCurrent=13000000 (2022-12-31) and =13000000 (2024-12-31) - essentially flat - while AccountsReceivableNetCurrent=900000000 (2022-12-31) grew to 1227000000 (2024-12-31), a 36% increase, dropping the allowance/AR coverage ratio from ~1.44% to ~1.06%",
+          "source_accession_no": "0001929561-25-000113",
+          "location": "10-Q filed 2025-11-06, comparative allowance and AR balances"
+        }
+      ]
+    },
+    {
+      "item_id": "CL7",
+      "question": "Does the filing chronology show irregularities (late filings/NT forms, amendments, unusual 8-K frequency)?",
+      "finding": "no_flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "All 10-K and 10-Q filings appear on a regular annual/quarterly cadence (10-K filed 2023-02-24, 2024-02-13, 2025-02-27; 10-Q filings filed within ~35-95 days of period end) with no NT 10-K/NT 10-Q or 10-K/A, 10-Q/A restatement filings present in the chronology",
+          "source_accession_no": "n/a",
+          "location": "filing_chronology list"
+        },
+        {
+          "quote": "Only minor Form 4/A insider-ownership amendments observed (4/A filed 2023-03-08, 2024-04-11, 2025-03-05, 2025-11-19); elevated 8-K frequency in Aug-Dec 2024 coincides with disclosed capital markets activity (424B5, S-3ASR, 424B7) tied to acquisition financing",
+          "source_accession_no": "n/a",
+          "location": "filing_chronology list, 2024-09 to 2024-12 entries"
+        }
+      ]
+    },
+    {
+      "item_id": "CL8",
+      "question": "Is the provided data sufficient in coverage and length for the above assessments?",
+      "finding": "no_flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "Data spans FY2020 through Q3 2025 with both annual and quarterly granularity for key line items (Revenue, NetIncomeLoss, OperatingCashFlow, Assets, Receivables, Goodwill, Intangibles, Allowance)",
+          "source_accession_no": "0001929561-25-000113",
+          "location": "financial_series_point_in_time, multiple concepts 2020-2025"
+        },
+        {
+          "quote": "Coverage gaps exist for inventory, cost of goods sold/purchased transportation expense, deferred revenue, and detailed reserve/contingency disclosures, limiting CL4 assessment",
+          "source_accession_no": "n/a",
+          "location": "Absence of these concepts across the entire dataset"
+        }
+      ]
+    }
+  ],
+  "misstatement_probability": 42,
+  "mechanism_hypotheses": [
+    {
+      "affected_line_items": [
+        "OperatingIncomeLoss",
+        "NetIncomeLoss",
+        "IntangibleAssetsNetExcludingGoodwill",
+        "SellingGeneralAndAdministrativeExpense"
+      ],
+      "direction": "understated",
+      "accounting_treatment": "Purchase accounting for the Q3 2024 acquisition (evidenced by Goodwill jumping from 630000000 (2024-06-30) to 1027000000 (2024-09-30) and IntangibleAssetsNetExcludingGoodwill jumping from 62000000 (2024-06-30) to 565000000 (2024-09-30)) appears to have driven a large non-cash charge (transaction costs, intangible amortization step-up, or fair-value remeasurement) that produced NetIncomeLoss=-243000000 (2024-07-01 to 2024-09-30) and full-year NetIncomeLoss=-290000000 (2024 annual), while NetCashProvidedByUsedInOperatingActivities was only -12000000 (2024 annual). The magnitude and non-cash nature of these purchase-accounting adjustments create risk of misallocation between expense timing and capitalized intangible value, potentially understating current-period operating income or overstating intangible asset values assigned in the acquisition.",
+      "rationale_evidence": [
+        {
+          "quote": "NetIncomeLoss=-243000000 (2024-07-01 to 2024-09-30)",
+          "source_accession_no": "0001929561-25-000113",
+          "location": "10-Q filed 2025-11-06, quarterly comparative NetIncomeLoss"
+        },
+        {
+          "quote": "Goodwill=1027000000 (2024-09-30); IntangibleAssetsNetExcludingGoodwill=565000000 (2024-09-30)",
+          "source_accession_no": "0001929561-24-000127",
+          "location": "10-Q balance sheet Q3 2024"
+        }
+      ]
+    },
+    {
+      "affected_line_items": [
+        "AllowanceForDoubtfulAccountsReceivableCurrent",
+        "AccountsReceivableNetCurrent",
+        "BadDebtExpense (implied)"
+      ],
+      "direction": "overstated",
+      "accounting_treatment": "Receivables reserve (allowance for doubtful accounts) was not scaled up commensurate with a 36% increase in gross receivables following the 2024 acquisition (AllowanceForDoubtfulAccountsReceivableCurrent=13000000 (2022-12-31) vs 13000000 (2024-12-31), while AccountsReceivableNetCurrent=900000000 (2022-12-31) grew to 1227000000 (2024-12-31)). This could reflect under-provisioning for credit risk in the acquired receivables book, overstating net receivables and understating bad debt expense.",
+      "rationale_evidence": [
+        {
+          "quote": "AllowanceForDoubtfulAccountsReceivableCurrent=13000000 (2022-12-31) and 13000000 (2024-12-31)",
+          "source_accession_no": "0001929561-25-000113",
+          "location": "10-Q filed 2025-11-06, comparative allowance data"
+        },
+        {
+          "quote": "AccountsReceivableNetCurrent=900000000 (2022-12-31) and 1227000000 (2024-12-31)",
+          "source_accession_no": "0001929561-25-000113",
+          "location": "10-Q filed 2025-11-06, comparative AR data"
+        }
+      ]
+    },
+    {
+      "affected_line_items": [
+        "AccountsReceivableNetCurrent",
+        "RevenueFromContractWithCustomerExcludingAssessedTax"
+      ],
+      "direction": "timing_shift",
+      "accounting_treatment": "Consolidation of an acquired entity's receivables balance in a quarter where only a partial/stub period of its revenue is reflected (AR +57% q/q from 725000000 (2024-06-30) to 1138000000 (2024-09-30) vs revenue +12% q/q from 930000000 to 1040000000 for the same quarter) creates a mechanical AR/revenue mismatch. While largely attributable to acquisition-date consolidation, the scale of the mismatch warrants scrutiny of revenue cut-off and collection timing in the newly combined entity going forward.",
+      "rationale_evidence": [
+        {
+          "quote": "AccountsReceivableNetCurrent=725000000 (2024-06-30) -> 1138000000 (2024-09-30)",
+          "source_accession_no": "0001929561-24-000127",
+          "location": "10-Q balance sheet Q3 2024"
+        },
+        {
+          "quote": "RevenueFromContractWithCustomerExcludingAssessedTax=930000000 (2024-04-01/2024-06-30) -> 1040000000 (2024-07-01/2024-09-30)",
+          "source_accession_no": "0001929561-24-000127",
+          "location": "10-Q income statement Q3 2024"
+        }
+      ]
+    }
+  ],
+  "overall": {
+    "risk_tier": "watch",
+    "top_signals": [
+      "Goodwill and intangibles more than doubled in a single quarter (Q3 2024) coincident with a large net loss quarter (NetIncomeLoss=-243000000), consistent with acquisition-related non-cash charges/purchase accounting complexity",
+      "Persistent and widening divergence between NetIncomeLoss and operating cash flow, especially FY2024 (NetIncomeLoss=-290000000 vs NetCashProvidedByUsedInOperatingActivities=-12000000)",
+      "Allowance for doubtful accounts held flat at $13M despite a 36% increase in accounts receivable from 2022 to 2024, reducing reserve coverage ratio",
+      "Accounts receivable grew far faster than revenue in the acquisition quarter (Q3 2024), a mechanical consolidation effect that still merits monitoring for collectability and cut-off risk",
+      "No evidence of late filings, NT forms, or financial statement restatements (10-K/A, 10-Q/A) in the filing chronology, which is a mitigating factor"
+    ]
+  }
+}

@@ -1,0 +1,502 @@
+{
+  "case_id": "hc_06",
+  "run_id": "original-hc_06-r1",
+  "model": "claude-sonnet-5",
+  "pipeline_version": "acd0c0baae3c63d40a7a20783ae5e1a827b353fc",
+  "run_timestamp": "2026-07-09T02:27:42.042805+00:00",
+  "documents_used": [
+    {
+      "accession_no": "0000950123-11-077677",
+      "form_type": "10-Q",
+      "filing_date": "2011-08-15"
+    },
+    {
+      "accession_no": "0001166003-17-000027",
+      "form_type": "10-Q",
+      "filing_date": "2017-08-04"
+    },
+    {
+      "accession_no": "0001166003-17-000038",
+      "form_type": "10-Q",
+      "filing_date": "2017-11-06"
+    },
+    {
+      "accession_no": "0001166003-18-000022",
+      "form_type": "10-K",
+      "filing_date": "2018-02-12"
+    },
+    {
+      "accession_no": "0001166003-18-000047",
+      "form_type": "10-Q",
+      "filing_date": "2018-05-07"
+    },
+    {
+      "accession_no": "0001166003-18-000055",
+      "form_type": "10-Q",
+      "filing_date": "2018-08-03"
+    },
+    {
+      "accession_no": "0001166003-18-000063",
+      "form_type": "10-Q",
+      "filing_date": "2018-11-05"
+    },
+    {
+      "accession_no": "0001166003-19-000021",
+      "form_type": "10-K",
+      "filing_date": "2019-02-14"
+    },
+    {
+      "accession_no": "0001166003-19-000030",
+      "form_type": "10-Q",
+      "filing_date": "2019-05-01"
+    },
+    {
+      "accession_no": "0001166003-19-000041",
+      "form_type": "10-Q",
+      "filing_date": "2019-08-01"
+    },
+    {
+      "accession_no": "0001166003-19-000049",
+      "form_type": "10-Q",
+      "filing_date": "2019-10-28"
+    },
+    {
+      "accession_no": "0001166003-20-000028",
+      "form_type": "10-K",
+      "filing_date": "2020-02-10"
+    },
+    {
+      "accession_no": "0001166003-20-000039",
+      "form_type": "10-Q",
+      "filing_date": "2020-05-05"
+    },
+    {
+      "accession_no": "0001166003-20-000047",
+      "form_type": "10-Q",
+      "filing_date": "2020-08-03"
+    },
+    {
+      "accession_no": "0001166003-20-000057",
+      "form_type": "10-Q",
+      "filing_date": "2020-11-06"
+    },
+    {
+      "accession_no": "0001166003-21-000023",
+      "form_type": "10-K",
+      "filing_date": "2021-02-12"
+    },
+    {
+      "accession_no": "0001166003-21-000058",
+      "form_type": "10-Q",
+      "filing_date": "2021-05-04"
+    },
+    {
+      "accession_no": "0001166003-21-000071",
+      "form_type": "10-Q",
+      "filing_date": "2021-08-04"
+    },
+    {
+      "accession_no": "0001166003-21-000099",
+      "form_type": "10-Q",
+      "filing_date": "2021-11-03"
+    },
+    {
+      "accession_no": "0001166003-22-000024",
+      "form_type": "10-K",
+      "filing_date": "2022-02-16"
+    },
+    {
+      "accession_no": "0001166003-22-000044",
+      "form_type": "10-Q",
+      "filing_date": "2022-05-10"
+    },
+    {
+      "accession_no": "0001166003-22-000049",
+      "form_type": "10-Q",
+      "filing_date": "2022-08-08"
+    },
+    {
+      "accession_no": "0001166003-22-000059",
+      "form_type": "10-Q",
+      "filing_date": "2022-11-02"
+    },
+    {
+      "accession_no": "0001166003-23-000017",
+      "form_type": "10-K",
+      "filing_date": "2023-02-13"
+    },
+    {
+      "accession_no": "0001166003-23-000053",
+      "form_type": "10-Q",
+      "filing_date": "2023-05-04"
+    },
+    {
+      "accession_no": "0001166003-23-000064",
+      "form_type": "10-Q",
+      "filing_date": "2023-08-04"
+    },
+    {
+      "accession_no": "0001166003-23-000075",
+      "form_type": "10-Q",
+      "filing_date": "2023-10-30"
+    },
+    {
+      "accession_no": "0001166003-24-000022",
+      "form_type": "10-K",
+      "filing_date": "2024-02-08"
+    },
+    {
+      "accession_no": "0001166003-24-000066",
+      "form_type": "10-Q",
+      "filing_date": "2024-05-03"
+    },
+    {
+      "accession_no": "0001166003-24-000073",
+      "form_type": "10-Q",
+      "filing_date": "2024-08-01"
+    },
+    {
+      "accession_no": "0001166003-24-000076",
+      "form_type": "10-Q",
+      "filing_date": "2024-10-30"
+    },
+    {
+      "accession_no": "0001166003-25-000017",
+      "form_type": "10-K",
+      "filing_date": "2025-02-07"
+    },
+    {
+      "accession_no": "0001166003-25-000067",
+      "form_type": "10-Q",
+      "filing_date": "2025-04-30"
+    },
+    {
+      "accession_no": "0001166003-25-000076",
+      "form_type": "10-Q",
+      "filing_date": "2025-07-31"
+    },
+    {
+      "accession_no": "0001166003-25-000087",
+      "form_type": "10-Q",
+      "filing_date": "2025-10-30"
+    },
+    {
+      "accession_no": "0001193125-11-307055",
+      "form_type": "10-Q",
+      "filing_date": "2011-11-10"
+    },
+    {
+      "accession_no": "0001193125-12-090969",
+      "form_type": "10-K",
+      "filing_date": "2012-03-01"
+    },
+    {
+      "accession_no": "0001193125-12-225597",
+      "form_type": "10-Q",
+      "filing_date": "2012-05-10"
+    },
+    {
+      "accession_no": "0001193125-12-454863",
+      "form_type": "10-Q",
+      "filing_date": "2012-11-06"
+    },
+    {
+      "accession_no": "0001193125-13-103438",
+      "form_type": "10-K",
+      "filing_date": "2013-03-12"
+    },
+    {
+      "accession_no": "0001193125-13-207880",
+      "form_type": "10-Q",
+      "filing_date": "2013-05-08"
+    },
+    {
+      "accession_no": "0001193125-13-313456",
+      "form_type": "10-Q",
+      "filing_date": "2013-08-01"
+    },
+    {
+      "accession_no": "0001193125-13-427995",
+      "form_type": "10-Q",
+      "filing_date": "2013-11-05"
+    },
+    {
+      "accession_no": "0001193125-14-067991",
+      "form_type": "10-K",
+      "filing_date": "2014-02-26"
+    },
+    {
+      "accession_no": "0001193125-14-180414",
+      "form_type": "10-Q",
+      "filing_date": "2014-05-02"
+    },
+    {
+      "accession_no": "0001193125-14-287471",
+      "form_type": "10-Q",
+      "filing_date": "2014-07-31"
+    },
+    {
+      "accession_no": "0001437749-12-009263",
+      "form_type": "10-Q/A",
+      "filing_date": "2012-09-07"
+    },
+    {
+      "accession_no": "0001445305-14-004914",
+      "form_type": "10-Q",
+      "filing_date": "2014-11-07"
+    },
+    {
+      "accession_no": "0001628280-15-000923",
+      "form_type": "10-K",
+      "filing_date": "2015-02-23"
+    },
+    {
+      "accession_no": "0001628280-15-003903",
+      "form_type": "10-Q",
+      "filing_date": "2015-05-07"
+    },
+    {
+      "accession_no": "0001628280-15-006381",
+      "form_type": "10-Q",
+      "filing_date": "2015-08-10"
+    },
+    {
+      "accession_no": "0001628280-15-008570",
+      "form_type": "10-Q",
+      "filing_date": "2015-11-09"
+    },
+    {
+      "accession_no": "0001628280-16-011979",
+      "form_type": "10-K",
+      "filing_date": "2016-02-29"
+    },
+    {
+      "accession_no": "0001628280-16-015742",
+      "form_type": "10-Q",
+      "filing_date": "2016-05-05"
+    },
+    {
+      "accession_no": "0001628280-16-018720",
+      "form_type": "10-Q",
+      "filing_date": "2016-08-08"
+    },
+    {
+      "accession_no": "0001628280-16-021034",
+      "form_type": "10-Q",
+      "filing_date": "2016-11-08"
+    },
+    {
+      "accession_no": "0001628280-17-001912",
+      "form_type": "10-K",
+      "filing_date": "2017-02-28"
+    },
+    {
+      "accession_no": "0001628280-17-005262",
+      "form_type": "10-Q",
+      "filing_date": "2017-05-09"
+    }
+  ],
+  "checklist": [
+    {
+      "item_id": "CL1",
+      "question": "Did receivables grow materially faster than revenue across consecutive periods?",
+      "finding": "no_flag",
+      "confidence": "high",
+      "evidence": [
+        {
+          "quote": "AccountsReceivableNetCurrent=908000000 (2021-12-31)",
+          "source_accession_no": "0001166003-23-000017",
+          "location": "10-K FY2021 Balance Sheet"
+        },
+        {
+          "quote": "Revenues=7202000000 (2021 annual)",
+          "source_accession_no": "0001166003-24-000022",
+          "location": "10-K FY2021 Income Statement (comparative)"
+        },
+        {
+          "quote": "AccountsReceivableNetCurrent=977000000 (2024-12-31)",
+          "source_accession_no": "0001166003-25-000087",
+          "location": "10-Q Q3 2025 balance sheet (comparative FY2024)"
+        },
+        {
+          "quote": "RevenueFromContractWithCustomerExcludingAssessedTax=8072000000 (2024 annual)",
+          "source_accession_no": "0001166003-25-000017",
+          "location": "10-K FY2024 Income Statement"
+        }
+      ]
+    },
+    {
+      "item_id": "CL2",
+      "question": "Did non-current 'soft' assets (intangibles, other assets, capitalized items) grow materially faster than the business overall?",
+      "finding": "no_flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "Goodwill=4326000000 (2016-12-31)",
+          "source_accession_no": "0001166003-19-000021",
+          "location": "10-K FY2018 comparative balance sheet"
+        },
+        {
+          "quote": "Goodwill=1461000000 (2024-12-31)",
+          "source_accession_no": "0001166003-25-000087",
+          "location": "10-Q Q3 2025 comparative balance sheet"
+        },
+        {
+          "quote": "IntangibleAssetsNetExcludingGoodwill=1534700000 (2016-12-31)",
+          "source_accession_no": "0001166003-18-000022",
+          "location": "10-K FY2016 balance sheet"
+        },
+        {
+          "quote": "IntangibleAssetsNetExcludingGoodwill=361000000 (2024-12-31)",
+          "source_accession_no": "0001166003-25-000087",
+          "location": "10-Q Q3 2025 comparative balance sheet"
+        }
+      ]
+    },
+    {
+      "item_id": "CL3",
+      "question": "Is there a persistent divergence between net income and operating cash flow?",
+      "finding": "no_flag",
+      "confidence": "high",
+      "evidence": [
+        {
+          "quote": "NetIncomeLoss=666000000 (2022 annual)",
+          "source_accession_no": "0001166003-25-000017",
+          "location": "10-K FY2024 comparative income statement"
+        },
+        {
+          "quote": "NetCashProvidedByUsedInOperatingActivitiesContinuingOperations=824000000 (2022 annual)",
+          "source_accession_no": "0001166003-25-000017",
+          "location": "10-K FY2024 comparative cash flow statement"
+        },
+        {
+          "quote": "NetIncomeLoss=387000000 (2024 annual)",
+          "source_accession_no": "0001166003-25-000017",
+          "location": "10-K FY2024 income statement"
+        },
+        {
+          "quote": "NetCashProvidedByUsedInOperatingActivitiesContinuingOperations=808000000 (2024 annual)",
+          "source_accession_no": "0001166003-25-000017",
+          "location": "10-K FY2024 cash flow statement"
+        }
+      ]
+    },
+    {
+      "item_id": "CL4",
+      "question": "Do inventory levels or gross margins show trends inconsistent with revenue?",
+      "finding": "insufficient_data",
+      "confidence": "high",
+      "evidence": [
+        {
+          "quote": "InventoryNet=50600000 (2016-03-31)",
+          "source_accession_no": "0001628280-16-015742",
+          "location": "10-Q Q1 2016 balance sheet - last reported inventory figure"
+        },
+        {
+          "quote": "GrossProfit=53072000 (2013-10-01 to 2013-12-31)",
+          "source_accession_no": "0001193125-14-067991",
+          "location": "10-K FY2013 - last period gross profit reported as discrete line item"
+        }
+      ]
+    },
+    {
+      "item_id": "CL5",
+      "question": "Is the earnings trajectory unusually smooth relative to the volatility of revenue and cash flow?",
+      "finding": "no_flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "NetIncomeLoss=-131000000 (2020-04-01 to 2020-06-30)",
+          "source_accession_no": "0001166003-21-000071",
+          "location": "10-Q Q2 2020"
+        },
+        {
+          "quote": "NetIncomeLoss=488000000 (2022-01-01 to 2022-03-31)",
+          "source_accession_no": "0001166003-23-000053",
+          "location": "10-Q Q1 2022"
+        },
+        {
+          "quote": "NetIncomeLoss=-57000000 (2021-07-01 to 2021-09-30)",
+          "source_accession_no": "0001166003-22-000059",
+          "location": "10-Q Q3 2021"
+        }
+      ]
+    },
+    {
+      "item_id": "CL6",
+      "question": "Did liability, allowance, or reserve balances decline (or fail to grow) despite growing business activity?",
+      "finding": "no_flag",
+      "confidence": "high",
+      "evidence": [
+        {
+          "quote": "AllowanceForDoubtfulAccountsReceivableCurrent=26300000 (2016-12-31)",
+          "source_accession_no": "0001166003-18-000022",
+          "location": "10-K FY2016 balance sheet notes"
+        },
+        {
+          "quote": "AccountsReceivableNetCurrent=2313300000 (2016-12-31)",
+          "source_accession_no": "0001166003-18-000022",
+          "location": "10-K FY2016 balance sheet"
+        },
+        {
+          "quote": "AllowanceForDoubtfulAccountsReceivableCurrent=50000000 (2024-12-31)",
+          "source_accession_no": "0001166003-25-000087",
+          "location": "10-Q Q3 2025 comparative balance sheet"
+        },
+        {
+          "quote": "AccountsReceivableNetCurrent=977000000 (2024-12-31)",
+          "source_accession_no": "0001166003-25-000087",
+          "location": "10-Q Q3 2025 comparative balance sheet"
+        }
+      ]
+    },
+    {
+      "item_id": "CL7",
+      "question": "Does the filing chronology show irregularities (late filings/NT forms, amendments, unusual 8-K frequency)?",
+      "finding": "flag",
+      "confidence": "low",
+      "evidence": [
+        {
+          "quote": "10-Q/A filing_date=2012-09-07",
+          "source_accession_no": "0001437749-12-009263",
+          "location": "Filing chronology - amendment to Q2 2012 10-Q"
+        },
+        {
+          "quote": "AccountsPayableCurrent=8329000 (2012-06-30) reported in 10-Q/A",
+          "source_accession_no": "0001437749-12-009263",
+          "location": "10-Q/A balance sheet"
+        }
+      ]
+    },
+    {
+      "item_id": "CL8",
+      "question": "Is the provided data sufficient in coverage and length for the above assessments?",
+      "finding": "no_flag",
+      "confidence": "high",
+      "evidence": [
+        {
+          "quote": "Revenues data span from 2009-01-01 through 2024-07-01 to 2024-09-30 quarterly points, and RevenueFromContractWithCustomerExcludingAssessedTax through 2025-07-01 to 2025-09-30",
+          "source_accession_no": "0001166003-25-000087",
+          "location": "10-Q Q3 2025 income statement"
+        },
+        {
+          "quote": "NetIncomeLoss data span from 2009-01-01 through 2025-07-01 to 2025-09-30",
+          "source_accession_no": "0001166003-25-000087",
+          "location": "10-Q Q3 2025 income statement"
+        }
+      ]
+    }
+  ],
+  "misstatement_probability": 20,
+  "mechanism_hypotheses": [],
+  "overall": {
+    "risk_tier": "watch",
+    "top_signals": [
+      "Operating cash flow consistently and comfortably exceeds net income across nearly all annual periods (e.g., NetIncomeLoss=666000000 vs NetCashProvidedByUsedInOperatingActivitiesContinuingOperations=824000000 for 2022; NetIncomeLoss=387000000 vs OCF=808000000 for 2024), a quality-of-earnings positive rather than a red flag.",
+      "Allowance for doubtful accounts as a percentage of gross receivables has trended upward over time (from ~1.1% in 2016 to ~5.1% in 2024), inconsistent with reserve-starving/earnings-management patterns.",
+      "Revenue and balance-sheet comparability is complicated by multiple large corporate actions (Con-way acquisition 2015, GXO spin-off 2021, RXO spin-off 2022) causing restated 'continuing operations' figures that must be interpreted carefully but are transparently disclosed.",
+      "One historical 10-Q/A amendment (filed 2012-09-07, accession 0001437749-12-009263) during the company's early high-growth roll-up phase is a minor, dated flag with no evidence of recurrence in the subsequent decade of filings.",
+      "No NT 10-K/10-Q filings, no evidence of auditor turnover disclosed in the data, and regular annual/quarterly filing cadence since ~2010 support overall filing discipline."
+    ]
+  }
+}
