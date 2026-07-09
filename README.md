@@ -1,141 +1,198 @@
-# AAER Evals — 이해상충 없는 회계 품질 신호의 백테스트
+# AAER Evals — Backtesting a Conflict-Free Accounting-Quality Signal
 
 > Authored by Claude Code, pending human audit (GA-001 (b), D15).
-> 본 결과는 Claude 기반 단일 파이프라인(피평가자 claude-sonnet-5 핀)에 한정된다
-> (PROJECT.md §5-5). **These controls BOUND memorization risk; they do not eliminate it.**
+> All results are scoped to a single Claude-based pipeline (evaluatee pinned to
+> claude-sonnet-5; PROJECT.md §5-5). **These controls BOUND memorization risk;
+> they do not eliminate it.** 한국어 원문: [README.ko.md](README.ko.md).
 
-## 무엇인가
+## What this is
 
-상장사 회계 품질에 대한 독립 신호는 구조적 공백이다: 감사인은 피감사인이 보수를
-지급하고, 셀사이드는 거래 관계가 있으며, 신용평가사는 발행사가 수수료를 낸다. 이
-저장소는 그 공백을 겨냥한 장치 — **LLM이 point-in-time 구조화 공시 데이터만으로
-왜곡표시 위험을 스크리닝할 수 있는가** — 를 SEC 집행(AAER) 확정 사건과 매칭 비집행
-대조군으로 백테스트하고, 컷오프-후 홀드아웃(암기 불가)으로 그 능력을 독립 검증한 기록이다.
-포지션 없음 · 교육·정보 목적 · 투자 조언 아님.
+Independent signals on public-company accounting quality are a structural gap:
+auditors are paid by the auditee, sell-side analysts have banking relationships,
+rating agencies are paid by issuers. This repository is a backtest of one device
+aimed at that gap — **can an LLM screen for misstatement risk from point-in-time
+structured disclosure data alone?** — measured against SEC enforcement (AAER)
+confirmed cases with matched non-enforcement controls, and independently
+validated on a post-training-cutoff holdout where memorization is structurally
+impossible. No positions · educational/informational · not investment advice.
 
-## 헤드라인 — 3층 서사 (암기 축을 따라 벗겨내기)
+## Headline — three layers, peeling along the memorization axis
 
-발동 결론 규칙은 **사전 커밋**된 R1–R4 / H1–H3의 기계 판정이다(점수 존재 전 커밋 —
-freeze-commit-then-run). 세 층은 "얼마나 암기 가능한가"로 정렬된다:
+Conclusions fire by **pre-committed** machine rules R1–R4 / H1–H3, committed
+before any score existed (freeze-commit-then-run). The three layers are ordered
+by "how memorizable are these cases":
 
-**① 유명 사건 (wave-1, 실험군 8 vs 대조군 22) → R3 (암기 얽힘).**
-LLM은 확정 분식을 대조군과 분리하나, 그 점수는 모델이 각 회사에 대해 *기억하는 것*과
-얽혀 있다. **읽는 순서는 교란(정체-가림) 우선** — 능력의 하한 anchor:
-- 교란 프레임: 순열 p = **0.0021** / AUC **0.864** [0.722, 0.969] / 플래그 4/8.
-- 정체-노출(원본, 얽힌 상한): p = **0.00114** (100k, one-sided) / 평균차 **+19.8pp**
-  (중위 57.5 vs 33.0) / AUC **0.824** [0.599, 0.983] — N=30 불안정, 점 그림이 1차 시각.
-- 암기 분해: 8케이스 중 **5건**이 R3 임계 초과. 익명 페이로드 이름 지목률 **50%**.
+**The backbone claim is deliberately not an AUC comparison.** It is this:
+**separation significance survives standalone, within each layer independently,
+as the memorization signal is progressively removed** — wave-1 perturbed
+(identity-masked) permutation p = 0.0021; wave-2 standalone permutation
+p = 0.00116; and in the post-cutoff holdout, detection persists where
+memorization is impossible (recognition gate 3/3 non-recognition). Each layer's
+p-value is computed on that layer alone; no layer borrows significance from
+another. (Pooled wave-1+wave-2 figures such as p=3.0e-05 are secondary,
+reported only alongside the standalone per-wave numbers.)
 
-**② 덜 유명한 사건 (wave-2, 실험군 9 vs 대조군 23) → R4 (잔여 능력).**
-암기 지표가 약해 R3가 비발동 → 분리가 암기·기계신호로 설명되지 않는 잔여 능력을 시사:
-- 순열 p = **0.00116** / 평균차 **+20.6pp** / AUC **0.829** [0.616, 0.983] / 플래그 7/9.
-- 이름 지목률 **21.9%**(동결 name_match 규칙; 사람 판독 25% 병기 — 단일 경계 케이스
-  DAR, `analysis/synthesis.json` §reconcile) = **wave-1의 절반**. 정체-교란 dominance
-  3/9(과반 미달) → R3 비발동. **R4 프레이밍 제약**: 벤치마크 정확도/AUC 비교 주장 금지.
+**① Famous cases (wave-1, 8 treatment vs 22 control) → R3 (memorization-entangled).**
+The LLM separates confirmed misstatement cases from controls, but its scores are
+entangled with what the model *remembers* about each company. **Read the
+perturbed (identity-masked) frame first** — it anchors the lower bound of ability:
+- Perturbed frame: permutation p = **0.0021** / AUC 0.864 [0.722, 0.969] / flags 4/8.
+- Identity-exposed (original, entangled upper line): p = **0.00114** (100k,
+  one-sided) / mean gap **+19.8pp** (median 57.5 vs 33.0).
+- Memorization decomposition: 5 of 8 cases exceed the R3 threshold; anonymized-
+  payload name-identification rate **50%**.
 
-**③ 컷오프-후 홀드아웃 (암기 구조적 불가, HUBG·WMK·GNE) → H2 (per-case, N=3).**
-recognition gate 3/3 비인지(폭로 미암기 실증). 신호는 **약화하나 붕괴하지 않는다**:
-- per-case: **HUBG p=70(플래그)** · GNE 42 · WMK 32. **HUBG는 기계 스크린(Beneish
-  M·Dechow F)이 결측으로 계산조차 못 한 곳에서 탐지** → LLM 신호는 M/F 복제가 아니다.
-- 단 정직 단서(오류해부 P1): HUBG의 적중은 **tier 적중 / 기제 빗나감**(dim2=1 — 과거
-  2018 정정 클러스터에 정박, 2026 사건 기제 미상). 리스크 스크리닝 ≠ forensic 기제 탐지.
-- **E1 매칭 대조군 (2026-07-09 감독 실행)**: HUBG 70은 **매칭 대조군 전부를 상회**
-  (RXO 42·BCO 30·XPO 20) — 단 WMK·GNE는 각자 대조군과 분리 미검출 (3케이스 중 1건만
-  대조 우위, `analysis/holdout_controls_results.json`). 정확 순열 p=0.20은 CONTEXT ONLY.
-- **k=5 재추첨 (E5§7)**: HUBG 플래그는 **5/5 draw에서 p≥50** [58–76] — 사전 규칙(≥4/5)상
-  draw 잡음에 강건. WMK [28–42]·GNE [30–42]는 0/5 (뒤집힘 없음). 발행 수치는 draw-1.
-- **H1(순열 유의성)은 N=3 과소검정이라 미주장.**
+**② Less-famous cases (wave-2, 9 treatment vs 23 control) → R4 (residual ability).**
+Weak memorization signal, R3 does not fire → separation suggests residual
+ability not explained by memorization or mechanical signals:
+- Standalone permutation p = **0.00116** / mean gap **+20.6pp** / flags 7/9.
+- Name-identification **21.9%** (frozen name_match rule; human read 25% co-reported
+  — single boundary case DAR, `analysis/synthesis.json` §reconcile) = **half of
+  wave-1**. Identity-vs-perturbed dominance 3/9 (below majority) → R3 does not
+  fire. **R4 framing constraint**: no benchmark-accuracy/AUC-comparison claims.
 
-**암기-소멸 백본 (핵심)**: 각 wave의 **standalone 순열 유의성이 암기 지표(name-ID
-50% → 21.9% → 0%)의 반감·소멸에도 독립 생존한다** — wave-1 p=**0.00114**(교란 프레임
-0.0021 우선 판독) · wave-2 p=**0.00116** · 홀드아웃은 recognition gate 3/3 비인지에서
-HUBG 탐지가 매칭 대조군을 상회하고 5-draw robust. ⇒ **분리는 암기로 설명되지 않는다**.
-**2차 gradient 관찰**: AUC 0.824 [0.599, 0.983] → 0.829 [0.616, 0.983] — 점추정은
-나란하나 **CI 폭이 동등성 주장을 금지한다** (N=30·32 부트스트랩; "사실상 불변"은
-관찰이지 결론이 아니다). 세 표본은 시대·유명도·라벨 tier가 달라 **통제 실험이 아니라
-gradient 판독**이다 (`analysis/synthesis.md`, `fig_memorization_doseresponse.png`).
+**③ Post-cutoff holdout (memorization structurally impossible; HUBG·WMK·GNE) → H2 (per-case, N=3).**
+Recognition gate 3/3 non-recognition (demonstrated non-memorization of the
+disclosure events). The signal **weakens but does not collapse**. All three
+companies carry provisional (G2) restatement labels, not confirmed enforcement:
+- Per-case: **HUBG p=70 (flagged)** · GNE 42 · WMK 32 — all G2-provisional
+  restatement events, labels pending any 4.02/AAER upgrade.
+- **k=5 redraw band (E5 §7, run 2026-07-09; published values remain draw-1):
+  HUBG p=70 [5-draw range 58–76, ≥50 in 5/5 → robust under the pre-committed
+  ≥4/5 rule]** · WMK 32 [28–42, 0/5] · GNE 42 [30–42, 0/5] — zero flips.
+- **Matched controls (E1, run 2026-07-09 under supervision, D26)**: HUBG's 70
+  sits **above all three of its matched controls** (RXO 42 · Brink's 30 ·
+  XPO 20); WMK and GNE show no separation from theirs (1 of 3 cases separates;
+  `analysis/holdout_controls_results.json`). Control flag rate 2/9 = 22.2%,
+  Clopper-Pearson 95% [2.8%, 60.0%]. Exact permutation p = 0.20 is context
+  only (N=3, under-powered — pre-declared).
+- **HUBG was detected where the mechanical screens (Beneish M, Dechow F) could
+  not even be computed due to missing inputs** → the LLM signal is not a
+  replica of M/F.
+- Honesty note (error-anatomy P1): the HUBG hit is **tier-correct /
+  mechanism-missed** (dim2=1 — anchored to the 2018 restatement cluster, not
+  the 2026 restatement's actual mechanism). Risk screening ≠ forensic
+  mechanism detection.
+- **H1 (permutation significance) is not claimed at N=3** (under-powered).
 
-## 거짓양성 — 환각이 아니라 과잉해석 (정직 기록)
+**Memorization dose-response (secondary, gradient read).** As name-ID halves
+and vanishes (50% → 21.9% → 0%), the separation AUC point estimates barely move
+— 0.824 [0.599, 0.983] → 0.829 [0.616, 0.983] — and holdout detection persists.
+**The CI widths forbid any statistical equivalence claim about the AUCs**; this
+is a gradient reading across three samples that differ in era, fame, and label
+tier — not a controlled experiment. The load-bearing evidence is the standalone
+per-layer significance above, not this AUC comparison
+(`analysis/synthesis.md`, `fig_memorization_doseresponse.png`).
 
-- wave-1 FPR **3/22 = 13.6%** Clopper–Pearson 95% **[2.9%, 34.9%]** · wave-2 FPR
-  **5/23 = 21.7%** CP **[7.5%, 43.7%]** · 홀드아웃 대조군(E1) FPR **2/9 = 22.2%**
-  CP **[2.8%, 60.0%]**. **"0%"로 보고하지 않는다.** 점추정은 악화 방향이나 CP
-  구간이 크게 겹쳐 **입증되지 않는다**(worse-but-not-provably).
-- wave-2 오탐 5건은 **전건 채점자 검증상 근거됨(dim4 상단) — 수치 날조(환각)가 아니라
-  실재 수치의 양성 오독**(정상 구조/비율 발산을 위험으로 승격). 신뢰 경계는 환각이
-  아니라 base-rate/보정 축이다 (`analysis/error_analysis_wave2_holdout.md`).
-- 보정: wave-2 ECE **0.179** (wave-1 0.209와 동일 차수 — 개선 없음, null-ish).
+## False positives — over-interpretation, not hallucination (honesty record)
 
-## 기계 기준선 대조 (R2 비발동)
+- wave-1 FPR **3/22 = 13.6%**, Clopper–Pearson 95% **[2.9%, 34.9%]** · wave-2
+  FPR **5/23 = 21.7%**, CP **[7.5%, 43.7%]** · holdout matched controls (E1)
+  FPR **2/9 = 22.2%**, CP **[2.8%, 60.0%]**. **We do not report an FPR of
+  "0%."** The point estimates worsen, but the CP intervals overlap heavily
+  — worse-but-not-provably.
+- All 5 wave-2 false positives are grader-verified as evidence-grounded (dim4
+  upper band) — **not fabricated numbers (hallucination) but positive
+  misreadings of real figures** (normal structural/ratio divergence promoted to
+  risk). The E1 control flags (2/9) follow the same pattern. The trust boundary
+  is base-rate/calibration, not hallucination
+  (`analysis/error_analysis_wave2_holdout.md`).
+- Calibration: wave-2 ECE **0.179** (same order as wave-1's 0.209 — no
+  improvement, null-ish).
 
-동일 30사·동일 PIT: Beneish M p=0.498/AUC 0.510 · Dechow F p=0.268/AUC 0.573 — 정량
-스크린은 이 표본에서 무분리. LLM 순위는 둘과 사실상 무상관(wave-1 ρ −0.075/−0.144;
-wave-2 0.337/0.265), 잔차 분리가 살아남는다 → 사전 커밋 R2 **비발동**. LLM은 기계
-공식의 재현이 아니다.
+## Mechanical baselines (R2 does not fire)
 
-## 채점·확정 상태
+Same 30 companies, same point-in-time data: Beneish M p=0.498/AUC 0.510 ·
+Dechow F p=0.268/AUC 0.573 — the quantitative screens show no separation on
+this sample. LLM rankings are essentially uncorrelated with both (wave-1
+ρ −0.075/−0.144; wave-2 0.337/0.265) and residual separation survives →
+pre-committed R2 does **not** fire. The LLM is not reproducing the mechanical
+formulas.
 
-- 채점: **Claude 보조 + 인간 최종 확정.** 피평가자 **claude-sonnet-5**(핀, 호출별 서빙
-  모델 검증, 핀 불일치 0). 채점자 claude-fable-5.
-- wave-1 채점 26건 `human_finalized=true`(동결). **wave-2 32 + 홀드아웃 3 + wave-1
-  대조군 22 채점도 `human_finalized=true`** (2026-07-09 소유자 확정, D24 · 오버라이드
-  0건 — §9 고무도장 점검 포함) — 워크벤치 `review_packets/RP-13_grading_workbench.md`.
+## Grading & finalization status
 
-## 확장 실험 E1–E5 (사전 등록 완료 — freeze-then-run)
+- Grading: **Claude-assisted + human final sign-off.** Evaluatee
+  **claude-sonnet-5** (pinned, served-model verified per call, 0 pin
+  mismatches). Grader claude-fable-5.
+- **All grades are `human_finalized=true`**: wave-1 26 (frozen earlier) +
+  wave-1 controls 22 + wave-2 32 + holdout 3 (owner sign-off 2026-07-09, D24 —
+  0 overrides, with the Issue #0 §9 rubber-stamp check explicitly confirmed) +
+  holdout matched controls 9 (D26). Overrides ledger: `scoring/overrides.md`;
+  workbench: `review_packets/RP-13_grading_workbench.md`.
 
-전 실험은 채점 전 사전 등록·커밋되었다(`analysis/*_PLAN.md`, 커밋 `c1b85a7`):
-- **E1** 홀드아웃 매칭 대조군 — **실행 완료 (2026-07-09 감독, D26)**: 9사 중 HUBG
-  매칭군만 분리, FPR 2/9 (H1 N=3 미주장 유지).
-- **E2** 조기성 (분기별 탐지 선행시간, 제출-정렬 스냅샷).
-- **E3** wave-2 교란 재추첨 (R4 draw-잡음 방어 — **median-dominance ≥5/9면 R3가 R4를
-  supersede**, 규칙이 결정).
-- **E4** 교차모델 (**EXPLORATORY** — claude-opus-4-8, 한계 각주 전용).
-- **E5** wave-2 본채점 재추첨 (안정성 밴드, draw-1 published 불변) — **§7 홀드아웃
-  arm 실행 완료 (2026-07-09, D27)**: HUBG 5/5 robust; wave-2 arm은 최저 우선순위 유지.
+## Extension experiments E1–E5 (pre-registered — freeze-then-run)
 
-실행 상태·미터링 spend 게이트: `docs/OWNER_QUEUE.md`(Q-E01) · `docs/RESUME.md`.
-**어떤 결과도 미발행**(소유자 게이트).
+All experiments were pre-registered and committed before scoring
+(`analysis/*_PLAN.md`, commit `c1b85a7`):
+- **E1** Holdout matched controls — **executed under supervision 2026-07-09
+  (D26)**: of 3 holdout cases, only HUBG separates from its matched controls;
+  control flag rate 2/9 (H1 still not claimed at N=3).
+- **E2** Earliness (quarterly detection lead time, filing-aligned snapshots).
+- **E3** wave-2 perturbation redraws (defends R4 against draw noise —
+  median-dominance ≥5/9 would let R3 supersede R4; rule decides). **Executed:
+  3/9 → R4 retained.**
+- **E4** Cross-model (**EXPLORATORY** — claude-opus-4-8, limitations-footnote only).
+- **E5** wave-2 main-scoring redraw (stability band; published draw-1
+  immutable) — **§7 holdout arm executed 2026-07-09 (D27): HUBG ≥50 in 5/5
+  draws → robust**; the wave-2 arm remains lowest priority.
 
-## 거버넌스 지도 (읽는 순서)
+Execution status & metered spend gates: `docs/OWNER_QUEUE.md` (Q-E01) ·
+`docs/RESUME.md`. **No experiment result is published without the owner gate.**
 
-1. `PROJECT.md` — 단일 기준 문서 (방법론 §5, 협업 모델 §7, 스코프 가드 §8)
-2. `CLAUDE.md` — 세션 가드레일 · `scoring/decisions_log.md` — 결정 대장 + freeze 해시
-3. `scoring/overrides.md` — 오버라이드·서명·게이트 (OWNER-GATE-E 포함)
-4. `review_packets/INDEX.md` · `RP-11_expansion_holdout.md` · `RP-10_final.md` — 감사 진입점
-5. 발행 후보 초안: `analysis/ISSUE_0_DRAFT.md`(wave-1) · `ISSUE_1_WAVE2_DRAFT.md`(R4) ·
-   `ISSUE_2_HOLDOUT_DRAFT.md`(H2) — 전부 소유자 서명 대기, 미발행.
+## Governance map (reading order)
 
-## 수치 재현 (제3자 검증)
+1. `PROJECT.md` — single reference document (methodology §5, collaboration
+   model §7, scope guard §8)
+2. `CLAUDE.md` — session guardrails · `scoring/decisions_log.md` — decision
+   ledger + freeze hashes
+3. `scoring/overrides.md` — overrides/signatures/gates (incl. OWNER-GATE-E)
+4. `review_packets/INDEX.md` · `RP-11_expansion_holdout.md` · `RP-10_final.md`
+   — audit entry points
+5. Publication candidates (written in English): `analysis/ISSUE_0_DRAFT.md`
+   (wave-1) · `ISSUE_1_WAVE2_DRAFT.md` (R4) · `ISSUE_2_HOLDOUT_DRAFT.md` (H2)
+   — all awaiting owner signature, unpublished.
+
+## Reproducing the numbers (third-party verification)
 
 ```bash
 pip install -r requirements.txt
-python tools/reproduce_analysis.py   # 발행 수치 전건 재계산 → PASS/FAIL (100/100)
-python tools/verify_blindness.py     # 채점 선행 이력 증명 · 실명/카나리 스캔 · runs/ sha256
-python tools/verify_manifest.py      # 데이터 매니페스트 대조 (429 파일)
-python analysis/synthesis.py         # 교차-웨이브 종합 (결정론, seed 20260708)
+python tools/reproduce_analysis.py   # recompute every published number → PASS/FAIL (100/100)
+python tools/verify_blindness.py     # grading-precedence proof · name/canary scan · runs/ sha256
+python tools/verify_manifest.py      # data manifest check (429 files)
+python analysis/synthesis.py         # cross-wave synthesis (deterministic, seed 20260708)
 ```
 
-셋 다 커밋 산출물만 사용한다 (API 호출 0, 원문 코퍼스 불요) — CI가 매 push 검증한다.
-원시: `runs/`(sha256 매니페스트) · `scoring/grades*/` · `scoring/probe_results*/` ·
-`logs/run_*/`(호출별 서빙 모델·격리 플래그·freeze 해시).
+All four use committed artifacts only (0 API calls, no source corpus needed) —
+CI verifies every push. Raw: `runs/` (sha256 manifest) · `scoring/grades*/` ·
+`scoring/probe_results*/` · `logs/run_*/` (per-call served model, isolation
+flags, freeze hashes).
 
-## 한계 (전문: docs/methodology_limitations.md)
+## Limitations (full text: docs/methodology_limitations.md)
 
-L-1 모델 내부 지식은 차단 불가 — 측정·공개만. L-2 실행층은 Claude Code 하네스 매개.
-L-3 샘플링 파라미터 고정 불능 — 케이스 판정은 비결정론 표본의 점추정. L-4 격리는 실행별
-게이트 검증. **L-5 교란은 수치 암기를 흩뜨릴 뿐 정체 인지를 제거하지 못한다**
-("perturbation disrupts memorized NUMBERS, not IDENTITY recognition") — 이름 지목률이
-그 증거이며, 모든 양성 결과는 잔여 오염 하의 값이다. **L-6** 채점자(claude-fable-5)와
-피평가자(claude-sonnet-5)는 동일 Claude 계열 — 동일 계열 관대화는 배제 불가, 인간 전수
-확정(§7)과 E4(EXPLORATORY)로만 완화. 선택·생존 편향: 실험군은 "적발까지
-간 사건"의 생존 표본, 대조군 라벨은 "무결"이 아니라 "비집행"(Dyck-Morse-Zingales: 대형사
-~10% 연간 증권사기, ~⅓만 적발 — 특이도 하향 편향, 거짓양성 결과는 그만큼 보수적).
+L-1 Model-internal knowledge cannot be blocked — only measured and disclosed.
+L-2 The execution layer runs through the Claude Code harness (not the raw API).
+L-3 Sampling parameters cannot be pinned — each case judgment is a point
+estimate from a non-deterministic sample. L-4 Isolation is verified per-run by
+gates. **L-5 Perturbation scatters memorized NUMBERS; it does not remove
+IDENTITY recognition** — the name-ID rate is the evidence, and every positive
+result is a value under residual contamination. L-6 Grader (claude-fable-5) and
+evaluatee (claude-sonnet-5) are the same model family — same-family leniency
+cannot be excluded; mitigated by 100% human sign-off (§7) and prospectively by
+E4 cross-model (EXPLORATORY). Selection/survivorship: the treatment group is a
+survivor sample of "cases that reached enforcement"; control labels mean
+"non-enforcement," not "clean" (Dyck–Morse–Zingales: ~10% of large firms in
+securities fraud annually, only ~⅓ detected — specificity is biased downward,
+so false-positive results are conservative by that amount).
 
-## 이것이 아닌 것
+## What this is NOT
 
-존재 증명 시도이지 성능 추정치가 아니다(정밀도/재현율 % 헤드라인 의도적 부재 — 신뢰구간
-넓음, 실회사 벤치마크 비교 불가, R4 프레이밍 제약). 단일 분석자(+AI) 산출물, 외부 재현·
-감사 전. 피평가자는 하네스 매개 호출이라 원시 API 재현과 다를 수 있다. 케이스 판정은
-비결정론 표본. pooled wave1+wave2 수치(p=3.0e-05 등)는 **2차 병기 전용** — standalone
-wave별 결론이 헤드라인이다. 특정 기업에 대한 주장이 아니며 — 현재/G2 기업 산출물에
-"분식/fraud/조작" 서술을 쓰지 않는다(§6) — 투자 조언은 더더욱 아니다.
+An existence proof attempt, not a performance estimate (precision/recall %
+headlines deliberately absent — wide confidence intervals, no comparable
+real-company benchmark, R4 framing constraint). Single-analyst (+AI) output,
+prior to external replication/audit. Evaluatee calls run through a harness and
+may differ from raw-API reproduction. Case judgments are non-deterministic
+samples. Pooled wave-1+wave-2 figures (p=3.0e-05 etc.) are **secondary,
+co-reported only** — standalone per-wave conclusions are the headline. This
+makes no claims about any specific company — outputs about current/G2
+companies never use "fraud/manipulation" language (§6) — and it is emphatically
+not investment advice.

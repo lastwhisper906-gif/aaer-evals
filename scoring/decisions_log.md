@@ -777,3 +777,7 @@ c44bd59a…)는 **서명 없이 superseded** (채점 미진입 상태 폐기). v
 ## D28 — Phase 5: README 통계 재구성 + L-6 + canon 배선 (2026-07-09, JSON 1줄)
 
 {"decision":"D28","date":"2026-07-09","action":"발행 서사 재구성 (무호출)","items":["README dose-response 강등: 백본 = per-wave standalone 순열 유의성(0.00114/0.00116) 생존, AUC 0.824→0.829는 2차 gradient 관찰로 격하 + CI [0.599,0.983]/[0.616,0.983] 본문 병기 + 'CI 폭이 동등성 주장 금지' 본문 명시","synthesis.md 판독 동일 재구성","README 층③에 E1·k=5 최종 수치 반영 + FPR 절에 E1 2/9 CP[2.8%,60%] 추가","L-6 intra-family 편향 methodology_limitations 기입 + README 한계 한 줄","lint_publication canon() 사장 코드 배선: README↔결과JSON 수치 드리프트 기계 검출 (check_canon, 소유자 권고 승인 사항)"],"gates":"lint(canon 포함)·reproduce 100/100·pytest green"}
+
+## D29 — Phase 6: 영어 발행 표면 (2026-07-09, JSON 1줄)
+
+{"decision":"D29","date":"2026-07-09","action":"영어 README 전환 (무호출)","items":["git mv README.md→README.ko.md + 영어 README.md 신규 (Phase 1/3/4 최종 수치 반영: 57+9 확정, E1 HUBG만 분리·FPR 2/9, k=5 5/5 robust; standalone-유의성 백본 구조 그대로)","lint DOCS에 README.ko.md 추가 (하드코딩 리스트의 무음 탈락 맹점 폐쇄)","영어 맹점 자가 검열: zero/no-false-positives 문구 부재, G2 3사 문장 provisional/restatement 동반, EXPLORATORY 병기 확인","이슈 초안 3종은 원래 영어로 확인 — _EN 중복본 불요 (계획 항목 무효화 기록)"],"github_metadata":"repo description+topics는 기설정 (bg job fd9d67c4에서 완료 확인)","gates":"lint(양 README+canon)·reproduce 100/100·pytest·blindness green"}

@@ -16,8 +16,8 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
-DOCS = ["README.md", "analysis/ISSUE_0_DRAFT.md", "analysis/ISSUE_1_WAVE2_DRAFT.md",
-        "analysis/ISSUE_2_HOLDOUT_DRAFT.md"]
+DOCS = ["README.md", "README.ko.md", "analysis/ISSUE_0_DRAFT.md",
+        "analysis/ISSUE_1_WAVE2_DRAFT.md", "analysis/ISSUE_2_HOLDOUT_DRAFT.md"]
 
 G2 = {"HUBG": ["hub group"], "WMK": ["weis markets", "weis"], "GNE": ["genie energy", "genie"]}
 FRAUD_WORDS = ["fraud", "분식", "조작", "manipulat"]
