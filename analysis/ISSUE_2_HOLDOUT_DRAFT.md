@@ -107,6 +107,10 @@ cutoffs (`analysis/holdout_controls_results.json`):
   — overlapping wave-1 (3/22) and wave-2 (5/23) intervals; no cross-wave comparison
   claimed. The two elevated controls are non-enforcement companies; their scores are
   opinions on risk posture, not findings of any kind.
+- **The single highest score in the holdout tier belongs to a control false
+  positive (GridAI, GRDX, 78)** — HUBG (70) tops its own matched controls but
+  not the full nine-company control set. Any reading of the HUBG detection must
+  carry this fact alongside it.
 - Exact permutation p = 0.20, **context only** (N=3 is structurally underpowered —
   pre-declared; H1 remains unclaimed).
 - Net honest reading: the matched-control comparison **strengthens the Hub Group

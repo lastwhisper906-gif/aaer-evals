@@ -8,6 +8,9 @@
   (E) E4/교차모델/opus 피평가자 언급에 EXPLORATORY 라벨 누락.
   (F) 수치 정합: 산문 통계가 동결 json(results_stats/wave2_results/synthesis)과 불일치
       + 알려진 stale 값 금지.
+  (G) 교란(identity-masked) 프레임을 "lower bound/하한"으로 서술 금지 (D31 0-2, W3) —
+      교정 문구("not a clean lower bound"/"하한이 아니다"/구조적 하한=홀드아웃)는 allowlist.
+  (H) README가 E1 결과를 다루면 GRDX·78 co-presence 강제 (D31 0-1 — 누락형 왜곡 기계 차단).
 비영: 위반 0. 위반 시 라인·사유 출력 후 exit 1. `make verify`에 편입.
 """
 import json
@@ -46,15 +49,34 @@ def canon():
         "wave2_fpr": ["21.7%", "5/23"],
         "wave2_ece": ["0.179"],
         "name_id_w2_frozen": ["21.9%"],
+        # D31 0-1: 홀드아웃 tier 최고점 = 대조군 오탐 (GRDX 78) — README에 존재 강제.
+        # co-presence(GRDX와 78 동시)는 check_canon의 (H) 규칙이 양 README에 검사.
+        "e1_top_control_fp": ["GRDX"],
     }
 
 
 def check_canon():
     """README ↔ 결과 JSON 수치 드리프트 검사 (키당 허용 문자열 중 1개 이상 존재)."""
     text = (REPO / "README.md").read_text(encoding="utf-8")
-    return [("README.md", 0, f"canon drift: {key} — 기대 {variants} 중 어느 것도 README에 없음")
-            for key, variants in canon().items()
-            if not any(v in text for v in variants)]
+    viols = [("README.md", 0, f"canon drift: {key} — 기대 {variants} 중 어느 것도 README에 없음")
+             for key, variants in canon().items()
+             if not any(v in text for v in variants)]
+    # (H) D31 0-1: E1 결과를 다루는 README에는 GRDX와 78이 함께 존재해야 PASS.
+    for doc in ["README.md", "README.ko.md"]:
+        t = (REPO / doc).read_text(encoding="utf-8")
+        if re.search(r"\bE1\b|matched controls|매칭 대조군", t):
+            if "GRDX" not in t or not re.search(r"\b78\b", t):
+                viols.append((doc, 0, "(H) E1 커버 문서에 GRDX·78 co-presence 부재 "
+                                      "(홀드아웃 tier 최고점=대조군 오탐 GRDX 78 — D31 0-1)"))
+    return viols
+
+
+# (G) D31 0-2 (W3): 교란 프레임 + lower bound/하한 결합 서술 금지 — 교정 문구는 allowlist.
+PERTURB_TERM = re.compile(r"perturb|identity.?mask|identity.?blind|교란|정체[- ]?가림", re.I)
+LOWER_BOUND_TERM = re.compile(r"lower\s+bound|하한", re.I)
+LOWER_BOUND_ALLOW = re.compile(
+    r"not a clean lower bound|clean lower bound|하한이 아니|덜 오염|less.?contaminat"
+    r"|structural lower bound|구조적 하한", re.I)
 
 
 STALE = [
@@ -110,6 +132,14 @@ def lint_doc(path):
         if "exploratory" not in win:
             ln = low[:m.start()].count("\n") + 1
             viol.append((ln, f"(E) 교차모델/opus 언급에 EXPLORATORY 라벨 부재: {lines[ln-1].strip()[:70]}"))
+
+    # (G) 교란 프레임을 lower bound/하한으로 서술 (±160자 창, allowlist 문구 예외)
+    for m in PERTURB_TERM.finditer(text):
+        win = text[max(0, m.start() - 160):m.end() + 160]
+        if LOWER_BOUND_TERM.search(win) and not LOWER_BOUND_ALLOW.search(win):
+            ln = text[:m.start()].count("\n") + 1
+            viol.append((ln, f"(G) 교란 프레임+lower bound/하한 결합 서술 금지 (W3): "
+                             f"{lines[ln-1].strip()[:70]}"))
 
     # (F) stale forbidden
     for pat, why in STALE:

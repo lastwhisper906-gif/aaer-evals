@@ -35,7 +35,11 @@ reported only alongside the standalone per-wave numbers.)
 **① Famous cases (wave-1, 8 treatment vs 22 control) → R3 (memorization-entangled).**
 The LLM separates confirmed misstatement cases from controls, but its scores are
 entangled with what the model *remembers* about each company. **Read the
-perturbed (identity-masked) frame first** — it anchors the lower bound of ability:
+perturbed (identity-masked) frame first** — it is the *less-contaminated*
+measurement, **not a clean lower bound** of ability: residual identity
+recognition persists after perturbation (5–6 of 8 treatment cases named across
+recognition-probe draws — L-5). The only structural lower bound in this design
+is the post-cutoff holdout (layer ③):
 - Perturbed frame: permutation p = **0.0021** / AUC 0.864 [0.722, 0.969] / flags 4/8.
 - Identity-exposed (original, entangled upper line): p = **0.00114** (100k,
   one-sided) / mean gap **+19.8pp** (median 57.5 vs 33.0).
@@ -65,7 +69,9 @@ companies carry provisional (G2) restatement labels, not confirmed enforcement:
   XPO 20); WMK and GNE show no separation from theirs (1 of 3 cases separates;
   `analysis/holdout_controls_results.json`). Control flag rate 2/9 = 22.2%,
   Clopper-Pearson 95% [2.8%, 60.0%]. Exact permutation p = 0.20 is context
-  only (N=3, under-powered — pre-declared).
+  only (N=3, under-powered — pre-declared). **The single highest score in the
+  holdout tier belongs to a control false positive (GridAI, GRDX, 78)** —
+  HUBG (70) tops its own matched controls but not the pooled control set.
 - **HUBG was detected where the mechanical screens (Beneish M, Dechow F) could
   not even be computed due to missing inputs** → the LLM signal is not a
   replica of M/F.

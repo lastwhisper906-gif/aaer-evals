@@ -69,3 +69,22 @@
 - **상태**: OPEN.
 
 ---
+
+## Q-R01 — Issue #2 서사 보강 diff 서명 (D31 0-5, RP-14) — **OPEN**
+
+- **질문**: `analysis/ISSUE_2_HOLDOUT_DRAFT.md` §3 crux 문단에 "After E1, the
+  holdout evidence rests on a single robust case (HUBG, 5/5 redraws)" 취지의
+  문장을 병기하는 diff(`review_packets/RP-14_issue2_narrative_diff.md` DIFF-1)를
+  적용할까? Issue #2 발행 서명에 선행하는 항목.
+- **옵션**: (A 기본) diff 그대로 적용 · (B) 문구 수정 후 적용 · (C) 기각
+  (사유 → overrides.md).
+- **근거**: 3차 외부 검토 — "weakens but does not collapse" 서사가 단일 케이스
+  의존(HUBG 1/3만 분리, E1 D26)을 명시하지 않으면 3케이스 전반 신호 잔존으로
+  오독됨. 데이터: `holdout_controls_results.json` + D27 k=5 (HUBG 5/5·WMK/GNE 0/5).
+- **세션 기본 조치**: 미적용 유지 (diffs only — 서명 전 draft 본문 무변경).
+  단 §3b의 GRDX 78 사실 병기는 미션 0-1의 직접 지시로 이미 반영됨 (D31).
+- **연동**: Phase 1(recognition gate k=5, D32)에서 HUBG가 knows_event ≥2/5로
+  자격 상실 시 본 diff 무효 + **Issue #2 발행 보류** 긴급 항목이 우선.
+- **상태**: OPEN.
+
+---
