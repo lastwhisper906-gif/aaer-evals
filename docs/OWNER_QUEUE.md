@@ -85,6 +85,8 @@
   단 §3b의 GRDX 78 사실 병기는 미션 0-1의 직접 지시로 이미 반영됨 (D31).
 - **연동**: Phase 1(recognition gate k=5, D32)에서 HUBG가 knows_event ≥2/5로
   자격 상실 시 본 diff 무효 + **Issue #2 발행 보류** 긴급 항목이 우선.
+  → **실측 (D33)**: HUBG·WMK·GNE 전건 0/5, 자격 유지 — 긴급 항목 비발동.
+  RP-14에 **DIFF-2**(§2 gate k=5 band 병기) 추가 — 서명 대상 2건으로 확대.
 - **상태**: OPEN.
 
 ---

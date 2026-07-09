@@ -27,7 +27,8 @@ by "how memorizable are these cases":
 as the memorization signal is progressively removed** — wave-1 perturbed
 (identity-masked) permutation p = 0.0021; wave-2 standalone permutation
 p = 0.00116; and in the post-cutoff holdout, detection persists where
-memorization is impossible (recognition gate 3/3 non-recognition). Each layer's
+memorization is impossible (recognition gate 3/3 non-recognition, draw-1;
+k=5 re-probe: knows_event 0/5 per case). Each layer's
 p-value is computed on that layer alone; no layer borrows significance from
 another. (Pooled wave-1+wave-2 figures such as p=3.0e-05 are secondary,
 reported only alongside the standalone per-wave numbers.)
@@ -57,7 +58,10 @@ ability not explained by memorization or mechanical signals:
 
 **③ Post-cutoff holdout (memorization structurally impossible; HUBG·WMK·GNE) → H2 (per-case, N=3).**
 Recognition gate 3/3 non-recognition (demonstrated non-memorization of the
-disclosure events). The signal **weakens but does not collapse**. All three
+disclosure events; draw-1). **Gate elevated to k=5 (run 2026-07-10, rules
+pre-committed): knows_event 0/5 for each of HUBG·WMK·GNE — holdout eligibility
+robust to draw noise under the pre-committed ≤1/5 rule; positive control HTZ
+re-verified True.** The signal **weakens but does not collapse**. All three
 companies carry provisional (G2) restatement labels, not confirmed enforcement:
 - Per-case: **HUBG p=70 (flagged)** · GNE 42 · WMK 32 — all G2-provisional
   restatement events, labels pending any 4.02/AAER upgrade.

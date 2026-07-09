@@ -793,3 +793,7 @@ c44bd59a…)는 **서명 없이 superseded** (채점 미진입 상태 폐기). v
 ## D32 — Phase 1 사전 등록: recognition gate k=5 승격 (2026-07-10, JSON 1줄, 프로브 발사 전 커밋)
 
 {"decision":"D32","date":"2026-07-10","action":"recognition gate k=5 사전 등록 — analysis/GATE_K5_PLAN.md + analysis/gate_k5_analyze.py(결정론 판정기) 프로브 호출 전 커밋 (freeze-commit-then-run)","targets":"HUBG·WMK·GNE knows_event draws 2–5 (12호출, 동결 tools/holdout_probe.py 무수정 재사용, 출력만 runs/holdout/recognition_k5/) + HTZ 양성대조 1호출 선행 (False면 즉시 중단+OWNER_QUEUE)","rules_prefixed":"band ≥2/5 True → 홀드아웃 자격 상실(H2 제외·강등 사유 발행 표면 명시·Tier-③ 재작성, HUBG면 Issue #2 발행 보류 긴급 항목) · ≤1/5 → 자격 유지 + 'gate band x/5 (k=5)' 병기(draw-1 발행값 불변) · 해석은 §3 사전 등록 3방향 문장만","boundary_commits":"[HTZ+draw-2]·[draw-3]·[draw-4]·[draw-5] 4회, 각 커밋 전 verify_blindness --write-manifest","budget":"Phase 1 = 13호출 (세션 cap 60)"}
+
+## D33 — Phase 1 판정: gate k=5 결과 방향 (i) — 자격 3/3 강건 (2026-07-10, JSON 1줄)
+
+{"decision":"D33","date":"2026-07-10","action":"recognition gate k=5 실행 완료 (13호출: HTZ 1 + 3케이스×draws 2–5 12, 경계 커밋 4회 전건 push)","result":"HTZ 양성대조 True(high) — 민감도 확증 · HUBG 0/5 · WMK 0/5 · GNE 0/5 (knows_event=True 0건) → 사전 규칙(≤1/5) 자격 3/3 유지, 결과 방향 (i), 판정 gate_k5_analyze.py 기계 적용","interpretation":"사전 등록 문장 (i) 그대로 — draw 잡음에 강건; k=1 거짓음성 산술(≈34%)은 반박이 아니라 관측 인지율이 가정(30%)보다 낮은 방향 시사로만 기술","docs":"holdout_summary §1 밴드 병기 + README 양어 병기(draw-1 발행값 불변) + ISSUE_2는 RP-14 DIFF-2로 diff-only + Q-R01 갱신","metered":"Phase 1 실호출 13/13 (초과·낭비 0), 세션 누계 13/60","invariants":"발행 동결값 무변경 — 전부 병기; Issue #2 발행 보류 긴급 항목 비발동"}

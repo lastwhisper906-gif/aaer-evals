@@ -12,6 +12,17 @@ HUBG·WMK·GNE 전원 폭로 사건 **비인지**(knows_event=False). 양성 대
 HTZ·KHC는 고신뢰 인지(계기 검증). ⇒ **N=3 편입, H3의 N<3 STOP 비발동.**
 정체는 알되(WMK="Pennsylvania 슈퍼마켓") 폭로는 미암기 = 이상적 홀드아웃.
 
+- **게이트 k=5 승격 (D32/D33, 2026-07-10 — 판정·해석 문장 사전 커밋
+  `analysis/GATE_K5_PLAN.md`)**: draws 2–5 재프로브 결과 **HUBG 0/5 · WMK 0/5 ·
+  GNE 0/5** (knows_event=True 0건, 판정 `analysis/gate_k5_analyze.py` 기계 적용,
+  결과 방향 (i)). 양성대조 HTZ 재검 True(high) — 계기 민감도 확증. 사전 규칙
+  (≤1/5 → 자격 유지)상 **홀드아웃 자격 3/3 draw 잡음에 강건**. 발행 표기는
+  "recognition gate 3/3 (draw-1)"에 "gate band 0/5 per case (k=5)" **병기**
+  (대체 아님). k=1 거짓음성 산술(인지 확률 30% 가정 시 3/3 통과 ≈34% —
+  methodology_limitations §Instrument bias directions)은 반박된 것이 아니라,
+  이 세트의 관측 인지율이 가정보다 낮은 방향임을 시사하는 것으로만 기술한다
+  (사전 등록 해석 문장 (i) 그대로). transcript: `runs/holdout/recognition_k5/`.
+
 ## 2. per-case 채점 (identity frame PRIMARY, 컷오프=폭로 전일)
 
 | 회사 (G2) | 컷오프 | LLM p | tier | Beneish M | Dechow F | 플래그(p≥50) |
