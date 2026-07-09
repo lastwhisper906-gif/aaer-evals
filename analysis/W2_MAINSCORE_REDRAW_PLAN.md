@@ -46,3 +46,52 @@ case_NN 오름차순(=알파벳 발사순 승계). 케이스 경계마다 freeze
 ## 6. 면책
 
 단일 Claude 파이프라인, k=2. draw-1 published 불변. 발행 안 함(소유자 게이트).
+
+## 7. 로그된 개정 #1 (§5-6 이력 공개) — 2026-07-09: 홀드아웃 본채점 재추첨 arm 추가
+
+> Authored by Claude Code, pending human audit (GA-001 (b)). 본 arm의 어떤 호출도
+> 이 개정 커밋 **이후**에만 발사된다 — 사전 등록 조건 충족. 이하 §7 불변.
+
+### 7-1. 동기
+
+홀드아웃 per-case 판정(HUBG 70 · GNE 42 · WMK 32)은 draw-1 단일이다. L-3(비결정론
+점추정)을 홀드아웃 자신에게 적용하면, H2의 핵심 근거(HUBG 플래그)가 draw 잡음에
+견디는지 측정하지 않고는 headline로 세울 수 없다. wave-1 A3(k=5) 방식을 홀드아웃에
+승계한다.
+
+### 7-2. 설계
+
+- **홀드아웃 3사(HUBG·WMK·GNE) × 총 k=5 draw**: draw-1 = 동결 `runs/holdout/scores`
+  (불침해, published 유지) + 신규 draw-2..5 (identity frame 본채점 재실행).
+- **피평가자 호출만 12건, 채점자 0건** (E3 선례 — 아래 판정 규칙은
+  `misstatement_probability`만 사용, d1~d4 채점 불요).
+- 산출: `runs/holdout/mainscore_redraw/draw_{2,3,4,5}/case_NN.json`.
+  cutoff_guard·forbid·pin(claude-sonnet-5) 전건. draw 경계마다
+  `verify_blindness --write-manifest`·commit·push.
+
+### 7-3. 판정 규칙 (사전 커밋)
+
+- **1차 규칙**: HUBG **p≥50 이 5 draw 중 ≥4** (draw-1 포함) → "H2 탐지는 draw 잡음에
+  강건(robust)". **≤3/5 → draw-민감으로 보고, 표현 완화 없음.**
+- **2차 (밴드 전용, 유의성 주장 없음)**: 3사 각각 5-draw 중위값 + [min, max] 밴드.
+  WMK·GNE 는 sub-50 예상 — **≥2 draw에서 p≥50으로 뒤집히면 '불안정'으로 보고**하며
+  신규 탐지로 승격하지 않는다.
+- **H1(순열 유의성)은 N=3에서 계속 미주장** (E1 사전 등록 §0과 동일).
+- **발행 per-case 수치는 draw-1 그대로** (§3 원칙 승계: 재추첨은 밴드이지 교체가 아니다).
+
+### 7-4. 순서·절단
+
+GNE → WMK → HUBG 오름차순 아님 — **case_71(HUBG) → 72 → 73 케이스 순, draw 단위 발사**
+(draw-2 전건 → draw-3 전건 → …). 절단 시 완료 draw까지의 부분 밴드 보고("k=n/5", 미완 명시).
+
+### 7-5. 호출 추정·우선순위
+
+12 호출(전역 cap 계상). 본 arm은 **wave-2 +1 draw(§1)와 독립** — wave-2 arm의 최저
+우선순위 지위는 불변이며, 본 arm은 OWNER-GATE-E 승인 및 소유자 일정 지시(2026-07-09,
+"E1 감독 실행·홀드아웃 k=5 최우선")에 따라 E1 직후 실행한다.
+
+### 7-6. 분석·보고
+
+`analysis/holdout_redraw_analyze.py` (신규, e3_analyze.py 패턴) →
+`analysis/holdout_redraw_results.json` + `analysis/holdout_summary.md`·Issue #2 초안에
+밴드 병기 (예: "HUBG p=70 [5-draw 범위 __–__, ≥50 판정 _/5]").

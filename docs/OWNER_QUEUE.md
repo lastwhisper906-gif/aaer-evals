@@ -18,7 +18,10 @@
   함수는 준비됨. 실행은 **감독 하 1회**(풀 fetch → validate → PROPOSED → 컷오프 검증
   → 채점)로 — wave-2 대조군이 RP-08/09에서 받은 것과 동일한 게이트. 수기 지명 아님.
 - **옵션**: (A 기본) 감독 하 실행으로 이관 · (B) 소유자가 "무인 fetch 승인" 시 진행.
-- **상태**: OPEN — E1은 P-작업·E3와 달리 네트워크·검증 의존이라 무인 부적합.
+- **상태**: **RESOLVED (소유자, 2026-07-09)** — **(A) 감독 하 실행, 최우선.** E1 감독
+  실행 + 홀드아웃 k=5 재추첨(W2_MAINSCORE_REDRAW_PLAN §7)을 소유자 입회 세션에서
+  최우선 실행. 순서 GNE→HUBG→WMK, 케이스 경계 commit·push (승인 계획
+  `~/.claude/plans/i-want-to-solve-happy-moonbeam.md` Phase 3–4).
 
 ---
 
