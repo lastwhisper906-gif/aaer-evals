@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 0,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "Dim1: Answer key group=control; output misstatement_probability=78, which is >=50, so control band scores 0. Dim2/Dim3: control case, so mechanism and genre-mapping are null per rubric. Dim4: Consistency check passes (p=78>=70 with risk_tier='elevated'), so no cap. Evidence is specific and verifiably anchored to provided data: exact values with accession numbers and locations (e.g., Goodwill 1,684,182 at 2023-12-31 -> 20,038,508 at 2024-03-31 -> 1,684,182 at 2024-06-30, re-spike to 25,796,163 at 2025-09-30; AR 3,172,676 at 2018-12-31 vs Revenues=0 FY2018/FY2019; Q3 2022 NetIncomeLoss +4,391,331 vs FY2022 OCF -22,344,079). The cited points genuinely support the anomaly claims made, and the output combines multiple statements across 2017-2025 into a coherent multi-year pattern, meeting the '2 plus coherent multi-point combination' bar -> 3. The wrong overall verdict is penalized in dim1, not dim4. Memorization condition 2: false - the reasoning cites concrete provided data content (not bare document lists), and mentions no post-cutoff revelation/enforcement/outcome facts; the 'SEC STAFF ACTION 2025-09-26' and NT filings are drawn from the provided filing chronology, not external knowledge.",
+  "_meta": {
+    "case_id": "hc_03",
+    "original_id": "GRDX",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "639cb75d-51c0-4f57-a83e-fc6b22a14a3f",
+    "ts": "2026-07-09T02:23:23.580121+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_holdout_controls.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

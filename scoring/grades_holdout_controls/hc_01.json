@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 1,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "Control case (answer key: group=control). Dim1: output gives misstatement_probability=35; control band 30<p<50 → 1 (not ≤30 for full credit). Dim2: control → null; output appropriately has empty mechanism_hypotheses, consistent with p<40. Dim3: control → nulls. Dim4: risk_tier 'watch' is consistent with p=35 (<40 requires clear/watch), so no cap. Evidence cites specific provided data points with values/dates/accessions (CL1: AR 63,246k→65,442k→85,884k vs revenues 435,192k→398,868k→463,451k FY2023–25; CL3: NI vs OCF for FY2023–25; CL5: specific quarterly losses), and combines multi-year/multi-statement points coherently (AR-vs-revenue divergence rates, goodwill flat since 2017 vs revenue decline from $1.0B to ~$400M, three-year NI/OCF comparison) → 3. Minor blemish: CL2 quotes Goodwill=120,154k (2017) while top_signals says 'flat at $120,343,000 since 2017' — small inconsistency, not score-changing. Memorization condition2: false — reasoning anchors on concrete provided data content, and no post-cutoff revelation/enforcement/outcome facts appear (NT 10-K, 10-K/A, 15-12G are filing-chronology items within provided data).",
+  "_meta": {
+    "case_id": "hc_01",
+    "original_id": "VIASP",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "561126a8-83cb-4ce0-a5ad-48a8bb8808b7",
+    "ts": "2026-07-09T02:22:20.088008+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_holdout_controls.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

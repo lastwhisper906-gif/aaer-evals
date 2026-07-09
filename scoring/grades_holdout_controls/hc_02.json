@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 2,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "dim1=2: Control case per answer key; output p=20 which is <=30, earning the full 2. dim2=null: control case, mechanism not graded; output correctly provides an empty mechanism_hypotheses list (permissible since p=20 < 40). dim3=nulls: control case, genre mapping not applicable. dim4=3: Evidence is specific and genuinely supports claims — CL1 cites AR 75,000,000->98,600,000 vs revenue 494,800,000->536,000,000 from accession 0001193125-26-042983; CL2 cites OtherAssetsNoncurrent 17,500,000->45,500,000 vs Assets 1,794,500,000->2,134,200,000; CL3 cites NI vs OCF for both 2024 (47.1M vs 125.9M) and 2025 (50.2M vs 131.3M); CL6 spans 2009->2025 liability growth. The top_signals section coherently combines multiple data points across years: the AR/soft-asset flags are explained by the first appearance of Goodwill (0->4,300,000) indicating a 2025 acquisition, and persistent OCF>NI across years is used as an earnings-quality offset — a genuine multi-point, multi-year synthesis. Consistency rule: p=20 (<40) requires clear/watch; declared tier is 'watch', so no cap applies. Minor flaw (CL5 mixes two accession references in one evidence entry's quote/location fields) noted but both accessions are in documents_used and data is concrete, so not fabrication. memorization_suspect_condition2=false: reasoning anchors on concrete provided data values (not bare document lists), and no post-cutoff facts (revelation/enforcement/outcome) are mentioned anywhere in the output.",
+  "_meta": {
+    "case_id": "hc_02",
+    "original_id": "UTL",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "0a73a7ff-9b42-4e12-ac4a-bd9e8f7364b7",
+    "ts": "2026-07-09T02:22:47.507225+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_holdout_controls.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}
