@@ -1,0 +1,72 @@
+{
+ "plan": "W2_MAINSCORE_REDRAW_PLAN.md §7 (로그된 개정 #1)",
+ "k_completed": 5,
+ "draws_done": [
+  1,
+  2,
+  3,
+  4,
+  5
+ ],
+ "per_case": {
+  "HUBG": {
+   "published_draw1": 70,
+   "by_draw": {
+    "draw_1": 70,
+    "draw_2": 76,
+    "draw_3": 60,
+    "draw_4": 58,
+    "draw_5": 60
+   },
+   "median": 60,
+   "band_min": 58,
+   "band_max": 76,
+   "n_ge50": 5,
+   "k": 5
+  },
+  "WMK": {
+   "published_draw1": 32,
+   "by_draw": {
+    "draw_1": 32,
+    "draw_2": 28,
+    "draw_3": 42,
+    "draw_4": 32,
+    "draw_5": 40
+   },
+   "median": 32,
+   "band_min": 28,
+   "band_max": 42,
+   "n_ge50": 0,
+   "k": 5
+  },
+  "GNE": {
+   "published_draw1": 42,
+   "by_draw": {
+    "draw_1": 42,
+    "draw_2": 32,
+    "draw_3": 30,
+    "draw_4": 32,
+    "draw_5": 38
+   },
+   "median": 32,
+   "band_min": 30,
+   "band_max": 42,
+   "n_ge50": 0,
+   "k": 5
+  }
+ },
+ "primary_rule_HUBG": {
+  "n_ge50": 5,
+  "threshold": "4/5",
+  "verdict": "H2 탐지는 draw 잡음에 강건(robust) — HUBG p>=50 5/5 (>=4 충족)"
+ },
+ "secondary_instability": {
+  "counts": {
+   "WMK": 0,
+   "GNE": 0
+  },
+  "flagged": [],
+  "note": "'불안정' 보고 전용 — 신규 탐지 승격 금지 (§7-3)"
+ },
+ "invariants": "H1 미주장(N=3) · 발행 per-case = draw-1 유지 (§3 승계)"
+}

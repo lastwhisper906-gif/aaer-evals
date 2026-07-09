@@ -769,3 +769,7 @@ c44bd59a…)는 **서명 없이 superseded** (채점 미진입 상태 폐기). v
 ## D26 — E1 대조군 채점 9건 소유자 확정 + 결과 반영 (2026-07-09, JSON 1줄)
 
 {"decision":"D26","date":"2026-07-09","scope":"scoring/grades_holdout_controls hc_01..09 human_finalized=true — E1 감독 세션 내 소유자 mini-sign-off (밴드 재도출 검증 + FP 2건 rationale 확인 후 전건 finalize, 오버라이드 0)","results":"per-case: HUBG 70 > {RXO 42, BCO 30, XPO 20} 유일 분리 · WMK 32 미분리 {GO 58, SFM 32, VLGEA 12} · GNE 42 미분리 {GRDX 78, VIASP 35, UTL 20}; FPR 2/9=22.2% CP95 [2.8%,60.0%]; perm p=0.2045 CONTEXT ONLY(H1 미주장)","gate_incident":"FWRD knows_event=True 탈락 → XPO 승격 (gate_failures.json); probe 비멱등 재실행 2호출 정직 기록 — E1 실호출 30 (추정 18–27 +3)","docs":"holdout_summary §5 해소 + ISSUE_2 §3b 추가","basis":"HOLDOUT_CONTROLS_PLAN §2/§4/§7 사전 고정 그대로 — 사후 재해석 없음"}
+
+## D27 — E5§7 홀드아웃 재추첨 완료: 사전 규칙 판정 robust (2026-07-09, JSON 1줄)
+
+{"decision":"D27","date":"2026-07-09","action":"홀드아웃 본채점 k=5 재추첨 완료 (draws 2-5, 12 피평가자 호출, draw 경계 commit·push 전건)","result":"HUBG p>=50 5/5 (draw별 70/76/60/58/60, median 60, band [58,76]) → 사전 커밋 규칙(>=4/5) 'H2 탐지는 draw 잡음에 강건' · WMK [28,42] 0/5 · GNE [30,42] 0/5 — 뒤집힘 0, 불안정 보고 없음","invariants":"발행 per-case = draw-1 유지 · H1 미주장(N=3) · 판정은 holdout_redraw_analyze.py 기계 적용 (재해석 없음)","docs":"holdout_summary §2 밴드 병기 + ISSUE_2 §3 표 갱신","metered":"세션 누계 42 (E1 30 + redraw 12), 전역 cap 320 內"}

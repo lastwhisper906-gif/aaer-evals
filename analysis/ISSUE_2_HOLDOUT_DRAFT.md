@@ -58,11 +58,17 @@ Each admitted case was scored identity-visible (memorization of the revelation i
 impossible by construction; the gate proved non-recognition) on pre-revelation
 point-in-time data (cutoff = day before the 8-K). Results (`analysis/holdout_summary.md`):
 
-| company (G2) | cutoff | LLM p | flagged (≥50)? | grade d1/d2 | Beneish M / Dechow F |
-|---|---|---|---|---|---|
-| **Hub Group** (unrecorded payables, exec terminations) | 2026-02-04 | **70** | **yes** | 2 / 1 | uncomputable / uncomputable |
-| Weis Markets (inventory overstatement, whistleblower) | 2026-02-19 | 32 | no | 0 / 0 | uncomputable / 0.25 |
-| Genie Energy (captive-insurance liability error) | 2026-03-11 | 42 | no | 0 / 0 | −2.05 / 0.36 |
+| company (G2) | cutoff | LLM p | 5-draw band (k=5) | flagged (≥50)? | grade d1/d2 | Beneish M / Dechow F |
+|---|---|---|---|---|---|---|
+| **Hub Group** (unrecorded payables, exec terminations) | 2026-02-04 | **70** | [58–76], ≥50 in **5/5** | **yes** | 2 / 1 | uncomputable / uncomputable |
+| Weis Markets (inventory overstatement, whistleblower) | 2026-02-19 | 32 | [28–42], 0/5 | no | 0 / 0 | uncomputable / 0.25 |
+| Genie Energy (captive-insurance liability error) | 2026-03-11 | 42 | [30–42], 0/5 | no | 0 / 0 | −2.05 / 0.36 |
+
+Published per-case values remain draw-1 (the pre-registered protocol; redraws form a
+stability band, never a replacement). Under the pre-committed rule (§7 of
+`analysis/W2_MAINSCORE_REDRAW_PLAN.md`, logged amendment committed before any redraw
+call), Hub Group's flag is **robust to draw noise** (≥50 in 5/5 draws, threshold 4/5);
+neither Weis nor Genie flipped to ≥50 in any draw.
 
 - **H3's N<3 STOP does not fire** (N=3 admitted).
 - **H1 not claimed**: at N=3, a fraud-vs-control permutation is structurally
