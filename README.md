@@ -99,7 +99,7 @@ wave-2 0.337/0.265), 잔차 분리가 살아남는다 → 사전 커밋 R2 **비
 pip install -r requirements.txt
 python tools/reproduce_analysis.py   # 발행 수치 전건 재계산 → PASS/FAIL (100/100)
 python tools/verify_blindness.py     # 채점 선행 이력 증명 · 실명/카나리 스캔 · runs/ sha256
-python tools/verify_manifest.py      # 데이터 매니페스트 대조 (402 파일)
+python tools/verify_manifest.py      # 데이터 매니페스트 대조 (426 파일)
 python analysis/synthesis.py         # 교차-웨이브 종합 (결정론, seed 20260708)
 ```
 
