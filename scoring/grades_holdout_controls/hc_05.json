@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 2,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "dim1: Answer key says this is a control case. Output gives misstatement_probability=30, which satisfies the control band p<=30 -> score 2 (exactly at the boundary, which the rubric includes via '<=').\n\ndim2: Control case -> null per rubric. Note the output correctly provides an empty mechanism_hypotheses list, which is also consistent with the rule that a hypothesis is only required at p>=40 (p=30 here).\n\ndim3: Control case -> nulls per rubric (no top-ranked hypothesis exists to map anyway).\n\ndim4: Evidence is specific and internally coherent across multiple years and data points. Examples: CL3 cites NI vs OCF pairs for three consecutive years with accession numbers (NI=$16.7M vs OCF=$296.4M in 2017; NI=-$33.3M vs OCF=$364.1M in 2018; NI=$29.0M vs OCF=$368.6M in 2019); CL6 combines allowance balances ($30.7M in 2020 -> $16.9M in 2021) with receivables balances ($679.1M -> $701.8M), and the top_signals arithmetic (4.52% -> 2.41% allowance ratio) checks out exactly against the cited figures; CL2 combines goodwill ($186.2M 2016 -> $1,434.9M 2024) with revenue ($3,020.6M -> $5,011.9M) to make a proportionality argument. All checklist items quote concrete XBRL-style data values with accession numbers and locations, and the narrative claims (e.g., reserve-release pattern) are directly supported by the cited numbers. This is a coherent multi-year, multi-point combination -> 3. Consistency-rule cap check: p=30 (<40) requires clear/watch; declared risk_tier='watch' -> consistent, no cap. Mechanism-type assertions on this control case (allowance release, goodwill growth, NT 10-K/8-K recast) are anchored to specific provided data points rather than asserted generically.\n\nmemorization_suspect_condition2: false. The reasoning points at concrete provided data content (specific balances, ratios, filing dates) rather than merely listing documents, and mentions no revelation/enforcement/outcome facts that would postdate a cutoff; the Venezuela deconsolidation reference is contemporaneous filing content, and the output correctly treats it as an explanation of the NI/OCF gap rather than post-hoc knowledge of any enforcement action.",
+  "_meta": {
+    "case_id": "hc_05",
+    "original_id": "BCO",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "cf659535-2000-45d2-bc50-68e105056ea9",
+    "ts": "2026-07-09T02:29:14.731132+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_holdout_controls.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

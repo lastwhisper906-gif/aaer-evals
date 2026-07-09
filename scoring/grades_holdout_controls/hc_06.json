@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 2,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "Control case per answer key. Dim1: output gives misstatement_probability=20, which is <=30 for a control case -> 2. Dim2: control -> null; output correctly lists no mechanism hypotheses, consistent with p=20<40. Dim3: control -> nulls. Dim4: consistency rule satisfied (p=20<40 with tier='watch', an allowed clear/watch tier), so no cap. Evidence is specific and genuinely supports the no_flag findings: CL3 cites NetIncomeLoss=666M vs OCF=824M (2022) and 387M vs 808M (2024) from accession 0001166003-25-000017 to show OCF exceeds NI (no divergence flag); CL6 combines AllowanceForDoubtfulAccounts (26.3M in 2016 -> 50M in 2024) with AR balances (2,313.3M -> 977M) to show reserve coverage rising ~1.1%->~5.1%, contradicting reserve-starving; CL1 pairs AR (908M 2021, 977M 2024) with revenue (7,202M 2021, 8,072M 2024). Top signals coherently synthesize these multi-year, multi-account data points, plus a correctly hedged, dated 10-Q/A flag (accession 0001437749-12-009263) -> 3. Memorization condition 2: false - the reasoning anchors on concrete provided data values (not bare document lists), and the corporate actions mentioned (Con-way 2015, GXO 2021, RXO 2022 spin-offs) pre-date the latest provided filing (2025-10-30), so no post-cutoff revelation/enforcement facts are used.",
+  "_meta": {
+    "case_id": "hc_06",
+    "original_id": "XPO",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "b7208917-d089-4d67-bbaf-b85a94a1dee3",
+    "ts": "2026-07-09T02:29:48.719766+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_holdout_controls.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}

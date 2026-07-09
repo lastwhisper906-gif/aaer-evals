@@ -1,0 +1,22 @@
+{
+  "dim1_probability_band": 1,
+  "dim2_mechanism": null,
+  "dim3_genre_mapping": {
+    "mapped_genre": null,
+    "score": null
+  },
+  "dim4_evidence_quality": 3,
+  "memorization_suspect_condition2": false,
+  "rationale": "dim1=1: Control case; output p=42 falls in 30<p<50 band → 1 (would need p≤30 for 2). dim2=null and dim3 nulls: control case per rubric. dim4=3: No cap — p=42 with risk_tier='watch' satisfies the 40≤p<70 ⇒ watch/elevated consistency rule. Evidence is specific and genuinely supports claims: AR 725M→1,138M vs revenue 930M→1,040M q/q Q3 2024 (0001929561-24-000127); Goodwill 630M→1,027M and intangibles 62M→565M same quarter; NI −290M vs OCF −12M FY2024 (0001929561-25-000044); allowance flat at 13M vs AR 900M→1,227M 2022→2024 (0001929561-25-000113). The output coherently combines multi-year annual series (2021–2024 NI trajectory, 2022 vs 2024 AR/allowance) with quarterly points and filing-chronology checks, and its mechanism assertions on this control case are data-grounded and appropriately hedged (e.g., AR/revenue mismatch attributed largely to acquisition-date consolidation). Minor weakness: CL3's 2022 NI 92M vs OCF 310M gap is favorable-direction divergence, weakly supporting the flag, but overall support remains genuine and multi-point → 3. memorization_suspect_condition2=false: reasoning cites concrete provided data values throughout (not bare document lists) and mentions no post-cutoff revelation/enforcement/outcome facts; the Coyote acquisition reference is disclosed within the provided Q3 2024 filings.",
+  "_meta": {
+    "case_id": "hc_04",
+    "original_id": "RXO",
+    "grader_model_reported": "claude-fable-5",
+    "grader_pin_used": "claude-fable-5",
+    "fallback_used": false,
+    "session_id": "addcd544-f160-4a97-a2cc-4b48df7bd1f2",
+    "ts": "2026-07-09T02:28:48.264489+00:00",
+    "human_finalized": false,
+    "mapping_access_note": "scoring/id_mapping_holdout_controls.json opened mechanically by grader_runner for answer-key join; neutral IDs only on stdout (label-joining deferred to Phase 6)"
+  }
+}
