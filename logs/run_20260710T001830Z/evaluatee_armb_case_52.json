@@ -1,0 +1,59 @@
+{
+  "ts": "2026-07-10T00:20:21.926541+00:00",
+  "harness_pin": "2.1.201",
+  "flags": [
+    "claude",
+    "-p",
+    "--model",
+    "claude-sonnet-5",
+    "--output-format",
+    "json",
+    "--max-turns",
+    "2",
+    "--setting-sources",
+    "",
+    "--strict-mcp-config",
+    "--tools",
+    "",
+    "--disallowedTools",
+    "Bash,Read,Edit,Write,Glob,Grep,WebFetch,WebSearch,Task,NotebookEdit",
+    "--system-prompt",
+    "You are analyzing the financial reporting quality of Calawick Logistics (CALA) using only the structured data provided below, which reflects public filings available on or before 2010-08-10. Do not us...[1724 chars]",
+    "--json-schema",
+    "{\"type\": \"object\", \"additionalProperties\": false, \"required\": [\"checklist\", \"misstatement_probability\", \"mechanism_hypotheses\", \"overall\"], \"properties\": {\"checklist\": {\"type\": \"array\", \"items\": {\"typ...[1821 chars]"
+  ],
+  "model_requested": "claude-sonnet-5",
+  "served_models": [
+    "claude-sonnet-5"
+  ],
+  "pin_ok": true,
+  "ok": true,
+  "fail_reason": null,
+  "session_id": "3e406336-da0e-4ee9-b197-9a98884bb583",
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 30891,
+    "cache_read_input_tokens": 1116,
+    "output_tokens": 12226,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 30891,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [],
+    "speed": "standard"
+  },
+  "total_cost_usd_reference_only": 0.3690768,
+  "attempts": 1,
+  "wall_seconds": 111.8,
+  "freeze": {
+    "head": "45a2e5688f3b4590a64ef26517f6dd03e52715df",
+    "clean_tree": true
+  },
+  "raw_tail": null
+}

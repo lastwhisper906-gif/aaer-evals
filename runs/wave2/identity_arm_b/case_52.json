@@ -1,0 +1,280 @@
+{
+  "case_id": "case_52",
+  "run_id": "armb-case_52-r1",
+  "model": "claude-sonnet-5",
+  "pipeline_version": "45a2e5688f3b4590a64ef26517f6dd03e52715df",
+  "run_timestamp": "2026-07-10T00:20:22.026397+00:00",
+  "documents_used": [
+    {
+      "accession_no": "0000023082-09-000045",
+      "form_type": "10-Q",
+      "filing_date": "2009-08-07"
+    },
+    {
+      "accession_no": "0000023082-09-000065",
+      "form_type": "10-Q",
+      "filing_date": "2009-11-12"
+    },
+    {
+      "accession_no": "0000023082-10-000015",
+      "form_type": "10-Q",
+      "filing_date": "2010-02-10"
+    },
+    {
+      "accession_no": "0000023082-10-000036",
+      "form_type": "10-K",
+      "filing_date": "2010-05-21"
+    }
+  ],
+  "checklist": [
+    {
+      "item_id": "CL1",
+      "question": "Did receivables grow materially faster than revenue across consecutive periods?",
+      "finding": "flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "ReceivablesNetCurrent=2135115788.18 (2009-04-03)",
+          "source_accession_no": "0000023082-10-000036",
+          "location": "10-K balance sheet, FY2009 year-end"
+        },
+        {
+          "quote": "ReceivablesNetCurrent=2170644656.29 (2010-04-02)",
+          "source_accession_no": "0000023082-10-000036",
+          "location": "10-K balance sheet, FY2010 year-end"
+        },
+        {
+          "quote": "Revenues=9440527811.47 (2008-03-29 to 2009-04-03)",
+          "source_accession_no": "0000023082-10-000036",
+          "location": "10-K income statement, FY2009 annual"
+        },
+        {
+          "quote": "Revenues=9095390235.56 (2009-04-04 to 2010-04-02)",
+          "source_accession_no": "0000023082-10-000036",
+          "location": "10-K income statement, FY2010 annual"
+        }
+      ]
+    },
+    {
+      "item_id": "CL2",
+      "question": "Did non-current 'soft' assets (intangibles, other assets, capitalized items) grow materially faster than the business overall?",
+      "finding": "flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "OtherAssetsNoncurrent=346829426.77 (2009-04-03)",
+          "source_accession_no": "0000023082-10-000036",
+          "location": "10-K balance sheet, FY2009 year-end"
+        },
+        {
+          "quote": "OtherAssetsNoncurrent=435933572.18 (2010-04-02)",
+          "source_accession_no": "0000023082-10-000036",
+          "location": "10-K balance sheet, FY2010 year-end"
+        },
+        {
+          "quote": "Revenues=9095390235.56 (2009-04-04 to 2010-04-02) vs Revenues=9440527811.47 (2008-03-29 to 2009-04-03)",
+          "source_accession_no": "0000023082-10-000036",
+          "location": "10-K income statement"
+        }
+      ]
+    },
+    {
+      "item_id": "CL3",
+      "question": "Is there a persistent divergence between net income and operating cash flow?",
+      "finding": "flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "NetIncomeLoss=68237984.78 (2008-03-29 to 2008-07-04) vs NetCashProvidedByUsedInOperatingActivities=-31581216.10 (2008-03-29 to 2008-07-04)",
+          "source_accession_no": "0000023082-09-000045",
+          "location": "10-Q, Q1 FY2009"
+        },
+        {
+          "quote": "NetIncomeLoss=73877487.65 (2009-04-04 to 2009-07-03) vs NetCashProvidedByUsedInOperatingActivities=-167493235.36 (2009-04-04 to 2009-07-03)",
+          "source_accession_no": "0000023082-09-000045",
+          "location": "10-Q, Q1 FY2010"
+        },
+        {
+          "quote": "NetIncomeLoss=460747384.82 (2009-04-04 to 2010-04-02) vs NetCashProvidedByUsedInOperatingActivities=926570322.24 (2009-04-04 to 2010-04-02)",
+          "source_accession_no": "0000023082-10-000036",
+          "location": "10-K annual FY2010, cash flow statement"
+        }
+      ]
+    },
+    {
+      "item_id": "CL4",
+      "question": "Do inventory levels or gross margins show trends inconsistent with revenue?",
+      "finding": "no_flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "Revenues=9305179742.48 (2007-03-31 to 2008-03-28); CostOfServices=7415946279.62 (2007-03-31 to 2008-03-28) -> gross margin ~20.3%",
+          "source_accession_no": "0000023082-10-000036",
+          "location": "10-K income statement, FY2008 annual"
+        },
+        {
+          "quote": "Revenues=9440527811.47 (2008-03-29 to 2009-04-03); CostOfServices=7482492413.53 (2008-03-29 to 2009-04-03) -> gross margin ~20.7%",
+          "source_accession_no": "0000023082-10-000036",
+          "location": "10-K income statement, FY2009 annual"
+        },
+        {
+          "quote": "Revenues=9095390235.56 (2009-04-04 to 2010-04-02); CostOfServices=7216871828.16 (2009-04-04 to 2010-04-02) -> gross margin ~20.7%",
+          "source_accession_no": "0000023082-10-000036",
+          "location": "10-K income statement, FY2010 annual"
+        }
+      ]
+    },
+    {
+      "item_id": "CL5",
+      "question": "Is the earnings trajectory unusually smooth relative to the volatility of revenue and cash flow?",
+      "finding": "no_flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "Quarterly NetIncomeLoss FY2009: 68237984.78 (Q1), 254905529.92 (Q2), 90795996.28 (Q3)",
+          "source_accession_no": "0000023082-09-000065",
+          "location": "10-Q filings FY2009 Q1-Q3"
+        },
+        {
+          "quote": "Quarterly NetIncomeLoss FY2010: 73877487.65 (Q1), 121813262.08 (Q2), 118993510.65 (Q3)",
+          "source_accession_no": "0000023082-10-000015",
+          "location": "10-Q filings FY2010 Q1-Q3"
+        }
+      ]
+    },
+    {
+      "item_id": "CL6",
+      "question": "Did liability, allowance, or reserve balances decline (or fail to grow) despite growing business activity?",
+      "finding": "flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "AccountsPayableCurrent=358672382.8 (2009-04-03) declining to AccountsPayableCurrent=230655667.56 (2010-04-02), a ~36% decline",
+          "source_accession_no": "0000023082-10-000036",
+          "location": "10-K balance sheet, FY2009 vs FY2010 year-end"
+        },
+        {
+          "quote": "CostOfServices=7482492413.53 (FY2009 annual) vs CostOfServices=7216871828.16 (FY2010 annual), only a ~3.5% decline",
+          "source_accession_no": "0000023082-10-000036",
+          "location": "10-K income statement"
+        },
+        {
+          "quote": "AllowanceForDoubtfulAccountsReceivableCurrent=2135115788.18 (2009-04-03) is identical to ReceivablesNetCurrent=2135115788.18 (2009-04-03); AllowanceForDoubtfulAccountsReceivableCurrent=2170644656.29 (2010-04-02) is identical to ReceivablesNetCurrent=2170644656.29 (2010-04-02)",
+          "source_accession_no": "0000023082-10-000036",
+          "location": "10-K balance sheet / XBRL tagging"
+        }
+      ]
+    },
+    {
+      "item_id": "CL7",
+      "question": "Does the filing chronology show irregularities (late filings/NT forms, amendments, unusual 8-K frequency)?",
+      "finding": "flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "NT 10-Q filed 2006-11-09; NT 10-Q filed 2007-02-08; NT 10-K filed 2007-05-30; NT 10-Q filed 2007-08-08; NT 10-Q filed 2007-11-08; 10-K/A filed 2008-01-11",
+          "source_accession_no": "n/a",
+          "location": "filing_chronology list"
+        },
+        {
+          "quote": "Numerous CORRESP and UPLOAD entries (SEC comment-letter correspondence) recurring from 2006-08-04 through 2009-08-25",
+          "source_accession_no": "n/a",
+          "location": "filing_chronology list"
+        }
+      ]
+    },
+    {
+      "item_id": "CL8",
+      "question": "Is the provided data sufficient in coverage and length for the above assessments?",
+      "finding": "insufficient_data",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "Quarterly operating cash flow data provided only for isolated quarters, e.g., NetCashProvidedByUsedInOperatingActivities=-31581216.10 (2008-03-29 to 2008-07-04) and -167493235.36 (2009-04-04 to 2009-07-03), with no full quarterly series across all fiscal quarters",
+          "source_accession_no": "0000023082-09-000045",
+          "location": "10-Q cash flow statements"
+        },
+        {
+          "quote": "Detailed point-in-time series begin only at 2009-04-03/2007 for select items (e.g., Cash first reported 2007-03-30), leaving limited multi-year history prior to FY2008 for receivables, payables, and allowance accounts",
+          "source_accession_no": "0000023082-10-000036",
+          "location": "10-K comparative balance sheet"
+        }
+      ]
+    }
+  ],
+  "misstatement_probability": 45,
+  "mechanism_hypotheses": [
+    {
+      "affected_line_items": [
+        "AccountsPayableCurrent",
+        "CostOfServices",
+        "NetIncomeLoss"
+      ],
+      "direction": "overstated",
+      "accounting_treatment": "Potential understatement/under-accrual of trade payables and related operating expenses relative to purchase/cost volume, which would understate liabilities and overstate reported net income and equity.",
+      "rationale_evidence": [
+        {
+          "quote": "AccountsPayableCurrent=358672382.8 (2009-04-03) declining ~36% to AccountsPayableCurrent=230655667.56 (2010-04-02)",
+          "source_accession_no": "0000023082-10-000036",
+          "location": "10-K balance sheet"
+        },
+        {
+          "quote": "CostOfServices=7482492413.53 (FY2009 annual) vs CostOfServices=7216871828.16 (FY2010 annual), only ~3.5% decline",
+          "source_accession_no": "0000023082-10-000036",
+          "location": "10-K income statement"
+        }
+      ]
+    },
+    {
+      "affected_line_items": [
+        "OtherAssetsNoncurrent",
+        "SellingGeneralAndAdministrativeExpense or CostOfServices",
+        "NetIncomeLoss"
+      ],
+      "direction": "overstated",
+      "accounting_treatment": "Possible capitalization of costs that would normally be expensed, inflating non-current 'other assets' and correspondingly reducing operating expense recognized in the period, thereby overstating net income and total assets relative to a shrinking revenue base.",
+      "rationale_evidence": [
+        {
+          "quote": "OtherAssetsNoncurrent=346829426.77 (2009-04-03) growing to OtherAssetsNoncurrent=435933572.18 (2010-04-02), a ~25.7% increase",
+          "source_accession_no": "0000023082-10-000036",
+          "location": "10-K balance sheet"
+        },
+        {
+          "quote": "Revenues declined from 9440527811.47 (FY2009 annual) to 9095390235.56 (FY2010 annual), a ~3.7% decline",
+          "source_accession_no": "0000023082-10-000036",
+          "location": "10-K income statement"
+        }
+      ]
+    },
+    {
+      "affected_line_items": [
+        "ReceivablesNetCurrent",
+        "AllowanceForDoubtfulAccountsReceivableCurrent"
+      ],
+      "direction": "overstated",
+      "accounting_treatment": "The allowance for doubtful accounts is reported as numerically identical to gross/net receivables in both periods shown, indicating either a data/tagging error or a failure to properly disclose/size the bad-debt reserve, which obscures whether receivables are adequately reserved and could mask an overstatement of net receivables.",
+      "rationale_evidence": [
+        {
+          "quote": "AllowanceForDoubtfulAccountsReceivableCurrent=2135115788.18 (2009-04-03) equals ReceivablesNetCurrent=2135115788.18 (2009-04-03)",
+          "source_accession_no": "0000023082-10-000036",
+          "location": "10-K balance sheet / XBRL tag"
+        },
+        {
+          "quote": "AllowanceForDoubtfulAccountsReceivableCurrent=2170644656.29 (2010-04-02) equals ReceivablesNetCurrent=2170644656.29 (2010-04-02)",
+          "source_accession_no": "0000023082-10-000036",
+          "location": "10-K balance sheet / XBRL tag"
+        }
+      ]
+    }
+  ],
+  "overall": {
+    "risk_tier": "watch",
+    "top_signals": [
+      "Accounts payable fell ~36% (358.7M to 230.7M) while cost of services fell only ~3.5%, a mismatch suggesting possible under-accrual of liabilities/expenses",
+      "Other non-current assets grew ~25.7% (346.8M to 435.9M) while revenue declined ~3.7%, suggesting possible capitalization of costs that inflates assets/earnings",
+      "Allowance for doubtful accounts is reported identically to net receivables in two periods (2135.1M and 2170.6M), a data anomaly that prevents verifying reserve adequacy and could mask receivable overstatement",
+      "Recurring pattern of positive net income alongside negative operating cash flow in Q1 of both FY2009 and FY2010",
+      "Historical cluster of NT 10-Q/NT 10-K late-filing notices and a 10-K/A amendment (2006-2008) plus extensive SEC comment-letter correspondence (2006-2009), indicating a history of filing/disclosure friction"
+    ]
+  }
+}
