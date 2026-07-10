@@ -55,6 +55,16 @@ ability not explained by memorization or mechanical signals:
   — single boundary case DAR, `analysis/synthesis.json` §reconcile) = **half of
   wave-1**. Identity-vs-perturbed dominance 3/9 (below majority) → R3 does not
   fire. **R4 framing constraint**: no benchmark-accuracy/AUC-comparison claims.
+- **Outcome-recognition probe (identity-exposed, run 2026-07-10, pre-registered
+  D34 — branchless, not an R/H input): the model recalls the
+  enforcement/restatement event for 8 of 9 treatment cases (88.9%, CP
+  [51.7%, 99.7%]) vs 0/23 controls (CP [0%, 14.8%]).** Five cases are
+  event-known-but-not-nameable from the anonymized payload (name-ID
+  false-negative direction). Honest scoping: the "half of wave-1" reading
+  belongs to the name-ID instrument only — on the direct instrument, the
+  identity-exposed frame (the published primary) operated with outcome
+  knowledge broadly available. R4 is unchanged (its input is perturbation
+  dominance 3/9, not this probe). `analysis/outcome_recognition_results.json`.
 
 **③ Post-cutoff holdout (memorization structurally impossible; HUBG·WMK·GNE) → H2 (per-case, N=3).**
 Recognition gate 3/3 non-recognition (demonstrated non-memorization of the
@@ -85,9 +95,14 @@ companies carry provisional (G2) restatement labels, not confirmed enforcement:
   mechanism detection.
 - **H1 (permutation significance) is not claimed at N=3** (under-powered).
 
-**Memorization dose-response (secondary, gradient read).** As name-ID halves
-and vanishes (50% → 21.9% → 0%), the separation AUC point estimates barely move
-— 0.824 [0.599, 0.983] → 0.829 [0.616, 0.983] — and holdout detection persists.
+**Memorization dose-response (secondary, gradient read — now two axes).** On
+the name-ID proxy, the axis halves and vanishes (50% → 21.9% → 0%) while the
+separation AUC point estimates barely move — 0.824 [0.599, 0.983] → 0.829
+[0.616, 0.983] — and holdout detection persists. **On the direct
+outcome-knowledge instrument (aligned with the holdout gate; wave-1 unmeasured),
+the axis reads wave-2 88.9% → holdout 0% — memorization removal happens between
+wave-2 and the holdout, not between wave-1 and wave-2** (`analysis/synthesis.md`
+§1, two-axis table).
 **The CI widths forbid any statistical equivalence claim about the AUCs**; this
 is a gradient reading across three samples that differ in era, fame, and label
 tier — not a controlled experiment. The load-bearing evidence is the standalone
