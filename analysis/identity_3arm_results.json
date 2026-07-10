@@ -1,0 +1,113 @@
+{
+ "plan": "analysis/IDENTITY_3ARM_PLAN.md (D36)",
+ "bar_pp": 10.0,
+ "per_case": [
+  {
+   "case_id": "case_39",
+   "ticker": "OSIR",
+   "fict_name": "Galoridge Logistics",
+   "a_perturbed_frozen": 65.0,
+   "b_fict_name": 70.0,
+   "c_original_frozen": 58.0,
+   "delta_b_minus_a": 5.0,
+   "delta_c_minus_b": -12.0
+  },
+  {
+   "case_id": "case_40",
+   "ticker": "TNGO",
+   "fict_name": "Joridine Enterprises",
+   "a_perturbed_frozen": 52.0,
+   "b_fict_name": 60.0,
+   "c_original_frozen": 55.0,
+   "delta_b_minus_a": 8.0,
+   "delta_c_minus_b": -5.0
+  },
+  {
+   "case_id": "case_52",
+   "ticker": "CSC",
+   "fict_name": "Calawick Logistics",
+   "a_perturbed_frozen": 55.0,
+   "b_fict_name": 45.0,
+   "c_original_frozen": 40.0,
+   "delta_b_minus_a": -10.0,
+   "delta_c_minus_b": -5.0
+  },
+  {
+   "case_id": "case_59",
+   "ticker": "HAIN",
+   "fict_name": "Hariawick Systems",
+   "a_perturbed_frozen": 45.0,
+   "b_fict_name": 60.0,
+   "c_original_frozen": 58.0,
+   "delta_b_minus_a": 15.0,
+   "delta_c_minus_b": -2.0
+  },
+  {
+   "case_id": "case_60",
+   "ticker": "MDXG",
+   "fict_name": "Pelodine Brands",
+   "a_perturbed_frozen": 58.0,
+   "b_fict_name": 62.0,
+   "c_original_frozen": 65.0,
+   "delta_b_minus_a": 4.0,
+   "delta_c_minus_b": 3.0
+  },
+  {
+   "case_id": "case_61",
+   "ticker": "CGI",
+   "fict_name": "Solaford Holdings",
+   "a_perturbed_frozen": 62.0,
+   "b_fict_name": 68.0,
+   "c_original_frozen": 72.0,
+   "delta_b_minus_a": 6.0,
+   "delta_c_minus_b": 4.0
+  },
+  {
+   "case_id": "case_65",
+   "ticker": "WFT",
+   "fict_name": "Teleridge Logistics",
+   "a_perturbed_frozen": 55.0,
+   "b_fict_name": 55.0,
+   "c_original_frozen": 74.0,
+   "delta_b_minus_a": 0.0,
+   "delta_c_minus_b": 19.0
+  },
+  {
+   "case_id": "case_66",
+   "ticker": "UAA",
+   "fict_name": "Vereridge Enterprises",
+   "a_perturbed_frozen": 42.0,
+   "b_fict_name": 55.0,
+   "c_original_frozen": 55.0,
+   "delta_b_minus_a": 13.0,
+   "delta_c_minus_b": 0.0
+  },
+  {
+   "case_id": "case_67",
+   "ticker": "BRX",
+   "fict_name": "Taladine Logistics",
+   "a_perturbed_frozen": 20.0,
+   "b_fict_name": 30.0,
+   "c_original_frozen": 20.0,
+   "delta_b_minus_a": 10.0,
+   "delta_c_minus_b": -10.0
+  }
+ ],
+ "median_b_minus_a": 6.0,
+ "median_c_minus_b": -2.0,
+ "sign_test_b_minus_a": {
+  "n_nonzero": 8,
+  "pos": 7,
+  "neg": 1,
+  "p_two_sided": 0.07031
+ },
+ "sign_test_c_minus_b": {
+  "n_nonzero": 8,
+  "pos": 3,
+  "neg": 5,
+  "p_two_sided": 0.72656
+ },
+ "classification": "ii",
+ "interpretation_preregistered": "암기의 점수 기여가 작다는 방향 증거 (a≈b≈c). N=9 방향 증거.",
+ "framing": "N=9 directional evidence — 인과 확정 서술 금지; R/H 판정 불변"
+}

@@ -65,6 +65,13 @@ ability not explained by memorization or mechanical signals:
   identity-exposed frame (the published primary) operated with outcome
   knowledge broadly available. R4 is unchanged (its input is perturbation
   dominance 3/9, not this probe). `analysis/outcome_recognition_results.json`.
+- **Identity 3-arm experiment (pre-registered D36, run 2026-07-10)**: scoring
+  the same perturbed payloads under fabricated company names (collision-screened
+  against all 1,049,982 EDGAR filer names) — anonymous vs fabricated-name vs
+  real-name medians differ by +6.0pp / −2.0pp (both under the pre-registered
+  10pp bar) → pre-registered reading **(ii): directional evidence that
+  memorization's score contribution is small on this set (a≈b≈c; N=9,
+  directional only — no causal claim)**. `analysis/identity_3arm_results.json`.
 
 **③ Post-cutoff holdout (memorization structurally impossible; HUBG·WMK·GNE) → H2 (per-case, N=3).**
 Recognition gate 3/3 non-recognition (demonstrated non-memorization of the
