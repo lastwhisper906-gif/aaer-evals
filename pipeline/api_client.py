@@ -47,10 +47,10 @@ def call_model_api(model: str, system_prompt: str, user_payload: str,
                    max_tokens: int = DEFAULT_MAX_TOKENS) -> CallResult:
     """cli_client.call_model 동일 계약 — 구조화 출력은 강제 tool-use로 수취."""
     assert_raw_api_approved()
-    import anthropic  # 지연 import — 스캐폴드 단계에서 패키지 의존 강제하지 않음
-
     if forbid_markers:
-        guard_payload(user_payload, forbid_markers)
+        guard_payload(user_payload, forbid_markers)  # SDK import 이전 — 가드 항상 선행
+
+    import anthropic  # 지연 import — 스캐폴드 단계에서 패키지 의존 강제하지 않음
 
     client = anthropic.Anthropic()
     tool = {"name": STRUCTURED_TOOL, "description":
