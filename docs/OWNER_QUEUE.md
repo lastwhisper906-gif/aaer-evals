@@ -90,3 +90,21 @@
 - **상태**: OPEN.
 
 ---
+
+## Q-R02 — freeze 개정 #3 (피평가자 raw API 이행) 발효 여부 — **OPEN**
+
+- **질문**: 피평가자 호출을 하네스(`claude -p`)에서 순수 Anthropic SDK로 옮기는
+  freeze 개정 #3(`docs/FREEZE_REV3_DRAFT.md`)을 발효할까? L-2(J13-e
+  currentDate/system-reminder 주입)·W8(2차 검토)의 해소 경로. **스캐폴드는 커밋
+  완료** (`pipeline/api_client.py`·`runner_api.py`·무호출 테스트 5건) — 이중
+  안전장치(AAER_RAW_API_APPROVED=1 + API 키)로 발효 전 실행 불가.
+- **소유자 인프라 결정 3건** (세션 권한 밖): ① INVARIANT 4(구독 OAuth 전용) 개정
+  + API 키 발급·보관 ② 종량 과금 예산 (동치성 테스트 ~30호출 + 이후 배치)
+  ③ 발효 시점 (권장: E2 조기성 발사 전 — 조기성 결과가 처음부터 깨끗한 경로에 섬).
+- **옵션**: (A) 발효 + 동치성 테스트부터 (FREEZE_REV3_DRAFT §3 설계 그대로) ·
+  (B) 보류 (스캐폴드 동결 유지, 언제든 분 단위 재개) · (C) 기각 (사유 기록).
+- **세션 기본 조치**: 없음 — **동결 결과 재실행 금지** 불변, 기존 러너는 어떤
+  것도 api_client를 import하지 않음 (테스트가 인터페이스 동일성만 검증).
+- **상태**: OPEN.
+
+---

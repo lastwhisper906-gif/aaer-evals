@@ -813,3 +813,7 @@ c44bd59a…)는 **서명 없이 superseded** (채점 미진입 상태 폐기). v
 ## D37 — Phase 3 판정: 3-arm 분류 (ii) — a≈b≈c (2026-07-10, JSON 1줄)
 
 {"decision":"D37","date":"2026-07-10","action":"arm (b) 9호출 완료 (케이스 경계 commit·push 9회 전건, FAIL 0, 핀 불일치 0) + 결정론 판독","result":"median(b−a)=+6.0pp · median(c−b)=−2.0pp (부호검정 p=0.18/1.0 병기) — 양쪽 10pp 바 미달 → 사전 등록 분류 (ii) '암기의 점수 기여가 작다는 방향 증거 (a≈b≈c)'","per_case":"OSIR 65/70/58 · TNGO 52/60/55 · CSC 55/45/40 · HAIN 45/60/58 · MDXG 58/62/65 · CGI 62/68/72 · WFT 55/55/74 · UAA 42/55/55 · BRX 20/30/20 (a/b/c)","framing":"사전 등록 문장 (ii) 그대로 — N=9 방향 증거, 인과 확정 서술 금지; D35(사건 지식 8/9 가용)와의 종합 해석은 독립 계기 병기로만, 소유자 검토 이관","docs":"synthesis §1b + README 양어 층② 병기","metered":"Phase 3 실호출 9/9 (초과·낭비 0), 세션 누계 54/60"}
+
+## D38 — Phase 4: raw API 이행 스캐폴드 (2026-07-10, JSON 1줄, 무호출 — 소유자 게이트)
+
+{"decision":"D38","date":"2026-07-10","action":"freeze 개정 #3 초안 + 스캐폴드 커밋 (실행 배선 없음)","items":["docs/FREEZE_REV3_DRAFT.md — 하네스→순수 SDK (J13-e 주입 제거, threat_model V4 원안 복귀, temperature 핀 가능 = L-3 부분 해소, INVARIANT 4 개정은 소유자 결정), 동치성 테스트 설계(pilot 2케이스 k=5 양경로, 게이트 아닌 측정, ~30호출 종량)","pipeline/api_client.py — cli_client.call_model 동일 CallResult 인터페이스, 이중 안전장치(AAER_RAW_API_APPROVED=1 + API 키), 동결 가드·재시도·핀검증·로그 규약 재사용","pipeline/runner_api.py — runner.py 병렬 변형 (동결 모듈 import만, runner.py 무수정 — §8-3 소진 없음)","pipeline/test_api_client.py — 무호출 테스트 5건 (가드 발동·인터페이스 동일성) green"],"invariants":"동결 결과 재실행 금지 — 다음 실행 배치부터; 기존 러너의 api_client import 0","owner_gate":"OWNER_QUEUE Q-R02 (키·과금·발효 시점 3건 이관)","metered":"Phase 4 = 0호출, 세션 누계 54/60"}
