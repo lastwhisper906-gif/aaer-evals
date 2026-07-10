@@ -1,0 +1,211 @@
+{
+  "case_id": "case_67",
+  "run_id": "armb-case_67-r1",
+  "model": "claude-sonnet-5",
+  "pipeline_version": "db7b0c41d502ee9f2e70043ebe710ba83ef692cf",
+  "run_timestamp": "2026-07-10T00:33:06.341800+00:00",
+  "documents_used": [
+    {
+      "accession_no": "0001581068-13-000007",
+      "form_type": "10-Q",
+      "filing_date": "2013-12-03"
+    },
+    {
+      "accession_no": "0001581068-14-000028",
+      "form_type": "10-Q",
+      "filing_date": "2014-05-07"
+    },
+    {
+      "accession_no": "0001581068-14-000038",
+      "form_type": "8-K",
+      "filing_date": "2014-05-27"
+    },
+    {
+      "accession_no": "0001581068-14-000053",
+      "form_type": "10-Q",
+      "filing_date": "2014-08-05"
+    },
+    {
+      "accession_no": "0001581068-14-000070",
+      "form_type": "10-Q",
+      "filing_date": "2014-11-04"
+    },
+    {
+      "accession_no": "0001581068-15-000028",
+      "form_type": "10-K",
+      "filing_date": "2015-02-19"
+    },
+    {
+      "accession_no": "0001581068-15-000050",
+      "form_type": "10-Q",
+      "filing_date": "2015-04-27"
+    },
+    {
+      "accession_no": "0001581068-15-000073",
+      "form_type": "10-Q",
+      "filing_date": "2015-07-27"
+    },
+    {
+      "accession_no": "0001581068-15-000092",
+      "form_type": "10-Q",
+      "filing_date": "2015-10-26"
+    }
+  ],
+  "checklist": [
+    {
+      "item_id": "CL1",
+      "question": "Did receivables grow materially faster than revenue across consecutive periods?",
+      "finding": "insufficient_data",
+      "confidence": "high",
+      "evidence": [
+        {
+          "quote": "ReceivablesNetCurrent=134820651.51 (2012-12-31)",
+          "source_accession_no": "0001581068-13-000007",
+          "location": "10-Q balance sheet"
+        },
+        {
+          "quote": "ReceivablesNetCurrent=156708905.92 (2014-12-31)",
+          "source_accession_no": "0001581068-15-000092",
+          "location": "10-Q balance sheet"
+        },
+        {
+          "quote": "ReceivablesNetCurrent=147680430.49 (2015-09-30)",
+          "source_accession_no": "0001581068-15-000092",
+          "location": "10-Q balance sheet"
+        }
+      ]
+    },
+    {
+      "item_id": "CL2",
+      "question": "Did non-current 'soft' assets (intangibles, other assets, capitalized items) grow materially faster than the business overall?",
+      "finding": "insufficient_data",
+      "confidence": "high",
+      "evidence": [
+        {
+          "quote": "Assets=8249955402.5 (2012-12-31)",
+          "source_accession_no": "0001581068-13-000007",
+          "location": "10-Q balance sheet"
+        },
+        {
+          "quote": "Assets=8184577557.51 (2015-09-30)",
+          "source_accession_no": "0001581068-15-000092",
+          "location": "10-Q balance sheet"
+        }
+      ]
+    },
+    {
+      "item_id": "CL3",
+      "question": "Is there a persistent divergence between net income and operating cash flow?",
+      "finding": "flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "NetIncomeLoss=-138058360.73; NetCashProvidedByUsedInOperatingActivities=230949432.26 (2012-01-01 to 2012-12-31)",
+          "source_accession_no": "0001581068-15-000028",
+          "location": "10-K income statement / cash flow statement"
+        },
+        {
+          "quote": "NetIncomeLoss=114123880.96; NetCashProvidedByUsedInOperatingActivities=411658963.77; DepreciationAndAmortization=379376365.62 (2014-01-01 to 2014-12-31)",
+          "source_accession_no": "0001581068-15-000028",
+          "location": "10-K"
+        },
+        {
+          "quote": "NetIncomeLoss=26746965.83; NetCashProvidedByUsedInOperatingActivities=97017024.67; DepreciationAndAmortization=93243276.57 (2015-01-01 to 2015-03-31)",
+          "source_accession_no": "0001581068-15-000050",
+          "location": "10-Q"
+        }
+      ]
+    },
+    {
+      "item_id": "CL4",
+      "question": "Do inventory levels or gross margins show trends inconsistent with revenue?",
+      "finding": "insufficient_data",
+      "confidence": "high",
+      "evidence": [
+        {
+          "quote": "No InventoryNet, CostOfRevenue, or Revenues concept appears anywhere in the provided financial_series_point_in_time dataset",
+          "source_accession_no": "n/a",
+          "location": "financial_series_point_in_time (absence noted across all filings 2013-2015)"
+        }
+      ]
+    },
+    {
+      "item_id": "CL5",
+      "question": "Is the earnings trajectory unusually smooth relative to the volatility of revenue and cash flow?",
+      "finding": "no_flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "ProfitLoss=-138058360.73 (2012 annual); ProfitLoss=-102124856.72 (2013 annual); ProfitLoss=114123880.96 (2014 annual)",
+          "source_accession_no": "0001581068-15-000028",
+          "location": "10-K"
+        },
+        {
+          "quote": "InterestExpense=323201380.5 (2012 annual); InterestExpense=294815372.7 (2013 annual); InterestExpense=225765145.94 (2014 annual)",
+          "source_accession_no": "0001581068-15-000028",
+          "location": "10-K"
+        },
+        {
+          "quote": "ProceedsFromIssuanceOfCommonStock=767858519.96 (2013 annual); DebtAndCapitalLeaseObligations=5583185150.79 (2012-12-31) declining to 5138146599.04 (2013-12-31)",
+          "source_accession_no": "0001581068-15-000028",
+          "location": "10-K / 8-K (0001581068-14-000038)"
+        }
+      ]
+    },
+    {
+      "item_id": "CL6",
+      "question": "Did liability, allowance, or reserve balances decline (or fail to grow) despite growing business activity?",
+      "finding": "no_flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "Liabilities=6276042896.96 (2012-12-31); Liabilities=5666150912.6 (2015-09-30)",
+          "source_accession_no": "0001581068-15-000092",
+          "location": "10-Q balance sheets"
+        },
+        {
+          "quote": "Assets=8249955402.5 (2012-12-31); Assets=8184577557.51 (2015-09-30)",
+          "source_accession_no": "0001581068-15-000092",
+          "location": "10-Q balance sheets"
+        }
+      ]
+    },
+    {
+      "item_id": "CL7",
+      "question": "Does the filing chronology show irregularities (late filings/NT forms, amendments, unusual 8-K frequency)?",
+      "finding": "no_flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "10-Q filed 2013-12-03, 2014-05-07, 2014-08-05, 2014-11-04, 2015-04-27, 2015-07-27, 2015-10-26; 10-K filed 2014-03-12 and 2015-02-19; no NT 10-Q/NT 10-K or 10-K/A restatement filings present",
+          "source_accession_no": "n/a",
+          "location": "filing_chronology list"
+        }
+      ]
+    },
+    {
+      "item_id": "CL8",
+      "question": "Is the provided data sufficient in coverage and length for the above assessments?",
+      "finding": "flag",
+      "confidence": "high",
+      "evidence": [
+        {
+          "quote": "Series provided limited to Assets, Cash, Debt, D&A, G&A, InterestExpense, Liabilities, Operating/Investing/Financing cash flows, NetIncomeLoss/ProfitLoss, ReceivablesNetCurrent, StockholdersEquity, and select Proceeds items; no Revenues, CostOfRevenue, InventoryNet, IntangibleAssets/Goodwill, or AllowanceForDoubtfulAccounts concepts are present in any filing 2013-2015",
+          "source_accession_no": "n/a",
+          "location": "financial_series_point_in_time"
+        }
+      ]
+    }
+  ],
+  "misstatement_probability": 30,
+  "mechanism_hypotheses": [],
+  "overall": {
+    "risk_tier": "watch",
+    "top_signals": [
+      "Recurring shortfall of operating cash flow relative to NI+D&A add-back in most periods (2012, 2014, Q1 2015: e.g. NetIncomeLoss=114123880.96 + DepreciationAndAmortization=379376365.62 = 493.5M vs NetCashProvidedByUsedInOperatingActivities=411658963.77 for 2014), suggesting working-capital or other accrual items are consuming cash faster than reported earnings - warrants deeper review of items not visible in this dataset",
+      "Absence of Revenue, COGS, inventory, intangible-asset, and allowance-for-doubtful-accounts concepts across the entire dataset (financial_series_point_in_time) prevents testing several standard misstatement heuristics (receivables-vs-revenue growth, soft-asset growth, gross margin trends), so the overall risk read is necessarily incomplete",
+      "Earnings trajectory swings from losses (ProfitLoss=-138058360.73 in 2012, -102124856.72 in 2013) to growing profit (114123880.96 in 2014) alongside falling InterestExpense (323201380.5 -> 294815372.7 -> 225765145.94) and a large 2013 equity raise (ProceedsFromIssuanceOfCommonStock=767858519.96) used to reduce Debt (5583185150.79 at 2012-12-31 to 5138146599.04 at 2013-12-31) - a plausible, disclosed driver rather than earnings smoothing",
+      "Filing chronology is regular (10-Q/10-K cadence intact 2013-2015) with no NT filings or restatement amendments observed, reducing concern of overt governance/reporting-control red flags"
+    ]
+  }
+}
