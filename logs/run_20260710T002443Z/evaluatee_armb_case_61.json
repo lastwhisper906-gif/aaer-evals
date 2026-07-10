@@ -1,0 +1,59 @@
+{
+  "ts": "2026-07-10T00:26:24.022031+00:00",
+  "harness_pin": "2.1.201",
+  "flags": [
+    "claude",
+    "-p",
+    "--model",
+    "claude-sonnet-5",
+    "--output-format",
+    "json",
+    "--max-turns",
+    "2",
+    "--setting-sources",
+    "",
+    "--strict-mcp-config",
+    "--tools",
+    "",
+    "--disallowedTools",
+    "Bash,Read,Edit,Write,Glob,Grep,WebFetch,WebSearch,Task,NotebookEdit",
+    "--system-prompt",
+    "You are analyzing the financial reporting quality of Solaford Holdings (SOLA) using only the structured data provided below, which reflects public filings available on or before 2017-04-04. Do not use...[1723 chars]",
+    "--json-schema",
+    "{\"type\": \"object\", \"additionalProperties\": false, \"required\": [\"checklist\", \"misstatement_probability\", \"mechanism_hypotheses\", \"overall\"], \"properties\": {\"checklist\": {\"type\": \"array\", \"items\": {\"typ...[1821 chars]"
+  ],
+  "model_requested": "claude-sonnet-5",
+  "served_models": [
+    "claude-sonnet-5"
+  ],
+  "pin_ok": true,
+  "ok": true,
+  "fail_reason": null,
+  "session_id": "0e666aa6-c557-4035-8622-eb61af0048a0",
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 63301,
+    "cache_read_input_tokens": 1116,
+    "output_tokens": 11219,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 63301,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [],
+    "speed": "standard"
+  },
+  "total_cost_usd_reference_only": 0.5484317999999999,
+  "attempts": 1,
+  "wall_seconds": 100.2,
+  "freeze": {
+    "head": "88a0a3d048f5247447e0aaf4f2ade3b913457c75",
+    "clean_tree": true
+  },
+  "raw_tail": null
+}
