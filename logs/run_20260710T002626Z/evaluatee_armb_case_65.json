@@ -1,0 +1,59 @@
+{
+  "ts": "2026-07-10T00:28:10.401616+00:00",
+  "harness_pin": "2.1.201",
+  "flags": [
+    "claude",
+    "-p",
+    "--model",
+    "claude-sonnet-5",
+    "--output-format",
+    "json",
+    "--max-turns",
+    "2",
+    "--setting-sources",
+    "",
+    "--strict-mcp-config",
+    "--tools",
+    "",
+    "--disallowedTools",
+    "Bash,Read,Edit,Write,Glob,Grep,WebFetch,WebSearch,Task,NotebookEdit",
+    "--system-prompt",
+    "You are analyzing the financial reporting quality of Teleridge Logistics (TELE) using only the structured data provided below, which reflects public filings available on or before 2011-02-28. Do not u...[1725 chars]",
+    "--json-schema",
+    "{\"type\": \"object\", \"additionalProperties\": false, \"required\": [\"checklist\", \"misstatement_probability\", \"mechanism_hypotheses\", \"overall\"], \"properties\": {\"checklist\": {\"type\": \"array\", \"items\": {\"typ...[1821 chars]"
+  ],
+  "model_requested": "claude-sonnet-5",
+  "served_models": [
+    "claude-sonnet-5"
+  ],
+  "pin_ok": true,
+  "ok": true,
+  "fail_reason": null,
+  "session_id": "772eebbe-3bff-4605-814c-87de0060780c",
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 37233,
+    "cache_read_input_tokens": 1116,
+    "output_tokens": 11025,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 37233,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [],
+    "speed": "standard"
+  },
+  "total_cost_usd_reference_only": 0.3891138,
+  "attempts": 1,
+  "wall_seconds": 103.6,
+  "freeze": {
+    "head": "d0104e4b955b8ced35e53d7022f40c1bf2b1561e",
+    "clean_tree": true
+  },
+  "raw_tail": null
+}
