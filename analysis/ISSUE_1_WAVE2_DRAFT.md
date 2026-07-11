@@ -82,11 +82,27 @@ Standalone primary (9 fraud vs 23 control), reproducible via
   [0.616, 0.983], Cliff δ 0.657, flags 7/9 vs 5/23, FPR 21.7% CP [7.5%, 43.7%]).
   Framing constraint (R4): **no benchmark-comparable accuracy/AUC claim**.
 
-**The contrast is the finding.** Wave-1's famous cases fired R3 (memorization
-entangled). Wave-2's less-famous cases fire R4 — the separation survives both the
-memorization check and the mechanical-baseline check, and the name-prediction probe
-identifies only **25%** of wave-2 firms (vs wave-1's 50%), confirming weaker
-memorization. Two misses (CSC, BRX) are themselves memorization-crossed cases.
+**The contrast is the finding — but "less memorized" needs precise scoping.**
+Wave-1's famous cases fired R3 (memorization entangled); wave-2 fires R4. The
+name-prediction probe identifies only **21.9%** of wave-2 firms (frozen
+name_match rule, 7/32; 25% under a rename-aware human reading — the DAR
+boundary case) (vs wave-1's 50%) — but that "less memorized" premise is
+**strictly confined to the name-ID instrument**. On the direct instrument,
+wave-2 outcome-knowledge is high: the model recalls the
+enforcement/restatement event for **8 of 9** treatment cases (direct probe,
+88.9%, CP [51.7%, 99.7%]). The basis for the residual-capability claim is
+therefore **not** reduced fame, but three independent observations:
+(a) **identity-masked scores do not collapse** — identity-perturbation
+dominance 3/9 single-draw and 4/9 median across E3 redraws, both below the
+pre-registered 5/9 bar; (b) **scores do not respond to identity manipulation**
+— the pre-registered 3-arm experiment reads a≈b≈c, median(b−a) = +6.0pp,
+under the 10pp bar (the clean b−a contrast; the c−b arm is confounded by
+scale restoration, and inter-arm deltas carry draw noise — `synthesis.md` §1b);
+(c) **detection persists in the un-memorizable holdout** — recognition gate
+robust at k=5 (knows_event 0/5 per case). In one sentence: **knowledge exists
+(8/9), but the evidence of it functioning as a score falls short of every
+pre-registered bar** — directional evidence only; causality is not declared
+confirmed. Two misses (CSC, BRX) are themselves memorization-crossed cases.
 Pooled secondary (17 vs 45, wave-1 frozen scores reused, **never a standalone
 headline**): p = 3.0e-05, AUC 0.831. Full write-up: `analysis/wave2_summary.md`;
 all grades human-finalized (owner sign-off 2026-07-09, D24 — 0 overrides, with

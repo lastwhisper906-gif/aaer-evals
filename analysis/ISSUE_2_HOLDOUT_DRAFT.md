@@ -52,6 +52,14 @@ nuance WMK makes explicit: the model **knows the company** (identity is availabl
 but **not the revelation**. That is exactly the holdout premise — under this frame,
 identity now adds information rather than contamination.
 
+**Gate elevated to k=5 (2026-07-10; rules and interpretations pre-committed at
+`analysis/GATE_K5_PLAN.md` before any probe call).** Re-probing each admitted
+company four more times: knows_event **0/5 per case** (HUBG · WMK · GNE), with
+the Hertz positive control re-verified True at high confidence. Under the
+pre-committed rule (≥2/5 recognitions would have revoked eligibility), the
+admission of all three cases is **robust to draw noise**. The published gate
+value remains the draw-1 3/3; the k=5 band is co-reported, never a replacement.
+
 ## 3. What the scoring shows (conclusion rule H2)
 
 Each admitted case was scored identity-visible (memorization of the revelation is
@@ -85,7 +93,9 @@ neither Weis nor Genie flipped to ≥50 in any draw.
 
 This is the honest crux: strip memorization entirely, and the score does not
 collapse to noise — the most misstatement-like case is still caught — but the signal
-is weaker than on memorized cases. That independently confirms Issue #0's R3 headline
+is weaker than on memorized cases. **After E1, the holdout evidence rests on a
+single robust case (HUBG — above all three matched controls, ≥50 in 5/5 redraws);
+the other two cases show no separation.** That independently confirms Issue #0's R3 headline
 ("separation is part memory, part analysis") on the axis where memory is impossible.
 N is tiny; this is directional existence evidence, not a capability estimate.
 

@@ -78,9 +78,13 @@ fresh-clone(P5)    : reproduce·lint·pytest·schema-only PASS (temp dir 실측)
    → **완료 (2026-07-09, D24)**: 35건 + wave-1 대조군 22건 = 57건 확정, 오버라이드
    0건(§9 고무도장 점검 소유자 확인), 적용기 `tools/apply_rp13_finalization.py`.
 2. **3-이슈 발행 결정** — `analysis/ISSUE_0/1/2_DRAFT.md` (전부 미발행, 소유자 게이트).
+   → **결정 (2026-07-11, D40)**: **GitHub Issues 형식으로 발행 GO** — 게시는
+   Phase C에서 #0→#1→#2 순차, 각 건 게시 직전 소유자 최종 렌더 확인 1회.
 3. **E4 EXPLORATORY 문단 검토** — E4 미실행. 사전 등록 `analysis/CROSSMODEL_PLAN.md`
    + Issue #0 §5/§8의 EXPLORATORY 라벨 문언 승인/수정. (실행 시 각주 1문단 전용.)
+   → **완료 (2026-07-11, D40)**: 소유자 문언 그대로 승인.
 4. **Console $0.00 확인** — 구독 외 종량 과금 부재의 소유자측 확인(pay-as-you-go).
+   → **완료 (2026-07-11, D40)**: 소유자 대시보드 확인 — $0.00.
 
 ### 소유자 spend 결정 대기 (액션 아님 — Q-E01/E03)
 

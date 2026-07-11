@@ -8,8 +8,10 @@
 > collapse" 류 서사에는 E1 이후의 증거 형상("단일 robust 케이스 의존")을 병기 ·
 > DIFF-3: "덜 유명 → 덜 암기 → 잔여 능력" 사슬은 Phase 2 실측(outcome-knowledge
 > 8/9)과 모순 — 발행 전 필수 재배선.
-> **본 diff들은 미적용 상태다** (0-5 "present diffs only") — 서명 시 세션이 적용,
-> 기각 시 사유를 overrides.md에 기록.
+> ~~**본 diff들은 미적용 상태다** (0-5 "present diffs only") — 서명 시 세션이 적용,
+> 기각 시 사유를 overrides.md에 기록.~~ → **서명 완료 (2026-07-11, D40)**:
+> DIFF-1/2 적용 · DIFF-3 수정 적용 (Q-E02(A) 정합, 하단 서명 절). 적용기
+> `tools/apply_rp14_diffs.py`.
 
 ## DIFF-1 — §3 crux 문단 (ISSUE_2_HOLDOUT_DRAFT.md, "This is the honest crux" 문단)
 
@@ -107,11 +109,16 @@ outcome-knowledge **8/9 = 88.9%**, D35)과 모순 — "덜 암기" 전제는 nam
   암기(88.9%)로 읽힌다. 잔여 능력 주장은 암기의 *부재*가 아니라 암기가 *점수로
   기능한다는 증거의 부재*(세 갈래 바 미달)에 얹어야 무너지지 않는다.
 
-## 서명
+## 서명 — 완료 (2026-07-11, 소유자 대화형 서명 세션, D40)
 
-- **서명 DIFF-1**: ☐ 적용 (diff 그대로)   ☐ 수정 적용 (문구: __________)   ☐ 기각 (사유: __________ → overrides.md)
-- **서명 DIFF-2**: ☐ 적용 (diff 그대로)   ☐ 수정 적용 (문구: __________)   ☐ 기각 (사유: __________ → overrides.md)
-- **서명 DIFF-3**: ☐ 적용 (diff 그대로)   ☐ 수정 적용 (문구: __________)   ☐ 기각 (사유: __________ → overrides.md)
+- **서명 DIFF-1**: ☑ 적용 (diff 그대로)
+- **서명 DIFF-2**: ☑ 적용 (diff 그대로)
+- **서명 DIFF-3**: ☑ **수정 적용** (문구: Q-E02(A) 정합 — name-ID "only **25%**"를
+  "only **21.9%** (frozen name_match rule, 7/32; 25% under a rename-aware human
+  reading — the DAR boundary case)"로 치환. 그 외 diff 원문 그대로. 소유자가
+  Q-E02(A) 확정 직후 두 옵션 제시받고 "21.9%로 정합 적용" 선택.)
+- 적용기: `tools/apply_rp14_diffs.py` (멱등, 앵커 완전 일치) — 2026-07-11 실행,
+  3/3 APPLIED. 기록: decisions_log **D40**.
 - 연동: `docs/OWNER_QUEUE.md` Q-R01 (범위 = DIFF-1/2/3). Phase 1(k=5 gate) 결과가
   HUBG 자격 상실로 나오면 DIFF-1은 무효화되고 Q-R01의 긴급 항목이 우선한다 —
   **실측: 자격 유지 (0/5×3), 긴급 항목 비발동.**
