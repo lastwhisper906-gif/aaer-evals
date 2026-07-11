@@ -67,11 +67,19 @@ ability not explained by memorization or mechanical signals:
   dominance 3/9, not this probe). `analysis/outcome_recognition_results.json`.
 - **Identity 3-arm experiment (pre-registered D36, run 2026-07-10)**: scoring
   the same perturbed payloads under fabricated company names (collision-screened
-  against all 1,049,982 EDGAR filer names) — anonymous vs fabricated-name vs
-  real-name medians differ by +6.0pp / −2.0pp (both under the pre-registered
-  10pp bar) → pre-registered reading **(ii): directional evidence that
-  memorization's score contribution is small on this set (a≈b≈c; N=9,
-  directional only — no causal claim)**. `analysis/identity_3arm_results.json`.
+  against all 1,049,982 EDGAR filer names). **The primary evidence is the b−a
+  contrast (+6.0pp median)** — same perturbed payload, only the name tokens
+  differ: the single clean causal contrast in the design. **The c−b contrast
+  (−2.0pp median) is a secondary, confounded observation** — arm (c) restores
+  both the real name and the real (unperturbed) numbers, blending the identity
+  effect with a scale-restoration effect. Resolution limit: arms (a) and (c)
+  are past frozen draws while (b) is a new draw, so inter-arm comparisons carry
+  draw noise (per-case 5-draw bands span 12–18pp ≈ ±10pp, E5 §7) — the ±6pp
+  median is a directional readout within that resolution. Both medians sit
+  under the pre-registered 10pp bar → pre-registered reading **(ii):
+  directional evidence that memorization's score contribution is small on this
+  set (a≈b≈c; N=9, directional only — no causal claim)**.
+  `analysis/identity_3arm_results.json` · limitation L-7.
 
 **③ Post-cutoff holdout (memorization structurally impossible; HUBG·WMK·GNE) → H2 (per-case, N=3).**
 Recognition gate 3/3 non-recognition (demonstrated non-memorization of the
@@ -210,7 +218,11 @@ IDENTITY recognition** — the name-ID rate is the evidence, and every positive
 result is a value under residual contamination. L-6 Grader (claude-fable-5) and
 evaluatee (claude-sonnet-5) are the same model family — same-family leniency
 cannot be excluded; mitigated by 100% human sign-off (§7) and prospectively by
-E4 cross-model (EXPLORATORY). Selection/survivorship: the treatment group is a
+E4 cross-model (EXPLORATORY). **L-7 In the identity 3-arm experiment, the c−b
+contrast is design-confounded** (arm (c) restores real name *and* real numbers
+— identity effect blended with scale restoration); only b−a is a clean
+contrast, and inter-arm deltas carry draw noise (≈±10pp per-case bands).
+Selection/survivorship: the treatment group is a
 survivor sample of "cases that reached enforcement"; control labels mean
 "non-enforcement," not "clean" (Dyck–Morse–Zingales: ~10% of large firms in
 securities fraud annually, only ~⅓ detected — specificity is biased downward,

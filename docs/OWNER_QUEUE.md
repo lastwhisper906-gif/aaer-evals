@@ -70,12 +70,14 @@
 
 ---
 
-## Q-R01 — Issue #2 서사 보강 diff 서명 (D31 0-5, RP-14) — **OPEN**
+## Q-R01 — Issue #1/#2 서사 보강 diff 서명 (D31 0-5 + D39 A-1, RP-14 DIFF-1/2/3) — **OPEN**
 
-- **질문**: `analysis/ISSUE_2_HOLDOUT_DRAFT.md` §3 crux 문단에 "After E1, the
-  holdout evidence rests on a single robust case (HUBG, 5/5 redraws)" 취지의
-  문장을 병기하는 diff(`review_packets/RP-14_issue2_narrative_diff.md` DIFF-1)를
-  적용할까? Issue #2 발행 서명에 선행하는 항목.
+- **질문**: RP-14의 diff 3건을 적용할까? — DIFF-1: `ISSUE_2_HOLDOUT_DRAFT.md` §3
+  crux 문단에 "After E1, the holdout evidence rests on a single robust case
+  (HUBG, 5/5 redraws)" 병기 · DIFF-2: §2 gate k=5 band 병기 · DIFF-3 (D39 신규):
+  `ISSUE_1_WAVE2_DRAFT.md` §5 논증 사슬 재배선 ("덜 유명 → 덜 암기 → 잔여 능력"이
+  D35 실측 outcome-knowledge 8/9와 모순 — 발행 전 필수, 3차 외부 검토).
+  Issue #1/#2 발행 서명에 선행하는 항목.
 - **옵션**: (A 기본) diff 그대로 적용 · (B) 문구 수정 후 적용 · (C) 기각
   (사유 → overrides.md).
 - **근거**: 3차 외부 검토 — "weakens but does not collapse" 서사가 단일 케이스
@@ -87,6 +89,8 @@
   자격 상실 시 본 diff 무효 + **Issue #2 발행 보류** 긴급 항목이 우선.
   → **실측 (D33)**: HUBG·WMK·GNE 전건 0/5, 자격 유지 — 긴급 항목 비발동.
   RP-14에 **DIFF-2**(§2 gate k=5 band 병기) 추가 — 서명 대상 2건으로 확대.
+  → **D39 (2026-07-11)**: RP-14에 **DIFF-3**(Issue #1 §5 재배선, 발행 전 필수)
+  추가 — 서명 대상 3건으로 확대.
 - **상태**: OPEN.
 
 ---

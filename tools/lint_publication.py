@@ -11,6 +11,8 @@
   (G) 교란(identity-masked) 프레임을 "lower bound/하한"으로 서술 금지 (D31 0-2, W3) —
       교정 문구("not a clean lower bound"/"하한이 아니다"/구조적 하한=홀드아웃)는 allowlist.
   (H) README가 E1 결과를 다루면 GRDX·78 co-presence 강제 (D31 0-1 — 누락형 왜곡 기계 차단).
+  (I) 발행 표면이 3-arm delta(+6.0pp/−2.0pp/b−a/c−b)를 언급하면 confound(혼입)와
+      draw-noise(draw 잡음) 단서 동반 강제 (D39 A-2 — arm (c) 설계 교란변수, L-7).
 비영: 위반 0. 위반 시 라인·사유 출력 후 exit 1. `make verify`에 편입.
 """
 import json
@@ -68,8 +70,30 @@ def check_canon():
             if "GRDX" not in t or not re.search(r"\b78\b", t):
                 viols.append((doc, 0, "(H) E1 커버 문서에 GRDX·78 co-presence 부재 "
                                       "(홀드아웃 tier 최고점=대조군 오탐 GRDX 78 — D31 0-1)"))
+    # (I) D39 A-2: 3-arm delta를 언급하는 발행 표면은 confound·draw-noise 단서 동반.
+    for doc in DOCS + ["analysis/synthesis.md"]:
+        if not (REPO / doc).exists():
+            continue
+        t = (REPO / doc).read_text(encoding="utf-8")
+        if THREEARM_DELTA.search(t):
+            missing = []
+            if not CONFOUND_TERM.search(t):
+                missing.append("confound(혼입)")
+            if not DRAWNOISE_TERM.search(t):
+                missing.append("draw-noise(draw 잡음)")
+            if missing:
+                viols.append((doc, 0, f"(I) 3-arm delta 언급에 {' · '.join(missing)} "
+                                      "단서 부재 (arm (c) 설계 교란변수 — D39 A-2, L-7)"))
     return viols
 
+
+# (I) D39 A-2: 3-arm delta 언급 감지 + 필수 동반 단서 (문서 단위, check_canon에서 검사).
+THREEARM_DELTA = re.compile(
+    r"median\(\s*b\s*[−-]\s*a\s*\)|median\(\s*c\s*[−-]\s*b\s*\)"
+    r"|b[−-]a\s+(contrast|대비)|c[−-]b\s+(contrast|대비)"
+    r"|\+6\.0\s*pp|[−-]2\.0\s*pp", re.I)
+CONFOUND_TERM = re.compile(r"confound|혼입|혼재|교란변수", re.I)
+DRAWNOISE_TERM = re.compile(r"draw[- ]?noise|draw\s*잡음|재추첨\s*잡음", re.I)
 
 # (G) D31 0-2 (W3): 교란 프레임 + lower bound/하한 결합 서술 금지 — 교정 문구는 allowlist.
 PERTURB_TERM = re.compile(r"perturb|identity.?mask|identity.?blind|교란|정체[- ]?가림", re.I)
