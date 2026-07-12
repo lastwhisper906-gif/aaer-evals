@@ -11,8 +11,8 @@
 | tier | B1 (M) | B2 (F) | B3 (W8) | **B4 (slope-aug)** | LLM | B4 커버리지 |
 |---|---|---|---|---|---|---|
 | wave1 | 0.5104 | 0.5729 | 0.7898 | 1.0000 ⚠️coverage-limited | 0.8239 | 3/30 |
-| wave2 | 동결값 없음 | 동결값 없음 | 0.5483 | 계산 불가 ⚠️coverage-limited | 0.829 | 1/32 |
-| holdout | 동결값 없음 | 동결값 없음 | 0.4259 | 0.1667 ⚠️coverage-limited | 없음(N=3) | 7/12 |
+| wave2 | 동결값 없음 | 동결값 없음 | 0.5483 | 1.0000 ⚠️coverage-limited | 0.829 | 3/32 |
+| holdout | 동결값 없음 | 동결값 없음 | 0.4259 | 0.4762 | 없음(N=3) | 10/12 |
 
 ⚠️coverage-limited = 커버리지 <70% (스펙 §6) — **서술 전용, 헤드라인 주장 금지**. FINRA 무료 데이터 하한(2017-12-29)이 원인이며 사전 등록된 산술 그대로다.
 
@@ -26,17 +26,19 @@
 
 ## wave2
 
-- **score_level**: coverage 2/32 — 통계 계산 불가(커버 처치/대조 부족)
-- **score_slope_aug**: coverage 1/32 — 통계 계산 불가(커버 처치/대조 부족)
-- 결측 케이스 (fail-closed): T02, T04, T19, T20, T22, T23, T24, T26, T29, W01, W02, W03, W04, W05, W06, W07, W08, W09, W10, W11, W12, W13, W14, W15, W16, W17, W18, W19, W20, W22
+- **score_level**: coverage 4/32, AUC 0.6667 CI [0.0, 1.0] p=0.501285
+  - precision@4 = 0.25 (1/4) — 농축 표본, 유니버스 precision@30과 수치 비교 불가 (스펙 §5)
+- **score_slope_aug**: coverage 3/32, AUC 1.0 CI [1.0, 1.0] p=0.332927
+  - precision@4 = 0.25 (1/4) — 농축 표본, 유니버스 precision@30과 수치 비교 불가 (스펙 §5)
+- 결측 케이스 (fail-closed): T02, T04, T19, T20, T22, T23, T24, T26, W01, W02, W03, W04, W05, W06, W07, W08, W09, W10, W11, W12, W13, W14, W15, W16, W17, W18, W19, W20
 
 ## holdout
 
-- **score_level**: coverage 7/12, AUC 0.1667 CI [0.0, 0.5] p=0.856481
-  - precision@2 = 0.0 (0/2) — 농축 표본, 유니버스 precision@30과 수치 비교 불가 (스펙 §5)
-- **score_slope_aug**: coverage 7/12, AUC 0.1667 CI [0.0, 0.5] p=0.856481
-  - precision@2 = 0.0 (0/2) — 농축 표본, 유니버스 precision@30과 수치 비교 불가 (스펙 §5)
-- 결측 케이스 (fail-closed): GRDX, VIASP, VLGEA, case_71, case_73
+- **score_level**: coverage 10/12, AUC 0.5238 CI [0.048, 1.0] p=0.241748
+  - precision@2 = 0.5 (1/2) — 농축 표본, 유니버스 precision@30과 수치 비교 불가 (스펙 §5)
+- **score_slope_aug**: coverage 10/12, AUC 0.4762 CI [0.0, 1.0] p=0.250137
+  - precision@2 = 0.5 (1/2) — 농축 표본, 유니버스 precision@30과 수치 비교 불가 (스펙 §5)
+- 결측 케이스 (fail-closed): GRDX, VLGEA
 
 ## 해석 (스펙 §7 사전 등록 규칙)
 
