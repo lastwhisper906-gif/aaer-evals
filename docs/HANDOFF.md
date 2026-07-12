@@ -1,4 +1,67 @@
-# HANDOFF.md — 세션 인수인계 (최종 갱신: 2026-07-12, 발행 완결 미션 D39–D42 — **발행 완료, v1.0.0**)
+# HANDOFF.md — 세션 인수인계 (최종 갱신: 2026-07-12, 기능 약점 교정 미션 F-1…F-8 — D44~D50, 미터링 0)
+
+## 기능 약점 교정 미션 요약 (2026-07-12 무인, 미터링 0 — D44~D50)
+
+외부 검토 기능 약점 8건(F-1~F-8)의 무-미터링 교정. **발행 동결값·R/H 판정
+전부 불변 — 신규 결과 전량 병기, 발행 표면은 diff-only.** 전 워크스트림
+freeze-commit-then-run (스펙 커밋 해시가 검증 경로, `git log --follow`).
+
+- **⚠ 실행 환경 특이사항 (소유자 필독)**: 세션 시작 시 `~/Documents` TCC
+  차단이 **재발** (07-12 해소 기록 이후 재퇴행 — 메모리 갱신됨). 본 세션은
+  GitHub 미러(로컬 HEAD 5147af3과 동률·clean 확인 후)를 풀 클론해 작업하고
+  push했다. **소유자 로컬 저장소는 `git pull` 필요** (로컬에서 커밋하기 전에
+  — 로컬은 이 미션의 커밋 11건이 없는 상태다). Full Disk Access 재부여도
+  점검 대상.
+- **WS-1 (F-4, D44)**: `specs/payload_v2.md` → `pipeline/payload_v2_extract.py`
+  (테스트 12) → `runs/diagnostics/payload_v2/` **82/82 케이스** (8-K item 코드 +
+  shares/EPS PIT, 진단 전용 — 페이로드 편입은 명명된 미래 소유자 게이트).
+  partial 1 = HUBG 1996–2007 하위 파일 미캐시 (**Q-F01**, B3/라벨링 무영향).
+  정직 기록: 미션 문면의 diluted 태그 철자는 실측 부재 — 실제 태그
+  `WeightedAverageNumberOfDilutedSharesOutstanding` 병기.
+- **WS-2 (F-1, D45)**: `specs/B3_metasignal.md` (윈도 W4/W8·6지표·비가중 합·
+  해석 규칙 — 전부 계산 전 커밋 053e780) → `analysis/b3_compute.py` →
+  `results_b3.json` + `B3_REPORT.md`. **판정(wave-2 W8): 귀속비 0.1468 ≤ 0.2
+  → non_trivial** — "분리는 사소한 연대기 규칙에 귀속되지 않음", 병기만,
+  주장 무변경 (≥0.5 diff 의무 브랜치 비발화). **참고 병기: wave-1 W8 귀속비
+  0.8947** (B3 AUC 0.7898 vs LLM 0.8239) — tier 비대칭의 산술 사실만 기록,
+  원인 서술은 사전 등록 문장 밖 (소유자 검토 대상). E2 통합:
+  `b3_score(ticker, cutoff, window_days)` import 가능 (E2 동결 파일 무수정).
+- **WS-3 (F-6, D46)**: `specs/label_taxonomy.md` → 홀드아웃 태깅 **3/3 bigR**
+  (accession 증거: HUBG 0001193125-26-039396 · WMK 0000105418-26-000009 ·
+  GNE 0001437749-26-007981) + `LABEL_REPORT.md` (기저율 ~2.2% 집행 연계 등) +
+  업그레이드 프로토콜 (4년 윈도, 대칭 — 무집행 만료도 보고 결과) +
+  **RP-15** 명명 diff (미적용, **Q-F03**) + Chu et al. 원문 대조 **Q-F02**.
+- **WS-4 (F-7, D47)**: `specs/calibration_scope.md` — 점수 = 서수 규약,
+  재보정 비실행 근거(N≈30–60 노이즈 지배) 사전 등록, 재개 하한 N≥150,
+  스키마 필드 개명 금지(Cycle-2 등록만). **RP-16** diff (ISSUE_0 확률 문장
+  강화 + ISSUE_2 표 헤더 `LLM p`→`LLM score`, 미적용, **Q-F04**).
+- **WS-5 (F-2, D48)**: `specs/perturb_v2.md` → `pipeline/date_shift.py` +
+  테스트 8 (결정론·주 단위·간격/요일 보존·컷오프 불변·no-leak 스캔).
+  교란 재실행 0 — v2 name-ID 프로브 런은 launch-ready (**Q-F05**, 62호출
+  산술). 구현 중 실측: 364일(52주) 오프셋의 **양성 충돌** (역년 start↔end
+  간격과 일치 시 이동 날짜가 타 원본 날짜 문자열에 착지) — 발사 전 위생
+  스캔 전제 조건으로 Q-F05에 기록. accession 연도 누출 → 순차 중립 ID
+  마스킹 사전 등록.
+- **WS-6 (F-3, D49, SPEC ONLY)**: `specs/draw_k3.md` — median-of-3 병기
+  1차값, 예산 산술 **(30+32)×2 = 124 피평가자 호출·채점자 0** (재사용 옵션
+  108), flip-rate 표 사전 등록, temp=0 비결정론 단서. 게이트 **Q-F06**.
+- **WS-7 (F-8, D50, SPEC ONLY)**: `specs/cross_grader.md` — 비-Anthropic
+  채점자 n=20 (n=10 기각 근거 명시), 층화 tier×등급 seed 20260712, 주관
+  2차원(dim2/dim4)만, κ≥0.6 사전 판독, E4 동배치 ~20호출. 게이트 **Q-F07**.
+- **OWNER_QUEUE 신규 8건**: Q-F01(HUBG 하위 파일 fetch) · Q-F02(Chu et al.
+  원문 대조) · Q-F03(RP-15 diff) · Q-F04(RP-16 diff) · Q-F05(v2 프로브 62호출)
+  · Q-F06(k=3 예산 124/108) · Q-F07(교차 채점자 ~20호출) · **Q-F08(대조군 풀
+  생존 편향 감사** — 현재 시점 SIC browse 열거가 상장폐지/등록취소 제출자를
+  과소 표집했을 가능성, Form 25/Form 15 대조 감사 열린 항목).
+- **최종 4게이트 (2026-07-12, 이 클론에서 실측)**:
+  - `pytest pipeline/ tools/ scoring/ -q` → **101 passed**
+  - `tools/reproduce_analysis.py` → **PASS — 100/100 항목 일치**
+  - `tools/lint_publication.py` → **PASS — 발행 정합**
+  - `tools/verify_blindness.py` → **PASS — 이력 증명 + 스캔(146) + 매니페스트 대조**
+  - (병기) `pytest analysis/test_b3_compute.py -q` → **7 passed** (4게이트
+    경로가 analysis/를 순회하지 않아 명시 실행 — specs/B3_metasignal.md §10-5)
+- 미터링: **전 워크스트림 0호출.** 계류 브랜치 `hardening/2026-07-08` 불변.
+
 
 ## 발행 완결 미션 요약 (2026-07-11~12, 소유자 대화형 — D39~D42, 미터링 0)
 
