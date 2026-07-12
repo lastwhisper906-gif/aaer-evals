@@ -144,7 +144,12 @@
 
 ---
 
-## Q-F01 — HUBG submissions 하위 파일 1건 미캐시 (payload-v2 coverage 구멍) — OPEN
+## Q-F01 — HUBG submissions 하위 파일 1건 미캐시 (payload-v2 coverage 구멍) — **RESOLVED (D62, 2026-07-13)**
+
+> 해소: CIK0000940942-submissions-001.json (547건, 1996-05~2007-11) fetch·캐시
+> (UA 규약)·매니페스트 512 등재. payload_v2 재생성 diff = case_71+COVERAGE만
+> (partial 0, 82/82 완전). HUBG b3_score W4/W8 동결값 대비 기계 대조 무변화
+> (1996–2007 제출은 어떤 B3 창과도 비교차) — B3·라벨링 비영향 확증.
 
 - **발견 (WS-1/D44 실측)**: `~/aaer-data/HUBG/edgar/` 본체 JSON의 `filings.files`가
   `CIK0000940942-submissions-001.json` (1996-05-15~2007-11-12 구간)을 열거하나
