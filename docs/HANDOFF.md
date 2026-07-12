@@ -3,7 +3,9 @@
 ## 발행 완결 미션 요약 (2026-07-11~12, 소유자 대화형 — D39~D42, 미터링 0)
 
 **발행이 세상에 존재한다.** 3-이슈 GitHub Issues 게시 + v1.0.0 동결 + 독자 검증
-패키지 ready-to-send. Phase E(c′ arm)는 소유자 SKIP — D43/D44는 발번되지 않음.
+패키지 ready-to-send. Phase E(c′ arm)는 소유자 SKIP — Phase E용 D43/D44는
+미사용. (D43은 이후 2026-07-12 소유자 인간 작업 실행 계획 서명에 발번 —
+아래 '소유자 잔여 액션' 절. D44는 미발번.)
 
 - **발행 URL (시리즈 번호 0/1/2 = GitHub 번호 1/2/3)**:
   - Issue 0: <https://github.com/lastwhisper906-gif/aaer-evals/issues/1>
