@@ -100,15 +100,22 @@ def scrub_check(path: Path) -> None:
         raise E2RunError(f"INVARIANT 4 위반: 출력에 API 키 문자열 — {path} 삭제·정지")
 
 
+def _snap_log_dir(row, log_dir: Path) -> Path:
+    """스냅샷별 로그 격리 (D70) — 러너의 log_name이 기저 case_id로만 구성되어
+    같은 케이스의 s{j}들이 로그 파일을 상호 덮어씀 (D67 잠복 결함, 실사격 발견).
+    동결 runner.py는 무수정 — run_one이 제어하는 log_dir을 s{j}로 분기해 해소."""
+    return log_dir / f"s{row['j']}"
+
+
 def _run_one_api(row, entry, log_dir):
     from runner_api import run_case_api
-    return run_case_api(entry, True, out_path(row).parent, log_dir,
-                        TEMPERATURE_PIN)
+    return run_case_api(entry, True, out_path(row).parent,
+                        _snap_log_dir(row, log_dir), TEMPERATURE_PIN)
 
 
 def _run_one_harness(row, entry, log_dir):
     from runner import run_case  # 동결 모듈 — 무수정 (§8-3), 출력 형식·멱등 skip 동일
-    return run_case(entry, True, out_path(row).parent, log_dir)
+    return run_case(entry, True, out_path(row).parent, _snap_log_dir(row, log_dir))
 
 
 def _default_run_one(client: str):

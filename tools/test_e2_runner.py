@@ -166,7 +166,7 @@ def test_harness_run_one_delegates_to_frozen_runner(sandbox, monkeypatch):
     assert res["status"].startswith("OK")
     assert seen["case"] is entry and seen["perturb"] is True
     assert seen["out_dir"] == er.out_path(row).parent
-    assert seen["log_dir"] == Path("/tmp/logs")
+    assert seen["log_dir"] == Path("/tmp/logs") / f"s{row['j']}"  # D70 스냅샷 격리
 
 
 def test_harness_preflight_blocks_metered_key(monkeypatch):
@@ -220,3 +220,26 @@ def test_crash_resume_idempotent_harness_client(sandbox):
     er.execute(sandbox, is_done=fake_done, run_one=make_run_one(calls),
                client="harness")
     assert sorted(calls) == sorted(set(calls)) and len(calls) == 4
+
+
+def test_snapshot_log_dir_isolated(sandbox, monkeypatch):
+    """D70: run_one은 스냅샷별 로그 디렉토리(s{j})를 러너에 넘긴다 — 러너
+    log_name이 기저 case_id 뿐이라 같은 케이스 s1..s8 로그가 덮어써지는
+    D67 잠복 결함의 해소 (동결 runner.py 무수정 경로)."""
+    import runner, runner_api
+    seen = []
+    monkeypatch.setattr(runner, "run_case",
+                        lambda case, perturb, out_dir, log_dir:
+                        seen.append(("h", log_dir)) or {"status": "OK"})
+    monkeypatch.setattr(runner_api, "run_case_api",
+                        lambda case, perturb, out_dir, log_dir, temp:
+                        seen.append(("a", log_dir)) or {"status": "OK"})
+    rows = er.buildable_rows(sandbox)
+    base = Path("/tmp/logs_x")
+    for row in rows[:2]:
+        er._run_one_harness(row, {"case_id": row["base_case_id"]}, base)
+        er._run_one_api(row, {"case_id": row["base_case_id"]}, base)
+    dirs = [d for _, d in seen]
+    assert dirs == [base / f"s{rows[0]['j']}", base / f"s{rows[0]['j']}",
+                    base / f"s{rows[1]['j']}", base / f"s{rows[1]['j']}"]
+    assert len({(m, d) for m, d in seen}) == 4   # 케이스 내 스냅샷 간 충돌 0
