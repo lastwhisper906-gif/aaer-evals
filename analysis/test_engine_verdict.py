@@ -147,3 +147,27 @@ def test_b4_never_rescues_b_or_c():
              for i in range(3)]
     v = ev.compute(_traj(treat + CONTROLS_B4))
     assert v["branch"] == "c_terminated"
+
+
+def test_b4_invalid_at_d61_e2_shape():
+    """D60/D61 무대 산술 그대로의 픽스처 — 실험군 13, 커버 2 (KHC형: s0 단독
+    비-None · UAA형: 8점 중 3점 비-None), 나머지 11 전건 None → 2/13(15.4%)
+    < 70%, valid=false + 커버리지 사유, 기본 판정 비오염 (E2_PREFLIGHT §3)."""
+    khc_like = [_case_b4("khc", "treatment",
+                         [(0, 1, 80, 2, 0.012)]  # s0 재사용점만 커버
+                         + [(j, j + 1, 60 - j, 0, None) for j in range(1, 8)])]
+    uaa_like = [_case_b4("uaa", "treatment",
+                         [(0, 1, 75, 1, 0.020), (1, 2, 70, 0, 0.015),
+                          (2, 3, 65, 0, 0.011)]
+                         + [(j, j + 1, 55 - j, 0, None) for j in range(3, 8)])]
+    dead = [_case_b4(f"tw{i}", "treatment",
+                     [(0, 1, 80, 2, None), (1, 2, 70, 1, None),
+                      (2, 3, 60, 0, None), (3, 4, 30, 0, None)])
+            for i in range(11)]
+    treat = khc_like + uaa_like + dead
+    assert len(treat) == 13
+    v = ev.compute(_traj(treat + CONTROLS_B4))
+    assert not v["b4_comparison"]["valid"]
+    assert "커버리지" in v["b4_comparison"]["reason"]
+    # 커버 2/13이 유효 비교로 새지 않는다 — 기본 판정은 B4 무관하게 성립
+    assert v["branch"] == "a_llm_engine" and v["b_subcase"] is None

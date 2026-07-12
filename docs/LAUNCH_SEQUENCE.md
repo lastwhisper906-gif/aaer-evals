@@ -34,7 +34,8 @@ git add runs/smoke_rev3 && python tools/verify_blindness.py --write-manifest \
 
 ```bash
 export AAER_RAW_API_APPROVED=1     # 배치 단위 opt-in (영구 프로필 금지)
-# 실행 상세 = analysis/EARLINESS_PLAN.md (동결) + docs/RESUME.md 재개 명령 절
+# 실행 상세 = analysis/EARLINESS_PLAN.md (동결) + docs/RESUME.md E2 상태 절
+# 발사 전 정적 감사 전표 = docs/E2_PREFLIGHT.md (호출 산술 146, 차단: 생성기 부재)
 # 케이스 경계마다 commit·push (runs/ 추가 시 --write-manifest 동반)
 ```
 
