@@ -298,7 +298,7 @@
 
 ---
 
-## Q-M03 — B4 분모 폴백 스펙 개정 (holdout 커버리지 7/12 원인 교정) — OPEN
+## Q-M03 — B4 분모 폴백 스펙 개정 (holdout 커버리지 7/12 원인 교정) — **RESOLVED (병렬 실행됨, 소유자 revert 경로 유지)**
 
 - **발견 (B4 1차 실행, 커밋 287a92a)**: 스펙 §6 기대 커버리지 holdout 12/12,
   실측 **7/12 (58%)** — 70% 바 미달로 holdout까지 서술 전용. 원인: SIR 분모가
@@ -314,4 +314,22 @@
 - **권고**: 첫 seal(2026-11-15) 전 해소 — sealed 엔트리의 `b4_level/slope_aug`
   null 비율이 프로토콜 §2의 selection_note 부담으로 직결된다.
 - **세션 기본 조치**: 등록만 (스펙 개정은 소유자 승인 D-엔트리로).
+- **상태**: **RESOLVED (2026-07-13 병합 세션)** — 병렬 워크트리 세션이 옵션 (A)
+  분모 폴백 사다리를 **D56 스펙 §13 개정(재실행 전 커밋) + D57 재실행**으로
+  이미 실행 (holdout 7/12 → **10/12 (83%)**; 비교 성립 tier는 여전히 없음 —
+  holdout 동결 LLM AUC 부재). 본 큐 등록과 병렬 실행이 겹친 중복이었다.
+  **소유자 기각 경로 보존** (병렬 세션 정합 노트 그대로): D56/D57 기각 시
+  결과 커밋 revert로 원복 — 동결 발행 수치 무접촉.
+
+---
+
+## Q-M04 — Cycle-2 등록: 설명가능성(explainability) 채점 설계 — OPEN (등록만, 원번호 Q-M03 재부여)
+
+- **맥락**: screener stage-2 출력 계약이 계정 수준 가설 스키마로 고정됨
+  (screener/schemas/flag_explanation.json + validate_explanation.py 기계
+  검증 — 접지성(groundedness)은 기계가 강제). 그러나 **가설의 품질**(기제
+  타당성·증거 적합성·반증 조건의 예리함) 채점은 평가 설계 문제 — Cycle-2
+  aaer-evals 질문으로 등록. 이 세션은 등록만, 설계·구축 없음
+  (docs/FUTURE_CYCLE_PROTOCOL.md 절차를 따를 것).
+
 - **상태**: OPEN
