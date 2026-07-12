@@ -10,8 +10,8 @@ from pathlib import Path
 
 import pytest
 
-import cutoff_guard
-import e2_generate_cases as gen
+import e2_generate_cases as gen  # 자체 sys.path 부트스트랩 (pipeline/ 포함)
+import cutoff_guard  # noqa: E402 — gen의 부트스트랩 이후에 해석 가능
 
 TICKER = "E2T"
 CUTOFF = "2016-02-28"
@@ -172,3 +172,15 @@ def test_generation_deterministic_and_accounted(tmp_path, monkeypatch):
 
 
 REPO_STUB = None  # derive_roster가 monkeypatch되므로 미사용
+
+
+def test_antileak_boundary_exact_cutoff_allowed():
+    """경계 정밀성: filed == cutoff 은 허용(등호 포함 규약), +1일은 거부."""
+    ok = {"financial_series_point_in_time":
+          {"t": [{"filed": CUTOFF, "value": 1}]},
+          "filing_chronology": [{"form": "10-K", "filing_date": CUTOFF}]}
+    gen.assert_no_leak(ok, CUTOFF)  # 예외 없음
+    bad = {"financial_series_point_in_time":
+           {"t": [{"filed": "2016-02-29", "value": 1}]}, "filing_chronology": []}
+    with pytest.raises(gen.E2GenError, match="LEAK"):
+        gen.assert_no_leak(bad, CUTOFF)

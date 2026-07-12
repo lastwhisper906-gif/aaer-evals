@@ -121,3 +121,19 @@ def test_postrun_chain_end_to_end(sandbox, tmp_path, monkeypatch):
     case = traj["cases"][0]
     assert [s["j"] for s in case["snapshots"]] == [0, 1, 2]   # s0 + 신규 정렬
     assert traj["flag_threshold_llm"] == 50 and traj["flag_threshold_b3"] == 2
+
+
+def test_crash_tmp_artifact_not_treated_as_done(sandbox):
+    """원자 기록의 반대면: 크래시가 남긴 .tmp 부분 파일은 '완료'가 아니다 —
+    재실행이 해당 스냅샷을 다시 (정확히 1회) 지출한다."""
+    rows = er.buildable_rows(sandbox)
+    victim = rows[0]
+    p = er.out_path(victim)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.with_suffix(".json.tmp").write_text('{"misstatement_prob')  # 부분 파일
+    calls = []
+    er.execute(sandbox, is_done=fake_done, run_one=make_run_one(calls))
+    assert calls.count(victim["snapshot_id"]) == 1
+    assert p.is_file()                           # 정본 존재
+    assert not p.with_suffix(".json.tmp").exists()  # 부분 파일은 rename으로 소거
+    assert len(calls) == 4                       # 전 스냅샷 정확 1회
