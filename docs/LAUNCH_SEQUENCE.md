@@ -33,10 +33,13 @@ git add runs/smoke_rev3 && python tools/verify_blindness.py --write-manifest \
 > 시점은 **≈ 2028-08**. E2 발사 여부 판단에 이 편익을 계상하지 말 것.
 
 ```bash
-export AAER_RAW_API_APPROVED=1     # 배치 단위 opt-in (영구 프로필 금지)
-# 실행 상세 = analysis/EARLINESS_PLAN.md (동결) + docs/RESUME.md E2 상태 절
-# 발사 전 정적 감사 전표 = docs/E2_PREFLIGHT.md (호출 산술 146, 차단: 생성기 부재)
-# 케이스 경계마다 commit·push (runs/ 추가 시 --write-manifest 동반)
+AAER_RAW_API_APPROVED=1 .venv/bin/python tools/e2_runner.py --execute
+# 이 한 줄이 전부다 (D66/D67): 케이스 파일·레일·후처리 전부 커밋 완료 —
+#   드리프트/지출(146)/온도(0.0)/키 스크럽 자동, 크래시 시 같은 명령 재실행(멱등).
+# 완료 시 자동: e2_trajectories.json → engine_verdict → runs/e2/E2_SUMMARY.md
+# 마무리: git add runs/e2 analysis/e2_trajectories.json analysis/engine_verdict.json \
+#   && python tools/verify_blindness.py --write-manifest && git add runs/MANIFEST.sha256 \
+#   && 판정 D-엔트리 기록 후 commit·push
 ```
 
 ## 3단계 — 판정 (무호출, 결정론)

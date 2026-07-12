@@ -11,9 +11,11 @@
 2. **RP-15 서명** (Q-F03) — 라벨 명명 diff. (+ RP-16/Q-F04 보정 언어 diff 동병렬.)
 3. **screener 원격(S-03)+UA(S-01)** — seal 앵커 사슬 전제, 명령 준비됨.
 4. **`make smoke`** (~30호출) — E2 래치 (§6-3).
-5. **E2 발사 결정** — docs/E2_PREFLIGHT.md 필독: 산술 146 evaluatee·차단=스냅샷
-   생성기(발사 세션 앞부분 무호출 작업)·**D60/D61: E2는 B4 대결을 해소하지 않는다
-   (커버 2/13) — 사는 것은 LLM vs B3 리드타임뿐**·드리프트 확인 2건(§4).
+5. **E2 발사** — 스모크 뒤 명령 한 줄 (D66/D67 완비):
+   `AAER_RAW_API_APPROVED=1 .venv/bin/python tools/e2_runner.py --execute`
+   146 evaluatee·0 grader (D65 기록 예산 — §5 문구 드리프트는 주석으로 확정,
+   별도 확인 불요)·**D60/D61: E2는 B4 대결을 해소하지 않는다 (커버 2/13) —
+   사는 것은 LLM vs B3 리드타임뿐.** 후처리(판정·요약) 자동.
 6. **RP-18 yes/no** — D53 비대칭 메모 발행 (완성 텍스트·명령 1줄, 비용 0).
 7. **변호사 2종** (screener S-10 증권 · S-13 이민/whistleblower).
 8. **Zenodo vs release** (Q-R03 + screener S-02 — 채널 단일화).
