@@ -290,7 +290,11 @@
   문서 (발행 표면 아님).
 - **상태**: OPEN
 
-## Q-M02 — FINRA 과거 공표일(dissemination date) 실측 입수 가능성 — OPEN
+## Q-M02 — FINRA 과거 공표일(dissemination date) 실측 입수 가능성 — **CONVERTED (D63: 입수 가능 확인, 구현 GO 게이트로 전환)**
+
+> 조사 완료 (analysis/DISSEMINATION_DATES_MEMO.md): Wayback 연도별 스냅샷에서
+> 3열 일정표 복원 가능 (2020 표본 파싱 검증 — 관측 지연 11–12일 ≤ LAG 14).
+> 잔여 결정: 구현 GO/NO (1세션 분량, 스펙 개정 D-엔트리 동반 — 메모 §3 계획).
 
 - **맥락**: B4 PIT 규칙은 보수 상수 LAG=14일(결제일→공표일)을 사전 등록. FINRA는
   연도별 Short Interest Reporting Deadlines 표(공표일 포함)를 게시하므로, 과거
