@@ -1,4 +1,4 @@
-# B4 리포트 — 비정상 공매도 잔고 기준선 (D52)
+# B4 리포트 — 비정상 공매도 잔고 기준선 (D55)
 
 - 스펙: specs/B4_short_interest.md (커밋 4753824, 계산 전 동결)
 - 데이터: FINRA Consolidated Short Interest, 하한 2017-12-29, PIT LAG 14일

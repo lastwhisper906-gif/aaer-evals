@@ -1,4 +1,4 @@
-"""B4 — 비정상 공매도 잔고 기준선 (specs/B4_short_interest.md, D52).
+"""B4 — 비정상 공매도 잔고 기준선 (specs/B4_short_interest.md, D55).
 
 정본 계산 코어는 screener/ingest/short_interest.py — 여기서는
 analysis/vendor/short_interest.py (문자 그대로 스냅샷, PROVENANCE.md)를 import.
@@ -146,7 +146,7 @@ def _b3_auc(b3: dict | None, tier: str) -> str:
 
 
 def report_md(out: dict, b3: dict | None) -> str:
-    L = ["# B4 리포트 — 비정상 공매도 잔고 기준선 (D52)", "",
+    L = ["# B4 리포트 — 비정상 공매도 잔고 기준선 (D55)", "",
          f"- 스펙: {out['spec']} (커밋 {out['spec_commit']}, 계산 전 동결)",
          f"- 데이터: FINRA Consolidated Short Interest, 하한 {out['data_floor']}, "
          f"PIT LAG {out['lag_days']}일",

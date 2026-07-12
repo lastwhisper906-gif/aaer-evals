@@ -116,7 +116,7 @@ def build_manifest() -> dict:
             if entry["source_url"] is None:
                 unattributed.append(str(rel))
         elif ticker == "short_interest":
-            # B4 아카이브 (D52) — 파일명이 URL을 결정 (shrtYYYYMMDD.csv)
+            # B4 아카이브 (D55) — 파일명이 URL을 결정 (shrtYYYYMMDD.csv)
             if path.name.startswith("shrt") and path.suffix == ".csv":
                 entry["source_url"] = ("https://cdn.finra.org/equity/otcmarket/"
                                        f"biweekly/{path.name}")

@@ -275,7 +275,7 @@
 
 ## Q-M01 — FINRA 공매도 잔고 데이터 ToS/라이선스 확인 — OPEN
 
-- **맥락**: B4 기준선(specs/B4_short_interest.md, D52)이 FINRA Consolidated
+- **맥락**: B4 기준선(specs/B4_short_interest.md, D55)이 FINRA Consolidated
   Short Interest 공개 파일(cdn.finra.org)을 사용. 내부 분석·회고 채점은 공개
   데이터 사용 범주이나, **발행물(리포트·seal 공개 파일)에 FINRA 파생 수치를
   게재할 때의 라이선스/귀속 조건**은 소유자가 FINRA 데이터 이용약관에서 확인.

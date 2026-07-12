@@ -1,4 +1,4 @@
-"""B4 아카이브 단계 — FINRA Consolidated Short Interest 파일 수집 (D52 스펙 §1).
+"""B4 아카이브 단계 — FINRA Consolidated Short Interest 파일 수집 (D55 스펙 §1).
 
 로스터의 각 케이스에서 필요한 결제일 창의 합집합을 ~/aaer-data/short_interest/에
 원본 그대로 보관한다 (재개 가능 — 기존 파일 스킵, sha256은 checksums.log).
