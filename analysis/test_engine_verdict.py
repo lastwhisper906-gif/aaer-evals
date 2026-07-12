@@ -171,3 +171,40 @@ def test_b4_invalid_at_d61_e2_shape():
     assert "커버리지" in v["b4_comparison"]["reason"]
     # 커버 2/13이 유효 비교로 새지 않는다 — 기본 판정은 B4 무관하게 성립
     assert v["branch"] == "a_llm_engine" and v["b_subcase"] is None
+
+
+# ---------------------------------------------------------------- D71 §3 주석
+
+
+def test_control_llm_p_null_j0_auc_fail_closed():
+    """D71: 대조군 j=0 llm_p null (RP-01 v1 대조군 perturbed 미채점) —
+    LLM j=0 AUC = null + 플래그, b3 AUC 정상, 브랜치 판정 무영향."""
+    treat = [_case(f"t{i}", "treatment",
+                   [(0, 1, 80, 2), (1, 2, 70, 1), (2, 3, 60, 0)]) for i in range(3)]
+    ctrls = [_case(f"ctl{i}", "control", [(0, 0, None, 0)]) for i in range(3)]
+    v = ev.compute(_traj(treat + ctrls))
+    assert v["auc_snapshot0"]["llm"] is None
+    assert v["auc_snapshot0"]["b3"] is not None
+    assert "llm_p" in v["auc_snapshot0_flags"]
+    assert v["branch"] == "a_llm_engine"        # median lead만 소비 — 판정 불변
+
+
+def test_control_llm_p_null_b_sublabel_fail_closed():
+    """(b) 브랜치에서 AUC null이면 하위 라벨 = b_auc_unavailable (판정 무영향 필드)."""
+    treat = [_case(f"t{i}", "treatment",
+                   [(0, 1, 55, 3), (1, 2, 40, 3), (2, 3, 30, 2)]) for i in range(3)]
+    ctrls = [_case(f"ctl{i}", "control", [(0, 0, None, 0)]) for i in range(3)]
+    v = ev.compute(_traj(treat + ctrls))
+    assert v["branch"] == "b_rules_engine"
+    assert v["b_subcase"] == "b_auc_unavailable"
+
+
+def test_partial_j0_coverage_flagged_not_null():
+    """일부 대조군만 null이면 커버 부분집합 AUC + 부분 커버 플래그."""
+    treat = [_case(f"t{i}", "treatment",
+                   [(0, 1, 80, 2), (1, 2, 70, 1)]) for i in range(3)]
+    ctrls = ([_case("ctl0", "control", [(0, 0, None, 0)])]
+             + [_case(f"ctl{i}", "control", [(0, 0, 20 + i, 0)]) for i in (1, 2)])
+    v = ev.compute(_traj(treat + ctrls))
+    assert v["auc_snapshot0"]["llm"] is not None
+    assert "부분 커버" in v["auc_snapshot0_flags"]["llm_p"]

@@ -108,10 +108,25 @@ def compute(traj: dict) -> dict:
     med_llm = statistics.median(l["lead_llm"] for l in leads)
     med_b3 = statistics.median(l["lead_b3"] for l in leads)
 
-    auc_llm = auc([_snapshot0(c, "llm_p") for c in treat],
-                  [_snapshot0(c, "llm_p") for c in ctrl])
-    auc_b3 = auc([_snapshot0(c, "b3_score") for c in treat],
-                 [_snapshot0(c, "b3_score") for c in ctrl])
+    # §3 주석 (D71): j=0 값이 null인 케이스는 해당 지표 AUC에서 제외하고,
+    # 어느 그룹이든 0이 되면 AUC = null + 플래그 (fail-closed — 프레임 혼합 금지:
+    # RP-01 v1 대조군의 동결 점수는 원본 프레임뿐이라 perturbed j=0 llm_p가 없다).
+    auc_flags = {}
+
+    def _auc_j0(key: str):
+        t = [v for c in treat if (v := _snapshot0(c, key)) is not None]
+        k = [v for c in ctrl if (v := _snapshot0(c, key)) is not None]
+        if not t or not k:
+            auc_flags[key] = (f"j=0 {key} 가용 실험군 {len(t)}·대조군 {len(k)} — "
+                              "빈 그룹으로 AUC 계산 불능 (fail-closed null, §3 주석 D71)")
+            return None
+        if len(t) < len(treat) or len(k) < len(ctrl):
+            auc_flags[key] = (f"j=0 {key} 부분 커버 (실험군 {len(t)}/{len(treat)} · "
+                              f"대조군 {len(k)}/{len(ctrl)}) — 커버 부분집합 AUC")
+        return auc(t, k)
+
+    auc_llm = _auc_j0("llm_p")
+    auc_b3 = _auc_j0("b3_score")
 
     # 스펙 §4 — 순서 고정, 첫 일치가 판정
     if med_llm <= 1 and med_b3 <= 1:
@@ -124,7 +139,10 @@ def compute(traj: dict) -> dict:
                                              "보조로 강등")
     sub = None
     if branch == "b_rules_engine":
-        sub = "b_strict" if (med_b3 >= med_llm and auc_b3 >= auc_llm) else "b_residual"
+        if auc_llm is None or auc_b3 is None:
+            sub = "b_auc_unavailable"  # §4 하위 라벨은 AUC 요구 — 판정 무영향 필드의 fail-closed
+        else:
+            sub = "b_strict" if (med_b3 >= med_llm and auc_b3 >= auc_llm) else "b_residual"
 
     # §4b (D58): B4 결합 — 기본 판정 후 적용, (a)만 강등 가능
     b4_cmp = _b4_comparison(treat, ctrl, thr_llm)
@@ -137,7 +155,9 @@ def compute(traj: dict) -> dict:
             "thresholds": {"llm_p": thr_llm, "b3_score": thr_b3},
             "median_lead_llm_quarters": med_llm,
             "median_lead_b3_quarters": med_b3,
-            "auc_snapshot0": {"llm": round(auc_llm, 4), "b3": round(auc_b3, 4)},
+            "auc_snapshot0": {"llm": round(auc_llm, 4) if auc_llm is not None else None,
+                              "b3": round(auc_b3, 4) if auc_b3 is not None else None},
+            "auc_snapshot0_flags": auc_flags or None,
             "n_treatment": len(treat), "n_control": len(ctrl),
             "branch": branch, "b_subcase": sub, "reading": reading,
             "b4_comparison": b4_cmp,

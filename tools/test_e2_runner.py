@@ -243,3 +243,38 @@ def test_snapshot_log_dir_isolated(sandbox, monkeypatch):
     assert dirs == [base / f"s{rows[0]['j']}", base / f"s{rows[0]['j']}",
                     base / f"s{rows[1]['j']}", base / f"s{rows[1]['j']}"]
     assert len({(m, d) for m, d in seen}) == 4   # 케이스 내 스냅샷 간 충돌 0
+
+
+def test_postrun_s0_null_for_unscored_controls(sandbox, tmp_path, monkeypatch):
+    """D71: 동결 perturbed 파일이 없는 대조군은 j=0 llm_p=null로 어댑터 통과 —
+    후처리 체인이 크래시 없이 verdict까지 완주하고 가용성 목록을 기록한다."""
+    er.execute(sandbox, is_done=fake_done, run_one=make_run_one([]))
+    for row in er.buildable_rows(sandbox):
+        (er.E2_DIR / f"{row['snapshot_id']}.json").write_text(json.dumps(
+            {"base_cutoff": "2015-06-30", "b3_W8": {"score": row["j"] % 3},
+             "b4": {"state": "not_computable"}}))
+    # case_90(=treatment)만 동결 s0 존재, case_91(=control)은 파일 부재 → None
+    monkeypatch.setattr(er, "_s0_score",
+                        lambda cid, tier: 60 if cid == "case_90" else None)
+    monkeypatch.setattr(er, "TRAJ_OUT", tmp_path / "traj.json")
+    import b3_compute, b4_short_interest
+    monkeypatch.setattr(b3_compute, "b3_score", lambda *a, **k: {
+        "score": 1, "indicators": {}, "flags": {}})
+    monkeypatch.setattr(b4_short_interest, "b4_score", lambda *a, **k: {
+        "score_slope_aug": None, "score_level": None, "flags": {}})
+    monkeypatch.setattr(er, "REPO", tmp_path)
+    (tmp_path / "analysis").mkdir()
+    er.postrun(sandbox)
+    traj = json.loads((tmp_path / "traj.json").read_text())
+    assert traj["_s0_llm_unavailable"] == ["case_91"]
+    ctl = next(c for c in traj["cases"] if c["case_id"] == "case_91")
+    j0 = next(s for s in ctl["snapshots"] if s["j"] == 0)
+    assert j0["llm_p"] is None and j0["b3_score"] == 1
+    verdict = json.loads((tmp_path / "analysis" / "engine_verdict.json").read_text())
+    assert verdict["auc_snapshot0"]["llm"] is None
+    assert verdict["auc_snapshot0_flags"]["llm_p"]
+
+
+def test_s0_score_missing_file_returns_none(sandbox, monkeypatch):
+    monkeypatch.setattr(er, "REPO", Path("/nonexistent-root"))
+    assert er._s0_score("case_99", "wave1") is None

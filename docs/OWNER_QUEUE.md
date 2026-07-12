@@ -394,3 +394,22 @@
   A-8+P-큐로 충분 · (C) B-4만 Q-F02 완화와 함께 재지시.
 - **세션 기본 조치**: A-8을 백로그 작업으로 사용, B-목록은 미실행.
 - **상태**: OPEN
+
+---
+
+## Q-M06 — v1 대조군 perturbed j=0 채점 7호출 (E2 LLM j=0 AUC 계산 가능화) — OPEN (신규, 2026-07-13 야간)
+
+- **발견 (D71)**: E2 대조군(RP-01 v1 대조군 7건 buildable)은 perturbed 프레임
+  동결 점수가 없어 어댑터가 j=0 llm_p를 null로 기록 — engine_verdict의 LLM
+  j=0 AUC가 fail-closed null (플래그 병기). **§4 브랜치 판정은 무영향**
+  (실험군 median lead만 소비); 잃는 것은 j=0 AUC 병기와 b_strict/b_residual
+  하위 라벨 선명도뿐.
+- **옵션**: (A) 7호출 승인 — `pipeline/runner.py --perturbed --only case_04
+  case_05 case_07 case_10 case_11 case_14 case_15 --out runs/perturbed` (동결
+  러너 그대로, 멱등; 완료 후 e2_runner --postrun-only 재실행이 AUC를 채움) ·
+  (B) null 유지 (플래그가 이미 정직 기록).
+- **주의**: (A) 실행 시 이 7건은 draw-1이 아니라 **2026-07 신규 draw**임을
+  verdict D-엔트리에 명기해야 한다 (실험군 j=0은 2026-07-06~09 draw-1 —
+  시점 비대칭 각주 의무).
+- **세션 기본 조치**: (B) — 미션 사전 승인 외 지출이므로 실행 안 함.
+- **상태**: OPEN

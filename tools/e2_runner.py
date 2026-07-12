@@ -174,9 +174,14 @@ def _q_to_rev(base_cutoff: str, snap_cutoff: str) -> int:
     return max(0, (rev - datetime.date.fromisoformat(snap_cutoff)).days // 91)
 
 
-def _s0_score(base_case_id: str, tier: str) -> int:
+def _s0_score(base_case_id: str, tier: str) -> int | None:
+    """동결 perturbed draw-1 점수 (j=0 재사용). RP-01 v1 대조군은 perturbed
+    프레임 미채점(동결 점수가 원본 프레임에만 존재) — 파일 부재 시 None
+    (llm_p null), ENGINE_DECISION §3 주석(D71)의 fail-closed 규약."""
     p = (REPO / "runs/perturbed" / f"{base_case_id}.json" if tier == "wave1"
          else REPO / "runs/wave2/perturbed" / f"{base_case_id}.json")
+    if not p.is_file():
+        return None
     return json.loads(p.read_text(encoding="utf-8"))["misstatement_probability"]
 
 
@@ -212,9 +217,13 @@ def build_trajectories(manifest: dict, runs_dir: Path = RUNS) -> dict:
     for c in cases.values():
         c.pop("_base_cutoff")
         c["snapshots"].sort(key=lambda s: s["j"])
+    s0_null = sorted(cid for cid, c in cases.items()
+                     if any(s["j"] == 0 and s["llm_p"] is None for s in c["snapshots"]))
     return {"flag_threshold_llm": FLAG_LLM, "flag_threshold_b3": FLAG_B3,
             "cases": [cases[k] for k in sorted(cases)],
-            "_adapter": "tools/e2_runner.py (D66/D67 — q=floor(days/91), s0=동결 perturbed)"}
+            "_s0_llm_unavailable": s0_null,
+            "_adapter": ("tools/e2_runner.py (D66/D67/D71 — q=floor(days/91), "
+                         "s0=동결 perturbed; RP-01 v1 대조군 perturbed 미채점 → llm_p null)")}
 
 
 def postrun(manifest: dict, runs_dir: Path = RUNS) -> Path:
