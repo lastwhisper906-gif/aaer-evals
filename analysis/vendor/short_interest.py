@@ -1,6 +1,6 @@
 """FINRA Consolidated Short Interest — downloader / parser / PIT aligner / B4 scorer.
 
-Canonical implementation (aaer-evals D52, specs/B4_short_interest.md). The aaer-evals
+Canonical implementation (aaer-evals D55, specs/B4_short_interest.md). The aaer-evals
 repo carries a byte-identical vendored snapshot (analysis/vendor/short_interest.py,
 reverse of this repo's vendor/aaer_evals convention) — edit HERE, then re-export.
 
@@ -31,7 +31,7 @@ TRAILING_DAYS = 365           # abnormal-SI median window (spec §3)
 MIN_TRAILING_REPORTS = 12     # of ~24 possible bi-monthly reports
 SLOPE_REPORTS = 4             # trailing reports for the slope term
 SHARES_FRESHNESS_DAYS = 400   # denominator fact: t-400 <= end <= t
-# Denominator priority chain (spec §13 / D53 amendment): multi-class issuers
+# Denominator priority chain (spec §13 / D56 amendment — renumbered from D53 at parallel-landing merge): multi-class issuers
 # have no undimensioned dei fact (companyfacts does not flatten dimensional
 # facts), so fall through — one source per case, never mixed within a series.
 SHARES_TAG_PRIORITY = (
