@@ -29,11 +29,15 @@
   PASS, GRDX 78 포함) · FEEDBACK_FORM(핵심 3 고정 + 유형별) · TARGET_LIST_TEMPLATE
   (5–10 슬롯, 회신 +10일) · OUTREACH_MESSAGE(cold/warm, <120단어, 단일 요청).
   **패키지 발송은 소유자 인간 작업 — 자동화 금지.**
-- **소유자 잔여 액션 (전부 인간 작업)**: ① 독자 패키지 발송 (TARGET_LIST 실명
-  기입 → 발송 → 회신을 `docs/reader_validation/responses/`에 원문 기록)
-  ② Q-R03 Zenodo DOI (3줄 절차, OWNER_QUEUE) ③ Q-R02 후속 — API 키 발급·종량
-  예산 승인 후 동치성 스모크 테스트(~30호출) → E2 발사 (RESUME.md 재개 명령)
-  ④ E2/E4/E5 발사 시점 결정 (launch-ready 동결 유지 중).
+- **소유자 잔여 액션 — 실행 계획 서명 완료 (D43, 2026-07-12, 전건 추천안 채택)**:
+  ① 독자 발송 = **warm 5–7명 1차, 이번 주** (유형 균형 유지, 이메일 본문에
+  원페이저 붙여넣기 + 핵심 3문항, 기한 +10일; 회신은
+  `docs/reader_validation/responses/`에 원문 기록; cold는 2차 배치)
+  ② Zenodo = **토글 + v1.0.0 재발행** (Q-R03 RESOLVED — 릴리스 삭제→동일
+  태그·노트 재생성; DOI 배지 README 반영은 세션 몫)
+  ③ Q-R02 후속 = **발송 직후 이번 주** 키 발급·스모크(~30호출) → E2는 회신
+  대기 기간에 실행 (8/18 전 완결 경로; 스모크 결과 커밋 선행 — FREEZE_REV3 §6)
+  ④ E 배치 = **E2 + E4만** (E5는 launch-ready 동결 유지).
 - 미터링: 전 Phase 0호출. 계류 브랜치 `hardening/2026-07-08` 불변(스코프 외).
 
 ## 잔여 교정 세션 완료 요약 (2026-07-10, 무인 — D31~D38, 미터링 54/60)
