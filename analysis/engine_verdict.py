@@ -36,6 +36,52 @@ def case_lead(snapshots: list[dict], score_key: str, threshold: int) -> int:
     return max(crossed, default=0)
 
 
+def _case_lead_b4(snapshots: list[dict]) -> int:
+    """§4b: B4 돌파 = b4_slope_aug > 0 (엄격 초과 — FUNNEL §1 임계 재사용)."""
+    crossed = [s["quarters_to_revelation"] for s in snapshots
+               if s.get("b4_slope_aug") is not None and s["b4_slope_aug"] > 0]
+    return max(crossed, default=0)
+
+
+def _b4_comparison(treat: list[dict], ctrl: list[dict], thr_llm: int) -> dict:
+    """§4b 비교 블록 — 성립 조건·짝지은 부분집합 산식·전량 기록. 전역 완전."""
+    covered_t = [c for c in treat
+                 if any(s.get("b4_slope_aug") is not None for s in c["snapshots"])]
+    coverage = len(covered_t) / len(treat)
+    block = {"valid": False, "coverage": f"{len(covered_t)}/{len(treat)}",
+             "coverage_ratio": round(coverage, 4), "dominates_llm": None}
+    if coverage < 0.7:
+        block["reason"] = "실험군 B4 커버리지 < 70% — 비교 불성립 (B4 스펙 §7 (i))"
+        return block
+    j0_t = [c for c in treat if _snapshot0_opt(c, "b4_slope_aug") is not None]
+    j0_c = [c for c in ctrl if _snapshot0_opt(c, "b4_slope_aug") is not None]
+    if not j0_t or not j0_c:
+        block["reason"] = "j=0 B4 값 부재 (실험군/대조군 중 빈 쪽) — AUC 짝비교 불능"
+        return block
+    lead_b4 = statistics.median(_case_lead_b4(c["snapshots"]) for c in covered_t)
+    lead_llm_paired = statistics.median(
+        case_lead(c["snapshots"], "llm_p", thr_llm) for c in covered_t)
+    auc_b4 = auc([_snapshot0_opt(c, "b4_slope_aug") for c in j0_t],
+                 [_snapshot0_opt(c, "b4_slope_aug") for c in j0_c])
+    auc_llm_paired = auc([_snapshot0_opt(c, "llm_p") for c in j0_t],
+                         [_snapshot0_opt(c, "llm_p") for c in j0_c])
+    dominated = lead_llm_paired <= lead_b4 and auc_llm_paired <= auc_b4
+    block.update({
+        "valid": True,
+        "median_lead_b4": lead_b4, "median_lead_llm_paired": lead_llm_paired,
+        "auc_b4_snapshot0_paired": round(auc_b4, 4),
+        "auc_llm_snapshot0_paired": round(auc_llm_paired, 4),
+        "paired_subset_note": "LLM 값은 B4 커버 부분집합에서 재계산 (§4b 정직 조항 — "
+                              "전체군 값과의 차이는 상위 필드 대조)",
+        "dominates_llm": dominated})
+    return block
+
+
+def _snapshot0_opt(case: dict, key: str):
+    j0 = [s for s in case["snapshots"] if s["j"] == 0]
+    return j0[0].get(key) if len(j0) == 1 else None
+
+
 def _snapshot0(case: dict, score_key: str):
     j0 = [s for s in case["snapshots"] if s["j"] == 0]
     if len(j0) != 1:
@@ -80,13 +126,21 @@ def compute(traj: dict) -> dict:
     if branch == "b_rules_engine":
         sub = "b_strict" if (med_b3 >= med_llm and auc_b3 >= auc_llm) else "b_residual"
 
-    return {"spec": "specs/ENGINE_DECISION.md", "spec_decision": "D51",
+    # §4b (D58): B4 결합 — 기본 판정 후 적용, (a)만 강등 가능
+    b4_cmp = _b4_comparison(treat, ctrl, thr_llm)
+    if b4_cmp["valid"] and b4_cmp["dominates_llm"] and branch == "a_llm_engine":
+        branch, sub = "b_rules_engine", "b4_dominated"
+        reading = ("규칙 엔진 — §4b: 무료 B4 신호가 리드타임·AUC 모두에서 LLM과 "
+                   "대등 이상 (E2 평결과 동일 가중치, B4 스펙 §7 완화 금지 조항 이행)")
+
+    return {"spec": "specs/ENGINE_DECISION.md", "spec_decision": "D51 (+D58 §4b)",
             "thresholds": {"llm_p": thr_llm, "b3_score": thr_b3},
             "median_lead_llm_quarters": med_llm,
             "median_lead_b3_quarters": med_b3,
             "auc_snapshot0": {"llm": round(auc_llm, 4), "b3": round(auc_b3, 4)},
             "n_treatment": len(treat), "n_control": len(ctrl),
             "branch": branch, "b_subcase": sub, "reading": reading,
+            "b4_comparison": b4_cmp,
             "per_case_leads": sorted(leads, key=lambda l: l["case_id"]),
             "note": "판정은 스펙 §4 기계 규칙 — 본 결과는 Claude 기반 단일 파이프라인에 한정 (§5-5)"}
 
