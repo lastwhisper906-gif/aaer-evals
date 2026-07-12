@@ -1,4 +1,69 @@
-# HANDOFF.md — 세션 인수인계 (최종 갱신: 2026-07-12, 기능 약점 교정 미션 F-1…F-8 — D44~D50, 미터링 0)
+# HANDOFF.md — 세션 인수인계 (최종 갱신: 2026-07-13, 시장조사 통합 미션 WS-SI/SEAL/EXPLAIN/DDQ — 이 브랜치 D51~D54+정합노트, 미터링 0)
+
+## 시장조사 통합 미션 요약 (2026-07-13 무인, 미터링 0 — 브랜치 mkt-integration-2026-07-13)
+
+**헤드라인 — B4 5열 표 (tier별, 재계산 0, analysis/B4_REPORT.md 정본):**
+
+| tier | B1 (M) | B2 (F) | B3 (W8) | B4 (slope-aug) | LLM | B4 커버리지 |
+|---|---|---|---|---|---|---|
+| wave1 | 0.5104 | 0.5729 | 0.7898 | 1.0000 ⚠️서술전용 | 0.8239 | 3/30 |
+| wave2 | — | — | 0.5483 | 1.0000 ⚠️서술전용 | 0.829 | 3/32 (level 4/32) |
+| holdout | — | — | 0.4259 | **0.4762** [0.0,1.0] | 없음(N=3) | **10/12** |
+
+**B4가 wave-2에서 LLM을 이겼는가 — 판정 불성립이 정직한 답이다.** FINRA 무료
+데이터 하한(결제일 2017-12-29, 프로브 실측)으로 wave-1/2 커버리지가 10%대
+(사전 등록 §6 산술 그대로) → 서술 전용. holdout은 커버리지 바(83%)를 넘지만
+동결 LLM AUC가 없다(N=3). **결론: LLM vs B4는 회고로 성립하지 않는 비교이며,
+전향 무대(E2 스냅샷·sealed 분기)로 사전 등록 결합 조항과 함께 이관** —
+비교 성립 시 LLM≤B4이면 E2 평결과 동일 가중치로 엔진 결정 입력 (스펙 §7,
+완화 금지). 이 사실이 이 미션의 핵심 발견이다: 무료 신호 벤치마크는
+본질적으로 앞으로의 seal에서만 이길 수 있고, 그래서 seal 프로토콜에 B4
+top-30 동봉을 의무화했다.
+
+- **WS-SI (D52 스펙→구현→D53 개정→D54 확정)**: specs/B4_short_interest.md
+  사전 등록(freeze-commit-then-run, 4753824) → screener/ingest/short_interest.py
+  정본 + analysis/vendor 역방향 vendoring(PROVENANCE+무결성 테스트) +
+  analysis/b4_short_interest.py (b4_score = b3_score 동형 E2 계약, 동결 E2
+  무수정) → FINRA 79파일 아카이브(~/aaer-data/short_interest/, 매니페스트
+  511파일 등재) → 1차 실행(287a92a, holdout 7/12 — 다중클래스 분모 구멍
+  진단) → **D53 개정**(분모 4단 사다리, 1차 결과 커밋 후 공개 개정) →
+  **D54 재실행**(holdout 10/12). PIT: 결제일+14일 보수 LAG 사전 등록.
+- **게이트 수리 (D51, 이 브랜치 번호)**: 세션 개시 verify_manifest FAIL
+  (reference/ 2건 미등재, D36 산물) → 귀속 분기+재생성, 전 게이트 green 복구.
+- **WS-SEAL-METRICS (screener)**: 프로토콜 pre-first-seal 개정 — 헤더 목표
+  밴드(precision@30 ≥25–33%), §2 b4 필드, §3 b4_top30 공개 파일 의무 동봉
+  (seal create 하드 게이트), §5 metric 3(lift vs B4 동일 유니버스·동일 창),
+  §5b 4연속 분기 초과 시 escalation gate = seal/verdict.py 계산 필드.
+- **WS-EXPLAIN (screener)**: schemas/flag_explanation.json (계정 태그·방향·
+  기제 통제 어휘·accession 앵커 증거·반증 조건·서수 confidence) +
+  validate_explanation.py 결정론 하드 게이트 + STAGE2_PROMPT_SPEC.md (호출 0).
+  aaer-evals 쪽 Cycle-2 채점 질문 등록(이 브랜치 Q-M03→재부여 Q-M04).
+- **WS-DDQ (screener)**: docs/DDQ_PACK.md — 포인터 큐레이션 (PIT 보증·계보·
+  한계 L-1~L-7 원제·제3자 seal 검증 커맨드 시퀀스); 미소싱 항목 S-12.
+- **WS-LEGAL/WS-KR**: **병렬 소유자 세션에 양도/합작** (아래 충돌 노트).
+  본 세션 기여: W-8(F-1/OPT·whistleblower 상담 게이트)+S-13, KR_DART.md §4
+  DART DS003 프로브 실측 기록.
+
+### ⚠️ 병렬 세션 충돌 노트 (통합자 필독)
+
+같은 시간대에 main에서 별도 세션(git author chaeryeol, 로드맵 운영화 미션
+D51~D53 + 본 브랜치 부분 병합 f465961 + WS-LEGAL/WS-KR)이 진행됨. **이
+브랜치의 D51~D54는 main 규약으로 재부여 필요** — 매핑 제안은 원장 말미 정합
+노트: D53→D56·D54→D57·Q-M03→Q-M04, main Q-M03(분모 폴백 질문)은 D56/D57
+실행으로 RESOLVED 가능(소유자 기각 시 결과 커밋 revert로 원복, 동결 수치
+무접촉). analysis/b4_short_interest.py 내 "D52" 문자열 인용은 재부여 시
+4e850ad 방식으로 전수 갱신할 것.
+
+- **소유자 잔여 (이 미션분)**: Q-M01 FINRA ToS · Q-M02 공표일 실측 ·
+  Q-M03/M04 재부여 확정 · screener S-08~S-13 (ToS·공표일·변호사 2종·DART
+  키·DDQ 미소싱) · 본 브랜치 main 병합.
+- **미터링: 전 워크스트림 0호출.** 네트워크는 공개 규제 데이터(FINRA CDN·
+  Query API 프로브, DART 문서 페이지)만.
+- **최종 4게이트 (2026-07-13, 이 브랜치에서 실측)**: 아래 커밋 직전 실측값
+  병기 — reproduce 100/100 · blindness PASS · manifest 511 files PASS ·
+  lint PASS · pytest 101+10(analysis) passed.
+
+# (이전) HANDOFF.md — 세션 인수인계 (최종 갱신: 2026-07-12, 기능 약점 교정 미션 F-1…F-8 — D44~D50, 미터링 0)
 
 ## 기능 약점 교정 미션 요약 (2026-07-12 무인, 미터링 0 — D44~D50)
 
