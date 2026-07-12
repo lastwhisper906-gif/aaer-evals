@@ -186,3 +186,18 @@
   (B) 문구 수정 후 적용 · (C) 기각 (사유 → overrides.md).
 - **세션 기본 조치**: 미적용 유지 (diff-only).
 - **상태**: OPEN
+
+---
+
+## Q-F04 — RP-16 보정 언어 diff (DIFF-6/DIFF-7) 서명 — OPEN
+
+- **질문**: 발행 표면의 확률 함의 언어 2건을 서수(ordinal) 규약으로 교체할까?
+  (ISSUE_0 §5 "these probabilities are rankings" 문장 강화 + ISSUE_2 표 헤더
+  `LLM p` → `LLM score (0–100, ordinal)`.)
+- **근거**: specs/calibration_scope.md — ECE 0.209/0.179 개선 없음, N≈30–60
+  재보정은 노이즈 지배, 점수는 순위·플래그로만 검증됨. 스키마 필드
+  `misstatement_probability`는 무변경 (Cycle-2 개명 등록 — 재현성).
+- **옵션**: (A) 적용 (Issue #1/#3 edited 표시 + 사유 코멘트) · (B) 문구 수정
+  후 적용 · (C) 기각 (사유 → overrides.md).
+- **세션 기본 조치**: 미적용 유지 (diff-only).
+- **상태**: OPEN
