@@ -68,7 +68,9 @@ def _fetch(url: str, user_agent: str, timeout: int = 60) -> bytes | None:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             return resp.read()
     except urllib.error.HTTPError as e:
-        if e.code == 404:
+        if e.code in (403, 404):
+            # FINRA CDN(CloudFront)은 없는 키에 404가 아니라 403을 돌려준다
+            # (2026-07-13 실측: 존재 20190215=200, 부재 20190216=403).
             return None
         raise
 
