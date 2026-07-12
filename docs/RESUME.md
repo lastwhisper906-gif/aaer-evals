@@ -56,3 +56,21 @@ E1 보류(§5-1, Q-E03) · E2/E4/E5 launch-ready(Q-E01). 소유자 액션 4 =
 
 세션이 지금 죽으면: `git log --oneline -5` 로 마지막 push 확인 → 이 파일의
 가계부·Phase 상태에서 다음 미완 유닛부터. 미터링 발사 전이면 spend 없음.
+
+## 스모크 테스트 (freeze 개정 #3 래치 — 2026-07-13 추가, D52)
+
+소유자 행동 전체 (§6-1 키 주입 규약 준수 — 키는 셸에만, 파일 저장 금지):
+
+```bash
+read -s ANTHROPIC_API_KEY && export ANTHROPIC_API_KEY   # 또는 Keychain 경유
+make smoke        # = AAER_RAW_API_APPROVED=1 tools/smoke_rev3.py --live (30호출, 종량)
+```
+
+- 계획 매니페스트는 커밋 완료: `runs/smoke_rev3/DRYRUN_MANIFEST.json` (30호출 —
+  pilot 2케이스 × 5draw × 3arm: 하네스 / raw 미핀 / raw temp=0). `--live`는
+  커밋된 매니페스트와 재생성본이 다르면 정지한다 (fail-closed).
+- 게이트 아님 — 측정 (FREEZE_REV3 §3-3): 케이스별 |median(raw)−median(하네스)|
+  > 6.4pp 이면 발행물 L-2 문단 병기 대상 플래그가 SMOKE_REPORT.md에 찍힌다.
+- 완료 후: `git add runs/smoke_rev3 && python tools/verify_blindness.py
+  --write-manifest && git add runs/MANIFEST.sha256` → 커밋+push. **이 커밋
+  전에는 E2 본 발사 금지 (§6-3).** 멱등 — 중단 시 같은 명령으로 재개.
