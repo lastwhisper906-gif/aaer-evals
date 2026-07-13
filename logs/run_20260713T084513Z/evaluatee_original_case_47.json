@@ -1,0 +1,59 @@
+{
+  "ts": "2026-07-13T09:20:21.261722+00:00",
+  "harness_pin": "2.1.201",
+  "flags": [
+    "claude",
+    "-p",
+    "--model",
+    "claude-sonnet-5",
+    "--output-format",
+    "json",
+    "--max-turns",
+    "2",
+    "--setting-sources",
+    "",
+    "--strict-mcp-config",
+    "--tools",
+    "",
+    "--disallowedTools",
+    "Bash,Read,Edit,Write,Glob,Grep,WebFetch,WebSearch,Task,NotebookEdit",
+    "--system-prompt",
+    "You are analyzing the financial reporting quality of HALOZYME THERAPEUTICS, INC. (HALO, CIK 0001159036) using only the structured data provided below, which reflects public filings available on or bef...[1749 chars]",
+    "--json-schema",
+    "{\"type\": \"object\", \"additionalProperties\": false, \"required\": [\"checklist\", \"misstatement_probability\", \"mechanism_hypotheses\", \"overall\"], \"properties\": {\"checklist\": {\"type\": \"array\", \"items\": {\"typ...[1821 chars]"
+  ],
+  "model_requested": "claude-sonnet-5",
+  "served_models": [
+    "claude-sonnet-5"
+  ],
+  "pin_ok": true,
+  "ok": true,
+  "fail_reason": null,
+  "session_id": "32cfa040-cd3e-41ab-b634-6551ef009947",
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 53792,
+    "cache_read_input_tokens": 1116,
+    "output_tokens": 11459,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 53792,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [],
+    "speed": "standard"
+  },
+  "total_cost_usd_reference_only": 0.4949778,
+  "attempts": 1,
+  "wall_seconds": 119.3,
+  "freeze": {
+    "head": "24c9b112a80cfc3bb14dca110684d2b27bb7b092",
+    "clean_tree": false
+  },
+  "raw_tail": null
+}

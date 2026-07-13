@@ -996,3 +996,7 @@ c44bd59a…)는 **서명 없이 superseded** (채점 미진입 상태 폐기). v
 ## D83 — P4(Q-F06-B) 병행 발사 (2026-07-13, D80 개정 연장, JSON 1줄)
 
 {"decision":"D83","date":"2026-07-13","action":"Q-F06-B 108호출 발사 — D80 라이브 순서 개정의 연장(소유자 반복 지시 'finish all tasks'), P3와 병행·동시 2 상한 유지(runner --concurrency 1). 4연 invocation(w1_controls×draw_2/3·wave2×draw_2/3), draw 경계 commit·push, 멱등","budget_projection":"누계 180 + P3 62 + P4 108 = 350 ≤ 캡 380 — P5(32)는 캡 초과(382)로 발사 불가, 소유자 큐 잔류","metered":"108 (발사 시점 기록)","learning_note":"이 판단에서 알아야 할 것: 캡이 있는 밤에는 마지막 유닛의 발사 가능 여부가 앞 유닛들의 재지출에서 결정된다 — 재지출 16이 P5의 자리 절반을 먹었고, 이것이 재지출을 원장에 실시간 기록하는 이유다"}
+
+## D84 — Q-F05 완결: v2 date-shift name-ID 프로브 (2026-07-13, 63호출, JSON 1줄)
+
+{"decision":"D84","date":"2026-07-13","action":"Q-F05 실행 완결 — 62케이스 v2ds recognition 프로브(하네스, --v2-dateshift, 로그 _v2ds 격리) + analysis/name_probes_v2ds.py 판정 (동결 name_match 규칙, 재해석 금지)","results":"**wave-1 4/30 = 13.3% (동결 v1 50%, −36.7pp) · wave-2 0/32 = 0.0% (동결 v1 21.9%, −21.9pp)** — CP95 병기 산출물 참조. 사전 등록 판독 가드 내 서술: 날짜 지문 제거가 name-ID 채널을 추가로 좁혔다 (원인 분해·인과 서술은 소유자 검토 대상)","spend":"63호출 = 62 + case_25 재시도 1 (1차 호출 FAIL — 출력 미기록, 멱등 재시도로 완결). 누계 180+63 = 243/380","hygiene_context":"발사 전 위생 스캔 62/62 PASS(D73)·엔드포인트 사전 등록(스펙 §5)·동일 프로브 문구·동일 k — v1과 유일 차이는 date_shift.shift_payload (렌더 직전 이동+accession 마스킹)","metered":"63 (누계 243)","learning_note":"이 판단에서 알아야 할 것: 교란의 효과 측정은 '무엇이 남았는가'만큼 '무엇이 떨어졌는가'가 판정 재료다 — 50%→13.3%·21.9%→0%는 v1 잔존 인지의 대부분이 날짜 지문 경유였다는 산술이고, 그 진술은 사전 등록 두 문장 밖으로 나가지 않아야 한다"}

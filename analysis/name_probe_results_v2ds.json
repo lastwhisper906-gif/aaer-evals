@@ -1,0 +1,501 @@
+{
+ "reading_guard": "사전 등록 비교는 rate 병기까지 — v2가 낮으면 '날짜 지문 제거가 name-ID 채널을 추가로 좁혔다', 같으면 '날짜 외 지문(수치 자체)이 지배'. 인과 서술은 이 두 문장 밖으로 나가지 않는다 (원인 분해는 소유자 검토 대상).",
+ "spec": "specs/perturb_v2.md §5 (사전 등록 엔드포인트)",
+ "verdict_rule": "동결 scoring/probe_verdict.name_match — 재해석 금지",
+ "wave1": {
+  "cp95_pct": [
+   3.8,
+   30.7
+  ],
+  "delta_vs_v1_pp": -36.7,
+  "n": 30,
+  "rate_pct": 13.3,
+  "recognized": 4,
+  "rows": [
+   {
+    "case_id": "case_01",
+    "confidence": "low",
+    "group": "fraud",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "SCOR"
+   },
+   {
+    "case_id": "case_02",
+    "confidence": "low",
+    "group": "fraud",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "OFIX"
+   },
+   {
+    "case_id": "case_03",
+    "confidence": "low",
+    "group": "fraud",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "LOGI"
+   },
+   {
+    "case_id": "case_06",
+    "confidence": "low",
+    "group": "fraud",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "MON"
+   },
+   {
+    "case_id": "case_08",
+    "confidence": "low",
+    "group": "fraud",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "HTZ"
+   },
+   {
+    "case_id": "case_09",
+    "confidence": "medium",
+    "group": "fraud",
+    "guess": "Iconix Brand Group, Inc. (formerly Candie's, Inc.)",
+    "recognized": true,
+    "truth_ticker": "ICON"
+   },
+   {
+    "case_id": "case_12",
+    "confidence": "low",
+    "group": "fraud",
+    "guess": "Actavis plc (post-merger entity, later renamed Allergan plc) — best structural guess based on merger timing and balance sheet expansion pattern; not confidently confirmed",
+    "recognized": false,
+    "truth_ticker": "KHC"
+   },
+   {
+    "case_id": "case_13",
+    "confidence": "medium",
+    "group": "fraud",
+    "guess": "Research In Motion Limited (BlackBerry Limited)",
+    "recognized": false,
+    "truth_ticker": "MRVL"
+   },
+   {
+    "case_id": "case_17",
+    "confidence": "low",
+    "group": "control",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "TDY"
+   },
+   {
+    "case_id": "case_18",
+    "confidence": "low",
+    "group": "control",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "GIS"
+   },
+   {
+    "case_id": "case_19",
+    "confidence": "low",
+    "group": "control",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "CPB"
+   },
+   {
+    "case_id": "case_20",
+    "confidence": "high",
+    "group": "control",
+    "guess": "First Solar, Inc.",
+    "recognized": true,
+    "truth_ticker": "FSLR"
+   },
+   {
+    "case_id": "case_21",
+    "confidence": "medium",
+    "group": "control",
+    "guess": "Exponent, Inc. (formerly The Failure Group, Inc.)",
+    "recognized": true,
+    "truth_ticker": "EXPO"
+   },
+   {
+    "case_id": "case_22",
+    "confidence": "low",
+    "group": "control",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "MMSI"
+   },
+   {
+    "case_id": "case_23",
+    "confidence": "low",
+    "group": "control",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "BHE"
+   },
+   {
+    "case_id": "case_24",
+    "confidence": "low",
+    "group": "control",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "ARAY"
+   },
+   {
+    "case_id": "case_25",
+    "confidence": "low",
+    "group": "control",
+    "guess": "NVIDIA Corporation",
+    "recognized": false,
+    "truth_ticker": "GRMN"
+   },
+   {
+    "case_id": "case_26",
+    "confidence": "medium",
+    "group": "control",
+    "guess": "MACOM Technology Solutions Holdings, Inc.",
+    "recognized": false,
+    "truth_ticker": "IDCC"
+   },
+   {
+    "case_id": "case_27",
+    "confidence": "medium",
+    "group": "control",
+    "guess": "Community Health Systems, Inc.",
+    "recognized": false,
+    "truth_ticker": "R"
+   },
+   {
+    "case_id": "case_28",
+    "confidence": "low",
+    "group": "control",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "AMKR"
+   },
+   {
+    "case_id": "case_29",
+    "confidence": "low",
+    "group": "control",
+    "guess": "Bob Evans Farms, Inc.",
+    "recognized": false,
+    "truth_ticker": "UPBD"
+   },
+   {
+    "case_id": "case_30",
+    "confidence": "low",
+    "group": "control",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "LQDT"
+   },
+   {
+    "case_id": "case_31",
+    "confidence": "low",
+    "group": "control",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "CE"
+   },
+   {
+    "case_id": "case_32",
+    "confidence": "low",
+    "group": "control",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "APD"
+   },
+   {
+    "case_id": "case_33",
+    "confidence": "medium",
+    "group": "control",
+    "guess": "Advent Software, Inc.",
+    "recognized": false,
+    "truth_ticker": "FORR"
+   },
+   {
+    "case_id": "case_34",
+    "confidence": "low",
+    "group": "control",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "MASI"
+   },
+   {
+    "case_id": "case_35",
+    "confidence": "low",
+    "group": "control",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "MOS"
+   },
+   {
+    "case_id": "case_36",
+    "confidence": "low",
+    "group": "control",
+    "guess": "Ciena Corporation",
+    "recognized": true,
+    "truth_ticker": "CIEN"
+   },
+   {
+    "case_id": "case_37",
+    "confidence": "low",
+    "group": "control",
+    "guess": "Superior Uniform Group, Inc. (now Superior Group of Companies)",
+    "recognized": false,
+    "truth_ticker": "RCKY"
+   },
+   {
+    "case_id": "case_38",
+    "confidence": "low",
+    "group": "control",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "DLB"
+   }
+  ],
+  "v1_frozen": {
+   "count": "15/30",
+   "rate_pct": 50.0
+  }
+ },
+ "wave2": {
+  "cp95_pct": [
+   0.0,
+   9.4
+  ],
+  "delta_vs_v1_pp": -21.9,
+  "n": 32,
+  "rate_pct": 0.0,
+  "recognized": 0,
+  "rows": [
+   {
+    "case_id": "case_39",
+    "confidence": "low",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "OSIR"
+   },
+   {
+    "case_id": "case_40",
+    "confidence": "high",
+    "guess": "ExamWorks Group, Inc.",
+    "recognized": false,
+    "truth_ticker": "TNGO"
+   },
+   {
+    "case_id": "case_41",
+    "confidence": "low",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "HSTM"
+   },
+   {
+    "case_id": "case_42",
+    "confidence": "low",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "RL"
+   },
+   {
+    "case_id": "case_43",
+    "confidence": "low",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "NBR"
+   },
+   {
+    "case_id": "case_44",
+    "confidence": "low",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "ADAM"
+   },
+   {
+    "case_id": "case_45",
+    "confidence": "low",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "FLO"
+   },
+   {
+    "case_id": "case_46",
+    "confidence": "low",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "UFPT"
+   },
+   {
+    "case_id": "case_47",
+    "confidence": "low",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "HALO"
+   },
+   {
+    "case_id": "case_48",
+    "confidence": "low",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "LPSN"
+   },
+   {
+    "case_id": "case_49",
+    "confidence": "low",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "IOVA"
+   },
+   {
+    "case_id": "case_50",
+    "confidence": "low",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "ATRC"
+   },
+   {
+    "case_id": "case_51",
+    "confidence": "low",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "VAL"
+   },
+   {
+    "case_id": "case_52",
+    "confidence": "low",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "CSC"
+   },
+   {
+    "case_id": "case_53",
+    "confidence": "low",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "MRTN"
+   },
+   {
+    "case_id": "case_54",
+    "confidence": "low",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "LEVI"
+   },
+   {
+    "case_id": "case_55",
+    "confidence": "low",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "BF-A"
+   },
+   {
+    "case_id": "case_56",
+    "confidence": "low",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "BXMT"
+   },
+   {
+    "case_id": "case_57",
+    "confidence": "medium",
+    "guess": "Spectrum Brands Holdings, Inc.",
+    "recognized": false,
+    "truth_ticker": "DAR"
+   },
+   {
+    "case_id": "case_58",
+    "confidence": "low",
+    "guess": "Meredith Corporation",
+    "recognized": false,
+    "truth_ticker": "CTAS"
+   },
+   {
+    "case_id": "case_59",
+    "confidence": "low",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "HAIN"
+   },
+   {
+    "case_id": "case_60",
+    "confidence": "low",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "MDXG"
+   },
+   {
+    "case_id": "case_61",
+    "confidence": "low",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "CGI"
+   },
+   {
+    "case_id": "case_62",
+    "confidence": "low",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "ULH"
+   },
+   {
+    "case_id": "case_63",
+    "confidence": "medium",
+    "guess": "Liberty Property Trust",
+    "recognized": false,
+    "truth_ticker": "SITC"
+   },
+   {
+    "case_id": "case_64",
+    "confidence": "low",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "SAIA"
+   },
+   {
+    "case_id": "case_65",
+    "confidence": "low",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "WFT"
+   },
+   {
+    "case_id": "case_66",
+    "confidence": "low",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "UAA"
+   },
+   {
+    "case_id": "case_67",
+    "confidence": "low",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "BRX"
+   },
+   {
+    "case_id": "case_68",
+    "confidence": "low",
+    "guess": "unknown",
+    "recognized": false,
+    "truth_ticker": "RGEN"
+   },
+   {
+    "case_id": "case_69",
+    "confidence": "low",
+    "guess": "Digirad Corporation (best guess based on goods/services revenue mix, equipment+diagnostic imaging services model, and 2015 acquisition activity increasing goodwill/debt substantially) — identification uncertain",
+    "recognized": false,
+    "truth_ticker": "AORT"
+   },
+   {
+    "case_id": "case_70",
+    "confidence": "low",
+    "guess": "Bottomline Technologies, Inc. (best guess; not confidently verified)",
+    "recognized": false,
+    "truth_ticker": "MCHX"
+   }
+  ],
+  "v1_frozen": {
+   "count": "7/32",
+   "rate_pct": 21.9
+  }
+ }
+}
