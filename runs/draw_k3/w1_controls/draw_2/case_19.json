@@ -1,0 +1,481 @@
+{
+  "case_id": "case_19",
+  "run_id": "original-case_19-r1",
+  "model": "claude-sonnet-5",
+  "pipeline_version": "5abb3435ada54e8718010705b2430b1fcdedcfce",
+  "run_timestamp": "2026-07-13T06:39:42.433771+00:00",
+  "documents_used": [
+    {
+      "accession_no": "0000016732-12-000013",
+      "form_type": "10-Q",
+      "filing_date": "2012-06-06"
+    },
+    {
+      "accession_no": "0000016732-12-000024",
+      "form_type": "10-K",
+      "filing_date": "2012-09-27"
+    },
+    {
+      "accession_no": "0000016732-12-000038",
+      "form_type": "10-Q",
+      "filing_date": "2012-12-05"
+    },
+    {
+      "accession_no": "0000016732-13-000006",
+      "form_type": "10-Q",
+      "filing_date": "2013-03-07"
+    },
+    {
+      "accession_no": "0000016732-13-000013",
+      "form_type": "10-Q",
+      "filing_date": "2013-06-05"
+    },
+    {
+      "accession_no": "0000016732-13-000023",
+      "form_type": "10-K",
+      "filing_date": "2013-09-26"
+    },
+    {
+      "accession_no": "0000016732-13-000041",
+      "form_type": "10-Q",
+      "filing_date": "2013-12-05"
+    },
+    {
+      "accession_no": "0000016732-14-000008",
+      "form_type": "10-Q",
+      "filing_date": "2014-03-06"
+    },
+    {
+      "accession_no": "0000016732-14-000017",
+      "form_type": "10-Q",
+      "filing_date": "2014-06-04"
+    },
+    {
+      "accession_no": "0000016732-14-000023",
+      "form_type": "10-K",
+      "filing_date": "2014-09-24"
+    },
+    {
+      "accession_no": "0000016732-14-000029",
+      "form_type": "10-Q",
+      "filing_date": "2014-12-11"
+    },
+    {
+      "accession_no": "0000016732-15-000007",
+      "form_type": "10-Q",
+      "filing_date": "2015-03-11"
+    },
+    {
+      "accession_no": "0000016732-15-000019",
+      "form_type": "10-Q",
+      "filing_date": "2015-06-11"
+    },
+    {
+      "accession_no": "0000016732-15-000059",
+      "form_type": "10-Q",
+      "filing_date": "2015-12-10"
+    },
+    {
+      "accession_no": "0000016732-15-000061",
+      "form_type": "8-K",
+      "filing_date": "2015-12-10"
+    },
+    {
+      "accession_no": "0000016732-16-000114",
+      "form_type": "10-Q",
+      "filing_date": "2016-03-10"
+    },
+    {
+      "accession_no": "0000016732-16-000124",
+      "form_type": "10-Q",
+      "filing_date": "2016-06-07"
+    },
+    {
+      "accession_no": "0000016732-16-000146",
+      "form_type": "10-K",
+      "filing_date": "2016-09-22"
+    },
+    {
+      "accession_no": "0000016732-16-000173",
+      "form_type": "10-Q",
+      "filing_date": "2016-12-07"
+    },
+    {
+      "accession_no": "0000016732-17-000023",
+      "form_type": "10-Q",
+      "filing_date": "2017-03-09"
+    },
+    {
+      "accession_no": "0000016732-17-000040",
+      "form_type": "10-Q",
+      "filing_date": "2017-06-08"
+    },
+    {
+      "accession_no": "0000016732-17-000058",
+      "form_type": "10-K",
+      "filing_date": "2017-09-27"
+    },
+    {
+      "accession_no": "0000016732-17-000085",
+      "form_type": "10-Q",
+      "filing_date": "2017-12-08"
+    },
+    {
+      "accession_no": "0000016732-18-000026",
+      "form_type": "10-Q",
+      "filing_date": "2018-03-05"
+    },
+    {
+      "accession_no": "0000016732-18-000050",
+      "form_type": "10-Q",
+      "filing_date": "2018-06-05"
+    },
+    {
+      "accession_no": "0000016732-18-000062",
+      "form_type": "10-K",
+      "filing_date": "2018-09-27"
+    },
+    {
+      "accession_no": "0000016732-18-000085",
+      "form_type": "10-Q",
+      "filing_date": "2018-12-06"
+    },
+    {
+      "accession_no": "0000950123-09-069718",
+      "form_type": "10-Q",
+      "filing_date": "2009-12-10"
+    },
+    {
+      "accession_no": "0000950123-10-022850",
+      "form_type": "10-Q",
+      "filing_date": "2010-03-10"
+    },
+    {
+      "accession_no": "0000950123-10-057241",
+      "form_type": "10-Q",
+      "filing_date": "2010-06-10"
+    },
+    {
+      "accession_no": "0000950123-10-090083",
+      "form_type": "10-K",
+      "filing_date": "2010-09-29"
+    },
+    {
+      "accession_no": "0000950123-10-112236",
+      "form_type": "10-Q",
+      "filing_date": "2010-12-09"
+    },
+    {
+      "accession_no": "0000950123-11-023447",
+      "form_type": "10-Q",
+      "filing_date": "2011-03-09"
+    },
+    {
+      "accession_no": "0000950123-11-057712",
+      "form_type": "10-Q",
+      "filing_date": "2011-06-09"
+    },
+    {
+      "accession_no": "0000950123-11-087197",
+      "form_type": "10-K",
+      "filing_date": "2011-09-28"
+    },
+    {
+      "accession_no": "0001193125-11-332861",
+      "form_type": "10-Q",
+      "filing_date": "2011-12-07"
+    },
+    {
+      "accession_no": "0001445305-12-000596",
+      "form_type": "10-Q",
+      "filing_date": "2012-03-07"
+    }
+  ],
+  "checklist": [
+    {
+      "item_id": "CL1",
+      "question": "Did receivables grow materially faster than revenue across consecutive periods?",
+      "finding": "flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "AccountsReceivableNetCurrent=550000000 (2017-07-30)",
+          "source_accession_no": "0000016732-18-000062",
+          "location": "10-K FY2017 balance sheet"
+        },
+        {
+          "quote": "AccountsReceivableNetCurrent=714000000 (2018-07-29)",
+          "source_accession_no": "0000016732-18-000062",
+          "location": "10-K FY2018 balance sheet"
+        },
+        {
+          "quote": "SalesRevenueGoodsNet=7890000000 (FY2017, 2016-08-01 to 2017-07-30)",
+          "source_accession_no": "0000016732-18-000062",
+          "location": "10-K FY2018 income statement, prior year comparative"
+        },
+        {
+          "quote": "SalesRevenueGoodsNet=8685000000 (FY2018, 2017-07-31 to 2018-07-29)",
+          "source_accession_no": "0000016732-18-000062",
+          "location": "10-K FY2018 income statement"
+        }
+      ]
+    },
+    {
+      "item_id": "CL2",
+      "question": "Did non-current 'soft' assets (intangibles, other assets, capitalized items) grow materially faster than the business overall?",
+      "finding": "flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "Goodwill=2115000000 (2017-07-30)",
+          "source_accession_no": "0000016732-18-000062",
+          "location": "10-K FY2018 balance sheet, prior year"
+        },
+        {
+          "quote": "Goodwill=4580000000 (2018-07-29)",
+          "source_accession_no": "0000016732-18-000085",
+          "location": "10-Q Q1 FY2019 balance sheet"
+        },
+        {
+          "quote": "IntangibleAssetsNetExcludingGoodwill=1118000000 (2017-07-30)",
+          "source_accession_no": "0000016732-18-000062",
+          "location": "10-K FY2018 balance sheet, prior year"
+        },
+        {
+          "quote": "IntangibleAssetsNetExcludingGoodwill=4196000000 (2018-07-29)",
+          "source_accession_no": "0000016732-18-000085",
+          "location": "10-Q Q1 FY2019 balance sheet"
+        },
+        {
+          "quote": "ProceedsFromIssuanceOfLongTermDebt=6224000000 (FY2018)",
+          "source_accession_no": "0000016732-18-000062",
+          "location": "10-K FY2018 cash flow statement"
+        }
+      ]
+    },
+    {
+      "item_id": "CL3",
+      "question": "Is there a persistent divergence between net income and operating cash flow?",
+      "finding": "flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "NetIncomeLoss=261000000 (FY2018, 2017-07-31 to 2018-07-29)",
+          "source_accession_no": "0000016732-18-000062",
+          "location": "10-K FY2018 income statement"
+        },
+        {
+          "quote": "NetCashProvidedByUsedInOperatingActivities=1305000000 (FY2018)",
+          "source_accession_no": "0000016732-18-000062",
+          "location": "10-K FY2018 cash flow statement"
+        },
+        {
+          "quote": "NetIncomeLoss=563000000 (FY2016, 2015-08-03 to 2016-07-31)",
+          "source_accession_no": "0000016732-18-000062",
+          "location": "10-K FY2018 income statement, prior year comparative"
+        },
+        {
+          "quote": "NetCashProvidedByUsedInOperatingActivities=1491000000 (FY2016)",
+          "source_accession_no": "0000016732-18-000062",
+          "location": "10-K FY2018 cash flow statement, prior year comparative"
+        }
+      ]
+    },
+    {
+      "item_id": "CL4",
+      "question": "Do inventory levels or gross margins show trends inconsistent with revenue?",
+      "finding": "flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "InventoryNet=902000000 (2017-07-30)",
+          "source_accession_no": "0000016732-18-000062",
+          "location": "10-K FY2018 balance sheet, prior year"
+        },
+        {
+          "quote": "InventoryNet=1199000000 (2018-07-29)",
+          "source_accession_no": "0000016732-18-000085",
+          "location": "10-Q Q1 FY2019 balance sheet"
+        },
+        {
+          "quote": "GrossProfit=783000000 (2017-07-31 to 2017-10-29)",
+          "source_accession_no": "0000016732-18-000062",
+          "location": "10-K FY2018 quarterly data"
+        },
+        {
+          "quote": "Revenues=2694000000 (2018-07-30 to 2018-10-28); CostOfGoodsAndServicesSold=1870000000 (same period)",
+          "source_accession_no": "0000016732-18-000085",
+          "location": "10-Q Q1 FY2019 income statement"
+        }
+      ]
+    },
+    {
+      "item_id": "CL5",
+      "question": "Is the earnings trajectory unusually smooth relative to the volatility of revenue and cash flow?",
+      "finding": "no_flag",
+      "confidence": "high",
+      "evidence": [
+        {
+          "quote": "NetIncomeLoss=-393000000 (2018-01-29 to 2018-04-29)",
+          "source_accession_no": "0000016732-18-000050",
+          "location": "10-Q Q3 FY2018 income statement"
+        },
+        {
+          "quote": "NetIncomeLoss=-158000000 (2013-04-29 to 2013-07-28)",
+          "source_accession_no": "0000016732-14-000023",
+          "location": "10-K FY2014 quarterly data, prior year"
+        },
+        {
+          "quote": "NetIncomeLoss=-81000000 (2016-05-02 to 2016-07-31)",
+          "source_accession_no": "0000016732-17-000058",
+          "location": "10-K FY2017 quarterly data, prior year"
+        }
+      ]
+    },
+    {
+      "item_id": "CL6",
+      "question": "Did liability, allowance, or reserve balances decline (or fail to grow) despite growing business activity?",
+      "finding": "no_flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "AllowanceForDoubtfulAccountsReceivableCurrent=11000000 (2017-07-30)",
+          "source_accession_no": "0000016732-18-000062",
+          "location": "10-K FY2018, prior year"
+        },
+        {
+          "quote": "AllowanceForDoubtfulAccountsReceivableCurrent=20000000 (2018-07-29)",
+          "source_accession_no": "0000016732-18-000062",
+          "location": "10-K FY2018 balance sheet"
+        },
+        {
+          "quote": "AccruedLiabilitiesCurrent=561000000 (2017-07-30) vs AccruedLiabilitiesCurrent=676000000 (2018-07-29)",
+          "source_accession_no": "0000016732-18-000085",
+          "location": "10-Q Q1 FY2019 balance sheet, comparative"
+        }
+      ]
+    },
+    {
+      "item_id": "CL7",
+      "question": "Does the filing chronology show irregularities (late filings/NT forms, amendments, unusual 8-K frequency)?",
+      "finding": "flag",
+      "confidence": "low",
+      "evidence": [
+        {
+          "quote": "DFAN14A filing_date 2018-09-07 through 2018-11-20 (dozens of DFAN14A/DEFC14A filings)",
+          "source_accession_no": "n/a",
+          "location": "Filing chronology, Sept-Nov 2018 proxy contest filings"
+        },
+        {
+          "quote": "CORRESP filing_date 2008-02-14, 2008-03-26, 2008-05-02, 2008-06-03, 2009-12-11, 2011-01-19, 2011-03-11, 2011-04-07, 2011-06-08, 2011-07-07, 2014-03-28",
+          "source_accession_no": "n/a",
+          "location": "Filing chronology, SEC comment letter correspondence"
+        },
+        {
+          "quote": "SC 13D filed 2017-12-28 and 2018-08-09 (activist stakes) followed by SC 13D/A series through Feb 2019",
+          "source_accession_no": "n/a",
+          "location": "Filing chronology"
+        }
+      ]
+    },
+    {
+      "item_id": "CL8",
+      "question": "Is the provided data sufficient in coverage and length for the above assessments?",
+      "finding": "no_flag",
+      "confidence": "high",
+      "evidence": [
+        {
+          "quote": "Data spans annual and quarterly XBRL concepts from FY2008 (2008-08-03) through Q1 FY2019 (2018-10-28), filed 2018-12-06",
+          "source_accession_no": "0000016732-18-000085",
+          "location": "financial_series_point_in_time, multiple concepts"
+        }
+      ]
+    }
+  ],
+  "misstatement_probability": 35,
+  "mechanism_hypotheses": [
+    {
+      "affected_line_items": [
+        "Goodwill",
+        "IntangibleAssetsNetExcludingGoodwill",
+        "OperatingIncomeLoss",
+        "NetIncomeLoss"
+      ],
+      "direction": "overstated",
+      "accounting_treatment": "Purchase-accounting driven step-up of goodwill/intangibles from the ~$6.1B Snyder's-Lance acquisition (closed FY2018) combined with a subsequent large non-cash impairment/write-down recognized in Q3 FY2018 (OperatingIncomeLoss=-475,000,000 and NetIncomeLoss=-393,000,000 for 2018-01-29 to 2018-04-29) suggests prior-period goodwill/intangible carrying values (e.g., legacy Fresh/Bolthouse-related goodwill) may have been carried above recoverable value before being corrected via impairment, consistent with a historically overstated intangible asset base that was later written down rather than a currently overstated balance.",
+      "rationale_evidence": [
+        {
+          "quote": "Goodwill=4580000000 (2018-07-29) vs Goodwill=2115000000 (2017-07-30)",
+          "source_accession_no": "0000016732-18-000085",
+          "location": "10-Q Q1 FY2019 balance sheet, comparative to FY2018 10-K"
+        },
+        {
+          "quote": "OperatingIncomeLoss=-475000000 (2018-01-29 to 2018-04-29)",
+          "source_accession_no": "0000016732-18-000050",
+          "location": "10-Q Q3 FY2018 income statement"
+        },
+        {
+          "quote": "NetIncomeLoss=-393000000 (2018-01-29 to 2018-04-29)",
+          "source_accession_no": "0000016732-18-000050",
+          "location": "10-Q Q3 FY2018 income statement"
+        }
+      ]
+    },
+    {
+      "affected_line_items": [
+        "AccountsReceivableNetCurrent",
+        "InventoryNet",
+        "AccountsPayableCurrent"
+      ],
+      "direction": "timing_shift",
+      "accounting_treatment": "Working-capital balances (receivables, inventory, payables) grew far faster than revenue in FY2018, largely attributable to consolidation of Snyder's-Lance balances upon acquisition close (April 2018) rather than organic deterioration; however, the magnitude of the mismatch (receivables +29.8% vs revenue +10.1%; inventory +32.9% vs revenue +10.1%) warrants monitoring for potential channel-stuffing or inventory valuation issues in the newly combined entity.",
+      "rationale_evidence": [
+        {
+          "quote": "AccountsReceivableNetCurrent=714000000 (2018-07-29) vs 550000000 (2017-07-30)",
+          "source_accession_no": "0000016732-18-000062",
+          "location": "10-K FY2018 balance sheet"
+        },
+        {
+          "quote": "InventoryNet=1199000000 (2018-07-29) vs 902000000 (2017-07-30)",
+          "source_accession_no": "0000016732-18-000085",
+          "location": "10-Q Q1 FY2019 balance sheet, comparative"
+        },
+        {
+          "quote": "SalesRevenueGoodsNet=8685000000 (FY2018) vs 7890000000 (FY2017)",
+          "source_accession_no": "0000016732-18-000062",
+          "location": "10-K FY2018 income statement"
+        }
+      ]
+    },
+    {
+      "affected_line_items": [
+        "GrossProfit",
+        "CostOfGoodsSold"
+      ],
+      "direction": "understated",
+      "accounting_treatment": "Gross margin compression from 36.2% (Q1 FY2018) to 30.6% (Q1 FY2019) could reflect purchase-accounting inventory step-up amortization and/or lower-margin acquired snack business mix being absorbed into COGS, potentially masking underlying core-business margin trends during the integration period.",
+      "rationale_evidence": [
+        {
+          "quote": "GrossProfit=783000000 on Revenues implied ~2161000000 (2017-07-31 to 2017-10-29)",
+          "source_accession_no": "0000016732-18-000062",
+          "location": "10-K FY2018 quarterly data"
+        },
+        {
+          "quote": "Revenues=2694000000, CostOfGoodsAndServicesSold=1870000000 (2018-07-30 to 2018-10-28)",
+          "source_accession_no": "0000016732-18-000085",
+          "location": "10-Q Q1 FY2019 income statement"
+        }
+      ]
+    }
+  ],
+  "overall": {
+    "risk_tier": "watch",
+    "top_signals": [
+      "Large FY2018 divergence between net income ($261M) and operating cash flow ($1,305M), driven by non-cash impairment/acquisition charges (Q3 FY2018 net loss of -$393M)",
+      "Goodwill and intangible assets more than doubled/tripled in FY2018 (Goodwill +116.6%, other intangibles +275%) versus only 10.1% revenue growth, tied to the debt-funded Snyder's-Lance acquisition",
+      "Receivables (+29.8%) and inventory (+32.9%) grew far faster than revenue (+10.1%) in FY2018, and gross margin compressed ~560bps quarter-over-quarter post-acquisition",
+      "Elevated proxy-contest filing activity (dozens of DFAN14A/DEFC14A/SC 13D-A filings) in Sept-Nov 2018 reflecting activist investor (Third Point) pressure and board/strategy uncertainty, alongside a history of multi-year SEC CORRESP comment-letter exchanges",
+      "Highly volatile quarterly net income (large negative quarters in FY2013, FY2016, FY2018) inconsistent with a 'smoothed' earnings pattern, suggesting recurring large discretionary/impairment charges rather than manipulated income smoothing"
+    ]
+  }
+}

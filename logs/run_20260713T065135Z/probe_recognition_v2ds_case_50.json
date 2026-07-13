@@ -1,0 +1,59 @@
+{
+  "ts": "2026-07-13T07:02:05.984893+00:00",
+  "harness_pin": "2.1.201",
+  "flags": [
+    "claude",
+    "-p",
+    "--model",
+    "claude-sonnet-5",
+    "--output-format",
+    "json",
+    "--max-turns",
+    "2",
+    "--setting-sources",
+    "",
+    "--strict-mcp-config",
+    "--tools",
+    "",
+    "--disallowedTools",
+    "Bash,Read,Edit,Write,Glob,Grep,WebFetch,WebSearch,Task,NotebookEdit",
+    "--system-prompt",
+    "Based on the structured filing data above, which specific company is this? Answer with the company's real name, or 'unknown'.",
+    "--json-schema",
+    "{\"type\": \"object\", \"additionalProperties\": false, \"required\": [\"company_guess\", \"confidence\"], \"properties\": {\"company_guess\": {\"type\": \"string\"}, \"confidence\": {\"type\": \"string\", \"enum\": [\"high\", \"medium\", \"low\"]}}}"
+  ],
+  "model_requested": "claude-sonnet-5",
+  "served_models": [
+    "claude-sonnet-5"
+  ],
+  "pin_ok": true,
+  "ok": true,
+  "fail_reason": null,
+  "session_id": "9368603a-0e48-4c33-aee8-950151330a49",
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 63259,
+    "cache_read_input_tokens": 0,
+    "output_tokens": 21992,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 63259,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [],
+    "speed": "standard"
+  },
+  "total_cost_usd_reference_only": 0.70944,
+  "attempts": 1,
+  "wall_seconds": 239.9,
+  "freeze": {
+    "head": "b835b34b65fd478b783704c76fbb91eb60f6776a",
+    "clean_tree": false
+  },
+  "raw_tail": null
+}
