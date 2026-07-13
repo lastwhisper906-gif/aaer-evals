@@ -43,7 +43,8 @@ VERBATIM_TASK = ("Without any documents: state {company_name}'s exact reported t
                  "If you do not know, set known=false and use nulls.")
 
 
-def probe_case(kind: str, case: dict, out: Path, log_dir: Path) -> dict:
+def probe_case(kind: str, case: dict, out: Path, log_dir: Path,
+               v2_dateshift: bool = False) -> dict:
     cid = case["case_id"]
     out_path = out / f"{cid}.json"
     schema = RECOG_SCHEMA if kind == "recognition" else VERBATIM_SCHEMA
@@ -53,6 +54,11 @@ def probe_case(kind: str, case: dict, out: Path, log_dir: Path) -> dict:
     if kind == "recognition":
         payload = bp.build_payload(case, perturb=True)
         payload.pop("_k_internal")
+        if v2_dateshift:
+            # Q-F05 (specs/perturb_v2.md §3): 컷오프 가드는 상류 진짜 날짜에서
+            # 이미 완료 — 렌더 직전 균일 이동 + accession 마스킹만 적용
+            import date_shift
+            payload = date_shift.shift_payload(payload)
         system, user = RECOG_TASK, json.dumps(payload, ensure_ascii=False)
         markers = cli_client.EVALUATEE_FORBIDDEN_MARKERS
     else:
@@ -61,8 +67,10 @@ def probe_case(kind: str, case: dict, out: Path, log_dir: Path) -> dict:
         user = "Answer now."
         markers = cli_client.EVALUATEE_FORBIDDEN_MARKERS
 
+    variant_tag = "_v2ds" if v2_dateshift else ""  # 로그 충돌 방지 (D70 교훈)
     r = cli_client.call_model(EVALUATEE_MODEL, system, user, schema,
-                              log_dir=log_dir, log_name=f"probe_{kind}_{cid}",
+                              log_dir=log_dir,
+                              log_name=f"probe_{kind}{variant_tag}_{cid}",
                               forbid_markers=markers)
     if not r.ok:
         return {"case_id": cid, "status": f"FAIL ({r.fail_reason})"}
@@ -86,6 +94,9 @@ def main() -> int:
     ap.add_argument("--out-root", default=str(REPO_ROOT / "scoring" / "probe_results"),
                     help="RP-09 3b: v2 대조군 프로브는 별도 루트 (I3 — 기존 "
                          "probe_results 동결 경로에 추가 기입 금지)")
+    ap.add_argument("--v2-dateshift", action="store_true",
+                    help="Q-F05: 렌더 직전 date_shift.shift_payload 적용 "
+                         "(specs/perturb_v2.md §3/§5 — recognition 전용)")
     args = ap.parse_args()
 
     cli_client.assert_no_metered_credentials()
@@ -108,7 +119,8 @@ def main() -> int:
             # cli_client가 호출 단위로 보장, 케이스 간 상태 공유 없음)
             with concurrent.futures.ThreadPoolExecutor(
                     max_workers=args.concurrency) as pool:
-                futs = {pool.submit(probe_case, kind, case, out, log_dir): case
+                futs = {pool.submit(probe_case, kind, case, out, log_dir,
+                                    args.v2_dateshift): case
                         for case in cases}
                 for fut in concurrent.futures.as_completed(futs):
                     res = fut.result()
