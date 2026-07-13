@@ -7,6 +7,11 @@
  "primary_score": "score_slope_aug",
  "lag_days": 14,
  "data_floor": "2017-12-29",
+ "dissemination": {
+  "source": "data/finra_dissemination/dissemination_dates.json",
+  "rows": 223,
+  "fallback": "t+14d (매핑 미커버 결제일만)"
+ },
  "frozen_llm_auc": {
   "wave1": 0.8239,
   "wave2": 0.829,
@@ -1459,8 +1464,8 @@
      "stats": {
       "n_treatment": 3,
       "n_control": 7,
-      "mean_diff": 5.074822,
-      "median_treatment": 0.002891,
+      "mean_diff": 5.075419,
+      "median_treatment": 0.003165,
       "median_control": 0.009263,
       "auc": 0.5238,
       "auc_boot95": [
@@ -1486,15 +1491,15 @@
      "stats": {
       "n_treatment": 3,
       "n_control": 7,
-      "mean_diff": 6.032582,
-      "median_treatment": 0.000892,
+      "mean_diff": 6.033608,
+      "median_treatment": 0.002016,
       "median_control": 0.003818,
       "auc": 0.4762,
       "auc_boot95": [
        0.0,
        1.0
       ],
-      "perm_p_one_sided": 0.250137
+      "perm_p_one_sided": 0.241758
      },
      "precision_at_k": {
       "k": 2,
@@ -1553,11 +1558,11 @@
      "group": "control",
      "score_level": null,
      "score_slope_aug": null,
-     "sir_last": 0.02741958944086132,
+     "sir_last": 0.02232455844204904,
      "abnormal_sir_last": null,
      "slope4": null,
-     "n_reports_trailing12m": 4,
-     "last_settlement": "2026-02-13",
+     "n_reports_trailing12m": 5,
+     "last_settlement": "2026-02-27",
      "shares_source": "dei:EntityCommonStockSharesOutstanding",
      "flags": {
       "insufficient_history": true,
@@ -1611,13 +1616,13 @@
     "UTL": {
      "ticker": "UTL",
      "group": "control",
-     "score_level": 0.01518013278211212,
-     "score_slope_aug": 0.015739558686008726,
-     "sir_last": 0.03414358345537704,
-     "abnormal_sir_last": 0.01518013278211212,
-     "slope4": 0.0005594259038966048,
+     "score_level": 0.011236312355628796,
+     "score_slope_aug": 0.010650039902067227,
+     "sir_last": 0.033777202105383264,
+     "abnormal_sir_last": 0.011236312355628796,
+     "slope4": -0.0005862724535615694,
      "n_reports_trailing12m": 24,
-     "last_settlement": "2026-02-13",
+     "last_settlement": "2026-02-27",
      "shares_source": "dei:EntityCommonStockSharesOutstanding",
      "flags": {
       "insufficient_history": false,
@@ -1631,13 +1636,13 @@
     "VIASP": {
      "ticker": "VIASP",
      "group": "control",
-     "score_level": -0.0010148799956861214,
-     "score_slope_aug": -0.000865236276384231,
-     "sir_last": 0.0005498927038626609,
-     "abnormal_sir_last": -0.0010148799956861214,
-     "slope4": 0.00014964371930189043,
+     "score_level": -0.0006045373363394362,
+     "score_slope_aug": -0.0003336341093508812,
+     "sir_last": 0.000845225321888412,
+     "abnormal_sir_last": -0.0006045373363394362,
+     "slope4": 0.000270903226988555,
      "n_reports_trailing12m": 24,
-     "last_settlement": "2026-02-13",
+     "last_settlement": "2026-02-27",
      "shares_source": "us-gaap:WeightedAverageNumberOfDilutedSharesOutstanding",
      "flags": {
       "insufficient_history": false,
@@ -1731,13 +1736,13 @@
     "case_73": {
      "ticker": "GNE",
      "group": "treatment",
-     "score_level": 0.0028907494549288947,
-     "score_slope_aug": 0.0008919125341212888,
-     "sir_last": 0.02083659858274281,
-     "abnormal_sir_last": 0.0028907494549288947,
-     "slope4": -0.001998836920807606,
+     "score_level": 0.003164784090572536,
+     "score_slope_aug": 0.002015850243271586,
+     "sir_last": 0.02151055363977415,
+     "abnormal_sir_last": 0.003164784090572536,
+     "slope4": -0.0011489338473009499,
      "n_reports_trailing12m": 24,
-     "last_settlement": "2026-02-13",
+     "last_settlement": "2026-02-27",
      "shares_source": "us-gaap:WeightedAverageNumberOfDilutedSharesOutstanding",
      "flags": {
       "insufficient_history": false,

@@ -1,7 +1,7 @@
 # B4 리포트 — 비정상 공매도 잔고 기준선 (D55, 개정 D56 · 확정 D57)
 
-- 스펙: specs/B4_short_interest.md (커밋 4753824, 계산 전 동결) · 개정: §13 분모 우선순위 사슬 — D56 (원번호 D53), 커밋 7994e2d
-- 데이터: FINRA Consolidated Short Interest, 하한 2017-12-29, PIT LAG 14일
+- 스펙: specs/B4_short_interest.md (커밋 4753824, 계산 전 동결) · 개정: §13 분모 우선순위 사슬 — D56 (원번호 D53), 커밋 7994e2d · 개정: §14 공표일 실측 대체 — D77, 커밋 7a12bb8
+- 데이터: FINRA Consolidated Short Interest, 하한 2017-12-29, PIT 공표일 실측 223행 (§14/D77, 지연 9~12일) + LAG 14일 폴백(미커버만)
 - 시드 20260713 · perm 100,000 · boot 10,000 · 1차 점수 = slope-augmented
 
 > 본 결과는 Claude 기반 단일 파이프라인의 보조 기준선 문서에 한정된다 (PROJECT.md §5-5). LLM/B1/B2/B3 값은 동결 인용 — 재계산 0.
@@ -38,7 +38,7 @@
 
 - **score_level**: coverage 10/12, AUC 0.5238 CI [0.048, 1.0] p=0.241748
   - precision@2 = 0.5 (1/2) — 농축 표본, 유니버스 precision@30과 수치 비교 불가 (스펙 §5)
-- **score_slope_aug**: coverage 10/12, AUC 0.4762 CI [0.0, 1.0] p=0.250137
+- **score_slope_aug**: coverage 10/12, AUC 0.4762 CI [0.0, 1.0] p=0.241758
   - precision@2 = 0.5 (1/2) — 농축 표본, 유니버스 precision@30과 수치 비교 불가 (스펙 §5)
 - 결측 케이스 (fail-closed): GRDX, VLGEA
 
