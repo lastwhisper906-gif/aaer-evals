@@ -1,0 +1,404 @@
+{
+  "case_id": "case_09",
+  "run_id": "perturbed-case_09-r1",
+  "model": "claude-sonnet-5",
+  "pipeline_version": "fca8fadfb375b51633817b875a65685ef9523103",
+  "run_timestamp": "2026-07-13T02:36:25.871908+00:00",
+  "documents_used": [
+    {
+      "accession_no": "0001144204-10-041613",
+      "form_type": "10-Q",
+      "filing_date": "2010-08-05"
+    },
+    {
+      "accession_no": "0001144204-10-057962",
+      "form_type": "10-Q",
+      "filing_date": "2010-11-05"
+    },
+    {
+      "accession_no": "0001144204-11-011064",
+      "form_type": "10-K",
+      "filing_date": "2011-02-25"
+    },
+    {
+      "accession_no": "0001144204-11-026827",
+      "form_type": "10-Q",
+      "filing_date": "2011-05-06"
+    },
+    {
+      "accession_no": "0001144204-11-050565",
+      "form_type": "10-Q/A",
+      "filing_date": "2011-08-30"
+    },
+    {
+      "accession_no": "0001144204-11-061644",
+      "form_type": "10-Q",
+      "filing_date": "2011-11-07"
+    },
+    {
+      "accession_no": "0001144204-12-011985",
+      "form_type": "10-K",
+      "filing_date": "2012-02-29"
+    },
+    {
+      "accession_no": "0001193125-12-215038",
+      "form_type": "10-Q",
+      "filing_date": "2012-05-07"
+    },
+    {
+      "accession_no": "0001193125-12-337704",
+      "form_type": "10-Q",
+      "filing_date": "2012-08-06"
+    },
+    {
+      "accession_no": "0001193125-12-446644",
+      "form_type": "10-Q",
+      "filing_date": "2012-11-01"
+    },
+    {
+      "accession_no": "0001193125-13-084387",
+      "form_type": "10-K",
+      "filing_date": "2013-02-28"
+    },
+    {
+      "accession_no": "0001193125-13-204557",
+      "form_type": "10-Q",
+      "filing_date": "2013-05-07"
+    },
+    {
+      "accession_no": "0001193125-13-329139",
+      "form_type": "10-Q",
+      "filing_date": "2013-08-09"
+    },
+    {
+      "accession_no": "0001193125-13-430192",
+      "form_type": "10-Q",
+      "filing_date": "2013-11-06"
+    },
+    {
+      "accession_no": "0001193125-14-072954",
+      "form_type": "10-K",
+      "filing_date": "2014-02-27"
+    },
+    {
+      "accession_no": "0001193125-14-192433",
+      "form_type": "10-Q",
+      "filing_date": "2014-05-09"
+    },
+    {
+      "accession_no": "0001193125-14-298324",
+      "form_type": "10-Q",
+      "filing_date": "2014-08-06"
+    },
+    {
+      "accession_no": "0001193125-14-403492",
+      "form_type": "10-Q",
+      "filing_date": "2014-11-07"
+    }
+  ],
+  "checklist": [
+    {
+      "item_id": "CL1",
+      "question": "Did receivables grow materially faster than revenue across consecutive periods?",
+      "finding": "flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "AccountsReceivableNetCurrent=47500419.50 (2013-03-31)",
+          "source_accession_no": "0001193125-13-204557",
+          "location": "Balance Sheet - AccountsReceivableNetCurrent"
+        },
+        {
+          "quote": "Revenues=44278823.43 (2013-01-01 to 2013-03-31)",
+          "source_accession_no": "0001193125-14-192433",
+          "location": "Income Statement - Revenues"
+        },
+        {
+          "quote": "AccountsReceivableNetCurrent=56915285.35 (2014-06-30)",
+          "source_accession_no": "0001193125-14-298324",
+          "location": "Balance Sheet - AccountsReceivableNetCurrent"
+        },
+        {
+          "quote": "Revenues=50129029.48 (2014-04-01 to 2014-06-30)",
+          "source_accession_no": "0001193125-14-298324",
+          "location": "Income Statement - Revenues"
+        },
+        {
+          "quote": "AccountsReceivableNetCurrent=55548509.31 (2014-09-30)",
+          "source_accession_no": "0001193125-14-403492",
+          "location": "Balance Sheet - AccountsReceivableNetCurrent"
+        },
+        {
+          "quote": "Revenues=47940417.71 (2014-07-01 to 2014-09-30)",
+          "source_accession_no": "0001193125-14-403492",
+          "location": "Income Statement - Revenues"
+        }
+      ]
+    },
+    {
+      "item_id": "CL2",
+      "question": "Did non-current 'soft' assets (intangibles, other assets, capitalized items) grow materially faster than the business overall?",
+      "finding": "no_flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "IntangibleAssetsNetExcludingGoodwill=528793975.83 (2009-12-31)",
+          "source_accession_no": "0001144204-11-011064",
+          "location": "Balance Sheet - IntangibleAssetsNetExcludingGoodwill"
+        },
+        {
+          "quote": "Revenues=97801823.75 (2009-01-01 to 2009-12-31)",
+          "source_accession_no": "0001144204-12-011985",
+          "location": "Income Statement - Revenues"
+        },
+        {
+          "quote": "IntangibleAssetsNetExcludingGoodwill=824214419.72 (2013-12-31)",
+          "source_accession_no": "0001193125-14-403492",
+          "location": "Balance Sheet - IntangibleAssetsNetExcludingGoodwill"
+        },
+        {
+          "quote": "Revenues=182332054.07 (2013-01-01 to 2013-12-31)",
+          "source_accession_no": "0001193125-14-072954",
+          "location": "Income Statement - Revenues"
+        }
+      ]
+    },
+    {
+      "item_id": "CL3",
+      "question": "Is there a persistent divergence between net income and operating cash flow?",
+      "finding": "no_flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "NetIncomeLoss=53966370.17 (2013-01-01 to 2013-12-31)",
+          "source_accession_no": "0001193125-14-072954",
+          "location": "Income Statement - NetIncomeLoss"
+        },
+        {
+          "quote": "NetCashProvidedByUsedInOperatingActivities=98109906.79 (2013-01-01 to 2013-12-31)",
+          "source_accession_no": "0001193125-14-072954",
+          "location": "Cash Flow Statement - NetCashProvidedByUsedInOperatingActivities"
+        },
+        {
+          "quote": "NetIncomeLoss=26512842.17 (2008-01-01 to 2008-12-31)",
+          "source_accession_no": "0001144204-11-011064",
+          "location": "Income Statement - NetIncomeLoss"
+        },
+        {
+          "quote": "NetCashProvidedByUsedInOperatingActivities=37611839.10 (2008-01-01 to 2008-12-31)",
+          "source_accession_no": "0001144204-11-011064",
+          "location": "Cash Flow Statement - NetCashProvidedByUsedInOperatingActivities"
+        }
+      ]
+    },
+    {
+      "item_id": "CL4",
+      "question": "Do inventory levels or gross margins show trends inconsistent with revenue?",
+      "finding": "insufficient_data",
+      "confidence": "low",
+      "evidence": [
+        {
+          "quote": "No InventoryNet or CostOfGoodsSold concept provided in the dataset for any period.",
+          "source_accession_no": "0001193125-14-072954",
+          "location": "Data availability check"
+        },
+        {
+          "quote": "OperatingIncomeLoss=59868415.08 (2008) / Revenues=91354838.53 (2008) implies ~65.5% operating margin; OperatingIncomeLoss=108486952.63 (2013) / Revenues=182332054.07 (2013) implies ~59.5% operating margin",
+          "source_accession_no": "0001193125-14-072954",
+          "location": "Income Statement - OperatingIncomeLoss and Revenues"
+        }
+      ]
+    },
+    {
+      "item_id": "CL5",
+      "question": "Is the earnings trajectory unusually smooth relative to the volatility of revenue and cash flow?",
+      "finding": "flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "NetIncomeLoss=25189475.92 (2014-01-01 to 2014-03-31)",
+          "source_accession_no": "0001193125-14-192433",
+          "location": "Income Statement - NetIncomeLoss"
+        },
+        {
+          "quote": "OperatingIncomeLoss=28631914.00 (2014-01-01 to 2014-03-31)",
+          "source_accession_no": "0001193125-14-192433",
+          "location": "Income Statement - OperatingIncomeLoss"
+        },
+        {
+          "quote": "NetIncomeLoss=14885341.65 (2014-04-01 to 2014-06-30)",
+          "source_accession_no": "0001193125-14-298324",
+          "location": "Income Statement - NetIncomeLoss"
+        },
+        {
+          "quote": "OperatingIncomeLoss=31461557.64 (2014-04-01 to 2014-06-30)",
+          "source_accession_no": "0001193125-14-298324",
+          "location": "Income Statement - OperatingIncomeLoss"
+        }
+      ]
+    },
+    {
+      "item_id": "CL6",
+      "question": "Did liability, allowance, or reserve balances decline (or fail to grow) despite growing business activity?",
+      "finding": "flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "LongTermDebtCurrent=280734450.09 (2014-06-30)",
+          "source_accession_no": "0001193125-14-298324",
+          "location": "Balance Sheet - LongTermDebtCurrent"
+        },
+        {
+          "quote": "LongTermDebtCurrent=25814071.07 (2014-03-31)",
+          "source_accession_no": "0001193125-14-192433",
+          "location": "Balance Sheet - LongTermDebtCurrent"
+        },
+        {
+          "quote": "LongTermDebtCurrent=25760546.39 (2014-09-30)",
+          "source_accession_no": "0001193125-14-403492",
+          "location": "Balance Sheet - LongTermDebtCurrent"
+        },
+        {
+          "quote": "LiabilitiesCurrent=308530198.91 (2014-06-30)",
+          "source_accession_no": "0001193125-14-298324",
+          "location": "Balance Sheet - LiabilitiesCurrent"
+        },
+        {
+          "quote": "LiabilitiesCurrent=60102743.63 (2014-09-30)",
+          "source_accession_no": "0001193125-14-403492",
+          "location": "Balance Sheet - LiabilitiesCurrent"
+        }
+      ]
+    },
+    {
+      "item_id": "CL7",
+      "question": "Does the filing chronology show irregularities (late filings/NT forms, amendments, unusual 8-K frequency)?",
+      "finding": "flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "10-K/A filing_date=2011-04-29",
+          "source_accession_no": "n/a",
+          "location": "Filing chronology"
+        },
+        {
+          "quote": "10-K/A filing_date=2012-04-27",
+          "source_accession_no": "n/a",
+          "location": "Filing chronology"
+        },
+        {
+          "quote": "10-K/A filing_date=2013-04-30",
+          "source_accession_no": "n/a",
+          "location": "Filing chronology"
+        },
+        {
+          "quote": "10-K/A filing_date=2014-04-30",
+          "source_accession_no": "n/a",
+          "location": "Filing chronology"
+        },
+        {
+          "quote": "10-Q/A filing_date=2011-08-30 (amending 10-Q originally filed 2011-08-09)",
+          "source_accession_no": "0001144204-11-050565",
+          "location": "Filing chronology"
+        }
+      ]
+    },
+    {
+      "item_id": "CL8",
+      "question": "Is the provided data sufficient in coverage and length for the above assessments?",
+      "finding": "no_flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "Quarterly and annual data spans from AccountsReceivableNetCurrent end=2009-12-31 through end=2014-09-30, with Revenues from 2008-01-01 through 2014-09-30",
+          "source_accession_no": "0001193125-14-403492",
+          "location": "Financial series point-in-time dataset coverage"
+        },
+        {
+          "quote": "No InventoryNet, AllowanceForDoubtfulAccounts, or amortization-of-intangibles concepts were provided in the dataset",
+          "source_accession_no": "0001193125-14-072954",
+          "location": "Data availability check"
+        }
+      ]
+    }
+  ],
+  "misstatement_probability": 48,
+  "mechanism_hypotheses": [
+    {
+      "affected_line_items": [
+        "LiabilitiesCurrent",
+        "LongTermDebtCurrent",
+        "LongTermDebtNoncurrent"
+      ],
+      "direction": "timing_shift",
+      "accounting_treatment": "Reclassification of long-term debt between current and noncurrent portions - a single-quarter spike in LongTermDebtCurrent and LiabilitiesCurrent (Q2 2014) followed by reversion in Q3 2014 is consistent with either a technical/temporary breach of debt covenants requiring current classification (later cured/refinanced) or an inconsistent application of classification rules across quarters, which could mask underlying liquidity/leverage risk in the periods where debt is shown as noncurrent.",
+      "rationale_evidence": [
+        {
+          "quote": "LongTermDebtCurrent=280734450.09 (2014-06-30)",
+          "source_accession_no": "0001193125-14-298324",
+          "location": "Balance Sheet - LongTermDebtCurrent"
+        },
+        {
+          "quote": "LiabilitiesCurrent=308530198.91 (2014-06-30)",
+          "source_accession_no": "0001193125-14-298324",
+          "location": "Balance Sheet - LiabilitiesCurrent"
+        },
+        {
+          "quote": "LongTermDebtCurrent=25760546.39 (2014-09-30)",
+          "source_accession_no": "0001193125-14-403492",
+          "location": "Balance Sheet - LongTermDebtCurrent"
+        }
+      ]
+    },
+    {
+      "affected_line_items": [
+        "NetIncomeLoss",
+        "ProfitLoss"
+      ],
+      "direction": "overstated",
+      "accounting_treatment": "Possible inclusion of a non-recurring, non-operating gain (e.g., tax benefit, gain on debt modification/extinguishment, or other below-the-line item) in Q1 2014 that inflated net income far beyond what the period's operating income growth would suggest, compared to the more typical ~45-55% NI/OperatingIncome conversion ratio seen in adjacent quarters.",
+      "rationale_evidence": [
+        {
+          "quote": "NetIncomeLoss=25189475.92 (2014-01-01 to 2014-03-31) vs OperatingIncomeLoss=28631914.00 (2014-01-01 to 2014-03-31)",
+          "source_accession_no": "0001193125-14-192433",
+          "location": "Income Statement"
+        },
+        {
+          "quote": "NetIncomeLoss=14236302.15 (2014-07-01 to 2014-09-30) vs OperatingIncomeLoss=26787630.32 (2014-07-01 to 2014-09-30)",
+          "source_accession_no": "0001193125-14-403492",
+          "location": "Income Statement"
+        }
+      ]
+    },
+    {
+      "affected_line_items": [
+        "AccountsReceivableNetCurrent",
+        "Revenues"
+      ],
+      "direction": "overstated",
+      "accounting_treatment": "Potential aggressive revenue recognition or slowing collections reflected in receivables growing faster than quarterly revenue in 2014 versus 2013, which could indicate channel-stuffing, extended payment terms to customers, or bill-and-hold arrangements inflating reported revenue/receivables.",
+      "rationale_evidence": [
+        {
+          "quote": "AccountsReceivableNetCurrent=56915285.35 (2014-06-30) vs Revenues=50129029.48 (2014-04-01 to 2014-06-30)",
+          "source_accession_no": "0001193125-14-298324",
+          "location": "Balance Sheet / Income Statement"
+        },
+        {
+          "quote": "AccountsReceivableNetCurrent=46380615.63 (2013-06-30) vs Revenues=48519917.26 (2013-04-01 to 2013-06-30)",
+          "source_accession_no": "0001193125-13-329139",
+          "location": "Balance Sheet / Income Statement"
+        }
+      ]
+    }
+  ],
+  "overall": {
+    "risk_tier": "watch",
+    "top_signals": [
+      "Anomalous one-quarter spike and reversal in current-vs-noncurrent debt classification (Q2 2014) suggesting possible covenant issue or classification inconsistency",
+      "Unusual Q1 2014 net income spike relative to operating income trend, inconsistent with adjacent quarters' NI/OperatingIncome conversion ratio",
+      "Receivables growing faster than revenue in 2014 quarters relative to 2013 pattern, suggesting DSO expansion",
+      "Recurring pattern of annual 10-K/A amendments (2011-2014) indicating persistent post-filing corrections/updates",
+      "Very large intangible asset base (~4.5-5.4x annual revenue) with no visible amortization, elevating impairment/valuation risk"
+    ]
+  }
+}
