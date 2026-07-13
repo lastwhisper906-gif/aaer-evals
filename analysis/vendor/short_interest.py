@@ -6,9 +6,11 @@ reverse of this repo's vendor/aaer_evals convention) — edit HERE, then re-expo
 
 Design constraints:
   - stdlib only, no intra-package imports (so the snapshot imports cleanly anywhere).
-  - PIT rule: a settlement-date-t report enters features iff t + LAG_DAYS <= cutoff
-    (LAG_DAYS = 14 calendar days, pre-registered conservative dissemination lag;
-    replacing it with measured dissemination dates requires a spec amendment first).
+  - PIT rule: a settlement-date-t report enters features iff its availability
+    date <= cutoff. Availability = measured publication date when the caller
+    supplies dissemination_map (allowed only under aaer-evals spec B4 §14
+    amendment); otherwise t + LAG_DAYS (14 calendar days, pre-registered
+    conservative fallback — the default when no map is passed).
   - First-disseminated value: settlement t is read from file shrt{t}.csv only;
     later-file revisions (revisionFlag=R) are counted as a diagnostic, never applied.
   - fail-closed: missing file / missing symbol / missing denominator -> flags and
@@ -156,20 +158,32 @@ def load_symbol_row(path: Path, symbol: str) -> dict | None:
 
 
 def si_series(symbol: str, si_dir: Path, cutoff: datetime.date,
-              lag_days: int = LAG_DAYS) -> tuple[list[dict], dict]:
-    """All archived reports for symbol with settlement + lag <= cutoff, ascending.
+              lag_days: int = LAG_DAYS,
+              dissemination_map: dict[str, str] | None = None) -> tuple[list[dict], dict]:
+    """All archived reports for symbol available on or before cutoff, ascending.
+    Availability of settlement t: measured publication date when
+    dissemination_map ({settlement_iso: publication_iso} — aaer-evals spec B4
+    §14 amendment) covers t; otherwise t + lag_days (the pre-registered
+    conservative fallback — behavior is unchanged when the map is None).
     Each item: {settlement: date, short_qty: int, revised_next: bool placeholder}.
-    Second return: diagnostics {files_scanned, revision_seen}."""
+    Second return: diagnostics {files_scanned, revision_seen, measured_dates_used}."""
     if not si_dir.is_dir():
         raise ShortInterestError(f"{si_dir} missing — archive step not run")
-    rows, revision_seen = [], 0
+    rows, revision_seen, measured_used = [], 0, 0
     files = sorted(si_dir.glob("shrt*.csv"))
     usable_files = []
     for path in files:
         ymd = path.stem[len("shrt"):]
         settlement = datetime.date(int(ymd[:4]), int(ymd[4:6]), int(ymd[6:8]))
-        if settlement + datetime.timedelta(days=lag_days) <= cutoff:
+        pub_iso = (dissemination_map or {}).get(settlement.isoformat())
+        if pub_iso:
+            available = datetime.date.fromisoformat(pub_iso)
+        else:
+            available = settlement + datetime.timedelta(days=lag_days)
+        if available <= cutoff:
             usable_files.append((settlement, path))
+            if pub_iso:
+                measured_used += 1
     for settlement, path in usable_files:
         row = load_symbol_row(path, symbol)
         if row is None:
@@ -178,7 +192,8 @@ def si_series(symbol: str, si_dir: Path, cutoff: datetime.date,
             revision_seen += 1  # diagnostic only; first-disseminated value kept
         rows.append({"settlement": settlement,
                      "short_qty": int(row["currentShortPositionQuantity"])})
-    return rows, {"files_scanned": len(usable_files), "revision_seen": revision_seen}
+    return rows, {"files_scanned": len(usable_files), "revision_seen": revision_seen,
+                  "measured_dates_used": measured_used}
 
 
 def _span_days(f: dict) -> int:
@@ -293,9 +308,12 @@ def b4_from_series(series: list[dict], share_facts: dict,
 
 
 def b4_from_facts(symbol: str, cutoff: datetime.date, si_dir: Path,
-                  share_facts: dict) -> dict:
+                  share_facts: dict,
+                  dissemination_map: dict[str, str] | None = None) -> dict:
     """E2-contract core (spec §8): pure function over archived files + PIT share
     facts. Missing archive dir raises (archive precedes scoring); missing symbol
-    rows produce flagged None scores, never exceptions (keeps E2 loops alive)."""
-    series, diag = si_series(symbol, si_dir, cutoff)
+    rows produce flagged None scores, never exceptions (keeps E2 loops alive).
+    dissemination_map: see si_series — None keeps the LAG_DAYS fallback."""
+    series, diag = si_series(symbol, si_dir, cutoff,
+                             dissemination_map=dissemination_map)
     return b4_from_series(series, share_facts, cutoff, diag)
