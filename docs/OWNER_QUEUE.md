@@ -418,3 +418,13 @@
   시점 비대칭 각주 의무).
 - **세션 기본 조치**: (B) — 미션 사전 승인 외 지출이므로 실행 안 함.
 - **상태**: OPEN
+
+---
+
+## Q-M07 — P5(E5 wave-2 본채점 재추첨 arm) 캡 잔여 부족으로 미발사 — OPEN (2026-07-13 야간)
+
+- **산술**: 야간 캡 380 중 351 지출 (재지출 16 + 재시도 1 포함) — P5 32호출은
+  383 > 380으로 발사 불가. launch-ready 동결 유지 (W2_MAINSCORE_REDRAW_PLAN).
+- **발사 명령**: `python pipeline/runner.py --cases data/evaluatee/cases_wave2.json
+  --out runs/wave2/mainscore_redraw/draw_2` (멱등) → 부분/전체 밴드 분석.
+- **상태**: OPEN (소유자 임의 시점 — 종전 launch-ready 동결과 동일 지위)
