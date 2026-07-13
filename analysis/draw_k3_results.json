@@ -1,0 +1,1280 @@
+{
+ "flag_threshold": 50,
+ "nondeterminism_note": "temp=0이 배포 API에서 결정론을 보장하지 않으므로 median-of-k는 분산 완화이지 제거가 아니다 (스펙 §1 — 발행 표면 인용 시 동반 의무)",
+ "per_case": [
+  {
+   "band_min_max": [
+    45,
+    45
+   ],
+   "case_id": "case_01",
+   "draw23_source": "hardening 재사용 (Q-F06 옵션 B)",
+   "draws": [
+    45,
+    45,
+    45
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "treatment",
+   "median3": 45,
+   "tier": "wave1"
+  },
+  {
+   "band_min_max": [
+    45,
+    60
+   ],
+   "case_id": "case_02",
+   "draw23_source": "hardening 재사용 (Q-F06 옵션 B)",
+   "draws": [
+    45,
+    55,
+    60
+   ],
+   "flag_draw1": false,
+   "flag_median3": true,
+   "flip": "gained_flag",
+   "group": "treatment",
+   "median3": 55,
+   "tier": "wave1"
+  },
+  {
+   "band_min_max": [
+    45,
+    50
+   ],
+   "case_id": "case_03",
+   "draw23_source": "hardening 재사용 (Q-F06 옵션 B)",
+   "draws": [
+    45,
+    50,
+    45
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "treatment",
+   "median3": 45,
+   "tier": "wave1"
+  },
+  {
+   "band_min_max": [
+    48,
+    58
+   ],
+   "case_id": "case_06",
+   "draw23_source": "hardening 재사용 (Q-F06 옵션 B)",
+   "draws": [
+    58,
+    48,
+    52
+   ],
+   "flag_draw1": true,
+   "flag_median3": true,
+   "flip": null,
+   "group": "treatment",
+   "median3": 52,
+   "tier": "wave1"
+  },
+  {
+   "band_min_max": [
+    45,
+    55
+   ],
+   "case_id": "case_08",
+   "draw23_source": "hardening 재사용 (Q-F06 옵션 B)",
+   "draws": [
+    55,
+    45,
+    45
+   ],
+   "flag_draw1": true,
+   "flag_median3": false,
+   "flip": "lost_flag",
+   "group": "treatment",
+   "median3": 45,
+   "tier": "wave1"
+  },
+  {
+   "band_min_max": [
+    45,
+    60
+   ],
+   "case_id": "case_09",
+   "draw23_source": "hardening 재사용 (Q-F06 옵션 B)",
+   "draws": [
+    55,
+    60,
+    45
+   ],
+   "flag_draw1": true,
+   "flag_median3": true,
+   "flip": null,
+   "group": "treatment",
+   "median3": 55,
+   "tier": "wave1"
+  },
+  {
+   "band_min_max": [
+    68,
+    82
+   ],
+   "case_id": "case_12",
+   "draw23_source": "hardening 재사용 (Q-F06 옵션 B)",
+   "draws": [
+    68,
+    82,
+    68
+   ],
+   "flag_draw1": true,
+   "flag_median3": true,
+   "flip": null,
+   "group": "treatment",
+   "median3": 68,
+   "tier": "wave1"
+  },
+  {
+   "band_min_max": [
+    25,
+    42
+   ],
+   "case_id": "case_13",
+   "draw23_source": "hardening 재사용 (Q-F06 옵션 B)",
+   "draws": [
+    42,
+    25,
+    33
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "treatment",
+   "median3": 33,
+   "tier": "wave1"
+  },
+  {
+   "band_min_max": [
+    30,
+    35
+   ],
+   "case_id": "case_17",
+   "draw23_source": "신규",
+   "draws": [
+    30,
+    35,
+    33
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "control",
+   "median3": 33,
+   "tier": "wave1"
+  },
+  {
+   "band_min_max": [
+    18,
+    22
+   ],
+   "case_id": "case_18",
+   "draw23_source": "신규",
+   "draws": [
+    22,
+    22,
+    18
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "control",
+   "median3": 22,
+   "tier": "wave1"
+  },
+  {
+   "band_min_max": [
+    30,
+    45
+   ],
+   "case_id": "case_19",
+   "draw23_source": "신규",
+   "draws": [
+    30,
+    35,
+    45
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "control",
+   "median3": 35,
+   "tier": "wave1"
+  },
+  {
+   "band_min_max": [
+    40,
+    45
+   ],
+   "case_id": "case_20",
+   "draw23_source": "신규",
+   "draws": [
+    40,
+    42,
+    45
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "control",
+   "median3": 42,
+   "tier": "wave1"
+  },
+  {
+   "band_min_max": [
+    10,
+    20
+   ],
+   "case_id": "case_21",
+   "draw23_source": "신규",
+   "draws": [
+    18,
+    10,
+    20
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "control",
+   "median3": 18,
+   "tier": "wave1"
+  },
+  {
+   "band_min_max": [
+    30,
+    30
+   ],
+   "case_id": "case_22",
+   "draw23_source": "신규",
+   "draws": [
+    30,
+    30,
+    30
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "control",
+   "median3": 30,
+   "tier": "wave1"
+  },
+  {
+   "band_min_max": [
+    42,
+    42
+   ],
+   "case_id": "case_23",
+   "draw23_source": "신규",
+   "draws": [
+    42,
+    42,
+    42
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "control",
+   "median3": 42,
+   "tier": "wave1"
+  },
+  {
+   "band_min_max": [
+    42,
+    58
+   ],
+   "case_id": "case_24",
+   "draw23_source": "신규",
+   "draws": [
+    45,
+    58,
+    42
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "control",
+   "median3": 45,
+   "tier": "wave1"
+  },
+  {
+   "band_min_max": [
+    28,
+    42
+   ],
+   "case_id": "case_25",
+   "draw23_source": "신규",
+   "draws": [
+    28,
+    32,
+    42
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "control",
+   "median3": 32,
+   "tier": "wave1"
+  },
+  {
+   "band_min_max": [
+    30,
+    42
+   ],
+   "case_id": "case_26",
+   "draw23_source": "신규",
+   "draws": [
+    42,
+    30,
+    37
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "control",
+   "median3": 37,
+   "tier": "wave1"
+  },
+  {
+   "band_min_max": [
+    30,
+    42
+   ],
+   "case_id": "case_27",
+   "draw23_source": "신규",
+   "draws": [
+    33,
+    42,
+    30
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "control",
+   "median3": 33,
+   "tier": "wave1"
+  },
+  {
+   "band_min_max": [
+    33,
+    55
+   ],
+   "case_id": "case_28",
+   "draw23_source": "신규",
+   "draws": [
+    33,
+    40,
+    55
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "control",
+   "median3": 40,
+   "tier": "wave1"
+  },
+  {
+   "band_min_max": [
+    42,
+    55
+   ],
+   "case_id": "case_29",
+   "draw23_source": "신규",
+   "draws": [
+    42,
+    42,
+    55
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "control",
+   "median3": 42,
+   "tier": "wave1"
+  },
+  {
+   "band_min_max": [
+    52,
+    65
+   ],
+   "case_id": "case_30",
+   "draw23_source": "신규",
+   "draws": [
+    65,
+    55,
+    52
+   ],
+   "flag_draw1": true,
+   "flag_median3": true,
+   "flip": null,
+   "group": "control",
+   "median3": 55,
+   "tier": "wave1"
+  },
+  {
+   "band_min_max": [
+    40,
+    42
+   ],
+   "case_id": "case_31",
+   "draw23_source": "신규",
+   "draws": [
+    42,
+    42,
+    40
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "control",
+   "median3": 42,
+   "tier": "wave1"
+  },
+  {
+   "band_min_max": [
+    12,
+    15
+   ],
+   "case_id": "case_32",
+   "draw23_source": "신규",
+   "draws": [
+    15,
+    12,
+    15
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "control",
+   "median3": 15,
+   "tier": "wave1"
+  },
+  {
+   "band_min_max": [
+    18,
+    55
+   ],
+   "case_id": "case_33",
+   "draw23_source": "신규",
+   "draws": [
+    55,
+    18,
+    28
+   ],
+   "flag_draw1": true,
+   "flag_median3": false,
+   "flip": "lost_flag",
+   "group": "control",
+   "median3": 28,
+   "tier": "wave1"
+  },
+  {
+   "band_min_max": [
+    32,
+    50
+   ],
+   "case_id": "case_34",
+   "draw23_source": "신규",
+   "draws": [
+    32,
+    45,
+    50
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "control",
+   "median3": 45,
+   "tier": "wave1"
+  },
+  {
+   "band_min_max": [
+    30,
+    42
+   ],
+   "case_id": "case_35",
+   "draw23_source": "신규",
+   "draws": [
+    30,
+    35,
+    42
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "control",
+   "median3": 35,
+   "tier": "wave1"
+  },
+  {
+   "band_min_max": [
+    32,
+    45
+   ],
+   "case_id": "case_36",
+   "draw23_source": "신규",
+   "draws": [
+    45,
+    40,
+    32
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "control",
+   "median3": 40,
+   "tier": "wave1"
+  },
+  {
+   "band_min_max": [
+    48,
+    55
+   ],
+   "case_id": "case_37",
+   "draw23_source": "신규",
+   "draws": [
+    55,
+    52,
+    48
+   ],
+   "flag_draw1": true,
+   "flag_median3": true,
+   "flip": null,
+   "group": "control",
+   "median3": 52,
+   "tier": "wave1"
+  },
+  {
+   "band_min_max": [
+    30,
+    42
+   ],
+   "case_id": "case_38",
+   "draw23_source": "신규",
+   "draws": [
+    30,
+    42,
+    42
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "control",
+   "median3": 42,
+   "tier": "wave1"
+  },
+  {
+   "band_min_max": [
+    45,
+    55
+   ],
+   "case_id": "case_44",
+   "draw23_source": "신규",
+   "draws": [
+    55,
+    55,
+    45
+   ],
+   "flag_draw1": true,
+   "flag_median3": true,
+   "flip": null,
+   "group": "control",
+   "median3": 55,
+   "tier": "wave2"
+  },
+  {
+   "band_min_max": [
+    45,
+    50
+   ],
+   "case_id": "case_69",
+   "draw23_source": "신규",
+   "draws": [
+    50,
+    45,
+    48
+   ],
+   "flag_draw1": true,
+   "flag_median3": false,
+   "flip": "lost_flag",
+   "group": "control",
+   "median3": 48,
+   "tier": "wave2"
+  },
+  {
+   "band_min_max": [
+    15,
+    28
+   ],
+   "case_id": "case_50",
+   "draw23_source": "신규",
+   "draws": [
+    15,
+    28,
+    20
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "control",
+   "median3": 20,
+   "tier": "wave2"
+  },
+  {
+   "band_min_max": [
+    22,
+    35
+   ],
+   "case_id": "case_55",
+   "draw23_source": "신규",
+   "draws": [
+    25,
+    22,
+    35
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "control",
+   "median3": 25,
+   "tier": "wave2"
+  },
+  {
+   "band_min_max": [
+    15,
+    58
+   ],
+   "case_id": "case_67",
+   "draw23_source": "신규",
+   "draws": [
+    20,
+    15,
+    58
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "treatment",
+   "median3": 20,
+   "tier": "wave2"
+  },
+  {
+   "band_min_max": [
+    28,
+    45
+   ],
+   "case_id": "case_56",
+   "draw23_source": "신규",
+   "draws": [
+    35,
+    28,
+    45
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "control",
+   "median3": 35,
+   "tier": "wave2"
+  },
+  {
+   "band_min_max": [
+    72,
+    82
+   ],
+   "case_id": "case_61",
+   "draw23_source": "신규",
+   "draws": [
+    72,
+    80,
+    82
+   ],
+   "flag_draw1": true,
+   "flag_median3": true,
+   "flip": null,
+   "group": "treatment",
+   "median3": 80,
+   "tier": "wave2"
+  },
+  {
+   "band_min_max": [
+    35,
+    45
+   ],
+   "case_id": "case_52",
+   "draw23_source": "신규",
+   "draws": [
+    40,
+    45,
+    35
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "treatment",
+   "median3": 40,
+   "tier": "wave2"
+  },
+  {
+   "band_min_max": [
+    20,
+    25
+   ],
+   "case_id": "case_58",
+   "draw23_source": "신규",
+   "draws": [
+    25,
+    20,
+    20
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "control",
+   "median3": 20,
+   "tier": "wave2"
+  },
+  {
+   "band_min_max": [
+    22,
+    28
+   ],
+   "case_id": "case_57",
+   "draw23_source": "신규",
+   "draws": [
+    25,
+    28,
+    22
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "control",
+   "median3": 25,
+   "tier": "wave2"
+  },
+  {
+   "band_min_max": [
+    28,
+    42
+   ],
+   "case_id": "case_45",
+   "draw23_source": "신규",
+   "draws": [
+    28,
+    42,
+    30
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "control",
+   "median3": 30,
+   "tier": "wave2"
+  },
+  {
+   "band_min_max": [
+    58,
+    58
+   ],
+   "case_id": "case_59",
+   "draw23_source": "신규",
+   "draws": [
+    58,
+    58,
+    58
+   ],
+   "flag_draw1": true,
+   "flag_median3": true,
+   "flip": null,
+   "group": "treatment",
+   "median3": 58,
+   "tier": "wave2"
+  },
+  {
+   "band_min_max": [
+    30,
+    42
+   ],
+   "case_id": "case_47",
+   "draw23_source": "신규",
+   "draws": [
+    42,
+    30,
+    32
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "control",
+   "median3": 32,
+   "tier": "wave2"
+  },
+  {
+   "band_min_max": [
+    22,
+    30
+   ],
+   "case_id": "case_41",
+   "draw23_source": "신규",
+   "draws": [
+    22,
+    30,
+    30
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "control",
+   "median3": 30,
+   "tier": "wave2"
+  },
+  {
+   "band_min_max": [
+    42,
+    58
+   ],
+   "case_id": "case_49",
+   "draw23_source": "신규",
+   "draws": [
+    58,
+    48,
+    42
+   ],
+   "flag_draw1": true,
+   "flag_median3": false,
+   "flip": "lost_flag",
+   "group": "control",
+   "median3": 48,
+   "tier": "wave2"
+  },
+  {
+   "band_min_max": [
+    50,
+    58
+   ],
+   "case_id": "case_54",
+   "draw23_source": "신규",
+   "draws": [
+    55,
+    58,
+    50
+   ],
+   "flag_draw1": true,
+   "flag_median3": true,
+   "flip": null,
+   "group": "control",
+   "median3": 55,
+   "tier": "wave2"
+  },
+  {
+   "band_min_max": [
+    48,
+    62
+   ],
+   "case_id": "case_48",
+   "draw23_source": "신규",
+   "draws": [
+    55,
+    48,
+    62
+   ],
+   "flag_draw1": true,
+   "flag_median3": true,
+   "flip": null,
+   "group": "control",
+   "median3": 55,
+   "tier": "wave2"
+  },
+  {
+   "band_min_max": [
+    28,
+    40
+   ],
+   "case_id": "case_70",
+   "draw23_source": "신규",
+   "draws": [
+    28,
+    40,
+    32
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "control",
+   "median3": 32,
+   "tier": "wave2"
+  },
+  {
+   "band_min_max": [
+    58,
+    65
+   ],
+   "case_id": "case_60",
+   "draw23_source": "신규",
+   "draws": [
+    65,
+    58,
+    65
+   ],
+   "flag_draw1": true,
+   "flag_median3": true,
+   "flip": null,
+   "group": "treatment",
+   "median3": 65,
+   "tier": "wave2"
+  },
+  {
+   "band_min_max": [
+    15,
+    20
+   ],
+   "case_id": "case_53",
+   "draw23_source": "신규",
+   "draws": [
+    15,
+    20,
+    15
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "control",
+   "median3": 15,
+   "tier": "wave2"
+  },
+  {
+   "band_min_max": [
+    32,
+    45
+   ],
+   "case_id": "case_43",
+   "draw23_source": "신규",
+   "draws": [
+    45,
+    45,
+    32
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "control",
+   "median3": 45,
+   "tier": "wave2"
+  },
+  {
+   "band_min_max": [
+    58,
+    62
+   ],
+   "case_id": "case_39",
+   "draw23_source": "신규",
+   "draws": [
+    58,
+    62,
+    60
+   ],
+   "flag_draw1": true,
+   "flag_median3": true,
+   "flip": null,
+   "group": "treatment",
+   "median3": 60,
+   "tier": "wave2"
+  },
+  {
+   "band_min_max": [
+    45,
+    55
+   ],
+   "case_id": "case_68",
+   "draw23_source": "신규",
+   "draws": [
+    45,
+    45,
+    55
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "control",
+   "median3": 45,
+   "tier": "wave2"
+  },
+  {
+   "band_min_max": [
+    18,
+    25
+   ],
+   "case_id": "case_42",
+   "draw23_source": "신규",
+   "draws": [
+    20,
+    25,
+    18
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "control",
+   "median3": 20,
+   "tier": "wave2"
+  },
+  {
+   "band_min_max": [
+    18,
+    25
+   ],
+   "case_id": "case_64",
+   "draw23_source": "신규",
+   "draws": [
+    20,
+    18,
+    25
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "control",
+   "median3": 20,
+   "tier": "wave2"
+  },
+  {
+   "band_min_max": [
+    25,
+    35
+   ],
+   "case_id": "case_63",
+   "draw23_source": "신규",
+   "draws": [
+    30,
+    35,
+    25
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "control",
+   "median3": 30,
+   "tier": "wave2"
+  },
+  {
+   "band_min_max": [
+    42,
+    55
+   ],
+   "case_id": "case_40",
+   "draw23_source": "신규",
+   "draws": [
+    55,
+    42,
+    45
+   ],
+   "flag_draw1": true,
+   "flag_median3": false,
+   "flip": "lost_flag",
+   "group": "treatment",
+   "median3": 45,
+   "tier": "wave2"
+  },
+  {
+   "band_min_max": [
+    52,
+    60
+   ],
+   "case_id": "case_66",
+   "draw23_source": "신규",
+   "draws": [
+    55,
+    52,
+    60
+   ],
+   "flag_draw1": true,
+   "flag_median3": true,
+   "flip": null,
+   "group": "treatment",
+   "median3": 55,
+   "tier": "wave2"
+  },
+  {
+   "band_min_max": [
+    42,
+    48
+   ],
+   "case_id": "case_46",
+   "draw23_source": "신규",
+   "draws": [
+    42,
+    42,
+    48
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "control",
+   "median3": 42,
+   "tier": "wave2"
+  },
+  {
+   "band_min_max": [
+    40,
+    48
+   ],
+   "case_id": "case_62",
+   "draw23_source": "신규",
+   "draws": [
+    42,
+    40,
+    48
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "control",
+   "median3": 42,
+   "tier": "wave2"
+  },
+  {
+   "band_min_max": [
+    20,
+    30
+   ],
+   "case_id": "case_51",
+   "draw23_source": "신규",
+   "draws": [
+    20,
+    20,
+    30
+   ],
+   "flag_draw1": false,
+   "flag_median3": false,
+   "flip": null,
+   "group": "control",
+   "median3": 20,
+   "tier": "wave2"
+  },
+  {
+   "band_min_max": [
+    65,
+    78
+   ],
+   "case_id": "case_65",
+   "draw23_source": "신규",
+   "draws": [
+    74,
+    78,
+    65
+   ],
+   "flag_draw1": true,
+   "flag_median3": true,
+   "flip": null,
+   "group": "treatment",
+   "median3": 74,
+   "tier": "wave2"
+  }
+ ],
+ "seed": 20260713,
+ "spec": "specs/draw_k3.md (Q-F06 옵션 B — owner 2026-07-13 야간 서면 승인)",
+ "tiers": {
+  "wave1": {
+   "flip_rate": "3/30",
+   "flips": [
+    {
+     "case_id": "case_02",
+     "direction": "gained_flag",
+     "draws": [
+      45,
+      55,
+      60
+     ],
+     "median3": 55
+    },
+    {
+     "case_id": "case_08",
+     "direction": "lost_flag",
+     "draws": [
+      55,
+      45,
+      45
+     ],
+     "median3": 45
+    },
+    {
+     "case_id": "case_33",
+     "direction": "lost_flag",
+     "draws": [
+      55,
+      18,
+      28
+     ],
+     "median3": 28
+    }
+   ],
+   "median3_stats_co_report": {
+    "auc": 0.8494,
+    "auc_boot95": [
+     0.665,
+     0.983
+    ],
+    "mean_diff": 13.1591,
+    "note": "병기 전용 — 동결 draw-1 발행 수치 대체 금지 (specs/draw_k3.md)",
+    "perm_p_one_sided": 0.00168
+   },
+   "n": 30
+  },
+  "wave2": {
+   "flip_rate": "3/32",
+   "flips": [
+    {
+     "case_id": "case_69",
+     "direction": "lost_flag",
+     "draws": [
+      50,
+      45,
+      48
+     ],
+     "median3": 48
+    },
+    {
+     "case_id": "case_49",
+     "direction": "lost_flag",
+     "draws": [
+      58,
+      48,
+      42
+     ],
+     "median3": 48
+    },
+    {
+     "case_id": "case_40",
+     "direction": "lost_flag",
+     "draws": [
+      55,
+      42,
+      45
+     ],
+     "median3": 45
+    }
+   ],
+   "median3_stats_co_report": {
+    "auc": 0.8261,
+    "auc_boot95": [
+     0.618,
+     0.981
+    ],
+    "mean_diff": 20.9179,
+    "note": "병기 전용 — 동결 draw-1 발행 수치 대체 금지 (specs/draw_k3.md)",
+    "perm_p_one_sided": 0.00084
+   },
+   "n": 32
+  }
+ }
+}
