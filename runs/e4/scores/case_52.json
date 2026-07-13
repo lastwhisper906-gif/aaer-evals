@@ -1,0 +1,232 @@
+{
+  "case_id": "case_52",
+  "run_id": "original-case_52-r1",
+  "model": "claude-opus-4-8",
+  "pipeline_version": "5698f1ecfd4ac69ec4e00fdfbd2dda8d39fba408",
+  "run_timestamp": "2026-07-13T03:59:31.183328+00:00",
+  "documents_used": [
+    {
+      "accession_no": "0000023082-09-000045",
+      "form_type": "10-Q",
+      "filing_date": "2009-08-07"
+    },
+    {
+      "accession_no": "0000023082-09-000065",
+      "form_type": "10-Q",
+      "filing_date": "2009-11-12"
+    },
+    {
+      "accession_no": "0000023082-10-000015",
+      "form_type": "10-Q",
+      "filing_date": "2010-02-10"
+    },
+    {
+      "accession_no": "0000023082-10-000036",
+      "form_type": "10-K",
+      "filing_date": "2010-05-21"
+    }
+  ],
+  "checklist": [
+    {
+      "item_id": "CL1",
+      "question": "Did receivables grow materially faster than revenue across consecutive periods?",
+      "finding": "flag",
+      "confidence": "low",
+      "evidence": [
+        {
+          "quote": "ReceivablesNetCurrent=3786000000 (2009-04-03) vs 3849000000 (2010-04-02): +1.7%",
+          "source_accession_no": "0000023082-10-000036",
+          "location": "10-K balance sheet"
+        },
+        {
+          "quote": "Revenues=16740000000 (FY2009) vs 16128000000 (FY2010): -3.7%",
+          "source_accession_no": "0000023082-10-000036",
+          "location": "10-K income statement"
+        }
+      ]
+    },
+    {
+      "item_id": "CL2",
+      "question": "Did non-current 'soft' assets grow materially faster than the business overall?",
+      "finding": "flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "OtherAssetsNoncurrent=615000000 (2009-04-03) vs 773000000 (2010-04-02): +25.7% while revenue fell 3.7% and total Assets grew only ~5.4% (15619000000 to 16455000000)",
+          "source_accession_no": "0000023082-10-000036",
+          "location": "10-K balance sheet"
+        },
+        {
+          "quote": "Goodwill=3784000000 (2009-04-03) vs 3866000000 (2010-04-02): only +2.2%, so soft-asset growth is concentrated in Other Assets",
+          "source_accession_no": "0000023082-10-000036",
+          "location": "10-K balance sheet"
+        }
+      ]
+    },
+    {
+      "item_id": "CL3",
+      "question": "Is there a persistent divergence between net income and operating cash flow?",
+      "finding": "no_flag",
+      "confidence": "high",
+      "evidence": [
+        {
+          "quote": "NetCashProvidedByUsedInOperatingActivities=1986000000 (FY2009) exceeds NetIncomeLoss=1115000000 (FY2009)",
+          "source_accession_no": "0000023082-10-000036",
+          "location": "10-K cash flow statement"
+        },
+        {
+          "quote": "NetCashProvidedByUsedInOperatingActivities=1643000000 (FY2010) exceeds NetIncomeLoss=817000000 (FY2010); D&A=1156000000 (FY2010) bridges the gap",
+          "source_accession_no": "0000023082-10-000036",
+          "location": "10-K cash flow statement"
+        }
+      ]
+    },
+    {
+      "item_id": "CL4",
+      "question": "Do inventory levels or gross margins show trends inconsistent with revenue?",
+      "finding": "no_flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "Revenues=16500000000 less CostOfServices=13150000000 = 20.3% margin (FY2008); Revenues=16128000000 less CostOfServices=12797000000 = 20.7% margin (FY2010) - stable",
+          "source_accession_no": "0000023082-10-000036",
+          "location": "10-K income statement"
+        },
+        {
+          "quote": "No inventory line item is reported (services company); gross margin stable and consistent with revenue",
+          "source_accession_no": "0000023082-10-000036",
+          "location": "10-K"
+        }
+      ]
+    },
+    {
+      "item_id": "CL5",
+      "question": "Is the earnings trajectory unusually smooth relative to volatility of revenue and cash flow?",
+      "finding": "no_flag",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "quote": "NetIncomeLoss quarterly=121000000, 452000000, 161000000 across FY2009 quarters - highly volatile, not smoothed",
+          "source_accession_no": "0000023082-09-000065",
+          "location": "10-Q income statement"
+        },
+        {
+          "quote": "NetCashProvidedByUsedInOperatingActivities quarterly=-56000000 (Q1 FY2009) and -297000000 (Q1 FY2010) show large swings; earnings not unusually smooth vs cash flow",
+          "source_accession_no": "0000023082-09-000045",
+          "location": "10-Q cash flow statement"
+        }
+      ]
+    },
+    {
+      "item_id": "CL6",
+      "question": "Did liability, allowance, or reserve balances decline (or fail to grow) despite growing business activity?",
+      "finding": "insufficient_data",
+      "confidence": "low",
+      "evidence": [
+        {
+          "quote": "AllowanceForDoubtfulAccountsReceivableCurrent=3786000000 (2009-04-03), 55000000 (2009-07-03), 3849000000 (2010-04-02) - values equal to ReceivablesNetCurrent in two periods, indicating a tagging error making the allowance trend unreliable",
+          "source_accession_no": "0000023082-10-000036",
+          "location": "10-K"
+        },
+        {
+          "quote": "AccountsPayableCurrent=636000000 (2009-04-03) declined to 409000000 (2010-04-02) but AccruedLiabilitiesCurrent=1264000000 rose to 1344000000 and DeferredRevenueCurrent=915000000 rose to 1189000000; mixed signals with a contracting revenue base",
+          "source_accession_no": "0000023082-10-000036",
+          "location": "10-K balance sheet"
+        }
+      ]
+    },
+    {
+      "item_id": "CL7",
+      "question": "Does the filing chronology show irregularities (late filings/NT forms, amendments, unusual 8-K frequency)?",
+      "finding": "flag",
+      "confidence": "high",
+      "evidence": [
+        {
+          "quote": "NT 10-K filed 2007-05-30 and multiple NT 10-Q filings (2006-11-09, 2007-02-08, 2007-08-08, 2007-11-08) indicate repeated late filings",
+          "source_accession_no": "n/a",
+          "location": "filing_chronology"
+        },
+        {
+          "quote": "Numerous restatement-type amendments (10-K/A on 2008-01-11, multiple 10-Q/A) plus repeated SEC UPLOAD/CORRESP comment-letter exchanges (2006-2009) indicate accounting scrutiny",
+          "source_accession_no": "n/a",
+          "location": "filing_chronology"
+        }
+      ]
+    },
+    {
+      "item_id": "CL8",
+      "question": "Is the provided data sufficient in coverage and length for the above assessments?",
+      "finding": "no_flag",
+      "confidence": "low",
+      "evidence": [
+        {
+          "quote": "Three fiscal years of annual data (FY2008-FY2010) plus several quarters are provided for Revenues, NetIncomeLoss, and cash flows, enabling trend analysis",
+          "source_accession_no": "0000023082-10-000036",
+          "location": "financial_series"
+        },
+        {
+          "quote": "However AllowanceForDoubtfulAccountsReceivableCurrent values appear mis-tagged (equal to receivables) and no inventory/unbilled receivables detail is provided, limiting CL4 and CL6",
+          "source_accession_no": "0000023082-10-000036",
+          "location": "financial_series"
+        }
+      ]
+    }
+  ],
+  "misstatement_probability": 52,
+  "mechanism_hypotheses": [
+    {
+      "affected_line_items": [
+        "ReceivablesNetCurrent",
+        "Revenues"
+      ],
+      "direction": "overstated",
+      "accounting_treatment": "As a long-term IT-services/outsourcing company, revenue is recognized on multi-year contracts (percentage-of-completion / unbilled receivables). Receivables rose 1.7% (3786000000 to 3849000000) while revenue fell 3.7%, pushing DSO from ~82.5 to ~87 days. Aggressive timing of revenue recognition or capitalization of unbilled amounts on troubled contracts would overstate revenue and inflate receivables.",
+      "rationale_evidence": [
+        {
+          "quote": "ReceivablesNetCurrent=3849000000 (2010-04-02) held up while Revenues=16128000000 (FY2010) declined from 16740000000 (FY2009)",
+          "source_accession_no": "0000023082-10-000036",
+          "location": "10-K balance sheet and income statement"
+        }
+      ]
+    },
+    {
+      "affected_line_items": [
+        "OtherAssetsNoncurrent",
+        "CostOfServices"
+      ],
+      "direction": "overstated",
+      "accounting_treatment": "Deferral/capitalization of contract costs or other soft assets into non-current Other Assets, which grew 25.7% (615000000 to 773000000) against a declining revenue base, would understate current-period cost of services and overstate assets and earnings.",
+      "rationale_evidence": [
+        {
+          "quote": "OtherAssetsNoncurrent=615000000 (2009-04-03) rose to 773000000 (2010-04-02), +25.7%, while Revenues declined and CostOfServices fell to 12797000000 (FY2010)",
+          "source_accession_no": "0000023082-10-000036",
+          "location": "10-K balance sheet"
+        }
+      ]
+    },
+    {
+      "affected_line_items": [
+        "AllowanceForDoubtfulAccountsReceivableCurrent",
+        "ReceivablesNetCurrent"
+      ],
+      "direction": "understated",
+      "accounting_treatment": "The filing history of NT forms, amendments, and SEC comment letters raises concern that reserves/allowances against receivables may be under-provisioned; an inadequate allowance would understate expense and overstate net receivables and earnings. Data quality on the allowance line is too poor to confirm.",
+      "rationale_evidence": [
+        {
+          "quote": "AllowanceForDoubtfulAccountsReceivableCurrent=55000000 (2009-07-03) against ReceivablesNetCurrent≈3976000000 (2009-07-03) implies ~1.4% reserve, while repeated SEC CORRESP/UPLOAD exchanges and NT filings signal accounting scrutiny",
+          "source_accession_no": "0000023082-09-000045",
+          "location": "10-Q and filing_chronology"
+        }
+      ]
+    }
+  ],
+  "overall": {
+    "risk_tier": "watch",
+    "top_signals": [
+      "Filing chronology irregularities: NT 10-K/NT 10-Q late filings, multiple 10-K/A and 10-Q/A amendments, and repeated SEC comment-letter (UPLOAD/CORRESP) exchanges",
+      "Rising DSO (~82.5 to ~87 days) as receivables grew 1.7% while revenue fell 3.7% - possible contract revenue-recognition/unbilled-receivable risk",
+      "Other noncurrent 'soft' assets grew 25.7% against a contracting revenue base - possible cost capitalization/deferral",
+      "Mis-tagged/unreliable allowance-for-doubtful-accounts data limiting reserve adequacy assessment"
+    ]
+  }
+}
