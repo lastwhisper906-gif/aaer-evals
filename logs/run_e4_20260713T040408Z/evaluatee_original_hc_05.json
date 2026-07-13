@@ -1,0 +1,59 @@
+{
+  "ts": "2026-07-13T04:05:39.946200+00:00",
+  "harness_pin": "2.1.201",
+  "flags": [
+    "claude",
+    "-p",
+    "--model",
+    "claude-opus-4-8",
+    "--output-format",
+    "json",
+    "--max-turns",
+    "2",
+    "--setting-sources",
+    "",
+    "--strict-mcp-config",
+    "--tools",
+    "",
+    "--disallowedTools",
+    "Bash,Read,Edit,Write,Glob,Grep,WebFetch,WebSearch,Task,NotebookEdit",
+    "--system-prompt",
+    "You are analyzing the financial reporting quality of BRINKS CO (BCO, CIK 0000078890) using only the structured data provided below, which reflects public filings available on or before 2026-02-04. Do ...[1730 chars]",
+    "--json-schema",
+    "{\"type\": \"object\", \"additionalProperties\": false, \"required\": [\"checklist\", \"misstatement_probability\", \"mechanism_hypotheses\", \"overall\"], \"properties\": {\"checklist\": {\"type\": \"array\", \"items\": {\"typ...[1821 chars]"
+  ],
+  "model_requested": "claude-opus-4-8",
+  "served_models": [
+    "claude-opus-4-8"
+  ],
+  "pin_ok": true,
+  "ok": true,
+  "fail_reason": null,
+  "session_id": "bc4b7cf7-7e71-4209-bb0f-72c776cb62fd",
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 174285,
+    "cache_read_input_tokens": 1052,
+    "output_tokens": 7330,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 174285,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [],
+    "speed": "standard"
+  },
+  "total_cost_usd_reference_only": 1.926636,
+  "attempts": 1,
+  "wall_seconds": 91.9,
+  "freeze": {
+    "head": "163516569d27cd6b1dde2e68e1168ad1dedc08e3",
+    "clean_tree": false
+  },
+  "raw_tail": null
+}
