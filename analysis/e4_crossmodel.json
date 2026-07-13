@@ -1,0 +1,178 @@
+{
+ "claim_ceiling": "'두 Claude 모델(claude-sonnet-5 vs claude-opus-4-8)의 순위가 얼마나 겹치는가' 이상 주장 금지 — truth 없음, N=18 단일 프롬프트 (PLAN §3)",
+ "cohen_kappa": 0.6582,
+ "disagreement_cases": [
+  "case_52",
+  "case_71",
+  "hc_07"
+ ],
+ "flag_agreement": "15/18",
+ "flag_threshold": 50,
+ "label": "EXPLORATORY — 각주 전용, 헤드라인 금지 (CROSSMODEL_PLAN §6)",
+ "n": 18,
+ "rows": [
+  {
+   "case_id": "case_44",
+   "flag_opus48": true,
+   "flag_sonnet5": true,
+   "group": "wave2",
+   "model_served_e4": "claude-opus-4-8",
+   "p_opus48": 55,
+   "p_sonnet5": 55
+  },
+  {
+   "case_id": "case_49",
+   "flag_opus48": true,
+   "flag_sonnet5": true,
+   "group": "wave2",
+   "model_served_e4": "claude-opus-4-8",
+   "p_opus48": 55,
+   "p_sonnet5": 58
+  },
+  {
+   "case_id": "case_52",
+   "flag_opus48": true,
+   "flag_sonnet5": false,
+   "group": "wave2",
+   "model_served_e4": "claude-opus-4-8",
+   "p_opus48": 52,
+   "p_sonnet5": 40
+  },
+  {
+   "case_id": "case_60",
+   "flag_opus48": true,
+   "flag_sonnet5": true,
+   "group": "wave2",
+   "model_served_e4": "claude-opus-4-8",
+   "p_opus48": 70,
+   "p_sonnet5": 65
+  },
+  {
+   "case_id": "case_61",
+   "flag_opus48": true,
+   "flag_sonnet5": true,
+   "group": "wave2",
+   "model_served_e4": "claude-opus-4-8",
+   "p_opus48": 80,
+   "p_sonnet5": 72
+  },
+  {
+   "case_id": "case_65",
+   "flag_opus48": true,
+   "flag_sonnet5": true,
+   "group": "wave2",
+   "model_served_e4": "claude-opus-4-8",
+   "p_opus48": 58,
+   "p_sonnet5": 74
+  },
+  {
+   "case_id": "case_71",
+   "flag_opus48": false,
+   "flag_sonnet5": true,
+   "group": "holdout",
+   "model_served_e4": "claude-opus-4-8",
+   "p_opus48": 48,
+   "p_sonnet5": 70
+  },
+  {
+   "case_id": "case_72",
+   "flag_opus48": false,
+   "flag_sonnet5": false,
+   "group": "holdout",
+   "model_served_e4": "claude-opus-4-8",
+   "p_opus48": 25,
+   "p_sonnet5": 32
+  },
+  {
+   "case_id": "case_73",
+   "flag_opus48": false,
+   "flag_sonnet5": false,
+   "group": "holdout",
+   "model_served_e4": "claude-opus-4-8",
+   "p_opus48": 35,
+   "p_sonnet5": 42
+  },
+  {
+   "case_id": "hc_01",
+   "flag_opus48": false,
+   "flag_sonnet5": false,
+   "group": "e1_control",
+   "model_served_e4": "claude-opus-4-8",
+   "p_opus48": 42,
+   "p_sonnet5": 35
+  },
+  {
+   "case_id": "hc_02",
+   "flag_opus48": false,
+   "flag_sonnet5": false,
+   "group": "e1_control",
+   "model_served_e4": "claude-opus-4-8",
+   "p_opus48": 25,
+   "p_sonnet5": 20
+  },
+  {
+   "case_id": "hc_03",
+   "flag_opus48": true,
+   "flag_sonnet5": true,
+   "group": "e1_control",
+   "model_served_e4": "claude-opus-4-8",
+   "p_opus48": 80,
+   "p_sonnet5": 78
+  },
+  {
+   "case_id": "hc_04",
+   "flag_opus48": false,
+   "flag_sonnet5": false,
+   "group": "e1_control",
+   "model_served_e4": "claude-opus-4-8",
+   "p_opus48": 25,
+   "p_sonnet5": 42
+  },
+  {
+   "case_id": "hc_05",
+   "flag_opus48": false,
+   "flag_sonnet5": false,
+   "group": "e1_control",
+   "model_served_e4": "claude-opus-4-8",
+   "p_opus48": 34,
+   "p_sonnet5": 30
+  },
+  {
+   "case_id": "hc_06",
+   "flag_opus48": false,
+   "flag_sonnet5": false,
+   "group": "e1_control",
+   "model_served_e4": "claude-opus-4-8",
+   "p_opus48": 24,
+   "p_sonnet5": 20
+  },
+  {
+   "case_id": "hc_07",
+   "flag_opus48": false,
+   "flag_sonnet5": true,
+   "group": "e1_control",
+   "model_served_e4": "claude-opus-4-8",
+   "p_opus48": 22,
+   "p_sonnet5": 58
+  },
+  {
+   "case_id": "hc_08",
+   "flag_opus48": false,
+   "flag_sonnet5": false,
+   "group": "e1_control",
+   "model_served_e4": "claude-opus-4-8",
+   "p_opus48": 22,
+   "p_sonnet5": 32
+  },
+  {
+   "case_id": "hc_09",
+   "flag_opus48": false,
+   "flag_sonnet5": false,
+   "group": "e1_control",
+   "model_served_e4": "claude-opus-4-8",
+   "p_opus48": 15,
+   "p_sonnet5": 12
+  }
+ ],
+ "spearman_rho": 0.781
+}
