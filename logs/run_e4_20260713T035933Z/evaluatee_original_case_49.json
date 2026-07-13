@@ -1,0 +1,59 @@
+{
+  "ts": "2026-07-13T04:01:04.417148+00:00",
+  "harness_pin": "2.1.201",
+  "flags": [
+    "claude",
+    "-p",
+    "--model",
+    "claude-opus-4-8",
+    "--output-format",
+    "json",
+    "--max-turns",
+    "2",
+    "--setting-sources",
+    "",
+    "--strict-mcp-config",
+    "--tools",
+    "",
+    "--disallowedTools",
+    "Bash,Read,Edit,Write,Glob,Grep,WebFetch,WebSearch,Task,NotebookEdit",
+    "--system-prompt",
+    "You are analyzing the financial reporting quality of IOVANCE BIOTHERAPEUTICS, INC. (IOVA, CIK 0001425205) using only the structured data provided below, which reflects public filings available on or b...[1751 chars]",
+    "--json-schema",
+    "{\"type\": \"object\", \"additionalProperties\": false, \"required\": [\"checklist\", \"misstatement_probability\", \"mechanism_hypotheses\", \"overall\"], \"properties\": {\"checklist\": {\"type\": \"array\", \"items\": {\"typ...[1821 chars]"
+  ],
+  "model_requested": "claude-opus-4-8",
+  "served_models": [
+    "claude-opus-4-8"
+  ],
+  "pin_ok": true,
+  "ok": true,
+  "fail_reason": null,
+  "session_id": "ea5f3ba1-b724-4541-a669-2fb599ff0467",
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 32506,
+    "cache_read_input_tokens": 1052,
+    "output_tokens": 7495,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 32506,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [],
+    "speed": "standard"
+  },
+  "total_cost_usd_reference_only": 0.5129710000000001,
+  "attempts": 1,
+  "wall_seconds": 91.4,
+  "freeze": {
+    "head": "73d79b41b3cffedd31429f27504f0d6521fb978f",
+    "clean_tree": false
+  },
+  "raw_tail": null
+}
