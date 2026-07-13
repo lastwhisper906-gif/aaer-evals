@@ -63,12 +63,21 @@ def compute(traj: dict, logs_dir: Path | None,
                        for s in c["snapshots"]))
 
     # 3. 비용 — E2 로그 usage 실측
+    # D82 개정: 하네스 로그의 usage.input_tokens는 '비캐시 잔여'뿐 — 실입력은
+    # cache_creation(1h=2.0×·5m=1.25×)·cache_read(0.1×) 필드에 있다. 과금 등가
+    # (billing-weighted) 입력 토큰으로 집계 (원 구현은 raw-API 로그 가정 →
+    # input_tokens만 합산해 하네스 실지출을 과소계상 — D82 원장에 양판 병기).
     tokens_in, tokens_out = [], []
     if logs_dir is not None:
         for p in sorted(Path(logs_dir).rglob("*.json")):
             u = json.loads(p.read_text(encoding="utf-8")).get("usage")
             if u and u.get("input_tokens") is not None:
-                tokens_in.append(u["input_tokens"])
+                cc = u.get("cache_creation") or {}
+                w1h = cc.get("ephemeral_1h_input_tokens",
+                             u.get("cache_creation_input_tokens", 0) or 0)
+                w5m = cc.get("ephemeral_5m_input_tokens", 0)
+                rd = u.get("cache_read_input_tokens", 0) or 0
+                tokens_in.append(u["input_tokens"] + 2.0 * w1h + 1.25 * w5m + 0.1 * rd)
                 tokens_out.append(u["output_tokens"])
         if not tokens_in:
             raise BuyerMetricsError(f"{logs_dir}: usage 실측 로그 0건 — 비용 지표 계산 불능")
@@ -97,7 +106,9 @@ def compute(traj: dict, logs_dir: Path | None,
                            else "단가 미입력 (--price-in/--price-out)",
         "cost_stage2_pass": f"${cost * STAGE2_UNIVERSE:,.2f} (~{STAGE2_UNIVERSE}건)"
                             if cost is not None else "단가 미입력",
-        "pricing_note": (f"입력 ${price_in}/MTok · 출력 ${price_out}/MTok (소유자 입력)"
+        "pricing_note": (f"입력 ${price_in}/MTok · 출력 ${price_out}/MTok (소유자 입력). "
+                         "입력 토큰은 과금 등가(캐시 쓰기 1h×2.0·5m×1.25·읽기×0.1 가중 — "
+                         "하네스 로그의 캐시 필드 반영, D82)"
                          if have_price else "단가 미입력 — 소유자가 실행 시점 공식 단가로 지정"),
         "coverage_treatment": f"E2 적격 detected fraud {len(treat)}건 (EARLINESS_PLAN §1)",
         "coverage_control": f"RP-01 확정 대조군 {len(ctrl)}건 (동일 그리드, EARLINESS_PLAN §4)",

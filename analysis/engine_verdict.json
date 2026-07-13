@@ -1,0 +1,128 @@
+{
+ "auc_snapshot0": {
+  "b3": 0.6845,
+  "llm": null
+ },
+ "auc_snapshot0_flags": {
+  "llm_p": "j=0 llm_p 가용 실험군 12·대조군 0 — 빈 그룹으로 AUC 계산 불능 (fail-closed null, §3 주석 D71)"
+ },
+ "b4_comparison": {
+  "coverage": "2/12",
+  "coverage_ratio": 0.1667,
+  "dominates_llm": null,
+  "reason": "실험군 B4 커버리지 < 70% — 비교 불성립 (B4 스펙 §7 (i))",
+  "valid": false
+ },
+ "b_subcase": null,
+ "branch": "a_llm_engine",
+ "median_lead_b3_quarters": 5.5,
+ "median_lead_llm_quarters": 7.0,
+ "n_control": 7,
+ "n_treatment": 12,
+ "note": "판정은 스펙 §4 기계 규칙 — 본 결과는 Claude 기반 단일 파이프라인에 한정 (§5-5)",
+ "per_case_leads": [
+  {
+   "case_id": "case_01",
+   "lead_b3": 8,
+   "lead_b3_ge1": 8,
+   "lead_b3_ge3": 0,
+   "lead_llm": 8,
+   "ticker": "SCOR"
+  },
+  {
+   "case_id": "case_02",
+   "lead_b3": 0,
+   "lead_b3_ge1": 2,
+   "lead_b3_ge3": 0,
+   "lead_llm": 2,
+   "ticker": "OFIX"
+  },
+  {
+   "case_id": "case_08",
+   "lead_b3": 0,
+   "lead_b3_ge1": 4,
+   "lead_b3_ge3": 0,
+   "lead_llm": 2,
+   "ticker": "HTZ"
+  },
+  {
+   "case_id": "case_09",
+   "lead_b3": 8,
+   "lead_b3_ge1": 8,
+   "lead_b3_ge3": 0,
+   "lead_llm": 8,
+   "ticker": "ICON"
+  },
+  {
+   "case_id": "case_12",
+   "lead_b3": 5,
+   "lead_b3_ge1": 5,
+   "lead_b3_ge3": 0,
+   "lead_llm": 6,
+   "ticker": "KHC"
+  },
+  {
+   "case_id": "case_13",
+   "lead_b3": 0,
+   "lead_b3_ge1": 0,
+   "lead_b3_ge3": 0,
+   "lead_llm": 8,
+   "ticker": "MRVL"
+  },
+  {
+   "case_id": "case_39",
+   "lead_b3": 6,
+   "lead_b3_ge1": 7,
+   "lead_b3_ge3": 1,
+   "lead_llm": 7,
+   "ticker": "OSIR"
+  },
+  {
+   "case_id": "case_40",
+   "lead_b3": 7,
+   "lead_b3_ge1": 7,
+   "lead_b3_ge3": 0,
+   "lead_llm": 6,
+   "ticker": "TNGO"
+  },
+  {
+   "case_id": "case_59",
+   "lead_b3": 0,
+   "lead_b3_ge1": 0,
+   "lead_b3_ge3": 0,
+   "lead_llm": 7,
+   "ticker": "HAIN"
+  },
+  {
+   "case_id": "case_60",
+   "lead_b3": 7,
+   "lead_b3_ge1": 7,
+   "lead_b3_ge3": 0,
+   "lead_llm": 6,
+   "ticker": "MDXG"
+  },
+  {
+   "case_id": "case_61",
+   "lead_b3": 7,
+   "lead_b3_ge1": 7,
+   "lead_b3_ge3": 0,
+   "lead_llm": 7,
+   "ticker": "CGI"
+  },
+  {
+   "case_id": "case_66",
+   "lead_b3": 0,
+   "lead_b3_ge1": 0,
+   "lead_b3_ge3": 0,
+   "lead_llm": 7,
+   "ticker": "UAA"
+  }
+ ],
+ "reading": "LLM lead ≥ B3+1분기 — stage-2 활성",
+ "spec": "specs/ENGINE_DECISION.md",
+ "spec_decision": "D51 (+D58 §4b)",
+ "thresholds": {
+  "b3_score": 2,
+  "llm_p": 50
+ }
+}
