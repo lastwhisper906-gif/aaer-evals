@@ -1,0 +1,129 @@
+{
+  "flags": [
+    {
+      "title": "Off-balance-sheet receivables factoring nearly tripled, inflating reported operating cash flow and understating true receivables growth",
+      "description": "Gildan continuously sells (factors) trade receivables of designated customers to a third-party financial institution and de-recognizes them from the balance sheet. The balance of receivables serviced but sold off-balance-sheet grew from $272.1 million to $777.0 million year-over-year (a 186% increase), far outpacing the 76% growth in net sales (much of which came from only one month of Hanes consolidation). Because the cash proceeds from these sales are classified as operating cash flows, this program materially assists reported operating cash flow and reduces the receivables balance and DSO that would otherwise appear on the balance sheet. Supply-chain (reverse factoring) payables also grew sharply, from $11.6 million to $78.1 million, and a further $120.1 million of AP relates to timing differences between collection of sold receivables and remittance to the bank counterparty (up from $37.8 million). Together, these off-balance-sheet financing arrangements represent a growing, and increasingly consequential, source of working-capital/cash-flow optics that is easy to overlook without reading the notes.",
+      "quotes": [
+        {
+          "text": "As at December 28, 2025, trade accounts receivables being serviced under receivables purchase agreements amounted to $777.0 million (December 29, 2024 - $272.1 million). The difference between the carrying amount of the receivables sold under the agreements and the cash received at the time of transfer was $19.0 million for fiscal 2025 (2024 - $16.4 million) and was recorded in bank and other financial charges.",
+          "location": "Exhibit 99.2, Note 7 \"Trade Accounts Receivable\""
+        },
+        {
+          "text": "The net cash proceeds received by the Company are included as cash flows from operating activities in the consolidated statements of cash flows.",
+          "location": "Exhibit 99.2, Note 3(b) \"Trade accounts receivable\" (material accounting policy)"
+        },
+        {
+          "text": "Accounts payable and accrued liabilities include $78.1 million (December 29, 2024 - $11.6 million) under supply-chain financing arrangements (reverse factoring)... Accounts payable and accrued liabilities also include balances payable of $120.1 million (December 29, 2024 - $37.8 million) resulting mainly from a one-week timing difference between the collection of sold receivables and the weekly remittance to our bank counterparty under our receivables purchase agreement",
+          "location": "Exhibit 99.2, Note 16(a) \"Financial Instruments - carrying amounts and fair values\", footnote (1)"
+        },
+        {
+          "text": "The three receivables purchase agreements allow for the sale of a maximum of $975 million, $400 million, and $150 million, respectively, of accounts receivables at any one time.",
+          "location": "Exhibit 99.2, Note 28 \"Financial Risk Management\" - Credit risk"
+        }
+      ],
+      "verification_path": "Recompute a 'gross' DSO and true working-capital investment by adding back the $777.0 million of derecognized receivables to reported trade AR and comparing growth rates to net sales growth; compare the trend in factoring balances to the trend in reported operating cash flow over the past 3-5 years to see how much of the operating cash flow improvement is attributable to increased factoring rather than organic collections; review the receivables purchase agreements (filed as material contracts, if available) for recourse provisions, true-sale opinions, and whether credit risk is genuinely transferred; check subsequent 10-Q/quarterly filings for factoring balance trend continuation post-Hanes integration, since Hanes itself had its own $115 million AR securitization facility that was repaid at closing.",
+      "confidence": "medium",
+      "additional_data_that_would_change_confidence": "The actual receivables purchase agreement documents (recourse terms, true-sale legal opinions), a multi-year trend of the factoring balance vs. sales growth, and subsequent-quarter data showing whether the factoring balance continues to grow disproportionately to sales would increase or decrease confidence that this is being used to manage optics rather than for genuine treasury/liquidity purposes."
+    },
+    {
+      "title": "Extreme trade-receivable concentration with a single customer (67% of AR, 33% of net sales) creates outsized, opaque credit risk",
+      "description": "The company's largest wholesale distributor customer accounts for 67% of total trade accounts receivable and 33% of total net sales, while the top 10 debtors represent 80% of trade AR. This concentration is not new but has intensified in relative terms and is combined with disclosure that many of these wholesale distributors are 'highly leveraged with significant reliance on trade credit terms provided by a few major vendors, including the Company, and third-party debt financing, including bank debt secured with trade accounts receivable and inventory pledged as collateral.' A payment disruption, credit event, or renegotiation of terms with this single customer could have an outsized impact on reported receivables, the allowance for expected credit losses, and revenue, yet the allowance for expected credit losses of only $11.1 million appears low relative to the concentration risk and the $966.8 million gross receivable balance.",
+      "quotes": [
+        {
+          "text": "As at December 28, 2025, the Company's largest wholesale distributor accounted for 67% of trade accounts receivable (2024 - 69%) and 33% of total net sales during fiscal 2025 (2024 - 39% ).",
+          "location": "Exhibit 99.2, Note 28 \"Financial Risk Management\" - Credit risk"
+        },
+        {
+          "text": "As at December 28, 2025, the Company's ten largest trade debtors accounted for 80% of trade accounts receivable (2024 - 87%). The Company's main trade debtors are located in the U.S.",
+          "location": "Exhibit 99.2, Note 28 \"Financial Risk Management\" - Credit risk"
+        },
+        {
+          "text": "Certain wholesale distributors are highly leveraged with significant reliance on trade credit terms provided by a few major vendors, including the Company, and third-party debt financing, including bank debt secured with trade accounts receivable and inventory pledged as collateral.",
+          "location": "Exhibit 99.2, Note 28 \"Financial Risk Management\" - Credit risk"
+        },
+        {
+          "text": "Balance, end of fiscal year | $ | (11,092)",
+          "location": "Exhibit 99.2, Note 7 \"Trade Accounts Receivable\" - movement in allowance for expected credit losses"
+        }
+      ],
+      "verification_path": "Identify the named customer (likely the combined distributor referenced in Note 30 as 'Customer A', formed from a 2024 merger of two prior top customers) via public sources/credit rating services and review its own leverage, liquidity and any bankruptcy/restructuring news; compare the allowance for expected credit losses ($11.1 million, ~1.1% of gross AR) to industry norms for similarly concentrated receivables books; review the aging schedule (past-due balances of $60.4 million in Note 28) for deterioration trends; monitor subsequent quarterly filings for any change in customer concentration percentages or credit losses relating to this customer.",
+      "confidence": "medium",
+      "additional_data_that_would_change_confidence": "Confirmation of the specific customer's identity and its standalone credit profile/financial statements, any recent news of financial distress at that distributor, and Gildan's specific credit terms/collateral arrangements with that customer would materially change confidence in whether this is a manageable, well-controlled exposure versus a genuine solvency risk."
+    },
+    {
+      "title": "Hanes purchase price allocation remains preliminary with unallocated $597.2 million of goodwill not tested for impairment, and provisional fair values for major intangibles rely on management estimates flagged as a Critical Audit Matter",
+      "description": "The Hanes acquisition (closed just 4 weeks before fiscal year-end) resulted in $2.78 billion of intangible assets and $597.2 million of goodwill being recorded based on provisional fair values. The auditor identified the valuation of customer relationships ($799 million), the Hanes trademark ($1,644 million), and HAA net assets held for sale ($600 million) as a critical audit matter due to reliance on management assumptions with 'limited observable information.' Critically, the acquired goodwill has not been allocated to any CGU and therefore was not subjected to an impairment test in the current period, and management states the indefinite-life intangibles' recoverable amount 'approximately equal' their carrying value 'given the proximity of the acquisition date' rather than through a full impairment analysis. Given the acquisition closed on debt-funded terms with net debt leverage already above target (3.0x vs. 1.5-2.5x target), any measurement-period adjustments to these provisional values (which can be made up to one year post-acquisition) could materially move goodwill, intangible amortization, and future impairment risk.",
+      "quotes": [
+        {
+          "text": "As of December 28, 2025, the Company has not completed the determination of the fair value of assets acquired and liabilities assumed for the Hanes acquisition. The provisional fair values of the customer relationships of $799 million was determined using the multi-period excess earnings method, the Hanes trademark of $1,644 million was determined using the relief from royalty method and the fair value less cost to sell of the HAA net assets held for sale of $600 million was determined using the market approach.",
+          "location": "Exhibit 99.2, Report of Independent Registered Public Accounting Firm - Critical Audit Matters"
+        },
+        {
+          "text": "The valuations included assumptions based on limited observable information, which impacted the nature and extent of audit effort. The audit effort also required specialized skills and knowledge.",
+          "location": "Exhibit 99.2, Report of Independent Registered Public Accounting Firm - Critical Audit Matters"
+        },
+        {
+          "text": "As at December 28, 2025, there was no impairment test performed on the goodwill from the Hanes acquisition (note 5) as it is unallocated, given the fair value measurement of the acquired assets and liabilities remains preliminary. In addition, it was determined that the carrying value of the indefinite life intangible assets acquired in the Hanes acquisition approximately equal their recoverable amount given the proximity of the acquisition date to December 28, 2025.",
+          "location": "Exhibit 99.2, Note 11 \"Intangible Assets and Goodwill\" - Recoverability of cash-generating units"
+        },
+        {
+          "text": "Measurement uncertainty exists at December 28, 2025 with respect to, but not limited to, working capital balances, property, plant and equipment, intangible assets, net assets held for sale, pensions and other benefit liabilities and deferred income taxes.",
+          "location": "Exhibit 99.2, Note 5 \"Business Acquisitions\""
+        }
+      ],
+      "verification_path": "Track the finalization of the Hanes purchase price allocation over the next 3 quarterly filings (measurement period runs to Dec 1, 2026) for adjustments to goodwill, intangibles, and deferred taxes; compare the final PPA to the provisional figures; review whether/when goodwill is allocated to CGUs and whether an impairment test is subsequently performed; assess whether the assumptions used for the trademark/customer relationship valuations (attrition rates, EBITDA margins, discount rates) are consistent with Hanes' pre-acquisition historical performance and current market comparables (e.g., via HanesBrands' own historical SEC filings prior to the merger).",
+      "confidence": "high",
+      "additional_data_that_would_change_confidence": "The finalized (non-provisional) Hanes purchase price allocation, expected within the one-year measurement period, would directly confirm or refute the magnitude of estimation risk; interim quarterly disclosures on any measurement-period adjustments would also inform confidence."
+    },
+    {
+      "title": "Widening gap between GAAP and non-GAAP (\"adjusted\") earnings, driven by a proliferation of new one-time addbacks introduced in the acquisition year",
+      "description": "GAAP diluted EPS from continuing operations was $2.57 versus adjusted diluted EPS of $3.51 - a 37% gap, up from a 22% gap in the prior year ($2.46 GAAP vs. $3.00 adjusted). Fiscal 2025 introduced several brand-new categories of non-GAAP addbacks not used in prior periods (inventory fair value step-up, bridge facility commitment fees, net interest expense on bond issuance prior to Hanes close, gain on debt redemption net of breakage fee, and a $9.5 million 'foreign tax credit benefit'), several of which are financing/tax items rather than clearly non-operating or non-recurring items, and are described by management itself as adjustments that will recur into 2026 (an additional $201.6 million of inventory step-up cost remains to flow through cost of sales in fiscal 2026). The growing reliance on adjusted metrics to describe performance, combined with a leverage ratio computed on a non-GAAP 'proforma adjusted EBITDA' basis, increases the risk that readers focus on flattering adjusted figures rather than the weaker GAAP results (GAAP operating income was essentially flat year-over-year despite an 11% increase in net sales).",
+      "quotes": [
+        {
+          "text": "GAAP diluted EPS from continuing operations were $2.57, up 4% while adjusted diluted EPS increased by 17.0% to $3.51 from $3.00 in the prior year, with such increase reflecting the benefit of a lower outstanding share base (based on diluted weighted average number of common shares outstanding during the period).",
+          "location": "Exhibit 99.1 (MD&A), Section 5.6.10 \"Net earnings, adjusted net earnings, earnings per share measures, and adjusted earnings per share\""
+        },
+        {
+          "text": "The remaining portion of the total inventory fair value step-up of $237 million which was recorded as part of the HanesBrands purchase price allocation will be recorded to cost of sales in fiscal 2026.",
+          "location": "Exhibit 99.1 (MD&A), Section 5.6.2 \"Gross profit/margin and adjusted gross profit/margin\""
+        },
+        {
+          "text": "During fiscal 2025, the Company incurred financing related fees of $8.7 million (net) in connection with the issuance of new debt and the redemption of Hanes' debt, including bridge facility commitment fees of $9.3 million, net interest expense incurred on bond issuance prior to Hanes transaction close of $2.9 million, and a gain on debt redemption net of debt breakage fee of $3.5 million.",
+          "location": "Exhibit 99.1 (MD&A), Section 16.0 \"Definition and reconciliation of non-GAAP financial measures\" - Bridge facility commitment fees..."
+        },
+        {
+          "text": "During fiscal 2025, the Company incurred a tax recovery of $9.5 million in connection with a foreign tax credit benefit which Hanes became eligible for in the post-acquisition period. Hanes is able to utilize foreign tax credits that are born on the last day of the taxable year, and as a result the full-year foreign tax credit benefit was recognized in the one-month period post acquisition.",
+          "location": "Exhibit 99.1 (MD&A), Section 16.0 - Foreign tax credit benefit (new adjustment in 2025)"
+        }
+      ],
+      "verification_path": "Build a multi-year bridge from GAAP diluted EPS to adjusted diluted EPS and track whether the number and magnitude of addback categories is expanding faster than the underlying business; assess whether items labeled 'non-recurring' (e.g., inventory step-up) genuinely do not recur by checking fiscal 2026 quarterly filings for the promised $201.6 million remaining step-up charge and confirming it is excluded from adjusted results as guided; scrutinize whether financing fees (bridge commitment fees, bond issuance costs) meet the traditional definition of non-operating/non-recurring items or are ordinary costs of the acquisition's capital structure that will effectively recur in different form as the debt is serviced.",
+      "confidence": "medium",
+      "additional_data_that_would_change_confidence": "Subsequent-quarter data confirming (or disproving) that the inventory step-up and financing fee items do not recur beyond fiscal 2026, and a comparison against sell-side analyst treatment of these items, would sharpen confidence about whether this represents aggressive earnings presentation versus reasonable acquisition-related normalization."
+    },
+    {
+      "title": "Reported net debt leverage ratio (3.0x) is calculated using pro-forma target EBITDA for periods before ownership and is lower than the leverage ratio computed under the company's own credit agreements (3.1x-3.4x)",
+      "description": "Gildan's primary leverage metric, net debt leverage ratio, uses a non-GAAP 'proforma adjusted EBITDA for the trailing twelve months' that includes Hanes' (and HAA's) EBITDA for the eleven months before Gildan actually owned the business, adjusted using Hanes' own previously reported (non-Gildan, non-audited-by-KPMG-for-that-period) EBITDA figures and further adjusted for anticipated synergies from reduced compensation and severance. This produces a reported ratio of 3.0x. However, the company discloses that its actual leverage ratio as calculated under its term loan/revolving facility covenants (3.1x) and under its U.S. private placement note covenants (3.4x) is meaningfully higher - and both of those differ further from a ratio calculated purely on trailing actual (non-proforma) EBITDA, which would be far higher still since Hanes contributed only one month of actual EBITDA to the $926.3 million company-reported (non-proforma) figure. This creates multiple, inconsistent leverage metrics that could understate the company's true post-acquisition financial risk to readers who do not parse the non-GAAP reconciliation.",
+      "quotes": [
+        {
+          "text": "Includes the adjusted EBITDA of Hanes for the period beginning December 30, 2024 and ending November 30, 2025 (including HAA), and the adjusted EBITDA of the HAA business (which was classified as discontinued operations as at the date of acquisition) for the period beginning December 1, 2025 and ending December 28, 2025. The adjusted EBITDA of Hanes and of HAA varies from the definition of the Company's adjusted EBITDA as presented in this MD&A in certain respects.",
+          "location": "Exhibit 99.1 (MD&A), Section 16.0 \"Net debt leverage ratio\", footnote (2)"
+        },
+        {
+          "text": "The Company's net debt to EBITDA ratio for purposes of its term loans and revolving facility was 3.1x and for purposes of U.S. private placement notes was 3.4x at December 28, 2025.",
+          "location": "Exhibit 99.1 (MD&A), Section 8.2 \"Long-term debt and net debt and net debt leverage ratio\""
+        },
+        {
+          "text": "As a result of the closing of the Hanes acquisition, our net debt leverage ratio exceeds our stated target range. Accordingly, we paused our share repurchases starting in August 2025, and we expect share repurchases to resume when our net debt leverage ratio approximates the midpoint of the target range.",
+          "location": "Exhibit 99.1 (MD&A), Section 8.1 \"Capital allocation framework\""
+        },
+        {
+          "text": "Net debt(1) | 4,417.1 | 1,568.6 | 993.4\nNet debt leverage ratio(1) | 3.0 | 1.9 | 1.5",
+          "location": "Exhibit 99.1 (MD&A), Section 8.2, Net debt leverage ratio table"
+        }
+      ],
+      "verification_path": "Reconstruct the leverage ratio using only actual trailing-twelve-month reported adjusted EBITDA ($926.3 million, excluding the $564.8 million pro-forma add-on) against reported net debt ($4,417.1 million) to see the 'as-reported-only' ratio (approximately 4.8x) versus the company's headline 3.0x figure; obtain and review the actual credit agreement and note purchase agreement covenant definitions and compliance certificates (if available) to confirm the 3.1x/3.4x figures and assess covenant headroom versus any maximum leverage covenant; monitor how quickly the pro-forma adjustment shrinks in subsequent quarters as actual Hanes-inclusive trailing EBITDA replaces the pro-forma estimate, which will reveal whether the underlying business supports the assumed pro-forma EBITDA.",
+      "confidence": "medium",
+      "additional_data_that_would_change_confidence": "The specific maximum leverage covenant thresholds in the credit agreements/note purchase agreements and current covenant headroom, plus subsequent-quarter actual (non-pro-forma) trailing EBITDA data as Hanes results annualize into the base, would clarify whether the 3.0x/3.1x/3.4x figures represent manageable leverage or a covenant-compliance concern."
+    }
+  ]
+}

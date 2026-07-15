@@ -1,0 +1,59 @@
+{
+  "ts": "2026-07-15T11:31:47.153150+00:00",
+  "harness_pin": "2.1.201",
+  "flags": [
+    "claude",
+    "-p",
+    "--model",
+    "claude-sonnet-5",
+    "--output-format",
+    "json",
+    "--max-turns",
+    "2",
+    "--setting-sources",
+    "",
+    "--strict-mcp-config",
+    "--tools",
+    "",
+    "--disallowedTools",
+    "Bash,Read,Edit,Write,Glob,Grep,WebFetch,WebSearch,Task,NotebookEdit",
+    "--system-prompt",
+    "You are a forensic accountant. Analyze the attached SEC filings of this company. Identify the 3-5 most significant accounting red flags or anomalies, prioritizing issues in revenue recognition, receiv...[724 chars]",
+    "--json-schema",
+    "{\"type\": \"object\", \"additionalProperties\": false, \"required\": [\"flags\"], \"properties\": {\"flags\": {\"type\": \"array\", \"minItems\": 3, \"maxItems\": 5, \"items\": {\"type\": \"object\", \"additionalProperties\": fal...[891 chars]"
+  ],
+  "model_requested": "claude-sonnet-5",
+  "served_models": [
+    "claude-sonnet-5"
+  ],
+  "pin_ok": true,
+  "ok": true,
+  "fail_reason": null,
+  "session_id": "1e4dee54-0fb9-4fe8-bb8b-dd74cf2afe25",
+  "usage": {
+    "input_tokens": 4,
+    "cache_creation_input_tokens": 12138,
+    "cache_read_input_tokens": 263740,
+    "output_tokens": 20125,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 12138,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [],
+    "speed": "standard"
+  },
+  "total_cost_usd_reference_only": 0.453837,
+  "attempts": 1,
+  "wall_seconds": 180.9,
+  "freeze": {
+    "head": "36c900c7811942505e348ffae5285fc7834aa12b",
+    "clean_tree": false
+  },
+  "raw_tail": null
+}
