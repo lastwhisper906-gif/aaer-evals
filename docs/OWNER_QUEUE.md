@@ -428,3 +428,20 @@
 - **발사 명령**: `python pipeline/runner.py --cases data/evaluatee/cases_wave2.json
   --out runs/wave2/mainscore_redraw/draw_2` (멱등) → 부분/전체 밴드 분석.
 - **상태**: OPEN (소유자 임의 시점 — 종전 launch-ready 동결과 동일 지위)
+
+---
+
+## Q-O01 — OUT-GIL-V1 소비 가능 산출물 서명 게이트 (GIL 블라인드 메모 v1) — OPEN (2026-07-15)
+
+- **대상**: (1) `runs/gil_memo_v1/citation_adjudication.md` — 비-VERIFIED 인용 5건
+  수기 판정(전부 "…" 병합 인용, 날조 0) 서명; (2) 메모 승인 —
+  `output/GIL_memo_v1.md` (과제 규격 영문판, 검증표 부록 포함) +
+  `runs/gil_memo_v1/memo_draft.md` (한글 발행용 초안). 서명 전 외부 공개 금지.
+- **추가 사실 검증 (memo assembly 단계, 판정 파일 미수록)**: 모델 서술의
+  "$201.6 million"(연차 공시상 step-up 추정 총액)은 원문 부재 — 40-F MD&A는
+  **총액 $237M**을 명시하며, $201.6M = 237.0 − 35.4(FY2025 인식분)의 파생값.
+  Q1 인식 $106.3M + 잔여 $95M ≈ $201.6M로 산술 정합. memo Flag 1에 assembly
+  note로 명기 완료 — 서명 시 이 판정도 함께 확인 요망.
+- **병렬 세션 병합 기록**: 08be4ee(20:38, 데이터·평가 2호출·검증·한글 초안 커밋)
+  + 본 커밋(과제 규격 memo·원장·큐) — 동일 실험의 분업, 수치 충돌 없음.
+- **상태**: OPEN (사용자 확정 사항 — 세션은 자료 제공까지)
