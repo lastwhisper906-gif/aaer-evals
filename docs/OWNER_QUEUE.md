@@ -12,16 +12,19 @@
    ② RP-18 코멘트 (Issue #2 — `review_packets/RP-18_body.md`)
    ③ Issue #1/#3 편집 (RP-15/16 반영분 — edited 표시 + 사유 코멘트)
    ④ 독자 발송 5–10명 ({ISSUE_URL} 치환 — 미발송 시 Tier 3 검증 0점).
-2. **차기 소유자 감독 세션 1번 작업**: 유니버스 열거 — Q-O04 발효분
+2. **screener SEC User-Agent (S-01) + GitHub 원격 생성/push (S-03)** —
+   seal 타임스탬프 앵커 사슬의 전제 (첫 seal 2026-11-15); 명령 준비됨
+   (HANDOFF §게시 절차 / LAUNCH_SEQUENCE).
+3. **차기 소유자 감독 세션 1번 작업**: 유니버스 열거 — Q-O04 발효분
    (`docs/UNIVERSE_SELECTION.md` §6 확정 · `docs/RESUME.md` 재개 순서).
-3. **Q-F02** — Chu et al. 원문 대조 (소유자 직접 — 옵션은 아래 항목).
-4. **Q-F07** — 교차 패밀리 채점자 (~20호출 종량 — 옵션은 아래 항목).
-5. **Q-F08 실행** — 계획은 사전 등록 완료(D96), 실행은 감독 세션 편승.
-6. **Q-M01** — FINRA ToS/라이선스 확인.
-7. **Q-M04** — HOLD (Cycle-2 개시 시점 일괄 설계, D96).
-8. **Q-M05** — 야간 프롬프트 §5 절단 (재전송/폐기/부분 재지시 선택).
-9. **변호사 2종** (screener S-10 증권 · S-13 이민/whistleblower).
-10. **Zenodo vs release** (Q-R03 — 경로 확정, 소유자 계정 실행 대기).
+4. **Q-F02** — Chu et al. 원문 대조 (소유자 직접 — 옵션은 아래 항목).
+5. **Q-F07** — 교차 패밀리 채점자 (~20호출 종량 — 옵션은 아래 항목).
+6. **Q-F08 실행** — 계획은 사전 등록 완료(D96), 실행은 감독 세션 편승.
+7. **Q-M01** — FINRA ToS/라이선스 확인.
+8. **Q-M04** — HOLD (Cycle-2 개시 시점 일괄 설계, D96).
+9. **Q-M05** — 야간 프롬프트 §5 절단 (재전송/폐기/부분 재지시 선택).
+10. **변호사 2종** (screener S-10 증권 · S-13 이민/whistleblower).
+11. **Zenodo vs release** (Q-R03 — 경로 확정, 소유자 계정 실행 대기).
 - 잔여 launch-ready 지출 옵션 (소유자 임의 시점, 본 재작성 시점 OPEN):
   **Q-M06**(7호출 — E2 j=0 AUC 가능화) · **Q-M07**(P5 32호출 — E5 wave-2 재추첨).
 - **2026-07-16 서명 일괄 해소** (owner, 2026-07-16, this session's structured
