@@ -1038,3 +1038,7 @@ c44bd59a…)는 **서명 없이 superseded** (채점 미진입 상태 폐기). v
 ## D94 — Q-O02 소유자 서명: 결정 표 발행 표면 등재 (2026-07-16, 서명, JSON 1줄)
 
 {"decision":"D94","date":"2026-07-16","action":"Q-O02 서명 — (owner, 2026-07-16, this session's structured decision responses), 옵션 (A). DECISION_TABLE.md 헤더 unsigned draft → 서명일 교체, README 양어 Publication 절에 링크 + 한 줄 요약('궤적 레이어에서 단독 LLM 임계는 지배 전략 없음 — 전 셀 CP95 병기') 등재","provenance":"사전 등록 2fc3d23(계산 전 단독 커밋) → 계산 1836289 → 서명 본 커밋 — freeze-commit-then-run 사슬 완결","metered":"0호출","learning_note":"이 판단에서 알아야 할 것: 서명 게이트의 산출물은 링크 한 줄이지만 그 링크의 신뢰는 커밋 순서(등록→계산→서명)가 진다 — 순서가 뒤집힌 표는 같은 수치라도 발행 표면에 올릴 수 없다"}
+
+## D95 — Q-O04 소유자 서명: 유니버스 선정 프로토콜 발효 (A·12·$1B) (2026-07-16, 서명, JSON 1줄)
+
+{"decision":"D95","date":"2026-07-16","action":"Q-O04 서명 발효 — (owner, 2026-07-16, this session's structured decision responses). 확정: 섹터 (A) 하드웨어·전력 사슬 협의 SIC 집합 · 선정 수 12 · dei:EntityPublicFloat ≥$1B. UNIVERSE_SELECTION.md §6 확정 절 기입 + FREEZE 조항 재확인(열거 후 개정은 FREEZE_REV 전용)","rationale":"(A)>(B): 백테스트 실측 — 소프트웨어 유니버스는 CL4(재고·마진 축)가 insufficient_data로 빠짐(대조군 17/45); (A)>(C): 4911 제외는 전력 사슬 논지 훼손 + 사후 재편입이 체리피킹으로 읽힘(사후 제외는 FREEZE_REV로 저렴)","enumeration":"본 세션 미실행 (네트워크 = Q-E03 선례, 감독 전용) — RESUME.md 차기 감독 세션 1번 작업 등재","metered":"0호출","learning_note":"이 판단에서 알아야 할 것: 유니버스 확정의 힘은 목록이 아니라 순서에서 나온다 — 어떤 후보도 조회되기 전에 SIC 집합·수·하한이 커밋되었다는 타임스탬프가, 이후 나올 모든 메모의 '왜 이 회사였나' 질문에 대한 유일하게 검증 가능한 답이다"}
