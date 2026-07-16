@@ -1,0 +1,469 @@
+{
+  "plan": "analysis/DECISION_TABLE_PLAN.md",
+  "generated_by": "analysis/decision_table.py",
+  "cost_per_screen_usd": 0.5304,
+  "cost_source": "analysis/BUYER_METRICS.md §3 (실측 인용 — 재계산 없음)",
+  "thresholds": [
+    40,
+    50,
+    60,
+    70
+  ],
+  "layers": {
+    "L1_wave1_perturbed": {
+      "n_treatment": 8,
+      "n_control": 8,
+      "n_screens": 16,
+      "note": "프레임 비대칭: 실험군=perturbed, 대조군=original (대조군 perturbed 미채점 — 사전 등록 §2①, 신규 채점 금지)",
+      "cells": [
+        {
+          "threshold": 40,
+          "detected": 8,
+          "n_treatment": 8,
+          "detected_ci95": [
+            0.6306,
+            1.0
+          ],
+          "false_positives": 3,
+          "n_control": 8,
+          "fpr_ci95": [
+            0.0852,
+            0.7551
+          ],
+          "cost_per_detection_usd": 1.06
+        },
+        {
+          "threshold": 50,
+          "detected": 4,
+          "n_treatment": 8,
+          "detected_ci95": [
+            0.157,
+            0.843
+          ],
+          "false_positives": 1,
+          "n_control": 8,
+          "fpr_ci95": [
+            0.0032,
+            0.5265
+          ],
+          "cost_per_detection_usd": 2.12
+        },
+        {
+          "threshold": 60,
+          "detected": 1,
+          "n_treatment": 8,
+          "detected_ci95": [
+            0.0032,
+            0.5265
+          ],
+          "false_positives": 0,
+          "n_control": 8,
+          "fpr_ci95": [
+            0.0,
+            0.3694
+          ],
+          "cost_per_detection_usd": 8.49
+        },
+        {
+          "threshold": 70,
+          "detected": 0,
+          "n_treatment": 8,
+          "detected_ci95": [
+            0.0,
+            0.3694
+          ],
+          "false_positives": 0,
+          "n_control": 8,
+          "fpr_ci95": [
+            0.0,
+            0.3694
+          ],
+          "cost_per_detection_usd": null
+        }
+      ]
+    },
+    "L2_wave2": {
+      "n_treatment": 9,
+      "n_control": 23,
+      "n_screens": 32,
+      "note": null,
+      "cells": [
+        {
+          "threshold": 40,
+          "detected": 8,
+          "n_treatment": 9,
+          "detected_ci95": [
+            0.5175,
+            0.9972
+          ],
+          "false_positives": 10,
+          "n_control": 23,
+          "fpr_ci95": [
+            0.2319,
+            0.6551
+          ],
+          "cost_per_detection_usd": 2.12
+        },
+        {
+          "threshold": 50,
+          "detected": 7,
+          "n_treatment": 9,
+          "detected_ci95": [
+            0.3999,
+            0.9719
+          ],
+          "false_positives": 5,
+          "n_control": 23,
+          "fpr_ci95": [
+            0.0746,
+            0.437
+          ],
+          "cost_per_detection_usd": 2.42
+        },
+        {
+          "threshold": 60,
+          "detected": 3,
+          "n_treatment": 9,
+          "detected_ci95": [
+            0.0749,
+            0.7007
+          ],
+          "false_positives": 0,
+          "n_control": 23,
+          "fpr_ci95": [
+            0.0,
+            0.1482
+          ],
+          "cost_per_detection_usd": 5.66
+        },
+        {
+          "threshold": 70,
+          "detected": 2,
+          "n_treatment": 9,
+          "detected_ci95": [
+            0.0281,
+            0.6001
+          ],
+          "false_positives": 0,
+          "n_control": 23,
+          "fpr_ci95": [
+            0.0,
+            0.1482
+          ],
+          "cost_per_detection_usd": 8.49
+        }
+      ]
+    },
+    "L3_holdout_e1": {
+      "n_treatment": 3,
+      "n_control": 9,
+      "n_screens": 12,
+      "note": "라벨 G2 provisional (restatement/non-reliance, NOT fraud) — '탐지'가 아니라 잠정 라벨 이벤트 플래깅 (사전 등록 §2②)",
+      "cells": [
+        {
+          "threshold": 40,
+          "detected": 2,
+          "n_treatment": 3,
+          "detected_ci95": [
+            0.0943,
+            0.9916
+          ],
+          "false_positives": 3,
+          "n_control": 9,
+          "fpr_ci95": [
+            0.0749,
+            0.7007
+          ],
+          "cost_per_detection_usd": 3.18
+        },
+        {
+          "threshold": 50,
+          "detected": 1,
+          "n_treatment": 3,
+          "detected_ci95": [
+            0.0084,
+            0.9057
+          ],
+          "false_positives": 2,
+          "n_control": 9,
+          "fpr_ci95": [
+            0.0281,
+            0.6001
+          ],
+          "cost_per_detection_usd": 6.36
+        },
+        {
+          "threshold": 60,
+          "detected": 1,
+          "n_treatment": 3,
+          "detected_ci95": [
+            0.0084,
+            0.9057
+          ],
+          "false_positives": 1,
+          "n_control": 9,
+          "fpr_ci95": [
+            0.0028,
+            0.4825
+          ],
+          "cost_per_detection_usd": 6.36
+        },
+        {
+          "threshold": 70,
+          "detected": 1,
+          "n_treatment": 3,
+          "detected_ci95": [
+            0.0084,
+            0.9057
+          ],
+          "false_positives": 1,
+          "n_control": 9,
+          "fpr_ci95": [
+            0.0028,
+            0.4825
+          ],
+          "cost_per_detection_usd": 6.36
+        }
+      ]
+    },
+    "L4_e2_trajectory": {
+      "n_treatment": 12,
+      "n_control": 7,
+      "n_screens": 158,
+      "excluded_null_snapshots": 7,
+      "note": "플래그 = 어느 스냅샷이든 llm_p≥T; null 스냅샷 fail-closed 제외 (대조군 j=0 null — D71 규약)",
+      "cells": [
+        {
+          "threshold": 40,
+          "detected": 12,
+          "n_treatment": 12,
+          "detected_ci95": [
+            0.7354,
+            1.0
+          ],
+          "false_positives": 7,
+          "n_control": 7,
+          "fpr_ci95": [
+            0.5904,
+            1.0
+          ],
+          "cost_per_detection_usd": 6.98,
+          "flagged_treatment": [
+            "case_01",
+            "case_02",
+            "case_08",
+            "case_09",
+            "case_12",
+            "case_13",
+            "case_39",
+            "case_40",
+            "case_59",
+            "case_60",
+            "case_61",
+            "case_66"
+          ],
+          "flagged_control": [
+            "case_04",
+            "case_05",
+            "case_07",
+            "case_10",
+            "case_11",
+            "case_14",
+            "case_15"
+          ]
+        },
+        {
+          "threshold": 50,
+          "detected": 12,
+          "n_treatment": 12,
+          "detected_ci95": [
+            0.7354,
+            1.0
+          ],
+          "false_positives": 5,
+          "n_control": 7,
+          "fpr_ci95": [
+            0.2904,
+            0.9633
+          ],
+          "cost_per_detection_usd": 6.98,
+          "flagged_treatment": [
+            "case_01",
+            "case_02",
+            "case_08",
+            "case_09",
+            "case_12",
+            "case_13",
+            "case_39",
+            "case_40",
+            "case_59",
+            "case_60",
+            "case_61",
+            "case_66"
+          ],
+          "flagged_control": [
+            "case_05",
+            "case_07",
+            "case_10",
+            "case_11",
+            "case_14"
+          ]
+        },
+        {
+          "threshold": 60,
+          "detected": 7,
+          "n_treatment": 12,
+          "detected_ci95": [
+            0.2767,
+            0.8483
+          ],
+          "false_positives": 3,
+          "n_control": 7,
+          "fpr_ci95": [
+            0.099,
+            0.8159
+          ],
+          "cost_per_detection_usd": 11.97,
+          "flagged_treatment": [
+            "case_01",
+            "case_02",
+            "case_12",
+            "case_39",
+            "case_60",
+            "case_61",
+            "case_66"
+          ],
+          "flagged_control": [
+            "case_05",
+            "case_10",
+            "case_11"
+          ]
+        },
+        {
+          "threshold": 70,
+          "detected": 1,
+          "n_treatment": 12,
+          "detected_ci95": [
+            0.0021,
+            0.3848
+          ],
+          "false_positives": 0,
+          "n_control": 7,
+          "fpr_ci95": [
+            0.0,
+            0.4096
+          ],
+          "cost_per_detection_usd": 83.8,
+          "flagged_treatment": [
+            "case_39"
+          ],
+          "flagged_control": []
+        }
+      ]
+    }
+  },
+  "exploratory_combo": {
+    "label": "EXPLORATORY",
+    "rule": "동일 스냅샷에서 b3_score>=2 AND llm_p>=T (L4 궤적 전용)",
+    "status": "사후(post-hoc) 규칙 — 소급 성능 주장 금지. Cycle-2 사전 등록 후보 전용 (사전 등록 §5)",
+    "cells": [
+      {
+        "threshold": 40,
+        "detected": 8,
+        "n_treatment": 12,
+        "detected_ci95": [
+          0.3489,
+          0.9008
+        ],
+        "false_positives": 0,
+        "n_control": 7,
+        "fpr_ci95": [
+          0.0,
+          0.4096
+        ],
+        "cost_per_detection_usd": 10.48,
+        "flagged_treatment": [
+          "case_01",
+          "case_08",
+          "case_09",
+          "case_12",
+          "case_39",
+          "case_40",
+          "case_60",
+          "case_61"
+        ],
+        "flagged_control": []
+      },
+      {
+        "threshold": 50,
+        "detected": 7,
+        "n_treatment": 12,
+        "detected_ci95": [
+          0.2767,
+          0.8483
+        ],
+        "false_positives": 0,
+        "n_control": 7,
+        "fpr_ci95": [
+          0.0,
+          0.4096
+        ],
+        "cost_per_detection_usd": 11.97,
+        "flagged_treatment": [
+          "case_01",
+          "case_08",
+          "case_09",
+          "case_12",
+          "case_39",
+          "case_60",
+          "case_61"
+        ],
+        "flagged_control": []
+      },
+      {
+        "threshold": 60,
+        "detected": 5,
+        "n_treatment": 12,
+        "detected_ci95": [
+          0.1517,
+          0.7233
+        ],
+        "false_positives": 0,
+        "n_control": 7,
+        "fpr_ci95": [
+          0.0,
+          0.4096
+        ],
+        "cost_per_detection_usd": 16.76,
+        "flagged_treatment": [
+          "case_01",
+          "case_12",
+          "case_39",
+          "case_60",
+          "case_61"
+        ],
+        "flagged_control": []
+      },
+      {
+        "threshold": 70,
+        "detected": 1,
+        "n_treatment": 12,
+        "detected_ci95": [
+          0.0021,
+          0.3848
+        ],
+        "false_positives": 0,
+        "n_control": 7,
+        "fpr_ci95": [
+          0.0,
+          0.4096
+        ],
+        "cost_per_detection_usd": 83.8,
+        "flagged_treatment": [
+          "case_39"
+        ],
+        "flagged_control": []
+      }
+    ]
+  }
+}
