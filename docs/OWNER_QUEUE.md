@@ -529,3 +529,22 @@
   responses)** — **옵션 (A) 협의 SIC 집합 · 선정 수 12 · float ≥$1B 확정,
   발효.** §6 확정 절 기입 + FREEZE 조항 재확인 (D95). 열거는 차기 감독
   세션 1번 작업 (RESUME.md) — 본 세션 네트워크 작업 없음.
+
+---
+
+## Q-O05 — P1+P3 메모 파이프라인 일반화 서명 (GIL 재현 게이트 PASS) — OPEN (2026-07-16)
+
+- **대상**: `tools/memo_run.py`·`memo_extract.py`·`memo_verify.py` (blind_memo_*
+  3종의 매개변수화 후계 — 원본 무접촉) + `data/gil/memo_docs.json` +
+  `tools/test_memo_pipeline.py` (7 테스트).
+- **게이트 증거**: GIL 재현 — 신규 러너의 dry-run 페이로드 sha256 = 동결
+  blind_memo_run.build_payload 출력 (annual·combined 양 스테이지, 테스트
+  강제). INSTRUCTION/SCHEMA/추출·매칭 로직 소스 동일성 테스트 — 전사 오류
+  (NBSP) 1건을 실제 검출·수정 (D97).
+- **판정 큐 (P3)**: `--adjudication-queue` — 비-VERIFIED만 4택 판정 블록
+  (병합 인용/의역/날조 의심/재확인) + 서명란 + 수기 판정 소요 분 필드.
+- **옵션**: (A) 서명 — 유니버스 메모 실행 경로로 승인 (실발사는 별도 spend
+  gate — P4 ④) · (B) 수정 후 서명 · (C) 기각 (blind_memo_* 하드코딩 유지,
+  12사 확장 불가).
+- **세션 기본 조치**: 실발사 없음 (dry-run 전용 검증 완료).
+- **상태**: OPEN (사용자 확정 사항 — 세션은 자료 제공까지)
