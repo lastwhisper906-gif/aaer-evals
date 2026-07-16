@@ -1,9 +1,9 @@
 # DECISION_TABLE — 임계별 결정 표 (구매자 언어 번역)
 
-> **본 표는 서명 전 초안(unsigned draft)이다.** 사전 등록:
-> `analysis/DECISION_TABLE_PLAN.md` (계산 전 단독 커밋 2fc3d23) · 수치 원본:
-> `analysis/decision_table.json` (`analysis/decision_table.py`, 동결 점수
-> 재집계 — 신규 실험·신규 미터링 0).
+> **소유자 서명 2026-07-16 (Q-O02, this session's structured decision
+> responses; 원장 D94).** 사전 등록: `analysis/DECISION_TABLE_PLAN.md`
+> (계산 전 단독 커밋 2fc3d23) · 수치 원본: `analysis/decision_table.json`
+> (`analysis/decision_table.py`, 동결 점수 재집계 — 신규 실험·신규 미터링 0).
 
 ## 0. 이 표를 읽는 법
 

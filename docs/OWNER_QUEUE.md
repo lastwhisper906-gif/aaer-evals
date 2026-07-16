@@ -472,7 +472,9 @@
 - **옵션**: (A) 서명 → README '발행/Publication' 절에 링크 (별도 커밋) ·
   (B) 문구 수정 후 서명 · (C) 기각 (사유 → overrides.md).
 - **세션 기본 조치**: README 무접촉 유지 (서명 전 링크 금지).
-- **상태**: OPEN (사용자 확정 사항 — 세션은 자료 제공까지)
+- **상태**: **RESOLVED (owner, 2026-07-16, this session's structured decision
+  responses)** — **(A) 서명.** DECISION_TABLE 헤더 서명일 기입 + README 양어
+  Publication 절 링크(한 줄 요약 병기) 반영, 원장 D94.
 
 ---
 

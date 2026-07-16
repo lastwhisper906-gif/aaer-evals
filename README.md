@@ -28,6 +28,10 @@ GitHub numbers 1/2/3). The posted issues are the publication surface; the
   <https://github.com/lastwhisper906-gif/aaer-evals/issues/2>
 - **Issue 2** (post-cutoff holdout, H2 — the un-memorizable axis):
   <https://github.com/lastwhisper906-gif/aaer-evals/issues/3>
+- **Decision table** (owner-signed 2026-07-16, D94): what a threshold buys —
+  detection, false positives, and cost per detection across four frozen data
+  layers; **no dominant single-threshold LLM strategy on the trajectory layer —
+  CP95 intervals on every cell**. [`analysis/DECISION_TABLE.md`](analysis/DECISION_TABLE.md)
 - **Citable freeze point**: release
   [v1.0.0](https://github.com/lastwhisper906-gif/aaer-evals/releases/tag/v1.0.0)
   (annotated tag; frozen numbers as published).

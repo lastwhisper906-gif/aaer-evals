@@ -22,6 +22,9 @@
 - **Issue 0** (wave-1, R3 — 암기 얽힘 분리): <https://github.com/lastwhisper906-gif/aaer-evals/issues/1>
 - **Issue 1** (wave-2, R4 — 잔여 능력, 범위 한정): <https://github.com/lastwhisper906-gif/aaer-evals/issues/2>
 - **Issue 2** (컷오프 후 홀드아웃, H2 — 암기 불가 축): <https://github.com/lastwhisper906-gif/aaer-evals/issues/3>
+- **결정 표** (소유자 서명 2026-07-16, D94): 임계가 사는 것 — 4개 동결 레이어의
+  탐지·오탐·탐지당 비용; **궤적 레이어에서 단독 LLM 임계는 지배 전략 없음 —
+  전 셀 CP95 병기**. [`analysis/DECISION_TABLE.md`](analysis/DECISION_TABLE.md)
 - **인용 가능한 동결점**: 릴리스 [v1.0.0](https://github.com/lastwhisper906-gif/aaer-evals/releases/tag/v1.0.0) (annotated tag, 발행 동결값 그대로).
 
 ## 헤드라인 — 3층 서사 (암기 축을 따라 벗겨내기)
