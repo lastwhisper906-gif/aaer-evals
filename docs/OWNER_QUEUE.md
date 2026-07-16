@@ -464,3 +464,28 @@
   (B) 문구 수정 후 서명 · (C) 기각 (사유 → overrides.md).
 - **세션 기본 조치**: README 무접촉 유지 (서명 전 링크 금지).
 - **상태**: OPEN (사용자 확정 사항 — 세션은 자료 제공까지)
+
+---
+
+## Q-O03 — GIL 메모 발행 패키지 서명 (Issue #4 텍스트 + 보강 2건 — Q-O01 연동) — OPEN (2026-07-16)
+
+- **대상 (Q-O01의 서명 대상이 이번 세션에서 보강됨 — 서명은 보강본 기준)**:
+  1. **선정 배경 공개 절 추가** — `runs/gil_memo_v1/memo_draft.md`(한글)·
+     `output/GIL_memo_v1.md`(영문) 양판. 내용: Jehoshaphat 리포트(2026-06-16)
+     인지 후 선정 + 입력 컷오프 2026-06-15 코드 강제 → "무작위 스크리닝
+     적중"이 아니라 **봉인된 사전-리포트 복제**. §2 가치 기준 1(참)의
+     방어선 — 이 절 없이 발행하면 과장이 된다.
+  2. **증거 라인 부록** — `analysis/EVIDENCE_LINES.md` (동결 51케이스
+     체크리스트 flag 빈도 실험군/대조군 정직 병기 + 유형별 원문 인용
+     accession 병기 + HUBG 박스 README 범위 내). 신규 주장 0.
+  3. **Issue #4 게시 최종 텍스트** — `analysis/ISSUE_4_GIL_MEMO_DRAFT.md`
+     (제목 2안, §6 자가 감사 7항목 PASS 표 첨부, 게시 전 체크리스트 포함).
+- **참고**: runs/gil_memo_v1/memo_draft.md 수정에 따라 runs/MANIFEST.sha256
+  재생성 (verify_blindness --write-manifest, 게이트 PASS). "ISSUE_3_DRAFT"
+  파일은 저장소에 없음 — Issue #3은 ISSUE_2_HOLDOUT_DRAFT.md에서 게시된
+  전례를 따름.
+- **옵션**: (A) 서명 → 소유자가 Issue 게시 + README 링크 + 독자 5–10명 발송
+  (발송 없으면 Tier 3 검증 0점) · (B) 문구 수정 후 서명 · (C) 기각
+  (사유 → overrides.md; 보강 2건 revert는 커밋 단위 원복).
+- **세션 기본 조치**: 게시·발송 안 함 (소유자 전용 작업).
+- **상태**: OPEN (사용자 확정 사항 — 세션은 자료 제공까지)

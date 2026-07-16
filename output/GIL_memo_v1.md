@@ -12,7 +12,9 @@
 >
 > **Citation integrity status:** 19 verbatim quotes machine-checked against raw filing text — **14 VERIFIED (exact match)**; **⚠ 5 flagged by the checker (1 ALTERED, 4 NOT FOUND)**. Manual tracing found all 5 to be ellipsis-merged quotes whose individual fragments each match the filings exactly (`grep` exact match) — **zero fabricated citations** — but per protocol the machine verdicts are reported unmodified. Flagged quotes carry a ⚠ below; full table in the Appendix.
 
-Flag descriptions and verification paths below are condensed from the model's output; the full, unabridged output is preserved in `runs/gil_memo_v1/flags_combined.json`. No claims were added at assembly.
+> **Selection background (hindsight disclosure).** GIL was not selected at random. At selection time the author was aware of a short-seller report on the company (Jehoshaphat Research, published **2026-06-16** — its claims are **allegations**, which the company has denied). The model's input, however, was **code-enforced to a 2026-06-15 cutoff** (look-ahead guard, access-logged): only filings submitted before the report were used, and the report itself, news, and the selection rationale were excluded from the input. This memo is therefore **not a "random screening hit"**; it is a **sealed pre-report replication** — could the same area of signal be reconstructed from pre-report filings alone? It neither confirms nor rebuts that report; readers can compare the five flags against the public claims directly via the filing links.
+
+Flag descriptions and verification paths below are condensed from the model's output; the full, unabridged output is preserved in `runs/gil_memo_v1/flags_combined.json`. No claims were added at assembly. Descriptive statistics on which signal types moved scores in the backtest (no new claims) are in `analysis/EVIDENCE_LINES.md`.
 
 ---
 
