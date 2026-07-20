@@ -5,11 +5,11 @@
 > result does not generalize to LLMs at large. No positions; educational /
 > informational only — not investment advice.
 
-**Question.** Given only pre-revelation public financial data (point-in-time
-XBRL series and filing chronology), can an LLM distinguish companies later
-charged with accounting fraud (SEC AAER ground truth) from matched
-non-enforcement controls — and if it separates them, is that *analysis* or
-*memory of the scandal*?
+**Question [TASK 1 — AAER historical benchmark].** Given only pre-revelation
+public financial data (point-in-time XBRL series and filing chronology), can
+an LLM distinguish companies later charged with accounting fraud (SEC AAER
+ground truth) from matched non-enforcement controls — and if it separates
+them, is that *analysis* or *memory of the scandal*?
 
 **Design.** Three tiers peeling along the memorization axis, all
 **freeze-then-run**: every roster rule, grading rubric, and conclusion rule
@@ -50,7 +50,8 @@ through the Claude Code harness, single-model, with an intra-family grader
 (3) Holdout N=3 with one robust case; the 3-arm c-arm is design-confounded
 (L-7) — full text in `docs/methodology_limitations.md` (L-1–L-7).
 
-**What's new (2026-07-16).** First **Tier 2 live output**: an
+**What's new (2026-07-16) [TASK 3 — exploratory monitoring; no performance
+claims].** First **Tier 2 live output**: an
 earnings-quality memo on Gildan (GIL) built solely from filings submitted
 before the 2026-06-16 short report (input cutoff code-enforced at 06-15;
 selection background disclosed — a sealed pre-report replication, not a

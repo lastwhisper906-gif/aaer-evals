@@ -116,6 +116,39 @@ PCT_PROB = re.compile(
     r"|(?:probability|likelihood|chance)\s+of\s+\d{1,3}\s*%", re.I)
 PROB_ALLOW = re.compile(r"not a|does not mean|≠|아니다|아니라|않는다|금지", re.I)
 
+# (L) D106 ④ (task separation): 결과 언어 문단에 태스크 층위 표지 부재 금지.
+#     대상 = ORDINAL_DOCS + forward 문서 (동결 ISSUE 초안 3종 제외 — RP-15/16
+#     선례). 실용 규칙: 결과 언어(detection/separation/flagged/AUC/FPR/perm p)를
+#     포함한 문단(빈 줄 구분 블록)이 태스크 표지(TASK 1/2/3, 태스크, wave-1/2,
+#     holdout, E1/E2/E4, baseline 등 코호트 명명)를 하나도 갖지 않으면 위반 —
+#     즉 코호트 무명의 합산형 헤드라인만 잡고, 코호트가 명명된 문장은 통과.
+RESULTS_TERM = re.compile(
+    r"\bAUC\b|\bFPR\b|perm(utation)?\s*p\b|\bdetect(s|ed|ion)\b|\bseparat(es|ion)\b"
+    r"|\bflag(ged|s)?\s+\d+\s*/\s*\d+|오탐률|탐지(율|된|한다)|분리(도)?\s*(유의|성)", re.I)
+TIER_TOKEN = re.compile(
+    r"TASK\s*[123]|\[T[123]\]|태스크\s*[123]|wave-?\s*[12]|웨이브\s*[12]|holdout|홀드아웃"
+    r"|\bE[124]\b|\bL[1-4]\b(?![-.])|baseline|베이스라인|pilot|파일럿|mechanical|기계(적)?\s*(스크린|베이스)"
+    r"|per-?tier|티어별|Tier\s*[AB]", re.I)
+
+
+def check_task_tier():
+    """(L) 결과 언어 문단의 태스크 층위 표지 검사 — 문단 단위."""
+    viols = []
+    for path in ordinal_claim_docs():
+        text = (REPO / path).read_text(encoding="utf-8")
+        offset_ln = 1
+        for block in text.split("\n\n"):
+            n_lines = block.count("\n") + 1
+            # 거버넌스 관용구("task separation"/"태스크 분리")는 결과 언어가 아님
+            scan = re.sub(r"task\s+separation|태스크\s*분리", "", block, flags=re.I)
+            if RESULTS_TERM.search(scan) and not TIER_TOKEN.search(block):
+                viols.append((path, offset_ln,
+                              f"(L) 결과 언어 문단에 태스크 층위 표지 부재 (D106 ④): "
+                              f"{block.strip().splitlines()[0][:70]}"))
+            offset_ln += n_lines + 1
+    return viols
+
+
 # (K) D100 (CLAIM_HIERARCHY §L4): 현 증거 수준에서 무자격 사용 금지 문구.
 CLAIM_FORBIDDEN = [
     (r"predicts\s+fraud\s+in\s+public\s+compan", "predicts fraud in public companies"),
@@ -250,11 +283,14 @@ def main():
     for path, ln, msg in check_ordinal_and_claims():
         print(f"  {path}:{ln}: {msg}")
         total += 1
+    for path, ln, msg in check_task_tier():
+        print(f"  {path}:{ln}: {msg}")
+        total += 1
     if total:
         print(f"\nFAIL — 발행 정합 위반 {total}건")
         return 1
     print("PASS — 발행 정합 (0% 오탐·G2-fraud·대조군주어·pooled·EXPLORATORY·stale"
-          "·canon·서수확률화(J)·주장위계(K) 무위반)")
+          "·canon·서수확률화(J)·주장위계(K)·태스크층위(L) 무위반)")
     return 0
 
 

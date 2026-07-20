@@ -16,6 +16,31 @@ confirmed cases with matched non-enforcement controls, and independently
 validated on a post-training-cutoff holdout where memorization is structurally
 impossible. No positions · educational/informational · not investment advice.
 
+## Three tasks, three evidence tiers (D106 ④ — task separation)
+
+This repository contains **three distinct benchmark tasks** (TASK 1 / TASK 2 /
+TASK 3 below). They differ in label strength and memorization exposure, and
+**performance claims are never aggregated across them** — every results
+sentence below carries its task tag, and detections are never summed across
+tiers into a headline number.
+
+- **TASK 1 — AAER enforcement-linked historical benchmark** (wave-1 ①,
+  wave-2 ②). Strong labels (SEC-enforcement-confirmed), but measured
+  memorization risk: on the direct outcome-knowledge instrument the model
+  recalls the enforcement/restatement event for **8 of 9 wave-2 treatment
+  cases (88.9%)** (wave-1 unmeasured on that instrument; wave-1
+  anonymized-payload name-identification **50%**, wave-2 **21.9%**). Task-1
+  results are readings under disclosed residual contamination (L-1/L-5).
+- **TASK 2 — Restatement/4.02 non-reliance early-warning benchmark**
+  (post-cutoff holdout ③: HUBG·WMK·GNE). Provisional Big-R labels — **these
+  are NOT confirmed fraud and not enforcement outcomes**; they are
+  non-reliance restatement events. Low memorization risk (knows_event 0/5
+  per case, pre-committed gate). N=3 — per-case evidence only.
+- **TASK 3 — Earnings-quality monitoring** (GIL memo `output/GIL_memo_v1.md`,
+  forward watchlist `specs/FORWARD_WATCHLIST_V1.md`). **Exploratory only — no
+  performance claims are permitted on this task** until sealed prospective
+  cycles resolve (first seal 2026-11-15).
+
 ## Publication (v1.0 — 2026-07-11, owner-signed D40/D41)
 
 The three-issue series is published as GitHub Issues (series numbering 0/1/2;
@@ -30,22 +55,21 @@ GitHub numbers 1/2/3). The posted issues are the publication surface; the
   <https://github.com/lastwhisper906-gif/aaer-evals/issues/3>
 - **Decision table** (owner-signed 2026-07-16, D94): what a threshold buys —
   detection, false positives, and cost per detection across four frozen data
-  layers; **no dominant single-threshold LLM strategy on the trajectory layer —
-  CP95 intervals on every cell**. [`analysis/DECISION_TABLE.md`](analysis/DECISION_TABLE.md)
+  layers (L1/L2 = TASK 1 · L3 = TASK 2 · L4 = exploratory E2); cells are
+  per-layer and never summed across layers. **No dominant single-threshold LLM
+  strategy on the trajectory layer — CP95 intervals on every cell**.
+  [`analysis/DECISION_TABLE.md`](analysis/DECISION_TABLE.md)
 - **Citable freeze point**: release
   [v1.0.0](https://github.com/lastwhisper906-gif/aaer-evals/releases/tag/v1.0.0)
   (annotated tag; frozen numbers as published).
 
 ### Post-publication notice (2026-07-20) — partial de-identification of the v1 perturbed frame
 
-v1 remains frozen and no original result is recomputed. A dated audit
-confirmed the v1 perturbed frame removed company names, tickers, and CIK and
-rescaled monetary values, but **retained original SEC accession numbers and
-the real filing chronology**. The perturbed arm is therefore **partially
-de-identified**, not fully identity-masked: recognition may have occurred
-through accession metadata, filing chronology, financial structure, or
-memorized financial patterns, and the published recognition rates cannot be
-attributed solely to financial-pattern reconstruction. Details:
+v1 remains frozen; no original result is recomputed. The v1 perturbed frame
+removed names/tickers/CIK and rescaled values but **retained original SEC
+accession numbers and real filing chronology** — it is **partially
+de-identified**, not fully identity-masked, so published recognition rates
+cannot be attributed solely to financial-pattern reconstruction. Details:
 [`docs/V1_PARTIAL_DEIDENTIFICATION_NOTE.md`](docs/V1_PARTIAL_DEIDENTIFICATION_NOTE.md).
 
 ## Headline — three layers, peeling along the memorization axis
@@ -65,7 +89,7 @@ p-value is computed on that layer alone; no layer borrows significance from
 another. (Pooled wave-1+wave-2 figures such as p=3.0e-05 are secondary,
 reported only alongside the standalone per-wave numbers.)
 
-**① Famous cases (wave-1, 8 treatment vs 22 control) → R3 (memorization-entangled).**
+**① [TASK 1] Famous cases (wave-1, 8 treatment vs 22 control) → R3 (memorization-entangled).**
 The LLM separates confirmed misstatement cases from controls, but its scores are
 entangled with what the model *remembers* about each company. **Read the
 perturbed (identity-masked) frame first** — it is the *less-contaminated*
@@ -79,7 +103,7 @@ is the post-cutoff holdout (layer ③):
 - Memorization decomposition: 5 of 8 cases exceed the R3 threshold; anonymized-
   payload name-identification rate **50%**.
 
-**② Less-famous cases (wave-2, 9 treatment vs 23 control) → R4 (residual ability).**
+**② [TASK 1] Less-famous cases (wave-2, 9 treatment vs 23 control) → R4 (residual ability).**
 Weak memorization signal, R3 does not fire → separation suggests residual
 ability not explained by memorization or mechanical signals:
 - Standalone permutation p = **0.00116** / mean gap **+20.6pp** / flags 7/9.
@@ -87,33 +111,22 @@ ability not explained by memorization or mechanical signals:
   — single boundary case DAR, `analysis/synthesis.json` §reconcile) = **half of
   wave-1**. Identity-vs-perturbed dominance 3/9 (below majority) → R3 does not
   fire. **R4 framing constraint**: no benchmark-accuracy/AUC-comparison claims.
-- **Outcome-recognition probe (identity-exposed, run 2026-07-10, pre-registered
-  D34 — branchless, not an R/H input): the model recalls the
-  enforcement/restatement event for 8 of 9 treatment cases (88.9%, CP
-  [51.7%, 99.7%]) vs 0/23 controls (CP [0%, 14.8%]).** Five cases are
-  event-known-but-not-nameable from the anonymized payload (name-ID
-  false-negative direction). Honest scoping: the "half of wave-1" reading
-  belongs to the name-ID instrument only — on the direct instrument, the
-  identity-exposed frame (the published primary) operated with outcome
-  knowledge broadly available. R4 is unchanged (its input is perturbation
-  dominance 3/9, not this probe). `analysis/outcome_recognition_results.json`.
-- **Identity 3-arm experiment (pre-registered D36, run 2026-07-10)**: scoring
-  the same perturbed payloads under fabricated company names (collision-screened
-  against all 1,049,982 EDGAR filer names). **The primary evidence is the b−a
-  contrast (+6.0pp median)** — same perturbed payload, only the name tokens
-  differ: the single clean causal contrast in the design. **The c−b contrast
-  (−2.0pp median) is a secondary, confounded observation** — arm (c) restores
-  both the real name and the real (unperturbed) numbers, blending the identity
-  effect with a scale-restoration effect. Resolution limit: arms (a) and (c)
-  are past frozen draws while (b) is a new draw, so inter-arm comparisons carry
-  draw noise (per-case 5-draw bands span 12–18pp ≈ ±10pp, E5 §7) — the ±6pp
-  median is a directional readout within that resolution. Both medians sit
-  under the pre-registered 10pp bar → pre-registered reading **(ii):
-  directional evidence that memorization's score contribution is small on this
-  set (a≈b≈c; N=9, directional only — no causal claim)**.
-  `analysis/identity_3arm_results.json` · limitation L-7.
+- **Outcome-recognition probe (identity-exposed, D34, branchless): the model
+  recalls the enforcement/restatement event for 8 of 9 treatment cases (88.9%,
+  CP [51.7%, 99.7%]) vs 0/23 controls.** The "half of wave-1" reading belongs
+  to the name-ID instrument only; on the direct instrument the published
+  identity-exposed frame operated with outcome knowledge broadly available.
+  R4 unchanged (its input is perturbation dominance 3/9). Full scoping:
+  `analysis/outcome_recognition_results.json` · `analysis/synthesis.md` §1.
+- **Identity 3-arm experiment (D36)**: primary evidence is the b−a contrast
+  (+6.0pp median; fabricated names, same perturbed payload); the c−b contrast
+  (−2.0pp) is a **confounded** secondary observation (arm (c) restores name
+  *and* numbers), and inter-arm deltas carry **draw noise** (≈±10pp per-case
+  bands, E5 §7). Both medians under the pre-registered 10pp bar →
+  reading (ii): directional-only, no causal claim.
+  `analysis/identity_3arm_results.json` · `analysis/synthesis.md` · L-7.
 
-**③ Post-cutoff holdout (memorization structurally impossible; HUBG·WMK·GNE) → H2 (per-case, N=3).**
+**③ [TASK 2] Post-cutoff holdout (memorization structurally impossible; HUBG·WMK·GNE) → H2 (per-case, N=3).**
 Recognition gate 3/3 non-recognition (demonstrated non-memorization of the
 disclosure events; draw-1). **Gate elevated to k=5 (run 2026-07-10, rules
 pre-committed): knows_event 0/5 for each of HUBG·WMK·GNE — holdout eligibility
@@ -144,7 +157,10 @@ confirmed enforcement:
   mechanism detection.
 - **H1 (permutation significance) is not claimed at N=3** (under-powered).
 
-**Memorization dose-response (secondary, gradient read — now two axes).** On
+**Memorization dose-response (secondary, gradient read — now two axes).**
+*Task-tier note: this paragraph juxtaposes TASK 1 (waves) and TASK 2 (holdout)
+solely to read the memorization gradient — it is not a pooled performance
+claim, and detections are not summed across the two tasks.* On
 the name-ID proxy, the axis halves and vanishes (50% → 21.9% → 0%) while the
 separation AUC point estimates barely move — 0.824 [0.599, 0.983] → 0.829
 [0.616, 0.983] — and holdout detection persists. **On the direct
@@ -160,9 +176,10 @@ per-layer significance above, not this AUC comparison
 
 ## False positives — over-interpretation, not hallucination (honesty record)
 
-- wave-1 FPR **3/22 = 13.6%**, Clopper–Pearson 95% **[2.9%, 34.9%]** · wave-2
-  FPR **5/23 = 21.7%**, CP **[7.5%, 43.7%]** · holdout matched controls (E1)
-  FPR **2/9 = 22.2%**, CP **[2.8%, 60.0%]**. **We do not report an FPR of
+- [TASK 1] wave-1 FPR **3/22 = 13.6%**, Clopper–Pearson 95% **[2.9%, 34.9%]** ·
+  [TASK 1] wave-2 FPR **5/23 = 21.7%**, CP **[7.5%, 43.7%]** · [TASK 2] holdout
+  matched controls (E1) FPR **2/9 = 22.2%**, CP **[2.8%, 60.0%]** — per-tier,
+  never pooled (D106 ④ / CONTROL_CRITERIA_v3 §2). **We do not report an FPR of
   "0%."** The point estimates worsen, but the CP intervals overlap heavily
   — worse-but-not-provably.
 - All 5 wave-2 false positives are grader-verified as evidence-grounded (dim4
@@ -174,7 +191,7 @@ per-layer significance above, not this AUC comparison
 - Calibration: wave-2 ECE **0.179** (same order as wave-1's 0.209 — no
   improvement, null-ish).
 
-## Mechanical baselines (R2 does not fire)
+## Mechanical baselines (R2 does not fire) — [TASK 1]
 
 Same 30 companies, same point-in-time data: Beneish M p=0.498/AUC 0.510 ·
 Dechow F p=0.268/AUC 0.573 — the quantitative screens show no separation on
@@ -186,46 +203,29 @@ formulas.
 ## Grading & finalization status
 
 - Grading: **Claude-assisted + human final sign-off.** Evaluatee
-  **claude-sonnet-5** (pinned, served-model verified per call, 0 pin
-  mismatches). Grader claude-fable-5.
-- **All grades are `human_finalized=true`**: wave-1 26 (frozen earlier) +
-  wave-1 controls 22 + wave-2 32 + holdout 3 (owner sign-off 2026-07-09, D24 —
-  0 overrides, with the Issue #0 §9 rubber-stamp check explicitly confirmed) +
-  holdout matched controls 9 (D26). Overrides ledger: `scoring/overrides.md`;
-  workbench: `review_packets/RP-13_grading_workbench.md`.
+  **claude-sonnet-5** (pinned, served-model verified, 0 pin mismatches);
+  grader claude-fable-5. **All grades `human_finalized=true`** (owner
+  sign-offs D24/D26, 0 overrides, rubber-stamp check confirmed). Ledger:
+  `scoring/overrides.md` · workbench: `review_packets/RP-13_grading_workbench.md`.
 
 ## Extension experiments E1–E5 (pre-registered — freeze-then-run)
 
-All experiments were pre-registered and committed before scoring
-(`analysis/*_PLAN.md`, commit `c1b85a7`):
-- **E1** Holdout matched controls — **executed under supervision 2026-07-09
-  (D26)**: of 3 holdout cases, only HUBG separates from its matched controls;
-  control flag rate 2/9 (H1 still not claimed at N=3).
-- **E2** Earliness (quarterly detection lead time, filing-aligned snapshots).
-- **E3** wave-2 perturbation redraws (defends R4 against draw noise —
-  median-dominance ≥5/9 would let R3 supersede R4; rule decides). **Executed:
-  3/9 → R4 retained.**
-- **E4** Cross-model (**EXPLORATORY** — claude-opus-4-8, limitations-footnote only).
-- **E5** wave-2 main-scoring redraw (stability band; published draw-1
-  immutable) — **§7 holdout arm executed 2026-07-09 (D27): HUBG ≥50 in 5/5
-  draws → robust**; the wave-2 arm remains lowest priority.
-
-Execution status & metered spend gates: `docs/OWNER_QUEUE.md` (Q-E01) ·
-`docs/RESUME.md`. **No experiment result is published without the owner gate.**
+All pre-registered and committed before scoring (`analysis/*_PLAN.md`,
+commit `c1b85a7`): **E1** holdout matched controls (executed, D26 — only HUBG
+separates; 2/9 control flags) · **E2** earliness trajectory · **E3** wave-2
+perturbation redraws (executed: 3/9 → R4 retained) · **E4** cross-model
+(**EXPLORATORY**, claude-opus-4-8, footnote-only) · **E5** scoring redraw
+bands (holdout arm executed, D27: HUBG ≥50 in 5/5 draws). Status & spend
+gates: `docs/OWNER_QUEUE.md` · `docs/RESUME.md`. **No experiment result is
+published without the owner gate.**
 
 ## Governance map (reading order)
 
-1. `PROJECT.md` — single reference document (methodology §5, collaboration
-   model §7, scope guard §8)
-2. `CLAUDE.md` — session guardrails · `scoring/decisions_log.md` — decision
-   ledger + freeze hashes
-3. `scoring/overrides.md` — overrides/signatures/gates (incl. OWNER-GATE-E)
-4. `review_packets/INDEX.md` · `RP-11_expansion_holdout.md` · `RP-10_final.md`
-   — audit entry points
-5. Published issue source texts: `analysis/ISSUE_0_DRAFT.md`
-   (wave-1) · `ISSUE_1_WAVE2_DRAFT.md` (R4) · `ISSUE_2_HOLDOUT_DRAFT.md` (H2)
-   — owner-signed and posted 2026-07-11 (D40/D41; URLs in the Publication
-   section above).
+`PROJECT.md` (single reference: methodology §5 · collaboration §7 · scope §8)
+→ `CLAUDE.md` + `scoring/decisions_log.md` (ledger + freeze hashes)
+→ `scoring/overrides.md` (signatures/gates) → `review_packets/INDEX.md`
+(audit entry) → published issue source texts `analysis/ISSUE_{0,1,2}*_DRAFT.md`
+(owner-signed, posted 2026-07-11, D40/D41; URLs in Publication above).
 
 ## Reproducing the numbers (third-party verification)
 

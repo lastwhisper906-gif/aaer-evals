@@ -51,3 +51,8 @@
 | 42 | controls/retrospective_audit_v1.json | B2 | created (machine verdicts + query log, audit date 2026-07-21) |
 | 43 | docs/methodology_limitations.md | B2 | L-8 appended — published FPRs conditional on original v1/v1.1/v2 selection criteria |
 | — | NOTE | B2 | Overlap finding: audit-FAIL controls GRDX/GO/NUVA/LQDT/R are also atlas FP/TN-flagged cases → label-noise angle queued for owner (no atlas/PATTERNS edit — drafted set frozen for owner review) |
+| 44 | README.md | C1/C2/C4 | edited — "Three tasks, three evidence tiers" section + [TASK n] tags; 277→277 lines (flat); numbers unchanged; lint PASS |
+| 45 | README.ko.md | C1/C2/C4 | edited — mirrored 태스크 분리 section + tags; 201→201 lines; lint PASS |
+| 46 | tools/lint_publication.py | C3 | rule (L) added — results-language paragraph without task-tier token fails; governance phrase "task separation" exempt; frozen ISSUE drafts exempt (RP-15/16) |
+| 47 | docs/reader_validation/ONE_PAGER.md | C2/C3 | 2 tier tags added ([TASK 1] Question / [TASK 3] GIL memo) to clear new rule L — OWNER: re-approve before reader dispatch (pre-dispatch surface, D92 queue) |
+| — | NOTE | C2 | Frozen memo audit (report-only, no edits): ISSUE_0 7 untagged results-blocks — all single-cohort wave-1 statements, no cross-task pooling; ISSUE_1/2 0; GIL memo 1 spurious (disclaimer). Owner may add tags via signed diff; not required |
