@@ -29,3 +29,20 @@
 | 20 | atlas/case_13.md | A3 wave-1 T | drafted (perturbed-frame miss documented) |
 | 21 | atlas/case_71.md | A3 holdout T | drafted (§2/§5/§9 partial — 8-K body not sealed locally) |
 | 22 | atlas/case_72.md | A3 holdout T | drafted (FN; in-set vs not-in-set split documented) |
+| 23 | atlas/case_73.md | A3 holdout T | drafted (FN; missed in-set insurance signal documented) |
+| 24 | atlas/case_10.md | A3 FP | drafted (sealed record contradicts model's restatement reading) |
+| 25 | atlas/case_30.md | A3 FP | drafted (distress-vs-misstatement over-reading) |
+| 26 | atlas/case_33.md | A3 FP | drafted (label-window mismatch; out-of-window 4.02s) |
+| 27 | atlas/case_37.md | A3 FP | drafted (deck chronology artifact + wrong-accession cite) |
+| 28 | atlas/case_44.md | A3 FP | drafted (XBRL tag re-mapping artifact over-read) |
+| 29 | atlas/case_48.md | A3 FP | drafted (grounded over-reading; benign ties documented) |
+| 30 | atlas/case_49.md | A3 FP | drafted (pre-revenue biotech over-reading) |
+| 31 | atlas/case_54.md | A3 FP | drafted (genuine world-facts over-read; draw-stable) |
+| 32 | atlas/case_69.md | A3 FP | drafted (at-threshold boundary; benign one-time gain resolves spike) |
+| 33 | atlas/hc_03.md | A3 FP | drafted (highest holdout-control score; skipped disposal-group benign candidate) |
+| 34 | atlas/hc_07.md | A3 FP | drafted (pair inversion vs WMK documented) |
+| 35 | atlas/case_05.md | A3 TN-flagged | drafted (E2 any-snapshot rule; 5 breaching snapshots) |
+| 36 | atlas/case_07.md | A3 TN-flagged | drafted (convertible-debt reclass under truncated windows) |
+| 37 | atlas/case_11.md | A3 TN-flagged | drafted (E2 flag within recorded draw noise) |
+| 38 | atlas/case_14.md | A3 TN-flagged | drafted (truncated-window re-read of resolved reserve declines) |
+| 39 | atlas/PATTERNS.md | A4 | drafted [human_finalized=false] (wrong-reason TPs / genuine-figures FPs / input-visibility-floor misses) |
