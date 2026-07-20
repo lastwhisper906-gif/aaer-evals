@@ -1078,3 +1078,7 @@ c44bd59a…)는 **서명 없이 superseded** (채점 미진입 상태 폐기). v
 ## D104 — Q-O06 소유자 서명: MODEL_TRANSITION 사전 등록 발효 (2026-07-20, 무호출, JSON 1줄)
 
 {"decision":"D104","date":"2026-07-20","action":"Q-O06 해소 — 옵션 (A): specs/MODEL_TRANSITION.md 발효. 트리거=핀 모델 deprecation 고지 · 브리지 런=최근 k 스냅샷×구/신 페어드 델타(수용 밴드는 유도 규칙만 사전 고정) · 밴드 초과 시 트랙 레코드 라벨 분절(연속-기록 주장 분절 횡단 금지) · 개정 FREEZE_REV 전용. 브리지 런 ~6k 호출 spend gate는 등록만 — 발사는 트리거 시점 별도 소유자 승인","authority":"owner, 2026-07-20, this session's structured decision responses","metered":"0호출","learning_note":"이 판단에서 알아야 할 것: 전환 프로토콜은 전환이 닥치기 전에 서명되어야 자산이다 — 11월 seal 이후 모델이 deprecated되고 나서 만든 규칙은 아무리 합리적이어도 사후 규칙이다"}
+
+## D105 — Q-O07 소유자 서명: Tier-3 피드백 로그 구조 승인 + scope 문서 개번 (2026-07-20, 무호출, JSON 1줄)
+
+{"decision":"D105","date":"2026-07-20","action":"Q-O07 해소 — 옵션 (A): docs/reader_validation/RESPONSES.md 구조 승인 — 독자별 블록(3질문 verbatim + 응답 verbatim + 소유자 판정 3열) + §9 통과선 집계(≥2/5 · ≥1 · 접근성 ≥2 → Phase 4 트리거). 규율 유지: 세션은 전사만, 판정 열은 소유자 서명 전용(verbatim 인용 필수), 미서명 행 집계 제외. 부수: 미래 scope 초안 FREEZE_REV5_SCOPE → FREEZE_REV7_SCOPE 개번 (FREEZE_REV5 번호가 4911 slot 건으로 선점됨, 트리거 전 미작성 규율 불변)","authority":"owner, 2026-07-20, this session's structured decision responses","metered":"0호출","learning_note":"이 판단에서 알아야 할 것: 피드백 로그의 신뢰성은 응답이 오기 전에 판정 열이 고정되어 있었다는 사실에서 나온다 — 응답을 본 뒤 열을 바꾸면 집계는 측정이 아니라 편집이 된다"}

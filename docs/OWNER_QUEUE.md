@@ -588,18 +588,21 @@
 
 ---
 
-## Q-O07 — Tier-3 피드백 로그(RESPONSES.md) 구조 서명 — OPEN (2026-07-16)
+## Q-O07 — Tier-3 피드백 로그(RESPONSES.md) 구조 서명 — **RESOLVED (2026-07-20, D105)**
 
 - **대상**: `docs/reader_validation/RESPONSES.md` (P5) — 독자별 블록(3질문
   verbatim + 양식 응답 verbatim + 소유자 판정 3열: 몰랐다/다르게/결핍 범주)
   + §9 통과선 배선 집계 블록(≥2/5 · ≥1 · 접근성 ≥2 → Phase 4 트리거,
-  FREEZE_REV5_SCOPE는 트리거 전 미작성이 규율).
+  FREEZE_REV7_SCOPE(구 FREEZE_REV5_SCOPE — 번호 선점으로 개번, D105)는 트리거 전 미작성이 규율).
 - **핵심 규율**: 세션은 전사만, 판정 열은 전부 소유자 서명 항목 — 판정에
   verbatim 인용 필수 (§7 서명 규칙). 서명되지 않은 행은 집계 제외.
 - **옵션**: (A) 서명 — 발송 개시 시 이 구조로 기록 · (B) 열 구성 수정 후
   서명 · (C) 기각.
 - **세션 기본 조치**: 구조만 커밋 (응답 데이터 0 — 발송은 P0 소유자 작업).
-- **상태**: OPEN (사용자 확정 사항 — 세션은 자료 제공까지)
+- **해소 (2026-07-20)**: 소유자 서명 — **(A) 구조 승인**. 발송 개시 시 이
+  구조로 기록. 미래 scope 문서는 FREEZE_REV5 번호 선점(4911 slot)으로
+  **FREEZE_REV7_SCOPE로 개번**. 원장 D105.
+- **상태**: RESOLVED (owner, 2026-07-20, this session's structured decision responses)
 
 ---
 
