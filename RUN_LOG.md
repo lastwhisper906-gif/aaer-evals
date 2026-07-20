@@ -46,3 +46,8 @@
 | 37 | atlas/case_11.md | A3 TN-flagged | drafted (E2 flag within recorded draw noise) |
 | 38 | atlas/case_14.md | A3 TN-flagged | drafted (truncated-window re-read of resolved reserve declines) |
 | 39 | atlas/PATTERNS.md | A4 | drafted [human_finalized=false] (wrong-reason TPs / genuine-figures FPs / input-visibility-floor misses) |
+| 40 | docs/CONTROL_CRITERIA_v3.md | B1 | SKIPPED — already existed (d096ff6, this session); §4 roster corrected pre-run (1ce4cb8) |
+| 41 | controls/retrospective_audit_v1.md | B2 | created — 62 controls; FAIL 8 rows (6 cos: NUVA·R·UPBD·LQDT·FLO (f) MTD-survived; GRDX (e) disagreement resignation; GO (d) unremediated MW); tiers A=35 B=12 prov=7; FPR untouched |
+| 42 | controls/retrospective_audit_v1.json | B2 | created (machine verdicts + query log, audit date 2026-07-21) |
+| 43 | docs/methodology_limitations.md | B2 | L-8 appended — published FPRs conditional on original v1/v1.1/v2 selection criteria |
+| — | NOTE | B2 | Overlap finding: audit-FAIL controls GRDX/GO/NUVA/LQDT/R are also atlas FP/TN-flagged cases → label-noise angle queued for owner (no atlas/PATTERNS edit — drafted set frozen for owner review) |
