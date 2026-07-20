@@ -119,9 +119,15 @@
 `record_id`(중립 ID: `fw001-r01`…) · `company`(채점 측 식별: 사명·티커·CIK
 — forward는 라이브 스크리닝이므로 정체 가시) · `misstatement_risk_score` ·
 `decision_state` · `evidence_sufficiency` · `assessment_confidence` ·
-`top_signals[]` · `benign_alternative_explanations[]`(사실/가설 분리 의무) ·
-`affected_account_areas[]` · `cited_sources[]`(accession 인용) ·
-`model_id`/`prompt_sha256`/`schema_sha256` · `scored_at`.
+`top_signals[]` · `benign_alternative_explanations[]`(사실/가설 분리 의무 —
+v1.2 출력 스키마는 이 항목을 유도하지 않으므로 cycle_001은 빈 배열로 기록,
+프롬프트 확장은 Cycle-2 등록 후보) · `affected_account_areas[]` ·
+`cited_sources[]`(accession 인용) · `model_id`/`prompt_sha256`/
+`schema_sha256` · `scored_at`.
+
+조립은 `tools/forward_assemble.py`의 **사전 등록 유도 규칙**(모듈 docstring
+— sufficiency 비율 컷 1/2·1/5, confidence 평균 컷 2.5/1.5, 서수 결정 컷)
+으로만 한다 — 실행 시점 재량 0.
 
 **법적 안전 규칙 (PROJECT.md §6 — 현재 기업)**: "분식/fraud/조작" 단어 사용
 금지, 사실(지표)과 가설(해석) 분리, 전 수치 공시 원문 인용, 포지션 없음 +

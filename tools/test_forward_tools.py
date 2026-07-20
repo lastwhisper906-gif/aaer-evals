@@ -182,6 +182,44 @@ def test_outcome_append_chains_previous_label(cycle, monkeypatch):
     assert (cycle / "scores.json").read_bytes() == scores_before  # 원 점수 무접촉
 
 
+# ── scores 조립 (사전 등록 유도 규칙) ─────────────────────────────────────
+
+def test_assemble_derivation_rules():
+    import forward_assemble as fa
+    mk = lambda finding, conf: {"finding": finding, "confidence": conf}
+    assert fa.derive_sufficiency([mk("flag", "high")] * 10) == "sufficient"
+    assert fa.derive_sufficiency([mk("insufficient_data", "low")] * 3
+                                 + [mk("flag", "high")] * 7) == "partial"
+    assert fa.derive_sufficiency([mk("insufficient_data", "low")] * 6
+                                 + [mk("flag", "high")] * 4) == "insufficient"
+    assert fa.derive_confidence([mk("f", "high")] * 3) == "high"
+    assert fa.derive_confidence([mk("f", "high"), mk("f", "low")]) == "medium"
+    assert fa.derive_state(70, "sufficient") == "flag"
+    assert fa.derive_state(69, "sufficient") == "review"
+    assert fa.derive_state(39, "partial") == "no_flag"
+    assert fa.derive_state(95, "insufficient") == "abstain"
+
+
+def test_assemble_record_roundtrips_validate(cycle):
+    import forward_assemble as fa
+    meta = {"record_id": "fw001-r01", "name": "Test Co", "ticker": "T", "cik": "1"}
+    out = {"misstatement_probability": 72, "model": "claude-sonnet-5",
+           "run_id": "x", "run_timestamp": "2026-11-15T00:00:00Z",
+           "checklist": [{"finding": "flag", "confidence": "high"}] * 5,
+           "mechanism_hypotheses": [{"affected_line_items": ["revenue", "AR"]}],
+           "overall": {"top_signals": ["CL1"]},
+           "documents_used": [{"accession_no": "0000000000-26-000001"}]}
+    r = fa.assemble_record(meta, out)
+    assert r["misstatement_risk_score"] == 72 and r["decision_state"] == "flag"
+    assert r["affected_account_areas"] == ["revenue", "AR"]
+    assert fa.assemble_record(meta, None)["status"] == "not_scored"
+    # 조립 레코드가 forward_validate 검사를 통과하는 형태인지
+    sc = fc.read_json(cycle / "scores.json")
+    sc["records"][0] = r
+    fc.write_json(cycle / "scores.json", sc)
+    assert forward_validate.validate(cycle) == []
+
+
 def test_outcome_append_rejects_unknown_record(cycle, monkeypatch):
     monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(cycle),
                                       "--record-id", "fw001-r99", "--event-date", "d",
