@@ -1,17 +1,11 @@
-# CLAUDE.md — 역할 중립 저장소 컨텍스트 (자동 로드)
+# PROJECT_INVARIANTS.md — 역할 중립 프로젝트 불변식
 
-이 파일은 `claude`(대화형·`-p` 모두)와, `AGENTS.md` 심링크를 통해 `codex`에도
-자동 로드된다. 따라서 **역할 중립 내용만** 담는다: 어떤 역할(빌더/리뷰어/
-대화형 세션)이 읽어도 유효한 프로젝트 불변식.
+이 파일은 aaer-evals 저장소를 수정하거나 검토하는 **모든** 주체(인간, 모든
+AI 모델, 빌더/리뷰어 역할 무관)에게 동일하게 적용되는 불변식만 담는다.
+세션 운영 방식·협업 절차는 여기 넣지 않는다(`docs/ORCHESTRATOR_NOTES.md`
+참조 — 자동 로드되지 않음). 단일 기준 문서는 PROJECT.md이며 충돌 시
+PROJECT.md가 우선한다.
 
-- 단일 기준 문서는 PROJECT.md다. 충돌 시 PROJECT.md가 우선.
-- 아래 블록의 원본은 `PROJECT_INVARIANTS.md`다. 수정은 그 파일에서 하고
-  `harness/sync_context.sh`로 이 블록을 재생성한다. 이 블록을 직접 편집하지
-  않는다.
-- 대화형 오케스트레이터 세션 전용 지침은 `docs/ORCHESTRATOR_NOTES.md`에
-  있다(자동 로드되지 않음 — 대화형 세션에서만 수동 참조).
-
-<!-- BEGIN SHARED INVARIANTS (source: PROJECT_INVARIANTS.md) -->
 ## 1. 방법론 불변식 — 위반 시 프로젝트 무효
 
 1. **Look-ahead 차단**: 케이스 컷오프일(최초 폭로일 기준) 이후 데이터
@@ -68,4 +62,3 @@
 - 커밋은 작게 유지한다.
 - aaer-evals를 수정하는 작성자는 동시에 최대 1개(단일 작성자 원칙).
   워크트리 병렬성은 서로소 저장소(예: screener)에만 허용.
-<!-- END SHARED INVARIANTS -->
