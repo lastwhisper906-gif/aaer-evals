@@ -1,7 +1,6 @@
 # FREEZE_REV5_SIC4911_SLOT.md — freeze 개정 #5: 4911 버킷 무배정(라운드로빈 기계 결과)의 소유자 승인
 
-> 2026-07-20 작성. status: **awaiting-owner-signature — 초안, 자체 승인
-> 없음.** 발효는 아래 서명란으로만. `UNIVERSE_SELECTION.md` §0/§6 FREEZE
+> 2026-07-20 작성. status: **SIGNED — choice (A) 규칙 유지 (owner, 2026-07-20).** 발효는 아래 서명란으로만. `UNIVERSE_SELECTION.md` §0/§6 FREEZE
 > 조항("첫 열거 후 개정은 FREEZE_REV 문서 + D-엔트리로만")의 절차를
 > 따른다. **본 엔트리는 cycle_001의 어떤 모델 점수도 존재하기 전에
 > 기록되었다** (2026-07-20 실측: `forward/cycle_001/scores.json` 부재).
@@ -34,7 +33,7 @@
 아래 `PENDING`을 선택지 문자로 바꾸고 날짜를 기입하면 발효한다:
 
 ```
-FREEZE_REV5: PENDING   (owner, choice: A|B, date: __________)
+FREEZE_REV5: SIGNED   (owner, choice: A, 2026-07-20, this session's structured decision responses)
 ```
 
 - 전제 재확인: **cycle_001 모델 점수 부재 상태에서 기록·서명됨.**
