@@ -60,3 +60,4 @@
 | 49 | tools/lint_publication.py | E1 | surface/**/*.md added to J/K/L lint coverage |
 | 50 | surface/BRIEF.md | E1 | created — DRAFT watermark; 5 pages, 268 lines; 28-figure appendix all mapped to frozen paths; lint PASS |
 | 51 | surface/BRIEF_KR.md | E2 | created — faithful translation, 244 lines, same watermark; lint PASS |
+| 52 | experiments/CROSS_FAMILY_GRADING_SPEC_v1.md | F1 | created — design only; gpt-5.4 pin proposed (divergence from cross_grader.md §3 recorded); owner signature EMPTY |
