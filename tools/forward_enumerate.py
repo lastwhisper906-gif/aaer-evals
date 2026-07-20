@@ -70,13 +70,10 @@ def browse_ciks(sic: str, offline: bool) -> list[tuple[str, str]]:
         if data is None:
             break
         text = data.decode("utf-8", "replace")
-        entries = re.findall(r"<entry>.*?</entry>", text, re.S)
-        for e in entries:
-            m = re.search(r"CIK=(\d+)", e)
-            t = re.search(r"<title>(.*?)</title>", e, re.S)
-            if m:
-                out.append((m.group(1).zfill(10), (t.group(1).strip() if t else "")))
-        if len(entries) < 100:
+        # company-list atom: 항목당 <cik>NNNNNNNNNN</cik> (사명은 submissions에서)
+        ciks = re.findall(r"<cik>(\d+)</cik>", text)
+        out.extend((c.zfill(10), "") for c in ciks)
+        if len(ciks) < 100:
             break
         start += 100
     return out
