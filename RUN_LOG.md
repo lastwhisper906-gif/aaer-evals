@@ -57,3 +57,6 @@
 | 47 | docs/reader_validation/ONE_PAGER.md | C2/C3 | 2 tier tags added ([TASK 1] Question / [TASK 3] GIL memo) to clear new rule L — OWNER: re-approve before reader dispatch (pre-dispatch surface, D92 queue) |
 | — | NOTE | C2 | Frozen memo audit (report-only, no edits): ISSUE_0 7 untagged results-blocks — all single-cohort wave-1 statements, no cross-task pooling; ISSUE_1/2 0; GIL memo 1 spurious (disclaimer). Owner may add tags via signed diff; not required |
 | 48 | CONTRIBUTIONS.md | D1 | created — 9-row AI/owner table, 1 [OWNER CONFIRM] (pre-GA-001 commit trailers), accountability model; linked from both README headers; 28 lines |
+| 49 | tools/lint_publication.py | E1 | surface/**/*.md added to J/K/L lint coverage |
+| 50 | surface/BRIEF.md | E1 | created — DRAFT watermark; 5 pages, 268 lines; 28-figure appendix all mapped to frozen paths; lint PASS |
+| 51 | surface/BRIEF_KR.md | E2 | created — faithful translation, 244 lines, same watermark; lint PASS |

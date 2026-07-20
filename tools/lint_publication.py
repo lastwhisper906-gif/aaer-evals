@@ -165,6 +165,8 @@ def ordinal_claim_docs():
     """규칙 (J)/(K) 대상 문서 — 고정 3종 + forward 사이클 마크다운(존재 시)."""
     paths = [p for p in ORDINAL_DOCS if (REPO / p).exists()]
     paths += sorted(str(p.relative_to(REPO)) for p in REPO.glob("forward/**/*.md"))
+    # D106 ⑥: 실무자 브리프(surface/)도 발행 표면 — J/K/L 규칙 적용
+    paths += sorted(str(p.relative_to(REPO)) for p in REPO.glob("surface/**/*.md"))
     return paths
 
 
