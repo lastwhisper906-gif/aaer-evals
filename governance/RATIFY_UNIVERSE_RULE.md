@@ -1,6 +1,6 @@
 # governance/RATIFY_UNIVERSE_RULE.md — 유니버스 규칙 확장 2건 추인
 
-> 2026-07-20 작성. status: **awaiting-owner-signature.**
+> 2026-07-20 작성. status: **RATIFIED (owner, 2026-07-20).**
 > 근거 문서: `governance/D95_UNIVERSE_CROSSCHECK.md` (조항별 대조 표).
 > **백데이팅 없음**: 아래 확장들은 사전 승인되지 않았다. 이 문서는 그
 > 사실을 있는 그대로 기록하고, 소유자가 2026-07-20자로 — **어떤 모델
@@ -52,7 +52,7 @@ float ≥$1B·폼/XBRL 요건·오염 제외·버킷 내 정렬)은 열거에서
 아래 한 줄의 `PENDING`을 `RATIFIED`로 바꾸고 날짜를 기입하면 발효한다:
 
 ```
-RATIFICATION: PENDING   (owner, date: __________)
+RATIFICATION: RATIFIED   (owner, 2026-07-20, this session's structured decision responses)
 ```
 
 - 추인 거부 시: 이 줄을 `REJECTED`로 바꾸고 사유를 병기한다. 그 경우
