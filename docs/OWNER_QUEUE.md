@@ -545,7 +545,7 @@
 
 ---
 
-## Q-O05 — P1+P3 메모 파이프라인 일반화 서명 (GIL 재현 게이트 PASS) — OPEN (2026-07-16)
+## Q-O05 — P1+P3 메모 파이프라인 일반화 서명 (GIL 재현 게이트 PASS) — **RESOLVED (2026-07-20, D103)**
 
 - **대상**: `tools/memo_run.py`·`memo_extract.py`·`memo_verify.py` (blind_memo_*
   3종의 매개변수화 후계 — 원본 무접촉) + `data/gil/memo_docs.json` +
@@ -560,7 +560,9 @@
   gate — P4 ④) · (B) 수정 후 서명 · (C) 기각 (blind_memo_* 하드코딩 유지,
   12사 확장 불가).
 - **세션 기본 조치**: 실발사 없음 (dry-run 전용 검증 완료).
-- **상태**: OPEN (사용자 확정 사항 — 세션은 자료 제공까지)
+- **해소 (2026-07-20)**: 소유자 서명 — **(A) 유니버스 메모 실행 경로로 승인**.
+  실발사는 별도 spend gate 유지. 원장 D103.
+- **상태**: RESOLVED (owner, 2026-07-20, this session's structured decision responses)
 
 ---
 

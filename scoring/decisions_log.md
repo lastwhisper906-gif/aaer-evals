@@ -1070,3 +1070,7 @@ c44bd59a…)는 **서명 없이 superseded** (채점 미진입 상태 폐기). v
 ## D102 — Q-O08 소유자 서명: FREEZE_REV3 무기 정지 — zero-metered 우선 (2026-07-20, 무호출, JSON 1줄)
 
 {"decision":"D102","date":"2026-07-20","action":"Q-O08 해소 — 옵션 (A): FREEZE_REV3(피평가자 raw Anthropic SDK 종량 이행, D40 GO)를 무기 정지(suspended)로 기록. D40의 GO는 이력 보존(소급 격하 없음), 2026-07-20 소유자 계획 §0.4 zero-metered 명령(구독 OAuth 전용·ANTHROPIC_API_KEY 전면 금지)이 우선. api_client.py/runner_api.py 스캐폴드는 무변경 동결 유지, 이중 래치 유효. 재활성화는 정지 해제가 아니라 신규 소유자 결정 전용","authority":"owner, 2026-07-20, this session's structured decision responses","metered":"0호출","learning_note":"이 판단에서 알아야 할 것: 정면 충돌하는 두 소유자 결정은 암묵 우선순위로 두면 안 된다 — 어느 쪽이 이기는지 명시 서명으로 박아야 미래 세션이 D40을 근거로 종량 경로를 되살리는 사고를 막는다"}
+
+## D103 — Q-O05 소유자 서명: 메모 파이프라인 일반화 승인 (2026-07-20, 무호출, JSON 1줄)
+
+{"decision":"D103","date":"2026-07-20","action":"Q-O05 해소 — 옵션 (A): tools/memo_run.py·memo_extract.py·memo_verify.py(+data/gil/memo_docs.json, test_memo_pipeline.py 7테스트)를 유니버스 메모 실행 경로로 승인. 게이트 증거 = GIL 재현(dry-run 페이로드 sha256 동일, 테스트 강제) + 소스 동일성 테스트(NBSP 전사 오류 1건 실검출·수정, D97). 실발사는 승인하지 않음 — 모든 발사는 별도 spend gate","authority":"owner, 2026-07-20, this session's structured decision responses","metered":"0호출","learning_note":"이 판단에서 알아야 할 것: 경로 승인과 발사 승인을 분리해야 quota가 소유자 자원으로 남는다 — 경로가 승인됐다는 이유로 발사가 자동 승인되는 순간 spend gate는 장식이 된다"}
