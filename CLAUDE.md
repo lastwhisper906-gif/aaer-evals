@@ -6,8 +6,8 @@
 
 - 단일 기준 문서는 PROJECT.md다. 충돌 시 PROJECT.md가 우선.
 - 아래 블록의 원본은 `PROJECT_INVARIANTS.md`다. 수정은 그 파일에서 하고
-  `harness/sync_context.sh`로 이 블록을 재생성한다. 이 블록을 직접 편집하지
-  않는다.
+  `~/tools/harness/sync_context.sh .`(저장소 루트에서 실행)로 이 블록을
+  재생성한다. 이 블록을 직접 편집하지 않는다.
 - 대화형 오케스트레이터 세션 전용 지침은 `docs/ORCHESTRATOR_NOTES.md`에
   있다(자동 로드되지 않음 — 대화형 세션에서만 수동 참조).
 
