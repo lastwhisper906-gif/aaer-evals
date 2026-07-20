@@ -566,7 +566,7 @@
 
 ---
 
-## Q-O06 — MODEL_TRANSITION 사전 등록 서명 + 브리지 런 미래 spend gate — OPEN (2026-07-16)
+## Q-O06 — MODEL_TRANSITION 사전 등록 서명 + 브리지 런 미래 spend gate — **RESOLVED (2026-07-20, D104)**
 
 - **대상**: `specs/MODEL_TRANSITION.md` (P2) — ① 트리거 = 핀 모델(단일 출처
   `pipeline/runner.EVALUATEE_MODEL`) deprecation **고지** ② 브리지 런:
@@ -582,7 +582,9 @@
 - **옵션**: (A) 서명 발효 · (B) 수정 후 서명 · (C) 기각 (전환 규정 부재
   상태 유지 — 장기 seal의 구조 리스크 존치).
 - **세션 기본 조치**: 미발효 (사전 등록 초안 지위).
-- **상태**: OPEN (사용자 확정 사항 — 세션은 자료 제공까지)
+- **해소 (2026-07-20)**: 소유자 서명 — **(A) 발효**. 브리지 런 spend gate는
+  등록만 (발사는 트리거 시점 별도 소유자 승인). 원장 D104.
+- **상태**: RESOLVED (owner, 2026-07-20, this session's structured decision responses)
 
 ---
 

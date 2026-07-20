@@ -1074,3 +1074,7 @@ c44bd59a…)는 **서명 없이 superseded** (채점 미진입 상태 폐기). v
 ## D103 — Q-O05 소유자 서명: 메모 파이프라인 일반화 승인 (2026-07-20, 무호출, JSON 1줄)
 
 {"decision":"D103","date":"2026-07-20","action":"Q-O05 해소 — 옵션 (A): tools/memo_run.py·memo_extract.py·memo_verify.py(+data/gil/memo_docs.json, test_memo_pipeline.py 7테스트)를 유니버스 메모 실행 경로로 승인. 게이트 증거 = GIL 재현(dry-run 페이로드 sha256 동일, 테스트 강제) + 소스 동일성 테스트(NBSP 전사 오류 1건 실검출·수정, D97). 실발사는 승인하지 않음 — 모든 발사는 별도 spend gate","authority":"owner, 2026-07-20, this session's structured decision responses","metered":"0호출","learning_note":"이 판단에서 알아야 할 것: 경로 승인과 발사 승인을 분리해야 quota가 소유자 자원으로 남는다 — 경로가 승인됐다는 이유로 발사가 자동 승인되는 순간 spend gate는 장식이 된다"}
+
+## D104 — Q-O06 소유자 서명: MODEL_TRANSITION 사전 등록 발효 (2026-07-20, 무호출, JSON 1줄)
+
+{"decision":"D104","date":"2026-07-20","action":"Q-O06 해소 — 옵션 (A): specs/MODEL_TRANSITION.md 발효. 트리거=핀 모델 deprecation 고지 · 브리지 런=최근 k 스냅샷×구/신 페어드 델타(수용 밴드는 유도 규칙만 사전 고정) · 밴드 초과 시 트랙 레코드 라벨 분절(연속-기록 주장 분절 횡단 금지) · 개정 FREEZE_REV 전용. 브리지 런 ~6k 호출 spend gate는 등록만 — 발사는 트리거 시점 별도 소유자 승인","authority":"owner, 2026-07-20, this session's structured decision responses","metered":"0호출","learning_note":"이 판단에서 알아야 할 것: 전환 프로토콜은 전환이 닥치기 전에 서명되어야 자산이다 — 11월 seal 이후 모델이 deprecated되고 나서 만든 규칙은 아무리 합리적이어도 사후 규칙이다"}
