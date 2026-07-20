@@ -85,7 +85,7 @@ recognition gate 3/3 비인지(폭로 미암기 실증, draw-1). **게이트 k=5
 세 회사 라벨은 전건 G2 잠정 — 그리고 **전건 Big R**(Item 4.02 비신뢰 선언 동반,
 기계 검증 `analysis/label_tags_holdout.json`), 확정 집행 아님.
 신호는 **약화하나 붕괴하지 않는다**:
-- per-case: **HUBG p=70(플래그)** · GNE 42 · WMK 32. **HUBG는 기계 스크린(Beneish
+- per-case: **HUBG 점수 70 (0–100 서수; 플래그)** · GNE 42 · WMK 32. **HUBG는 기계 스크린(Beneish
   M·Dechow F)이 결측으로 계산조차 못 한 곳에서 탐지** → LLM 신호는 M/F 복제가 아니다.
 - 단 정직 단서(오류해부 P1): HUBG의 적중은 **tier 적중 / 기제 빗나감**(dim2=1 — 과거
   2018 정정 클러스터에 정박, 2026 사건 기제 미상). 리스크 스크리닝 ≠ forensic 기제 탐지.

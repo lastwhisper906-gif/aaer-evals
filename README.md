@@ -122,10 +122,10 @@ re-verified True.** The signal **weakens but does not collapse**. All three
 companies carry provisional (G2) restatement labels — all three Big R (Item 4.02
 non-reliance), mechanically verified (`analysis/label_tags_holdout.json`) — not
 confirmed enforcement:
-- Per-case: **HUBG p=70 (flagged)** · GNE 42 · WMK 32 — all G2-provisional
+- Per-case: **HUBG score 70 (0–100 ordinal; flagged)** · GNE 42 · WMK 32 — all G2-provisional
   restatement events, labels pending any 4.02/AAER upgrade.
 - **k=5 redraw band (E5 §7, run 2026-07-09; published values remain draw-1):
-  HUBG p=70 [5-draw range 58–76, ≥50 in 5/5 → robust under the pre-committed
+  HUBG score 70 [5-draw range 58–76, ≥50 in 5/5 → robust under the pre-committed
   ≥4/5 rule]** · WMK 32 [28–42, 0/5] · GNE 42 [30–42, 0/5] — zero flips.
 - **Matched controls (E1, run 2026-07-09 under supervision, D26)**: HUBG's 70
   sits **above all three of its matched controls** (RXO 42 · Brink's 30 ·
