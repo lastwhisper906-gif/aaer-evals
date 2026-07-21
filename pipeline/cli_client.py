@@ -118,6 +118,34 @@ def assert_no_metered_credentials() -> None:
             "(freeze 개정 #2 INVARIANT 4). unset 후 재실행.")
 
 
+# C3 (D109) — 하네스 핀 강제. 정직 기록: 강제는 이 커밋부터다 — 이전 런은
+# HARNESS_PIN을 호출별 로그에 기록만 했고 강제하지 않았다 (CHANGELOG.md).
+# 거울 대상: 모델 핀의 modelUsage 사후 대조(_pin_matches)와 같은 지위의
+# 강제를, 하네스에는 첫 호출 전 버전 명령 사전 대조로 건다.
+_harness_version_actual: str | None = None
+
+
+def enforce_harness_pin() -> str:
+    """런의 첫 호출 전 `claude --version` 실측을 핀과 대조 — fail-closed.
+
+    버전 명령 자체가 실패해도(바이너리 부재·비정상 종료) 예외 — 호출은
+    일어나지 않는다. 핀 개정은 freeze 개정 전용 (사후 완화 금지).
+    """
+    global _harness_version_actual
+    if _harness_version_actual is None:
+        try:
+            actual = subprocess.check_output([CLAUDE_BIN, "--version"], text=True)
+        except (OSError, subprocess.SubprocessError) as exc:
+            raise RuntimeError(
+                f"하네스 버전 확인 실패 — fail-closed (핀 {HARNESS_PIN}): {exc}") from exc
+        if HARNESS_PIN not in actual:
+            raise RuntimeError(
+                f"하네스 핀 불일치 — 핀 {HARNESS_PIN}, 실측 {actual.strip()!r}. "
+                "핀 개정은 freeze 개정 전용.")
+        _harness_version_actual = actual.strip()
+    return _harness_version_actual
+
+
 def guard_payload(payload: str, forbid_markers: list[str]) -> None:
     low = payload.lower()
     hits = [m for m in forbid_markers if m.lower() in low]
@@ -163,6 +191,7 @@ def call_model(model: str,
                extra_flags: list[str] | None = None) -> CallResult:
     """단일 모델 호출 — 격리 임시 디렉토리에서 `claude -p` 1회 (+1 재시도)."""
     assert_no_metered_credentials()
+    enforce_harness_pin()  # 첫 호출 전 fail-closed (프로세스당 1회 실측, 매 호출 로그)
     if forbid_markers:
         guard_payload(user_payload, forbid_markers)
         guard_payload(system_prompt, forbid_markers)
@@ -272,6 +301,7 @@ def _write_log(log_dir: Path, log_name: str, cmd: list[str], model: str,
     (log_dir / f"{log_name}.json").write_text(json.dumps({
         "ts": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "harness_pin": HARNESS_PIN,
+        "harness_version_actual": _harness_version_actual,
         "flags": flags,
         "model_requested": model,
         "served_models": r.served_models,

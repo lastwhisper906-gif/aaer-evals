@@ -28,6 +28,12 @@ SCHEMA = {"type": "object", "additionalProperties": False,
 
 STUB = r'''#!/usr/bin/env python3
 import json, os, sys
+if sys.argv[1:] == ["--version"]:
+    # 하네스 핀 강제 경로 (C3) — call_ 기록 없이 버전만 응답하고 종료
+    if os.environ.get("STUB_VERSION_FAIL"):
+        sys.exit(1)
+    sys.stdout.write(os.environ.get("STUB_VERSION", "STUB-VERSION-UNSET"))
+    sys.exit(0)
 stub_dir = os.environ["STUB_DIR"]
 payload = sys.stdin.read()
 n = len([f for f in os.listdir(stub_dir) if f.startswith("call_")])
@@ -63,6 +69,10 @@ def stub(tmp_path, monkeypatch):
     monkeypatch.setenv("PATH", f"{bin_dir}{os.pathsep}{os.environ['PATH']}")
     monkeypatch.setenv("STUB_DIR", str(stub_dir))
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    # 하네스 핀 강제 (C3): 기본은 핀 일치 버전 응답 + 프로세스 캐시 리셋
+    monkeypatch.setenv("STUB_VERSION", f"{cli_client.HARNESS_PIN} (Claude Code)")
+    monkeypatch.delenv("STUB_VERSION_FAIL", raising=False)
+    monkeypatch.setattr(cli_client, "_harness_version_actual", None)
 
     class Stub:
         dir = stub_dir
@@ -232,3 +242,36 @@ def test_runner_skips_existing_valid_output(stub, tmp_path):
     res = runner_mod.run_case(case, False, out_dir, tmp_path / "logs")
     assert res["status"].startswith("skip")
     assert stub.calls() == [], "멱등 skip인데 호출 발생"
+
+
+# ⑨ 하네스 핀 강제 (C3, D109) — 핀 일치 통과 / 불일치·명령 실패는 호출 전 중단 / 실측 버전 로그
+def test_harness_pin_match_passes_and_version_is_logged(stub, tmp_path):
+    stub.set_responses(good_response({"answer": "x"}))
+    r = _call(tmp_path / "logs")
+    assert r.ok
+    log = json.loads((tmp_path / "logs" / "t.json").read_text(encoding="utf-8"))
+    assert log["harness_version_actual"] == f"{cli_client.HARNESS_PIN} (Claude Code)"
+
+
+def test_harness_pin_mismatch_raises_before_any_call(stub, tmp_path, monkeypatch):
+    monkeypatch.setenv("STUB_VERSION", "9.9.9 (Claude Code)")
+    stub.set_responses(good_response({"answer": "x"}))
+    with pytest.raises(RuntimeError, match="하네스 핀 불일치"):
+        _call(tmp_path / "logs")
+    assert stub.calls() == [], "핀 불일치인데 모델 호출이 발생"
+
+
+def test_harness_version_command_error_fails_closed(stub, tmp_path, monkeypatch):
+    monkeypatch.setenv("STUB_VERSION_FAIL", "1")
+    stub.set_responses(good_response({"answer": "x"}))
+    with pytest.raises(RuntimeError, match="하네스 버전 확인 실패"):
+        _call(tmp_path / "logs")
+    assert stub.calls() == []
+
+
+def test_harness_missing_binary_fails_closed(stub, tmp_path, monkeypatch):
+    monkeypatch.setattr(cli_client, "CLAUDE_BIN", "claude-binary-absent-xyz")
+    stub.set_responses(good_response({"answer": "x"}))
+    with pytest.raises(RuntimeError, match="하네스 버전 확인 실패"):
+        _call(tmp_path / "logs")
+    assert stub.calls() == []
