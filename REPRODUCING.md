@@ -25,7 +25,7 @@
 
 <!-- BEGIN-GENERATED: repro-facts (refresh: make docs-refresh; CI: tools/lint_doc_counts.py) -->
 - data manifest: **538 files** (`data/manifests/aaer_data_manifest.json` · `file_count`)
-- pytest: **275 tests collected** (`pipeline tools scoring analysis`)
+- pytest: **279 tests collected** (`pipeline tools scoring analysis`)
 - `make verify-public` (zero external data):
   - `.venv/bin/python tools/reproduce_analysis.py`
   - `.venv/bin/python tools/lint_publication.py`
@@ -46,9 +46,20 @@
 
 ```bash
 git clone <repo> && cd aaer-evals
-python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+python3.12 -m venv .venv                                    # 3.12 = 재현 주장 정본(canonical) 버전
+.venv/bin/pip install --require-hashes -r requirements.lock  # 해시 핀 설치 (C4, D109)
 make verify-public
 ```
+
+**재현 주장의 정본 Python은 3.12다** — CI는 3.11/3.12/3.13 매트릭스를
+돌리지만 재현 주장은 3.12 기준이며, 비정본 버전 실패는 발견(finding)으로
+기록될 뿐 재현 주장을 깨지 않는다 (C5).
+
+`requirements.lock`은 `pip-compile --generate-hashes`(pip-tools, Python
+3.12) 산출물로 전이 의존성까지 sha256 핀 — `requirements.txt`는 사람이
+읽는 5개 최상위 핀의 의도 선언으로 유지된다 (양쪽 다 커밋; lock 재생성은
+`pip-compile --allow-unsafe --generate-hashes --strip-extras -o
+requirements.lock requirements.txt`).
 
 발행 헤드라인 수치의 재검증은 여기서 끝난다 — **원문 코퍼스 없이** 가능
 (검증 가능성의 1차 방어선, PROJECT.md §6-5). CI가 매 push 동일 게이트를
@@ -89,7 +100,18 @@ provenance는 `runs/*/control_pool_raw/provenance.jsonl` 규약 승계.
 
 발행 수치 재검증에는 **불필요**(§1로 충분). 채점 자체를 재실행하려면 구독
 OAuth(`claude` CLI) 필요, `ANTHROPIC_API_KEY` 부재 assert (zero-metered
-명령, D102). 예: E3 재추첨 재현 — `python pipeline/runner.py --cases
+명령, D102).
+
+**Claude CLI 설치 (하네스 — 종전 문서화 누락분, C4)**:
+
+```bash
+npm install -g @anthropic-ai/claude-code@2.1.201   # = pipeline/cli_client.HARNESS_PIN
+claude --version                                    # 핀 문자열 포함 확인
+```
+
+첫 호출 전 `cli_client.enforce_harness_pin()`이 `claude --version` 실측을
+핀과 대조해 불일치·명령 실패 시 fail-closed로 중단한다 (강제 개시 시점의
+정직 기록은 `CHANGELOG.md` 2026-07-22 항목). 예: E3 재추첨 재현 — `python pipeline/runner.py --cases
 data/evaluatee/cases_wave2.json --perturbed --out
 runs/wave2/perturbed_redraw/draw_2 --only <9 fraud ids>`
 (멱등·핀검증·레이트리밋 재개).
