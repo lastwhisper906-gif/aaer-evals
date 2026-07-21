@@ -7,14 +7,26 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    # C5 (D109): 재현 주장의 정본은 3.12 (REPRODUCING.md §1). 비정본 버전
+    # 실패는 발견(finding)으로 기록·허용 — 잡 레벨 continue-on-error로 워크플로는
+    # 통과하되 해당 잡의 실패 표시·아래 notice 주석은 남는다 (침묵 green 금지).
+    continue-on-error: ${{ matrix.python-version != '3.12' }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0   # verify_blindness.py의 git 이력 증명(채점 커밋 선행)에 전체 이력 필요
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-      - run: pip install -r requirements.txt
+          python-version: ${{ matrix.python-version }}
+      - name: 비정본 버전 고지 (C5 — allowed-to-fail, 결과는 발견으로 기록)
+        if: matrix.python-version != '3.12'
+        run: echo "::notice title=non-canonical Python::Python ${{ matrix.python-version }}는 비정본 — 재현 주장은 3.12 기준 (REPRODUCING.md §1). 이 잡의 실패는 허용되되 가시 기록된다."
+      - name: 의존성 설치 (해시 핀 lockfile — C4, D109)
+        run: pip install --require-hashes -r requirements.lock
       - name: pytest (cutoff_guard + 가드 우회 스캔 + 피평가자 입력 오염 차단 + 베이스라인 규율 + analysis 판정·통계 불변식)
         run: python -m pytest pipeline/ tools/ scoring/ analysis/ -q
       - name: 스키마 검증 (candidates.json ↔ case_input, 편차 허용목록)

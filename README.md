@@ -1,5 +1,7 @@
 # AAER Evals — Backtesting a Conflict-Free Accounting-Quality Signal
 
+[![ci](https://github.com/lastwhisper906-gif/aaer-evals/actions/workflows/ci.yml/badge.svg)](https://github.com/lastwhisper906-gif/aaer-evals/actions/workflows/ci.yml)
+
 > Authored by Claude Code, pending human audit (GA-001 (b), D15).
 > Who did what: [CONTRIBUTIONS.md](CONTRIBUTIONS.md) (AI-vs-human table, D106 ⑤).
 > All results are scoped to a single Claude-based pipeline (evaluatee pinned to
@@ -250,7 +252,7 @@ and checks the full corpus manifest; prerequisites and corpus layout:
 
 <!-- BEGIN-GENERATED: repro-facts (refresh: make docs-refresh; CI: tools/lint_doc_counts.py) -->
 - data manifest: **538 files** (`data/manifests/aaer_data_manifest.json` · `file_count`)
-- pytest: **275 tests collected** (`pipeline tools scoring analysis`)
+- pytest: **279 tests collected** (`pipeline tools scoring analysis`)
 - `make verify-public` (zero external data):
   - `.venv/bin/python tools/reproduce_analysis.py`
   - `.venv/bin/python tools/lint_publication.py`
