@@ -4,7 +4,7 @@
 - Branch: remediation/external-review
 - Worktree: ~/work/worktrees/forensic-project-remediation
 - Invocation scope: Phase 0 + Phase 1 (Tasks 1–11)
-- Harness model-call budget: 40 | **consumed: 29** (was 27 at Phase-1 exit; +T08v2 1b+1r) (T03: 2b+1r; T02: 3b+2r; T06: 1b+1r; T07: 2b+1b+1r; T08: 3b+1r STOPPED; T09: 3b+2r STOPPED; T10: 1b+1r; T11: 1b+1r)
+- Harness model-call budget: 40 | **consumed: 35 FINAL** (Phase-1 27; T08v2 1b+1r; T09v2 3b+3r) (T03: 2b+1r; T02: 3b+2r; T06: 1b+1r; T07: 2b+1b+1r; T08: 3b+1r STOPPED; T09: 3b+2r STOPPED; T10: 1b+1r; T11: 1b+1r)
 
 ## Preflight (2026-07-21)
 
@@ -29,7 +29,7 @@
 | Task 6 (schema unification) | HARNESS | COMMITTED (APPROVED cycle 1/3) | ~/tools/harness/logs/T06_schema_unification_20260721_152549 | see log |
 | Task 7 (fingerprinted idempotency) | HARNESS | COMMITTED (run 1 killed mid-cycle-2 → reset+relaunched once per protocol; relaunch APPROVED cycle 1) | ~/tools/harness/logs/T07_fingerprint_idempotency_20260721_153703 | see log |
 | Task 8 (dynamic blindness scanner) | HARNESS | STOPPED (max-cycles 3, QUARANTINE rule 3 — root cause: orchestrator-supplied registry omitted scoring/probe_results_v2*/v2ds_* surfaces; discovery guarantee worked and caught it; c2 review also flagged fail-open carve-outs + name-variant weakening; worktree reverted, diffs preserved in run dir; owner D3) → v2 relaunch COMMITTED (APPROVED cycle 1/3; run T08v2_blindness_scanner_20260721_213051) | ~/tools/harness/logs/T08_blindness_scanner_20260721_154259 | – |
-| Task 9 (cutoff loader contract) | HARNESS Option B | STOPPED (max-cycles 3, rule 3 — c3 review: registry-weakening guard needed for fixture mode; un-editable caller scoring/probe_verdict.py:62 breaks on signature change; coverage-metadata regression; fixture-mode writes to DEFAULT access log. Worktree reverted, diffs in run dir. owner D4) → v2 relaunch IN_PROGRESS: ~/work/remediation-tasks/T09v2_cutoff_loader_contract.md | ~/tools/harness/logs/T09_cutoff_loader_contract_20260721_155721 | – |
+| Task 9 (cutoff loader contract) | HARNESS Option B | STOPPED (max-cycles 3, rule 3 — c3 review: registry-weakening guard needed for fixture mode; un-editable caller scoring/probe_verdict.py:62 breaks on signature change; coverage-metadata regression; fixture-mode writes to DEFAULT access log. Worktree reverted, diffs in run dir. owner D4) → v2 relaunch STOPPED-FINAL (max-cycles 3, three REVISE; residue is 4 mechanical items: sibling-import convention x3 + multi-match fabrication edge — see T09v2 run feedback_latest.md; owner-authorized single relaunch exhausted) | ~/tools/harness/logs/T09_cutoff_loader_contract_20260721_155721 | – |
 | Task 10 (exception swallowing) | HARNESS | COMMITTED (APPROVED cycle 1/3) | ~/tools/harness/logs/T10_exception_swallowing_20260721_162559 | see log |
 | Task 11 (synthetic fixtures) | HARNESS | COMMITTED (APPROVED cycle 1/3; synthetic tier runs corpus-free, real tier iterates ALL cases) | ~/tools/harness/logs/T11_synthetic_fixtures_20260721_163048 | see log |
 
@@ -42,3 +42,12 @@ Tasks 12–18: NOT in this invocation (Phase 2/3 — owner re-invokes).
 - STOPPED: T8, T9 (max-cycles, rule 3; relaunch recommendations in final packet).
 - QUARANTINED: T5 presentation (E-002 DRAFT in final packet).
 - Owner-queue (NOT done, per spec): reader dispatch, human graders, draw re-runs, sealed cycle arming, synthesis.py real-data rerun, forward cycle_001 hash re-pin decision.
+
+## Owner-decision execution (2026-07-21, second invocation)
+
+- D1 EXECUTED: ERRATA E-002 committed (b85a05a) — rev2 citable.
+- D2 EXECUTED: coverage floor dropped; no pytest-cov; expanded CI kept.
+- D3 EXECUTED: T08v2 APPROVED cycle 1, committed 7fd417c.
+- D4 EXECUTED (relaunch) → STOPPED-FINAL at cycle cap; residue: (1) `from pipeline import cutoff_guard` must be sibling `import cutoff_guard` in build_payload.py + payload_v2_extract.py (script-mode frozen callers; .pth flakiness; worktree resolution), (2) same for test_all_raw_reads_enforced.py imports (double-module-instance split of exception classes), (3) payload_v2_extract fabrication branch must fabricate only on ZERO registry matches (multi-match must raise). Cycle diffs preserved in ~/tools/harness/logs/T09v2_cutoff_loader_contract_20260721_213934.
+- D5 NOTED (post-merge step, not executed): re-seal forward cycle_001 via forward_prepare against corrected main + governance supersession entry (reason: F3/F4 remediation, re-sealed before launch).
+- D6 EXECUTED: synthesis rev2 rerun committed (b208ba1) — all published values reproduced identically, excluded_n=0.
