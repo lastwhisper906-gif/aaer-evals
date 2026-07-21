@@ -4,7 +4,7 @@
 - Branch: remediation/external-review
 - Worktree: ~/work/worktrees/forensic-project-remediation
 - Invocation scope: Phase 0 + Phase 1 (Tasks 1–11)
-- Harness model-call budget: 40 | **consumed: 3** (T03: 2 build + 1 review)
+- Harness model-call budget: 40 | **consumed: 8** (T03: 2b+1r; T02: 3b+2r)
 
 ## Preflight (2026-07-21)
 
@@ -22,9 +22,9 @@
 |---|---|---|---|---|
 | Phase 0 (V1–V11 verification) | DIRECT | COMMITTED (all 11 CONFIRMED) | – | 80e5290 |
 | Task 1 (ERRATA entry) | DIRECT | COMMITTED (E-001) | – | c3a396c |
-| Task 2 (verdict module) | HARNESS | IN_PROGRESS | task: ~/work/remediation-tasks/T02_verdict_module.md | – |
+| Task 2 (verdict module) | HARNESS | COMMITTED (APPROVED cycle 3/3; c2 caught dropped perturbed-frame + sealed-runs test dep) | ~/tools/harness/logs/T02_verdict_module_20260721_150952 | see log |
 | Task 3 (statistics module) | HARNESS | COMMITTED (APPROVED cycle 2/3) | ~/tools/harness/logs/T03_statistics_module_20260721_150457 | see log |
-| Task 4 (CI covers analysis/) | DIRECT+1 harness max | PENDING | – | – |
+| Task 4 (CI covers analysis/) | DIRECT+1 harness max | TRIAGED (expanded suite 235 passed, 0 fail — no harness task needed; coverage floor deferred: pytest-cov vs 5-dep invariant → batched decision) | – | – |
 | Task 5 (wave2 rev2 rerun) | DIRECT | PENDING | – | – |
 | Task 6 (schema unification) | HARNESS | PENDING | – | – |
 | Task 7 (fingerprinted idempotency) | HARNESS | PENDING | – | – |
