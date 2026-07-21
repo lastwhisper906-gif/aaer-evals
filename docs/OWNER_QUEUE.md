@@ -626,3 +626,16 @@
   D40 GO는 이력 보존, zero-metered 명령 우선. 재활성화는 신규 소유자 결정
   전용. 원장 D102.
 - **상태**: RESOLVED (owner, 2026-07-20, this session's structured decision responses)
+
+---
+
+## Q-O09 — 병합 추인: remediation/external-review → main (0269b63) — OPEN (신규, 2026-07-22 야간)
+
+- **대상**: 병합 커밋 `0269b63` (--no-ff). 조건 (a)–(d) 실측 충족 기록은 D107.
+  E-002 전문 바이트 동일 사본은 최종 패킷 §1.
+- **옵션**: (A 기본) 추인 — 별도 조치 없음 (병합 유지) · (B) 기각 —
+  `git revert -m 1 0269b63` 실행 후 push (동결 산출물 무접촉 revert).
+- **근거**: 소유자 결정 블록(2026-07-22 야간 프롬프트)이 "I ratify or revert
+  in the morning"으로 사후 확정을 유보 — 병합은 조건부 집행이었다.
+- **세션 기본 조치**: 병합 유지 상태로 후속 Phase 진행 (프롬프트 지시).
+- **상태**: OPEN
