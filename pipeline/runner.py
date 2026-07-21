@@ -23,10 +23,12 @@ import datetime
 import json
 import shlex
 import sys
+from copy import deepcopy
 from pathlib import Path
 
 import build_payload as bp
 import cli_client
+import jsonschema
 from cli_client import EVALUATEE_FORBIDDEN_MARKERS, freeze_state
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -34,6 +36,16 @@ EVALUATEE_MODEL = "claude-sonnet-5"  # D6 pin (사유는 채점 쪽 문서)
 FULL_OUTPUT_SCHEMA = json.loads(
     (REPO_ROOT / "schemas" / "llm_output.json").read_text(encoding="utf-8"))
 CANARY_MARKERS = ("9fa11f98", "a2d69cfe")
+
+
+def derive_model_schema(full_schema: dict) -> dict:
+    """Return the canonical model subset as a standalone Draft 7 schema."""
+    model_schema = deepcopy(full_schema["$defs"]["model_output"])
+    model_schema["$schema"] = full_schema["$schema"]
+    return model_schema
+
+
+MODEL_SCHEMA = derive_model_schema(FULL_OUTPUT_SCHEMA)
 
 TASK = """You are analyzing the financial reporting quality of {company_name} ({ticker}{cik_part}) \
 using only the structured data provided below, which reflects public filings available on or \
@@ -55,50 +67,6 @@ CL5 Is the earnings trajectory unusually smooth relative to the volatility of re
 CL6 Did liability, allowance, or reserve balances decline (or fail to grow) despite growing business activity?
 CL7 Does the filing chronology show irregularities (late filings/NT forms, amendments, unusual 8-K frequency)?
 CL8 Is the provided data sufficient in coverage and length for the above assessments?"""
-
-# 모델이 채우는 부분만의 스키마 (구조화 출력용 — 파이프라인 메타 필드는 러너가 채움)
-MODEL_SCHEMA = {
-    "type": "object",
-    "additionalProperties": False,
-    "required": ["checklist", "misstatement_probability", "mechanism_hypotheses", "overall"],
-    "properties": {
-        "checklist": {"type": "array", "items": {
-            "type": "object", "additionalProperties": False,
-            "required": ["item_id", "question", "finding", "confidence", "evidence"],
-            "properties": {
-                "item_id": {"type": "string"},
-                "question": {"type": "string"},
-                "finding": {"type": "string", "enum": ["flag", "no_flag", "insufficient_data"]},
-                "confidence": {"type": "string", "enum": ["high", "medium", "low"]},
-                "evidence": {"type": "array", "items": {
-                    "type": "object", "additionalProperties": False,
-                    "required": ["quote", "source_accession_no", "location"],
-                    "properties": {"quote": {"type": "string"},
-                                   "source_accession_no": {"type": "string"},
-                                   "location": {"type": "string"}}}},
-            }}},
-        "misstatement_probability": {"type": "integer"},
-        "mechanism_hypotheses": {"type": "array", "items": {
-            "type": "object", "additionalProperties": False,
-            "required": ["affected_line_items", "direction", "accounting_treatment", "rationale_evidence"],
-            "properties": {
-                "affected_line_items": {"type": "array", "items": {"type": "string"}},
-                "direction": {"type": "string", "enum": ["overstated", "understated", "timing_shift"]},
-                "accounting_treatment": {"type": "string"},
-                "rationale_evidence": {"type": "array", "items": {
-                    "type": "object", "additionalProperties": False,
-                    "required": ["quote", "source_accession_no", "location"],
-                    "properties": {"quote": {"type": "string"},
-                                   "source_accession_no": {"type": "string"},
-                                   "location": {"type": "string"}}}},
-            }}},
-        "overall": {"type": "object", "additionalProperties": False,
-                    "required": ["risk_tier", "top_signals"],
-                    "properties": {"risk_tier": {"type": "string", "enum": ["elevated", "watch", "clear"]},
-                                   "top_signals": {"type": "array", "items": {"type": "string"}}}},
-    },
-}
-
 
 def run_case(case: dict, perturb: bool, out_dir: Path, log_dir: Path) -> dict:
     """케이스 1건 실행 — 반환: 상태 요약 dict (FAIL 포함, 예외는 레이트 리밋만)."""
@@ -147,6 +115,15 @@ def run_case(case: dict, perturb: bool, out_dir: Path, log_dir: Path) -> dict:
         "documents_used": sorted(accessions.values(), key=lambda d: d["accession_no"]),
         **r.structured,
     }
+    errors = list(jsonschema.Draft7Validator(FULL_OUTPUT_SCHEMA).iter_errors(full))
+    if errors:
+        path = ".".join(str(part) for part in errors[0].absolute_path) or "<root>"
+        reason = f"schema_violation: {path}"
+        meta["fail_reason"] = reason
+        log_dir.mkdir(parents=True, exist_ok=True)
+        (log_dir / f"runmeta_{variant}_{cid}.json").write_text(
+            json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+        return {"case_id": cid, "status": f"FAIL ({reason})"}
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(full, ensure_ascii=False, indent=2), encoding="utf-8")
     return {"case_id": cid, "status": f"OK p={full['misstatement_probability']} "

@@ -4,7 +4,7 @@
 - Branch: remediation/external-review
 - Worktree: ~/work/worktrees/forensic-project-remediation
 - Invocation scope: Phase 0 + Phase 1 (Tasks 1–11)
-- Harness model-call budget: 40 | **consumed: 8** (T03: 2b+1r; T02: 3b+2r)
+- Harness model-call budget: 40 | **consumed: 10** (T03: 2b+1r; T02: 3b+2r; T06: 1b+1r)
 
 ## Preflight (2026-07-21)
 
@@ -26,8 +26,8 @@
 | Task 3 (statistics module) | HARNESS | COMMITTED (APPROVED cycle 2/3) | ~/tools/harness/logs/T03_statistics_module_20260721_150457 | see log |
 | Task 4 (CI covers analysis/) | DIRECT+1 harness max | COMMITTED (pytest now covers analysis/; 0 failures; coverage floor DEFERRED — pytest-cov vs 5-dep invariant → batched decision) | – | (this commit) |
 | Task 5 (wave2 rev2 rerun) | DIRECT | QUARANTINED (rule 1): verdict R4 UNCHANGED, primary stats identical, but tie-aware Spearman shifts published rho_M 0.337→0.333, rho_F 0.265→0.293 → E-002 held as DRAFT in final packet; rev2 artifact committed (deterministic, v1 untouched) | – | (this commit) |
-| Task 6 (schema unification) | HARNESS | IN_PROGRESS | task: ~/work/remediation-tasks/T06_schema_unification.md | – |
-| Task 7 (fingerprinted idempotency) | HARNESS | PENDING | – | – |
+| Task 6 (schema unification) | HARNESS | COMMITTED (APPROVED cycle 1/3) | ~/tools/harness/logs/T06_schema_unification_20260721_152549 | see log |
+| Task 7 (fingerprinted idempotency) | HARNESS | IN_PROGRESS | task: ~/work/remediation-tasks/T07_fingerprint_idempotency.md | – |
 | Task 8 (dynamic blindness scanner) | HARNESS | PENDING | – | – |
 | Task 9 (cutoff loader contract) | HARNESS (option chosen by orchestrator) | PENDING | – | – |
 | Task 10 (exception swallowing) | HARNESS | PENDING | – | – |
