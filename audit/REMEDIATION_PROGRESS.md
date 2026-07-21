@@ -20,10 +20,10 @@
 
 | Task | Lane | Status | Run dir | Commit |
 |---|---|---|---|---|
-| Phase 0 (V1–V11 verification) | DIRECT | IN_PROGRESS | – | – |
-| Task 1 (ERRATA entry) | DIRECT | PENDING | – | – |
-| Task 2 (verdict module) | HARNESS | PENDING | – | – |
-| Task 3 (statistics module) | HARNESS | PENDING | – | – |
+| Phase 0 (V1–V11 verification) | DIRECT | COMMITTED (all 11 CONFIRMED) | – | 80e5290 |
+| Task 1 (ERRATA entry) | DIRECT | COMMITTED (E-001) | – | c3a396c |
+| Task 2 (verdict module) | HARNESS | PENDING (runs after Task 3 — imports statistics module) | – | – |
+| Task 3 (statistics module) | HARNESS | IN_PROGRESS | task: ~/work/remediation-tasks/T03_statistics_module.md | – |
 | Task 4 (CI covers analysis/) | DIRECT+1 harness max | PENDING | – | – |
 | Task 5 (wave2 rev2 rerun) | DIRECT | PENDING | – | – |
 | Task 6 (schema unification) | HARNESS | PENDING | – | – |
