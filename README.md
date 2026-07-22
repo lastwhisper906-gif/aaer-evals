@@ -107,9 +107,13 @@ are the publication surface, `analysis/ISSUE_*_DRAFT.md` the frozen sources.
 
 ## Licensing
 
-**License selection is pending an owner decision (Q-O10,
-`docs/OWNER_QUEUE.md`)** — no LICENSE file exists yet; until one lands, default
-copyright applies and reuse requires permission. The planned split under
-consideration: permissive code license + attribution docs license, so published
-memos stay verifiable with attribution. `CITATION.cff` is present (DOI pending
-Q-R03).
+Dual-licensed by content type (Q-O10, owner-signed 2026-07-22):
+
+- **Code — [Apache-2.0](LICENSE)** (explicit patent grant; modifications must
+  be stated).
+- **Documentation, published memos, analysis prose — [CC-BY-4.0](LICENSE-docs)**.
+  Rationale for the split: attribution-required reuse keeps the published
+  memos verifiable — any republication must trace back to the frozen
+  originals in this repository.
+
+© 2026 lastwhisper906-gif. Cite via `CITATION.cff` (DOI pending Q-R03).
