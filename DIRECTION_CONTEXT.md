@@ -62,6 +62,11 @@
 - (소유자 추가분) **2026-11-15 사이클이 실제로 실행·봉인됨**; 오탐
   71.4%가 **실질적으로 감소했거나, 게시된 결정 테이블에서 정직하게
   성격 규정됨**; 인프라 사이클이 아니라 **케이던스가 지속되고 있음**.
+- The repository is READABLE BY ITS TARGET AUDIENCE (US academics and
+  practitioners): headline evidence documents in English, a README that
+  survives 90 seconds without internal identifiers, an open feedback
+  channel, and citation-grade identity (account name, DOI). "Audit-ready
+  but unread" fails this quarter regardless of everything else.
 
 ## Standing suspicions
 

@@ -171,3 +171,25 @@
   런 .direction/20260729-021552 (worktree aaer-evals-loop, base 0c2d227)
 - **Revert:** rm aaer-evals-loop/.direction/stage1_signed_off — 기본
   모드는 즉시 다시 거부된다 (H15).
+
+## D-P12 — 리뷰어 미션 확장: goal_gap 카테고리 (소유자 승인 편집)
+- **What:** 소유자 지시(2026-07-29, ~/Downloads/direction-loop-v2.md)에
+  따라 두 편집 실행. ① ~/tools/prompts/direction_review.md "What to look
+  for"에 7번 카테고리 **goal_gap** 추가 — DIRECTION_CONTEXT.md "What good
+  looks like this quarter" 대비 저장소 감사(기존 6종은 자기 문서 대비
+  감사). H19 앵커 규칙 불변: anchor = 갭을 증거하는 실재 저장소 경로.
+  라우팅 불변. ② DIRECTION_CONTEXT.md "What good" 절에 소유자 추가분
+  1항(대상 독자 가독성: 영어 헤드라인 문서·90초 README·열린 피드백
+  채널·인용 가능 정체성) append — 소유자 목소리 문서의 소유자 승인 편집.
+- **Assumed micro-decisions:** (a) 출력 포맷의 category 열거형에
+  goal_gap 병기 — 미션과 포맷 스펙의 정합 목적. 하네스(H23)는 필드
+  존재만 검증하고 값은 검증하지 않음을 실측 확인 — 기존 규칙 약화 없음.
+  (b) ~/tools는 git 저장소지만 prompts/ 전체가 untracked — "commit both
+  edits" 이행을 위해 prompts/direction_review.md 단일 파일만 add·commit
+  (부분 추적 개시). 타임스탬프 증거(INV-07 정신) 확보 목적.
+- **Not touched:** PROJECT_INVARIANTS.md 무변경 (git status 실측) —
+  sync_context.sh 불요. 측정 조건·동결 경로 무접촉.
+- **Basis:** 소유자 지시문 원문 · direction-loop.sh:195-211 실측(H23
+  필드 존재 검증만) · git status 실측
+- **Revert:** ① 카테고리 7 블록 + 열거형 goal_gap 제거 ②
+  DIRECTION_CONTEXT.md append 1항 제거 (양쪽 모두 단일 커밋 revert).
