@@ -153,3 +153,21 @@
 - **Basis:** darwin 실측 · .gitignore(.venv/) · 드라이런 전체 PASS
 - **Revert:** ① sha() 제거 ② 심링크 블록 제거 + .loop.conf를 절대
   경로로 변경(소유자 승인 필요).
+
+## D-P11 — Stage 1 기계 사인오프 (V1 소유자 사후 채점 대기)
+- **Options:** (a) V2–V6 전부 통과 확인 후 기계 사인오프 생성 (b) 소유자
+  복귀까지 사인오프 보류
+- **Choice:** (a) — 소유자 지시문 §5 그대로("If all machine-gradable
+  criteria pass: create .direction/stage1_signed_off"). 실측:
+  V2=0/0/0 (기계) · V4=50%(1/2)·100%(1/1) ≥50% (기계) · H23 incomplete
+  0/0/0 · V3=위반 0 (전 채널 실측 — 발견은 3건 전부 BN-05 omission,
+  STRATEGIC S-01 1건은 역량 배치 평가) · V5=위장 없음 (유일 발견의
+  done_when이 why의 미규정 상태를 직접 해소 + OWNER DECISION
+  REQUIRED로 정직 라우팅) · V6=baseline 115줄≤150, 모듈 책임 6구역,
+  INV 강제 지점 7개(코드 경로 포함), BN 차단 지점 6개, 인용 경로 전수
+  실재(맨이름 3건은 문장 명시 디렉토리 내 해소). V1은 미채점 — 마커
+  문구에 명기.
+- **Basis:** VALIDATION_CRITERIA v1 (커밋 d720ac8, 리뷰 실행 전 등록) ·
+  런 .direction/20260729-021552 (worktree aaer-evals-loop, base 0c2d227)
+- **Revert:** rm aaer-evals-loop/.direction/stage1_signed_off — 기본
+  모드는 즉시 다시 거부된다 (H15).
