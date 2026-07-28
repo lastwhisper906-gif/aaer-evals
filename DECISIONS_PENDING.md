@@ -61,3 +61,38 @@
   yourself; V1 owner-graded post-hoc") · 계획 §7.0
 - **Revert:** VALIDATION_CRITERIA.md는 등록 후 동결 — 수정이 아니라
   차기 검증 라운드에서 v2로 재등록.
+
+## D-P6 — .protected-paths: 위임 작성분 + 애매 판정 기록 (Stage 2)
+- **Options:** 각 경로마다 (보호) vs (루프 편집 허용). 기준: "루프가
+  바꾼 뒤 revert해도 피해가 남는가" (비가역성). 애매 ⇒ 보호.
+- **Choice (전체 52 프리픽스, 전부 prefix-anchored·사각 항목 0 검증):**
+  - 명백 보호: forward/ · runs/ · data/ · scoring/ (비밀+원장) ·
+    schemas/ · specs/ · governance/ · review_packets/ · audit/ ·
+    docs/FREEZE_REV · 평가 핀 파일 5종(pipeline/cutoff_guard·cli_client·
+    build_payload·runner*·api_client·date_shift) · 게이트 정의(Makefile·
+    .github/·tools/verify_*·lint_*·reproduce_analysis·memo_verify 2종·
+    forward_* 8종·seal_predictions) · requirements. · ERRATA.md ·
+    EXCLUSION.md · GATE_PACKAGE.md · LICENSE* · CITATION.cff ·
+    PROJECT.md · CLAUDE.md · AGENTS.md · 기준 문서(docs/CONTROL_CRITERIA*·
+    HOLDOUT_CRITERIA·UNIVERSE_SELECTION·FUTURE_*·EARLINESS_DESIGN·
+    SURVIVORSHIP_AUDIT_PLAN·V1_PARTIAL_DEIDENTIFICATION_NOTE·
+    baseline_screens)
+  - **애매→보호 (양쪽 논거 기록):**
+    - analysis/ 전체: [편집 허용론] 문서 정합 수리의 주 무대, 상당수가
+      파생 보고물. [보호론] 사전 등록 PLAN·서명 DECISION_TABLE·게시
+      JSON이 혼재 — 분리 목록은 누락 위험. ⇒ 보호 (루프는 제안만).
+    - aaer_eval/: rev2 게시 경로의 판정·통계 모듈 — 사후 변경은 판정
+      기준 변경. ⇒ 보호.
+    - atlas/·issue0/·pilot/·experiments/·logs/·output/·surface/·
+      controls/: 과거 기록·구성 산출물, 용도 불명 포함. ⇒ 보호 (불명은
+      30초 규칙으로 보호).
+  - **의도적 비보호 (루프의 실행 가능 표면):** README*·RESULTS.md·
+    METHOD.md·AUDIT_INDEX.md·REPRODUCING.md·CHANGELOG 등 파생 보고
+    문서(revert로 완전 복원 가능, lint·owner 병합 5게이트가 백스톱) ·
+    docs/ 서사·상태 문서(HANDOFF·RESUME·OWNER_QUEUE 등) · pipeline/
+    테스트·픽스처 · tools/ 나머지 · conftest.py · 판단 기반 문서 4종
+    (.loop.conf 포함)은 H9 가드셋이 별도 자동 보호.
+- **Basis:** 계획 §4 (비가역성 기준·과보호 저비용) · 소유자 Q15 경계 ·
+  SUPERSESSION_CYCLE001_REPIN(핀 파일 목록) · awk prefix 검증 실측
+  (dead 0, caught 3543/3681)
+- **Revert:** .protected-paths에서 해당 줄 삭제 (줄 단위 가역).
