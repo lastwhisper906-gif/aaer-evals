@@ -96,3 +96,60 @@
   SUPERSESSION_CYCLE001_REPIN(핀 파일 목록) · awk prefix 검증 실측
   (dead 0, caught 3543/3681)
 - **Revert:** .protected-paths에서 해당 줄 삭제 (줄 단위 가역).
+
+## D-P7 — H23 해석: 발견 필수 필드 기계 검증 [ASSUMED]
+- **Options:** H23의 "missing-field … terminate"를 (a) 발견(executable)
+  블록의 필수 필드 9종(id·category·anchor·what·why·files·action·
+  done_when·touches_protected) 전수 검사로 해석 (b) STRATEGIC 채널까지
+  확장 (c) 미구현
+- **Choice:** (a). 계획 v2 문서에는 H23이 없고 소유자 지시문의 드라이런
+  항목("H23 missing-field and INV-99-basis terminate")만 존재 — 실행기가
+  의존하는 필드가 빠진 발견은 기본 모드에서 런 종료, review-only에서는
+  "incomplete findings: N" 출력. INV-99-basis 종료는 H19 경로가 담당.
+  STRATEGIC 항목은 실행되지 않으므로 검사 제외.
+- **Basis:** 소유자 지시문 Stage 3 · direction-loop.sh check_finding_fields
+  (~/tools/direction-loop.sh, [ASSUMED D-P7] 주석) · 드라이런 T21 PASS
+- **Revert:** 해당 블록 삭제 (H19·A2는 독립).
+
+## D-P8 — H24 해석: 소유자 컨텍스트 충돌 스크린 [ASSUMED]
+- **Options:** "repeat-conflict exit 6 / ungrounded-conflict dropped /
+  call-failure non-fatal"의 "conflict"를 (a) 발견 vs DIRECTION_CONTEXT
+  기각 목록·INV 제약의 충돌로 해석 — 읽기 전용 추가 호출 1회로 스크린
+  (b) 발견 간 상호 충돌로 해석 (c) 미구현
+- **Choice:** (a). 근거: "call-failure non-fatal"은 모델 호출 전제,
+  기각 접근 재제안 차단은 G2·DIRECTION_CONTEXT의 명시 목적. 동작:
+  스크린 호출 실패 → 비치명(로그 후 진행) · CONFLICT 라인의 앵커가
+  검증 불가 → 그 충돌 폐기 · 검증된 충돌 → 해당 사이클 exec 스킵 +
+  키(발견 앵커|충돌 앵커) 기록 · 동일 키 재발 → exit 6 (리뷰어가
+  소유자 기각 작업을 반복 제안 — 경성 정지). 기본 모드 전용
+  (review-only는 H13의 "리뷰만" 계약 유지).
+- **Basis:** 소유자 지시문 Stage 3 · direction-loop.sh H24 블록
+  ([ASSUMED D-P8] 주석) · 드라이런 T22a/b/c PASS
+- **Revert:** H24 블록 삭제 — 프롬프트 수준 금지(리뷰어 Rules)는 그대로
+  남는다.
+
+## D-P9 — H18 체크섬 범위: ~/tools 전체 → 루프 소비 파일 8종 [ASSUMED]
+- **Options:** (a) 계획 원문대로 ~/tools 전체 sha256 (b) 루프가 읽고
+  실행하는 파일 8종(direction-loop.sh·preflight.sh·bootstrap.sh·
+  loop-status.sh·loop-autoreview.sh·prompts 3종)만
+- **Choice:** (b). 이 머신의 ~/tools에는 무관한 상시 작업(market-brief/
+  — launchd plist + 증가하는 brief.log)과 .git 디렉토리가 있어 전체
+  체크섬은 중간 실행 오탐(exit 5)을 구조적으로 낸다. D4 위협(exec가
+  다음 사이클용 리뷰어 프롬프트·하네스를 몰래 수정)은 루프 소비 파일
+  집합으로 완전 커버 — 그 밖의 ~/tools 파일은 루프가 읽지 않으므로
+  변조가 루프 동작에 도달할 경로가 없다. 부작용: "~/tools에 새 파일
+  추가"는 감지하지 않는다(목록 파일 수정·삭제는 감지).
+- **Basis:** ~/tools 실측(market-brief 상주) · 계획 D4 위협 모델 ·
+  드라이런 T14 PASS (목록 파일 변조 → exit 5)
+- **Revert:** harness_sum을 계획 6.2 원문 find 방식으로 교체.
+
+## D-P10 — 기계 이식성 2건: sha256 폴백 + 워크트리 .venv 링크 [ASSUMED]
+- **Options/Choice:** ① macOS에 sha256sum 부재 가능 → `shasum -a 256`
+  폴백 함수. ② GATE_CMD(U3 고정 문자열)의 `.venv/bin/python`은
+  gitignore된 .venv가 신선 워크트리에 없어 실패 → H1 프로비저닝에서
+  메인 저장소 .venv를 심링크하고 git info/exclude에 등록(커밋 불가
+  경로, H2 clean-tree 무영향). GATE_CMD 문자열 자체는 소유자 지정
+  그대로 유지.
+- **Basis:** darwin 실측 · .gitignore(.venv/) · 드라이런 전체 PASS
+- **Revert:** ① sha() 제거 ② 심링크 블록 제거 + .loop.conf를 절대
+  경로로 변경(소유자 승인 필요).
