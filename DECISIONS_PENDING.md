@@ -193,3 +193,22 @@
   필드 존재 검증만) · git status 실측
 - **Revert:** ① 카테고리 7 블록 + 열거형 goal_gap 제거 ②
   DIRECTION_CONTEXT.md append 1항 제거 (양쪽 모두 단일 커밋 revert).
+
+## D-P13 — 승인 푸시 실행 + 첫 실전 스프린트 기동 (2026-07-29)
+- **What:** ① 5게이트(verify-public) 전부 PASS 실측 후 main 7커밋 푸시
+  (d92ce25..429c1ce). 소유자 지시문은 "6 pending commits"였으나 실측
+  ahead 7 — 7번째는 직전 지시로 승인·커밋된 429c1ce(goal_gap 편집)라
+  범위 내로 판단하고 포함 푸시. CI run 30389485749 green 확인.
+  ② 2사이클 스프린트를 tmux(dloop) 분리 기동 — preflight·H15 사인오프
+  게이트 통과 확인(60초 체크), run .direction/20260729-035419.
+- **Outcome:** exit 0 (REASON="exec produced no commit (cycle 2)" —
+  실행 가능 항목 소진, 정상 종료 형태). cycle 1: F-01/F-02 번역 2커밋
+  (c4c187d·d4c0e9f, 게이트 green). cycle 2: 유일 발견이 보호 경로
+  (tools/lint_publication.py DOCS) + OWNER DECISION REQUIRED → 커밋 0.
+  done_when 전 항목 본 세션 재실측 PASS. 충돌 검사 양 사이클 NONE.
+  머지/체리픽/폐기는 미실행 — 번역 정본 문서 내용 검수가 선행하는
+  소유자 결정 (INV-18).
+- **Basis:** verify-public 실측 로그 · facts.txt(기계 생성) ·
+  review-2.md 검증 절 · 소유자 지시문(2026-07-29 Action 1·2)
+- **Revert:** 푸시는 되돌리지 않음(이력) · 스프린트 산출물은 워크트리
+  브랜치에 격리 — 폐기 시 `git -C ../aaer-evals-loop reset --hard 0c2d227`.
