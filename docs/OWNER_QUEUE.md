@@ -772,3 +772,29 @@
 - **세션 기본 조치**: 초안만 — 보호 경로 무접촉 (draft only,
   no protected-path contact).
 - **상태**: OPEN
+
+## Q-F12 — BN-10: ENGINE_DECISION v2 소유자 패킷 검토·서명 (Cycle-2 등록 이전) — OPEN (신규, 2026-07-29 direction-loop)
+
+- **질문**: 루프가 작성한 `docs/ENGINE_DECISION_V2_OWNER_PACKET.md`
+  (BN-10이 의무화한 3절 — FPR-matched readout rules ·
+  Control-expansion selection protocol · Post-E2 history disclosure,
+  PROJECT.md §5-6)를 검토·확정하고 서명 D-엔트리 하에
+  `specs/ENGINE_DECISION.md` v2 절로 등재할까? DIRECTION_CONTEXT와
+  BN-10이 엔진 변경·대조군 확장의 유일한 사전 등록 경로로 "ENGINE_DECISION
+  v2"를 인용하지만 v2 초안이 어떤 파일에도 없었다 — 우선순위 1 병목
+  BN-01(오탐 주장 가능성)의 해소 경로가 이 서명을 경유한다.
+- **옵션**: (A) 패킷 §1–§3 옵션 선택 + 문안 확정 + 서명 D-엔트리 +
+  owner-hand로 `specs/` 등재 — **Cycle-2 등록 이전** (BN-10 해소 조건
+  문면) · (B) 패킷 수정 지시 — 루프가 초안 개정 후 재상정 · (C) 기각 —
+  v2 경로 자체를 재설계 (사유 기록 필요; BN-01 해소 경로 공백 지속).
+- **근거**: BN-10 해소 조건 = "Owner packet exists containing a v2 draft
+  (FPR-matching readout rules + control-expansion selection protocol +
+  post-E2 history-disclosure section per PROJECT.md §5-6) and owner
+  signature is recorded in the D-ledger before Cycle-2 registration."
+  패킷 존재 반쪽은 본 커밋으로 충족 — 서명·등재는 보호 경로(`specs/`)라
+  소유자 전속. 대조군 규모 선정 근거는 Q12에 따라 패킷 안에서 **OPEN**
+  으로 명시 표기했고, 패킷은 임계값·대조군 집합을 결정하지 않는다.
+- **세션 기본 조치**: 패킷 초안만 — `specs/` 무접촉, 임계·대조군 집합
+  무결정 (packet draft only, no specs/ contact, no threshold or
+  control-set decisions).
+- **상태**: OPEN
