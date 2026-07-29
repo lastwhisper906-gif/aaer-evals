@@ -65,6 +65,48 @@ seal 이후).
 **Basis:** README.md Licensing 절 (DOI pending Q-R03) ·
 `docs/OWNER_QUEUE.md` 12
 
+### BN-07: 재현 경로의 shallow-clone 취약성 — 이력 증명이 전체 git 이력 전제
+**Blocked:** 제3자 재현 주장의 견고성. `tools/verify_blindness.py`의
+기준-선행 증명(INV-07)은 `git merge-base --is-ancestor`로 커밋 SHA 이력을
+대조한다 — shallow clone(`--depth 1`, GitHub actions/checkout 기본값
+fetch-depth 1 포함)에서는 대상 SHA가 로컬 이력에 없어 검사가 실패하거나
+오판정한다. REPRODUCING.md의 재현 명령(`git clone <repo>`)은 full-clone
+요구를 명시하지 않는다.
+**Blocks:** 외부 감사자의 blindness 게이트 재현 — README "auditable"
+주장의 실측 경로. 얕은 클론으로 시도한 첫 외부 재현자가 원인 불명
+실패를 만나면 신뢰 비용이 발생한다.
+**Resolution condition:** verify_blindness.py가 shallow clone을 감지해
+명시적 fail-closed 메시지를 내고, REPRODUCING.md가 full-clone 전제를
+명시하며, full clone·shallow clone 각각에서 동작이 실측 확인됨.
+**Basis:** `tools/verify_blindness.py` check_history · REPRODUCING.md
+재현 명령 절
+
+### BN-08: README 첫 화면 — 첫 방문자 전환 실패 (시각 증거 0장)
+**Blocked:** DIRECTION_CONTEXT의 분기 성공 조건 "a README that survives
+90 seconds without internal identifiers". 현행 README 첫 화면은 산문·표
+중심이고 figure가 0장 — 실무자 방문자가 헤드라인 증거를 30초 안에 얻지
+못하며, 내부 식별자 밀도가 초기 이탈을 유발한다.
+**Blocks:** 독자 발송(BN-04)의 전환 — 발송해도 첫 화면 이탈이면 "몰랐던
+것" 응답 수집이 실패한다; 인용·확산 경로 전반.
+**Resolution condition:** `analysis/synthesis.py` 계열 산출 figure 파일이
+저장소에 존재하고 README 첫 화면에서 참조되며 `tools/lint_doc_counts.py`
+그린 — 세 조건 동시 충족.
+**Basis:** README.md 첫 화면 · DIRECTION_CONTEXT.md "READABLE BY ITS
+TARGET AUDIENCE" 절
+
+### BN-09: L-6 동일 계열 관대화 — 교차 채점자 부채 (스펙만 존재, 실측 0)
+**Blocked:** 채점 신뢰성 주장의 독립성 정량화. 채점 보조가 피평가자와
+동일 계열(Claude)이라는 한계는 공개돼 있으나(L-6), 교차 패밀리 채점자는
+스펙 문서만 존재(`specs/cross_grader.md` SPECIFICATION ONLY)하고 합의율
+(agreement) 실측이 0이다 — 관대화의 크기를 아무도 모른다.
+**Blocks:** L-6 한계의 정량화 — 외부 방어 가능한 채점 신뢰성 주장;
+Q-F07/Q18 소유자 결정의 실측 근거. INV-12상 타 LLM 호출 경로는 금지이므로
+호출 실행·합의표 게시는 소유자 게이트(owner packet) 대상.
+**Resolution condition:** 교차 채점자 하네스가 스펙에서 실행 가능 상태로
+구현되고(호출은 소유자 게이트 대기), 파일럿 합의표 산출 절차가 소유자
+패킷으로 준비됨.
+**Basis:** `docs/methodology_limitations.md` L-6 · `specs/cross_grader.md`
+
 ### BN-05: R3 산입 규칙 미규정 — RESOLVED (2026-07-29, D116)
 **Blocked (당시):** 교란 draw가 없는 실험군 케이스의 R3 산입 처리 —
 분자에서 제외되며 분모(n_treatment)에는 포함되는 현행 동작(v1=rev2
