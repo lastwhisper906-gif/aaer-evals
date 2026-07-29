@@ -214,9 +214,22 @@ def check_manifest(write: bool, root: Path = REPO) -> None:
         fail(f"(d) 매니페스트 미기재 파일 존재: {line.split('  ')[1]}")
 
 
+def check_not_shallow(root: Path = REPO) -> None:
+    # D123 (BN-07): (a)의 이력 증명은 전체 git 이력을 전제한다 — shallow
+    # clone에서는 merge-base 대조가 침묵 오판정할 수 있으므로 fail-closed.
+    probe = subprocess.run(["git", "-C", str(root), "rev-parse",
+                            "--is-shallow-repository"],
+                           capture_output=True, text=True)
+    if probe.returncode != 0 or probe.stdout.strip() != "false":
+        sys.exit("FATAL: shallow clone detected — the INV-07 history proof "
+                 "requires full git history. Run `git fetch --unshallow` "
+                 "(or re-clone without --depth), then re-run this verifier.")
+
+
 def main() -> int:
     FAILS.clear()
     WARNS.clear()
+    check_not_shallow(REPO)
     registry = load_registry(REPO)
     check_history(REPO, registry)
     check_semantic_scans(REPO, registry)
