@@ -402,3 +402,43 @@
   ~/tools 커밋 0f4b226 · run 로그 .direction/20260729-185813 (BRIEF.md
   00:15 생성)
 - **Revert:** ~/tools에서 0f4b226 revert (본 항목은 append-only 기록).
+
+## D-P29 — H27 until-stop 모드 + H28 모델 fallback/쿼터 일시정지 구현·발사 (2026-07-30)
+- **What:** 소유자 지시(플랜 ~/Downloads/direction-loop-v2-2.md + 2026-07-30
+  지시문)로 ~/tools 커밋 072fed7. **H27:** `--until-stop` 플래그(--cycles·
+  --review-only와 상호 배타, 워크트리 핸드오프 전파) — 사이클 캡 없음,
+  종료는 `.direction/STOP`(모든 대기 전후 확인). 5사이클=1에포크; 에포크
+  경계마다 H24 정합 패스를 롤링(직전 에포크 누적 diff + 신규 결정만)으로
+  실행, 근거 있는 CONFLICT는 `.direction/coherence_conflicts.md`로 다음
+  사이클 리뷰어 최우선 항목 라우팅(direction_review.md 규칙 신설), 동일
+  앵커가 연속 두 에포크 패스 생존 시 exit 6. 보충 예산 2/에포크(경계
+  리셋); 한 에포크 내 빈 수렴 2회 = "judgment base exhausted" 종료(소유자
+  인지·수용한 유일한 자체 종료 예외). facts.txt에 에포크별 커밋 수 요약.
+  **H28:** PRIMARY_MODEL(기본 = CLI 기본 모델)·FALLBACK_MODEL(기본
+  claude-opus-4-8 — claude CLI 2.1.220이 해당 문자열 수락함을 라이브 1회
+  호출로 확인). 쿼터 시그니처(429/rate limit/overloaded/usage limit) 실패
+  시 fallback으로 1회 재시도, 호출별 모델을 meta.txt에 기록("cycle N step
+  X: model=..."); fallback도 쿼터 실패 시 사이클 경계 QUOTA PAUSE(기본
+  30분 sleep, STOP 전후 확인, 사이클 처음(리뷰 단계)부터 PRIMARY로 재시도,
+  일시정지 이벤트당 예산 6h 초과 시 "quota exhausted beyond pause budget"
+  종료). 비쿼터 실패는 H10 유지(재시도 없음). BRIEF·정합 패스도 fallback
+  참여; Codex는 별도 풀(무변경). fallback 사용 시 BRIEF에 기계 부기
+  honesty marker(고정 caveat 문구, 모델 아닌 하네스가 append). **미세 가정
+  결정:** (1) coherence_conflicts.md는 최신 에포크 패스가 덮어쓰기,
+  COHERENT 시 삭제; 생존 판정 앵커 집합은 .direction/epoch_anchors_prev로
+  런 간 지속(per-cycle conflicts_seen 전례). (2) 에포크 경계 처리는 루프
+  상단(continue 경로 포섭)이며 STOP 검사가 경계 처리보다 우선. (3)
+  exec·codex-fix 쿼터 재시도 전 `git reset --hard PREV`(부분 커밋 파기).
+  (4) 예산 소진 상태의 수렴도 빈 수렴으로 계상. (5) 정합 패스 실패(쿼터
+  포함)는 S-B대로 비치명 로그, 직전 충돌 상태 유지. 드라이런 7/7 green
+  (/tmp/h27-dryrun/log-{s1,s2,s3,s4a,s4b,s4c,s5a+b}.txt: 11사이클
+  until-stop+STOP, 에포크 5·10 정합, 반복 충돌 exit 6, 빈 수렴 2회 종료,
+  fallback meta 기록, pause 예산 소진, pause 중 STOP, 플래그 상호 배타),
+  bash -n + shellcheck -S warning clean. 본 기록 push 후
+  `--until-stop`으로 발사(기존 aaer-evals-loop 워크트리 재사용 — 미병합
+  스프린트 20260729-185813 14커밋 위에서 계속; 병합 판단은 소유자 몫으로
+  유지).
+- **Basis:** 소유자 지시문(2026-07-30) · ~/tools 커밋 072fed7 · 드라이런
+  로그 /tmp/h27-dryrun
+- **Revert:** ~/tools에서 072fed7 revert (aaer-evals 무영향; 본 항목은
+  append-only 기록).
