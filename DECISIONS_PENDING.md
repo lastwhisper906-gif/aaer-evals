@@ -324,3 +324,21 @@
 - **Basis:** 소유자 지시문 Action 1 · ~/tools 커밋 7ef8b1a · 드라이런
   로그 /tmp/h25-dryrun/log-s1..s6.txt
 - **Revert:** ~/tools에서 7ef8b1a revert (aaer-evals 저장소는 무영향).
+
+## D-P24 — D120 적용 기록: rescue + cherry-pick + BN-08 플립 (2026-07-29)
+- **What:** rescue 브랜치 rescue-20260729-152205(15fc704) 생성으로 루프
+  워크트리의 unreachable 커밋 보존, main에 0cfc80e·15fc704 cherry-pick
+  (874b025·d813a1a) — verify-public RC=0, push, CI green 확인. 소유자
+  손으로 BN-08 RESOLVED 이동(실측 증거 포함, 원장 D120).
+- **Basis:** 소유자 지시문 Action 0 · vp2 로그 RC=0 · CI run d813a1a
+  success
+- **Revert:** BN-08 플립 커밋 revert + `git revert 874b025 d813a1a`
+  (rescue 브랜치는 무영향).
+
+## D-P25 — D121 적용 기록: S-05 해소, BN-09 재규정 (2026-07-29)
+- **What:** BOTTLENECKS.md BN-09 resolution_condition을 소유자 패킷 준비
+  3종(SPEC·선정 프로토콜·호출-비활성 SKELETON)으로 재규정(원장 D121).
+  INV-12·INV-20 무개정. 루프 워크트리 strategic.md의 S-05에 RESOLVED
+  주석 병기.
+- **Basis:** 소유자 지시문 Action 2 · S-05 (run 20260729-152205 cycle 1)
+- **Revert:** 본 커밋 revert + strategic.md 주석 제거.

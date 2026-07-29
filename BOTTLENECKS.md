@@ -81,19 +81,6 @@ fetch-depth 1 포함)에서는 대상 SHA가 로컬 이력에 없어 검사가 �
 **Basis:** `tools/verify_blindness.py` check_history · REPRODUCING.md
 재현 명령 절
 
-### BN-08: README 첫 화면 — 첫 방문자 전환 실패 (시각 증거 0장)
-**Blocked:** DIRECTION_CONTEXT의 분기 성공 조건 "a README that survives
-90 seconds without internal identifiers". 현행 README 첫 화면은 산문·표
-중심이고 figure가 0장 — 실무자 방문자가 헤드라인 증거를 30초 안에 얻지
-못하며, 내부 식별자 밀도가 초기 이탈을 유발한다.
-**Blocks:** 독자 발송(BN-04)의 전환 — 발송해도 첫 화면 이탈이면 "몰랐던
-것" 응답 수집이 실패한다; 인용·확산 경로 전반.
-**Resolution condition:** `analysis/synthesis.py` 계열 산출 figure 파일이
-저장소에 존재하고 README 첫 화면에서 참조되며 `tools/lint_doc_counts.py`
-그린 — 세 조건 동시 충족.
-**Basis:** README.md 첫 화면 · DIRECTION_CONTEXT.md "READABLE BY ITS
-TARGET AUDIENCE" 절
-
 ### BN-09: L-6 동일 계열 관대화 — 교차 채점자 부채 (스펙만 존재, 실측 0)
 **Blocked:** 채점 신뢰성 주장의 독립성 정량화. 채점 보조가 피평가자와
 동일 계열(Claude)이라는 한계는 공개돼 있으나(L-6), 교차 패밀리 채점자는
@@ -102,10 +89,14 @@ TARGET AUDIENCE" 절
 **Blocks:** L-6 한계의 정량화 — 외부 방어 가능한 채점 신뢰성 주장;
 Q-F07/Q18 소유자 결정의 실측 근거. INV-12상 타 LLM 호출 경로는 금지이므로
 호출 실행·합의표 게시는 소유자 게이트(owner packet) 대상.
-**Resolution condition:** 교차 채점자 하네스가 스펙에서 실행 가능 상태로
-구현되고(호출은 소유자 게이트 대기), 파일럿 합의표 산출 절차가 소유자
-패킷으로 준비됨.
-**Basis:** `docs/methodology_limitations.md` L-6 · `specs/cross_grader.md`
+**Resolution condition:** (D121 재규정 — 소유자 패킷 준비로 한정) 루프
+산출물은 ① 교차 채점자 SPEC 확정, ② 채점 대상 선정 프로토콜, ③
+fail-closed·호출-비활성 하네스 SKELETON(어디에도 GPT/Gemini 호출 경로를
+추가하지 않음 — INV-12 위반 테스트 무개정 존치, INV-20 zero-metered
+존치)의 3종이 소유자 패킷으로 준비되면 해소. 실제 타 계열 호출·등급
+선정·합의표 게시는 루프 밖 소유자 실행 전용.
+**Basis:** `docs/methodology_limitations.md` L-6 · `specs/cross_grader.md` ·
+`scoring/decisions_log.md` D121
 
 ### BN-05: R3 산입 규칙 미규정 — RESOLVED (2026-07-29, D116)
 **Blocked (당시):** 교란 draw가 없는 실험군 케이스의 R3 산입 처리 —
@@ -117,3 +108,15 @@ Q-F07/Q18 소유자 결정의 실측 근거. INV-12상 타 LLM 호출 경로는 
 아님. 차기 ANALYSIS_PLAN 개정본이 이 규칙을 계승 명문화한다.
 **Basis:** ERRATA.md E-002 "차기 계획 개정 플래그" 절 ·
 `docs/FUTURE_CYCLE_PROTOCOL.md` 부록 A-3 · `scoring/decisions_log.md` D116
+
+### BN-08: README 첫 화면 첫 방문자 전환 — RESOLVED (2026-07-29, D120)
+**Blocked (당시):** DIRECTION_CONTEXT의 분기 성공 조건 "a README that
+survives 90 seconds" — README 첫 화면에 figure 0장.
+**RESOLVED:** wave-1 30사 dot plot이 README 첫 화면에 삽입됨 — 실측
+증거: `analysis/fig_dotplot_30firms.png`(git-tracked) 참조가
+README.md:46, `## Quickstart`(:56)보다 위. `make verify-public` RC=0
+(lint_publication PASS · lint_doc_counts PASS · pytest 279 passed) —
+해소 조건 3종 동시 충족. 커밋 874b025(루프 0cfc80e cherry-pick, 소유자
+채택). 소유자 서명 D120.
+**Basis:** README.md:46 · `scoring/decisions_log.md` D120 · vp2 게이트
+로그 (verify-public RC=0)

@@ -1138,3 +1138,11 @@ c44bd59a…)는 **서명 없이 superseded** (채점 미진입 상태 폐기). v
 ## D119 — 소유자 서명: BN-07/08/09 주입 + 정적 리뷰 맹점 상시 의심 등재 (2026-07-29, 무호출, JSON 1줄)
 
 {"decision":"D119","date":"2026-07-29","action":"BOTTLENECKS.md에 BN-07(shallow-clone 재현 취약성 — verify_blindness의 merge-base 이력 대조가 full clone 전제), BN-08(README 첫 화면 첫 방문자 전환 실패 — figure 0장, 90초 생존 조건), BN-09(L-6 교차 채점자 부채 — 스펙만 존재·합의율 실측 0, 호출·게시는 소유자 게이트) 3건 주입. DIRECTION_CONTEXT.md Standing suspicions에 '정적 리뷰의 실행 경로 맹점' 등재. 문언 유의: 소유자 지시의 '기지정 문언(previously-specified wording)'이 접근 가능한 어떤 기록(계획 문서 v2·전 세션 전사·저장소)에도 부재 — 주제 괄호(shallow-clone repro fragility / first-visitor README conversion / L-6 cross-grader debt)와 저장소 실측 근거로부터 본 세션이 문언을 도출했고 이 도출은 소유자 사후 검토 대상","authority":"owner, 2026-07-29, this session's prompt (Action 0-3)","metered":"0호출","learning_note":"이 판단에서 알아야 할 것: '기지정 문언 재적용' 지시에서 문언 원본이 유실됐으면 주제 의도+실측 근거로 재구성하되 재구성 사실 자체를 원장에 박아야 한다 — 재구성을 원문 인용처럼 침묵 처리하면 소유자의 사후 검토가 검토할 대상을 잃는다"}
+
+## D120 — 소유자 서명: BN-08 해소 — README 첫 화면 figure 실측 충족 (2026-07-29, 무호출, JSON 1줄)
+
+{"decision":"D120","date":"2026-07-29","action":"exit-4로 revert된 루프 커밋 0cfc80e·15fc704를 rescue 브랜치(rescue-20260729-152205) 보존 후 main에 cherry-pick(874b025·d813a1a, verify-public RC=0, CI green). 소유자 손으로 BOTTLENECKS.md BN-08을 RESOLVED 하단 이동 — 실측 증거: analysis/fig_dotplot_30firms.png(git-tracked) 참조 README.md:46(## Quickstart :56 위), lint_publication·lint_doc_counts PASS, pytest 279. 루프의 cycle-2 상태 플립 시도는 H9가 정당 차단했고 플립은 본 서명 경로로 실행","authority":"owner, 2026-07-29, this session's prompt (Action 0)","metered":"0호출","learning_note":"이 판단에서 알아야 할 것: 가드가 되돌린 작업의 채택은 '가드 무력화'가 아니라 '승인 경로 통과'다 — 같은 diff라도 exec 커밋이면 위반, rescue→cherry-pick→서명이면 정본이 되는 것은 경로가 곧 권한이기 때문이다"}
+
+## D121 — 소유자 서명: S-05 해소 — BN-09를 소유자 패킷 준비로 재규정 (2026-07-29, 무호출, JSON 1줄)
+
+{"decision":"D121","date":"2026-07-29","action":"S-05(BN-09 해소 조건이 INV-12 위반 테스트·INV-20과 충돌)를 재규정으로 해소: BN-09 resolution_condition을 ①교차 채점자 SPEC ②선정 프로토콜 ③fail-closed·호출-비활성 하네스 SKELETON(GPT/Gemini 호출 경로 무추가)의 소유자 패킷 준비로 한정. INV-12 위반 테스트 무개정 존치, INV-20 zero-metered 존치. 실제 타 계열 호출·등급 선정·합의표 게시는 루프 밖 소유자 실행 전용","authority":"owner, 2026-07-29, this session's prompt (Action 2)","metered":"0호출","learning_note":"이 판단에서 알아야 할 것: 불변식과 충돌하는 해소 조건은 불변식을 여는 쪽이 아니라 조건을 좁히는 쪽으로 푸는 것이 기본값이다 — 경계 수정은 한 번 열리면 위반 테스트의 기계성이 죽는다"}
