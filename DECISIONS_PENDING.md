@@ -386,3 +386,10 @@
 - **Basis:** 소유자 지시문 Action 1·2 · vp4 로그 RC=0 · CI 42fedf3
   success · 원장 D122~D126
 - **Revert:** 각 governance 커밋 개별 revert (원장은 append-only).
+
+## D-P (harness replenish) — H25 BN append: BN-13 BN-14 (20260729-185813 cycle 4)
+- **What:** H25 replenish accepted BN-13 BN-14 after mechanical filters
+  (H19 basis verification · no Basis overlap · no id collision). Appended
+  and committed by the HARNESS, not exec-claude. Source: .direction/20260729-185813/replenish-4.md
+- **Basis:** .direction/20260729-185813/replenish-4.md · H25 (owner-signed 2026-07-29)
+- **Revert:** revert the replenish(harness) commit listed in .direction/20260729-185813/replenish_shas.

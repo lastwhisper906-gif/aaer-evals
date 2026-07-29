@@ -145,3 +145,16 @@ RC=2 "CALLS DISABLED" fail-closed, `requests|urllib|http` 임포트 0건,
 실제 타 계열 호출·합의표 게시는 여전히 루프 밖 소유자 실행 전용(Q-F07).
 **Basis:** `docs/CROSS_GRADER_OWNER_PACKET.md` ·
 `tools/test_cross_grader_skeleton.py` · `scoring/decisions_log.md` D122
+
+### BN-13: E-001's blind spot is still open — published numbers beyond wave-1 sit outside the recompute gate
+**Blocked:** Machine-verified provenance of RESULTS rows 3/6/9/10/13 (including the headline 71.4%) — verify-public recomputes only RP-05/wave-1 numbers, while wave2_results.json, holdout_controls_results.json, and decision_table.json are trusted as-is (lint_publication rule F cross-reads them; nothing recomputes them from the committed runs/ scores and e2_trajectories.json, and even verify-full omits wave2_analyze.py)
+**Blocks:** The README/CLAIM_HIERARCHY Level-0 claim "recomputes every published number from committed artifacts" at exactly the artifact class where the project's own errata (E-001/E-002) found real plan-deviation defects — silent drift or a regenerated-JSON error in the wave-2/holdout/E2 numbers would pass all 5 gates green
+**Resolution condition:** A verify-public step (reproduce_analysis extension or dedicated pytest) recomputes the wave-2 separation stats, holdout-controls numbers, and decision-table cells from committed runs/ artifacts and analysis/e2_trajectories.json (seeds per E-002), fails on mismatch with the published JSONs, and make verify-public exits RC=0 after wiring
+**Basis:** tools/reproduce_analysis.py
+
+### BN-14: The limits half of the evidence chain is Korean-only — the limitation ledger every honest-scrutiny click resolves to
+**Blocked:** Non-Korean reader access to docs/methodology_limitations.md (L-1…L-8 — the target of AUDIT_INDEX's L-N row, README_DETAIL's L-1/L-5 citations, and RESULTS row 8/9 limit language) and to analysis/error_analysis_wave2_holdout.md (RESULTS row 9's source column) — the claims half of the chain is now English, the limits half is not
+**Blocks:** The quarter goal "readable by its target audience" on the academic-scrutiny path — the reader verifying "residual memorization is measured, not eliminated" hits a Korean wall one click below RESULTS, leaving the D114 boundary (all reader-facing docs English-canonical) unapplied to the very docs that carry the project's honesty differentiator
+**Resolution condition:** English-canonical methodology_limitations.md (and the row-9 source doc) with .ko.md originals preserved per the F-01/F-02 protocol, numeric token-equivalence check PASS, lint DOCS lists extended to the new pairs, owner-adopted on main with verify-public RC=0
+**Basis:** docs/methodology_limitations.md
+
