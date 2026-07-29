@@ -3,7 +3,10 @@
 > Authored by Claude Code, pending human audit (GA-001 (b)). Zero new claims —
 > every row links a frozen-artifact path. Existence-proof framing: these are
 > not performance estimates. Re-verify: `make verify-public`. Task tags and the
-> no-pooling discipline are in the README "Three tasks" section (D106 ④).
+> no-pooling discipline are in the "Three tasks" section of
+> [docs/README_DETAIL.md](docs/README_DETAIL.md) (D106 ④).
+> Identifier glossary (D/Q/RP/R3/R4/E5/L4/CP95 and friends):
+> [AUDIT_INDEX.md](AUDIT_INDEX.md).
 > Grading: Claude-assisted, human-finalized. All results are scoped to a
 > single Claude-based pipeline.
 > Korean original: [RESULTS.ko.md](RESULTS.ko.md).
@@ -16,7 +19,7 @@
 | 4 | [T1] name-ID axis | 50% (15/30) → 21.9% (7/32) → 0% | 21.9% is the frozen-rule value — a rename-aware human reading of 25% (borderline case DAR) is footnoted alongside (Q-E02) | `analysis/name_probe_results.json` · `analysis/synthesis.json` |
 | 5 | [T2] post-cutoff holdout per-case scores | HUBG 70 · GNE 42 · WMK 32 (0–100 ordinal) | N=3, per-case only — H1 (permutation significance) not claimed. Labels are provisional Big-R (4.02 unreliable), not confirmed enforcement. The HUBG hit is a tier hit with the mechanism missed (anchored on the 2018 restatement cluster) | `runs/holdout/` · `analysis/label_tags_holdout.json` |
 | 6 | [T2] E1 matched controls | HUBG 70 > all matched controls (RXO 42 · BCO 30 · XPO 20); separation in only 1 of 3 cases | Exact permutation p=0.20 is CONTEXT ONLY. The single highest score in the holdout tier is a control false positive (GRDX 78) — HUBG does not exceed the pooled control set | `analysis/holdout_controls_results.json` |
-| 7 | [T2] holdout draw robustness (k=5) | HUBG ≥50 in 5/5 draws [58–76]; WMK [28–42] · GNE [30–42] 0/5 | The published number is draw-1 — the bands are companion statistics | `runs/holdout_redraw/` (E5 §7) |
+| 7 | [T2] holdout draw robustness (k=5) | HUBG ≥50 in 5/5 draws [58–76]; WMK [28–42] · GNE [30–42] 0/5 | The published number is draw-1 — the bands are companion statistics | `runs/holdout/mainscore_redraw/` (E5 §7) |
 | 8 | [T1] FPR wave-1 | 3/22 = 13.6% CP95 [2.9%, 34.9%] | Controls are "non-enforcement," not "clean" — the bias direction pushes specificity downward (survivorship and selection bias; README Limitations) | `analysis/results_stats.json` |
 | 9 | [T1] FPR wave-2 | 5/23 = 21.7% CP95 [7.5%, 43.7%] | Same as above; additionally, the 5 false positives are not hallucinations but positive misreadings of real figures (grounded; top of dim4) | `analysis/wave2_results.json` · `analysis/error_analysis_wave2_holdout.md` |
 | 10 | [T2] FPR holdout controls | 2/9 = 22.2% CP95 [2.8%, 60.0%] | No silent pooling of FPR across tiers — CP intervals overlap heavily; worse-but-not-provably | `analysis/holdout_controls_results.json` |
