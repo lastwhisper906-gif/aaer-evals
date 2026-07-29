@@ -19,14 +19,16 @@
 | **L-N / J-NN** | Methodology limitation / analysis discretion judgment record | `docs/methodology_limitations.md` · RP-05 §9 |
 | **R1–R4 / H1–H3** | Pre-committed conclusion trigger rules (wave / holdout) | `analysis/*_PLAN.md` (freeze-commit-then-run) |
 | **E1–E5** | Experiment codes (metered batches): E1 holdout matched controls · E2 earliness trajectories · E3 wave-2 perturbed redraw · E4 cross-model (exploratory) · E5 wave-2 main-score redraw stability band | E1 `analysis/HOLDOUT_CONTROLS_PLAN.md` · E2 `analysis/EARLINESS_PLAN.md` · E3 `analysis/W2_PERTURB_REDRAW_PLAN.md` · E4 (exploratory) `analysis/CROSSMODEL_PLAN.md` · E5 `analysis/W2_MAINSCORE_REDRAW_PLAN.md` |
-| **L1–L4** | Evidence-layer codes in the decision table: L1/L2 = TASK 1 · L3 = TASK 2 · L4 = exploratory E2 trajectory layer. Cells are per-layer, never summed across layers | `analysis/DECISION_TABLE.md` |
+| **L1–L4** | Evidence-layer codes in the decision table: L1/L2 = TASK 1 · L3 = TASK 2 · L4 = exploratory E2 trajectory layer. Cells are per-layer, never summed across layers | `analysis/DECISION_TABLE.md` · `docs/README_DETAIL.md` (English definition) |
 | **CP95** | Clopper–Pearson exact 95% confidence interval — the interval convention attached to every published proportion | `RESULTS.md` (per-row limits) · `analysis/DECISION_TABLE.md` |
 | **B1–B4** | Deterministic baseline codes: B1 = Beneish M-score · B2 = Dechow F-score · B3 = pre-registered chronology meta-signal · B4 = abnormal short interest | `analysis/baseline_table.csv` · `specs/B3_metasignal.md` · `specs/B4_short_interest.md` |
 
 Disambiguation: **E-NNN** (three digits, hyphenated — errata, e.g. E-001) is
 a different identifier family from experiment codes **E1–E5** (single digit,
 no hyphen). E-001 is a post-publication defect record; E1 is a metered
-experiment batch.
+experiment batch. Likewise, limitation codes **L-N** (hyphenated, e.g. L-6,
+`docs/methodology_limitations.md`) are a different identifier family from
+evidence-layer codes **L1–L4** (no hyphen).
 
 Reading order (governance map): `PROJECT.md` → `scoring/decisions_log.md` →
 `scoring/overrides.md` → `review_packets/INDEX.md` → frozen texts of the

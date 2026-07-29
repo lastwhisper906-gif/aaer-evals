@@ -19,13 +19,15 @@
 | **L-N / J-NN** | 방법론 한계 / 분석 재량 판단 기록 | `docs/methodology_limitations.md` · RP-05 §9 |
 | **R1–R4 / H1–H3** | 사전 커밋된 결론 발동 규칙 (wave / holdout) | `analysis/*_PLAN.md` (freeze-commit-then-run) |
 | **E1–E5** | 실험 코드(미터링 배치): E1 홀드아웃 매칭 대조군 · E2 조기성 궤적 · E3 wave-2 교란 재추첨 · E4 교차모델(exploratory) · E5 wave-2 본채점 재추첨 안정성 밴드 | E1 `analysis/HOLDOUT_CONTROLS_PLAN.md` · E2 `analysis/EARLINESS_PLAN.md` · E3 `analysis/W2_PERTURB_REDRAW_PLAN.md` · E4 (exploratory) `analysis/CROSSMODEL_PLAN.md` · E5 `analysis/W2_MAINSCORE_REDRAW_PLAN.md` |
-| **L1–L4** | 결정 테이블의 증거 레이어 코드: L1/L2 = TASK 1 · L3 = TASK 2 · L4 = 탐색적 E2 궤적 레이어. 셀은 레이어별 — 레이어 간 합산 금지 | `analysis/DECISION_TABLE.md` |
+| **L1–L4** | 결정 테이블의 증거 레이어 코드: L1/L2 = TASK 1 · L3 = TASK 2 · L4 = 탐색적 E2 궤적 레이어. 셀은 레이어별 — 레이어 간 합산 금지 | `analysis/DECISION_TABLE.md` · `docs/README_DETAIL.md` (영문 정의) |
 | **CP95** | Clopper–Pearson 정확 95% 신뢰구간 — 발행되는 모든 비율 수치에 붙는 구간 규약 | `RESULTS.ko.md` (행별 한계 열) · `analysis/DECISION_TABLE.md` |
 | **B1–B4** | 결정론적 기준선 코드: B1 = Beneish M-score · B2 = Dechow F-score · B3 = 사전 등록 연대기 메타신호 · B4 = 비정상 공매도 잔고 | `analysis/baseline_table.csv` · `specs/B3_metasignal.md` · `specs/B4_short_interest.md` |
 
 구별 주: **E-NNN**(세 자리·하이픈 — 정오표, 예: E-001)은 실험 코드
 **E1–E5**(한 자리·하이픈 없음)와 다른 식별자 계열이다. E-001은 발행 후
-결함 기록이고, E1은 미터링 실험 배치다.
+결함 기록이고, E1은 미터링 실험 배치다. 마찬가지로 방법론 한계 코드
+**L-N**(하이픈, 예: L-6, `docs/methodology_limitations.md`)은 증거 레이어
+코드 **L1–L4**(하이픈 없음)와 다른 식별자 계열이다.
 
 읽는 순서(거버넌스 지도): `PROJECT.md` → `scoring/decisions_log.md` →
 `scoring/overrides.md` → `review_packets/INDEX.md` → 게시 이슈 동결 원문
