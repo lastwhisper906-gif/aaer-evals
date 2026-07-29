@@ -1122,3 +1122,7 @@ c44bd59a…)는 **서명 없이 superseded** (채점 미진입 상태 폐기). v
 ## D115 — 소유자 서명: lint_publication DOCS에 RESULTS/METHOD 양어 4종 편입 (2026-07-29, 무호출, JSON 1줄)
 
 {"decision":"D115","date":"2026-07-29","action":"스프린트 20260729-035419 cycle-2 소유자 패킷(F-01, .direction/20260729-035419/review-2.md) 해소 — tools/lint_publication.py DOCS += RESULTS.md·METHOD.md(영어 정본 수치 표·방법 문서)·RESULTS.ko.md·METHOD.ko.md(동결 한국어 원본 회귀 감시). INV-13(단정 어휘 금지)·INV-14(범위 한정 문구) 규칙이 주 인용 대상 문서에 기계 검사로 편입됨. 적용 후 lint PASS 실측(RC=0). 보호 경로 수정은 본 서명 하 세션이 소유자의 손으로 적용 — direction-loop 실행 아님","authority":"owner, 2026-07-29, this session's prompt (Action 2, D-B)","metered":"0호출","learning_note":"이 판단에서 알아야 할 것: 문서를 번역해 발행 표면에 올리는 커밋과 그 문서를 lint 대상에 넣는 커밋이 분리되면 그 사이가 무검사 창이 된다 — 표면 편입과 검사 편입은 같은 결정 사슬에 묶어야 한다"}
+
+## D116 — 소유자 서명: BN-05 해소 — R3 무draw 산입 규칙 전향 명문화 (2026-07-29, 무호출, JSON 1줄)
+
+{"decision":"D116","date":"2026-07-29","action":"Stage-1 런(.direction/20260729-021552) 상비 소유자 패킷 해소 — docs/FUTURE_CYCLE_PROTOCOL.md 부록 A-3 신설: 교란 draw 부재 실험군 케이스는 R3 분자 제외·분모 포함(v1=rev2 실측 동작)을 차기 사이클 측정 절차로 명문화. 관할: 전향 전용 — ANALYSIS_PLAN_WAVE2·동결 산출물의 소급 개정 아님(사전 고정 원칙, E-002 '소급 변경 금지' 준수). ERRATA E-002 플래그에 resolved-by 교차 참조(ERRATA 자체는 무수정 — append-only 원칙). BOTTLENECKS.md BN-05 RESOLVED 이동. done_when 실측: grep R3 docs/FUTURE_CYCLE_PROTOCOL.md = 2건(기존 0)","authority":"owner, 2026-07-29, this session's prompt (Action 2, D-C)","metered":"0호출","learning_note":"이 판단에서 알아야 할 것: 결과를 이미 본 규칙의 명문화는 관할 선언이 본체다 — '전향 전용, 소급 아님'을 규칙 텍스트 안에 박지 않으면 같은 문장이 나중에 소급 정당화로 오독될 수 있다"}

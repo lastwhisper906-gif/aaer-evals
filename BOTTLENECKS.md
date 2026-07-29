@@ -56,18 +56,6 @@ seal 이후).
 **Basis:** `docs/OWNER_QUEUE.md` 레버리지 1 · `docs/HANDOFF.md` 게시 절차 ·
 `docs/POST_FORWARD_BACKLOG.md` P3
 
-### BN-05: R3 산입 규칙 미규정 — 차기 계획 개정 전 차기 채점 불가 영역
-**Blocked:** 교란 draw가 없는 실험군 케이스의 R3 산입 처리 —
-분자에서 제외되며 분모(n_treatment)에는 포함되는 현행 동작(v1=rev2
-동일)이 `analysis/ANALYSIS_PLAN_WAVE2.md`에 규정되어 있지 않다. E-002가
-"차기 계획 개정 시 명시적으로 규정할 것 (소급 변경 금지)"로 플래그.
-**Blocks:** 이 경우를 포함할 수 있는 다음 wave/사이클의 분석 계획 확정 —
-규정 없이 재실행하면 같은 미규정 상태를 재생산한다.
-**Resolution condition:** 차기 ANALYSIS_PLAN 개정본에 해당 규칙이 명문화
-되어 실행 전 커밋됨 (INV-07 선행 커밋 충족).
-**Basis:** ERRATA.md E-002 "차기 계획 개정 플래그" 절 ·
-`analysis/ANALYSIS_PLAN_WAVE2.md`
-
 ### BN-06: DOI 미발급 — 인용 경로 미완결
 **Blocked:** `CITATION.cff`의 DOI 필드 (Q-R03 — Zenodo vs release 경로는
 확정, 소유자 계정 실행 대기).
@@ -76,3 +64,14 @@ seal 이후).
 **Resolution condition:** DOI 발급 + `CITATION.cff` 반영 커밋.
 **Basis:** README.md Licensing 절 (DOI pending Q-R03) ·
 `docs/OWNER_QUEUE.md` 12
+
+### BN-05: R3 산입 규칙 미규정 — RESOLVED (2026-07-29, D116)
+**Blocked (당시):** 교란 draw가 없는 실험군 케이스의 R3 산입 처리 —
+분자에서 제외되며 분모(n_treatment)에는 포함되는 현행 동작(v1=rev2
+동일)이 `analysis/ANALYSIS_PLAN_WAVE2.md`에 규정되어 있지 않았다. E-002가
+"차기 계획 개정 시 명시적으로 규정할 것 (소급 변경 금지)"로 플래그.
+**RESOLVED:** `docs/FUTURE_CYCLE_PROTOCOL.md` 부록 A-3에 전향 전용으로
+명문화(소유자 서명 D116) — 관할은 차기 사이클 측정 절차이며 소급 개정
+아님. 차기 ANALYSIS_PLAN 개정본이 이 규칙을 계승 명문화한다.
+**Basis:** ERRATA.md E-002 "차기 계획 개정 플래그" 절 ·
+`docs/FUTURE_CYCLE_PROTOCOL.md` 부록 A-3 · `scoring/decisions_log.md` D116
