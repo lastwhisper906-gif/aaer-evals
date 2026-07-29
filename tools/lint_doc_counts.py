@@ -24,7 +24,9 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 MANIFEST = REPO / "data" / "manifests" / "aaer_data_manifest.json"
 MAKEFILE = REPO / "Makefile"
-DOCS = ["README.md", "README.ko.md", "REPRODUCING.md"]
+DOCS = ["README.md", "README.ko.md", "REPRODUCING.md",
+        "REPRODUCING.ko.md"]  # D124: 동결 한국어 원본의 생성 블록도 대조
+
 
 BEGIN = "<!-- BEGIN-GENERATED: repro-facts (refresh: make docs-refresh; CI: tools/lint_doc_counts.py) -->"
 END = "<!-- END-GENERATED: repro-facts -->"
