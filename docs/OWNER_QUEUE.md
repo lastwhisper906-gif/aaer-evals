@@ -829,3 +829,33 @@
 - **세션 기본 조치**: 등록만 — 보호 경로 무접촉 (registration only,
   no protected-path contact).
 - **상태**: OPEN
+
+## Q-F14 — BN-14: methodology_limitations 영어화 채택 + 린트 DOCS 확장 (en/ko 쌍) — OPEN (신규, 2026-07-29 direction-loop)
+
+- **질문**: 루프가 F-01/F-02 규약(D114 영어화 선례)대로 수행한
+  `docs/methodology_limitations.md` 영어화 — 한국어 원문은
+  `docs/methodology_limitations.ko.md`로 바이트 보존, 영어본은 수치
+  토큰 동치 검사 PASS(정렬 숫자 토큰 diff 일치), 상호 헤더 링크 —
+  를 영어 정본으로 채택 확정하고, D115/D118 선례대로
+  `tools/lint_publication.py` DOCS에 신규 en/ko 쌍 2파일을 편입할까?
+  이 문서는 AUDIT_INDEX의 L-N 행과 RESULTS 행 8·9 한계 문언의 대상
+  (L-1…L-8)인데 지금까지 한국어 전용이었다 — "residual memorization is
+  measured, not eliminated"를 검증하려는 독자가 RESULTS 한 클릭 아래에서
+  한국어 벽을 만나는 상태 (BN-14, D114 경계: 독자 대면 문서 영어 정본).
+- **옵션**: (A) D118 선례 그대로 — 서명 D-엔트리 1건 하에 채택 확정 +
+  `tools/lint_publication.py` DOCS에
+  `docs/methodology_limitations.md`·`docs/methodology_limitations.ko.md`
+  2파일 추가(G2-fraud·범위 문구 회귀 감시 편입), 편집 후 lint 실측
+  RC=0 기록 · (B) 채택만 확정하고 린트 편입 이연 — D115 학습 노트가
+  경고한 파일별 무검사 창이 열린다 · (C) 기각 — 영어본을 철회하고
+  한국어 단일본으로 복귀 (사유 기록 필요; BN-14 미해소 지속).
+- **근거**: BN-14 해소 조건이 이 문서를 첫 번째로 지명하고, 분기 목표가
+  "audit-ready but unread fails this quarter"를 명시한다. 번역·상호
+  링크·수치 토큰 동치까지는 비보호 docs/ 경로라 루프가 완료 — 채택
+  확정과 린트 확장(`tools/lint_` 보호 접두)은 owner-hand 대상이라
+  INV-18 사슬(발견 → 큐 등록 → 서명)로 등재한다. **기본값 (무응답 시)**:
+  (A) — D118 선례("표면 승격과 린트 편입은 같은 결정의 두 반쪽").
+- **세션 기본 조치**: 번역·상호 링크·동치 검사까지만 — 린트 등
+  보호 경로 무접촉 (translation + cross-links only, no protected-path
+  contact).
+- **상태**: OPEN
