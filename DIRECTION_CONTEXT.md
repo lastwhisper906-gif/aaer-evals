@@ -67,6 +67,10 @@
   survives 90 seconds without internal identifiers, an open feedback
   channel, and citation-grade identity (account name, DOI). "Audit-ready
   but unread" fails this quarter regardless of everything else.
+- (경계 확정 — D114, 2026-07-29) 위 영어 표면(D29)은 **모든 독자 대면
+  문서**로 확장된다: AUDIT_INDEX.md·REPRODUCING.md는 영어 정본 + `.ko.md`
+  원본 보존(F-01/F-02 규약), ERRATA.md는 현행 유지(보호·append-only 우선),
+  향후 독자 대면 신규 문서는 영어 정본이 기본값이다.
 
 ## Standing suspicions
 
