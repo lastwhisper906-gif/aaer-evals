@@ -887,3 +887,32 @@
 - **세션 기본 조치**: 초안만 — 보호 경로 무접촉 (draft only,
   no protected-path contact).
 - **상태**: OPEN
+
+## Q-F16 — BN-16: verify-public 무네트워크·무코퍼스 가드(sandbox_guard) 보호 Makefile 배선 — OPEN (신규, 2026-07-30 direction-loop)
+
+- **질문**: README "no corpus, no API key, no network" 재현 주장의 유일한
+  증거가 2026-07-22 일회 샌드박스 트랜스크립트(279-test 시점,
+  `audit/verify_public_sandbox_transcript_20260722.txt`)인 상태(BN-16 —
+  실행 환경의 속성이라 정적 리뷰의 맹점)를, 루프가 추가한
+  `tools/sandbox_guard.py`(stdlib 전용 래퍼, INV-11 — PYTHONPATH 주입
+  sitecustomize로 소켓 연결·DNS·허용목록(저장소 루트 + venv/stdlib +
+  임시 리다이렉트 HOME/MPLCONFIGDIR) 밖 파일 열기를 명명된
+  SANDBOX-VIOLATION으로 fail-closed 차단, 자기 검증
+  `tools/test_sandbox_guard.py` 4건)로 `make verify-public`에 배선해
+  매 실행 구조적 강제로 전환할까? 배선은 보호 경로(Makefile) 1행이다.
+- **옵션**: (A) 배선 — 서명 D-엔트리 1건 하에 Makefile 타깃 1행 추가
+  (`verify-public-sandboxed:` →
+  `.venv/bin/python tools/sandbox_guard.py -- $(MAKE) verify-public`;
+  또는 소유자 선호 시 verify-public 본체를 가드 경유로 전환), 배선 후
+  가드 경유 실행 실측 RC=0 기록 · (B) 가드·자기 검증만 존치, 배선 이연 —
+  재현 주장의 증거는 일회 트랜스크립트(현 suite 대비 시점 표류)에
+  머무르고 가드는 opt-in 도구로만 남는다 · (C) 기각 — 사유 기록
+  (BN-16 미해소 지속).
+- **근거**: BN-16 — verify-public의 "외부 데이터 엄격 0"은 코드가 아닌
+  실행 환경의 속성이라 일회 실측이 아닌 매 실행 구조 가드가 필요하다.
+  가드 본체·자기 검증은 비보호 `tools/` 경로라 루프가 완료 — 게이트
+  배선(Makefile)은 D115 선례대로 owner-hand 대상이라 INV-18 사슬
+  (발견 → 큐 등록 → 서명)로 등재한다. **기본값 (무응답 시)**: (A) — 배선.
+- **세션 기본 조치**: 가드 스크립트 + 자기 검증 테스트까지만 — 보호
+  경로 무접촉 (guard + self-tests only, no protected-path contact).
+- **상태**: OPEN
