@@ -295,3 +295,32 @@
 - **Basis:** 소유자 지시문 Action 0-3 · D119 원장 기록
 - **Revert:** 본 커밋 revert (BOTTLENECKS 형식 규약상 해소 항목은 하단
   이동이나, 미해소 신규 항목의 오기입 정정은 주입 커밋 revert가 맞다).
+
+## D-P22 — D-F 적용 기록: 루프 워크트리 fast-forward 정합 (2026-07-29)
+- **What:** 소유자 승인 D-F 실행 — 루프 워크트리(aaer-evals-loop)를
+  origin/main(dbac35b)으로 --ff-only 정합, status clean 실측. 스프린트
+  제기 S-03 해소. 부수: .direction/strategic.md의 S-03·S-04에 RESOLVED
+  주석 병기(S-01/S-02 선례와 동일 — 재라우팅 소음 방지).
+- **Basis:** 소유자 지시문 Action 0-2 D-F · INV-17(정합은 소유자 몫 —
+  본 세션은 소유자 위임 실행)
+- **Revert:** 워크트리 브랜치를 7ec58c5로 reset (main은 무영향).
+
+## D-P23 — H25 replenish cycle 구현 (2026-07-29)
+- **What:** ~/tools 하네스에 H25 구현(커밋 7ef8b1a): 기본 모드
+  findings:[] 수렴 시 종료 대신 read-only FULL replenish 호출(런당 최대
+  2회, 5렌즈 외부 리뷰어 미션 프롬프트 prompts/replenish.md). 후보는
+  기계 필터 3종(H19 basis 검증 · 기존 Basis 중복 기각 · id 충돌 기각)
+  통과분만 하네스 자신이 BOTTLENECKS.md에 append + D-P 기록 + 커밋
+  (`replenish(harness): ` 접두, SHA를 $RUN/replenish_shas에 기록). H9
+  보호 경로 검사는 per-commit으로 전환 + 기록된 replenish SHA가
+  BOTTLENECKS.md/DECISIONS_PENDING.md만 건드린 커밋에 한정된 carve-out
+  (잔여 위험 코드 주석 문서화: 적대 exec의 SHA 위조는 append 범위로
+  bounded — 측정 조건 경로는 열지 못함). 드라이런 6시나리오 전부 green
+  (/tmp stub, bash -n·shellcheck clean). **미세 가정 결정 2건:**
+  (1) 소유자 미션 텍스트 뒤에 엄격 출력 계약 절(필드 문법)을 부가 —
+  행동 스펙의 계약을 프롬프트 안에 명시해야 모델이 준수 가능;
+  (2) shellcheck 미설치 상태라 brew로 설치 후 실측(지시 'shellcheck as
+  usual' 이행 경로).
+- **Basis:** 소유자 지시문 Action 1 · ~/tools 커밋 7ef8b1a · 드라이런
+  로그 /tmp/h25-dryrun/log-s1..s6.txt
+- **Revert:** ~/tools에서 7ef8b1a revert (aaer-evals 저장소는 무영향).
