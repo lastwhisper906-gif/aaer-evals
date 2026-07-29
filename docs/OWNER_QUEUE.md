@@ -697,7 +697,7 @@
 
 ---
 
-## Q-F09 — BN-07 코드 반쪽: verify_blindness 얕은 클론(shallow) fail-closed 검출 — OPEN (신규, 2026-07-29 direction-loop)
+## Q-F09 — BN-07 코드 반쪽: verify_blindness 얕은 클론(shallow) fail-closed 검출 — **RESOLVED (2026-07-29, D123)** (등록 2026-07-29 direction-loop)
 
 - **질문**: `tools/verify_blindness.py`에 얕은(shallow) 저장소 fail-closed
   검출을 추가할까? 이력 증명(`git merge-base --is-ancestor`)은 depth-1
@@ -718,9 +718,12 @@
   (BN-07의 measured-evidence 요건) · (B) 11월 실행 창으로 이연 ·
   (C) 기각 — README/REPRODUCING 주의 문구로 대체.
 - **세션 기본 조치**: 없음 (등록만 — 보호 경로 코드 무접촉).
-- **상태**: OPEN
+- **해소 (2026-07-29)**: 소유자 서명 — **(A) owner-hand 적용** (원장
+  D123): `check_not_shallow()` 신설, "실측: file:// full clone RC=0 PASS ·
+  --depth 1 shallow clone RC=1 + FATAL 메시지".
+- **상태**: RESOLVED (2026-07-29, D123)
 
-## Q-F10 — lint_doc_counts DOCS 목록에 REPRODUCING.ko.md 누락 — OPEN (신규, 2026-07-29 direction-loop)
+## Q-F10 — lint_doc_counts DOCS 목록에 REPRODUCING.ko.md 누락 — **RESOLVED (2026-07-29, D124)** (등록 2026-07-29 direction-loop)
 
 - **질문**: `tools/lint_doc_counts.py`의 DOCS 목록(현재 README.md ·
   README.ko.md · REPRODUCING.md)에 `REPRODUCING.ko.md`를 추가할까?
@@ -739,7 +742,10 @@
   D-엔트리 하에 owner-hand 적용 · (B) 기각 — 대신
   `REPRODUCING.ko.md` 프로즈에서 CI 대조 주장을 삭제해 사실과 일치시킴.
 - **세션 기본 조치**: 없음 (등록만 — 보호 경로 코드 무접촉).
-- **상태**: OPEN
+- **해소 (2026-07-29)**: 소유자 서명 — **(A) owner-hand 적용** (원장
+  D124): DOCS에 REPRODUCING.ko.md 추가(4번째), "적용 후 단독 실행 PASS
+  RC=0 (manifest 538 · pytest 283)".
+- **상태**: RESOLVED (2026-07-29, D124)
 
 ## Q-F11 — BN-11 채택 반쪽: DECISION_TABLE 영어 정본 채택 + 린트 DOCS 확장 — OPEN (신규, 2026-07-29 direction-loop)
 
