@@ -787,6 +787,9 @@
   owner-hand로 `specs/` 등재 — **Cycle-2 등록 이전** (BN-10 해소 조건
   문면) · (B) 패킷 수정 지시 — 루프가 초안 개정 후 재상정 · (C) 기각 —
   v2 경로 자체를 재설계 (사유 기록 필요; BN-01 해소 경로 공백 지속).
+  어느 옵션이든 언어 표면 선택 포함 — D114 기본값(독자 대면 신규 문서 =
+  영어 정본)에 따라 v2 절을 영어 정본으로 등재하거나 같은 커밋에 영어
+  정본을 병행할지 소유자가 명시한다 (패킷 §4-4; BN-11 재입력 선례, D125).
 - **근거**: BN-10 해소 조건 = "Owner packet exists containing a v2 draft
   (FPR-matching readout rules + control-expansion selection protocol +
   post-E2 history-disclosure section per PROJECT.md §5-6) and owner
