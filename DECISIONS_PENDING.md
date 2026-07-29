@@ -212,3 +212,54 @@
   review-2.md 검증 절 · 소유자 지시문(2026-07-29 Action 1·2)
 - **Revert:** 푸시는 되돌리지 않음(이력) · 스프린트 산출물은 워크트리
   브랜치에 격리 — 폐기 시 `git -C ../aaer-evals-loop reset --hard 0c2d227`.
+
+## D-P14 — 승인 병합 실행 + 수치 등가 기계 검사 판정 (2026-07-29)
+- **What:** 소유자 지시 Action 1 — 병합 전 수치 토큰 다중집합 검사 실행.
+  RESULTS 표 영역(정본 수치 전체): 189=189 토큰 **완전 동일 PASS**.
+  전문(full-file) 비교의 비대칭 토큰 8건은 전수 판독 결과 전부
+  (a) `.ko.md` 전용 D29 교차링크 메타데이터 라인("D29 패턴" → '29' 2건)
+  (b) 숫자의 영어 단어 렌더링 — "신규 주장 0"↔"Zero new claims"(×2),
+  "1페이지"↔"one page", "1회"↔"one … invocation", "정확히 1회"↔"exactly
+  once", "3계기"↔"three instruments". 정본 수치를 건드리는 비대칭 0건 →
+  가정 결정: 전문 검사의 "IDENTICAL" 요건은 위 두 클래스(구조적
+  메타데이터·단어 렌더링)를 정규화로 제외한 판정 — 표 영역은 무정규화
+  엄격 동일. 이 판정 하 병합 d5523a7 실행, verify-public GATE_RC=0,
+  push 429c1ce..d5523a7 (D-P13 커밋 3b49a3e 포함 — main push 승인 범위 내).
+- **Basis:** 소유자 지시문 Action 1 · numcheck 스크립트 출력(본 세션) ·
+  review-2.md 값-대-값 검증(이중 게이트의 나머지 절반)
+- **Revert:** `git revert -m 1 d5523a7` (병합 커밋).
+
+## D-P15 — D114 적용 기록: 영어 표면 경계 (2026-07-29)
+- **What:** 소유자 서명 D-A를 원장 D114로 기입, DIRECTION_CONTEXT.md
+  분기 목표 절에 경계 확정 1항 추가 (커밋 ca30fd6). 번역 실행은 미포함
+  — Action 3 루프 실행 채널로 위임.
+- **Basis:** 소유자 지시문 Action 2 D-A · scoring/decisions_log.md D114
+- **Revert:** ca30fd6 revert (원장은 append-only — revert도 이력 보존).
+
+## D-P16 — D115 적용 기록: lint DOCS 확장 (2026-07-29)
+- **What:** 소유자 서명 D-B를 원장 D115로 기입, 보호 경로
+  tools/lint_publication.py DOCS에 RESULTS.md·METHOD.md·RESULTS.ko.md·
+  METHOD.ko.md 4종 추가 (커밋 5f9661f). 적용 후 lint 단독 실행 RC=0
+  PASS 실측. 가정 결정: 소유자 문안은 4종 명시라 .ko.md 원본 포함이
+  지시 그대로 — cycle-2 패킷의 '.ko.md 포함 여부' 하위 질문도 이로써
+  해소됨.
+- **Basis:** 소유자 지시문 Action 2 D-B · lint 실측 RC=0
+- **Revert:** 5f9661f revert.
+
+## D-P17 — D116 적용 기록: BN-05 전향 명문화 (2026-07-29)
+- **What:** 소유자 서명 D-C를 원장 D116으로 기입,
+  docs/FUTURE_CYCLE_PROTOCOL.md 부록 A-3 신설 + BOTTLENECKS.md BN-05
+  RESOLVED 하단 이동 (커밋 a19d3ea). ERRATA.md는 무수정(append-only) —
+  교차 참조는 A-3 쪽에서 단방향. done_when 실측: grep R3 대상 파일 2건.
+- **Basis:** 소유자 지시문 Action 2 D-C · ERRATA E-002 플래그 절 ·
+  Stage-1 런 리뷰 done_when
+- **Revert:** a19d3ea revert.
+
+## D-P18 — D117 적용 기록: S-01 기각 (2026-07-29)
+- **What:** 소유자 서명 D-D를 원장 D117로 기입, DIRECTION_CONTEXT.md
+  Rejected approaches에 기각 등재 (커밋 f3d1ea2), 루프 워크트리
+  .direction/strategic.md의 S-01을 RESOLVED 주석 처리. 가정 결정: S-02도
+  D114로 해소되었으므로 동일 파일에서 RESOLVED 주석 병기(재라우팅 소음
+  방지) — 소유자 명시 지시는 S-01만이었음을 기록.
+- **Basis:** 소유자 지시문 Action 2 D-D · 병합 d5523a7 (실행 채널 실증)
+- **Revert:** f3d1ea2 revert + strategic.md 원문 복원.
