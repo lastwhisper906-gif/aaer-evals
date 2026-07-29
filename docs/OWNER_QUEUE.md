@@ -798,3 +798,31 @@
   무결정 (packet draft only, no specs/ contact, no threshold or
   control-set decisions).
 - **상태**: OPEN
+
+## Q-F13 — BN-12: README 첫 화면 그림의 확률 프레이밍 축 라벨 + 그림 드리프트 게이트 부재 — OPEN (신규, 2026-07-29 direction-loop)
+
+- **질문**: `analysis/fig_dotplot.py`(:40 부근)의 축 라벨 "Misstatement
+  probability"를 서수(ordinal) 규약 문언으로 교체하고, 커밋된 동결
+  산출물로부터 PNG를 재생성하며, verify-public에 그림 드리프트 게이트
+  단계를 배선할까? 점수는 서수(0–100 순위)이지 확률이 아니라는 것이
+  발행 규약(Q-F04/D91, RESULTS 행 11)인데, 가장 가시적인 게시 산출물
+  (README 첫 화면 도트 플롯)의 축 라벨이 정반대를 말한다 — 발행 표면의
+  유일한 D91 서수 규약 모순(BN-12). 수리 전체가 보호 경로(`analysis/` ·
+  `Makefile` · `.github/`)에 있어 루프는 적용 불가 — INV-18 사슬(발견 →
+  큐 등록 → 서명)을 위해 본 항목으로 등록한다.
+- **제안 스케치 (proposal text — 세션은 적용하지 않음)**: ① 축 라벨을
+  ordinal 규약 문언(예: "LLM score (0–100, ordinal — not a probability)")
+  으로 교체 ② 4종 게시 PNG를 커밋된 동결 산출물에서 재생성 (신규 채점
+  0) ③ verify-public에 그림 재생성-대조 단계를 추가해 라벨·그림
+  드리프트를 기계 검출 (BN-12 해소 조건: 배선 후 `make verify-public`
+  RC=0).
+- **옵션**: (A) BN-12 전체 패키지 — ①②③ 일괄, 서명 D-엔트리 1건 하에
+  owner-hand 적용 · (B) ①② 라벨+재생성만 우선, 게이트(③) 이연 — 텍스트
+  린트 밖 그림 드리프트 감시 공백은 지속 · (C) 기각 — 사유 기록 (README
+  캡션 병기 문구 등 대체 수단 포함 여부는 소유자 판단).
+- **근거**: BN-12 — "ordinal 린트·INV-05 게이트는 텍스트만 커버, 그림
+  드리프트·용어 위반은 침묵 출하"가 실제 인스턴스화된 사례이며, RESULTS
+  행 11("점수는 서수, 확률 아님")과 첫 화면 그림이 상호 모순인 상태.
+- **세션 기본 조치**: 등록만 — 보호 경로 무접촉 (registration only,
+  no protected-path contact).
+- **상태**: OPEN
