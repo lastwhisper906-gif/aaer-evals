@@ -342,3 +342,25 @@
   주석 병기.
 - **Basis:** 소유자 지시문 Action 2 · S-05 (run 20260729-152205 cycle 1)
 - **Revert:** 본 커밋 revert + strategic.md 주석 제거.
+
+## D-P26 — H26 검증 상태-플립 채널 구현 (2026-07-29)
+- **What:** ~/tools 커밋 aa3dd0b. (a) direction_review.md에 GUARDED SET
+  명문 규칙(BOTTLENECKS·DIRECTION_CONTEXT·PROJECT_INVARIANTS·.loop.conf·
+  .protected-paths 변경 = 무조건 touches_protected: true) +
+  `bn_resolved_claim: BN-xx` 필드 신설. (b) 하네스: 사이클의
+  gate+Codex+scope 통과 후에만, 해소 조건의 runnable check(명시 `check:`
+  라인, 또는 공백 포함 백틱 스팬 — 공백 없는 백틱 경로는 인용으로 간주)
+  실행 PASS 시 하네스 자신이 헤딩 RESOLVED 편집 + 검증 증거(명령·출력
+  sha256 다이제스트·날짜) 부기 + `bnflip(harness): ` 커밋 + SHA를
+  replenish_shas에 기록(H9 carve-out 무확장 감사 완료 — BOTTLENECKS.md·
+  DECISIONS_PENDING.md 한정 유지). check 실패 = 플립 없이 런 종료(실패
+  출력 표시); runnable check 부재 = 플립 없이 소유자 패킷 라우팅.
+  exit-4 경로가 revert 전에 facts.txt를 기록하도록 수정(이번 포스트모템의
+  reflog 재구성 재발 방지). 드라이런 4/4 green, bash -n + shellcheck
+  clean. **미세 가정 결정 2건:** (1) runnable check 판별 휴리스틱은
+  보수(과소검출→소유자 패킷, 안전) 방향으로 설계 — 공백 포함 백틱만
+  명령으로 간주; (2) H26 플립 항목은 제자리 RESOLVED(하단 이동은 소유자
+  정리 몫 — 기계 편집 최소화).
+- **Basis:** 소유자 지시문 Action 1 · ~/tools aa3dd0b · 드라이런 로그
+  /tmp/h25-dryrun/log-h26a..d.txt
+- **Revert:** ~/tools에서 aa3dd0b revert (aaer-evals 무영향).
