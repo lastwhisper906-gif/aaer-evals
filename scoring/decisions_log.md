@@ -1130,3 +1130,11 @@ c44bd59a…)는 **서명 없이 superseded** (채점 미진입 상태 폐기). v
 ## D117 — 소유자 서명: S-01 기각 — 루프-라우터-전용 프레이밍 (2026-07-29, 무호출, JSON 1줄)
 
 {"decision":"D117","date":"2026-07-29","action":"S-01(루프 가치 = 소유자 결정 패킷 라우팅 전용 관점) 기각 — 스프린트 20260729가 실행 채널을 실증(번역 2커밋 c4c187d·d4c0e9f 게이트 통과, main 병합 d5523a7). DIRECTION_CONTEXT.md Rejected approaches에 기각 등재('loop-as-router-only framing — rejected 20260729, execution channel demonstrated'), .direction/strategic.md 대기 목록의 S-01을 RESOLVED 처리(재제기 금지). 부수: S-02도 D114 서명으로 RESOLVED 주석 처리","authority":"owner, 2026-07-29, this session's prompt (Action 2, D-D)","metered":"0호출","learning_note":"이 판단에서 알아야 할 것: 전략 채널의 관찰은 기각도 명시 기록이어야 한다 — 기각을 원장에 남기지 않으면 다음 리뷰 사이클이 같은 관찰을 다시 라우팅하고, 기각은 반복 비용으로 되돌아온다"}
+
+## D118 — 소유자 서명: 발행 린트 DOCS 확장 — AUDIT_INDEX·REPRODUCING (en+ko) (2026-07-29, 무호출, JSON 1줄)
+
+{"decision":"D118","date":"2026-07-29","action":"tools/lint_publication.py DOCS에 AUDIT_INDEX.md·REPRODUCING.md·AUDIT_INDEX.ko.md·REPRODUCING.ko.md 4파일 추가 — D114 영어화(F-01/F-02, 스프린트 20260729-112828 커밋 d09c8d7·7ec58c5, main 병합 ada2405)로 새 독자 대면 표면이 된 두 문서와 동결 한국어 원본을 G2-fraud·범위 문구 회귀 감시에 편입(D115와 동일 패턴). 편집 후 lint 실측 PASS RC=0 — REPRODUCING.md의 '<9 fraud ids>' 자리표시자는 G2 현재 기업 스코프 밖이라 무위반. S-04(스프린트 제기) 해소","authority":"owner, 2026-07-29, this session's prompt (Action 0-2, D-E)","metered":"0호출","learning_note":"이 판단에서 알아야 할 것: 문서가 독자 대면 표면으로 승격되는 순간과 린트 편입은 같은 결정의 두 반쪽이다 — 승격 커밋과 린트 커밋이 갈라지면 그 사이 창이 D115 학습 노트가 경고한 파일별 감시 공백이 된다"}
+
+## D119 — 소유자 서명: BN-07/08/09 주입 + 정적 리뷰 맹점 상시 의심 등재 (2026-07-29, 무호출, JSON 1줄)
+
+{"decision":"D119","date":"2026-07-29","action":"BOTTLENECKS.md에 BN-07(shallow-clone 재현 취약성 — verify_blindness의 merge-base 이력 대조가 full clone 전제), BN-08(README 첫 화면 첫 방문자 전환 실패 — figure 0장, 90초 생존 조건), BN-09(L-6 교차 채점자 부채 — 스펙만 존재·합의율 실측 0, 호출·게시는 소유자 게이트) 3건 주입. DIRECTION_CONTEXT.md Standing suspicions에 '정적 리뷰의 실행 경로 맹점' 등재. 문언 유의: 소유자 지시의 '기지정 문언(previously-specified wording)'이 접근 가능한 어떤 기록(계획 문서 v2·전 세션 전사·저장소)에도 부재 — 주제 괄호(shallow-clone repro fragility / first-visitor README conversion / L-6 cross-grader debt)와 저장소 실측 근거로부터 본 세션이 문언을 도출했고 이 도출은 소유자 사후 검토 대상","authority":"owner, 2026-07-29, this session's prompt (Action 0-3)","metered":"0호출","learning_note":"이 판단에서 알아야 할 것: '기지정 문언 재적용' 지시에서 문언 원본이 유실됐으면 주제 의도+실측 근거로 재구성하되 재구성 사실 자체를 원장에 박아야 한다 — 재구성을 원문 인용처럼 침묵 처리하면 소유자의 사후 검토가 검토할 대상을 잃는다"}

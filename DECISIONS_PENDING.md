@@ -263,3 +263,35 @@
   방지) — 소유자 명시 지시는 S-01만이었음을 기록.
 - **Basis:** 소유자 지시문 Action 2 D-D · 병합 d5523a7 (실행 채널 실증)
 - **Revert:** f3d1ea2 revert + strategic.md 원문 복원.
+
+## D-P19 — 스프린트 20260729-112828 병합 (2026-07-29)
+- **What:** Action 0-1 실행 — d09c8d7(F-01 AUDIT_INDEX 영어화) +
+  7ec58c5(F-02 REPRODUCING 영어화)를 main에 --no-ff 병합 (ada2405).
+  수치 등가 검사는 전 세션 보고에서 양 파일 PASS 완료(EN-only 토큰 0,
+  KO-only 15건 전부 D29 헤더 2건 + 숫자→영단어 렌더링 13건으로 판정).
+  병합 후 verify-public 5게이트 전부 PASS RC=0, push 완료.
+- **Basis:** 소유자 지시문 Action 0-1 · 전 세션 수치 등가 판정(D-P14
+  방법 동일) · vp0.log RC=0
+- **Revert:** `git revert -m 1 ada2405`.
+
+## D-P20 — D118 적용 기록: lint DOCS 확장 2차 (2026-07-29)
+- **What:** 소유자 서명 D-E를 원장 D118로 기입, tools/lint_publication.py
+  DOCS에 AUDIT_INDEX.md·REPRODUCING.md + .ko.md 원본 2종 추가 (D115와
+  동일 패턴). 적용 후 lint 단독 실행 RC=0 PASS 실측. 스프린트 제기
+  S-04 해소.
+- **Basis:** 소유자 지시문 Action 0-2 D-E · D115/D-P16 선례 · lint 실측
+- **Revert:** 본 커밋 revert.
+
+## D-P21 — D119 적용 기록: BN-07/08/09 주입 + 상시 의심 등재 (2026-07-29)
+- **What:** BOTTLENECKS.md에 BN-07(shallow-clone 재현 취약성)·BN-08
+  (README 첫 방문자 전환)·BN-09(L-6 교차 채점자 부채) 주입,
+  DIRECTION_CONTEXT.md Standing suspicions에 '정적 리뷰의 실행 경로
+  맹점' 추가. **가정 결정(소유자 검토 대상):** 지시문의 '기지정 문언'이
+  접근 가능한 어떤 기록에도 부재 — 계획 문서(direction-loop-v2-2.md)·
+  전 세션 전사 전수 검색 0건. 주제 괄호 3건 + 저장소 실측(verify_blindness
+  merge-base 이력 대조, README figure 0장, cross_grader SPECIFICATION
+  ONLY)으로 문언을 도출해 주입했다. 문언이 소유자 의도와 다르면 이
+  커밋 revert 후 원문 재주입이 정정 경로다.
+- **Basis:** 소유자 지시문 Action 0-3 · D119 원장 기록
+- **Revert:** 본 커밋 revert (BOTTLENECKS 형식 규약상 해소 항목은 하단
+  이동이나, 미해소 신규 항목의 오기입 정정은 주입 커밋 revert가 맞다).
