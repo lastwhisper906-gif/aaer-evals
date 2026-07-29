@@ -1118,3 +1118,7 @@ c44bd59a…)는 **서명 없이 superseded** (채점 미진입 상태 폐기). v
 ## D114 — 소유자 서명: D29 영어 발행 표면 경계 확정 — 전 독자 대면 문서 (2026-07-29, 무호출, JSON 1줄)
 
 {"decision":"D114","date":"2026-07-29","action":"S-02 해소 — D29 영어 발행 표면은 모든 독자 대면(reader-facing) 문서로 확장한다: AUDIT_INDEX.md·REPRODUCING.md는 영어 정본 + .ko.md 원본 보존(F-01/F-02 규약과 동일)으로 전환 대상, ERRATA.md는 현행 유지(보호 경로·append-only 원칙이 우선), 향후 독자 대면 신규 문서는 영어 정본이 기본값. 번역 실행 자체는 본 결정에 포함되지 않음 — direction-loop 후속 스프린트의 실행 채널 작업(Action 3)","authority":"owner, 2026-07-29, this session's prompt (Action 2, D-A)","metered":"0호출","learning_note":"이 판단에서 알아야 할 것: 표면 언어 정책은 파일 단위로 흘리면 문서마다 재량 시점이 생긴다 — 경계를 한 번에 그어야(독자 대면 = 영어 정본, 동결 경로 = 불변) 후속 문서가 결정 없이 올바른 쪽에 착지한다"}
+
+## D115 — 소유자 서명: lint_publication DOCS에 RESULTS/METHOD 양어 4종 편입 (2026-07-29, 무호출, JSON 1줄)
+
+{"decision":"D115","date":"2026-07-29","action":"스프린트 20260729-035419 cycle-2 소유자 패킷(F-01, .direction/20260729-035419/review-2.md) 해소 — tools/lint_publication.py DOCS += RESULTS.md·METHOD.md(영어 정본 수치 표·방법 문서)·RESULTS.ko.md·METHOD.ko.md(동결 한국어 원본 회귀 감시). INV-13(단정 어휘 금지)·INV-14(범위 한정 문구) 규칙이 주 인용 대상 문서에 기계 검사로 편입됨. 적용 후 lint PASS 실측(RC=0). 보호 경로 수정은 본 서명 하 세션이 소유자의 손으로 적용 — direction-loop 실행 아님","authority":"owner, 2026-07-29, this session's prompt (Action 2, D-B)","metered":"0호출","learning_note":"이 판단에서 알아야 할 것: 문서를 번역해 발행 표면에 올리는 커밋과 그 문서를 lint 대상에 넣는 커밋이 분리되면 그 사이가 무검사 창이 된다 — 표면 편입과 검사 편입은 같은 결정 사슬에 묶어야 한다"}

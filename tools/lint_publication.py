@@ -23,7 +23,9 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[1]
 DOCS = ["README.md", "README.ko.md", "analysis/ISSUE_0_DRAFT.md",
         "analysis/ISSUE_1_WAVE2_DRAFT.md", "analysis/ISSUE_2_HOLDOUT_DRAFT.md",
-        "docs/reader_validation/ONE_PAGER.md"]  # D42: 독자 검증 원페이저도 발행 표면
+        "docs/reader_validation/ONE_PAGER.md",  # D42: 독자 검증 원페이저도 발행 표면
+        "RESULTS.md", "METHOD.md",              # D115: 영어 정본 수치 표·방법 문서
+        "RESULTS.ko.md", "METHOD.ko.md"]        # D115: 동결 한국어 원본 회귀 감시
 
 G2 = {"HUBG": ["hub group"], "WMK": ["weis markets", "weis"], "GNE": ["genie energy", "genie"]}
 FRAUD_WORDS = ["fraud", "분식", "조작", "manipulat"]
