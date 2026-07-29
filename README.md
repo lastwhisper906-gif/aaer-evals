@@ -102,6 +102,13 @@ Detailed narrative (three-task separation, three-layer headline, false
 positives, baselines, limitations — relocated copies):
 [`docs/README_DETAIL.md`](docs/README_DETAIL.md).
 
+## Feedback
+
+Reproduction results (successes *and* failures) and methodology questions
+are both welcome — [open an issue](https://github.com/lastwhisper906-gif/aaer-evals/issues/new/choose)
+using the **reproduction-report** or **methodology-question** template
+(`.github/ISSUE_TEMPLATE/`). Identifier lookups first: [AUDIT_INDEX.md](AUDIT_INDEX.md).
+
 ## Publication (v1.0 — 2026-07-11, owner-signed D40/D41)
 
 Published as GitHub Issues (series 0/1/2 = GitHub #1/#2/#3); the posted issues
