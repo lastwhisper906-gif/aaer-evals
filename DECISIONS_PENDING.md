@@ -386,3 +386,19 @@
 - **Basis:** 소유자 지시문 Action 1·2 · vp4 로그 RC=0 · CI 42fedf3
   success · 원장 D122~D126
 - **Revert:** 각 governance 커밋 개별 revert (원장은 append-only).
+
+## D-P28 — direction-loop pager 정지 사고: 프로세스 해제 + 하네스 수정 (2026-07-30)
+- **What:** 스프린트 20260729-185813(5사이클 전부 ok)이 종료 리포트의
+  `git log --oneline`이 tmux tty에서 less로 페이징되며 ~3h54m 정지
+  (20:21→00:14, EXIT trap 미실행, 워크트리 잠금+전역 잠금 고정, 토큰 소비
+  0). 소유자 승인 하에 계보 확인 후 less(pid 52202)만 SIGTERM — 스크립트는
+  자연 재개해 H20 브리프 생성 후 00:15:25 정상 종료, **양 잠금 모두 EXIT
+  trap이 회수(누수 0), tmux 세션 자연 소멸(좀비 없음)**. 하네스 수정:
+  ~/tools 커밋 0f4b226 — `export GIT_PAGER=cat PAGER=cat` + 종료 리포트
+  tty 대면 2개 호출(git diff --stat/git log --oneline)에 `--no-pager`,
+  bash -n·shellcheck PASS. 전용 dry-run 체크리스트 파일은 부재 —
+  실패 모드는 스크립트 수정부 주석에 기록.
+- **Basis:** ps 계보 실측(46643→52201 git log→52202 less, etime 03:52) ·
+  ~/tools 커밋 0f4b226 · run 로그 .direction/20260729-185813 (BRIEF.md
+  00:15 생성)
+- **Revert:** ~/tools에서 0f4b226 revert (본 항목은 append-only 기록).
