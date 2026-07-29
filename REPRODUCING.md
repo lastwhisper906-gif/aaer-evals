@@ -55,6 +55,16 @@ python3.12 -m venv .venv                                    # 3.12 = canonical v
 make verify-public
 ```
 
+**Full-clone prerequisite**: `tools/verify_blindness.py` (the
+grading-precedence history proof inside `verify-public`) proves criteria
+precedence with `git merge-base --is-ancestor` over the commit graph, so it
+**requires complete git history**. In a shallow clone (`git clone
+--depth 1`, or a CI checkout with `fetch-depth: 1`) the ancestry check will
+fail or misreport because the commits it must walk are absent. Clone with
+full history as above, or repair a shallow copy first with
+`git fetch --unshallow`. (This repository's own CI uses `fetch-depth: 0`
+for exactly this reason.)
+
 **The canonical Python of the reproduction claim is 3.12** — CI runs a
 3.11/3.12/3.13 matrix, but the reproduction claim is stated against 3.12;
 a failure on a non-canonical version is only recorded as a finding and
