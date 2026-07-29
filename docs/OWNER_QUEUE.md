@@ -895,10 +895,12 @@
   `audit/verify_public_sandbox_transcript_20260722.txt`)인 상태(BN-16 —
   실행 환경의 속성이라 정적 리뷰의 맹점)를, 루프가 추가한
   `tools/sandbox_guard.py`(stdlib 전용 래퍼, INV-11 — PYTHONPATH 주입
-  sitecustomize로 소켓 연결·DNS·허용목록(저장소 루트 + venv/stdlib +
-  임시 리다이렉트 HOME/MPLCONFIGDIR) 밖 파일 열기를 명명된
+  sitecustomize로 소켓 연결·비연결 송신(sendto/sendmsg)·DNS·허용목록
+  (저장소 루트 + venv/stdlib + 임시 리다이렉트 HOME/MPLCONFIGDIR) 밖
+  파일 열기(builtins/io.open·os.open)를 명명된
   SANDBOX-VIOLATION으로 fail-closed 차단, 자기 검증
-  `tools/test_sandbox_guard.py` 4건)로 `make verify-public`에 배선해
+  `tools/test_sandbox_guard.py` 6건 — os.open·UDP sendto 우회 2건은
+  2026-07-30 Codex 리뷰 지적으로 봉합)로 `make verify-public`에 배선해
   매 실행 구조적 강제로 전환할까? 배선은 보호 경로(Makefile) 1행이다.
 - **옵션**: (A) 배선 — 서명 D-엔트리 1건 하에 Makefile 타깃 1행 추가
   (`verify-public-sandboxed:` →

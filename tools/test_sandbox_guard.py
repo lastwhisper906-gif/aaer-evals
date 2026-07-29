@@ -21,10 +21,24 @@ def test_socket_connect_blocked():
     assert "SANDBOX-VIOLATION" in r.stderr and "socket" in r.stderr
 
 
+def test_udp_sendto_blocked():
+    r = run_guarded(
+        "import socket; socket.socket(socket.AF_INET, socket.SOCK_DGRAM)"
+        ".sendto(b'x', ('127.0.0.1', 9))")
+    assert r.returncode != 0
+    assert "SANDBOX-VIOLATION" in r.stderr and "sendto" in r.stderr
+
+
 def test_out_of_repo_read_blocked():
     r = run_guarded("open('/etc/hosts').read()")
     assert r.returncode != 0
     assert "SANDBOX-VIOLATION" in r.stderr and "open" in r.stderr
+
+
+def test_os_open_out_of_repo_blocked():
+    r = run_guarded("import os; os.open('/etc/hosts', os.O_RDONLY)")
+    assert r.returncode != 0
+    assert "SANDBOX-VIOLATION" in r.stderr and "os-open" in r.stderr
 
 
 def test_in_repo_read_allowed():

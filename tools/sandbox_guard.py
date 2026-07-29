@@ -3,10 +3,11 @@
 
 주어진 명령을 PYTHONPATH 주입 sitecustomize 하에 재실행한다. 주입된
 sitecustomize는 (모든 하위 Python 프로세스에서):
-  - 소켓 연결(connect/connect_ex/create_connection)·DNS(getaddrinfo)를 차단
+  - 소켓 연결(connect/connect_ex/create_connection)·비연결 송신(sendto/
+    sendmsg)·DNS(getaddrinfo)를 차단
   - 저장소 루트 + 허용목록(인터프리터 prefix/.venv, stdlib, 임시 디렉토리,
     임시 리다이렉트된 HOME/MPLCONFIGDIR, /dev, 읽기 전용 시스템 데이터
-    (폰트·zoneinfo)) 밖의 파일 열기를 차단
+    (폰트·zoneinfo)) 밖의 파일 열기(builtins/io.open·os.open)를 차단
 위반은 명명된 SANDBOX-VIOLATION(BaseException 파생 — 라이브러리의 광역
 except Exception에 삼켜지지 않음)으로 fail-closed한다.
 
@@ -86,12 +87,33 @@ builtins.open = _guarded_open
 io.open = _guarded_open
 
 
+_real_os_open = os.open
+
+
+def _guarded_os_open(path, flags, mode=0o777, *, dir_fd=None):
+    # dir_fd 상대 경로는 이미 가드를 통과한 디렉토리 fd 기준(shutil.rmtree 등)
+    # — 절대 경로이거나 dir_fd 없음이면 허용목록 검사.
+    if dir_fd is None or os.path.isabs(os.fspath(path)):
+        if not _allowed(path):
+            _deny("os-open", os.fsdecode(os.fspath(path)))
+    return _real_os_open(path, flags, mode, dir_fd=dir_fd)
+
+
+os.open = _guarded_os_open
+
+
 def _deny_connect(self, *args, **kwargs):
     _deny("socket-connect", repr(args[:1]))
 
 
+def _deny_sendto(self, *args, **kwargs):
+    _deny("socket-sendto", repr(args[-1:]))
+
+
 socket.socket.connect = _deny_connect
 socket.socket.connect_ex = _deny_connect
+socket.socket.sendto = _deny_sendto
+socket.socket.sendmsg = _deny_sendto
 socket.create_connection = lambda *a, **k: _deny("socket-connect", repr(a[:1]))
 socket.getaddrinfo = lambda *a, **k: _deny("dns", repr(a[:2]))
 '''
