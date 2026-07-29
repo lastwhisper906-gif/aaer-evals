@@ -364,3 +364,10 @@
 - **Basis:** 소유자 지시문 Action 1 · ~/tools aa3dd0b · 드라이런 로그
   /tmp/h25-dryrun/log-h26a..d.txt
 - **Revert:** ~/tools에서 aa3dd0b revert (aaer-evals 무영향).
+
+## D-P (harness replenish) — H25 BN append: BN-10 BN-12 (20260729-170154 cycle 4)
+- **What:** H25 replenish accepted BN-10 BN-12 after mechanical filters
+  (H19 basis verification · no Basis overlap · no id collision). Appended
+  and committed by the HARNESS, not exec-claude. Source: .direction/20260729-170154/replenish-4.md
+- **Basis:** .direction/20260729-170154/replenish-4.md · H25 (owner-signed 2026-07-29)
+- **Revert:** revert the replenish(harness) commit listed in .direction/20260729-170154/replenish_shas.
