@@ -120,3 +120,16 @@ README.md:46, `## Quickstart`(:56)보다 위. `make verify-public` RC=0
 채택). 소유자 서명 D120.
 **Basis:** README.md:46 · `scoring/decisions_log.md` D120 · vp2 게이트
 로그 (verify-public RC=0)
+
+### BN-10: ENGINE_DECISION v2 (FPR-matched comparison + control expansion) is doctrine-cited but exists in no file
+**Blocked:** The owner-mandated sole path for engine changes and control widening — DIRECTION_CONTEXT cites "ENGINE_DECISION v2" as pre-registered, but specs/ENGINE_DECISION.md contains no v2, no FPR-matching clause, no expansion clause
+**Blocks:** Claimable resolution of BN-01 — with n=7 controls, CP95 upper stays 41% even at 0/7 false positives, so no Cycle-2 forward result can support any FP claim until a signed v2 registers the widened control set and FPR-matched readout
+**Resolution condition:** Owner packet exists containing a v2 draft (FPR-matching readout rules + control-expansion selection protocol + post-E2 history-disclosure section per PROJECT.md §5-6) and owner signature is recorded in the D-ledger before Cycle-2 registration
+**Basis:** specs/ENGINE_DECISION.md
+
+### BN-12: Published figures sit outside the machine-check perimeter — the README first-screen PNG carries the demoted probability framing
+**Blocked:** A trustworthy figure layer — no gate in verify-public/CI regenerates or compares any of the 4 published PNGs, and fig_dotplot's committed axis label "Misstatement probability" contradicts the ordinal-only publication convention (Q-F04/D91, RESULTS row 11) on the README first screen
+**Blocks:** Publication-surface integrity — the ordinal lint and INV-05 gates cover text only, so figure drift or terminology violations ship silently (the standing suspicion "static review passes figure generation" instantiated)
+**Resolution condition:** README-referenced figures regenerate from committed artifacts with ordinal-convention labels and a gate step fails on drift, with make verify-public RC=0 after wiring
+**Basis:** analysis/fig_dotplot.py:40
+

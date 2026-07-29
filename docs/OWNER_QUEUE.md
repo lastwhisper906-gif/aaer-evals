@@ -694,3 +694,49 @@
 - **세션 기본 조치**: 감사 문서만 커밋, 코드 무변경.
 - **해소 (2026-07-22)**: 소유자 서명 — **(A) 일괄 승인, 저순위.** 5건을 테스트 동반 1커밋으로 — 크리티컬 패스(게시·seal) 비차단이므로 차기 작업 세션 편승 실행. (owner, 2026-07-22; 원장 D113)
 - **상태**: RESOLVED (실행 대기 — 차기 작업 세션)
+
+---
+
+## Q-F09 — BN-07 코드 반쪽: verify_blindness 얕은 클론(shallow) fail-closed 검출 — OPEN (신규, 2026-07-29 direction-loop)
+
+- **질문**: `tools/verify_blindness.py`에 얕은(shallow) 저장소 fail-closed
+  검출을 추가할까? 이력 증명(`git merge-base --is-ancestor`)은 depth-1
+  클론에서 조상 관계가 잘려 외부 재현자가 신뢰할 수 없는 판정을 받을 수
+  있다. BN-07의 문서 반쪽은 완료(REPRODUCING.md full-clone 전제 +
+  unshallow 처방, d813a1a) — 남은 코드 반쪽은 보호 경로(`tools/verify_`)라
+  owner-hand 적용 대상이며, INV-18 사슬(발견 → 큐 등록 → 서명)을 위해 본
+  항목으로 등록한다.
+- **제안 스케치 (proposal text — 세션은 적용하지 않음)**: merge-base 이력
+  증명 직전에
+
+      git rev-parse --is-shallow-repository
+
+  를 실행해 출력이 `true`면 즉시 FAIL로 fail-closed (메시지 예:
+  "shallow clone — run 'git fetch --unshallow' first; see REPRODUCING.md §1").
+- **옵션**: (A) D115/D118 선례대로 제안 패치를 서명 D-엔트리 하에
+  owner-hand 적용 + **full-clone·depth-1 클론 실측 런 2건**을 증거로 기록
+  (BN-07의 measured-evidence 요건) · (B) 11월 실행 창으로 이연 ·
+  (C) 기각 — README/REPRODUCING 주의 문구로 대체.
+- **세션 기본 조치**: 없음 (등록만 — 보호 경로 코드 무접촉).
+- **상태**: OPEN
+
+## Q-F10 — lint_doc_counts DOCS 목록에 REPRODUCING.ko.md 누락 — OPEN (신규, 2026-07-29 direction-loop)
+
+- **질문**: `tools/lint_doc_counts.py`의 DOCS 목록(현재 README.md ·
+  README.ko.md · REPRODUCING.md)에 `REPRODUCING.ko.md`를 추가할까?
+  이 파일의 repro-facts 생성 블록은 프로즈에서 "CI가
+  `tools/lint_doc_counts.py`로 대조"한다고 주장하지만 실제 DOCS 목록에
+  빠져 있어, 이번 283 전환에서 "279 tests collected"로 조용히 드리프트했다
+  (F-01에서 블록 동기화 완료). DOCS 미확장 시 테스트 수가 바뀔 때마다
+  같은 드리프트가 게이트 미검출로 재발한다. 린트는 보호 경로
+  (`tools/lint_` 접두)라 owner-hand 적용 대상이며, INV-18 사슬(발견 →
+  큐 등록 → 서명)을 위해 본 항목으로 등록한다.
+- **제안 스케치 (proposal text — 세션은 적용하지 않음)**:
+  `tools/lint_doc_counts.py`의 DOCS 리스트에 한 줄
+  `"REPRODUCING.ko.md",` 추가 (make docs-refresh 갱신 대상에도 자동
+  포함되는지 동일 커밋에서 확인).
+- **옵션**: (A) D115/D118 선례(린트 DOCS 확장은 서명 원라이너)대로 서명
+  D-엔트리 하에 owner-hand 적용 · (B) 기각 — 대신
+  `REPRODUCING.ko.md` 프로즈에서 CI 대조 주장을 삭제해 사실과 일치시킴.
+- **세션 기본 조치**: 없음 (등록만 — 보호 경로 코드 무접촉).
+- **상태**: OPEN
