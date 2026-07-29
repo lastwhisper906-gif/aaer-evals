@@ -1146,3 +1146,23 @@ c44bd59a…)는 **서명 없이 superseded** (채점 미진입 상태 폐기). v
 ## D121 — 소유자 서명: S-05 해소 — BN-09를 소유자 패킷 준비로 재규정 (2026-07-29, 무호출, JSON 1줄)
 
 {"decision":"D121","date":"2026-07-29","action":"S-05(BN-09 해소 조건이 INV-12 위반 테스트·INV-20과 충돌)를 재규정으로 해소: BN-09 resolution_condition을 ①교차 채점자 SPEC ②선정 프로토콜 ③fail-closed·호출-비활성 하네스 SKELETON(GPT/Gemini 호출 경로 무추가)의 소유자 패킷 준비로 한정. INV-12 위반 테스트 무개정 존치, INV-20 zero-metered 존치. 실제 타 계열 호출·등급 선정·합의표 게시는 루프 밖 소유자 실행 전용","authority":"owner, 2026-07-29, this session's prompt (Action 2)","metered":"0호출","learning_note":"이 판단에서 알아야 할 것: 불변식과 충돌하는 해소 조건은 불변식을 여는 쪽이 아니라 조건을 좁히는 쪽으로 푸는 것이 기본값이다 — 경계 수정은 한 번 열리면 위반 테스트의 기계성이 죽는다"}
+
+## D122 — 소유자 서명: BN-09 플립 — H26 BNFLIP-09 패킷 경유 (2026-07-29, 무호출, JSON 1줄)
+
+{"decision":"D122","date":"2026-07-29","action":"H26이 라우팅한 BNFLIP-09 소유자 패킷 서명 — BN-09를 RESOLVED 하단 이동. 실측 증거: docs/CROSS_GRADER_OWNER_PACKET.md 존재(스프린트 5594c44, 병합 42fedf3), tools/cross_grader_skeleton.py 단독 실행 RC=2 'CALLS DISABLED' fail-closed, requests|urllib|http 임포트 0건, 전용 테스트 4건 pytest 283 편입 — D121 재규정 3조건 전부 충족. 타 계열 실호출·합의표 게시는 Q-F07 소유자 게이트 유지","authority":"owner, 2026-07-29, this session's prompt (Action 2, D-G)","metered":"0호출","learning_note":"이 판단에서 알아야 할 것: H26의 '검증 불가 ⇒ 인간' 라우팅이 처음 실전 작동한 사례다 — 하네스가 프로즈 조건을 플립하지 않고 패킷으로 넘겼고, 서명은 패킷의 실측 기록을 그대로 증거로 쓴다"}
+
+## D123 — 소유자 서명: BN-07 코드 반쪽 — shallow-clone fail-closed 가드 (2026-07-29, 무호출, JSON 1줄)
+
+{"decision":"D123","date":"2026-07-29","action":"Q-F09 서명 — tools/verify_blindness.py에 check_not_shallow() 신설(main 최선두 호출): git rev-parse --is-shallow-repository가 false가 아니면 명시 메시지('git fetch --unshallow' 안내)로 즉시 종료. 실측: file:// full clone RC=0 PASS · --depth 1 shallow clone RC=1 + FATAL 메시지 (패치 코드 주입 후 양쪽 측정). CI는 fetch-depth 0(ci.yml:21)이라 무영향. REPRODUCING.md full-clone 문언은 스프린트 15fc704로 선행 완료 — BN-07 해소 조건 3종이 이로써 전부 실측 충족(플립은 별도 판단)","authority":"owner, 2026-07-29, this session's prompt (Action 2, D-H)","metered":"0호출","learning_note":"이 판단에서 알아야 할 것: 보호 경로 게이트 수정은 그 게이트를 소비하는 CI의 전제(fetch-depth)를 먼저 실측하고 커밋해야 한다 — 가드 추가가 CI 자신을 죽이는 자충수가 이 확인 한 줄로 배제된다"}
+
+## D124 — 소유자 서명: lint_doc_counts DOCS + REPRODUCING.ko.md (2026-07-29, 무호출, JSON 1줄)
+
+{"decision":"D124","date":"2026-07-29","action":"Q-F10 서명 — tools/lint_doc_counts.py DOCS에 REPRODUCING.ko.md 추가(4번째). 적용 후 단독 실행 PASS RC=0 (manifest 538 · pytest 283). 스프린트가 발견한 '생성 블록이 lint 감시 밖에서 침묵 표류' 공백(279 vs 283 사건)의 재발 차단","authority":"owner, 2026-07-29, this session's prompt (Action 2, D-I)","metered":"0호출","learning_note":"이 판단에서 알아야 할 것: 생성 블록을 가진 문서는 생성기 DOCS와 lint DOCS 양쪽에 동시 등재돼야 한다 — 한쪽만 등재된 문서가 바로 침묵 표류의 서식지였다"}
+
+## D125 — 소유자 서명: BN-11 재진입 — DECISION_TABLE 영어 표면 (2026-07-29, 무호출, JSON 1줄)
+
+{"decision":"D125","date":"2026-07-29","action":"replenish 기각 후보 BN-11의 소유자 재진입 — 기각은 basis 토큰(scoring/decisions_log.md)이 BN-08 Basis와 겹친 필터 기제 아티팩트였고 실질 기각이 아님을 인정. basis를 analysis/DECISION_TABLE.md로 교체(필터 통과 앵커)해 BOTTLENECKS.md에 소유자 추가. D114 경계 적용 — 번역은 루프 작업","authority":"owner, 2026-07-29, this session's prompt (Action 2, D-J)","metered":"0호출","learning_note":"이 판단에서 알아야 할 것: 기계 필터의 기각은 '실질 기각'과 '기제 아티팩트'를 구분해 기록해야 한다 — 후자의 구제 경로가 소유자 재진입이고, 필터 자체는 고치지 않는 것이 반복 가능성(repackaging 방어)을 지킨다"}
+
+## D126 — 소유자 서명: 피드백 인테이크 — ISSUE_TEMPLATE 2종 + config (2026-07-29, 무호출, JSON 1줄)
+
+{"decision":"D126","date":"2026-07-29","action":"S-07 기계 반쪽 서명 — .github/ISSUE_TEMPLATE에 reproduction-report.md·methodology-question.md 2종 + config.yml(AUDIT_INDEX·REPRODUCING contact_links, blank issues 허용) 신설. 분기 목표 'open feedback channel'의 인테이크 표면. 공지·가시화(발송, Discussions 여부)는 소유자 잔여","authority":"owner, 2026-07-29, this session's prompt (Action 2, D-K)","metered":"0호출","learning_note":"이 판단에서 알아야 할 것: 인테이크 템플릿의 설계 목표는 트래픽 생성이 아니라 도착한 독자의 마찰 제거다 — 발송(BN-04)이 트래픽을 만들기 전에 표면이 먼저 서 있어야 응답이 계측 가능하다"}

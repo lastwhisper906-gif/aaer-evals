@@ -371,3 +371,18 @@
   and committed by the HARNESS, not exec-claude. Source: .direction/20260729-170154/replenish-4.md
 - **Basis:** .direction/20260729-170154/replenish-4.md · H25 (owner-signed 2026-07-29)
 - **Revert:** revert the replenish(harness) commit listed in .direction/20260729-170154/replenish_shas.
+
+## D-P27 — 스프린트 20260729-170154 병합 + D122~D126 적용 기록 (2026-07-29)
+- **What:** Action 1: 스프린트 6커밋 --no-ff 병합(42fedf3), verify-public
+  RC=0, push, CI green. Action 2 서명 5건 적용 — D122: BN-09 플립(H26
+  BNFLIP-09 패킷 증거), D123: verify_blindness shallow 가드(실측 full
+  RC=0/shallow RC=1, CI fetch-depth 0 확인), D124: lint_doc_counts DOCS
+  + REPRODUCING.ko.md(PASS RC=0), D125: BN-11 재진입(basis 교체
+  analysis/DECISION_TABLE.md), D126: ISSUE_TEMPLATE 2종+config.
+  **주기:** D123으로 BN-07 해소 조건 3종(코드 가드·문서 문언·양쪽 실측)이
+  전부 충족됨 — 플립은 소유자 미지시라 보류, 차기 스프린트 리뷰어가
+  bn_resolved_claim으로 올리면 H26 경로(프로즈 조건 → 소유자 패킷)로
+  돌아오므로 소유자 서명 1건이 최단 경로.
+- **Basis:** 소유자 지시문 Action 1·2 · vp4 로그 RC=0 · CI 42fedf3
+  success · 원장 D122~D126
+- **Revert:** 각 governance 커밋 개별 revert (원장은 append-only).
