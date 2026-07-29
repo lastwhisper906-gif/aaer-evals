@@ -859,3 +859,31 @@
   보호 경로 무접촉 (translation + cross-links only, no protected-path
   contact).
 - **상태**: OPEN
+
+## Q-F15 — BN-14: error_analysis_wave2_holdout 영어 초안 채택 (RESULTS 행 9 소스 문서, Q-F11 패턴) — OPEN (신규, 2026-07-29 direction-loop)
+
+- **질문**: 루프가 작성한 `docs/ERROR_ANALYSIS_WAVE2_HOLDOUT_EN_DRAFT.md`
+  (`analysis/error_analysis_wave2_holdout.md`의 전문 영역 — 수치 토큰
+  동치 diff 검사 PASS, 식별자 L-N·dim·(i)–(iv) 분류·§5-3 오류 귀속 문언
+  의미 보존, `docs/DECISION_TABLE_EN_DRAFT.md`와 동일 "DRAFT —
+  unadopted English translation" 배너)를 영어 정본으로 채택할까?
+  RESULTS 행 9의 소스 문서가 한국어 전용인데 보호 경로(`analysis/`)에
+  있어, BN-11이 확립한 초안-패킷 분리(루프는 docs/ 초안 출하, 채택은
+  owner-hand — D125/Q-F11 선례)를 그대로 적용한 사안이다 (BN-14 해소
+  조건이 "the row-9 source doc"을 명시 포함).
+- **제안 (Q-F11 패턴 그대로)**: ① 초안을
+  `analysis/error_analysis_wave2_holdout.md`의 영어 정본으로 이동(초안
+  배너 제거) ② 한국어 원본을
+  `analysis/error_analysis_wave2_holdout.ko.md`로 보존(동결 원문) ③
+  채택 직후 수치 토큰 동치 검사 재실행 기록.
+- **옵션**: (A) ①②③ 일괄 — 서명 D-엔트리 1건, `make verify-public`
+  실측 동반 · (B) 초안을 `docs/`에 존치하고 RESULTS 행 9에서 병기
+  링크로 안내 — 보호 경로 무접촉 유지, 정본 이원화 지속 · (C) 기각 —
+  사유 기록 (BN-14 부분 미해소 지속).
+- **근거**: BN-14 해소 조건 중 루프 실행 가능 반쪽(전문 영역 초안 +
+  동치 검사)은 본 커밋으로 완료 — 잔여(채택·이동)는 전부 보호 경로
+  접촉이라 INV-18 사슬(발견 → 큐 등록 → 서명)로 소유자 채택을
+  요청한다. **기본값 (무응답 시)**: (A) — D125/Q-F11 선례.
+- **세션 기본 조치**: 초안만 — 보호 경로 무접촉 (draft only,
+  no protected-path contact).
+- **상태**: OPEN
