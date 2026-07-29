@@ -171,3 +171,22 @@ RC=2 "CALLS DISABLED" fail-closed, `requests|urllib|http` 임포트 0건,
 **Resolution condition:** make verify-public runs under a machine-enforced no-network/no-corpus guard that fails the gate on any socket or out-of-repo data access, and exits RC=0 with the guard active
 **Basis:** audit/verify_public_sandbox_transcript_20260722.txt
 
+
+### BN-17: The D/Q/RP/E governance-identifier web is outside the machine-check perimeter — referential integrity is hand-maintained despite three real renumbering collisions
+**Blocked:** Machine-verified resolution of every cross-ledger identifier reference (Q→D signatures, RP/FREEZE_REV/E citations, BOTTLENECKS Basis paths) that AUDIT_INDEX promises auditors as the audit trail's spine
+**Blocks:** The "existence-proof record with its full audit trail" claim surviving an auditor's first dangling reference — Q-M03→Q-M04, Q-O03→Q-O04, and FREEZE_REV5→REV7 renumberings already happened and only hand-checks catch the next one
+**Resolution condition:** A collected pytest fails on any dangling D-/Q-/RP-/E-/FREEZE_REV cross-reference or nonexistent BOTTLENECKS Basis path (seeded-violation test proves it fires), and the full verify-public pytest gate passes green on the current tree
+**Basis:** tools/lint_publication.py
+
+### BN-18: The post-publication defect record (ERRATA E-001/E-002) is Korean-only — the honesty differentiator's sharpest surface is unreadable at the exact click where scrutiny lands
+**Blocked:** Non-Korean reader access to the errata that RESULTS rows 3/12 cite in their source columns and the README Publication section links directly — the only place the project proves it discloses its own plan-deviation defects
+**Blocks:** The quarter goal's academic-scrutiny path — the reader verifying "defects are found and disclosed, not hidden" hits a Korean wall one click below the English claims/limits chain that BN-11/BN-14 are closing
+**Resolution condition:** English-canonical ERRATA.md with the Korean original preserved as .ko.md per the F-01/F-02 protocol, numeric token-parity PASS, adoption queue entry filed, owner-adopted on main with verify-public RC=0
+**Basis:** AUDIT_INDEX.md:18
+
+### BN-19: The headline finding has no figure — the no-dominant-strategy detection/false-positive tradeoff exists only as prose and a 4×4 CP95 table
+**Blocked:** A 30-second visual of the threshold sweep (detection 12/12 vs FP 71.4% at T≥50; detection 1/12 at T=70) from committed decision_table.json — the README first-screen figure shows the narrower wave-1 claim, not the headline
+**Blocks:** Practitioner conversion on the headline claim itself — the quarter's "readable by its target audience" goal fails at the top sentence, where prose forces minutes for what one tradeoff chart gives in seconds
+**Resolution condition:** A committed deterministic script regenerates a threshold-sweep figure (detection and false-positive rates with CP95, ordinal-convention labels) from analysis/decision_table.json, PNG committed, plus an owner adoption queue entry for README/DECISION_TABLE placement
+**Basis:** analysis/decision_table.json
+
