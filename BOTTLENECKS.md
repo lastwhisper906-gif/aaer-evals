@@ -110,6 +110,21 @@ README.md:46, `## Quickstart`(:56)보다 위. `make verify-public` RC=0
 **Resolution condition:** Owner packet exists containing a v2 draft (FPR-matching readout rules + control-expansion selection protocol + post-E2 history-disclosure section per PROJECT.md §5-6) and owner signature is recorded in the D-ledger before Cycle-2 registration
 **Basis:** specs/ENGINE_DECISION.md
 
+### BN-11: The README headline's sole evidence link (analysis/DECISION_TABLE.md) is Korean-only — D114 English-surface boundary unapplied at its most load-bearing click
+**Blocked:** Target-audience readability of the headline finding's evidence
+— README.md:26 sends practitioners and academics to a Korean-throughout
+signed table with no English counterpart. (Owner re-entry D125: the H25
+repackaging filter rejected the original candidate on a basis-token
+mechanism artifact, not on substance.)
+**Blocks:** The quarter goal "headline evidence documents in English /
+audit-ready but unread fails this quarter" — both simulated non-Korean
+readers stop at the first click off the headline.
+**Resolution condition:** English canonical DECISION_TABLE with preserved
+.ko.md original (F-01/F-02 protocol), numeric token-equivalence check
+PASS, owner-adopted on main, and lint_publication DOCS extended to both
+files.
+**Basis:** analysis/DECISION_TABLE.md
+
 ### BN-12: Published figures sit outside the machine-check perimeter — the README first-screen PNG carries the demoted probability framing
 **Blocked:** A trustworthy figure layer — no gate in verify-public/CI regenerates or compares any of the 4 published PNGs, and fig_dotplot's committed axis label "Misstatement probability" contradicts the ordinal-only publication convention (Q-F04/D91, RESULTS row 11) on the README first screen
 **Blocks:** Publication-surface integrity — the ordinal lint and INV-05 gates cover text only, so figure drift or terminology violations ship silently (the standing suspicion "static review passes figure generation" instantiated)
