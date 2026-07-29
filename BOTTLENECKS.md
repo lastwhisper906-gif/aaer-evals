@@ -158,3 +158,16 @@ RC=2 "CALLS DISABLED" fail-closed, `requests|urllib|http` 임포트 0건,
 **Resolution condition:** English-canonical methodology_limitations.md (and the row-9 source doc) with .ko.md originals preserved per the F-01/F-02 protocol, numeric token-equivalence check PASS, lint DOCS lists extended to the new pairs, owner-adopted on main with verify-public RC=0
 **Basis:** docs/methodology_limitations.md
 
+
+### BN-15: The Nov-15 seal window's pre-seal steps run on unwritten or never-executed code — in-window authoring risk under the abort discipline
+**Blocked:** A pre-verified offline execution path for OWNER_LAUNCH_GATE §4 steps (1)–(3) — the forward case-build script is unwritten (build_evaluatee_inputs.py has no forward parameterization; the gate schedules "파라미터화, 커밋 후 실행" inside the window) and the claimed forward_enumerate --offline determinism recheck has zero pytest coverage
+**Blocks:** Low-risk cycle_001 sealing — any in-window tooling failure converts to INV-22 abort (no silent extension), slipping the calendar-critical seal and with it BN-01's sole resolution path
+**Resolution condition:** Committed offline pytest proves (i) forward_enumerate --offline recomputes universe.json matching the pinned sha256 and (ii) a committed forward case-build path emits a schema-valid cases_forward_001-shaped file from a synthetic fixture, with make verify-public RC=0
+**Basis:** tools/forward_enumerate.py
+
+### BN-16: verify-public's zero-external-data property rests on a stale one-time transcript, not a gate — the named static-review blind spot on the project's most load-bearing reproduce claim
+**Blocked:** Continuous machine proof of the README Quickstart claim "no corpus, no API key, no network" — sole evidence is the 2026-07-22 clean-HOME transcript recorded at the 279-test state while the suite is now 289 and growing
+**Blocks:** Reproduce-promise integrity — a new test or tool that silently reaches network, ~/aaer-data, or HOME passes all 5 gates green while falsifying the README sentence auditors act on first
+**Resolution condition:** make verify-public runs under a machine-enforced no-network/no-corpus guard that fails the gate on any socket or out-of-repo data access, and exits RC=0 with the guard active
+**Basis:** audit/verify_public_sandbox_transcript_20260722.txt
+

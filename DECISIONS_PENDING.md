@@ -393,3 +393,10 @@
   and committed by the HARNESS, not exec-claude. Source: .direction/20260729-185813/replenish-4.md
 - **Basis:** .direction/20260729-185813/replenish-4.md · H25 (owner-signed 2026-07-29)
 - **Revert:** revert the replenish(harness) commit listed in .direction/20260729-185813/replenish_shas.
+
+## D-P (harness replenish) — H25 BN append: BN-15 BN-16 (20260730-004720 cycle 2)
+- **What:** H25 replenish accepted BN-15 BN-16 after mechanical filters
+  (H19 basis verification · no Basis overlap · no id collision). Appended
+  and committed by the HARNESS, not exec-claude. Source: .direction/20260730-004720/replenish-2.md
+- **Basis:** .direction/20260730-004720/replenish-2.md · H25 (owner-signed 2026-07-29)
+- **Revert:** revert the replenish(harness) commit listed in .direction/20260730-004720/replenish_shas.
