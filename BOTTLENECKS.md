@@ -81,23 +81,6 @@ fetch-depth 1 포함)에서는 대상 SHA가 로컬 이력에 없어 검사가 �
 **Basis:** `tools/verify_blindness.py` check_history · REPRODUCING.md
 재현 명령 절
 
-### BN-09: L-6 동일 계열 관대화 — 교차 채점자 부채 (스펙만 존재, 실측 0)
-**Blocked:** 채점 신뢰성 주장의 독립성 정량화. 채점 보조가 피평가자와
-동일 계열(Claude)이라는 한계는 공개돼 있으나(L-6), 교차 패밀리 채점자는
-스펙 문서만 존재(`specs/cross_grader.md` SPECIFICATION ONLY)하고 합의율
-(agreement) 실측이 0이다 — 관대화의 크기를 아무도 모른다.
-**Blocks:** L-6 한계의 정량화 — 외부 방어 가능한 채점 신뢰성 주장;
-Q-F07/Q18 소유자 결정의 실측 근거. INV-12상 타 LLM 호출 경로는 금지이므로
-호출 실행·합의표 게시는 소유자 게이트(owner packet) 대상.
-**Resolution condition:** (D121 재규정 — 소유자 패킷 준비로 한정) 루프
-산출물은 ① 교차 채점자 SPEC 확정, ② 채점 대상 선정 프로토콜, ③
-fail-closed·호출-비활성 하네스 SKELETON(어디에도 GPT/Gemini 호출 경로를
-추가하지 않음 — INV-12 위반 테스트 무개정 존치, INV-20 zero-metered
-존치)의 3종이 소유자 패킷으로 준비되면 해소. 실제 타 계열 호출·등급
-선정·합의표 게시는 루프 밖 소유자 실행 전용.
-**Basis:** `docs/methodology_limitations.md` L-6 · `specs/cross_grader.md` ·
-`scoring/decisions_log.md` D121
-
 ### BN-05: R3 산입 규칙 미규정 — RESOLVED (2026-07-29, D116)
 **Blocked (당시):** 교란 draw가 없는 실험군 케이스의 R3 산입 처리 —
 분자에서 제외되며 분모(n_treatment)에는 포함되는 현행 동작(v1=rev2
@@ -133,3 +116,17 @@ README.md:46, `## Quickstart`(:56)보다 위. `make verify-public` RC=0
 **Resolution condition:** README-referenced figures regenerate from committed artifacts with ordinal-convention labels and a gate step fails on drift, with make verify-public RC=0 after wiring
 **Basis:** analysis/fig_dotplot.py:40
 
+
+### BN-09: L-6 교차 채점자 부채 — RESOLVED (2026-07-29, D122)
+**Blocked (당시):** 채점 신뢰성 주장의 독립성 정량화 — 교차 패밀리
+채점자가 스펙만 존재, 합의율 실측 0.
+**RESOLVED:** D121 재규정 조건(소유자 패킷 준비 3종) 충족 실측 —
+① SPEC 확정 문서 `docs/CROSS_GRADER_OWNER_PACKET.md`(스프린트 커밋
+5594c44, 병합 42fedf3), ② 채점 대상 선정 프로토콜 동 패킷 수록,
+③ 호출-비활성 스켈레톤 `tools/cross_grader_skeleton.py` — 단독 실행
+RC=2 "CALLS DISABLED" fail-closed, `requests|urllib|http` 임포트 0건,
+전용 테스트 4건이 pytest 283에 편입. GPT/Gemini 호출 경로 무추가
+(INV-12·INV-20 무개정 존치). H26 BNFLIP-09 패킷 경유, 소유자 서명 D122.
+실제 타 계열 호출·합의표 게시는 여전히 루프 밖 소유자 실행 전용(Q-F07).
+**Basis:** `docs/CROSS_GRADER_OWNER_PACKET.md` ·
+`tools/test_cross_grader_skeleton.py` · `scoring/decisions_log.md` D122
