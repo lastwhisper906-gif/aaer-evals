@@ -39,6 +39,10 @@
   벤치마크는 비정상 공매도 잔고(abnormal short interest, Karpoff/Lou
   2010) → `specs/B4_short_interest.md`.
 - **무제한 커스텀 하네스 구축** — 위 인프라 단서 조항 참조.
+- **루프-라우터-전용 프레이밍 (loop-as-router-only framing)** — rejected
+  2026-07-29, execution channel demonstrated: 스프린트 20260729가 번역
+  2커밋을 게이트 통과로 실행하고 main에 병합됨(d5523a7). 루프의 가치를
+  "소유자 결정 패킷 라우팅"만으로 한정하는 관점은 기각 (D117).
 - **결과를 본 뒤의 임계값 재보정(post-hoc recalibration) 일체** —
   범주적 기각. E2 조기성(earliness) 결과(LLM 리드타임 우위처럼 보였던
   것)가 임계 비대칭 아티팩트(오탐 71.4% vs 0%)로 판명된 것이 근거 —

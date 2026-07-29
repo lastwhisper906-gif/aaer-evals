@@ -1126,3 +1126,7 @@ c44bd59a…)는 **서명 없이 superseded** (채점 미진입 상태 폐기). v
 ## D116 — 소유자 서명: BN-05 해소 — R3 무draw 산입 규칙 전향 명문화 (2026-07-29, 무호출, JSON 1줄)
 
 {"decision":"D116","date":"2026-07-29","action":"Stage-1 런(.direction/20260729-021552) 상비 소유자 패킷 해소 — docs/FUTURE_CYCLE_PROTOCOL.md 부록 A-3 신설: 교란 draw 부재 실험군 케이스는 R3 분자 제외·분모 포함(v1=rev2 실측 동작)을 차기 사이클 측정 절차로 명문화. 관할: 전향 전용 — ANALYSIS_PLAN_WAVE2·동결 산출물의 소급 개정 아님(사전 고정 원칙, E-002 '소급 변경 금지' 준수). ERRATA E-002 플래그에 resolved-by 교차 참조(ERRATA 자체는 무수정 — append-only 원칙). BOTTLENECKS.md BN-05 RESOLVED 이동. done_when 실측: grep R3 docs/FUTURE_CYCLE_PROTOCOL.md = 2건(기존 0)","authority":"owner, 2026-07-29, this session's prompt (Action 2, D-C)","metered":"0호출","learning_note":"이 판단에서 알아야 할 것: 결과를 이미 본 규칙의 명문화는 관할 선언이 본체다 — '전향 전용, 소급 아님'을 규칙 텍스트 안에 박지 않으면 같은 문장이 나중에 소급 정당화로 오독될 수 있다"}
+
+## D117 — 소유자 서명: S-01 기각 — 루프-라우터-전용 프레이밍 (2026-07-29, 무호출, JSON 1줄)
+
+{"decision":"D117","date":"2026-07-29","action":"S-01(루프 가치 = 소유자 결정 패킷 라우팅 전용 관점) 기각 — 스프린트 20260729가 실행 채널을 실증(번역 2커밋 c4c187d·d4c0e9f 게이트 통과, main 병합 d5523a7). DIRECTION_CONTEXT.md Rejected approaches에 기각 등재('loop-as-router-only framing — rejected 20260729, execution channel demonstrated'), .direction/strategic.md 대기 목록의 S-01을 RESOLVED 처리(재제기 금지). 부수: S-02도 D114 서명으로 RESOLVED 주석 처리","authority":"owner, 2026-07-29, this session's prompt (Action 2, D-D)","metered":"0호출","learning_note":"이 판단에서 알아야 할 것: 전략 채널의 관찰은 기각도 명시 기록이어야 한다 — 기각을 원장에 남기지 않으면 다음 리뷰 사이클이 같은 관찰을 다시 라우팅하고, 기각은 반복 비용으로 되돌아온다"}
