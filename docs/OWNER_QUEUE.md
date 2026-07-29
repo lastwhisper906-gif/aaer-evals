@@ -740,3 +740,29 @@
   `REPRODUCING.ko.md` 프로즈에서 CI 대조 주장을 삭제해 사실과 일치시킴.
 - **세션 기본 조치**: 없음 (등록만 — 보호 경로 코드 무접촉).
 - **상태**: OPEN
+
+## Q-F11 — BN-11 채택 반쪽: DECISION_TABLE 영어 정본 채택 + 린트 DOCS 확장 — OPEN (신규, 2026-07-29 direction-loop)
+
+- **질문**: 루프가 작성한 `docs/DECISION_TABLE_EN_DRAFT.md`
+  (`analysis/DECISION_TABLE.md`의 전문 영역 — 수치 토큰 동치 diff 검사
+  PASS, D94 서명·한계 문언 의미 보존)를 영어 정본으로 채택할까? README
+  헤드라인 발견의 유일한 증거 링크가 한국어 전용인 상태(BN-11)를 D125가
+  소유자 재진입으로 확정했고 번역을 루프 작업으로 지정했다 —
+  `analysis/`는 보호 경로라 채택 자체는 owner-hand 대상이다.
+- **제안 (F-01/F-02 규약 — D114 영어화 선례 그대로)**: ① 초안을
+  `analysis/DECISION_TABLE.md`로 이동(영어 정본, 초안 배너 제거) ②
+  한국어 원본을 `analysis/DECISION_TABLE.ko.md`로 보존(동결 원문) ③
+  D115/D118 선례대로 `tools/lint_publication.py` DOCS에 두 파일 편입 —
+  표면 승격과 린트 편입은 같은 결정의 두 반쪽 (D115/D118 학습 노트).
+- **옵션**: (A) ①②③ 일괄 — 서명 D-엔트리 1건, 채택 직후 수치 토큰 동치
+  검사 재실행 + `make verify-public` 실측 · (B) ①②만 채택하고 린트
+  편입 이연 — D115 학습 노트가 경고한 무검사 창이 열린다 · (C) 기각 —
+  초안을 `docs/`에 존치하고 README에서 병기 링크로 안내.
+- **근거**: BN-11 해소 조건("English canonical DECISION_TABLE with
+  preserved .ko.md original, numeric token-equivalence check PASS,
+  owner-adopted on main, lint_publication DOCS extended") 중 루프 실행
+  가능 반쪽(영역 초안 + 동치 검사)은 완료 — 잔여 전부가 보호 경로 접촉
+  이라 INV-18 사슬(발견 → 큐 등록 → 서명)로 소유자 채택을 요청한다.
+- **세션 기본 조치**: 초안만 — 보호 경로 무접촉 (draft only,
+  no protected-path contact).
+- **상태**: OPEN
