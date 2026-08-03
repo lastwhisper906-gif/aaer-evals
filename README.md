@@ -68,7 +68,7 @@ Corpus-dependent full reproduction: `make verify-full` (`REPRODUCING.md`).
 
 <!-- BEGIN-GENERATED: repro-facts (refresh: make docs-refresh; CI: tools/lint_doc_counts.py) -->
 - data manifest: **538 files** (`data/manifests/aaer_data_manifest.json` · `file_count`)
-- pytest: **283 tests collected** (`pipeline tools scoring analysis`)
+- pytest: **297 tests collected** (`pipeline tools scoring analysis`)
 - `make verify-public` (zero external data):
   - `.venv/bin/python tools/reproduce_analysis.py`
   - `.venv/bin/python tools/lint_publication.py`
@@ -101,6 +101,13 @@ Corpus-dependent full reproduction: `make verify-full` (`REPRODUCING.md`).
 Detailed narrative (three-task separation, three-layer headline, false
 positives, baselines, limitations — relocated copies):
 [`docs/README_DETAIL.md`](docs/README_DETAIL.md).
+
+## Feedback
+
+Reproduction results (successes *and* failures) and methodology questions
+are both welcome — [open an issue](https://github.com/lastwhisper906-gif/aaer-evals/issues/new/choose)
+using the **reproduction-report** or **methodology-question** template
+(`.github/ISSUE_TEMPLATE/`). Identifier lookups first: [AUDIT_INDEX.md](AUDIT_INDEX.md).
 
 ## Publication (v1.0 — 2026-07-11, owner-signed D40/D41)
 

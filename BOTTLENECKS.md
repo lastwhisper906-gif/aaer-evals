@@ -145,3 +145,48 @@ RC=2 "CALLS DISABLED" fail-closed, `requests|urllib|http` 임포트 0건,
 실제 타 계열 호출·합의표 게시는 여전히 루프 밖 소유자 실행 전용(Q-F07).
 **Basis:** `docs/CROSS_GRADER_OWNER_PACKET.md` ·
 `tools/test_cross_grader_skeleton.py` · `scoring/decisions_log.md` D122
+
+### BN-13: E-001's blind spot is still open — published numbers beyond wave-1 sit outside the recompute gate
+**Blocked:** Machine-verified provenance of RESULTS rows 3/6/9/10/13 (including the headline 71.4%) — verify-public recomputes only RP-05/wave-1 numbers, while wave2_results.json, holdout_controls_results.json, and decision_table.json are trusted as-is (lint_publication rule F cross-reads them; nothing recomputes them from the committed runs/ scores and e2_trajectories.json, and even verify-full omits wave2_analyze.py)
+**Blocks:** The README/CLAIM_HIERARCHY Level-0 claim "recomputes every published number from committed artifacts" at exactly the artifact class where the project's own errata (E-001/E-002) found real plan-deviation defects — silent drift or a regenerated-JSON error in the wave-2/holdout/E2 numbers would pass all 5 gates green
+**Resolution condition:** A verify-public step (reproduce_analysis extension or dedicated pytest) recomputes the wave-2 separation stats, holdout-controls numbers, and decision-table cells from committed runs/ artifacts and analysis/e2_trajectories.json (seeds per E-002), fails on mismatch with the published JSONs, and make verify-public exits RC=0 after wiring
+**Basis:** tools/reproduce_analysis.py
+
+### BN-14: The limits half of the evidence chain is Korean-only — the limitation ledger every honest-scrutiny click resolves to
+**Blocked:** Non-Korean reader access to docs/methodology_limitations.md (L-1…L-8 — the target of AUDIT_INDEX's L-N row, README_DETAIL's L-1/L-5 citations, and RESULTS row 8/9 limit language) and to analysis/error_analysis_wave2_holdout.md (RESULTS row 9's source column) — the claims half of the chain is now English, the limits half is not
+**Blocks:** The quarter goal "readable by its target audience" on the academic-scrutiny path — the reader verifying "residual memorization is measured, not eliminated" hits a Korean wall one click below RESULTS, leaving the D114 boundary (all reader-facing docs English-canonical) unapplied to the very docs that carry the project's honesty differentiator
+**Resolution condition:** English-canonical methodology_limitations.md (and the row-9 source doc) with .ko.md originals preserved per the F-01/F-02 protocol, numeric token-equivalence check PASS, lint DOCS lists extended to the new pairs, owner-adopted on main with verify-public RC=0
+**Basis:** docs/methodology_limitations.md
+
+
+### BN-15: The Nov-15 seal window's pre-seal steps run on unwritten or never-executed code — in-window authoring risk under the abort discipline
+**Blocked:** A pre-verified offline execution path for OWNER_LAUNCH_GATE §4 steps (1)–(3) — the forward case-build script is unwritten (build_evaluatee_inputs.py has no forward parameterization; the gate schedules "파라미터화, 커밋 후 실행" inside the window) and the claimed forward_enumerate --offline determinism recheck has zero pytest coverage
+**Blocks:** Low-risk cycle_001 sealing — any in-window tooling failure converts to INV-22 abort (no silent extension), slipping the calendar-critical seal and with it BN-01's sole resolution path
+**Resolution condition:** Committed offline pytest proves (i) forward_enumerate --offline recomputes universe.json matching the pinned sha256 and (ii) a committed forward case-build path emits a schema-valid cases_forward_001-shaped file from a synthetic fixture, with make verify-public RC=0
+**Basis:** tools/forward_enumerate.py
+
+### BN-16: verify-public's zero-external-data property rests on a stale one-time transcript, not a gate — the named static-review blind spot on the project's most load-bearing reproduce claim
+**Blocked:** Continuous machine proof of the README Quickstart claim "no corpus, no API key, no network" — sole evidence is the 2026-07-22 clean-HOME transcript recorded at the 279-test state while the suite is now 289 and growing
+**Blocks:** Reproduce-promise integrity — a new test or tool that silently reaches network, ~/aaer-data, or HOME passes all 5 gates green while falsifying the README sentence auditors act on first
+**Resolution condition:** make verify-public runs under a machine-enforced no-network/no-corpus guard that fails the gate on any socket or out-of-repo data access, and exits RC=0 with the guard active
+**Basis:** audit/verify_public_sandbox_transcript_20260722.txt
+
+
+### BN-17: The D/Q/RP/E governance-identifier web is outside the machine-check perimeter — referential integrity is hand-maintained despite three real renumbering collisions
+**Blocked:** Machine-verified resolution of every cross-ledger identifier reference (Q→D signatures, RP/FREEZE_REV/E citations, BOTTLENECKS Basis paths) that AUDIT_INDEX promises auditors as the audit trail's spine
+**Blocks:** The "existence-proof record with its full audit trail" claim surviving an auditor's first dangling reference — Q-M03→Q-M04, Q-O03→Q-O04, and FREEZE_REV5→REV7 renumberings already happened and only hand-checks catch the next one
+**Resolution condition:** A collected pytest fails on any dangling D-/Q-/RP-/E-/FREEZE_REV cross-reference or nonexistent BOTTLENECKS Basis path (seeded-violation test proves it fires), and the full verify-public pytest gate passes green on the current tree
+**Basis:** tools/lint_publication.py
+
+### BN-18: The post-publication defect record (ERRATA E-001/E-002) is Korean-only — the honesty differentiator's sharpest surface is unreadable at the exact click where scrutiny lands
+**Blocked:** Non-Korean reader access to the errata that RESULTS rows 3/12 cite in their source columns and the README Publication section links directly — the only place the project proves it discloses its own plan-deviation defects
+**Blocks:** The quarter goal's academic-scrutiny path — the reader verifying "defects are found and disclosed, not hidden" hits a Korean wall one click below the English claims/limits chain that BN-11/BN-14 are closing
+**Resolution condition:** English-canonical ERRATA.md with the Korean original preserved as .ko.md per the F-01/F-02 protocol, numeric token-parity PASS, adoption queue entry filed, owner-adopted on main with verify-public RC=0
+**Basis:** AUDIT_INDEX.md:18
+
+### BN-19: The headline finding has no figure — the no-dominant-strategy detection/false-positive tradeoff exists only as prose and a 4×4 CP95 table
+**Blocked:** A 30-second visual of the threshold sweep (detection 12/12 vs FP 71.4% at T≥50; detection 1/12 at T=70) from committed decision_table.json — the README first-screen figure shows the narrower wave-1 claim, not the headline
+**Blocks:** Practitioner conversion on the headline claim itself — the quarter's "readable by its target audience" goal fails at the top sentence, where prose forces minutes for what one tradeoff chart gives in seconds
+**Resolution condition:** A committed deterministic script regenerates a threshold-sweep figure (detection and false-positive rates with CP95, ordinal-convention labels) from analysis/decision_table.json, PNG committed, plus an owner adoption queue entry for README/DECISION_TABLE placement
+**Basis:** analysis/decision_table.json
+

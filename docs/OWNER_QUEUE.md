@@ -697,7 +697,7 @@
 
 ---
 
-## Q-F09 — BN-07 코드 반쪽: verify_blindness 얕은 클론(shallow) fail-closed 검출 — OPEN (신규, 2026-07-29 direction-loop)
+## Q-F09 — BN-07 코드 반쪽: verify_blindness 얕은 클론(shallow) fail-closed 검출 — **RESOLVED (2026-07-29, D123)** (등록 2026-07-29 direction-loop)
 
 - **질문**: `tools/verify_blindness.py`에 얕은(shallow) 저장소 fail-closed
   검출을 추가할까? 이력 증명(`git merge-base --is-ancestor`)은 depth-1
@@ -718,9 +718,12 @@
   (BN-07의 measured-evidence 요건) · (B) 11월 실행 창으로 이연 ·
   (C) 기각 — README/REPRODUCING 주의 문구로 대체.
 - **세션 기본 조치**: 없음 (등록만 — 보호 경로 코드 무접촉).
-- **상태**: OPEN
+- **해소 (2026-07-29)**: 소유자 서명 — **(A) owner-hand 적용** (원장
+  D123): `check_not_shallow()` 신설, "실측: file:// full clone RC=0 PASS ·
+  --depth 1 shallow clone RC=1 + FATAL 메시지".
+- **상태**: RESOLVED (2026-07-29, D123)
 
-## Q-F10 — lint_doc_counts DOCS 목록에 REPRODUCING.ko.md 누락 — OPEN (신규, 2026-07-29 direction-loop)
+## Q-F10 — lint_doc_counts DOCS 목록에 REPRODUCING.ko.md 누락 — **RESOLVED (2026-07-29, D124)** (등록 2026-07-29 direction-loop)
 
 - **질문**: `tools/lint_doc_counts.py`의 DOCS 목록(현재 README.md ·
   README.ko.md · REPRODUCING.md)에 `REPRODUCING.ko.md`를 추가할까?
@@ -739,4 +742,179 @@
   D-엔트리 하에 owner-hand 적용 · (B) 기각 — 대신
   `REPRODUCING.ko.md` 프로즈에서 CI 대조 주장을 삭제해 사실과 일치시킴.
 - **세션 기본 조치**: 없음 (등록만 — 보호 경로 코드 무접촉).
+- **해소 (2026-07-29)**: 소유자 서명 — **(A) owner-hand 적용** (원장
+  D124): DOCS에 REPRODUCING.ko.md 추가(4번째), "적용 후 단독 실행 PASS
+  RC=0 (manifest 538 · pytest 283)".
+- **상태**: RESOLVED (2026-07-29, D124)
+
+## Q-F11 — BN-11 채택 반쪽: DECISION_TABLE 영어 정본 채택 + 린트 DOCS 확장 — OPEN (신규, 2026-07-29 direction-loop)
+
+- **질문**: 루프가 작성한 `docs/DECISION_TABLE_EN_DRAFT.md`
+  (`analysis/DECISION_TABLE.md`의 전문 영역 — 수치 토큰 동치 diff 검사
+  PASS, D94 서명·한계 문언 의미 보존)를 영어 정본으로 채택할까? README
+  헤드라인 발견의 유일한 증거 링크가 한국어 전용인 상태(BN-11)를 D125가
+  소유자 재진입으로 확정했고 번역을 루프 작업으로 지정했다 —
+  `analysis/`는 보호 경로라 채택 자체는 owner-hand 대상이다.
+- **제안 (F-01/F-02 규약 — D114 영어화 선례 그대로)**: ① 초안을
+  `analysis/DECISION_TABLE.md`로 이동(영어 정본, 초안 배너 제거) ②
+  한국어 원본을 `analysis/DECISION_TABLE.ko.md`로 보존(동결 원문) ③
+  D115/D118 선례대로 `tools/lint_publication.py` DOCS에 두 파일 편입 —
+  표면 승격과 린트 편입은 같은 결정의 두 반쪽 (D115/D118 학습 노트).
+- **옵션**: (A) ①②③ 일괄 — 서명 D-엔트리 1건, 채택 직후 수치 토큰 동치
+  검사 재실행 + `make verify-public` 실측 · (B) ①②만 채택하고 린트
+  편입 이연 — D115 학습 노트가 경고한 무검사 창이 열린다 · (C) 기각 —
+  초안을 `docs/`에 존치하고 README에서 병기 링크로 안내.
+- **근거**: BN-11 해소 조건("English canonical DECISION_TABLE with
+  preserved .ko.md original, numeric token-equivalence check PASS,
+  owner-adopted on main, lint_publication DOCS extended") 중 루프 실행
+  가능 반쪽(영역 초안 + 동치 검사)은 완료 — 잔여 전부가 보호 경로 접촉
+  이라 INV-18 사슬(발견 → 큐 등록 → 서명)로 소유자 채택을 요청한다.
+- **세션 기본 조치**: 초안만 — 보호 경로 무접촉 (draft only,
+  no protected-path contact).
+- **상태**: OPEN
+
+## Q-F12 — BN-10: ENGINE_DECISION v2 소유자 패킷 검토·서명 (Cycle-2 등록 이전) — OPEN (신규, 2026-07-29 direction-loop)
+
+- **질문**: 루프가 작성한 `docs/ENGINE_DECISION_V2_OWNER_PACKET.md`
+  (BN-10이 의무화한 3절 — FPR-matched readout rules ·
+  Control-expansion selection protocol · Post-E2 history disclosure,
+  PROJECT.md §5-6)를 검토·확정하고 서명 D-엔트리 하에
+  `specs/ENGINE_DECISION.md` v2 절로 등재할까? DIRECTION_CONTEXT와
+  BN-10이 엔진 변경·대조군 확장의 유일한 사전 등록 경로로 "ENGINE_DECISION
+  v2"를 인용하지만 v2 초안이 어떤 파일에도 없었다 — 우선순위 1 병목
+  BN-01(오탐 주장 가능성)의 해소 경로가 이 서명을 경유한다.
+- **옵션**: (A) 패킷 §1–§3 옵션 선택 + 문안 확정 + 서명 D-엔트리 +
+  owner-hand로 `specs/` 등재 — **Cycle-2 등록 이전** (BN-10 해소 조건
+  문면) · (B) 패킷 수정 지시 — 루프가 초안 개정 후 재상정 · (C) 기각 —
+  v2 경로 자체를 재설계 (사유 기록 필요; BN-01 해소 경로 공백 지속).
+  어느 옵션이든 언어 표면 선택 포함 — D114 기본값(독자 대면 신규 문서 =
+  영어 정본)에 따라 v2 절을 영어 정본으로 등재하거나 같은 커밋에 영어
+  정본을 병행할지 소유자가 명시한다 (패킷 §4-4; BN-11 재입력 선례, D125).
+- **근거**: BN-10 해소 조건 = "Owner packet exists containing a v2 draft
+  (FPR-matching readout rules + control-expansion selection protocol +
+  post-E2 history-disclosure section per PROJECT.md §5-6) and owner
+  signature is recorded in the D-ledger before Cycle-2 registration."
+  패킷 존재 반쪽은 본 커밋으로 충족 — 서명·등재는 보호 경로(`specs/`)라
+  소유자 전속. 대조군 규모 선정 근거는 Q12에 따라 패킷 안에서 **OPEN**
+  으로 명시 표기했고, 패킷은 임계값·대조군 집합을 결정하지 않는다.
+- **세션 기본 조치**: 패킷 초안만 — `specs/` 무접촉, 임계·대조군 집합
+  무결정 (packet draft only, no specs/ contact, no threshold or
+  control-set decisions).
+- **상태**: OPEN
+
+## Q-F13 — BN-12: README 첫 화면 그림의 확률 프레이밍 축 라벨 + 그림 드리프트 게이트 부재 — OPEN (신규, 2026-07-29 direction-loop)
+
+- **질문**: `analysis/fig_dotplot.py`(:40 부근)의 축 라벨 "Misstatement
+  probability"를 서수(ordinal) 규약 문언으로 교체하고, 커밋된 동결
+  산출물로부터 PNG를 재생성하며, verify-public에 그림 드리프트 게이트
+  단계를 배선할까? 점수는 서수(0–100 순위)이지 확률이 아니라는 것이
+  발행 규약(Q-F04/D91, RESULTS 행 11)인데, 가장 가시적인 게시 산출물
+  (README 첫 화면 도트 플롯)의 축 라벨이 정반대를 말한다 — 발행 표면의
+  유일한 D91 서수 규약 모순(BN-12). 수리 전체가 보호 경로(`analysis/` ·
+  `Makefile` · `.github/`)에 있어 루프는 적용 불가 — INV-18 사슬(발견 →
+  큐 등록 → 서명)을 위해 본 항목으로 등록한다.
+- **제안 스케치 (proposal text — 세션은 적용하지 않음)**: ① 축 라벨을
+  ordinal 규약 문언(예: "LLM score (0–100, ordinal — not a probability)")
+  으로 교체 ② 4종 게시 PNG를 커밋된 동결 산출물에서 재생성 (신규 채점
+  0) ③ verify-public에 그림 재생성-대조 단계를 추가해 라벨·그림
+  드리프트를 기계 검출 (BN-12 해소 조건: 배선 후 `make verify-public`
+  RC=0).
+- **옵션**: (A) BN-12 전체 패키지 — ①②③ 일괄, 서명 D-엔트리 1건 하에
+  owner-hand 적용 · (B) ①② 라벨+재생성만 우선, 게이트(③) 이연 — 텍스트
+  린트 밖 그림 드리프트 감시 공백은 지속 · (C) 기각 — 사유 기록 (README
+  캡션 병기 문구 등 대체 수단 포함 여부는 소유자 판단).
+- **근거**: BN-12 — "ordinal 린트·INV-05 게이트는 텍스트만 커버, 그림
+  드리프트·용어 위반은 침묵 출하"가 실제 인스턴스화된 사례이며, RESULTS
+  행 11("점수는 서수, 확률 아님")과 첫 화면 그림이 상호 모순인 상태.
+- **세션 기본 조치**: 등록만 — 보호 경로 무접촉 (registration only,
+  no protected-path contact).
+- **상태**: OPEN
+
+## Q-F14 — BN-14: methodology_limitations 영어화 채택 + 린트 DOCS 확장 (en/ko 쌍) — OPEN (신규, 2026-07-29 direction-loop)
+
+- **질문**: 루프가 F-01/F-02 규약(D114 영어화 선례)대로 수행한
+  `docs/methodology_limitations.md` 영어화 — 한국어 원문은
+  `docs/methodology_limitations.ko.md`로 바이트 보존, 영어본은 수치
+  토큰 동치 검사 PASS(정렬 숫자 토큰 diff 일치), 상호 헤더 링크 —
+  를 영어 정본으로 채택 확정하고, D115/D118 선례대로
+  `tools/lint_publication.py` DOCS에 신규 en/ko 쌍 2파일을 편입할까?
+  이 문서는 AUDIT_INDEX의 L-N 행과 RESULTS 행 8·9 한계 문언의 대상
+  (L-1…L-8)인데 지금까지 한국어 전용이었다 — "residual memorization is
+  measured, not eliminated"를 검증하려는 독자가 RESULTS 한 클릭 아래에서
+  한국어 벽을 만나는 상태 (BN-14, D114 경계: 독자 대면 문서 영어 정본).
+- **옵션**: (A) D118 선례 그대로 — 서명 D-엔트리 1건 하에 채택 확정 +
+  `tools/lint_publication.py` DOCS에
+  `docs/methodology_limitations.md`·`docs/methodology_limitations.ko.md`
+  2파일 추가(G2-fraud·범위 문구 회귀 감시 편입), 편집 후 lint 실측
+  RC=0 기록 · (B) 채택만 확정하고 린트 편입 이연 — D115 학습 노트가
+  경고한 파일별 무검사 창이 열린다 · (C) 기각 — 영어본을 철회하고
+  한국어 단일본으로 복귀 (사유 기록 필요; BN-14 미해소 지속).
+- **근거**: BN-14 해소 조건이 이 문서를 첫 번째로 지명하고, 분기 목표가
+  "audit-ready but unread fails this quarter"를 명시한다. 번역·상호
+  링크·수치 토큰 동치까지는 비보호 docs/ 경로라 루프가 완료 — 채택
+  확정과 린트 확장(`tools/lint_` 보호 접두)은 owner-hand 대상이라
+  INV-18 사슬(발견 → 큐 등록 → 서명)로 등재한다. **기본값 (무응답 시)**:
+  (A) — D118 선례("표면 승격과 린트 편입은 같은 결정의 두 반쪽").
+- **세션 기본 조치**: 번역·상호 링크·동치 검사까지만 — 린트 등
+  보호 경로 무접촉 (translation + cross-links only, no protected-path
+  contact).
+- **상태**: OPEN
+
+## Q-F15 — BN-14: error_analysis_wave2_holdout 영어 초안 채택 (RESULTS 행 9 소스 문서, Q-F11 패턴) — OPEN (신규, 2026-07-29 direction-loop)
+
+- **질문**: 루프가 작성한 `docs/ERROR_ANALYSIS_WAVE2_HOLDOUT_EN_DRAFT.md`
+  (`analysis/error_analysis_wave2_holdout.md`의 전문 영역 — 수치 토큰
+  동치 diff 검사 PASS, 식별자 L-N·dim·(i)–(iv) 분류·§5-3 오류 귀속 문언
+  의미 보존, `docs/DECISION_TABLE_EN_DRAFT.md`와 동일 "DRAFT —
+  unadopted English translation" 배너)를 영어 정본으로 채택할까?
+  RESULTS 행 9의 소스 문서가 한국어 전용인데 보호 경로(`analysis/`)에
+  있어, BN-11이 확립한 초안-패킷 분리(루프는 docs/ 초안 출하, 채택은
+  owner-hand — D125/Q-F11 선례)를 그대로 적용한 사안이다 (BN-14 해소
+  조건이 "the row-9 source doc"을 명시 포함).
+- **제안 (Q-F11 패턴 그대로)**: ① 초안을
+  `analysis/error_analysis_wave2_holdout.md`의 영어 정본으로 이동(초안
+  배너 제거) ② 한국어 원본을
+  `analysis/error_analysis_wave2_holdout.ko.md`로 보존(동결 원문) ③
+  채택 직후 수치 토큰 동치 검사 재실행 기록.
+- **옵션**: (A) ①②③ 일괄 — 서명 D-엔트리 1건, `make verify-public`
+  실측 동반 · (B) 초안을 `docs/`에 존치하고 RESULTS 행 9에서 병기
+  링크로 안내 — 보호 경로 무접촉 유지, 정본 이원화 지속 · (C) 기각 —
+  사유 기록 (BN-14 부분 미해소 지속).
+- **근거**: BN-14 해소 조건 중 루프 실행 가능 반쪽(전문 영역 초안 +
+  동치 검사)은 본 커밋으로 완료 — 잔여(채택·이동)는 전부 보호 경로
+  접촉이라 INV-18 사슬(발견 → 큐 등록 → 서명)로 소유자 채택을
+  요청한다. **기본값 (무응답 시)**: (A) — D125/Q-F11 선례.
+- **세션 기본 조치**: 초안만 — 보호 경로 무접촉 (draft only,
+  no protected-path contact).
+- **상태**: OPEN
+
+## Q-F16 — BN-16: verify-public 무네트워크·무코퍼스 가드(sandbox_guard) 보호 Makefile 배선 — OPEN (신규, 2026-07-30 direction-loop)
+
+- **질문**: README "no corpus, no API key, no network" 재현 주장의 유일한
+  증거가 2026-07-22 일회 샌드박스 트랜스크립트(279-test 시점,
+  `audit/verify_public_sandbox_transcript_20260722.txt`)인 상태(BN-16 —
+  실행 환경의 속성이라 정적 리뷰의 맹점)를, 루프가 추가한
+  `tools/sandbox_guard.py`(stdlib 전용 래퍼, INV-11 — PYTHONPATH 주입
+  sitecustomize로 소켓 연결·비연결 송신(sendto/sendmsg)·DNS·허용목록
+  (저장소 루트 + venv/stdlib + 임시 리다이렉트 HOME/MPLCONFIGDIR) 밖
+  파일 열기(builtins/io.open·os.open)를 명명된
+  SANDBOX-VIOLATION으로 fail-closed 차단, 자기 검증
+  `tools/test_sandbox_guard.py` 6건 — os.open·UDP sendto 우회 2건은
+  2026-07-30 Codex 리뷰 지적으로 봉합)로 `make verify-public`에 배선해
+  매 실행 구조적 강제로 전환할까? 배선은 보호 경로(Makefile) 1행이다.
+- **옵션**: (A) 배선 — 서명 D-엔트리 1건 하에 Makefile 타깃 1행 추가
+  (`verify-public-sandboxed:` →
+  `.venv/bin/python tools/sandbox_guard.py -- $(MAKE) verify-public`;
+  또는 소유자 선호 시 verify-public 본체를 가드 경유로 전환), 배선 후
+  가드 경유 실행 실측 RC=0 기록 · (B) 가드·자기 검증만 존치, 배선 이연 —
+  재현 주장의 증거는 일회 트랜스크립트(현 suite 대비 시점 표류)에
+  머무르고 가드는 opt-in 도구로만 남는다 · (C) 기각 — 사유 기록
+  (BN-16 미해소 지속).
+- **근거**: BN-16 — verify-public의 "외부 데이터 엄격 0"은 코드가 아닌
+  실행 환경의 속성이라 일회 실측이 아닌 매 실행 구조 가드가 필요하다.
+  가드 본체·자기 검증은 비보호 `tools/` 경로라 루프가 완료 — 게이트
+  배선(Makefile)은 D115 선례대로 owner-hand 대상이라 INV-18 사슬
+  (발견 → 큐 등록 → 서명)로 등재한다. **기본값 (무응답 시)**: (A) — 배선.
+- **세션 기본 조치**: 가드 스크립트 + 자기 검증 테스트까지만 — 보호
+  경로 무접촉 (guard + self-tests only, no protected-path contact).
 - **상태**: OPEN

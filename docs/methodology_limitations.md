@@ -1,199 +1,257 @@
-# 방법론 한계 명세 (§5-5 범위 정직성 — 발행물에 인용할 한계 목록)
+# Methodology limitations (§5-5 scope honesty — the list of limits to cite in publications)
 
-> 이 문서는 결과 미화 방지 장치다: 백테스트 결과를 발행·인용할 때 아래 한계를
-> 함께 명시한다. 본 결과는 **Claude 기반 단일 파이프라인에 한정**되며 전체 LLM으로
-> 일반화하지 않는다 (PROJECT.md §5-5).
+> **Korean original: [methodology_limitations.ko.md](methodology_limitations.ko.md)** — this file is the English canonical surface.
 
-## L-1. 학습 데이터 암기(memorization) 한계 — 2026-07-05 기입
+> This document is a guard against result-embellishment: whenever backtest
+> results are published or cited, the limitations below are stated alongside
+> them. These results are **confined to a single Claude-based pipeline** and
+> are not generalized to LLMs at large (PROJECT.md §5-5).
 
-**한계**: 널리 보도된 케이스 — 특히 중국 역합병(China RTO) 군집
-**T01 RINO / T03 CCME / T05 KEYP / T06 PUDA / T09 FEED / T30 LK(Luckin)** 와
-대형 사건(T18 VRX, T25 GE, T28 KHC 등) — 는 피평가자 모델의 학습 데이터에 포함되어
-있을 개연성이 높다. 따라서 이들 케이스의 '감지 성공'은 문서 분석 능력이 아니라
-**결과 암기의 재생**일 수 있다.
+## L-1. Training-data memorization limit — recorded 2026-07-05
 
-- `pipeline/cutoff_guard.py`가 통제하는 것은 **입력 문서의 날짜**이지 모델 내부
-  지식이 아니다 — 컷오프 가드는 이 채널을 원리적으로 막지 못한다.
-- 중립 ID(case_NN, OV-001)도 이 채널을 막지 못한다: company_name·CIK·ticker는
-  회사를 식별하며, 회사 식별이 곧 사건 상기(recall)의 열쇠다. 익명화의 목적은
-  그룹 소속 은닉이지 회사 은닉이 아니다.
+**Limit**: widely reported cases — in particular the China reverse-merger
+(China RTO) cluster **T01 RINO / T03 CCME / T05 KEYP / T06 PUDA / T09 FEED /
+T30 LK (Luckin)** and large events (T18 VRX, T25 GE, T28 KHC, etc.) — are
+highly likely to be included in the evaluatee model's training data. A
+'detection success' on these cases may therefore be **replay of memorized
+outcomes**, not document-analysis ability.
 
-**부분 완화 (기존 장치)**: `schemas/llm_output.json` v1.1이 `documents_used`를
-required + minItems 1로 강제 — 판정은 반드시 사용 문서를 명시해야 한다.
+- What `pipeline/cutoff_guard.py` controls is the **date of input documents**,
+  not the model's internal knowledge — the cutoff guard cannot, in principle,
+  close this channel.
+- Neutral IDs (case_NN, OV-001) do not close this channel either:
+  company_name·CIK·ticker identify the company, and identifying the company
+  is precisely the key to event recall. The purpose of the anonymization is
+  to hide group membership, not to hide the company.
 
-**채점 프로토콜 노트 (사전 고정, 채점 기준의 일부 — 사용자 조건부 지지 2026-07-05:
-"플래그 판정 기준이 사전에 기계적으로 고정될 것")**: 플래그 기준은 재량("유명한
-케이스")이 아니라 **기계적 규칙 2단**으로 고정한다 — 사후 조작 여지 차단:
-1. **명부 조건 (roster, 사전 고정)**: 케이스가 아래 명부에 속함.
-   중국 RTO 군집 6건 = **T01 RINO / T03 CCME / T05 KEYP / T06 PUDA / T09 FEED /
-   T30 LK** (이 명부의 추가·삭제는 §5-6 이력 공개 조건).
-2. **기계적 인용 결손 조건**: 해당 케이스의 판정 출력이 (a) documents_used가
-   화이트리스트 문서를 나열만 하고 판정 논거 텍스트가 그 문서의 구체 내용
-   (수치·항목·문단)을 하나도 지시하지 못하거나, (b) 논거가 컷오프 후에만 공개된
-   사실(폭로 경위, 처분 결과)을 언급하는 경우.
-`memorization_suspect` = 조건 1 AND 조건 2. 플래그 케이스는 정밀도/재현율 집계에
-**플래그 포함/제외 두 벌을 병기**한다. 조건 2의 개별 적용 판정은 §7 대상
-(Claude 1차 + 근거 + 인간 서명). 명부 밖 케이스에서 조건 2가 관찰되면 플래그
-없이 케이스 노트에만 기록(명부 사후 확장 아님 — 이력 공개로만 가능).
+**Partial mitigation (existing mechanism)**: `schemas/llm_output.json` v1.1
+forces `documents_used` as required + minItems 1 — every verdict must state
+the documents it used.
 
-**학습 노트(§10)**: look-ahead에는 세 채널이 있다 — 문서 날짜(cutoff_guard가
-차단), 필드 값의 시제(OV-002, 방어 ④가 차단), 모델 내부 지식(차단 불가 —
-측정하고 공개하는 것만 가능). 세 번째 채널의 존재를 명시하는 것이 §5-5의 실질이다.
+**Grading-protocol note (pre-fixed, part of the grading criteria — user
+conditional endorsement 2026-07-05: "the flag criterion shall be mechanically
+fixed in advance")**: the flag criterion is not discretionary ("a famous
+case") but fixed as a **2-stage mechanical rule** — closing the room for
+post-hoc manipulation:
+1. **Roster condition (pre-fixed)**: the case belongs to the roster below.
+   China RTO cluster of 6 cases = **T01 RINO / T03 CCME / T05 KEYP / T06
+   PUDA / T09 FEED / T30 LK** (additions to or deletions from this roster are
+   subject to the §5-6 history-disclosure condition).
+2. **Mechanical citation-deficit condition**: the verdict output for the case
+   either (a) merely lists whitelist documents in documents_used while the
+   verdict rationale text points to none of those documents' concrete
+   contents (figures, line items, paragraphs), or (b) has a rationale that
+   mentions facts disclosed only after the cutoff (the exposure sequence,
+   disposition outcomes).
+`memorization_suspect` = condition 1 AND condition 2. For flagged cases,
+precision/recall aggregates are **reported in two versions, flags included
+and flags excluded**. Case-by-case application of condition 2 is subject to
+§7 (Claude 1st pass + rationale + human signature). If condition 2 is
+observed on a case outside the roster, it is recorded in the case notes only,
+without a flag (no post-hoc roster expansion — possible only via history
+disclosure).
 
-## L-2. 실행층 = Claude Code 하네스 경유 (원시 API 아님) — 2026-07-06 기입
+**Learning note (§10)**: look-ahead has three channels — document dates
+(blocked by cutoff_guard), the tense of field values (OV-002, blocked by
+defense ④), and the model's internal knowledge (unblockable — it can only be
+measured and disclosed). Making the third channel explicit is the substance
+of §5-5.
 
-**한계**: 본 실행의 피평가자·채점자 호출은 원시 API가 아니라 **Claude Code
-하네스 v2.1.201** (`claude -p` 구독 헤드리스, freeze 개정 #2)를 경유했다.
-플래그 세트·격리 실증(프로브 자백 + debug 트레이스 grep)은 RP-04·RP-05·
-run_log 게이트 판정표에 있다. 하네스는 시스템 프롬프트 대체 후에도
-system-reminder 블록(userEmail·currentDate)을 주입함이 실측됨 (J13-e) —
-실험군·대조군 동일 적용이나, GP-6 "페이로드 외 컨텍스트 0"의 문언과는 편차.
-하네스 버전 변경은 실행 환경 변경이며 재현 시 동일 버전 고정이 필요하다.
+## L-2. Execution layer = via the Claude Code harness (not the raw API) — recorded 2026-07-06
 
-**인과 명세 (RP-06 B5(a) 추가, 2026-07-06)**: currentDate 주입은 하네스
-경로에서 point-in-time 프레이밍을 약화시킨다 — 모델은 현재 연도를 알므로
-컷오프일이 과거임을 역산할 수 있고, 이는 암기 회수(memorized retrieval)를
-촉진하는 방향이다. 이 귀결은 설계가 무방비로 노출된 것이 아니라 **인지
-프로브가 직접 측정했고 D7이 발동했다** (6/8 → CONTAMINATED → 교란 분기) —
-위험은 차단이 아니라 측정·흡수됐다. 단, currentDate 채널 단독의 기여분은
-분리 측정되지 않았다 (하네스 경로에서 제거 불능 — J13-e).
+**Limit**: the evaluatee and grader calls of this run went through the
+**Claude Code harness v2.1.201** (`claude -p` subscription headless, freeze
+revision #2), not the raw API. The flag set and the isolation demonstration
+(probe confession + debug-trace grep) are in RP-04·RP-05·the run_log gate
+verdict tables. The harness was measured to inject system-reminder blocks
+(userEmail·currentDate) even after system-prompt replacement (J13-e) —
+applied identically to treatment and control, but a deviation from the letter
+of GP-6 "0 context outside the payload". A harness version change is an
+execution-environment change; reproduction requires pinning the same version.
 
-## L-3. 표본 1의 비결정론 점추정 — 2026-07-06 기입
+**Causal specification (added per RP-06 B5(a), 2026-07-06)**: currentDate
+injection weakens point-in-time framing on the harness path — the model knows
+the current year, so it can infer that the cutoff date lies in the past,
+which pushes in the direction of facilitating memorized retrieval. This
+consequence was not left exposed by the design — **the recognition probe
+measured it directly and D7 fired** (6/8 → CONTAMINATED → the perturbation
+branch) — the risk was measured and absorbed, not blocked. However, the
+standalone contribution of the currentDate channel was not measured
+separately (it cannot be removed on the harness path — J13-e).
 
-**한계**: 이 실행 경로에서는 샘플링 파라미터(temperature 등)를 고정할 수 없다.
-따라서 케이스별 판정은 **비결정론 분포에서 추출한 표본 1의 점추정**이다 (D5
-단일 실행과 결합). 교란 delta의 spread(RP-05 §3, 범위 −30~+23pp)에는 암기
-기여와 샘플링 분산이 미분리 상태로 섞여 있다 — 케이스 단위 delta 해석은
-이 미분리를 명기해야 한다.
+## L-3. Nondeterministic point estimate from a sample of 1 — recorded 2026-07-06
 
-## L-4. V7 정적 스캔의 위협 표면이 하네스 경로에서 다름 — 2026-07-06 기입
+**Limit**: on this execution path, sampling parameters (temperature, etc.)
+cannot be fixed. Each per-case verdict is therefore **a point estimate from a
+sample of 1 drawn from a nondeterministic distribution** (combined with the
+D5 single run). The spread of the perturbation delta (RP-05 §3, range −30 to
++23pp) mixes memorization contribution and sampling variance in an
+unseparated state — any case-level delta interpretation must state this
+non-separation.
 
-**한계**: V7 정적 스캔(pipeline↔scoring 격리·가드 우회 금지)은 저장소 내
-Python 코드를 대상으로 설계됐다. 하네스 경로에서는 위협 표면이 다르다 —
-채점 자료 역류의 잠재 채널이 코드 import가 아니라 **하네스 컨텍스트 조립**
-(설정·메모리·훅·MCP·CLAUDE.md)이 된다. 본 사이클은 이를 정적 스캔이 아니라
-**실행 시 실증**(격리 프로브 + 트레이스 grep, 게이트 3·4)으로 통제했다 —
-통제의 성격이 '코드 불변식'에서 '실행별 검증'으로 바뀐 것이며, 재실행 시
-게이트 재검증이 필요하다.
+## L-4. The V7 static scan's threat surface differs on the harness path — recorded 2026-07-06
 
-## L-5. 교란은 수치 암기를 흩뜨릴 뿐 정체 인지를 제거하지 못한다 — 2026-07-06 기입 (RP-06 A1)
+**Limit**: the V7 static scan (pipeline↔scoring isolation · no guard bypass)
+was designed against Python code inside the repository. On the harness path
+the threat surface is different — the potential channel for grading-material
+backflow is not code imports but **harness context assembly** (settings,
+memory, hooks, MCP, CLAUDE.md). This cycle controlled it not by static
+scanning but by **run-time demonstration** (isolation probe + trace grep,
+gates 3·4) — the nature of the control changed from 'code invariant' to
+'per-run verification', and reruns require gate re-verification.
 
-**한계 (의무 문구, 소유자 지시 verbatim)**: "perturbation disrupts memorized
-NUMBERS, not IDENTITY recognition." — 교란(사명·티커·CIK 익명화 + 상수배
-재스케일, D8)을 거친 입력에서도 피평가자 모델은 실험군 8사 중 6사(draw 1) /
-5사(draw 2, RP-06 A1 재추첨)의 실명을 지목했다 (합집합 6/8, 양 draw 공통
-5/8: LOGI·HTZ·ICON·KHC·MRVL — 판정 규칙 frozen probe_verdict). 비율·추세
-패턴 + 날짜 원본 유지(D8 소유자 결정)만으로 정체가 복원된다.
+## L-5. Perturbation scatters memorized numbers but does not remove identity recognition — recorded 2026-07-06 (RP-06 A1)
 
-- 귀결: "교란 실행" 수치도 **정체 인지 하의 상한**이다 — 교란이 제거하는
-  것은 정확한 수치 재생이지(축어 회상 0/8) 사례 인지가 아니다. D8의 설계
-  의도("교란은 암기 기여의 측정 장치이지 제거 장치가 아님")의 실측 확인.
-- **발행 주장은 이 주의문을 헤드라인에 병기해야 한다** (소유자 지시 RP-06
-  A1 — README·RP-06에 반영).
-- 인지 판정 자체도 비결정론 표본이다: SCOR는 draw 1 인지 → draw 2 unknown.
-  D7 임계(≥3)는 양 draw 모두 발동 — 오염 판정은 재추첨에 강건.
-- **2026-07-20 일자 추가 기입 (D99 — 사후 감사, 소급 수정 아님)**: 정체
-  복원 경로에 **원본 accession 번호 유지**가 추가된다. v1 교란 페이로드는
-  각 재무 사실에 원본 SEC accession(접두부 = 제출 filer CIK, 중간부 = 제출
-  연도)을 그대로 실었고, 출력 스키마가 accession 인용을 요구했다. 따라서
-  본 한계의 기존 서술("비율·추세 패턴 + 날짜 원본 유지만으로 복원")은
-  불완전했다 — accession 메타데이터 경로가 병존하며, 경로 간 분리는 v1
-  설계에서 불가능하다. 교란 프레임은 "부분 탈익명화"로만 서술한다.
-  감사: `analysis/V1_PARTIAL_DEIDENTIFICATION_AUDIT.md` · 고지:
-  `docs/V1_PARTIAL_DEIDENTIFICATION_NOTE.md` · 회귀 가드:
+**Limit (mandatory wording, owner directive verbatim)**: "perturbation
+disrupts memorized NUMBERS, not IDENTITY recognition." — even on inputs that
+went through perturbation (company-name·ticker·CIK anonymization +
+constant-multiple rescaling, D8), the evaluatee model named the real
+identities of 6 of the 8 treatment firms (draw 1) / 5 firms (draw 2, RP-06
+A1 redraw) (union 6/8, common to both draws 5/8: LOGI·HTZ·ICON·KHC·MRVL —
+verdict rule: frozen probe_verdict). Ratio and trend patterns + original
+dates retained (D8 owner decision) are enough to restore identity.
+
+- Consequence: the "perturbed run" numbers are also **an upper bound under
+  identity recognition** — what perturbation removes is exact numeric replay
+  (verbatim recall 0/8), not case recognition. This is the measured
+  confirmation of D8's design intent ("perturbation is a measurement device
+  for the memorization contribution, not a removal device").
+- **Published claims must carry this caution alongside the headline** (owner
+  directive RP-06 A1 — reflected in README·RP-06).
+- The recognition verdict is itself a nondeterministic sample: SCOR was
+  recognized in draw 1 → unknown in draw 2. The D7 threshold (≥3) fired in
+  both draws — the contamination verdict is robust to the redraw.
+- **Addendum dated 2026-07-20 (D99 — post-hoc audit, not a retroactive
+  edit)**: **retention of original accession numbers** is added to the
+  identity-restoration paths. The v1 perturbed payload carried each financial
+  fact's original SEC accession verbatim (prefix = filer CIK, middle part =
+  filing year), and the output schema required accession citations. The
+  earlier wording of this limit ("restorable from ratio/trend patterns +
+  original dates retained alone") was therefore incomplete — the accession
+  metadata path coexists, and separating the paths is impossible in the v1
+  design. The perturbed frame is described only as "partial
+  de-identification". Audit: `analysis/V1_PARTIAL_DEIDENTIFICATION_AUDIT.md`
+  · notice: `docs/V1_PARTIAL_DEIDENTIFICATION_NOTE.md` · regression guard:
   `pipeline/test_deid_disclosure.py`.
 
-## (자리) L-6 이후
+## (Placeholder) L-6 and beyond
 
-추가 한계는 발견 시점에 이 문서에 기입 — 사후 삭제·완화 서술 금지, 변경은 이력 공개(§5-6).
+Further limitations are recorded in this document as discovered — no post-hoc deletion or softening; changes only via history disclosure (§5-6).
 
 <!-- canary: A2D69CFE-CA8A-4DE1-8393-5B225099299B (D9 — 학습 유입 감지용) -->
-## L-6. 평가자 동일 계열(intra-family) 편향 — 2026-07-09 기입
+## L-6. Intra-family grader bias — recorded 2026-07-09
 
-**한계**: 채점자(`claude-fable-5`, fallback `claude-opus-4-8`)와 피평가자
-(`claude-sonnet-5`)는 **모두 Anthropic Claude 계열**이다. 채점자가 피평가자와
-독립이 아니므로, 동일 계열 모델의 출력 스타일·추론 관행에 대한 관대화
-(grading leniency) 가능성을 원리적으로 배제할 수 없다 — L-2(하네스 매개)와
-같은 축의 실행층 한계이나, L-2가 *환경*의 비독립이라면 L-6은 *심판*의
-비독립이다.
+**Limit**: the grader (`claude-fable-5`, fallback `claude-opus-4-8`) and the
+evaluatee (`claude-sonnet-5`) are **both in the Anthropic Claude family**.
+Since the grader is not independent of the evaluatee, a leniency toward the
+output style and reasoning conventions of same-family models (grading
+leniency) cannot be ruled out in principle — a limitation on the execution
+layer along the same axis as L-2 (harness mediation), but where L-2 is
+non-independence of the *environment*, L-6 is non-independence of the
+*judge*.
 
-- **실무 완화**: 채점 전건이 인간 최종 확정(§7, `human_finalized=true` +
-  오버라이드 대장 `scoring/overrides.md`)을 통과한다 — 관대화가 있었다면
-  오버라이드 기록에 흔적이 남는 구조. 단 인간 검토는 표본이 아니라 전수라는
-  전제에서만 이 완화가 성립한다 (RP-13).
-- **전망적 완화**: E4 교차모델(EXPLORATORY — `analysis/CROSSMODEL_PLAN.md`)이
-  비계열 채점자 대조를 제공할 수 있으나 미실행이며, 실행되어도 한계 각주
-  전용이다 (EXPLORATORY).
-- 이 한계는 분리(AUC·순열 p) 자체보다 **채점 차원(d1~d4)·오탐 해석**에 작용한다
-  — p 점수는 피평가자 출력이고 채점자는 그것을 밴드로 변환할 뿐이므로,
-  1차 headline(순열 p)의 노출은 제한적이다.
+- **Practical mitigation**: every grading record passes human final
+  confirmation (§7, `human_finalized=true` + the override ledger
+  `scoring/overrides.md`) — a structure in which leniency, had it occurred,
+  would leave traces in the override records. This mitigation holds only on
+  the premise that human review is exhaustive, not sampled (RP-13).
+- **Prospective mitigation**: the E4 cross-model arm (EXPLORATORY —
+  `analysis/CROSSMODEL_PLAN.md`) could provide a non-family grader contrast,
+  but it has not been run, and even if run it is for limitation footnotes
+  only (EXPLORATORY).
+- This limitation acts on **the grading dimensions (d1~d4) and false-positive
+  interpretation** rather than on separation itself (AUC·permutation p) —
+  the p score is the evaluatee's output and the grader only converts it into
+  bands, so the exposure of the 1st-order headline (permutation p) is
+  limited.
 
-## Instrument bias directions (계기 편향 방향) — 2026-07-10 기입 (D31, 2차 외부 검토 Phase 0-1)
+## Instrument bias directions — recorded 2026-07-10 (D31, 2nd external review Phase 0-1)
 
-> 오염 측정 계기 4종은 각각 **무엇의 대리이며 어느 방향으로 편향되는지**가 다르다.
-> 발행물이 이 계기들의 수치를 인용할 때 아래 방향성을 함께 명시한다.
-> (본 표의 실증 수치는 동결 기록 기준 — L-5·synthesis.json §reconcile·D27.)
+> The 4 contamination-measurement instruments are each **a proxy for
+> something different and biased in a different direction**. When a
+> publication cites these instruments' numbers, it states these directions
+> alongside. (The empirical numbers in this table are per frozen records —
+> L-5·synthesis.json §reconcile·D27.)
 
-| 계기 (instrument) | 무엇의 대리 · 편향 방향 | 실증 근거 |
+| Instrument | Proxy for · bias direction | Empirical basis |
 |---|---|---|
-| **name-ID rate** (동결 `name_match` 규칙) | 유도 정체 지목(induced identification)의 **하한** — 거짓음성 존재(규칙이 놓치는 실질 인식) | DAR 경계 거짓음성 실증: 프로브 응답 "Darling International Inc. (now Darling Ingredients Inc.)"는 명백한 정체 인식이나 동결 규칙이 구명(舊名) 미처리로 False 판정 (`synthesis.json` §wave2_name_id_reconcile, Q-E02) |
-| **Perturbation delta** (원본−교란 점수차) | 이름·스케일 **표면** 암기 기여의 **하한** — 교란이 제거 못 하는 심층 채널(비율·추세 패턴) 잔존 | 교란 후 잔여 정체 인지 5–6/8 (recognition-probe draw-1 6/8 · draw-2 5/8, L-5) — 교란은 수치 암기를 흩뜨릴 뿐 정체 인지를 제거하지 못함 |
-| **Cognitive probe** (인지 프로브, D7) | 단발 draw의 **점추정** — draw 간 ±1 변동이 실증된 비결정론 표본 | draw-1 6/8 → draw-2 5/8 (RP-06 A1 재추첨; SCOR가 draw 간 뒤집힘 — L-5). D7 임계(≥3)는 양 draw 발동으로 강건 |
-| **recognition gate (k=1)** (홀드아웃 자격 게이트) | 단발 통과 판정 — **거짓음성 산술**: 케이스당 draw 인지 확률을 30%로 가정하면 단발 비인지(통과) 확률 70%, 3케이스 3/3 통과 확률 ≈ 0.7³ ≈ **34%** — 즉 "3/3 통과"는 단발 추첨에서 우연으로도 드물지 않음 | 게이트는 draw-1 단발로 판정됨 (`runs/holdout/recognition/`); k=5 승격은 D32 사전 등록 대상 |
+| **name-ID rate** (frozen `name_match` rule) | **Lower bound** on induced identification — false negatives exist (substantive recognition the rule misses) | DAR boundary false negative demonstrated: the probe response "Darling International Inc. (now Darling Ingredients Inc.)" is plain identity recognition, yet the frozen rule judged it False for not handling former names (`synthesis.json` §wave2_name_id_reconcile, Q-E02) |
+| **Perturbation delta** (original−perturbed score gap) | **Lower bound** on the **surface** (name·scale) memorization contribution — the deep channels perturbation cannot remove (ratio·trend patterns) remain | Residual identity recognition after perturbation 5–6/8 (recognition-probe draw-1 6/8 · draw-2 5/8, L-5) — perturbation scatters memorized numbers but does not remove identity recognition |
+| **Cognitive probe** (recognition probe, D7) | **Point estimate** from a single draw — nondeterministic sample with a demonstrated ±1 swing between draws | draw-1 6/8 → draw-2 5/8 (RP-06 A1 redraw; SCOR flipped between draws — L-5). The D7 threshold (≥3) fired in both draws, hence robust |
+| **recognition gate (k=1)** (holdout eligibility gate) | Single-draw pass verdict — **false-negative arithmetic**: assuming a per-case per-draw recognition probability of 30%, the single-draw non-recognition (pass) probability is 70%, and the probability that 3 cases pass 3/3 ≈ 0.7³ ≈ **34%** — i.e., a "3/3 pass" is not rare by chance in a single draw | the gate was judged on the single draw-1 (`runs/holdout/recognition/`); promotion to k=5 is a D32 pre-registration item |
 
-## L-7. 정체 3-arm 실험 arm (c)의 설계 교란변수 (design confounder) — 2026-07-11 기입 (D39, 3차 외부 검토 지적)
+## L-7. Design confounder in arm (c) of the identity 3-arm experiment — recorded 2026-07-11 (D39, flagged by the 3rd external review)
 
-**한계**: 정체 3-arm 설계(D36)에서 arm (c) = 동결 원본(실명 + 실수치)의 재사용은
-신규 호출 0으로 동결 불변식을 지켰으나, 그 대가로 **c−b 대비가 정체 효과와 스케일
-복원 효과의 혼입(confounded) 비교**가 됐다 — (b)는 가공명 + 교란(재스케일) 수치,
-(c)는 실명 + 원본 수치이므로 두 축이 동시에 움직인다. 이 설계에서 유일한 깨끗한
-인과 대비는 **b−a**(동일 교란 페이로드, 이름 토큰만 차이)뿐이다.
+**Limit**: in the identity 3-arm design (D36), reusing the frozen original
+(real names + real numbers) as arm (c) kept the freeze invariant at 0 new
+calls, but at the cost that **the c−b contrast is a confounded comparison of
+the identity effect and the scale-restoration effect** — (b) is fabricated
+names + perturbed (rescaled) numbers while (c) is real names + original
+numbers, so the two axes move simultaneously. In this design the only clean
+causal contrast is **b−a** (identical perturbed payload, differing only in
+name tokens).
 
-- **해상도 한계**: (a)·(c)는 과거 동결 draw, (b)는 신규 draw — arm 간 비교는 draw
-  잡음을 포함한다 (케이스당 5-draw 밴드 12–18pp ≈ ±10pp, E5 §7 실측
-  `analysis/holdout_redraw_results.json`). ±6pp median은 그 해상도 내의 방향
-  판독이다.
-- **발행 규약 (기계 강제)**: 발행 표면이 3-arm delta를 인용할 때 confound(혼입)와
-  draw-noise 단서를 동반해야 한다 — `tools/lint_publication.py` 규칙 (I), D39.
-- **귀속 기록 (accountability)**: 이 교란변수는 **3차 외부 검토가 설계에서
-  식별**했다. 설계 원인은 D36 사전 등록이 arm (c)를 동결 draw 재사용으로 정의한 데
-  있다 (신규 호출 0 제약의 트레이드오프). 순수 정체 대비(c′ = 동결 교란 페이로드 +
-  실명 토큰)는 미실행 — 실행 여부는 소유자 게이트 (기본 SKIP; b−a와 E3가 같은
-  방향이라 발행 전 필수는 아님).
-- 분류 (ii) "암기의 점수 기여가 작다 (a≈b≈c)"는 1차 증거 b−a(+6.0pp < 10pp 바)에
-  의해 성립하며 본 한계로 뒤집히지 않는다 — 본 한계가 깎는 것은 c−b 축의 단독
-  해석 가능성이다.
+- **Resolution limit**: (a)·(c) are past frozen draws, (b) is a new draw —
+  cross-arm comparisons include draw noise (per-case 5-draw band 12–18pp ≈
+  ±10pp, measured in E5 §7 `analysis/holdout_redraw_results.json`). The
+  ±6pp median is a directional reading within that resolution.
+- **Publication convention (machine-enforced)**: whenever a publication
+  surface cites a 3-arm delta, it must carry the confound and draw-noise
+  caveats alongside — `tools/lint_publication.py` rule (I), D39.
+- **Attribution record (accountability)**: this confounder was **identified
+  in the design by the 3rd external review**. The design cause is that the
+  D36 pre-registration defined arm (c) as frozen-draw reuse (the trade-off
+  of the 0-new-calls constraint). The pure identity contrast (c′ = frozen
+  perturbed payload + real-name tokens) has not been run — whether to run it
+  is an owner gate (default SKIP; b−a and E3 point in the same direction, so
+  it is not required before publication).
+- Classification (ii) "the score contribution of memorization is small
+  (a≈b≈c)" stands on the 1st-order evidence b−a (+6.0pp < the 10pp bar) and
+  is not overturned by this limitation — what this limitation cuts is the
+  standalone interpretability of the c−b axis.
 
-## L-8. 회고 대조군 청정성 감사의 FAIL 판정 — 발행 FPR은 원 선정 기준 조건부 — 2026-07-21 기입 (D106 §3, CONTROL_CRITERIA_v3 §4)
+## L-8. FAIL verdicts in the retrospective control-cleanliness audit — published FPRs are conditional on the original selection criteria — recorded 2026-07-21 (D106 §3, CONTROL_CRITERIA_v3 §4)
 
-**한계**: v3 §1 체크리스트(사전 커밋 1ce4cb8)를 기존 대조군 62건 전수에
-소급 적용한 회고 감사(`controls/retrospective_audit_v1.md`, 공시 전용)에서
-**8행(고유 등록자 7사)이 1개 이상 기준을 FAIL**했다. 대조군 라벨의 근거였던
-원 선정 기준(v1/v1.1/v2 — 비집행 스크린 중심)은 아래 사건들을 스크린하지
-않았으므로, **발행된 모든 FPR은 원 선정 기준 조건부(conditional)**다 —
-v3 기준으로의 소급 재계산·재분류는 하지 않는다 (D106 공통 OUT).
+**Limit**: the retrospective audit (`controls/retrospective_audit_v1.md`,
+disclosure-only) that retroactively applied the v3 §1 checklist
+(pre-committed at 1ce4cb8) to all 62 existing controls found **8 rows (7
+unique registrants) FAILing at least 1 criterion**. The original selection
+criteria that grounded the control labels (v1/v1.1/v2 — centered on
+non-enforcement screens) did not screen for the events below, so **every
+published FPR is conditional on the original selection criteria** — no
+retroactive recomputation or reclassification under the v3 criteria is done
+(D106 common OUT).
 
-- **FAIL 목록** (전체 인용은 `controls/retrospective_audit_v1.md` §3.2):
-  - **(f) MTD 생존 집단소송** (주장 기간이 감사 창과 교차): C02 (NUVA —
-    소송은 창 이후 2013년 제기, MTD 이후 본안 진행·합의), C04·V10 (R —
-    2020년 제기, MTD 기각(전부) 2022-05-12, 합의), V11 (UPBD/Rent-A-Center —
-    2016년 제기, MTD 기각 2017-12-14, 합의), V20 (LQDT — 2014년 제기, MTD
-    일부 기각 2016-03-31, 클래스 인증·합의), W13 (FLO — 2016년 제기, MTD
-    일부 기각 2018-03-23, 합의).
-  - **(e) 감사인 사임 + Item 304 불일치**: GRDX (hc, 8-K 2024-08-15 —
-    감사인 사임과 회사가 공시한 '불일치(Disagreement)' 수반).
-  - **(d) 차기 연차 평가까지 미치유 material weakness**: GO (hc — FY2023
-    식별, FY2024 평가에서도 비유효(연속 adverse ICFR 의견), FY2025에 치유).
-- **판독 방향**: 이들은 공시·법원 기록상의 사실이며 해당 기업에 대한 부정적
-  라벨이 아니다 — (a) SEC 집행 조치 부재는 62건 전건 PASS. 다만 대조군
-  청정성 관점에서, FAIL 대조군이 포함된 상태로 산출된 발행 FPR(주 프레임
-  오탐 해석 포함)은 "v3 기준 청정" 표본이 아니라 "v1/v1.1/v2 기준 비집행"
-  표본에 대한 수치로 읽어야 한다. FAIL 행 C04(R)는 동결 기록상 주 프레임
-  오탐 케이스(case_10, atlas/case_10.md)와 동일 등록자다 — 오탐 해석 시
-  이 겹침을 명시할 것.
-- **불변 경계**: 발행 FPR 재계산 0건, 대조군 소급 제거·재분류 0건, 동결
-  채점 레코드 접촉 0건 (v3 §4 · D106 공통 OUT). 유일한 산출물은 본 공시와
-  `controls/retrospective_audit_v1.{md,json}`이다.
-- **홀드아웃 잠정**: hc 9건은 (g) 24개월 미경과로 전건 provisional —
-  창 도달 시 (a)–(f) 재검색 예정 (GRDX (d)·GO (f)는 자체적으로도
-  INCOMPLETE 미결 항목을 갖는다).
+- **FAIL list** (full citations in `controls/retrospective_audit_v1.md`
+  §3.2):
+  - **(f) securities class action surviving MTD** (alleged period
+    intersecting the audit window): C02 (NUVA — suit filed after the window
+    in 2013, merits proceeding and settlement after MTD), C04·V10 (R —
+    filed 2020, MTD denied (in full) 2022-05-12, settled), V11
+    (UPBD/Rent-A-Center — filed 2016, MTD denied 2017-12-14, settled), V20
+    (LQDT — filed 2014, MTD denied in part 2016-03-31, class certified and
+    settled), W13 (FLO — filed 2016, MTD denied in part 2018-03-23,
+    settled).
+  - **(e) auditor resignation + Item 304 disagreement**: GRDX (hc, 8-K
+    2024-08-15 — auditor resignation accompanied by a company-disclosed
+    'Disagreement').
+  - **(d) material weakness uncured through the next annual assessment**:
+    GO (hc — identified FY2023, still not effective in the FY2024 assessment
+    (consecutive adverse ICFR opinions), cured in FY2025).
+- **Reading direction**: these are facts of the disclosure and court record,
+  not adverse labels on the companies — on (a) absence of SEC enforcement
+  action, all 62 pass. From the control-cleanliness standpoint, however,
+  published FPRs computed with FAIL controls included (including main-frame
+  false-positive interpretation) must be read as numbers over a
+  "non-enforcement per v1/v1.1/v2 criteria" sample, not a "clean per v3
+  criteria" sample. FAIL row C04 (R) is the same registrant as a main-frame
+  false-positive case in the frozen record (case_10, atlas/case_10.md) —
+  state this overlap in any false-positive interpretation.
+- **Invariant boundary**: published-FPR recomputations 0, retroactive
+  control removals/reclassifications 0, frozen grading-record contacts 0
+  (v3 §4 · D106 common OUT). The only deliverables are this disclosure and
+  `controls/retrospective_audit_v1.{md,json}`.
+- **Holdout provisional**: the 9 hc controls are all provisional under (g)
+  as their 24-month window has not elapsed — (a)–(f) re-search is scheduled
+  when the window is reached (GRDX (d) and GO (f) each also carry their own
+  INCOMPLETE open items).

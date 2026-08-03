@@ -36,6 +36,14 @@
   forward watchlist `specs/FORWARD_WATCHLIST_V1.md`). **탐색 전용 — 봉인 전향
   사이클 해소 전까지 성능 주장 금지** (첫 seal 2026-11-15).
 
+## 피드백
+
+재현 결과(성공 *과* 실패 모두)와 방법론 질문을 모두 환영한다 —
+**reproduction-report** 또는 **methodology-question** 템플릿
+(`.github/ISSUE_TEMPLATE/`)으로
+[이슈를 열어달라](https://github.com/lastwhisper906-gif/aaer-evals/issues/new/choose).
+식별자 조회는 먼저 [AUDIT_INDEX.md](AUDIT_INDEX.md).
+
 ## 발행 (v1.0 — 2026-07-11, 소유자 서명 D40/D41)
 
 3-이슈 시리즈를 GitHub Issues로 발행했다 (시리즈 번호 0/1/2; GitHub 번호 1/2/3).
@@ -191,7 +199,7 @@ make verify-full     # 2계층 — 원시 코퍼스 재계산 추가 (~/aaer-dat
 
 <!-- BEGIN-GENERATED: repro-facts (refresh: make docs-refresh; CI: tools/lint_doc_counts.py) -->
 - data manifest: **538 files** (`data/manifests/aaer_data_manifest.json` · `file_count`)
-- pytest: **283 tests collected** (`pipeline tools scoring analysis`)
+- pytest: **297 tests collected** (`pipeline tools scoring analysis`)
 - `make verify-public` (zero external data):
   - `.venv/bin/python tools/reproduce_analysis.py`
   - `.venv/bin/python tools/lint_publication.py`

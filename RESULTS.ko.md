@@ -5,7 +5,9 @@
 > Authored by Claude Code, pending human audit (GA-001 (b)). 신규 주장 0 —
 > 전 행이 동결 산출물 경로를 단다. 존재 증명(existence-proof) 프레이밍:
 > 성능 추정치가 아니다. 재검증: `make verify-public`. 태스크 태그·비합산
-> 규율은 README "Three tasks" 절 (D106 ④). 채점: Claude 보조 + 인간 최종
+> 규율은 [docs/README_DETAIL.md](docs/README_DETAIL.md)의 "Three tasks" 절
+> (D106 ④). 식별자 해설(D/Q/RP/R3/R4/E5/L4/CP95 등):
+> [AUDIT_INDEX.md](AUDIT_INDEX.md). 채점: Claude 보조 + 인간 최종
 > 확정. 본 결과는 Claude 기반 단일 파이프라인에 한정.
 
 | # | [태스크] 측정 | 발행 수치 | 이 행의 한계 (같이 읽지 않으면 오독) | 소스 |
@@ -16,7 +18,7 @@
 | 4 | [T1] name-ID 축 | 50% (15/30) → 21.9% (7/32) → 0% | 21.9%는 동결 규칙값 — rename-aware 사람 판독 25%(경계 케이스 DAR) 각주 병기 (Q-E02) | `analysis/name_probe_results.json` · `analysis/synthesis.json` |
 | 5 | [T2] 컷오프-후 홀드아웃 per-case 점수 | HUBG 70 · GNE 42 · WMK 32 (0–100 서수) | N=3, per-case 전용 — H1(순열 유의성) 미주장. 라벨은 잠정 Big-R(4.02 비신뢰)이지 확정 집행 아님. HUBG 적중은 tier 적중/기제 빗나감(2018 정정 클러스터 정박) | `runs/holdout/` · `analysis/label_tags_holdout.json` |
 | 6 | [T2] E1 매칭 대조군 | HUBG 70 > 매칭군 전부 (RXO 42·BCO 30·XPO 20); 분리는 3케이스 중 1건만 | 정확 순열 p=0.20은 CONTEXT ONLY. 홀드아웃 tier 단일 최고점은 대조군 오탐(GRDX 78) — HUBG는 풀링 대조군 집합을 상회하지 못함 | `analysis/holdout_controls_results.json` |
-| 7 | [T2] 홀드아웃 draw 강건성 (k=5) | HUBG 5/5 draw에서 ≥50 [58–76]; WMK [28–42]·GNE [30–42] 0/5 | 발행 수치는 draw-1 — 밴드는 병기 통계 | `runs/holdout_redraw/` (E5 §7) |
+| 7 | [T2] 홀드아웃 draw 강건성 (k=5) | HUBG 5/5 draw에서 ≥50 [58–76]; WMK [28–42]·GNE [30–42] 0/5 | 발행 수치는 draw-1 — 밴드는 병기 통계 | `runs/holdout/mainscore_redraw/` (E5 §7) |
 | 8 | [T1] FPR wave-1 | 3/22 = 13.6% CP95 [2.9%, 34.9%] | 대조군은 "비집행"이지 "무결(clean)"이 아니다 — 특이도 하향 편향 방향 (생존·선택 편향, README Limitations) | `analysis/results_stats.json` |
 | 9 | [T1] FPR wave-2 | 5/23 = 21.7% CP95 [7.5%, 43.7%] | 위와 동일 + 오탐 5건은 환각이 아니라 실재 수치의 양성 오독 (근거됨, dim4 상단) | `analysis/wave2_results.json` · `analysis/error_analysis_wave2_holdout.md` |
 | 10 | [T2] FPR 홀드아웃 대조군 | 2/9 = 22.2% CP95 [2.8%, 60.0%] | 티어 간 FPR 무언 합산 금지 — CP 구간 대폭 중첩, worse-but-not-provably | `analysis/holdout_controls_results.json` |

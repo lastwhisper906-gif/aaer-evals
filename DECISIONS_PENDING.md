@@ -524,3 +524,23 @@
   STOP after-exec는 scope 검사 후에만 정지 / 에포크 롤오버 시
   changed_files 리셋+보호 스캔 누적성 유지)
 - **Revert:** ~/tools에서 78fd717 revert + loop-stop.md 문구 원복.
+## D-P (harness replenish) — H25 BN append: BN-13 BN-14 (20260729-185813 cycle 4)
+- **What:** H25 replenish accepted BN-13 BN-14 after mechanical filters
+  (H19 basis verification · no Basis overlap · no id collision). Appended
+  and committed by the HARNESS, not exec-claude. Source: .direction/20260729-185813/replenish-4.md
+- **Basis:** .direction/20260729-185813/replenish-4.md · H25 (owner-signed 2026-07-29)
+- **Revert:** revert the replenish(harness) commit listed in .direction/20260729-185813/replenish_shas.
+
+## D-P (harness replenish) — H25 BN append: BN-15 BN-16 (20260730-004720 cycle 2)
+- **What:** H25 replenish accepted BN-15 BN-16 after mechanical filters
+  (H19 basis verification · no Basis overlap · no id collision). Appended
+  and committed by the HARNESS, not exec-claude. Source: .direction/20260730-004720/replenish-2.md
+- **Basis:** .direction/20260730-004720/replenish-2.md · H25 (owner-signed 2026-07-29)
+- **Revert:** revert the replenish(harness) commit listed in .direction/20260730-004720/replenish_shas.
+
+## D-P (harness replenish) — H25 BN append: BN-17 BN-18 BN-19 (20260730-004720 cycle 4)
+- **What:** H25 replenish accepted BN-17 BN-18 BN-19 after mechanical filters
+  (H19 basis verification · no Basis overlap · no id collision). Appended
+  and committed by the HARNESS, not exec-claude. Source: .direction/20260730-004720/replenish-4.md
+- **Basis:** .direction/20260730-004720/replenish-4.md · H25 (owner-signed 2026-07-29)
+- **Revert:** revert the replenish(harness) commit listed in .direction/20260730-004720/replenish_shas.
