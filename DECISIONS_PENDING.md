@@ -442,3 +442,85 @@
   로그 /tmp/h27-dryrun
 - **Revert:** ~/tools에서 072fed7 revert (aaer-evals 무영향; 본 항목은
   append-only 기록).
+
+## D-P30 — H31 사전 exec 라벨 검증: touches_protected는 주장, 기계 대조가 판정 (2026-08-03)
+- **What:** 소유자 지시(런 히스토리 기반 강화 5건 중 1)로 ~/tools 커밋
+  78fd717. 리뷰어의 `touches_protected` 라벨을 exec 실행 전에 GUARDED
+  집합과 동일 prefix-anchored 매처로 전 소견 기계 대조: false인데 files가
+  guarded와 겹치면 강제 true 라우팅(exec 입력 사본에서 라벨 플립 + 오라벨
+  명기한 소유자 패킷을 strategic.md로 + "label corrected: F-xx" 로그),
+  true인데 files가 clean이면 라우팅 유지·over-label 로그(소유자 패킷
+  방향은 위험하지 않음). ALLOWED(H17c)는 이제 실행 가능 소견의 files
+  합집합만 포함 — 정정으로 실행 집합이 비면 findings:[]와 동일한
+  수렴/보충(H25) 경로로 진입(오류 아님). H25 블록은 이 재사용을 위해
+  함수(replenish_path)로 전환(동작 동일). H5/H9 누적 스캔은 그대로 백스톱
+  (심층 방어, 대체 아님).
+- **Basis:** 스프린트 3(런 20260729-152205) exit 4 — review-2의 소견이
+  `files: [BOTTLENECKS.md]`를 `touches_protected: false`로 오라벨, exec가
+  guarded 파일을 커밋해 exit 4로 사이클 1의 검증된 2커밋까지 파괴 ·
+  ~/tools 커밋 78fd717 · 드라이런 b1/b1b (/tmp/h31-dryrun/log-b1*.txt:
+  오라벨 정정+소유자 패킷+exit 4 없음 / 전건 보호 시 replenish 진입)
+- **Revert:** ~/tools에서 78fd717 revert (aaer-evals 무영향).
+
+## D-P31 — H32 폭발 반경 축소 + 비정상 종료 facts 상시화 + 배너 off-by-one (2026-08-03)
+- **What:** (a) 보호 경로 위반 시 reset 대상을 BASE→PREV(당해 사이클
+  시작)로 변경 — 이전 사이클들은 각자 사이클별 보호 검사를 통과했으므로
+  검증된 작업을 파괴하지 않는다. exit 4 유지, 종료 리포트·facts가 생존
+  범위와 되돌린 범위를 커밋 수와 함께 명명. **수용 잔여:** 당해 사이클보다
+  오래된 위반 커밋(사이클 간 주입 등)은 reset에서 생존하되 facts의 생존
+  범위에 명시되어 소유자가 제거 — 침묵 보존 아님(드라이런 b6이 이 경로
+  실증). (b) facts.txt를 모든 비정상 종료(4·5·6·쿼터 소진)에서 기록 —
+  write_facts 함수화, exit 6 두 지점(사이클 H24 반복·에포크 반복)과
+  exit 5(UNTRUSTED)·쿼터 소진 종료에 추가(H26 시절 지시는 exit 4만
+  커버했음을 확인). 비정상 종료에는 BRIEF 호출 없음(비용 억제), git
+  사실은 항상. (c) 종료 배너 "after N cycles" off-by-one 수정 — 루프
+  상단 break 지점(STOP·캡·review-only 완료·에포크 경계 STOP)에서 미실행
+  사이클을 계상하지 않음.
+- **Basis:** 스프린트 3 exit 4 사고(D-P30과 동일 사건 — BASE reset이
+  사이클 1 검증 커밋 파괴, facts 부재로 reflog 복구 필요했음) · 배너
+  off-by-one 2회 관측(소유자 지시문) · ~/tools 커밋 78fd717 · 드라이런
+  b2/b2e5/b2e6/b6/b7 (exit 4 PREV-reset+생존 범위, exit 5·6 facts 존재,
+  "after 3 cycles" 정확)
+- **Revert:** ~/tools에서 78fd717 revert.
+
+## D-P32 — H33 런 시작 워크트리 자동 정합: behind는 ff, diverged는 거부 (2026-08-03)
+- **What:** H2 clean-tree 검사 직후, 워크트리 브랜치가 main보다 strictly
+  behind이고 ff 가능하면 `git merge --ff-only main` 자동 실행 +
+  meta.txt에 "worktree ff'd to <sha>" 기록. DIVERGED(양쪽 커밋)면 exit 3
+  거부 + 정합 옵션 3종(merge/rebase/discard) 출력 — divergence는 미병합
+  스프린트를 뜻하고 그 판단은 하네스가 아니라 소유자의 것. 수동 ff 단계
+  (한 번 잊혔던)를 제거해 낡은 거버넌스 문서를 리뷰하는 사이클을 차단.
+- **Basis:** S-03 (런 20260729-112828 cycle 1 strategic — 워크트리가
+  origin/main 6커밋 behind인 채 리뷰, 소유자가 수동 ff로 해소 D-F
+  dbac35b; 재발성 수동 단계) · ~/tools 커밋 78fd717 · 드라이런 b3a/b3b
+  (behind→ff 로그+HEAD==main / diverged→exit 3+옵션 출력+런 미시작)
+- **Revert:** ~/tools에서 78fd717 revert.
+
+## D-P33 — H34 until-stop 인체공학 + H28 정정: 실패 단계 재개·codex 쿼터 동등·STOP 단계 경계·에포크 DELTA (2026-08-03)
+- **What:** (a) H28 정정 — 쿼터 일시정지 후 재개를 사이클 시작이 아니라
+  **실패한 단계**로: run_step 래퍼가 매 모델 호출 전
+  `.direction/cycle_step`에 현재 단계를 기록하고, pause 후 동일
+  PREV로 그 단계만 재시도. exec가 이미 커밋한 뒤의 pause가 review+exec를
+  재실행(중복 커밋)하는 D-P29 설계 결함 제거; exec 단계 자체의 쿼터
+  실패는 종전대로 PREV로 reset 후 exec만 재시도, codex-fix는 post-exec
+  HEAD(FIXBASE)로 reset 후 fix만 재시도(exec 커밋 보존). (b) codex 쿼터
+  동등 — codex 호출 실패가 쿼터 시그니처와 일치하면 pause-and-retry
+  경로 합류(codex는 별도 풀: 모델 fallback 없음, pause만); 비쿼터 실패는
+  H10 종료 유지. (c) STOP 반응성 — `.direction/STOP`을 사이클 상단 외에
+  단계 경계(리뷰 후 · exec+scope 검사 후 · codex fix 후)에서도 검사;
+  exec와 그 scope 검사 사이에서는 절대 중단하지 않음(H31이 ALLOWED를
+  guarded-clean으로 보장하므로 경계 중단 시 보호 위반 잔류 불가).
+  loop-stop.md 문구 갱신("halts at the next step boundary, typically
+  minutes"). (d) 에포크 스코프 DELTA — --until-stop에서 에포크 경계마다
+  리뷰어 기준점 롤링: changed_files.txt는 epoch-start..HEAD, 이전 역사는
+  설계대로 baseline/strategic이 대신. PROTECTED 스캔은 BASE..HEAD 누적
+  유지(replenish/bnflip SHA carve-out 포함) — 안전 경계는 줄지 않고
+  리뷰어 읽기 부하만 준다.
+- **Basis:** H28 스펙 리뷰(D-P29의 "사이클 처음(리뷰 단계)부터 재시도"
+  명세가 exec 커밋 후 중복 커밋 위험 — 소유자 지시문 적시) · ~/tools
+  커밋 78fd717 · 드라이런 b4/b4b/b5a/b5b/b6 (exec 커밋 후 codex 쿼터
+  pause→wake에서 codex만 재시도·exec 미재실행·커밋 셋 정확히 1 /
+  비쿼터 codex 실패 H10 종료 / STOP after-review는 exec 전 정지 /
+  STOP after-exec는 scope 검사 후에만 정지 / 에포크 롤오버 시
+  changed_files 리셋+보호 스캔 누적성 유지)
+- **Revert:** ~/tools에서 78fd717 revert + loop-stop.md 문구 원복.
