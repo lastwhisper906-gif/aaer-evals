@@ -5,6 +5,12 @@
 > (계산 전 단독 커밋 2fc3d23) · 수치 원본: `analysis/decision_table.json`
 > (`analysis/decision_table.py`, 동결 점수 재집계 — 신규 실험·신규 미터링 0).
 
+![Threshold sweep: detection rate vs false-positive rate with CP95 intervals, ordinal thresholds 40-70](fig_tradeoff.png)
+
+*임계 스윕 한 장 요약 — 탐지율과 오탐율이 임계와 함께 움직인다
+(지배 전략 부재). 재생성: `.venv/bin/python analysis/fig_tradeoff.py`
+(D-P43 소유자 서명, Q-F17 기본값 (C) 집행).*
+
 ## 0. 이 표를 읽는 법
 
 - 질문: "임계 T에서 자르면 무엇을 얻고(플래그), 무엇을 잘못 울리고(오탐),

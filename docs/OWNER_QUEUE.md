@@ -919,7 +919,7 @@
   경로 무접촉 (guard + self-tests only, no protected-path contact).
 - **상태**: OPEN
 
-## Q-F17 — BN-19 tradeoff figure adoption: README/DECISION_TABLE placement — OPEN (신규, 2026-08-05 direction-loop)
+## Q-F17 — BN-19 tradeoff figure adoption: README/DECISION_TABLE placement — **RESOLVED (2026-08-05, D-P43 소유자 서명 — 기본값 (C) 집행)**
 
 - **질문**: BN-19의 headline threshold-sweep tradeoff figure를 독자 대면
   문서 어디에 배치할까?
@@ -929,4 +929,5 @@
   `analysis/fig_tradeoff.png`.
 - **기본값 (무응답 시)**: (C) — both.
 - **세션 기본 조치**: 스크립트·PNG·테스트·큐 등재까지만 — 보호 경로 무접촉 (figure + tests + queue entry only, no protected-path contact).
-- **상태**: OPEN
+- **상태**: RESOLVED (2026-08-05) — 소유자 서명(D-P43 verbatim 기록) 후
+  기본값 (C) 집행: README companion 줄 + DECISION_TABLE.md 헤더 그림 삽입.

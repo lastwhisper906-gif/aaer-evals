@@ -215,3 +215,17 @@ DECISIONS_PENDING.md; owner reconciliation command recorded there).
   --workdir ~/repos/aaer-evals-work` → evaluate → disclose → commit.
   STOP file: ~/tools/harness/STOP. Harness reviewer contract:
   ~/tools/harness/{OWNER_MODEL,REVIEW_SPEC}.md (tools commit 457b77a).
+
+## Entry 10 — OWNER SIGNATURE received + signed-default execution (2026-08-05)
+- Owner input (verbatim, recorded in D-P43): "i will sign on all of above.
+  approve."
+- Applied per anti-rubber-stamp discipline (ORCHESTRATOR_NOTES):
+  D-P34..D-P42 + 18 loop commits RATIFIED; Q-F17 default (C) EXECUTED
+  (README companion line + DECISION_TABLE.md header figure); BN-19
+  RESOLVED (condition met + signature); DP-Q items with embedded
+  sub-choices remain packet-gated (Q1 rename-vs-calibrate, Q4
+  vehicle/INV-20, Q6 universe-vs-intermediate-labels) — not guessed.
+- Gates after execution: verify-public 5/5 PASS (RC=0), 330 collected.
+- TCC still denies ~/Documents — reconciliation remains an owner command:
+  `git -C ~/Documents/aaer-evals pull ~/repos/aaer-evals-work main`
+  (or push from the mirror per owner dispatch).

@@ -715,3 +715,20 @@
 - **하네스:** TASK_FB09 inverted mode cycle 1 APPROVE. 스위트 329
   passed/1 skipped, verify-public PASS, 문서 카운트 325→330.
 - **Revert:** 해당 커밋 revert.
+
+## D-P43 — 소유자 서명 기록: 2026-08-05 루프 산출물 일괄 추인 (2026-08-05)
+- **서명 원문 (세션 내 소유자 입력, verbatim):** "i will sign on all of
+  above. approve." (2026-08-05, 오케스트레이터 세션)
+- **서명 적용 범위 판정 (ORCHESTRATOR_NOTES 반(反)일괄승인 규율 적용):**
+  (a) **확정 추인** — D-P34..D-P42(공개 기록 9건: 미러 클론 운영, 백로그
+  검증, FB-01..04·06..09 집행, FB-05 기각) 및 그 커밋 18건; L-9; 하네스
+  리뷰어 계약(~/tools 457b77a). (b) **기본값 있는 결정 확정** — Q-F17
+  그림 배치 = 기본값 (C) both → 본 세션이 집행. BN-19 해소 조건 충족 +
+  서명 → RESOLVED 플립 집행. (c) **원칙 승인, 패킷별 집행 대기** —
+  DP-Q1..Q10 중 하위 선택지가 남은 항목(Q1: 개명 vs 보정 · Q4: 실행
+  수단/INV-20 · Q6: 유니버스 확장 vs 중간 라벨)은 blanket approve로
+  해소 불가 — 패킷 초안에 소유자 선택 1줄씩 필요. 세션은 이를
+  추측하지 않는다.
+- **Basis:** INV-18 (서명 기록 요건 충족 — 본 항목이 그 기록) ·
+  docs/ORCHESTRATOR_NOTES.md 세션 운영 규율.
+- **Revert:** 본 항목 아래 부인(disavowal) 항목 추가로만 (append-only).

@@ -184,7 +184,12 @@ RC=2 "CALLS DISABLED" fail-closed, `requests|urllib|http` 임포트 0건,
 **Resolution condition:** English-canonical ERRATA.md with the Korean original preserved as .ko.md per the F-01/F-02 protocol, numeric token-parity PASS, adoption queue entry filed, owner-adopted on main with verify-public RC=0
 **Basis:** AUDIT_INDEX.md:18
 
-### BN-19: The headline finding has no figure — the no-dominant-strategy detection/false-positive tradeoff exists only as prose and a 4×4 CP95 table
+### BN-19: The headline finding has no figure — RESOLVED (2026-08-05, D-P43)
+**RESOLVED:** resolution condition met and owner-signed — deterministic
+`analysis/fig_tradeoff.py` regenerates the threshold-sweep figure (detection
++ FPR with CP95, ordinal labels) from `analysis/decision_table.json`; PNG
+committed; adoption executed per Q-F17 default (C): README companion line +
+DECISION_TABLE.md header (D-P43 signature record).
 **Blocked:** A 30-second visual of the threshold sweep (detection 12/12 vs FP 71.4% at T≥50; detection 1/12 at T=70) from committed decision_table.json — the README first-screen figure shows the narrower wave-1 claim, not the headline
 **Blocks:** Practitioner conversion on the headline claim itself — the quarter's "readable by its target audience" goal fails at the top sentence, where prose forces minutes for what one tradeoff chart gives in seconds
 **Resolution condition:** A committed deterministic script regenerates a threshold-sweep figure (detection and false-positive rates with CP95, ordinal-convention labels) from analysis/decision_table.json, PNG committed, plus an owner adoption queue entry for README/DECISION_TABLE placement
