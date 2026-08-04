@@ -122,3 +122,24 @@ DECISIONS_PENDING.md; owner reconciliation command recorded there).
 - Backlog depth: 5 executable (FB-05..09). DECISIONS_PENDING count: 42.
   Next: FB-05 (verify-* additive naming + honest scope wording).
 - Resume: write TASK_FB05 per BACKLOG; STOP file = ~/tools/harness/STOP.
+
+## Entry 6 — Cycle 5: FB-05 REBUTTED + FB-06 BN-19 tradeoff figure (2026-08-05) — DONE
+- FB-05 killed as already-satisfied (D108 two-tier + sandbox transcript +
+  synthetic fixtures); rebuttal independently audited and UPHELD by
+  pre-review ("a rename is not small; an alias adds a second name for the
+  same thing — worse for a skeptical reader").
+- A8 "no visualizations" also rebutted (fig_dotplot + 3 companions exist).
+- Pre-review caught a dangerous spec ambiguity: exploratory_combo
+  (post-hoc, performance-claims-barred) also matches n_treatment==12 —
+  spec now pins selection to the layers object and the discriminating
+  test fixture proves the post-hoc key is never selected.
+- Build: APPROVE at cycle 2 (cycle-1 REVISE: non-discriminating fixture +
+  Q-F17 format gaps — both fixed by builder).
+- Evaluation: figure visually verified (sweep 40-70, CP95 bars, ordinal
+  axis, neutral vocab, both operating points annotated); analysis suite
+  71 passed; full suite green; verify-public PASS after docs-refresh
+  (314→318).
+- Disclosure: D-P39. Owner decision queued: Q-F17 (figure placement).
+- Backlog depth: 3 executable (FB-07, FB-08, FB-09). DECISIONS_PENDING
+  count: 43. Next: FB-07 (power analysis doc).
+- Resume: write TASK_FB07 per BACKLOG; STOP file = ~/tools/harness/STOP.

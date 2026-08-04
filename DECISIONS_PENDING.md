@@ -652,3 +652,22 @@
   1회 일시 실패(Execution error) → CLI 건강 프로브 후 재시도 성공
   (쿼터 아님 판정).
 - **Revert:** 해당 커밋 revert.
+
+## D-P39 — FB-06 집행 기록: BN-19 headline tradeoff figure (INV-03 공개, 2026-08-05)
+- **What:** BN-19 해소 조건 문언 그대로 집행 — `analysis/fig_tradeoff.py`
+  (결정론, decision_table.json의 layers 객체만 순회, layer-수준
+  n_treatment==12 유일 일치=L4_e2_trajectory, post-hoc `exploratory_combo`
+  선택 불가 fail-closed) + `analysis/fig_tradeoff.png` 커밋 +
+  OWNER_QUEUE Q-F17(배치 소유자 결정, 기본값 (C) both) 등재. 테스트
+  4종: 재생성·커밋 존재·post-hoc 거부(완전 plottable 픽스처로 판별력
+  확보 — 하네스 리뷰 cycle 1 REVISE 반영)·라벨 어휘(in-suite fraud/확률
+  프레이밍 금지 — lint는 .py/.png 미스캔이므로 유일 게이트).
+  기존 analysis/ 파일·README·DECISION_TABLE·BOTTLENECKS 무접촉.
+- **FB-05 기각 기록:** verify-* 분리 요구는 D108 2계층 인터페이스로
+  기충족(README.md:62-67 정직 스코프 문언 + 샌드박스 트랜스크립트) —
+  사전 리뷰 독립 감사로 기각 유지 확정. A8 "시각화 전무" 주장도 기각
+  (fig_dotplot 4종 기존재, BN-08/D120).
+- **스위트:** 전체 통과, verify-public 5게이트 PASS, 문서 카운트
+  314→318 (신규 테스트 4). BN-19 상태 플립은 이 루프가 하지 않음
+  (guarded 채널 — 소유자/direction-loop).
+- **Revert:** 해당 커밋 revert + Q-F17 항목은 append-only 존치.

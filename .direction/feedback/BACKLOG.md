@@ -102,7 +102,7 @@ priority rule carry an INV-03 disclosure entry in DECISIONS_PENDING.md.
 - deps: none. Makefile is INV-05 surface: diff must be provably additive.
 
 ### FB-06 Headline tradeoff figure (BN-19 resolution condition)
-- source: A8 residual + BN-19 · category: DELIVERY · size: S · status: TODO
+- source: A8 residual + BN-19 · category: DELIVERY · size: S · status: DONE (2026-08-05, D-P39, Q-F17)
 - A8's "no visualizations" claim REBUTTED at cycle time: README.md:46-54
   already carries fig_dotplot_30firms.png + 3 companion figures (BN-08
   resolved 2026-07-29, D120). Residual genuine gap = BN-19: the headline

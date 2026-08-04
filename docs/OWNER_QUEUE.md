@@ -918,3 +918,15 @@
 - **세션 기본 조치**: 가드 스크립트 + 자기 검증 테스트까지만 — 보호
   경로 무접촉 (guard + self-tests only, no protected-path contact).
 - **상태**: OPEN
+
+## Q-F17 — BN-19 tradeoff figure adoption: README/DECISION_TABLE placement — OPEN (신규, 2026-08-05 direction-loop)
+
+- **질문**: BN-19의 headline threshold-sweep tradeoff figure를 독자 대면
+  문서 어디에 배치할까?
+- **옵션**: (A) README first-screen companion-figure line · (B)
+  `analysis/DECISION_TABLE.md` header · (C) both.
+- **근거**: BN-19와 신규 산출물 `analysis/fig_tradeoff.py`,
+  `analysis/fig_tradeoff.png`.
+- **기본값 (무응답 시)**: (C) — both.
+- **세션 기본 조치**: 스크립트·PNG·테스트·큐 등재까지만 — 보호 경로 무접촉 (figure + tests + queue entry only, no protected-path contact).
+- **상태**: OPEN
