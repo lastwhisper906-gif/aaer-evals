@@ -78,7 +78,19 @@ priority rule carry an INV-03 disclosure entry in DECISIONS_PENDING.md.
 ## Tier 2 — cheap, high-leverage, executable
 
 ### FB-05 verify-* naming: additive targets + honest scope wording
-- source: B8 · category: DELIVERY · size: S · status: TODO
+- source: B8 · category: DELIVERY · size: S · status: REBUTTED (2026-08-05 — already satisfied)
+- REBUTTAL EVIDENCE (checked at cycle time, before build): the two-tier
+  interface B requests already exists as D108: README.md:62 advertises
+  `make verify-public   # recomputes every published number from committed
+  artifacts` (exactly the requested verify-claims semantics, in plain
+  words, on the top surface); README.md:65-67 states the zero-corpus/
+  zero-network scope with the clean-HOME sandbox transcript
+  (audit/verify_public_sandbox_transcript_20260722.txt); REPRODUCING.md:17-18
+  table separates the tiers; pipeline/fixtures/synthetic_corpus +
+  test_payload_synthetic.py already give third parties the
+  cutoff→payload-path check inside verify-public (B's fixture ask).
+  Remaining delta would be a synonym make target with no new capability —
+  candidate governance bloat under OWNER_MODEL. Owner may reinstate.
 - VERIFIED: Makefile `verify-public` = 6 commands (5 gates + doc-count
   lint). Feedback: name overpromises ("public verify" reads as full
   reproduction).
@@ -89,16 +101,22 @@ priority rule carry an INV-03 disclosure entry in DECISIONS_PENDING.md.
   all 6 commands verbatim (INV-05). No target removed or weakened.
 - deps: none. Makefile is INV-05 surface: diff must be provably additive.
 
-### FB-06 README figure: treatment-vs-control score distribution
-- source: A8 (= BN-19 already registered) · category: DELIVERY · size: S ·
-  status: TODO
-- claim strengthened: headline no-dominant-strategy / separation claim —
-  currently prose+table only (BN-19).
-- fix shape: deterministic matplotlib script reading committed
-  analysis outputs → PNG + alt text + source link in README; INV-13/14
-  wording (no fraud vocabulary, ordinal-not-probability axis labels —
-  BN-12's demoted-framing lesson applies); drift-gate note.
-- deps: FB-05 none; reads only committed artifacts.
+### FB-06 Headline tradeoff figure (BN-19 resolution condition)
+- source: A8 residual + BN-19 · category: DELIVERY · size: S · status: TODO
+- A8's "no visualizations" claim REBUTTED at cycle time: README.md:46-54
+  already carries fig_dotplot_30firms.png + 3 companion figures (BN-08
+  resolved 2026-07-29, D120). Residual genuine gap = BN-19: the headline
+  no-dominant-strategy detection/FPR tradeoff exists only as prose + 4x4
+  CP95 table.
+- fix shape = BN-19's written resolution condition verbatim: committed
+  deterministic script regenerating a threshold-sweep figure (detection
+  and false-positive rates with CP95, ordinal-convention labels) from
+  analysis/decision_table.json; PNG committed; owner adoption queue entry
+  for README/DECISION_TABLE placement (placement itself owner-gated).
+  Follows the fig_dotplot.py precedent (analysis/ new files only, no
+  existing file edited). BOTTLENECKS.md status flip NOT done by this loop
+  (guarded file — owner/direction-loop channel).
+- deps: none. INV-13 (no fraud vocab on labels), ordinal axis convention.
 
 ### FB-07 Statistical power analysis doc (pre-registration groundwork for N expansion)
 - source: A1 · category: STATS · size: S · status: TODO
