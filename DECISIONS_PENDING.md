@@ -593,3 +593,25 @@
   APPROVE(REVIEW_SPEC 6절 준수, 근거 인용 리뷰).
 - **Revert:** 해당 커밋 revert + L-9 항목은 append-only 규약상 존치
   (revert 사실을 후속 항목으로 추가).
+
+## D-P36 — FB-02 집행 기록: 완성 payload 컷오프 fail-closed 불변식 + 로그 키 정정 + METHOD §2 정합 (INV-03 공개, 2026-08-05)
+- **What:** EXT_FB_B 항목 2 실측 확인 후 수리. (i)
+  `cutoff_guard.assert_payload_pre_cutoff()` 신설 — 완성 payload의 전
+  날짜(series `filed`·chronology `filing_date`)를 재스캔, 컷오프 초과
+  1건이라도 있으면 CutoffGuardError, 스캔 대상 키 부재도 fail-closed;
+  `build_payload()` 말미에서 양군 공통 호출(INV-04 중립). (ii) 요약 로그
+  키 정정: facts_after_cutoff→facts_retained_pre_cutoff,
+  facts_dropped→facts_dropped_post_cutoff (의미 반전 해소). (iii)
+  METHOD.md §2를 실제 3층 구조로 정합 — 원시 파일의 사후 데이터 허용 →
+  로더 명시 필터+집계 로그 → 완성 payload 위반 즉시 실패; 기존 참
+  문장(accession 교차검증·우회 스캔 테스트) 존치. 신규 테스트 5종.
+  스위트 311 passed/1 skipped, verify-public 5게이트 PASS(RC=0), 문서
+  카운트 307→312.
+- **INV-03 요건:** (a) 동결 산출물 무접촉 — 코드·문서 전향 수리만.
+  (b) 공개 절 — 본 항목이 METHOD §2의 종전 과잉 주장(전 로더 예외
+  주장)을 명시 기록. (c) 재실행 없음.
+- **하네스 실행 기록:** TASK_FB02_20260805 run cycle 1 APPROVE. 사전
+  리뷰가 스펙의 차단급 오류(chronology 키명 filingDate→filing_date,
+  build_payload.py:156 개명 미반영)를 빌드 전 교정 — 사전 리뷰 계약의
+  실측 효용 사례.
+- **Revert:** 해당 커밋 revert.

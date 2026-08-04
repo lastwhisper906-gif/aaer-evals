@@ -33,7 +33,7 @@ priority rule carry an INV-03 disclosure entry in DECISIONS_PENDING.md.
   untouched (disclose-don't-revise). No evaluatee re-run in this loop.
 
 ### FB-02 Cutoff: payload-level fail-closed invariant + truthful log names + METHOD wording
-- source: B2 · category: CODE-FIX · size: S · status: TODO
+- source: B2 · category: CODE-FIX · size: S · status: DONE (2026-08-05, D-P36)
 - VERIFIED: bulk loaders filter rather than raise (`cutoff_guard.py:207`,
   `:236`); summary log key `"facts_after_cutoff": len(rows)` at `:212`
   actually records RETAINED (≤ cutoff) rows — name inverted. `load_document`

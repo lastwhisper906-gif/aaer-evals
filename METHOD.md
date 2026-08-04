@@ -17,10 +17,14 @@ section).
 
 <!-- source: pipeline/cutoff_guard.py -->
 **2. Cutoff guard (fail-closed).** All raw-data loading passes through a
-single guard module. Each fact's date is checked against the case cutoff
-date, and filed documents are cross-validated against the filingDate in the
-EDGAR filing history. If post-cutoff data is detected, that load dies with an
-exception — bypass code is forbidden by a scan test.
+single guard module. Raw SEC files may contain post-cutoff data, as expected;
+bulk loaders explicitly drop those rows and log retained and dropped counts.
+Each fact's date is checked against the case cutoff date, and filed documents
+are cross-validated against the filingDate in the EDGAR filing history. At
+`build_payload` assembly, the completed payload is re-scanned and any
+surviving post-cutoff date raises `CutoffGuardError` (fail-closed).
+Single-document loads (`load_document`) retain their raise-on-violation
+behavior. Bypass code is forbidden by a scan test.
 
 <!-- source: pipeline/cli_client.py -->
 **3. Isolated single call.** Each evaluatee call is one subscription headless

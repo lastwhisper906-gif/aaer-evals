@@ -51,6 +51,28 @@ def _parse_date(value, field: str) -> datetime.date:
         raise CutoffGuardError(f"{field}={value!r}: ISO 날짜가 아님 (UNRESOLVED 케이스는 로딩 불가)") from e
 
 
+def assert_payload_pre_cutoff(payload: dict, cutoff_date) -> None:
+    """완성된 payload의 모든 날짜가 컷오프 이내인지 재검증한다."""
+    cutoff = _parse_date(cutoff_date, "cutoff_date")
+    for key in ("financial_series_point_in_time", "filing_chronology"):
+        if key not in payload:
+            raise CutoffGuardError(f"완성 payload에 {key!r} 없음 — fail-closed")
+    for facts in payload["financial_series_point_in_time"].values():
+        for fact in facts:
+            filed = _parse_date(fact.get("filed"), "filed")
+            if filed > cutoff:
+                raise CutoffGuardError(
+                    f"완성 payload look-ahead 위반: filed={filed} > cutoff_date={cutoff}"
+                )
+    for row in payload["filing_chronology"]:
+        filing_date = _parse_date(row.get("filing_date"), "filing_date")
+        if filing_date > cutoff:
+            raise CutoffGuardError(
+                "완성 payload look-ahead 위반: "
+                f"filing_date={filing_date} > cutoff_date={cutoff}"
+            )
+
+
 def _load_cases(registry_path=DEFAULT_REGISTRY) -> dict:
     """candidates.json → {case_id: case dict}. 중복 case_id는 조용한 last-wins가
     아니라 예외 — 어느 컷오프가 적용됐는지 모호해지는 순간 가드 전체가 무효."""
@@ -209,8 +231,8 @@ def load_xbrl_facts(case_id: str, ticker: str, cutoff_date, *,
         _log(log_path, {"case_id": case_id, "doc": str(path), "verdict": "allowed",
                         "reason": "bulk_xbrl_crosschecked"})
     _log(log_path, {"case_id": case_id, "verdict": "summary", "reason": "bulk_xbrl",
-                    "facts_total": total, "facts_after_cutoff": len(rows),
-                    "facts_dropped": total - len(rows)})
+                    "facts_total": total, "facts_retained_pre_cutoff": len(rows),
+                    "facts_dropped_post_cutoff": total - len(rows)})
     return rows, {"namespaces": sorted(namespaces)}
 
 

@@ -183,13 +183,15 @@ def build_payload(case: dict, perturb: bool = False) -> dict:
         series = {tag: [{**v, "value": (round(v["value"] * k, 2)
                                         if isinstance(v["value"], (int, float)) else v["value"])}
                         for v in vals] for tag, vals in series.items()}
-    return {
+    payload = {
         "_variant": "perturbed" if perturb else "original",
         "case": fields,
         "financial_series_point_in_time": series,
         "filing_chronology": chronology,
         "_k_internal": k,  # 러너가 채점 로그에만 기록 후 페이로드에서 제거
     }
+    cutoff_guard.assert_payload_pre_cutoff(payload, cutoff)
+    return payload
 
 
 def build_all(perturb: bool = False) -> list[dict]:

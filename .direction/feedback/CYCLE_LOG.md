@@ -63,3 +63,23 @@ DECISIONS_PENDING.md; owner reconciliation command recorded there).
   `~/tools/harness/run_task.sh --task .direction/feedback/tasks/TASK_FB02.md
   --workdir ~/repos/aaer-evals-work` after writing TASK_FB02 per BACKLOG
   FB-02; STOP file = ~/tools/harness/STOP.
+
+## Entry 3 — Cycle 2: FB-02 cutoff payload-level fail-closed (2026-08-05) — DONE
+- Pre-review: REVISE→amended. Caught a BLOCKING spec error (chronology scan
+  key must be payload-side `filing_date`, not raw-EDGAR `filingDate` —
+  build_payload.py:156 rename; as-written contract would push the builder
+  to weaken fail-closed). Also: disclosure ownership line, retain §2
+  cross-validation sentence, don't hardcode log keys in METHOD prose.
+  Logged FB-01-FU1 (date_shift variant naming) as follow-up.
+- Build: TASK_FB02_20260805 APPROVE at cycle 1 (no stall — PRE-FLIGHT
+  no-fetch note now standard).
+- Independent evaluation: full suite 311 passed / 1 skipped (5 new guard
+  tests); raw diff read (5 files; assert function contract verified incl.
+  missing-key fail-closed and == boundary); repo-wide grep confirms no
+  old-log-key consumer remains; verify-public 5 gates PASS (RC=0) after
+  docs-refresh (307→312).
+- Disclosure: D-P36 (records METHOD §2's former overclaim explicitly).
+- Backlog depth: 7 executable (FB-03..09). DECISIONS_PENDING count: 40.
+  Next: FB-03 (legacy fingerprint fail-closed default).
+- Resume: write TASK_FB03 per BACKLOG; harness command pattern unchanged;
+  STOP file = ~/tools/harness/STOP.

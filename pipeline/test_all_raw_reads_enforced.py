@@ -103,7 +103,7 @@ def test_xbrl_filters_logs_and_fixture_log_is_isolated(tmp_path):
     records = [json.loads(line) for line in
                (tmp_path / "access_log.jsonl").read_text(encoding="utf-8").splitlines()]
     assert any(record["reason"] == "xbrl_accession_index" for record in records)
-    assert records[-1]["facts_dropped"] == 1
+    assert records[-1]["facts_dropped_post_cutoff"] == 1
     after = (default.stat().st_mtime_ns, default.stat().st_size) if default.exists() else None
     assert after == before
 

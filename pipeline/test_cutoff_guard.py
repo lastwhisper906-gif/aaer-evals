@@ -4,7 +4,12 @@ import json
 
 import pytest
 
-from cutoff_guard import CutoffGuardError, CutoffViolationError, load_document
+from cutoff_guard import (
+    CutoffGuardError,
+    CutoffViolationError,
+    assert_payload_pre_cutoff,
+    load_document,
+)
 
 CUTOFF = "2014-06-05"  # 예: 폭로일 2014-06-06의 전일
 ACCESSION = "0001234567-14-000001"
@@ -37,6 +42,44 @@ def load(env, doc_date, case_id="T01", **kwargs):
     return load_document(case_id, env["doc"], doc_date,
                          registry_path=env["registry"], log_path=env["log"],
                          edgar_data_dir=env["edgar"], **kwargs)
+
+
+@pytest.fixture
+def completed_payload():
+    return {
+        "financial_series_point_in_time": {
+            "Revenue": [{"filed": "2014-01-01"}],
+        },
+        "filing_chronology": [{"form": "10-K", "filing_date": "2014-01-01"}],
+    }
+
+
+def test_completed_payload_pre_cutoff_passes(completed_payload):
+    assert_payload_pre_cutoff(completed_payload, CUTOFF)
+
+
+def test_completed_payload_post_cutoff_series_raises(completed_payload):
+    completed_payload["financial_series_point_in_time"]["Revenue"][0]["filed"] = "2014-06-06"
+    with pytest.raises(CutoffGuardError):
+        assert_payload_pre_cutoff(completed_payload, CUTOFF)
+
+
+def test_completed_payload_post_cutoff_chronology_raises(completed_payload):
+    completed_payload["filing_chronology"][0]["filing_date"] = "2014-06-06"
+    with pytest.raises(CutoffGuardError):
+        assert_payload_pre_cutoff(completed_payload, CUTOFF)
+
+
+def test_completed_payload_cutoff_boundary_passes(completed_payload):
+    completed_payload["financial_series_point_in_time"]["Revenue"][0]["filed"] = CUTOFF
+    completed_payload["filing_chronology"][0]["filing_date"] = CUTOFF
+    assert_payload_pre_cutoff(completed_payload, CUTOFF)
+
+
+def test_completed_payload_missing_scanned_key_raises(completed_payload):
+    del completed_payload["filing_chronology"]
+    with pytest.raises(CutoffGuardError):
+        assert_payload_pre_cutoff(completed_payload, CUTOFF)
 
 
 def test_allowed_load_returns_content_and_logs(env):
