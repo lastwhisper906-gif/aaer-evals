@@ -212,7 +212,7 @@ def call_model(model: str,
     if extra_flags:
         cmd += extra_flags
 
-    validator = jsonschema.Draft7Validator(schema)
+    validator = jsonschema.Draft7Validator(schema, format_checker=jsonschema.FormatChecker())
     t0 = time.monotonic()
     last: dict = {"fail_reason": "empty", "raw": None, "obj": None}
     attempts = 0
@@ -326,4 +326,5 @@ def output_is_valid(path: Path, schema: dict) -> bool:
         data = json.loads(path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError):
         return False
-    return not list(jsonschema.Draft7Validator(schema).iter_errors(data))
+    return not list(jsonschema.Draft7Validator(
+        schema, format_checker=jsonschema.FormatChecker()).iter_errors(data))

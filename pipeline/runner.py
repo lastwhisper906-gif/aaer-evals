@@ -173,7 +173,10 @@ def run_case(case: dict, perturb: bool, out_dir: Path, log_dir: Path, *,
         "fingerprint": fingerprint,
         **r.structured,
     }
-    errors = list(jsonschema.Draft7Validator(FULL_OUTPUT_SCHEMA).iter_errors(full))
+    # Pinned jsonschema checks draft-7 "date" without extras; date-time and uri
+    # remain unchecked because their optional dependencies are intentionally absent.
+    errors = list(jsonschema.Draft7Validator(
+        FULL_OUTPUT_SCHEMA, format_checker=jsonschema.FormatChecker()).iter_errors(full))
     if errors:
         path = ".".join(str(part) for part in errors[0].absolute_path) or "<root>"
         reason = f"schema_violation: {path}"

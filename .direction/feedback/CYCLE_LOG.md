@@ -104,3 +104,21 @@ DECISIONS_PENDING.md; owner reconciliation command recorded there).
 - Backlog depth: 6 executable (FB-04..09). DECISIONS_PENDING count: 41.
   Next: FB-04 (FormatChecker on evaluatee-path validators).
 - Resume: write TASK_FB04 per BACKLOG; STOP file = ~/tools/harness/STOP.
+
+## Entry 5 — Cycle 4: FB-04 FormatChecker on evaluatee-path validators (2026-08-05) — DONE
+- Pre-review: REVISE→amended (transient CLI failure once, health-probed,
+  retried). Found 4th call site (committed-output revalidation test must
+  match production strictness); empirically cleared frozen outputs (all
+  filing_date strict ISO — no gate flip); corrected boundary to date-only;
+  extended fencing parity to runner.py.
+- Build: APPROVE at cycle 1. Protected-file hunks verified minimal by me
+  directly (2+1 argument additions + 2-line boundary comment).
+- Evaluation: suite 313 passed / 1 skipped; verify-public 5 gates PASS
+  (RC=0); docs 313→314.
+- Disclosure: D-P38 (includes protected-path hunk audit + honest no-op
+  note for cli_client:215).
+- Tier 1 (correctness bugs undermining published claims) is now COMPLETE:
+  FB-01..04 all DONE in 4 cycles, zero gate regressions.
+- Backlog depth: 5 executable (FB-05..09). DECISIONS_PENDING count: 42.
+  Next: FB-05 (verify-* additive naming + honest scope wording).
+- Resume: write TASK_FB05 per BACKLOG; STOP file = ~/tools/harness/STOP.

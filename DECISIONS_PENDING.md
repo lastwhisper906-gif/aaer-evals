@@ -632,3 +632,23 @@
 - **하네스 실행 기록:** TASK_FB03_20260805_030750 cycle 2 APPROVE
   (cycle 1은 기계 체크 자동 REVISE — 위 기존 테스트 충돌).
 - **Revert:** 해당 커밋 revert.
+
+## D-P38 — FB-04 집행 기록: 피평가자 경로 검증기 FormatChecker 부착 (INV-03 공개, 2026-08-05)
+- **What:** EXT_FB_B 항목 6(검증기 반쪽) 실측 확인 후 수리. 4개
+  호출부에 `format_checker=jsonschema.FormatChecker()` 부착 —
+  runner.py(~:176, 실구멍), cli_client.output_is_valid(~:329, 실구멍),
+  cli_client.call_model(~:215, 오늘 기준 형식 주석 없는 스키마만 통과 —
+  방어층, 실구멍 아님), test_output_schema_enforcement.py:~120(동결 출력
+  재검증 테스트 — 생산 검증기와 엄격도 동기화, 동결 출력 전수 ISO 검증
+  통과 실측). 경계 정직 기록: 핀 jsonschema는 draft-7 `date`만 내장 검사
+  — `date-time`·`uri`는 의존성 동결(INV-11)로 미검사 유지, 주석 명기.
+  회귀 테스트 1종 추가(비날짜 문자열 거부 + 정상 날짜 통과). 스키마
+  파일 무변경(의미 강화는 DP-Q1 소유자 게이트).
+- **보호 경로 공개:** cli_client.py·runner.py(.protected-paths 등재)
+  수정 — 소유자 우선순위 규칙(스키마 강제) 근거, hunk 단위 실측: 인자
+  추가 2건+1건과 경계 주석뿐. 스위트 313 passed/1 skipped,
+  verify-public PASS, 문서 카운트 313→314.
+- **하네스 실행 기록:** TASK_FB04_20260805 cycle 1 APPROVE. 사전 리뷰
+  1회 일시 실패(Execution error) → CLI 건강 프로브 후 재시도 성공
+  (쿼터 아님 판정).
+- **Revert:** 해당 커밋 revert.

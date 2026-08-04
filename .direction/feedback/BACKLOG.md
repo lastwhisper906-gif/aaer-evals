@@ -62,7 +62,7 @@ priority rule carry an INV-03 disclosure entry in DECISIONS_PENDING.md.
 - deps: none.
 
 ### FB-04 FormatChecker on evaluatee-path validators
-- source: B6 (validator half) · category: CODE-FIX · size: S · status: TODO
+- source: B6 (validator half) · category: CODE-FIX · size: S · status: DONE (2026-08-05, D-P38)
 - VERIFIED: `runner.py:169`, `cli_client.py:215,329` use `Draft7Validator`
   without `format_checker`; `tools/test_build_evaluatee_inputs.py:68` and
   `tools/validate_schemas.py:16` already use `FormatChecker` — evaluatee

@@ -110,6 +110,46 @@ def test_run_case_revalidates_before_write(monkeypatch, tmp_path):
     assert meta["fail_reason"] == "schema_violation: misstatement_probability"
 
 
+def test_date_format_enforced_by_runner_and_output_validity(monkeypatch, tmp_path):
+    payload = {
+        "_k_internal": 1.0,
+        "_variant": "original",
+        "case": {"company_name": "Example", "ticker": "EX"},
+        "financial_series_point_in_time": {
+            "Revenue": [{"accession": "a", "form": "10-K", "filed": "not-a-date"}]
+        },
+        "filing_chronology": [],
+    }
+    monkeypatch.setattr(runner.bp, "build_payload", lambda case, perturb: copy.deepcopy(payload))
+    monkeypatch.setattr(runner.cli_client, "call_model", lambda *args, **kwargs: SimpleNamespace(
+        ok=True, structured=_model_output(), fail_reason=None,
+        served_models=[runner.EVALUATEE_MODEL]))
+    monkeypatch.setattr(runner, "freeze_state", lambda: {"head": "a" * 40})
+    case = {"case_id": "case_99", "company_name": "Example", "ticker": "EX",
+            "cik": "1", "cutoff_date": "2020-01-01"}
+    log_dir = tmp_path / "logs"
+    log_dir.mkdir()
+
+    bad_output = _full_output(_model_output())
+    bad_output["documents_used"][0]["filing_date"] = "not-a-date"
+    assert not list(jsonschema.Draft7Validator(
+        runner.FULL_OUTPUT_SCHEMA).iter_errors(bad_output))
+    output_path = tmp_path / "output.json"
+    output_path.write_text(json.dumps(bad_output), encoding="utf-8")
+
+    bad_result = runner.run_case(case, False, tmp_path / "bad-runs", log_dir)
+    assert bad_result["status"] == "FAIL (schema_violation: documents_used.0.filing_date)"
+    assert not runner.cli_client.output_is_valid(output_path, runner.FULL_OUTPUT_SCHEMA)
+
+    payload["financial_series_point_in_time"]["Revenue"][0]["filed"] = "2020-01-01"
+    good_output = _full_output(_model_output())
+    output_path.write_text(json.dumps(good_output), encoding="utf-8")
+
+    good_result = runner.run_case(case, False, tmp_path / "good-runs", log_dir)
+    assert good_result["status"].startswith("OK p=")
+    assert runner.cli_client.output_is_valid(output_path, runner.FULL_OUTPUT_SCHEMA)
+
+
 def test_all_committed_run_outputs_validate():
     patterns = (
         "runs/*/case_*.json", "runs/*/scores/*.json", "runs/wave2/perturbed/*.json",
@@ -117,7 +157,8 @@ def test_all_committed_run_outputs_validate():
     )
     paths = sorted({path for pattern in patterns for path in REPO_ROOT.glob(pattern)})
     assert paths
-    validator = jsonschema.Draft7Validator(runner.FULL_OUTPUT_SCHEMA)
+    validator = jsonschema.Draft7Validator(
+        runner.FULL_OUTPUT_SCHEMA, format_checker=jsonschema.FormatChecker())
     failures = []
     for path in paths:
         errors = list(validator.iter_errors(json.loads(path.read_text(encoding="utf-8"))))
