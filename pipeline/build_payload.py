@@ -184,8 +184,7 @@ def build_payload(case: dict, perturb: bool = False) -> dict:
                                         if isinstance(v["value"], (int, float)) else v["value"])}
                         for v in vals] for tag, vals in series.items()}
     return {
-        "variant": "perturbed" if perturb else "original",
-        "perturb_factor_recorded_scoring_side_only": None,  # k는 페이로드에 싣지 않는다
+        "_variant": "perturbed" if perturb else "original",
         "case": fields,
         "financial_series_point_in_time": series,
         "filing_chronology": chronology,

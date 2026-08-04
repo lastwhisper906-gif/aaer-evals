@@ -24,6 +24,7 @@ REPO = Path(__file__).resolve().parent.parent
 FORBIDDEN_PAYLOAD_SUBSTRINGS = [
     "aaer", "fraud", "manipulat", "scheme_summary", "matched_case",
     "m_score", "beneish", "dechow", "montier", "sloan", "piotroski",
+    "variant", "perturb",
     "9FA11F98", "A2D69CFE",  # 카나리 GUID — 페이로드 반입 즉시 누출
 ]
 
@@ -47,9 +48,22 @@ def test_all_series_and_chronology_respect_cutoff():
 
 def test_payload_has_no_ground_truth_or_baseline_markers():
     for case in _cases():
-        text = json.dumps(bp.build_payload(case), ensure_ascii=False).lower()
+        payload = bp.build_payload(case)
+        model_visible = {key: payload[key] for key in (
+            "case", "financial_series_point_in_time", "filing_chronology")}
+        text = json.dumps(model_visible, ensure_ascii=False).lower()
         leaked = [s for s in FORBIDDEN_PAYLOAD_SUBSTRINGS if s.lower() in text]
         assert not leaked, f"{case['case_id']}: 페이로드 누출 마커 {leaked}"
+
+
+def test_run_side_payload_keys_are_renamed_and_retained():
+    for case in _cases():
+        for perturb, expected in ((False, "original"), (True, "perturbed")):
+            payload = bp.build_payload(case, perturb=perturb)
+            assert "variant" not in payload
+            assert "perturb_factor_recorded_scoring_side_only" not in payload
+            assert payload["_variant"] == expected
+            assert "_k_internal" in payload
 
 
 def test_perturbation_is_deterministic_and_ratio_preserving():

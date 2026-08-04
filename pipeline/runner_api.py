@@ -23,6 +23,7 @@ from cli_client import EVALUATEE_FORBIDDEN_MARKERS, freeze_state
 from runner import EVALUATEE_MODEL, FULL_OUTPUT_SCHEMA, MODEL_SCHEMA, TASK
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+MODEL_VISIBLE_KEYS = ("case", "financial_series_point_in_time", "filing_chronology")
 
 
 def run_case_api(case: dict, perturb: bool, out_dir: Path, log_dir: Path,
@@ -37,8 +38,8 @@ def run_case_api(case: dict, perturb: bool, out_dir: Path, log_dir: Path,
     task = TASK.format(company_name=payload["case"]["company_name"],
                        ticker=payload["case"]["ticker"], cik_part=cik_part,
                        cutoff_date=case["cutoff_date"])
-    user_payload = json.dumps({k2: v for k2, v in payload.items()
-                               if not k2.startswith("_")}, ensure_ascii=False)
+    user_payload = json.dumps({key: payload[key] for key in MODEL_VISIBLE_KEYS},
+                              ensure_ascii=False)
     variant = "perturbed" if perturb else "original"
     r = call_model_api(EVALUATEE_MODEL, task, user_payload, MODEL_SCHEMA,
                        log_dir=log_dir, log_name=f"evaluatee_api_{variant}_{cid}",

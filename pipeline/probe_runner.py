@@ -23,6 +23,7 @@ import cli_client
 from runner import EVALUATEE_MODEL
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+MODEL_VISIBLE_KEYS = ("case", "financial_series_point_in_time", "filing_chronology")
 
 RECOG_SCHEMA = {"type": "object", "additionalProperties": False,
                 "required": ["company_guess", "confidence"],
@@ -53,13 +54,13 @@ def probe_case(kind: str, case: dict, out: Path, log_dir: Path,
 
     if kind == "recognition":
         payload = bp.build_payload(case, perturb=True)
-        payload.pop("_k_internal")
         if v2_dateshift:
             # Q-F05 (specs/perturb_v2.md §3): 컷오프 가드는 상류 진짜 날짜에서
             # 이미 완료 — 렌더 직전 균일 이동 + accession 마스킹만 적용
             import date_shift
             payload = date_shift.shift_payload(payload)
-        system, user = RECOG_TASK, json.dumps(payload, ensure_ascii=False)
+        user_payload = {key: payload[key] for key in MODEL_VISIBLE_KEYS}
+        system, user = RECOG_TASK, json.dumps(user_payload, ensure_ascii=False)
         markers = cli_client.EVALUATEE_FORBIDDEN_MARKERS
     else:
         system = VERBATIM_TASK.format(company_name=case["company_name"],

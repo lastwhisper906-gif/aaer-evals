@@ -34,6 +34,7 @@ import jsonschema
 from cli_client import EVALUATEE_FORBIDDEN_MARKERS, freeze_state
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+MODEL_VISIBLE_KEYS = ("case", "financial_series_point_in_time", "filing_chronology")
 EVALUATEE_MODEL = "claude-sonnet-5"  # D6 pin (사유는 채점 쪽 문서)
 FULL_OUTPUT_SCHEMA = json.loads(
     (REPO_ROOT / "schemas" / "llm_output.json").read_text(encoding="utf-8"))
@@ -120,7 +121,7 @@ def run_case(case: dict, perturb: bool, out_dir: Path, log_dir: Path) -> dict:
     task = TASK.format(company_name=payload["case"]["company_name"],
                        ticker=payload["case"]["ticker"], cik_part=cik_part,
                        cutoff_date=case["cutoff_date"])
-    user_payload = json.dumps({k2: v for k2, v in payload.items() if not k2.startswith("_")},
+    user_payload = json.dumps({key: payload[key] for key in MODEL_VISIBLE_KEYS},
                               ensure_ascii=False)
     fingerprint = compute_fingerprint(case, task, user_payload)
     write_path = out_path
