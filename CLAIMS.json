@@ -1,0 +1,138 @@
+{
+  "generated_from": "RESULTS.md",
+  "authority": "RESULTS.md is authoritative; this file is a locked machine-readable rendering (tools/test_claims_ledger.py)",
+  "scope": "Grading: Claude-assisted, human-finalized. All results are scoped to a single Claude-based pipeline.",
+  "disclaimer": "no positions · educational/informational · not investment advice.",
+  "claims": [
+    {
+      "id": 1,
+      "task_tag": "[T1]",
+      "measurement": "wave-1 identity–exposure separation (treatment 8 vs control 22)",
+      "published_value": "permutation p 0.00114 · mean diff +19.8pp · AUC 0.824 [0.599, 0.983]",
+      "limits": "Upper bound entangled with memorization — R3 triggered (5 of 8 over threshold), name-ID 50%. N=30 small sample, wide CI",
+      "source_raw": "`analysis/results_stats.json`",
+      "source_paths": ["analysis/results_stats.json"],
+      "status": "published"
+    },
+    {
+      "id": 2,
+      "task_tag": "[T1]",
+      "measurement": "wave-1 perturbed frame (primary reading)",
+      "published_value": "permutation p 0.0021 · AUC 0.864 [0.722, 0.969] · flags 4/8",
+      "limits": "A *less-contaminated* measurement, not a clean lower bound — residual identity recognition after perturbation 5–6/8; the v1 frame is partially de-anonymized (accession numbers and filing chronology retained)",
+      "source_raw": "`analysis/results_stats.json` · `docs/V1_PARTIAL_DEIDENTIFICATION_NOTE.md`",
+      "source_paths": ["analysis/results_stats.json", "docs/V1_PARTIAL_DEIDENTIFICATION_NOTE.md"],
+      "status": "published"
+    },
+    {
+      "id": 3,
+      "task_tag": "[T1]",
+      "measurement": "wave-2 separation (treatment 9 vs control 23)",
+      "published_value": "permutation p 0.00116 · mean diff +20.6pp · AUC 0.829 [0.616, 0.983] · flags 7/9",
+      "limits": "R4 framing constraint (no accuracy/AUC comparison claims). Under direct probing, outcome knowledge is available for 8/9 (88.9%, CP [51.7%, 99.7%])",
+      "source_raw": "`analysis/wave2_results.json` (rev2 parallel path: `analysis/out/wave2_rev2/`, ERRATA E-002)",
+      "source_paths": ["analysis/wave2_results.json", "analysis/out/wave2_rev2/"],
+      "status": "published"
+    },
+    {
+      "id": 4,
+      "task_tag": "[T1]",
+      "measurement": "name-ID axis",
+      "published_value": "50% (15/30) → 21.9% (7/32) → 0%",
+      "limits": "21.9% is the frozen-rule value — a rename-aware human reading of 25% (borderline case DAR) is footnoted alongside (Q-E02)",
+      "source_raw": "`analysis/name_probe_results.json` · `analysis/synthesis.json`",
+      "source_paths": ["analysis/name_probe_results.json", "analysis/synthesis.json"],
+      "status": "published"
+    },
+    {
+      "id": 5,
+      "task_tag": "[T2]",
+      "measurement": "post-cutoff holdout per-case scores",
+      "published_value": "HUBG 70 · GNE 42 · WMK 32 (0–100 ordinal)",
+      "limits": "N=3, per-case only — H1 (permutation significance) not claimed. Labels are provisional Big-R (4.02 unreliable), not confirmed enforcement. The HUBG hit is a tier hit with the mechanism missed (anchored on the 2018 restatement cluster)",
+      "source_raw": "`runs/holdout/` · `analysis/label_tags_holdout.json`",
+      "source_paths": ["runs/holdout/", "analysis/label_tags_holdout.json"],
+      "status": "published"
+    },
+    {
+      "id": 6,
+      "task_tag": "[T2]",
+      "measurement": "E1 matched controls",
+      "published_value": "HUBG 70 > all matched controls (RXO 42 · BCO 30 · XPO 20); separation in only 1 of 3 cases",
+      "limits": "Exact permutation p=0.20 is CONTEXT ONLY. The single highest score in the holdout tier is a control false positive (GRDX 78) — HUBG does not exceed the pooled control set",
+      "source_raw": "`analysis/holdout_controls_results.json`",
+      "source_paths": ["analysis/holdout_controls_results.json"],
+      "status": "published"
+    },
+    {
+      "id": 7,
+      "task_tag": "[T2]",
+      "measurement": "holdout draw robustness (k=5)",
+      "published_value": "HUBG ≥50 in 5/5 draws [58–76]; WMK [28–42] · GNE [30–42] 0/5",
+      "limits": "The published number is draw-1 — the bands are companion statistics",
+      "source_raw": "`runs/holdout/mainscore_redraw/` (E5 §7)",
+      "source_paths": ["runs/holdout/mainscore_redraw/"],
+      "status": "published"
+    },
+    {
+      "id": 8,
+      "task_tag": "[T1]",
+      "measurement": "FPR wave-1",
+      "published_value": "3/22 = 13.6% CP95 [2.9%, 34.9%]",
+      "limits": "Controls are \"non-enforcement,\" not \"clean\" — the bias direction pushes specificity downward (survivorship and selection bias; README Limitations)",
+      "source_raw": "`analysis/results_stats.json`",
+      "source_paths": ["analysis/results_stats.json"],
+      "status": "published"
+    },
+    {
+      "id": 9,
+      "task_tag": "[T1]",
+      "measurement": "FPR wave-2",
+      "published_value": "5/23 = 21.7% CP95 [7.5%, 43.7%]",
+      "limits": "Same as above; additionally, the 5 false positives are not hallucinations but positive misreadings of real figures (grounded; top of dim4)",
+      "source_raw": "`analysis/wave2_results.json` · `analysis/error_analysis_wave2_holdout.md`",
+      "source_paths": ["analysis/wave2_results.json", "analysis/error_analysis_wave2_holdout.md"],
+      "status": "published"
+    },
+    {
+      "id": 10,
+      "task_tag": "[T2]",
+      "measurement": "FPR holdout controls",
+      "published_value": "2/9 = 22.2% CP95 [2.8%, 60.0%]",
+      "limits": "No silent pooling of FPR across tiers — CP intervals overlap heavily; worse-but-not-provably",
+      "source_raw": "`analysis/holdout_controls_results.json`",
+      "source_paths": ["analysis/holdout_controls_results.json"],
+      "status": "published"
+    },
+    {
+      "id": 11,
+      "task_tag": "[T1]",
+      "measurement": "Calibration",
+      "published_value": "ECE wave-2 0.179 (wave-1 0.209)",
+      "limits": "**Scores are ordinal (0–100 ranks), not probabilities** — no calibration improvement (null-ish); recalibration at N≈30–60 is noise-dominated (`specs/calibration_scope.md`)",
+      "source_raw": "`analysis/calibration_wave2.json`",
+      "source_paths": ["analysis/calibration_wave2.json"],
+      "status": "published"
+    },
+    {
+      "id": 12,
+      "task_tag": "[T1]",
+      "measurement": "Mechanical baseline comparison",
+      "published_value": "Beneish M p 0.498/AUC 0.510 · Dechow F p 0.268/AUC 0.573 · LLM rank correlation w1 −0.075/−0.144 · w2 0.333/0.293 (rev2 tie-aware)",
+      "limits": "Same 30 companies, same PIT window only. The v1 w2 correlation values 0.337/0.265 came from an implementation that did not average ties — both values are far from the R2 threshold of 0.7, with no effect on the verdict (E-002)",
+      "source_raw": "`analysis/baseline_table.csv` · `ERRATA.md` E-002",
+      "source_paths": ["analysis/baseline_table.csv", "ERRATA.md"],
+      "status": "published"
+    },
+    {
+      "id": 13,
+      "task_tag": "[Exploratory L4]",
+      "measurement": "E2 trajectory single threshold",
+      "published_value": "T≥50: detection 12/12 CP [73.5%, 100%] · **false positives 5/7 = 71.4%** CP [29.0%, 96.3%]",
+      "limits": "**No dominant strategy for a standalone LLM threshold at the trajectory layer** — sensitive thresholds travel with false positives, and a false-positive-controlling threshold (T=70) kills detection first (1/12). The EXPLORATORY combined rule (B3≥2 AND llm_p≥T) has 0/7 false positives but is a post-hoc rule — registered only as a Cycle-2 sealed candidate",
+      "source_raw": "`analysis/DECISION_TABLE.md` §4 (signed D94)",
+      "source_paths": ["analysis/DECISION_TABLE.md"],
+      "status": "published"
+    }
+  ]
+}

@@ -160,3 +160,15 @@ DECISIONS_PENDING.md; owner reconciliation command recorded there).
 - Backlog depth: 2 executable (FB-08, FB-09). DECISIONS_PENDING count: 44.
   Next: FB-08 (CLAIMS.json machine-readable claims ledger).
 - Resume: write TASK_FB08 per BACKLOG; STOP file = ~/tools/harness/STOP.
+
+## Entry 8 — Cycle 7: FB-08 CLAIMS.json ledger (2026-08-05) — DONE
+- Pre-review: APPROVE (first non-REVISE) — judged NOT governance bloat:
+  verbatim artifact EXT_FB_B §11 named, external-reader entry point,
+  sync-objection weak because RESULTS.md changes only via ERRATA/INV-03
+  discipline. Kill locked: no generator script; status field do-not-grow.
+- Build: APPROVE at cycle 1. Evaluation: shape exact (5 keys, 13 claims),
+  verbatim lock verified by live corruption test (1 char → FAIL →
+  restore → PASS); full suite 324/1; verify-public PASS (324→325).
+- Disclosure: D-P41.
+- Backlog depth: 1 executable (FB-09). DECISIONS_PENDING count: 45.
+- Resume: write TASK_FB09 per BACKLOG; STOP file = ~/tools/harness/STOP.

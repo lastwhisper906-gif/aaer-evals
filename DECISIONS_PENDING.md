@@ -687,3 +687,16 @@
   APPROVE. 스위트 323 passed/1 skipped, verify-public PASS, 문서 카운트
   319→324.
 - **Revert:** 해당 커밋 revert.
+
+## D-P41 — FB-08 집행 기록: CLAIMS.json 기계 가독 주장 원장 (INV-03 공개, 2026-08-05)
+- **What:** EXT_FB_B 항목 11 집행 — 루트 `CLAIMS.json`(RESULTS.md 13행
+  표의 verbatim 기계 렌더링: id·task_tag·측정·게시 수치·한계·출처 원문·
+  출처 경로·status) + `tools/test_claims_ledger.py`(RESULTS.md 자체를
+  파싱해 문자 단위 동기 잠금 — 1문자 오염 실측 FAIL 확인 후 복원).
+  RESULTS.md가 정본, CLAIMS.json은 파생 — 생성기 스크립트는 사전 리뷰
+  kill 지침대로 미제작(13행 표에 3번째 유지 대상 기계는 bloat).
+  README 연결 여부는 소유자 결정 대기(Q-F18 후보 — 큐 등재는 다음
+  소유자 세션에서, OWNER_QUEUE 연속 append 충돌 방지).
+- **하네스:** TASK_FB08 cycle 1 APPROVE. 스위트 324 passed/1 skipped,
+  verify-public PASS, 문서 카운트 324→325.
+- **Revert:** 해당 커밋 revert.

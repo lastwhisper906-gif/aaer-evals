@@ -131,7 +131,7 @@ priority rule carry an INV-03 disclosure entry in DECISIONS_PENDING.md.
 ## Tier 3 — executable design/stats (after Tiers 1–2)
 
 ### FB-08 CLAIMS.json machine-readable claims ledger
-- source: B11 (subset) · category: DELIVERY · size: M · status: TODO
+- source: B11 (subset) · category: DELIVERY · size: M · status: DONE (2026-08-05, D-P41)
 - claim strengthened: every published claim (gives external readers one
   entry point: number → source artifact → limitation → status).
 - fix shape: CLAIMS.json + generator/consistency check wired into existing
