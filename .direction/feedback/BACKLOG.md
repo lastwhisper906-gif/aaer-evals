@@ -178,3 +178,12 @@ priority rule carry an INV-03 disclosure entry in DECISIONS_PENDING.md.
   Doc/log mismatch stands (→ FB-02).
 - (No other factual errors found; A's numeric quotes match RESULTS.md
   rows 5/11 and README.)
+
+## Follow-up candidates (logged by reviews, not yet items)
+
+- FB-01-FU1 (from cycle-2 pre-review self-critique): `date_shift.py:71`
+  still sets non-underscore `out["variant"] = "perturbed_v2_dateshift"`
+  while FB-01 renamed the payload key to `_variant` — a shifted payload
+  carries both. No leak (3-key send allowlist strips both) and
+  date_shift.py is protected; candidate one-line rename for an
+  owner-supervised session. Logged so it isn't rediscovered.
