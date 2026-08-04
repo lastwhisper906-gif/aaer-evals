@@ -229,3 +229,18 @@ DECISIONS_PENDING.md; owner reconciliation command recorded there).
 - TCC still denies ~/Documents — reconciliation remains an owner command:
   `git -C ~/Documents/aaer-evals pull ~/repos/aaer-evals-work main`
   (or push from the mirror per owner dispatch).
+
+## Entry 11 — D-P44 sub-choices executed + PUSHED (2026-08-05)
+- Owner selected (recorded D-P44): Q1 rename→risk_score v2 · Q4
+  Codex/GPT subscription vehicle (Gemini out) · Q6 both (universe
+  expansion + intermediate labels) · push dispatched.
+- Pushed: 37ac75b..7ed12aa (21 commits) then 15bca1c (packets). CI GREEN
+  on both runs (30961024777, 30961103574 — canonical 3.12 pass; 3.13
+  notice is the standing non-canonical record).
+- Packets drafted and committed: PKT-Q1 (schema v2 rename),
+  PKT-Q4 (INV-12 amendment text + codex run protocol — RUNS remain a
+  separate owner-launched step), PKT-Q6 (forward redesign, Nov clock).
+  Each contains exact commands; next build cycles convert packet→TASK.
+- Local main == origin/main. ~/Documents copy still TCC-blocked — owner:
+  `git -C ~/Documents/aaer-evals pull` (now just a fast-forward from
+  origin) when access recovers.
