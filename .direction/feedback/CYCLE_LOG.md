@@ -172,3 +172,16 @@ DECISIONS_PENDING.md; owner reconciliation command recorded there).
 - Disclosure: D-P41.
 - Backlog depth: 1 executable (FB-09). DECISIONS_PENDING count: 45.
 - Resume: write TASK_FB09 per BACKLOG; STOP file = ~/tools/harness/STOP.
+
+## Entry 9 — Cycle 8: FB-09 stats annex (2026-08-05) — DONE
+- Pre-review: APPROVE + 2 amendments (source-cited provenance instead of
+  "absent" for wave-2 seed; 17v45 feasibility row; estimator-form
+  citation) — all verified in the built artifact.
+- Build: inverted mode, APPROVE at cycle 1. Evaluation: annex
+  artifact-faithful (9 MC p-values, B and estimator source-cited incl.
+  the E-001-preserved legacy analyzer path), suite 329/1, verify-public
+  PASS (325→330).
+- Disclosure: D-P42.
+- BACKLOG EXECUTABLE QUEUE NOW EMPTY: FB-01..04, 06..09 DONE (8 built),
+  FB-05 REBUTTED. Next: REPLENISH review per loop step 7.
+- Resume: replenish review; STOP file = ~/tools/harness/STOP.

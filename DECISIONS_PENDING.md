@@ -700,3 +700,18 @@
 - **하네스:** TASK_FB08 cycle 1 APPROVE. 스위트 324 passed/1 skipped,
   verify-public PASS, 문서 카운트 324→325.
 - **Revert:** 해당 커밋 revert.
+
+## D-P42 — FB-09 집행 기록: MC 오차·시드·정확 순열 가능성 부록 (INV-03 공개, 2026-08-05)
+- **What:** EXT_FB_B 항목 10(실행 가능 부분집합) 집행 —
+  `tools/stats_annex.py` + `docs/STATS_ANNEX.md` + 테스트 5종. 게시된
+  MC 순열 p 9건 전수: B=100,000을 소스에서 인용(analysis/stats.py:16 ·
+  legacy/wave2_analyze_v1.py:29 — 역산 금지 규칙 준수), 추정량
+  (ge+1)/(n+1) 인용, MC-SE·95% MC 구간 병기(최대 SE 0.0016 — MC 오차가
+  결론에 무의미함을 정량화). 정확 순열 가능성: 6v16·8v22·9v23 enumerable,
+  pooled 17v45 C(62,17)≈7.4e14 불가 — MC가 필요였음을 명시. 시드 출처:
+  results_stats 아티팩트 기록 20260707, wave2는 아티팩트 부재 —
+  legacy/wave2_analyze_v1.py:12 소스 인용(부재를 미상으로 오기하지 않음,
+  사전 리뷰 A1). 재계산·수정 0, analysis/ 무접촉.
+- **하네스:** TASK_FB09 inverted mode cycle 1 APPROVE. 스위트 329
+  passed/1 skipped, verify-public PASS, 문서 카운트 325→330.
+- **Revert:** 해당 커밋 revert.

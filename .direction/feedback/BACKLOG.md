@@ -140,7 +140,7 @@ priority rule carry an INV-03 disclosure entry in DECISIONS_PENDING.md.
 
 ### FB-09 Monte-Carlo SE / seed disclosure annotations for published stats
 - source: B10 (subset executable without touching frozen outputs) ·
-  category: STATS · size: M · status: TODO
+  category: STATS · size: M · status: DONE (2026-08-05, D-P42)
 - fix shape: new annex doc + code that recomputes MC-SE from committed
   artifacts; no edits to frozen analysis outputs; exact-permutation note
   where N makes it feasible.
