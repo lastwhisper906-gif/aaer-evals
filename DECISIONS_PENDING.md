@@ -615,3 +615,20 @@
   build_payload.py:156 개명 미반영)를 빌드 전 교정 — 사전 리뷰 계약의
   실측 효용 사례.
 - **Revert:** 해당 커밋 revert.
+
+## D-P37 — FB-03 집행 기록: legacy 무-fingerprint 출력 자동 신뢰 제거 (INV-03 공개, 2026-08-05)
+- **What:** EXT_FB_B 항목 7 실측 확인 후 수리. runner.run_case 기본값:
+  스키마 유효·fingerprint 부재 기존 출력 = "FAIL (stale_legacy_output…)"
+  — 모델 호출 0, 파일 쓰기 0, 원본 무변경(종전: 무조건 skip 신뢰).
+  명시 수용은 `--accept-legacy-output` 플래그(감사 가능). fingerprint
+  일치 멱등 skip은 무변경. 사전 리뷰가 초안(자동 재실행 기본값)을
+  기각하고 사전 등록된 fix shape(보고-거부, DP-Q7 소유자 게이트 유지)로
+  교정 — 무단 쿼터 소진 방지. 스위트 312 passed/1 skipped,
+  verify-public PASS(RC=0), 문서 카운트 312→313.
+- **스코프 일탈 공개:** 과업 명시 2파일 외 pipeline/test_cli_client.py
+  4줄 강제 수정 — 기존 테스트가 구(舊) legacy-skip 동작을 단정하고
+  있어 스펙 자체가 모순(오케스트레이터 스펙 결함). 하네스 리뷰어가
+  일탈을 명시 공개 후 승인; 단정은 강화 방향(FAIL 거부 + 호출 0 유지).
+- **하네스 실행 기록:** TASK_FB03_20260805_030750 cycle 2 APPROVE
+  (cycle 1은 기계 체크 자동 REVISE — 위 기존 테스트 충돌).
+- **Revert:** 해당 커밋 revert.

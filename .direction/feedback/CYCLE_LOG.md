@@ -83,3 +83,24 @@ DECISIONS_PENDING.md; owner reconciliation command recorded there).
   Next: FB-03 (legacy fingerprint fail-closed default).
 - Resume: write TASK_FB03 per BACKLOG; harness command pattern unchanged;
   STOP file = ~/tools/harness/STOP.
+
+## Entry 4 — Cycle 3: FB-03 legacy fingerprint fail-closed (2026-08-05) — DONE
+- Pre-review: REVISE→amended. Rejected my drafted auto-re-run default in
+  favor of the pre-registered report-STALE-refuse shape (DP-Q7 owner gate,
+  no surprise quota burn); fixed gated line range (:113-116 only; parse
+  at :109-112 must stay for idempotent skip).
+- Build: TASK_FB03_20260805_030750 APPROVE at cycle 2. Cycle-1 auto-REVISE
+  exposed a spec defect: pre-existing test_cli_client test asserted the
+  old legacy-skip; builder made the minimal forced 4-line adaptation;
+  reviewer verified it as assertion-strengthening, disclosed the scope
+  deviation explicitly (STEELMAN section), and confirmed other run_case
+  callers (e2/e4 runners) stay compatible via keyword-only default.
+- Reviewer kill/defer honored: no flag plumbing into e2/e4 experiment
+  runners; analysis-side fingerprint gating stays deferred.
+- Independent evaluation: runner.py diff matches contract (FAIL before
+  build_payload, no write; ACCEPTED path; docstring updated); full suite
+  312 passed / 1 skipped; verify-public 5 gates PASS (RC=0); docs 312→313.
+- Disclosure: D-P37 (includes the scope-deviation record).
+- Backlog depth: 6 executable (FB-04..09). DECISIONS_PENDING count: 41.
+  Next: FB-04 (FormatChecker on evaluatee-path validators).
+- Resume: write TASK_FB04 per BACKLOG; STOP file = ~/tools/harness/STOP.

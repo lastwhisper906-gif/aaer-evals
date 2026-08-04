@@ -10,7 +10,7 @@
     다른 케이스·채점 자료 일절 미포함 — cli_client가 격리 임시 디렉토리에서
     `claude -p` (도구 차단, CLAUDE_CONFIG_DIR 격리)로 강제.
   - 이 모듈은 scoring/ 를 import하지 않는다 (정적 스캔).
-  - 멱등: legacy 유효 출력 또는 현재 실행 fingerprint와 일치하는 출력만 skip.
+  - 멱등: legacy 유효 출력은 기본 stale FAIL(명시 수용 시 skip), 현재 실행 fingerprint 일치 시 skip.
   - 실행 순서 = 케이스 파일의 셔플된 중립 ID 순서 고정, 동시성 3.
   - 2연속 실패 = 해당 케이스 FAIL 기록 후 계속. 레이트 리밋 = 재개 명령 출력 후 중단.
   - 모델 핀: 피평가자 = claude-sonnet-5 (D6) — 폴백 없음. 서빙 모델 핀 불일치 = FAIL.
@@ -100,7 +100,8 @@ CL6 Did liability, allowance, or reserve balances decline (or fail to grow) desp
 CL7 Does the filing chronology show irregularities (late filings/NT forms, amendments, unusual 8-K frequency)?
 CL8 Is the provided data sufficient in coverage and length for the above assessments?"""
 
-def run_case(case: dict, perturb: bool, out_dir: Path, log_dir: Path) -> dict:
+def run_case(case: dict, perturb: bool, out_dir: Path, log_dir: Path, *,
+             accept_legacy_output: bool = False) -> dict:
     """케이스 1건 실행 — 반환: 상태 요약 dict (FAIL 포함, 예외는 레이트 리밋만)."""
     cid = case["case_id"]
     out_path = out_dir / f"{cid}.json"
@@ -112,8 +113,13 @@ def run_case(case: dict, perturb: bool, out_dir: Path, log_dir: Path) -> dict:
             pass
         if (cli_client.output_is_valid(out_path, FULL_OUTPUT_SCHEMA)
                 and isinstance(existing, dict) and "fingerprint" not in existing):
+            if not accept_legacy_output:
+                return {"case_id": cid,
+                        "status": "FAIL (stale_legacy_output — fingerprint 없음; "
+                                  "--accept-legacy-output으로 명시 수용하거나 소유자 게이트 재실행)"}
             return {"case_id": cid,
-                    "status": "skip (legacy output — fingerprint 없음, 재실행 안 함)"}
+                    "status": "skip (legacy output ACCEPTED via "
+                              "--accept-legacy-output — fingerprint 없음)"}
 
     payload = bp.build_payload(case, perturb=perturb)
     k = payload.pop("_k_internal")
@@ -190,6 +196,7 @@ def main() -> int:
     ap.add_argument("--out", required=True, help="출력 디렉토리 (예: runs/main, pilot/runs)")
     ap.add_argument("--only", nargs="*", help="특정 case_id만")
     ap.add_argument("--concurrency", type=int, default=3)
+    ap.add_argument("--accept-legacy-output", action="store_true")
     args = ap.parse_args()
 
     cli_client.assert_no_metered_credentials()
@@ -206,7 +213,8 @@ def main() -> int:
         shlex.quote(a) for a in sys.argv[1:])
     failures = 0
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.concurrency) as pool:
-        futs = {pool.submit(run_case, c, args.perturbed, out_dir, log_dir): c
+        futs = {pool.submit(run_case, c, args.perturbed, out_dir, log_dir,
+                            accept_legacy_output=args.accept_legacy_output): c
                 for c in cases}  # 제출 순서 = 케이스 파일의 셔플된 중립 ID 순서 (고정)
         try:
             for fut in concurrent.futures.as_completed(futs):

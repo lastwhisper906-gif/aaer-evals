@@ -218,8 +218,8 @@ def test_output_is_valid_gates_idempotent_skip(tmp_path):
     assert cli_client.output_is_valid(p, SCHEMA)              # 유효 → skip
 
 
-def test_runner_skips_existing_valid_output(stub, tmp_path):
-    """러너 멱등성: 유효한 기존 출력이 있으면 모델 호출이 일어나지 않는다."""
+def test_runner_refuses_existing_legacy_output(stub, tmp_path):
+    """러너 멱등성: fingerprint 없는 기존 출력은 호출 없이 거부한다."""
     case = {"case_id": "case_99", "ticker": "ZZZZ", "cik": "0000000000",
             "company_name": "Nowhere Corp", "cutoff_date": "2020-01-01"}
     out_dir = tmp_path / "runs"
@@ -240,8 +240,8 @@ def test_runner_skips_existing_valid_output(stub, tmp_path):
     }
     (out_dir / "case_99.json").write_text(json.dumps(valid), encoding="utf-8")
     res = runner_mod.run_case(case, False, out_dir, tmp_path / "logs")
-    assert res["status"].startswith("skip")
-    assert stub.calls() == [], "멱등 skip인데 호출 발생"
+    assert res["status"].startswith("FAIL (stale_legacy_output")
+    assert stub.calls() == [], "legacy 출력 거부인데 호출 발생"
 
 
 # ⑨ 하네스 핀 강제 (C3, D109) — 핀 일치 통과 / 불일치·명령 실패는 호출 전 중단 / 실측 버전 로그

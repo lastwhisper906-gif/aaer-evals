@@ -41,13 +41,14 @@ def _call_result():
                            served_models=[runner.EVALUATEE_MODEL])
 
 
-def _run(monkeypatch, tmp_path, call_model=None):
+def _run(monkeypatch, tmp_path, call_model=None, *, accept_legacy_output=False):
     _setup(monkeypatch)
     monkeypatch.setattr(runner.cli_client, "call_model", call_model or (lambda *a, **k: _call_result()))
     out_dir = tmp_path / "runs"
     log_dir = tmp_path / "logs"
     log_dir.mkdir(exist_ok=True)
-    result = runner.run_case(CASE, False, out_dir, log_dir)
+    result = runner.run_case(
+        CASE, False, out_dir, log_dir, accept_legacy_output=accept_legacy_output)
     return result, out_dir
 
 
@@ -77,15 +78,31 @@ def test_changed_prompt_writes_versioned_sibling_without_touching_original(monke
         json.loads(original.read_text())["fingerprint"]["system_prompt_sha256"]
 
 
-def test_legacy_valid_output_skips(monkeypatch, tmp_path):
+def test_legacy_valid_output_fails_by_default(monkeypatch, tmp_path):
+    _, out_dir = _run(monkeypatch, tmp_path)
+    path = out_dir / "case_99.json"
+    legacy = json.loads(path.read_text())
+    legacy.pop("fingerprint")
+    path.write_text(json.dumps(legacy), encoding="utf-8")
+    legacy_bytes = path.read_bytes()
+
+    result, _ = _run(monkeypatch, tmp_path, _never_called)
+    assert result["status"].startswith("FAIL (stale_legacy_output")
+    assert "--accept-legacy-output" in result["status"]
+    assert path.read_bytes() == legacy_bytes
+    assert not list(out_dir.glob("case_99.fp-*.json"))
+
+
+def test_legacy_valid_output_skips_when_accepted(monkeypatch, tmp_path):
     _, out_dir = _run(monkeypatch, tmp_path)
     path = out_dir / "case_99.json"
     legacy = json.loads(path.read_text())
     legacy.pop("fingerprint")
     path.write_text(json.dumps(legacy), encoding="utf-8")
 
-    result, _ = _run(monkeypatch, tmp_path, _never_called)
-    assert "legacy" in result["status"]
+    result, _ = _run(
+        monkeypatch, tmp_path, _never_called, accept_legacy_output=True)
+    assert "ACCEPTED" in result["status"]
 
 
 def test_new_output_embeds_computed_fingerprint(monkeypatch, tmp_path):

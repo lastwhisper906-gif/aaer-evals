@@ -48,7 +48,7 @@ priority rule carry an INV-03 disclosure entry in DECISIONS_PENDING.md.
 - deps: none. INV-03 disclosure entry required (plumbing + doc alignment).
 
 ### FB-03 Legacy fingerprint auto-trust → fail-closed default
-- source: B7 · category: CODE-FIX · size: S · status: TODO
+- source: B7 · category: CODE-FIX · size: S · status: DONE (2026-08-05, D-P37)
 - VERIFIED: `pipeline/runner.py:113-115` — schema-valid output without
   fingerprint → "skip (legacy output — fingerprint 없음, 재실행 안 함)".
   Prompt/schema/code drift silently preserves stale outputs.
