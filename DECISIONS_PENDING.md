@@ -732,3 +732,20 @@
 - **Basis:** INV-18 (서명 기록 요건 충족 — 본 항목이 그 기록) ·
   docs/ORCHESTRATOR_NOTES.md 세션 운영 규율.
 - **Revert:** 본 항목 아래 부인(disavowal) 항목 추가로만 (append-only).
+
+## D-P44 — 소유자 서명 기록: DP-Q1/Q4/Q6 하위 선택 + push 디스패치 (2026-08-05)
+- **서명 방식:** 세션 제시 선택지(각 2-3안 + 권고)에 대한 소유자 명시
+  선택 (AskUserQuestion, 2026-08-05).
+- **DP-Q1 확정:** (a) v2 계약에서 `misstatement_probability` →
+  `misstatement_risk_score` 개명, ECE/Brier 주지표 강등. 동결 wave-1/2
+  무접촉 — 전향 적용만. 패킷: PKT-Q1.
+- **DP-Q4 확정:** (a) 교차모델 수단 = Codex CLI(ChatGPT 구독 인증) —
+  zero-metered(INV-20 준수), GPT 한정(Gemini 제외 유지). INV-12 개정
+  문안 포함 패킷: PKT-Q4. 실행(런)은 패킷 내 프로토콜로 별도 발사.
+- **DP-Q6 확정:** (c) both — 규칙 정의 수백 사 유니버스 확장 + 중간
+  라벨(Item 4.02 non-reliance·재작성) 사전 등록, AAER은 확인 라벨로.
+  패킷: PKT-Q6 (Nov 2026 창 시계).
+- **Push 디스패치:** 소유자 지시로 본 세션이 미러 클론에서 origin/main
+  push 실행 (owner-dispatch 규약의 명시 디스패치 — 2026-07-20 사건
+  예방 조건인 fetch-first·ahead-only 확인 후).
+- **Revert:** append-only 부인 항목으로만.
