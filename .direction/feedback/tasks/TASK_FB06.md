@@ -23,9 +23,14 @@ from `analysis/decision_table.json`, in the visual style of the existing
 - analysis/fig_tradeoff.py — create: deterministic matplotlib script
   (Agg backend, fixed dpi like fig_dotplot.py), no randomness, no network,
   reads ONLY analysis/decision_table.json. It must:
-  - select the pooled headline layer by inspecting the JSON (the layer
-    whose cells have n_treatment == 12); if none matches, exit nonzero
-    with a clear message (fail-closed, no guessing);
+  - select the headline layer by iterating the `layers` OBJECT ONLY,
+    matching on the LAYER-LEVEL `n_treatment` field == 12 (unique among
+    layers: 8/9/3/12 → L4_e2_trajectory). NEVER read the top-level
+    `exploratory_combo` key — it is a post-hoc rule explicitly barred
+    from retroactive performance claims ("사후(post-hoc) 규칙 — 소급 성능
+    주장 금지") whose cells ALSO carry n_treatment 12; plotting it as the
+    headline would misrepresent the methodology. Fail closed (exit
+    nonzero, clear message) unless EXACTLY ONE layer matches;
   - plot, versus threshold (40/50/60/70), the detection rate
     (detected/n_treatment) and false-positive rate
     (false_positives/n_control), each with its committed CP95 interval
@@ -49,7 +54,13 @@ from `analysis/decision_table.json`, in the visual style of the existing
   nonempty PNG is produced; (b) asserts the committed
   analysis/fig_tradeoff.png exists and is nonempty; (c) asserts the
   script's layer selection fails closed (nonzero) when given a JSON
-  (tmp fixture) with no n_treatment==12 layer. Do NOT assert byte
+  (tmp fixture) with no layers-object n_treatment==12 match, AND that a
+  fixture whose only 12-match is a top-level exploratory_combo is
+  REJECTED (proves the post-hoc key is never selected); (d) asserts the
+  script's label/annotation strings (inspect module constants or the
+  matplotlib text objects) contain none of {"fraud", "분식", "조작",
+  "manipulat"} and no probability framing ("probability", "확률") —
+  in-suite vocabulary enforcement, since no lint scans .py/.png. Do NOT assert byte
   equality of PNGs (cross-platform font rendering varies — that drift
   gate is BN-12's own project, out of scope).
 - docs/OWNER_QUEUE.md — APPEND ONLY a new OPEN entry (follow the existing
@@ -80,10 +91,12 @@ check: ./.venv/bin/python -m pytest analysis -q
    fails closed when absent, uses committed CI values without
    recomputation.
 2. Labels: ordinal-score convention, no probability framing, no
-   fraud-vocabulary (must survive `tools/lint_publication.py`).
+   fraud-vocabulary — ENFORCED by test (d) in-suite (lint_publication
+   scans only markdown DOCS, never .py/.png; the rendered PNG's text is
+   beyond every lint's reach, so discipline is built in at authoring).
 3. `analysis/fig_tradeoff.png` committed and reproducible by
    `.venv/bin/python analysis/fig_tradeoff.py`.
-4. Tests (a)-(c) exist and pass; check command passes.
+4. Tests (a)-(d) exist and pass; check command passes.
 5. OWNER_QUEUE.md gains exactly one new OPEN entry, append-only, correct
    next Q-F number; no existing line modified.
 6. Diff touches ONLY the four files in scope (three new + one append).
@@ -99,5 +112,9 @@ check: ./.venv/bin/python -m pytest analysis -q
 
 - INV-03 disclosure D-entry authored by the ORCHESTRATOR at merge.
 - Style anchor: analysis/fig_dotplot.py (colors, dpi, annotation tone).
-- lint_publication runs inside verify-public and scans figures' source
-  scripts among DOCS surfaces — keep labels clean.
+- lint_publication does NOT scan .py or .png — test (d) is the only
+  vocabulary gate for this artifact; keep labels clean at authoring.
+- Orchestrator merge protocol (not builder scope): `make docs-refresh`
+  runs at merge BEFORE the merge commit (new test raises the committed
+  "N tests collected" blocks), then verify-public re-runs.
+- OWNER_QUEUE entry: next free number is Q-F17; format template = Q-F16.
