@@ -1,0 +1,180 @@
+# BACKLOG.md — merged external-feedback backlog (2026-08-05)
+
+Sources: EXT_FB_A_2026-08-05.md (A1–A8), EXT_FB_B_2026-08-05.md (B1–B11).
+Every code-level claim was verified against the working tree at 37ac75b
+before inclusion (verification evidence inline). Ordering follows the
+owner's priority rule: (1) correctness bugs undermining published claims →
+(2) cheap high-leverage → (3) executable design/stats → (4) OWNER-GATED /
+INVARIANT-CONFLICT items to DECISIONS_PENDING only.
+
+Loop protection rule in force: frozen/sealed/published artifacts (INV-06
+set), measurement-condition definitions (schema semantics, thresholds,
+metric names, evaluatee prompts), and owner-signature surfaces are never
+edited by the build loop. Pipeline plumbing fixes named by the owner's
+priority rule carry an INV-03 disclosure entry in DECISIONS_PENDING.md.
+
+## Tier 1 — CODE-FIX, direct claim impact
+
+### FB-01 Perturbation blindness: strip experiment markers from model payload
+- source: B1 (A6 adjacent) · category: CODE-FIX · size: S · status: TODO
+- VERIFIED: `pipeline/build_payload.py:187` puts `"variant":
+  "perturbed"|"original"` and `:188` `"perturb_factor_recorded_scoring_side_only":
+  None` into the payload; `pipeline/runner.py:123` (and `runner_api.py:41`)
+  strip only `_`-prefixed keys → both fields reach the model. The perturbed
+  arm self-announces the experiment.
+- claim strengthened: memorization-control (perturbation) claim — name-ID
+  21.9%, B3 attribution 0.147.
+- fix shape: model-visible payload contains only case/series/chronology
+  fields; variant + factor live in run-side metadata (underscore-prefixed or
+  separate record); regression test asserting no experiment-marker key names
+  or values in the rendered user_payload, both arms (INV-04: same fields in
+  both arms).
+- deps: none. NOTE: changes future fingerprints only; frozen `runs/`
+  untouched (disclose-don't-revise). No evaluatee re-run in this loop.
+
+### FB-02 Cutoff: payload-level fail-closed invariant + truthful log names + METHOD wording
+- source: B2 · category: CODE-FIX · size: S · status: TODO
+- VERIFIED: bulk loaders filter rather than raise (`cutoff_guard.py:207`,
+  `:236`); summary log key `"facts_after_cutoff": len(rows)` at `:212`
+  actually records RETAINED (≤ cutoff) rows — name inverted. `load_document`
+  (`:250`) does raise. METHOD.md §2 claims blanket "fail-closed".
+- claim strengthened: point-in-time (look-ahead-free) claim — the repo's
+  core methodological claim.
+- fix shape: (i) final invariant — completed payload assembly re-scans all
+  dated rows, raises CutoffGuardError on any > cutoff; (ii) rename log keys
+  facts_total / facts_retained_pre_cutoff / facts_dropped_post_cutoff;
+  (iii) METHOD.md wording: raw-file post-cutoff content allowed, assembly
+  filters, completed-payload violation fail-closed. Tests for (i) and (ii).
+- deps: none. INV-03 disclosure entry required (plumbing + doc alignment).
+
+### FB-03 Legacy fingerprint auto-trust → fail-closed default
+- source: B7 · category: CODE-FIX · size: S · status: TODO
+- VERIFIED: `pipeline/runner.py:113-115` — schema-valid output without
+  fingerprint → "skip (legacy output — fingerprint 없음, 재실행 안 함)".
+  Prompt/schema/code drift silently preserves stale outputs.
+- claim strengthened: reproducibility/provenance claim (published numbers
+  trace to fingerprinted outputs).
+- fix shape: default = treat as STALE and refuse to silently skip (report,
+  do NOT auto-call the model — evaluatee runs stay owner-land);
+  `--accept-legacy-output` opt-in retains old behavior; provenance note in
+  run report. Tests via existing fixture pattern
+  (`test_fingerprint_idempotency.py`).
+- deps: none.
+
+### FB-04 FormatChecker on evaluatee-path validators
+- source: B6 (validator half) · category: CODE-FIX · size: S · status: TODO
+- VERIFIED: `runner.py:169`, `cli_client.py:215,329` use `Draft7Validator`
+  without `format_checker`; `tools/test_build_evaluatee_inputs.py:68` and
+  `tools/validate_schemas.py:16` already use `FormatChecker` — evaluatee
+  path is the lax one. (Schema `format` annotations to be confirmed at task
+  time; add where dates/times are declared.)
+- claim strengthened: schema-enforcement claim (INV-02 "출력은 schemas/
+  스키마 준수").
+- fix shape: add FormatChecker to the three call sites + failing-fixture
+  test. NO semantic tightening of the schema itself (that half is
+  owner-gated, see DP-Q1).
+- deps: none.
+
+## Tier 2 — cheap, high-leverage, executable
+
+### FB-05 verify-* naming: additive targets + honest scope wording
+- source: B8 · category: DELIVERY · size: S · status: TODO
+- VERIFIED: Makefile `verify-public` = 6 commands (5 gates + doc-count
+  lint). Feedback: name overpromises ("public verify" reads as full
+  reproduction).
+- claim strengthened: reproduce-from-public claim (honest scoping).
+- fix shape: ADDITIVE only — `verify-claims` alias for the current
+  recompute set; README/REPRODUCING one-paragraph scope statement
+  (recompute-committed-artifacts, not model re-run). verify-public keeps
+  all 6 commands verbatim (INV-05). No target removed or weakened.
+- deps: none. Makefile is INV-05 surface: diff must be provably additive.
+
+### FB-06 README figure: treatment-vs-control score distribution
+- source: A8 (= BN-19 already registered) · category: DELIVERY · size: S ·
+  status: TODO
+- claim strengthened: headline no-dominant-strategy / separation claim —
+  currently prose+table only (BN-19).
+- fix shape: deterministic matplotlib script reading committed
+  analysis outputs → PNG + alt text + source link in README; INV-13/14
+  wording (no fraud vocabulary, ordinal-not-probability axis labels —
+  BN-12's demoted-framing lesson applies); drift-gate note.
+- deps: FB-05 none; reads only committed artifacts.
+
+### FB-07 Statistical power analysis doc (pre-registration groundwork for N expansion)
+- source: A1 · category: STATS · size: S · status: TODO
+- claim strengthened: roadmap credibility of the N-expansion claim; makes
+  the INV-12 scope-change decision (DP-Q3) evidence-based instead of vibes.
+- fix shape: deterministic power analysis (seeded, exact where feasible):
+  N required to distinguish AUC 0.83 from 0.5 (and from 0.65) at stated
+  power; docs/POWER_ANALYSIS.md + small tools/ script + test. Does NOT
+  register any new case (stays inside INV-12).
+- deps: none.
+
+## Tier 3 — executable design/stats (after Tiers 1–2)
+
+### FB-08 CLAIMS.json machine-readable claims ledger
+- source: B11 (subset) · category: DELIVERY · size: M · status: TODO
+- claim strengthened: every published claim (gives external readers one
+  entry point: number → source artifact → limitation → status).
+- fix shape: CLAIMS.json + generator/consistency check wired into existing
+  lint (additive); no README restructure in this item.
+- deps: FB-05 (wording), FB-06 (figure ref) soft.
+
+### FB-09 Monte-Carlo SE / seed disclosure annotations for published stats
+- source: B10 (subset executable without touching frozen outputs) ·
+  category: STATS · size: M · status: TODO
+- fix shape: new annex doc + code that recomputes MC-SE from committed
+  artifacts; no edits to frozen analysis outputs; exact-permutation note
+  where N makes it feasible.
+- deps: FB-07.
+
+## DECISIONS_PENDING queue (never built by this loop)
+
+- DP-Q1 — schema v2 semantic tightening + probability→risk_score rename
+  (B5, B6 schema half; A metric framing). Measurement-condition change to
+  the evaluatee contract mid-project; comparability with frozen waves 1–2.
+  → ready-to-execute draft schema + migration note; owner signs.
+- DP-Q2 — CI hardening: SHA-pinned actions, permissions: contents: read,
+  scheduled compat workflow, Ruff/type/coverage/pip-audit (B9). Touches
+  `.github/` (INV-24 surface; also INV-11 tension: Ruff/Pyright are new
+  dev-deps). → ready-to-execute workflow diff; owner signs.
+- DP-Q3 — retrospective N expansion to 50–100 + matched controls (A1).
+  Direct INV-12 conflict (>8 experimental cases prohibited). → scope-change
+  proposal with power-analysis evidence (FB-07 output); owner signs.
+- DP-Q4 — cross-model GPT/Gemini pass over frozen payloads (A3). Direct
+  INV-12 conflict ("타 LLM 벤치마크 확장 금지"; specs/cross_grader.md is
+  SPECIFICATION ONLY) + INV-20 metered-key question for other vendors.
+  → spec-only expansion draft; owner signs.
+- DP-Q5 — modern ML baseline (RUSBoost/GBM per Bao et al. 2020) (A4).
+  Beyond the INV-12 carve-out (deterministic formula baselines allowed;
+  trained models are not covered). → spec draft with seeded-determinism
+  plan; owner signs.
+- DP-Q6 — forward-cycle universe/base-rate redesign: hundreds-of-firms
+  universe or pre-registered intermediate labels (4.02, restatement)
+  (A2, B4). Touches sealed forward-cycle protocol (INV-22, Nov 2026
+  window). → design memo with base-rate math; owner signs.
+- DP-Q7 — k≥5 redraw for waves 1–2 (A5) and any evaluatee re-run after
+  FB-01/FB-02 land. Requires model runs — sealed-runner + owner launch
+  only (harness is dev tooling; INV-19/21/22).
+- DP-Q8 — external human blind re-scoring, κ reporting (B3); GA-001(b)
+  human audit completion; DOI/Zenodo (A7); SSRN/arXiv packaging (A8).
+  Owner-only actions (recruiting, signing, publishing).
+- DP-Q9 — perturbation frame v2 (accession removal + chronology re-timing
+  + signal-preservation check) (A6). New measurement condition + re-run.
+  → spec draft; owner signs.
+- DP-Q10 — README restructure / English canonicalization beyond FB-05/06
+  (A8, B11): already partly queued as Q-F11/Q-F13/Q-F14 (OWNER_QUEUE);
+  do not duplicate — link there.
+
+## REBUTTED / corrected feedback claims
+
+- B9 "3.11/3.13 failures are allowed" — allowed BUT visibly recorded via
+  job-level notice (`ci.yml:15-27`), which B did not mention; the silent-
+  green concern is already mitigated (INV-24). SHA-pinning and permissions
+  hardening remain valid (→ DP-Q2).
+- B2's implication that the guard never raises — `load_document`
+  (`cutoff_guard.py:250-271`) does raise on violation/unregistered/
+  unresolved; the filter behavior is specific to the two bulk loaders.
+  Doc/log mismatch stands (→ FB-02).
+- (No other factual errors found; A's numeric quotes match RESULTS.md
+  rows 5/11 and README.)

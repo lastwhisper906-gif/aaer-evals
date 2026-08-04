@@ -544,3 +544,29 @@
   and committed by the HARNESS, not exec-claude. Source: .direction/20260730-004720/replenish-4.md
 - **Basis:** .direction/20260730-004720/replenish-4.md · H25 (owner-signed 2026-07-29)
 - **Revert:** revert the replenish(harness) commit listed in .direction/20260730-004720/replenish_shas.
+
+## D-P34 — 오케스트레이터 연속 개선 루프 기동: 외부 피드백 인테이크 + 소유자 결정 큐 (2026-08-05)
+- **What:** 소유자 지시문(2026-08-05 오케스트레이터 프롬프트)에 따라
+  외부 피드백 2건을 `.direction/feedback/EXT_FB_{A,B}_2026-08-05.md`로
+  원문 보존하고, 코드 대조 검증을 거친 통합 백로그
+  `.direction/feedback/BACKLOG.md`를 작성. 하네스(~/tools/harness)에
+  OWNER_MODEL.md + REVIEW_SPEC.md 리뷰어 계약을 부트스트랩(~/tools 커밋
+  457b77a). 빌드 루프는 Tier-1 CODE-FIX(FB-01..04)부터 실행하며, 각각
+  INV-03 공개(disclosure) 기록을 본 원장에 append한다.
+- **소유자 서명 대기 큐 (BACKLOG.md DP-Q1..Q10 — 루프는 절대 실행하지
+  않음):** 스키마 v2 의미 강화·확률→서열 개명(DP-Q1) · CI 강화(DP-Q2) ·
+  N 확장 스코프 개정(DP-Q3, INV-12 충돌) · 타 LLM 교차검증(DP-Q4,
+  INV-12 충돌) · ML 베이스라인(DP-Q5, INV-12 경계) · forward 유니버스
+  재설계(DP-Q6, INV-22) · 재추출 k≥5(DP-Q7, INV-19/21/22) · 외부 인간
+  채점/DOI/GA-001(b)(DP-Q8) · 교란 v2(DP-Q9) · README 재구조화(DP-Q10,
+  기존 Q-F11/13/14와 연결).
+- **환경 공개 (INV-16/17 관련):** 세션 중 macOS TCC가 ~/Documents 접근을
+  차단(기지 재발 현상). 표준 우회(미러 클론)를 무푸시 규약에 맞춰 적응:
+  작업 사본은 `~/repos/aaer-evals-work`(origin/main 37ac75b에서 풀클론,
+  로컬 main과 동일 상태 확인 후 생성). 모든 커밋은 이 사본에 로컬로만
+  누적. ~/Documents 원본과 origin은 무변경. 동시 작성자 없음(단일 루프).
+- **소유자 정합 명령:** TCC 복구 후
+  `git -C ~/Documents/aaer-evals pull ~/repos/aaer-evals-work main`
+  (또는 검토 후 사본에서 owner-dispatch push).
+- **Revert:** 사본 폐기(`rm -rf ~/repos/aaer-evals-work`) +
+  ~/tools 457b77a revert.
