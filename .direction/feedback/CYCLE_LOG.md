@@ -143,3 +143,20 @@ DECISIONS_PENDING.md; owner reconciliation command recorded there).
 - Backlog depth: 3 executable (FB-07, FB-08, FB-09). DECISIONS_PENDING
   count: 43. Next: FB-07 (power analysis doc).
 - Resume: write TASK_FB07 per BACKLOG; STOP file = ~/tools/harness/STOP.
+
+## Entry 7 — Cycle 6: FB-07 power analysis (2026-08-05) — DONE
+- Pre-review: REVISE→amended (E2 layer relabeled exploratory/D94; RP-09
+  prior-art cross-reference; merge-protocol docs-refresh note). One
+  amendment replace missed the doc-structure phrase — compensated at
+  evaluation: orchestrator added the one-sentence hypothetical-design-power
+  caveat post-build (disclosed in D-P40).
+- Build: inverted mode (Claude builds, Codex reviews) — first inverted run
+  of this loop; APPROVE at cycle 1.
+- Evaluation: table sanity-checked (N 22-30 suffices vs 0.5; N 64-94
+  needed vs 0.65; current designs 0.285-0.320 power vs 0.65 — quantifies
+  A1's core complaint); doc has honest limits, no advocacy, INV-14
+  phrasing; suite 323 passed / 1 skipped; verify-public PASS (319→324).
+- Disclosure: D-P40. DP-Q3 now has its evidence input.
+- Backlog depth: 2 executable (FB-08, FB-09). DECISIONS_PENDING count: 44.
+  Next: FB-08 (CLAIMS.json machine-readable claims ledger).
+- Resume: write TASK_FB08 per BACKLOG; STOP file = ~/tools/harness/STOP.

@@ -119,7 +119,7 @@ priority rule carry an INV-03 disclosure entry in DECISIONS_PENDING.md.
 - deps: none. INV-13 (no fraud vocab on labels), ordinal axis convention.
 
 ### FB-07 Statistical power analysis doc (pre-registration groundwork for N expansion)
-- source: A1 · category: STATS · size: S · status: TODO
+- source: A1 · category: STATS · size: S · status: DONE (2026-08-05, D-P40)
 - claim strengthened: roadmap credibility of the N-expansion claim; makes
   the INV-12 scope-change decision (DP-Q3) evidence-based instead of vibes.
 - fix shape: deterministic power analysis (seeded, exact where feasible):

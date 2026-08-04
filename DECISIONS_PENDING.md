@@ -671,3 +671,19 @@
   314→318 (신규 테스트 4). BN-19 상태 플립은 이 루프가 하지 않음
   (guarded 채널 — 소유자/direction-loop).
 - **Revert:** 해당 커밋 revert + Q-F17 항목은 append-only 존치.
+
+## D-P40 — FB-07 집행 기록: N-확장 결정용 검정력 분석 (INV-03 공개, 2026-08-05)
+- **What:** EXT_FB_A 항목 1 요구 실행 — `tools/power_analysis.py`
+  (stdlib 전용·폐형식·무RNG; Hanley-McNeil 1982 근사 + Acklam 역정규
+  근사, 오차 한계 주석) + `docs/POWER_ANALYSIS.md` + 테스트 5종.
+  핵심 수치: AUC 0.83 vs 0.50 구별에 총 N 22-30(80% 검정력)로 현행
+  설계 충분(wave-1 0.832·wave-2 0.874); 0.83 vs 0.65 구별에는 총 N
+  64-94 필요 — 현행 검정력 0.285-0.320으로 심대 부족(A1의 "0.65인지
+  0.95인지 모른다" 정량 확인). E2 trajectory 행은 게시 AUC 없음·가상
+  설계 검정력 명기(사전 리뷰 요구; 마지막 절 문구는 오케스트레이터가
+  병합 시 1문장 보강 — 공개 기록). RP-09 선행 분석과 스코프 구별 인용.
+  권고 없음 — DP-Q3(INV-12 스코프 개정, 소유자 게이트)의 증거 입력.
+- **하네스:** TASK_FB07 inverted mode(Claude 빌드·Codex 리뷰) cycle 1
+  APPROVE. 스위트 323 passed/1 skipped, verify-public PASS, 문서 카운트
+  319→324.
+- **Revert:** 해당 커밋 revert.
