@@ -185,3 +185,33 @@ DECISIONS_PENDING.md; owner reconciliation command recorded there).
 - BACKLOG EXECUTABLE QUEUE NOW EMPTY: FB-01..04, 06..09 DONE (8 built),
   FB-05 REBUTTED. Next: REPLENISH review per loop step 7.
 - Resume: replenish review; STOP file = ~/tools/harness/STOP.
+
+## FINAL ENTRY — WAITING ON OWNER (2026-08-05, clean stop by design)
+- Replenish review verdict: NO_NEW_ITEMS (independent claude -p review,
+  scratchpad replenish/out.md; all 8 built items re-verified in-tree at
+  line level; the one plausible residual — v1 rescaling signal-preservation
+  annex — killed with evidence: test_build_payload.py:69-79 already proves
+  ratio invariance; FB-01-FU1 stays a note).
+- Terminal state: executable backlog EMPTY (8 built + 1 rebutted of 9);
+  ALL remaining feedback-derived work is owner-gated: DP-Q1..Q10 in
+  DECISIONS_PENDING.md (D-P34) + Q-F17 (figure placement). Loop stop
+  condition per owner prompt: "NO_NEW_ITEMS and DECISIONS_PENDING is the
+  only thing left → stall by design → WAITING ON OWNER, stop cleanly."
+- TIME-CRITICAL for owner ranking: DP-Q6 (forward universe/base-rate
+  redesign) has the Nov 2026 seal-window clock (replenish review §f).
+- Final certification (this session, live): git fetch origin — origin/main
+  unchanged at 37ac75b, local main ahead 18, not behind (INV-17 clean);
+  make verify-public ALL 5 GATES PASS (RC=0); suite 329 passed/1 skipped
+  (330 collected).
+- Ledger: 18 local commits (37ac75b..ac29b6d + this one); disclosures
+  D-P34..D-P42 (9 entries); limitation L-9; owner queue Q-F17.
+- OWNER RECONCILIATION (choose one):
+  (a) TCC restored: `git -C ~/Documents/aaer-evals pull ~/repos/aaer-evals-work main`
+      then review and push per owner-dispatch convention;
+  (b) or review in ~/repos/aaer-evals-work directly and push from there.
+- RESUME (if owner adds items or ranks DP-Q queue): re-read this file +
+  BACKLOG.md; loop pattern: write TASK per BACKLOG →
+  `~/tools/harness/run_task.sh --task .direction/feedback/tasks/TASK_X.md
+  --workdir ~/repos/aaer-evals-work` → evaluate → disclose → commit.
+  STOP file: ~/tools/harness/STOP. Harness reviewer contract:
+  ~/tools/harness/{OWNER_MODEL,REVIEW_SPEC}.md (tools commit 457b77a).
