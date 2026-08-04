@@ -570,3 +570,26 @@
   (또는 검토 후 사본에서 owner-dispatch push).
 - **Revert:** 사본 폐기(`rm -rf ~/repos/aaer-evals-work`) +
   ~/tools 457b77a revert.
+
+## D-P35 — FB-01 집행 기록: 교란 실험 마커의 페이로드 차단 (INV-03 공개, 2026-08-05)
+- **What:** EXT_FB_B 항목 1 실측 확인 후 수리. 모델 가시 페이로드를
+  3-키 allowlist(case·financial_series_point_in_time·filing_chronology)로
+  고정 — 송출 3개소(runner.py·runner_api.py·probe_runner.py) 전부.
+  `variant`→`_variant`(런 측 전용), `perturb_factor_recorded_scoring_side_only`
+  삭제. 문자열 수준 회귀 테스트 `pipeline/test_payload_blindness.py`
+  (3경로×2군 + v2-dateshift 형상). 스위트 306 passed/1 skipped,
+  `make verify-public` 5게이트 PASS(RC=0), 문서 카운트 297→307 갱신.
+- **INV-03 요건:** (a) 1차 결과 git 이력 보존 — 동결 runs/ 무접촉,
+  수리는 전향(future-run) 경로만. (b) 공개 절 — docs/methodology_limitations.md
+  L-9 (동결 수치가 마커 가시 조건에서 측정되었음과 편향 방향 미상 명기).
+  (c) 재실행 없음 — 재측정은 DP-Q7(소유자 게이트) 대기.
+- **주의(.protected-paths):** pipeline/build_payload.py·runner*는
+  direction-loop 보호 목록에 있으나, 본 루프는 소유자 지시문(2026-08-05
+  우선순위 규칙 1이 본 수리를 명시 지명)에 따라 집행 — D-P34 운영 규칙
+  참조. 소유자 추인 대상.
+- **하네스 실행 기록:** TASK_FB01_20260805_023947(STALLED — 빌더
+  샌드박스 내 git fetch 불가로 사이클2 무변경; 원인·완화는 CYCLE_LOG
+  entry 2) → 체크포인트 d8ae885 → TASK_FB01_20260805_024411 cycle 1
+  APPROVE(REVIEW_SPEC 6절 준수, 근거 인용 리뷰).
+- **Revert:** 해당 커밋 revert + L-9 항목은 append-only 규약상 존치
+  (revert 사실을 후속 항목으로 추가).

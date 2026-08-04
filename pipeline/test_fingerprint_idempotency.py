@@ -10,10 +10,12 @@ CASE = {"case_id": "case_99", "company_name": "Example", "ticker": "EX",
         "cik": "1", "cutoff_date": "2020-01-01"}
 PAYLOAD = {
     "_k_internal": 1.0,
+    "_variant": "original",
     "case": {"company_name": "Example", "ticker": "EX"},
     "financial_series_point_in_time": {
         "Revenue": [{"accession": "a", "form": "10-K", "filed": "2020-01-01"}]
     },
+    "filing_chronology": [],
 }
 MODEL_OUTPUT = {
     "checklist": [{
@@ -90,8 +92,7 @@ def test_new_output_embeds_computed_fingerprint(monkeypatch, tmp_path):
     result, out_dir = _run(monkeypatch, tmp_path)
     assert result["status"].startswith("OK")
     record = json.loads((out_dir / "case_99.json").read_text())
-    payload = copy.deepcopy(PAYLOAD)
-    payload.pop("_k_internal")
+    payload = {key: PAYLOAD[key] for key in runner.MODEL_VISIBLE_KEYS}
     user_payload = json.dumps(payload, ensure_ascii=False)
     task = runner.TASK.format(company_name="Example", ticker="EX", cik_part=", CIK 1",
                               cutoff_date="2020-01-01")

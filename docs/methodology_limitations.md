@@ -255,3 +255,29 @@ retroactive recomputation or reclassification under the v3 criteria is done
   as their 24-month window has not elapsed — (a)–(f) re-search is scheduled
   when the window is reached (GRDX (d) and GO (f) each also carry their own
   INCOMPLETE open items).
+
+## L-9. Frozen wave-1/2 and probe results were measured with experiment markers visible to the model — recorded 2026-08-05 (FB-01, EXT_FB_B item 1)
+
+- **What**: until commit `d8ae885`+, every evaluatee payload carried
+  `"variant": "perturbed"|"original"` and the perturbed arm additionally a
+  field named `"perturb_factor_recorded_scoring_side_only"`; the
+  recognition-probe path serialized the payload with no filtering at all.
+  The model could therefore see which arm it was in. All frozen numbers —
+  wave-1/2 scores, the name-ID rate 21.9% (human-read 25%), attribution
+  0.147 — were measured under this condition.
+- **Direction of bias — unknown, both signs plausible**: a model told
+  "perturbed" may answer more conservatively (deflating perturbed-arm
+  scores → inflating the original-vs-perturbed gap attributed to memory
+  removal) or may decline to name companies it would otherwise guess
+  (deflating the measured name-ID rate → 21.9% could be an underestimate).
+  Neither direction is measurable retroactively.
+- **Repair**: assembly-layer allowlist (`case`,
+  `financial_series_point_in_time`, `filing_chronology`) at all three send
+  sites + string-level regression test
+  (`pipeline/test_payload_blindness.py`), effective for all FUTURE runs.
+  Frozen artifacts are untouched (INV-03/INV-06 disclose-don't-revise);
+  any re-measurement under blinded payloads is a separate owner-gated
+  decision (DECISIONS_PENDING.md DP-Q7).
+- **Invariant boundary**: published-number edits 0; frozen `runs/`
+  contacts 0; the deliverables are the code path, the test, this
+  disclosure, and D-P35.

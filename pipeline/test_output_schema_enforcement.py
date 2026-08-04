@@ -85,10 +85,12 @@ def test_run_case_revalidates_before_write(monkeypatch, tmp_path):
     invalid["misstatement_probability"] = 130
     payload = {
         "_k_internal": 1.0,
+        "_variant": "original",
         "case": {"company_name": "Example", "ticker": "EX"},
         "financial_series_point_in_time": {
             "Revenue": [{"accession": "a", "form": "10-K", "filed": "2020-01-01"}]
         },
+        "filing_chronology": [],
     }
     monkeypatch.setattr(runner.bp, "build_payload", lambda case, perturb: copy.deepcopy(payload))
     monkeypatch.setattr(runner.cli_client, "call_model", lambda *args, **kwargs: SimpleNamespace(

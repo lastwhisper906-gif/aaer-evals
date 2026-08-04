@@ -63,7 +63,11 @@ def test_all_cases_respect_cutoff_and_have_no_leakage_markers():
             datetime.date.fromisoformat(value["filed"]) <= cutoff
             for values in payload["financial_series_point_in_time"].values()
             for value in values)
-        text = json.dumps(payload, ensure_ascii=False).lower()
+        model_visible = {
+            key: payload[key]
+            for key in ("case", "financial_series_point_in_time", "filing_chronology")
+        }
+        text = json.dumps(model_visible, ensure_ascii=False).lower()
         assert not [marker for marker in FORBIDDEN_PAYLOAD_SUBSTRINGS
                     if marker.lower() in text]
 

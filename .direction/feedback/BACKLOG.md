@@ -16,7 +16,7 @@ priority rule carry an INV-03 disclosure entry in DECISIONS_PENDING.md.
 ## Tier 1 — CODE-FIX, direct claim impact
 
 ### FB-01 Perturbation blindness: strip experiment markers from model payload
-- source: B1 (A6 adjacent) · category: CODE-FIX · size: S · status: TODO
+- source: B1 (A6 adjacent) · category: CODE-FIX · size: S · status: DONE (2026-08-05, D-P35, L-9)
 - VERIFIED: `pipeline/build_payload.py:187` puts `"variant":
   "perturbed"|"original"` and `:188` `"perturb_factor_recorded_scoring_side_only":
   None` into the payload; `pipeline/runner.py:123` (and `runner_api.py:41`)
