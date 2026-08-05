@@ -337,3 +337,10 @@ DECISIONS_PENDING.md; owner reconciliation command recorded there).
 - Q-F16 (A) wired; guarded full-gate RC=0 measured; denial probes verified.
   Three allowlist mole-whacks generalized to /System/Library (SIP-sealed).
   Q-F16 + BN-16 flipped. Phase 1 remaining: P1-08 only.
+
+## Entry 23 — Cycle 21: P1-08 recruiting packet — PHASE 1 COMPLETE (2026-08-05)
+- Reader gate PASS-with-edits (both personas would advance it); all edits
+  applied incl. the analyst's key catch: lead with what survives masking
+  (row 2, p=0.0021) instead of burying it — the honesty ordering the
+  README itself now follows. Phase 1: 8/8 items closed, 7 bottlenecks
+  resolved today. Entering Phase 2 (specs only, zero model calls).
