@@ -845,3 +845,24 @@
   Phase 1 완결 후 재평가 대상으로 PARK. 기존 불변식·5게이트·동결
   규율·보호 경로 무변경.
 - **Revert:** append-only 부인 항목으로만.
+
+## D-P51 — P1-01 집행 기록: README 독자 표면 재작성 (D-P50 Phase 1 항목 1, 2026-08-05)
+- **완료 요약:** 첫 화면 재구성 — 질문 1문장 → 답 2문장(분리 실재 +
+  평판 기억: Hertz 78→55(−23)·Monsanto 28→58(+30), 평문) → 점 플롯 1장
+  → 검증 명령 3줄. 첫 화면 전문 식별자 0 (D/Q/RP/BN/CP95/R3/E2/GA 부재;
+  lint 요구 계층 표지는 평어 "wave 1"로 충족). 기존 내용 전부 접힘 아래
+  보존(Scope & attribution — INV-14 문구 전량 유지 · 종전 headline 절
+  원문 · Quickstart+GENERATED 블록 무변경 · "Want to check our work?"로
+  기존 탐색 절 이동). README.ko.md 무접촉(F-01/F-02). lint_publication
+  RC=0 · verify-public 5게이트 RC=0.
+- **독자 테스트 게이트 (D-P50):** 모의 독자 2인 — 비기술 리크루터·
+  회계사(AI 비전공) — 첫 화면만 제시, (a)(b)(c) 자기 언어 재진술
+  **2/2 PASS** (기록: .direction/feedback/readertests/P1-01_reader{1,2}.md).
+  통과 후 이들의 정직 혼동 5건을 자구 반영(AAER 풀네임·매칭 기준
+  "industry, size, era"(CONTROL_CRITERIA 실측)·재호출 아님 명시·훈련
+  힌트 포인터·통계 위치 포인터) — 추가 절만, 재게이트 불요 판단.
+- **소유자 인지 필요 (수치 정정):** 구두 지시의 "Hertz −30 / Monsanto
+  +16"은 커밋 아티팩트(analysis/baseline_table.csv)와 불일치 — 실측
+  Hertz −23(78→55)·Monsanto +30(28→58). 표면에는 실측치 사용.
+- **차기 계획:** P1-02 (Issues #1-3 이미지 절대 URL 패킷).
+- **Revert:** 해당 커밋 revert (README.ko.md 무영향).

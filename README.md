@@ -1,12 +1,57 @@
-# AAER Evals — Backtesting a Conflict-Free Accounting-Quality Signal
+# AAER Evals — can an AI flag risky accounting from the filings alone?
 
 [![ci](https://github.com/lastwhisper906-gif/aaer-evals/actions/workflows/ci.yml/badge.svg)](https://github.com/lastwhisper906-gif/aaer-evals/actions/workflows/ci.yml)
+
+**The question.** If you show an AI model only the financial disclosures a
+company had published up to a chosen date — no news, no hindsight — can it
+tell which companies later became SEC accounting-enforcement cases? (Those
+cases are called AAERs: the SEC's formal accounting-misconduct releases,
+which is where this project's name comes from.)
+
+**The answer so far.** The enforcement cases did score visibly higher than
+clean-record companies matched on industry, size, and era, consistently
+enough that chance is an unlikely explanation (the statistical tests live
+one scroll down) — but part of that score is the model *remembering
+companies by reputation*, not reading their numbers. When we disguised the
+companies' identities, Hertz's risk score dropped 23 points (78 → 55) while
+Monsanto's rose 30 (28 → 58): name-memory cuts both ways, so every published
+number in this repository carries that caveat next to it. The deeper
+hindsight risk — what the model absorbed in its own training — is exactly
+what the name-masking experiments below are designed to measure.
+
+![Dot plot of every per-firm score for all 30 wave-1 firms — 8 enforcement treatment cases vs 22 matched controls — showing the treatment/control separation with overlap](analysis/fig_dotplot_30firms.png)
+
+*Every score from test wave 1, nothing summarized: enforcement cases in red,
+matched controls in blue. The separation is visible — and so is the overlap,
+which is why no single alert threshold works (companion chart:
+[threshold tradeoff](analysis/fig_tradeoff.png)).*
+
+**Check it yourself** — five minutes, no accounts, no data downloads. This
+recomputes every published number from the outputs committed here (it does
+not re-call the AI — that distinction, and a fuller reproduction ladder, is
+documented below):
+
+```bash
+git clone https://github.com/lastwhisper906-gif/aaer-evals && cd aaer-evals
+python3.12 -m venv .venv && .venv/bin/pip install --require-hashes -r requirements.lock
+make verify-public
+```
+
+---
+
+## Scope & attribution
 
 > Authored by Claude Code, pending human audit (GA-001 (b), D15).
 > Who did what: [CONTRIBUTIONS.md](CONTRIBUTIONS.md) (AI-vs-human table, D106 ⑤).
 > All results are scoped to a single Claude-based pipeline (evaluatee pinned to
 > claude-sonnet-5; PROJECT.md §5-5). Grading: Claude-assisted, human-finalized.
 > 한국어 원문(전체 서사): [README.ko.md](README.ko.md).
+
+No positions · educational/informational · not investment advice. Scores are
+ordinal ranks (0–100), not calibrated probabilities. "Control" means no
+enforcement action was found, not that the company is clean.
+
+## What this is
 
 ## What this is
 
@@ -88,6 +133,9 @@ Corpus-dependent full reproduction: `make verify-full` (`REPRODUCING.md`).
   - `$(MAKE) verify-public`
 <!-- END-GENERATED: repro-facts -->
 
+
+## Want to check our work?
+
 ## Where to go next
 
 - **[METHOD.md](METHOD.md)** — the pipeline on one page: payload assembly,
@@ -137,3 +185,4 @@ Dual-licensed by content type (Q-O10, owner-signed 2026-07-22):
   originals in this repository.
 
 © 2026 lastwhisper906-gif. Cite via `CITATION.cff` (DOI pending Q-R03).
+

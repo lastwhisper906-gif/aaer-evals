@@ -269,3 +269,16 @@ DECISIONS_PENDING.md; owner reconciliation command recorded there).
   queued for the dep-requiring half.
 - Backlog: NB-03..07 (5). Next: NB-03 (INV-12 amendment + cross-model
   GPT runner) — the big one.
+
+## Entry 14 — Cycle 12 (D-P50 Phase 1): P1-01 README reader surface (2026-08-05) — DONE
+- Rewrite per direction: question→answer→figure→verify command, zero
+  specialist identifiers first screen, all content preserved below fold,
+  INV-14 clauses relocated intact, .ko untouched (F-01/F-02).
+- Number verification: owner-quoted Hertz −30/Monsanto +16 did NOT match
+  baseline_table.csv — used artifact values (−23/+30), flagged in D-P51.
+- Reader gate: 2/2 PASS (recruiter + analyst personas, first-screen-only,
+  restatement test); records committed under
+  .direction/feedback/readertests/. Their 5 honest confusions folded in
+  as additive clauses post-pass.
+- Gates: lint_publication RC=0, verify-public RC=0 (repeatedly).
+- Direct-edit (docs work); no harness cycle. Next: P1-02.
