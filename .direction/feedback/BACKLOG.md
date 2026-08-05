@@ -257,8 +257,8 @@ priority rule carry an INV-03 disclosure entry in DECISIONS_PENDING.md.
 ### P1-04 BN-11/14/18 batch — IN PROGRESS
 - P1-04a DECISION_TABLE: DONE (D-P54, BN-11+Q-F11 resolved)
 - P1-04b(1) methodology_limitations adoption: DONE (D-P55, Q-F14 resolved)
-- P1-04b2 error_analysis_wave2_holdout EN (Q-F15): TODO
-- P1-04c ERRATA EN (BN-18; append-only design question): TODO
+- P1-04b2 error_analysis_wave2_holdout EN: DONE (D-P56, BN-14+Q-F15 resolved)
+- P1-04c ERRATA EN: DONE (D-P57, BN-18 resolved) — BATCH COMPLETE
 ### P1-05 BN-13: wave-2/holdout/E2 recompute wired into verify-public — TODO
 ### P1-06 BN-16: no-network/no-corpus guard enforcing verify-public RC=0 (sandbox_guard wiring, Q-F16) — TODO
 ### P1-07 BN-07 remainder — PRE-EXISTING (REPRODUCING.md:59-66); BN-07 RESOLVED by measurement (2026-08-05, D-P53)

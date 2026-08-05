@@ -318,3 +318,11 @@ DECISIONS_PENDING.md; owner reconciliation command recorded there).
   Reader gate 2/2 with unprompted identification of the honesty
   architecture. Q-F15 + BN-14 flipped. Phase 1 remaining: P1-04c,
   P1-05, P1-06, P1-08.
+
+## Entry 20 — Cycle 18 (Phase 1): P1-04c ERRATA EN — BN-18 RESOLVED, batch complete (2026-08-05)
+- One transient CLI kill (health-probed, retried — 2nd of session, same
+  pattern). Build APPROVE cycle 1. Frozen-packet byte recipe verified
+  reproducing against ko (identical sha). Reader gate 2/2 ("trust more" /
+  "no conclusion changed"). BN-18 flipped; P1-04 batch fully DONE
+  (BN-07/11/12/14/18 resolved today across the direction's items).
+- Phase 1 remaining: P1-05 (BN-13), P1-06 (BN-16), P1-08 (packet).

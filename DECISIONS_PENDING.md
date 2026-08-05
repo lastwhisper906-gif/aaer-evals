@@ -931,3 +931,19 @@
 - **소유자 액션:** 없음. **차기:** P1-04c (ERRATA — append-only 설계
   중재를 사전 리뷰에 회부).
 - **Revert:** 해당 커밋 revert.
+
+## D-P57 — P1-04c 집행 기록: ERRATA 영어 정본 — BN-18 해소, P1-04 배치 완결 (INV-03 공개, 2026-08-05)
+- **완료 요약:** ERRATA.md 영어 정본화(전문 번역 — 초안 부재 실측),
+  ERRATA.ko.md 동결(선행 마커 1줄만 추가 — E-002 바이트 범위 보존 설계:
+  동결 OWNER_FINAL_PACKET의 awk+sha256 검증 레시피가 ko에서 동일 해시
+  a326427a… 재현 실측). 향후 정정은 영어 정본에만 append(양측 헤더
+  명문). lint 편입(en만) + 규칙 (D) standalone 문구 승인 일탈 + 로마자
+  2개소(*igo* 접속사 = E-002의 발견 그 자체). 독자 게이트 2/2 PASS.
+- **보호 경로 공개:** ERRATA.md(.protected-paths:45) ·
+  tools/lint_publication.py(:38) — D-P50 #4 서명 스코프, hunk 검증.
+- **후속 후보(비차단):** 독자 지적 — 로마자 주석이 낯섦, R4 의미 미정의
+  — ERRATA 자체는 원장이므로 손대지 않고 AUDIT_INDEX 용어행 보강 후보로만
+  기록.
+- **P1-04 배치 완결:** BN-11·BN-14·BN-18 전부 RESOLVED (D-P54..57).
+- **소유자 액션:** 없음. **차기:** P1-05 (BN-13 재계산 게이트 배선).
+- **Revert:** 해당 커밋 revert.

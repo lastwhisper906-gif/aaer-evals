@@ -19,6 +19,9 @@ TRANSLATION_PAIRS = (
     ("docs/methodology_limitations.md", "docs/methodology_limitations.ko.md",
      "> 동결 스냅샷: L-1–L-8 (F-01/F-02) — L-9 이후 신규 한계는 영어 정본에만 추가된다.",
      "\n## L-9"),
+    ("ERRATA.md", "ERRATA.ko.md",
+     "> 한국어 원본 (동결 스냅샷: E-001–E-002) — 영어 정본: ERRATA.md (F-01/F-02, D-P50); 이후 정정 항목은 영어 정본에만 추가된다.",
+     None),
 )
 HANGUL = re.compile(r"[\uac00-\ud7a3]")
 # Intervals and ratios are matched before their constituent numbers.

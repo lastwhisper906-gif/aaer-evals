@@ -30,8 +30,9 @@ DOCS = ["README.md", "README.ko.md", "analysis/ISSUE_0_DRAFT.md",
         "AUDIT_INDEX.ko.md", "REPRODUCING.ko.md",  # D118: 한국어 원본 회귀 감시
         "analysis/DECISION_TABLE.md", "analysis/DECISION_TABLE.ko.md",
         "docs/methodology_limitations.md",      # D-P50 #4 / Q-F14: 한계 원장 영어 정본
-        "analysis/error_analysis_wave2_holdout.md"]
+        "analysis/error_analysis_wave2_holdout.md", "ERRATA.md"]
         # ko 원본 미편입 (D-P55): 동결 문언은 현행 발행 린트 규칙 제정 이전이다.
+        # ERRATA ko 원본 미편입 (D-P55): 동결 스냅샷은 현행 발행 린트 규칙 제정 이전이다.
         # ko 원본 미편입 (D-P55): 동결 스냅샷이 W3/(E) 규칙 제정 이전 문언 —
         # 편입 시 영구 적색. 수치 충실도는 test_translation_equivalence가 잠금.
 

@@ -208,7 +208,14 @@ the document's honesty core). verify-public RC=0 both merges.
 **Resolution condition:** A collected pytest fails on any dangling D-/Q-/RP-/E-/FREEZE_REV cross-reference or nonexistent BOTTLENECKS Basis path (seeded-violation test proves it fires), and the full verify-public pytest gate passes green on the current tree
 **Basis:** tools/lint_publication.py
 
-### BN-18: The post-publication defect record (ERRATA E-001/E-002) is Korean-only — the honesty differentiator's sharpest surface is unreadable at the exact click where scrutiny lands
+### BN-18: ERRATA Korean-only — RESOLVED (2026-08-05, D-P57)
+**RESOLVED:** BN-18's prescribed F-01/F-02 shape executed under D-P50 #4 —
+ERRATA.md English-canonical (E-001/E-002 1:1, token-locked, lint-enrolled
+incl. the rule-(D) standalone clause), ERRATA.ko.md frozen byte-preserving
+the E-002 range so the frozen owner-packet byte-identity recipe reproduces
+there (sha verified identical); future errata append to the EN canonical
+(both headers state the rule). Reader gate 2/2 — recruiter: "trust more",
+analyst: "no conclusion changed; process defect, not a numbers change".
 **Blocked:** Non-Korean reader access to the errata that RESULTS rows 3/12 cite in their source columns and the README Publication section links directly — the only place the project proves it discloses its own plan-deviation defects
 **Blocks:** The quarter goal's academic-scrutiny path — the reader verifying "defects are found and disclosed, not hidden" hits a Korean wall one click below the English claims/limits chain that BN-11/BN-14 are closing
 **Resolution condition:** English-canonical ERRATA.md with the Korean original preserved as .ko.md per the F-01/F-02 protocol, numeric token-parity PASS, adoption queue entry filed, owner-adopted on main with verify-public RC=0
