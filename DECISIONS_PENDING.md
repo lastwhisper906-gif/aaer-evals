@@ -1195,3 +1195,21 @@
   발견·수정 커밋·E-003 패킷화 포함**), 독자 게이트 5회 전PASS, 뮤테이션
   실증 1회, 자기 결함 3건 정직 수리, 매 병합 verify-public RC=0.
 - **Revert:** 해당 없음 (기록).
+
+## D-P73 — 소유자 지시 기록: External Audit Feedback Integration (2026-08-05)
+- **서명:** 지시문 전문 (verbally approved). D-P50을 대체; 미결 항목은
+  Phase 6으로 승계. 하네스 자기 개선 3종(External Code Auditor 렌즈 ·
+  모델 문자열 로깅 · 소유자 큐 노화 표시) 채택.
+- **⚠ 소유자 액션 최상단 (매 요약 반복, 나이 표기):**
+  ① **PKT-E003 서명** (0일 — 게시 수치 정정; 서명·재생성·push 전까지
+  게시 수치 접촉 단계는 브랜치 빌드만) ② PKT-R2 (0일) ③ PKT-FWD (0일)
+  ④ PKT-P102/P108 (0일) ⑤ 계정 리네임·Zenodo DOI(Q-R03, 2026-07-11부터
+  **25일**)·BN-04 디스패치·인간 재채점자 모집·GPT 결정.
+- **Phase 0 완료:** audit/FEEDBACK_TRIAGE.md (본 스프린트 유일 신규 문서;
+  audit/ 보호 경로 — 지시 명명 스코프 공개). 판정: P0-1/P0-2 **HEAD에서
+  확증**(글롭 선택 12개소 · 채점 fingerprint 부재 — 로테이션 렌즈의
+  게이트-시스템 사각 실증), threat_model 주장 **반박**(파일 부재·SDK
+  언급 0), 기해소 7건 검증 인용, 나머지 부분/미결 상 매핑.
+- **차기:** Phase 1 (결과 선택 결정론) — 브랜치 audit-integration에서
+  하네스 빌드.
+- **Revert:** append-only 부인 항목으로만.

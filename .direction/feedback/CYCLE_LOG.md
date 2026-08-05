@@ -451,3 +451,12 @@ DECISIONS_PENDING.md; owner reconciliation command recorded there).
      PKT-R2 → PKT-FWD → PKT-P102 → PKT-P108 → PKT-Q1/Q4/Q6.
   5. Push remains owner-dispatch; ~/Documents copy needs `git pull`
      post-TCC recovery.
+
+## Entry 35 — New direction (D-P73): audit integration — Phase 0 triage DONE (2026-08-05)
+- Loop resumed post-halt under the superseding direction. Model-string
+  logging begins this entry: orchestrator session = claude-fable-5
+  (harness reviewer/builder strings recorded per run in meta.txt already —
+  will be surfaced per cycle from now).
+- Triage verified P0-1/P0-2 open on HEAD (the audit's core value),
+  refuted the threat_model claim, mapped 14 items to phases. E-003
+  precondition ACTIVE — building on branch for published-number phases.
