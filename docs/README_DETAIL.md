@@ -47,7 +47,7 @@ GitHub numbers 1/2/3). The posted issues are the publication surface; the
   layers (L1/L2 = TASK 1 · L3 = TASK 2 · L4 = exploratory E2); cells are
   per-layer and never summed across layers. **No dominant single-threshold LLM
   strategy on the trajectory layer — CP95 intervals on every cell**.
-  [`analysis/DECISION_TABLE.md`](analysis/DECISION_TABLE.md)
+  [`analysis/DECISION_TABLE.md`](../analysis/DECISION_TABLE.md)
 - **Citable freeze point**: release
   [v1.0.0](https://github.com/lastwhisper906-gif/aaer-evals/releases/tag/v1.0.0)
   (annotated tag; frozen numbers as published).
@@ -59,7 +59,7 @@ removed names/tickers/CIK and rescaled values but **retained original SEC
 accession numbers and real filing chronology** — it is **partially
 de-identified**, not fully identity-masked, so published recognition rates
 cannot be attributed solely to financial-pattern reconstruction. Details:
-[`docs/V1_PARTIAL_DEIDENTIFICATION_NOTE.md`](docs/V1_PARTIAL_DEIDENTIFICATION_NOTE.md).
+[`docs/V1_PARTIAL_DEIDENTIFICATION_NOTE.md`](V1_PARTIAL_DEIDENTIFICATION_NOTE.md).
 
 ## Headline — three layers, peeling along the memorization axis
 
@@ -185,7 +185,7 @@ per-layer significance above, not this AUC comparison
 Same 30 companies, same point-in-time data: Beneish M p=0.498/AUC 0.510 ·
 Dechow F p=0.268/AUC 0.573 — the quantitative screens show no separation on
 this sample. LLM rankings are essentially uncorrelated with both (wave-1
-ρ −0.075/−0.144; wave-2 0.337/0.265) and residual separation survives →
+ρ −0.075/−0.144; wave-2 0.333/0.293 (rev2 tie-aware — corrected per ERRATA E-002; the v1 values 0.337/0.265 came from a non-tie-averaging implementation)) and residual separation survives →
 pre-committed R2 does **not** fire. The LLM is not reproducing the mechanical
 formulas.
 

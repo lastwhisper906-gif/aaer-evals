@@ -53,14 +53,16 @@ enforcement action was found, not that the company is clean.
 
 ## What this is
 
-## What this is
-
 This repository backtests one question — **can an LLM screen for misstatement
 risk from point-in-time structured disclosure data alone?** — against SEC
 enforcement (AAER) confirmed cases with matched non-enforcement controls, plus
 a post-training-cutoff holdout where memorization is structurally impossible.
 It is an existence-proof record with its full audit trail, not a product:
 no positions · educational/informational · not investment advice.
+
+<details>
+<summary><b>The headline finding, with its limits</b> (full detail — same
+figure and commands as above, kept verbatim for citability)</summary>
 
 ## The headline finding, with its limits
 
@@ -135,9 +137,9 @@ Corpus-dependent full reproduction: `make verify-full` (`REPRODUCING.md`).
 <!-- END-GENERATED: repro-facts -->
 
 
-## Want to check our work?
+</details>
 
-## Where to go next
+## Want to check our work?
 
 - **[METHOD.md](METHOD.md)** — the pipeline on one page: payload assembly,
   fail-closed cutoff guard, isolated single call, schema-forced output,
@@ -146,6 +148,8 @@ Corpus-dependent full reproduction: `make verify-full` (`REPRODUCING.md`).
   qualitatively, a human signs).
 - **[RESULTS.md](RESULTS.md)** — one table of published numbers, each row
   carrying its own limit.
+- **[CLAIMS.json](CLAIMS.json)** — the same table machine-readable
+  (number → source artifact → limitation), drift-locked to RESULTS.md.
 - **[AUDIT_INDEX.md](AUDIT_INDEX.md)** — what D/Q/RP/FREEZE_REV identifiers
   mean, where each ledger lives, one real decision traced end-to-end.
 - **[Licensing](#licensing)** — license status (below).

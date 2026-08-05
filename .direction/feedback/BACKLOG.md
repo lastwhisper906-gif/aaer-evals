@@ -300,3 +300,10 @@ priority rule carry an INV-03 disclosure entry in DECISIONS_PENDING.md.
 - All published values verified clean (HM null variance, Beneish/Dechow
   coefficients, CP implementations, Fisher tail, permutation estimator —
   externally cross-checked).
+
+## R3 round (reader delivery, 2026-08-05 — full report: replenish_R3_2026-08-05.md)
+### R3-01 README editing damage from P1-01 (dup header, empty section, unfolded dupes) — DONE (D-P66; real <details> fold added — D-P51's fold description now true)
+### R3-02 README_DETAIL both evidence links 404 — DONE (D-P66; no link-linter machinery per reviewer kill)
+### R3-03 README_DETAIL pre-E-002 Spearman values — DONE (D-P66; rev2 + errata pointer)
+### R3-04 error_analysis snapshot markers (protected analysis/) — FOLDED into PKT-R2 (owner signature)
+### R3-05 CLAIMS.json zero inbound links — DONE (D-P66; one line in Where to go next)

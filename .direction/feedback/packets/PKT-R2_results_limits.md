@@ -17,6 +17,15 @@ carries for this frame)"
 measures in-sample departure only and is not an estimate of deployment
 calibration error"
 
+## Edit 3 (R3-04, folded per its disposition) — analysis/error_analysis_wave2_holdout.md:
+prepend ONE dated-snapshot blockquote ABOVE the H1 (position preserves the
+ko token-equivalence lock, same mechanism as the existing pointer):
+"> Snapshot of 2026-07-08 (OWNER-GATE-E session). Two assertions are
+SUPERSEDED by later signed work and preserved unchanged per
+disclose-don't-revise: human_finalized=false (superseded by GA-001(b)
+progress — see AUDIT_INDEX) and 'E1 not run' (superseded by the E1
+matched-controls run, RESULTS row 6)."
+
 ## Why signature: RESULTS.md is the owner-signed publication surface;
 additive-honesty edits still change signed text. Both amendments mirror
 limits the repo already states elsewhere (DECISION_TABLE.md:37-38;

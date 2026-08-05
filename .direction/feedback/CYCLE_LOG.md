@@ -380,3 +380,9 @@ DECISIONS_PENDING.md; owner reconciliation command recorded there).
   R2-03 landed (power-doc mismatch disclosure); R2-01/02 → PKT-R2 owner
   packet (published-surface limits sentences). One transient CLI kill
   (5th, recovered). Rotation next: R3.
+
+## Entry 29 — Cycle 27: R3 round — 4 repaired (incl. own P1-01 damage), 1 packeted (2026-08-05)
+- The rotation caught editing damage in this loop's own flagship rewrite
+  — recorded plainly, repaired, and the fold description made true.
+  Seam-defect class (cross-document) now demonstrated as the per-doc
+  gates' blind spot. Rotation next: R4.
