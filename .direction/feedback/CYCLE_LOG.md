@@ -360,3 +360,11 @@ DECISIONS_PENDING.md; owner reconciliation command recorded there).
   defining ground truth); fixed to pre-registered HORIZON_DAYS=730 before
   any signature (last legal moment under INV-03). Gates green.
 - Phase 2 remaining: P2-11 only.
+
+## Entry 26 — Cycle 24: P2-11 pre-existing (4th catch) — D-P50 DIRECTION COMPLETE (2026-08-05)
+- POSTCUTOFF_ACCUMULATION.md (D111) already answers the inventory-plan
+  ask; one interpolated N=15 row added per the table's own convention.
+- Direction totals: Phase 1 8/8 + Phase 2 3/3; 7 BNs resolved, 4 Q-Fs
+  closed, 2 specs authored, 2 owner packets, 5/5 reader gates, gates
+  green throughout. Loop continues: replenish rotation R1 next
+  (no-idle rule, D-P45 §2).
