@@ -4,7 +4,7 @@
 주어진 명령을 PYTHONPATH 주입 sitecustomize 하에 재실행한다. 주입된
 sitecustomize는 (모든 하위 Python 프로세스에서):
   - 소켓 연결(connect/connect_ex/create_connection)·비연결 송신(sendto/
-    sendmsg)·DNS(getaddrinfo)를 차단
+    sendmsg)·DNS(gethostbyname/gethostbyname_ex/getnameinfo/getaddrinfo)를 차단
   - 저장소 루트 + 허용목록(인터프리터 prefix/.venv, stdlib, 임시 디렉토리,
     임시 리다이렉트된 HOME/MPLCONFIGDIR, /dev, 읽기 전용 시스템 데이터
     (폰트·zoneinfo)) 밖의 파일 열기(builtins/io.open·os.open)를 차단
@@ -12,7 +12,8 @@ sitecustomize는 (모든 하위 Python 프로세스에서):
 except Exception에 삼켜지지 않음)으로 fail-closed한다.
 
 한계 (정직 고지): 가드는 Python 프로세스의 builtins/io.open·socket 계층
-후킹이다 — 비Python 하위 프로세스와 io.open_code(모듈 임포트)는 대상 밖이며,
+후킹이다 — 비Python 하위 프로세스, Python -E/-I 하위 프로세스와
+io.open_code(모듈 임포트)는 대상 밖이며,
 sitecustomize 임포트 실패 시 CPython site가 계속 진행하는 잔여 경로는
 tools/test_sandbox_guard.py의 자기 검증(차단 실측)이 회귀 감시한다.
 
@@ -121,6 +122,9 @@ socket.socket.connect_ex = _deny_connect
 socket.socket.sendto = _deny_sendto
 socket.socket.sendmsg = _deny_sendto
 socket.create_connection = lambda *a, **k: _deny("socket-connect", repr(a[:1]))
+socket.gethostbyname = lambda *a, **k: _deny("dns", repr(a[:1]))
+socket.gethostbyname_ex = lambda *a, **k: _deny("dns", repr(a[:1]))
+socket.getnameinfo = lambda *a, **k: _deny("dns", repr(a[:1]))
 socket.getaddrinfo = lambda *a, **k: _deny("dns", repr(a[:2]))
 '''
 

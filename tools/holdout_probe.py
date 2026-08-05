@@ -20,7 +20,8 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO))
-from pipeline.cli_client import call_model  # noqa: E402
+from pipeline.cli_client import (call_model, output_is_valid,  # noqa: E402
+                                 require_clean_tree)
 
 PIN_MODEL = "claude-sonnet-5"
 
@@ -53,8 +54,18 @@ SCHEMA = {
     },
 }
 
+TRANSCRIPT_SCHEMA = {
+    "type": "object",
+    "required": ["ticker", "company", "kind", "context", *SCHEMA["required"],
+                 "served_models", "pin_ok", "session_id", "cost_ref_usd"],
+}
+
 
 def probe(ticker: str, company: str, kind: str, context: str, out_dir: Path) -> dict:
+    out = out_dir / f"{ticker}.json"
+    if output_is_valid(out, TRANSCRIPT_SCHEMA):
+        print(f"{ticker}: skip (멱등) — 유효한 transcript 존재: {out.relative_to(REPO)}")
+        return json.loads(out.read_text(encoding="utf-8"))
     out_dir.mkdir(parents=True, exist_ok=True)
     res = call_model(
         model=PIN_MODEL,
@@ -79,7 +90,6 @@ def probe(ticker: str, company: str, kind: str, context: str, out_dir: Path) -> 
         "session_id": res.session_id,
         "cost_ref_usd": res.total_cost_usd,
     }
-    out = out_dir / f"{ticker}.json"
     out.write_text(json.dumps(record, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     print(f"{ticker}: knows_event={record['knows_event']} confidence={record['confidence']}"
           f" → {out.relative_to(REPO)}")
@@ -94,6 +104,7 @@ def main() -> int:
     ap.add_argument("--context", default="E1 control recognition gate (post-cutoff)")
     ap.add_argument("--out", default="runs/holdout/controls/recognition")
     a = ap.parse_args()
+    require_clean_tree()
     rec = probe(a.ticker, a.company, a.kind, a.context, REPO / a.out)
     return 0 if rec["knows_event"] is False else 3  # 3 = knows_event=True (탈락 신호)
 

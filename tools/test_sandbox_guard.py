@@ -29,8 +29,29 @@ def test_udp_sendto_blocked():
     assert "SANDBOX-VIOLATION" in r.stderr and "sendto" in r.stderr
 
 
+def test_dns_lookup_family_blocked():
+    for name in ("gethostbyname", "gethostbyname_ex", "getaddrinfo"):
+        r = run_guarded(f"import socket; socket.{name}('example.invalid')")
+        assert r.returncode != 0
+        assert "SANDBOX-VIOLATION" in r.stderr and "dns" in r.stderr
+    r = run_guarded("import socket; socket.getnameinfo(('192.0.2.1', 80), 0)")
+    assert r.returncode != 0
+    assert "SANDBOX-VIOLATION" in r.stderr and "dns" in r.stderr
+
+
 def test_out_of_repo_read_blocked():
     r = run_guarded("open('/etc/hosts').read()")
+    assert r.returncode != 0
+    assert "SANDBOX-VIOLATION" in r.stderr and "open" in r.stderr
+
+
+def test_grandchild_out_of_repo_read_blocked():
+    code = (
+        "import subprocess,sys; "
+        "r=subprocess.run([sys.executable,'-c',\"open('/etc/hosts').read()\"],"
+        "capture_output=True,text=True); print(r.stderr,file=sys.stderr); sys.exit(r.returncode)"
+    )
+    r = run_guarded(code)
     assert r.returncode != 0
     assert "SANDBOX-VIOLATION" in r.stderr and "open" in r.stderr
 

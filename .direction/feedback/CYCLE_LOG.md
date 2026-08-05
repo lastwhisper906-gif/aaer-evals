@@ -418,3 +418,9 @@ DECISIONS_PENDING.md; owner reconciliation command recorded there).
   per INV-03(c) with a divergence-lock test; artifact regeneration and
   the E-003 erratum are owner-signature items (PKT-E003) — disclose-
   don't-revise held exactly as designed. 8 more C1 items registered.
+
+## Entry 34 — Cycle 32: C1A bundle landed; forward trio packeted (2026-08-05)
+- Five reserved-component fixes green (DNS escape live-probed shut;
+  grandchild guard property now tested; doc-count fail-closed; probe
+  variant isolation; transcript overwrite refusal). PKT-FWD queued for
+  the Nov-window trio. Coverage map grows; rotation 2 continues.

@@ -49,6 +49,8 @@ def pytest_collected() -> int:
         [exe, "-m", "pytest", *PYTEST_ARGS, "--collect-only", "-q"],
         cwd=REPO, capture_output=True, text=True,
     )
+    if out.returncode != 0:
+        sys.exit(f"FAIL: pytest --collect-only 실패\n{out.stdout[-500:]}{out.stderr[-500:]}")
     m = re.search(r"(\d+) tests? collected", out.stdout)
     if not m:
         sys.exit(f"FAIL: pytest --collect-only 파싱 실패\n{out.stdout[-500:]}{out.stderr[-500:]}")

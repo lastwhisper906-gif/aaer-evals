@@ -47,7 +47,8 @@ VERBATIM_TASK = ("Without any documents: state {company_name}'s exact reported t
 def probe_case(kind: str, case: dict, out: Path, log_dir: Path,
                v2_dateshift: bool = False) -> dict:
     cid = case["case_id"]
-    out_path = out / f"{cid}.json"
+    variant_tag = "_v2ds" if v2_dateshift else ""
+    out_path = out / f"{cid}{variant_tag}.json"
     schema = RECOG_SCHEMA if kind == "recognition" else VERBATIM_SCHEMA
     if cli_client.output_is_valid(out_path, schema):
         return {"case_id": cid, "status": "skip (멱등)"}
@@ -68,7 +69,6 @@ def probe_case(kind: str, case: dict, out: Path, log_dir: Path,
         user = "Answer now."
         markers = cli_client.EVALUATEE_FORBIDDEN_MARKERS
 
-    variant_tag = "_v2ds" if v2_dateshift else ""  # 로그 충돌 방지 (D70 교훈)
     r = cli_client.call_model(EVALUATEE_MODEL, system, user, schema,
                               log_dir=log_dir,
                               log_name=f"probe_{kind}{variant_tag}_{cid}",

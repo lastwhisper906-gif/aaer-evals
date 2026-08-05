@@ -1164,3 +1164,21 @@
 - **소유자 액션:** PKT-E003 서명 (+ 기존 PKT-R2·PKT-P102·PKT-P108).
 - **차기:** C1 잔여 8건 빌드 사이클.
 - **Revert:** 해당 커밋 revert (게시 산출물 무영향 — 코드·테스트만).
+
+## D-P71 — C1A 번들 집행 기록: 예약 컴포넌트 5건 (INV-03 공개, 2026-08-05)
+- **완료 요약:** (C1-01) probe v2ds 산출물 파일명·루트 분리 — v1 결과의
+  침묵 채택 종결(변형 구분 멱등). (C1-02) sandbox_guard 손자 전파
+  실측 테스트(광고된 전-하위-프로세스 속성 봉인). (C1-03) DNS 탈출구
+  차단(gethostbyname 계열) — 라이브 프로브 실측 SANDBOX-VIOLATION.
+  (C1-04) lint_doc_counts가 pytest 수집 오류를 성공으로 오파싱하던 것
+  fail-closed화(축소 카운트가 독자 표면에 쓰이는 경로 종결). (C1-05)
+  holdout_probe 멱등 skip + 동결 트랜스크립트 침묵 덮어쓰기 거부.
+  하네스 cycle 2 APPROVE. 스위트 376/1, verify-public RC=0, 문서 카운트
+  372→377. forward 3건은 PKT-FWD 서명 패킷(보호 prefix, 11월 창 전 권고).
+- **소유자 패킷 큐 (서명 대기 6):** PKT-E003(게시 수치 정정 — 최우선) ·
+  PKT-R2(문장 9) · PKT-FWD(cycle_002 경화) · PKT-P102 · PKT-P108 ·
+  PKT-Q1/Q4/Q6(스펙 실행).
+- **차기:** 로테이션-2 다음 컴포넌트 군(미검토 잔여: memo 파이프라인·
+  e2/e4 러너·payload_v2_extract·probe 스키마·runner_api 등 — 커버리지
+  맵은 CYCLE_LOG 추적).
+- **Revert:** 해당 커밋 revert.

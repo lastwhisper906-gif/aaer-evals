@@ -54,3 +54,19 @@ def test_default_off_preserves_v1_render(tmp_path, monkeypatch):
     assert sent["case"]["cutoff_date"] == "2015-06-30"          # 원본 유지
     assert sent["financial_series_point_in_time"]["t"][0]["accession"] == "0001-15-000001"
     assert calls[0]["log_name"] == "probe_recognition_case_99"  # v1 명명 불변
+
+
+def test_v1_result_does_not_satisfy_v2ds_run(tmp_path, monkeypatch):
+    (tmp_path / "case_99.json").write_text(
+        json.dumps(FakeResult.structured), encoding="utf-8")
+    calls = []
+    _capture(monkeypatch, calls)
+    monkeypatch.setattr(pr.bp, "build_payload", _fake_payload)
+
+    result = pr.probe_case(
+        "recognition", {"case_id": "case_99"}, tmp_path, tmp_path,
+        v2_dateshift=True)
+
+    assert result["status"].startswith("OK")
+    assert len(calls) == 1
+    assert (tmp_path / "case_99_v2ds.json").exists()
