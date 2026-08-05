@@ -9,6 +9,10 @@ REPO = Path(__file__).resolve().parents[1]
 # (en, ko, ko_frozen_marker_line, en_truncate_at) — truncate handles entries
 # appended to the English canonical after the Korean snapshot froze.
 TRANSLATION_PAIRS = (
+    ("analysis/error_analysis_wave2_holdout.md",
+     "analysis/error_analysis_wave2_holdout.ko.md",
+     "> 한국어 원본 (동결) — 영어 정본: error_analysis_wave2_holdout.md (F-01/F-02, D-P50)",
+     None),
     ("analysis/DECISION_TABLE.md", "analysis/DECISION_TABLE.ko.md",
      "> 한국어 원본 (동결) — 영어 정본: DECISION_TABLE.md (F-01/F-02, D-P50)",
      None),

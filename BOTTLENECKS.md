@@ -175,7 +175,14 @@ RC=2 "CALLS DISABLED" fail-closed, `requests|urllib|http` 임포트 0건,
 **Resolution condition:** A verify-public step (reproduce_analysis extension or dedicated pytest) recomputes the wave-2 separation stats, holdout-controls numbers, and decision-table cells from committed runs/ artifacts and analysis/e2_trajectories.json (seeds per E-002), fails on mismatch with the published JSONs, and make verify-public exits RC=0 after wiring
 **Basis:** tools/reproduce_analysis.py
 
-### BN-14: The limits half of the evidence chain is Korean-only — the limitation ledger every honest-scrutiny click resolves to
+### BN-14: The limits half of the evidence chain Korean-only — RESOLVED (2026-08-05, D-P56)
+**RESOLVED:** both halves of the condition met under D-P50 #4 —
+methodology_limitations.md English-canonical adopted (D-P55: lint DOCS,
+equivalence lock with L-9 snapshot rule, Q-F14) and
+error_analysis_wave2_holdout.md promoted from the Q-F15 draft (D-P56:
+ko frozen, token-locked, lint-enrolled, reader gate 2/2 — both readers
+independently identified the HUBG tier-hit/mechanism-miss deflation as
+the document's honesty core). verify-public RC=0 both merges.
 **Blocked:** Non-Korean reader access to docs/methodology_limitations.md (L-1…L-8 — the target of AUDIT_INDEX's L-N row, README_DETAIL's L-1/L-5 citations, and RESULTS row 8/9 limit language) and to analysis/error_analysis_wave2_holdout.md (RESULTS row 9's source column) — the claims half of the chain is now English, the limits half is not
 **Blocks:** The quarter goal "readable by its target audience" on the academic-scrutiny path — the reader verifying "residual memorization is measured, not eliminated" hits a Korean wall one click below RESULTS, leaving the D114 boundary (all reader-facing docs English-canonical) unapplied to the very docs that carry the project's honesty differentiator
 **Resolution condition:** English-canonical methodology_limitations.md (and the row-9 source doc) with .ko.md originals preserved per the F-01/F-02 protocol, numeric token-equivalence check PASS, lint DOCS lists extended to the new pairs, owner-adopted on main with verify-public RC=0

@@ -862,7 +862,7 @@
   contact).
 - **상태**: OPEN
 
-## Q-F15 — BN-14: error_analysis_wave2_holdout 영어 초안 채택 (RESULTS 행 9 소스 문서, Q-F11 패턴) — OPEN (신규, 2026-07-29 direction-loop)
+## Q-F15 — BN-14: error_analysis_wave2_holdout 영어 초안 채택 — **RESOLVED (2026-08-05, D-P50 #4 · D-P56 집행)**
 
 - **질문**: 루프가 작성한 `docs/ERROR_ANALYSIS_WAVE2_HOLDOUT_EN_DRAFT.md`
   (`analysis/error_analysis_wave2_holdout.md`의 전문 영역 — 수치 토큰

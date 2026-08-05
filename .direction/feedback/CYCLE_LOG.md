@@ -311,3 +311,10 @@ DECISIONS_PENDING.md; owner reconciliation command recorded there).
   surfaced 2 pre-W3 lint violations — fixed in EN canonical only, frozen
   ko deferred with documented reason. Q-F14 RESOLVED; BN-14 half-open
   (error-analysis doc next).
+
+## Entry 19 — Cycle 17 (Phase 1): P1-04b2 error-analysis EN — BN-14 RESOLVED (2026-08-05)
+- Second consecutive pre-existing-draft catch by pre-review (now a
+  standing spec step: check for drafts first). Build APPROVE cycle 1.
+  Reader gate 2/2 with unprompted identification of the honesty
+  architecture. Q-F15 + BN-14 flipped. Phase 1 remaining: P1-04c,
+  P1-05, P1-06, P1-08.
