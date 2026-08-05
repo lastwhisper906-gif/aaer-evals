@@ -155,7 +155,8 @@ def test_all_committed_run_outputs_validate():
         "runs/*/case_*.json", "runs/*/scores/*.json", "runs/wave2/perturbed/*.json",
         "pilot/runs/case_*.json",
     )
-    paths = sorted({path for pattern in patterns for path in REPO_ROOT.glob(pattern)})
+    paths = sorted({path for pattern in patterns for path in REPO_ROOT.glob(pattern)
+                    if path.name != "MANIFEST.json"})
     assert paths
     validator = jsonschema.Draft7Validator(
         runner.FULL_OUTPUT_SCHEMA, format_checker=jsonschema.FormatChecker())

@@ -1213,3 +1213,25 @@
 - **차기:** Phase 1 (결과 선택 결정론) — 브랜치 audit-integration에서
   하네스 빌드.
 - **Revert:** append-only 부인 항목으로만.
+
+## D-P74 — P1a 집행 기록: 실행 매니페스트 + 글롭 선택 종결 (P0-1, 브랜치, 2026-08-05)
+- **⚠ 최상단 소유자 액션 (나이):** PKT-E003 서명 0일 · PKT-R2 0일 ·
+  PKT-FWD 0일 · PKT-P102/P108 0일 · Zenodo DOI(Q-R03) **25일** ·
+  계정 리네임/BN-04/재채점자/GPT 결정 — 본 브랜치의 main 병합은
+  PKT-E003 서명·push 후.
+- **완료 요약 (audit-integration 브랜치):** 결과 파일 선택의 매니페스트
+  전환 — runs/실험별 MANIFEST.json(17종 생성·커밋), aaer_eval/manifest.py
+  로더(5중 fail-closed: 중복 ID·등록 누락·미등록 존재·해시 불일치·
+  fingerprint-null 거부 플래그 — 각 테스트 실증), 글롭 선택 10개소 전환
+  (baselines·decision_table·name_probes×2·buyer_metrics·analyze_rp05),
+  산출물 무변경 실측(선택 리팩토링만). 하네스 3사이클 UNRESOLVED의
+  원인은 스펙 내부 모순(README* 금지 vs RC=0 요구 — 오케스트레이터
+  결함, 리뷰어가 정확 진단): docs-refresh는 병합 프로토콜대로
+  오케스트레이터가 수행(377→399). 전 게이트 RC=0; 매니페스트 원장
+  188엔트리 독립 재해시 0 불일치(리뷰어 미검증분 보완).
+- **리뷰어 유예 채택:** holdout 분석기 로더 배선은 별도 스코프 후속
+  (매니페스트는 사전 등록 상태로 커밋); e2/usage류 확장 자제.
+- **모델 문자열 (지시 요구):** builder=codex-cli 0.144.6 기본 모델 ·
+  reviewer=claude 2.1.221 (meta.txt 기록).
+- **차기:** P1b (채점 fingerprint — P0-2).
+- **Revert:** 브랜치 revert.

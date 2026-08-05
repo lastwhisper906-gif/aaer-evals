@@ -15,9 +15,11 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO))
 sys.path.insert(0, str(REPO / "scoring"))
 sys.path.insert(0, str(REPO / "analysis"))
 from probe_verdict import name_match  # noqa: E402 (동결 판정 규칙)
+from aaer_eval.manifest import load_experiment  # noqa: E402
 import stats  # noqa: E402 (Clopper-Pearson)
 
 V1_FROZEN = {"wave1": {"rate_pct": 50.0, "count": "15/30"},
@@ -35,7 +37,8 @@ def wave1_rows() -> list[dict]:
     cands2 = {c["case_id"]: c for c in json.loads(
         (REPO / "data/candidates/candidates_v2_controls.json").read_text())["candidates"]}
     rows = []
-    for p in sorted(W1_DIR.glob("case_*.json")):
+    for entry in load_experiment("main/name_probe_v2ds_wave1").values():
+        p = entry.path
         j = json.loads(p.read_text(encoding="utf-8"))
         cid = p.stem
         num = int(cid.split("_")[1])
@@ -53,7 +56,8 @@ def wave2_rows() -> list[dict]:
     cases = {c["case_id"]: c for c in json.loads(
         (REPO / "data/evaluatee/cases_wave2.json").read_text())["cases"]}
     rows = []
-    for p in sorted(W2_DIR.glob("case_*.json")):
+    for entry in load_experiment("wave2/name_probe_v2ds_wave2").values():
+        p = entry.path
         j = json.loads(p.read_text(encoding="utf-8"))
         c = cases[p.stem]
         rows.append({"case_id": p.stem, "truth_ticker": c["ticker"],

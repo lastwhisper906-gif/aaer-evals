@@ -11,7 +11,9 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO))
 sys.path.insert(0, str(REPO / "analysis"))
+from aaer_eval.manifest import load_experiment  # noqa: E402
 from holdout_controls_analyze import clopper_pearson  # noqa: E402 (동결 CP 재사용)
 
 PLAN = "analysis/DECISION_TABLE_PLAN.md"
@@ -98,7 +100,7 @@ def count_scored_snapshots(cases: list[dict]) -> tuple[int, int]:
 
 def build(repo: Path = REPO) -> dict:
     w2_fraud = set(json.load(open(repo / "runs/wave2/fraud_case_ids.json")))
-    w2_all = sorted(p.stem for p in (repo / "runs/wave2/scores").glob("case_*.json"))
+    w2_all = list(load_experiment("wave2/scores", repo=repo))
 
     layers = {
         "L1_wave1_perturbed": {

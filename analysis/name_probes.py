@@ -11,7 +11,9 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO))
 sys.path.insert(0, str(REPO / "scoring"))
+from aaer_eval.manifest import load_experiment  # noqa: E402
 from probe_verdict import name_match  # noqa: E402 (동결 판정 규칙)
 
 
@@ -24,8 +26,8 @@ def main() -> int:
         (REPO / "data/candidates/candidates_v2_controls.json").read_text())["candidates"]}
 
     rows = []
-    d = REPO / "scoring/probe_results_v2/recognition"
-    for p in sorted(d.glob("case_*.json")):
+    for entry in load_experiment("main/name_probe_v2").values():
+        p = entry.path
         j = json.loads(p.read_text())
         cid = p.stem
         num = int(cid.split("_")[1])

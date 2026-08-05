@@ -460,3 +460,10 @@ DECISIONS_PENDING.md; owner reconciliation command recorded there).
 - Triage verified P0-1/P0-2 open on HEAD (the audit's core value),
   refuted the threat_model claim, mapped 14 items to phases. E-003
   precondition ACTIVE — building on branch for published-number phases.
+
+## Entry 36 — Cycle (P1a): manifests landed on branch — P0-1 closed pending merge (2026-08-05)
+- UNRESOLVED root-caused to my spec's README*-forbidden vs RC=0 conflict
+  (4th orchestrator spec defect; reviewer's steelman called it exactly).
+  Orchestrator completed the mechanical half per merge protocol.
+  188-entry ledger independently re-hashed clean. Holdout-analyzer wiring
+  deferred per reviewer. Models: codex-cli 0.144.6 / claude 2.1.221.

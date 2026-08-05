@@ -13,7 +13,9 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO))
 sys.path.insert(0, str(REPO / "scoring/baselines"))
+from aaer_eval.manifest import load_experiment  # noqa: E402
 from screens import run_case  # noqa: E402 (동결 PIT 구현 재사용)
 
 TREAT_IDS = ["T07", "T11", "T12", "T13", "T16", "T17", "T21", "T28"]
@@ -23,16 +25,19 @@ def llm_scores() -> dict:
     """원본 프레임 LLM 점수 (1차) + 교란 실험군 점수 (2차 프레임용)."""
     out = {}
     m1 = json.loads((REPO / "scoring/id_mapping.json").read_text())["mapping"]
-    for p in sorted((REPO / "runs/main").glob("case_*.json")):
+    for entry in load_experiment("main").values():
+        p = entry.path
         j = json.loads(p.read_text())
         out[m1[j["case_id"]]] = {"llm_original": j["misstatement_probability"]}
-    for p in sorted((REPO / "runs/perturbed").glob("case_*.json")):
+    for entry in load_experiment("perturbed").values():
+        p = entry.path
         j = json.loads(p.read_text())
         out[m1[j["case_id"]]]["llm_perturbed"] = j["misstatement_probability"]
     m2p = REPO / "scoring/id_mapping_v2.json"
     if m2p.exists():
         m2 = json.loads(m2p.read_text())["mapping"]
-        for p in sorted((REPO / "runs/rp09/scores").glob("case_*.json")):
+        for entry in load_experiment("rp09/scores").values():
+            p = entry.path
             j = json.loads(p.read_text())
             out[m2[j["case_id"]]] = {"llm_original": j["misstatement_probability"]}
     return out

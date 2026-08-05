@@ -19,7 +19,9 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO))
 sys.path.insert(0, str(REPO / "analysis"))
+from aaer_eval.manifest import EXPERIMENT_SPECS, load_experiment  # noqa: E402
 from engine_verdict import case_lead  # noqa: E402 (D51 판정과 동일 산식)
 from holdout_controls_analyze import clopper_pearson  # noqa: E402 (동결 CP 재사용)
 
@@ -69,7 +71,22 @@ def compute(traj: dict, logs_dir: Path | None,
     # input_tokens만 합산해 하네스 실지출을 과소계상 — D82 원장에 양판 병기).
     tokens_in, tokens_out = [], []
     if logs_dir is not None:
-        for p in sorted(Path(logs_dir).rglob("*.json")):
+        try:
+            in_repo = Path(logs_dir).resolve().is_relative_to(REPO)
+        except ValueError:
+            in_repo = False
+        if in_repo:
+            expected_root = REPO / EXPERIMENT_SPECS["e2/usage"][0]
+            if Path(logs_dir).resolve() != expected_root.resolve():
+                raise BuyerMetricsError(
+                    f"{logs_dir}: manifest root mismatch; expected {expected_root}"
+                )
+        # Synthetic fixture directories are flat and outside the repository;
+        # repository result selection is always pinned by the run manifest.
+        paths = ([e.path for e in load_experiment("e2/usage").values()]
+                 if in_repo else sorted(p for p in Path(logs_dir).iterdir()
+                                        if p.is_file() and p.suffix == ".json"))
+        for p in paths:
             u = json.loads(p.read_text(encoding="utf-8")).get("usage")
             if u and u.get("input_tokens") is not None:
                 cc = u.get("cache_creation") or {}

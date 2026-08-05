@@ -14,26 +14,30 @@ from __future__ import annotations
 import itertools
 import json
 import statistics
+import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO))
+from aaer_eval.manifest import load_experiment  # noqa: E402
 
 mapping = json.loads((REPO / "scoring/id_mapping.json").read_text(encoding="utf-8"))["mapping"]
 cands = {c["case_id"]: c for c in json.loads(
     (REPO / "data/candidates/candidates.json").read_text(encoding="utf-8"))["candidates"]}
 
 
-def load_dir(d):
+def load_dir(experiment_id):
     out = {}
-    for p in sorted((REPO / d).glob("case_*.json")):
+    for entry in load_experiment(experiment_id).values():
+        p = entry.path
         out[p.stem] = json.loads(p.read_text(encoding="utf-8"))
     return out
 
 
-runs_main = load_dir("runs/main")
-runs_pert = load_dir("runs/perturbed")
-grades_main = load_dir("scoring/grades/main")
-grades_pert = load_dir("scoring/grades/perturbed")
+runs_main = load_dir("main")
+runs_pert = load_dir("perturbed")
+grades_main = load_dir("main/grades_main")
+grades_pert = load_dir("main/grades_perturbed")
 
 treat = sorted(n for n, o in mapping.items() if o.startswith("T"))
 ctrl = sorted(n for n, o in mapping.items() if o.startswith("C"))
@@ -107,7 +111,8 @@ mem2 = [n for n in mapping if grades_main[n]["memorization_suspect_condition2"]]
 
 # 교란 일관성 (원본−교란 delta, 실험군 8)
 k_factors = {}
-for p in (REPO / "logs").glob("run_*/runmeta_perturbed_*.json"):
+for entry in load_experiment("main/rp05_perturbation_meta").values():
+    p = entry.path
     d = json.loads(p.read_text(encoding="utf-8"))
     if d.get("perturb_factor"):
         k_factors[d["case_id"]] = round(d["perturb_factor"], 3)
