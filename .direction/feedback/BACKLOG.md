@@ -307,3 +307,14 @@ priority rule carry an INV-03 disclosure entry in DECISIONS_PENDING.md.
 ### R3-03 README_DETAIL pre-E-002 Spearman values — DONE (D-P66; rev2 + errata pointer)
 ### R3-04 error_analysis snapshot markers (protected analysis/) — FOLDED into PKT-R2 (owner signature)
 ### R3-05 CLAIMS.json zero inbound links — DONE (D-P66; one line in Where to go next)
+
+## R4 round (test quality, 2026-08-05 — full report: replenish_R4_2026-08-05.md)
+### R4-01 Blindness test verifies its own re-implementation, not the runner send site — BUILD
+### R4-02 check_history (INV-07 proof) zero tests — BUILD
+### R4-03 crossmodel resume = legacy-auto-trust reintroduced — BUILD, SHRUNK to option (ii) (pin behavior + fail on fingerprint-less; no launch-procedure changes)
+### R4-04 no positive control on the INV-01 bypass scan — BUILD
+### R4-05 pin substring near-miss — KILLED (reviewer's own if-any-pushback offer; risk requires 4-digit patch version)
+### R4-06 translation lock breaks on next designed erratum — DEFERRED to E-003 drafting (finding preserved so the red CI is understood as the test's defect)
+- Reviewer kill honored: no mutation-testing/coverage-gate machinery.
+- Borderline recorded for R1's reserved list: sandbox_guard grandchild
+  propagation untested.
