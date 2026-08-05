@@ -1276,3 +1276,20 @@
 - **차기:** Phase 3 (verify-claims 타깃 + CLAIMS 게이트 구동 + 그림
   게이트 확장).
 - **Revert:** 브랜치 revert.
+
+## D-P77 — Phase 3 완결: 검증 표면 정직화 (브랜치, 2026-08-05)
+- **⚠ 최상단:** PKT-E003 서명 0일 (병합 게이트) · Zenodo DOI 25일 · 패킷
+  큐 동일.
+- **완료:** 재현 사다리 명명 — verify-claims(재계산+재계산 테스트+그림
+  게이트+CLAIMS 커버리지 반복자) · verify-fixture-pipeline ·
+  reproduce-corpus/rerun-evaluatee(정직 거부 스텁, 전제 echo+exit 1).
+  verify-public 7행 verbatim 유지(diff 실측 — 제거 1행은 .PHONY 확장).
+  CLAIMS.json v2: per-claim recompute{command,artifacts}+limitation_ref,
+  기존 verbatim-lock 열 무변경. verify_claims_coverage: RESULTS 행
+  1..13 전수 존재·아티팩트 실재·명령 유효 — 결손 시 명명 실패(테스트
+  실증). 그림 게이트 5종 전커버(현세대 2: 사이드카+config-hash · 동결
+  3: bytes-pin+정직 주석, figures.manifest.json). 하네스 cycle 1
+  APPROVE. 스위트 414/1, verify-claims RC=0, verify-public RC=0.
+- **차기:** Phase 4 스펙 3종 (P4a 교란 v2 → P4b 전향 지표 → P4c 인간
+  블라인드 재채점) — 각각 사이클당 문서 슬롯 1.
+- **Revert:** 브랜치 revert.

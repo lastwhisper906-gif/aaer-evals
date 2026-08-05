@@ -1,5 +1,7 @@
 import json
 import re
+import subprocess
+import sys
 from pathlib import Path
 
 
@@ -82,6 +84,8 @@ def test_claims_ledger_is_locked_to_results():
             "source_raw",
             "source_paths",
             "status",
+            "recompute",
+            "limitation_ref",
         }
         for field in (
             "id",
@@ -93,8 +97,25 @@ def test_claims_ledger_is_locked_to_results():
         ):
             assert claim[field] == row[field]
         assert claim["status"] == "published"
+        assert set(claim["recompute"]) == {"command", "artifacts"}
+        assert isinstance(claim["recompute"]["command"], str)
+        assert claim["recompute"]["artifacts"]
+        assert isinstance(claim["limitation_ref"], str)
 
         source_tokens = PATH_TOKEN.findall(row["source_raw"])
         assert set(source_tokens) <= set(claim["source_paths"])
         for source_path in claim["source_paths"]:
             assert (ROOT / source_path.rstrip("/")).exists()
+
+
+def test_claims_coverage_fails_when_results_row_is_missing(tmp_path):
+    ledger = json.loads((ROOT / "CLAIMS.json").read_text(encoding="utf-8"))
+    ledger["claims"] = [claim for claim in ledger["claims"] if claim["id"] != 13]
+    copy = tmp_path / "CLAIMS.json"
+    copy.write_text(json.dumps(ledger), encoding="utf-8")
+    result = subprocess.run(
+        [sys.executable, "tools/verify_claims_coverage.py", "--claims", str(copy)],
+        cwd=ROOT, text=True, capture_output=True, check=False,
+    )
+    assert result.returncode != 0
+    assert "RESULTS row 13: missing" in result.stderr

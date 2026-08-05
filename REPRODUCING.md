@@ -26,13 +26,19 @@ machine-enforced no-network/no-external-read guard, every run (D-P59).
 Corpus-dependent pytest cases are marked skip when the corpus is absent
 (the synthetic tier runs in full).
 
+As a reproduction-ladder alias, `make verify-public` covers the
+committed-artifact claims gate (`make verify-claims`) and the synthetic
+cutoff-to-payload fixture gate (`make verify-fixture-pipeline`). The named
+`reproduce-corpus` and `rerun-evaluatee` rungs are documented refusals: they
+exit nonzero after stating the external-corpus or subscription preconditions.
+
 The list of numbers and commands is a generated block derived from the
 repository (refresh with `make docs-refresh`; CI compares it via
 `tools/lint_doc_counts.py`):
 
 <!-- BEGIN-GENERATED: repro-facts (refresh: make docs-refresh; CI: tools/lint_doc_counts.py) -->
 - data manifest: **538 files** (`data/manifests/aaer_data_manifest.json` · `file_count`)
-- pytest: **413 tests collected** (`pipeline tools scoring analysis`)
+- pytest: **415 tests collected** (`pipeline tools scoring analysis`)
 - `make verify-public` (zero external data):
   - `.venv/bin/python tools/reproduce_analysis.py`
   - `.venv/bin/python tools/lint_publication.py`

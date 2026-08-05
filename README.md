@@ -119,9 +119,15 @@ transcript: `audit/verify_public_sandbox_transcript_20260722.txt`,
 2026-07-22 gate set).
 Corpus-dependent full reproduction: `make verify-full` (`REPRODUCING.md`).
 
+The verification ladder names each honest boundary: `make verify-public` is
+the alias for the committed-artifact claims gate (`make verify-claims`) plus
+the cutoff-to-payload synthetic fixture gate (`make verify-fixture-pipeline`).
+The labeled `reproduce-corpus` and `rerun-evaluatee` rungs refuse by default
+and print the external-corpus or subscription preconditions they require.
+
 <!-- BEGIN-GENERATED: repro-facts (refresh: make docs-refresh; CI: tools/lint_doc_counts.py) -->
 - data manifest: **538 files** (`data/manifests/aaer_data_manifest.json` · `file_count`)
-- pytest: **413 tests collected** (`pipeline tools scoring analysis`)
+- pytest: **415 tests collected** (`pipeline tools scoring analysis`)
 - `make verify-public` (zero external data):
   - `.venv/bin/python tools/reproduce_analysis.py`
   - `.venv/bin/python tools/lint_publication.py`
@@ -193,4 +199,3 @@ Dual-licensed by content type (Q-O10, owner-signed 2026-07-22):
   originals in this repository.
 
 © 2026 lastwhisper906-gif. Cite via `CITATION.cff` (DOI pending Q-R03).
-

@@ -12,6 +12,8 @@
       "limits": "Upper bound entangled with memorization — R3 triggered (5 of 8 over threshold), name-ID 50%. N=30 small sample, wide CI",
       "source_raw": "`analysis/results_stats.json`",
       "source_paths": ["analysis/results_stats.json"],
+      "recompute": {"command": "artifact-read: analysis/results_stats.json", "artifacts": ["analysis/results_stats.json"]},
+      "limitation_ref": "RESULTS.md row 1 limits",
       "status": "published"
     },
     {
@@ -22,6 +24,8 @@
       "limits": "A *less-contaminated* measurement, not a clean lower bound — residual identity recognition after perturbation 5–6/8; the v1 frame is partially de-anonymized (accession numbers and filing chronology retained)",
       "source_raw": "`analysis/results_stats.json` · `docs/V1_PARTIAL_DEIDENTIFICATION_NOTE.md`",
       "source_paths": ["analysis/results_stats.json", "docs/V1_PARTIAL_DEIDENTIFICATION_NOTE.md"],
+      "recompute": {"command": "artifact-read: analysis/results_stats.json", "artifacts": ["analysis/results_stats.json", "docs/V1_PARTIAL_DEIDENTIFICATION_NOTE.md"]},
+      "limitation_ref": "RESULTS.md row 2 limits",
       "status": "published"
     },
     {
@@ -32,6 +36,8 @@
       "limits": "R4 framing constraint (no accuracy/AUC comparison claims). Under direct probing, outcome knowledge is available for 8/9 (88.9%, CP [51.7%, 99.7%])",
       "source_raw": "`analysis/wave2_results.json` (rev2 parallel path: `analysis/out/wave2_rev2/`, ERRATA E-002)",
       "source_paths": ["analysis/wave2_results.json", "analysis/out/wave2_rev2/"],
+      "recompute": {"command": ".venv/bin/python -m pytest tools/test_recompute_published.py -q", "artifacts": ["analysis/wave2_results.json", "analysis/out/wave2_rev2/"]},
+      "limitation_ref": "RESULTS.md row 3 limits",
       "status": "published"
     },
     {
@@ -42,6 +48,8 @@
       "limits": "21.9% is the frozen-rule value — a rename-aware human reading of 25% (borderline case DAR) is footnoted alongside (Q-E02)",
       "source_raw": "`analysis/name_probe_results.json` · `analysis/synthesis.json`",
       "source_paths": ["analysis/name_probe_results.json", "analysis/synthesis.json"],
+      "recompute": {"command": ".venv/bin/python -m pytest tools/test_recompute_published.py -q", "artifacts": ["analysis/name_probe_results.json", "analysis/synthesis.json"]},
+      "limitation_ref": "RESULTS.md row 4 limits",
       "status": "published"
     },
     {
@@ -52,6 +60,8 @@
       "limits": "N=3, per-case only — H1 (permutation significance) not claimed. Labels are provisional Big-R (4.02 unreliable), not confirmed enforcement. The HUBG hit is a tier hit with the mechanism missed (anchored on the 2018 restatement cluster)",
       "source_raw": "`runs/holdout/` · `analysis/label_tags_holdout.json`",
       "source_paths": ["runs/holdout/", "analysis/label_tags_holdout.json"],
+      "recompute": {"command": "artifact-read: runs/holdout/", "artifacts": ["runs/holdout/", "analysis/label_tags_holdout.json"]},
+      "limitation_ref": "RESULTS.md row 5 limits",
       "status": "published"
     },
     {
@@ -62,6 +72,8 @@
       "limits": "Exact permutation p=0.20 is CONTEXT ONLY. The single highest score in the holdout tier is a control false positive (GRDX 78) — HUBG does not exceed the pooled control set",
       "source_raw": "`analysis/holdout_controls_results.json`",
       "source_paths": ["analysis/holdout_controls_results.json"],
+      "recompute": {"command": ".venv/bin/python -m pytest tools/test_recompute_published.py -q", "artifacts": ["analysis/holdout_controls_results.json"]},
+      "limitation_ref": "RESULTS.md row 6 limits",
       "status": "published"
     },
     {
@@ -72,6 +84,8 @@
       "limits": "The published number is draw-1 — the bands are companion statistics",
       "source_raw": "`runs/holdout/mainscore_redraw/` (E5 §7)",
       "source_paths": ["runs/holdout/mainscore_redraw/"],
+      "recompute": {"command": ".venv/bin/python -m pytest tools/test_recompute_published.py -q", "artifacts": ["runs/holdout/mainscore_redraw/"]},
+      "limitation_ref": "RESULTS.md row 7 limits",
       "status": "published"
     },
     {
@@ -82,6 +96,8 @@
       "limits": "Controls are \"non-enforcement,\" not \"clean\" — the bias direction pushes specificity downward (survivorship and selection bias; README Limitations)",
       "source_raw": "`analysis/results_stats.json`",
       "source_paths": ["analysis/results_stats.json"],
+      "recompute": {"command": "artifact-read: analysis/results_stats.json", "artifacts": ["analysis/results_stats.json"]},
+      "limitation_ref": "RESULTS.md row 8 limits",
       "status": "published"
     },
     {
@@ -92,6 +108,8 @@
       "limits": "Same as above; additionally, the 5 false positives are not hallucinations but positive misreadings of real figures (grounded; top of dim4)",
       "source_raw": "`analysis/wave2_results.json` · `analysis/error_analysis_wave2_holdout.md`",
       "source_paths": ["analysis/wave2_results.json", "analysis/error_analysis_wave2_holdout.md"],
+      "recompute": {"command": ".venv/bin/python -m pytest tools/test_recompute_published.py -q", "artifacts": ["analysis/wave2_results.json", "analysis/error_analysis_wave2_holdout.md"]},
+      "limitation_ref": "RESULTS.md row 9 limits",
       "status": "published"
     },
     {
@@ -102,6 +120,8 @@
       "limits": "No silent pooling of FPR across tiers — CP intervals overlap heavily; worse-but-not-provably",
       "source_raw": "`analysis/holdout_controls_results.json`",
       "source_paths": ["analysis/holdout_controls_results.json"],
+      "recompute": {"command": ".venv/bin/python -m pytest tools/test_recompute_published.py -q", "artifacts": ["analysis/holdout_controls_results.json"]},
+      "limitation_ref": "RESULTS.md row 10 limits",
       "status": "published"
     },
     {
@@ -112,6 +132,8 @@
       "limits": "**Scores are ordinal (0–100 ranks), not probabilities** — no calibration improvement (null-ish); recalibration at N≈30–60 is noise-dominated (`specs/calibration_scope.md`)",
       "source_raw": "`analysis/calibration_wave2.json`",
       "source_paths": ["analysis/calibration_wave2.json"],
+      "recompute": {"command": ".venv/bin/python -m pytest tools/test_recompute_published.py -q", "artifacts": ["analysis/calibration_wave2.json"]},
+      "limitation_ref": "RESULTS.md row 11 limits",
       "status": "published"
     },
     {
@@ -122,6 +144,8 @@
       "limits": "Same 30 companies, same PIT window only. The v1 w2 correlation values 0.337/0.265 came from an implementation that did not average ties — both values are far from the R2 threshold of 0.7, with no effect on the verdict (E-002)",
       "source_raw": "`analysis/baseline_table.csv` · `ERRATA.md` E-002",
       "source_paths": ["analysis/baseline_table.csv", "ERRATA.md"],
+      "recompute": {"command": "artifact-read: analysis/baseline_table.csv", "artifacts": ["analysis/baseline_table.csv", "ERRATA.md"]},
+      "limitation_ref": "RESULTS.md row 12 limits",
       "status": "published"
     },
     {
@@ -132,6 +156,8 @@
       "limits": "**No dominant strategy for a standalone LLM threshold at the trajectory layer** — sensitive thresholds travel with false positives, and a false-positive-controlling threshold (T=70) kills detection first (1/12). The EXPLORATORY combined rule (B3≥2 AND llm_p≥T) has 0/7 false positives but is a post-hoc rule — registered only as a Cycle-2 sealed candidate",
       "source_raw": "`analysis/DECISION_TABLE.md` §4 (signed D94)",
       "source_paths": ["analysis/DECISION_TABLE.md"],
+      "recompute": {"command": ".venv/bin/python -m pytest tools/test_recompute_published.py -q", "artifacts": ["analysis/DECISION_TABLE.md"]},
+      "limitation_ref": "RESULTS.md row 13 limits",
       "status": "published"
     }
   ]

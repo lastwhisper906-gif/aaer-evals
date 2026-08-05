@@ -29,6 +29,7 @@ def test_checker_passes_committed_tree():
 
 def test_checker_names_tampered_field(tmp_path):
     for relative in (
+        "analysis/figures.manifest.json",
         "analysis/fig_dotplot_30firms.sidecar.json",
         "analysis/fig_tradeoff.sidecar.json",
     ):
@@ -46,6 +47,22 @@ def test_checker_names_tampered_field(tmp_path):
     )
     assert result.returncode != 0
     assert "field xlabel" in result.stderr
+
+
+def test_checker_covers_all_five_readme_figures():
+    manifest = json.loads((REPO / "analysis/figures.manifest.json").read_text(
+        encoding="utf-8"))
+    assert {entry["path"] for entry in manifest["figures"]} == {
+        "analysis/fig_dotplot_30firms.png",
+        "analysis/fig_tradeoff.png",
+        "analysis/fig_reliability.png",
+        "analysis/fig_memorization_doseresponse.png",
+        "analysis/fig_memorization_decomposition.png",
+    }
+    current = [entry for entry in manifest["figures"]
+               if entry["mode"] == "current-generator"]
+    assert all({"source_data_sha256", "config_sha256"} <= set(entry)
+               for entry in current)
 
 
 def test_dotplot_sidecar_pins_bn12_labels():

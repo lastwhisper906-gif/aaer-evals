@@ -1,5 +1,5 @@
 # RP-10 Phase 2.3 — 분석 전체 재현: make analysis (결정론, 네트워크 없음)
-.PHONY: analysis verify verify-public verify-public-sandboxed verify-full corpus-check docs-refresh
+.PHONY: analysis verify verify-public verify-claims verify-fixture-pipeline reproduce-corpus rerun-evaluatee verify-public-sandboxed verify-full corpus-check docs-refresh
 analysis:
 	.venv/bin/python analysis/baselines.py
 	.venv/bin/python analysis/stats.py
@@ -21,6 +21,23 @@ verify-public:
 	.venv/bin/python tools/verify_manifest.py --schema-only
 	.venv/bin/python tools/verify_blindness.py
 	.venv/bin/python tools/verify_figures.py
+
+verify-claims:
+	.venv/bin/python tools/reproduce_analysis.py
+	.venv/bin/python -m pytest tools/test_recompute_published.py -q
+	.venv/bin/python tools/verify_figures.py
+	.venv/bin/python tools/verify_claims_coverage.py
+
+verify-fixture-pipeline:
+	.venv/bin/python -m pytest pipeline/test_payload_synthetic.py pipeline/test_payload_v2.py -q
+
+reproduce-corpus:
+	@echo "REFUSED: reproduce-corpus requires the owner-supervised external corpus workflow in REPRODUCING.md section 2."
+	@exit 1
+
+rerun-evaluatee:
+	@echo "REFUSED: rerun-evaluatee requires subscription authentication, the pinned harness/model, and the isolated runner described in REPRODUCING.md section 4."
+	@exit 1
 
 # verify-public-sandboxed: 동일 게이트를 구조적 무네트워크·무코퍼스 가드
 # 하에 실행 (Q-F16 (A), D-P50 #6 · D-P59 — BN-16: 일회 트랜스크립트가 아닌
