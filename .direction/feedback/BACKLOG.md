@@ -328,3 +328,14 @@ priority rule carry an INV-03 disclosure entry in DECISIONS_PENDING.md.
 ### R5-06 — KILLED as standalone (UA doc line folded into R5-01 edit)
 - Reviewer pre-kills honored: no corpus-distribution infra, no doc-claim
   linter, no manifest-mode porting.
+
+## R6 round (premise challenge, 2026-08-05 — full report: replenish_R6_2026-08-05.md)
+### R6-01..04 — ALL PACKETED into PKT-R2 (published-surface sentence
+amendments: holdout "structurally impossible" softened to declared-cutoff+
+measured-non-recognition; FPR bias direction → sign-unknown; A-type
+detectability screen disclosed; name-ID 0% denominator) + frozen-ISSUE
+notices via the D99 channel.
+### VERIFIED-PREMISE ×7 — recorded (cutoff mechanics, exposure-date
+operationalization, control matching vs selection-on-outcome, threshold-
+grid robustness of no-dominant-strategy, and 3 more — one held by
+independent recomputation). ROTATION 1 COMPLETE (R1..R6).

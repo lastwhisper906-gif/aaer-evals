@@ -398,3 +398,15 @@ DECISIONS_PENDING.md; owner reconciliation command recorded there).
   destructive-before-validation ordering fixed; CI parity restored
   (this loop's own P1-03 wiring gap — 2nd self-defect caught by rotation).
   Rotation next: R6 premise challenge (closes rotation 1).
+
+## Entry 32 — Cycle 30: R6 + ROTATION 1 COMPLETE (2026-08-05)
+- 7 premises attacked and held (1 by independent recomputation — committed
+  as an external-credibility record); 4 published-sentence findings all
+  folded into the single PKT-R2 signature packet (9 sentence edits + 3
+  frozen-ISSUE notices, one signature applies all).
+- Rotation 1 totals: 25 findings — 16 built (gates green throughout, 1
+  mutation-verified), 7 packeted, 2 killed, 2 deferred; 2 own-defects
+  honestly repaired; 0 errors in published numbers across two independent
+  re-verifications.
+- Rotation 2 begins per the escalation rule: component-first coverage of
+  the R1 reserved list.
