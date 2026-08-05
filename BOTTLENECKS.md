@@ -169,7 +169,16 @@ RC=2 "CALLS DISABLED" fail-closed, `requests|urllib|http` 임포트 0건,
 **Basis:** `docs/CROSS_GRADER_OWNER_PACKET.md` ·
 `tools/test_cross_grader_skeleton.py` · `scoring/decisions_log.md` D122
 
-### BN-13: E-001's blind spot is still open — published numbers beyond wave-1 sit outside the recompute gate
+### BN-13: published numbers beyond wave-1 outside the recompute gate — RESOLVED (2026-08-05, D-P58)
+**RESOLVED:** condition verified already met by the committed tree —
+tools/test_recompute_published.py (F-01, commits 06b9345/2ea5be8, both
+citing BN-13) recomputes decision-table cells, holdout/E1 numbers, and
+wave-2 rev2 stats (+ calibration/redraw/name-ID rows beyond the condition)
+from committed runs/ + e2_trajectories.json with E-002 seeds
+(20260707/100k), fails on mismatch (MC estimates at ±3e-3 ≈ >10σ MC noise;
+everything else exact), and runs inside verify-public's pytest gate
+(6 passed, 6.97s — measured 2026-08-05). Cycle-19 pre-review REJECTed a
+duplicate build; flip is the only remaining act.
 **Blocked:** Machine-verified provenance of RESULTS rows 3/6/9/10/13 (including the headline 71.4%) — verify-public recomputes only RP-05/wave-1 numbers, while wave2_results.json, holdout_controls_results.json, and decision_table.json are trusted as-is (lint_publication rule F cross-reads them; nothing recomputes them from the committed runs/ scores and e2_trajectories.json, and even verify-full omits wave2_analyze.py)
 **Blocks:** The README/CLAIM_HIERARCHY Level-0 claim "recomputes every published number from committed artifacts" at exactly the artifact class where the project's own errata (E-001/E-002) found real plan-deviation defects — silent drift or a regenerated-JSON error in the wave-2/holdout/E2 numbers would pass all 5 gates green
 **Resolution condition:** A verify-public step (reproduce_analysis extension or dedicated pytest) recomputes the wave-2 separation stats, holdout-controls numbers, and decision-table cells from committed runs/ artifacts and analysis/e2_trajectories.json (seeds per E-002), fails on mismatch with the published JSONs, and make verify-public exits RC=0 after wiring

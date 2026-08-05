@@ -326,3 +326,9 @@ DECISIONS_PENDING.md; owner reconciliation command recorded there).
   "no conclusion changed"). BN-18 flipped; P1-04 batch fully DONE
   (BN-07/11/12/14/18 resolved today across the direction's items).
 - Phase 1 remaining: P1-05 (BN-13), P1-06 (BN-16), P1-08 (packet).
+
+## Entry 21 — Cycle 19 (Phase 1): P1-05 pre-existing — BN-13 RESOLVED (2026-08-05)
+- Pre-review REJECTed the duplicate build (3rd already-done catch) and
+  exposed two spec traps (exact-equality on MC estimates; frozen-v1
+  import). Existing F-01 test verified live (6/6, 6.97s). BN-13 flipped.
+  Phase 1 remaining: P1-06, P1-08.
