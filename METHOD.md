@@ -88,3 +88,6 @@ This document is a method summary and contains no performance claims. All
 numbers live in `RESULTS.md` (with row-level limits alongside); the audit
 trail is in `AUDIT_INDEX.md`. All results are scoped to a single Claude-based
 pipeline.
+
+Multiple-testing family classification and Holm adjustment are documented in
+`docs/MULTIPLE_TESTING.md`.

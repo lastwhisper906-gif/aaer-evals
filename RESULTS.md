@@ -10,6 +10,7 @@
 > Grading: Claude-assisted, human-finalized. All results are scoped to a
 > single Claude-based pipeline.
 > Korean original: [RESULTS.ko.md](RESULTS.ko.md).
+> Multiple-testing classification and Holm adjustment: [docs/MULTIPLE_TESTING.md](docs/MULTIPLE_TESTING.md).
 
 | # | [Task] Measurement | Published number | Limits of this row (misread if not read together) | Source |
 |---|---|---|---|---|

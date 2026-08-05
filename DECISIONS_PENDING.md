@@ -1353,3 +1353,36 @@
   2026 절 (c) candidates PENDING 승계 헤더는 **동결 산출물 접촉 →
   소유자 패킷** (d) 소유자 큐 승계분.
 - **Revert:** 브랜치 revert.
+
+## D-P81 — Phase 6 (a) 완결: docs/MULTIPLE_TESTING.md — 다중 검정 공개 (브랜치, 2026-08-06)
+- **⚠ 최상단:** PKT-E003 서명 **1일** (병합 게이트) · Zenodo DOI **26일** ·
+  PKT-R2/FWD/P102/P108 1일 · Q-F18 (P4c 표본률 — 모집 게이트) 0일.
+- **완료:** 감사 지적 24번(다중 검정 문단 부재 — grep 0건 실측) 해소.
+  확증(confirmatory) 계열 열거 = 순열·Fisher p 11개를 두 동결 산출물
+  (`analysis/results_stats.json`, `analysis/wave2_results.json`)에서 읽어
+  각각의 사전등록 plan 절·freeze 커밋을 인용해 분류; 탐색(EXPLORATORY)
+  L4·E2 계열은 계열에서 분리(무풀링 규율 준수). Holm step-down은
+  `tools/multiple_testing.py`(stdlib 전용 — INV-11 무증설), 결정론,
+  단조성 강제 포함; 산출물 부재 시 `FileNotFoundError` fail-closed(테스트
+  실증). 신규 테스트 3종(수기 계산 대조 + fail-closed).
+- **정직 공개 (실질):** 보정 후 미생존 1건 — wave-1 perturbed Fisher
+  `p=0.059613`(보정 전후 동일, 계열 최대값)은 **결론과 같은 문장에서**
+  유의하지 않다고 기술. 이 Fisher 값은 RESULTS row 2가 애초에 발행하지
+  않은 동반 통계이며, 감추지 않고 공개하는 쪽을 택했다. 나머지 확증
+  결론은 보정 후에도 유지(최대 조정 p=0.009435).
+- **계열 선택의 보수성 실증:** 리뷰어가 wave-1/wave-2 분할 계열(4+2)과
+  통합 계열(6)을 양쪽 계산해 통합 쪽 조정 p가 **엄격히 더 크다**는 것을
+  확인 — 계열 프레이밍으로 유의성을 만들어낼 수 없음.
+- **발행 수치 무변경 실측:** RESULTS.md·METHOD.md diff는 포인터 줄 각
+  1행뿐 — 셀 값 변경 0. README/REPRODUCING은 docs-refresh 카운트
+  (415→418) 갱신뿐. FB-09(ac29b6d) 신규파일+포인터 선례 준수.
+- **하네스:** `run_task.sh --until-approve` cycle 3 APPROVE (REVISE 2회).
+  **모델 문자열:** meta.txt `claude_model=opus` (핀 도입 후 하네스가 직접
+  기록) · claude 2.1.222 · codex-cli 0.144.6 · 오케스트레이터
+  claude-opus-5[1m].
+- **게이트:** verify-public RC=0 · 417 passed/1 skipped · reproduce 100/100
+  · lint_doc_counts(538/418) · blindness · manifest · figures.
+  main 병합은 PKT-E003 후.
+- **차기:** Phase 6 (b) README November 2026 절. (c) candidates PENDING
+  승계 헤더는 동결 커밋 산출물 접촉 → 소유자 패킷(빌드 아님).
+- **Revert:** 브랜치 revert.
