@@ -289,3 +289,10 @@ DECISIONS_PENDING.md; owner reconciliation command recorded there).
   build APPROVE cycle 1. Figure visually verified. verify-public now 7
   commands (additive). BN-12 flipped with honest 2-gated/3-excluded
   evidence. Backlog: P1-04..08 remain in Phase 1.
+
+## Entry 16 — Cycle 14 (Phase 1): P1-07 pre-existing + BN-07 RESOLVED by measurement (2026-08-05)
+- Requested line already present (REPRODUCING.md:59-66, D123 sprint);
+  completed the unmeasured third leg of BN-07's condition empirically
+  (shallow clone → explicit FATAL, RC=1; full clone → PASS RC=0).
+  BN-07 flipped. Zero new prose. Phase 1 remaining: P1-04, P1-05,
+  P1-06, P1-08.

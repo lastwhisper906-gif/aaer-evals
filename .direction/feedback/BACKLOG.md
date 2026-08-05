@@ -257,7 +257,7 @@ priority rule carry an INV-03 disclosure entry in DECISIONS_PENDING.md.
 ### P1-04 BN-11/14/18 batch: Eng-canonical DECISION_TABLE / methodology_limitations / ERRATA — TODO
 ### P1-05 BN-13: wave-2/holdout/E2 recompute wired into verify-public — TODO
 ### P1-06 BN-16: no-network/no-corpus guard enforcing verify-public RC=0 (sandbox_guard wiring, Q-F16) — TODO
-### P1-07 BN-07 remainder: full-clone requirement line in REPRODUCING.md — TODO
+### P1-07 BN-07 remainder — PRE-EXISTING (REPRODUCING.md:59-66); BN-07 RESOLVED by measurement (2026-08-05, D-P53)
 ### P1-08 Recruiting materials packet (2 resume bullets + LinkedIn draft; owner packet) — TODO
 
 ## Phase 2 (only after Phase 1 all DONE/owner-blocked; specs only, zero calls)

@@ -65,7 +65,12 @@ seal 이후).
 **Basis:** README.md Licensing 절 (DOI pending Q-R03) ·
 `docs/OWNER_QUEUE.md` 12
 
-### BN-07: 재현 경로의 shallow-clone 취약성 — 이력 증명이 전체 git 이력 전제
+### BN-07: 재현 경로의 shallow-clone 취약성 — RESOLVED (2026-08-05, D-P53)
+**RESOLVED:** 해소 조건 3요소 전부 실측 — (1) verify_blindness.py
+check_not_shallow 명시 fail-closed (D123, :217); (2) REPRODUCING.md
+full-clone 전제 명시 (:59-66, --unshallow 수리 명령 포함); (3) 실측:
+full clone PASS(RC=0) · depth-1 clone에서 명시 FATAL 메시지 + 비영
+종료(2026-08-05 로컬 file:// 클론 실측, D-P53 기록).
 **Blocked:** 제3자 재현 주장의 견고성. `tools/verify_blindness.py`의
 기준-선행 증명(INV-07)은 `git merge-base --is-ancestor`로 커밋 SHA 이력을
 대조한다 — shallow clone(`--depth 1`, GitHub actions/checkout 기본값
