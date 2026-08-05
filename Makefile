@@ -1,5 +1,5 @@
 # RP-10 Phase 2.3 — 분석 전체 재현: make analysis (결정론, 네트워크 없음)
-.PHONY: analysis verify verify-public verify-full corpus-check docs-refresh
+.PHONY: analysis verify verify-public verify-public-sandboxed verify-full corpus-check docs-refresh
 analysis:
 	.venv/bin/python analysis/baselines.py
 	.venv/bin/python analysis/stats.py
@@ -21,6 +21,12 @@ verify-public:
 	.venv/bin/python tools/verify_manifest.py --schema-only
 	.venv/bin/python tools/verify_blindness.py
 	.venv/bin/python tools/verify_figures.py
+
+# verify-public-sandboxed: 동일 게이트를 구조적 무네트워크·무코퍼스 가드
+# 하에 실행 (Q-F16 (A), D-P50 #6 · D-P59 — BN-16: 일회 트랜스크립트가 아닌
+# 매 실행 구조 강제).
+verify-public-sandboxed:
+	.venv/bin/python tools/sandbox_guard.py -- $(MAKE) verify-public
 
 # verify-full: 원시 코퍼스(~/aaer-data) 의존 경로 전부 — 기준선 재계산 포함.
 # 전제 조건·취득 방법은 REPRODUCING.md §2 (corpus-check가 부재 시 안내 후 실패).

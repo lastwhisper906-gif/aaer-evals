@@ -260,7 +260,7 @@ priority rule carry an INV-03 disclosure entry in DECISIONS_PENDING.md.
 - P1-04b2 error_analysis_wave2_holdout EN: DONE (D-P56, BN-14+Q-F15 resolved)
 - P1-04c ERRATA EN: DONE (D-P57, BN-18 resolved) — BATCH COMPLETE
 ### P1-05 BN-13 — PRE-EXISTING (tools/test_recompute_published.py, F-01); BN-13 RESOLVED (2026-08-05, D-P58)
-### P1-06 BN-16: no-network/no-corpus guard enforcing verify-public RC=0 (sandbox_guard wiring, Q-F16) — TODO
+### P1-06 BN-16 — DONE (2026-08-05, D-P59; guarded RC=0 measured, Q-F16(A) executed)
 ### P1-07 BN-07 remainder — PRE-EXISTING (REPRODUCING.md:59-66); BN-07 RESOLVED by measurement (2026-08-05, D-P53)
 ### P1-08 Recruiting materials packet (2 resume bullets + LinkedIn draft; owner packet) — TODO
 

@@ -204,7 +204,14 @@ the document's honesty core). verify-public RC=0 both merges.
 **Resolution condition:** Committed offline pytest proves (i) forward_enumerate --offline recomputes universe.json matching the pinned sha256 and (ii) a committed forward case-build path emits a schema-valid cases_forward_001-shaped file from a synthetic fixture, with make verify-public RC=0
 **Basis:** tools/forward_enumerate.py
 
-### BN-16: verify-public's zero-external-data property rests on a stale one-time transcript, not a gate — the named static-review blind spot on the project's most load-bearing reproduce claim
+### BN-16: zero-external-data property was transcript-only — RESOLVED (2026-08-05, D-P59)
+**RESOLVED:** Q-F16 option (A) executed under D-P50 #6 — additive Makefile
+target `verify-public-sandboxed` wraps the full 7-command gate in
+tools/sandbox_guard.py (stdlib sitecustomize injection); measured RC=0
+(2026-08-05) with denial probes still firing on corpus reads (~/aaer-data)
+and network (socket.create_connection). Guard allowlist generalized to the
+SIP-sealed /System/Library (macOS font-asset scans during matplotlib
+import — read-only OS territory, corpus impossible); self-tests 6/6.
 **Blocked:** Continuous machine proof of the README Quickstart claim "no corpus, no API key, no network" — sole evidence is the 2026-07-22 clean-HOME transcript recorded at the 279-test state while the suite is now 289 and growing
 **Blocks:** Reproduce-promise integrity — a new test or tool that silently reaches network, ~/aaer-data, or HOME passes all 5 gates green while falsifying the README sentence auditors act on first
 **Resolution condition:** make verify-public runs under a machine-enforced no-network/no-corpus guard that fails the gate on any socket or out-of-repo data access, and exits RC=0 with the guard active

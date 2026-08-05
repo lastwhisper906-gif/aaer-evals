@@ -58,7 +58,13 @@ _ALLOW += [_real(p) for p in (
 ) if p]
 # 읽기 전용 시스템 데이터: matplotlib 폰트 캐시 재구축(시스템 폰트 스캔)·
 # zoneinfo 등 — 프로젝트 코퍼스가 존재할 수 없는 경로만.
-_ALLOW += ["/dev", "/System/Library/Fonts", "/Library/Fonts",
+_ALLOW += ["/dev",
+           # macOS SIP 봉인 시스템 볼륨 전체 — 읽기 전용 OS 영역(폰트
+           # 자산·PrivateFrameworks 폰트 서비스 등을 PIL/matplotlib이
+           # 임포트 시 스캔), 프로젝트 코퍼스 존재 불가 (D-P59; 종전
+           # /System/Library/Fonts 단일 항목의 원리적 일반화)
+           "/System/Library",
+           "/Library/Fonts",
            "/usr/share", "/usr/local/share"]
 
 

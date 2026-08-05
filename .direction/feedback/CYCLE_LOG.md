@@ -332,3 +332,8 @@ DECISIONS_PENDING.md; owner reconciliation command recorded there).
   exposed two spec traps (exact-equality on MC estimates; frozen-v1
   import). Existing F-01 test verified live (6/6, 6.97s). BN-13 flipped.
   Phase 1 remaining: P1-06, P1-08.
+
+## Entry 22 — Cycle 20 (Phase 1): P1-06 BN-16 RESOLVED (2026-08-05)
+- Q-F16 (A) wired; guarded full-gate RC=0 measured; denial probes verified.
+  Three allowlist mole-whacks generalized to /System/Library (SIP-sealed).
+  Q-F16 + BN-16 flipped. Phase 1 remaining: P1-08 only.

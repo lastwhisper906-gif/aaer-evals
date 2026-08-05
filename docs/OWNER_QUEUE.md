@@ -890,7 +890,7 @@
   no protected-path contact).
 - **상태**: OPEN
 
-## Q-F16 — BN-16: verify-public 무네트워크·무코퍼스 가드(sandbox_guard) 보호 Makefile 배선 — OPEN (신규, 2026-07-30 direction-loop)
+## Q-F16 — BN-16: sandbox_guard 보호 Makefile 배선 — **RESOLVED (2026-08-05, D-P50 #6 · D-P59 — 옵션 (A) 집행, 가드 경유 RC=0 실측)**
 
 - **질문**: README "no corpus, no API key, no network" 재현 주장의 유일한
   증거가 2026-07-22 일회 샌드박스 트랜스크립트(279-test 시점,
