@@ -1,6 +1,7 @@
 # Methodology limitations (§5-5 scope honesty — the list of limits to cite in publications)
 
 > **Korean original: [methodology_limitations.ko.md](methodology_limitations.ko.md)** — this file is the English canonical surface.
+> Frozen Korean snapshot covers L-1–L-8 (F-01/F-02); L-9 and later entries are English-canonical only.
 
 > This document is a guard against result-embellishment: whenever backtest
 > results are published or cited, the limitations below are stated alongside
@@ -141,7 +142,7 @@ Further limitations are recorded in this document as discovered — no post-hoc 
 <!-- canary: A2D69CFE-CA8A-4DE1-8393-5B225099299B (D9 — 학습 유입 감지용) -->
 ## L-6. Intra-family grader bias — recorded 2026-07-09
 
-**Limit**: the grader (`claude-fable-5`, fallback `claude-opus-4-8`) and the
+**Limit** (cross-model check: EXPLORATORY, unrun): the grader (`claude-fable-5`, fallback `claude-opus-4-8`) and the
 evaluatee (`claude-sonnet-5`) are **both in the Anthropic Claude family**.
 Since the grader is not independent of the evaluatee, a leniency toward the
 output style and reasoning conventions of same-family models (grading
@@ -176,7 +177,7 @@ non-independence of the *environment*, L-6 is non-independence of the
 | Instrument | Proxy for · bias direction | Empirical basis |
 |---|---|---|
 | **name-ID rate** (frozen `name_match` rule) | **Lower bound** on induced identification — false negatives exist (substantive recognition the rule misses) | DAR boundary false negative demonstrated: the probe response "Darling International Inc. (now Darling Ingredients Inc.)" is plain identity recognition, yet the frozen rule judged it False for not handling former names (`synthesis.json` §wave2_name_id_reconcile, Q-E02) |
-| **Perturbation delta** (original−perturbed score gap) | **Lower bound** on the **surface** (name·scale) memorization contribution — the deep channels perturbation cannot remove (ratio·trend patterns) remain | Residual identity recognition after perturbation 5–6/8 (recognition-probe draw-1 6/8 · draw-2 5/8, L-5) — perturbation scatters memorized numbers but does not remove identity recognition |
+| **Perturbation delta** (original−perturbed score gap) | Not a clean lower bound (the masked frame is partially de-identified) — bounds the **surface** (name·scale) memorization contribution — the deep channels perturbation cannot remove (ratio·trend patterns) remain | Residual identity recognition after perturbation 5–6/8 (recognition-probe draw-1 6/8 · draw-2 5/8, L-5) — perturbation scatters memorized numbers but does not remove identity recognition |
 | **Cognitive probe** (recognition probe, D7) | **Point estimate** from a single draw — nondeterministic sample with a demonstrated ±1 swing between draws | draw-1 6/8 → draw-2 5/8 (RP-06 A1 redraw; SCOR flipped between draws — L-5). The D7 threshold (≥3) fired in both draws, hence robust |
 | **recognition gate (k=1)** (holdout eligibility gate) | Single-draw pass verdict — **false-negative arithmetic**: assuming a per-case per-draw recognition probability of 30%, the single-draw non-recognition (pass) probability is 70%, and the probability that 3 cases pass 3/3 ≈ 0.7³ ≈ **34%** — i.e., a "3/3 pass" is not rare by chance in a single draw | the gate was judged on the single draw-1 (`runs/holdout/recognition/`); promotion to k=5 is a D32 pre-registration item |
 

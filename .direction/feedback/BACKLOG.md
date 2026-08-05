@@ -254,7 +254,11 @@ priority rule carry an INV-03 disclosure entry in DECISIONS_PENDING.md.
 ### P1-01 README reader-surface rewrite (Eng canonical, .ko preserved) — DONE (2026-08-05, D-P51, reader gate 2/2)
 ### P1-02 Published-issue image fix packet (Issues #1-3, absolute raw URLs; owner posts) — TODO
 ### P1-03 BN-12: fig_dotplot axis label → ordinal convention + figure-drift gate in verify-public — DONE (2026-08-05, D-P52)
-### P1-04 BN-11/14/18 batch: Eng-canonical DECISION_TABLE / methodology_limitations / ERRATA — TODO
+### P1-04 BN-11/14/18 batch — IN PROGRESS
+- P1-04a DECISION_TABLE: DONE (D-P54, BN-11+Q-F11 resolved)
+- P1-04b(1) methodology_limitations adoption: DONE (D-P55, Q-F14 resolved)
+- P1-04b2 error_analysis_wave2_holdout EN (Q-F15): TODO
+- P1-04c ERRATA EN (BN-18; append-only design question): TODO
 ### P1-05 BN-13: wave-2/holdout/E2 recompute wired into verify-public — TODO
 ### P1-06 BN-16: no-network/no-corpus guard enforcing verify-public RC=0 (sandbox_guard wiring, Q-F16) — TODO
 ### P1-07 BN-07 remainder — PRE-EXISTING (REPRODUCING.md:59-66); BN-07 RESOLVED by measurement (2026-08-05, D-P53)

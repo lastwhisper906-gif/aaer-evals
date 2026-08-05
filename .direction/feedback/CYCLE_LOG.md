@@ -304,3 +304,10 @@ DECISIONS_PENDING.md; owner reconciliation command recorded there).
   correctly discounted the post-hoc combined rule — the honesty framing
   survives translation). BN-11 + Q-F11 flipped. Remaining Phase 1:
   P1-04b/c, P1-05, P1-06, P1-08.
+
+## Entry 18 — Cycle 16 (Phase 1): P1-04b(1) limitations adoption (2026-08-05) — DONE
+- Translation pre-existed; cycle = adoption mechanics. The equivalence
+  lock caught 2 tokenizer artifacts (sentence-final numbers) and enrollment
+  surfaced 2 pre-W3 lint violations — fixed in EN canonical only, frozen
+  ko deferred with documented reason. Q-F14 RESOLVED; BN-14 half-open
+  (error-analysis doc next).

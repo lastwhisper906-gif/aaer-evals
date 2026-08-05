@@ -832,7 +832,7 @@
   no protected-path contact).
 - **상태**: OPEN
 
-## Q-F14 — BN-14: methodology_limitations 영어화 채택 + 린트 DOCS 확장 (en/ko 쌍) — OPEN (신규, 2026-07-29 direction-loop)
+## Q-F14 — BN-14: methodology_limitations 영어화 채택 + 린트 DOCS 확장 — **RESOLVED (2026-08-05, D-P50 #4 · D-P55 집행)**
 
 - **질문**: 루프가 F-01/F-02 규약(D114 영어화 선례)대로 수행한
   `docs/methodology_limitations.md` 영어화 — 한국어 원문은
