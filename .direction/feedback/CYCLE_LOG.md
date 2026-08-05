@@ -351,3 +351,12 @@ DECISIONS_PENDING.md; owner reconciliation command recorded there).
   longitudinal reframe. Build APPROVE cycle 1. Suite + verify-public
   green (no test-count change — verified). Governance-diet doc slot 1/1
   used. Next: P2-10.
+
+## Entry 25 — Cycle 23 (Phase 2): P2-10 Sealed Analyst spec (2026-08-05) — DONE
+- Harness stalled on MY silent-no-match check amendment (post-mortem in
+  D-P62; checker now a tool file; edit scripts now assert matches).
+  Artifact itself was complete; missing review run directly — REVISE
+  caught a gameable event-horizon rule (evaluatee-chosen resolution dates
+  defining ground truth); fixed to pre-registered HORIZON_DAYS=730 before
+  any signature (last legal moment under INV-03). Gates green.
+- Phase 2 remaining: P2-11 only.

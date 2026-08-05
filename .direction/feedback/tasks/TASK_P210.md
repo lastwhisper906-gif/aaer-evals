@@ -90,7 +90,7 @@ artifacts."
   forward/, BOTTLENECKS.md.
 
 ## Check command
-check: ./.venv/bin/python tools/lint_publication.py && ./.venv/bin/python -c "import json,re,sys; t=open('specs/SEALED_ANALYST_V0_1.md').read(); m=re.search(r'```json\n(.*?)```', t, re.S); json.loads(m.group(1)); import jsonschema; jsonschema.Draft7Validator.check_schema(json.loads(m.group(1))); print('embedded schema valid')"
+check: ./.venv/bin/python tools/lint_publication.py && ./.venv/bin/python tools/check_sealed_analyst_spec.py
 
 ## Acceptance criteria
 1. All 8 sections; exactly one draft-07 schema fence, check_schema-clean;

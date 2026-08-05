@@ -1009,3 +1009,26 @@
 - **소유자 액션:** 서명 시 §8 체크리스트 순서 실행 (§5.1 판정 포함).
 - **차기:** P2-10 (Sealed Analyst 스키마 v0.1).
 - **Revert:** 해당 커밋 revert.
+
+## D-P62 — P2-10 집행 기록: Sealed Analyst 스키마 v0.1 스펙 (2026-08-05)
+- **완료 요약:** specs/SEALED_ANALYST_V0_1.md (466줄, SPEC ONLY, 모델
+  호출 0) — 3단 판정/반증 가능 콜/커버넌트 트리거(소유자 지시문 문언
+  그대로 — provenance 헤더 명기), draft-7 스키마 내장(기계 검증:
+  tools/check_sealed_analyst_spec.py — 스키마 유일성 + worked example
+  인스턴스 검증), 필드별 결정론 채점 공식(상수 전수 sourced-or-
+  preregistered), ETF 축은 비규범 부록(가격 데이터 부재 정직 명기,
+  INV-23 취득 전제), RISK_SCORE_SEMANTICS 결정 어휘 매핑. 사후 리뷰가
+  게임 가능 지평 결함 적발 — 이벤트 지평이 피평가자 출력(resolution_date)
+  의존이던 것을 사전 등록 상수(case_cutoff + HORIZON_DAYS=730,
+  HOLDOUT (g) 관행)로 교정: INV-03 동결 전 마지막 합법 시점의 1문장
+  수리. 수리 후 fence check·전체 게이트 green.
+- **스톨 사후 부검 (공개):** 하네스 1차 런 STALLED — 원인은 빌더가 아닌
+  오케스트레이터: 체크 명령 수정 str.replace가 무매치 침묵 실패(세션 2번째
+  동일 실수)해 백틱 파손 체크(사전 리뷰가 예언한 바로 그 결함)로 실행.
+  교정: 체크를 도구 파일화(tools/check_sealed_analyst_spec.py), 이후
+  편집 스크립트는 assert 매치 의무화(본 수리부터 적용).
+- **보호 경로 공개:** specs/SEALED_ANALYST_V0_1.md(.protected-paths) —
+  D-P50 Phase 2 #10 서명 스코프 (사이클당 신규 문서 1 슬롯).
+- **소유자 액션:** 서명 시 §6 전제 체크리스트. **차기:** P2-11 (클린
+  케이스 인벤토리 플랜 — Phase 2 최종).
+- **Revert:** 해당 커밋 revert.

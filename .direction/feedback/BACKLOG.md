@@ -266,7 +266,7 @@ priority rule carry an INV-03 disclosure entry in DECISIONS_PENDING.md.
 
 ## Phase 2 (only after Phase 1 all DONE/owner-blocked; specs only, zero calls)
 ### P2-09 specs/OBSERVATORY_PILOT_V0.md — DONE (2026-08-05, D-P61)
-### P2-10 Sealed Analyst task schema v0.1 + deterministic scoring formulas (specs/) — TODO
+### P2-10 Sealed Analyst task schema v0.1 — DONE (2026-08-05, D-P62)
 ### P2-11 Clean-case inventory plan N=3 → 15+ (plan only, INV-23) — TODO
 
 ## PARKED (post-Phase-1 re-evaluation, D-P50)
