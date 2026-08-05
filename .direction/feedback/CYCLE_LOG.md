@@ -344,3 +344,10 @@ DECISIONS_PENDING.md; owner reconciliation command recorded there).
   (row 2, p=0.0021) instead of burying it — the honesty ordering the
   README itself now follows. Phase 1: 8/8 items closed, 7 bottlenecks
   resolved today. Entering Phase 2 (specs only, zero model calls).
+
+## Entry 24 — Cycle 22 (Phase 2): P2-09 observatory pilot spec (2026-08-05) — DONE
+- Pre-review's degenerate-contrast catch became the spec's §5.1
+  feasibility gate — the owner signs either a real contrast or a knowing
+  longitudinal reframe. Build APPROVE cycle 1. Suite + verify-public
+  green (no test-count change — verified). Governance-diet doc slot 1/1
+  used. Next: P2-10.

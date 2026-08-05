@@ -988,3 +988,24 @@
 - **차기 계획:** Phase 2 (스펙 전용, 모델 호출 0): P2-09 관측소 파일럿
   스펙 → P2-10 Sealed Analyst 스키마 → P2-11 클린 케이스 인벤토리 플랜.
 - **Revert:** 해당 커밋 revert.
+
+## D-P61 — P2-09 집행 기록: specs/OBSERVATORY_PILOT_V0.md (SPECIFICATION ONLY, 2026-08-05)
+- **완료 요약:** D-P50 Phase 2 #9 — 관측소 파일럿 스펙 (229줄, 모델 호출
+  0·호출 경로 코드 0). 사전 리뷰의 핵심 적발 반영: (1) 교차 컷오프
+  대비가 오늘 기준 퇴화 가능(웨이브 사건 전부 knows-era · 홀드아웃 사건
+  2026-02/03 — 현행 구독 후보 전원의 컷오프 이후) → off-diagonal 셀
+  부재 시 NO-GO + LONGITUDINAL baseline leg 재프레임을 소유자 별도
+  서명란으로 사전 등록 — "아무것도 측정하지 않는 스펙 서명" 차단.
+  (2) tier별 측정 매트릭스(홀드아웃은 교란 arm 부재 — 설계상 PRIMARY
+  identity-visible). (3) 프로브 인용 교정(holdout_probe.py·
+  probe_verdict.py:name_match). (4) G2 어휘 수동 검증(0건 실측 — lint는
+  specs/ 미스캔). 후보 로스터는 options/rationale/default로 미해소 유지.
+- **보호 경로 공개:** specs/OBSERVATORY_PILOT_V0.md(.protected-paths) —
+  D-P50 Phase 2 #9 서명 스코프. 스프린트 신규 최상위 문서 1/1 슬롯 소진
+  (거버넌스 다이어트 준수 — P2-10/11은 specs/ 기존 계열·플랜 문서).
+- **언어 관행 기록:** 스펙은 소유자 결정 문서로 한국어 혼용 —
+  D114 경계(독자 대면 영어 정본)는 specs/ 내부 설계 문서에 부적용
+  (cross_grader.md 선례).
+- **소유자 액션:** 서명 시 §8 체크리스트 순서 실행 (§5.1 판정 포함).
+- **차기:** P2-10 (Sealed Analyst 스키마 v0.1).
+- **Revert:** 해당 커밋 revert.
