@@ -1305,3 +1305,15 @@
   하네스 cycle 2 APPROVE. lint·verify-public green.
 - **차기:** P4b (PROSPECTIVE_METRICS).
 - **Revert:** 브랜치 revert.
+
+## D-P79 — P4b 완결: specs/PROSPECTIVE_METRICS.md (브랜치, 2026-08-06)
+- **⚠ 최상단:** PKT-E003 서명 1일 · Zenodo DOI 26일 · 패킷 큐 동일.
+- **완료:** 결과변수 분류 분리(4.02/재작성 Big-R·little-r/조사 공시/
+  소장/AAER — 결과별 기저율·시차 주석), 지표 계약(PR-AUC·PPV·top-k
+  정밀도·1000사당 경보·건당 검토 수·6/12/24개월 지평, 결정론 정의),
+  봉인 전향 통합(INV-22 경계 — cycle_001 무접촉·전 유니버스 점수 보존
+  독트린·임계 동결), cycle 2 유니버스 확장 산술, 소N 정직 절, 소유자
+  결정 3건 미해소 유지. PKT-Q6 지표 반 흡수. 하네스 cycle 1 APPROVE.
+  lint·verify-public green.
+- **차기:** P4c (HUMAN_BLIND_REGRADE) — Phase 4 마지막.
+- **Revert:** 브랜치 revert.
