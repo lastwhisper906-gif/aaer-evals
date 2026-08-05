@@ -1,4 +1,5 @@
 import json
+import subprocess
 from pathlib import Path
 
 import verify_blindness as vb
@@ -34,6 +35,46 @@ def semantic_failures(root: Path, reg: dict) -> list[str]:
     vb.WARNS.clear()
     vb.check_semantic_scans(root, reg)
     return list(vb.FAILS)
+
+
+def commit(root: Path, message: str) -> str:
+    subprocess.run(["git", "add", "."], cwd=root, check=True)
+    subprocess.run(["git", "-c", "user.name=Test", "-c",
+                    "user.email=test@example.invalid", "commit", "-m", message],
+                   cwd=root, check=True, capture_output=True)
+    return subprocess.run(["git", "rev-parse", "HEAD"], cwd=root, check=True,
+                          capture_output=True, text=True).stdout.strip()
+
+
+def history_failures(root: Path, reg: dict) -> list[str]:
+    vb.FAILS.clear()
+    vb.WARNS.clear()
+    vb.check_history(root, reg)
+    return list(vb.FAILS)
+
+
+def test_history_fails_when_criteria_commit_does_not_precede_results(tmp_path):
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    write_json(tmp_path, "joined.json", {})
+    joined = commit(tmp_path, "label join")
+    write_json(tmp_path, "scores.json", {})
+    score = commit(tmp_path, "criteria after results")
+    reg = {"experiments": [{"name": "bad-order", "score_commit": score,
+                             "label_join_commit": joined}]}
+
+    assert any("조상이 아님" in failure for failure in history_failures(tmp_path, reg))
+
+
+def test_history_unknown_skip_cannot_vacuously_pass_required_state(tmp_path):
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    write_json(tmp_path, "initial.json", {})
+    commit(tmp_path, "initial")
+    reg = {"experiments": [{"name": "unknown-score", "score_commit": "UNKNOWN",
+                             "label_join_commit": "UNKNOWN",
+                             "blind_state_required": ["blind.json"]}]}
+
+    assert any("트리를 읽지 못함" in failure
+               for failure in history_failures(tmp_path, reg))
 
 
 def test_synthetic_real_name_leak(tmp_path):

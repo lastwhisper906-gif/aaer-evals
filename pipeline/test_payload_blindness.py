@@ -1,6 +1,8 @@
 """Regression tests for the exact JSON exposed to the evaluatee."""
 import json
+import copy
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -59,3 +61,49 @@ def test_model_visible_top_level_keys_are_identical_across_arms():
     perturbed, _ = _render(bp.build_payload(CASE, perturb=True),
                            runner.MODEL_VISIBLE_KEYS)
     assert set(original) == set(perturbed) == EXPECTED_KEYS
+
+
+@pytest.mark.parametrize("perturb", [False, True])
+def test_runner_send_site_drops_adversarial_nonunderscore_marker(
+        monkeypatch, tmp_path, perturb):
+    payload = bp.build_payload(CASE, perturb=perturb)
+    payload["variant"] = "perturbed" if perturb else "original"
+    captured = []
+
+    def fake_call_model(model, system, user_payload, schema, **kwargs):
+        captured.append(user_payload)
+        return SimpleNamespace(ok=False, structured=None, fail_reason="test-stop",
+                               served_models=[])
+
+    monkeypatch.setattr(runner.bp, "build_payload",
+                        lambda *args, **kwargs: copy.deepcopy(payload))
+    monkeypatch.setattr(runner.cli_client, "call_model", fake_call_model)
+    log_dir = tmp_path / "logs"
+    log_dir.mkdir()
+    result = runner.run_case(CASE, perturb, tmp_path / "out", log_dir)
+
+    assert result["status"] == "FAIL (test-stop)"
+    sent = json.loads(captured[0])
+    assert set(sent) == EXPECTED_KEYS
+    assert not [word for word in FORBIDDEN if word in captured[0].lower()]
+
+
+def test_probe_send_site_drops_adversarial_nonunderscore_marker(monkeypatch, tmp_path):
+    payload = bp.build_payload(CASE, perturb=True)
+    payload["variant"] = "perturbed_v2_dateshift"
+    captured = []
+
+    def fake_call_model(model, system, user, schema, **kwargs):
+        captured.append(user)
+        return SimpleNamespace(ok=True,
+                               structured={"company_guess": "unknown", "confidence": "low"},
+                               fail_reason=None)
+
+    monkeypatch.setattr(probe_runner.bp, "build_payload",
+                        lambda *args, **kwargs: copy.deepcopy(payload))
+    monkeypatch.setattr(probe_runner.cli_client, "call_model", fake_call_model)
+    probe_runner.probe_case("recognition", CASE, tmp_path / "out", tmp_path / "logs")
+
+    sent = json.loads(captured[0])
+    assert set(sent) == EXPECTED_KEYS
+    assert not [word for word in FORBIDDEN if word in captured[0].lower()]

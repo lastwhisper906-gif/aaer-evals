@@ -250,3 +250,25 @@ def test_dry_run_has_hashes_and_no_subprocess(
     assert rc == 0
     assert "payload_sha256=" in output
     assert "prompt_sha256=" in output
+
+
+def test_valid_fingerprintless_existing_output_is_currently_skipped(
+        monkeypatch, tmp_path, case, payload, model_output):
+    """Pin option (ii): current code skips this; requiring FAIL remains an acceptance gap."""
+    repo = _configure_tmp(monkeypatch, tmp_path, payload)
+    existing = {
+        "case_id": "C01", "run_id": "legacy-C01", "model": "gpt-test",
+        "pipeline_version": "abc123", "run_timestamp": "2020-01-01T00:00:00+00:00",
+        "documents_used": [{"accession_no": "0001-20-000001", "form_type": "10-K",
+                            "filing_date": "2020-02-01"}],
+        **model_output,
+    }
+    jsonschema.Draft7Validator(cross.runner.FULL_OUTPUT_SCHEMA).validate(existing)
+    (repo / "runs" / "crossmodel_gpt" / "C01.json").write_text(
+        json.dumps(existing), encoding="utf-8")
+    monkeypatch.setattr(cross.subprocess, "run",
+                        lambda *a, **k: pytest.fail("resume invoked subprocess"))
+
+    result = cross.run_case(case, "original", repo / "runs" / "crossmodel_gpt")
+
+    assert result["status"] == "skip"

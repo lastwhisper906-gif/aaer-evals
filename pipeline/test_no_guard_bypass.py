@@ -13,6 +13,8 @@ pipeline/ 안의 모듈(피평가자 쪽 코드)은 cutoff_guard를 제외하고
 import re
 from pathlib import Path
 
+import pytest
+
 PIPELINE_DIR = Path(__file__).resolve().parent
 EXEMPT = {"cutoff_guard.py"}  # 게이트웨이 본체만 예외
 
@@ -35,6 +37,17 @@ def scannable_sources():
         if p.name in EXEMPT or p.name.startswith("test_"):
             continue
         yield p
+
+
+@pytest.mark.parametrize(("label", "source"), [
+    ("network import", "import requests\n"),
+    ("candidates.json direct reference", 'Path("candidates.json").read_text()\n'),
+    ("id_mapping direct reference", 'open("id_mapping.json")\n'),
+    ("scoring import", "from scoring import rubric\n"),
+    ("raw aaer-data read", 'Path("/tmp/aaer-data/raw.pdf").read_bytes()\n'),
+])
+def test_forbidden_patterns_have_positive_controls(label, source):
+    assert FORBIDDEN_PATTERNS[label].search(source), label
 
 
 def test_pipeline_modules_do_not_bypass_guard():

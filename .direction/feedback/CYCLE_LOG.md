@@ -386,3 +386,9 @@ DECISIONS_PENDING.md; owner reconciliation command recorded there).
   — recorded plainly, repaired, and the fold description made true.
   Seam-defect class (cross-document) now demonstrated as the per-doc
   gates' blind spot. Rotation next: R4.
+
+## Entry 30 — Cycle 28: R4 test-quality bundle landed, mutation-verified (2026-08-05)
+- Send-site blindness lock proven by live mutation test (2 red on
+  pre-FB-01 revert). INV-07 proof and INV-01 scan now have discriminating
+  tests. 6th transient CLI kill recovered earlier this round. Rotation
+  next: R5 third-party reproducibility.
