@@ -21,7 +21,12 @@ EXPERIMENT_SPECS = OrderedDict([
     ("holdout/controls/scores", ("runs/holdout/controls/scores", "hc_*.json")),
     ("main/grades_main", ("scoring/grades/main", "case_*.json")),
     ("main/grades_perturbed", ("scoring/grades/perturbed", "case_*.json")),
-    ("main/rp05_perturbation_meta", ("logs", "run_*/runmeta_perturbed_*.json")),
+    # ERA-SCOPED (divergence audit, D-P75): the committed rp05_stats.json is
+    # the frozen RP-05-era record (wave-1, 8 cases, 2026-07-06 run window).
+    # An unscoped run_* pattern pinned later wave-2/holdout runmetas and broke
+    # byte-identical regeneration. Later-era runmetas belong to future
+    # experiment ids, not this one.
+    ("main/rp05_perturbation_meta", ("logs", "run_20260706T*/runmeta_perturbed_*.json")),
     ("main/name_probe_v2", ("scoring/probe_results_v2/recognition", "case_*.json")),
     ("main/name_probe_v2ds_wave1", ("scoring/probe_results_v2ds_wave1/recognition", "case_*.json")),
     ("wave2/name_probe_v2ds_wave2", ("scoring/probe_results_v2ds_wave2/recognition", "case_*.json")),

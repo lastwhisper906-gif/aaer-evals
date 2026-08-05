@@ -1235,3 +1235,30 @@
   reviewer=claude 2.1.221 (meta.txt 기록).
 - **차기:** P1b (채점 fingerprint — P0-2).
 - **Revert:** 브랜치 revert.
+
+## D-P75 — Phase 1 완결: P0-2 채점 fingerprint + 발산 감사 (브랜치, 2026-08-05)
+- **⚠ 최상단 소유자 액션 (나이):** PKT-E003 서명 **0일** (본 브랜치 병합
+  게이트) · PKT-R2/FWD/P102/P108 0일 · Zenodo DOI(Q-R03) **25일** ·
+  계정 리네임/BN-04/재채점자/GPT 결정.
+- **P1b:** grader_runner에 8필드 fingerprint(각 필드가 지문을 바꾸는
+  것 실증 테스트) + fp-일치 skip + legacy fail-closed(--accept-legacy-grade
+  옵트인, FB-03 선례) + 불일치 시 형제 파일 + R1-01 교훈(형제 멱등).
+  하네스 cycle 2 APPROVE. 모델 호출 0.
+- **발산 감사 (Phase 1 step 4) — 판정:** 전 분석기 재실행 대조 결과,
+  게시 수치 이탈은 **정확히 E-003 기지 델타 2건뿐** (synthesis
+  fraud_median 60.0→57.5 · unified_table m_flag 반전) — E-003 검증
+  주장의 상향 기록(그 외 이탈 0). 부수 판정 2건: (i) BUYER_METRICS
+  이탈은 감사 절차 오호출(--logs-dir 미지정)의 거짓 양성 — 도구는
+  usage 0건·단가 미입력에 fail-closed함을 실측 확인. (ii) rp05_stats
+  이탈 = P1a 매니페스트의 시대(era) 미스코프 (전 세션 자기 결함 —
+  RP-05 동결 산출물은 2026-07-06 창의 wave-1 8케이스인데 현재 디스크
+  전체를 핀): run_20260706T* 로 시대 스코프 교정 — 생성기의 드롭 가드가
+  침묵 축소를 거부(설계 의도 실증)해 삭제-재생성의 명시 정정으로 수행,
+  교정 후 재생성이 커밋 산출물과 **의미 동일(parsed-equal)** 실증(잔여
+  24줄은 키 순서). 전역 runs 원장 재생성(--write-manifest). 후속 등록:
+  생성기의 generated_from_commit 필드가 무변경 재생성에도 전 파일을
+  더럽히는 처닝 와트 — 내용 무변경 시 무기록으로 개선 (차기).
+- **게이트:** 402/1 green · verify-public RC=0 (브랜치). main 병합은
+  PKT-E003 후.
+- **차기:** Phase 2 (스키마 v2 하드 제약 — 서명된 플랜 실행).
+- **Revert:** 브랜치 revert.

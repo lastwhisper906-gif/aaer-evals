@@ -467,3 +467,12 @@ DECISIONS_PENDING.md; owner reconciliation command recorded there).
   Orchestrator completed the mechanical half per merge protocol.
   188-entry ledger independently re-hashed clean. Holdout-analyzer wiring
   deferred per reviewer. Models: codex-cli 0.144.6 / claude 2.1.221.
+
+## Entry 37 — Phase 1 COMPLETE on branch: P0-1+P0-2 closed; divergence audit clean-except-known (2026-08-05)
+- The audit's two P0 defects are closed with fail-closed machinery and
+  tests. The divergence audit found ONLY the two known E-003 deltas among
+  published numbers — recorded as an upgrade to the E-003-era validation
+  claim — plus one self-inflicted manifest era-scope error (caught by the
+  audit, corrected explicitly through the drop guard, semantic identity
+  proven) and one procedure false-positive (tool verified fail-closed).
+  Models: codex-cli 0.144.6 / claude 2.1.221.
