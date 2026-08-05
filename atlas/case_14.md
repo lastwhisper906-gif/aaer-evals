@@ -85,7 +85,7 @@ in `runs/e2/s1…s8/case_14.json` (run `perturbed-case_14-r1`), assembled in
 `analysis/e2_trajectories.json` (j=0 `llm_p: null` — D71 fail-closed):
 j1 32 (cutoff 2013-05-09), j2 30, j3 48, j4 33, j5 **52** (2012-05-10), j6
 **55** (2012-03-01), j7 **58** (2011-11-03, trajectory maximum), j8 **55**
-(2011-05-05). Flag rule as recorded (`analysis/DECISION_TABLE.md` §4):
+(2011-05-05). Flag rule as recorded (`analysis/DECISION_TABLE.ko.md` §4):
 "플래그 = **어느 스냅샷이든** llm_p ≥ T … llm_p null 스냅샷 fail-closed
 제외" — at T=50 four snapshots (s5-s8) meet the rule, so case_14 enters
 `flagged_control`; cited as recorded, no recomputation. The frozen B3
@@ -121,7 +121,7 @@ kept CL1/CL3/CL5 at no_flag and held the composite at score 32.
   FY2008→FY2009 leg. Same axis as the Ryder over-reading in RP-05 §6 and
   the case_05 E2 flag.
 - **Design/measurement context (recorded, not recomputed)** —
-  `analysis/DECISION_TABLE.md` §4 states the rule's own cost: "리드타임의
+  `analysis/DECISION_TABLE.ko.md` §4 states the rule's own cost: "리드타임의
   대가로 오탐 기회도 스냅샷 수만큼 늘어난다" (any-snapshot rule; T=50
   control row 5/7). Draw-noise on record: main-frame k=5 re-draws scored
   32,27,45,42,30 (mean 35.2, σ 7.0; `review_packets/RP-06_hardening.md`

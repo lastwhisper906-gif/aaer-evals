@@ -889,3 +889,18 @@
   RESOLVED 플립(증거 인용). 파일 수정 0 (플립 외).
 - **소유자 액션:** 없음. **차기:** P1-04 (영어 정본 배치, 독자 게이트).
 - **Revert:** 플립 revert.
+
+## D-P54 — P1-04a 집행 기록: BN-11 해소 — DECISION_TABLE 영어 정본 (INV-03 공개, 2026-08-05)
+- **완료 요약:** Q-F11 기존 초안(docs/DECISION_TABLE_EN_DRAFT.md) 승격 —
+  재번역 아님(사전 리뷰가 고아화 방지 지적): DRAFT 배너 제거,
+  fig_tradeoff 블록 번역 삽입, 양방향 포인터, 초안 파일 동일 커밋 삭제.
+  한국어 원본 DECISION_TABLE.ko.md 동결 보존. 수치 토큰 등가 기계 잠금
+  (신규 tools/test_translation_equivalence.py — 레지스트리 확장형,
+  포인터 줄 제외 규칙 명시). lint DOCS += en/ko 동일 커밋(D115/D118
+  사슬 규칙). atlas 4파일의 한국어 인용 귀속을 .ko.md로 재지정(승격이
+  만든 사실 오류의 기계적 수리 — 보호 경로, 서명 지시 범위 공개).
+  독자 게이트 2/2 PASS(리크루터·애널리스트 — 기록 커밋). BN-11·Q-F11
+  RESOLVED. 스위트 353/1, verify-public(7) RC=0, 문서 카운트 352→354.
+- **소유자 액션:** 없음. **차기:** P1-04b (methodology_limitations 영어
+  정본 — Q-F14 초안 존재 여부 확인 후 동일 패턴).
+- **Revert:** 해당 커밋 revert.

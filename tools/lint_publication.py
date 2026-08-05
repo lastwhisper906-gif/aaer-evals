@@ -27,7 +27,8 @@ DOCS = ["README.md", "README.ko.md", "analysis/ISSUE_0_DRAFT.md",
         "RESULTS.md", "METHOD.md",              # D115: 영어 정본 수치 표·방법 문서
         "RESULTS.ko.md", "METHOD.ko.md",        # D115: 동결 한국어 원본 회귀 감시
         "AUDIT_INDEX.md", "REPRODUCING.md",     # D118: D114 영어화 2종 (F-01/F-02)
-        "AUDIT_INDEX.ko.md", "REPRODUCING.ko.md"]  # D118: 한국어 원본 회귀 감시
+        "AUDIT_INDEX.ko.md", "REPRODUCING.ko.md",  # D118: 한국어 원본 회귀 감시
+        "analysis/DECISION_TABLE.md", "analysis/DECISION_TABLE.ko.md"]
 
 G2 = {"HUBG": ["hub group"], "WMK": ["weis markets", "weis"], "GNE": ["genie energy", "genie"]}
 FRAUD_WORDS = ["fraud", "분식", "조작", "manipulat"]

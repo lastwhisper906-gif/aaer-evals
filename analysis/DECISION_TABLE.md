@@ -1,111 +1,124 @@
-# DECISION_TABLE — 임계별 결정 표 (구매자 언어 번역)
+# DECISION_TABLE — Per-threshold decision table (buyer-language translation)
 
-> **소유자 서명 2026-07-16 (Q-O02, this session's structured decision
-> responses; 원장 D94).** 사전 등록: `analysis/DECISION_TABLE_PLAN.md`
-> (계산 전 단독 커밋 2fc3d23) · 수치 원본: `analysis/decision_table.json`
-> (`analysis/decision_table.py`, 동결 점수 재집계 — 신규 실험·신규 미터링 0).
+> Korean original: [DECISION_TABLE.ko.md](DECISION_TABLE.ko.md) (frozen).
+
+> **Owner-signed 2026-07-16 (Q-O02, this session's structured decision
+> responses; ledger D94).** Pre-registered: `analysis/DECISION_TABLE_PLAN.md`
+> (standalone commit 2fc3d23 before computation) · numeric source:
+> `analysis/decision_table.json` (`analysis/decision_table.py`, frozen-score
+> reaggregation — new experiments · new metering: 0).
 
 ![Threshold sweep: detection rate vs false-positive rate with CP95 intervals, ordinal thresholds 40-70](fig_tradeoff.png)
 
-*임계 스윕 한 장 요약 — 탐지율과 오탐율이 임계와 함께 움직인다
-(지배 전략 부재). 재생성: `.venv/bin/python analysis/fig_tradeoff.py`
-(D-P43 소유자 서명, Q-F17 기본값 (C) 집행).*
+*Threshold sweep at a glance — detection rate and false-positive rate move
+with the threshold (no dominant strategy). Regenerate:
+`.venv/bin/python analysis/fig_tradeoff.py` (D-P43 owner-signed, Q-F17
+default (C) executed).*
 
-## 0. 이 표를 읽는 법
+## 0. How to read this table
 
-- 질문: "임계 T에서 자르면 무엇을 얻고(플래그), 무엇을 잘못 울리고(오탐),
-  탐지 1건에 얼마가 드는가?"
-- 모든 비율에 Clopper–Pearson 95% 구간을 병기했다 — **N이 작아 점 추정
-  단독으로는 아무것도 말할 수 없다.** 연속 곡선(ROC 등)은 같은 이유로
-  일부러 그리지 않았다.
-- 점수는 0–100 **서수(ordinal)** 산출이다. 보정된 확률이 아니다
-  (ECE 0.209/0.179, `specs/calibration_scope.md`).
-- 비용 축: 스크린당 **$0.5304** (`analysis/BUYER_METRICS.md` §3 실측 —
-  E2 로그 158호출 토큰, sonnet-5 목록가 $3/$15, 캐시 과금 등가 가중).
-  탐지당 비용 = 레이어 전체 스크린 비용 ÷ 탐지 수. 탐지 0이면 "—".
+- The question: "If you cut at threshold T, what do you gain (flags), what
+  do you falsely alarm on (false positives), and what does 1 detection
+  cost?"
+- Every rate carries its Clopper–Pearson 95% interval — **N is so small
+  that a point estimate alone says nothing.** Continuous curves (ROC etc.)
+  are deliberately not drawn, for the same reason.
+- Scores are **ordinal** outputs on the 0–100 scale — not calibrated
+  probabilities (ECE 0.209/0.179, `specs/calibration_scope.md`).
+- Cost axis: **$0.5304** per screen (`analysis/BUYER_METRICS.md` §3
+  measured — E2 log 158-call tokens, sonnet-5 list price $3/$15,
+  cache-billing-equivalent weighting). Cost per detection = layer-wide
+  screening cost ÷ detections. 0 detections → "—".
 
-## 1. wave-1 perturbed (실험군 8 · 대조군 8)
+## 1. wave-1 perturbed (treatment 8 · control 8)
 
-식별자 마스킹(perturbed) 프레임의 실험군 8건 vs **original 프레임** 대조군
-8건 — 대조군의 perturbed 채점본이 없어 프레임이 비대칭이다 (신규 채점
-금지 계약). 이 비대칭은 이 표의 한계로 남는다.
+Treatment 8 cases in the identity-masked (perturbed) frame vs control
+8 cases in the **original frame** — no perturbed-frame grading exists for
+the controls, so the frames are asymmetric (no-new-grading contract). This
+asymmetry remains a limit of this table.
 
-| 임계 T | 플래그(실험군, n=8) | 95% CI | 오탐(대조군, n=8) | 95% CI | 탐지당 비용 |
+| Threshold T | Flags (treatment, n=8) | 95% CI | False positives (control, n=8) | 95% CI | Cost per detection |
 |---|---|---|---|---|---|
 | ≥40 | 8/8 (100.0%) | [63.1%, 100.0%] | 3/8 (37.5%) | [8.5%, 75.5%] | $1.06 |
 | ≥50 | 4/8 (50.0%) | [15.7%, 84.3%] | 1/8 (12.5%) | [0.3%, 52.6%] | $2.12 |
 | ≥60 | 1/8 (12.5%) | [0.3%, 52.6%] | 0/8 (0.0%) | [0.0%, 36.9%] | $8.49 |
 | ≥70 | 0/8 (0.0%) | [0.0%, 36.9%] | 0/8 (0.0%) | [0.0%, 36.9%] | — |
 
-## 2. wave-2 (실험군 9 · 대조군 23)
+## 2. wave-2 (treatment 9 · control 23)
 
-가공명(fictional name) 프레임, 실험군·대조군 동일 프로토콜.
+Fictional-name frame, identical protocol for treatment and control.
 
-| 임계 T | 플래그(실험군, n=9) | 95% CI | 오탐(대조군, n=23) | 95% CI | 탐지당 비용 |
+| Threshold T | Flags (treatment, n=9) | 95% CI | False positives (control, n=23) | 95% CI | Cost per detection |
 |---|---|---|---|---|---|
 | ≥40 | 8/9 (88.9%) | [51.7%, 99.7%] | 10/23 (43.5%) | [23.2%, 65.5%] | $2.12 |
 | ≥50 | 7/9 (77.8%) | [40.0%, 97.2%] | 5/23 (21.7%) | [7.5%, 43.7%] | $2.42 |
 | ≥60 | 3/9 (33.3%) | [7.5%, 70.1%] | 0/23 (0.0%) | [0.0%, 14.8%] | $5.66 |
 | ≥70 | 2/9 (22.2%) | [2.8%, 60.0%] | 0/23 (0.0%) | [0.0%, 14.8%] | $8.49 |
 
-## 3. holdout + E1 대조군 (이벤트군 3 · 대조군 9)
+## 3. holdout + E1 controls (event group 3 · control 9)
 
-**주의: 여기의 3건은 fraud 확정이 아니라 G2 잠정 라벨(재작성/4.02
-non-reliance 이벤트)이다.** 열 이름도 "탐지"가 아니라 "이벤트 플래깅"으로
-읽어야 한다. n=3은 통계가 아니라 사례 기록이다.
+**Caution: the 3 cases here are not confirmed fraud but G2 provisional
+labels (restatement/4.02 non-reliance events).** The column name must also
+be read as "event flagging," not "detection." n=3 is case documentation,
+not statistics.
 
-| 임계 T | 플래그(이벤트군, n=3) | 95% CI | 오탐(대조군, n=9) | 95% CI | 탐지당 비용 |
+| Threshold T | Flags (event group, n=3) | 95% CI | False positives (control, n=9) | 95% CI | Cost per detection |
 |---|---|---|---|---|---|
 | ≥40 | 2/3 (66.7%) | [9.4%, 99.2%] | 3/9 (33.3%) | [7.5%, 70.1%] | $3.18 |
 | ≥50 | 1/3 (33.3%) | [0.8%, 90.6%] | 2/9 (22.2%) | [2.8%, 60.0%] | $6.36 |
 | ≥60 | 1/3 (33.3%) | [0.8%, 90.6%] | 1/9 (11.1%) | [0.3%, 48.2%] | $6.36 |
 | ≥70 | 1/3 (33.3%) | [0.8%, 90.6%] | 1/9 (11.1%) | [0.3%, 48.2%] | $6.36 |
 
-## 4. E2 궤적 (실험군 12 · 대조군 7 — 케이스당 다중 스냅샷)
+## 4. E2 trajectories (treatment 12 · control 7 — multiple snapshots per case)
 
-플래그 = **어느 스냅샷이든** llm_p ≥ T (분기 시계열 감시 시나리오와 동일
-의미론 — 리드타임의 대가로 오탐 기회도 스냅샷 수만큼 늘어난다).
-스크린 158 스냅샷, llm_p null 7 스냅샷은 fail-closed 제외 (대조군 j=0 —
-D71 규약).
+Flag = llm_p ≥ T on **any snapshot** (the same semantics as a quarterly
+time-series surveillance scenario — the price of lead time is that
+false-positive opportunities also grow with the snapshot count).
+Screened 158 snapshots; 7 snapshots with llm_p null are excluded
+fail-closed (control j=0 — D71 convention).
 
-| 임계 T | 플래그(실험군, n=12) | 95% CI | 오탐(대조군, n=7) | 95% CI | 탐지당 비용 |
+| Threshold T | Flags (treatment, n=12) | 95% CI | False positives (control, n=7) | 95% CI | Cost per detection |
 |---|---|---|---|---|---|
 | ≥40 | 12/12 (100.0%) | [73.5%, 100.0%] | 7/7 (100.0%) | [59.0%, 100.0%] | $6.98 |
 | ≥50 | 12/12 (100.0%) | [73.5%, 100.0%] | 5/7 (71.4%) | [29.0%, 96.3%] | $6.98 |
 | ≥60 | 7/12 (58.3%) | [27.7%, 84.8%] | 3/7 (42.9%) | [9.9%, 81.6%] | $11.97 |
 | ≥70 | 1/12 (8.3%) | [0.2%, 38.5%] | 0/7 (0.0%) | [0.0%, 41.0%] | $83.80 |
 
-읽기: 단일 임계 LLM 감시는 T=50에서 오탐 71.4%와 동행한다 (buyer_metrics
-§2와 동일 수치 — 리드타임 7분기의 가격표). T를 올려 오탐을 죽이면 탐지가
-먼저 죽는다 (T=70: 1/12). **이 궤적 레이어에서 단독 LLM 임계로는 지배
-전략이 없다** — 이것이 이 표의 주된 정직한 결론이다.
+Reading: single-threshold LLM surveillance travels with 71.4% false
+positives at T=50 (the same figure as buyer_metrics §2 — the price tag of
+a 7-quarter lead time). Raise T to kill the false positives and detection
+dies first (T=70: 1/12). **At this trajectory layer there is no dominant
+strategy for a standalone LLM threshold** — that is this table's main
+honest conclusion.
 
-## 5. [EXPLORATORY] 결합 규칙 후보: B3 게이트 + LLM (성능 주장 금지)
+## 5. [EXPLORATORY] Combined-rule candidate: B3 gate + LLM (no performance claims)
 
-동일 스냅샷에서 `b3_score ≥ 2` AND `llm_p ≥ T` (L4 궤적 전용).
+`b3_score ≥ 2` AND `llm_p ≥ T` on the same snapshot (L4 trajectory only).
 
-> **이 절은 동결 데이터를 열람한 뒤 세운 사후(post-hoc) 규칙이다. 아래
-> 수치는 소급 성능 주장으로 인용할 수 없으며, 유일한 용도는 Cycle-2
-> sealed 전향 검증의 사전 등록 후보다** (`docs/FUTURE_CYCLE_PROTOCOL.md`
-> 부록). 발행 표면·README에서 성능 근거로 인용 금지.
+> **This section is a post-hoc rule formed after viewing the frozen data.
+> The numbers below cannot be cited as retrospective performance claims;
+> their sole use is as a pre-registered candidate for Cycle-2 sealed
+> forward validation** (`docs/FUTURE_CYCLE_PROTOCOL.md` appendix). Do not
+> cite them as performance evidence on the publication surface or README.
 
-| 임계 T | 플래그(실험군, n=12) | 95% CI | 오탐(대조군, n=7) | 95% CI | 탐지당 비용 |
+| Threshold T | Flags (treatment, n=12) | 95% CI | False positives (control, n=7) | 95% CI | Cost per detection |
 |---|---|---|---|---|---|
 | ≥40 | 8/12 (66.7%) | [34.9%, 90.1%] | 0/7 (0.0%) | [0.0%, 41.0%] | $10.48 |
 | ≥50 | 7/12 (58.3%) | [27.7%, 84.8%] | 0/7 (0.0%) | [0.0%, 41.0%] | $11.97 |
 | ≥60 | 5/12 (41.7%) | [15.2%, 72.3%] | 0/7 (0.0%) | [0.0%, 41.0%] | $16.76 |
 | ≥70 | 1/12 (8.3%) | [0.2%, 38.5%] | 0/7 (0.0%) | [0.0%, 41.0%] | $83.80 |
 
-관찰 기술(주장 아님): 결합 시 대조군 오탐이 전 임계에서 0/7이 되고 T=50
-탐지 7/12가 남는다 — 그러나 n=7 대조군의 0/7은 CI 상한 41.0%까지 열려
-있고, 규칙 자체가 사후 선택이므로 이 표에서 증명되는 것은 없다. 검증은
-sealed 예측으로만 한다.
+Observed description (not a claim): under the combined rule, control false
+positives go to 0/7 at every threshold and T=50 detection of 7/12 remains
+— but the control n=7's 0/7 stays open up to a CI upper bound of 41.0% —
+and the rule itself is a post-hoc selection, so this table proves nothing.
+Validation happens only through sealed predictions.
 
-## 6. 한계와 범위
+## 6. Limits and scope
 
-- 본 결과는 **Claude 기반 단일 파이프라인에 한정**된다 (PROJECT.md §5-5).
-  전체 LLM으로 일반화 금지.
-- 대조군은 "비집행"이지 "깨끗함 확정"이 아니다 (EARLINESS_PLAN §7) —
-  오탐률은 그 한정 안에서만 정의된다.
-- 모든 N이 작다. 구간이 곧 결론이다.
-- 채점: Claude 보조 + 인간 최종 확정.
+- These results are **scoped to a single Claude-based pipeline**
+  (PROJECT.md §5-5). No generalization to LLMs at large.
+- Controls are "non-enforcement," not "confirmed clean" (EARLINESS_PLAN
+  §7) — the false-positive rate is defined only within that qualification.
+- Every N is small. The intervals are the conclusion.
+- Grading: Claude-assisted, human-finalized.

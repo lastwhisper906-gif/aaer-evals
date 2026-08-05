@@ -83,7 +83,7 @@ harness per `docs/FREEZE_REV4_HARNESS_E2.md`): frozen snapshot scores in
 **55** (cutoff 2013-05-02), j2 45, j3 **55** (2012-10-26), j4 45, j5 **60**
 (2012-05-02, trajectory maximum), j6 **58** (2012-02-28), j7 **55**
 (2011-11-05). Flag rule as recorded
-(`analysis/DECISION_TABLE.md` §4; `decision_table.json` L4 note): "플래그 =
+(`analysis/DECISION_TABLE.ko.md` §4; `decision_table.json` L4 note): "플래그 =
 **어느 스냅샷이든** llm_p ≥ T … null 스냅샷 fail-closed 제외" — at T=50
 five snapshots meet the rule (files `runs/e2/s1,s3,s5,s6,s7/case_11.json`),
 so case_11 enters `flagged_control`; at T=60 only s5. The frozen B3 series
@@ -118,7 +118,7 @@ kept CL1/CL5 at no_flag and held the composite at score 45.
   "classic reserve-release earnings-boost pattern" is the same coverage
   decline the main frame held below threshold.
 - **Design/measurement context (recorded, not recomputed)** —
-  `analysis/DECISION_TABLE.md` §4 states the rule's own cost: "리드타임의
+  `analysis/DECISION_TABLE.ko.md` §4 states the rule's own cost: "리드타임의
   대가로 오탐 기회도 스냅샷 수만큼 늘어난다". Draw-noise on record:
   main-frame k=5 re-draws scored 45,33,55,58,45 (mean 47.2, σ 8.8, 33–58;
   `review_packets/RP-06_hardening.md` §3-2) — two of five re-draws

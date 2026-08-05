@@ -296,3 +296,11 @@ DECISIONS_PENDING.md; owner reconciliation command recorded there).
   (shallow clone → explicit FATAL, RC=1; full clone → PASS RC=0).
   BN-07 flipped. Zero new prose. Phase 1 remaining: P1-04, P1-05,
   P1-06, P1-08.
+
+## Entry 17 — Cycle 15 (Phase 1): P1-04a BN-11 resolved (2026-08-05) — DONE
+- Pre-review caught the pre-existing Q-F11 English draft (promotion, not
+  retranslation) + token-scaffold trap + pointer precedent + atlas
+  follow-up. Build APPROVE cycle 1. Reader gate 2/2 PASS (both readers
+  correctly discounted the post-hoc combined rule — the honesty framing
+  survives translation). BN-11 + Q-F11 flipped. Remaining Phase 1:
+  P1-04b/c, P1-05, P1-06, P1-08.

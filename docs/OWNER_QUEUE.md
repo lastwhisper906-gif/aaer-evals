@@ -747,7 +747,7 @@
   RC=0 (manifest 538 · pytest 283)".
 - **상태**: RESOLVED (2026-07-29, D124)
 
-## Q-F11 — BN-11 채택 반쪽: DECISION_TABLE 영어 정본 채택 + 린트 DOCS 확장 — OPEN (신규, 2026-07-29 direction-loop)
+## Q-F11 — BN-11 채택 반쪽: DECISION_TABLE 영어 정본 채택 + 린트 DOCS 확장 — **RESOLVED (2026-08-05, D-P50 소유자 지시 #4 · D-P54 집행)**
 
 - **질문**: 루프가 작성한 `docs/DECISION_TABLE_EN_DRAFT.md`
   (`analysis/DECISION_TABLE.md`의 전문 영역 — 수치 토큰 동치 diff 검사
@@ -771,7 +771,9 @@
   이라 INV-18 사슬(발견 → 큐 등록 → 서명)로 소유자 채택을 요청한다.
 - **세션 기본 조치**: 초안만 — 보호 경로 무접촉 (draft only,
   no protected-path contact).
-- **상태**: OPEN
+- **상태**: RESOLVED (2026-08-05) — D-P50 #4 서명 지시로 집행: Q-F11 초안
+  승격(analysis/DECISION_TABLE.md 영어 정본), .ko.md 동결, 토큰 등가
+  기계 잠금, 린트 DOCS 동시 편입, 독자 게이트 2/2 PASS (D-P54).
 
 ## Q-F12 — BN-10: ENGINE_DECISION v2 소유자 패킷 검토·서명 (Cycle-2 등록 이전) — OPEN (신규, 2026-07-29 direction-loop)
 

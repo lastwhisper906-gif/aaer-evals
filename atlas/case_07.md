@@ -82,7 +82,7 @@ in `runs/e2/s1…s8/case_07.json` (run `perturbed-case_07-r1`), assembled in
 case_07 in `_s0_llm_unavailable`): j1 28, j2 30, j3 33, j4 35, j5 25, j6
 **50** (cutoff 2014-05-17), j7 30, j8 **55** (cutoff 2013-10-29, trajectory
 maximum; risk_tier "elevated"). Flag rule as recorded
-(`analysis/DECISION_TABLE.md` §4; `decision_table.json` L4 note): "플래그 =
+(`analysis/DECISION_TABLE.ko.md` §4; `decision_table.json` L4 note): "플래그 =
 **어느 스냅샷이든** llm_p ≥ T … llm_p null 7 스냅샷은 fail-closed 제외" — at
 T=50 two snapshots meet the rule (`runs/e2/s6,s8/case_07.json`), so case_07
 enters `flagged_control` (also at T=40; not at T=60 — max 55); the frozen B3
@@ -120,7 +120,7 @@ eight items at no_flag and held score 25 with zero mechanism hypotheses.
   **undetermined**: interpretation if present, retrieval/DATA if omitted.
   **[OWNER REVIEW]**
 - **Design/measurement context (recorded, not recomputed)** —
-  `analysis/DECISION_TABLE.md` §4 states the rule's own cost: "리드타임의
+  `analysis/DECISION_TABLE.ko.md` §4 states the rule's own cost: "리드타임의
   대가로 오탐 기회도 스냅샷 수만큼 늘어난다" (any-snapshot rule over ≤8
   snapshots). Unlike case_05, this is **not** near-threshold noise:
   main-frame k=5 re-draws scored 25,15,20,18,20 (mean 19.6, σ 3.3, max 25 —

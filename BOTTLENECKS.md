@@ -115,7 +115,15 @@ README.md:46, `## Quickstart`(:56)보다 위. `make verify-public` RC=0
 **Resolution condition:** Owner packet exists containing a v2 draft (FPR-matching readout rules + control-expansion selection protocol + post-E2 history-disclosure section per PROJECT.md §5-6) and owner signature is recorded in the D-ledger before Cycle-2 registration
 **Basis:** specs/ENGINE_DECISION.md
 
-### BN-11: The README headline's sole evidence link (analysis/DECISION_TABLE.md) is Korean-only — D114 English-surface boundary unapplied at its most load-bearing click
+### BN-11: README headline evidence link Korean-only — RESOLVED (2026-08-05, D-P54)
+**RESOLVED:** D-P50 #4 execution — analysis/DECISION_TABLE.md promoted to
+English canonical from the Q-F11 draft (banner removed, fig_tradeoff block
+translated in), Korean original frozen at DECISION_TABLE.ko.md with
+bidirectional pointers; numeric token-equivalence machine-locked
+(tools/test_translation_equivalence.py, registry-extensible); both files in
+lint DOCS same-commit (D115/D118 chain rule); atlas quote attributions
+repointed to .ko.md; reader gate 2/2 PASS
+(.direction/feedback/readertests/P1-04a_*).
 **Blocked:** Target-audience readability of the headline finding's evidence
 — README.md:26 sends practitioners and academics to a Korean-throughout
 signed table with no English counterpart. (Owner re-entry D125: the H25
