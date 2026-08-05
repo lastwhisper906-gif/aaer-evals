@@ -814,3 +814,34 @@
   회고 케이스 × 구독 Codex × 분리 경로(runs/crossmodel_gpt/) × 게시
   소유자 게이트. Gemini·종량 API·신규 케이스는 예외 밖(여전히 위반).
 - **Revert:** 본 커밋 revert + sync 재실행.
+
+## D-P49 — NB-03 집행 기록: 교차모델 GPT 러너 병합 · 라이브 트랜치 PARKED (INV-03 공개, 2026-08-05)
+- **What:** pipeline/crossmodel_gpt.py + 테스트 병합 (하네스 3사이클
+  APPROVE — cycle 1-2 REVISE가 라이브 치명 결함 2건 교정: 스키마 미포함
+  프롬프트(전 트랜치 FAIL 예정이었음) · provenance 문서화). v1 완전
+  준수 봉투 + codex-native fingerprint, MCP/지시파일 격리 플래그 +
+  --json 감사 로그, 동일 입력 재시도(코칭 금지), frozen-frame 재구성
+  (eafc32b 기준). 스위트 345 passed/1 skipped, verify-public PASS,
+  문서 카운트 334→346. 모델 호출 0.
+- **라이브 트랜치 PARKED:** 2026-08 신규 소유자 지시(Reader Surface
+  Completion 우선 잠금, Phase 2도 zero model calls)에 따라 30콜 트랜치
+  발사는 보류 — 소유자 액션 아이템으로 이관: 발사 명령
+  `.venv/bin/python pipeline/crossmodel_gpt.py --frame original --out
+  runs/crossmodel_gpt/wave1_original --limit 30` (D-P48 예외 하 합법,
+  실행 시점은 소유자/차기 지시).
+- **Revert:** 해당 커밋 revert.
+
+## D-P50 — 소유자 지시 기록: Reader Surface Completion → Observatory Prep (2026-08-05)
+- **서명:** 소유자 지시문 "DIRECTION: Reader Surface Completion →
+  Observatory Prep (2026-08 revision, owner-approved verbally)" 전문.
+- **효력:** 우선순위 잠금 — Phase 1(독자 표면 8항목) 완결/소유자 차단
+  전까지 하위 단계 착수 금지; Phase 2는 스펙·스키마만(모델 호출 0).
+  거버넌스 다이어트(스프린트당 신규 최상위 문서 ≤1, 신규 INV/BN 식별자
+  금지), 독자 테스트 게이트(항목 1·2·4·8: 모의 독자 2인 통과 기록),
+  게시·발송·계정·모델 호출·신규 fetch 필요 시 즉시 정지+큐 적재,
+  사이클마다 본 원장에 완료 요약/소유자 액션/차기 계획 append.
+- **기존 백로그 처분:** NB-04(교란 v2)·NB-05(전달 재구조 — Phase 1
+  항목 1로 흡수)·NB-06(forward 메모)·NB-07(확장 PREP)·GPT 트랜치 →
+  Phase 1 완결 후 재평가 대상으로 PARK. 기존 불변식·5게이트·동결
+  규율·보호 경로 무변경.
+- **Revert:** append-only 부인 항목으로만.

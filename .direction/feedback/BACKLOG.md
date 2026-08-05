@@ -220,7 +220,7 @@ priority rule carry an INV-03 disclosure entry in DECISIONS_PENDING.md.
   actions, permissions: contents: read, doc/code job split). Ruff/type/
   coverage EXCLUDED (INV-11 — amendment draft queued).
 ### NB-03 INV-12 amendment commit (cite D-P44b) + cross-model GPT runner
-- category: CODE+RUN · size: M+L · status: TODO
+- category: CODE+RUN · size: M+L · status: CODE DONE (2026-08-05, D-P48/D-P49); LIVE TRANCHE PARKED (D-P50 phase lock)
 - claim: L-6 same-family-leniency limitation gets its empirical test;
   "Claude pipeline result" → "LLM result" reframing (A3: best ROI).
   Runs via subscription codex only; outputs to new separated path;
@@ -246,3 +246,26 @@ priority rule carry an INV-03 disclosure entry in DECISIONS_PENDING.md.
 - Ruff/Pyright/coverage/pip-audit (INV-11) · ML baseline (INV-12) ·
   k>=5 redraw (INV-21/BN-03 pin, Nov window D113) · universe expansion
   execution (INV-23 supervised fetch + INV-12).
+
+
+# BACKLOG v3 (D-P50 phase lock, 2026-08-05) — Reader Surface Completion
+
+## Phase 1 (priority order; items 1/2/4/8 carry the 2-simulated-reader gate)
+### P1-01 README reader-surface rewrite (Eng canonical, .ko preserved) — TODO
+### P1-02 Published-issue image fix packet (Issues #1-3, absolute raw URLs; owner posts) — TODO
+### P1-03 BN-12: fig_dotplot axis label → ordinal convention + figure-drift gate in verify-public — TODO
+### P1-04 BN-11/14/18 batch: Eng-canonical DECISION_TABLE / methodology_limitations / ERRATA — TODO
+### P1-05 BN-13: wave-2/holdout/E2 recompute wired into verify-public — TODO
+### P1-06 BN-16: no-network/no-corpus guard enforcing verify-public RC=0 (sandbox_guard wiring, Q-F16) — TODO
+### P1-07 BN-07 remainder: full-clone requirement line in REPRODUCING.md — TODO
+### P1-08 Recruiting materials packet (2 resume bullets + LinkedIn draft; owner packet) — TODO
+
+## Phase 2 (only after Phase 1 all DONE/owner-blocked; specs only, zero calls)
+### P2-09 specs/OBSERVATORY_PILOT_V0.md (SPECIFICATION ONLY) — TODO
+### P2-10 Sealed Analyst task schema v0.1 + deterministic scoring formulas (specs/) — TODO
+### P2-11 Clean-case inventory plan N=3 → 15+ (plan only, INV-23) — TODO
+
+## PARKED (post-Phase-1 re-evaluation, D-P50)
+- NB-04 perturbation v2 validation · NB-06 forward memo (Nov clock — flag
+  at Phase-1 exit) · NB-07 expansion PREP · GPT live tranche (launch
+  command in D-P49)
