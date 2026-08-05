@@ -374,3 +374,9 @@ DECISIONS_PENDING.md; owner reconciliation command recorded there).
   registry covers its outputs, the runner refuses to fire unpinned, and
   resume is truly idempotent (previously certified-wrong by its own
   test). R1-04 stays deferred. Rotation next: R2 statistical validity.
+
+## Entry 28 — Cycle 26: R2 round — 1 built, 2 packeted (2026-08-05)
+- All published stats verified error-free against external references.
+  R2-03 landed (power-doc mismatch disclosure); R2-01/02 → PKT-R2 owner
+  packet (published-surface limits sentences). One transient CLI kill
+  (5th, recovered). Rotation next: R3.

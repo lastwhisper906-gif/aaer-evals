@@ -291,3 +291,12 @@ priority rule carry an INV-03 disclosure entry in DECISIONS_PENDING.md.
 - R1 coverage gap (recorded): grader_runner, probe_runner, forward_
   validate/enumerate/prepare, calibration/synthesis, e2/e4, sandbox_guard,
   lint_doc_counts — future R1 rounds must pick these first.
+
+## R2 round (statistical validity, 2026-08-05 — full report: replenish_R2_2026-08-05.md)
+### R2-01 RESULTS row-2 limits omit J14 asymmetry — PACKET (PKT-R2, owner signature)
+### R2-02 ECE design-prevalence scoping absent from row-11 limits — PACKET (PKT-R2, owner signature)
+### R2-03 Power-doc test/sidedness mismatch undisclosed — DONE (2026-08-05, direct additive edit, D-P65)
+- Reviewer kill honored: NO simulated-power machinery.
+- All published values verified clean (HM null variance, Beneish/Dechow
+  coefficients, CP implementations, Fisher tail, permutation estimator —
+  externally cross-checked).
