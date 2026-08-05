@@ -1049,3 +1049,22 @@
 - **차기 계획 (D-P45 §2 규율):** 백로그 공백 → 생성형 보충 R1 렌즈(코드
   정합·숨은 버그 — 실코드 경로 정독)부터 로테이션 개시.
 - **Revert:** 해당 커밋 revert.
+
+## D-P64 — R1-01/02/03 집행 기록: 재개 멱등 + 교차모델 핀 + 레지스트리 커버리지 (INV-03 공개, 2026-08-05)
+- **완료 요약:** R1 보충 리뷰 3건 수리 — (01) runner fp-sibling 재개
+  경로: 현행 fingerprint 일치 sibling 존재 시 skip(모델 재호출·기록
+  덮어쓰기 종결; _never_called 3차 실행 회귀로 봉인 — 종전 테스트가
+  오동작을 인증하던 상태 교정). (02) crossmodel_gpt fail-closed 핀:
+  -c model=<핀> 명령 주입 + _pin_matches 의미론(정확 일치 또는 핀+"-"
+  접두) + MODEL_FALLBACK 수용 거부 + codex 버전 사전 lazy 검사(드라이런
+  무서브프로세스 보존); 핀 상수는 OWNER-SET-BEFORE-LAUNCH 플레이스홀더 —
+  플레이스홀더인 채 실행 시 기동 거부. (03) 블라인드니스 레지스트리에
+  crossmodel_gpt 항목(완전 키 형상, 추가만) + 커버리지 테스트 —
+  D-P49 발사 시 첫 산출물부터 카나리 스캔 안이며 게이트 적색 함정 제거.
+  스위트 358/1, verify-public RC=0, 문서 카운트 354→359.
+- **D-P49 발사 전제 갱신:** 발사 전 소유자가 CODEX_MODEL_PIN(+버전 핀)을
+  실측 확정 문자열로 교체·서명해야 기동 가능(fail-closed가 강제).
+- **보호 경로 공개:** pipeline/runner.py·pipeline/crossmodel_gpt.py·
+  scoring/experiment_registry.json(추가 1객체) — R1 정합 수리, hunk 검증.
+- **차기:** 보충 로테이션 R2 (통계 타당성·지표 선택).
+- **Revert:** 해당 커밋 revert.

@@ -277,13 +277,13 @@ priority rule carry an INV-03 disclosure entry in DECISIONS_PENDING.md.
 # BACKLOG v4 — replenish rotation findings (D-P45 §2)
 
 ## R1 round (code correctness, 2026-08-05 — full report: replenish_R1_2026-08-05.md)
-### R1-01 Runner fp-sibling resume double-call/overwrite — TODO (S)
+### R1-01 — DONE (2026-08-05, D-P64)
 - claim: provenance/idempotent-resume; fix: skip when sibling matches
   current fingerprint + _never_called regression test.
-### R1-02 crossmodel_gpt no model pin (fail-open provenance) — TODO (S, BLOCKS D-P49 launch)
+### R1-02 — DONE (2026-08-05, D-P64; launch precondition: owner sets pin)
 - claim: L-6 cross-model number's provenance; fix: -c model=<pin>,
   fail-closed post-call check, reject MODEL_FALLBACK, CLI version pre-check.
-### R1-03 runs/crossmodel_gpt/ outside blindness-scan registry — TODO (S, BLOCKS D-P49 launch)
+### R1-03 — DONE (2026-08-05, D-P64)
 - claim: INV-09 canary coverage + INV-05 green on first run; fix: 2
   additive registry globs (+jsonl aux) + coverage test. NO generalized
   registry-linter machinery (reviewer kill).

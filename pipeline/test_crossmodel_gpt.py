@@ -58,6 +58,9 @@ def _configure_tmp(monkeypatch, tmp_path, payload):
     monkeypatch.setattr(cross, "REPO_ROOT", repo)
     monkeypatch.setattr(cross, "ALLOWED_OUT_ROOT", repo / "runs" / "crossmodel_gpt")
     monkeypatch.setattr(cross.build_payload, "build_payload", lambda *a, **k: payload.copy())
+    monkeypatch.setattr(cross, "CODEX_MODEL_PIN", "gpt-test")
+    monkeypatch.setattr(cross, "CODEX_VERSION_PIN", "codex-cli test")
+    monkeypatch.setattr(cross, "_verified_harness_version", None)
     return repo
 
 
@@ -103,6 +106,8 @@ def test_invalid_json_retries_once_and_records_failure(
     calls = []
 
     def mocked_run(command, **kwargs):
+        if command == ["codex", "--version"]:
+            return SimpleNamespace(stdout="codex-cli test\n", stderr="", returncode=0)
         calls.append(command)
         return SimpleNamespace(stdout=_event_stream("not json"), stderr="", returncode=0)
 
@@ -122,6 +127,8 @@ def test_nonzero_exit_with_valid_json_is_recorded_as_failure(
     repo = _configure_tmp(monkeypatch, tmp_path, payload)
 
     def mocked_run(command, **kwargs):
+        if command == ["codex", "--version"]:
+            return SimpleNamespace(stdout="codex-cli test\n", stderr="", returncode=0)
         return SimpleNamespace(stdout=_event_stream(json.dumps(model_output)),
                                stderr="failed", returncode=7)
 
@@ -160,7 +167,8 @@ def test_valid_response_writes_conformant_provenance_and_isolation_command(
     assert record["fingerprint"]["model_requested"] == "gpt-test"
     assert record["fingerprint"]["harness_version_actual"] == "codex-cli test"
     assert record["fingerprint"]["system_prompt_sha256"]
-    command = commands[0][0]
+    assert commands[0][0] == ["codex", "--version"]
+    command = next(command for command, _ in commands if command[:2] == ["codex", "exec"])
     assert command[:2] == ["codex", "exec"]
     assert ["--sandbox", "read-only"] == command[2:4]
     assert "--ephemeral" in command
@@ -170,30 +178,58 @@ def test_valid_response_writes_conformant_provenance_and_isolation_command(
     assert command[-1] == "-"
     assert "mcp_servers={}" in command
     assert "project_doc_max_bytes=0" in command
+    assert ["-c", "model=gpt-test"] == command[command.index("-c"):command.index("-c") + 2]
     temp_cwd = Path(command[command.index("--cd") + 1])
     assert repo.resolve() not in temp_cwd.parents
     assert (repo / "runs" / "crossmodel_gpt" / "audit_original_C01.jsonl").exists()
 
 
-def test_unavailable_codex_version_uses_honest_fallback(
+def test_unavailable_codex_version_refuses_before_model_call(
         monkeypatch, tmp_path, case, payload, model_output):
     repo = _configure_tmp(monkeypatch, tmp_path, payload)
+    model_called = False
 
     def mocked_run(command, **kwargs):
         if command[:2] == ["codex", "exec"]:
-            return SimpleNamespace(stdout=_event_stream(json.dumps(model_output)),
-                                   stderr="", returncode=0)
+            nonlocal model_called
+            model_called = True
+            pytest.fail("model call occurred before version check")
         if command == ["codex", "--version"]:
             raise OSError("codex unavailable")
-        assert command == ["git", "rev-parse", "HEAD"]
-        return SimpleNamespace(stdout="abc123\n", stderr="", returncode=0)
+        pytest.fail(f"unexpected subprocess: {command}")
+
+    monkeypatch.setattr(cross.subprocess, "run", mocked_run)
+    with pytest.raises(RuntimeError, match="version check failed"):
+        cross.run_case(case, "original", repo / "runs" / "crossmodel_gpt")
+    assert not model_called
+
+
+def test_placeholder_model_pin_refuses_without_subprocess(
+        monkeypatch, tmp_path, case, payload):
+    repo = _configure_tmp(monkeypatch, tmp_path, payload)
+    monkeypatch.setattr(cross, "CODEX_MODEL_PIN", cross.PIN_PLACEHOLDER)
+    monkeypatch.setattr(cross.subprocess, "run",
+                        lambda *a, **k: pytest.fail("placeholder invoked subprocess"))
+    with pytest.raises(RuntimeError, match="model pin"):
+        cross.run_case(case, "original", repo / "runs" / "crossmodel_gpt")
+
+
+@pytest.mark.parametrize("reported_model", ["gpt-test.2-codex", cross.MODEL_FALLBACK, None])
+def test_wrong_or_missing_reported_model_fails(
+        monkeypatch, tmp_path, case, payload, model_output, reported_model):
+    repo = _configure_tmp(monkeypatch, tmp_path, payload)
+
+    def mocked_run(command, **kwargs):
+        if command == ["codex", "--version"]:
+            return SimpleNamespace(stdout="codex-cli test\n", stderr="", returncode=0)
+        assert command[:2] == ["codex", "exec"]
+        return SimpleNamespace(stdout=_event_stream(json.dumps(model_output), reported_model),
+                               stderr="", returncode=0)
 
     monkeypatch.setattr(cross.subprocess, "run", mocked_run)
     result = cross.run_case(case, "original", repo / "runs" / "crossmodel_gpt")
-    assert result["status"] == "OK"
-    record = json.loads((repo / "runs" / "crossmodel_gpt" / "C01.json").read_text())
-    assert record["fingerprint"]["harness_version_actual"] == \
-        "harness_version_unavailable"
+    assert result["status"] == "FAIL (model_pin_mismatch)"
+    assert not (repo / "runs" / "crossmodel_gpt" / "C01.json").exists()
 
 
 def test_dry_run_has_hashes_and_no_subprocess(

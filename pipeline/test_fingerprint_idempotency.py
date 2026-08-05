@@ -125,11 +125,14 @@ def test_stale_versioned_path_is_deterministic(monkeypatch, tmp_path):
 
     _run(monkeypatch, tmp_path)
     sibling = next(out_dir.glob("case_99.fp-*.json"))
+    sibling_bytes = sibling.read_bytes()
     first = json.loads(sibling.read_text())
-    _run(monkeypatch, tmp_path)
+    result, _ = _run(monkeypatch, tmp_path, _never_called)
     siblings = list(out_dir.glob("case_99.fp-*.json"))
     second = json.loads(siblings[0].read_text())
 
+    assert result["status"] == "skip (멱등 — fp-sibling 일치)"
+    assert sibling.read_bytes() == sibling_bytes
     assert len(siblings) == 1
     first.pop("run_timestamp")
     second.pop("run_timestamp")

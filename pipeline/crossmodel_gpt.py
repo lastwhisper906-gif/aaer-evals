@@ -46,6 +46,10 @@ ALLOWED_OUT_ROOT = REPO_ROOT / "runs" / "crossmodel_gpt"
 METERED_ENV_VARS = ("ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GEMINI_API_KEY",
                     "GOOGLE_API_KEY")
 MODEL_FALLBACK = "model_string_unavailable"
+PIN_PLACEHOLDER = "OWNER-SET-BEFORE-LAUNCH"
+CODEX_MODEL_PIN = PIN_PLACEHOLDER
+CODEX_VERSION_PIN = "codex-cli 0.144.6"
+_verified_harness_version: str | None = None
 
 
 def frozen_frame_payload(payload: dict) -> str:
@@ -102,8 +106,34 @@ def codex_command(temp_dir: Path) -> list[str]:
         "codex", "exec", "--sandbox", "read-only", "--cd", str(temp_dir),
         "--skip-git-repo-check", "--ephemeral", "--ignore-user-config",
         "--ignore-rules", "--config", "mcp_servers={}", "--config",
-        "project_doc_max_bytes=0", "--json", "-",
+        "project_doc_max_bytes=0", "-c", f"model={CODEX_MODEL_PIN}", "--json", "-",
     ]
+
+
+def _pins_are_concrete() -> None:
+    if not CODEX_MODEL_PIN or CODEX_MODEL_PIN == PIN_PLACEHOLDER:
+        raise RuntimeError("Codex model pin must be owner-set before launch")
+    if not CODEX_VERSION_PIN or CODEX_VERSION_PIN == PIN_PLACEHOLDER:
+        raise RuntimeError("Codex version pin must be owner-set before launch")
+
+
+def enforce_harness_pin() -> str:
+    global _verified_harness_version
+    if _verified_harness_version == CODEX_VERSION_PIN:
+        return _verified_harness_version
+    try:
+        actual = subprocess.run(["codex", "--version"], capture_output=True, text=True,
+                                check=True).stdout.strip()
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise RuntimeError("Codex version check failed") from exc
+    if actual != CODEX_VERSION_PIN:
+        raise RuntimeError(f"Codex version mismatch: expected {CODEX_VERSION_PIN}, got {actual}")
+    _verified_harness_version = actual
+    return actual
+
+
+def _pin_matches(reported: str, pin: str) -> bool:
+    return reported == pin or reported.startswith(pin + "-")
 
 
 def _event_value(value, key: str):
@@ -169,6 +199,7 @@ def _sha(text: str) -> str:
 
 
 def run_case(case: dict, frame: str, out_dir: Path, *, dry_run: bool = False) -> dict:
+    _pins_are_concrete()
     out_dir = resolve_output_dir(out_dir)
     cid = case["case_id"]
     out_path = out_dir / f"{cid}.json"
@@ -192,6 +223,7 @@ def run_case(case: dict, frame: str, out_dir: Path, *, dry_run: bool = False) ->
         print(f"{cid} payload_sha256={payload_sha} prompt_sha256={prompt_sha}")
         return {"case_id": cid, "status": "dry-run"}
 
+    version = enforce_harness_pin()
     out_dir.mkdir(parents=True, exist_ok=True)
     audit_path = out_dir / f"audit_{frame}_{cid}.jsonl"
     meta_path = out_dir / f"runmeta_{frame}_{cid}.json"
@@ -212,9 +244,12 @@ def run_case(case: dict, frame: str, out_dir: Path, *, dry_run: bool = False) ->
                                        text=True, check=False)
             streams.append(completed.stdout)
             answer, reported_model = parse_event_stream(completed.stdout)
-            if reported_model != MODEL_FALLBACK:
-                model = reported_model
             structured, failure = _valid_model_output(answer)
+            if reported_model == MODEL_FALLBACK or not _pin_matches(
+                    reported_model, CODEX_MODEL_PIN):
+                structured, failure = None, "model_pin_mismatch"
+            else:
+                model = reported_model
             if completed.returncode == 0 and structured is not None:
                 ok = True
                 break
@@ -234,11 +269,6 @@ def run_case(case: dict, frame: str, out_dir: Path, *, dry_run: bool = False) ->
         meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
         return {"case_id": cid, "status": f"FAIL ({failure})"}
 
-    try:
-        version = subprocess.run(["codex", "--version"], capture_output=True, text=True,
-                                 check=True).stdout.strip()
-    except (OSError, subprocess.SubprocessError):
-        version = "harness_version_unavailable"
     head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=REPO_ROOT,
                           capture_output=True, text=True, check=True).stdout.strip()
     schema_sha = hashlib.sha256((REPO_ROOT / "schemas" / "llm_output.json").read_bytes()).hexdigest()

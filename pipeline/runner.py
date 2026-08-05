@@ -139,6 +139,9 @@ def run_case(case: dict, perturb: bool, out_dir: Path, log_dir: Path, *,
         suffix = hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:8]
         write_path = out_dir / f"{cid}.fp-{suffix}.json"
         stale_superseding = True
+        if write_path.exists() and json.loads(write_path.read_text(encoding="utf-8")).get(
+                "fingerprint") == fingerprint:
+            return {"case_id": cid, "status": "skip (멱등 — fp-sibling 일치)"}
 
     variant = "perturbed" if perturb else "original"
     r = cli_client.call_model(

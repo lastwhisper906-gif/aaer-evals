@@ -368,3 +368,9 @@ DECISIONS_PENDING.md; owner reconciliation command recorded there).
   closed, 2 specs authored, 2 owner packets, 5/5 reader gates, gates
   green throughout. Loop continues: replenish rotation R1 next
   (no-idle rule, D-P45 §2).
+
+## Entry 27 — Cycle 25: R1-01/02/03 fixes landed (2026-08-05) — DONE
+- APPROVE cycle 1. The parked D-P49 launch command is no longer a trap:
+  registry covers its outputs, the runner refuses to fire unpinned, and
+  resume is truly idempotent (previously certified-wrong by its own
+  test). R1-04 stays deferred. Rotation next: R2 statistical validity.
