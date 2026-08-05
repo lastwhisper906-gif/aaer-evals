@@ -244,3 +244,17 @@ DECISIONS_PENDING.md; owner reconciliation command recorded there).
 - Local main == origin/main. ~/Documents copy still TCC-blocked — owner:
   `git -C ~/Documents/aaer-evals pull` (now just a fast-forward from
   origin) when access recovers.
+
+## Entry 12 — Cycle 9 (loop v2): NB-01 schema v2 rename (2026-08-05) — DONE
+- Standing-authorization category cited (D-P45 §3: "Schema v2 — new
+  versioned files; v1 untouched").
+- Pre-review: REVISE→amended (found the 7th/8th rename sites the spec
+  missed: L112 description literal + $ref value strings; check_schema is
+  blind to stale $refs — instance test covers).
+- Build: APPROVE at cycle 1. Evaluation: v1 byte-untouched (git diff 0),
+  8-site rename complete (sole remaining old-name string = intentional
+  provenance sentence in v2 header), suite 333/1, validate_schemas PASS,
+  verify-public PASS (330→334).
+- Disclosure: D-P46 (incl. $comment→description packet deviation).
+- NOTE (v2 rules): push is owner-gated again — commits accumulate locally.
+- Backlog: NB-02..07 remain (6). Next: NB-02 CI hardening (dep-free half).

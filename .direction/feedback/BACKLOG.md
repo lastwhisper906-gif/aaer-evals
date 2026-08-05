@@ -211,7 +211,7 @@ priority rule carry an INV-03 disclosure entry in DECISIONS_PENDING.md.
 ## Executable (NB series, priority order)
 
 ### NB-01 Schema v2: risk_score rename (PKT-Q1, signed D-P44a)
-- category: CODE · size: S · status: TODO
+- category: CODE · size: S · status: DONE (2026-08-05, D-P46)
 - claim: metric-framing coherence of every future published number
   (probability/ordinal conflict resolved at the contract).
 ### NB-02 CI hardening, dependency-free half (DP-Q2a)

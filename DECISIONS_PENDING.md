@@ -773,3 +773,18 @@
     초안 대기) · 인간 채점/DOI/GA-001(b)(소유자 외부 행위) ·
     유니버스 확장 본실행(INV-23 감독 fetch + INV-12 개정).
 - **Revert:** append-only 부인 항목으로만.
+
+## D-P46 — NB-01 집행 기록: schemas/llm_output_v2.json 서수 개명 계약 (INV-03 공개, 2026-08-05)
+- **What:** D-P44a/D-P45 서명 하 집행 — v2 계약 파일 신설: 8개 소재지
+  전부 개명(property·required×2·$defs·if/then 트리거·$ref 값 문자열·
+  mechanism_hypotheses 설명 내 문구), 서수 의미 재기술("보정된 확률이
+  아니다"), v1.2는 byte 무접촉(git diff 0줄 실측 + 테스트 가드).
+  구조 diff 테스트가 의도된 델타 외 모든 차이를 JSON-pointer로 실패
+  처리. 트리거 의미 인스턴스 검증(45→실패, 30→통과). 채택 배선은
+  차기 FREEZE_REV(INV-21 핀 규율) — 이 파일은 그때까지 불활성.
+- **패킷 문언 일탈 공개:** PKT-Q1은 $comment 헤더를 지정했으나 구현은
+  최상위 description에 v2 표식 기재 — 기능 동등, 사전 리뷰 지적대로
+  침묵 일탈 대신 본 기록으로 공개.
+- **하네스:** TASK_NB01 cycle 1 APPROVE. 스위트 333 passed/1 skipped,
+  validate_schemas PASS, verify-public PASS, 문서 카운트 330→334.
+- **Revert:** 해당 커밋 revert (v1 무영향).
