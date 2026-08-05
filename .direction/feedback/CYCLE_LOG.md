@@ -424,3 +424,30 @@ DECISIONS_PENDING.md; owner reconciliation command recorded there).
   grandchild guard property now tested; doc-count fail-closed; probe
   variant isolation; transcript overwrite refusal). PKT-FWD queued for
   the Nov-window trio. Coverage map grows; rotation 2 continues.
+
+## SAFETY HALT — quota-class long-call throttling (2026-08-05, clean stop)
+- Trigger: 4 consecutive long-form claude -p review calls failed (2
+  killed mid-run, 2 timed out at 900s with zero output) while short
+  health probes answer instantly — the sustained-session long-call
+  throttle pattern, treated as the loop's quota safety-halt per its
+  standing rules. No half-applied state: the C2 component round had not
+  begun; every landed cycle is committed and gate-green.
+- Repo state at halt: HEAD dde6411+, all gates verify-public RC=0
+  (7 commands + sandboxed variant), suite 376 passed / 1 skipped,
+  ledger D-P34..D-P71, 34 prior log entries.
+- RESUME INSTRUCTIONS (next session with fresh quota):
+  1. Preflight: probe ~/Documents TCC; git -C ~/repos/aaer-evals-work
+     fetch origin; check ~/tools/harness/STOP.
+  2. Re-run the C2 component round: prompts are saved at scratchpad-
+     independent paths? NO — regenerate from this file's C2 description
+     (half A: payload_v2_extract, runner_api, api_client suspension
+     check, run_identity_arms, e2_generate_cases; half B: memo-pipeline
+     callers, e4_runner, e2_runner, regrade_spotcheck, holdout_rescan,
+     build_evaluatee_inputs), BACKLOG format, exclusions through D-P71.
+  3. Then continue the rotation-2 coverage map (remaining unreviewed
+     modules listed in D-P71's 차기 field) and the loop's standing rules
+     (v2 continuous mode, D-P45/D-P50, reader gates, packet channel).
+  4. Owner signature queue (unchanged, order of value): PKT-E003 →
+     PKT-R2 → PKT-FWD → PKT-P102 → PKT-P108 → PKT-Q1/Q4/Q6.
+  5. Push remains owner-dispatch; ~/Documents copy needs `git pull`
+     post-TCC recovery.
