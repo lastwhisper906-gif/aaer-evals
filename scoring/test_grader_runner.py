@@ -61,6 +61,9 @@ def stub(tmp_path, monkeypatch):
     # 하네스 핀 강제 (C3, D109): 핀 일치 버전 응답 + 프로세스 캐시 리셋
     monkeypatch.setenv("STUB_VERSION", f"{cli_client.HARNESS_PIN} (Claude Code)")
     monkeypatch.setattr(cli_client, "_harness_version_actual", None)
+    monkeypatch.setattr(gr, "_HARNESS_VERSION", None)
+    monkeypatch.setattr(cli_client, "freeze_state", lambda: {"head": "a" * 40,
+                                                              "clean_tree": True})
     monkeypatch.setattr(gr, "answer_key", lambda oid, *a, **k: {"group": "treatment",
                                                        "scheme_summary": "s",
                                                        "scheme_type": ["x"],
@@ -118,13 +121,30 @@ def test_double_failure_marks_case_fail_and_continues(stub, tmp_path):
 
 
 def test_idempotent_skip_on_valid_existing_grade(stub, tmp_path):
+    stub.set_responses(resp(GRADE))
     out = tmp_path / "g"
-    out.mkdir()
-    (out / "case_01.json").write_text(
-        json.dumps({**GRADE, "_meta": {"case_id": "case_01"}}), encoding="utf-8")
+    gr.grade_one("case_01", "TXX", OUTPUT, out, tmp_path / "l", "note")
+    original_bytes = (out / "case_01.json").read_bytes()
     status = gr.grade_one("case_01", "TXX", OUTPUT, out, tmp_path / "l", "note")
     assert status.startswith("skip")
-    assert stub.calls() == []
+    assert len(stub.calls()) == 1
+    assert (out / "case_01.json").read_bytes() == original_bytes
+
+
+def test_date_suffixed_served_model_skips_without_sibling(stub, tmp_path):
+    stub.set_responses(resp(GRADE, model=f"{gr.GRADER_PIN}-20260101"))
+    out = tmp_path / "g"
+    gr.grade_one("case_01", "TXX", OUTPUT, out, tmp_path / "l", "note")
+    call_count = len(stub.calls())
+
+    status = gr.grade_one("case_01", "TXX", OUTPUT, out, tmp_path / "l", "note")
+
+    assert status.startswith("skip")
+    assert len(stub.calls()) == call_count
+    assert not list(out.glob("case_01.fp-*.json"))
+    grade = json.loads((out / "case_01.json").read_text(encoding="utf-8"))
+    assert grade["_meta"]["fingerprint"]["grader_model"] == gr.GRADER_PIN
+    assert grade["_meta"]["grader_model_reported"] == f"{gr.GRADER_PIN}-20260101"
 
 
 def test_grading_payload_contains_answer_key_and_output(stub, tmp_path):
@@ -134,3 +154,67 @@ def test_grading_payload_contains_answer_key_and_output(stub, tmp_path):
     payload = json.loads(call["stdin"])
     assert set(payload) == {"answer_key", "evaluatee_output"}
     assert payload["evaluatee_output"]["case_id"] == "case_01"
+
+
+def test_fingerprint_content_and_each_field_affects_identity(stub, tmp_path):
+    stub.set_responses(resp(GRADE))
+    out = tmp_path / "g"
+    gr.grade_one("case_01", "TXX", OUTPUT, out, tmp_path / "l", "note")
+    fingerprint = json.loads((out / "case_01.json").read_text())["_meta"]["fingerprint"]
+    assert set(fingerprint) == {
+        "evaluatee_output_sha256", "answer_key_sha256", "rubric_sha256",
+        "grade_schema_sha256", "grader_system_prompt_sha256", "grader_model",
+        "grader_harness_version", "pipeline_commit",
+    }
+    assert fingerprint["evaluatee_output_sha256"] == gr._canonical_sha256(OUTPUT)
+    assert fingerprint["answer_key_sha256"] == gr._canonical_sha256(
+        gr.answer_key("TXX"))
+    assert fingerprint["rubric_sha256"] == fingerprint["grader_system_prompt_sha256"]
+    assert fingerprint["grade_schema_sha256"] == gr._canonical_sha256(gr.GRADE_SCHEMA)
+    assert fingerprint["grader_model"] == gr.GRADER_PIN
+    assert fingerprint["grader_harness_version"] == f"{cli_client.HARNESS_PIN} (Claude Code)"
+    assert fingerprint["pipeline_commit"] == "a" * 40
+    baseline = gr._canonical_sha256(fingerprint)
+    for field in fingerprint:
+        changed = dict(fingerprint)
+        changed[field] = changed[field] + "-changed"
+        assert gr._canonical_sha256(changed) != baseline
+
+
+def test_legacy_grade_fails_closed_and_opt_in_skips(stub, tmp_path):
+    out = tmp_path / "g"
+    out.mkdir()
+    path = out / "case_01.json"
+    path.write_text(json.dumps({**GRADE, "_meta": {"case_id": "case_01"}}), encoding="utf-8")
+    original_bytes = path.read_bytes()
+    status = gr.grade_one("case_01", "TXX", OUTPUT, out, tmp_path / "l", "note")
+    assert status.startswith("FAIL (stale_legacy_grade")
+    assert "--accept-legacy-grade" in status
+    assert path.read_bytes() == original_bytes
+    status = gr.grade_one("case_01", "TXX", OUTPUT, out, tmp_path / "l", "note",
+                          accept_legacy_grade=True)
+    assert "ACCEPTED" in status
+    assert stub.calls() == []
+
+
+def test_mismatch_writes_sibling_then_third_run_skips_without_call(stub, tmp_path):
+    stub.set_responses(resp(GRADE))
+    out = tmp_path / "g"
+    gr.grade_one("case_01", "TXX", OUTPUT, out, tmp_path / "l", "note")
+    original = out / "case_01.json"
+    original_bytes = original.read_bytes()
+    changed_output = {**OUTPUT, "misstatement_probability": 81}
+    status = gr.grade_one("case_01", "TXX", changed_output, out, tmp_path / "l", "note")
+    assert status.startswith("OK stale-superseding")
+    siblings = list(out.glob("case_01.fp-*.json"))
+    assert len(siblings) == 1
+    sibling_bytes = siblings[0].read_bytes()
+    assert original.read_bytes() == original_bytes
+
+    # A third run must find the matching sibling before invoking the CLI.
+    call_count = len(stub.calls())
+    status = gr.grade_one("case_01", "TXX", changed_output, out, tmp_path / "l", "note")
+    assert status == "skip (멱등 — fp-sibling 일치)"
+    assert len(stub.calls()) == call_count
+    assert original.read_bytes() == original_bytes
+    assert siblings[0].read_bytes() == sibling_bytes

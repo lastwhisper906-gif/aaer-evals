@@ -14,8 +14,10 @@ from __future__ import annotations
 
 import argparse
 import datetime
+import hashlib
 import json
 import shlex
+import subprocess
 import sys
 from pathlib import Path
 
@@ -72,6 +74,45 @@ Cap at 1 if risk_tier contradicts the declared consistency rule \
 (b) mentions facts only public after the cutoff (revelation, enforcement, outcome)."""
 
 
+def _canonical_sha256(value: object) -> str:
+    encoded = json.dumps(value, sort_keys=True, ensure_ascii=False,
+                         separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+_HARNESS_VERSION: str | None = None
+
+
+def _harness_version() -> str:
+    global _HARNESS_VERSION
+    if _HARNESS_VERSION is None:
+        try:
+            result = subprocess.run(
+                [cli_client.CLAUDE_BIN, "--version"], capture_output=True,
+                text=True, check=True)
+            _HARNESS_VERSION = (
+                result.stdout.splitlines()[0] if result.stdout else "UNAVAILABLE")
+        except (FileNotFoundError, OSError, subprocess.CalledProcessError):
+            _HARNESS_VERSION = "UNAVAILABLE"
+    return _HARNESS_VERSION
+
+
+def compute_fingerprint(output: dict, key: dict, grader_model: str,
+                        harness_version: str, pipeline_commit: str) -> dict:
+    system_hash = hashlib.sha256(SYSTEM.encode("utf-8")).hexdigest()
+    return {
+        "evaluatee_output_sha256": _canonical_sha256(output),
+        "answer_key_sha256": _canonical_sha256(key),
+        # The fixed rubric is embedded in SYSTEM, so these identities are intentionally equal.
+        "rubric_sha256": system_hash,
+        "grade_schema_sha256": _canonical_sha256(GRADE_SCHEMA),
+        "grader_system_prompt_sha256": system_hash,
+        "grader_model": grader_model,
+        "grader_harness_version": harness_version,
+        "pipeline_commit": pipeline_commit,
+    }
+
+
 def answer_key(original_id: str, candidates_path: str = "data/candidates/candidates.json") -> dict:
     cands = {c["case_id"]: c for c in json.loads(
         (REPO / candidates_path).read_text(encoding="utf-8"))["candidates"]}
@@ -105,11 +146,37 @@ def _existing_grade_valid(path: Path) -> bool:
 
 def grade_one(neutral: str, original_id: str, output: dict,
               out_dir: Path, log_dir: Path, mapping_path_note: str,
-              candidates_path: str = "data/candidates/candidates.json") -> str:
+              candidates_path: str = "data/candidates/candidates.json",
+              *, accept_legacy_grade: bool = False) -> str:
     out_path = out_dir / f"{neutral}.json"
-    if _existing_grade_valid(out_path):
-        return "skip (멱등)"
     key = answer_key(original_id, candidates_path)
+    harness_version = _harness_version()
+    pipeline_commit = cli_client.freeze_state()["head"]
+    existing = None
+    if out_path.exists():
+        try:
+            existing = json.loads(out_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            pass
+        if _existing_grade_valid(out_path) and isinstance(existing, dict):
+            old_fingerprint = existing.get("_meta", {}).get("fingerprint")
+            if old_fingerprint is None:
+                if not accept_legacy_grade:
+                    return "FAIL (stale_legacy_grade — fingerprint 없음; --accept-legacy-grade로 명시 수용)"
+                return "skip (legacy grade ACCEPTED via --accept-legacy-grade — fingerprint 없음)"
+            old_model = old_fingerprint.get("grader_model")
+            if old_model in (GRADER_PIN, GRADER_FALLBACK) and old_fingerprint == compute_fingerprint(
+                    output, key, old_model, harness_version, pipeline_commit):
+                return "skip (멱등 — fingerprint 일치)"
+
+        for model in (GRADER_PIN, GRADER_FALLBACK):
+            candidate = compute_fingerprint(output, key, model, harness_version, pipeline_commit)
+            sibling_path = out_dir / f"{neutral}.fp-{_canonical_sha256(candidate)[:8]}.json"
+            if _existing_grade_valid(sibling_path):
+                sibling = json.loads(sibling_path.read_text(encoding="utf-8"))
+                if sibling.get("_meta", {}).get("fingerprint") == candidate:
+                    return "skip (멱등 — fp-sibling 일치)"
+
     user_payload = json.dumps({"answer_key": key, "evaluatee_output": output},
                               ensure_ascii=False)
     used_model, r = GRADER_PIN, None
@@ -127,6 +194,19 @@ def grade_one(neutral: str, original_id: str, output: dict,
     if not r.ok:
         return f"FAIL ({r.fail_reason})"
 
+    fingerprint = compute_fingerprint(
+        output, key, used_model, harness_version, pipeline_commit)
+    write_path = out_path
+    stale_superseding = False
+    if out_path.exists():
+        suffix = _canonical_sha256(fingerprint)[:8]
+        write_path = out_dir / f"{neutral}.fp-{suffix}.json"
+        stale_superseding = True
+        if _existing_grade_valid(write_path):
+            sibling = json.loads(write_path.read_text(encoding="utf-8"))
+            if sibling.get("_meta", {}).get("fingerprint") == fingerprint:
+                return "skip (멱등 — fp-sibling 일치)"
+
     grade = dict(r.structured)
     grade["_meta"] = {
         "case_id": neutral, "original_id": original_id,
@@ -137,10 +217,12 @@ def grade_one(neutral: str, original_id: str, output: dict,
         "ts": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "human_finalized": False,
         "mapping_access_note": mapping_path_note,
+        "fingerprint": fingerprint,
     }
     out_dir.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(json.dumps(grade, ensure_ascii=False, indent=2), encoding="utf-8")
-    return (f"OK d1={grade['dim1_probability_band']} d2={grade['dim2_mechanism']} "
+    write_path.write_text(json.dumps(grade, ensure_ascii=False, indent=2), encoding="utf-8")
+    prefix = "OK stale-superseding" if stale_superseding else "OK"
+    return (f"{prefix} d1={grade['dim1_probability_band']} d2={grade['dim2_mechanism']} "
             f"d4={grade['dim4_evidence_quality']} mem2={grade['memorization_suspect_condition2']}"
             + (" [fallback]" if grade["_meta"]["fallback_used"] else ""))
 
@@ -155,6 +237,7 @@ def main() -> int:
                     help="파일럿은 scoring/id_mapping_pilot.json")
     ap.add_argument("--pattern", default="case_*.json",
                     help="runs 파일 글롭 (E1 홀드아웃 대조군은 hc_*.json — 기본 무변경)")
+    ap.add_argument("--accept-legacy-grade", action="store_true")
     args = ap.parse_args()
 
     cli_client.assert_no_metered_credentials()
@@ -175,7 +258,8 @@ def main() -> int:
             output = json.loads(run_file.read_text(encoding="utf-8"))
             neutral = output["case_id"]
             status = grade_one(neutral, mapping[neutral], output, out_dir, log_dir, note,
-                               candidates_path=args.candidates)
+                               candidates_path=args.candidates,
+                               accept_legacy_grade=args.accept_legacy_grade)
             if status.startswith("FAIL"):
                 failures += 1
             print(f"{neutral}: {status}", flush=True)
