@@ -135,11 +135,19 @@ import·read하는 변경(테스트의 격리 검증 제외), 또는 채점 로�
 파이프라인 전면 재설계(수정 최대 2지점) / UI·제품화 / 딥다이브 3개+ /
 타 LLM(GPT·Gemini) 벤치마크 확장. 참고: Beneish M-score / Dechow F-score
 등 결정론적 공식 베이스라인 계산은 스코프 위반이 아니다(채점의 일부).
+**예외 (소유자 서명 2026-08-05, D-P44b·D-P45):** 동결(payload-frozen)
+회고 케이스에 한해, 구독 인증 Codex CLI(zero-metered, INV-20 준수)를
+통한 GPT 교차모델 패스는 스코프 위반이 아니다 — L-6(동일 계열 관대화)
+한계의 실증 테스트 목적. 신규 케이스 확장·Gemini·종량 API 경로는 여전히
+금지. 산출물은 신규 분리 경로(`runs/crossmodel_gpt/`)에만 기록하며 동결
+결과 집합과 병합하지 않는다; 수치 게시는 소유자 게이트.
 **Basis:** PROJECT.md §8 · `docs/POST_FORWARD_BACKLOG.md` (P4 제품층
 "수요 검증 전 착수 금지" 재확인)
 **Violation test:** 실험군 케이스 등록을 8개 초과로 늘리는 데이터·코드
-변경; UI·웹 프론트엔드 코드 추가; GPT·Gemini 호출 경로 추가(기록·스펙
-문서는 허용 — `specs/cross_grader.md`는 SPECIFICATION ONLY).
+변경; UI·웹 프론트엔드 코드 추가; 위 예외 조건(구독 Codex·동결 케이스·
+분리 경로) 밖의 GPT·Gemini 호출 경로 추가 — 종량 API 키 경로는 예외
+없이 위반(기록·스펙 문서는 허용 — `specs/cross_grader.md`는
+SPECIFICATION ONLY).
 
 ## 5. 산출물 표현 불변식 (현재 기업 대상)
 

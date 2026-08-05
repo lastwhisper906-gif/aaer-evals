@@ -803,3 +803,14 @@
   텍스트 diff 검증(로컬 YAML 파서 부재는 INV-11 귀결; GitHub 푸시 시
   가시 검증). Ruff/타입/커버리지 절반은 PKT-INV11 개정 초안으로 큐잉.
 - **Revert:** 해당 커밋 revert.
+
+## D-P48 — INV-12 개정 발효: 구독 Codex GPT 교차모델 예외 (2026-08-05)
+- **서명 근거:** D-P44b(소유자 명시 선택: "Codex/GPT via subscription —
+  Requires an INV-12 amendment entry you sign" 옵션 선택) + D-P45 §3
+  (불변식 충돌 시 개정 초안 → 서명 후 발효 규칙). 개정문은 PKT-Q4
+  초안(15bca1c 커밋, push됨)과 동일 취지 — 소유자 열람 가능 상태였음.
+- **What:** PROJECT_INVARIANTS.md INV-12에 예외 단락 + Violation test
+  정합 수정; sync_context.sh로 CLAUDE.md 블록 재생성. 예외 범위: 동결
+  회고 케이스 × 구독 Codex × 분리 경로(runs/crossmodel_gpt/) × 게시
+  소유자 게이트. Gemini·종량 API·신규 케이스는 예외 밖(여전히 위반).
+- **Revert:** 본 커밋 revert + sync 재실행.
