@@ -410,3 +410,11 @@ DECISIONS_PENDING.md; owner reconciliation command recorded there).
   re-verifications.
 - Rotation 2 begins per the escalation rule: component-first coverage of
   the R1 reserved list.
+
+## Entry 33 — Cycle 31: rotation-2 C1 — FIRST published-number defects found; correction committed, regeneration packeted (2026-08-05)
+- The escalation rule earned its keep on round one: two synthesis-layer
+  published-artifact defects (inverted flag across 65 rows; wrong median
+  estimator on the only even-n group). Code corrected BEFORE regeneration
+  per INV-03(c) with a divergence-lock test; artifact regeneration and
+  the E-003 erratum are owner-signature items (PKT-E003) — disclose-
+  don't-revise held exactly as designed. 8 more C1 items registered.

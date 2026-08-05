@@ -12,6 +12,7 @@
 """
 import csv
 import json
+import statistics
 import random
 import sys
 from pathlib import Path
@@ -68,7 +69,7 @@ def rows_wave1(exclusions, repo=REPO):
                         llm_perturbed=pert,
                         perturb_delta=round(pert - p, 1) if (pert is not None and p is not None) else None,
                         recognized=npr.get(r["ticker"].split("/")[0]),
-                        m_score=m, m_flag=int(m <= M_FLAG) if m is not None else None,
+                        m_score=m, m_flag=int(m > M_FLAG) if m is not None else None,
                         f_score=f, f_flag=int(f >= F_FLAG) if f is not None else None))
     return out
 
@@ -102,7 +103,7 @@ def rows_wave2(exclusions, repo=REPO):
                         perturb_delta=round(pert - p, 1) if (pert is not None and p is not None) else None,
                         recognized=rec,
                         m_score=round(m, 3) if m is not None else None,
-                        m_flag=int(m <= M_FLAG) if m is not None else None,
+                        m_flag=int(m > M_FLAG) if m is not None else None,
                         f_score=round(f, 3) if f is not None else None,
                         f_flag=int(f >= F_FLAG) if f is not None else None))
     return out
@@ -136,7 +137,7 @@ def rows_holdout(exclusions, repo=REPO):
                         perturb_delta=None,
                         recognized=recognized,
                         m_score=round(m, 3) if m is not None else None,
-                        m_flag=int(m <= M_FLAG) if m is not None else None,
+                        m_flag=int(m > M_FLAG) if m is not None else None,
                         f_score=round(f, 3) if f is not None else None,
                         f_flag=int(f >= F_FLAG) if f is not None else None))
     return out
@@ -146,8 +147,8 @@ def separation(rows, rng):
     fr = [r["llm_score"] for r in rows if r["group"] == "fraud" and r["llm_score"] is not None]
     ct = [r["llm_score"] for r in rows if r["group"] == "control" and r["llm_score"] is not None]
     d = dict(n_fraud=len(fr), n_control=len(ct),
-             fraud_median=round(sorted(fr)[len(fr) // 2], 1) if fr else None,
-             control_median=round(sorted(ct)[len(ct) // 2], 1) if ct else None)
+             fraud_median=round(statistics.median(fr), 1) if fr else None,
+             control_median=round(statistics.median(ct), 1) if ct else None)
     if fr and ct and len(ct) >= 2:
         d["auc"] = round(auc(fr, ct), 3)
         lo, hi = boot_auc_ci(fr, ct, rng)

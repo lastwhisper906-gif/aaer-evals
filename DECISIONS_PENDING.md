@@ -1149,3 +1149,18 @@
   enumerate/prepare·calibration/synthesis·e2/e4 러너·sandbox_guard 손자
   전파·lint_doc_counts)부터, 전 소스·문서·테스트 모듈 개별 검토 완료까지.
 - **Revert:** 해당 커밋 revert.
+
+## D-P70 — 로테이션-2 C1 라운드: 첫 게시 수치 결함 2건 발견 — 수정 커밋 선행 (INV-03, 2026-08-05)
+- **발견 (루프 최초 게시 수치 결함):** (C1B-01) 게시 unified_table.csv의
+  Beneish m_flag가 동결 규칙의 정확한 보수 — 전 행 반전 (RESULTS 행 12
+  수치들은 baseline_table 소스라 무영향 실측). (C1B-02) synthesis.json
+  wave-1 fraud_median 60.0 → 참값 57.5 (짝수 n 추정자 오류; 유일한 짝수
+  군). INV-03(c) 준수: 수정 커밋(m_flag 3개소 + statistics.median +
+  발산 방지 테스트)을 재생성 전에 선행 — 재생성·E-003 초안·게시 표면
+  인용 검증은 PKT-E003 서명 패킷. 산출물 원본 무접촉.
+- **여타:** C1 half-A 5건 + half-B forward 3건 등록(전부 S; forward
+  3건은 11월 창 표식). grader_runner·calibration NO-FINDING 커버리지
+  기록. 장시간 렌즈 호출 kill 패턴에 리뷰 이분할 적응(6·7번째 kill).
+- **소유자 액션:** PKT-E003 서명 (+ 기존 PKT-R2·PKT-P102·PKT-P108).
+- **차기:** C1 잔여 8건 빌드 사이클.
+- **Revert:** 해당 커밋 revert (게시 산출물 무영향 — 코드·테스트만).
