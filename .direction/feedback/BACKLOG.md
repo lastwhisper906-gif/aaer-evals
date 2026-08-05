@@ -205,3 +205,44 @@ priority rule carry an INV-03 disclosure entry in DECISIONS_PENDING.md.
   carries both. No leak (3-key send allowlist strips both) and
   date_shift.py is protected; candidate one-line rename for an
   owner-supervised session. Logged so it isn't rediscovered.
+
+# BACKLOG v2 (D-P45 재분류, 2026-08-05) — continuous mode
+
+## Executable (NB series, priority order)
+
+### NB-01 Schema v2: risk_score rename (PKT-Q1, signed D-P44a)
+- category: CODE · size: S · status: TODO
+- claim: metric-framing coherence of every future published number
+  (probability/ordinal conflict resolved at the contract).
+### NB-02 CI hardening, dependency-free half (DP-Q2a)
+- category: CODE · size: S · status: TODO
+- claim: reproduce-from-public integrity (supply-chain: SHA-pinned
+  actions, permissions: contents: read, doc/code job split). Ruff/type/
+  coverage EXCLUDED (INV-11 — amendment draft queued).
+### NB-03 INV-12 amendment commit (cite D-P44b) + cross-model GPT runner
+- category: CODE+RUN · size: M+L · status: TODO
+- claim: L-6 same-family-leniency limitation gets its empirical test;
+  "Claude pipeline result" → "LLM result" reframing (A3: best ROI).
+  Runs via subscription codex only; outputs to new separated path;
+  publishing owner-gated.
+### NB-04 Perturbation v2 signal-preservation validation (DP-Q9, pre-authorized)
+- category: CODE · size: M · status: TODO
+- claim: memorization-control claim robustness (A6: rescale/digit-pattern
+  effects unverified; v2ds frame exists — validate detectors invariant).
+### NB-05 delivery-restructure branch: README/docs restructure + 1-page summary
+- category: DELIVERY · size: M · status: TODO
+- claim: external-reader judgment surface (B11 structure, A8 summary).
+  Branch only; merge owner-gated.
+### NB-06 Forward redesign memo draft (PKT-Q6 non-protected parts)
+- category: DESIGN · size: M · status: TODO · Nov 2026 clock
+- claim: forward-cycle validability (base-rate math → design memo;
+  protected-doc amendment text prepared for owner signature).
+### NB-07 Universe expansion PREP (DP-Q3 subset: matching rules + fixture dry runs)
+- category: DESIGN · size: M · status: TODO
+- claim: N-expansion readiness (no fetch — INV-23; no case registration —
+  INV-12).
+
+## Queued with amendment drafts (invariant wins)
+- Ruff/Pyright/coverage/pip-audit (INV-11) · ML baseline (INV-12) ·
+  k>=5 redraw (INV-21/BN-03 pin, Nov window D113) · universe expansion
+  execution (INV-23 supervised fetch + INV-12).
