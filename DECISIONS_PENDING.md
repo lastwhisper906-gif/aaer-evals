@@ -1293,3 +1293,15 @@
 - **차기:** Phase 4 스펙 3종 (P4a 교란 v2 → P4b 전향 지표 → P4c 인간
   블라인드 재채점) — 각각 사이클당 문서 슬롯 1.
 - **Revert:** 브랜치 revert.
+
+## D-P78 — P4a 완결: specs/PERTURBATION_V2.md (브랜치, 2026-08-06)
+- **⚠ 최상단:** PKT-E003 서명 **1일** (병합 게이트) · Zenodo DOI **26일** ·
+  패킷 큐 동일 (PKT-R2/FWD/P102/P108 1일).
+- **완료:** 대칭 2×2 교란 설계 스펙 — J14 비대칭 종결 설계(승계 근거
+  명시), 케이스별 짝지은 델타 추정자, 정체 제거 arm과 연대기 보존
+  arm 분리(CL7 상호작용 문서화), accession 가명화·상대 날짜 이동·회계
+  기간 안정성 요건, 신호 보존 검증 플랜(결정론 탐지기 불변), 실행 전제
+  체크리스트(서명 활성), 잔존 채널 정직 절(L-5/L-9). PKT-Q9 흡수.
+  하네스 cycle 2 APPROVE. lint·verify-public green.
+- **차기:** P4b (PROSPECTIVE_METRICS).
+- **Revert:** 브랜치 revert.
