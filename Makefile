@@ -20,6 +20,7 @@ verify-public:
 	.venv/bin/python -m pytest pipeline tools scoring analysis -q
 	.venv/bin/python tools/verify_manifest.py --schema-only
 	.venv/bin/python tools/verify_blindness.py
+	.venv/bin/python tools/verify_figures.py
 
 # verify-full: 원시 코퍼스(~/aaer-data) 의존 경로 전부 — 기준선 재계산 포함.
 # 전제 조건·취득 방법은 REPRODUCING.md §2 (corpus-check가 부재 시 안내 후 실패).

@@ -125,7 +125,17 @@ PASS, owner-adopted on main, and lint_publication DOCS extended to both
 files.
 **Basis:** analysis/DECISION_TABLE.md
 
-### BN-12: Published figures sit outside the machine-check perimeter — the README first-screen PNG carries the demoted probability framing
+### BN-12: Published figures outside the machine-check perimeter — RESOLVED (2026-08-05, D-P52)
+**RESOLVED:** condition met under owner direction D-P50 #3 — fig_dotplot
+axis label and threshold annotation now ordinal-convention ("Evaluatee risk
+score (0-100, ordinal)", "T=50"), PNG regenerated; drift gate
+`tools/verify_figures.py` wired as an additive verify-public line comparing
+recomputed vs committed semantic sidecars (data sha256 + labels +
+annotations), figures also re-render inside the pytest gate. Honest scope:
+2 current-generation figures gated; 3 legacy companions excluded with
+semantic reasons (reliability = probability-hypothesis instrument;
+memorization figures label-clean); committed PNG bytes attested by
+same-run convention + git review, not machine-compared.
 **Blocked:** A trustworthy figure layer — no gate in verify-public/CI regenerates or compares any of the 4 published PNGs, and fig_dotplot's committed axis label "Misstatement probability" contradicts the ordinal-only publication convention (Q-F04/D91, RESULTS row 11) on the README first screen
 **Blocks:** Publication-surface integrity — the ordinal lint and INV-05 gates cover text only, so figure drift or terminology violations ship silently (the standing suspicion "static review passes figure generation" instantiated)
 **Resolution condition:** README-referenced figures regenerate from committed artifacts with ordinal-convention labels and a gate step fails on drift, with make verify-public RC=0 after wiring

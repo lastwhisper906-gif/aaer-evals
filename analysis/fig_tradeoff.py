@@ -1,16 +1,14 @@
 """BN-19 headline threshold sweep from the committed decision table."""
 import argparse
+import hashlib
 import json
 import sys
 from pathlib import Path
 
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa: E402
-
 REPO = Path(__file__).resolve().parents[1]
 DATA_PATH = REPO / "analysis/decision_table.json"
 DEFAULT_OUT = REPO / "analysis/fig_tradeoff.png"
+SIDECAR_PATH = REPO / "analysis/fig_tradeoff.sidecar.json"
 
 INK, MUTED, GRID = "#1f2937", "#6b7280", "#e5e7eb"
 TREATMENT, CONTROL = "#b3261e", "#2f5fa8"
@@ -50,21 +48,66 @@ def _rates_and_intervals(cells: list[dict], numerator: str,
     return rates, lower, upper
 
 
+def _plotted_cells() -> tuple[list[dict], dict[int, dict]]:
+    layer = _headline_layer(DATA_PATH)
+    cells_by_threshold = {cell["threshold"]: cell for cell in layer["cells"]}
+    return ([cells_by_threshold[threshold] for threshold in (40, 50, 60, 70)],
+            cells_by_threshold)
+
+
+def compute_sidecar() -> dict:
+    cells, cells_by_threshold = _plotted_cells()
+    encoded = json.dumps(cells, sort_keys=True, separators=(",", ":"),
+                         ensure_ascii=False).encode("utf-8")
+    at_50 = cells_by_threshold[50]
+    at_70 = cells_by_threshold[70]
+    annotations = [
+        TEXT_STRINGS[5].format(
+            detected=at_50["detected"], n_treatment=at_50["n_treatment"],
+            fpr=at_50["false_positives"] / at_50["n_control"]),
+        TEXT_STRINGS[6].format(
+            detected=at_70["detected"], n_treatment=at_70["n_treatment"]),
+    ]
+    return {
+        "figure": "fig_tradeoff.png",
+        "data_sha256": hashlib.sha256(encoded).hexdigest(),
+        "xlabel": X_LABEL,
+        "ylabel": Y_LABEL,
+        "annotations": annotations,
+        "generator": "analysis/fig_tradeoff.py",
+    }
+
+
+def _write_sidecar(sidecar: dict) -> None:
+    SIDECAR_PATH.write_text(
+        json.dumps(sidecar, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+
+
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
+    parser.add_argument("--sidecar-only", action="store_true")
     return parser.parse_args()
 
 
 def main() -> int:
     args = _parse_args()
     try:
-        layer = _headline_layer(DATA_PATH)
-        cells_by_threshold = {cell["threshold"]: cell for cell in layer["cells"]}
-        cells = [cells_by_threshold[threshold] for threshold in (40, 50, 60, 70)]
+        sidecar = compute_sidecar()
+        cells, cells_by_threshold = _plotted_cells()
     except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError) as exc:
         print(f"fig_tradeoff: {exc}", file=sys.stderr)
         return 1
+
+    if args.sidecar_only:
+        _write_sidecar(sidecar)
+        return 0
+
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
 
     thresholds = [cell["threshold"] for cell in cells]
     detected, detected_lo, detected_hi = _rates_and_intervals(
@@ -111,6 +154,7 @@ def main() -> int:
     fig.tight_layout()
     fig.savefig(args.out, facecolor="white", dpi=160)
     plt.close(fig)
+    _write_sidecar(sidecar)
     print(f"→ {args.out}")
     return 0
 

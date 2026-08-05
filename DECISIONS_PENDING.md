@@ -866,3 +866,16 @@
   Hertz −23(78→55)·Monsanto +30(28→58). 표면에는 실측치 사용.
 - **차기 계획:** P1-02 (Issues #1-3 이미지 절대 URL 패킷).
 - **Revert:** 해당 커밋 revert (README.ko.md 무영향).
+
+## D-P52 — P1-03 집행 기록: BN-12 해소 — 서수 라벨 + 그림 드리프트 게이트 (INV-03 공개, 2026-08-05)
+- **완료 요약:** fig_dotplot x축 "Misstatement probability…" →
+  "Evaluatee risk score (0-100, ordinal; original frame)", 주석
+  "p=50"→"T=50", PNG 결정론 재생성(시각 델타는 라벨뿐 — 육안 대조 실측).
+  의미 사이드카 게이트: 두 현세대 그림이 compute_sidecar()로 데이터
+  sha256+라벨+주석을 기록, tools/verify_figures.py가 재계산-대조,
+  verify-public 7번째 명령으로 추가(기존 6종 verbatim, INV-05). 렌더
+  재생성은 pytest 게이트 내 실측. 레거시 3종 제외 사유는 BN-12 플립
+  문안에 명기. 스위트 전체 green, verify-public(7명령) RC=0.
+- **소유자 액션:** 없음 (BN-12 플립은 D-P50 지시 범위 내 집행).
+- **차기 계획:** P1-04 (BN-11/14/18 영어 정본 배치 — 독자 게이트 대상).
+- **Revert:** 해당 커밋 revert.

@@ -282,3 +282,10 @@ DECISIONS_PENDING.md; owner reconciliation command recorded there).
   as additive clauses post-pass.
 - Gates: lint_publication RC=0, verify-public RC=0 (repeatedly).
 - Direct-edit (docs work); no harness cycle. Next: P1-02.
+
+## Entry 15 — Cycle 13 (Phase 1): P1-03 BN-12 resolved (2026-08-05) — DONE
+- Pre-review REVISE→5 amendments (p=50 annotation, sidecar-only entry
+  point, render-in-pytest, factual list fixes, honest flip evidence);
+  build APPROVE cycle 1. Figure visually verified. verify-public now 7
+  commands (additive). BN-12 flipped with honest 2-gated/3-excluded
+  evidence. Backlog: P1-04..08 remain in Phase 1.
