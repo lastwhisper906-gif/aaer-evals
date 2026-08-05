@@ -4,6 +4,11 @@ on:
   push:
   pull_request:
 
+# 공급망 강화 (D-P45 §3 CI hardening, 2026-08-05): 최소 권한 + 액션 SHA 핀.
+# 태그는 가변(mutable) — 전체 커밋 SHA로 고정하고 주석에 사람이 읽는 버전 유지.
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -16,10 +21,10 @@ jobs:
     # 통과하되 해당 잡의 실패 표시·아래 notice 주석은 남는다 (침묵 green 금지).
     continue-on-error: ${{ matrix.python-version != '3.12' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
         with:
           fetch-depth: 0   # verify_blindness.py의 git 이력 증명(채점 커밋 선행)에 전체 이력 필요
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5
         with:
           python-version: ${{ matrix.python-version }}
       - name: 비정본 버전 고지 (C5 — allowed-to-fail, 결과는 발견으로 기록)

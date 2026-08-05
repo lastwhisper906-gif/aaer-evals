@@ -215,7 +215,7 @@ priority rule carry an INV-03 disclosure entry in DECISIONS_PENDING.md.
 - claim: metric-framing coherence of every future published number
   (probability/ordinal conflict resolved at the contract).
 ### NB-02 CI hardening, dependency-free half (DP-Q2a)
-- category: CODE · size: S · status: TODO
+- category: CODE · size: S · status: DONE (2026-08-05, D-P47)
 - claim: reproduce-from-public integrity (supply-chain: SHA-pinned
   actions, permissions: contents: read, doc/code job split). Ruff/type/
   coverage EXCLUDED (INV-11 — amendment draft queued).

@@ -258,3 +258,14 @@ DECISIONS_PENDING.md; owner reconciliation command recorded there).
 - Disclosure: D-P46 (incl. $comment→description packet deviation).
 - NOTE (v2 rules): push is owner-gated again — commits accumulate locally.
 - Backlog: NB-02..07 remain (6). Next: NB-02 CI hardening (dep-free half).
+
+## Entry 13 — Cycle 10 (v2): NB-02 CI hardening dep-free half (2026-08-05) — DONE
+- Standing-authorization category: D-P45 §3 "CI hardening (SHA pinning,
+  permissions)". Direct edit (harness skipped per its own when-NOT-to-use
+  doctrine — 3-line diff); disclosed in D-P47.
+- permissions: contents: read + full-SHA pins for checkout/setup-python
+  (SHAs fetched live from official repos). Job split killed (INV-24
+  letter protects the 3.12 all-steps job). PKT-INV11 amendment draft
+  queued for the dep-requiring half.
+- Backlog: NB-03..07 (5). Next: NB-03 (INV-12 amendment + cross-model
+  GPT runner) — the big one.

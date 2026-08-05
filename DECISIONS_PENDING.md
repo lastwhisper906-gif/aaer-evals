@@ -788,3 +788,18 @@
 - **하네스:** TASK_NB01 cycle 1 APPROVE. 스위트 333 passed/1 skipped,
   validate_schemas PASS, verify-public PASS, 문서 카운트 330→334.
 - **Revert:** 해당 커밋 revert (v1 무영향).
+
+## D-P47 — NB-02 집행 기록: CI 공급망 강화 — 의존성 무추가 절반 (INV-03 공개, 2026-08-05)
+- **What:** D-P45 §3(CI hardening) 인용 집행 — ci.yml에 (1) workflow 수준
+  `permissions: contents: read` (2) actions/checkout@v4 →
+  11d5960a326750d5838078e36cf38b85af677262, actions/setup-python@v5 →
+  a26af69be951a213d495a4c3e4e4022e16d87065 (전체 SHA 핀 + 사람 가독 버전
+  주석; SHA는 오케스트레이터가 gh api로 공식 저장소에서 실측 조회).
+  스텝 목록·매트릭스·3.12 정본 잡 무변경 — INV-24 문언 보존. B9의 잡
+  분리는 미집행: 3.12 잡 전 단계 실행이 INV-24의 보호 대상이라 이동은
+  불변식 저촉, 병렬 중복 잡은 가치 대비 기계 증가로 kill.
+- **직접 편집 공개:** 3줄 추가+2토큰 교체 규모로 하네스 자체 독트린
+  ("one-line edits는 직접 편집이 저렴") 적용 — 빌더·리뷰어 호출 생략,
+  텍스트 diff 검증(로컬 YAML 파서 부재는 INV-11 귀결; GitHub 푸시 시
+  가시 검증). Ruff/타입/커버리지 절반은 PKT-INV11 개정 초안으로 큐잉.
+- **Revert:** 해당 커밋 revert.
