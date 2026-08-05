@@ -1262,3 +1262,17 @@
   PKT-E003 후.
 - **차기:** Phase 2 (스키마 v2 하드 제약 — 서명된 플랜 실행).
 - **Revert:** 브랜치 revert.
+
+## D-P76 — Phase 2 완결: 스키마 v2.1 하드 제약 (브랜치, 2026-08-05)
+- **⚠ 최상단:** PKT-E003 서명 0일 (병합 게이트) · Zenodo DOI 25일 · 기타
+  패킷 큐 동일.
+- **완료:** llm_output_v2 → v2.1 — checklist 정확 8(enum CL1..CL8),
+  top_signals enum, fingerprint 필수 승격, 커밋 해시/accession/케이스 ID
+  패턴 제약; aaer_eval/output_contract_v2.py 의미 검증기(스키마 비틀기
+  금지 지시 준수 — ID 집합 동치·tier/score 정합 양방향·top_signals ⊆
+  checklist), 위반 클래스별 발화 테스트. v2.0 구조 diff-lock은 문서화
+  대체(침묵 삭제 아님). v1 byte-동결 실측(diff 0줄). 하네스 cycle 2
+  APPROVE. 스위트 412/1, validate_schemas PASS, verify-public RC=0.
+- **차기:** Phase 3 (verify-claims 타깃 + CLAIMS 게이트 구동 + 그림
+  게이트 확장).
+- **Revert:** 브랜치 revert.
