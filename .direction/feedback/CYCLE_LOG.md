@@ -476,3 +476,40 @@ DECISIONS_PENDING.md; owner reconciliation command recorded there).
   audit, corrected explicitly through the drop guard, semantic identity
   proven) and one procedure false-positive (tool verified fail-closed).
   Models: codex-cli 0.144.6 / claude 2.1.221.
+
+## Entry 38 — P4c APPROVE at cycle 5: Phase 4 COMPLETE on branch (2026-08-06)
+- Session resumed on claude-opus-5[1m] after the prior orchestrator died on
+  the Fable weekly limit. Entry-gate findings, honestly: (1) the reported 11
+  leaked background monitors DID NOT EXIST — zero harness processes, empty
+  TaskList, no RUNNING sentinels; run_task.sh is fully synchronous and never
+  owned them (they were session-scoped Monitor watches that died with their
+  session). No leak, no harness fix; ≤3 concurrent held anyway. (2) The model
+  pin WAS missing and is the root cause of the death — run_task.sh passed no
+  --model at all, so `claude -p` inherited ~/.claude/settings.json. Fixed via
+  HARNESS_CLAUDE_MODEL (default opus) + --model on both call sites + per-call
+  logging + meta.txt claude_model=. (3) P4c salvaged: builder output was
+  intact and coherent, so the BUILDER WAS NOT RE-RUN — review pass only,
+  replayed from the harness's own snapshotted cycle-1 prompt and sentinel.
+- REVIEW->REVISE x5, no cap (direction). Convergence 6 -> 4 -> 1 -> 2 -> 0.
+  Cycle 1 found the instrument UNEXECUTABLE: eval_spec.md §4 defines dim2/dim3
+  by comparison against the answer key that §3 withholds until submission.
+  That defect would have shipped under the dead Fable reviewer.
+- Two self-inflicted errors recorded rather than buried: the orchestrator's
+  own e_d ESTIMATE ("약 9-10") was arithmetic the reviewer corrected to 7 from
+  the document's own formula; and the reviewer's cycle-2 line citations
+  (:36-43, "repository-relative") were wrong, passed through unverified by the
+  orchestrator, and caught by the reviewer itself at cycle 4 — left uncorrected
+  they would have made the sampled population the empty set.
+- The reviewer's KILL-OR-DEFER was SPLIT rather than applied wholesale: the
+  honesty half (state that dim4_blind is the only band-labeled dimension) went
+  to the builder; the cost half (raise sampling to ~77% of the treatment
+  stratum, ~3x the recruit's paid time) went to the owner as Q-F18. A loop
+  does not get to spend the owner's money to make its own statistic prettier.
+- Models this cycle: orchestrator claude-opus-5[1m] · builder codex-cli 0.144.6
+  (cycles 1-5) · reviewer claude -p --model opus CLI 2.1.222 (cycles 1-rerun,
+  2, 3, 4, 5) · cycle-1 original reviewer = UNPINNED -> Fable 5 -> quota death.
+- Gates: verify-public RC=0, 414 passed/1 skipped, reproduce 100/100.
+  Merge to main still gated on PKT-E003.
+- Next: Phase 6 — multiple-testing paragraph (spec drafted), README November
+  2026 section, candidates PENDING supersession headers (frozen-artifact
+  contact -> owner packet, NOT a build), owner-queue carry-overs.
