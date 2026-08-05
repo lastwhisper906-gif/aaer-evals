@@ -392,3 +392,9 @@ DECISIONS_PENDING.md; owner reconciliation command recorded there).
   pre-FB-01 revert). INV-07 proof and INV-01 scan now have discriminating
   tests. 6th transient CLI kill recovered earlier this round. Rotation
   next: R5 third-party reproducibility.
+
+## Entry 31 — Cycle 29: R5 round — 5 repaired (incl. 2nd own-defect), 1 killed (2026-08-05)
+- Tier-2's cannot-succeed-as-documented state repaired into honest scope;
+  destructive-before-validation ordering fixed; CI parity restored
+  (this loop's own P1-03 wiring gap — 2nd self-defect caught by rotation).
+  Rotation next: R6 premise challenge (closes rotation 1).

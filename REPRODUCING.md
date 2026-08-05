@@ -19,7 +19,10 @@
 
 The "zero external data" claim of `verify-public` is proven **by an actual
 run in a sandbox with HOME pointed at an empty temporary directory** —
-transcript: `audit/verify_public_sandbox_transcript_20260722.txt`.
+transcript: `audit/verify_public_sandbox_transcript_20260722.txt`
+(historical evidence for the 2026-07-22 gate set). The LIVE structural
+proof is `make verify-public-sandboxed`: the same full gate under a
+machine-enforced no-network/no-external-read guard, every run (D-P59).
 Corpus-dependent pytest cases are marked skip when the corpus is absent
 (the synthetic tier runs in full).
 
@@ -39,11 +42,11 @@ repository (refresh with `make docs-refresh`; CI compares it via
   - `.venv/bin/python tools/verify_blindness.py`
   - `.venv/bin/python tools/verify_figures.py`
 - `make verify-full` (requires `~/aaer-data` corpus; see REPRODUCING.md §2):
+  - `.venv/bin/python tools/verify_manifest.py`
   - `.venv/bin/python analysis/baselines.py`
   - `.venv/bin/python analysis/stats.py`
   - `.venv/bin/python analysis/synthesis.py`
   - `.venv/bin/python analysis/calibration_wave2.py`
-  - `.venv/bin/python tools/verify_manifest.py`
   - `$(MAKE) verify-public`
 <!-- END-GENERATED: repro-facts -->
 
@@ -93,8 +96,10 @@ corpus is absent):
 - **Size**: about 2.3 GB on disk (what the manifest pins is the file count
   in the generated block / about 586 MB).
 - **Acquisition**: the two fetch tools in §3 below (SEC fair-access
-  User-Agent required). In environments where SEC egress is blocked, the
-  tools print a **fetch manifest (the list of required URLs)** so you can
+  User-Agent required — set it via your own identity; identifying yourself
+  as this repo's owner to the SEC is not appropriate for third parties).
+  In environments where SEC egress is blocked, `tools/holdout_rescan.py`
+  prints a **fetch manifest (the list of required URLs)** so you can
   acquire the files separately and place them — or it is available on
   request.
 
@@ -147,8 +152,20 @@ runs/wave2/perturbed_redraw/draw_2 --only <9 fraud ids>`
 
 Accumulates post-cutoff new disclosures (8-K Item 4.02) with a single
 command — the procedure that fills `docs/FUTURE_HOLDOUT_CANDIDATES.md`
-Tier-2. Same SEC fair-access UA as §3; prints a fetch manifest when
-egress is blocked.
+Tier-2. Same SEC fair-access UA note as §3. (Manifest-on-blocked-egress
+is implemented in `holdout_rescan.py`; the §3 fetch tools report failures
+and continue — R5-03 behavior note.)
+
+**Tier-2 honest scope (R5-01/R5-02):** a fresh fetch from live SEC
+endpoints reproduces recomputed *values* for comparison, not corpus
+*bytes* — the pinned manifest hashes identify the owner's frozen corpus
+and will not match any later fetch (living endpoints). The complete fetch
+toolset spans more tools than §3's two examples (see `tools/fetch_*.py`
+and `tools/holdout_rescan.py`); for byte-identical corpus access, request
+it via a repository issue (owner-mediated). Note also: `verify-full`
+rewrites tracked analysis artifacts in place — run it on a clean checkout
+and inspect `git diff` afterward (the manifest check now runs FIRST, so a
+drifted corpus fails before any artifact is rewritten).
 
 ## 6. Disclaimer
 

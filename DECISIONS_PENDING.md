@@ -1111,3 +1111,24 @@
   스위트 369/1, verify-public RC=0, 문서 카운트 359→370.
 - **차기:** 보충 로테이션 R5 (제3자 재현 경로).
 - **Revert:** 해당 커밋 revert.
+
+## D-P68 — R5 라운드 집행 기록: 제3자 재현 경로 6건 (INV-03 공개, 2026-08-05)
+- **완료 요약:** 헤드라인 판정 — Tier-1은 실제로 낯선 이가 걸을 수 있는
+  경로(clean), Tier-2는 문서대로면 어떤 외부 재현자도 성공 불가한 상태
+  였음. 수리: (R5-01) REPRODUCING §2 정직 스코프 — 값 재현 가능·바이트
+  불가(살아있는 SEC 엔드포인트 vs 동결 코퍼스 핀), 도구 목록 완결,
+  코퍼스 요청 채널, 제3자 UA 자기 신원 사용 명시(R5-06 흡수). (R5-02)
+  verify-full 순서 교정 — verify_manifest를 재계산 4종 앞으로(명령
+  verbatim 순수 재배열): 드리프트 코퍼스가 커밋 산출물을 덮어쓴 뒤
+  "수치 불재현"으로 위장하던 파괴-후-검증 순서 종결 + git diff 경고
+  문장. (R5-03) fetch 매니페스트 약속을 실제 구현체(holdout_rescan)로
+  귀속 교정. (R5-04i) 일회 트랜스크립트(2026-07-22 게이트 세트로 날짜
+  스코프) 대신 매 실행 구조 증명(verify-public-sandboxed)을 README·
+  REPRODUCING 표면에 노출 — 재녹화는 차기 실행 세션으로 연기. (R5-05)
+  ci.yml에 그림 게이트 1스텝 추가(additive) — P1-03가 만든 verify-public
+  ↔ CI 동등성 갭(본 루프 자기 결함 2호)의 수리. R5-06 단독 kill.
+  전 게이트 green (문서 카운트 370 유지).
+- **보호 경로 공개:** Makefile(verify-full 순수 재배열 — verify-public
+  무접촉)·.github/workflows/ci.yml(additive 1스텝, INV-24 강화 방향).
+- **차기:** 보충 로테이션 R6 (전제 도전) — 1회전 완료 렌즈.
+- **Revert:** 해당 커밋 revert.

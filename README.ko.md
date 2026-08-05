@@ -209,11 +209,11 @@ make verify-full     # 2계층 — 원시 코퍼스 재계산 추가 (~/aaer-dat
   - `.venv/bin/python tools/verify_blindness.py`
   - `.venv/bin/python tools/verify_figures.py`
 - `make verify-full` (requires `~/aaer-data` corpus; see REPRODUCING.md §2):
+  - `.venv/bin/python tools/verify_manifest.py`
   - `.venv/bin/python analysis/baselines.py`
   - `.venv/bin/python analysis/stats.py`
   - `.venv/bin/python analysis/synthesis.py`
   - `.venv/bin/python analysis/calibration_wave2.py`
-  - `.venv/bin/python tools/verify_manifest.py`
   - `$(MAKE) verify-public`
 <!-- END-GENERATED: repro-facts -->
 

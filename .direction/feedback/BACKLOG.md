@@ -318,3 +318,13 @@ priority rule carry an INV-03 disclosure entry in DECISIONS_PENDING.md.
 - Reviewer kill honored: no mutation-testing/coverage-gate machinery.
 - Borderline recorded for R1's reserved list: sandbox_guard grandchild
   propagation untested.
+
+## R5 round (third-party reproducibility, 2026-08-05 — full report: replenish_R5_2026-08-05.md)
+### [DONE D-P68] R5-01 Tier-2 honest scope (values-not-bytes, tool list, request channel)
+### [DONE D-P68] R5-02 verify-full manifest-first reorder + rewrite warning
+### [DONE D-P68] R5-03 fetch-manifest promise attributed correctly
+### [DONE D-P68] R5-04(i) live structural proof surfaced; transcript date-scoped — (ii) re-record DEFERRED to next execution session
+### [DONE D-P68] R5-05 ci.yml figure-gate parity step (repairs P1-03's own wiring gap)
+### R5-06 — KILLED as standalone (UA doc line folded into R5-01 edit)
+- Reviewer pre-kills honored: no corpus-distribution infra, no doc-claim
+  linter, no manifest-mode porting.

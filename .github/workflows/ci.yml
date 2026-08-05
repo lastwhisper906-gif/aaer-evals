@@ -46,3 +46,5 @@ jobs:
         run: python tools/lint_publication.py
       - name: 문서-저장소 수치 정합 린트 (매니페스트 수·pytest 수·재현 명령 목록 — B3, D108)
         run: python tools/lint_doc_counts.py
+      - name: 그림 드리프트 게이트 (BN-12/D-P52 — verify-public 동등성, R5-05)
+        run: python tools/verify_figures.py

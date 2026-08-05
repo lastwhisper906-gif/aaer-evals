@@ -31,11 +31,11 @@ verify-public-sandboxed:
 # verify-full: 원시 코퍼스(~/aaer-data) 의존 경로 전부 — 기준선 재계산 포함.
 # 전제 조건·취득 방법은 REPRODUCING.md §2 (corpus-check가 부재 시 안내 후 실패).
 verify-full: corpus-check
+	.venv/bin/python tools/verify_manifest.py
 	.venv/bin/python analysis/baselines.py
 	.venv/bin/python analysis/stats.py
 	.venv/bin/python analysis/synthesis.py
 	.venv/bin/python analysis/calibration_wave2.py
-	.venv/bin/python tools/verify_manifest.py
 	$(MAKE) verify-public
 
 corpus-check:

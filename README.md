@@ -112,8 +112,11 @@ python3.12 -m venv .venv
 make verify-public   # recomputes every published number from committed artifacts
 ```
 
-`verify-public` needs no corpus, no API key, no network — proven by a
-clean-HOME sandbox transcript (`audit/verify_public_sandbox_transcript_20260722.txt`).
+`verify-public` needs no corpus, no API key, no network — enforced
+structurally on every run by `make verify-public-sandboxed` (a
+no-network/no-external-read guard wrapping the full gate; historical
+transcript: `audit/verify_public_sandbox_transcript_20260722.txt`,
+2026-07-22 gate set).
 Corpus-dependent full reproduction: `make verify-full` (`REPRODUCING.md`).
 
 <!-- BEGIN-GENERATED: repro-facts (refresh: make docs-refresh; CI: tools/lint_doc_counts.py) -->
@@ -128,11 +131,11 @@ Corpus-dependent full reproduction: `make verify-full` (`REPRODUCING.md`).
   - `.venv/bin/python tools/verify_blindness.py`
   - `.venv/bin/python tools/verify_figures.py`
 - `make verify-full` (requires `~/aaer-data` corpus; see REPRODUCING.md §2):
+  - `.venv/bin/python tools/verify_manifest.py`
   - `.venv/bin/python analysis/baselines.py`
   - `.venv/bin/python analysis/stats.py`
   - `.venv/bin/python analysis/synthesis.py`
   - `.venv/bin/python analysis/calibration_wave2.py`
-  - `.venv/bin/python tools/verify_manifest.py`
   - `$(MAKE) verify-public`
 <!-- END-GENERATED: repro-facts -->
 
