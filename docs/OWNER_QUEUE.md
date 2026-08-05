@@ -933,3 +933,30 @@
 - **세션 기본 조치**: 스크립트·PNG·테스트·큐 등재까지만 — 보호 경로 무접촉 (figure + tests + queue entry only, no protected-path contact).
 - **상태**: RESOLVED (2026-08-05) — 소유자 서명(D-P43 verbatim 기록) 후
   기본값 (C) 집행: README companion 줄 + DECISION_TABLE.md 헤더 그림 삽입.
+
+## Q-F18 — P4c 인간 재채점 표본률: dim3를 underpowered로 발행할 것인가, 표본률을 올릴 것인가 — OPEN (신규, 2026-08-06 direction-loop, D-P80)
+
+- **질문**: `specs/HUMAN_BLIND_REGRADE.md`의 표본률 25%는 dim3의 예상
+  유효 pair 수를 `e_d = round_half_up(23*26/90) = 7`로 만든다. 자매
+  사전등록 `specs/cross_grader.md` §2는 `n=10`을 기각하고 `n=20`을 최소
+  실용 규모로 사전 등록했다. 25%를 유지하고 dim3를 `underpowered`
+  (밴드 라벨 없음, 불일치 목록만)로 발행할 것인가, 아니면 dim3가 하한
+  20을 넘도록 표본률을 올릴 것인가?
+- **옵션**:
+  (A) 현행 유지 — 25%, dim3는 `underpowered`로 정직 발행. 밴드 라벨을
+      받는 차원은 `dim4_blind` 하나. 재채점자 시간 = 1시간 + 23패킷.
+  (B) dim3 유효 pair가 20을 넘도록 treatment 층 표본률 상향 — 층 크기가
+      26이므로 약 77% 추출 필요. 재채점자 시간·보상이 대략 3배.
+      25%는 더 이상 "spot-check"가 아니라 다른 설계가 된다.
+  (C) dim3를 도구에서 제외하고 `dim4_blind`만 재채점 — 패킷당 시간 최소,
+      L-6 검증 범위는 인용 품질 한 축으로 축소.
+- **근거**: D-P80 · `specs/HUMAN_BLIND_REGRADE.md` §1 "예상 유효 pair 수와
+  검정력 하한" · `specs/cross_grader.md` §2 · 하네스 cycle 2 리뷰
+  §c KILL-OR-DEFER.
+- **기본값 (무응답 시)**: (A) — 현행 명세가 이미 (A)로 쓰여 있고, 정직
+  표기가 문서에 명시되어 있다. 무응답이 지출을 늘리는 방향으로 해석되지
+  않아야 한다.
+- **세션 기본 조치**: 명세를 (A)로 고정하고 이 큐 항목 등재까지만.
+  표본률 상향은 소유자 서명 없이 집행하지 않는다 — 비용 결정.
+- **상태**: OPEN — 소유자 서명 대기. 재채점자 모집 착수 전에 결정 필요
+  (모집 시 시간·보상 합의가 이 선택에 종속).

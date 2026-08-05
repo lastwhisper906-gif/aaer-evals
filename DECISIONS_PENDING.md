@@ -1317,3 +1317,39 @@
   lint·verify-public green.
 - **차기:** P4c (HUMAN_BLIND_REGRADE) — Phase 4 마지막.
 - **Revert:** 브랜치 revert.
+
+## D-P80 — P4c 완결: specs/HUMAN_BLIND_REGRADE.md — Phase 4 종결 (브랜치, 2026-08-06)
+- **⚠ 최상단:** PKT-E003 서명 **1일** (병합 게이트) · Zenodo DOI **26일** ·
+  패킷 큐 동일 (PKT-R2/FWD/P102/P108 1일). 신규: PKT-P4C-SAMPLE (0일).
+- **완료:** 인간 블라인드 재채점 사전 명세 — 결정론 표본(25%, Hamilton
+  비례배분, 시드=고정 리터럴‖동결 eval_spec.md 바이트의 SHA-256, 층 키
+  `"<tier>|<arm>"`를 `TIER_BY_DIR`(scoring/ 상대) 조회로 기계 정의,
+  미매핑 fail-closed), 필드별 삭제표(schemas/llm_output.json 전수 대조),
+  quadratic-weighted kappa(반열린 실수 구간 밴드 사전 등록), 전건 불일치
+  공개, 두 인간 합의 전속(모델 타이브레이크 금지), 소유자 전속 모집 패킷.
+  **정직 표기:** dim1 제외·dim2 블라인드 채점 불가로 제거·dim3는
+  `underpowered`(e_d=7 < 선례 하한 20)로 밴드 라벨 없이 불일치 목록만 —
+  밴드 라벨을 받는 차원은 `dim4_blind` 하나뿐임을 문서에 명시.
+- **하네스:** cycle 5 APPROVE (REVIEW→REVISE 5회, 상한 없음 — 지시 규정).
+  수렴: 6건 → 4건 → 1건 → 2건 → 0건. 게이트 약화 0건.
+- **모델 문자열 (지시 요구 — 본 사이클 전수 기록):** 오케스트레이터
+  claude-opus-5[1m] · 빌더 codex-cli 0.144.6 (cycle 1-5) · 리뷰어
+  `claude -p --model opus` CLI 2.1.222 (cycle 1 재실행·2·3·4·5).
+  **cycle 1 최초 리뷰어 호출은 핀 부재로 Fable 5를 상속해 주간 한도로
+  사망** — 하네스 모델 핀 부재의 실증. `~/tools/harness/run_task.sh`에
+  `HARNESS_CLAUDE_MODEL`(기본 opus) 도입 + 양 호출부 `--model` + 호출별
+  로깅 + meta.txt `claude_model=` 기록으로 수리.
+- **자기 결함 정직 기록 2건:** (i) 오케스트레이터 수정안 7의 유효 pair
+  추정치 "약 9-10"이 오산 — 리뷰어가 문서 자체 공식을 실제 모집단에
+  적용해 7로 정정(cycle 2). (ii) cycle 2 리뷰어 항목 2의
+  `cross_grader_skeleton.py:36-43`·"저장소 상대" 표현이 오류 —
+  오케스트레이터가 무검증 통과시켰고 cycle 4에서 리뷰어가 자기 오류를
+  발견, 33-40·"scoring/ 상대"로 정정(그대로 두었으면 모집단 공집합).
+- **게이트:** verify-public RC=0 (7행 전부) · 414 passed/1 skipped ·
+  reproduce 100/100 · lint_publication · lint_doc_counts(538/415) ·
+  verify_blindness · verify_manifest · verify_figures. main 병합은
+  PKT-E003 후.
+- **차기:** Phase 6 표면 작업 — (a) 다중 검정 문단 (b) README November
+  2026 절 (c) candidates PENDING 승계 헤더는 **동결 산출물 접촉 →
+  소유자 패킷** (d) 소유자 큐 승계분.
+- **Revert:** 브랜치 revert.
