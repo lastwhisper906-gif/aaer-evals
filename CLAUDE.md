@@ -122,11 +122,18 @@ import·read하는 변경(테스트의 격리 검증 제외), 또는 채점 로�
 **Constraint:** 신규 의존성 추가 금지. 최상위 의존성은
 `requirements.txt`의 5개(pytest·jsonschema·requests·pypdf·matplotlib)로
 고정, 설치는 해시 핀 `requirements.lock`(`--require-hashes`) 경유.
+**예외 (소유자 서명 2026-08-06, D-P83 — PKT-INV11):** 개발·CI 전용 도구
+체인(ruff, pyright 또는 mypy, pytest-cov, pip-audit)은 런타임 5종 동결과
+별도의 `requirements-dev.lock`(해시 핀, pip-compile 생성)으로 허용된다.
+채점·파이프라인 코드는 이들 도구를 import할 수 없다(가드 스캔 대상).
+CI에서 비정본 보조 잡으로만 실행 — 정본 3.12 5게이트 잡은 무변경(INV-24).
 **Basis:** `requirements.txt` · D109 C4 (pip-compile --generate-hashes,
-전이 의존성 663해시) · README Quickstart
+전이 의존성 663해시) · README Quickstart · PKT-INV11 (D-P83)
 **Violation test:** `requirements.txt`에 여섯 번째 최상위 의존성을
 추가하는 변경, 또는 `requirements.lock`을 pip-compile 재생성 없이 수기
-수정하는 변경.
+수정하는 변경; 런타임 코드(`pipeline/`·`scoring/`·`analysis/`)가 dev
+도구 체인을 import하는 변경; 정본 3.12 5게이트 잡에 dev 도구를 끼워
+넣는 변경.
 
 ## 4. 스코프 불변식
 
