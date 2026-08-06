@@ -1,4 +1,5 @@
 # PKT-FWD — forward-tool fail-closed hardening (C1B-03/04/05; OWNER SIGNATURE — protected prefix tools/forward_)
+**STATUS: SIGNED (owner blanket, 2026-08-06, D-P83) — queued as TASK_FWD for the next loop sprint.**
 
 Nov-2026-window relevance. Full evidence: rot2_C1B_2026-08-05.md.
 1. forward_validate: enforce the FULL sealed-spec §6 record contract

@@ -1,4 +1,5 @@
 # PKT-INV11 — dev-toolchain amendment draft (Ruff / type check / coverage / pip-audit)
+**STATUS: SIGNED (owner blanket, 2026-08-06, D-P83) — INV-11 amendment committed (6f04e2e); wiring queued as TASK_INV11.**
 Status: OWNER SIGNATURE REQUIRED (INV-11 conflict — invariant wins, D-P45 rule).
 
 ## Why queued

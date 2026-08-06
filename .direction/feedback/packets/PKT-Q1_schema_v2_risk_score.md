@@ -1,5 +1,6 @@
 # PKT-Q1 — v2 evaluatee contract: misstatement_probability → misstatement_risk_score
 **Owner decision: SIGNED (D-P44a, 2026-08-05) — rename; ECE/Brier demoted.**
+**Execution queued as TASK_Q1 for the next loop sprint (D-P83).**
 Status: ready-to-execute packet. Execution = one build cycle, future waves only.
 
 ## What changes (and what must not)

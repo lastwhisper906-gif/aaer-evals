@@ -1,4 +1,5 @@
 # PKT-P108 — recruiting materials (OWNER PACKET — posting is owner-manual, INV-18)
+**STATUS: SIGNED / materials approved (owner blanket, 2026-08-06, D-P83) — posting owner-manual; handle decision: keep lastwhisper906-gif. Q-F18 resolved (A): regrader terms = 25% sampling, ~1hr + 23 packets.**
 
 Every number below cites its RESULTS.md row; nothing here is a publication
 surface until the owner posts it. Links assume the public repo README.

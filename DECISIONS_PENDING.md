@@ -1415,3 +1415,50 @@
   미푸시 · audit-integration +17 · ~/Documents 23 behind).
 - **Revert:** 브랜치 revert (ERRATA는 append-only — revert 시에도 후속
   엔트리로만 정정).
+## D-P83 — OWNER DECISION SESSION 일괄 서명·집행 (2026-08-06)
+- **⚠ 최상단:** PKT-E003 서명·집행 완료(D-P82) · PKT-R2 집행 완료(본
+  엔트리) · **잔여 소유자 수동 액션은 close-out 표 참조** (Issue 공지 3건
+  포스팅 · P102 이미지 수정 · Zenodo DOI · P108 포스팅).
+- **서명 (verbatim, 전 항목 공통):** 소유자 답변 **"sign all sections
+  with your recommend options that you believe the choice would most
+  contribute for the project."** (2026-08-06). 위임 범위: 각 항목의 권고
+  옵션 채택. 세션 규율 준수: 빌드 작업은 서명만 기록하고 TASK로 큐잉
+  (본 세션 무빌드).
+- **집행 완료 (본 세션 커밋):**
+  ① **[2A]** main ← audit-integration ff-only 병합 (011180d), push는 본
+  엔트리 커밋 후 1회 — CI 3.12 잡 결과 확인 의무 (INV-24).
+  ② **[PKT-R2]** RESULTS 행 1·2·3·4·8·9·10·11·13 limits 추가 문장 9건
+  (패킷 문언 그대로) + CLAIMS.json char-lock 동기(테스트 2 passed) +
+  README·METHOD·README_DETAIL "structurally impossible" → 선언 컷오프+
+  실측 비인지 문언(패킷 edit 4; README_DETAIL.md:118의 동일 문구 1건은
+  패킷 명시 밖이나 동일 주장 표면이라 포함 — 본 문장으로 공개) +
+  error_analysis 스냅샷 블록쿼트(edit 3; 등가성 테스트 선두 포인터
+  인식자에 "> Snapshot of " 추가 — 본문 수치 잠금 무변경) + README 검증
+  기록 링크(edit 9). Edit 8 공지 3건은 패킷에 포스팅 문안으로 작성 —
+  포스팅은 소유자 수동 (D99). 커밋 38c0c77.
+  ③ **[Q-F12/(A)]** ENGINE_DECISION v2 등재 (f43f36c) — §A 정확 FPR 매칭
+  · §B 확장 대조군 목표 n≈30 (규모만 서명 — 조달·fetch·채점 지출은
+  INV-22/23 별도 게이트) · §C 공개 절 내장 · 영어 정본 (D114).
+  ④ **[PKT-INV11]** INV-11 dev-toolchain 예외 개정 등재 + sync_context
+  재생성 (6f04e2e). 배선은 TASK_INV11 큐잉 (pip-compile은 소유자 입회
+  세션 한정 — INV-23).
+  ⑤ **[Q-F18/(A)]** 25% 유지, dim3 underpowered 정직 발행 — 모집 게이트
+  해제. ⑥ **[Q-F13]** 기본 옵션 서명, TASK_QF13 큐잉. ⑦ **[PKT-FWD]**
+  서명, TASK_FWD 큐잉 (cycle_002 준비 전 실행 권고). ⑧ **[PKT-Q1]**
+  집행 TASK_Q1 큐잉. **[PKT-Q4]** INV-12 개정 기등재(D-P44b/D-P45) 확인
+  — 런 발사는 소유자 수동 유지. **[PKT-Q6]** Nov 2026 시계 — 무조치.
+  ⑨ **[계정]** 핸들 유지 결정: lastwhisper906-gif (리네임 없음 — P102/
+  Zenodo/P108 시퀀스 차단 해제; 위임 하 판단: 계정 변경은 세션 불가
+  액션이므로 유지가 유일한 집행 가능 권고).
+  ⑩ **[주차 6건]** Q-F02·Q-F07·Q-M01·Q-M05·Q-M06·Q-M07 → PARKED (각
+  재부상 조건 명기; Q-M06은 차기 감독 미터링 세션 최우선 후보).
+  ⑪ **[Q-F19]** candidates.json 승계 헤더 사안 신규 등재 (등재만 —
+  처분은 기본값 (A) ERRATA-인접 공개, 무응답 시).
+  ⑫ **[정정]** Q-F14/15/16 상태줄 OPEN 잔존 표기 → RESOLVED 정정
+  (헤더·D-원장이 정본; 갱신 누락 bookkeeping).
+  ⑬ **[하네스 핀 추인]** HARNESS_CLAUDE_MODEL=opus (run_task.sh 기본값,
+  빌더·리뷰어 --model 명시 + meta.txt 기록)를 상시 결정으로 추인 —
+  세션 대화형 /model 전환과 무관하게 하네스 호출은 핀 고정.
+- **게이트:** 본 엔트리 커밋 직후 make verify-public 실측 → push → CI
+  3.12 확인 (결과는 close-out 보고).
+- **Revert:** 항목별 커밋 revert + 본 엔트리 후속 정정 엔트리.

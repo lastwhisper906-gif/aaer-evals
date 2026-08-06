@@ -217,7 +217,7 @@
 - **옵션**: (A 기본) 정성 인용 유지 (수치 불사용) · (B) 소유자 원문 대조 후
   정확 수치+페이지 인용으로 승격.
 - **세션 기본 조치**: (A) — 산출물 전부 정성 인용으로 작성 완료.
-- **상태**: OPEN
+- **상태**: PARKED (2026-08-06, D-P83) — post-merge review 재부상. 원문 대조는 소유자 열람 사안; 게시 수치 비의존 (인용 문언은 이미 보수적).
 
 ---
 
@@ -313,7 +313,7 @@
   차원 "grader-dependent" 강등 diff 의무 (동결값 불변).
 - **옵션**: (A) E4 배치에 편승 발사 · (B) 별도 시점 · (C) 기각.
 - **세션 기본 조치**: 없음 (spec only).
-- **상태**: OPEN
+- **상태**: PARKED (2026-08-06, D-P83) — launch-ready 동결 유지, 소유자 임의 시점. 차기 감독 미터링 세션 검토 목록에 재부상.
 
 ---
 
@@ -348,7 +348,7 @@
   게재하고 원수치 비게재 · (C) FINRA에 서면 문의.
 - **세션 기본 조치**: 게재 전 확인 필요 항목으로 등록만. B4_REPORT는 저장소 내부
   문서 (발행 표면 아님).
-- **상태**: OPEN
+- **상태**: PARKED (2026-08-06, D-P83) — B4 발행 확장 착수 전 재부상 (현 발행 표면 FINRA 데이터 비의존).
 
 ## Q-M02 — FINRA 과거 공표일(dissemination date) 실측 입수 가능성 — **RESOLVED (D72/D77~D79, 2026-07-13 — 구현 완결)**
 
@@ -426,7 +426,7 @@
 - **옵션**: (A) 소유자가 §5 전문 재전송 (차기 세션 실행) · (B) B-목록 폐기,
   A-8+P-큐로 충분 · (C) B-4만 Q-F02 완화와 함께 재지시.
 - **세션 기본 조치**: A-8을 백로그 작업으로 사용, B-목록은 미실행.
-- **상태**: OPEN
+- **상태**: PARKED (2026-08-06, D-P83) — 야간 미션 프롬프트 재사용 시점에 재부상; 현 direction-loop 하네스는 해당 프롬프트 미사용.
 
 ---
 
@@ -445,7 +445,7 @@
   verdict D-엔트리에 명기해야 한다 (실험군 j=0은 2026-07-06~09 draw-1 —
   시점 비대칭 각주 의무).
 - **세션 기본 조치**: (B) — 미션 사전 승인 외 지출이므로 실행 안 함.
-- **상태**: OPEN
+- **상태**: PARKED (2026-08-06, D-P83) — 차기 감독 미터링 세션의 최우선 후보로 재부상 (7호출로 E2 LLM j=0 AUC 가능 — ENGINE_DECISION §3 주석 해소 경로).
 
 ---
 
@@ -455,7 +455,7 @@
   383 > 380으로 발사 불가. launch-ready 동결 유지 (W2_MAINSCORE_REDRAW_PLAN).
 - **발사 명령**: `python pipeline/runner.py --cases data/evaluatee/cases_wave2.json
   --out runs/wave2/mainscore_redraw/draw_2` (멱등) → 부분/전체 밴드 분석.
-- **상태**: OPEN (소유자 임의 시점 — 종전 launch-ready 동결과 동일 지위)
+- **상태**: PARKED (2026-08-06, D-P83) — launch-ready 동결과 동일 지위 유지, 차기 감독 미터링 세션 검토 목록에 재부상.
 
 ---
 
@@ -802,7 +802,7 @@
 - **세션 기본 조치**: 패킷 초안만 — `specs/` 무접촉, 임계·대조군 집합
   무결정 (packet draft only, no specs/ contact, no threshold or
   control-set decisions).
-- **상태**: OPEN
+- **상태**: RESOLVED (2026-08-06, D-P83) — 옵션 (A): 소유자 서명 verbatim "sign all sections with your recommend options that you believe the choice would most contribute for the project." (2026-08-06 owner decision session, D-P83) — §A 정확 매칭 · §B n≈30 (규모만; 지출 별도 게이트) · §C 내장 · 영어 정본. specs/ENGINE_DECISION.md v2 절 등재 (커밋 f43f36c). Cycle-2 등록 이전 조건 충족.
 
 ## Q-F13 — BN-12: README 첫 화면 그림의 확률 프레이밍 축 라벨 + 그림 드리프트 게이트 부재 — OPEN (신규, 2026-07-29 direction-loop)
 
@@ -830,7 +830,7 @@
   행 11("점수는 서수, 확률 아님")과 첫 화면 그림이 상호 모순인 상태.
 - **세션 기본 조치**: 등록만 — 보호 경로 무접촉 (registration only,
   no protected-path contact).
-- **상태**: OPEN
+- **상태**: RESOLVED (2026-08-06, D-P83) — 기본 옵션 서명: 소유자 서명 verbatim "sign all sections with your recommend options that you believe the choice would most contribute for the project." (2026-08-06 owner decision session, D-P83) 집행은 TASK_QF13으로 차기 루프 스프린트 큐잉 (본 세션 무빌드 규율).
 
 ## Q-F14 — BN-14: methodology_limitations 영어화 채택 + 린트 DOCS 확장 — **RESOLVED (2026-08-05, D-P50 #4 · D-P55 집행)**
 
@@ -860,7 +860,7 @@
 - **세션 기본 조치**: 번역·상호 링크·동치 검사까지만 — 린트 등
   보호 경로 무접촉 (translation + cross-links only, no protected-path
   contact).
-- **상태**: OPEN
+- **상태**: RESOLVED — 헤더의 D-P50 #4 · D-P55 집행 기록이 정본; 본 상태줄의 구 OPEN 표기는 갱신 누락이었음 (정정 2026-08-06, D-P83 bookkeeping).
 
 ## Q-F15 — BN-14: error_analysis_wave2_holdout 영어 초안 채택 — **RESOLVED (2026-08-05, D-P50 #4 · D-P56 집행)**
 
@@ -888,7 +888,7 @@
   요청한다. **기본값 (무응답 시)**: (A) — D125/Q-F11 선례.
 - **세션 기본 조치**: 초안만 — 보호 경로 무접촉 (draft only,
   no protected-path contact).
-- **상태**: OPEN
+- **상태**: RESOLVED — 헤더의 D-P50 #4 · D-P56 집행 기록이 정본; 본 상태줄의 구 OPEN 표기는 갱신 누락이었음 (정정 2026-08-06, D-P83 bookkeeping).
 
 ## Q-F16 — BN-16: sandbox_guard 보호 Makefile 배선 — **RESOLVED (2026-08-05, D-P50 #6 · D-P59 — 옵션 (A) 집행, 가드 경유 RC=0 실측)**
 
@@ -919,7 +919,7 @@
   (발견 → 큐 등록 → 서명)로 등재한다. **기본값 (무응답 시)**: (A) — 배선.
 - **세션 기본 조치**: 가드 스크립트 + 자기 검증 테스트까지만 — 보호
   경로 무접촉 (guard + self-tests only, no protected-path contact).
-- **상태**: OPEN
+- **상태**: RESOLVED — 헤더의 D-P50 #6 · D-P59 집행 기록이 정본; 본 상태줄의 구 OPEN 표기는 갱신 누락이었음 (정정 2026-08-06, D-P83 bookkeeping).
 
 ## Q-F17 — BN-19 tradeoff figure adoption: README/DECISION_TABLE placement — **RESOLVED (2026-08-05, D-P43 소유자 서명 — 기본값 (C) 집행)**
 
@@ -958,5 +958,17 @@
   않아야 한다.
 - **세션 기본 조치**: 명세를 (A)로 고정하고 이 큐 항목 등재까지만.
   표본률 상향은 소유자 서명 없이 집행하지 않는다 — 비용 결정.
-- **상태**: OPEN — 소유자 서명 대기. 재채점자 모집 착수 전에 결정 필요
-  (모집 시 시간·보상 합의가 이 선택에 종속).
+- **상태**: RESOLVED (2026-08-06, D-P83) — 옵션 (A): 소유자 서명 verbatim "sign all sections with your recommend options that you believe the choice would most contribute for the project." (2026-08-06 owner decision session, D-P83) 25% 유지, dim3는 `underpowered` 정직 발행, 밴드 라벨 차원은 dim4_blind 단독. 명세 무변경 (이미 (A)로 작성). 재채점자 모집 게이트 해제 — 모집 자체는 PKT-P108 소유자 수동.
+
+## Q-F19 — candidates.json "PENDING HUMAN SIGN-OFF" 승계 헤더: 동결 커밋 내 파일 접촉 (신규, 2026-08-06 owner decision session)
+
+- **질문**: `data/candidates/candidates.json:3` · `COLLECTION_NOTES.md:3` ·
+  `reverification_diff.md:3`의 "PENDING HUMAN SIGN-OFF" 표기는 후속 서명
+  (D40/D41 게시 사슬)으로 사실상 승계되었으나, 세 파일은 동결 커밋
+  c47a155/344f97d 안에 있어 날짜 헤더 추가가 INV-06 동결 산출물 접촉이다.
+  승계 사실을 어떻게 기록할까?
+- **옵션**: (A) ERRATA-인접 공개 항목 1건 + 파일 무접촉 (동결 원문 보존,
+  승계 사실은 원장에만) · (B) INV-06 병행 게시 경로로 신규 병행 파일에
+  승계 헤더 게시 · (C) 방치 (독자가 PENDING을 미해소로 오독할 위험 지속).
+- **기본값 (무응답 시)**: (A) — 최소 접촉·최대 정직.
+- **상태**: OPEN — 등재 자체는 D-P83 서명으로 승인됨 (등재만; 처분 미결).
