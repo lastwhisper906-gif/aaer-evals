@@ -64,8 +64,9 @@ separation of pipeline/ and scoring/. <!-- source: analysis/synthesis.md, docs/V
 **Memorization** — the model knowing case outcomes from training data. It
 cannot be blocked, only measured: disclosed measurement via three
 instruments — the name-ID probe (50%→21.9%→0%), the outcome-recognition
-probe (wave-2 8/9), and the post-cutoff holdout (the structurally impossible
-axis).
+probe (wave-2 8/9), and the post-cutoff holdout (revelation postdates the
+evaluatee's *declared* training cutoff; measured non-recognition demonstrated —
+k=5 gate, positive controls).
 <!-- source: tools/verify_blindness.py -->
 **Canaries** — all runs/ are scanned for grading-material GUIDs appearing in
 evaluatee artifacts (an appearance is an immediate FAIL). The same gate also

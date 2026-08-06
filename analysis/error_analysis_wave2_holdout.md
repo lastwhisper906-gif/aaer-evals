@@ -1,5 +1,7 @@
 > Korean original: [error_analysis_wave2_holdout.ko.md](error_analysis_wave2_holdout.ko.md) (frozen).
 
+> Snapshot of 2026-07-08 (OWNER-GATE-E session). Two assertions are SUPERSEDED by later signed work and preserved unchanged per disclose-don't-revise: human_finalized=false (superseded by GA-001(b) progress — see AUDIT_INDEX) and "E1 not run" (superseded by the E1 matched-controls run, RESULTS row 6).
+
 # Error anatomy — wave-2 (treatment 9 vs control 23) + holdout (HUBG·WMK·GNE)
 
 > Authored by Claude Code, pending human audit (GA-001 (b)). 2026-07-08

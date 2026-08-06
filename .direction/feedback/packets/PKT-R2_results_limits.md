@@ -58,3 +58,40 @@ calibration criterion analysis/calibration.py:57 scope).
   # orchestrator or owner applies the two appends + CLAIMS.json sync,
   # runs: .venv/bin/python -m pytest tools/test_claims_ledger.py -q
   #       && make verify-public
+
+---
+## STATUS: SIGNED & EXECUTED (owner blanket signature, 2026-08-06, D-P83)
+Owner verbatim: "sign all sections with your recommend options that you
+believe the choice would most contribute for the project." Edits 1-7 + 9
+applied repo-side (RESULTS.md limits x9 + CLAIMS.json char-lock sync +
+README/METHOD/README_DETAIL holdout framing + snapshot blockquote +
+README verification-record link). Edit 8 = owner posts the three notice
+texts below (D99 post-publication-notice channel).
+
+## Edit 8 — ready-to-post notice texts (owner pastes as issue comments)
+
+### On GitHub issue #1 (series Issue 0, wave-1 memo) — FPR sign note
+> **Post-publication notice (owner-posted, PKT-R2/D-P83).** The wave-1
+> control false-positive rate (3/22 = 13.6%) is subject to two known
+> selection effects with opposite signs: undetected fraud in the
+> non-enforcement control pool pushes measured specificity down, while
+> hindsight no-restatement certification (E5 window cutoff+3y) pushes it
+> up. Net direction unknown. The frozen memo text is preserved unchanged;
+> see RESULTS.md rows 8–10 limits.
+
+### On GitHub issue #2 (series Issue 1, wave-2 memo) — "A-type" definition
+> **Post-publication notice (owner-posted, PKT-R2/D-P83).** "A-type" in
+> this memo means the treatment roster was pre-screened for in-principle
+> public-data detectability: a case entered the roster only if its
+> misstatement was in principle visible in the public filings the pipeline
+> reads. All detection rates are conditional on that screen. The frozen
+> memo text is preserved unchanged; see RESULTS.md rows 1/3/13 limits.
+
+### On GitHub issue #3 (series Issue 2, holdout memo) — HUBG boundary caveat, generalized
+> **Post-publication notice (owner-posted, PKT-R2/D-P83).** The HUBG
+> caveat in this memo (a tier hit with the mechanism missed — anchored on
+> the 2018 restatement cluster) generalizes: any per-case holdout hit
+> should be read as a tier hit unless the mechanism hypothesis matches the
+> later-revealed mechanism. N=3, per-case only; H1 (permutation
+> significance) is not claimed at this tier. The frozen memo text is
+> preserved unchanged; see RESULTS.md rows 5–7 limits.

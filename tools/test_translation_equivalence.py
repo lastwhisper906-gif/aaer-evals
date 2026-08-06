@@ -35,12 +35,16 @@ NUMERIC_TOKEN = re.compile(
 
 
 def _without_added_pointer_lines(text: str) -> str:
-    """Exclude only leading blockquotes identifying the F-01/F-02 companion."""
+    """Exclude only leading blockquotes identifying the F-01/F-02 companion,
+    plus dated-snapshot supersession markers prepended above the H1 per the
+    disclose-don't-revise channel (PKT-R2 edit 3 / R3-04, D-P83). Body numeric
+    equivalence is unaffected."""
     lines = text.splitlines()
     while lines and (not lines[0].strip() or lines[0].startswith(">")):
         line = lines[0]
         if line.startswith(">") and (
             "F-01/F-02" in line or "Korean original" in line
+            or line.startswith("> Snapshot of ")
         ):
             lines.pop(0)
             if lines and not lines[0].strip():

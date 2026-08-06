@@ -115,7 +115,7 @@ ability not explained by memorization or mechanical signals:
   reading (ii): directional-only, no causal claim.
   `analysis/identity_3arm_results.json` · `analysis/synthesis.md` · L-7.
 
-**③ [TASK 2] Post-cutoff holdout (memorization structurally impossible; HUBG·WMK·GNE) → H2 (per-case, N=3).**
+**③ [TASK 2] Post-cutoff holdout (revelation postdates the evaluatee's *declared* training cutoff, non-recognition measured — k=5 gate; HUBG·WMK·GNE) → H2 (per-case, N=3).**
 Recognition gate 3/3 non-recognition (demonstrated non-memorization of the
 disclosure events; draw-1). **Gate elevated to k=5 (run 2026-07-10, rules
 pre-committed): knows_event 0/5 for each of HUBG·WMK·GNE — holdout eligibility

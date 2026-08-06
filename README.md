@@ -56,7 +56,9 @@ enforcement action was found, not that the company is clean.
 This repository backtests one question — **can an LLM screen for misstatement
 risk from point-in-time structured disclosure data alone?** — against SEC
 enforcement (AAER) confirmed cases with matched non-enforcement controls, plus
-a post-training-cutoff holdout where memorization is structurally impossible.
+a post-training-cutoff holdout where the revelation postdates the evaluatee's
+*declared* training cutoff and measured non-recognition was demonstrated
+(k=5 gate, positive controls).
 It is an existence-proof record with its full audit trail, not a product:
 no positions · educational/informational · not investment advice.
 
@@ -161,6 +163,10 @@ and print the external-corpus or subscription preconditions they require.
   (number → source artifact → limitation), drift-locked to RESULTS.md.
 - **[AUDIT_INDEX.md](AUDIT_INDEX.md)** — what D/Q/RP/FREEZE_REV identifiers
   mean, where each ledger lives, one real decision traced end-to-end.
+- **[Adversarial premise verification](.direction/feedback/replenish_R6_2026-08-05.md)**
+  — a committed record of the repo's own published sentences being
+  adversarially re-checked (7 premises held, one by independent
+  recomputation).
 - **[Licensing](#licensing)** — license status (below).
 
 Detailed narrative (three-task separation, three-layer headline, false
