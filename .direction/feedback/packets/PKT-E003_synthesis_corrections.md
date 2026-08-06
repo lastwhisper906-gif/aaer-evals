@@ -1,4 +1,6 @@
-# PKT-E003 — synthesis-layer published-artifact corrections (OWNER SIGNATURE REQUIRED)
+# PKT-E003 — synthesis-layer published-artifact corrections
+**STATUS: SIGNED & EXECUTED (owner verbatim "sign", 2026-08-06, D-P82).**
+E-003 appended to ERRATA.md; artifacts regenerated; verify-public RC=0.
 
 Two published-artifact defects found by the rotation-2 C1B component
 review (full evidence: .direction/feedback/rot2_C1B_2026-08-05.md).

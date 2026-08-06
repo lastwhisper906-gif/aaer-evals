@@ -1386,3 +1386,32 @@
 - **차기:** Phase 6 (b) README November 2026 절. (c) candidates PENDING
   승계 헤더는 동결 커밋 산출물 접촉 → 소유자 패킷(빌드 아님).
 - **Revert:** 브랜치 revert.
+## D-P82 — PKT-E003 소유자 서명·집행: E-003 게시 + 산출물 재생성 (2026-08-06, OWNER DECISION SESSION)
+- **⚠ 최상단:** PKT-E003 **서명 완료 (본 엔트리)** — 병합 게이트 해제
+  (병합·push 자체는 소유자 별도 지시 대기, Item 2) · Zenodo DOI **26일** ·
+  PKT-R2/FWD/P102/P108 1일 · Q-F18 0일.
+- **서명 (verbatim):** 소유자 답변 **"sign"** (2026-08-06, owner decision
+  session, 옵션 A). INV-18 사슬: 발견(D-P70 C1B) → 격리 등록(0bf612e 코드
+  선행 커밋 + 발산 잠금 테스트) → 검토 패킷(PKT-E003) → **인간 서명(본
+  엔트리)** → 동결 텍스트(ERRATA.md E-003) 완결.
+- **집행 (서명 후 본 세션):**
+  ① ERRATA.md에 E-003 영어 정본 추가(append-only; 패킷 초안 기반, 게시
+  표면 60.0 인용 grep 실측 결과 "인용 0건 — 전부 무관한 CP 상한 60.0%"
+  명기). ② `analysis/synthesis.py` 재생성 — synthesis.json 1행 delta
+  (wave-1 fraud_median 60.0→57.5), unified_table.csv m_flag 전 m-행 정정
+  (m > -1.78 규칙 실측: -1.527→1, -2.426→0). 기지 delta 2건 외 변경 0
+  (Phase-1 발산 감사와 일치). 원본은 git 이력 보존(10a97fe 이전) —
+  병행 게시. ③ `tools/test_translation_equivalence.py` ERRATA 쌍에
+  en_truncate `"\n## E-003"` 지정 — methodology_limitations 쌍의 L-9 절단과
+  동일한 설계 기제(동결 ko 스냅샷 E-002 종료, 이후 영어 전용). E-001/E-002
+  구간 수치 동치 검사는 전량 유지 — 게이트 약화 아님. ④ 재생성 부산물
+  `analysis/out/synthesis_exclusions.json`(excluded_n=0, 비추적 이력)은
+  미커밋 관례 유지로 제거.
+- **게이트 (집행 후 실측):** `make verify-public` RC=0 — pytest 417 passed/
+  1 skipped · reproduce · lint_publication · lint_doc_counts(538/418) ·
+  verify_blindness PASS · verify_manifest · verify_figures OK.
+  divergence-lock `analysis/test_synthesis_flag_convention.py` 2 passed.
+- **차기:** 소유자 결정 세션 Item 2 — push/정합 결정 (로컬 main 41 ahead
+  미푸시 · audit-integration +17 · ~/Documents 23 behind).
+- **Revert:** 브랜치 revert (ERRATA는 append-only — revert 시에도 후속
+  엔트리로만 정정).

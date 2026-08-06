@@ -21,7 +21,9 @@ TRANSLATION_PAIRS = (
      "\n## L-9"),
     ("ERRATA.md", "ERRATA.ko.md",
      "> 한국어 원본 (동결 스냅샷: E-001–E-002) — 영어 정본: ERRATA.md (F-01/F-02, D-P50); 이후 정정 항목은 영어 정본에만 추가된다.",
-     None),
+     # E-003+ exist only in the English canonical (frozen ko snapshot ends at
+     # E-002) — same mechanism as the L-9 truncation above (D-P82).
+     "\n## E-003"),
 )
 HANGUL = re.compile(r"[\uac00-\ud7a3]")
 # Intervals and ratios are matched before their constituent numbers.
