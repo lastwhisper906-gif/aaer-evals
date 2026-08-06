@@ -136,3 +136,71 @@
 - **타이밍 증거**: 본 주석 커밋 시점에 analysis/e2_trajectories.json ·
   engine_verdict.json 부재 (E2 호출 진행 중, 후처리 미실행) — 판정 산출물을
   보기 전의 규약임을 저장소 상태로 증명한다.
+
+---
+
+## v2 — FPR-matched comparison + control expansion (owner-signed 2026-08-06, D-P83; BN-10/Q-F12; English canonical per D114)
+
+> Registered from `docs/ENGINE_DECISION_V2_OWNER_PACKET.md` under the owner's
+> 2026-08-06 blanket signature (verbatim in D-P83). v1 sections above are
+> preserved unchanged (INV-06 append-only spirit; E-001 parallel-path
+> precedent). **v2 rules apply to forward (Cycle-2 sealed) predictions
+> only** — see §C. Registration precedes Cycle-2 registration, satisfying
+> the BN-10 resolution condition.
+
+### §A. FPR-matched readout rules (owner option: (A) exact matching)
+
+1. For every compared channel (LLM · B3 · B4), a **pre-registered threshold
+   grid** is frozen by commit before Cycle-2 seal. No post-hoc grid
+   additions.
+2. Any lead-time or detection-rate comparison claim is valid **only at
+   threshold pairs whose control-flag counts match exactly**. If no exact
+   match exists, the comparison is recorded as "comparison not established"
+   and the claim is omitted — fail-closed, isomorphic to §4b's
+   comparison-validity condition.
+3. Every cell carries its Clopper–Pearson 95% interval (DECISION_TABLE
+   convention). Continuous-curve (ROC) claims remain prohibited.
+4. Readout is computed mechanically by the v2 successor of
+   `analysis/engine_verdict.py`; narrative outside the rules cannot affect
+   the verdict (v1 §0 principle inherited).
+
+Basis: the recorded E2 asymmetric-readout artifact — LLM flags were read at
+a threshold carrying 71.4% (5/7) control false positives while the B3 gate
+was read at 0/7 (packet §0; DIRECTION_CONTEXT "why FPR-matching is
+non-negotiable").
+
+### §B. Control-expansion selection protocol (owner option: size (B) n≈30)
+
+1. Expanded controls follow the identical protocol (INV-04) and identical
+   PIT discipline (INV-01) as existing controls; the selection rule inherits
+   the `analysis/HOLDOUT_CONTROLS_PLAN.md` matching conventions, with any
+   necessary deviation pre-stated in this section before use.
+2. The selected roster (ticker list) is committed **standalone, before
+   Cycle-2 seal and before any new grading** — freeze-commit-then-run.
+3. Any new data fetch happens only in an owner-attended supervised session
+   (INV-23).
+4. **Target size: n≈30** (owner-signed under the 2026-08-06 delegation).
+   Deterministic arithmetic recorded at signing: 0/30 → CP95 upper ≈11.6%
+   (vs 0/7 → 41.0% today; 0/20 → ~16.8%; 0/50 → ~7.1%). n≈30 is the
+   cost/precision knee: it brings a zero-FP result's upper bound below every
+   measured FPR in RESULTS rows 8–10 while keeping procurement and
+   matching-quality burden bounded. This signs the target size only —
+   procurement, fetch sessions, and any metered grading remain separately
+   gated (INV-22/INV-23, OWNER_LAUNCH_GATE).
+
+### §C. Post-E2 history disclosure (owner option: (A) embedded; PROJECT.md §5-6)
+
+1. **What was seen before v2 was drafted**: the E2 verdict artifacts,
+   DECISION_TABLE (including the 71.4% asymmetry observation),
+   buyer-metrics, and the [EXPLORATORY] combined-rule candidate (already
+   disclosed as post-hoc in the published table).
+2. **Binding scope**: v2 rules apply to forward (Cycle-2 sealed)
+   predictions only. Retroactive readouts of v1/E2 frozen data under v2
+   rules are not citable as performance claims (same discipline as
+   DECISION_TABLE §5's warning text).
+3. **v1 history preservation**: the v1 verdict rules and existing
+   amendments (§4b, §3 annotation) above are preserved unmodified; v2 is
+   registered as an additive section only.
+
+> Scope limitation: results and plans are specific to a single Claude-based
+> pipeline (PROJECT.md §5-5). Grading: Claude-assisted, human-finalized.
