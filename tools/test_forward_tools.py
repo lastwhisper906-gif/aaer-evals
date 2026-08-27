@@ -895,3 +895,8 @@ def test_cli_client_covers_forward_metered_family():
     assert {"ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_BASE_URL",
             "CLAUDE_CODE_USE_BEDROCK", "CLAUDE_CODE_USE_VERTEX"} <= \
         set(cli_client.METERED_CREDENTIAL_VARS)
+    # R6-4: 세 번째 튜플(codex arm)도 가족에 잠근다 — cli_client 상위집합 +
+    # codex 재라우팅 변수
+    import crossmodel_gpt
+    assert set(cli_client.METERED_CREDENTIAL_VARS) <= set(crossmodel_gpt.METERED_ENV_VARS)
+    assert {"OPENAI_BASE_URL", "OPENAI_API_BASE"} <= set(crossmodel_gpt.METERED_ENV_VARS)

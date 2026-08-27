@@ -44,8 +44,11 @@ from cli_client import EVALUATEE_FORBIDDEN_MARKERS
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 ALLOWED_OUT_ROOT = REPO_ROOT / "runs" / "crossmodel_gpt"
-METERED_ENV_VARS = ("ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GEMINI_API_KEY",
-                    "GOOGLE_API_KEY")
+# R6-4: cli_client의 잠긴 가족(벤더 키 + Claude 재라우팅) 재사용 + codex 쪽
+# 재라우팅 변수 — OPENAI_BASE_URL/API_BASE는 구독 codex 호출을 종량/미검증
+# 백엔드로 조용히 돌린다 (R2-28의 codex 판형). 정합은 교차 대조 테스트가 잠근다.
+METERED_ENV_VARS = tuple(cli_client.METERED_CREDENTIAL_VARS) + (
+    "OPENAI_BASE_URL", "OPENAI_API_BASE")
 MODEL_FALLBACK = "model_string_unavailable"
 PIN_PLACEHOLDER = "OWNER-SET-BEFORE-LAUNCH"
 CODEX_MODEL_PIN = PIN_PLACEHOLDER
