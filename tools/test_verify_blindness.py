@@ -229,3 +229,19 @@ def test_real_registry_history_rule_passes():
     vb.WARNS.clear()
     vb.check_history(vb.REPO)
     assert vb.FAILS == []
+
+
+def test_history_proof_exempt_set_is_pinned():
+    """R6-1: 면제는 서명 근거가 있는 항목에만 — 집합을 실트리 테스트로 고정.
+    crossmodel 첫 산출 시 CI가 붉어지면 최저마찰 green이 '면제 키 한 줄'인데,
+    그 편집은 이 테스트의 가시적 개정 없이는 통과하지 못한다. 확장 절차:
+    D-엔트리 근거(예: aux_nonexperiment의 D88/D93)를 확보한 뒤 여기 집합과
+    레지스트리를 같은 커밋에서 함께 고친다."""
+    registry = vb.load_registry(vb.REPO)
+    exempted = {exp["name"] for exp in registry["experiments"]
+                if exp.get("history_proof_exempt")}
+    assert exempted == {"aux_nonexperiment"}, exempted
+    crossmodel = next(exp for exp in registry["experiments"]
+                      if exp["name"] == "crossmodel_gpt")
+    assert "history_proof_exempt" not in crossmodel, \
+        "crossmodel은 면제 불가 — 첫 산출 시 커밋 확정이 규칙 (R1-21 forcing)"
