@@ -706,3 +706,67 @@ def test_runs_dir_absent_skips_with_notice(cycle, capsys):
     errs = forward_validate.validate(cycle, runs_dir=cycle / "no_such_runs")
     assert errs == []
     assert "실측 재해시 생략" in capsys.readouterr().out
+
+
+# ── R4-7: 소도구 경화 4종 ─────────────────────────────────────────────────
+
+def test_enumerate_incomplete_writes_nothing_even_without_target(tmp_path, monkeypatch):
+    """R4-7(a): 불완전 재계산은 대상 부재여도 무기록 — 부분 universe가
+    다음 실행을 자기 산출물로 막지 않는다."""
+    import urllib.request
+    import forward_enumerate
+    for var in fc.METERED_CREDENTIAL_VARS:
+        monkeypatch.delenv(var, raising=False)
+    monkeypatch.setattr(urllib.request, "urlopen",
+                        lambda *a, **k: (_ for _ in ()).throw(AssertionError("network")))
+    monkeypatch.setattr(forward_enumerate, "_provenance", [])
+    monkeypatch.setattr(forward_enumerate, "_fetch_errors", [])
+    snap = tmp_path / "snap_empty"
+    snap.mkdir()
+    monkeypatch.setattr(forward_enumerate, "SNAP", snap)
+    target = tmp_path / "fresh" / "universe.json"
+    monkeypatch.setattr(sys, "argv", ["x", "--offline", "--out", str(target)])
+    assert forward_enumerate.main() == 1
+    assert not target.exists(), "불완전 재계산이 부분 universe를 기록함"
+
+
+def test_cited_source_attestation_requires_accession_shape(cycle):
+    """R4-7(b): 'sec'/'20' 류 비정형 인용이 부분 문자열로 인증되면 안 된다."""
+    assert not forward_validate._cited_source_attested(
+        "sec", [{"url": "https://data.sec.gov/x", "accession_no": "a"}])
+    assert not forward_validate._cited_source_attested(
+        "20", [{"url": "https://x/2026", "accession_no": None}])
+    assert forward_validate._cited_source_attested(
+        "0000000000-26-000001", [{"accession_no": "0000000000-26-000001"}])
+    assert forward_validate._cited_source_attested(
+        "0000000000-26-000001",
+        [{"url": "https://www.sec.gov/Archives/000000000026000001/x-index.htm"}])
+    sc = fc.read_json(cycle / "scores.json")
+    sc["records"][0]["cited_sources"] = ["sec"]
+    fc.write_json(cycle / "scores.json", sc)
+    assert any("source_manifest 미등재" in e for e in forward_validate.validate(cycle))
+
+
+def test_outcome_append_rejects_datetime_suffixed_date(cycle, monkeypatch):
+    """R4-7(c): parse_date 10자 절단 우회('2027-03-02T00:00') 차단."""
+    monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(cycle),
+                                      "--record-id", "fw001-r01",
+                                      "--event-date", "2027-03-02T00:00",
+                                      "--event-public-date", "2027-03-02",
+                                      "--event-type", "sec_complaint", "--source", "s",
+                                      "--new-label", "sec_complaint",
+                                      "--reviewer", "o", "--rationale", "r"])
+    with pytest.raises(SystemExit):
+        forward_outcome_append.main()
+    assert (cycle / "outcome_updates.jsonl").read_text(encoding="utf-8") == ""
+
+
+def test_portable_path_anchors(tmp_path):
+    import fetch_xbrl_facts as fxf
+    repo, home = tmp_path / "repo", tmp_path / "home"
+    (repo / "runs").mkdir(parents=True)
+    (home / "data").mkdir(parents=True)
+    assert fxf.portable_path(repo / "runs/x.json", repo=repo, home=home) == "runs/x.json"
+    assert fxf.portable_path(home / "data/y.json", repo=repo, home=home) == "~/data/y.json"
+    other = tmp_path / "elsewhere.json"
+    assert fxf.portable_path(other, repo=repo, home=home) == str(other.resolve())

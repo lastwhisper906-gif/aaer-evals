@@ -36,13 +36,15 @@ def main():
 
     if args.event_type not in EVENT_TYPES or args.new_label not in EVENT_TYPES:
         fail(f"event_type/new_label은 spec §7 계층 라벨 중 하나여야 함: {sorted(EVENT_TYPES)}")
-    # R3-10(b): append-only 원장에 비ISO 날짜가 들어가면 영구 오염 — 선파싱
+    # R3-10(b)/R4-7(c): append-only 원장에 비ISO 날짜가 들어가면 영구 오염 —
+    # parse_date는 앞 10자만 보므로("2027-03-02T00:00" 통과) 전체 문자열 검증
     for flag, value in (("--event-date", args.event_date),
                         ("--event-public-date", args.event_public_date)):
         try:
-            parse_date(value)
+            if parse_date(value).isoformat() != value:
+                raise ValueError(value)
         except ValueError:
-            fail(f"{flag} {value!r} — ISO 날짜(YYYY-MM-DD)가 아님")
+            fail(f"{flag} {value!r} — 정확한 ISO 날짜(YYYY-MM-DD 전체 일치)가 아님")
     records = {r["record_id"]: r for r in read_json(cycle / "scores.json")["records"]}
     if args.record_id not in records:
         fail(f"record_id {args.record_id} 이(가) scores.json에 없음")

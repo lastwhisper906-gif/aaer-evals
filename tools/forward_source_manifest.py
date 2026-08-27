@@ -40,15 +40,33 @@ def accessions_in_companyfacts(path: Path, cutoff: str) -> dict[str, str]:
     return out
 
 
+def _resolve_logged_path(value: str, fetch_dir: Path) -> Path:
+    """R4-7(d): fetch_log의 정박 표기(저장소 상대·~/)와 구세대 절대 경로 해석."""
+    if value.startswith("~/"):
+        return Path.home() / value[2:]
+    p = Path(value)
+    if p.is_absolute():
+        return p
+    if (REPO / value).exists():
+        return REPO / value
+    return fetch_dir / value
+
+
 def build_sources(fetch_dir: Path, cutoff: str) -> list[dict]:
     log_path = fetch_dir / "fetch_log.jsonl"
-    sources = []
+    # R4-7(d): append 로그의 재시도 중복 — record_id당 최신 행만 채택
+    # (뒤 행 우선). 없으면 재시도 후 매니페스트에 상충 sha256이 이중 등재된다.
+    latest: dict[str, dict] = {}
     for line in log_path.read_text(encoding="utf-8").splitlines():
         if not line.strip():
             continue
         row = json.loads(line)
-        for accn, filed in sorted(
-                accessions_in_companyfacts(Path(row["path"]), cutoff).items()):
+        latest[row["record_id"]] = row
+    sources = []
+    for rid in sorted(latest):
+        row = latest[rid]
+        path = _resolve_logged_path(row["path"], fetch_dir)
+        for accn, filed in sorted(accessions_in_companyfacts(path, cutoff).items()):
             sources.append({
                 "accession_no": accn,
                 "filing_date": filed,

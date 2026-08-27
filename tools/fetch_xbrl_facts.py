@@ -26,6 +26,19 @@ from fetch_primary_sources import DATA_DIR, EXTRA_CIKS, fetch
 REPO = Path(__file__).resolve().parents[1]
 
 
+def portable_path(path: Path, *, repo: Path | None = None,
+                  home: Path | None = None) -> str:
+    """R4-7(d): fetch_log에 절대 경로를 굽지 않는다 — 저장소/홈 정박 표기."""
+    resolved = path.resolve()
+    for anchor, prefix in (((repo or REPO).resolve(), ""),
+                           ((home or Path.home()).resolve(), "~/")):
+        try:
+            return prefix + resolved.relative_to(anchor).as_posix()
+        except ValueError:
+            continue
+    return str(resolved)
+
+
 def fetch_forward(universe_path: Path, dest: Path) -> int:
     """R3-4: universe 기반 파라미터화 수집 — 회고 경로(candidates.json) 무접촉."""
     universe = json.loads(universe_path.read_text(encoding="utf-8"))
@@ -50,7 +63,7 @@ def fetch_forward(universe_path: Path, dest: Path) -> int:
                 "retrieval_date": datetime.datetime.now(
                     datetime.timezone.utc).isoformat(timespec="seconds"),
                 "sha256": hashlib.sha256(resp.content).hexdigest(),
-                "path": str(out),
+                "path": portable_path(out),
             }, ensure_ascii=False) + "\n")
             print(f"{rid} saved {out} ({len(resp.content):,} bytes)")
     print(f"\n{len(failures)} failures" if failures else "\nall fetches succeeded")

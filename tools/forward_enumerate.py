@@ -235,6 +235,13 @@ def main():
               f"(candidates {candidates} · selected {len(selected)})")
         return 0
 
+    # R4-7(a): 불완전 재계산은 어떤 경로로도 기록하지 않는다 — 대상 부재 시
+    # 부분 universe(selected 미달)를 써 두면 다음 실행이 자기 산출물에 막힌다
+    # (--check와 대칭: 불완전 = 무기록 FAIL)
+    if not complete:
+        print(f"FAIL — 재계산 불완전 (candidates {candidates} · "
+              f"selected {len(selected)}): {args.out} 미기록 (부분 universe 기록 금지)")
+        return 1
     # R4-3: 봉인된 사이클의 universe.json은 --force로도 재작성 불가 (INV-22)
     if (out_path.parent / "MANIFEST.sha256").exists():
         print(f"FAIL — {out_path.parent.name}: MANIFEST.sha256 존재 — 봉인된 "

@@ -55,14 +55,20 @@ def expected_state(score: int, sufficiency: str) -> str:
 def _cited_source_attested(acc: str, sources: list[dict]) -> bool:
     """cited accession이 source_manifest에 등재되어 있는가 (§6 ⊆ 의무).
 
-    accession_no 필드 일치 또는 URL 내 출현(대시 유무 양형)으로 판정."""
+    R4-7(b): 비정형 인용("sec"·"20" 류)이 부분 문자열 일치로 인증되면
+    ⊆ 의무가 장식이 된다 — accession 형태(대시형 10-2-6 또는 무대시 18자리)
+    전체 토큰만 인정, accession_no 정확 일치 또는 URL 내 토큰 경계 출현."""
+    if not re.fullmatch(r"\d{10}-\d{2}-\d{6}|\d{18}", acc):
+        return False
     bare = acc.replace("-", "")
+    dashed = f"{bare[:10]}-{bare[10:12]}-{bare[12:]}"
     for s in sources:
-        if acc == s.get("accession_no"):
+        if s.get("accession_no") in (dashed, bare, acc):
             return True
         url = s.get("url") or ""
-        if acc in url or (bare and bare in url):
-            return True
+        for token in (dashed, bare):
+            if re.search(rf"(?<!\d){re.escape(token)}(?!\d)", url):
+                return True
     return False
 
 

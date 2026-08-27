@@ -31,24 +31,29 @@ class _Resp:
         self.content = content
 
 
+def _accn(i: int, post_cutoff: bool = False) -> str:
+    # R4-7(b) 이후 인증은 실형태(10-2-6) accession만 인정한다
+    return f"{i:010d}-26-{'999999' if post_cutoff else '000001'}"
+
+
 def _synthetic_companyfacts(i: int) -> bytes:
     return json.dumps({"facts": {"us-gaap": {"Revenues": {"units": {"USD": [
-        {"accn": f"0001-26-{i:06d}", "filed": "2026-10-01",
+        {"accn": _accn(i), "filed": "2026-10-01",
          "end": "2026-09-30", "val": 100 + i},
         # 컷오프 이후 제출 — source_manifest에서 걸러져야 한다
-        {"accn": f"0009-26-{i:06d}", "filed": "2026-12-01",
+        {"accn": _accn(i, post_cutoff=True), "filed": "2026-12-01",
          "end": "2026-11-30", "val": 999},
     ]}}}}}).encode("utf-8")
 
 
 def _model_output(rid: str, i: int) -> dict:
     evidence = {"quote": "Revenues=100 (FY2026)",
-                "source_accession_no": f"0001-26-{i:06d}",
+                "source_accession_no": _accn(i),
                 "location": "Revenues FY2026"}
     return {
         "case_id": rid, "run_id": f"original-{rid}-r1", "model": "claude-sonnet-5",
         "pipeline_version": "a" * 40, "run_timestamp": "2026-11-16T00:00:00+00:00",
-        "documents_used": [{"accession_no": f"0001-26-{i:06d}", "form_type": "10-K",
+        "documents_used": [{"accession_no": _accn(i), "form_type": "10-K",
                             "filing_date": "2026-10-01"}],
         "checklist": [{"item_id": "CL1", "question": "q", "finding": "no_flag",
                        "confidence": "medium", "evidence": [evidence]}],
@@ -105,7 +110,7 @@ def test_gate_steps_dry_run_end_to_end(tmp_path, monkeypatch, clean_env):
                                "sources": sources})
     accs = {s["accession_no"] for s in sources}
     assert len(accs) == 12
-    assert all(a.startswith("0001-26-") for a in accs), "컷오프 이후 accession 누출"
+    assert all(a.endswith("-26-000001") for a in accs), "컷오프 이후 accession 누출"
     for s in sources:
         assert s["url"] and s["retrieval_date"] and s["sha256"] and s["filing_date"]
 
@@ -132,3 +137,26 @@ def test_forward_build_requires_out_and_retro_default_unchanged(tmp_path, monkey
     committed = json.loads(
         (REPO / "data/evaluatee/cases.json").read_text(encoding="utf-8"))
     assert payload == committed
+
+
+def test_refetch_does_not_duplicate_source_manifest(tmp_path, monkeypatch, clean_env):
+    """R4-7(d): fetch 재시도(append 로그) 후 build가 record_id당 최신 행만
+    채택 — 상충 sha256의 accession 이중 등재 금지."""
+    universe = make_universe(12)
+    upath = tmp_path / "universe.json"
+    forward_common.write_json(upath, universe)
+
+    def fake_fetch(url):
+        i = int(url.split("CIK")[1][:10]) - 1000
+        return _Resp(_synthetic_companyfacts(i))
+
+    import fetch_xbrl_facts as fxf_mod
+    monkeypatch.setattr(fxf_mod, "fetch", fake_fetch)
+    dest = tmp_path / "data_forward"
+    assert fxf_mod.fetch_forward(upath, dest) == 0
+    single = fsm.build_sources(dest, CUTOFF)
+    assert fxf_mod.fetch_forward(upath, dest) == 0  # 재시도 — 로그 append
+    double = fsm.build_sources(dest, CUTOFF)
+    assert double == single
+    accs = [s["accession_no"] for s in double]
+    assert len(accs) == len(set(accs)) == 12
