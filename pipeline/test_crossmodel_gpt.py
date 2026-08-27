@@ -338,3 +338,39 @@ def test_crossmodel_write_atomic_crash_leaves_no_corrupt_canonical(
     with pytest.raises(OSError, match="simulated crash"):
         cross.run_case(case, "original", repo / "runs" / "crossmodel_gpt")
     assert not (repo / "runs" / "crossmodel_gpt" / "C01.json").exists()
+
+
+def test_audit_file_from_truncated_retry_keeps_attempts_line_separated(
+        monkeypatch, tmp_path, case, payload, model_output):
+    """R6-2 (R5-5(a)의 생산 사이트 검증): 시도 1이 행 중간 절단 + 시도 2 성공
+    — 기록된 audit_*.jsonl에서 두 시도의 thread.started가 각각 온전한 행으로
+    파싱돼야 한다. ""-join 회귀면 절단 꼬리와 시도 2 첫 이벤트가 융합되어
+    파싱 가능한 thread.started가 1개로 준다 (red-with-revert 실측 절차 대상)."""
+    repo = _configure_tmp(monkeypatch, tmp_path, payload)
+    good = _event_stream(json.dumps(model_output))
+    truncated = good[: len(good) // 2].rstrip("\n")  # 행 중간 절단, 개행 없음
+    responses = [truncated, good]
+
+    def mocked_run(command, **kwargs):
+        if command == ["codex", "--version"]:
+            return SimpleNamespace(stdout="codex-cli test\n", stderr="", returncode=0)
+        if command == ["git", "rev-parse", "HEAD"]:
+            return SimpleNamespace(stdout="abc123\n", stderr="", returncode=0)
+        return SimpleNamespace(stdout=responses.pop(0), stderr="", returncode=0)
+
+    monkeypatch.setattr(cross.subprocess, "run", mocked_run)
+    result = cross.run_case(case, "original", repo / "runs" / "crossmodel_gpt")
+    assert result["status"] == "OK"
+    audit = (repo / "runs" / "crossmodel_gpt" / "audit_original_C01.jsonl").read_text(
+        encoding="utf-8")
+    started = 0
+    for line in audit.splitlines():
+        if not line.strip():
+            continue
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            continue  # 절단 꼬리 1행은 정직한 비JSON — 융합만 아니면 된다
+        if event.get("type") == "thread.started":
+            started += 1
+    assert started == 2, "시도 경계 융합 — 시도 2의 thread.started가 행 단위로 살아남지 못함"
