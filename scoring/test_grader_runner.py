@@ -61,7 +61,6 @@ def stub(tmp_path, monkeypatch):
     # 하네스 핀 강제 (C3, D109): 핀 일치 버전 응답 + 프로세스 캐시 리셋
     monkeypatch.setenv("STUB_VERSION", f"{cli_client.HARNESS_PIN} (Claude Code)")
     monkeypatch.setattr(cli_client, "_harness_version_actual", None)
-    monkeypatch.setattr(gr, "_HARNESS_VERSION", None)
     monkeypatch.setattr(cli_client, "freeze_state", lambda: {"head": "a" * 40,
                                                               "clean_tree": True})
     monkeypatch.setattr(gr, "answer_key", lambda oid, *a, **k: {"group": "treatment",
@@ -221,6 +220,22 @@ def test_mismatch_writes_sibling_then_third_run_skips_without_call(stub, tmp_pat
 
 
 # ── R2-7: dim3 정답지 fail-closed + 장르 표 파라미터화 ─────────────────────
+
+def test_broken_harness_binary_fails_closed_before_any_grade_write(
+        stub, tmp_path, monkeypatch):
+    """R7-5: 버전 획득 실패는 예외로 중단 — grade 파일이 쓰이기 전에, 그리고
+    "UNAVAILABLE" 자리표시자가 fingerprint에 들어갈 경로 자체가 없다."""
+    monkeypatch.setattr(cli_client, "CLAUDE_BIN", str(tmp_path / "no_such_claude"))
+    monkeypatch.setattr(cli_client, "_harness_version_actual", None)
+    out = tmp_path / "g_broken"
+    with pytest.raises(RuntimeError, match="하네스 버전 확인 실패"):
+        gr.grade_one("case_01", "TXX", OUTPUT, out, tmp_path / "l", "note")
+    assert not out.exists() or not list(out.iterdir())
+    import pathlib
+    src = pathlib.Path(gr.__file__).read_text(encoding="utf-8")
+    # 자리표시자 대입(구현) 부재 — 문서 언급은 허용, 값 생산 경로는 금지
+    assert '= "UNAVAILABLE"' not in src and 'else "UNAVAILABLE"' not in src
+
 
 def _answer_key_fixture(tmp_path, group):
     cands = {"candidates": [{"case_id": "T99", "group": group,

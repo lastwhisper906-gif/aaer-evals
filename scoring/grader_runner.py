@@ -17,7 +17,6 @@ import datetime
 import hashlib
 import json
 import shlex
-import subprocess
 import sys
 from pathlib import Path
 
@@ -80,21 +79,12 @@ def _canonical_sha256(value: object) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
-_HARNESS_VERSION: str | None = None
-
-
 def _harness_version() -> str:
-    global _HARNESS_VERSION
-    if _HARNESS_VERSION is None:
-        try:
-            result = subprocess.run(
-                [cli_client.CLAUDE_BIN, "--version"], capture_output=True,
-                text=True, check=True)
-            _HARNESS_VERSION = (
-                result.stdout.splitlines()[0] if result.stdout else "UNAVAILABLE")
-        except (FileNotFoundError, OSError, subprocess.CalledProcessError):
-            _HARNESS_VERSION = "UNAVAILABLE"
-    return _HARNESS_VERSION
+    """R7-5 (R1-16의 채점 측): cli_client.enforce_harness_pin 단일 출처 위임.
+
+    버전 획득 실패·핀 불일치는 예외(fail-closed) — "UNAVAILABLE" 자리표시자가
+    grade fingerprint에 들어가는 경로는 존재하지 않는다."""
+    return cli_client.enforce_harness_pin()
 
 
 def compute_fingerprint(output: dict, key: dict, grader_model: str,
