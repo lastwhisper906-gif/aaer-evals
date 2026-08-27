@@ -106,8 +106,16 @@ def main():
                     ("- status: sealed (past-window — --past-window 명시 실행)\n"
                      if args.past_window else "- status: sealed\n"))
     status_lines += rehash_line
+    # R7-16: runs 출력·호출 로그(logs/run_* — served_models/pin_ok 증거)를
+    # 봉인 커밋에 함께 staging — 없으면 클론 검증자의 re-hash leg가
+    # skip-with-notice로 격하된다. 부재 경로는 넣지 않는다 (git add 오류).
+    stage_extra = ""
+    if runs_dir.is_dir():
+        stage_extra += f" {runs_display}"
+    if sorted((REPO / "logs").glob("run_*")):
+        stage_extra += " logs/run_*"
     owner_cmds = (
-        f"git add {cycle_display} && "
+        f"git add {cycle_display}{stage_extra} && "
         f"git commit -m 'SEAL{'(ABORT)' if args.abort else ''}: {cycle.name} forward watchlist'\n"
         f"git tag -a {tag} -m 'forward {seal_kind} {now} manifest sha256 {mhash}'\n"
         f"git push origin main --tags")

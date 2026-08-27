@@ -962,6 +962,18 @@ def test_seal_record_has_no_absolute_paths_and_names_rehash_command(cycle, monke
         "run-output 사슬 검증 명령 부재"
 
 
+def test_seal_owner_commands_stage_runs_dir_and_call_logs(cycle, monkeypatch):
+    """R7-16: 봉인 커밋 명령이 runs 출력과 logs/run_* 호출 로그를 staging —
+    빠지면 클론 검증자의 run-output re-hash leg가 skip으로 격하된다."""
+    monkeypatch.setattr(sys, "argv", seal_argv(cycle))
+    assert forward_seal.main() == 0
+    record = (cycle / "SEAL_RECORD.md").read_text(encoding="utf-8")
+    add_line = next(line for line in record.splitlines()
+                    if line.startswith("git add "))
+    assert " runs_t" in add_line, add_line   # 픽스처 runs 디렉토리 표기
+    assert " logs/run_*" in add_line, add_line
+
+
 def test_abort_seal_record_also_portable(cycle, monkeypatch):
     (cycle / "scores.json").unlink()
     monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(cycle),
