@@ -109,6 +109,51 @@ def test_fetch_refuses_primary_ticker_collision_before_any_write(tmp_path):
     assert not dest.exists()
 
 
+class _FetchResp:
+    def __init__(self, obj):
+        self.content = json.dumps(obj).encode("utf-8")
+
+
+def _manifest_fixture(tmp_path, monkeypatch, pinned_path):
+    """R10-2 픽스처: 밀폐된 REPO(매니페스트만) + DATA_DIR을 fxf에 주입."""
+    import fetch_xbrl_facts as fxf
+    data_dir = tmp_path / "aaer-data"
+    repo = tmp_path / "repo"
+    (repo / "data/manifests").mkdir(parents=True)
+    (repo / "data/manifests/aaer_data_manifest.json").write_text(
+        json.dumps({"files": [{"path": pinned_path}]}), encoding="utf-8")
+    monkeypatch.setattr(fxf, "DATA_DIR", data_dir)
+    monkeypatch.setattr(fxf, "REPO", repo)
+    return fxf, data_dir
+
+
+def test_fetch_refuses_manifest_pinned_collision_before_any_write(tmp_path, monkeypatch):
+    """R10-2(a): 핀 고정 경로({ticker}/…)와 충돌하는 수집은 네트워크에 닿기
+    전·파일 0개 쓴 채 거부 — 7월 스냅샷 바이트 커스터디."""
+    fxf, data_dir = _manifest_fixture(tmp_path, monkeypatch,
+                                      "TK01/xbrl/CIK0000001001.json")
+    monkeypatch.setattr(fxf, "fetch", lambda url: (_ for _ in ()).throw(
+        AssertionError("거부 전에 네트워크 호출")))
+    upath = tmp_path / "universe.json"
+    fc.write_json(upath, make_universe())
+    with pytest.raises(SystemExit, match="매니페스트 핀 경로와 충돌"):
+        fxf.fetch_forward(upath, data_dir)
+    assert not data_dir.exists()
+
+
+def test_fetch_manifest_guard_allows_disjoint_tickers(tmp_path, monkeypatch):
+    """R10-2(a) 반대면: 핀 경로와 서로소인 universe는 정상 진행한다."""
+    fxf, data_dir = _manifest_fixture(tmp_path, monkeypatch,
+                                      "OTHER/xbrl/CIK0000009999.json")
+    monkeypatch.setattr(fxf, "fetch",
+                        lambda url: _FetchResp({"filings": {"files": []}}))
+    upath = tmp_path / "universe.json"
+    fc.write_json(upath, make_universe(2))
+    assert fxf.fetch_forward(upath, data_dir) == 0
+    assert (data_dir / "TK01/xbrl/CIK0000001001.json").is_file()
+    assert (data_dir / "fetch_log.jsonl").is_file()
+
+
 # ── 컷오프·완결성·서수 컷 검증 ────────────────────────────────────────────
 
 def test_validate_passes_good_cycle(cycle):

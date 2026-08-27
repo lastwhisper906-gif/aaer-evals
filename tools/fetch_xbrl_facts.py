@@ -112,6 +112,27 @@ def fetch_forward(universe_path: Path, dest: Path) -> int:
     if dups:
         raise SystemExit(f"FAIL — universe.selected 1차 티커 충돌 {sorted(dups)}: "
                          "corpus 디렉토리 병합 위험, 수집 거부 (R8-3)")
+    # R10-2: 매니페스트 핀 corpus 커스터디 — 게시된 회고 결과의 재현성 증거인
+    # data/manifests/aaer_data_manifest.json 기재 경로와 충돌하는 수집은 어떤
+    # 파일도 쓰기 전에 거부한다 (R8-3 관용구). SEC 아카이브는 누적형이라
+    # 핀 스냅샷 바이트는 덮어쓰면 복구 불가. 충돌 자체의 해소는 소유자 결정.
+    manifest_file = REPO / "data/manifests/aaer_data_manifest.json"
+    if manifest_file.is_file():
+        pinned_paths = {f["path"] for f in json.loads(
+            manifest_file.read_text(encoding="utf-8"))["files"]}
+        try:
+            dest_rel = dest.resolve().relative_to(DATA_DIR.resolve()).as_posix()
+        except ValueError:
+            dest_rel = None  # 매니페스트 관할(~/aaer-data) 밖 dest — 충돌 불가
+        if dest_rel is not None:
+            prefix = "" if dest_rel == "." else dest_rel + "/"
+            tickers = {str(r["ticker"]).split("/")[0] for r in universe["selected"]}
+            hits = sorted(t for t in tickers
+                          if any(p.startswith(f"{prefix}{t}/") for p in pinned_paths))
+            if hits:
+                raise SystemExit(
+                    f"FAIL — 매니페스트 핀 경로와 충돌 {hits}: 핀 고정된 corpus "
+                    "스냅샷을 덮어쓸 수 있어 수집 거부 (R10-2; 해소는 소유자 결정)")
     log_path = dest / "fetch_log.jsonl"
     dest.mkdir(parents=True, exist_ok=True)
     failures = []

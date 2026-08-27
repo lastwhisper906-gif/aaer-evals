@@ -111,7 +111,12 @@ def build_manifest() -> dict:
             ).isoformat(timespec="seconds"),
             "source_url": None,
         }
-        if ticker == "reference":
+        if len(rel.parts) == 1 and path.name == "fetch_log.jsonl":
+            # R10-2: forward 수집 로그 (fetch_xbrl_facts --universe가 루트에
+            # 기록) — checksums.log와 동일한 파생물 관용구. 귀속이 없으면
+            # --write 재생성 매니페스트가 자신의 check_schema에서 실패한다.
+            entry["derived_from"] = "~/aaer-data (forward 수집 로그 — tools/fetch_xbrl_facts.py --universe)"
+        elif ticker == "reference":
             entry["source_url"] = REFERENCE_URLS.get(path.name)
             if entry["source_url"] is None:
                 unattributed.append(str(rel))
