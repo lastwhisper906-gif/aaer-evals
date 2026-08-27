@@ -53,10 +53,17 @@ def _b4_comparison(treat: list[dict], ctrl: list[dict], thr_llm: int) -> dict:
     if coverage < 0.7:
         block["reason"] = "실험군 B4 커버리지 < 70% — 비교 불성립 (B4 스펙 §7 (i))"
         return block
-    j0_t = [c for c in treat if _snapshot0_opt(c, "b4_slope_aug") is not None]
-    j0_c = [c for c in ctrl if _snapshot0_opt(c, "b4_slope_aug") is not None]
+    # §4b (ii): 동일 데이터에 LLM 성능이 존재해야 비교 성립 — 짝지은 AUC는
+    # b4_slope_aug와 llm_p가 모두 j=0에 있는 케이스로만 구성한다 (D71 규약상
+    # 대조군 j=0 llm_p는 null일 수 있고, 그때 비교는 크래시가 아니라 불성립).
+    j0_t = [c for c in treat if _snapshot0_opt(c, "b4_slope_aug") is not None
+            and _snapshot0_opt(c, "llm_p") is not None]
+    j0_c = [c for c in ctrl if _snapshot0_opt(c, "b4_slope_aug") is not None
+            and _snapshot0_opt(c, "llm_p") is not None]
     if not j0_t or not j0_c:
-        block["reason"] = "j=0 B4 값 부재 (실험군/대조군 중 빈 쪽) — AUC 짝비교 불능"
+        block["reason"] = ("j=0에 b4_slope_aug·llm_p 동시 존재 케이스가 실험군/"
+                           "대조군 중 빈 쪽 — 동일 데이터의 LLM 성능 부재로 비교 "
+                           "불성립 (§4b (ii))")
         return block
     lead_b4 = statistics.median(_case_lead_b4(c["snapshots"]) for c in covered_t)
     lead_llm_paired = statistics.median(

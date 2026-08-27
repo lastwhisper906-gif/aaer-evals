@@ -141,6 +141,18 @@ def test_b4_absent_key_backward_compatible():
     assert v["branch"] == "a_llm_engine"
 
 
+def test_b4_all_control_llm_null_is_invalid_not_crash():
+    """R1-8: D71 규약상 대조군 j=0 llm_p는 전건 null일 수 있다 — 그때 §4b는
+    TypeError가 아니라 '비교 불성립 (§4b (ii))'를 기록해야 한다 (판정 총체성)."""
+    treat = _a_branch_treat_b4(b4_j0=0.05, b4_deep=0.04)  # 커버리지 3/3 ≥ 70%
+    controls = [_case_b4(f"ctl{i}", "control", [(0, 0, None, 0, 0.001 * i)])
+                for i in range(3)]
+    v = ev.compute(_traj(treat + controls))
+    assert not v["b4_comparison"]["valid"]
+    assert "§4b (ii)" in v["b4_comparison"]["reason"]
+    assert v["branch"] == "a_llm_engine"
+
+
 def test_b4_never_rescues_b_or_c():
     # B4가 LLM에 지배당해도(유리해도) (c)는 (c) — §4b는 (a)만 건드린다
     treat = [_case_b4(f"t{i}", "treatment", [(0, 1, 70, 2, 0.05), (1, 2, 30, 1, 0.04)])
