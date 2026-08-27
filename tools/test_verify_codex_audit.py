@@ -65,3 +65,34 @@ def test_real_tree_gate():
     """상시 게이트 — 현재 vacuous(runs/crossmodel_gpt는 MANIFEST뿐)지만
     arm의 첫 라이브 발사(소유자 게이트)를 이 게이트가 선행한다."""
     assert vca.scan_tree() == []
+
+
+# ── R5-5: 스트림 접합·강건성 ──────────────────────────────────────────────
+
+def test_retry_streams_joined_with_newline_pass(tmp_path):
+    """R5-5(a): 시도 1이 행 중간에서 절단돼도, "\\n" 접합이면 절단 잔여와
+    시도 2의 첫 이벤트가 별개 행 — 절단 행만 위반, 융합 오탐 없음. 실제
+    crossmodel_gpt의 접합("\\n".join)을 그대로 재현해 게이트를 통과·실패
+    양방향으로 검증한다."""
+    attempt1_truncated = TOOL_FREE[: len(TOOL_FREE) // 2].rstrip("\n")
+    attempt2 = TOOL_FREE
+    fused = "".join([attempt1_truncated, attempt2])        # 종전 판형 (버그)
+    joined = "\n".join([attempt1_truncated, attempt2])     # 수정 판형
+    fused_violations = vca.audit_violations(fused)
+    joined_violations = vca.audit_violations(joined)
+    # 수정 판형: 절단 행 1건만 (그 자체는 정직한 무결성 신호), 융합 없음
+    assert len(joined_violations) == 1 and "비JSON" in joined_violations[0]
+    # 버그 판형은 시도 2의 첫 정상 이벤트까지 융합 — 수정본과 동일해선 안 된다
+    assert fused != joined
+
+
+def test_clean_retry_with_complete_attempts_passes():
+    """양 시도 모두 완결 스트림이면 "\\n" 접합 후 위반 0."""
+    assert vca.audit_violations("\n".join([TOOL_FREE.rstrip("\n"),
+                                           TOOL_FREE.rstrip("\n")])) == []
+
+
+def test_non_string_event_type_is_clean_violation_not_crash():
+    violations = vca.audit_violations(_line({"type": 42}) + _line({"type": None}))
+    assert len(violations) == 2
+    assert all("비문자열" in v for v in violations)

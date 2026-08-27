@@ -265,7 +265,10 @@ def run_case(case: dict, frame: str, out_dir: Path, *, dry_run: bool = False) ->
                 break
             if completed.returncode != 0:
                 failure = f"codex_exit_{completed.returncode}"
-    audit_path.write_text("".join(streams), encoding="utf-8")
+    # R5-5(a): 시도 간 경계를 개행으로 접합 — ""-join은 시도 1의 말미
+    # 절단 행과 시도 2의 첫 이벤트를 한 비JSON 행으로 융합해, 깨끗한
+    # 재시도 스트림이 audit 게이트(verify_codex_audit)에서 오탐 실패한다
+    audit_path.write_text("\n".join(streams), encoding="utf-8")
 
     meta = {
         "case_id": cid, "crossmodel": "gpt_subscription_codex",

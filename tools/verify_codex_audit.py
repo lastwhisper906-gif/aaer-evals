@@ -38,9 +38,13 @@ def audit_violations(text: str, label: str = "<audit>") -> list[str]:
             violations.append(f"{label}:{n}: 비JSON 행 (스트림 무결성)")
             continue
         etype = event.get("type")
+        # R5-5(b): 비문자열 type은 크래시가 아니라 깨끗한 위반 행으로
+        if not isinstance(etype, str):
+            violations.append(f"{label}:{n}: 이벤트 type 비문자열 {etype!r} (fail-closed)")
+            continue
         if etype in ALLOWED_EVENT_TYPES:
             continue
-        if isinstance(etype, str) and etype.startswith("item."):
+        if etype.startswith("item."):
             item_type = (event.get("item") or {}).get("type")
             if item_type in ALLOWED_ITEM_TYPES:
                 continue
