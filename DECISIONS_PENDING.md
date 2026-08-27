@@ -1561,6 +1561,19 @@
   페이로드 — 자체 게이트 관할)을 제외한 분류 불가 case-패턴 파일은 실패,
   fp-sibling은 스위프 포함(소비자 제외 R2-5와 별개 축). 이 리비전
   이후에야 원문 주장("어떤 16번째 위반 기록도 실패")이 정확하다.
+- **REVISION 2026-08-27 (cycle 004, R4-9d·e — census 추가 공개 2건):**
+  (d) `schemas/llm_output.json`의 `overall.top_signals` description
+  ("checklist item_id 참조만 허용")은 코퍼스 전체에서 사문(死文)이다 —
+  커밋된 top_signals 문자열 전건이 자유 산문(신호 서술)이고 item_id
+  참조는 **0건** (본 세션 재계수 0/2,224; 검토 렌즈 계수 2,215 — 발견
+  술어 차이일 뿐 결론 동일). description은 비강제 주석이라 스키마 검증은
+  전건 통과 — 스키마는 동결이므로 수정하지 않고 여기 기록한다 (독자는
+  top_signals를 checklist 참조가 아니라 서술 텍스트로 읽을 것).
+  (e) wave-2 identity arm-B의 runmeta 9건은 `canary_hit` 필드 없이
+  `fict_name`을 기록한다 (arm-B 전용 러너 판형) — 카나리 검사 자체는
+  verify_blindness 전수 스캔이 커버하므로 누출 게이트 공백은 아니나,
+  runmeta 필드 균일성 주장에는 이 예외를 병기해야 한다. 기록만, 동결
+  로그 무수정.
 
 ## D-P87 — [DRAFT — 소유자 서명 대기] L4 12/12의 탐지 조건부(denominator) 문구 — 서명 표면 전파 제안
 - **Status:** DRAFT — 세션(harness v4 cycle 002, R2-6)이 작성. 서명 동결
@@ -1663,6 +1676,11 @@
 - **Basis:** INV-06 · CONTROL_CRITERIA §6 (4층 방어) · data/README.md
   경로 규약 · reviews/cycle-003.md R3-3
 - **Revert:** 병행 매니페스트 삭제 + 해석기 revert 시 사유 기록.
+- **REVISION 2026-08-27 (cycle 004, R4-9a — 산술 오기 정정):** 위 결함
+  단락의 "362+301건은 stale 클론"은 오기 — 올바른 분해는 **stale 클론
+  키 362건 = rp08 61 + wave2 180 + rp09 83 + holdout 38**이고, 여기에
+  `~/aaer-data/_rp08` 절대 경로 키 4,961건(rp08)이 더해진다 (총 5,323행,
+  회귀 렌즈 실측 확인).
 
 ## D-P90 — [DRAFT — 소유자 서명 대기] 후보 파일 4종의 case_input 스키마 편차 66건 — 정리 방안 결정 요청
 - **Status:** DRAFT — 세션(harness v4 cycle 003, R3-11)이 작성. 데이터

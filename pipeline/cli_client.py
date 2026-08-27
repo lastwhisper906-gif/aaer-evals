@@ -84,6 +84,11 @@ class CallResult:
 
 
 def freeze_state() -> dict:
+    # R4-9(c) 주: 이 clean_tree는 **무필터** porcelain이라 실행 자신의 면제
+    # 미추적 출력까지 잡는다 — 커밋 로그 503/528건의 false가 그 산물이며
+    # 추적 파일 드리프트 증거가 아니다(호출 시점 가드는 require_clean_tree).
+    # 미래 러너 개선: 면제 필터(IGNORED_UNTRACKED) 적용 후의 porcelain을
+    # 기록할 것 — 동결 로그는 불변이므로 여기서는 의미만 문서화한다.
     head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=REPO_ROOT,
                           capture_output=True, text=True, check=True).stdout.strip()
     dirty = subprocess.run(["git", "status", "--porcelain"], cwd=REPO_ROOT,

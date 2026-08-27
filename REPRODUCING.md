@@ -38,7 +38,7 @@ repository (refresh with `make docs-refresh`; CI compares it via
 
 <!-- BEGIN-GENERATED: repro-facts (refresh: make docs-refresh; CI: tools/lint_doc_counts.py) -->
 - data manifest: **538 files** (`data/manifests/aaer_data_manifest.json` · `file_count`)
-- pytest: **547 tests collected** (`pipeline tools scoring analysis`)
+- pytest: **548 tests collected** (`pipeline tools scoring analysis`)
 - `make verify-public` (zero external data):
   - `.venv/bin/python tools/reproduce_analysis.py`
   - `.venv/bin/python tools/lint_publication.py`
@@ -153,6 +153,19 @@ redraw — `python pipeline/runner.py --cases
 data/evaluatee/cases_wave2.json --perturbed --out
 runs/wave2/perturbed_redraw/draw_2 --only <9 fraud ids>`
 (idempotent, pin-verified, rate-limit resume).
+
+Two record-semantics notes for reproducers reading `runs/` and `logs/`
+(R4-9): records are **path-identified**, not run_id-identified — `run_id`
+encodes only the frame and case (`{frame}-{case_id}-r1`), so the same
+run_id string legitimately recurs across draw directories (draw_2/draw_3/…
+of the same case); cross-directory run_id collisions are by design, and the
+directory path is the identity. And in the committed call logs, the
+`freeze.clean_tree` flag is `false` on 503/528 evaluatee calls: that flag
+recorded unfiltered `git status` porcelain, which includes the run's own
+exempted untracked outputs — the actual guard at call time was
+`require_clean_tree()`, which checks tracked files only, so `false` there
+does not indicate tracked-file drift (future runners should store the
+exempt-filtered porcelain instead; noted in `pipeline/cli_client.py`).
 
 ## 5. Monthly holdout rescan (`tools/holdout_rescan.py`)
 
