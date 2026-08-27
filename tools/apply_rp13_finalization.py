@@ -43,6 +43,13 @@ SIG_OVER = re.compile(rf"{TICK}\s*override\s*\(사유:\s*(.*?)\s*→\s*overrides
 UNTICKED = re.compile(r"^\- \*\*서명\*\*:\s*☐\s*finalize\s+☐\s*override")
 
 
+def grade_files(directory):
+    """R3-5: fp-sibling({case}.fp-XXXX.json)은 stale-superseded 채점 기록 —
+    blanket finalize·잔존 스캔이 stale 채점을 확정 도장하면 안 된다. 제외."""
+    return [gp for gp in sorted(glob.glob(str(directory / "*.json")))
+            if ".fp-" not in os.path.basename(gp)]
+
+
 def grade_path(case):
     for d in GRADE_DIRS:
         p = REPO / d / f"{case}.json"
@@ -164,7 +171,7 @@ def main():
             print(f"{d['case']}: {st}")
 
     for extra in args.also:
-        for gp in sorted(glob.glob(str(REPO / extra / "*.json"))):
+        for gp in grade_files(REPO / extra):
             _, st = finalize_file(Path(gp), args.date,
                                   f"blanket ({extra}, decisions_log 참조)",
                                   None, args.dry_run)
@@ -172,7 +179,7 @@ def main():
             print(f"{extra}/{os.path.basename(gp)}: {st}")
 
     remaining = [str(Path(gp).relative_to(REPO)) for d in GRADE_DIRS
-                 for gp in sorted(glob.glob(str(REPO / d / "*.json")))
+                 for gp in grade_files(REPO / d)
                  if json.loads(Path(gp).read_text(encoding="utf-8"))
                  .get("_meta", {}).get("human_finalized") is not True]
     tag = "[DRY-RUN] " if args.dry_run else ""

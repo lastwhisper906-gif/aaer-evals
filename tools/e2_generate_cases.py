@@ -37,6 +37,7 @@ import datetime
 import glob
 import hashlib
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -100,7 +101,10 @@ def derive_roster(repo: Path = REPO) -> list[dict]:
         (repo / "data/candidates/candidates_wave2.json").read_text(encoding="utf-8"))["candidates"]}
     map2 = _mapping(repo / "scoring/id_mapping_wave2.json")
     ev2 = _evaluatee_entries(repo / "data/evaluatee/cases_wave2.json")
+    # R3-5: fp-sibling은 stale-superseded 기록 — 로스터 행 이중 생성 방지 제외
     for p in sorted(glob.glob(str(repo / "runs/wave2/scores/case_*.json"))):
+        if ".fp-" in os.path.basename(p):
+            continue
         j = json.loads(Path(p).read_text(encoding="utf-8"))
         tid = map2.get(j["case_id"])
         if tid and cand2[tid]["group"] == "treatment" \

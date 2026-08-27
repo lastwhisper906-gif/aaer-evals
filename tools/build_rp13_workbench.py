@@ -41,6 +41,13 @@ def rationale_lines(r, maxlines=6, width=240):
     return out
 
 
+def grade_files(directory):
+    """R3-5: fp-sibling({case}.fp-XXXX.json)은 stale-superseded 채점 기록 —
+    *.json 글롭에 걸리면 sibling 파일명에서 쓰레기 케이스 키가 유도된다. 제외."""
+    return [gp for gp in sorted(glob.glob(str(directory / "*.json")))
+            if ".fp-" not in os.path.basename(gp)]
+
+
 def collect():
     idmap = load("scoring/id_mapping_wave2.json")["mapping"]
     frauds = set(load("runs/wave2/fraud_case_ids.json"))
@@ -85,9 +92,9 @@ def collect():
                          d3=g.get("dim3_genre_mapping"), d4=d4, mem2=mem2,
                          rationale=g.get("rationale", ""), key=key, flags=flags))
 
-    for gp in sorted(glob.glob(str(REPO / "scoring/grades_wave2/*.json"))):
+    for gp in grade_files(REPO / "scoring/grades_wave2"):
         add(os.path.basename(gp)[:-5], "scoring/grades_wave2", "runs/wave2/scores", "wave2")
-    for gp in sorted(glob.glob(str(REPO / "scoring/grades_holdout/*.json"))):
+    for gp in grade_files(REPO / "scoring/grades_holdout"):
         add(os.path.basename(gp)[:-5], "scoring/grades_holdout", "runs/holdout/scores", "holdout")
     return recs
 
