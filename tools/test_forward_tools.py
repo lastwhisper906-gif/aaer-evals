@@ -45,6 +45,7 @@ def make_record(rid, score=45, suff="sufficient", cik=None):
             "run_fingerprint": {"system_prompt_sha256": "f" * 64,
                                 "schema_sha256": SCHEMA_SHA,
                                 "pipeline_commit": "a" * 40},
+            "run_output_sha256": "b" * 64,
             "scored_at": "2026-11-15"}
 
 
@@ -361,7 +362,7 @@ def test_assemble_record_roundtrips_validate(cycle):
            "fingerprint": {"system_prompt_sha256": "f" * 64,
                            "schema_sha256": SCHEMA_SHA,
                            "pipeline_commit": "a" * 40}}
-    r = fa.assemble_record(meta, out)
+    r = fa.assemble_record(meta, out, out_sha256="c" * 64)
     assert r["misstatement_risk_score"] == 72 and r["decision_state"] == "flag"
     assert r["affected_account_areas"] == ["revenue", "AR"]
     assert fa.assemble_record(meta, None)["status"] == "not_scored"
@@ -493,3 +494,44 @@ def test_assemble_copies_run_time_fingerprint(tmp_path, monkeypatch):
     rec = fc.read_json(cycle / "scores.json")["records"][0]
     assert rec["run_fingerprint"]["schema_sha256"] == "e" * 64
     assert rec["run_fingerprint"]["pipeline_commit"] == "a" * 40
+
+
+# ── R3-8: 봉인 해시 사슬이 러너 출력까지 연장 ─────────────────────────────
+
+def test_run_output_mutation_detectable_from_sealed_content(tmp_path, monkeypatch):
+    """scores.json(SEALED_FILES)의 run_output_sha256 ↔ 러너 출력 실측 해시 —
+    봉인 후 출력 변조는 봉인 내용만으로 검출된다."""
+    for var in fc.METERED_CREDENTIAL_VARS:
+        monkeypatch.delenv(var, raising=False)
+    cycle = tmp_path / "cycle_b"
+    cycle.mkdir()
+    fc.write_json(cycle / "universe.json", make_universe())
+    runs = tmp_path / "runs"
+    runs.mkdir()
+    out = {"case_id": "fw001-r01", "misstatement_probability": 45,
+           "checklist": [], "mechanism_hypotheses": [],
+           "overall": {"top_signals": []}, "documents_used": [],
+           "model": "claude-sonnet-5", "run_timestamp": "t", "run_id": "rid",
+           "fingerprint": {"schema_sha256": SCHEMA_SHA}}
+    run_path = runs / "fw001-r01.json"
+    run_path.write_text(json.dumps(out), encoding="utf-8")
+    import sys as _sys
+    monkeypatch.setattr(_sys, "argv", ["forward_assemble.py", "--cycle", str(cycle),
+                                       "--runs", str(runs)])
+    import forward_assemble
+    assert forward_assemble.main() == 0
+    sealed = fc.read_json(cycle / "scores.json")["records"][0]
+    assert sealed["run_output_sha256"] == fc.sha256_file(run_path)
+
+    tampered = dict(out, misstatement_probability=99)
+    run_path.write_text(json.dumps(tampered), encoding="utf-8")
+    assert sealed["run_output_sha256"] != fc.sha256_file(run_path), \
+        "출력 변조가 봉인 해시로 검출되지 않음"
+
+
+def test_validate_requires_run_output_sha256(cycle):
+    sc = fc.read_json(cycle / "scores.json")
+    del sc["records"][0]["run_output_sha256"]
+    fc.write_json(cycle / "scores.json", sc)
+    errs = forward_validate.validate(cycle)
+    assert any("run_output_sha256 부재" in e for e in errs)

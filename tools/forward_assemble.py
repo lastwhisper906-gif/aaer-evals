@@ -52,7 +52,8 @@ def derive_state(score: int, sufficiency: str) -> str:
     return "flag" if score >= 70 else ("review" if score >= 40 else "no_flag")
 
 
-def assemble_record(rec_meta: dict, out: dict | None) -> dict:
+def assemble_record(rec_meta: dict, out: dict | None,
+                    out_sha256: str | None = None) -> dict:
     base = {"record_id": rec_meta["record_id"],
             "company": {"name": rec_meta["name"], "ticker": rec_meta["ticker"],
                         "cik": rec_meta["cik"]}}
@@ -90,6 +91,10 @@ def assemble_record(rec_meta: dict, out: dict | None) -> dict:
                             else None),
         "scored_at": out.get("run_timestamp", ""),
         "run_id": out.get("run_id", ""),
+        # R3-8: 소비한 러너 출력 파일 전체의 sha256 — scores.json이 SEALED_FILES
+        # 이므로 이 해시 사슬이 봉인을 runs/ 출력까지 연장한다 (봉인 후 러너
+        # 출력 변조가 봉인 내용만으로 검출 가능; evidence/ 복사 불필요)
+        "run_output_sha256": out_sha256,
     }
 
 
@@ -107,7 +112,11 @@ def main():
     for r in universe["selected"]:
         # 러너 케이스 ID 규약: record_id를 케이스 ID로 사용
         out_path = runs / f"{r['record_id']}.json"
-        records.append(assemble_record(r, read_json(out_path) if out_path.exists() else None))
+        if out_path.exists():
+            records.append(assemble_record(r, read_json(out_path),
+                                           out_sha256=sha256_file(out_path)))
+        else:
+            records.append(assemble_record(r, None))
     write_json(cycle / "scores.json", {"records": records,
                                        "assembled_by": "tools/forward_assemble.py",
                                        "derivation": "모듈 docstring 사전 등록 규칙"})

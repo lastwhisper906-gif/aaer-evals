@@ -154,6 +154,10 @@ def validate(cycle: Path) -> list[str]:
                     and rf["schema_sha256"] != r["schema_sha256"]:
                 errs.append(f"{rid}: run-time schema_sha256 ≠ assemble-time — "
                             "런/조립 드리프트 (자기모순 봉인 차단)")
+            # R3-8: 봉인 해시 사슬이 러너 출력 파일까지 닿아야 한다
+            if not r.get("run_output_sha256"):
+                errs.append(f"{rid}: run_output_sha256 부재 — 봉인이 러너 출력을 "
+                            "커버하지 않음 (R3-8)")
             # §6: 두 배열은 존재 의무 — 빈 배열은 적법, 키 부재는 위반
             for field in ("benign_alternative_explanations", "affected_account_areas"):
                 if not isinstance(r.get(field), list):
