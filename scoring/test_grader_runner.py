@@ -218,3 +218,36 @@ def test_mismatch_writes_sibling_then_third_run_skips_without_call(stub, tmp_pat
     assert len(stub.calls()) == call_count
     assert original.read_bytes() == original_bytes
     assert siblings[0].read_bytes() == sibling_bytes
+
+
+# ── R2-7: dim3 정답지 fail-closed + 장르 표 파라미터화 ─────────────────────
+
+def _answer_key_fixture(tmp_path, group):
+    cands = {"candidates": [{"case_id": "T99", "group": group,
+                             "scheme_summary": "s", "scheme_type": ["x"]}]}
+    cands_path = tmp_path / "cands.json"
+    cands_path.write_text(json.dumps(cands), encoding="utf-8")
+    genre_path = tmp_path / "genre.md"
+    genre_path.write_text("| T01 | other-wave row |\n", encoding="utf-8")
+    return str(cands_path), str(genre_path)
+
+
+def test_answer_key_fails_closed_on_treatment_without_genre_row(tmp_path):
+    """R2-7: SYSTEM 프롬프트는 dim3 채점을 요구하는데 정답 장르 행이 없으면
+    (wave-2 실측: 9/9 실험군 miss → 즉석 채점) 채점 시작 전에 정지해야 한다."""
+    cands_path, genre_path = _answer_key_fixture(tmp_path, "treatment")
+    with pytest.raises(gr.AnswerKeyError):
+        gr.answer_key("T99", cands_path, genre_path)
+
+
+def test_answer_key_control_without_genre_row_stays_null(tmp_path):
+    cands_path, genre_path = _answer_key_fixture(tmp_path, "control")
+    key = gr.answer_key("T99", cands_path, genre_path)
+    assert key["genre_tag_row"] is None
+
+
+def test_answer_key_reads_parameterized_genre_table(tmp_path):
+    cands_path, genre_path = _answer_key_fixture(tmp_path, "treatment")
+    Path(genre_path).write_text("| T99 | revenue timing |\n", encoding="utf-8")
+    key = gr.answer_key("T99", cands_path, genre_path)
+    assert key["genre_tag_row"] == "| T99 | revenue timing |"

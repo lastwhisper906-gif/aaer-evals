@@ -113,16 +113,28 @@ def compute_fingerprint(output: dict, key: dict, grader_model: str,
     }
 
 
-def answer_key(original_id: str, candidates_path: str = "data/candidates/candidates.json") -> dict:
+class AnswerKeyError(RuntimeError):
+    """R2-7: 실험군 케이스에 정답지 구성 요소가 없으면 채점을 시작하지 않는다."""
+
+
+def answer_key(original_id: str, candidates_path: str = "data/candidates/candidates.json",
+               genre_table_path: str = "scoring/genre_tags.md") -> dict:
     cands = {c["case_id"]: c for c in json.loads(
         (REPO / candidates_path).read_text(encoding="utf-8"))["candidates"]}
     c = cands[original_id]
     genre = None
-    genre_table = (REPO / "scoring/genre_tags.md").read_text(encoding="utf-8")
+    genre_table = (REPO / genre_table_path).read_text(encoding="utf-8")
     for line in genre_table.splitlines():
         if line.startswith(f"| {original_id} "):
             genre = line
             break
+    # R2-7 fail-closed: 실험군인데 장르 행이 없으면 SYSTEM 프롬프트는 dim3
+    # 채점을 요구하는데 정답지가 null — 채점자가 즉석 채점하게 된다 (wave-2
+    # 실측 결함). 파일 지정 오류/행 누락 모두 여기서 정지.
+    if c["group"] == "treatment" and genre is None:
+        raise AnswerKeyError(
+            f"treatment {original_id}: {genre_table_path}에 장르 행 없음 — "
+            "--genre-table로 해당 웨이브의 장르 표를 지정하거나 행을 추가하라")
     return {
         "group": c["group"],
         "scheme_summary": c.get("scheme_summary"),
@@ -147,9 +159,10 @@ def _existing_grade_valid(path: Path) -> bool:
 def grade_one(neutral: str, original_id: str, output: dict,
               out_dir: Path, log_dir: Path, mapping_path_note: str,
               candidates_path: str = "data/candidates/candidates.json",
+              genre_table_path: str = "scoring/genre_tags.md",
               *, accept_legacy_grade: bool = False) -> str:
     out_path = out_dir / f"{neutral}.json"
-    key = answer_key(original_id, candidates_path)
+    key = answer_key(original_id, candidates_path, genre_table_path)
     harness_version = _harness_version()
     pipeline_commit = cli_client.freeze_state()["head"]
     existing = None
@@ -242,6 +255,8 @@ def main() -> int:
                     help="RP-09: v2 대조군은 data/candidates/candidates_v2_controls.json")
     ap.add_argument("--mapping", default="scoring/id_mapping.json",
                     help="파일럿은 scoring/id_mapping_pilot.json")
+    ap.add_argument("--genre-table", default="scoring/genre_tags.md",
+                    help="R2-7: dim3 정답 장르 표 — 웨이브별로 --candidates와 함께 지정")
     ap.add_argument("--pattern", default="case_*.json",
                     help="runs 파일 글롭 (E1 홀드아웃 대조군은 hc_*.json — 기본 무변경)")
     ap.add_argument("--accept-legacy-grade", action="store_true")
@@ -266,6 +281,7 @@ def main() -> int:
             neutral = output["case_id"]
             status = grade_one(neutral, mapping[neutral], output, out_dir, log_dir, note,
                                candidates_path=args.candidates,
+                               genre_table_path=args.genre_table,
                                accept_legacy_grade=args.accept_legacy_grade)
             if status.startswith("FAIL"):
                 failures += 1

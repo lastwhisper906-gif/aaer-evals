@@ -1574,3 +1574,30 @@
 - **Basis:** `analysis/EARLINESS_PLAN.md` §1 · `analysis/BUYER_METRICS.md`
   §1/§4 · INV-03/INV-06 · reviews/cycle-002.md R2-6
 - **Revert:** 라이브 표면 절 삭제 diff + 사유 기록.
+
+## D-P88 — [DRAFT — 소유자 서명 대기] ERRATA 후보: wave-2 dim3는 정답 장르 표 없이 채점됨
+- **Status:** DRAFT — 세션(harness v4 cycle 002, R2-7)이 작성. 동결
+  `scoring/grades_wave2/` 무접촉.
+- **결함:** `grader_runner.answer_key()`가 `--candidates`는 파라미터화하면서
+  장르 표는 wave-1 `scoring/genre_tags.md`를 하드코딩했다. wave-2 실험군
+  9건의 id는 이 표에 전부 부재 → 채점자 페이로드의 `genre_tag_row: null`,
+  그러나 SYSTEM 프롬프트는 dim3(장르 매핑) 채점을 계속 요구. 동결
+  `grades_wave2/`의 dim3는 정답지 없이 산출된 즉석 채점이다 (T19/T23/T26/
+  T29 점수 부여, T02/T04/T20/T22/T24 null) — 어떤 커밋된 정답 표로도 재현
+  불가.
+- **소비 감사 (커밋 시점 실측):** wave-2 dim3 점수를 읽는 코드는
+  `tools/build_rp13_workbench.py`(인간 최종 확정 워크벤치의 d3 표시 열)
+  뿐이다. 게시 수치·집계(`analysis/wave2_analyze.py`·
+  `tools/reproduce_analysis.py`·RESULTS 행)는 wave-2 dim3를 소비하지
+  않는다 — misstatement_probability·dim1/dim4 경로만. 게시 수치 무영향.
+- **조치 (코드만, 커밋됨):** 장르 표 경로 파라미터화(`--genre-table`) +
+  실험군 후보에 장르 행이 없으면 `AnswerKeyError`로 fail-closed
+  (`scoring/test_grader_runner.py` 3종). 미래 웨이브 보호 목적 — 동결
+  기록 무수정 (INV-06).
+- **Options:** (a) ERRATA 등재 (grading-record 재현성 주장을 게시 표면으로
+  낸다고 판단 시 — RP-13 워크벤치가 dim3를 표시하므로 권고) (b) 본
+  엔트리 특성화 공개로 종결 + RP-13 문서에 각주 (c) wave-2 장르 표를
+  사후 작성해 재채점 병행 산출 — INV-03 사후 개정 한계 검토 필요
+- **Basis:** INV-03/INV-06 · METHOD.md §4 (정답지 기반 채점) ·
+  reviews/cycle-002.md R2-7
+- **Revert:** fail-closed 완화는 후속 엔트리로 사유 기록.
