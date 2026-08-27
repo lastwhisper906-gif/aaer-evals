@@ -29,7 +29,10 @@ SEP_THRESHOLD = 10.0  # 사전 등록 분리 임계 (pp)
 
 def load_p(rel):
     out = {}
+    # R4-5: fp-sibling(case_NN.fp-*.json)은 stale-superseded 기록 — 제외 (R2-5 판형)
     for p in sorted((REPO / rel).glob("case_*.json")):
+        if ".fp-" in p.name:
+            continue
         j = json.loads(p.read_text(encoding="utf-8"))
         out[j["case_id"]] = j["misstatement_probability"]
     return out

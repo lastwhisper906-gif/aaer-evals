@@ -79,8 +79,9 @@ def stats_block(t_vals, c_vals):
 
 
 def load_p(d):
+    # R4-5: fp-sibling 제외 — stem 키가 쓰레기가 되고 stale 점수가 유입된다
     return {p.stem: json.loads(p.read_text(encoding="utf-8"))["misstatement_probability"]
-            for p in sorted((REPO / d).glob("case_*.json"))}
+            for p in sorted((REPO / d).glob("case_*.json")) if ".fp-" not in p.name}
 
 
 def a1_recognition():

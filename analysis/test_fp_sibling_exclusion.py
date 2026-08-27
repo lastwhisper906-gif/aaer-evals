@@ -67,3 +67,17 @@ def test_reproduce_load_p_and_grades_skip_fp_siblings(tmp_path):
 # 주: 스키마 스위프의 fp-sibling 취급은 R3-12에서 '포함'으로 결정 —
 # pipeline/test_output_schema_enforcement.py::test_fp_sibling_is_swept_for_schema_validity
 # 가 관할한다. 이 파일은 소비자(집계·채점·재현) 제외만 다룬다.
+
+
+# ── R4-5: 마지막 세 분석기 (analyze_rp07·analyze_hardening·power_precompute) ─
+
+def test_remaining_analyzer_load_p_skip_siblings(tmp_path, monkeypatch):
+    import analyze_hardening
+    import analyze_rp07
+    import power_precompute_rp09
+    _pair(tmp_path, "d", "case_01", 50, 99)
+    for mod in (analyze_rp07, power_precompute_rp09):
+        monkeypatch.setattr(mod, "REPO", tmp_path)
+        assert mod.load_p("d") == {"case_01": 50}, mod.__name__
+    monkeypatch.setattr(analyze_hardening, "REPO", tmp_path)
+    assert analyze_hardening.load_p("d") == {"case_01": 50}
