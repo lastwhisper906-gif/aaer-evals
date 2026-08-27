@@ -20,7 +20,7 @@ from pathlib import Path
 
 import build_payload as bp
 import cli_client
-from runner import EVALUATEE_MODEL
+from runner import CANARY_MARKERS, EVALUATEE_MODEL
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 MODEL_VISIBLE_KEYS = ("case", "financial_series_point_in_time", "filing_chronology")
@@ -75,6 +75,9 @@ def probe_case(kind: str, case: dict, out: Path, log_dir: Path,
                               forbid_markers=markers)
     if not r.ok:
         return {"case_id": cid, "status": f"FAIL ({r.fail_reason})"}
+    # R6-5 (R2-13 판형): 카나리 GUID 출력은 append-only 트리에 싣지 않는다
+    if any(m in json.dumps(r.structured or {}).lower() for m in CANARY_MARKERS):
+        return {"case_id": cid, "status": "FAIL (canary_hit)"}
     out.mkdir(parents=True, exist_ok=True)
     # 원자적 기록 (D67, R1-12): tmp→replace — 부분 기록이 정본을 오염 금지
     tmp_path = out_path.with_suffix(".json.tmp")

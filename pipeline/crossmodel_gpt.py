@@ -285,6 +285,12 @@ def run_case(case: dict, frame: str, out_dir: Path, *, dry_run: bool = False) ->
         meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
         return {"case_id": cid, "status": f"FAIL ({failure})"}
 
+    # R6-5 (R2-13 판형): 카나리 GUID 출력은 기록 전 fail-closed (meta 증거 유지)
+    if any(m in json.dumps(structured or {}).lower() for m in runner.CANARY_MARKERS):
+        meta["fail_reason"] = "canary_hit"
+        meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+        return {"case_id": cid, "status": "FAIL (canary_hit)"}
+
     head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=REPO_ROOT,
                           capture_output=True, text=True, check=True).stdout.strip()
     schema_sha = hashlib.sha256((REPO_ROOT / "schemas" / "llm_output.json").read_bytes()).hexdigest()

@@ -118,3 +118,17 @@ def test_runner_canary_hit_fails_before_write(monkeypatch, tmp_path):
     assert not (out_dir / "case_99.json").exists(), "카나리 출력이 기록됨"
     meta = json.loads((log_dir / "runmeta_original_case_99.json").read_text(encoding="utf-8"))
     assert meta["canary_hit"] is True and meta["fail_reason"] == "canary_hit"
+
+
+def test_probe_canary_hit_fails_before_write(monkeypatch, tmp_path):
+    """R6-5: 프로브 출력의 카나리도 기록 전 FAIL (R2-13 판형)."""
+    monkeypatch.setattr(cli_client, "call_model", lambda *a, **k: SimpleNamespace(
+        ok=True, structured={"company_guess": "canary 9fa11f98-dead-beef",
+                             "confidence": "low"},
+        fail_reason=None))
+    monkeypatch.setattr(pr.bp, "build_payload", lambda case, perturb: {
+        "_k_internal": 1, "case": {"case_id": case["case_id"]},
+        "financial_series_point_in_time": {}, "filing_chronology": []})
+    result = pr.probe_case("recognition", {"case_id": "case_98"}, tmp_path, tmp_path)
+    assert result["status"] == "FAIL (canary_hit)"
+    assert not (tmp_path / "case_98.json").exists()
