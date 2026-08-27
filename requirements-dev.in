@@ -1,0 +1,10 @@
+# 개발·CI 전용 도구 체인 — INV-11 예외 (소유자 서명 2026-08-06, D-P83 / PKT-INV11).
+# 런타임 5종 동결(requirements.txt)과 별도. 설치는 해시 핀 lock 경유만:
+#   pip-compile --generate-hashes --output-file=requirements-dev.lock requirements-dev.in
+# pip-compile은 네트워크가 필요하므로 소유자 입회 세션에서만 실행한다 (INV-23).
+# 채점·파이프라인 런타임 코드(pipeline/·scoring/·analysis/)는 이들 도구를
+# import할 수 없다 — tools/test_no_dev_toolchain_import.py 가드 스캔.
+ruff
+mypy
+pytest-cov
+pip-audit

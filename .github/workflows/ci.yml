@@ -48,3 +48,43 @@ jobs:
         run: python tools/lint_doc_counts.py
       - name: 그림 드리프트 게이트 (BN-12/D-P52 — verify-public 동등성, R5-05)
         run: python tools/verify_figures.py
+
+  # PKT-INV11 (D-P83): 비정본 보조 quality 잡 — dev 도구 체인은 별도 해시 핀
+  # lock으로만 설치. 실패는 허용하되 가시 기록 (침묵 green 금지, INV-24).
+  # 정본 3.12 5게이트 잡(test)은 무변경. requirements-dev.lock 생성(pip-compile)
+  # 은 네트워크가 필요해 소유자 입회 세션 한정 (INV-23) — lock이 커밋되기
+  # 전까지 이 잡은 고지만 남기고 휴면한다.
+  quality:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5
+        with:
+          python-version: "3.12"
+      - name: dev lock 존재 확인 (부재 시 고지 후 휴면 — 활성화는 lock 커밋)
+        id: devlock
+        run: |
+          if [ -f requirements-dev.lock ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=quality job dormant::requirements-dev.lock 부재 — pip-compile은 소유자 입회 세션 한정 (INV-23). lock 커밋 시 이 잡이 활성화된다."
+          fi
+      - name: dev 도구 설치 (해시 핀 lock — PKT-INV11)
+        if: steps.devlock.outputs.present == 'true'
+        run: pip install --require-hashes -r requirements-dev.lock
+      - name: ruff (lint — 발견은 기록, 게이트 아님)
+        if: steps.devlock.outputs.present == 'true'
+        run: ruff check pipeline tools scoring analysis
+      - name: mypy (타입 검사 — 발견은 기록, 게이트 아님)
+        if: steps.devlock.outputs.present == 'true'
+        run: mypy --ignore-missing-imports pipeline tools scoring analysis
+      - name: pytest 커버리지 가시화 (pytest-cov — 게이트 아님)
+        if: steps.devlock.outputs.present == 'true'
+        run: |
+          pip install --require-hashes -r requirements.lock
+          python -m pytest pipeline tools scoring analysis -q --cov=pipeline --cov=tools --cov=scoring --cov=analysis --cov-report=term
+      - name: pip-audit (런타임 lock 취약점 감사)
+        if: steps.devlock.outputs.present == 'true'
+        run: pip-audit -r requirements.lock
