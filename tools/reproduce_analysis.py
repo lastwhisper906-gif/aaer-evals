@@ -98,6 +98,12 @@ def _case_files(d):
     return sorted(p for p in (REPO / d).glob("case_*.json") if ".fp-" not in p.name)
 
 
+def a3_stats_missing(rp06_doc: dict, draws_exist: bool) -> bool:
+    """R1-20: draws가 실재하는데 a3_sampling이 없으면 A3는 침묵 부분 검증이
+    된다 — 명시 FAIL 대상 (조건-on-subject의 정직한 반쪽)."""
+    return draws_exist and "a3_sampling" not in rp06_doc
+
+
 def load_p(d):
     return {p.stem: json.loads(p.read_text(encoding="utf-8"))["misstatement_probability"]
             for p in _case_files(d)}
@@ -209,13 +215,22 @@ def main() -> int:
     check("stats.json appendix p", stats["appendix"]["p_one_sided_exact"], app["p"])
 
     # ---- A3 확장 (RP-06): 통계 파일이 존재할 때만 — 부재는 실패가 아님 ----
+    # 단 R1-20: draws가 실재하는데 per_draw_stats가 없거나 수가 다르면
+    # zip 절단으로 침묵 부분 검증이 된다 — 명시 FAIL.
     rp06 = REPO / "scoring/rp06_hardening_stats.json"
-    if rp06.is_file() and "a3_sampling" in json.loads(rp06.read_text(encoding="utf-8")):
-        pub6 = json.loads(rp06.read_text(encoding="utf-8"))["a3_sampling"]
-        draws_root = REPO / "runs/hardening/draws"
+    draws_root = REPO / "runs/hardening/draws"
+    draws_exist = draws_root.is_dir() and any(d.is_dir() for d in draws_root.iterdir())
+    rp06_doc = json.loads(rp06.read_text(encoding="utf-8")) if rp06.is_file() else {}
+    if a3_stats_missing(rp06_doc, draws_exist):
+        check("A3 draws-실재-통계-부재", "draws present, stats absent",
+              "a3_sampling in rp06_hardening_stats.json")
+    if "a3_sampling" in rp06_doc:
+        pub6 = rp06_doc["a3_sampling"]
         draw_p = {1: {**{n: p_pert[n] for n in treat}, **{n: p_orig[n] for n in ctrl}}}
         for i, dname in enumerate(sorted(d.name for d in draws_root.iterdir() if d.is_dir()), start=2):
             draw_p[i] = load_p(f"runs/hardening/draws/{dname}")
+        check("A3 draw-수 ↔ per_draw_stats-수 일치", len(draw_p),
+              len(pub6["per_draw_stats"]))
         for d, want in zip(sorted(draw_p), pub6["per_draw_stats"]):
             got = stats_block([draw_p[d][n] for n in treat], [draw_p[d][n] for n in ctrl])
             check(f"A3 draw{d} p", got["p"], want["p"])
