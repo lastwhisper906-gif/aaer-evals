@@ -229,9 +229,16 @@ def call_model(model: str,
         env = dict(os.environ)
         env.update(ISOLATION_ENV)
         try:
-            proc = subprocess.run(cmd, input=user_payload, cwd=work_dir, env=env,
-                                  capture_output=True, text=True,
-                                  timeout=timeout_seconds)
+            try:
+                proc = subprocess.run(cmd, input=user_payload, cwd=work_dir, env=env,
+                                      capture_output=True, text=True,
+                                      timeout=timeout_seconds)
+            except subprocess.TimeoutExpired as exc:
+                # R1-11: 한 케이스의 지연이 배치 전체를 무기록 크래시시키면
+                # 안 된다 — 실패 시도로 취급, 재시도/백오프·runmeta 흔적 유지.
+                last = {"fail_reason": "timeout",
+                        "raw": f"TimeoutExpired after {exc.timeout}s", "obj": None}
+                continue
 
             def _rate_limit_check():  # 오류 경로에서만 호출 (J13-g — 정상 응답 오탐 차단)
                 if _looks_rate_limited(proc.stdout[-2000:] if proc.stdout else "",

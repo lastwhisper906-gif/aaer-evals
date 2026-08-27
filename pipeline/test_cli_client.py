@@ -42,6 +42,12 @@ with open(os.path.join(stub_dir, f"call_{n:02d}.json"), "w") as f:
                "env_nonessential": os.environ.get("DISABLE_NON_ESSENTIAL_MODEL_CALLS"),
                "env_traffic": os.environ.get("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"),
                "stdin": payload}, f)
+if os.environ.get("STUB_SLEEP_ONCE") and n == 0:
+    import time
+    time.sleep(float(os.environ["STUB_SLEEP_ONCE"]))  # R1-11 타임아웃 재현 (첫 호출만)
+if os.environ.get("STUB_SLEEP"):
+    import time
+    time.sleep(float(os.environ["STUB_SLEEP"]))  # R1-11 타임아웃 재현 (매 호출)
 responses = json.load(open(os.path.join(stub_dir, "responses.json")))
 r = responses[min(n, len(responses) - 1)]
 sys.stdout.write(r if isinstance(r, str) else json.dumps(r))
@@ -160,6 +166,26 @@ def test_successful_response_containing_429_number_is_not_rate_limit(stub, tmp_p
     stub.set_responses(good_response({"answer": "Revenues=84,429 (FY2014); limit of detection"}))
     r = _call(tmp_path / "logs")
     assert r.ok and "429" in r.structured["answer"]
+
+
+# ④b 타임아웃 (R1-11)
+def test_timeout_is_failed_attempt_with_log_not_crash(stub, tmp_path, monkeypatch):
+    """R1-11: 한 케이스의 TimeoutExpired은 fail_reason=timeout의 FAIL 결과 —
+    예외 전파로 배치 전체가 무기록 크래시하면 안 된다."""
+    stub.set_responses(good_response({"answer": "x"}))
+    monkeypatch.setenv("STUB_SLEEP", "10")
+    r = _call(tmp_path / "logs", timeout_seconds=1)
+    assert not r.ok and r.fail_reason == "timeout" and r.attempts == 2
+    log = json.loads((tmp_path / "logs" / "t.json").read_text(encoding="utf-8"))
+    assert log["fail_reason"] == "timeout"
+    assert "TimeoutExpired" in log["raw_tail"]
+
+
+def test_timeout_then_success_preserves_retry(stub, tmp_path, monkeypatch):
+    stub.set_responses(good_response({"answer": "x"}), good_response({"answer": "y"}))
+    monkeypatch.setenv("STUB_SLEEP_ONCE", "10")
+    r = _call(tmp_path / "logs", timeout_seconds=2)
+    assert r.ok and r.attempts == 2
 
 
 # ⑤ 서빙 모델 핀 불일치
