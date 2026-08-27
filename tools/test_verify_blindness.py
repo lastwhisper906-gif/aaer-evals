@@ -245,3 +245,17 @@ def test_history_proof_exempt_set_is_pinned():
                       if exp["name"] == "crossmodel_gpt")
     assert "history_proof_exempt" not in crossmodel, \
         "crossmodel은 면제 불가 — 첫 산출 시 커밋 확정이 규칙 (R1-21 forcing)"
+
+
+def test_canary_guid_sets_agree_across_planter_guard_and_scanner():
+    """R7-10 (R6-4 패턴): 카나리 GUID가 세 모듈에 복제되어 있다 — 심는 쪽
+    (runner.CANARY_MARKERS), 송출 전 가드(cli_client.EVALUATEE_FORBIDDEN_MARKERS),
+    스캐너(verify_blindness.CANARIES). 한 곳에만 추가된 카나리는 스캔을
+    조용히 빠져나간다 — 세 집합의 정합을 잠근다."""
+    import sys
+    from pathlib import Path as _P
+    sys.path.insert(0, str(_P(__file__).resolve().parents[1] / "pipeline"))
+    import cli_client
+    import runner
+    assert set(runner.CANARY_MARKERS) == set(vb.CANARIES)
+    assert set(vb.CANARIES) <= set(cli_client.EVALUATEE_FORBIDDEN_MARKERS)
