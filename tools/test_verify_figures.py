@@ -113,3 +113,17 @@ def test_unmanifested_readme_figure_fails(tmp_path, monkeypatch):
     failures = vf.verify()
     assert any("fig_brand_new.png" in f and "no manifest entry" in f
                for f in failures), failures[:5]
+
+
+def test_unmanifested_ko_readme_figure_fails(tmp_path, monkeypatch):
+    """R7-12: README.ko.md는 1급 발행 표면 — 거기에만 추가된 그림도 매니페스트
+    등재 의무 (en/ko 한쪽 구멍 차단)."""
+    import verify_figures as vf
+    rogue = tmp_path / "README.ko.md"
+    rogue.write_text(
+        vf.KO_README_PATH.read_text(encoding="utf-8")
+        + "\n![새 그림](analysis/fig_ko_only.png)\n", encoding="utf-8")
+    monkeypatch.setattr(vf, "KO_README_PATH", rogue)
+    failures = vf.verify()
+    assert any("fig_ko_only.png" in f and "no manifest entry" in f
+               for f in failures), failures[:5]
