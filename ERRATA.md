@@ -153,3 +153,13 @@ table's m_flag column or the wave-1 fraud median must link this entry: "The
 unified table's m_flag was computed as the complement of the frozen rule and
 the wave-1 fraud median used a biased even-n estimator (60.0; corrected value
 57.5); both were corrected and republished per E-003."
+
+### E-003 citation-path correction note (2026-08-28, harness cycle 009 R9-5 — append-only; E-003 text unmodified)
+
+E-003's fact section cites `analysis/screens.py` and
+`analysis/baseline_screens.md`; neither path exists in the repository. The
+frozen −1.78 rule it refers to lives at `scoring/baselines/screens.py`
+(`flag_minus_1_78`, line 382 at this note's commit) and the companion
+document at `docs/baseline_screens.md`. The substance of E-003 — the
+inverted m_flag, the corrected median, the regeneration lineage — is
+unaffected; only the two citation paths dead-ended for a replicator.
