@@ -13,14 +13,14 @@
     {"name": "wave2", "score_commit": "040f790", "label_join_commit": "78d0c75", "analysis_commit": "78d0c75",
      "output_globs": ["runs/wave2/scores/case_*.json", "runs/draw_k3/wave2/**/case_*.json", "runs/rp09/scores/case_*.json"],
      "perturbed_globs": ["runs/wave2/perturbed/case_*.json", "runs/wave2/perturbed_redraw/**/case_*.json", "runs/wave2/identity_arm_b/case_*.json"],
-     "aux_globs": ["runs/wave2/**/*.json", "scoring/probe_results_wave2/**/*.json", "scoring/probe_results_v2ds_wave2/**/*.json", "runs/rp09/**/*.json", "runs/draw_k3/**/*.json", "runs/wave2/**/*.jsonl", "runs/rp09/**/*.jsonl"],
+     "aux_globs": ["runs/wave2/**/*.json", "scoring/probe_results_wave2/**/*.json", "scoring/probe_results_v2ds_wave2/**/*.json", "scoring/grades_wave2/**/*.json", "runs/rp09/**/*.json", "runs/draw_k3/**/*.json", "runs/wave2/**/*.jsonl", "runs/rp09/**/*.jsonl"],
      "perturbed_treatment_ids": "runs/wave2/fraud_case_ids.json",
      "names_candidates": "data/candidates/candidates_wave2.json",
      "names_mapping": "scoring/id_mapping_wave2.json"},
     {"name": "holdout", "score_commit": "7948de4", "label_join_commit": "9af2559", "analysis_commit": "9af2559",
      "output_globs": ["runs/holdout/scores/*.json", "runs/holdout/mainscore_redraw/**/case_*.json", "runs/holdout/controls/scores/hc_*.json"],
      "perturbed_globs": [],
-     "aux_globs": ["runs/holdout/**/*.json", "runs/holdout/**/*.jsonl"]},
+     "aux_globs": ["runs/holdout/**/*.json", "runs/holdout/**/*.jsonl", "scoring/grades_holdout/**/*.json", "scoring/grades_holdout_controls/**/*.json"]},
     {"name": "e2", "score_commit": "ace1e77", "label_join_commit": "9b51133", "analysis_commit": "9b51133",
      "output_globs": ["runs/e2/**/case_*.json"], "perturbed_globs": [], "aux_globs": ["runs/e2/**/*.json", "runs/e2/**/*.md"]},
     {"name": "e4", "score_commit": "ba213f4", "label_join_commit": "7f6458e", "analysis_commit": "7f6458e",
@@ -30,6 +30,6 @@
      "aux_globs": ["runs/crossmodel_gpt/**/*.jsonl"]},
     {"name": "aux_nonexperiment", "score_commit": "UNKNOWN", "label_join_commit": "UNKNOWN", "analysis_commit": "UNKNOWN",
      "output_globs": ["runs/gil_memo_v1/*.md"], "perturbed_globs": [],
-     "aux_globs": ["runs/rp08/**/*.json", "runs/smoke_rev3/**/*.json", "runs/gil_memo_v1/**/*.json", "runs/diagnostics/**/*.json", "runs/rp08/**/*.jsonl"]}
+     "aux_globs": ["runs/rp08/**/*.json", "runs/smoke_rev3/**/*.json", "runs/gil_memo_v1/**/*.json", "runs/diagnostics/**/*.json", "runs/rp08/**/*.jsonl", "scoring/grades_v2/**/*.json", "logs/run_*/**/*.json", "logs/*.jsonl", "logs/*.md"]}
   ]
 }

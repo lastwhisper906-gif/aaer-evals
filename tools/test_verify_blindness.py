@@ -111,6 +111,41 @@ def test_registered_nonjson_surface_is_canary_scanned(tmp_path):
     assert any("카나리" in f for f in semantic_failures(tmp_path, reg))
 
 
+def test_unregistered_grades_sibling_tree_fails(tmp_path):
+    """R2-1: scoring/grades_wave2 등 grades 형제 트리는 채점자 모델 산출 —
+    미등록 파일이 발견을 피해 조용히 통과하면 안 된다."""
+    write_json(tmp_path, "scoring/grades_wave2/case_99.json", {})
+    fails = semantic_failures(tmp_path, {"experiments": []})
+    assert any("unregistered output surface" in f and "grades_wave2" in f
+               for f in fails)
+
+
+def test_logs_call_log_is_discovered_and_canary_scanned(tmp_path):
+    """R2-1: logs/run_*/ 호출 로그(raw_tail 실패 텍스트 채널 포함)는 발견
+    대상이며, aux 등록 시 카나리 스캔을 받는다."""
+    write_json(tmp_path, "logs/run_x/evaluatee_test.json",
+               {"raw_tail": "canary 9fa11f98-dead-beef"})
+    unreg = semantic_failures(tmp_path, {"experiments": []})
+    assert any("unregistered output surface" in f and "evaluatee_test" in f
+               for f in unreg)
+    reg = {"experiments": [{"name": "t", "score_commit": "UNKNOWN",
+                            "label_join_commit": "UNKNOWN",
+                            "output_globs": [], "perturbed_globs": [],
+                            "aux_globs": ["logs/run_*/**/*.json"]}]}
+    assert any("카나리" in f for f in semantic_failures(tmp_path, reg))
+
+
+def test_real_tree_discovery_fully_registered():
+    """R2-1: 현재 트리의 모든 발견 표면이 레지스트리에 등록되어 있다
+    (내용 스캔 없이 글롭 대조만 — 전체 스캔은 verify_blindness 게이트)."""
+    registry = vb.load_registry(vb.REPO)
+    registered = vb._registered_paths(vb.REPO, registry)
+    all_registered = set().union(*registered.values())
+    unregistered = vb._discovered_paths(vb.REPO) - all_registered
+    assert unregistered == set(), sorted(
+        str(p.relative_to(vb.REPO)) for p in unregistered)
+
+
 def test_derivation_missing_mapping_fails_closed(tmp_path):
     reg = registry(perturbed=["runs/wave_test/**/*.json"])
     identity_files(tmp_path, mapping={"different": "T01"})

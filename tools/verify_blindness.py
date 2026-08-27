@@ -92,10 +92,13 @@ _DISCOVER_PATTERNS = ("*.json", "*.jsonl", "*.md", "*.txt")
 
 def _discovered_paths(root: Path) -> set[Path]:
     bases = [root / "runs", root / "pilot/runs", root / "pilot/grades",
-             root / "scoring/grades"]
+             root / "logs"]
     scoring = root / "scoring"
     if scoring.is_dir():
         bases.extend(b for b in scoring.glob("probe_results*") if b.is_dir())
+        # R2-1: grades 형제 트리(grades_wave2 등)도 채점자 모델 산출 —
+        # probe_results*와 같은 와일드카드 발견이 아니면 스캔 사각.
+        bases.extend(b for b in scoring.glob("grades*") if b.is_dir())
     paths: set[Path] = set()
     for base in bases:
         if base.is_dir():
