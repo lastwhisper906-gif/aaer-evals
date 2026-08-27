@@ -116,25 +116,29 @@ def main() -> int:
     kinds = [k for k, on in (("recognition", args.recognition),
                              ("verbatim", args.verbatim)) if on]
     failures = 0
-    try:
-        for kind in kinds:
-            out = out_root / kind
-            # RP-09 3d: 병렬화 (runner.py와 동일 ThreadPool 패턴 — 호출 격리는
-            # cli_client가 호출 단위로 보장, 케이스 간 상태 공유 없음)
-            with concurrent.futures.ThreadPoolExecutor(
-                    max_workers=args.concurrency) as pool:
-                futs = {pool.submit(probe_case, kind, case, out, log_dir,
-                                    args.v2_dateshift): case
-                        for case in cases}
+    for kind in kinds:
+        out = out_root / kind
+        # RP-09 3d: 병렬화 (runner.py와 동일 ThreadPool 패턴 — 호출 격리는
+        # cli_client가 호출 단위로 보장, 케이스 간 상태 공유 없음)
+        with concurrent.futures.ThreadPoolExecutor(
+                max_workers=args.concurrency) as pool:
+            futs = {pool.submit(probe_case, kind, case, out, log_dir,
+                                args.v2_dateshift): case
+                    for case in cases}
+            try:
                 for fut in concurrent.futures.as_completed(futs):
                     res = fut.result()
                     if res["status"].startswith("FAIL"):
                         failures += 1
                     print(f"[{kind}] {res['case_id']}: {res['status']}", flush=True)
-    except cli_client.RateLimitedError as e:
-        print(f"\nHALT — {e}", file=sys.stderr)
-        print(f"재개 명령 (완료분 자동 skip):\n  {resume_cmd}")
-        return 3
+            except cli_client.RateLimitedError as e:
+                # R2-11 (runner.py 거울): with-블록 밖에서 잡으면 __exit__가
+                # 대기 futures를 전부 소진 — 이미 리밋 걸린 구독에 ~수십 호출
+                # 추가 발사. 큐 취소 후 HALT.
+                pool.shutdown(cancel_futures=True)
+                print(f"\nHALT — {e}", file=sys.stderr)
+                print(f"재개 명령 (완료분 자동 skip):\n  {resume_cmd}")
+                return 3
     return 0 if failures == 0 else 2
 
 

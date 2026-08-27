@@ -70,3 +70,29 @@ def test_v1_result_does_not_satisfy_v2ds_run(tmp_path, monkeypatch):
     assert result["status"].startswith("OK")
     assert len(calls) == 1
     assert (tmp_path / "case_99_v2ds.json").exists()
+
+
+def test_rate_limit_cancels_queued_probes(tmp_path, monkeypatch):
+    """R2-11: 레이트 리밋 발생 시 대기 큐를 취소해야 한다 — Executor.__exit__
+    소진으로 이미 리밋 걸린 구독에 잔여 프로브가 계속 발사되면 안 된다."""
+    import sys
+    cases = {"cases": [{"case_id": f"case_{i:02d}"} for i in range(1, 21)]}
+    cases_path = tmp_path / "cases.json"
+    cases_path.write_text(json.dumps(cases), encoding="utf-8")
+
+    executed = []
+
+    def limited_probe(kind, case, out, log_dir, v2_dateshift=False):
+        executed.append(case["case_id"])
+        raise cli_client.RateLimitedError("usage limit reached")
+
+    monkeypatch.setattr(pr, "probe_case", limited_probe)
+    monkeypatch.setattr(pr.cli_client, "assert_no_metered_credentials", lambda: None)
+    monkeypatch.setattr(pr.cli_client, "require_clean_tree", lambda: None)
+    monkeypatch.setattr(sys, "argv",
+                        ["probe_runner.py", "--recognition", "--concurrency", "1",
+                         "--cases", str(cases_path),
+                         "--out-root", str(tmp_path / "probe_out")])
+    assert pr.main() == 3
+    assert len(executed) == 1, (
+        f"리밋 후에도 {len(executed) - 1}건이 추가 발사됨 — 큐 미취소")
