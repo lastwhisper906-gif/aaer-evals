@@ -1,5 +1,6 @@
 import copy
 import json
+import re
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -174,37 +175,89 @@ PREVALIDATION_ALLOWLIST = {
 }
 
 
-def _llm_output_shaped_paths(root=REPO_ROOT):
-    paths = set()
+# R3-12: 발견 술어 확장 — 필수 키가 빠진 기록(가장 나쁜 위반 클래스)이
+# "shape 미달"로 조용히 스킵되지 않도록, v1/v2 확률 필드·checklist·case-패턴
+# 파일명 어느 것으로든 발견하고, 분류 불가 case-패턴 파일은 실패로 취급한다.
+# fp-sibling 결정 (문서화): 스키마 스위프는 fp-sibling을 **포함**한다 —
+# 커밋된 모델 산출이므로 스키마 유효성 의무는 동일; 소비자 제외(R2-5)와는
+# 별개 축이다.
+CASE_PATTERN = re.compile(r"(case_\d+|hc_\d+)(\.fp-[0-9a-f]+)?\.json")
+V2_SCHEMA = json.loads(
+    (REPO_ROOT / "schemas/llm_output_v2.json").read_text(encoding="utf-8"))
+
+
+def _classify_output(path, doc):
+    """v1 | v2 | grade | probe | diagnostic | unclassifiable | None(비대상)."""
+    if isinstance(doc, dict):
+        if "misstatement_risk_score" in doc:
+            return "v2"
+        if "misstatement_probability" in doc or "checklist" in doc:
+            return "v1"
+    if not CASE_PATTERN.fullmatch(path.name):
+        return None
+    if isinstance(doc, dict):
+        # runs/pilot 아래 case-패턴이지만 별도 계약을 따르는 알려진 가족 —
+        # 채점(grader GRADE_SCHEMA)·프로브(probe_runner)·진단 페이로드는
+        # 자체 게이트/동결 검증 관할이라 여기서 스키마 검증하지 않는다.
+        if "dim1_probability_band" in doc:
+            return "grade"
+        if "company_guess" in doc or "known" in doc:
+            return "probe"
+        if doc.get("diagnostic_only"):
+            return "diagnostic"
+    return "unclassifiable"
+
+
+def _discovered_outputs(root=REPO_ROOT):
+    found = []
     for base in ("runs", "pilot"):
-        for path in (root / base).rglob("*.json"):
-            if ".fp-" in path.name:  # R2-5: stale-superseded fp-sibling 제외
-                continue
+        for path in sorted((root / base).rglob("*.json")):
             try:
                 doc = json.loads(path.read_text(encoding="utf-8"))
             except json.JSONDecodeError:
+                doc = None
+            kind = _classify_output(path, doc)
+            if kind:
+                found.append((path, kind, doc))
+    return found
+
+
+def _sweep_failures(found, root, allowlist):
+    from aaer_eval.output_contract_v2 import validate_v2
+    v1_validator = jsonschema.Draft7Validator(
+        runner.FULL_OUTPUT_SCHEMA, format_checker=jsonschema.FormatChecker())
+    v2_validator = jsonschema.Draft7Validator(
+        V2_SCHEMA, format_checker=jsonschema.FormatChecker())
+    failures, seen_allowlisted = [], {}
+    for path, kind, doc in found:
+        relative = path.relative_to(root).as_posix()
+        if kind in ("grade", "probe", "diagnostic"):
+            continue
+        if kind == "unclassifiable":
+            failures.append(f"{relative}: case-패턴 파일이 어떤 알려진 출력 "
+                            "계약(v1/v2/채점/프로브/진단)으로도 분류 불가")
+            continue
+        if kind == "v1":
+            errors = list(v1_validator.iter_errors(doc))
+            if relative in allowlist:
+                seen_allowlisted[relative] = errors
                 continue
-            if isinstance(doc, dict) and "misstatement_probability" in doc \
-                    and "checklist" in doc:
-                paths.add(path)
-    return sorted(paths)
+            if errors:
+                failures.append(f"{relative}: {errors[0].message}")
+        else:  # v2
+            messages = [e.message for e in v2_validator.iter_errors(doc)]
+            messages += validate_v2(doc)
+            if messages:
+                failures.append(f"{relative}: {messages[0]}")
+    return failures, seen_allowlisted
 
 
 def test_all_committed_run_outputs_validate():
-    paths = _llm_output_shaped_paths()
-    assert len(paths) > 400, "스위프가 draw 트리를 놓침 — 발견 회귀"
-    validator = jsonschema.Draft7Validator(
-        runner.FULL_OUTPUT_SCHEMA, format_checker=jsonschema.FormatChecker())
-    failures = []
-    seen_allowlisted = {}
-    for path in paths:
-        relative = path.relative_to(REPO_ROOT).as_posix()
-        errors = list(validator.iter_errors(json.loads(path.read_text(encoding="utf-8"))))
-        if relative in PREVALIDATION_ALLOWLIST:
-            seen_allowlisted[relative] = errors
-            continue
-        if errors:
-            failures.append(f"{relative}: {errors[0].message}")
+    found = _discovered_outputs()
+    assert sum(1 for _, kind, _ in found if kind == "v1") > 400, \
+        "스위프가 draw 트리를 놓침 — 발견 회귀"
+    failures, seen_allowlisted = _sweep_failures(found, REPO_ROOT,
+                                                 PREVALIDATION_ALLOWLIST)
     assert not failures, "\n".join(failures)
     # 열거된 15건은 존재해야 하고(동결 확인), 기재된 이유로 실패해야 한다 —
     # 다른 이유의 새 위반이 허용목록 뒤에 숨지 못하게.
@@ -214,6 +267,45 @@ def test_all_committed_run_outputs_validate():
         errors = seen_allowlisted[relative]
         assert errors and keyword in errors[0].json_path, \
             f"{relative}: 기재 이유({keyword}) 외의 스키마 상태"
+
+
+def test_case_pattern_record_missing_required_keys_is_caught(tmp_path):
+    """R3-12: 필수 키(checklist·확률 필드) 전부가 빠진 case_00.json —
+    구 술어에서는 '비대상'으로 침묵 통과했던 최악 클래스."""
+    (tmp_path / "runs/x").mkdir(parents=True)
+    (tmp_path / "pilot").mkdir()
+    (tmp_path / "runs/x/case_00.json").write_text(
+        json.dumps({"case_id": "case_00", "overall": {}}), encoding="utf-8")
+    found = _discovered_outputs(tmp_path)
+    assert [(p.name, k) for p, k, _ in found] == [("case_00.json", "unclassifiable")]
+    failures, _ = _sweep_failures(found, tmp_path, {})
+    assert failures and "분류 불가" in failures[0]
+
+
+def test_synthetic_v2_record_discovered_and_validated(tmp_path):
+    (tmp_path / "runs/x").mkdir(parents=True)
+    (tmp_path / "pilot").mkdir()
+    (tmp_path / "runs/x/case_01.json").write_text(
+        json.dumps({"case_id": "case_01", "misstatement_risk_score": 130,
+                    "checklist": []}), encoding="utf-8")
+    found = _discovered_outputs(tmp_path)
+    assert [k for _, k, _ in found] == ["v2"]
+    failures, _ = _sweep_failures(found, tmp_path, {})
+    assert failures, "v2 위반 기록이 스위프를 통과함"
+
+
+def test_fp_sibling_is_swept_for_schema_validity(tmp_path):
+    """R3-12 결정: fp-sibling도 커밋 모델 산출 — 스키마 스위프 포함
+    (소비자 제외 R2-5와 별개 축)."""
+    (tmp_path / "runs/x").mkdir(parents=True)
+    (tmp_path / "pilot").mkdir()
+    bad = {"case_id": "case_01", "misstatement_probability": 130, "checklist": []}
+    (tmp_path / "runs/x/case_01.fp-deadbeef.json").write_text(
+        json.dumps(bad), encoding="utf-8")
+    found = _discovered_outputs(tmp_path)
+    assert [p.name for p, _, _ in found] == ["case_01.fp-deadbeef.json"]
+    failures, _ = _sweep_failures(found, tmp_path, {})
+    assert failures, "스키마 무효 fp-sibling이 스위프를 통과함"
 
 
 # ── evaluatee_input 화이트리스트의 송출 지점 강제 (R1-5) ──────────────────

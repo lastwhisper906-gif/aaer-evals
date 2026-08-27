@@ -15,7 +15,6 @@ for sub in ("pipeline", "scoring", "tools", "analysis"):
 import grader_runner as gr  # noqa: E402
 import reproduce_analysis as ra  # noqa: E402
 import wave2_analyze  # noqa: E402
-from test_output_schema_enforcement import _llm_output_shaped_paths  # noqa: E402
 
 
 def _write(root: Path, relative: str, value: dict) -> None:
@@ -65,11 +64,6 @@ def test_reproduce_load_p_and_grades_skip_fp_siblings(tmp_path):
     assert list(grades) == ["case_01"]
 
 
-def test_schema_sweep_skips_fp_siblings(tmp_path):
-    shaped = {"case_id": "case_01", "misstatement_probability": 50,
-              "checklist": []}
-    _write(tmp_path, "runs/x/case_01.json", shaped)
-    _write(tmp_path, "runs/x/case_01.fp-deadbeef.json", shaped)
-    (tmp_path / "pilot").mkdir()
-    paths = _llm_output_shaped_paths(tmp_path)
-    assert [p.name for p in paths] == ["case_01.json"]
+# 주: 스키마 스위프의 fp-sibling 취급은 R3-12에서 '포함'으로 결정 —
+# pipeline/test_output_schema_enforcement.py::test_fp_sibling_is_swept_for_schema_validity
+# 가 관할한다. 이 파일은 소비자(집계·채점·재현) 제외만 다룬다.

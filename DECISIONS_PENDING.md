@@ -1549,8 +1549,18 @@
   (draw-robustness 표를 게시 표면으로 강하게 낸다고 판단 시)
 - **Basis:** INV-02(스키마 준수)·INV-06 · reviews/cycle-002.md R2-2
 - **Revert:** 허용목록 축소는 후속 엔트리로 사유 기록.
-
-## D-P87 — [DRAFT — 소유자 서명 대기] L4 12/12의 탐지 조건부(denominator) 문구 — 서명 표면 전파 제안
+- **REVISION 2026-08-27 (harness v4 cycle 003, R3-12 — 주장 정밀화):**
+  위 원문(보존)의 "16번째 위반 기록은 어디에 생겨도 pytest 실패"는 발견
+  전제조건을 누락한 과잉 진술이었다. 당시 발견 술어는
+  `misstatement_probability`와 `checklist` **둘 다** 가진 dict만 스캔 —
+  필수 키 자체가 빠진 기록(가장 나쁜 위반 클래스)과 미래 v2 기록
+  (`misstatement_risk_score`)은 발견조차 되지 않았고, fp-sibling은 스캔
+  제외였다. cycle 003 R3-12에서 술어를 확장: v1/v2 확률 필드·checklist·
+  case-패턴 파일명 어느 것으로든 발견, v1은 llm_output·v2는
+  llm_output_v2+validate_v2로 검증, 알려진 타계약 가족(채점·프로브·진단
+  페이로드 — 자체 게이트 관할)을 제외한 분류 불가 case-패턴 파일은 실패,
+  fp-sibling은 스위프 포함(소비자 제외 R2-5와 별개 축). 이 리비전
+  이후에야 원문 주장("어떤 16번째 위반 기록도 실패")이 정확하다. — [DRAFT — 소유자 서명 대기] L4 12/12의 탐지 조건부(denominator) 문구 — 서명 표면 전파 제안
 - **Status:** DRAFT — 세션(harness v4 cycle 002, R2-6)이 작성. 서명 동결
   표면(`analysis/DECISION_TABLE.md` §4 — D94 서명 · fig_tradeoff
   그림/사이드카)은 본 세션이 접촉하지 않았다.
