@@ -39,6 +39,16 @@ def assert_subscription_only():
             "이 가드는 우발적 종량 과금을 기계적으로 차단한다.")
 
 
+def assert_parallel_lengths(label: str, **arrays) -> None:
+    """R5-3 (R1-13 클래스, 라이브 수집 사이트): EDGAR submissions 병렬 배열의
+    길이 불일치는 zip 절단으로 꼬리 제출(8-K 4.02 오염 스크린 대상 포함)을
+    침묵 탈락시킨다 — fail-closed로 즉시 오류."""
+    lengths = {name: len(values) for name, values in arrays.items()}
+    if len(set(lengths.values())) > 1:
+        raise ValueError(f"{label}: submissions 병렬 배열 길이 불일치 {lengths} "
+                         "— 스냅샷 재수집 필요 (fail-closed)")
+
+
 def sha256_file(path: Path) -> str:
     h = hashlib.sha256()
     with open(path, "rb") as f:

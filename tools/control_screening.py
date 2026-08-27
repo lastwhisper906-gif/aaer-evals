@@ -17,6 +17,7 @@ import sys
 from pathlib import Path
 
 from fetch_primary_sources import DATA_DIR, fetch
+from forward_common import assert_parallel_lengths
 
 REPO = Path(__file__).resolve().parents[1]
 OUT = REPO / "data/candidates/control_screening.json"
@@ -61,6 +62,10 @@ def filing_counts(cik10: str, cutoff: datetime.date, dest: Path):
     ann = q = 0
     xbrl = False
     for b in blocks:
+        # R5-3: zip 절단 방지 — 병렬 배열 정렬성 강제 (R1-13 클래스)
+        assert_parallel_lengths(f"CIK{cik10}", form=b["form"],
+                                filingDate=b["filingDate"],
+                                isXBRL=b.get("isXBRL", [0] * len(b["form"])))
         for form, date, isx in zip(b["form"], b["filingDate"], b.get("isXBRL", [0] * len(b["form"]))):
             d = datetime.date.fromisoformat(date)
             if d > cutoff:

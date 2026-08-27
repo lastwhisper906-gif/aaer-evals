@@ -842,3 +842,42 @@ def test_normal_seal_record_states_rehash_performed(cycle, monkeypatch):
     assert forward_seal.main() == 0
     record = (cycle / "SEAL_RECORD.md").read_text(encoding="utf-8")
     assert "run_output re-hash: verified" in record
+
+
+# ── R5-3: 라이브 수집 사이트의 EDGAR 병렬 배열 정렬성 (R1-13 클래스) ──────
+
+def test_check_candidate_hard_errors_on_truncated_filing_dates(tmp_path, monkeypatch):
+    """filingDate가 form보다 짧으면 4.02 오염 스크린 대상 꼬리 제출이
+    침묵 탈락 — 후보가 조용히 admit되기 전에 하드 오류."""
+    import forward_enumerate as fe
+    snap = tmp_path / "snap"
+    snap.mkdir()
+    monkeypatch.setattr(fe, "SNAP", snap)
+    cik = "0000009001"
+    fc.write_json(snap / f"submissions_CIK{cik}.json", {
+        "sic": "3674", "name": "Co", "tickers": ["T"],
+        "filings": {"recent": {
+            "form": ["10-K", "8-K"], "filingDate": ["2025-01-01"],
+            "items": ["", "4.02"], "isXBRL": [1, 1]}}})
+    with pytest.raises(ValueError, match="병렬 배열 길이 불일치"):
+        fe.check_candidate(cik, offline=True)
+
+
+def test_control_screening_filing_counts_hard_errors_on_mismatch(tmp_path, monkeypatch):
+    import datetime as _dt
+    import control_screening as cs
+
+    class _Resp:
+        def __init__(self, obj):
+            self._obj = obj
+
+        def json(self):
+            return self._obj
+
+    doc = {"filings": {"recent": {"form": ["10-K", "10-Q"],
+                                  "filingDate": ["2025-01-01"],
+                                  "isXBRL": [1, 1]},
+                       "files": []}}
+    monkeypatch.setattr(cs, "fetch", lambda url: _Resp(doc))
+    with pytest.raises(ValueError, match="병렬 배열 길이 불일치"):
+        cs.filing_counts("0000009001", _dt.date(2026, 1, 1), tmp_path / "d")

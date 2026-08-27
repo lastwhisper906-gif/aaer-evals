@@ -22,8 +22,8 @@ import urllib.request
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from forward_common import (REPO, SEC_UA, UNIVERSE_SIZE, assert_subscription_only,
-                            write_json, read_json)
+from forward_common import (REPO, SEC_UA, UNIVERSE_SIZE, assert_parallel_lengths,
+                            assert_subscription_only, write_json, read_json)
 
 SIC_SET = ["3571", "3572", "3576", "3577", "3585", "3612", "3613", "3621",
            "3661", "3663", "3669", "3672", "3674", "4911"]  # §6 (A) — 정렬 고정
@@ -107,6 +107,10 @@ def check_candidate(cik: str, offline: bool) -> tuple[str, dict | None]:
     dates = recent.get("filingDate", [])
     items = recent.get("items", [""] * len(forms))
     xbrl = recent.get("isXBRL", [0] * len(forms))
+    # R5-3: 위치 조인(forms[i]·items[i] over dates 인덱스) 전에 정렬성 강제 —
+    # 짧은 filingDate는 4.02 오염 스크린 대상 꼬리 제출을 침묵 탈락시킨다
+    assert_parallel_lengths(f"CIK{cik}", form=forms, filingDate=dates,
+                            items=items, isXBRL=xbrl)
 
     if any(f in ("20-F", "40-F", "6-K") for f in forms):
         return "foreign_filer", None
