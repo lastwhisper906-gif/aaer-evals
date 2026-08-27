@@ -81,6 +81,8 @@ LLM은 확정 분식을 대조군과 분리하나, 그 점수는 모델이 각 �
 - 교란 프레임: 순열 p = **0.0021** / AUC **0.864** [0.722, 0.969] / 플래그 4/8.
 - 정체-노출(원본, 얽힌 상한): p = **0.00114** (100k, one-sided) / 평균차 **+19.8pp**
   (중위 57.5 vs 33.0) / AUC **0.824** [0.599, 0.983] — N=30 불안정, 점 그림이 1차 시각.
+  wave-1 사기군 중위값은 짝수-n 추정자 편향 정정치(60.0 → 57.5) —
+  [ERRATA.md](ERRATA.md) E-003 참조.
 - 암기 분해: 8케이스 중 **5건**이 R3 임계 초과. 익명 페이로드 이름 지목률 **50%**.
 
 **② [TASK 1] 덜 유명한 사건 (wave-2, 실험군 9 vs 대조군 23) → R4 (잔여 능력).**
@@ -152,8 +154,8 @@ wave-2 88.9% → 홀드아웃 0% — 암기 제거는 wave-2→홀드아웃 사�
 
 동일 30사·동일 PIT: Beneish M p=0.498/AUC 0.510 · Dechow F p=0.268/AUC 0.573 — 정량
 스크린은 이 표본에서 무분리. LLM 순위는 둘과 사실상 무상관(wave-1 ρ −0.075/−0.144;
-wave-2 0.337/0.265), 잔차 분리가 살아남는다 → 사전 커밋 R2 **비발동**. LLM은 기계
-공식의 재현이 아니다.
+wave-2 0.333/0.293 — rev2 tie-aware, [ERRATA.md](ERRATA.md) E-002), 잔차 분리가
+살아남는다 → 사전 커밋 R2 **비발동**. LLM은 기계 공식의 재현이 아니다.
 
 ## 채점·확정 상태
 
@@ -186,7 +188,9 @@ URL은 상단 '발행' 절).
 감사: `analysis/REVIEW_CLAIMS_AUDIT.md`):
 
 ```bash
-pip install -r requirements.txt
+git clone <repo> && cd aaer-evals
+python3.12 -m venv .venv                                    # 3.12 = 재현 주장 정본 버전
+.venv/bin/pip install --require-hashes -r requirements.lock  # 해시 핀 설치 (C4, D109)
 make verify-public   # 1계층 — 외부 데이터 엄격 0: 커밋 산출물만
 make verify-full     # 2계층 — 원시 코퍼스 재계산 추가 (~/aaer-data 필요)
 ```

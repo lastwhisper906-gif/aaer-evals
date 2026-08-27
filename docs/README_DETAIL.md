@@ -88,7 +88,9 @@ recognition-probe draws — L-5). The only structural lower bound in this design
 is the post-cutoff holdout (layer ③):
 - Perturbed frame: permutation p = **0.0021** / AUC 0.864 [0.722, 0.969] / flags 4/8.
 - Identity-exposed (original, entangled upper line): p = **0.00114** (100k,
-  one-sided) / mean gap **+19.8pp** (median 57.5 vs 33.0).
+  one-sided) / mean gap **+19.8pp** (median 57.5 vs 33.0). The wave-1 fraud
+  median is the corrected value (biased even-n estimator 60.0 → 57.5) per
+  [ERRATA.md](../ERRATA.md) E-003.
 - Memorization decomposition: 5 of 8 cases exceed the R3 threshold; anonymized-
   payload name-identification rate **50%**.
 
