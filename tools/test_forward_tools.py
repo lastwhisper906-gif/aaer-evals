@@ -363,3 +363,37 @@ def test_outcome_append_rejects_unknown_record(cycle, monkeypatch):
                                       "sec_complaint", "--reviewer", "o", "--rationale", "r"])
     with pytest.raises(SystemExit):
         forward_outcome_append.main()
+
+
+# ── R2-8 (INV-22): 봉인 후 불변성 자동 게이트 ─────────────────────────────
+
+def test_real_cycles_seal_integrity_gate():
+    """실존하는 모든 forward/cycle_*/MANIFEST.sha256를 pytest 스위프마다
+    재검증한다. 봉인 전에는 공진(vacuous pass) — 게이트가 봉인을 선행해야
+    봉인 직후부터 in-place 변조가 CI에서 잡힌다는 것이 요점."""
+    for manifest in sorted((fc.REPO / "forward").glob("cycle_*/MANIFEST.sha256")):
+        cycle = manifest.parent
+        assert manifest.read_text(encoding="utf-8") == fc.manifest_text(cycle), (
+            f"INV-22 위반: 봉인 후 변조 — {cycle.relative_to(fc.REPO)} "
+            "(정정은 ERRATA/신규 사이클 경유, in-place 수정 금지)")
+
+
+def test_sealed_fixture_tamper_fires_the_gate(tmp_path):
+    """픽스처 봉인 사이클로 게이트 발화 증명: 변조·추가 각각 red."""
+    cycle = tmp_path / "cycle_099"
+    cycle.mkdir()
+    (cycle / "PROTOCOL.md").write_text("protocol v1\n", encoding="utf-8")
+    (cycle / "universe.json").write_text("{}\n", encoding="utf-8")
+    manifest = cycle / "MANIFEST.sha256"
+    manifest.write_text(fc.manifest_text(cycle), encoding="utf-8")
+    assert manifest.read_text(encoding="utf-8") == fc.manifest_text(cycle)
+
+    (cycle / "PROTOCOL.md").write_text("protocol v2 (tampered)\n", encoding="utf-8")
+    assert manifest.read_text(encoding="utf-8") != fc.manifest_text(cycle)
+
+    (cycle / "PROTOCOL.md").write_text("protocol v1\n", encoding="utf-8")
+    assert manifest.read_text(encoding="utf-8") == fc.manifest_text(cycle)
+    evidence = cycle / "evidence"
+    evidence.mkdir()
+    (evidence / "late_addition.txt").write_text("added after seal\n", encoding="utf-8")
+    assert manifest.read_text(encoding="utf-8") != fc.manifest_text(cycle)
