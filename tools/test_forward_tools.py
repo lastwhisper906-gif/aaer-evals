@@ -1041,6 +1041,19 @@ def test_seal_owner_commands_stage_runs_dir_and_call_logs(cycle, monkeypatch):
     assert " logs/run_*" in add_line, add_line
 
 
+def test_seal_owner_commands_write_and_stage_blindness_manifest(cycle, monkeypatch):
+    """R10-3: 봉인 커밋이 runs/forward 출력을 담는 이상, 블라인드 매니페스트
+    재생성 + staging이 소유자 명령에 없으면 push된 봉인 커밋이 verify_blindness
+    (d) leg에서 정본 CI를 붉힌다."""
+    monkeypatch.setattr(sys, "argv", seal_argv(cycle))
+    assert forward_seal.main() == 0
+    record = (cycle / "SEAL_RECORD.md").read_text(encoding="utf-8")
+    assert "verify_blindness.py --write-manifest" in record
+    add_line = next(line for line in record.splitlines()
+                    if line.startswith("git add "))
+    assert "runs/MANIFEST.sha256" in add_line, add_line
+
+
 def test_abort_seal_record_also_portable(cycle, monkeypatch):
     (cycle / "scores.json").unlink()
     monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(cycle),

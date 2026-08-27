@@ -114,8 +114,11 @@ def main():
         stage_extra += f" {runs_display}"
     if sorted((REPO / "logs").glob("run_*")):
         stage_extra += " logs/run_*"
+    # R10-3: 봉인 커밋은 runs/forward 출력을 staging하므로 블라인드 매니페스트
+    # 재생성·staging 없이는 push된 봉인 커밋 자체가 정본 CI를 붉힌다.
     owner_cmds = (
-        f"git add {cycle_display}{stage_extra} && "
+        f"python tools/verify_blindness.py --write-manifest\n"
+        f"git add runs/MANIFEST.sha256 {cycle_display}{stage_extra} && "
         f"git commit -m 'SEAL{'(ABORT)' if args.abort else ''}: {cycle.name} forward watchlist'\n"
         f"git tag -a {tag} -m 'forward {seal_kind} {now} manifest sha256 {mhash}'\n"
         f"git push origin main --tags")

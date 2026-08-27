@@ -231,6 +231,24 @@ def test_real_registry_history_rule_passes():
     assert vb.FAILS == []
 
 
+def test_forward_runs_surface_preregistered(tmp_path):
+    """R10-3: runs/forward/** 는 사전 등록된 표면 — 11월 봉인 push가
+    'unregistered output surface'로 정본 CI를 붉히지 않는다. 발견 확장자
+    전부가 카나리 전용 aux 클래스에 잡혀야 하고, output/perturbed 클래스에는
+    잡히지 않아야 한다 (outcome 확정 전 라벨 결합·정답지가 없으므로
+    ANSWER_KEY_MARKERS 어휘는 봉인 자유 서술에 적법 — 마커 스캔 부적합)."""
+    registry = vb.load_registry(vb.REPO)
+    for ext in ("json", "jsonl", "md", "txt"):
+        p = tmp_path / f"runs/forward/cycle_001/fw001-r99.{ext}"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text("{}", encoding="utf-8")
+        assert p in vb._discovered_paths(tmp_path), ext
+        registered = vb._registered_paths(tmp_path, registry)
+        assert p in registered["aux"], ext
+        assert p not in registered["output"], ext
+        assert p not in registered["perturbed"], ext
+
+
 def test_history_proof_exempt_set_is_pinned():
     """R6-1: 면제는 서명 근거가 있는 항목에만 — 집합을 실트리 테스트로 고정.
     crossmodel 첫 산출 시 CI가 붉어지면 최저마찰 green이 '면제 키 한 줄'인데,
