@@ -1689,3 +1689,60 @@
   등록 계약 준수" 주장이 wave-1에만 성립)
 - **Basis:** INV-02(스키마 준수)·INV-06 · reviews/cycle-003.md R3-11
 - **Revert:** 특성화 축소는 후속 엔트리로 사유 기록.
+
+## D-P91 — [DRAFT — 소유자 서명 대기] ERRATA 후보: 2026-07-07 동결 표제 wave-2 기록 4건의 무공개 제자리 재작성
+- **Status:** DRAFT — 세션(harness v4 cycle 004, R4-1)이 작성. 동결
+  파일·로그 전건 무접촉; 전 수치·SHA·타임스탬프는 본 세션이 git 이력에서
+  재실측 확인함 (2026-08-27).
+- **사실 (git 이력 실측):**
+  - `040f7901` (2026-07-07 20:58:47 +09, "W2 채점 원시 출력 — **I3 즉시
+    동결**")이 `runs/wave2/scores/case_40.json`(p=60/elevated) ·
+    `case_45.json`(p=35/watch) · `case_63.json`(p=22/watch)을,
+    `b9077a88` (21:04:56, "W2 교란 draw")이
+    `runs/wave2/perturbed/case_66.json`(p=58/elevated)을 커밋했다.
+  - `3223fb28` (21:41:51) · `eba481c0` (21:43:46)이 동일 경로 4건을 신규
+    모델 호출 산출로 **제자리 교체**: case_40 60/elevated→55/watch ·
+    case_45 35→28/watch · case_63 22→30/watch · perturbed case_66
+    58/elevated→42/watch. 공개 절·D-엔트리·커밋 메시지 언급 없음 —
+    두 교체 커밋의 제목은 원 커밋과 동일한 동결 표제였다.
+  - 양 draw의 호출 로그는 전건 생존: 1차 `logs/run_20260707T113920Z`
+    (original) · `logs/run_20260707T115847Z`(perturbed), 재추첨
+    `logs/run_20260707T123948Z`(case_40/45/63) ·
+    `logs/run_20260707T124151Z`(case_66).
+  - **기계적 원인 (재실측):** 1차 draw 4건 전부 `overall.top_signals`
+    6항목 — 동결 스키마 maxItems 5 위반 (교체본은 3–5항목으로 유효).
+    D82(2026-07-13)가 E2 재지출 기록에서 "top_signals 스키마 재추첨 9"로
+    같은 결함 클래스를 기록하고 `docs/HANDOFF.md:16`은 이를 "잠복 불일치
+    (재추첨 수렴, ~7% 발현)"라 썼으나 — 사실관계는 **6일 전(07-07)에
+    이미 발화해 무공개로 처리**된 상태였다.
+  - **경미 동류 사례 (포함 공개):** `runs/holdout/controls/recognition/
+    {BCO,RXO}.json` — `2e70caf`(07-09 11:25:24) 추가 후 `acd0c0ba`
+    (11:26:18)가 재호출로 교체 (session_id·cost 변경,
+    event_description "Placeholder"→"See above."). 판정 필드
+    (knows_event=false·confidence) 무변경 — 결과 무영향.
+- **중대성 (실측):**
+  - 채점은 최종값만 소비 — wave-2 grader 로그는 재추첨 이후인
+    `run_20260707T124441Z`(12:44Z, 32건)부터 시작. wave-2 FPR 5/23은
+    현행 기록에서 재현됨.
+  - 단 **perturbed case_66(T29)의 교란 민감도 판독은 생존 draw에
+    의존**: original p=55 대비 1차 draw 58(Δ+3) vs 채택 draw 42(Δ−13).
+    방향까지 뒤집힌다 — draw 잡음 밴드(케이스당 ≈±10pp, E5 §7)의 실증
+    사례로 공개할 것.
+- **INV-03/INV-06 분석:** 스키마 위반 산출의 재추첨 자체는 기계적
+  배관(plumbing) 수리로 (a) git 이력 보존은 (우연히) 충족되나, (b)
+  공개 절을 포함한 신규 D-엔트리 요건이 결여됐고, 동결 표제로 커밋된
+  파일의 제자리 교체는 disclose-don't-revise 원칙 위반이다. 본 엔트리가
+  그 결여된 (b)를 사후 이행한다.
+- **HANDOFF.md "잠복" 문구 정정의 소재:** `docs/HANDOFF.md`는 일자 기입
+  세션 인수인계 기록(2026-07-13 갱신)으로 과거 세션 기록에 준한다 —
+  본 세션은 수정하지 않았다. 정정은 (i) 본 엔트리 서명으로 갈음하거나
+  (ii) ERRATA 등재 본문에 한 줄 포함 — 소유자 서명 시 결정.
+- **Options:** (a) ERRATA 등재 (권고 — 동결 표제 커밋의 제자리 교체는
+  게시된 "frozen-at-commit" 주장의 신뢰 문제; case_66 민감도 판독
+  의존성 공개 포함) (b) 본 엔트리 특성화 공개로 종결 (c) (a)+
+  **freeze-title single-add 게이트** 신설 — "동결" 표제 커밋이 기존
+  동결 경로를 수정하면 CI 실패 (코드는 소유자 승인 후 별도 항목;
+  본 세션은 구축하지 않았다).
+- **Basis:** INV-03/INV-06 · D82 · reviews/cycle-004.md R4-1 (전 사실
+  본 세션 git 재검증)
+- **Revert:** 해당 없음 (기록 전용 — 동결 무접촉).
