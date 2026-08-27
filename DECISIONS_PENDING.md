@@ -1620,3 +1620,34 @@
 - **Basis:** INV-03/INV-06 · METHOD.md §4 (정답지 기반 채점) ·
   reviews/cycle-002.md R2-7
 - **Revert:** fail-closed 완화는 후속 엔트리로 사유 기록.
+
+## D-P89 — [DRAFT — 소유자 서명 대기] 대조군 풀 layer-2 병행 정규화 매니페스트 게시 (disclose-don't-revise)
+- **Status:** DRAFT — 세션(harness v4 cycle 003, R3-3)이 작성.
+- **결함:** 동결 대조군 풀 매니페스트 4종(runs/rp08·wave2·rp09/
+  control_pool_raw, runs/holdout/controls/pool_raw의 MANIFEST.sha256)의
+  키가 전건 절대 경로다 — 362+301건은 stale 클론
+  `/Users/chaeryeollee/Documents/aaer-evals/...`, 4,961건은
+  `/Users/chaeryeollee/aaer-data/_rp08/...`. 현 체크아웃에서
+  `validate_control_input.layer2_hashes`는 죽어 있었고(수천 건 오탐;
+  stale 클론이 존재하는 머신에서는 조용히 *그쪽* 파일을 해시),
+  `verify_manifest.py`는 layer-2가 담당한다는 사유로 `_rp08`을 제외해
+  원시 대조군 풀 ~4,961파일에 작동하는 해시 게이트가 없었다.
+- **조치 (커밋됨):** 각 풀에 병행 `MANIFEST.relpaths.sha256` 게시 —
+  동결 원본의 **해시 열은 그대로**(재해시 아님, attestation 승계) 키 열만
+  기계 재작성(저장소 상대 / `~/aaer-data/` 정박; 파생 규칙은 파일 헤더에
+  명기). 동결 원본 무수정 (INV-06). `layer2_hashes`는 정규화 매니페스트
+  우선 + 구세대 키도 마커 재정박으로 해석(stale 클론 절대 경로 직참조
+  불가). pytest 게이트 4풀 전건 (`tools/test_control_pool_layer2.py`) —
+  in-repo 항목 상시 검증, 코퍼스 항목은 부재 시 skip. 실측: 현 체크아웃
+  + 현 코퍼스에서 4,961 코퍼스 항목 포함 전건 해시 일치.
+- **한 가지 의도적 스코프 구분 (공개):** "매니페스트 밖 원시 파일" 스윕은
+  RP-08 수집 시점 검증 경로(main)에서는 BIG_DIR 포함 그대로 유지하되,
+  이식성 풀 게이트(pytest)에서는 BIG_DIR을 제외한다 — 이 디렉토리는 이후
+  웨이브들과 공유되는 코퍼스라(현재 17,154파일 vs rp08 키 4,961) 미등재
+  파일 존재가 상시 게이트의 결함 신호가 아니다. 등재분의 존재·해시 검증은
+  두 경로 모두 전건 유지.
+- **Options:** (a) 본 엔트리로 공개 종결 (권고) (b) ERRATA 병행 등재
+  (4-layer 방어 주장을 게시 표면으로 강하게 냈다고 판단 시)
+- **Basis:** INV-06 · CONTROL_CRITERIA §6 (4층 방어) · data/README.md
+  경로 규약 · reviews/cycle-003.md R3-3
+- **Revert:** 병행 매니페스트 삭제 + 해석기 revert 시 사유 기록.

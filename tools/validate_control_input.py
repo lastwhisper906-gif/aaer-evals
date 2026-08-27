@@ -20,7 +20,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from rp08_common import (BIG_DIR, CASES, MANIFEST, N_PIT, PROVENANCE, RAW_DIR,
-                         sha256_file)
+                         REPO, sha256_file)
 
 QUARANTINE = RAW_DIR.parent / "quarantine/quarantine.json"
 
@@ -63,24 +63,69 @@ def layer1_shape(pool: dict, problems: list):
                       "eligible=False인데 fails 공백 (무침묵 탈락)")
 
 
-def layer2_hashes(problems: list) -> dict:
+def resolve_manifest_key(key: str, repo: Path | None = None) -> Path:
+    """R3-3: 매니페스트 키를 현재 체크아웃/홈 기준으로 해석한다.
+
+    정규화 세대(MANIFEST.relpaths.sha256): 저장소 상대 경로 또는 `~/…`.
+    구세대(동결 MANIFEST.sha256): 절대 경로 키 — stale 클론 절대 경로를
+    절대 직접 참조하지 않고, 마커(`/aaer-evals*/`·`/aaer-data/`) 뒤 꼬리를
+    현재 REPO/홈에 재정박해 해석한다.
+    """
+    repo = repo or REPO
+    if key.startswith("~/"):
+        return Path.home() / key[2:]
+    if not key.startswith("/"):
+        return repo / key
+    for marker in ("/aaer-evals/", "/aaer-evals-work/"):
+        if marker in key:
+            return repo / key.split(marker, 1)[1]
+    if "/aaer-data/" in key:
+        return Path.home() / ("aaer-data/" + key.split("/aaer-data/", 1)[1])
+    return Path(key)
+
+
+def _read_manifest(manifest_path: Path, repo: Path | None = None) -> dict[str, str]:
+    """{해석된 절대 경로(str): sha256} — 병행 정규화 매니페스트가 있으면 우선."""
+    normalized = manifest_path.with_name("MANIFEST.relpaths.sha256")
+    source = normalized if normalized.exists() else manifest_path
     manifest = {}
-    if not MANIFEST.exists():
-        check(problems, False, "2-hash", "MANIFEST.sha256", "부재")
-        return manifest
-    for line in MANIFEST.read_text().splitlines():
-        if not line.strip():
+    for line in source.read_text().splitlines():
+        if not line.strip() or line.startswith("#"):
             continue
-        h, path = line.split("  ", 1)
-        manifest[path] = h
+        h, key = line.split("  ", 1)
+        manifest[str(resolve_manifest_key(key, repo))] = h
+    return manifest
+
+
+_UNSET = object()
+
+
+def layer2_hashes(problems: list, manifest_path: Path | None = None,
+                  raw_dir: Path | None = None, repo: Path | None = None,
+                  big_dir=_UNSET) -> dict:
+    manifest_path = manifest_path or MANIFEST
+    raw_dir = raw_dir or RAW_DIR
+    if big_dir is _UNSET:
+        # RP-08 수집 시점 계약(main 경로): BIG_DIR 미등재 스윕 유지.
+        # 이식성 풀 게이트(test_control_pool_layer2)는 big_dir=None으로
+        # 호출한다 — BIG_DIR은 이후 웨이브들과 공유되는 코퍼스라(17k 파일
+        # vs rp08 키 4,961) 미등재 존재가 결함이 아니다; 키 등재분의
+        # 존재·해시 검증은 어느 경로에서든 전건 수행.
+        big_dir = BIG_DIR
+    if not manifest_path.exists():
+        check(problems, False, "2-hash", "MANIFEST.sha256", "부재")
+        return {}
+    manifest = _read_manifest(manifest_path, repo)
+    for path, h in manifest.items():
         p = Path(path)
         if not p.exists():
             check(problems, False, "2-hash", path, "매니페스트 항목의 파일 부재")
         elif sha256_file(p) != h:
             check(problems, False, "2-hash", path, "sha256 불일치 (변조/부패)")
-    for base in (RAW_DIR, BIG_DIR):
+    bases = [raw_dir] + ([big_dir] if big_dir else [])
+    for base in bases:
         for p in sorted(base.rglob("*")):
-            if p.is_file() and p.name != "MANIFEST.sha256":
+            if p.is_file() and p.name not in ("MANIFEST.sha256", "MANIFEST.relpaths.sha256"):
                 check(problems, str(p) in manifest, "2-hash", str(p), "매니페스트 밖 원시 파일")
     return manifest
 
@@ -101,7 +146,8 @@ def layer3_provenance(manifest: dict, problems: list) -> dict:
         if row.get("http_status") != 200:
             check(problems, False, "3-prov", row.get("path", f"line {i+1}"),
                   f"HTTP {row.get('http_status')}")
-        prov[row.get("path")] = row
+        # R3-3: provenance의 path도 매니페스트와 같은 규칙으로 해석해 조인
+        prov[str(resolve_manifest_key(str(row.get("path", ""))))] = row
     # 네트워크 산출 파일(원시 디렉토리의 .atom/.json, 추출·매니페스트 제외)은
     # 전부 provenance를 가져야 한다
     for path in manifest:
