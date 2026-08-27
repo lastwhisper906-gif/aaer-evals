@@ -11,6 +11,7 @@
 | 접두 | 의미 | 원장(사는 곳) |
 |---|---|---|
 | **D-NNN** | 결정(Decision) 원장 항목 — 모든 실행·서명·스코프 변경의 단위 기록. JSON 1줄 + 학습 노트 | `scoring/decisions_log.md` |
+| **D-PNN** | 보류 결정(Pending) 원장 항목 — 세션이 초안하고 소유자 추인을 대기/보유하는 결정 (작업 원장이며 서명은 항목 내 기재, 예: E-003 서명 D-P82) | `DECISIONS_PENDING.md` |
 | **Q-XNN** | 소유자 판단 대기열 항목 (E=실험, F=발견, M=기타, O=서명 게이트, R=검토발) — 옵션/근거/기본값 형식, 세션은 절대 self-resolve 안 함 | `docs/OWNER_QUEUE.md` |
 | **RP-NN** | 검토 패킷(Review Packet) — 비동기 소유자 검토용 완결 문서 (diff·게시 텍스트·판독 포함) | `review_packets/` (진입점 `INDEX.md`) |
 | **FREEZE_REV N** | 동결 개정 — 사전 고정된 프로토콜·핀의 명시적 개정 (개정 커밋이 재실행보다 앞서야 유효) | `docs/FREEZE_REV*.md` |

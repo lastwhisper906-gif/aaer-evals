@@ -11,6 +11,7 @@
 | Prefix | Meaning | Ledger (where it lives) |
 |---|---|---|
 | **D-NNN** | Decision ledger entry — the unit record of every execution, signature, and scope change. One JSON line + a learning note | `scoring/decisions_log.md` |
+| **D-PNN** | Pending-decision ledger entry — session-drafted decisions awaiting or carrying owner ratification (a pending/working ledger; entries are owner-signed in place, e.g. the E-003 signature D-P82) | `DECISIONS_PENDING.md` |
 | **Q-XNN** | Owner judgment queue item (E=experiment, F=finding, M=misc, O=signature gate, R=review-originated) — options/rationale/default format; sessions never self-resolve | `docs/OWNER_QUEUE.md` |
 | **RP-NN** | Review Packet — a self-contained document for asynchronous owner review (diff, publication text, and reading included) | `review_packets/` (entry point `INDEX.md`) |
 | **FREEZE_REV N** | Freeze revision — an explicit revision of a pre-frozen protocol or pin (valid only if the revision commit precedes the re-run) | `docs/FREEZE_REV*.md` |
