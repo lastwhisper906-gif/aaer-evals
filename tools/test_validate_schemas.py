@@ -103,3 +103,35 @@ def test_compensating_swap_on_invalid_cases_fails(tmp_path):
     # 스왑 특성상 집계 잠금은 정말로 침묵해야 테스트가 의미를 가진다
     assert not any("편차 총수" in f or "invalid 케이스 집합" in f
                    or "특성화 밖 신규 편차" in f for f in failures), failures
+
+
+def test_emit_characterization_output_is_pasteable(tmp_path, capsys):
+    """R5-4: 서명 정리 집행 시뮬레이션 — 도구 출력 복사만으로 상수 갱신 가능."""
+    import subprocess
+    import sys as _sys
+    base = _copied_base(tmp_path)
+    doc = json.loads((base / "candidates_holdout.json").read_text(encoding="utf-8"))
+    doc["candidates"][0]["aaer_no"] = "AAER-9999"  # 서명된 정리라고 가정
+    (base / "candidates_holdout.json").write_text(json.dumps(doc), encoding="utf-8")
+    # 갱신 경로: emit이 내놓는 해시가 곧 새 상수 — 재계산 일치 확인
+    vs.emit_characterization(CASE_INPUT, base=base)
+    out = capsys.readouterr().out
+    import re as _re
+    hashes = _re.findall(r'"characterization_sha256": "([0-9a-f]{64})",', out)
+    assert len(hashes) == len(vs.LEGACY_CANDIDATE_FILES)
+    validator = Draft7Validator(CASE_INPUT)
+    _, _, per_case, _, _ = vs.characterize_file(
+        validator, base / "candidates_holdout.json")
+    assert vs.characterization_sha256(per_case) in hashes
+
+
+def test_mismatch_error_carries_full_hash(tmp_path):
+    base = _copied_base(tmp_path)
+    doc = json.loads((base / "candidates_holdout.json").read_text(encoding="utf-8"))
+    doc["candidates"][0]["aaer_no"] = "AAER-9999"
+    (base / "candidates_holdout.json").write_text(json.dumps(doc), encoding="utf-8")
+    failures = _legacy_failures(base)
+    sha_failures = [f for f in failures if "sha256 불일치" in f]
+    assert sha_failures
+    import re as _re
+    assert _re.search(r"실측 [0-9a-f]{64} ≠ 기록 [0-9a-f]{64}", sha_failures[0])

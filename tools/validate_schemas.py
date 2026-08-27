@@ -95,25 +95,49 @@ def _deviation_signature(error) -> str:
     return f"{error.validator}:{path or '<root>'}"
 
 
+def characterize_file(validator, path: Path):
+    """(invalid_ids, per_case_map, error_count, out-of-allowlist sigs 목록)."""
+    cases = json.loads(path.read_text(encoding="utf-8"))["candidates"]
+    invalid_ids, n_err, per_case, sigs = [], 0, {}, []
+    for c in cases:
+        errors = list(validator.iter_errors(c))
+        if errors:
+            invalid_ids.append(c.get("case_id", "?"))
+            per_case[c.get("case_id", "?")] = sorted(
+                _deviation_signature(e) for e in errors)
+        for e in errors:
+            n_err += 1
+            sigs.append((c.get("case_id", "?"), _deviation_signature(e)))
+    return cases, invalid_ids, per_case, n_err, sigs
+
+
+def characterization_sha256(per_case: dict) -> str:
+    canonical = json.dumps(per_case, sort_keys=True, ensure_ascii=False)
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def emit_characterization(case_input_schema, base: Path | None = None) -> None:
+    """R5-4: 소유자 서명 정리 집행 후의 정본 갱신 경로 — 파일별 케이스 맵과
+    잠금 해시를 그대로 출력한다 (수기 암호계산 없이 복사-갱신)."""
+    validator = Draft7Validator(case_input_schema, format_checker=FormatChecker())
+    base = base or (REPO / "data" / "candidates")
+    for name in LEGACY_CANDIDATE_FILES:
+        _, invalid_ids, per_case, n_err, _ = characterize_file(validator, base / name)
+        print(f"\n## {name} — invalid {len(invalid_ids)} · errors {n_err}")
+        print(json.dumps(per_case, sort_keys=True, ensure_ascii=False, indent=1))
+        print(f'"characterization_sha256": "{characterization_sha256(per_case)}",')
+
+
 def check_legacy_candidates(case_input_schema, failures,
                             base: Path | None = None) -> None:
     validator = Draft7Validator(case_input_schema, format_checker=FormatChecker())
     base = base or (REPO / "data" / "candidates")
     for name, expected in LEGACY_CANDIDATE_FILES.items():
-        cases = json.loads((base / name).read_text(encoding="utf-8"))["candidates"]
-        invalid_ids, n_err, per_case = [], 0, {}
-        for c in cases:
-            errors = list(validator.iter_errors(c))
-            if errors:
-                invalid_ids.append(c.get("case_id", "?"))
-                per_case[c.get("case_id", "?")] = sorted(
-                    _deviation_signature(e) for e in errors)
-            for e in errors:
-                n_err += 1
-                sig = _deviation_signature(e)
-                if sig not in expected["allowed_signatures"]:
-                    failures.append(f"[{name}] {c.get('case_id', '?')}: "
-                                    f"특성화 밖 신규 편차 {sig}")
+        cases, invalid_ids, per_case, n_err, sigs = characterize_file(
+            validator, base / name)
+        for cid, sig in sigs:
+            if sig not in expected["allowed_signatures"]:
+                failures.append(f"[{name}] {cid}: 특성화 밖 신규 편차 {sig}")
         if sorted(invalid_ids) != expected["invalid_ids"]:
             failures.append(f"[{name}] invalid 케이스 집합 변화: "
                             f"{sorted(invalid_ids)} ≠ 기록 {expected['invalid_ids']}")
@@ -123,13 +147,13 @@ def check_legacy_candidates(case_input_schema, failures,
                             "(개선이어도 특성화를 갱신·서명하라)")
         # R4-8: 케이스별 시그니처 목록 정본 잠금 — 집계(집합·총수) 불변인
         # 보상 스왑(같은 케이스에서 한 편차 해소 + 다른 허용 편차 추가)도 잡는다
-        canonical = json.dumps(per_case, sort_keys=True, ensure_ascii=False)
-        actual_sha = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+        actual_sha = characterization_sha256(per_case)
         if actual_sha != expected["characterization_sha256"]:
-            failures.append(f"[{name}] 케이스별 편차 특성화 sha256 불일치 "
-                            f"({actual_sha[:12]}… ≠ 기록 "
-                            f"{expected['characterization_sha256'][:12]}…) — "
-                            "케이스 내 편차 구성이 변했다 (스왑 포함)")
+            failures.append(f"[{name}] 케이스별 편차 특성화 sha256 불일치 — "
+                            f"실측 {actual_sha} ≠ 기록 "
+                            f"{expected['characterization_sha256']}. 서명된 정리 "
+                            "집행 후라면 `--emit-characterization` 출력으로 "
+                            "상수를 갱신하라 (R5-4)")
         print(f"{name}: {len(cases)}건 — 기존 편차 {n_err}건 열거 대조")
 
 
@@ -160,6 +184,11 @@ def check_scheme_type_by_group(cases, failures) -> None:
 
 def main() -> int:
     failures = []
+
+    if "--emit-characterization" in sys.argv:
+        schema = json.loads((SCHEMA_DIR / "case_input.json").read_text(encoding="utf-8"))
+        emit_characterization(schema)
+        return 0
 
     schemas = {}
     for path in sorted(SCHEMA_DIR.glob("*.json")):
