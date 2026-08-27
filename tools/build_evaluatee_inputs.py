@@ -19,6 +19,7 @@ data/evaluatee/cases.json을 생성한다. 물리적 분리가 방어의 핵심:
 출력은 결정론적(고정 시드, 타임스탬프 없음) — 커밋본과 재생성본의
 바이트 대조가 CI에서 가능하다.
 """
+import argparse
 import json
 import random
 import re
@@ -104,7 +105,57 @@ def build() -> tuple[dict, dict]:
     return payload, mapping_payload
 
 
+def build_forward(universe_path: Path, cutoff: str) -> dict:
+    """R3-4 (게이트 §4 (3)): universe.selected → 피평가자 케이스 파일.
+
+    forward에는 숨길 정답이 없으므로 중립 ID 셔플·매핑 없음 — case_id는
+    record_id(fw001-rNN) 그대로. 필드는 회고와 동일한 화이트리스트 5종
+    (schemas/evaluatee_input.json 계약과 동일 모양) + 결정론(타임스탬프 0).
+    """
+    universe = json.loads(universe_path.read_text(encoding="utf-8"))
+    cases = [{
+        "case_id": r["record_id"],
+        "ticker": primary_ticker(str(r["ticker"])),
+        "cik": str(r["cik"]),
+        "company_name": name_as_of_cutoff(str(r["name"])),
+        "cutoff_date": cutoff,
+    } for r in universe["selected"]]
+    return {
+        "_meta": {
+            "contract": "schemas/evaluatee_input.json",
+            "warning": "피평가자에게는 이 파일 외의 케이스 메타데이터를 제공하지 않는다",
+            "generated_by": "tools/build_evaluatee_inputs.py --universe (결정론)",
+            "id_convention": "forward record_id 그대로 (정답 부재 — 중립화 불필요)",
+            "cutoff_convention": f"전건 동일 스크리닝 컷오프 {cutoff} "
+                                 "(forward/cycle PROTOCOL.md와 일치 의무)",
+        },
+        "cases": cases,
+    }
+
+
 def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--universe", help="forward 모드: universe.json 경로")
+    ap.add_argument("--cutoff", help="forward 모드: 스크리닝 컷오프 (기본: "
+                                     "forward_common.SCREENING_CUTOFF)")
+    ap.add_argument("--out", help="forward 모드: 출력 경로 "
+                                  "(예: data/evaluatee/cases_forward_001.json)")
+    args = ap.parse_args()
+    if args.universe:
+        if not args.out:
+            ap.error("--universe에는 --out이 필요하다")
+        if args.cutoff is None:
+            sys.path.insert(0, str(Path(__file__).resolve().parent))
+            from forward_common import SCREENING_CUTOFF
+            args.cutoff = SCREENING_CUTOFF
+        payload = build_forward(Path(args.universe), args.cutoff)
+        out = Path(args.out)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
+                       encoding="utf-8")
+        print(f"wrote {out} ({len(payload['cases'])} forward cases)")
+        return 0
+
     payload, mapping_payload = build()
     DEST.parent.mkdir(parents=True, exist_ok=True)
     DEST.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
