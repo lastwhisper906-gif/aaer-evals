@@ -44,11 +44,32 @@ def candidate(case_id: str, attempt: int) -> tuple[str, str, str]:
     return core, name, ticker
 
 
+def load_ticker_screen(ref: Path = REF) -> set[str]:
+    """R9-3: 현재 상장 티커 + 선언된 역사적 티커 참조의 합집합 — 둘 다 필수.
+
+    CALA 선례(L-10): company_tickers.json은 현재 스냅샷만이라 2023년 상폐된
+    Calithera Biosciences의 CALA가 스크린을 통과, frozen arm-b(case_52)에
+    채택됐다 — 학습 창 안의 강한 실존 지시체. 미래 추첨은 역사적 상장
+    티커도 거부한다. historical_tickers.txt(행당 1 티커)는 소유자 입회
+    세션에서 EDGAR submissions former-names/tickers 하베스트로 생성한다
+    (INV-23 — 무인 fetch 금지); 부재 시 fail-closed (불완전 스크린으로
+    추첨 금지)."""
+    tickers = {v["ticker"].upper() for v in
+               json.loads((ref / "company_tickers.json").read_text()).values()}
+    hist = ref / "historical_tickers.txt"
+    if not hist.exists():
+        raise SystemExit(
+            f"FAIL — 역사적 티커 참조 부재: {hist} — 현재-스냅샷 단독 스크린은 "
+            "상폐 티커(CALA 선례, L-10)를 통과시킨다. 소유자 감독 하베스트 후 재실행.")
+    tickers |= {line.strip().upper() for line in
+                hist.read_text(encoding="utf-8").splitlines() if line.strip()}
+    return tickers
+
+
 def main() -> int:
     print("loading EDGAR reference lists...", flush=True)
     edgar_names = norm((REF / "cik-lookup-data.txt").read_text(encoding="latin-1"))
-    tickers = {v["ticker"].upper() for v in
-               json.loads((REF / "company_tickers.json").read_text()).values()}
+    tickers = load_ticker_screen()
     result = {"_meta": {
         "rule": "sha256(case_id+'fictname-v1'+attempt) 결정론; core가 EDGAR 전 filer명"
                 " 부분문자열 불일치 AND 티커 실존 불일치일 때 채택 (D36)",

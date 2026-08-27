@@ -282,3 +282,27 @@ retroactive recomputation or reclassification under the v3 criteria is done
 - **Invariant boundary**: published-number edits 0; frozen `runs/`
   contacts 0; the deliverables are the code path, the test, this
   disclosure, and D-P35.
+
+## L-10. Arm-b fictitious ticker "CALA" was a real, in-training-window Nasdaq ticker — recorded 2026-08-28 (harness cycle 009 R9-3)
+
+- **What**: the identity 3-arm masking experiment's fictitious identity for
+  case_52 (arm b, `data/evaluatee/fict_names_wave2.json`) is "Calawick
+  Logistics" with ticker **CALA** — Calithera Biosciences' actual Nasdaq
+  ticker from 2014 to its 2023 delisting (CIK 1496671), squarely inside the
+  evaluatee model's training window. The collision screen checked the
+  *current* `company_tickers.json` snapshot only, so the row records
+  `ticker_collision: false`, and the file's `_meta.warning` (that the
+  fictitious names bear no relation to any real company, spec §6) is false
+  for this row.
+- **Effect on the claim**: arm b was designed to remove real-company
+  identity; for case_52 it handed the model a ticker with a strong real
+  referent — an unscreened priming channel. The published a≈b≈c result
+  stands as measured but is qualified by this note: for one of the arm-b
+  rows the "no real referent" premise did not hold. Direction of any bias
+  unknown (the real referent is an unrelated biotech; the case is not).
+- **Repair (future draws)**: `tools/gen_fict_names.py` now unions the
+  current-listing screen with a declared historical-ticker reference
+  (`~/aaer-data/reference/historical_tickers.txt`, owner-supervised EDGAR
+  harvest per INV-23) and fails closed when the reference is absent.
+  Frozen `fict_names_wave2.json` and all frozen arm outputs are untouched
+  (INV-03/INV-06 disclose-don't-revise).
