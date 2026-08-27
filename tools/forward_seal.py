@@ -22,6 +22,9 @@ from forward_common import (REPO, EXECUTION_WINDOW_END, assert_subscription_only
                             manifest_text, parse_date, sha256_text, fail)
 from forward_validate import validate
 
+# R10-6: ots 달력 서버 불통 시 무한 대기 금지 — 한도 초과면 pending 기록
+OTS_TIMEOUT_S = 120
+
 
 def main():
     ap = argparse.ArgumentParser()
@@ -58,9 +61,19 @@ def main():
     runs_display = _display(args.runs, runs_dir, f"runs/forward/{cycle.name}")
 
     manifest = cycle / "MANIFEST.sha256"
+    record = cycle / "SEAL_RECORD.md"
     if manifest.exists():
-        fail(f"{manifest} 이미 존재 — 재봉인 금지 (spec §3-5: "
-             "교정은 새 사이클에서. aborted 처리는 SEAL_RECORD.md에 일자 기입)")
+        if record.exists():
+            fail(f"{manifest} 이미 존재 — 재봉인 금지 (spec §3-5: "
+                 "교정은 새 사이클에서. aborted 처리는 SEAL_RECORD.md에 일자 기입)")
+        # R10-6: MANIFEST만 있고 SEAL_RECORD가 없는 상태는 완결 봉인이 아니라
+        # 중단 잔여물(ots 지연·Ctrl-C)이다 — 내용이 현재 트리와 일치할 때만
+        # 이어서 SEAL_RECORD를 완성한다. 불일치는 재개가 아니라 소유자 판정.
+        if manifest.read_text(encoding="utf-8") != manifest_text(cycle):
+            fail("MANIFEST.sha256 존재(SEAL_RECORD 부재)하나 내용이 현재 트리와 "
+                 "불일치 — 중단 재개 불가: 수동 삭제 대신 소유자가 판정하라 (R10-6)")
+        print("NOTE — 중단된 봉인 재개 (R10-6): MANIFEST 트리 일치 확인, "
+              "SEAL_RECORD 완성을 진행한다")
     if args.abort:
         if not args.reason:
             ap.error("--abort에는 --reason이 필요하다 (중단 사유 기록 의무)")
@@ -89,9 +102,17 @@ def main():
     ots_bin = shutil.which("ots")
     ots_status = "pending — ots 클라이언트 부재"
     if ots_bin:
-        r = subprocess.run([ots_bin, "stamp", str(manifest)], capture_output=True, text=True)
-        ots_status = ("stamped — MANIFEST.sha256.ots 생성" if r.returncode == 0
-                      else f"실패({r.returncode}): {r.stderr.strip()[:120]}")
+        # R10-6: stamp 미완이 봉인 자체를 wedging하지 않는다 — pending으로
+        # 기록하고 완결한다 (.ots는 사후 stamp 가능, 형식은 pending 지원).
+        try:
+            r = subprocess.run([ots_bin, "stamp", str(manifest)],
+                               capture_output=True, text=True,
+                               timeout=OTS_TIMEOUT_S)
+            ots_status = ("stamped — MANIFEST.sha256.ots 생성" if r.returncode == 0
+                          else f"실패({r.returncode}): {r.stderr.strip()[:120]}")
+        except (subprocess.TimeoutExpired, KeyboardInterrupt):
+            ots_status = (f"pending — stamp 미완 (시간초과/중단, {OTS_TIMEOUT_S}s "
+                          "한도); 사후 실행: `ots stamp MANIFEST.sha256` 후 .ots 커밋")
 
     seal_kind = "ABORTED" if args.abort else "sealed"
     # R5-1: 재해시 leg의 실행 여부를 SEAL_RECORD에 명시 (abort는 부분 상태
@@ -122,7 +143,6 @@ def main():
         f"git commit -m 'SEAL{'(ABORT)' if args.abort else ''}: {cycle.name} forward watchlist'\n"
         f"git tag -a {tag} -m 'forward {seal_kind} {now} manifest sha256 {mhash}'\n"
         f"git push origin main --tags")
-    record = cycle / "SEAL_RECORD.md"
     record.write_text(f"""# SEAL_RECORD.md — {cycle.name}
 
 {status_lines}- sealed_at (UTC): {now}

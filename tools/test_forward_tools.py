@@ -398,7 +398,50 @@ def test_reseal_refused(cycle, monkeypatch):
     monkeypatch.setattr(sys, "argv", seal_argv(cycle))
     assert forward_seal.main() == 0
     with pytest.raises(SystemExit):
-        forward_seal.main()  # MANIFEST 존재 → 거부 (spec §3-5)
+        forward_seal.main()  # MANIFEST+SEAL_RECORD 존재 → 거부 (spec §3-5)
+
+
+def test_interrupted_seal_resumes_instead_of_wedging(cycle, monkeypatch):
+    """R10-6: ots 단계 중단이 MANIFEST만 남긴 상태 — 재실행이 '재봉인 금지'로
+    wedging되지 않고 SEAL_RECORD를 완성한다 (수동 삭제 불요)."""
+    argv = seal_argv(cycle)
+    (cycle / "MANIFEST.sha256").write_text(fc.manifest_text(cycle),
+                                           encoding="utf-8")
+    monkeypatch.setattr(sys, "argv", argv)
+    assert forward_seal.main() == 0
+    assert (cycle / "MANIFEST.sha256").exists()
+    assert (cycle / "SEAL_RECORD.md").exists()
+
+
+def test_interrupted_seal_resume_refused_on_tree_mismatch(cycle, monkeypatch):
+    """R10-6 반대면: 잔여 MANIFEST가 현재 트리와 불일치하면 재개 불가 —
+    소유자 판정으로 fail-closed."""
+    monkeypatch.setattr(sys, "argv", seal_argv(cycle))
+    (cycle / "MANIFEST.sha256").write_text("0" * 64 + "  scores.json\n",
+                                           encoding="utf-8")
+    with pytest.raises(SystemExit):
+        forward_seal.main()
+    assert not (cycle / "SEAL_RECORD.md").exists()
+
+
+def test_ots_stall_records_pending_and_completes_seal(cycle, monkeypatch):
+    """R10-6: ots stamp 시간초과/중단이 봉인을 중단시키지 않는다 — pending
+    기록 후 SEAL_RECORD까지 완결 (timeout= 없던 종전엔 무한 대기)."""
+    import subprocess as sp
+    monkeypatch.setattr(forward_seal.shutil, "which", lambda name: "/fake/ots")
+    real_run = sp.run
+
+    def fake_run(cmd, *a, **kw):
+        if cmd and cmd[0] == "/fake/ots":
+            assert kw.get("timeout"), "ots 호출에 timeout= 부재 (R10-6)"
+            raise sp.TimeoutExpired(cmd, kw["timeout"])
+        return real_run(cmd, *a, **kw)
+
+    monkeypatch.setattr(forward_seal.subprocess, "run", fake_run)
+    monkeypatch.setattr(sys, "argv", seal_argv(cycle))
+    assert forward_seal.main() == 0
+    record = (cycle / "SEAL_RECORD.md").read_text(encoding="utf-8")
+    assert "pending — stamp 미완" in record
 
 
 def test_seal_refused_on_invalid_cycle(cycle, monkeypatch):
