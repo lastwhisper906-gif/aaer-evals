@@ -46,6 +46,19 @@ def test_trajectory_b3_gate_conjunction_same_snapshot():
     assert cell["false_positives"] == 1  # c1은 동일 스냅샷에서 양쪽 충족
 
 
+def test_trajectory_b3_gate_none_b3_excluded_not_typeerror():
+    """R2-20: 게이트 분기에서 b3_score None — TypeError 없이 fail-closed 제외
+    (buyer_metrics_build와 동일 규약), null 제외 수에 집계."""
+    cases = [_traj_case("t1", "treatment", [(60, None), (55, 2)]),
+             _traj_case("t2", "treatment", [(60, None)])]
+    flagged, nulls = dt.trajectory_flags(cases, 50, require_b3_gate=True)
+    assert flagged == ["t1"]      # t1은 (55, 2) 스냅샷으로만 통과
+    assert nulls == 2             # b3 None 스냅샷 2건 제외 집계
+    # 게이트 비활성 시 b3 None은 여전히 무관 (llm_p만 판정)
+    flagged, nulls = dt.trajectory_flags(cases, 50)
+    assert flagged == ["t1", "t2"] and nulls == 0
+
+
 def test_count_scored_snapshots():
     cases = [_traj_case("t1", "treatment", [(None, 2), (60, 0)]),
              _traj_case("c1", "control", [(55, 0)])]

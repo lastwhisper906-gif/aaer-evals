@@ -65,6 +65,11 @@ def trajectory_flags(cases: list[dict], threshold: int,
             if s["llm_p"] is None:
                 nulls += 1
                 continue
+            # R2-20: 게이트 분기에서 b3_score None은 buyer_metrics_build와 동일
+            # 규약으로 fail-closed 제외 (None >= 2 TypeError 잠복 제거)
+            if require_b3_gate and s["b3_score"] is None:
+                nulls += 1
+                continue
             if s["llm_p"] >= threshold and (not require_b3_gate or s["b3_score"] >= 2):
                 hit = True
         if hit:
