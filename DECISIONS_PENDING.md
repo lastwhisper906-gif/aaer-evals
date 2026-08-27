@@ -1842,3 +1842,89 @@
 - **Basis:** docs/UNIVERSE_SELECTION.md §2-2·§3 · INV-18 · INV-06 · INV-22 ·
   reviews/cycle-010.md R10-1 · runs/rp09/scores/case_36.json (실재 확인).
 - **Revert:** 해당 없음 (기록 전용).
+
+## D-P95 — [DRAFT — 소유자 서명 대기] OWNER_LAUNCH_GATE §4 실행 절차 개정 통합 패킷: 현행 문면대로는 step (4)에서 결정론적으로 기동 거부된다 (R3-14/Q-O11 연동)
+
+- **Status:** DRAFT — 세션(harness v4 cycle 010, R10-4)이 작성.
+  `forward/cycle_001/OWNER_LAUNCH_GATE.md`는 소유자 서명 문서 — 세션
+  무접촉(INV-18). 기존 DEFERRED R3-14(§4 runbook에 Q-O11 in-window 재핀
+  단계 부재)를 확장·통합한다.
+- **결함 목록 (문면 그대로 실행 시):**
+  (i) step (2)-(3)이 생성하는 `forward/cycle_001/source_manifest.json`·
+      `data/evaluatee/cases_forward_001.json`은
+      `pipeline/cli_client.py UNTRACKED_OUTPUT_PREFIXES`의 예외 접두
+      (runs/·logs/·pilot/·scoring/grades·probe_results)에 없다 — §4에 커밋
+      단계가 없으므로 step (4) 러너가 "freeze-commit-then-run 위반"으로
+      기동 거부 (결정론적 발사 실패).
+  (ii) fetch 후 `verify_manifest.py --write` + 커밋 단계 부재 —
+      R10-2 가드·fetch_log 귀속과 짝을 이루는 corpus 매니페스트 갱신이
+      절차에 없어 fetch 직후부터 full verify가 적색.
+  (iii) §4(6) `git add forward/cycle_001`은 SEAL_RECORD가 방출하는 정본
+      stage 목록(runs/forward/<cycle> + logs/run_* + runs/MANIFEST.sha256,
+      R7-16/R10-3)과 어긋난다 — 문면대로면 클론 검증자의 run-output
+      re-hash leg가 침묵 격하.
+  (iv) §4(1)이 쓰기 모드 `--offline`을 호출 — 검증 전용으로 만든
+      읽기 전용 `--check` 형(R3-1)이 정위치 (동결본 mtime/클로버 무위험).
+  (v) §4(2)가 요구 산출물(source_manifest.json)을 만들 도구
+      `tools/forward_source_manifest.py`를 이름으로 지시하지 않는다.
+  (vi) 창 내 supersession 열거 대상이 3/7에서 **4/7**로 늘었다 — 실측
+      (2026-08-28): `pipeline/build_payload.py`·`pipeline/cli_client.py`·
+      `pipeline/runner.py`·`specs/FORWARD_WATCHLIST_V1.md` 드리프트,
+      `docs/UNIVERSE_SELECTION.md`·`schemas/llm_output.json`·
+      `specs/RISK_SCORE_SEMANTICS.md` 일치. Q-O11 서명된 in-window 재핀
+      단계는 이 4종 전부를 열거해야 한다 (R1-40 관측의 현재값).
+- **결정 요청:** 아래 §4 교체문 승인 (게이트 문서 개정은 소유자 직접 편집).
+- **집행 조건:** 서명 = 소유자가 아래 펜스 블록으로
+  `forward/cycle_001/OWNER_LAUNCH_GATE.md` §4를 직접 교체 + (vi)의 4종
+  재핀을 Q-O11 절차(FREEZE_REV/supersession 문서)에 등재. 세션은 게이트
+  파일을 편집하지 않는다.
+- **§4 교체문 (ready-to-apply):**
+
+```bash
+# (0) 사전: 병행 작성자 검사 + 5게이트 green + Q-O08 확인 + Q-O11 재핀
+#     (supersession 문서 — 드리프트 4종: build_payload.py·cli_client.py·
+#      runner.py·FORWARD_WATCHLIST_V1.md, 2026-08-28 실측; 실행 직전 재실측)
+# (1) 유니버스 신선도 재확인 — 읽기 전용 --check 형 (R3-1; 쓰기 모드 금지)
+#     신규 4.02 오염 시 §2 규칙 인용 + alternates 승격 (Q-F21/D-P94 참조)
+python tools/forward_enumerate.py --offline --check
+# (2) 입력 수집 (컷오프 가드 경유; retrieval/filing 분리 기록;
+#     매니페스트 핀 충돌 시 fetch가 파일 0개 쓴 채 거부 — R10-2)
+python tools/fetch_xbrl_facts.py --universe forward/cycle_001/universe.json --dest ~/aaer-data
+python tools/forward_source_manifest.py --fetch-dir ~/aaer-data --cycle forward/cycle_001
+# (2b) corpus 매니페스트 재생성 + 커밋 (R10-2 짝)
+python tools/verify_manifest.py --write
+git add data/manifests/aaer_data_manifest.json && git commit -m "cycle_001: corpus manifest post-fetch"
+# (3) 케이스 빌드 (R3-4 파라미터화 경로)
+python tools/build_evaluatee_inputs.py --universe forward/cycle_001/universe.json \
+    --out data/evaluatee/cases_forward_001.json
+# (3b) 생성 입력 2종 커밋 — cli_client freeze-commit-then-run 게이트:
+#     forward/·data/evaluatee/는 미추적 예외 접두가 아니므로 미커밋 시
+#     step (4)가 기동 거부한다
+git add forward/cycle_001/source_manifest.json data/evaluatee/cases_forward_001.json && \
+  git commit -m "cycle_001: frozen inputs (source_manifest + cases_forward_001)"
+# (4) 발사 (소유자 승인 후):
+python pipeline/runner.py --cases data/evaluatee/cases_forward_001.json \
+    --out runs/forward/cycle_001
+# (5) 조립·검증·봉인 (validate는 R5-1 --runs leg 포함형):
+python tools/forward_assemble.py --cycle forward/cycle_001 --runs runs/forward/cycle_001
+python tools/forward_validate.py --cycle forward/cycle_001 --runs runs/forward/cycle_001
+python tools/forward_seal.py --cycle forward/cycle_001
+# (6) 봉인 직후 (외부 타임스탬프 — 즉시): 정본은 forward_seal이 방출한
+#     소유자 명령 블록(SEAL_RECORD.md §소유자 봉인 명령) — 그대로 실행.
+#     현재 형태 사본 (R7-16/R10-3 stage 목록):
+python tools/verify_blindness.py --write-manifest
+git add runs/MANIFEST.sha256 forward/cycle_001 runs/forward/cycle_001 logs/run_* && \
+  git commit -m "SEAL: cycle_001 forward watchlist"
+git tag -a forward-cycle-001-seal -m "forward seal"
+git push origin main --tags
+pip install opentimestamps-client   # (ots 부재 시 1회, 무료)
+ots stamp forward/cycle_001/MANIFEST.sha256
+git add forward/cycle_001/MANIFEST.sha256.ots && git commit -m "SEAL: OTS anchor" && git push
+# (7) 사후 검증:
+python tools/forward_verify_seal.py --cycle forward/cycle_001
+```
+
+- **Basis:** reviews/cycle-010.md R10-4 · R3-14 (DEFERRED, Q-O11 연동) ·
+  pipeline/cli_client.py UNTRACKED_OUTPUT_PREFIXES ·
+  forward/cycle_001/PROTOCOL.md 핀 실측 (2026-08-28) · INV-18 · INV-22.
+- **Revert:** 해당 없음 (기록 전용 — 게이트 파일 무변경).
