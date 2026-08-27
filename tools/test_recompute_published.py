@@ -398,3 +398,25 @@ def test_wave1_headline_stats_recompute_equals_committed_artifact():
     assert want["seed"] == SEED
     assert primary == want["primary"]
     assert secondary == want["secondary"]
+
+
+def test_v2ds_rev2_artifact_recompute_equals_committed():
+    """(h) R8-5 — D-P92가 미래 인용처로 지정한 rev2 병행 산출물의 게이트 결속.
+
+    동결 원본은 (f)가 커버하나 rev2는 어떤 게이트도 재계산하지 않았다 —
+    수기 편집이 전 게이트를 통과한다. 헤더 필드(n·recognized·rate·delta)를
+    행 기록에서, cp95_pct를 정확 Clopper-Pearson 재계산으로 대조한다."""
+    rev2 = _load_json("analysis/name_probe_results_v2ds_rev2.json")
+    frozen = _load_json("analysis/name_probe_results_v2ds.json")
+    for tier, n_exp in (("wave1", 30), ("wave2", 32)):
+        f = rev2[tier]
+        assert len(f["rows"]) == f["n"] == n_exp, tier
+        assert sum(r["recognized"] for r in f["rows"]) == f["recognized"], tier
+        assert f["rate_pct"] == round(100 * f["recognized"] / f["n"], 1), tier
+        assert f["delta_vs_v1_pp"] == round(
+            f["rate_pct"] - f["v1_frozen"]["rate_pct"], 1), tier
+        lo, hi = clopper_pearson(f["recognized"], f["n"])
+        assert f["cp95_pct"] == [round(100 * lo, 1), round(100 * hi, 1)], tier
+        # rev2는 라벨 교정만 — 행 기록·판정은 동결 원본과 동일해야 한다
+        assert f["rows"] == frozen[tier]["rows"], tier
+        assert f["v1_frozen"] == frozen[tier]["v1_frozen"], tier
