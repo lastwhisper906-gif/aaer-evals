@@ -163,7 +163,11 @@ def enforce_harness_pin() -> str:
         except (OSError, subprocess.SubprocessError) as exc:
             raise RuntimeError(
                 f"하네스 버전 확인 실패 — fail-closed (핀 {HARNESS_PIN}): {exc}") from exc
-        if HARNESS_PIN not in actual:
+        # R10-9 (INV-21): 부분 문자열 포함이 아니라 버전 토큰 동등 비교 —
+        # 핀을 접두로 포함하는 상위 버전 문자열(예: 2.1.2013)이 통과하면
+        # "fail-closed 핀" 주장은 장식이다 (_pin_matches·codex 대조와 정합).
+        token = re.search(r"\d+\.\d+\.\d+", actual)
+        if token is None or token.group(0) != HARNESS_PIN:
             raise RuntimeError(
                 f"하네스 핀 불일치 — 핀 {HARNESS_PIN}, 실측 {actual.strip()!r}. "
                 "핀 개정은 freeze 개정 전용.")

@@ -349,6 +349,17 @@ def test_harness_pin_mismatch_raises_before_any_call(stub, tmp_path, monkeypatch
     assert stub.calls() == [], "핀 불일치인데 모델 호출이 발생"
 
 
+def test_harness_pin_superstring_version_rejected(stub, tmp_path, monkeypatch):
+    """R10-9 (INV-21): 핀을 접두로 포함하는 상위 버전(자동 업데이트 형,
+    예: 2.1.201 → 2.1.2013)이 부분 문자열 검사를 통과하면 핀은 장식이다 —
+    버전 토큰 동등 비교로 fail-closed."""
+    monkeypatch.setenv("STUB_VERSION", f"{cli_client.HARNESS_PIN}3 (Claude Code)")
+    stub.set_responses(good_response({"answer": "x"}))
+    with pytest.raises(RuntimeError, match="하네스 핀 불일치"):
+        _call(tmp_path / "logs")
+    assert stub.calls() == [], "상위 버전 문자열인데 모델 호출이 발생"
+
+
 def test_harness_version_command_error_fails_closed(stub, tmp_path, monkeypatch):
     monkeypatch.setenv("STUB_VERSION_FAIL", "1")
     stub.set_responses(good_response({"answer": "x"}))
