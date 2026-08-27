@@ -1651,3 +1651,31 @@
 - **Basis:** INV-06 · CONTROL_CRITERIA §6 (4층 방어) · data/README.md
   경로 규약 · reviews/cycle-003.md R3-3
 - **Revert:** 병행 매니페스트 삭제 + 해석기 revert 시 사유 기록.
+
+## D-P90 — [DRAFT — 소유자 서명 대기] 후보 파일 4종의 case_input 스키마 편차 66건 — 정리 방안 결정 요청
+- **Status:** DRAFT — 세션(harness v4 cycle 003, R3-11)이 작성. 데이터
+  파일·스키마 파일 무접촉 (둘 다 동결 — 소유자만 정리 가능).
+- **실측 census (2026-08-27, 게이트 코드에 열거 잠금):**
+  `schemas/case_input.json`은 `data/candidates/candidates.json`(38/38 유효)
+  만을 상정한다. 나머지 4파일 66/66 레코드 무효 — 편차 클래스:
+  - AAER 필수 필드 부재 (aaer_no·aaer_date·aaer_url·first_revelation_date·
+    revelation_source): wave2 32 · holdout 3 · holdout_controls 9 ·
+    v2_controls 22 — 대조군/G2 잠정 케이스에는 정의상 없는 필드가 필수로
+    걸림.
+  - id 패턴 밖: W08/V07/case_71/VIASP 형 (스키마는 T/C-접두만 허용).
+  - scheme_type: null(스키마는 배열/부재만) · scheme_summary 문자열-vs-배열
+    드리프트 · matched_treatment ↔ matched_case_id 개명 (not:<root> 23+9+22).
+- **조치 (코드만, 커밋됨):** `tools/validate_schemas.py`가 5파일 전부를
+  스윕 — 기존 66건은 파일별 {invalid id 집합, 허용 시그니처 집합, 편차
+  총수}로 열거 특성화(blanket 면제 아님): 신규 편차 클래스·신규 무효
+  케이스·총수 변화(개선 포함) 어느 것도 침묵 통과 불가
+  (`tools/test_validate_schemas.py` 4종). CI는 기존 validate_schemas 단계
+  그대로 커버.
+- **Options (소유자 결정):** (a) case_input 스키마 개정 서명 — 그룹/티어
+  조건부 required (treatment-AAER 필수, control/G2 면제) + id 패턴 확장
+  (b) 웨이브별 스키마(case_input_wave2 등) 신설 후 파일별 바인딩
+  (c) case_input_v2 신설, v1은 wave-1 전용으로 스코프 명시
+  (d) 현상 유지 — 본 특성화 게이트를 영구 계약으로 (권고하지 않음: "사전
+  등록 계약 준수" 주장이 wave-1에만 성립)
+- **Basis:** INV-02(스키마 준수)·INV-06 · reviews/cycle-003.md R3-11
+- **Revert:** 특성화 축소는 후속 엔트리로 사유 기록.
