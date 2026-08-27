@@ -160,6 +160,22 @@ def test_validate_universe_score_bijection(cycle):
 
 # ── §6 전 필드 계약 + 교차 대조 (fail-closed 전환, TASK_FWD 1) ────────────
 
+def test_scored_at_iso_and_window_enforced(cycle):
+    """R7-17: 비ISO·창 밖 scored_at은 레코드 오류 — 창 내 정상값은 무오류."""
+    for bad, frag in (("not-a-date", "ISO datetime 아님"),
+                      ("2026-11-30T00:00:00+00:00", "실행 창 밖"),
+                      ("2026-11-01", "실행 창 밖")):
+        sc = fc.read_json(cycle / "scores.json")
+        sc["records"][0]["scored_at"] = bad
+        fc.write_json(cycle / "scores.json", sc)
+        errs = forward_validate.validate(cycle)
+        assert any("scored_at" in e and frag in e for e in errs), (bad, errs[:5])
+    sc = fc.read_json(cycle / "scores.json")
+    sc["records"][0]["scored_at"] = "2026-11-16T09:00:00+00:00"
+    fc.write_json(cycle / "scores.json", sc)
+    assert not any("scored_at" in e for e in forward_validate.validate(cycle))
+
+
 def test_validate_full_record_contract_fields(cycle):
     for field in ("schema_sha256", "scored_at"):
         sc = fc.read_json(cycle / "scores.json")

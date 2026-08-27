@@ -15,7 +15,10 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from forward_common import (REPO, SCREENING_CUTOFF, MIN_SCORED, UNIVERSE_SIZE,
+import datetime
+
+from forward_common import (REPO, SCREENING_CUTOFF, EXECUTION_WINDOW_END,
+                            MIN_SCORED, UNIVERSE_SIZE,
                             assert_subscription_only, fp_siblings, read_json,
                             parse_date, sha256_file)
 from forward_prepare import check_universe
@@ -147,6 +150,21 @@ def validate(cycle: Path, runs_dir: Path | None = None) -> list[str]:
                           "prompt_sha256", "schema_sha256", "scored_at"):
                 if not r.get(field):
                     errs.append(f"{rid}: {field} 결측")
+            # R7-17: scored_at은 ISO datetime + 실행 창 내 — 비어있지 않다는
+            # 것만으로는 아무 문자열이나 봉인된다. 레코드 수준 오류
+            # (--past-window 주석 의미론과 동일 — 추가 봉인 차단 없음).
+            sa = r.get("scored_at")
+            if sa:
+                try:
+                    sa_date = datetime.datetime.fromisoformat(str(sa)).date()
+                except ValueError:
+                    errs.append(f"{rid}: scored_at {sa!r} ISO datetime 아님")
+                else:
+                    if not (parse_date(SCREENING_CUTOFF) <= sa_date
+                            <= parse_date(EXECUTION_WINDOW_END)):
+                        errs.append(
+                            f"{rid}: scored_at {sa!r} 실행 창 밖 "
+                            f"({SCREENING_CUTOFF}..{EXECUTION_WINDOW_END})")
             # R3-7: 레코드 해시 ↔ PROTOCOL 핀, model_id ↔ 모델 핀, 그리고
             # 런타임 fingerprint(run_fingerprint) ↔ 조립 시점 해시 정합
             for field, rel in PIN_FILES.items():
