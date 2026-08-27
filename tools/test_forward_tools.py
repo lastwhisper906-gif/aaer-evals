@@ -274,13 +274,28 @@ def test_enumerate_fails_closed_on_fetch_error(tmp_path, monkeypatch, capsys):
 
 # ── 봉인·검증 왕복 ────────────────────────────────────────────────────────
 
+def seal_argv(cycle):
+    """R5-1: 정규 봉인은 runs 디렉토리 실측 재해시가 필수 — 픽스처 러너
+    출력을 만들고 scores의 run_output_sha256를 실제 해시로 맞춘다."""
+    runs = cycle.parent / "runs_t"
+    if not runs.exists():
+        runs.mkdir()
+        sc = fc.read_json(cycle / "scores.json")
+        for r in sc["records"]:
+            path = runs / f"{r['record_id']}.json"
+            path.write_text(json.dumps({"case_id": r["record_id"]}), encoding="utf-8")
+            r["run_output_sha256"] = fc.sha256_file(path)
+        fc.write_json(cycle / "scores.json", sc)
+    return ["x", "--cycle", str(cycle), "--runs", str(runs)]
+
+
 def run_seal(cycle, capsys=None):
     sys.argv = ["forward_seal.py", "--cycle", str(cycle)]
     return forward_seal.main()
 
 
 def test_seal_verify_roundtrip_and_tamper(cycle, monkeypatch, capsys):
-    monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(cycle)])
+    monkeypatch.setattr(sys, "argv", seal_argv(cycle))
     assert forward_seal.main() == 0
     assert (cycle / "MANIFEST.sha256").exists() and (cycle / "SEAL_RECORD.md").exists()
 
@@ -298,15 +313,16 @@ def test_seal_verify_roundtrip_and_tamper(cycle, monkeypatch, capsys):
 
 
 def test_reseal_refused(cycle, monkeypatch):
-    monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(cycle)])
+    monkeypatch.setattr(sys, "argv", seal_argv(cycle))
     assert forward_seal.main() == 0
     with pytest.raises(SystemExit):
         forward_seal.main()  # MANIFEST 존재 → 거부 (spec §3-5)
 
 
 def test_seal_refused_on_invalid_cycle(cycle, monkeypatch):
+    argv = seal_argv(cycle)
     (cycle / "source_manifest.json").unlink()
-    monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(cycle)])
+    monkeypatch.setattr(sys, "argv", argv)
     with pytest.raises(SystemExit):
         forward_seal.main()
 
@@ -402,7 +418,7 @@ def test_outcome_append_rejects_non_iso_dates(cycle, monkeypatch):
 
 def test_assemble_refuses_after_seal(cycle, monkeypatch):
     """R3-10(a): 봉인 후 재조립은 sealed scores.json을 재작성한다 — 거부."""
-    monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(cycle)])
+    monkeypatch.setattr(sys, "argv", seal_argv(cycle))
     assert forward_seal.main() == 0
     sealed_bytes = (cycle / "scores.json").read_bytes()
     import forward_assemble
@@ -601,7 +617,7 @@ def test_plain_seal_past_window_requires_explicit_flag(cycle, monkeypatch):
     with pytest.raises(SystemExit):
         forward_seal.main()  # 조용한 연장 금지 (INV-22)
     assert not (cycle / "MANIFEST.sha256").exists()
-    monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(cycle), "--past-window"])
+    monkeypatch.setattr(sys, "argv", seal_argv(cycle) + ["--past-window"])
     assert forward_seal.main() == 0
     assert "past-window" in (cycle / "SEAL_RECORD.md").read_text(encoding="utf-8")
 
@@ -619,7 +635,7 @@ def test_prepare_protocol_title_uses_cycle_name(tmp_path, monkeypatch):
 # ── R4-3: 봉인 후 writer 가드 가족 완결 (source_manifest·enumerate --force) ─
 
 def test_source_manifest_refuses_after_seal(cycle, monkeypatch, tmp_path):
-    monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(cycle)])
+    monkeypatch.setattr(sys, "argv", seal_argv(cycle))
     assert forward_seal.main() == 0
     sealed_bytes = (cycle / "source_manifest.json").read_bytes()
     fetch_dir = tmp_path / "fetch"
@@ -633,7 +649,7 @@ def test_source_manifest_refuses_after_seal(cycle, monkeypatch, tmp_path):
 
 
 def test_enumerate_force_refuses_on_sealed_cycle(cycle, monkeypatch):
-    monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(cycle)])
+    monkeypatch.setattr(sys, "argv", seal_argv(cycle))
     assert forward_seal.main() == 0
     sealed_bytes = (cycle / "universe.json").read_bytes()
     import urllib.request
@@ -770,3 +786,40 @@ def test_portable_path_anchors(tmp_path):
     assert fxf.portable_path(home / "data/y.json", repo=repo, home=home) == "~/data/y.json"
     other = tmp_path / "elsewhere.json"
     assert fxf.portable_path(other, repo=repo, home=home) == str(other.resolve())
+
+
+# ── R5-1: 봉인 시점 재해시 leg 실행 ───────────────────────────────────────
+
+def test_seal_fails_on_tampered_runner_output(cycle, monkeypatch):
+    argv = seal_argv(cycle)
+    runs = Path(argv[argv.index("--runs") + 1])
+    (runs / "fw001-r01.json").write_text(
+        json.dumps({"case_id": "fw001-r01", "edited": True}), encoding="utf-8")
+    monkeypatch.setattr(sys, "argv", argv)
+    with pytest.raises(SystemExit):
+        forward_seal.main()
+    assert not (cycle / "MANIFEST.sha256").exists(), "변조 출력이 봉인됨"
+
+
+def test_plain_seal_requires_runs_dir(cycle, monkeypatch):
+    monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(cycle),
+                                      "--runs", str(cycle / "no_runs")])
+    with pytest.raises(SystemExit):
+        forward_seal.main()
+    assert not (cycle / "MANIFEST.sha256").exists()
+
+
+def test_abort_seal_record_carries_rehash_skip_line(cycle, monkeypatch):
+    (cycle / "scores.json").unlink()
+    monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(cycle),
+                                      "--abort", "--reason", "window missed"])
+    assert forward_seal.main() == 0
+    record = (cycle / "SEAL_RECORD.md").read_text(encoding="utf-8")
+    assert "run_output re-hash: SKIPPED" in record
+
+
+def test_normal_seal_record_states_rehash_performed(cycle, monkeypatch):
+    monkeypatch.setattr(sys, "argv", seal_argv(cycle))
+    assert forward_seal.main() == 0
+    record = (cycle / "SEAL_RECORD.md").read_text(encoding="utf-8")
+    assert "run_output re-hash: verified" in record

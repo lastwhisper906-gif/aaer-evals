@@ -33,9 +33,13 @@ def main():
     ap.add_argument("--past-window", action="store_true",
                     help=f"창 종료({EXECUTION_WINDOW_END}) 후의 정규 봉인 명시 허용 "
                          "— 무플래그 봉인은 거부된다 (R3-9)")
+    ap.add_argument("--runs", default=None,
+                    help="R5-1: 러너 출력 디렉토리 (기본 규약 runs/forward/<cycle명>) "
+                         "— 정규 봉인은 이 디렉토리 실측 재해시 없이는 불가")
     args = ap.parse_args()
     assert_subscription_only()
     cycle = REPO / args.cycle
+    runs_dir = REPO / (args.runs or f"runs/forward/{cycle.name}")
     tag = f"forward-{cycle.name.replace('_', '-')}-seal"
 
     manifest = cycle / "MANIFEST.sha256"
@@ -51,7 +55,12 @@ def main():
             fail(f"실행 창 종료({EXECUTION_WINDOW_END}) 이후의 정규 봉인 — "
                  "조용한 연장 금지 (INV-22: abort 마감 + 새 사이클이 규칙). "
                  "그래도 봉인하려면 --past-window 명시 (SEAL_RECORD에 남는다).")
-        errs = validate(cycle)
+        # R5-1: 봉인 머신은 러너 출력을 가진 바로 그 머신 — 정규 봉인에서
+        # run_output_sha256 실측 재해시 leg를 건너뛸 사유가 없다 (fail-closed).
+        if not runs_dir.is_dir():
+            fail(f"runs 디렉토리 부재({runs_dir}) — 정규 봉인은 러너 출력 실측 "
+                 "재해시 없이는 불가 (R5-1; 부분 상태 동결은 --abort 경로)")
+        errs = validate(cycle, runs_dir=runs_dir)
         if errs:
             fail("봉인 전 검증 위반 — forward_validate 참조:\n  " + "\n  ".join(errs))
 
@@ -70,10 +79,18 @@ def main():
                       else f"실패({r.returncode}): {r.stderr.strip()[:120]}")
 
     seal_kind = "ABORTED" if args.abort else "sealed"
+    # R5-1: 재해시 leg의 실행 여부를 SEAL_RECORD에 명시 (abort는 부분 상태
+    # 동결이 목적이므로 skip-with-notice 유지)
+    rehash_line = (f"- run_output re-hash: SKIPPED — abort 봉인 (부분 상태; "
+                   f"runs dir {'있음' if runs_dir.is_dir() else '부재'})\n"
+                   if args.abort else
+                   f"- run_output re-hash: verified against `{runs_dir}` "
+                   "(forward_validate --runs leg)\n")
     status_lines = (f"- **status: ABORTED** — 부분 상태 동결 (spec §3-2)\n"
                     f"- abort_reason: {args.reason}\n" if args.abort else
                     ("- status: sealed (past-window — --past-window 명시 실행)\n"
                      if args.past_window else "- status: sealed\n"))
+    status_lines += rehash_line
     owner_cmds = (
         f"git add {cycle} && "
         f"git commit -m 'SEAL{'(ABORT)' if args.abort else ''}: {cycle.name} forward watchlist'\n"
