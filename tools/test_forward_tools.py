@@ -381,6 +381,34 @@ def test_outcome_append_chains_previous_label(cycle, monkeypatch):
     assert (cycle / "scores.json").read_bytes() == scores_before  # 원 점수 무접촉
 
 
+def test_outcome_append_refuses_down_hierarchy(cycle, monkeypatch, capsys):
+    """R9-2: spec §7 상향만 — 상위 라벨 뒤 하위 라벨 append는 원장 오염,
+    fail-closed. 동일 계층 재기입은 허용."""
+    base = ["x", "--cycle", str(cycle), "--record-id", "fw001-r02",
+            "--event-date", "2027-03-02", "--event-public-date", "2027-03-02",
+            "--source", "acc-x", "--reviewer", "owner", "--rationale", "r"]
+    monkeypatch.setattr(sys, "argv", base + ["--event-type", "big_r_restatement",
+                                             "--new-label", "big_r_restatement"])
+    assert forward_outcome_append.main() == 0
+    # 하향 (big_r → none_observed) — 거부, 원장 무추가
+    before = (cycle / "outcome_updates.jsonl").read_text()
+    monkeypatch.setattr(sys, "argv", base + ["--event-type", "none_observed",
+                                             "--new-label", "none_observed"])
+    with pytest.raises(SystemExit) as exc:
+        forward_outcome_append.main()
+    assert exc.value.code == 1
+    assert "하향 금지" in capsys.readouterr().out
+    assert (cycle / "outcome_updates.jsonl").read_text() == before
+    # 동일 계층 재기입 — 허용
+    monkeypatch.setattr(sys, "argv", base + ["--event-type", "big_r_restatement",
+                                             "--new-label", "big_r_restatement"])
+    assert forward_outcome_append.main() == 0
+    # 상향 (big_r → aaer) — 허용
+    monkeypatch.setattr(sys, "argv", base + ["--event-type", "aaer_or_final_enforcement",
+                                             "--new-label", "aaer_or_final_enforcement"])
+    assert forward_outcome_append.main() == 0
+
+
 # ── scores 조립 (사전 등록 유도 규칙) ─────────────────────────────────────
 
 def test_assemble_derivation_rules():

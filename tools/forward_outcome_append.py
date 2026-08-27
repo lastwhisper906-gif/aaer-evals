@@ -24,6 +24,16 @@ EVENT_TYPES = {
     "unresolved_event", "none_observed",
 }
 
+# R9-2: spec §7 계층 — 성숙 시 상향만 (숫자 낮을수록 상위). none_observed는
+# 기저(최하위). 하향 이동은 append-only 원장의 영구 오염이므로 fail-closed.
+# 정정 경로(override)는 만들지 않는다 — 필요해지면 소유자 결정 사안 (INV-18);
+# 그때까지 하향은 도구 밖에서 불가능해야 한다.
+LABEL_RANK = {
+    "aaer_or_final_enforcement": 1, "item_402_nonreliance": 2,
+    "big_r_restatement": 3, "sec_complaint": 4, "doj_action": 5,
+    "other_material_correction": 6, "unresolved_event": 7, "none_observed": 8,
+}
+
 
 def main():
     ap = argparse.ArgumentParser()
@@ -57,6 +67,10 @@ def main():
                 e = json.loads(line)
                 if e["record_id"] == args.record_id:
                     prev = e["new_label"]
+
+    if LABEL_RANK[args.new_label] > LABEL_RANK[prev]:
+        fail(f"라벨 하향 금지 (spec §7 — 상향만): {prev} → {args.new_label}. "
+             "원 이력은 보존된다; 정정이 필요하면 소유자 결정 사안이다.")
 
     entry = {
         "record_id": args.record_id,
