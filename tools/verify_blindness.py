@@ -85,17 +85,22 @@ def _registered_paths(root: Path, registry: dict) -> dict[str, set[Path]]:
     return matched
 
 
+"""발견 대상 확장자 — *.json만 스캔하면 모델 산출 .md/.jsonl/.txt 표면이
+등록·스캔 없이 게이트를 통과한다 (R1-9): 텍스트형 산출 확장자 전부 발견."""
+_DISCOVER_PATTERNS = ("*.json", "*.jsonl", "*.md", "*.txt")
+
+
 def _discovered_paths(root: Path) -> set[Path]:
-    paths = set((root / "runs").rglob("*.json")) if (root / "runs").is_dir() else set()
-    for relative in ("pilot/runs", "pilot/grades", "scoring/grades"):
-        base = root / relative
-        if base.is_dir():
-            paths.update(base.rglob("*.json"))
+    bases = [root / "runs", root / "pilot/runs", root / "pilot/grades",
+             root / "scoring/grades"]
     scoring = root / "scoring"
     if scoring.is_dir():
-        for base in scoring.glob("probe_results*"):
-            if base.is_dir():
-                paths.update(base.rglob("*.json"))
+        bases.extend(b for b in scoring.glob("probe_results*") if b.is_dir())
+    paths: set[Path] = set()
+    for base in bases:
+        if base.is_dir():
+            for pattern in _DISCOVER_PATTERNS:
+                paths.update(base.rglob(pattern))
     return {p for p in paths if p.name != "MANIFEST.sha256"}
 
 

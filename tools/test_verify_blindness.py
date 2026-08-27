@@ -90,6 +90,27 @@ def test_unregistered_surface_fails(tmp_path):
                for failure in semantic_failures(tmp_path, {"experiments": []}))
 
 
+def test_unregistered_nonjson_surface_fails(tmp_path):
+    """R1-9: *.md/*.jsonl/*.txt 표면도 발견·등록 의무 — 카나리를 실은 미등록
+    leak.md가 조용히 통과하면 안 된다."""
+    leak = tmp_path / "runs/rogue/leak.md"
+    leak.parent.mkdir(parents=True)
+    leak.write_text("memo with canary 9fa11f98-dead-beef", encoding="utf-8")
+    fails = semantic_failures(tmp_path, {"experiments": []})
+    assert any("unregistered output surface" in f and "leak.md" in f for f in fails)
+
+
+def test_registered_nonjson_surface_is_canary_scanned(tmp_path):
+    reg = {"experiments": [{"name": "t", "score_commit": "UNKNOWN",
+                            "label_join_commit": "UNKNOWN",
+                            "output_globs": [], "perturbed_globs": [],
+                            "aux_globs": ["runs/rogue/*.md"]}]}
+    leak = tmp_path / "runs/rogue/leak.md"
+    leak.parent.mkdir(parents=True)
+    leak.write_text("memo with canary 9fa11f98-dead-beef", encoding="utf-8")
+    assert any("카나리" in f for f in semantic_failures(tmp_path, reg))
+
+
 def test_derivation_missing_mapping_fails_closed(tmp_path):
     reg = registry(perturbed=["runs/wave_test/**/*.json"])
     identity_files(tmp_path, mapping={"different": "T01"})
