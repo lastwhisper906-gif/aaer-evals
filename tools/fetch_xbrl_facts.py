@@ -102,6 +102,13 @@ def fetch_forward(universe_path: Path, dest: Path) -> int:
     + {ticker}/edgar/CIK*.json(submissions). record_id 키 배치는 cutoff_guard가
     읽지 못한다(창 안 코드 수정 유발)."""
     universe = json.loads(universe_path.read_text(encoding="utf-8"))
+    # R8-3: 1차 티커 충돌 = 두 회사의 corpus가 한 {ticker}/ 디렉토리에 침묵
+    # 병합 (cutoff_guard는 glob-merge) — 어떤 파일도 쓰기 전에 fail-closed.
+    primaries = [str(r["ticker"]).split("/")[0] for r in universe["selected"]]
+    dups = {t for t in primaries if primaries.count(t) > 1}
+    if dups:
+        raise SystemExit(f"FAIL — universe.selected 1차 티커 충돌 {sorted(dups)}: "
+                         "corpus 디렉토리 병합 위험, 수집 거부 (R8-3)")
     log_path = dest / "fetch_log.jsonl"
     dest.mkdir(parents=True, exist_ok=True)
     failures = []

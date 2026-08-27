@@ -89,7 +89,24 @@ def test_universe_checks_catch_violations():
     u = make_universe()
     u["selected"][0]["float_usd"] = 5e8
     assert any("$1B" in e for e in forward_prepare.check_universe(u))
+    # R8-3: 서로 다른 CIK인데 1차 티커 공유 — corpus 디렉토리 병합 위험
+    u = make_universe()
+    u["selected"][1]["ticker"] = u["selected"][0]["ticker"] + "/B"
+    assert any("1차 티커 충돌" in e for e in forward_prepare.check_universe(u))
     assert forward_prepare.check_universe(make_universe()) == []
+
+
+def test_fetch_refuses_primary_ticker_collision_before_any_write(tmp_path):
+    """R8-3: fetch 진입점에서도 fail-closed — 파일 0개 쓴 채 거부."""
+    import fetch_xbrl_facts as fxf
+    u = make_universe()
+    u["selected"][1]["ticker"] = u["selected"][0]["ticker"]
+    upath = tmp_path / "universe.json"
+    fc.write_json(upath, u)
+    dest = tmp_path / "dest"
+    with pytest.raises(SystemExit, match="1차 티커 충돌"):
+        fxf.fetch_forward(upath, dest)
+    assert not dest.exists()
 
 
 # ── 컷오프·완결성·서수 컷 검증 ────────────────────────────────────────────

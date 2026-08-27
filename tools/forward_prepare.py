@@ -39,6 +39,14 @@ def check_universe(u: dict) -> list[str]:
     ciks = [r.get("cik") for r in sel]
     if len(set(ciks)) != len(ciks):
         errs.append("selected 내 중복 CIK")
+    # R8-3: fetch·레지스트리 모두 1차 티커로 축약된 {ticker}/ 디렉토리를 쓴다 —
+    # 서로 다른 CIK 두 레코드가 1차 티커를 공유하면 corpus가 침묵 병합된다
+    # (cutoff_guard는 glob-merge). fail-closed.
+    primaries = [str(r.get("ticker", "")).split("/")[0] for r in sel]
+    dup_primary = {t for t in primaries if primaries.count(t) > 1}
+    if dup_primary:
+        errs.append(f"selected 내 1차 티커 충돌 {sorted(dup_primary)} — "
+                    "{ticker}/ corpus 디렉토리 병합 위험")
     for r in sel:
         missing = [k for k in ("cik", "ticker", "name", "sic", "float_usd", "record_id")
                    if r.get(k) in (None, "")]
