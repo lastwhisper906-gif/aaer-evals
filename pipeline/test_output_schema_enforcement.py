@@ -186,7 +186,23 @@ V2_SCHEMA = json.loads(
     (REPO_ROOT / "schemas/llm_output_v2.json").read_text(encoding="utf-8"))
 
 
-def _classify_output(path, doc):
+# R4-6: 타계약 가족은 **경로 로스터**로만 인정 — 내용 키 자기분류는 임의
+# 위치의 {"known": true} 한 줄로 스위프를 탈출하는 구멍이다 (D-P86 리비전이
+# 사과한 바로 그 클래스). 등재 트리 안에서도 내용 키 교차 확인은 유지.
+KNOWN_CONTRACT_TREES = {
+    "grade": ("pilot/grades", "runs/hardening/regrade_opus"),
+    "probe": ("runs/hardening/probe_recognition",),
+    "diagnostic": ("runs/diagnostics/payload_v2",),
+}
+_FAMILY_SHAPE = {
+    "grade": lambda doc: isinstance(doc, dict) and "dim1_probability_band" in doc,
+    "probe": lambda doc: isinstance(doc, dict) and (
+        "company_guess" in doc or "known" in doc),
+    "diagnostic": lambda doc: isinstance(doc, dict) and bool(doc.get("diagnostic_only")),
+}
+
+
+def _classify_output(path, doc, root=REPO_ROOT):
     """v1 | v2 | grade | probe | diagnostic | unclassifiable | None(비대상)."""
     if isinstance(doc, dict):
         if "misstatement_risk_score" in doc:
@@ -195,16 +211,11 @@ def _classify_output(path, doc):
             return "v1"
     if not CASE_PATTERN.fullmatch(path.name):
         return None
-    if isinstance(doc, dict):
-        # runs/pilot 아래 case-패턴이지만 별도 계약을 따르는 알려진 가족 —
-        # 채점(grader GRADE_SCHEMA)·프로브(probe_runner)·진단 페이로드는
-        # 자체 게이트/동결 검증 관할이라 여기서 스키마 검증하지 않는다.
-        if "dim1_probability_band" in doc:
-            return "grade"
-        if "company_guess" in doc or "known" in doc:
-            return "probe"
-        if doc.get("diagnostic_only"):
-            return "diagnostic"
+    relative = path.relative_to(root).as_posix()
+    for family, trees in KNOWN_CONTRACT_TREES.items():
+        if any(relative.startswith(tree + "/") for tree in trees):
+            # 로스터 트리 소속 + 모양 교차 확인 둘 다 통과해야 가족 인정
+            return family if _FAMILY_SHAPE[family](doc) else "unclassifiable"
     return "unclassifiable"
 
 
@@ -216,7 +227,7 @@ def _discovered_outputs(root=REPO_ROOT):
                 doc = json.loads(path.read_text(encoding="utf-8"))
             except json.JSONDecodeError:
                 doc = None
-            kind = _classify_output(path, doc)
+            kind = _classify_output(path, doc, root)
             if kind:
                 found.append((path, kind, doc))
     return found
@@ -337,3 +348,37 @@ def test_whitelist_rejects_missing_required_and_accepts_exact_contract():
     runner.bp.assert_case_whitelisted(
         {"case_id": "case_98", "company_name": "Example", "ticker": "EX",
          "cik": "1", "cutoff_date": "2020-01-01"})
+
+
+def test_content_key_self_classification_escape_is_closed(tmp_path):
+    """R4-6: 로스터 트리 밖의 {"known": true}/{"diagnostic_only": true}는
+    가족 자기분류로 스위프를 탈출할 수 없다 — 분류 불가 실패."""
+    (tmp_path / "runs/x").mkdir(parents=True)
+    (tmp_path / "pilot").mkdir()
+    (tmp_path / "runs/x/case_00.json").write_text(
+        json.dumps({"known": True}), encoding="utf-8")
+    (tmp_path / "runs/x/case_01.json").write_text(
+        json.dumps({"diagnostic_only": True}), encoding="utf-8")
+    found = _discovered_outputs(tmp_path)
+    assert [k for _, k, _ in found] == ["unclassifiable", "unclassifiable"]
+    failures, _ = _sweep_failures(found, tmp_path, {})
+    assert len(failures) == 2
+
+
+def test_roster_tree_with_wrong_shape_is_unclassifiable(tmp_path):
+    """등재 트리 안이라도 가족 모양이 아니면 통과 금지 (교차 확인)."""
+    d = tmp_path / "runs/hardening/probe_recognition"
+    d.mkdir(parents=True)
+    (tmp_path / "pilot").mkdir()
+    (d / "case_00.json").write_text(json.dumps({"weird": 1}), encoding="utf-8")
+    found = _discovered_outputs(tmp_path)
+    assert [k for _, k, _ in found] == ["unclassifiable"]
+
+
+def test_real_contract_trees_still_classify():
+    found = _discovered_outputs()
+    kinds = {}
+    for path, kind, _ in found:
+        if kind in ("grade", "probe", "diagnostic"):
+            kinds[kind] = kinds.get(kind, 0) + 1
+    assert kinds == {"grade": 8, "probe": 8, "diagnostic": 82}, kinds
