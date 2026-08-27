@@ -78,7 +78,7 @@ from collections import Counter
 W1_T={"case_01","case_02","case_03","case_06","case_08","case_09","case_12","case_13"}
 w2f=set(json.load(open("runs/wave2/fraud_case_ids.json")))
 freq={"treat":Counter(),"ctrl":Counter()}
-for p in glob.glob("runs/main/*.json")+glob.glob("runs/wave2/scores/*.json")+glob.glob("runs/holdout/scores/*.json"):
+for p in glob.glob("runs/main/case_*.json")+glob.glob("runs/wave2/scores/case_*.json")+glob.glob("runs/holdout/scores/case_*.json"):
     d=json.load(open(p)); cid=d["case_id"]
     t = cid in W1_T or cid in w2f or cid in {"case_71","case_72","case_73"}
     for it in d["checklist"]:
