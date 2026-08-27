@@ -163,3 +163,20 @@ frozen −1.78 rule it refers to lives at `scoring/baselines/screens.py`
 document at `docs/baseline_screens.md`. The substance of E-003 — the
 inverted m_flag, the corrected median, the regeneration lineage — is
 unaffected; only the two citation paths dead-ended for a replicator.
+
+### E-002 reproduction caveat note (2026-08-28, harness cycle 009 R2-21 — append-only; E-002 text unmodified)
+
+E-002's reproduce line (`PYTHONPATH=. python analysis/wave2_analyze.py`, seed
+20260707) had two caveats as of this note. (1) It crashed outright after a
+later cycle added `MANIFEST.json` to the scores directories (the analyzer's
+`*.json` glob picked it up) — fixed at this note's commit by narrowing the
+glob to `case_*.json`; the command now runs. (2) It reproduces every
+deterministic field exactly, but the frozen Monte-Carlo estimates (the four
+`perm_p` values and the bootstrap `auc_ci`) were generated before the
+analyzer sorted its input globs — their trailing digits reflect the
+generating machine's filesystem enumeration order. The
+analyzer now loads in sorted order (`_case_files`, locked order-independent
+by `analysis/test_wave2_order_independence.py`), so a re-run may differ from
+the frozen MC digits within MC noise; `tools/test_recompute_published.py`
+documents and enforces the tolerances (perm_p ±3e-3, auc_ci ±0.02). Frozen
+artifacts are unchanged.

@@ -161,7 +161,9 @@ def _case_files(pattern):
 def load_scores(directory, mapping_path):
     mapping = json.loads(Path(mapping_path).read_text())["mapping"]
     scores = {}
-    for filename in _case_files(f"{directory}/*.json"):
+    # R2-21 부수 수리: 케이스 파일만 — MANIFEST.json(후속 사이클이 scores
+    # 디렉토리에 추가)이 *.json에 걸려 E-002 재현 명령 자체가 죽었다
+    for filename in _case_files(f"{directory}/case_*.json"):
         record = json.loads(Path(filename).read_text())
         scores[mapping[record["case_id"]]] = record.get("misstatement_probability")
     return scores
