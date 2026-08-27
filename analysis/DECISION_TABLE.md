@@ -46,7 +46,10 @@ asymmetry remains a limit of this table.
 
 ## 2. wave-2 (treatment 9 · control 23)
 
-Fictional-name frame, identical protocol for treatment and control.
+Identity-exposed (original) frame, identical protocol for treatment and
+control (real company names in the payload — the fictional-name arm is a
+separate, control-free vector; frame provenance disclosed in
+DECISIONS_PENDING).
 
 | Threshold T | Flags (treatment, n=9) | 95% CI | False positives (control, n=23) | 95% CI | Cost per detection |
 |---|---|---|---|---|---|

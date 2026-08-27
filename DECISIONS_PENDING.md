@@ -1928,3 +1928,26 @@ python tools/forward_verify_seal.py --cycle forward/cycle_001
   pipeline/cli_client.py UNTRACKED_OUTPUT_PREFIXES ·
   forward/cycle_001/PROTOCOL.md 핀 실측 (2026-08-28) · INV-18 · INV-22.
 - **Revert:** 해당 없음 (기록 전용 — 게이트 파일 무변경).
+
+## D-P96 — [DRAFT — 소유자 서명 대기] DECISION_TABLE §2 프레임 오표기 공개: "가공명 프레임"이 실은 정체 노출(원본) 프레임 점수 위에 있었다
+
+- **Status:** DRAFT — 세션(harness v4 cycle 010, R10-7)이 작성.
+- **개정 블록 (2026-08-28, R3-2/D-P87 판례의 일자 기입 방식):**
+  - 영어 정본 `analysis/DECISION_TABLE.md` §2의 프레임 문장
+    "Fictional-name frame, …"을 "Identity-exposed (original) frame, …"으로
+    정정했다 (수치 토큰 무변경). §2 셀(≥50 7/9·FP 5/23, ≥60 3/9)은
+    `wave2_results.json` 원본 프레임 벡터 — 페이로드에 실명이 들어간
+    실행이며(`analysis/wave2_summary.md` "1차 프레임: 정체 노출",
+    `data/evaluatee/cases_wave2.json`의 실명 payload), 8/9 knows_event
+    (docs/README_DETAIL.md). 유일한 가공명 wave-2 점수(3-arm b-arm,
+    `identity_3arm_results.json`)는 대조군이 없고 ≥60 계수도 다르다(5/9).
+  - **동결 ko 표면**: `analysis/DECISION_TABLE.ko.md:44`에 같은 오표기
+    ("가공명(fictional name) 프레임")가 남아 있다 — D94 서명 동결 표면이므로
+    무수정(INV-06). 본 엔트리가 공개(disclosure) 기록이며, 소유자는
+    (a) 본 공개로 종결 또는 (b) ERRATA 항목 승격 중 서명한다. ko 스냅샷
+    vs live 정책의 양방향 적용 이력은 R3-19(DEFERRED)가 다룬다.
+  - 오표기는 rigor-inflating 방향(정체 마스킹 주장 → 실제는 노출)이었다 —
+    오염 축의 정확 공개가 봉인 신뢰성의 근거라는 점에서 P2.
+- **Basis:** reviews/cycle-010.md R10-7 · analysis/wave2_summary.md ·
+  docs/README_DETAIL.md:105-109 · INV-06 · D94 (표면 서명).
+- **Revert:** DECISION_TABLE.md §2 문장 원복 (비권장 — 오표기 복원이 된다).
