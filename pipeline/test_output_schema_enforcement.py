@@ -97,6 +97,9 @@ def test_run_case_revalidates_before_write(monkeypatch, tmp_path):
     monkeypatch.setattr(runner.cli_client, "call_model", lambda *args, **kwargs: SimpleNamespace(
         ok=True, structured=invalid, fail_reason=None, served_models=[runner.EVALUATEE_MODEL]))
     monkeypatch.setattr(runner, "freeze_state", lambda: {"head": "a" * 40})
+    # R1-16: get_harness_version은 enforce_harness_pin 단일 출처 — 테스트는 핀 실측 캐시를 주입
+    monkeypatch.setattr(runner.cli_client, "_harness_version_actual",
+                        f"{runner.cli_client.HARNESS_PIN} (test)")
     out_dir = tmp_path / "runs"
     log_dir = tmp_path / "logs"
     log_dir.mkdir()
@@ -126,6 +129,9 @@ def test_date_format_enforced_by_runner_and_output_validity(monkeypatch, tmp_pat
         ok=True, structured=_model_output(), fail_reason=None,
         served_models=[runner.EVALUATEE_MODEL]))
     monkeypatch.setattr(runner, "freeze_state", lambda: {"head": "a" * 40})
+    # R1-16: get_harness_version은 enforce_harness_pin 단일 출처 — 테스트는 핀 실측 캐시를 주입
+    monkeypatch.setattr(runner.cli_client, "_harness_version_actual",
+                        f"{runner.cli_client.HARNESS_PIN} (test)")
     case = {"case_id": "case_99", "company_name": "Example", "ticker": "EX",
             "cik": "1", "cutoff_date": "2020-01-01"}
     log_dir = tmp_path / "logs"

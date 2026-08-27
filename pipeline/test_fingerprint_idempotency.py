@@ -139,3 +139,22 @@ def test_stale_versioned_path_is_deterministic(monkeypatch, tmp_path):
     assert first == second
     canonical = json.dumps(second["fingerprint"], sort_keys=True, ensure_ascii=False)
     assert sibling.name == f"case_99.fp-{hashlib.sha256(canonical.encode()).hexdigest()[:8]}.json"
+
+
+def test_harness_version_failure_is_fail_closed(monkeypatch):
+    """R1-16: 버전 획득 실패가 'UNAVAILABLE'로 fingerprint에 들어가는 대신
+    fail-closed 예외 — 단일 출처(enforce_harness_pin) 경유 증명."""
+    import cli_client
+    import pytest
+    monkeypatch.setattr(cli_client, "_harness_version_actual", None)
+    monkeypatch.setattr(cli_client, "CLAUDE_BIN", "/nonexistent/claude-binary")
+    with pytest.raises(RuntimeError, match="fail-closed"):
+        runner.get_harness_version()
+
+
+def test_harness_version_reuses_pin_checked_measurement(monkeypatch):
+    import cli_client
+    monkeypatch.setattr(cli_client, "_harness_version_actual",
+                        f"{cli_client.HARNESS_PIN} (test)")
+    assert runner.get_harness_version() == f"{cli_client.HARNESS_PIN} (test)"
+    assert "UNAVAILABLE" not in runner.get_harness_version()

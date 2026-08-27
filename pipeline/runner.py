@@ -39,20 +39,12 @@ EVALUATEE_MODEL = "claude-sonnet-5"  # D6 pin (사유는 채점 쪽 문서)
 FULL_OUTPUT_SCHEMA = json.loads(
     (REPO_ROOT / "schemas" / "llm_output.json").read_text(encoding="utf-8"))
 CANARY_MARKERS = ("9fa11f98", "a2d69cfe")
-_HARNESS_VERSION: str | None = None
-
-
 def get_harness_version() -> str:
-    """Return the CLI version once per runner process."""
-    global _HARNESS_VERSION
-    if _HARNESS_VERSION is None:
-        try:
-            result = subprocess.run(
-                ["claude", "--version"], capture_output=True, text=True, check=True)
-            _HARNESS_VERSION = result.stdout.splitlines()[0] if result.stdout else "UNAVAILABLE"
-        except (FileNotFoundError, OSError):
-            _HARNESS_VERSION = "UNAVAILABLE"
-    return _HARNESS_VERSION
+    """R1-16: 단일 출처 — cli_client.enforce_harness_pin의 핀-대조 실측을
+    그대로 쓴다. 버전 획득 실패는 fail-closed 예외이며, "UNAVAILABLE" 류
+    자리표시자가 fingerprint에 들어가는 일은 없다 (CalledProcessError 포함
+    전 실패 경로가 enforce에서 예외로 수렴)."""
+    return cli_client.enforce_harness_pin()
 
 
 def compute_fingerprint(case: dict, task: str, user_payload: str) -> dict:

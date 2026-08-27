@@ -49,6 +49,9 @@ def _stub_runner(monkeypatch):
         ok=True, structured=_model_output(), fail_reason=None,
         served_models=[runner.EVALUATEE_MODEL]))
     monkeypatch.setattr(runner, "freeze_state", lambda: {"head": "a" * 40})
+    # R1-16: get_harness_version은 enforce_harness_pin 단일 출처 — 테스트는 핀 실측 캐시를 주입
+    monkeypatch.setattr(runner.cli_client, "_harness_version_actual",
+                        f"{runner.cli_client.HARNESS_PIN} (test)")
 
 
 CASE = {"case_id": "case_99", "company_name": "Example", "ticker": "EX",

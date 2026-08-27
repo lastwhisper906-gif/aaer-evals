@@ -78,6 +78,9 @@ def test_runner_send_site_drops_adversarial_nonunderscore_marker(
     monkeypatch.setattr(runner.bp, "build_payload",
                         lambda *args, **kwargs: copy.deepcopy(payload))
     monkeypatch.setattr(runner.cli_client, "call_model", fake_call_model)
+    # R1-16: fingerprint의 버전 출처가 enforce_harness_pin 단일화 — 캐시 주입
+    monkeypatch.setattr(runner.cli_client, "_harness_version_actual",
+                        f"{runner.cli_client.HARNESS_PIN} (test)")
     log_dir = tmp_path / "logs"
     log_dir.mkdir()
     result = runner.run_case(CASE, perturb, tmp_path / "out", log_dir)
