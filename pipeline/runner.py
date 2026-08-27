@@ -200,7 +200,11 @@ def run_case(case: dict, perturb: bool, out_dir: Path, log_dir: Path, *,
             json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
         return {"case_id": cid, "status": f"FAIL ({reason})"}
     out_dir.mkdir(parents=True, exist_ok=True)
-    write_path.write_text(json.dumps(full, ensure_ascii=False, indent=2), encoding="utf-8")
+    # 원자적 기록 (D67, R1-12): 크래시 중단 시 부분 파일이 정본 {cid}.json을
+    # 오염시키면 멱등 skip이 영영 실패하고 fp-sibling 뒤로 가려진다 — tmp→replace
+    tmp_path = write_path.with_suffix(".json.tmp")
+    tmp_path.write_text(json.dumps(full, ensure_ascii=False, indent=2), encoding="utf-8")
+    tmp_path.replace(write_path)
     status_prefix = "OK stale-superseding" if stale_superseding else "OK"
     return {"case_id": cid, "status": f"{status_prefix} p={full['misstatement_probability']} "
             f"tier={full['overall']['risk_tier']} hyps={len(full['mechanism_hypotheses'])}"}

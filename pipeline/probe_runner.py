@@ -76,8 +76,11 @@ def probe_case(kind: str, case: dict, out: Path, log_dir: Path,
     if not r.ok:
         return {"case_id": cid, "status": f"FAIL ({r.fail_reason})"}
     out.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(json.dumps(r.structured, ensure_ascii=False, indent=2),
+    # 원자적 기록 (D67, R1-12): tmp→replace — 부분 기록이 정본을 오염 금지
+    tmp_path = out_path.with_suffix(".json.tmp")
+    tmp_path.write_text(json.dumps(r.structured, ensure_ascii=False, indent=2),
                         encoding="utf-8")
+    tmp_path.replace(out_path)
     if kind == "recognition":
         return {"case_id": cid, "status": f"OK guess={r.structured['company_guess']!r} "
                 f"({r.structured['confidence']})"}
