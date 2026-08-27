@@ -17,7 +17,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import datetime
 
-from forward_common import (REPO, SCREENING_CUTOFF, EXECUTION_WINDOW_END,
+from forward_common import (ET, REPO, SCREENING_CUTOFF, EXECUTION_WINDOW_END,
                             MIN_SCORED, UNIVERSE_SIZE,
                             assert_subscription_only, fp_siblings, read_json,
                             parse_date, sha256_file)
@@ -156,10 +156,16 @@ def validate(cycle: Path, runs_dir: Path | None = None) -> list[str]:
             sa = r.get("scored_at")
             if sa:
                 try:
-                    sa_date = datetime.datetime.fromisoformat(str(sa)).date()
+                    sa_dt = datetime.datetime.fromisoformat(str(sa))
                 except ValueError:
                     errs.append(f"{rid}: scored_at {sa!r} ISO datetime 아님")
                 else:
+                    # R10-8: 창은 ET 정의 — tz-aware 기록(러너는 UTC)은 ET로
+                    # 환산 후 날짜 비교. 아니면 마지막 창일 19:00 ET 이후 배치
+                    # 전체가 UTC 다음 날짜로 넘어가 "실행 창 밖" 오판정된다.
+                    # naive 문자열은 이미 창 로컬(ET) 날짜로 간주.
+                    sa_date = (sa_dt.astimezone(ET).date()
+                               if sa_dt.tzinfo is not None else sa_dt.date())
                     if not (parse_date(SCREENING_CUTOFF) <= sa_date
                             <= parse_date(EXECUTION_WINDOW_END)):
                         errs.append(

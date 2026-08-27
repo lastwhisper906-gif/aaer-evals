@@ -15,6 +15,9 @@ REPO = Path(__file__).resolve().parents[1]
 SEC_UA = {"User-Agent": "chaeper lastwhisper906@gmail.com"}  # fetch_primary_sources 규약
 SCREENING_CUTOFF = "2026-11-15"          # specs/FORWARD_WATCHLIST_V1.md §2
 EXECUTION_WINDOW_END = "2026-11-22"
+# R10-8: 창은 ET로 정의된다 (PROTOCOL.md — "ET, EDGAR acceptance"). 11월
+# 실행 창은 DST 밖이므로 고정 EST(UTC-5)로 충분 — zoneinfo 의존 없이 결정론.
+ET = datetime.timezone(datetime.timedelta(hours=-5))
 MIN_SCORED = 11                          # §3-3 사전 등록 완료 분율 (12사 중 ≥11)
 UNIVERSE_SIZE = 12
 

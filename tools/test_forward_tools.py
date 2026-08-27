@@ -221,6 +221,19 @@ def test_scored_at_iso_and_window_enforced(cycle):
     assert not any("scored_at" in e for e in forward_validate.validate(cycle))
 
 
+def test_validate_window_compares_in_et(cycle):
+    """R10-8: 창은 ET 정의(PROTOCOL) — 마지막 창일 저녁 배치의 UTC 기록
+    (다음 UTC 날짜)은 적법, 실제 창 밖 UTC 기록은 여전히 오류."""
+    sc = fc.read_json(cycle / "scores.json")
+    sc["records"][0]["scored_at"] = "2026-11-23T01:00:00+00:00"  # 11-22 20:00 ET
+    fc.write_json(cycle / "scores.json", sc)
+    assert not any("실행 창 밖" in e for e in forward_validate.validate(cycle))
+    sc = fc.read_json(cycle / "scores.json")
+    sc["records"][0]["scored_at"] = "2026-11-24T12:00:00+00:00"  # 11-24 07:00 ET
+    fc.write_json(cycle / "scores.json", sc)
+    assert any("실행 창 밖" in e for e in forward_validate.validate(cycle))
+
+
 def test_validate_full_record_contract_fields(cycle):
     for field in ("schema_sha256", "scored_at"):
         sc = fc.read_json(cycle / "scores.json")
@@ -524,7 +537,9 @@ def test_assemble_record_roundtrips_validate(cycle):
     meta = {"record_id": "fw001-r01", "name": "Test Co", "ticker": "T",
             "cik": "0000001001"}
     out = {"misstatement_probability": 72, "model": "claude-sonnet-5",
-           "run_id": "x", "run_timestamp": "2026-11-15T00:00:00Z",
+           # R10-8: 검증이 ET로 환산한다 — 15:00Z = 10:00 ET (창 내 명백).
+           # 종전 00:00Z는 ET로 11-14 19:00, 컷오프 전이라 적법하게 거부된다.
+           "run_id": "x", "run_timestamp": "2026-11-15T15:00:00Z",
            "checklist": [{"finding": "flag", "confidence": "high"}] * 5,
            "mechanism_hypotheses": [{"affected_line_items": ["revenue", "AR"]}],
            "overall": {"top_signals": ["CL1"]},

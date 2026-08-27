@@ -18,8 +18,9 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from forward_common import (REPO, EXECUTION_WINDOW_END, assert_subscription_only,
-                            manifest_text, parse_date, sha256_text, fail)
+from forward_common import (ET, REPO, EXECUTION_WINDOW_END,
+                            assert_subscription_only, manifest_text,
+                            parse_date, sha256_text, fail)
 from forward_validate import validate
 
 # R10-6: ots 달력 서버 불통 시 무한 대기 금지 — 한도 초과면 pending 기록
@@ -78,7 +79,9 @@ def main():
         if not args.reason:
             ap.error("--abort에는 --reason이 필요하다 (중단 사유 기록 의무)")
     else:
-        today = datetime.datetime.now(datetime.timezone.utc).date()
+        # R10-8: 창은 ET 정의 — UTC 날짜로 판정하면 마지막 창일 19:00 ET
+        # 이후의 정규 봉인이 --past-window로 오낙인된다 (SEAL_RECORD 영구 기록).
+        today = datetime.datetime.now(ET).date()
         if today > parse_date(EXECUTION_WINDOW_END) and not args.past_window:
             fail(f"실행 창 종료({EXECUTION_WINDOW_END}) 이후의 정규 봉인 — "
                  "조용한 연장 금지 (INV-22: abort 마감 + 새 사이클이 규칙). "
