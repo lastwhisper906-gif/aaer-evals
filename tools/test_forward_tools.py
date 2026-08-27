@@ -648,21 +648,40 @@ def test_source_manifest_refuses_after_seal(cycle, monkeypatch, tmp_path):
     assert (cycle / "source_manifest.json").read_bytes() == sealed_bytes
 
 
-def test_enumerate_force_refuses_on_sealed_cycle(cycle, monkeypatch):
+def test_enumerate_force_refuses_on_sealed_cycle(cycle, monkeypatch, capsys):
+    """R5-2 재작성: 종전 판형은 빈 스냅샷이라 R4-7(a) 불완전 가드가 먼저
+    발화 — 봉인 가드를 지워도 통과하는 공진 테스트였다. 완전 재계산(12사
+    스냅샷)으로 제어 흐름이 봉인 가드에 도달하게 하고, 거부 사유가
+    MANIFEST.sha256(봉인)임을 출력으로 단언한다. (수정 검증: R4-3 가드
+    hunk를 로컬 revert하면 이 테스트가 red — 실측 후 원복.)"""
     monkeypatch.setattr(sys, "argv", seal_argv(cycle))
     assert forward_seal.main() == 0
     sealed_bytes = (cycle / "universe.json").read_bytes()
     import urllib.request
-    import forward_enumerate
+    import forward_enumerate as fe
     monkeypatch.setattr(urllib.request, "urlopen",
                         lambda *a, **k: (_ for _ in ()).throw(AssertionError("network")))
-    monkeypatch.setattr(forward_enumerate, "_provenance", [])
-    monkeypatch.setattr(forward_enumerate, "_fetch_errors", [])
-    monkeypatch.setattr(forward_enumerate, "SNAP", cycle / "snap_empty")
-    (cycle / "snap_empty").mkdir()
+    monkeypatch.setattr(fe, "_provenance", [])
+    monkeypatch.setattr(fe, "_fetch_errors", [])
+    monkeypatch.setattr(fe, "SIC_SET", ["3674"])
+    monkeypatch.setattr(fe, "cycle1_ciks", lambda: set())
+    snap = cycle / "snap_full"
+    snap.mkdir()
+    monkeypatch.setattr(fe, "SNAP", snap)
+    ciks = [f"{9000 + i:010d}" for i in range(1, 13)]
+    (snap / "sic_3674_p0.xml").write_text(
+        "".join(f"<cik>{c}</cik>" for c in ciks), encoding="utf-8")
+    for c in ciks:
+        _write_submissions(snap, c, ["2025-01-01", "2024-09-01"],
+                           ["2025-01-02", "2025-04-02", "2025-07-02", "2025-10-02",
+                            "2026-01-02", "2026-04-02"])
+        fc.write_json(snap / f"float_CIK{c}.json",
+                      {"units": {"USD": [{"end": "2026-06-30", "val": 2.0e9}]}})
     monkeypatch.setattr(sys, "argv", ["x", "--offline", "--force",
                                       "--out", str(cycle / "universe.json")])
-    assert forward_enumerate.main() == 1
+    assert fe.main() == 1
+    out = capsys.readouterr().out
+    assert "MANIFEST.sha256" in out and "재작성 금지" in out, out[-400:]
     assert (cycle / "universe.json").read_bytes() == sealed_bytes
 
 
