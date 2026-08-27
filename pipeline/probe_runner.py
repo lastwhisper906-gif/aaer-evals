@@ -151,6 +151,11 @@ def main() -> int:
                     help="R1-14: fingerprint 사이드카 없는 동결 프로브 출력의 "
                          "멱등 skip 명시 수용 (기본은 FAIL)")
     args = ap.parse_args()
+    if args.verbatim and args.v2_dateshift:
+        # R1-15: v2-dateshift는 recognition 전용(help 문구 그대로) — 조합 시
+        # 무이동 verbatim 출력이 _v2ds 파일명으로 오표기 기록되던 침묵 결함.
+        ap.error("--verbatim은 --v2-dateshift와 함께 쓸 수 없다 "
+                 "(v2-dateshift는 recognition 전용 — specs/perturb_v2.md §3)")
 
     cli_client.assert_no_metered_credentials()
     cli_client.require_clean_tree()

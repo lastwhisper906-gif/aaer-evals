@@ -135,3 +135,16 @@ def test_legacy_output_without_sidecar_fails_unless_accepted(tmp_path, monkeypat
     accepted = _probe_once(tmp_path, monkeypatch, calls, accept_legacy_probe=True)
     assert accepted["status"].startswith("skip (legacy probe ACCEPTED")
     assert len(calls) == 1
+
+
+def test_verbatim_with_v2ds_is_a_parse_error(monkeypatch, capsys):
+    """R1-15: --verbatim + --v2-dateshift 조합은 무이동 verbatim을 _v2ds
+    파일명으로 오표기하던 침묵 결함 — parser.error로 즉시 거부."""
+    import sys
+    import pytest
+    monkeypatch.setattr(sys, "argv",
+                        ["probe_runner.py", "--verbatim", "--v2-dateshift"])
+    with pytest.raises(SystemExit) as exc:
+        pr.main()
+    assert exc.value.code == 2  # argparse 사용 오류
+    assert "recognition 전용" in capsys.readouterr().err
