@@ -1487,3 +1487,35 @@
   등재 (INV-09 주장을 게시문에서 강하게 낸 표면이 있다고 판단 시)
 - **Basis:** INV-09 · INV-03 · METHOD.md §3 · reviews/cycle-001.md R1-2
 - **Revert:** 커밋 revert (가드 완화이므로 revert 시 사유 기록 의무).
+
+## D-P85 — [DRAFT — 소유자 서명 대기] ERRATA E-004 초안: wave-2 대조군 5건 후신 사명 반입 (OV-002/§5-1)
+- **Status:** DRAFT — 세션(harness v4 cycle 001, R1-3)이 작성. ERRATA.md는
+  본 세션이 접촉하지 않았다 — 등재는 소유자 서명 후 append-only로만.
+- **제안 ERRATA 본문 (E-004, ready-to-sign):**
+  - **결함:** `tools/run_wave2_scoring._cutoff_name`이 EDGAR 청크 파일
+    (`CIK…-submissions-001.json` — 사전순으로 본 파일보다 앞서고 formerNames
+    부재)을 먼저 만나면 첫 파일에서 break하여 본 파일의 formerNames 재구성을
+    건너뛰었다. 결과: 동결 `data/evaluatee/cases_wave2.json` 대조군 22건 중
+    5건이 컷오프 이후 사명으로 송출됨 — case_51(Valaris↔Ensco)·case_49
+    (Iovance↔Lion Bio)·case_63(SITE Centers↔DDR)·case_44(Adamas Trust↔NY
+    Mortgage Trust)·case_69(Artivion↔CryoLife). 아티팩트 자체 `_meta`
+    "name_convention: 컷오프 시점 사명" 및 OV-002와 모순 — 필드 값 수준의
+    §5-1 look-ahead.
+  - **영향:** 실험군 9건 전부 무영향(검증 완료 — 프로젝트 핵심 주장 유지).
+    영향 범위는 대조군 사명 필드 한정. case_44/69는 게시된 wave-2 오탐 2건
+    (`analysis/error_analysis_wave2_holdout.md`)과 겹침 — 후신 사명 노출이
+    오탐에 기여했을 가능성은 판정 불가로 정직 공개(피평가자는 사명으로
+    사후 지식을 상기할 수 있으나 방향 효과 미측정).
+  - **조치 (코드만, 커밋됨):** `_cutoff_name`이 존재 파일 전부를 순회한 뒤
+    낙하하도록 수정 + 회귀 테스트 3종(`tools/test_run_wave2_scoring.py`).
+    동결 `cases_wave2.json`·`runs/` 무접촉 (INV-06). 재실행·병행 경로 산출은
+    소유자 결정 사항(하단 Options).
+  - **비영향 확인:** `tools/run_control_v2_scoring.name_at_cutoff`는 본
+    파일(`CIK{cik}.json`)만 읽는 구조라 본 결함 비해당.
+- **Options:** (a) E-004 등재 + 정정 사명으로 대조군 5건 재실행을 신규 분리
+  경로(`runs/wave2_rev3/` 류)에 병행 산출 — E-001 판형 (b) E-004 등재만
+  하고 재실행은 보류 — 오탐 해석 각주만 게시 표면에 추가 (권고: 소유자
+  판단 — 재실행은 모델 호출 비용·INV-19 격리 경로 필요)
+- **Basis:** OV-002 · PROJECT.md §5-1 · INV-03/INV-06 (disclose-dont-revise)
+  · reviews/cycle-001.md R1-3 검증 노트 (~/aaer-data/_rp08 대조 실측)
+- **Revert:** 코드 revert 시 후속 엔트리로 사유 기록 (ERRATA append-only).

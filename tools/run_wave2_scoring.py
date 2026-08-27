@@ -34,20 +34,24 @@ FRAUDS = {"T02":"CSC","T04":"WFT","T19":"OSIR","T20":"BRX","T22":"TNGO",
 
 
 def _cutoff_name(cik, cutoff, current, subs_paths):
-    """컷오프 시점 사명 = formerNames로 재구성 (OV-002 후신 사명 차단)."""
+    """컷오프 시점 사명 = formerNames로 재구성 (OV-002 후신 사명 차단).
+
+    EDGAR 청크 파일(CIK…-submissions-001.json)은 formerNames를 싣지 않고
+    사전순으로 본 파일보다 앞서므로, 첫 파일만 보고 끊으면 본 파일의
+    formerNames가 통째로 건너뛰어진다 — 존재 파일 전부를 순회한 뒤에만
+    정규식 정리로 낙하한다."""
+    spans = []
     for p in subs_paths:
         if not p.exists():
             continue
         j = json.loads(p.read_text(encoding="utf-8"))
-        spans = []
         for f in j.get("formerNames", []):
             frm, to = (f.get("from") or "")[:10], (f.get("to") or "")[:10]
             if frm and to and frm <= cutoff <= to:
                 spans.append((to, f.get("name", "")))
-        if spans:
-            return min(spans)[1] or current
-        # 후신 사명 제거 (n/k/a) — build_evaluatee_inputs 규약 (paren + tail 양형)
-        break
+    if spans:
+        return min(spans)[1] or current
+    # 후신 사명 제거 (n/k/a) — build_evaluatee_inputs 규약 (paren + tail 양형)
     import re
     s = re.sub(r"\s*\(\s*(?:n/k/a|now(?:\s+known\s+as)?)\s+[^)]*\)", "", current, flags=re.I)
     s = re.sub(r"\s*;\s*(?:n/k/a|now(?:\s+known\s+as)?)\s+.*$", "", s, flags=re.I)
