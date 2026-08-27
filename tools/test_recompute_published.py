@@ -365,3 +365,36 @@ def test_name_probe_counts_match_headers_and_synthesis():
     dose = {d["tier"]: d["name_id_pct"] for d in syn["memorization_dose_response"]}
     assert dose["wave1 (famous)"] == v1["rate_pct"]
     assert dose["wave2 (less-famous)"] == frozen_pct
+
+
+def test_wave1_headline_stats_recompute_equals_committed_artifact():
+    """(g) R7-4 — CLAIMS 행 1/2/8의 wave-1 헤드라인 통계를 커밋 입력에서 재계산.
+
+    README "여기 커밋된 출력에서 발행 수치 전부를 재계산" 문장의 최대 공백:
+    results_stats.json의 primary/secondary 블록(perm_p 0.00114/0.00207,
+    AUC 0.8636, FPR CP 구간)은 지금까지 artifact-read로만 신뢰됐다. 여기서
+    동결 정의(analysis/stats.py — seed 20260707, n_perm=100k, n_boot=10k)를
+    커밋 입력(analysis/baseline_table.csv)에 그대로 재실행해 두 블록 전체의
+    정확 일치를 요구한다. CSV 행 순서가 rng 소비 순서를 고정하므로 MC 필드
+    (perm_p·auc_boot95)까지 결정론 정확 일치다 — 허용오차 0 (실측 확인).
+    Beneish/Dechow 베이스라인·conclusion_rules는 (c)와 동일 사유로 제외
+    (~/aaer-data 필요 성분 — verify-full 전용)."""
+    import random
+    from analysis.stats import SEED, frame_stats, load_table
+
+    rows = load_table()
+    fraud = [r for r in rows if r["group"] == "fraud"]
+    ctrl = [r for r in rows if r["group"] == "control"]
+    fraud_s = [r["llm_score"] for r in fraud if r["llm_score"] is not None]
+    ctrl_s = [r["llm_score"] for r in ctrl if r["llm_score"] is not None]
+    rng = random.Random(SEED)
+    primary = frame_stats(fraud_s, ctrl_s, rng,
+                          "primary: original(8) vs original(22)")
+    fraud_pert = [r["llm_perturbed"] for r in fraud if r["llm_perturbed"] is not None]
+    secondary = frame_stats(fraud_pert, ctrl_s, rng,
+                            "secondary: perturbed-fraud vs original-control (J14)")
+
+    want = _load_json("analysis/results_stats.json")
+    assert want["seed"] == SEED
+    assert primary == want["primary"]
+    assert secondary == want["secondary"]
