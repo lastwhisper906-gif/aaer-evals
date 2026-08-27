@@ -1813,3 +1813,32 @@
 - **Basis:** INV-18 · INV-06 · reviews/cycle-007.md R7-6 ·
   reviews/cycle-008.md (재디스패치 지시) · builds/cycle-007.md census
 - **Revert:** 해당 없음 (기록 전용).
+
+## D-P94 — [DRAFT — 소유자 서명 대기] forward 유니버스 자기 오염(fw001-r08=CIEN) 처리 + cycle-002 예방: 소각 목록을 cutoff_guard 정본에서 파생 (Q-F21 참조)
+
+- **Status:** DRAFT — 세션(harness v4 cycle 010, R10-1)이 작성. 동결 산출물
+  무접촉 (universe.json·GATE_PIN·tools/forward_enumerate.py 무변경).
+- **사실관계:** `tools/forward_enumerate.py`의 `cycle1_ciks()`는
+  cases.json·cases_wave2.json·cases_holdout.json·cases_holdout_controls.json
+  4파일만 소각하나, 러너 정본 `pipeline/cutoff_guard.py
+  TRUSTED_CASE_FILES`에는 `cases_v2.json`이 더 있다. 그 결과
+  case_36(CIENA CORP, CIK 0000936395; 2026-07-07 커밋·채점, 게시 wave-2
+  통계에 `runs/rp09/scores/case_36.json` 경유 반영)이 T₀=2026-07-20 열거에서
+  소각되지 않고 fw001-r08로 선정·GATE_PIN 동결되었다 —
+  docs/UNIVERSE_SELECTION.md §2-2의 문서화된 위반 (1/12 봉인 레코드).
+- **결정 요청:** Q-F21 옵션 (A) 기록 + §3 사전 고정 1순위 대기(NEE) 자동
+  승격 / (B) 유지 + disclosure / (C) 단건 abort 중 서명. 권고 (A).
+- **집행 조건 (서명 후 각각 별도 커밋):**
+  1. 선택지 집행 — (A)면 GATE_PIN supersession 문서 + 병행 산출물 경로
+     (동결 원본 무수정, INV-06 병행 경로 규약; R3-13의 승격 절차
+     사전 등록과 연동).
+  2. 예방(cycle-002): `cycle1_ciks()`의 하드코딩 4파일 목록을
+     `cutoff_guard.TRUSTED_CASE_FILES`에서 파생하되 `cases_forward_*` 접두
+     파일만 제외하는 형태로 교체 + 두 목록의 드리프트를 잠그는 회귀 테스트
+     (R7-10 교차 대조 관용구). 지금 고치지 않는 이유: `cycle1_ciks()`는
+     동결 universe.json의 byte-identity 재현 경로다 — 서명 없는 코드 변경은
+     §2-2 위반을 침묵 소거하는 재열거를 만들 수 있다
+     (tools/test_forward_enumerate_offline.py의 byte-identity 핀과 충돌).
+- **Basis:** docs/UNIVERSE_SELECTION.md §2-2·§3 · INV-18 · INV-06 · INV-22 ·
+  reviews/cycle-010.md R10-1 · runs/rp09/scores/case_36.json (실재 확인).
+- **Revert:** 해당 없음 (기록 전용).

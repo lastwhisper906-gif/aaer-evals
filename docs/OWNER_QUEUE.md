@@ -1011,3 +1011,36 @@
 - **권고**: (A) — 리뷰어 steelman: allowlist(B)는 보호를 늘리지 않으면서
   유지 표면만 늘리고, (C)는 R7-6의 목적(미래 표면 보호) 자체를 폐기한다.
 - **상태**: OPEN
+
+## Q-F21 — forward 유니버스 자기 오염: fw001-r08 = CIEN(case_36, 이미 채점·게시 통계 반영) — §2-2 위반 처리 서명 요청 — OPEN (신규, 2026-08-28 harness v4 cycle 010, R10-1)
+
+- **질문**: `forward/cycle_001/universe.json`의 fw001-r08(CIENA CORP, CIK
+  0000936395)은 `data/evaluatee/cases_v2.json` case_36과 동일 회사다 —
+  UNIVERSE_SELECTION §2-2 자기 오염 제외("이 저장소가 해당 회사에 대한
+  판단을 이미 공개했으므로 제외")의 문서화된 위반. 타임라인: case_36 커밋·
+  채점 2026-07-07 < 열거 T₀ 2026-07-20. case_36 점수
+  (`runs/rp09/scores/case_36.json`)는 `analysis/wave2_analyze.py`·
+  `analysis/baselines.py` 경유로 게시 wave-2 통계에 이미 들어가 있다.
+  원인: `tools/forward_enumerate.py cycle1_ciks()` 소각 목록이 4파일만
+  순회하고 `cases_v2.json` 누락 (`cutoff_guard.TRUSTED_CASE_FILES`에는
+  존재). 봉인 후에는 정정 불가(INV-22/INV-06) — 11월 창 전 서명 필요.
+- **옵션**:
+  (A) **기록 + §3 규칙의 사전 고정 1순위 대기(NEE, NEXTERA ENERGY INC,
+      CIK 0000753308) 자동 승격** — §3 명문("빼야 할 사유가 생기면 §2 규칙
+      인용 + 기록 후 대기 목록 자동 승격")의 집행. GATE_PIN·byte-identity
+      테스트(tools/test_forward_enumerate_offline.py)의 supersession 문서
+      필요 — R3-13(승격 절차 미기계화·핀 충돌, DEFERRED)과 연동. **권고.**
+  (B) fw001-r08 유지 + 봉인 문서에 자기 오염 disclosure — §2-2 위반과 게시
+      통계 중복을 안고 감; 유니버스 CIK를 cases*.json과 diff하는 외부
+      검증자가 수 분 내 발견하는 모순.
+  (C) fw001-r08 단건 not_scored/abort 처리 — MIN_SCORED=11이므로 11/12
+      정규 봉인은 여전히 가능; 유니버스 12사 주장과의 정합 설명 필요.
+- **근거**: docs/UNIVERSE_SELECTION.md §2-2·§3 · FUTURE_CYCLE_PROTOCOL §0
+  (소각 원리) · reviews/cycle-010.md R10-1 (검토자 3-grep 재검증) ·
+  INV-22 · INV-06.
+- **기본값 (무응답 시)**: 없음 — universe.json은 GATE_PIN 동결 산출물,
+  세션 무접촉(INV-18). 미서명 상태로 11월 창에 들어가면 fw001-r08은 §2-2
+  위반 상태로 봉인된다.
+- **세션 기본 조치**: 본 큐 항목 + DECISIONS_PENDING D-P94 DRAFT(예방 코드
+  방향 포함) 등재까지. universe.json·forward_enumerate.py 무접촉.
+- **상태**: OPEN
