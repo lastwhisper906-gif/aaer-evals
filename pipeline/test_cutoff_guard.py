@@ -257,3 +257,29 @@ def test_forward_registry_trusted_toward_real_corpus_path(monkeypatch, tmp_path)
     data_dir, _log_path = cutoff_guard._fixture_settings(
         fixture_corpus, registry, tmp_path / "x.jsonl")
     assert data_dir == fixture_corpus
+
+
+def test_trusted_case_files_are_committed_clean_in_git():
+    """R8-2: 신뢰는 커밋 diff로 가시화되어야 한다 (R1-17 원칙) — 신뢰 이름
+    자리에 미추적/변경 파일이 있으면 실패. 커밋 전의 파일이 이름만으로
+    실제 corpus 접근을 자기-신뢰하는 창을 닫는다. cases_forward_001.json이
+    런북 §4(3)대로 빌드+커밋되면 자동으로 통과한다 (테스트 수정 불요)."""
+    import subprocess
+    from cutoff_guard import REPO_ROOT, TRUSTED_CASE_FILES
+    tracked = set(subprocess.run(
+        ["git", "ls-files", "data/evaluatee"], cwd=REPO_ROOT,
+        capture_output=True, text=True, check=True).stdout.split())
+    dirty = set()
+    for line in subprocess.run(
+            ["git", "status", "--porcelain", "data/evaluatee"], cwd=REPO_ROOT,
+            capture_output=True, text=True, check=True).stdout.splitlines():
+        dirty.add(line[3:].strip().strip('"'))
+    offenders = []
+    for name in TRUSTED_CASE_FILES:
+        rel = f"data/evaluatee/{name}"
+        exists = (REPO_ROOT / rel).exists()
+        if exists and (rel not in tracked or rel in dirty):
+            offenders.append(rel)
+    assert not offenders, (
+        f"신뢰 레지스트리 이름 자리에 미추적/미커밋 변경 파일: {offenders} — "
+        "커밋 없이 실제 corpus 접근 신뢰를 얻을 수 없다 (R8-2)")
