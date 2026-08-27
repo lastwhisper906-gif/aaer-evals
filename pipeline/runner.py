@@ -167,6 +167,13 @@ def run_case(case: dict, perturb: bool, out_dir: Path, log_dir: Path, *,
     (log_dir / f"runmeta_{variant}_{cid}.json").write_text(
         json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
 
+    if canary_hit:
+        # R2-13: 카나리 GUID를 실은 출력이 OK로 runs/(append-only)에 실리면
+        # 검출이 커밋-후 CI에 의존한다 — 기록 전 fail-closed (runmeta 증거 유지)
+        meta["fail_reason"] = "canary_hit"
+        (log_dir / f"runmeta_{variant}_{cid}.json").write_text(
+            json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+        return {"case_id": cid, "status": "FAIL (canary_hit)"}
     if not r.ok:
         return {"case_id": cid, "status": f"FAIL ({r.fail_reason})"}
 

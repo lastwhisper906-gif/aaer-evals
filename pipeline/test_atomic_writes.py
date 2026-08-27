@@ -100,3 +100,21 @@ def test_probe_crash_mid_write_leaves_no_corrupt_canonical(monkeypatch, tmp_path
     with pytest.raises(OSError, match="simulated crash"):
         pr.probe_case("recognition", {"case_id": "case_98"}, tmp_path, tmp_path)
     assert not (tmp_path / "case_98.json").exists()
+
+
+def test_runner_canary_hit_fails_before_write(monkeypatch, tmp_path):
+    """R2-13: 카나리 GUID 출력은 OK로 runs/에 실리지 않는다 — 기록 전 FAIL,
+    runmeta 증거는 유지."""
+    _stub_runner(monkeypatch)
+    hit = _model_output()
+    hit["overall"]["top_signals"] = ["canary 9fa11f98-dead-beef"]
+    monkeypatch.setattr(runner.cli_client, "call_model", lambda *a, **k: SimpleNamespace(
+        ok=True, structured=hit, fail_reason=None,
+        served_models=[runner.EVALUATEE_MODEL]))
+    out_dir, log_dir = tmp_path / "runs", tmp_path / "logs"
+    log_dir.mkdir()
+    result = runner.run_case(CASE, False, out_dir, log_dir)
+    assert result["status"] == "FAIL (canary_hit)"
+    assert not (out_dir / "case_99.json").exists(), "카나리 출력이 기록됨"
+    meta = json.loads((log_dir / "runmeta_original_case_99.json").read_text(encoding="utf-8"))
+    assert meta["canary_hit"] is True and meta["fail_reason"] == "canary_hit"

@@ -128,12 +128,15 @@ def test_runner_api_schema_invalid_composed_record_not_written(monkeypatch, tmp_
     assert meta["fail_reason"] == "schema_violation: misstatement_probability"
 
 
-def test_runner_api_canary_hit_recorded_in_runmeta(monkeypatch, tmp_path):
+def test_runner_api_canary_hit_fails_before_write(monkeypatch, tmp_path):
+    """R2-3 증거 기록 + R2-13: 카나리 출력은 기록 전 FAIL — runs/에 실리지 않는다."""
     hit = _valid_model_output()
     hit["overall"]["top_signals"] = ["canary 9fa11f98-dead-beef"]
     result, out_path, meta_path = _run_case_api(monkeypatch, tmp_path, hit)
+    assert result["status"] == "FAIL (canary_hit)"
+    assert not out_path.exists(), "카나리 출력이 기록됨"
     meta = json.loads(meta_path.read_text(encoding="utf-8"))
-    assert meta["canary_hit"] is True
+    assert meta["canary_hit"] is True and meta["fail_reason"] == "canary_hit"
 
 
 def test_runner_api_valid_record_written_and_passes(monkeypatch, tmp_path):

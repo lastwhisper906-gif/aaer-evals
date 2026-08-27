@@ -63,6 +63,12 @@ def run_case_api(case: dict, perturb: bool, out_dir: Path, log_dir: Path,
     meta_path = log_dir / f"runmeta_api_{variant}_{cid}.json"
     meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
 
+    if canary_hit:
+        # R2-13 (runner 거울): 카나리 출력은 기록 전 fail-closed
+        meta["fail_reason"] = "canary_hit"
+        meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2),
+                             encoding="utf-8")
+        return {"case_id": cid, "status": "FAIL (canary_hit)"}
     if not r.ok:
         return {"case_id": cid, "status": f"FAIL ({r.fail_reason})"}
     accessions = {}
