@@ -46,6 +46,17 @@ def _synthetic_companyfacts(i: int) -> bytes:
     ]}}}}}).encode("utf-8")
 
 
+def _synthetic_submissions(i: int) -> bytes:
+    # R7-2: companyfacts의 모든 accn(컷오프 이후 포함)은 submissions 인덱스와
+    # 교차 대조된다 — 두 accession 모두 filed 일치로 등재한다.
+    return json.dumps({"filings": {"recent": {
+        "accessionNumber": [_accn(i), _accn(i, post_cutoff=True)],
+        "filingDate": ["2026-10-01", "2026-12-01"],
+        "form": ["10-K", "8-K"],
+        "items": ["", ""],
+    }, "files": []}}).encode("utf-8")
+
+
 def _model_output(rid: str, i: int) -> dict:
     evidence = {"quote": "Revenues=100 (FY2026)",
                 "source_accession_no": _accn(i),
@@ -88,13 +99,21 @@ def test_gate_steps_dry_run_end_to_end(tmp_path, monkeypatch, clean_env):
     def fake_fetch(url):
         i = int(url.split("CIK")[1][:10]) - 1000
         served[url] = True
+        if "/submissions/" in url:
+            return _Resp(_synthetic_submissions(i))
         return _Resp(_synthetic_companyfacts(i))
 
     monkeypatch.setattr(fxf, "fetch", fake_fetch)
     dest = tmp_path / "data_forward"
     assert fxf.fetch_forward(cycle / "universe.json", dest) == 0
     assert (dest / "fetch_log.jsonl").exists()
-    assert len(served) == 12
+    assert len(served) == 24  # companyfacts 12 + submissions 12
+
+    # R7-2: fetch 배치는 러너(cutoff_guard)가 읽는 {ticker}/{xbrl,edgar} 형태
+    for r in universe["selected"]:
+        cik10 = str(r["cik"]).zfill(10)
+        assert (dest / r["ticker"] / "xbrl" / f"CIK{cik10}.json").exists()
+        assert (dest / r["ticker"] / "edgar" / f"CIK{cik10}.json").exists()
 
     # (3) build — universe → 피평가자 케이스 파일 (화이트리스트 계약 준수)
     payload = bei.build_forward(cycle / "universe.json", CUTOFF)
@@ -102,6 +121,20 @@ def test_gate_steps_dry_run_end_to_end(tmp_path, monkeypatch, clean_env):
     for case in payload["cases"]:
         bp.assert_case_whitelisted(case)
         assert case["cutoff_date"] == CUTOFF
+
+    # (3b) R7-2: fetch가 쓴 corpus를 러너 경로(build_payload→cutoff_guard)가
+    # 실제로 읽어 payload를 만든다 — fetch→payload 이음매 리허설. 창 안에서
+    # 필요한 코드 수정 0을 여기서 증명한다 (네트워크 0, 픽스처 corpus 루트).
+    monkeypatch.setattr(bp, "DATA_DIR", dest)
+    for case in payload["cases"]:
+        built = bp.build_payload(case)
+        assert built["_variant"] == "original"
+        series = built["financial_series_point_in_time"]
+        assert series.get("Revenues"), f"{case['case_id']}: 빈 시계열 — 러너가 fetch 배치를 못 읽음"
+        # 컷오프 이후(2026-12-01) 제출은 시계열·연대기 모두에서 배제
+        assert all(v["filed"] <= CUTOFF for v in series["Revenues"])
+        assert built["filing_chronology"] == [
+            {"form": "10-K", "filing_date": "2026-10-01"}]
 
     # (2b) source_manifest 방출 — 컷오프 이후 accession은 배제
     sources = fsm.build_sources(dest, CUTOFF)
