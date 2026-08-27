@@ -25,6 +25,10 @@ from runner import CANARY_MARKERS, EVALUATEE_MODEL
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 MODEL_VISIBLE_KEYS = ("case", "financial_series_point_in_time", "filing_chronology")
+# R2-29: 동결 프로브 트리 — 이 아래 '신규' 케이스 파일 생성은 probe_case가
+# 거부한다 (기존 파일의 R1-14 멱등 skip·fp 사이드카는 종전대로).
+FROZEN_PROBE_ROOTS = (REPO_ROOT / "scoring" / "probe_results",
+                      REPO_ROOT / "scoring" / "probe_results_wave2")
 
 RECOG_SCHEMA = {"type": "object", "additionalProperties": False,
                 "required": ["company_guess", "confidence"],
@@ -106,6 +110,17 @@ def probe_case(kind: str, case: dict, out: Path, log_dir: Path,
         return {"case_id": cid, "status":
                 "FAIL (stale_legacy_probe — fingerprint 사이드카 없음; "
                 "--accept-legacy-probe로 명시 수용)"}
+
+    # R2-29: 기본 --out-root가 동결 트리 그 자체다 — 동결 루트 아래 '신규'
+    # 케이스 파일 생성은 거부한다 (호출 전, 쓰기 전). 기존 파일의 멱등 skip
+    # (R1-14)은 위에서 이미 처리됐다; 신규 산출은 비동결 --out-root 전용.
+    resolved_out = out.resolve()
+    frozen = [p.resolve() for p in FROZEN_PROBE_ROOTS]
+    if any(p == resolved_out or p in resolved_out.parents for p in frozen) \
+            and not out_path.exists():
+        return {"case_id": cid, "status":
+                "FAIL (frozen_root_new_file — 동결 프로브 트리에 신규 케이스 "
+                "파일 생성 금지; 비동결 --out-root로 실행)"}
 
     r = cli_client.call_model(EVALUATEE_MODEL, system, user, schema,
                               log_dir=log_dir,

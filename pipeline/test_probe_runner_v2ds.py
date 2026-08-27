@@ -137,6 +137,27 @@ def test_legacy_output_without_sidecar_fails_unless_accepted(tmp_path, monkeypat
     assert len(calls) == 1
 
 
+def test_frozen_root_refuses_new_case_file_without_call(tmp_path, monkeypatch):
+    """R2-29: 기본 out-root(동결 트리) 아래 신규 케이스 파일 생성은 호출도
+    쓰기도 없이 FAIL; 비동결 경로는 종전대로 기록."""
+    def forbidden_call(*a, **k):
+        raise AssertionError("동결 루트 신규 파일인데 모델 호출 발생")
+    monkeypatch.setattr(cli_client, "call_model", forbidden_call)
+    monkeypatch.setattr(pr.bp, "build_payload", _fake_payload)
+    frozen = tmp_path / "probe_results"
+    monkeypatch.setattr(pr, "FROZEN_PROBE_ROOTS", (frozen,))
+    res = pr.probe_case("recognition", {"case_id": "case_98"},
+                        frozen / "recognition", tmp_path / "logs")
+    assert "frozen_root_new_file" in res["status"]
+    assert not (frozen / "recognition" / "case_98.json").exists()
+    # 비동결 out-root — 종전대로 기록된다
+    calls = []
+    _capture(monkeypatch, calls)
+    out = tmp_path / "fresh" / "recognition"
+    res = pr.probe_case("recognition", {"case_id": "case_98"}, out, tmp_path / "logs")
+    assert res["status"].startswith("OK") and (out / "case_98.json").exists()
+
+
 def test_verbatim_with_v2ds_is_a_parse_error(monkeypatch, capsys):
     """R1-15: --verbatim + --v2-dateshift 조합은 무이동 verbatim을 _v2ds
     파일명으로 오표기하던 침묵 결함 — parser.error로 즉시 거부."""
