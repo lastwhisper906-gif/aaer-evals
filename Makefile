@@ -21,6 +21,7 @@ verify-public:
 	.venv/bin/python tools/verify_manifest.py --schema-only
 	.venv/bin/python tools/verify_blindness.py
 	.venv/bin/python tools/verify_figures.py
+	.venv/bin/python tools/validate_schemas.py
 
 verify-claims:
 	.venv/bin/python tools/reproduce_analysis.py

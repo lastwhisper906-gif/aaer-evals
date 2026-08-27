@@ -108,6 +108,16 @@ def test_claims_ledger_is_locked_to_results():
             assert (ROOT / source_path.rstrip("/")).exists()
 
 
+def test_real_tree_claims_coverage_green():
+    """R7-7: verify_claims_coverage의 실수형(green-path)을 실제 트리에 상시 실행 —
+    CLAIMS가 참조하는 산출물·recompute.command 도구 경로가 리네임/삭제되면
+    verify-public(pytest 단계)과 CI가 여기서 red가 된다. 지금까지 이 도구는
+    변이 사본 테스트로만 행사됐고 실트리 green은 어떤 게이트도 단정하지 않았다."""
+    sys.path.insert(0, str(ROOT / "tools"))
+    import verify_claims_coverage
+    assert verify_claims_coverage.verify() == []
+
+
 def test_claims_coverage_fails_when_results_row_is_missing(tmp_path):
     ledger = json.loads((ROOT / "CLAIMS.json").read_text(encoding="utf-8"))
     ledger["claims"] = [claim for claim in ledger["claims"] if claim["id"] != 13]
