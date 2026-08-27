@@ -267,26 +267,70 @@ def test_dry_run_has_hashes_and_no_subprocess(
     assert "prompt_sha256=" in output
 
 
-def test_valid_fingerprintless_existing_output_is_currently_skipped(
-        monkeypatch, tmp_path, case, payload, model_output):
-    """Pin option (ii): current code skips this; requiring FAIL remains an acceptance gap."""
-    repo = _configure_tmp(monkeypatch, tmp_path, payload)
-    existing = {
+def _existing_record(model_output, fingerprint=None):
+    record = {
         "case_id": "C01", "run_id": "xgpt-original-C01-r1", "model": "gpt-test",
         "pipeline_version": "abc123", "run_timestamp": "2020-01-01T00:00:00+00:00",
         "documents_used": [{"accession_no": "0001-20-000001", "form_type": "10-K",
                             "filing_date": "2020-02-01"}],
         **model_output,
     }
+    if fingerprint is not None:
+        record["fingerprint"] = fingerprint
+    return record
+
+
+def _current_config(repo, case, payload, frame="original"):
+    import hashlib as _hashlib
+    user = cross.frozen_frame_payload(payload)
+    prompt = cross.build_prompt(cross.build_task(case, payload, frame), user)
+    return {"payload_sha256": cross._sha(user),
+            "system_prompt_sha256": cross._sha(prompt),
+            "schema_sha256": _hashlib.sha256(
+                (repo / "schemas" / "llm_output.json").read_bytes()).hexdigest(),
+            "model_requested": "gpt-test",
+            "case_input_sha256": "x", "harness_version_actual": "v",
+            "pipeline_commit": "abc123"}
+
+
+def test_valid_fingerprintless_existing_output_now_fails(
+        monkeypatch, tmp_path, case, payload, model_output):
+    """R1-14: 종전 문서화된 공백(무 fingerprint skip)이 실제 단언으로 승격 —
+    이제 stale_legacy FAIL이다 (runs/crossmodel_gpt 실기록 0건이라 수용 플래그
+    불필요)."""
+    repo = _configure_tmp(monkeypatch, tmp_path, payload)
+    existing = _existing_record(model_output)
     jsonschema.Draft7Validator(cross.runner.FULL_OUTPUT_SCHEMA).validate(existing)
     (repo / "runs" / "crossmodel_gpt" / "C01.json").write_text(
         json.dumps(existing), encoding="utf-8")
     monkeypatch.setattr(cross.subprocess, "run",
                         lambda *a, **k: pytest.fail("resume invoked subprocess"))
-
     result = cross.run_case(case, "original", repo / "runs" / "crossmodel_gpt")
+    assert result["status"].startswith("FAIL (stale_legacy_output")
 
+
+def test_unchanged_config_still_skips(monkeypatch, tmp_path, case, payload, model_output):
+    repo = _configure_tmp(monkeypatch, tmp_path, payload)
+    fingerprint = _current_config(repo, case, payload.copy())
+    (repo / "runs" / "crossmodel_gpt" / "C01.json").write_text(
+        json.dumps(_existing_record(model_output, fingerprint)), encoding="utf-8")
+    monkeypatch.setattr(cross.subprocess, "run",
+                        lambda *a, **k: pytest.fail("resume invoked subprocess"))
+    result = cross.run_case(case, "original", repo / "runs" / "crossmodel_gpt")
     assert result["status"] == "skip"
+
+
+def test_changed_config_fails_not_skips(monkeypatch, tmp_path, case, payload, model_output):
+    """R1-14: 구성이 바뀌면 stale-but-valid 출력이 조용히 충족하면 안 된다."""
+    repo = _configure_tmp(monkeypatch, tmp_path, payload)
+    fingerprint = _current_config(repo, case, payload.copy())
+    fingerprint["payload_sha256"] = "0" * 64  # 다른 구성의 산출로 기록됨
+    (repo / "runs" / "crossmodel_gpt" / "C01.json").write_text(
+        json.dumps(_existing_record(model_output, fingerprint)), encoding="utf-8")
+    monkeypatch.setattr(cross.subprocess, "run",
+                        lambda *a, **k: pytest.fail("collision invoked subprocess"))
+    result = cross.run_case(case, "original", repo / "runs" / "crossmodel_gpt")
+    assert result["status"].startswith("FAIL (config_changed")
 
 
 def test_cross_frame_existing_output_fails_not_skips(

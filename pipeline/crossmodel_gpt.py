@@ -209,6 +209,17 @@ def run_case(case: dict, frame: str, out_dir: Path, *, dry_run: bool = False) ->
     out_dir = resolve_output_dir(out_dir)
     cid = case["case_id"]
     out_path = out_dir / f"{cid}.json"
+
+    # R1-14: 구성 정체 대조를 위해 페이로드·프롬프트 해시를 skip 판정 전에
+    # 계산한다 (전부 로컬 계산 — 호출 없음)
+    payload = build_payload.build_payload(case, perturb=frame == "perturbed")
+    user_payload = frozen_frame_payload(payload)
+    task = build_task(case, payload, frame)
+    prompt = build_prompt(task, user_payload)
+    payload_sha, prompt_sha = _sha(user_payload), _sha(prompt)
+    schema_sha = hashlib.sha256(
+        (REPO_ROOT / "schemas" / "llm_output.json").read_bytes()).hexdigest()
+
     if out_path.exists():
         try:
             existing = json.loads(out_path.read_text(encoding="utf-8"))
@@ -223,13 +234,28 @@ def run_case(case: dict, frame: str, out_dir: Path, *, dry_run: bool = False) ->
             if not str(existing.get("run_id", "")).startswith(f"xgpt-{frame}-"):
                 return {"case_id": cid, "status": "FAIL (frame_collision: "
                         f"existing run_id={existing.get('run_id')!r} vs frame={frame!r})"}
+            # R1-14: 스키마 유효 + frame 일치만으로는 stale-but-valid 출력이
+            # 바뀐 구성을 조용히 충족한다 — 기록된 fingerprint의 구성 필드
+            # (payload·prompt·schema 해시, 요청 모델)와 대조. pipeline_commit·
+            # harness_version은 구성 정체가 아니므로 제외 (per-commit 전면
+            # stale 방지 — R2-5 보고 노트와 동일 논지).
+            recorded = existing.get("fingerprint")
+            if not isinstance(recorded, dict):
+                return {"case_id": cid, "status":
+                        "FAIL (stale_legacy_output — fingerprint 없음; 동결 "
+                        "경로 보호를 위해 덮어쓰지 않음. 새 --out으로 실행)"}
+            hashes_match = all(recorded.get(k) == v for k, v in (
+                ("payload_sha256", payload_sha),
+                ("system_prompt_sha256", prompt_sha),
+                ("schema_sha256", schema_sha)))
+            model_match = _pin_matches(str(recorded.get("model_requested", "")),
+                                       CODEX_MODEL_PIN)
+            if not (hashes_match and model_match):
+                return {"case_id": cid, "status":
+                        "FAIL (config_changed — 기존 출력은 다른 구성의 산출; "
+                        "덮어쓰지 않음. 새 --out으로 실행)"}
             return {"case_id": cid, "status": "skip"}
 
-    payload = build_payload.build_payload(case, perturb=frame == "perturbed")
-    user_payload = frozen_frame_payload(payload)
-    task = build_task(case, payload, frame)
-    prompt = build_prompt(task, user_payload)
-    payload_sha, prompt_sha = _sha(user_payload), _sha(prompt)
     # 송출 경계 전체 스캔: prompt = task + 모델 스키마 + user_payload (INV-09)
     cli_client.guard_payload(prompt, EVALUATEE_FORBIDDEN_MARKERS)
     if dry_run:

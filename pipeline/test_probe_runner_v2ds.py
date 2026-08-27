@@ -82,7 +82,7 @@ def test_rate_limit_cancels_queued_probes(tmp_path, monkeypatch):
 
     executed = []
 
-    def limited_probe(kind, case, out, log_dir, v2_dateshift=False):
+    def limited_probe(kind, case, out, log_dir, v2_dateshift=False, **kw):
         executed.append(case["case_id"])
         raise cli_client.RateLimitedError("usage limit reached")
 
@@ -96,3 +96,42 @@ def test_rate_limit_cancels_queued_probes(tmp_path, monkeypatch):
     assert pr.main() == 3
     assert len(executed) == 1, (
         f"리밋 후에도 {len(executed) - 1}건이 추가 발사됨 — 큐 미취소")
+
+
+# ── R1-14: 프로브 멱등 skip의 구성 fingerprint ────────────────────────────
+
+def _probe_once(tmp_path, monkeypatch, calls, **kw):
+    _capture(monkeypatch, calls)
+    monkeypatch.setattr(pr.bp, "build_payload", _fake_payload)
+    return pr.probe_case("recognition", {"case_id": "case_99"}, tmp_path, tmp_path, **kw)
+
+
+def test_same_config_rerun_skips_via_fingerprint(tmp_path, monkeypatch):
+    calls = []
+    assert _probe_once(tmp_path, monkeypatch, calls)["status"].startswith("OK")
+    assert (tmp_path / "fp_case_99.json").exists()
+    result = _probe_once(tmp_path, monkeypatch, calls)
+    assert result["status"] == "skip (멱등 — fingerprint 일치)"
+    assert len(calls) == 1, "동일 구성 재실행이 재호출함"
+
+
+def test_changed_config_fails_not_skips(tmp_path, monkeypatch):
+    """R1-14: stale-but-valid 출력이 바뀐 구성을 조용히 충족하면 안 된다 —
+    동결 경로 보호상 덮어쓰기 대신 FAIL."""
+    calls = []
+    assert _probe_once(tmp_path, monkeypatch, calls)["status"].startswith("OK")
+    monkeypatch.setattr(pr, "RECOG_TASK", pr.RECOG_TASK + " CHANGED")
+    result = _probe_once(tmp_path, monkeypatch, calls)
+    assert result["status"].startswith("FAIL (config_changed")
+    assert len(calls) == 1
+
+
+def test_legacy_output_without_sidecar_fails_unless_accepted(tmp_path, monkeypatch):
+    calls = []
+    assert _probe_once(tmp_path, monkeypatch, calls)["status"].startswith("OK")
+    (tmp_path / "fp_case_99.json").unlink()  # 동결 트리 판형: 사이드카 부재
+    result = _probe_once(tmp_path, monkeypatch, calls)
+    assert result["status"].startswith("FAIL (stale_legacy_probe")
+    accepted = _probe_once(tmp_path, monkeypatch, calls, accept_legacy_probe=True)
+    assert accepted["status"].startswith("skip (legacy probe ACCEPTED")
+    assert len(calls) == 1

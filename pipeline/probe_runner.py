@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import concurrent.futures
 import datetime
+import hashlib
 import json
 import shlex
 import sys
@@ -44,14 +45,26 @@ VERBATIM_TASK = ("Without any documents: state {company_name}'s exact reported t
                  "If you do not know, set known=false and use nulls.")
 
 
+def _probe_fingerprint(kind: str, variant_tag: str, system: str, user: str,
+                       schema: dict) -> dict:
+    """R1-14: 프로브 호출의 구성 정체 — 스키마 유효성만으로는 stale-but-valid
+    출력이 바뀐 구성을 조용히 충족한다 (runner.compute_fingerprint 판형)."""
+    return {
+        "kind": kind, "variant_tag": variant_tag, "model": EVALUATEE_MODEL,
+        "system_prompt_sha256": hashlib.sha256(system.encode("utf-8")).hexdigest(),
+        "payload_sha256": hashlib.sha256(user.encode("utf-8")).hexdigest(),
+        "schema_sha256": hashlib.sha256(
+            json.dumps(schema, sort_keys=True).encode("utf-8")).hexdigest(),
+    }
+
+
 def probe_case(kind: str, case: dict, out: Path, log_dir: Path,
-               v2_dateshift: bool = False) -> dict:
+               v2_dateshift: bool = False, *,
+               accept_legacy_probe: bool = False) -> dict:
     cid = case["case_id"]
     variant_tag = "_v2ds" if v2_dateshift else ""
     out_path = out / f"{cid}{variant_tag}.json"
     schema = RECOG_SCHEMA if kind == "recognition" else VERBATIM_SCHEMA
-    if cli_client.output_is_valid(out_path, schema):
-        return {"case_id": cid, "status": "skip (멱등)"}
 
     if kind == "recognition":
         payload = bp.build_payload(case, perturb=True)
@@ -69,6 +82,31 @@ def probe_case(kind: str, case: dict, out: Path, log_dir: Path,
         user = "Answer now."
         markers = cli_client.EVALUATEE_FORBIDDEN_MARKERS
 
+    # R1-14: 멱등 skip은 스키마 유효성 + 구성 fingerprint 일치여야 한다.
+    # 동결 프로브 트리 보호(I3): 구성 불일치는 덮어쓰지 않고 FAIL — 새
+    # --out-root로 실행하라. fingerprint는 사이드카(fp_*.json — case_* 글롭과
+    # 충돌하지 않는 이름)에 둔다: 동결 출력 파일 무접촉.
+    fingerprint = _probe_fingerprint(kind, variant_tag, system, user, schema)
+    fp_path = out / f"fp_{cid}{variant_tag}.json"
+    if cli_client.output_is_valid(out_path, schema):
+        if fp_path.exists():
+            try:
+                recorded = json.loads(fp_path.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError):
+                recorded = None
+            if recorded == fingerprint:
+                return {"case_id": cid, "status": "skip (멱등 — fingerprint 일치)"}
+            return {"case_id": cid, "status":
+                    "FAIL (config_changed — 기존 출력은 다른 구성의 산출; 동결 "
+                    "경로 보호를 위해 덮어쓰지 않음. 새 --out-root로 실행)"}
+        if accept_legacy_probe:
+            return {"case_id": cid, "status":
+                    "skip (legacy probe ACCEPTED via --accept-legacy-probe — "
+                    "fingerprint 사이드카 없음)"}
+        return {"case_id": cid, "status":
+                "FAIL (stale_legacy_probe — fingerprint 사이드카 없음; "
+                "--accept-legacy-probe로 명시 수용)"}
+
     r = cli_client.call_model(EVALUATEE_MODEL, system, user, schema,
                               log_dir=log_dir,
                               log_name=f"probe_{kind}{variant_tag}_{cid}",
@@ -84,6 +122,11 @@ def probe_case(kind: str, case: dict, out: Path, log_dir: Path,
     tmp_path.write_text(json.dumps(r.structured, ensure_ascii=False, indent=2),
                         encoding="utf-8")
     tmp_path.replace(out_path)
+    # R1-14: 구성 fingerprint 사이드카 (출력 파일 스키마 무접촉)
+    fp_tmp = fp_path.with_suffix(".json.tmp")
+    fp_tmp.write_text(json.dumps(fingerprint, ensure_ascii=False, indent=2),
+                      encoding="utf-8")
+    fp_tmp.replace(fp_path)
     if kind == "recognition":
         return {"case_id": cid, "status": f"OK guess={r.structured['company_guess']!r} "
                 f"({r.structured['confidence']})"}
@@ -104,6 +147,9 @@ def main() -> int:
     ap.add_argument("--v2-dateshift", action="store_true",
                     help="Q-F05: 렌더 직전 date_shift.shift_payload 적용 "
                          "(specs/perturb_v2.md §3/§5 — recognition 전용)")
+    ap.add_argument("--accept-legacy-probe", action="store_true",
+                    help="R1-14: fingerprint 사이드카 없는 동결 프로브 출력의 "
+                         "멱등 skip 명시 수용 (기본은 FAIL)")
     args = ap.parse_args()
 
     cli_client.assert_no_metered_credentials()
@@ -126,7 +172,8 @@ def main() -> int:
         with concurrent.futures.ThreadPoolExecutor(
                 max_workers=args.concurrency) as pool:
             futs = {pool.submit(probe_case, kind, case, out, log_dir,
-                                args.v2_dateshift): case
+                                args.v2_dateshift,
+                                accept_legacy_probe=args.accept_legacy_probe): case
                     for case in cases}
             try:
                 for fut in concurrent.futures.as_completed(futs):
