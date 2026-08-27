@@ -9,6 +9,7 @@
 2026-07-05 스키마 v1.1 서명(패턴 완화)으로 해당 편차가 스키마 적법이 되어
 허용목록을 삭제 — 이제 어떤 편차도 예외 없이 실패다.
 """
+import hashlib
 import json
 import re
 import sys
@@ -41,6 +42,9 @@ LEGACY_CANDIDATE_FILES = {
             "required:revelation_source", "type:scheme_summary",
             "type:scheme_type"},
         "error_count": 275,
+        # R4-8: {case_id: [시그니처…]} 정본 잠금 — 집계 불변식은
+        # 보상 스왑(한 필드 채우고 다른 허용 편차 추가)에 눈멀다
+        "characterization_sha256": "7272c791cf25952172e156725075910549b0471b696101165753d72d90d481ce",
     },
     "candidates_holdout.json": {
         "invalid_ids": ["case_71", "case_72", "case_73"],
@@ -49,6 +53,9 @@ LEGACY_CANDIDATE_FILES = {
             "required:aaer_url", "required:first_revelation_date",
             "required:revelation_source", "type:scheme_type"},
         "error_count": 21,
+        # R4-8: {case_id: [시그니처…]} 정본 잠금 — 집계 불변식은
+        # 보상 스왑(한 필드 채우고 다른 허용 편차 추가)에 눈멀다
+        "characterization_sha256": "d704871227c7c24e2227a0b7d7b117cfe19ac3908a955a2576b2239a4771aeed",
     },
     "candidates_holdout_controls.json": {
         "invalid_ids": sorted(["VIASP", "UTL", "GRDX", "RXO", "BCO", "XPO",
@@ -60,6 +67,9 @@ LEGACY_CANDIDATE_FILES = {
             "required:revelation_source", "type:scheme_summary",
             "type:scheme_type"},
         "error_count": 90,
+        # R4-8: {case_id: [시그니처…]} 정본 잠금 — 집계 불변식은
+        # 보상 스왑(한 필드 채우고 다른 허용 편차 추가)에 눈멀다
+        "characterization_sha256": "02b7cd69455d3701709bdf37fbc590d898325dd2f5a4d872b3d02af229264919",
     },
     "candidates_v2_controls.json": {
         "invalid_ids": sorted([f"V{i:02d}" for i in range(1, 23)]),
@@ -70,6 +80,9 @@ LEGACY_CANDIDATE_FILES = {
             "required:revelation_source", "type:scheme_summary",
             "type:scheme_type"},
         "error_count": 220,
+        # R4-8: {case_id: [시그니처…]} 정본 잠금 — 집계 불변식은
+        # 보상 스왑(한 필드 채우고 다른 허용 편차 추가)에 눈멀다
+        "characterization_sha256": "4fd9d419785209aa17ed226ef8011b35bab4093bf290ae14d1a1199d2e6edc21",
     },
 }
 
@@ -88,11 +101,13 @@ def check_legacy_candidates(case_input_schema, failures,
     base = base or (REPO / "data" / "candidates")
     for name, expected in LEGACY_CANDIDATE_FILES.items():
         cases = json.loads((base / name).read_text(encoding="utf-8"))["candidates"]
-        invalid_ids, n_err = [], 0
+        invalid_ids, n_err, per_case = [], 0, {}
         for c in cases:
             errors = list(validator.iter_errors(c))
             if errors:
                 invalid_ids.append(c.get("case_id", "?"))
+                per_case[c.get("case_id", "?")] = sorted(
+                    _deviation_signature(e) for e in errors)
             for e in errors:
                 n_err += 1
                 sig = _deviation_signature(e)
@@ -106,6 +121,15 @@ def check_legacy_candidates(case_input_schema, failures,
             failures.append(f"[{name}] 편차 총수 {n_err} ≠ 기록 "
                             f"{expected['error_count']} — 침묵 드리프트 금지 "
                             "(개선이어도 특성화를 갱신·서명하라)")
+        # R4-8: 케이스별 시그니처 목록 정본 잠금 — 집계(집합·총수) 불변인
+        # 보상 스왑(같은 케이스에서 한 편차 해소 + 다른 허용 편차 추가)도 잡는다
+        canonical = json.dumps(per_case, sort_keys=True, ensure_ascii=False)
+        actual_sha = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+        if actual_sha != expected["characterization_sha256"]:
+            failures.append(f"[{name}] 케이스별 편차 특성화 sha256 불일치 "
+                            f"({actual_sha[:12]}… ≠ 기록 "
+                            f"{expected['characterization_sha256'][:12]}…) — "
+                            "케이스 내 편차 구성이 변했다 (스왑 포함)")
         print(f"{name}: {len(cases)}건 — 기존 편차 {n_err}건 열거 대조")
 
 

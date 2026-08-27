@@ -82,3 +82,24 @@ def test_silent_improvement_also_fails(tmp_path):
     (base / "candidates_holdout.json").write_text(json.dumps(doc), encoding="utf-8")
     failures = _legacy_failures(base)
     assert any("편차 총수" in f for f in failures)
+
+
+def test_compensating_swap_on_invalid_cases_fails(tmp_path):
+    """R4-8: 허용 시그니처 집합 안의 보상 스왑 — W-케이스에서 required 편차
+    1건 해소(-1), T-케이스에 다른 허용 클래스 편차 1건 추가(+1). invalid id
+    집합·시그니처 집합·총수 전부 불변 → 집계 잠금은 눈멀고, 케이스별
+    특성화 sha256만이 잡는다."""
+    base = _copied_base(tmp_path)
+    name = "candidates_wave2.json"
+    doc = json.loads((base / name).read_text(encoding="utf-8"))
+    by_id = {c["case_id"]: c for c in doc["candidates"]}
+    w01, t04 = by_id["W01"], by_id["T04"]
+    assert "aaer_no" not in w01 and "scheme_summary" in t04
+    w01["aaer_no"] = "AAER-1111"    # -1: required:aaer_no (W01은 여전히 invalid)
+    t04["scheme_summary"] = 123     # +1: type:scheme_summary (허용 클래스)
+    (base / name).write_text(json.dumps(doc), encoding="utf-8")
+    failures = _legacy_failures(base)
+    assert any("케이스별 편차 특성화 sha256 불일치" in f for f in failures), failures
+    # 스왑 특성상 집계 잠금은 정말로 침묵해야 테스트가 의미를 가진다
+    assert not any("편차 총수" in f or "invalid 케이스 집합" in f
+                   or "특성화 밖 신규 편차" in f for f in failures), failures
