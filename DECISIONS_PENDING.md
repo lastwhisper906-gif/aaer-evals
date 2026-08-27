@@ -1519,3 +1519,33 @@
 - **Basis:** OV-002 · PROJECT.md §5-1 · INV-03/INV-06 (disclose-dont-revise)
   · reviews/cycle-001.md R1-3 검증 노트 (~/aaer-data/_rp08 대조 실측)
 - **Revert:** 코드 revert 시 후속 엔트리로 사유 기록 (ERRATA append-only).
+
+## D-P86 — [DRAFT — 소유자 서명 대기] 특성화 공개: 쓰기 시점 검증 이전 draw 기록 15건의 스키마 위반 (ERRATA 후보)
+- **Status:** DRAFT — 세션(harness v4 cycle 002, R2-2)이 작성. 동결
+  기록·ERRATA.md 무접촉; 등재 여부는 소유자 서명 사항.
+- **사실:** `runs/**` 아래 llm_output 형태 기록 508건 전수 검증 결과,
+  15건이 현행 동결 스키마(FULL_OUTPUT_SCHEMA)에 실패한다. 전부 draw
+  디렉토리 도입 커밋(62fe360)이 쓰기 시점 검증 도입(e1b5a43)보다 앞서는
+  pre-validation 기록. 실패 사유는 두 종:
+  - `overall.top_signals` maxItems 5 초과 — 14건:
+    runs/draw_k3/w1_controls/draw_2/case_24, case_37 ·
+    runs/draw_k3/wave2/draw_2/case_45 ·
+    runs/hardening/draws/draw_3/case_14, draw_4/case_12, draw_5/case_12,
+    draw_5/case_13 · runs/holdout/mainscore_redraw/draw_5/case_73 ·
+    runs/rp07/draws/draw_3/case_08, draw_3/case_12, draw_5/case_09,
+    draw_5/case_12 · runs/wave2/perturbed_redraw/draw_2/case_66,
+    draw_3/case_66 (모두 .json)
+  - `checklist[3].evidence` minItems 1 위반 — 1건:
+    runs/draw_k3/wave2/draw_3/case_67.json
+- **하류 소비:** draw 소비 경로(`scoring/analyze_hardening.py`,
+  `analysis/draw_k3_analysis.py` 등)는 `misstatement_probability`만
+  읽으며, 이 필드는 15건 전부에서 스키마 유효 — 게시 수치 무영향.
+- **조치 (코드만, 커밋됨):** `pipeline/test_output_schema_enforcement.py`
+  스위프를 runs/**·pilot 전체 rglob로 확장, 15건은 경로+실패 키워드
+  명시 허용목록으로 열거(존재·기재 사유 일치까지 단언) — 16번째 위반
+  기록은 어디에 생겨도 pytest 실패. 동결 기록 무수정 (INV-06).
+- **Options:** (a) ERRATA 등재 없이 본 엔트리를 특성화 공개로 종결
+  (권고 — 게시 수치 무영향, 소비 필드 유효) (b) ERRATA 병행 등재
+  (draw-robustness 표를 게시 표면으로 강하게 낸다고 판단 시)
+- **Basis:** INV-02(스키마 준수)·INV-06 · reviews/cycle-002.md R2-2
+- **Revert:** 허용목록 축소는 후속 엔트리로 사유 기록.

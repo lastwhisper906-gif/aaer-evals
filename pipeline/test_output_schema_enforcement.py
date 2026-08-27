@@ -150,22 +150,68 @@ def test_date_format_enforced_by_runner_and_output_validity(monkeypatch, tmp_pat
     assert runner.cli_client.output_is_valid(output_path, runner.FULL_OUTPUT_SCHEMA)
 
 
+# R2-2: 쓰기 시점 검증(e1a5…) 이전에 커밋된 draw 기록 15건 — 스키마 위반이
+# 알려진 채 동결됨(수정 금지, INV-06). 경로 + 실패 키워드를 명시 열거:
+# 새 위반 기록(16번째)은 이 목록에 없으므로 스위프가 잡는다. 특성화는
+# DECISIONS_PENDING.md DRAFT(ERRATA 후보) 참조 — 하류 소비는 스키마 유효한
+# misstatement_probability 필드뿐.
+PREVALIDATION_ALLOWLIST = {
+    "runs/draw_k3/w1_controls/draw_2/case_24.json": "top_signals",
+    "runs/draw_k3/w1_controls/draw_2/case_37.json": "top_signals",
+    "runs/draw_k3/wave2/draw_2/case_45.json": "top_signals",
+    "runs/draw_k3/wave2/draw_3/case_67.json": "evidence",
+    "runs/hardening/draws/draw_3/case_14.json": "top_signals",
+    "runs/hardening/draws/draw_4/case_12.json": "top_signals",
+    "runs/hardening/draws/draw_5/case_12.json": "top_signals",
+    "runs/hardening/draws/draw_5/case_13.json": "top_signals",
+    "runs/holdout/mainscore_redraw/draw_5/case_73.json": "top_signals",
+    "runs/rp07/draws/draw_3/case_08.json": "top_signals",
+    "runs/rp07/draws/draw_3/case_12.json": "top_signals",
+    "runs/rp07/draws/draw_5/case_09.json": "top_signals",
+    "runs/rp07/draws/draw_5/case_12.json": "top_signals",
+    "runs/wave2/perturbed_redraw/draw_2/case_66.json": "top_signals",
+    "runs/wave2/perturbed_redraw/draw_3/case_66.json": "top_signals",
+}
+
+
+def _llm_output_shaped_paths():
+    paths = set()
+    for base in ("runs", "pilot"):
+        for path in (REPO_ROOT / base).rglob("*.json"):
+            try:
+                doc = json.loads(path.read_text(encoding="utf-8"))
+            except json.JSONDecodeError:
+                continue
+            if isinstance(doc, dict) and "misstatement_probability" in doc \
+                    and "checklist" in doc:
+                paths.add(path)
+    return sorted(paths)
+
+
 def test_all_committed_run_outputs_validate():
-    patterns = (
-        "runs/*/case_*.json", "runs/*/scores/*.json", "runs/wave2/perturbed/*.json",
-        "pilot/runs/case_*.json",
-    )
-    paths = sorted({path for pattern in patterns for path in REPO_ROOT.glob(pattern)
-                    if path.name != "MANIFEST.json"})
-    assert paths
+    paths = _llm_output_shaped_paths()
+    assert len(paths) > 400, "스위프가 draw 트리를 놓침 — 발견 회귀"
     validator = jsonschema.Draft7Validator(
         runner.FULL_OUTPUT_SCHEMA, format_checker=jsonschema.FormatChecker())
     failures = []
+    seen_allowlisted = {}
     for path in paths:
+        relative = path.relative_to(REPO_ROOT).as_posix()
         errors = list(validator.iter_errors(json.loads(path.read_text(encoding="utf-8"))))
+        if relative in PREVALIDATION_ALLOWLIST:
+            seen_allowlisted[relative] = errors
+            continue
         if errors:
-            failures.append(f"{path.relative_to(REPO_ROOT)}: {errors[0].message}")
+            failures.append(f"{relative}: {errors[0].message}")
     assert not failures, "\n".join(failures)
+    # 열거된 15건은 존재해야 하고(동결 확인), 기재된 이유로 실패해야 한다 —
+    # 다른 이유의 새 위반이 허용목록 뒤에 숨지 못하게.
+    assert set(seen_allowlisted) == set(PREVALIDATION_ALLOWLIST), \
+        "허용목록 기재 기록이 트리에 없거나 스위프가 발견하지 못함"
+    for relative, keyword in PREVALIDATION_ALLOWLIST.items():
+        errors = seen_allowlisted[relative]
+        assert errors and keyword in errors[0].json_path, \
+            f"{relative}: 기재 이유({keyword}) 외의 스키마 상태"
 
 
 # ── evaluatee_input 화이트리스트의 송출 지점 강제 (R1-5) ──────────────────
