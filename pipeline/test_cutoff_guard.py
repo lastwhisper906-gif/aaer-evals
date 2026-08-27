@@ -153,3 +153,71 @@ def test_accession_crosscheck_missing_submissions_fails_closed(env, tmp_path):
                       registry_path=env["registry"], log_path=env["log"],
                       edgar_data_dir=tmp_path / "empty")
     assert read_log(env["log"])[-1]["reason"] == "edgar_crosscheck_unavailable"
+
+
+# ── R1-13: EDGAR 병렬 배열 정렬성 fail-closed ─────────────────────────────
+
+def _chronology_env(tmp_path, recent):
+    registry = tmp_path / "candidates.json"
+    registry.write_text(json.dumps({"candidates": [
+        {"case_id": "T01", "ticker": "AAA", "cutoff_date": CUTOFF}]}), encoding="utf-8")
+    sub_dir = tmp_path / "aaer-data" / "AAA" / "edgar"
+    sub_dir.mkdir(parents=True)
+    (sub_dir / "CIK0001234567.json").write_text(
+        json.dumps({"filings": {"recent": recent, "files": []}}), encoding="utf-8")
+    return {"registry": registry, "edgar": tmp_path / "aaer-data",
+            "log": tmp_path / "logs" / "access_log.jsonl"}
+
+
+def _chronology(env):
+    from cutoff_guard import load_edgar_chronology
+    return load_edgar_chronology("T01", "AAA", CUTOFF, data_dir=env["edgar"],
+                                 registry_path=env["registry"], log_path=env["log"])
+
+
+def test_chronology_truncated_parallel_arrays_fail_closed(tmp_path):
+    """filingDate가 form보다 짧으면 zip이 뒤 제출을 침묵 절단 — 예외여야 한다."""
+    env = _chronology_env(tmp_path, {
+        "form": ["10-K", "8-K"], "filingDate": ["2014-01-01"],
+        "accessionNumber": [ACCESSION, "0001234567-14-000002"], "items": ["", ""]})
+    with pytest.raises(CutoffGuardError, match="병렬 배열 길이 불일치"):
+        _chronology(env)
+
+
+def test_chronology_short_accession_array_fails_not_none_collapse(tmp_path):
+    """accessionNumber가 짧으면 종전에는 뒤 제출의 accession이 침묵 None."""
+    env = _chronology_env(tmp_path, {
+        "form": ["10-K", "8-K"], "filingDate": ["2014-01-01", "2014-02-01"],
+        "accessionNumber": [ACCESSION], "items": ["", ""]})
+    with pytest.raises(CutoffGuardError, match="병렬 배열 길이 불일치"):
+        _chronology(env)
+
+
+def test_chronology_items_length_mismatch_fails(tmp_path):
+    env = _chronology_env(tmp_path, {
+        "form": ["10-K", "8-K"], "filingDate": ["2014-01-01", "2014-02-01"],
+        "accessionNumber": [ACCESSION, "0001234567-14-000002"], "items": [""]})
+    with pytest.raises(CutoffGuardError, match="items 배열 길이 불일치"):
+        _chronology(env)
+
+
+def test_chronology_aligned_arrays_pass_and_absent_items_allowed(tmp_path):
+    env = _chronology_env(tmp_path, {
+        "form": ["10-K", "8-K"], "filingDate": ["2014-01-01", "2014-02-01"],
+        "accessionNumber": [ACCESSION, "0001234567-14-000002"]})
+    rows, meta = _chronology(env)
+    assert [r["accessionNumber"] for r in rows] == [ACCESSION, "0001234567-14-000002"]
+    assert all(r["items"] == "" for r in rows)
+
+
+def test_submissions_index_truncated_arrays_fail_closed(tmp_path):
+    """_submissions 인덱스 경로(교차 대조용 accession→filingDate)도 동일 강제."""
+    env = _chronology_env(tmp_path, {
+        "form": ["10-K"], "filingDate": ["2014-01-01", "2014-02-01"],
+        "accessionNumber": [ACCESSION]})
+    doc = tmp_path / "doc.txt"
+    doc.write_text("10-K body", encoding="utf-8")
+    with pytest.raises(CutoffGuardError, match="병렬 배열 길이 불일치"):
+        load_document("T01", doc, "2014-01-01",
+                      accession_no=ACCESSION, registry_path=env["registry"],
+                      log_path=env["log"], edgar_data_dir=env["edgar"])

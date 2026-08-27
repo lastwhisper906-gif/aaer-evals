@@ -123,9 +123,17 @@ def _edgar_filing_date(case: dict, accession_no: str, edgar_data_dir) -> datetim
         j = json.loads(chunk.read_text(encoding="utf-8"))
         blocks = [j["filings"]["recent"]] if "filings" in j else [j]
         for b in blocks:
-            for i, acc in enumerate(b.get("accessionNumber", [])):
+            accs = b.get("accessionNumber", [])
+            dates = b.get("filingDate", [])
+            # R1-13: 위치 조인(dates[i]) 전에 배열 정렬성 강제 — 길이가 다르면
+            # 잘못된 filingDate가 침묵 반환될 수 있다 (fail-closed)
+            if len(accs) != len(dates):
+                raise CutoffGuardError(
+                    f"{chunk.name}: submissions 병렬 배열 길이 불일치 "
+                    f"(accessionNumber {len(accs)} ≠ filingDate {len(dates)})")
+            for i, acc in enumerate(accs):
                 if acc == target:
-                    return _parse_date(b["filingDate"][i], "filingDate")
+                    return _parse_date(dates[i], "filingDate")
     raise CutoffGuardError(
         f"accession_no={target}: {edgar_dir}의 submissions JSON에서 미발견 — fail-closed"
     )
@@ -184,7 +192,14 @@ def _submissions(data_dir: Path, ticker: str):
         parsed.append((path, doc))
         blocks = [doc["filings"]["recent"]] if "filings" in doc else [doc]
         for block in blocks:
-            for acc, filed in zip(block.get("accessionNumber", []), block.get("filingDate", [])):
+            accs = block.get("accessionNumber", [])
+            dates = block.get("filingDate", [])
+            # R1-13: zip 절단은 침묵 misalignment — 병렬 배열 길이 강제 (fail-closed)
+            if len(accs) != len(dates):
+                raise CutoffGuardError(
+                    f"{path.name}: submissions 병렬 배열 길이 불일치 "
+                    f"(accessionNumber {len(accs)} ≠ filingDate {len(dates)})")
+            for acc, filed in zip(accs, dates):
                 accession_dates[_normalize_accession(acc)] = _parse_date(filed, "filingDate")
     return parsed, accession_dates
 
@@ -254,11 +269,22 @@ def load_edgar_chronology(case_id: str, ticker: str, cutoff_date, *,
         for block in blocks:
             forms, dates = block.get("form", []), block.get("filingDate", [])
             accs, items = block.get("accessionNumber", []), block.get("items", [])
+            # R1-13: 배열 간 길이 불일치는 zip 절단·accession None 붕괴로
+            # 연대기를 침묵 왜곡한다 — 동일 길이 강제 (items는 부재 시만 예외)
+            if not (len(forms) == len(dates) == len(accs)):
+                raise CutoffGuardError(
+                    f"{path.name}: submissions 병렬 배열 길이 불일치 "
+                    f"(form {len(forms)} / filingDate {len(dates)} / "
+                    f"accessionNumber {len(accs)})")
+            if items and len(items) != len(forms):
+                raise CutoffGuardError(
+                    f"{path.name}: items 배열 길이 불일치 "
+                    f"({len(items)} ≠ form {len(forms)})")
             for i, (form, date) in enumerate(zip(forms, dates)):
                 if _parse_date(date, "filingDate") <= cutoff:
                     rows.append({"form": form, "filingDate": date,
-                                 "accessionNumber": accs[i] if i < len(accs) else None,
-                                 "items": items[i] if i < len(items) else ""})
+                                 "accessionNumber": accs[i],
+                                 "items": items[i] if items else ""})
         _log(log_path, {"case_id": case_id, "doc": str(path), "verdict": "allowed",
                         "reason": "bulk_edgar_filtered"})
     return rows, {"files_read": [str(path) for path, _ in parsed],
