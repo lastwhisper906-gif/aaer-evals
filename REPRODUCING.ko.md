@@ -1,3 +1,5 @@
+> **한국어 스냅샷 (2026-08-06 PKT-R2 집행 이전 동기화) — 영어 정본이 최신이다.** 스냅샷 이후의 주장 개정은 영어 정본에만 반영된다: 특히 PKT-R2 (D-P83, commit 38c0c77)는 "구조적으로 암기 불가(structurally impossible)" 문언을 "선언 컷오프 + 실측 비인지(declared cutoff + measured non-recognition)" 문언으로 약화하고 RESULTS 행에 서명된 한계 문장 9건을 추가했다. 이 문서의 "암기 불가" 류 표현은 그 개정으로 대체된 스냅샷 표현이다 (ERRATA.ko F-01/F-02 판형).
+
 # REPRODUCING.ko.md — 제3자 재현 가이드
 
 > **영문판은 [REPRODUCING.md](REPRODUCING.md)** — 이 문서는 한국어 원문을 유지한다 (D29 패턴).
@@ -53,6 +55,14 @@ python3.12 -m venv .venv                                    # 3.12 = 재현 주�
 .venv/bin/pip install --require-hashes -r requirements.lock  # 해시 핀 설치 (C4, D109)
 make verify-public
 ```
+
+**완전 클론(full-clone) 전제**: `tools/verify_blindness.py`(verify-public
+내부의 채점-기준 선행 이력 증명)는 `git merge-base --is-ancestor`로 커밋
+그래프를 걷는다 — **완전한 git 이력이 필요하다**. 얕은 클론(`git clone
+--depth 1`, CI 체크아웃의 `fetch-depth: 1`)에서는 걸어야 할 커밋이 없어
+검사가 실패하거나 오판정한다. 위처럼 전체 이력으로 클론하거나, 얕은 사본은
+먼저 `git fetch --unshallow`로 복구하라. (이 저장소의 CI가 `fetch-depth: 0`
+을 쓰는 이유가 정확히 이것이다 — BN-07/D-P53.)
 
 **재현 주장의 정본 Python은 3.12다** — CI는 3.11/3.12/3.13 매트릭스를
 돌리지만 재현 주장은 3.12 기준이며, 비정본 버전 실패는 발견(finding)으로

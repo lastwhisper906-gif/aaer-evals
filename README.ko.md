@@ -1,3 +1,5 @@
+> **한국어 스냅샷 (2026-08-06 PKT-R2 집행 이전 동기화) — 영어 정본이 최신이다.** 스냅샷 이후의 주장 개정은 영어 정본에만 반영된다: 특히 PKT-R2 (D-P83, commit 38c0c77)는 "구조적으로 암기 불가(structurally impossible)" 문언을 "선언 컷오프 + 실측 비인지(declared cutoff + measured non-recognition)" 문언으로 약화하고 RESULTS 행에 서명된 한계 문장 9건을 추가했다. 이 문서의 "암기 불가" 류 표현은 그 개정으로 대체된 스냅샷 표현이다 (ERRATA.ko F-01/F-02 판형).
+
 # AAER Evals — 이해상충 없는 회계 품질 신호의 백테스트
 
 [![ci](https://github.com/lastwhisper906-gif/aaer-evals/actions/workflows/ci.yml/badge.svg)](https://github.com/lastwhisper906-gif/aaer-evals/actions/workflows/ci.yml)
