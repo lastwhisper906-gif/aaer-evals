@@ -281,8 +281,26 @@ def lint_doc(path):
     return viol
 
 
+# R1-19: 열거 표면 중 어떤 상태에서 부재가 적법한 파일 (현재 없음 — 항목을
+# 추가하려면 사유 주석과 함께; 빈 집합이 기본이자 정상이다)
+MISSING_ALLOWED: set[str] = set()
+
+
+def missing_enumerated_surfaces(allowed: set[str] | None = None) -> list[str]:
+    """R1-19: DOCS/ORDINAL_DOCS 열거 표면의 부재는 커버리지 침묵 이탈 —
+    삭제·개명된 발행 표면이 린트 범위에서 소리 없이 빠지면 안 된다."""
+    allowed = MISSING_ALLOWED if allowed is None else allowed
+    enumerated = list(dict.fromkeys(DOCS + ORDINAL_DOCS + ["analysis/synthesis.md"]))
+    return [p for p in enumerated
+            if p not in allowed and not (REPO / p).exists()]
+
+
 def main():
     total = 0
+    for path in missing_enumerated_surfaces():
+        print(f"  {path}:0: (R1-19) 열거 발행 표면 부재 — 삭제/개명은 린트 "
+              "커버리지 이탈: DOCS 갱신 또는 MISSING_ALLOWED 등재(사유 주석) 필요")
+        total += 1
     for path in DOCS:
         if not (REPO / path).exists():
             continue
