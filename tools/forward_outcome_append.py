@@ -16,7 +16,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from forward_common import REPO, read_json, fail
+from forward_common import REPO, parse_date, read_json, fail
 
 EVENT_TYPES = {
     "aaer_or_final_enforcement", "item_402_nonreliance", "big_r_restatement",
@@ -36,6 +36,13 @@ def main():
 
     if args.event_type not in EVENT_TYPES or args.new_label not in EVENT_TYPES:
         fail(f"event_type/new_label은 spec §7 계층 라벨 중 하나여야 함: {sorted(EVENT_TYPES)}")
+    # R3-10(b): append-only 원장에 비ISO 날짜가 들어가면 영구 오염 — 선파싱
+    for flag, value in (("--event-date", args.event_date),
+                        ("--event-public-date", args.event_public_date)):
+        try:
+            parse_date(value)
+        except ValueError:
+            fail(f"{flag} {value!r} — ISO 날짜(YYYY-MM-DD)가 아님")
     records = {r["record_id"]: r for r in read_json(cycle / "scores.json")["records"]}
     if args.record_id not in records:
         fail(f"record_id {args.record_id} 이(가) scores.json에 없음")

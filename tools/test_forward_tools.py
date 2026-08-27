@@ -375,12 +375,39 @@ def test_assemble_record_roundtrips_validate(cycle):
 
 def test_outcome_append_rejects_unknown_record(cycle, monkeypatch):
     monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(cycle),
-                                      "--record-id", "fw001-r99", "--event-date", "d",
-                                      "--event-public-date", "d", "--event-type",
+                                      "--record-id", "fw001-r99",
+                                      "--event-date", "2027-03-02",
+                                      "--event-public-date", "2027-03-02", "--event-type",
                                       "sec_complaint", "--source", "s", "--new-label",
                                       "sec_complaint", "--reviewer", "o", "--rationale", "r"])
     with pytest.raises(SystemExit):
         forward_outcome_append.main()
+
+
+def test_outcome_append_rejects_non_iso_dates(cycle, monkeypatch):
+    """R3-10(b): append-only 원장에 비ISO 날짜 유입 금지 — 선파싱 거부."""
+    for bad_flag in ("--event-date", "--event-public-date"):
+        argv = ["x", "--cycle", str(cycle), "--record-id", "fw001-r01",
+                "--event-date", "2027-03-02", "--event-public-date", "2027-03-02",
+                "--event-type", "sec_complaint", "--source", "s", "--new-label",
+                "sec_complaint", "--reviewer", "o", "--rationale", "r"]
+        argv[argv.index(bad_flag) + 1] = "03/02/2027"
+        monkeypatch.setattr(sys, "argv", argv)
+        with pytest.raises(SystemExit):
+            forward_outcome_append.main()
+    assert (cycle / "outcome_updates.jsonl").read_text(encoding="utf-8") == ""
+
+
+def test_assemble_refuses_after_seal(cycle, monkeypatch):
+    """R3-10(a): 봉인 후 재조립은 sealed scores.json을 재작성한다 — 거부."""
+    monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(cycle)])
+    assert forward_seal.main() == 0
+    sealed_bytes = (cycle / "scores.json").read_bytes()
+    import forward_assemble
+    monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(cycle),
+                                      "--runs", str(cycle / "no_runs")])
+    assert forward_assemble.main() == 1
+    assert (cycle / "scores.json").read_bytes() == sealed_bytes
 
 
 # ── R2-8 (INV-22): 봉인 후 불변성 자동 게이트 ─────────────────────────────
