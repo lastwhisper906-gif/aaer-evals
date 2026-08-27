@@ -124,8 +124,11 @@ def test_gate_steps_dry_run_end_to_end(tmp_path, monkeypatch, clean_env):
                                       "--runs", str(runs)])
     assert forward_assemble.main() == 0
 
-    # (5) validate — 전 구간 정합, 신규 코드 0으로 PASS
-    errs = forward_validate.validate(cycle)
+    # (5) validate — 전 구간 정합, 신규 코드 0으로 PASS. runs_dir 전달로
+    # R5-1 재해시 leg까지 리허설: assemble이 계산한 run_output_sha256와
+    # validate의 실측 재해시 규약이 어긋나면 여기서 red (R6-6) — 창 안이
+    # 아니라 지금 잡힌다. (실제 assemble 산출 해시 — 수기 해시 아님.)
+    errs = forward_validate.validate(cycle, runs_dir=runs)
     assert errs == [], errs[:10]
 
 
