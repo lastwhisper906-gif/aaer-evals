@@ -937,8 +937,9 @@ def test_seal_record_has_no_absolute_paths_and_names_rehash_command(cycle, monke
     monkeypatch.setattr(sys, "argv", seal_argv(cycle))
     assert forward_seal.main() == 0
     record = (cycle / "SEAL_RECORD.md").read_text(encoding="utf-8")
-    body = record.split("## 소유자 봉인 명령")[0] + record.split("## 외부 검증 방법")[1]
-    assert "/Users/" not in body and str(cycle.parent) not in body, \
+    # R7-8: 전체 레코드 단정 — 소유자 명령 절(git add {cycle_display})이 R6-7
+    # 수정 지점인데 종전 splice가 그 절만 검사에서 도려냈다 (revert 미검출).
+    assert "/Users/" not in record and str(cycle.parent) not in record, \
         "SEAL_RECORD에 절대 로컬 경로가 남음"
     assert "forward_validate.py --cycle" in record and "--runs" in record, \
         "run-output 사슬 검증 명령 부재"
