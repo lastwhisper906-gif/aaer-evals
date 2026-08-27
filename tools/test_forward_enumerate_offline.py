@@ -83,3 +83,63 @@ def test_offline_recompute_reproduces_frozen_universe(tmp_path, monkeypatch):
         "--offline 재계산이 동결 universe.json과 바이트 불일치 — 봉인 창 "
         "개막 명령이 창 안에서 실패한다 (OWNER_LAUNCH_GATE §4 (1))")
     assert _forward_tree_state() == before, "재계산이 forward/ 하위를 수정했다"
+
+
+# ── R3-1: --check 모드 + 동결 대상 덮어쓰기 거부 ──────────────────────────
+
+def _offline_env(monkeypatch, tmp_snap):
+    for var in forward_common.METERED_CREDENTIAL_VARS:
+        monkeypatch.delenv(var, raising=False)
+    monkeypatch.setattr(urllib.request, "urlopen", _refuse_network)
+    monkeypatch.setattr(forward_enumerate, "_provenance", [])
+    monkeypatch.setattr(forward_enumerate, "_fetch_errors", [])
+    monkeypatch.setattr(forward_enumerate, "SNAP", tmp_snap)
+
+
+def test_gate_step_command_on_incomplete_snapshot_refuses_and_preserves_frozen(
+        tmp_path, monkeypatch):
+    """R3-1 (P1): 게이트 §4(1) 명령(--offline, 무플래그)이 불완전 스냅샷에서
+    selected:[]로 동결 universe.json을 클로버하면 안 된다 — 거부 + 무변경."""
+    _offline_env(monkeypatch, tmp_path / "snap_empty")
+    (tmp_path / "snap_empty").mkdir()
+    before = _forward_tree_state()
+    frozen_bytes = FROZEN.read_bytes()
+    monkeypatch.setattr(sys, "argv", ["forward_enumerate.py", "--offline"])
+    assert forward_enumerate.main() == 1
+    assert FROZEN.read_bytes() == frozen_bytes, "동결 universe.json이 변조됨"
+    assert _forward_tree_state() == before
+
+
+def test_check_mode_never_writes_and_fails_closed_on_incomplete_snapshot(
+        tmp_path, monkeypatch):
+    _offline_env(monkeypatch, tmp_path / "snap_empty")
+    (tmp_path / "snap_empty").mkdir()
+    target = tmp_path / "universe_copy.json"
+    target.write_bytes(FROZEN.read_bytes())
+    monkeypatch.setattr(sys, "argv",
+                        ["forward_enumerate.py", "--offline", "--check",
+                         "--out", str(target)])
+    assert forward_enumerate.main() == 1  # 불완전 재계산 → 판정 불가 fail-closed
+    assert target.read_bytes() == FROZEN.read_bytes(), "--check가 대상을 씀"
+
+
+def test_check_mode_passes_on_frozen_and_fails_on_planted_byte(tmp_path, monkeypatch):
+    missing, total = _missing_snapshot_files()
+    if missing:
+        pytest.skip(f"T₀ 스냅샷 불완전: {len(missing)}/{total} 파일 부재")
+    _offline_env(monkeypatch, SNAP)
+
+    monkeypatch.setattr(sys, "argv", ["forward_enumerate.py", "--offline", "--check"])
+    assert forward_enumerate.main() == 0
+
+    tampered = tmp_path / "universe_tampered.json"
+    text = FROZEN.read_text(encoding="utf-8")
+    tampered.write_text(text.replace("fw001-r01", "fw001-r0X", 1), encoding="utf-8")
+    monkeypatch.setattr(forward_enumerate, "_provenance", [])
+    monkeypatch.setattr(forward_enumerate, "_fetch_errors", [])
+    monkeypatch.setattr(sys, "argv",
+                        ["forward_enumerate.py", "--offline", "--check",
+                         "--out", str(tampered)])
+    assert forward_enumerate.main() == 1
+    assert tampered.read_text(encoding="utf-8") == text.replace(
+        "fw001-r01", "fw001-r0X", 1), "--check가 대상을 수정함"

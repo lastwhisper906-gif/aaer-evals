@@ -144,6 +144,11 @@ def main():
     ap.add_argument("--out", default="forward/cycle_001/universe.json")
     ap.add_argument("--offline", action="store_true",
                     help="스냅샷만으로 재계산 (결정론 검증)")
+    ap.add_argument("--check", action="store_true",
+                    help="R3-1: 재계산 결과를 --out 대상과 바이트 대조만 한다 — "
+                         "대상을 절대 쓰지 않음 (OWNER_LAUNCH_GATE §4 (1) 검증용)")
+    ap.add_argument("--force", action="store_true",
+                    help="기존 --out과 다른 결과의 덮어쓰기 허용 (의도적 재생성 전용)")
     args = ap.parse_args()
     assert_subscription_only()
     SNAP.mkdir(parents=True, exist_ok=True)
@@ -199,22 +204,50 @@ def main():
             "rerun": "python tools/forward_enumerate.py --offline (스냅샷 결정론 재계산)",
         },
     }
-    write_json(REPO / args.out, universe)
     if _provenance:
         prov_path = SNAP / "provenance.json"
         old = read_json(prov_path) if prov_path.exists() else []
         write_json(prov_path, old + _provenance)
-    print(f"OK — candidates {candidates} · selected {len(selected)} · "
-          f"alternates {len(alternates)} · excluded {excluded}")
-    print("selected:", ", ".join(f"{r['ticker'] or r['cik']}({r['browse_sic']})"
-                                 for r in selected))
+
+    out_path = REPO / args.out
+    # write_json과 동일 직렬화 — 바이트 대조의 기준
+    rendered = json.dumps(universe, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+    complete = not _fetch_errors and len(selected) == UNIVERSE_SIZE
     if _fetch_errors:
         print(f"FAIL — fetch 오류 {len(_fetch_errors)}건: 결측을 배제 사유로 "
               "삼키지 않는다 (fail-closed). 오류 해소(또는 스냅샷 확보) 후 재실행.")
         for e in _fetch_errors[:10]:
             print(f"  {e}")
+
+    if args.check:
+        # R3-1: 검증 모드는 어떤 경우에도 대상을 쓰지 않는다 (INV-06/INV-22)
+        if not complete:
+            print("FAIL — 재계산 불완전(스냅샷 결측/선정 미달) — 대조 판정 불가; "
+                  f"{args.out} 무접촉")
+            return 1
+        if not out_path.exists():
+            print(f"FAIL — 대조 대상 {args.out} 부재")
+            return 1
+        if out_path.read_text(encoding="utf-8") != rendered:
+            print(f"FAIL — 재계산 결과가 동결 {args.out}와 바이트 불일치 (대상 무접촉)")
+            return 1
+        print(f"OK — 재계산 결과가 {args.out}와 바이트 일치 "
+              f"(candidates {candidates} · selected {len(selected)})")
+        return 0
+
+    if (out_path.exists()
+            and out_path.read_text(encoding="utf-8") != rendered and not args.force):
+        # R3-1: 동결·서명 가능 산출물의 무단 덮어쓰기 거부 — 특히 불완전
+        # 스냅샷에서의 selected:[] 클로버 차단. 검증은 --check로.
+        print(f"FAIL — {args.out} 기존 내용과 재계산 결과 불일치: 덮어쓰기 거부 "
+              "(검증은 --check, 의도적 재생성만 --force)")
         return 1
-    return 0 if len(selected) == UNIVERSE_SIZE else 1
+    write_json(out_path, universe)
+    print(f"OK — candidates {candidates} · selected {len(selected)} · "
+          f"alternates {len(alternates)} · excluded {excluded}")
+    print("selected:", ", ".join(f"{r['ticker'] or r['cik']}({r['browse_sic']})"
+                                 for r in selected))
+    return 0 if complete else 1
 
 
 if __name__ == "__main__":
