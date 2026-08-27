@@ -272,7 +272,7 @@ def test_valid_fingerprintless_existing_output_is_currently_skipped(
     """Pin option (ii): current code skips this; requiring FAIL remains an acceptance gap."""
     repo = _configure_tmp(monkeypatch, tmp_path, payload)
     existing = {
-        "case_id": "C01", "run_id": "legacy-C01", "model": "gpt-test",
+        "case_id": "C01", "run_id": "xgpt-original-C01-r1", "model": "gpt-test",
         "pipeline_version": "abc123", "run_timestamp": "2020-01-01T00:00:00+00:00",
         "documents_used": [{"accession_no": "0001-20-000001", "form_type": "10-K",
                             "filing_date": "2020-02-01"}],
@@ -287,3 +287,27 @@ def test_valid_fingerprintless_existing_output_is_currently_skipped(
     result = cross.run_case(case, "original", repo / "runs" / "crossmodel_gpt")
 
     assert result["status"] == "skip"
+
+
+def test_cross_frame_existing_output_fails_not_skips(
+        monkeypatch, tmp_path, case, payload, model_output):
+    """R2-4: 파일명은 case_id만 — original arm 기록이 있는 디렉토리에
+    --frame perturbed로 실행하면 skip이 아니라 frame_collision FAIL이어야
+    한다 (조용한 arm 오염 차단). run_id 접두사가 판정 기준."""
+    repo = _configure_tmp(monkeypatch, tmp_path, payload)
+    existing = {
+        "case_id": "C01", "run_id": "xgpt-original-C01-r1", "model": "gpt-test",
+        "pipeline_version": "abc123", "run_timestamp": "2020-01-01T00:00:00+00:00",
+        "documents_used": [{"accession_no": "0001-20-000001", "form_type": "10-K",
+                            "filing_date": "2020-02-01"}],
+        **model_output,
+    }
+    (repo / "runs" / "crossmodel_gpt" / "C01.json").write_text(
+        json.dumps(existing), encoding="utf-8")
+    monkeypatch.setattr(cross.subprocess, "run",
+                        lambda *a, **k: pytest.fail("collision invoked subprocess"))
+
+    result = cross.run_case(case, "perturbed", repo / "runs" / "crossmodel_gpt")
+
+    assert result["status"].startswith("FAIL (frame_collision"), result["status"]
+    assert "xgpt-original-C01-r1" in result["status"]

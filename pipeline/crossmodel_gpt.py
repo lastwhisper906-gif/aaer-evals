@@ -214,6 +214,12 @@ def run_case(case: dict, frame: str, out_dir: Path, *, dry_run: bool = False) ->
         if existing is not None and not list(jsonschema.Draft7Validator(
                 runner.FULL_OUTPUT_SCHEMA,
                 format_checker=jsonschema.FormatChecker()).iter_errors(existing)):
+            # R2-4: 파일명은 case_id만 담는다 — 다른 frame의 기존 기록을
+            # 멱등 skip하면 "perturbed" arm 데이터가 조용히 original arm이
+            # 된다. run_id 접두사로 frame 일치를 강제, 불일치는 FAIL.
+            if not str(existing.get("run_id", "")).startswith(f"xgpt-{frame}-"):
+                return {"case_id": cid, "status": "FAIL (frame_collision: "
+                        f"existing run_id={existing.get('run_id')!r} vs frame={frame!r})"}
             return {"case_id": cid, "status": "skip"}
 
     payload = build_payload.build_payload(case, perturb=frame == "perturbed")
