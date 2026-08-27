@@ -48,8 +48,13 @@ def call_model_api(model: str, system_prompt: str, user_payload: str,
                    max_tokens: int = DEFAULT_MAX_TOKENS) -> CallResult:
     """cli_client.call_model 동일 계약 — 구조화 출력은 강제 tool-use로 수취."""
     assert_raw_api_approved()
+    schema_json = json.dumps(schema, ensure_ascii=False)
     if forbid_markers:
-        guard_payload(user_payload, forbid_markers)  # SDK import 이전 — 가드 항상 선행
+        # cli_client.call_model 거울 (R2-3): 페이로드에 더해 system=·
+        # input_schema= 채널도 값 수준 가드 (INV-09) — SDK import 이전 선행.
+        guard_payload(user_payload, forbid_markers)
+        guard_payload(system_prompt, forbid_markers)
+        guard_payload(schema_json, forbid_markers)
 
     import anthropic  # 지연 import — 스캐폴드 단계에서 패키지 의존 강제하지 않음
 
@@ -83,7 +88,9 @@ def call_model_api(model: str, system_prompt: str, user_payload: str,
             fail = "empty"
             continue
         try:
-            jsonschema.validate(blocks[0].input, schema)
+            # FormatChecker: CLI arm과 동일 강도 — date 형식 검증 포함 (R2-3)
+            jsonschema.validate(blocks[0].input, schema,
+                                format_checker=jsonschema.FormatChecker())
             structured, fail = blocks[0].input, None
             break
         except jsonschema.ValidationError:

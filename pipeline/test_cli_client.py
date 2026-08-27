@@ -197,6 +197,16 @@ def test_mutation_injected_payload_never_leaves(stub, tmp_path, marker):
     assert stub.calls() == [], "가드 위반 페이로드가 프로세스 경계를 넘음"
 
 
+def test_marker_in_system_prompt_never_leaves(stub, tmp_path):
+    """R2-3 패리티: system prompt 채널 가드 — payload·schema와 함께 3채널
+    전부가 양 arm(cli·raw-api)에서 동일하게 가드된다."""
+    with pytest.raises(cli_client.PayloadGuardError):
+        cli_client.call_model("claude-sonnet-5", "SYSTEM beneish", '{"case": 1}',
+                              SCHEMA, log_dir=tmp_path / "logs", log_name="t",
+                              forbid_markers=cli_client.EVALUATEE_FORBIDDEN_MARKERS)
+    assert stub.calls() == [], "가드 위반 시스템 프롬프트가 프로세스 경계를 넘음"
+
+
 def test_model_schema_channel_is_marker_free():
     """R1-2: --json-schema로 송출되는 스키마 자체가 값 수준 가드를 통과해야
     한다 — 스키마 파일 description의 채점 루브릭 문구('fraud 어휘 금지' 등)가

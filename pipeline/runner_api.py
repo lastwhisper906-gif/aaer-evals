@@ -4,6 +4,12 @@
 TASK·MODEL_SCHEMA·build_payload·출력 형식·멱등 skip 전부 동결 모듈 import.
 실행은 개정 #3 발효 후에만 (api_client의 이중 안전장치가 차단).
 
+의도된 계약 차이 (R2-3에서 문서화): fingerprint 필드는 이 arm에 없다 —
+멱등 skip은 output_is_valid(스키마 유효성)만으로 판정하며, fp-sibling
+재실행 의미론은 동치성 테스트 규모(소수 케이스·수동 감독)에 불필요.
+composed 기록의 FULL_OUTPUT_SCHEMA 재검증·카나리 runmeta 기록은
+runner.run_case와 동일하게 수행한다.
+
 사용 (발효 후):
   AAER_RAW_API_APPROVED=1 python pipeline/runner_api.py --cases <cases.json> --out <dir> \
       [--perturbed] [--only case_NN ...] [--temperature 0]
@@ -16,11 +22,13 @@ import json
 import sys
 from pathlib import Path
 
+import jsonschema
+
 import build_payload as bp
 import cli_client
 from api_client import assert_raw_api_approved, call_model_api
 from cli_client import EVALUATEE_FORBIDDEN_MARKERS, freeze_state
-from runner import EVALUATEE_MODEL, FULL_OUTPUT_SCHEMA, MODEL_SCHEMA, TASK
+from runner import CANARY_MARKERS, EVALUATEE_MODEL, FULL_OUTPUT_SCHEMA, MODEL_SCHEMA, TASK
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 MODEL_VISIBLE_KEYS = ("case", "financial_series_point_in_time", "filing_chronology")
@@ -45,6 +53,16 @@ def run_case_api(case: dict, perturb: bool, out_dir: Path, log_dir: Path,
                        log_dir=log_dir, log_name=f"evaluatee_api_{variant}_{cid}",
                        forbid_markers=EVALUATEE_FORBIDDEN_MARKERS,
                        temperature=temperature)
+
+    # runner.run_case 거울 (R2-3): 카나리 검사 + runmeta 증거 기록
+    canary_hit = any(m in json.dumps(r.structured or {}).lower() for m in CANARY_MARKERS)
+    meta = {"case_id": cid, "variant": f"api-{variant}-{cid}-r1",
+            "canary_hit": canary_hit, "fail_reason": r.fail_reason,
+            "served_models": r.served_models}
+    log_dir.mkdir(parents=True, exist_ok=True)
+    meta_path = log_dir / f"runmeta_api_{variant}_{cid}.json"
+    meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+
     if not r.ok:
         return {"case_id": cid, "status": f"FAIL ({r.fail_reason})"}
     accessions = {}
@@ -60,6 +78,16 @@ def run_case_api(case: dict, perturb: bool, out_dir: Path, log_dir: Path,
             "run_timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             "documents_used": sorted(accessions.values(), key=lambda d: d["accession_no"]),
             **r.structured}
+    # runner.run_case 거울 (R2-3): composed 기록 재검증 — 위반 시 미기록 FAIL
+    # (스키마 무효 기록이 남으면 output_is_valid skip이 영영 실패해 종량 호출 반복)
+    errors = list(jsonschema.Draft7Validator(
+        FULL_OUTPUT_SCHEMA, format_checker=jsonschema.FormatChecker()).iter_errors(full))
+    if errors:
+        path = ".".join(str(part) for part in errors[0].absolute_path) or "<root>"
+        reason = f"schema_violation: {path}"
+        meta["fail_reason"] = reason
+        meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+        return {"case_id": cid, "status": f"FAIL ({reason})"}
     out_dir.mkdir(parents=True, exist_ok=True)
     # 원자적 기록 (D67): 크래시 시 부분 파일이 '완료'로 오인되지 않도록 tmp→replace
     tmp = out_path.with_suffix(".json.tmp")
