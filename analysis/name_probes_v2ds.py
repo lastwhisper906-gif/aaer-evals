@@ -6,7 +6,14 @@
 입력: scoring/probe_results_v2ds_wave1/recognition/ (30 = 8 treatment + 22 control)
       scoring/probe_results_v2ds_wave2/recognition/ (32)
 비교 기준선 (동결 v1, 사전 등록): wave-1 50% [15/30] · wave-2 21.9% [7/32].
-출력: analysis/name_probe_results_v2ds.json
+출력: analysis/name_probe_results_v2ds_rev2.json
+
+R7-11 (rev2, disclose-don't-revise — INV-03/06): 원 산출물
+analysis/name_probe_results_v2ds.json은 동결 보존 — cp95_pct 라벨이 k=0에서
+stats.fpr_bound의 rule-of-three(300/n)를 실었다 (wave-2 0/32 → 9.4, 정확
+CP95 상한은 10.9). rev2는 전 k에서 정확 Clopper-Pearson(양측 95%,
+holdout_controls_analyze.clopper_pearson — RESULTS 행 4와 동일 규칙)을 쓰고
+신규 병행 경로에 기록한다. 공개: DECISIONS_PENDING.md D-P92 (D84 참조).
 
 실행: .venv/bin/python analysis/name_probes_v2ds.py   (무호출·결정론)
 """
@@ -20,7 +27,7 @@ sys.path.insert(0, str(REPO / "scoring"))
 sys.path.insert(0, str(REPO / "analysis"))
 from probe_verdict import name_match  # noqa: E402 (동결 판정 규칙)
 from aaer_eval.manifest import load_experiment  # noqa: E402
-import stats  # noqa: E402 (Clopper-Pearson)
+from holdout_controls_analyze import clopper_pearson  # noqa: E402 (정확 CP — R7-11)
 
 V1_FROZEN = {"wave1": {"rate_pct": 50.0, "count": "15/30"},
              "wave2": {"rate_pct": 21.9, "count": "7/32"}}
@@ -71,10 +78,13 @@ def frame(rows: list[dict], expect_n: int, tier: str) -> dict:
     if len(rows) != expect_n:
         raise SystemExit(f"{tier}: {len(rows)}/{expect_n} — 프로브 미완, 판정 보류")
     k = sum(r["recognized"] for r in rows)
-    cp = stats.fpr_bound(k, len(rows))  # Clopper-Pearson 95% (범용 이항)
+    # R7-11: 전 k(0·n 극점 포함)에서 정확 Clopper-Pearson 양측 95% — 라벨과
+    # 계산 일치. (구판 stats.fpr_bound는 k=0에서 rule-of-three로 낙하 —
+    # 0/32 → 9.4는 정확 CP95 10.9보다 반보수적, 방법 라벨 불일치.)
+    lo, hi = clopper_pearson(k, len(rows))
     return {"n": len(rows), "recognized": k,
             "rate_pct": round(100 * k / len(rows), 1),
-            "cp95_pct": [cp.get("lo_pct", 0.0), cp["upper95_pct"]],
+            "cp95_pct": [round(100 * lo, 1), round(100 * hi, 1)],
             "v1_frozen": V1_FROZEN[tier], "rows": rows}
 
 
@@ -90,7 +100,8 @@ def main() -> int:
         "사전 등록 비교는 rate 병기까지 — v2가 낮으면 '날짜 지문 제거가 name-ID "
         "채널을 추가로 좁혔다', 같으면 '날짜 외 지문(수치 자체)이 지배'. 인과 "
         "서술은 이 두 문장 밖으로 나가지 않는다 (원인 분해는 소유자 검토 대상).")
-    p = REPO / "analysis" / "name_probe_results_v2ds.json"
+    # R7-11: 원 경로는 동결 — rev2는 병행 신규 경로에만 기록 (INV-06)
+    p = REPO / "analysis" / "name_probe_results_v2ds_rev2.json"
     p.write_text(json.dumps(out, ensure_ascii=False, sort_keys=True, indent=1) + "\n",
                  encoding="utf-8")
     print(f"wave-1 v2ds {out['wave1']['recognized']}/30 = {out['wave1']['rate_pct']}% "

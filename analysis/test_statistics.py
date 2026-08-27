@@ -80,3 +80,18 @@ def test_fpr_bounds_match_published_values():
 def test_residuals_linear_and_degenerate_x():
     assert residuals([3, 5, 7], [1, 2, 3]) == [0.0, 0.0, 0.0]
     assert residuals([1, 2, 6], [4, 4, 4]) == [-2.0, -1.0, 3.0]
+
+
+def test_v2ds_frame_pins_exact_clopper_pearson_at_poles():
+    """R7-11: frame()의 cp95_pct는 전 k에서 정확 CP 양측 95% — k=0 극점이
+    rule-of-three(0/32 → 9.4)로 낙하하던 결함의 회귀 잠금 (정확 CP95 = 10.9).
+    k==n 극점도 정확 CP (상한 100)."""
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from name_probes_v2ds import frame
+
+    zero = frame([{"recognized": False} for _ in range(32)], 32, "wave2")
+    assert zero["cp95_pct"] == [0.0, 10.9]
+    full = frame([{"recognized": True} for _ in range(3)], 3, "wave2")
+    assert full["cp95_pct"] == [29.2, 100.0]

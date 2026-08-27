@@ -1766,3 +1766,32 @@
 - **Basis:** INV-03/INV-06 · D82 · reviews/cycle-004.md R4-1 (전 사실
   본 세션 git 재검증)
 - **Revert:** 해당 없음 (기록 전용 — 동결 무접촉).
+
+## D-P92 — [DRAFT — 소유자 서명 대기] cp95_pct 라벨-계산 불일치: v2ds wave-2 0/32의 rule-of-three 상한 9.4 (정확 CP95 10.9) — rev2 병행 산출물 게시
+
+- **Status:** DRAFT — 세션(harness v4 cycle 007, R7-11)이 작성. 동결
+  산출물 무접촉.
+- **결함 (계산-라벨링, 임계값·판정 규칙 변경 아님):**
+  `analysis/name_probe_results_v2ds.json`(동결, D84가 "CP95 병기 산출물"로
+  인용)의 `cp95_pct` 필드는 `stats.fpr_bound` 산출을 실었는데, 이 함수는
+  k=0에서 Clopper-Pearson이 아니라 rule-of-three(300/n)로 낙하한다 —
+  wave-2 0/32 행이 CP95 라벨 아래 [0.0, 9.4]를 게시 (정확 양측 CP95 상한
+  10.9보다 반보수적·방법 라벨 불일치). wave-1 4/30(k>0)은 정확 CP와 일치
+  ([3.8, 30.7] 불변). RESULTS 행 4는 0/3에 정확 CP를 쓰므로 한 표면에 두
+  규약이 공존했다.
+- **조치 (disclose-don't-revise — INV-03 (a)(b)(c) / INV-06):**
+  (a) 원 산출물·git 이력 보존 (byte-identical 확인);
+  (b) 본 엔트리가 공개 절;
+  (c) 재산출 전 개정 커밋 — `analysis/name_probes_v2ds.py` frame()이 전
+  k(0·n 극점 포함)에서 정확 CP(`holdout_controls_analyze.clopper_pearson`,
+  RESULTS 행 4와 동일 규칙)를 쓰도록 수정, 산출은 신규 병행 경로
+  `analysis/name_probe_results_v2ds_rev2.json`에만 기록. 극점 회귀는
+  `analysis/test_statistics.py`가 잠금 (0/32 → 10.9 · 3/3 → [29.2, 100]).
+- **게시 표면 영향:** rate·count·delta 무변 (13.3%/0.0% 등) — 구간 라벨만
+  교정. D84 본문(동결)은 "CP95 병기 산출물 참조"라는 포인터라 정정 불요;
+  어느 문서가 9.4를 인용하게 되면 rev2 값(10.9)으로 인용할 것.
+- **Options:** (a) rev2 병행 게시 승인 + 원 산출물 헤더에 rev2 포인터
+  주석(신규 커밋) (b) rev2 병행 게시만 (c) ERRATA 등재 격상 — 소유자 판단.
+- **Basis:** INV-03·INV-06 · D84 · reviews/cycle-007.md R7-11 ·
+  ERRATA.md E-001 (병행 경로 선례)
+- **Revert:** rev2 경로 삭제로 원상 (원 산출물 무접촉이므로 안전).
