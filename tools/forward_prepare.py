@@ -82,7 +82,7 @@ def main():
     pins = {p: sha256_file(REPO / p) for p in PIN_SOURCES}
     proto = cycle / "PROTOCOL.md"
     proto.write_text(
-        "# PROTOCOL.md — cycle_001 동결 프로토콜 스냅샷\n\n"
+        f"# PROTOCOL.md — {cycle.name} 동결 프로토콜 스냅샷\n\n"
         f"- generated: {datetime.date.today().isoformat()} (tools/forward_prepare.py)\n"
         f"- spec: specs/FORWARD_WATCHLIST_V1.md (규범 원문)\n"
         f"- screening_cutoff: {SCREENING_CUTOFF} (ET, EDGAR acceptance)\n"

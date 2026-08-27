@@ -18,14 +18,21 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from forward_common import (REPO, assert_subscription_only, manifest_text,
-                            sha256_text, fail)
+from forward_common import (REPO, EXECUTION_WINDOW_END, assert_subscription_only,
+                            manifest_text, parse_date, sha256_text, fail)
 from forward_validate import validate
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--cycle", required=True)
+    ap.add_argument("--abort", action="store_true",
+                    help="R3-9: 중단 봉인 — 현재 부분 상태를 그대로 동결하고 "
+                         "SEAL_RECORD를 aborted로 기록 (조용한 연장 금지, INV-22)")
+    ap.add_argument("--reason", help="--abort 사유 (필수)")
+    ap.add_argument("--past-window", action="store_true",
+                    help=f"창 종료({EXECUTION_WINDOW_END}) 후의 정규 봉인 명시 허용 "
+                         "— 무플래그 봉인은 거부된다 (R3-9)")
     args = ap.parse_args()
     assert_subscription_only()
     cycle = REPO / args.cycle
@@ -35,9 +42,18 @@ def main():
     if manifest.exists():
         fail(f"{manifest} 이미 존재 — 재봉인 금지 (spec §3-5: "
              "교정은 새 사이클에서. aborted 처리는 SEAL_RECORD.md에 일자 기입)")
-    errs = validate(cycle)
-    if errs:
-        fail("봉인 전 검증 위반 — forward_validate 참조:\n  " + "\n  ".join(errs))
+    if args.abort:
+        if not args.reason:
+            ap.error("--abort에는 --reason이 필요하다 (중단 사유 기록 의무)")
+    else:
+        today = datetime.datetime.now(datetime.timezone.utc).date()
+        if today > parse_date(EXECUTION_WINDOW_END) and not args.past_window:
+            fail(f"실행 창 종료({EXECUTION_WINDOW_END}) 이후의 정규 봉인 — "
+                 "조용한 연장 금지 (INV-22: abort 마감 + 새 사이클이 규칙). "
+                 "그래도 봉인하려면 --past-window 명시 (SEAL_RECORD에 남는다).")
+        errs = validate(cycle)
+        if errs:
+            fail("봉인 전 검증 위반 — forward_validate 참조:\n  " + "\n  ".join(errs))
 
     text = manifest_text(cycle)
     manifest.write_text(text, encoding="utf-8")
@@ -53,15 +69,20 @@ def main():
         ots_status = ("stamped — MANIFEST.sha256.ots 생성" if r.returncode == 0
                       else f"실패({r.returncode}): {r.stderr.strip()[:120]}")
 
+    seal_kind = "ABORTED" if args.abort else "sealed"
+    status_lines = (f"- **status: ABORTED** — 부분 상태 동결 (spec §3-2)\n"
+                    f"- abort_reason: {args.reason}\n" if args.abort else
+                    ("- status: sealed (past-window — --past-window 명시 실행)\n"
+                     if args.past_window else "- status: sealed\n"))
     owner_cmds = (
         f"git add {cycle} && "
-        f"git commit -m 'SEAL: {cycle.name} forward watchlist'\n"
-        f"git tag -a {tag} -m 'forward seal {now} manifest sha256 {mhash}'\n"
+        f"git commit -m 'SEAL{'(ABORT)' if args.abort else ''}: {cycle.name} forward watchlist'\n"
+        f"git tag -a {tag} -m 'forward {seal_kind} {now} manifest sha256 {mhash}'\n"
         f"git push origin main --tags")
     record = cycle / "SEAL_RECORD.md"
     record.write_text(f"""# SEAL_RECORD.md — {cycle.name}
 
-- sealed_at (UTC): {now}
+{status_lines}- sealed_at (UTC): {now}
 - MANIFEST.sha256 자체의 sha256: `{mhash}`
 - 봉인 시점 git HEAD (매니페스트 커밋 이전): `{head}`
 - OpenTimestamps: {ots_status}
@@ -86,7 +107,8 @@ def main():
     if ots_bin is None:
         print("NOTE — ots 부재: `pip install opentimestamps-client` 후 "
               f"`ots stamp {manifest}` 실행, .ots 파일 커밋 (무료)")
-    print(f"SEALED — manifest {mhash}\n소유자 명령:\n{owner_cmds}")
+    print(f"{'ABORT-' if args.abort else ''}SEALED — manifest {mhash}\n"
+          f"소유자 명령:\n{owner_cmds}")
     return 0
 
 

@@ -535,3 +535,53 @@ def test_validate_requires_run_output_sha256(cycle):
     fc.write_json(cycle / "scores.json", sc)
     errs = forward_validate.validate(cycle)
     assert any("run_output_sha256 부재" in e for e in errs)
+
+
+# ── R3-9: abort 봉인·창 종료 가드·PROTOCOL 제목 ───────────────────────────
+
+def test_abort_seal_freezes_partial_state_and_is_gate_covered(cycle, monkeypatch, capsys):
+    (cycle / "scores.json").unlink()  # 창 내 완료 실패 상태 (검증 통과 불가)
+    monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(cycle),
+                                      "--abort", "--reason", "window missed"])
+    assert forward_seal.main() == 0
+    record = (cycle / "SEAL_RECORD.md").read_text(encoding="utf-8")
+    assert "ABORTED" in record and "window missed" in record
+
+    import forward_verify_seal
+    monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(cycle)])
+    assert forward_verify_seal.main() == 0
+    # R2-8 봉인 불변성 게이트와 동일 판정식 — aborted 사이클도 자동 커버
+    assert (cycle / "MANIFEST.sha256").read_text(encoding="utf-8") == \
+        fc.manifest_text(cycle)
+
+    monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(cycle)])
+    with pytest.raises(SystemExit):
+        forward_prepare.main()  # aborted(봉인) 사이클 재작성 거부
+
+
+def test_abort_requires_reason(cycle, monkeypatch):
+    monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(cycle), "--abort"])
+    with pytest.raises(SystemExit):
+        forward_seal.main()
+    assert not (cycle / "MANIFEST.sha256").exists()
+
+
+def test_plain_seal_past_window_requires_explicit_flag(cycle, monkeypatch):
+    monkeypatch.setattr(forward_seal, "EXECUTION_WINDOW_END", "2020-01-01")
+    monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(cycle)])
+    with pytest.raises(SystemExit):
+        forward_seal.main()  # 조용한 연장 금지 (INV-22)
+    assert not (cycle / "MANIFEST.sha256").exists()
+    monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(cycle), "--past-window"])
+    assert forward_seal.main() == 0
+    assert "past-window" in (cycle / "SEAL_RECORD.md").read_text(encoding="utf-8")
+
+
+def test_prepare_protocol_title_uses_cycle_name(tmp_path, monkeypatch):
+    for var in fc.METERED_CREDENTIAL_VARS:
+        monkeypatch.delenv(var, raising=False)
+    c = tmp_path / "cycle_042"
+    monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(c)])
+    assert forward_prepare.main() == 0
+    title = (c / "PROTOCOL.md").read_text(encoding="utf-8").splitlines()[0]
+    assert "cycle_042" in title and "cycle_001" not in title
