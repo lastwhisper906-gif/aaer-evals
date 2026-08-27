@@ -218,7 +218,8 @@ def run_case(case: dict, frame: str, out_dir: Path, *, dry_run: bool = False) ->
     task = build_task(case, payload, frame)
     prompt = build_prompt(task, user_payload)
     payload_sha, prompt_sha = _sha(user_payload), _sha(prompt)
-    cli_client.guard_payload(user_payload, EVALUATEE_FORBIDDEN_MARKERS)
+    # 송출 경계 전체 스캔: prompt = task + 모델 스키마 + user_payload (INV-09)
+    cli_client.guard_payload(prompt, EVALUATEE_FORBIDDEN_MARKERS)
     if dry_run:
         print(f"{cid} payload_sha256={payload_sha} prompt_sha256={prompt_sha}")
         return {"case_id": cid, "status": "dry-run"}
@@ -239,7 +240,7 @@ def run_case(case: dict, frame: str, out_dir: Path, *, dry_run: bool = False) ->
             raise RuntimeError("Codex temporary cwd must be outside the repository")
         command = codex_command(temp_dir)
         for attempts in (1, 2):
-            cli_client.guard_payload(user_payload, EVALUATEE_FORBIDDEN_MARKERS)
+            cli_client.guard_payload(prompt, EVALUATEE_FORBIDDEN_MARKERS)
             completed = subprocess.run(command, input=prompt, capture_output=True,
                                        text=True, check=False)
             streams.append(completed.stdout)

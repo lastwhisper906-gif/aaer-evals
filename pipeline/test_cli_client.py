@@ -190,6 +190,32 @@ def test_mutation_injected_payload_never_leaves(stub, tmp_path, marker):
     assert stub.calls() == [], "가드 위반 페이로드가 프로세스 경계를 넘음"
 
 
+def test_model_schema_channel_is_marker_free():
+    """R1-2: --json-schema로 송출되는 스키마 자체가 값 수준 가드를 통과해야
+    한다 — 스키마 파일 description의 채점 루브릭 문구('fraud 어휘 금지' 등)가
+    피평가자 채널로 새면 INV-09 위반."""
+    cli_client.guard_payload(
+        json.dumps(runner_mod.MODEL_SCHEMA, ensure_ascii=False),
+        cli_client.EVALUATEE_FORBIDDEN_MARKERS)
+
+
+def test_full_subprocess_boundary_is_marker_free(stub, tmp_path):
+    """R1-2: 실전 MODEL_SCHEMA로 호출했을 때, 스폰된 프로세스의 argv+stdin
+    어디에도 금지 마커가 없어야 한다 (mutation 테스트의 경계 전수 판형)."""
+    stub.set_responses(good_response({"answer": "x"}))
+    cli_client.call_model("claude-sonnet-5", "SYSTEM PROMPT", '{"case": 1}',
+                          runner_mod.MODEL_SCHEMA,
+                          log_dir=tmp_path / "logs", log_name="t",
+                          forbid_markers=cli_client.EVALUATEE_FORBIDDEN_MARKERS)
+    calls = stub.calls()
+    assert calls, "스텁 호출 기록 없음"
+    for call in calls:
+        boundary = (json.dumps(call["argv"], ensure_ascii=False)
+                    + call["stdin"]).lower()
+        for m in cli_client.EVALUATEE_FORBIDDEN_MARKERS:
+            assert m.lower() not in boundary, f"경계 누출 마커: {m}"
+
+
 def test_clean_payload_passes_guard(stub, tmp_path):
     stub.set_responses(good_response({"answer": "x"}))
     r = cli_client.call_model("claude-sonnet-5", "SYSTEM", '{"revenue": 100}', SCHEMA,

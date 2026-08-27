@@ -70,11 +70,22 @@ def compute_fingerprint(case: dict, task: str, user_payload: str) -> dict:
     }
 
 
+def _strip_descriptions(node):
+    """모델 송출 스키마에서 주석층(description)을 제거한다 — 스키마 파일의
+    description에는 채점 루브릭 문구가 있어 피평가자 채널로 새면 INV-09
+    위반이다. description은 JSON Schema 주석 키워드라 검증 의미론 불변."""
+    if isinstance(node, dict):
+        return {k: _strip_descriptions(v) for k, v in node.items() if k != "description"}
+    if isinstance(node, list):
+        return [_strip_descriptions(v) for v in node]
+    return node
+
+
 def derive_model_schema(full_schema: dict) -> dict:
     """Return the canonical model subset as a standalone Draft 7 schema."""
     model_schema = deepcopy(full_schema["$defs"]["model_output"])
     model_schema["$schema"] = full_schema["$schema"]
-    return model_schema
+    return _strip_descriptions(model_schema)
 
 
 MODEL_SCHEMA = derive_model_schema(FULL_OUTPUT_SCHEMA)

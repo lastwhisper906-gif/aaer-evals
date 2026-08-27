@@ -84,6 +84,13 @@ def test_prompt_contains_model_schema(payload):
     assert '"insufficient_data"' in prompt
 
 
+def test_prompt_passes_evaluatee_marker_guard(payload):
+    """R1-2: Codex 송출 프롬프트(task + 모델 스키마 + 페이로드) 전체가 값 수준
+    가드를 통과해야 한다 — 스키마 description 루브릭 누출 회귀 방지 (INV-09)."""
+    prompt = cross.build_prompt("task text", cross.frozen_frame_payload(payload))
+    cross.cli_client.guard_payload(prompt, cross.EVALUATEE_FORBIDDEN_MARKERS)
+
+
 @pytest.mark.parametrize("name", cross.METERED_ENV_VARS)
 def test_metered_environment_is_refused(monkeypatch, name):
     for variable in cross.METERED_ENV_VARS:

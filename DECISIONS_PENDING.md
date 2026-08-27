@@ -1462,3 +1462,28 @@
 - **게이트:** 본 엔트리 커밋 직후 make verify-public 실측 → push → CI
   3.12 확인 (결과는 close-out 보고).
 - **Revert:** 항목별 커밋 revert + 본 엔트리 후속 정정 엔트리.
+
+## D-P84 — [DRAFT — 소유자 서명 대기] 스키마 채널 누출 봉합 공개 (INV-09/INV-03)
+- **Status:** DRAFT — 세션(harness v4 cycle 001, R1-2)이 작성. 서명 전까지
+  미집행 게시 없음. 코드 변경 자체는 커밋됨(전향 런 전용 — 동결 런 무접촉).
+- **발견 (channel):** `--json-schema`로 피평가자에게 송출되는 출력 스키마와
+  Codex 프롬프트 내장 스키마가 송출 전 값 수준 가드(guard_payload)를 거치지
+  않았고, `schemas/llm_output.json`의 description 필드에 채점 루브릭 문구
+  ("fraud 어휘 금지 (red-team #1)"·"문장 인용을 쓰면 날조로 채점(차원 4=0)"
+  등)가 있어 EVALUATEE_FORBIDDEN_MARKERS의 "fraud"가 문자 그대로 피평가자
+  가시 채널에 실려 나갔다 — INV-09 "전 페이로드 값 수준 스캔" 주장 자가
+  위반. 케이스별 정답은 누출되지 않음(문구는 전 케이스·전 군 균일).
+- **조치 (커밋됨):** ① `pipeline/runner.derive_model_schema`가 모델 송출
+  스키마에서 description 키를 전량 제거(_strip_descriptions — 스키마 파일
+  자체는 무변경, 검증 의미론 불변) ② `cli_client.call_model`이 송출 스키마
+  JSON도 guard_payload 스캔 ③ `crossmodel_gpt.run_case`가 user_payload
+  대신 송출 프롬프트 전문(task+스키마+페이로드)을 스캔. 테스트 3종 추가.
+- **핑거프린트 영향 (전향 런만):** 실제 송출 스키마 문자열이 달라지므로
+  Claude arm의 argv·GPT arm의 prompt_sha256이 이후 런부터 변한다.
+  `compute_fingerprint.schema_sha256`은 스키마 파일 해시라 무변경.
+  동결 runs/ 산출물 무접촉 (git 확인).
+- **Options:** (a) 본 공개를 ERRATA 없이 D-원장 엔트리로 승인 (권고 —
+  게시 수치 무영향, 방법론 주장 문구의 자가 위반 봉합) (b) ERRATA 병행
+  등재 (INV-09 주장을 게시문에서 강하게 낸 표면이 있다고 판단 시)
+- **Basis:** INV-09 · INV-03 · METHOD.md §3 · reviews/cycle-001.md R1-2
+- **Revert:** 커밋 revert (가드 완화이므로 revert 시 사유 기록 의무).

@@ -192,9 +192,13 @@ def call_model(model: str,
     """단일 모델 호출 — 격리 임시 디렉토리에서 `claude -p` 1회 (+1 재시도)."""
     assert_no_metered_credentials()
     enforce_harness_pin()  # 첫 호출 전 fail-closed (프로세스당 1회 실측, 매 호출 로그)
+    schema_json = json.dumps(schema, ensure_ascii=False)
     if forbid_markers:
+        # 서브프로세스 경계 전체를 스캔 — 페이로드·시스템 프롬프트에 더해
+        # --json-schema로 송출되는 스키마 채널도 값 수준 가드 대상 (INV-09)
         guard_payload(user_payload, forbid_markers)
         guard_payload(system_prompt, forbid_markers)
+        guard_payload(schema_json, forbid_markers)
 
     cmd = [CLAUDE_BIN, "-p",
            "--model", model,
@@ -208,7 +212,7 @@ def call_model(model: str,
            "--tools", "",             # 내장 도구 전면 비활성 (disallowedTools는 이중 방어)
            "--disallowedTools", DISALLOWED_TOOLS,
            "--system-prompt", system_prompt,
-           "--json-schema", json.dumps(schema, ensure_ascii=False)]
+           "--json-schema", schema_json]
     if extra_flags:
         cmd += extra_flags
 
