@@ -69,6 +69,10 @@ def fetch_forward_submissions(rid: str, cik10: str, dest_dir: Path,
     main_url = f"https://data.sec.gov/submissions/CIK{cik10}.json"
     try:
         resp = fetch(main_url)
+        # R8-6: 파싱을 쓰기 전에 — 200에 절단 본문이 오면 (a) 손상 바이트가
+        # 디스크에 남고 (b) 다회사 수집 전체가 traceback으로 중단됐다.
+        # 함수 계약(침묵 skip 금지, 실패 집계)대로 집계하고 쓰지 않는다.
+        doc = json.loads(resp.content)
     except Exception as e:  # noqa: BLE001
         print(f"{rid} FAIL {main_url}: {e}")
         return [(rid, main_url)]
@@ -78,7 +82,6 @@ def fetch_forward_submissions(rid: str, cik10: str, dest_dir: Path,
     _log_row(log, kind="submissions", rid=rid, cik10=cik10, url=main_url,
              content=resp.content, out=out)
     failures = []
-    doc = json.loads(resp.content)
     for item in doc.get("filings", {}).get("files", []):
         name = item["name"]
         url = f"https://data.sec.gov/submissions/{name}"

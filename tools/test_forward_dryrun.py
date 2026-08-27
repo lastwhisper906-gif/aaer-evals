@@ -211,6 +211,32 @@ def test_refetch_does_not_duplicate_source_manifest(tmp_path, monkeypatch, clean
     assert len(accs) == len(set(accs)) == 12
 
 
+def test_invalid_submissions_json_aggregates_failure_without_corrupt_write(
+        tmp_path, monkeypatch, clean_env):
+    """R8-6: 200 + 절단 본문 → 그 레코드만 실패 집계(exit 1), 손상 바이트는
+    디스크에 남지 않고, 나머지 레코드는 정상 수집."""
+    universe = make_universe(2)
+    upath = tmp_path / "universe.json"
+    forward_common.write_json(upath, universe)
+
+    def fake_fetch(url):
+        i = int(url.split("CIK")[1][:10]) - 1000
+        if "/submissions/" in url:
+            if i == 1:
+                return _Resp(b'{"filings": {"recent"')  # 절단 JSON
+            return _Resp(_synthetic_submissions(i))
+        return _Resp(_synthetic_companyfacts(i))
+
+    monkeypatch.setattr(fxf, "fetch", fake_fetch)
+    dest = tmp_path / "d"
+    assert fxf.fetch_forward(upath, dest) == 1
+    r1, r2 = universe["selected"]
+    assert not (dest / r1["ticker"] / "edgar" / "CIK0000001001.json").exists()
+    assert (dest / r1["ticker"] / "xbrl" / "CIK0000001001.json").exists()
+    assert (dest / r2["ticker"] / "edgar" / "CIK0000001002.json").exists()
+    assert (dest / r2["ticker"] / "xbrl" / "CIK0000001002.json").exists()
+
+
 def test_submissions_row_after_companyfacts_does_not_clobber_manifest(tmp_path):
     """R8-1 trap: record_id 키 최신-행 dedup에 submissions 행이 섞이면
     companyfacts 행을 클로버해 그 레코드의 매니페스트가 조용히 빈다 —
