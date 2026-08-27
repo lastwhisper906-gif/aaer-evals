@@ -61,6 +61,11 @@ def build_sources(fetch_dir: Path, cutoff: str) -> list[dict]:
         if not line.strip():
             continue
         row = json.loads(line)
+        # R8-1: submissions 행(kind)은 매니페스트 입력이 아니다 — record_id 키
+        # 최신-행 dedup에 섞이면 companyfacts 행을 클로버해 해당 레코드의
+        # 매니페스트가 조용히 빈다. kind 부재(구세대 로그)는 companyfacts.
+        if row.get("kind", "companyfacts") != "companyfacts":
+            continue
         latest[row["record_id"]] = row
     sources = []
     for rid in sorted(latest):

@@ -115,6 +115,19 @@ def test_gate_steps_dry_run_end_to_end(tmp_path, monkeypatch, clean_env):
         assert (dest / r["ticker"] / "xbrl" / f"CIK{cik10}.json").exists()
         assert (dest / r["ticker"] / "edgar" / f"CIK{cik10}.json").exists()
 
+    # R8-1: 쓴 파일마다 로그 행 — 수·kind·sha256 전건 정합 (submissions 포함)
+    import hashlib as _hl
+    log_rows = [json.loads(line) for line in
+                (dest / "fetch_log.jsonl").read_text(encoding="utf-8").splitlines()]
+    written = sorted(dest.glob("*/*/CIK*.json"))
+    assert len(log_rows) == len(written) == 24
+    by_path = {r["path"]: r for r in log_rows}
+    for f in written:
+        row = by_path[fxf.portable_path(f)]
+        assert row["sha256"] == _hl.sha256(f.read_bytes()).hexdigest()
+        assert row["kind"] == ("companyfacts" if f.parent.name == "xbrl"
+                               else "submissions")
+
     # (3) build — universe → 피평가자 케이스 파일 (화이트리스트 계약 준수)
     payload = bei.build_forward(cycle / "universe.json", CUTOFF)
     assert len(payload["cases"]) == 12
@@ -196,3 +209,26 @@ def test_refetch_does_not_duplicate_source_manifest(tmp_path, monkeypatch, clean
     assert double == single
     accs = [s["accession_no"] for s in double]
     assert len(accs) == len(set(accs)) == 12
+
+
+def test_submissions_row_after_companyfacts_does_not_clobber_manifest(tmp_path):
+    """R8-1 trap: record_id 키 최신-행 dedup에 submissions 행이 섞이면
+    companyfacts 행을 클로버해 그 레코드의 매니페스트가 조용히 빈다 —
+    build_sources는 kind=companyfacts 행만 소비해야 한다."""
+    dest = tmp_path / "d"
+    cf = dest / "TK01" / "xbrl" / "CIK0000001001.json"
+    cf.parent.mkdir(parents=True)
+    cf.write_bytes(_synthetic_companyfacts(1))
+    sub = dest / "TK01" / "edgar" / "CIK0000001001.json"
+    sub.parent.mkdir(parents=True)
+    sub.write_bytes(_synthetic_submissions(1))
+    rows = [{"record_id": "fw001-r01", "kind": "companyfacts", "cik": "0000001001",
+             "url": "u-cf", "retrieval_date": "t1", "sha256": "s1", "path": str(cf)},
+            # 뒤 행이 submissions — 무필터면 latest[rid]를 클로버한다
+            {"record_id": "fw001-r01", "kind": "submissions", "cik": "0000001001",
+             "url": "u-sub", "retrieval_date": "t2", "sha256": "s2", "path": str(sub)}]
+    (dest / "fetch_log.jsonl").write_text(
+        "\n".join(json.dumps(r) for r in rows) + "\n", encoding="utf-8")
+    sources = fsm.build_sources(dest, CUTOFF)
+    assert {s["accession_no"] for s in sources} == {_accn(1)}
+    assert all(s["url"] == "u-cf" for s in sources)

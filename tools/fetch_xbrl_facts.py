@@ -41,13 +41,31 @@ def portable_path(path: Path, *, repo: Path | None = None,
     return str(resolved)
 
 
-def fetch_forward_submissions(rid: str, cik10: str, dest_dir: Path) -> list[tuple[str, str]]:
+def _log_row(log, *, kind: str, rid: str, cik10: str, url: str,
+             content: bytes, out: Path) -> None:
+    """R8-1: fetch_forward가 디스크에 쓰는 모든 파일의 출처 행 — kind 구분.
+
+    submissions 인덱스는 cutoff_guard가 허용성(admissibility)을 판정하는
+    바로 그 파일이므로 sha256 기록이 없으면 사후 변조가 검출 불가.
+    forward_source_manifest.build_sources는 kind=companyfacts 행만 소비한다
+    (record_id 키 최신-행 dedup이 submissions 행에 클로버되지 않도록)."""
+    log.write(json.dumps({
+        "record_id": rid, "kind": kind, "cik": cik10, "url": url,
+        "retrieval_date": datetime.datetime.now(
+            datetime.timezone.utc).isoformat(timespec="seconds"),
+        "sha256": hashlib.sha256(content).hexdigest(),
+        "path": portable_path(out),
+    }, ensure_ascii=False) + "\n")
+
+
+def fetch_forward_submissions(rid: str, cik10: str, dest_dir: Path,
+                              log) -> list[tuple[str, str]]:
     """R7-2: forward 회사의 submissions JSON(main + 구세대 청크) 수집.
 
     cutoff_guard._submissions가 {ticker}/edgar/CIK*.json을 hard-require하고
     companyfacts의 모든 accession을 이 인덱스와 교차 대조한다 — companyfacts만
     수집하면 러너가 fail-closed. fetch_primary_sources.fetch_submissions와 동형이되
-    실패를 반환값으로 집계한다 (침묵 skip 금지)."""
+    실패를 반환값으로 집계한다 (침묵 skip 금지). R8-1: 쓰는 파일마다 로그 행."""
     main_url = f"https://data.sec.gov/submissions/CIK{cik10}.json"
     try:
         resp = fetch(main_url)
@@ -55,7 +73,10 @@ def fetch_forward_submissions(rid: str, cik10: str, dest_dir: Path) -> list[tupl
         print(f"{rid} FAIL {main_url}: {e}")
         return [(rid, main_url)]
     dest_dir.mkdir(parents=True, exist_ok=True)
-    (dest_dir / f"CIK{cik10}.json").write_bytes(resp.content)
+    out = dest_dir / f"CIK{cik10}.json"
+    out.write_bytes(resp.content)
+    _log_row(log, kind="submissions", rid=rid, cik10=cik10, url=main_url,
+             content=resp.content, out=out)
     failures = []
     doc = json.loads(resp.content)
     for item in doc.get("filings", {}).get("files", []):
@@ -67,7 +88,10 @@ def fetch_forward_submissions(rid: str, cik10: str, dest_dir: Path) -> list[tupl
             print(f"{rid} FAIL {url}: {e}")
             failures.append((rid, url))
             continue
-        (dest_dir / name).write_bytes(r2.content)
+        chunk_out = dest_dir / name
+        chunk_out.write_bytes(r2.content)
+        _log_row(log, kind="submissions", rid=rid, cik10=cik10, url=url,
+                 content=r2.content, out=chunk_out)
     return failures
 
 
@@ -86,7 +110,8 @@ def fetch_forward(universe_path: Path, dest: Path) -> int:
             rid, cik10 = r["record_id"], str(r["cik"]).zfill(10)
             ticker = str(r["ticker"]).split("/")[0]
             failures.extend(
-                fetch_forward_submissions(rid, cik10, dest / ticker / "edgar"))
+                fetch_forward_submissions(rid, cik10, dest / ticker / "edgar",
+                                          log))
             url = f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik10}.json"
             try:
                 resp = fetch(url)
@@ -97,13 +122,8 @@ def fetch_forward(universe_path: Path, dest: Path) -> int:
             out = dest / ticker / "xbrl" / f"CIK{cik10}.json"
             out.parent.mkdir(parents=True, exist_ok=True)
             out.write_bytes(resp.content)
-            log.write(json.dumps({
-                "record_id": rid, "cik": cik10, "url": url,
-                "retrieval_date": datetime.datetime.now(
-                    datetime.timezone.utc).isoformat(timespec="seconds"),
-                "sha256": hashlib.sha256(resp.content).hexdigest(),
-                "path": portable_path(out),
-            }, ensure_ascii=False) + "\n")
+            _log_row(log, kind="companyfacts", rid=rid, cik10=cik10, url=url,
+                     content=resp.content, out=out)
             print(f"{rid} saved {out} ({len(resp.content):,} bytes)")
     print(f"\n{len(failures)} failures" if failures else "\nall fetches succeeded")
     return 1 if failures else 0
