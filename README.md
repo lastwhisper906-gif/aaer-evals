@@ -70,7 +70,11 @@ figure and commands as above, kept verbatim for citability)</summary>
 
 **There is no dominant single-threshold LLM strategy on the trajectory layer
 (exploratory E2).** At threshold T≥50 that layer detects 12/12 treatment cases
-(CP95 [73.5%, 100%]) but false-alarms on 5/7 controls (**71.4%**, CP95
+(CP95 [73.5%, 100%]; detection-conditioned — the E2 stratum roster includes
+only cases already detected at main scoring (p≥50), so the 4 undetected
+treatment cases are excluded from this denominator;
+[`analysis/EARLINESS_PLAN.md`](analysis/EARLINESS_PLAN.md) §1) but
+false-alarms on 5/7 controls (**71.4%**, CP95
 [29.0%, 96.3%]); tightening to T=70 kills detection first (1/12). Cost per
 detection and every cell's CP95 interval: [`analysis/DECISION_TABLE.md`](analysis/DECISION_TABLE.md)
 (owner-signed, D94).

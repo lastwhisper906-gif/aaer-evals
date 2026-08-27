@@ -1549,3 +1549,28 @@
   (draw-robustness 표를 게시 표면으로 강하게 낸다고 판단 시)
 - **Basis:** INV-02(스키마 준수)·INV-06 · reviews/cycle-002.md R2-2
 - **Revert:** 허용목록 축소는 후속 엔트리로 사유 기록.
+
+## D-P87 — [DRAFT — 소유자 서명 대기] L4 12/12의 탐지 조건부(denominator) 문구 — 서명 표면 전파 제안
+- **Status:** DRAFT — 세션(harness v4 cycle 002, R2-6)이 작성. 서명 동결
+  표면(`analysis/DECISION_TABLE.md` §4 — D94 서명 · fig_tradeoff
+  그림/사이드카)은 본 세션이 접촉하지 않았다.
+- **사실:** L4 "T≥50 탐지 12/12 CP95 [73.5, 100]"의 E2 계층 모집단
+  (`analysis/e2_trajectories.json`, EARLINESS_PLAN §1)은 본채점에서 이미
+  탐지된(p≥50) 케이스만 포함한다 — 미탐지 4건(CSC·BRX, 데이터 사유
+  MON·WFT)은 분모에서 제외. 비조건부로 읽으면 ~12/16. 공개는
+  BUYER_METRICS §1/§4·EARLINESS_PLAN §1에만 존재했고 README/RESULTS
+  헤드라인에는 부재했다.
+- **조치 (라이브 표면만, 커밋됨):** README.md 헤드라인 절 + RESULTS.md
+  행 13 한계 열(+ 잠금 렌더링 CLAIMS.json 행 13)에 탐지 조건부 절 추가.
+  RESULTS.ko는 PKT-R2 스냅샷 마커 관행(영어 정본에만 신규 개정 반영,
+  D-P83)에 따라 무접촉.
+- **제안 (서명 필요):** (a) DECISION_TABLE.md §4에 일자 기입 addendum
+  한 문단(동일 조건부 문구, disclose-don't-revise 채널) (b) fig_tradeoff
+  그림 캡션/사이드카 재생성에 같은 조건부 명시 — 두 표면 모두 D94 서명
+  동결이므로 소유자 서명 후 집행.
+- **Options:** (a) addendum + 그림 캡션 재생성 모두 (권고 — 그림은
+  README에서 직링크되는 고노출 표면) (b) addendum만 (c) 현행 유지 —
+  라이브 표면 절만으로 충분하다고 판단 시
+- **Basis:** `analysis/EARLINESS_PLAN.md` §1 · `analysis/BUYER_METRICS.md`
+  §1/§4 · INV-03/INV-06 · reviews/cycle-002.md R2-6
+- **Revert:** 라이브 표면 절 삭제 diff + 사유 기록.

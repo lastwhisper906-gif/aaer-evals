@@ -249,7 +249,7 @@
       "task_tag": "[Exploratory L4]",
       "measurement": "E2 trajectory single threshold",
       "published_value": "T≥50: detection 12/12 CP [73.5%, 100%] · **false positives 5/7 = 71.4%** CP [29.0%, 96.3%]",
-      "limits": "**No dominant strategy for a standalone LLM threshold at the trajectory layer** — sensitive thresholds travel with false positives, and a false-positive-controlling threshold (T=70) kills detection first (1/12). The EXPLORATORY combined rule (B3≥2 AND llm_p≥T) has 0/7 false positives but is a post-hoc rule — registered only as a Cycle-2 sealed candidate; treatment rosters were pre-screened for in-principle public-data detectability (A-type rule) — rates are conditional on that screen",
+      "limits": "**No dominant strategy for a standalone LLM threshold at the trajectory layer** — sensitive thresholds travel with false positives, and a false-positive-controlling threshold (T=70) kills detection first (1/12). The EXPLORATORY combined rule (B3≥2 AND llm_p≥T) has 0/7 false positives but is a post-hoc rule — registered only as a Cycle-2 sealed candidate; treatment rosters were pre-screened for in-principle public-data detectability (A-type rule) — rates are conditional on that screen; additionally the 12/12 is detection-conditioned — the E2 stratum roster includes only cases already detected at main scoring (p≥50), so the 4 undetected treatment cases are excluded from this denominator (`analysis/EARLINESS_PLAN.md` §1)",
       "source_raw": "`analysis/DECISION_TABLE.md` §4 (signed D94)",
       "source_paths": [
         "analysis/DECISION_TABLE.md"
