@@ -259,6 +259,8 @@ def test_canary_guid_sets_agree_across_planter_guard_and_scanner():
     import runner
     assert set(runner.CANARY_MARKERS) == set(vb.CANARIES)
     assert set(vb.CANARIES) <= set(cli_client.EVALUATEE_FORBIDDEN_MARKERS)
+    # R7-18: cli_client의 명명 튜플(raw_tail redaction 소스)도 동일 집합
+    assert set(cli_client.CANARY_MARKERS) == set(vb.CANARIES)
 
 
 def test_every_canary_is_planted_in_a_committed_doc():

@@ -47,10 +47,14 @@ DISALLOWED_TOOLS = ("Bash,Read,Edit,Write,Glob,Grep,WebFetch,WebSearch,"
 # 피평가자·프로브 페이로드 송출 전 값 수준 가드 (소문자 대조).
 # test_build_payload.FORBIDDEN_PAYLOAD_SUBSTRINGS와 동일 계열 + 카나리 GUID.
 # 채점 페이로드는 정답 키를 정당하게 포함하므로 이 목록을 적용하지 않는다.
+# 카나리 GUID 접두 — 페이로드 반입 즉시 누출 (R7-18: 실패 로그 raw_tail
+# redaction에도 동일 튜플 사용; runner.CANARY_MARKERS·verify_blindness.CANARIES와
+# 정합은 tools/test_verify_blindness.py가 잠근다)
+CANARY_MARKERS = ("9fa11f98", "a2d69cfe")
 EVALUATEE_FORBIDDEN_MARKERS = [
     "aaer", "fraud", "manipulat", "scheme_summary", "matched_case",
     "m_score", "beneish", "dechow", "montier", "sloan", "piotroski",
-    "9fa11f98", "a2d69cfe",  # 카나리 GUID — 페이로드 반입 즉시 누출
+    *CANARY_MARKERS,
 ]
 
 # 주의 (J13-g): 정상 응답 본문의 재무 수치가 '429'를 포함해 오탐된 사례 실증 —
@@ -325,6 +329,15 @@ def _finish(model: str, obj: dict, structured: dict | None, fail_reason: str | N
                       raw_result_text=None if structured is not None else raw)
 
 
+def _redact_canaries(text: str) -> str:
+    """R7-18: 실패 로그의 raw_tail은 append-only 표면 — 카나리 GUID가 실리면
+    사후 CI 검출 전까지 잔존한다. 접두를 지워 스캐너 대상 문자열 자체를
+    로그에서 제거한다 (나머지 진단 증거는 보존)."""
+    for c in CANARY_MARKERS:
+        text = re.sub(re.escape(c), "[CANARY-REDACTED]", text, flags=re.IGNORECASE)
+    return text
+
+
 def _write_log(log_dir: Path, log_name: str, cmd: list[str], model: str,
                r: CallResult, raw: str | None) -> None:
     log_dir.mkdir(parents=True, exist_ok=True)
@@ -349,7 +362,8 @@ def _write_log(log_dir: Path, log_name: str, cmd: list[str], model: str,
         "attempts": r.attempts,
         "wall_seconds": r.wall_seconds,
         "freeze": freeze_state(),
-        "raw_tail": (raw or "")[:1000] if not r.ok else None,
+        # R7-18: redact 후 절단 — 경계에 걸친 GUID도 남지 않는다
+        "raw_tail": _redact_canaries(raw or "")[:1000] if not r.ok else None,
     }, ensure_ascii=False, indent=2), encoding="utf-8")
 
 

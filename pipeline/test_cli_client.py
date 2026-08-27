@@ -363,3 +363,31 @@ def test_harness_missing_binary_fails_closed(stub, tmp_path, monkeypatch):
     with pytest.raises(RuntimeError, match="하네스 버전 확인 실패"):
         _call(tmp_path / "logs")
     assert stub.calls() == []
+
+
+def test_failure_log_raw_tail_redacts_canary(tmp_path):
+    """R7-18: 스키마 실패 raw가 카나리 GUID를 담아도 로그 파일에는 실리지
+    않는다 — 접두 redact 후 절단, 나머지 진단 증거는 보존."""
+    canary_raw = ("model said: 9FA11F98-6380-4BF5-AB3C-8542459ACA6F and "
+                  "a2d69cfe-ca8a-4de1-8393-5b225099299b plus diagnostics")
+    r = cli_client.CallResult(
+        ok=False, structured=None, fail_reason="schema_failure",
+        served_models=["claude-sonnet-5"], pin_ok=True, session_id=None,
+        usage=None, total_cost_usd=None, attempts=2, wall_seconds=1.0,
+        raw_result_text=canary_raw)
+    log_dir = tmp_path / "logs"
+    cli_client._write_log(log_dir, "evaluatee_test_case", ["claude"],
+                          "claude-sonnet-5", r, canary_raw)
+    text = (log_dir / "evaluatee_test_case.json").read_text(encoding="utf-8")
+    low = text.lower()
+    for prefix in cli_client.CANARY_MARKERS:
+        assert prefix not in low, prefix
+    assert "[CANARY-REDACTED]" in text
+    assert "plus diagnostics" in text          # 증거 보존
+    assert json.loads(text)["fail_reason"] == "schema_failure"
+
+    # 정상 실패(카나리 무관) 로그는 raw 그대로
+    cli_client._write_log(log_dir, "evaluatee_plain", ["claude"],
+                          "claude-sonnet-5", r, "plain failure body")
+    plain = json.loads((log_dir / "evaluatee_plain.json").read_text(encoding="utf-8"))
+    assert plain["raw_tail"] == "plain failure body"
