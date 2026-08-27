@@ -221,3 +221,24 @@ def test_submissions_index_truncated_arrays_fail_closed(tmp_path):
         load_document("T01", doc, "2014-01-01",
                       accession_no=ACCESSION, registry_path=env["registry"],
                       log_path=env["log"], edgar_data_dir=env["edgar"])
+
+
+# ── R1-17: 신뢰 레지스트리 명시 열거 ──────────────────────────────────────
+
+def test_unlisted_cases_like_file_is_not_trusted(tmp_path):
+    """이름 패턴 자기-신뢰 차단: data/evaluatee/에 떨어진 미등재 cases_*.json은
+    실제 corpus 접근 신뢰를 얻지 못한다 (fail-closed)."""
+    from cutoff_guard import DEFAULT_EDGAR_DATA, _fixture_settings, REPO_ROOT
+    rogue = REPO_ROOT / "data" / "evaluatee" / "cases_rogue_selftrust.json"
+    with pytest.raises(CutoffGuardError, match="비기본 레지스트리"):
+        _fixture_settings(DEFAULT_EDGAR_DATA, rogue, "logs/x.jsonl")
+
+
+def test_listed_case_files_remain_trusted():
+    from cutoff_guard import TRUSTED_CASE_FILES, _fixture_settings, DEFAULT_EDGAR_DATA, REPO_ROOT
+    assert set(TRUSTED_CASE_FILES) == {
+        "cases.json", "cases_wave2.json", "cases_holdout.json",
+        "cases_holdout_controls.json", "cases_v2.json"}
+    for name in TRUSTED_CASE_FILES:
+        registry = REPO_ROOT / "data" / "evaluatee" / name
+        _fixture_settings(DEFAULT_EDGAR_DATA, registry, "logs/x.jsonl")  # 무예외

@@ -22,6 +22,11 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_REGISTRY = REPO_ROOT / "data" / "candidates" / "candidates.json"
 DEFAULT_BULK_REGISTRY = REPO_ROOT / "data" / "evaluatee" / "cases.json"
+# R1-17: 신뢰 레지스트리는 명시 열거 — 이름 패턴(cases*.json) 술어는 같은
+# 디렉토리에 떨어진 임의 파일의 자기-신뢰를 허용했다. 새 케이스 파일은 이
+# 튜플에 추가해야 실제 corpus 접근 신뢰를 얻는다 (커밋 diff로 가시화).
+TRUSTED_CASE_FILES = ("cases.json", "cases_wave2.json", "cases_holdout.json",
+                      "cases_holdout_controls.json", "cases_v2.json")
 DEFAULT_LOG = REPO_ROOT / "logs" / "access_log.jsonl"
 DEFAULT_EDGAR_DATA = Path.home() / "aaer-data"  # data/README.md 경로 규약
 
@@ -155,7 +160,7 @@ def _fixture_settings(data_dir, registry_path, log_path, allow_unindexed_accessi
     evaluatee_dir = (REPO_ROOT / "data" / "evaluatee").resolve()
     trusted_registry = (registry in {DEFAULT_REGISTRY.resolve(), DEFAULT_BULK_REGISTRY.resolve()} or
                         (registry is not None and registry.parent == evaluatee_dir and
-                         registry.name.startswith("cases") and registry.suffix == ".json"))
+                         registry.name in TRUSTED_CASE_FILES))
     custom_registry = not trusted_registry
     if (custom_registry or allow_unindexed_accessions) and (resolved == corpus or corpus in resolved.parents):
         raise CutoffGuardError("비기본 레지스트리로 실제 corpus 접근 불가 — fail-closed")
