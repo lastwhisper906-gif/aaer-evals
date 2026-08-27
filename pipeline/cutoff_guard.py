@@ -26,7 +26,10 @@ DEFAULT_BULK_REGISTRY = REPO_ROOT / "data" / "evaluatee" / "cases.json"
 # 디렉토리에 떨어진 임의 파일의 자기-신뢰를 허용했다. 새 케이스 파일은 이
 # 튜플에 추가해야 실제 corpus 접근 신뢰를 얻는다 (커밋 diff로 가시화).
 TRUSTED_CASE_FILES = ("cases.json", "cases_wave2.json", "cases_holdout.json",
-                      "cases_holdout_controls.json", "cases_v2.json")
+                      "cases_holdout_controls.json", "cases_v2.json",
+                      # R7-1: 서명된 런북(OWNER_LAUNCH_GATE §4)이 지정하는 forward
+                      # 사이클 레지스트리 — 봉인 창 내 파이프라인 diff 없이 실행 가능해야 한다.
+                      "cases_forward_001.json")
 DEFAULT_LOG = REPO_ROOT / "logs" / "access_log.jsonl"
 DEFAULT_EDGAR_DATA = Path.home() / "aaer-data"  # data/README.md 경로 규약
 

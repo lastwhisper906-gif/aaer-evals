@@ -238,7 +238,22 @@ def test_listed_case_files_remain_trusted():
     from cutoff_guard import TRUSTED_CASE_FILES, _fixture_settings, DEFAULT_EDGAR_DATA, REPO_ROOT
     assert set(TRUSTED_CASE_FILES) == {
         "cases.json", "cases_wave2.json", "cases_holdout.json",
-        "cases_holdout_controls.json", "cases_v2.json"}
+        "cases_holdout_controls.json", "cases_v2.json", "cases_forward_001.json"}
     for name in TRUSTED_CASE_FILES:
         registry = REPO_ROOT / "data" / "evaluatee" / name
         _fixture_settings(DEFAULT_EDGAR_DATA, registry, "logs/x.jsonl")  # 무예외
+
+
+def test_forward_registry_trusted_toward_real_corpus_path(monkeypatch, tmp_path):
+    """R7-1: 서명된 런북 명령(runner --cases data/evaluatee/cases_forward_001.json)이
+    봉인 창 안에서 파이프라인 diff 없이 실행 가능함을 오프라인으로 증명 —
+    forward 레지스트리는 실제 corpus 루트를 향한 신뢰 술어를 통과한다."""
+    import cutoff_guard
+    fixture_corpus = tmp_path / "aaer-data"
+    fixture_corpus.mkdir()
+    monkeypatch.setattr(cutoff_guard, "DEFAULT_EDGAR_DATA", fixture_corpus)
+    registry = cutoff_guard.REPO_ROOT / "data" / "evaluatee" / "cases_forward_001.json"
+    # 신뢰 거부(비기본 레지스트리) 예외 없이 corpus 루트가 그대로 반환되어야 한다.
+    data_dir, _log_path = cutoff_guard._fixture_settings(
+        fixture_corpus, registry, tmp_path / "x.jsonl")
+    assert data_dir == fixture_corpus
