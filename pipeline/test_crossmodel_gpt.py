@@ -84,6 +84,14 @@ def test_prompt_contains_model_schema(payload):
     assert '"insufficient_data"' in prompt
 
 
+def test_pin_match_accepts_only_date_shaped_suffix():
+    """R1-6: gpt-5 핀이 gpt-5-codex를 수용하면 INV-21 fail-closed가 무너진다."""
+    assert cross._pin_matches("gpt-test", "gpt-test")
+    assert cross._pin_matches("gpt-test-20260101", "gpt-test")
+    assert not cross._pin_matches("gpt-test-codex", "gpt-test")
+    assert not cross._pin_matches("gpt-test-5", "gpt-test")
+
+
 def test_prompt_passes_evaluatee_marker_guard(payload):
     """R1-2: Codex 송출 프롬프트(task + 모델 스키마 + 페이로드) 전체가 값 수준
     가드를 통과해야 한다 — 스키마 description 루브릭 누출 회귀 방지 (INV-09)."""

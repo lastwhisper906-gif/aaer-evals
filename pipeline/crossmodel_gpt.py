@@ -29,6 +29,7 @@ import datetime
 import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -133,7 +134,9 @@ def enforce_harness_pin() -> str:
 
 
 def _pin_matches(reported: str, pin: str) -> bool:
-    return reported == pin or reported.startswith(pin + "-")
+    # 날짜형 접미사만 인정 — gpt-5가 gpt-5-codex를 수용하는 류의 임의 하이픈
+    # 확장은 다른 모델이므로 불일치 (INV-21 fail-closed, cli_client 거울)
+    return bool(re.fullmatch(re.escape(pin) + r"(-\d{8})?", reported))
 
 
 def _event_value(value, key: str):

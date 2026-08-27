@@ -171,9 +171,12 @@ def _served_models(model_usage: dict) -> list[str]:
 
 
 def _pin_matches(pin: str, served: list[str]) -> bool:
-    # 핀은 날짜 접미사 없는 정식 ID — 서버가 접미사 부가 문자열을 보고해도 인정.
+    # 핀은 날짜 접미사 없는 정식 ID — 서버가 날짜 접미사(-YYYYMMDD) 부가 문자열을
+    # 보고해도 인정. 임의 하이픈 확장(claude-sonnet-5 → claude-sonnet-5-5 류)은
+    # 다른 모델이므로 불일치 — 접미사 허용은 날짜형에 한정한다 (INV-21 fail-closed).
     # 핀과 무관한 모델이 하나라도 서빙되면 불일치 (엄격 — 게이트에서 드러나야 한다).
-    return bool(served) and all(m == pin or m.startswith(pin + "-") for m in served)
+    return bool(served) and all(
+        re.fullmatch(re.escape(pin) + r"(-\d{8})?", m) for m in served)
 
 
 def _looks_rate_limited(*texts: str) -> bool:

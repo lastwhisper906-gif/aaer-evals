@@ -176,6 +176,13 @@ def test_dated_suffix_of_pin_is_accepted(stub, tmp_path):
     assert r.ok and r.pin_ok
 
 
+def test_hyphen_extension_model_is_pin_mismatch(stub, tmp_path):
+    """R1-6: 접미사 허용은 날짜형 한정 — claude-sonnet-5-5는 다른 모델이다."""
+    stub.set_responses(good_response({"answer": "x"}, model="claude-sonnet-5-5"))
+    r = _call(tmp_path / "logs")
+    assert not r.ok and r.fail_reason == "pin_mismatch"
+
+
 # ⑥ 값 수준 송출 가드 — 변조 주입 시 호출 미발생
 @pytest.mark.parametrize("marker", ["9FA11F98-6380-4BF5-AB3C-8542459ACA6F",
                                     "A2D69CFE-CA8A-4DE1-8393-5B225099299B",

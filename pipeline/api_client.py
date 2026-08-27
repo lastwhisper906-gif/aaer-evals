@@ -16,6 +16,7 @@ from __future__ import annotations
 import datetime
 import json
 import os
+import re
 import time
 from pathlib import Path
 
@@ -88,8 +89,9 @@ def call_model_api(model: str, system_prompt: str, user_payload: str,
         except jsonschema.ValidationError:
             fail = "schema_failure"
 
-    pin_ok = bool(served) and all(m == model or m.startswith(model + "-")
-                                  for m in served)
+    # 날짜형 접미사만 인정 — 임의 하이픈 확장은 다른 모델 (INV-21, cli_client 거울)
+    pin_ok = bool(served) and all(
+        re.fullmatch(re.escape(model) + r"(-\d{8})?", m) for m in served)
     if structured is not None and not pin_ok:
         structured, fail = None, "pin_mismatch"
     result = CallResult(
