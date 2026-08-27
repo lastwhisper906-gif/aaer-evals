@@ -972,3 +972,42 @@
   승계 헤더 게시 · (C) 방치 (독자가 PENDING을 미해소로 오독할 위험 지속).
 - **기본값 (무응답 시)**: (A) — 최소 접촉·최대 정직.
 - **상태**: OPEN — 등재 자체는 D-P83 서명으로 승인됨 (등재만; 처분 미결).
+
+## Q-F20 — verify_blindness 교란 표면의 accession/CIK 정체 벡터 스캔 정책: 동결 표면 35개가 이미 적중 (신규, 2026-08-28 harness v4 cycle 008, R7-6)
+
+- **질문**: 교란(perturbed) 표면은 실명·티커만 스캔되고, D99/L-9가 공개한
+  accession/filer-CIK 정체 벡터는 스캔되지 않는다. 게이트를 이 벡터로
+  확장하려 했으나 실측(cycle 007) 결과 실제 트리가 대량 적중한다 —
+  **2,558 매치 / 35 파일, 전부 INV-06 동결 표면, 스캔 오탐 0** (전부 실제
+  실험군 accession/CIK 접두). 무조건 fail은 불변 데이터 위에서 게이트를
+  영구 적색으로 만든다. 어떤 형태로 확장을 서명할 것인가?
+  - 적중 census (상세: harness builds/cycle-007.md):
+    wave1 — `runs/perturbed/{case_01,03,12}.json` + 동일 3케이스 ×
+    `runs/hardening/draws/draw_{2..5}` (15파일);
+    wave2 — `runs/wave2/{perturbed,identity_arm_b}/{case_52,59,60,66,67}.json`
+    + `perturbed_redraw/draw_{2,3}` (20파일).
+  - 부수 질문: `identity_arm_b`(정체 가시 arm)가 perturbed-kind glob에
+    등재되어 있다 — 이 arm은 정의상 정체 노출이 설계이므로, 스캔 확장 시
+    분류를 확인·조정해야 한다 (perturbed-kind에서 제외 또는 면제 사유
+    명시).
+  - 스캔 스케치 (~20줄, 서명 후 구현): `derive_treatment_patterns`가
+    후보 CIK에서 `0*{cik}-\d{2}-\d{6}`(accession)·`CIK 0-패딩 10자리`
+    정규식을 파생, perturbed-kind 표면에서 실명·티커와 동일한 fail 처리.
+- **옵션**:
+  (A) **일자 경계(grandfather line)** — experiment registry에 소유자 서명
+      일자 필드 추가, 그 일자 이후 생성 표면만 fail. 동결 이력은 D99
+      공개가 담당, 미래 표면은 게이트가 담당. 유지 표면 최소.
+  (B) 열거 allowlist — 35파일을 registry에 명시 면제. 보호 범위는 (A)와
+      동일하나 유지·드리프트 표면이 크다 (R2-24 교훈).
+  (C) 현상 유지 — 게이트 무확장, D99 공개가 전담. 미래 표면 무보호
+      (R7-6이 지적한 공백 지속).
+- **근거**: reviews/cycle-007.md R7-6 · builds/cycle-007.md 적중 census ·
+  docs/methodology_limitations.md L-9/D99 · INV-06 (동결 불변) ·
+  INV-18 (게이트 행동 변경 = 서명 대상).
+- **기본값 (무응답 시)**: 없음 — 게이트 행동 변경은 서명 전 미집행
+  (현상은 (C)와 동일하게 유지되나, 이는 기본 선택이 아니라 미결 상태다).
+- **세션 기본 조치**: 본 큐 항목 + DECISIONS_PENDING D-P93 DRAFT 등재까지.
+  스캔 코드는 서명 전 구현하지 않는다.
+- **권고**: (A) — 리뷰어 steelman: allowlist(B)는 보호를 늘리지 않으면서
+  유지 표면만 늘리고, (C)는 R7-6의 목적(미래 표면 보호) 자체를 폐기한다.
+- **상태**: OPEN

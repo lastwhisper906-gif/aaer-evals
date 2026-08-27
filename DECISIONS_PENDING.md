@@ -1795,3 +1795,21 @@
 - **Basis:** INV-03·INV-06 · D84 · reviews/cycle-007.md R7-11 ·
   ERRATA.md E-001 (병행 경로 선례)
 - **Revert:** rev2 경로 삭제로 원상 (원 산출물 무접촉이므로 안전).
+
+## D-P93 — [DRAFT — 소유자 서명 대기] 교란 표면 accession/CIK 스캔 확장의 정책 선택 (Q-F20 참조)
+
+- **Status:** DRAFT — 세션(harness v4 cycle 008, R7-6 재디스패치)이 작성.
+  게이트 행동 변경 0 (INV-18 — 서명 대상은 게이트의 행동 그 자체).
+- **사실관계:** cycle 007 실측 — 교란-kind 표면에 실험군 실제
+  accession(접두 = filer CIK) 2,558건 / 35 동결 파일, 스캔 오탐 0.
+  벡터 자체는 D99/L-9로 공개되어 있고 `build_payload.py`가 교란
+  페이로드에 실제 accession을 유지하는 설계도 공개 문서에 있다 — 결함은
+  "게이트가 공개된 벡터를 스캔하지 않는다"는 검증 공백이다.
+- **결정 요청:** docs/OWNER_QUEUE.md Q-F20의 옵션 (A) 일자 경계 /
+  (B) 열거 allowlist / (C) 현상 유지 중 서명. 권고 (A). `identity_arm_b`
+  분류 확인 포함 (정체 가시 arm이 perturbed-kind glob에 등재된 현황).
+- **집행 조건:** 서명 후 별도 커밋으로 스캔 구현 + 회귀 테스트. 서명 전
+  게이트 코드 무접촉 — 본 엔트리와 Q-F20 등재가 이번 사이클의 전부다.
+- **Basis:** INV-18 · INV-06 · reviews/cycle-007.md R7-6 ·
+  reviews/cycle-008.md (재디스패치 지시) · builds/cycle-007.md census
+- **Revert:** 해당 없음 (기록 전용).
