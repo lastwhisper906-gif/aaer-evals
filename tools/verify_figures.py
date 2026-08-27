@@ -4,11 +4,21 @@ import argparse
 import hashlib
 import importlib.util
 import json
+import re
 import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
 MANIFEST = "analysis/figures.manifest.json"
+README_PATH = REPO / "README.md"
+# R1-22: README가 참조하는 모든 로컬 PNG(이미지·링크 양형) — 각각 매니페스트
+# 등재 의무. 이 링키지가 없으면 새 README 그림이 무검증으로 게시된다.
+_PNG_REF = re.compile(r"\(([\w][\w/.-]*\.png)\)")
+
+
+def readme_figure_refs(readme_path: Path | None = None) -> set[str]:
+    text = (readme_path or README_PATH).read_text(encoding="utf-8")
+    return set(_PNG_REF.findall(text))
 FIGURES = (
     ("analysis/fig_dotplot.py", "analysis/fig_dotplot_30firms.sidecar.json",
      "analysis/fig_dotplot_30firms.png"),
@@ -61,6 +71,12 @@ def verify(sidecar_root: Path = REPO) -> list[str]:
         return [f"{MANIFEST}: {exc}"]
     if len(entries) != 5:
         failures.append(f"{MANIFEST}: expected 5 figures, found {len(entries)}")
+    # R1-22: README 참조 그림 전건이 매니페스트에 등재되어야 한다
+    manifest_paths = {entry.get("path") for entry in entries}
+    for ref in sorted(readme_figure_refs()):
+        if ref not in manifest_paths:
+            failures.append(f"{ref}: README-referenced figure has no manifest entry "
+                            "(R1-22 — add to analysis/figures.manifest.json)")
     for entry in entries:
         path = REPO / entry.get("path", "")
         if not path.is_file():

@@ -89,3 +89,27 @@ def test_figure_renders_to_requested_output(tmp_path, script):
     )
     assert result.returncode == 0, result.stderr
     assert output.stat().st_size > 0
+
+
+# ── R1-22: README 그림 참조 ↔ 매니페스트 링키지 ───────────────────────────
+
+def test_readme_refs_extracted_and_all_manifested(tmp_path):
+    import json as _json
+    import verify_figures as vf
+    refs = vf.readme_figure_refs()
+    assert refs, "README에서 그림 참조를 하나도 찾지 못함 — 추출 회귀"
+    manifest = _json.loads((vf.REPO / vf.MANIFEST).read_text(encoding="utf-8"))
+    manifest_paths = {e["path"] for e in manifest["figures"]}
+    assert refs <= manifest_paths, refs - manifest_paths
+
+
+def test_unmanifested_readme_figure_fails(tmp_path, monkeypatch):
+    import verify_figures as vf
+    rogue_readme = tmp_path / "README.md"
+    rogue_readme.write_text(
+        (vf.REPO / "README.md").read_text(encoding="utf-8")
+        + "\n![new figure](analysis/fig_brand_new.png)\n", encoding="utf-8")
+    monkeypatch.setattr(vf, "README_PATH", rogue_readme)
+    failures = vf.verify()
+    assert any("fig_brand_new.png" in f and "no manifest entry" in f
+               for f in failures), failures[:5]
