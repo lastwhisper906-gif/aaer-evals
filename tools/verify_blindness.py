@@ -48,6 +48,22 @@ def check_history(root: Path = REPO, registry: dict | None = None) -> None:
     registry = registry or load_registry(root)
     for exp in registry["experiments"]:
         score, joined = exp["score_commit"], exp["label_join_commit"]
+        if score == "UNKNOWN" or joined == "UNKNOWN":
+            # R1-21: UNKNOWN은 이력 증명 스킵 — 그러나 output/perturbed
+            # 산출물이 이미 실재하면 스킵은 공진(vacuous) 통과다. 규칙:
+            # 산출물 있는 실험은 커밋을 확정하거나, 라벨 결합·채점이
+            # 정의상 없는 비실험 산출물만 history_proof_exempt 사유를
+            # 등재한다 (MANIFEST.* 파일은 모델 산출이 아니므로 제외).
+            if not exp.get("history_proof_exempt"):
+                outputs = [p for kind in ("output_globs", "perturbed_globs")
+                           for pattern in exp.get(kind, [])
+                           for p in root.glob(pattern)
+                           if p.is_file() and not p.name.startswith("MANIFEST")]
+                if outputs:
+                    fail(f"(a) {exp.get('name', '<unnamed>')}: score/label 커밋 "
+                         f"UNKNOWN인데 output/perturbed 산출물 {len(outputs)}건 실재 "
+                         "— 이력 증명 공진 통과 금지 (커밋 확정 또는 비실험 "
+                         "history_proof_exempt 사유 등재 필요)")
         if score != "UNKNOWN" and joined != "UNKNOWN":
             rc = subprocess.run(["git", "merge-base", "--is-ancestor", score, joined],
                                 cwd=root, capture_output=True).returncode

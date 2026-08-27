@@ -183,3 +183,49 @@ def test_perturbed_precedes_aux(tmp_path):
     identity_files(tmp_path)
     write_json(tmp_path, "runs/wave_test/case_01.json", {"text": "Zebra"})
     assert any("실명" in failure for failure in semantic_failures(tmp_path, reg))
+
+
+# ── R1-21: UNKNOWN 커밋의 공진(vacuous) 통과 차단 ─────────────────────────
+
+def _unknown_exp(tmp_path, exempt=None):
+    exp = {"name": "u", "score_commit": "UNKNOWN", "label_join_commit": "UNKNOWN",
+           "output_globs": ["runs/u/case_*.json"], "perturbed_globs": []}
+    if exempt:
+        exp["history_proof_exempt"] = exempt
+    return {"experiments": [exp]}
+
+
+def test_unknown_with_existing_outputs_fails(tmp_path):
+    write_json(tmp_path, "runs/u/case_01.json", {})
+    assert any("공진 통과 금지" in f
+               for f in history_failures(tmp_path, _unknown_exp(tmp_path)))
+
+
+def test_unknown_with_no_outputs_passes(tmp_path):
+    (tmp_path / "runs/u").mkdir(parents=True)
+    assert history_failures(tmp_path, _unknown_exp(tmp_path)) == []
+
+
+def test_unknown_manifest_only_passes(tmp_path):
+    """MANIFEST.*는 모델 산출이 아니다 — crossmodel_gpt 현행 상태 판형."""
+    write_json(tmp_path, "runs/u/MANIFEST.json", {})
+    reg = {"experiments": [{"name": "u", "score_commit": "UNKNOWN",
+                            "label_join_commit": "UNKNOWN",
+                            "output_globs": ["runs/u/**/*.json"],
+                            "perturbed_globs": []}]}
+    assert history_failures(tmp_path, reg) == []
+
+
+def test_unknown_with_documented_exemption_passes(tmp_path):
+    write_json(tmp_path, "runs/u/case_01.json", {})
+    reg = _unknown_exp(tmp_path, exempt="비실험 산출물 — 채점·라벨 결합 부재")
+    assert history_failures(tmp_path, reg) == []
+
+
+def test_real_registry_history_rule_passes():
+    """현 트리: gil_memo는 문서화 면제, crossmodel은 MANIFEST뿐 — 규칙 무발화.
+    (crossmodel arm의 첫 실산출은 커밋 확정 전까지 이 규칙이 잡는다.)"""
+    vb.FAILS.clear()
+    vb.WARNS.clear()
+    vb.check_history(vb.REPO)
+    assert vb.FAILS == []
