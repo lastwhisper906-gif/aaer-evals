@@ -203,11 +203,19 @@ def main() -> int:
         print(f"schema OK: {path.name}")
 
     if "case_input" in schemas:
-        cases = json.loads(CANDIDATES.read_text(encoding="utf-8"))["candidates"]
+        doc = json.loads(CANDIDATES.read_text(encoding="utf-8"))
+        cases = doc["candidates"]
         validate_items(Draft7Validator(schemas["case_input"], format_checker=FormatChecker()),
                        cases, "candidates.json", failures)
         check_scheme_type_by_group(cases, failures)
         check_legacy_candidates(schemas["case_input"], failures)
+        # R9-6: 헤더 부기(count)가 실제 레코드 수와 어긋나면 정답지 레지스트리가
+        # 첫 열람에서 자기모순 — 그룹별 분리형과 실측 대조 (재드리프트 차단)
+        actual = {"treatment": sum(1 for c in cases if c.get("group") == "treatment"),
+                  "control": sum(1 for c in cases if c.get("group") == "control")}
+        if doc.get("_meta", {}).get("count") != actual:
+            failures.append(f"[candidates.json] _meta.count "
+                            f"{doc.get('_meta', {}).get('count')!r} ≠ 실측 {actual}")
 
     if "evaluatee_input" in schemas and EVALUATEE.is_file():
         cases = json.loads(EVALUATEE.read_text(encoding="utf-8"))["cases"]
