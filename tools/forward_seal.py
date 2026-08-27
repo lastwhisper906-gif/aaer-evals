@@ -42,6 +42,21 @@ def main():
     runs_dir = REPO / (args.runs or f"runs/forward/{cycle.name}")
     tag = f"forward-{cycle.name.replace('_', '-')}-seal"
 
+    # R6-7(a): SEAL_RECORD는 게시·공유 표면 — 절대 로컬 경로(사용자명)를
+    # 굽지 않는다. 저장소 상대 표기, 저장소 밖(픽스처)은 이름만.
+    def _display(path_arg, resolved: Path, default: str) -> str:
+        if path_arg is None:
+            return default
+        if not Path(path_arg).is_absolute():
+            return path_arg
+        try:
+            return resolved.relative_to(REPO).as_posix()
+        except ValueError:
+            return resolved.name
+
+    cycle_display = _display(args.cycle, cycle, cycle.name)
+    runs_display = _display(args.runs, runs_dir, f"runs/forward/{cycle.name}")
+
     manifest = cycle / "MANIFEST.sha256"
     if manifest.exists():
         fail(f"{manifest} 이미 존재 — 재봉인 금지 (spec §3-5: "
@@ -84,7 +99,7 @@ def main():
     rehash_line = (f"- run_output re-hash: SKIPPED — abort 봉인 (부분 상태; "
                    f"runs dir {'있음' if runs_dir.is_dir() else '부재'})\n"
                    if args.abort else
-                   f"- run_output re-hash: verified against `{runs_dir}` "
+                   f"- run_output re-hash: verified against `{runs_display}` "
                    "(forward_validate --runs leg)\n")
     status_lines = (f"- **status: ABORTED** — 부분 상태 동결 (spec §3-2)\n"
                     f"- abort_reason: {args.reason}\n" if args.abort else
@@ -92,7 +107,7 @@ def main():
                      if args.past_window else "- status: sealed\n"))
     status_lines += rehash_line
     owner_cmds = (
-        f"git add {cycle} && "
+        f"git add {cycle_display} && "
         f"git commit -m 'SEAL{'(ABORT)' if args.abort else ''}: {cycle.name} forward watchlist'\n"
         f"git tag -a {tag} -m 'forward {seal_kind} {now} manifest sha256 {mhash}'\n"
         f"git push origin main --tags")
@@ -119,7 +134,10 @@ def main():
 2. **OpenTimestamps** (무료·무계정): `ots verify MANIFEST.sha256.ots`
    (클라이언트: `pip install opentimestamps-client`). 앵커 pending이면
    수 시간 후 `ots upgrade MANIFEST.sha256.ots` 후 재검증.
-3. **로컬 무결성**: `python tools/forward_verify_seal.py --cycle {cycle}`
+3. **로컬 무결성**: `python tools/forward_verify_seal.py --cycle {cycle_display}`
+4. **run-output 사슬** (R6-7 — runs/ 출력 보유 검증자): `python
+   tools/forward_validate.py --cycle {cycle_display} --runs {runs_display}`
+   — scores.json의 `run_output_sha256`를 러너 출력 실측 재해시로 대조.
 """, encoding="utf-8")
     if ots_bin is None:
         print("NOTE — ots 부재: `pip install opentimestamps-client` 후 "

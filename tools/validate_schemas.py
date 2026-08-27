@@ -96,7 +96,8 @@ def _deviation_signature(error) -> str:
 
 
 def characterize_file(validator, path: Path):
-    """(invalid_ids, per_case_map, error_count, out-of-allowlist sigs 목록)."""
+    """5-튜플 (cases, invalid_ids, per_case_map, error_count,
+    [(case_id, signature)] 전체 편차 목록) — R6-7(c) docstring 정정."""
     cases = json.loads(path.read_text(encoding="utf-8"))["candidates"]
     invalid_ids, n_err, per_case, sigs = [], 0, {}, []
     for c in cases:

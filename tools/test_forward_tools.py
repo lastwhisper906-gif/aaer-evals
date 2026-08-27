@@ -900,3 +900,26 @@ def test_cli_client_covers_forward_metered_family():
     import crossmodel_gpt
     assert set(cli_client.METERED_CREDENTIAL_VARS) <= set(crossmodel_gpt.METERED_ENV_VARS)
     assert {"OPENAI_BASE_URL", "OPENAI_API_BASE"} <= set(crossmodel_gpt.METERED_ENV_VARS)
+
+
+# ── R6-7: SEAL_RECORD 이식성 + 검증 완결성 ────────────────────────────────
+
+def test_seal_record_has_no_absolute_paths_and_names_rehash_command(cycle, monkeypatch):
+    monkeypatch.setattr(sys, "argv", seal_argv(cycle))
+    assert forward_seal.main() == 0
+    record = (cycle / "SEAL_RECORD.md").read_text(encoding="utf-8")
+    body = record.split("## 소유자 봉인 명령")[0] + record.split("## 외부 검증 방법")[1]
+    assert "/Users/" not in body and str(cycle.parent) not in body, \
+        "SEAL_RECORD에 절대 로컬 경로가 남음"
+    assert "forward_validate.py --cycle" in record and "--runs" in record, \
+        "run-output 사슬 검증 명령 부재"
+
+
+def test_abort_seal_record_also_portable(cycle, monkeypatch):
+    (cycle / "scores.json").unlink()
+    monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(cycle),
+                                      "--abort", "--reason", "window missed"])
+    assert forward_seal.main() == 0
+    record = (cycle / "SEAL_RECORD.md").read_text(encoding="utf-8")
+    verify_section = record.split("## 외부 검증 방법")[1]
+    assert "/Users/" not in verify_section and str(cycle.parent) not in verify_section
