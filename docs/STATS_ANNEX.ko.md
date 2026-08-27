@@ -1,28 +1,25 @@
-# FB-09 — Monte-Carlo error, seed, and exactness annex for the published statistics
+> 한국어 원본 (동결) — 영어 정본: STATS_ANNEX.md (F-01/F-02, R1-31)
 
-> Korean original (frozen): [STATS_ANNEX.ko.md](STATS_ANNEX.ko.md) — this English version is canonical; every number is byte-equal to the Korean source.
+# FB-09 — 게시 통계의 Monte-Carlo 오차·시드·정확성 부록
 
-## Purpose
+## 목적
 
-This annex displays, in one place, the simulation error of the Monte-Carlo
-permutation p-values recorded in the committed
-`analysis/results_stats.json` and `analysis/wave2_results.json`, and the
-seed and provenance of the AUC confidence intervals. It also shows the full
-enumeration count of each permutation design.
+이 부록은 커밋된 `analysis/results_stats.json`과
+`analysis/wave2_results.json`에 기록된 Monte-Carlo 순열 p값의 시뮬레이션
+오차와 AUC 신뢰구간의 시드·출처를 한곳에 표시한다. 또한 각 순열 설계의 완전
+열거 조합 수를 표시한다.
 
-## Method
+## 방법
 
-`tools/stats_annex.py` reads only the two JSON artifacts as statistical
-input. For each recorded p-value it computes MC-SE = `sqrt(p(1-p)/B)` and
-`p ± 1.96·MC-SE` using the iteration count B=100,000 stated in the analysis
-source; B is never back-derived from the p-value. The permutation-p
-estimator is `(ge+1)/(n+1)` as implemented in the analysis source. Full
-enumeration counts are computed with `math.comb(n, n_t)`. The script uses
-no randomness and no external packages.
+`tools/stats_annex.py`는 두 JSON 산출물만 통계값의 입력으로 읽는다. 각 기록된
+p값에 대해 분석 소스에 명시된 반복 수 B=100,000을 사용하여
+MC-SE = `sqrt(p(1-p)/B)`와 `p ± 1.96·MC-SE`를 계산한다. B를 p값에서 역산하지
+않는다. 순열 p 추정량은 분석 소스에 구현된 `(ge+1)/(n+1)`이다. 완전 열거 수는
+`math.comb(n, n_t)`로 계산한다. 스크립트는 난수와 외부 패키지를 사용하지 않는다.
 
-## Regenerable actual output
+## 재생성 가능한 실제 출력
 
-Below is the actual output of `./.venv/bin/python tools/stats_annex.py`.
+아래는 `./.venv/bin/python tools/stats_annex.py`의 실제 출력이다.
 
 ```text
 MONTE-CARLO PERMUTATION P-VALUES
@@ -53,15 +50,14 @@ analysis/wave2_results.json:seed | 20260707 | not in artifact; source: analysis/
 analysis/wave2_results.json:original.auc_ci | [0.616,0.983] | recorded in artifact; method source: analysis/legacy/wave2_analyze_v1.py:40-44
 ```
 
-## What this annex does not do
+## 이 부록이 하지 않는 일
 
-This annex does not recompute or revise the frozen statistics, and it adds
-no new statistical claims. The MC intervals are not confidence intervals of
-the recorded p-values themselves — they display the Monte-Carlo error that
-arises from finite iterations. The exact-permutation rows are feasibility
-notes on full enumeration, not exact-permutation test results. The existing
-primary·secondary·exploratory classification is unchanged.
+이 부록은 동결 통계값을 재계산하거나 수정하지 않으며, 새로운 통계적 주장을
+추가하지 않는다. MC 구간은 기록된 p값 자체의 신뢰구간이 아니라 유한 반복에서
+생기는 Monte-Carlo 오차 표시다. 정확순열 행은 완전 열거의 실행 가능성 메모일
+뿐 정확순열 검정 결과가 아니다. 기존 primary·secondary·exploratory 구분도
+변경하지 않는다.
 
-All results are scoped to a single Claude-based pipeline (PROJECT.md §5-5).
-Grading: Claude-assisted, human-finalized. No positions ·
-educational/informational · not investment advice.
+본 결과는 Claude 기반 단일 파이프라인에 한정된다 (PROJECT.md §5-5).
+채점: Claude 보조 + 인간 최종 확정. 포지션 없음 · 교육·정보 목적 · 투자 조언
+아님.
