@@ -28,6 +28,30 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 EVALUATEE_CASES = REPO_ROOT / "data" / "evaluatee" / "cases.json"
 DATA_DIR = cutoff_guard.DEFAULT_EDGAR_DATA
 
+# evaluatee_input 계약의 화이트리스트를 송출 지점에서 구조 강제한다 —
+# additionalProperties:false는 파일 생성 시점만이 아니라 송출 직전에도 걸어야
+# ground-truth 필드(group·first_revelation_date 등)가 오염된 케이스 파일을 타고
+# 모델에 도달하는 것이 구조적으로 불가능해진다. 값 패턴(case_id 형식 등)은
+# 여기서 강제하지 않는다 — 라이브 입력(hc_NN 홀드아웃 ID)이 패턴 밖이며,
+# 누출 위협은 키 집합이지 값 형식이 아니다.
+_EVALUATEE_INPUT_SCHEMA = json.loads(
+    (REPO_ROOT / "schemas" / "evaluatee_input.json").read_text(encoding="utf-8"))
+ALLOWED_CASE_KEYS = frozenset(_EVALUATEE_INPUT_SCHEMA["properties"])
+REQUIRED_CASE_KEYS = frozenset(_EVALUATEE_INPUT_SCHEMA["required"])
+
+
+class CaseWhitelistError(ValueError):
+    """케이스 dict가 evaluatee_input 화이트리스트 밖 — 송출 전 차단."""
+
+
+def assert_case_whitelisted(case: dict) -> None:
+    extra = sorted(set(case) - ALLOWED_CASE_KEYS)
+    missing = sorted(REQUIRED_CASE_KEYS - set(case))
+    if extra or missing:
+        raise CaseWhitelistError(
+            f"evaluatee_input 화이트리스트 위반 — 초과 필드 {extra}, "
+            f"결측 필드 {missing} (schemas/evaluatee_input.json)")
+
 # 페이로드에 싣는 us-gaap 태그 (원시 값 — 파생 지표·스크린 점수 금지).
 PAYLOAD_TAGS = [
     "Revenues", "RevenueFromContractWithCustomerExcludingAssessedTax", "SalesRevenueNet",
@@ -166,6 +190,7 @@ def load_filing_chronology(case_or_ticker, cutoff: datetime.date, *, data_dir=No
 
 
 def build_payload(case: dict, perturb: bool = False) -> dict:
+    assert_case_whitelisted(case)
     cutoff = _iso(case["cutoff_date"])
     series = load_pit_series(case, cutoff)
     chronology = load_filing_chronology(case, cutoff)

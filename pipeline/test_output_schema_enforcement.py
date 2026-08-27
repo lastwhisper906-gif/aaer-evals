@@ -166,3 +166,34 @@ def test_all_committed_run_outputs_validate():
         if errors:
             failures.append(f"{path.relative_to(REPO_ROOT)}: {errors[0].message}")
     assert not failures, "\n".join(failures)
+
+
+# ── evaluatee_input 화이트리스트의 송출 지점 강제 (R1-5) ──────────────────
+
+def test_ground_truth_field_blocked_before_model_call(monkeypatch, tmp_path):
+    """오염된 케이스 파일의 ground-truth 필드는 call_model 도달 전에 차단."""
+    calls = []
+    monkeypatch.setattr(runner.cli_client, "call_model",
+                        lambda *a, **k: calls.append(1))
+    case = {"case_id": "case_98", "company_name": "Example", "ticker": "EX",
+            "cik": "1", "cutoff_date": "2020-01-01",
+            "first_revelation_date": "2021-05-01"}
+    with pytest.raises(runner.bp.CaseWhitelistError):
+        runner.run_case(case, False, tmp_path / "runs", tmp_path / "logs")
+    assert calls == [], "화이트리스트 위반 케이스가 모델 호출에 도달"
+
+
+@pytest.mark.parametrize("extra", ["group", "revelation_source", "scheme_summary"])
+def test_whitelist_rejects_each_ground_truth_key(extra):
+    case = {"case_id": "case_98", "company_name": "Example", "ticker": "EX",
+            "cik": "1", "cutoff_date": "2020-01-01", extra: "x"}
+    with pytest.raises(runner.bp.CaseWhitelistError):
+        runner.bp.assert_case_whitelisted(case)
+
+
+def test_whitelist_rejects_missing_required_and_accepts_exact_contract():
+    with pytest.raises(runner.bp.CaseWhitelistError):
+        runner.bp.assert_case_whitelisted({"case_id": "case_98"})
+    runner.bp.assert_case_whitelisted(
+        {"case_id": "case_98", "company_name": "Example", "ticker": "EX",
+         "cik": "1", "cutoff_date": "2020-01-01"})
