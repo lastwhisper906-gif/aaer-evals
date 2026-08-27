@@ -17,7 +17,7 @@ import forward_common
 import forward_source_manifest as fsm
 import forward_assemble
 import forward_validate
-from test_forward_tools import make_universe
+from test_forward_tools import PROTOCOL_FIXTURE, make_universe
 
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "pipeline"))
@@ -55,6 +55,11 @@ def _model_output(rid: str, i: int) -> dict:
         "misstatement_probability": 30 + i,
         "mechanism_hypotheses": [],
         "overall": {"risk_tier": "watch", "top_signals": ["synthetic signal"]},
+        # R3-7: 러너 call-time fingerprint — validate가 조립 해시와 대조
+        "fingerprint": {"system_prompt_sha256": "f" * 64,
+                        "schema_sha256": forward_common.sha256_file(
+                            REPO / "schemas/llm_output.json"),
+                        "pipeline_commit": "a" * 40},
     }
 
 
@@ -69,6 +74,7 @@ def test_gate_steps_dry_run_end_to_end(tmp_path, monkeypatch, clean_env):
     cycle = tmp_path / "forward/cycle_099"
     cycle.mkdir(parents=True)
     forward_common.write_json(cycle / "universe.json", universe)
+    (cycle / "PROTOCOL.md").write_text(PROTOCOL_FIXTURE, encoding="utf-8")
 
     # (2) fetch — 스텁, 네트워크 0
     served = {}

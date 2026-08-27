@@ -20,6 +20,16 @@ def make_universe(n=12):
             "enumerated_at": "2026-07-20", "candidate_count": n, "excluded_by_reason": {}}
 
 
+# R3-7: 픽스처 해시는 라이브 동결 파일과 정합해야 validate 3각 대조를 통과
+REPO_ROOT = Path(__file__).resolve().parents[1]
+PROMPT_SHA = fc.sha256_file(REPO_ROOT / "pipeline/runner.py")
+SCHEMA_SHA = fc.sha256_file(REPO_ROOT / "schemas/llm_output.json")
+PROTOCOL_FIXTURE = ("# PROTOCOL fixture\n"
+                    "- evaluatee_model (pin): `claude-sonnet-5`\n"
+                    f"- `pipeline/runner.py` sha256 `{PROMPT_SHA}`\n"
+                    f"- `schemas/llm_output.json` sha256 `{SCHEMA_SHA}`\n")
+
+
 def make_record(rid, score=45, suff="sufficient", cik=None):
     state = "abstain" if suff == "insufficient" else (
         "flag" if score >= 70 else "review" if score >= 40 else "no_flag")
@@ -30,7 +40,11 @@ def make_record(rid, score=45, suff="sufficient", cik=None):
             "evidence_sufficiency": suff, "assessment_confidence": "medium",
             "top_signals": ["s"], "benign_alternative_explanations": ["b"],
             "affected_account_areas": ["rev"], "cited_sources": ["0000000000-26-000001"],
-            "model_id": "claude-sonnet-5", "prompt_sha256": "x", "schema_sha256": "y",
+            "model_id": "claude-sonnet-5", "prompt_sha256": PROMPT_SHA,
+            "schema_sha256": SCHEMA_SHA,
+            "run_fingerprint": {"system_prompt_sha256": "f" * 64,
+                                "schema_sha256": SCHEMA_SHA,
+                                "pipeline_commit": "a" * 40},
             "scored_at": "2026-11-15"}
 
 
@@ -45,7 +59,7 @@ def cycle(tmp_path):
          "accession_no": "0000000000-26-000001"}]})
     fc.write_json(c / "scores.json", {"records": [
         make_record(f"fw001-r{i:02d}") for i in range(1, 13)]})
-    (c / "PROTOCOL.md").write_text("proto", encoding="utf-8")
+    (c / "PROTOCOL.md").write_text(PROTOCOL_FIXTURE, encoding="utf-8")
     (c / "outcome_updates.jsonl").write_text("", encoding="utf-8")
     return c
 
@@ -343,7 +357,10 @@ def test_assemble_record_roundtrips_validate(cycle):
            "checklist": [{"finding": "flag", "confidence": "high"}] * 5,
            "mechanism_hypotheses": [{"affected_line_items": ["revenue", "AR"]}],
            "overall": {"top_signals": ["CL1"]},
-           "documents_used": [{"accession_no": "0000000000-26-000001"}]}
+           "documents_used": [{"accession_no": "0000000000-26-000001"}],
+           "fingerprint": {"system_prompt_sha256": "f" * 64,
+                           "schema_sha256": SCHEMA_SHA,
+                           "pipeline_commit": "a" * 40}}
     r = fa.assemble_record(meta, out)
     assert r["misstatement_risk_score"] == 72 and r["decision_state"] == "flag"
     assert r["affected_account_areas"] == ["revenue", "AR"]
@@ -397,3 +414,82 @@ def test_sealed_fixture_tamper_fires_the_gate(tmp_path):
     evidence.mkdir()
     (evidence / "late_addition.txt").write_text("added after seal\n", encoding="utf-8")
     assert manifest.read_text(encoding="utf-8") != fc.manifest_text(cycle)
+
+
+# ── R3-7: PROTOCOL 핀 ↔ 라이브 파일 ↔ scores 해시 3각 대조 ────────────────
+
+def test_validate_fails_when_protocol_pin_diverges_from_live_file(cycle):
+    proto = (cycle / "PROTOCOL.md").read_text(encoding="utf-8")
+    (cycle / "PROTOCOL.md").write_text(proto.replace(SCHEMA_SHA, "0" * 64),
+                                       encoding="utf-8")
+    errs = forward_validate.validate(cycle)
+    assert any("PROTOCOL 핀 ≠ 라이브" in e for e in errs)
+
+
+def test_validate_fails_when_record_hash_diverges_from_pin(cycle):
+    sc = fc.read_json(cycle / "scores.json")
+    sc["records"][0]["schema_sha256"] = "1" * 64
+    fc.write_json(cycle / "scores.json", sc)
+    errs = forward_validate.validate(cycle)
+    assert any("≠ PROTOCOL 핀" in e and "fw001-r01" in e for e in errs)
+
+
+def test_validate_fails_on_run_assemble_fingerprint_drift(cycle):
+    sc = fc.read_json(cycle / "scores.json")
+    sc["records"][0]["run_fingerprint"]["schema_sha256"] = "2" * 64
+    fc.write_json(cycle / "scores.json", sc)
+    errs = forward_validate.validate(cycle)
+    assert any("런/조립 드리프트" in e for e in errs)
+
+
+def test_validate_requires_run_fingerprint(cycle):
+    sc = fc.read_json(cycle / "scores.json")
+    del sc["records"][0]["run_fingerprint"]
+    fc.write_json(cycle / "scores.json", sc)
+    errs = forward_validate.validate(cycle)
+    assert any("run_fingerprint 부재" in e for e in errs)
+
+
+def test_validate_model_id_pin_semantics(cycle):
+    sc = fc.read_json(cycle / "scores.json")
+    sc["records"][0]["model_id"] = "claude-haiku-4-5"
+    sc["records"][1]["model_id"] = "claude-sonnet-5-20261101"  # 날짜형 접미사 적법
+    sc["records"][2]["model_id"] = "claude-sonnet-5-5"         # 임의 확장 위반 (R1-6)
+    fc.write_json(cycle / "scores.json", sc)
+    errs = forward_validate.validate(cycle)
+    assert any("fw001-r01: model_id" in e for e in errs)
+    assert not any("fw001-r02: model_id" in e for e in errs)
+    assert any("fw001-r03: model_id" in e for e in errs)
+
+
+def test_validate_fails_without_protocol(cycle):
+    (cycle / "PROTOCOL.md").unlink()
+    errs = forward_validate.validate(cycle)
+    assert any("PROTOCOL.md 부재" in e for e in errs)
+
+
+def test_assemble_copies_run_time_fingerprint(tmp_path, monkeypatch):
+    for var in fc.METERED_CREDENTIAL_VARS:
+        monkeypatch.delenv(var, raising=False)
+    cycle = tmp_path / "cycle_a"
+    cycle.mkdir()
+    fc.write_json(cycle / "universe.json", make_universe())
+    runs = tmp_path / "runs"
+    runs.mkdir()
+    out = {"case_id": "fw001-r01", "misstatement_probability": 45,
+           "checklist": [], "mechanism_hypotheses": [],
+           "overall": {"top_signals": []}, "documents_used": [],
+           "model": "claude-sonnet-5", "run_timestamp": "t", "run_id": "rid",
+           "fingerprint": {"system_prompt_sha256": "f" * 64,
+                           "schema_sha256": "e" * 64, "pipeline_commit": "a" * 40,
+                           "model_requested": "claude-sonnet-5",
+                           "harness_version_actual": "v"}}
+    (runs / "fw001-r01.json").write_text(json.dumps(out), encoding="utf-8")
+    import sys as _sys
+    monkeypatch.setattr(_sys, "argv", ["forward_assemble.py", "--cycle", str(cycle),
+                                       "--runs", str(runs)])
+    import forward_assemble
+    assert forward_assemble.main() == 0
+    rec = fc.read_json(cycle / "scores.json")["records"][0]
+    assert rec["run_fingerprint"]["schema_sha256"] == "e" * 64
+    assert rec["run_fingerprint"]["pipeline_commit"] == "a" * 40

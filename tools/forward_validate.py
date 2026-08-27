@@ -10,17 +10,36 @@ source_manifest + company.cik ↔ universe 교차 대조.
 네트워크 0 · 모델 호출 0. 위반 시 exit 1.
 """
 import argparse
+import re
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from forward_common import (REPO, SCREENING_CUTOFF, MIN_SCORED, UNIVERSE_SIZE,
-                            assert_subscription_only, read_json, parse_date)
+                            assert_subscription_only, read_json, parse_date,
+                            sha256_file)
 from forward_prepare import check_universe
 
 DECISION_STATES = {"flag", "review", "no_flag", "abstain"}
 SUFFICIENCY = {"sufficient", "partial", "insufficient"}
 CONFIDENCE = {"high", "medium", "low"}
+
+# R3-7: scores 레코드의 해시 필드 ↔ PROTOCOL.md 핀 ↔ 라이브 파일 3각 대조 대상
+PIN_FILES = {"prompt_sha256": "pipeline/runner.py",
+             "schema_sha256": "schemas/llm_output.json"}
+
+
+def parse_protocol_pins(text: str) -> tuple[str | None, dict[str, str]]:
+    """PROTOCOL.md에서 (모델 핀, {경로: sha256}) 추출 — forward_prepare 서식."""
+    m = re.search(r"evaluatee_model \(pin\): `([^`]+)`", text)
+    pins = dict(re.findall(r"- `([^`]+)` sha256 `([0-9a-f]{64})`", text))
+    return (m.group(1) if m else None), pins
+
+
+def _model_matches_pin(model: str, pin: str) -> bool:
+    # 날짜형 접미사만 인정 — 임의 하이픈 확장은 다른 모델 (INV-21/R1-6,
+    # cli_client._pin_matches 거울)
+    return re.fullmatch(re.escape(pin) + r"(-\d{8})?", model) is not None
 
 
 def expected_state(score: int, sufficiency: str) -> str:
@@ -50,6 +69,23 @@ def validate(cycle: Path) -> list[str]:
     universe_ids = {r["record_id"] for r in u.get("selected", [])}
     universe_cik = {r["record_id"]: str(r.get("cik", "")).zfill(10)
                     for r in u.get("selected", [])}
+
+    # R3-7: PROTOCOL 핀 ↔ 라이브 동결 파일 ↔ scores 해시 3각 fail-closed 대조
+    model_pin, pins = None, {}
+    proto_path = cycle / "PROTOCOL.md"
+    if proto_path.exists():
+        model_pin, pins = parse_protocol_pins(proto_path.read_text(encoding="utf-8"))
+        if not model_pin:
+            errs.append("PROTOCOL: evaluatee_model 핀 미해석")
+        for field, rel in PIN_FILES.items():
+            pinned = pins.get(rel)
+            if not pinned:
+                errs.append(f"PROTOCOL: `{rel}` 핀 부재")
+            elif sha256_file(REPO / rel) != pinned:
+                errs.append(f"PROTOCOL 핀 ≠ 라이브 파일 해시: {rel} — 재핀은 "
+                            "FREEZE_REV/supersession 문서로만 (Q-O11)")
+    else:
+        errs.append("PROTOCOL.md 부재 — 핀 대조 불가 (fail-closed)")
 
     cutoff = parse_date(SCREENING_CUTOFF)
     sources: list[dict] = []
@@ -101,6 +137,23 @@ def validate(cycle: Path) -> list[str]:
                           "prompt_sha256", "schema_sha256", "scored_at"):
                 if not r.get(field):
                     errs.append(f"{rid}: {field} 결측")
+            # R3-7: 레코드 해시 ↔ PROTOCOL 핀, model_id ↔ 모델 핀, 그리고
+            # 런타임 fingerprint(run_fingerprint) ↔ 조립 시점 해시 정합
+            for field, rel in PIN_FILES.items():
+                if r.get(field) and pins.get(rel) and r[field] != pins[rel]:
+                    errs.append(f"{rid}: {field} ≠ PROTOCOL 핀 ({rel}) — "
+                                "런/조립 사이 동결 파일 드리프트")
+            if model_pin and r.get("model_id") and not _model_matches_pin(
+                    str(r["model_id"]), model_pin):
+                errs.append(f"{rid}: model_id {r['model_id']!r} ≠ 핀 {model_pin!r}")
+            rf = r.get("run_fingerprint")
+            if not isinstance(rf, dict):
+                errs.append(f"{rid}: run_fingerprint 부재 — 러너 call-time "
+                            "fingerprint가 봉인 대상에 실리지 않음 (R3-7)")
+            elif rf.get("schema_sha256") and r.get("schema_sha256") \
+                    and rf["schema_sha256"] != r["schema_sha256"]:
+                errs.append(f"{rid}: run-time schema_sha256 ≠ assemble-time — "
+                            "런/조립 드리프트 (자기모순 봉인 차단)")
             # §6: 두 배열은 존재 의무 — 빈 배열은 적법, 키 부재는 위반
             for field in ("benign_alternative_explanations", "affected_account_areas"):
                 if not isinstance(r.get(field), list):

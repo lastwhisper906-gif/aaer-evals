@@ -80,6 +80,14 @@ def assemble_record(rec_meta: dict, out: dict | None) -> dict:
         "model_id": out.get("model", ""),
         "prompt_sha256": sha256_file(REPO / "pipeline/runner.py"),
         "schema_sha256": sha256_file(REPO / "schemas/llm_output.json"),
+        # R3-7: 런 출력 자신의 call-time fingerprint를 봉인 대상에 복사 —
+        # validate가 조립 시점 해시·PROTOCOL 핀과 3각 대조한다 (드리프트 차단)
+        "run_fingerprint": ({k: fp.get(k) for k in
+                             ("system_prompt_sha256", "schema_sha256",
+                              "pipeline_commit", "model_requested",
+                              "harness_version_actual")}
+                            if isinstance((fp := out.get("fingerprint")), dict)
+                            else None),
         "scored_at": out.get("run_timestamp", ""),
         "run_id": out.get("run_id", ""),
     }
