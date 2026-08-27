@@ -59,7 +59,8 @@ def _model_output(rid: str, i: int) -> dict:
         "fingerprint": {"system_prompt_sha256": "f" * 64,
                         "schema_sha256": forward_common.sha256_file(
                             REPO / "schemas/llm_output.json"),
-                        "pipeline_commit": "a" * 40},
+                        "pipeline_commit": "a" * 40,
+                        "model_requested": "claude-sonnet-5"},
     }
 
 

@@ -42,6 +42,10 @@ def _model_matches_pin(model: str, pin: str) -> bool:
     return re.fullmatch(re.escape(pin) + r"(-\d{8})?", model) is not None
 
 
+def _is_sha256(value) -> bool:
+    return isinstance(value, str) and re.fullmatch(r"[0-9a-f]{64}", value) is not None
+
+
 def expected_state(score: int, sufficiency: str) -> str:
     if sufficiency == "insufficient":
         return "abstain"
@@ -62,7 +66,7 @@ def _cited_source_attested(acc: str, sources: list[dict]) -> bool:
     return False
 
 
-def validate(cycle: Path) -> list[str]:
+def validate(cycle: Path, runs_dir: Path | None = None) -> list[str]:
     errs = []
     u = read_json(cycle / "universe.json")
     errs += [f"universe: {e}" for e in check_universe(u)]
@@ -150,14 +154,27 @@ def validate(cycle: Path) -> list[str]:
             if not isinstance(rf, dict):
                 errs.append(f"{rid}: run_fingerprint 부재 — 러너 call-time "
                             "fingerprint가 봉인 대상에 실리지 않음 (R3-7)")
-            elif rf.get("schema_sha256") and r.get("schema_sha256") \
-                    and rf["schema_sha256"] != r["schema_sha256"]:
-                errs.append(f"{rid}: run-time schema_sha256 ≠ assemble-time — "
-                            "런/조립 드리프트 (자기모순 봉인 차단)")
-            # R3-8: 봉인 해시 사슬이 러너 출력 파일까지 닿아야 한다
-            if not r.get("run_output_sha256"):
-                errs.append(f"{rid}: run_output_sha256 부재 — 봉인이 러너 출력을 "
-                            "커버하지 않음 (R3-8)")
+            else:
+                # R4-4: 각 leg fail-closed — 빈 dict·결측 키가 대조를 침묵
+                # 스킵하면 leg 전체가 fail-open이다
+                if not _is_sha256(rf.get("schema_sha256")):
+                    errs.append(f"{rid}: run_fingerprint.schema_sha256 "
+                                f"부재/비정형 {rf.get('schema_sha256')!r}")
+                elif r.get("schema_sha256") and rf["schema_sha256"] != r["schema_sha256"]:
+                    errs.append(f"{rid}: run-time schema_sha256 ≠ assemble-time — "
+                                "런/조립 드리프트 (자기모순 봉인 차단)")
+                if model_pin:
+                    requested = rf.get("model_requested")
+                    if not requested:
+                        errs.append(f"{rid}: run_fingerprint.model_requested 부재")
+                    elif not _model_matches_pin(str(requested), model_pin):
+                        errs.append(f"{rid}: run_fingerprint.model_requested "
+                                    f"{requested!r} ≠ 핀 {model_pin!r}")
+            # R3-8/R4-4: 봉인 해시 사슬이 러너 출력 파일까지 닿아야 한다 — 64-hex 강제
+            if not _is_sha256(r.get("run_output_sha256")):
+                errs.append(f"{rid}: run_output_sha256 부재/비정형 "
+                            f"{r.get('run_output_sha256')!r} — 봉인이 러너 출력을 "
+                            "커버하지 않음 (R3-8/R4-4)")
             # §6: 두 배열은 존재 의무 — 빈 배열은 적법, 키 부재는 위반
             for field in ("benign_alternative_explanations", "affected_account_areas"):
                 if not isinstance(r.get(field), list):
@@ -180,6 +197,25 @@ def validate(cycle: Path) -> list[str]:
         if scored < MIN_SCORED:
             errs.append(f"완료 분율 미달: scored {scored} < {MIN_SCORED}/{UNIVERSE_SIZE} "
                         "— 봉인 불가, spec §3-3 (abort 규칙 §3-2 적용)")
+        # R4-4: run_output_sha256 실측 재해시 — 어떤 도구도 실제로 재해시하지
+        # 않으면 leg는 신뢰 사슬이 아니라 장식이다. runs 부재(클론 검증자)는
+        # 공지 후 생략, 존재하면 전건 대조.
+        if runs_dir is not None:
+            if runs_dir.is_dir():
+                for r in records:
+                    if r.get("status") == "not_scored":
+                        continue
+                    out_path = runs_dir / f"{r.get('record_id')}.json"
+                    if not out_path.exists():
+                        errs.append(f"{r.get('record_id')}: runs 출력 부재 "
+                                    f"({out_path.name}) — run_output_sha256 대조 불가")
+                    elif _is_sha256(r.get("run_output_sha256")) and \
+                            sha256_file(out_path) != r["run_output_sha256"]:
+                        errs.append(f"{r.get('record_id')}: runs 출력 실측 해시 ≠ "
+                                    "run_output_sha256 — 조립 후 변조/드리프트")
+            else:
+                print(f"NOTICE — runs 디렉토리 부재({runs_dir}): run_output_sha256 "
+                      "실측 재해시 생략 (커밋 산출물만 가진 검증자는 정상)")
     else:
         errs.append("scores.json 부재")
     return errs
@@ -188,9 +224,13 @@ def validate(cycle: Path) -> list[str]:
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--cycle", required=True)
+    ap.add_argument("--runs", default=None,
+                    help="R4-4: 러너 출력 디렉토리 (기본 규약 runs/forward/<cycle명>) "
+                         "— 존재 시 run_output_sha256 실측 재해시, 부재 시 공지 후 생략")
     args = ap.parse_args()
     assert_subscription_only()
-    errs = validate(REPO / args.cycle)
+    runs_dir = REPO / (args.runs or f"runs/forward/{Path(args.cycle).name}")
+    errs = validate(REPO / args.cycle, runs_dir=runs_dir)
     if errs:
         print("FAIL — forward 검증 위반:")
         for e in errs:

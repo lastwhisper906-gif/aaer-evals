@@ -44,7 +44,8 @@ def make_record(rid, score=45, suff="sufficient", cik=None):
             "schema_sha256": SCHEMA_SHA,
             "run_fingerprint": {"system_prompt_sha256": "f" * 64,
                                 "schema_sha256": SCHEMA_SHA,
-                                "pipeline_commit": "a" * 40},
+                                "pipeline_commit": "a" * 40,
+                                "model_requested": "claude-sonnet-5"},
             "run_output_sha256": "b" * 64,
             "scored_at": "2026-11-15"}
 
@@ -361,7 +362,8 @@ def test_assemble_record_roundtrips_validate(cycle):
            "documents_used": [{"accession_no": "0000000000-26-000001"}],
            "fingerprint": {"system_prompt_sha256": "f" * 64,
                            "schema_sha256": SCHEMA_SHA,
-                           "pipeline_commit": "a" * 40}}
+                           "pipeline_commit": "a" * 40,
+                           "model_requested": "claude-sonnet-5"}}
     r = fa.assemble_record(meta, out, out_sha256="c" * 64)
     assert r["misstatement_risk_score"] == 72 and r["decision_state"] == "flag"
     assert r["affected_account_areas"] == ["revenue", "AR"]
@@ -646,3 +648,61 @@ def test_enumerate_force_refuses_on_sealed_cycle(cycle, monkeypatch):
                                       "--out", str(cycle / "universe.json")])
     assert forward_enumerate.main() == 1
     assert (cycle / "universe.json").read_bytes() == sealed_bytes
+
+
+# ── R4-4: 봉인 사슬 엄격화 — leg별 fail-closed + 실측 재해시 ──────────────
+
+def test_empty_run_fingerprint_fails(cycle):
+    sc = fc.read_json(cycle / "scores.json")
+    sc["records"][0]["run_fingerprint"] = {}
+    fc.write_json(cycle / "scores.json", sc)
+    errs = forward_validate.validate(cycle)
+    assert any("run_fingerprint.schema_sha256" in e for e in errs)
+    assert any("model_requested 부재" in e for e in errs)
+
+
+def test_wrong_model_requested_in_fingerprint_fails(cycle):
+    sc = fc.read_json(cycle / "scores.json")
+    sc["records"][0]["run_fingerprint"]["model_requested"] = "claude-haiku-4-5"
+    sc["records"][1]["run_fingerprint"]["model_requested"] = "claude-sonnet-5-20261101"
+    fc.write_json(cycle / "scores.json", sc)
+    errs = forward_validate.validate(cycle)
+    assert any("fw001-r01" in e and "model_requested" in e for e in errs)
+    assert not any("fw001-r02" in e and "model_requested" in e for e in errs)
+
+
+def test_garbage_run_output_sha256_fails(cycle):
+    sc = fc.read_json(cycle / "scores.json")
+    sc["records"][0]["run_output_sha256"] = "yes"
+    fc.write_json(cycle / "scores.json", sc)
+    errs = forward_validate.validate(cycle)
+    assert any("run_output_sha256 부재/비정형" in e for e in errs)
+
+
+def test_runs_rehash_detects_post_assemble_edit(cycle, tmp_path):
+    runs = tmp_path / "runs_check"
+    runs.mkdir()
+    sc = fc.read_json(cycle / "scores.json")
+    for r in sc["records"]:
+        out_path = runs / f"{r['record_id']}.json"
+        out_path.write_text(json.dumps({"case_id": r["record_id"]}), encoding="utf-8")
+        r["run_output_sha256"] = fc.sha256_file(out_path)
+    fc.write_json(cycle / "scores.json", sc)
+    assert forward_validate.validate(cycle, runs_dir=runs) == []
+
+    victim = runs / "fw001-r01.json"
+    victim.write_text(json.dumps({"case_id": "fw001-r01", "edited": True}),
+                      encoding="utf-8")
+    errs = forward_validate.validate(cycle, runs_dir=runs)
+    assert any("실측 해시 ≠" in e for e in errs)
+
+    missing = runs / "fw001-r02.json"
+    missing.unlink()
+    errs = forward_validate.validate(cycle, runs_dir=runs)
+    assert any("runs 출력 부재" in e and "fw001-r02" in e for e in errs)
+
+
+def test_runs_dir_absent_skips_with_notice(cycle, capsys):
+    errs = forward_validate.validate(cycle, runs_dir=cycle / "no_such_runs")
+    assert errs == []
+    assert "실측 재해시 생략" in capsys.readouterr().out
