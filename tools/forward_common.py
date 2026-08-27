@@ -57,6 +57,15 @@ def sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
+def fp_siblings(runs_dir: Path) -> list:
+    """R7-3: 러너의 fingerprint-mismatch 산출물({rid}.fp-*.json) 목록.
+
+    존재 = 창 중간 커밋(예: Q-O11 re-pin) 후 재실행이 정본 파일을 비켜
+    기록했다는 뜻 — 어느 런이 정본인지 모호하므로 assemble/validate는
+    fail-closed하고 소유자가 명시적으로 해소한다."""
+    return sorted(Path(runs_dir).glob("*.fp-*.json"))
+
+
 def sha256_text(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 

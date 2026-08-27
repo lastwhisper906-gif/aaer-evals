@@ -28,8 +28,8 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from forward_common import (REPO, assert_subscription_only, read_json, write_json,
-                            sha256_file)
+from forward_common import (REPO, assert_subscription_only, fp_siblings,
+                            read_json, write_json, sha256_file)
 
 CONF_NUM = {"high": 3, "medium": 2, "low": 1}
 
@@ -110,6 +110,14 @@ def main():
     if (cycle / "MANIFEST.sha256").exists():
         print(f"FAIL — {args.cycle}: MANIFEST.sha256 존재 — 봉인된 사이클의 "
               "scores.json 재조립 금지 (spec §3-5, INV-22). 교정은 새 사이클로.")
+        return 1
+
+    # R7-3: fp-sibling 존재 = 정본 모호 — stale 정본을 조립·봉인하는 경로 차단
+    sibs = fp_siblings(runs)
+    if sibs:
+        print("FAIL — fp-sibling 러너 출력 존재: 어느 런이 정본인지 모호 "
+              "(창 중간 커밋 후 재실행 흔적). 소유자 해소 후 재시도: "
+              + ", ".join(s.name for s in sibs))
         return 1
 
     universe = read_json(cycle / "universe.json")

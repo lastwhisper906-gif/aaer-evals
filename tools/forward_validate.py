@@ -16,8 +16,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from forward_common import (REPO, SCREENING_CUTOFF, MIN_SCORED, UNIVERSE_SIZE,
-                            assert_subscription_only, read_json, parse_date,
-                            sha256_file)
+                            assert_subscription_only, fp_siblings, read_json,
+                            parse_date, sha256_file)
 from forward_prepare import check_universe
 
 DECISION_STATES = {"flag", "review", "no_flag", "abstain"}
@@ -208,6 +208,11 @@ def validate(cycle: Path, runs_dir: Path | None = None) -> list[str]:
         # 공지 후 생략, 존재하면 전건 대조.
         if runs_dir is not None:
             if runs_dir.is_dir():
+                # R7-3: fp-sibling 존재 = 정본 모호 — 봉인이 stale 출력을
+                # 인증하지 못하게 여기(봉인 시 실행되는 leg)서도 fail-closed
+                for s in fp_siblings(runs_dir):
+                    errs.append(f"fp-sibling 존재: {s.name} — 어느 런이 정본인지 "
+                                "모호, 봉인 전 소유자 해소 필요 (R7-3)")
                 for r in records:
                     if r.get("status") == "not_scored":
                         continue

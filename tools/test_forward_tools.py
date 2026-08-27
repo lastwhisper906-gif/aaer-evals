@@ -743,6 +743,35 @@ def test_runs_dir_absent_skips_with_notice(cycle, capsys):
     assert "실측 재해시 생략" in capsys.readouterr().out
 
 
+# ── R7-3: fp-sibling 존재 시 조립·검증 fail-closed ────────────────────────
+
+def test_fp_sibling_fails_assemble_and_validate(cycle, tmp_path, monkeypatch, capsys):
+    """창 중간 커밋 후 재실행은 {rid}.fp-*.json을 남긴다 — 정본이 stale일 수
+    있으므로 assemble·validate 모두 sibling을 이름으로 지목하며 거부한다."""
+    for var in fc.METERED_CREDENTIAL_VARS:
+        monkeypatch.delenv(var, raising=False)
+    runs = tmp_path / "runs_sib"
+    runs.mkdir()
+    sc = fc.read_json(cycle / "scores.json")
+    for r in sc["records"]:
+        out_path = runs / f"{r['record_id']}.json"
+        out_path.write_text(json.dumps({"case_id": r["record_id"]}), encoding="utf-8")
+        r["run_output_sha256"] = fc.sha256_file(out_path)
+    fc.write_json(cycle / "scores.json", sc)
+    assert forward_validate.validate(cycle, runs_dir=runs) == []  # sibling 없음 = 무변화
+
+    sib = runs / "fw001-r01.fp-9a3b.json"
+    sib.write_text(json.dumps({"case_id": "fw001-r01", "newer": True}), encoding="utf-8")
+    errs = forward_validate.validate(cycle, runs_dir=runs)
+    assert any("fp-sibling" in e and sib.name in e for e in errs)
+
+    import forward_assemble
+    monkeypatch.setattr(sys, "argv", ["forward_assemble.py", "--cycle",
+                                      str(cycle), "--runs", str(runs)])
+    assert forward_assemble.main() == 1
+    assert sib.name in capsys.readouterr().out
+
+
 # ── R4-7: 소도구 경화 4종 ─────────────────────────────────────────────────
 
 def test_enumerate_incomplete_writes_nothing_even_without_target(tmp_path, monkeypatch):
