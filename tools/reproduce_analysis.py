@@ -93,14 +93,19 @@ def stats_block(t_vals, c_vals):
             "sd_all16": round(statistics.pstdev(all16), 2), "brier": round(brier, 4)}
 
 
+def _case_files(d):
+    # R2-5: fp-sibling(case_NN.fp-XXXX.json)은 stale-superseded 기록 — 제외
+    return sorted(p for p in (REPO / d).glob("case_*.json") if ".fp-" not in p.name)
+
+
 def load_p(d):
     return {p.stem: json.loads(p.read_text(encoding="utf-8"))["misstatement_probability"]
-            for p in sorted((REPO / d).glob("case_*.json"))}
+            for p in _case_files(d)}
 
 
 def load_grades(d):
     return {p.stem: json.loads(p.read_text(encoding="utf-8"))
-            for p in sorted((REPO / d).glob("case_*.json"))}
+            for p in _case_files(d)}
 
 
 CHECKS = []

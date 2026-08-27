@@ -152,10 +152,16 @@ def compute_results(fraud, control, perturbed, m_pairs, f_pairs,
     }
 
 
+def _case_files(pattern):
+    """R2-5: fp-sibling(case_NN.fp-XXXX.json)은 stale-superseded 기록 —
+    글롭에 걸리면 이중 집계·파일시스템 순서 비결정(INV-02). 제외 + 정렬."""
+    return sorted(f for f in glob.glob(pattern) if ".fp-" not in Path(f).name)
+
+
 def load_scores(directory, mapping_path):
     mapping = json.loads(Path(mapping_path).read_text())["mapping"]
     scores = {}
-    for filename in glob.glob(f"{directory}/*.json"):
+    for filename in _case_files(f"{directory}/*.json"):
         record = json.loads(Path(filename).read_text())
         scores[mapping[record["case_id"]]] = record.get("misstatement_probability")
     return scores
@@ -165,13 +171,13 @@ def load_wave1_scores():
     mapping = json.loads(Path("scoring/id_mapping.json").read_text())["mapping"]
     fraud_ids = {"T07", "T11", "T12", "T13", "T16", "T17", "T21", "T28"}
     fraud = []
-    for filename in glob.glob("runs/main/case_*.json"):
+    for filename in _case_files("runs/main/case_*.json"):
         record = json.loads(Path(filename).read_text())
         if mapping[record["case_id"]] in fraud_ids:
             fraud.append(record["misstatement_probability"])
     control = [
         json.loads(Path(filename).read_text())["misstatement_probability"]
-        for filename in glob.glob("runs/rp09/scores/case_*.json")
+        for filename in _case_files("runs/rp09/scores/case_*.json")
     ]
     return fraud, control
 

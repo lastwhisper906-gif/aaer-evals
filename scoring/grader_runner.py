@@ -227,6 +227,13 @@ def grade_one(neutral: str, original_id: str, output: dict,
             + (" [fallback]" if grade["_meta"]["fallback_used"] else ""))
 
 
+def iter_run_files(runs_dir, pattern):
+    """R2-5: fp-sibling(case_NN.fp-XXXX.json)은 runner의 stale-superseded
+    기록으로 case_*.json 글롭에 걸린다 — 케이스당 정본 1건만 채점하도록
+    명시 제외 + 정렬(결정론, INV-02)."""
+    return sorted(p for p in runs_dir.glob(pattern) if ".fp-" not in p.name)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--runs", required=True)
@@ -254,7 +261,7 @@ def main() -> int:
 
     failures = 0
     try:
-        for run_file in sorted((REPO / args.runs).glob(args.pattern)):
+        for run_file in iter_run_files(REPO / args.runs, args.pattern):
             output = json.loads(run_file.read_text(encoding="utf-8"))
             neutral = output["case_id"]
             status = grade_one(neutral, mapping[neutral], output, out_dir, log_dir, note,

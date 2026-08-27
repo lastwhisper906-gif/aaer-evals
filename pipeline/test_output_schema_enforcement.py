@@ -174,10 +174,12 @@ PREVALIDATION_ALLOWLIST = {
 }
 
 
-def _llm_output_shaped_paths():
+def _llm_output_shaped_paths(root=REPO_ROOT):
     paths = set()
     for base in ("runs", "pilot"):
-        for path in (REPO_ROOT / base).rglob("*.json"):
+        for path in (root / base).rglob("*.json"):
+            if ".fp-" in path.name:  # R2-5: stale-superseded fp-sibling 제외
+                continue
             try:
                 doc = json.loads(path.read_text(encoding="utf-8"))
             except json.JSONDecodeError:
