@@ -233,7 +233,12 @@ def grade_one(neutral: str, original_id: str, output: dict,
         "fingerprint": fingerprint,
     }
     out_dir.mkdir(parents=True, exist_ok=True)
-    write_path.write_text(json.dumps(grade, ensure_ascii=False, indent=2), encoding="utf-8")
+    # 원자적 기록 (D67, R3-6): 크래시 부분 기록이 정본 {neutral}.json이 되면
+    # _existing_grade_valid가 영영 False — 재채점이 전부 fp-sibling으로 우회
+    # 되고 소비자는 부패 정본에서 크래시한다. tmp→replace.
+    tmp_path = write_path.with_suffix(".json.tmp")
+    tmp_path.write_text(json.dumps(grade, ensure_ascii=False, indent=2), encoding="utf-8")
+    tmp_path.replace(write_path)
     prefix = "OK stale-superseding" if stale_superseding else "OK"
     return (f"{prefix} d1={grade['dim1_probability_band']} d2={grade['dim2_mechanism']} "
             f"d4={grade['dim4_evidence_quality']} mem2={grade['memorization_suspect_condition2']}"

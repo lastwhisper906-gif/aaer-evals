@@ -311,3 +311,30 @@ def test_cross_frame_existing_output_fails_not_skips(
 
     assert result["status"].startswith("FAIL (frame_collision"), result["status"]
     assert "xgpt-original-C01-r1" in result["status"]
+
+
+def test_crossmodel_write_atomic_crash_leaves_no_corrupt_canonical(
+        monkeypatch, tmp_path, case, payload, model_output):
+    """R3-6: tmp→replace — 크래시 부분 기록이 정본 C01.json이 되면 안 된다."""
+    from pathlib import Path as _P
+    repo = _configure_tmp(monkeypatch, tmp_path, payload)
+
+    def mocked_run(command, **kwargs):
+        if command == ["codex", "--version"]:
+            return SimpleNamespace(stdout="codex-cli test\n", stderr="", returncode=0)
+        return SimpleNamespace(stdout=_event_stream(json.dumps(model_output)),
+                               stderr="", returncode=0)
+
+    monkeypatch.setattr(cross.subprocess, "run", mocked_run)
+    real_write = _P.write_text
+
+    def crashing(self, text, *args, **kwargs):
+        if self.name.endswith(".json.tmp"):
+            real_write(self, text[:10], *args, **kwargs)
+            raise OSError("simulated crash mid-write")
+        return real_write(self, text, *args, **kwargs)
+
+    monkeypatch.setattr(_P, "write_text", crashing)
+    with pytest.raises(OSError, match="simulated crash"):
+        cross.run_case(case, "original", repo / "runs" / "crossmodel_gpt")
+    assert not (repo / "runs" / "crossmodel_gpt" / "C01.json").exists()

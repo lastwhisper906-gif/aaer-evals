@@ -303,7 +303,10 @@ def run_case(case: dict, frame: str, out_dir: Path, *, dry_run: bool = False) ->
         meta["fail_reason"] = "full_output_schema_validation"
         meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
         return {"case_id": cid, "status": "FAIL (full_output_schema_validation)"}
-    out_path.write_text(json.dumps(full, ensure_ascii=False, indent=2), encoding="utf-8")
+    # 원자적 기록 (D67, R3-6): tmp→replace — 부분 기록의 정본 오염 방지
+    tmp_path = out_path.with_suffix(".json.tmp")
+    tmp_path.write_text(json.dumps(full, ensure_ascii=False, indent=2), encoding="utf-8")
+    tmp_path.replace(out_path)
     meta["fail_reason"] = None
     meta["model"] = model
     meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")

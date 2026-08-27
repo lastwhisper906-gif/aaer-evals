@@ -251,3 +251,31 @@ def test_answer_key_reads_parameterized_genre_table(tmp_path):
     Path(genre_path).write_text("| T99 | revenue timing |\n", encoding="utf-8")
     key = gr.answer_key("T99", cands_path, genre_path)
     assert key["genre_tag_row"] == "| T99 | revenue timing |"
+
+
+# ── R3-6: 채점 정본 기록 원자성 (tmp→replace, D67 판형) ────────────────────
+
+def test_grade_write_atomic_crash_leaves_no_corrupt_canonical(stub, tmp_path, monkeypatch):
+    """크래시 부분 기록이 정본이 되면 _existing_grade_valid가 영영 False —
+    재채점 전부가 fp-sibling으로 우회되고 소비자는 부패 정본에서 죽는다."""
+    stub.set_responses(resp(GRADE))
+    real_write = Path.write_text
+
+    def crashing(self, text, *args, **kwargs):
+        if self.name.endswith(".json.tmp"):
+            real_write(self, text[:10], *args, **kwargs)
+            raise OSError("simulated crash mid-write")
+        return real_write(self, text, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "write_text", crashing)
+    with pytest.raises(OSError, match="simulated crash"):
+        gr.grade_one("case_01", "TXX", OUTPUT, tmp_path / "g", tmp_path / "l", "note")
+    assert not (tmp_path / "g" / "case_01.json").exists(), \
+        "크래시 부분 기록이 정본 채점 파일로 남음"
+
+
+def test_grade_write_leaves_no_tmp_residue(stub, tmp_path):
+    stub.set_responses(resp(GRADE))
+    status = gr.grade_one("case_01", "TXX", OUTPUT, tmp_path / "g", tmp_path / "l", "note")
+    assert status.startswith("OK")
+    assert not list((tmp_path / "g").glob("*.tmp"))
