@@ -20,10 +20,12 @@ def make_universe(n=12):
             "enumerated_at": "2026-07-20", "candidate_count": n, "excluded_by_reason": {}}
 
 
-def make_record(rid, score=45, suff="sufficient"):
+def make_record(rid, score=45, suff="sufficient", cik=None):
     state = "abstain" if suff == "insufficient" else (
         "flag" if score >= 70 else "review" if score >= 40 else "no_flag")
-    return {"record_id": rid, "company": {"name": "Test", "ticker": "T", "cik": "1"},
+    if cik is None:  # make_universe와 정합: fw001-rNN ↔ cik 1000+NN
+        cik = f"{1000 + int(rid.rsplit('r', 1)[1]):010d}"
+    return {"record_id": rid, "company": {"name": "Test", "ticker": "T", "cik": cik},
             "misstatement_risk_score": score, "decision_state": state,
             "evidence_sufficiency": suff, "assessment_confidence": "medium",
             "top_signals": ["s"], "benign_alternative_explanations": ["b"],
@@ -39,7 +41,8 @@ def cycle(tmp_path):
     fc.write_json(c / "universe.json", make_universe())
     fc.write_json(c / "source_manifest.json", {"sources": [
         {"url": "https://data.sec.gov/x", "filing_date": "2026-11-14",
-         "retrieval_date": "2026-11-15", "sha256": "abc", "description": "d"}]})
+         "retrieval_date": "2026-11-15", "sha256": "abc", "description": "d",
+         "accession_no": "0000000000-26-000001"}]})
     fc.write_json(c / "scores.json", {"records": [
         make_record(f"fw001-r{i:02d}") for i in range(1, 13)]})
     (c / "PROTOCOL.md").write_text("proto", encoding="utf-8")
@@ -122,6 +125,137 @@ def test_validate_universe_score_bijection(cycle):
     assert any("누락" in e for e in errs) and any("유니버스 밖" in e for e in errs)
 
 
+# ── §6 전 필드 계약 + 교차 대조 (fail-closed 전환, TASK_FWD 1) ────────────
+
+def test_validate_full_record_contract_fields(cycle):
+    for field in ("schema_sha256", "scored_at"):
+        sc = fc.read_json(cycle / "scores.json")
+        del sc["records"][0][field]
+        fc.write_json(cycle / "scores.json", sc)
+        assert any(field in e for e in forward_validate.validate(cycle)), field
+    for field in ("benign_alternative_explanations", "affected_account_areas"):
+        sc = fc.read_json(cycle / "scores.json")
+        del sc["records"][0][field]
+        fc.write_json(cycle / "scores.json", sc)
+        assert any(field in e for e in forward_validate.validate(cycle)), field
+
+
+def test_validate_empty_arrays_are_legal(cycle):
+    sc = fc.read_json(cycle / "scores.json")
+    sc["records"][0]["benign_alternative_explanations"] = []
+    sc["records"][0]["affected_account_areas"] = []
+    fc.write_json(cycle / "scores.json", sc)
+    assert forward_validate.validate(cycle) == []
+
+
+def test_validate_cited_source_must_be_in_manifest(cycle):
+    sc = fc.read_json(cycle / "scores.json")
+    sc["records"][0]["cited_sources"] = ["0000000000-26-999999"]
+    fc.write_json(cycle / "scores.json", sc)
+    assert any("source_manifest 미등재" in e for e in forward_validate.validate(cycle))
+    # URL 내 대시 제거형 출현도 등재로 인정
+    sm = fc.read_json(cycle / "source_manifest.json")
+    sm["sources"].append({"url": "https://www.sec.gov/Archives/000000000026999999/x.htm",
+                          "filing_date": "2026-11-14", "retrieval_date": "2026-11-15",
+                          "sha256": "z", "description": "d"})
+    fc.write_json(cycle / "source_manifest.json", sm)
+    assert forward_validate.validate(cycle) == []
+
+
+def test_validate_company_cik_must_match_universe(cycle):
+    sc = fc.read_json(cycle / "scores.json")
+    sc["records"][0]["company"]["cik"] = "7777777"
+    fc.write_json(cycle / "scores.json", sc)
+    assert any("universe CIK" in e for e in forward_validate.validate(cycle))
+
+
+# ── prepare fail-closed 전환 (TASK_FWD 2) ────────────────────────────────
+
+def test_prepare_refuses_after_seal(tmp_path, monkeypatch):
+    import forward_prepare as fp
+    c = tmp_path / "cycle_sealed"
+    c.mkdir()
+    proto_before = "sealed proto"
+    (c / "PROTOCOL.md").write_text(proto_before, encoding="utf-8")
+    (c / "MANIFEST.sha256").write_text("x  PROTOCOL.md\n", encoding="utf-8")
+    monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(c)])
+    with pytest.raises(SystemExit):
+        fp.main()
+    assert (c / "PROTOCOL.md").read_text(encoding="utf-8") == proto_before
+
+
+def test_prepare_fails_on_missing_pin_source(tmp_path, monkeypatch):
+    import forward_prepare as fp
+    monkeypatch.setattr(fp, "PIN_SOURCES", fp.PIN_SOURCES + ["nonexistent/ghost.py"])
+    monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(tmp_path / "cycle_new")])
+    with pytest.raises(SystemExit):
+        fp.main()
+    assert not (tmp_path / "cycle_new" / "PROTOCOL.md").exists()
+
+
+def test_prepare_fails_on_unresolved_model_pin(tmp_path, monkeypatch):
+    import forward_prepare as fp
+    monkeypatch.setattr(fp, "evaluatee_model", lambda: "UNRESOLVED")
+    monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(tmp_path / "cycle_new")])
+    with pytest.raises(SystemExit):
+        fp.main()
+    assert not (tmp_path / "cycle_new" / "PROTOCOL.md").exists()
+
+
+# ── enumerate fail-closed + 창 경계 (TASK_FWD 3) ─────────────────────────
+
+def _write_submissions(snap, cik, dates_10k, dates_10q):
+    forms = ["10-K"] * len(dates_10k) + ["10-Q"] * len(dates_10q)
+    dates = dates_10k + dates_10q
+    fc.write_json(snap / f"submissions_CIK{cik}.json", {
+        "sic": "3674", "name": f"Co {cik}", "tickers": [f"T{cik[-2:]}"],
+        "filings": {"recent": {"form": forms, "filingDate": dates,
+                               "items": [""] * len(forms),
+                               "isXBRL": [1] * len(forms)}}})
+
+
+def test_enumerate_trailing_window_is_bounded_by_t0(tmp_path, monkeypatch):
+    import forward_enumerate as fe
+    snap = tmp_path / "snap"
+    snap.mkdir()
+    monkeypatch.setattr(fe, "SNAP", snap)
+    cik = "0000009001"
+    # 10-K는 창 안, 10-Q 전건이 T0(2026-07-20) 이후 → q_recent=0 → 배제되어야 한다
+    _write_submissions(snap, cik, ["2025-01-01", "2024-09-01"],
+                       ["2026-08-01", "2026-09-01", "2026-10-01", "2026-11-01",
+                        "2026-12-01", "2027-01-01"])
+    reason, _ = fe.check_candidate(cik, offline=True)
+    assert reason == "form_requirement"
+
+
+def test_enumerate_fails_closed_on_fetch_error(tmp_path, monkeypatch, capsys):
+    import urllib.request
+    import forward_enumerate as fe
+    snap = tmp_path / "snap"
+    snap.mkdir()
+    monkeypatch.setattr(fe, "SNAP", snap)
+    monkeypatch.setattr(fe, "SIC_SET", ["3674"])
+    monkeypatch.setattr(fe, "_provenance", [])
+    monkeypatch.setattr(fe, "_fetch_errors", [])
+    monkeypatch.setattr(fe, "cycle1_ciks", lambda: set())
+    monkeypatch.setattr(urllib.request, "urlopen",
+                        lambda *a, **k: (_ for _ in ()).throw(OSError("timeout")))
+    good = [f"{9000 + i:010d}" for i in range(1, 13)]
+    bad = "0000009999"  # 스냅샷 부재 → fetch 오류
+    atom = "".join(f"<cik>{c}</cik>" for c in good + [bad])
+    (snap / "sic_3674_p0.xml").write_text(atom, encoding="utf-8")
+    for c in good:
+        _write_submissions(snap, c, ["2025-01-01", "2024-09-01"],
+                           ["2025-01-02", "2025-04-02", "2025-07-02", "2025-10-02",
+                            "2026-01-02", "2026-04-02"])
+        fc.write_json(snap / f"float_CIK{c}.json",
+                      {"units": {"USD": [{"end": "2026-06-30", "val": 2.0e9}]}})
+    monkeypatch.setattr(sys, "argv", ["x", "--out", str(tmp_path / "u.json")])
+    assert fe.main() == 1  # 12사 선정 완료여도 fetch 오류가 있으면 실패
+    out = capsys.readouterr().out
+    assert "selected 12" in out and "fail-closed" in out
+
+
 # ── 봉인·검증 왕복 ────────────────────────────────────────────────────────
 
 def run_seal(cycle, capsys=None):
@@ -202,7 +336,8 @@ def test_assemble_derivation_rules():
 
 def test_assemble_record_roundtrips_validate(cycle):
     import forward_assemble as fa
-    meta = {"record_id": "fw001-r01", "name": "Test Co", "ticker": "T", "cik": "1"}
+    meta = {"record_id": "fw001-r01", "name": "Test Co", "ticker": "T",
+            "cik": "0000001001"}
     out = {"misstatement_probability": 72, "model": "claude-sonnet-5",
            "run_id": "x", "run_timestamp": "2026-11-15T00:00:00Z",
            "checklist": [{"finding": "flag", "confidence": "high"}] * 5,

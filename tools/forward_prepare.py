@@ -62,19 +62,31 @@ def main():
     assert_subscription_only()
 
     cycle = REPO / args.cycle
+    if (cycle / "MANIFEST.sha256").exists():
+        fail(f"{args.cycle}: MANIFEST.sha256 존재 — 봉인된 사이클의 PROTOCOL.md "
+             "재작성 금지 (spec §3-5, INV-22). 교정은 새 사이클로.")
+    missing_pins = [p for p in PIN_SOURCES if not (REPO / p).exists()]
+    if missing_pins:
+        fail(f"PIN_SOURCES 부재 {missing_pins} — 핀 스냅샷 불완전 상태로 "
+             "PROTOCOL.md를 쓰지 않는다 (fail-closed)")
+    model_pin = evaluatee_model()
+    if model_pin == "UNRESOLVED":
+        fail("pipeline/runner.py에서 EVALUATEE_MODEL 핀을 해석하지 못함 — "
+             "미해석 핀으로 PROTOCOL.md를 쓰지 않는다 (fail-closed)")
+
     (cycle / "evidence").mkdir(parents=True, exist_ok=True)
     outcomes = cycle / "outcome_updates.jsonl"
     if not outcomes.exists():
         outcomes.write_text("", encoding="utf-8")
 
-    pins = {p: sha256_file(REPO / p) for p in PIN_SOURCES if (REPO / p).exists()}
+    pins = {p: sha256_file(REPO / p) for p in PIN_SOURCES}
     proto = cycle / "PROTOCOL.md"
     proto.write_text(
         "# PROTOCOL.md — cycle_001 동결 프로토콜 스냅샷\n\n"
         f"- generated: {datetime.date.today().isoformat()} (tools/forward_prepare.py)\n"
         f"- spec: specs/FORWARD_WATCHLIST_V1.md (규범 원문)\n"
         f"- screening_cutoff: {SCREENING_CUTOFF} (ET, EDGAR acceptance)\n"
-        f"- evaluatee_model (pin): `{evaluatee_model()}`\n"
+        f"- evaluatee_model (pin): `{model_pin}`\n"
         "- execution path: subscription OAuth only — `claude -p` + "
         "`CLAUDE_CODE_OAUTH_TOKEN` via `pipeline/cli_client.py` (INVARIANT 4)\n"
         "- draws: k=1 · retry ≤2 · decision cuts: ≥70 flag / 40–69 review / "

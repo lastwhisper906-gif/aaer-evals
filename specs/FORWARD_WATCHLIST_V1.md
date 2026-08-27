@@ -75,7 +75,9 @@
   (`source_manifest.json`) — 컷오프 후 수집이라도 제출이 컷오프 전이면
   적격이며, 그 사실이 기계 검증 가능해야 한다.
 - 기계 검증: `tools/forward_validate.py`가 `source_manifest.json` 전 항목의
-  filing_date ≤ cutoff를 검사 (`pipeline/cutoff_guard.py` 경유 로딩).
+  filing_date ≤ cutoff를 검사한다. 로딩은 `tools/forward_common.read_json`
+  직접 경로다 — `pipeline/cutoff_guard.py`를 경유하지 않는다 (cutoff_guard는
+  회고 케이스 원시 데이터 전용).
 
 ## 5. 모델 프로토콜
 

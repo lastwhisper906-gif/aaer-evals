@@ -33,6 +33,7 @@ TRAIL_START = "2024-07-20"             # T₀ − 24개월 (§1-1)
 FLOAT_MIN = 1e9
 
 _provenance = []
+_fetch_errors = []  # fail-closed: 오류 발생 시 결측으로 삼키지 않고 종료 코드 1
 
 
 def fetch(url: str, dest: Path, offline: bool) -> bytes | None:
@@ -44,8 +45,9 @@ def fetch(url: str, dest: Path, offline: bool) -> bytes | None:
     try:
         with urllib.request.urlopen(req, timeout=30) as r:
             data = r.read()
-    except Exception as e:  # 404 등 — 결측 기록 (fail-closed)
+    except Exception as e:  # 404·타임아웃 등 — 기록 후 run 전체를 실패시킨다
         _provenance.append({"url": url, "retrieved_at": _now(), "error": str(e)[:120]})
+        _fetch_errors.append(f"{url}: {str(e)[:120]}")
         dest.with_suffix(dest.suffix + ".missing").write_text(str(e)[:200], encoding="utf-8")
         return None
     dest.parent.mkdir(parents=True, exist_ok=True)
@@ -65,6 +67,7 @@ def browse_ciks(sic: str, offline: bool) -> list[tuple[str, str]]:
     while True:
         url = ("https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany"
                f"&SIC={sic}&type=10-K&datea={TRAIL_START.replace('-', '')}"
+               f"&dateb={T0.replace('-', '')}"
                f"&owner=include&count=100&start={start}&output=atom")
         data = fetch(url, SNAP / f"sic_{sic}_p{start // 100}.xml", offline)
         if data is None:
@@ -107,7 +110,8 @@ def check_candidate(cik: str, offline: bool) -> tuple[str, dict | None]:
 
     if any(f in ("20-F", "40-F", "6-K") for f in forms):
         return "foreign_filer", None
-    in_trail = [i for i, d in enumerate(dates) if d >= TRAIL_START]
+    # 트레일링 창은 양쪽 경계 고정 [TRAIL_START, T0] — fetch 시점 독립 (결정론)
+    in_trail = [i for i, d in enumerate(dates) if TRAIL_START <= d <= T0]
     k_recent = sum(1 for i in in_trail if forms[i] == "10-K")
     q_recent = sum(1 for i in in_trail if forms[i] == "10-Q")
     if k_recent < 1 or q_recent < 2:
@@ -204,6 +208,12 @@ def main():
           f"alternates {len(alternates)} · excluded {excluded}")
     print("selected:", ", ".join(f"{r['ticker'] or r['cik']}({r['browse_sic']})"
                                  for r in selected))
+    if _fetch_errors:
+        print(f"FAIL — fetch 오류 {len(_fetch_errors)}건: 결측을 배제 사유로 "
+              "삼키지 않는다 (fail-closed). 오류 해소(또는 스냅샷 확보) 후 재실행.")
+        for e in _fetch_errors[:10]:
+            print(f"  {e}")
+        return 1
     return 0 if len(selected) == UNIVERSE_SIZE else 1
 
 
