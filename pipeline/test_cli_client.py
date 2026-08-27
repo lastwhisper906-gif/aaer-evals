@@ -285,11 +285,13 @@ def test_full_metered_family_aborts_before_any_call(stub, tmp_path, monkeypatch,
     assert stub.calls() == [], var
 
 
-def test_empty_valued_var_does_not_trip():
-    """forward_common과 동일 의미론(truthy) — 빈 값은 재라우팅하지 않는다."""
-    import os as _os
-    assert not [v for v in cli_client.METERED_CREDENTIAL_VARS
-                if _os.environ.get(v)]
+def test_empty_valued_vars_do_not_trip(monkeypatch):
+    """R6-3: truthy 의미론 고정 (forward_common 동일) — 가족 전원을 빈 값으로
+    설정하고 가드를 실제 호출한다. presence 의미론으로 바뀌면 red; 실환경의
+    무관 변수에도 독립 (전 변수를 명시 override)."""
+    for var in cli_client.METERED_CREDENTIAL_VARS:
+        monkeypatch.setenv(var, "")
+    cli_client.assert_no_metered_credentials()  # 예외 없음이 곧 단언
 
 
 # ⑧ 멱등 skip
