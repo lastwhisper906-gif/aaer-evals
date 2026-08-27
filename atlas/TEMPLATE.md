@@ -29,7 +29,10 @@
   error**, not an allegation. Holdout labels are provisional (restatement/
   4.02) — never conflate with AAER-confirmed fraud.
 - **Ground-truth tier vocabulary**: `AAER-confirmed` (Task 1 cohorts) vs
+  `SEC-enforcement-confirmed, no AAER (GP-4 ②)` (서명된 GP-4 ② 결의 —
+  AAER 부재 사실을 케이스별로 명기; candidates 레코드 `aaer_no: null`) vs
   `provisional-4.02/restatement` (holdout). State the tier in every header.
+  R9-1: `aaer_no: null`인 케이스에 AAER-confirmed를 쓰면 기계 검사가 red다.
 
 ---
 

@@ -9,7 +9,7 @@ Authored by Claude Code, pending human audit (D15). Analytical document under D1
 | Case ID (anonymized frame) | case_60 (scoring ID T26) |
 | Cohort | wave-2 |
 | Outcome class | TP (main frame, flag at score ≥50) |
-| Ground-truth tier | AAER-confirmed (wave-2 treatment cohort; sealed enforcement basis LR-24678, SEC v. MiMedx Group, Inc., Parker H. Petit, William C. Taylor, and Michael J. Senken, 1:19-cv-10927 (S.D.N.Y., filed Nov. 26, 2019)) |
+| Ground-truth tier | SEC-enforcement-confirmed, no AAER (GP-4 ②) (wave-2 treatment cohort; sealed enforcement basis LR-24678, SEC v. MiMedx Group, Inc., Parker H. Petit, William C. Taylor, and Michael J. Senken, 1:19-cv-10927 (S.D.N.Y., filed Nov. 26, 2019)) |
 | Frozen score | score 65 (`runs/wave2/scores/case_60.json`, run `original-case_60-r1`, risk_tier "elevated") |
 | Grade record | `scoring/grades_wave2/case_60.json` (human_finalized: true, finalized 2026-07-09 via RP-13 workbench; dim1=1, dim2=2, dim3=2 "active", dim4=3) |
 

@@ -9,7 +9,7 @@ Authored by Claude Code, pending human audit (D15). Analytical document under D1
 | Case ID (anonymized frame) | case_61 (scoring ID T24) |
 | Cohort | wave-2 |
 | Outcome class | TP (main frame, flag at score ≥50) |
-| Ground-truth tier | AAER-confirmed (wave-2 treatment cohort; sealed enforcement basis LR-24459, SEC v. Celadon Group, Inc., No. 1:19-cv-1659 (S.D. Ind., filed April 25, 2019)) |
+| Ground-truth tier | SEC-enforcement-confirmed, no AAER (GP-4 ②) (wave-2 treatment cohort; sealed enforcement basis LR-24459, SEC v. Celadon Group, Inc., No. 1:19-cv-1659 (S.D. Ind., filed April 25, 2019)) |
 | Frozen score | score 72 (`runs/wave2/scores/case_61.json`, run `original-case_61-r1`, risk_tier "elevated") |
 | Grade record | `scoring/grades_wave2/case_61.json` (human_finalized: true, finalized 2026-07-09 via RP-13 workbench; dim1=2, dim2=2, dim3 mapped "mixed"/score null, dim4=3) |
 

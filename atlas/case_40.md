@@ -9,7 +9,7 @@ Authored by Claude Code, pending human audit (D15). Analytical document under D1
 | Case ID (anonymized frame) | case_40 (scoring ID T22) |
 | Cohort | wave-2 |
 | Outcome class | TP (main frame, flag at score ≥50) |
-| Ground-truth tier | AAER-confirmed (LR-24255; SEC v. Tangoe, Inc. et al., 3:18-cv-01479 (D. Conn.)) |
+| Ground-truth tier | SEC-enforcement-confirmed, no AAER (GP-4 ②) (LR-24255; SEC v. Tangoe, Inc. et al., 3:18-cv-01479 (D. Conn.)) |
 | Frozen score | score 55 (`runs/wave2/scores/case_40.json`, run `original-case_40-r1`) |
 | Grade record | `scoring/grades_wave2/case_40.json` (human_finalized: true, finalized 2026-07-09 via RP-13 workbench) |
 | Company | Tangoe, Inc., CIK 0001182325, cutoff 2016-03-06 (`data/candidates/candidates_wave2.json` T22; `data/evaluatee/cases_wave2.json` case_40) |
