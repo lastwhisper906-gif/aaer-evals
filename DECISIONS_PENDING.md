@@ -1574,6 +1574,25 @@
 - **Basis:** `analysis/EARLINESS_PLAN.md` §1 · `analysis/BUYER_METRICS.md`
   §1/§4 · INV-03/INV-06 · reviews/cycle-002.md R2-6
 - **Revert:** 라이브 표면 절 삭제 diff + 사유 기록.
+- **REVISION 2026-08-27 (harness v4 cycle 003, R3-2 — 서명 전 사실 정정):**
+  위 원문(보존)의 배제 목록·산술이 틀렸다. 실측 정정
+  (`analysis/EARLINESS_PLAN.md` §1·주석 1 · `analysis/e2_trajectories.json`
+  로스터 12 실험군 대조 확인):
+  - 실험군 모집단 **17** (wave-1 8 + wave-2 9), 원문의 "~12/16"은 오류 —
+    비조건부 판독은 **≈12/17**.
+  - 본채점 미탐(p<50) 배제는 **4건: MON(T07, p=28)·LOGI(T12, p=42)·CSC·BRX**
+    — 원문은 LOGI를 누락하고 MON·WFT를 "데이터 사유"로 묶어 오기했다.
+  - **WFT(T04)는 본채점 탐지 7/9에 포함**되나 스냅샷-0 데이터 사유
+    (XBRL 의무화 경계, 잔존 제출 미달 — EARLINESS_PLAN 주석 1)로 별도
+    배제된 **다섯 번째** 케이스다. MON은 미탐+데이터 사유 이중 배제.
+  - 산술: **12 = 17 − 4(미탐) − 1(탐지-데이터배제 WFT)**.
+  - 라이브 표면(README.md·RESULTS.md 행 13·CLAIMS.json)은 본 리비전
+    커밋에서 정정 완료. 서명 대상 제안 (a)(b)의 addendum 문구는 본 리비전
+    목록을 기준으로 할 것 — 원문 목록으로 서명하지 말 것.
+  - **ko-정책 미결 (R3-19, 소유자 판단):** cycle 2는 README.ko의
+    E-002/E-003 수치는 갱신하면서 이 L4 조건부 절은 RESULTS.ko 스냅샷
+    마커 관행을 이유로 보류했다 — 두 처리 중 하나는 틀렸다 (정오 준수
+    갱신 vs 스냅샷 동결의 경계 기준을 소유자가 정해야 함).
 
 ## D-P88 — [DRAFT — 소유자 서명 대기] ERRATA 후보: wave-2 dim3는 정답 장르 표 없이 채점됨
 - **Status:** DRAFT — 세션(harness v4 cycle 002, R2-7)이 작성. 동결
