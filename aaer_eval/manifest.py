@@ -33,6 +33,10 @@ EXPERIMENT_SPECS = OrderedDict([
     ("e2", ("runs/e2", "**/case_*.json")),
     ("e4", ("runs/e4", "**/*.json")),
     ("e2/usage", ("logs/run_e2_20260712T212907Z", "**/*.json")),
+    # R1-7: 게시된 비용 수치(n=158, $0.5304)는 run_e2_* 7개 루트 전체 풀링에서
+    # 나온다 — 단일 루트 핀(e2/usage)으로는 재생성 불가. 동결 e2/usage 매니페스트는
+    # 무수정 보존(INV-06)하고, 전체 풀을 담는 병행 매니페스트를 신규 경로로 등재.
+    ("e2/usage_full", ("logs", "run_e2_*/**/*.json")),
     ("crossmodel_gpt", ("runs/crossmodel_gpt", "**/*.json")),
 ])
 

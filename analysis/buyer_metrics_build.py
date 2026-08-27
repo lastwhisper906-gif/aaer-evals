@@ -76,14 +76,16 @@ def compute(traj: dict, logs_dir: Path | None,
         except ValueError:
             in_repo = False
         if in_repo:
-            expected_root = REPO / EXPERIMENT_SPECS["e2/usage"][0]
+            # R1-7: 게시 수치는 run_e2_* 전 루트 풀 — e2/usage_full 매니페스트가
+            # 158건 usage 실측을 포함한 전체 선택을 핀한다 (e2/usage는 동결 보존)
+            expected_root = REPO / EXPERIMENT_SPECS["e2/usage_full"][0]
             if Path(logs_dir).resolve() != expected_root.resolve():
                 raise BuyerMetricsError(
                     f"{logs_dir}: manifest root mismatch; expected {expected_root}"
                 )
         # Synthetic fixture directories are flat and outside the repository;
         # repository result selection is always pinned by the run manifest.
-        paths = ([e.path for e in load_experiment("e2/usage").values()]
+        paths = ([e.path for e in load_experiment("e2/usage_full").values()]
                  if in_repo else sorted(p for p in Path(logs_dir).iterdir()
                                         if p.is_file() and p.suffix == ".json"))
         for p in paths:

@@ -77,7 +77,7 @@ def test_required_fingerprint_rejects_legacy_null(tmp_path, monkeypatch):
     "holdout/controls/scores", "main/grades_main", "main/grades_perturbed",
     "main/rp05_perturbation_meta", "main/name_probe_v2",
     "main/name_probe_v2ds_wave1", "wave2/name_probe_v2ds_wave2", "e2", "e4",
-    ("e2/usage", "crossmodel_gpt"), "wave2/perturbed",
+    ("e2/usage", "crossmodel_gpt"), "wave2/perturbed", "e2/usage_full",
 ])
 def test_committed_selection_matches_manifest(experiment_id):
     experiment_ids = ((experiment_id,) if isinstance(experiment_id, str)
@@ -88,6 +88,16 @@ def test_committed_selection_matches_manifest(experiment_id):
         expected = [rm.REPO / item["path"] for item in raw["cases"].values()]
         selected = [entry.path for entry in rm.load_experiment(current_id).values()]
         assert selected == expected
+
+
+def test_buyer_metrics_pooled_usage_reproduces_frozen_cost():
+    """R1-7: 게시 수치(n=158·$0.5304, decision_table COST_PER_SCREEN_USD)는
+    매니페스트 경로만으로 재생성 가능해야 한다 — 단일 루트 핀은 116/$0.5368."""
+    traj = json.loads((rm.REPO / "analysis/e2_trajectories.json")
+                      .read_text(encoding="utf-8"))
+    vals = bm.compute(traj, rm.REPO / "logs", 3.0, 15.0)
+    assert vals["n_calls_measured"] == 158
+    assert vals["cost_per_screen"] == "$0.5304"
 
 
 def test_buyer_metrics_rejects_wrong_in_repo_logs_dir():
