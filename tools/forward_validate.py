@@ -146,7 +146,7 @@ def validate(cycle: Path, runs_dir: Path | None = None) -> list[str]:
             elif suff in SUFFICIENCY and ds != expected_state(s, suff):
                 errs.append(f"{rid}: decision_state {ds} ≠ 서수 컷 기대 "
                             f"{expected_state(s, suff)} (score {s}, {suff})")
-            for field in ("company", "top_signals", "cited_sources", "model_id",
+            for field in ("company", "cited_sources", "model_id",
                           "prompt_sha256", "schema_sha256", "scored_at"):
                 if not r.get(field):
                     errs.append(f"{rid}: {field} 결측")
@@ -199,8 +199,11 @@ def validate(cycle: Path, runs_dir: Path | None = None) -> list[str]:
                 errs.append(f"{rid}: run_output_sha256 부재/비정형 "
                             f"{r.get('run_output_sha256')!r} — 봉인이 러너 출력을 "
                             "커버하지 않음 (R3-8/R4-4)")
-            # §6: 두 배열은 존재 의무 — 빈 배열은 적법, 키 부재는 위반
-            for field in ("benign_alternative_explanations", "affected_account_areas"):
+            # §6: 세 배열은 존재 의무 — 빈 배열은 적법, 키 부재는 위반
+            # (top_signals: 스키마 maxItems=5·minItems 없음 — []는 적법한
+            #  핀 모델 출력이므로 falsy 검사로 봉인을 막지 않는다)
+            for field in ("benign_alternative_explanations", "affected_account_areas",
+                          "top_signals"):
                 if not isinstance(r.get(field), list):
                     errs.append(f"{rid}: {field} 부재/비배열 (§6 — 빈 배열 허용, 키 생략 불가)")
             for acc in r.get("cited_sources") or []:

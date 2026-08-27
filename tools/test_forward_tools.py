@@ -182,7 +182,8 @@ def test_validate_full_record_contract_fields(cycle):
         del sc["records"][0][field]
         fc.write_json(cycle / "scores.json", sc)
         assert any(field in e for e in forward_validate.validate(cycle)), field
-    for field in ("benign_alternative_explanations", "affected_account_areas"):
+    for field in ("benign_alternative_explanations", "affected_account_areas",
+                  "top_signals"):
         sc = fc.read_json(cycle / "scores.json")
         del sc["records"][0][field]
         fc.write_json(cycle / "scores.json", sc)
@@ -190,9 +191,12 @@ def test_validate_full_record_contract_fields(cycle):
 
 
 def test_validate_empty_arrays_are_legal(cycle):
+    # R10-5: top_signals 포함 — 스키마상 []는 적법한 핀 모델 출력이며
+    # falsy 검사가 정규 봉인을 막아서는 안 된다
     sc = fc.read_json(cycle / "scores.json")
     sc["records"][0]["benign_alternative_explanations"] = []
     sc["records"][0]["affected_account_areas"] = []
+    sc["records"][0]["top_signals"] = []
     fc.write_json(cycle / "scores.json", sc)
     assert forward_validate.validate(cycle) == []
 
