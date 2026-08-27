@@ -306,3 +306,24 @@ retroactive recomputation or reclassification under the v3 criteria is done
   harvest per INV-23) and fails closed when the reference is absent.
   Frozen `fict_names_wave2.json` and all frozen arm outputs are untouched
   (INV-03/INV-06 disclose-don't-revise).
+
+## L-11. Holdout-controls id convention encodes group membership; the file's declared contract does not hold for its rows — recorded 2026-08-28 (harness cycle 009 R9-4)
+
+- **What**: in the E1 holdout frame, treatments are `case_71..case_73`
+  (`data/evaluatee/cases_holdout.json`) while controls are `hc_01..hc_09`
+  (`data/evaluatee/cases_holdout_controls.json`) — the id prefix itself
+  encodes group membership, the same value-level channel class the signed
+  OV-001 correction removed from wave 1, and the id reaches the model
+  payload. Additionally the controls file's `_meta.contract` line declares
+  `schemas/evaluatee_input.json`, whose id pattern (`^case_[0-9]{2}$`)
+  every `hc_` row fails; `pipeline/build_payload.py` documents the pattern
+  as unenforced for this reason, and `tools/validate_schemas.py` counts
+  these rows in its enumerated deviation census (D-P90, owner-pending).
+- **Mitigation / why P3**: the holdout frame is identity-visible by design
+  (company names are in the payload), so the id prefix adds no identity
+  information the model lacks; the channel matters only as convention
+  hygiene. The file sits in the freeze-titled commit `c47a155`, so the
+  stale `_meta` line is disclosed here rather than edited in place
+  (disclose-don't-revise; schema-binding resolution is D-P90's owner call).
+- **Forward rule**: future waves use a single neutral id namespace for all
+  arms (no group-distinguishing prefixes), per this note.
