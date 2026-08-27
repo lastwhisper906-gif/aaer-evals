@@ -205,7 +205,7 @@ make verify-full     # 2계층 — 원시 코퍼스 재계산 추가 (~/aaer-dat
 
 <!-- BEGIN-GENERATED: repro-facts (refresh: make docs-refresh; CI: tools/lint_doc_counts.py) -->
 - data manifest: **538 files** (`data/manifests/aaer_data_manifest.json` · `file_count`)
-- pytest: **616 tests collected** (`pipeline tools scoring analysis`)
+- pytest: **626 tests collected** (`pipeline tools scoring analysis`)
 - `make verify-public` (zero external data):
   - `.venv/bin/python tools/reproduce_analysis.py`
   - `.venv/bin/python tools/lint_publication.py`
@@ -214,6 +214,7 @@ make verify-full     # 2계층 — 원시 코퍼스 재계산 추가 (~/aaer-dat
   - `.venv/bin/python tools/verify_manifest.py --schema-only`
   - `.venv/bin/python tools/verify_blindness.py`
   - `.venv/bin/python tools/verify_figures.py`
+  - `.venv/bin/python tools/validate_schemas.py`
 - `make verify-full` (requires `~/aaer-data` corpus; see REPRODUCING.md §2):
   - `.venv/bin/python tools/verify_manifest.py`
   - `.venv/bin/python analysis/baselines.py`
