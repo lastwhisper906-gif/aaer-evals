@@ -259,3 +259,14 @@ def test_canary_guid_sets_agree_across_planter_guard_and_scanner():
     import runner
     assert set(runner.CANARY_MARKERS) == set(vb.CANARIES)
     assert set(vb.CANARIES) <= set(cli_client.EVALUATEE_FORBIDDEN_MARKERS)
+
+
+def test_every_canary_is_planted_in_a_committed_doc():
+    """R8-4: 코드 세 벌의 정합(위 테스트)은 심긴 값과의 정합이 아니다 — 문서의
+    GUID를 회전·삭제하면 스캐너가 아무 데도 없는 값을 사냥하며 셋 다 green.
+    각 카나리 접두가 커밋된 식재 지점 중 하나 이상에 실재해야 한다."""
+    plant_sites = [vb.REPO / "scoring/genre_tags.md",
+                   vb.REPO / "docs/methodology_limitations.md"]
+    planted = "\n".join(p.read_text(encoding="utf-8") for p in plant_sites).lower()
+    missing = [c for c in vb.CANARIES if c.lower() not in planted]
+    assert not missing, f"식재 지점에 없는 카나리 접두: {missing}"
