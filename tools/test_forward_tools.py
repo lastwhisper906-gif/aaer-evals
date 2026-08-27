@@ -612,3 +612,37 @@ def test_prepare_protocol_title_uses_cycle_name(tmp_path, monkeypatch):
     assert forward_prepare.main() == 0
     title = (c / "PROTOCOL.md").read_text(encoding="utf-8").splitlines()[0]
     assert "cycle_042" in title and "cycle_001" not in title
+
+
+# ── R4-3: 봉인 후 writer 가드 가족 완결 (source_manifest·enumerate --force) ─
+
+def test_source_manifest_refuses_after_seal(cycle, monkeypatch, tmp_path):
+    monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(cycle)])
+    assert forward_seal.main() == 0
+    sealed_bytes = (cycle / "source_manifest.json").read_bytes()
+    fetch_dir = tmp_path / "fetch"
+    fetch_dir.mkdir()
+    (fetch_dir / "fetch_log.jsonl").write_text("", encoding="utf-8")
+    import forward_source_manifest
+    monkeypatch.setattr(sys, "argv", ["x", "--fetch-dir", str(fetch_dir),
+                                      "--cycle", str(cycle)])
+    assert forward_source_manifest.main() == 1
+    assert (cycle / "source_manifest.json").read_bytes() == sealed_bytes
+
+
+def test_enumerate_force_refuses_on_sealed_cycle(cycle, monkeypatch):
+    monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(cycle)])
+    assert forward_seal.main() == 0
+    sealed_bytes = (cycle / "universe.json").read_bytes()
+    import urllib.request
+    import forward_enumerate
+    monkeypatch.setattr(urllib.request, "urlopen",
+                        lambda *a, **k: (_ for _ in ()).throw(AssertionError("network")))
+    monkeypatch.setattr(forward_enumerate, "_provenance", [])
+    monkeypatch.setattr(forward_enumerate, "_fetch_errors", [])
+    monkeypatch.setattr(forward_enumerate, "SNAP", cycle / "snap_empty")
+    (cycle / "snap_empty").mkdir()
+    monkeypatch.setattr(sys, "argv", ["x", "--offline", "--force",
+                                      "--out", str(cycle / "universe.json")])
+    assert forward_enumerate.main() == 1
+    assert (cycle / "universe.json").read_bytes() == sealed_bytes

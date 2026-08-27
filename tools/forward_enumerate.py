@@ -235,6 +235,11 @@ def main():
               f"(candidates {candidates} · selected {len(selected)})")
         return 0
 
+    # R4-3: 봉인된 사이클의 universe.json은 --force로도 재작성 불가 (INV-22)
+    if (out_path.parent / "MANIFEST.sha256").exists():
+        print(f"FAIL — {out_path.parent.name}: MANIFEST.sha256 존재 — 봉인된 "
+              "사이클의 universe.json 재작성 금지 (--force 무효; 교정은 새 사이클로)")
+        return 1
     if (out_path.exists()
             and out_path.read_text(encoding="utf-8") != rendered and not args.force):
         # R3-1: 동결·서명 가능 산출물의 무단 덮어쓰기 거부 — 특히 불완전
