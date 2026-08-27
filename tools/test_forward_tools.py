@@ -881,3 +881,17 @@ def test_control_screening_filing_counts_hard_errors_on_mismatch(tmp_path, monke
     monkeypatch.setattr(cs, "fetch", lambda url: _Resp(doc))
     with pytest.raises(ValueError, match="병렬 배열 길이 불일치"):
         cs.filing_counts("0000009001", _dt.date(2026, 1, 1), tmp_path / "d")
+
+
+# ── R2-28: cli_client ↔ forward_common 종량 가족 정합 (복제 교차 대조) ────
+
+def test_cli_client_covers_forward_metered_family():
+    """INV-08 방향상 pipeline은 tools/를 import하지 않으므로 목록을 복제한다 —
+    이 교차 대조가 두 목록의 드리프트를 잠근다 (cli_client는 재라우팅 변수를
+    더한 상위집합이어야 한다)."""
+    sys.path.insert(0, str(REPO_ROOT / "pipeline"))
+    import cli_client
+    assert set(fc.METERED_CREDENTIAL_VARS) <= set(cli_client.METERED_CREDENTIAL_VARS)
+    assert {"ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_BASE_URL",
+            "CLAUDE_CODE_USE_BEDROCK", "CLAUDE_CODE_USE_VERTEX"} <= \
+        set(cli_client.METERED_CREDENTIAL_VARS)

@@ -275,6 +275,23 @@ def test_api_key_presence_aborts_before_any_call(stub, tmp_path, monkeypatch):
     assert stub.calls() == []
 
 
+@pytest.mark.parametrize("var", cli_client.METERED_CREDENTIAL_VARS)
+def test_full_metered_family_aborts_before_any_call(stub, tmp_path, monkeypatch, var):
+    """R2-28: 종량 키뿐 아니라 AUTH_TOKEN/BASE_URL/BEDROCK/VERTEX 재라우팅
+    변수도 서브프로세스 스폰 이전에 거부 (INV-20/INV-21)."""
+    monkeypatch.setenv(var, "1")
+    with pytest.raises(RuntimeError, match="구독 OAuth 전용"):
+        _call(tmp_path / "logs")
+    assert stub.calls() == [], var
+
+
+def test_empty_valued_var_does_not_trip():
+    """forward_common과 동일 의미론(truthy) — 빈 값은 재라우팅하지 않는다."""
+    import os as _os
+    assert not [v for v in cli_client.METERED_CREDENTIAL_VARS
+                if _os.environ.get(v)]
+
+
 # ⑧ 멱등 skip
 def test_output_is_valid_gates_idempotent_skip(tmp_path):
     p = tmp_path / "case_01.json"

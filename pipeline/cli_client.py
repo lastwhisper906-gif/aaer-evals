@@ -116,11 +116,27 @@ def require_clean_tree() -> None:
                            + "\n".join(bad))
 
 
+# R2-28: 종량·재라우팅 자격증명 가족 — tools/forward_common.py의
+# METERED_CREDENTIAL_VARS 상위집합. INV-08 방향(pipeline은 tools/를 import하지
+# 않는다)에 따라 목록을 복제하고, 정합은 교차 대조 테스트가 잠근다
+# (tools/test_forward_tools.py::test_cli_client_covers_forward_metered_family).
+METERED_CREDENTIAL_VARS = (
+    "ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GEMINI_API_KEY", "GOOGLE_API_KEY",
+    "MISTRAL_API_KEY", "COHERE_API_KEY", "XAI_API_KEY", "DEEPSEEK_API_KEY",
+    # 평가 호출을 구독 OAuth 밖으로 재라우팅하는 변수 (INV-20/INV-21) —
+    # 조용한 백엔드 전환은 핀·zero-metered 규약을 무언 우회한다
+    "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_BASE_URL",
+    "CLAUDE_CODE_USE_BEDROCK", "CLAUDE_CODE_USE_VERTEX",
+)
+
+
 def assert_no_metered_credentials() -> None:
-    if "ANTHROPIC_API_KEY" in os.environ:
+    present = [v for v in METERED_CREDENTIAL_VARS if os.environ.get(v)]
+    if present:
         raise RuntimeError(
-            "ANTHROPIC_API_KEY가 환경에 존재 — 구독 OAuth 전용 실행 규약 위반 "
-            "(freeze 개정 #2 INVARIANT 4). unset 후 재실행.")
+            f"{present} 이(가) 환경에 존재 — 구독 OAuth 전용 실행 규약 위반 "
+            "(freeze 개정 #2 INVARIANT 4 / INV-20·INV-21: 종량 키 또는 백엔드 "
+            "재라우팅). unset 후 재실행.")
 
 
 # C3 (D109) — 하네스 핀 강제. 정직 기록: 강제는 이 커밋부터다 — 이전 런은
