@@ -66,6 +66,9 @@ def check_universe(u: dict) -> list[str]:
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--cycle", required=True)
+    ap.add_argument("--force", action="store_true",
+                    help="R9-7: 기존 PROTOCOL.md 명시적 재생성 (기본은 거부 — "
+                         "검증 실행이 검증 대상을 변이시키지 않도록)")
     args = ap.parse_args()
     assert_subscription_only()
 
@@ -73,6 +76,12 @@ def main():
     if (cycle / "MANIFEST.sha256").exists():
         fail(f"{args.cycle}: MANIFEST.sha256 존재 — 봉인된 사이클의 PROTOCOL.md "
              "재작성 금지 (spec §3-5, INV-22). 교정은 새 사이클로.")
+    # R9-7 (cycle-8 사건, R3-1 관용구): 준비된-미봉인 사이클의 PROTOCOL.md를
+    # 검증/리허설 실행이 침묵 재작성했다 — 게이트 서명과 봉인 사이 핀 문서
+    # 안정성이 깨진다. 재생성은 --force 명시로만.
+    if (cycle / "PROTOCOL.md").exists() and not args.force:
+        fail(f"{args.cycle}: PROTOCOL.md 이미 존재 — 덮어쓰기는 --force 명시 "
+             "전용 (검증 실행이 검증 대상을 변이시키지 않는다, R9-7)")
     missing_pins = [p for p in PIN_SOURCES if not (REPO / p).exists()]
     if missing_pins:
         fail(f"PIN_SOURCES 부재 {missing_pins} — 핀 스냅샷 불완전 상태로 "

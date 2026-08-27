@@ -693,6 +693,25 @@ def test_prepare_protocol_title_uses_cycle_name(tmp_path, monkeypatch):
     assert "cycle_042" in title and "cycle_001" not in title
 
 
+def test_prepare_refuses_overwrite_of_unsealed_protocol_without_force(
+        tmp_path, monkeypatch, capsys):
+    """R9-7 (cycle-8 사건): 준비된-미봉인 사이클에 재실행 = 거부·무변이;
+    --force 명시 시에만 재생성; 신규 사이클은 종전대로 생성."""
+    for var in fc.METERED_CREDENTIAL_VARS:
+        monkeypatch.delenv(var, raising=False)
+    c = tmp_path / "cycle_043"
+    monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(c)])
+    assert forward_prepare.main() == 0            # 신규 사이클 — 종전대로
+    before = (c / "PROTOCOL.md").read_bytes()
+    with pytest.raises(SystemExit) as exc:        # 재실행 — 거부, 파일 무접촉
+        forward_prepare.main()
+    assert exc.value.code == 1
+    assert "--force" in capsys.readouterr().out
+    assert (c / "PROTOCOL.md").read_bytes() == before
+    monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(c), "--force"])
+    assert forward_prepare.main() == 0            # 명시적 재생성은 허용
+
+
 # ── R4-3: 봉인 후 writer 가드 가족 완결 (source_manifest·enumerate --force) ─
 
 def test_source_manifest_refuses_after_seal(cycle, monkeypatch, tmp_path):
