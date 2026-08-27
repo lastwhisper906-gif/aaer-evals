@@ -205,6 +205,10 @@ def _sha(text: str) -> str:
 
 
 def run_case(case: dict, frame: str, out_dir: Path, *, dry_run: bool = False) -> dict:
+    # R7-9: 호출 경계에서 매 케이스 강제 — Claude arm(cli_client.call_model:
+    # 매 호출 검사)과 동일 배치. main() 단독 배치는 비-main 드라이버(배치
+    # 래퍼·재개 런)가 상속 환경 그대로 codex를 spawn하는 구멍을 남긴다.
+    enforce_no_metered_credentials()
     _pins_are_concrete()
     out_dir = resolve_output_dir(out_dir)
     cid = case["case_id"]

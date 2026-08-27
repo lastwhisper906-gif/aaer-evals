@@ -108,6 +108,24 @@ def test_metered_environment_is_refused(monkeypatch, name):
         cross.enforce_no_metered_credentials()
 
 
+def test_run_case_refuses_metered_env_before_any_spawn(
+        monkeypatch, tmp_path, case, payload):
+    """R7-9: 가드는 호출 경계(run_case)에도 있다 — main()을 거치지 않는
+    드라이버(배치 래퍼·재개 런)도 상속 환경의 종량 자격증명으로 codex를
+    spawn할 수 없다. subprocess 도달 전에 예외."""
+    repo = _configure_tmp(monkeypatch, tmp_path, payload)
+
+    def forbidden_subprocess(*args, **kwargs):
+        pytest.fail("metered env인데 subprocess가 spawn됨")
+
+    monkeypatch.setattr(cross.subprocess, "run", forbidden_subprocess)
+    for variable in cross.METERED_ENV_VARS:
+        monkeypatch.delenv(variable, raising=False)
+    monkeypatch.setenv("OPENAI_API_KEY", "present")
+    with pytest.raises(RuntimeError, match="metered API"):
+        cross.run_case(case, "original", repo / "runs" / "crossmodel_gpt")
+
+
 def test_output_directory_outside_separated_root_is_refused(monkeypatch, tmp_path):
     monkeypatch.setattr(cross, "REPO_ROOT", tmp_path)
     monkeypatch.setattr(cross, "ALLOWED_OUT_ROOT", tmp_path / "runs" / "crossmodel_gpt")
