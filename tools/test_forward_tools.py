@@ -1390,14 +1390,31 @@ def test_seal_owner_commands_stage_runs_dir_and_call_logs(cycle, monkeypatch):
 def test_seal_owner_commands_write_and_stage_blindness_manifest(cycle, monkeypatch):
     """R10-3: 봉인 커밋이 runs/forward 출력을 담는 이상, 블라인드 매니페스트
     재생성 + staging이 소유자 명령에 없으면 push된 봉인 커밋이 verify_blindness
-    (d) leg에서 정본 CI를 붉힌다."""
+    (d) leg에서 정본 CI를 붉힌다.
+
+    R11-9: 그 블록은 `&&` 연쇄여야 한다 — verify_blindness는 스캔 실패(exit 1)
+    에도 매니페스트를 쓰고 반환하므로, 줄바꿈 나열이면 붙여넣기 한 번에
+    커밋·태그·push까지 흘러간다. push 직전 읽기 전용 재검증 + runs/ 청결
+    확인(기록만 되고 staging 안 된 리허설 잔여물)도 같은 사슬 안에 있어야 한다."""
     monkeypatch.setattr(sys, "argv", seal_argv(cycle))
     assert forward_seal.main() == 0
     record = (cycle / "SEAL_RECORD.md").read_text(encoding="utf-8")
-    assert "verify_blindness.py --write-manifest" in record
-    add_line = next(line for line in record.splitlines()
+    block = record.split("```bash")[1].split("```")[0]
+    assert "verify_blindness.py --write-manifest" in block
+    add_line = next(line for line in block.splitlines()
                     if line.startswith("git add "))
     assert "runs/MANIFEST.sha256" in add_line, add_line
+
+    # push까지 이어지는 모든 단계가 && 로 묶여 있는가
+    steps = [ln.strip() for ln in block.strip().splitlines() if ln.strip()]
+    push_at = next(i for i, ln in enumerate(steps) if ln.startswith("git push"))
+    for line in steps[:push_at]:
+        assert line.endswith("&& \\"), f"연쇄 끊김 — 실패가 흘러간다: {line}"
+    # push 직전 읽기 전용 재검증 + runs/ 청결 확인
+    assert any(ln.startswith("python tools/verify_blindness.py &&")
+               for ln in steps[:push_at]), block
+    assert any("git status --porcelain" in ln and "runs/" in ln
+               for ln in steps[:push_at]), block
 
 
 def test_abort_seal_record_also_portable(cycle, monkeypatch):

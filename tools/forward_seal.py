@@ -161,11 +161,21 @@ def main():
         stage_extra += " logs/run_*"
     # R10-3: 봉인 커밋은 runs/forward 출력을 staging하므로 블라인드 매니페스트
     # 재생성·staging 없이는 push된 봉인 커밋 자체가 정본 CI를 붉힌다.
+    # R11-9: 줄바꿈 나열은 실패를 흘려보낸다 — verify_blindness는 스캔이
+    # 실패해도(exit 1) 매니페스트를 쓰고 반환하므로, 붙여넣은 블록이 그대로
+    # 커밋·태그·push까지 진행했다. 전 구간 `&&` 연쇄 + push 직전 읽기 전용
+    # 재검증(매니페스트 기록 후 staging 누락까지 잡는다)으로 닫는다.
     owner_cmds = (
-        f"python tools/verify_blindness.py --write-manifest\n"
-        f"git add runs/MANIFEST.sha256 {cycle_display}{stage_extra} && "
-        f"git commit -m 'SEAL{'(ABORT)' if args.abort else ''}: {cycle.name} forward watchlist'\n"
-        f"git tag -a {tag} -m 'forward {seal_kind} {now} manifest sha256 {mhash}'\n"
+        f"python tools/verify_blindness.py --write-manifest && \\\n"
+        f"git add runs/MANIFEST.sha256 {cycle_display}{stage_extra} && \\\n"
+        f"git commit -m 'SEAL{'(ABORT)' if args.abort else ''}: {cycle.name} forward watchlist' && \\\n"
+        f"git tag -a {tag} -m 'forward {seal_kind} {now} manifest sha256 {mhash}' && \\\n"
+        f"python tools/verify_blindness.py && \\\n"
+        # R11-9: 매니페스트는 파일시스템에서 만들어지는데 clean-tree 게이트는
+        # runs/ 하위 미추적 파일을 관용한다 — 리허설 잔여물이 기록만 되고
+        # staging은 안 되면 로컬은 PASS, 신선한 CI 클론은 "매니페스트 기재
+        # 파일 누락"으로 적색이다. 커밋 후 runs/가 깨끗한지 확인해 막는다.
+        f"test -z \"$(git status --porcelain --untracked-files=all runs/)\" && \\\n"
         f"git push origin main --tags\n"
         # R11-3: 서버가 기록한 시각은 push 이벤트뿐이다 (tag/commit 날짜는
         # 클라이언트 제공값). Events API는 ~90일 보존이므로 push 직후에
