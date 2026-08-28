@@ -1,4 +1,5 @@
 """forward 봉인 도구의 오프라인 테스트 (spec §11, D100). 네트워크 0·호출 0."""
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -114,37 +115,63 @@ class _FetchResp:
         self.content = json.dumps(obj).encode("utf-8")
 
 
-def _manifest_fixture(tmp_path, monkeypatch, pinned_path):
-    """R10-2 픽스처: 밀폐된 REPO(매니페스트만) + DATA_DIR을 fxf에 주입."""
+def _manifest_fixture(tmp_path, monkeypatch, pinned_path, *, on_disk=None):
+    """R10-2 픽스처: 밀폐된 REPO(매니페스트만) + DATA_DIR을 fxf에 주입.
+
+    R11-2: 가드는 접두가 아니라 출처로 판정하므로, 핀 경로의 실제 바이트를
+    디스크에 둘 수 있어야 한다 (on_disk=b"..." → 그 바이트 + 정합 sha256)."""
     import fetch_xbrl_facts as fxf
     data_dir = tmp_path / "aaer-data"
     repo = tmp_path / "repo"
     (repo / "data/manifests").mkdir(parents=True)
+    entry = {"path": pinned_path}
+    if on_disk is not None:
+        target = data_dir / pinned_path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(on_disk)
+        entry["sha256"] = hashlib.sha256(on_disk).hexdigest()
     (repo / "data/manifests/aaer_data_manifest.json").write_text(
-        json.dumps({"files": [{"path": pinned_path}]}), encoding="utf-8")
+        json.dumps({"files": [entry]}), encoding="utf-8")
     monkeypatch.setattr(fxf, "DATA_DIR", data_dir)
     monkeypatch.setattr(fxf, "REPO", repo)
     return fxf, data_dir
 
 
-def test_fetch_refuses_manifest_pinned_collision_before_any_write(tmp_path, monkeypatch):
-    """R10-2(a): 핀 고정 경로({ticker}/…)와 충돌하는 수집은 네트워크에 닿기
-    전·파일 0개 쓴 채 거부 — 7월 스냅샷 바이트 커스터디."""
+def test_fetch_refuses_intact_pinned_snapshot_before_any_write(tmp_path, monkeypatch):
+    """R10-2(a): 온전한 회고 스냅샷(디스크 바이트 == 매니페스트 기록)과
+    충돌하는 수집은 네트워크에 닿기 전 거부 — 7월 CIEN 판형."""
     fxf, data_dir = _manifest_fixture(tmp_path, monkeypatch,
-                                      "TK01/xbrl/CIK0000001001.json")
+                                      "TK01/xbrl/CIK0000001001.json",
+                                      on_disk=b'{"july": "snapshot"}')
     monkeypatch.setattr(fxf, "fetch", lambda url: (_ for _ in ()).throw(
         AssertionError("거부 전에 네트워크 호출")))
     upath = tmp_path / "universe.json"
     fc.write_json(upath, make_universe())
     with pytest.raises(SystemExit, match="매니페스트 핀 경로와 충돌"):
         fxf.fetch_forward(upath, data_dir)
-    assert not data_dir.exists()
+    assert (data_dir / "TK01/xbrl/CIK0000001001.json").read_bytes() == \
+        b'{"july": "snapshot"}', "거부 경로가 핀 바이트를 건드렸다"
+    assert not (data_dir / "fetch_log.jsonl").exists()
+
+
+def test_fetch_refuses_when_pinned_bytes_drifted(tmp_path, monkeypatch):
+    """R11-2: 기록 sha256과 디스크 바이트가 어긋난 핀 경로 — 상태 미상이므로
+    여전히 거부 (가드 완화가 무조건 통과로 새지 않는다)."""
+    fxf, data_dir = _manifest_fixture(tmp_path, monkeypatch,
+                                      "TK01/xbrl/CIK0000001001.json",
+                                      on_disk=b'{"july": "snapshot"}')
+    (data_dir / "TK01/xbrl/CIK0000001001.json").write_bytes(b'{"drifted": 1}')
+    upath = tmp_path / "universe.json"
+    fc.write_json(upath, make_universe())
+    with pytest.raises(SystemExit, match="매니페스트 핀 경로와 충돌"):
+        fxf.fetch_forward(upath, data_dir)
 
 
 def test_fetch_manifest_guard_allows_disjoint_tickers(tmp_path, monkeypatch):
     """R10-2(a) 반대면: 핀 경로와 서로소인 universe는 정상 진행한다."""
     fxf, data_dir = _manifest_fixture(tmp_path, monkeypatch,
-                                      "OTHER/xbrl/CIK0000009999.json")
+                                      "OTHER/xbrl/CIK0000009999.json",
+                                      on_disk=b"{}")
     monkeypatch.setattr(fxf, "fetch",
                         lambda url: _FetchResp({"filings": {"files": []}}))
     upath = tmp_path / "universe.json"
@@ -152,6 +179,52 @@ def test_fetch_manifest_guard_allows_disjoint_tickers(tmp_path, monkeypatch):
     assert fxf.fetch_forward(upath, data_dir) == 0
     assert (data_dir / "TK01/xbrl/CIK0000001001.json").is_file()
     assert (data_dir / "fetch_log.jsonl").is_file()
+
+
+def test_refetch_after_manifest_rebuild_is_allowed(tmp_path, monkeypatch):
+    """R11-2 (runbook 순서 재현): fetch → verify_manifest --write(2b) →
+    같은 universe 재수집. 종전 접두 가드는 자기가 방금 쓴 경로를 핀으로
+    보고 창 안 재시도·부분 실패 복구를 영구 차단했다."""
+    import fetch_xbrl_facts as fxf
+    import verify_manifest as vm
+    data_dir = tmp_path / "aaer-data"
+    repo = tmp_path / "repo"
+    (repo / "data/manifests").mkdir(parents=True)
+    manifest_path = repo / "data/manifests/aaer_data_manifest.json"
+    manifest_path.write_text(json.dumps({"files": []}), encoding="utf-8")
+    monkeypatch.setattr(fxf, "DATA_DIR", data_dir)
+    monkeypatch.setattr(fxf, "REPO", repo)
+    monkeypatch.setattr(vm, "DATA_DIR", data_dir)
+    monkeypatch.setattr(fxf, "fetch",
+                        lambda url: _FetchResp({"filings": {"files": []}}))
+    upath = tmp_path / "universe.json"
+    fc.write_json(upath, make_universe(2))
+    assert fxf.fetch_forward(upath, data_dir) == 0
+
+    # 2b: 방금 수집한 forward 파일 전건이 매니페스트에 핀으로 등재된다
+    m = vm.build_manifest()
+    manifest_path.write_text(json.dumps(m), encoding="utf-8")
+    assert any(f["path"].startswith("TK01/") for f in m["files"])
+
+    # 재수집(재시도·절단 청크 재당김·창 후반 최신화)이 여전히 가능해야 한다
+    assert fxf.fetch_forward(upath, data_dir) == 0
+
+
+def test_owner_may_override_pinned_collision_and_it_is_logged(tmp_path, monkeypatch):
+    """R11-2: 온전한 핀 스냅샷 덮어쓰기는 소유자 명시 --allow-pinned 로만,
+    그리고 그 사실이 fetch_log.jsonl에 남는다."""
+    fxf, data_dir = _manifest_fixture(tmp_path, monkeypatch,
+                                      "TK01/xbrl/CIK0000001001.json",
+                                      on_disk=b'{"july": "snapshot"}')
+    monkeypatch.setattr(fxf, "fetch",
+                        lambda url: _FetchResp({"filings": {"files": []}}))
+    upath = tmp_path / "universe.json"
+    fc.write_json(upath, make_universe(1))
+    assert fxf.fetch_forward(upath, data_dir, {"TK01"}) == 0
+    rows = [json.loads(x) for x in
+            (data_dir / "fetch_log.jsonl").read_text(encoding="utf-8").splitlines()]
+    override = [r for r in rows if r.get("kind") == "pinned_override"]
+    assert override and override[0]["tickers"] == ["TK01"]
 
 
 # ── 컷오프·완결성·서수 컷 검증 ────────────────────────────────────────────
