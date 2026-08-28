@@ -112,7 +112,7 @@
       "task_tag": "[T2]",
       "measurement": "E1 matched controls",
       "published_value": "HUBG 70 > all matched controls (RXO 42 · BCO 30 · XPO 20); separation in only 1 of 3 cases",
-      "limits": "Exact permutation p=0.20 is CONTEXT ONLY. The single highest score in the holdout tier is a control false positive (GRDX 78) — HUBG does not exceed the pooled control set",
+      "limits": "Exact permutation p=0.20 is CONTEXT ONLY. The single highest score in the holdout tier is a control false positive (GRDX 78) — HUBG does not exceed the pooled control set. GRDX is one of the two controls this project's own retrospective audit records as `ineligible` (criterion (e): auditor resignation 8-K accompanied by a company-disclosed Item 304 disagreement) — `controls/retrospective_audit_v1.md` §4; see also row 10",
       "source_raw": "`analysis/holdout_controls_results.json`",
       "source_paths": [
         "analysis/holdout_controls_results.json"
@@ -190,7 +190,7 @@
       "task_tag": "[T2]",
       "measurement": "FPR holdout controls",
       "published_value": "2/9 = 22.2% CP95 [2.8%, 60.0%]",
-      "limits": "No silent pooling of FPR across tiers — CP intervals overlap heavily; worse-but-not-provably; two known selection effects with opposite signs — undetected fraud in controls (specificity ↓) vs hindsight no-restatement certification (E5 window cutoff+3y, specificity ↑); net direction unknown",
+      "limits": "No silent pooling of FPR across tiers — CP intervals overlap heavily; worse-but-not-provably; two known selection effects with opposite signs — undetected fraud in controls (specificity ↓) vs hindsight no-restatement certification (E5 window cutoff+3y, specificity ↑); net direction unknown. Both counted false positives are the only two of these 9 controls that this project's own retrospective audit records as `ineligible` — GRDX (criterion (e): auditor resignation 8-K accompanied by a company-disclosed Item 304 disagreement) and GO (criterion (d): material weakness not remediated by the next annual assessment) — while 0 of the other 7 (all recorded `provisional-INCOMPLETE`, none ineligible) reached the ≥50 threshold: `controls/retrospective_audit_v1.md` §4. The overlap is load-bearing in both directions and is stated, not resolved, here (`docs/methodology_limitations.md` L-8 requires stating it in any false-positive interpretation)",
       "source_raw": "`analysis/holdout_controls_results.json`",
       "source_paths": [
         "analysis/holdout_controls_results.json"

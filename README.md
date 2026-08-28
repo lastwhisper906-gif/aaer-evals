@@ -91,7 +91,9 @@ progressively removed** — wave-1 perturbed permutation p=0.0021 (N=8 vs 22;
 identity-exposed upper line p=0.00114), wave-2 standalone p=0.00116, AUC 0.829
 [0.616, 0.983] (N=9 vs 23), and per-case persistence in the post-cutoff
 holdout (N=3 — per-case evidence only, no significance claim; the single top
-score in that tier is a control false positive, GridAI **GRDX 78**).
+score in that tier is a control false positive, GridAI **GRDX 78** — one of
+the two controls this project's own retrospective audit records as
+`ineligible`, `controls/retrospective_audit_v1.md` §4).
 
 The limits, inline: false positives are real — [TASK 1] wave-1 FPR 3/22 =
 **13.6%** CP95 [2.9%, 34.9%], wave-2 FPR 5/23 = **21.7%** CP95 [7.5%, 43.7%];
@@ -139,7 +141,7 @@ and print the external-corpus or subscription preconditions they require.
 
 <!-- BEGIN-GENERATED: repro-facts (refresh: make docs-refresh; CI: tools/lint_doc_counts.py) -->
 - data manifest: **538 files** (`data/manifests/aaer_data_manifest.json` · `file_count`)
-- pytest: **725 tests collected** (`pipeline tools scoring analysis`)
+- pytest: **735 tests collected** (`pipeline tools scoring analysis`)
 - `make verify-public` (zero external data):
   - `.venv/bin/python tools/reproduce_analysis.py`
   - `.venv/bin/python tools/lint_publication.py`

@@ -327,3 +327,52 @@ retroactive recomputation or reclassification under the v3 criteria is done
   (disclose-don't-revise; schema-binding resolution is D-P90's owner call).
 - **Forward rule**: future waves use a single neutral id namespace for all
   arms (no group-distinguishing prefixes), per this note.
+
+## L-12. Both counted holdout-control false positives are the tier's only audit-ineligible controls, and the top one was matched on a size fallback — recorded 2026-08-28 (harness cycle 014 R14-4)
+
+Addendum to L-8, in the disclose-don't-revise channel — L-8's own text is not
+edited, and it sits inside the frozen Korean snapshot (L-1–L-8, F-01/F-02),
+so the addition is carried here as its own dated entry. L-8 already
+discharges this duty once, for the wave-1 frame ("FAIL row C04 (R) is the
+same registrant as a main-frame false-positive case … state this overlap in
+any false-positive interpretation"). The same duty for the holdout tier is
+discharged here.
+
+- **The overlap**: of the 9 hc controls, exactly 2 are recorded `ineligible`
+  in `controls/retrospective_audit_v1.md` — GRDX under criterion (e) and GO
+  under criterion (d) — and those same 2 are exactly the 2 controls counted
+  as false positives at the ≥50 threshold (GRDX 78, GO 58;
+  `analysis/holdout_controls_results.json` `control_fpr` = fp 2, n 9, point
+  0.222, CP95 [0.028, 0.600]). The other 7 are recorded
+  `provisional-INCOMPLETE`, and none of them reached the threshold. The
+  criteria are facts of the disclosure record — an auditor resignation 8-K
+  accompanied by a company-disclosed Item 304 disagreement (GRDX), and a
+  material weakness not remediated by the next annual assessment (GO) — not
+  adverse labels: on criterion (a), absence of SEC enforcement action, all 62
+  controls pass. Nothing here is an inference about why any score came out as
+  it did.
+- **Reading direction — both ways, and neither is resolved here**: read one
+  way, the published 22.2% is conditional on a control pool whose only two
+  flagged members are the two the project's own checklist declines to
+  certify. Read the other way, the same fact means the tier's error rate may
+  be an overstatement. The published number is unchanged either way (D106
+  common OUT — no recomputation, no reclassification).
+- **Second fact, same control**: GRDX is also the one control in this tier
+  matched under the size fallback.
+  `runs/holdout/controls/control_group_holdout.json` `selections.case_73`
+  records `rev_pit` 0, `size_basis` "assets", `size_dist` 1.0686 and a single
+  `size_flags` entry, tagged S1, recording that point-in-time revenue was
+  unavailable and total assets were substituted, with `former_names`
+  ["Entero Therapeutics", "First Wave BioPharma", "AzurRx BioPharma", …],
+  against a treatment (GNE) whose `rev_pit` is 425,202,000. It was rank 3 of
+  `eligible_ranked_count` 3, with `alternates` []. The pre-registered axis
+  order is size → industry → era (`analysis/HOLDOUT_CONTROLS_PLAN.md` §1), so
+  "matched on industry, size, and era" is nominal rather than literal for
+  this one pairing, and this note qualifies it where it is used.
+- **Invariant boundary**: published-number edits 0, frozen `runs/` contacts
+  0, `analysis/holdout_controls_results.json` contacts 0,
+  `analysis/ISSUE_2_HOLDOUT_DRAFT.md` (published 2026-07-11, predating the
+  2026-07-21 audit) contacts 0. The deliverables are this note and the
+  matching limits text in `RESULTS.md` rows 6 and 10, `README.md`, and
+  `analysis/DECISION_TABLE.md` §3. Owner record: `DECISIONS_PENDING.md`
+  D-P97.

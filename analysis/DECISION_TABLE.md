@@ -65,6 +65,17 @@ labels (restatement/4.02 non-reliance events).** The column name must also
 be read as "event flagging," not "detection." n=3 is case documentation,
 not statistics.
 
+**Control-pool caution:** both false positives counted in this tier are the
+only controls here that this project's own retrospective control-cleanliness
+audit records as `ineligible` — GridAI (GRDX), on the criterion of an auditor
+resignation accompanied by a company-disclosed disagreement, and Grocery
+Outlet (GO), on the criterion of a material weakness not remediated by the
+next annual assessment. None of the other controls in this tier reached the
+flagging threshold. Full citations, accession numbers and the audit criteria
+are in `RESULTS.md` (the rows for this tier) and in the retrospective
+control-cleanliness audit under `controls/`. The numbers in this section are
+unchanged by that audit — it is disclosure only.
+
 | Threshold T | Flags (event group, n=3) | 95% CI | False positives (control, n=9) | 95% CI | Cost per detection |
 |---|---|---|---|---|---|
 | ≥40 | 2/3 (66.7%) | [9.4%, 99.2%] | 3/9 (33.3%) | [7.5%, 70.1%] | $3.18 |

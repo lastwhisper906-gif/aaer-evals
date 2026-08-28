@@ -1951,3 +1951,50 @@ python tools/forward_verify_seal.py --cycle forward/cycle_001
 - **Basis:** reviews/cycle-010.md R10-7 · analysis/wave2_summary.md ·
   docs/README_DETAIL.md:105-109 · INV-06 · D94 (표면 서명).
 - **Revert:** DECISION_TABLE.md §2 문장 원복 (비권장 — 오표기 복원이 된다).
+
+## D-P97 — [DRAFT — 소유자 서명 대기] holdout 대조군 위양성 2건 = 자체 감사가 `ineligible`로 기록한 2건이라는 중첩 공개 (L-8 의무의 holdout 티어 이행)
+
+- **Status:** DRAFT — 세션(harness v4 cycle 014, R14-4)이 작성. 게시
+  표면 편집이므로 소유자 감사 대상이다.
+- **사실 (전건 아티팩트 재확인):**
+  - `analysis/holdout_controls_results.json`의 `control_fpr` = fp 2 · n 9 ·
+    point 0.222 · CP95 [0.028, 0.600]. ≥50 쌍은 정확히 {GRDX 78, GO 58}.
+  - `controls/retrospective_audit_v1.md` 판정표의 hc 9행 중 `ineligible`은
+    정확히 2행 — GRDX (기준 (e), 감사인 사임 8-K + 회사 공시 Item 304
+    disagreement)와 GO (기준 (d), 차기 연차 평가까지 미해소 중요한 취약점).
+    나머지 7행은 전부 `provisional-INCOMPLETE`이며 ≥50에 도달한 행은 없다.
+  - `runs/holdout/controls/control_group_holdout.json` `selections.case_73`:
+    GRDX는 `rev_pit` 0 · `size_basis` "assets" · `size_dist` 1.0686 · S1
+    플래그(매출 PIT 불능 → 총자산 대체), `eligible_ranked_count` 3의 rank 3,
+    `alternates` [] — 사전 등록 축 순서(size → industry → era,
+    `analysis/HOLDOUT_CONTROLS_PLAN.md` §1)에 비추어 "industry·size·era로
+    매칭"은 이 한 쌍에 대해 문자 그대로는 아니다.
+- **왜 공개인가:** `docs/methodology_limitations.md` L-8이 스스로 부과한
+  의무("어떤 위양성 해석에서도 이 중첩을 명시하라")가 wave-1 사례(C04/R)
+  에는 이행돼 있고 holdout 티어에는 이행돼 있지 않았다. 이 사실은 양방향
+  으로 하중을 받는다 — 22.2%가 대조군 풀 조건부라는 읽기와, 그래서 오차율
+  과대 표시일 수 있다는 읽기가 동시에 성립한다. 그래서 해석을 정하지 않고
+  사실만 병기했다.
+- **편집 표면 (게시·live만):** `RESULTS.md` 6·10행 limits 열 + 잠금
+  렌더링 `CLAIMS.json`의 같은 두 셀(tools/test_claims_ledger.py가 강제하는
+  동기화) · `README.md` GRDX 문장 · `analysis/DECISION_TABLE.md` §3 ·
+  `docs/methodology_limitations.md` L-12.
+- **무접촉 (동결):** `runs/` 0건 · `analysis/ISSUE_2_HOLDOUT_DRAFT.md`
+  (2026-07-11 게시, 2026-07-21 감사보다 앞섬) 0건 ·
+  `analysis/holdout_controls_results.json` 0건 · 공표 수치 재계산 0건.
+- **두 건의 형식 제약 (소유자 확인 요망):**
+  (i) 추가분을 L-8 본문 아래 addendum으로 넣으면 동결 ko 스냅샷(L-1–L-8)과의
+      수치 토큰 등가 잠금(tools/test_translation_equivalence.py)이 깨진다 —
+      L-8은 무수정으로 두고 신규 L-12로 기입했다(L-9 이후 영어 정본 전용
+      규약, L-10/L-11 판례).
+  (ii) 같은 잠금 때문에 `analysis/DECISION_TABLE.md` §3의 문구는 숫자 토큰을
+      하나도 담을 수 없다 — 그 절에는 무숫자 요약 + 전체 인용 위치 지시만
+      두고, 수치·accession은 RESULTS.md와 감사 문서가 진다.
+- **INV-13:** 두 회사는 집행 대상이 아닌 현재 기업이다. 추가 문면은 공시
+  사실 + 출처만 담고 단정 어휘를 쓰지 않으며, 모델이 왜 그 점수를 냈는지에
+  대한 추론을 담지 않는다.
+- **Basis:** reviews/cycle-014.md R14-4 (C13-p 승격) · L-8 자체 지시 ·
+  D106 common OUT · GA-001 (b) (RESULTS.md는 인간 감사 대기 표면) ·
+  INV-06 (동결 경로 무접촉).
+- **Revert:** 위 다섯 표면의 추가 문면 삭제 + `CLAIMS.json` 두 셀 원복
+  (비권장 — L-8이 부과한 공개 의무가 다시 미이행 상태로 돌아간다).
