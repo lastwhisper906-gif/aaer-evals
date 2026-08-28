@@ -627,8 +627,72 @@ def test_shippable_evidence_file_is_sealed_normally(cycle):
     """R11-6 반대면: 무시 규칙에 걸리지 않는 증거 파일은 그대로 봉인된다."""
     (cycle / "evidence").mkdir(exist_ok=True)
     (cycle / "evidence/note.txt").write_text("evidence", encoding="utf-8")
-    assert fc.unshippable_sealed_files(cycle) == []
+    assert fc.unshippable_sealed_files(cycle, include_runs=False) == []
     assert "evidence/note.txt" in fc.manifest_text(cycle)
+
+
+# R12-2 계열 경계: 비-ASCII · 따옴표 · 역슬래시 · 개행 — 전부 종전
+# 줄 단위 check-ignore가 C-인용 때문에 놓치던 이름들 (lens B 실측 우회).
+@pytest.mark.parametrize("relname", [
+    "evidence/.DS_Store",             # ASCII 기준선 (종전에도 잡힘)
+    "evidence/증거/.DS_Store",         # 비-ASCII
+    'evidence/we"ird/.DS_Store',      # 따옴표
+    "evidence/back\\slash/.DS_Store",  # 역슬래시
+    "evidence/a\nb/.DS_Store",        # 개행 (--stdin 줄 프로토콜 자체가 깨진다)
+])
+def test_seal_refuses_ignored_names_across_quoting_classes(cycle, relname):
+    """R12-2: git이 '무시됨'이라 답한 파일을 문자열 대조 실수로 흘리면
+    봉인이 되돌릴 수 없이 깨진다. `-z`(NUL) 프로토콜로 인용을 없앤다."""
+    target = cycle / relname
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(b"\x00mac")
+    bad = fc.unshippable_sealed_files(cycle, include_runs=False)
+    assert any(".DS_Store" in b for b in bad), f"{relname!r} 우회: {bad}"
+
+
+def test_non_ignored_lookalike_name_stays_shippable(cycle):
+    """R12-2 과차단 방지: `.DS_Store거`는 무시 규칙에 걸리지 않는다 —
+    `git add -A`가 실제로 추적한다(스크래치 저장소 실측). 실어 나를 수 있는
+    파일을 막으면 정당한 봉인을 세우게 되므로 통과해야 한다."""
+    (cycle / "evidence").mkdir(exist_ok=True)
+    (cycle / "evidence/.DS_Store거").write_bytes(b"x")
+    assert fc.unshippable_sealed_files(cycle, include_runs=False) == []
+
+
+def test_seal_refuses_nested_repo_and_outside_symlink(cycle, tmp_path):
+    """R12-2: 무시 규칙 밖의 두 종 — `git add`는 중첩 저장소를 gitlink 하나로
+    싣고(내부 파일 미포함), 사이클 밖 심볼릭 링크는 링크만 싣는다. 어느
+    쪽이든 매니페스트에는 줄이 있고 클론에는 파일이 없다."""
+    ev = cycle / "evidence"
+    ev.mkdir(exist_ok=True)
+    (ev / "sub/.git").mkdir(parents=True)
+    (ev / "sub/.git/config").write_text("[core]\n", encoding="utf-8")
+    bad = fc.unshippable_sealed_files(cycle, include_runs=False)
+    assert any("중첩 git 저장소" in b for b in bad), bad
+
+    import shutil
+    shutil.rmtree(ev / "sub")
+    outside = tmp_path / "outside.txt"
+    outside.write_text("out", encoding="utf-8")
+    (ev / "link.txt").symlink_to(outside)
+    bad = fc.unshippable_sealed_files(cycle, include_runs=False)
+    assert any("심볼릭 링크" in b for b in bad), bad
+
+
+def test_unshippable_check_covers_runs_tree(cycle, monkeypatch, tmp_path):
+    """R12-2: 봉인 커밋은 runs/forward 출력을 함께 싣고 블라인드 매니페스트는
+    runs/ 전체를 해싱한다 — 같은 '해시됐지만 실리지 않음' 피해가 그쪽에서도
+    성립하므로 검사 범위에 든다."""
+    import subprocess
+    fake_repo = tmp_path / "repo"
+    (fake_repo / "runs/forward/cycle_t").mkdir(parents=True)
+    subprocess.run(["git", "-C", str(fake_repo), "init", "-q"], check=True)
+    (fake_repo / ".gitignore").write_text(
+        (REPO_ROOT / ".gitignore").read_text(encoding="utf-8"), encoding="utf-8")
+    (fake_repo / "runs/forward/cycle_t/leftover.pyc").write_bytes(b"x")
+    monkeypatch.setattr(fc, "REPO", fake_repo)
+    bad = fc.unshippable_sealed_files(cycle, include_runs=True)
+    assert any("leftover.pyc" in b for b in bad), bad
 
 
 def test_verify_seal_requires_ots_anchor_on_regular_seal(cycle, monkeypatch, capsys):

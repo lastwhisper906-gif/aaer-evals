@@ -120,8 +120,72 @@ def sealed_paths(cycle: Path) -> list[tuple[Path, str]]:
     return items
 
 
-def unshippable_sealed_files(cycle: Path) -> list[str]:
-    """R11-6: 봉인 대상 중 git이 실어 나르지 못하는 파일 (무시 규칙 적중).
+# verify_blindness.manifest_lines가 runs/에서 해싱 대상에서 빼는 이름과 동일
+_BLINDNESS_EXCLUDE = {"MANIFEST.sha256", ".DS_Store"}
+
+
+def _git_ignored(probe_paths: list[str]) -> set[str] | None:
+    """git 무시 규칙 질의 — NUL 프로토콜 (R12-2).
+
+    `check-ignore --stdin`은 줄 단위이고 기본 core.quotePath=true라서
+    비-ASCII·`"`·`\\`를 C-따옴표로 감싸 내보낸다. 그래서 문자열 대조가
+    빗나가고 git이 "무시됨"이라 답한 파일을 가드가 흘렸다 — 실측 우회:
+    `evidence/증거/.DS_Store`, `we"ird/…`, `back\\slash/…`, 개행 포함 이름.
+    `-z`는 입출력 모두 NUL 구분이라 인용이 사라진다 (core.quotePath=false만
+    으로는 탭·개행이 여전히 인용되어 불충분). 실패 시 None = 판정 불가."""
+    if not probe_paths:
+        return set()
+    r = subprocess.run(["git", "-C", str(REPO), "check-ignore", "-z", "--stdin"],
+                       input="\0".join(probe_paths), capture_output=True, text=True)
+    if r.returncode not in (0, 1):  # 0=일부 적중, 1=적중 없음, 그 외=오류
+        return None
+    return {p for p in r.stdout.split("\0") if p}
+
+
+def _shipping_members(cycle: Path, include_runs: bool) -> list[tuple[Path, str, str]]:
+    """출하 가능성을 물어야 할 (디스크 경로, git 질의 경로, 표시명) 전건.
+
+    봉인 대상뿐 아니라 `runs/`도 포함한다 (R12-2): 봉인 커밋은 runs/forward
+    출력을 함께 싣고 블라인드 매니페스트가 runs/ 전체를 해싱하므로,
+    같은 '해시됐지만 실리지 않음' 피해가 그쪽에서도 성립한다."""
+    try:
+        cyc_rel = cycle.resolve().relative_to(REPO.resolve()).as_posix()
+    except (ValueError, OSError):
+        # 저장소 밖 사이클(테스트 픽스처): 이름 기반 무시 규칙은 위치와
+        # 무관하므로 저장소 안 가상 경로로 같은 규칙을 질의한다.
+        cyc_rel = "forward/_shipping_probe"
+    members = [(p, f"{cyc_rel}/{name}", name) for p, name in sealed_paths(cycle)]
+    runs = REPO / "runs"
+    if include_runs and runs.is_dir():
+        members += [(p, p.relative_to(REPO).as_posix(), p.relative_to(REPO).as_posix())
+                    for p in sorted(runs.rglob("*"))
+                    if p.is_file() and p.name not in _BLINDNESS_EXCLUDE]
+    return members
+
+
+def _unshippable_structure(path: Path, root: Path) -> str | None:
+    """무시 규칙 밖의 '실어 나를 수 없음' 두 종 (R12-2).
+
+    ① 중첩 git 저장소: `git add`는 gitlink 하나만 만들고 내부 파일은 싣지
+       않는데 매니페스트는 내부를 전건 해싱한다.
+    ② 사이클 밖으로 나가는 심볼릭 링크: 매니페스트는 타깃 내용을 해싱하나
+       git은 링크만 싣는다 — 클론에서 타깃이 없으면 is_file()이 False가 되어
+       그 줄이 통째로 사라진다 (같은 '한 줄 부족' 피해)."""
+    try:
+        if path.is_symlink() and root.resolve() not in path.resolve().parents:
+            return "사이클 밖 심볼릭 링크"
+    except OSError:
+        return "해석 불가 심볼릭 링크"
+    for parent in path.parents:
+        if parent == root or root not in parent.parents:
+            break
+        if (parent / ".git").exists():
+            return "중첩 git 저장소 내부"
+    return None
+
+
+def unshippable_sealed_files(cycle: Path, include_runs: bool = True) -> list[str]:
+    """R11-6/R12-2: 해시는 되지만 git이 실어 나르지 못하는 파일 전건.
 
     seal은 파일 해시를 MANIFEST에 적고, 소유자 명령은 `git add`로 커밋한다.
     `.gitignore`가 무시하는 파일(.DS_Store — macOS에서 Finder로 evidence/를
@@ -131,23 +195,21 @@ def unshippable_sealed_files(cycle: Path) -> list[str]:
     적색이 된다. 재봉인 금지(§3-5) + 매니페스트 불변이므로 사후 교정
     경로가 없다 — 봉인 직전 fail-closed가 유일한 탈출구다. 조용히 건너뛰지
     않는 이유: 누락된 증거 파일이 막힌 봉인보다 나쁘다."""
-    names = [name for _, name in sealed_paths(cycle)]
-    if not names:
+    members = _shipping_members(cycle, include_runs)
+    if not members:
         return []
-    try:
-        prefix = cycle.resolve().relative_to(REPO.resolve()).as_posix()
-    except ValueError:
-        # 저장소 밖 사이클(테스트 픽스처): 이름 기반 무시 규칙은 위치와
-        # 무관하므로 저장소 안 가상 경로로 같은 규칙을 질의한다.
-        prefix = "forward/_shipping_probe"
-    probe = "\n".join(f"{prefix}/{n}" for n in names)
-    r = subprocess.run(["git", "-C", str(REPO), "check-ignore", "--stdin"],
-                       input=probe, capture_output=True, text=True)
-    if r.returncode not in (0, 1):  # 0=일부 적중, 1=적중 없음, 그 외=오류
-        return [f"(git check-ignore 실행 실패 — 출하 가능성 미확인: "
-                f"{r.stderr.strip()[:120]})"]
-    ignored = {line.strip() for line in r.stdout.splitlines() if line.strip()}
-    return sorted(n for n in names if f"{prefix}/{n}" in ignored)
+    ignored = _git_ignored([probe for _, probe, _ in members])
+    if ignored is None:
+        return ["(git check-ignore 실행 실패 — 출하 가능성 미확인)"]
+    bad = {display for _, probe, display in members if probe in ignored}
+    cycle_root = cycle.resolve()
+    runs_root = (REPO / "runs").resolve()
+    for path, probe, display in members:
+        root = runs_root if probe.startswith("runs/") else cycle_root
+        reason = _unshippable_structure(path, root)
+        if reason:
+            bad.add(f"{display} ({reason})")
+    return sorted(bad)
 
 
 def manifest_text(cycle: Path) -> str:
