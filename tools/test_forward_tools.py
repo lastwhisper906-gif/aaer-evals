@@ -472,16 +472,22 @@ def test_validate_company_cik_must_match_universe(cycle):
 
 # ── prepare fail-closed 전환 (TASK_FWD 2) ────────────────────────────────
 
-def test_prepare_refuses_after_seal(tmp_path, monkeypatch):
+def test_prepare_refuses_after_seal(tmp_path, monkeypatch, capsys):
+    """R12-3: 이름이 약속하는 성질(봉인 후 거부)을 실제로 시험한다 —
+    종전 픽스처는 MANIFEST만 두어 새 술어 하에서 '잔여물'이었고, PROTOCOL.md가
+    있어 R9-7 가드가 먼저 발화했다. 즉 봉인 가드를 통째로 지워도 통과했다."""
     import forward_prepare as fp
     c = tmp_path / "cycle_sealed"
     c.mkdir()
     proto_before = "sealed proto"
     (c / "PROTOCOL.md").write_text(proto_before, encoding="utf-8")
     (c / "MANIFEST.sha256").write_text("x  PROTOCOL.md\n", encoding="utf-8")
+    (c / "SEAL_RECORD.md").write_text("- status: sealed\n", encoding="utf-8")
     monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(c)])
     with pytest.raises(SystemExit):
         fp.main()
+    # 거부 사유가 봉인이어야 한다 (R9-7의 PROTOCOL.md 가드가 아니라)
+    assert "봉인 완결" in capsys.readouterr().out
     assert (c / "PROTOCOL.md").read_text(encoding="utf-8") == proto_before
 
 
@@ -773,19 +779,45 @@ def test_interrupt_residue_does_not_wedge_downstream_tools(cycle, monkeypatch, t
         fc.manifest_text(cycle)
 
 
-def test_sealed_predicate_is_shared_by_downstream_writers(cycle, monkeypatch):
+def test_sealed_predicate_is_shared_by_downstream_writers(cycle, monkeypatch, capsys):
     """R11-8: 봉인 완결(두 파일)에서는 하류 쓰기 도구가 전부 거부한다 —
-    잔여물 판정과 봉인 판정이 도구마다 어긋나지 않게 한 판정식을 공유한다."""
+    잔여물 판정과 봉인 판정이 도구마다 어긋나지 않게 한 판정식을 공유한다.
+
+    R12-3: prepare 다리는 거부 **사유**까지 단언한다 — 픽스처에 PROTOCOL.md가
+    있어 R9-7 가드가 먼저 발화하므로, 사유를 보지 않으면 봉인 술어를 통째로
+    지워도 통과하는 공허한 다리였다 (lens B: 가드 삭제 후 582건 전부 green)."""
     monkeypatch.setattr(sys, "argv", seal_argv(cycle))
     assert forward_seal.main() == 0
     assert fc.is_sealed(cycle) and fc.seal_residue_notice(cycle) is None
 
     monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(cycle),
                                       "--runs", str(cycle.parent / "runs_t")])
+    capsys.readouterr()
     assert forward_assemble.main() == 1
+    assert "봉인 완결" in capsys.readouterr().out
     monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(cycle)])
     with pytest.raises(SystemExit):
         forward_prepare.main()
+    assert "봉인 완결" in capsys.readouterr().out, "prepare 거부 사유가 봉인이 아니다"
+
+
+def test_residue_note_matches_what_each_path_actually_does(cycle, monkeypatch, capsys):
+    """R12-3: 잔여물 NOTE는 경로별로 사실이어야 한다 — abort는 validate를
+    전혀 돌리지 않는데 종전 문구는 두 경로 모두에 "현재 트리로 검증" 후
+    완결한다고 약속했다 (봉인-크리티컬 운영자 표면의 허위 문구).
+
+    abort가 잔여물 위에서 계속 진행하는 것 자체는 의도된 동작이다 (R11-8:
+    검증 없이 부분 상태를 동결하는 것이 abort의 계약이고, 그 탈출구까지
+    막은 것이 R10-6의 결함이었다) — 여기서 고치는 것은 문구다."""
+    (cycle / "MANIFEST.sha256").write_text(fc.manifest_text(cycle), encoding="utf-8")
+    (cycle / "scores.json").unlink()  # 검증 통과 불가 상태
+    monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(cycle),
+                                      "--abort", "--reason", "window missed"])
+    capsys.readouterr()
+    assert forward_seal.main() == 0
+    out = capsys.readouterr().out
+    assert "검증 없이" in out, out
+    assert "검증·매니페스트 재작성 후 봉인을 완결" not in out, "abort가 돌리지 않는 검증을 약속"
 
 
 def test_ots_stall_records_pending_and_completes_seal(cycle, monkeypatch):
@@ -1217,6 +1249,11 @@ def test_enumerate_force_refuses_on_sealed_cycle(cycle, monkeypatch, capsys):
                       {"units": {"USD": [{"end": "2026-06-30", "val": 2.0e9}]}})
     monkeypatch.setattr(sys, "argv", ["x", "--offline", "--force",
                                       "--out", str(cycle / "universe.json")])
+    # R12-3: 이 호출의 출력만 본다 — 종전에는 앞서 실행한 forward_seal의
+    # stdout(`git add runs/MANIFEST.sha256 …`)이 같은 capsys 버퍼에 남아
+    # enumerate 메시지에서 MANIFEST.sha256을 없애도 통과했다. 자기 docstring이
+    # R5-2에서 고쳤다고 밝힌 공진 결함이 같은 자리에서 재발한 상태였다.
+    capsys.readouterr()
     assert fe.main() == 1
     out = capsys.readouterr().out
     assert "MANIFEST.sha256" in out and "재작성 금지" in out, out[-400:]

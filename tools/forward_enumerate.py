@@ -250,8 +250,9 @@ def main():
     # R4-3: 봉인된 사이클의 universe.json은 --force로도 재작성 불가 (INV-22)
     # R11-8: 판정식은 '봉인 완결'(MANIFEST + SEAL_RECORD) — 중단 잔여물 제외
     if is_sealed(out_path.parent):
-        print(f"FAIL — {out_path.parent.name}: 봉인 완결 — 봉인된 "
-              "사이클의 universe.json 재작성 금지 (--force 무효; 교정은 새 사이클로)")
+        print(f"FAIL — {out_path.parent.name}: 봉인 완결 (MANIFEST.sha256 + "
+              "SEAL_RECORD.md) — 봉인된 사이클의 universe.json 재작성 금지 "
+              "(--force 무효; 교정은 새 사이클로)")
         return 1
     if (notice := seal_residue_notice(out_path.parent)):
         print(notice)
