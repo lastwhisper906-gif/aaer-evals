@@ -81,6 +81,24 @@ def test_model_schema_is_derived_with_all_constraints():
     assert schema["allOf"][0]["then"]["properties"]["mechanism_hypotheses"]["minItems"] == 1
 
 
+def test_top_signals_contract_reaches_the_channel_the_model_actually_sees():
+    """R13-1(a): top_signals의 계약("checklist item_id 참조만")은 스키마
+    description에만 있었고, _strip_descriptions가 송출 직전에 그것을 지운다 —
+    모델이 받는 두 채널(렌더된 TASK, derive_model_schema 산출)을 그대로 읽어
+    계약이 실제로 전달되는지 고정한다. 미고정 시 실측 결과: 커밋된 506건 중
+    계약을 만족한 출력 0건."""
+    rendered = runner.TASK.format(company_name="Example Co", ticker="EX",
+                                  cik_part=", CIK 0000000001",
+                                  cutoff_date="2026-11-14")
+    assert "overall.top_signals" in rendered
+    assert "CL1..CL8" in rendered
+    sent_schema = json.dumps(runner.MODEL_SCHEMA, ensure_ascii=False)
+    assert "top_signals" in sent_schema
+    # description 채널은 비어 있다 — 계약이 여기 있으면 모델은 못 본다
+    assert "item_id 참조만" not in sent_schema
+    assert "description" not in sent_schema
+
+
 def test_run_case_revalidates_before_write(monkeypatch, tmp_path):
     invalid = _model_output()
     invalid["misstatement_probability"] = 130

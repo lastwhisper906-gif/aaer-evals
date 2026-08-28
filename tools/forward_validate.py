@@ -6,7 +6,8 @@ usage: python tools/forward_validate.py --cycle forward/cycle_001
 retrieval/filing 분리 저장 ③ scores 완결성(유니버스 전건 1레코드, not_scored
 명시, 완료 분율 ≥11/12) ④ decision_state가 사전 등록 서수 컷과 기계 일치
 ⑤ 레코드 §6 전 필드 계약(두 배열 존재 의무 포함) + cited_sources ⊆
-source_manifest + company.cik ↔ universe 교차 대조.
+source_manifest + company.cik ↔ universe 교차 대조 ⑥ 봉인되는 자유서술
+(top_signals·affected_account_areas)의 INV-13 금지어 (R13-1).
 네트워크 0 · 모델 호출 0. 위반 시 exit 1.
 """
 import argparse
@@ -24,6 +25,10 @@ from forward_common import (ET, REPO, SCREENING_CUTOFF, EXECUTION_WINDOW_END,
                             assert_subscription_only, fp_siblings, read_json,
                             parse_date, sha256_file)
 from forward_prepare import check_universe
+# R13-1: INV-13 금지어 목록은 발행 린트와 **같은 출처**를 쓴다 — 목록이 한쪽만
+# 늘면 봉인 경로에 구멍이 생긴다 (lint_publication은 상수·REPO만 정의하는
+# import-safe 모듈이며, 이 방향 의존은 tools/ 내부다).
+from lint_publication import FRAUD_WORDS
 
 DECISION_STATES = {"flag", "review", "no_flag", "abstain"}
 SUFFICIENCY = {"sufficient", "partial", "insufficient"}
@@ -114,6 +119,37 @@ def _rederivation_errors(record: dict, out_path: Path,
                 "scores.json이 동결 프로토콜 산출이 아님 (조립 후 편집, 또는 "
                 "stale 체크아웃 조립: assemble 재실행 필요, R11-4)"]
     return []
+
+
+# R13-1: 모델 자유서술이 아무 게이트도 통과하지 않고 봉인 레코드에 실린다.
+# top_signals의 선언된 계약("checklist item_id 참조만")은 스키마 description에만
+# 있었고 runner._strip_descriptions가 송출 전에 그것을 지운다 — 실측 결과 커밋된
+# 506개 러너 출력 중 계약을 만족한 것은 0건, 11.9%(60건)는 금지어를 담고 있다.
+# forward 사이클의 유니버스는 **집행 대상이 아닌 현재 기업 12곳**이므로 INV-13이
+# 무조건 적용되고(면책 문맥의 문장도 그 단어를 쓴다), 봉인 후에는 INV-06/INV-22로
+# 수정이 불가능하다 — 봉인 전에 fail-closed로 막는다.
+# 범위: forward 사이클 레코드 한정. runs/ 하위 회고 케이스는 AAER 집행 대상이라
+# INV-13의 적용 대상이 아니며, 이 함수는 validate()에서만 호출된다.
+FREE_TEXT_SEALED_FIELDS = ("top_signals", "affected_account_areas")
+
+
+def fraud_word_errors(record: dict) -> list[str]:
+    """봉인 대상 자유서술 필드의 INV-13 금지어 검사 (R13-1)."""
+    rid = record.get("record_id")
+    errs = []
+    for field in FREE_TEXT_SEALED_FIELDS:
+        value = record.get(field)
+        if not isinstance(value, list):
+            continue  # 부재/비배열은 §6 계약 leg가 별도로 잡는다
+        for i, item in enumerate(value):
+            low = str(item).lower()
+            hits = sorted(w for w in FRAUD_WORDS if w in low)
+            if hits:
+                errs.append(
+                    f"{rid}: {field}[{i}] INV-13 금지어 {hits} — 집행 대상이 "
+                    "아닌 현재 기업에 단정 어휘 사용 금지 (면책 문맥도 동일). "
+                    "봉인 후에는 정정 불가이므로 봉인 전 차단 (R13-1)")
+    return errs
 
 
 def validate(cycle: Path, runs_dir: Path | None = None) -> list[str]:
@@ -267,6 +303,7 @@ def validate(cycle: Path, runs_dir: Path | None = None) -> list[str]:
                           "top_signals"):
                 if not isinstance(r.get(field), list):
                     errs.append(f"{rid}: {field} 부재/비배열 (§6 — 빈 배열 허용, 키 생략 불가)")
+            errs += fraud_word_errors(r)
             for acc in r.get("cited_sources") or []:
                 if not _cited_source_attested(str(acc), sources):
                     errs.append(f"{rid}: cited_sources {acc!r} — source_manifest 미등재 (§6 ⊆ 의무)")

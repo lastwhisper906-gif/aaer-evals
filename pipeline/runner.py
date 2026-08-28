@@ -101,7 +101,12 @@ CL4 Do inventory levels or gross margins show trends inconsistent with revenue?
 CL5 Is the earnings trajectory unusually smooth relative to the volatility of revenue and cash flow?
 CL6 Did liability, allowance, or reserve balances decline (or fail to grow) despite growing business activity?
 CL7 Does the filing chronology show irregularities (late filings/NT forms, amendments, unusual 8-K frequency)?
-CL8 Is the provided data sufficient in coverage and length for the above assessments?"""
+CL8 Is the provided data sufficient in coverage and length for the above assessments?
+
+Output format constraint: the field overall.top_signals takes checklist item ids only - each \
+element must be exactly one id from CL1..CL8 (for example "CL3"), most important first, at most \
+5. Do not put sentences, company names or narrative there; narrative belongs in the checklist \
+evidence and mechanism fields."""
 
 def run_case(case: dict, perturb: bool, out_dir: Path, log_dir: Path, *,
              accept_legacy_output: bool = False) -> dict:

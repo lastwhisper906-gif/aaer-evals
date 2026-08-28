@@ -477,6 +477,57 @@ def test_validate_empty_arrays_are_legal(cycle):
     assert forward_validate.validate(cycle) == []
 
 
+# ── R13-1: 봉인되는 자유서술의 INV-13 게이트 ──────────────────────────────
+
+@pytest.mark.parametrize("field", ["top_signals", "affected_account_areas"])
+@pytest.mark.parametrize("text", [
+    "CL1 receivables outrun revenue — possible fraud in the reserve roll",
+    "CL3 매출채권 급증과 매출 정체 — 분식 가능성",
+    "CL6 충당금이 사업 확대에도 감소 — 조작 정황",
+    "CL2 capitalization pattern suggests manipulation of the allowance",
+    # 면책 문맥도 위반이다 — INV-13은 단어 사용 자체를 금지한다
+    "CL4 margin trend is explained by the acquisition rather than fraud, "
+    "but adds governance/reporting-quality uncertainty",
+])
+def test_fraud_word_in_sealed_free_text_blocks_the_seal(cycle, field, text):
+    """R13-1(b)(c): 금지어 4종 전건 + 영/한 + 면책 문맥까지 봉인 전에 막힌다.
+
+    변이 — validate()에서 `errs += fraud_word_errors(r)` 한 줄을 지우면
+    이 테스트 전건(10건)이 red가 된다.
+    """
+    sc = fc.read_json(cycle / "scores.json")
+    sc["records"][0][field] = [text]
+    fc.write_json(cycle / "scores.json", sc)
+    errs = forward_validate.validate(cycle)
+    assert [e for e in errs if "INV-13" in e and field in e], errs
+
+
+def test_clean_free_text_still_seals(cycle):
+    """R13-1: 게이트가 정상 출력을 막지 않는다 (over-blocking 대조군)."""
+    sc = fc.read_json(cycle / "scores.json")
+    sc["records"][0]["top_signals"] = ["CL1", "CL3"]
+    sc["records"][0]["affected_account_areas"] = ["revenue", "receivables"]
+    fc.write_json(cycle / "scores.json", sc)
+    assert forward_validate.validate(cycle) == []
+
+
+def test_inv13_gate_scope_is_limited_to_forward_records():
+    """R13-1(d): runs/ 하위 회고 레코드는 AAER 집행 대상 기업이라 INV-13
+    적용 대상이 아니다 — 게이트가 그 트리로 번지면 동결 산출물이 사후에
+    적색이 된다. 실제 회고 레코드가 금지어를 담고 있음을 확인하고, 게이트가
+    forward 경로 한 곳에만 배선돼 있음을 정적으로 고정한다."""
+    retro = REPO_ROOT / "runs/draw_k3/w1_controls/draw_3/case_22.json"
+    signals = " ".join(json.loads(retro.read_text(encoding="utf-8"))
+                       ["overall"]["top_signals"]).lower()
+    assert [w for w in forward_validate.FRAUD_WORDS if w in signals], \
+        "회고 기준선이 사라졌다면 이 테스트의 전제를 다시 확인해야 한다"
+    wired = {p.relative_to(REPO_ROOT).as_posix()
+             for root in ("pipeline", "tools", "scoring", "analysis", "aaer_eval")
+             for p in (REPO_ROOT / root).rglob("*.py")
+             if "fraud_word_errors" in p.read_text(encoding="utf-8")}
+    assert wired == {"tools/forward_validate.py", "tools/test_forward_tools.py"}
+
+
 def test_validate_cited_source_must_be_in_manifest(cycle):
     sc = fc.read_json(cycle / "scores.json")
     sc["records"][0]["cited_sources"] = ["0000000000-26-999999"]
