@@ -822,6 +822,38 @@ def test_enumerate_fails_closed_on_fetch_error(tmp_path, monkeypatch, capsys):
     assert "selected 12" in out and "fail-closed" in out
 
 
+# ── R14-3(b): 봉인 대상 파일 목록 자체의 고정 ─────────────────────────────
+
+def test_sealed_files_membership_is_locked(tmp_path):
+    """R14-3(b): `SEALED_FILES`에서 이름을 빼도 스위트가 알아채지 못했다 —
+    실측: `scores.json` 제거는 1 red였지만 `universe.json`·
+    `source_manifest.json` 제거는 각각 723 passed(0 red)였고, universe를 뺀
+    채 12건 픽스처를 봉인해 `selected[0]`의 cik·ticker·name을 바꿔도
+    `forward_verify_seal.main()`이 `PASS — 봉인 무결성`으로 0을 반환했다.
+
+    범위를 정직하게: runs/를 가진 검증자가 `forward_validate --runs`를 다시
+    돌리면 바뀐 cik·name은 여전히 잡힌다. 아무도 못 잡는 것은 열거 감사
+    흔적(`alternates`·`selection_rank`·`candidate_count`·`excluded_by_reason`·
+    `float_usd`·`sic` — "이 12곳은 기계적으로 선정됐고 체리피킹이 아니다"의
+    근거)과 `source_manifest.json` 전체(INV-01 증거인 retrieval_date·
+    filing_date·url·sha256)다.
+
+    규범 출처는 spec §9 (`specs/FORWARD_WATCHLIST_V1.md`): 그 절은 봉인
+    **디렉토리 내용물**(네 파일 + `evidence/` + MANIFEST·SEAL_RECORD·.ots·
+    outcome_updates)을 열거한다 — 네 항목짜리 해시 목록을 그대로 옮겨 적은
+    것이 아니므로, 목록의 네 이름과 `evidence/` 포함을 함께 고정한다."""
+    assert fc.SEALED_FILES == ["PROTOCOL.md", "universe.json",
+                               "source_manifest.json", "scores.json"]
+    cycle = tmp_path / "cycle_sealed_list"
+    (cycle / "evidence").mkdir(parents=True)
+    for name in fc.SEALED_FILES:
+        (cycle / name).write_text("x", encoding="utf-8")
+    (cycle / "evidence" / "note.txt").write_text("e", encoding="utf-8")
+    names = [rel for _, rel in fc.sealed_paths(cycle)]
+    assert names[:len(fc.SEALED_FILES)] == fc.SEALED_FILES, names
+    assert "evidence/note.txt" in names, names
+
+
 # ── 봉인·검증 왕복 ────────────────────────────────────────────────────────
 
 def seal_argv(cycle):
