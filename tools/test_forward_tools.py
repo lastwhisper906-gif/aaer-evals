@@ -1639,6 +1639,29 @@ def test_rederivation_catches_extra_key_in_sealed_record(cycle, tmp_path):
     assert any("published_score" in e for e in errs), errs
 
 
+def test_rederivation_catches_status_key_on_a_scored_record(cycle, tmp_path):
+    """R13-6: status 예외가 반례를 남겼다 — 채점된 봉인 레코드에 status를
+    덧붙여도 오류 0이었다(R12-5-A 실측). 이 대조에 도달하는 레코드는 채점된
+    것뿐이고(not_scored는 앞서 continue), assemble_record는 not_scored일 때만
+    status를 만든다. 변이: `- {"status"}` 복원 시 red."""
+    runs = tmp_path / "runs_status"
+    runs.mkdir()
+    sc = fc.read_json(cycle / "scores.json")
+    for r in sc["records"]:
+        out_path = runs / f"{r['record_id']}.json"
+        out_path.write_text(json.dumps(make_run_output(r["record_id"])),
+                            encoding="utf-8")
+        r["run_output_sha256"] = fc.sha256_file(out_path)
+    fc.write_json(cycle / "scores.json", sc)
+    assert forward_validate.validate(cycle, runs_dir=runs) == []
+
+    sc = fc.read_json(cycle / "scores.json")
+    sc["records"][0]["status"] = "sealed_by_hand"
+    fc.write_json(cycle / "scores.json", sc)
+    errs = forward_validate.validate(cycle, runs_dir=runs)
+    assert any("status" in e and "재파생" in e for e in errs), errs
+
+
 def test_runs_dir_absent_skips_with_notice(cycle, capsys):
     errs = forward_validate.validate(cycle, runs_dir=cycle / "no_such_runs")
     assert errs == []

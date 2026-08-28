@@ -112,8 +112,13 @@ def _rederivation_errors(record: dict, out_path: Path,
                    if k not in _REDERIVE_SKIP and record.get(k) != v)
     # R12-5: 대조가 expect 쪽만 돌면 레코드에만 있는 키는 보이지 않는다 —
     # 조립기가 만들지 않는 필드를 봉인 레코드에 덧붙여도 통과했다.
-    # (status는 not_scored 경로의 정규 필드이므로 제외.)
-    diffs += sorted(set(record) - set(expect) - {"status"})
+    # R13-6: status 예외를 뗀다. 이 대조에 도달하는 레코드는 채점된 레코드뿐
+    # (not_scored는 :297에서 continue), 그리고 assemble_record는 out is None
+    # 일 때만 status를 만든다 — 따라서 여기서의 status는 정의상 조립기가 만든
+    # 필드가 아니다. 하필 제어 흐름 의미를 가진 유일한 필드를 대칭 대조 밖에
+    # 두고 있었다: "status": "sealed_by_hand"를 실은 봉인 레코드가 오류 0으로
+    # 통과했다 (R12-5-A 실측 반례).
+    diffs += sorted(set(record) - set(expect))
     if diffs:
         return [f"{rid}: 봉인 레코드가 러너 출력의 재파생과 불일치 {diffs} — "
                 "scores.json이 동결 프로토콜 산출이 아님 (조립 후 편집, 또는 "
