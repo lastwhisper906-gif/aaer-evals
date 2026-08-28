@@ -19,7 +19,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from forward_common import (REPO, SCREENING_CUTOFF, assert_subscription_only,
-                            parse_date, write_json)
+                            is_sealed, parse_date, seal_residue_notice,
+                            write_json)
 
 
 def accessions_in_companyfacts(path: Path, cutoff: str) -> dict[str, str]:
@@ -91,10 +92,13 @@ def main() -> int:
     assert_subscription_only()
     cycle = REPO / args.cycle
     # R4-3: source_manifest.json은 SEALED_FILES — 봉인 후 재작성 금지
-    if (cycle / "MANIFEST.sha256").exists():
-        print(f"FAIL — {args.cycle}: MANIFEST.sha256 존재 — 봉인된 사이클의 "
+    # R11-8: 판정식은 '봉인 완결'(MANIFEST + SEAL_RECORD) — 중단 잔여물은 아니다
+    if is_sealed(cycle):
+        print(f"FAIL — {args.cycle}: 봉인 완결 — 봉인된 사이클의 "
               "source_manifest.json 재작성 금지 (spec §3-5, INV-22). 교정은 새 사이클로.")
         return 1
+    if (notice := seal_residue_notice(cycle)):
+        print(notice)
     sources = build_sources(Path(args.fetch_dir), args.cutoff)
     write_json(cycle / "source_manifest.json", {
         "generated_by": "tools/forward_source_manifest.py",

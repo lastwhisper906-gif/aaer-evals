@@ -29,7 +29,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from forward_common import (REPO, assert_subscription_only, fp_siblings,
-                            read_json, write_json, sha256_file)
+                            is_sealed, read_json, seal_residue_notice,
+                            write_json, sha256_file)
 
 CONF_NUM = {"high": 3, "medium": 2, "low": 1}
 
@@ -107,10 +108,14 @@ def main():
     cycle = REPO / args.cycle
     runs = REPO / args.runs
     # R3-10(a): prepare·seal과 동일한 봉인 후 가드 — 봉인된 scores.json 재작성 금지
-    if (cycle / "MANIFEST.sha256").exists():
-        print(f"FAIL — {args.cycle}: MANIFEST.sha256 존재 — 봉인된 사이클의 "
+    # R11-8: 중단 잔여물(MANIFEST만)은 봉인이 아니다 — 여기서 거부하면 재개된
+    # 러너 출력의 재조립 경로가 막히고 seal도 못 이어져 창 안 출구가 사라진다.
+    if is_sealed(cycle):
+        print(f"FAIL — {args.cycle}: 봉인 완결 — 봉인된 사이클의 "
               "scores.json 재조립 금지 (spec §3-5, INV-22). 교정은 새 사이클로.")
         return 1
+    if (notice := seal_residue_notice(cycle)):
+        print(notice)
 
     # R7-3: fp-sibling 존재 = 정본 모호 — stale 정본을 조립·봉인하는 경로 차단
     sibs = fp_siblings(runs)

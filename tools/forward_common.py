@@ -89,6 +89,26 @@ def evidence_files(cycle: Path):
     return sorted(p for p in ev.rglob("*") if p.is_file()) if ev.exists() else []
 
 
+def is_sealed(cycle: Path) -> bool:
+    """봉인 완결 = MANIFEST.sha256 **와** SEAL_RECORD.md 둘 다 존재 (R11-8).
+
+    MANIFEST만 있는 상태는 봉인이 아니라 중단 잔여물이다 (ots 지연·SIGHUP·
+    터미널 종료). R10-6이 seal에만 이 구분을 넣었기 때문에 하류 도구는
+    여전히 MANIFEST 존재만으로 '봉인됨'으로 거부했다 — 잔여물 상태에서
+    assemble은 "봉인된 사이클"이라 거부하고 seal은 트리가 달라졌다고 거부해
+    양쪽 출구가 닫혔다. 판정식을 한 곳에 둬 그 어긋남을 없앤다."""
+    return (cycle / "MANIFEST.sha256").exists() and (cycle / "SEAL_RECORD.md").exists()
+
+
+def seal_residue_notice(cycle: Path) -> str | None:
+    """중단 잔여물(MANIFEST만 존재) 상태의 설명 — 없으면 None."""
+    if (cycle / "MANIFEST.sha256").exists() and not is_sealed(cycle):
+        return ("NOTICE — 중단된 봉인 잔여물(MANIFEST.sha256 존재, "
+                "SEAL_RECORD.md 부재): 봉인 완결 상태가 아니므로 계속 진행한다. "
+                "봉인은 `forward_seal.py`로 이어서 완결하라 (R11-8).")
+    return None
+
+
 def sealed_paths(cycle: Path) -> list[tuple[Path, str]]:
     """봉인 매니페스트가 해싱하는 (경로, 기재명) 전건 — 결정론적 순서 (§9).
 

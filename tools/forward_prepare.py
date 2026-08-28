@@ -16,7 +16,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from forward_common import (REPO, UNIVERSE_SIZE, SCREENING_CUTOFF,
-                            assert_subscription_only, read_json, sha256_file, fail)
+                            assert_subscription_only, is_sealed, read_json,
+                            seal_residue_notice, sha256_file, fail)
 
 PIN_SOURCES = [
     "pipeline/runner.py", "pipeline/cli_client.py", "pipeline/build_payload.py",
@@ -73,9 +74,11 @@ def main():
     assert_subscription_only()
 
     cycle = REPO / args.cycle
-    if (cycle / "MANIFEST.sha256").exists():
-        fail(f"{args.cycle}: MANIFEST.sha256 존재 — 봉인된 사이클의 PROTOCOL.md "
+    if is_sealed(cycle):
+        fail(f"{args.cycle}: 봉인 완결 — 봉인된 사이클의 PROTOCOL.md "
              "재작성 금지 (spec §3-5, INV-22). 교정은 새 사이클로.")
+    if (notice := seal_residue_notice(cycle)):  # R11-8
+        print(notice)
     # R9-7 (cycle-8 사건, R3-1 관용구): 준비된-미봉인 사이클의 PROTOCOL.md를
     # 검증/리허설 실행이 침묵 재작성했다 — 게이트 서명과 봉인 사이 핀 문서
     # 안정성이 깨진다. 재생성은 --force 명시로만.

@@ -23,7 +23,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from forward_common import (REPO, SEC_UA, UNIVERSE_SIZE, assert_parallel_lengths,
-                            assert_subscription_only, write_json, read_json)
+                            assert_subscription_only, is_sealed,
+                            seal_residue_notice, write_json, read_json)
 
 SIC_SET = ["3571", "3572", "3576", "3577", "3585", "3612", "3613", "3621",
            "3661", "3663", "3669", "3672", "3674", "4911"]  # §6 (A) — 정렬 고정
@@ -247,10 +248,13 @@ def main():
               f"selected {len(selected)}): {args.out} 미기록 (부분 universe 기록 금지)")
         return 1
     # R4-3: 봉인된 사이클의 universe.json은 --force로도 재작성 불가 (INV-22)
-    if (out_path.parent / "MANIFEST.sha256").exists():
-        print(f"FAIL — {out_path.parent.name}: MANIFEST.sha256 존재 — 봉인된 "
+    # R11-8: 판정식은 '봉인 완결'(MANIFEST + SEAL_RECORD) — 중단 잔여물 제외
+    if is_sealed(out_path.parent):
+        print(f"FAIL — {out_path.parent.name}: 봉인 완결 — 봉인된 "
               "사이클의 universe.json 재작성 금지 (--force 무효; 교정은 새 사이클로)")
         return 1
+    if (notice := seal_residue_notice(out_path.parent)):
+        print(notice)
     if (out_path.exists()
             and out_path.read_text(encoding="utf-8") != rendered and not args.force):
         # R3-1: 동결·서명 가능 산출물의 무단 덮어쓰기 거부 — 특히 불완전

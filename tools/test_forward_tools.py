@@ -580,15 +580,47 @@ def test_interrupted_seal_resumes_instead_of_wedging(cycle, monkeypatch):
     assert (cycle / "SEAL_RECORD.md").exists()
 
 
-def test_interrupted_seal_resume_refused_on_tree_mismatch(cycle, monkeypatch):
-    """R10-6 반대면: 잔여 MANIFEST가 현재 트리와 불일치하면 재개 불가 —
-    소유자 판정으로 fail-closed."""
-    monkeypatch.setattr(sys, "argv", seal_argv(cycle))
-    (cycle / "MANIFEST.sha256").write_text("0" * 64 + "  scores.json\n",
+def test_interrupt_residue_does_not_wedge_downstream_tools(cycle, monkeypatch, tmp_path):
+    """R11-8: SIGHUP이 MANIFEST만 남긴 상태에서 12번째가 재개로 완료되면,
+    종전에는 assemble이 '봉인된 사이클'이라 거부하고 seal은 트리 불일치라
+    거부해 두 출구가 모두 닫혔다 (R10-6 메시지가 금지한 수동 rm만 남았다).
+    잔여물은 봉인이 아니다 — 재조립도 봉인 완결도 가능해야 한다."""
+    argv = seal_argv(cycle)
+    runs = Path(argv[argv.index("--runs") + 1])
+    (cycle / "MANIFEST.sha256").write_text(fc.manifest_text(cycle),
                                            encoding="utf-8")
+    # 재개된 러너 출력으로 트리가 바뀐다 (11/12 → 12/12 판형)
+    sc = fc.read_json(cycle / "scores.json")
+    rid = sc["records"][-1]["record_id"]
+    sc["records"][-1] = {"record_id": rid,
+                         "company": sc["records"][-1]["company"],
+                         "status": "not_scored"}
+    fc.write_json(cycle / "scores.json", sc)
+
+    monkeypatch.setattr(sys, "argv", ["forward_assemble.py", "--cycle",
+                                      str(cycle), "--runs", str(runs)])
+    assert forward_assemble.main() == 0, "잔여물 상태에서 재조립이 막혔다"
+
+    monkeypatch.setattr(sys, "argv", argv)
+    assert forward_seal.main() == 0
+    assert (cycle / "SEAL_RECORD.md").exists()
+    assert (cycle / "MANIFEST.sha256").read_text(encoding="utf-8") == \
+        fc.manifest_text(cycle)
+
+
+def test_sealed_predicate_is_shared_by_downstream_writers(cycle, monkeypatch):
+    """R11-8: 봉인 완결(두 파일)에서는 하류 쓰기 도구가 전부 거부한다 —
+    잔여물 판정과 봉인 판정이 도구마다 어긋나지 않게 한 판정식을 공유한다."""
+    monkeypatch.setattr(sys, "argv", seal_argv(cycle))
+    assert forward_seal.main() == 0
+    assert fc.is_sealed(cycle) and fc.seal_residue_notice(cycle) is None
+
+    monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(cycle),
+                                      "--runs", str(cycle.parent / "runs_t")])
+    assert forward_assemble.main() == 1
+    monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(cycle)])
     with pytest.raises(SystemExit):
-        forward_seal.main()
-    assert not (cycle / "SEAL_RECORD.md").exists()
+        forward_prepare.main()
 
 
 def test_ots_stall_records_pending_and_completes_seal(cycle, monkeypatch):

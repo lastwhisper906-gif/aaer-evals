@@ -19,7 +19,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from forward_common import (ET, REPO, EXECUTION_WINDOW_END,
-                            assert_subscription_only, manifest_text,
+                            assert_subscription_only, is_sealed, manifest_text,
                             parse_date, sha256_text, fail,
                             unshippable_sealed_files)
 from forward_validate import validate
@@ -64,18 +64,19 @@ def main():
 
     manifest = cycle / "MANIFEST.sha256"
     record = cycle / "SEAL_RECORD.md"
+    if is_sealed(cycle):
+        fail(f"{manifest} 이미 존재 — 재봉인 금지 (spec §3-5: "
+             "교정은 새 사이클에서. aborted 처리는 SEAL_RECORD.md에 일자 기입)")
     if manifest.exists():
-        if record.exists():
-            fail(f"{manifest} 이미 존재 — 재봉인 금지 (spec §3-5: "
-                 "교정은 새 사이클에서. aborted 처리는 SEAL_RECORD.md에 일자 기입)")
         # R10-6: MANIFEST만 있고 SEAL_RECORD가 없는 상태는 완결 봉인이 아니라
-        # 중단 잔여물(ots 지연·Ctrl-C)이다 — 내용이 현재 트리와 일치할 때만
-        # 이어서 SEAL_RECORD를 완성한다. 불일치는 재개가 아니라 소유자 판정.
-        if manifest.read_text(encoding="utf-8") != manifest_text(cycle):
-            fail("MANIFEST.sha256 존재(SEAL_RECORD 부재)하나 내용이 현재 트리와 "
-                 "불일치 — 중단 재개 불가: 수동 삭제 대신 소유자가 판정하라 (R10-6)")
-        print("NOTE — 중단된 봉인 재개 (R10-6): MANIFEST 트리 일치 확인, "
-              "SEAL_RECORD 완성을 진행한다")
+        # 중단 잔여물(ots 지연·SIGHUP·터미널 종료)이다 — 이어서 완결한다.
+        # R11-8: 종전의 "잔여물이 현재 트리와 바이트 일치할 때만" 조건은
+        # 삭제했다. 정규 경로는 어차피 validate()를 다시 돌리고 매니페스트를
+        # 다시 쓰므로 새 봉인이 주지 않는 보호를 하나도 주지 못하면서,
+        # 재개된 러너 출력으로 트리가 바뀐 정당한 경우(11/12 → 12/12)에
+        # 유일한 출구를 막아 수동 rm 외에 길이 없는 상태를 만들었다.
+        print("NOTE — 중단된 봉인 재개 (R10-6/R11-8): SEAL_RECORD 부재 — "
+              "현재 트리로 검증·매니페스트 재작성 후 봉인을 완결한다")
     if args.abort:
         if not args.reason:
             ap.error("--abort에는 --reason이 필요하다 (중단 사유 기록 의무)")
