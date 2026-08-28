@@ -10,7 +10,9 @@
     다른 케이스·채점 자료 일절 미포함 — cli_client가 격리 임시 디렉토리에서
     `claude -p` (도구 차단, CLAUDE_CONFIG_DIR 격리)로 강제.
   - 이 모듈은 scoring/ 를 import하지 않는다 (정적 스캔).
-  - 멱등: legacy 유효 출력은 기본 stale FAIL(명시 수용 시 skip), 현재 실행 fingerprint 일치 시 skip.
+  - 멱등: legacy 유효 출력은 기본 stale FAIL(명시 수용 시 skip), 현재 실행의
+    **구성 정체**(payload·prompt·schema·case 해시 + 요청 모델) 일치 시 skip —
+    출처 필드(pipeline_commit·harness_version_actual)는 기록하되 비교 제외 (R13-2).
   - 실행 순서 = 케이스 파일의 셔플된 중립 ID 순서 고정, 동시성 3.
   - 2연속 실패 = 해당 케이스 FAIL 기록 후 계속. 레이트 리밋 = 재개 명령 출력 후 중단.
   - 모델 핀: 피평가자 = claude-sonnet-5 (D6) — 폴백 없음. 서빙 모델 핀 불일치 = FAIL.
@@ -60,6 +62,30 @@ def compute_fingerprint(case: dict, task: str, user_payload: str) -> dict:
         "harness_version_actual": get_harness_version(),
         "pipeline_commit": freeze_state()["head"],
     }
+
+
+# R13-2: fingerprint는 두 층이다 — **구성 정체**(무엇을 물었는가)와
+# **출처**(어느 커밋·하네스가 물었는가). 멱등 skip 판정은 구성 정체로만 한다.
+# 전체 dict 동등 비교였을 때: 창 중간에 HEAD가 한 번만 움직여도(부분 결과
+# 커밋, Q-O11 재핀 등) 완료된 케이스 전건이 불일치가 되어 재호출되고
+# {cid}.fp-<hash>.json으로 떨어진다 → forward_assemble이 "fp-sibling 러너 출력
+# 존재: 어느 런이 정본인지 모호"로 조립 자체를 거부한다. OWNER_LAUNCH_GATE:46-48이
+# 약속하는 "재개 = 동일 명령 재실행 … 결정론"은 HEAD가 고정일 때만 성립했다.
+# crossmodel_gpt.run_case(:243-246)와 probe_runner._probe_fingerprint는 이미
+# 같은 이유로 이 둘을 제외한다 — 이 모듈만 뒤처져 있었다.
+# 출처 필드는 계속 기록된다(봉인 사슬이 쓴다). 비교에서만 빠진다.
+CONFIG_IDENTITY_KEYS = ("case_input_sha256", "payload_sha256",
+                        "system_prompt_sha256", "schema_sha256", "model_requested")
+PROVENANCE_KEYS = ("harness_version_actual", "pipeline_commit")
+
+
+def config_identity(fingerprint) -> dict | None:
+    """fingerprint에서 구성 정체 부분만 — 비-dict/키 결측은 None (fail-closed)."""
+    if not isinstance(fingerprint, dict):
+        return None
+    if any(k not in fingerprint for k in CONFIG_IDENTITY_KEYS):
+        return None
+    return {k: fingerprint[k] for k in CONFIG_IDENTITY_KEYS}
 
 
 def _strip_descriptions(node):
@@ -140,15 +166,21 @@ def run_case(case: dict, perturb: bool, out_dir: Path, log_dir: Path, *,
     fingerprint = compute_fingerprint(case, task, user_payload)
     write_path = out_path
     stale_superseding = False
+    identity = config_identity(fingerprint)
     if out_path.exists():
-        if isinstance(existing, dict) and existing.get("fingerprint") == fingerprint:
-            return {"case_id": cid, "status": "skip (멱등 — fingerprint 일치)"}
-        canonical = json.dumps(fingerprint, sort_keys=True, ensure_ascii=False)
+        if (identity is not None and isinstance(existing, dict)
+                and config_identity(existing.get("fingerprint")) == identity):
+            return {"case_id": cid, "status": "skip (멱등 — 구성 정체 일치)"}
+        # R13-2: sibling 경로명도 구성 정체에서 파생한다 — 전체 fingerprint로
+        # 파생하면 창 중간 커밋마다 같은 구성이 새 sibling을 낳아 같은 교착이
+        # 한 층 아래에서 재현된다.
+        canonical = json.dumps(identity, sort_keys=True, ensure_ascii=False)
         suffix = hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:8]
         write_path = out_dir / f"{cid}.fp-{suffix}.json"
         stale_superseding = True
-        if write_path.exists() and json.loads(write_path.read_text(encoding="utf-8")).get(
-                "fingerprint") == fingerprint:
+        if (identity is not None and write_path.exists()
+                and config_identity(json.loads(write_path.read_text(
+                    encoding="utf-8")).get("fingerprint")) == identity):
             return {"case_id": cid, "status": "skip (멱등 — fp-sibling 일치)"}
 
     variant = "perturbed" if perturb else "original"
