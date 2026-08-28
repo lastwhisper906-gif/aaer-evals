@@ -30,6 +30,19 @@ OTS_TIMEOUT_S = 120
 ABORT_MARKER = "ABORT_RECORD.txt"
 
 
+# R14-2: 실행 창 판정의 유일한 시계 접점 — 이음매로 뽑아 테스트가 날짜를
+# 고정할 수 있게 한다. 종전에는 창 판정이 벽시계를 직접 읽어, 창 종료일
+# (2026-11-22)이 지나면 봉인 성공 경로의 테스트 19건이 **날짜만의 이유로**
+# 영구 red가 됐다 — 외부 독자가 도착하는 바로 그 주에 정본 3.12 pytest
+# 게이트(INV-05/INV-24)가 무너진다는 뜻이다. INV-02(채점 경로 벽시계 금지)의
+# 문자 그대로의 적용이기도 하다. 기록용 sealed_at은 시계로 남되(게이트가
+# 아니다) 판정은 이 함수 하나만 지난다.
+def _today() -> datetime.date:
+    """창 판정 기준일 (ET) — R10-8: UTC 날짜로 판정하면 마지막 창일 19:00 ET
+    이후의 정규 봉인이 --past-window로 오낙인된다."""
+    return datetime.datetime.now(ET).date()
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--cycle", required=True)
@@ -88,9 +101,8 @@ def main():
         if not args.reason:
             ap.error("--abort에는 --reason이 필요하다 (중단 사유 기록 의무)")
     else:
-        # R10-8: 창은 ET 정의 — UTC 날짜로 판정하면 마지막 창일 19:00 ET
-        # 이후의 정규 봉인이 --past-window로 오낙인된다 (SEAL_RECORD 영구 기록).
-        today = datetime.datetime.now(ET).date()
+        # R10-8/R14-2: 창은 ET 정의이고, 그 기준일은 _today() 이음매를 지난다.
+        today = _today()
         if today > parse_date(EXECUTION_WINDOW_END) and not args.past_window:
             fail(f"실행 창 종료({EXECUTION_WINDOW_END}) 이후의 정규 봉인 — "
                  "조용한 연장 금지 (INV-22: abort 마감 + 새 사이클이 규칙). "

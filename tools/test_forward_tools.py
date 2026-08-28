@@ -1,4 +1,5 @@
 """forward 봉인 도구의 오프라인 테스트 (spec §11, D100). 네트워크 0·호출 0."""
+import datetime
 import hashlib
 import json
 import sys
@@ -86,6 +87,20 @@ def cycle(tmp_path):
     (c / "PROTOCOL.md").write_text(PROTOCOL_FIXTURE, encoding="utf-8")
     (c / "outcome_updates.jsonl").write_text("", encoding="utf-8")
     return c
+
+
+# R14-2: 실행 창 안의 날짜를 모든 테스트에 고정한다. 이 파일의 봉인 성공
+# 경로 19건은 종전에 벽시계를 그대로 읽었고, 2026-11-23부터는 **날짜만의
+# 이유로** 영구 red가 됐다 (실측: `today`를 그날로 두면 19 failed / 704
+# passed, 하루 앞인 11-20이면 0 red — 붉어지는 원인은 오로지 날짜다).
+# 창 게이트 자체를 검사하는 테스트는 EXECUTION_WINDOW_END를 직접
+# monkeypatch하므로 이 고정과 무관하게 발화한다.
+IN_WINDOW_DAY = datetime.date(2026, 11, 20)
+
+
+@pytest.fixture(autouse=True)
+def pin_seal_clock(monkeypatch):
+    monkeypatch.setattr(forward_seal, "_today", lambda: IN_WINDOW_DAY)
 
 
 # ── 구독 전용 가드 ────────────────────────────────────────────────────────
@@ -1473,6 +1488,36 @@ def test_abort_requires_reason(cycle, monkeypatch):
     with pytest.raises(SystemExit):
         forward_seal.main()
     assert not (cycle / "MANIFEST.sha256").exists()
+
+
+def test_window_gate_itself_refuses_the_past_window_seal(cycle, monkeypatch, capsys):
+    """R14-2(a): 종전의 이름값 테스트는 --runs 없이 main()을 불러서, 창
+    게이트를 통째로 `if False:`로 죽여도 다음 가드(runs 디렉토리 부재)가
+    대신 SystemExit을 냈다 — 실측 0 red. 여기서는 seal_argv로 유효한 runs
+    디렉토리를 만들어 다음 가드가 발화할 수 없게 한 뒤, 창 게이트만이 낼 수
+    있는 거부 문구까지 확인한다."""
+    argv = seal_argv(cycle)
+    monkeypatch.setattr(forward_seal, "EXECUTION_WINDOW_END", "2020-01-01")
+    monkeypatch.setattr(sys, "argv", argv)
+    with pytest.raises(SystemExit):
+        forward_seal.main()
+    assert "실행 창 종료" in capsys.readouterr().out
+    assert not (cycle / "MANIFEST.sha256").exists()
+
+
+def test_seal_window_verdict_does_not_depend_on_the_wall_clock(cycle, monkeypatch):
+    """R14-2(b): 판정 기준일은 _today() 이음매 하나만 지난다 — 창 종료
+    다음날로 이음매를 밀면 거부, 창 안의 날짜면 통과. 스위트가 도는 날짜와는
+    무관하다 (autouse pin_seal_clock)."""
+    monkeypatch.setattr(forward_seal, "_today", lambda: datetime.date(2026, 11, 23))
+    monkeypatch.setattr(sys, "argv", seal_argv(cycle))
+    with pytest.raises(SystemExit):
+        forward_seal.main()
+    assert not (cycle / "MANIFEST.sha256").exists()
+    monkeypatch.setattr(forward_seal, "_today", lambda: datetime.date(2026, 11, 22))
+    monkeypatch.setattr(sys, "argv", seal_argv(cycle))
+    assert forward_seal.main() == 0
+    assert "past-window" not in (cycle / "SEAL_RECORD.md").read_text(encoding="utf-8")
 
 
 def test_plain_seal_past_window_requires_explicit_flag(cycle, monkeypatch):
