@@ -49,23 +49,51 @@ def _resolve_logged_path(value: str) -> Path:
     return p if p.is_absolute() else REPO / value
 
 
-def _own_writes(dest: Path) -> set[str]:
-    """R11-2: 이 사이클이 직접 쓴 파일 목록 (dest/fetch_log.jsonl 기준).
+def _log_is_authoritative(log_path: Path, pinned: dict[str, str]) -> bool:
+    """R12-1: 수집 로그가 출처 주장의 권위를 갖는 조건.
+
+    R11-2는 `dest/fetch_log.jsonl`을 출처의 근거로 삼았는데, 그 파일은
+    **가드가 보호하는 바로 그 트리 안에 사는 서명 없는 append-only 파일**
+    이다. 위조 한 줄(`{"path": "<동결 경로>"}`)이면 복구 불가능한 동결
+    바이트가 열렸다 — 작동 익스플로잇으로 실증됨.
+
+    앵커는 로그 자신의 매니페스트 핀이다: `data/manifests/…json`은 git 안에
+    있어 위조가 diff에 드러나고, 로그는 git 밖(INV-15)에 있다. 로그가 자기
+    핀과 바이트 일치할 때만 그 행들을 출처로 인정한다 — 한 줄이라도
+    덧붙으면 해시가 달라져 권위를 잃고 가드는 거부 쪽으로 떨어진다.
+
+    (행 안의 sha256 필드로는 못 막는다: 온전한 동결 파일은 디스크 == 매니페스트
+    이므로 위조자가 그 값을 그대로 적어 세 값을 모두 만족시킬 수 있다.)"""
+    if not log_path.is_file():
+        return False
+    try:
+        rel = log_path.resolve().relative_to(DATA_DIR.resolve()).as_posix()
+    except (ValueError, OSError):
+        return False
+    recorded = pinned.get(rel)
+    return bool(recorded) and _sha256_bytes_of(log_path) == recorded
+
+
+def _own_writes(dest: Path, pinned: dict[str, str]) -> set[str]:
+    """R11-2/R12-1: 이 사이클이 직접 쓴 파일 목록 (권위 있는 로그에 한해).
 
     DATA_DIR 상대 posix 표기로 정규화해 매니페스트 path와 같은 좌표계에 둔다.
-    로그가 없거나 손상된 행은 조용히 무시한다 — 미상은 '내 것 아님'으로
-    떨어져 가드가 강한 쪽(거부)으로 기운다."""
+    손상된 행은 조용히 무시한다 — 미상은 '내 것 아님'으로 떨어져 가드가
+    강한 쪽(거부)으로 기운다."""
     own: set[str] = set()
     log_path = dest / "fetch_log.jsonl"
-    if not log_path.is_file():
+    if not _log_is_authoritative(log_path, pinned):
         return own
     for line in log_path.read_text(encoding="utf-8").splitlines():
         if not line.strip():
             continue
         try:
-            value = json.loads(line).get("path")
+            row = json.loads(line)
         except json.JSONDecodeError:
             continue
+        # R12-1(d): 유효 JSON 비객체 행(`123`)에서 죽지 않는다 — 독스트링이
+        # 약속한 침묵 스킵을 실제로 이행한다.
+        value = row.get("path") if isinstance(row, dict) else None
         if not value:
             continue
         try:
@@ -100,6 +128,12 @@ def assert_no_pinned_custody_conflict(universe: dict, dest: Path,
       - 그 외 (온전한 회고 스냅샷,
         또는 기록과 어긋난 바이트)  → 거부 (fail-closed)
 
+    R12-1: '이 사이클이 쓴'의 근거인 수집 로그는 자기 매니페스트 핀과
+    일치할 때만 권위를 갖는다 (_log_is_authoritative). 로그가 자란 뒤
+    2b(verify_manifest --write)를 다시 돌리지 않았다면 출처 주장은 통째
+    무효가 되고 가드는 거부로 떨어진다 — 아래 거부 메시지가 그 복구 절차를
+    지목한다.
+
     소유자 명시 예외는 --allow-pinned (fetch_log.jsonl에 기록된다).
     반환값은 실제로 예외가 적용된 티커 목록 (로그 기록용)."""
     manifest_file = REPO / "data/manifests/aaer_data_manifest.json"
@@ -112,7 +146,8 @@ def assert_no_pinned_custody_conflict(universe: dict, dest: Path,
     prefix = "" if dest_rel == "." else dest_rel + "/"
     pinned = {f["path"]: f.get("sha256") for f in json.loads(
         manifest_file.read_text(encoding="utf-8"))["files"]}
-    own = _own_writes(dest)
+    own = _own_writes(dest, pinned)
+    log_stale = (dest / "fetch_log.jsonl").is_file() and not own
     blocked, overridden = {}, []
     for ticker in sorted({str(r["ticker"]).split("/")[0]
                           for r in universe["selected"]}):
@@ -136,11 +171,14 @@ def assert_no_pinned_custody_conflict(universe: dict, dest: Path,
         blocked[ticker] = reasons
     if blocked:
         detail = "; ".join(f"{t}({len(v)}건: {v[0]}…)" for t, v in sorted(blocked.items()))
+        remedy = ("\n  수집 로그가 자기 매니페스트 핀과 어긋나 출처 주장이 "
+                  "무효다 (R12-1) — `python tools/verify_manifest.py --write` "
+                  "재실행(runbook 2b) 후 다시 시도하라." if log_stale else "")
         raise SystemExit(
             f"FAIL — 매니페스트 핀 경로와 충돌 {sorted(blocked)}: {detail} — "
             "온전한 회고 스냅샷을 덮어쓸 수 있어 수집 거부 (R10-2/R11-2). "
             "정책 해소는 소유자 결정(D-P94); 의도적 덮어쓰기는 "
-            "--allow-pinned TICKER[,...] 명시.")
+            "--allow-pinned TICKER[,...] 명시." + remedy)
     return overridden
 
 

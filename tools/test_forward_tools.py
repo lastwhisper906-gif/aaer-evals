@@ -172,7 +172,11 @@ def test_fetch_refuses_intact_pinned_snapshot_before_any_write(tmp_path, monkeyp
 
 def test_fetch_refuses_when_pinned_bytes_drifted(tmp_path, monkeypatch):
     """R11-2: 기록 sha256과 디스크 바이트가 어긋난 핀 경로 — 상태 미상이므로
-    여전히 거부 (가드 완화가 무조건 통과로 새지 않는다)."""
+    여전히 거부 (가드 완화가 무조건 통과로 새지 않는다).
+
+    주의: 이 픽스처는 로그를 쓰지 않으므로 거부가 **출처 leg**에서 나온다 —
+    sha leg의 변별력은 아래 test_sha_leg_is_the_only_reason_for_refusal이
+    따로 고정한다 (R12-1(c))."""
     fxf, data_dir = _manifest_fixture(tmp_path, monkeypatch,
                                       "TK01/xbrl/CIK0000001001.json",
                                       on_disk=b'{"july": "snapshot"}')
@@ -181,6 +185,103 @@ def test_fetch_refuses_when_pinned_bytes_drifted(tmp_path, monkeypatch):
     fc.write_json(upath, make_universe())
     with pytest.raises(SystemExit, match="매니페스트 핀 경로와 충돌"):
         fxf.fetch_forward(upath, data_dir)
+
+
+def _log_row_for(data_dir, rel, **extra):
+    """실제 _log_row와 같은 형태 — portable_path는 저장소·홈 밖 경로를
+    절대 경로로 적는다 (픽스처 tmp_path가 그 경우)."""
+    return {"path": str(data_dir / rel), "kind": "companyfacts", **extra}
+
+
+def _authoritative_log(fxf, vm, data_dir, manifest_path, rows):
+    """R12-1: 로그를 쓰고 그 로그까지 포함해 매니페스트를 재생성 —
+    로그가 자기 핀과 일치하는 '권위 있는' 상태를 만든다 (runbook 2b 상태)."""
+    (data_dir / "fetch_log.jsonl").write_text(
+        "".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
+    manifest_path.write_text(json.dumps(vm.build_manifest()), encoding="utf-8")
+
+
+def _fetch_fixture(tmp_path, monkeypatch):
+    import fetch_xbrl_facts as fxf
+    import verify_manifest as vm
+    data_dir = tmp_path / "aaer-data"
+    repo = tmp_path / "repo"
+    (repo / "data/manifests").mkdir(parents=True)
+    manifest_path = repo / "data/manifests/aaer_data_manifest.json"
+    manifest_path.write_text(json.dumps({"files": []}), encoding="utf-8")
+    monkeypatch.setattr(fxf, "DATA_DIR", data_dir)
+    monkeypatch.setattr(fxf, "REPO", repo)
+    monkeypatch.setattr(vm, "DATA_DIR", data_dir)
+    return fxf, vm, data_dir, manifest_path
+
+
+def test_forged_log_row_cannot_open_a_frozen_pinned_file(tmp_path, monkeypatch):
+    """R12-1(a): 종전 가드의 신뢰 앵커는 보호 대상 트리 안의 서명 없는
+    append-only 파일이었다 — 동결 경로를 지목하는 위조 행 한 줄이면
+    fetch_forward가 0을 반환하고 복구 불가능한 바이트를 덮어썼다
+    (lens B 작동 익스플로잇). 로그는 이제 자기 매니페스트 핀과 일치할
+    때만 출처 권위를 갖는다."""
+    fxf, vm, data_dir, manifest_path = _fetch_fixture(tmp_path, monkeypatch)
+    frozen = data_dir / "TK01/xbrl/CIK0000001001.json"
+    frozen.parent.mkdir(parents=True)
+    frozen.write_bytes(b'{"july": "snapshot"}')
+    # 온전한 동결 스냅샷 + (아직 위조 전) 권위 있는 빈 로그
+    _authoritative_log(fxf, vm, data_dir, manifest_path, [])
+
+    # 공격: 동결 경로를 자기 것이라 주장하는 한 줄 덧붙이기
+    with (data_dir / "fetch_log.jsonl").open("a", encoding="utf-8") as log:
+        log.write(json.dumps(_log_row_for(
+            data_dir, "TK01/xbrl/CIK0000001001.json",
+            sha256=hashlib.sha256(b'{"july": "snapshot"}').hexdigest())) + "\n")
+
+    monkeypatch.setattr(fxf, "fetch", lambda url: (_ for _ in ()).throw(
+        AssertionError("거부 전에 네트워크 호출")))
+    upath = tmp_path / "universe.json"
+    fc.write_json(upath, make_universe(1))
+    with pytest.raises(SystemExit, match="매니페스트 핀 경로와 충돌"):
+        fxf.fetch_forward(upath, data_dir)
+    assert frozen.read_bytes() == b'{"july": "snapshot"}', "동결 바이트가 열렸다"
+
+
+def test_sha_leg_is_the_only_reason_for_refusal(tmp_path, monkeypatch):
+    """R12-1(c) leg 격리: 경로가 권위 있는 로그에 실재하므로 출처 leg는
+    통과한다 — 거부 사유는 오직 디스크 바이트 ≠ 매니페스트 기록이다.
+    변이 `if rel in own and recorded and _sha256_bytes_of(disk) == recorded:`
+    → `if rel in own:` 는 이 테스트를 red로 만들어야 한다."""
+    fxf, vm, data_dir, manifest_path = _fetch_fixture(tmp_path, monkeypatch)
+    mine = data_dir / "TK01/xbrl/CIK0000001001.json"
+    mine.parent.mkdir(parents=True)
+    mine.write_bytes(b'{"mine": 1}')
+    _authoritative_log(fxf, vm, data_dir, manifest_path,
+                       [_log_row_for(data_dir, "TK01/xbrl/CIK0000001001.json")])
+    # 출처 leg는 통과(로그에 있음), sha leg만 실패하도록 디스크만 드리프트
+    mine.write_bytes(b'{"mine": 2}')
+    assert "TK01/xbrl/CIK0000001001.json" in fxf._own_writes(
+        data_dir, {f["path"]: f.get("sha256")
+                   for f in json.loads(manifest_path.read_text())["files"]}), \
+        "출처 leg가 통과해야 sha leg를 격리 측정할 수 있다"
+
+    upath = tmp_path / "universe.json"
+    fc.write_json(upath, make_universe(1))
+    with pytest.raises(SystemExit, match="매니페스트 핀 경로와 충돌"):
+        fxf.fetch_forward(upath, data_dir)
+
+
+def test_own_writes_skips_valid_json_non_object_row(tmp_path, monkeypatch):
+    """R12-1(d): 독스트링이 약속한 침묵 스킵 — 유효 JSON 비객체 행에서
+    AttributeError로 죽지 않는다."""
+    fxf, vm, data_dir, manifest_path = _fetch_fixture(tmp_path, monkeypatch)
+    good = data_dir / "TK01/xbrl/CIK0000001001.json"
+    good.parent.mkdir(parents=True)
+    good.write_bytes(b"{}")
+    (data_dir / "fetch_log.jsonl").write_text(
+        "123\n[1, 2]\n\"str\"\nnot json\n"
+        + json.dumps(_log_row_for(data_dir, "TK01/xbrl/CIK0000001001.json")) + "\n",
+        encoding="utf-8")
+    manifest_path.write_text(json.dumps(vm.build_manifest()), encoding="utf-8")
+    pinned = {f["path"]: f.get("sha256")
+              for f in json.loads(manifest_path.read_text())["files"]}
+    assert fxf._own_writes(data_dir, pinned) == {"TK01/xbrl/CIK0000001001.json"}
 
 
 def test_fetch_manifest_guard_allows_disjoint_tickers(tmp_path, monkeypatch):
