@@ -248,6 +248,92 @@ def test_forged_log_row_cannot_open_a_frozen_pinned_file(tmp_path, monkeypatch):
     assert frozen.read_bytes() == b'{"july": "snapshot"}', "동결 바이트가 열렸다"
 
 
+def _run_remedy(vm, monkeypatch, manifest_path, *argv) -> int:
+    """거부 메시지가 지목하는 복구 명령을 그대로 실행한다 (runbook 2b)."""
+    monkeypatch.setattr(vm, "MANIFEST", manifest_path)
+    monkeypatch.setattr(sys, "argv", ["verify_manifest.py", "--write", *argv])
+    return vm.main()
+
+
+def test_forged_claim_survives_the_remedy_the_guard_itself_prints(
+        tmp_path, monkeypatch):
+    """R13-5(a): 거부 → 가드가 인쇄한 복구 명령 실행 → 재시도, 3단계 전체.
+
+    R12-1은 1단계(단발 거부)만 고정했고, lens B가 2단계를 실증했다:
+    `verify_manifest --write`가 보호 트리를 무조건 재스캔해 위조 행이 실린
+    로그를 그대로 재핀했고, 그 한 번으로 가드가 온전한 동결 바이트를 열었다.
+    이제 그 재핀 자체가 '이미 핀된 경로에 대한 새 주장'을 거부한다."""
+    fxf, vm, data_dir, manifest_path = _fetch_fixture(tmp_path, monkeypatch)
+    frozen = data_dir / "TK01/xbrl/CIK0000001001.json"
+    frozen.parent.mkdir(parents=True)
+    frozen.write_bytes(b'{"july": "snapshot"}')
+    _authoritative_log(fxf, vm, data_dir, manifest_path, [])
+    manifest_before = manifest_path.read_bytes()
+
+    # 공격: 동결 경로를 자기 것이라 주장하는 위조 행 한 줄
+    with (data_dir / "fetch_log.jsonl").open("a", encoding="utf-8") as log:
+        log.write(json.dumps(_log_row_for(
+            data_dir, "TK01/xbrl/CIK0000001001.json",
+            sha256=hashlib.sha256(b'{"july": "snapshot"}').hexdigest())) + "\n")
+
+    monkeypatch.setattr(fxf, "fetch", lambda url: (_ for _ in ()).throw(
+        AssertionError("거부 전에 네트워크 호출")))
+    upath = tmp_path / "universe.json"
+    fc.write_json(upath, make_universe(1))
+
+    # 1단계: 거부
+    with pytest.raises(SystemExit, match="매니페스트 핀 경로와 충돌"):
+        fxf.fetch_forward(upath, data_dir)
+
+    # 2단계: 거부 메시지가 지목하는 복구 명령 — 이제 거부되고 매니페스트는 무변경
+    assert _run_remedy(vm, monkeypatch, manifest_path) == 1
+    assert manifest_path.read_bytes() == manifest_before
+
+    # 3단계: 재시도 — 여전히 거부, 동결 바이트 무접촉
+    with pytest.raises(SystemExit, match="매니페스트 핀 경로와 충돌"):
+        fxf.fetch_forward(upath, data_dir)
+    assert frozen.read_bytes() == b'{"july": "snapshot"}', "동결 바이트가 열렸다"
+
+
+def test_owner_flag_is_the_only_way_past_a_new_custody_claim(tmp_path, monkeypatch):
+    """R13-5: 우회는 존재하되 소유자 명시 플래그로만 — 그리고 그 플래그 없이
+    돌린 2b는 아무것도 바꾸지 않는다(위 테스트). 플래그 경로가 실제로
+    작동함을 함께 고정해, 거부가 막다른 골목이 아님을 보인다."""
+    fxf, vm, data_dir, manifest_path = _fetch_fixture(tmp_path, monkeypatch)
+    frozen = data_dir / "TK01/xbrl/CIK0000001001.json"
+    frozen.parent.mkdir(parents=True)
+    frozen.write_bytes(b'{"july": "snapshot"}')
+    _authoritative_log(fxf, vm, data_dir, manifest_path, [])
+    with (data_dir / "fetch_log.jsonl").open("a", encoding="utf-8") as log:
+        log.write(json.dumps(_log_row_for(
+            data_dir, "TK01/xbrl/CIK0000001001.json")) + "\n")
+
+    assert _run_remedy(vm, monkeypatch, manifest_path) == 1
+    assert _run_remedy(vm, monkeypatch, manifest_path,
+                       "--allow-new-custody-claims") == 0
+    blessed = json.loads(manifest_path.read_text())[vm.CUSTODY_CLAIMS_KEY]
+    assert "TK01/xbrl/CIK0000001001.json" in blessed
+
+
+def test_runbook_repin_loop_still_works(tmp_path, monkeypatch):
+    """R13-5(b)(d): 거부 메시지가 지목하는 복구 명령이 정당한 경우에는
+    실제로 통한다 — fetch → 2b → 재수집 → 2b 가 전부 0.
+
+    한 번 축복된 주장은 다음 재핀에서 '새 주장'이 아니므로, 창 안 재시도·
+    부분 실패 복구(R11-2가 되살린 흐름)가 다시 막히지 않는다."""
+    fxf, vm, data_dir, manifest_path = _fetch_fixture(tmp_path, monkeypatch)
+    monkeypatch.setattr(fxf, "fetch",
+                        lambda url: _FetchResp({"filings": {"files": []}}))
+    upath = tmp_path / "universe.json"
+    fc.write_json(upath, make_universe(2))
+
+    assert fxf.fetch_forward(upath, data_dir) == 0
+    assert _run_remedy(vm, monkeypatch, manifest_path) == 0   # 2b (최초 핀)
+    assert fxf.fetch_forward(upath, data_dir) == 0            # 재수집
+    assert _run_remedy(vm, monkeypatch, manifest_path) == 0   # 2b (재핀)
+    assert fxf.fetch_forward(upath, data_dir) == 0
+
+
 def test_sha_leg_is_the_only_reason_for_refusal(tmp_path, monkeypatch):
     """R12-1(c) leg 격리: 경로가 권위 있는 로그에 실재하므로 출처 leg는
     통과한다 — 거부 사유는 오직 디스크 바이트 ≠ 매니페스트 기록이다.

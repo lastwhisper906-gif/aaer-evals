@@ -74,15 +74,18 @@ def _log_is_authoritative(log_path: Path, pinned: dict[str, str]) -> bool:
     return bool(recorded) and _sha256_bytes_of(log_path) == recorded
 
 
-def _own_writes(dest: Path, pinned: dict[str, str]) -> set[str]:
-    """R11-2/R12-1: 이 사이클이 직접 쓴 파일 목록 (권위 있는 로그에 한해).
+def logged_claims(log_path: Path, data_dir: Path) -> set[str]:
+    """로그가 '내가 썼다'고 주장하는 경로 집합 — 권위 판정 **이전**의 원시 파싱.
 
-    DATA_DIR 상대 posix 표기로 정규화해 매니페스트 path와 같은 좌표계에 둔다.
+    R13-5: verify_manifest가 재핀 시점에 '새 주장'을 검출하려면 가드가 신뢰
+    대상으로 읽는 것과 **같은 파싱**을 봐야 한다. 규칙이 갈라지면 한쪽이
+    축복한 주장을 다른 쪽이 다르게 읽는다.
+
+    data_dir 상대 posix 표기로 정규화해 매니페스트 path와 같은 좌표계에 둔다.
     손상된 행은 조용히 무시한다 — 미상은 '내 것 아님'으로 떨어져 가드가
     강한 쪽(거부)으로 기운다."""
     own: set[str] = set()
-    log_path = dest / "fetch_log.jsonl"
-    if not _log_is_authoritative(log_path, pinned):
+    if not log_path.is_file():
         return own
     for line in log_path.read_text(encoding="utf-8").splitlines():
         if not line.strip():
@@ -98,10 +101,18 @@ def _own_writes(dest: Path, pinned: dict[str, str]) -> set[str]:
             continue
         try:
             own.add(_resolve_logged_path(str(value)).resolve()
-                    .relative_to(DATA_DIR.resolve()).as_posix())
+                    .relative_to(data_dir.resolve()).as_posix())
         except (ValueError, OSError):
             continue
     return own
+
+
+def _own_writes(dest: Path, pinned: dict[str, str]) -> set[str]:
+    """R11-2/R12-1: 이 사이클이 직접 쓴 파일 목록 (권위 있는 로그에 한해)."""
+    log_path = dest / "fetch_log.jsonl"
+    if not _log_is_authoritative(log_path, pinned):
+        return set()
+    return logged_claims(log_path, DATA_DIR)
 
 
 def _sha256_bytes_of(path: Path) -> str:
@@ -172,8 +183,12 @@ def assert_no_pinned_custody_conflict(universe: dict, dest: Path,
     if blocked:
         detail = "; ".join(f"{t}({len(v)}건: {v[0]}…)" for t, v in sorted(blocked.items()))
         remedy = ("\n  수집 로그가 자기 매니페스트 핀과 어긋나 출처 주장이 "
-                  "무효다 (R12-1) — `python tools/verify_manifest.py --write` "
-                  "재실행(runbook 2b) 후 다시 시도하라." if log_stale else "")
+                  "무효다 (R12-1) — 이 사이클이 실제로 쓴 파일이라면 "
+                  "`python tools/verify_manifest.py --write` 재실행(runbook 2b) "
+                  "후 다시 시도하라.\n"
+                  "  단, 로그가 **이미 핀된 경로**를 새로 주장하면 2b가 거부한다 "
+                  "(R13-5) — 그때는 재핀이 곧 세탁이므로 자동 복구 경로가 없고, "
+                  "로그 변조 여부는 소유자 판단이다." if log_stale else "")
         raise SystemExit(
             f"FAIL — 매니페스트 핀 경로와 충돌 {sorted(blocked)}: {detail} — "
             "온전한 회고 스냅샷을 덮어쓸 수 있어 수집 거부 (R10-2/R11-2). "
