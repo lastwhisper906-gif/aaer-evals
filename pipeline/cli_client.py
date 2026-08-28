@@ -166,7 +166,11 @@ def enforce_harness_pin() -> str:
         # R10-9 (INV-21): 부분 문자열 포함이 아니라 버전 토큰 동등 비교 —
         # 핀을 접두로 포함하는 상위 버전 문자열(예: 2.1.2013)이 통과하면
         # "fail-closed 핀" 주장은 장식이다 (_pin_matches·codex 대조와 정합).
-        token = re.search(r"\d+\.\d+\.\d+", actual)
+        # R11-10: 토큰 자체를 양끝에서 고정한다 — 앵커가 없으면 뒤에 붙는
+        # 성분·프리릴리즈 접미(2.1.201.3 · 2.1.201-beta.1 · 2.1.201rc2)에서
+        # 부분 일치가 살아남고, 앞에서는 12.1.201이 2.1.201로 읽힌다.
+        # (?<!\d) = 앞에 숫자 없음 · (?!\S) = 토큰 끝이 공백 또는 문자열 끝.
+        token = re.search(r"(?<!\d)\d+\.\d+\.\d+(?!\S)", actual)
         if token is None or token.group(0) != HARNESS_PIN:
             raise RuntimeError(
                 f"하네스 핀 불일치 — 핀 {HARNESS_PIN}, 실측 {actual.strip()!r}. "
