@@ -1,6 +1,9 @@
 import json
 import subprocess
 from pathlib import Path
+from types import SimpleNamespace
+
+import pytest
 
 import verify_blindness as vb
 
@@ -11,11 +14,11 @@ def write_json(root: Path, relative: str, value) -> None:
     path.write_text(json.dumps(value), encoding="utf-8")
 
 
-def registry(*, perturbed=None, aux=None) -> dict:
+def registry(*, perturbed=None, aux=None, output=None) -> dict:
     return {"experiments": [{
         "name": "wave_test", "score_commit": "UNKNOWN",
         "label_join_commit": "UNKNOWN", "analysis_commit": "UNKNOWN",
-        "output_globs": [], "perturbed_globs": perturbed or [],
+        "output_globs": output or [], "perturbed_globs": perturbed or [],
         "aux_globs": aux or [],
         "perturbed_treatment_ids": "ids.json",
         "names_mapping": "mapping.json", "names_candidates": "candidates.json",
@@ -35,6 +38,100 @@ def semantic_failures(root: Path, reg: dict) -> list[str]:
     vb.WARNS.clear()
     vb.check_semantic_scans(root, reg)
     return list(vb.FAILS)
+
+
+# ── R13-4: 세 leg의 변별력 — 각각 자기 leg만 깨뜨린다 ──────────────────────
+# 실측(2026-08-28, 008739e): 아래 세 곳을 각각 무력화해도 전 스위트가 green이었다.
+#   check_manifest의 recorded−current 대조 루프 삭제 → 0 red
+#   ANSWER_KEY_MARKERS 스캔의 `if marker in low` → `if False` → 0 red
+#   check_not_shallow의 조건 → `if False` → 0 red
+# leg (d)는 봉인 커밋 이후 runs/(봉인된 forward 사이클 포함) 사후 변조를
+# 검출하는 유일한 기제이고, 마커 스캔은 채점 측 INV-09 검출기, not-shallow는
+# 제3자 재현자가 가장 쉽게 빠지는 상태(shallow clone)에서 INV-07 이력 증명이
+# 공진 통과하지 않게 하는 fail-closed다.
+
+def _shallow_probe(monkeypatch, answer: str = "false", returncode: int = 0) -> None:
+    """git 실행 없이 shallow 여부만 흉내낸다 (실트리·실 git 미사용)."""
+    monkeypatch.setattr(vb, "subprocess", SimpleNamespace(
+        run=lambda *a, **k: SimpleNamespace(returncode=returncode,
+                                            stdout=answer, stderr="")))
+
+
+def _three_leg_fixture(root: Path, text: str = "clean output") -> dict:
+    """세 leg가 **모두 통과**하는 tmp 루트 — 각 테스트는 하나만 깨뜨린다."""
+    write_json(root, "runs/wave_test/case_01.json", {"text": text})
+    identity_files(root)
+    vb.check_manifest(True, root)  # 정합 상태의 매니페스트로 시작
+    return registry(output=["runs/wave_test/*.json"])
+
+
+def _manifest_failures(root: Path) -> list[str]:
+    vb.FAILS.clear()
+    vb.WARNS.clear()
+    vb.check_manifest(False, root)
+    return list(vb.FAILS)
+
+
+def test_manifest_leg_catches_post_hoc_mutation(tmp_path, monkeypatch):
+    """leg (d): 양방향 — 기재된 파일의 소실/변조와 미기재 파일의 출현.
+
+    두 루프를 각각 붙든다. 한 방향만 보면 `recorded − current` 루프를 통째로
+    지워도 반대 루프가 대신 red를 내주어 변별력이 없다 (실측으로 확인).
+    """
+    reg = _three_leg_fixture(tmp_path)
+    assert _manifest_failures(tmp_path) == []
+    # 다른 두 leg는 이 픽스처에서 통과한다 (leg 격리)
+    assert semantic_failures(tmp_path, reg) == []
+    _shallow_probe(monkeypatch)
+    vb.check_not_shallow(tmp_path)
+
+    # (1) recorded − current: 기재된 파일이 사라졌다
+    (tmp_path / "runs/wave_test/case_01.json").unlink()
+    fails = _manifest_failures(tmp_path)
+    assert [f for f in fails if "기재 파일 누락/변조" in f], fails
+    assert not [f for f in fails if "미기재 파일 존재" in f], fails
+
+    # (2) current − recorded: 기재되지 않은 파일이 나타났다
+    write_json(tmp_path, "runs/wave_test/case_01.json", {"text": "clean output"})
+    assert _manifest_failures(tmp_path) == []
+    write_json(tmp_path, "runs/wave_test/case_02.json", {"text": "new"})
+    fails = _manifest_failures(tmp_path)
+    assert [f for f in fails if "미기재 파일 존재" in f], fails
+    assert not [f for f in fails if "기재 파일 누락/변조" in f], fails
+
+    # (3) 내용 변조는 양쪽에 동시에 걸린다
+    (tmp_path / "runs/wave_test/case_02.json").unlink()
+    write_json(tmp_path, "runs/wave_test/case_01.json", {"text": "tampered"})
+    fails = _manifest_failures(tmp_path)
+    assert [f for f in fails if "기재 파일 누락/변조" in f], fails
+    assert [f for f in fails if "미기재 파일 존재" in f], fails
+
+
+def test_answer_key_marker_leg_catches_a_registered_output(tmp_path, monkeypatch):
+    """leg (b): 등록된 피평가자 출력에 정답지 마커."""
+    reg = _three_leg_fixture(tmp_path, text="beneish 점수를 참고했다")
+    # 다른 두 leg는 통과 — 마커가 심긴 뒤 매니페스트를 썼으므로 (d)는 정합
+    assert _manifest_failures(tmp_path) == []
+    _shallow_probe(monkeypatch)
+    vb.check_not_shallow(tmp_path)
+
+    fails = semantic_failures(tmp_path, reg)
+    assert [f for f in fails if "정답지 마커" in f], fails
+
+
+@pytest.mark.parametrize("answer,returncode", [("true", 0), ("false", 1)])
+def test_not_shallow_leg_is_fail_closed(tmp_path, monkeypatch, answer, returncode):
+    """check_not_shallow: shallow 응답과 명령 실패 양쪽 모두 fail-closed."""
+    reg = _three_leg_fixture(tmp_path)
+    # 다른 두 leg는 통과 (leg 격리)
+    assert _manifest_failures(tmp_path) == []
+    assert semantic_failures(tmp_path, reg) == []
+
+    _shallow_probe(monkeypatch, "false")
+    vb.check_not_shallow(tmp_path)  # 온전한 클론은 통과한다
+    _shallow_probe(monkeypatch, answer, returncode)
+    with pytest.raises(SystemExit):
+        vb.check_not_shallow(tmp_path)
 
 
 def commit(root: Path, message: str) -> str:
