@@ -14,8 +14,11 @@ enough that chance is an unlikely explanation (the statistical tests live
 one scroll down) — but part of that score is the model *remembering
 companies by reputation*, not reading their numbers. When we disguised the
 companies' identities, Hertz's risk score dropped 23 points (78 → 55) while
-Monsanto's rose 30 (28 → 58): name-memory cuts both ways, so every published
-number in this repository carries that caveat next to it. The deeper
+Monsanto's rose 30 (28 → 58) on the first draw. Rerunning both five times put
+the averaged shifts at HTZ +30.2 and MON −15.8 points ([RP-07 closure](review_packets/RP-07_robustness_closure.md), `scoring/rp07_stats.json`), against
+single-draw noise SDs of 10.2 and 12.8 — the direction holds, but about half of
+that Monsanto number was draw-to-draw noise. Name-memory cuts both ways, so
+every published number in this repository carries that caveat next to it. The deeper
 hindsight risk — what the model absorbed in its own training — is exactly
 what the name-masking experiments below are designed to measure.
 
