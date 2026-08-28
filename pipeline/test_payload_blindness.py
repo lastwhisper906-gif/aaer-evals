@@ -69,9 +69,15 @@ def test_runner_send_site_drops_adversarial_nonunderscore_marker(
     payload = bp.build_payload(CASE, perturb=perturb)
     payload["variant"] = "perturbed" if perturb else "original"
     captured = []
+    captured_kwargs = []
 
+    # R13-3: 스텁이 **kwargs를 삼키면 송출 전 값 수준 스캔의 **배선**은 어떤
+    # 테스트도 보지 않는다 — forbid_markers를 지워도 전건 green이었다(실측).
+    # 가드 구현은 별도로 잘 덮여 있으므로 여기서는 호출부가 실제로 그 목록을
+    # 넘기는지만 붙든다 (INV-09).
     def fake_call_model(model, system, user_payload, schema, **kwargs):
         captured.append(user_payload)
+        captured_kwargs.append(kwargs)
         return SimpleNamespace(ok=False, structured=None, fail_reason="test-stop",
                                served_models=[])
 
@@ -89,15 +95,21 @@ def test_runner_send_site_drops_adversarial_nonunderscore_marker(
     sent = json.loads(captured[0])
     assert set(sent) == EXPECTED_KEYS
     assert not [word for word in FORBIDDEN if word in captured[0].lower()]
+    # 목록 **동일성**을 본다 — 존재만 보면 빈 목록도 통과한다
+    assert captured_kwargs[0]["forbid_markers"] == \
+        runner.cli_client.EVALUATEE_FORBIDDEN_MARKERS
+    assert runner.cli_client.EVALUATEE_FORBIDDEN_MARKERS
 
 
 def test_probe_send_site_drops_adversarial_nonunderscore_marker(monkeypatch, tmp_path):
     payload = bp.build_payload(CASE, perturb=True)
     payload["variant"] = "perturbed_v2_dateshift"
     captured = []
+    captured_kwargs = []
 
     def fake_call_model(model, system, user, schema, **kwargs):
         captured.append(user)
+        captured_kwargs.append(kwargs)
         return SimpleNamespace(ok=True,
                                structured={"company_guess": "unknown", "confidence": "low"},
                                fail_reason=None)
@@ -110,3 +122,7 @@ def test_probe_send_site_drops_adversarial_nonunderscore_marker(monkeypatch, tmp
     sent = json.loads(captured[0])
     assert set(sent) == EXPECTED_KEYS
     assert not [word for word in FORBIDDEN if word in captured[0].lower()]
+    # R13-3: probe 송출부의 forbid_markers 배선 (INV-09) — 목록 동일성
+    assert captured_kwargs[0]["forbid_markers"] == \
+        probe_runner.cli_client.EVALUATEE_FORBIDDEN_MARKERS
+    assert probe_runner.cli_client.EVALUATEE_FORBIDDEN_MARKERS
