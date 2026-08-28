@@ -18,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import datetime
 
 import forward_assemble
+import forward_prepare
 from forward_common import (ET, REPO, SCREENING_CUTOFF, EXECUTION_WINDOW_END,
                             MIN_SCORED, UNIVERSE_SIZE,
                             assert_subscription_only, fp_siblings, read_json,
@@ -131,13 +132,26 @@ def validate(cycle: Path, runs_dir: Path | None = None) -> list[str]:
         model_pin, pins = parse_protocol_pins(proto_path.read_text(encoding="utf-8"))
         if not model_pin:
             errs.append("PROTOCOL: evaluatee_model 핀 미해석")
-        for field, rel in PIN_FILES.items():
-            pinned = pins.get(rel)
-            if not pinned:
-                errs.append(f"PROTOCOL: `{rel}` 핀 부재")
-            elif sha256_file(REPO / rel) != pinned:
+        # R12-8: 드리프트 대조는 PROTOCOL이 핀한 **전건**을 돈다. 종전에는
+        # PIN_FILES(2개)만 돌아, prepare가 핀한 7개 중 5개는 어떤 게이트도
+        # 재검증하지 않았다 — 그 5개에 `pipeline/cli_client.py`(모델을 호출하는
+        # 바로 그 코드)가 들어 있어, 코드가 바뀐 채로 봉인된 사이클이
+        # "이 해시의 코드가 이 점수를 냈다"는 봉인의 중심 주장을 거짓으로 만들고도
+        # 사슬이 알아차리지 못했다 (실측: 5개 중 3개가 이미 드리프트).
+        expected_pins = set(forward_prepare.PIN_SOURCES)
+        missing = sorted(expected_pins - set(pins))
+        if missing:
+            errs.append(f"PROTOCOL: 핀 부재 {missing} — prepare가 핀하는 "
+                        "전건이 기재돼야 한다 (PIN_SOURCES 정합)")
+        for rel in sorted(expected_pins & set(pins)):
+            if sha256_file(REPO / rel) != pins[rel]:
                 errs.append(f"PROTOCOL 핀 ≠ 라이브 파일 해시: {rel} — 재핀은 "
                             "FREEZE_REV/supersession 문서로만 (Q-O11)")
+        # PIN_FILES는 레코드 필드 ↔ 핀 대조(별개 leg)로 계속 쓰인다 —
+        # 그 두 경로가 PROTOCOL에 실제로 있는지만 여기서 확인한다.
+        for rel in PIN_FILES.values():
+            if rel not in pins:
+                errs.append(f"PROTOCOL: `{rel}` 핀 부재 (레코드 대조 leg)")
     else:
         errs.append("PROTOCOL.md 부재 — 핀 대조 불가 (fail-closed)")
 

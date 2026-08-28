@@ -26,10 +26,15 @@ def make_universe(n=12):
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PROMPT_SHA = fc.sha256_file(REPO_ROOT / "pipeline/runner.py")
 SCHEMA_SHA = fc.sha256_file(REPO_ROOT / "schemas/llm_output.json")
-PROTOCOL_FIXTURE = ("# PROTOCOL fixture\n"
-                    "- evaluatee_model (pin): `claude-sonnet-5`\n"
-                    f"- `pipeline/runner.py` sha256 `{PROMPT_SHA}`\n"
-                    f"- `schemas/llm_output.json` sha256 `{SCHEMA_SHA}`\n")
+# R12-8: 픽스처는 prepare가 실제로 쓰는 형태여야 한다 — PIN_SOURCES 전 7건.
+# 종전 2건짜리 픽스처는 validate가 2건만 대조하던 시절의 모양이라, 나머지
+# 5건(호출 코드 pipeline/cli_client.py 포함)이 무검증인 상태를 드러내지
+# 못했다. PIN_SOURCES에서 파생하므로 목록이 늘면 픽스처도 자동으로 따라간다.
+PROTOCOL_FIXTURE = (
+    "# PROTOCOL fixture\n"
+    "- evaluatee_model (pin): `claude-sonnet-5`\n"
+    + "".join(f"- `{rel}` sha256 `{fc.sha256_file(REPO_ROOT / rel)}`\n"
+              for rel in forward_prepare.PIN_SOURCES))
 
 
 # R11-4: validate의 runs leg가 러너 출력에서 레코드를 재파생해 대조하므로,
@@ -409,6 +414,29 @@ def test_scored_at_iso_and_window_enforced(cycle):
     sc["records"][0]["scored_at"] = "2026-11-16T09:00:00+00:00"
     fc.write_json(cycle / "scores.json", sc)
     assert not any("scored_at" in e for e in forward_validate.validate(cycle))
+
+
+def test_every_protocol_pin_is_rechecked_against_the_live_file(cycle):
+    """R12-8: prepare는 7건을 핀하는데 validate는 PIN_FILES 2건만 재대조했다 —
+    무검증 5건에 `pipeline/cli_client.py`(호출 코드 자체)가 있었다. 실측
+    당시 5건 중 3건이 이미 드리프트한 상태였다."""
+    proto = (cycle / "PROTOCOL.md").read_text(encoding="utf-8")
+    corrupted = proto.replace(
+        fc.sha256_file(REPO_ROOT / "pipeline/cli_client.py"), "0" * 64)
+    assert corrupted != proto, "픽스처가 cli_client.py를 핀하지 않는다"
+    (cycle / "PROTOCOL.md").write_text(corrupted, encoding="utf-8")
+    errs = forward_validate.validate(cycle)
+    assert any("pipeline/cli_client.py" in e and "라이브 파일 해시" in e
+               for e in errs), errs
+
+
+def test_a_new_pin_source_cannot_land_outside_the_check(cycle, monkeypatch):
+    """R12-8: 핀 목록이 늘었는데 validate가 모르면 그 파일은 조용히 무검증이
+    된다 — 파싱된 핀 집합이 PIN_SOURCES와 같아야 함을 강제한다."""
+    monkeypatch.setattr(forward_prepare, "PIN_SOURCES",
+                        forward_prepare.PIN_SOURCES + ["docs/HANDOFF.md"])
+    errs = forward_validate.validate(cycle)
+    assert any("핀 부재" in e and "docs/HANDOFF.md" in e for e in errs), errs
 
 
 def test_validate_window_compares_in_et(cycle):
