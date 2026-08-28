@@ -172,14 +172,27 @@ outcome_updates에 일자 기입; 원 점수·원 라벨 상태 무접촉.
 
 ### 외부 검증 가능 타임스탬프 (의무 — git 로컬 타임스탬프만으로 불충분)
 
-1. **GitHub push 증거**: 봉인 즉시 `MANIFEST.sha256` 커밋 + annotated tag
-   (`forward-cycle-001-seal`) push. `SEAL_RECORD.md`에 push 기록 + 검증
-   방법 명시: GitHub API의 서버 기록 시각
-   (`GET /repos/{owner}/{repo}/git/refs/tags/forward-cycle-001-seal` →
-   commit의 서버 수신 시각) — 작성자가 소급 조작 불가.
-2. **OpenTimestamps 앵커**: `ots stamp MANIFEST.sha256` →
-   `MANIFEST.sha256.ots`(= SEAL_RECORD.ots) 커밋. 검증: `ots verify
-   MANIFEST.sha256.ots` (무료·무계정, Bitcoin 블록체인 앵커).
+1. **OpenTimestamps 앵커 (유일한 비가역 앵커, 필수)**: `ots stamp
+   MANIFEST.sha256` → `MANIFEST.sha256.ots`(= SEAL_RECORD.ots) 커밋. 검증:
+   `ots verify MANIFEST.sha256.ots` (무료·무계정, Bitcoin 블록체인 앵커).
+   `.ots` 부재는 검증 실패로 취급한다 — `forward_verify_seal.py`가 정규
+   봉인에서 exit 1 (R11-3).
+2. **GitHub push 증거 (보조)**: 봉인 즉시 `MANIFEST.sha256` 커밋 +
+   annotated tag (`forward-cycle-001-seal`) push. 서버가 기록하는 시각은
+   **push 이벤트**뿐이므로, push 직후 Events API 응답
+   (`GET /repos/{owner}/{repo}/events`)을 `push_event_*.json`으로 남긴다
+   (보존 약 90일, 봉인 해시 사슬 밖의 보조 증거).
+
+   > **2026-08-28 개정 (봉인 전 일반 커밋 + 사유 — 이 문서 헤더 규칙;
+   > harness v4 cycle 012 R12-4).** 종전 1번 항목은 태그 API
+   > (`GET …/git/refs/…` 태그 참조 엔드포인트)가 커밋의 서버 수신 시각을
+   > 주므로 작성자가 시각을 소급해 바꿀 수 없다고 적었다. 사실이 아니다:
+   > 그 엔드포인트는 시각
+   > 필드를 반환하지 않고, 역참조해 얻는 `tagger.date`/`committer.date`는
+   > **클라이언트가 제출하는 값**이다(`GIT_COMMITTER_DATE`로 설정 가능) —
+   > 바로 이 절의 제목이 "불충분"하다고 선언한 git 로컬 타임스탬프 그
+   > 자체다. 따라서 태그 API는 앵커에서 제외하고 OTS를 1번으로 올린다.
+   > `SEAL_RECORD.md` 생성 문면은 같은 개정을 이미 반영하고 있다.
 
 지출 $0: GitHub free tier + OpenTimestamps만. 유료 타임스탬프·DB·호스팅
 금지.

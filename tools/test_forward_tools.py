@@ -589,8 +589,10 @@ def run_seal(cycle, capsys=None):
 
 def stamp_ots(cycle):
     """R11-3: 정규 봉인의 OTS 앵커 — 실제 stamp는 네트워크·클라이언트가 필요
-    하므로 테스트에서는 앵커 파일의 존재만 재현한다."""
-    (cycle / "MANIFEST.sha256.ots").write_bytes(b"\x00ots-fixture")
+    하므로 테스트에서는 형식(매직)을 갖춘 앵커 파일을 재현한다 (R12-4:
+    존재만으로는 더 이상 통과하지 않는다)."""
+    import forward_verify_seal as fvs
+    (cycle / "MANIFEST.sha256.ots").write_bytes(fvs.OTS_MAGIC + b"\x00fixture")
 
 
 def test_seal_verify_roundtrip_and_tamper(cycle, monkeypatch, capsys):
@@ -717,6 +719,73 @@ def test_verify_seal_requires_ots_anchor_on_regular_seal(cycle, monkeypatch, cap
 
     stamp_ots(cycle)
     assert forward_verify_seal.main() == 0
+
+
+def test_inserted_aborted_line_cannot_flip_verify_seal(cycle, monkeypatch, capsys):
+    """R12-4: abort 면제가 미해시 산문(SEAL_RECORD.md)의 부분문자열이면,
+    정규 봉인 기록에 한 줄 끼워 넣는 것만으로 앵커 없는 봉인이 exit 1 →
+    exit 0으로 뒤집힌다 (lens B 실증). 판정 근거를 매니페스트가 해싱하는
+    evidence/ 마커로 옮긴다 — 사후 삽입은 무결성 검사에서 먼저 걸린다."""
+    import forward_verify_seal
+    monkeypatch.setattr(sys, "argv", seal_argv(cycle))
+    assert forward_seal.main() == 0
+    record = cycle / "SEAL_RECORD.md"
+    record.write_text("- status: ABORTED (?)\n"
+                      + record.read_text(encoding="utf-8"), encoding="utf-8")
+    monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(cycle)])
+    assert forward_verify_seal.main() == 1, "산문 한 줄로 앵커 검사가 뒤집혔다"
+
+
+def test_abort_exemption_rides_on_the_hashed_marker(cycle, monkeypatch):
+    """R12-4 반대면: 진짜 abort 봉인은 evidence/ 안의 해시된 마커를 남기고,
+    그 근거로 .ots 없이도 통과한다. 마커를 지우면 매니페스트 무결성 검사가
+    먼저 발화한다 (판정 근거가 사슬 안에 있다는 뜻)."""
+    import forward_verify_seal
+    (cycle / "scores.json").unlink()
+    monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(cycle),
+                                      "--abort", "--reason", "window missed"])
+    assert forward_seal.main() == 0
+    marker = cycle / "evidence" / forward_seal.ABORT_MARKER
+    assert marker.is_file()
+    assert marker.name in (cycle / "MANIFEST.sha256").read_text(encoding="utf-8")
+
+    monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(cycle)])
+    assert forward_verify_seal.main() == 0        # abort + .ots 없음 → 통과
+    marker.unlink()
+    assert forward_verify_seal.main() == 1        # 마커 제거 = 무결성 위반
+
+
+def test_forged_empty_ots_is_not_accepted_as_an_anchor(cycle, monkeypatch, capsys):
+    """R12-4: 0바이트 위조 .ots가 "ots verify" 확언과 함께 통과했다 —
+    도구가 존재만 확인했기 때문. 형식(매직)을 보고, 확인하지 못한 것은
+    확인하지 못했다고 말한다."""
+    import forward_verify_seal
+    monkeypatch.setattr(sys, "argv", seal_argv(cycle))
+    assert forward_seal.main() == 0
+    (cycle / "MANIFEST.sha256.ots").write_bytes(b"")
+    monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(cycle)])
+    assert forward_verify_seal.main() == 1
+    assert "형식 불일치" in capsys.readouterr().out
+
+
+def test_seal_record_discloses_receipt_is_outside_the_hash_chain(cycle, monkeypatch):
+    """R12-4: push 영수증이 봉인 해시 사슬 밖이라는 사실이 Python 주석에만
+    있고 게시 기록에는 없었다 — 제3자에게 '서버 기록'으로 제시되는 파일이
+    사후 자유 편집 가능한데 그 사실이 공개되지 않았다."""
+    monkeypatch.setattr(sys, "argv", seal_argv(cycle))
+    assert forward_seal.main() == 0
+    record = (cycle / "SEAL_RECORD.md").read_text(encoding="utf-8")
+    section = record.split("## 외부 검증 방법")[1]
+    assert "봉인 해시 사슬 밖" in section
+    assert "포함되지 않는다" in section
+
+
+def test_spec_norm_text_no_longer_claims_tag_api_is_server_time():
+    """R12-4: 철회한 주장이 SEAL_RECORD가 구현해야 할 규범 원문에 잔존했다 —
+    생성 산출물만 고치면 두 게시면 중 하나만 참이 된다."""
+    spec = (REPO_ROOT / "specs/FORWARD_WATCHLIST_V1.md").read_text(encoding="utf-8")
+    assert "소급 조작 불가" not in spec
+    assert "git/refs/tags" not in spec
 
 
 def test_seal_record_does_not_claim_tag_api_is_server_time(cycle, monkeypatch):

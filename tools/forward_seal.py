@@ -26,6 +26,8 @@ from forward_validate import validate
 
 # R10-6: ots 달력 서버 불통 시 무한 대기 금지 — 한도 초과면 pending 기록
 OTS_TIMEOUT_S = 120
+# R12-4: abort 판정을 봉인 해시 사슬 안으로 옮기는 마커 (evidence/는 해싱된다)
+ABORT_MARKER = "ABORT_RECORD.txt"
 
 
 def main():
@@ -101,6 +103,19 @@ def main():
         errs = validate(cycle, runs_dir=runs_dir)
         if errs:
             fail("봉인 전 검증 위반 — forward_validate 참조:\n  " + "\n  ".join(errs))
+
+    # R12-4: abort 여부는 매니페스트가 덮는 곳에 적는다. 종전에는
+    # forward_verify_seal이 SEAL_RECORD.md의 `"status: ABORTED"` 부분문자열로
+    # 판정했는데, 그 파일은 매니페스트가 해싱하지 않으므로 정규 봉인 기록에
+    # 한 줄만 끼워 넣으면 앵커 없는 봉인이 exit 1 → exit 0으로 뒤집혔다.
+    # evidence/는 manifest_text가 해싱하므로, 여기 쓰면 사후 삽입·삭제가
+    # 무결성 검사에서 먼저 잡힌다 (봉인 해시 사슬 안).
+    if args.abort:
+        ev = cycle / "evidence"
+        ev.mkdir(parents=True, exist_ok=True)
+        (ev / ABORT_MARKER).write_text(
+            f"ABORTED — 부분 상태 동결 (spec §3-2)\nreason: {args.reason}\n",
+            encoding="utf-8")
 
     # R11-6: 매니페스트에 적히지만 git이 실어 나르지 못하는 파일이 있으면
     # 봉인 순간 되돌릴 수 없이 깨진다 (클론마다 manifest_text 한 줄 부족).
@@ -210,8 +225,12 @@ def main():
    `pip install opentimestamps-client`). 앵커 pending이면 수 시간 후
    `ots upgrade MANIFEST.sha256.ots` 후 재검증. **.ots 부재는 검증 실패로
    취급한다** (`forward_verify_seal.py`가 정규 봉인에서 exit 1).
-2. **GitHub push 이벤트 영수증** (보조): `push_event_*.json` — 봉인 push
-   직후 Events API에서 받은 서버 기록. 주의: 태그·커밋의 `tagger.date`/
+2. **GitHub push 이벤트 영수증** (보조, **봉인 해시 사슬 밖**):
+   `push_event_*.json` — 봉인 push 직후 Events API에서 받은 서버 기록.
+   이 파일은 MANIFEST.sha256이 해싱하는 집합(PROTOCOL.md · universe.json ·
+   source_manifest.json · scores.json · evidence/)에 **포함되지 않는다** —
+   즉 봉인 후 편집·교체가 무결성 검사로 탐지되지 않으므로, 독립 증거가
+   아니라 위 (1)을 보조하는 참고 자료로만 인용한다. 주의: 태그·커밋의 `tagger.date`/
    `committer.date`는 **클라이언트가 제출한 값**이며(`GIT_COMMITTER_DATE`로
    설정 가능) 서버 기록 시각이 아니다 — 저자 소급 조작을 배제하지 못하므로
    앵커로 인용하지 않는다. Events API 보존은 약 90일이라 그 이후 독립
