@@ -17,6 +17,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import datetime
 
+import forward_assemble
 from forward_common import (ET, REPO, SCREENING_CUTOFF, EXECUTION_WINDOW_END,
                             MIN_SCORED, UNIVERSE_SIZE,
                             assert_subscription_only, fp_siblings, read_json,
@@ -75,6 +76,41 @@ def _cited_source_attested(acc: str, sources: list[dict]) -> bool:
     return False
 
 
+# R11-4: 해시 사슬은 "그 파일이 안 바뀌었다"만 증명한다 — scores.json이
+# 실제로 그 출력에서 사전 등록 규칙대로 파생됐는지는 별개의 주장이며,
+# 정합적으로 함께 고친 레코드(35/insufficient/abstain → 75/sufficient/flag)는
+# 기존 leg 전부를 통과했다. 봉인의 값어치는 "동결 프로토콜의 출력임"이므로
+# runs leg에서 실제로 재파생해 대조한다.
+_REDERIVE_SKIP = ("prompt_sha256", "schema_sha256")
+
+
+def _rederivation_errors(record: dict, out_path: Path,
+                         universe_meta: dict) -> list[str]:
+    rid = record.get("record_id")
+    meta = universe_meta.get(rid)
+    if meta is None:
+        return []  # universe 밖 레코드는 상위 extra 검사가 잡는다
+    try:
+        out = read_json(out_path)
+    except (OSError, ValueError) as exc:
+        return [f"{rid}: runs 출력 파싱 불가 ({exc}) — 재파생 대조 불가"]
+    try:
+        expect = forward_assemble.assemble_record(
+            {"record_id": rid, "name": meta.get("name"),
+             "ticker": meta.get("ticker"), "cik": meta.get("cik")},
+            out, record.get("run_output_sha256"))
+    except (KeyError, TypeError) as exc:
+        return [f"{rid}: 러너 출력에서 재파생 실패 ({exc}) — 조립 규칙과 "
+                "출력 형식 불일치"]
+    diffs = sorted(k for k, v in expect.items()
+                   if k not in _REDERIVE_SKIP and record.get(k) != v)
+    if diffs:
+        return [f"{rid}: 봉인 레코드가 러너 출력의 재파생과 불일치 {diffs} — "
+                "scores.json이 동결 프로토콜 산출이 아님 (조립 후 편집, 또는 "
+                "stale 체크아웃 조립: assemble 재실행 필요, R11-4)"]
+    return []
+
+
 def validate(cycle: Path, runs_dir: Path | None = None) -> list[str]:
     errs = []
     u = read_json(cycle / "universe.json")
@@ -82,6 +118,7 @@ def validate(cycle: Path, runs_dir: Path | None = None) -> list[str]:
     universe_ids = {r["record_id"] for r in u.get("selected", [])}
     universe_cik = {r["record_id"]: str(r.get("cik", "")).zfill(10)
                     for r in u.get("selected", [])}
+    universe_meta = {r["record_id"]: r for r in u.get("selected", [])}
 
     # R3-7: PROTOCOL 핀 ↔ 라이브 동결 파일 ↔ scores 해시 3각 fail-closed 대조
     model_pin, pins = None, {}
@@ -251,6 +288,8 @@ def validate(cycle: Path, runs_dir: Path | None = None) -> list[str]:
                             sha256_file(out_path) != r["run_output_sha256"]:
                         errs.append(f"{r.get('record_id')}: runs 출력 실측 해시 ≠ "
                                     "run_output_sha256 — 조립 후 변조/드리프트")
+                    else:
+                        errs += _rederivation_errors(r, out_path, universe_meta)
             else:
                 print(f"NOTICE — runs 디렉토리 부재({runs_dir}): run_output_sha256 "
                       "실측 재해시 생략 (커밋 산출물만 가진 검증자는 정상)")

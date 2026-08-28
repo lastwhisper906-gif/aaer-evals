@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import forward_assemble
 import forward_common as fc
 import forward_prepare
 import forward_seal
@@ -31,24 +32,39 @@ PROTOCOL_FIXTURE = ("# PROTOCOL fixture\n"
                     f"- `schemas/llm_output.json` sha256 `{SCHEMA_SHA}`\n")
 
 
-def make_record(rid, score=45, suff="sufficient", cik=None):
-    state = "abstain" if suff == "insufficient" else (
-        "flag" if score >= 70 else "review" if score >= 40 else "no_flag")
-    if cik is None:  # make_universe와 정합: fw001-rNN ↔ cik 1000+NN
-        cik = f"{1000 + int(rid.rsplit('r', 1)[1]):010d}"
-    return {"record_id": rid, "company": {"name": "Test", "ticker": "T", "cik": cik},
-            "misstatement_risk_score": score, "decision_state": state,
-            "evidence_sufficiency": suff, "assessment_confidence": "medium",
-            "top_signals": ["s"], "benign_alternative_explanations": ["b"],
-            "affected_account_areas": ["rev"], "cited_sources": ["0000000000-26-000001"],
-            "model_id": "claude-sonnet-5", "prompt_sha256": PROMPT_SHA,
-            "schema_sha256": SCHEMA_SHA,
-            "run_fingerprint": {"system_prompt_sha256": "f" * 64,
-                                "schema_sha256": SCHEMA_SHA,
-                                "pipeline_commit": "a" * 40,
-                                "model_requested": "claude-sonnet-5"},
-            "run_output_sha256": "b" * 64,
-            "scored_at": "2026-11-15"}
+# R11-4: validate의 runs leg가 러너 출력에서 레코드를 재파생해 대조하므로,
+# 픽스처도 생산 경로와 같은 방향이어야 한다 — 출력이 원본, 레코드는 그
+# 출력에서 assemble_record로 파생한 값. (종전 픽스처는 레코드를 손으로 쓰고
+# 러너 출력은 {"case_id": …} 더미여서, 조립 규칙을 한 줄도 통과하지 않았다.)
+_INSUFFICIENT_OF_FIVE = {"sufficient": 0, "partial": 2, "insufficient": 3}
+
+
+def make_run_output(rid, score=45, suff="sufficient"):
+    """llm_output v1.2 형태의 러너 출력 — checklist 비율이 suff를 유도한다."""
+    n = _INSUFFICIENT_OF_FIVE[suff]
+    checklist = [{"item_id": f"CL{i}", "question": "q",
+                  "finding": "insufficient_data" if i < n else "no_flag",
+                  "confidence": "medium"} for i in range(5)]
+    return {"case_id": rid, "run_id": f"run-{rid}", "model": "claude-sonnet-5",
+            "run_timestamp": "2026-11-15T15:00:00Z",
+            "misstatement_probability": score, "checklist": checklist,
+            "mechanism_hypotheses": [{"affected_line_items": ["rev"]}],
+            "overall": {"top_signals": ["s"]},
+            "documents_used": [{"accession_no": "0000000000-26-000001"}],
+            "fingerprint": {"system_prompt_sha256": "f" * 64,
+                            "schema_sha256": SCHEMA_SHA,
+                            "pipeline_commit": "a" * 40,
+                            "model_requested": "claude-sonnet-5"}}
+
+
+def make_record(rid, score=45, suff="sufficient", cik=None, out_sha256="b" * 64):
+    # make_universe와 동일 규약 — 생산 경로(forward_assemble.main)는 universe
+    # 항목을 그대로 rec_meta로 넘기므로 company도 universe에서 파생돼야 한다.
+    i = int(rid.rsplit("r", 1)[1])
+    meta = {"record_id": rid, "name": f"Test Co {i}", "ticker": f"TK{i:02d}",
+            "cik": cik or f"{1000 + i:010d}"}
+    return forward_assemble.assemble_record(
+        meta, make_run_output(rid, score, suff), out_sha256)
 
 
 @pytest.fixture
@@ -450,8 +466,10 @@ def seal_argv(cycle):
         runs.mkdir()
         sc = fc.read_json(cycle / "scores.json")
         for r in sc["records"]:
+            # R11-4: 레코드가 이 출력의 재파생과 일치해야 봉인이 통과한다
             path = runs / f"{r['record_id']}.json"
-            path.write_text(json.dumps({"case_id": r["record_id"]}), encoding="utf-8")
+            path.write_text(json.dumps(make_run_output(r["record_id"])),
+                            encoding="utf-8")
             r["run_output_sha256"] = fc.sha256_file(path)
         fc.write_json(cycle / "scores.json", sc)
     return ["x", "--cycle", str(cycle), "--runs", str(runs)]
@@ -980,13 +998,14 @@ def test_runs_rehash_detects_post_assemble_edit(cycle, tmp_path):
     sc = fc.read_json(cycle / "scores.json")
     for r in sc["records"]:
         out_path = runs / f"{r['record_id']}.json"
-        out_path.write_text(json.dumps({"case_id": r["record_id"]}), encoding="utf-8")
+        out_path.write_text(json.dumps(make_run_output(r["record_id"])),
+                            encoding="utf-8")
         r["run_output_sha256"] = fc.sha256_file(out_path)
     fc.write_json(cycle / "scores.json", sc)
     assert forward_validate.validate(cycle, runs_dir=runs) == []
 
     victim = runs / "fw001-r01.json"
-    victim.write_text(json.dumps({"case_id": "fw001-r01", "edited": True}),
+    victim.write_text(json.dumps({**make_run_output("fw001-r01"), "edited": True}),
                       encoding="utf-8")
     errs = forward_validate.validate(cycle, runs_dir=runs)
     assert any("실측 해시 ≠" in e for e in errs)
@@ -995,6 +1014,35 @@ def test_runs_rehash_detects_post_assemble_edit(cycle, tmp_path):
     missing.unlink()
     errs = forward_validate.validate(cycle, runs_dir=runs)
     assert any("runs 출력 부재" in e and "fw001-r02" in e for e in errs)
+
+
+def test_runs_leg_rederives_records_from_runner_output(cycle, tmp_path):
+    """R11-4: 해시 사슬은 '그 파일이 안 바뀌었다'만 증명한다 — 점수·판정을
+    서로 정합하게 함께 고친 레코드는 종전 leg 전부를 통과했다 (35/insufficient/
+    abstain → 75/sufficient/flag). 봉인은 '동결 프로토콜의 산출'을 주장하므로
+    러너 출력에서 실제로 재파생해 대조한다."""
+    runs = tmp_path / "runs_rederive"
+    runs.mkdir()
+    sc = fc.read_json(cycle / "scores.json")
+    for r in sc["records"]:
+        out_path = runs / f"{r['record_id']}.json"
+        out_path.write_text(json.dumps(make_run_output(r["record_id"])),
+                            encoding="utf-8")
+        r["run_output_sha256"] = fc.sha256_file(out_path)
+    fc.write_json(cycle / "scores.json", sc)
+    assert forward_validate.validate(cycle, runs_dir=runs) == []
+
+    # 자기 정합적 편집: expected_state(75, "sufficient") == "flag" 이므로
+    # 서수 컷 대조는 침묵 통과하고, 러너 출력 파일은 손대지 않아 해시도 정합.
+    sc = fc.read_json(cycle / "scores.json")
+    sc["records"][0].update(misstatement_risk_score=75,
+                            evidence_sufficiency="sufficient",
+                            decision_state="flag")
+    fc.write_json(cycle / "scores.json", sc)
+    errs = forward_validate.validate(cycle, runs_dir=runs)
+    assert any("재파생과 불일치" in e and "fw001-r01" in e for e in errs), errs
+    # 해시 leg·서수 컷 leg는 여전히 침묵 — 재파생 leg만이 이걸 잡는다
+    assert not any("실측 해시 ≠" in e or "서수 컷 기대" in e for e in errs), errs
 
 
 def test_runs_dir_absent_skips_with_notice(cycle, capsys):
@@ -1015,7 +1063,8 @@ def test_fp_sibling_fails_assemble_and_validate(cycle, tmp_path, monkeypatch, ca
     sc = fc.read_json(cycle / "scores.json")
     for r in sc["records"]:
         out_path = runs / f"{r['record_id']}.json"
-        out_path.write_text(json.dumps({"case_id": r["record_id"]}), encoding="utf-8")
+        out_path.write_text(json.dumps(make_run_output(r["record_id"])),
+                            encoding="utf-8")
         r["run_output_sha256"] = fc.sha256_file(out_path)
     fc.write_json(cycle / "scores.json", sc)
     assert forward_validate.validate(cycle, runs_dir=runs) == []  # sibling 없음 = 무변화
