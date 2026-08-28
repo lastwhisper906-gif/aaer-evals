@@ -480,6 +480,12 @@ def run_seal(cycle, capsys=None):
     return forward_seal.main()
 
 
+def stamp_ots(cycle):
+    """R11-3: 정규 봉인의 OTS 앵커 — 실제 stamp는 네트워크·클라이언트가 필요
+    하므로 테스트에서는 앵커 파일의 존재만 재현한다."""
+    (cycle / "MANIFEST.sha256.ots").write_bytes(b"\x00ots-fixture")
+
+
 def test_seal_verify_roundtrip_and_tamper(cycle, monkeypatch, capsys):
     monkeypatch.setattr(sys, "argv", seal_argv(cycle))
     assert forward_seal.main() == 0
@@ -487,6 +493,7 @@ def test_seal_verify_roundtrip_and_tamper(cycle, monkeypatch, capsys):
 
     import forward_verify_seal
     monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(cycle)])
+    stamp_ots(cycle)
     assert forward_verify_seal.main() == 0
 
     # 변조 검출
@@ -496,6 +503,37 @@ def test_seal_verify_roundtrip_and_tamper(cycle, monkeypatch, capsys):
     assert forward_verify_seal.main() == 1
     out = capsys.readouterr().out
     assert "변조됨: scores.json" in out
+
+
+def test_verify_seal_requires_ots_anchor_on_regular_seal(cycle, monkeypatch, capsys):
+    """R11-3: 두 앵커 중 tag API 쪽은 서버 기록 시각을 주지 않는다
+    (tagger/committer 날짜 = 클라이언트 제출값). 남는 비가역 앵커는 OTS뿐인데
+    클라이언트 부재·시간초과 시 pending으로 떨어지고 아무 도구도 .ots 존재를
+    확인하지 않았다 — 앵커 0개로 봉인·검증 통과가 가능했다."""
+    import forward_verify_seal
+    monkeypatch.setattr(sys, "argv", seal_argv(cycle))
+    assert forward_seal.main() == 0
+
+    monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(cycle)])
+    assert not (cycle / "MANIFEST.sha256.ots").exists()
+    assert forward_verify_seal.main() == 1
+    assert "OTS 앵커 부재" in capsys.readouterr().out
+
+    stamp_ots(cycle)
+    assert forward_verify_seal.main() == 0
+
+
+def test_seal_record_does_not_claim_tag_api_is_server_time(cycle, monkeypatch):
+    """R11-3: 게시 문면이 tag API를 '작성자 소급 조작 불가'로 인용하지 않는다
+    — 그 필드는 클라이언트가 제출하는 값이다."""
+    monkeypatch.setattr(sys, "argv", seal_argv(cycle))
+    assert forward_seal.main() == 0
+    record = (cycle / "SEAL_RECORD.md").read_text(encoding="utf-8")
+    assert "소급 조작 불가" not in record
+    assert "git/refs/tags" not in record
+    assert "클라이언트가 제출한 값" in record, "태그 날짜의 한계 공개 부재"
+    # 앵커 pending은 OTS 줄뿐 아니라 status 줄에도 드러나야 한다
+    assert "OTS 앵커 pending" in record.split("- sealed_at")[0]
 
 
 def test_reseal_refused(cycle, monkeypatch):

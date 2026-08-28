@@ -39,10 +39,26 @@ def main():
         return 1
 
     print(f"PASS — 봉인 무결성 (manifest sha256 {sha256_text(recorded)})")
+
+    # R11-3: OTS는 유일한 비가역 외부 앵커다 — tagger/committer 날짜는
+    # 클라이언트 제출값이고 Events API 영수증은 ~90일 보존이다. 앵커 없는
+    # 정규 봉인을 PASS로 통과시키면 "외부 검증 가능한 타임스탬프로 불변
+    # 봉인"(spec §0)이라는 산출물 주장 자체가 빈다 — fail-closed.
     ots = manifest.with_suffix(".sha256.ots")
-    print("외부 검증: SEAL_RECORD.md §외부 검증 방법 — GitHub tag API 서버 시각 + "
-          + (f"`ots verify {ots}`" if ots.exists()
-             else "OTS 앵커 pending (ots stamp 후 커밋 필요)"))
+    record = cycle / "SEAL_RECORD.md"
+    aborted = (record.is_file()
+               and "status: ABORTED" in record.read_text(encoding="utf-8"))
+    if not ots.exists():
+        if aborted:
+            print("NOTICE — abort 봉인: OTS 앵커 부재 허용 (부분 상태 동결)")
+            return 0
+        print(f"FAIL — OTS 앵커 부재: {ots.name} 없음. 정규 봉인의 외부 시각 "
+              "증거가 성립하지 않는다 — `ots stamp MANIFEST.sha256` "
+              "(pip install opentimestamps-client) 실행 후 .ots를 커밋하라. "
+              "태그·커밋 날짜는 클라이언트 제출값이므로 대체 증거가 아니다.")
+        return 1
+    print(f"외부 검증: SEAL_RECORD.md §외부 검증 방법 — `ots verify {ots}` "
+          "(+ push_event_*.json 보조 영수증)")
     return 0
 
 

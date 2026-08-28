@@ -125,10 +125,18 @@ def main():
                    if args.abort else
                    f"- run_output re-hash: verified against `{runs_display}` "
                    "(forward_validate --runs leg)\n")
+    # R11-3: OTS는 유일하게 남는 비가역 앵커다 (GitHub Events는 ~90일 보존,
+    # tagger/committer 날짜는 클라이언트 제공값) — pending을 OTS 줄에만
+    # 적으면 status만 읽는 독자에게 앵커 부재가 보이지 않는다.
+    ots_pending = not ots_status.startswith("stamped")
+    pending_mark = (" — **OTS 앵커 pending** (봉인 유효하되 외부 시각 증거 "
+                    "미완: `ots stamp MANIFEST.sha256` 후 .ots 커밋 필요)"
+                    if ots_pending else "")
     status_lines = (f"- **status: ABORTED** — 부분 상태 동결 (spec §3-2)\n"
                     f"- abort_reason: {args.reason}\n" if args.abort else
-                    ("- status: sealed (past-window — --past-window 명시 실행)\n"
-                     if args.past_window else "- status: sealed\n"))
+                    (f"- status: sealed (past-window — --past-window 명시 실행)"
+                     f"{pending_mark}\n" if args.past_window else
+                     f"- status: sealed{pending_mark}\n"))
     status_lines += rehash_line
     # R7-16: runs 출력·호출 로그(logs/run_* — served_models/pin_ok 증거)를
     # 봉인 커밋에 함께 staging — 없으면 클론 검증자의 re-hash leg가
@@ -145,7 +153,14 @@ def main():
         f"git add runs/MANIFEST.sha256 {cycle_display}{stage_extra} && "
         f"git commit -m 'SEAL{'(ABORT)' if args.abort else ''}: {cycle.name} forward watchlist'\n"
         f"git tag -a {tag} -m 'forward {seal_kind} {now} manifest sha256 {mhash}'\n"
-        f"git push origin main --tags")
+        f"git push origin main --tags\n"
+        # R11-3: 서버가 기록한 시각은 push 이벤트뿐이다 (tag/commit 날짜는
+        # 클라이언트 제공값). Events API는 ~90일 보존이므로 push 직후에
+        # 받아 파일로 남긴다 — 봉인 대상(SEALED_FILES) 밖의 보조 증거.
+        f"curl -sS https://api.github.com/repos/lastwhisper906-gif/aaer-evals/events "
+        f"> {cycle_display}/push_event_{now[:10]}.json && "
+        f"git add {cycle_display}/push_event_{now[:10]}.json && "
+        f"git commit -m 'SEAL: push event receipt' && git push")
     record.write_text(f"""# SEAL_RECORD.md — {cycle.name}
 
 {status_lines}- sealed_at (UTC): {now}
@@ -154,7 +169,7 @@ def main():
 - OpenTimestamps: {ots_status}
 - 지연/중단 기록: (해당 시 일자 기입 — spec §3)
 
-## 소유자 봉인 명령 (즉시 실행 — push 서버 시각이 외부 증거)
+## 소유자 봉인 명령 (즉시 실행 — OTS 앵커 + push 이벤트 영수증이 외부 증거)
 
 ```bash
 {owner_cmds}
@@ -162,12 +177,17 @@ def main():
 
 ## 외부 검증 방법 (제3자용)
 
-1. **GitHub 서버 시각** (작성자 소급 조작 불가):
-   `GET https://api.github.com/repos/lastwhisper906-gif/aaer-evals/git/refs/tags/{tag}`
-   → tag object → tagger/commit의 서버 기록 시각 확인.
-2. **OpenTimestamps** (무료·무계정): `ots verify MANIFEST.sha256.ots`
-   (클라이언트: `pip install opentimestamps-client`). 앵커 pending이면
-   수 시간 후 `ots upgrade MANIFEST.sha256.ots` 후 재검증.
+1. **OpenTimestamps — 유일한 비가역 앵커** (무료·무계정):
+   `ots verify MANIFEST.sha256.ots` (클라이언트:
+   `pip install opentimestamps-client`). 앵커 pending이면 수 시간 후
+   `ots upgrade MANIFEST.sha256.ots` 후 재검증. **.ots 부재는 검증 실패로
+   취급한다** (`forward_verify_seal.py`가 정규 봉인에서 exit 1).
+2. **GitHub push 이벤트 영수증** (보조): `push_event_*.json` — 봉인 push
+   직후 Events API에서 받은 서버 기록. 주의: 태그·커밋의 `tagger.date`/
+   `committer.date`는 **클라이언트가 제출한 값**이며(`GIT_COMMITTER_DATE`로
+   설정 가능) 서버 기록 시각이 아니다 — 저자 소급 조작을 배제하지 못하므로
+   앵커로 인용하지 않는다. Events API 보존은 약 90일이라 그 이후 독립
+   확인은 위 (1)에 의존한다.
 3. **로컬 무결성**: `python tools/forward_verify_seal.py --cycle {cycle_display}`
 4. **run-output 사슬** (R6-7 — runs/ 출력 보유 검증자): `python
    tools/forward_validate.py --cycle {cycle_display} --runs {runs_display}`
