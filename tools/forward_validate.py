@@ -104,6 +104,10 @@ def _rederivation_errors(record: dict, out_path: Path,
                 "출력 형식 불일치"]
     diffs = sorted(k for k, v in expect.items()
                    if k not in _REDERIVE_SKIP and record.get(k) != v)
+    # R12-5: 대조가 expect 쪽만 돌면 레코드에만 있는 키는 보이지 않는다 —
+    # 조립기가 만들지 않는 필드를 봉인 레코드에 덧붙여도 통과했다.
+    # (status는 not_scored 경로의 정규 필드이므로 제외.)
+    diffs += sorted(set(record) - set(expect) - {"status"})
     if diffs:
         return [f"{rid}: 봉인 레코드가 러너 출력의 재파생과 불일치 {diffs} — "
                 "scores.json이 동결 프로토콜 산출이 아님 (조립 후 편집, 또는 "

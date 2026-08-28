@@ -1437,6 +1437,43 @@ def test_not_scored_with_existing_runner_output_is_caught(cycle, tmp_path):
     assert forward_validate.validate(cycle, runs_dir=runs) == []
 
 
+def test_naive_in_window_scored_at_is_accepted(cycle):
+    """R12-5: R11-4의 픽스처 재작성이 scored_at을 naive에서 tz-aware로 옮기며
+    R10-8의 naive 분기 커버리지를 통째로 없앴다 — 같은 변이가 부모에서는
+    23건을 죽였는데 그 뒤로는 0건이었다. naive 창내 값 한 건이면 복원된다
+    (러너는 UTC …Z를 쓰므로 naive는 손편집·외래 레코드에서만 온다)."""
+    sc = fc.read_json(cycle / "scores.json")
+    sc["records"][0]["scored_at"] = "2026-11-16"       # 창 내, tz 없음
+    fc.write_json(cycle / "scores.json", sc)
+    assert not any("실행 창 밖" in e for e in forward_validate.validate(cycle))
+
+    sc = fc.read_json(cycle / "scores.json")
+    sc["records"][0]["scored_at"] = "2026-11-30"       # 창 밖, tz 없음
+    fc.write_json(cycle / "scores.json", sc)
+    assert any("실행 창 밖" in e for e in forward_validate.validate(cycle))
+
+
+def test_rederivation_catches_extra_key_in_sealed_record(cycle, tmp_path):
+    """R12-5: 재파생 대조가 `expect.items()`만 돌아 레코드에만 있는 키는
+    보이지 않았다 — 봉인 레코드에 없는 필드를 덧붙여도 통과했다."""
+    runs = tmp_path / "runs_extra"
+    runs.mkdir()
+    sc = fc.read_json(cycle / "scores.json")
+    for r in sc["records"]:
+        out_path = runs / f"{r['record_id']}.json"
+        out_path.write_text(json.dumps(make_run_output(r["record_id"])),
+                            encoding="utf-8")
+        r["run_output_sha256"] = fc.sha256_file(out_path)
+    fc.write_json(cycle / "scores.json", sc)
+    assert forward_validate.validate(cycle, runs_dir=runs) == []
+
+    sc = fc.read_json(cycle / "scores.json")
+    sc["records"][0]["published_score"] = 99
+    fc.write_json(cycle / "scores.json", sc)
+    errs = forward_validate.validate(cycle, runs_dir=runs)
+    assert any("published_score" in e for e in errs), errs
+
+
 def test_runs_dir_absent_skips_with_notice(cycle, capsys):
     errs = forward_validate.validate(cycle, runs_dir=cycle / "no_such_runs")
     assert errs == []
