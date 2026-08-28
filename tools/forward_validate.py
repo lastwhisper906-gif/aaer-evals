@@ -7,7 +7,8 @@ retrieval/filing 분리 저장 ③ scores 완결성(유니버스 전건 1레코�
 명시, 완료 분율 ≥11/12) ④ decision_state가 사전 등록 서수 컷과 기계 일치
 ⑤ 레코드 §6 전 필드 계약(두 배열 존재 의무 포함) + cited_sources ⊆
 source_manifest + company.cik ↔ universe 교차 대조 ⑥ 봉인되는 자유서술
-(top_signals·affected_account_areas)의 INV-13 금지어 (R13-1).
+(top_signals·affected_account_areas)의 INV-13 금지어 (R13-1) ⑦ 봉인 커밋에
+함께 실리는 러너 출력 원본 전체의 INV-13 금지어 (R14-1, runs leg).
 네트워크 0 · 모델 호출 0. 위반 시 exit 1.
 """
 import argparse
@@ -154,6 +155,49 @@ def fraud_word_errors(record: dict) -> list[str]:
                     f"{rid}: {field}[{i}] INV-13 금지어 {hits} — 집행 대상이 "
                     "아닌 현재 기업에 단정 어휘 사용 금지 (면책 문맥도 동일). "
                     "봉인 후에는 정정 불가이므로 봉인 전 차단 (R13-1)")
+    return errs
+
+
+# R14-1: 위 게이트는 scores.json만 본다 — 그런데 봉인 커밋이 공개로 올리는 것은
+# 러너 출력 원본(runs/forward/<cycle>/<record_id>.json)까지다. forward_seal의
+# stage_extra가 그 트리를 함께 add·push하고, 같이 봉인되는 universe.json이
+# record_id → name/ticker/cik를 잇는다. 그 파일 안의 checklist[].evidence·
+# mechanism_hypotheses[].*·overall.* 서술은 어떤 게이트도 지나지 않았다
+# (verify_blindness의 VOCAB_WARN_MARKERS는 kind가 perturbed/output일 때만,
+# 그것도 WARN이며 runs/forward/**는 aux 등록이다; lint_publication은 runs/를
+# 읽지 않는다). 범위 근거는 위 R13-1 주석과 동일하며 배선도 동일하게 좁다 —
+# 이 함수는 validate()의 runs leg에서만 호출되고 회고 waves는 그 경로를
+# 지나지 않는다. 필드 목록을 열거하는 대신 출력 JSON 전체를 훑는 이유는,
+# 열거가 곧 다음 사이클의 구멍이기 때문이다(R13-1이 두 필드만 훑어서 생긴
+# 구멍이 바로 이 항목이다).
+def _json_text_nodes(node, path: str = "$"):
+    """JSON 트리를 순회하며 (JSON 경로, 문자열 값) 쌍을 낸다."""
+    if isinstance(node, str):
+        yield path, node
+    elif isinstance(node, dict):
+        for k, v in node.items():
+            yield from _json_text_nodes(v, f"{path}.{k}")
+    elif isinstance(node, list):
+        for i, v in enumerate(node):
+            yield from _json_text_nodes(v, f"{path}[{i}]")
+
+
+def run_output_fraud_word_errors(rid, out_path: Path) -> list[str]:
+    """러너 출력 원본 전체의 INV-13 금지어 검사 (R14-1)."""
+    try:
+        out = read_json(out_path)
+    except (OSError, ValueError):
+        return []  # 파싱 불가는 _rederivation_errors가 이미 보고한다
+    errs = []
+    for jpath, text in _json_text_nodes(out):
+        hits = sorted(w for w in FRAUD_WORDS if w in text.lower())
+        if hits:
+            errs.append(
+                f"{rid}: {out_path.name} {jpath} INV-13 금지어 {hits} — 이 "
+                "러너 출력은 봉인 커밋에 그대로 실려 공개되고 universe.json이 "
+                "record_id를 실명 기업에 잇는다. 집행 대상이 아닌 현재 기업에 "
+                "단정 어휘 사용 금지(면책 문맥도 동일), 봉인 후 정정 불가 "
+                "— 소유자가 봉인 전에 결정해야 한다 (R14-1)")
     return errs
 
 
@@ -361,6 +405,8 @@ def validate(cycle: Path, runs_dir: Path | None = None) -> list[str]:
                                     "run_output_sha256 — 조립 후 변조/드리프트")
                     else:
                         errs += _rederivation_errors(r, out_path, universe_meta)
+                        errs += run_output_fraud_word_errors(
+                            r.get("record_id"), out_path)
             else:
                 print(f"NOTICE — runs 디렉토리 부재({runs_dir}): run_output_sha256 "
                       "실측 재해시 생략 (커밋 산출물만 가진 검증자는 정상)")

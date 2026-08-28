@@ -614,6 +614,85 @@ def test_inv13_gate_scope_is_limited_to_forward_records():
     assert wired == {"tools/forward_validate.py", "tools/test_forward_tools.py"}
 
 
+# ── R14-1: 봉인 커밋이 함께 싣는 러너 출력 원본의 INV-13 게이트 ───────────
+
+def _cycle_with_runs(cycle, tmp_path, name, mutate=None):
+    """(runs 디렉토리, 변조 대상 rid) — 레코드는 러너 출력에서 재파생하고
+    run_output_sha256도 실측으로 다시 잡으므로, 다른 leg(해시·재파생)는
+    침묵한 채 새 leg만 발화한다."""
+    runs = tmp_path / name
+    runs.mkdir()
+    records = []
+    for i in range(1, 13):
+        rid = f"fw001-r{i:02d}"
+        out = make_run_output(rid)
+        if mutate is not None and i == 1:
+            mutate(out)
+        out_path = runs / f"{rid}.json"
+        out_path.write_text(json.dumps(out), encoding="utf-8")
+        meta = {"record_id": rid, "name": f"Test Co {i}", "ticker": f"TK{i:02d}",
+                "cik": f"{1000 + i:010d}"}
+        records.append(forward_assemble.assemble_record(
+            meta, out, fc.sha256_file(out_path)))
+    fc.write_json(cycle / "scores.json", {"records": records})
+    return runs, "fw001-r01"
+
+
+def _put_evidence_quote(out):
+    out["checklist"][0]["evidence"] = [
+        {"quote": "AR=1,234M (FY2026) — consistent with revenue manipulation",
+         "source_accession_no": "0000000000-26-000001", "location": "AR (FY2026)"}]
+
+
+def _put_mechanism_prose(out):
+    out["mechanism_hypotheses"][0]["accounting_treatment"] = \
+        "충당금 환입을 통한 이익 조작으로 보인다"
+
+
+def _put_overall_signal(out):
+    out["overall"]["top_signals"] = ["CL1 possible fraud in the reserve roll"]
+
+
+@pytest.mark.parametrize("mutate, jpath", [
+    (_put_evidence_quote, "$.checklist[0].evidence[0].quote"),
+    (_put_mechanism_prose, "$.mechanism_hypotheses[0].accounting_treatment"),
+    (_put_overall_signal, "$.overall.top_signals[0]"),
+])
+def test_fraud_word_anywhere_in_runner_output_blocks_the_seal(
+        cycle, tmp_path, monkeypatch, capsys, mutate, jpath):
+    """R14-1(a): R13-1의 게이트는 scores.json의 두 필드만 본다. 봉인 커밋은
+    러너 출력 원본을 함께 push하고 universe.json이 record_id를 실명 기업에
+    잇는다 — 세 곳(체크리스트 인용·기제 서술·overall)에서 각각 exit 1이며
+    레코드·파일명·JSON 경로를 모두 지목해야 소유자가 결정할 수 있다."""
+    runs, rid = _cycle_with_runs(cycle, tmp_path, f"runs_{mutate.__name__}", mutate)
+    monkeypatch.setattr(sys, "argv",
+                        ["x", "--cycle", str(cycle), "--runs", str(runs)])
+    assert forward_validate.main() == 1
+    out = capsys.readouterr().out
+    hit = [ln for ln in out.splitlines() if "R14-1" in ln]
+    assert len(hit) == 1, out
+    assert rid in hit[0] and f"{rid}.json" in hit[0] and jpath in hit[0], hit
+
+
+def test_runner_output_gate_is_independent_of_the_scores_json_gate(cycle, tmp_path):
+    """R14-1(b): 두 leg는 서로를 대신하지 못한다. 러너 출력에만 있고 레코드로
+    복사되지 않는 필드(체크리스트 인용·기제 서술)를 쓰면 R13-1 leg는 침묵한
+    채 새 leg만 발화한다 — 반대 방향(R13-1 전용)은 runs 없이 도는
+    test_fraud_word_in_sealed_free_text_blocks_the_seal가 고정한다."""
+    runs, rid = _cycle_with_runs(cycle, tmp_path, "runs_iso", _put_evidence_quote)
+    errs = forward_validate.validate(cycle, runs_dir=runs)
+    assert [e for e in errs if "R14-1" in e and rid in e], errs
+    assert not [e for e in errs if "R13-1" in e], errs
+    # 다른 leg(해시·재파생·서수 컷)는 이 픽스처에서 침묵한다
+    assert not [e for e in errs if "R14-1" not in e], errs
+
+
+def test_clean_runner_output_still_seals(cycle, tmp_path):
+    """R14-1(c) over-blocking 대조군: 금지어 없는 출력은 그대로 통과한다."""
+    runs, _ = _cycle_with_runs(cycle, tmp_path, "runs_clean")
+    assert forward_validate.validate(cycle, runs_dir=runs) == []
+
+
 def test_validate_cited_source_must_be_in_manifest(cycle):
     sc = fc.read_json(cycle / "scores.json")
     sc["records"][0]["cited_sources"] = ["0000000000-26-999999"]
