@@ -279,6 +279,17 @@ def validate(cycle: Path, runs_dir: Path | None = None) -> list[str]:
                                 "모호, 봉인 전 소유자 해소 필요 (R7-3)")
                 for r in records:
                     if r.get("status") == "not_scored":
+                        # R11-7: 완료 분율(≥11/12)은 선택 보고에 대한 유일한
+                        # 방어인데, 검사가 한 방향뿐이라 stale assemble만으로도
+                        # 충족됐다 — 레이트 리밋 후 재개로 완료된 레코드가
+                        # not_scored로 봉인되고, 그 출력 파일은 봉인 커밋에
+                        # 함께 실린다(제3자에겐 사후 배제와 구분 불가).
+                        resumed = runs_dir / f"{r.get('record_id')}.json"
+                        if resumed.exists():
+                            errs.append(
+                                f"{r.get('record_id')}: not_scored인데 러너 출력 "
+                                f"{resumed.name} 존재 — assemble 재실행 필요 "
+                                "(완료분을 배제한 채 봉인 금지, R11-7)")
                         continue
                     out_path = runs_dir / f"{r.get('record_id')}.json"
                     if not out_path.exists():

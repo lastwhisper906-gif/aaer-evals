@@ -1108,6 +1108,32 @@ def test_runs_leg_rederives_records_from_runner_output(cycle, tmp_path):
     assert not any("실측 해시 ≠" in e or "서수 컷 기대" in e for e in errs), errs
 
 
+def test_not_scored_with_existing_runner_output_is_caught(cycle, tmp_path):
+    """R11-7: 레이트 리밋으로 11/12 조립 → 소유자가 러너 재개 → 12번째 완료.
+    봉인은 validate만 재실행하고 assemble은 다시 돌리지 않으므로, 완료된
+    레코드가 not_scored로 봉인되고 그 출력은 봉인 커밋에 함께 실린다."""
+    runs = tmp_path / "runs_resume"
+    runs.mkdir()
+    sc = fc.read_json(cycle / "scores.json")
+    for r in sc["records"]:
+        out_path = runs / f"{r['record_id']}.json"
+        out_path.write_text(json.dumps(make_run_output(r["record_id"])),
+                            encoding="utf-8")
+        r["run_output_sha256"] = fc.sha256_file(out_path)
+    victim = sc["records"][-1]
+    rid = victim["record_id"]
+    sc["records"][-1] = {"record_id": rid, "company": victim["company"],
+                         "status": "not_scored"}
+    fc.write_json(cycle / "scores.json", sc)
+
+    errs = forward_validate.validate(cycle, runs_dir=runs)
+    assert any("not_scored인데 러너 출력" in e and rid in e for e in errs), errs
+
+    # 출력이 실제로 없으면(진짜 미채점) 통과 — 11/12는 MIN_SCORED 충족
+    (runs / f"{rid}.json").unlink()
+    assert forward_validate.validate(cycle, runs_dir=runs) == []
+
+
 def test_runs_dir_absent_skips_with_notice(cycle, capsys):
     errs = forward_validate.validate(cycle, runs_dir=cycle / "no_such_runs")
     assert errs == []
