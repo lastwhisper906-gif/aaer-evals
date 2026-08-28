@@ -505,6 +505,31 @@ def test_seal_verify_roundtrip_and_tamper(cycle, monkeypatch, capsys):
     assert "변조됨: scores.json" in out
 
 
+def test_seal_refuses_unshippable_evidence_file(cycle, monkeypatch, capsys):
+    """R11-6: evidence/에 떨어진 .DS_Store(Finder로 폴더를 열면 생긴다)는
+    해시되어 MANIFEST에 실리지만 `git add`는 건너뛴다 — push 이후 모든
+    클론에서 검증이 영구 실패하고, 재봉인 금지라 교정 경로가 없다."""
+    (cycle / "evidence").mkdir(exist_ok=True)
+    (cycle / "evidence/.DS_Store").write_bytes(b"\x00mac")
+    monkeypatch.setattr(sys, "argv", seal_argv(cycle))
+    with pytest.raises(SystemExit):
+        forward_seal.main()
+    assert ".DS_Store" in capsys.readouterr().out
+    assert not (cycle / "MANIFEST.sha256").exists(), "거부인데 매니페스트가 쓰였다"
+
+    (cycle / "evidence/.DS_Store").unlink()
+    assert forward_seal.main() == 0
+    assert (cycle / "MANIFEST.sha256").exists()
+
+
+def test_shippable_evidence_file_is_sealed_normally(cycle):
+    """R11-6 반대면: 무시 규칙에 걸리지 않는 증거 파일은 그대로 봉인된다."""
+    (cycle / "evidence").mkdir(exist_ok=True)
+    (cycle / "evidence/note.txt").write_text("evidence", encoding="utf-8")
+    assert fc.unshippable_sealed_files(cycle) == []
+    assert "evidence/note.txt" in fc.manifest_text(cycle)
+
+
 def test_verify_seal_requires_ots_anchor_on_regular_seal(cycle, monkeypatch, capsys):
     """R11-3: 두 앵커 중 tag API 쪽은 서버 기록 시각을 주지 않는다
     (tagger/committer 날짜 = 클라이언트 제출값). 남는 비가역 앵커는 OTS뿐인데

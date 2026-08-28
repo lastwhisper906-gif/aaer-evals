@@ -20,7 +20,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from forward_common import (ET, REPO, EXECUTION_WINDOW_END,
                             assert_subscription_only, manifest_text,
-                            parse_date, sha256_text, fail)
+                            parse_date, sha256_text, fail,
+                            unshippable_sealed_files)
 from forward_validate import validate
 
 # R10-6: ots 달력 서버 불통 시 무한 대기 금지 — 한도 초과면 pending 기록
@@ -94,6 +95,17 @@ def main():
         errs = validate(cycle, runs_dir=runs_dir)
         if errs:
             fail("봉인 전 검증 위반 — forward_validate 참조:\n  " + "\n  ".join(errs))
+
+    # R11-6: 매니페스트에 적히지만 git이 실어 나르지 못하는 파일이 있으면
+    # 봉인 순간 되돌릴 수 없이 깨진다 (클론마다 manifest_text 한 줄 부족).
+    # abort 봉인도 같은 방식으로 커밋되므로 두 경로 모두에 적용한다.
+    unshippable = unshippable_sealed_files(cycle)
+    if unshippable:
+        fail("봉인 대상에 git이 커밋하지 못하는 파일 존재 — "
+             f"{unshippable}: 해시는 매니페스트에 실리지만 `git add`가 건너뛰어 "
+             "모든 클론에서 봉인 검증이 영구 실패한다 (재봉인 금지·매니페스트 "
+             "불변이므로 사후 교정 불가). 해당 파일을 제거하거나(.DS_Store 류), "
+             "실어야 할 증거라면 무시 규칙에서 예외 처리한 뒤 다시 봉인하라.")
 
     text = manifest_text(cycle)
     manifest.write_text(text, encoding="utf-8")

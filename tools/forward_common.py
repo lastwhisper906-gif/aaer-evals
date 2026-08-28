@@ -8,6 +8,7 @@ import datetime
 import hashlib
 import json
 import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -88,16 +89,50 @@ def evidence_files(cycle: Path):
     return sorted(p for p in ev.rglob("*") if p.is_file()) if ev.exists() else []
 
 
+def sealed_paths(cycle: Path) -> list[tuple[Path, str]]:
+    """봉인 매니페스트가 해싱하는 (경로, 기재명) 전건 — 결정론적 순서 (§9).
+
+    manifest_text와 출하 가능성 검사(unshippable_sealed_files)가 같은 목록을
+    보게 하는 단일 출처: 둘이 어긋나면 R11-6 구멍이 조용히 다시 열린다."""
+    items = [(cycle / name, name) for name in SEALED_FILES
+             if (cycle / name).exists()]
+    items += [(p, p.relative_to(cycle).as_posix()) for p in evidence_files(cycle)]
+    return items
+
+
+def unshippable_sealed_files(cycle: Path) -> list[str]:
+    """R11-6: 봉인 대상 중 git이 실어 나르지 못하는 파일 (무시 규칙 적중).
+
+    seal은 파일 해시를 MANIFEST에 적고, 소유자 명령은 `git add`로 커밋한다.
+    `.gitignore`가 무시하는 파일(.DS_Store — macOS에서 Finder로 evidence/를
+    열면 생긴다, `__pycache__/`, `*.pyc`)은 해시는 되지만 커밋되지 않는다:
+    push 순간부터 모든 클론에서 `manifest_text`가 그 줄만큼 짧아져
+    forward_verify_seal이 제3자마다 exit 1, 정본 pytest 게이트도 매 push
+    적색이 된다. 재봉인 금지(§3-5) + 매니페스트 불변이므로 사후 교정
+    경로가 없다 — 봉인 직전 fail-closed가 유일한 탈출구다. 조용히 건너뛰지
+    않는 이유: 누락된 증거 파일이 막힌 봉인보다 나쁘다."""
+    names = [name for _, name in sealed_paths(cycle)]
+    if not names:
+        return []
+    try:
+        prefix = cycle.resolve().relative_to(REPO.resolve()).as_posix()
+    except ValueError:
+        # 저장소 밖 사이클(테스트 픽스처): 이름 기반 무시 규칙은 위치와
+        # 무관하므로 저장소 안 가상 경로로 같은 규칙을 질의한다.
+        prefix = "forward/_shipping_probe"
+    probe = "\n".join(f"{prefix}/{n}" for n in names)
+    r = subprocess.run(["git", "-C", str(REPO), "check-ignore", "--stdin"],
+                       input=probe, capture_output=True, text=True)
+    if r.returncode not in (0, 1):  # 0=일부 적중, 1=적중 없음, 그 외=오류
+        return [f"(git check-ignore 실행 실패 — 출하 가능성 미확인: "
+                f"{r.stderr.strip()[:120]})"]
+    ignored = {line.strip() for line in r.stdout.splitlines() if line.strip()}
+    return sorted(n for n in names if f"{prefix}/{n}" in ignored)
+
+
 def manifest_text(cycle: Path) -> str:
     """봉인 매니페스트 본문 — 결정론적 순서 (§9)."""
-    lines = []
-    for name in SEALED_FILES:
-        p = cycle / name
-        if p.exists():
-            lines.append(f"{sha256_file(p)}  {name}")
-    for p in evidence_files(cycle):
-        lines.append(f"{sha256_file(p)}  {p.relative_to(cycle)}")
-    return "\n".join(lines) + "\n"
+    return "".join(f"{sha256_file(p)}  {name}\n" for p, name in sealed_paths(cycle))
 
 
 def parse_date(s: str) -> datetime.date:
