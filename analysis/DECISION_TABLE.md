@@ -70,11 +70,11 @@ only controls here that this project's own retrospective control-cleanliness
 audit records as `ineligible` — GridAI (GRDX), on the criterion of an auditor
 resignation accompanied by a company-disclosed disagreement, and Grocery
 Outlet (GO), on the criterion of a material weakness not remediated by the
-next annual assessment. None of the other controls in this tier reached the
-flagging threshold. Full citations, accession numbers and the audit criteria
-are in `RESULTS.md` (the rows for this tier) and in the retrospective
-control-cleanliness audit under `controls/`. The numbers in this section are
-unchanged by that audit — it is disclosure only.
+next annual assessment. No other control in this tier reached the threshold
+at which those false positives are counted. Full citations, accession numbers
+and the audit criteria are in `RESULTS.md` (the rows for this tier) and in the
+retrospective control-cleanliness audit under `controls/`. The numbers in this
+section are unchanged by that audit — it is disclosure only.
 
 | Threshold T | Flags (event group, n=3) | 95% CI | False positives (control, n=9) | 95% CI | Cost per detection |
 |---|---|---|---|---|---|
