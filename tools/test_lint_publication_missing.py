@@ -153,3 +153,102 @@ def test_readme_detail_is_linted_surface_and_g2_rule_bites(monkeypatch, tmp_path
     monkeypatch.setattr(lp, "REPO", tmp_path)
     viol = lp.lint_doc("docs/README_DETAIL.md")
     assert any("(B) G2" in msg for _, msg in viol), viol
+
+
+# ── R17-4: 규칙 (G)는 양방향으로 무력했다 ────────────────────────────────────
+# (1) 규칙 전체에 테스트가 하나도 없었다 — LOWER_BOUND_TERM을 절대 매칭되지 않는
+#     패턴으로 바꿔 규칙을 통째로 무력화해도 0 red(788 passed)였다.
+# (2) allowlist가 **강화된** 주장을 흘렸다 — `clean lower bound`·`structural
+#     lower bound`·`구조적 하한`·`덜 오염`·`less.?contaminat`가 맨 긍정 분기라,
+#     "교란 프레임의 결과는 탐지력의 clean lower bound이다"가 11/11 DOCS에서
+#     통과했다. 세 분기는 D31 0-2 교정문 **자신의 어휘**다.
+#
+# 아래 코퍼스는 리터럴 목록이 아니라 **LOWER_BOUND_ALLOW의 분기에서 실행 시점에
+# 파생**된다. 맨 긍정 분기를 추가하면 테스트를 한 줄도 고치지 않아도 적색이 된다.
+
+def _g_probe(literal: str) -> str:
+    """교란 프레임 + 하한 + 그 분기를 한 문장에 담는다 — (G)의 발화 조건 그대로."""
+    return (f"\n교란(perturbed) 프레임의 결과는 탐지력의 lower bound 이다 "
+            f"— {literal}.\n")
+
+
+def _g_violations(monkeypatch, tmp_path, rel, added):
+    return [msg for _, msg in _mutated_copy(tmp_path, monkeypatch, rel, added)
+            if "(G)" in msg]
+
+
+G_ALLOW_BRANCHES = lp.alternation_branches(lp.LOWER_BOUND_ALLOW.pattern)
+
+
+def test_rule_g_allowlist_has_branches_to_check():
+    assert G_ALLOW_BRANCHES, "분기 분해가 비어 있으면 아래 테스트들이 공회전한다"
+
+
+@pytest.mark.parametrize("branch", G_ALLOW_BRANCHES)
+def test_every_rule_g_allow_branch_is_corrective_by_its_own_text(branch):
+    """(a): 분기는 자기 텍스트만으로 부정 또는 홀드아웃 귀속이어야 한다.
+
+    맨 긍정어(`clean lower bound`·`구조적 하한`·`덜 오염`)는 어느 쪽도 아니므로
+    분기가 될 수 없다 — allowlist에 열쇠를 **추가하는 능력** 자체가 사라진다."""
+    assert lp.lower_bound_allow_branch_is_corrective(branch), branch
+
+
+# 종전 allowlist에 실제로 들어 있던 맨 긍정 분기들 — 술어의 **음성 대조**다.
+# 이것이 없으면 술어를 항상 True로 바꿔도 0 red다(실측): 현재 분기가 모두 교정형
+# 이라 아래 파라미터화의 else 가지가 한 번도 실행되지 않기 때문이다.
+G_HISTORICAL_BARE_AFFIRMATIVE = [
+    "clean\\s+lower\\s+bound", "structural\\s+lower\\s+bound",
+    "구조적\\s+하한", "덜\\s+오염", "less.?contaminat",
+]
+
+
+@pytest.mark.parametrize("branch", G_HISTORICAL_BARE_AFFIRMATIVE)
+def test_bare_affirmative_branches_are_rejected_by_the_predicate(branch):
+    """(a) 음성 대조: 교정문 자신의 어휘라도 맨 긍정어는 분기가 될 수 없다."""
+    assert not lp.lower_bound_allow_branch_is_corrective(branch), branch
+
+
+@pytest.mark.parametrize("branch",
+                         G_ALLOW_BRANCHES + G_HISTORICAL_BARE_AFFIRMATIVE)
+def test_rule_g_corpus_is_derived_from_the_allowlist(monkeypatch, tmp_path, branch):
+    """(b): 프로브 문장을 분기에서 파생해 판정한다.
+
+    교정 분기면 통과해야 하고(그래야 철회 사실을 서술할 수 있다), 교정 분기가
+    아니면 반드시 걸려야 한다. 맨 긍정 분기를 넣으면 후자 가지가 적색이 된다."""
+    literal = lp.allow_branch_literal(branch)
+    viol = _g_violations(monkeypatch, tmp_path, "METHOD.md", _g_probe(literal))
+    if lp.lower_bound_allow_branch_is_corrective(branch):
+        assert not viol, (branch, viol)
+    else:
+        assert viol, (branch, "맨 긍정 분기가 (G)를 열었다")
+
+
+# (d) 리뷰가 실측한 네 문장 — 종전에는 0/11 DOCS에서 걸렸다.
+G_AFFIRMATIVE_SENTENCES = [
+    "\n교란(perturbed) 프레임의 결과는 탐지력의 clean lower bound 이다.\n",
+    "\nThe identity-masked arm yields a structural lower bound on detection.\n",
+    "\n정체-가림 조건의 수치는 탐지력의 구조적 하한 이다.\n",
+    "\nBecause the perturbed frame is less contaminated, its score is a lower bound.\n",
+    # 대조(원래도 걸리던 형태) — 규칙이 살아 있음을 확인한다
+    "\nThe perturbed arm gives a lower bound on detection.\n",
+]
+
+
+@pytest.mark.parametrize("sentence", G_AFFIRMATIVE_SENTENCES,
+                         ids=[str(i) for i in range(len(G_AFFIRMATIVE_SENTENCES))])
+def test_strengthened_lower_bound_claim_is_flagged(monkeypatch, tmp_path, sentence):
+    assert _g_violations(monkeypatch, tmp_path, "METHOD.md", sentence), sentence
+
+
+def test_rule_g_still_fires_on_the_plain_form(monkeypatch, tmp_path):
+    """(d) LOWER_BOUND_TERM 무력화가 적색이 되게 하는 최소 잠금."""
+    assert _g_violations(monkeypatch, tmp_path, "README.md",
+                         "\n교란 프레임은 능력의 하한 이다.\n")
+
+
+def test_genuinely_corrective_passages_stay_pass():
+    """(c) 트리에 이미 있는 정직한 철회 문면은 그대로 통과한다."""
+    for rel in ("docs/methodology_limitations.md", "docs/README_DETAIL.md",
+                "RESULTS.md", "RESULTS.ko.md", "README.ko.md"):
+        viol = [msg for _, msg in lp.lint_doc(rel) if "(G)" in msg]
+        assert not viol, (rel, viol)

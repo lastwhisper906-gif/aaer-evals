@@ -113,9 +113,90 @@ DRAWNOISE_TERM = re.compile(r"draw[- ]?noise|draw\s*잡음|재추첨\s*잡음", 
 # (G) D31 0-2 (W3): 교란 프레임 + lower bound/하한 결합 서술 금지 — 교정 문구는 allowlist.
 PERTURB_TERM = re.compile(r"perturb|identity.?mask|identity.?blind|교란|정체[- ]?가림", re.I)
 LOWER_BOUND_TERM = re.compile(r"lower\s+bound|하한", re.I)
+# R17-4: 종전 allowlist는 `clean lower bound`·`structural lower bound`·`구조적 하한`·
+#     `덜 오염`·`less.?contaminat`를 **맨 긍정 분기**로 담고 있었다. D31 0-2가
+#     철회한 문장은 "교란 프레임 = 능력 하한"이고 서명된 교정문은 "덜 오염된 측정,
+#     clean lower bound 아님 … 구조적 하한은 홀드아웃뿐"이다 — 즉 분기 셋이 교정문
+#     **자신의 어휘**였다. 그래서 약한 주장은 걸리고 **강화된** 주장("교란 프레임의
+#     결과는 탐지력의 clean lower bound이다")은 전 DOCS에서 통과했다. 게다가 규칙
+#     전체에 테스트가 하나도 없어 LOWER_BOUND_TERM을 무력화해도 0 red였다.
+#
+#     이제 분기는 형식 제약을 받는다 (lower_bound_allow_branch_is_corrective):
+#     분기 자신의 텍스트가 하한 표현을 **부정**하거나, 하한을 **홀드아웃 계층으로
+#     귀속**해야 한다. 맨 긍정어는 분기가 될 수 없고, 테스트 코퍼스는 이 패턴의
+#     분기들에서 **실행 시점에 파생**되므로 맨 긍정 분기를 넣으면 스위트가 적색이
+#     된다 — 열쇠를 옮기는 게 아니라 열쇠를 추가할 능력을 없앤다.
 LOWER_BOUND_ALLOW = re.compile(
-    r"not a clean lower bound|clean lower bound|하한이 아니|덜 오염|less.?contaminat"
-    r"|structural lower bound|구조적 하한", re.I)
+    r"not\s+a\s+clean\s+lower\s+bound"
+    r"|하한\s*(?:이|은|는)?\s*아(?:니|님)"
+    # 문장 경계(마침표)는 넘지 않되 하드랩 개행은 넘는다 — 실제 정본 문장이
+    # "The only structural lower bound in this design\nis the post-cutoff holdout"
+    # 처럼 줄바꿈으로 끊긴다.
+    r"|only\s+structural\s+lower\s+bound[^.]{0,80}holdout"
+    r"|유일한\s+구조적\s+하한[^.]{0,80}홀드아웃", re.I)
+
+# 분기 자신만 보고 판정하는 두 술어 (R17-4 (a)의 "기계적으로 무엇이 부정인가").
+_ALLOW_NEGATION = re.compile(r"not\s|no\s+longer|아니|아님|않", re.I)
+# 서명된 교정문이 구조적 하한을 배정한 **유일한** 계층.
+_ALLOW_TIER_REASSIGNMENT = re.compile(r"holdout|홀드아웃", re.I)
+
+
+def alternation_branches(pattern: str) -> list[str]:
+    """정규식 소스의 **최상위** `|` 분기 — 괄호/문자클래스/이스케이프를 존중한다."""
+    branches, buf, depth, in_class, escaped = [], [], 0, False, False
+    for ch in pattern:
+        if escaped:
+            buf.append(ch)
+            escaped = False
+        elif ch == "\\":
+            buf.append(ch)
+            escaped = True
+        elif in_class:
+            buf.append(ch)
+            in_class = ch != "]"
+        elif ch == "[":
+            buf.append(ch)
+            in_class = True
+        elif ch in "()":
+            depth += 1 if ch == "(" else -1
+            buf.append(ch)
+        elif ch == "|" and depth == 0:
+            branches.append("".join(buf))
+            buf = []
+        else:
+            buf.append(ch)
+    branches.append("".join(buf))
+    return [b for b in branches if b]
+
+
+def allow_branch_literal(branch: str) -> str:
+    """분기를 **그 분기가 실제로 매칭하는** 평문 한 줄로 편다.
+
+    허용하는 구성은 넷뿐이다: `(?:a|b)?` → 삭제, `(?:a|b)` → 첫 대안,
+    `[^.\\n]{0,N}` → 공백, `\\s+`/`\\s*`/`.?` → 공백. 그 밖의 메타문자가 남으면
+    ValueError — 허용 분기는 이 판정이 결정 가능할 만큼 단순해야 한다. 이
+    제약 자체가 규칙의 일부다(임의 정규식으로 판정을 흐릴 수 없다)."""
+    s = re.sub(r"\(\?:[^()]*\)\?", "", branch)
+    s = re.sub(r"\(\?:([^()|]*)(?:\|[^()|]*)*\)", lambda m: m.group(1), s)
+    s = re.sub(r"\[\^[^\]]*\]\{\d+,\d+\}", " ", s)
+    for meta, plain in ((r"\s+", " "), (r"\s*", " "), (".?", " "), (r"\b", "")):
+        s = s.replace(meta, plain)
+    if re.search(r"[\\^$.|?*+()\[\]{}]", s):
+        raise ValueError(f"허용 분기가 너무 복잡하다: {branch!r} → {s!r}")
+    return s
+
+
+def lower_bound_allow_branch_is_corrective(branch: str) -> bool:
+    """규칙 (G) allowlist 분기의 적격성 — 분기 텍스트 하나만으로 결정된다.
+
+    (N1) 하한 용어 + 부정 토큰 (`not a clean lower bound`, `하한 아님`), 또는
+    (N2) 하한 용어 + 홀드아웃 귀속 (`the only structural lower bound … holdout`).
+    맨 긍정어는 (N1)도 (N2)도 아니므로 분기가 될 수 없다."""
+    literal = allow_branch_literal(branch)
+    if not LOWER_BOUND_TERM.search(literal):
+        return False
+    return bool(_ALLOW_NEGATION.search(literal)
+                or _ALLOW_TIER_REASSIGNMENT.search(literal))
 
 
 # (M) D-P83 / PKT-R2 (R15-5): 철회된 "암기 불가능" 문언의 재유입 금지.
@@ -142,8 +223,15 @@ IMPOSSIBLE_TERM = re.compile(r"impossible", re.I)
 #     LIVE_CLAIM_DOCS 4종 전부 포함). 정확히 철회 문언을 되살리는 방향으로
 #     느슨했다는 뜻이다.
 #
-#     규칙 (G)의 LOWER_BOUND_ALLOW는 **부정하는** 구문만 받는다("하한이 아니",
-#     "not a clean lower bound"). 같은 종류로 맞춘다: 철회 사실을 **서술**하는
+#     R17-4 정정 — 아래 선례 서술은 **틀렸다**: 이 주석이 쓰일 당시 규칙 (G)의
+#     LOWER_BOUND_ALLOW는 부정 구문만 받지 않았다. `clean lower bound`,
+#     `structural lower bound`, `구조적 하한`, `덜 오염`, `less.?contaminat`가
+#     맨 긍정 분기로 들어 있었고, 각각 단독으로 (G)를 열었다 — 즉 (M)의 접근이
+#     기댄 선례는 실재하지 않았다. (G)는 cycle 017에서 분기 형식 제약
+#     (lower_bound_allow_branch_is_corrective: 부정 또는 홀드아웃 귀속)으로
+#     구조적으로 닫혔고, 지금은 실제로 부정/귀속 구문만 받는다. (M)의 설계
+#     판단은 소유자 몫으로 남아 있다 (R17-5 (b) 초안).
+#     같은 종류로 맞춘다: 철회 사실을 **서술**하는
 #     구문 — 문언/주장/표현을 목적어로 삼아 그것이 철회되었다고 말하거나,
 #     더는 주장하지 않는다고 말하는 형태 — 만 허용한다. 주제어 단독으로는
 #     열리지 않으므로, 철회된 문장을 재단언하면서 교정 어휘를 곁들이는
