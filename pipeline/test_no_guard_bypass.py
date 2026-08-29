@@ -16,10 +16,13 @@ from pathlib import Path
 
 import pytest
 
-from test_all_raw_reads_enforced import CORPUS_ROOT_NAMES, _raw_read_functions
+from test_all_raw_reads_enforced import (CORPUS_ROOT_ATTRS, CORPUS_ROOT_LITERAL,
+                                          CORPUS_ROOT_NAMES, EXEMPT, EXEMPT_PIN,
+                                          _raw_read_functions, scannable_sources)
 
 PIPELINE_DIR = Path(__file__).resolve().parent
-EXEMPT = {"cutoff_guard.py"}  # 게이트웨이 본체만 예외
+# 로스터와 면제 집합은 두 스캐너의 **단일 출처**다 (test_all_raw_reads_enforced).
+# 한쪽만 넓히면 다른 쪽에 그대로 구멍이 남는다 — R17-2 (a)(iv).
 
 FORBIDDEN_PATTERNS = {
     "network import": re.compile(
@@ -40,8 +43,8 @@ FORBIDDEN_PATTERNS = {
 # 심볼(DATA_DIR = cutoff_guard.DEFAULT_EDGAR_DATA)로 들고 있어서 파일 어디에도
 # 'aaer-data' 리터럴이 없다. R16-1(e): 리터럴에 의존하지 않는 두 번째 층 —
 # 코퍼스 루트를 가리키는 *이름*을 소스에서 유도한 뒤 원시 읽기 호출을 찾는다.
-CORPUS_ROOT_ATTRS = frozenset({"DEFAULT_EDGAR_DATA"})
-CORPUS_ROOT_LITERAL = "aaer-data"
+# CORPUS_ROOT_ATTRS·CORPUS_ROOT_LITERAL은 위에서 import한다 — 두 스캐너가 같은
+# 시드 집합을 봐야 한쪽만 넓히는 실수가 불가능하다 (R17-2 (a)).
 
 
 def corpus_root_aliases(source: str) -> set[str]:
@@ -101,17 +104,31 @@ def test_imported_corpus_root_read_is_flagged_without_the_literal():
     assert corpus_reads_via_root(IMPORTED_ROOT_SOURCE) == ["load_pit_series"]
 
 
+def corpus_root_violations(root: Path = PIPELINE_DIR) -> dict[str, list[str]]:
+    """루트 아래 전 깊이의 비-테스트 모듈 중 코퍼스를 직독하는 것."""
+    found = {}
+    for path in scannable_sources(root):
+        hits = corpus_reads_via_root(path.read_text(encoding="utf-8"))
+        if hits:
+            found[path.relative_to(root).as_posix()] = hits
+    return found
+
+
+def pattern_violations(root: Path = PIPELINE_DIR) -> list[str]:
+    """루트 아래 전 깊이의 비-테스트 모듈에서 FORBIDDEN_PATTERNS 적중 전건."""
+    violations = []
+    for path in scannable_sources(root):
+        source = path.read_text(encoding="utf-8")
+        rel = path.relative_to(root).as_posix()
+        for label, pattern in FORBIDDEN_PATTERNS.items():
+            for m in pattern.finditer(source):
+                line_no = source[: m.start()].count("\n") + 1
+                violations.append(f"{rel}:{line_no} [{label}] {m.group(0).strip()}")
+    return violations
+
+
 def test_pipeline_modules_do_not_read_the_corpus_root_directly():
-    violations = {path.name: corpus_reads_via_root(path.read_text(encoding="utf-8"))
-                  for path in scannable_sources()}
-    assert not {k: v for k, v in violations.items() if v}
-
-
-def scannable_sources():
-    for p in sorted(PIPELINE_DIR.glob("*.py")):
-        if p.name in EXEMPT or p.name.startswith("test_"):
-            continue
-        yield p
+    assert not corpus_root_violations()
 
 
 @pytest.mark.parametrize(("label", "source"), [
@@ -129,14 +146,71 @@ def test_forbidden_patterns_have_positive_controls(label, source):
 
 
 def test_pipeline_modules_do_not_bypass_guard():
-    violations = []
-    for path in scannable_sources():
-        source = path.read_text(encoding="utf-8")
-        for label, pattern in FORBIDDEN_PATTERNS.items():
-            for m in pattern.finditer(source):
-                line_no = source[: m.start()].count("\n") + 1
-                violations.append(f"{path.name}:{line_no} [{label}] {m.group(0).strip()}")
+    violations = pattern_violations()
     assert not violations, (
         "cutoff_guard 우회 의심 코드 발견 — load_document(loader=...) 경유로 수정할 것:\n"
         + "\n".join(violations)
     )
+
+
+# ── R17-2 (a)(iv)·(d): 깊이 ──────────────────────────────────────────────────
+# 두 스캐너의 로스터는 `glob("*.py")`였다 — 바이트 동일한 위반 모듈을
+# pipeline/edgar_fetch.py에 심으면 1 red, pipeline/loaders/edgar_fetch.py에
+# 심으면 0 red(788 passed)였다. 아래 테스트는 위반 모듈을 **런타임에 계산한
+# 경로**(깊이 ≥2, 이름은 단언에 하드코딩하지 않음)에 합성해, 로스터가 깊이에
+# 독립임을 규칙별로 확인한다.
+_DEPTH_VIOLATION = '''
+import json
+import requests
+
+from scoring import rubric
+
+
+def fetch(ticker):
+    key = "scoring/id_mapping.json"
+    doc = "candidates.json"
+    return json.load(open("/srv/aaer-data/AAER/raw.json"))
+'''
+
+# 'aaer-data' 리터럴을 한 번도 쓰지 않는 코퍼스 직독 — 리터럴 규칙과 **독립으로**
+# 원시-코퍼스 leg가 자기 적색을 내야 한다.
+_DEPTH_VIOLATION_NO_LITERAL = '''
+import json
+
+import cutoff_guard
+
+
+def fetch(ticker):
+    return json.load(open(cutoff_guard.DEFAULT_EDGAR_DATA / ticker / "xbrl" / "f.json"))
+'''
+
+
+def _plant(tmp_path: Path, source: str, depth: int) -> Path:
+    """깊이 `depth`의 패키지 경로를 런타임에 만들고 모듈을 심는다."""
+    rel = Path(*(f"pkg{i}" for i in range(depth)))
+    target = tmp_path / rel / f"mod{depth}.py"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(source, encoding="utf-8")
+    return target
+
+
+@pytest.mark.parametrize("depth", [1, 2, 3])
+def test_forbidden_patterns_are_found_at_any_depth(tmp_path, depth):
+    planted = _plant(tmp_path, _DEPTH_VIOLATION, depth)
+    assert planted.relative_to(tmp_path).parts[:-1]  # 실제로 하위 디렉토리다
+    violations = pattern_violations(tmp_path)
+    labels = {v.split("[", 1)[1].split("]", 1)[0] for v in violations}
+    assert labels == set(FORBIDDEN_PATTERNS), (depth, sorted(labels))
+
+
+@pytest.mark.parametrize("depth", [1, 2, 3])
+def test_corpus_root_reads_are_found_at_any_depth(tmp_path, depth):
+    _plant(tmp_path, _DEPTH_VIOLATION_NO_LITERAL, depth)
+    assert CORPUS_ROOT_LITERAL not in _DEPTH_VIOLATION_NO_LITERAL
+    assert corpus_root_violations(tmp_path), depth
+
+
+def test_roster_is_recursive_and_exemptions_are_pinned():
+    assert EXEMPT == EXEMPT_PIN
+    names = {p.name for p in scannable_sources()}
+    assert names and not names & EXEMPT
