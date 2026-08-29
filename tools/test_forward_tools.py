@@ -2371,6 +2371,41 @@ def test_seal_owner_commands_write_and_stage_blindness_manifest(cycle, monkeypat
     assert any("git status --porcelain" in ln and "runs/" in ln
                for ln in steps[:push_at]), block
 
+    # R15-3: 사이클 디렉토리도 push 전에 재검증된다 — 매니페스트가 불변인
+    # 쪽이 그쪽인데 사슬은 runs/만 두 번 보고 있었다.
+    assert any(ln.startswith("python tools/forward_verify_seal.py --cycle")
+               for ln in steps[:push_at]), block
+    assert any("git status --porcelain" in ln and cycle.name in ln
+               for ln in steps[:push_at]), block
+
+
+def test_late_evidence_file_is_caught_by_the_chains_own_verifier(
+        cycle, monkeypatch, capsys):
+    """R15-3 행동 leg: 봉인 후 evidence/에 떨어진 파일 하나가 무엇을 하는가.
+
+    `git add {cycle}`는 디렉토리 전체를 담고 sealed_paths는 SEALED_FILES +
+    evidence/ 전건을 해싱하므로, 매니페스트가 쓰인 **뒤** 생긴 파일은 커밋·
+    태그·push까지 실려 가고 그 순간부터 모든 클론에서 manifest_text가 그
+    줄만큼 길어진다 (forward_common.py의 자체 주석이 서술하는 실패 모드).
+    교정 경로는 없다 — INV-06/INV-22가 매니페스트 재작성을, forward_seal이
+    재봉인을 금지한다.
+
+    사슬에 넣은 그 명령이 정확히 이것을 잡는다: 아래 exit 1이 push 직전에
+    나오면 push가 일어나지 않는다. 부모 커밋에서는 사슬에 이 단계가 없어
+    같은 시퀀스가 push까지 도달했다 (test_seal_owner_commands_…의 새 단언이
+    그 부재를 고정한다)."""
+    monkeypatch.setattr(sys, "argv", seal_argv(cycle))
+    assert forward_seal.main() == 0
+    import forward_verify_seal
+    monkeypatch.setattr(sys, "argv", ["x", "--cycle", str(cycle)])
+    stamp_ots(cycle)
+    assert forward_verify_seal.main() == 0        # 봉인 직후 상태는 정합
+
+    (cycle / "evidence").mkdir(exist_ok=True)
+    (cycle / "evidence" / "late.txt").write_text("fetch receipt", encoding="utf-8")
+    assert forward_verify_seal.main() == 1
+    assert "봉인 후 추가됨: evidence/late.txt" in capsys.readouterr().out
+
 
 def test_abort_seal_record_also_portable(cycle, monkeypatch):
     (cycle / "scores.json").unlink()

@@ -197,6 +197,24 @@ def main():
     # 실패해도(exit 1) 매니페스트를 쓰고 반환하므로, 붙여넣은 블록이 그대로
     # 커밋·태그·push까지 진행했다. 전 구간 `&&` 연쇄 + push 직전 읽기 전용
     # 재검증(매니페스트 기록 후 staging 누락까지 잡는다)으로 닫는다.
+    # R15-3: 사슬은 runs/를 두 번 재검증하면서 **사이클 디렉토리**는 한 번도
+    # 재검증하지 않았다 — 매니페스트가 불변인 쪽이 그쪽인데도. `git add
+    # {cycle_display}`는 디렉토리 전체를 담고 sealed_paths는 SEALED_FILES +
+    # evidence/ 전건을 해싱하므로, 매니페스트 기록 후 evidence/에 떨어진 파일
+    # 하나가 커밋·태그·push까지 실려 간다. 그 push 시점부터 모든 클론에서
+    # manifest_text가 그 줄만큼 길어져 forward_verify_seal이 제3자마다 exit 1
+    # 이고, INV-06/INV-22가 매니페스트 재작성을 금지하므로 교정 경로가 없다.
+    # 그래서 push 직전에 forward_verify_seal을 사슬 안에 넣는다.
+    #
+    # 정규 봉인에서 verify_seal은 .ots 부재를 실패로 본다 (R11-3 fail-closed).
+    # 봉인 시점에 stamp가 pending이었다면(클라이언트 부재·시간초과) 그 stamp를
+    # push 전에 해야 하므로, 그 경우에만 앵커 단계를 함께 방출한다 — abort
+    # 봉인은 .ots 없이 통과하므로 넣지 않는다.
+    ots_step = ""
+    if ots_pending and not args.abort:
+        ots_step = (f"ots stamp {cycle_display}/MANIFEST.sha256 && \\\n"
+                    f"git add {cycle_display}/MANIFEST.sha256.ots && \\\n"
+                    f"git commit -m 'SEAL: OTS anchor' && \\\n")
     owner_cmds = (
         f"python tools/verify_blindness.py --write-manifest && \\\n"
         f"git add runs/MANIFEST.sha256 {cycle_display}{stage_extra} && \\\n"
@@ -208,6 +226,14 @@ def main():
         # staging은 안 되면 로컬은 PASS, 신선한 CI 클론은 "매니페스트 기재
         # 파일 누락"으로 적색이다. 커밋 후 runs/가 깨끗한지 확인해 막는다.
         f"test -z \"$(git status --porcelain --untracked-files=all runs/)\" && \\\n"
+        + ots_step +
+        # R15-3: 봉인된 사이클 디렉토리 자체의 재검증 — 제3자 클론이 실행할
+        # 바로 그 명령을 push 전에 한 번 돌린다 (매니페스트 대비 추가·삭제·변조).
+        f"python tools/forward_verify_seal.py --cycle {cycle_display} && \\\n"
+        # R15-3: :210의 runs/ 청결 게이트를 사이클 디렉토리에도 건다 — 위
+        # 검증이 통과한 디스크 상태와 커밋된 상태가 같아야 "검증한 것을
+        # push한다"가 성립한다 (미추적 잔여물은 클론에 가지 않는다).
+        f"test -z \"$(git status --porcelain --untracked-files=all {cycle_display})\" && \\\n"
         f"git push origin main --tags\n"
         # R11-3: 서버가 기록한 시각은 push 이벤트뿐이다 (tag/commit 날짜는
         # 클라이언트 제공값). Events API는 ~90일 보존이므로 push 직후에
