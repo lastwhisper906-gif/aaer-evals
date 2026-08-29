@@ -246,9 +246,15 @@ def validate(cycle: Path, runs_dir: Path | None = None) -> list[str]:
     if sm_path.exists():
         sources = read_json(sm_path).get("sources", [])
         for i, e in enumerate(sources):
-            for field in ("filing_date", "retrieval_date", "url", "sha256"):
+            for field in ("filing_date", "retrieval_date", "url"):
                 if not e.get(field):
                     errs.append(f"source[{i}]: {field} 결측 (retrieval/filing 분리 저장 의무)")
+            # R16-5: sha256은 truthiness가 아니라 형식으로 본다 — `"abc"`는
+            # 종전 검사를 통과했고 실제로 픽스처에 봉인돼 있었다. 같은 파일의
+            # run_output_sha256 leg는 이미 _is_sha256를 쓴다.
+            if not _is_sha256(e.get("sha256")):
+                errs.append(f"source[{i}]: sha256 부재/비정형 {e.get('sha256')!r} "
+                            "— 봉인이 출처 바이트를 가리키지 못한다")
             try:
                 if e.get("filing_date") and parse_date(e["filing_date"]) > cutoff:
                     errs.append(f"source[{i}] {e.get('url', '?')[:60]}: filing_date "

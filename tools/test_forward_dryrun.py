@@ -4,6 +4,7 @@ mock 회사(픽스처 universe 12건)로 fetch(스텁)→build→source-manifest
 assemble(스텁 러너 출력)→validate 전 구간을 네트워크 0으로 관통한다
 (INV-23 — 테스트·도구 기본 경로 모두 픽스처 전용).
 """
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -239,6 +240,42 @@ def test_invalid_submissions_json_aggregates_failure_without_corrupt_write(
     assert (dest / r2["ticker"] / "xbrl" / "CIK0000001002.json").exists()
 
 
+def _one_row_log(cf: Path) -> None:
+    log_path = fxf.fetch_log_path()
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    log_path.write_text(json.dumps(
+        {"record_id": "fw001-r01", "kind": "companyfacts", "cik": "0000001001",
+         "url": "u-cf", "retrieval_date": "t1",
+         "sha256": hashlib.sha256(cf.read_bytes()).hexdigest(),
+         "path": str(cf)}) + "\n", encoding="utf-8")
+
+
+def test_build_sources_fails_closed_when_disk_bytes_drifted_from_the_log(tmp_path):
+    """R16-5: 로그 행이 쓰인 **뒤** 디스크 파일이 바뀌면 build_sources는 닫아야
+    한다. 이 아이템이 존재하는 시나리오 그 자체다.
+
+    종전 build_sources는 accession을 디스크에서 파싱하고 sha256은 로그 행에서
+    베껴 왔다 — 그래서 봉인되는 source_manifest.json의 sha256은 '누가 언젠가
+    이렇게 적었다'는 전사였지, 파싱된 바이트에 대한 증명이 아니었다.
+    forward_validate도 이 leg를 재해시하지 않고 비어있지만 않으면 통과시켰다
+    (같은 파일의 run_output_sha256 leg는 R4-4에서 실측 재해시가 됐다)."""
+    dest = tmp_path / "d"
+    cf = dest / "TK01" / "xbrl" / "CIK0000001001.json"
+    cf.parent.mkdir(parents=True)
+    cf.write_bytes(_synthetic_companyfacts(1))
+    _one_row_log(cf)
+    sources = fsm.build_sources(dest, CUTOFF)       # 드리프트 전에는 통과
+    # 봉인되는 값은 파싱한 바이트의 실측 해시여야 한다 — 로그의 전사가 아니라
+    assert {s["sha256"] for s in sources} == {
+        hashlib.sha256(cf.read_bytes()).hexdigest()}
+
+    cf.write_bytes(_synthetic_companyfacts(2))      # 로그 기록 후 디스크가 바뀐다
+    with pytest.raises(SystemExit) as exc:
+        fsm.build_sources(dest, CUTOFF)
+    assert "디스크 바이트가 다르다" in str(exc.value)
+    assert "재수집" in str(exc.value), "복구 지시가 '재로깅'이면 증명이 아니다"
+
+
 def test_submissions_row_after_companyfacts_does_not_clobber_manifest(tmp_path):
     """R8-1 trap: record_id 키 최신-행 dedup에 submissions 행이 섞이면
     companyfacts 행을 클로버해 그 레코드의 매니페스트가 조용히 빈다 —
@@ -250,11 +287,16 @@ def test_submissions_row_after_companyfacts_does_not_clobber_manifest(tmp_path):
     sub = dest / "TK01" / "edgar" / "CIK0000001001.json"
     sub.parent.mkdir(parents=True)
     sub.write_bytes(_synthetic_submissions(1))
+    # R16-5: build_sources가 파싱한 바이트를 재해시하므로 픽스처 로그의
+    # sha256도 실제 값이어야 한다 ("s1"/"s2"는 종전에 아무도 대조하지 않아서
+    # 통과했다 — 이 아이템이 없앤 성질 그대로다). 픽스처 정정.
     rows = [{"record_id": "fw001-r01", "kind": "companyfacts", "cik": "0000001001",
-             "url": "u-cf", "retrieval_date": "t1", "sha256": "s1", "path": str(cf)},
+             "url": "u-cf", "retrieval_date": "t1",
+             "sha256": hashlib.sha256(cf.read_bytes()).hexdigest(), "path": str(cf)},
             # 뒤 행이 submissions — 무필터면 latest[rid]를 클로버한다
             {"record_id": "fw001-r01", "kind": "submissions", "cik": "0000001001",
-             "url": "u-sub", "retrieval_date": "t2", "sha256": "s2", "path": str(sub)}]
+             "url": "u-sub", "retrieval_date": "t2",
+             "sha256": hashlib.sha256(sub.read_bytes()).hexdigest(), "path": str(sub)}]
     # R15-1: 픽스처 로그도 정본 경로에 둔다 (build_sources가 읽는 유일한 파일)
     log_path = fxf.fetch_log_path()
     log_path.parent.mkdir(parents=True, exist_ok=True)

@@ -21,7 +21,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from forward_common import (REPO, SCREENING_CUTOFF, assert_subscription_only,
                             is_sealed, parse_date, seal_residue_notice,
-                            write_json)
+                            sha256_file, write_json)
 
 
 def accessions_in_companyfacts(path: Path, cutoff: str) -> dict[str, str]:
@@ -77,13 +77,28 @@ def build_sources(fetch_dir: Path, cutoff: str) -> list[dict]:
     for rid in sorted(latest):
         row = latest[rid]
         path = _resolve_logged_path(row["path"], fetch_dir)
+        # R16-5: 봉인되는 sha256은 **파싱한 그 바이트**의 것이어야 한다.
+        # 종전에는 디스크에서 accession을 읽고 sha256은 로그 행에서 베껴 왔다 —
+        # 두 값이 어긋나도 아무도 몰랐고, source_manifest.json은 SEALED_FILES이자
+        # 이 저장소가 내세우는 INV-01 증거다. R4-4가 run_output_sha256을 실측
+        # 재해시로 만든 것과 같은 이유: 아무도 다시 계산하지 않는 leg는 신뢰
+        # 사슬이 아니라 장식이다.
+        actual = sha256_file(path)
+        if actual != row.get("sha256"):
+            raise SystemExit(
+                f"FAIL — {rid}: 수집 로그의 sha256과 디스크 바이트가 다르다 — "
+                f"로그 {row.get('sha256')!r} ≠ 실측 {actual} ({path}). "
+                "봉인될 출처 증명이 실제로 파싱된 바이트를 가리키지 않는다. "
+                "로그를 고치지 말고 재수집하라 (fetch_xbrl_facts.py --universe) "
+                "— 로그를 실측에 맞추면 증명이 아니라 전사(transcription)가 된다.")
         for accn, filed in sorted(accessions_in_companyfacts(path, cutoff).items()):
             sources.append({
                 "accession_no": accn,
                 "filing_date": filed,
                 "url": row["url"],
                 "retrieval_date": row["retrieval_date"],
-                "sha256": row["sha256"],
+                # 로그 행이 아니라 **실측값**을 봉인한다 (위 대조로 둘은 같다).
+                "sha256": actual,
             })
     return sources
 

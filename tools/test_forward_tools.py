@@ -81,7 +81,11 @@ def cycle(tmp_path):
     fc.write_json(c / "universe.json", make_universe())
     fc.write_json(c / "source_manifest.json", {"sources": [
         {"url": "https://data.sec.gov/x", "filing_date": "2026-11-14",
-         "retrieval_date": "2026-11-15", "sha256": "abc", "description": "d",
+         # R16-5: 종전 값은 `"abc"`였고 validate를 통과했다 — sha256 leg가
+         # truthiness만 봤기 때문이다. 실제 64자 hex로 교정 (픽스처 정정).
+         "retrieval_date": "2026-11-15",
+         "sha256": hashlib.sha256(b"forward source fixture").hexdigest(),
+         "description": "d",
          "accession_no": "0000000000-26-000001"}]})
     fc.write_json(c / "scores.json", {"records": [
         make_record(f"fw001-r{i:02d}") for i in range(1, 13)]})
@@ -1045,7 +1049,9 @@ def test_validate_cited_source_must_be_in_manifest(cycle):
     sm = fc.read_json(cycle / "source_manifest.json")
     sm["sources"].append({"url": "https://www.sec.gov/Archives/000000000026999999/x.htm",
                           "filing_date": "2026-11-14", "retrieval_date": "2026-11-15",
-                          "sha256": "z", "description": "d"})
+                          # R16-5: `"z"`도 종전 truthiness 검사를 통과했다 (픽스처 정정)
+                          "sha256": hashlib.sha256(b"cited source fixture").hexdigest(),
+                          "description": "d"})
     fc.write_json(cycle / "source_manifest.json", sm)
     assert forward_validate.validate(cycle) == []
 
