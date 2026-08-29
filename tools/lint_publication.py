@@ -136,9 +136,24 @@ MEMO_RETRACTED_PHRASE = re.compile(r"memorization\s+is\s+impossible", re.I)
 LIVE_CLAIM_DOCS = ["README.md", "METHOD.md", "RESULTS.md", "docs/README_DETAIL.md"]
 MEMO_TERM = re.compile(r"memoriz|memory", re.I)
 IMPOSSIBLE_TERM = re.compile(r"impossible", re.I)
+# R16-3: 종전 allowlist는 **주제어**로 열렸다 — `retracted`·`declared cutoff`·
+#     `D-P83`, 즉 서명된 교정 어휘 자체가 열쇠였다. 그래서 철회된 문장을
+#     그 어휘와 함께 그대로 다시 단언하면 통과했다 (실측 20/20 DOCS 미검출,
+#     LIVE_CLAIM_DOCS 4종 전부 포함). 정확히 철회 문언을 되살리는 방향으로
+#     느슨했다는 뜻이다.
+#
+#     규칙 (G)의 LOWER_BOUND_ALLOW는 **부정하는** 구문만 받는다("하한이 아니",
+#     "not a clean lower bound"). 같은 종류로 맞춘다: 철회 사실을 **서술**하는
+#     구문 — 문언/주장/표현을 목적어로 삼아 그것이 철회되었다고 말하거나,
+#     더는 주장하지 않는다고 말하는 형태 — 만 허용한다. 주제어 단독으로는
+#     열리지 않으므로, 철회된 문장을 재단언하면서 교정 어휘를 곁들이는
+#     경로가 닫힌다.
 MEMO_ALLOW = re.compile(
-    r"retracted|철회|D-P83|PKT-R2|declared\s+(training\s+)?cutoff|선언\s*컷오프"
-    r"|not\s+impossible|cannot\s+be\s+blocked", re.I)
+    r"(wording|claim|phrase|sentence|statement|문언|문구|주장|표현)"
+    r"[^.\n]{0,80}\b(was|were|is|are|has\s+been|have\s+been)\s+retracted"
+    r"|\b(retracted|withdrew|withdrawn)\s+(this|that|the\s+above)\b"
+    r"|철회(되었|된|한|했|합니다|한다)"
+    r"|no\s+longer\s+(claim|assert|state|say)", re.I)
 
 
 # (J) D100 (RISK_SCORE_SEMANTICS §4): 서수 점수의 확률화 서술 금지.
