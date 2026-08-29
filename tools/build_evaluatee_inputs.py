@@ -144,15 +144,36 @@ def main() -> int:
     if args.universe:
         if not args.out:
             ap.error("--universe에는 --out이 필요하다")
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from forward_common import SCREENING_CUTOFF, cutoff_agreement_errors
         if args.cutoff is None:
-            sys.path.insert(0, str(Path(__file__).resolve().parent))
-            from forward_common import SCREENING_CUTOFF
             args.cutoff = SCREENING_CUTOFF
+        # R17-1: 이 파일은 cutoff_guard.TRUSTED_CASE_FILES 멤버가 되어 실제 코퍼스
+        # 신뢰를 부여받고, 하류 검사는 전부 **이 파일이 실은 값**을 다시 읽는
+        # 자기참조다 — 여기서 틀리면 모델 호출까지 아무도 못 잡는다. 사이클은
+        # universe.json의 위치에서 유도된다 (런북 §4 (3)의 실제 호출 형태).
+        cycle = Path(args.universe).resolve().parent
+        errs = cutoff_agreement_errors(
+            cycle, extra=[("--cutoff (이번 실행)", args.cutoff)])
+        if errs:
+            print("FAIL — 스크리닝 컷오프 정합 위반 (피평가자 케이스 파일을 "
+                  "쓰지 않는다 — 모델 호출 전 fail-closed):")
+            for e in errs:
+                print(f"  {e}")
+            return 1
         payload = build_forward(Path(args.universe), args.cutoff)
         out = Path(args.out)
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
                        encoding="utf-8")
+        # 쓴 뒤 레지스트리 표면까지 포함해 한 번 더 — 케이스별 cutoff_date가
+        # 상수에서 파생됐음을 산출물 자체에 대고 확인한다.
+        errs = cutoff_agreement_errors(cycle, registry_path=out)
+        if errs:
+            print("FAIL — 작성된 케이스 파일의 컷오프 정합 위반:")
+            for e in errs:
+                print(f"  {e}")
+            return 1
         print(f"wrote {out} ({len(payload['cases'])} forward cases)")
         return 0
 

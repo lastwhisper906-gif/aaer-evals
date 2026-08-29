@@ -163,6 +163,15 @@ def test_gate_steps_dry_run_end_to_end(tmp_path, monkeypatch, clean_env):
     for s in sources:
         assert s["url"] and s["retrieval_date"] and s["sha256"] and s["filing_date"]
 
+    # (3-out) R17-1: 런북 §4 (3)은 케이스 파일을 **디스크에** 쓴다 — 그 파일의
+    # cutoff_date가 세 컷오프 표면 중 하나다. 종전 리허설은 payload를 메모리에서만
+    # 만들고 넘어가서, 이 표면이 리허설에 아예 없었다. 실제 절차대로 쓴다.
+    registry_dir = tmp_path / "evaluatee"
+    registry_dir.mkdir()
+    (registry_dir / "cases_forward_099.json").write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    monkeypatch.setattr(forward_validate, "EVALUATEE_REGISTRY_DIR", registry_dir)
+
     # (4) 러너 출력 스텁 → assemble
     runs = tmp_path / "runs_forward"
     runs.mkdir()

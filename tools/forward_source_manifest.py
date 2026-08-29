@@ -20,8 +20,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from forward_common import (REPO, SCREENING_CUTOFF, assert_subscription_only,
-                            is_sealed, parse_date, seal_residue_notice,
-                            sha256_file, write_json)
+                            cutoff_agreement_errors, is_sealed, parse_date,
+                            seal_residue_notice, sha256_file, write_json)
 
 
 def accessions_in_companyfacts(path: Path, cutoff: str) -> dict[str, str]:
@@ -119,6 +119,16 @@ def main() -> int:
         return 1
     if (notice := seal_residue_notice(cycle)):
         print(notice)
+    # R17-1: `--cutoff`는 동결 상수를 기본값으로만 쓰는 자유 문자열이었다 — 아무도
+    # 되비추지 않았으므로 임의 값이 그대로 봉인 대상 매니페스트에 실렸다. 이 사이클이
+    # 이미 기재한 컷오프(PROTOCOL 스냅샷)와 이번 실행의 `--cutoff`를 함께 상수에
+    # 대조하고, 어긋나면 **쓰기 전에** 멈춘다.
+    errs = cutoff_agreement_errors(cycle, extra=[("--cutoff (이번 실행)", args.cutoff)])
+    if errs:
+        print("FAIL — 스크리닝 컷오프 정합 위반 (봉인 대상 매니페스트를 쓰지 않는다):")
+        for e in errs:
+            print(f"  {e}")
+        return 1
     sources = build_sources(Path(args.fetch_dir), args.cutoff)
     write_json(cycle / "source_manifest.json", {
         "generated_by": "tools/forward_source_manifest.py",

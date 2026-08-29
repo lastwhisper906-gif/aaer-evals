@@ -8,6 +8,7 @@ import datetime
 import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -215,6 +216,93 @@ def unshippable_sealed_files(cycle: Path, include_runs: bool = True) -> list[str
 def manifest_text(cycle: Path) -> str:
     """봉인 매니페스트 본문 — 결정론적 순서 (§9)."""
     return "".join(f"{sha256_file(p)}  {name}\n" for p, name in sealed_paths(cycle))
+
+
+# ── 스크리닝 컷오프 정합 (R17-1) ────────────────────────────────────────────
+# 이 사이클이 컷오프를 **기재하거나 소비하는** 자리는 셋이다: PROTOCOL.md 스냅샷의
+# `screening_cutoff:` 줄, 봉인 대상 source_manifest.json의 `cutoff` 키, 그리고
+# 서명된 런북이 지목하는 피평가자 레지스트리의 케이스별 `cutoff_date`. 종전에는
+# 두 생산자가 `--cutoff`를 자유 문자열로 받아 SCREENING_CUTOFF를 **기본값으로만**
+# 썼고, 어느 도구도 그 값을 상수나 서로에게 되비추지 않았다 — `--cutoff 2026-11-20`
+# 으로 만든 케이스 파일이 rc 0으로 나왔고, forward_validate는 `cutoff` 키가 아예
+# 없어도, `"2027-12-31"`로 바뀌어 있어도 빈 오류 목록을 돌려줬다.
+#
+# 부재를 **값**으로 만드는 것이 이 설계의 핵심이다. 아래 세 리더는 파일 부재·키
+# 부재·빈 문자열·파싱 실패를 전부 CUTOFF_ABSENT로 환원하고, 판정은 단 한 줄
+# (`value != SCREENING_CUTOFF`)을 지난다. 그래서 "기재가 없다"와 "기재가 다르다"는
+# 호출자에게 구분되지 않는다 — fail-closed의 양쪽 반을 한 경로에 둔다.
+CUTOFF_ABSENT = "<absent>"
+
+
+def _protocol_cutoff(cycle: Path) -> str:
+    path = Path(cycle) / "PROTOCOL.md"
+    if not path.is_file():
+        return CUTOFF_ABSENT
+    m = re.search(r"^- screening_cutoff:\s*(\S+)", path.read_text(encoding="utf-8"),
+                  re.M)
+    return m.group(1) if m else CUTOFF_ABSENT
+
+
+def _manifest_cutoff(cycle: Path) -> str:
+    path = Path(cycle) / "source_manifest.json"
+    if not path.is_file():
+        return CUTOFF_ABSENT
+    try:
+        value = read_json(path).get("cutoff")
+    except (OSError, ValueError):
+        return CUTOFF_ABSENT
+    return value if isinstance(value, str) and value else CUTOFF_ABSENT
+
+
+def _registry_cutoffs(registry_path: Path) -> list[tuple[str, str]]:
+    label = f"evaluatee registry {Path(registry_path).name}"
+    try:
+        cases = read_json(Path(registry_path)).get("cases", [])
+    except (OSError, ValueError):
+        return [(label, CUTOFF_ABSENT)]
+    if not isinstance(cases, list) or not cases:
+        return [(label, CUTOFF_ABSENT)]
+    out = []
+    for c in cases:
+        value = c.get("cutoff_date") if isinstance(c, dict) else None
+        out.append((f"{label} [{(c or {}).get('case_id', '?')}].cutoff_date",
+                    value if isinstance(value, str) and value else CUTOFF_ABSENT))
+    return out
+
+
+def cutoff_declarations(cycle: Path, registry_path=None,
+                        extra=()) -> list[tuple[str, str]]:
+    """이 호출이 책임지는 (표면 이름, 기재된 컷오프) 전건 — 부재는 CUTOFF_ABSENT.
+
+    registry_path가 None이면 레지스트리는 **이 호출의 표면 집합에 없다**는 뜻이다
+    (예: 레지스트리가 아직 만들어지기 전인 매니페스트 생산자). 경로가 주어지면
+    그 경로의 부재는 다른 표면의 부재와 똑같이 CUTOFF_ABSENT다."""
+    decls = [("PROTOCOL.md screening_cutoff", _protocol_cutoff(cycle)),
+             ("source_manifest.json cutoff", _manifest_cutoff(cycle))]
+    if registry_path is not None:
+        decls += _registry_cutoffs(registry_path)
+    return decls + list(extra)
+
+
+def cutoff_agreement_errors(cycle: Path, registry_path=None,
+                            extra=()) -> list[str]:
+    """전 표면이 동결 상수 하나에서 파생됐는가 — 아니면 fail-closed 사유 목록.
+
+    폐쇄성: 앵커가 **하나**이므로 "전건이 앵커와 같다"는 "전건이 서로 같고 앵커와도
+    같다"와 동치다 — 두 표면 사이에만 생긴 불일치도 반드시 최소 한 표면을 앵커와
+    어긋나게 만들기 때문에 같은 한 줄에 걸린다. 쌍 불일치는 사유를 읽는 사람을 위해
+    별도 줄로 한 번 더 요약한다(판정을 더하지는 않는다)."""
+    decls = cutoff_declarations(cycle, registry_path, extra)
+    errs = [f"컷오프 불일치/부재: {surface} = {value!r} ≠ 동결 스크리닝 컷오프 "
+            f"{SCREENING_CUTOFF!r} — 기재 부재는 기재 불일치와 동일하게 차단된다 "
+            "(INV-01, R17-1)"
+            for surface, value in decls if value != SCREENING_CUTOFF]
+    distinct = {value for _, value in decls}
+    if len(distinct) > 1:
+        errs.append(f"컷오프 표면 간 불일치: {sorted(distinct)} — 한 사이클의 모든 "
+                    "컷오프 기재는 forward_common.SCREENING_CUTOFF 하나에서 "
+                    "파생돼야 한다 (R17-1)")
+    return errs
 
 
 def parse_date(s: str) -> datetime.date:

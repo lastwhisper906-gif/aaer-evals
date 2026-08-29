@@ -23,8 +23,8 @@ import forward_assemble
 import forward_prepare
 from forward_common import (ET, REPO, SCREENING_CUTOFF, EXECUTION_WINDOW_END,
                             MIN_SCORED, UNIVERSE_SIZE,
-                            assert_subscription_only, fp_siblings, read_json,
-                            parse_date, sha256_file)
+                            assert_subscription_only, cutoff_agreement_errors,
+                            fp_siblings, read_json, parse_date, sha256_file)
 from forward_prepare import check_universe
 # R13-1: INV-13 금지어 목록은 발행 린트와 **같은 출처**를 쓴다 — 목록이 한쪽만
 # 늘면 봉인 경로에 구멍이 생긴다 (lint_publication은 상수·REPO만 정의하는
@@ -201,8 +201,22 @@ def run_output_fraud_word_errors(rid, out_path: Path) -> list[str]:
     return errs
 
 
+# R17-1: 서명된 런북이 지목하는 피평가자 레지스트리 (§4 (3)·(4)) — 사이클
+# 디렉토리 이름에서 기계적으로 유도한다. 모듈 상수라서 테스트가 대체할 수 있다.
+EVALUATEE_REGISTRY_DIR = REPO / "data" / "evaluatee"
+
+
+def evaluatee_registry_path(cycle: Path) -> Path:
+    suffix = Path(cycle).name.split("cycle_", 1)[-1]
+    return EVALUATEE_REGISTRY_DIR / f"cases_forward_{suffix}.json"
+
+
 def validate(cycle: Path, runs_dir: Path | None = None) -> list[str]:
     errs = []
+    # R17-1: 세 컷오프 표면(PROTOCOL 스냅샷·봉인 매니페스트·피평가자 레지스트리)이
+    # 동결 상수 하나에서 파생됐는지 — 봉인 **전에** 판정한다. 종전에는 매니페스트에
+    # `cutoff` 키가 아예 없어도, `"2027-12-31"`이어도 오류가 0건이었다.
+    errs += cutoff_agreement_errors(cycle, evaluatee_registry_path(cycle))
     u = read_json(cycle / "universe.json")
     errs += [f"universe: {e}" for e in check_universe(u)]
     universe_ids = {r["record_id"] for r in u.get("selected", [])}

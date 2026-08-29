@@ -32,8 +32,11 @@ SCHEMA_SHA = fc.sha256_file(REPO_ROOT / "schemas/llm_output.json")
 # 종전 2건짜리 픽스처는 validate가 2건만 대조하던 시절의 모양이라, 나머지
 # 5건(호출 코드 pipeline/cli_client.py 포함)이 무검증인 상태를 드러내지
 # 못했다. PIN_SOURCES에서 파생하므로 목록이 늘면 픽스처도 자동으로 따라간다.
+# R17-1 픽스처 완결: 실제 prepare가 쓰는 `screening_cutoff:` 줄이 종전 픽스처에는
+# 없었다 — 그래서 컷오프 표면이 하나도 실측되지 않는 상태였다. 값은 상수에서 파생.
 PROTOCOL_FIXTURE = (
     "# PROTOCOL fixture\n"
+    f"- screening_cutoff: {fc.SCREENING_CUTOFF} (ET, EDGAR acceptance)\n"
     "- evaluatee_model (pin): `claude-sonnet-5`\n"
     + "".join(f"- `{rel}` sha256 `{fc.sha256_file(REPO_ROOT / rel)}`\n"
               for rel in forward_prepare.PIN_SOURCES))
@@ -75,18 +78,33 @@ def make_record(rid, score=45, suff="sufficient", cik=None, out_sha256="b" * 64)
 
 
 @pytest.fixture
-def cycle(tmp_path):
+def cycle(tmp_path, monkeypatch):
     c = tmp_path / "cycle_t"
     (c / "evidence").mkdir(parents=True)
     fc.write_json(c / "universe.json", make_universe())
-    fc.write_json(c / "source_manifest.json", {"sources": [
-        {"url": "https://data.sec.gov/x", "filing_date": "2026-11-14",
-         # R16-5: 종전 값은 `"abc"`였고 validate를 통과했다 — sha256 leg가
-         # truthiness만 봤기 때문이다. 실제 64자 hex로 교정 (픽스처 정정).
-         "retrieval_date": "2026-11-15",
-         "sha256": hashlib.sha256(b"forward source fixture").hexdigest(),
-         "description": "d",
-         "accession_no": "0000000000-26-000001"}]})
+    # R17-1 픽스처 완결: 서명된 런북이 지목하는 피평가자 레지스트리는 컷오프
+    # 표면 셋 중 하나다. 실제 경로는 REPO/data/evaluatee 아래이므로, 픽스처는
+    # tmp 디렉토리를 그 자리에 세운다 (기대값은 하나도 바뀌지 않는다 — 종전에
+    # 픽스처가 이 표면을 아예 갖고 있지 않았을 뿐이다).
+    reg_dir = tmp_path / "evaluatee"
+    reg_dir.mkdir()
+    fc.write_json(reg_dir / "cases_forward_t.json", {"cases": [
+        {"case_id": f"fw001-r{i:02d}", "ticker": f"TK{i:02d}",
+         "cik": f"{1000 + i:010d}", "company_name": f"Test Co {i}",
+         "cutoff_date": fc.SCREENING_CUTOFF} for i in range(1, 13)]})
+    monkeypatch.setattr(forward_validate, "EVALUATEE_REGISTRY_DIR", reg_dir)
+    fc.write_json(c / "source_manifest.json", {
+        # R17-1: `cutoff` 키는 봉인 매니페스트의 기재 의무다 — 종전 픽스처에는
+        # 없었고, 없어도 validate가 빈 목록을 돌려줬다.
+        "cutoff": fc.SCREENING_CUTOFF,
+        "sources": [
+            {"url": "https://data.sec.gov/x", "filing_date": "2026-11-14",
+             # R16-5: 종전 값은 `"abc"`였고 validate를 통과했다 — sha256 leg가
+             # truthiness만 봤기 때문이다. 실제 64자 hex로 교정 (픽스처 정정).
+             "retrieval_date": "2026-11-15",
+             "sha256": hashlib.sha256(b"forward source fixture").hexdigest(),
+             "description": "d",
+             "accession_no": "0000000000-26-000001"}]})
     fc.write_json(c / "scores.json", {"records": [
         make_record(f"fw001-r{i:02d}") for i in range(1, 13)]})
     (c / "PROTOCOL.md").write_text(PROTOCOL_FIXTURE, encoding="utf-8")
@@ -2685,3 +2703,176 @@ def test_abort_seal_record_also_portable(cycle, monkeypatch):
     record = (cycle / "SEAL_RECORD.md").read_text(encoding="utf-8")
     verify_section = record.split("## 외부 검증 방법")[1]
     assert "/Users/" not in verify_section and str(cycle.parent) not in verify_section
+
+
+# ── R17-1: 스크리닝 컷오프는 동결 상수 하나에서 파생돼야 한다 ────────────────
+# 종전에는 두 생산자의 `--cutoff`가 상수를 **기본값으로만** 쓰는 자유 문자열이었고,
+# forward_validate는 매니페스트의 `cutoff` 키가 없어도 `"2027-12-31"`이어도 오류
+# 0건이었다. 아래는 표면·결함·범위의 곱집합에서 리뷰가 지목하지 않은 칸들이다.
+#
+# 생성 규칙: (표면 ∈ {PROTOCOL 스냅샷, 봉인 매니페스트, 피평가자 레지스트리})
+#          × (결함 ∈ {기재 부재, 빈 문자열, 다른 유효 날짜, 같은 날짜의 다른 표기})
+#          × (범위 ∈ {한 원소, 전 원소})
+# 에서 표집했고, "두 표면이 서로는 일치하면서 나머지 하나와 어긋나는" 칸을
+# 반드시 포함한다.
+
+def _registry_of(cycle):
+    return forward_validate.evaluatee_registry_path(cycle)
+
+
+def _bump_protocol(cycle, value):
+    text = (cycle / "PROTOCOL.md").read_text(encoding="utf-8")
+    (cycle / "PROTOCOL.md").write_text(
+        text.replace(f"- screening_cutoff: {fc.SCREENING_CUTOFF}",
+                     f"- screening_cutoff: {value}"), encoding="utf-8")
+
+
+def _drop_protocol_line(cycle):
+    text = (cycle / "PROTOCOL.md").read_text(encoding="utf-8")
+    (cycle / "PROTOCOL.md").write_text(
+        "".join(line for line in text.splitlines(keepends=True)
+                if not line.startswith("- screening_cutoff:")), encoding="utf-8")
+
+
+def _set_manifest_cutoff(cycle, value):
+    sm = fc.read_json(cycle / "source_manifest.json")
+    if value is None:
+        sm.pop("cutoff", None)
+    else:
+        sm["cutoff"] = value
+    fc.write_json(cycle / "source_manifest.json", sm)
+
+
+def _set_registry_cutoff(cycle, value, index=None):
+    path = _registry_of(cycle)
+    reg = fc.read_json(path)
+    targets = reg["cases"] if index is None else [reg["cases"][index]]
+    for case in targets:
+        if value is None:
+            case.pop("cutoff_date", None)
+        else:
+            case["cutoff_date"] = value
+    fc.write_json(path, reg)
+
+
+_DIVERGENCE_SHAPES = {
+    # 한 원소만 형제들과 어긋난다 — 같은 표면 안의 쌍 불일치
+    "registry_one_case_other_date":
+        lambda c: _set_registry_cutoff(c, "2026-11-16", index=7),
+    # 두 표면이 서로는 일치한 채 레지스트리와만 어긋난다 (다수파가 틀린 경우)
+    "protocol_and_manifest_agree_but_wrong":
+        lambda c: (_bump_protocol(c, "2026-11-20"),
+                   _set_manifest_cutoff(c, "2026-11-20")),
+    # 기재는 있으나 빈 문자열 — truthiness 검사만 있던 시절의 통과 형태
+    "manifest_cutoff_empty_string":
+        lambda c: _set_manifest_cutoff(c, ""),
+    # 한 케이스만 키 자체가 사라진다
+    "registry_one_case_key_absent":
+        lambda c: _set_registry_cutoff(c, None, index=3),
+    # PROTOCOL 스냅샷의 줄 자체가 사라진다
+    "protocol_line_absent":
+        lambda c: _drop_protocol_line(c),
+    # 같은 날짜의 다른 표기 — 파서 관용에 기대면 통과하는 형태
+    "manifest_same_day_other_lexical_form":
+        lambda c: _set_manifest_cutoff(c, f"{fc.SCREENING_CUTOFF}T00:00:00"),
+    # 전 케이스가 함께 옮겨간다 (레지스트리만 통째로 어긋나는 범위)
+    "registry_all_cases_other_date":
+        lambda c: _set_registry_cutoff(c, "2026-12-01"),
+}
+
+
+def test_cutoff_agreement_holds_on_the_intact_fixture(cycle):
+    assert fc.cutoff_agreement_errors(cycle, _registry_of(cycle)) == []
+    assert forward_validate.validate(cycle) == []
+
+
+@pytest.mark.parametrize("shape", sorted(_DIVERGENCE_SHAPES),
+                         ids=sorted(_DIVERGENCE_SHAPES))
+def test_cutoff_divergence_is_refused_before_seal(cycle, shape):
+    _DIVERGENCE_SHAPES[shape](cycle)
+    errs = forward_validate.validate(cycle)
+    assert any("컷오프" in e for e in errs), (shape, errs)
+
+
+@pytest.mark.parametrize("surface", ["protocol", "manifest", "registry"])
+def test_absent_declaration_fails_exactly_like_a_disagreeing_one(cycle, surface):
+    """부재와 불일치는 호출자에게 구분되지 않는다 — 같은 한 줄을 지난다.
+
+    코드 경로: 세 리더가 파일/키/필드의 부재를 CUTOFF_ABSENT라는 **값**으로
+    환원하고, cutoff_agreement_errors의 유일한 판정식
+    `value != SCREENING_CUTOFF`가 두 경우를 똑같이 처리한다."""
+    absent = {"protocol": lambda: _drop_protocol_line(cycle),
+              "manifest": lambda: _set_manifest_cutoff(cycle, None),
+              "registry": lambda: _set_registry_cutoff(cycle, None)}
+    disagree = {"protocol": lambda: _bump_protocol(cycle, "2026-11-20"),
+                "manifest": lambda: _set_manifest_cutoff(cycle, "2026-11-20"),
+                "registry": lambda: _set_registry_cutoff(cycle, "2026-11-20")}
+    absent[surface]()
+    absent_errs = [e.split(" = ")[0] for e in
+                   fc.cutoff_agreement_errors(cycle, _registry_of(cycle))
+                   if e.startswith("컷오프 불일치/부재: ")]
+    fc.write_json(cycle / "source_manifest.json",
+                  fc.read_json(cycle / "source_manifest.json"))  # no-op 재작성
+    _rebuild_cutoff_surfaces(cycle)
+    disagree[surface]()
+    disagree_errs = [e.split(" = ")[0] for e in
+                     fc.cutoff_agreement_errors(cycle, _registry_of(cycle))
+                   if e.startswith("컷오프 불일치/부재: ")]
+    assert absent_errs and absent_errs == disagree_errs, surface
+
+
+def _rebuild_cutoff_surfaces(cycle):
+    """세 표면을 상수 상태로 되돌린다 (한 테스트 안에서 두 결함을 재는 용도)."""
+    (cycle / "PROTOCOL.md").write_text(PROTOCOL_FIXTURE, encoding="utf-8")
+    _set_manifest_cutoff(cycle, fc.SCREENING_CUTOFF)
+    _set_registry_cutoff(cycle, fc.SCREENING_CUTOFF)
+
+
+def test_case_builder_refuses_a_cutoff_other_than_the_frozen_one(cycle, monkeypatch,
+                                                                 tmp_path):
+    """모델 호출 전 fail-closed — 케이스 파일이 아예 만들어지지 않는다."""
+    import build_evaluatee_inputs
+    out = tmp_path / "cases_forward_t.json"
+    monkeypatch.setattr(sys, "argv", ["x", "--universe",
+                                      str(cycle / "universe.json"),
+                                      "--out", str(out), "--cutoff", "2026-11-20"])
+    assert build_evaluatee_inputs.main() == 1
+    assert not out.exists()
+
+
+def test_case_builder_writes_when_every_surface_agrees(cycle, monkeypatch, tmp_path):
+    import build_evaluatee_inputs
+    out = tmp_path / "cases_forward_t.json"
+    monkeypatch.setattr(sys, "argv", ["x", "--universe",
+                                      str(cycle / "universe.json"),
+                                      "--out", str(out)])
+    assert build_evaluatee_inputs.main() == 0
+    cases = json.loads(out.read_text(encoding="utf-8"))["cases"]
+    assert {c["cutoff_date"] for c in cases} == {fc.SCREENING_CUTOFF}
+
+
+def test_case_builder_refuses_when_the_cycle_snapshot_disagrees(cycle, monkeypatch,
+                                                                tmp_path):
+    """`--cutoff`가 상수와 같아도, 사이클이 기재한 컷오프가 어긋나면 멈춘다."""
+    import build_evaluatee_inputs
+    _bump_protocol(cycle, "2026-11-20")
+    out = tmp_path / "cases_forward_t.json"
+    monkeypatch.setattr(sys, "argv", ["x", "--universe",
+                                      str(cycle / "universe.json"),
+                                      "--out", str(out)])
+    assert build_evaluatee_inputs.main() == 1
+    assert not out.exists()
+
+
+def test_source_manifest_refuses_a_cutoff_other_than_the_frozen_one(cycle, monkeypatch,
+                                                                    tmp_path):
+    import forward_source_manifest
+    before = (cycle / "source_manifest.json").read_bytes()
+    fetch_dir = tmp_path / "fetch"
+    fetch_dir.mkdir()
+    (fetch_dir / "fetch_log.jsonl").write_text("", encoding="utf-8")
+    monkeypatch.setattr(sys, "argv", ["x", "--fetch-dir", str(fetch_dir),
+                                      "--cycle", str(cycle),
+                                      "--cutoff", "2026-11-20"])
+    assert forward_source_manifest.main() == 1
+    assert (cycle / "source_manifest.json").read_bytes() == before
