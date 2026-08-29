@@ -366,6 +366,60 @@ def test_name_probe_counts_match_headers_and_synthesis():
     assert dose["wave1 (famous)"] == v1["rate_pct"]
     assert dose["wave2 (less-famous)"] == frozen_pct
 
+    # R15-4: 행 4의 **세 번째** 끝점은 지금까지 어떤 단언도 걸려 있지 않았다 —
+    # CLAIMS.json이 이 명령을 그 행의 재계산 명령으로 광고하는데도. 그리고 그
+    # 끝점은 앞의 두 개와 **다른 계기**의 값이다: 앞의 둘은 익명화 페이로드
+    # 추측에 동결 name_match를 적용한 값이고, 이것은 인식 게이트의
+    # knows_event 비율이다 (holdout 프레임은 설계상 신원 노출 — L-11, 그래서
+    # 이름 식별이 정의되지 않는다). 여기서는 광고된 명령이 실제로 그 끝점을
+    # 커밋 아티팩트에서 재계산하도록 만든다.
+    rows = [json.loads(p.read_text(encoding="utf-8"))
+            for p in sorted((REPO / "runs/holdout/recognition").glob("*.json"))]
+    cands = [r for r in rows if r["kind"] == "holdout-candidate"]
+    controls = [r for r in rows if r["kind"] == "positive-control"]
+    assert len(cands) == 3 and all(isinstance(r["knows_event"], bool)
+                                  for r in cands)
+    holdout_pct = round(100 * sum(r["knows_event"] for r in cands) / len(cands), 1)
+    assert dose["holdout (post-cutoff, unmemorizable)"] == holdout_pct, (
+        "synthesis의 holdout 끝점이 recognition 게이트 재계산과 불일치")
+    # 0%를 읽을 수 있게 만드는 것은 양성 대조군이다 — 전건이 true여야 "모른다"가
+    # 계기의 침묵이 아니라 관측이다 (게이트가 발화한다는 증거).
+    assert controls and all(r["knows_event"] for r in controls)
+    # 계기 구분의 근거 자체도 고정한다 — 이 파일들에는 company_guess도
+    # name_match도 없다 (있다면 '다른 계기'라는 공개 문언이 틀린 것이다).
+    for r in rows:
+        assert "company_guess" not in r and "name_match" not in r, r["ticker"]
+
+
+def test_holdout_dose_endpoint_recomputes_from_the_recognition_gate(tmp_path):
+    """R15-4: 행 4의 세 번째 끝점을 **코드에서** 재계산해 게시본과 대조한다.
+
+    위 테스트는 커밋된 synthesis.json을 읽는다 — 산출물끼리의 대조라서
+    synthesis.py의 조립 줄이 바뀌어도 붉어지지 않는다. CLAIMS.json이 이
+    명령을 행 4의 재계산 명령으로 광고하는 이상, 그 명령은 끝점을 만드는
+    코드를 실제로 돌려야 한다. 여기서 그 경로를 닫는다: 동결 코드로
+    재생성한 값 == 커밋 산출물 == recognition 게이트 knows_event 비율."""
+    sys.path.insert(0, str(REPO / "analysis"))
+    import synthesis  # noqa: PLC0415 — 저장소 상대 임포트 (경로 선삽입 필요)
+
+    assert synthesis.main(repo=REPO, out_dir=tmp_path) == 0
+    regenerated = {d["tier"]: d["name_id_pct"] for d in json.loads(
+        (tmp_path / "synthesis.json").read_text(encoding="utf-8")
+    )["memorization_dose_response"]}
+    committed = {d["tier"]: d["name_id_pct"]
+                 for d in _load_json("analysis/synthesis.json")[
+                     "memorization_dose_response"]}
+    tier = "holdout (post-cutoff, unmemorizable)"
+
+    cands = [json.loads(p.read_text(encoding="utf-8"))
+             for p in sorted((REPO / "runs/holdout/recognition").glob("*.json"))]
+    cands = [r for r in cands if r["kind"] == "holdout-candidate"]
+    gate_pct = round(100 * sum(r["knows_event"] for r in cands) / len(cands), 1)
+
+    assert regenerated[tier] == gate_pct, "재생성 끝점이 게이트 재계산과 불일치"
+    assert committed[tier] == regenerated[tier], (
+        "커밋된 synthesis.json의 holdout 끝점이 동결 코드 재생성과 드리프트")
+
 
 def test_wave1_headline_stats_recompute_equals_committed_artifact():
     """(g) R7-4 — CLAIMS 행 1/2/8의 wave-1 헤드라인 통계를 커밋 입력에서 재계산.

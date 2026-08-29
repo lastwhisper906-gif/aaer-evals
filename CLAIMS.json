@@ -70,7 +70,7 @@
       "task_tag": "[T1]",
       "measurement": "name-ID axis",
       "published_value": "50% (15/30) → 21.9% (7/32) → 0%",
-      "limits": "21.9% is the frozen-rule value — a rename-aware human reading of 25% (borderline case DAR) is footnoted alongside (Q-E02); endpoint 0% is 0/3 (CP95 [0%, 70.8%]); the perturbation gradient shares the frame confound published in README_DETAIL",
+      "limits": "21.9% is the frozen-rule value — a rename-aware human reading of 25% (borderline case DAR) is footnoted alongside (Q-E02); endpoint 0% is 0/3 (CP95 [0%, 70.8%]); the perturbation gradient shares the frame confound published in README_DETAIL. The third endpoint is a different instrument from the first two: it is the recognition gate `knows_event` rate over `runs/holdout/recognition/*.json` (k=1 draw-1), not the frozen `name_match` rule applied to anonymized-payload guesses — `analysis/name_probe_results.json` carries no holdout tier, and name identification is undefined in the identity-exposed holdout frame (`docs/methodology_limitations.md` L-11; `analysis/holdout_summary.md` records the name probe as not run)",
       "source_raw": "`analysis/name_probe_results.json` · `analysis/synthesis.json`",
       "source_paths": [
         "analysis/name_probe_results.json",
