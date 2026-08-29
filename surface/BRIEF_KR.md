@@ -12,7 +12,7 @@
 >
 > 대상 독자: 포렌식 회계사, 내부감사인, 바이사이드 애널리스트.
 > 이 브리프의 모든 수치는 동결된 저장소 산출물(부록)로 추적되며
-> `tools/reproduce_analysis.py`가 재계산한다. 새 수치는 여기에 등장하지 않는다.
+> `make verify-public`이 재계산한다. 새 수치는 여기에 등장하지 않는다.
 
 ---
 
@@ -104,11 +104,11 @@
 + OpenTimestamps 앵커) — 암기할 결과가 존재하기 전에
 (`specs/FORWARD_WATCHLIST_V1.md`).
 
-**원커맨드 재현.** `python tools/reproduce_analysis.py`가 커밋된 산출물에서
-발행 수치 전건을 재계산한다, API 호출 0 — **100/100 체크** —
-`tools/verify_blindness.py`·`tools/verify_manifest.py`와 함께. CI가 매 push마다
-전부 실행한다. 이 브리프의 어떤 수치든 불신하는 독자는 몇 분 안에 직접
-재계산할 수 있다.
+**원커맨드 재현.** `make verify-public`이 커밋된 산출물에서 발행 수치 전건을
+재계산한다, API 호출 0 — 재계산 스위트를
+`tools/verify_blindness.py`·`tools/verify_manifest.py`와 함께 돌리는 릴리스
+게이트다. CI가 매 push마다 전부 실행한다. 이 브리프의 어떤 수치든 불신하는
+독자는 몇 분 안에 직접 재계산할 수 있다.
 
 ## 4면 — 무엇을 찾았는가
 
@@ -201,8 +201,8 @@ misstatement."* (풀이: 같은 동결 프로토콜 아래에서 점수 70은 �
 
 ## 부록 — 수치-원천 지도
 
-위의 모든 수치, 그 동결 원천, 검증 경로. 별도 표기 없는 한 모든 행은 `python
-tools/reproduce_analysis.py`(100/100)로 재계산된다.
+위의 모든 수치, 그 동결 원천, 검증 경로. 별도 표기 없는 한 모든 행은
+`make verify-public`으로 재계산된다.
 
 | 브리프의 수치 | 동결 원천 (검증 경로) |
 |---|---|
@@ -232,7 +232,7 @@ tools/reproduce_analysis.py`(100/100)로 재계산된다.
 | ECE wave-2 0.179 · wave-1 0.209 | `analysis/calibration_wave2.json` → `ece_10bin`; `analysis/calibration.json` → `ece_10bin` |
 | FP atlas 점수: case_30 점수 65 · case_10 점수 58 | `atlas/case_30.md`, `atlas/case_10.md` (동결 점수 인용, RP-16/D91); 종합 `atlas/PATTERNS.md` §d |
 | 사전 등록 커밋 `c1b85a7` (채점 전 계획 동결) | `README.md` (Extension experiments 절); `analysis/*_PLAN.md` git 이력 |
-| 재현 100/100, API 호출 0 | `tools/reproduce_analysis.py` (직접 실행; CI 검증) |
+| 발행 수치 전건 재현, API 호출 0 | `make verify-public` (매 push CI 검증) |
 | Forward 봉인일 2026-11-15 · 12사 유니버스 · ≥11/12 정지 규칙 | `specs/FORWARD_WATCHLIST_V1.md` §1–§3; `forward/cycle_001/universe.json` (`selected` = 12) |
 
 *라벨: HUBG · WMK · GNE는 잠정 Item 4.02 비신뢰 정정 사건(G2)으로 업그레이드

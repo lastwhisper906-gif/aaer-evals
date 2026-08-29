@@ -65,5 +65,5 @@ positives, and cost per detection at $0.53/screen measured;
 · Release (citable freeze):
 <https://github.com/lastwhisper906-gif/aaer-evals/releases/tag/v1.0.0> ·
 Issues 0/1/2 = GitHub issues 1/2/3 · EQ Memo #1 = {ISSUE_URL}.
-`python tools/reproduce_analysis.py` recomputes every published number
-(PASS 100/100).
+`make verify-public` recomputes every published number from committed
+artifacts.

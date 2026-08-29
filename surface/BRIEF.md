@@ -11,7 +11,7 @@
 >
 > Audience: forensic accountants, internal auditors, buy-side analysts.
 > Every number in this brief traces to a frozen repository artifact (Appendix)
-> and is recomputed by `tools/reproduce_analysis.py`. No new numbers appear here.
+> and is recomputed by `make verify-public`. No new numbers appear here.
 
 ---
 
@@ -113,11 +113,11 @@ watchlist is scheduled to be scored and cryptographically sealed on
 **2026-11-15** (GitHub server timestamp + OpenTimestamps anchor), before any
 outcome exists to memorize (`specs/FORWARD_WATCHLIST_V1.md`).
 
-**One-command reproduction.** `python tools/reproduce_analysis.py` recomputes
-every published number from committed artifacts, 0 API calls — **100/100
-checks** — alongside `tools/verify_blindness.py` and `tools/verify_manifest.py`.
-CI runs all of it on every push. A reader who distrusts any figure in this
-brief can recompute it in minutes.
+**One-command reproduction.** `make verify-public` recomputes every published
+number from committed artifacts, 0 API calls — the release gate that runs the
+recomputation suite alongside `tools/verify_blindness.py` and
+`tools/verify_manifest.py`. CI runs all of it on every push. A reader who
+distrusts any figure in this brief can recompute it in minutes.
 
 ## Page 4 — What it found
 
@@ -225,7 +225,7 @@ more.
 ## Appendix — figure-to-source map
 
 Every figure above, its frozen source, and the verifying path. All rows
-recompute via `python tools/reproduce_analysis.py` (100/100) unless noted.
+recompute via `make verify-public` unless noted.
 
 | Figure in brief | Frozen source (verified path) |
 |---|---|
@@ -255,7 +255,7 @@ recompute via `python tools/reproduce_analysis.py` (100/100) unless noted.
 | ECE wave-2 0.179 · wave-1 0.209 | `analysis/calibration_wave2.json` → `ece_10bin`; `analysis/calibration.json` → `ece_10bin` |
 | FP atlas scores: case_30 score 65 · case_10 score 58 | `atlas/case_30.md`, `atlas/case_10.md` (frozen scores quoted per RP-16/D91); synthesis `atlas/PATTERNS.md` §d |
 | Pre-registration commit `c1b85a7` (plans frozen before scoring) | `README.md` (Extension experiments section); `analysis/*_PLAN.md` git history |
-| Reproduction 100/100, 0 API calls | `tools/reproduce_analysis.py` (run directly; CI-verified) |
+| Reproduction of every published number, 0 API calls | `make verify-public` (CI-verified on every push) |
 | Forward seal date 2026-11-15 · 12-company universe · ≥11/12 stop rule | `specs/FORWARD_WATCHLIST_V1.md` §1–§3; `forward/cycle_001/universe.json` (`selected` = 12) |
 
 *Labels: HUBG · WMK · GNE are provisional Item 4.02 non-reliance restatement
