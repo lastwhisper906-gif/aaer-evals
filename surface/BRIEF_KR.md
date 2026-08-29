@@ -80,9 +80,12 @@
 사실을 첫 페이지에 명시한다.
 
 **실행 전 동결.** 채점 기준, 임계값, 기계 결론 규칙(R1–R4 / H1–H3)은 어떤
-점수도 존재하기 전에 커밋되었다 — 사전 등록은 git 커밋 타임스탬프로 증빙된다
-(실험 계획, 커밋 `c1b85a7`). 사후 규칙 변경이 필요한 결과였다면 git 이력에
-드러났을 것이며, 그런 변경은 없었다.
+점수도 존재하기 전에 커밋되었다(실험 계획, 커밋 `c1b85a7`). 증거는 **날짜가
+아니라 조상 관계(ancestry)**다: `tools/verify_blindness.py`가
+`git merge-base --is-ancestor`로 기준 커밋이 점수 커밋의 조상임을 커밋 그래프
+위에서 증명하며, CI가 매 push마다 실행한다. 커밋·태그 날짜는 클라이언트가
+제출하는 값(`GIT_COMMITTER_DATE`)이므로 의도적으로 증거가 아니다. 사후 규칙
+변경이 필요한 결과였다면 그 조상 관계가 깨졌을 것이며, 그런 변경은 없었다.
 
 **오염은 가정으로 치우지 않고 측정한다.** 직접 outcome-knowledge 프로브에서
 모델은 **wave-2 실험군 9케이스 중 8건(88.9%, CP95 [51.7%, 99.7%])의 집행/정정
@@ -100,9 +103,12 @@
 대해서는 암기가 단지 개연성이 낮은 것이 아니라 구조적으로 불가능하다.
 
 **봉인, 전향.** 다음 단계는 전향적이다: 12개 회사 forward watchlist를
-**2026-11-15**에 채점하고 암호학적으로 봉인할 예정이다(GitHub 서버 타임스탬프
-+ OpenTimestamps 앵커) — 암기할 결과가 존재하기 전에
-(`specs/FORWARD_WATCHLIST_V1.md`).
+**2026-11-15**에 채점하고 암호학적으로 봉인할 예정이다 — 암기할 결과가
+존재하기 전에 (`specs/FORWARD_WATCHLIST_V1.md`). 외부 앵커는
+**OpenTimestamps**(Bitcoin)이며 누구나 `ots verify MANIFEST.sha256.ots`로
+검증할 수 있다. GitHub push 이벤트 기록은 보조 증거로, 봉인 해시 사슬 밖이며
+보존 기간이 약 90일이다. 태그 API는 앵커에서 제외한다 — 그 엔드포인트가 주는
+날짜는 클라이언트가 제출하는 값이기 때문이다 (spec §9, 2026-08-28 개정).
 
 **원커맨드 재현.** `make verify-public`이 커밋된 산출물에서 발행 수치 전건을
 재계산한다, API 호출 0 — 재계산 스위트를
@@ -191,8 +197,9 @@ misstatement."* (풀이: 같은 동결 프로토콜 아래에서 점수 70은 �
 
 **이 전부를 규율하는 약속**: 봉인된 전향 사이클. 어떤 점수도 존재하기 전에
 사전 동결 규칙으로 열거된 12개 회사를, 사전 등록된 정지 규칙(≥11/12 채점,
-미달 시 사이클 중단·현상 보존), 무과금(zero-metered) 실행, 외부 검증 가능한
-타임스탬프, 사전 등록된 검토 지평 아래 **2026-11-15**에 채점·봉인한다.
+미달 시 사이클 중단·현상 보존), 무과금(zero-metered) 실행, 봉인 매니페스트에
+대한 외부 검증 가능한 OpenTimestamps 앵커, 사전 등록된 검토 지평 아래
+**2026-11-15**에 채점·봉인한다.
 프로토콜은 `specs/FORWARD_WATCHLIST_V1.md`에서, 동결 유니버스는
 `forward/cycle_001/`에서 검증하라. 그 사이클들이 성숙하기 전까지 이 저장소가
 주장하는 것은 회고적 분리(TASK 1)와 per-case 증거(TASK 2)다 — 그 이상은 없다.
@@ -231,7 +238,7 @@ misstatement."* (풀이: 같은 동결 프로토콜 아래에서 점수 70은 �
 | [TASK 2] HUBG Beneish M / Dechow F 계산 불능 (입력 결측) | `analysis/holdout_summary.md` §2 표 (계산불능/결측 행) |
 | ECE wave-2 0.179 · wave-1 0.209 | `analysis/calibration_wave2.json` → `ece_10bin`; `analysis/calibration.json` → `ece_10bin` |
 | FP atlas 점수: case_30 점수 65 · case_10 점수 58 | `atlas/case_30.md`, `atlas/case_10.md` (동결 점수 인용, RP-16/D91); 종합 `atlas/PATTERNS.md` §d |
-| 사전 등록 커밋 `c1b85a7` (채점 전 계획 동결) | `README.md` (Extension experiments 절); `analysis/*_PLAN.md` git 이력 |
+| 사전 등록 커밋 `c1b85a7` (계획 커밋이 점수 커밋의 조상) | `tools/verify_blindness.py` (`git merge-base --is-ancestor`, CI 실행); `README.md` (Extension experiments 절) |
 | 발행 수치 전건 재현, API 호출 0 | `make verify-public` (매 push CI 검증) |
 | Forward 봉인일 2026-11-15 · 12사 유니버스 · ≥11/12 정지 규칙 | `specs/FORWARD_WATCHLIST_V1.md` §1–§3; `forward/cycle_001/universe.json` (`selected` = 12) |
 

@@ -85,10 +85,13 @@ these cases in training.* The controls below bound that risk; they do not
 eliminate it, and the repository says so on its front page.
 
 **Freeze before run.** Scoring criteria, thresholds, and the machine conclusion
-rules (R1–R4 / H1–H3) were committed before any score existed — the
-pre-registration is git-commit-timestamped (experiment plans at commit
-`c1b85a7`). A result that required post-hoc rule changes would be visible in
-the git history; none was made.
+rules (R1–R4 / H1–H3) were committed before any score existed (experiment plans
+at commit `c1b85a7`). The evidence is **ancestry, not a date**:
+`tools/verify_blindness.py` proves that each criteria commit is an ancestor of
+the score commit with `git merge-base --is-ancestor` over the commit graph, and
+CI runs it on every push. Commit and tag dates are client-submitted values
+(`GIT_COMMITTER_DATE`) and are deliberately not the evidence. A result that
+required post-hoc rule changes would break that ancestry relation; none was made.
 
 **Contamination is measured, not assumed away.** On the direct
 outcome-knowledge probe, the model recalls the enforcement/restatement event
@@ -110,8 +113,12 @@ memorization is structurally impossible, not merely improbable.
 
 **Sealing, forward.** The next step is prospective: a 12-company forward
 watchlist is scheduled to be scored and cryptographically sealed on
-**2026-11-15** (GitHub server timestamp + OpenTimestamps anchor), before any
-outcome exists to memorize (`specs/FORWARD_WATCHLIST_V1.md`).
+**2026-11-15**, before any outcome exists to memorize
+(`specs/FORWARD_WATCHLIST_V1.md`). The external anchor is **OpenTimestamps**
+(Bitcoin), verifiable by anyone with `ots verify MANIFEST.sha256.ots`. The
+GitHub push-event record is auxiliary — outside the seal's hash chain and
+retained about 90 days — and the tag API is excluded from the anchor set,
+because the dates it returns are client-submitted (spec §9, revised 2026-08-28).
 
 **One-command reproduction.** `make verify-public` recomputes every published
 number from committed artifacts, 0 API calls — the release gate that runs the
@@ -213,8 +220,9 @@ Who does what, and why (full table: `CONTRIBUTIONS.md`):
 **The commitment that disciplines all of it**: a sealed prospective cycle.
 Twelve companies, enumerated by a pre-frozen rule before any score exists,
 scored and sealed on **2026-11-15** under pre-registered stop rules (≥11/12
-scored or the cycle aborts and is preserved as-is), zero-metered execution,
-externally verifiable timestamps, and pre-registered review horizons.
+scored or the cycle aborts and is preserved as-is), zero-metered execution, an
+externally verifiable OpenTimestamps anchor over the seal manifest, and
+pre-registered review horizons.
 Verify the protocol at `specs/FORWARD_WATCHLIST_V1.md` and the frozen universe
 at `forward/cycle_001/`. Until those cycles mature, this repository claims
 retrospective separation (TASK 1) and per-case evidence (TASK 2) — nothing
@@ -254,7 +262,7 @@ recompute via `make verify-public` unless noted.
 | [TASK 2] HUBG Beneish M / Dechow F uncomputable (missing inputs) | `analysis/holdout_summary.md` §2 table (계산불능/결측 rows) |
 | ECE wave-2 0.179 · wave-1 0.209 | `analysis/calibration_wave2.json` → `ece_10bin`; `analysis/calibration.json` → `ece_10bin` |
 | FP atlas scores: case_30 score 65 · case_10 score 58 | `atlas/case_30.md`, `atlas/case_10.md` (frozen scores quoted per RP-16/D91); synthesis `atlas/PATTERNS.md` §d |
-| Pre-registration commit `c1b85a7` (plans frozen before scoring) | `README.md` (Extension experiments section); `analysis/*_PLAN.md` git history |
+| Pre-registration commit `c1b85a7` (plans are ancestors of the score commits) | `tools/verify_blindness.py` (`git merge-base --is-ancestor`, run in CI); `README.md` (Extension experiments section) |
 | Reproduction of every published number, 0 API calls | `make verify-public` (CI-verified on every push) |
 | Forward seal date 2026-11-15 · 12-company universe · ≥11/12 stop rule | `specs/FORWARD_WATCHLIST_V1.md` §1–§3; `forward/cycle_001/universe.json` (`selected` = 12) |
 

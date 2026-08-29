@@ -301,6 +301,48 @@ CLAIM_FORBIDDEN = [
 CLAIM_ALLOW = re.compile(r"\bnot\b|cannot|do(es)? not|없|않|금지|아니|Level 4|지원하지", re.I)
 
 
+# (N) R17-5 (f): 커밋·태그 **날짜**를 순서(사전 등록)나 봉인 시각의 증거로
+#     인용하는 문면 금지. specs/FORWARD_WATCHLIST_V1.md의 서명된 2026-08-28
+#     개정이 그 날짜를 **클라이언트 제출 값**(`GIT_COMMITTER_DATE`)으로 규정하고
+#     태그 API를 앵커 집합에서 제외했으며, SEAL_RECORD는 GitHub leg를 해시 사슬
+#     밖 보조 증거로 강등했고, verify_blindness는 날짜를 **하나도** 읽지 않는다
+#     (`git merge-base --is-ancestor`로 커밋 그래프 위의 선행을 증명한다).
+#     그런데 surface/의 실무자 브리프 두 종은 여전히 날짜를 증거로 팔고 있었다 —
+#     surface/가 DOCS 밖이라 어떤 린트도 보지 않았기 때문이다. 그래서 이 규칙은
+#     DOCS가 아니라 ordinal_claim_docs()(= surface/ 포함)에 건다.
+GIT_TIME_TERM = re.compile(
+    r"(?:git[\s-]*)?commit[\s-]*timestamp(?:ed)?|tag[\s-]*timestamp"
+    r"|github\s+server\s+timestamp|committer\.date|tagger\.date"
+    r"|커밋\s*타임스탬프|태그\s*타임스탬프|github\s*서버\s*타임스탬프", re.I)
+ORDERING_EVIDENCE_TERM = re.compile(
+    r"pre.?registrat|pre.?register|precedence|evidence|proof|prove|attest"
+    r"|anchor|sealed\s+(?:at|on)|사전\s*등록|선행|증거|증빙|입증|앵커|봉인\s*시각", re.I)
+# 허용: 그 날짜가 증거가 **아니라고** 말하거나 보조로 **강등**하는 문면.
+DATE_EVIDENCE_ALLOW = re.compile(
+    r"client.?submitted|GIT_COMMITTER_DATE|not\s+the\s+evidence|auxiliary"
+    r"|excluded\s+from\s+the\s+anchor|클라이언트가\s*제출|증거가\s*아니"
+    r"|앵커에서\s*제외|보조\s*증거", re.I)
+
+
+def date_as_evidence_violations(path: str, text: str) -> list[tuple[int, str]]:
+    """규칙 (N) — 한 문서의 위반 (줄번호, 메시지)."""
+    lines = text.splitlines()
+    out = []
+    for m in GIT_TIME_TERM.finditer(text):
+        win = text[max(0, m.start() - 160):m.end() + 160]
+        if not ORDERING_EVIDENCE_TERM.search(win):
+            continue
+        if DATE_EVIDENCE_ALLOW.search(win):
+            continue
+        ln = text[:m.start()].count("\n") + 1
+        out.append((ln, "(N) 커밋·태그 **날짜**를 순서/봉인 시각의 증거로 인용 "
+                        "금지 — 그 값은 클라이언트 제출이며(spec §9, 2026-08-28 "
+                        "개정) 저장소가 실제로 돌리는 증명은 "
+                        "`git merge-base --is-ancestor`(verify_blindness)와 "
+                        f"OpenTimestamps다: {lines[ln-1].strip()[:70]}"))
+    return out
+
+
 def ordinal_claim_docs():
     """규칙 (J)/(K) 대상 문서 — 고정 3종 + forward 사이클 마크다운(존재 시)."""
     paths = [p for p in ORDINAL_DOCS if (REPO / p).exists()]
@@ -334,6 +376,8 @@ def check_ordinal_and_claims():
                 ln = text[:m.start()].count("\n") + 1
                 viols.append((path, ln, f"(K) 무자격 주장 문구 금지 '{label}' "
                                         f"(CLAIM_HIERARCHY): {lines[ln-1].strip()[:70]}"))
+        viols += [(path, ln, msg) for ln, msg in
+                  date_as_evidence_violations(path, text)]
     return viols
 
 
@@ -473,7 +517,8 @@ def main():
         print(f"\nFAIL — 발행 정합 위반 {total}건")
         return 1
     print("PASS — 발행 정합 (0% 오탐·G2-fraud·대조군주어·pooled·EXPLORATORY·stale"
-          "·canon·서수확률화(J)·주장위계(K)·태스크층위(L)·철회문언(M) 무위반)")
+          "·canon·서수확률화(J)·주장위계(K)·태스크층위(L)·철회문언(M)"
+          "·날짜증거(N) 무위반)")
     return 0
 
 

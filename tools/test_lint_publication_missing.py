@@ -252,3 +252,81 @@ def test_genuinely_corrective_passages_stay_pass():
                 "RESULTS.md", "RESULTS.ko.md", "README.ko.md"):
         viol = [msg for _, msg in lp.lint_doc(rel) if "(G)" in msg]
         assert not viol, (rel, viol)
+
+
+# ── R17-5 (f): 커밋·태그 날짜를 순서/봉인의 증거로 파는 문면 금지 (규칙 N) ──
+# surface/의 실무자 브리프 두 종은 git/GitHub 커밋·태그 타임스탬프를 사전 등록과
+# 봉인의 증거로 팔고 있었다. specs/FORWARD_WATCHLIST_V1.md의 서명된 2026-08-28
+# 개정이 그 값을 **클라이언트 제출**로 규정하고 태그 API를 앵커에서 제외했으며,
+# verify_blindness는 날짜를 하나도 읽지 않는다(merge-base --is-ancestor). 규칙이
+# DOCS가 아니라 ordinal_claim_docs()에 걸리는 이유는 surface/가 DOCS 밖이라
+# 어떤 린트도 그 표면을 보지 않았기 때문이다 — 그것이 이 결함이 남은 이유다.
+
+DATE_EVIDENCE_REINSTATEMENTS = [
+    "\nThe pre-registration is git-commit-timestamped, which is the evidence.\n",
+    "\nSealed on 2026-11-15 (GitHub server timestamp anchor).\n",
+    "\n사전 등록은 git 커밋 타임스탬프로 증빙된다.\n",
+    "\n봉인 시각의 앵커는 GitHub 서버 타임스탬프다.\n",
+]
+
+
+@pytest.mark.parametrize("sentence", DATE_EVIDENCE_REINSTATEMENTS,
+                         ids=[str(i) for i in range(len(DATE_EVIDENCE_REINSTATEMENTS))])
+def test_date_as_ordering_evidence_is_flagged(sentence):
+    viol = lp.date_as_evidence_violations("surface/BRIEF.md", sentence)
+    assert viol, sentence
+
+
+@pytest.mark.parametrize("sentence", [
+    # 강등·부정 문면은 허용돼야 한다 — 그러지 않으면 이 사실 자체를 쓸 수 없다
+    "\nCommit and tag dates are client-submitted (GIT_COMMITTER_DATE) and are "
+    "not the evidence of pre-registration.\n",
+    "\nGitHub push 기록은 보조 증거이며 커밋 타임스탬프는 앵커에서 제외한다 "
+    "(사전 등록의 증거가 아니다).\n",
+])
+def test_demoting_or_negating_context_is_allowed(sentence):
+    assert not lp.date_as_evidence_violations("surface/BRIEF.md", sentence)
+
+
+def test_rule_n_is_wired_to_the_surface_briefs_not_only_to_DOCS():
+    """이 규칙이 보는 집합에 surface/ 브리프가 실제로 들어 있어야 한다."""
+    docs = lp.ordinal_claim_docs()
+    assert "surface/BRIEF.md" in docs and "surface/BRIEF_KR.md" in docs
+    assert "surface/BRIEF.md" not in lp.DOCS
+
+
+def test_live_briefs_carry_no_date_as_evidence_claim():
+    for rel in ("surface/BRIEF.md", "surface/BRIEF_KR.md"):
+        text = (lp.REPO / rel).read_text(encoding="utf-8")
+        assert not lp.date_as_evidence_violations(rel, text), rel
+
+
+def test_live_briefs_name_the_mechanism_the_repo_actually_runs():
+    """(e): 철회된 근거를 뺀 자리에 실제 기제가 들어와 있어야 한다."""
+    en = (lp.REPO / "surface/BRIEF.md").read_text(encoding="utf-8")
+    kr = (lp.REPO / "surface/BRIEF_KR.md").read_text(encoding="utf-8")
+    for text in (en, kr):
+        assert "merge-base --is-ancestor" in text
+        assert "OpenTimestamps" in text
+
+
+def test_rule_n_is_wired_into_the_linter_not_only_callable(monkeypatch, tmp_path):
+    """규칙 (N)이 `check_ordinal_and_claims`를 통해 실제로 돈다.
+
+    함수만 직접 부르는 테스트는 배선을 고정하지 못한다 — 실측으로,
+    lint_doc/check_ordinal_and_claims에서 (N) 호출을 떼어내도 0 red였다.
+    이 테스트가 그 구멍을 닫는다."""
+    surface = tmp_path / "surface"
+    surface.mkdir()
+    (surface / "BRIEF.md").write_text(
+        "# brief\n\nThe pre-registration is git-commit-timestamped, which is "
+        "the evidence.\n", encoding="utf-8")
+    monkeypatch.setattr(lp, "REPO", tmp_path)
+    monkeypatch.setattr(lp, "ORDINAL_DOCS", [])
+    viols = lp.check_ordinal_and_claims()
+    assert [m for _, _, m in viols if "(N)" in m], viols
+
+
+def test_rule_n_wired_path_is_clean_on_the_real_tree():
+    viols = [(p, m) for p, _, m in lp.check_ordinal_and_claims() if "(N)" in m]
+    assert not viols, viols
