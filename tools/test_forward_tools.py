@@ -1225,6 +1225,95 @@ def test_check_candidate_excludes_float_below_1b(enumerate_snap):
     assert fe.check_candidate(cik, offline=True)[0] == "float_below_1b"
 
 
+def test_check_candidate_separates_absent_float_fact_from_absent_bytes(
+        enumerate_snap):
+    """R16-7(b): 'float 사실이 없다'와 '스냅샷 바이트가 없다'는 다른 사건이다.
+
+    종전에는 둘 다 "missing_data"였다. 봉인된 universe.json만 보는 외부
+    독자는 §1-4 실패(진짜 배제)와 404/403(수집 실패)을 구분할 수 없었고,
+    바로 그 구분 불가가 cycle_001의 35건에 실제로 적용돼 있다."""
+    fe, snap = enumerate_snap
+    cik = "0000009106"
+    _enumerate_snapshot(snap, cik)
+    # 파싱은 성공, units.USD 부재 → 진짜 배제
+    fc.write_json(snap / f"float_CIK{cik}.json", {"units": {}})
+    assert fe.check_candidate(cik, offline=True)[0] == "no_float_fact"
+    assert fe._fetch_errors == [], "배제는 fail-closed 채널을 건드리지 않는다"
+
+    # 스냅샷 자체가 없다 → 수집 실패
+    other = "0000009107"
+    _enumerate_snapshot(snap, other)
+    (snap / f"float_CIK{other}.json").unlink()
+    assert fe.check_candidate(other, offline=True)[0] == "fetch_unavailable"
+
+
+def test_offline_rerun_with_a_recorded_failure_exits_1_and_writes_nothing(
+        enumerate_snap, tmp_path, monkeypatch):
+    """R16-7(a) 전 구간: 마커가 있으면 --offline 재실행이 종료 1이고 아무것도
+    쓰지 않는다 — 온라인 실행과 같은 fail-closed 채널.
+
+    `complete = not _fetch_errors and ...` 이므로 --force도 이 게이트를
+    통과하지 못한다 (그래서 종전에 유일하게 쓰기에 도달한 경로가 --offline
+    재실행이었다)."""
+    fe, snap = enumerate_snap
+    monkeypatch.setattr(fe, "SIC_SET", ["3674"])
+    monkeypatch.setattr(fe, "_provenance", [])
+    monkeypatch.setattr(fe, "_fetch_errors", [])
+    monkeypatch.setattr(fe, "cycle1_ciks", lambda: set())
+    rows = [(f"{9400 + i:010d}", 2.0e9 + i) for i in range(13)]
+    for cik, float_usd in rows:
+        _enumerate_snapshot(snap, cik, float_usd=float_usd)
+    (snap / "sic_3674_p0.xml").write_text(
+        "".join(f"<cik>{c}</cik>" for c, _ in rows), encoding="utf-8")
+    # 한 건만 온라인에서 하드 실패했다고 기록된 상태 (cycle_001의 35건 형태)
+    doomed = snap / f"float_CIK{rows[0][0]}.json"
+    fe.missing_marker(doomed).write_text("HTTP Error 404: Not Found",
+                                         encoding="utf-8")
+    doomed.unlink()
+
+    out = tmp_path / "universe_out.json"
+    monkeypatch.setattr(sys, "argv", ["x", "--offline", "--out", str(out)])
+    assert fe.main() == 1
+    assert not out.exists(), "기록된 fetch 실패를 안고 유니버스를 썼다"
+
+
+def test_offline_rerun_cannot_launder_a_recorded_fetch_failure(enumerate_snap,
+                                                               monkeypatch):
+    """R16-7(a): 온라인 실행이 남긴 `.missing` 마커를 아무도 읽지 않았다.
+
+    같은 물리 상태가 온라인에서는 _fetch_errors(→ 종료 1, 무기록)로, 오프라인
+    에서는 배제 문자열(→ universe.json에 봉인)로 갈렸다. 그래서 '모든 fetch
+    실패에 소유자 판단을 강제한다'는 기제가 문서화된 재실행 한 번으로 무력화
+    됐다 — cycle_001의 35건이 정확히 그 경로를 통과했다."""
+    fe, snap = enumerate_snap
+    monkeypatch.setattr(fe, "_fetch_errors", [])
+    cik = "0000009108"
+    _enumerate_snapshot(snap, cik)
+    float_snap = snap / f"float_CIK{cik}.json"
+    marker = fe.missing_marker(float_snap)
+    float_snap.unlink()
+    marker.write_text("HTTP Error 404: Not Found", encoding="utf-8")
+
+    assert fe.check_candidate(cik, offline=True)[0] == "fetch_unavailable"
+    assert fe._fetch_errors, "마커가 있는데 오프라인 재실행이 조용히 배제했다"
+    assert "404" in fe._fetch_errors[0], "마커가 기록한 정확한 오류가 실려야 한다"
+
+
+def test_truncated_float_body_is_a_failure_not_an_exclusion(enumerate_snap,
+                                                            monkeypatch):
+    """R16-7(c): JSONDecodeError는 ValueError 파생이라 `except (KeyError,
+    ValueError)`에 삼켜져 배제 버킷으로 흘렀다 — 잘린 200 본문이 '이 회사엔
+    float 사실이 없다'로 봉인된다."""
+    fe, snap = enumerate_snap
+    monkeypatch.setattr(fe, "_fetch_errors", [])
+    cik = "0000009109"
+    _enumerate_snapshot(snap, cik)
+    (snap / f"float_CIK{cik}.json").write_text(
+        '{"units": {"USD": [{"end": "2026-06-30", "val": 2.0e9', encoding="utf-8")
+    assert fe.check_candidate(cik, offline=True)[0] == "fetch_unavailable"
+    assert any("JSON 파싱 실패" in e for e in fe._fetch_errors), fe._fetch_errors
+
+
 def _run_enumerate(fe, snap, monkeypatch, tmp_path, rows, burned=()):
     """rows: [(cik, float_usd)] — 한 SIC 버킷으로 main()을 완주시킨다."""
     monkeypatch.setattr(fe, "SIC_SET", ["3674"])

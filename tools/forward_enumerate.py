@@ -37,10 +37,25 @@ _provenance = []
 _fetch_errors = []  # fail-closed: 오류 발생 시 결측으로 삼키지 않고 종료 코드 1
 
 
+def missing_marker(dest: Path) -> Path:
+    """온라인 fetch가 하드 실패를 기록해 둔 마커 (정확한 HTTP 오류 문자열)."""
+    return dest.with_suffix(dest.suffix + ".missing")
+
+
 def fetch(url: str, dest: Path, offline: bool) -> bytes | None:
     if dest.exists():
         return dest.read_bytes()
     if offline:
+        # R16-7: 같은 물리 상태(쓸 수 있는 스냅샷 바이트 없음)에 두 개의 실패
+        # 의미가 있었다 — 온라인이면 _fetch_errors에 쌓여 run 전체가 실패하고,
+        # 오프라인이면 조용히 배제 사유 문자열이 되어 universe.json에 봉인됐다.
+        # 온라인 실행이 남긴 마커를 아무도 읽지 않았기 때문이다. 문서화된 복구
+        # 절차(--offline 재실행)가 바로 그 우회 경로였다.
+        marker = missing_marker(dest)
+        if marker.is_file():
+            _fetch_errors.append(
+                f"{url}: (offline) 기록된 fetch 실패 — "
+                f"{marker.read_text(encoding='utf-8')[:120]}")
         return None
     req = urllib.request.Request(url, headers=SEC_UA)
     try:
@@ -49,7 +64,7 @@ def fetch(url: str, dest: Path, offline: bool) -> bytes | None:
     except Exception as e:  # 404·타임아웃 등 — 기록 후 run 전체를 실패시킨다
         _provenance.append({"url": url, "retrieved_at": _now(), "error": str(e)[:120]})
         _fetch_errors.append(f"{url}: {str(e)[:120]}")
-        dest.with_suffix(dest.suffix + ".missing").write_text(str(e)[:200], encoding="utf-8")
+        missing_marker(dest).write_text(str(e)[:200], encoding="utf-8")
         return None
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_bytes(data)
@@ -101,7 +116,11 @@ def check_candidate(cik: str, offline: bool) -> tuple[str, dict | None]:
     data = fetch(f"https://data.sec.gov/submissions/CIK{cik}.json",
                  SNAP / f"submissions_CIK{cik}.json", offline)
     if data is None:
-        return "missing_data", None
+        # R16-7: '스냅샷 바이트가 없다'와 '파싱은 됐는데 float 사실이 없다'는
+        # 서로 다른 사건이다 — 종전에는 둘 다 "missing_data"였고, 봉인된
+        # universe.json만 보는 외부 독자는 404와 403을, 결측과 부재를 구분할
+        # 방법이 없었다.
+        return "fetch_unavailable", None
     sub = json.loads(data)
     recent = sub.get("filings", {}).get("recent", {})
     forms = recent.get("form", [])
@@ -128,15 +147,25 @@ def check_candidate(cik: str, offline: bool) -> tuple[str, dict | None]:
     if len(xb_all) < 8 or xb_k < 2:
         return "xbrl_history", None
 
-    fdata = fetch(f"https://data.sec.gov/api/xbrl/companyconcept/CIK{cik}/dei/EntityPublicFloat.json",
-                  SNAP / f"float_CIK{cik}.json", offline)
+    furl = (f"https://data.sec.gov/api/xbrl/companyconcept/CIK{cik}"
+            "/dei/EntityPublicFloat.json")
+    fdata = fetch(furl, SNAP / f"float_CIK{cik}.json", offline)
     if fdata is None:
-        return "missing_data", None
+        return "fetch_unavailable", None
     try:
-        facts = [u for u in json.loads(fdata)["units"]["USD"] if u.get("end") <= T0]
+        doc = json.loads(fdata)
+    except json.JSONDecodeError as e:
+        # R16-7(c): 잘린·비-JSON 200 본문은 '이 회사에 float 사실이 없다'가
+        # 아니라 수집 실패다. JSONDecodeError는 ValueError 파생이라 아래
+        # except에 삼켜져 배제 버킷으로 흘렀다 — fail-closed 채널로 돌린다.
+        _fetch_errors.append(f"{furl}: JSON 파싱 실패 — {str(e)[:120]}")
+        return "fetch_unavailable", None
+    try:
+        facts = [u for u in doc["units"]["USD"] if u.get("end") <= T0]
         latest = max(facts, key=lambda u: u["end"])
     except (KeyError, ValueError):
-        return "missing_data", None
+        # 파싱은 성공했고 units.USD가 없거나 T0 이전 사실이 없다 — 진짜 배제
+        return "no_float_fact", None
     if latest["val"] < FLOAT_MIN:
         return "float_below_1b", None
     return "ok", {"float_usd": latest["val"], "float_asof": latest["end"],
