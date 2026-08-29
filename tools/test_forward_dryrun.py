@@ -106,7 +106,9 @@ def test_gate_steps_dry_run_end_to_end(tmp_path, monkeypatch, clean_env):
     monkeypatch.setattr(fxf, "fetch", fake_fetch)
     dest = tmp_path / "data_forward"
     assert fxf.fetch_forward(cycle / "universe.json", dest) == 0
-    assert (dest / "fetch_log.jsonl").exists()
+    # R15-1: 수집 로그는 dest가 아니라 정본 경로(git 관리)에 쓴다
+    assert fxf.fetch_log_path().exists()
+    assert not (dest / "fetch_log.jsonl").exists()
     assert len(served) == 24  # companyfacts 12 + submissions 12
 
     # R7-2: fetch 배치는 러너(cutoff_guard)가 읽는 {ticker}/{xbrl,edgar} 형태
@@ -118,7 +120,7 @@ def test_gate_steps_dry_run_end_to_end(tmp_path, monkeypatch, clean_env):
     # R8-1: 쓴 파일마다 로그 행 — 수·kind·sha256 전건 정합 (submissions 포함)
     import hashlib as _hl
     log_rows = [json.loads(line) for line in
-                (dest / "fetch_log.jsonl").read_text(encoding="utf-8").splitlines()]
+                fxf.fetch_log_path().read_text(encoding="utf-8").splitlines()]
     written = sorted(dest.glob("*/*/CIK*.json"))
     assert len(log_rows) == len(written) == 24
     by_path = {r["path"]: r for r in log_rows}
@@ -253,7 +255,10 @@ def test_submissions_row_after_companyfacts_does_not_clobber_manifest(tmp_path):
             # 뒤 행이 submissions — 무필터면 latest[rid]를 클로버한다
             {"record_id": "fw001-r01", "kind": "submissions", "cik": "0000001001",
              "url": "u-sub", "retrieval_date": "t2", "sha256": "s2", "path": str(sub)}]
-    (dest / "fetch_log.jsonl").write_text(
+    # R15-1: 픽스처 로그도 정본 경로에 둔다 (build_sources가 읽는 유일한 파일)
+    log_path = fxf.fetch_log_path()
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    log_path.write_text(
         "\n".join(json.dumps(r) for r in rows) + "\n", encoding="utf-8")
     sources = fsm.build_sources(dest, CUTOFF)
     assert {s["accession_no"] for s in sources} == {_accn(1)}

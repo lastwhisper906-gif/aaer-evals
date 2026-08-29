@@ -1998,3 +1998,37 @@ python tools/forward_verify_seal.py --cycle forward/cycle_001
   INV-06 (동결 경로 무접촉).
 - **Revert:** 위 다섯 표면의 추가 문면 삭제 + `CLAIMS.json` 두 셀 원복
   (비권장 — L-8이 부과한 공개 의무가 다시 미이행 상태로 돌아간다).
+
+## D-P98 — [DRAFT — 소유자 서명 대기] 11월 창 runbook 변경: `--allow-new-custody-claims`(2b 1회 거부)가 사라지고 "수집 직후 `data/provenance/fetch_log.jsonl` 커밋"이 그 자리에 들어온다
+
+- **Status:** DRAFT — 세션(harness v4 cycle 015, R15-1)이 작성. 소유자가
+  11월 창에서 **실제로 실행하는 절차**가 바뀌므로 서명 대상이다.
+- **무엇이 바뀌나 (소유자 관점, 절차 두 줄):**
+  - **사라지는 것:** R13-5가 예고한 "첫 실 재핀(runbook 2b)이 한 번 거부하고,
+    소유자가 `python tools/verify_manifest.py --write --allow-new-custody-claims`
+    로 명시 승인한다"는 단계. 그 플래그도, 매니페스트의 `custody_claims` 키도
+    더 이상 존재하지 않는다. 2b는 이제 조건 없이 통과한다.
+  - **들어오는 것:** 수집 로그의 정본이 corpus 트리 밖 git 관리 경로
+    (`data/provenance/fetch_log.jsonl`)로 옮겨졌으므로, **각 감독 fetch 직후
+    그 파일을 커밋**해야 출처 주장이 이력에 정박된다. 커밋하지 않은 로그는
+    정박되지 않은 로그다. `fetch_xbrl_facts.py`가 종료 시 이 문구를 인쇄한다.
+- **왜 (한 문장):** 커스터디 앵커를 "매니페스트 핀"에서 "git diff"로 옮기면
+  같은 도구가 자기 앵커를 재생성하는 순환이 끊긴다 — R11-2 → R12-1 → R13-5 →
+  R14-5로 네 번 재발한 결함(두 경로·두 파서·두 파일)의 클래스가 사라진다.
+  체크포인트는 약해지지 않고 옮겨간다: 제3자가 이력에서 검사할 수 있으므로
+  재핀 시점의 자체 신고보다 강하다.
+- **열린 질문 (기록만 — 답하지 않았다):** 도구가 커밋을 **강제**해야 하는가.
+  가드 시점에 clean git 상태를 요구하면 `fetch → 2b → 재수집` 루프(창 안
+  재시도·부분 실패 복구, R11-2가 되살린 흐름)가 깨진다. 그래서 현재 구현은
+  **알림만** 인쇄한다. 강제 여부는 소유자 판단이다.
+- **INV-15 관계:** 저장소 안에 두는 것은 여전히 매니페스트류 텍스트뿐이다 —
+  대용량 원문은 git 밖 그대로다. 수집 로그는 크기가 아니라 **증거 성격**
+  때문에 안으로 들어온다.
+- **잔존 우회 경로:** 핀된 온전한 스냅샷을 실제로 덮어쓰는 길은 수집 시점의
+  `--allow-pinned TICKER` 하나뿐이며 종전과 같이 소유자 판단이고 로그에
+  남는다. 즉 소유자 플래그가 둘(재핀 쪽 + 수집 쪽)에서 하나로 줄었다.
+- **Basis:** reviews/cycle-015.md R15-1 (R11-2 → R12-1 → R13-5 → R14-5의 5차
+  디스패치) · builds/cycle-015.md · INV-18 (세션은 self-resolve하지 않는다).
+- **Revert:** `tools/fetch_xbrl_facts.py`의 `FETCH_LOG_REL`/`fetch_log_path()`
+  제거 + `verify_manifest`의 custody_claims 층 복원 (비권장 — 네 번 뚫린
+  앵커로 되돌아간다).

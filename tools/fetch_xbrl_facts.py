@@ -7,8 +7,9 @@ Forward mode (R3-4, OWNER_LAUNCH_GATE §4 (2) — 소유자 입회 세션 전용
        universe.selected 전건의 companyfacts를 <dest>/{ticker}/xbrl/에,
        submissions(main+청크)를 <dest>/{ticker}/edgar/에 저장한다 — 러너
        (pipeline/cutoff_guard.py)가 읽는 corpus 배치 그대로 (R7-2).
-       <dest>/fetch_log.jsonl에 url·retrieval_date·sha256를 기록한다
-       (tools/forward_source_manifest.py의 입력).
+       data/provenance/fetch_log.jsonl(정본·git 관리)에 url·retrieval_date·
+       sha256를 기록한다 (tools/forward_source_manifest.py의 입력). 로그는
+       보호 대상 트리(DATA_DIR) 밖에 있고 --dest에서 파생되지 않는다 (R15-1).
 
 Saves to ~/aaer-data/{ticker}/xbrl/CIK{cik10}.json. Like fetch_primary_sources.py,
 this is scoring-assistant ground-truth collection, not evaluatee data loading —
@@ -26,6 +27,26 @@ from pathlib import Path
 from fetch_primary_sources import DATA_DIR, EXTRA_CIKS, fetch
 
 REPO = Path(__file__).resolve().parents[1]
+
+# R15-1: 수집 로그의 **정본 위치** — `--dest`를 비롯한 어떤 호출자 인자에서도
+# 파생하지 않고, 보호 대상 corpus 트리(DATA_DIR) 밖의 git 관리 경로 하나로
+# 고정한다. R11-2 → R12-1 → R13-5 → R14-5로 네 번 재발한 결함 클래스
+# ("두 경로·두 파서·두 파일")를 기제가 아니라 **속성**으로 없앤다: 보호 트리
+# 안으로의 어떤 쓰기도 가드가 신뢰하는 출처 주장을 만들거나 늘릴 수 없다.
+# 앵커는 매니페스트 핀이 아니라 git diff이며, 도구가 스스로 인쇄하는 복구
+# 명령으로 세탁될 수 없다.
+FETCH_LOG_REL = "data/provenance/fetch_log.jsonl"
+
+# 테스트 격리 seam (R15-1): None이면 정본(REPO). 픽스처가 임시 루트를 꽂으면
+# writer·가드·source_manifest가 **함께** 옮겨간다 — 한쪽만 옮길 수 없는 것이
+# 이 설계의 요점이므로 seam도 단일 지점이다. 프로덕션 경로는 이 값을 쓰지
+# 않는다 (tools/conftest.py의 autouse 픽스처가 유일한 설정자).
+FETCH_LOG_ROOT: Path | None = None
+
+
+def fetch_log_path() -> Path:
+    """정본 수집 로그 — writer·가드·source_manifest의 단일 출처."""
+    return (FETCH_LOG_ROOT or REPO) / FETCH_LOG_REL
 
 
 def portable_path(path: Path, *, repo: Path | None = None,
@@ -47,31 +68,6 @@ def _resolve_logged_path(value: str) -> Path:
         return Path.home() / value[2:]
     p = Path(value)
     return p if p.is_absolute() else REPO / value
-
-
-def _log_is_authoritative(log_path: Path, pinned: dict[str, str]) -> bool:
-    """R12-1: 수집 로그가 출처 주장의 권위를 갖는 조건.
-
-    R11-2는 `dest/fetch_log.jsonl`을 출처의 근거로 삼았는데, 그 파일은
-    **가드가 보호하는 바로 그 트리 안에 사는 서명 없는 append-only 파일**
-    이다. 위조 한 줄(`{"path": "<동결 경로>"}`)이면 복구 불가능한 동결
-    바이트가 열렸다 — 작동 익스플로잇으로 실증됨.
-
-    앵커는 로그 자신의 매니페스트 핀이다: `data/manifests/…json`은 git 안에
-    있어 위조가 diff에 드러나고, 로그는 git 밖(INV-15)에 있다. 로그가 자기
-    핀과 바이트 일치할 때만 그 행들을 출처로 인정한다 — 한 줄이라도
-    덧붙으면 해시가 달라져 권위를 잃고 가드는 거부 쪽으로 떨어진다.
-
-    (행 안의 sha256 필드로는 못 막는다: 온전한 동결 파일은 디스크 == 매니페스트
-    이므로 위조자가 그 값을 그대로 적어 세 값을 모두 만족시킬 수 있다.)"""
-    if not log_path.is_file():
-        return False
-    try:
-        rel = log_path.resolve().relative_to(DATA_DIR.resolve()).as_posix()
-    except (ValueError, OSError):
-        return False
-    recorded = pinned.get(rel)
-    return bool(recorded) and _sha256_bytes_of(log_path) == recorded
 
 
 def logged_claims(log_path: Path, data_dir: Path) -> set[str]:
@@ -107,12 +103,17 @@ def logged_claims(log_path: Path, data_dir: Path) -> set[str]:
     return own
 
 
-def _own_writes(dest: Path, pinned: dict[str, str]) -> set[str]:
-    """R11-2/R12-1: 이 사이클이 직접 쓴 파일 목록 (권위 있는 로그에 한해)."""
-    log_path = dest / "fetch_log.jsonl"
-    if not _log_is_authoritative(log_path, pinned):
-        return set()
-    return logged_claims(log_path, DATA_DIR)
+def _own_writes() -> set[str]:
+    """R11-2/R15-1: 이 사이클이 직접 쓴 파일 목록 — 정본 로그만 읽는다.
+
+    R12-1의 앵커("로그가 자기 매니페스트 핀과 바이트 일치")는 로그가 DATA_DIR
+    **안**에 산다는 전제에서만 성립했고, 바로 그 전제가 네 번 뚫린 자리였다 —
+    마지막(R14-5/R15-1)에는 기본값 아닌 --dest 하나로 가드(`dest/…`)와
+    재핀(`DATA_DIR/…`)이 서로 다른 파일을 읽었다. 로그를 트리 밖 git 관리
+    정본 한 곳으로 옮기면 권위 판정 자체가 필요 없어진다: 보호 트리 안에는
+    신뢰되는 주장을 담을 수 있는 파일이 아예 없다. 인자를 받지 않는 것이
+    이 함수의 계약이다 — 호출자가 경로를 고를 수 있으면 클래스가 되살아난다."""
+    return logged_claims(fetch_log_path(), DATA_DIR)
 
 
 def _sha256_bytes_of(path: Path) -> str:
@@ -139,13 +140,13 @@ def assert_no_pinned_custody_conflict(universe: dict, dest: Path,
       - 그 외 (온전한 회고 스냅샷,
         또는 기록과 어긋난 바이트)  → 거부 (fail-closed)
 
-    R12-1: '이 사이클이 쓴'의 근거인 수집 로그는 자기 매니페스트 핀과
-    일치할 때만 권위를 갖는다 (_log_is_authoritative). 로그가 자란 뒤
-    2b(verify_manifest --write)를 다시 돌리지 않았다면 출처 주장은 통째
-    무효가 되고 가드는 거부로 떨어진다 — 아래 거부 메시지가 그 복구 절차를
-    지목한다.
+    R15-1: '이 사이클이 쓴'의 근거는 정본 수집 로그(FETCH_LOG_REL) 하나뿐
+    이고, 그 파일은 보호 대상 트리 밖의 git 관리 경로다 — dest·--dest에서
+    파생되지 않으므로 가드와 다른 소비자가 서로 다른 파일을 볼 수 없고,
+    트리 안으로 쓰는 어떤 것도 주장을 만들 수 없다. R12-1의 매니페스트 핀
+    앵커는 그 전제(로그가 트리 안에 산다)에서만 필요했으므로 함께 사라졌다.
 
-    소유자 명시 예외는 --allow-pinned (fetch_log.jsonl에 기록된다).
+    소유자 명시 예외는 --allow-pinned (정본 로그에 기록된다).
     반환값은 실제로 예외가 적용된 티커 목록 (로그 기록용)."""
     manifest_file = REPO / "data/manifests/aaer_data_manifest.json"
     if not manifest_file.is_file():
@@ -157,8 +158,7 @@ def assert_no_pinned_custody_conflict(universe: dict, dest: Path,
     prefix = "" if dest_rel == "." else dest_rel + "/"
     pinned = {f["path"]: f.get("sha256") for f in json.loads(
         manifest_file.read_text(encoding="utf-8"))["files"]}
-    own = _own_writes(dest, pinned)
-    log_stale = (dest / "fetch_log.jsonl").is_file() and not own
+    own = _own_writes()
     blocked, overridden = {}, []
     for ticker in sorted({str(r["ticker"]).split("/")[0]
                           for r in universe["selected"]}):
@@ -177,18 +177,17 @@ def assert_no_pinned_custody_conflict(universe: dict, dest: Path,
         if ticker in allow_pinned:
             overridden.append(ticker)
             print(f"WARN — {ticker}: 핀 경로 {len(reasons)}건을 소유자 명시 "
-                  "--allow-pinned로 덮어쓴다 (fetch_log.jsonl에 기록)")
+                  f"--allow-pinned로 덮어쓴다 ({FETCH_LOG_REL}에 기록)")
             continue
         blocked[ticker] = reasons
     if blocked:
         detail = "; ".join(f"{t}({len(v)}건: {v[0]}…)" for t, v in sorted(blocked.items()))
-        remedy = ("\n  수집 로그가 자기 매니페스트 핀과 어긋나 출처 주장이 "
-                  "무효다 (R12-1) — 이 사이클이 실제로 쓴 파일이라면 "
-                  "`python tools/verify_manifest.py --write` 재실행(runbook 2b) "
-                  "후 다시 시도하라.\n"
-                  "  단, 로그가 **이미 핀된 경로**를 새로 주장하면 2b가 거부한다 "
-                  "(R13-5) — 그때는 재핀이 곧 세탁이므로 자동 복구 경로가 없고, "
-                  "로그 변조 여부는 소유자 판단이다." if log_stale else "")
+        remedy = ("\n  이 사이클이 실제로 그 파일을 썼다면 정본 수집 로그"
+                  f"({FETCH_LOG_REL})에 그 행이 있어야 한다 — 없다면 이 수집은 "
+                  "그 경로의 출처가 아니다. 로그는 git 관리 파일이므로 행의 "
+                  "신설·변경은 diff에 드러난다 (R15-1): 재핀·재실행 같은 자동 "
+                  "복구 경로는 없고, 그래도 덮어써야 한다면 --allow-pinned가 "
+                  "유일한 길이며 소유자 판단이다.")
         raise SystemExit(
             f"FAIL — 매니페스트 핀 경로와 충돌 {sorted(blocked)}: {detail} — "
             "온전한 회고 스냅샷을 덮어쓸 수 있어 수집 거부 (R10-2/R11-2). "
@@ -272,7 +271,8 @@ def fetch_forward(universe_path: Path, dest: Path,
     # R10-2/R11-2: 핀 고정 corpus 커스터디 가드 — 어떤 파일도 쓰기 전에.
     overridden = assert_no_pinned_custody_conflict(
         universe, dest, set(allow_pinned or ()))
-    log_path = dest / "fetch_log.jsonl"
+    log_path = fetch_log_path()
+    log_path.parent.mkdir(parents=True, exist_ok=True)
     dest.mkdir(parents=True, exist_ok=True)
     failures = []
     with log_path.open("a", encoding="utf-8") as log:
@@ -304,6 +304,10 @@ def fetch_forward(universe_path: Path, dest: Path,
                      content=resp.content, out=out)
             print(f"{rid} saved {out} ({len(resp.content):,} bytes)")
     print(f"\n{len(failures)} failures" if failures else "\nall fetches succeeded")
+    print(f"NOTE — 출처 기록이 {FETCH_LOG_REL}에 추가됐다. 이 파일이 커스터디 "
+          "주장의 정본이며 앵커는 git diff이므로, 수집 직후 커밋하라 (R15-1). "
+          "(커밋 강제는 하지 않는다 — 가드 시점의 clean-tree 요구는 "
+          "fetch → 2b → 재수집 루프를 깨뜨린다.)")
     return 1 if failures else 0
 
 
@@ -311,7 +315,8 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("case_ids", nargs="*", help="회고 모드: 후보 case_id 필터")
     ap.add_argument("--universe", help="forward 모드: universe.json 경로")
-    ap.add_argument("--dest", help="forward 모드: 저장 루트 (fetch_log.jsonl 포함)")
+    ap.add_argument("--dest", help="forward 모드: corpus 저장 루트 (수집 로그는 "
+                                   "여기가 아니라 정본 경로에 쓴다 — R15-1)")
     ap.add_argument("--allow-pinned", default="",
                     help="R11-2: 매니페스트 핀 경로 덮어쓰기를 명시 허용할 "
                          "티커 (쉼표 구분) — 소유자 판단 전용, fetch_log에 기록")

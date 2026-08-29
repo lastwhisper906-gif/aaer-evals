@@ -3,8 +3,9 @@
 usage: python tools/forward_source_manifest.py --fetch-dir <dest> \
     --cycle forward/cycle_001 [--cutoff YYYY-MM-DD]
 
-fetch_xbrl_facts.py --universe 수집이 남긴 fetch_log.jsonl(url·retrieval_date·
-sha256·path)과 수집 파일 자체(companyfacts의 accn·filed)에서
+fetch_xbrl_facts.py --universe 수집이 남긴 정본 수집 로그
+(data/provenance/fetch_log.jsonl — url·retrieval_date·sha256·path, R15-1)와
+수집 파일 자체(companyfacts의 accn·filed)에서
 `forward_validate`가 요구하는 source_manifest.json을 기계 생성한다:
 항목당 {accession_no, url, filing_date, retrieval_date, sha256}.
 
@@ -54,7 +55,11 @@ def _resolve_logged_path(value: str, fetch_dir: Path) -> Path:
 
 
 def build_sources(fetch_dir: Path, cutoff: str) -> list[dict]:
-    log_path = fetch_dir / "fetch_log.jsonl"
+    # R15-1: 수집 로그의 정본 위치는 fetch_xbrl_facts가 소유한다 — fetch_dir
+    # (= --fetch-dir)에서 파생하면 writer와 **다른 파일**을 읽는 네 번째
+    # 소비자가 된다. fetch_dir은 로그 행의 상대 경로 해석에만 쓴다.
+    import fetch_xbrl_facts  # noqa: PLC0415 — 지연 import (순환 없음)
+    log_path = fetch_xbrl_facts.fetch_log_path()
     # R4-7(d): append 로그의 재시도 중복 — record_id당 최신 행만 채택
     # (뒤 행 우선). 없으면 재시도 후 매니페스트에 상충 sha256이 이중 등재된다.
     latest: dict[str, dict] = {}

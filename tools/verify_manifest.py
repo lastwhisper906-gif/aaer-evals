@@ -79,40 +79,13 @@ def url_basenames(url: str) -> set[str]:
     return names
 
 
-CUSTODY_CLAIMS_KEY = "custody_claims"
-
-
-def _custody_claims(data_dir: Path | None = None) -> set[str]:
-    """수집 로그가 주장하는 경로 집합 — 가드와 같은 파서를 쓴다 (R13-5)."""
-    root = data_dir or DATA_DIR
-    import fetch_xbrl_facts  # noqa: PLC0415 — 지연 import (순환 없음)
-    return fetch_xbrl_facts.logged_claims(root / "fetch_log.jsonl", root)
-
-
-def new_custody_claims(previous: dict | None,
-                       data_dir: Path | None = None) -> list[str]:
-    """R13-5: 이미 핀된 경로에 대한 **새** 출처 주장 — 재핀 거부 사유.
-
-    fetch 가드(fetch_xbrl_facts.assert_no_pinned_custody_conflict)의 신뢰
-    앵커는 "수집 로그가 자기 매니페스트 핀과 일치한다"이다. 그런데 그 핀을
-    만드는 유일한 도구가 이 파일이고, --write는 보호 대상 트리를 무조건
-    전수 재스캔해 로그의 새 해시를 그대로 재기록했다. 그래서 위조된 한 줄이
-    가드가 스스로 인쇄한 복구 명령(2b) 한 번으로 세탁됐다 — 재핀 후 그 행은
-    권위를 얻고, 가드는 온전한 동결 파일의 덮어쓰기를 허용한다 (R12-1-B
-    작동 익스플로잇).
-
-    구분 기준은 '주장의 신규성'이다. 정당한 흐름에서 새 주장이 향하는 경로는
-    직전 매니페스트에 아직 핀되지 않은 경로(이번에 처음 수집)이거나, 직전
-    재핀 때 이미 축복된 주장이다. 위조 행이 노리는 것은 정확히 그 반대 —
-    이 사이클이 쓴 적 없는, 이미 핀된 회고 스냅샷이다.
-
-    최초 생성(previous=None)에는 기준선이 없으므로 비교하지 않는다.
-    """
-    if previous is None:
-        return []
-    blessed = set(previous.get(CUSTODY_CLAIMS_KEY) or [])
-    pinned = {f.get("path") for f in previous.get("files", [])}
-    return sorted((_custody_claims(data_dir) - blessed) & pinned)
+# R15-1: R13-5의 custody_claims 층(재핀 시점 '새 출처 주장' 대조)은 삭제됐다.
+# 그 층은 "수집 로그가 보호 트리 안에 살고 자기 매니페스트 핀에서 권위를
+# 얻는다"는 전제 위에서만 지킬 것이 있었다. 로그가 git 관리 정본
+# (fetch_xbrl_facts.FETCH_LOG_REL)으로 나간 뒤에는 재핀이 어떤 출처 주장에도
+# 권위를 주지 않으므로 축복할 것도, 거부할 것도 없다 — 체크포인트는 git diff
+# 이며 그것이 더 강하다(제3자가 이력에서 검사할 수 있다). 한 속성에 두 개의
+# 진실 원천을 두는 것이 R11-2→R15-1을 네 번 재발시킨 결함 클래스다.
 
 
 def build_manifest() -> dict:
@@ -148,9 +121,11 @@ def build_manifest() -> dict:
             "source_url": None,
         }
         if len(rel.parts) == 1 and path.name == "fetch_log.jsonl":
-            # R10-2: forward 수집 로그 (fetch_xbrl_facts --universe가 루트에
-            # 기록) — checksums.log와 동일한 파생물 관용구. 귀속이 없으면
-            # --write 재생성 매니페스트가 자신의 check_schema에서 실패한다.
+            # R10-2: forward 수집 로그 — checksums.log와 동일한 파생물 관용구.
+            # 귀속이 없으면 --write 재생성 매니페스트가 자신의 check_schema에서
+            # 실패한다. R15-1 이후 수집은 여기에 쓰지 않는다(정본은 git 관리
+            # data/provenance/fetch_log.jsonl) — 이 가지는 그 이전에 남은 로그
+            # 파일을 위한 것이며, 그런 파일은 이제 출처 주장의 근거가 아니다.
             entry["derived_from"] = "~/aaer-data (forward 수집 로그 — tools/fetch_xbrl_facts.py --universe)"
         elif ticker == "reference":
             entry["source_url"] = REFERENCE_URLS.get(path.name)
@@ -206,10 +181,6 @@ def build_manifest() -> dict:
     return {
         "manifest_version": 1,
         "root": "~/aaer-data",
-        # R13-5: 이 재핀 시점에 축복된 출처 주장 집합. 다음 재핀은 이것과
-        # 대조해 '이미 핀된 경로에 대한 새 주장'을 거부한다 — 매니페스트는
-        # git 안에 있으므로 이 집합의 증가는 diff에도 드러난다.
-        CUSTODY_CLAIMS_KEY: sorted(_custody_claims()),
         "generated_at": datetime.now(tz=timezone.utc).isoformat(timespec="seconds"),
         "generated_by": "tools/verify_manifest.py --write",
         "file_count": len(files),
@@ -282,28 +253,9 @@ def main() -> int:
     mode = ap.add_mutually_exclusive_group()
     mode.add_argument("--write", action="store_true", help="매니페스트 생성")
     mode.add_argument("--schema-only", action="store_true", help="자체 정합성만 (CI)")
-    ap.add_argument("--allow-new-custody-claims", action="store_true",
-                    help="R13-5: 이미 핀된 경로에 대한 새 출처 주장을 소유자가 "
-                         "명시 승인 (자동화·runbook에서 쓰지 않는다)")
     args = ap.parse_args()
 
     if args.write:
-        previous = (json.loads(MANIFEST.read_text(encoding="utf-8"))
-                    if MANIFEST.is_file() else None)
-        offending = new_custody_claims(previous)
-        if offending and not args.allow_new_custody_claims:
-            print(f"FAIL — 재핀 거부 (R13-5): 수집 로그가 이미 핀된 경로 "
-                  f"{len(offending)}건을 새로 '내가 썼다'고 주장한다:",
-                  file=sys.stderr)
-            for path in offending[:10]:
-                print(f"  {path}", file=sys.stderr)
-            print("  재핀하면 그 주장이 핀의 권위를 얻어 fetch 가드가 온전한 "
-                  "동결 바이트의 덮어쓰기를 허용한다 — 위조 행 한 줄이 복구 "
-                  "명령 한 번으로 세탁되는 경로다 (R12-1-B 실측).\n"
-                  "  이 사이클이 실제로 그 경로를 수집한 것이 맞다면 소유자가 "
-                  "--allow-new-custody-claims 로 명시 승인한다. 그 판단 없이 "
-                  "자동화·runbook·CI에서 이 플래그를 쓰지 않는다.", file=sys.stderr)
-            return 1
         m = build_manifest()
         MANIFEST.parent.mkdir(parents=True, exist_ok=True)
         MANIFEST.write_text(

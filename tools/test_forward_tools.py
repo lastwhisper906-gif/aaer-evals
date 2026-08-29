@@ -221,6 +221,19 @@ def _authoritative_log(fxf, vm, data_dir, manifest_path, rows):
     manifest_path.write_text(json.dumps(vm.build_manifest()), encoding="utf-8")
 
 
+def _canonical_log(fxf, vm, data_dir, manifest_path, rows):
+    """R15-1: 정본 수집 로그(트리 밖·git 관리)에 행을 쓰고 매니페스트 재생성.
+
+    _authoritative_log의 후신 — 종전에는 '로그가 자기 핀과 일치해야 권위'
+    였으므로 로그를 DATA_DIR 안에 두고 함께 재핀해야 했다. 이제 권위 판정이
+    없으므로 로그는 정본 위치에 있기만 하면 된다."""
+    log_path = fxf.fetch_log_path()
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    log_path.write_text("".join(json.dumps(r) + "\n" for r in rows),
+                        encoding="utf-8")
+    manifest_path.write_text(json.dumps(vm.build_manifest()), encoding="utf-8")
+
+
 def _fetch_fixture(tmp_path, monkeypatch):
     import fetch_xbrl_facts as fxf
     import verify_manifest as vm
@@ -270,64 +283,179 @@ def _run_remedy(vm, monkeypatch, manifest_path, *argv) -> int:
     return vm.main()
 
 
-def test_forged_claim_survives_the_remedy_the_guard_itself_prints(
-        tmp_path, monkeypatch):
-    """R13-5(a): 거부 → 가드가 인쇄한 복구 명령 실행 → 재시도, 3단계 전체.
+FROZEN_BYTES = b'{"july": "snapshot"}'
 
-    R12-1은 1단계(단발 거부)만 고정했고, lens B가 2단계를 실증했다:
-    `verify_manifest --write`가 보호 트리를 무조건 재스캔해 위조 행이 실린
-    로그를 그대로 재핀했고, 그 한 번으로 가드가 온전한 동결 바이트를 열었다.
-    이제 그 재핀 자체가 '이미 핀된 경로에 대한 새 주장'을 거부한다."""
+
+def _custody_fixture(tmp_path, monkeypatch, dest_rel: str):
+    """R15-1: 핀된 온전한 동결 스냅샷 + 그 경로를 관할하는 dest.
+
+    dest_rel="" 는 기본 dest(= DATA_DIR), "sub" 는 하위 dest — R14-5/R15-1이
+    드러낸 세탁 경로가 정확히 후자다 (가드는 `dest/fetch_log.jsonl`을,
+    재핀 검사는 `DATA_DIR/fetch_log.jsonl`을 읽어 서로 다른 파일을 봤다)."""
     fxf, vm, data_dir, manifest_path = _fetch_fixture(tmp_path, monkeypatch)
-    frozen = data_dir / "TK01/xbrl/CIK0000001001.json"
+    dest = data_dir / dest_rel if dest_rel else data_dir
+    prefix = f"{dest_rel}/" if dest_rel else ""
+    frozen = data_dir / f"{prefix}TK01/xbrl/CIK0000001001.json"
     frozen.parent.mkdir(parents=True)
-    frozen.write_bytes(b'{"july": "snapshot"}')
-    _authoritative_log(fxf, vm, data_dir, manifest_path, [])
-    manifest_before = manifest_path.read_bytes()
-
-    # 공격: 동결 경로를 자기 것이라 주장하는 위조 행 한 줄
-    with (data_dir / "fetch_log.jsonl").open("a", encoding="utf-8") as log:
-        log.write(json.dumps(_log_row_for(
-            data_dir, "TK01/xbrl/CIK0000001001.json",
-            sha256=hashlib.sha256(b'{"july": "snapshot"}').hexdigest())) + "\n")
-
+    frozen.write_bytes(FROZEN_BYTES)
+    manifest_path.write_text(json.dumps(vm.build_manifest()), encoding="utf-8")
     monkeypatch.setattr(fxf, "fetch", lambda url: (_ for _ in ()).throw(
         AssertionError("거부 전에 네트워크 호출")))
     upath = tmp_path / "universe.json"
     fc.write_json(upath, make_universe(1))
+    return fxf, vm, manifest_path, dest, frozen, upath
+
+
+def _forge(log_path: Path, frozen: Path) -> None:
+    """보호 트리 안 임의 위치에 '이 동결 파일은 내가 썼다'는 행을 심는다."""
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    with log_path.open("a", encoding="utf-8") as log:
+        log.write(json.dumps({
+            "record_id": "fw001-r01", "kind": "companyfacts",
+            "path": str(frozen),
+            "sha256": hashlib.sha256(FROZEN_BYTES).hexdigest()}) + "\n")
+
+
+@pytest.mark.parametrize("dest_rel", ["", "sub"])
+def test_forged_claim_cannot_be_laundered_through_any_dest(
+        tmp_path, monkeypatch, dest_rel):
+    """R15-1(a): 위조 → 거부 → 가드가 지목하는 복구 명령(2b) → 재시도.
+    R13-5의 3단계 시퀀스를 **dest 전건**으로 돌린다.
+
+    replaces test_forged_claim_survives_the_remedy_the_guard_itself_prints:
+    그 테스트가 고정하던 성질("위조 행이 2b를 통과해 살아남는다 — 그러니
+    2b가 거부해야 한다")은 R15-1에서 한 단계 앞으로 이동했다. 이제 위조 행은
+    **읽히지 않아서** 실패한다 — 보호 트리 안 어디에 놓든 정본 로그가 아니다.
+    2b는 정상적으로 성공하지만(축복할 주장이 없다) 그것이 아무 권위도 주지
+    않는다는 것이 이 테스트의 요점이다.
+
+    dest_rel="sub"가 R14-5가 실증한 세탁 경로다: 종전 코드에서 가드는
+    `dest/fetch_log.jsonl`(= sub/)을, 재핀 거부 검사는 `DATA_DIR/`의 로그를
+    읽었으므로 하위 dest 위조는 2b에서 걸리지 않고 3단계에서 통과했다."""
+    fxf, vm, manifest_path, dest, frozen, upath = _custody_fixture(
+        tmp_path, monkeypatch, dest_rel)
+    _forge(dest / "fetch_log.jsonl", frozen)
 
     # 1단계: 거부
     with pytest.raises(SystemExit, match="매니페스트 핀 경로와 충돌"):
-        fxf.fetch_forward(upath, data_dir)
+        fxf.fetch_forward(upath, dest)
 
-    # 2단계: 거부 메시지가 지목하는 복구 명령 — 이제 거부되고 매니페스트는 무변경
-    assert _run_remedy(vm, monkeypatch, manifest_path) == 1
-    assert manifest_path.read_bytes() == manifest_before
+    # 2단계: 복구 명령(runbook 2b) — 성공하지만 어떤 출처 주장도 축복하지 않는다
+    assert _run_remedy(vm, monkeypatch, manifest_path) == 0
+    assert "custody_claims" not in json.loads(manifest_path.read_text()), \
+        "재핀 산출물이 다시 출처 주장의 진실 원천이 됐다"
 
     # 3단계: 재시도 — 여전히 거부, 동결 바이트 무접촉
     with pytest.raises(SystemExit, match="매니페스트 핀 경로와 충돌"):
-        fxf.fetch_forward(upath, data_dir)
-    assert frozen.read_bytes() == b'{"july": "snapshot"}', "동결 바이트가 열렸다"
+        fxf.fetch_forward(upath, dest)
+    assert frozen.read_bytes() == FROZEN_BYTES, "동결 바이트가 열렸다"
 
 
-def test_owner_flag_is_the_only_way_past_a_new_custody_claim(tmp_path, monkeypatch):
-    """R13-5: 우회는 존재하되 소유자 명시 플래그로만 — 그리고 그 플래그 없이
-    돌린 2b는 아무것도 바꾸지 않는다(위 테스트). 플래그 경로가 실제로
-    작동함을 함께 고정해, 거부가 막다른 골목이 아님을 보인다."""
+@pytest.mark.parametrize("dest_rel,log_rel", [
+    ("", "fetch_log.jsonl"),               # 종전 정본 위치
+    ("sub", "sub/fetch_log.jsonl"),        # --dest 처리가 닿는 위치 (R14-5 세탁 경로)
+    ("", "TK01/fetch_log.jsonl"),          # 티커 디렉토리 안
+    ("", "TK01/xbrl/fetch_log.jsonl"),     # 핀 파일 바로 옆
+])
+def test_no_write_inside_the_corpus_can_create_a_trusted_claim(
+        tmp_path, monkeypatch, dest_rel, log_rel):
+    """R15-1(b) 속성: 보호 트리(DATA_DIR) **안** 어떤 파일에 행을 덧붙여도
+    핀된 경로에 대해 수집이 허가되지 않는다.
+
+    기제가 아니라 속성이 산출물이다 — R11-2·R12-1·R13-5는 각각 특정 파일
+    하나를 막았고, 매번 다른 파일이 남아 있었다. 여기서는 위치를 4곳으로
+    변주하고, 그 사이에 2b까지 끼워 넣는다."""
+    fxf, vm, manifest_path, dest, frozen, upath = _custody_fixture(
+        tmp_path, monkeypatch, dest_rel)
+    _forge(fxf.DATA_DIR / log_rel, frozen)
+
+    with pytest.raises(SystemExit, match="매니페스트 핀 경로와 충돌"):
+        fxf.fetch_forward(upath, dest)
+    assert _run_remedy(vm, monkeypatch, manifest_path) == 0   # 2b 후에도
+    with pytest.raises(SystemExit, match="매니페스트 핀 경로와 충돌"):
+        fxf.fetch_forward(upath, dest)
+    assert frozen.read_bytes() == FROZEN_BYTES, "동결 바이트가 열렸다"
+    assert not fxf.fetch_log_path().is_file(), \
+        "거부 경로가 정본 로그에 행을 남겼다"
+
+
+def test_repin_grants_no_custody_authority_so_no_owner_flag_is_needed(
+        tmp_path, monkeypatch):
+    """R15-1: replaces test_owner_flag_is_the_only_way_past_a_new_custody_claim.
+
+    그 테스트의 성질("이미 핀된 경로에 대한 새 주장을 통과시키는 유일한 길은
+    소유자 플래그 --allow-new-custody-claims")은 존재하지 않게 됐다. 그것을
+    불필요하게 만든 **새 불변식**을 대신 고정한다:
+
+      (1) 재핀(2b)은 어떤 출처 주장도 축복하지 않는다 — 산출 매니페스트에
+          custody_claims 키가 없고, 재핀 뒤에도 가드 판정이 바뀌지 않는다.
+      (2) 그래서 재핀 전용 소유자 플래그도 사라졌다 — 넘기면 argparse가 거부.
+      (3) 핀 경로를 실제로 덮어쓰는 유일한 길은 종전과 같이 수집 시점의
+          --allow-pinned이며, 그것은 여전히 소유자 판단이고 로그에 남는다.
+
+    즉 우회 경로의 수가 둘에서 하나로 줄었고, 남은 하나는 재핀 도구가 아니라
+    수집 도구 쪽에 있다."""
+    fxf, vm, manifest_path, dest, frozen, upath = _custody_fixture(
+        tmp_path, monkeypatch, "")
+    _forge(fxf.DATA_DIR / "fetch_log.jsonl", frozen)
+
+    # (1) 재핀은 성공하되 아무것도 축복하지 않는다
+    assert _run_remedy(vm, monkeypatch, manifest_path) == 0
+    assert "custody_claims" not in json.loads(manifest_path.read_text())
+    with pytest.raises(SystemExit, match="매니페스트 핀 경로와 충돌"):
+        fxf.fetch_forward(upath, dest)
+
+    # (2) 재핀 전용 소유자 플래그는 존재하지 않는다 (argparse 종료코드 2)
+    with pytest.raises(SystemExit) as exc:
+        _run_remedy(vm, monkeypatch, manifest_path, "--allow-new-custody-claims")
+    assert exc.value.code == 2
+    assert not hasattr(vm, "new_custody_claims")
+
+    # (3) 남은 유일한 우회는 수집 시점의 소유자 판단 --allow-pinned
+    monkeypatch.setattr(fxf, "fetch",
+                        lambda url: _FetchResp({"filings": {"files": []}}))
+    assert fxf.fetch_forward(upath, dest, {"TK01"}) == 0
+    rows = [json.loads(x) for x in fxf.fetch_log_path()
+            .read_text(encoding="utf-8").splitlines()]
+    assert [r for r in rows if r.get("kind") == "pinned_override"]
+
+
+def test_canonical_fetch_log_lives_in_git_outside_the_corpus(monkeypatch):
+    """R15-1: 정본 해석 자체를 고정한다 — tools/conftest.py의 격리 seam이
+    프로덕션 경로를 가리지 않도록, seam을 끄고 실제 값을 확인한다.
+
+    로그가 git 관리 트리 안(REPO 상대)이고 보호 대상 corpus(DATA_DIR) 밖이라는
+    두 성질이 R15-1의 앵커 전체다: 앞의 것이 'git diff가 체크포인트'를,
+    뒤의 것이 '트리 안 쓰기가 주장을 만들 수 없다'를 성립시킨다."""
+    import fetch_xbrl_facts as fxf
+    monkeypatch.setattr(fxf, "FETCH_LOG_ROOT", None)
+    assert fxf.fetch_log_path() == fxf.REPO / fxf.FETCH_LOG_REL
+    assert fxf.fetch_log_path().is_relative_to(fxf.REPO)
+    assert not fxf.fetch_log_path().is_relative_to(fxf.DATA_DIR)
+
+
+def test_every_consumer_reads_the_one_canonical_log(tmp_path, monkeypatch):
+    """R15-1: writer·가드·source_manifest가 같은 한 파일을 본다.
+
+    dest 밑에는 로그가 생기지 않고 (writer), 가드의 출처 집합은 정본 로그에서
+    나오며 (guard), build_sources는 --fetch-dir이 아니라 정본을 읽는다
+    (네 번째 소비자 — R14-5 보고에서 Location 목록에 빠져 있던 자리)."""
+    import forward_source_manifest as fsm
     fxf, vm, data_dir, manifest_path = _fetch_fixture(tmp_path, monkeypatch)
-    frozen = data_dir / "TK01/xbrl/CIK0000001001.json"
-    frozen.parent.mkdir(parents=True)
-    frozen.write_bytes(b'{"july": "snapshot"}')
-    _authoritative_log(fxf, vm, data_dir, manifest_path, [])
-    with (data_dir / "fetch_log.jsonl").open("a", encoding="utf-8") as log:
-        log.write(json.dumps(_log_row_for(
-            data_dir, "TK01/xbrl/CIK0000001001.json")) + "\n")
+    monkeypatch.setattr(fxf, "fetch",
+                        lambda url: _FetchResp({"filings": {"files": []}}))
+    upath = tmp_path / "universe.json"
+    fc.write_json(upath, make_universe(1))
+    dest = data_dir / "sub"
+    assert fxf.fetch_forward(upath, dest) == 0
 
-    assert _run_remedy(vm, monkeypatch, manifest_path) == 1
-    assert _run_remedy(vm, monkeypatch, manifest_path,
-                       "--allow-new-custody-claims") == 0
-    blessed = json.loads(manifest_path.read_text())[vm.CUSTODY_CLAIMS_KEY]
-    assert "TK01/xbrl/CIK0000001001.json" in blessed
+    assert fxf.fetch_log_path().is_file()
+    assert not (dest / "fetch_log.jsonl").exists()
+    assert not (data_dir / "fetch_log.jsonl").exists()
+    assert fxf._own_writes() == {
+        "sub/TK01/xbrl/CIK0000001001.json", "sub/TK01/edgar/CIK0000001001.json"}
+    # build_sources가 --fetch-dir에서 로그 경로를 파생하면 여기서 죽는다
+    assert fsm.build_sources(dest, "2026-11-15") == []
 
 
 def test_runbook_repin_loop_still_works(tmp_path, monkeypatch):
@@ -349,22 +477,45 @@ def test_runbook_repin_loop_still_works(tmp_path, monkeypatch):
     assert fxf.fetch_forward(upath, data_dir) == 0
 
 
+def test_runbook_repin_loop_still_works_under_a_sub_dest(tmp_path, monkeypatch):
+    """R15-1(d): 정당한 흐름(fetch → 2b → 재수집 → 2b → 재수집)이 **하위
+    dest**에서도 전부 0을 반환한다.
+
+    위 test_runbook_repin_loop_still_works가 기본 dest를 고정하고, 이 테스트가
+    R14-5의 세탁 경로였던 --dest 하위 트리를 고정한다 — 거부만 강해지고 정당한
+    재시도·부분 실패 복구가 막히면 R11-2를 다시 만드는 것이다."""
+    fxf, vm, data_dir, manifest_path = _fetch_fixture(tmp_path, monkeypatch)
+    monkeypatch.setattr(fxf, "fetch",
+                        lambda url: _FetchResp({"filings": {"files": []}}))
+    upath = tmp_path / "universe.json"
+    fc.write_json(upath, make_universe(2))
+    dest = data_dir / "sub"
+
+    assert fxf.fetch_forward(upath, dest) == 0
+    assert _run_remedy(vm, monkeypatch, manifest_path) == 0   # 2b (최초 핀)
+    assert fxf.fetch_forward(upath, dest) == 0                # 재수집
+    assert _run_remedy(vm, monkeypatch, manifest_path) == 0   # 2b (재핀)
+    assert fxf.fetch_forward(upath, dest) == 0
+    assert any(f["path"].startswith("sub/TK01/")
+               for f in json.loads(manifest_path.read_text())["files"])
+
+
 def test_sha_leg_is_the_only_reason_for_refusal(tmp_path, monkeypatch):
     """R12-1(c) leg 격리: 경로가 권위 있는 로그에 실재하므로 출처 leg는
     통과한다 — 거부 사유는 오직 디스크 바이트 ≠ 매니페스트 기록이다.
     변이 `if rel in own and recorded and _sha256_bytes_of(disk) == recorded:`
-    → `if rel in own:` 는 이 테스트를 red로 만들어야 한다."""
+    → `if rel in own:` 는 이 테스트를 red로 만들어야 한다.
+
+    R15-1: 로그 위치가 정본으로 바뀌어 픽스처가 그쪽에 쓴다 — 단언은 무변경."""
     fxf, vm, data_dir, manifest_path = _fetch_fixture(tmp_path, monkeypatch)
     mine = data_dir / "TK01/xbrl/CIK0000001001.json"
     mine.parent.mkdir(parents=True)
     mine.write_bytes(b'{"mine": 1}')
-    _authoritative_log(fxf, vm, data_dir, manifest_path,
-                       [_log_row_for(data_dir, "TK01/xbrl/CIK0000001001.json")])
+    _canonical_log(fxf, vm, data_dir, manifest_path,
+                   [_log_row_for(data_dir, "TK01/xbrl/CIK0000001001.json")])
     # 출처 leg는 통과(로그에 있음), sha leg만 실패하도록 디스크만 드리프트
     mine.write_bytes(b'{"mine": 2}')
-    assert "TK01/xbrl/CIK0000001001.json" in fxf._own_writes(
-        data_dir, {f["path"]: f.get("sha256")
-                   for f in json.loads(manifest_path.read_text())["files"]}), \
+    assert "TK01/xbrl/CIK0000001001.json" in fxf._own_writes(), \
         "출처 leg가 통과해야 sha leg를 격리 측정할 수 있다"
 
     upath = tmp_path / "universe.json"
@@ -375,19 +526,21 @@ def test_sha_leg_is_the_only_reason_for_refusal(tmp_path, monkeypatch):
 
 def test_own_writes_skips_valid_json_non_object_row(tmp_path, monkeypatch):
     """R12-1(d): 독스트링이 약속한 침묵 스킵 — 유효 JSON 비객체 행에서
-    AttributeError로 죽지 않는다."""
+    AttributeError로 죽지 않는다.
+
+    R15-1: 로그 위치가 정본으로 바뀌어 픽스처가 그쪽에 쓴다 — 단언은 무변경."""
     fxf, vm, data_dir, manifest_path = _fetch_fixture(tmp_path, monkeypatch)
     good = data_dir / "TK01/xbrl/CIK0000001001.json"
     good.parent.mkdir(parents=True)
     good.write_bytes(b"{}")
-    (data_dir / "fetch_log.jsonl").write_text(
+    log_path = fxf.fetch_log_path()
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    log_path.write_text(
         "123\n[1, 2]\n\"str\"\nnot json\n"
         + json.dumps(_log_row_for(data_dir, "TK01/xbrl/CIK0000001001.json")) + "\n",
         encoding="utf-8")
     manifest_path.write_text(json.dumps(vm.build_manifest()), encoding="utf-8")
-    pinned = {f["path"]: f.get("sha256")
-              for f in json.loads(manifest_path.read_text())["files"]}
-    assert fxf._own_writes(data_dir, pinned) == {"TK01/xbrl/CIK0000001001.json"}
+    assert fxf._own_writes() == {"TK01/xbrl/CIK0000001001.json"}
 
 
 def test_fetch_manifest_guard_allows_disjoint_tickers(tmp_path, monkeypatch):
@@ -401,7 +554,7 @@ def test_fetch_manifest_guard_allows_disjoint_tickers(tmp_path, monkeypatch):
     fc.write_json(upath, make_universe(2))
     assert fxf.fetch_forward(upath, data_dir) == 0
     assert (data_dir / "TK01/xbrl/CIK0000001001.json").is_file()
-    assert (data_dir / "fetch_log.jsonl").is_file()
+    assert fxf.fetch_log_path().is_file()   # R15-1: 정본 위치
 
 
 def test_refetch_after_manifest_rebuild_is_allowed(tmp_path, monkeypatch):
@@ -435,7 +588,7 @@ def test_refetch_after_manifest_rebuild_is_allowed(tmp_path, monkeypatch):
 
 def test_owner_may_override_pinned_collision_and_it_is_logged(tmp_path, monkeypatch):
     """R11-2: 온전한 핀 스냅샷 덮어쓰기는 소유자 명시 --allow-pinned 로만,
-    그리고 그 사실이 fetch_log.jsonl에 남는다."""
+    그리고 그 사실이 수집 로그에 남는다 (R15-1: 정본 위치)."""
     fxf, data_dir = _manifest_fixture(tmp_path, monkeypatch,
                                       "TK01/xbrl/CIK0000001001.json",
                                       on_disk=b'{"july": "snapshot"}')
@@ -445,7 +598,7 @@ def test_owner_may_override_pinned_collision_and_it_is_logged(tmp_path, monkeypa
     fc.write_json(upath, make_universe(1))
     assert fxf.fetch_forward(upath, data_dir, {"TK01"}) == 0
     rows = [json.loads(x) for x in
-            (data_dir / "fetch_log.jsonl").read_text(encoding="utf-8").splitlines()]
+            fxf.fetch_log_path().read_text(encoding="utf-8").splitlines()]
     override = [r for r in rows if r.get("kind") == "pinned_override"]
     assert override and override[0]["tickers"] == ["TK01"]
 
