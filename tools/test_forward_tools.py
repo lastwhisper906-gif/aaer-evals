@@ -2876,3 +2876,140 @@ def test_source_manifest_refuses_a_cutoff_other_than_the_frozen_one(cycle, monke
                                       "--cutoff", "2026-11-20"])
     assert forward_source_manifest.main() == 1
     assert (cycle / "source_manifest.json").read_bytes() == before
+
+
+# ── R17-3: 어느 저장소가 커스터디를 답하는지 공격자가 고를 수 없다 ───────────
+# R16-2는 신뢰 근원을 "정본 로그의 HEAD 판"으로 옮겼지만, 조회를 `git -C <로그가
+# 사는 디렉토리>`로 했다. 위조 행을 덧붙일 수 있는 주체 — 이 익스플로잇이 필요로
+# 하는 바로 그 능력 — 은 같은 자리에 `git init`도 할 수 있고, 그러면 중첩 저장소가
+# 바깥 저장소를 **가린다**: 바깥 HEAD의 로그는 그대로 비어 있고 바깥 `git log`에도
+# 아무 흔적이 없는데, 가드는 위조본을 읽고 핀된 동결 바이트를 덮어썼다.
+# "위조는 git 이력에 남지 않고서는 성립할 수 없다"는 이 통제가 사려던 유일한 값이
+# 지불되지 않았다는 뜻이다.
+
+def _init_repo(path: Path) -> None:
+    path.mkdir(parents=True, exist_ok=True)
+    subprocess.run(["git", "init", "-q", str(path)], check=True)
+    for key, value in (("user.email", "t@example.invalid"), ("user.name", "t")):
+        subprocess.run(["git", "-C", str(path), "config", key, value], check=True)
+
+
+def _commit_all(path: Path, message: str) -> None:
+    subprocess.run(["git", "-C", str(path), "add", "-A"], check=True)
+    subprocess.run(["git", "-C", str(path), "-c", "commit.gpgsign=false",
+                    "commit", "-q", "--allow-empty", "-m", message], check=True)
+
+
+def _shadow_nested_repo_in_log_dir(fxf, frozen, tmp_path):
+    """리뷰가 실증한 형태 — 로그가 사는 디렉토리에 중첩 저장소를 만든다."""
+    log_path = fxf.fetch_log_path()
+    _forge(log_path, frozen)
+    _init_repo(log_path.parent)
+    _commit_all(log_path.parent, "forged")
+
+
+def _shadow_nested_repo_in_parent_dir(fxf, frozen, tmp_path):
+    """빌더 생성 형태: 중첩 저장소를 로그의 **상위** 디렉토리에 만든다.
+
+    종전 조회는 `-C <로그 디렉토리>`에서 위로 올라가 첫 저장소를 찾으므로,
+    가리는 저장소가 바로 그 디렉토리일 필요가 없다."""
+    log_path = fxf.fetch_log_path()
+    _forge(log_path, frozen)
+    _init_repo(log_path.parent.parent)
+    _commit_all(log_path.parent.parent, "forged")
+
+
+def _shadow_gitfile_indirection(fxf, frozen, tmp_path):
+    """빌더 생성 형태: `.git`을 **파일**로 두어 다른 git 디렉토리를 가리킨다.
+
+    중첩 저장소를 만드는 것과 기제가 다르다 — 디렉토리 하나 없이 파일 한 줄로
+    권위 소재를 옮긴다."""
+    log_path = fxf.fetch_log_path()
+    _forge(log_path, frozen)
+    evil = tmp_path / "evil-gitdir"
+    _init_repo(evil)
+    (evil / log_path.name).write_text(log_path.read_text(encoding="utf-8"),
+                                      encoding="utf-8")
+    _commit_all(evil, "forged")
+    (log_path.parent / ".git").write_text(f"gitdir: {evil / '.git'}\n",
+                                          encoding="utf-8")
+
+
+def _shadow_symlinked_log_dir(fxf, frozen, tmp_path):
+    """리뷰가 지목한 형태: 로그 디렉토리 자체를 공격자 트리로 심볼릭 링크."""
+    log_path = fxf.fetch_log_path()
+    evil = tmp_path / "evil-provenance"
+    _init_repo(evil)
+    _forge(evil / log_path.name, frozen)
+    _commit_all(evil, "forged")
+    if log_path.parent.exists():
+        for child in log_path.parent.iterdir():
+            child.unlink()
+        log_path.parent.rmdir()
+    log_path.parent.symlink_to(evil, target_is_directory=True)
+
+
+def _uncommitted_append_to_a_genuine_log(fxf, frozen, tmp_path):
+    """리뷰가 지목한 형태: 정당한 커밋 행이 이미 있는 로그에 한 줄만 덧붙인다."""
+    log_path = fxf.fetch_log_path()
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    log_path.write_text(json.dumps({
+        "record_id": "fw001-r02", "kind": "companyfacts",
+        "path": str(frozen.parent.parent.parent / "TK02/xbrl/CIK0000001002.json"),
+        "sha256": "0" * 64}) + "\n", encoding="utf-8")
+    _commit_canonical_log(fxf)          # 정당한 행은 이력에 있다
+    _forge(log_path, frozen)            # 위조 행은 작업 트리에만
+
+
+FORGERY_SHAPES = {
+    "nested_repo_in_log_dir": _shadow_nested_repo_in_log_dir,
+    "nested_repo_in_parent_dir": _shadow_nested_repo_in_parent_dir,
+    "gitfile_indirection": _shadow_gitfile_indirection,
+    "symlinked_log_dir": _shadow_symlinked_log_dir,
+    "uncommitted_append_to_genuine_log": _uncommitted_append_to_a_genuine_log,
+}
+
+
+@pytest.mark.parametrize("shape", sorted(FORGERY_SHAPES), ids=sorted(FORGERY_SHAPES))
+def test_no_attacker_creatable_repository_can_answer_the_custody_question(
+        tmp_path, monkeypatch, shape):
+    """(b): 어떤 형태로도 핀된 경로에 대해 permitted=True가 나오지 않는다."""
+    fxf, vm, manifest_path, dest, frozen, upath = _custody_fixture(
+        tmp_path, monkeypatch, "")
+    _commit_canonical_log(fxf)          # 바깥 저장소의 HEAD 로그는 비어 있다
+    FORGERY_SHAPES[shape](fxf, frozen, tmp_path)
+
+    # 위조가 주장한 **핀된** 경로가 커스터디 권위를 얻지 못한다 (정당한 행은
+    # 얻어도 된다 — uncommitted_append 형태는 그 대조를 함께 담는다).
+    assert "TK01/xbrl/CIK0000001001.json" not in fxf._own_writes(), shape
+    with pytest.raises(SystemExit, match="매니페스트 핀 경로와 충돌"):
+        fxf.fetch_forward(upath, dest)
+    assert frozen.read_bytes() == FROZEN_BYTES, f"{shape}: 동결 바이트가 열렸다"
+
+
+def test_custody_anchor_is_the_repo_root_not_the_logs_directory(tmp_path, monkeypatch):
+    """(a): 앵커 저장소는 로그가 사는 디렉토리가 아니라 저장소 루트다."""
+    fxf, vm, manifest_path, dest, frozen, upath = _custody_fixture(
+        tmp_path, monkeypatch, "")
+    _commit_canonical_log(fxf)
+    root = fxf._anchor_repo_root()
+    assert root is not None
+    assert root.resolve() == fxf.FETCH_LOG_ROOT.resolve()
+    log_path = fxf.fetch_log_path()
+    assert root.resolve() != log_path.parent.resolve()
+    # 중첩 저장소가 생겨도 앵커는 움직이지 않는다
+    _init_repo(log_path.parent)
+    _commit_all(log_path.parent, "nested")
+    assert fxf._anchor_repo_root().resolve() == root.resolve()
+
+
+def test_genuine_committed_rows_still_grant_custody_under_the_new_anchor(
+        tmp_path, monkeypatch):
+    """(c) 반대 방향: 정당하게 커밋된 행은 여전히 읽힌다 — 게이트가 모든 것을
+    거부하는 방식으로 '안전'해진 것이 아니다."""
+    fxf, vm, manifest_path, dest, frozen, upath = _custody_fixture(
+        tmp_path, monkeypatch, "")
+    _forge(fxf.fetch_log_path(), frozen)     # 이번엔 정당한 절차로 커밋한다
+    _commit_canonical_log(fxf)
+    own = fxf._own_writes()
+    assert own == {"TK01/xbrl/CIK0000001001.json"}, own

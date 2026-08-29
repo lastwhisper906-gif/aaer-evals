@@ -71,6 +71,27 @@ def _resolve_logged_path(value: str) -> Path:
     return p if p.is_absolute() else REPO / value
 
 
+def _anchor_repo_root() -> Path | None:
+    """커스터디 권위를 답하는 저장소의 루트 — 없거나 미상이면 None (fail-closed).
+
+    R17-3: 이 값이 **공격자가 만들 수 있는 경로에서 유도되지 않는다**는 것이
+    통제의 전부다. 출발점은 로그 파일의 위치가 아니라 모듈이 자기 `__file__`
+    에서 계산한 저장소(REPO) — 테스트에서는 seam이 꽂은 FETCH_LOG_ROOT — 이고,
+    거기서 위로 올라가며 찾은 toplevel이 답한다. 보호 대상(핀된 코퍼스 바이트)을
+    핀하는 매니페스트가 사는 저장소가 곧 그 저장소다."""
+    base = FETCH_LOG_ROOT or REPO
+    try:
+        proc = subprocess.run(
+            ["git", "-C", str(base), "rev-parse", "--show-toplevel"],
+            capture_output=True, text=True, check=False)
+    except (OSError, ValueError):
+        return None
+    if proc.returncode != 0 or not proc.stdout.strip():
+        return None
+    root = Path(proc.stdout.strip())
+    return root if root.is_dir() else None
+
+
 def committed_log_lines(log_path: Path) -> list[str]:
     """HEAD에 **커밋된** 정본 로그의 행. 작업 트리 내용이 아니다.
 
@@ -83,11 +104,27 @@ def committed_log_lines(log_path: Path) -> list[str]:
     저장소가 아니거나 파일이 추적되지 않거나 git이 없으면 빈 리스트 —
     fail-closed. 미상은 '내 것 아님'으로 떨어져 가드가 거부 쪽으로 기운다.
     작업 트리 전체가 깨끗할 것을 요구하지 않는다: 새로 수집한(아직 커밋 전)
-    행은 의지 대상이 아니므로 fetch → 2b → 재수집 루프는 그대로 돈다."""
+    행은 의지 대상이 아니므로 fetch → 2b → 재수집 루프는 그대로 돈다.
+
+    R17-3: 어느 저장소가 답하는지를 **공격자가 고를 수 없다**. 종전 게이트는
+    `git -C <로그가 사는 디렉토리>`였고, 위조 행을 덧붙일 수 있는 주체는 같은
+    자리에 `git init`도 할 수 있다 — 중첩 저장소가 바깥 저장소를 가려
+    `HEAD:./fetch_log.jsonl`이 위조본을 돌려줬고, 바깥 이력에는 아무 흔적도
+    남지 않은 채 핀된 동결 바이트가 덮어써졌다. 이제 앵커 저장소는 데이터에
+    적힌 어떤 경로도 아닌 **모듈 자신의 설치 위치**(REPO, 테스트 seam은
+    FETCH_LOG_ROOT)에서 `rev-parse --show-toplevel`로 얻고, 조회는 저장소
+    루트 상대 pathspec으로 한다."""
+    root = _anchor_repo_root()
+    if root is None:
+        return []
+    try:
+        rel = log_path.resolve().relative_to(root.resolve())
+    except (ValueError, OSError):
+        # 로그가 앵커 저장소 밖을 가리킨다 (심볼릭 링크 등) — fail-closed
+        return []
     try:
         proc = subprocess.run(
-            ["git", "-C", str(log_path.parent), "show",
-             f"HEAD:./{log_path.name}"],
+            ["git", "-C", str(root), "show", f"HEAD:{rel.as_posix()}"],
             capture_output=True, text=True, check=False)
     except (OSError, ValueError):
         return []
@@ -355,9 +392,12 @@ def fetch_forward(universe_path: Path, dest: Path,
             print(f"{rid} saved {out} ({len(resp.content):,} bytes)")
     print(f"\n{len(failures)} failures" if failures else "\nall fetches succeeded")
     print(f"NOTE — 출처 기록이 {FETCH_LOG_REL}에 추가됐다. 이 파일이 커스터디 "
-          "주장의 정본이며 앵커는 git diff이므로, 수집 직후 커밋하라 (R15-1). "
-          "(커밋 강제는 하지 않는다 — 가드 시점의 clean-tree 요구는 "
-          "fetch → 2b → 재수집 루프를 깨뜨린다.)")
+          "주장의 정본이며 앵커는 git 이력이므로, 수집 직후 커밋하라 (R15-1). "
+          "이 커밋은 권고가 아니라 절차의 일부다 (R16-2): 가드는 저장소 HEAD에 "
+          "있는 행만 신뢰하므로, 커밋하지 않으면 다음 재수집이 방금 쓴 핀 "
+          "경로에서 거부된다. (작업 트리 **전체**의 청결은 요구하지 않는다 — "
+          "가드가 요구하는 것은 자신이 의지하는 행이 커밋돼 있을 것뿐이라, "
+          "fetch → 2b → 재수집 루프는 그대로 돈다.)")
     return 1 if failures else 0
 
 
