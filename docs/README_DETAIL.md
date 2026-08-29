@@ -71,8 +71,9 @@ by "how memorizable are these cases":
 **separation significance survives standalone, within each layer independently,
 as the memorization signal is progressively removed** — wave-1 perturbed
 (identity-masked) permutation p = 0.0021; wave-2 standalone permutation
-p = 0.00116; and in the post-cutoff holdout, detection persists where
-memorization is impossible (recognition gate 3/3 non-recognition, draw-1;
+p = 0.00116; and in the post-cutoff holdout, detection persists where the
+revelation postdates the evaluatee's *declared* training cutoff and measured
+non-recognition was demonstrated (recognition gate 3/3 non-recognition, draw-1;
 k=5 re-probe: knows_event 0/5 per case). Each layer's
 p-value is computed on that layer alone; no layer borrows significance from
 another. (Pooled wave-1+wave-2 figures such as p=3.0e-05 are secondary,

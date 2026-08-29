@@ -10,6 +10,8 @@
       + 알려진 stale 값 금지.
   (G) 교란(identity-masked) 프레임을 "lower bound/하한"으로 서술 금지 (D31 0-2, W3) —
       교정 문구("not a clean lower bound"/"하한이 아니다"/구조적 하한=홀드아웃)는 allowlist.
+  (M) 철회된 "암기 불가능" 문언 재유입 금지 (D-P83/PKT-R2, R15-5) — 전 DOCS는 철회
+      문구 그대로, 살아 있는 영어 정본 4종은 암기+불가능 결합 전반. 교정 맥락은 allowlist.
   (H) README가 E1 결과를 다루면 GRDX·78 co-presence 강제 (D31 0-1 — 누락형 왜곡 기계 차단).
   (I) 발행 표면이 3-arm delta(+6.0pp/−2.0pp/b−a/c−b)를 언급하면 confound(혼입)와
       draw-noise(draw 잡음) 단서 동반 강제 (D39 A-2 — arm (c) 설계 교란변수, L-7).
@@ -114,6 +116,29 @@ LOWER_BOUND_TERM = re.compile(r"lower\s+bound|하한", re.I)
 LOWER_BOUND_ALLOW = re.compile(
     r"not a clean lower bound|clean lower bound|하한이 아니|덜 오염|less.?contaminat"
     r"|structural lower bound|구조적 하한", re.I)
+
+
+# (M) D-P83 / PKT-R2 (R15-5): 철회된 "암기 불가능" 문언의 재유입 금지.
+#     서명된 교정 문언은 "선언(declared) 컷오프 이후 폭로 + 실측 비인지"이며,
+#     보증의 전제가 벤더 선언(name-pinned endpoint)이므로 논리적 불가능성
+#     주장은 근거가 없다. PKT-R2는 README·METHOD·README_DETAIL을 고쳤으나
+#     README_DETAIL의 backbone 문단 한 곳을 놓쳤고, 린트에는 이 문언을 잡는
+#     규칙이 없어 grep 없이는 드러나지 않았다.
+#
+#     두 층으로 건다:
+#       - 전 DOCS: 철회 문구 그대로의 재유입 (동결 ISSUE 초안 3종의 역사
+#         문언 "structurally impossible"과는 구별된다 — 그 파일들은 게시된
+#         역사 텍스트라 수정 금지(INV-06)이며 규칙 (J)와 같은 취급이다).
+#       - 살아 있는 영어 정본 표면: "memorization/memory … impossible" 결합
+#         전반 (구조적 불가능 주장 자체).
+#     교정 맥락(철회 사실을 서술하는 문장)은 allowlist로 허용한다.
+MEMO_RETRACTED_PHRASE = re.compile(r"memorization\s+is\s+impossible", re.I)
+LIVE_CLAIM_DOCS = ["README.md", "METHOD.md", "RESULTS.md", "docs/README_DETAIL.md"]
+MEMO_TERM = re.compile(r"memoriz|memory", re.I)
+IMPOSSIBLE_TERM = re.compile(r"impossible", re.I)
+MEMO_ALLOW = re.compile(
+    r"retracted|철회|D-P83|PKT-R2|declared\s+(training\s+)?cutoff|선언\s*컷오프"
+    r"|not\s+impossible|cannot\s+be\s+blocked", re.I)
 
 
 # (J) D100 (RISK_SCORE_SEMANTICS §4): 서수 점수의 확률화 서술 금지.
@@ -271,6 +296,29 @@ def lint_doc(path):
             viol.append((ln, f"(G) 교란 프레임+lower bound/하한 결합 서술 금지 (W3): "
                              f"{lines[ln-1].strip()[:70]}"))
 
+    # (M) 철회된 "암기 불가능" 문언의 재유입 (R15-5) — 두 층, 같은 줄은 1건
+    seen_m = set()
+    for m in MEMO_RETRACTED_PHRASE.finditer(text):
+        win = text[max(0, m.start() - 160):m.end() + 160]
+        if MEMO_ALLOW.search(win):
+            continue
+        ln = text[:m.start()].count("\n") + 1
+        seen_m.add(ln)
+        viol.append((ln, "(M) 철회 문언 재유입 금지 (D-P83/PKT-R2 — 서명된 "
+                         f"교정 문언은 선언 컷오프 + 실측 비인지): {lines[ln-1].strip()[:70]}"))
+    if path in LIVE_CLAIM_DOCS:
+        for m in MEMO_TERM.finditer(text):
+            win = text[max(0, m.start() - 120):m.end() + 120]
+            if not IMPOSSIBLE_TERM.search(win) or MEMO_ALLOW.search(win):
+                continue
+            ln = text[:m.start()].count("\n") + 1
+            if ln in seen_m:
+                continue
+            seen_m.add(ln)
+            viol.append((ln, "(M) 살아 있는 정본 표면의 암기 불가능성 주장 금지 "
+                             "(엔드포인트는 이름 핀이므로 전제가 벤더 선언이다): "
+                             f"{lines[ln-1].strip()[:70]}"))
+
     # (F) stale forbidden
     for pat, why in STALE:
         if why is None:
@@ -322,7 +370,7 @@ def main():
         print(f"\nFAIL — 발행 정합 위반 {total}건")
         return 1
     print("PASS — 발행 정합 (0% 오탐·G2-fraud·대조군주어·pooled·EXPLORATORY·stale"
-          "·canon·서수확률화(J)·주장위계(K)·태스크층위(L) 무위반)")
+          "·canon·서수확률화(J)·주장위계(K)·태스크층위(L)·철회문언(M) 무위반)")
     return 0
 
 
