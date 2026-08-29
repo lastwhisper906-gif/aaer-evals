@@ -95,7 +95,15 @@ def committed_log_lines(log_path: Path) -> list[str]:
 
 
 def claims_from_lines(lines, data_dir: Path) -> set[str]:
-    """행 목록 → 출처 주장 경로 집합. 파싱 규칙의 단일 지점."""
+    """행 목록 → 로그가 '내가 썼다'고 주장하는 경로 집합. 파싱의 단일 지점.
+
+    R13-5: 재핀 검사와 가드가 **같은 파싱**을 봐야 한다 — 규칙이 갈라지면 한쪽이
+    축복한 주장을 다른 쪽이 다르게 읽는다. 그래서 파싱은 여기 한 곳뿐이고,
+    '어느 행을 신뢰할 것인가'(권위)는 호출자가 정한다 (R16-2: HEAD 판).
+
+    data_dir 상대 posix 표기로 정규화해 매니페스트 path와 같은 좌표계에 둔다.
+    손상된 행은 조용히 무시한다 — 미상은 '내 것 아님'으로 떨어져 가드가
+    강한 쪽(거부)으로 기운다."""
     own: set[str] = set()
     for line in lines:
         if not line.strip():
@@ -115,22 +123,6 @@ def claims_from_lines(lines, data_dir: Path) -> set[str]:
         except (ValueError, OSError):
             continue
     return own
-
-
-def logged_claims(log_path: Path, data_dir: Path) -> set[str]:
-    """로그가 '내가 썼다'고 주장하는 경로 집합 — 권위 판정 **이전**의 원시 파싱.
-
-    R13-5: verify_manifest가 재핀 시점에 '새 주장'을 검출하려면 가드가 신뢰
-    대상으로 읽는 것과 **같은 파싱**을 봐야 한다. 규칙이 갈라지면 한쪽이
-    축복한 주장을 다른 쪽이 다르게 읽는다.
-
-    data_dir 상대 posix 표기로 정규화해 매니페스트 path와 같은 좌표계에 둔다.
-    손상된 행은 조용히 무시한다 — 미상은 '내 것 아님'으로 떨어져 가드가
-    강한 쪽(거부)으로 기운다."""
-    if not log_path.is_file():
-        return set()
-    return claims_from_lines(
-        log_path.read_text(encoding="utf-8").splitlines(), data_dir)
 
 
 def _own_writes() -> set[str]:
