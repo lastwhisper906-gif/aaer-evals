@@ -517,6 +517,64 @@ def test_forged_row_in_the_canonical_log_working_tree_grants_no_authority(
     assert frozen.read_bytes() == FROZEN_BYTES, "동결 바이트가 열렸다"
 
 
+def _committed_custody_deadlock(monkeypatch) -> dict:
+    """커밋된 universe.json × 커밋된 매니페스트에 대한 가드의 blocked 집합.
+
+    R16-4: 11월 창 step (2)는 파일 하나 쓰기 전에 `universe["selected"]` 전건을
+    이 술어로 훑고, 막힌 티커를 **한 dict에 모아 한 번의 SystemExit**을 낸다 —
+    즉 한 티커가 막히면 12사 전부가 0건으로 끝난다. 로컬 corpus 유무에 판정이
+    흔들리지 않도록 존재 술어는 매니페스트 자체로 둔다 (핀되어 있다 = 그
+    바이트는 보호 대상이다)."""
+    import fetch_xbrl_facts as fxf
+    monkeypatch.setattr(fxf, "FETCH_LOG_ROOT", None)   # 커밋된 정본 로그를 본다
+    universe = json.loads(
+        (REPO_ROOT / "forward/cycle_001/universe.json").read_text(encoding="utf-8"))
+    pinned = {f["path"]: f.get("sha256") for f in json.loads(
+        (REPO_ROOT / "data/manifests/aaer_data_manifest.json")
+        .read_text(encoding="utf-8"))["files"]}
+    blocked = fxf.pinned_conflicts(universe, "", pinned, fxf._own_writes(),
+                                   lambda rel: True)
+    return {t: sorted(v) for t, v in blocked.items()}
+
+
+# Q-F21이 미해소인 동안의 **기록된** 교착 상태. 새 핀 티커가 유니버스에 들어오면
+# 여기서 즉시 깨진다 — 교착이 이미 있다는 사실이 새 교착을 숨기지 못하게.
+RECORDED_CUSTODY_DEADLOCK = {
+    "CIEN": ["CIEN/edgar/CIK0000936395-submissions-001.json",
+             "CIEN/edgar/CIK0000936395-submissions-002.json",
+             "CIEN/edgar/CIK0000936395.json",
+             "CIEN/xbrl/CIK0000936395.json"],
+}
+
+
+def test_committed_custody_deadlock_matches_the_recorded_state(monkeypatch):
+    """R16-4(c) 상보: 교착의 **현재 범위**를 고정한다.
+
+    아래 xfail 테스트 하나만 두면 '이미 red인 자리'가 새 위반을 흡수한다 —
+    핀된 티커가 하나 더 들어와도 여전히 xfail이라 아무도 모른다. 이 테스트는
+    범위가 정확히 Q-F21이 기록한 CIEN 4건일 때만 green이다."""
+    assert _committed_custody_deadlock(monkeypatch) == RECORDED_CUSTODY_DEADLOCK
+
+
+@pytest.mark.xfail(strict=True, reason=(
+    "Q-F21 미해소 — fw001-r08(CIEN)이 매니페스트 핀 4건과 충돌해 11월 창 "
+    "step (2)가 12사 전건 0파일로 중단된다. 옵션 (A) 대기 1순위 승격으로 "
+    "해소되면 이 테스트가 XPASS(strict → red)가 되어 마커 제거를 강제한다."))
+def test_committed_universe_has_no_pinned_custody_deadlock(monkeypatch):
+    """R16-4(c): 소유자가 Q-F21을 해소하면 green이 되어야 하는 성질.
+
+    가드는 `dest.mkdir` 전에, 바이트 하나 쓰기 전에 판정하고 막힌 티커를 모아
+    **단일** SystemExit을 던진다. 따라서 CIEN 한 건의 충돌이 step (2) 전체를
+    0파일로 끝낸다 — Q-F21이 통계·거버넌스 문제로만 기록돼 있었지 실행 창
+    첫날의 교착이라는 사실은 어디에도 없었다.
+
+    strict xfail인 이유: 교착은 지금 **실재**하므로 이 단언은 red이고, 그것을
+    green으로 만드는 것은 소유자 결정(INV-18)이지 세션의 코드 변경이 아니다.
+    suite를 red로 두면 다른 모든 게이트가 가려지므로 기록된 실패로 격리한다 —
+    해소되는 순간 XPASS로 깨져서 조용히 지나갈 수 없다."""
+    assert _committed_custody_deadlock(monkeypatch) == {}
+
+
 def test_canonical_log_is_tracked_in_git(monkeypatch):
     """R16-2(d): 정본 로그가 실제로 저장소에 **추적**되고 있어야 한다.
 

@@ -2058,3 +2058,57 @@ python tools/forward_verify_seal.py --cycle forward/cycle_001
 - **Revert:** `tools/fetch_xbrl_facts.py`의 `FETCH_LOG_REL`/`fetch_log_path()`
   제거 + `verify_manifest`의 custody_claims 층 복원 (비권장 — 네 번 뚫린
   앵커로 되돌아간다).
+
+## D-P99 — [DRAFT — 소유자 서명 대기] Q-F21은 11월 창 첫날의 **커스터디 교착**이기도 하다: 옵션 (B)·(C)는 기계적으로 실행 불가
+
+- **Status:** DRAFT — 세션(harness v4 cycle 016, R16-4)이 작성. 선택도, 서명도
+  하지 않았다 (INV-18). Q-F21은 `docs/OWNER_QUEUE.md`에서 **OPEN 그대로**다.
+- **새로 밝혀진 사실 (통계·거버넌스가 아니라 실행 가능성):** `fw001-r08` =
+  CIEN(CIK 0000936395)은 `data/manifests/aaer_data_manifest.json`의 핀 4건과
+  충돌한다. `tools/fetch_xbrl_facts.py`의
+  `assert_no_pinned_custody_conflict`는 `dest.mkdir` **전에**, 바이트 하나
+  쓰기 전에 `universe["selected"]` 전건을 판정하고 막힌 티커를 한 dict에 모아
+  **단일 `SystemExit`**을 던진다. 따라서 OWNER_LAUNCH_GATE step (2)는 CIEN만이
+  아니라 **12사 전건에 대해 0파일**로 끝난다. 봉인 사슬이 실행 창 첫날 멈춘다.
+  - 실측: 커밋된 `forward/cycle_001/universe.json` × 커밋된 매니페스트에 대한
+    blocked 집합 =
+    `{"CIEN": ["CIEN/edgar/CIK0000936395-submissions-001.json",
+    "CIEN/edgar/CIK0000936395-submissions-002.json",
+    "CIEN/edgar/CIK0000936395.json", "CIEN/xbrl/CIK0000936395.json"]}`.
+    `tools/test_forward_tools.py::test_committed_universe_has_no_pinned_custody_deadlock`
+    이 이 판정을 재생한다 (현재 strict xfail — 해소되면 XPASS로 깨진다).
+- **각 옵션에 붙는 교착 결과 (Q-F21의 선택지 그대로, 판단은 소유자):**
+  - **(A) 대기 1순위 NEE(CIK 0000753308) 자동 승격** — NEE는 핀 매니페스트에
+    없다. runbook을 **적힌 그대로** 실행 가능하게 두는 유일한 옵션.
+    §3 명문의 집행이라는 점은 Q-F21의 기존 서술과 같다. GATE_PIN·byte-identity
+    supersession 문서가 필요하다는 점도 같다. *본 초안의 기본값 — 적용하지
+    않았다.*
+  - **(B) fw001-r08 유지 + 봉인 문서 disclosure** — **기계적으로 실행 불가.**
+    CIEN이 `selected`에 남는 한 step (2)가 전건을 막으므로 disclosure를 붙일
+    산출물 자체가 생기지 않는다.
+  - **(C) fw001-r08 단건 not_scored/abort** — **기계적으로 실행 불가.**
+    아무것도 쓰지 않고 거부하는 fetch를 통과해 not_scored 레코드에 도달할 수
+    없다. 창 안 코드 변경이 필요하다.
+  - **(D) 가드를 티커 단위 skip으로 재설계** (막힌 티커만 건너뛰고 나머지는
+    수집) — 선택지로 **기록만** 한다. 서명된 runbook 안의 게이트 의미를 바꾸는
+    변경이므로 소유자 결정이며, 본 사이클에서 구현하지 않았다. 부작용: 부분
+    수집이 조용히 정상 종료가 되어 "12사 전건 수집"이 게이트에서 빠진다.
+- **`--allow-pinned CIEN`이 해법이 아닌 이유 (경로 자체를 배제 권고):**
+  매니페스트 핀 wave-2 파일 4건을 덮어쓰고, D-P95 §4 step **(2b)**
+  (`verify_manifest --write` + 커밋)가 파괴된 바이트를 **다시 핀**한다 —
+  게시된 wave-2 케이스의 재현 바이트를 ERRATA도 D-엔트리도 없이 제자리
+  개서하는 것(INV-06). CI는 `--schema-only`로 돌아 green을 유지하므로
+  `make verify-full`을 돌릴 때까지 보이지 않는다. R11-12가 가설이 아니라 확정
+  경로가 된다.
+- **시한:** 2026-11-15 창 시작 전. 미서명으로 창에 들어가면 step (2)가 0파일로
+  중단되고, 그 자리에서 쓸 수 있는 유일한 명령이 위 파괴적 경로다.
+- **세션 조치 (여기까지만):** OWNER_QUEUE Q-F21에 교착 결과 bullet 추가(OPEN
+  유지), 본 DRAFT 등재, 판정을 재생하는 테스트 추가.
+  `forward/cycle_001/universe.json`·`SNAPSHOT_MANIFEST.sha256`·
+  `data/manifests/` **무접촉** (GATE_PIN 동결, INV-06).
+- **Basis:** reviews/cycle-016.md R16-4 · docs/OWNER_QUEUE.md Q-F21 ·
+  DECISIONS_PENDING D-P94·D-P95 §4 · docs/UNIVERSE_SELECTION.md §2-2·§3 ·
+  INV-06 · INV-18 · INV-22.
+- **Revert:** 본 항목은 문서·테스트만 추가한다. 되돌리려면 Q-F21 bullet과 본
+  항목, 그리고 두 테스트를 제거하면 된다 — 실행 코드의 판정 규칙은 바뀌지
+  않았다 (`pinned_conflicts` 추출은 동작 보존 리팩터).

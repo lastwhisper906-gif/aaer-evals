@@ -1035,8 +1035,34 @@
       검증자가 수 분 내 발견하는 모순.
   (C) fw001-r08 단건 not_scored/abort 처리 — MIN_SCORED=11이므로 11/12
       정규 봉인은 여전히 가능; 유니버스 12사 주장과의 정합 설명 필요.
+- **커스터디 교착 — 옵션 (B)·(C)는 기계적으로 실행 불가 (2026-08-29, cycle 016
+  R16-4에서 추가)**: Q-F21은 지금까지 통계·거버넌스 문제로만 기록돼 있었다.
+  그것은 **실행 창 첫날의 교착이기도 하다.** `tools/fetch_xbrl_facts.py`의
+  `assert_no_pinned_custody_conflict`는 `dest.mkdir` 전에, 바이트 하나 쓰기
+  전에 `universe["selected"]` 전건을 훑고 막힌 티커를 **한 dict에 모아 단일
+  `SystemExit`**을 던진다. CIEN은 매니페스트 핀 4건
+  (`CIEN/edgar/CIK0000936395{,-submissions-001,-submissions-002}.json`,
+  `CIEN/xbrl/CIK0000936395.json`)과 충돌하므로 — 이 4건은 게시된 wave-2
+  케이스의 재현 바이트다 — step (2)는 **12사 전건에 대해 0파일**로 끝난다.
+  CIEN만 빠지는 것이 아니다. 이 판정은
+  `tools/test_forward_tools.py::test_committed_universe_has_no_pinned_custody_deadlock`
+  (현재 strict xfail)이 커밋된 universe.json × 커밋된 매니페스트로 재생한다.
+  - **(B) 유지 + disclosure**: 실행 불가 — CIEN이 `selected`에 남는 한 fetch가
+    전건을 막는다. 봉인할 산출물 자체가 생기지 않는다.
+  - **(C) 단건 not_scored/abort**: 실행 불가 — 아무것도 쓰지 않고 거부하는
+    fetch를 통과해 not_scored 레코드에 도달할 수 없다. 창 안 코드 변경이
+    필요하며, 그것은 서명된 runbook의 게이트 의미를 바꾸는 일이다.
+  - **(A) 대기 1순위(NEE) 승격**: runbook을 적힌 그대로 실행 가능하게 두는
+    유일한 옵션.
+  - **`--allow-pinned CIEN`은 해법이 아니다**: 매니페스트 핀 wave-2 파일 4건을
+    덮어쓰고, D-P95 step (2b)(`verify_manifest --write` + 커밋)가 그 파괴된
+    바이트를 **다시 핀**한다 — ERRATA도 D-엔트리도 없이 게시 결과의 재현
+    바이트를 제자리 개서하는 것(INV-06 위반). CI는 `--schema-only`로 돌기
+    때문에 green을 유지하고, `make verify-full`을 돌릴 때까지 보이지 않는다.
+    R11-12가 가설이 아니라 확정 경로가 된다.
 - **근거**: docs/UNIVERSE_SELECTION.md §2-2·§3 · FUTURE_CYCLE_PROTOCOL §0
   (소각 원리) · reviews/cycle-010.md R10-1 (검토자 3-grep 재검증) ·
+  reviews/cycle-016.md R16-4 (교착 실측) · DECISIONS_PENDING D-P99 (DRAFT) ·
   INV-22 · INV-06.
 - **기본값 (무응답 시)**: 없음 — universe.json은 GATE_PIN 동결 산출물,
   세션 무접촉(INV-18). 미서명 상태로 11월 창에 들어가면 fw001-r08은 §2-2

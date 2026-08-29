@@ -158,6 +158,33 @@ def _sha256_bytes_of(path: Path) -> str:
     return h.hexdigest()
 
 
+def pinned_conflicts(universe: dict, prefix: str, pinned: dict,
+                     own: set[str], exists) -> dict[str, list[str]]:
+    """티커 → 이 수집이 열 수 없는 핀 경로 목록. 가드 판정의 순수 함수부.
+
+    R16-4: 가드 자신은 `exists`로 디스크를 묻지만, **커밋된 산출물만** 보고
+    같은 판정을 재생하려면 매니페스트가 곧 '그 바이트는 핀되어 있다'는 진실
+    이어야 한다 — 그래야 판정이 로컬 corpus 유무에 흔들리지 않는다. 소유자
+    결정(Q-F21) 전에 판정 규칙을 바꾸지 않으려고 술어만 주입 가능하게 했다."""
+    blocked: dict[str, list[str]] = {}
+    for ticker in sorted({str(r["ticker"]).split("/")[0]
+                          for r in universe["selected"]}):
+        reasons = []
+        for rel, recorded in pinned.items():
+            if not rel.startswith(f"{prefix}{ticker}/"):
+                continue
+            if not exists(rel):
+                continue
+            disk = DATA_DIR / rel
+            if (rel in own and recorded and disk.is_file()
+                    and _sha256_bytes_of(disk) == recorded):
+                continue
+            reasons.append(rel)
+        if reasons:
+            blocked[ticker] = reasons
+    return blocked
+
+
 def assert_no_pinned_custody_conflict(universe: dict, dest: Path,
                                       allow_pinned: set[str]) -> list[str]:
     """R10-2/R11-2: 핀 고정 corpus 커스터디 가드 — 어떤 파일도 쓰기 전에 판정.
@@ -199,20 +226,9 @@ def assert_no_pinned_custody_conflict(universe: dict, dest: Path,
         manifest_file.read_text(encoding="utf-8"))["files"]}
     own = _own_writes()
     blocked, overridden = {}, []
-    for ticker in sorted({str(r["ticker"]).split("/")[0]
-                          for r in universe["selected"]}):
-        reasons = []
-        for rel, recorded in pinned.items():
-            if not rel.startswith(f"{prefix}{ticker}/"):
-                continue
-            disk = DATA_DIR / rel
-            if not disk.is_file():
-                continue
-            if rel in own and recorded and _sha256_bytes_of(disk) == recorded:
-                continue
-            reasons.append(rel)
-        if not reasons:
-            continue
+    for ticker, reasons in pinned_conflicts(
+            universe, prefix, pinned, own,
+            lambda rel: (DATA_DIR / rel).is_file()).items():
         if ticker in allow_pinned:
             overridden.append(ticker)
             print(f"WARN — {ticker}: 핀 경로 {len(reasons)}건을 소유자 명시 "
