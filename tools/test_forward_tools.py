@@ -947,6 +947,156 @@ def test_enumerate_trailing_window_is_bounded_by_t0(tmp_path, monkeypatch):
     assert reason == "form_requirement"
 
 
+# ── R15-2: 사전 등록 유니버스 선정 술어의 실행 가능한 잠금 ────────────────
+#
+# universe.json은 SEALED_FILE이자 "12곳은 사전 등록된 기계 규칙으로 뽑혔고
+# 손으로 고른 것이 아니다"라는 공개 주장의 증거다. 그런데 그 규칙을 만드는
+# check_candidate의 여섯 줄(§1-1 외국 발행인 · §2-1 4.02 오염 격리 · §1-3
+# XBRL 이력 · §1-4 float ≥ $1B · §2-2 Cycle-1 자기오염 · §3 랭킹)은 어느
+# 것을 지워도 스위트가 0 red였다 — 전수 커버는 T₀ 스냅샷 2507건 부재로 skip
+# 되는 두 테스트뿐이었기 때문이다 (OB-3, 소유자 커스터디 결정 대기).
+#
+# 아래는 스냅샷도 네트워크도 필요 없는 픽스처 구동 잠금이다: OB-3이 가리고
+# 있던 커버리지 구멍은 OB-3의 해소를 기다리지 않아도 메울 수 있다.
+
+_WINDOW_10K = ["2025-01-01", "2024-09-01"]          # 창 안 10-K 2건 (≥1 필요)
+_WINDOW_10Q = ["2025-01-02", "2025-04-02", "2025-07-02",
+               "2025-10-02", "2026-01-02", "2026-04-02"]  # 창 안 10-Q 6건 (≥2)
+
+
+def _enumerate_snapshot(snap, cik, *, float_usd=2.0e9, extra_filings=(),
+                        non_xbrl=0):
+    """§1·§2 전 조건을 통과하는 기준 후보 스냅샷 (_write_submissions 기반).
+
+    각 테스트는 이 기준선이 'ok'임을 먼저 확인한 뒤 **축 하나만** 무너뜨린다 —
+    그래야 배제 사유가 그 축의 것임을 격리 측정할 수 있다 (R13-4 판례).
+    기준선의 XBRL 제출은 정확히 8건(10-K 2 + 10-Q 6)으로 §1-3 하한과 같으므로,
+    non_xbrl=1이면 그 leg만 무너진다."""
+    _write_submissions(snap, cik, list(_WINDOW_10K), list(_WINDOW_10Q))
+    path = snap / f"submissions_CIK{cik}.json"
+    sub = fc.read_json(path)
+    recent = sub["filings"]["recent"]
+    for i in range(non_xbrl):
+        recent["isXBRL"][-(i + 1)] = 0
+    for row in extra_filings:
+        recent["form"].append(row.get("form", "8-K"))
+        recent["filingDate"].append(row.get("filingDate", "2025-06-01"))
+        recent["items"].append(row.get("items", ""))
+        recent["isXBRL"].append(row.get("isXBRL", 0))
+    fc.write_json(path, sub)
+    fc.write_json(snap / f"float_CIK{cik}.json",
+                  {"units": {"USD": [{"end": "2026-06-30", "val": float_usd}]}})
+    return path
+
+
+@pytest.fixture
+def enumerate_snap(tmp_path, monkeypatch):
+    import forward_enumerate as fe
+    snap = tmp_path / "snap"
+    snap.mkdir()
+    monkeypatch.setattr(fe, "SNAP", snap)
+    return fe, snap
+
+
+def test_baseline_candidate_passes_every_screen(enumerate_snap):
+    """R15-2 통제: 기준선이 'ok'가 아니면 아래 배제 테스트들은 아무것도
+    변별하지 못한다 (어떤 변경도 같은 사유를 낸다)."""
+    fe, snap = enumerate_snap
+    _enumerate_snapshot(snap, "0000009101")
+    reason, info = fe.check_candidate("0000009101", offline=True)
+    assert reason == "ok"
+    assert info["float_usd"] == 2.0e9
+
+
+def test_check_candidate_excludes_foreign_filer(enumerate_snap):
+    """§1-1: 20-F/40-F/6-K 제출 이력이 있으면 미국 국내 발행인 프레임 밖."""
+    fe, snap = enumerate_snap
+    cik = "0000009102"
+    _enumerate_snapshot(snap, cik, extra_filings=[
+        {"form": "20-F", "filingDate": "2025-03-01"}])
+    assert fe.check_candidate(cik, offline=True)[0] == "foreign_filer"
+
+
+def test_check_candidate_excludes_402_restater(enumerate_snap):
+    """§2-1 오염 격리: 창 안 8-K Item 4.02(비신뢰 선언)는 사후 트랙 —
+    이 스크린이 사라지면 재작성 발표 기업이 유니버스에 들어온다."""
+    fe, snap = enumerate_snap
+    cik = "0000009103"
+    _enumerate_snapshot(snap, cik, extra_filings=[
+        {"form": "8-K", "filingDate": "2025-06-01", "items": "4.02"}])
+    assert fe.check_candidate(cik, offline=True)[0] == \
+        "contamination_402_posthoc_track"
+
+
+def test_check_candidate_excludes_short_xbrl_history(enumerate_snap):
+    """§1-3: XBRL 제출 8건·10-K 2건 하한 — 기준선은 정확히 그 경계에 있다."""
+    fe, snap = enumerate_snap
+    cik = "0000009104"
+    _enumerate_snapshot(snap, cik, non_xbrl=1)
+    assert fe.check_candidate(cik, offline=True)[0] == "xbrl_history"
+
+
+def test_check_candidate_excludes_float_below_1b(enumerate_snap):
+    """§1-4: EntityPublicFloat ≥ $1B — 경계 바로 아래는 배제."""
+    fe, snap = enumerate_snap
+    cik = "0000009105"
+    _enumerate_snapshot(snap, cik, float_usd=9.99e8)
+    assert fe.check_candidate(cik, offline=True)[0] == "float_below_1b"
+
+
+def _run_enumerate(fe, snap, monkeypatch, tmp_path, rows, burned=()):
+    """rows: [(cik, float_usd)] — 한 SIC 버킷으로 main()을 완주시킨다."""
+    monkeypatch.setattr(fe, "SIC_SET", ["3674"])
+    monkeypatch.setattr(fe, "_provenance", [])
+    monkeypatch.setattr(fe, "_fetch_errors", [])
+    monkeypatch.setattr(fe, "cycle1_ciks", lambda: set(burned))
+    for cik, float_usd in rows:
+        _enumerate_snapshot(snap, cik, float_usd=float_usd)
+    (snap / "sic_3674_p0.xml").write_text(
+        "".join(f"<cik>{c}</cik>" for c, _ in rows), encoding="utf-8")
+    out = tmp_path / "universe_out.json"
+    monkeypatch.setattr(sys, "argv", ["x", "--out", str(out)])
+    assert fe.main() == 0
+    return fc.read_json(out)
+
+
+def test_burned_cik_is_excluded_as_cycle1_self_contamination(
+        enumerate_snap, tmp_path, monkeypatch):
+    """§2-2: Cycle-1에서 이미 평가된 회사는 자기 오염 — 배제 사유가 집계에
+    남아야 감사 흔적이 성립한다 (universe.excluded_by_reason)."""
+    fe, snap = enumerate_snap
+    burned = "0000009200"
+    rows = [(f"{9200 + i:010d}", 2.0e9 + i) for i in range(13)]
+    universe = _run_enumerate(fe, snap, monkeypatch, tmp_path, rows,
+                              burned=[burned])
+    assert universe["excluded_by_reason"]["cycle1_self_contamination"] == 1
+    assert burned not in [r["cik"] for r in universe["selected"]]
+    assert burned not in [r["cik"] for r in universe["alternates"]]
+
+
+def test_bucket_ranking_is_float_descending_then_cik_ascending(
+        enumerate_snap, tmp_path, monkeypatch):
+    """§3: 버킷 안 정렬은 float 내림차순, 동률은 CIK 오름차순.
+
+    정렬 키 `-r["float_usd"]`의 부호가 뒤집히면 12곳 전체가 다른 회사로
+    바뀐다 — 그런데 그 변이는 0 red였다 (R15-2 실측)."""
+    fe, snap = enumerate_snap
+    # 동률 쌍(9302·9303)을 가운데 두고, 가장 큰 float은 가장 큰 CIK에 준다 —
+    # CIK 오름차순으로만 정렬해도 통과하는 배치를 피한다.
+    floats = {"0000009301": 3.0e9, "0000009302": 5.0e9, "0000009303": 5.0e9,
+              "0000009304": 9.0e9}
+    rows = [(c, floats.get(c, 1.0e9 + i))
+            for i, c in enumerate(f"{9300 + n:010d}" for n in range(1, 13))]
+    universe = _run_enumerate(fe, snap, monkeypatch, tmp_path, rows)
+    ranked = [r["cik"] for r in universe["selected"]]
+    assert ranked[0] == "0000009304", "최상위 float이 1위가 아니다"
+    assert ranked[1:3] == ["0000009302", "0000009303"], \
+        "동률 float이 CIK 오름차순으로 갈리지 않았다"
+    vals = [r["float_usd"] for r in universe["selected"]]
+    assert vals == sorted(vals, reverse=True), "float 내림차순이 깨졌다"
+    assert [r["selection_rank"] for r in universe["selected"]] == list(range(1, 13))
+
+
 def test_enumerate_fails_closed_on_fetch_error(tmp_path, monkeypatch, capsys):
     import urllib.request
     import forward_enumerate as fe
