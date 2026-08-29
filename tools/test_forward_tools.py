@@ -2,6 +2,7 @@
 import datetime
 import hashlib
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -207,6 +208,29 @@ def test_fetch_refuses_when_pinned_bytes_drifted(tmp_path, monkeypatch):
         fxf.fetch_forward(upath, data_dir)
 
 
+def _commit_canonical_log(fxf) -> None:
+    """runbook 2b의 로그 커밋 단계 (D-P98: 감독 수집마다 정본 로그를 커밋).
+
+    R16-2: 출처 권위의 근거가 정본 로그의 **HEAD 판**이 됐으므로, 픽스처도
+    실제 절차를 그대로 밟아야 한다 — 작업 트리에만 있는 행은 (위조든 정당한
+    수집이든) 권위가 없다는 것이 이 아이템의 성질 전체다. 격리 루트는
+    tools/conftest.py가 꽂은 임시 디렉토리이므로 여기서 저장소로 만든다."""
+    root = fxf.FETCH_LOG_ROOT
+    assert root is not None and root != fxf.REPO, (
+        "격리 seam이 꺼진 채로 커밋하려 했다 — 실제 저장소에 커밋할 뻔했다")
+    log_path = fxf.fetch_log_path()
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    log_path.touch()
+    if not (root / ".git").exists():
+        subprocess.run(["git", "init", "-q", str(root)], check=True)
+        for key, value in (("user.email", "t@example.invalid"), ("user.name", "t")):
+            subprocess.run(["git", "-C", str(root), "config", key, value], check=True)
+    subprocess.run(["git", "-C", str(root), "add", "--", fxf.FETCH_LOG_REL],
+                   check=True)
+    subprocess.run(["git", "-C", str(root), "-c", "commit.gpgsign=false",
+                    "commit", "-q", "--allow-empty", "-m", "fetch log"], check=True)
+
+
 def _log_row_for(data_dir, rel, **extra):
     """실제 _log_row와 같은 형태 — portable_path는 저장소·홈 밖 경로를
     절대 경로로 적는다 (픽스처 tmp_path가 그 경우)."""
@@ -231,6 +255,7 @@ def _canonical_log(fxf, vm, data_dir, manifest_path, rows):
     log_path.parent.mkdir(parents=True, exist_ok=True)
     log_path.write_text("".join(json.dumps(r) + "\n" for r in rows),
                         encoding="utf-8")
+    _commit_canonical_log(fxf)   # R16-2: 권위의 근거는 HEAD 판이다
     manifest_path.write_text(json.dumps(vm.build_manifest()), encoding="utf-8")
 
 
@@ -276,11 +301,19 @@ def test_forged_log_row_cannot_open_a_frozen_pinned_file(tmp_path, monkeypatch):
     assert frozen.read_bytes() == b'{"july": "snapshot"}', "동결 바이트가 열렸다"
 
 
-def _run_remedy(vm, monkeypatch, manifest_path, *argv) -> int:
-    """거부 메시지가 지목하는 복구 명령을 그대로 실행한다 (runbook 2b)."""
+def _run_remedy(vm, monkeypatch, manifest_path, *argv, fxf=None) -> int:
+    """거부 메시지가 지목하는 복구 명령을 그대로 실행한다 (runbook 2b).
+
+    R16-2: 2b는 재핀과 **정본 로그 커밋** 두 단계다 (D-P98). fxf가 주어지면
+    커밋까지 밟는다 — 그것이 방금 수집한 행에 출처 권위를 주는 유일한 단계다.
+    fxf 없이 부르면 재핀만 — 위조 행이 2b만으로는 권위를 얻지 못한다는 성질을
+    고정하는 테스트가 그 형태를 쓴다."""
     monkeypatch.setattr(vm, "MANIFEST", manifest_path)
     monkeypatch.setattr(sys, "argv", ["verify_manifest.py", "--write", *argv])
-    return vm.main()
+    rc = vm.main()
+    if fxf is not None:
+        _commit_canonical_log(fxf)
+    return rc
 
 
 FROZEN_BYTES = b'{"july": "snapshot"}'
@@ -420,6 +453,87 @@ def test_repin_grants_no_custody_authority_so_no_owner_flag_is_needed(
     assert [r for r in rows if r.get("kind") == "pinned_override"]
 
 
+def _forge_into_canonical(fxf, frozen: Path, *, mode: str) -> None:
+    """정본 로그의 **작업 트리** 판에 위조 행을 심는다 — 커밋하지 않는다.
+
+    R15-1이 옮겨놓은 신뢰 근원을 그대로 겨눈 R15-1 lens B 익스플로잇의 형태들."""
+    row = json.dumps({"record_id": "fw001-r01", "kind": "companyfacts",
+                      "path": str(frozen),
+                      "sha256": hashlib.sha256(FROZEN_BYTES).hexdigest()}) + "\n"
+    log_path = fxf.fetch_log_path()
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    if mode == "append_to_empty":            # 추적·커밋된 빈 로그에 덧붙이기
+        _commit_canonical_log(fxf)
+        with log_path.open("a", encoding="utf-8") as log:
+            log.write(row)
+    elif mode == "append_to_genuine":        # 진짜 행이 이미 있는 로그에 덧붙이기
+        log_path.write_text(json.dumps(
+            {"record_id": "fw001-r09", "kind": "companyfacts",
+             "path": str(fxf.DATA_DIR / "TK09/xbrl/CIK0000001009.json"),
+             "sha256": "0" * 64}) + "\n", encoding="utf-8")
+        _commit_canonical_log(fxf)
+        with log_path.open("a", encoding="utf-8") as log:
+            log.write(row)
+    elif mode == "rewrite_tracked":          # 커밋된 내용을 통째로 갈아치우기
+        _commit_canonical_log(fxf)
+        log_path.write_text(row, encoding="utf-8")
+    elif mode == "untracked":                # 커밋이 아예 없는 상태
+        log_path.write_text(row, encoding="utf-8")
+    else:
+        raise AssertionError(mode)
+
+
+@pytest.mark.parametrize("mode", ["append_to_empty", "append_to_genuine",
+                                  "rewrite_tracked", "untracked"])
+def test_forged_row_in_the_canonical_log_working_tree_grants_no_authority(
+        tmp_path, monkeypatch, mode):
+    """R16-2(a): R15-1은 신뢰 근원을 corpus 밖 git 관리 경로로 **옮겼지만**
+    옮긴 자리에 인증을 놓지 않았다 — `_log_is_authoritative`가 삭제되고 그
+    자리는 비었다. 정본 로그의 작업 트리 판에 위조 행 한 줄이면 fetch_forward가
+    0을 반환하며 온전한·핀된·동결 바이트를 덮어썼다 (lens B 작동 익스플로잇,
+    logs/verdicts/R15-1-B.md §3).
+
+    이제 권위의 근거는 HEAD 판이다: 커밋되지 않은 행은 위조든 정당한 수집이든
+    아무 것도 열지 못하고, 커밋하면 git 이력에 남는다 — R15-1이 앵커라고
+    선언했던 성질이 비로소 기계적으로 강제된다.
+
+    네 변주는 전부 '커밋되지 않은 작업 트리 행'이라는 한 성질의 변주다:
+    빈 로그에 덧붙이기 / 진짜 행이 있는 로그에 덧붙이기 / 커밋된 내용을 통째로
+    갈아치우기 / 커밋이 아예 없는 상태."""
+    fxf, vm, manifest_path, dest, frozen, upath = _custody_fixture(
+        tmp_path, monkeypatch, "")
+    _forge_into_canonical(fxf, frozen, mode=mode)
+
+    assert "TK01/xbrl/CIK0000001001.json" not in fxf._own_writes(), \
+        "커밋되지 않은 위조 행이 출처 권위를 얻었다"
+    with pytest.raises(SystemExit, match="매니페스트 핀 경로와 충돌"):
+        fxf.fetch_forward(upath, dest)
+    assert frozen.read_bytes() == FROZEN_BYTES, "동결 바이트가 열렸다"
+
+    # 2b(재핀)만으로는 권위가 생기지 않는다 — 커밋이 그 단계다
+    assert _run_remedy(vm, monkeypatch, manifest_path) == 0
+    with pytest.raises(SystemExit, match="매니페스트 핀 경로와 충돌"):
+        fxf.fetch_forward(upath, dest)
+    assert frozen.read_bytes() == FROZEN_BYTES, "동결 바이트가 열렸다"
+
+
+def test_canonical_log_is_tracked_in_git(monkeypatch):
+    """R16-2(d): 정본 로그가 실제로 저장소에 **추적**되고 있어야 한다.
+
+    R15-1의 앵커 주장("행의 신설은 git diff에 드러난다")은 파일이 추적될
+    때만 성립하고, 그 커밋에서는 `data/provenance/`가 생성조차 되지 않았다.
+    추적이 끊기면 committed_log_lines가 영구히 빈 리스트를 돌려주므로 가드는
+    fail-closed로 굳는다 — 조용한 green이 아니라 여기서 깨진다."""
+    import fetch_xbrl_facts as fxf
+    monkeypatch.setattr(fxf, "FETCH_LOG_ROOT", None)
+    proc = subprocess.run(
+        ["git", "-C", str(fxf.REPO), "ls-files", "--error-unmatch", "--",
+         fxf.FETCH_LOG_REL], capture_output=True, text=True)
+    assert proc.returncode == 0, \
+        f"{fxf.FETCH_LOG_REL}가 git에 추적되지 않는다: {proc.stderr.strip()}"
+    assert fxf.fetch_log_path().is_file()
+
+
 def test_canonical_fetch_log_lives_in_git_outside_the_corpus(monkeypatch):
     """R15-1: 정본 해석 자체를 고정한다 — tools/conftest.py의 격리 seam이
     프로덕션 경로를 가리지 않도록, seam을 끄고 실제 값을 확인한다.
@@ -452,6 +566,7 @@ def test_every_consumer_reads_the_one_canonical_log(tmp_path, monkeypatch):
     assert fxf.fetch_log_path().is_file()
     assert not (dest / "fetch_log.jsonl").exists()
     assert not (data_dir / "fetch_log.jsonl").exists()
+    _commit_canonical_log(fxf)   # R16-2: HEAD 판만이 출처 권위를 준다
     assert fxf._own_writes() == {
         "sub/TK01/xbrl/CIK0000001001.json", "sub/TK01/edgar/CIK0000001001.json"}
     # build_sources가 --fetch-dir에서 로그 경로를 파생하면 여기서 죽는다
@@ -471,9 +586,9 @@ def test_runbook_repin_loop_still_works(tmp_path, monkeypatch):
     fc.write_json(upath, make_universe(2))
 
     assert fxf.fetch_forward(upath, data_dir) == 0
-    assert _run_remedy(vm, monkeypatch, manifest_path) == 0   # 2b (최초 핀)
-    assert fxf.fetch_forward(upath, data_dir) == 0            # 재수집
-    assert _run_remedy(vm, monkeypatch, manifest_path) == 0   # 2b (재핀)
+    assert _run_remedy(vm, monkeypatch, manifest_path, fxf=fxf) == 0   # 2b (최초 핀)
+    assert fxf.fetch_forward(upath, data_dir) == 0                     # 재수집
+    assert _run_remedy(vm, monkeypatch, manifest_path, fxf=fxf) == 0   # 2b (재핀)
     assert fxf.fetch_forward(upath, data_dir) == 0
 
 
@@ -492,9 +607,9 @@ def test_runbook_repin_loop_still_works_under_a_sub_dest(tmp_path, monkeypatch):
     dest = data_dir / "sub"
 
     assert fxf.fetch_forward(upath, dest) == 0
-    assert _run_remedy(vm, monkeypatch, manifest_path) == 0   # 2b (최초 핀)
-    assert fxf.fetch_forward(upath, dest) == 0                # 재수집
-    assert _run_remedy(vm, monkeypatch, manifest_path) == 0   # 2b (재핀)
+    assert _run_remedy(vm, monkeypatch, manifest_path, fxf=fxf) == 0   # 2b (최초 핀)
+    assert fxf.fetch_forward(upath, dest) == 0                         # 재수집
+    assert _run_remedy(vm, monkeypatch, manifest_path, fxf=fxf) == 0   # 2b (재핀)
     assert fxf.fetch_forward(upath, dest) == 0
     assert any(f["path"].startswith("sub/TK01/")
                for f in json.loads(manifest_path.read_text())["files"])
@@ -539,6 +654,7 @@ def test_own_writes_skips_valid_json_non_object_row(tmp_path, monkeypatch):
         "123\n[1, 2]\n\"str\"\nnot json\n"
         + json.dumps(_log_row_for(data_dir, "TK01/xbrl/CIK0000001001.json")) + "\n",
         encoding="utf-8")
+    _commit_canonical_log(fxf)   # R16-2: HEAD 판만이 출처 권위를 준다
     manifest_path.write_text(json.dumps(vm.build_manifest()), encoding="utf-8")
     assert fxf._own_writes() == {"TK01/xbrl/CIK0000001001.json"}
 
@@ -580,6 +696,7 @@ def test_refetch_after_manifest_rebuild_is_allowed(tmp_path, monkeypatch):
     # 2b: 방금 수집한 forward 파일 전건이 매니페스트에 핀으로 등재된다
     m = vm.build_manifest()
     manifest_path.write_text(json.dumps(m), encoding="utf-8")
+    _commit_canonical_log(fxf)   # R16-2: 2b의 두 번째 단계 (정본 로그 커밋)
     assert any(f["path"].startswith("TK01/") for f in m["files"])
 
     # 재수집(재시도·절단 청크 재당김·창 후반 최신화)이 여전히 가능해야 한다

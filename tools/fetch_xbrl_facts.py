@@ -21,6 +21,7 @@ import argparse
 import datetime
 import hashlib
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -70,20 +71,33 @@ def _resolve_logged_path(value: str) -> Path:
     return p if p.is_absolute() else REPO / value
 
 
-def logged_claims(log_path: Path, data_dir: Path) -> set[str]:
-    """로그가 '내가 썼다'고 주장하는 경로 집합 — 권위 판정 **이전**의 원시 파싱.
+def committed_log_lines(log_path: Path) -> list[str]:
+    """HEAD에 **커밋된** 정본 로그의 행. 작업 트리 내용이 아니다.
 
-    R13-5: verify_manifest가 재핀 시점에 '새 주장'을 검출하려면 가드가 신뢰
-    대상으로 읽는 것과 **같은 파싱**을 봐야 한다. 규칙이 갈라지면 한쪽이
-    축복한 주장을 다른 쪽이 다르게 읽는다.
+    R16-2: R15-1은 신뢰 근원을 corpus 안에서 git 관리 경로로 **옮겼지만**,
+    옮긴 자리에 아무 인증도 놓지 않았다 — 작업 트리 파일에 위조 행 한 줄을
+    덧붙이면 온전한 핀 스냅샷이 아무 플래그 없이 덮어써졌다 (R15-1 lens B
+    재현 익스플로잇). 설계가 전제한 앵커("행의 신설은 git diff에 드러난다")를
+    실제 게이트로 만든다: 가드가 **의지하는 행**은 HEAD에 있어야 한다.
 
-    data_dir 상대 posix 표기로 정규화해 매니페스트 path와 같은 좌표계에 둔다.
-    손상된 행은 조용히 무시한다 — 미상은 '내 것 아님'으로 떨어져 가드가
-    강한 쪽(거부)으로 기운다."""
+    저장소가 아니거나 파일이 추적되지 않거나 git이 없으면 빈 리스트 —
+    fail-closed. 미상은 '내 것 아님'으로 떨어져 가드가 거부 쪽으로 기운다.
+    작업 트리 전체가 깨끗할 것을 요구하지 않는다: 새로 수집한(아직 커밋 전)
+    행은 의지 대상이 아니므로 fetch → 2b → 재수집 루프는 그대로 돈다."""
+    try:
+        proc = subprocess.run(
+            ["git", "-C", str(log_path.parent), "show",
+             f"HEAD:./{log_path.name}"],
+            capture_output=True, text=True, check=False)
+    except (OSError, ValueError):
+        return []
+    return proc.stdout.splitlines() if proc.returncode == 0 else []
+
+
+def claims_from_lines(lines, data_dir: Path) -> set[str]:
+    """행 목록 → 출처 주장 경로 집합. 파싱 규칙의 단일 지점."""
     own: set[str] = set()
-    if not log_path.is_file():
-        return own
-    for line in log_path.read_text(encoding="utf-8").splitlines():
+    for line in lines:
         if not line.strip():
             continue
         try:
@@ -103,6 +117,22 @@ def logged_claims(log_path: Path, data_dir: Path) -> set[str]:
     return own
 
 
+def logged_claims(log_path: Path, data_dir: Path) -> set[str]:
+    """로그가 '내가 썼다'고 주장하는 경로 집합 — 권위 판정 **이전**의 원시 파싱.
+
+    R13-5: verify_manifest가 재핀 시점에 '새 주장'을 검출하려면 가드가 신뢰
+    대상으로 읽는 것과 **같은 파싱**을 봐야 한다. 규칙이 갈라지면 한쪽이
+    축복한 주장을 다른 쪽이 다르게 읽는다.
+
+    data_dir 상대 posix 표기로 정규화해 매니페스트 path와 같은 좌표계에 둔다.
+    손상된 행은 조용히 무시한다 — 미상은 '내 것 아님'으로 떨어져 가드가
+    강한 쪽(거부)으로 기운다."""
+    if not log_path.is_file():
+        return set()
+    return claims_from_lines(
+        log_path.read_text(encoding="utf-8").splitlines(), data_dir)
+
+
 def _own_writes() -> set[str]:
     """R11-2/R15-1: 이 사이클이 직접 쓴 파일 목록 — 정본 로그만 읽는다.
 
@@ -112,8 +142,12 @@ def _own_writes() -> set[str]:
     재핀(`DATA_DIR/…`)이 서로 다른 파일을 읽었다. 로그를 트리 밖 git 관리
     정본 한 곳으로 옮기면 권위 판정 자체가 필요 없어진다: 보호 트리 안에는
     신뢰되는 주장을 담을 수 있는 파일이 아예 없다. 인자를 받지 않는 것이
-    이 함수의 계약이다 — 호출자가 경로를 고를 수 있으면 클래스가 되살아난다."""
-    return logged_claims(fetch_log_path(), DATA_DIR)
+    이 함수의 계약이다 — 호출자가 경로를 고를 수 있으면 클래스가 되살아난다.
+
+    R16-2: 정본 로그의 **HEAD 판**만 읽는다. 작업 트리에 덧붙인 행은 커밋되기
+    전까지 아무 권위도 갖지 않으므로, 위조는 git 이력에 남지 않고서는 성립할
+    수 없다 — R15-1이 앵커라고 선언했지만 강제하지 않았던 바로 그 성질."""
+    return claims_from_lines(committed_log_lines(fetch_log_path()), DATA_DIR)
 
 
 def _sha256_bytes_of(path: Path) -> str:
@@ -145,6 +179,11 @@ def assert_no_pinned_custody_conflict(universe: dict, dest: Path,
     파생되지 않으므로 가드와 다른 소비자가 서로 다른 파일을 볼 수 없고,
     트리 안으로 쓰는 어떤 것도 주장을 만들 수 없다. R12-1의 매니페스트 핀
     앵커는 그 전제(로그가 트리 안에 산다)에서만 필요했으므로 함께 사라졌다.
+
+    R16-2: 그러나 옮겨간 신뢰 근원 자체는 인증되지 않은 채였다 — 작업 트리의
+    로그에 위조 행 한 줄이면 온전한 핀 스냅샷이 열렸다. 이제 근거는 로그의
+    **HEAD 판**이다 (committed_log_lines). 작업 트리 전체의 청결을 요구하지
+    않으므로 정당한 재수집 루프는 그대로다.
 
     소유자 명시 예외는 --allow-pinned (정본 로그에 기록된다).
     반환값은 실제로 예외가 적용된 티커 목록 (로그 기록용)."""
@@ -183,11 +222,14 @@ def assert_no_pinned_custody_conflict(universe: dict, dest: Path,
     if blocked:
         detail = "; ".join(f"{t}({len(v)}건: {v[0]}…)" for t, v in sorted(blocked.items()))
         remedy = ("\n  이 사이클이 실제로 그 파일을 썼다면 정본 수집 로그"
-                  f"({FETCH_LOG_REL})에 그 행이 있어야 한다 — 없다면 이 수집은 "
-                  "그 경로의 출처가 아니다. 로그는 git 관리 파일이므로 행의 "
-                  "신설·변경은 diff에 드러난다 (R15-1): 재핀·재실행 같은 자동 "
-                  "복구 경로는 없고, 그래도 덮어써야 한다면 --allow-pinned가 "
-                  "유일한 길이며 소유자 판단이다.")
+                  f"({FETCH_LOG_REL})의 **HEAD 판**에 그 행이 있어야 한다 — "
+                  "방금 수집했다면 runbook 2b에서 그 로그를 커밋하라 "
+                  f"(git add {FETCH_LOG_REL} && git commit). 행이 작업 트리에만 "
+                  "있으면 권위가 없다 (R16-2): 위조가 git 이력에 남지 않고 "
+                  "성립할 수 없게 하는 것이 앵커의 전부다. 커밋해도 그 행이 "
+                  "이 수집의 것이 아니라면 이 수집은 그 경로의 출처가 아니며, "
+                  "그래도 덮어써야 한다면 --allow-pinned가 유일한 길이고 "
+                  "소유자 판단이다.")
         raise SystemExit(
             f"FAIL — 매니페스트 핀 경로와 충돌 {sorted(blocked)}: {detail} — "
             "온전한 회고 스냅샷을 덮어쓸 수 있어 수집 거부 (R10-2/R11-2). "
