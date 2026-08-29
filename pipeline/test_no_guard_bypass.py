@@ -10,10 +10,13 @@ pipeline/ 안의 모듈(피평가자 쪽 코드)은 cutoff_guard를 제외하고
 
 규범이 아니라 테스트다: 위반 코드는 커밋 전에 여기서 깨진다.
 """
+import ast
 import re
 from pathlib import Path
 
 import pytest
+
+from test_all_raw_reads_enforced import CORPUS_ROOT_NAMES, _raw_read_functions
 
 PIPELINE_DIR = Path(__file__).resolve().parent
 EXEMPT = {"cutoff_guard.py"}  # 게이트웨이 본체만 예외
@@ -31,6 +34,77 @@ FORBIDDEN_PATTERNS = {
     "scoring import": re.compile(r"^\s*(import\s+scoring|from\s+scoring)\b", re.M),
     "raw aaer-data read": re.compile(r"aaer-data"),
 }
+
+
+# "raw aaer-data read" 규칙은 리터럴 문자열만 본다 — build_payload.py는 코퍼스 루트를
+# 심볼(DATA_DIR = cutoff_guard.DEFAULT_EDGAR_DATA)로 들고 있어서 파일 어디에도
+# 'aaer-data' 리터럴이 없다. R16-1(e): 리터럴에 의존하지 않는 두 번째 층 —
+# 코퍼스 루트를 가리키는 *이름*을 소스에서 유도한 뒤 원시 읽기 호출을 찾는다.
+CORPUS_ROOT_ATTRS = frozenset({"DEFAULT_EDGAR_DATA"})
+CORPUS_ROOT_LITERAL = "aaer-data"
+
+
+def corpus_root_aliases(source: str) -> set[str]:
+    """코퍼스 루트로 바인딩된 이름 전부 — 리터럴 경로든 import한 심볼이든."""
+    tree = ast.parse(source)
+    aliases = set(CORPUS_ROOT_NAMES)
+    changed = True
+    while changed:
+        changed = False
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Assign):
+                targets, value = node.targets, node.value
+            elif isinstance(node, ast.AnnAssign) and node.value is not None:
+                targets, value = [node.target], node.value
+            else:
+                continue
+            reaches_root = any(
+                (isinstance(n, ast.Attribute) and n.attr in CORPUS_ROOT_ATTRS)
+                or (isinstance(n, ast.Name) and n.id in (CORPUS_ROOT_ATTRS | aliases))
+                or (isinstance(n, ast.Constant) and isinstance(n.value, str)
+                    and CORPUS_ROOT_LITERAL in n.value)
+                for n in ast.walk(value))
+            if not reaches_root:
+                continue
+            for target in targets:
+                for name in (n.id for n in ast.walk(target) if isinstance(n, ast.Name)):
+                    if name not in aliases:
+                        aliases.add(name)
+                        changed = True
+    return aliases
+
+
+def corpus_reads_via_root(source: str) -> list[str]:
+    return _raw_read_functions(source, roots=corpus_root_aliases(source))
+
+
+# 양성 대조: 'aaer-data' 리터럴이 한 번도 나오지 않는데도 코퍼스를 직접 읽는 모듈.
+IMPORTED_ROOT_SOURCE = '''
+import json
+import os
+
+import cutoff_guard
+
+CORPUS = cutoff_guard.DEFAULT_EDGAR_DATA
+
+
+def load_pit_series(ticker, cutoff):
+    for name in os.listdir(CORPUS / ticker / "xbrl"):
+        data = json.load(open(CORPUS / ticker / "xbrl" / name))
+'''
+
+
+def test_imported_corpus_root_read_is_flagged_without_the_literal():
+    # 기존 리터럴 규칙은 이 소스를 못 잡는다 — 그래서 두 번째 층이 필요하다.
+    assert not FORBIDDEN_PATTERNS["raw aaer-data read"].search(IMPORTED_ROOT_SOURCE)
+    assert "CORPUS" in corpus_root_aliases(IMPORTED_ROOT_SOURCE)
+    assert corpus_reads_via_root(IMPORTED_ROOT_SOURCE) == ["load_pit_series"]
+
+
+def test_pipeline_modules_do_not_read_the_corpus_root_directly():
+    violations = {path.name: corpus_reads_via_root(path.read_text(encoding="utf-8"))
+                  for path in scannable_sources()}
+    assert not {k: v for k, v in violations.items() if v}
 
 
 def scannable_sources():

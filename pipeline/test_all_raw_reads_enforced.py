@@ -14,41 +14,62 @@ import payload_v2_extract
 PIPELINE = Path(__file__).resolve().parent
 
 
-def _raw_read_functions(source: str) -> list[str]:
+# 함수 단위 오염(taint) 시드 — 코퍼스 루트를 가리키는 이름.
+CORPUS_ROOT_NAMES = frozenset({"DATA_DIR", "data_dir"})
+
+# 매칭되는 원시 읽기 형태. R16-1 이전 판은 {read_text, open, load}를 *속성 호출로만*
+# 봤고, 그래서 read_bytes·iterdir·builtin open(path)·json.load(open(path))이 전부
+# 통과했다 — build_payload.py에 실제 가드 우회를 주입해도 0 red였다.
+RAW_READ_ATTRS = frozenset({"read_text", "read_bytes", "open", "load", "iterdir"})
+# builtin 호출 형태(수신자가 없어 속성 규칙이 닿지 않는다): open(path)
+RAW_READ_BUILTINS = frozenset({"open"})
+
+
+def _tainted_names(node, roots) -> set[str]:
+    """함수 안에서 코퍼스 루트로부터 파생된 이름 집합 (고정점까지 전파)."""
+    tainted = set(roots)
+    changed = True
+    while changed:
+        changed = False
+        for child in ast.walk(node):
+            targets, value = [], None
+            if isinstance(child, ast.Assign):
+                targets, value = child.targets, child.value
+            elif isinstance(child, ast.AnnAssign):
+                targets, value = [child.target], child.value
+            elif isinstance(child, (ast.For, ast.comprehension)):
+                targets, value = [child.target], child.iter
+            if value is None:
+                continue
+            names = {n.id for n in ast.walk(value) if isinstance(n, ast.Name)}
+            if names & tainted:
+                for target in targets:
+                    for name in (n.id for n in ast.walk(target) if isinstance(n, ast.Name)):
+                        if name not in tainted:
+                            tainted.add(name)
+                            changed = True
+    return tainted
+
+
+def _raw_read_functions(source: str, roots=CORPUS_ROOT_NAMES) -> list[str]:
     tree = ast.parse(source)
     violations = []
     for node in ast.walk(tree):
         if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             continue
-        tainted = {"DATA_DIR", "data_dir"}
-        changed = True
-        while changed:
-            changed = False
-            for child in ast.walk(node):
-                targets, value = [], None
-                if isinstance(child, ast.Assign):
-                    targets, value = child.targets, child.value
-                elif isinstance(child, ast.AnnAssign):
-                    targets, value = [child.target], child.value
-                elif isinstance(child, (ast.For, ast.comprehension)):
-                    targets, value = [child.target], child.iter
-                if value is None:
-                    continue
-                names = {n.id for n in ast.walk(value) if isinstance(n, ast.Name)}
-                if names & tainted:
-                    for target in targets:
-                        for name in (n.id for n in ast.walk(target) if isinstance(n, ast.Name)):
-                            if name not in tainted:
-                                tainted.add(name)
-                                changed = True
+        tainted = _tainted_names(node, roots)
         raw_call = False
         for call in (n for n in ast.walk(node) if isinstance(n, ast.Call)):
             func = call.func
-            if (isinstance(func, ast.Attribute) and
-                    func.attr in {"read_text", "open", "load"}):
+            arg_names = {n.id
+                         for a in (*call.args, *(k.value for k in call.keywords))
+                         for n in ast.walk(a) if isinstance(n, ast.Name)}
+            if isinstance(func, ast.Attribute) and func.attr in RAW_READ_ATTRS:
                 receiver_names = {n.id for n in ast.walk(func.value)
                                   if isinstance(n, ast.Name)}
-                raw_call = raw_call or bool(receiver_names & tainted)
+                raw_call = raw_call or bool((receiver_names | arg_names) & tainted)
+            elif isinstance(func, ast.Name) and func.id in RAW_READ_BUILTINS:
+                raw_call = raw_call or bool(arg_names & tainted)
         if raw_call:
             violations.append(node.name)
     return violations
@@ -60,6 +81,56 @@ def load_pit_series(ticker, cutoff):
     for path in xbrl_dir.glob("*.json"):
         data = json.loads(path.read_text())
 '''
+
+_SRC_READ_BYTES = '''
+def load_pit_series(ticker, cutoff):
+    blob = (DATA_DIR / ticker / "xbrl" / "CIK1.json").read_bytes()
+'''
+
+_SRC_ITERDIR = '''
+def load_pit_series(ticker, cutoff):
+    return sorted((DATA_DIR / ticker / "xbrl").iterdir())
+'''
+
+_SRC_PATH_OPEN = '''
+def load_pit_series(ticker, cutoff):
+    handle = (DATA_DIR / ticker / "xbrl" / "CIK1.json").open()
+'''
+
+_SRC_BUILTIN_OPEN = '''
+def load_pit_series(ticker, cutoff):
+    for name in os.listdir(DATA_DIR / ticker / "xbrl"):
+        handle = open(DATA_DIR / ticker / "xbrl" / name)
+'''
+
+_SRC_JSON_LOAD_OPEN = '''
+def load_pit_series(ticker, cutoff):
+    for name in os.listdir(DATA_DIR / ticker / "xbrl"):
+        data = json.load(open(DATA_DIR / ticker / "xbrl" / name))
+'''
+
+# 형태별 양성 대조 — 한 형태당 소스 하나. 대조가 없는 형태가 R16-1이 막으려는 결함
+# 그 자체이므로, 커버리지는 test_every_matched_read_form_has_a_positive_control이
+# RAW_READ_ATTRS | RAW_READ_BUILTINS와의 집합 동일성으로 강제한다.
+CONTROL_SOURCES = {
+    "read_text": (OLD_SOURCE, {"read_text"}),
+    "read_bytes": (_SRC_READ_BYTES, {"read_bytes"}),
+    "iterdir": (_SRC_ITERDIR, {"iterdir"}),
+    "path_open": (_SRC_PATH_OPEN, {"open"}),
+    "builtin_open": (_SRC_BUILTIN_OPEN, {"open"}),
+    "json_load_open": (_SRC_JSON_LOAD_OPEN, {"load", "open"}),
+}
+
+
+@pytest.mark.parametrize("form", sorted(CONTROL_SOURCES), ids=sorted(CONTROL_SOURCES))
+def test_scanner_flags_raw_read_form(form):
+    source, _ = CONTROL_SOURCES[form]
+    assert _raw_read_functions(source) == ["load_pit_series"], form
+
+
+def test_every_matched_read_form_has_a_positive_control():
+    covered = set().union(*(forms for _, forms in CONTROL_SOURCES.values()))
+    assert covered == set(RAW_READ_ATTRS | RAW_READ_BUILTINS)
 
 
 def test_ast_scanner_catches_old_source_and_passes_modules():
