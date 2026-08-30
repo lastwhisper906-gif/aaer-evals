@@ -1463,7 +1463,7 @@
   3.12 확인 (결과는 close-out 보고).
 - **Revert:** 항목별 커밋 revert + 본 엔트리 후속 정정 엔트리.
 
-## D-P84 — [DRAFT — 소유자 서명 대기] 스키마 채널 누출 봉합 공개 (INV-09/INV-03)
+## D-P84 — [서명 완료 — D-P104 (2026-08-29)] 스키마 채널 누출 봉합 공개 (INV-09/INV-03)
 - **Status:** DRAFT — 세션(harness v4 cycle 001, R1-2)이 작성. 서명 전까지
   미집행 게시 없음. 코드 변경 자체는 커밋됨(전향 런 전용 — 동결 런 무접촉).
 - **발견 (channel):** `--json-schema`로 피평가자에게 송출되는 출력 스키마와
@@ -1488,7 +1488,7 @@
 - **Basis:** INV-09 · INV-03 · METHOD.md §3 · reviews/cycle-001.md R1-2
 - **Revert:** 커밋 revert (가드 완화이므로 revert 시 사유 기록 의무).
 
-## D-P85 — [DRAFT — 소유자 서명 대기] ERRATA E-004 초안: wave-2 대조군 5건 후신 사명 반입 (OV-002/§5-1)
+## D-P85 — [서명 완료 — D-P104 (2026-08-29)] ERRATA E-004 초안: wave-2 대조군 5건 후신 사명 반입 (OV-002/§5-1)
 - **Status:** DRAFT — 세션(harness v4 cycle 001, R1-3)이 작성. ERRATA.md는
   본 세션이 접촉하지 않았다 — 등재는 소유자 서명 후 append-only로만.
 - **제안 ERRATA 본문 (E-004, ready-to-sign):**
@@ -1520,7 +1520,7 @@
   · reviews/cycle-001.md R1-3 검증 노트 (~/aaer-data/_rp08 대조 실측)
 - **Revert:** 코드 revert 시 후속 엔트리로 사유 기록 (ERRATA append-only).
 
-## D-P86 — [DRAFT — 소유자 서명 대기] 특성화 공개: 쓰기 시점 검증 이전 draw 기록 15건의 스키마 위반 (ERRATA 후보)
+## D-P86 — [서명 완료 — D-P104 (2026-08-29)] 특성화 공개: 쓰기 시점 검증 이전 draw 기록 15건의 스키마 위반 (ERRATA 후보)
 - **Status:** DRAFT — 세션(harness v4 cycle 002, R2-2)이 작성. 동결
   기록·ERRATA.md 무접촉; 등재 여부는 소유자 서명 사항.
 - **사실:** `runs/**` 아래 llm_output 형태 기록 508건 전수 검증 결과,
@@ -1575,7 +1575,7 @@
   runmeta 필드 균일성 주장에는 이 예외를 병기해야 한다. 기록만, 동결
   로그 무수정.
 
-## D-P87 — [DRAFT — 소유자 서명 대기] L4 12/12의 탐지 조건부(denominator) 문구 — 서명 표면 전파 제안
+## D-P87 — [서명 완료 — D-P104 (2026-08-29)] L4 12/12의 탐지 조건부(denominator) 문구 — 서명 표면 전파 제안
 - **Status:** DRAFT — 세션(harness v4 cycle 002, R2-6)이 작성. 서명 동결
   표면(`analysis/DECISION_TABLE.md` §4 — D94 서명 · fig_tradeoff
   그림/사이드카)은 본 세션이 접촉하지 않았다.
@@ -1619,7 +1619,7 @@
     마커 관행을 이유로 보류했다 — 두 처리 중 하나는 틀렸다 (정오 준수
     갱신 vs 스냅샷 동결의 경계 기준을 소유자가 정해야 함).
 
-## D-P88 — [DRAFT — 소유자 서명 대기] ERRATA 후보: wave-2 dim3는 정답 장르 표 없이 채점됨
+## D-P88 — [서명 완료 — D-P104 (2026-08-29)] ERRATA 후보: wave-2 dim3는 정답 장르 표 없이 채점됨
 - **Status:** DRAFT — 세션(harness v4 cycle 002, R2-7)이 작성. 동결
   `scoring/grades_wave2/` 무접촉.
 - **결함:** `grader_runner.answer_key()`가 `--candidates`는 파라미터화하면서
@@ -1646,7 +1646,7 @@
   reviews/cycle-002.md R2-7
 - **Revert:** fail-closed 완화는 후속 엔트리로 사유 기록.
 
-## D-P89 — [DRAFT — 소유자 서명 대기] 대조군 풀 layer-2 병행 정규화 매니페스트 게시 (disclose-don't-revise)
+## D-P89 — [서명 완료 — D-P104 (2026-08-29)] 대조군 풀 layer-2 병행 정규화 매니페스트 게시 (disclose-don't-revise)
 - **Status:** DRAFT — 세션(harness v4 cycle 003, R3-3)이 작성.
 - **결함:** 동결 대조군 풀 매니페스트 4종(runs/rp08·wave2·rp09/
   control_pool_raw, runs/holdout/controls/pool_raw의 MANIFEST.sha256)의
@@ -1682,7 +1682,7 @@
   `~/aaer-data/_rp08` 절대 경로 키 4,961건(rp08)이 더해진다 (총 5,323행,
   회귀 렌즈 실측 확인).
 
-## D-P90 — [DRAFT — 소유자 서명 대기] 후보 파일 4종의 case_input 스키마 편차 66건 — 정리 방안 결정 요청
+## D-P90 — [서명 완료 — D-P104 (2026-08-29)] 후보 파일 4종의 case_input 스키마 편차 66건 — 정리 방안 결정 요청
 - **Status:** DRAFT — 세션(harness v4 cycle 003, R3-11)이 작성. 데이터
   파일·스키마 파일 무접촉 (둘 다 동결 — 소유자만 정리 가능).
 - **실측 census (2026-08-27, 게이트 코드에 열거 잠금):**
@@ -1710,7 +1710,7 @@
 - **Basis:** INV-02(스키마 준수)·INV-06 · reviews/cycle-003.md R3-11
 - **Revert:** 특성화 축소는 후속 엔트리로 사유 기록.
 
-## D-P91 — [DRAFT — 소유자 서명 대기] ERRATA 후보: 2026-07-07 동결 표제 wave-2 기록 4건의 무공개 제자리 재작성
+## D-P91 — [서명 완료 — D-P104 (2026-08-29)] ERRATA 후보: 2026-07-07 동결 표제 wave-2 기록 4건의 무공개 제자리 재작성
 - **Status:** DRAFT — 세션(harness v4 cycle 004, R4-1)이 작성. 동결
   파일·로그 전건 무접촉; 전 수치·SHA·타임스탬프는 본 세션이 git 이력에서
   재실측 확인함 (2026-08-27).
@@ -1767,7 +1767,7 @@
   본 세션 git 재검증)
 - **Revert:** 해당 없음 (기록 전용 — 동결 무접촉).
 
-## D-P92 — [DRAFT — 소유자 서명 대기] cp95_pct 라벨-계산 불일치: v2ds wave-2 0/32의 rule-of-three 상한 9.4 (정확 CP95 10.9) — rev2 병행 산출물 게시
+## D-P92 — [서명 완료 — D-P104 (2026-08-29)] cp95_pct 라벨-계산 불일치: v2ds wave-2 0/32의 rule-of-three 상한 9.4 (정확 CP95 10.9) — rev2 병행 산출물 게시
 
 - **Status:** DRAFT — 세션(harness v4 cycle 007, R7-11)이 작성. 동결
   산출물 무접촉.
@@ -1796,7 +1796,7 @@
   ERRATA.md E-001 (병행 경로 선례)
 - **Revert:** rev2 경로 삭제로 원상 (원 산출물 무접촉이므로 안전).
 
-## D-P93 — [DRAFT — 소유자 서명 대기] 교란 표면 accession/CIK 스캔 확장의 정책 선택 (Q-F20 참조)
+## D-P93 — [서명 완료 — D-P104 (2026-08-29)] 교란 표면 accession/CIK 스캔 확장의 정책 선택 (Q-F20 참조)
 
 - **Status:** DRAFT — 세션(harness v4 cycle 008, R7-6 재디스패치)이 작성.
   게이트 행동 변경 0 (INV-18 — 서명 대상은 게이트의 행동 그 자체).
@@ -1814,7 +1814,7 @@
   reviews/cycle-008.md (재디스패치 지시) · builds/cycle-007.md census
 - **Revert:** 해당 없음 (기록 전용).
 
-## D-P94 — [DRAFT — 소유자 서명 대기] forward 유니버스 자기 오염(fw001-r08=CIEN) 처리 + cycle-002 예방: 소각 목록을 cutoff_guard 정본에서 파생 (Q-F21 참조)
+## D-P94 — [서명 완료 — D-P104 (2026-08-29)] forward 유니버스 자기 오염(fw001-r08=CIEN) 처리 + cycle-002 예방: 소각 목록을 cutoff_guard 정본에서 파생 (Q-F21 참조)
 
 - **Status:** DRAFT — 세션(harness v4 cycle 010, R10-1)이 작성. 동결 산출물
   무접촉 (universe.json·GATE_PIN·tools/forward_enumerate.py 무변경).
@@ -1843,7 +1843,7 @@
   reviews/cycle-010.md R10-1 · runs/rp09/scores/case_36.json (실재 확인).
 - **Revert:** 해당 없음 (기록 전용).
 
-## D-P95 — [DRAFT — 소유자 서명 대기] OWNER_LAUNCH_GATE §4 실행 절차 개정 통합 패킷: 현행 문면대로는 step (4)에서 결정론적으로 기동 거부된다 (R3-14/Q-O11 연동)
+## D-P95 — [서명 완료 — D-P104 (2026-08-29)] OWNER_LAUNCH_GATE §4 실행 절차 개정 통합 패킷: 현행 문면대로는 step (4)에서 결정론적으로 기동 거부된다 (R3-14/Q-O11 연동)
 
 - **Status:** DRAFT — 세션(harness v4 cycle 010, R10-4)이 작성.
   `forward/cycle_001/OWNER_LAUNCH_GATE.md`는 소유자 서명 문서 — 세션
@@ -1929,7 +1929,7 @@ python tools/forward_verify_seal.py --cycle forward/cycle_001
   forward/cycle_001/PROTOCOL.md 핀 실측 (2026-08-28) · INV-18 · INV-22.
 - **Revert:** 해당 없음 (기록 전용 — 게이트 파일 무변경).
 
-## D-P96 — [DRAFT — 소유자 서명 대기] DECISION_TABLE §2 프레임 오표기 공개: "가공명 프레임"이 실은 정체 노출(원본) 프레임 점수 위에 있었다
+## D-P96 — [서명 완료 — D-P104 (2026-08-29)] DECISION_TABLE §2 프레임 오표기 공개: "가공명 프레임"이 실은 정체 노출(원본) 프레임 점수 위에 있었다
 
 - **Status:** DRAFT — 세션(harness v4 cycle 010, R10-7)이 작성.
 - **개정 블록 (2026-08-28, R3-2/D-P87 판례의 일자 기입 방식):**
@@ -1952,7 +1952,7 @@ python tools/forward_verify_seal.py --cycle forward/cycle_001
   docs/README_DETAIL.md:105-109 · INV-06 · D94 (표면 서명).
 - **Revert:** DECISION_TABLE.md §2 문장 원복 (비권장 — 오표기 복원이 된다).
 
-## D-P97 — [DRAFT — 소유자 서명 대기] holdout 대조군 위양성 2건 = 자체 감사가 `ineligible`로 기록한 2건이라는 중첩 공개 (L-8 의무의 holdout 티어 이행)
+## D-P97 — [서명 완료 — D-P104 (2026-08-29)] holdout 대조군 위양성 2건 = 자체 감사가 `ineligible`로 기록한 2건이라는 중첩 공개 (L-8 의무의 holdout 티어 이행)
 
 - **Status:** DRAFT — 세션(harness v4 cycle 014, R14-4)이 작성. 게시
   표면 편집이므로 소유자 감사 대상이다.
@@ -1999,7 +1999,7 @@ python tools/forward_verify_seal.py --cycle forward/cycle_001
 - **Revert:** 위 다섯 표면의 추가 문면 삭제 + `CLAIMS.json` 두 셀 원복
   (비권장 — L-8이 부과한 공개 의무가 다시 미이행 상태로 돌아간다).
 
-## D-P98 — [DRAFT — 소유자 서명 대기] 11월 창 runbook 변경: `--allow-new-custody-claims`(2b 1회 거부)가 사라지고 "수집 직후 `data/provenance/fetch_log.jsonl` 커밋"이 그 자리에 들어온다
+## D-P98 — [서명 완료 — D-P104 (2026-08-29)] 11월 창 runbook 변경: `--allow-new-custody-claims`(2b 1회 거부)가 사라지고 "수집 직후 `data/provenance/fetch_log.jsonl` 커밋"이 그 자리에 들어온다
 
 - **Status:** DRAFT — 세션(harness v4 cycle 015, R15-1)이 작성. 소유자가
   11월 창에서 **실제로 실행하는 절차**가 바뀌므로 서명 대상이다.
@@ -2076,7 +2076,7 @@ python tools/forward_verify_seal.py --cycle forward/cycle_001
   제거 + `verify_manifest`의 custody_claims 층 복원 (비권장 — 네 번 뚫린
   앵커로 되돌아간다).
 
-## D-P99 — [DRAFT — 소유자 서명 대기] Q-F21은 11월 창 첫날의 **커스터디 교착**이기도 하다: 옵션 (B)·(C)는 기계적으로 실행 불가
+## D-P99 — [서명 완료 — D-P104 (2026-08-29)] Q-F21은 11월 창 첫날의 **커스터디 교착**이기도 하다: 옵션 (B)·(C)는 기계적으로 실행 불가
 
 - **Status:** DRAFT — 세션(harness v4 cycle 016, R16-4)이 작성. 선택도, 서명도
   하지 않았다 (INV-18). Q-F21은 `docs/OWNER_QUEUE.md`에서 **OPEN 그대로**다.
@@ -2130,7 +2130,7 @@ python tools/forward_verify_seal.py --cycle forward/cycle_001
   항목, 그리고 두 테스트를 제거하면 된다 — 실행 코드의 판정 규칙은 바뀌지
   않았다 (`pinned_conflicts` 추출은 동작 보존 리팩터).
 
-## D-P100 — [DRAFT — 소유자 서명 대기] 커스터디 앵커는 어디에 살고 무엇이 그것을 강제하는가: 일곱 번째 국소 패치 대신 설계를 고른다
+## D-P100 — [서명 완료 — D-P104 (2026-08-29)] 커스터디 앵커는 어디에 살고 무엇이 그것을 강제하는가: 일곱 번째 국소 패치 대신 설계를 고른다
 
 - **Status:** DRAFT — 세션(harness v4 cycle 017, R17-5 (a))이 작성. 서명 대상은
   **설계 선택 하나**이며, 아래 옵션 중 무엇도 선택하지 않았다 (INV-18).
@@ -2199,7 +2199,7 @@ python tools/forward_verify_seal.py --cycle forward/cycle_001
   D-P98 (같은 계열, 절차 문면) · reviews/cycle-016.md R16-2 · INV-06 · INV-18.
 - **Revert:** 본 항목은 문서만 추가한다. (i)을 유지하면 코드 변경은 없다.
 
-## D-P101 — [DRAFT — 소유자 서명 대기] 철회 문언 잠금(규칙 M)의 설계: 근접창 allowlist는 어떤 문구를 열쇠로 삼든 그 문구를 적어 넣으면 열린다
+## D-P101 — [서명 완료 — D-P104 (2026-08-29)] 철회 문언 잠금(규칙 M)의 설계: 근접창 allowlist는 어떤 문구를 열쇠로 삼든 그 문구를 적어 넣으면 열린다
 
 - **Status:** DRAFT — 세션(harness v4 cycle 017, R17-5 (b))이 작성. 두 번 연속
   검증 실패한 항목이므로 CRITERIA_RULES C-11(two-strike)에 따라 패치가 아니라
@@ -2246,7 +2246,7 @@ python tools/forward_verify_seal.py --cycle forward/cycle_001
   logs/verdicts/R16-3-B.md · scoring/decisions_log.md D-P83 · CRITERIA_RULES C-11.
 - **Revert:** 본 항목은 문서만 추가한다.
 
-## D-P102 — [DRAFT — 소유자 서명 대기] 서명된 런북의 첫 명령이 실패한다 — 그리고 두 번째 파손은 어떤 결정으로도 되돌릴 수 없다
+## D-P102 — [서명 완료 — D-P104 (2026-08-29)] 서명된 런북의 첫 명령이 실패한다 — 그리고 두 번째 파손은 어떤 결정으로도 되돌릴 수 없다
 
 - **Status:** DRAFT — 세션(harness v4 cycle 017, R17-5 (c))이 작성. 서명 대상은
   §4 step (1)과 §1 결정론 주장의 처리다. 세션은 아무것도 고치지 않았다.
@@ -2281,7 +2281,7 @@ python tools/forward_verify_seal.py --cycle forward/cycle_001
   INV-06 · INV-22.
 - **Revert:** 본 항목은 문서만 추가한다.
 
-## D-P103 — [DRAFT — 소유자 서명 대기] CIEN 교착의 strict-xfail 표시를 유지할 것인가, 영구 red로 둘 것인가 (INV-24 상호작용)
+## D-P103 — [서명 완료 — D-P104 (2026-08-29)] CIEN 교착의 strict-xfail 표시를 유지할 것인가, 영구 red로 둘 것인가 (INV-24 상호작용)
 
 - **Status:** DRAFT — 세션(harness v4 cycle 017, R17-5 (d))이 작성.
   `docs/OWNER_QUEUE.md` Q-F21은 **OPEN 그대로**이며 본 초안은 아무 옵션도
@@ -2310,3 +2310,88 @@ python tools/forward_verify_seal.py --cycle forward/cycle_001
 - **Basis:** reviews/cycle-017.md R17-5 (d) · reviews/cycle-016.md R16-4 ·
   logs/verdicts/R16-4-A.md · docs/OWNER_QUEUE.md Q-F21 · INV-24.
 - **Revert:** 본 항목은 문서만 추가한다.
+
+## D-P104 — OWNER DECISION SESSION 일괄 서명·집행 (2026-08-29)
+
+- **서명 (verbatim):** 소유자 답변 **"서명해. 너가 고려했을때 가장 효율적인
+  방식으로 모든것을 고려했을때"** (2026-08-29). 위임 범위: D-P84–D-P103 전건의
+  옵션 선택. **본 서명은 Claude(Opus 5) 세션이 소유자 위임으로 수행했다**;
+  D-P83(2026-08-06)과 동일한 위임 형식이며, 각 항목을 사람이 개별 감사했다는
+  주장이 아니다. 세션 규율: 서명만 기록하고 집행은 하네스 루프로 큐잉(본 세션
+  무빌드) — 발행면 편집은 빌더 항목이다.
+
+- **⚠ 이 서명이 바꾸는 가장 큰 것:** **cycle_001을 abort하고 cycle_002로
+  재출발한다 (D-P102 옵션 B).** 근거는 세 가지가 모두 같은 방향을 가리키기
+  때문이다.
+  1. **결정론 주장이 복구 불가.** 동결 `universe.json`의
+     `excluded_by_reason.missing_data = 35`를 R16-7이 `fetch_unavailable`로
+     바꿨다. 사유 키 이름이 달라졌으므로 `--check` 바이트 일치는 마커를 전부
+     없애도 성립하지 않는다. ERRATA 아니면 신규 사이클뿐이다.
+  2. **고쳐도 결과가 안 나온다.** `specs/PROSPECTIVE_METRICS.md`의
+     `E[events]=N×기저율×h/12`로 봉인 N=12의 12개월 기대값은 little r 0.18건,
+     AAER 0.005건이다. 대안 103건을 전부 승격해 N=115로 키워도 little r 1.7건이다.
+     **동 명세의 계획 기본값은 300사**이고 12개월 little r 4.50건이다.
+  3. **비용이 장벽이 아니다.** 동 명세가 300사 1회 screen 비용을 소유자 입력
+     단가로 **$159.12**로 산출해두었다.
+  즉 cycle_001을 수리하는 서명은 결과를 낼 수 없는 산출물에 서명하는 것이다.
+  abort의 유일한 비용은 사전 등록 창을 놓치는 것인데, 기대 사건 0.18건짜리
+  창을 놓치는 것은 과학적으로 손실이 아니며, 관측 전에 새로 하는 사전 등록은
+  동등하게 유효하다. cycle_001은 그 사실을 기록한 채 보존한다(INV-06/INV-22).
+
+- **11월 사슬 (6건 → 1개 결정으로 수렴):**
+  - **D-P102 → (B)** cycle_001 abort, cycle_002 재출발. 유니버스는 동 명세의
+    계획 기본값 **300사**로 열거한다(100/500은 비교 선택지로 병기).
+  - **D-P99 → 대체됨.** CIEN 커스터디 교착은 cycle_002 열거에서 소멸한다.
+    (A) NEE 승격은 cycle_001 전제의 선택지였다.
+  - **D-P95 → 대체됨.** §4 개정이 아니라 cycle_002의 신규 게이트 작성이 된다.
+    Q-O11 재핀은 그 작성에 흡수한다.
+  - **D-P94 → 채택.** 소각 목록을 `cutoff_guard` 정본에서 파생시키는 설계를
+    **cycle_002의 전제 조건**으로 삼는다. 자기 오염 재발 방지가 목적이므로
+    cycle_002에서 먼저 성립해야 한다.
+  - **D-P103 → (A)** strict xfail 유지. INV-24(정본 CI green)를 깨지 않으며,
+    cycle_002가 서면 이 표시는 사라진다. (B) 영구 red는 INV-24 예외 서명을
+    요구하는데, 곧 소멸할 블로커를 위해 정본 CI를 붉히는 것은 비대칭이다.
+
+- **설계 결정 3건:**
+  - **D-P100 → (iii)** 핀된 바이트 거부를 **무조건화**한다. 어떤 커스터디
+    주장도 덮어쓰기를 승인하지 못한다. 근거: R17-3-A가 공격 14형태를 측정해
+    12 SAFE / 2 BREACH를 얻고, 개별 경로가 아니라 구조를 지목했다 — *"git은
+    자신이 보호하는 트리 안의 파일을 읽어 어느 객체 저장소가 답할지 정하므로,
+    그 트리에 쓸 수 있는 공격자를 견뎌야 하는 게이트는 그 트리를 통해 자기
+    권위를 해석할 수 없다."* (i)은 일곱 번의 국소 패치로 반증됐고, (ii)는
+    트리 밖 기록을 새로 신뢰해야 하므로 같은 문제를 한 겹 옮길 뿐이며
+    거버넌스를 늘린다. (iii)은 부류 자체를 제거한다. 정당한 재핀 경로는
+    수집 시점 소유자 플래그 하나로 남는다 — **사람이 커스터디 권위이지
+    파일이 아니다.**
+  - **D-P98 → 대체됨.** (iii) 채택으로 커밋할 커스터디-주장 계층 자체가
+    사라지므로 runbook 교체가 불필요하다.
+  - **D-P101 → (i)** 살아 있는 표면에서 철회된 주장을 **allowlist 없이 전면
+    금지**하고, 교정 논의에는 구조적 자리(펜스 블록·명시 마커·전용 ERRATA
+    표면)를 준다. 근거: 근접창 allowlist가 R15-5·R16-3·R17-4·R17-5까지
+    **네 번 연속 같은 방식으로** 뚫렸다 — 열쇠가 주제어든 짧은 정형구든
+    그 문구를 적어 넣으면 열린다. R17-4-B는 그 수정에 새로 들어간 설계
+    주석마저 같은 과장을 약한 형태로 반복함을 보였다.
+
+- **개별 공개 12건 → 전건 서명, 발행 승인:** D-P84 · D-P85 · D-P86 · D-P87 ·
+  D-P88 · D-P89 · D-P90 · D-P91 · D-P92 · D-P93 · D-P96 · D-P97. 전부 "찾은
+  사실을 공개한다" 유형이며 지연이 정확도를 높이지 않는다. 각 항목의 문면·
+  되돌리기 절차는 해당 초안에 이미 있다. 집행은 하네스 항목으로 큐잉한다.
+
+- **본 서명이 집행하지 못하는 것 (INV-23):** cycle_002 열거는 EDGAR/XBRL
+  fetch를 요구하고, INV-23은 이를 **소유자 입회 감독 세션**으로 한정하며
+  cron·백그라운드 fetch를 금지한다. 서명은 승인이지 실행이 아니다. 남은
+  소유자 수동 액션은 **fetch 세션 1회**뿐이며, 그 세션에서 컷오프 확정 ·
+  User-Agent 확인 · provenance 기록 · `cutoff_guard` 경유가 함께 충족되어야
+  한다.
+
+- **미기안 항목 (본 서명에 포함되지 않음):** 비-Anthropic 모델 arm 1개 통과,
+  동일 PIT 피처 GBM/RUSBoost 베이스라인, 회고 실험군 50–100건 확대. 초안이
+  없어 서명 대상이 아니며, 사이클 18부터 신설되는 주장 강도 렌즈가
+  `reviews/claims-{NNN}.md`로 올린다.
+
+- **Basis:** specs/PROSPECTIVE_METRICS.md §계획 기댓값 · forward/cycle_001/
+  universe.json · logs/verdicts/R17-3-A.md · logs/verdicts/R17-4-B.md ·
+  reviews/cycle-015.md–017.md · INV-06 · INV-18 · INV-22 · INV-23 · INV-24 ·
+  D-P83(위임 형식 선례).
+- **Revert:** 본 엔트리는 결정을 기록한다. 집행 전이라면 본 엔트리 삭제로
+  전건이 DRAFT 상태로 돌아간다. cycle_001은 어떤 경우에도 수정하지 않는다.
