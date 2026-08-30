@@ -236,12 +236,49 @@ IMPOSSIBLE_TERM = re.compile(r"impossible", re.I)
 #     더는 주장하지 않는다고 말하는 형태 — 만 허용한다. 주제어 단독으로는
 #     열리지 않으므로, 철회된 문장을 재단언하면서 교정 어휘를 곁들이는
 #     경로가 닫힌다.
-MEMO_ALLOW = re.compile(
-    r"(wording|claim|phrase|sentence|statement|문언|문구|주장|표현)"
-    r"[^.\n]{0,80}\b(was|were|is|are|has\s+been|have\s+been)\s+retracted"
-    r"|\b(retracted|withdrew|withdrawn)\s+(this|that|the\s+above)\b"
-    r"|철회(되었|된|한|했|합니다|한다)"
-    r"|no\s+longer\s+(claim|assert|state|say)", re.I)
+#     D-P101 (i) — 서명 완료 (D-P104). 근접창 allowlist는 **삭제됐다**.
+#     네 번(R15-5·R16-3·R17-4·R17-5) 같은 방식으로 뚫렸고, 근본 원인은 열쇠의
+#     내용이 아니라 열쇠가 **문장 안에** 있었다는 것이다: 창 안에 그 문구를
+#     함께 적으면 열리므로, 철회된 주장을 다시 단언하는 바로 그 방향으로
+#     느슨했다. 열쇠를 또 옮기는 대신 자물쇠를 없앤다.
+#
+#     교정 논의는 사라지지 않고 **구조적 자리**로 간다 (아래
+#     structural_quote_spans): 펜스 블록, 명시 마커 구역, 그리고 전용 ERRATA
+#     표면. 차이가 요점이다 — 문장에 무엇을 쓰든 판정은 열리지 않고, 열려면
+#     문서의 구조를 눈에 보이게 바꿔야 한다. 구역은 셀 수 있으므로 늘어나면
+#     드러난다.
+RETRACTION_MARKER_OPEN = re.compile(r"^<!--\s*RETRACTED-QUOTE\s*-->\s*$", re.M)
+RETRACTION_MARKER_CLOSE = re.compile(r"^<!--\s*/RETRACTED-QUOTE\s*-->\s*$", re.M)
+CODE_FENCE = re.compile(r"^```", re.M)
+# 전용 ERRATA 표면 — 철회 사실의 정본 자리. 살아 있는 주장 표면이 아니다.
+ERRATA_SURFACE = "ERRATA.md"
+
+
+def structural_quote_spans(text: str) -> list[tuple[int, int]]:
+    """철회 문언을 **인용**할 수 있는 자리의 문자 구간 (D-P101 i).
+
+    두 가지뿐이고, 둘 다 위치로 결정된다 — 문장 내용은 아무 영향도 주지 않는다:
+      - 펜스 코드 블록 (``` … ```): 인용이지 단언이 아니다.
+      - 명시 마커 구역 (<!-- RETRACTED-QUOTE --> … <!-- /RETRACTED-QUOTE -->).
+
+    닫히지 않은 여는 마커·펜스는 문서 끝까지 덮지 **않는다** — 구간을 열어 둔
+    채 재단언을 뒤에 붙이는 것이 이 설계에서 가능한 유일한 우회이므로,
+    짝이 맞지 않는 여는 표시는 구간을 만들지 못한다 (fail-closed)."""
+    spans: list[tuple[int, int]] = []
+    fences = [m.start() for m in CODE_FENCE.finditer(text)]
+    for i in range(0, len(fences) - 1, 2):
+        spans.append((fences[i], fences[i + 1]))
+    opens = [m.end() for m in RETRACTION_MARKER_OPEN.finditer(text)]
+    closes = [m.start() for m in RETRACTION_MARKER_CLOSE.finditer(text)]
+    for start in opens:
+        after = [c for c in closes if c > start]
+        if after:
+            spans.append((start, after[0]))
+    return spans
+
+
+def in_structural_quote(spans: list[tuple[int, int]], pos: int) -> bool:
+    return any(start <= pos < end for start, end in spans)
 
 
 # (J) D100 (RISK_SCORE_SEMANTICS §4): 서수 점수의 확률화 서술 금지.
@@ -443,20 +480,27 @@ def lint_doc(path):
             viol.append((ln, f"(G) 교란 프레임+lower bound/하한 결합 서술 금지 (W3): "
                              f"{lines[ln-1].strip()[:70]}"))
 
-    # (M) 철회된 "암기 불가능" 문언의 재유입 (R15-5) — 두 층, 같은 줄은 1건
+    # (M) 철회된 "암기 불가능" 문언의 재유입 (R15-5) — 두 층, 같은 줄은 1건.
+    #     D-P101 (i): 근접창 allowlist 없음. 예외는 구조적 자리 하나뿐이고
+    #     그 판정은 **위치**로만 이뤄진다 (structural_quote_spans).
     seen_m = set()
+    quotes = structural_quote_spans(text)
     for m in MEMO_RETRACTED_PHRASE.finditer(text):
-        win = text[max(0, m.start() - 160):m.end() + 160]
-        if MEMO_ALLOW.search(win):
+        if in_structural_quote(quotes, m.start()):
             continue
         ln = text[:m.start()].count("\n") + 1
         seen_m.add(ln)
         viol.append((ln, "(M) 철회 문언 재유입 금지 (D-P83/PKT-R2 — 서명된 "
-                         f"교정 문언은 선언 컷오프 + 실측 비인지): {lines[ln-1].strip()[:70]}"))
+                         "교정 문언은 선언 컷오프 + 실측 비인지). 철회 사실을 "
+                         "서술하려면 문장을 고치지 말고 구조적 자리에 두라: "
+                         "```펜스 블록```, <!-- RETRACTED-QUOTE --> 구역, "
+                         f"또는 {ERRATA_SURFACE} (D-P101 i): "
+                         f"{lines[ln-1].strip()[:70]}"))
     if path in LIVE_CLAIM_DOCS:
         for m in MEMO_TERM.finditer(text):
             win = text[max(0, m.start() - 120):m.end() + 120]
-            if not IMPOSSIBLE_TERM.search(win) or MEMO_ALLOW.search(win):
+            if not IMPOSSIBLE_TERM.search(win) or in_structural_quote(quotes,
+                                                                     m.start()):
                 continue
             ln = text[:m.start()].count("\n") + 1
             if ln in seen_m:

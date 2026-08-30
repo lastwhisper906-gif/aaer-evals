@@ -123,21 +123,71 @@ def test_retracted_claim_cannot_be_reasserted_alongside_corrective_vocabulary(
     assert [msg for _, msg in viol if "(M)" in msg], (rel, viol)
 
 
-def test_corrective_context_is_allowlisted(monkeypatch, tmp_path):
-    """교정 문맥에서 철회 문구를 **인용**하는 것은 허용된다 — 그러지 않으면
-    철회 사실 자체를 서술할 수 없다 (규칙 (G)의 allowlist와 같은 구조).
+# ── D-P101 (i): 교정 논의의 자리는 문장이 아니라 문서 구조다 ────────────────
+# 종전 테스트(test_corrective_context_is_allowlisted)는 CORRECTIVE_SENTENCE가
+# **산문 그대로** 통과할 것을 고정했다. 서명된 결정이 그 성질을 폐기했으므로
+# 테스트는 삭제가 아니라 새 성질로 **교체**된다: 같은 문장이 산문에서는 red이고
+# 구조적 자리 안에서는 pass다. 네 번 뚫린 자리가 "문장에 무엇을 적었는가"였기
+# 때문에, 이제 판정은 문장을 읽지 않는다.
 
-    R16-3(d): 종전에는 단언이 전부 부정형(`assert not …`)이라 규칙 (M) 자체를
-    지워도 green이었다 — 아무것도 고정하지 않았다. 같은 파일·같은 헬퍼로 양성
-    대조를 함께 건다: 교정 틀 없이 같은 문구를 단언하면 반드시 red다."""
+RETRACTION_MARKER = "<!-- RETRACTED-QUOTE -->\n{}\n<!-- /RETRACTED-QUOTE -->"
+CODE_FENCE_QUOTE = "```text\n{}\n```"
+
+
+def test_corrective_prose_is_no_longer_exempt(monkeypatch, tmp_path):
+    """(a) 근접창 allowlist 삭제 — 교정 어휘를 갖춘 산문도 이제 red다."""
     viol = _mutated_copy(tmp_path, monkeypatch, "docs/README_DETAIL.md",
                          "\n" + CORRECTIVE_SENTENCE + "\n")
+    assert [msg for _, msg in viol if "(M)" in msg], viol
+
+
+@pytest.mark.parametrize("template", [RETRACTION_MARKER, CODE_FENCE_QUOTE],
+                         ids=["explicit_marker", "code_fence"])
+def test_a_structural_place_carries_the_retraction_instead(monkeypatch, tmp_path,
+                                                           template):
+    """(a) 철회 사실은 여전히 서술 가능하다 — 구조적 자리 안에서."""
+    viol = _mutated_copy(tmp_path, monkeypatch, "docs/README_DETAIL.md",
+                         "\n" + template.format(CORRECTIVE_SENTENCE) + "\n")
     assert not [msg for _, msg in viol if "(M)" in msg], viol
 
     bare = _mutated_copy(tmp_path, monkeypatch, "docs/README_DETAIL.md",
                          "\nHere memorization is impossible.\n")
     assert [msg for _, msg in bare if "(M)" in msg], (
-        "규칙 (M)이 살아 있지 않으면 위 allowlist 단언은 아무것도 고정하지 않는다")
+        "규칙 (M)이 살아 있지 않으면 위 단언은 아무것도 고정하지 않는다")
+
+
+# (b) 리뷰·verdict 어디에도 이름이 없는, 이 커밋에서 생성한 우회 시도.
+# 생성 규칙: 종전 allowlist의 **각 분기**를 하나씩 열쇠로 삼아 재단언과 한
+# 문장에 넣는다 + 마커를 흉내 내되 정확히 일치하지는 않게 쓴다.
+GENERATED_EVASIONS = [
+    ("README.md",
+     "문구가 철회되었습니다. 그래도 memorization is impossible 은 유지된다."),
+    ("METHOD.md",
+     "We no longer assert the following, which nevertheless holds: "
+     "memorization is impossible."),
+    ("RESULTS.md",
+     "Withdrawn the above — yet memory of these filings is impossible."),
+    ("docs/README_DETAIL.md",
+     "The phrase was retracted; memorization is impossible nonetheless."),
+    ("README.md",
+     "<!-- retracted quote -->\nmemorization is impossible\n<!-- /retracted quote -->"),
+]
+
+
+@pytest.mark.parametrize("rel,sentence", GENERATED_EVASIONS,
+                         ids=[str(i) for i in range(len(GENERATED_EVASIONS))])
+def test_generated_evasions_are_all_flagged(monkeypatch, tmp_path, rel, sentence):
+    viol = _mutated_copy(tmp_path, monkeypatch, rel, "\n" + sentence + "\n")
+    assert [msg for _, msg in viol if "(M)" in msg], (rel, viol)
+
+
+def test_an_unclosed_marker_does_not_exempt_the_rest_of_the_document(
+        monkeypatch, tmp_path):
+    """구간을 열어 둔 채 재단언을 뒤에 붙이는 것이 이 설계의 유일한 우회다."""
+    viol = _mutated_copy(
+        tmp_path, monkeypatch, "docs/README_DETAIL.md",
+        "\n<!-- RETRACTED-QUOTE -->\nHere memorization is impossible.\n")
+    assert [msg for _, msg in viol if "(M)" in msg], viol
 
 
 def test_readme_detail_is_linted_surface_and_g2_rule_bites(monkeypatch, tmp_path):
