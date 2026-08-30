@@ -2878,6 +2878,93 @@ def test_source_manifest_refuses_a_cutoff_other_than_the_frozen_one(cycle, monke
     assert (cycle / "source_manifest.json").read_bytes() == before
 
 
+# ── R18-1: 생산자는 자기 산출물의 부재 때문에 멈추지 않는다 ──────────────────
+# R17-1은 매니페스트 표면에 registry_path 같은 제외구를 주지 않았다. 그래서
+# source_manifest.json을 만드는 도구가 그 파일의 사전 존재를 요구했고, 새
+# 사이클에서는 무조건 rc 1이었다. main()의 두 호출부가 모두 `== 1`을 단언했기
+# 때문에 851-green 스위트에 보이지 않았다 — 아래 성공 경로 단언이 그 자리다.
+
+def _empty_canonical_log():
+    """정본 수집 로그를 빈 채로 만든다 (conftest가 꽂은 임시 루트 아래)."""
+    import fetch_xbrl_facts as fxf
+    log_path = fxf.fetch_log_path()
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    log_path.write_text("", encoding="utf-8")
+    return log_path
+
+
+def test_source_manifest_writes_into_a_cycle_that_has_no_manifest_yet(
+        cycle, monkeypatch, tmp_path):
+    """게이트 §4 (2): 산출물이 아직 없는 사이클에서 생산자가 rc 0으로 쓴다."""
+    import forward_source_manifest
+    (cycle / "source_manifest.json").unlink()
+    _empty_canonical_log()
+    fetch_dir = tmp_path / "fetch"
+    fetch_dir.mkdir()
+    monkeypatch.setattr(sys, "argv", ["x", "--fetch-dir", str(fetch_dir),
+                                      "--cycle", str(cycle)])
+    assert forward_source_manifest.main() == 0
+    written = fc.read_json(cycle / "source_manifest.json")
+    assert written["cutoff"] == fc.SCREENING_CUTOFF
+
+
+def test_both_producers_run_in_runbook_order_on_a_fresh_cycle(cycle, monkeypatch,
+                                                              tmp_path):
+    """게이트 §4 (2)→(3): 매니페스트가 없는 상태에서 두 생산자가 연달아 rc 0.
+
+    cycle_002가 시작되려면 이 순서가 통해야 한다. 두 단계를 한 테스트에 두는
+    이유는 (3)이 (2)의 산출물을 표면으로 **읽기** 때문이다 — (2)만 고쳐도
+    (3)이 막히면 런북은 여전히 진행하지 못한다."""
+    import build_evaluatee_inputs
+    import forward_source_manifest
+    (cycle / "source_manifest.json").unlink()
+    _empty_canonical_log()
+    fetch_dir = tmp_path / "fetch"
+    fetch_dir.mkdir()
+    monkeypatch.setattr(sys, "argv", ["x", "--fetch-dir", str(fetch_dir),
+                                      "--cycle", str(cycle)])
+    assert forward_source_manifest.main() == 0
+
+    out = tmp_path / "cases_forward_t.json"
+    monkeypatch.setattr(sys, "argv", ["x", "--universe",
+                                      str(cycle / "universe.json"),
+                                      "--out", str(out)])
+    assert build_evaluatee_inputs.main() == 0
+    assert {c["cutoff_date"] for c in
+            fc.read_json(out)["cases"]} == {fc.SCREENING_CUTOFF}
+
+
+def test_the_producer_optout_reaches_only_the_producers_own_output():
+    """제외구는 매니페스트 표면 하나에만 열린다 — 나머지는 ValueError.
+
+    이 단언이 R18-1의 폐쇄성이다: 전건에서 표면을 빼는 문이 하나 열렸으므로,
+    그 문으로 **무엇이** 나갈 수 있는지가 곧 이 변경이 약화시킨 범위다."""
+    assert fc.PRODUCIBLE_SURFACES == {fc.SURFACE_MANIFEST}
+    for surface in (fc.SURFACE_PROTOCOL, "evaluatee registry x.json", "PROTOCOL.md"):
+        with pytest.raises(ValueError):
+            fc.cutoff_declarations(Path("/nonexistent"), producing=[surface])
+
+
+def test_the_producers_pre_write_check_still_enforces_every_other_surface(cycle):
+    """매니페스트를 빼도 PROTOCOL 스냅샷은 전건에 남는다."""
+    _drop_protocol_line(cycle)
+    errs = fc.cutoff_agreement_errors(cycle, producing=[fc.SURFACE_MANIFEST])
+    assert any(fc.SURFACE_PROTOCOL in e for e in errs), errs
+
+
+@pytest.mark.parametrize("mutate", ["absent", "disagree"],
+                         ids=["manifest_key_deleted", "manifest_key_changed"])
+def test_consumers_still_see_the_manifest_surface_enforced(cycle, mutate):
+    """(c) 소비자의 전건에서는 아무것도 빠지지 않는다 — 부재도 불일치도 그대로.
+
+    R17-1이 산 성질(부재 = 불일치)이 생산자 제외구로 약해지지 않았음을
+    소비자 쪽에서 고정한다."""
+    _set_manifest_cutoff(cycle, None if mutate == "absent" else "2026-11-20")
+    assert any("컷오프" in e for e in forward_validate.validate(cycle))
+    assert any(fc.SURFACE_MANIFEST in e
+               for e in fc.cutoff_agreement_errors(cycle, _registry_of(cycle)))
+
+
 # ── R17-3: 어느 저장소가 커스터디를 답하는지 공격자가 고를 수 없다 ───────────
 # R16-2는 신뢰 근원을 "정본 로그의 HEAD 판"으로 옮겼지만, 조회를 `git -C <로그가
 # 사는 디렉토리>`로 했다. 위조 행을 덧붙일 수 있는 주체 — 이 익스플로잇이 필요로

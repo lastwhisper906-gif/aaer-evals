@@ -19,9 +19,10 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from forward_common import (REPO, SCREENING_CUTOFF, assert_subscription_only,
-                            cutoff_agreement_errors, is_sealed, parse_date,
-                            seal_residue_notice, sha256_file, write_json)
+from forward_common import (REPO, SCREENING_CUTOFF, SURFACE_MANIFEST,
+                            assert_subscription_only, cutoff_agreement_errors,
+                            is_sealed, parse_date, seal_residue_notice,
+                            sha256_file, write_json)
 
 
 def accessions_in_companyfacts(path: Path, cutoff: str) -> dict[str, str]:
@@ -123,7 +124,12 @@ def main() -> int:
     # 되비추지 않았으므로 임의 값이 그대로 봉인 대상 매니페스트에 실렸다. 이 사이클이
     # 이미 기재한 컷오프(PROTOCOL 스냅샷)와 이번 실행의 `--cutoff`를 함께 상수에
     # 대조하고, 어긋나면 **쓰기 전에** 멈춘다.
-    errs = cutoff_agreement_errors(cycle, extra=[("--cutoff (이번 실행)", args.cutoff)])
+    # R18-1: 이 도구가 **쓰는** 파일이 source_manifest.json이므로, 사전 검사의
+    # 전건에서는 그 표면 하나만 뺀다 (SURFACE_MANIFEST). 빼도 이번 실행이 쓸
+    # 값은 검사된다 — 아래 extra의 `--cutoff (이번 실행)`가 곧 파일에 실릴 바로
+    # 그 값이다. PROTOCOL 스냅샷은 그대로 전건에 남는다.
+    errs = cutoff_agreement_errors(cycle, extra=[("--cutoff (이번 실행)", args.cutoff)],
+                                   producing=[SURFACE_MANIFEST])
     if errs:
         print("FAIL — 스크리닝 컷오프 정합 위반 (봉인 대상 매니페스트를 쓰지 않는다):")
         for e in errs:
@@ -135,6 +141,15 @@ def main() -> int:
         "cutoff": args.cutoff,
         "sources": sources,
     })
+    # 쓴 뒤 매니페스트 표면까지 포함해 한 번 더 — 사전 검사에서 뺀 표면을
+    # 산출물 자체에 대고 되읽는다 (build_evaluatee_inputs의 레지스트리 재검사와
+    # 같은 형태). 이 호출에는 producing이 없다.
+    errs = cutoff_agreement_errors(cycle, extra=[("--cutoff (이번 실행)", args.cutoff)])
+    if errs:
+        print("FAIL — 작성된 source_manifest.json의 컷오프 정합 위반:")
+        for e in errs:
+            print(f"  {e}")
+        return 1
     print(f"OK — source_manifest.json: {len(sources)} accession 항목 "
           f"(cutoff {args.cutoff})")
     return 0

@@ -270,29 +270,57 @@ def _registry_cutoffs(registry_path: Path) -> list[tuple[str, str]]:
     return out
 
 
-def cutoff_declarations(cycle: Path, registry_path=None,
-                        extra=()) -> list[tuple[str, str]]:
+SURFACE_PROTOCOL = "PROTOCOL.md screening_cutoff"
+SURFACE_MANIFEST = "source_manifest.json cutoff"
+
+# R18-1: **생산자 자신의 산출물만** 그 생산자의 사전 검사에서 빠질 수 있다.
+# R17-1은 매니페스트 표면에 registry_path와 같은 제외구를 주지 않았고, 그래서
+# source_manifest.json을 **만드는** 도구가 그 파일이 이미 존재하기를 요구했다 —
+# 산출물이 있어야 산출물을 쓸 수 있다는 순환 전제이고, 새 사이클에서는 무조건
+# rc 1이다 (main()의 두 호출부가 모두 `== 1`을 단언해 851-green 스위트에
+# 보이지 않았다).
+#
+# 이 집합이 좁다는 것이 이 설계의 값이다. PROTOCOL 스냅샷과 레지스트리는 여기
+# 없으므로 어떤 호출자도 이 문으로 그 둘을 뺄 수 없고, 매니페스트를 뺄 수 있는
+# 것도 그 파일을 곧 쓸 호출 하나뿐이다. 부재=불일치 환원(CUTOFF_ABSENT)은
+# 조금도 약해지지 않는다 — 표면이 전건에 **있는** 모든 소비자에게 그대로다.
+PRODUCIBLE_SURFACES = frozenset({SURFACE_MANIFEST})
+
+
+def cutoff_declarations(cycle: Path, registry_path=None, extra=(),
+                        producing=()) -> list[tuple[str, str]]:
     """이 호출이 책임지는 (표면 이름, 기재된 컷오프) 전건 — 부재는 CUTOFF_ABSENT.
 
     registry_path가 None이면 레지스트리는 **이 호출의 표면 집합에 없다**는 뜻이다
     (예: 레지스트리가 아직 만들어지기 전인 매니페스트 생산자). 경로가 주어지면
-    그 경로의 부재는 다른 표면의 부재와 똑같이 CUTOFF_ABSENT다."""
-    decls = [("PROTOCOL.md screening_cutoff", _protocol_cutoff(cycle)),
-             ("source_manifest.json cutoff", _manifest_cutoff(cycle))]
+    그 경로의 부재는 다른 표면의 부재와 똑같이 CUTOFF_ABSENT다.
+
+    producing은 이 호출자가 **곧 쓸** 산출물의 표면 이름이다 (PRODUCIBLE_SURFACES
+    안에서만). 생산자의 **사전** 검사 전용이고, 쓴 뒤에는 producing 없이 다시
+    불러 실제로 디스크에 앉은 값을 같은 판정식에 태워야 한다."""
+    produced = frozenset(producing)
+    if not produced <= PRODUCIBLE_SURFACES:
+        raise ValueError(
+            f"producing에 알 수 없는 표면: {sorted(produced - PRODUCIBLE_SURFACES)} "
+            f"— 사전 검사에서 뺄 수 있는 표면은 {sorted(PRODUCIBLE_SURFACES)}뿐이다 "
+            "(R18-1: 생산자는 자기 산출물만 뺀다)")
+    decls = [(SURFACE_PROTOCOL, _protocol_cutoff(cycle))]
+    if SURFACE_MANIFEST not in produced:
+        decls.append((SURFACE_MANIFEST, _manifest_cutoff(cycle)))
     if registry_path is not None:
         decls += _registry_cutoffs(registry_path)
     return decls + list(extra)
 
 
-def cutoff_agreement_errors(cycle: Path, registry_path=None,
-                            extra=()) -> list[str]:
+def cutoff_agreement_errors(cycle: Path, registry_path=None, extra=(),
+                            producing=()) -> list[str]:
     """전 표면이 동결 상수 하나에서 파생됐는가 — 아니면 fail-closed 사유 목록.
 
     폐쇄성: 앵커가 **하나**이므로 "전건이 앵커와 같다"는 "전건이 서로 같고 앵커와도
     같다"와 동치다 — 두 표면 사이에만 생긴 불일치도 반드시 최소 한 표면을 앵커와
     어긋나게 만들기 때문에 같은 한 줄에 걸린다. 쌍 불일치는 사유를 읽는 사람을 위해
     별도 줄로 한 번 더 요약한다(판정을 더하지는 않는다)."""
-    decls = cutoff_declarations(cycle, registry_path, extra)
+    decls = cutoff_declarations(cycle, registry_path, extra, producing)
     errs = [f"컷오프 불일치/부재: {surface} = {value!r} ≠ 동결 스크리닝 컷오프 "
             f"{SCREENING_CUTOFF!r} — 기재 부재는 기재 불일치와 동일하게 차단된다 "
             "(INV-01, R17-1)"
