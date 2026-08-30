@@ -1362,6 +1362,81 @@ def test_burned_cik_is_excluded_as_cycle1_self_contamination(
     assert burned not in [r["cik"] for r in universe["alternates"]]
 
 
+# ── R18-2 / D-P94 집행조건 2: 소각 목록은 러너 정본에서 파생된다 ────────────
+# 손으로 적힌 네 파일과 `cutoff_guard.TRUSTED_CASE_FILES` 사이의 드리프트가
+# CIENA를 T₀ 열거에서 살려 fw001-r08로 봉인시켰다. 아래 테스트들이 잠그는 것은
+# 목록의 **내용**이 아니라 두 목록의 관계다 — 내용을 잠그면 정본이 자랄 때
+# 테스트가 같이 손으로 자라야 하고, 그러면 드리프트가 되돌아온다.
+
+def _cutoff_guard():
+    """러너 정본 모듈 — forward_enumerate가 쓰는 것과 같은 경로 삽입으로 연다."""
+    sys.path.insert(0, str(fc.REPO / "pipeline"))
+    import cutoff_guard
+    return cutoff_guard
+
+
+def _canon(monkeypatch, names):
+    monkeypatch.setattr(_cutoff_guard(), "TRUSTED_CASE_FILES", tuple(names))
+
+
+_BURN_DERIVATION_SHAPES = {
+    # 정본에 케이스 파일이 하나 더 들어온다 — 두 번째 편집 없이 소각된다
+    "canon_gains_a_case_file":
+        (("cases.json", "cases_new_tier.json"),
+         ("cases.json", "cases_new_tier.json")),
+    # 정본에서 빠지면 소각 목록도 함께 줄어든다 (한 방향 잠금이 아니다)
+    "canon_loses_a_case_file":
+        (("cases.json",), ("cases.json",)),
+    # forward 사이클 레지스트리만 제외된다 — 서명된 유일한 예외
+    "forward_registry_stays_out":
+        (("cases.json", "cases_forward_002.json"), ("cases.json",)),
+    # 접두가 아니라 부분 문자열인 이름은 제외 대상이 아니다
+    "forward_prefix_is_a_prefix_not_a_substring":
+        (("cases_v3_cases_forward_x.json",), ("cases_v3_cases_forward_x.json",)),
+}
+
+
+@pytest.mark.parametrize("shape", sorted(_BURN_DERIVATION_SHAPES),
+                         ids=sorted(_BURN_DERIVATION_SHAPES))
+def test_burn_list_follows_the_canon(enumerate_snap, monkeypatch, shape):
+    fe, _snap = enumerate_snap
+    canon, expected = _BURN_DERIVATION_SHAPES[shape]
+    _canon(monkeypatch, canon)
+    assert fe.burn_list_files() == expected
+
+
+def test_burn_list_is_exactly_the_canon_minus_forward_registries(enumerate_snap):
+    """드리프트 잠금 — 손으로 적은 목록을 되살리면 이 단언이 붉어진다.
+
+    기대값을 정본에서 **다시 파생**하므로, 이 테스트는 목록의 길이나 원소를
+    고정하지 않는다: 정본이 자라면 함께 자라고, 구현이 정본에서 떨어져 나오면
+    그때만 붉어진다 (R7-10 교차 대조 관용구)."""
+    fe, _snap = enumerate_snap
+    assert fe.burn_list_files() == tuple(
+        f for f in _cutoff_guard().TRUSTED_CASE_FILES
+        if not f.startswith("cases_forward_"))
+    assert "cases_v2.json" in fe.burn_list_files()   # 드리프트가 만든 그 구멍
+
+
+def test_a_company_entering_the_canon_is_burned_with_no_second_edit(
+        enumerate_snap, monkeypatch, tmp_path):
+    """(a) 정본에 파일 하나를 넣으면 그 파일의 CIK가 소각 집합에 나타난다."""
+    fe, _snap = enumerate_snap
+    evaluatee = tmp_path / "data/evaluatee"
+    evaluatee.mkdir(parents=True)
+    fc.write_json(evaluatee / "cases_new_tier.json",
+                  {"cases": [{"cik": "936395"}]})
+    monkeypatch.setattr(fe, "REPO", tmp_path)
+    _canon(monkeypatch, ("cases_new_tier.json",))
+    assert fe.cycle1_ciks() == {"0000936395"}
+
+
+def test_the_ciena_cik_is_burned_now_that_the_list_is_derived(enumerate_snap):
+    """D-P94의 사실관계 자체를 고정한다 — 소각 목록이 실제로 CIENA를 잡는다."""
+    fe, _snap = enumerate_snap
+    assert "0000936395" in fe.cycle1_ciks()
+
+
 def test_bucket_ranking_is_float_descending_then_cik_ascending(
         enumerate_snap, tmp_path, monkeypatch):
     """§3: 버킷 안 정렬은 float 내림차순, 동률은 CIK 오름차순.

@@ -98,11 +98,35 @@ def browse_ciks(sic: str, offline: bool) -> list[tuple[str, str]]:
     return out
 
 
+# D-P94 집행조건 2 (서명 완료 — D-P104): 소각 목록은 러너 정본에서 **파생**한다.
+# 종전에는 네 파일이 여기 손으로 적혀 있었고, 러너 정본
+# `pipeline/cutoff_guard.TRUSTED_CASE_FILES`에는 `cases_v2.json`이 더 있었다.
+# 그 한 파일의 드리프트가 case_36(CIENA, CIK 0000936395 — 2026-07-07 채점되어
+# 게시 wave-2 통계에 들어간 회사)을 T₀ 열거에서 살려 두었고, fw001-r08로
+# 선정·GATE_PIN 동결됐다: docs/UNIVERSE_SELECTION.md §2-2의 문서화된 위반이자
+# 봉인 레코드 12건 중 1건. 정본에 케이스 파일이 하나 더 들어오면 이 목록은
+# **두 번째 편집 없이** 함께 자란다.
+FORWARD_REGISTRY_PREFIX = "cases_forward_"
+
+
+def burn_list_files() -> tuple[str, ...]:
+    """소각 대상 케이스 파일 — cutoff_guard 정본에서 파생 (D-P94).
+
+    forward 사이클 레지스트리(`cases_forward_*`)만 뺀다. 서명된 제외 사유:
+    `cycle1_ciks()`는 동결 universe.json의 byte-identity 재현 경로이므로, 그
+    사이클 자신의 레지스트리를 소각 입력으로 넣으면 열거가 자기 산출물을 읽는
+    자기참조가 된다 (tools/test_forward_enumerate_offline.py의 byte-identity 핀).
+    """
+    sys.path.insert(0, str(REPO / "pipeline"))
+    import cutoff_guard  # noqa: PLC0415 — 지연 import (tools → pipeline 단방향)
+    return tuple(f for f in cutoff_guard.TRUSTED_CASE_FILES
+                 if not f.startswith(FORWARD_REGISTRY_PREFIX))
+
+
 def cycle1_ciks() -> set[str]:
     """자기 오염 제외 (§2-2): Cycle-1 케이스 세트 전건의 CIK."""
     ciks = set()
-    for f in ["cases.json", "cases_wave2.json", "cases_holdout.json",
-              "cases_holdout_controls.json"]:
+    for f in burn_list_files():
         p = REPO / "data/evaluatee" / f
         if p.exists():
             for c in read_json(p).get("cases", []):
