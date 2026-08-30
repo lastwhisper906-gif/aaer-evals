@@ -2742,6 +2742,74 @@ def test_seal_owner_commands_write_and_stage_blindness_manifest(cycle, monkeypat
                for ln in steps[:push_at]), block
 
 
+# ── R18-7: 판정 컷 하나, 그리고 그것을 실제로 묶는 경계 픽스처 ──────────────
+# 생산자(forward_assemble.derive_state)와 검증자(forward_validate.expected_state)
+# 가 같은 규칙을 각각 타이핑하고 있었다. 실측: 생산자 쪽 `>= 70` → `> 70`은
+# 1 red인데 검증자 쪽 같은 변이는 **0 red**였다 — 검증자의 일은 생산자를 검사하는
+# 것인데 그 방법이 생산자의 규칙을 다시 적는 것이었으므로, 두 사본이 갈라지는
+# 순간 검사 자체가 사라진다. 게다가 forward 픽스처의 점수는 전부 45·80·90·72·
+# 31–42라 39/40/69/70/100 어디에도 앉지 않는다: 경계는 아무도 밟지 않았다.
+
+_STATE_TABLE = [
+    (0, "sufficient", "no_flag"), (39, "sufficient", "no_flag"),
+    (40, "sufficient", "review"), (69, "sufficient", "review"),
+    (70, "sufficient", "flag"), (71, "sufficient", "flag"),
+    (99, "sufficient", "flag"), (100, "sufficient", "flag"),
+    (0, "partial", "no_flag"), (39, "partial", "no_flag"),
+    (40, "partial", "review"), (69, "partial", "review"),
+    (70, "partial", "flag"), (71, "partial", "flag"),
+    (99, "partial", "flag"), (100, "partial", "flag"),
+    (0, "insufficient", "abstain"), (39, "insufficient", "abstain"),
+    (40, "insufficient", "abstain"), (69, "insufficient", "abstain"),
+    (70, "insufficient", "abstain"), (71, "insufficient", "abstain"),
+    (99, "insufficient", "abstain"), (100, "insufficient", "abstain"),
+]
+
+
+@pytest.mark.parametrize("score,suff,state", _STATE_TABLE,
+                         ids=[f"{s}-{f}" for s, f, _ in _STATE_TABLE])
+def test_assemble_and_validate_agree_with_the_spec_table(score, suff, state):
+    """(b) 경계 8점 × 충분성 3종 — 생산자 == 검증자 == 명세표."""
+    assert forward_assemble.derive_state(score, suff) == state
+    assert forward_validate.expected_state(score, suff) == state
+
+
+def test_the_decision_cut_has_one_implementation():
+    """(a) 사본이 둘이면 한쪽만 변이시켜 갈라 놓을 수 있다 — 같은 객체여야 한다."""
+    assert forward_validate.expected_state is forward_assemble.derive_state
+
+
+def test_score_range_is_derived_from_the_schema_not_restated():
+    """(c) 두 끝점 모두 스키마에서 온다."""
+    schema = fc.read_json(fc.REPO / "schemas/llm_output.json")
+    declared = schema["$defs"]["model_output"]["properties"][
+        "misstatement_probability"]
+    assert forward_validate.SCORE_MIN == declared["minimum"]
+    assert forward_validate.SCORE_MAX == declared["maximum"]
+
+
+@pytest.mark.parametrize("score", [-1, 101])
+def test_scores_outside_the_schema_range_are_refused(cycle, score):
+    """양성 대조 — 두 끝점 **바깥**은 거부된다 (범위가 장식이 아님)."""
+    scores = fc.read_json(cycle / "scores.json")
+    scores["records"][0]["misstatement_risk_score"] = score
+    fc.write_json(cycle / "scores.json", scores)
+    assert any("misstatement_risk_score" in e
+               for e in forward_validate.validate(cycle))
+
+
+@pytest.mark.parametrize("score", [0, 100])
+def test_both_endpoints_of_the_schema_range_are_accepted(cycle, score):
+    """경계 자체는 유효하다 — `<= 100`을 `< 100`으로 좁히면 여기서 걸린다."""
+    scores = fc.read_json(cycle / "scores.json")
+    scores["records"][0]["misstatement_risk_score"] = score
+    scores["records"][0]["decision_state"] = forward_assemble.derive_state(
+        score, scores["records"][0]["evidence_sufficiency"])
+    fc.write_json(cycle / "scores.json", scores)
+    assert not [e for e in forward_validate.validate(cycle)
+                if "misstatement_risk_score" in e]
+
+
 def test_seal_chain_lints_the_publication_surface_before_push(cycle, monkeypatch):
     """R18-5 (c): SEAL_RECORD.md는 이 도구가 쓰는 순간 ordinal_claim_docs()의
     forward/**/*.md 집합에 들어간다 — 그런데 소유자 사슬은 그 표면을 읽는

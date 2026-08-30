@@ -12,6 +12,7 @@ source_manifest + company.cik ↔ universe 교차 대조 ⑥ 봉인되는 자유
 네트워크 0 · 모델 호출 0. 위반 시 exit 1.
 """
 import argparse
+import json
 import re
 import sys
 from pathlib import Path
@@ -57,10 +58,41 @@ def _is_sha256(value) -> bool:
     return isinstance(value, str) and re.fullmatch(r"[0-9a-f]{64}", value) is not None
 
 
-def expected_state(score: int, sufficiency: str) -> str:
-    if sufficiency == "insufficient":
-        return "abstain"
-    return "flag" if score >= 70 else ("review" if score >= 40 else "no_flag")
+# R18-7: 판정 컷은 **한 곳**에서만 산다. 종전에는 생산자
+# (forward_assemble.derive_state)와 그것을 검사하는 validate가 같은 규칙을 각각
+# 타이핑했고, 검증자 쪽 사본을 `>= 70` → `> 70`으로 바꿔도 0 red였다 (생산자
+# 쪽은 1 red). 검증자의 일은 생산자를 검사하는 것인데, 그 방법이 생산자의
+# 규칙을 다시 적는 것이면 두 사본이 갈라지는 순간 검사가 사라진다.
+expected_state = forward_assemble.derive_state
+
+# 점수 범위는 스키마에서 **파생**한다 — 두 번째 사본을 만들지 않는다.
+# 스키마 안에서 이 속성이 어느 깊이에 선언돼 있는지에 기대지 않으려고 문서를
+# 훑는다. 선언이 하나가 아니면 fail-closed: 0개면 파생할 근거가 없고, 2개면
+# 어느 쪽이 정본인지 이 코드가 고를 일이 아니다.
+def _score_bounds(schema_path: Path) -> tuple[int, int]:
+    doc = json.loads(schema_path.read_text(encoding="utf-8"))
+    found = []
+
+    def walk(node, key=None):
+        if isinstance(node, dict):
+            if key == "misstatement_probability" and "minimum" in node \
+                    and "maximum" in node:
+                found.append((node["minimum"], node["maximum"]))
+            for k, v in node.items():
+                walk(v, k)
+        elif isinstance(node, list):
+            for v in node:
+                walk(v, key)
+
+    walk(doc)
+    if len(found) != 1:
+        raise SystemExit(
+            f"FAIL — {schema_path.name}: misstatement_probability의 범위 선언이 "
+            f"{len(found)}개다 (정확히 1개여야 파생이 성립한다 — R18-7)")
+    return found[0]
+
+
+SCORE_MIN, SCORE_MAX = _score_bounds(REPO / "schemas/llm_output.json")
 
 
 def _cited_source_attested(acc: str, sources: list[dict]) -> bool:
@@ -292,8 +324,9 @@ def validate(cycle: Path, runs_dir: Path | None = None) -> list[str]:
                 continue
             scored += 1
             s = r.get("misstatement_risk_score")
-            if not isinstance(s, int) or not (0 <= s <= 100):
-                errs.append(f"{rid}: misstatement_risk_score 비정상 {s!r} (0–100 정수 서수)")
+            if not isinstance(s, int) or not (SCORE_MIN <= s <= SCORE_MAX):
+                errs.append(f"{rid}: misstatement_risk_score 비정상 {s!r} "
+                            f"({SCORE_MIN}–{SCORE_MAX} 정수 서수)")
                 continue
             suff = r.get("evidence_sufficiency")
             if suff not in SUFFICIENCY:
