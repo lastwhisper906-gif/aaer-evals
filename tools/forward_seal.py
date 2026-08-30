@@ -230,6 +230,12 @@ def main():
         # R15-3: 봉인된 사이클 디렉토리 자체의 재검증 — 제3자 클론이 실행할
         # 바로 그 명령을 push 전에 한 번 돌린다 (매니페스트 대비 추가·삭제·변조).
         f"python tools/forward_verify_seal.py --cycle {cycle_display} && \\\n"
+        # R18-5 (c): `ordinal_claim_docs()`는 forward/**/*.md를 훑는 유일한
+        # 린트이고, SEAL_RECORD.md는 이 도구가 쓰는 순간 그 집합에 들어간다 —
+        # 그런데 소유자 사슬은 push 전에 lint_publication을 한 번도 돌리지
+        # 않았다. 봉인 기록 안의 위반은 push 후 CI에서야 드러나고, 그때는
+        # INV-06/INV-22가 그 파일을 이미 수정 불가로 만든 뒤다.
+        f"python tools/lint_publication.py && \\\n"
         # R15-3: :210의 runs/ 청결 게이트를 사이클 디렉토리에도 건다 — 위
         # 검증이 통과한 디스크 상태와 커밋된 상태가 같아야 "검증한 것을
         # push한다"가 성립한다 (미추적 잔여물은 클론에 가지 않는다).

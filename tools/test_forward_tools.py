@@ -2742,6 +2742,24 @@ def test_seal_owner_commands_write_and_stage_blindness_manifest(cycle, monkeypat
                for ln in steps[:push_at]), block
 
 
+def test_seal_chain_lints_the_publication_surface_before_push(cycle, monkeypatch):
+    """R18-5 (c): SEAL_RECORD.md는 이 도구가 쓰는 순간 ordinal_claim_docs()의
+    forward/**/*.md 집합에 들어간다 — 그런데 소유자 사슬은 그 표면을 읽는
+    유일한 린트를 push 전에 한 번도 돌리지 않았다. 봉인 기록 안의 위반은
+    INV-06/INV-22가 그 파일을 수정 불가로 만든 **뒤에** CI에서야 드러난다."""
+    monkeypatch.setattr(sys, "argv", seal_argv(cycle))
+    assert forward_seal.main() == 0
+    block = (cycle / "SEAL_RECORD.md").read_text(
+        encoding="utf-8").split("```bash")[1].split("```")[0]
+    steps = [ln.strip() for ln in block.strip().splitlines() if ln.strip()]
+    push_at = next(i for i, ln in enumerate(steps) if ln.startswith("git push"))
+    lint_at = next((i for i, ln in enumerate(steps)
+                    if ln.startswith("python tools/lint_publication.py")), None)
+    assert lint_at is not None, block
+    assert lint_at < push_at, block
+    assert steps[lint_at].endswith("&& \\"), steps[lint_at]
+
+
 def test_late_evidence_file_is_caught_by_the_chains_own_verifier(
         cycle, monkeypatch, capsys):
     """R15-3 행동 leg: 봉인 후 evidence/에 떨어진 파일 하나가 무엇을 하는가.

@@ -141,7 +141,7 @@ _ALLOW_NEGATION = re.compile(r"not\s|no\s+longer|아니|아님|않", re.I)
 _ALLOW_TIER_REASSIGNMENT = re.compile(r"holdout|홀드아웃", re.I)
 
 
-def alternation_branches(pattern: str) -> list[str]:
+def alternation_branches(pattern: str, keep_empty: bool = False) -> list[str]:
     """정규식 소스의 **최상위** `|` 분기 — 괄호/문자클래스/이스케이프를 존중한다."""
     branches, buf, depth, in_class, escaped = [], [], 0, False, False
     for ch in pattern:
@@ -166,7 +166,12 @@ def alternation_branches(pattern: str) -> list[str]:
         else:
             buf.append(ch)
     branches.append("".join(buf))
-    return [b for b in branches if b]
+    # R18-5 (b): 기본값은 빈 분기를 버린다 — (G)의 적격성 판정은 실체 있는
+    # 분기만 본다. 그런데 **그 버림 자체가** 이 규칙들이 조용히 열린 방법이다:
+    # 정규식 앞에 `|` 하나를 붙이면 빈 대안이 생겨 전부 통과하는데, 분기 목록
+    # 에서는 사라지므로 어떤 검사도 그것을 보지 못한다. keep_empty=True는
+    # 공허성 검사가 버려지는 것까지 볼 수 있게 한다.
+    return branches if keep_empty else [b for b in branches if b]
 
 
 def allow_branch_literal(branch: str) -> str:
@@ -184,6 +189,22 @@ def allow_branch_literal(branch: str) -> str:
     if re.search(r"[\\^$.|?*+()\[\]{}]", s):
         raise ValueError(f"허용 분기가 너무 복잡하다: {branch!r} → {s!r}")
     return s
+
+
+def allow_branch_is_vacuous(branch: str) -> bool:
+    """이 분기 하나가 **아무 텍스트에나** 매칭하는가 — allowlist를 통째로 여는가.
+
+    R18-5 (b): (G)에 건 분기 형식 제약을, 디스패치되지 않아 남아 있던 두
+    allowlist((J)의 PROB_ALLOW, (K)의 CLAIM_ALLOW)에도 건다. 이 둘은 정규식
+    앞에 빈 대안 하나(`|…`)를 붙이는 것만으로 조용히 열렸다 — 규칙을 삭제한
+    것과 같은 효과인데 스위트는 초록이었다. 빈 분기와 `.*`류 전면 매칭 분기를
+    같은 자리에서 잡는다."""
+    if not branch.strip():
+        return True
+    try:
+        return bool(re.compile(branch).match(""))
+    except re.error:
+        return False
 
 
 def lower_bound_allow_branch_is_corrective(branch: str) -> bool:

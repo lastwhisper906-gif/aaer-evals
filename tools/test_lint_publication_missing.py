@@ -380,3 +380,157 @@ def test_rule_n_is_wired_into_the_linter_not_only_callable(monkeypatch, tmp_path
 def test_rule_n_wired_path_is_clean_on_the_real_tree():
     viols = [(p, m) for p, _, m in lp.check_ordinal_and_claims() if "(N)" in m]
     assert not viols, viols
+
+
+# ── R18-5: 열한 개 규칙에 양성 대조를 준다 ──────────────────────────────────
+# 측정된 사실: 아래 열한 규칙은 각각 정규식 하나를 무력화해도 스위트가 전부
+# 초록이었다. 같은 파일의 (G)/LOWER_BOUND_TERM은 19 red다 — 모듈이 도달
+# 불가능한 것이 아니라, cycle 15–17이 디스패치한 네 규칙에만 테스트가 있었다.
+# 규칙이 존재한다는 것과 규칙이 잠겨 있다는 것은 다른 사실이고, 11월 봉인
+# 표면을 지키는 것은 뒤쪽이다.
+
+PAD = "\n" + ("." * 200) + "\n"   # ±120자 창을 실제 문서 꼬리에서 떼어 놓는다
+
+
+def _plant(tmp_path, monkeypatch, rel, sentence):
+    return _mutated_copy(tmp_path, monkeypatch, rel, PAD + sentence + PAD)
+
+
+def _adverse_control_sentence():
+    """(C) 대조군 티커 + 부정 술어 — 티커는 실제 대조군 표에서 가져온다."""
+    return f"{sorted(lp.controls())[0]} overstated its reported revenue."
+
+
+LINT_DOC_CONTROLS = [
+    ("A", "README.md", "We report 0% FPR on this cohort."),
+    ("D", "METHOD.md", "The pooled figure is given here."),
+    ("E", "README.md", "The cross-model arm is summarised here."),
+]
+
+
+@pytest.mark.parametrize("rule,rel,sentence", LINT_DOC_CONTROLS,
+                         ids=[r for r, _, _ in LINT_DOC_CONTROLS])
+def test_lint_doc_rule_has_a_positive_control(monkeypatch, tmp_path, rule, rel,
+                                              sentence):
+    viol = _plant(tmp_path, monkeypatch, rel, sentence)
+    assert [m for _, m in viol if f"({rule})" in m], (rule, viol)
+
+
+def test_rule_c_has_a_positive_control(monkeypatch, tmp_path):
+    viol = _plant(tmp_path, monkeypatch, "README.md", _adverse_control_sentence())
+    assert [m for _, m in viol if "(C)" in m], viol
+
+
+ORDINAL_CONTROLS = [
+    ("J", "The case scored p=70 in the table."),
+    ("J", "This corresponds to a 70% probability of misstatement."),
+    ("K", "This is a validated fraud-detection system."),
+]
+
+
+@pytest.mark.parametrize("rule,sentence", ORDINAL_CONTROLS,
+                         ids=["J_int_score", "J_pct_prob", "K_unqualified"])
+def test_ordinal_and_claim_rule_has_a_positive_control(monkeypatch, tmp_path,
+                                                       rule, sentence):
+    doc = tmp_path / "README.md"
+    doc.write_text(PAD + sentence + PAD, encoding="utf-8")
+    monkeypatch.setattr(lp, "REPO", tmp_path)
+    monkeypatch.setattr(lp, "ORDINAL_DOCS", ["README.md"])
+    viols = lp.check_ordinal_and_claims()
+    assert [m for _, _, m in viols if f"({rule})" in m], (rule, viols)
+
+
+# (L)의 결과 언어는 대안이 여럿이다. 한 문장이 여러 대안에 동시에 걸리면
+# 그 문장은 어느 대안도 고정하지 못한다 — 실측으로, `\bAUC\b` 계열만 무력화한
+# 변이가 0 red였다(같은 문장의 `separation`이 대신 발화). 대안마다 그 대안
+# **하나만** 건드리는 문장을 쓴다.
+L_RESULT_LANGUAGE = [
+    ("auc", "The AUC is 0.83 for this cohort."),
+    ("separation", "The separation is clear."),
+    ("detection", "The detection held up."),
+    ("perm_p", "The perm p is small."),
+    ("fpr_ko", "오탐률은 낮았다."),
+]
+
+
+@pytest.mark.parametrize("label,sentence", L_RESULT_LANGUAGE,
+                         ids=[lbl for lbl, _ in L_RESULT_LANGUAGE])
+def test_rule_l_has_a_positive_control(monkeypatch, tmp_path, label, sentence):
+    """(L) 코호트 무명의 결과 언어 문단."""
+    doc = tmp_path / "README.md"
+    doc.write_text(f"# t\n\n{sentence}\n", encoding="utf-8")
+    monkeypatch.setattr(lp, "REPO", tmp_path)
+    monkeypatch.setattr(lp, "ORDINAL_DOCS", ["README.md"])
+    viols = lp.check_task_tier()
+    assert [m for _, _, m in viols if "(L)" in m], (label, viols)
+
+
+def _canon_tree(tmp_path, monkeypatch, readme_text=None, readme_ko_text=None):
+    for rel in ("analysis/results_stats.json", "analysis/wave2_results.json"):
+        dst = tmp_path / rel
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        dst.write_text((REAL_REPO / rel).read_text(encoding="utf-8"),
+                       encoding="utf-8")
+    for rel, override in (("README.md", readme_text),
+                          ("README.ko.md", readme_ko_text)):
+        text = (REAL_REPO / rel).read_text(encoding="utf-8")
+        (tmp_path / rel).write_text(override if override is not None else text,
+                                    encoding="utf-8")
+    monkeypatch.setattr(lp, "REPO", tmp_path)
+    monkeypatch.setattr(lp, "DOCS", ["README.md", "README.ko.md"])
+    return lp.check_canon()
+
+
+def test_canon_drift_has_a_positive_control(monkeypatch, tmp_path):
+    """정본 수치 하나가 README에서 사라지면 드리프트로 잡힌다."""
+    text = (REAL_REPO / "README.md").read_text(encoding="utf-8")
+    dropped = lp.canon()["wave2_auc"][0]
+    viols = _canon_tree(tmp_path, monkeypatch,
+                        readme_text=text.replace(dropped, "0.999"))
+    assert [m for _, _, m in viols if "canon drift" in m], viols
+
+
+def test_rule_h_has_a_positive_control(monkeypatch, tmp_path):
+    """(H) E1을 다루면서 GRDX·78 co-presence가 없는 README."""
+    text = (REAL_REPO / "README.md").read_text(encoding="utf-8")
+    viols = _canon_tree(tmp_path, monkeypatch,
+                        readme_text=text.replace("GRDX", "XXXX"))
+    assert [m for _, _, m in viols if "(H)" in m], viols
+
+
+def test_rule_i_has_a_positive_control(monkeypatch, tmp_path):
+    """(I) 3-arm delta 언급에 confound·draw-noise 단서가 없는 표면."""
+    doc = tmp_path / "README.md"
+    doc.parent.mkdir(parents=True, exist_ok=True)
+    doc.write_text("# t\n\nThe arm gap is +6.0 pp overall.\n", encoding="utf-8")
+    (tmp_path / "README.ko.md").write_text("# t\n", encoding="utf-8")
+    for rel in ("analysis/results_stats.json", "analysis/wave2_results.json"):
+        dst = tmp_path / rel
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        dst.write_text((REAL_REPO / rel).read_text(encoding="utf-8"),
+                       encoding="utf-8")
+    monkeypatch.setattr(lp, "REPO", tmp_path)
+    monkeypatch.setattr(lp, "DOCS", ["README.md"])
+    viols = lp.check_canon()
+    assert [m for _, _, m in viols if "(I)" in m], viols
+
+
+# ── R18-5 (b): allowlist는 빈 대안 하나로 조용히 열려서는 안 된다 ───────────
+# (G)에서 cycle 017이 건 제약을, 디스패치되지 않아 남아 있던 두 allowlist에
+# 같은 형태로 적용한다: 분기 목록에 빈 문자열 분기가 있으면 그 정규식은 모든
+# 것을 통과시키므로, 규칙이 사라진 것과 같은데 아무도 붉어지지 않는다.
+
+@pytest.mark.parametrize("name", ["PROB_ALLOW", "CLAIM_ALLOW"])
+def test_allow_regex_has_no_empty_branch(name):
+    branches = lp.alternation_branches(getattr(lp, name).pattern, keep_empty=True)
+    assert branches, name
+    assert all(b.strip() for b in branches), (name, branches)
+    assert not any(lp.allow_branch_is_vacuous(b) for b in branches), (name, branches)
+
+
+@pytest.mark.parametrize("name", ["PROB_ALLOW", "CLAIM_ALLOW"])
+def test_an_empty_alternative_is_detected_as_vacuous(name):
+    """빈 대안을 앞에 붙이는 것이 그 규칙을 여는 방법이었다."""
+    opened = "|" + getattr(lp, name).pattern
+    branches = lp.alternation_branches(opened, keep_empty=True)
+    assert any(lp.allow_branch_is_vacuous(b) for b in branches), branches
