@@ -125,6 +125,9 @@ recognition gate 3/3 비인지(폭로 미암기 실증, draw-1). **게이트 k=5
 50% → 21.9% → 0%)의 반감·소멸에도 독립 생존한다** — wave-1 p=**0.00114**(교란 프레임
 0.0021 우선 판독) · wave-2 p=**0.00116** · 홀드아웃은 recognition gate 3/3 비인지에서
 HUBG 탐지가 매칭 대조군을 상회하고 5-draw robust. ⇒ **분리는 암기로 설명되지 않는다**.
+단, 잔여 암기는 부분집합화로 **제거되지 않는다** — name-ID 플래그 케이스를 빼도
+wave-2 분리는 유지되나(6 vs 19, RESULTS 행 15) 그것은 하한 계기의 제외일 뿐이고,
+암기가 구조적으로 배제되는 유일한 층은 컷오프-후 홀드아웃이며 그 층은 N=3이다.
 **2차 gradient 관찰 (2축)** — *태스크-티어 주: TASK 1(waves)↔TASK 2(홀드아웃)
 병치는 암기 축 판독 전용 — 합산 성능 주장이 아니며 탐지 수도 합산하지 않는다*:
 name-ID 축은 50%→21.9%→0%로 반감·소멸하는 동안 AUC 0.824 [0.599, 0.983] →
@@ -152,6 +155,14 @@ wave-2 88.9% → 홀드아웃 0% — 암기 제거는 wave-2→홀드아웃 사�
 스크린은 이 표본에서 무분리. LLM 순위는 둘과 사실상 무상관(wave-1 ρ −0.075/−0.144;
 wave-2 0.337/0.265), 잔차 분리가 살아남는다 → 사전 커밋 R2 **비발동**. LLM은 기계
 공식의 재현이 아니다.
+
+**교차 티어 head-to-head (사전 등록 `specs/B1B2_CROSS_TIER.md`, 2026-09-04, RESULTS
+행 14)** — 동일 계산 가능 부분집합 위 짝 비교 ΔAUC = LLM − 스크린: wave-1 교란
+프레임 M +0.370 [0.042, 0.708] (A) · F +0.250 [−0.104, 0.594] (B); wave-2 M +0.231
+[0.000, 0.495] (B, 커버리지 62%) · F +0.303 [0.061, 0.591] (A, 커버리지 53%). 4셀 중
+2셀에서 LLM 우위, 2셀은 이 N에서 구별 불가 — 스크린 계산 가능 회사에 한정된 동일
+표본 비교이지 "LLM이 기존 방법보다 낫다"는 주장이 아니다. 홀드아웃은 per-case 전용.
+보고서: `analysis/out/b1b2_cross_tier/REPORT.md`.
 
 ## 채점·확정 상태
 
@@ -199,7 +210,7 @@ make verify-full     # 2계층 — 원시 코퍼스 재계산 추가 (~/aaer-dat
 
 <!-- BEGIN-GENERATED: repro-facts (refresh: make docs-refresh; CI: tools/lint_doc_counts.py) -->
 - data manifest: **538 files** (`data/manifests/aaer_data_manifest.json` · `file_count`)
-- pytest: **418 tests collected** (`pipeline tools scoring analysis`)
+- pytest: **425 tests collected** (`pipeline tools scoring analysis`)
 - `make verify-public` (zero external data):
   - `.venv/bin/python tools/reproduce_analysis.py`
   - `.venv/bin/python tools/lint_publication.py`
@@ -214,6 +225,7 @@ make verify-full     # 2계층 — 원시 코퍼스 재계산 추가 (~/aaer-dat
   - `.venv/bin/python analysis/stats.py`
   - `.venv/bin/python analysis/synthesis.py`
   - `.venv/bin/python analysis/calibration_wave2.py`
+  - `.venv/bin/python analysis/b1b2_screens_all_tiers.py`
   - `$(MAKE) verify-public`
 <!-- END-GENERATED: repro-facts -->
 

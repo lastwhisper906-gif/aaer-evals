@@ -1462,3 +1462,77 @@
 - **게이트:** 본 엔트리 커밋 직후 make verify-public 실측 → push → CI
   3.12 확인 (결과는 close-out 보고).
 - **Revert:** 항목별 커밋 revert + 본 엔트리 후속 정정 엔트리.
+
+## D-P105 — 외부 리뷰 C (2026-09-04) 인테이크 + B1/B2 교차 티어 head-to-head 사전 등록 (소유자 지시 집행, 비준 대기)
+- **Options:** (a) 리뷰 6항목을 verbatim 인테이크·트리아지하고, 신규 호출·신규
+  fetch 없이 계산 가능한 항목(공식 스크린 교차 티어 짝 비교 · 이름-식별 제외
+  민감도)은 사전 등록 → 계산 → 병행 게시로, 소유자 게이트 항목(교차 패밀리 arm ·
+  표본 확대 · 전향 사이클 · 스크린 커버리지 개선)은 OWNER_QUEUE 등재로 처리
+  (b) 인테이크만 하고 전 항목 소유자 대기 (c) 리뷰 요구대로 새 케이스 등록·타
+  모델 호출까지 세션이 집행.
+- **Choice:** (a). (c)는 INV-12(8 초과 확장 · GPT/Gemini 호출 경로 금지) ·
+  INV-18(서명 없는 스코프 변경) · INV-23(무인 fetch) 위반. (b)는 소유자
+  지시("모두 반영")에 미달.
+- **Basis:** 소유자 지시 2026-09-04 (verbatim: "내 git 에 pushed 되어있는 aaer
+  evals project 에 대한 피드백인데 이걸 잘 읽고 모두 반영해줘") ·
+  `.direction/feedback/EXT_FB_C_2026-09-04.md` · `specs/B1B2_CROSS_TIER.md`
+  (본 커밋 = freeze, INV-07: 코드·결과 커밋보다 선행) · ANALYSIS_PLAN §5
+  (5f4ca65) · INV-03 (b) · INV-06 병행 경로 · 미병합 브랜치 context-diet의
+  D-P104(fbf3414) "미기안 항목" 3건(비-Anthropic arm · 동일 PIT 피처 베이스라인 ·
+  회고 표본 확대)과 정합.
+- **번호 근거:** origin/main 최종 D-P83, 미병합 context-diet 최종 D-P104
+  (fbf3414, 2026-08-29) — 교차 브랜치 충돌 회피를 위해 D-P105부터 발번. Q-F도
+  같은 이유로 Q-F22부터 (context-diet에 Q-F20·Q-F21 존재).
+- **작성 환경:** 소유자 대화형 세션 (하네스 루프 아님 — 루프는 2026-09-02
+  소유자 정지 상태, 라이브 세션 0 실측). 기준 = origin/main dc7e396, 브랜치
+  `review-response/2026-09-04`. 로컬 main(37ac75b, 87 behind)은 INV-17에 따라
+  무접촉.
+- **보호 경로 공개:** specs/(.protected-paths:8) — 신규 파일 1건.
+- **Revert:** 본 엔트리 · `specs/B1B2_CROSS_TIER.md` ·
+  `.direction/feedback/EXT_FB_C_2026-09-04.md` 삭제.
+
+## D-P106 — 외부 리뷰 C 집행: B1/B2 교차 티어 head-to-head 실행·병행 게시 + 표면 반영 + 소유자 항목 4건 (비준 대기)
+- **Options:** (a) 사전 등록(D-P105, 95cf8cd)대로 계산하고 결과를 병행 경로에
+  게시, RESULTS 행 14·15와 README·L-13에 반영, 소유자 게이트 항목은
+  OWNER_QUEUE Q-F22–Q-F25로 등재 (b) 계산만 하고 표면 반영은 소유자 서명까지
+  보류 (c) 리뷰어 요구 순서(F-score → forward 실행 → 교차 패밀리 → 20/20)를
+  세션이 전부 집행.
+- **Choice:** (a). (c)는 INV-12·INV-18·INV-22·INV-23 위반. (b)는 소유자
+  지시("모두 반영")에 미달하며, 행 14·15는 신규 병행 행(append)이지 기존
+  행·판정의 변경이 아니다 — 두 행의 limits 셀에 "pending owner ratification
+  (D-P106)"을 명기해 독자가 비준 상태를 본다.
+- **실행 기록 (본 브랜치 커밋):** ① 95cf8cd spec freeze + EXT_FB_C + D-P105 ·
+  ② 96e3d31 `aaer_eval/statistics.py` `boot_paired_auc_diff_ci` +
+  `analysis/b1b2_screens_all_tiers.py`(stage 1, 74사 재계산: 게시 unified_table
+  M/F 65건 전부 일치, 홀드아웃 대조군 9건 최초 산출 M 2/9·F 3/9) +
+  `analysis/b1b2_cross_tier.py`(stage 2) + `analysis/test_b1b2_cross_tier.py`
+  (7) + `analysis/out/b1b2_cross_tier/{screens_by_case.json,results.json,
+  REPORT.md}` + Makefile verify-full 1줄 + docs-refresh(pytest 418→425) ·
+  ③ 본 커밋: RESULTS 행 14·15 + CLAIMS 14·15 + `tools/test_claims_ledger.py`
+  13→15, README(.ko) 헤드라인 문장, `docs/README_DETAIL.md`, L-13, Q-F22–Q-F25,
+  `audit/FEEDBACK_TRIAGE.md` §2026-09-04, CHANGELOG.
+- **결과 (사전 등록 분기, 결과 전 고정):** wave-1 교란×M → **A** (+0.370
+  [0.042, 0.708]) · wave-1 교란×F → **B** (+0.250 [−0.104, 0.594]) · wave-2×M →
+  **B** (+0.231 [0.000, 0.495], 커버리지 62%) · wave-2×F → **A** (+0.303
+  [0.061, 0.591], 커버리지 53%). C 셀 0. S-NID: wave-2 6 vs 19 AUC 0.842
+  [0.553, 1.0], p 0.0024. 게시 판정·행 1–13·R1–R4 변경 0.
+- **공개(disclosure) 절 (INV-03 (b)):** 행 14·15는 결과 이후에 등록된 병행
+  파생 통계다 — 임계(M −1.78/−2.22, F 1.0/1.4, LLM 50)·판정 규칙·지표 정의는
+  동결값 재사용, 새 임계 발명 0. 사전 등록 스펙은 결과 계산 전에 커밋됐다
+  (95cf8cd < 96e3d31, `tools/verify_blindness.py` 이력 규율과 같은 방식으로
+  git 이력이 증거). 리뷰어 주장 중 사실과 다른 2건(B1/B2 부재 · B4 미구현)은
+  `audit/FEEDBACK_TRIAGE.md`에 REFUTED로 기록했고, 정당한 결손(교차 티어·짝
+  비교·노출)은 채웠다.
+- **Basis:** D-P105 · `specs/B1B2_CROSS_TIER.md` §5–§8 · INV-03 (b) · INV-06 ·
+  INV-07 · INV-12 · INV-14 · INV-18 · `make verify-public` PASS (7 게이트,
+  pytest 425) · lint_publication PASS · claims ledger 4 passed · claims coverage OK.
+- **보호 경로 공개:** analysis/(.protected-paths:6) · aaer_eval/(:7) ·
+  audit/(:12) · Makefile(:42) · `tools/test_claims_ledger.py`(tools/ 는 비보호,
+  13→15 상수만) — 소유자 대화형 세션.
+- **미집행 (세션 권한 밖):** 브랜치 push 후 main 병합은 소유자 결정 (INV-18).
+  로컬 main(37ac75b, 87 behind) · context-diet(171 ahead) 무접촉 — 정합은
+  Q-F24.
+- **Revert:** 커밋 3건 revert (③ → ② → ①). 부분 되돌리기: RESULTS 행 14·15 +
+  CLAIMS 14·15 삭제 + `test_claims_ledger.py` 15→13; README(.ko)·README_DETAIL
+  문장 삭제; L-13 삭제; Q-F22–Q-F25 삭제. 어느 경우에도 동결 산출물은 접촉된
+  적이 없다.

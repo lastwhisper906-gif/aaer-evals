@@ -262,6 +262,51 @@
       },
       "limitation_ref": "RESULTS.md row 13 limits",
       "status": "published"
+    },
+    {
+      "id": 14,
+      "task_tag": "[T1]",
+      "measurement": "Formula-screen head-to-head on identical computable subsets (B1 Beneish M · B2 Dechow F vs the LLM score)",
+      "published_value": "ΔAUC = AUC_LLM − AUC_screen, paired bootstrap 95% CI — wave-1 perturbed frame: M +0.370 [0.042, 0.708] (branch A) · F +0.250 [−0.104, 0.594] (B); wave-2: M +0.231 [0.000, 0.495] (B, coverage 62%) · F +0.303 [0.061, 0.591] (A, coverage 53%)",
+      "limits": "Pre-registered readout (`specs/B1B2_CROSS_TIER.md` §5, freeze 95cf8cd) on the computable subset only — wave-1 6 vs 16, wave-2 M 7 vs 13 / F 6 vs 11; the subset is non-random (filers without liabilities/cost-of-revenue/SG&A tags drop out), direction of bias unknown; holdout per-case only (M 1 vs 2, F 2 vs 3); T1 context-only mechanical baseline, no pooling across tiers, Level 2 — not a claim that the LLM beats existing methods; the two B cells are not distinguishable at this N; pending owner ratification (D-P106)",
+      "source_raw": "`analysis/out/b1b2_cross_tier/results.json` · `analysis/out/b1b2_cross_tier/REPORT.md` · `specs/B1B2_CROSS_TIER.md`",
+      "source_paths": [
+        "analysis/out/b1b2_cross_tier/results.json",
+        "analysis/out/b1b2_cross_tier/REPORT.md",
+        "specs/B1B2_CROSS_TIER.md"
+      ],
+      "recompute": {
+        "command": ".venv/bin/python -m pytest analysis/test_b1b2_cross_tier.py -q",
+        "artifacts": [
+          "analysis/out/b1b2_cross_tier/results.json",
+          "analysis/out/b1b2_cross_tier/screens_by_case.json",
+          "analysis/unified_table.csv",
+          "analysis/holdout_controls_results.json"
+        ]
+      },
+      "limitation_ref": "RESULTS.md row 14 limits · docs/methodology_limitations.md L-13",
+      "status": "published"
+    },
+    {
+      "id": 15,
+      "task_tag": "[T1]",
+      "measurement": "Name-ID-excluded sensitivity (cases flagged by the frozen name_match rule removed)",
+      "published_value": "wave-2 6 vs 19: AUC 0.8421 [0.553, 1.0], permutation p 0.00239 · wave-1 perturbed frame 5 vs 10: AUC 0.84 [0.6, 1.0], p 0.02564 · wave-1 original frame 5 vs 10: AUC 0.78 [0.44, 1.0], p 0.02421",
+      "limits": "Sensitivity only — no readout branch, changes no verdict (`specs/B1B2_CROSS_TIER.md` §6); name-ID is a lower-bound instrument (L-1, instrument-bias table); excluding by the outcome-knowledge probe instead (8/9 wave-2 treatment cases) leaves one treatment case, not computable — residual memorization cannot be removed by subsetting, it is structurally excluded only in the post-cutoff holdout (N=3) and a forward cycle; pending owner ratification (D-P106)",
+      "source_raw": "`analysis/out/b1b2_cross_tier/results.json` · `specs/B1B2_CROSS_TIER.md`",
+      "source_paths": [
+        "analysis/out/b1b2_cross_tier/results.json",
+        "specs/B1B2_CROSS_TIER.md"
+      ],
+      "recompute": {
+        "command": ".venv/bin/python -m pytest analysis/test_b1b2_cross_tier.py -q",
+        "artifacts": [
+          "analysis/out/b1b2_cross_tier/results.json",
+          "analysis/unified_table.csv"
+        ]
+      },
+      "limitation_ref": "RESULTS.md row 15 limits · docs/methodology_limitations.md L-13",
+      "status": "published"
     }
   ]
 }

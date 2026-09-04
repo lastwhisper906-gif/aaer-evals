@@ -17,7 +17,12 @@ companies' identities, Hertz's risk score dropped 23 points (78 → 55) while
 Monsanto's rose 30 (28 → 58): name-memory cuts both ways, so every published
 number in this repository carries that caveat next to it. The deeper
 hindsight risk — what the model absorbed in its own training — is exactly
-what the name-masking experiments below are designed to measure.
+what the name-masking experiments below are designed to measure. Against
+the two textbook formula screens (Beneish M-score, Dechow F-score) on the
+same point-in-time data, the model ranked cases above controls more cleanly
+than either screen in two of four pre-registered comparisons; in the other
+two the difference was within noise — a same-sample comparison on the
+companies where the screens can be computed, not a benchmark claim.
 
 ![Dot plot of every per-firm score for all 30 wave-1 firms — 8 enforcement treatment cases vs 22 matched controls — showing the treatment/control separation with overlap](analysis/fig_dotplot_30firms.png)
 
@@ -88,7 +93,17 @@ The limits, inline: false positives are real — [TASK 1] wave-1 FPR 3/22 =
 [TASK 2] holdout controls (E1) 2/9 = 22.2% CP95 [2.8%, 60.0%] — never summed
 across tiers. Scores are **ordinal (0–100), not probabilities** (wave-2 ECE
 **0.179**, wave-1 0.209 — uncalibrated). Residual memorization is measured,
-not eliminated (name-ID **21.9%** on wave-2, frozen rule; 50% on wave-1).
+not eliminated (name-ID **21.9%** on wave-2, frozen rule; 50% on wave-1) — and
+it is not removable by subsetting: dropping the name-ID-flagged cases keeps
+the wave-2 separation (6 vs 19, RESULTS row 15), but the only layer where
+memorization is structurally excluded is the post-cutoff holdout, and that
+layer is N=3. Against the textbook formula screens on the identical computable
+subsets ([TASK 1] B1 Beneish M · B2 Dechow F, pre-registered head-to-head,
+RESULTS row 14), the LLM score separates better in 2 of 4 primary cells
+(wave-1 perturbed × M, wave-2 × F; paired ΔAUC CI above 0) and is not
+distinguishable in the other 2 (wave-1 × F, wave-2 × M) — computable-subset
+only (wave-2 coverage 62% / 53%), so this is not "the LLM beats existing
+methods": [`analysis/out/b1b2_cross_tier/REPORT.md`](analysis/out/b1b2_cross_tier/REPORT.md).
 Controls mean "not enforced against," not "clean." Every published number with
 its row-level limit: [`RESULTS.md`](RESULTS.md).
 
@@ -129,7 +144,7 @@ and print the external-corpus or subscription preconditions they require.
 
 <!-- BEGIN-GENERATED: repro-facts (refresh: make docs-refresh; CI: tools/lint_doc_counts.py) -->
 - data manifest: **538 files** (`data/manifests/aaer_data_manifest.json` · `file_count`)
-- pytest: **418 tests collected** (`pipeline tools scoring analysis`)
+- pytest: **425 tests collected** (`pipeline tools scoring analysis`)
 - `make verify-public` (zero external data):
   - `.venv/bin/python tools/reproduce_analysis.py`
   - `.venv/bin/python tools/lint_publication.py`
@@ -144,6 +159,7 @@ and print the external-corpus or subscription preconditions they require.
   - `.venv/bin/python analysis/stats.py`
   - `.venv/bin/python analysis/synthesis.py`
   - `.venv/bin/python analysis/calibration_wave2.py`
+  - `.venv/bin/python analysis/b1b2_screens_all_tiers.py`
   - `$(MAKE) verify-public`
 <!-- END-GENERATED: repro-facts -->
 

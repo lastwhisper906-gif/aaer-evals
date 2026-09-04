@@ -189,6 +189,15 @@ this sample. LLM rankings are essentially uncorrelated with both (wave-1
 pre-committed R2 does **not** fire. The LLM is not reproducing the mechanical
 formulas.
 
+**Cross-tier head-to-head (pre-registered `specs/B1B2_CROSS_TIER.md`, 2026-09-04;
+RESULTS row 14)** — [TASK 1] paired comparison on the identical computable subset,
+ΔAUC = LLM − screen: wave-1 perturbed frame M +0.370 [0.042, 0.708] (branch A) ·
+F +0.250 [−0.104, 0.594] (B); wave-2 M +0.231 [0.000, 0.495] (B, coverage 62%) ·
+F +0.303 [0.061, 0.591] (A, coverage 53%). Two of four primary cells favour the
+LLM, two are not distinguishable at this N; holdout is per-case only. Same-sample,
+computable-subset comparison — not a "beats existing methods" claim. Full tables:
+`analysis/out/b1b2_cross_tier/REPORT.md`.
+
 ## Grading & finalization status
 
 - Grading: **Claude-assisted + human final sign-off.** Evaluatee
