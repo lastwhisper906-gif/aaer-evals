@@ -1,0 +1,2371 @@
+{
+ "classification": "T1 context-only mechanical baseline (docs/MULTIPLE_TESTING.md); parallel derived statistic (INV-03 b); no published verdict changes",
+ "frames": {
+  "holdout_e1": {
+   "label": "holdout — post-cutoff treatment (3) vs E1 matched controls (9)",
+   "n_control": 9,
+   "n_treatment": 3,
+   "results_row": 6,
+   "role": "context",
+   "screens": {
+    "beneish_m": {
+     "coverage": {
+      "below_70pct": true,
+      "n_control": 9,
+      "n_control_computable": 2,
+      "n_treatment": 3,
+      "n_treatment_computable": 1,
+      "share": 0.25
+     },
+     "note": "computable subset has n_treatment=1, n_control=2 (< 3) — per-case table only, no AUC/p/CI (spec §3)",
+     "per_case": [
+      {
+       "case_id": "case_73",
+       "group": "treatment",
+       "llm": 42.0,
+       "llm_flag": false,
+       "screen": -2.046,
+       "screen_flag_primary": false,
+       "ticker": "GNE"
+      },
+      {
+       "case_id": "GO",
+       "group": "control",
+       "llm": 58.0,
+       "llm_flag": true,
+       "screen": -2.460259769999104,
+       "screen_flag_primary": false,
+       "ticker": "GO"
+      },
+      {
+       "case_id": "VIASP",
+       "group": "control",
+       "llm": 35.0,
+       "llm_flag": false,
+       "screen": -2.3729349088955902,
+       "screen_flag_primary": false,
+       "ticker": "VIASP"
+      }
+     ]
+    },
+    "dechow_f": {
+     "coverage": {
+      "below_70pct": true,
+      "n_control": 9,
+      "n_control_computable": 3,
+      "n_treatment": 3,
+      "n_treatment_computable": 2,
+      "share": 0.417
+     },
+     "note": "computable subset has n_treatment=2, n_control=3 (< 3) — per-case table only, no AUC/p/CI (spec §3)",
+     "per_case": [
+      {
+       "case_id": "case_72",
+       "group": "treatment",
+       "llm": 32.0,
+       "llm_flag": false,
+       "screen": 0.249,
+       "screen_flag_primary": false,
+       "ticker": "WMK"
+      },
+      {
+       "case_id": "case_73",
+       "group": "treatment",
+       "llm": 42.0,
+       "llm_flag": false,
+       "screen": 0.36,
+       "screen_flag_primary": false,
+       "ticker": "GNE"
+      },
+      {
+       "case_id": "BCO",
+       "group": "control",
+       "llm": 30.0,
+       "llm_flag": false,
+       "screen": 0.33232638456268937,
+       "screen_flag_primary": false,
+       "ticker": "BCO"
+      },
+      {
+       "case_id": "GO",
+       "group": "control",
+       "llm": 58.0,
+       "llm_flag": true,
+       "screen": 0.46520236769103596,
+       "screen_flag_primary": false,
+       "ticker": "GO"
+      },
+      {
+       "case_id": "VIASP",
+       "group": "control",
+       "llm": 35.0,
+       "llm_flag": false,
+       "screen": 1.785368146232315,
+       "screen_flag_primary": true,
+       "ticker": "VIASP"
+      }
+     ]
+    }
+   },
+   "tier": "holdout"
+  },
+  "wave1_primary_perturbed": {
+   "label": "wave-1 primary — perturbed treatment vs original controls",
+   "n_control": 22,
+   "n_treatment": 8,
+   "results_row": 2,
+   "role": "primary",
+   "screens": {
+    "beneish_m": {
+     "coverage": {
+      "below_70pct": false,
+      "n_control": 22,
+      "n_control_computable": 16,
+      "n_treatment": 8,
+      "n_treatment_computable": 6,
+      "share": 0.733
+     },
+     "llm_same_subset": {
+      "auc": 0.8802,
+      "auc_boot95": [
+       0.719,
+       0.99
+      ],
+      "mean_diff": 15.375,
+      "perm_mc_se": 0.000201,
+      "perm_p_one_sided": 0.00404
+     },
+     "paired_delta_auc": {
+      "ci95": [
+       0.042,
+       0.708
+      ],
+      "definition": "AUC_LLM - AUC_screen on the identical subset; stratified paired bootstrap",
+      "delta": 0.3698
+     },
+     "per_case": [
+      {
+       "case_id": "T07",
+       "group": "treatment",
+       "llm": 58.0,
+       "llm_flag": true,
+       "screen": -2.426106855927867,
+       "screen_flag_primary": false,
+       "ticker": "MON"
+      },
+      {
+       "case_id": "T11",
+       "group": "treatment",
+       "llm": 45.0,
+       "llm_flag": false,
+       "screen": -1.5270821152956189,
+       "screen_flag_primary": true,
+       "ticker": "OFIX"
+      },
+      {
+       "case_id": "T12",
+       "group": "treatment",
+       "llm": 45.0,
+       "llm_flag": false,
+       "screen": -4.009151041765871,
+       "screen_flag_primary": false,
+       "ticker": "LOGI"
+      },
+      {
+       "case_id": "T17",
+       "group": "treatment",
+       "llm": 42.0,
+       "llm_flag": false,
+       "screen": -2.785483950734183,
+       "screen_flag_primary": false,
+       "ticker": "MRVL"
+      },
+      {
+       "case_id": "T21",
+       "group": "treatment",
+       "llm": 45.0,
+       "llm_flag": false,
+       "screen": -3.2920438197280086,
+       "screen_flag_primary": false,
+       "ticker": "SCOR"
+      },
+      {
+       "case_id": "T28",
+       "group": "treatment",
+       "llm": 68.0,
+       "llm_flag": true,
+       "screen": -1.8267496918962767,
+       "screen_flag_primary": false,
+       "ticker": "KHC"
+      },
+      {
+       "case_id": "V01",
+       "group": "control",
+       "llm": 15.0,
+       "llm_flag": false,
+       "screen": -2.5372122761981974,
+       "screen_flag_primary": false,
+       "ticker": "APD"
+      },
+      {
+       "case_id": "V03",
+       "group": "control",
+       "llm": 42.0,
+       "llm_flag": false,
+       "screen": -2.356917576891104,
+       "screen_flag_primary": false,
+       "ticker": "CE"
+      },
+      {
+       "case_id": "V04",
+       "group": "control",
+       "llm": 32.0,
+       "llm_flag": false,
+       "screen": -2.3353869241960936,
+       "screen_flag_primary": false,
+       "ticker": "MASI"
+      },
+      {
+       "case_id": "V06",
+       "group": "control",
+       "llm": 30.0,
+       "llm_flag": false,
+       "screen": -2.706326222194146,
+       "screen_flag_primary": false,
+       "ticker": "MMSI"
+      },
+      {
+       "case_id": "V07",
+       "group": "control",
+       "llm": 30.0,
+       "llm_flag": false,
+       "screen": -2.3524952024041372,
+       "screen_flag_primary": false,
+       "ticker": "TDY"
+      },
+      {
+       "case_id": "V08",
+       "group": "control",
+       "llm": 45.0,
+       "llm_flag": false,
+       "screen": -3.471202363311366,
+       "screen_flag_primary": false,
+       "ticker": "CIEN"
+      },
+      {
+       "case_id": "V09",
+       "group": "control",
+       "llm": 28.0,
+       "llm_flag": false,
+       "screen": -2.6944546092798998,
+       "screen_flag_primary": false,
+       "ticker": "GRMN"
+      },
+      {
+       "case_id": "V10",
+       "group": "control",
+       "llm": 33.0,
+       "llm_flag": false,
+       "screen": -2.9631357331384183,
+       "screen_flag_primary": false,
+       "ticker": "R"
+      },
+      {
+       "case_id": "V13",
+       "group": "control",
+       "llm": 55.0,
+       "llm_flag": true,
+       "screen": -2.452184584614712,
+       "screen_flag_primary": false,
+       "ticker": "RCKY"
+      },
+      {
+       "case_id": "V14",
+       "group": "control",
+       "llm": 30.0,
+       "llm_flag": false,
+       "screen": -2.9672334397186146,
+       "screen_flag_primary": false,
+       "ticker": "DLB"
+      },
+      {
+       "case_id": "V15",
+       "group": "control",
+       "llm": 40.0,
+       "llm_flag": false,
+       "screen": -2.4129269920015934,
+       "screen_flag_primary": false,
+       "ticker": "FSLR"
+      },
+      {
+       "case_id": "V16",
+       "group": "control",
+       "llm": 33.0,
+       "llm_flag": false,
+       "screen": -2.7987591042063817,
+       "screen_flag_primary": false,
+       "ticker": "AMKR"
+      },
+      {
+       "case_id": "V17",
+       "group": "control",
+       "llm": 42.0,
+       "llm_flag": false,
+       "screen": -2.7624837056013045,
+       "screen_flag_primary": false,
+       "ticker": "BHE"
+      },
+      {
+       "case_id": "V18",
+       "group": "control",
+       "llm": 55.0,
+       "llm_flag": true,
+       "screen": -2.8277160754126656,
+       "screen_flag_primary": false,
+       "ticker": "FORR"
+      },
+      {
+       "case_id": "V21",
+       "group": "control",
+       "llm": 22.0,
+       "llm_flag": false,
+       "screen": -2.3789080104570326,
+       "screen_flag_primary": false,
+       "ticker": "GIS"
+      },
+      {
+       "case_id": "V22",
+       "group": "control",
+       "llm": 30.0,
+       "llm_flag": false,
+       "screen": -2.443905775326996,
+       "screen_flag_primary": false,
+       "ticker": "CPB"
+      }
+     ],
+     "screen": {
+      "auc": 0.5104,
+      "auc_boot95": [
+       0.177,
+       0.844
+      ],
+      "mean_diff": 0.0094,
+      "perm_mc_se": 0.001581,
+      "perm_p_one_sided": 0.498935
+     },
+     "spearman_rho_llm_vs_screen": -0.065,
+     "thresholds": {
+      "LLM >= 50": {
+       "detection": {
+        "cp95_pct": [
+         4.3,
+         77.7
+        ],
+        "k": 2,
+        "n": 6,
+        "pct": 33.3
+       },
+       "false_positive": {
+        "cp95_pct": [
+         1.6,
+         38.3
+        ],
+        "k": 2,
+        "n": 16,
+        "pct": 12.5
+       },
+       "precision": {
+        "cp95_pct": [
+         6.8,
+         93.2
+        ],
+        "k": 2,
+        "n": 4,
+        "pct": 50.0
+       },
+       "role": "llm_same_subset"
+      },
+      "M > -1.78": {
+       "detection": {
+        "cp95_pct": [
+         0.4,
+         64.1
+        ],
+        "k": 1,
+        "n": 6,
+        "pct": 16.7
+       },
+       "false_positive": {
+        "cp95_pct": [
+         0.0,
+         20.6
+        ],
+        "k": 0,
+        "n": 16,
+        "pct": 0.0
+       },
+       "precision": {
+        "cp95_pct": [
+         2.5,
+         100.0
+        ],
+        "k": 1,
+        "n": 1,
+        "pct": 100.0
+       },
+       "role": "primary"
+      },
+      "M > -2.22": {
+       "detection": {
+        "cp95_pct": [
+         4.3,
+         77.7
+        ],
+        "k": 2,
+        "n": 6,
+        "pct": 33.3
+       },
+       "false_positive": {
+        "cp95_pct": [
+         0.0,
+         20.6
+        ],
+        "k": 0,
+        "n": 16,
+        "pct": 0.0
+       },
+       "precision": {
+        "cp95_pct": [
+         15.8,
+         100.0
+        ],
+        "k": 2,
+        "n": 2,
+        "pct": 100.0
+       },
+       "role": "secondary"
+      }
+     }
+    },
+    "dechow_f": {
+     "coverage": {
+      "below_70pct": false,
+      "n_control": 22,
+      "n_control_computable": 16,
+      "n_treatment": 8,
+      "n_treatment_computable": 6,
+      "share": 0.733
+     },
+     "llm_same_subset": {
+      "auc": 0.8229,
+      "auc_boot95": [
+       0.63,
+       0.964
+      ],
+      "mean_diff": 14.0625,
+      "perm_mc_se": 0.000428,
+      "perm_p_one_sided": 0.01869
+     },
+     "paired_delta_auc": {
+      "ci95": [
+       -0.104,
+       0.594
+      ],
+      "definition": "AUC_LLM - AUC_screen on the identical subset; stratified paired bootstrap",
+      "delta": 0.25
+     },
+     "per_case": [
+      {
+       "case_id": "T11",
+       "group": "treatment",
+       "llm": 45.0,
+       "llm_flag": false,
+       "screen": 1.626433492399362,
+       "screen_flag_primary": true,
+       "ticker": "OFIX"
+      },
+      {
+       "case_id": "T12",
+       "group": "treatment",
+       "llm": 45.0,
+       "llm_flag": false,
+       "screen": 0.3685984969434358,
+       "screen_flag_primary": false,
+       "ticker": "LOGI"
+      },
+      {
+       "case_id": "T16",
+       "group": "treatment",
+       "llm": 55.0,
+       "llm_flag": true,
+       "screen": 0.7003029385249269,
+       "screen_flag_primary": false,
+       "ticker": "ICON"
+      },
+      {
+       "case_id": "T17",
+       "group": "treatment",
+       "llm": 42.0,
+       "llm_flag": false,
+       "screen": 1.226011859099635,
+       "screen_flag_primary": true,
+       "ticker": "MRVL"
+      },
+      {
+       "case_id": "T21",
+       "group": "treatment",
+       "llm": 45.0,
+       "llm_flag": false,
+       "screen": 0.5074354766531907,
+       "screen_flag_primary": false,
+       "ticker": "SCOR"
+      },
+      {
+       "case_id": "T28",
+       "group": "treatment",
+       "llm": 68.0,
+       "llm_flag": true,
+       "screen": 0.6419185060457099,
+       "screen_flag_primary": false,
+       "ticker": "KHC"
+      },
+      {
+       "case_id": "V01",
+       "group": "control",
+       "llm": 15.0,
+       "llm_flag": false,
+       "screen": 0.7315416218930291,
+       "screen_flag_primary": false,
+       "ticker": "APD"
+      },
+      {
+       "case_id": "V04",
+       "group": "control",
+       "llm": 32.0,
+       "llm_flag": false,
+       "screen": 0.5566293466794986,
+       "screen_flag_primary": false,
+       "ticker": "MASI"
+      },
+      {
+       "case_id": "V06",
+       "group": "control",
+       "llm": 30.0,
+       "llm_flag": false,
+       "screen": 1.1940777282810482,
+       "screen_flag_primary": true,
+       "ticker": "MMSI"
+      },
+      {
+       "case_id": "V07",
+       "group": "control",
+       "llm": 30.0,
+       "llm_flag": false,
+       "screen": 0.6630556118421926,
+       "screen_flag_primary": false,
+       "ticker": "TDY"
+      },
+      {
+       "case_id": "V08",
+       "group": "control",
+       "llm": 45.0,
+       "llm_flag": false,
+       "screen": 0.7793639072144858,
+       "screen_flag_primary": false,
+       "ticker": "CIEN"
+      },
+      {
+       "case_id": "V10",
+       "group": "control",
+       "llm": 33.0,
+       "llm_flag": false,
+       "screen": 0.6532145612507625,
+       "screen_flag_primary": false,
+       "ticker": "R"
+      },
+      {
+       "case_id": "V12",
+       "group": "control",
+       "llm": 42.0,
+       "llm_flag": false,
+       "screen": 0.3141397094857203,
+       "screen_flag_primary": false,
+       "ticker": "IDCC"
+      },
+      {
+       "case_id": "V13",
+       "group": "control",
+       "llm": 55.0,
+       "llm_flag": true,
+       "screen": 0.6475483038512848,
+       "screen_flag_primary": false,
+       "ticker": "RCKY"
+      },
+      {
+       "case_id": "V14",
+       "group": "control",
+       "llm": 30.0,
+       "llm_flag": false,
+       "screen": 0.32532891619979487,
+       "screen_flag_primary": false,
+       "ticker": "DLB"
+      },
+      {
+       "case_id": "V15",
+       "group": "control",
+       "llm": 40.0,
+       "llm_flag": false,
+       "screen": 0.9041700920038489,
+       "screen_flag_primary": false,
+       "ticker": "FSLR"
+      },
+      {
+       "case_id": "V16",
+       "group": "control",
+       "llm": 33.0,
+       "llm_flag": false,
+       "screen": 0.55384520328388,
+       "screen_flag_primary": false,
+       "ticker": "AMKR"
+      },
+      {
+       "case_id": "V18",
+       "group": "control",
+       "llm": 55.0,
+       "llm_flag": true,
+       "screen": 0.3908864735388269,
+       "screen_flag_primary": false,
+       "ticker": "FORR"
+      },
+      {
+       "case_id": "V19",
+       "group": "control",
+       "llm": 18.0,
+       "llm_flag": false,
+       "screen": 0.3554940012596707,
+       "screen_flag_primary": false,
+       "ticker": "EXPO"
+      },
+      {
+       "case_id": "V20",
+       "group": "control",
+       "llm": 65.0,
+       "llm_flag": true,
+       "screen": 0.264248582696991,
+       "screen_flag_primary": false,
+       "ticker": "LQDT"
+      },
+      {
+       "case_id": "V21",
+       "group": "control",
+       "llm": 22.0,
+       "llm_flag": false,
+       "screen": 1.6628088692667498,
+       "screen_flag_primary": true,
+       "ticker": "GIS"
+      },
+      {
+       "case_id": "V22",
+       "group": "control",
+       "llm": 30.0,
+       "llm_flag": false,
+       "screen": 1.479834928371408,
+       "screen_flag_primary": true,
+       "ticker": "CPB"
+      }
+     ],
+     "screen": {
+      "auc": 0.5729,
+      "auc_boot95": [
+       0.292,
+       0.823
+      ],
+      "mean_diff": 0.1279,
+      "perm_mc_se": 0.001394,
+      "perm_p_one_sided": 0.264207
+     },
+     "spearman_rho_llm_vs_screen": -0.253,
+     "thresholds": {
+      "F >= 1.0": {
+       "detection": {
+        "cp95_pct": [
+         4.3,
+         77.7
+        ],
+        "k": 2,
+        "n": 6,
+        "pct": 33.3
+       },
+       "false_positive": {
+        "cp95_pct": [
+         4.0,
+         45.6
+        ],
+        "k": 3,
+        "n": 16,
+        "pct": 18.8
+       },
+       "precision": {
+        "cp95_pct": [
+         5.3,
+         85.3
+        ],
+        "k": 2,
+        "n": 5,
+        "pct": 40.0
+       },
+       "role": "primary"
+      },
+      "F >= 1.4": {
+       "detection": {
+        "cp95_pct": [
+         0.4,
+         64.1
+        ],
+        "k": 1,
+        "n": 6,
+        "pct": 16.7
+       },
+       "false_positive": {
+        "cp95_pct": [
+         1.6,
+         38.3
+        ],
+        "k": 2,
+        "n": 16,
+        "pct": 12.5
+       },
+       "precision": {
+        "cp95_pct": [
+         0.8,
+         90.6
+        ],
+        "k": 1,
+        "n": 3,
+        "pct": 33.3
+       },
+       "role": "secondary"
+      },
+      "LLM >= 50": {
+       "detection": {
+        "cp95_pct": [
+         4.3,
+         77.7
+        ],
+        "k": 2,
+        "n": 6,
+        "pct": 33.3
+       },
+       "false_positive": {
+        "cp95_pct": [
+         4.0,
+         45.6
+        ],
+        "k": 3,
+        "n": 16,
+        "pct": 18.8
+       },
+       "precision": {
+        "cp95_pct": [
+         5.3,
+         85.3
+        ],
+        "k": 2,
+        "n": 5,
+        "pct": 40.0
+       },
+       "role": "llm_same_subset"
+      }
+     }
+    }
+   },
+   "tier": "wave1"
+  },
+  "wave1_secondary_original": {
+   "label": "wave-1 secondary — original (identity-exposed) frame",
+   "n_control": 22,
+   "n_treatment": 8,
+   "results_row": 1,
+   "role": "secondary",
+   "screens": {
+    "beneish_m": {
+     "coverage": {
+      "below_70pct": false,
+      "n_control": 22,
+      "n_control_computable": 16,
+      "n_treatment": 8,
+      "n_treatment_computable": 6,
+      "share": 0.733
+     },
+     "llm_same_subset": {
+      "auc": 0.7969,
+      "auc_boot95": [
+       0.51,
+       0.99
+      ],
+      "mean_diff": 16.2083,
+      "perm_mc_se": 0.000278,
+      "perm_p_one_sided": 0.00779
+     },
+     "paired_delta_auc": {
+      "ci95": [
+       -0.156,
+       0.703
+      ],
+      "definition": "AUC_LLM - AUC_screen on the identical subset; stratified paired bootstrap",
+      "delta": 0.2865
+     },
+     "per_case": [
+      {
+       "case_id": "T07",
+       "group": "treatment",
+       "llm": 28.0,
+       "llm_flag": false,
+       "screen": -2.426106855927867,
+       "screen_flag_primary": false,
+       "ticker": "MON"
+      },
+      {
+       "case_id": "T11",
+       "group": "treatment",
+       "llm": 60.0,
+       "llm_flag": true,
+       "screen": -1.5270821152956189,
+       "screen_flag_primary": true,
+       "ticker": "OFIX"
+      },
+      {
+       "case_id": "T12",
+       "group": "treatment",
+       "llm": 42.0,
+       "llm_flag": false,
+       "screen": -4.009151041765871,
+       "screen_flag_primary": false,
+       "ticker": "LOGI"
+      },
+      {
+       "case_id": "T17",
+       "group": "treatment",
+       "llm": 55.0,
+       "llm_flag": true,
+       "screen": -2.785483950734183,
+       "screen_flag_primary": false,
+       "ticker": "MRVL"
+      },
+      {
+       "case_id": "T21",
+       "group": "treatment",
+       "llm": 55.0,
+       "llm_flag": true,
+       "screen": -3.2920438197280086,
+       "screen_flag_primary": false,
+       "ticker": "SCOR"
+      },
+      {
+       "case_id": "T28",
+       "group": "treatment",
+       "llm": 68.0,
+       "llm_flag": true,
+       "screen": -1.8267496918962767,
+       "screen_flag_primary": false,
+       "ticker": "KHC"
+      },
+      {
+       "case_id": "V01",
+       "group": "control",
+       "llm": 15.0,
+       "llm_flag": false,
+       "screen": -2.5372122761981974,
+       "screen_flag_primary": false,
+       "ticker": "APD"
+      },
+      {
+       "case_id": "V03",
+       "group": "control",
+       "llm": 42.0,
+       "llm_flag": false,
+       "screen": -2.356917576891104,
+       "screen_flag_primary": false,
+       "ticker": "CE"
+      },
+      {
+       "case_id": "V04",
+       "group": "control",
+       "llm": 32.0,
+       "llm_flag": false,
+       "screen": -2.3353869241960936,
+       "screen_flag_primary": false,
+       "ticker": "MASI"
+      },
+      {
+       "case_id": "V06",
+       "group": "control",
+       "llm": 30.0,
+       "llm_flag": false,
+       "screen": -2.706326222194146,
+       "screen_flag_primary": false,
+       "ticker": "MMSI"
+      },
+      {
+       "case_id": "V07",
+       "group": "control",
+       "llm": 30.0,
+       "llm_flag": false,
+       "screen": -2.3524952024041372,
+       "screen_flag_primary": false,
+       "ticker": "TDY"
+      },
+      {
+       "case_id": "V08",
+       "group": "control",
+       "llm": 45.0,
+       "llm_flag": false,
+       "screen": -3.471202363311366,
+       "screen_flag_primary": false,
+       "ticker": "CIEN"
+      },
+      {
+       "case_id": "V09",
+       "group": "control",
+       "llm": 28.0,
+       "llm_flag": false,
+       "screen": -2.6944546092798998,
+       "screen_flag_primary": false,
+       "ticker": "GRMN"
+      },
+      {
+       "case_id": "V10",
+       "group": "control",
+       "llm": 33.0,
+       "llm_flag": false,
+       "screen": -2.9631357331384183,
+       "screen_flag_primary": false,
+       "ticker": "R"
+      },
+      {
+       "case_id": "V13",
+       "group": "control",
+       "llm": 55.0,
+       "llm_flag": true,
+       "screen": -2.452184584614712,
+       "screen_flag_primary": false,
+       "ticker": "RCKY"
+      },
+      {
+       "case_id": "V14",
+       "group": "control",
+       "llm": 30.0,
+       "llm_flag": false,
+       "screen": -2.9672334397186146,
+       "screen_flag_primary": false,
+       "ticker": "DLB"
+      },
+      {
+       "case_id": "V15",
+       "group": "control",
+       "llm": 40.0,
+       "llm_flag": false,
+       "screen": -2.4129269920015934,
+       "screen_flag_primary": false,
+       "ticker": "FSLR"
+      },
+      {
+       "case_id": "V16",
+       "group": "control",
+       "llm": 33.0,
+       "llm_flag": false,
+       "screen": -2.7987591042063817,
+       "screen_flag_primary": false,
+       "ticker": "AMKR"
+      },
+      {
+       "case_id": "V17",
+       "group": "control",
+       "llm": 42.0,
+       "llm_flag": false,
+       "screen": -2.7624837056013045,
+       "screen_flag_primary": false,
+       "ticker": "BHE"
+      },
+      {
+       "case_id": "V18",
+       "group": "control",
+       "llm": 55.0,
+       "llm_flag": true,
+       "screen": -2.8277160754126656,
+       "screen_flag_primary": false,
+       "ticker": "FORR"
+      },
+      {
+       "case_id": "V21",
+       "group": "control",
+       "llm": 22.0,
+       "llm_flag": false,
+       "screen": -2.3789080104570326,
+       "screen_flag_primary": false,
+       "ticker": "GIS"
+      },
+      {
+       "case_id": "V22",
+       "group": "control",
+       "llm": 30.0,
+       "llm_flag": false,
+       "screen": -2.443905775326996,
+       "screen_flag_primary": false,
+       "ticker": "CPB"
+      }
+     ],
+     "screen": {
+      "auc": 0.5104,
+      "auc_boot95": [
+       0.177,
+       0.844
+      ],
+      "mean_diff": 0.0094,
+      "perm_mc_se": 0.001581,
+      "perm_p_one_sided": 0.498935
+     },
+     "spearman_rho_llm_vs_screen": -0.075,
+     "thresholds": {
+      "LLM >= 50": {
+       "detection": {
+        "cp95_pct": [
+         22.3,
+         95.7
+        ],
+        "k": 4,
+        "n": 6,
+        "pct": 66.7
+       },
+       "false_positive": {
+        "cp95_pct": [
+         1.6,
+         38.3
+        ],
+        "k": 2,
+        "n": 16,
+        "pct": 12.5
+       },
+       "precision": {
+        "cp95_pct": [
+         22.3,
+         95.7
+        ],
+        "k": 4,
+        "n": 6,
+        "pct": 66.7
+       },
+       "role": "llm_same_subset"
+      },
+      "M > -1.78": {
+       "detection": {
+        "cp95_pct": [
+         0.4,
+         64.1
+        ],
+        "k": 1,
+        "n": 6,
+        "pct": 16.7
+       },
+       "false_positive": {
+        "cp95_pct": [
+         0.0,
+         20.6
+        ],
+        "k": 0,
+        "n": 16,
+        "pct": 0.0
+       },
+       "precision": {
+        "cp95_pct": [
+         2.5,
+         100.0
+        ],
+        "k": 1,
+        "n": 1,
+        "pct": 100.0
+       },
+       "role": "primary"
+      },
+      "M > -2.22": {
+       "detection": {
+        "cp95_pct": [
+         4.3,
+         77.7
+        ],
+        "k": 2,
+        "n": 6,
+        "pct": 33.3
+       },
+       "false_positive": {
+        "cp95_pct": [
+         0.0,
+         20.6
+        ],
+        "k": 0,
+        "n": 16,
+        "pct": 0.0
+       },
+       "precision": {
+        "cp95_pct": [
+         15.8,
+         100.0
+        ],
+        "k": 2,
+        "n": 2,
+        "pct": 100.0
+       },
+       "role": "secondary"
+      }
+     }
+    },
+    "dechow_f": {
+     "coverage": {
+      "below_70pct": false,
+      "n_control": 22,
+      "n_control_computable": 16,
+      "n_treatment": 8,
+      "n_treatment_computable": 6,
+      "share": 0.733
+     },
+     "llm_same_subset": {
+      "auc": 0.8958,
+      "auc_boot95": [
+       0.75,
+       0.995
+      ],
+      "mean_diff": 21.5625,
+      "perm_mc_se": 0.000126,
+      "perm_p_one_sided": 0.00159
+     },
+     "paired_delta_auc": {
+      "ci95": [
+       0.036,
+       0.615
+      ],
+      "definition": "AUC_LLM - AUC_screen on the identical subset; stratified paired bootstrap",
+      "delta": 0.3229
+     },
+     "per_case": [
+      {
+       "case_id": "T11",
+       "group": "treatment",
+       "llm": 60.0,
+       "llm_flag": true,
+       "screen": 1.626433492399362,
+       "screen_flag_primary": true,
+       "ticker": "OFIX"
+      },
+      {
+       "case_id": "T12",
+       "group": "treatment",
+       "llm": 42.0,
+       "llm_flag": false,
+       "screen": 0.3685984969434358,
+       "screen_flag_primary": false,
+       "ticker": "LOGI"
+      },
+      {
+       "case_id": "T16",
+       "group": "treatment",
+       "llm": 65.0,
+       "llm_flag": true,
+       "screen": 0.7003029385249269,
+       "screen_flag_primary": false,
+       "ticker": "ICON"
+      },
+      {
+       "case_id": "T17",
+       "group": "treatment",
+       "llm": 55.0,
+       "llm_flag": true,
+       "screen": 1.226011859099635,
+       "screen_flag_primary": true,
+       "ticker": "MRVL"
+      },
+      {
+       "case_id": "T21",
+       "group": "treatment",
+       "llm": 55.0,
+       "llm_flag": true,
+       "screen": 0.5074354766531907,
+       "screen_flag_primary": false,
+       "ticker": "SCOR"
+      },
+      {
+       "case_id": "T28",
+       "group": "treatment",
+       "llm": 68.0,
+       "llm_flag": true,
+       "screen": 0.6419185060457099,
+       "screen_flag_primary": false,
+       "ticker": "KHC"
+      },
+      {
+       "case_id": "V01",
+       "group": "control",
+       "llm": 15.0,
+       "llm_flag": false,
+       "screen": 0.7315416218930291,
+       "screen_flag_primary": false,
+       "ticker": "APD"
+      },
+      {
+       "case_id": "V04",
+       "group": "control",
+       "llm": 32.0,
+       "llm_flag": false,
+       "screen": 0.5566293466794986,
+       "screen_flag_primary": false,
+       "ticker": "MASI"
+      },
+      {
+       "case_id": "V06",
+       "group": "control",
+       "llm": 30.0,
+       "llm_flag": false,
+       "screen": 1.1940777282810482,
+       "screen_flag_primary": true,
+       "ticker": "MMSI"
+      },
+      {
+       "case_id": "V07",
+       "group": "control",
+       "llm": 30.0,
+       "llm_flag": false,
+       "screen": 0.6630556118421926,
+       "screen_flag_primary": false,
+       "ticker": "TDY"
+      },
+      {
+       "case_id": "V08",
+       "group": "control",
+       "llm": 45.0,
+       "llm_flag": false,
+       "screen": 0.7793639072144858,
+       "screen_flag_primary": false,
+       "ticker": "CIEN"
+      },
+      {
+       "case_id": "V10",
+       "group": "control",
+       "llm": 33.0,
+       "llm_flag": false,
+       "screen": 0.6532145612507625,
+       "screen_flag_primary": false,
+       "ticker": "R"
+      },
+      {
+       "case_id": "V12",
+       "group": "control",
+       "llm": 42.0,
+       "llm_flag": false,
+       "screen": 0.3141397094857203,
+       "screen_flag_primary": false,
+       "ticker": "IDCC"
+      },
+      {
+       "case_id": "V13",
+       "group": "control",
+       "llm": 55.0,
+       "llm_flag": true,
+       "screen": 0.6475483038512848,
+       "screen_flag_primary": false,
+       "ticker": "RCKY"
+      },
+      {
+       "case_id": "V14",
+       "group": "control",
+       "llm": 30.0,
+       "llm_flag": false,
+       "screen": 0.32532891619979487,
+       "screen_flag_primary": false,
+       "ticker": "DLB"
+      },
+      {
+       "case_id": "V15",
+       "group": "control",
+       "llm": 40.0,
+       "llm_flag": false,
+       "screen": 0.9041700920038489,
+       "screen_flag_primary": false,
+       "ticker": "FSLR"
+      },
+      {
+       "case_id": "V16",
+       "group": "control",
+       "llm": 33.0,
+       "llm_flag": false,
+       "screen": 0.55384520328388,
+       "screen_flag_primary": false,
+       "ticker": "AMKR"
+      },
+      {
+       "case_id": "V18",
+       "group": "control",
+       "llm": 55.0,
+       "llm_flag": true,
+       "screen": 0.3908864735388269,
+       "screen_flag_primary": false,
+       "ticker": "FORR"
+      },
+      {
+       "case_id": "V19",
+       "group": "control",
+       "llm": 18.0,
+       "llm_flag": false,
+       "screen": 0.3554940012596707,
+       "screen_flag_primary": false,
+       "ticker": "EXPO"
+      },
+      {
+       "case_id": "V20",
+       "group": "control",
+       "llm": 65.0,
+       "llm_flag": true,
+       "screen": 0.264248582696991,
+       "screen_flag_primary": false,
+       "ticker": "LQDT"
+      },
+      {
+       "case_id": "V21",
+       "group": "control",
+       "llm": 22.0,
+       "llm_flag": false,
+       "screen": 1.6628088692667498,
+       "screen_flag_primary": true,
+       "ticker": "GIS"
+      },
+      {
+       "case_id": "V22",
+       "group": "control",
+       "llm": 30.0,
+       "llm_flag": false,
+       "screen": 1.479834928371408,
+       "screen_flag_primary": true,
+       "ticker": "CPB"
+      }
+     ],
+     "screen": {
+      "auc": 0.5729,
+      "auc_boot95": [
+       0.292,
+       0.823
+      ],
+      "mean_diff": 0.1279,
+      "perm_mc_se": 0.001394,
+      "perm_p_one_sided": 0.264207
+     },
+     "spearman_rho_llm_vs_screen": -0.144,
+     "thresholds": {
+      "F >= 1.0": {
+       "detection": {
+        "cp95_pct": [
+         4.3,
+         77.7
+        ],
+        "k": 2,
+        "n": 6,
+        "pct": 33.3
+       },
+       "false_positive": {
+        "cp95_pct": [
+         4.0,
+         45.6
+        ],
+        "k": 3,
+        "n": 16,
+        "pct": 18.8
+       },
+       "precision": {
+        "cp95_pct": [
+         5.3,
+         85.3
+        ],
+        "k": 2,
+        "n": 5,
+        "pct": 40.0
+       },
+       "role": "primary"
+      },
+      "F >= 1.4": {
+       "detection": {
+        "cp95_pct": [
+         0.4,
+         64.1
+        ],
+        "k": 1,
+        "n": 6,
+        "pct": 16.7
+       },
+       "false_positive": {
+        "cp95_pct": [
+         1.6,
+         38.3
+        ],
+        "k": 2,
+        "n": 16,
+        "pct": 12.5
+       },
+       "precision": {
+        "cp95_pct": [
+         0.8,
+         90.6
+        ],
+        "k": 1,
+        "n": 3,
+        "pct": 33.3
+       },
+       "role": "secondary"
+      },
+      "LLM >= 50": {
+       "detection": {
+        "cp95_pct": [
+         35.9,
+         99.6
+        ],
+        "k": 5,
+        "n": 6,
+        "pct": 83.3
+       },
+       "false_positive": {
+        "cp95_pct": [
+         4.0,
+         45.6
+        ],
+        "k": 3,
+        "n": 16,
+        "pct": 18.8
+       },
+       "precision": {
+        "cp95_pct": [
+         24.5,
+         91.5
+        ],
+        "k": 5,
+        "n": 8,
+        "pct": 62.5
+       },
+       "role": "llm_same_subset"
+      }
+     }
+    }
+   },
+   "tier": "wave1"
+  },
+  "wave2_primary_original": {
+   "label": "wave-2 primary — original frame",
+   "n_control": 23,
+   "n_treatment": 9,
+   "results_row": 3,
+   "role": "primary",
+   "screens": {
+    "beneish_m": {
+     "coverage": {
+      "below_70pct": true,
+      "n_control": 23,
+      "n_control_computable": 13,
+      "n_treatment": 9,
+      "n_treatment_computable": 7,
+      "share": 0.625
+     },
+     "llm_same_subset": {
+      "auc": 0.9011,
+      "auc_boot95": [
+       0.72,
+       1.0
+      ],
+      "mean_diff": 21.3187,
+      "perm_mc_se": 9.7e-05,
+      "perm_p_one_sided": 0.00095
+     },
+     "paired_delta_auc": {
+      "ci95": [
+       0.0,
+       0.495
+      ],
+      "definition": "AUC_LLM - AUC_screen on the identical subset; stratified paired bootstrap",
+      "delta": 0.2308
+     },
+     "per_case": [
+      {
+       "case_id": "case_39",
+       "group": "treatment",
+       "llm": 58.0,
+       "llm_flag": true,
+       "screen": -1.173,
+       "screen_flag_primary": true,
+       "ticker": "OSIR"
+      },
+      {
+       "case_id": "case_40",
+       "group": "treatment",
+       "llm": 55.0,
+       "llm_flag": true,
+       "screen": -2.609,
+       "screen_flag_primary": false,
+       "ticker": "TNGO"
+      },
+      {
+       "case_id": "case_42",
+       "group": "control",
+       "llm": 20.0,
+       "llm_flag": false,
+       "screen": -2.832,
+       "screen_flag_primary": false,
+       "ticker": "RL"
+      },
+      {
+       "case_id": "case_43",
+       "group": "control",
+       "llm": 45.0,
+       "llm_flag": false,
+       "screen": -3.737,
+       "screen_flag_primary": false,
+       "ticker": "NBR"
+      },
+      {
+       "case_id": "case_45",
+       "group": "control",
+       "llm": 28.0,
+       "llm_flag": false,
+       "screen": -2.456,
+       "screen_flag_primary": false,
+       "ticker": "FLO"
+      },
+      {
+       "case_id": "case_46",
+       "group": "control",
+       "llm": 42.0,
+       "llm_flag": false,
+       "screen": -2.632,
+       "screen_flag_primary": false,
+       "ticker": "UFPT"
+      },
+      {
+       "case_id": "case_47",
+       "group": "control",
+       "llm": 42.0,
+       "llm_flag": false,
+       "screen": -2.973,
+       "screen_flag_primary": false,
+       "ticker": "HALO"
+      },
+      {
+       "case_id": "case_48",
+       "group": "control",
+       "llm": 55.0,
+       "llm_flag": true,
+       "screen": -2.46,
+       "screen_flag_primary": false,
+       "ticker": "LPSN"
+      },
+      {
+       "case_id": "case_50",
+       "group": "control",
+       "llm": 15.0,
+       "llm_flag": false,
+       "screen": -2.157,
+       "screen_flag_primary": false,
+       "ticker": "ATRC"
+      },
+      {
+       "case_id": "case_52",
+       "group": "treatment",
+       "llm": 40.0,
+       "llm_flag": false,
+       "screen": -2.646,
+       "screen_flag_primary": false,
+       "ticker": "CSC"
+      },
+      {
+       "case_id": "case_54",
+       "group": "control",
+       "llm": 55.0,
+       "llm_flag": true,
+       "screen": -2.674,
+       "screen_flag_primary": false,
+       "ticker": "LEVI"
+      },
+      {
+       "case_id": "case_55",
+       "group": "control",
+       "llm": 25.0,
+       "llm_flag": false,
+       "screen": -1.982,
+       "screen_flag_primary": false,
+       "ticker": "BF-A"
+      },
+      {
+       "case_id": "case_57",
+       "group": "control",
+       "llm": 25.0,
+       "llm_flag": false,
+       "screen": -2.907,
+       "screen_flag_primary": false,
+       "ticker": "DAR"
+      },
+      {
+       "case_id": "case_59",
+       "group": "treatment",
+       "llm": 58.0,
+       "llm_flag": true,
+       "screen": -2.303,
+       "screen_flag_primary": false,
+       "ticker": "HAIN"
+      },
+      {
+       "case_id": "case_60",
+       "group": "treatment",
+       "llm": 65.0,
+       "llm_flag": true,
+       "screen": -1.242,
+       "screen_flag_primary": true,
+       "ticker": "MDXG"
+      },
+      {
+       "case_id": "case_65",
+       "group": "treatment",
+       "llm": 74.0,
+       "llm_flag": true,
+       "screen": -1.74,
+       "screen_flag_primary": true,
+       "ticker": "WFT"
+      },
+      {
+       "case_id": "case_66",
+       "group": "treatment",
+       "llm": 55.0,
+       "llm_flag": true,
+       "screen": -3.178,
+       "screen_flag_primary": false,
+       "ticker": "UAA"
+      },
+      {
+       "case_id": "case_68",
+       "group": "control",
+       "llm": 45.0,
+       "llm_flag": false,
+       "screen": -1.008,
+       "screen_flag_primary": true,
+       "ticker": "RGEN"
+      },
+      {
+       "case_id": "case_69",
+       "group": "control",
+       "llm": 50.0,
+       "llm_flag": true,
+       "screen": -2.53,
+       "screen_flag_primary": false,
+       "ticker": "AORT"
+      },
+      {
+       "case_id": "case_70",
+       "group": "control",
+       "llm": 28.0,
+       "llm_flag": false,
+       "screen": -3.673,
+       "screen_flag_primary": false,
+       "ticker": "MCHX"
+      }
+     ],
+     "screen": {
+      "auc": 0.6703,
+      "auc_boot95": [
+       0.396,
+       0.901
+      ],
+      "mean_diff": 0.4897,
+      "perm_mc_se": 0.00088,
+      "perm_p_one_sided": 0.084609
+     },
+     "spearman_rho_llm_vs_screen": 0.333,
+     "thresholds": {
+      "LLM >= 50": {
+       "detection": {
+        "cp95_pct": [
+         42.1,
+         99.6
+        ],
+        "k": 6,
+        "n": 7,
+        "pct": 85.7
+       },
+       "false_positive": {
+        "cp95_pct": [
+         5.0,
+         53.8
+        ],
+        "k": 3,
+        "n": 13,
+        "pct": 23.1
+       },
+       "precision": {
+        "cp95_pct": [
+         29.9,
+         92.5
+        ],
+        "k": 6,
+        "n": 9,
+        "pct": 66.7
+       },
+       "role": "llm_same_subset"
+      },
+      "M > -1.78": {
+       "detection": {
+        "cp95_pct": [
+         9.9,
+         81.6
+        ],
+        "k": 3,
+        "n": 7,
+        "pct": 42.9
+       },
+       "false_positive": {
+        "cp95_pct": [
+         0.2,
+         36.0
+        ],
+        "k": 1,
+        "n": 13,
+        "pct": 7.7
+       },
+       "precision": {
+        "cp95_pct": [
+         19.4,
+         99.4
+        ],
+        "k": 3,
+        "n": 4,
+        "pct": 75.0
+       },
+       "role": "primary"
+      },
+      "M > -2.22": {
+       "detection": {
+        "cp95_pct": [
+         9.9,
+         81.6
+        ],
+        "k": 3,
+        "n": 7,
+        "pct": 42.9
+       },
+       "false_positive": {
+        "cp95_pct": [
+         5.0,
+         53.8
+        ],
+        "k": 3,
+        "n": 13,
+        "pct": 23.1
+       },
+       "precision": {
+        "cp95_pct": [
+         11.8,
+         88.2
+        ],
+        "k": 3,
+        "n": 6,
+        "pct": 50.0
+       },
+       "role": "secondary"
+      }
+     }
+    },
+    "dechow_f": {
+     "coverage": {
+      "below_70pct": true,
+      "n_control": 23,
+      "n_control_computable": 11,
+      "n_treatment": 9,
+      "n_treatment_computable": 6,
+      "share": 0.531
+     },
+     "llm_same_subset": {
+      "auc": 0.9697,
+      "auc_boot95": [
+       0.909,
+       1.0
+      ],
+      "mean_diff": 26.7424,
+      "perm_mc_se": 6.7e-05,
+      "perm_p_one_sided": 0.00045
+     },
+     "paired_delta_auc": {
+      "ci95": [
+       0.061,
+       0.591
+      ],
+      "definition": "AUC_LLM - AUC_screen on the identical subset; stratified paired bootstrap",
+      "delta": 0.303
+     },
+     "per_case": [
+      {
+       "case_id": "case_39",
+       "group": "treatment",
+       "llm": 58.0,
+       "llm_flag": true,
+       "screen": 1.445,
+       "screen_flag_primary": true,
+       "ticker": "OSIR"
+      },
+      {
+       "case_id": "case_40",
+       "group": "treatment",
+       "llm": 55.0,
+       "llm_flag": true,
+       "screen": 1.494,
+       "screen_flag_primary": true,
+       "ticker": "TNGO"
+      },
+      {
+       "case_id": "case_42",
+       "group": "control",
+       "llm": 20.0,
+       "llm_flag": false,
+       "screen": 1.228,
+       "screen_flag_primary": true,
+       "ticker": "RL"
+      },
+      {
+       "case_id": "case_43",
+       "group": "control",
+       "llm": 45.0,
+       "llm_flag": false,
+       "screen": 0.368,
+       "screen_flag_primary": false,
+       "ticker": "NBR"
+      },
+      {
+       "case_id": "case_46",
+       "group": "control",
+       "llm": 42.0,
+       "llm_flag": false,
+       "screen": 0.234,
+       "screen_flag_primary": false,
+       "ticker": "UFPT"
+      },
+      {
+       "case_id": "case_48",
+       "group": "control",
+       "llm": 55.0,
+       "llm_flag": true,
+       "screen": 1.55,
+       "screen_flag_primary": true,
+       "ticker": "LPSN"
+      },
+      {
+       "case_id": "case_50",
+       "group": "control",
+       "llm": 15.0,
+       "llm_flag": false,
+       "screen": 0.661,
+       "screen_flag_primary": false,
+       "ticker": "ATRC"
+      },
+      {
+       "case_id": "case_53",
+       "group": "control",
+       "llm": 15.0,
+       "llm_flag": false,
+       "screen": 0.145,
+       "screen_flag_primary": false,
+       "ticker": "MRTN"
+      },
+      {
+       "case_id": "case_54",
+       "group": "control",
+       "llm": 55.0,
+       "llm_flag": true,
+       "screen": 0.427,
+       "screen_flag_primary": false,
+       "ticker": "LEVI"
+      },
+      {
+       "case_id": "case_55",
+       "group": "control",
+       "llm": 25.0,
+       "llm_flag": false,
+       "screen": 1.188,
+       "screen_flag_primary": true,
+       "ticker": "BF-A"
+      },
+      {
+       "case_id": "case_57",
+       "group": "control",
+       "llm": 25.0,
+       "llm_flag": false,
+       "screen": 0.956,
+       "screen_flag_primary": false,
+       "ticker": "DAR"
+      },
+      {
+       "case_id": "case_59",
+       "group": "treatment",
+       "llm": 58.0,
+       "llm_flag": true,
+       "screen": 0.595,
+       "screen_flag_primary": false,
+       "ticker": "HAIN"
+      },
+      {
+       "case_id": "case_60",
+       "group": "treatment",
+       "llm": 65.0,
+       "llm_flag": true,
+       "screen": 0.873,
+       "screen_flag_primary": false,
+       "ticker": "MDXG"
+      },
+      {
+       "case_id": "case_65",
+       "group": "treatment",
+       "llm": 74.0,
+       "llm_flag": true,
+       "screen": 1.086,
+       "screen_flag_primary": true,
+       "ticker": "WFT"
+      },
+      {
+       "case_id": "case_66",
+       "group": "treatment",
+       "llm": 55.0,
+       "llm_flag": true,
+       "screen": 1.008,
+       "screen_flag_primary": true,
+       "ticker": "UAA"
+      },
+      {
+       "case_id": "case_69",
+       "group": "control",
+       "llm": 50.0,
+       "llm_flag": true,
+       "screen": 1.285,
+       "screen_flag_primary": true,
+       "ticker": "AORT"
+      },
+      {
+       "case_id": "case_70",
+       "group": "control",
+       "llm": 28.0,
+       "llm_flag": false,
+       "screen": 0.773,
+       "screen_flag_primary": false,
+       "ticker": "MCHX"
+      }
+     ],
+     "screen": {
+      "auc": 0.6667,
+      "auc_boot95": [
+       0.379,
+       0.909
+      ],
+      "mean_diff": 0.2821,
+      "perm_mc_se": 0.000983,
+      "perm_p_one_sided": 0.108479
+     },
+     "spearman_rho_llm_vs_screen": 0.293,
+     "thresholds": {
+      "F >= 1.0": {
+       "detection": {
+        "cp95_pct": [
+         22.3,
+         95.7
+        ],
+        "k": 4,
+        "n": 6,
+        "pct": 66.7
+       },
+       "false_positive": {
+        "cp95_pct": [
+         10.9,
+         69.2
+        ],
+        "k": 4,
+        "n": 11,
+        "pct": 36.4
+       },
+       "precision": {
+        "cp95_pct": [
+         15.7,
+         84.3
+        ],
+        "k": 4,
+        "n": 8,
+        "pct": 50.0
+       },
+       "role": "primary"
+      },
+      "F >= 1.4": {
+       "detection": {
+        "cp95_pct": [
+         4.3,
+         77.7
+        ],
+        "k": 2,
+        "n": 6,
+        "pct": 33.3
+       },
+       "false_positive": {
+        "cp95_pct": [
+         0.2,
+         41.3
+        ],
+        "k": 1,
+        "n": 11,
+        "pct": 9.1
+       },
+       "precision": {
+        "cp95_pct": [
+         9.4,
+         99.2
+        ],
+        "k": 2,
+        "n": 3,
+        "pct": 66.7
+       },
+       "role": "secondary"
+      },
+      "LLM >= 50": {
+       "detection": {
+        "cp95_pct": [
+         54.1,
+         100.0
+        ],
+        "k": 6,
+        "n": 6,
+        "pct": 100.0
+       },
+       "false_positive": {
+        "cp95_pct": [
+         6.0,
+         61.0
+        ],
+        "k": 3,
+        "n": 11,
+        "pct": 27.3
+       },
+       "precision": {
+        "cp95_pct": [
+         29.9,
+         92.5
+        ],
+        "k": 6,
+        "n": 9,
+        "pct": 66.7
+       },
+       "role": "llm_same_subset"
+      }
+     }
+    }
+   },
+   "tier": "wave2"
+  }
+ },
+ "inputs": [
+  "analysis/unified_table.csv",
+  "analysis/holdout_controls_results.json",
+  "analysis/out/b1b2_cross_tier/screens_by_case.json"
+ ],
+ "interpretation_constraints": [
+  "Level 2 only (docs/CLAIM_HIERARCHY.md): selected retrospective sample, same point-in-time data, computable subset",
+  "no pooling across tiers; secondary frame, holdout and threshold tables are context only",
+  "no general 'LLM beats existing methods' claim (R4 framing constraint)",
+  "the name-ID-excluded sensitivity has no readout branch and changes no published verdict"
+ ],
+ "n_boot": 10000,
+ "n_perm": 100000,
+ "name_id_excluded_sensitivity": {
+  "wave1_primary_perturbed": {
+   "excluded": [
+    {
+     "case_id": "T12",
+     "group": "treatment",
+     "ticker": "LOGI"
+    },
+    {
+     "case_id": "T17",
+     "group": "treatment",
+     "ticker": "MRVL"
+    },
+    {
+     "case_id": "T28",
+     "group": "treatment",
+     "ticker": "KHC"
+    },
+    {
+     "case_id": "V02",
+     "group": "control",
+     "ticker": "MOS"
+    },
+    {
+     "case_id": "V03",
+     "group": "control",
+     "ticker": "CE"
+    },
+    {
+     "case_id": "V04",
+     "group": "control",
+     "ticker": "MASI"
+    },
+    {
+     "case_id": "V05",
+     "group": "control",
+     "ticker": "ARAY"
+    },
+    {
+     "case_id": "V08",
+     "group": "control",
+     "ticker": "CIEN"
+    },
+    {
+     "case_id": "V09",
+     "group": "control",
+     "ticker": "GRMN"
+    },
+    {
+     "case_id": "V12",
+     "group": "control",
+     "ticker": "IDCC"
+    },
+    {
+     "case_id": "V14",
+     "group": "control",
+     "ticker": "DLB"
+    },
+    {
+     "case_id": "V15",
+     "group": "control",
+     "ticker": "FSLR"
+    },
+    {
+     "case_id": "V18",
+     "group": "control",
+     "ticker": "FORR"
+    },
+    {
+     "case_id": "V19",
+     "group": "control",
+     "ticker": "EXPO"
+    },
+    {
+     "case_id": "V22",
+     "group": "control",
+     "ticker": "CPB"
+    }
+   ],
+   "llm": {
+    "auc": 0.84,
+    "auc_boot95": [
+     0.6,
+     1.0
+    ],
+    "mean_diff": 14.9,
+    "perm_mc_se": 0.0005,
+    "perm_p_one_sided": 0.02564
+   },
+   "n_control": 10,
+   "n_treatment": 5
+  },
+  "wave1_secondary_original": {
+   "excluded": [
+    {
+     "case_id": "T12",
+     "group": "treatment",
+     "ticker": "LOGI"
+    },
+    {
+     "case_id": "T17",
+     "group": "treatment",
+     "ticker": "MRVL"
+    },
+    {
+     "case_id": "T28",
+     "group": "treatment",
+     "ticker": "KHC"
+    },
+    {
+     "case_id": "V02",
+     "group": "control",
+     "ticker": "MOS"
+    },
+    {
+     "case_id": "V03",
+     "group": "control",
+     "ticker": "CE"
+    },
+    {
+     "case_id": "V04",
+     "group": "control",
+     "ticker": "MASI"
+    },
+    {
+     "case_id": "V05",
+     "group": "control",
+     "ticker": "ARAY"
+    },
+    {
+     "case_id": "V08",
+     "group": "control",
+     "ticker": "CIEN"
+    },
+    {
+     "case_id": "V09",
+     "group": "control",
+     "ticker": "GRMN"
+    },
+    {
+     "case_id": "V12",
+     "group": "control",
+     "ticker": "IDCC"
+    },
+    {
+     "case_id": "V14",
+     "group": "control",
+     "ticker": "DLB"
+    },
+    {
+     "case_id": "V15",
+     "group": "control",
+     "ticker": "FSLR"
+    },
+    {
+     "case_id": "V18",
+     "group": "control",
+     "ticker": "FORR"
+    },
+    {
+     "case_id": "V19",
+     "group": "control",
+     "ticker": "EXPO"
+    },
+    {
+     "case_id": "V22",
+     "group": "control",
+     "ticker": "CPB"
+    }
+   ],
+   "llm": {
+    "auc": 0.78,
+    "auc_boot95": [
+     0.44,
+     1.0
+    ],
+    "mean_diff": 20.5,
+    "perm_mc_se": 0.000486,
+    "perm_p_one_sided": 0.02421
+   },
+   "n_control": 10,
+   "n_treatment": 5
+  },
+  "wave2_primary_original": {
+   "excluded": [
+    {
+     "case_id": "case_42",
+     "group": "control",
+     "ticker": "RL"
+    },
+    {
+     "case_id": "case_48",
+     "group": "control",
+     "ticker": "LPSN"
+    },
+    {
+     "case_id": "case_52",
+     "group": "treatment",
+     "ticker": "CSC"
+    },
+    {
+     "case_id": "case_54",
+     "group": "control",
+     "ticker": "LEVI"
+    },
+    {
+     "case_id": "case_55",
+     "group": "control",
+     "ticker": "BF-A"
+    },
+    {
+     "case_id": "case_59",
+     "group": "treatment",
+     "ticker": "HAIN"
+    },
+    {
+     "case_id": "case_66",
+     "group": "treatment",
+     "ticker": "UAA"
+    }
+   ],
+   "llm": {
+    "auc": 0.8421,
+    "auc_boot95": [
+     0.553,
+     1.0
+    ],
+    "mean_diff": 23.5439,
+    "perm_mc_se": 0.000154,
+    "perm_p_one_sided": 0.00239
+   },
+   "n_control": 19,
+   "n_treatment": 6
+  }
+ },
+ "readout": {
+  "wave1_primary_perturbed:beneish_m": {
+   "branch": "A",
+   "ci95": [
+    0.042,
+    0.708
+   ],
+   "computable_subset_only": false,
+   "delta_auc": 0.3698,
+   "statement": "LLM score separates treatment from controls better than the screen on the identical computable subset"
+  },
+  "wave1_primary_perturbed:dechow_f": {
+   "branch": "B",
+   "ci95": [
+    -0.104,
+    0.594
+   ],
+   "computable_subset_only": false,
+   "delta_auc": 0.25,
+   "statement": "LLM score and screen are not distinguishable at this N on the identical computable subset"
+  },
+  "wave2_primary_original:beneish_m": {
+   "branch": "B",
+   "ci95": [
+    0.0,
+    0.495
+   ],
+   "computable_subset_only": true,
+   "delta_auc": 0.2308,
+   "statement": "LLM score and screen are not distinguishable at this N on the identical computable subset [computable-subset only: coverage below 70%]"
+  },
+  "wave2_primary_original:dechow_f": {
+   "branch": "A",
+   "ci95": [
+    0.061,
+    0.591
+   ],
+   "computable_subset_only": true,
+   "delta_auc": 0.303,
+   "statement": "LLM score separates treatment from controls better than the screen on the identical computable subset [computable-subset only: coverage below 70%]"
+  }
+ },
+ "seed": 20260904,
+ "spec": "specs/B1B2_CROSS_TIER.md",
+ "spec_commit": "95cf8cd",
+ "thresholds": {
+  "beneish_m": [
+   -1.78,
+   -2.22
+  ],
+  "dechow_f": [
+   1.0,
+   1.4
+  ],
+  "llm_flag": 50,
+  "min_group": 3
+ }
+}

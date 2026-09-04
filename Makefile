@@ -53,6 +53,7 @@ verify-full: corpus-check
 	.venv/bin/python analysis/stats.py
 	.venv/bin/python analysis/synthesis.py
 	.venv/bin/python analysis/calibration_wave2.py
+	.venv/bin/python analysis/b1b2_screens_all_tiers.py
 	$(MAKE) verify-public
 
 corpus-check:

@@ -1,0 +1,1720 @@
+{
+ "cases": {
+  "holdout:case_71": {
+   "case_id": "case_71",
+   "cutoff_date": "2026-02-04",
+   "error": null,
+   "f_missing": [
+    "rsst_acc",
+    "ch_rec",
+    "ch_cs"
+   ],
+   "f_score": null,
+   "fiscal_year_ends_used": [
+    "2024-12-31",
+    "2023-12-31",
+    "2022-12-31"
+   ],
+   "group": "fraud",
+   "m_missing": [
+    "DSRI",
+    "GMI"
+   ],
+   "m_score": null,
+   "ticker": "HUBG",
+   "wave": "holdout"
+  },
+  "holdout:case_72": {
+   "case_id": "case_72",
+   "cutoff_date": "2026-02-19",
+   "error": null,
+   "f_missing": [],
+   "f_score": 0.2490613256112502,
+   "fiscal_year_ends_used": [
+    "2024-12-28",
+    "2023-12-30",
+    "2022-12-31"
+   ],
+   "group": "fraud",
+   "m_missing": [
+    "GMI"
+   ],
+   "m_score": null,
+   "ticker": "WMK",
+   "wave": "holdout"
+  },
+  "holdout:case_73": {
+   "case_id": "case_73",
+   "cutoff_date": "2026-03-11",
+   "error": null,
+   "f_missing": [],
+   "f_score": 0.3604295108875219,
+   "fiscal_year_ends_used": [
+    "2024-12-31",
+    "2023-12-31",
+    "2022-12-31"
+   ],
+   "group": "fraud",
+   "m_missing": [],
+   "m_score": -2.0464953096565113,
+   "ticker": "GNE",
+   "wave": "holdout"
+  },
+  "holdout_controls:BCO": {
+   "case_id": "BCO",
+   "cutoff_date": "2026-02-04",
+   "error": null,
+   "f_missing": [],
+   "f_score": 0.33232638456268937,
+   "fiscal_year_ends_used": [
+    "2024-12-31",
+    "2023-12-31",
+    "2022-12-31"
+   ],
+   "group": "control",
+   "m_missing": [
+    "SGAI"
+   ],
+   "m_score": null,
+   "ticker": "BCO",
+   "wave": "holdout_controls"
+  },
+  "holdout_controls:GO": {
+   "case_id": "GO",
+   "cutoff_date": "2026-02-19",
+   "error": null,
+   "f_missing": [],
+   "f_score": 0.46520236769103596,
+   "fiscal_year_ends_used": [
+    "2024-12-28",
+    "2023-12-30",
+    "2022-12-31"
+   ],
+   "group": "control",
+   "m_missing": [],
+   "m_score": -2.460259769999104,
+   "ticker": "GO",
+   "wave": "holdout_controls"
+  },
+  "holdout_controls:GRDX": {
+   "case_id": "GRDX",
+   "cutoff_date": "2026-03-11",
+   "error": null,
+   "f_missing": [
+    "ch_rec",
+    "soft_assets",
+    "ch_cs"
+   ],
+   "f_score": null,
+   "fiscal_year_ends_used": [
+    "2024-12-31",
+    "2023-12-31",
+    "2022-12-31"
+   ],
+   "group": "control",
+   "m_missing": [
+    "DSRI",
+    "GMI",
+    "AQI",
+    "SGI",
+    "SGAI"
+   ],
+   "m_score": null,
+   "ticker": "GRDX",
+   "wave": "holdout_controls"
+  },
+  "holdout_controls:RXO": {
+   "case_id": "RXO",
+   "cutoff_date": "2026-02-04",
+   "error": null,
+   "f_missing": [
+    "rsst_acc"
+   ],
+   "f_score": null,
+   "fiscal_year_ends_used": [
+    "2024-12-31",
+    "2023-12-31",
+    "2022-12-31"
+   ],
+   "group": "control",
+   "m_missing": [
+    "GMI"
+   ],
+   "m_score": null,
+   "ticker": "RXO",
+   "wave": "holdout_controls"
+  },
+  "holdout_controls:SFM": {
+   "case_id": "SFM",
+   "cutoff_date": "2026-02-19",
+   "error": null,
+   "f_missing": [
+    "soft_assets"
+   ],
+   "f_score": null,
+   "fiscal_year_ends_used": [
+    "2025-12-28",
+    "2024-12-29",
+    "2023-12-31"
+   ],
+   "group": "control",
+   "m_missing": [
+    "AQI",
+    "DEPI"
+   ],
+   "m_score": null,
+   "ticker": "SFM",
+   "wave": "holdout_controls"
+  },
+  "holdout_controls:UTL": {
+   "case_id": "UTL",
+   "cutoff_date": "2026-03-11",
+   "error": null,
+   "f_missing": [
+    "rsst_acc",
+    "soft_assets"
+   ],
+   "f_score": null,
+   "fiscal_year_ends_used": [
+    "2025-12-31",
+    "2024-12-31",
+    "2023-12-31"
+   ],
+   "group": "control",
+   "m_missing": [
+    "GMI",
+    "AQI",
+    "DEPI",
+    "SGAI"
+   ],
+   "m_score": null,
+   "ticker": "UTL",
+   "wave": "holdout_controls"
+  },
+  "holdout_controls:VIASP": {
+   "case_id": "VIASP",
+   "cutoff_date": "2026-03-11",
+   "error": null,
+   "f_missing": [],
+   "f_score": 1.785368146232315,
+   "fiscal_year_ends_used": [
+    "2025-12-31",
+    "2024-12-31",
+    "2023-12-31"
+   ],
+   "group": "control",
+   "m_missing": [],
+   "m_score": -2.3729349088955902,
+   "ticker": "VIASP",
+   "wave": "holdout_controls"
+  },
+  "holdout_controls:VLGEA": {
+   "case_id": "VLGEA",
+   "cutoff_date": "2026-02-19",
+   "error": null,
+   "f_missing": [
+    "rsst_acc",
+    "ch_rec",
+    "ch_cs"
+   ],
+   "f_score": null,
+   "fiscal_year_ends_used": [
+    "2025-07-26",
+    "2024-07-27",
+    "2023-07-29"
+   ],
+   "group": "control",
+   "m_missing": [
+    "DSRI"
+   ],
+   "m_score": null,
+   "ticker": "VLGEA",
+   "wave": "holdout_controls"
+  },
+  "holdout_controls:XPO": {
+   "case_id": "XPO",
+   "cutoff_date": "2026-02-04",
+   "error": null,
+   "f_missing": [
+    "rsst_acc"
+   ],
+   "f_score": null,
+   "fiscal_year_ends_used": [
+    "2024-12-31",
+    "2023-12-31",
+    "2022-12-31"
+   ],
+   "group": "control",
+   "m_missing": [
+    "GMI",
+    "SGAI"
+   ],
+   "m_score": null,
+   "ticker": "XPO",
+   "wave": "holdout_controls"
+  },
+  "wave1:T07": {
+   "case_id": "T07",
+   "cutoff_date": "2011-06-28",
+   "error": null,
+   "f_missing": [
+    "rsst_acc"
+   ],
+   "f_score": null,
+   "fiscal_year_ends_used": [
+    "2010-08-31",
+    "2009-08-31",
+    "2008-08-31"
+   ],
+   "group": "fraud",
+   "m_missing": [],
+   "m_score": -2.426106855927867,
+   "ticker": "MON",
+   "wave": "wave1"
+  },
+  "wave1:T11": {
+   "case_id": "T11",
+   "cutoff_date": "2013-07-28",
+   "error": null,
+   "f_missing": [],
+   "f_score": 1.626433492399362,
+   "fiscal_year_ends_used": [
+    "2012-12-31",
+    "2011-12-31",
+    "2010-12-31"
+   ],
+   "group": "fraud",
+   "m_missing": [],
+   "m_score": -1.5270821152956189,
+   "ticker": "OFIX",
+   "wave": "wave1"
+  },
+  "wave1:T12": {
+   "case_id": "T12",
+   "cutoff_date": "2013-08-06",
+   "error": null,
+   "f_missing": [],
+   "f_score": 0.3685984969434358,
+   "fiscal_year_ends_used": [
+    "2013-03-31",
+    "2012-03-31",
+    "2011-03-31"
+   ],
+   "group": "fraud",
+   "m_missing": [],
+   "m_score": -4.009151041765871,
+   "ticker": "LOGI",
+   "wave": "wave1"
+  },
+  "wave1:T13": {
+   "case_id": "T13",
+   "cutoff_date": "2014-05-12",
+   "error": null,
+   "f_missing": [
+    "rsst_acc"
+   ],
+   "f_score": null,
+   "fiscal_year_ends_used": [
+    "2013-12-31",
+    "2012-12-31",
+    "2011-12-31"
+   ],
+   "group": "fraud",
+   "m_missing": [
+    "GMI",
+    "AQI",
+    "DEPI",
+    "LVGI"
+   ],
+   "m_score": null,
+   "ticker": "HTZ",
+   "wave": "wave1"
+  },
+  "wave1:T16": {
+   "case_id": "T16",
+   "cutoff_date": "2015-08-09",
+   "error": null,
+   "f_missing": [],
+   "f_score": 0.7003029385249269,
+   "fiscal_year_ends_used": [
+    "2014-12-31",
+    "2013-12-31",
+    "2012-12-31"
+   ],
+   "group": "fraud",
+   "m_missing": [
+    "GMI"
+   ],
+   "m_score": null,
+   "ticker": "ICON",
+   "wave": "wave1"
+  },
+  "wave1:T17": {
+   "case_id": "T17",
+   "cutoff_date": "2015-09-10",
+   "error": null,
+   "f_missing": [],
+   "f_score": 1.226011859099635,
+   "fiscal_year_ends_used": [
+    "2015-01-31",
+    "2014-02-01",
+    "2013-02-02"
+   ],
+   "group": "fraud",
+   "m_missing": [],
+   "m_score": -2.785483950734183,
+   "ticker": "MRVL",
+   "wave": "wave1"
+  },
+  "wave1:T21": {
+   "case_id": "T21",
+   "cutoff_date": "2016-02-28",
+   "error": null,
+   "f_missing": [],
+   "f_score": 0.5074354766531907,
+   "fiscal_year_ends_used": [
+    "2014-12-31",
+    "2013-12-31",
+    "2012-12-31"
+   ],
+   "group": "fraud",
+   "m_missing": [],
+   "m_score": -3.2920438197280086,
+   "ticker": "SCOR",
+   "wave": "wave1"
+  },
+  "wave1:T28": {
+   "case_id": "T28",
+   "cutoff_date": "2019-02-20",
+   "error": null,
+   "f_missing": [],
+   "f_score": 0.6419185060457099,
+   "fiscal_year_ends_used": [
+    "2017-12-30",
+    "2016-12-31",
+    "2016-01-03"
+   ],
+   "group": "fraud",
+   "m_missing": [],
+   "m_score": -1.8267496918962767,
+   "ticker": "KHC",
+   "wave": "wave1"
+  },
+  "wave1:V01": {
+   "case_id": "V01",
+   "cutoff_date": "2011-06-28",
+   "error": null,
+   "f_missing": [],
+   "f_score": 0.7315416218930291,
+   "fiscal_year_ends_used": [
+    "2010-09-30",
+    "2009-09-30",
+    "2008-09-30"
+   ],
+   "group": "control",
+   "m_missing": [],
+   "m_score": -2.5372122761981974,
+   "ticker": "APD",
+   "wave": "wave1"
+  },
+  "wave1:V02": {
+   "case_id": "V02",
+   "cutoff_date": "2011-06-28",
+   "error": "컷오프 전 연차 XBRL 기간 1개 — 스크린 계산 불능 (연차 2개 필요)",
+   "f_missing": null,
+   "f_score": null,
+   "fiscal_year_ends_used": [
+    "2010-05-31"
+   ],
+   "group": "control",
+   "m_missing": null,
+   "m_score": null,
+   "ticker": "MOS",
+   "wave": "wave1"
+  },
+  "wave1:V03": {
+   "case_id": "V03",
+   "cutoff_date": "2011-06-28",
+   "error": null,
+   "f_missing": [
+    "rsst_acc"
+   ],
+   "f_score": null,
+   "fiscal_year_ends_used": [
+    "2010-12-31",
+    "2009-12-31",
+    "2008-12-31"
+   ],
+   "group": "control",
+   "m_missing": [],
+   "m_score": -2.356917576891104,
+   "ticker": "CE",
+   "wave": "wave1"
+  },
+  "wave1:V04": {
+   "case_id": "V04",
+   "cutoff_date": "2013-07-28",
+   "error": null,
+   "f_missing": [],
+   "f_score": 0.5566293466794986,
+   "fiscal_year_ends_used": [
+    "2012-12-29",
+    "2011-12-31",
+    "2011-01-01"
+   ],
+   "group": "control",
+   "m_missing": [],
+   "m_score": -2.3353869241960936,
+   "ticker": "MASI",
+   "wave": "wave1"
+  },
+  "wave1:V05": {
+   "case_id": "V05",
+   "cutoff_date": "2013-07-28",
+   "error": null,
+   "f_missing": [
+    "ch_rec",
+    "ch_cs"
+   ],
+   "f_score": null,
+   "fiscal_year_ends_used": [
+    "2012-06-30",
+    "2011-06-30",
+    "2010-06-30"
+   ],
+   "group": "control",
+   "m_missing": [
+    "DSRI"
+   ],
+   "m_score": null,
+   "ticker": "ARAY",
+   "wave": "wave1"
+  },
+  "wave1:V06": {
+   "case_id": "V06",
+   "cutoff_date": "2013-07-28",
+   "error": null,
+   "f_missing": [],
+   "f_score": 1.1940777282810482,
+   "fiscal_year_ends_used": [
+    "2012-12-31",
+    "2011-12-31",
+    "2010-12-31"
+   ],
+   "group": "control",
+   "m_missing": [],
+   "m_score": -2.706326222194146,
+   "ticker": "MMSI",
+   "wave": "wave1"
+  },
+  "wave1:V07": {
+   "case_id": "V07",
+   "cutoff_date": "2013-08-06",
+   "error": null,
+   "f_missing": [],
+   "f_score": 0.6630556118421926,
+   "fiscal_year_ends_used": [
+    "2012-12-30",
+    "2012-01-01",
+    "2011-01-02"
+   ],
+   "group": "control",
+   "m_missing": [],
+   "m_score": -2.3524952024041372,
+   "ticker": "TDY",
+   "wave": "wave1"
+  },
+  "wave1:V08": {
+   "case_id": "V08",
+   "cutoff_date": "2013-08-06",
+   "error": null,
+   "f_missing": [],
+   "f_score": 0.7793639072144858,
+   "fiscal_year_ends_used": [
+    "2012-10-31",
+    "2011-10-31",
+    "2010-10-31"
+   ],
+   "group": "control",
+   "m_missing": [],
+   "m_score": -3.471202363311366,
+   "ticker": "CIEN",
+   "wave": "wave1"
+  },
+  "wave1:V09": {
+   "case_id": "V09",
+   "cutoff_date": "2013-08-06",
+   "error": null,
+   "f_missing": [
+    "rsst_acc"
+   ],
+   "f_score": null,
+   "fiscal_year_ends_used": [
+    "2012-12-29",
+    "2011-12-31",
+    "2010-12-25"
+   ],
+   "group": "control",
+   "m_missing": [],
+   "m_score": -2.6944546092798998,
+   "ticker": "GRMN",
+   "wave": "wave1"
+  },
+  "wave1:V10": {
+   "case_id": "V10",
+   "cutoff_date": "2014-05-12",
+   "error": null,
+   "f_missing": [],
+   "f_score": 0.6532145612507625,
+   "fiscal_year_ends_used": [
+    "2013-12-31",
+    "2012-12-31",
+    "2011-12-31"
+   ],
+   "group": "control",
+   "m_missing": [],
+   "m_score": -2.9631357331384183,
+   "ticker": "R",
+   "wave": "wave1"
+  },
+  "wave1:V11": {
+   "case_id": "V11",
+   "cutoff_date": "2014-05-12",
+   "error": null,
+   "f_missing": [
+    "rsst_acc"
+   ],
+   "f_score": null,
+   "fiscal_year_ends_used": [
+    "2013-12-31",
+    "2012-12-31",
+    "2011-12-31"
+   ],
+   "group": "control",
+   "m_missing": [
+    "AQI",
+    "LVGI"
+   ],
+   "m_score": null,
+   "ticker": "UPBD",
+   "wave": "wave1"
+  },
+  "wave1:V12": {
+   "case_id": "V12",
+   "cutoff_date": "2015-08-09",
+   "error": null,
+   "f_missing": [],
+   "f_score": 0.3141397094857203,
+   "fiscal_year_ends_used": [
+    "2014-12-31",
+    "2013-12-31",
+    "2012-12-31"
+   ],
+   "group": "control",
+   "m_missing": [
+    "GMI"
+   ],
+   "m_score": null,
+   "ticker": "IDCC",
+   "wave": "wave1"
+  },
+  "wave1:V13": {
+   "case_id": "V13",
+   "cutoff_date": "2015-08-09",
+   "error": null,
+   "f_missing": [],
+   "f_score": 0.6475483038512848,
+   "fiscal_year_ends_used": [
+    "2014-12-31",
+    "2013-12-31",
+    "2012-12-31"
+   ],
+   "group": "control",
+   "m_missing": [],
+   "m_score": -2.452184584614712,
+   "ticker": "RCKY",
+   "wave": "wave1"
+  },
+  "wave1:V14": {
+   "case_id": "V14",
+   "cutoff_date": "2015-08-09",
+   "error": null,
+   "f_missing": [],
+   "f_score": 0.32532891619979487,
+   "fiscal_year_ends_used": [
+    "2014-09-26",
+    "2013-09-27",
+    "2012-09-28"
+   ],
+   "group": "control",
+   "m_missing": [],
+   "m_score": -2.9672334397186146,
+   "ticker": "DLB",
+   "wave": "wave1"
+  },
+  "wave1:V15": {
+   "case_id": "V15",
+   "cutoff_date": "2015-09-10",
+   "error": null,
+   "f_missing": [],
+   "f_score": 0.9041700920038489,
+   "fiscal_year_ends_used": [
+    "2014-12-31",
+    "2013-12-31",
+    "2012-12-31"
+   ],
+   "group": "control",
+   "m_missing": [],
+   "m_score": -2.4129269920015934,
+   "ticker": "FSLR",
+   "wave": "wave1"
+  },
+  "wave1:V16": {
+   "case_id": "V16",
+   "cutoff_date": "2015-09-10",
+   "error": null,
+   "f_missing": [],
+   "f_score": 0.55384520328388,
+   "fiscal_year_ends_used": [
+    "2014-12-31",
+    "2013-12-31",
+    "2012-12-31"
+   ],
+   "group": "control",
+   "m_missing": [],
+   "m_score": -2.7987591042063817,
+   "ticker": "AMKR",
+   "wave": "wave1"
+  },
+  "wave1:V17": {
+   "case_id": "V17",
+   "cutoff_date": "2015-09-10",
+   "error": null,
+   "f_missing": [
+    "rsst_acc"
+   ],
+   "f_score": null,
+   "fiscal_year_ends_used": [
+    "2014-12-31",
+    "2013-12-31",
+    "2012-12-31"
+   ],
+   "group": "control",
+   "m_missing": [],
+   "m_score": -2.7624837056013045,
+   "ticker": "BHE",
+   "wave": "wave1"
+  },
+  "wave1:V18": {
+   "case_id": "V18",
+   "cutoff_date": "2016-02-28",
+   "error": null,
+   "f_missing": [],
+   "f_score": 0.3908864735388269,
+   "fiscal_year_ends_used": [
+    "2014-12-31",
+    "2013-12-31",
+    "2012-12-31"
+   ],
+   "group": "control",
+   "m_missing": [],
+   "m_score": -2.8277160754126656,
+   "ticker": "FORR",
+   "wave": "wave1"
+  },
+  "wave1:V19": {
+   "case_id": "V19",
+   "cutoff_date": "2016-02-28",
+   "error": null,
+   "f_missing": [],
+   "f_score": 0.3554940012596707,
+   "fiscal_year_ends_used": [
+    "2016-01-01",
+    "2015-01-02",
+    "2014-01-03"
+   ],
+   "group": "control",
+   "m_missing": [
+    "GMI"
+   ],
+   "m_score": null,
+   "ticker": "EXPO",
+   "wave": "wave1"
+  },
+  "wave1:V20": {
+   "case_id": "V20",
+   "cutoff_date": "2016-02-28",
+   "error": null,
+   "f_missing": [],
+   "f_score": 0.264248582696991,
+   "fiscal_year_ends_used": [
+    "2015-09-30",
+    "2014-09-30",
+    "2013-09-30"
+   ],
+   "group": "control",
+   "m_missing": [
+    "GMI"
+   ],
+   "m_score": null,
+   "ticker": "LQDT",
+   "wave": "wave1"
+  },
+  "wave1:V21": {
+   "case_id": "V21",
+   "cutoff_date": "2019-02-20",
+   "error": null,
+   "f_missing": [],
+   "f_score": 1.6628088692667498,
+   "fiscal_year_ends_used": [
+    "2018-05-27",
+    "2017-05-28",
+    "2016-05-29"
+   ],
+   "group": "control",
+   "m_missing": [],
+   "m_score": -2.3789080104570326,
+   "ticker": "GIS",
+   "wave": "wave1"
+  },
+  "wave1:V22": {
+   "case_id": "V22",
+   "cutoff_date": "2019-02-20",
+   "error": null,
+   "f_missing": [],
+   "f_score": 1.479834928371408,
+   "fiscal_year_ends_used": [
+    "2018-07-29",
+    "2017-07-30",
+    "2016-07-31"
+   ],
+   "group": "control",
+   "m_missing": [],
+   "m_score": -2.443905775326996,
+   "ticker": "CPB",
+   "wave": "wave1"
+  },
+  "wave2:case_39": {
+   "case_id": "T19",
+   "cutoff_date": "2015-11-05",
+   "error": null,
+   "f_missing": [],
+   "f_score": 1.4454280997130584,
+   "fiscal_year_ends_used": [
+    "2014-12-31",
+    "2013-12-31",
+    "2012-12-31"
+   ],
+   "group": "fraud",
+   "m_missing": [],
+   "m_score": -1.1734755689282867,
+   "ticker": "OSIR",
+   "wave": "wave2"
+  },
+  "wave2:case_40": {
+   "case_id": "T22",
+   "cutoff_date": "2016-03-06",
+   "error": null,
+   "f_missing": [],
+   "f_score": 1.4944835808998989,
+   "fiscal_year_ends_used": [
+    "2014-12-31",
+    "2013-12-31",
+    "2012-12-31"
+   ],
+   "group": "fraud",
+   "m_missing": [],
+   "m_score": -2.609061425890093,
+   "ticker": "TNGO",
+   "wave": "wave2"
+  },
+  "wave2:case_41": {
+   "case_id": "W10",
+   "cutoff_date": "2016-03-06",
+   "error": null,
+   "f_missing": [
+    "rsst_acc"
+   ],
+   "f_score": null,
+   "fiscal_year_ends_used": [
+    "2015-12-31",
+    "2014-12-31",
+    "2013-12-31"
+   ],
+   "group": "control",
+   "m_missing": [
+    "SGAI"
+   ],
+   "m_score": null,
+   "ticker": "HSTM",
+   "wave": "wave2"
+  },
+  "wave2:case_42": {
+   "case_id": "W22",
+   "cutoff_date": "2019-11-02",
+   "error": null,
+   "f_missing": [],
+   "f_score": 1.2279930268606711,
+   "fiscal_year_ends_used": [
+    "2019-03-30",
+    "2018-03-31",
+    "2017-04-01"
+   ],
+   "group": "control",
+   "m_missing": [],
+   "m_score": -2.831855028524015,
+   "ticker": "RL",
+   "wave": "wave2"
+  },
+  "wave2:case_43": {
+   "case_id": "W01",
+   "cutoff_date": "2011-02-28",
+   "error": null,
+   "f_missing": [],
+   "f_score": 0.3677998385268098,
+   "fiscal_year_ends_used": [
+    "2009-12-31",
+    "2008-12-31",
+    "2007-12-31"
+   ],
+   "group": "control",
+   "m_missing": [],
+   "m_score": -3.736698646587334,
+   "ticker": "NBR",
+   "wave": "wave2"
+  },
+  "wave2:case_44": {
+   "case_id": "W08",
+   "cutoff_date": "2016-02-07",
+   "error": null,
+   "f_missing": [
+    "rsst_acc",
+    "ch_rec",
+    "soft_assets",
+    "ch_cs"
+   ],
+   "f_score": null,
+   "fiscal_year_ends_used": [
+    "2014-12-31",
+    "2013-12-31",
+    "2012-12-31"
+   ],
+   "group": "control",
+   "m_missing": [
+    "DSRI",
+    "GMI",
+    "AQI",
+    "SGI",
+    "DEPI",
+    "SGAI",
+    "LVGI"
+   ],
+   "m_score": null,
+   "ticker": "ADAM",
+   "wave": "wave2"
+  },
+  "wave2:case_45": {
+   "case_id": "W13",
+   "cutoff_date": "2016-08-14",
+   "error": null,
+   "f_missing": [
+    "rsst_acc"
+   ],
+   "f_score": null,
+   "fiscal_year_ends_used": [
+    "2016-01-02",
+    "2015-01-03",
+    "2013-12-28"
+   ],
+   "group": "control",
+   "m_missing": [],
+   "m_score": -2.4564065891833176,
+   "ticker": "FLO",
+   "wave": "wave2"
+  },
+  "wave2:case_46": {
+   "case_id": "W19",
+   "cutoff_date": "2016-12-14",
+   "error": null,
+   "f_missing": [],
+   "f_score": 0.23425770523219208,
+   "fiscal_year_ends_used": [
+    "2015-12-31",
+    "2014-12-31",
+    "2013-12-31"
+   ],
+   "group": "control",
+   "m_missing": [],
+   "m_score": -2.6316361620199022,
+   "ticker": "UFPT",
+   "wave": "wave2"
+  },
+  "wave2:case_47": {
+   "case_id": "W05",
+   "cutoff_date": "2015-11-05",
+   "error": null,
+   "f_missing": [
+    "rsst_acc"
+   ],
+   "f_score": null,
+   "fiscal_year_ends_used": [
+    "2014-12-31",
+    "2013-12-31",
+    "2012-12-31"
+   ],
+   "group": "control",
+   "m_missing": [],
+   "m_score": -2.973213339036298,
+   "ticker": "HALO",
+   "wave": "wave2"
+  },
+  "wave2:case_48": {
+   "case_id": "W09",
+   "cutoff_date": "2016-03-06",
+   "error": null,
+   "f_missing": [],
+   "f_score": 1.5501956764841054,
+   "fiscal_year_ends_used": [
+    "2014-12-31",
+    "2013-12-31",
+    "2012-12-31"
+   ],
+   "group": "control",
+   "m_missing": [],
+   "m_score": -2.460064628167409,
+   "ticker": "LPSN",
+   "wave": "wave2"
+  },
+  "wave2:case_49": {
+   "case_id": "W04",
+   "cutoff_date": "2015-11-05",
+   "error": null,
+   "f_missing": [
+    "rsst_acc",
+    "ch_rec",
+    "ch_cs"
+   ],
+   "f_score": null,
+   "fiscal_year_ends_used": [
+    "2014-12-31",
+    "2013-12-31",
+    "2012-12-31"
+   ],
+   "group": "control",
+   "m_missing": [
+    "DSRI",
+    "GMI",
+    "AQI",
+    "SGI",
+    "SGAI"
+   ],
+   "m_score": null,
+   "ticker": "IOVA",
+   "wave": "wave2"
+  },
+  "wave2:case_50": {
+   "case_id": "W20",
+   "cutoff_date": "2016-12-14",
+   "error": null,
+   "f_missing": [],
+   "f_score": 0.660782673070392,
+   "fiscal_year_ends_used": [
+    "2015-12-31",
+    "2014-12-31",
+    "2013-12-31"
+   ],
+   "group": "control",
+   "m_missing": [],
+   "m_score": -2.1574325819376217,
+   "ticker": "ATRC",
+   "wave": "wave2"
+  },
+  "wave2:case_51": {
+   "case_id": "W02",
+   "cutoff_date": "2011-02-28",
+   "error": null,
+   "f_missing": [
+    "rsst_acc",
+    "ch_cs"
+   ],
+   "f_score": null,
+   "fiscal_year_ends_used": [
+    "2010-12-31",
+    "2009-12-31",
+    "2008-12-31"
+   ],
+   "group": "control",
+   "m_missing": [
+    "DSRI",
+    "GMI",
+    "SGI",
+    "DEPI",
+    "SGAI"
+   ],
+   "m_score": null,
+   "ticker": "VAL",
+   "wave": "wave2"
+  },
+  "wave2:case_52": {
+   "case_id": "T02",
+   "cutoff_date": "2010-08-10",
+   "error": null,
+   "f_missing": [
+    "rsst_acc"
+   ],
+   "f_score": null,
+   "fiscal_year_ends_used": [
+    "2010-04-02",
+    "2009-04-03",
+    "2008-03-28"
+   ],
+   "group": "fraud",
+   "m_missing": [],
+   "m_score": -2.6456491800002278,
+   "ticker": "CSC",
+   "wave": "wave2"
+  },
+  "wave2:case_53": {
+   "case_id": "W17",
+   "cutoff_date": "2017-04-04",
+   "error": null,
+   "f_missing": [],
+   "f_score": 0.14517483006759288,
+   "fiscal_year_ends_used": [
+    "2016-12-31",
+    "2015-12-31",
+    "2014-12-31"
+   ],
+   "group": "control",
+   "m_missing": [
+    "GMI",
+    "SGAI"
+   ],
+   "m_score": null,
+   "ticker": "MRTN",
+   "wave": "wave2"
+  },
+  "wave2:case_54": {
+   "case_id": "W21",
+   "cutoff_date": "2019-11-02",
+   "error": null,
+   "f_missing": [],
+   "f_score": 0.4265582719797174,
+   "fiscal_year_ends_used": [
+    "2018-11-25",
+    "2017-11-26",
+    "2016-11-27"
+   ],
+   "group": "control",
+   "m_missing": [],
+   "m_score": -2.674468626130229,
+   "ticker": "LEVI",
+   "wave": "wave2"
+  },
+  "wave2:case_55": {
+   "case_id": "W14",
+   "cutoff_date": "2016-08-14",
+   "error": null,
+   "f_missing": [],
+   "f_score": 1.1876569853340473,
+   "fiscal_year_ends_used": [
+    "2016-04-30",
+    "2015-04-30",
+    "2014-04-30"
+   ],
+   "group": "control",
+   "m_missing": [],
+   "m_score": -1.9819723078775886,
+   "ticker": "BF-A",
+   "wave": "wave2"
+  },
+  "wave2:case_56": {
+   "case_id": "W07",
+   "cutoff_date": "2016-02-07",
+   "error": null,
+   "f_missing": [
+    "rsst_acc",
+    "ch_rec",
+    "soft_assets",
+    "ch_cs"
+   ],
+   "f_score": null,
+   "fiscal_year_ends_used": [
+    "2014-12-31",
+    "2013-12-31",
+    "2012-12-31"
+   ],
+   "group": "control",
+   "m_missing": [
+    "DSRI",
+    "GMI",
+    "AQI",
+    "SGI",
+    "DEPI",
+    "SGAI",
+    "LVGI"
+   ],
+   "m_score": null,
+   "ticker": "BXMT",
+   "wave": "wave2"
+  },
+  "wave2:case_57": {
+   "case_id": "W12",
+   "cutoff_date": "2016-08-14",
+   "error": null,
+   "f_missing": [],
+   "f_score": 0.9555678267963381,
+   "fiscal_year_ends_used": [
+    "2016-01-02",
+    "2015-01-03",
+    "2013-12-28"
+   ],
+   "group": "control",
+   "m_missing": [],
+   "m_score": -2.9070390659334864,
+   "ticker": "DAR",
+   "wave": "wave2"
+  },
+  "wave2:case_58": {
+   "case_id": "W23",
+   "cutoff_date": "2019-11-02",
+   "error": null,
+   "f_missing": [
+    "rsst_acc"
+   ],
+   "f_score": null,
+   "fiscal_year_ends_used": [
+    "2019-05-31",
+    "2018-05-31",
+    "2017-05-31"
+   ],
+   "group": "control",
+   "m_missing": [
+    "GMI"
+   ],
+   "m_score": null,
+   "ticker": "CTAS",
+   "wave": "wave2"
+  },
+  "wave2:case_59": {
+   "case_id": "T23",
+   "cutoff_date": "2016-08-14",
+   "error": null,
+   "f_missing": [],
+   "f_score": 0.5946979931364452,
+   "fiscal_year_ends_used": [
+    "2015-06-30",
+    "2014-06-30",
+    "2013-06-30"
+   ],
+   "group": "fraud",
+   "m_missing": [],
+   "m_score": -2.3034277395566165,
+   "ticker": "HAIN",
+   "wave": "wave2"
+  },
+  "wave2:case_60": {
+   "case_id": "T26",
+   "cutoff_date": "2016-12-14",
+   "error": null,
+   "f_missing": [],
+   "f_score": 0.8733976633435192,
+   "fiscal_year_ends_used": [
+    "2015-12-31",
+    "2014-12-31",
+    "2013-12-31"
+   ],
+   "group": "fraud",
+   "m_missing": [],
+   "m_score": -1.2421261348576895,
+   "ticker": "MDXG",
+   "wave": "wave2"
+  },
+  "wave2:case_61": {
+   "case_id": "T24",
+   "cutoff_date": "2017-04-04",
+   "error": null,
+   "f_missing": [
+    "rsst_acc"
+   ],
+   "f_score": null,
+   "fiscal_year_ends_used": [
+    "2016-06-30",
+    "2015-06-30",
+    "2014-06-30"
+   ],
+   "group": "fraud",
+   "m_missing": [
+    "GMI",
+    "SGAI"
+   ],
+   "m_score": null,
+   "ticker": "CGI",
+   "wave": "wave2"
+  },
+  "wave2:case_62": {
+   "case_id": "W15",
+   "cutoff_date": "2017-04-04",
+   "error": null,
+   "f_missing": [
+    "rsst_acc"
+   ],
+   "f_score": null,
+   "fiscal_year_ends_used": [
+    "2016-12-31",
+    "2015-12-31",
+    "2014-12-31"
+   ],
+   "group": "control",
+   "m_missing": [
+    "GMI"
+   ],
+   "m_score": null,
+   "ticker": "ULH",
+   "wave": "wave2"
+  },
+  "wave2:case_63": {
+   "case_id": "W06",
+   "cutoff_date": "2016-02-07",
+   "error": null,
+   "f_missing": [
+    "rsst_acc",
+    "soft_assets",
+    "ch_cs"
+   ],
+   "f_score": null,
+   "fiscal_year_ends_used": [
+    "2014-12-31",
+    "2013-12-31",
+    "2012-12-31"
+   ],
+   "group": "control",
+   "m_missing": [
+    "DSRI",
+    "GMI",
+    "AQI",
+    "SGI",
+    "DEPI",
+    "SGAI",
+    "LVGI"
+   ],
+   "m_score": null,
+   "ticker": "SITC",
+   "wave": "wave2"
+  },
+  "wave2:case_64": {
+   "case_id": "W16",
+   "cutoff_date": "2017-04-04",
+   "error": null,
+   "f_missing": [
+    "rsst_acc"
+   ],
+   "f_score": null,
+   "fiscal_year_ends_used": [
+    "2016-12-31",
+    "2015-12-31",
+    "2014-12-31"
+   ],
+   "group": "control",
+   "m_missing": [
+    "GMI",
+    "SGAI"
+   ],
+   "m_score": null,
+   "ticker": "SAIA",
+   "wave": "wave2"
+  },
+  "wave2:case_65": {
+   "case_id": "T04",
+   "cutoff_date": "2011-02-28",
+   "error": null,
+   "f_missing": [],
+   "f_score": 1.0859840434896275,
+   "fiscal_year_ends_used": [
+    "2009-12-31",
+    "2008-12-31",
+    "2007-12-31"
+   ],
+   "group": "fraud",
+   "m_missing": [],
+   "m_score": -1.7404186164954611,
+   "ticker": "WFT",
+   "wave": "wave2"
+  },
+  "wave2:case_66": {
+   "case_id": "T29",
+   "cutoff_date": "2019-11-02",
+   "error": null,
+   "f_missing": [],
+   "f_score": 1.007932263279468,
+   "fiscal_year_ends_used": [
+    "2018-12-31",
+    "2017-12-31",
+    "2016-12-31"
+   ],
+   "group": "fraud",
+   "m_missing": [],
+   "m_score": -3.177610530360576,
+   "ticker": "UAA",
+   "wave": "wave2"
+  },
+  "wave2:case_67": {
+   "case_id": "T20",
+   "cutoff_date": "2016-02-07",
+   "error": null,
+   "f_missing": [
+    "rsst_acc",
+    "soft_assets",
+    "ch_cs"
+   ],
+   "f_score": null,
+   "fiscal_year_ends_used": [
+    "2014-12-31",
+    "2013-12-31",
+    "2012-12-31"
+   ],
+   "group": "fraud",
+   "m_missing": [
+    "DSRI",
+    "GMI",
+    "AQI",
+    "SGI",
+    "DEPI",
+    "SGAI",
+    "LVGI"
+   ],
+   "m_score": null,
+   "ticker": "BRX",
+   "wave": "wave2"
+  },
+  "wave2:case_68": {
+   "case_id": "W03",
+   "cutoff_date": "2015-11-05",
+   "error": null,
+   "f_missing": [
+    "rsst_acc"
+   ],
+   "f_score": null,
+   "fiscal_year_ends_used": [
+    "2014-12-31",
+    "2013-12-31",
+    "2012-12-31"
+   ],
+   "group": "control",
+   "m_missing": [],
+   "m_score": -1.007952818608221,
+   "ticker": "RGEN",
+   "wave": "wave2"
+  },
+  "wave2:case_69": {
+   "case_id": "W18",
+   "cutoff_date": "2016-12-14",
+   "error": null,
+   "f_missing": [],
+   "f_score": 1.2846905795214034,
+   "fiscal_year_ends_used": [
+    "2015-12-31",
+    "2014-12-31",
+    "2013-12-31"
+   ],
+   "group": "control",
+   "m_missing": [],
+   "m_score": -2.5301715481618836,
+   "ticker": "AORT",
+   "wave": "wave2"
+  },
+  "wave2:case_70": {
+   "case_id": "W11",
+   "cutoff_date": "2016-03-06",
+   "error": null,
+   "f_missing": [],
+   "f_score": 0.7733680341228184,
+   "fiscal_year_ends_used": [
+    "2014-12-31",
+    "2013-12-31",
+    "2012-12-31"
+   ],
+   "group": "control",
+   "m_missing": [],
+   "m_score": -3.6730239127690574,
+   "ticker": "MCHX",
+   "wave": "wave2"
+  }
+ },
+ "consistency_vs_unified_table": {
+  "per_case": {
+   "holdout:case_71": {
+    "f": "both_none",
+    "m": "both_none"
+   },
+   "holdout:case_72": {
+    "f": "match",
+    "m": "both_none"
+   },
+   "holdout:case_73": {
+    "f": "match",
+    "m": "match"
+   },
+   "wave1:T07": {
+    "f": "both_none",
+    "m": "match"
+   },
+   "wave1:T11": {
+    "f": "match",
+    "m": "match"
+   },
+   "wave1:T12": {
+    "f": "match",
+    "m": "match"
+   },
+   "wave1:T13": {
+    "f": "both_none",
+    "m": "both_none"
+   },
+   "wave1:T16": {
+    "f": "match",
+    "m": "both_none"
+   },
+   "wave1:T17": {
+    "f": "match",
+    "m": "match"
+   },
+   "wave1:T21": {
+    "f": "match",
+    "m": "match"
+   },
+   "wave1:T28": {
+    "f": "match",
+    "m": "match"
+   },
+   "wave1:V01": {
+    "f": "match",
+    "m": "match"
+   },
+   "wave1:V02": {
+    "f": "both_none",
+    "m": "both_none"
+   },
+   "wave1:V03": {
+    "f": "both_none",
+    "m": "match"
+   },
+   "wave1:V04": {
+    "f": "match",
+    "m": "match"
+   },
+   "wave1:V05": {
+    "f": "both_none",
+    "m": "both_none"
+   },
+   "wave1:V06": {
+    "f": "match",
+    "m": "match"
+   },
+   "wave1:V07": {
+    "f": "match",
+    "m": "match"
+   },
+   "wave1:V08": {
+    "f": "match",
+    "m": "match"
+   },
+   "wave1:V09": {
+    "f": "both_none",
+    "m": "match"
+   },
+   "wave1:V10": {
+    "f": "match",
+    "m": "match"
+   },
+   "wave1:V11": {
+    "f": "both_none",
+    "m": "both_none"
+   },
+   "wave1:V12": {
+    "f": "match",
+    "m": "both_none"
+   },
+   "wave1:V13": {
+    "f": "match",
+    "m": "match"
+   },
+   "wave1:V14": {
+    "f": "match",
+    "m": "match"
+   },
+   "wave1:V15": {
+    "f": "match",
+    "m": "match"
+   },
+   "wave1:V16": {
+    "f": "match",
+    "m": "match"
+   },
+   "wave1:V17": {
+    "f": "both_none",
+    "m": "match"
+   },
+   "wave1:V18": {
+    "f": "match",
+    "m": "match"
+   },
+   "wave1:V19": {
+    "f": "match",
+    "m": "both_none"
+   },
+   "wave1:V20": {
+    "f": "match",
+    "m": "both_none"
+   },
+   "wave1:V21": {
+    "f": "match",
+    "m": "match"
+   },
+   "wave1:V22": {
+    "f": "match",
+    "m": "match"
+   },
+   "wave2:case_39": {
+    "f": "match",
+    "m": "match"
+   },
+   "wave2:case_40": {
+    "f": "match",
+    "m": "match"
+   },
+   "wave2:case_41": {
+    "f": "both_none",
+    "m": "both_none"
+   },
+   "wave2:case_42": {
+    "f": "match",
+    "m": "match"
+   },
+   "wave2:case_43": {
+    "f": "match",
+    "m": "match"
+   },
+   "wave2:case_44": {
+    "f": "both_none",
+    "m": "both_none"
+   },
+   "wave2:case_45": {
+    "f": "both_none",
+    "m": "match"
+   },
+   "wave2:case_46": {
+    "f": "match",
+    "m": "match"
+   },
+   "wave2:case_47": {
+    "f": "both_none",
+    "m": "match"
+   },
+   "wave2:case_48": {
+    "f": "match",
+    "m": "match"
+   },
+   "wave2:case_49": {
+    "f": "both_none",
+    "m": "both_none"
+   },
+   "wave2:case_50": {
+    "f": "match",
+    "m": "match"
+   },
+   "wave2:case_51": {
+    "f": "both_none",
+    "m": "both_none"
+   },
+   "wave2:case_52": {
+    "f": "both_none",
+    "m": "match"
+   },
+   "wave2:case_53": {
+    "f": "match",
+    "m": "both_none"
+   },
+   "wave2:case_54": {
+    "f": "match",
+    "m": "match"
+   },
+   "wave2:case_55": {
+    "f": "match",
+    "m": "match"
+   },
+   "wave2:case_56": {
+    "f": "both_none",
+    "m": "both_none"
+   },
+   "wave2:case_57": {
+    "f": "match",
+    "m": "match"
+   },
+   "wave2:case_58": {
+    "f": "both_none",
+    "m": "both_none"
+   },
+   "wave2:case_59": {
+    "f": "match",
+    "m": "match"
+   },
+   "wave2:case_60": {
+    "f": "match",
+    "m": "match"
+   },
+   "wave2:case_61": {
+    "f": "both_none",
+    "m": "both_none"
+   },
+   "wave2:case_62": {
+    "f": "both_none",
+    "m": "both_none"
+   },
+   "wave2:case_63": {
+    "f": "both_none",
+    "m": "both_none"
+   },
+   "wave2:case_64": {
+    "f": "both_none",
+    "m": "both_none"
+   },
+   "wave2:case_65": {
+    "f": "match",
+    "m": "match"
+   },
+   "wave2:case_66": {
+    "f": "match",
+    "m": "match"
+   },
+   "wave2:case_67": {
+    "f": "both_none",
+    "m": "both_none"
+   },
+   "wave2:case_68": {
+    "f": "both_none",
+    "m": "match"
+   },
+   "wave2:case_69": {
+    "f": "match",
+    "m": "match"
+   },
+   "wave2:case_70": {
+    "f": "match",
+    "m": "match"
+   }
+  },
+  "tally": {
+   "f:both_none": 24,
+   "f:match": 41,
+   "m:both_none": 22,
+   "m:match": 43
+  }
+ },
+ "generated_by": "analysis/b1b2_screens_all_tiers.py",
+ "n_cases": 74,
+ "point_in_time_rule": "facts with filed <= cutoff only; latest filed wins per (tag, period-end)",
+ "screens_source": "scoring/baselines/screens.py (frozen; run_case)",
+ "spec": "specs/B1B2_CROSS_TIER.md",
+ "stage2_usage": "holdout_controls entries are stage-2 inputs; wave1/wave2/holdout entries are a reproducibility check only — stage 2 reads the published analysis/unified_table.csv values"
+}

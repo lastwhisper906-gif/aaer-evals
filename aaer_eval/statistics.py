@@ -137,3 +137,27 @@ def fpr_bound(fp, n):
 
 def median(xs):
     return statistics.median(xs)
+
+
+def boot_paired_auc_diff_ci(a1, b1, a2, b2, rng, n=10_000):
+    """Paired, group-stratified bootstrap CI for AUC(scorer 1) - AUC(scorer 2).
+
+    ``a1``/``a2`` are the treatment scores of the two scorers for the *same*
+    cases in the same order; ``b1``/``b2`` likewise for controls. Each
+    resample draws case indices once and evaluates both AUCs on that identical
+    resample, so the interval reflects the paired difference, not two
+    independent intervals. Returns ``(delta, lo, hi)`` with a percentile 95%
+    interval (specs/B1B2_CROSS_TIER.md §4).
+    """
+    if len(a1) != len(a2) or len(b1) != len(b2):
+        raise ValueError("paired bootstrap needs index-aligned score lists")
+    delta = auc(a1, b1) - auc(a2, b2)
+    vals = []
+    for _ in range(n):
+        ia = [rng.randrange(len(a1)) for _ in a1]
+        ib = [rng.randrange(len(b1)) for _ in b1]
+        ra1, ra2 = [a1[i] for i in ia], [a2[i] for i in ia]
+        rb1, rb2 = [b1[i] for i in ib], [b2[i] for i in ib]
+        vals.append(auc(ra1, rb1) - auc(ra2, rb2))
+    vals.sort()
+    return delta, vals[int(0.025 * n)], vals[int(0.975 * n)]
