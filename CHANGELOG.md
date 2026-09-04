@@ -3,6 +3,19 @@
 > 항목은 최신이 위. 발행 수치·동결 산출물 변경은 이 파일의 대상이 아니다
 > (그건 ERRATA.md·decisions_log의 관할).
 
+## 2026-09-04 — 외부 리뷰 C 반영: B1/B2 교차 티어 head-to-head (D-P105/D-P106)
+
+- `specs/B1B2_CROSS_TIER.md` (freeze 95cf8cd) → `analysis/b1b2_screens_all_tiers.py`
+  (코퍼스 tier, verify-full) + `analysis/b1b2_cross_tier.py` (공개 tier) →
+  `analysis/out/b1b2_cross_tier/`. 동결 Beneish M / Dechow F 스크린을 LLM 점수와
+  **동일 계산 가능 부분집합** 위에서 짝 비교(ΔAUC 층화 짝 부트스트랩 —
+  `aaer_eval.statistics.boot_paired_auc_diff_ci` 신설), 동결 임계 탐지/오탐/정밀도
+  (정확 CP95), 이름-식별 제외 민감도. RESULTS 행 14·15 신설(비준 대기), L-13.
+- 리뷰 C 원문 `.direction/feedback/EXT_FB_C_2026-09-04.md`, 트리아지
+  `audit/FEEDBACK_TRIAGE.md` §2026-09-04, 소유자 항목 Q-F22–Q-F25.
+- 게시 수치·동결 산출물 변경 0 (행 1–13 불변; unified_table·baseline_table·
+  results_stats·wave2_results·screens.py 무접촉).
+
 ## 2026-07-22 — 하네스 핀 강제 개시 (C3, D109)
 
 - `pipeline/cli_client.py`: 런의 첫 호출 전 `claude --version` 실측을

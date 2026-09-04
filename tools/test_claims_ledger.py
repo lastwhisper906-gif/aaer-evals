@@ -69,8 +69,8 @@ def test_claims_ledger_is_locked_to_results():
 
     markdown_rows = results_rows()
     claims = ledger["claims"]
-    expected_ids = list(range(1, 14))
-    assert len(markdown_rows) == len(claims) == 13
+    expected_ids = list(range(1, 16))
+    assert len(markdown_rows) == len(claims) == 15
     assert [row["id"] for row in markdown_rows] == expected_ids
     assert [claim["id"] for claim in claims] == expected_ids
 

@@ -972,3 +972,95 @@
   승계 헤더 게시 · (C) 방치 (독자가 PENDING을 미해소로 오독할 위험 지속).
 - **기본값 (무응답 시)**: (A) — 최소 접촉·최대 정직.
 - **상태**: OPEN — 등재 자체는 D-P83 서명으로 승인됨 (등재만; 처분 미결).
+
+## Q-F22 — 외부 리뷰 C 항목 3: 비-Anthropic 계열 arm 1개 (cross-grader 또는 evaluatee 교체) — OPEN (신규, 2026-09-04 owner-directed session, D-P105/D-P106)
+
+- **질문**: 리뷰 C는 "다른 계열 모델 하나로 cross-grader 또는 evaluatee 교체
+  실험"을 완성 조건 3번으로 든다 (D-P104 "미기안 항목"의 첫 번째와 동일). 어느
+  arm을, 어떤 인증 경로로 열 것인가?
+- **옵션**: **(A)** Q-F07(PARKED)을 해제해 스펙 확정본 `specs/cross_grader.md`
+  (n=20, κ ≥ 0.6, seed 20260712)의 교차 패밀리 **채점자** 스팟체크를 실행 —
+  `docs/CROSS_GRADER_OWNER_PACKET.md` §3 절차, Codex CLI 구독 인증 전용
+  (INV-20), ~20호출, 새 D-엔트리. L-6을 정량화한다. · **(B)** **피평가자**
+  교체 arm(비-Anthropic 모델로 wave-2 32건 재채점) — PROJECT.md §8-6 · INV-12
+  "타 모델 벤치마크 확장 금지"의 **개정 서명이 선행**해야 하며 zero-metered
+  하에서는 Codex CLI 구독 경유만 가능; 프레임 재동결(FREEZE_REV) 필요. ·
+  **(C)** 기각 — L-6 공개 유지, "단일 Claude 파이프라인 한정" 범위 문구로 답변.
+- **근거**: `docs/methodology_limitations.md` L-6 (채점자 비독립은 d1–d4·오탐
+  해석에 작용, 분리도 자체(AUC·순열 p)에는 제한적) · `specs/cross_grader.md`
+  §4 사전 등록 판독 · `tools/cross_grader_skeleton.py` (호출 봉쇄 상태, 4
+  테스트) · INV-12 · INV-20 · D-P104 미기안 항목 ①.
+- **기본값 (무응답 시)**: (A) — 가장 싼 경로(~20호출)이고 리뷰어가 지목한
+  독립성 결손(L-6)을 직접 잰다. 무응답이 (B)의 스코프 개정으로 해석되지
+  않아야 한다.
+- **세션 기본 조치**: 등재만. 호출 0 · 스코프 개정 0 · 스켈레톤 무변경.
+- **상태**: OPEN.
+
+## Q-F23 — 외부 리뷰 C 항목 1·4: "클린 층 표본 최소 20/20" — 표본 확대 경로 — OPEN (신규, 2026-09-04, D-P105/D-P106)
+
+- **질문**: 리뷰 C는 검정력(AUC CI [0.62, 0.98]·오탐 CI [29%, 96%]·홀드아웃
+  N=3)을 들어 "암기가 구조적으로 불가능한 층"을 최소 20/20으로 키우라고 한다.
+  어느 경로로 키울 것인가?
+- **옵션**: **(A)** 전향(forward) 유니버스로 쌓는다 — D-P104(context-diet)가
+  택한 cycle_002 300사 열거·봉인이 그 자체로 클린 층이다 (12개월 기대 사건
+  little r 4.5건, `specs/PROSPECTIVE_METRICS.md`); 회고 확장 없음. ·
+  **(B)** 회고 실험군 50–100건 확대 (D-P104 미기안 항목 ③) — PROJECT.md §8-1 ·
+  INV-12 "8개 초과 확장 금지" **개정 서명 선행**, 소유자 입회 감독 fetch
+  세션(INV-23), 신규 케이스의 컷오프 가드 등록·대조군 매칭·채점 호출(구독
+  quota) 일체; 암기 오염(L-1)은 회고 표본이 커져도 그대로다. · **(C)** 현
+  상태 유지 + POWER_ANALYSIS로 답변.
+- **근거**: `docs/POWER_ANALYSIS.md` (0.83 vs 0.65 구별에 80% 검정력이면
+  1:2.75에서 25/69 필요 — 현 설계는 0.29–0.32) · `docs/CLAIM_HIERARCHY.md`
+  Level 2 vs Level 3 · INV-12 · INV-23 · D-P104.
+- **기본값 (무응답 시)**: (A) — 리뷰어가 "프로젝트 정체성을 바꾼다"고 한
+  경로와 동일하며 스코프 개정이 필요 없다. 무응답이 (B)의 케이스 확장으로
+  해석되지 않아야 한다.
+- **세션 기본 조치**: 등재만. 케이스 등록 0 · fetch 0.
+- **상태**: OPEN.
+
+## Q-F24 — 외부 리뷰 C 항목 6: 11월 전향 사이클 — origin/main과 context-diet의 상태 불일치 정합 — OPEN (신규, 2026-09-04, D-P105/D-P106)
+
+- **질문**: 게시된 main(dc7e396)에서는 `forward/cycle_001/OWNER_LAUNCH_GATE.md`
+  §6 체크박스 4개가 전부 미서명이고 봉인 산출물 0건이다. 반면 미병합 브랜치
+  context-diet(fbf3414, 2026-08-29)의 D-P104는 **cycle_001 abort + cycle_002
+  (300사) 재출발**을 서명했다. 리뷰어는 main만 보고 "forward cycle이 아직 안
+  돌았다"고 했고, 그 판독은 main 기준으로 정확하다. 어느 상태를 정본으로
+  할 것인가, 그리고 11월 창(컷오프 2026-11-15, 실행 창 11-15~11-22)을 어떻게
+  맞출 것인가?
+- **옵션**: **(A)** context-diet를 main에 병합·push해 D-P84–D-P104를 정본화하고
+  cycle_002 준비(TASK_FWD fail-closed 3건 → 소각 목록 `cutoff_guard` 정본
+  파생(D-P94) → 소유자 입회 fetch 세션 1회(INV-23) → FREEZE_REV 신규 문서로
+  하네스 핀 재핀(BN-03) → 게이트 서명)로 간다. · **(B)** D-P104 결정만 main에
+  별도 이관하고 나머지 171 커밋은 보류. · **(C)** 유지 — main은 cycle_001
+  미서명 상태로 남고 11월 창은 cycle_001 §4 절차로 시도 (D-P102가 "첫
+  명령이 실패한다"로 기록한 상태).
+- **근거**: `forward/cycle_001/OWNER_LAUNCH_GATE.md` §5–§6 · `BOTTLENECKS.md`
+  BN-02/BN-03/BN-15 · `.direction/feedback/tasks/TASK_FWD.md` · context-diet
+  D-P94·D-P102·D-P104 · INV-16 (루프 실행 중 main push 금지 — 루프는 2026-09-02
+  정지) · INV-17 · INV-22 · INV-23.
+- **기본값 (무응답 시)**: (A) — 소유자 서명(D-P104)이 이미 존재하는 결정을
+  게시 상태와 일치시키는 것이며, 리뷰어의 "유일한 차별점"이 실제로 도는
+  유일한 경로다. 본 세션은 main·context-diet 어느 쪽도 병합하지 않았다.
+- **세션 기본 조치**: 등재만. 브랜치 병합 0 · forward/ 접촉 0 · 모델 호출 0.
+- **상태**: OPEN.
+
+## Q-F25 — 공식 스크린 커버리지 개선 (screens v2: 총부채 유도·수취채권 사다리) — OPEN (신규, 2026-09-04, D-P106)
+
+- **질문**: B1/B2 교차 티어 비교(RESULTS 행 14)의 주된 약점은 커버리지다
+  (wave-2 F 17/32, M 20/32; 홀드아웃 대조군 F 3/9, M 2/9). stage-1 결측
+  사유(`analysis/out/b1b2_cross_tier/screens_by_case.json`)상 F 결측의
+  주원인은 `Liabilities` 미태깅(`rsst_acc`), M 결측은 COGS·SG&A 미태깅이다.
+  동결 스크린에 폴백을 추가할 것인가?
+- **옵션**: **(A)** 병행 모듈 `scoring/baselines/screens_v2.py` (총부채 =
+  `LiabilitiesAndStockholdersEquity − StockholdersEquity(NCI 포함)`,
+  수취채권 사다리에 `AccountsAndOtherReceivablesNetCurrent` ·
+  `AccountsReceivableGrossCurrent − Allowance` 추가) → 신규 산출 경로 +
+  **ERRATA E-004** (행 12의 wave-1 AUC/p가 바뀌므로 disclose-don't-revise) +
+  행 14 재계산 병행 게시. · **(B)** 유지 — 커버리지를 한계(L-13)로만 공개.
+- **근거**: `docs/baseline_screens.md` §4 (태그 폴백 한계 사전 기록) ·
+  `analysis/ANALYSIS_PLAN.md` §5 "침묵 대체 금지" · INV-03 (c) · INV-06 ·
+  `aaer_eval/statistics.py` 헤더(스크린 단일 원천 원칙 — 복제 금지, 병행 모듈은
+  허용).
+- **기본값 (무응답 시)**: (B) — 게시 수치 변경(E-004)은 소유자 서명 사안.
+- **세션 기본 조치**: 등재만. `screens.py` 무변경.
+- **상태**: OPEN.

@@ -282,3 +282,36 @@ retroactive recomputation or reclassification under the v3 criteria is done
 - **Invariant boundary**: published-number edits 0; frozen `runs/`
   contacts 0; the deliverables are the code path, the test, this
   disclosure, and D-P35.
+
+## L-13. Formula-screen comparison covers only the computable subset, and residual memorization is not removable by subsetting — recorded 2026-09-04 (external review C, D-P106)
+
+**Limit**: the pre-registered head-to-head of the LLM score against the two
+textbook formula screens (B1 Beneish M-score, B2 Dechow F-score Model 1;
+`specs/B1B2_CROSS_TIER.md`, `analysis/out/b1b2_cross_tier/REPORT.md`, RESULTS
+row 14) is a **paired comparison on the computable subset only**: wave-1 6 of 8
+treatment and 16 of 22 controls; wave-2 Beneish 7 of 9 and 13 of 23, Dechow 6
+of 9 and 11 of 23; holdout 1–2 of 3 and 2–3 of 9 (per-case only). The subset
+is non-random — registrants whose XBRL lacks total-liabilities,
+cost-of-revenue, SG&A or receivables tags (financial, REIT, service filers)
+drop out — and the direction of the resulting bias is unknown. Two of the four
+primary cells read branch A (LLM separates better on the identical subset) and
+two read branch B (not distinguishable at this N); no cell reads C. This
+supports no statement of the form "the LLM beats existing methods".
+
+- The screens are the frozen implementation (`scoring/baselines/screens.py`);
+  coverage-raising fallbacks (deriving total liabilities from
+  liabilities-and-equity minus equity, a wider receivables tag ladder) would
+  change published RESULTS row 12 and are an owner item (Q-F25, ERRATA path).
+- **Residual memorization is not removable by subsetting**: dropping the
+  name-ID-flagged cases (frozen `name_match`; wave-2 7 of 32) leaves 6 vs 19
+  and the separation persists (RESULTS row 15), but the name-ID rate is a
+  lower-bound instrument (instrument-bias table above). Dropping cases by the
+  outcome-knowledge probe instead (8 of 9 wave-2 treatment cases) leaves one
+  treatment case — not computable. The only layer in which memorization is
+  structurally excluded is the post-cutoff holdout, and that layer is N=3
+  (per-case evidence only). Any reading of this record as
+  "memorization-controlled" must carry this caveat; the repository's own
+  framing is "measured, not eliminated".
+- Numbering note: L-10 to L-12 are taken by the unmerged branch
+  `context-diet` (commits R9-3, R9-4, R14-4), so this entry is L-13 to keep
+  identifiers unique across branches.
