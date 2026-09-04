@@ -59,7 +59,6 @@ def test_1_determinism_same_seed_same_result(monkeypatch):
 def test_2_recompute_matches_committed_within_mc_tolerance():
     got, want = _computed(), _committed()
     for path, x, y in _walk(got, want):
-        tail = path.rsplit("/", 1)[-1]
         if "perm_p_one_sided" in path or "perm_mc_se" in path:
             assert abs(x - y) <= PERM_TOL, (path, x, y)
         elif "auc_boot95" in path or "/ci95" in path:
