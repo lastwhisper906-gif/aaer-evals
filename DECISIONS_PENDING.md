@@ -1462,3 +1462,31 @@
 - **게이트:** 본 엔트리 커밋 직후 make verify-public 실측 → push → CI
   3.12 확인 (결과는 close-out 보고).
 - **Revert:** 항목별 커밋 revert + 본 엔트리 후속 정정 엔트리.
+
+## D-P105 — 외부 리뷰 C (2026-09-04) 인테이크 + B1/B2 교차 티어 head-to-head 사전 등록 (소유자 지시 집행, 비준 대기)
+- **Options:** (a) 리뷰 6항목을 verbatim 인테이크·트리아지하고, 신규 호출·신규
+  fetch 없이 계산 가능한 항목(공식 스크린 교차 티어 짝 비교 · 이름-식별 제외
+  민감도)은 사전 등록 → 계산 → 병행 게시로, 소유자 게이트 항목(교차 패밀리 arm ·
+  표본 확대 · 전향 사이클 · 스크린 커버리지 개선)은 OWNER_QUEUE 등재로 처리
+  (b) 인테이크만 하고 전 항목 소유자 대기 (c) 리뷰 요구대로 새 케이스 등록·타
+  모델 호출까지 세션이 집행.
+- **Choice:** (a). (c)는 INV-12(8 초과 확장 · GPT/Gemini 호출 경로 금지) ·
+  INV-18(서명 없는 스코프 변경) · INV-23(무인 fetch) 위반. (b)는 소유자
+  지시("모두 반영")에 미달.
+- **Basis:** 소유자 지시 2026-09-04 (verbatim: "내 git 에 pushed 되어있는 aaer
+  evals project 에 대한 피드백인데 이걸 잘 읽고 모두 반영해줘") ·
+  `.direction/feedback/EXT_FB_C_2026-09-04.md` · `specs/B1B2_CROSS_TIER.md`
+  (본 커밋 = freeze, INV-07: 코드·결과 커밋보다 선행) · ANALYSIS_PLAN §5
+  (5f4ca65) · INV-03 (b) · INV-06 병행 경로 · 미병합 브랜치 context-diet의
+  D-P104(fbf3414) "미기안 항목" 3건(비-Anthropic arm · 동일 PIT 피처 베이스라인 ·
+  회고 표본 확대)과 정합.
+- **번호 근거:** origin/main 최종 D-P83, 미병합 context-diet 최종 D-P104
+  (fbf3414, 2026-08-29) — 교차 브랜치 충돌 회피를 위해 D-P105부터 발번. Q-F도
+  같은 이유로 Q-F22부터 (context-diet에 Q-F20·Q-F21 존재).
+- **작성 환경:** 소유자 대화형 세션 (하네스 루프 아님 — 루프는 2026-09-02
+  소유자 정지 상태, 라이브 세션 0 실측). 기준 = origin/main dc7e396, 브랜치
+  `review-response/2026-09-04`. 로컬 main(37ac75b, 87 behind)은 INV-17에 따라
+  무접촉.
+- **보호 경로 공개:** specs/(.protected-paths:8) — 신규 파일 1건.
+- **Revert:** 본 엔트리 · `specs/B1B2_CROSS_TIER.md` ·
+  `.direction/feedback/EXT_FB_C_2026-09-04.md` 삭제.
