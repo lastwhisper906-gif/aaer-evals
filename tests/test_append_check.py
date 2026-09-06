@@ -25,6 +25,7 @@ def repo(tmp_path, monkeypatch):
     run = tmp_path / "runs" / "AAPL" / "0000320193-26-000001"
     run.mkdir(parents=True)
     (run / "prediction_pressure.json").write_text('{"tier": "clear"}\n')
+    (tmp_path / "runs" / "README.md").write_text("# runs/\n\nappend-only\n")
     (tmp_path / "events").mkdir()
     (tmp_path / "events" / "ledger.jsonl").write_text(PUBLISHED_LINE)
     git(tmp_path, "add", "-A")
@@ -91,6 +92,28 @@ def test_deleting_a_published_prediction_fails(repo):
 
     assert append_check.violations("baseline") == [
         "deleted: runs/AAPL/0000320193-26-000001/prediction_pressure.json"
+    ]
+
+
+def test_the_directory_readme_stays_editable(repo):
+    """It explains the directory; freezing it the day it is written is a bug."""
+    (repo / "runs" / "README.md").write_text("# runs/\n\nrewritten\n")
+    commit_all(repo)
+
+    assert append_check.violations("baseline") == []
+
+
+def test_a_readme_inside_a_prediction_is_still_protected(repo):
+    inside = repo / "runs" / "AAPL" / "0000320193-26-000001" / "README.md"
+    inside.write_text("first\n")
+    commit_all(repo, "publish a readme inside the bundle")
+    git(repo, "branch", "-f", "baseline", "HEAD")
+
+    inside.write_text("second\n")
+    commit_all(repo, "quietly change it")
+
+    assert append_check.violations("baseline") == [
+        "modified: runs/AAPL/0000320193-26-000001/README.md"
     ]
 
 

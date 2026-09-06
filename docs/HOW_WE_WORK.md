@@ -100,7 +100,9 @@ every one could have been checked by a machine daily.
 - **missing-filing check** — the EDGAR list against `runs/`
 - **prediction-tamper check** — any change to existing content, or deletion, of
   a `runs/`, `rules/` or `events/` file that exists on `origin/main` fails CI and
-  blocks the merge; appending to the end of a ledger file passes
+  blocks the merge; appending to the end of a ledger file passes, and so does a
+  `README.md` at the root of one of those directories, which is documentation
+  and not a record
 - **rules-precedence check** — the rules-version commit is an ancestor of the
   prediction commit
 - **event-gap check** — EDGAR events against the ledger
