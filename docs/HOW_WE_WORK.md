@@ -68,6 +68,12 @@ a prediction.
 | record events | 8-K 4.01 / 4.02 / 1.01 / 5.02, late filings, amendments, comment letters, material-weakness language, explanation materialization → `events/ledger.jsonl` | the append succeeded |
 | score | on horizon expiry or event occurrence, recompute the metrics and regenerate the results document | deterministic match |
 
+**Publish merges itself.** `main` requires the CI check and nothing else — no
+reviewer, no approval. Every pull request from the pipeline or a routine sets
+`gh pr merge --auto --squash` the moment it is opened, so it lands as soon as CI
+goes green and nobody clicks anything. A pull request sitting open waiting for
+the owner is the bottleneck the rules forbid, not a safety measure.
+
 Scheduled-task sessions start from a clone, sparse-checked-out to that company's
 `runs/` only. A model fallback is possible, so the served model is recorded; if
 it differs from the pin the run is recorded as a failure. There is no metered
