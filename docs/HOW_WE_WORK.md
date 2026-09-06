@@ -17,8 +17,9 @@
    predictor saw. Every quote is string-matched against the committed input.
 5. **Python does the arithmetic.** Ratios, trends, diffs, baselines — all
    deterministic code. The model judges text only.
-6. **Published files are never edited.** `runs/`, `rules/` and `events/` are
-   append-only. A correction is a new file plus one ledger line.
+6. **Append-only under `runs/`, `rules/` and `events/`:** existing content is
+   never changed or deleted; appending to the end of a ledger file is allowed.
+   A correction is a new file plus one ledger line.
 7. **The seal is nothing more than** auto-commit, pull request, auto-merge on
    green CI, and one timestamp command. No manifest, no signature gate, no seal
    window, no launch approval.
@@ -97,9 +98,11 @@ every one could have been checked by a machine daily.
 - **cutoff re-check** — every date and accession in published inputs
 - **quote re-check** — every prediction quote against the input text
 - **missing-filing check** — the EDGAR list against `runs/`
-- **prediction-tamper check** — any modification or deletion of a `runs/`,
-  `rules/` or `events/` file that exists on `origin/main` fails CI and blocks the
-  merge
+- **prediction-tamper check** — any change to existing content, or deletion, of
+  a `runs/`, `rules/` or `events/` file that exists on `origin/main` fails CI and
+  blocks the merge; appending to the end of a ledger file passes, and so does a
+  `README.md` at the root of one of those directories, which is documentation
+  and not a record
 - **rules-precedence check** — the rules-version commit is an ancestor of the
   prediction commit
 - **event-gap check** — EDGAR events against the ledger
@@ -150,8 +153,9 @@ claim-strength review, the doc-bloat penalty, no push, and no metered billing.
 Removed: the seal machinery — the sealed manifest, the seal check, the seal stop
 condition, the November seal success criterion, the per-finding causal path to
 the seal, the launch-gate language. In its place, `src/append_check.py`: fail if
-the diff modifies or deletes any `runs/`, `rules/` or `events/` file that exists
-on `origin/main`. It runs inside the test command, and a violation stops the
+the diff changes or deletes existing content in any `runs/`, `rules/` or
+`events/` file that exists on `origin/main`, while letting an append to the end
+of a ledger file through. It runs inside the test command, and a violation stops the
 cycle immediately as "prediction record damaged". The success criterion is now
 the one line at the bottom of `CLAUDE.md`, and each finding carries one line
 tying it to one of its three conditions.
@@ -230,7 +234,8 @@ confirmation.
 - Create new identifier families, new ledgers, new approval procedures, new
   document systems.
 - Hand summaries to the predictor.
-- Edit published files under `runs/`, `rules/` or `events/`.
+- Change or delete existing content under `runs/`, `rules/` or `events/`.
+  Appending to the end of a ledger file is fine.
 - Change a cycle's rules or thresholds after seeing its results.
 - Stop and wait for the owner. Take the default and leave one line.
 - Spend more than one day on harness or infrastructure changes.

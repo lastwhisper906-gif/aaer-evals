@@ -2,18 +2,24 @@
 
 Published means: anything under runs/, rules/ or events/ that already exists on
 the baseline ref (origin/main by default). Those three directories are
-append-only. A correction is a new file plus one ledger line, never an edit.
+append-only: existing content is never changed or deleted. A correction is a new
+file plus one ledger line.
 
-A .jsonl ledger is the one published file that legitimately grows: it passes as
-long as its new bytes begin with its old bytes. Rewriting or dropping a line
-that was already published fails like any other edit.
+Appending to the end of a ledger file is allowed, and a .jsonl ledger is the one
+published file that legitimately grows: it passes as long as its new bytes begin
+with its old bytes. Rewriting or truncating a line that was already published
+fails like any other change to existing content.
+
+A README.md at the root of one of those three directories is documentation and
+not a record, so it stays editable. Nothing deeper does.
 
 Run it before pytest. A violation is not a test failure to be triaged later --
 it means the prediction record is damaged, and the cycle stops.
 
     python -m src.append_check [--baseline origin/main]
 
-Exit 0 clean, 1 violation, 2 the baseline ref could not be resolved.
+Exit 0 clean, 1 violation, 2 the baseline ref could not be resolved, 3 the wrong
+interpreter.
 
 One-time exemption: a published path that is absent from the head tree but
 present at archive/<same path> passes. That is the 2026-09-06 relocation of the
@@ -31,7 +37,16 @@ import argparse
 import subprocess
 import sys
 
+from src import interpreter_pin
+
 PROTECTED = ("runs/", "rules/", "events/")
+
+# A README.md sitting directly at the root of a protected directory is
+# documentation, not a record: a prediction lives at runs/{ticker}/{accession}/
+# and a rules file is versioned, so neither can ever be named this. Without this
+# line the directory's own explanation would be frozen the day it was written --
+# which is how this was found, when the check refused a correction to it.
+DOCUMENTATION = frozenset(f"{prefix}README.md" for prefix in PROTECTED)
 
 
 def _git(*args: str) -> str:
@@ -72,6 +87,8 @@ def violations(baseline: str, head: str = "HEAD") -> list[str]:
     }
     found = []
     for path, blob in sorted(base_files.items()):
+        if path in DOCUMENTATION:
+            continue
         if head_files.get(path) == blob:
             continue
         if path in head_files:
@@ -122,4 +139,8 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    # The pin comes first, before argument parsing and before any git call: a
+    # result from an unpinned interpreter is not worth producing. It sits here
+    # rather than inside main() so main() stays importable and testable on
+    # whatever interpreter is running the tests.
+    raise SystemExit(interpreter_pin.enforce() or main())

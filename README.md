@@ -42,8 +42,11 @@ make check
 ```
 
 `make check` is `src/append_check.py` followed by pytest. The append check fails
-if the branch modifies or deletes any published file under `runs/`, `rules/` or
-`events/`.
+if the branch changes or deletes existing content under `runs/`, `rules/` or
+`events/`; appending to the end of a ledger file passes.
+
+Both run on Python 3.12 and refuse to run on anything else — a gate result from
+another interpreter is not worth producing.
 
 ## The earlier experiment
 

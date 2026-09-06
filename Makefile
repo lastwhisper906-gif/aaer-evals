@@ -1,4 +1,5 @@
-PYTHON ?= python3
+# Python 3.12 is the pinned interpreter; the entry points refuse anything else.
+PYTHON ?= python3.12
 BASELINE ?= origin/main
 
 .PHONY: check append-check test
