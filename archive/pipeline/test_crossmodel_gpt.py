@@ -1,0 +1,461 @@
+import json
+from pathlib import Path
+from types import SimpleNamespace
+
+import jsonschema
+import pytest
+
+import crossmodel_gpt as cross
+
+
+@pytest.fixture
+def case():
+    return {"case_id": "C01", "company_name": "Example Co", "ticker": "EX",
+            "cik": "0001", "cutoff_date": "2020-12-31"}
+
+
+@pytest.fixture
+def payload():
+    return {
+        "_variant": "original-C01-r1",
+        "_k_internal": None,
+        "case": {"company_name": "Example Co", "ticker": "EX"},
+        "financial_series_point_in_time": {
+            "Revenue": [{"value": 10, "accession": "0001-20-000001",
+                         "form": "10-K", "filed": "2020-02-01"}]},
+        "filing_chronology": [{"form": "10-K", "filingDate": "2020-02-01"}],
+    }
+
+
+@pytest.fixture
+def model_output():
+    evidence = [{"quote": "Revenue=10 (FY2019)",
+                 "source_accession_no": "0001-20-000001", "location": "Revenue FY2019"}]
+    return {
+        "checklist": [{"item_id": "CL1", "question": "Receivables trend?",
+                       "finding": "insufficient_data", "confidence": "low",
+                       "evidence": evidence}],
+        "misstatement_probability": 10,
+        "mechanism_hypotheses": [],
+        "overall": {"risk_tier": "clear", "top_signals": []},
+    }
+
+
+def _event_stream(output, model="gpt-test"):
+    return "\n".join([
+        json.dumps({"type": "thread.started", "model": model}),
+        json.dumps({"type": "item.completed", "item": {
+            "type": "agent_message", "text": output}}),
+    ]) + "\n"
+
+
+def _configure_tmp(monkeypatch, tmp_path, payload):
+    repo = tmp_path / "repo"
+    (repo / "runs" / "crossmodel_gpt").mkdir(parents=True)
+    (repo / "schemas").mkdir()
+    source_schema = Path(cross.runner.REPO_ROOT) / "schemas" / "llm_output.json"
+    (repo / "schemas" / "llm_output.json").write_bytes(source_schema.read_bytes())
+    monkeypatch.setattr(cross, "REPO_ROOT", repo)
+    monkeypatch.setattr(cross, "ALLOWED_OUT_ROOT", repo / "runs" / "crossmodel_gpt")
+    monkeypatch.setattr(cross.build_payload, "build_payload", lambda *a, **k: payload.copy())
+    monkeypatch.setattr(cross, "CODEX_MODEL_PIN", "gpt-test")
+    monkeypatch.setattr(cross, "CODEX_VERSION_PIN", "codex-cli test")
+    monkeypatch.setattr(cross, "_verified_harness_version", None)
+    return repo
+
+
+def test_frozen_frame_reconstruction_has_golden_order(payload):
+    expected = ('{"variant": "original-C01-r1", '
+                '"perturb_factor_recorded_scoring_side_only": null, '
+                '"case": {"company_name": "Example Co", "ticker": "EX"}, '
+                '"financial_series_point_in_time": {"Revenue": [{"value": 10, '
+                '"accession": "0001-20-000001", "form": "10-K", '
+                '"filed": "2020-02-01"}]}, "filing_chronology": '
+                '[{"form": "10-K", "filingDate": "2020-02-01"}]}')
+    assert cross.frozen_frame_payload(payload) == expected
+    assert list(json.loads(expected)) == [
+        "variant", "perturb_factor_recorded_scoring_side_only", "case",
+        "financial_series_point_in_time", "filing_chronology"]
+
+
+def test_prompt_contains_model_schema(payload):
+    prompt = cross.build_prompt("task text", cross.frozen_frame_payload(payload))
+    assert '"mechanism_hypotheses"' in prompt
+    assert '"insufficient_data"' in prompt
+
+
+def test_pin_match_accepts_only_date_shaped_suffix():
+    """R1-6: gpt-5 핀이 gpt-5-codex를 수용하면 INV-21 fail-closed가 무너진다."""
+    assert cross._pin_matches("gpt-test", "gpt-test")
+    assert cross._pin_matches("gpt-test-20260101", "gpt-test")
+    assert not cross._pin_matches("gpt-test-codex", "gpt-test")
+    assert not cross._pin_matches("gpt-test-5", "gpt-test")
+
+
+def test_prompt_passes_evaluatee_marker_guard(payload):
+    """R1-2: Codex 송출 프롬프트(task + 모델 스키마 + 페이로드) 전체가 값 수준
+    가드를 통과해야 한다 — 스키마 description 루브릭 누출 회귀 방지 (INV-09)."""
+    prompt = cross.build_prompt("task text", cross.frozen_frame_payload(payload))
+    cross.cli_client.guard_payload(prompt, cross.EVALUATEE_FORBIDDEN_MARKERS)
+
+
+@pytest.mark.parametrize("name", cross.METERED_ENV_VARS)
+def test_metered_environment_is_refused(monkeypatch, name):
+    for variable in cross.METERED_ENV_VARS:
+        monkeypatch.delenv(variable, raising=False)
+    monkeypatch.setenv(name, "present")
+    with pytest.raises(RuntimeError, match="metered API"):
+        cross.enforce_no_metered_credentials()
+
+
+def test_run_case_refuses_metered_env_before_any_spawn(
+        monkeypatch, tmp_path, case, payload):
+    """R7-9: 가드는 호출 경계(run_case)에도 있다 — main()을 거치지 않는
+    드라이버(배치 래퍼·재개 런)도 상속 환경의 종량 자격증명으로 codex를
+    spawn할 수 없다. subprocess 도달 전에 예외."""
+    repo = _configure_tmp(monkeypatch, tmp_path, payload)
+
+    def forbidden_subprocess(*args, **kwargs):
+        pytest.fail("metered env인데 subprocess가 spawn됨")
+
+    monkeypatch.setattr(cross.subprocess, "run", forbidden_subprocess)
+    for variable in cross.METERED_ENV_VARS:
+        monkeypatch.delenv(variable, raising=False)
+    monkeypatch.setenv("OPENAI_API_KEY", "present")
+    with pytest.raises(RuntimeError, match="metered API"):
+        cross.run_case(case, "original", repo / "runs" / "crossmodel_gpt")
+
+
+def test_output_directory_outside_separated_root_is_refused(monkeypatch, tmp_path):
+    monkeypatch.setattr(cross, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(cross, "ALLOWED_OUT_ROOT", tmp_path / "runs" / "crossmodel_gpt")
+    with pytest.raises(ValueError, match="runs/crossmodel_gpt"):
+        cross.resolve_output_dir(tmp_path / "elsewhere")
+
+
+def test_invalid_json_retries_once_and_records_failure(
+        monkeypatch, tmp_path, case, payload):
+    repo = _configure_tmp(monkeypatch, tmp_path, payload)
+    calls = []
+
+    def mocked_run(command, **kwargs):
+        if command == ["codex", "--version"]:
+            return SimpleNamespace(stdout="codex-cli test\n", stderr="", returncode=0)
+        calls.append(command)
+        return SimpleNamespace(stdout=_event_stream("not json"), stderr="", returncode=0)
+
+    monkeypatch.setattr(cross.subprocess, "run", mocked_run)
+    result = cross.run_case(case, "original", repo / "runs" / "crossmodel_gpt")
+    assert result["status"] == "FAIL (invalid_json)"
+    assert len(calls) == 2
+    meta = json.loads((repo / "runs" / "crossmodel_gpt" /
+                       "runmeta_original_C01.json").read_text())
+    assert meta["retry_count"] == 1
+    assert meta["fail_reason"] == "invalid_json"
+    assert not (repo / "runs" / "crossmodel_gpt" / "C01.json").exists()
+
+
+def test_nonzero_exit_with_valid_json_is_recorded_as_failure(
+        monkeypatch, tmp_path, case, payload, model_output):
+    repo = _configure_tmp(monkeypatch, tmp_path, payload)
+
+    def mocked_run(command, **kwargs):
+        if command == ["codex", "--version"]:
+            return SimpleNamespace(stdout="codex-cli test\n", stderr="", returncode=0)
+        return SimpleNamespace(stdout=_event_stream(json.dumps(model_output)),
+                               stderr="failed", returncode=7)
+
+    monkeypatch.setattr(cross.subprocess, "run", mocked_run)
+    result = cross.run_case(case, "original", repo / "runs" / "crossmodel_gpt")
+    assert result["status"] == "FAIL (codex_exit_7)"
+    meta = json.loads((repo / "runs" / "crossmodel_gpt" /
+                       "runmeta_original_C01.json").read_text())
+    assert meta["fail_reason"] == "codex_exit_7"
+    assert not (repo / "runs" / "crossmodel_gpt" / "C01.json").exists()
+
+
+def test_valid_response_writes_conformant_provenance_and_isolation_command(
+        monkeypatch, tmp_path, case, payload, model_output):
+    repo = _configure_tmp(monkeypatch, tmp_path, payload)
+    commands = []
+
+    def mocked_run(command, **kwargs):
+        commands.append((command, kwargs))
+        if command[:2] == ["codex", "exec"]:
+            return SimpleNamespace(stdout=_event_stream(json.dumps(model_output)),
+                                   stderr="", returncode=0)
+        if command == ["codex", "--version"]:
+            return SimpleNamespace(stdout="codex-cli test\n", stderr="", returncode=0)
+        assert command == ["git", "rev-parse", "HEAD"]
+        return SimpleNamespace(stdout="abc123\n", stderr="", returncode=0)
+
+    monkeypatch.setattr(cross.subprocess, "run", mocked_run)
+    result = cross.run_case(case, "original", repo / "runs" / "crossmodel_gpt")
+    assert result["status"] == "OK"
+    record = json.loads((repo / "runs" / "crossmodel_gpt" / "C01.json").read_text())
+    jsonschema.Draft7Validator(cross.runner.FULL_OUTPUT_SCHEMA).validate(record)
+    assert record["run_id"] == "xgpt-original-C01-r1"
+    assert record["model"] == "gpt-test"
+    assert record["pipeline_version"] == "abc123"
+    assert record["fingerprint"]["model_requested"] == "gpt-test"
+    assert record["fingerprint"]["harness_version_actual"] == "codex-cli test"
+    assert record["fingerprint"]["system_prompt_sha256"]
+    assert commands[0][0] == ["codex", "--version"]
+    command = next(command for command, _ in commands if command[:2] == ["codex", "exec"])
+    assert command[:2] == ["codex", "exec"]
+    assert ["--sandbox", "read-only"] == command[2:4]
+    assert "--ephemeral" in command
+    assert "--ignore-user-config" in command
+    assert "--ignore-rules" in command
+    assert "--json" in command
+    assert command[-1] == "-"
+    assert "mcp_servers={}" in command
+    assert "project_doc_max_bytes=0" in command
+    assert ["-c", "model=gpt-test"] == command[command.index("-c"):command.index("-c") + 2]
+    temp_cwd = Path(command[command.index("--cd") + 1])
+    assert repo.resolve() not in temp_cwd.parents
+    assert (repo / "runs" / "crossmodel_gpt" / "audit_original_C01.jsonl").exists()
+
+
+def test_unavailable_codex_version_refuses_before_model_call(
+        monkeypatch, tmp_path, case, payload, model_output):
+    repo = _configure_tmp(monkeypatch, tmp_path, payload)
+    model_called = False
+
+    def mocked_run(command, **kwargs):
+        if command[:2] == ["codex", "exec"]:
+            nonlocal model_called
+            model_called = True
+            pytest.fail("model call occurred before version check")
+        if command == ["codex", "--version"]:
+            raise OSError("codex unavailable")
+        pytest.fail(f"unexpected subprocess: {command}")
+
+    monkeypatch.setattr(cross.subprocess, "run", mocked_run)
+    with pytest.raises(RuntimeError, match="version check failed"):
+        cross.run_case(case, "original", repo / "runs" / "crossmodel_gpt")
+    assert not model_called
+
+
+def test_placeholder_model_pin_refuses_without_subprocess(
+        monkeypatch, tmp_path, case, payload):
+    repo = _configure_tmp(monkeypatch, tmp_path, payload)
+    monkeypatch.setattr(cross, "CODEX_MODEL_PIN", cross.PIN_PLACEHOLDER)
+    monkeypatch.setattr(cross.subprocess, "run",
+                        lambda *a, **k: pytest.fail("placeholder invoked subprocess"))
+    with pytest.raises(RuntimeError, match="model pin"):
+        cross.run_case(case, "original", repo / "runs" / "crossmodel_gpt")
+
+
+@pytest.mark.parametrize("reported_model", ["gpt-test.2-codex", cross.MODEL_FALLBACK, None])
+def test_wrong_or_missing_reported_model_fails(
+        monkeypatch, tmp_path, case, payload, model_output, reported_model):
+    repo = _configure_tmp(monkeypatch, tmp_path, payload)
+
+    def mocked_run(command, **kwargs):
+        if command == ["codex", "--version"]:
+            return SimpleNamespace(stdout="codex-cli test\n", stderr="", returncode=0)
+        assert command[:2] == ["codex", "exec"]
+        return SimpleNamespace(stdout=_event_stream(json.dumps(model_output), reported_model),
+                               stderr="", returncode=0)
+
+    monkeypatch.setattr(cross.subprocess, "run", mocked_run)
+    result = cross.run_case(case, "original", repo / "runs" / "crossmodel_gpt")
+    assert result["status"] == "FAIL (model_pin_mismatch)"
+    assert not (repo / "runs" / "crossmodel_gpt" / "C01.json").exists()
+
+
+def test_dry_run_has_hashes_and_no_subprocess(
+        monkeypatch, tmp_path, capsys, case, payload):
+    repo = _configure_tmp(monkeypatch, tmp_path, payload)
+    cases_path = tmp_path / "cases.json"
+    cases_path.write_text(json.dumps({"cases": [case]}))
+
+    def forbidden_subprocess(*args, **kwargs):
+        pytest.fail("dry-run invoked subprocess")
+
+    monkeypatch.setattr(cross.subprocess, "run", forbidden_subprocess)
+    for variable in cross.METERED_ENV_VARS:
+        monkeypatch.delenv(variable, raising=False)
+    rc = cross.main(["--cases", str(cases_path), "--frame", "original",
+                     "--out", str(repo / "runs" / "crossmodel_gpt"), "--dry-run"])
+    output = capsys.readouterr().out
+    assert rc == 0
+    assert "payload_sha256=" in output
+    assert "prompt_sha256=" in output
+
+
+def _existing_record(model_output, fingerprint=None):
+    record = {
+        "case_id": "C01", "run_id": "xgpt-original-C01-r1", "model": "gpt-test",
+        "pipeline_version": "abc123", "run_timestamp": "2020-01-01T00:00:00+00:00",
+        "documents_used": [{"accession_no": "0001-20-000001", "form_type": "10-K",
+                            "filing_date": "2020-02-01"}],
+        **model_output,
+    }
+    if fingerprint is not None:
+        record["fingerprint"] = fingerprint
+    return record
+
+
+def _current_config(repo, case, payload, frame="original"):
+    import hashlib as _hashlib
+    user = cross.frozen_frame_payload(payload)
+    prompt = cross.build_prompt(cross.build_task(case, payload, frame), user)
+    return {"payload_sha256": cross._sha(user),
+            "system_prompt_sha256": cross._sha(prompt),
+            "schema_sha256": _hashlib.sha256(
+                (repo / "schemas" / "llm_output.json").read_bytes()).hexdigest(),
+            "model_requested": "gpt-test",
+            "case_input_sha256": "x", "harness_version_actual": "v",
+            "pipeline_commit": "abc123"}
+
+
+def test_valid_fingerprintless_existing_output_now_fails(
+        monkeypatch, tmp_path, case, payload, model_output):
+    """R1-14: 종전 문서화된 공백(무 fingerprint skip)이 실제 단언으로 승격 —
+    이제 stale_legacy FAIL이다 (runs/crossmodel_gpt 실기록 0건이라 수용 플래그
+    불필요)."""
+    repo = _configure_tmp(monkeypatch, tmp_path, payload)
+    existing = _existing_record(model_output)
+    jsonschema.Draft7Validator(cross.runner.FULL_OUTPUT_SCHEMA).validate(existing)
+    (repo / "runs" / "crossmodel_gpt" / "C01.json").write_text(
+        json.dumps(existing), encoding="utf-8")
+    monkeypatch.setattr(cross.subprocess, "run",
+                        lambda *a, **k: pytest.fail("resume invoked subprocess"))
+    result = cross.run_case(case, "original", repo / "runs" / "crossmodel_gpt")
+    assert result["status"].startswith("FAIL (stale_legacy_output")
+
+
+def test_unchanged_config_still_skips(monkeypatch, tmp_path, case, payload, model_output):
+    repo = _configure_tmp(monkeypatch, tmp_path, payload)
+    fingerprint = _current_config(repo, case, payload.copy())
+    (repo / "runs" / "crossmodel_gpt" / "C01.json").write_text(
+        json.dumps(_existing_record(model_output, fingerprint)), encoding="utf-8")
+    monkeypatch.setattr(cross.subprocess, "run",
+                        lambda *a, **k: pytest.fail("resume invoked subprocess"))
+    result = cross.run_case(case, "original", repo / "runs" / "crossmodel_gpt")
+    assert result["status"] == "skip"
+
+
+def test_changed_config_fails_not_skips(monkeypatch, tmp_path, case, payload, model_output):
+    """R1-14: 구성이 바뀌면 stale-but-valid 출력이 조용히 충족하면 안 된다."""
+    repo = _configure_tmp(monkeypatch, tmp_path, payload)
+    fingerprint = _current_config(repo, case, payload.copy())
+    fingerprint["payload_sha256"] = "0" * 64  # 다른 구성의 산출로 기록됨
+    (repo / "runs" / "crossmodel_gpt" / "C01.json").write_text(
+        json.dumps(_existing_record(model_output, fingerprint)), encoding="utf-8")
+    monkeypatch.setattr(cross.subprocess, "run",
+                        lambda *a, **k: pytest.fail("collision invoked subprocess"))
+    result = cross.run_case(case, "original", repo / "runs" / "crossmodel_gpt")
+    assert result["status"].startswith("FAIL (config_changed")
+
+
+def test_cross_frame_existing_output_fails_not_skips(
+        monkeypatch, tmp_path, case, payload, model_output):
+    """R2-4: 파일명은 case_id만 — original arm 기록이 있는 디렉토리에
+    --frame perturbed로 실행하면 skip이 아니라 frame_collision FAIL이어야
+    한다 (조용한 arm 오염 차단). run_id 접두사가 판정 기준."""
+    repo = _configure_tmp(monkeypatch, tmp_path, payload)
+    existing = {
+        "case_id": "C01", "run_id": "xgpt-original-C01-r1", "model": "gpt-test",
+        "pipeline_version": "abc123", "run_timestamp": "2020-01-01T00:00:00+00:00",
+        "documents_used": [{"accession_no": "0001-20-000001", "form_type": "10-K",
+                            "filing_date": "2020-02-01"}],
+        **model_output,
+    }
+    (repo / "runs" / "crossmodel_gpt" / "C01.json").write_text(
+        json.dumps(existing), encoding="utf-8")
+    monkeypatch.setattr(cross.subprocess, "run",
+                        lambda *a, **k: pytest.fail("collision invoked subprocess"))
+
+    result = cross.run_case(case, "perturbed", repo / "runs" / "crossmodel_gpt")
+
+    assert result["status"].startswith("FAIL (frame_collision"), result["status"]
+    assert "xgpt-original-C01-r1" in result["status"]
+
+
+def test_crossmodel_write_atomic_crash_leaves_no_corrupt_canonical(
+        monkeypatch, tmp_path, case, payload, model_output):
+    """R3-6: tmp→replace — 크래시 부분 기록이 정본 C01.json이 되면 안 된다."""
+    from pathlib import Path as _P
+    repo = _configure_tmp(monkeypatch, tmp_path, payload)
+
+    def mocked_run(command, **kwargs):
+        if command == ["codex", "--version"]:
+            return SimpleNamespace(stdout="codex-cli test\n", stderr="", returncode=0)
+        return SimpleNamespace(stdout=_event_stream(json.dumps(model_output)),
+                               stderr="", returncode=0)
+
+    monkeypatch.setattr(cross.subprocess, "run", mocked_run)
+    real_write = _P.write_text
+
+    def crashing(self, text, *args, **kwargs):
+        if self.name.endswith(".json.tmp"):
+            real_write(self, text[:10], *args, **kwargs)
+            raise OSError("simulated crash mid-write")
+        return real_write(self, text, *args, **kwargs)
+
+    monkeypatch.setattr(_P, "write_text", crashing)
+    with pytest.raises(OSError, match="simulated crash"):
+        cross.run_case(case, "original", repo / "runs" / "crossmodel_gpt")
+    assert not (repo / "runs" / "crossmodel_gpt" / "C01.json").exists()
+
+
+def test_audit_file_from_truncated_retry_keeps_attempts_line_separated(
+        monkeypatch, tmp_path, case, payload, model_output):
+    """R6-2 (R5-5(a)의 생산 사이트 검증): 시도 1이 행 중간 절단 + 시도 2 성공
+    — 기록된 audit_*.jsonl에서 두 시도의 thread.started가 각각 온전한 행으로
+    파싱돼야 한다. ""-join 회귀면 절단 꼬리와 시도 2 첫 이벤트가 융합되어
+    파싱 가능한 thread.started가 1개로 준다 (red-with-revert 실측 절차 대상)."""
+    repo = _configure_tmp(monkeypatch, tmp_path, payload)
+    good = _event_stream(json.dumps(model_output))
+    truncated = good[: len(good) // 2].rstrip("\n")  # 행 중간 절단, 개행 없음
+    responses = [truncated, good]
+
+    def mocked_run(command, **kwargs):
+        if command == ["codex", "--version"]:
+            return SimpleNamespace(stdout="codex-cli test\n", stderr="", returncode=0)
+        if command == ["git", "rev-parse", "HEAD"]:
+            return SimpleNamespace(stdout="abc123\n", stderr="", returncode=0)
+        return SimpleNamespace(stdout=responses.pop(0), stderr="", returncode=0)
+
+    monkeypatch.setattr(cross.subprocess, "run", mocked_run)
+    result = cross.run_case(case, "original", repo / "runs" / "crossmodel_gpt")
+    assert result["status"] == "OK"
+    audit = (repo / "runs" / "crossmodel_gpt" / "audit_original_C01.jsonl").read_text(
+        encoding="utf-8")
+    started = 0
+    for line in audit.splitlines():
+        if not line.strip():
+            continue
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            continue  # 절단 꼬리 1행은 정직한 비JSON — 융합만 아니면 된다
+        if event.get("type") == "thread.started":
+            started += 1
+    assert started == 2, "시도 경계 융합 — 시도 2의 thread.started가 행 단위로 살아남지 못함"
+
+
+def test_crossmodel_canary_hit_fails_before_write(
+        monkeypatch, tmp_path, case, payload, model_output):
+    """R6-5: 교차모델 출력의 카나리도 기록 전 FAIL — meta 증거 유지."""
+    repo = _configure_tmp(monkeypatch, tmp_path, payload)
+    model_output["overall"]["top_signals"] = ["canary 9fa11f98-dead-beef"]
+
+    def mocked_run(command, **kwargs):
+        if command == ["codex", "--version"]:
+            return SimpleNamespace(stdout="codex-cli test\n", stderr="", returncode=0)
+        if command == ["git", "rev-parse", "HEAD"]:
+            return SimpleNamespace(stdout="abc123\n", stderr="", returncode=0)
+        return SimpleNamespace(stdout=_event_stream(json.dumps(model_output)),
+                               stderr="", returncode=0)
+
+    monkeypatch.setattr(cross.subprocess, "run", mocked_run)
+    result = cross.run_case(case, "original", repo / "runs" / "crossmodel_gpt")
+    assert result["status"] == "FAIL (canary_hit)"
+    assert not (repo / "runs" / "crossmodel_gpt" / "C01.json").exists()
+    meta = json.loads((repo / "runs" / "crossmodel_gpt" /
+                       "runmeta_original_C01.json").read_text(encoding="utf-8"))
+    assert meta["fail_reason"] == "canary_hit"

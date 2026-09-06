@@ -1,0 +1,292 @@
+"""피평가자 러너 (freeze 개정 #2 — 구독 헤드리스 경로) — 케이스별 독립 호출, 페이로드 규약 강제.
+
+사용:
+  python pipeline/runner.py --cases data/evaluatee/cases.json --out runs/main
+  python pipeline/runner.py --cases scoring/perturbed_cases.json --perturbed --out runs/perturbed
+  python pipeline/runner.py --cases pilot/cases_pilot.json --out pilot/runs
+
+규약 (GP-6 3조항 + V4/V7 + 개정 #2):
+  - 호출당 컨텍스트 = 시스템 프롬프트(TASK) + 페이로드 JSON 하나. 저장소 문서·
+    다른 케이스·채점 자료 일절 미포함 — cli_client가 격리 임시 디렉토리에서
+    `claude -p` (도구 차단, CLAUDE_CONFIG_DIR 격리)로 강제.
+  - 이 모듈은 scoring/ 를 import하지 않는다 (정적 스캔).
+  - 멱등: legacy 유효 출력은 기본 stale FAIL(명시 수용 시 skip), 현재 실행의
+    **구성 정체**(payload·prompt·schema·case 해시 + 요청 모델) 일치 시 skip —
+    출처 필드(pipeline_commit·harness_version_actual)는 기록하되 비교 제외 (R13-2).
+  - 실행 순서 = 케이스 파일의 셔플된 중립 ID 순서 고정, 동시성 3.
+  - 2연속 실패 = 해당 케이스 FAIL 기록 후 계속. 레이트 리밋 = 재개 명령 출력 후 중단.
+  - 모델 핀: 피평가자 = claude-sonnet-5 (D6) — 폴백 없음. 서빙 모델 핀 불일치 = FAIL.
+"""
+from __future__ import annotations
+
+import argparse
+import concurrent.futures
+import datetime
+import hashlib
+import json
+import shlex
+import subprocess
+import sys
+from copy import deepcopy
+from pathlib import Path
+
+import build_payload as bp
+import cli_client
+import jsonschema
+from cli_client import EVALUATEE_FORBIDDEN_MARKERS, freeze_state
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+MODEL_VISIBLE_KEYS = ("case", "financial_series_point_in_time", "filing_chronology")
+EVALUATEE_MODEL = "claude-sonnet-5"  # D6 pin (사유는 채점 쪽 문서)
+FULL_OUTPUT_SCHEMA = json.loads(
+    (REPO_ROOT / "schemas" / "llm_output.json").read_text(encoding="utf-8"))
+CANARY_MARKERS = ("9fa11f98", "a2d69cfe")
+def get_harness_version() -> str:
+    """R1-16: 단일 출처 — cli_client.enforce_harness_pin의 핀-대조 실측을
+    그대로 쓴다. 버전 획득 실패는 fail-closed 예외이며, "UNAVAILABLE" 류
+    자리표시자가 fingerprint에 들어가는 일은 없다 (CalledProcessError 포함
+    전 실패 경로가 enforce에서 예외로 수렴)."""
+    return cli_client.enforce_harness_pin()
+
+
+def compute_fingerprint(case: dict, task: str, user_payload: str) -> dict:
+    """Compute the complete configuration identity before a model call."""
+    schema_bytes = (REPO_ROOT / "schemas" / "llm_output.json").read_bytes()
+    case_json = json.dumps(case, sort_keys=True, ensure_ascii=False)
+    return {
+        "case_input_sha256": hashlib.sha256(case_json.encode("utf-8")).hexdigest(),
+        "payload_sha256": hashlib.sha256(user_payload.encode("utf-8")).hexdigest(),
+        "system_prompt_sha256": hashlib.sha256(task.encode("utf-8")).hexdigest(),
+        "schema_sha256": hashlib.sha256(schema_bytes).hexdigest(),
+        "model_requested": EVALUATEE_MODEL,
+        "harness_version_actual": get_harness_version(),
+        "pipeline_commit": freeze_state()["head"],
+    }
+
+
+# R13-2: fingerprint는 두 층이다 — **구성 정체**(무엇을 물었는가)와
+# **출처**(어느 커밋·하네스가 물었는가). 멱등 skip 판정은 구성 정체로만 한다.
+# 전체 dict 동등 비교였을 때: 창 중간에 HEAD가 한 번만 움직여도(부분 결과
+# 커밋, Q-O11 재핀 등) 완료된 케이스 전건이 불일치가 되어 재호출되고
+# {cid}.fp-<hash>.json으로 떨어진다 → forward_assemble이 "fp-sibling 러너 출력
+# 존재: 어느 런이 정본인지 모호"로 조립 자체를 거부한다. OWNER_LAUNCH_GATE:46-48이
+# 약속하는 "재개 = 동일 명령 재실행 … 결정론"은 HEAD가 고정일 때만 성립했다.
+# crossmodel_gpt.run_case(:243-246)와 probe_runner._probe_fingerprint는 이미
+# 같은 이유로 이 둘을 제외한다 — 이 모듈만 뒤처져 있었다.
+# 출처 필드는 계속 기록된다(봉인 사슬이 쓴다). 비교에서만 빠진다.
+CONFIG_IDENTITY_KEYS = ("case_input_sha256", "payload_sha256",
+                        "system_prompt_sha256", "schema_sha256", "model_requested")
+PROVENANCE_KEYS = ("harness_version_actual", "pipeline_commit")
+
+
+def config_identity(fingerprint) -> dict | None:
+    """fingerprint에서 구성 정체 부분만 — 비-dict/키 결측은 None (fail-closed)."""
+    if not isinstance(fingerprint, dict):
+        return None
+    if any(k not in fingerprint for k in CONFIG_IDENTITY_KEYS):
+        return None
+    return {k: fingerprint[k] for k in CONFIG_IDENTITY_KEYS}
+
+
+def _strip_descriptions(node):
+    """모델 송출 스키마에서 주석층(description)을 제거한다 — 스키마 파일의
+    description에는 채점 루브릭 문구가 있어 피평가자 채널로 새면 INV-09
+    위반이다. description은 JSON Schema 주석 키워드라 검증 의미론 불변."""
+    if isinstance(node, dict):
+        return {k: _strip_descriptions(v) for k, v in node.items() if k != "description"}
+    if isinstance(node, list):
+        return [_strip_descriptions(v) for v in node]
+    return node
+
+
+def derive_model_schema(full_schema: dict) -> dict:
+    """Return the canonical model subset as a standalone Draft 7 schema."""
+    model_schema = deepcopy(full_schema["$defs"]["model_output"])
+    model_schema["$schema"] = full_schema["$schema"]
+    return _strip_descriptions(model_schema)
+
+
+MODEL_SCHEMA = derive_model_schema(FULL_OUTPUT_SCHEMA)
+
+TASK = """You are analyzing the financial reporting quality of {company_name} ({ticker}{cik_part}) \
+using only the structured data provided below, which reflects public filings available on or \
+before {cutoff_date}. Do not use any knowledge of events after {cutoff_date}. Complete the \
+checklist, then: (a) estimate the probability (0-100) that the company's financial statements \
+contain, or have contained during the periods covered by the available filings, a material \
+misstatement; (b) if you estimate this probability at 40 or above, describe the most likely \
+mechanism(s), most confident first (at most 3): which financial statement line items are \
+affected, in which direction, and through what accounting treatment. Every finding must cite \
+the specific data points provided, in the form 'concept=value (period)'. If the data is \
+insufficient for an item, say so - do not guess.
+
+Checklist items (answer each with finding flag/no_flag/insufficient_data + evidence):
+CL1 Did receivables grow materially faster than revenue across consecutive periods?
+CL2 Did non-current 'soft' assets (intangibles, other assets, capitalized items) grow materially faster than the business overall?
+CL3 Is there a persistent divergence between net income and operating cash flow?
+CL4 Do inventory levels or gross margins show trends inconsistent with revenue?
+CL5 Is the earnings trajectory unusually smooth relative to the volatility of revenue and cash flow?
+CL6 Did liability, allowance, or reserve balances decline (or fail to grow) despite growing business activity?
+CL7 Does the filing chronology show irregularities (late filings/NT forms, amendments, unusual 8-K frequency)?
+CL8 Is the provided data sufficient in coverage and length for the above assessments?
+
+Output format constraint: the field overall.top_signals takes checklist item ids only - each \
+element must be exactly one id from CL1..CL8 (for example "CL3"), most important first, at most \
+5. Do not put sentences, company names or narrative there; narrative belongs in the checklist \
+evidence and mechanism fields."""
+
+def run_case(case: dict, perturb: bool, out_dir: Path, log_dir: Path, *,
+             accept_legacy_output: bool = False) -> dict:
+    """케이스 1건 실행 — 반환: 상태 요약 dict (FAIL 포함, 예외는 레이트 리밋만)."""
+    cid = case["case_id"]
+    out_path = out_dir / f"{cid}.json"
+    existing = None
+    if out_path.exists():
+        try:
+            existing = json.loads(out_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            pass
+        if (cli_client.output_is_valid(out_path, FULL_OUTPUT_SCHEMA)
+                and isinstance(existing, dict) and "fingerprint" not in existing):
+            if not accept_legacy_output:
+                return {"case_id": cid,
+                        "status": "FAIL (stale_legacy_output — fingerprint 없음; "
+                                  "--accept-legacy-output으로 명시 수용하거나 소유자 게이트 재실행)"}
+            return {"case_id": cid,
+                    "status": "skip (legacy output ACCEPTED via "
+                              "--accept-legacy-output — fingerprint 없음)"}
+
+    payload = bp.build_payload(case, perturb=perturb)
+    k = payload.pop("_k_internal")
+    cik_part = f", CIK {case['cik']}" if not perturb else ""
+    task = TASK.format(company_name=payload["case"]["company_name"],
+                       ticker=payload["case"]["ticker"], cik_part=cik_part,
+                       cutoff_date=case["cutoff_date"])
+    user_payload = json.dumps({key: payload[key] for key in MODEL_VISIBLE_KEYS},
+                              ensure_ascii=False)
+    fingerprint = compute_fingerprint(case, task, user_payload)
+    write_path = out_path
+    stale_superseding = False
+    identity = config_identity(fingerprint)
+    if out_path.exists():
+        if (identity is not None and isinstance(existing, dict)
+                and config_identity(existing.get("fingerprint")) == identity):
+            return {"case_id": cid, "status": "skip (멱등 — 구성 정체 일치)"}
+        # R13-2: sibling 경로명도 구성 정체에서 파생한다 — 전체 fingerprint로
+        # 파생하면 창 중간 커밋마다 같은 구성이 새 sibling을 낳아 같은 교착이
+        # 한 층 아래에서 재현된다.
+        canonical = json.dumps(identity, sort_keys=True, ensure_ascii=False)
+        suffix = hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:8]
+        write_path = out_dir / f"{cid}.fp-{suffix}.json"
+        stale_superseding = True
+        if (identity is not None and write_path.exists()
+                and config_identity(json.loads(write_path.read_text(
+                    encoding="utf-8")).get("fingerprint")) == identity):
+            return {"case_id": cid, "status": "skip (멱등 — fp-sibling 일치)"}
+
+    variant = "perturbed" if perturb else "original"
+    r = cli_client.call_model(
+        EVALUATEE_MODEL, task, user_payload, MODEL_SCHEMA,
+        log_dir=log_dir, log_name=f"evaluatee_{variant}_{cid}",
+        forbid_markers=EVALUATEE_FORBIDDEN_MARKERS)
+
+    canary_hit = any(m in json.dumps(r.structured or {}).lower() for m in CANARY_MARKERS)
+    meta = {"case_id": cid, "variant": f"{variant}-{cid}-r1",
+            "perturb_factor": k if perturb else None, "canary_hit": canary_hit,
+            "fail_reason": r.fail_reason, "served_models": r.served_models}
+    (log_dir / f"runmeta_{variant}_{cid}.json").write_text(
+        json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    if canary_hit:
+        # R2-13: 카나리 GUID를 실은 출력이 OK로 runs/(append-only)에 실리면
+        # 검출이 커밋-후 CI에 의존한다 — 기록 전 fail-closed (runmeta 증거 유지)
+        meta["fail_reason"] = "canary_hit"
+        (log_dir / f"runmeta_{variant}_{cid}.json").write_text(
+            json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+        return {"case_id": cid, "status": "FAIL (canary_hit)"}
+    if not r.ok:
+        return {"case_id": cid, "status": f"FAIL ({r.fail_reason})"}
+
+    accessions = {}
+    for tag, vals in payload["financial_series_point_in_time"].items():
+        for v in vals:
+            if v.get("accession"):
+                accessions[v["accession"]] = {"accession_no": v["accession"],
+                                              "form_type": v.get("form") or "unknown",
+                                              "filing_date": v["filed"]}
+    full = {
+        "case_id": cid,
+        "run_id": f"{variant}-{cid}-r1",
+        "model": (r.served_models or [EVALUATEE_MODEL])[0],
+        "pipeline_version": freeze_state()["head"],
+        "run_timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "documents_used": sorted(accessions.values(), key=lambda d: d["accession_no"]),
+        "fingerprint": fingerprint,
+        **r.structured,
+    }
+    # Pinned jsonschema checks draft-7 "date" without extras; date-time and uri
+    # remain unchecked because their optional dependencies are intentionally absent.
+    errors = list(jsonschema.Draft7Validator(
+        FULL_OUTPUT_SCHEMA, format_checker=jsonschema.FormatChecker()).iter_errors(full))
+    if errors:
+        path = ".".join(str(part) for part in errors[0].absolute_path) or "<root>"
+        reason = f"schema_violation: {path}"
+        meta["fail_reason"] = reason
+        log_dir.mkdir(parents=True, exist_ok=True)
+        (log_dir / f"runmeta_{variant}_{cid}.json").write_text(
+            json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+        return {"case_id": cid, "status": f"FAIL ({reason})"}
+    out_dir.mkdir(parents=True, exist_ok=True)
+    # 원자적 기록 (D67, R1-12): 크래시 중단 시 부분 파일이 정본 {cid}.json을
+    # 오염시키면 멱등 skip이 영영 실패하고 fp-sibling 뒤로 가려진다 — tmp→replace
+    tmp_path = write_path.with_suffix(".json.tmp")
+    tmp_path.write_text(json.dumps(full, ensure_ascii=False, indent=2), encoding="utf-8")
+    tmp_path.replace(write_path)
+    status_prefix = "OK stale-superseding" if stale_superseding else "OK"
+    return {"case_id": cid, "status": f"{status_prefix} p={full['misstatement_probability']} "
+            f"tier={full['overall']['risk_tier']} hyps={len(full['mechanism_hypotheses'])}"}
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--cases", default=str(bp.EVALUATEE_CASES))
+    ap.add_argument("--perturbed", action="store_true")
+    ap.add_argument("--out", required=True, help="출력 디렉토리 (예: runs/main, pilot/runs)")
+    ap.add_argument("--only", nargs="*", help="특정 case_id만")
+    ap.add_argument("--concurrency", type=int, default=3)
+    ap.add_argument("--accept-legacy-output", action="store_true")
+    args = ap.parse_args()
+
+    cli_client.assert_no_metered_credentials()
+    cli_client.require_clean_tree()
+
+    cases = json.loads(Path(args.cases).read_text(encoding="utf-8"))["cases"]
+    if args.only:
+        cases = [c for c in cases if c["case_id"] in set(args.only)]
+    out_dir = REPO_ROOT / args.out
+    ts = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    log_dir = REPO_ROOT / "logs" / f"run_{ts}"
+
+    resume_cmd = "python pipeline/runner.py " + " ".join(
+        shlex.quote(a) for a in sys.argv[1:])
+    failures = 0
+    with concurrent.futures.ThreadPoolExecutor(max_workers=args.concurrency) as pool:
+        futs = {pool.submit(run_case, c, args.perturbed, out_dir, log_dir,
+                            accept_legacy_output=args.accept_legacy_output): c
+                for c in cases}  # 제출 순서 = 케이스 파일의 셔플된 중립 ID 순서 (고정)
+        try:
+            for fut in concurrent.futures.as_completed(futs):
+                res = fut.result()
+                if res["status"].startswith("FAIL"):
+                    failures += 1
+                print(f"{res['case_id']}: {res['status']}", flush=True)
+        except cli_client.RateLimitedError as e:
+            pool.shutdown(cancel_futures=True)
+            print(f"\nHALT — {e}", file=sys.stderr)
+            print(f"재개 명령 (완료분 자동 skip):\n  {resume_cmd}")
+            return 3
+    print(f"완료: {len(cases)}건 중 FAIL {failures}건 (로그: {log_dir})")
+    return 0 if failures == 0 else 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())

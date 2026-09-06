@@ -4,47 +4,34 @@ on:
   push:
   pull_request:
 
-# 공급망 강화 (D-P45 §3 CI hardening, 2026-08-05): 최소 권한 + 액션 SHA 핀.
-# 태그는 가변(mutable) — 전체 커밋 SHA로 고정하고 주석에 사람이 읽는 버전 유지.
 permissions:
   contents: read
 
 jobs:
-  test:
+  check:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.11", "3.12", "3.13"]
-    # C5 (D109): 재현 주장의 정본은 3.12 (REPRODUCING.md §1). 비정본 버전
-    # 실패는 발견(finding)으로 기록·허용 — 잡 레벨 continue-on-error로 워크플로는
-    # 통과하되 해당 잡의 실패 표시·아래 notice 주석은 남는다 (침묵 green 금지).
-    continue-on-error: ${{ matrix.python-version != '3.12' }}
     steps:
+      # Action versions are pinned by commit SHA; tags are mutable.
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
         with:
-          fetch-depth: 0   # verify_blindness.py의 git 이력 증명(채점 커밋 선행)에 전체 이력 필요
+          fetch-depth: 0
+
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5
         with:
-          python-version: ${{ matrix.python-version }}
-      - name: 비정본 버전 고지 (C5 — allowed-to-fail, 결과는 발견으로 기록)
-        if: matrix.python-version != '3.12'
-        run: echo "::notice title=non-canonical Python::Python ${{ matrix.python-version }}는 비정본 — 재현 주장은 3.12 기준 (REPRODUCING.md §1). 이 잡의 실패는 허용되되 가시 기록된다."
-      - name: 의존성 설치 (해시 핀 lockfile — C4, D109)
-        run: pip install --require-hashes -r requirements.lock
-      - name: pytest (cutoff_guard + 가드 우회 스캔 + 피평가자 입력 오염 차단 + 베이스라인 규율 + analysis 판정·통계 불변식)
-        run: python -m pytest pipeline/ tools/ scoring/ analysis/ -q
-      - name: 스키마 검증 (candidates.json ↔ case_input, 편차 허용목록)
-        run: python tools/validate_schemas.py
-      - name: 매니페스트 자체 정합성 (러너에 ~/aaer-data 원본 없음 → schema-only)
-        run: python tools/verify_manifest.py --schema-only
-      - name: RP-05 발행 수치 재현 (커밋 산출물만 의존 — skip 금지, RP-06 B2)
-        run: python tools/reproduce_analysis.py
-      - name: 블라인드·카나리·runs 매니페스트 검증 (커밋 산출물만 의존 — skip 금지, RP-06 B3)
-        run: python tools/verify_blindness.py
-      - name: 발행 정합 린트 (0% 오탐·G2-fraud·대조군주어·pooled·EXPLORATORY·stale — P4)
-        run: python tools/lint_publication.py
-      - name: 문서-저장소 수치 정합 린트 (매니페스트 수·pytest 수·재현 명령 목록 — B3, D108)
-        run: python tools/lint_doc_counts.py
-      - name: 그림 드리프트 게이트 (BN-12/D-P52 — verify-public 동등성, R5-05)
-        run: python tools/verify_figures.py
+          python-version: "3.12"
+
+      - name: install
+        run: pip install -r requirements.txt
+
+      # The append check needs the baseline branch, which checkout does not
+      # fetch on a pull request.
+      - name: fetch the baseline branch
+        run: git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+
+      # runs/, rules/ and events/ are append-only. A failure here means the
+      # prediction record is damaged, so it runs before the tests, not after.
+      - name: append check
+        run: python -m src.append_check --baseline origin/main
+
+      - name: tests
+        run: python -m pytest tests -q

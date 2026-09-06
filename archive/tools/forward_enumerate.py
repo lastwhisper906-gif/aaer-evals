@@ -1,0 +1,328 @@
+"""forward 유니버스 결정론 열거 (UNIVERSE_SELECTION.md §1–§3·§5·§6, D100).
+
+usage: python tools/forward_enumerate.py --out forward/cycle_001/universe.json
+재실행(결정론 검증): 동일 명령 — 동일 T₀ 스냅샷( data/candidates/universe/ )이
+있으면 네트워크 없이 재계산한다 (--offline 강제 가능).
+
+권한: governance/DECISION_FORWARD_UNIVERSE.md §5 (owner plan 2026-07-20
+§4.4/§8 서면 위임). 원시 응답 전건 보존 + provenance(질의 URL·시각) 기록.
+네트워크는 EDGAR 공개 API만 (무료) · 모델 호출 0 · 레이트 ≤4 req/s.
+
+기계 판독 주석 (§1-3): "companyfacts에 XBRL 사실이 있는 제출"은 EDGAR
+submissions의 공식 isXBRL 플래그로 판독한다 (companyfacts 전건 fetch 대비
+등가·경량 — 방법은 universe.json.method에 기록).
+"""
+import argparse
+import datetime
+import json
+import re
+import sys
+import time
+import urllib.request
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from forward_common import (REPO, SEC_UA, UNIVERSE_SIZE, assert_parallel_lengths,
+                            assert_subscription_only, is_sealed,
+                            seal_residue_notice, write_json, read_json)
+
+SIC_SET = ["3571", "3572", "3576", "3577", "3585", "3612", "3613", "3621",
+           "3661", "3663", "3669", "3672", "3674", "4911"]  # §6 (A) — 정렬 고정
+SNAP = REPO / "data/candidates/universe"
+T0 = "2026-07-20"                      # 열거 시점 (서명 후 첫 실행일 — D95→plan 위임)
+TRAIL_START = "2024-07-20"             # T₀ − 24개월 (§1-1)
+FLOAT_MIN = 1e9
+
+_provenance = []
+_fetch_errors = []  # fail-closed: 오류 발생 시 결측으로 삼키지 않고 종료 코드 1
+
+
+def missing_marker(dest: Path) -> Path:
+    """온라인 fetch가 하드 실패를 기록해 둔 마커 (정확한 HTTP 오류 문자열)."""
+    return dest.with_suffix(dest.suffix + ".missing")
+
+
+def fetch(url: str, dest: Path, offline: bool) -> bytes | None:
+    if dest.exists():
+        return dest.read_bytes()
+    if offline:
+        # R16-7: 같은 물리 상태(쓸 수 있는 스냅샷 바이트 없음)에 두 개의 실패
+        # 의미가 있었다 — 온라인이면 _fetch_errors에 쌓여 run 전체가 실패하고,
+        # 오프라인이면 조용히 배제 사유 문자열이 되어 universe.json에 봉인됐다.
+        # 온라인 실행이 남긴 마커를 아무도 읽지 않았기 때문이다. 문서화된 복구
+        # 절차(--offline 재실행)가 바로 그 우회 경로였다.
+        marker = missing_marker(dest)
+        if marker.is_file():
+            _fetch_errors.append(
+                f"{url}: (offline) 기록된 fetch 실패 — "
+                f"{marker.read_text(encoding='utf-8')[:120]}")
+        return None
+    req = urllib.request.Request(url, headers=SEC_UA)
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            data = r.read()
+    except Exception as e:  # 404·타임아웃 등 — 기록 후 run 전체를 실패시킨다
+        _provenance.append({"url": url, "retrieved_at": _now(), "error": str(e)[:120]})
+        _fetch_errors.append(f"{url}: {str(e)[:120]}")
+        missing_marker(dest).write_text(str(e)[:200], encoding="utf-8")
+        return None
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_bytes(data)
+    _provenance.append({"url": url, "retrieved_at": _now(), "file": str(dest.relative_to(REPO))})
+    time.sleep(0.3)  # SEC fair-access <5 req/s
+    return data
+
+
+def _now():
+    return datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
+
+
+def browse_ciks(sic: str, offline: bool) -> list[tuple[str, str]]:
+    """SIC별 활동 등록사 (트레일링 24개월 내 10-K 제출 필터) — (cik, name)."""
+    out, start = [], 0
+    while True:
+        url = ("https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany"
+               f"&SIC={sic}&type=10-K&datea={TRAIL_START.replace('-', '')}"
+               f"&dateb={T0.replace('-', '')}"
+               f"&owner=include&count=100&start={start}&output=atom")
+        data = fetch(url, SNAP / f"sic_{sic}_p{start // 100}.xml", offline)
+        if data is None:
+            break
+        text = data.decode("utf-8", "replace")
+        # company-list atom: 항목당 <cik>NNNNNNNNNN</cik> (사명은 submissions에서)
+        ciks = re.findall(r"<cik>(\d+)</cik>", text)
+        out.extend((c.zfill(10), "") for c in ciks)
+        if len(ciks) < 100:
+            break
+        start += 100
+    return out
+
+
+# D-P94 집행조건 2 (서명 완료 — D-P104): 소각 목록은 러너 정본에서 **파생**한다.
+# 종전에는 네 파일이 여기 손으로 적혀 있었고, 러너 정본
+# `pipeline/cutoff_guard.TRUSTED_CASE_FILES`에는 `cases_v2.json`이 더 있었다.
+# 그 한 파일의 드리프트가 case_36(CIENA, CIK 0000936395 — 2026-07-07 채점되어
+# 게시 wave-2 통계에 들어간 회사)을 T₀ 열거에서 살려 두었고, fw001-r08로
+# 선정·GATE_PIN 동결됐다: docs/UNIVERSE_SELECTION.md §2-2의 문서화된 위반이자
+# 봉인 레코드 12건 중 1건. 정본에 케이스 파일이 하나 더 들어오면 이 목록은
+# **두 번째 편집 없이** 함께 자란다.
+FORWARD_REGISTRY_PREFIX = "cases_forward_"
+
+
+def burn_list_files() -> tuple[str, ...]:
+    """소각 대상 케이스 파일 — cutoff_guard 정본에서 파생 (D-P94).
+
+    forward 사이클 레지스트리(`cases_forward_*`)만 뺀다. 서명된 제외 사유:
+    `cycle1_ciks()`는 동결 universe.json의 byte-identity 재현 경로이므로, 그
+    사이클 자신의 레지스트리를 소각 입력으로 넣으면 열거가 자기 산출물을 읽는
+    자기참조가 된다 (tools/test_forward_enumerate_offline.py의 byte-identity 핀).
+    """
+    sys.path.insert(0, str(REPO / "pipeline"))
+    import cutoff_guard  # noqa: PLC0415 — 지연 import (tools → pipeline 단방향)
+    return tuple(f for f in cutoff_guard.TRUSTED_CASE_FILES
+                 if not f.startswith(FORWARD_REGISTRY_PREFIX))
+
+
+def cycle1_ciks() -> set[str]:
+    """자기 오염 제외 (§2-2): Cycle-1 케이스 세트 전건의 CIK."""
+    ciks = set()
+    for f in burn_list_files():
+        p = REPO / "data/evaluatee" / f
+        if p.exists():
+            for c in read_json(p).get("cases", []):
+                if c.get("cik"):
+                    ciks.add(str(c["cik"]).zfill(10))
+    return ciks
+
+
+def check_candidate(cik: str, offline: bool) -> tuple[str, dict | None]:
+    """(사유 | 'ok', 상세) — §1·§2 기계 판정."""
+    data = fetch(f"https://data.sec.gov/submissions/CIK{cik}.json",
+                 SNAP / f"submissions_CIK{cik}.json", offline)
+    if data is None:
+        # R16-7: '스냅샷 바이트가 없다'와 '파싱은 됐는데 float 사실이 없다'는
+        # 서로 다른 사건이다 — 종전에는 둘 다 "missing_data"였고, 봉인된
+        # universe.json만 보는 외부 독자는 404와 403을, 결측과 부재를 구분할
+        # 방법이 없었다.
+        return "fetch_unavailable", None
+    sub = json.loads(data)
+    recent = sub.get("filings", {}).get("recent", {})
+    forms = recent.get("form", [])
+    dates = recent.get("filingDate", [])
+    items = recent.get("items", [""] * len(forms))
+    xbrl = recent.get("isXBRL", [0] * len(forms))
+    # R5-3: 위치 조인(forms[i]·items[i] over dates 인덱스) 전에 정렬성 강제 —
+    # 짧은 filingDate는 4.02 오염 스크린 대상 꼬리 제출을 침묵 탈락시킨다
+    assert_parallel_lengths(f"CIK{cik}", form=forms, filingDate=dates,
+                            items=items, isXBRL=xbrl)
+
+    if any(f in ("20-F", "40-F", "6-K") for f in forms):
+        return "foreign_filer", None
+    # 트레일링 창은 양쪽 경계 고정 [TRAIL_START, T0] — fetch 시점 독립 (결정론)
+    in_trail = [i for i, d in enumerate(dates) if TRAIL_START <= d <= T0]
+    k_recent = sum(1 for i in in_trail if forms[i] == "10-K")
+    q_recent = sum(1 for i in in_trail if forms[i] == "10-Q")
+    if k_recent < 1 or q_recent < 2:
+        return "form_requirement", None
+    if any(forms[i] == "8-K" and "4.02" in (items[i] or "") for i in in_trail):
+        return "contamination_402_posthoc_track", None
+    xb_all = [i for i, f in enumerate(forms) if f in ("10-K", "10-Q") and xbrl[i]]
+    xb_k = sum(1 for i in xb_all if forms[i] == "10-K")
+    if len(xb_all) < 8 or xb_k < 2:
+        return "xbrl_history", None
+
+    furl = (f"https://data.sec.gov/api/xbrl/companyconcept/CIK{cik}"
+            "/dei/EntityPublicFloat.json")
+    fdata = fetch(furl, SNAP / f"float_CIK{cik}.json", offline)
+    if fdata is None:
+        return "fetch_unavailable", None
+    try:
+        doc = json.loads(fdata)
+    except json.JSONDecodeError as e:
+        # R16-7(c): 잘린·비-JSON 200 본문은 '이 회사에 float 사실이 없다'가
+        # 아니라 수집 실패다. JSONDecodeError는 ValueError 파생이라 아래
+        # except에 삼켜져 배제 버킷으로 흘렀다 — fail-closed 채널로 돌린다.
+        _fetch_errors.append(f"{furl}: JSON 파싱 실패 — {str(e)[:120]}")
+        return "fetch_unavailable", None
+    try:
+        facts = [u for u in doc["units"]["USD"] if u.get("end") <= T0]
+        latest = max(facts, key=lambda u: u["end"])
+    except (KeyError, ValueError):
+        # 파싱은 성공했고 units.USD가 없거나 T0 이전 사실이 없다 — 진짜 배제
+        return "no_float_fact", None
+    if latest["val"] < FLOAT_MIN:
+        return "float_below_1b", None
+    return "ok", {"float_usd": latest["val"], "float_asof": latest["end"],
+                  "sic": str(sub.get("sic", "")), "name": sub.get("name", ""),
+                  "ticker": (sub.get("tickers") or [""])[0]}
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--out", default="forward/cycle_001/universe.json")
+    ap.add_argument("--offline", action="store_true",
+                    help="스냅샷만으로 재계산 (결정론 검증)")
+    ap.add_argument("--check", action="store_true",
+                    help="R3-1: 재계산 결과를 --out 대상과 바이트 대조만 한다 — "
+                         "대상을 절대 쓰지 않음 (OWNER_LAUNCH_GATE §4 (1) 검증용)")
+    ap.add_argument("--force", action="store_true",
+                    help="기존 --out과 다른 결과의 덮어쓰기 허용 (의도적 재생성 전용)")
+    args = ap.parse_args()
+    assert_subscription_only()
+    SNAP.mkdir(parents=True, exist_ok=True)
+
+    burned = cycle1_ciks()
+    seen, buckets, excluded = set(), {s: [] for s in SIC_SET}, {}
+    candidates = 0
+    for sic in SIC_SET:
+        for cik, _name in browse_ciks(sic, args.offline):
+            if cik in seen:
+                continue
+            seen.add(cik)
+            candidates += 1
+            if cik in burned:
+                excluded["cycle1_self_contamination"] = excluded.get(
+                    "cycle1_self_contamination", 0) + 1
+                continue
+            reason, info = check_candidate(cik, args.offline)
+            if reason != "ok":
+                excluded[reason] = excluded.get(reason, 0) + 1
+                continue
+            buckets[sic].append({"cik": cik, **info, "browse_sic": sic})
+
+    for sic in SIC_SET:  # float 내림차순 · 동률 CIK 오름차순 (§3)
+        buckets[sic].sort(key=lambda r: (-r["float_usd"], r["cik"]))
+    order = []            # 버킷 라운드로빈 (SIC 오름차순 고정)
+    rank = 0
+    while any(buckets.values()):
+        for sic in SIC_SET:
+            if buckets[sic]:
+                r = buckets[sic].pop(0)
+                rank += 1
+                r["selection_rank"] = rank
+                order.append(r)
+    selected = order[:UNIVERSE_SIZE]
+    for i, r in enumerate(selected, 1):
+        r["record_id"] = f"fw001-r{i:02d}"
+    alternates = order[UNIVERSE_SIZE:]
+
+    universe = {
+        "rule_ref": "docs/UNIVERSE_SELECTION.md#§6",
+        "decision_ref": "governance/DECISION_FORWARD_UNIVERSE.md",
+        "enumerated_at": T0,
+        "trailing_window_start": TRAIL_START,
+        "candidate_count": candidates,
+        "excluded_by_reason": excluded,
+        "selected": selected,
+        "alternates": alternates,
+        "method": {
+            "browse": "browse-edgar SIC + type=10-K + datea=trailing-24mo (활동 필터)",
+            "xbrl_history": "submissions.isXBRL 플래그 판독 (§1-3 기계 판독 주석)",
+            "float": "companyconcept dei/EntityPublicFloat 최신(end ≤ T0)",
+            "rerun": "python tools/forward_enumerate.py --offline (스냅샷 결정론 재계산)",
+        },
+    }
+    if _provenance:
+        prov_path = SNAP / "provenance.json"
+        old = read_json(prov_path) if prov_path.exists() else []
+        write_json(prov_path, old + _provenance)
+
+    out_path = REPO / args.out
+    # write_json과 동일 직렬화 — 바이트 대조의 기준
+    rendered = json.dumps(universe, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+    complete = not _fetch_errors and len(selected) == UNIVERSE_SIZE
+    if _fetch_errors:
+        print(f"FAIL — fetch 오류 {len(_fetch_errors)}건: 결측을 배제 사유로 "
+              "삼키지 않는다 (fail-closed). 오류 해소(또는 스냅샷 확보) 후 재실행.")
+        for e in _fetch_errors[:10]:
+            print(f"  {e}")
+
+    if args.check:
+        # R3-1: 검증 모드는 어떤 경우에도 대상을 쓰지 않는다 (INV-06/INV-22)
+        if not complete:
+            print("FAIL — 재계산 불완전(스냅샷 결측/선정 미달) — 대조 판정 불가; "
+                  f"{args.out} 무접촉")
+            return 1
+        if not out_path.exists():
+            print(f"FAIL — 대조 대상 {args.out} 부재")
+            return 1
+        if out_path.read_text(encoding="utf-8") != rendered:
+            print(f"FAIL — 재계산 결과가 동결 {args.out}와 바이트 불일치 (대상 무접촉)")
+            return 1
+        print(f"OK — 재계산 결과가 {args.out}와 바이트 일치 "
+              f"(candidates {candidates} · selected {len(selected)})")
+        return 0
+
+    # R4-7(a): 불완전 재계산은 어떤 경로로도 기록하지 않는다 — 대상 부재 시
+    # 부분 universe(selected 미달)를 써 두면 다음 실행이 자기 산출물에 막힌다
+    # (--check와 대칭: 불완전 = 무기록 FAIL)
+    if not complete:
+        print(f"FAIL — 재계산 불완전 (candidates {candidates} · "
+              f"selected {len(selected)}): {args.out} 미기록 (부분 universe 기록 금지)")
+        return 1
+    # R4-3: 봉인된 사이클의 universe.json은 --force로도 재작성 불가 (INV-22)
+    # R11-8: 판정식은 '봉인 완결'(MANIFEST + SEAL_RECORD) — 중단 잔여물 제외
+    if is_sealed(out_path.parent):
+        print(f"FAIL — {out_path.parent.name}: 봉인 완결 (MANIFEST.sha256 + "
+              "SEAL_RECORD.md) — 봉인된 사이클의 universe.json 재작성 금지 "
+              "(--force 무효; 교정은 새 사이클로)")
+        return 1
+    if (notice := seal_residue_notice(out_path.parent)):
+        print(notice)
+    if (out_path.exists()
+            and out_path.read_text(encoding="utf-8") != rendered and not args.force):
+        # R3-1: 동결·서명 가능 산출물의 무단 덮어쓰기 거부 — 특히 불완전
+        # 스냅샷에서의 selected:[] 클로버 차단. 검증은 --check로.
+        print(f"FAIL — {args.out} 기존 내용과 재계산 결과 불일치: 덮어쓰기 거부 "
+              "(검증은 --check, 의도적 재생성만 --force)")
+        return 1
+    write_json(out_path, universe)
+    print(f"OK — candidates {candidates} · selected {len(selected)} · "
+          f"alternates {len(alternates)} · excluded {excluded}")
+    print("selected:", ", ".join(f"{r['ticker'] or r['cik']}({r['browse_sic']})"
+                                 for r in selected))
+    return 0 if complete else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,428 @@
+"""cli_client (freeze 개정 #2 실행층) 테스트 — subprocess 모킹 (stub `claude` 실행 파일).
+
+검증 대상 계약:
+  ① 핀 플래그 세트·격리 (repo 밖 cwd, CLAUDE_CONFIG_DIR 격리, stdin 페이로드)
+  ② structured_output 파싱 + 스키마 검증
+  ③ 재시도 1회 → 2연속 실패 = FAIL (전체 중단 없음)
+  ④ 레이트 리밋 감지 = RateLimitedError
+  ⑤ 서빙 모델 핀 불일치 = FAIL
+  ⑥ 값 수준 송출 가드 — 변조 주입(mutation injection) 시 호출 자체가 일어나지 않는다
+  ⑦ ANTHROPIC_API_KEY 존재 시 즉시 중단
+  ⑧ 멱등 skip 판정
+"""
+import json
+import os
+import stat
+import sys
+from pathlib import Path
+
+import pytest
+
+import cli_client
+import runner as runner_mod
+
+REPO = Path(__file__).resolve().parent.parent
+
+SCHEMA = {"type": "object", "additionalProperties": False,
+          "required": ["answer"], "properties": {"answer": {"type": "string"}}}
+
+STUB = r'''#!/usr/bin/env python3
+import json, os, sys
+if sys.argv[1:] == ["--version"]:
+    # 하네스 핀 강제 경로 (C3) — call_ 기록 없이 버전만 응답하고 종료
+    if os.environ.get("STUB_VERSION_FAIL"):
+        sys.exit(1)
+    sys.stdout.write(os.environ.get("STUB_VERSION", "STUB-VERSION-UNSET"))
+    sys.exit(0)
+stub_dir = os.environ["STUB_DIR"]
+payload = sys.stdin.read()
+n = len([f for f in os.listdir(stub_dir) if f.startswith("call_")])
+with open(os.path.join(stub_dir, f"call_{n:02d}.json"), "w") as f:
+    json.dump({"argv": sys.argv[1:], "cwd": os.getcwd(),
+               "env_nonessential": os.environ.get("DISABLE_NON_ESSENTIAL_MODEL_CALLS"),
+               "env_traffic": os.environ.get("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"),
+               "stdin": payload}, f)
+if os.environ.get("STUB_SLEEP_ONCE") and n == 0:
+    import time
+    time.sleep(float(os.environ["STUB_SLEEP_ONCE"]))  # R1-11 타임아웃 재현 (첫 호출만)
+if os.environ.get("STUB_SLEEP"):
+    import time
+    time.sleep(float(os.environ["STUB_SLEEP"]))  # R1-11 타임아웃 재현 (매 호출)
+responses = json.load(open(os.path.join(stub_dir, "responses.json")))
+r = responses[min(n, len(responses) - 1)]
+sys.stdout.write(r if isinstance(r, str) else json.dumps(r))
+'''
+
+
+def good_response(structured, model="claude-sonnet-5"):
+    return {"type": "result", "subtype": "success", "is_error": False,
+            "result": json.dumps(structured), "session_id": "sess-test",
+            "total_cost_usd": 0.0, "usage": {"input_tokens": 10, "output_tokens": 5},
+            "modelUsage": {model: {"outputTokens": 5}},
+            "structured_output": structured}
+
+
+@pytest.fixture()
+def stub(tmp_path, monkeypatch):
+    """PATH 맨 앞에 stub `claude`를 심고, 호출 기록 디렉토리를 돌려준다."""
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    exe = bin_dir / "claude"
+    exe.write_text(STUB, encoding="utf-8")
+    exe.chmod(exe.stat().st_mode | stat.S_IXUSR)
+    stub_dir = tmp_path / "stub"
+    stub_dir.mkdir()
+    monkeypatch.setenv("PATH", f"{bin_dir}{os.pathsep}{os.environ['PATH']}")
+    monkeypatch.setenv("STUB_DIR", str(stub_dir))
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    # 하네스 핀 강제 (C3): 기본은 핀 일치 버전 응답 + 프로세스 캐시 리셋
+    monkeypatch.setenv("STUB_VERSION", f"{cli_client.HARNESS_PIN} (Claude Code)")
+    monkeypatch.delenv("STUB_VERSION_FAIL", raising=False)
+    monkeypatch.setattr(cli_client, "_harness_version_actual", None)
+
+    class Stub:
+        dir = stub_dir
+
+        @staticmethod
+        def set_responses(*objs):
+            (stub_dir / "responses.json").write_text(json.dumps(list(objs)), encoding="utf-8")
+
+        @staticmethod
+        def calls():
+            return [json.loads(p.read_text(encoding="utf-8"))
+                    for p in sorted(stub_dir.glob("call_*.json"))]
+
+    return Stub
+
+
+def _call(log_dir, **kw):
+    return cli_client.call_model("claude-sonnet-5", "SYSTEM PROMPT", '{"case": 1}',
+                                 SCHEMA, log_dir=log_dir, log_name="t", **kw)
+
+
+# ① 플래그 세트 + 격리
+def test_pinned_flags_isolated_cwd_and_config(stub, tmp_path):
+    stub.set_responses(good_response({"answer": "x"}))
+    r = _call(tmp_path / "logs")
+    assert r.ok and r.structured == {"answer": "x"}
+    (call,) = stub.calls()
+    argv = call["argv"]
+    assert argv[0] == "-p"
+    for flag, val in [("--model", "claude-sonnet-5"), ("--output-format", "json"),
+                      ("--max-turns", "2"),  # 구조화 출력 도구 왕복 1턴 포함 (J13-d)
+                      ("--setting-sources", ""), ("--tools", ""),
+                      ("--disallowedTools", cli_client.DISALLOWED_TOOLS),
+                      ("--system-prompt", "SYSTEM PROMPT")]:
+        assert argv[argv.index(flag) + 1] == val, flag
+    assert json.loads(argv[argv.index("--json-schema") + 1]) == SCHEMA
+    assert "--strict-mcp-config" in argv, "MCP 0개 강제 플래그 누락"
+    assert call["stdin"] == '{"case": 1}'
+    # 격리: 작업 디렉토리는 저장소 밖 임시 + 하우스키핑 모델 호출 차단 env
+    assert not Path(call["cwd"]).resolve().is_relative_to(REPO)
+    assert call["env_nonessential"] == "1" and call["env_traffic"] == "1"
+    # 로그 계약 (SR 11-7)
+    log = json.loads((tmp_path / "logs" / "t.json").read_text(encoding="utf-8"))
+    assert log["session_id"] == "sess-test" and log["pin_ok"] is True
+    assert log["served_models"] == ["claude-sonnet-5"]
+    assert "freeze" in log and log["harness_pin"] == cli_client.HARNESS_PIN
+
+
+# ② + ③ 재시도·2연속 실패
+def test_schema_failure_retries_once_then_fails(stub, tmp_path):
+    stub.set_responses(good_response({"wrong": 1}))  # 스키마 위반 반복
+    r = _call(tmp_path / "logs")
+    assert not r.ok and r.fail_reason == "schema_failure" and r.attempts == 2
+    assert len(stub.calls()) == 2, "동일 입력 정확히 1회 재시도"
+
+
+def test_second_attempt_success(stub, tmp_path):
+    stub.set_responses(good_response({"wrong": 1}), good_response({"answer": "ok"}))
+    r = _call(tmp_path / "logs")
+    assert r.ok and r.attempts == 2 and r.structured == {"answer": "ok"}
+
+
+def test_empty_stdout_counts_as_failure(stub, tmp_path):
+    stub.set_responses("", "")
+    r = _call(tmp_path / "logs")
+    assert not r.ok and r.fail_reason == "empty" and r.attempts == 2
+
+
+# ④ 레이트 리밋
+def test_rate_limit_raises_for_idempotent_resume(stub, tmp_path):
+    stub.set_responses("You've reached your usage limit. Your limit will reset at 3pm.")
+    with pytest.raises(cli_client.RateLimitedError):
+        _call(tmp_path / "logs")
+
+
+def test_error_response_with_429_status_is_rate_limit(stub, tmp_path):
+    stub.set_responses(json.dumps({"type": "result", "is_error": True,
+                                   "result": "API Error: status 429 too many requests"}))
+    with pytest.raises(cli_client.RateLimitedError):
+        _call(tmp_path / "logs")
+
+
+def test_successful_response_containing_429_number_is_not_rate_limit(stub, tmp_path):
+    """J13-g 회귀: 정상 응답 본문의 재무 수치 '84,429' 등이 레이트 리밋으로 오탐되면 안 된다."""
+    stub.set_responses(good_response({"answer": "Revenues=84,429 (FY2014); limit of detection"}))
+    r = _call(tmp_path / "logs")
+    assert r.ok and "429" in r.structured["answer"]
+
+
+# ④b 타임아웃 (R1-11)
+def test_timeout_is_failed_attempt_with_log_not_crash(stub, tmp_path, monkeypatch):
+    """R1-11: 한 케이스의 TimeoutExpired은 fail_reason=timeout의 FAIL 결과 —
+    예외 전파로 배치 전체가 무기록 크래시하면 안 된다."""
+    stub.set_responses(good_response({"answer": "x"}))
+    monkeypatch.setenv("STUB_SLEEP", "10")
+    r = _call(tmp_path / "logs", timeout_seconds=1)
+    assert not r.ok and r.fail_reason == "timeout" and r.attempts == 2
+    log = json.loads((tmp_path / "logs" / "t.json").read_text(encoding="utf-8"))
+    assert log["fail_reason"] == "timeout"
+    assert "TimeoutExpired" in log["raw_tail"]
+
+
+def test_timeout_then_success_preserves_retry(stub, tmp_path, monkeypatch):
+    stub.set_responses(good_response({"answer": "x"}), good_response({"answer": "y"}))
+    monkeypatch.setenv("STUB_SLEEP_ONCE", "10")
+    r = _call(tmp_path / "logs", timeout_seconds=2)
+    assert r.ok and r.attempts == 2
+
+
+# ⑤ 서빙 모델 핀 불일치
+def test_served_model_pin_mismatch_is_fail(stub, tmp_path):
+    stub.set_responses(good_response({"answer": "x"}, model="claude-haiku-4-5"))
+    r = _call(tmp_path / "logs")
+    assert not r.ok and r.fail_reason == "pin_mismatch"
+    assert r.served_models == ["claude-haiku-4-5"]
+
+
+def test_dated_suffix_of_pin_is_accepted(stub, tmp_path):
+    stub.set_responses(good_response({"answer": "x"}, model="claude-sonnet-5-20260203"))
+    r = _call(tmp_path / "logs")
+    assert r.ok and r.pin_ok
+
+
+def test_hyphen_extension_model_is_pin_mismatch(stub, tmp_path):
+    """R1-6: 접미사 허용은 날짜형 한정 — claude-sonnet-5-5는 다른 모델이다."""
+    stub.set_responses(good_response({"answer": "x"}, model="claude-sonnet-5-5"))
+    r = _call(tmp_path / "logs")
+    assert not r.ok and r.fail_reason == "pin_mismatch"
+
+
+# ⑥ 값 수준 송출 가드 — 변조 주입 시 호출 미발생
+@pytest.mark.parametrize("marker", ["9FA11F98-6380-4BF5-AB3C-8542459ACA6F",
+                                    "A2D69CFE-CA8A-4DE1-8393-5B225099299B",
+                                    "scheme_summary", "beneish", "AAER-1272"])
+def test_mutation_injected_payload_never_leaves(stub, tmp_path, marker):
+    clean = json.dumps({"case": {"ticker": "ZZZZ"}, "series": [1, 2, 3]})
+    mutated = clean[:-1] + f', "x": "{marker}"}}'
+    with pytest.raises(cli_client.PayloadGuardError):
+        cli_client.call_model("claude-sonnet-5", "SYSTEM", mutated, SCHEMA,
+                              log_dir=tmp_path / "logs", log_name="t",
+                              forbid_markers=cli_client.EVALUATEE_FORBIDDEN_MARKERS)
+    assert stub.calls() == [], "가드 위반 페이로드가 프로세스 경계를 넘음"
+
+
+def test_marker_in_system_prompt_never_leaves(stub, tmp_path):
+    """R2-3 패리티: system prompt 채널 가드 — payload·schema와 함께 3채널
+    전부가 양 arm(cli·raw-api)에서 동일하게 가드된다."""
+    with pytest.raises(cli_client.PayloadGuardError):
+        cli_client.call_model("claude-sonnet-5", "SYSTEM beneish", '{"case": 1}',
+                              SCHEMA, log_dir=tmp_path / "logs", log_name="t",
+                              forbid_markers=cli_client.EVALUATEE_FORBIDDEN_MARKERS)
+    assert stub.calls() == [], "가드 위반 시스템 프롬프트가 프로세스 경계를 넘음"
+
+
+def test_model_schema_channel_is_marker_free():
+    """R1-2: --json-schema로 송출되는 스키마 자체가 값 수준 가드를 통과해야
+    한다 — 스키마 파일 description의 채점 루브릭 문구('fraud 어휘 금지' 등)가
+    피평가자 채널로 새면 INV-09 위반."""
+    cli_client.guard_payload(
+        json.dumps(runner_mod.MODEL_SCHEMA, ensure_ascii=False),
+        cli_client.EVALUATEE_FORBIDDEN_MARKERS)
+
+
+def test_full_subprocess_boundary_is_marker_free(stub, tmp_path):
+    """R1-2: 실전 MODEL_SCHEMA로 호출했을 때, 스폰된 프로세스의 argv+stdin
+    어디에도 금지 마커가 없어야 한다 (mutation 테스트의 경계 전수 판형)."""
+    stub.set_responses(good_response({"answer": "x"}))
+    cli_client.call_model("claude-sonnet-5", "SYSTEM PROMPT", '{"case": 1}',
+                          runner_mod.MODEL_SCHEMA,
+                          log_dir=tmp_path / "logs", log_name="t",
+                          forbid_markers=cli_client.EVALUATEE_FORBIDDEN_MARKERS)
+    calls = stub.calls()
+    assert calls, "스텁 호출 기록 없음"
+    for call in calls:
+        boundary = (json.dumps(call["argv"], ensure_ascii=False)
+                    + call["stdin"]).lower()
+        for m in cli_client.EVALUATEE_FORBIDDEN_MARKERS:
+            assert m.lower() not in boundary, f"경계 누출 마커: {m}"
+
+
+def test_clean_payload_passes_guard(stub, tmp_path):
+    stub.set_responses(good_response({"answer": "x"}))
+    r = cli_client.call_model("claude-sonnet-5", "SYSTEM", '{"revenue": 100}', SCHEMA,
+                              log_dir=tmp_path / "logs", log_name="t",
+                              forbid_markers=cli_client.EVALUATEE_FORBIDDEN_MARKERS)
+    assert r.ok
+
+
+# ⑦ 종량 자격 증명 차단
+def test_api_key_presence_aborts_before_any_call(stub, tmp_path, monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test-not-a-real-key")
+    with pytest.raises(RuntimeError, match="구독 OAuth 전용"):
+        _call(tmp_path / "logs")
+    assert stub.calls() == []
+
+
+@pytest.mark.parametrize("var", cli_client.METERED_CREDENTIAL_VARS)
+def test_full_metered_family_aborts_before_any_call(stub, tmp_path, monkeypatch, var):
+    """R2-28: 종량 키뿐 아니라 AUTH_TOKEN/BASE_URL/BEDROCK/VERTEX 재라우팅
+    변수도 서브프로세스 스폰 이전에 거부 (INV-20/INV-21)."""
+    monkeypatch.setenv(var, "1")
+    with pytest.raises(RuntimeError, match="구독 OAuth 전용"):
+        _call(tmp_path / "logs")
+    assert stub.calls() == [], var
+
+
+def test_empty_valued_vars_do_not_trip(monkeypatch):
+    """R6-3: truthy 의미론 고정 (forward_common 동일) — 가족 전원을 빈 값으로
+    설정하고 가드를 실제 호출한다. presence 의미론으로 바뀌면 red; 실환경의
+    무관 변수에도 독립 (전 변수를 명시 override)."""
+    for var in cli_client.METERED_CREDENTIAL_VARS:
+        monkeypatch.setenv(var, "")
+    cli_client.assert_no_metered_credentials()  # 예외 없음이 곧 단언
+
+
+# ⑧ 멱등 skip
+def test_output_is_valid_gates_idempotent_skip(tmp_path):
+    p = tmp_path / "case_01.json"
+    assert not cli_client.output_is_valid(p, SCHEMA)          # 부재
+    p.write_text("not json", encoding="utf-8")
+    assert not cli_client.output_is_valid(p, SCHEMA)          # 파손
+    p.write_text(json.dumps({"wrong": 1}), encoding="utf-8")
+    assert not cli_client.output_is_valid(p, SCHEMA)          # 스키마 위반
+    p.write_text(json.dumps({"answer": "x"}), encoding="utf-8")
+    assert cli_client.output_is_valid(p, SCHEMA)              # 유효 → skip
+
+
+def test_runner_refuses_existing_legacy_output(stub, tmp_path):
+    """러너 멱등성: fingerprint 없는 기존 출력은 호출 없이 거부한다."""
+    case = {"case_id": "case_99", "ticker": "ZZZZ", "cik": "0000000000",
+            "company_name": "Nowhere Corp", "cutoff_date": "2020-01-01"}
+    out_dir = tmp_path / "runs"
+    out_dir.mkdir()
+    valid = {
+        "case_id": "case_99", "run_id": "original-case_99-r1",
+        "model": "claude-sonnet-5", "pipeline_version": "x" * 40,
+        "run_timestamp": "2026-07-06T00:00:00+00:00",
+        "documents_used": [{"accession_no": "a", "form_type": "10-K",
+                            "filing_date": "2019-01-01"}],
+        "checklist": [{"item_id": "CL1", "question": "q", "finding": "no_flag",
+                       "confidence": "low",
+                       "evidence": [{"quote": "concept=1 (FY)", "source_accession_no": "a",
+                                     "location": "tag"}]}],
+        "misstatement_probability": 10,
+        "mechanism_hypotheses": [],
+        "overall": {"risk_tier": "clear", "top_signals": []},
+    }
+    (out_dir / "case_99.json").write_text(json.dumps(valid), encoding="utf-8")
+    res = runner_mod.run_case(case, False, out_dir, tmp_path / "logs")
+    assert res["status"].startswith("FAIL (stale_legacy_output")
+    assert stub.calls() == [], "legacy 출력 거부인데 호출 발생"
+
+
+# ⑨ 하네스 핀 강제 (C3, D109) — 핀 일치 통과 / 불일치·명령 실패는 호출 전 중단 / 실측 버전 로그
+def test_harness_pin_match_passes_and_version_is_logged(stub, tmp_path):
+    stub.set_responses(good_response({"answer": "x"}))
+    r = _call(tmp_path / "logs")
+    assert r.ok
+    log = json.loads((tmp_path / "logs" / "t.json").read_text(encoding="utf-8"))
+    assert log["harness_version_actual"] == f"{cli_client.HARNESS_PIN} (Claude Code)"
+
+
+def test_harness_pin_mismatch_raises_before_any_call(stub, tmp_path, monkeypatch):
+    monkeypatch.setenv("STUB_VERSION", "9.9.9 (Claude Code)")
+    stub.set_responses(good_response({"answer": "x"}))
+    with pytest.raises(RuntimeError, match="하네스 핀 불일치"):
+        _call(tmp_path / "logs")
+    assert stub.calls() == [], "핀 불일치인데 모델 호출이 발생"
+
+
+@pytest.mark.parametrize("version", [
+    "2.1.2013 (Claude Code)",    # 뒤 성분이 붙은 상위 버전 (R10-9)
+    "2.1.201.3 (Claude Code)",   # 네 번째 성분 — 앵커 없으면 통과했다
+    "2.1.201-beta.1",            # 프리릴리즈 접미
+    "2.1.201rc2",                # 접미 (구분자 없음)
+    "12.1.201 (Claude Code)",    # 앞 성분 확장 — 앞 앵커가 없으면 통과했다
+    "2.1.20 (Claude Code)",      # 다른 하위 버전
+    "Claude Code (no version)",  # 버전 토큰 부재
+])
+def test_harness_pin_rejects_unanchored_version_variants(stub, tmp_path,
+                                                         monkeypatch, version):
+    """R11-10 (R10-9 재디스패치, INV-21): 버전 토큰이 양끝에서 고정되지
+    않으면 접두 일치가 살아남는다 — 자동 업데이트된 CLI에서 '핀 fail-closed'
+    주장이 조용히 빈다. 모든 변형이 호출 전에 거부되어야 한다."""
+    monkeypatch.setenv("STUB_VERSION", version)
+    stub.set_responses(good_response({"answer": "x"}))
+    with pytest.raises(RuntimeError, match="하네스 핀 불일치"):
+        _call(tmp_path / "logs")
+    assert stub.calls() == [], f"{version!r} 인데 모델 호출이 발생"
+
+
+@pytest.mark.parametrize("version", [
+    "2.1.201 (Claude Code)",  # 실제 CLI 출력 형태
+    "2.1.201",                # 순수 핀 문자열
+])
+def test_harness_pin_accepts_exact_version(stub, tmp_path, monkeypatch, version):
+    """R11-10 반대면: 정확히 핀인 버전은 통과한다 (가드가 전부 거부로
+    무너지지 않았음을 잠근다)."""
+    assert version.split()[0] == cli_client.HARNESS_PIN
+    monkeypatch.setenv("STUB_VERSION", version)
+    stub.set_responses(good_response({"answer": "x"}))
+    _call(tmp_path / "logs")
+    assert stub.calls(), "정확한 핀인데 호출이 일어나지 않았다"
+
+
+def test_harness_version_command_error_fails_closed(stub, tmp_path, monkeypatch):
+    monkeypatch.setenv("STUB_VERSION_FAIL", "1")
+    stub.set_responses(good_response({"answer": "x"}))
+    with pytest.raises(RuntimeError, match="하네스 버전 확인 실패"):
+        _call(tmp_path / "logs")
+    assert stub.calls() == []
+
+
+def test_harness_missing_binary_fails_closed(stub, tmp_path, monkeypatch):
+    monkeypatch.setattr(cli_client, "CLAUDE_BIN", "claude-binary-absent-xyz")
+    stub.set_responses(good_response({"answer": "x"}))
+    with pytest.raises(RuntimeError, match="하네스 버전 확인 실패"):
+        _call(tmp_path / "logs")
+    assert stub.calls() == []
+
+
+def test_failure_log_raw_tail_redacts_canary(tmp_path):
+    """R7-18: 스키마 실패 raw가 카나리 GUID를 담아도 로그 파일에는 실리지
+    않는다 — 접두 redact 후 절단, 나머지 진단 증거는 보존."""
+    canary_raw = ("model said: 9FA11F98-6380-4BF5-AB3C-8542459ACA6F and "
+                  "a2d69cfe-ca8a-4de1-8393-5b225099299b plus diagnostics")
+    r = cli_client.CallResult(
+        ok=False, structured=None, fail_reason="schema_failure",
+        served_models=["claude-sonnet-5"], pin_ok=True, session_id=None,
+        usage=None, total_cost_usd=None, attempts=2, wall_seconds=1.0,
+        raw_result_text=canary_raw)
+    log_dir = tmp_path / "logs"
+    cli_client._write_log(log_dir, "evaluatee_test_case", ["claude"],
+                          "claude-sonnet-5", r, canary_raw)
+    text = (log_dir / "evaluatee_test_case.json").read_text(encoding="utf-8")
+    low = text.lower()
+    for prefix in cli_client.CANARY_MARKERS:
+        assert prefix not in low, prefix
+    assert "[CANARY-REDACTED]" in text
+    assert "plus diagnostics" in text          # 증거 보존
+    assert json.loads(text)["fail_reason"] == "schema_failure"
+
+    # 정상 실패(카나리 무관) 로그는 raw 그대로
+    cli_client._write_log(log_dir, "evaluatee_plain", ["claude"],
+                          "claude-sonnet-5", r, "plain failure body")
+    plain = json.loads((log_dir / "evaluatee_plain.json").read_text(encoding="utf-8"))
+    assert plain["raw_tail"] == "plain failure body"

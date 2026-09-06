@@ -1,0 +1,292 @@
+"""채점자 러너 (freeze 개정 #2 — 구독 헤드리스 경로. 피평가자 자료 흐름과 단방향 분리).
+
+채점자는 정답 키 + 피평가자 출력을 받는다; 피평가자는 채점자 자료를 절대 받지 않는다
+(V7 — 이 모듈은 pipeline/ 이 아니라 scoring/ 에 있고, pipeline/ 은 scoring import가
+정적 스캔으로 금지된다. scoring→pipeline 방향의 cli_client 공유는 규약 위반이 아니다).
+
+사용: python scoring/grader_runner.py --runs runs/main --out scoring/grades/main
+모델: 채점자 = claude-fable-5, 폴백 claude-opus-4-8 (D6 — 발동 사유·케이스 ID 로그).
+채점은 1차일 뿐이다 — "채점: Claude 보조 + 인간 최종 확정" (§7).
+stdout은 중립 ID만 출력한다 (원본 ID 노출 금지 — 라벨 결합은 Phase 6).
+멱등: 채점 파일 존재+스키마 통과 = skip. 레이트 리밋 = 재개 명령 출력 후 중단.
+"""
+from __future__ import annotations
+
+import argparse
+import datetime
+import hashlib
+import json
+import shlex
+import sys
+from pathlib import Path
+
+REPO = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO / "pipeline"))
+import cli_client  # noqa: E402  (scoring→pipeline 방향 — V7 허용 방향)
+
+GRADER_PIN = "claude-fable-5"
+GRADER_FALLBACK = "claude-opus-4-8"
+FALLBACK_REASONS = {"error", "refusal", "empty", "schema_failure"}  # 접근불능·거부·절단
+
+GRADE_SCHEMA = {
+    "type": "object", "additionalProperties": False,
+    "required": ["dim1_probability_band", "dim2_mechanism", "dim3_genre_mapping",
+                 "dim4_evidence_quality", "memorization_suspect_condition2",
+                 "rationale"],
+    "properties": {
+        "dim1_probability_band": {"type": "integer", "enum": [0, 1, 2]},
+        "dim2_mechanism": {"type": ["integer", "null"], "enum": [0, 1, 2, 3, None]},
+        "dim3_genre_mapping": {
+            "type": "object", "additionalProperties": False,
+            "required": ["mapped_genre", "score"],
+            "properties": {"mapped_genre": {"type": ["string", "null"],
+                                            "enum": ["active", "omission-estimate", "mixed", None]},
+                           "score": {"type": ["integer", "null"], "enum": [0, 1, 2, None]}}},
+        "dim4_evidence_quality": {"type": "integer", "enum": [0, 1, 2, 3]},
+        "memorization_suspect_condition2": {"type": "boolean"},
+        "rationale": {"type": "string"},
+    },
+}
+
+SYSTEM = """You are grading one output of a financial-analysis pipeline against ground truth, \
+using a fixed 4-dimension rubric. Apply the rubric mechanically; every score must be justified \
+in 'rationale' by pointing at specific parts of the output and the answer key. You are the \
+first-pass grader; a human auditor finalizes all grades. Do not reward confident language - \
+only evidence. Rubric (fixed at freeze):
+- dim1 (probability band): treatment case: p>=70 -> 2, 50<=p<70 -> 1, p<50 -> 0. \
+control case: p<=30 -> 2, 30<p<50 -> 1, p>=50 -> 0.
+- dim2 (mechanism, treatment only, TOP-RANKED hypothesis only; control -> null): \
+0 = no hypothesis (required if p>=40) or unrelated accounts; 1 = correct account area; \
+2 = account + direction + treatment type substantially match the enforcement-order description; \
+3 = additionally names at least one case-specific fact pinpointed in the answer key. \
+Multi-mechanism truth: grade best match, note coverage in rationale.
+- dim3 (genre mapping, treatment only; control -> nulls): map the top-ranked hypothesis \
+narrative to active / omission-estimate / mixed, then score against the answer-key genre: \
+exact 2; one-sided-vs-mixed 1; wrong 0.
+- dim4 (evidence quality, all cases): 0 fabricated/irrelevant citations; 1 generic; \
+2 specific provided data points genuinely support the claims (including any mechanism \
+assertions on control cases); 3 = 2 plus coherent multi-year/multi-point combination. \
+Cap at 1 if risk_tier contradicts the declared consistency rule \
+(p>=70 => elevated; 40<=p<70 => watch/elevated; p<40 => clear/watch).
+- memorization_suspect_condition2 (mechanical, L-1): true iff the output's reasoning \
+(a) lists documents without pointing at any concrete provided data content, or \
+(b) mentions facts only public after the cutoff (revelation, enforcement, outcome)."""
+
+
+def _canonical_sha256(value: object) -> str:
+    encoded = json.dumps(value, sort_keys=True, ensure_ascii=False,
+                         separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _harness_version() -> str:
+    """R7-5 (R1-16의 채점 측): cli_client.enforce_harness_pin 단일 출처 위임.
+
+    버전 획득 실패·핀 불일치는 예외(fail-closed) — "UNAVAILABLE" 자리표시자가
+    grade fingerprint에 들어가는 경로는 존재하지 않는다."""
+    return cli_client.enforce_harness_pin()
+
+
+def compute_fingerprint(output: dict, key: dict, grader_model: str,
+                        harness_version: str, pipeline_commit: str) -> dict:
+    system_hash = hashlib.sha256(SYSTEM.encode("utf-8")).hexdigest()
+    return {
+        "evaluatee_output_sha256": _canonical_sha256(output),
+        "answer_key_sha256": _canonical_sha256(key),
+        # The fixed rubric is embedded in SYSTEM, so these identities are intentionally equal.
+        "rubric_sha256": system_hash,
+        "grade_schema_sha256": _canonical_sha256(GRADE_SCHEMA),
+        "grader_system_prompt_sha256": system_hash,
+        "grader_model": grader_model,
+        "grader_harness_version": harness_version,
+        "pipeline_commit": pipeline_commit,
+    }
+
+
+class AnswerKeyError(RuntimeError):
+    """R2-7: 실험군 케이스에 정답지 구성 요소가 없으면 채점을 시작하지 않는다."""
+
+
+def answer_key(original_id: str, candidates_path: str = "data/candidates/candidates.json",
+               genre_table_path: str = "scoring/genre_tags.md") -> dict:
+    cands = {c["case_id"]: c for c in json.loads(
+        (REPO / candidates_path).read_text(encoding="utf-8"))["candidates"]}
+    c = cands[original_id]
+    genre = None
+    genre_table = (REPO / genre_table_path).read_text(encoding="utf-8")
+    for line in genre_table.splitlines():
+        if line.startswith(f"| {original_id} "):
+            genre = line
+            break
+    # R2-7 fail-closed: 실험군인데 장르 행이 없으면 SYSTEM 프롬프트는 dim3
+    # 채점을 요구하는데 정답지가 null — 채점자가 즉석 채점하게 된다 (wave-2
+    # 실측 결함). 파일 지정 오류/행 누락 모두 여기서 정지.
+    if c["group"] == "treatment" and genre is None:
+        raise AnswerKeyError(
+            f"treatment {original_id}: {genre_table_path}에 장르 행 없음 — "
+            "--genre-table로 해당 웨이브의 장르 표를 지정하거나 행을 추가하라")
+    return {
+        "group": c["group"],
+        "scheme_summary": c.get("scheme_summary"),
+        "scheme_type": c.get("scheme_type"),
+        "manipulation_period": [c.get("manipulation_period_start"), c.get("manipulation_period_end")],
+        "genre_tag_row": genre,
+    }
+
+
+def _existing_grade_valid(path: Path) -> bool:
+    if not path.is_file():
+        return False
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return False
+    body = {k: v for k, v in data.items() if k != "_meta"}
+    import jsonschema
+    return not list(jsonschema.Draft7Validator(GRADE_SCHEMA).iter_errors(body))
+
+
+def grade_one(neutral: str, original_id: str, output: dict,
+              out_dir: Path, log_dir: Path, mapping_path_note: str,
+              candidates_path: str = "data/candidates/candidates.json",
+              genre_table_path: str = "scoring/genre_tags.md",
+              *, accept_legacy_grade: bool = False) -> str:
+    out_path = out_dir / f"{neutral}.json"
+    key = answer_key(original_id, candidates_path, genre_table_path)
+    harness_version = _harness_version()
+    pipeline_commit = cli_client.freeze_state()["head"]
+    existing = None
+    if out_path.exists():
+        try:
+            existing = json.loads(out_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            pass
+        if _existing_grade_valid(out_path) and isinstance(existing, dict):
+            old_fingerprint = existing.get("_meta", {}).get("fingerprint")
+            if old_fingerprint is None:
+                if not accept_legacy_grade:
+                    return "FAIL (stale_legacy_grade — fingerprint 없음; --accept-legacy-grade로 명시 수용)"
+                return "skip (legacy grade ACCEPTED via --accept-legacy-grade — fingerprint 없음)"
+            old_model = old_fingerprint.get("grader_model")
+            if old_model in (GRADER_PIN, GRADER_FALLBACK) and old_fingerprint == compute_fingerprint(
+                    output, key, old_model, harness_version, pipeline_commit):
+                return "skip (멱등 — fingerprint 일치)"
+
+        for model in (GRADER_PIN, GRADER_FALLBACK):
+            candidate = compute_fingerprint(output, key, model, harness_version, pipeline_commit)
+            sibling_path = out_dir / f"{neutral}.fp-{_canonical_sha256(candidate)[:8]}.json"
+            if _existing_grade_valid(sibling_path):
+                sibling = json.loads(sibling_path.read_text(encoding="utf-8"))
+                if sibling.get("_meta", {}).get("fingerprint") == candidate:
+                    return "skip (멱등 — fp-sibling 일치)"
+
+    user_payload = json.dumps({"answer_key": key, "evaluatee_output": output},
+                              ensure_ascii=False)
+    used_model, r = GRADER_PIN, None
+    for model in (GRADER_PIN, GRADER_FALLBACK):
+        r = cli_client.call_model(model, SYSTEM, user_payload, GRADE_SCHEMA,
+                                  log_dir=log_dir, log_name=f"grader_{model}_{neutral}")
+        used_model = model
+        if r.ok:
+            break
+        if r.fail_reason in FALLBACK_REASONS and model == GRADER_PIN:
+            print(f"  {neutral}: {model} 실패({r.fail_reason}) — 폴백 {GRADER_FALLBACK} "
+                  f"(D6 폴백 발동 기록)", file=sys.stderr, flush=True)
+            continue
+        break
+    if not r.ok:
+        return f"FAIL ({r.fail_reason})"
+
+    fingerprint = compute_fingerprint(
+        output, key, used_model, harness_version, pipeline_commit)
+    write_path = out_path
+    stale_superseding = False
+    if out_path.exists():
+        suffix = _canonical_sha256(fingerprint)[:8]
+        write_path = out_dir / f"{neutral}.fp-{suffix}.json"
+        stale_superseding = True
+        if _existing_grade_valid(write_path):
+            sibling = json.loads(write_path.read_text(encoding="utf-8"))
+            if sibling.get("_meta", {}).get("fingerprint") == fingerprint:
+                return "skip (멱등 — fp-sibling 일치)"
+
+    grade = dict(r.structured)
+    grade["_meta"] = {
+        "case_id": neutral, "original_id": original_id,
+        "grader_model_reported": (r.served_models or [used_model])[0],
+        "grader_pin_used": used_model,
+        "fallback_used": used_model != GRADER_PIN,
+        "session_id": r.session_id,
+        "ts": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "human_finalized": False,
+        "mapping_access_note": mapping_path_note,
+        "fingerprint": fingerprint,
+    }
+    out_dir.mkdir(parents=True, exist_ok=True)
+    # 원자적 기록 (D67, R3-6): 크래시 부분 기록이 정본 {neutral}.json이 되면
+    # _existing_grade_valid가 영영 False — 재채점이 전부 fp-sibling으로 우회
+    # 되고 소비자는 부패 정본에서 크래시한다. tmp→replace.
+    tmp_path = write_path.with_suffix(".json.tmp")
+    tmp_path.write_text(json.dumps(grade, ensure_ascii=False, indent=2), encoding="utf-8")
+    tmp_path.replace(write_path)
+    prefix = "OK stale-superseding" if stale_superseding else "OK"
+    return (f"{prefix} d1={grade['dim1_probability_band']} d2={grade['dim2_mechanism']} "
+            f"d4={grade['dim4_evidence_quality']} mem2={grade['memorization_suspect_condition2']}"
+            + (" [fallback]" if grade["_meta"]["fallback_used"] else ""))
+
+
+def iter_run_files(runs_dir, pattern):
+    """R2-5: fp-sibling(case_NN.fp-XXXX.json)은 runner의 stale-superseded
+    기록으로 case_*.json 글롭에 걸린다 — 케이스당 정본 1건만 채점하도록
+    명시 제외 + 정렬(결정론, INV-02)."""
+    return sorted(p for p in runs_dir.glob(pattern) if ".fp-" not in p.name)
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--runs", required=True)
+    ap.add_argument("--out", required=True)
+    ap.add_argument("--candidates", default="data/candidates/candidates.json",
+                    help="RP-09: v2 대조군은 data/candidates/candidates_v2_controls.json")
+    ap.add_argument("--mapping", default="scoring/id_mapping.json",
+                    help="파일럿은 scoring/id_mapping_pilot.json")
+    ap.add_argument("--genre-table", default="scoring/genre_tags.md",
+                    help="R2-7: dim3 정답 장르 표 — 웨이브별로 --candidates와 함께 지정")
+    ap.add_argument("--pattern", default="case_*.json",
+                    help="runs 파일 글롭 (E1 홀드아웃 대조군은 hc_*.json — 기본 무변경)")
+    ap.add_argument("--accept-legacy-grade", action="store_true")
+    args = ap.parse_args()
+
+    cli_client.assert_no_metered_credentials()
+    cli_client.require_clean_tree()
+
+    mapping = json.loads((REPO / args.mapping).read_text(encoding="utf-8"))["mapping"]
+    out_dir = REPO / args.out
+    ts = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    log_dir = REPO / "logs" / f"run_{ts}"
+    note = (f"{args.mapping} opened mechanically by grader_runner for answer-key join; "
+            f"neutral IDs only on stdout (label-joining deferred to Phase 6)")
+    resume_cmd = "python scoring/grader_runner.py " + " ".join(
+        shlex.quote(a) for a in sys.argv[1:])
+
+    failures = 0
+    try:
+        for run_file in iter_run_files(REPO / args.runs, args.pattern):
+            output = json.loads(run_file.read_text(encoding="utf-8"))
+            neutral = output["case_id"]
+            status = grade_one(neutral, mapping[neutral], output, out_dir, log_dir, note,
+                               candidates_path=args.candidates,
+                               genre_table_path=args.genre_table,
+                               accept_legacy_grade=args.accept_legacy_grade)
+            if status.startswith("FAIL"):
+                failures += 1
+            print(f"{neutral}: {status}", flush=True)
+    except cli_client.RateLimitedError as e:
+        print(f"\nHALT — {e}", file=sys.stderr)
+        print(f"재개 명령 (완료분 자동 skip):\n  {resume_cmd}")
+        return 3
+    return 0 if failures == 0 else 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())

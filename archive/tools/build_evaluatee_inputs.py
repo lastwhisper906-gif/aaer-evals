@@ -1,0 +1,193 @@
+"""피평가자 입력 파일 생성 (ground truth 오염 차단 — schemas/evaluatee_input.json 계약).
+
+candidates.json(정답지 포함)에서 화이트리스트 필드만 추출해
+data/evaluatee/cases.json을 생성한다. 물리적 분리가 방어의 핵심:
+피평가자 코드는 candidates.json을 열 일이 없고(pipeline/test_no_guard_bypass.py가
+직독을 금지), 이 생성물에 금지 필드가 없는지는 tools/test_build_evaluatee_inputs.py가
+스키마(additionalProperties: false) + 재생성 대조 + 값 수준 스캔으로 강제한다.
+
+2026-07-05 표본 점검(§7)이 잡은 값 수준 누출 2건의 정정 (OV-001/OV-002,
+서명 결정 — scoring/overrides.md):
+  1. case_id의 T/C 접두사가 그룹 소속(=정답)을 인코딩 → 중립 ID(case_NN)로
+     치환 + 고정 시드 셔플(순번-그룹 상관 차단). 원본 매핑은 채점 전용
+     scoring/id_mapping.json (피평가자가 볼 수 없는 인간 전용 구역 — 이 파일은
+     데이터가 아니라 채점 인프라(정답 열쇠)라는 성격 판단, 사용자 검토 2026-07-05).
+  2. company_name의 후신 사명(n/k/a, "now …")은 정의상 컷오프 이후 정보(§5-1
+     위반이 필드 값 안에) → 컷오프 시점 사명만 남긴다. f/k/a(과거 정보)는 유지.
+  부수 정정: 복합 티커("UAA/UA")는 주 상장 티커만 ("A/B" → "A").
+
+출력은 결정론적(고정 시드, 타임스탬프 없음) — 커밋본과 재생성본의
+바이트 대조가 CI에서 가능하다.
+"""
+import argparse
+import json
+import random
+import re
+import sys
+from pathlib import Path
+
+REPO = Path(__file__).resolve().parents[1]
+CANDIDATES = REPO / "data" / "candidates" / "candidates.json"
+DEST = REPO / "data" / "evaluatee" / "cases.json"
+MAPPING_DEST = REPO / "scoring" / "id_mapping.json"
+
+# schemas/evaluatee_input.json required와 1:1 — 여기 필드를 늘리려면 스키마 개정(=서명) 필요
+WHITELIST = ["case_id", "ticker", "cik", "company_name", "cutoff_date"]
+
+# 중립 ID 셔플 시드 — 고정값이어야 재생성 대조가 성립한다. 시드 자체는 비밀이
+# 아니다(매핑 파일이 이미 채점 전용 경로에 평문으로 존재): 방어선은 시드의
+# 은닉이 아니라 피평가자에게 매핑·candidates.json을 주지 않는 물리적 분리다.
+NEUTRAL_ID_SEED = 20260706  # v1.2 재셔플 (2-7: 대조군 편입 후 순번-그룹 상관 재차단)
+
+# v1.2 실험 집합 (freeze 대상): 실험군 8 (소유자 확정 2026-07-06) + 대조군 8 (D17 선정).
+# 30건 풀 전체가 아니라 이 16건만 피평가자 파일에 들어간다.
+EXPERIMENT_CASE_IDS = [
+    "T07", "T11", "T12", "T13", "T16", "T17", "T21", "T28",
+    "C01", "C02", "C03", "C04", "C05", "C06", "C07", "C08",
+]
+
+# 컷오프 이후 정보(후신 사명) 제거 — "(n/k/a …)", "(now …)", "; n/k/a …" 꼴.
+# f/k/a(개명 '이전' 사명 = 과거 정보)는 서명 결정대로 유지.
+_POST_CUTOFF_PAREN = re.compile(r"\s*\(\s*(?:n/k/a|now(?:\s+known\s+as)?)\s+[^)]*\)", re.I)
+_POST_CUTOFF_TAIL = re.compile(r"\s*;\s*(?:n/k/a|now(?:\s+known\s+as)?)\s+.*$", re.I)
+
+
+def name_as_of_cutoff(name: str) -> str:
+    return _POST_CUTOFF_TAIL.sub("", _POST_CUTOFF_PAREN.sub("", name)).strip()
+
+
+def primary_ticker(ticker: str) -> str:
+    return ticker.split("/")[0]
+
+
+def build() -> tuple[dict, dict]:
+    """(피평가자 파일 payload, 채점용 ID 매핑 payload)를 반환. 둘 다 결정론."""
+    candidates = json.loads(CANDIDATES.read_text(encoding="utf-8"))["candidates"]
+    candidates = [c for c in candidates if c["case_id"] in EXPERIMENT_CASE_IDS]
+    assert len(candidates) == len(EXPERIMENT_CASE_IDS), "실험 집합 16건 미충족 — candidates.json 확인"
+    ordered = sorted(candidates, key=lambda c: c["case_id"])
+    random.Random(NEUTRAL_ID_SEED).shuffle(ordered)
+
+    cases, mapping = [], {}
+    for i, c in enumerate(ordered, start=1):
+        neutral_id = f"case_{i:02d}"
+        mapping[neutral_id] = c["case_id"]
+        cases.append({
+            "case_id": neutral_id,
+            "ticker": primary_ticker(c["ticker"]),
+            "cik": c["cik"],
+            "company_name": name_as_of_cutoff(c["company_name"]),
+            "cutoff_date": c["cutoff_date"],
+        })
+
+    payload = {
+        "_meta": {
+            "contract": "schemas/evaluatee_input.json",
+            "warning": "피평가자에게는 이 파일 외의 케이스 메타데이터를 제공하지 않는다 "
+                       "(candidates.json은 ground truth — PROJECT.md §7 역할 분리)",
+            "generated_by": "tools/build_evaluatee_inputs.py (결정론 — 재생성 대조는 CI)",
+            "id_convention": "중립 ID(case_NN), 고정 시드 셔플 — 원본 매핑은 채점 전용 "
+                             "scoring/id_mapping.json (OV-001)",
+            "name_convention": "company_name은 컷오프 시점 사명만 — 후신 사명(n/k/a 등) "
+                               "제거, f/k/a 유지 (OV-002)",
+            "ticker_convention": "복합 티커는 주 상장 티커만 ('A/B' → 'A')",
+        },
+        "cases": cases,
+    }
+    mapping_payload = {
+        "_meta": {
+            "warning": "채점 시에만 사용 — 피평가자(파이프라인)에 절대 제공·노출 금지. "
+                       "pipeline/test_no_guard_bypass.py가 pipeline/ 내 참조를 금지한다",
+            "generated_by": "tools/build_evaluatee_inputs.py (NEUTRAL_ID_SEED 고정)",
+        },
+        "mapping": mapping,
+    }
+    return payload, mapping_payload
+
+
+def build_forward(universe_path: Path, cutoff: str) -> dict:
+    """R3-4 (게이트 §4 (3)): universe.selected → 피평가자 케이스 파일.
+
+    forward에는 숨길 정답이 없으므로 중립 ID 셔플·매핑 없음 — case_id는
+    record_id(fw001-rNN) 그대로. 필드는 회고와 동일한 화이트리스트 5종
+    (schemas/evaluatee_input.json 계약과 동일 모양) + 결정론(타임스탬프 0).
+    """
+    universe = json.loads(universe_path.read_text(encoding="utf-8"))
+    cases = [{
+        "case_id": r["record_id"],
+        "ticker": primary_ticker(str(r["ticker"])),
+        "cik": str(r["cik"]),
+        "company_name": name_as_of_cutoff(str(r["name"])),
+        "cutoff_date": cutoff,
+    } for r in universe["selected"]]
+    return {
+        "_meta": {
+            "contract": "schemas/evaluatee_input.json",
+            "warning": "피평가자에게는 이 파일 외의 케이스 메타데이터를 제공하지 않는다",
+            "generated_by": "tools/build_evaluatee_inputs.py --universe (결정론)",
+            "id_convention": "forward record_id 그대로 (정답 부재 — 중립화 불필요)",
+            "cutoff_convention": f"전건 동일 스크리닝 컷오프 {cutoff} "
+                                 "(forward/cycle PROTOCOL.md와 일치 의무)",
+        },
+        "cases": cases,
+    }
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--universe", help="forward 모드: universe.json 경로")
+    ap.add_argument("--cutoff", help="forward 모드: 스크리닝 컷오프 (기본: "
+                                     "forward_common.SCREENING_CUTOFF)")
+    ap.add_argument("--out", help="forward 모드: 출력 경로 "
+                                  "(예: data/evaluatee/cases_forward_001.json)")
+    args = ap.parse_args()
+    if args.universe:
+        if not args.out:
+            ap.error("--universe에는 --out이 필요하다")
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from forward_common import SCREENING_CUTOFF, cutoff_agreement_errors
+        if args.cutoff is None:
+            args.cutoff = SCREENING_CUTOFF
+        # R17-1: 이 파일은 cutoff_guard.TRUSTED_CASE_FILES 멤버가 되어 실제 코퍼스
+        # 신뢰를 부여받고, 하류 검사는 전부 **이 파일이 실은 값**을 다시 읽는
+        # 자기참조다 — 여기서 틀리면 모델 호출까지 아무도 못 잡는다. 사이클은
+        # universe.json의 위치에서 유도된다 (런북 §4 (3)의 실제 호출 형태).
+        cycle = Path(args.universe).resolve().parent
+        errs = cutoff_agreement_errors(
+            cycle, extra=[("--cutoff (이번 실행)", args.cutoff)])
+        if errs:
+            print("FAIL — 스크리닝 컷오프 정합 위반 (피평가자 케이스 파일을 "
+                  "쓰지 않는다 — 모델 호출 전 fail-closed):")
+            for e in errs:
+                print(f"  {e}")
+            return 1
+        payload = build_forward(Path(args.universe), args.cutoff)
+        out = Path(args.out)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
+                       encoding="utf-8")
+        # 쓴 뒤 레지스트리 표면까지 포함해 한 번 더 — 케이스별 cutoff_date가
+        # 상수에서 파생됐음을 산출물 자체에 대고 확인한다.
+        errs = cutoff_agreement_errors(cycle, registry_path=out)
+        if errs:
+            print("FAIL — 작성된 케이스 파일의 컷오프 정합 위반:")
+            for e in errs:
+                print(f"  {e}")
+            return 1
+        print(f"wrote {out} ({len(payload['cases'])} forward cases)")
+        return 0
+
+    payload, mapping_payload = build()
+    DEST.parent.mkdir(parents=True, exist_ok=True)
+    DEST.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    MAPPING_DEST.parent.mkdir(parents=True, exist_ok=True)
+    MAPPING_DEST.write_text(
+        json.dumps(mapping_payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+    print(f"wrote {DEST} ({len(payload['cases'])} cases)")
+    print(f"wrote {MAPPING_DEST} ({len(mapping_payload['mapping'])} entries)")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,128 @@
+"""Regression tests for the exact JSON exposed to the evaluatee."""
+import json
+import copy
+from pathlib import Path
+from types import SimpleNamespace
+
+import pytest
+
+import build_payload as bp
+import date_shift
+import probe_runner
+import runner
+import runner_api
+
+
+FIXTURES = Path(__file__).resolve().parent / "fixtures"
+CORPUS = FIXTURES / "synthetic_corpus"
+CASE = json.loads(
+    (FIXTURES / "synthetic_cases.json").read_text(encoding="utf-8"))["cases"][0]
+EXPECTED_KEYS = {"case", "financial_series_point_in_time", "filing_chronology"}
+FORBIDDEN = {"variant", "perturb", "dateshift", "anonym", "scoring_side"}
+
+
+@pytest.fixture(autouse=True)
+def synthetic_data_dir(monkeypatch):
+    monkeypatch.setattr(bp, "DATA_DIR", CORPUS)
+
+
+def _render(payload, keys):
+    visible = {key: payload[key] for key in keys}
+    return visible, json.dumps(visible, ensure_ascii=False)
+
+
+@pytest.mark.parametrize("perturb", [False, True])
+@pytest.mark.parametrize("send_path", [runner, runner_api, probe_runner])
+def test_all_send_paths_expose_only_allowlisted_keys(send_path, perturb):
+    payload = bp.build_payload(CASE, perturb=perturb)
+    visible, sent = _render(payload, send_path.MODEL_VISIBLE_KEYS)
+
+    assert set(visible) == EXPECTED_KEYS
+    assert not [word for word in FORBIDDEN if word in sent.lower()]
+    assert payload["_variant"] == ("perturbed" if perturb else "original")
+    assert "_k_internal" in payload
+
+
+@pytest.mark.parametrize("perturb", [False, True])
+def test_probe_dateshift_shape_cannot_add_run_markers_to_sent_json(perturb):
+    payload = date_shift.shift_payload(bp.build_payload(CASE, perturb=perturb))
+    assert payload["variant"] == "perturbed_v2_dateshift"
+
+    visible, sent = _render(payload, probe_runner.MODEL_VISIBLE_KEYS)
+    assert set(visible) == EXPECTED_KEYS
+    assert not [word for word in FORBIDDEN if word in sent.lower()]
+    assert payload["_variant"] == ("perturbed" if perturb else "original")
+    assert "_k_internal" in payload
+
+
+def test_model_visible_top_level_keys_are_identical_across_arms():
+    original, _ = _render(bp.build_payload(CASE, perturb=False),
+                          runner.MODEL_VISIBLE_KEYS)
+    perturbed, _ = _render(bp.build_payload(CASE, perturb=True),
+                           runner.MODEL_VISIBLE_KEYS)
+    assert set(original) == set(perturbed) == EXPECTED_KEYS
+
+
+@pytest.mark.parametrize("perturb", [False, True])
+def test_runner_send_site_drops_adversarial_nonunderscore_marker(
+        monkeypatch, tmp_path, perturb):
+    payload = bp.build_payload(CASE, perturb=perturb)
+    payload["variant"] = "perturbed" if perturb else "original"
+    captured = []
+    captured_kwargs = []
+
+    # R13-3: 스텁이 **kwargs를 삼키면 송출 전 값 수준 스캔의 **배선**은 어떤
+    # 테스트도 보지 않는다 — forbid_markers를 지워도 전건 green이었다(실측).
+    # 가드 구현은 별도로 잘 덮여 있으므로 여기서는 호출부가 실제로 그 목록을
+    # 넘기는지만 붙든다 (INV-09).
+    def fake_call_model(model, system, user_payload, schema, **kwargs):
+        captured.append(user_payload)
+        captured_kwargs.append(kwargs)
+        return SimpleNamespace(ok=False, structured=None, fail_reason="test-stop",
+                               served_models=[])
+
+    monkeypatch.setattr(runner.bp, "build_payload",
+                        lambda *args, **kwargs: copy.deepcopy(payload))
+    monkeypatch.setattr(runner.cli_client, "call_model", fake_call_model)
+    # R1-16: fingerprint의 버전 출처가 enforce_harness_pin 단일화 — 캐시 주입
+    monkeypatch.setattr(runner.cli_client, "_harness_version_actual",
+                        f"{runner.cli_client.HARNESS_PIN} (test)")
+    log_dir = tmp_path / "logs"
+    log_dir.mkdir()
+    result = runner.run_case(CASE, perturb, tmp_path / "out", log_dir)
+
+    assert result["status"] == "FAIL (test-stop)"
+    sent = json.loads(captured[0])
+    assert set(sent) == EXPECTED_KEYS
+    assert not [word for word in FORBIDDEN if word in captured[0].lower()]
+    # 목록 **동일성**을 본다 — 존재만 보면 빈 목록도 통과한다
+    assert captured_kwargs[0]["forbid_markers"] == \
+        runner.cli_client.EVALUATEE_FORBIDDEN_MARKERS
+    assert runner.cli_client.EVALUATEE_FORBIDDEN_MARKERS
+
+
+def test_probe_send_site_drops_adversarial_nonunderscore_marker(monkeypatch, tmp_path):
+    payload = bp.build_payload(CASE, perturb=True)
+    payload["variant"] = "perturbed_v2_dateshift"
+    captured = []
+    captured_kwargs = []
+
+    def fake_call_model(model, system, user, schema, **kwargs):
+        captured.append(user)
+        captured_kwargs.append(kwargs)
+        return SimpleNamespace(ok=True,
+                               structured={"company_guess": "unknown", "confidence": "low"},
+                               fail_reason=None)
+
+    monkeypatch.setattr(probe_runner.bp, "build_payload",
+                        lambda *args, **kwargs: copy.deepcopy(payload))
+    monkeypatch.setattr(probe_runner.cli_client, "call_model", fake_call_model)
+    probe_runner.probe_case("recognition", CASE, tmp_path / "out", tmp_path / "logs")
+
+    sent = json.loads(captured[0])
+    assert set(sent) == EXPECTED_KEYS
+    assert not [word for word in FORBIDDEN if word in captured[0].lower()]
+    # R13-3: probe 송출부의 forbid_markers 배선 (INV-09) — 목록 동일성
+    assert captured_kwargs[0]["forbid_markers"] == \
+        probe_runner.cli_client.EVALUATEE_FORBIDDEN_MARKERS
+    assert probe_runner.cli_client.EVALUATEE_FORBIDDEN_MARKERS

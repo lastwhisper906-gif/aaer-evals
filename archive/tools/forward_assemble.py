@@ -1,0 +1,148 @@
+"""러너 출력(llm_output v1.2) → forward scores.json 기계 조립 (spec §6, D100).
+
+usage: python tools/forward_assemble.py --cycle forward/cycle_001 \
+    --runs runs/forward/cycle_001
+
+**사전 등록 유도 규칙 (실행 시점 재량 0 — 봉인 전 개정은 일반 커밋+사유,
+봉인 후 FREEZE_REV 전용):**
+
+- `misstatement_risk_score` = `misstatement_probability` 값 그대로 (서수
+  경계 개명 — specs/RISK_SCORE_SEMANTICS.md §3).
+- `evidence_sufficiency`: checklist 중 finding=insufficient_data 비율 r —
+  r > 1/2 → insufficient · r > 1/5 → partial · 그 외 → sufficient.
+- `assessment_confidence`: checklist confidence의 평균 (high=3·medium=2·
+  low=1) — ≥2.5 → high · ≥1.5 → medium · 그 외 → low.
+- `decision_state`: insufficient → abstain · 그 외 score ≥70 flag /
+  40–69 review / <40 no_flag (spec §5 서수 컷).
+- `top_signals` = overall.top_signals · `affected_account_areas` =
+  mechanism_hypotheses[*].affected_line_items 합집합(순서 보존) ·
+  `cited_sources` = documents_used accession 목록.
+- `benign_alternative_explanations` = [] — v1.2 출력 스키마가 이 항목을
+  유도하지 않음 (spec §6 주석 — 프롬프트 확장은 Cycle-2 등록 후보).
+- `prompt_sha256`/`schema_sha256` = 동결 러너 소스·출력 스키마 파일 해시.
+
+레코드 부재 = not_scored 명시 등재 (spec §3-3). 네트워크 0 · 모델 호출 0.
+"""
+import argparse
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from forward_common import (REPO, assert_subscription_only, fp_siblings,
+                            is_sealed, read_json, seal_residue_notice,
+                            write_json, sha256_file)
+
+CONF_NUM = {"high": 3, "medium": 2, "low": 1}
+
+
+def derive_sufficiency(checklist) -> str:
+    r = sum(1 for c in checklist if c["finding"] == "insufficient_data") / max(len(checklist), 1)
+    return "insufficient" if r > 0.5 else ("partial" if r > 0.2 else "sufficient")
+
+
+def derive_confidence(checklist) -> str:
+    if not checklist:
+        return "low"
+    mean = sum(CONF_NUM.get(c["confidence"], 1) for c in checklist) / len(checklist)
+    return "high" if mean >= 2.5 else ("medium" if mean >= 1.5 else "low")
+
+
+def derive_state(score: int, sufficiency: str) -> str:
+    if sufficiency == "insufficient":
+        return "abstain"
+    return "flag" if score >= 70 else ("review" if score >= 40 else "no_flag")
+
+
+def assemble_record(rec_meta: dict, out: dict | None,
+                    out_sha256: str | None = None) -> dict:
+    base = {"record_id": rec_meta["record_id"],
+            "company": {"name": rec_meta["name"], "ticker": rec_meta["ticker"],
+                        "cik": rec_meta["cik"]}}
+    if out is None:
+        return {**base, "status": "not_scored"}
+    checklist = out.get("checklist", [])
+    score = out["misstatement_probability"]
+    suff = derive_sufficiency(checklist)
+    areas, seen = [], set()
+    for h in out.get("mechanism_hypotheses", []):
+        for a in h.get("affected_line_items", []):
+            if a not in seen:
+                seen.add(a)
+                areas.append(a)
+    return {
+        **base,
+        "misstatement_risk_score": score,
+        "decision_state": derive_state(score, suff),
+        "evidence_sufficiency": suff,
+        "assessment_confidence": derive_confidence(checklist),
+        "top_signals": out.get("overall", {}).get("top_signals", []),
+        "benign_alternative_explanations": [],
+        "affected_account_areas": areas,
+        "cited_sources": [d["accession_no"] for d in out.get("documents_used", [])],
+        "model_id": out.get("model", ""),
+        "prompt_sha256": sha256_file(REPO / "pipeline/runner.py"),
+        "schema_sha256": sha256_file(REPO / "schemas/llm_output.json"),
+        # R3-7: 런 출력 자신의 call-time fingerprint를 봉인 대상에 복사 —
+        # validate가 조립 시점 해시·PROTOCOL 핀과 3각 대조한다 (드리프트 차단)
+        "run_fingerprint": ({k: fp.get(k) for k in
+                             ("system_prompt_sha256", "schema_sha256",
+                              "pipeline_commit", "model_requested",
+                              "harness_version_actual")}
+                            if isinstance((fp := out.get("fingerprint")), dict)
+                            else None),
+        "scored_at": out.get("run_timestamp", ""),
+        "run_id": out.get("run_id", ""),
+        # R3-8: 소비한 러너 출력 파일 전체의 sha256 — scores.json이 SEALED_FILES
+        # 이므로 이 해시 사슬이 봉인을 runs/ 출력까지 연장한다 (봉인 후 러너
+        # 출력 변조가 봉인 내용만으로 검출 가능; evidence/ 복사 불필요)
+        "run_output_sha256": out_sha256,
+    }
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--cycle", required=True)
+    ap.add_argument("--runs", required=True, help="러너 출력 디렉토리 (케이스당 JSON)")
+    args = ap.parse_args()
+    assert_subscription_only()
+    cycle = REPO / args.cycle
+    runs = REPO / args.runs
+    # R3-10(a): prepare·seal과 동일한 봉인 후 가드 — 봉인된 scores.json 재작성 금지
+    # R11-8: 중단 잔여물(MANIFEST만)은 봉인이 아니다 — 여기서 거부하면 재개된
+    # 러너 출력의 재조립 경로가 막히고 seal도 못 이어져 창 안 출구가 사라진다.
+    if is_sealed(cycle):
+        print(f"FAIL — {args.cycle}: 봉인 완결 — 봉인된 사이클의 "
+              "scores.json 재조립 금지 (spec §3-5, INV-22). 교정은 새 사이클로.")
+        return 1
+    if (notice := seal_residue_notice(cycle)):
+        print(notice)
+
+    # R7-3: fp-sibling 존재 = 정본 모호 — stale 정본을 조립·봉인하는 경로 차단
+    sibs = fp_siblings(runs)
+    if sibs:
+        print("FAIL — fp-sibling 러너 출력 존재: 어느 런이 정본인지 모호 "
+              "(창 중간 커밋 후 재실행 흔적). 소유자 해소 후 재시도: "
+              + ", ".join(s.name for s in sibs))
+        return 1
+
+    universe = read_json(cycle / "universe.json")
+    records = []
+    for r in universe["selected"]:
+        # 러너 케이스 ID 규약: record_id를 케이스 ID로 사용
+        out_path = runs / f"{r['record_id']}.json"
+        if out_path.exists():
+            records.append(assemble_record(r, read_json(out_path),
+                                           out_sha256=sha256_file(out_path)))
+        else:
+            records.append(assemble_record(r, None))
+    write_json(cycle / "scores.json", {"records": records,
+                                       "assembled_by": "tools/forward_assemble.py",
+                                       "derivation": "모듈 docstring 사전 등록 규칙"})
+    n = sum(1 for r in records if r.get("status") != "not_scored")
+    print(f"OK — scores.json 조립: scored {n}/{len(records)} "
+          f"(미채점 {len(records) - n}건 not_scored 명시)")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
