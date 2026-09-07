@@ -25,12 +25,21 @@ The contract, and the reason for each half of it:
   nothing inside a paragraph may change, and a non-breaking space is a
   character the filer wrote. `str.strip()` and `\\s` in a regex both treat it
   as whitespace, so nothing downstream has to care.
-- Runs of newlines collapse to one. Only newlines this module inserted are
-  affected; no source character is touched.
+- A run of two or more newlines collapses to exactly two. Only newlines this
+  module inserted are affected; no source character is touched.
+
+That last rule is what makes a paragraph well defined, and it is chosen to
+match the independent recount the dispatch specifies — *strip tags, split on
+blank lines*. Any two adjacent blocks are separated by at least a closing tag
+and an opening tag, so at least two newlines, so a blank line. A lone `<br>`
+contributes one newline and therefore does **not** start a new paragraph: a
+line break inside an address or a signature block is part of the paragraph the
+filer wrote, and an independent stripper splitting on blank lines reads it the
+same way.
 
 So `strip_tags(html)` is the filing's own characters, in the filing's own
 order, with block boundaries marked. `paragraphs(html)` is that text split on
-those boundaries and trimmed at the edges, which trap 2 allows.
+blank lines and trimmed at the edges, which trap 2 allows.
 """
 
 from __future__ import annotations
@@ -66,14 +75,38 @@ def strip_tags(html: str) -> str:
     text = _DROPPED.sub("", text)
     text = _TAG.sub(_replace_tag, text)
     text = html_module.unescape(text)
-    return _BLANK_RUN.sub("\n", text).strip("\n")
+    return _BLANK_RUN.sub("\n\n", text).strip()
 
 
 def spans(text: str) -> list[tuple[int, int]]:
-    """(start, end) of every non-empty block in already-stripped text.
+    """(start, end) of every non-empty paragraph in already-stripped text.
 
-    The offsets are into `text` itself, so `text[start:end]` is the block and
-    the containment property is true by construction rather than by comparison.
+    The offsets are into `text` itself, so `text[start:end]` is the paragraph
+    and the containment property is true by construction, not by comparison.
+    """
+    out = []
+    position = 0
+    for chunk in text.split("\n\n"):
+        start = position + len(chunk) - len(chunk.lstrip())
+        end = position + len(chunk.rstrip())
+        if end > start:
+            out.append((start, end))
+        position += len(chunk) + 2
+    return out
+
+
+def paragraphs(html: str) -> list[str]:
+    """Every non-empty paragraph of the document, edge-trimmed, in order."""
+    text = strip_tags(html)
+    return [text[start:end] for start, end in spans(text)]
+
+
+def lines(text: str) -> list[tuple[int, int]]:
+    """(start, end) of every non-empty line. Headings are lines, not paragraphs.
+
+    A section heading is its own block in every filing in the fixture set, but
+    a `<br>`-separated pair of lines is one paragraph, so heading detection
+    reads lines and paragraph emission reads paragraphs.
     """
     out = []
     position = 0
@@ -84,12 +117,6 @@ def spans(text: str) -> list[tuple[int, int]]:
             out.append((start, end))
         position += len(line) + 1
     return out
-
-
-def paragraphs(html: str) -> list[str]:
-    """Every non-empty block of the document, edge-trimmed, in document order."""
-    text = strip_tags(html)
-    return [text[start:end] for start, end in spans(text)]
 
 
 def normalized(text: str) -> str:
