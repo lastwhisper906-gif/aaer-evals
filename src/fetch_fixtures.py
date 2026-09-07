@@ -4,6 +4,7 @@ For each company, as of a fixed date, this pulls three filings:
 
     10-K   the latest annual report      XBRL instance + primary HTML
     10-Q   the latest quarterly report   XBRL instance + primary HTML
+    10-Q   the one before it             the same two, as `prior_period`
     8-K    the latest one carrying item 2.02, with exhibit 99.1
 
 and stores them under `tests/fixtures/{ticker}/{form}/`, with one
@@ -193,6 +194,23 @@ def pick(filings: list[dict], as_of: str, form: str, item: str | None = None):
     return max(matches, key=lambda f: (f["filingDate"], f["accessionNumber"]), default=None)
 
 
+def pick_previous(filings: list[dict], as_of: str, form: str):
+    """The filing of this form before the latest one, still at or before the cutoff.
+
+    The prior-period diff needs a pair. One 10-Q per company is one period, and
+    a differ with nothing to diff against silently carries the full text and
+    looks like it works.
+    """
+    latest = pick(filings, as_of, form)
+    if latest is None:
+        return None
+    key = (latest["filingDate"], latest["accessionNumber"])
+    earlier = [f for f in filings
+               if f["form"] == form and f["filingDate"] <= as_of
+               and (f["filingDate"], f["accessionNumber"]) < key]
+    return max(earlier, key=lambda f: (f["filingDate"], f["accessionNumber"]), default=None)
+
+
 def directory(fetcher: Fetcher, cik: str, accession: str) -> list[str]:
     url = ARCHIVE_URL.format(cik_int=int(cik), accession=accession.replace("-", ""), name="index.json")
     return [item["name"] for item in fetcher.get_json(url)["directory"]["item"]]
@@ -343,6 +361,44 @@ def fetch_company(fetcher: Fetcher, ticker: str, cik: str, as_of: str,
                 "sha256": sha256(raw),
             })
             print(f"  {ticker} {form:5s} {role:14s} {len(raw):>9,d} B  {name}")
+
+    # The 10-Q before the one already held, so the prior-period diff has a real
+    # pair to work on. Both its documents: the differ reads the HTML, the note
+    # change history reads the instance.
+    previous = pick_previous(filings, as_of, "10-Q")
+    if previous is None:
+        if ("10-Q", "prior_period") not in have:
+            problems.append(f"{ticker}: only one 10-Q filed on or before {as_of}")
+    else:
+        accession = previous["accessionNumber"]
+        names = directory(fetcher, cik, accession)
+        wanted, unfound = wanted_documents("10-Q", previous, names, [])
+        prior_roles = {"primary_html": "prior_period",
+                       "xbrl_instance": "prior_period_xbrl_instance"}
+        problems.extend(f"{ticker}: prior period {line}" for role, line in unfound
+                        if ("10-Q", prior_roles[role]) not in have)
+        for role, name in wanted:
+            prior_role = prior_roles[role]
+            if ("10-Q", prior_role) in have:
+                continue
+            url = ARCHIVE_URL.format(cik_int=int(cik),
+                                     accession=accession.replace("-", ""), name=name)
+            raw = fetcher.get(url)
+            path, encoding = store(ticker_dir / "10-Q" / name, raw)
+            documents.append({
+                "form": "10-Q",
+                "role": prior_role,
+                "accession": accession,
+                "filing_date": previous["filingDate"],
+                "report_date": previous["reportDate"],
+                "items": previous["items"] or "",
+                "url": url,
+                "path": str(path.relative_to(ticker_dir)),
+                "stored": encoding,
+                "bytes": len(raw),
+                "sha256": sha256(raw),
+            })
+            print(f"  {ticker} {'10-Q':5s} {prior_role:26s} {len(raw):>9,d} B  {name}")
 
     manifest = {
         "ticker": ticker,

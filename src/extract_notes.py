@@ -81,17 +81,20 @@ def sections_from_instance(xml_bytes: bytes, *, accession: str,
     return sections
 
 
-def extract(ticker: str, form: str = "10-K", *, cutoff=None,
-            fixtures_root=cutoff_guard.FIXTURES) -> dict:
+def extract(ticker: str, form: str = "10-K", *, role: str = "xbrl_instance",
+            cutoff=None, fixtures_root=cutoff_guard.FIXTURES) -> dict:
+    """`role` is `xbrl_instance` for the current filing; the prior period's
+    instance is stored under `prior_period_xbrl_instance` and is read the same
+    way, which is what the note change history pairs."""
     cutoff = cutoff or cutoff_guard.default_cutoff(ticker, fixtures_root=fixtures_root)
-    row = cutoff_guard.one_document(ticker, form, "xbrl_instance",
-                                    fixtures_root=fixtures_root)
+    row = cutoff_guard.one_document(ticker, form, role, fixtures_root=fixtures_root)
     raw = cutoff_guard.load_bytes(row["full_path"], cutoff, fixtures_root=fixtures_root)
     sections = sections_from_instance(raw, accession=row["accession"],
                                       filing_date=row["filing_date"], form=form)
     return {
         "ticker": ticker,
         "form": form,
+        "role": role,
         "cutoff": str(cutoff),
         "accession": row["accession"],
         "filing_date": row["filing_date"],
