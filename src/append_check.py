@@ -10,8 +10,9 @@ published file that legitimately grows: it passes as long as its new bytes begin
 with its old bytes. Rewriting or truncating a line that was already published
 fails like any other change to existing content.
 
-A README.md at the root of one of those three directories is documentation and
-not a record, so it stays editable. Nothing deeper does.
+Everything under those three prefixes is a record. Documentation about them
+lives in docs/, because a file inside an append-only directory can never be
+corrected.
 
 Run it before pytest. A violation is not a test failure to be triaged later --
 it means the prediction record is damaged, and the cycle stops.
@@ -40,13 +41,6 @@ import sys
 from src import interpreter_pin
 
 PROTECTED = ("runs/", "rules/", "events/")
-
-# A README.md sitting directly at the root of a protected directory is
-# documentation, not a record: a prediction lives at runs/{ticker}/{accession}/
-# and a rules file is versioned, so neither can ever be named this. Without this
-# line the directory's own explanation would be frozen the day it was written --
-# which is how this was found, when the check refused a correction to it.
-DOCUMENTATION = frozenset(f"{prefix}README.md" for prefix in PROTECTED)
 
 
 def _git(*args: str) -> str:
@@ -87,8 +81,6 @@ def violations(baseline: str, head: str = "HEAD") -> list[str]:
     }
     found = []
     for path, blob in sorted(base_files.items()):
-        if path in DOCUMENTATION:
-            continue
         if head_files.get(path) == blob:
             continue
         if path in head_files:

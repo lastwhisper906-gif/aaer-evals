@@ -95,26 +95,12 @@ def test_deleting_a_published_prediction_fails(repo):
     ]
 
 
-def test_the_directory_readme_stays_editable(repo):
-    """It explains the directory; freezing it the day it is written is a bug."""
-    (repo / "runs" / "README.md").write_text("# runs/\n\nrewritten\n")
+def test_every_path_under_a_protected_prefix_is_a_record(repo):
+    """No file in there is exempt, whatever it is called. Docs live in docs/."""
+    (repo / "runs" / "README.md").write_text("rewritten\n")
     commit_all(repo)
 
-    assert append_check.violations("baseline") == []
-
-
-def test_a_readme_inside_a_prediction_is_still_protected(repo):
-    inside = repo / "runs" / "AAPL" / "0000320193-26-000001" / "README.md"
-    inside.write_text("first\n")
-    commit_all(repo, "publish a readme inside the bundle")
-    git(repo, "branch", "-f", "baseline", "HEAD")
-
-    inside.write_text("second\n")
-    commit_all(repo, "quietly change it")
-
-    assert append_check.violations("baseline") == [
-        "modified: runs/AAPL/0000320193-26-000001/README.md"
-    ]
+    assert append_check.violations("baseline") == ["modified: runs/README.md"]
 
 
 def test_unprotected_paths_are_ignored(repo):
@@ -142,7 +128,8 @@ def test_relocating_anywhere_but_archive_fails(repo):
     commit_all(repo)
 
     assert append_check.violations("baseline") == [
-        "deleted: runs/AAPL/0000320193-26-000001/prediction_pressure.json"
+        "deleted: runs/AAPL/0000320193-26-000001/prediction_pressure.json",
+        "deleted: runs/README.md",
     ]
 
 
