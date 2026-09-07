@@ -32,6 +32,7 @@ when things are clear is the result being tested.
 | `runs/` | one directory per prediction — inputs and outputs, append-only (`docs/runs.md`) |
 | `events/ledger.jsonl` | what actually happened, append-only |
 | `src/` | parsers, extraction, prediction, scoring |
+| `tests/fixtures/` | the filings the parsers are judged against — one 10-K, 10-Q and 8-K 2.02 per company, with the sha256 of every file as EDGAR served it |
 | `archive/` | the earlier experiment, frozen at tag `archive-v1` |
 
 ## Running the checks
