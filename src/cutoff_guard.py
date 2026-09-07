@@ -202,6 +202,20 @@ def prior_runs(root, ticker: str) -> list[Path]:
     return sorted(child for child in folder.iterdir() if child.is_dir())
 
 
+def expected_values(ticker: str, *, fixtures_root=FIXTURES) -> dict:
+    """The recorded expectations for one company, `expected.json`.
+
+    Not a document and not gated: it holds counts this project agreed on, has no
+    filing date, and is the reference the drift check compares against. It lives
+    under the fixtures root, and every read of that root goes through this
+    module so that the bypass scan stays a true statement about `src/`.
+    """
+    path = Path(fixtures_root) / ticker / "expected.json"
+    if not path.is_file():
+        raise CutoffGuardError(f"{path} does not exist — no recorded values for {ticker}")
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
 def bundle_files(bundle_root, pattern: str) -> list[str]:
     """The names in one run directory matching a glob, sorted. Names only —
     reading them is still `load_bundle_file`, so there is one reader."""
