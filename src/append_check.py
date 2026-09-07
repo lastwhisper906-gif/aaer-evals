@@ -17,7 +17,8 @@ corrected.
 Run it before pytest. A violation is not a test failure to be triaged later --
 it means the prediction record is damaged, and the cycle stops.
 
-    python -m src.append_check [--baseline origin/main]
+    python3.12 -m src.append_check [--baseline origin/main]
+    python3.12 src/append_check.py [--baseline origin/main]
 
 Exit 0 clean, 1 violation, 2 the baseline ref could not be resolved, 3 the wrong
 interpreter.
@@ -37,8 +38,13 @@ from __future__ import annotations
 import argparse
 import subprocess
 import sys
+from pathlib import Path
 
-from src import interpreter_pin
+try:
+    from src import interpreter_pin
+except ImportError:  # invoked as a plain script: python3.12 src/append_check.py
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    from src import interpreter_pin
 
 PROTECTED = ("runs/", "rules/", "events/")
 
