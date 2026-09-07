@@ -10,3 +10,7 @@ in `docs/INPUT_SPEC.md`.
 is a ledger, so nothing here grows either. A correction is a new file plus one
 line in `events/ledger.jsonl`. `src/append_check.py` enforces this in CI, and a
 violation stops the cycle rather than opening a ticket.
+
+The directory itself is empty until the first prediction lands. This page lives
+in `docs/` rather than inside it, because a file inside an append-only directory
+can never be corrected — which is how that was found out.
