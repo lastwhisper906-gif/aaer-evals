@@ -46,6 +46,7 @@ from __future__ import annotations
 
 import html as html_module
 import re
+from html.parser import HTMLParser
 
 BLOCK_TAGS = frozenset("""
     address article aside blockquote br caption center dd div dl dt fieldset
@@ -122,7 +123,80 @@ def lines(text: str) -> list[tuple[int, int]]:
 def normalized(text: str) -> str:
     """Whitespace-flattened text, for *matching* only — never for emitting.
 
-    Heading detection and paragraph similarity compare through this; nothing
-    that reaches a bundle file passes through it.
+    Heading detection and paragraph similarity compare through this; no
+    paragraph that reaches a bundle file passes through it.
     """
     return re.sub(r"\s+", " ", text).strip().lower()
+
+
+# --- tables ----------------------------------------------------------------
+#
+# A table is a `<table>` element. That is the definition an independent reader
+# can recount by counting `<table` in the document, so it is the one used here.
+# A table nested inside another — filers nest them for layout — is its own
+# table, and its text belongs to it rather than to the cell containing it.
+
+_CELLS = ("td", "th")
+
+
+class _Tables(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.tables: list[list[list[str]]] = []
+        self._open: list[list[list[str]]] = []
+        self._cell: list[str] | None = None
+        self._skip = 0
+
+    def handle_starttag(self, tag, attrs):
+        if tag in ("script", "style"):
+            self._skip += 1
+        elif tag == "table":
+            self._open.append([])
+            self._cell = None
+        elif tag == "tr" and self._open:
+            self._open[-1].append([])
+            self._cell = None
+        elif tag in _CELLS and self._open:
+            if not self._open[-1]:
+                self._open[-1].append([])
+            self._open[-1][-1].append("")
+            self._cell = []
+
+    def handle_endtag(self, tag):
+        if tag in ("script", "style"):
+            self._skip = max(0, self._skip - 1)
+        elif tag == "table" and self._open:
+            self.tables.append([row for row in self._open.pop() if row])
+            self._cell = None
+        elif tag in _CELLS and self._cell is not None and self._open:
+            self._open[-1][-1][-1] = "".join(self._cell).strip()
+            self._cell = None
+
+    def handle_data(self, data):
+        if not self._skip and self._cell is not None:
+            self._cell.append(data)
+
+
+def tables(html: str) -> list[list[list[str]]]:
+    """Every `<table>` in the document, as rows of cell text, in order."""
+    parser = _Tables()
+    parser.feed(html)
+    parser.close()
+    return parser.tables
+
+
+def pipe_rows(table: list[list[str]]) -> list[str]:
+    """One `|`-delimited line per row.
+
+    A rendered row is a *rendering*, not a paragraph: a row has to be one line,
+    so whitespace inside a cell is flattened to single spaces. The containment
+    guarantee for tables therefore holds at the cell, and the tests assert it
+    there. No cell's characters are otherwise touched.
+    """
+    return ["| " + " | ".join(normalized_spacing(cell) for cell in row) + " |"
+            for row in table]
+
+
+def normalized_spacing(text: str) -> str:
+    """Runs of whitespace to one space. Case is left alone, unlike `normalized`."""
+    return re.sub(r"\s+", " ", text).strip()

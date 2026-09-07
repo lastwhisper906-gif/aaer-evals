@@ -11,6 +11,12 @@ and stores them under `tests/fixtures/{ticker}/{form}/`, with one
 the URL it came from, the filing date and the sha256 of the bytes as EDGAR
 served them.
 
+Beside them it stores `tests/fixtures/{ticker}/submissions.json`: the rows of
+the EDGAR submissions index, which is where an 8-K's item codes come from and
+the only place they are stated. It is filtered to the cutoff and projected to
+the fields used — see `submissions_record` for why both, and for the one place
+in this file where "the bytes EDGAR served" is deliberately not the rule.
+
 **Fixtures are records.** A file already on disk is never re-fetched and never
 overwritten: if its bytes no longer match the manifest the script stops with
 exit 4 rather than repairing anything. Adding a company or a form appends;
@@ -137,6 +143,48 @@ def recent_filings(fetcher: Fetcher, cik: str) -> list[dict]:
             for i in range(len(recent["form"]))]
 
 
+def submissions_record(ticker: str, cik: str, as_of: str,
+                       filings: list[dict]) -> tuple[dict, bytes]:
+    """The submissions index, as a fixture.
+
+    Two departures from "store the bytes EDGAR served", both deliberate.
+
+    It is **filtered to `filing_date <= as_of`**. The live index grows: fetched
+    today it lists filings made after the cutoff this fixture set is pinned to,
+    and a fixture carrying post-cutoff rows is the look-ahead the whole project
+    exists to prevent — a gate downstream would be guarding a file that should
+    never have contained them. The cutoff is applied where the document enters
+    the record, not where it is read.
+
+    It is **projected to the fields the index is used for**. `recent_filings`
+    already reduces EDGAR's parallel arrays to rows; storing those rows is
+    storing the index this program actually read. The url is recorded so the
+    original is one request away.
+
+    The manifest's `filing_date` for this record is the latest filing in it, so
+    reading it under an earlier cutoff is refused rather than quietly allowed.
+    """
+    rows = [{"accession": filing["accessionNumber"],
+             "filing_date": filing["filingDate"],
+             "report_date": filing["reportDate"],
+             "form": filing["form"],
+             "items": filing["items"] or "",
+             "primary_document": filing["primaryDocument"],
+             "primary_doc_description": filing["primaryDocDescription"] or ""}
+            for filing in filings if filing["filingDate"] <= as_of]
+    rows.sort(key=lambda row: (row["filing_date"], row["accession"]), reverse=True)
+    payload = {
+        "ticker": ticker,
+        "cik": cik,
+        "as_of": as_of,
+        "url": SUBMISSIONS_URL.format(cik=cik),
+        "note": ("the recent-filings rows of the EDGAR submissions index, "
+                 "projected to these fields and filtered to filing_date <= as_of"),
+        "filings": rows,
+    }
+    return payload, (json.dumps(payload, indent=2) + "\n").encode("utf-8")
+
+
 def pick(filings: list[dict], as_of: str, form: str, item: str | None = None):
     """The latest filing of this form at or before the cutoff date."""
     matches = [f for f in filings
@@ -234,6 +282,30 @@ def fetch_company(fetcher: Fetcher, ticker: str, cik: str, as_of: str,
     have = {(e["form"], e["role"]) for e in manifest.get("documents", [])}
     documents = list(manifest.get("documents", []))
     filings = recent_filings(fetcher, cik)
+
+    if ("submissions", "submissions_index") not in have:
+        record, raw = submissions_record(ticker, cik, as_of, filings)
+        if not record["filings"]:
+            problems.append(f"{ticker}: the submissions index has no filing on or before {as_of}")
+        else:
+            path, encoding = store(ticker_dir / "submissions.json", raw)
+            documents.append({
+                "form": "submissions",
+                "role": "submissions_index",
+                "accession": "",
+                "filing_date": record["filings"][0]["filing_date"],
+                "report_date": "",
+                "items": "",
+                "date_basis": ("the latest filing this index contains; the index "
+                               "is not itself a filing and has no filing date"),
+                "url": record["url"],
+                "path": str(path.relative_to(ticker_dir)),
+                "stored": encoding,
+                "bytes": len(raw),
+                "sha256": sha256(raw),
+            })
+            print(f"  {ticker} {'index':5s} {'submissions':14s} {len(raw):>9,d} B  "
+                  f"{len(record['filings'])} filings ≤ {as_of}")
 
     for form, item in (("10-K", None), ("10-Q", None), ("8-K", "2.02")):
         filing = pick(filings, as_of, form, item)
