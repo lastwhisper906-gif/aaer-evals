@@ -166,6 +166,51 @@ def load_document(path, cutoff_date, *, fixtures_root=FIXTURES, encoding="utf-8"
     return load_bytes(path, cutoff_date, fixtures_root=fixtures_root).decode(encoding)
 
 
+def load_index(path, *, fixtures_root=FIXTURES) -> bytes:
+    """The submissions index, which is a list of filings and not a filing.
+
+    The date gate does not apply and must not: the index is EDGAR's catalogue of
+    what a company has filed, fetched once at the fixture set's as-of date, so
+    its own recorded date is always the newest date in the set and gating it
+    would make every earlier cutoff unusable. The cutoff still applies — to the
+    *rows*, which is where the look-ahead actually lives, and the caller has to
+    do that filtering. `src/parse_8k.py` is the only caller and
+    `tests/test_parse_8k.py` asserts it drops every row past the cutoff.
+
+    The path is still checked against the manifest, so an unrecorded file is
+    refused here exactly as it is anywhere else.
+    """
+    row = document_record(path, fixtures_root=fixtures_root)
+    if row.get("role") != "submissions_index":
+        raise CutoffGuardError(
+            f"{path} is a {row.get('role')}, not a submissions index — "
+            "only the index of filings skips the date gate")
+    data = Path(path).read_bytes()
+    return gzip.decompress(data) if row.get("stored") == "gzip" else data
+
+
+def prior_runs(root, ticker: str) -> list[Path]:
+    """Run directories already published for this company, oldest first.
+
+    Reading the published record goes through this module like everything else,
+    so the bypass scan stays a true statement. A root that does not exist is not
+    an error: the first run for a company has no predecessors.
+    """
+    folder = Path(root) / ticker
+    if not folder.is_dir():
+        return []
+    return sorted(child for child in folder.iterdir() if child.is_dir())
+
+
+def bundle_files(bundle_root, pattern: str) -> list[str]:
+    """The names in one run directory matching a glob, sorted. Names only —
+    reading them is still `load_bundle_file`, so there is one reader."""
+    folder = Path(bundle_root)
+    if not folder.is_dir():
+        return []
+    return sorted(path.name for path in folder.glob(pattern) if path.is_file())
+
+
 def load_bundle_file(bundle_root, name: str) -> str:
     """Read one file out of an assembled run bundle.
 

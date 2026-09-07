@@ -67,13 +67,19 @@ def test_the_rendered_file_holds_nothing_but_entries_and_headings(ticker):
     scaffolding or a paragraph out of one of the two filings."""
     payload = note_history.history(ticker)
     source = sources(ticker)
-    stray = []
+    identifiers = {entry["id"] for entry in payload["entries"]}
+    assert len(identifiers) == len(payload["entries"]), f"{ticker}: an id is repeated"
+    stray, seen = [], set()
     for line in note_history.render(payload).split("\n"):
         if not line.strip() or line.startswith(("#", "- ", "  (was")):
+            continue
+        if line.startswith("[") and line[1:-1] in identifiers:
+            seen.add(line[1:-1])
             continue
         if not source.contains(line):
             stray.append(line)
     assert not stray, f"{ticker}: {stray[:1]}"
+    assert seen == identifiers, f"{ticker}: an entry reached the file with no id"
 
 
 def key_paragraphs(ticker: str, role: str | None = None) -> dict[str, list[str]]:

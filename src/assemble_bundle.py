@@ -1,0 +1,419 @@
+"""One run directory: the eight files the predictor sees, and the manifest.
+
+`docs/INPUT_SPEC.md` §5 names the eight. This file writes them and then writes
+`input_manifest.json`, which is the index a reader uses to check the other
+seven: every paragraph id that reached a file, every paragraph that was
+excluded and why, the cutoff, and the two placeholders that are not real yet.
+
+**The cutoff is the triggering report's filing date**, so the bundle for a 10-K
+cannot contain the 10-Q that came after it. That is not a detail of this file —
+it decides which documents exist at all, and it is why a 10-K bundle has no note
+change history (there is one 10-K on record, and a history needs two) while a
+10-Q bundle has one. The absence is written into the file and into the manifest
+rather than left for a reader to notice.
+
+**`rules_version` and `served_model` are null.** `rules/v0.1` does not exist and
+no prediction has been served, so a value here would be a guess about the two
+fields that decide how a prediction is scored. They are null with a comment
+saying what has to happen first, and a test asserts they are still null — the
+day they become real is a change someone makes on purpose.
+
+**The output root is an argument** and the default is never created as a side
+effect. The loop that runs this cannot write `runs/`, and nothing here tries.
+
+    python3.12 -m src.assemble_bundle --ticker AAPL --form 10-K --out /tmp/bundle
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import sys
+from pathlib import Path
+
+try:
+    from src import (clean_text, cutoff_guard, diff_periods, extract_notes,
+                     extract_numbers, html_text, interpreter_pin, note_history,
+                     parse_8k, split_sections, trends)
+except ImportError:  # invoked as a plain script
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    from src import (clean_text, cutoff_guard, diff_periods, extract_notes,
+                     extract_numbers, html_text, interpreter_pin, note_history,
+                     parse_8k, split_sections, trends)
+
+BAD_INPUT = 2
+
+DEFAULT_ROOT = Path("runs")
+TRIGGERING_FORMS = ("10-K", "10-Q")
+
+FILES = ("input_numbers.json", "input_trends.json", "input_notes.md",
+         "input_notes_history.md", "input_mdna.md", "input_8k.md",
+         "input_prior_predictions.md", "input_manifest.json")
+# The files a paragraph id can live in. The two JSON files carry fact ids and
+# period labels, which are a different kind of thing and are indexed by their
+# own contents.
+PARAGRAPH_FILES = ("input_notes.md", "input_notes_history.md", "input_mdna.md",
+                   "input_8k.md", "input_prior_predictions.md")
+
+RULES_VERSION_COMMENT = (
+    "null until rules/v0.1 exists; a prediction is scored against its own rules "
+    "version and guessing one here would decide that scoring by accident")
+SERVED_MODEL_COMMENT = (
+    "null until a prediction is served; the pinned-model runner records what it "
+    "actually served, and nothing else may claim to know it")
+
+# What a prior prediction file may never carry forward.
+PROBABILITY_KEYS = ("probability", "probabilities", "score", "scores",
+                    "likelihood", "confidence")
+
+
+class BundleError(Exception):
+    """The bundle cannot be assembled from what is on record."""
+
+
+def _sha256(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+def paragraph_ids(text: str) -> list[str]:
+    """The `[id]` lines of a rendered file, in the order they appear."""
+    out = []
+    for line in text.split("\n"):
+        stripped = line.strip()
+        if stripped.startswith("[") and stripped.endswith("]") and \
+                ":" in stripped and "\n" not in stripped:
+            out.append(stripped[1:-1])
+    return out
+
+
+# --- the pieces --------------------------------------------------------------
+
+def documents_on_record(ticker: str, cutoff, fixtures_root) -> list[dict]:
+    """Every fixture document filed at or before the cutoff, as the record has
+    it. A document filed later is not in the bundle and not in the manifest."""
+    rows = []
+    for row in cutoff_guard.documents(ticker, fixtures_root=fixtures_root):
+        if row["filing_date"] <= str(cutoff):
+            rows.append({"form": row["form"], "role": row["role"],
+                         "accession": row["accession"], "path": row["path"],
+                         "filing_date": row["filing_date"], "sha256": row["sha256"]})
+    rows.sort(key=lambda row: (row["filing_date"], row["accession"], row["role"]))
+    return rows
+
+
+def note_stream(ticker: str, form: str, *, cutoff, fixtures_root):
+    """Note paragraphs after the diff layer, and the paragraphs it dropped.
+
+    A 10-Q is diffed against the 10-Q before it. A 10-K has no earlier 10-K on
+    record, so every paragraph is carried and the manifest says why.
+    """
+    if form == "10-Q":
+        payload = diff_periods.extract(ticker, cutoff=cutoff, fixtures_root=fixtures_root)
+        return payload["notes"], payload["mdna"], payload["prior_accession"]
+
+    notes = diff_periods.diff_stream(
+        diff_periods._note_paragraphs(ticker, form, "xbrl_instance",
+                                      cutoff=cutoff, fixtures_root=fixtures_root), [])
+    row = cutoff_guard.one_document(ticker, form, "primary_html",
+                                    fixtures_root=fixtures_root)
+    kept = clean_text.clean_section(
+        split_sections.extract(ticker, form, "mdna", cutoff=cutoff,
+                               fixtures_root=fixtures_root)["paragraphs"])["paragraphs"]
+    mdna = diff_periods.diff_stream(
+        [{"id": f"{row['accession']}:mdna:{index}", "text": text, "note": "mdna",
+          "verbatim_topic": None} for index, text in enumerate(kept, start=1)], [])
+    return notes, mdna, None
+
+
+def excluded_paragraphs(ticker: str, form: str, *, cutoff, fixtures_root) -> list[dict]:
+    """Every paragraph the cleaner dropped, with the reason it gave.
+
+    The cleaner is run again here rather than threaded through the diff layer,
+    because the manifest has to name the drops and the diff layer keeps only
+    what survived them.
+    """
+    out = []
+    notes = extract_notes.extract(ticker, form, cutoff=cutoff, fixtures_root=fixtures_root)
+    for section in notes["sections"]:
+        text = section["text"]
+        result = clean_text.clean_section([text[a:b] for a, b in html_text.spans(text)])
+        for drop in result["dropped"]:
+            out.append({"id": f"{notes['accession']}:notes_excluded:{len(out) + 1}",
+                        "source": f"{form} notes / {section['name']}",
+                        "reason": drop["reason"], "text": drop["text"]})
+
+    mdna = split_sections.extract(ticker, form, "mdna", cutoff=cutoff,
+                                  fixtures_root=fixtures_root)
+    dropped_mdna = clean_text.clean_section(mdna["paragraphs"])["dropped"]
+    row = cutoff_guard.one_document(ticker, form, "primary_html", fixtures_root=fixtures_root)
+    for number, drop in enumerate(dropped_mdna, start=1):
+        out.append({"id": f"{row['accession']}:mdna_excluded:{number}",
+                    "source": f"{form} MD&A", "reason": drop["reason"],
+                    "text": drop["text"]})
+    return out
+
+
+def excluded_from_the_release(ticker: str, *, cutoff, fixtures_root) -> list[dict]:
+    """The earnings release's own drops, including any table already in XBRL."""
+    rows = cutoff_guard.documents(ticker, form="8-K", role="exhibit_99_1",
+                                  fixtures_root=fixtures_root)
+    rows = [row for row in rows if row["filing_date"] <= str(cutoff)]
+    if not rows:
+        return []
+    row = rows[-1]
+    html = cutoff_guard.load_document(row["full_path"], cutoff, fixtures_root=fixtures_root)
+    result = clean_text.clean(html)
+    out = []
+    for number, drop in enumerate(result["dropped"], start=1):
+        out.append({"id": f"{row['accession']}:8k_excluded:{number}",
+                    "source": "8-K exhibit 99.1", "reason": drop["reason"],
+                    "text": drop["text"]})
+    for table in result["tables"]:
+        if not table["kept"]:
+            out.append({"id": f"{row['accession']}:8k_excluded_table:{table['number']}",
+                        "source": "8-K exhibit 99.1",
+                        "reason": "every number in the table is already an XBRL fact",
+                        "text": ""})
+    return out
+
+
+def group_empty(exclusions: list[dict], accession: str) -> list[dict]:
+    """Collapse the empty-paragraph drops into one line per source.
+
+    A filing separates its blocks with paragraphs holding one zero-width space,
+    and Esterline's 10-Q has nearly five thousand of them. Listing each one
+    would put three quarters of a megabyte of nothing in the manifest and bury
+    the drops a reader has to check. There is no text to lose, so they are
+    counted per source instead — still an exclusion, still with a reason.
+    """
+    kept, counted = [], {}
+    for entry in exclusions:
+        if entry["reason"] == "empty":
+            counted[entry["source"]] = counted.get(entry["source"], 0) + 1
+        else:
+            kept.append(entry)
+    for number, (source, count) in enumerate(sorted(counted.items()), start=1):
+        kept.append({
+            "id": f"{accession}:empty_excluded:{number}",
+            "source": source,
+            "reason": f"empty paragraph — whitespace or a zero-width space and "
+                      f"nothing else; {count} of them, with no text to record",
+            "text": "",
+        })
+    return kept
+
+
+def prior_predictions(ticker: str, root: Path) -> tuple[str, list[dict]]:
+    """Past flag lists and outcomes, with every probability left behind.
+
+    Nothing is invented when there are none: the file says there are none, and
+    that is a true statement about the record rather than an empty file.
+    """
+    found = [(run, name) for run in cutoff_guard.prior_runs(root, ticker)
+             for name in cutoff_guard.bundle_files(run, "prediction_*.json")]
+    if not found:
+        return ("# {ticker} prior predictions\n\n"
+                "None on record. This company has no earlier run under the given "
+                "run root, so there are no flags, no management explanations and "
+                "no outcomes to carry forward.\n".format(ticker=ticker), [])
+
+    lines, entries = [f"# {ticker} prior predictions", ""], []
+    for run, name in found:
+        try:
+            payload = json.loads(cutoff_guard.load_bundle_file(run, name))
+        except ValueError as exc:
+            raise BundleError(f"{run}/{name} is not readable JSON: {exc}") from exc
+        accession = run.name
+        lines.extend([f"## {accession} — {name}", ""])
+        for number, flag in enumerate(payload.get("flags", []), start=1):
+            identifier = f"{accession}:prior:{name.removesuffix('.json')}:{number}"
+            text = flag if isinstance(flag, str) else json.dumps(
+                {key: value for key, value in flag.items()
+                 if key.lower() not in PROBABILITY_KEYS}, sort_keys=True)
+            lines.extend([f"[{identifier}]", text, ""])
+            entries.append({"id": identifier, "file": "input_prior_predictions.md",
+                            "kind": "prior_flag"})
+    return "\n".join(lines) + "\n", entries
+
+
+# --- the bundle ---------------------------------------------------------------
+
+def build(ticker: str, form: str, *, cutoff=None, fixtures_root=cutoff_guard.FIXTURES,
+          prior_runs: Path = DEFAULT_ROOT) -> dict:
+    """Every file's text, plus what the manifest needs to describe them."""
+    if form not in TRIGGERING_FORMS:
+        raise BundleError(f"{form} is not a triggering report; "
+                          f"one of {', '.join(TRIGGERING_FORMS)}")
+    trigger = cutoff_guard.one_document(ticker, form, "primary_html",
+                                        fixtures_root=fixtures_root)
+    # The cutoff is the triggering report's own filing date unless a run names
+    # another one. Nothing filed after it is read, so the rule is enforced by
+    # what is loaded rather than by remembering to check.
+    cutoff = str(cutoff) if cutoff else trigger["filing_date"]
+    if cutoff < trigger["filing_date"]:
+        raise BundleError(f"cutoff {cutoff} is before {form} {trigger['accession']} "
+                          f"was filed on {trigger['filing_date']}")
+
+    on_record = {(row["form"], row["role"]): row
+                 for row in documents_on_record(ticker, cutoff, fixtures_root)}
+    forms = tuple(name for name in ("10-K", "10-Q")
+                  if (name, "xbrl_instance") in on_record)
+    numbers = extract_numbers.extract(ticker, forms, cutoff=cutoff,
+                                      fixtures_root=fixtures_root)
+    table = trends.trends(json.loads(json.dumps(numbers, default=str)))
+
+    notes, mdna, prior_accession = note_stream(ticker, form, cutoff=cutoff,
+                                               fixtures_root=fixtures_root)
+
+    if ("8-K", "exhibit_99_1") in on_record and ("8-K", "primary_html") in on_record:
+        eight_k_text = parse_8k.render(
+            parse_8k.extract(ticker, cutoff=cutoff, fixtures_root=fixtures_root))
+        eight_k_note = None
+    else:
+        held = cutoff_guard.one_document(ticker, "8-K", "primary_html",
+                                         fixtures_root=fixtures_root)
+        eight_k_note = (f"no 8-K at or before {cutoff}: the one on record was filed "
+                        f"{held['filing_date']}, after the {form} this bundle is for")
+        eight_k_text = f"# {ticker} 8-K\n\n{eight_k_note}.\n"
+
+    # The history is two consecutive 10-Qs, whatever form triggered the run.
+    if all(key in on_record for key in (("10-Q", "xbrl_instance"),
+                                        ("10-Q", "prior_period_xbrl_instance"))):
+        history = note_history.history(ticker, cutoff=cutoff, fixtures_root=fixtures_root)
+        history_text = note_history.render(history)
+        history_note = None
+    else:
+        history = None
+        history_note = (f"no note change history: a history needs two 10-Qs and the "
+                        f"record holds fewer at or before {cutoff}")
+        history_text = f"# {ticker} note change history\n\n{history_note}.\n"
+
+    prior_text, prior_entries = prior_predictions(ticker, Path(prior_runs))
+
+    texts = {
+        "input_numbers.json": json.dumps(numbers, indent=2, sort_keys=False,
+                                         default=str) + "\n",
+        "input_trends.json": trends.render(table),
+        "input_notes.md": diff_periods.render(
+            notes, f"{ticker} notes — {trigger['accession']}"),
+        "input_notes_history.md": history_text,
+        "input_mdna.md": diff_periods.render(
+            mdna, f"{ticker} MD&A — {trigger['accession']}"),
+        "input_8k.md": eight_k_text,
+        "input_prior_predictions.md": prior_text,
+    }
+
+    paragraphs = []
+    for entry in notes:
+        paragraphs.append({"id": entry["id"], "file": "input_notes.md",
+                           "kind": entry["kind"]})
+    for entry in mdna:
+        paragraphs.append({"id": entry["id"], "file": "input_mdna.md",
+                           "kind": entry["kind"]})
+    if history is not None:
+        for entry in history["entries"]:
+            paragraphs.append({"id": entry["id"], "file": "input_notes_history.md",
+                               "kind": entry["kind"]})
+    for identifier in paragraph_ids(texts["input_8k.md"]):
+        paragraphs.append({"id": identifier, "file": "input_8k.md",
+                           "kind": "table" if ":8k_2_02_table:" in identifier
+                                   else "verbatim"})
+    paragraphs.extend(prior_entries)
+
+    exclusions = excluded_paragraphs(ticker, form, cutoff=cutoff,
+                                     fixtures_root=fixtures_root)
+    exclusions += excluded_from_the_release(ticker, cutoff=cutoff,
+                                            fixtures_root=fixtures_root)
+    exclusions = group_empty(exclusions, trigger["accession"])
+    for name, reason in (("input_notes_history.md", history_note),
+                         ("input_8k.md", eight_k_note)):
+        if reason:
+            exclusions.append({"id": f"{trigger['accession']}:file:{name}",
+                               "source": name, "reason": reason, "text": ""})
+
+    manifest = {
+        "ticker": ticker,
+        "form": form,
+        "accession": trigger["accession"],
+        "filing_date": trigger["filing_date"],
+        "cutoff": str(cutoff),
+        "prior_accession": prior_accession,
+        "rules_version": None,
+        "rules_version_comment": RULES_VERSION_COMMENT,
+        "served_model": None,
+        "served_model_comment": SERVED_MODEL_COMMENT,
+        "documents": documents_on_record(ticker, cutoff, fixtures_root),
+        "paragraphs": paragraphs,
+        "exclusions": exclusions,
+        "counts": {
+            "paragraphs": len(paragraphs),
+            "exclusions": len(exclusions),
+            "facts": len(numbers["facts"]),
+            "notes": sum(1 for entry in paragraphs if entry["file"] == "input_notes.md"),
+            "mdna": sum(1 for entry in paragraphs if entry["file"] == "input_mdna.md"),
+            "note_history": sum(1 for entry in paragraphs
+                                if entry["file"] == "input_notes_history.md"),
+            "eight_k": sum(1 for entry in paragraphs if entry["file"] == "input_8k.md"),
+        },
+        "files": {name: {"sha256": _sha256(text.encode("utf-8")),
+                         "bytes": len(text.encode("utf-8"))}
+                  for name, text in sorted(texts.items())},
+    }
+    texts["input_manifest.json"] = json.dumps(manifest, indent=2, sort_keys=True) + "\n"
+    return {"texts": texts, "manifest": manifest}
+
+
+def write(bundle: dict, out: Path) -> Path:
+    out.mkdir(parents=True, exist_ok=True)
+    for name in FILES:
+        (out / name).write_text(bundle["texts"][name], encoding="utf-8")
+    return out
+
+
+def assemble(ticker: str, form: str, out: Path, *, cutoff=None,
+             fixtures_root=cutoff_guard.FIXTURES,
+             prior_runs: Path = DEFAULT_ROOT) -> dict:
+    bundle = build(ticker, form, cutoff=cutoff, fixtures_root=fixtures_root,
+                   prior_runs=prior_runs)
+    write(bundle, Path(out))
+    return bundle["manifest"]
+
+
+def default_out(ticker: str, accession: str, root: Path = DEFAULT_ROOT) -> Path:
+    """Where a run lands when nobody says otherwise. Naming it does not make it."""
+    return Path(root) / ticker / accession
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="one run directory of predictor inputs")
+    parser.add_argument("--ticker", required=True)
+    parser.add_argument("--form", default="10-K", choices=list(TRIGGERING_FORMS))
+    parser.add_argument("--cutoff", default=None,
+                        help="ISO date; default is the triggering report's filing date")
+    parser.add_argument("--fixtures", default=str(cutoff_guard.FIXTURES))
+    parser.add_argument("--prior-runs", default=str(DEFAULT_ROOT),
+                        help="where earlier runs live; missing is fine and is recorded")
+    parser.add_argument("--out", default=None,
+                        help=f"the bundle directory; default {DEFAULT_ROOT}/TICKER/ACCESSION")
+    args = parser.parse_args(argv)
+
+    ticker = args.ticker.upper()
+    try:
+        bundle = build(ticker, args.form, cutoff=args.cutoff,
+                       fixtures_root=Path(args.fixtures),
+                       prior_runs=Path(args.prior_runs))
+        out = Path(args.out) if args.out else default_out(
+            ticker, bundle["manifest"]["accession"])
+        write(bundle, out)
+    except (cutoff_guard.CutoffGuardError, BundleError, OSError) as exc:
+        print(f"assemble_bundle: {exc}", file=sys.stderr)
+        return BAD_INPUT
+    print(f"assemble_bundle: {ticker} {args.form} "
+          f"{bundle['manifest']['counts']['paragraphs']} paragraphs, "
+          f"{bundle['manifest']['counts']['exclusions']} exclusions → {out}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(interpreter_pin.enforce() or main())

@@ -50,20 +50,32 @@ def item_codes(items: str) -> list[str]:
             (part.strip() for part in (items or "").split(",")) if code]
 
 
-def submissions(ticker: str, *, cutoff=None, fixtures_root=cutoff_guard.FIXTURES) -> dict:
-    """The stored submissions index, through the gate like any other document."""
-    cutoff = cutoff or cutoff_guard.default_cutoff(ticker, fixtures_root=fixtures_root)
+def submissions(ticker: str, *, fixtures_root=cutoff_guard.FIXTURES) -> dict:
+    """The stored submissions index, read through `cutoff_guard.load_index`.
+
+    An index of filings is not itself a filing, so the date gate does not apply
+    to the file — see that function. The cutoff applies to the rows, and
+    `eight_k_filings` is where it is applied.
+    """
     row = cutoff_guard.one_document(ticker, "submissions", "submissions_index",
                                     fixtures_root=fixtures_root)
-    return json.loads(cutoff_guard.load_document(row["full_path"], cutoff,
-                                                 fixtures_root=fixtures_root))
+    return json.loads(cutoff_guard.load_index(row["full_path"],
+                                              fixtures_root=fixtures_root))
 
 
-def eight_k_filings(index: dict) -> list[dict]:
-    """Every 8-K in the index, newest first, with its codes split out."""
+def eight_k_filings(index: dict, cutoff=None) -> list[dict]:
+    """Every 8-K in the index filed at or before the cutoff, newest first.
+
+    The filter is the look-ahead check: the index lists what the company has
+    filed to date, and a bundle whose cutoff is earlier than that must not learn
+    from it that a later 8-K exists.
+    """
+    limit = str(cutoff) if cutoff is not None else None
     found = []
     for row in index.get("filings", []):
         if row.get("form") != "8-K":
+            continue
+        if limit is not None and row["filing_date"] > limit:
             continue
         found.append({"accession": row["accession"],
                       "filing_date": row["filing_date"],
@@ -101,8 +113,8 @@ def body_items(html: str) -> dict[str, dict]:
 
 def extract(ticker: str, *, cutoff=None, fixtures_root=cutoff_guard.FIXTURES) -> dict:
     cutoff = cutoff or cutoff_guard.default_cutoff(ticker, fixtures_root=fixtures_root)
-    index = submissions(ticker, cutoff=cutoff, fixtures_root=fixtures_root)
-    filings = eight_k_filings(index)
+    index = submissions(ticker, fixtures_root=fixtures_root)
+    filings = eight_k_filings(index, cutoff)
 
     held = cutoff_guard.one_document(ticker, "8-K", "primary_html",
                                      fixtures_root=fixtures_root)

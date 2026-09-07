@@ -65,6 +65,22 @@ def test_the_index_is_a_recount_of_the_stored_file(ticker):
 
 
 @pytest.mark.parametrize("ticker", TICKERS)
+def test_a_run_with_an_earlier_cutoff_does_not_learn_of_later_filings(ticker):
+    """The index file is read without the date gate, because a catalogue of
+    filings is not a filing. The cutoff moves to the rows instead, and this is
+    the test that says the rows are actually filtered."""
+    index = parse_8k.submissions(ticker)
+    everything = parse_8k.eight_k_filings(index)
+    edge = everything[-1]["filing_date"]
+    kept = parse_8k.eight_k_filings(index, edge)
+    assert kept, f"{ticker}: the oldest 8-K should survive its own date"
+    assert all(row["filing_date"] <= edge for row in kept)
+    assert len(kept) < len(everything) or len(everything) == 1
+    day_before = (dt.date.fromisoformat(edge) - dt.timedelta(days=1)).isoformat()
+    assert parse_8k.eight_k_filings(index, day_before) == []
+
+
+@pytest.mark.parametrize("ticker", TICKERS)
 def test_the_stored_index_holds_nothing_filed_after_the_cutoff(ticker):
     row = cutoff_guard.one_document(ticker, "submissions", "submissions_index")
     raw = json.loads(cutoff_guard.load_document(row["full_path"], row["filing_date"]))

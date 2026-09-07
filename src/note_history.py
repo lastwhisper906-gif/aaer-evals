@@ -194,6 +194,10 @@ def history(ticker: str, *, cutoff=None, fixtures_root=cutoff_guard.FIXTURES) ->
                 **entry,
             })
     entries.sort(key=lambda entry: (entry["period"], entry["key_note"], entry["note"]))
+    # An id per entry, minted after the sort so it is the file's own order. The
+    # bundle manifest lists these, and an entry with no id cannot be listed.
+    for number, entry in enumerate(entries, start=1):
+        entry["id"] = f"{now['accession']}:note_history:{number}"
     counts = {kind: sum(1 for entry in entries if entry["kind"] == kind)
               for kind in ("added", "removed", "changed")}
     match_rules = {rule: sum(1 for pair in pairs if pair["matched_by"] == rule)
@@ -221,6 +225,7 @@ def render(payload: dict) -> str:
                             f"matched_by: {entry['matched_by']}, "
                             f"score: {entry['match_score']}", ""])
         out.append(f"- {entry['kind']} ({entry['period']}):")
+        out.append(f"[{entry['id']}]")
         out.append(entry["text"])
         if entry["kind"] == "changed":
             out.append(f"  (was, {entry['prior_period']}, similarity {entry['score']}):")
