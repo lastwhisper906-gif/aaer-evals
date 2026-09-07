@@ -9,6 +9,8 @@ then on. Nothing is ever rescored under new rules.
 
 `docs/CHECKLIST.md` is the readable draft these files are cut from. They are
 written once the flag distribution over the 30 archived cases exists — until
-then this directory is empty on purpose.
+then the directory is empty on purpose.
 
-**Append-only**, on the same terms as `runs/`.
+**Append-only**, on the same terms as `runs/`. This page lives in `docs/` rather
+than inside the directory, for the same reason: a file inside an append-only
+directory can never be corrected.

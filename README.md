@@ -28,8 +28,8 @@ when things are clear is the result being tested.
 | `docs/INPUT_SPEC.md` | what we fetch, and what the predictor is allowed to see |
 | `docs/CHECKLIST.md` | what we look at, what we try to get right, how we score it |
 | `docs/HOW_WE_WORK.md` | the pipeline, the routines, the harness, which model does what |
-| `rules/` | the frozen, versioned checklist, targets and thresholds |
-| `runs/` | one directory per prediction — inputs and outputs, append-only |
+| `rules/` | the frozen, versioned checklist, targets and thresholds (`docs/rules.md`) |
+| `runs/` | one directory per prediction — inputs and outputs, append-only (`docs/runs.md`) |
 | `events/ledger.jsonl` | what actually happened, append-only |
 | `src/` | parsers, extraction, prediction, scoring |
 | `archive/` | the earlier experiment, frozen at tag `archive-v1` |
