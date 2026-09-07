@@ -56,10 +56,14 @@ class SectionNotFound(Exception):
     """The section's heading is not in this document. Never a silent empty result."""
 
 
-# start: patterns whose match on a line makes it a candidate heading.
+# start:  patterns whose match on a line makes it a candidate heading.
 # marker: the same item number alone on its line, promoted to a heading when
 #         the next non-empty line starts with `title`.
 # end:    the first line after the start matching any of these ends the section.
+# select: "last" (the default rule: the table of contents comes first, the
+#         section comes last) or a pattern, meaning *the first candidate whose
+#         section matches it*. See `bounds` for why the auditor's report needs
+#         the second rule and every item heading needs the first.
 SECTIONS = {
     ("10-K", "mdna"): {
         "start": [_item("7", _MDNA_TITLE)],
@@ -79,6 +83,7 @@ SECTIONS = {
                 r"^consolidated statements? of income\b",
                 r"^consolidated and combined statements? of operations\b",
                 _item("8"), _item("9")],
+        "select": r"critical audit matter",
     },
     ("10-K", "item_9a"): {
         "start": [_item("9a", r"controls and procedures")],
@@ -118,37 +123,128 @@ def headings(text: str, spec: dict) -> list[tuple[int, int]]:
     return found
 
 
-def bounds(text: str, form: str, section: str) -> tuple[int, int, int]:
-    """(start, end, candidates) — the last candidate heading wins."""
+def _end_of(text: str, start: int, ends) -> int:
+    for line_start, line_end in html_text.lines(text):
+        if line_start <= start:
+            continue
+        if any(pattern.search(html_text.normalized(text[line_start:line_end]))
+               for pattern in ends):
+            return line_start
+    return len(text)
+
+
+def bounds(text: str, form: str, section: str) -> tuple[int, int, int, str]:
+    """(start, end, candidate count, the rule that chose the start).
+
+    Two selection rules, because the documents need two. An **item heading**
+    (`Item 7`, `Item 9A`, `Item 4`) is named by the table of contents before
+    the section appears, and the index entry always comes first, so the *last*
+    candidate is the section — twelve of twelve 10-Ks resolve that way.
+
+    The **auditor's report** does not work like that. A 10-K carries the report
+    on the financial statements and, separately, the report on internal control
+    over financial reporting, both under the identical heading, and it is the
+    first one that carries the critical audit matters. Taking the last
+    candidate there lands on the internal-control opinion every time. So this
+    section is selected by content: the first candidate whose body discusses a
+    critical audit matter, which is the defining content of the report the
+    input spec asks for. Any table-of-contents entry is excluded by the same
+    test, because an index line's "section" ends at the next index line.
+    """
     spec = SECTIONS[(form, section)]
     candidates = headings(text, spec)
     if not candidates:
         raise SectionNotFound(f"{form} {section}: no heading matched")
-    start = candidates[-1][0]
     ends = _compiled(spec["end"])
-    for line_start, line_end in html_text.lines(text):
-        if line_start <= start:
-            continue
-        normal = html_text.normalized(text[line_start:line_end])
-        if any(pattern.search(normal) for pattern in ends):
-            return start, line_start, len(candidates)
-    return start, len(text), len(candidates)
+    wanted = spec.get("select")
+
+    if wanted and wanted != "last":
+        pattern = re.compile(wanted)
+        for line_start, _ in candidates:
+            stop = _end_of(text, line_start, ends)
+            if pattern.search(html_text.normalized(text[line_start:stop])):
+                return line_start, stop, len(candidates), f"first candidate matching {wanted!r}"
+        raise SectionNotFound(
+            f"{form} {section}: {len(candidates)} candidate headings, none whose "
+            f"body matches {wanted!r}")
+
+    start = candidates[-1][0]
+    return start, _end_of(text, start, ends), len(candidates), "last candidate"
 
 
 def split(html: str, form: str, section: str) -> dict:
     """The section's text and its paragraphs, cut from the stripped document."""
     text = html_text.strip_tags(html)
-    start, end, candidates = bounds(text, form, section)
+    start, end, candidates, rule = bounds(text, form, section)
     body = text[start:end].strip()
-    return {
+    found = {
         "section": section,
         "form": form,
         "text": body,
         "paragraphs": [body[a:b] for a, b in html_text.spans(body)],
         "heading_candidates": candidates,
+        "selected_by": rule,
         "start": start,
         "end": end,
     }
+    if section == "auditors_report":
+        found["critical_audit_matters"] = critical_audit_matters(body)
+    return found
+
+
+# Each firm lays a critical audit matter out its own way, and the layout is the
+# only thing that says where one matter ends and the next begins.
+#   Deloitte  a "Critical Audit Matter Description" heading, then
+#             "How the Critical Audit Matter Was Addressed in the Audit"
+#   EY        "Description of the Matter", then
+#             "How We Addressed the Matter in Our Audit"
+#   PwC/KPMG/GT  no headings: one sentence per matter saying it was identified
+#             as, or determined to be, a critical audit matter
+#
+# The two families are counted separately and the larger wins, because a
+# Deloitte report carries markers from both and adding them double-counts.
+_CAM_ADDRESSED = re.compile(
+    r"how the critical audit matter was addressed in the audit"
+    r"|how we addressed the matter in our audit")
+_CAM_IDENTIFIED = re.compile(
+    r"(?:is|as) a critical audit matter")
+_CAM_ONE = re.compile(r"the critical audit matter communicated below is a matter")
+_CAM_MANY = re.compile(r"the critical audit matters communicated below are matters")
+_CAM_NONE = re.compile(r"(?:are|were) no critical audit matters")
+
+
+class CriticalAuditMatterCountUnclear(Exception):
+    """The count and the report's own singular/plural sentence disagree."""
+
+
+def critical_audit_matters(section_text: str) -> dict:
+    """How many critical audit matters the report states, and how that is known.
+
+    The report says in its own words whether there is one matter or several.
+    That sentence is not used to produce the count; it is used to check it, and
+    a disagreement raises rather than resolving itself quietly.
+    """
+    flat = html_text.normalized(section_text)
+    addressed = len(_CAM_ADDRESSED.findall(flat))
+    identified = len(_CAM_IDENTIFIED.findall(flat))
+    count = max(addressed, identified)
+    stated = ("none" if _CAM_NONE.search(flat) else
+              "many" if _CAM_MANY.search(flat) else
+              "one" if _CAM_ONE.search(flat) else "unstated")
+
+    if stated == "none" and count:
+        raise CriticalAuditMatterCountUnclear(
+            f"the report says there are no critical audit matters, found {count}")
+    if stated == "one" and count != 1:
+        raise CriticalAuditMatterCountUnclear(
+            f"the report states one critical audit matter, found {count}")
+    if stated == "many" and count < 2:
+        raise CriticalAuditMatterCountUnclear(
+            f"the report states several critical audit matters, found {count}")
+    return {"count": 0 if stated == "none" else count,
+            "stated": stated,
+            "matched_by": "addressed_headings" if addressed >= identified else
+                          "identification_sentences"}
 
 
 def extract(ticker: str, form: str, section: str, *, cutoff=None,

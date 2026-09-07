@@ -133,7 +133,8 @@ def test_the_table_of_contents_entry_is_not_the_one_selected(ticker, form):
     candidates = split_sections.headings(text, spec)
     assert len(candidates) == expected(ticker)["mdna"][form]["heading_candidates"]
 
-    start, stop, _ = split_sections.bounds(text, form, "mdna")
+    start, stop, _, rule = split_sections.bounds(text, form, "mdna")
+    assert rule == "last candidate"
     assert start == candidates[-1][0]
     if len(candidates) == 1:
         return
