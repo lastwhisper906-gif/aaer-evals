@@ -24,9 +24,17 @@ from src.fetch_fixtures import TICKERS
 from tests import independent_text
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
+# The six roles per company the dispatch counted as "all 72 fixture documents".
+DISPATCHED_ROLES = (("10-K", "primary_html"), ("10-K", "xbrl_instance"),
+                    ("10-Q", "primary_html"), ("10-Q", "xbrl_instance"),
+                    ("8-K", "primary_html"), ("8-K", "exhibit_99_1"))
+# Item 7 appended the prior-period 10-Q to every company, so the property is
+# checked over those as well. The claim only ever grows.
 HTML_DOCUMENTS = (("10-K", "primary_html"), ("10-Q", "primary_html"),
+                  ("10-Q", "prior_period"),
                   ("8-K", "primary_html"), ("8-K", "exhibit_99_1"))
-INSTANCES = (("10-K", "xbrl_instance"), ("10-Q", "xbrl_instance"))
+INSTANCES = (("10-K", "xbrl_instance"), ("10-Q", "xbrl_instance"),
+             ("10-Q", "prior_period_xbrl_instance"))
 
 
 def expected(ticker: str) -> dict:
@@ -42,8 +50,18 @@ def test_the_fixture_set_holds_seventy_two_documents():
     """The number the containment property is claimed over."""
     documents = [row for ticker in TICKERS
                  for row in cutoff_guard.documents(ticker)
-                 if row["form"] != "submissions"]
+                 if (row["form"], row["role"]) in DISPATCHED_ROLES]
     assert len(documents) == 72
+
+
+def test_the_prior_period_documents_are_extra_and_are_covered_too():
+    """Item 7 appends two documents per company. They are checked as well, so
+    the property now holds over more than the seventy-two, never fewer."""
+    extra = [row for ticker in TICKERS for row in cutoff_guard.documents(ticker)
+             if row["role"].startswith("prior_period")]
+    assert len(extra) == 24
+    covered = {role for _, role in HTML_DOCUMENTS + INSTANCES}
+    assert {"prior_period", "prior_period_xbrl_instance"} <= covered
 
 
 @pytest.mark.parametrize("ticker", TICKERS)
@@ -63,7 +81,7 @@ def test_every_kept_paragraph_is_the_documents_own_text(ticker, form, role):
 @pytest.mark.parametrize("form,role", INSTANCES)
 def test_every_kept_note_paragraph_is_the_notes_own_text(ticker, form, role):
     """The other 24 of the 72: an instance's text is the HTML inside its notes."""
-    sections = extract_notes.extract(ticker, form)["sections"]
+    sections = extract_notes.extract(ticker, form, role=role)["sections"]
     assert sections
     for section in sections:
         result = clean_text.clean(section["html"])
