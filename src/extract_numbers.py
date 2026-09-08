@@ -183,13 +183,25 @@ def apply_point_in_time(facts: list[dict]) -> list[dict]:
     return facts
 
 
+# Both instances a filing set holds. The prior-period instance is the previous
+# quarter's own XBRL, stored alongside the current one and listed in the same
+# fixture manifest; `note_history.py` and `diff_periods.py` have always read it.
+# This module read only `xbrl_instance`, so `input_trends.json` said "no period
+# ending within 20 days of … is in input_numbers.json" for quarters whose facts
+# were in a document the same manifest listed as an input.
+INSTANCE_ROLES = ("xbrl_instance", "prior_period_xbrl_instance")
+
+
 def extract(ticker: str, forms=("10-K",), *, cutoff=None,
             fixtures_root=cutoff_guard.FIXTURES) -> dict:
     """Every numeric fact for one company, from the forms asked for."""
     cutoff = cutoff or cutoff_guard.default_cutoff(ticker, fixtures_root=fixtures_root)
-    rows = [row for form in forms
-            for row in cutoff_guard.documents(ticker, form=form, role="xbrl_instance",
+    rows = [row for form in forms for role in INSTANCE_ROLES
+            for row in cutoff_guard.documents(ticker, form=form, role=role,
                                               fixtures_root=fixtures_root)]
+    # Not filtered by date here. The gate refuses a document filed after the
+    # cutoff, and this module refuses the run rather than quietly reading less
+    # than it was asked for — `test_the_extractor_goes_through_the_cutoff_gate`.
     rows.sort(key=lambda r: (r["filing_date"], r["accession"]))
     facts, documents = [], []
     for row in rows:
@@ -197,7 +209,8 @@ def extract(ticker: str, forms=("10-K",), *, cutoff=None,
         facts.extend(facts_from_instance(raw, accession=row["accession"],
                                          filing_date=row["filing_date"],
                                          form=row["form"]))
-        documents.append({"form": row["form"], "accession": row["accession"],
+        documents.append({"form": row["form"], "role": row["role"],
+                          "accession": row["accession"],
                           "filing_date": row["filing_date"], "path": row["path"]})
     return {
         "ticker": ticker,

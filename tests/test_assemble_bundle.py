@@ -797,6 +797,32 @@ def test_the_submissions_index_carries_no_filing_date_and_says_why(ticker, form)
     assert rows[0]["rows_used_through"] == manifest["cutoff"]
 
 
+@pytest.mark.parametrize("ticker", TICKERS)
+@pytest.mark.parametrize("form", ("10-K", "10-Q"))
+def test_every_xbrl_document_the_manifest_lists_is_in_the_numbers(ticker, form):
+    """A document listed as an input that no output holds a fact from is not an
+    input. `extract_numbers` read `xbrl_instance` only, so AAPL's 10-Q listed
+    `0000320193-26-000013`'s instance and none of its facts were in the file."""
+    bundle = built(ticker, form)
+    listed = {row["accession"] for row in bundle["manifest"]["documents"]
+              if "xbrl" in row["role"]}
+    numbers = json.loads(bundle["texts"]["input_numbers.json"])
+    read = {row["accession"] for row in numbers["documents"]}
+    assert listed - read == set(), f"{ticker} {form}"
+
+
+def test_apples_previous_quarter_is_filled_because_its_instance_is_read():
+    """`Q-1` was `missing` — "no period ending within 20 days of 2026-03-28 is
+    in input_numbers.json" — for a quarter whose facts sit in the prior-period
+    instance the same manifest listed."""
+    bundle = built("AAPL", "10-Q")
+    quarters = {quarter["label"]: quarter for quarter
+                in json.loads(bundle["texts"]["input_trends.json"])["coverage"]["quarters"]}
+    assert quarters["Q-1"]["status"] == "filled"
+    assert quarters["Q-1"]["end"] == "2026-03-28"
+    assert quarters["Q-1"]["ratios_filled"] > 0
+
+
 def test_a_cutoff_equal_to_the_triggering_reports_own_date_is_the_default():
     """The boundary itself is allowed — it is the default — so the check above
     is an upper bound and not an off-by-one that forbids the normal case."""

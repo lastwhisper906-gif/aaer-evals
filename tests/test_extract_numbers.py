@@ -44,11 +44,23 @@ def _count_by_hand(path: Path) -> int:
                and ("/us-gaap/" in element.tag or "/dei/" in element.tag))
 
 
+def _instances(ticker: str, form: str) -> list:
+    """Both instances a filing set holds for this form, oldest first."""
+    rows = [row for role in extract_numbers.INSTANCE_ROLES
+            for row in cutoff_guard.documents(ticker, form=form, role=role)]
+    return sorted(rows, key=lambda row: (row["filing_date"], row["accession"]))
+
+
 @pytest.mark.parametrize("ticker", TICKERS)
 @pytest.mark.parametrize("form", FORMS)
-def test_the_expected_count_is_what_the_instance_contains(ticker, form):
-    row = cutoff_guard.one_document(ticker, form, "xbrl_instance")
-    assert _count_by_hand(row["full_path"]) == expected(ticker)["numbers"][form]["fact_count"]
+def test_the_expected_count_is_what_the_instances_contain(ticker, form):
+    """Both instances, counted from the files. The prior-period instance is the
+    previous quarter's own XBRL, stored beside the current one and listed in the
+    same fixture manifest; `note_history.py` and `diff_periods.py` have always
+    read it and this module did not, so `input_trends.json` reported quarters as
+    missing whose facts were in a document the manifest listed as an input."""
+    counted = sum(_count_by_hand(row["full_path"]) for row in _instances(ticker, form))
+    assert counted == expected(ticker)["numbers"][form]["fact_count"]
 
 
 @pytest.mark.parametrize("ticker", TICKERS)
@@ -56,6 +68,14 @@ def test_the_expected_count_is_what_the_instance_contains(ticker, form):
 def test_the_extractor_finds_every_fact_and_no_others(ticker, form):
     payload = extract_numbers.extract(ticker, (form,))
     assert len(payload["facts"]) == expected(ticker)["numbers"][form]["fact_count"]
+
+
+@pytest.mark.parametrize("ticker", TICKERS)
+@pytest.mark.parametrize("form", FORMS)
+def test_every_instance_the_record_holds_for_that_form_is_read(ticker, form):
+    payload = extract_numbers.extract(ticker, (form,))
+    assert {(row["role"], row["accession"]) for row in payload["documents"]} == \
+        {(row["role"], row["accession"]) for row in _instances(ticker, form)}
 
 
 @pytest.mark.parametrize("ticker", TICKERS)
@@ -85,27 +105,44 @@ def test_fact_ids_are_unique(ticker):
 
 @pytest.mark.parametrize("ticker", TICKERS)
 def test_the_later_filing_wins_and_the_earlier_one_says_so(ticker):
-    """The 10-Q re-reports the 10-K's year-end balance sheet. Same fact, two
-    filings: the 10-Q is later, so it wins and the 10-K fact carries
-    superseded_by."""
+    """The 10-Q re-reports the 10-K's year-end balance sheet. Same fact in more
+    than one filing: the latest one that carries it wins, and the earlier ones
+    say so.
+
+    Three filings reach this now, not two — the 10-K, the previous quarter's
+    instance and the current one. The winner is therefore not "the newest of the
+    three": a fact the 10-K and the previous quarter both carry and the current
+    quarter does not is superseded by the previous quarter. Eleven of the twelve
+    companies have such facts, so the property is stated per fact rather than
+    per filing.
+    """
     payload = extract_numbers.extract(ticker, FORMS)
     by_accession = {document["accession"]: document["filing_date"]
                     for document in payload["documents"]}
-    assert len(by_accession) == 2, "this test needs the two filings to be distinct"
-    later = max(by_accession, key=lambda accession: (by_accession[accession], accession))
+    assert len(by_accession) == 3, "the 10-K and two quarters"
+
+    latest_carrying: dict[tuple, tuple[str, str]] = {}
+    for fact in payload["facts"]:
+        key = extract_numbers.identity(fact)
+        here = (fact["filing_date"], fact["source_accession"])
+        if latest_carrying.get(key) is None or here > latest_carrying[key]:
+            latest_carrying[key] = here
 
     superseded = [fact for fact in payload["facts"] if "superseded_by" in fact]
-    assert superseded, f"{ticker}: the two filings share no fact — nothing was tested"
+    assert superseded, f"{ticker}: the filings share no fact — nothing was tested"
     for fact in superseded:
-        assert fact["superseded_by"] == later
-        assert fact["source_accession"] != later
+        winner = latest_carrying[extract_numbers.identity(fact)]
+        assert fact["superseded_by"] == winner[1]
+        assert fact["source_accession"] != winner[1]
+        assert fact["filing_date"] <= winner[0]
 
-    surviving = {extract_numbers.identity(fact): fact
-                 for fact in payload["facts"] if "superseded_by" not in fact}
-    for fact in superseded:
-        winner = surviving[extract_numbers.identity(fact)]
-        assert winner["source_accession"] == later
-        assert winner["filing_date"] >= fact["filing_date"]
+    # And nothing surviving has a later counterpart: an unmarked fact is the
+    # newest report of itself.
+    for fact in payload["facts"]:
+        if "superseded_by" in fact:
+            continue
+        assert latest_carrying[extract_numbers.identity(fact)][1] == \
+            fact["source_accession"]
 
 
 def test_a_superseded_fact_is_kept_not_dropped():

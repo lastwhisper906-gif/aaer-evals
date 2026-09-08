@@ -199,9 +199,25 @@ def test_every_table_cell_is_the_documents_own_text(ticker, form, role):
 @pytest.mark.parametrize("ticker", TICKERS)
 @pytest.mark.parametrize("form", ("10-K", "10-Q", "8-K"))
 def test_the_dropped_table_count(ticker, form):
+    """"Already in the XBRL instance" means *this* filing's instance.
+
+    `extract_numbers.extract` also reads the previous quarter's instance now, so
+    taking the fact set from it would test a different rule than the one the
+    reason names — and a wider fact set makes the match looser rather than
+    tighter: `fact_values` records every fact at four scales and both signs, so
+    a set that size contains most small integers. Fed both instances, QCOM's
+    *table of contents* matches 17 of 17 on its page numbers and two Carrier
+    percent-change tables match 4 of 4. Six of the nine tables that changed that
+    way are real comparative statements; three are coincidence. The rule's
+    weakness is worth its own item — this test pins the rule it is named for.
+    """
     role = "exhibit_99_1" if form == "8-K" else "primary_html"
-    facts = (extract_numbers.extract(ticker, (form,))["facts"]
-             if form in ("10-K", "10-Q") else [])
+    facts = []
+    if form in ("10-K", "10-Q"):
+        row = cutoff_guard.one_document(ticker, form, "xbrl_instance")
+        facts = extract_numbers.facts_from_instance(
+            cutoff_guard.load_bytes(row["full_path"], row["filing_date"]),
+            accession=row["accession"], filing_date=row["filing_date"], form=form)
     result = clean_text.clean(document(ticker, form, role), facts=facts)
     record = expected(ticker)["cleaner"][form]
     assert len(result["tables"]) == record["tables"]

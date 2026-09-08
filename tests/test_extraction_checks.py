@@ -89,6 +89,30 @@ def test_a_missing_key_fails_the_schema_gate(tmp_path):
     assert gate_lines(lines, "schema") == ['schema: FAIL — input_numbers.json has no "facts"']
 
 
+def test_a_document_that_contributed_to_nothing_fails_the_schema_gate(tmp_path):
+    """`manifest.documents` is what the build read. A row that names no file it
+    fed is the "documents provided" list wearing the other one's name."""
+    bundle = good_bundle(tmp_path)
+
+    def damage(payload):
+        payload["documents"][0]["contributed_to"] = []
+    rewrite(bundle, "input_manifest.json", damage)
+    code, lines = extraction_checks.run(bundle)
+    assert code != 0
+    assert "names no file it contributed to" in "\n".join(gate_lines(lines, "schema"))
+
+
+def test_a_document_with_no_url_fails_the_schema_gate(tmp_path):
+    bundle = good_bundle(tmp_path)
+
+    def damage(payload):
+        payload["documents"][0]["url"] = ""
+    rewrite(bundle, "input_manifest.json", damage)
+    code, lines = extraction_checks.run(bundle)
+    assert code != 0
+    assert "has no url" in "\n".join(gate_lines(lines, "schema"))
+
+
 def test_a_missing_file_fails_the_schema_gate(tmp_path):
     bundle = good_bundle(tmp_path)
     (bundle / "input_trends.json").unlink()

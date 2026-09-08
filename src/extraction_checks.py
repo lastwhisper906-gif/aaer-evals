@@ -116,6 +116,19 @@ def check_schema(texts: dict) -> tuple[Result, dict]:
             result.fail(f"{name} is empty")
         elif not text.lstrip().startswith("#"):
             result.fail(f"{name} does not start with a heading")
+
+    # `documents` is the list of what the build read, so every row has to name
+    # what it fed. A listed document that contributed to nothing is the
+    # "documents provided" list wearing the name of the "documents used" one —
+    # `docs/HOW_WE_WORK.md:88`, the first of the archived project's ten errors.
+    for row in (parsed.get("input_manifest.json") or {}).get("documents") or []:
+        named = f"{row.get('form')} {row.get('role')} {row.get('accession')}"
+        if not row.get("contributed_to"):
+            result.fail(f"{named} is listed as an input and names no file it "
+                        f"contributed to")
+        if not row.get("url"):
+            result.fail(f"{named} has no url — a fixture path is not a pointer "
+                        f"a reader outside this repository can follow")
     result.detail = (f"{sum(1 for name in assemble_bundle.FILES if texts.get(name))} "
                      f"of {len(assemble_bundle.FILES)} files, every required key present")
     return result, parsed
