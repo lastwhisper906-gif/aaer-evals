@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "$note": "A Stop hook is a safety net, not a judge -- Claude Code ends the turn after eight consecutive blocks, so a hook that keeps failing stops blocking. CI is the judge. The plain-name check is suffixed with || true so a session is never blocked by the check being absent; the check itself is a task-list item with its own test. make check needs the pinned interpreter with requirements.txt installed.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cat lessons.md",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3.12 -m src.plain_name_check --changed || true",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "make check",
+            "timeout": 300
+          }
+        ]
+      }
+    ]
+  }
+}

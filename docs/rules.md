@@ -3,6 +3,11 @@
 The frozen, versioned rules: `checklist_v0.1.md`, `targets_v0.1.md`,
 `thresholds_v0.1.json`.
 
+Two data files in `src/` move with these and are named by the same version — the
+tag-continuity map and the map from SIC code to sector ETF. Both change what a
+number means, so a change to either is a rules change, not a code change. The
+agent prompts under `.claude/agents/` are versioned the same way.
+
 Every prediction is scored against the rules version named in its
 `input_manifest.json`. An improvement lands as the next version and applies from
 then on. Nothing is ever rescored under new rules.
