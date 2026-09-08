@@ -2,7 +2,7 @@
 
 Everything comes from EDGAR and is free, except prices and short interest, which
 come from a free market source and never reach a reader. A User-Agent header
-carrying an email-shaped contact is required on every EDGAR request.  There is no
+carrying an email-shaped contact is required on every EDGAR request. There is no
 consensus data: it is not on EDGAR and it is not free.
 
 Twelve companies: AAPL · STX · CSCO · PANW · CARR · LFUS · GNRC · CIEN · QCOM ·
