@@ -1,7 +1,7 @@
 # aaer-evals
 
-Reads the filings of twelve companies, predicts two questions about each, and
-leaves a verifiable record.
+Reads the filings of twelve companies, compares them with the market, predicts
+two questions about each, and leaves a verifiable record.
 
 The twelve: AAPL · STX · CSCO · PANW · CARR · LFUS · GNRC · CIEN · QCOM · ESE ·
 TTMI · NVDA.
@@ -12,9 +12,11 @@ The two questions, kept separate:
 - **financial pressure** — is this company under pressure?
 
 When one of the twelve files a report, the pipeline pulls the numbers, the notes,
-MD&A, the auditor's report and the 8-Ks from EDGAR, hands the predictor exactly
-that text, and publishes a dated prediction. Nothing published is edited
-afterwards.
+MD&A, the auditor's report, the exhibits and the 8-Ks from EDGAR, and hands them
+to three layers that never see each other's inputs: two readers see the filing,
+two comparers see the readers' reports next to a market table, and two
+supervisors see only reports. It publishes a dated prediction per question.
+Nothing published is edited afterwards.
 
 This is forward prediction, so there is nothing to anonymize and nothing to
 perturb. It is also an honest-negative test: accounting-reliability events will
@@ -27,7 +29,9 @@ when things are clear is the result being tested.
 |---|---|
 | `docs/INPUT_SPEC.md` | what we fetch, and what the predictor is allowed to see |
 | `docs/CHECKLIST.md` | what we look at, what we try to get right, how we score it |
-| `docs/HOW_WE_WORK.md` | the pipeline, the routines, the harness, which model does what |
+| `docs/HOW_WE_WORK.md` | the pipeline, the routines, the loop, which model does what |
+| `docs/next_cycle_tasks.md` | the task list — what is built next, and what needs judgment |
+| `.claude/` | the agent definitions, the two skills and the hooks that make up the loop |
 | `rules/` | the frozen, versioned checklist, targets and thresholds (`docs/rules.md`) |
 | `runs/` | one directory per prediction — inputs and outputs, append-only (`docs/runs.md`) |
 | `events/ledger.jsonl` | what actually happened, append-only |
