@@ -184,6 +184,20 @@ def check_cutoff(manifest: dict | None) -> Result:
         return result
     for row in documents:
         named = f"{row.get('form')} {row.get('role')} {row.get('accession')}"
+        # The submissions index is a catalogue of filings, not a filing, and it
+        # is the one thing the date gate does not apply to — `cutoff_guard.
+        # load_index` states the rule and the fixture manifest states the same
+        # in the row's own `date_basis`. The cutoff applies to its *rows*, which
+        # is where the look-ahead lives, and the row it names has to say through
+        # what date this bundle read them.
+        if row.get("role") == assemble_bundle.INDEX_ROLE:
+            if row.get("filing_date"):
+                result.fail(f"{named} carries a filing date — the submissions index "
+                            f"is a catalogue of filings and has none")
+            elif row.get("rows_used_through") != str(cutoff):
+                result.fail(f"{named} does not say it was read through the cutoff "
+                            f"{cutoff}, it says {row.get('rows_used_through')!r}")
+            continue
         try:
             filed = _date(row.get("filing_date"), named)
         except ValueError as exc:

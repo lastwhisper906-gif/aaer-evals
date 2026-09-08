@@ -185,10 +185,16 @@ def test_a_cutoff_that_is_not_the_triggering_reports_filing_date_fails(tmp_path)
     code, lines = extraction_checks.run(bundle)
     assert code != 0
     failures = gate_lines(lines, "cutoff")
-    assert len(failures) == 1
-    assert "the cutoff is 2027-01-01" in failures[0]
-    assert "was filed 2026-07-31" in failures[0]
-    assert "the triggering report's own filing date" in failures[0]
+    identity = [line for line in failures
+                if "the triggering report's own filing date" in line]
+    assert len(identity) == 1
+    assert "the cutoff is 2027-01-01" in identity[0]
+    assert "was filed 2026-07-31" in identity[0]
+    # The submissions index says which cutoff it was read through, so moving the
+    # cutoff after the fact contradicts it too. Both lines are true; neither is
+    # the gate shading into another one.
+    assert len(failures) == 2
+    assert "read through the cutoff 2027-01-01" in "\n".join(failures)
 
 
 def test_a_manifest_with_no_filing_date_for_its_trigger_fails_the_cutoff_gate(tmp_path):

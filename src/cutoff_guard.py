@@ -26,6 +26,7 @@ module that opens a fixture or a bundle behind the gate's back.
 
 from __future__ import annotations
 
+import contextlib
 import datetime as dt
 import gzip
 import json
@@ -154,10 +155,47 @@ def check(path, cutoff_date, *, fixtures_root=FIXTURES) -> dict:
     return row
 
 
+# --- what was actually opened ------------------------------------------------
+#
+# A bundle's manifest has to say which documents it *read*. Saying which ones
+# the record happens to hold at the cutoff is a different claim, and
+# `docs/HOW_WE_WORK.md:90` lists the difference as the first of the archived
+# project's ten errors: "the 'documents used' list was really 'documents
+# provided'". The only place that knows which is which is the reader, so the
+# reader keeps the list.
+
+_recorders: list[list[Path]] = []
+
+
+@contextlib.contextmanager
+def recording():
+    """Collect the documents opened inside this block, in the order opened.
+
+    Scopes nest: a document opened inside an inner block is recorded by that
+    block and by every block around it, so a caller can record one phase at a
+    time and the whole run at once.
+    """
+    seen: list[Path] = []
+    _recorders.append(seen)
+    try:
+        yield seen
+    finally:
+        _recorders.remove(seen)
+
+
+def _opened(path) -> None:
+    """One successful open. Called after the gate, never before it."""
+    resolved = Path(path).resolve()
+    for seen in _recorders:
+        if resolved not in seen:
+            seen.append(resolved)
+
+
 def load_bytes(path, cutoff_date, *, fixtures_root=FIXTURES) -> bytes:
     """The document's raw bytes as EDGAR served them, gate first."""
     row = check(path, cutoff_date, fixtures_root=fixtures_root)
     data = Path(path).read_bytes()
+    _opened(path)
     return gzip.decompress(data) if row.get("stored") == "gzip" else data
 
 
@@ -186,6 +224,7 @@ def load_index(path, *, fixtures_root=FIXTURES) -> bytes:
             f"{path} is a {row.get('role')}, not a submissions index — "
             "only the index of filings skips the date gate")
     data = Path(path).read_bytes()
+    _opened(path)
     return gzip.decompress(data) if row.get("stored") == "gzip" else data
 
 

@@ -28,6 +28,7 @@ effect. The loop that runs this cannot write `runs/`, and nothing here tries.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import hashlib
 import json
 import sys
@@ -143,6 +144,62 @@ def documents_on_record(ticker: str, cutoff, fixtures_root) -> list[dict]:
     return rows
 
 
+@contextlib.contextmanager
+def phase(opened: dict, *files: str):
+    """Record which documents one stretch of the build opened, and for what.
+
+    `manifest.documents` used to be `documents_on_record` — every fixture filed
+    at or before the cutoff, opened or not. AAPL's 10-Q listed the 10-K primary
+    HTML, which nothing reads, and omitted `submissions.json`, which supplies
+    the whole item-code section of `input_8k.md`. It was omitted because its own
+    recorded date is later than every cutoff in the set, so gate 3's "no
+    document was filed after the cutoff" was computed over a list built to leave
+    out the one entry that would have failed it.
+    """
+    with cutoff_guard.recording() as seen:
+        yield
+    for path in seen:
+        opened.setdefault(path, set()).update(files)
+
+
+INDEX_ROLE = "submissions_index"
+
+
+def documents_used(opened: dict, cutoff, fixtures_root) -> list[dict]:
+    """The manifest row for every document the build actually opened.
+
+    `contributed_to` names the bundle files it fed. A document that fed nothing
+    is not here, because nothing opened it.
+
+    The submissions index is the one row that carries no filing date, and the
+    fixture manifest is where that comes from: its `date_basis` reads *"the
+    latest filing this index contains; the index is not itself a filing and has
+    no filing date"*. Copying that value into a bundle as `filing_date` would
+    publish a date the record itself says is not one — and, since it is the
+    newest date in the fixture set, publish it into every bundle as look-ahead.
+    What the bundle used is stated instead: the rows at or before the cutoff.
+    """
+    rows = []
+    for path, files in opened.items():
+        row = cutoff_guard.document_record(path, fixtures_root=fixtures_root)
+        is_index = row.get("role") == INDEX_ROLE
+        entry = {"form": row["form"], "role": row["role"],
+                 "accession": row["accession"], "path": row["path"],
+                 "filing_date": None if is_index else row["filing_date"],
+                 "sha256": row["sha256"],
+                 # The only pointer the bundle gave a reader was a path into a
+                 # fixture store they do not have. The URL is EDGAR's own.
+                 "url": row.get("url"), "report_date": row.get("report_date"),
+                 "contributed_to": sorted(files)}
+        if is_index:
+            entry["date_basis"] = row.get("date_basis")
+            entry["rows_used_through"] = str(cutoff)
+        rows.append(entry)
+    rows.sort(key=lambda row: (row["filing_date"] or "9999-12-31",
+                               row["accession"], row["role"]))
+    return rows
+
+
 def note_stream(ticker: str, form: str, *, cutoff, fixtures_root):
     """Note paragraphs after the diff layer, and the paragraphs it dropped.
 
@@ -237,27 +294,53 @@ def excluded_paragraphs(ticker: str, form: str, *, cutoff, fixtures_root) -> lis
     return out
 
 
-def excluded_from_the_release(ticker: str, *, cutoff, fixtures_root) -> list[dict]:
-    """The earnings release's own drops, including any table already in XBRL."""
-    rows = cutoff_guard.documents(ticker, form="8-K", role="exhibit_99_1",
-                                  fixtures_root=fixtures_root)
-    rows = [row for row in rows if row["filing_date"] <= str(cutoff)]
-    if not rows:
+def eight_k_file(ticker: str, form: str, *, cutoff, fixtures_root,
+                 on_record: dict) -> tuple[dict | None, str, str | None]:
+    """`input_8k.md`: the parsed payload if there is one, the text, the reason.
+
+    The payload is returned so the exclusions can be read out of the same
+    cleaning that produced the text, instead of cleaning the exhibit twice.
+    """
+    if ("8-K", "exhibit_99_1") in on_record and ("8-K", "primary_html") in on_record:
+        payload = parse_8k.extract(ticker, cutoff=cutoff, fixtures_root=fixtures_root)
+        return payload, parse_8k.render(payload), None
+
+    # The sentence says what is missing and nothing about what comes later. It
+    # used to name the held 8-K's own filing date, a date after the cutoff, in
+    # 15 of the 24 bundles. PANW's 10-K stated that an 8-K was filed 2026-09-01
+    # under a cutoff of 2025-08-29 — twelve months of look-ahead, plus the fact
+    # that the company filed one in the window.
+    note = (f"no 8-K filed at or before {cutoff} is on record, so this bundle "
+            f"has no earnings release and no verbatim item body")
+    # No exhibit on record does not mean no filing index. The item codes and the
+    # late-filing notices come from `submissions.json`, which is stored for
+    # every company, and a bundle that says nothing about them cannot answer
+    # `filing_irregularity` either way.
+    text = (f"# {ticker} 8-K\n\n{note}.\n\n"
+            + parse_8k.render_index(ticker, cutoff=cutoff, fixtures_root=fixtures_root))
+    return None, text, note
+
+
+def excluded_from_the_release(payload: dict | None) -> list[dict]:
+    """The earnings release's own drops, out of the cleaning that produced it.
+
+    This used to load the exhibit and clean it a *second* time, while
+    `parse_8k.render` published the uncleaned paragraphs. The two never agreed:
+    43 paragraphs across the fixture set were listed in `manifest.paragraphs` as
+    `verbatim` and in `manifest.exclusions` at the same moment, and the test
+    that was supposed to catch it compared id sets — exclusion ids live in their
+    own namespace, so the assertion could not fail. The drops now come from the
+    one call in `parse_8k.extract` that also produced what is in the file, so
+    the manifest's claim is true by construction rather than by agreement.
+    """
+    if payload is None:
         return []
-    row = rows[-1]
-    html = cutoff_guard.load_document(row["full_path"], cutoff, fixtures_root=fixtures_root)
-    result = clean_text.clean(html)
+    accession = payload["accession"]
     out = []
-    for number, drop in enumerate(result["dropped"], start=1):
-        out.append({"id": f"{row['accession']}:8k_excluded:{number}",
+    for number, drop in enumerate(payload["item_2_02"]["dropped"], start=1):
+        out.append({"id": f"{accession}:8k_excluded:{number}",
                     "source": "8-K exhibit 99.1", "reason": drop["reason"],
                     "text": drop["text"]})
-    for table in result["tables"]:
-        if not table["kept"]:
-            out.append({"id": f"{row['accession']}:8k_excluded_table:{table['number']}",
-                        "source": "8-K exhibit 99.1",
-                        "reason": "every number in the table is already an XBRL fact",
-                        "text": ""})
     return out
 
 
@@ -374,49 +457,43 @@ def build(ticker: str, form: str, *, cutoff=None, fixtures_root=cutoff_guard.FIX
                  for row in documents_on_record(ticker, cutoff, fixtures_root)}
     forms = tuple(name for name in ("10-K", "10-Q")
                   if (name, "xbrl_instance") in on_record)
-    numbers = extract_numbers.extract(ticker, forms, cutoff=cutoff,
-                                      fixtures_root=fixtures_root)
-    table = trends.trends(json.loads(json.dumps(numbers, default=str)))
 
-    notes, mdna, prior_accession = note_stream(ticker, form, cutoff=cutoff,
-                                               fixtures_root=fixtures_root)
+    # Each phase records what it opened and which file that document fed.
+    opened: dict[Path, set[str]] = {}
 
-    if ("8-K", "exhibit_99_1") in on_record and ("8-K", "primary_html") in on_record:
-        eight_k_text = parse_8k.render(
-            parse_8k.extract(ticker, cutoff=cutoff, fixtures_root=fixtures_root))
-        eight_k_note = None
-    else:
-        # The sentence says what is missing and nothing about what comes later.
-        # It used to name the held 8-K's own filing date, a date after the
-        # cutoff, in 15 of the 24 bundles. PANW's 10-K stated that an 8-K was
-        # filed 2026-09-01 under a cutoff of 2025-08-29 — twelve months of
-        # look-ahead, plus the fact that the company filed one in the window.
-        eight_k_note = (f"no 8-K filed at or before {cutoff} is on record, so this "
-                        f"bundle has no earnings release and no verbatim item body")
-        # No exhibit on record does not mean no filing index. The item codes and
-        # the late-filing notices come from `submissions.json`, which is stored
-        # for every company, and a bundle that says nothing about them cannot
-        # answer `filing_irregularity` either way.
-        eight_k_text = (f"# {ticker} 8-K\n\n{eight_k_note}.\n\n"
-                        + parse_8k.render_index(ticker, cutoff=cutoff,
-                                                fixtures_root=fixtures_root))
+    with phase(opened, "input_numbers.json", "input_trends.json"):
+        numbers = extract_numbers.extract(ticker, forms, cutoff=cutoff,
+                                          fixtures_root=fixtures_root)
+        table = trends.trends(json.loads(json.dumps(numbers, default=str)))
+
+    with phase(opened, "input_notes.md", "input_mdna.md"):
+        notes, mdna, prior_accession = note_stream(ticker, form, cutoff=cutoff,
+                                                   fixtures_root=fixtures_root)
+
+    with phase(opened, "input_8k.md"):
+        eight_k, eight_k_text, eight_k_note = eight_k_file(
+            ticker, form, cutoff=cutoff, fixtures_root=fixtures_root,
+            on_record=on_record)
 
     # The history is two consecutive 10-Qs, whatever form triggered the run.
-    if all(key in on_record for key in (("10-Q", "xbrl_instance"),
-                                        ("10-Q", "prior_period_xbrl_instance"))):
-        history = note_history.history(ticker, cutoff=cutoff, fixtures_root=fixtures_root)
-        history_text = note_history.render(history)
-        history_note = None
-    else:
-        history = None
-        history_note = (f"no note change history: a history needs two 10-Qs and the "
-                        f"record holds fewer at or before {cutoff}")
-        history_text = f"# {ticker} note change history\n\n{history_note}.\n"
+    with phase(opened, "input_notes_history.md"):
+        if all(key in on_record for key in (("10-Q", "xbrl_instance"),
+                                            ("10-Q", "prior_period_xbrl_instance"))):
+            history = note_history.history(ticker, cutoff=cutoff,
+                                           fixtures_root=fixtures_root)
+            history_text = note_history.render(history)
+            history_note = None
+        else:
+            history = None
+            history_note = (f"no note change history: a history needs two 10-Qs and the "
+                            f"record holds fewer at or before {cutoff}")
+            history_text = f"# {ticker} note change history\n\n{history_note}.\n"
 
     prior_text, prior_entries = prior_predictions(ticker, Path(prior_runs), cutoff)
 
-    controls = control_sections(ticker, form, cutoff=cutoff,
-                                fixtures_root=fixtures_root)
+    with phase(opened, "input_controls.md"):
+        controls = control_sections(ticker, form, cutoff=cutoff,
+                                    fixtures_root=fixtures_root)
 
     texts = {
         "input_numbers.json": json.dumps(numbers, indent=2, sort_keys=False,
@@ -456,14 +533,13 @@ def build(ticker: str, form: str, *, cutoff=None, fixtures_root=cutoff_guard.FIX
                                "kind": "verbatim"})
     for identifier in paragraph_ids(texts["input_8k.md"]):
         paragraphs.append({"id": identifier, "file": "input_8k.md",
-                           "kind": "table" if ":8k_2_02_table:" in identifier
-                                   else "verbatim"})
+                           "kind": "verbatim"})
     paragraphs.extend(prior_entries)
 
-    exclusions = excluded_paragraphs(ticker, form, cutoff=cutoff,
-                                     fixtures_root=fixtures_root)
-    exclusions += excluded_from_the_release(ticker, cutoff=cutoff,
-                                            fixtures_root=fixtures_root)
+    with phase(opened, "input_notes.md", "input_mdna.md"):
+        exclusions = excluded_paragraphs(ticker, form, cutoff=cutoff,
+                                         fixtures_root=fixtures_root)
+    exclusions += excluded_from_the_release(eight_k)
     exclusions = group_empty(exclusions, trigger["accession"])
     for name, reason in (("input_notes_history.md", history_note),
                          ("input_8k.md", eight_k_note)):
@@ -487,7 +563,8 @@ def build(ticker: str, form: str, *, cutoff=None, fixtures_root=cutoff_guard.FIX
         "rules_version_comment": RULES_VERSION_COMMENT,
         "served_model": None,
         "served_model_comment": SERVED_MODEL_COMMENT,
-        "documents": documents_on_record(ticker, cutoff, fixtures_root),
+        "documents": documents_used(opened, cutoff, fixtures_root),
+        "on_record_at_cutoff": documents_on_record(ticker, cutoff, fixtures_root),
         "paragraphs": paragraphs,
         "exclusions": exclusions,
         "counts": {

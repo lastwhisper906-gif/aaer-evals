@@ -28,10 +28,10 @@ import sys
 from pathlib import Path
 
 try:
-    from src import cutoff_guard, html_text, interpreter_pin
+    from src import clean_text, cutoff_guard, html_text, interpreter_pin
 except ImportError:  # invoked as a plain script
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from src import cutoff_guard, html_text, interpreter_pin
+    from src import clean_text, cutoff_guard, html_text, interpreter_pin
 
 BAD_INPUT = 2
 
@@ -178,8 +178,20 @@ def extract(ticker: str, *, cutoff=None, fixtures_root=cutoff_guard.FIXTURES) ->
     body_html = cutoff_guard.load_document(held["full_path"], cutoff,
                                            fixtures_root=fixtures_root)
 
-    release = html_text.paragraphs(exhibit_html)
-    release_tables = html_text.tables(exhibit_html)
+    # The release goes through the cleaner, once, and both what survives and
+    # what was dropped come out of that one call. It used to be rendered from
+    # the *uncleaned* paragraphs while `assemble_bundle.excluded_from_the_release`
+    # cleaned the same document again to build the manifest's exclusion list —
+    # so the same paragraph was published as `verbatim` and recorded as excluded
+    # at the same time, 43 times across the fixture set. Two cleanings of one
+    # document cannot be kept in agreement; there is now one.
+    #
+    # No `facts` are passed on purpose. `table_is_in_xbrl` drops a table whose
+    # numbers are already XBRL facts, and the release's numbers are the
+    # first-reported ones — `CLAUDE.md`'s ground truth. Dropping the earnings
+    # table because the later 10-Q tagged the same figures would delete the very
+    # values a restatement is measured against.
+    release = clean_text.clean_stream(exhibit_html)
     items = body_items(body_html)
 
     verbatim, body_paragraphs = {}, []
@@ -203,10 +215,10 @@ def extract(ticker: str, *, cutoff=None, fixtures_root=cutoff_guard.FIXTURES) ->
         "filings": filings,
         "late_filings": late,
         "item_2_02": {
-            "paragraphs": release,
+            "paragraphs": release["paragraphs"],
             "paragraph_ids": [f"{accession}:8k_2_02:{index}"
-                              for index in range(1, len(release) + 1)],
-            "tables": release_tables,
+                              for index in range(1, len(release["paragraphs"]) + 1)],
+            "dropped": release["dropped"],
         },
         "verbatim_items": verbatim,
         "body_item_codes": sorted(items),
@@ -255,14 +267,13 @@ def render(payload: dict) -> str:
 
     out.append("## item 2.02 — earnings release, exhibit 99.1")
     out.append("")
+    # One stream, in the filing's order, a table being one entry holding all of
+    # its rows — the same shape the notes and the MD&A arrive in. The tables no
+    # longer trail the prose under an id of their own.
     for paragraph_id, paragraph in zip(payload["item_2_02"]["paragraph_ids"],
                                        payload["item_2_02"]["paragraphs"]):
         out.append(f"[{paragraph_id}]")
         out.append(paragraph)
-        out.append("")
-    for number, table in enumerate(payload["item_2_02"]["tables"], start=1):
-        out.append(f"[{payload['accession']}:8k_2_02_table:{number}]")
-        out.extend(html_text.pipe_rows(table))
         out.append("")
 
     for code in VERBATIM_ITEMS:

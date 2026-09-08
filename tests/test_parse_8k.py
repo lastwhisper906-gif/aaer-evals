@@ -23,6 +23,7 @@ from tests import independent_text
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 CODE = re.compile(r"^\d+\.\d{2}$")
+BAR = chr(124)
 
 
 def expected(ticker: str) -> dict:
@@ -94,20 +95,66 @@ def test_the_stored_index_holds_nothing_filed_after_the_cutoff(ticker):
 
 @pytest.mark.parametrize("ticker", TICKERS)
 def test_the_release_paragraph_and_table_counts(ticker):
+    """The release arrives cleaned, one entry per prose paragraph and one per
+    table holding all of its rows — the same stream the notes and the MD&A
+    arrive in. It used to be rendered uncleaned while the manifest recorded the
+    drops of a *second* cleaning of the same document, so 43 paragraphs across
+    the fixture set were published as verbatim and recorded as excluded at once.
+    """
     payload = parse_8k.extract(ticker)
     record = expected(ticker)["earnings_release"]["8-K"]
-    assert len(payload["item_2_02"]["paragraphs"]) == record["exhibit_99_1_paragraphs"]
-    assert len(payload["item_2_02"]["tables"]) == record["exhibit_99_1_tables"]
+    stream = payload["item_2_02"]["paragraphs"]
+    tables = [entry for entry in stream if entry.startswith(BAR)]
+    assert len(stream) - len(tables) == record["exhibit_99_1_paragraphs"]
+    assert len(tables) == record["exhibit_99_1_tables"]
+    assert len(payload["item_2_02"]["dropped"]) == record["exhibit_99_1_dropped"]
     assert payload["held_items"] == record["held_items"]
+
+
+TABLE_BLOCK = re.compile(r"<table\b.*?</table\s*>", re.DOTALL | re.IGNORECASE)
+CELL = re.compile(r"<t[dh]\b.*?</t[dh]\s*>", re.DOTALL | re.IGNORECASE)
 
 
 @pytest.mark.parametrize("ticker", TICKERS)
 def test_the_expected_counts_survive_an_independent_recount(ticker):
-    """Strip the exhibit with the other parser and count; count `<table` by hand."""
+    """The recorded counts, re-derived from the exhibit by two measures that
+    import nothing from `src/`.
+
+    Prose: block-split the exhibit with `tests/independent_text.py` after
+    deleting every `<table>` region, so a table cell cannot be counted as a
+    paragraph. Every one of those blocks is either carried or dropped, so
+    `carried + dropped` is the whole of it — which also pins the drop count from
+    the outside rather than from the cleaner's own report.
+
+    Tables: a bare regex for `<table>` elements holding at least one cell with a
+    character in it.
+    """
     html = exhibit_html(ticker)
     record = expected(ticker)["earnings_release"]["8-K"]
-    assert len(independent_text.block_paragraphs(html)) == record["exhibit_99_1_paragraphs"]
-    assert len(re.findall(r"<table[\s>]", html, re.IGNORECASE)) == record["exhibit_99_1_tables"]
+
+    outside_tables = TABLE_BLOCK.sub("\n<p></p>\n", html)
+    blocks = [block for block in independent_text.block_paragraphs(outside_tables)
+              if independent_text.flat(block)]
+    assert len(blocks) == record["exhibit_99_1_paragraphs"] + record["exhibit_99_1_dropped"]
+
+    tables = 0
+    for block in TABLE_BLOCK.findall(html):
+        if any(independent_text.flat(independent_text.strip(cell))
+               for cell in CELL.findall(block)):
+            tables += 1
+    assert tables == record["exhibit_99_1_tables"]
+
+
+@pytest.mark.parametrize("ticker", TICKERS)
+def test_every_release_drop_is_a_page_number_or_forward_looking_boilerplate(ticker):
+    """31 drops across the twelve exhibits, and they were read one by one:
+    LFUS's `Page 2` … `Page 12`, GNRC's `1` and `3`, CIEN's six page numbers,
+    and one safe-harbour paragraph per company that prints one. Nothing else
+    leaves an earnings release, and a new reason appearing here is a change
+    somebody has to look at rather than a number to re-record."""
+    dropped = parse_8k.extract(ticker)["item_2_02"]["dropped"]
+    reasons = {drop["reason"] for drop in dropped}
+    assert reasons <= {"page_number", "forward_looking_boilerplate"}, f"{ticker}"
 
 
 @pytest.mark.parametrize("ticker", TICKERS)
@@ -124,8 +171,9 @@ def test_every_table_cell_is_the_exhibits_own_text(ticker):
     cell — which is where the numbers a reader would quote actually live."""
     payload = parse_8k.extract(ticker)
     source = independent_text.Source(exhibit_html(ticker))
-    cells = [cell for table in payload["item_2_02"]["tables"]
-             for row in table for cell in row if cell]
+    cells = [cell.strip()
+             for entry in payload["item_2_02"]["paragraphs"] if entry.startswith(BAR)
+             for row in entry.split("\n") for cell in row.split(BAR) if cell.strip()]
     assert cells
     missing = source.missing(cells)
     assert not missing, f"{ticker}: {missing[:3]}"

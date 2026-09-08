@@ -162,11 +162,19 @@ def test_the_default_root_is_named_but_never_created(tmp_path):
 
 @pytest.mark.parametrize("ticker", TICKERS)
 def test_no_document_in_the_manifest_was_filed_after_the_cutoff(ticker):
+    """The submissions index is the one row with no filing date — it is a
+    catalogue of filings and not a filing, and the exemption is asserted
+    separately rather than skipped here."""
     manifest = built(ticker)["manifest"]
     assert manifest["documents"]
     for row in manifest["documents"]:
+        if row["role"] == assemble_bundle.INDEX_ROLE:
+            assert row["filing_date"] is None, row
+            continue
         assert row["filing_date"] <= manifest["cutoff"], row
     assert manifest["cutoff"] == manifest["filing_date"]
+    for row in manifest["on_record_at_cutoff"]:
+        assert row["filing_date"] <= manifest["cutoff"], row
 
 
 def test_a_ten_k_bundle_leaves_out_the_ten_q_that_came_after_it():
@@ -269,12 +277,23 @@ def test_a_paragraph_id_line_is_only_an_id_line():
     assert assemble_bundle.paragraph_ids("[see note 3]\n[1]\ntext") == []
 
 
-def test_the_submissions_index_is_not_one_of_the_bundles_documents():
-    """It is EDGAR's catalogue of filings, not a filing, and it carries the
-    fixture set's as-of date. Letting it into the manifest would make every
-    bundle look like a cutoff violation."""
+def test_the_submissions_index_is_listed_because_the_bundle_reads_it():
+    """It used to be left out, on the grounds that a catalogue is not a filing
+    and its recorded date would make every bundle look like a cutoff violation.
+    Both halves of that are true and neither is a reason to omit it: it supplies
+    the entire item-code section of `input_8k.md`, so leaving it out made "no
+    document was filed after the cutoff" a statement about a list built to
+    exclude the one entry that would fail it. It is listed, with no filing date,
+    with the record's own reason, and with the cutoff its rows were read
+    through — and `extraction_checks` checks all three."""
     manifest = built("AAPL")["manifest"]
-    assert not [row for row in manifest["documents"] if row["form"] == "submissions"]
+    rows = [row for row in manifest["documents"] if row["form"] == "submissions"]
+    assert len(rows) == 1
+    assert rows[0]["contributed_to"] == ["input_8k.md"]
+    assert rows[0]["filing_date"] is None
+    assert rows[0]["rows_used_through"] == manifest["cutoff"]
+    # And the fixture manifest's own later date is nowhere in the bundle.
+    assert "2026-09-01" not in json.dumps(manifest)
 
 
 def test_the_index_loader_refuses_anything_that_is_not_the_index():
@@ -675,6 +694,107 @@ def test_the_command_exits_non_zero_on_a_cutoff_after_the_report(tmp_path, capsy
     printed = capsys.readouterr().err
     assert "2026-08-01" in printed and "2025-10-31" in printed
     assert not out.exists()
+
+
+# --- the manifest describes the bundle it is the index of --------------------
+
+FILE_OF_SOURCE = {"8-K exhibit 99.1": "input_8k.md"}
+
+
+@pytest.mark.parametrize("ticker", TICKERS)
+@pytest.mark.parametrize("form", ("10-K", "10-Q"))
+def test_no_excluded_paragraph_is_still_in_the_file_it_was_excluded_from(ticker, form):
+    """The one that mattered: 43 paragraphs across the fixture set were recorded
+    as excluded and published as `verbatim` at the same time, because the 8-K
+    was rendered from the uncleaned text while the exclusions came from a second
+    cleaning of the same document.
+
+    `test_an_excluded_paragraph_is_not_in_any_file` could not catch it — it
+    compares **id sets**, and an exclusion id lives in its own namespace
+    (`…:8k_excluded:1` against `…:8k_2_02:13`), so the two sets are disjoint
+    whatever the text says. This compares text.
+    """
+    bundle = built(ticker, form)
+    blocks = {}
+    for name in assemble_bundle.PARAGRAPH_FILES:
+        blocks[name] = {text.strip() for _, text
+                        in assemble_bundle.paragraph_blocks(bundle["texts"][name])}
+    still_there = []
+    for entry in bundle["manifest"]["exclusions"]:
+        text = (entry.get("text") or "").strip()
+        source = entry["source"]
+        if not text:
+            continue
+        if source.startswith(f"{form} notes"):
+            name = "input_notes.md"
+        elif source == f"{form} MD&A":
+            name = "input_mdna.md"
+        else:
+            name = FILE_OF_SOURCE.get(source)
+        if name and text in blocks[name]:
+            still_there.append((entry["id"], name, text[:80]))
+    assert still_there == [], f"{ticker} {form}"
+
+
+@pytest.mark.parametrize("ticker", TICKERS)
+@pytest.mark.parametrize("form", ("10-K", "10-Q"))
+def test_the_manifest_lists_the_documents_the_build_opened(ticker, form, monkeypatch):
+    """Instrument the gateway itself and compare. `manifest.documents` used to
+    be every fixture filed at or before the cutoff — AAPL's 10-Q listed the 10-K
+    primary HTML, which nothing opens, and left out `submissions.json`, which
+    supplies the whole item-code section of `input_8k.md`."""
+    seen: list[Path] = []
+    for name in ("load_bytes", "load_index"):
+        original = getattr(cutoff_guard, name)
+
+        def watched(path, *args, _original=original, **kwargs):
+            result = _original(path, *args, **kwargs)
+            seen.append(Path(path).resolve())
+            return result
+        monkeypatch.setattr(cutoff_guard, name, watched)
+
+    manifest = assemble_bundle.build(ticker, form)["manifest"]
+    listed = {(REPO_ROOT / "tests" / "fixtures" / ticker / row["path"]).resolve()
+              for row in manifest["documents"]}
+    assert listed == set(seen), f"{ticker} {form}"
+    for row in manifest["documents"]:
+        assert row["contributed_to"], row
+
+
+@pytest.mark.parametrize("ticker", TICKERS)
+@pytest.mark.parametrize("form", ("10-K", "10-Q"))
+def test_every_listed_document_points_a_reader_at_edgar(ticker, form):
+    """A path into a fixture store the reader does not have is not a pointer.
+
+    The submissions index is the one row with no accession and no report date:
+    it is EDGAR's catalogue for a company, one JSON file per CIK, not a filing.
+    Its URL is asserted against that shape instead.
+    """
+    for row in built(ticker, form)["manifest"]["documents"]:
+        assert row["url"], row
+        if row["role"] == assemble_bundle.INDEX_ROLE:
+            assert row["url"].startswith("https://data.sec.gov/submissions/")
+            assert row["accession"] == "" and row["report_date"] == ""
+            continue
+        assert row["accession"].replace("-", "") in row["url"], row
+        assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", row["report_date"]), row
+
+
+@pytest.mark.parametrize("ticker", TICKERS)
+@pytest.mark.parametrize("form", ("10-K", "10-Q"))
+def test_the_submissions_index_carries_no_filing_date_and_says_why(ticker, form):
+    """The fixture manifest records `filing_date` for the index as *the latest
+    filing this index contains*, which is the newest date in the whole set —
+    later than every cutoff. Copying it into a bundle as a filing date would put
+    look-ahead in every manifest, and would state something the record itself
+    says is false: the index is not a filing and has no filing date."""
+    manifest = built(ticker, form)["manifest"]
+    rows = [row for row in manifest["documents"]
+            if row["role"] == assemble_bundle.INDEX_ROLE]
+    assert len(rows) == 1
+    assert rows[0]["filing_date"] is None
+    assert "not itself a filing" in rows[0]["date_basis"]
+    assert rows[0]["rows_used_through"] == manifest["cutoff"]
 
 
 def test_a_cutoff_equal_to_the_triggering_reports_own_date_is_the_default():
