@@ -194,13 +194,20 @@ def _date(value: str) -> dt.date:
 
 
 def usable(fact: dict) -> bool:
-    """Consolidated, reported, still current, and a number."""
+    """Consolidated, reported, still current, and a number.
+
+    Consolidated means no dimension of either kind. A typed member is a
+    dimension: NVIDIA's cash equivalents broken out by
+    `StatementOfFinancialPositionLocationBalanceAxis`, and Ciena's amortized
+    cost split between cash equivalents, short-term investments and non-current
+    marketable securities, carry an empty `segment` and are not totals.
+    """
     if fact.get("nil") or fact.get("number") is None:
         return False
     if fact.get("superseded_by"):
         return False
     context = fact.get("context") or {}
-    return not context.get("segment")
+    return not context.get("segment") and not context.get("typed_segment")
 
 
 def periods(facts: list[dict], kind: str) -> list[dict]:
@@ -221,6 +228,25 @@ def periods(facts: list[dict], kind: str) -> list[dict]:
     return sorted(found.values(), key=lambda p: (p["end"], p["start"]), reverse=True)
 
 
+def _precision(fact: dict) -> float:
+    """How precisely the filing stated this number.
+
+    XBRL `decimals` is a power of ten: `-6` means the value is accurate to the
+    million, `-8` to the hundred million, `INF` exactly. Larger is more precise.
+    A fact with no `decimals` claims nothing and loses to one that does.
+    """
+    decimals = fact.get("decimals")
+    if decimals is None:
+        return float("-inf")
+    text = str(decimals).strip()
+    if text.upper() == "INF":
+        return float("inf")
+    try:
+        return float(text)
+    except ValueError:
+        return float("-inf")
+
+
 def pick_fact(facts: list[dict], term: str, period: dict) -> dict | None:
     """The one fact behind a term for one period, by the rules in the docstring."""
     period_type, tags = CONCEPTS[term]
@@ -237,9 +263,19 @@ def pick_fact(facts: list[dict], term: str, period: dict) -> dict | None:
             elif context.get("instant") == period["end"]:
                 matches.append(fact)
         if matches:
-            # A filing may repeat a fact; the latest filing wins, then the id,
-            # so the choice does not depend on the order of the file.
-            matches.sort(key=lambda f: (f["filing_date"], f["source_accession"], f["id"]))
+            # A filing may repeat a fact. The latest filing wins — the
+            # point-in-time rule — and within one filing the more precisely
+            # stated cell wins.
+            #
+            # Breaking that second tie on the id string picked by accident.
+            # Cisco's 10-Q holds `AccountsReceivableNetCurrent` twice: `f-36` is
+            # 6,480,000,000 at decimals −6, the balance-sheet cell, and `f-525`
+            # is 6,500,000,000 at decimals −8, the narrative sentence "Accounts
+            # receivable, net was $6.5 billion". `"f-525" > "f-36"` as a string,
+            # so the rounded sentence won and Q-0 days-sales-outstanding was
+            # published as 37.3398 where the balance sheet gives 37.2249.
+            matches.sort(key=lambda f: (f["filing_date"], f["source_accession"],
+                                        _precision(f), f["id"]))
             return matches[-1]
     return None
 
@@ -272,7 +308,8 @@ def ratio(facts: list[dict], name: str, period: dict) -> dict:
         if fact is None:
             return {"missing": why_missing(facts, term, period)}
         inputs[term] = {"fact_id": fact["id"], "tag": fact["tag"],
-                        "value": fact["number"], "unit": fact["unit"]}
+                        "value": fact["number"], "unit": fact["unit"],
+                        "decimals": fact.get("decimals")}
         values[term] = fact["number"]
     written, of = DENOMINATORS[name]
     if of(values) == 0:
@@ -336,8 +373,23 @@ def _series(facts: list[dict], slots: list[dict], prefix: str) -> list[dict]:
     return rows
 
 
+def _tags(cell: dict) -> dict:
+    """Which us-gaap concept each term of a filled ratio was taken from."""
+    return {term: entry["tag"] for term, entry in (cell.get("inputs") or {}).items()}
+
+
 def _change(rows: list[dict], index: int, back: int, name: str, kind: str) -> dict:
-    """This period's ratio minus the one `back` periods earlier."""
+    """This period's ratio minus the one `back` periods earlier.
+
+    Only when both were built from the same concepts. `CONCEPTS` gives each
+    term a list of acceptable tags and `pick_fact` takes the first one the
+    filings carry, so two periods of the same ratio can rest on different
+    us-gaap concepts — 24 of 134 emitted changes did. NVIDIA's contract
+    liability change read +0.004437 where like-for-like gives +0.023102, and
+    ESCO's **flipped sign**, −0.009963 against +0.000324, feeding the
+    `deferred_revenue_diverging` flag. A difference of two different things is
+    not a change, so it is refused and the reason names both tags.
+    """
     here = rows[index]["ratios"].get(name, {})
     if "value" not in here:
         return {"against": None, "reason": f"{name} is not filled in {rows[index]['label']}"}
@@ -348,6 +400,16 @@ def _change(rows: list[dict], index: int, back: int, name: str, kind: str) -> di
     if "value" not in there["ratios"].get(name, {}):
         return {"against": there["label"],
                 "reason": f"{name} is not filled in {there['label']}"}
+
+    mine, theirs = _tags(here), _tags(there["ratios"][name])
+    differing = sorted(term for term in mine if mine[term] != theirs.get(term))
+    if differing:
+        named = "; ".join(f"{term}: us-gaap:{mine[term]} in {rows[index]['label']} "
+                          f"and us-gaap:{theirs.get(term)} in {there['label']}"
+                          for term in differing)
+        return {"against": there["label"],
+                "reason": f"{name} rests on a different concept in each period, so "
+                          f"the difference would not be a change — {named}"}
     return {"against": there["label"],
             "change": here["value"] - there["ratios"][name]["value"]}
 
@@ -401,8 +463,20 @@ def coverage(quarters: list[dict], years: list[dict]) -> dict:
                                 "reason": row["ratios"][name]["missing"]})
         by_ratio.append({"ratio": name, "filled": filled, "missing": missing})
 
+    # Two numbers, because they answer different questions and only one of them
+    # is the substantive one. A period is "on record" when the numbers hold any
+    # consolidated duration of that length — Cisco's Q-1, Q-2, Q-5 and Q-6 are
+    # on record on the strength of two share-repurchase facts and carry no ratio
+    # at all. Reporting "10 of 13 filled" for that is a truthful sentence about
+    # the wrong thing; the substantive answer is 6.
+    rows = quarters + years
+    on_record = sum(1 for row in rows if row["filled"])
+    with_a_ratio = sum(1 for row in rows if row["filled"]
+                       and any("value" in cell for cell in row["ratios"].values()))
     return {
         "requested": {"quarters": QUARTERS_REQUESTED, "years": YEARS_REQUESTED},
+        "periods_on_record": on_record,
+        "periods_with_at_least_one_ratio": with_a_ratio,
         "quarters": period_rows(quarters),
         "years": period_rows(years),
         "ratios": by_ratio,
@@ -450,9 +524,12 @@ def main(argv: list[str] | None = None) -> int:
         print(f"trends: {exc}", file=sys.stderr)
         return BAD_INPUT
     Path(args.out).write_text(render(payload), encoding="utf-8")
-    filled = sum(1 for row in payload["quarters"] + payload["years"] if row["filled"])
-    print(f"trends: {payload['ticker']} {filled} of "
-          f"{QUARTERS_REQUESTED + YEARS_REQUESTED} periods filled → {args.out}")
+    total = QUARTERS_REQUESTED + YEARS_REQUESTED
+    print(f"trends: {payload['ticker']} "
+          f"{payload['coverage']['periods_with_at_least_one_ratio']} of {total} "
+          f"periods carry a ratio "
+          f"({payload['coverage']['periods_on_record']} of {total} are on record "
+          f"at all) → {args.out}")
     return 0
 
 

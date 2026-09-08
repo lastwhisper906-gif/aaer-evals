@@ -83,6 +83,25 @@ def _context(node: ET.Element) -> dict:
         for member in node.iter(f"{{{XBRLDI}}}explicitMember")
     ]
     out["segment"] = sorted(members, key=lambda m: (m["dimension"] or "", m["member"]))
+
+    # A typed member is the other half of a dimension: instead of naming a
+    # member from a domain it carries a value in a child element — a date for
+    # `RevenueRemainingPerformanceObligationExpectedTimingOfSatisfactionStartDateAxis`,
+    # a QName for `StatementOfIncomeLocationBalanceAxis`. Reading only
+    # `explicitMember` collapsed 476 such contexts onto an empty `segment`, so a
+    # total and its components read identically in `input_numbers.json` and six
+    # NVIDIA facts were marked as superseded by a fact in a different context —
+    # a restatement that never happened. Recorded only when there is one: a key
+    # holding an empty list on every fact in the file is noise.
+    typed = []
+    for member in node.iter(f"{{{XBRLDI}}}typedMember"):
+        for child in member:
+            typed.append({"dimension": member.get("dimension"),
+                          "element": _qname(child.tag)[1],
+                          "value": (child.text or "").strip()})
+    if typed:
+        out["typed_segment"] = sorted(
+            typed, key=lambda m: (m["dimension"] or "", m["element"], m["value"]))
     return out
 
 
@@ -155,12 +174,19 @@ def facts_from_instance(xml_bytes: bytes, *, accession: str, filing_date: str,
 
 
 def identity(fact: dict) -> tuple:
-    """What makes two facts from different filings the same fact."""
+    """What makes two facts from different filings the same fact.
+
+    Both halves of the segment. A typed member is as much a part of what a fact
+    is about as an explicit one, and leaving it out made facts in different
+    contexts look like the same fact reported twice.
+    """
     context = fact.get("context") or {}
     segment = tuple((m.get("dimension"), m.get("member"))
                     for m in context.get("segment", []))
+    typed = tuple((m.get("dimension"), m.get("element"), m.get("value"))
+                  for m in context.get("typed_segment", []))
     return (fact["prefix"], fact["tag"], context.get("start"), context.get("end"),
-            context.get("instant"), segment, fact["unit"])
+            context.get("instant"), segment, typed, fact["unit"])
 
 
 def apply_point_in_time(facts: list[dict]) -> list[dict]:

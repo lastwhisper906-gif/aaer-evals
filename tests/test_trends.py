@@ -293,13 +293,116 @@ def test_nvidias_latest_quarter_gross_margin_is_the_filings_own_arithmetic():
 
 
 def test_ciscos_days_sales_outstanding_is_the_filings_own_arithmetic():
-    """CSCO's quarter: receivables $6,500m over revenue $15,841m across 91 days."""
+    """CSCO's quarter: receivables $6,480m over revenue $15,841m across 91 days.
+
+    Retyped from the filing, not from the extractor. Cisco's 10-Q
+    `0000858877-26-000078`, CONSOLIDATED BALANCE SHEETS (in millions,
+    except par value) (Unaudited), the April 25, 2026 column:
+
+        Accounts receivable, net of allowance of $73 at April 25, 2026
+        and $69 at July 26, 2025 ................................. 6,480
+
+    and the MD&A table "Accounts receivable, net $ 6,480 $ 6,701 $ (221)"
+    prints the same figure. The oracle here used to say `6,500,000,000`,
+    which is the note's sentence "Accounts receivable, net was $6.5 billion"
+    — the same number rounded to two significant figures, tagged at decimals
+    −8 against the balance sheet's −6. `pick_fact` sorted its two candidates
+    on the id string, `"f-525" > "f-36"`, so the rounded one won and the
+    published DSO was 37.3398 instead of 37.2249.
+    """
     row = {r["label"]: r for r in table("CSCO")["quarters"]}["Q-0"]
     cell = row["ratios"]["days_sales_outstanding"]
     assert row["days"] == 91
-    assert cell["inputs"]["receivables"]["value"] == 6500000000.0
+    assert cell["inputs"]["receivables"]["value"] == 6480000000.0
+    assert cell["inputs"]["receivables"]["decimals"] == "-6"
     assert cell["inputs"]["revenue"]["value"] == 15841000000.0
-    assert abs(cell["value"] - 6500000000.0 / 15841000000.0 * 91) <= 1e-9
+    assert abs(cell["value"] - 6480000000.0 / 15841000000.0 * 91) <= 1e-9
+    assert abs(cell["value"] - 37.2249226690) <= 1e-9
+
+
+def test_the_more_precise_of_two_cells_for_one_fact_is_the_one_used():
+    """The general rule behind the case above, stated on the pair itself."""
+    facts = numbers("CSCO")["facts"]
+    candidates = [fact for fact in facts
+                  if fact["tag"] == "AccountsReceivableNetCurrent"
+                  and fact["prefix"] == "us-gaap"
+                  and (fact["context"] or {}).get("instant") == "2026-04-25"
+                  and trends.usable(fact)]
+    assert {fact["number"] for fact in candidates} == {6480000000.0, 6500000000.0}
+    picked = trends.pick_fact(facts, "receivables",
+                              {"start": "2026-01-25", "end": "2026-04-25", "days": 91})
+    assert picked["number"] == 6480000000.0
+    assert trends._precision(picked) == -6.0
+    coarse = next(fact for fact in candidates if fact["number"] == 6500000000.0)
+    assert trends._precision(coarse) == -8.0
+    assert picked["id"] < coarse["id"]      # the id order would have chosen the other
+
+
+@pytest.mark.parametrize("ticker", TICKERS)
+def test_no_emitted_change_subtracts_two_different_concepts(ticker):
+    """`CONCEPTS` gives a term several acceptable tags and `pick_fact` takes the
+    first the filings carry, so two periods of one ratio can rest on different
+    us-gaap concepts. Subtracting those is not a change. 24 of 134 emitted
+    changes did it, and ESCO's `deferred_revenue_diverging` input flipped sign."""
+    payload = table(ticker)
+    by_label = {row["label"]: row for row in payload["quarters"] + payload["years"]}
+    checked = 0
+    for row in payload["quarters"] + payload["years"]:
+        for name, cell in row["ratios"].items():
+            for key in ("year_over_year", "quarter_over_quarter"):
+                entry = cell.get(key) or {}
+                if "change" not in entry:
+                    continue
+                other = by_label[entry["against"]]["ratios"][name]
+                mine = {term: got["tag"] for term, got in cell["inputs"].items()}
+                theirs = {term: got["tag"] for term, got in other["inputs"].items()}
+                assert mine == theirs, f"{ticker} {row['label']} {name} {key}"
+                checked += 1
+    assert checked, f"{ticker}: no change was emitted, so nothing was tested"
+
+
+def test_a_refused_change_names_both_concepts():
+    """The refusal has to be readable, or it is just an absence."""
+    refusals = []
+    for ticker in TICKERS:
+        payload = table(ticker)
+        for row in payload["quarters"] + payload["years"]:
+            for cell in row["ratios"].values():
+                for key in ("year_over_year", "quarter_over_quarter"):
+                    entry = cell.get(key) or {}
+                    if "different concept in each period" in (entry.get("reason") or ""):
+                        refusals.append(entry["reason"])
+    assert refusals, "no ratio in the fixture set changes concept between periods"
+    for reason in refusals:
+        assert reason.count("us-gaap:") >= 2
+
+
+@pytest.mark.parametrize("ticker", TICKERS)
+def test_coverage_separates_a_period_on_record_from_one_carrying_a_ratio(ticker):
+    """A period is "on record" when the numbers hold any consolidated duration
+    of that length. Cisco's Q-1, Q-2, Q-5 and Q-6 were on record on the strength
+    of two share-repurchase facts and carried no ratio; "10 of 13 filled" was a
+    true sentence about the wrong thing."""
+    payload = table(ticker)
+    rows_here = payload["quarters"] + payload["years"]
+    coverage = payload["coverage"]
+    assert coverage["periods_on_record"] == sum(1 for row in rows_here if row["filled"])
+    assert coverage["periods_with_at_least_one_ratio"] == sum(
+        1 for row in rows_here
+        if row["filled"] and any("value" in cell for cell in row["ratios"].values()))
+    assert coverage["periods_with_at_least_one_ratio"] <= coverage["periods_on_record"]
+
+
+def test_the_command_reports_both_period_counts(tmp_path, capsys):
+    source = tmp_path / "input_numbers.json"
+    source.write_text(json.dumps(numbers("CSCO")), encoding="utf-8")
+    assert trends.main(["--numbers", str(source),
+                        "--out", str(tmp_path / "out.json")]) == 0
+    printed = capsys.readouterr().out
+    coverage = table("CSCO")["coverage"]
+    assert f"{coverage['periods_with_at_least_one_ratio']} of 13 periods carry a ratio" \
+        in printed
+    assert f"{coverage['periods_on_record']} of 13 are on record" in printed
 
 
 def test_carriers_gross_margin_is_missing_because_it_is_only_reported_by_segment():

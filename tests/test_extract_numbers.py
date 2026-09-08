@@ -17,7 +17,7 @@ from pathlib import Path
 
 import pytest
 
-from src import cutoff_guard, extract_numbers
+from src import cutoff_guard, extract_numbers, trends
 from src.fetch_fixtures import TICKERS
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
@@ -143,6 +143,56 @@ def test_the_later_filing_wins_and_the_earlier_one_says_so(ticker):
             continue
         assert latest_carrying[extract_numbers.identity(fact)][1] == \
             fact["source_accession"]
+
+
+def _typed_by_hand(path: Path) -> int:
+    """Every `xbrldi:typedMember` in the instance, counted from the file."""
+    root = ET.fromstring(_raw(path))
+    return sum(1 for element in root.iter()
+               if element.tag == "{http://xbrl.org/2006/xbrldi}typedMember")
+
+
+@pytest.mark.parametrize("ticker", TICKERS)
+def test_a_typed_member_is_part_of_the_context(ticker):
+    """A typed member is the other half of a dimension: instead of naming a
+    member of a domain it carries a value in a child element. Reading only
+    `explicitMember` left those contexts looking empty."""
+    payload = extract_numbers.extract(ticker, FORMS)
+    carried = [fact for fact in payload["facts"] if fact["context"].get("typed_segment")]
+    if not carried:
+        pytest.skip(f"{ticker}'s instances use no typed member")
+    for fact in carried:
+        for member in fact["context"]["typed_segment"]:
+            assert member["dimension"] and member["element"]
+            assert member["value"] != ""
+
+
+def test_nvidias_repeated_cash_equivalents_are_not_a_restatement():
+    """Six of these carried a `superseded_by` pointing at a 10-Q fact in a
+    different context — a restatement that never happened. The 10-Q states them
+    under `StatementOfFinancialPositionLocationBalanceAxis`, a typed dimension
+    the extractor could not see, so they read as the same fact as the 10-K's."""
+    facts = extract_numbers.extract("NVDA", FORMS)["facts"]
+    here = [fact for fact in facts
+            if fact["tag"] == "CashEquivalentsAtCarryingValue"
+            and fact["context"].get("instant") == "2026-01-25"]
+    assert here
+    assert not [fact for fact in here if "superseded_by" in fact]
+
+
+def test_cienas_amortized_cost_components_are_distinguishable():
+    """The total and its components all read `{"instant": …, "segment": []}` and
+    were indistinguishable in `input_numbers.json`."""
+    facts = extract_numbers.extract("CIEN", FORMS)["facts"]
+    here = [fact for fact in facts
+            if fact["tag"] == "AvailableForSaleDebtSecuritiesAmortizedCostBasis"
+            and fact["context"].get("instant") == "2026-05-02"]
+    contexts = {json.dumps(fact["context"], sort_keys=True) for fact in here}
+    assert len(contexts) >= 7, sorted(contexts)
+    typed = [fact for fact in here if fact["context"].get("typed_segment")]
+    assert {fact["number"] for fact in typed} == {110563000.0, 157619000.0, 200248000.0}
+    # And the parts are no longer read as consolidated totals.
+    assert not [fact for fact in typed if trends.usable(fact)]
 
 
 def test_a_superseded_fact_is_kept_not_dropped():
