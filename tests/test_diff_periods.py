@@ -17,7 +17,7 @@ from pathlib import Path
 
 import pytest
 
-from src import cutoff_guard, diff_periods, extract_notes
+from src import assemble_bundle, cutoff_guard, diff_periods, extract_notes
 from src.fetch_fixtures import TICKERS
 from tests import independent_text
 
@@ -252,6 +252,24 @@ def test_a_topic_is_matched_on_the_paragraphs_own_words_too():
                 "ordinary course of business.") == "contingencies_and_litigation"
     assert diff_periods.always_verbatim(
         "mdna", "Revenues increased in every region.") is None
+
+
+def test_esterlines_one_contingencies_paragraph_reaches_the_file():
+    """It is in MD&A, not in a note, and it was a placeholder."""
+    text = assemble_bundle.build("ESE", "10-Q")["texts"]["input_mdna.md"]
+    assert text.count("As a normal incident of the business") == 1
+
+
+def test_apples_three_pronouncement_paragraphs_reach_the_file():
+    """Two of the three name the standard as `ASU No. 2024-03` and the third
+    spells out `Accounting Standards Update`. All three are the same topic."""
+    payload = diff_periods.extract("AAPL")
+    hits = [entry for entry in payload["mdna"]
+            if "FASB" in entry["text"] and "ASU" in entry["text"]]
+    assert len(hits) == 3, [entry["id"] for entry in hits]
+    for entry in hits:
+        assert entry["verbatim_topic"] == "accounting_changes_and_corrections"
+        assert entry["kind"] == "verbatim"
 
 
 def test_masking_takes_out_numbers_and_nothing_else():

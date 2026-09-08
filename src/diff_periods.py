@@ -80,8 +80,12 @@ ALWAYS_VERBATIM = {
     "accounting_changes_and_corrections": (
         r"\baccounting change|\berror correction|\bnew accounting pronouncement"
         r"|\brecently issued accounting|\bchange in accounting|\brestatement",
-        r"\baccounting standards update\b|\brecently issued accounting"
-        r"|\brecently adopted accounting|\brestatement of\b"),
+        # `ASU No. 2024-03` is how two of Apple's three pronouncement paragraphs
+        # name the thing the third spells out, so the abbreviation is matched
+        # where it carries a number and nowhere else.
+        r"\baccounting standards update\b|\bASU (?:No\.|\d{4}-)"
+        r"|\brecently issued accounting|\brecently adopted accounting"
+        r"|\brestatement of\b"),
 }
 _ALWAYS_VERBATIM = {topic: (re.compile(name, re.IGNORECASE),
                             re.compile(body, re.IGNORECASE))
