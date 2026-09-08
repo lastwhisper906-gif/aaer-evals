@@ -21,13 +21,26 @@ Three layers, and the two questions stay apart through all of them:
 | Layer | Sees | Never sees |
 |---|---|---|
 | readers | the filing bundle for one company | prices, short interest, any other company |
-| comparers | the two reader reports plus the market table | any filing |
+| comparers | both reader reports plus the market table | any filing |
 | supervisor | the four reports | any filing, the market table |
+
+A comparer holds both reader reports because the layer's directory is one
+directory, but it **labels only the items of its own report** — numbers versus
+market labels `report_numbers.md`, notes versus market labels
+`report_notes_text.md`. Labelling an item from the other report is a broken run.
 
 Isolation is enforced by a per-run, per-agent input directory holding only that
 agent's files, and a test asserts each directory's contents against the layer
-rule. Worktrees are for parallel execution only — data directories are shared
-across them and isolate nothing.
+rule. The agent's session is **rooted at that directory**, so a sibling
+directory is not merely undeclared, it is unreachable — a prompt that says "you
+never see prices" is a statement of intent, and the root is the enforcement.
+Worktrees are for parallel execution only — data directories are shared across
+them and isolate nothing.
+
+Two files travel with the readers and are named here so they are routed to
+somebody: `input_notes_history.md` goes to the notes-text reader, and
+`input_prior_predictions.md` goes to both readers with the probability numbers
+removed.
 
 ---
 
@@ -89,6 +102,11 @@ from a fixed tag list. Take every element whose name ends in `TextBlock`.
 MD&A, the auditor's report body, Item 9A, Item 4 and Item 1A are not tagged, so
 they need an HTML section split.
 
+**Each numeric fact records whether it came from inside a note.** A fact whose
+element sits within a `TextBlock` is marked as such when it is extracted. Without
+that mark the numbers reader's "seen in the notes" heading has no source and the
+reader would be sorting by memory.
+
 Companies renumber and retitle their notes, and they change tags. Match across
 periods by tag name first; fall back to title similarity when an extension tag
 changes. A **tag-continuity map** lives in `src/` as data and is versioned with
@@ -101,13 +119,30 @@ One filing date per document. The cutoff is the filing date of the report that
 triggered the run. Nothing filed later may enter the input. When a period is
 reported more than once, the latest filing before the cutoff wins.
 
-**Market data is bounded separately.** An agent may see market data through the
-filing date plus two trading days — that is the reaction window, and it is
-already public when the run happens. Nothing beyond it enters any input.
+**Market data is bounded separately, and it is keyed to reaction day zero, not
+to the filing date.**
+
+> **Reaction day zero** is the filing date when EDGAR accepted the filing before
+> the close, and the next trading day when it accepted after the close. Every
+> market bound below counts from it.
+
+An agent may see market data through **reaction day two**. That is the reaction
+window, and it is already public by the time the run happens. Nothing beyond it
+enters any input.
 
 **Outcomes are measured outside the input.** The 60-trading-day outcome window
-starts on the third trading day after the filing date and is never visible to
-any layer. It is read only by the scorer, after the horizon expires.
+starts on **reaction day three** and is never visible to any layer. It is read
+only by the scorer, after the horizon expires.
+
+Keying both to reaction day zero is what keeps them from colliding. If the
+window were counted from the filing date while an after-close acceptance pushed
+its start forward, the window would end on the same day the outcome window
+begins, and the cutoff and the score would be reading the same day.
+
+**The read stage waits.** A full run's readers do not start until reaction day
+two has closed. Running earlier hands the comparers a truncated window and makes
+`not_priced` mean "the market has not finished reacting" instead of "the market
+did not react".
 
 No anonymization. No perturbation. This is forward prediction — the company's
 identity is not a leak, it is the point.
@@ -122,6 +157,15 @@ identity is not a leak, it is the point.
 
 The unit of execution is (company, accession).
 
+**What a light run is**, exactly, because "financial pressure only" does not say
+which layers wake: both readers run on the earnings release alone; the
+numbers-versus-market comparer runs on the earnings-release window;
+`supervisor-pressure` runs and `supervisor-accounting` does not. The
+notes-versus-market comparer is skipped, because the notes are not public yet —
+that is the whole reason the filing window is the interesting one. A light run
+therefore produces three reports, not four, and `prediction_pressure.json`
+alone.
+
 ---
 
 ## 2. Shrinking the text — the deterministic layer
@@ -131,7 +175,12 @@ Python only. No model touches this stage.
 1. **Clean.** Strip headers, footers, table-of-contents links, page numbers and
    boilerplate forward-looking disclaimers. HTML becomes text; tables become
    `|`-delimited rows.
-2. **Paragraph ids** of the form `{accession}:{section}:{n}`.
+2. **Paragraph ids** of the form `{accession}:{section}:{n}`. Computed rows need
+   an id too, or the numbers reader has nothing to quote: a trend-table cell is
+   `{accession}:trends:{metric}:{period}`, an articulation check is
+   `{accession}:articulation:{account}:{period}`, and a numeric fact is
+   `{accession}:facts:{tag}:{period}`. The quote is the row as printed, and the
+   gate string-matches it like any other.
 3. **Prior-period diff.** Match paragraphs against the previous report of the
    same kind: replace numbers with placeholders, then compare similarity. A new
    or changed paragraph goes in verbatim. An unchanged one is replaced by a
@@ -190,15 +239,23 @@ Pure Python. One row per company per trading day.
 | sector return | the SIC-mapped sector ETF, same day |
 | beta | over the 250 trading days before the filing date |
 | abnormal return | raw − beta × market − sector |
-| reaction window | the sum of abnormal returns from the filing date through the second trading day after |
+| reaction window | the sum of abnormal returns from reaction day zero through reaction day two |
 | short-interest ratio | shares short over shares outstanding |
+| short-interest two-year median | the median of that ratio over the company's own trailing two years |
+| short interest above median | the ratio against that median, as a true or false |
+
+The last two columns exist because the crowded-signal rule needs them and the
+comparers do no arithmetic. A rule a comparer cannot evaluate from the table is
+a rule that will be evaluated by guessing.
 
 - **Sector** comes from the SIC code in `submissions.json`, mapped to an ETF. The
-  map is data in `src/`, versioned with the rules.
-- **Acceptance time decides the first day.** When EDGAR's acceptance time is
-  after the close, the reaction window starts the next trading day.
+  map is data in `src/`, versioned with the rules. Its default is one ETF per
+  SIC division, so the market table computes from the first run; narrowing the
+  map to major groups is an improvement, not a precondition.
+- **Acceptance time decides reaction day zero**, and every market bound counts
+  from there. See the cutoff rule above.
 - **Two windows are recorded separately** and never added together: the
-  8-K 2.02 day and the 10-Q or 10-K day. The 8-K day is where an earnings
+  8-K 2.02 reaction day zero and the 10-Q or 10-K reaction day zero. The 8-K day is where an earnings
   surprise gets priced; the 10-Q day is where the notes first become public.
 - **Short interest** comes from FINRA's twice-monthly file and is attached by
   **publication date** — settlement plus about eight business days — never by
@@ -233,7 +290,9 @@ Six in the first version; the seventh comes later.
    receivables, inventory and payables against the balance-sheet changes in the
    same accounts, net of disclosed acquisitions and foreign-exchange effects. A
    gap is `articulation_gap`. This is the first new input because it needs no
-   model and no threshold to be worth reading.
+   model, and because its magnitude is worth reading whether or not it crosses
+   the flag threshold — the gap is reported as a number from the first run, and
+   what size of gap raises a flag is set at rules v0.1.
 3. **Note change history.** For the key notes — revenue recognition policy,
    critical accounting estimates, contingencies, debt, related parties,
    subsequent events — only the added, removed and changed paragraphs per

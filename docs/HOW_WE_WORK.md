@@ -69,8 +69,8 @@ a prediction.
 |---|---|---|
 | detect filing | daily: new filings for the twelve, from the EDGAR submissions index | 12 of 12 lookups succeed |
 | extract | the input spec, plus the diff, the trend table, the articulation checks and the histories | schema passes, paragraph counts in the normal range, zero cutoff violations, at least one `TextBlock` found |
-| market | the market table — abnormal returns, both reaction windows, the short-interest ratio | every trading day between the prior filing and the cutoff has a row, and nothing past the cutoff plus two trading days exists in it |
-| read | two calls: the numbers reader and the notes-text reader, each seeing only its own input directory | every item carries a verbatim quote that string-matches that reader's committed input; unverifiable items are dropped and counted |
+| market | the market table — abnormal returns, both reaction windows, the short-interest ratio and its two-year median | every trading day from the prior filing to reaction day two has a row, and nothing past reaction day two exists in it |
+| read | two calls: the numbers reader and the notes-text reader, each seeing only its own input directory. **Waits until reaction day two has closed** | every item carries a verbatim quote that string-matches that reader's committed input; unverifiable items are dropped and counted |
 | compare | two calls: numbers versus market, notes versus market. Neither sees a filing | every item cites an upstream item id that resolves, and carries exactly one of the three labels |
 | decide | two calls: supervisor-accounting and supervisor-pressure. Neither sees a filing or the market table | output schema valid, every citation resolves to an upstream report, served model equals the pin |
 | controls | the formula baselines (Python), the single-agent baseline, the shuffled-report control | every baseline computed, both controls wrote their files, none merged into the pipeline's number |
@@ -80,6 +80,12 @@ a prediction.
 
 On a failure in `read`, `compare` or `decide`, retry once with identical input,
 then record a failure. A retry never changes the input.
+
+`detect filing` runs daily; the rest of a full run does not. It waits for
+reaction day two so the comparers get a whole window. A light run on an
+8-K 2.02 wakes both readers, the numbers-versus-market comparer and
+`supervisor-pressure` only — `docs/INPUT_SPEC.md` says which reports it
+produces.
 
 **Publish merges itself.** `main` requires the CI check and nothing else — no
 reviewer, no approval. Every pull request from the pipeline or a routine sets
@@ -136,7 +142,10 @@ Every routine below is a **scheduled task**, not a loop run.
 - **broken links and paragraph ids**
 - **fold lessons** — `lessons.md` into `CLAUDE.md` for rules and into skills for
   procedures; merge duplicates; strengthen anything seen three or more times;
-  open a pull request
+  open a pull request. **`CLAUDE.md` is capped at 22 lines**, so a fold that
+  cannot fit replaces a line rather than appending one — the file is read in
+  full at the start of every session, and a rules file nobody finishes is a
+  rules file nobody follows
 
 ### On red CI
 
@@ -159,8 +168,11 @@ Configured in `.claude/settings.json`, not written by hand each session.
 
 - **session start** — read `lessons.md`.
 - **after a write or edit** — the plain-name check on the changed files.
-- **session end** — `make check`, and this session's mistakes into `lessons.md`,
-  one line each, no judgment.
+- **session end** — `make check`.
+
+Writing this session's mistakes into `lessons.md` is not a hook and cannot be
+one: only the session knows what it got wrong. It is a rule in `CLAUDE.md`, and
+the Stop hook running green is not evidence that it happened.
 
 Routines do not run the pipeline, do not build parsers, and do not judge.
 
@@ -168,19 +180,12 @@ Routines do not run the pipeline, do not build parsers, and do not judge.
 
 ## 5. The loop
 
-The custom harness is gone. What it did is now done by Claude Code's own
-primitives, plus three things nothing native does.
+The custom harness is gone. **Kept**, because nothing native does them:
+`src/append_check.py`, in CI on every push; the **refute protocol** — an
+expected value comes from the source, never from the first run of the code it
+judges; and the **seeded-defect canary**, monthly, as a scheduled task.
 
-**Kept.**
-
-- `src/append_check.py` — the prediction record is append-only, and it runs in
-  CI on every push.
-- **the refute protocol** — an expected value comes from the source document,
-  from companyfacts, or from a hand computation. Never from the first run of the
-  code it is meant to judge.
-- **the seeded-defect canary** — monthly, as a scheduled task.
-
-**Dropped, and what does the job now.**
+**Dropped, and what does the job now:**
 
 | Dropped | Now |
 |---|---|
@@ -189,12 +194,12 @@ primitives, plus three things nothing native does.
 | the write-restriction guard and its self-test | hooks in `.claude/settings.json` |
 | the stop conditions as a file | `/goal` |
 | the builder and reviewer session pair | the `refute-check` and `reproduce-check` subagents |
-| the doc-bloat penalty | nothing — it measured a frozen tree, so it measured nothing |
+| the doc-bloat penalty | nothing — it measured a frozen tree |
 | the STOP file | the owner interrupting the session |
 | the `claude --bg` launcher | scheduled tasks |
 
-A Stop hook is a safety net, not a judge — Claude Code ends the turn after eight
-consecutive blocks, so a hook that keeps failing stops blocking. CI is the judge.
+A Stop hook is a safety net, not a judge — the turn ends after eight consecutive
+blocks, so a hook that keeps failing stops blocking. CI is the judge.
 
 ---
 
@@ -213,7 +218,14 @@ consecutive blocks, so a hook that keeps failing stops blocking. CI is the judge
 
 Agent prompts are committed under `.claude/agents/` and versioned with the
 rules. **Nothing in the read, compare or decide stages writes a prompt at run
-time.** Pins and served models are recorded in `input_manifest.json`.
+time.**
+
+**An agent file names a family, not a pin.** `model: opus` and `model: fable`
+are aliases and carry no effort setting, so the pin proper — the dated model id
+and the effort — lives in the rules version and is applied at invocation. The
+run records both the requested pin and the served model in
+`input_manifest.json`, and a run whose served model differs from the pin is
+recorded as a failure. A pin that exists only in this table is not a pin.
 
 ---
 

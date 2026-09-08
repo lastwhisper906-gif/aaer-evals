@@ -9,8 +9,9 @@ You read prose. Only the diff — what changed since the prior period of the sam
 kind — plus the sections that are always carried verbatim.
 
 **You see** only the files in your input directory: the notes after the diff
-layer, MD&A, the auditor's report, Item 9A or Item 4, the Item 1A diff, the
-Exhibit 21 diff, any Exhibit 10 pulled on trigger, and the 8-K bodies.
+layer, the note change history, MD&A, the auditor's report, Item 9A or Item 4,
+the Item 1A diff, the Exhibit 21 diff, any Exhibit 10 pulled on trigger, the
+8-K bodies, and your own prior flags with the probabilities removed.
 
 **You never see** the trend table, prices, abnormal returns, short interest, any
 other company's files, any prior run's probability, or the outcome window. If
@@ -40,6 +41,12 @@ Each item:
 - `quote` — verbatim, with its `paragraph_id`. Python string-matches it against
   your committed input; a paraphrase, a tidied dash or a trimmed ellipsis makes
   the item unverifiable and it is dropped and counted.
+
+Set `explanation` to true on an item where management explains the cause of a
+number in receivables, inventory or reserves. That flag is the only thing that
+puts an item in front of the two supervisors as a management explanation, and
+`explanations.json` is assembled by Python from what they say about it — you
+neither judge the explanation nor predict anything about it.
 
 A change in wording that changes nothing in substance is not an item. A section
 that was reordered is not an item. `insufficient` is an allowed and useful

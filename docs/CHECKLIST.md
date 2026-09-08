@@ -124,7 +124,7 @@ come from companyfacts and the three statements.
 | `maturity_wall` | debt note | Python then LLM | a large maturity falls inside the next four quarters |
 | `covenant_pressure` | debt note, 8-K 1.01, Exhibit 10 | LLM | covenant headroom is discussed, a covenant is amended, or a waiver is obtained |
 | `new_financing` | cash-flow statement, debt note, 8-K 1.01 | Python then LLM | new borrowing or an equity issuance on terms worse than the last one |
-| `net_stock_issuance` | cash-flow statement, companyfacts shares outstanding | Python | shares outstanding rise net of buybacks — issuance predicts weak returns, and a company issuing into weakness is under pressure |
+| `net_stock_issuance` | cash-flow statement, companyfacts shares outstanding | Python | shares outstanding rise net of buybacks — net issuance predicts weak returns (Pontiff and Woodgate 2008), and a company issuing into weakness is under pressure |
 | `shareholder_return_cut` | cash-flow statement, MD&A | Python | the dividend is cut or the buyback is suspended or sharply reduced |
 | `going_concern_language` | liquidity discussion, notes, auditor's report | LLM | substantial-doubt or going-concern language appears |
 
@@ -332,8 +332,14 @@ and Python string-matches it against that reader's committed input.
 ```json
 { "id": "", "what_changed": "", "account": "",
   "expected_direction": "up" | "down" | "none",
-  "horizon": "", "quote": "", "paragraph_id": "" }
+  "horizon": "", "quote": "", "paragraph_id": "",
+  "explanation": false }
 ```
+
+`explanation` is set by the notes-text reader on a sentence where management
+explains the cause of a number in receivables, inventory or reserves. It is the
+only route into `explanations.json`, which Python assembles from what the two
+supervisors say about those items — no agent writes that file.
 
 The notes-text reader is forbidden from arithmetic; `expected_direction` is what
 the prose says the numbers should do, not a computed value. Findings the numbers
@@ -412,6 +418,15 @@ the same targets, and none of them is ever merged into the pipeline's number.
   filing. If its score matches the real run, the supervisor is not reconciling
   the two reports, it is pattern-matching one of them.
 
+  Exactly what is swapped, because "one company's report" leaves the comparer
+  reports undefined: company A keeps `report_numbers.md` and
+  `report_numbers_vs_market.md`; `report_notes_text.md` and
+  `report_notes_vs_market.md` come from company B. The notes side travels with
+  its own comparer report, so the only thing broken is the correspondence
+  between the two sides — which is the thing being tested. Company B is the next
+  company in the twelve by ticker, wrapping around, so the pairing is fixed
+  rather than drawn.
+
 **No composite rank.** Indicators are never combined into a single score ranked
 across companies. That is the crowded thing factor funds already do, and it is
 not what this pipeline is testing. The formula baselines are baselines, not
@@ -432,6 +447,12 @@ to move, and moving one while adding the indicators it counts would hide the
 change inside the addition. The drift is named here so it is visible when the
 flag distribution over the 30 past cases is read.
 
+**Four of the new indicators have no threshold yet** — `articulation_gap`,
+`asset_growth_high`, `rnd_capitalization_shift` and `net_stock_issuance`. Until
+rules v0.1 they **report their value and do not flag**, so they are in the 33
+and the 17 as measurements and contribute nothing to a tier. A counted flag that
+cannot fire would make the denominator a lie.
+
 The test is whether the event rate in the "low accounting reliability × high
 financial pressure" cell is higher than in the other three cells. The "low × low"
 cell is reported separately — an accounting anomaly with no pressure behind it.
@@ -444,12 +465,22 @@ initial values take effect as they are.
 
 ## 10. The twelve are a pipeline test
 
-The twelve are among the most-read filings on earth, and any model reading them
-already knows how 2025 and 2026 turned out. Nothing observed on these twelve is
-recorded as an observation about signal, anywhere — not in a results document,
-not in a scorecard note, not in `lessons.md`. The word for what the twelve
-produce is **pipeline check**: the parsers ran, the layers stayed isolated, the
-quotes resolved, the scorer computed.
+The line is drawn by **when the filing existed**, not by which company filed it.
 
-Claims about signal come from the forward cycle only, on filings that did not
-exist when the rules version was frozen.
+| | What it is | What may be said |
+|---|---|---|
+| **pilot** | a filing already on EDGAR when the rules version was frozen | pipeline check only |
+| **forward cycle** | a filing that did not exist when the rules version was frozen | a result |
+
+The same twelve companies appear on both sides of that line. The pilot filings
+are among the most-read documents on earth and any model reading them already
+knows how 2025 and 2026 turned out, so nothing observed on them is recorded as
+an observation about signal, anywhere — not in a results document, not in a
+scorecard note, not in `lessons.md`. The word for what the pilot produces is
+**pipeline check**: the parsers ran, the layers stayed isolated, the quotes
+resolved, the scorer computed.
+
+**Every scorecard row carries which side it came from.** A Brier, a hit rate, a
+ranking or an AUC computed over pilot filings is labelled `pipeline check` in
+the table itself, not in a footnote, because a number that travels without its
+label eventually gets quoted without it.

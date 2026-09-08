@@ -19,21 +19,30 @@ Build each item with the `build-item` skill, and brief every agent with the
 `dispatch` skill. One worktree, one branch, one pull request per item, auto-merge
 on the moment it opens.
 
-The parsers on the branch `harness/cycle-020` — the numeric extractor, the note
-extractor, the MD&A and controls splitters, the 8-K parser, the paragraph diff,
-the note history, the trend table, the bundle assembler, the cutoff guard and
-the extraction checks — land through their own pull request. Several items below
-build on them and assume that has merged.
+The parsers on the git branch `harness/cycle-020` — the numeric extractor, the
+note extractor, the MD&A and controls splitters, the 8-K parser, the paragraph
+diff, the note history, the trend table, the bundle assembler, the cutoff guard
+and the extraction checks — land through their own pull request. Several items
+below build on them and assume that has merged.
+
+**They do not arrive judged.** Their fixtures are the ones `lessons.md` records
+as self-certified: the expected values were produced by running the code they
+judge. Merging that branch imports the parsers and the hole at the same time, so
+the first item below re-judges them before anything is built on top. Nothing
+lands through its own pull request and thereby escapes the rule this whole file
+exists to enforce.
 
 ---
 
 ## Ready to build
 
+[ ] re-judge the parsers that arrive from the parser branch · no new code — a replacement expected-value file per company, and the deletion of every expected value that came from a parser run · `python3.12 -m pytest tests -q` against the replaced fixtures · companyfacts for every numeric expectation, and the filing itself, read by eye, for every section boundary and paragraph count; each replaced value carries a one-line note naming where it came from. Do this before any item below builds on those parsers · PR:
+
 [ ] write the plain-name check · `src/plain_name_check.py` and the post-write hook that calls it · `python3.12 -m pytest tests/test_plain_name_check.py -q` · a letter-number code planted in a fixture file by the test itself, and a filter output that is greped rather than a filter that is inspected — a no-op regular expression fails quietly · PR:
 
 [ ] companyfacts fetcher · `src/fetch_companyfacts.py` and one `companyfacts.json` fixture per company, with its sha256 in the manifest · `python3.12 -m pytest tests/test_fetch_companyfacts.py -q` · every `us-gaap` numeric fact in the committed XBRL instance, looked up in companyfacts and matched by value, with every difference listed rather than tolerated · PR:
 
-[ ] trend table on companyfacts · `src/trends.py` reading companyfacts instead of a single instance · `python3.12 -m pytest tests/test_trends.py -q` · each ratio computed by hand from the raw companyfacts JSON and written out in the test, 12 of 12 companies, 8 quarters and 5 years · PR:
+[ ] trend table on companyfacts · `src/trends.py` reading companyfacts instead of a single instance · `python3.12 -m pytest tests/test_trends.py -q` · two claims, because "every ratio for twelve companies over 8 quarters and 5 years" is thousands of values and would become a generator sharing code with the thing it judges: (a) for three named companies and two named periods, every ratio computed by hand and written out term by term in the test; (b) for the rest, each ratio's numerator and denominator asserted equal to the named companyfacts fact and value they came from — a weaker claim than the ratio being right, but one the code under test cannot manufacture · PR:
 
 [ ] fourth-quarter derivation and the dump indicator · `src/fourth_quarter.py` · `python3.12 -m pytest tests/test_fourth_quarter.py -q` · annual and nine-month figures read off the filings for three companies and subtracted by hand in the test · PR:
 
@@ -55,11 +64,11 @@ build on them and assume that has merged.
 
 [ ] diff alignment with a multiset and a boilerplate score · `src/diff_periods.py` · `python3.12 -m pytest tests/test_diff_alignment.py -q` · constructed fixtures — one reordered, one retitled, one with a table of a hundred identical cells — whose expected change count is zero by construction · PR:
 
-[ ] market module · `src/market.py` writing `input_market.json` · `python3.12 -m pytest tests/test_market.py -q` · abnormal returns computed by hand from a frozen price fixture and written out in the test; an after-close acceptance time that must shift the window one day; a FINRA row that must attach by publication date and must not attach by settlement date · PR:
+[ ] market module · `src/market.py` writing `input_market.json` · `python3.12 -m pytest tests/test_market.py -q` · abnormal returns computed by hand from a frozen price fixture and written out in the test; an after-close acceptance time that must move reaction day zero to the next trading day and carry the cutoff and the outcome window with it, so the window is still three days and still ends before the outcome window opens; a FINRA row that must attach by publication date and must not attach by settlement date; a two-year short-interest median computed by hand for one company · PR:
 
 [ ] price-source delisting probe · a probe script and one line in `docs/structure_changes.md` · the probe run, exit status checked directly · a ticker known to have been delisted, whose history must come back; the source's own response is the expected value · PR:
 
-[ ] per-agent input directory builder · `src/agent_inputs.py` · `python3.12 -m pytest tests/test_agent_inputs.py -q` · the layer table in `docs/INPUT_SPEC.md`, asserted file by file: a reader directory with no price file, a comparer directory with no filing, a supervisor directory with neither a filing nor the market table · PR:
+[ ] per-agent input directory builder · `src/agent_inputs.py` · `python3.12 -m pytest tests/test_agent_inputs.py -q` · the layer table in `docs/INPUT_SPEC.md`, asserted file by file: a reader directory with no price file, a comparer directory with both reader reports and no filing, a supervisor directory with neither a filing nor the market table. The test must also assert the session root, because a directory that holds the right files but sits beside a readable sibling is not isolated — walk up from the root and fail if another agent's directory is reachable · PR:
 
 [ ] quote and citation gate at every layer · `src/quote_gate.py` · `python3.12 -m pytest tests/test_quote_gate.py -q` · items planted on purpose — a quote with a changed dash, a quote with trimmed whitespace, a citation naming an id that does not exist — each of which must be dropped, and the drop count written into `input_manifest.json` · PR:
 
@@ -78,11 +87,11 @@ build on them and assume that has merged.
 Not launched. No judge exists for these, and inventing one would be inventing the
 answer.
 
-[ ] thresholds for the four new numeric indicators — `articulation_gap`, `asset_growth_high`, `rnd_capitalization_shift`, `net_stock_issuance` · a threshold is the owner's, and each of these needs the flag distribution over the 30 past cases before a number means anything · needs judgment
+[ ] thresholds for the four new numeric indicators — `articulation_gap`, `asset_growth_high`, `rnd_capitalization_shift`, `net_stock_issuance` · nothing waits: until rules v0.1 all four report their value and do not flag, so they measure from the first run and contribute nothing to a tier. What size of gap or growth should raise a flag needs the distribution over the 30 past cases, and a threshold is the owner's · needs judgment
 
 [ ] the two-by-two flag thresholds · the accounting flag count grew from 26 to 33 and the pressure count from 16 to 17 while "4 or more" and "3 or more" stayed put, which loosens both tiers · needs judgment
 
-[ ] the map from SIC code to sector ETF · which ETF stands for which range of SIC codes is a modelling choice with no test that can settle it, and the abnormal return depends on it · needs judgment
+[ ] narrowing the map from SIC code to sector ETF · the default is one ETF per SIC division and it ships with the market module, so nothing waits; whether a finer map by major group gives a better sector return is a modelling choice no test can settle · needs judgment
 
 [ ] the price source, if no free source retains delisted tickers · the probe item above answers whether one does; if none does, the choice is between a paid source, a narrower universe, and dropping the abnormal-return target · needs judgment
 

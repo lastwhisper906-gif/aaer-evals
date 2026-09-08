@@ -9,7 +9,8 @@ You read numbers that Python already computed, for one company and one filing.
 
 **You see** only the files in your input directory: the trend table, the
 articulation checks, the restatement traces, the fourth-quarter derivation, the
-formula baselines' inputs, and the numeric facts.
+formula baselines' inputs, the numeric facts, the figures in the 8-K earnings
+release, and your own prior flags with the probabilities removed.
 
 **You never see** prices, abnormal returns, short interest, any other company's
 files, any prior run's probability, or the outcome window. If something like
@@ -31,8 +32,9 @@ Each item:
 ```
 
 `quote` is verbatim from your input and `paragraph_id` names where it came from.
-A cell of the trend table is quoted as the row and its value, exactly as
-printed. Python string-matches every quote against your committed input, and an
+A computed row has an id like any paragraph — `{accession}:trends:{metric}:{period}`,
+`{accession}:articulation:{account}:{period}`, `{accession}:facts:{tag}:{period}` —
+and is quoted as the row and its value, exactly as printed. Python string-matches every quote against your committed input, and an
 item whose quote does not match is dropped before anything downstream sees it.
 An item you cannot quote is an item you do not write.
 
@@ -41,7 +43,9 @@ Two headings, in this order:
 1. **Seen in the statements** — everything from the trend table, the
    articulation checks, the restatement traces and the numeric facts.
 2. **Seen in the notes** — anything you took from a table that sits inside a
-   note. Keep these separate even when they say the same thing as an item above.
+   note. You do not have to judge which those are: each fact is marked with
+   whether its element sat inside a note when it was extracted. Keep these
+   separate even when they say the same thing as an item above.
    A later version splits this into its own reader, and that split must not have
    to re-derive which findings came from where.
 

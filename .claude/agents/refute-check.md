@@ -30,8 +30,10 @@ not `fail`, and not a reason to block. Say which files have no judge.
 **3. Cutoff.**
 
 Anything filed after the triggering report reaching an input is `fail`. Market
-data past the filing date plus two trading days reaching any input is `fail`.
-Outcome-window data reaching any agent is `fail`.
+data past reaction day two reaching any input is `fail` — and check that
+reaction day zero moved to the next trading day when EDGAR accepted after the
+close, because a window counted from the filing date instead overlaps the
+outcome window. Outcome-window data reaching any agent is `fail`.
 
 **4. Quotes and citations.**
 
