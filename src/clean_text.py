@@ -43,14 +43,29 @@ except ImportError:  # invoked as a plain script
 BAD_INPUT = 2
 
 _PAGE_LABEL = re.compile(r"^page\s*\d{1,4}$")
-_BARE_NUMBER = re.compile(r"^\d{1,4}$")
-# Page numbers climb through a document, one page at a time. A bare number in a
-# table does not: `2025` and `2024` sit side by side in every column heading and
-# `100` is a percentage. So a bare number is a page number only when it belongs
-# to a run of them that increases in document order — three or more, each a
-# little larger than the last. Everything else is data and stays.
+# Three digits, not four. A year is four and a page of one of these filings is
+# not: the longest document in the fixture set ends on page 115. Palo Alto's
+# MD&A prints `2023 2024 2025` up the columns of six tables, far enough apart
+# and flanked by enough prose to look exactly like a page run, and a fourth
+# digit is the one thing that tells them apart before any other rule runs.
+_BARE_NUMBER = re.compile(r"^\d{1,3}$")
+# Page numbers climb through a document, one page at a time, and they are a
+# *page* apart. A bare number in a table climbs too — `2027 2028 2029 2030` is
+# every lease and debt maturity table in the fixture set, and Apple's table of
+# contents prints `27 28 29` down its right-hand column — but those neighbours
+# are three paragraphs apart, not a page. So a bare number is a page number only
+# when it belongs to a run that increases in document order, three or more, each
+# a little larger than the last, **and each separated from the last by more text
+# than a table row**. Everything else is data and stays.
 PAGE_RUN_MIN_LENGTH = 3
 PAGE_RUN_MAX_STEP = 3
+# Visible paragraphs between one page tail and the next. Eight is below the
+# smallest gap between two genuine page tails in the fixture set — nine, from
+# Qualcomm's page 46, the last page of Item 7 and cut short by the end of it —
+# and above the gap down a column of years: Apple's table of contents prints
+# `27`, `28`, `29` three and two paragraphs apart, and every lease and debt
+# maturity table prints `2027 2028 2029 2030` one apart.
+PAGE_RUN_MIN_GAP = 8
 _TOC_LINK = re.compile(r"^table of contents$|^index$|^back to (?:table of )?contents$")
 _FORWARD_LOOKING = re.compile(
     r"forward[- ]looking statements?"
@@ -64,10 +79,21 @@ _SAFE_HARBOUR = re.compile(
 # 21` and `… | 22` are one header. `Income before income taxes`, repeated once
 # per table in the same section, is not — it is a row label, and deleting it
 # would take the words the numbers belong to. The rule errs towards keeping.
+#
+# The shape test alone is not enough, because a roll-forward prints `Balance at
+# June 30, 2023`, `Balance at June 28, 2024`, `Balance at June 27, 2025` — one
+# shape, three digit variants, a page apart. What separates those from a page
+# footer is what they sit next to: a row label is followed (or preceded) by the
+# numbers of its own row, and a page footer is not. So the shape decides which
+# lines are *candidates* and the neighbours decide, one occurrence at a time,
+# whether this one is furniture.
 _DIGITS = re.compile(r"\d+")
 RUNNING_HEADER_MIN_REPEATS = 3
 RUNNING_HEADER_MAX_CHARS = 140
 RUNNING_HEADER_MAX_WORDS = 12
+# A cell that is nothing but a number, a currency sign, a dash or a percent —
+# the cells of a table row, and nothing a filer writes as a sentence.
+_NUMBER_CELL = re.compile(r"^[\s$€£%()\[\]\-–—+.,:;/\d]+$")
 # A table with one or two numbers can match XBRL by coincidence. Below this it
 # is kept, whatever the numbers say.
 MIN_NUMERIC_CELLS_TO_DROP = 4
@@ -144,21 +170,40 @@ def _could_be_a_header(text: str) -> bool:
             and len(_WORD.findall(text)) >= 3)
 
 
+def _visible_positions(paragraphs: list[str]) -> list[int]:
+    """How many visible paragraphs precede each one.
+
+    Distance is measured in paragraphs a reader would see. Two filers in the
+    fixture set (Generac, ESCO) emit hundreds of zero-width-space paragraphs;
+    counting those as text would make a maturity table look a page wide.
+    """
+    positions, seen = [], 0
+    for paragraph in paragraphs:
+        positions.append(seen)
+        if not _INVISIBLE.match(paragraph):
+            seen += 1
+    return positions
+
+
 def page_numbers(paragraphs: list[str]) -> set[int]:
     """Indices of the paragraphs that are page numbers, by the run rule above."""
     candidates = [(index, int(html_text.normalized(paragraph)))
                   for index, paragraph in enumerate(paragraphs)
-                  if _BARE_NUMBER.match(html_text.normalized(paragraph))]
+                  if _BARE_NUMBER.match(html_text.normalized(paragraph))
+                  and beside_prose(paragraphs, index)]
     if not candidates:
         return set()
+    positions = _visible_positions(paragraphs)
 
-    # Longest chain of increasing page numbers in document order.
+    # Longest chain of increasing page numbers in document order, a page apart.
     best_length = [1] * len(candidates)
     came_from: list[int | None] = [None] * len(candidates)
     for here in range(len(candidates)):
         for before in range(here):
             step = candidates[here][1] - candidates[before][1]
-            if 0 < step <= PAGE_RUN_MAX_STEP and best_length[before] + 1 > best_length[here]:
+            gap = positions[candidates[here][0]] - positions[candidates[before][0]]
+            if (0 < step <= PAGE_RUN_MAX_STEP and gap >= PAGE_RUN_MIN_GAP
+                    and best_length[before] + 1 > best_length[here]):
                 best_length[here] = best_length[before] + 1
                 came_from[here] = before
     end = max(range(len(candidates)), key=lambda index: best_length[index])
@@ -172,43 +217,123 @@ def page_numbers(paragraphs: list[str]) -> set[int]:
     return run
 
 
+def _counts_pages(occurrences: list[list[str]]) -> bool:
+    """Do these occurrences differ in one digit group, and does it climb?
+
+    The digits that vary in a running header are the page number, so they
+    climb through the document. Qualcomm's MD&A bullets `+ $101 million
+    increase in share-based compensation expense`, `+ $269 million …`,
+    `+ $62 million …` are one shape with eight variants and they do not climb;
+    a table footnote alternates `(1) See Note 20 …`, `(2) See Note 20 …`,
+    `(1) …` and does not climb either. Both are the filing's own words.
+    """
+    if len({len(groups) for groups in occurrences}) != 1:
+        return False
+    varying = [position for position in range(len(occurrences[0]))
+               if len({groups[position] for groups in occurrences}) > 1]
+    if len(varying) != 1:
+        return False
+    numbers = [int(groups[varying[0]]) for groups in occurrences]
+    return all(before < after for before, after in zip(numbers, numbers[1:]))
+
+
 def running_headers(paragraphs: list[str]) -> set[str]:
     """The digit-masked shapes that are page furniture in this document."""
     seen: dict[str, set[str]] = {}
+    digits: dict[str, list[list[str]]] = {}
     counts: Counter = Counter()
     for paragraph in paragraphs:
         if not _could_be_a_header(paragraph):
             continue
+        flat = html_text.normalized(paragraph)
         shape = _shape(paragraph)
         counts[shape] += 1
-        seen.setdefault(shape, set()).add(html_text.normalized(paragraph))
+        seen.setdefault(shape, set()).add(flat)
+        digits.setdefault(shape, []).append(_DIGITS.findall(flat))
     return {shape for shape, count in counts.items()
-            if count >= RUNNING_HEADER_MIN_REPEATS and len(seen[shape]) >= 2}
+            if count >= RUNNING_HEADER_MIN_REPEATS and len(seen[shape]) >= 2
+            and _counts_pages(digits[shape])}
 
 
-def drop_reason(paragraph: str, headers: set[str], is_page_number: bool = False) -> str | None:
+def _is_number_cell(paragraph: str) -> bool:
+    flat = html_text.normalized(paragraph)
+    return bool(flat) and _NUMBER_CELL.match(flat) is not None
+
+
+def _neighbours(paragraphs: list[str], index: int) -> list[str | None]:
+    """The nearest visible paragraph on each side, or None at the edges."""
+    found: list[str | None] = []
+    for step in (-1, 1):
+        cursor = index + step
+        while 0 <= cursor < len(paragraphs) and _INVISIBLE.match(paragraphs[cursor]):
+            cursor += step
+        found.append(paragraphs[cursor] if 0 <= cursor < len(paragraphs) else None)
+    return found
+
+
+def beside_a_number(paragraphs: list[str], index: int) -> bool:
+    """True when the nearest visible paragraph on either side is a table cell.
+
+    `Balance at June 27, 2025` is followed by `213`, `—`, `7,706`: it is the
+    label of that row and the numbers mean nothing without it. `Apple Inc. |
+    2025 Form 10-K | 23` is followed by the heading `Gross Margin`.
+    """
+    return any(near is not None and _is_number_cell(near)
+               for near in _neighbours(paragraphs, index))
+
+
+def beside_prose(paragraphs: list[str], index: int) -> bool:
+    """True when at least one side of this paragraph is not a table cell.
+
+    This is the *page furniture* half of the rule the other way round. A page
+    tail sits at the foot of a page, so the text above it or the text below it
+    is the running text of the document. A bare number in a column of a table
+    has cells on both sides — `55` then `%`, `44` then `175` — and that is
+    Qualcomm's MD&A, where eight page tails and five table cells are all bare
+    numbers between 30 and 56.
+    """
+    return any(near is None or not _is_number_cell(near)
+               for near in _neighbours(paragraphs, index))
+
+
+def drop_reason(paragraph: str, headers: set[str], is_page_number: bool = False,
+                *, next_to_a_number: bool = False, is_table_cell: bool = False) -> str | None:
     """Why this paragraph does not belong in the input, or None to keep it."""
     if _INVISIBLE.match(paragraph):
         return "empty"
+    if is_table_cell:
+        # The document prints this text as a cell of a table it renders, so it
+        # is data, whatever shape it has. Deleting it would take a row label or
+        # a column heading off numbers that stay.
+        return None
     flat = html_text.normalized(paragraph)
     if is_page_number or _PAGE_LABEL.match(flat):
         return "page_number"
     if _TOC_LINK.match(flat):
         return "table_of_contents_link"
-    if _could_be_a_header(paragraph) and _shape(paragraph) in headers:
+    if _could_be_a_header(paragraph) and _shape(paragraph) in headers and not next_to_a_number:
         return "running_header"
     if _FORWARD_LOOKING.search(flat) and _SAFE_HARBOUR.search(flat):
         return "forward_looking_boilerplate"
     return None
 
 
-def clean_paragraphs(paragraphs: list[str]) -> dict:
-    """Keep or drop, one decision per paragraph, each drop with its reason."""
+def clean_paragraphs(paragraphs: list[str], *, cells: set[str] | None = None) -> dict:
+    """Keep or drop, one decision per paragraph, each drop with its reason.
+
+    `cells` is the flattened text of every cell of every table in the same
+    document, when the caller knows them. A paragraph the document also prints
+    inside a table is never dropped.
+    """
     headers = running_headers(paragraphs)
     pages = page_numbers(paragraphs)
+    cells = cells or set()
     kept, dropped = [], []
     for index, paragraph in enumerate(paragraphs):
-        reason = drop_reason(paragraph, headers, index in pages)
+        reason = drop_reason(
+            paragraph, headers, index in pages,
+            next_to_a_number=beside_a_number(paragraphs, index),
+            is_table_cell=html_text.normalized(paragraph) in cells)
         if reason is None:
             kept.append(paragraph)
         else:
@@ -216,12 +341,25 @@ def clean_paragraphs(paragraphs: list[str]) -> dict:
     return {"paragraphs": kept, "dropped": dropped}
 
 
+def table_cells(tables: list[list[list[str]]]) -> set[str]:
+    """Every cell of every table, flattened for comparison against a paragraph.
+
+    Case is flattened as well as whitespace. Seagate prints its navigation link
+    as `Table of Contents` in the text and `TABLE OF CONTENTS` inside a layout
+    table; matching the two costs a link and buys a rule with no case corner.
+    """
+    return {html_text.normalized(cell)
+            for table in tables for row in table for cell in row
+            if html_text.normalized(cell)}
+
+
 def clean(html: str, *, facts: list[dict] | None = None) -> dict:
     """Clean one HTML document: paragraphs kept or dropped, tables rendered."""
-    result = clean_paragraphs(html_text.paragraphs(html))
+    parsed = html_text.tables(html)
+    result = clean_paragraphs(html_text.paragraphs(html), cells=table_cells(parsed))
     values = fact_values(facts or [])
     tables = []
-    for number, table in enumerate(html_text.tables(html), start=1):
+    for number, table in enumerate(parsed, start=1):
         in_xbrl, numeric, matched = table_is_in_xbrl(table, values)
         tables.append({
             "number": number,
