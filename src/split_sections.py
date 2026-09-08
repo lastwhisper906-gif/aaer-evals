@@ -83,10 +83,18 @@ SECTIONS = {
     ("10-K", "auditors_report"): {
         "start": [r"^report of independent registered public accounting firm"],
         "marker": None,
+        # `reports of management` is management's section, not the auditor's,
+        # and Cisco puts it directly after the report under no item number.
+        # Without it the split ran 46 paragraphs and swept in the CEO's and the
+        # CFO's signatures — a signed statement by the people the report is
+        # about, published as if the auditor had written it.
         "end": [r"^consolidated statements? of operations\b",
                 r"^consolidated balance sheets?\b",
                 r"^consolidated statements? of income\b",
                 r"^consolidated and combined statements? of operations\b",
+                r"^reports? of management\b",
+                r"^statement of management.{0,3}s responsibility\b",
+                r"^management.{0,3}s report on internal control\b",
                 _item("8"), _item("9")],
         "select": r"critical audit matter",
     },
@@ -98,7 +106,10 @@ SECTIONS = {
     ("10-Q", "item_4_controls"): {
         "start": [_item("4", r"controls and procedures")],
         "marker": (_item("4") + r"$", r"^controls and procedures"),
-        "end": [_item("1", r"legal proceedings"), r"^part ii\b", _item("1a")],
+        # Carrier ends Part I with an unnumbered cautionary note, so Item 4 ran
+        # 25 paragraphs of which 22 were forward-looking-statement bullets.
+        "end": [_item("1", r"legal proceedings"), r"^part ii\b", _item("1a"),
+                r"^cautionary note\b"],
     },
 }
 

@@ -35,6 +35,9 @@ SPEC = {
                    r"|^consolidated balance sheets?\b"
                    r"|^consolidated statements? of income\b"
                    r"|^consolidated and combined statements? of operations\b"
+                   r"|^reports? of management\b"
+                   r"|^statement of management.{0,3}s responsibility\b"
+                   r"|^management.{0,3}s report on internal control\b"
                    r"|^item\s*8\b|^item\s*9\b"),
         re.compile(r"critical audit matter")),
     "item_9a": (
@@ -47,7 +50,8 @@ SPEC = {
         "10-Q",
         re.compile(r"^item\s*4\s*[.:\-–—]?\s*controls and procedures"),
         (re.compile(r"^item\s*4\s*[.:\-–—]?$"), re.compile(r"^controls and procedures")),
-        re.compile(r"^item\s*1\s*[.:\-–—]?\s*legal proceedings|^part ii\b|^item\s*1a\b"),
+        re.compile(r"^item\s*1\s*[.:\-–—]?\s*legal proceedings|^part ii\b"
+                   r"|^item\s*1a\b|^cautionary note\b"),
         None),
 }
 
@@ -215,3 +219,87 @@ def test_the_splitters_go_through_the_cutoff_gate():
                           ("10-Q", "item_4_controls")):
         with pytest.raises(cutoff_guard.CutoffViolationError):
             split_sections.extract("AAPL", form, section, cutoff=dt.date(2020, 1, 1))
+
+
+# --- the boundary, which cycle 19 had no criterion for ----------------------
+#
+# The end-pattern list knew only item headings and financial-statement titles,
+# so any unnumbered section between the target and the next item was absorbed:
+# CARR's Item 4 ran 25 paragraphs of which 22 were forward-looking-statement
+# bullets, and CSCO's auditor's report ran 46 of which 20 were "Reports of
+# Management" — including the CEO's and the CFO's signatures, published as
+# though the auditor had written them.
+#
+# Two headings are deliberately NOT foreign, and hand-reading says why: a 10-K
+# carries the report on the financial statements and the report on internal
+# control under the identical title (seven companies), and Item 9A is the item
+# that carries management's ICFR report (eight companies). Neither is another
+# item's heading and neither is a financial statement's.
+
+STATEMENT_TITLES = (r"^consolidated statements? of operations\b",
+                    r"^consolidated balance sheets?\b",
+                    r"^consolidated statements? of income\b",
+                    r"^consolidated and combined statements? of operations\b")
+
+
+def foreign_headings(form: str, section: str) -> list[re.Pattern]:
+    """Every item heading the splitter knows except this section's own."""
+    spec = split_sections.SECTIONS[(form, section)]
+    own = set(spec["start"])
+    if spec.get("marker"):
+        own.add(spec["marker"][0])
+    items = set()
+    for other in split_sections.SECTIONS.values():
+        patterns = list(other["start"]) + list(other["end"])
+        if other.get("marker"):
+            patterns.append(other["marker"][0])
+        items |= {p for p in patterns if p.startswith(r"^item\s*")}
+    return [re.compile(p) for p in sorted(items - own) + list(STATEMENT_TITLES)]
+
+
+@pytest.mark.parametrize("ticker", TICKERS)
+@pytest.mark.parametrize("form,section", (("10-K", "auditors_report"),
+                                          ("10-K", "item_9a"),
+                                          ("10-Q", "item_4_controls")))
+def test_no_paragraph_after_the_first_is_another_sections_heading(ticker, form, section):
+    payload = split_sections.extract(ticker, form, section)
+    foreign = foreign_headings(form, section)
+    for index, paragraph in enumerate(payload["paragraphs"][1:], start=2):
+        flat = html_text.normalized(paragraph)
+        hit = next((p.pattern for p in foreign if p.search(flat)), None)
+        assert hit is None, f"{ticker} {form} {section} [{index}] matches {hit!r}"
+
+
+def test_carriers_item_4_ends_at_the_no_change_statement():
+    """Read from the filing: [1] the heading, [2] the Rule 13a-15 evaluation,
+    [3] "There has been no change in our internal control over financial
+    reporting during the three months ended June 30, 2026…". [4] opens
+    "CAUTIONARY NOTE CONCERNING FACTORS THAT MAY AFFECT FUTURE RESULTS", which
+    is Carrier's own unnumbered section and not part of Item 4."""
+    payload = split_sections.extract("CARR", "10-Q", "item_4_controls")
+    assert len(payload["paragraphs"]) == 3
+    assert payload["paragraphs"][-1].startswith(
+        "There has been no change in our internal control over financial reporting")
+
+
+def test_ciscos_auditors_report_ends_before_reports_of_management():
+    """Read from the filing: [21] `/s/ PricewaterhouseCoopers LLP`, [22] San
+    Jose, [23] the date, [24] "We have served as the Company's auditor since
+    1988." — the report's own last paragraph. [25] `54` and [26] `Table of
+    Contents` are page furniture, and [27] opens "Reports of Management", which
+    is management's section and carries the CEO's and the CFO's signatures."""
+    payload = split_sections.extract("CSCO", "10-K", "auditors_report")
+    assert len(payload["paragraphs"]) == 26
+    assert payload["paragraphs"][23] == \
+        "We have served as the Company\u2019s auditor since 1988."
+    # The cleaner takes the two `Table of Contents` headers and keeps the page
+    # numbers `53` and `54`: two candidates is below the page-run threshold, and
+    # a section handed to the cleaner on its own does not show the run a whole
+    # document does. That is the conservative direction R20-2 asked for, and it
+    # is recorded here rather than tuned around.
+    assert len(payload["carried"]) == 24
+    assert payload["carried"][22] == payload["paragraphs"][23]
+    assert payload["carried"][-1] == "54"
+    joined = "\n".join(payload["paragraphs"])
+    assert "CHARLES H. ROBBINS" not in joined
+    assert "Statement of Management" not in joined

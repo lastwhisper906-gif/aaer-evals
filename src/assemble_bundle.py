@@ -1,9 +1,10 @@
-"""One run directory: the eight files the predictor sees, and the manifest.
+"""One run directory: the files the predictor sees, and the manifest.
 
-`docs/INPUT_SPEC.md` §5 names the eight. This file writes them and then writes
-`input_manifest.json`, which is the index a reader uses to check the other
-seven: every paragraph id that reached a file, every paragraph that was
-excluded and why, the cutoff, and the two placeholders that are not real yet.
+`docs/INPUT_SPEC.md` §5 names eight. This file writes nine — see `FILES` for
+the ninth and the conflict inside the spec that puts it there — and then writes
+`input_manifest.json`, which is the index a reader uses to check the others:
+every paragraph id that reached a file, every paragraph that was excluded and
+why, the cutoff, and the two placeholders that are not real yet.
 
 **The cutoff is the triggering report's filing date**, so the bundle for a 10-K
 cannot contain the 10-Q that came after it. That is not a detail of this file —
@@ -47,14 +48,25 @@ BAD_INPUT = 2
 DEFAULT_ROOT = Path("runs")
 TRIGGERING_FORMS = ("10-K", "10-Q")
 
+# `input_controls.md` is the ninth file and `docs/INPUT_SPEC.md` §5 lists eight.
+# §1 requires the auditor's report with its critical audit matters, Item 9A and
+# the 10-Q's Item 4 — "HTML section split" — and §5 has no file to put them in,
+# so the two sections of the spec disagree. `docs/` is not ours to edit; the
+# name follows §5's own convention (`input_{what it holds}.md`) so that
+# reconciling it is a one-line change, and the conflict is in the build report.
 FILES = ("input_numbers.json", "input_trends.json", "input_notes.md",
-         "input_notes_history.md", "input_mdna.md", "input_8k.md",
-         "input_prior_predictions.md", "input_manifest.json")
+         "input_notes_history.md", "input_mdna.md", "input_controls.md",
+         "input_8k.md", "input_prior_predictions.md", "input_manifest.json")
 # The files a paragraph id can live in. The two JSON files carry fact ids and
 # period labels, which are a different kind of thing and are indexed by their
 # own contents.
 PARAGRAPH_FILES = ("input_notes.md", "input_notes_history.md", "input_mdna.md",
-                   "input_8k.md", "input_prior_predictions.md")
+                   "input_controls.md", "input_8k.md",
+                   "input_prior_predictions.md")
+
+# 10-K: the auditor's report and Item 9A. 10-Q: Item 4. `docs/INPUT_SPEC.md` §1.
+CONTROL_SECTIONS = {"10-K": ("auditors_report", "item_9a"),
+                    "10-Q": ("item_4_controls",)}
 
 RULES_VERSION_COMMENT = (
     "null until rules/v0.1 exists; a prediction is scored against its own rules "
@@ -154,6 +166,49 @@ def note_stream(ticker: str, form: str, *, cutoff, fixtures_root):
           "verbatim_topic": diff_periods.always_verbatim("mdna", text)}
          for index, text in enumerate(kept, start=1)], [])
     return notes, mdna, None
+
+
+def control_sections(ticker: str, form: str, *, cutoff, fixtures_root) -> list[dict]:
+    """The untagged sections `docs/INPUT_SPEC.md` §1 asks for, one entry each.
+
+    `docs/CHECKLIST.md` makes `control_weakness_disclosed` and
+    `new_critical_audit_matter` questions the model answers with a quote and a
+    paragraph id. Until this file existed the bundles held no occurrence of
+    `critical audit matter`, `disclosure controls and procedures`, `material
+    weakness` or `report of independent registered public accounting firm` — so
+    the only way to answer was to quote something that is not in the inputs.
+
+    A section that is genuinely not in the document is recorded with the reason,
+    the same way a missing 8-K and a missing note history are. It is never
+    silently absent.
+    """
+    out = []
+    for section in CONTROL_SECTIONS[form]:
+        try:
+            found = split_sections.extract(ticker, form, section, cutoff=cutoff,
+                                           fixtures_root=fixtures_root)
+        except split_sections.SectionNotFound as exc:
+            out.append({"section": section, "paragraphs": [], "reason": str(exc)})
+            continue
+        out.append({"section": section,
+                    "accession": found["accession"],
+                    "filing_date": found["filing_date"],
+                    "heading_candidates": found["heading_candidates"],
+                    "paragraphs": list(zip(found["paragraph_ids"], found["carried"])),
+                    "reason": None})
+    return out
+
+
+def render_controls(ticker: str, form: str, sections: list[dict]) -> str:
+    out = [f"# {ticker} {form} controls and the auditor's report", ""]
+    for entry in sections:
+        out.extend(["", f"## {entry['section']}", ""])
+        if entry["reason"]:
+            out.extend([entry["reason"] + ".", ""])
+            continue
+        for identifier, text in entry["paragraphs"]:
+            out.extend([f"[{identifier}]", text, ""])
+    return "\n".join(out)
 
 
 def excluded_paragraphs(ticker: str, form: str, *, cutoff, fixtures_root) -> list[dict]:
@@ -319,6 +374,9 @@ def build(ticker: str, form: str, *, cutoff=None, fixtures_root=cutoff_guard.FIX
 
     prior_text, prior_entries = prior_predictions(ticker, Path(prior_runs))
 
+    controls = control_sections(ticker, form, cutoff=cutoff,
+                                fixtures_root=fixtures_root)
+
     texts = {
         "input_numbers.json": json.dumps(numbers, indent=2, sort_keys=False,
                                          default=str) + "\n",
@@ -328,6 +386,7 @@ def build(ticker: str, form: str, *, cutoff=None, fixtures_root=cutoff_guard.FIX
         "input_notes_history.md": history_text,
         "input_mdna.md": diff_periods.render(
             mdna, f"{ticker} MD&A — {trigger['accession']}"),
+        "input_controls.md": render_controls(ticker, form, controls),
         "input_8k.md": eight_k_text,
         "input_prior_predictions.md": prior_text,
     }
@@ -350,6 +409,10 @@ def build(ticker: str, form: str, *, cutoff=None, fixtures_root=cutoff_guard.FIX
                 paragraphs.append({"id": entry["previous_id"],
                                    "file": "input_notes_history.md",
                                    "kind": "previous"})
+    for entry in controls:
+        for identifier, _ in entry["paragraphs"]:
+            paragraphs.append({"id": identifier, "file": "input_controls.md",
+                               "kind": "verbatim"})
     for identifier in paragraph_ids(texts["input_8k.md"]):
         paragraphs.append({"id": identifier, "file": "input_8k.md",
                            "kind": "table" if ":8k_2_02_table:" in identifier
@@ -366,6 +429,11 @@ def build(ticker: str, form: str, *, cutoff=None, fixtures_root=cutoff_guard.FIX
         if reason:
             exclusions.append({"id": f"{trigger['accession']}:file:{name}",
                                "source": name, "reason": reason, "text": ""})
+    for entry in controls:
+        if entry["reason"]:
+            exclusions.append({"id": f"{trigger['accession']}:section:{entry['section']}",
+                               "source": "input_controls.md",
+                               "reason": entry["reason"], "text": ""})
 
     manifest = {
         "ticker": ticker,
@@ -389,6 +457,8 @@ def build(ticker: str, form: str, *, cutoff=None, fixtures_root=cutoff_guard.FIX
             "mdna": sum(1 for entry in paragraphs if entry["file"] == "input_mdna.md"),
             "note_history": sum(1 for entry in paragraphs
                                 if entry["file"] == "input_notes_history.md"),
+            "controls": sum(1 for entry in paragraphs
+                            if entry["file"] == "input_controls.md"),
             "eight_k": sum(1 for entry in paragraphs if entry["file"] == "input_8k.md"),
         },
         "files": {name: {"sha256": _sha256(text.encode("utf-8")),

@@ -40,16 +40,20 @@ def ids_in_files(texts: dict) -> set[str]:
     return found
 
 
-# --- (b) the command writes the eight files ---------------------------------
+# --- (b) the command writes every file --------------------------------------
 
-def test_the_command_writes_all_eight_files(tmp_path):
+def test_the_command_writes_every_file(tmp_path):
     out = tmp_path / "bundle"
     assert assemble_bundle.main(
         ["--ticker", "aapl", "--form", "10-K", "--out", str(out)]) == 0
     assert sorted(path.name for path in out.iterdir()) == sorted(assemble_bundle.FILES)
     for name in assemble_bundle.FILES:
         assert (out / name).read_text(encoding="utf-8").strip()
-    assert len(assemble_bundle.FILES) == 8
+    # Nine, not the eight `docs/INPUT_SPEC.md` §5 lists: §1 requires the
+    # auditor's report, Item 9A and Item 4, and §5 gives them no file. The
+    # conflict is inside the spec and the spec is not ours to edit.
+    assert len(assemble_bundle.FILES) == 9
+    assert "input_controls.md" in assemble_bundle.FILES
 
 
 def test_the_command_refuses_a_form_that_does_not_trigger_a_run(tmp_path):
@@ -421,3 +425,54 @@ def test_the_note_history_count_is_its_entries_plus_its_changed_ones(ticker, for
     block = record["note_history"][form]
     assert listed == sum(block[kind] for kind in ("added", "removed", "changed")) \
         + block["changed"]
+
+
+# --- the untagged sections reach the bundle ----------------------------------
+#
+# `docs/INPUT_SPEC.md` §1 requires the auditor's report with its critical audit
+# matters, Item 9A and the 10-Q's Item 4. Every caller in `src/` used to ask for
+# `mdna` and nothing else, so across all 24 bundles there were zero occurrences
+# of `critical audit matter`, `disclosure controls and procedures`, `material
+# weakness` or `report of independent registered public accounting firm` — and
+# `docs/CHECKLIST.md` asks the model four questions that can only be answered by
+# quoting them.
+
+CHECKLIST_WORDS = ("critical audit matter", "disclosure controls and procedures",
+                   "report of independent registered public accounting firm")
+
+
+@pytest.mark.parametrize("ticker", TICKERS)
+@pytest.mark.parametrize("form", ("10-K", "10-Q"))
+def test_the_controls_file_carries_the_sections_the_spec_requires(ticker, form):
+    bundle = built(ticker, form)
+    text = bundle["texts"]["input_controls.md"]
+    for section in assemble_bundle.CONTROL_SECTIONS[form]:
+        assert f":{section}:" in text, f"{ticker} {form}: no {section} paragraph id"
+    listed = {entry["id"] for entry in bundle["manifest"]["paragraphs"]
+              if entry["file"] == "input_controls.md"}
+    assert listed == set(assemble_bundle.paragraph_ids(text))
+    assert listed, f"{ticker} {form}: the file is in the manifest with no paragraphs"
+
+
+@pytest.mark.parametrize("ticker", TICKERS)
+def test_the_ten_k_bundle_can_answer_the_checklists_audit_questions(ticker):
+    """A quote has to exist in the inputs before it can be checked against them."""
+    joined = "\n".join(text for name, text in built(ticker, "10-K")["texts"].items()
+                        if name.endswith(".md")).lower()
+    for phrase in CHECKLIST_WORDS:
+        assert phrase in joined, f"{ticker}: no bundle text says {phrase!r}"
+
+
+@pytest.mark.parametrize("ticker", TICKERS)
+@pytest.mark.parametrize("form", ("10-K", "10-Q"))
+def test_every_control_paragraph_is_the_filings_own_text(ticker, form):
+    row = cutoff_guard.one_document(ticker, form, "primary_html")
+    source = independent_text.Source(
+        cutoff_guard.load_document(row["full_path"], row["filing_date"]))
+    text = built(ticker, form)["texts"]["input_controls.md"]
+    misses = []
+    for _, body in assemble_bundle.paragraph_blocks(text):
+        for piece in independent_text.quotable(body):
+            if not source.contains(piece):
+                misses.append(piece)
+    assert not misses, f"{ticker} {form}: {misses[:2]}"

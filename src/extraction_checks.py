@@ -53,7 +53,7 @@ REQUIRED_KEYS = {
                             "counts", "files"),
 }
 MARKDOWN_FILES = ("input_notes.md", "input_notes_history.md", "input_mdna.md",
-                  "input_8k.md", "input_prior_predictions.md")
+                  "input_controls.md", "input_8k.md", "input_prior_predictions.md")
 
 
 class Result:
