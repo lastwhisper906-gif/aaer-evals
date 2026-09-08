@@ -14,5 +14,6 @@ Rules
 - Each prediction is scored against its own rules version. Rule changes apply from the next version.
 - Never soften an adverse result.
 - Read lessons.md at session start. Write this session's mistakes to lessons.md, one line each, at session end.
+- Start long runs under `caffeinate -s` so a locked screen never stops them. The lock is harmless; system sleep is what halts the loop.
 
 Success criterion: every published prediction is reproducible from its published inputs alone, every quote exists in those inputs, and the inputs do not violate the cutoff.
