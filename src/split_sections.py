@@ -24,7 +24,11 @@ heading is inside an anchor and CSCO's table-of-contents entry is not. It is
 recorded here because it is the obvious rule and it is wrong.
 
     python3.12 -m src.split_sections --ticker AAPL --form 10-K --section mdna \\
-        --out input_mdna.md
+        --out aapl-mdna.md
+
+The ids it mints are the bundle's — `{accession}:{section}:{n}` over the
+paragraphs that survive the cleaner — but the file is not: a bundle's MD&A has
+been through the diff layer. `--out input_*.md` is refused for that reason.
 """
 
 from __future__ import annotations
@@ -36,10 +40,10 @@ import sys
 from pathlib import Path
 
 try:
-    from src import cutoff_guard, html_text, interpreter_pin
+    from src import clean_text, cutoff_guard, html_text, interpreter_pin
 except ImportError:  # invoked as a plain script
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from src import cutoff_guard, html_text, interpreter_pin
+    from src import clean_text, cutoff_guard, html_text, interpreter_pin
 
 BAD_INPUT = 2
 
@@ -273,13 +277,20 @@ def extract(ticker: str, form: str, section: str, *, cutoff=None,
                                       fixtures_root=fixtures_root)
     found = split(html, form, section)
     accession = row["accession"]
+    # `paragraphs` is the section as the document has it; `carried` is what
+    # survives the cleaner, and the ids are minted over **that**, because that
+    # is the list the bundle publishes. Minting them over `paragraphs` gave the
+    # same string two meanings: 333 of AAPL's 365 `…:mdna:n` ids named one
+    # paragraph here and a different one in the bundle.
+    carried = clean_text.clean_stream(blocks=found["blocks"])["paragraphs"]
     found.update({
         "ticker": ticker,
         "cutoff": str(cutoff),
         "accession": accession,
         "filing_date": row["filing_date"],
+        "carried": carried,
         "paragraph_ids": [f"{accession}:{section}:{index}"
-                          for index in range(1, len(found["paragraphs"]) + 1)],
+                          for index in range(1, len(carried) + 1)],
     })
     return found
 
@@ -287,7 +298,7 @@ def extract(ticker: str, form: str, section: str, *, cutoff=None,
 def render(payload: dict) -> str:
     lines = [f"# {payload['ticker']} {payload['form']} {payload['section']} "
              f"— {payload['accession']} filed {payload['filing_date']}", ""]
-    for paragraph_id, paragraph in zip(payload["paragraph_ids"], payload["paragraphs"]):
+    for paragraph_id, paragraph in zip(payload["paragraph_ids"], payload["carried"]):
         lines.append(f"[{paragraph_id}]")
         lines.append(paragraph)
         lines.append("")
@@ -304,6 +315,17 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out", required=True)
     args = parser.parse_args(argv)
 
+    # A bundle filename is `src/assemble_bundle.py`'s to write. This CLI mints
+    # the same ids the bundle does, but not the same file: the bundle's MD&A
+    # has been through the diff layer, so `input_mdna.md` written from here
+    # would be a second file of that name with different content under the same
+    # ids. Refusing the name is cheaper than reconciling the two.
+    if Path(args.out).name.startswith("input_"):
+        print(f"split_sections: {Path(args.out).name} is a bundle filename — "
+              f"use src.assemble_bundle for a bundle, or another name here",
+              file=sys.stderr)
+        return BAD_INPUT
+
     try:
         payload = extract(args.ticker.upper(), args.form, args.section,
                           cutoff=args.cutoff, fixtures_root=Path(args.fixtures))
@@ -312,7 +334,7 @@ def main(argv: list[str] | None = None) -> int:
         return BAD_INPUT
     Path(args.out).write_text(render(payload), encoding="utf-8")
     print(f"split_sections: {args.ticker.upper()} {args.form} {args.section} "
-          f"{len(payload['paragraphs'])} paragraphs "
+          f"{len(payload['carried'])} paragraphs of {len(payload['paragraphs'])} "
           f"({payload['heading_candidates']} heading candidates) → {args.out}")
     return 0
 

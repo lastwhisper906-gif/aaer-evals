@@ -195,8 +195,18 @@ def history(ticker: str, *, cutoff=None, fixtures_root=cutoff_guard.FIXTURES) ->
     entries.sort(key=lambda entry: (entry["period"], entry["key_note"], entry["note"]))
     # An id per entry, minted after the sort so it is the file's own order. The
     # bundle manifest lists these, and an entry with no id cannot be listed.
+    #
+    # **The id names the filing the text came from.** A `removed` entry's text
+    # is the prior filing's, and a `changed` entry prints two paragraphs from
+    # two filings, so it carries two ids. Minting all of them from the current
+    # accession published prior-period text under a current-period id — AAPL 7
+    # removed and 8 changed, CSCO 24 and 76, NVDA 123 and 22 — and a quote
+    # checked against the filing that id names would not be found.
     for number, entry in enumerate(entries, start=1):
-        entry["id"] = f"{now['accession']}:note_history:{number}"
+        source = before["accession"] if entry["kind"] == "removed" else now["accession"]
+        entry["id"] = f"{source}:note_history:{number}"
+        if entry["kind"] == "changed":
+            entry["previous_id"] = f"{before['accession']}:note_history:{number}"
     counts = {kind: sum(1 for entry in entries if entry["kind"] == kind)
               for kind in ("added", "removed", "changed")}
     match_rules = {rule: sum(1 for pair in pairs if pair["matched_by"] == rule)
@@ -228,6 +238,7 @@ def render(payload: dict) -> str:
         out.append(entry["text"])
         if entry["kind"] == "changed":
             out.append(f"  (was, {entry['prior_period']}, similarity {entry['score']}):")
+            out.append(f"[{entry['previous_id']}]")
             out.append(entry["previous_text"])
         out.append("")
     return "\n".join(out)

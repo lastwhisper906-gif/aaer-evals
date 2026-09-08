@@ -91,7 +91,11 @@ def test_the_splitter_finds_exactly_that_many_paragraphs(ticker, form):
 def test_paragraph_ids_are_unique_and_dense(ticker, form):
     payload = split_sections.extract(ticker, form, "mdna")
     accession = payload["accession"]
-    count = len(payload["paragraphs"])
+    # One id per paragraph that survives the cleaner, because that is the list
+    # the bundle publishes. Minted over the raw `paragraphs` the same string
+    # named a different paragraph here than in the bundle.
+    count = len(payload["carried"])
+    assert count <= len(payload["paragraphs"])
     assert set(payload["paragraph_ids"]) == \
         {f"{accession}:mdna:{index}" for index in range(1, count + 1)}
     assert len(set(payload["paragraph_ids"])) == count

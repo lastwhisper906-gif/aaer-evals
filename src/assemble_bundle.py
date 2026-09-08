@@ -343,6 +343,13 @@ def build(ticker: str, form: str, *, cutoff=None, fixtures_root=cutoff_guard.FIX
         for entry in history["entries"]:
             paragraphs.append({"id": entry["id"], "file": "input_notes_history.md",
                                "kind": entry["kind"]})
+            # A `changed` entry prints two paragraphs from two filings. Both are
+            # in the file, so both are in the manifest, each under the accession
+            # its text came from.
+            if entry["kind"] == "changed":
+                paragraphs.append({"id": entry["previous_id"],
+                                   "file": "input_notes_history.md",
+                                   "kind": "previous"})
     for identifier in paragraph_ids(texts["input_8k.md"]):
         paragraphs.append({"id": identifier, "file": "input_8k.md",
                            "kind": "table" if ":8k_2_02_table:" in identifier

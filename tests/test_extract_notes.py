@@ -107,8 +107,10 @@ def test_at_least_one_company_carries_a_note_on_its_own_extension_namespace():
 def test_note_ids_are_dense_and_unique(ticker):
     sections = extract_notes.extract(ticker, "10-K")["sections"]
     accession = extract_notes.extract(ticker, "10-K")["accession"]
+    # `note_section`, not `notes`: `…:notes:n` is the nth paragraph of
+    # `input_notes.md` and this is the nth TextBlock of the instance.
     assert [section["id"] for section in sections] == \
-        [f"{accession}:notes:{i}" for i in range(1, len(sections) + 1)]
+        [f"{accession}:note_section:{i}" for i in range(1, len(sections) + 1)]
 
 
 def test_the_extractor_goes_through_the_cutoff_gate():

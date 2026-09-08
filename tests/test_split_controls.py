@@ -124,7 +124,7 @@ def test_the_splitter_finds_exactly_that_many_paragraphs(ticker, section):
 def test_paragraph_ids_are_unique_and_dense(ticker, section):
     form = SPEC[section][0]
     payload = split_sections.extract(ticker, form, section)
-    count = len(payload["paragraphs"])
+    count = len(payload["carried"])
     assert set(payload["paragraph_ids"]) == \
         {f"{payload['accession']}:{section}:{index}" for index in range(1, count + 1)}
 

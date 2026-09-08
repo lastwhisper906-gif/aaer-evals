@@ -20,7 +20,7 @@ from pathlib import Path
 import pytest
 
 from src import (assemble_bundle, clean_text, cutoff_guard, diff_periods,
-                 extract_notes)
+                 extract_notes, split_sections)
 from src.fetch_fixtures import TICKERS
 from tests import independent_text
 
@@ -356,3 +356,68 @@ def test_a_table_is_one_paragraph_holding_all_of_its_rows():
     assert stream[2] == "After"
     assert stream[1].split("\n") == [BAR + " Year " + BAR + " Amount " + BAR,
                                      BAR + " 2026 " + BAR + " 1,000 " + BAR]
+
+
+# --- one id per paragraph, minted once ---------------------------------------
+
+@pytest.mark.parametrize("ticker", TICKERS)
+@pytest.mark.parametrize("form", ("10-K", "10-Q"))
+def test_no_id_in_the_bundle_names_two_different_paragraphs(ticker, form):
+    """Across the eight files of one bundle, an id resolves to one text."""
+    texts = built(ticker, form)["texts"]
+    seen = {}
+    for name, text in texts.items():
+        if not name.endswith(".md"):
+            continue
+        for identifier, body in assemble_bundle.paragraph_blocks(text):
+            if identifier in seen:
+                assert seen[identifier] == body, f"{ticker} {form}: {identifier}"
+            seen[identifier] = body
+
+
+@pytest.mark.parametrize("ticker", TICKERS)
+@pytest.mark.parametrize("form", ("10-K", "10-Q"))
+def test_the_section_cli_mints_the_ids_the_bundle_publishes(ticker, form):
+    """`split_sections` and the bundle name the same paragraph by the same id.
+    They were two producers over two lists: 333 of AAPL's 365 `…:mdna:n` ids
+    named one paragraph in the CLI's file and a different one in the bundle."""
+    found = split_sections.extract(ticker, form, "mdna")
+    if form == "10-Q":
+        entries = diff_periods.extract(ticker)["mdna"]
+    else:
+        _, entries, _ = assemble_bundle.note_stream(
+            ticker, form, cutoff=None, fixtures_root=cutoff_guard.FIXTURES)
+    assert list(zip(found["paragraph_ids"], found["carried"])) == \
+        [(entry["id"], entry["text"]) for entry in entries]
+
+
+def test_the_section_cli_refuses_to_write_a_bundle_filename(tmp_path, capsys):
+    """It mints the bundle's ids over text the diff layer has not seen, so a
+    file of that name from here would hold different text under the same ids."""
+    out = tmp_path / "input_mdna.md"
+    assert split_sections.main(["--ticker", "AAPL", "--form", "10-Q",
+                                "--out", str(out)]) != 0
+    assert not out.exists()
+    assert "bundle filename" in capsys.readouterr().err
+    other = tmp_path / "aapl-mdna.md"
+    assert split_sections.main(["--ticker", "AAPL", "--form", "10-Q",
+                                "--out", str(other)]) == 0
+    assert other.exists()
+
+
+@pytest.mark.parametrize("ticker", TICKERS)
+@pytest.mark.parametrize("form", ("10-K", "10-Q"))
+def test_the_note_history_count_is_its_entries_plus_its_changed_ones(ticker, form):
+    """The recorded count is not free-floating: a changed entry puts two
+    paragraphs in the file, so the count is entries + changed, and both halves
+    are recorded separately in the same expected.json."""
+    manifest = built(ticker, form)["manifest"]
+    listed = manifest["counts"]["note_history"]
+    record = json.loads((REPO_ROOT / "tests" / "fixtures" / ticker /
+                         "expected.json").read_text())
+    if "note_history" not in record or form not in record["note_history"]:
+        assert listed == 0 or form == "10-K"
+        return
+    block = record["note_history"][form]
+    assert listed == sum(block[kind] for kind in ("added", "removed", "changed")) \
+        + block["changed"]

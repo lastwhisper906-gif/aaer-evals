@@ -67,8 +67,13 @@ def test_the_rendered_file_holds_nothing_but_entries_and_headings(ticker):
     scaffolding or a paragraph out of one of the two filings."""
     payload = note_history.history(ticker)
     source = sources(ticker)
+    # A changed entry prints two paragraphs from two filings and so carries two
+    # ids, one per filing. Every other kind carries one.
+    changed = [entry for entry in payload["entries"] if entry["kind"] == "changed"]
     identifiers = {entry["id"] for entry in payload["entries"]}
-    assert len(identifiers) == len(payload["entries"]), f"{ticker}: an id is repeated"
+    identifiers |= {entry["previous_id"] for entry in changed}
+    assert len(identifiers) == len(payload["entries"]) + len(changed), \
+        f"{ticker}: an id is repeated"
     stray, seen = [], set()
     for line in note_history.render(payload).split("\n"):
         if not line.strip() or line.startswith(("#", "- ", "  (was")):
@@ -294,3 +299,42 @@ def test_the_always_verbatim_notes_are_carried_by_the_diff_layer_not_here():
     doing it twice would put full text in the file that must not have any."""
     assert {"contingencies_and_litigation", "subsequent_events", "related_parties"} \
         <= set(diff_periods.ALWAYS_VERBATIM)
+
+
+# --- an id names the filing its text came from -------------------------------
+#
+# Every entry used to be minted from the current accession, so a `removed`
+# paragraph — which is the *prior* filing's text, and is in the file precisely
+# because it is not in the current one — was published under a current-period
+# id. A reader checking that quote against the filing the id names would not
+# find it. AAPL 7 removed and 8 changed, CSCO 24 and 76, NVDA 123 and 22.
+
+@pytest.mark.parametrize("ticker", TICKERS)
+def test_an_entrys_id_names_the_filing_its_text_came_from(ticker):
+    payload = note_history.history(ticker)
+    now, before = payload["accession"], payload["prior_accession"]
+    assert now != before
+    current = independent_text.Source("\n".join(
+        section["html"] for section in extract_notes.extract(ticker, "10-Q")["sections"]))
+    prior = independent_text.Source("\n".join(
+        section["html"] for section in extract_notes.extract(
+            ticker, "10-Q", role="prior_period_xbrl_instance")["sections"]))
+    for entry in payload["entries"]:
+        named = before if entry["kind"] == "removed" else now
+        assert entry["id"].startswith(named), f"{ticker}: {entry['kind']} {entry['id']}"
+        holder = prior if entry["kind"] == "removed" else current
+        assert all(holder.contains(piece)
+                   for piece in independent_text.quotable(entry["text"])), \
+            f"{ticker}: {entry['id']} is not in the filing it names"
+
+
+@pytest.mark.parametrize("ticker", TICKERS)
+def test_a_changed_entry_carries_an_id_for_each_of_its_two_paragraphs(ticker):
+    payload = note_history.history(ticker)
+    changed = [entry for entry in payload["entries"] if entry["kind"] == "changed"]
+    assert changed, f"{ticker}: nothing changed, so the rule is untested"
+    rendered = note_history.render(payload)
+    for entry in changed:
+        assert entry["previous_id"].startswith(payload["prior_accession"])
+        assert entry["previous_id"] != entry["id"]
+        assert f"[{entry['previous_id']}]" in rendered

@@ -80,7 +80,11 @@ def sections_from_instance(xml_bytes: bytes, *, accession: str,
         inside[element] = ancestor or name
         source_html = "".join(element.itertext())
         sections.append({
-            "id": f"{accession}:notes:{len(sections) + 1}",
+            # A *section* id. `…:notes:n` belongs to the paragraph stream that
+            # reaches `input_notes.md`, and minting it here too gave the same
+            # string two meanings — the fifteenth TextBlock and the fifteenth
+            # paragraph are not the same thing.
+            "id": f"{accession}:note_section:{len(sections) + 1}",
             "tag": local,
             "prefix": prefix,
             "namespace": uri,
