@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import functools
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -182,12 +183,20 @@ def test_a_ten_k_bundle_leaves_out_the_ten_q_that_came_after_it():
 
 
 def test_a_bundle_without_an_eight_k_says_so_instead_of_shipping_an_empty_file():
-    """Seagate's 8-K was filed after the 10-Q this bundle is for."""
+    """Seagate's 8-K was filed after the 10-Q this bundle is for.
+
+    The sentence says what is missing and stops there. It used to go on to name
+    the held 8-K's own filing date — a date after the cutoff, written into the
+    text the predictor reads, in 15 of the 24 bundles.
+    """
     bundle = built("STX")
+    cutoff = bundle["manifest"]["cutoff"]
     reasons = [entry["reason"] for entry in bundle["manifest"]["exclusions"]
                if entry["id"].endswith(":file:input_8k.md")]
-    assert len(reasons) == 1 and "after the 10-Q this bundle is for" in reasons[0]
-    assert "no 8-K at or before" in bundle["texts"]["input_8k.md"]
+    assert len(reasons) == 1
+    assert f"no 8-K filed at or before {cutoff} is on record" in reasons[0]
+    assert f"no 8-K filed at or before {cutoff} is on record" in \
+        bundle["texts"]["input_8k.md"]
     assert bundle["manifest"]["counts"]["eight_k"] == 0
 
 
@@ -511,8 +520,165 @@ def test_a_bundle_with_no_earnings_exhibit_still_carries_the_filing_index():
     has no earnings release. The item codes and the late-filing notices come
     from `submissions.json`, which is on record either way."""
     text = built("TTMI", "10-Q")["texts"]["input_8k.md"]
-    assert "no 8-K at or before 2026-08-05" in text
+    assert "no 8-K filed at or before 2026-08-05 is on record" in text
     assert "## item codes, every 8-K on or before 2026-08-05" in text
     assert "## late-filing notifications on or before 2026-08-05" in text
     assert "0001193125-26-337923" not in text      # filed 2026-08-06
     assert "0001193125-26-336163" not in text
+
+
+# --- the cutoff holds in the prose, not only in the document list ------------
+#
+# Gate 3 compares `documents[*].filing_date` to the cutoff, so a bundle can pass
+# it while a post-cutoff date sits in the sentence the predictor actually reads.
+# These two tests read the rendered bundle instead of the document list.
+
+ISO_DATE = re.compile(r"\b\d{4}-\d{2}-\d{2}\b")
+
+# The two ways a filing states a period that has not happened yet, in the words
+# the taxonomy uses for it: a forecast, a subsequent event, or a remaining
+# performance obligation bucketed by the year it is expected to be recognised
+# in. All three are disclosures *made by* a document filed inside the cutoff.
+FORWARD_MEMBERS = {"srt:ScenarioForecastMember", "us-gaap:SubsequentEventMember"}
+FORWARD_TAGS = ("RevenueRemainingPerformanceObligation",)
+
+PROSE_FILES = tuple(name for name in assemble_bundle.FILES
+                    if name != "input_numbers.json")
+
+
+@pytest.mark.parametrize("ticker", TICKERS)
+@pytest.mark.parametrize("form", ("10-K", "10-Q"))
+def test_no_prose_in_a_bundle_carries_a_date_later_than_its_own_cutoff(ticker, form):
+    """Every ISO date in the eight non-numeric files, against the bundle's own
+    cutoff. The manifest is one of the eight, so its exclusion reasons are read
+    here too — that is where the absence sentence was copied to."""
+    bundle = built(ticker, form)
+    cutoff = bundle["manifest"]["cutoff"]
+    late = []
+    for name in PROSE_FILES:
+        for line in bundle["texts"][name].split("\n"):
+            for date in ISO_DATE.findall(line):
+                if date > cutoff:
+                    late.append(f"{name}: {date} in {line.strip()[:120]}")
+    assert late == [], f"{ticker} {form} cutoff {cutoff}"
+
+
+@pytest.mark.parametrize("ticker", TICKERS)
+@pytest.mark.parametrize("form", ("10-K", "10-Q"))
+def test_a_later_date_in_the_numbers_is_the_filings_own_forward_disclosure(ticker, form):
+    """`input_numbers.json` is the one file where a date after the cutoff is
+    legitimate, because XBRL period dates are content, not provenance: GNRC's
+    10-K buckets extended-warranty revenue out to 2031, QCOM forecasts a tax
+    rate for fiscal 2027, NVDA's 10-Q reports a guarantee as a subsequent event
+    at 2026-08-31. Deleting those would delete disclosure the filing made.
+
+    So the assertion is not "no late date" but "every late date belongs to a
+    forward-looking fact that a document filed inside the cutoff disclosed". A
+    number lifted out of a document filed after the cutoff fails this.
+    """
+    bundle = built(ticker, form)
+    cutoff = bundle["manifest"]["cutoff"]
+    numbers = json.loads(bundle["texts"]["input_numbers.json"])
+    filed = {row["accession"]: row["filing_date"] for row in numbers["documents"]}
+    for fact in numbers["facts"]:
+        blob = json.dumps(fact)
+        if not [date for date in ISO_DATE.findall(blob) if date > cutoff]:
+            continue
+        source = fact["id"].split(":")[0]
+        assert source in filed, f"{ticker} {form}: {fact['id']} names no document"
+        assert filed[source] <= cutoff, (
+            f"{ticker} {form}: {fact['tag']} comes from {source}, filed "
+            f"{filed[source]}, after the cutoff {cutoff}")
+        members = {part.get("member")
+                   for part in (fact["context"].get("segment") or [])}
+        assert (members & FORWARD_MEMBERS) or fact["tag"].startswith(FORWARD_TAGS), (
+            f"{ticker} {form}: {fact['tag']} is dated after the cutoff {cutoff} "
+            f"and is not a forecast, a subsequent event or a remaining "
+            f"performance obligation — context {fact['context']}")
+
+
+# --- a run of a later quarter is not a prior run -----------------------------
+
+def written_run(root: Path, ticker: str, accession: str, flag: str,
+                filing_date: str | None) -> Path:
+    """One past run on disk: its own manifest, and one prediction."""
+    run = root / ticker / accession
+    run.mkdir(parents=True)
+    if filing_date is not None:
+        (run / "input_manifest.json").write_text(
+            json.dumps({"ticker": ticker, "accession": accession,
+                        "cutoff": filing_date, "filing_date": filing_date}),
+            encoding="utf-8")
+    (run / "prediction_accounting.json").write_text(
+        json.dumps({"flags": [{"flag": flag, "outcome": "did not materialize"}]}),
+        encoding="utf-8")
+    return run
+
+
+def test_a_prior_run_of_a_later_quarter_is_not_carried(tmp_path):
+    """`cutoff_guard.load_bundle_file` does not date-gate, on purpose, so
+    nothing stopped a run of a later quarter — its flags and its outcomes —
+    from entering `input_prior_predictions.md`. The date is the one the past run
+    recorded for itself."""
+    written_run(tmp_path, "AAPL", "0000320193-25-000079",
+                "earlier quarter flag", "2025-08-01")
+    written_run(tmp_path, "AAPL", "0000320193-26-000050",
+                "later quarter flag", "2026-07-31")
+
+    text, entries = assemble_bundle.prior_predictions("AAPL", tmp_path, "2025-10-31")
+    assert "earlier quarter flag" in text
+    assert "later quarter flag" not in text
+    assert len(entries) == 1
+    assert "0000320193-26-000050" not in text
+
+
+def test_a_prior_run_that_records_no_date_is_not_carried_either(tmp_path):
+    """An undated run cannot be shown to be earlier, so it is not carried."""
+    written_run(tmp_path, "AAPL", "0000320193-25-000079", "undated flag", None)
+    text, entries = assemble_bundle.prior_predictions("AAPL", tmp_path, "2025-10-31")
+    assert entries == [] and "undated flag" not in text
+    assert "None on record" in text
+
+
+def test_a_build_leaves_the_later_quarters_prediction_out_of_the_bundle(tmp_path):
+    """The same thing through `build`, which is how it reaches a reader: the
+    10-K's cutoff is 2025-10-31 and the run of the 2026 quarter is not in the
+    file, by its text and by the manifest's count."""
+    written_run(tmp_path, "AAPL", "0000320193-26-000050",
+                "later quarter flag", "2026-07-31")
+    bundle = assemble_bundle.build("AAPL", "10-K", prior_runs=tmp_path)
+    assert bundle["manifest"]["cutoff"] == "2025-10-31"
+    assert "later quarter flag" not in bundle["texts"]["input_prior_predictions.md"]
+    assert "2026-07-31" not in bundle["texts"]["input_prior_predictions.md"]
+
+    written_run(tmp_path, "AAPL", "0000320193-25-000079",
+                "earlier quarter flag", "2025-08-01")
+    again = assemble_bundle.build("AAPL", "10-K", prior_runs=tmp_path)
+    assert "earlier quarter flag" in again["texts"]["input_prior_predictions.md"]
+
+
+# --- the cutoff is bounded above by the report that triggered the run --------
+
+def test_a_cutoff_after_the_triggering_report_is_refused():
+    """`--cutoff 2026-08-01` on Apple's 10-K, filed 2025-10-31, used to build a
+    bundle out of six documents filed after the report the bundle is for."""
+    with pytest.raises(assemble_bundle.BundleError) as raised:
+        assemble_bundle.build("AAPL", "10-K", cutoff="2026-08-01")
+    assert "2026-08-01" in str(raised.value) and "2025-10-31" in str(raised.value)
+
+
+def test_the_command_exits_non_zero_on_a_cutoff_after_the_report(tmp_path, capsys):
+    out = tmp_path / "bundle"
+    code = assemble_bundle.main(["--ticker", "aapl", "--form", "10-K",
+                                 "--cutoff", "2026-08-01", "--out", str(out)])
+    assert code != 0
+    printed = capsys.readouterr().err
+    assert "2026-08-01" in printed and "2025-10-31" in printed
+    assert not out.exists()
+
+
+def test_a_cutoff_equal_to_the_triggering_reports_own_date_is_the_default():
+    """The boundary itself is allowed — it is the default — so the check above
+    is an upper bound and not an off-by-one that forbids the normal case."""
+    named = assemble_bundle.build("AAPL", "10-K", cutoff="2025-10-31")["texts"]
+    assert named == built("AAPL", "10-K")["texts"]

@@ -287,13 +287,37 @@ def group_empty(exclusions: list[dict], accession: str) -> list[dict]:
     return kept
 
 
-def prior_predictions(ticker: str, root: Path) -> tuple[str, list[dict]]:
+def run_filing_date(run: Path) -> str | None:
+    """The filing date a past run recorded for itself, out of its own manifest."""
+    try:
+        manifest = json.loads(cutoff_guard.load_bundle_file(run, "input_manifest.json"))
+    except (cutoff_guard.CutoffGuardError, OSError, ValueError):
+        return None
+    date = manifest.get("filing_date") or manifest.get("cutoff")
+    return str(date) if date else None
+
+
+def prior_predictions(ticker: str, root: Path, cutoff=None) -> tuple[str, list[dict]]:
     """Past flag lists and outcomes, with every probability left behind.
 
     Nothing is invented when there are none: the file says there are none, and
     that is a true statement about the record rather than an empty file.
+
+    **A run of a later quarter is not a prior run.** `cutoff_guard` does not
+    date-gate a bundle file on purpose, so nothing stopped a run dated after the
+    cutoff — its flags, its outcomes — from entering this file, and the default
+    root is `runs/`, so it fires by itself the day a later quarter is published
+    and an earlier one reassembled. The date is the one the past run recorded
+    for itself in its own `input_manifest.json`. A run that recorded none is not
+    carried, because an undated run cannot be shown to be earlier.
     """
-    found = [(run, name) for run in cutoff_guard.prior_runs(root, ticker)
+    limit = str(cutoff) if cutoff is not None else None
+    kept = []
+    for run in cutoff_guard.prior_runs(root, ticker):
+        date = run_filing_date(run)
+        if limit is None or (date is not None and date <= limit):
+            kept.append(run)
+    found = [(run, name) for run in kept
              for name in cutoff_guard.bundle_files(run, "prediction_*.json")]
     if not found:
         return ("# {ticker} prior predictions\n\n"
@@ -337,6 +361,14 @@ def build(ticker: str, form: str, *, cutoff=None, fixtures_root=cutoff_guard.FIX
     if cutoff < trigger["filing_date"]:
         raise BundleError(f"cutoff {cutoff} is before {form} {trigger['accession']} "
                           f"was filed on {trigger['filing_date']}")
+    # And bounded above. `CLAUDE.md`: the cutoff **is** the triggering report's
+    # filing date. A later one was accepted silently, and `--form 10-K --cutoff
+    # 2026-08-01` on a 10-K triggered 2025-10-31 pulled six later documents in
+    # and built a note history out of them, exit 0.
+    if cutoff > trigger["filing_date"]:
+        raise BundleError(f"cutoff {cutoff} is after {form} {trigger['accession']} "
+                          f"was filed on {trigger['filing_date']}. The cutoff is "
+                          f"the triggering report's own filing date")
 
     on_record = {(row["form"], row["role"]): row
                  for row in documents_on_record(ticker, cutoff, fixtures_root)}
@@ -354,10 +386,13 @@ def build(ticker: str, form: str, *, cutoff=None, fixtures_root=cutoff_guard.FIX
             parse_8k.extract(ticker, cutoff=cutoff, fixtures_root=fixtures_root))
         eight_k_note = None
     else:
-        held = cutoff_guard.one_document(ticker, "8-K", "primary_html",
-                                         fixtures_root=fixtures_root)
-        eight_k_note = (f"no 8-K at or before {cutoff}: the one on record was filed "
-                        f"{held['filing_date']}, after the {form} this bundle is for")
+        # The sentence says what is missing and nothing about what comes later.
+        # It used to name the held 8-K's own filing date, a date after the
+        # cutoff, in 15 of the 24 bundles. PANW's 10-K stated that an 8-K was
+        # filed 2026-09-01 under a cutoff of 2025-08-29 — twelve months of
+        # look-ahead, plus the fact that the company filed one in the window.
+        eight_k_note = (f"no 8-K filed at or before {cutoff} is on record, so this "
+                        f"bundle has no earnings release and no verbatim item body")
         # No exhibit on record does not mean no filing index. The item codes and
         # the late-filing notices come from `submissions.json`, which is stored
         # for every company, and a bundle that says nothing about them cannot
@@ -378,7 +413,7 @@ def build(ticker: str, form: str, *, cutoff=None, fixtures_root=cutoff_guard.FIX
                         f"record holds fewer at or before {cutoff}")
         history_text = f"# {ticker} note change history\n\n{history_note}.\n"
 
-    prior_text, prior_entries = prior_predictions(ticker, Path(prior_runs))
+    prior_text, prior_entries = prior_predictions(ticker, Path(prior_runs), cutoff)
 
     controls = control_sections(ticker, form, cutoff=cutoff,
                                 fixtures_root=fixtures_root)

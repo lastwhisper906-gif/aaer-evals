@@ -192,7 +192,25 @@ def check_cutoff(manifest: dict | None) -> Result:
             continue
         if filed > cutoff:
             result.fail(f"{named} was filed {filed}, after the cutoff {cutoff}")
-    result.detail = f"{len(documents)} documents, none filed after {cutoff}"
+
+    # The cutoff **is** the triggering report's filing date — `CLAUDE.md` and
+    # `docs/INPUT_SPEC.md` §1. Comparing documents to `manifest.cutoff` and
+    # never asking what that cutoff is meant a bundle built with a later cutoff
+    # passed this gate: every document it swept in was inside a boundary the
+    # bundle had moved for itself.
+    try:
+        filed = _date(manifest.get("filing_date"), "the triggering report")
+    except ValueError as exc:
+        result.fail(f"the manifest records no filing date for the report that "
+                    f"triggered it: {exc}")
+        return result
+    if filed != cutoff:
+        result.fail(f"the cutoff is {cutoff} and {manifest.get('form')} "
+                    f"{manifest.get('accession')} was filed {filed} — the cutoff "
+                    f"is the triggering report's own filing date")
+
+    result.detail = (f"{len(documents)} documents, none filed after {cutoff}, "
+                     f"which is the {manifest.get('form')}'s own filing date")
     return result
 
 

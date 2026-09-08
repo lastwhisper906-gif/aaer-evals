@@ -172,6 +172,36 @@ def test_an_unparseable_filing_date_fails_the_cutoff_gate(tmp_path):
     assert extraction_checks.run(bundle)[0] != 0
 
 
+def test_a_cutoff_that_is_not_the_triggering_reports_filing_date_fails(tmp_path):
+    """The gate used to compare every document to `manifest.cutoff` and never
+    ask what that cutoff was. A bundle built with a later cutoff passed: every
+    document it swept in was inside a boundary it had moved for itself. Here the
+    cutoff is pushed a year out and every document is still under it."""
+    bundle = good_bundle(tmp_path)
+
+    def damage(payload):
+        payload["cutoff"] = "2027-01-01"
+    rewrite(bundle, "input_manifest.json", damage)
+    code, lines = extraction_checks.run(bundle)
+    assert code != 0
+    failures = gate_lines(lines, "cutoff")
+    assert len(failures) == 1
+    assert "the cutoff is 2027-01-01" in failures[0]
+    assert "was filed 2026-07-31" in failures[0]
+    assert "the triggering report's own filing date" in failures[0]
+
+
+def test_a_manifest_with_no_filing_date_for_its_trigger_fails_the_cutoff_gate(tmp_path):
+    """Fail-closed the same way as a document with no date: a cutoff that
+    cannot be shown to be the report's own date is a violation, not a pass."""
+    bundle = good_bundle(tmp_path)
+    rewrite(bundle, "input_manifest.json", lambda payload: payload.pop("filing_date"))
+    code, lines = extraction_checks.run(bundle)
+    assert code != 0
+    assert "records no filing date for the report that triggered it" in \
+        "\n".join(gate_lines(lines, "cutoff"))
+
+
 def test_a_manifest_with_no_documents_fails_the_cutoff_gate(tmp_path):
     bundle = good_bundle(tmp_path)
 
