@@ -76,7 +76,11 @@ def test_the_rendered_file_holds_nothing_but_entries_and_headings(ticker):
         if line.startswith("[") and line[1:-1] in identifiers:
             seen.add(line[1:-1])
             continue
-        if not source.contains(line):
+        # A rendered table row is not a run of the filing's characters and
+        # cannot be — its separators are this pipeline's — so the claim is made
+        # of every cell instead. Nothing is skipped either way.
+        if not all(source.contains(piece)
+                   for piece in independent_text.quotable(line)):
             stray.append(line)
     assert not stray, f"{ticker}: {stray[:1]}"
     assert seen == identifiers, f"{ticker}: an entry reached the file with no id"

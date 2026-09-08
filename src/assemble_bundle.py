@@ -76,14 +76,43 @@ def _sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+def _is_id_line(line: str) -> bool:
+    """`[id]` alone on its line, where an id is `accession:file:n`.
+
+    An id holds no whitespace, and that is what tells it from the collapsed
+    line `[same as prior period, unchanged from …]` — which since cycle 20
+    holds a colon of its own, so a colon no longer distinguishes them.
+    """
+    stripped = line.strip()
+    return (stripped.startswith("[") and stripped.endswith("]")
+            and ":" in stripped and not any(c.isspace() for c in stripped))
+
+
 def paragraph_ids(text: str) -> list[str]:
     """The `[id]` lines of a rendered file, in the order they appear."""
-    out = []
+    return [line.strip()[1:-1] for line in text.split("\n") if _is_id_line(line)]
+
+
+def paragraph_blocks(text: str) -> list[tuple[str, str]]:
+    """(id, text) for every paragraph of a rendered file, in order.
+
+    A paragraph is everything between one `[id]` line and the next, which is
+    what makes a rendered table one paragraph: its rows are lines inside the
+    block, not blocks of their own.
+    """
+    out: list[tuple[str, str]] = []
+    identifier, body = None, []
     for line in text.split("\n"):
-        stripped = line.strip()
-        if stripped.startswith("[") and stripped.endswith("]") and \
-                ":" in stripped and "\n" not in stripped:
-            out.append(stripped[1:-1])
+        if _is_id_line(line):
+            if identifier is not None:
+                out.append((identifier, "\n".join(body).strip()))
+            identifier, body = line.strip()[1:-1], []
+        elif line.startswith("#"):
+            continue            # a `#` or `##` heading is the file's own scaffolding
+        elif identifier is not None:
+            body.append(line)
+    if identifier is not None:
+        out.append((identifier, "\n".join(body).strip()))
     return out
 
 
@@ -117,12 +146,13 @@ def note_stream(ticker: str, form: str, *, cutoff, fixtures_root):
                                       cutoff=cutoff, fixtures_root=fixtures_root), [])
     row = cutoff_guard.one_document(ticker, form, "primary_html",
                                     fixtures_root=fixtures_root)
-    kept = clean_text.clean_section(
-        split_sections.extract(ticker, form, "mdna", cutoff=cutoff,
-                               fixtures_root=fixtures_root)["paragraphs"])["paragraphs"]
+    kept = clean_text.clean_stream(
+        blocks=split_sections.extract(ticker, form, "mdna", cutoff=cutoff,
+                                      fixtures_root=fixtures_root)["blocks"])["paragraphs"]
     mdna = diff_periods.diff_stream(
         [{"id": f"{row['accession']}:mdna:{index}", "text": text, "note": "mdna",
-          "verbatim_topic": None} for index, text in enumerate(kept, start=1)], [])
+          "verbatim_topic": diff_periods.always_verbatim("mdna", text)}
+         for index, text in enumerate(kept, start=1)], [])
     return notes, mdna, None
 
 
@@ -134,18 +164,16 @@ def excluded_paragraphs(ticker: str, form: str, *, cutoff, fixtures_root) -> lis
     what survived them.
     """
     out = []
-    notes = extract_notes.extract(ticker, form, cutoff=cutoff, fixtures_root=fixtures_root)
-    for section in notes["sections"]:
-        text = section["text"]
-        result = clean_text.clean_section([text[a:b] for a, b in html_text.spans(text)])
-        for drop in result["dropped"]:
-            out.append({"id": f"{notes['accession']}:notes_excluded:{len(out) + 1}",
-                        "source": f"{form} notes / {section['name']}",
-                        "reason": drop["reason"], "text": drop["text"]})
+    notes = diff_periods.notes(ticker, form, "xbrl_instance", cutoff=cutoff,
+                               fixtures_root=fixtures_root)
+    for drop in notes["dropped"]:
+        out.append({"id": f"{notes['accession']}:notes_excluded:{len(out) + 1}",
+                    "source": f"{form} notes / {drop['source']}",
+                    "reason": drop["reason"], "text": drop["text"]})
 
     mdna = split_sections.extract(ticker, form, "mdna", cutoff=cutoff,
                                   fixtures_root=fixtures_root)
-    dropped_mdna = clean_text.clean_section(mdna["paragraphs"])["dropped"]
+    dropped_mdna = clean_text.clean_stream(blocks=mdna["blocks"])["dropped"]
     row = cutoff_guard.one_document(ticker, form, "primary_html", fixtures_root=fixtures_root)
     for number, drop in enumerate(dropped_mdna, start=1):
         out.append({"id": f"{row['accession']}:mdna_excluded:{number}",

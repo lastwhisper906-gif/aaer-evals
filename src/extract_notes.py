@@ -55,6 +55,8 @@ def sections_from_instance(xml_bytes: bytes, *, accession: str,
     """One record per TextBlock element, in document order. Nothing deduplicated."""
     prefixes = _prefixes(xml_bytes)
     root = ET.fromstring(xml_bytes)
+    parents = {child: parent for parent in root.iter() for child in parent}
+    inside: dict[object, str] = {}
     sections = []
     for position, element in enumerate(root.iter()):
         uri, _, local = element.tag[1:].partition("}") if element.tag.startswith("{") \
@@ -62,13 +64,28 @@ def sections_from_instance(xml_bytes: bytes, *, accession: str,
         if not local.endswith("TextBlock"):
             continue
         prefix = prefixes.get(uri, "")
+        name = f"{prefix}:{local}" if prefix else local
+        # A note tagged inside another note: the filer tags the whole note, then
+        # each policy, then each table inside it. `itertext()` gives the outer
+        # element every character of the inner ones, so emitting both puts the
+        # same paragraph in the file two, three and four times over — 71% to 77%
+        # of the note stream. The containment is a fact about the instance, not
+        # a guess from the text: walk up the tree.
+        ancestor, walk = None, parents.get(element)
+        while walk is not None:
+            if walk in inside:
+                ancestor = inside[walk]
+                break
+            walk = parents.get(walk)
+        inside[element] = ancestor or name
         source_html = "".join(element.itertext())
         sections.append({
             "id": f"{accession}:notes:{len(sections) + 1}",
             "tag": local,
             "prefix": prefix,
             "namespace": uri,
-            "name": f"{prefix}:{local}" if prefix else local,
+            "name": name,
+            "contained_in": ancestor,
             "extension": is_extension(uri),
             "element_id": element.get("id") or f"t{position}",
             "context_ref": element.get("contextRef"),

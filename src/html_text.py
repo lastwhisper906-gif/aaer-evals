@@ -200,3 +200,102 @@ def pipe_rows(table: list[list[str]]) -> list[str]:
 def normalized_spacing(text: str) -> str:
     """Runs of whitespace to one space. Case is left alone, unlike `normalized`."""
     return re.sub(r"\s+", " ", text).strip()
+
+
+# --- the document as an ordered stream of prose and tables -------------------
+#
+# `paragraphs()` puts every table cell in the stream as its own paragraph,
+# because `td` and `tr` are block tags. That is right for the containment
+# property and wrong for a reader: a note arrives as `Remainder of 2027`,
+# `Total`, `(In billions)`, `88`, `6`, `$`, and no figure in it is quotable
+# with the row and column it belongs to. `docs/INPUT_SPEC.md` asks for tables
+# as `|`-delimited rows, and `pipe_rows` already renders them; what was missing
+# is knowing *where* in the text each table sits.
+#
+# That is what `table_ranges` answers. It matches each table's own stripped
+# text against the document's, on non-whitespace characters — the same
+# comparison the independent stripper makes — so a range is the table's real
+# extent in the canonical text and never an approximation of it.
+
+_TABLE_TAG = re.compile(r"<\s*(/?)\s*table\b", re.IGNORECASE)
+
+
+def table_spans(html: str) -> list[tuple[int, int]]:
+    """(start, end) in `html` of every outermost `<table>` element."""
+    out, depth, opened = [], 0, 0
+    for match in _TABLE_TAG.finditer(html):
+        if match.group(1):
+            depth -= 1
+            if depth == 0:
+                closing = html.find(">", match.end())
+                out.append((opened, len(html) if closing < 0 else closing + 1))
+            depth = max(depth, 0)
+        else:
+            if depth == 0:
+                opened = match.start()
+            depth += 1
+    return out
+
+
+def _squeeze_index(text: str) -> tuple[str, list[int]]:
+    """The non-whitespace characters of `text`, and where each one came from."""
+    kept, where = [], []
+    for index, character in enumerate(text):
+        if not character.isspace():
+            kept.append(character)
+            where.append(index)
+    return "".join(kept), where
+
+
+def table_ranges(html: str, text: str | None = None) -> list[tuple[int, int] | None]:
+    """Where each table of `html` sits in the stripped text. One entry per table.
+
+    `None` for a table whose text is only whitespace, or one whose characters
+    do not appear in document order — neither has ever occurred in the fixture
+    set, and both are handled by leaving the table out of the stream's ordering
+    rather than by guessing a position.
+    """
+    text = strip_tags(html) if text is None else text
+    squeezed, where = _squeeze_index(text)
+    out: list[tuple[int, int] | None] = []
+    cursor = 0
+    for start, end in table_spans(html):
+        piece = re.sub(r"\s+", "", strip_tags(html[start:end]))
+        if not piece:
+            out.append(None)
+            continue
+        at = squeezed.find(piece, cursor)
+        if at < 0:
+            out.append(None)
+            continue
+        out.append((where[at], where[at + len(piece) - 1] + 1))
+        cursor = at + len(piece)
+    return out
+
+
+def blocks(html: str) -> list[dict]:
+    """The document in order: prose paragraphs and tables, nothing twice.
+
+    Every entry carries `start` and `end` into `strip_tags(html)`, so a caller
+    that cut a section out of that text by offset — `src/split_sections.py`
+    does — can select the blocks that fall inside it.
+    """
+    text = strip_tags(html)
+    ranges = table_ranges(html, text)
+    parsed = tables(html)
+    placed = sorted((where, number) for number, where in enumerate(ranges)
+                    if where is not None)
+    out, cursor = [], 0
+    for (start, end), number in placed:
+        if start < cursor:      # a table inside one already emitted
+            continue
+        for a, b in spans(text[cursor:start]):
+            out.append({"kind": "paragraph", "text": text[cursor + a:cursor + b],
+                        "start": cursor + a, "end": cursor + b})
+        out.append({"kind": "table", "number": number, "rows": parsed[number],
+                    "start": start, "end": end})
+        cursor = end
+    for a, b in spans(text[cursor:]):
+        out.append({"kind": "paragraph", "text": text[cursor + a:cursor + b],
+                    "start": cursor + a, "end": cursor + b})
+    return out

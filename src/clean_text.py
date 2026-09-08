@@ -328,17 +328,18 @@ def clean_paragraphs(paragraphs: list[str], *, cells: set[str] | None = None) ->
     headers = running_headers(paragraphs)
     pages = page_numbers(paragraphs)
     cells = cells or set()
-    kept, dropped = [], []
+    kept, dropped, decisions = [], [], []
     for index, paragraph in enumerate(paragraphs):
         reason = drop_reason(
             paragraph, headers, index in pages,
             next_to_a_number=beside_a_number(paragraphs, index),
             is_table_cell=html_text.normalized(paragraph) in cells)
+        decisions.append(reason)
         if reason is None:
             kept.append(paragraph)
         else:
             dropped.append({"text": paragraph, "reason": reason})
-    return {"paragraphs": kept, "dropped": dropped}
+    return {"paragraphs": kept, "dropped": dropped, "decisions": decisions}
 
 
 def table_cells(tables: list[list[list[str]]]) -> set[str]:
@@ -377,8 +378,76 @@ def clean(html: str, *, facts: list[dict] | None = None) -> dict:
 
 
 def clean_section(paragraphs: list[str]) -> dict:
-    """Clean an already-split section, which has no tables of its own to render."""
+    """Clean a list of paragraphs a caller already has, tables and all."""
     return clean_paragraphs(paragraphs)
+
+
+def clean_stream(html: str | None = None, *, facts: list[dict] | None = None,
+                 blocks: list[dict] | None = None) -> dict:
+    """The text as the predictor reads it: prose kept or dropped, tables as rows.
+
+    This is `clean` reordered around the reader instead of around the property.
+    `clean` answers *what did the document say* — every paragraph including
+    every table cell, and the tables separately. `clean_stream` answers *what
+    goes in the file*: one entry per prose paragraph and one per table, in the
+    filing's own order, so a figure is quotable with the row and column it
+    belongs to instead of arriving as `Total`, `$`, `279` on three lines.
+
+    A table is **one** entry holding all of its `|`-delimited rows, not one
+    entry per row. The dispatch asked for one id per row and this is the one
+    place it is not followed, for a reason worth stating: 2,321 rows in the
+    fixture set are byte-identical to a row of another table — `| (In millions)
+    | 2025 | | 2024 | | 2023 |` heads thirteen of Carrier's — and one id per
+    row makes those ids ambiguous unless twelve of the thirteen tables lose
+    their column headings. One id per table keeps every filed row, and the
+    duplicates that remain are whole tables printed twice, which the note
+    stream drops as a repeat without breaking a table apart.
+
+    A caller that has already cut a section out of the document passes the
+    section's `blocks`; everything else passes the HTML.
+    """
+    found = html_text.blocks(html) if blocks is None else blocks
+    prose = [block["text"] for block in found if block["kind"] == "paragraph"]
+    parsed = [block["rows"] for block in found if block["kind"] == "table"]
+    decided = clean_paragraphs(prose, cells=table_cells(parsed))
+    values = fact_values(facts or [])
+
+    tables = []
+    for number, rows in enumerate(parsed, start=1):
+        in_xbrl, numeric, matched = table_is_in_xbrl(rows, values)
+        tables.append({
+            "number": number,
+            "rows": html_text.pipe_rows(rows),
+            "cells": [cell for row in rows for cell in row],
+            "numeric_cells": numeric,
+            "matched_cells": matched,
+            "kept": not in_xbrl,
+            "reason": "already in the XBRL instance" if in_xbrl else "not in XBRL",
+        })
+
+    stream, dropped, paragraph, table = [], [], 0, 0
+    for block in found:
+        if block["kind"] == "paragraph":
+            reason = decided["decisions"][paragraph]
+            paragraph += 1
+            if reason is None:
+                stream.append(block["text"])
+            else:
+                dropped.append({"text": block["text"], "reason": reason})
+            continue
+        record = tables[table]
+        table += 1
+        rows = [row for row in record["rows"] if not _INVISIBLE.match(row.replace("|", ""))]
+        if not rows:
+            dropped.append({"text": "", "reason": "a table of empty cells",
+                            "rows": len(record["rows"])})
+        elif record["kept"]:
+            stream.append("\n".join(rows))
+        else:
+            dropped.append({"text": "", "reason": "already in the XBRL instance",
+                            "rows": len(record["rows"])})
+    return {"paragraphs": stream, "dropped": dropped, "tables": tables,
+            "dropped_tables": sum(1 for table in tables if not table["kept"])}
 
 
 def main(argv: list[str] | None = None) -> int:

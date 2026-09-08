@@ -124,9 +124,8 @@ def match_notes(current: list[dict], prior: list[dict]) -> list[dict]:
 
 
 def _paragraphs(section: dict) -> list[str]:
-    text = section["text"]
-    return clean_text.clean_section(
-        [text[a:b] for a, b in html_text.spans(text)])["paragraphs"]
+    """The note as the bundle carries it — prose paragraphs and whole tables."""
+    return clean_text.clean_stream(section["html"])["paragraphs"]
 
 
 def compare(current: list[str], prior: list[str]) -> list[dict]:

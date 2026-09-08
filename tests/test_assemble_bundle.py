@@ -19,10 +19,13 @@ from pathlib import Path
 
 import pytest
 
-from src import assemble_bundle, cutoff_guard
+from src import (assemble_bundle, clean_text, cutoff_guard, diff_periods,
+                 extract_notes)
 from src.fetch_fixtures import TICKERS
+from tests import independent_text
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+BAR = chr(124)
 
 
 @functools.lru_cache(maxsize=None)
@@ -267,3 +270,89 @@ def test_the_index_loader_refuses_anything_that_is_not_the_index():
         cutoff_guard.load_index(row["full_path"])
     index = cutoff_guard.one_document("AAPL", "submissions", "submissions_index")
     assert json.loads(cutoff_guard.load_index(index["full_path"]))["filings"]
+
+
+# --- the notes arrive as a reader can quote them -----------------------------
+#
+# `docs/INPUT_SPEC.md` asks for tables as pipe-delimited rows and the notes file
+# had none: `td`, `th` and `tr` are block tags, so every cell arrived as its own
+# paragraph and NVIDIA's contingencies note read `Remainder of 2027`, `Total`,
+# `(In billions)`, `88`, `6`, `$`. No figure in it could be quoted with the row
+# and the column it belongs to.
+
+def notes_paragraphs(ticker: str, form: str) -> list[str]:
+    """The `[id]` blocks of `input_notes.md`, as the file itself defines them."""
+    text = built(ticker, form)["texts"]["input_notes.md"]
+    return [body for _, body in assemble_bundle.paragraph_blocks(text) if body]
+
+
+@pytest.mark.parametrize("ticker", TICKERS)
+@pytest.mark.parametrize("form", ("10-K", "10-Q"))
+def test_the_notes_file_holds_tables_as_rows(ticker, form):
+    text = built(ticker, form)["texts"]["input_notes.md"]
+    rows = [line for line in text.split("\n") if line.startswith(BAR + " ")]
+    assert rows, f"{ticker} {form}: input_notes.md has no rendered table row"
+
+
+@pytest.mark.parametrize("ticker", TICKERS)
+@pytest.mark.parametrize("form", ("10-K", "10-Q"))
+def test_most_of_a_note_paragraph_is_more_than_three_words(ticker, form):
+    """79% to 88% of note paragraphs used to be three words or fewer, because
+    they were single table cells. A quarter is the line the dispatch drew."""
+    paragraphs = notes_paragraphs(ticker, form)
+    short = sum(1 for text in paragraphs if len(text.split()) <= 3)
+    share = short / max(1, len(paragraphs))
+    assert share < 0.25, f"{ticker} {form}: {share:.0%} of {len(paragraphs)}"
+
+
+@pytest.mark.parametrize("ticker", TICKERS)
+@pytest.mark.parametrize("form", ("10-K", "10-Q"))
+def test_no_note_is_carried_into_the_file_twice(ticker, form):
+    """Apple emitted the paragraph `$` 290 times and Cisco 1,231, because a
+    filer tags a note, then each policy in it, then each table in that. A quote
+    that resolves to a hundred ids is not a quote anyone can check."""
+    paragraphs = notes_paragraphs(ticker, form)
+    repeated = {text for text in paragraphs if paragraphs.count(text) > 1}
+    assert not repeated, f"{ticker} {form}: {sorted(repeated)[:1]}"
+
+
+@pytest.mark.parametrize("ticker", TICKERS)
+@pytest.mark.parametrize("form", ("10-K", "10-Q"))
+def test_every_rendered_cell_is_the_filings_own_text(ticker, form):
+    """A row is a rendering; a cell is the filing. The guarantee is at the cell,
+    and it is asserted there against the independent stripper."""
+    sections = extract_notes.extract(ticker, form)["sections"]
+    sources = [independent_text.Source(section["html"]) for section in sections]
+    misses = []
+    for text in notes_paragraphs(ticker, form):
+        if diff_periods.is_collapsed_line(text):
+            continue            # the diff layer's placeholder, not the filing
+        for piece in independent_text.quotable(text):
+            if not any(source.contains(piece) for source in sources):
+                misses.append(piece)
+    assert not misses, f"{ticker} {form}: {misses[:3]}"
+
+
+def test_a_note_inside_another_note_is_carried_once():
+    """Apple's 10-Q tags 26 notes; twelve of them are wholly inside another."""
+    stream = diff_periods.notes("AAPL", "10-Q", "xbrl_instance",
+                                cutoff=None, fixtures_root=cutoff_guard.FIXTURES)
+    assert stream["sections"] == 26
+    assert stream["notes_carried"] < stream["sections"]
+    assert any(repeat["kind"] == "note" for repeat in stream["repeats"])
+    for repeat in stream["repeats"]:
+        assert repeat["kind"] in ("note", "paragraph")
+        if repeat["kind"] == "paragraph":
+            assert repeat["already_at"].startswith("0000320193")
+
+
+def test_a_table_is_one_paragraph_holding_all_of_its_rows():
+    """Not one paragraph per row: 2,321 rows in the fixture set are identical to
+    a row of another table, and one id per row makes those ids ambiguous."""
+    html = ("<p>Before</p><table><tr><td>Year</td><td>Amount</td></tr>"
+            "<tr><td>2026</td><td>1,000</td></tr></table><p>After</p>")
+    stream = clean_text.clean_stream(html)["paragraphs"]
+    assert stream[0] == "Before"
+    assert stream[2] == "After"
+    assert stream[1].split("\n") == [BAR + " Year " + BAR + " Amount " + BAR,
+                                     BAR + " 2026 " + BAR + " 1,000 " + BAR]

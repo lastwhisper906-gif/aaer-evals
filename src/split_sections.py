@@ -30,6 +30,7 @@ recorded here because it is the obvious rule and it is wrong.
 from __future__ import annotations
 
 import argparse
+import functools
 import re
 import sys
 from pathlib import Path
@@ -172,6 +173,17 @@ def bounds(text: str, form: str, section: str) -> tuple[int, int, int, str]:
     return start, _end_of(text, start, ends), len(candidates), "last candidate"
 
 
+@functools.lru_cache(maxsize=4)
+def _blocks(html: str) -> tuple[dict, ...]:
+    """The document's prose-and-table stream, kept for the next section asked for.
+
+    Four sections come out of one 10-K and the stream costs a pass over every
+    table in it, so the last few documents are held. The list is returned as a
+    tuple to make the cached value unmodifiable by a caller.
+    """
+    return tuple(html_text.blocks(html))
+
+
 def split(html: str, form: str, section: str) -> dict:
     """The section's text and its paragraphs, cut from the stripped document."""
     text = html_text.strip_tags(html)
@@ -182,6 +194,11 @@ def split(html: str, form: str, section: str) -> dict:
         "form": form,
         "text": body,
         "paragraphs": [body[a:b] for a, b in html_text.spans(body)],
+        # The same section as an ordered stream of prose and whole tables. The
+        # paragraph list above is what the section *says*; this is what a
+        # reader is handed, and it is where a table stays a table.
+        "blocks": [block for block in _blocks(html)
+                   if start <= block["start"] and block["end"] <= end],
         "heading_candidates": candidates,
         "selected_by": rule,
         "start": start,

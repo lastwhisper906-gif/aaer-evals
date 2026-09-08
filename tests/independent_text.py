@@ -71,8 +71,12 @@ class Source:
         return squeeze(emitted) in self.squeezed
 
     def missing(self, emitted: list[str]) -> list[str]:
-        """The paragraphs that are not runs of this source. Empty is the pass."""
-        return [text for text in emitted if not self.contains(text)]
+        """The paragraphs that are not runs of this source. Empty is the pass.
+
+        A rendered table is asked about cell by cell; see `quotable` below.
+        """
+        return [text for text in emitted
+                if not all(self.contains(piece) for piece in quotable(text))]
 
 
 # --- a second implementation of "strip tags, split on blank lines" ----------
@@ -134,3 +138,30 @@ def block_paragraphs(source_html: str) -> list[str]:
     """The same text, split on blank lines and trimmed. The recount."""
     return [chunk.strip() for chunk in block_text(source_html).split("\n\n")
             if chunk.strip()]
+
+
+# --- a rendered table is quotable at the cell -------------------------------
+#
+# `src/clean_text.py` renders a table as pipe-delimited rows, so the paragraph
+# that reaches a file is not a run of the filing's characters and cannot be:
+# the separators and the single spaces around them are this pipeline's. What
+# *is* the filing's is every cell, and that is where `html_text.pipe_rows` says
+# the guarantee holds. So the containment property is asked cell by cell for a
+# rendered table and of the whole text for anything else — never skipped.
+
+_BAR = chr(124)
+_RENDERED = re.compile(r"^\%s.*\%s$" % (_BAR, _BAR))
+
+
+def is_rendered_table(paragraph: str) -> bool:
+    """Did the cleaner render this paragraph, rather than carry it?"""
+    lines = [line for line in paragraph.split("\n") if line.strip()]
+    return bool(lines) and all(_RENDERED.match(line.strip()) for line in lines)
+
+
+def quotable(paragraph: str) -> list[str]:
+    """The pieces of this paragraph that must be the filing's own characters."""
+    if not is_rendered_table(paragraph):
+        return [paragraph]
+    return [cell for line in paragraph.split("\n")
+            for cell in line.strip().strip(_BAR).split(_BAR) if cell.strip()]
