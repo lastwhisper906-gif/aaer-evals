@@ -39,6 +39,20 @@ ITEM_CODE = re.compile(r"^\d+\.\d{2}$")
 VERBATIM_ITEMS = ("1.01", "4.01", "4.02", "5.02")
 EARNINGS_ITEM = "2.02"
 
+# `8-K/A` is an 8-K. Selecting `form == "8-K"` exactly kept every amendment out
+# of the item-code list, and `docs/CHECKLIST.md:186` makes "an amendment that
+# changes numbers" a primary year-one target. TTMI filed its earnings release
+# (`0001193125-26-336163`, items 2.02/9.01) and an amendment carrying the same
+# items (`0001193125-26-337923`) on the same day, one day after the 10-Q this
+# bundle is for — so the one company where it happened is inside the window.
+INDEX_FORMS = ("8-K", "8-K/A")
+AMENDMENT_FORMS = ("8-K/A",)
+
+# A notification of late filing. `docs/CHECKLIST.md:67` names an NT 10-K a
+# `filing_irregularity` and `:185` names late filing a primary year-one target.
+# LFUS filed one on 2025-02-27 and nothing in the pipeline could see it.
+LATE_FORMS = ("NT 10-K", "NT 10-Q", "NT 10-K/A", "NT 10-Q/A")
+
 # An item heading in an 8-K body: "Item 5.02 Departure of Directors…".
 _BODY_ITEM = re.compile(r"^item\s*(\d+\.\d{2})\b")
 _BODY_END = re.compile(r"^signatures?\b|^exhibit index\b")
@@ -64,22 +78,58 @@ def submissions(ticker: str, *, fixtures_root=cutoff_guard.FIXTURES) -> dict:
 
 
 def eight_k_filings(index: dict, cutoff=None) -> list[dict]:
-    """Every 8-K in the index filed at or before the cutoff, newest first.
+    """Every 8-K and 8-K/A in the index filed at or before the cutoff, newest first.
 
     The filter is the look-ahead check: the index lists what the company has
     filed to date, and a bundle whose cutoff is earlier than that must not learn
     from it that a later 8-K exists.
+
+    An amendment names what it amends when the index makes that unambiguous:
+    the submissions index has no "amends" field, but it does carry each filing's
+    `report_date`, and an 8-K/A whose report date belongs to exactly one earlier
+    8-K amends that one. Where the report date is blank or matches more than
+    one, `amends` is null and the line still says it is an amendment.
     """
     limit = str(cutoff) if cutoff is not None else None
     found = []
     for row in index.get("filings", []):
-        if row.get("form") != "8-K":
+        if row.get("form") not in INDEX_FORMS:
             continue
         if limit is not None and row["filing_date"] > limit:
             continue
         found.append({"accession": row["accession"],
                       "filing_date": row["filing_date"],
+                      "form": row["form"],
+                      "report_date": row.get("report_date", ""),
+                      "amendment": row["form"] in AMENDMENT_FORMS,
+                      "amends": None,
                       "items": item_codes(row.get("items", ""))})
+    found.sort(key=lambda row: (row["filing_date"], row["accession"]), reverse=True)
+
+    originals: dict[str, list[str]] = {}
+    for row in found:
+        if not row["amendment"] and row["report_date"]:
+            originals.setdefault(row["report_date"], []).append(row["accession"])
+    for row in found:
+        candidates = originals.get(row["report_date"], []) if row["amendment"] else []
+        if len(candidates) == 1:
+            row["amends"] = candidates[0]
+    return found
+
+
+def late_filings(index: dict, cutoff=None) -> list[dict]:
+    """Every notification of late filing at or before the cutoff, newest first."""
+    limit = str(cutoff) if cutoff is not None else None
+    found = []
+    for row in index.get("filings", []):
+        if row.get("form") not in LATE_FORMS:
+            continue
+        if limit is not None and row["filing_date"] > limit:
+            continue
+        found.append({"accession": row["accession"],
+                      "filing_date": row["filing_date"],
+                      "form": row["form"],
+                      "report_date": row.get("report_date", "")})
     found.sort(key=lambda row: (row["filing_date"], row["accession"]), reverse=True)
     return found
 
@@ -115,6 +165,7 @@ def extract(ticker: str, *, cutoff=None, fixtures_root=cutoff_guard.FIXTURES) ->
     cutoff = cutoff or cutoff_guard.default_cutoff(ticker, fixtures_root=fixtures_root)
     index = submissions(ticker, fixtures_root=fixtures_root)
     filings = eight_k_filings(index, cutoff)
+    late = late_filings(index, cutoff)
 
     held = cutoff_guard.one_document(ticker, "8-K", "primary_html",
                                      fixtures_root=fixtures_root)
@@ -150,6 +201,7 @@ def extract(ticker: str, *, cutoff=None, fixtures_root=cutoff_guard.FIXTURES) ->
         "filing_date": held["filing_date"],
         "held_items": item_codes(held.get("items", "")),
         "filings": filings,
+        "late_filings": late,
         "item_2_02": {
             "paragraphs": release,
             "paragraph_ids": [f"{accession}:8k_2_02:{index}"
@@ -161,15 +213,45 @@ def extract(ticker: str, *, cutoff=None, fixtures_root=cutoff_guard.FIXTURES) ->
     }
 
 
+def index_lines(filings: list[dict], late: list[dict], cutoff) -> list[str]:
+    """The two lists that come from `submissions.json` and nothing else."""
+    out = [f"## item codes, every 8-K on or before {cutoff}", ""]
+    for row in filings:
+        line = (f"- {row['filing_date']} {row['accession']} — "
+                f"{', '.join(row['items']) or '(none recorded)'}")
+        if row["amendment"]:
+            line += (f" — amendment of {row['amends']}" if row["amends"] else
+                     " — amendment, the index does not say of what")
+        out.append(line)
+    out.extend(["", f"## late-filing notifications on or before {cutoff}", ""])
+    if late:
+        for row in late:
+            out.append(f"- {row['filing_date']} {row['accession']} — {row['form']}"
+                       + (f", for the period ended {row['report_date']}"
+                          if row["report_date"] else ""))
+    else:
+        out.append(f"- none on or before {cutoff}")
+    out.append("")
+    return out
+
+
+def render_index(ticker: str, *, cutoff, fixtures_root=cutoff_guard.FIXTURES) -> str:
+    """The filing index alone, for a bundle with no earnings exhibit on record.
+
+    `submissions.json` is stored for every company, so the item codes and the
+    late-filing notices exist whether or not an 8-K body does. A bundle that
+    printed neither could not answer `filing_irregularity` either way.
+    """
+    index = submissions(ticker, fixtures_root=fixtures_root)
+    return "\n".join(index_lines(eight_k_filings(index, cutoff),
+                                 late_filings(index, cutoff), cutoff))
+
+
 def render(payload: dict) -> str:
     out = [f"# {payload['ticker']} 8-K — {payload['accession']} "
            f"filed {payload['filing_date']}", ""]
-    out.append(f"## item codes, every 8-K on or before {payload['cutoff']}")
-    out.append("")
-    for row in payload["filings"]:
-        out.append(f"- {row['filing_date']} {row['accession']} — "
-                   f"{', '.join(row['items']) or '(none recorded)'}")
-    out.append("")
+    out.extend(index_lines(payload["filings"], payload["late_filings"],
+                           payload["cutoff"]))
 
     out.append("## item 2.02 — earnings release, exhibit 99.1")
     out.append("")

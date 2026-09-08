@@ -57,7 +57,9 @@ def test_the_index_is_a_recount_of_the_stored_file(ticker):
     """Read the index with `json` and count the 8-Ks by hand."""
     row = cutoff_guard.one_document(ticker, "submissions", "submissions_index")
     raw = json.loads(cutoff_guard.load_document(row["full_path"], row["filing_date"]))
-    by_hand = [row for row in raw["filings"] if row["form"] == "8-K"]
+    # `8-K/A` is an 8-K. Selecting the string exactly is what kept every
+    # amendment out of the list this recount is checking.
+    by_hand = [row for row in raw["filings"] if row["form"] in ("8-K", "8-K/A")]
     assert len(by_hand) == \
         expected(ticker)["earnings_release"]["8-K"]["eight_k_filings_in_the_index"]
     assert {row["accession"] for row in by_hand} == \
@@ -201,3 +203,72 @@ def test_the_rendered_file_carries_every_8k_and_its_codes(ticker):
 def test_the_parser_goes_through_the_cutoff_gate():
     with pytest.raises(cutoff_guard.CutoffViolationError):
         parse_8k.extract("AAPL", cutoff=dt.date(2020, 1, 1))
+
+
+# --- amendments and late filings --------------------------------------------
+#
+# `form == "8-K"` exactly, so no `8-K/A` reached the item-code list
+# `docs/INPUT_SPEC.md:28` promises and no NT filing reached anything. Both come
+# from the already-stored `submissions.json`; neither needs a fetch.
+
+@pytest.mark.parametrize("ticker", TICKERS)
+def test_an_amendment_is_in_the_list_and_says_it_is_one(ticker):
+    raw = json.loads(cutoff_guard.load_index(cutoff_guard.one_document(
+        ticker, "submissions", "submissions_index")["full_path"]))
+    by_hand = {row["accession"] for row in raw["filings"] if row["form"] == "8-K/A"}
+    listed = {row["accession"] for row in parse_8k.eight_k_filings(raw)
+              if row["amendment"]}
+    assert listed == by_hand, ticker
+    for row in parse_8k.eight_k_filings(raw):
+        assert row["amendment"] == (row["form"] == "8-K/A")
+
+
+def test_ttmis_amendment_names_the_filing_it_amends():
+    """TTMI filed its earnings release and an amendment of it on 2026-08-06.
+    The index has no `amends` field; both carry report date 2026-08-05, and
+    exactly one 8-K does, so the amendment can name it."""
+    raw = json.loads(cutoff_guard.load_index(cutoff_guard.one_document(
+        "TTMI", "submissions", "submissions_index")["full_path"]))
+    rows = {row["accession"]: row for row in parse_8k.eight_k_filings(raw)}
+    amendment = rows["0001193125-26-337923"]
+    assert amendment["amendment"] is True
+    assert amendment["items"] == ["2.02", "9.01"]
+    assert amendment["amends"] == "0001193125-26-336163"
+    assert rows["0001193125-26-336163"]["items"] == ["2.02", "9.01"]
+
+
+def test_the_amendment_is_outside_ttmis_own_bundles_because_of_the_cutoff():
+    """It was filed 2026-08-06 and TTMI's 10-Q on 2026-08-05, so neither the
+    amendment nor the 8-K it amends may enter that bundle. The cutoff outranks
+    the wish to see it: `CLAUDE.md` — nothing filed after the triggering report
+    enters the input."""
+    raw = json.loads(cutoff_guard.load_index(cutoff_guard.one_document(
+        "TTMI", "submissions", "submissions_index")["full_path"]))
+    listed = {row["accession"]
+              for row in parse_8k.eight_k_filings(raw, "2026-08-05")}
+    assert "0001193125-26-337923" not in listed
+    assert "0001193125-26-336163" not in listed
+    assert "0001193125-26-337923" in {
+        row["accession"] for row in parse_8k.eight_k_filings(raw, "2026-08-06")}
+
+
+def test_littelfuses_late_filing_notice_is_on_the_list():
+    """`docs/CHECKLIST.md:67` names an NT 10-K a filing irregularity. LFUS filed
+    one on 2025-02-27 for the year ended 2024-12-28."""
+    raw = json.loads(cutoff_guard.load_index(cutoff_guard.one_document(
+        "LFUS", "submissions", "submissions_index")["full_path"]))
+    late = parse_8k.late_filings(raw)
+    assert [row["accession"] for row in late] == ["0001140361-25-006294"]
+    assert late[0]["form"] == "NT 10-K"
+    assert late[0]["report_date"] == "2024-12-28"
+    assert not parse_8k.late_filings(raw, "2025-02-26")
+
+
+@pytest.mark.parametrize("ticker", TICKERS)
+def test_the_late_filing_list_is_a_recount_of_the_stored_file(ticker):
+    raw = json.loads(cutoff_guard.load_index(cutoff_guard.one_document(
+        ticker, "submissions", "submissions_index")["full_path"]))
+    by_hand = [row for row in raw["filings"]
+               if row["form"] in ("NT 10-K", "NT 10-Q", "NT 10-K/A", "NT 10-Q/A")]
+    assert {row["accession"] for row in by_hand} == \
+        {row["accession"] for row in parse_8k.late_filings(raw)}

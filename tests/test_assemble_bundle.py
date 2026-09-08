@@ -476,3 +476,43 @@ def test_every_control_paragraph_is_the_filings_own_text(ticker, form):
             if not source.contains(piece):
                 misses.append(piece)
     assert not misses, f"{ticker} {form}: {misses[:2]}"
+
+
+# --- the filing index reaches every bundle -----------------------------------
+
+@pytest.mark.parametrize("ticker", TICKERS)
+@pytest.mark.parametrize("form", ("10-K", "10-Q"))
+def test_the_bundle_lists_exactly_the_filings_the_index_holds(ticker, form):
+    """Counted straight out of `submissions.json` with `json` alone — the file
+    the bundle's own list is built from, read again without going through
+    `src/parse_8k.py`."""
+    bundle = built(ticker, form)
+    cutoff = bundle["manifest"]["cutoff"]
+    rows = json.loads((REPO_ROOT / "tests" / "fixtures" / ticker /
+                       "submissions.json").read_text())["filings"]
+    want_8k = sum(1 for row in rows if row["form"] in ("8-K", "8-K/A")
+                  and row["filing_date"] <= cutoff)
+    want_late = sum(1 for row in rows if row["form"].startswith("NT 10-")
+                    and row["filing_date"] <= cutoff)
+
+    text = bundle["texts"]["input_8k.md"]
+    codes = text.split("## item codes")[1].split("## late-filing")[0]
+    listed_8k = [line for line in codes.split("\n") if line.startswith("- ")]
+    tail = text.split("## late-filing")[1].split("\n## ")[0]
+    listed_late = [line for line in tail.split("\n") if line.startswith("- ")]
+    if listed_late == [f"- none on or before {cutoff}"]:
+        listed_late = []
+    assert len(listed_8k) == want_8k, f"{ticker} {form}: 8-K lines"
+    assert len(listed_late) == want_late, f"{ticker} {form}: late-filing lines"
+
+
+def test_a_bundle_with_no_earnings_exhibit_still_carries_the_filing_index():
+    """TTMI's only stored 8-K was filed the day after its 10-Q, so that bundle
+    has no earnings release. The item codes and the late-filing notices come
+    from `submissions.json`, which is on record either way."""
+    text = built("TTMI", "10-Q")["texts"]["input_8k.md"]
+    assert "no 8-K at or before 2026-08-05" in text
+    assert "## item codes, every 8-K on or before 2026-08-05" in text
+    assert "## late-filing notifications on or before 2026-08-05" in text
+    assert "0001193125-26-337923" not in text      # filed 2026-08-06
+    assert "0001193125-26-336163" not in text

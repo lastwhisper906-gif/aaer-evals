@@ -358,7 +358,13 @@ def build(ticker: str, form: str, *, cutoff=None, fixtures_root=cutoff_guard.FIX
                                          fixtures_root=fixtures_root)
         eight_k_note = (f"no 8-K at or before {cutoff}: the one on record was filed "
                         f"{held['filing_date']}, after the {form} this bundle is for")
-        eight_k_text = f"# {ticker} 8-K\n\n{eight_k_note}.\n"
+        # No exhibit on record does not mean no filing index. The item codes and
+        # the late-filing notices come from `submissions.json`, which is stored
+        # for every company, and a bundle that says nothing about them cannot
+        # answer `filing_irregularity` either way.
+        eight_k_text = (f"# {ticker} 8-K\n\n{eight_k_note}.\n\n"
+                        + parse_8k.render_index(ticker, cutoff=cutoff,
+                                                fixtures_root=fixtures_root))
 
     # The history is two consecutive 10-Qs, whatever form triggered the run.
     if all(key in on_record for key in (("10-Q", "xbrl_instance"),
