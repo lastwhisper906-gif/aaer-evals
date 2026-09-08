@@ -19,7 +19,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3.12 -m src.plain_name_check --changed || true",
+            "command": "test -f src/plain_name_check.py && python3.12 -m src.plain_name_check --changed || true",
             "timeout": 30
           }
         ]

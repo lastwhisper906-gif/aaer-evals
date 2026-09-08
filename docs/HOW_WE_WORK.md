@@ -204,7 +204,7 @@ consecutive blocks, so a hook that keeps failing stops blocking. CI is the judge
 |---|---|---|
 | numbers reader, notes-text reader, both comparers | Opus, effort xhigh | reading a filing and reading a report against a market table are the two places where a missed detail is not recoverable downstream |
 | **supervisor-accounting, supervisor-pressure** | **Fable, pinned for one year together with rules v0.1** | keeping the pin matters more than raw capability — a track record only means something as quarter-to-quarter comparison under the same model and the same rules. Check subscription-path stability from the served-model record on the first run; if fallbacks are frequent, drop the pin to Opus. |
-| single-agent baseline control | the same model as the supervisor | a control on a different model would measure the model, not the structure |
+| single-agent baseline control | the same model as the supervisor | a control on a different model would measure the model, not the structure. Its prompt lives inside the control's run script, not in `.claude/agents/` — it is a control, not a layer, and it must not become something a session can invoke by name |
 | refute verification, claim-strength review | Fable | heavy judgment, where a mistake is expensive |
 | reproduce verification, full review | Opus, effort xhigh | the existing pins |
 | when a model change is needed | run both models in parallel for one quarter, then switch | a switch without a bridge quarter contaminates the record |
