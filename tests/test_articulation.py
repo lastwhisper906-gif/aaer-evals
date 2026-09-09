@@ -34,6 +34,17 @@ missing inventory line. An absence has to arrive as an absence with a reason.
 None of them may arrive as a zero, and `test_no_absence_arrives_as_a_zero` is
 what makes that an assertion rather than a hope.
 
+The third thing asserted here is how far the check reaches. A run's cutoff is
+the filing date of the report that triggered it, and these twelve companies
+carry twenty-four triggers between them -- a 10-K and a 10-Q each.
+`test_every_trigger_whose_record_holds_the_rows_produces_one` counts, from the
+committed manifests and the committed companyfacts documents rather than from a
+run, how many of the twenty-four the record holds a row for, and asserts the
+module produces exactly those. Read through the whole-file date gate it produced
+seven, because companyfacts is dated by the newest filing it carries and eleven
+of the twelve 10-Ks are older than that date, so the record was refused whole to
+the annual run.
+
 `test_littelfuse_receivables_gap_nets_out_the_acquisition_it_discloses` is a
 strict expected failure. Littelfuse's 10-K discloses 16,798,000 of receivables
 and 23,363,000 of inventory acquired with Basler Electric; both are in the
@@ -617,10 +628,49 @@ def test_the_record_is_read_through_the_gate_and_not_around_it():
     assert [path.name for path in opened] == ["companyfacts.json.gz"]
 
 
-def test_a_cutoff_earlier_than_the_record_refuses_it_rather_than_filtering_it():
-    """companyfacts is a catalogue, and the gate has no catalogue route for it."""
-    with pytest.raises(cutoff_guard.CutoffViolationError):
-        articulation.articulation("AAPL", cutoff="2026-01-01")
+def test_a_cutoff_earlier_than_the_record_filters_its_rows_rather_than_refusing_it():
+    """companyfacts is a catalogue, and `load_catalogue` is the gate's route for it.
+
+    Apple's record is dated 2026-07-31, the day the third-quarter 10-Q was
+    filed, because that is the newest filing the record carries. Read as a
+    filing it was refused to every earlier cutoff, and the 10-K's own run --
+    cutoff 2025-10-31 -- got nothing. Read as a catalogue the cutoff selects
+    rows instead, so the annual trigger gets the three rows its own filing
+    supports, at the numbers `BY_HAND` differenced off the statements, and the
+    quarterly rows filed nine months later are not there.
+    """
+    by_hand = {(accession, account): gap
+               for _, accession, account, _period, *_, gap in BY_HAND}
+    annual = articulation.articulation("AAPL", cutoff="2025-10-31")
+
+    assert annual["source"]["filings"] == [APPLE_ANNUAL]
+    assert [(entry["accession"], entry["account"], entry["gap"])
+            for entry in annual["rows"]] == [
+        (APPLE_ANNUAL, account, by_hand[(APPLE_ANNUAL, account)])
+        for account in ("receivables", "inventory", "payables")]
+    assert not [entry for entry in annual["coverage"]
+                if entry["accession"] == APPLE_QUARTERLY]
+
+
+def test_the_run_states_the_newest_row_it_kept_and_neither_date_the_file_carries():
+    """A catalogue carries two dates a run may not repeat, and states a third.
+
+    The day the record was fetched and the newest filing the whole file holds
+    are both later than every earlier cutoff, so publishing either would put a
+    look-ahead in the output of a run that read no such filing. What the run may
+    state is the newest row left after its own cutoff, beside the cutoff it read
+    them through -- the pair `src/extraction_checks.py` requires of a catalogue
+    in a bundle manifest.
+    """
+    manifest = json.loads((FIXTURES / "AAPL" / "manifest.json").read_text())
+    catalogue = [row for row in manifest["documents"]
+                 if row["role"] == cutoff_guard.CATALOGUE_ROLE][0]
+    assert (manifest["as_of"], catalogue["filing_date"]) == ("2026-09-01", "2026-07-31")
+
+    annual = articulation.articulation("AAPL", cutoff="2025-10-31")
+    assert annual["source"]["rows_used_through"] == "2025-10-31"
+    assert annual["source"]["latest_filed"] == "2025-10-31"
+    assert "2026-09-01" not in articulation.render(annual)
 
 
 def test_a_filing_made_after_the_cutoff_is_not_read_at_all():
@@ -635,6 +685,161 @@ def test_a_filing_made_after_the_cutoff_is_not_read_at_all():
                                             "0001783180-26-000026"]
     assert not [entry for entry in payload["coverage"]
                 if entry["status"] == "absent_from_companyfacts"]
+
+
+# --- the triggers ------------------------------------------------------------
+#
+# A run is triggered by one report and its cutoff is that report's own filing
+# date -- `CLAUDE.md`, and `src/assemble_bundle.py`'s `TRIGGERING_FORMS`. These
+# twelve companies carry one 10-K and one 10-Q each, so there are twenty-four
+# triggers, and the manifests hold both the accession and the date.
+
+TRIGGERING_FORMS = ("10-K", "10-Q")
+
+# The us-gaap concepts a cash-flow statement states one of these three accounts
+# under, and the balance-sheet concepts facing them. Typed from the taxonomy
+# rather than read out of `src/articulation.py`, so the count below is not the
+# module agreeing with itself about what its record holds.
+CASH_FLOW_AND_BALANCE = {
+    "IncreaseDecreaseInAccountsReceivable":
+        ("AccountsReceivableNetCurrent", "AccountsReceivableNet"),
+    "IncreaseDecreaseInReceivables":
+        ("ReceivablesNetCurrent", "AccountsAndOtherReceivablesNetCurrent"),
+    "IncreaseDecreaseInInventories": ("InventoryNet",),
+    "IncreaseDecreaseInAccountsPayable":
+        ("AccountsPayableCurrent", "AccountsPayableTradeCurrent"),
+    "IncreaseDecreaseInAccountsPayableTrade":
+        ("AccountsPayableCurrent", "AccountsPayableTradeCurrent"),
+}
+
+# The three triggers whose record holds no row of theirs, and why -- each one a
+# refusal this file already asserts against the source above. Carrier's and
+# Littelfuse's July quarterlies are in no companyfacts row at all
+# (`NOT_IN_COMPANYFACTS`), and ESCO's quarterly states the whole of working
+# capital as one line
+# (`test_one_working_capital_line_for_everything_is_refused`).
+NOTHING_TO_READ = ["CARR 10-Q 0001783180-26-000032",
+                   "ESE 10-Q 0001104659-26-093266",
+                   "LFUS 10-Q 0001628280-26-050481"]
+
+
+@functools.lru_cache(maxsize=None)
+def triggers() -> tuple[tuple[str, str, str, str], ...]:
+    """`(ticker, form, accession, cutoff)` for each trigger, from the manifests."""
+    found = []
+    for ticker in TICKERS:
+        rows = json.loads((FIXTURES / ticker / "manifest.json").read_text())["documents"]
+        for form in TRIGGERING_FORMS:
+            triggering = [row for row in rows
+                          if row["form"] == form and row["role"] == "primary_html"]
+            assert len(triggering) == 1, f"{ticker} {form}: {len(triggering)} reports"
+            found.append((ticker, form, triggering[0]["accession"],
+                          triggering[0]["filing_date"]))
+    return tuple(found)
+
+
+@functools.lru_cache(maxsize=None)
+def record_rows(ticker: str) -> tuple[tuple, ...]:
+    """Every us-gaap USD row of the committed record, with the date it was filed.
+
+    `companyfacts` above drops `filed` because the rows it checks are looked up
+    by period; the cutoff selects on `filed`, so this reader keeps it.
+    """
+    entry = [document for document in
+             json.loads((FIXTURES / ticker / "manifest.json").read_text())["documents"]
+             if document["form"] == "companyfacts"][0]
+    raw = (FIXTURES / ticker / entry["path"]).read_bytes()
+    record = json.loads(gzip.decompress(raw) if entry["stored"] == "gzip" else raw)
+    return tuple((tag, fact["accn"], fact.get("start"), fact["end"], fact["filed"])
+                 for tag, concept in record["facts"]["us-gaap"].items()
+                 for fact in concept["units"].get("USD", []))
+
+
+def record_holds_a_row(ticker: str, accession: str, cutoff: str) -> bool:
+    """Are one filing's own three figures in the record, inside its own cutoff?
+
+    The row a trigger produces for the report that triggered it needs, from that
+    one filing: a cash-flow change over the column ending on the filing's report
+    date, and the same account's balance on both ends of that column -- the day
+    before it opens and the report date itself. Read straight out of the
+    committed document, which is where the answer is.
+    """
+    durations: dict[str, set] = {}
+    instants: dict[str, set] = {}
+    for tag, accn, start, end, filed in record_rows(ticker):
+        if accn != accession or filed > cutoff:
+            continue
+        if start:
+            durations.setdefault(tag, set()).add((start, end))
+        else:
+            instants.setdefault(tag, set()).add(end)
+
+    reported = report_dates(ticker)[accession]
+    for cash_flow, balances in CASH_FLOW_AND_BALANCE.items():
+        for start, end in durations.get(cash_flow, ()):
+            if end != reported:
+                continue
+            opening = (dt.date.fromisoformat(start) - dt.timedelta(days=1)).isoformat()
+            if any({opening, end} <= instants.get(tag, set()) for tag in balances):
+                return True
+    return False
+
+
+def test_a_filings_rows_in_companyfacts_carry_that_filings_own_date():
+    """What makes a triggering report's own rows survive its own cutoff.
+
+    companyfacts stamps each row with the date of the filing that reported it,
+    so a run triggered by a report reads that report's rows on the boundary the
+    cutoff allows rather than one day past it. If that were not so, the row
+    filter would take a trigger's own figures out from under it and the count
+    below would be measuring the wrong thing.
+    """
+    wrong = []
+    for ticker in TICKERS:
+        filed_on = {row["accession"]: row["filing_date"] for row in
+                    json.loads((FIXTURES / ticker / "manifest.json").read_text())
+                    ["documents"] if row.get("accession")}
+        for tag, accession, _start, _end, filed in record_rows(ticker):
+            if accession in filed_on and filed_on[accession] != filed:
+                wrong.append(f"{ticker} {accession} {tag}: the manifest says "
+                             f"{filed_on[accession]} and the row says {filed}")
+    assert wrong == [], "\n".join(sorted(set(wrong)))
+
+
+def test_every_trigger_whose_record_holds_the_rows_produces_one():
+    """The count this check is worth, over all twenty-four triggers.
+
+    A run's cutoff is the filing date of the report that triggered it, so the
+    check has to produce a number at that date and not only at the fixture set's
+    own as-of date. Read through the whole-file date gate it did not:
+    companyfacts is dated by the newest filing it carries, which for eleven of
+    the twelve 10-Ks is later than the 10-K itself, so the record was refused
+    whole and the annual trigger got nothing. Fourteen of the twenty-four raised
+    and seven produced a row for their own report.
+
+    Both sides here come from the committed fixtures and neither from a run. The
+    triggers are the manifests' own 10-K and 10-Q rows with the filing date each
+    carries; whether the record holds a trigger's row is read out of the
+    companyfacts document by `record_holds_a_row`. What is left over is
+    `NOTHING_TO_READ`, three refusals this file already asserts against the
+    source, so the number that should come out is twenty-four less those three.
+    """
+    holds, produces = [], []
+    for ticker, form, accession, cutoff in triggers():
+        named = f"{ticker} {form} {accession}"
+        if record_holds_a_row(ticker, accession, cutoff):
+            holds.append(named)
+        found = articulation.articulation(ticker, cutoff=cutoff)
+        if [entry for entry in found["rows"] if entry["accession"] == accession]:
+            produces.append(named)
+
+    assert len(triggers()) == 2 * len(TICKERS) == 24
+    assert sorted(set(f"{ticker} {form} {accession}"
+                      for ticker, form, accession, _ in triggers())
+                  - set(holds)) == NOTHING_TO_READ
+    assert produces == holds
+    assert len(produces) == len(triggers()) - len(NOTHING_TO_READ) == 21
+    assert len([named for named in produces if " 10-K " in named]) == len(TICKERS)
 
 
 # --- netting -----------------------------------------------------------------

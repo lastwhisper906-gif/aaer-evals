@@ -69,23 +69,32 @@ Differencing them anyway would produce a number that is a gap in the wrong
 account. `coverage` names the wider concept instead.
 
 **Through the gate, like every other extractor.** The companyfacts record is
-read with `src/cutoff_guard.py`'s `load_bytes`, and the filings it is read
+read with `src/cutoff_guard.py`'s `load_catalogue`, and the filings it is read
 against come from that module's `documents`. Borrowing
 `fetch_fixtures.read_stored` would have read the same bytes and left the bypass
 scan in `tests/test_cutoff_guard.py` unable to see the read, which is what
 `tests/test_fetch_companyfacts.py::test_only_the_companyfacts_fetcher_borrows_the_fetcher_file_helpers`
 exists to stop; it caught this module doing it.
 
-The gate is coarse on this document and that is worth naming. companyfacts is a
-catalogue of facts drawn from many filings rather than a filing, so its manifest
-row records the newest filing it carries and `date_basis` says so. `load_index`
-is the gate's treatment for a catalogue -- check the path, skip the date, make
-the caller filter the rows -- and it is restricted to the submissions index, so
-this record goes through the date gate whole. At the fixture set's own as-of
-date, which is the default cutoff here, all twelve pass. An earlier cutoff
-refuses the record rather than filtering its rows, which is fail-closed and is
-the direction the gate takes everywhere else. Widening `load_index` to a second
-catalogue role is a change to `src/cutoff_guard.py` and is not this item's file.
+`load_catalogue` is the route, and which route it is decides whether the annual
+trigger gets a number at all. companyfacts is a catalogue of facts drawn from
+many filings rather than a filing, so its manifest row records the newest filing
+it carries and `date_basis` says so, and the whole-file date gate compares a
+run's cutoff against that one date. This module read it through `load_bytes`
+until the catalogue route landed, and the cost was measured rather than guessed:
+of the twenty-four triggers these twelve companies carry -- a 10-K and a 10-Q
+each, the cutoff being each trigger's own filing date -- fourteen refused the
+record outright, eleven of them the annual ones, and seven produced a row for
+the report that triggered them. Carrier is the plainest: its record is dated
+2026-04-30 and its 10-K was filed 2026-02-05, so the annual run was refused a
+record of which 11,676 rows were inside its cutoff. That silence is not a
+smaller answer. The catalogue route applies the same cutoff to the rows instead,
+which is where the look-ahead in a catalogue lives, and the refusals that remain
+are the ones where a row genuinely is not there: a filing companyfacts has not
+loaded, a cash-flow line wider than the account, a balance sheet missing an end.
+`tests/test_articulation.py` counts the triggers that produce a row against the
+committed manifests, so a route that went quiet again would be caught by the
+count and not by a reading of the code.
 
 **Two filings companyfacts has not loaded.** Carrier's and Littelfuse's
 quarterlies filed in late July 2026 are in no companyfacts row at all -- EDGAR's
@@ -240,16 +249,16 @@ def _fact(accession: str, tag: str, period: str, value) -> dict:
 def document(ticker: str, fixtures_root: Path, cutoff: dt.date) -> tuple[dict, dict]:
     """One company's companyfacts record and the manifest row it was read from.
 
-    `cutoff_guard.load_bytes` and nothing else: the record is a committed
+    `cutoff_guard.load_catalogue` and nothing else: the record is a committed
     fixture, gzipped, and reading it any other way is a read the bypass scan
-    cannot see.
+    cannot see. What comes back is the record with every row filed after the
+    cutoff already gone, so nothing downstream has to remember to filter.
     """
     entry = cutoff_guard.one_document(ticker, fetch_companyfacts.FORM,
                                       fetch_companyfacts.ROLE,
                                       fixtures_root=fixtures_root)
-    raw = cutoff_guard.load_bytes(entry["full_path"], cutoff,
-                                  fixtures_root=fixtures_root)
-    return json.loads(raw), entry
+    return cutoff_guard.load_catalogue(entry["full_path"], cutoff,
+                                       fixtures_root=fixtures_root), entry
 
 
 def filings(ticker: str, fixtures_root: Path, cutoff: dt.date) -> list[dict]:
@@ -440,22 +449,29 @@ def articulation(ticker: str, fixtures: Path | None = None,
                 "account": None, "status": "absent_from_companyfacts",
                 "reason": (f"companyfacts holds no row filed under "
                            f"{filing['accession']}: this filing was filed "
-                           f"{filing['filing_date']} and the newest row in this "
-                           f"record was filed {latest}, so EDGAR had not loaded it "
-                           f"when the fixture was fetched. The three accounts are in "
-                           f"the instance and nothing here stands in for them")})
+                           f"{filing['filing_date']} and the newest row this record "
+                           f"holds through the cutoff was filed {latest}, so EDGAR "
+                           f"had not loaded it. The three accounts are in the "
+                           f"instance and nothing here stands in for them")})
             continue
         for account in ACCOUNTS:
             more, entry = account_rows(held, filing, account)
             rows.extend(more)
             coverage.append(entry)
 
+    # The catalogue states two dates a run may not repeat -- the day it was
+    # fetched (`as_of`) and the newest filing the whole file carries, which is
+    # what its manifest row records. Both are later than every earlier cutoff,
+    # so neither is published here. `latest_filed` is read off the rows that
+    # survived the cutoff, which is the one date this run is entitled to state,
+    # and `rows_used_through` says what the cutoff was -- the same pair
+    # `src/extraction_checks.py` requires of a catalogue in a bundle manifest.
     return {
         "ticker": ticker,
         "cutoff": cutoff.isoformat(),
-        "record_as_of": record.get("as_of"),
         "source": {"companyfacts": held_on_record["path"],
                    "sha256": held_on_record["sha256"],
+                   "rows_used_through": cutoff.isoformat(),
                    "latest_filed": latest,
                    "filings": [filing["accession"] for filing in on_file]},
         "rows": rows,
