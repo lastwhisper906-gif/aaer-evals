@@ -417,6 +417,25 @@ def test_a_basis_that_resolves_to_nothing_becomes_the_schemas_own_abstention(tmp
         row["item_id"] for row in result["dropped"]]
 
 
+def test_an_insufficient_p_up_still_resolves_the_basis_it_carries(tmp_path):
+    """The abstention excuses an empty basis, not an unresolvable one.
+
+    Both supervisor prompts put it unconditionally -- "Python checks that each
+    one resolves, and an unresolvable one is dropped and counted" -- so an
+    `"insufficient"` p_up carrying ids that name nothing is a drop like any
+    other, and what is written is the abstention with the basis emptied.
+    """
+    root, folder = plant(tmp_path)
+    answer = accounting_answer()
+    answer["market_direction"] = {"p_up": "insufficient",
+                                  "basis": [f"{ACCESSION}:notes:99"]}
+    result = go(root, folder, "accounting_reliability", answer)
+    assert written(root, "accounting_reliability")["market_direction"] == {
+        "p_up": "insufficient", "basis": []}
+    assert "accounting_reliability:market_direction" in [
+        row["item_id"] for row in result["dropped"]]
+
+
 def test_an_evidence_entry_with_no_quote_is_refused(tmp_path):
     """§7 shows `evidence` with `upstream_item_id` alone; this control has no
     upstream report, so its id names a paragraph and the quote is the only

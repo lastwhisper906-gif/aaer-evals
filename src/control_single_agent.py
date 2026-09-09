@@ -44,9 +44,13 @@ declares, `quote_drop_reason` matches one quote against it, and
 **`market_direction.basis` is a bare list of ids**, because §7 gives it that
 shape and there is nowhere in it to put a quote. So existence in the committed
 input is the whole of what Python can check there, through the gate's citation
-path. When `p_up` is `"insufficient"` the basis may be empty and nothing is
-checked: §7 makes `"insufficient"` an allowed value "and that is recorded and
-counted", and a probability resting on nothing is exactly what it is for.
+path. An `"insufficient"` `p_up` may rest on an empty basis and that is the one
+case nothing is resolved: §7 makes `"insufficient"` an allowed value "and that
+is recorded and counted", and a probability resting on nothing is exactly what
+it is for. A basis with ids in it is resolved whatever `p_up` says, because the
+supervisors' own rule -- "Python checks that each one resolves, and an
+unresolvable one is dropped and counted" -- does not go quiet when the
+probability abstains.
 
 **What a drop does.** A checklist entry whose evidence does not verify is
 dropped whole, because that is what the gate does with an item -- one failing
@@ -84,6 +88,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from collections import Counter
 from pathlib import Path
 
 try:
@@ -105,11 +110,10 @@ CONTROL_FILES = {
     "financial_pressure": "control_single_agent_pressure.json",
 }
 
-# Whose model this control borrows, per question. `docs/HOW_WE_WORK.md` §6.
-SUPERVISOR_PROMPTS = {
-    "accounting_reliability": "supervisor-accounting.md",
-    "financial_pressure": "supervisor-pressure.md",
-}
+# The two supervisors whose model this control borrows. Both, not one per
+# question: they run under one pin and this refuses if they ever disagree.
+# `docs/HOW_WE_WORK.md` §6.
+SUPERVISOR_PROMPTS = ("supervisor-accounting.md", "supervisor-pressure.md")
 
 # The output schema, copied out of `docs/CHECKLIST.md` §7 character for
 # character so the prompt shows the model the document's own shape.
@@ -190,6 +194,13 @@ class ControlError(Exception):
     """The control cannot be run, or its answer cannot be recorded as one."""
 
 
+def _a_question(question: str) -> None:
+    """One of the two questions there are, or a refusal."""
+    if question not in CONTROL_FILES:
+        raise ControlError(f"{question!r} is not a question; "
+                           f"one of {', '.join(CONTROL_FILES)}")
+
+
 # --- the model, borrowed from the supervisor ---------------------------------
 
 def _front_matter_model(path: Path) -> str:
@@ -218,7 +229,7 @@ def supervisor_model(prompts_dir: Path = AGENT_PROMPTS) -> str:
     picking one.
     """
     found = {name: _front_matter_model(Path(prompts_dir) / name)
-             for name in sorted(set(SUPERVISOR_PROMPTS.values()))}
+             for name in SUPERVISOR_PROMPTS}
     families = set(found.values())
     if len(families) != 1:
         named = ", ".join(f"{name} names {model}" for name, model in sorted(found.items()))
@@ -281,10 +292,10 @@ def _number(entry, field: str, where: str, *, low=None, high=None) -> float:
 
 def _unique(keys: list[str], where: str) -> None:
     """One indicator, one key — `docs/CHECKLIST.md` §2 says it in those words."""
-    seen = {key for key in keys if keys.count(key) > 1}
-    if seen:
+    repeated = [key for key, count in Counter(keys).items() if count > 1]
+    if repeated:
         raise ControlError(
-            f"{where} names {', '.join(sorted(seen))} more than once; one "
+            f"{where} names {', '.join(sorted(repeated))} more than once; one "
             "indicator, one key, and a repeated key names a set")
 
 
@@ -295,9 +306,7 @@ def check_schema(payload, question: str, *, rules_version) -> dict:
     does not get to invent it: a prediction scored against a rules version it
     named itself is scored against nothing.
     """
-    if question not in CONTROL_FILES:
-        raise ControlError(f"{question!r} is not a question; "
-                           f"one of {', '.join(CONTROL_FILES)}")
+    _a_question(question)
     if not isinstance(payload, dict):
         raise ControlError(
             f"the prediction is {type(payload).__name__}, not an object")
@@ -329,9 +338,10 @@ def check_schema(payload, question: str, *, rules_version) -> dict:
         if not isinstance(evidence, list):
             raise ControlError(f"{where}.evidence is not a list")
         for index, cited in enumerate(evidence, start=1):
-            _fields(cited, EVIDENCE_FIELDS, f"{where}.evidence[{index}]")
+            cited_where = f"{where}.evidence[{index}]"
+            _fields(cited, EVIDENCE_FIELDS, cited_where)
             for field in EVIDENCE_FIELDS:
-                _text(cited, field, f"{where}.evidence[{index}]")
+                _text(cited, field, cited_where)
     _unique([entry["key"] for entry in checklist], "checklist")
 
     if question == "financial_pressure":
@@ -456,11 +466,15 @@ def drop_reasons(payload: dict, question: str, index: dict) -> dict[str, str]:
             found[identifier] = why
 
     market = payload["market_direction"]
-    if market["p_up"] != INSUFFICIENT:
+    # The abstention rests on nothing by design, so an `"insufficient"` p_up with
+    # an empty basis is the one thing here that resolves nothing. Anything the
+    # basis does name is resolved, whatever p_up says.
+    if market["p_up"] != INSUFFICIENT or market["basis"]:
+        market_id = market_gate_id(question)
         why = quote_gate.citation_drop_reason(
-            {"id": market_gate_id(question), "basis": market["basis"]}, declared)
+            {"id": market_id, "basis": market["basis"]}, declared)
         if why is not None:
-            found[market_gate_id(question)] = why
+            found[market_id] = why
     return found
 
 
@@ -518,9 +532,7 @@ def input_files(input_dir) -> list[str]:
 
 def prompt(question: str, input_dir) -> str:
     """The one prompt this control sends, with the question and its files in it."""
-    if question not in CONTROL_FILES:
-        raise ControlError(f"{question!r} is not a question; "
-                           f"one of {', '.join(CONTROL_FILES)}")
+    _a_question(question)
     listed = "\n".join(f"- {name}" for name in input_files(input_dir))
     return CONTROL_PROMPT.format(question=question.replace("_", " "),
                                  files=listed, schema=SCHEMA)
