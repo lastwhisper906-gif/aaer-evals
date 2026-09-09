@@ -59,6 +59,18 @@ PLANTED_VALUE = 389_000_000
 # 389,000,000 − 412,000,000 = −23,000,000
 PLANTED_DIFFERENCE = -23_000_000
 
+# The committed record's own quiet restatement, and the one that is not in whole
+# dollars: Carrier first reported the second quarter of 2023 at a dividend of
+# 0.38 per share in the 10-Q filed 2023-07-27, and reported that quarter back at
+# 0.37 in the 10-Q filed 2023-10-26. Both rows are read out of the document in
+# the test below. 0.37 − 0.38 = −0.01, subtracted here by hand.
+DIVIDEND_TAG = "CommonStockDividendsPerShareDeclared"
+DIVIDEND_UNIT = "USD/shares"
+DIVIDEND_PERIOD = {"start": "2023-04-01", "end": "2023-06-30"}
+DIVIDEND_FIRST_REPORTED = 0.38
+DIVIDEND_RESTATED = 0.37
+DIVIDEND_DIFFERENCE = -0.01
+
 # Carrier's second-quarter 2026 10-Q, filed 2026-07-28, is in no companyfacts
 # row: EDGAR had not loaded it when the fixture set was fetched. It is the
 # accession the manifest records for the 10-Q instance, and the absence is
@@ -79,9 +91,9 @@ def companyfacts(fixtures_root: Path) -> dict:
                                               fixtures_root=fixtures_root))
 
 
-def rows_for_the_period(document: dict) -> list[dict]:
-    return [row for row in document["facts"][NAMESPACE][TAG]["units"][UNIT]
-            if (row.get("start"), row["end"]) == (PERIOD["start"], PERIOD["end"])]
+def rows_for_the_period(document: dict, tag=TAG, unit=UNIT, period=PERIOD) -> list[dict]:
+    return [row for row in document["facts"][NAMESPACE][tag]["units"][unit]
+            if (row.get("start"), row["end"]) == (period["start"], period["end"])]
 
 
 def every_row(document: dict) -> list[tuple]:
@@ -132,11 +144,19 @@ def test_the_planted_copy_is_the_bytes_its_own_manifest_recorded():
     assert manifest["planted"]["restated"]["value"] == PLANTED_VALUE
 
 
+def test_the_planted_manifest_records_the_one_document_the_directory_holds():
+    """A planted record is still a record: it may not name a file it does not hold."""
+    manifest = json.loads((PLANTED / TICKER / "manifest.json").read_text())
+    assert [row["path"] for row in manifest["documents"]] == ["companyfacts.json.gz"]
+    assert sorted(path.name for path in (PLANTED / TICKER).iterdir()) == [
+        "companyfacts.json.gz", "manifest.json"]
+
+
 # --- what the scan says about it ---------------------------------------------
 
-def trace_for_the_period(payload: dict) -> list[dict]:
+def trace_for_the_period(payload: dict, tag=TAG, unit=UNIT, period=PERIOD) -> list[dict]:
     return [trace for trace in payload["traces"]
-            if (trace["tag"], trace["unit"], trace["period"]) == (TAG, UNIT, PERIOD)]
+            if (trace["tag"], trace["unit"], trace["period"]) == (tag, unit, period)]
 
 
 @pytest.fixture(scope="module")
@@ -151,6 +171,15 @@ def planted_scan() -> dict:
 
 def test_the_planted_difference_is_the_two_numbers_subtracted():
     assert PLANTED_VALUE - FIRST_REPORTED_VALUE == PLANTED_DIFFERENCE
+
+
+def test_two_decimals_subtract_in_decimal_and_two_integers_stay_an_integer():
+    """The three subtractions on the right are hand arithmetic, not a run's output."""
+    assert json.dumps(restatement_trace.difference(0.37, 0.38)) == "-0.01"
+    assert json.dumps(restatement_trace.difference(0.303, 0.344)) == "-0.041"
+    planted = restatement_trace.difference(PLANTED_VALUE, FIRST_REPORTED_VALUE)
+    assert planted == PLANTED_DIFFERENCE
+    assert isinstance(planted, int)
 
 
 def test_the_planted_restatement_is_reported_with_the_accession_on_each_side(planted_scan):
@@ -181,6 +210,45 @@ def test_the_committed_record_reports_no_trace_for_that_period(committed_scan):
     assert reported_by == {FIRST_REPORTED_ACCESSION, LATER_ACCESSION}
 
 
+def test_a_difference_in_cents_is_reported_in_cents_and_not_in_binary(committed_scan):
+    """The committed record's own restatement, and the finding it hands the reader.
+
+    Carrier's second-quarter 2023 dividend per share is the one committed trace
+    whose two values are not whole numbers. Subtracted as floats it reports
+    −0.010000000000000009, and that is what would go to the numbers reader.
+    """
+    rows = rows_for_the_period(companyfacts(FIXTURES), DIVIDEND_TAG, DIVIDEND_UNIT,
+                               DIVIDEND_PERIOD)
+    assert [row["val"] for row in rows][:2] == [DIVIDEND_FIRST_REPORTED, DIVIDEND_RESTATED]
+
+    found = trace_for_the_period(committed_scan, DIVIDEND_TAG, DIVIDEND_UNIT,
+                                 DIVIDEND_PERIOD)
+    assert len(found) == 1, f"{len(found)} traces for {DIVIDEND_TAG} {DIVIDEND_PERIOD}"
+    assert found[0]["first_reported"]["value"] == DIVIDEND_FIRST_REPORTED
+    assert found[0]["restated"]["value"] == DIVIDEND_RESTATED
+    assert found[0]["difference"] == DIVIDEND_DIFFERENCE
+    assert DIVIDEND_RESTATED - DIVIDEND_FIRST_REPORTED != DIVIDEND_DIFFERENCE
+
+
+def decimal_places(number) -> int:
+    """How many digits after the point the number is written with in the payload."""
+    written = json.dumps(number)
+    return len(written.split(".")[1]) if "." in written else 0
+
+
+def test_no_difference_in_the_committed_record_invents_a_digit(committed_scan):
+    """Subtracting two decimals cannot need more decimal places than they carry.
+
+    Float subtraction does exactly that — two two-place numbers report an
+    eighteen-place one — so this fails the moment the arithmetic goes binary.
+    """
+    assert committed_scan["traces"], "no traces to check"
+    for trace in committed_scan["traces"]:
+        assert decimal_places(trace["difference"]) <= max(
+            decimal_places(trace["first_reported"]["value"]),
+            decimal_places(trace["restated"]["value"])), trace
+
+
 def key(trace: dict) -> tuple:
     return (trace["namespace"], trace["tag"], trace["unit"],
             trace["period"]["start"], trace["period"]["end"],
@@ -208,6 +276,19 @@ def test_a_filing_companyfacts_has_not_loaded_is_named_and_never_valued(committe
     named = {side["accession"] for trace in committed_scan["traces"]
              for side in (trace["first_reported"], trace["restated"])}
     assert NOT_YET_LOADED not in named
+    assert restatement_trace.ledger_line(committed_scan)["absent_from_companyfacts"] == 1
+
+
+def test_a_filing_later_than_the_cutoff_is_outside_the_run_not_missing_from_it():
+    """The absence list is cut off too, or a run names a document it may not see.
+
+    Carrier's July 2026 10-Q is in no companyfacts row at any cutoff. A run
+    triggered by the April 10-Q is not entitled to know it exists.
+    """
+    early = restatement_trace.scan(TICKER, cutoff="2026-05-01", fixtures_root=FIXTURES)
+    assert early["cutoff"] == "2026-05-01"
+    assert NOT_YET_LOADED_FILED > early["cutoff"]
+    assert early["absent_from_companyfacts"] == []
 
 
 def test_the_record_the_scan_read_is_named_by_its_own_hash(planted_scan, committed_scan):
@@ -251,15 +332,32 @@ def test_one_restated_value_repeated_by_later_filings_is_one_trace():
 
 
 def test_a_filing_that_reports_one_period_at_two_values_is_left_out_and_named():
-    """Two roundings inside one document are not a restatement, and not silence."""
+    """Two roundings inside one document are not a restatement, and not silence.
+
+    The filing is left out of the comparison, not the period: the third filing's
+    disagreement with the first-reported 100 is still reported, because dropping
+    the whole period would trade a real disagreement for silence.
+    """
     found, ambiguous = restatement_trace.traces(restatement_trace.by_period(
         facts(row(100, "first", "2025-05-01"),
               row(90, "second", "2025-08-01"),
-              row(90.4, "second", "2025-08-01")), "2026-09-01"))
-    assert found == []
+              row(90.4, "second", "2025-08-01"),
+              row(80, "third", "2025-11-01")), "2026-09-01"))
     assert len(ambiguous) == 1
     assert ambiguous[0]["accessions"] == ["second"]
     assert ambiguous[0]["values"] == {"second": [90, 90.4]}
+    assert [(trace["restated"]["accession"], trace["restated"]["value"])
+            for trace in found] == [("third", 80)]
+
+
+def test_a_period_whose_first_filing_reports_two_values_has_no_ground_truth():
+    """Ground truth is the first-reported value, and two of them are not one."""
+    found, ambiguous = restatement_trace.traces(restatement_trace.by_period(
+        facts(row(100, "first", "2025-05-01"),
+              row(101, "first", "2025-05-01"),
+              row(90, "second", "2025-08-01")), "2026-09-01"))
+    assert found == []
+    assert [entry["accessions"] for entry in ambiguous] == [["first"]]
 
 
 def test_a_row_filed_after_the_cutoff_does_not_enter_the_scan():
@@ -308,7 +406,8 @@ def test_a_run_appends_one_line_naming_what_it_found(tmp_path, planted_scan):
     assert line["source"] == "companyfacts"
     assert line["traces"] == planted_scan["counts"]["traces"]
     assert line["record_sha256"] == planted_scan["record"]["sha256"]
-    assert line["absent_from_companyfacts"] == 1
+    assert line["absent_from_companyfacts"] == len(
+        planted_scan["absent_from_companyfacts"])
     assert line["cutoff"] == planted_scan["cutoff"]
 
     written = json.loads((tmp_path / "first.json").read_text())

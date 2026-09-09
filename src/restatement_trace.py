@@ -26,6 +26,13 @@ the filing that introduced it is the one that restated.
 like a billion-dollar one. There is no threshold here and adding one would be
 inventing an answer this project has not decided.
 
+**The difference is subtracted in decimal, not in binary.** companyfacts prints
+a dividend per share as `0.38` and then as `0.37`; float subtraction of those
+two reports `-0.010000000000000009`, and that is the number the numbers reader
+would be handed as the finding. The digits the document printed are the ones
+subtracted here, so the answer is `-0.01`. Two integers subtract to an integer
+and stay one.
+
 **An amendment is marked, not dropped.** A restatement announced in a 10-K/A is a
 loud one, and calling it quiet would be a false statement; a trace whose later
 filing is an amendment carries `amendment: true` and is counted separately. The
@@ -36,21 +43,36 @@ pretend to decide it.
 **A filing that reports one period at two values is not a restatement.** It is
 the same fact at two roundings inside one document; companyfacts keeps the
 precise one, and no such row survives in the twelve records committed here. If
-one ever does, the period is listed under `ambiguous_within_one_filing` and left
-out of the scan rather than having one of its two values picked to disagree with.
+one ever does, that filing is named under `ambiguous_within_one_filing` and left
+out of the comparison rather than having one of its two values picked to
+disagree with — but only that filing. The period's other filings are still
+compared, because dropping the whole period would trade a real disagreement for
+silence. The exception is a period whose *first* filing is the ambiguous one:
+there is then no first-reported value to compare anything against, so the
+period is named and nothing else is said about it.
 
 **A filing companyfacts has not loaded is reported absent.** Two of the committed
 accessions — Carrier's and Littelfuse's quarterlies filed in late July 2026 — are
 in no companyfacts row, which is EDGAR's own loading lag. A period reported only
 there cannot be looked up here, so the accessions are named in
 `absent_from_companyfacts` and the numbers reader reads them out of the XBRL
-instance instead. An absence is never a value, and never a zero.
+instance instead. An absence is never a value, and never a zero. That list is
+cut off like everything else: a filing later than the cutoff is not missing from
+the run, it is outside it, and naming it would put a document the run may not
+see into the run's own output.
 
 **The cutoff.** companyfacts is a catalogue drawn from many filings, and its
 manifest row is dated with the newest filing it carries a fact from. The gate
 therefore refuses the whole document to a run whose cutoff is earlier than that
 — the run is refused rather than quietly reading a record it cannot vouch for —
 and the rows are filtered to `filed <= cutoff` on top of it.
+
+The adverse half of that, said plainly: with the fixture set as it stands, two
+of the twelve records are dated later than the company's own last committed
+report — CSCO's 2026-08-20 against a 10-Q filed 2026-08-12, QCOM's 2026-07-31
+against 2026-07-29 — so a run at the triggering report's own filing date is
+refused for those two and the trace does not run for them at all. That is the
+gate working, and it is a smaller answer than twelve.
 
     python3.12 -m src.restatement_trace --ticker CARR --out restatement_trace.json
 
@@ -69,6 +91,7 @@ import datetime as dt
 import json
 import sys
 from collections import defaultdict
+from decimal import Decimal
 from pathlib import Path
 
 try:
@@ -94,6 +117,18 @@ BAD_INPUT = 2
 def is_amendment(form: str) -> bool:
     """`10-K/A`, `10-Q/A`. An amendment says out loud what a quiet one does not."""
     return str(form).endswith("/A")
+
+
+def difference(restated, first_reported):
+    """The later value minus the first-reported one, subtracted in decimal.
+
+    `0.37 - 0.38` in binary floating point is `-0.010000000000000009`, and that
+    is what the finding would carry. The values are subtracted as the digits the
+    document printed them in instead. Two integers stay an integer.
+    """
+    if isinstance(restated, int) and isinstance(first_reported, int):
+        return restated - first_reported
+    return float(Decimal(str(restated)) - Decimal(str(first_reported)))
 
 
 def by_period(facts: dict, cutoff: str) -> dict[tuple, list[dict]]:
@@ -141,26 +176,32 @@ def traces(grouped: dict[tuple, list[dict]]) -> tuple[list[dict], list[dict]]:
         namespace, tag, unit, start, end = key
         values, filings = _filings(rows)
 
-        at_two_values = sorted(accession for accession in values
-                               if len(values[accession]) > 1)
+        at_two_values = {accession for accession in values
+                         if len(values[accession]) > 1}
         if at_two_values:
+            named = sorted(at_two_values)
             ambiguous.append({
                 "namespace": namespace, "tag": tag, "unit": unit,
                 "period": {"start": start, "end": end},
-                "accessions": at_two_values,
+                "accessions": named,
                 "values": {accession: sorted(values[accession])
-                           for accession in at_two_values},
+                           for accession in named},
             })
-            continue
 
         order = sorted(values, key=lambda accession: (filings[accession]["filing_date"],
                                                       accession))
         first = order[0]
+        if first in at_two_values:
+            # The filing that reported the period first reported it at two
+            # numbers, so there is no first-reported value to compare against.
+            continue
         first_value = next(iter(values[first]))
         frame = next((row["frame"] for row in rows if row.get("frame")), None)
 
         reported = {first_value}
         for accession in order[1:]:
+            if accession in at_two_values:
+                continue
             value = next(iter(values[accession]))
             if value in reported:
                 continue
@@ -175,7 +216,7 @@ def traces(grouped: dict[tuple, list[dict]]) -> tuple[list[dict], list[dict]]:
                                    **filings[first]},
                 "restated": {"value": value, "accession": accession,
                              **filings[accession]},
-                "difference": value - first_value,
+                "difference": difference(value, first_value),
                 "amendment": is_amendment(filings[accession]["form"]),
             })
 
@@ -187,18 +228,28 @@ def traces(grouped: dict[tuple, list[dict]]) -> tuple[list[dict], list[dict]]:
     return found, ambiguous
 
 
-def absent_from_companyfacts(ticker: str, reported: set, *, fixtures_root) -> list[dict]:
-    """Committed filings that are in no companyfacts row at all.
+def absent_from_companyfacts(ticker: str, reported: set, cutoff: dt.date, *,
+                             fixtures_root) -> list[dict]:
+    """Filings at or before the cutoff that are in no companyfacts row at all.
 
     EDGAR loads companyfacts from filings on its own schedule, and two of the
     accessions committed here were filed too recently to be in it. A period whose
     only source is one of those cannot be looked up in this record, so it is
     named rather than counted as agreeing — and never as a zero.
+
+    A filing later than the cutoff is not absent from the run; it is outside it,
+    and naming it would put a document the run may not see into the run's own
+    output. A filing with no recorded date cannot be shown to be inside the
+    cutoff, so it is refused rather than assumed early.
     """
     missing = []
     for role in INSTANCE_ROLES:
         for row in cutoff_guard.documents(ticker, role=role, fixtures_root=fixtures_root):
-            if row["accession"] and row["accession"] not in reported:
+            if not row["accession"] or row["accession"] in reported:
+                continue
+            filed = cutoff_guard.parse_date(
+                row.get("filing_date"), f"{ticker} {row.get('path')} filing_date")
+            if filed <= cutoff:
                 missing.append({"form": row["form"], "role": role,
                                 "accession": row["accession"],
                                 "filing_date": row["filing_date"]})
@@ -235,7 +286,7 @@ def scan(ticker: str, *, cutoff=None, fixtures_root=cutoff_guard.FIXTURES) -> di
         },
         "traces": found,
         "absent_from_companyfacts": absent_from_companyfacts(
-            ticker, reported_by, fixtures_root=fixtures_root),
+            ticker, reported_by, cutoff, fixtures_root=fixtures_root),
         "ambiguous_within_one_filing": ambiguous,
     }
 
