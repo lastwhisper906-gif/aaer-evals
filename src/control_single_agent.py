@@ -20,14 +20,35 @@ and it must not become something a session can invoke by name", so it is
 `CONTROL_PROMPT` below, a committed constant with the question and the file list
 interpolated into it.
 
-**What it sees.** The `input_*` files it is handed and `input_market.json`, and
-nothing the pipeline produced. A control that read `report_numbers.md` would be
-the supervisor with extra steps, measuring the pipeline rather than standing
-beside it, so a directory carrying a report, a prediction or another control is
-refused before the call is made. That directory is not one `src/agent_inputs.py`
-builds: that file builds the six layer directories and its `agents/` holds
-nothing else, and a seventh is the stage runner's to place. The shape is named
-here rather than minted there.
+**What it sees is an allowlist.** The `input_` files of the catalogue, and
+nothing else at all. A control that read `report_numbers.md` would be the
+supervisor with extra steps, measuring the pipeline rather than standing beside
+it; and a file nobody routed is worse, because nobody decided it -- a price file
+carrying the outcome window, another company's notes, whatever a broken stage
+left in the directory. `src/agent_inputs.py` refuses a name outside the
+catalogue for that reason and says it in those words: "a name outside this set
+inside a session root is a file nobody decided to route, and an undecided file
+in an agent's directory is a leak nobody chose either." So the guard names what
+may be there rather than what may not, and every other name is refused before
+the call is made, whether the pipeline wrote it or nothing in this repository
+did. The prompt tells the model it sees these files and nothing else, and the
+allowlist is what makes that sentence true. That directory is not one
+`src/agent_inputs.py` builds: that file builds the six layer directories and
+its `agents/` holds nothing else, and a seventh is the stage runner's to place.
+The shape is named here rather than minted there.
+
+**The cutoff is read and honoured, not carried past.** `CLAUDE.md`: "Cutoff:
+document filing date <= filing date of the triggering report. Nothing later
+enters the input." This control does not assemble the bundle, so the boundary it
+can check is the run's own record of one: `input_manifest.json` names the cutoff
+and the filing date of the report that triggered the run, and
+`src/extraction_checks.py`'s `check_cutoff` settles what the two have to say --
+"the cutoff is the triggering report's own filing date". A manifest naming no
+cutoff, an unparseable one, or one that is not that filing date is refused
+before the model is called: a control run against a boundary nobody recorded is
+scored on an input that may hold the outcome it is predicting, and that is not a
+baseline, it is a leak with a number on it. The cutoff it ran under goes back
+with the drop rows, for the runner to record.
 
 **Evidence carries a quote, and here is why.** `CLAUDE.md`: "Every report item
 carries a verbatim quote or an upstream item id that Python verifies." A
@@ -52,6 +73,16 @@ supervisors' own rule -- "Python checks that each one resolves, and an
 unresolvable one is dropped and counted" -- does not go quiet when the
 probability abstains.
 
+**An `explanations` entry is the identical shape.** §7 gives it an `id`, a
+`support` and a `realization_p`, and no more room for a quote than the basis
+has, so its id is resolved the same way and by the same call: existence in the
+committed input, through the gate's citation path. The build order in
+`docs/HOW_WE_WORK.md` finishes the controls at "both control files, with every
+citation resolving", and an id naming another company's accession and a
+paragraph that exists nowhere is a citation that does not resolve. An entry
+written into the control file unresolved would be an anchor the model was free
+to invent, scored as if it had been checked.
+
 **What a drop does.** A checklist entry whose evidence does not verify is
 dropped whole, because that is what the gate does with an item -- one failing
 citation drops the item, not the citation. A `market_direction` whose basis does
@@ -59,7 +90,10 @@ not resolve cannot be dropped, since §7 requires the field, so it degrades to
 `"insufficient"` with an empty basis and the drop is counted: the schema's own
 abstention, which the scorecard counts against the control, rather than a
 probability standing on an id that resolves to nothing. A `top_signals` entry
-naming a checklist key that went with a dropped entry goes with it.
+naming a checklist key that went with a dropped entry goes with it. An
+`explanations` entry goes whole like a checklist entry -- there is nothing else
+in it to keep, and §7 does not require the list to hold anything, so there is
+nothing to degrade to either.
 
 **The drop rows and the served model are returned, not written.**
 `docs/INPUT_SPEC.md` §6 gives `input_manifest.json` the dropped-item counts and
@@ -86,6 +120,7 @@ cannot be read, 3 the wrong interpreter.
 from __future__ import annotations
 
 import argparse
+import datetime as dt
 import json
 import sys
 from collections import Counter
@@ -109,6 +144,13 @@ CONTROL_FILES = {
     "accounting_reliability": "control_single_agent_accounting.json",
     "financial_pressure": "control_single_agent_pressure.json",
 }
+
+# What the control may be handed, by name: the catalogue's `input_` files and
+# nothing else. Read off `src/agent_inputs.py`'s catalogue rather than listed
+# again here, so a name routed there is routed here on the same day.
+INPUT_PREFIX = "input_"
+CONTROL_SEES = tuple(name for name in agent_inputs.BUNDLE_CATALOGUE
+                     if name.startswith(INPUT_PREFIX))
 
 # The two supervisors whose model this control borrows. Both, not one per
 # question: they run under one pin and this refuses if they ever disagree.
@@ -142,6 +184,9 @@ EXPLANATION_FIELDS = ("id", "support", "realization_p")
 MARKET_FIELDS = ("p_up", "basis")
 # `upstream_item_id` is §7's; `quote` is the branch of `CLAUDE.md`'s rule that
 # an agent with no upstream report has left. The docstring says why.
+# Nothing ties this tuple to `docs/CHECKLIST.md` §7: it and the list in
+# `tests/test_control_single_agent.py` were written by the same hand, so they
+# agree with each other and would go on agreeing if §7 moved.
 EVIDENCE_FIELDS = ("upstream_item_id", "quote")
 
 # `docs/CHECKLIST.md` §1: "An LLM answer is always `flag` / `no_flag` /
@@ -433,6 +478,17 @@ def market_gate_id(question: str) -> str:
     return f"{question}:market_direction"
 
 
+def explanation_gate_id(question: str, identifier: str) -> str:
+    """The handle the gate holds one `explanations` entry by.
+
+    The entry's own `id` is the citation, not the handle: it names a paragraph
+    of the committed input the way `market_direction.basis` does. The handle is
+    minted here for the drop row, exactly as a checklist entry's is, and it is
+    not written into the file.
+    """
+    return f"{question}:explanations:{identifier}"
+
+
 def _first_bad_quote(identifier: str, evidence: list, index: dict) -> str | None:
     """The first of an entry's quotes that does not match, by the gate's reading."""
     for cited in evidence:
@@ -452,7 +508,8 @@ def drop_reasons(payload: dict, question: str, index: dict) -> dict[str, str]:
     committed input *is* the upstream, so the id set it resolves against is the
     index's own -- and catches an entry citing nothing at all.
     `quote_drop_reason` then string-matches each quote against the paragraph it
-    names.
+    names. An `explanations` entry and `market_direction` have no quote to
+    match, so for those the citation path is the whole of it.
     """
     declared = set(index)
     found: dict[str, str] = {}
@@ -462,6 +519,13 @@ def drop_reasons(payload: dict, question: str, index: dict) -> dict[str, str]:
             {"id": identifier, "evidence": entry["evidence"]}, declared)
         if why is None:
             why = _first_bad_quote(identifier, entry["evidence"], index)
+        if why is not None:
+            found[identifier] = why
+
+    for entry in payload["explanations"]:
+        identifier = explanation_gate_id(question, entry["id"])
+        why = quote_gate.citation_drop_reason(
+            {"id": identifier, "upstream_item_id": entry["id"]}, declared)
         if why is not None:
             found[identifier] = why
 
@@ -486,9 +550,10 @@ def verify(payload: dict, question: str, input_dir, accession: str) -> tuple[dic
     that names a set resolves for nobody.
 
     A checklist entry goes whole, because that is what the gate does with an
-    item. `market_direction` cannot go -- §7 requires the field -- so it
-    degrades to the abstention §7 already allows, `"insufficient"` with an empty
-    basis, and the drop is counted like any other. A `top_signals` entry naming
+    item, and an `explanations` entry goes the same way. `market_direction`
+    cannot go -- §7 requires the field -- so it degrades to the abstention §7
+    already allows, `"insufficient"` with an empty basis, and the drop is
+    counted like any other. A `top_signals` entry naming
     a key that left goes with it.
     """
     index = quote_gate.quotable(input_dir, accession)
@@ -496,6 +561,9 @@ def verify(payload: dict, question: str, input_dir, accession: str) -> tuple[dic
     kept = dict(payload)
     kept["checklist"] = [entry for entry in payload["checklist"]
                          if checklist_gate_id(question, entry["key"]) not in reasons]
+    kept["explanations"] = [
+        entry for entry in payload["explanations"]
+        if explanation_gate_id(question, entry["id"]) not in reasons]
     standing = {entry["key"] for entry in kept["checklist"]}
     kept["top_signals"] = [one for one in payload["top_signals"] if one in standing]
     if market_gate_id(question) in reasons:
@@ -508,25 +576,26 @@ def verify(payload: dict, question: str, input_dir, accession: str) -> tuple[dic
 # --- the call ----------------------------------------------------------------
 
 def input_files(input_dir) -> list[str]:
-    """What the control was handed, or a refusal naming what it must not hold.
+    """What the control was handed, or a refusal naming what it may not hold.
 
     `docs/CHECKLIST.md` §8 hands this control "the whole bundle plus the market
-    table". A report, a prediction or another control in the directory would
-    make it a reader of the pipeline rather than a control beside it, so the
-    catalogue in `src/agent_inputs.py` is read for exactly that: everything in
-    it that is not an `input_` file is something the pipeline wrote.
+    table", and `CONTROL_SEES` is that bundle by name. The guard is an
+    allowlist, not a list of the pipeline's own files: a report or a prediction
+    would make this a reader of the pipeline rather than a control beside it,
+    and a name in neither list is a file nobody decided to route, which is the
+    worse of the two because nobody weighed it at all.
     """
     names = cutoff_guard.bundle_files(input_dir, "*")
     if not names:
         raise ControlError(
             f"{input_dir} holds no files — a control with no input is not a control")
-    produced = [name for name in names
-                if name in agent_inputs.BUNDLE_CATALOGUE and not name.startswith("input_")]
-    if produced:
+    stray = [name for name in names if name not in CONTROL_SEES]
+    if stray:
         raise ControlError(
-            f"{input_dir} holds {', '.join(produced)}, which the pipeline wrote. "
-            "A control that reads the pipeline's own output measures the "
-            "pipeline, not the structure")
+            f"{input_dir} holds {', '.join(stray)}, which this control is not "
+            f"handed. It sees the {len(CONTROL_SEES)} input files of the bundle "
+            "and nothing else: the pipeline's own output would make it a reader "
+            "of the pipeline, and a file nobody routed is a leak nobody chose")
     return names
 
 
@@ -562,6 +631,33 @@ def _place(path: Path, text: str) -> Path:
     return path
 
 
+def run_cutoff(manifest: dict) -> dt.date:
+    """The boundary this run was assembled under, or a refusal.
+
+    Fail-closed on both keys and on their disagreement.
+    `src/extraction_checks.py` settles what a bundle's own record has to say --
+    "the cutoff is the triggering report's own filing date" -- and a manifest
+    naming one key without the other, or a cutoff years off the filing, is a run
+    whose boundary nobody can read. The control refuses it rather than answering
+    against an input that may already hold the outcome.
+    """
+    try:
+        cutoff = cutoff_guard.parse_date(manifest.get("cutoff"), f"{MANIFEST} cutoff")
+        filed = cutoff_guard.parse_date(manifest.get("filing_date"),
+                                        f"{MANIFEST} filing_date")
+    except cutoff_guard.CutoffGuardError as exc:
+        raise ControlError(
+            f"{exc} — the control is handed a directory and not a boundary, so "
+            "the run's own record of its cutoff is the whole of what it can "
+            "check, and an unreadable one is refused") from exc
+    if cutoff != filed:
+        raise ControlError(
+            f"{MANIFEST} names the cutoff {cutoff} and the triggering report's "
+            f"filing date {filed}. The cutoff is that filing date; a run whose "
+            "own record disagrees was assembled against a boundary nobody set")
+    return cutoff
+
+
 def run(question: str, *, input_dir, bundle_root, ask,
         prompts_dir: Path = AGENT_PROMPTS) -> dict:
     """One call, gated, and the control file on disk.
@@ -572,9 +668,10 @@ def run(question: str, *, input_dir, bundle_root, ask,
     the call belongs to whoever runs the stage; what belongs here is the prompt,
     the pin, the schema and the gate.
 
-    Returns the payload as written, the file it was written to, the requested
-    and served model, and one row per drop -- `docs/INPUT_SPEC.md` §6 puts the
-    drop count and the served model in `input_manifest.json` and the module
+    Returns the payload as written, the file it was written to, the cutoff it
+    ran under, the requested and served model, and one row per drop --
+    `docs/INPUT_SPEC.md` §6 puts the drop count and the served model in
+    `input_manifest.json` and the module
     docstring says why this hands them back rather than writing them there.
     """
     family = supervisor_model(prompts_dir)
@@ -583,6 +680,7 @@ def run(question: str, *, input_dir, bundle_root, ask,
     if not isinstance(accession, str) or not accession:
         raise ControlError(
             f"{MANIFEST} names no accession, and a computed row's id begins with one")
+    cutoff = run_cutoff(manifest)
 
     answer = ask(prompt(question, input_dir), model=family)
     served = answer.get("served_model") if isinstance(answer, dict) else None
@@ -601,7 +699,8 @@ def run(question: str, *, input_dir, bundle_root, ask,
     path = _place(Path(bundle_root) / CONTROL_FILES[question],
                   json.dumps(kept, indent=INDENT, sort_keys=True) + "\n")
     return {"question": question, "path": path, "prediction": kept,
-            "dropped": dropped, "requested_model": family, "served_model": served}
+            "dropped": dropped, "cutoff": str(cutoff),
+            "requested_model": family, "served_model": served}
 
 
 def main(argv=None) -> int:

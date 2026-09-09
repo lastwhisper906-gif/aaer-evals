@@ -105,8 +105,45 @@ MARKET = """{
 }
 """
 
+# `filing_date` is the triggering report's own, and `src/assemble_bundle.py`
+# writes it into every bundle beside `cutoff`. The two are one date --
+# `src/extraction_checks.py`: "the cutoff is the triggering report's own filing
+# date" -- and a planted manifest naming one without the other would be planting
+# a run this repository does not assemble.
 MANIFEST = {"ticker": "AAPL", "accession": ACCESSION, "cutoff": "2025-10-31",
+            "filing_date": "2025-10-31",
             "rules_version": "0.1", "counts": {"paragraphs": 2, "exclusions": 0}}
+
+# Another company's accession, and a paragraph number the planted notes stop
+# short of: `plant` writes two, numbered 1 and 2. Nothing in the committed input
+# declares this id, which the gate's own index is asserted to agree about below.
+OTHER_ACCESSION = "0000789019-25-000104"
+STRAY_EXPLANATION = f"{OTHER_ACCESSION}:notes:7"
+
+# Two files no layer routes, which is why neither name is in the catalogue: a
+# price file carrying the sixty-day window the run is scored on, and another
+# company's notes.
+OUTCOME_PRICES = """{
+  "ticker": "AAPL",
+  "abnormal_return_60d": 0.184,
+  "reaction_day": "2025-10-31"
+}
+"""
+OTHER_NOTES = f"""# Notes
+
+[{OTHER_ACCESSION}:notes:1]
+Deferred revenue rose during the period.
+"""
+
+# `docs/INPUT_SPEC.md` §6's file list, the `input_` half of it, copied out by
+# hand -- plus `input_controls.md`, the one input name §6's list does not carry
+# and `src/agent_inputs.py` adds to the catalogue in those words.
+CONTROL_MAY_SEE = (
+    "input_numbers.json", "input_companyfacts.json", "input_trends.json",
+    "input_notes.md", "input_notes_history.md", "input_mdna.md",
+    "input_exhibits.md", "input_risk_factors.md", "input_8k.md",
+    "input_prior_predictions.md", "input_market.json", "input_manifest.json",
+    "input_controls.md")
 
 NOTES_ONE = f"{ACCESSION}:notes:1"
 NOTES_TWO = f"{ACCESSION}:notes:2"
@@ -161,6 +198,18 @@ def accounting_answer() -> dict:
         "tier": "watch",
         "top_signals": ["receivables_outrun_revenue", "estimate_change_favorable"],
     }
+
+
+def explaining_answer() -> dict:
+    """The accounting answer with three explanations: two that resolve, one that
+    resolves to nothing at all."""
+    answer = accounting_answer()
+    answer["explanations"] = [
+        {"id": NOTES_TWO, "support": "insufficient", "realization_p": 0.3},
+        {"id": TREND_CELL, "support": "sufficient", "realization_p": 0.6},
+        {"id": STRAY_EXPLANATION, "support": "sufficient", "realization_p": 0.9},
+    ]
+    return answer
 
 
 def pressure_answer() -> dict:
@@ -654,3 +703,139 @@ def test_the_command_line_refuses_a_directory_it_cannot_read(tmp_path, capsys):
         ["--question", "financial_pressure", "--input", str(tmp_path / "nowhere")])
     assert code == control_single_agent.BAD_INPUT
     assert "not a control" in capsys.readouterr().err
+
+
+# --- every explanation id resolves, or the entry goes ------------------------
+
+def test_the_stray_explanation_id_is_in_none_of_the_committed_input(tmp_path):
+    """The planted value, said by the gate's index rather than by this file."""
+    _, folder = plant(tmp_path)
+    index = quote_gate.quotable(folder, ACCESSION)
+    assert STRAY_EXPLANATION not in index
+    assert OTHER_ACCESSION not in "".join(index)
+    # The two beside it are, so a gate that resolved nothing would not pass here.
+    assert NOTES_TWO in index
+    assert TREND_CELL in index
+
+
+def test_an_explanation_id_that_resolves_to_nothing_is_dropped_and_counted(tmp_path):
+    """`docs/HOW_WE_WORK.md` finishes the controls at "both control files, with
+    every citation resolving"; an `explanations` id is a citation."""
+    root, folder = plant(tmp_path)
+    result = go(root, folder, "accounting_reliability", explaining_answer())
+    written_ids = [entry["id"] for entry in
+                   written(root, "accounting_reliability")["explanations"]]
+    # By name, so a gate that dropped all three fails here too.
+    assert written_ids == [NOTES_TWO, TREND_CELL]
+    dropped = {row["item_id"]: row["reason"] for row in result["dropped"]}
+    assert f"accounting_reliability:explanations:{STRAY_EXPLANATION}" in dropped
+    assert "does not resolve" in dropped[
+        f"accounting_reliability:explanations:{STRAY_EXPLANATION}"]
+    assert all(row["report"] == "control_single_agent_accounting.json"
+               for row in result["dropped"])
+
+
+def test_an_explanation_whose_id_resolves_is_written_as_it_stands(tmp_path):
+    root, folder = plant(tmp_path)
+    go(root, folder, "accounting_reliability", accounting_answer())
+    assert written(root, "accounting_reliability")["explanations"] == [
+        {"id": NOTES_TWO, "support": "insufficient", "realization_p": 0.3}]
+
+
+# --- the input guard is an allowlist -----------------------------------------
+
+def test_the_allowlist_is_the_input_half_of_the_committed_bundle():
+    spec = INPUT_SPEC.read_text(encoding="utf-8")
+    for name in CONTROL_MAY_SEE:
+        assert name.startswith("input_")
+        assert name in agent_inputs.BUNDLE_CATALOGUE
+        # `input_controls.md` is the one §6's list does not name.
+        assert name in spec or name == "input_controls.md"
+    assert sorted(CONTROL_MAY_SEE) == sorted(control_single_agent.CONTROL_SEES)
+    for name in ("report_numbers.md", "prediction_accounting.json",
+                 "explanations.json", "baselines.json",
+                 "control_single_agent_accounting.json"):
+        assert name in agent_inputs.BUNDLE_CATALOGUE
+        assert name not in control_single_agent.CONTROL_SEES
+
+
+def test_a_file_no_layer_routes_is_refused_and_named(tmp_path):
+    """The price file carries the window the run is scored on and the notes are
+    another company's, and neither is a name the pipeline would have written."""
+    root, folder = plant(tmp_path)
+    for name in ("prices_after_the_filing.json", "MSFT_notes.md"):
+        assert name not in agent_inputs.BUNDLE_CATALOGUE
+    (folder / "prices_after_the_filing.json").write_text(OUTCOME_PRICES,
+                                                         encoding="utf-8")
+    (folder / "MSFT_notes.md").write_text(OTHER_NOTES, encoding="utf-8")
+    stub = Stub(accounting_answer())
+    with pytest.raises(ControlError) as caught:
+        control_single_agent.run("accounting_reliability", input_dir=folder,
+                                 bundle_root=root, ask=stub)
+    assert "MSFT_notes.md" in str(caught.value)
+    assert "prices_after_the_filing.json" in str(caught.value)
+    assert stub.prompts == []
+    assert not (root / "control_single_agent_accounting.json").exists()
+
+
+def test_the_prompt_lists_the_files_and_the_directory_holds_nothing_else(tmp_path):
+    root, folder = plant(tmp_path)
+    stub = Stub(accounting_answer())
+    control_single_agent.run("accounting_reliability", input_dir=folder,
+                             bundle_root=root, ask=stub)
+    listed = [line[2:] for line in stub.prompts[0].split("\n")
+              if line.startswith("- input_")]
+    assert listed == sorted(path.name for path in folder.iterdir())
+    assert all(name in control_single_agent.CONTROL_SEES for name in listed)
+
+
+# --- the cutoff the run was assembled under ----------------------------------
+
+def test_the_planted_manifest_names_the_cutoff_the_filing_date_gives_it():
+    assert MANIFEST["cutoff"] == MANIFEST["filing_date"]
+
+
+def test_the_control_runs_under_the_cutoff_the_manifest_names(tmp_path):
+    root, folder = plant(tmp_path)
+    result = go(root, folder, "accounting_reliability", accounting_answer())
+    assert result["cutoff"] == MANIFEST["cutoff"]
+
+
+def _replant_manifest(root: Path, manifest: dict) -> None:
+    (root / "input_manifest.json").write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+@pytest.mark.parametrize("manifest,says", [
+    ({key: value for key, value in MANIFEST.items() if key != "cutoff"},
+     "cutoff is missing"),
+    ({key: value for key, value in MANIFEST.items() if key != "filing_date"},
+     "filing_date is missing"),
+    (MANIFEST | {"cutoff": "the fourth quarter"}, "not an ISO date"),
+])
+def test_a_manifest_with_no_readable_cutoff_is_refused(tmp_path, manifest, says):
+    root, folder = plant(tmp_path)
+    _replant_manifest(root, manifest)
+    stub = Stub(accounting_answer())
+    with pytest.raises(ControlError) as caught:
+        control_single_agent.run("accounting_reliability", input_dir=folder,
+                                 bundle_root=root, ask=stub)
+    assert says in str(caught.value)
+    assert stub.prompts == []
+    assert not (root / "control_single_agent_accounting.json").exists()
+
+
+def test_a_cutoff_years_before_the_filing_is_refused_rather_than_run(tmp_path):
+    """`CLAUDE.md`: the cutoff is the filing date of the triggering report. A
+    run that recorded 1999 for a 2025 filing set its boundary somewhere nobody
+    decided, and the control is not the place to find that out afterwards."""
+    root, folder = plant(tmp_path)
+    _replant_manifest(root, MANIFEST | {"cutoff": "1999-12-31"})
+    stub = Stub(accounting_answer())
+    with pytest.raises(ControlError) as caught:
+        control_single_agent.run("accounting_reliability", input_dir=folder,
+                                 bundle_root=root, ask=stub)
+    assert "1999-12-31" in str(caught.value)
+    assert MANIFEST["filing_date"] in str(caught.value)
+    assert stub.prompts == []
+    assert not (root / "control_single_agent_accounting.json").exists()
