@@ -71,35 +71,67 @@
     "value": 25,
     "from": "already judged: the same tests/test_split_controls.py::recount with the Item 9A boundaries, no src/ import; re-run here it gives 25"
   },
+  "mdna.10-K.ends_before": {
+    "value": "ITEM 7A. QUANTITATIVE AND QUALITATIVE DISCLOSURES ABOUT MARKET RISK.",
+    "from": "the filing, read by eye in 10-K/lfus-20251227.htm.gz, rendered to lines by tests/independent_text.block_paragraphs (html.parser) and importing nothing from src/: the LAST Item 7 heading in the document is the line 'ITEM 7. MANAGEMENT’S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERATIONS.' — the earlier one is the table-of-contents entry — and the first Item 7A or Item 8 heading after it is 'ITEM 7A. QUANTITATIVE AND QUALITATIVE DISCLOSURES ABOUT MARKET RISK.'. Those two lines are where the section starts and stops; every other MD&A expectation is a count, and a count cannot say the section began in the right place"
+  },
   "mdna.10-K.heading_candidates": {
     "value": 2,
     "from": "the filing: two Item 7 MD&A heading lines in 10-K/lfus-20251227.htm.gz - the table-of-contents entry, where 'Item 7.' stands alone on its line above the MD&A title, and the section heading itself - counted over tests/independent_text.block_text lines"
+  },
+  "mdna.10-K.opens_at": {
+    "value": "ITEM 7. MANAGEMENT’S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERATIONS.",
+    "from": "the filing, read by eye in 10-K/lfus-20251227.htm.gz, rendered to lines by tests/independent_text.block_paragraphs (html.parser) and importing nothing from src/: the LAST Item 7 heading in the document is the line 'ITEM 7. MANAGEMENT’S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERATIONS.' — the earlier one is the table-of-contents entry — and the first Item 7A or Item 8 heading after it is 'ITEM 7A. QUANTITATIVE AND QUALITATIVE DISCLOSURES ABOUT MARKET RISK.'. Those two lines are where the section starts and stops; every other MD&A expectation is a count, and a count cannot say the section began in the right place"
   },
   "mdna.10-K.paragraphs": {
     "value": 711,
     "from": "already judged: tests/test_split_mdna.py::recount builds the block text with html.parser via tests/independent_text, takes the LAST Item 7 heading, stops at the first Item 7A or Item 8 heading and splits on blank lines, importing nothing from src/; re-run here it gives 711"
   },
+  "mdna.10-Q.ends_before": {
+    "value": "ITEM 3. QUANTITATIVE AND QUALITATIVE DISCLOSURES ABOUT MARKET RISK",
+    "from": "the filing, read by eye in 10-Q/lfus-20260627.htm, rendered to lines by tests/independent_text.block_paragraphs (html.parser) and importing nothing from src/: the LAST Item 2 heading in the document is the line 'ITEM 2. MANAGEMENT’S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERATIONS' — the earlier one is the table-of-contents entry — and the first Item 3 or Item 4 heading after it is 'ITEM 3. QUANTITATIVE AND QUALITATIVE DISCLOSURES ABOUT MARKET RISK'. Those two lines are where the section starts and stops; every other MD&A expectation is a count, and a count cannot say the section began in the right place"
+  },
   "mdna.10-Q.heading_candidates": {
     "value": 2,
     "from": "the filing: two Item 2 MD&A heading lines in 10-Q/lfus-20260627.htm - the table-of-contents entry, where 'Item 2.' stands alone on its line above the MD&A title, and the section heading itself - counted over tests/independent_text.block_text lines"
+  },
+  "mdna.10-Q.opens_at": {
+    "value": "ITEM 2. MANAGEMENT’S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERATIONS",
+    "from": "the filing, read by eye in 10-Q/lfus-20260627.htm, rendered to lines by tests/independent_text.block_paragraphs (html.parser) and importing nothing from src/: the LAST Item 2 heading in the document is the line 'ITEM 2. MANAGEMENT’S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERATIONS' — the earlier one is the table-of-contents entry — and the first Item 3 or Item 4 heading after it is 'ITEM 3. QUANTITATIVE AND QUALITATIVE DISCLOSURES ABOUT MARKET RISK'. Those two lines are where the section starts and stops; every other MD&A expectation is a count, and a count cannot say the section began in the right place"
   },
   "mdna.10-Q.paragraphs": {
     "value": 490,
     "from": "already judged: the same tests/test_split_mdna.py::recount with the Item 2 boundaries, no src/ import; re-run here it gives 490"
   },
-  "note_history.10-Q.key_notes": {
-    "value": 8,
-    "from": "the two 10-Q XBRL instances, paired by hand over TextBlock element names read with ElementTree plus a start-ns pass: 8 names are one of the six key notes docs/INPUT_SPEC.md lists - revenue recognition (us-gaap:RevenueFromContractWithCustomerPolicy, :DisaggregationOfRevenueTable), contingencies (:CommitmentsAndContingenciesDisclosure), debt (:DebtDisclosure, :ScheduleOfDebtInstruments), related parties (:RelatedPartyTransactionsDisclosure, :ScheduleOfRelatedPartyTransactionsTable), critical accounting estimates (:SignificantAccountingPolicies) - each appearing once in each instance, so 8 pairs and nothing unmatched"
-  },
-  "note_history.10-Q.match_rules": {
-    "value": {
-      "tag_name": 8
-    },
-    "from": "the same hand pairing: all 46 TextBlock names appear exactly once in both the current instance (0001628280-26-050481) and the prior one (0001628280-26-031041), so each of the 8 marked key notes pairs by tag name and no_prior_note, no_current_note and title_similarity are 0 and omitted"
+  "note_history.10-Q.key_note_tags": {
+    "value": [
+      "us-gaap:CommitmentsAndContingenciesDisclosureTextBlock",
+      "us-gaap:DebtDisclosureTextBlock",
+      "us-gaap:DisaggregationOfRevenueTableTextBlock",
+      "us-gaap:RelatedPartyTransactionsDisclosureTextBlock",
+      "us-gaap:RevenueFromContractWithCustomerPolicyTextBlock",
+      "us-gaap:ScheduleOfDebtInstrumentsTextBlock",
+      "us-gaap:ScheduleOfRelatedPartyTransactionsTableTextBlock",
+      "us-gaap:SignificantAccountingPoliciesTextBlock"
+    ],
+    "from": "the current 10-Q XBRL instance 10-Q/lfus-20260627_htm.xml.gz: every element whose local name ends in 'TextBlock' listed with ElementTree and a start-ns pass for the prefixes, importing nothing from src/, then each name read against the six key notes docs/INPUT_SPEC.md section 5 names — contingencies: us-gaap:CommitmentsAndContingenciesDisclosureTextBlock; critical_accounting_estimates: us-gaap:SignificantAccountingPoliciesTextBlock; debt: us-gaap:DebtDisclosureTextBlock, us-gaap:ScheduleOfDebtInstrumentsTextBlock; related_parties: us-gaap:RelatedPartyTransactionsDisclosureTextBlock, us-gaap:ScheduleOfRelatedPartyTransactionsTableTextBlock; revenue_recognition_policy: us-gaap:DisaggregationOfRevenueTableTextBlock, us-gaap:RevenueFromContractWithCustomerPolicyTextBlock"
   },
   "note_history.10-Q.prior_accession": {
     "value": "0001628280-26-031041",
     "from": "the submissions index: the latest 10-Q filed strictly before the current 10-Q's 2026-07-29 is 0001628280-26-031041, filed 2026-05-06; it is also the manifest's ('10-Q','prior_period') row, so index and manifest agree"
+  },
+  "note_history.10-Q.prior_key_note_tags": {
+    "value": [
+      "us-gaap:CommitmentsAndContingenciesDisclosureTextBlock",
+      "us-gaap:DebtDisclosureTextBlock",
+      "us-gaap:DisaggregationOfRevenueTableTextBlock",
+      "us-gaap:RelatedPartyTransactionsDisclosureTextBlock",
+      "us-gaap:RevenueFromContractWithCustomerPolicyTextBlock",
+      "us-gaap:ScheduleOfDebtInstrumentsTextBlock",
+      "us-gaap:ScheduleOfRelatedPartyTransactionsTableTextBlock",
+      "us-gaap:SignificantAccountingPoliciesTextBlock"
+    ],
+    "from": "the prior 10-Q XBRL instance 10-Q/lfus-20260328_htm.xml: every element whose local name ends in 'TextBlock' listed with ElementTree and a start-ns pass for the prefixes, importing nothing from src/, then each name read against the six key notes docs/INPUT_SPEC.md section 5 names — contingencies: us-gaap:CommitmentsAndContingenciesDisclosureTextBlock; critical_accounting_estimates: us-gaap:SignificantAccountingPoliciesTextBlock; debt: us-gaap:DebtDisclosureTextBlock, us-gaap:ScheduleOfDebtInstrumentsTextBlock; related_parties: us-gaap:RelatedPartyTransactionsDisclosureTextBlock, us-gaap:ScheduleOfRelatedPartyTransactionsTableTextBlock; revenue_recognition_policy: us-gaap:DisaggregationOfRevenueTableTextBlock, us-gaap:RevenueFromContractWithCustomerPolicyTextBlock"
   },
   "notes.10-K.extension_tag_count": {
     "value": 5,

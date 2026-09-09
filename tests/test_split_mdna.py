@@ -95,6 +95,37 @@ def test_paragraph_ids_are_unique_and_dense(ticker, form):
     assert len(set(payload["paragraph_ids"])) == count
 
 
+def one_line(text: str, offset: int) -> str:
+    """The first line with anything on it at or after `offset`, flattened.
+
+    `normalized_spacing`, not `normalized`: the twelve write their headings in
+    three different casings and the recorded line is the filing's own.
+    """
+    for start, end in html_text.lines(text):
+        line = html_text.normalized_spacing(text[start:end].replace("​", ""))
+        if start >= offset and line:
+            return line
+    return ""
+
+
+@pytest.mark.parametrize("ticker", TICKERS)
+@pytest.mark.parametrize("form", FORMS)
+def test_the_section_begins_and_ends_at_the_headings_the_filing_carries(ticker, form):
+    """The boundary itself, held to the two lines somebody read off the filing.
+
+    Everything else recorded about MD&A is a count, and a count cannot say the
+    section began in the right place: a splitter that took the table-of-contents
+    entry, or ran past Item 7A into the financial statements, would be judged
+    only by a paragraph total re-derived with a second copy of the same heading
+    rule. These two headings are the filing's own text and neither rule produced
+    them.
+    """
+    text = html_text.strip_tags(source_html(ticker, form))
+    start, stop, _, _ = split_sections.bounds(text, form, "mdna")
+    assert one_line(text, start) == value(ticker, f"mdna.{form}.opens_at")
+    assert one_line(text, stop) == value(ticker, f"mdna.{form}.ends_before")
+
+
 @pytest.mark.parametrize("ticker", TICKERS)
 def test_the_section_stops_before_item_7a_and_item_8(ticker):
     """A heading is a line. A sentence that mentions Item 8 is not one — STX's

@@ -37,11 +37,11 @@
   },
   "cleaner.8-K.tables_already_in_xbrl": {
     "value": 0,
-    "from": "zero by construction - no XBRL instance is fetched for an 8-K exhibit, so the cleaner is handed an empty fact set (tests/test_clean_text.py:201 passes facts=[]) and no table can match"
+    "from": "zero by construction - no XBRL instance is fetched for an 8-K exhibit, so the cleaner is handed an empty fact set (tests/test_clean_text.py::test_the_cleaner_finds_every_table_the_document_holds passes facts=[]) and no table can match"
   },
   "earnings_release.8-K.eight_k_filings_in_the_index": {
     "value": 62,
-    "from": "already judged: tests/test_parse_8k.py:57 reads submissions.json with json alone and counts the rows whose form is '8-K' or '8-K/A', importing nothing from src/; that recount was re-run standalone here and returns 62"
+    "from": "already judged: tests/test_parse_8k.py::test_the_index_is_a_recount_of_the_stored_file reads submissions.json with json alone and counts the rows whose form is '8-K' or '8-K/A', importing nothing from src/; that recount was re-run standalone here and returns 62"
   },
   "earnings_release.8-K.exhibit_99_1_blocks_outside_tables": {
     "value": 66,
@@ -53,7 +53,7 @@
   },
   "earnings_release.8-K.exhibit_99_1_tables": {
     "value": 11,
-    "from": "already judged: tests/test_parse_8k.py:119 re-derives it with a bare regex for <table> elements holding at least one cell with a character in it, importing nothing from src/; that recount was re-run standalone here and returns 11"
+    "from": "already judged: tests/test_parse_8k.py::test_the_expected_counts_survive_an_independent_recount re-derives it with a bare regex for <table> elements holding at least one cell with a character in it, importing nothing from src/; that recount was re-run standalone here and returns 11"
   },
   "earnings_release.8-K.held_items": {
     "value": [
@@ -70,35 +70,59 @@
     "value": 14,
     "from": "already judged: tests/test_split_controls.py::recount, same mechanism against the Item 9A boundaries, importing nothing from src/; re-run standalone here it returns 14"
   },
+  "mdna.10-K.ends_before": {
+    "value": "Item 7A. Quantitative and Qualitative Disclosures about Market Risk",
+    "from": "the filing, read by eye in 10-K/nvda-20260125.htm, rendered to lines by tests/independent_text.block_paragraphs (html.parser) and importing nothing from src/: the LAST Item 7 heading in the document is the line 'Item 7. Management's Discussion and Analysis of Financial Condition and Results of Operations' — the earlier one is the table-of-contents entry — and the first Item 7A or Item 8 heading after it is 'Item 7A. Quantitative and Qualitative Disclosures about Market Risk'. Those two lines are where the section starts and stops; every other MD&A expectation is a count, and a count cannot say the section began in the right place"
+  },
   "mdna.10-K.heading_candidates": {
     "value": 2,
     "from": "the filing: two Item 7 MD&A heading lines in 10-K/nvda-20260125.htm - the table-of-contents entry (a bare 'Item 7.' whose next non-empty line is the MD&A title) and the section heading itself ('Item 7. Management's Discussion and Analysis of Financial Condition and Results of Operations'), found over tests/independent_text.block_text with a written-out regex"
   },
+  "mdna.10-K.opens_at": {
+    "value": "Item 7. Management's Discussion and Analysis of Financial Condition and Results of Operations",
+    "from": "the filing, read by eye in 10-K/nvda-20260125.htm, rendered to lines by tests/independent_text.block_paragraphs (html.parser) and importing nothing from src/: the LAST Item 7 heading in the document is the line 'Item 7. Management's Discussion and Analysis of Financial Condition and Results of Operations' — the earlier one is the table-of-contents entry — and the first Item 7A or Item 8 heading after it is 'Item 7A. Quantitative and Qualitative Disclosures about Market Risk'. Those two lines are where the section starts and stops; every other MD&A expectation is a count, and a count cannot say the section began in the right place"
+  },
   "mdna.10-K.paragraphs": {
     "value": 389,
-    "from": "already judged: tests/test_split_mdna.py:77 recount builds the block text with html.parser via tests/independent_text, takes the LAST Item 7 heading with its own regexes, stops at the first Item 7A or Item 8 heading and splits on blank lines, importing nothing from src/; re-run standalone here it returns 389 (far too large to read off by eye, which is why the independent recount and not an eye-read is the source)"
+    "from": "already judged: tests/test_split_mdna.py::recount builds the block text with html.parser via tests/independent_text, takes the LAST Item 7 heading with its own regexes, stops at the first Item 7A or Item 8 heading and splits on blank lines, importing nothing from src/; re-run standalone here it returns 389 (far too large to read off by eye, which is why the independent recount and not an eye-read is the source)"
+  },
+  "mdna.10-Q.ends_before": {
+    "value": "Item 3. Quantitative and Qualitative Disclosures About Market Risk",
+    "from": "the filing, read by eye in 10-Q/nvda-20260726.htm, rendered to lines by tests/independent_text.block_paragraphs (html.parser) and importing nothing from src/: the LAST Item 2 heading in the document is the line 'Item 2. Management’s Discussion and Analysis of Financial Condition and Results of Operations' — the earlier one is the table-of-contents entry — and the first Item 3 or Item 4 heading after it is 'Item 3. Quantitative and Qualitative Disclosures About Market Risk'. Those two lines are where the section starts and stops; every other MD&A expectation is a count, and a count cannot say the section began in the right place"
   },
   "mdna.10-Q.heading_candidates": {
     "value": 2,
     "from": "the filing: two Item 2 MD&A heading lines in 10-Q/nvda-20260726.htm - the table-of-contents entry (a bare 'Item 2.' whose next non-empty line is the MD&A title) and the section heading itself"
   },
+  "mdna.10-Q.opens_at": {
+    "value": "Item 2. Management’s Discussion and Analysis of Financial Condition and Results of Operations",
+    "from": "the filing, read by eye in 10-Q/nvda-20260726.htm, rendered to lines by tests/independent_text.block_paragraphs (html.parser) and importing nothing from src/: the LAST Item 2 heading in the document is the line 'Item 2. Management’s Discussion and Analysis of Financial Condition and Results of Operations' — the earlier one is the table-of-contents entry — and the first Item 3 or Item 4 heading after it is 'Item 3. Quantitative and Qualitative Disclosures About Market Risk'. Those two lines are where the section starts and stops; every other MD&A expectation is a count, and a count cannot say the section began in the right place"
+  },
   "mdna.10-Q.paragraphs": {
     "value": 584,
-    "from": "already judged: tests/test_split_mdna.py:77 recount, Item 2 boundaries, importing nothing from src/; re-run standalone here it returns 584"
+    "from": "already judged: tests/test_split_mdna.py::recount, Item 2 boundaries, importing nothing from src/; re-run standalone here it returns 584"
   },
-  "note_history.10-Q.key_notes": {
-    "value": 4,
-    "from": "the two 10-Q XBRL instances, paired by hand: reading the TextBlock tag names with ElementTree and marking the six key notes docs/INPUT_SPEC.md section 5.3 lists, both instances carry the same 4 - revenue recognition (ContractWithCustomerAssetAndLiability), critical accounting estimates (SignificantAccountingPolicies), contingencies (CommitmentsAndContingenciesDisclosure) and debt (DebtDisclosure, ScheduleOfDebtInstruments - counted as one topic's two tags, both paired); 4 paired + 0 current-only + 0 prior-only = 4. DISAGREES with the parser branch's recorded 6: src/note_history.KEY_NOTES matches the debt topic on the bare substring 'debt', which also sweeps in us-gaap:DebtSecuritiesAvailableForSaleTableTextBlock and us-gaap:InvestmentsInDebtAndMarketableEquitySecuritiesAndCertainTradingAssetsDisclosureTextBlock - NVIDIA's holdings of other issuers' securities, i.e. the investments note, not the company's own borrowings. Read by eye those two are not the debt note. The same eye-read reproduces TTMI's recorded 8 exactly, so the divergence is this substring and not the reading"
-  },
-  "note_history.10-Q.match_rules": {
-    "value": {
-      "tag_name": 4
-    },
-    "from": "the same hand pairing broken out by rule: all 4 marked names appear in both instances, so tag_name is 4 and no_prior_note, no_current_note and title_similarity are 0 and are omitted (the assertion filters zeros out). The four names current-only (AdditionalFinancialInformationDisclosure, OtherCommitments, ScheduleOfGuaranteeObligations, ScheduleOfOtherNonoperatingIncomeExpense) and the two prior-only (GainLossOnInvestments, SupplementalBalanceSheetDisclosures) are none of them one of the six key notes. DISAGREES with the parser branch's recorded {'tag_name': 6} for the reason given under note_history.10-Q.key_notes"
+  "note_history.10-Q.key_note_tags": {
+    "value": [
+      "us-gaap:CommitmentsAndContingenciesDisclosureTextBlock",
+      "us-gaap:DebtDisclosureTextBlock",
+      "us-gaap:ScheduleOfDebtInstrumentsTextBlock",
+      "us-gaap:SignificantAccountingPoliciesTextBlock"
+    ],
+    "from": "the current 10-Q XBRL instance 10-Q/nvda-20260726_htm.xml: every element whose local name ends in 'TextBlock' listed with ElementTree and a start-ns pass for the prefixes, importing nothing from src/, then each name read against the six key notes docs/INPUT_SPEC.md section 5 names — contingencies: us-gaap:CommitmentsAndContingenciesDisclosureTextBlock; critical_accounting_estimates: us-gaap:SignificantAccountingPoliciesTextBlock; debt: us-gaap:DebtDisclosureTextBlock, us-gaap:ScheduleOfDebtInstrumentsTextBlock. The instance also holds us-gaap:DebtSecuritiesAvailableForSaleTableTextBlock and us-gaap:InvestmentsInDebtAndMarketableEquitySecuritiesAndCertainTradingAssetsDisclosureTextBlock — the investments note, which is what this company owns and not what it owes, so nothing in it is one of the six. src/note_history.py's 'debt' pattern matches the bare substring 'debt' and pairs it as the debt note anyway: this is the one place the reading above DISAGREES with the parser"
   },
   "note_history.10-Q.prior_accession": {
     "value": "0001045810-26-000052",
     "from": "the submissions index: the latest 10-Q row in submissions.json filed strictly before the current 10-Q's 2026-08-26 is accession 0001045810-26-000052, filed 2026-05-20; it equals the fetch manifest's ('10-Q','prior_period') accession, whose bytes tests/test_fixtures.py verifies by sha256"
+  },
+  "note_history.10-Q.prior_key_note_tags": {
+    "value": [
+      "us-gaap:CommitmentsAndContingenciesDisclosureTextBlock",
+      "us-gaap:DebtDisclosureTextBlock",
+      "us-gaap:ScheduleOfDebtInstrumentsTextBlock",
+      "us-gaap:SignificantAccountingPoliciesTextBlock"
+    ],
+    "from": "the prior 10-Q XBRL instance 10-Q/nvda-20260426_htm.xml: every element whose local name ends in 'TextBlock' listed with ElementTree and a start-ns pass for the prefixes, importing nothing from src/, then each name read against the six key notes docs/INPUT_SPEC.md section 5 names — contingencies: us-gaap:CommitmentsAndContingenciesDisclosureTextBlock; critical_accounting_estimates: us-gaap:SignificantAccountingPoliciesTextBlock; debt: us-gaap:DebtDisclosureTextBlock, us-gaap:ScheduleOfDebtInstrumentsTextBlock. The instance also holds us-gaap:DebtSecuritiesAvailableForSaleTableTextBlock and us-gaap:InvestmentsInDebtAndMarketableEquitySecuritiesAndCertainTradingAssetsDisclosureTextBlock — the investments note, which is what this company owns and not what it owes, so nothing in it is one of the six. src/note_history.py's 'debt' pattern matches the bare substring 'debt' and pairs it as the debt note anyway: this is the one place the reading above DISAGREES with the parser"
   },
   "notes.10-K.extension_tag_count": {
     "value": 2,
@@ -106,7 +130,7 @@
   },
   "notes.10-K.textblock_count": {
     "value": 76,
-    "from": "already judged: tests/test_extract_notes.py:47 counts elements whose local name ends in 'TextBlock' straight off the instance with ElementTree and the input spec's rule, importing nothing from src/; re-counted standalone here it returns 76"
+    "from": "already judged: tests/test_extract_notes.py::_count_by_hand counts elements whose local name ends in 'TextBlock' straight off the instance with ElementTree and the input spec's rule, importing nothing from src/; re-counted standalone here it returns 76"
   },
   "notes.10-Q.extension_tag_count": {
     "value": 1,
@@ -114,7 +138,7 @@
   },
   "notes.10-Q.textblock_count": {
     "value": 39,
-    "from": "already judged: tests/test_extract_notes.py:47, same ElementTree hand count against the 10-Q instance; re-counted standalone here it returns 39"
+    "from": "already judged: tests/test_extract_notes.py::_count_by_hand, same ElementTree hand count against the 10-Q instance; re-counted standalone here it returns 39"
   },
   "numbers.10-K.fact_count": {
     "value": 1063,

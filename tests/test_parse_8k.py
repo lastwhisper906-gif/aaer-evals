@@ -107,7 +107,7 @@ def test_the_release_table_count_and_item_codes(ticker):
 # Nine of the twelve exhibits carry page furniture or a safe-harbour disclaimer
 # the cleaner leaves in. This is not a disagreement about where the line falls:
 # each of these was read off the exhibit block by block, against the rule
-# `docs/INPUT_SPEC.md:175` states — strip page numbers and boilerplate
+# `docs/INPUT_SPEC.md` §2 item 1 states — strip page numbers and boilerplate
 # forward-looking disclaimers — and the blocks the cleaner keeps are bare page
 # numerals sitting alone in footer divs, and safe-harbour paragraphs that say so
 # in their first sentence. Two rules in `src/clean_text.py` are behind all nine:
@@ -121,9 +121,17 @@ def test_the_release_table_count_and_item_codes(ticker):
 #   no duty", or "cause actual results to differ" for "actual results may
 #   differ", or that a page break has split in two, is carried into the input.
 #
-# The expected values stand as the exhibits read. These are strict xfails, so the
-# day either rule is fixed this file goes red and the marks come off — which is
-# the point of recording them here rather than rounding the numbers to fit.
+# The expected values stand as the exhibits read. These are strict xfails, so a
+# fixed rule turns them red and the marks come off — which is the point of
+# recording them rather than rounding the numbers to fit. PANW, GNRC and CIEN miss
+# on both rules at once, so fixing one of the two leaves those three still
+# xfailing; the count in each reason says how far each has to move.
+#
+# The mark covers one assertion and no more. `carried + dropped == the blocks the
+# exhibit holds` is true of all twelve however badly the cleaner draws the line,
+# so it is a live test above and no company's is skipped: a strict xfail is
+# satisfied by any failure, and an assertion sharing a test with a known-failing
+# one is an assertion nobody evaluates.
 UNDER_DROPPED = {
     "CSCO": "16 bare page numerals (1-16) in footer divs are carried; 17 read, 1 dropped",
     "PANW": "5 bare page numerals and all 3 forward-looking blocks are carried; "
@@ -144,23 +152,40 @@ UNDER_DROPPED = {
 }
 
 
+@pytest.mark.parametrize("ticker", TICKERS)
+def test_every_block_outside_a_table_is_carried_or_dropped(ticker):
+    """The segmentation, pinned for all twelve with no parser number in it.
+
+    A block of the exhibit is either in the release or in the drop list, so the
+    two have to add up to the block count somebody counted off the exhibit — and
+    that count is the recorded value, measured by `tests/independent_text` and
+    re-derived below. This holds whether or not the cleaner draws the line in the
+    right place, which is why it is here and not behind the mark: without it
+    nothing at all would pin the carried paragraph count of nine of the twelve
+    releases, and the parser could emit no prose for CSCO and stay green.
+    """
+    payload = parse_8k.extract(ticker)
+    stream = payload["item_2_02"]["paragraphs"]
+    tables = [entry for entry in stream if entry.startswith(BAR)]
+    carried = len(stream) - len(tables)
+    assert carried + len(payload["item_2_02"]["dropped"]) == \
+        value(ticker, "earnings_release.8-K.exhibit_99_1_blocks_outside_tables")
+
+
 @pytest.mark.parametrize("ticker", [
     pytest.param(ticker, marks=pytest.mark.xfail(
         strict=True, reason=f"{ticker}: {UNDER_DROPPED[ticker]}"))
     if ticker in UNDER_DROPPED else ticker
     for ticker in TICKERS])
 def test_the_cleaner_drops_the_blocks_the_exhibit_says_are_droppable(ticker):
-    """Every block outside a table is carried or dropped, and each exhibit was
-    read by eye to say which. So the carried count is the subtraction, not a
-    number of its own — recording it separately would have made the independent
-    recount below an identity instead of a check."""
-    payload = parse_8k.extract(ticker)
-    blocks = value(ticker, "earnings_release.8-K.exhibit_99_1_blocks_outside_tables")
-    dropped = value(ticker, "earnings_release.8-K.exhibit_99_1_dropped")
-    stream = payload["item_2_02"]["paragraphs"]
-    tables = [entry for entry in stream if entry.startswith(BAR)]
-    assert len(payload["item_2_02"]["dropped"]) == dropped
-    assert len(stream) - len(tables) == blocks - dropped
+    """One assertion: the drop count each exhibit was read by eye to justify.
+
+    The carried count is the subtraction of this from the block count, so it is
+    not recorded separately — that would have made the recount below an identity
+    instead of a check.
+    """
+    assert len(parse_8k.extract(ticker)["item_2_02"]["dropped"]) == \
+        value(ticker, "earnings_release.8-K.exhibit_99_1_dropped")
 
 
 TABLE_BLOCK = re.compile(r"<table\b.*?</table\s*>", re.DOTALL | re.IGNORECASE)

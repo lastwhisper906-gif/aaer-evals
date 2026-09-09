@@ -70,36 +70,61 @@
     "value": 14,
     "from": "already judged: tests/test_split_controls.py::recount re-finds the section with regexes written out in that test file over tests/independent_text.block_text (html.parser) and splits it on blank lines, importing nothing from src/; the Item 9A boundaries reproduce 14 paragraphs from 10-K/qcom-20250928.htm"
   },
+  "mdna.10-K.ends_before": {
+    "value": "Item 7A. Quantitative and Qualitative Disclosures about Market Risk",
+    "from": "the filing, read by eye in 10-K/qcom-20250928.htm, rendered to lines by tests/independent_text.block_paragraphs (html.parser) and importing nothing from src/: the LAST Item 7 heading in the document is the line 'Item 7. Management’s Discussion and Analysis of Financial Condition and Results of Operations' — the earlier one is the table-of-contents entry — and the first Item 7A or Item 8 heading after it is 'Item 7A. Quantitative and Qualitative Disclosures about Market Risk'. Those two lines are where the section starts and stops; every other MD&A expectation is a count, and a count cannot say the section began in the right place"
+  },
   "mdna.10-K.heading_candidates": {
     "value": 2,
     "from": "the filing: two Item 7 MD&A heading lines in 10-K/qcom-20250928.htm - the table-of-contents entry ('Item 7.' on its own line followed by the MD&A title) and the section heading itself ('Item 7. Management's Discussion and Analysis of Financial Condition and Results of Operations')"
+  },
+  "mdna.10-K.opens_at": {
+    "value": "Item 7. Management’s Discussion and Analysis of Financial Condition and Results of Operations",
+    "from": "the filing, read by eye in 10-K/qcom-20250928.htm, rendered to lines by tests/independent_text.block_paragraphs (html.parser) and importing nothing from src/: the LAST Item 7 heading in the document is the line 'Item 7. Management’s Discussion and Analysis of Financial Condition and Results of Operations' — the earlier one is the table-of-contents entry — and the first Item 7A or Item 8 heading after it is 'Item 7A. Quantitative and Qualitative Disclosures about Market Risk'. Those two lines are where the section starts and stops; every other MD&A expectation is a count, and a count cannot say the section began in the right place"
   },
   "mdna.10-K.paragraphs": {
     "value": 425,
     "from": "already judged: tests/test_split_mdna.py::recount rebuilds the block text with html.parser via tests/independent_text, takes the LAST Item 7 heading with its own regexes, stops at the first Item 7A or Item 8 heading and splits on blank lines, importing nothing from src/; 425 from 10-K/qcom-20250928.htm. Too many to read by eye, which is why the independent recount and not an eye-read is the source"
   },
+  "mdna.10-Q.ends_before": {
+    "value": "ITEM 3. QUANTITATIVE AND QUALITATIVE DISCLOSURES ABOUT MARKET RISK",
+    "from": "the filing, read by eye in 10-Q/qcom-20260628.htm, rendered to lines by tests/independent_text.block_paragraphs (html.parser) and importing nothing from src/: the LAST Item 2 heading in the document is the line 'ITEM 2. MANAGEMENT’S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERATIONS' — the earlier one is the table-of-contents entry — and the first Item 3 or Item 4 heading after it is 'ITEM 3. QUANTITATIVE AND QUALITATIVE DISCLOSURES ABOUT MARKET RISK'. Those two lines are where the section starts and stops; every other MD&A expectation is a count, and a count cannot say the section began in the right place"
+  },
   "mdna.10-Q.heading_candidates": {
     "value": 2,
     "from": "the filing: two Item 2 MD&A heading lines in 10-Q/qcom-20260628.htm - the table-of-contents entry ('Item 2.' alone, next line the MD&A title) and the section heading itself"
+  },
+  "mdna.10-Q.opens_at": {
+    "value": "ITEM 2. MANAGEMENT’S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERATIONS",
+    "from": "the filing, read by eye in 10-Q/qcom-20260628.htm, rendered to lines by tests/independent_text.block_paragraphs (html.parser) and importing nothing from src/: the LAST Item 2 heading in the document is the line 'ITEM 2. MANAGEMENT’S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERATIONS' — the earlier one is the table-of-contents entry — and the first Item 3 or Item 4 heading after it is 'ITEM 3. QUANTITATIVE AND QUALITATIVE DISCLOSURES ABOUT MARKET RISK'. Those two lines are where the section starts and stops; every other MD&A expectation is a count, and a count cannot say the section began in the right place"
   },
   "mdna.10-Q.paragraphs": {
     "value": 631,
     "from": "already judged: tests/test_split_mdna.py::recount rebuilds the block text with html.parser via tests/independent_text, takes the LAST Item 2 heading with its own regexes, stops at the first Item 3 or Item 4 heading and splits on blank lines, importing nothing from src/; 631 from 10-Q/qcom-20260628.htm"
   },
-  "note_history.10-Q.key_notes": {
-    "value": 6,
-    "from": "the two 10-Q XBRL instances, paired by hand over TextBlock element names read against the six key notes docs/INPUT_SPEC.md lists: current marks OrganizationConsolidationAndPresentationOfFinancialStatementsDisclosure (Note 1 'Basis of Presentation and Significant Accounting Policies Update', which carries the use-of-estimates sentence), RevenueRecognitionPolicy, DisaggregationOfRevenueTable, CommitmentsAndContingenciesDisclosure (Note 5), ScheduleOfShortTermDebt and SubsequentEvents; prior marks the first four; 4 shared + 2 current-only + 0 prior-only = 6"
-  },
-  "note_history.10-Q.match_rules": {
-    "value": {
-      "no_prior_note": 2,
-      "tag_name": 4
-    },
-    "from": "the same hand pairing: 4 names carry over (OrganizationConsolidationAndPresentation..., RevenueRecognitionPolicy, DisaggregationOfRevenueTable, CommitmentsAndContingenciesDisclosure) and 2 are new this quarter with no prior counterpart (ScheduleOfShortTermDebt, the short-term debt table, and SubsequentEvents, the Modular acquisition); no key note vanished and no tag was renamed, so no_current_note and title_similarity are 0 and omitted"
+  "note_history.10-Q.key_note_tags": {
+    "value": [
+      "us-gaap:CommitmentsAndContingenciesDisclosureTextBlock",
+      "us-gaap:DisaggregationOfRevenueTableTextBlock",
+      "us-gaap:OrganizationConsolidationAndPresentationOfFinancialStatementsDisclosureTextBlock",
+      "us-gaap:RevenueRecognitionPolicyTextBlock",
+      "us-gaap:ScheduleOfShortTermDebtTextBlock",
+      "us-gaap:SubsequentEventsTextBlock"
+    ],
+    "from": "the current 10-Q XBRL instance 10-Q/qcom-20260628_htm.xml: every element whose local name ends in 'TextBlock' listed with ElementTree and a start-ns pass for the prefixes, importing nothing from src/, then each name read against the six key notes docs/INPUT_SPEC.md section 5 names — contingencies: us-gaap:CommitmentsAndContingenciesDisclosureTextBlock; critical_accounting_estimates: us-gaap:OrganizationConsolidationAndPresentationOfFinancialStatementsDisclosureTextBlock; debt: us-gaap:ScheduleOfShortTermDebtTextBlock; revenue_recognition_policy: us-gaap:DisaggregationOfRevenueTableTextBlock, us-gaap:RevenueRecognitionPolicyTextBlock; subsequent_events: us-gaap:SubsequentEventsTextBlock"
   },
   "note_history.10-Q.prior_accession": {
     "value": "0000804328-26-000061",
     "from": "the submissions index: the latest 10-Q row in submissions.json filed strictly before the current 10-Q (0000804328-26-000086, filed 2026-07-29) is 0000804328-26-000061, filed 2026-04-29; it matches the manifest's ('10-Q','prior_period') row, whose bytes tests/test_fixtures.py verifies by sha256"
+  },
+  "note_history.10-Q.prior_key_note_tags": {
+    "value": [
+      "us-gaap:CommitmentsAndContingenciesDisclosureTextBlock",
+      "us-gaap:DisaggregationOfRevenueTableTextBlock",
+      "us-gaap:OrganizationConsolidationAndPresentationOfFinancialStatementsDisclosureTextBlock",
+      "us-gaap:RevenueRecognitionPolicyTextBlock"
+    ],
+    "from": "the prior 10-Q XBRL instance 10-Q/qcom-20260329_htm.xml: every element whose local name ends in 'TextBlock' listed with ElementTree and a start-ns pass for the prefixes, importing nothing from src/, then each name read against the six key notes docs/INPUT_SPEC.md section 5 names — contingencies: us-gaap:CommitmentsAndContingenciesDisclosureTextBlock; critical_accounting_estimates: us-gaap:OrganizationConsolidationAndPresentationOfFinancialStatementsDisclosureTextBlock; revenue_recognition_policy: us-gaap:DisaggregationOfRevenueTableTextBlock, us-gaap:RevenueRecognitionPolicyTextBlock"
   },
   "notes.10-K.extension_tag_count": {
     "value": 4,

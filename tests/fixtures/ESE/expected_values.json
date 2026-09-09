@@ -71,36 +71,64 @@
     "value": 14,
     "from": "already judged: tests/test_split_controls.py::recount re-finds the section with regexes written out in that test file over tests/independent_text.block_text (html.parser) and splits it on blank lines, importing nothing from src/; the Item 9A boundaries reproduce 14 paragraphs from 10-K/ese-20250930x10k.htm.gz"
   },
+  "mdna.10-K.ends_before": {
+    "value": "Item 7A. Quantitative and Qualitative Disclosures about Market Risk",
+    "from": "the filing, read by eye in 10-K/ese-20250930x10k.htm.gz, rendered to lines by tests/independent_text.block_paragraphs (html.parser) and importing nothing from src/: the LAST Item 7 heading in the document is the line 'Item 7. Management’s Discussion and Analysis of Financial Condition and Results of Operations' — the earlier one is the table-of-contents entry — and the first Item 7A or Item 8 heading after it is 'Item 7A. Quantitative and Qualitative Disclosures about Market Risk'. Those two lines are where the section starts and stops; every other MD&A expectation is a count, and a count cannot say the section began in the right place"
+  },
   "mdna.10-K.heading_candidates": {
     "value": 1,
     "from": "the filing: one Item 7 MD&A heading line in 10-K/ese-20250930x10k.htm.gz - the section heading itself; ESCO's index prints no separate 'Item 7.' MD&A entry that the heading rule sees, so there is no table-of-contents candidate"
+  },
+  "mdna.10-K.opens_at": {
+    "value": "Item 7. Management’s Discussion and Analysis of Financial Condition and Results of Operations",
+    "from": "the filing, read by eye in 10-K/ese-20250930x10k.htm.gz, rendered to lines by tests/independent_text.block_paragraphs (html.parser) and importing nothing from src/: the LAST Item 7 heading in the document is the line 'Item 7. Management’s Discussion and Analysis of Financial Condition and Results of Operations' — the earlier one is the table-of-contents entry — and the first Item 7A or Item 8 heading after it is 'Item 7A. Quantitative and Qualitative Disclosures about Market Risk'. Those two lines are where the section starts and stops; every other MD&A expectation is a count, and a count cannot say the section began in the right place"
   },
   "mdna.10-K.paragraphs": {
     "value": 357,
     "from": "already judged: tests/test_split_mdna.py::recount rebuilds the block text with html.parser via tests/independent_text, takes the LAST Item 7 heading with its own regexes, stops at the first Item 7A or Item 8 heading and splits on blank lines, importing nothing from src/; 357 from 10-K/ese-20250930x10k.htm.gz. Too many to read by eye, which is why the independent recount and not an eye-read is the source"
   },
+  "mdna.10-Q.ends_before": {
+    "value": "ITEM 3. QUANTITATIVE AND QUALITATIVE DISCLOSURES ABOUT MARKET RISK",
+    "from": "the filing, read by eye in 10-Q/ese-20260630x10q.htm, rendered to lines by tests/independent_text.block_paragraphs (html.parser) and importing nothing from src/: the LAST Item 2 heading in the document is the line 'ITEM 2. MANAGEMENT’S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERATIONS' — the earlier one is the table-of-contents entry — and the first Item 3 or Item 4 heading after it is 'ITEM 3. QUANTITATIVE AND QUALITATIVE DISCLOSURES ABOUT MARKET RISK'. Those two lines are where the section starts and stops; every other MD&A expectation is a count, and a count cannot say the section began in the right place"
+  },
   "mdna.10-Q.heading_candidates": {
     "value": 1,
     "from": "the filing: one Item 2 MD&A heading line in 10-Q/ese-20260630x10q.htm - the section heading itself, with no separate index entry"
+  },
+  "mdna.10-Q.opens_at": {
+    "value": "ITEM 2. MANAGEMENT’S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERATIONS",
+    "from": "the filing, read by eye in 10-Q/ese-20260630x10q.htm, rendered to lines by tests/independent_text.block_paragraphs (html.parser) and importing nothing from src/: the LAST Item 2 heading in the document is the line 'ITEM 2. MANAGEMENT’S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERATIONS' — the earlier one is the table-of-contents entry — and the first Item 3 or Item 4 heading after it is 'ITEM 3. QUANTITATIVE AND QUALITATIVE DISCLOSURES ABOUT MARKET RISK'. Those two lines are where the section starts and stops; every other MD&A expectation is a count, and a count cannot say the section began in the right place"
   },
   "mdna.10-Q.paragraphs": {
     "value": 141,
     "from": "already judged: tests/test_split_mdna.py::recount rebuilds the block text with html.parser via tests/independent_text, takes the LAST Item 2 heading with its own regexes, stops at the first Item 3 or Item 4 heading and splits on blank lines, importing nothing from src/; 141 from 10-Q/ese-20260630x10q.htm"
   },
-  "note_history.10-Q.key_notes": {
-    "value": 7,
-    "from": "the two 10-Q XBRL instances, paired by hand over TextBlock element names read against the six key notes docs/INPUT_SPEC.md lists: both periods mark OrganizationConsolidationAndPresentationOfFinancialStatementsDisclosure (Note 1 'BASIS OF PRESENTATION', which carries the use-of-estimates sentence), RevenueFromContractWithCustomer (Note 11 REVENUES), DisaggregationOfRevenueTable, DebtDisclosure (Note 7 DEBT), ScheduleOfDebtTable and RelatedPartyTransactionsDisclosure (Note 14 RELATED PARTIES); the prior period also marks SubsequentEvents (Note 15 SUBSEQUENT EVENT), gone this quarter; 6 shared + 0 current-only + 1 prior-only = 7"
-  },
-  "note_history.10-Q.match_rules": {
-    "value": {
-      "no_current_note": 1,
-      "tag_name": 6
-    },
-    "from": "the same hand pairing: 6 names carry over (OrganizationConsolidationAndPresentation..., RevenueFromContractWithCustomer, DisaggregationOfRevenueTable, DebtDisclosure, ScheduleOfDebtTable, RelatedPartyTransactionsDisclosure) and 1 key note has no counterpart this quarter (SubsequentEventsTextBlock, last quarter's Note 15 on the Megger agreement, which this quarter is told as Note 15 ACQUISITION under BusinessCombinationDisclosureTextBlock - not a key note); no new key note appeared and no tag was renamed, so no_prior_note and title_similarity are 0 and omitted"
+  "note_history.10-Q.key_note_tags": {
+    "value": [
+      "us-gaap:DebtDisclosureTextBlock",
+      "us-gaap:DisaggregationOfRevenueTableTextBlock",
+      "us-gaap:OrganizationConsolidationAndPresentationOfFinancialStatementsDisclosureTextBlock",
+      "us-gaap:RelatedPartyTransactionsDisclosureTextBlock",
+      "us-gaap:RevenueFromContractWithCustomerTextBlock",
+      "us-gaap:ScheduleOfDebtTableTextBlock"
+    ],
+    "from": "the current 10-Q XBRL instance 10-Q/ese-20260630x10q_htm.xml.gz: every element whose local name ends in 'TextBlock' listed with ElementTree and a start-ns pass for the prefixes, importing nothing from src/, then each name read against the six key notes docs/INPUT_SPEC.md section 5 names — critical_accounting_estimates: us-gaap:OrganizationConsolidationAndPresentationOfFinancialStatementsDisclosureTextBlock; debt: us-gaap:DebtDisclosureTextBlock, us-gaap:ScheduleOfDebtTableTextBlock; related_parties: us-gaap:RelatedPartyTransactionsDisclosureTextBlock; revenue_recognition_policy: us-gaap:DisaggregationOfRevenueTableTextBlock, us-gaap:RevenueFromContractWithCustomerTextBlock"
   },
   "note_history.10-Q.prior_accession": {
     "value": "0001104659-26-058482",
     "from": "the submissions index: the latest 10-Q row in submissions.json filed strictly before the current 10-Q (0001104659-26-093266, filed 2026-08-10) is 0001104659-26-058482, filed 2026-05-11; it matches the manifest's ('10-Q','prior_period') row, whose bytes tests/test_fixtures.py verifies by sha256"
+  },
+  "note_history.10-Q.prior_key_note_tags": {
+    "value": [
+      "us-gaap:DebtDisclosureTextBlock",
+      "us-gaap:DisaggregationOfRevenueTableTextBlock",
+      "us-gaap:OrganizationConsolidationAndPresentationOfFinancialStatementsDisclosureTextBlock",
+      "us-gaap:RelatedPartyTransactionsDisclosureTextBlock",
+      "us-gaap:RevenueFromContractWithCustomerTextBlock",
+      "us-gaap:ScheduleOfDebtTableTextBlock",
+      "us-gaap:SubsequentEventsTextBlock"
+    ],
+    "from": "the prior 10-Q XBRL instance 10-Q/ese-20260331x10q_htm.xml.gz: every element whose local name ends in 'TextBlock' listed with ElementTree and a start-ns pass for the prefixes, importing nothing from src/, then each name read against the six key notes docs/INPUT_SPEC.md section 5 names — critical_accounting_estimates: us-gaap:OrganizationConsolidationAndPresentationOfFinancialStatementsDisclosureTextBlock; debt: us-gaap:DebtDisclosureTextBlock, us-gaap:ScheduleOfDebtTableTextBlock; related_parties: us-gaap:RelatedPartyTransactionsDisclosureTextBlock; revenue_recognition_policy: us-gaap:DisaggregationOfRevenueTableTextBlock, us-gaap:RevenueFromContractWithCustomerTextBlock; subsequent_events: us-gaap:SubsequentEventsTextBlock"
   },
   "notes.10-K.extension_tag_count": {
     "value": 5,

@@ -122,21 +122,16 @@ def test_a_missing_file_fails_the_schema_gate(tmp_path):
 
 
 def test_a_paragraph_count_thirty_percent_low_fails_the_count_gate(tmp_path):
-    """`eight_k` is the count the band still holds. The note, MD&A, paragraph and
-    note-history references were deleted with the rest of the self-certified
-    numbers — they were counts of what survived the cleaner's own drop rules, and
-    nothing outside the pipeline produces them. `check_counts` skips a count it
-    has no reference for, so damaging one of those now finds nothing at all."""
     bundle = good_bundle(tmp_path)
 
     def damage(payload):
-        payload["counts"]["eight_k"] = int(payload["counts"]["eight_k"] * 0.70)
+        payload["counts"]["notes"] = int(payload["counts"]["notes"] * 0.70)
     rewrite(bundle, "input_manifest.json", damage)
     code, lines = extraction_checks.run(bundle)
     assert code != 0
     failures = gate_lines(lines, "paragraph counts")
     assert len(failures) == 1
-    assert "eight_k is" in failures[0] and "outside ±20%" in failures[0]
+    assert "notes is" in failures[0] and "outside ±20%" in failures[0]
 
 
 def test_a_count_inside_the_band_still_passes(tmp_path):
@@ -144,7 +139,7 @@ def test_a_count_inside_the_band_still_passes(tmp_path):
     bundle = good_bundle(tmp_path)
 
     def nudge(payload):
-        payload["counts"]["eight_k"] = int(payload["counts"]["eight_k"] * 0.90)
+        payload["counts"]["notes"] = int(payload["counts"]["notes"] * 0.90)
     rewrite(bundle, "input_manifest.json", nudge)
     assert extraction_checks.run(bundle)[0] == 0
 
@@ -260,13 +255,12 @@ def test_one_kind_of_damage_fails_one_gate(tmp_path):
 
 
 def test_a_recorded_count_of_zero_has_to_be_zero(tmp_path):
-    """Apple's only stored 8-K was filed 2026-07-30, after the 10-K's 2025-10-31,
-    so the cutoff keeps it out of that bundle and the reference records nothing.
-    ±20% of nothing is nothing, so a count that appears is a failure."""
+    """Apple's 10-K bundle has no note change history and expected.json records
+    none. ±20% of nothing is nothing, so a count that appears is a failure."""
     bundle = good_bundle(tmp_path, "AAPL", "10-K")
 
     def damage(payload):
-        payload["counts"]["eight_k"] = 5
+        payload["counts"]["note_history"] = 5
     rewrite(bundle, "input_manifest.json", damage)
     code, lines = extraction_checks.run(bundle)
     assert code != 0

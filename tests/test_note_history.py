@@ -85,15 +85,18 @@ def test_the_rendered_file_holds_nothing_but_entries_and_headings(ticker):
     assert seen == identifiers, f"{ticker}: an entry reached the file with no id"
 
 
-def key_paragraphs(ticker: str, role: str | None = None) -> dict[str, list[str]]:
-    """Every key note's paragraphs, gathered by tag name."""
+def key_sections(ticker: str, role: str | None = None) -> list[dict]:
+    """The sections this parser calls key notes, in one of the two 10-Qs."""
     sections = extract_notes.extract(
         ticker, "10-Q", **({"role": role} if role else {}))["sections"]
+    return [section for section in sections if note_history.key_note(section["name"])]
+
+
+def key_paragraphs(ticker: str, role: str | None = None) -> dict[str, list[str]]:
+    """Every key note's paragraphs, gathered by tag name."""
     out: dict[str, list[str]] = {}
-    for section in sections:
-        if note_history.key_note(section["name"]):
-            out.setdefault(section["name"], []).extend(
-                note_history._paragraphs(section))
+    for section in key_sections(ticker, role):
+        out.setdefault(section["name"], []).extend(note_history._paragraphs(section))
     return out
 
 
@@ -210,19 +213,34 @@ def test_the_six_key_notes_are_the_input_specs_six():
 
 # --- (e) the recorded values ------------------------------------------------
 
-# NVIDIA holds other issuers' bonds, and `KEY_NOTES["debt"]` matches the bare
-# substring `debt`, so `us-gaap:DebtSecuritiesAvailableForSaleTableTextBlock` and
-# `us-gaap:InvestmentsInDebtAndMarketableEquitySecuritiesAndCertainTradingAssets
-# DisclosureTextBlock` are paired as the debt note. Both are the investments
-# note: they are what the company owns, and `docs/INPUT_SPEC.md` §5 asks for the
-# note about what it owes. Reading the tag names off the two instances gives 4 on
-# each side — SignificantAccountingPolicies, CommitmentsAndContingenciesDisclosure,
-# DebtDisclosure and ScheduleOfDebtInstruments — and the parser reports 6. Strict,
-# so narrowing the pattern turns this red and the mark comes off with the fix.
+# `KEY_NOTES["debt"]` matches the bare substring `debt`, so a note about debt
+# securities the company *holds* is paired as the note about the debt it *owes*:
+# `us-gaap:DebtSecuritiesAvailableForSale…` and `us-gaap:InvestmentsInDebtAnd
+# MarketableEquitySecurities…`. Both are the investments note, and
+# `docs/INPUT_SPEC.md` §5 asks for the note about what the company owes. Four of
+# the twelve carry one or both.
+#
+# This stood on record for NVIDIA alone while the expected value was a *count*.
+# CSCO, PANW and CIEN miss by exactly the same rule and their counts agreed with
+# the parser anyway, because the tags read off the instance and the tags the
+# parser paired differed by compensating amounts — 3 in and 3 out of CSCO's 13. A
+# count cannot see a wrong pairing. The recorded value is the tag list now, so it
+# can, and the defect is on record for the four companies it actually reaches.
+# Strict, so narrowing the pattern turns these red and the marks come off.
 BROAD_DEBT_MATCH = {
-    "NVDA": "two investment-securities tags are paired as the debt note because "
-            "the pattern matches the bare substring 'debt'; 4 read, 6 paired",
+    "CSCO": "DebtSecuritiesAvailableForSaleUnrealizedLossPositionFairValueTable and "
+            "InvestmentsInDebtAndMarketableEquitySecurities…; 11 read, 13 paired",
+    "PANW": "DebtSecuritiesAvailableForSaleTable and InvestmentsInDebtAndMarketable"
+            "EquitySecurities…; 6 read, 8 paired",
+    "CIEN": "InvestmentsInDebtAndMarketableEquitySecurities…; 8 read, 9 paired",
+    "NVDA": "DebtSecuritiesAvailableForSaleTable and InvestmentsInDebtAndMarketable"
+            "EquitySecurities…; 4 read, 6 paired",
 }
+
+
+def key_tags(ticker: str, role: str | None = None) -> list[str]:
+    """The names of those sections, which is what the instance can source."""
+    return sorted(section["name"] for section in key_sections(ticker, role))
 
 
 @pytest.mark.parametrize("ticker", [
@@ -230,24 +248,51 @@ BROAD_DEBT_MATCH = {
         strict=True, reason=f"{ticker}: {BROAD_DEBT_MATCH[ticker]}"))
     if ticker in BROAD_DEBT_MATCH else ticker
     for ticker in TICKERS])
-def test_the_key_note_pairing_is_what_the_two_instances_hold(ticker):
-    """Which notes were paired, by which rule, against which prior report.
+def test_the_key_notes_are_the_tags_the_two_instances_hold(ticker):
+    """Which notes are key notes, and what that makes the pairing.
 
-    All three are readable off the two instances and the submissions index. The
-    added / removed / changed split is not: where the line falls between "added"
-    and "changed" is set by `CHANGED_SIMILARITY_FLOOR` over number-masked text —
-    a tuning parameter, not a fact about the filings — so a reader would disagree
-    with a *correct* parser at the margin, and nobody reads 43 changed pairs off
-    a page. Those three expected values were deleted. What was independent about
-    them was never in the record anyway: the recount below pins added+changed and
-    removed+changed note by note, with no expected value at all.
+    The expected value is the *list of tag names*, read off each instance with
+    ElementTree and marked against the six topics `docs/INPUT_SPEC.md` §5 names.
+    It was a count, and a count of the right size over the wrong set is a test
+    that passes while the parser is wrong — which is what it was doing in five
+    companies. The counts below are derived from the two lists rather than
+    recorded, so there is one reading and one place to disagree with it.
+
+    The added / removed / changed split is not here and is not recorded anywhere:
+    where the line falls between "added" and "changed" is set by
+    `CHANGED_SIMILARITY_FLOOR` over number-masked text — a tuning parameter, not a
+    fact about the filings — so a reader would disagree with a *correct* parser at
+    the margin, and nobody reads 43 changed pairs off a page. The recount below
+    pins added+changed and removed+changed note by note instead, with no expected
+    value at all.
     """
+    current = value(ticker, "note_history.10-Q.key_note_tags")
+    prior = value(ticker, "note_history.10-Q.prior_key_note_tags")
+    assert key_tags(ticker) == current
+    assert key_tags(ticker, "prior_period_xbrl_instance") == prior
+
+    # Pair by tag name, which is all the two lists can say; the title fallback
+    # fires for none of the twelve, because none renamed an extension tag.
+    shared = [tag for tag in current if tag in prior]
+    rules = {"tag_name": len(shared)}
+    if len(current) > len(shared):
+        rules[note_history.NO_PRIOR_NOTE] = len(current) - len(shared)
+    if len(prior) > len(shared):
+        rules[note_history.NO_CURRENT_NOTE] = len(prior) - len(shared)
+
     payload = note_history.history(ticker)
-    assert payload["key_notes"] == value(ticker, "note_history.10-Q.key_notes")
-    assert payload["prior_accession"] == \
-        value(ticker, "note_history.10-Q.prior_accession")
+    assert payload["key_notes"] == len(current) + len(prior) - len(shared)
     assert {rule: count for rule, count in payload["match_rules"].items() if count} \
-        == value(ticker, "note_history.10-Q.match_rules")
+        == rules
+
+
+@pytest.mark.parametrize("ticker", TICKERS)
+def test_the_history_names_the_prior_report_the_index_names(ticker):
+    """Its own test, for all twelve. A strict xfail is satisfied by any failure,
+    so while this assertion shared a test with the pairing above, NVIDIA's mark
+    meant nobody ever evaluated it there."""
+    assert note_history.history(ticker)["prior_accession"] == \
+        value(ticker, "note_history.10-Q.prior_accession")
 
 
 @pytest.mark.parametrize("ticker", TICKERS)
