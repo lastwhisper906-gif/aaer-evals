@@ -159,5 +159,13 @@
   "risk_factors.10-K.opens_at": {
     "value": "Item 1A. Risk Factors",
     "from": "the filing, read by eye in 10-K/nvda-20260125.htm, rendered to lines by tests/independent_text.py::block_paragraphs (html.parser) and importing nothing from src/: the LAST Item 1A heading in the document is the line 'Item 1A. Risk Factors'; the earlier candidate is the table-of-contents entry, where 'Item 1A.' sits alone above the title 'Risk Factors' and the page number below it. The first Item 1B heading after it is 'Item 1B. Unresolved Staff Comments'. Those two lines are where Item 1A starts and stops. docs/INPUT_SPEC.md carries this section as a diff and nothing else, so a boundary that slipped would not show up as an empty section — it would show up as a page of risk factors the prior period does not have"
+  },
+  "risk_factors.10-Q.ends_before": {
+    "value": "Item 2. Unregistered Sales of Equity Securities and Use of Proceeds",
+    "from": "the filing, read by eye in 10-Q/nvda-20260726.htm, rendered to lines by tests/independent_text.py::block_paragraphs (html.parser) and importing nothing from src/: the earlier candidate is the table-of-contents entry, where 'Item 1A.' sits alone above the title 'Risk Factors' and the page number 34 below it. The LAST Item 1A heading in the document is the line 'Item 1A. Risk Factors', in Part II after Part I's Item 4, and the first item heading after it is 'Item 2. Unregistered Sales of Equity Securities and Use of Proceeds'. Those two lines are where Part II's Item 1A starts and stops. docs/INPUT_SPEC.md carries this section as a diff and nothing else, so a boundary that slipped would not show up as an empty section — it would show up as a page of risk factors the prior period does not have"
+  },
+  "risk_factors.10-Q.opens_at": {
+    "value": "Item 1A. Risk Factors",
+    "from": "the filing, read by eye in 10-Q/nvda-20260726.htm, rendered to lines by tests/independent_text.py::block_paragraphs (html.parser) and importing nothing from src/: the earlier candidate is the table-of-contents entry, where 'Item 1A.' sits alone above the title 'Risk Factors' and the page number 34 below it. The LAST Item 1A heading in the document is the line 'Item 1A. Risk Factors', in Part II after Part I's Item 4, and the first item heading after it is 'Item 2. Unregistered Sales of Equity Securities and Use of Proceeds'. Those two lines are where Part II's Item 1A starts and stops. docs/INPUT_SPEC.md carries this section as a diff and nothing else, so a boundary that slipped would not show up as an empty section — it would show up as a page of risk factors the prior period does not have"
   }
 }

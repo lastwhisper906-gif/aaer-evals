@@ -165,5 +165,13 @@
   "risk_factors.10-K.opens_at": {
     "value": "Item 1A. Risk Factors",
     "from": "the filing, read by eye in 10-K/ese-20250930x10k.htm.gz, rendered to lines by tests/independent_text.py::block_paragraphs (html.parser) and importing nothing from src/: only one line matches: 'Item 1A. Risk Factors'; the table of contents prints 'Risk Factors' with no item number before it, so it is not a candidate at all. The first Item 1B heading after it is 'Item 1B. Unresolved Staff Comments'. Those two lines are where Item 1A starts and stops. docs/INPUT_SPEC.md carries this section as a diff and nothing else, so a boundary that slipped would not show up as an empty section — it would show up as a page of risk factors the prior period does not have"
+  },
+  "risk_factors.10-Q.ends_before": {
+    "value": null,
+    "from": "the filing, read by eye in 10-Q/ese-20260630x10q.htm, rendered to lines by tests/independent_text.py::block_paragraphs (html.parser) and importing nothing from src/: no line in the document begins 'Item 1A' — the table of contents does not list the item, and 'PART II. OTHER INFORMATION' is followed directly by 'ITEM 2. UNREGISTERED SALES OF EQUITY SECURITIES AND USE OF PROCEEDS' with no Item 1 and no Item 1A between them. Form 10-Q lets a filer leave the item out when it has nothing to add to the 10-K's risk factors, so there is no heading to record and null is that absence, read off the filing like the other eleven"
+  },
+  "risk_factors.10-Q.opens_at": {
+    "value": null,
+    "from": "the filing, read by eye in 10-Q/ese-20260630x10q.htm, rendered to lines by tests/independent_text.py::block_paragraphs (html.parser) and importing nothing from src/: no line in the document begins 'Item 1A' — the table of contents does not list the item, and 'PART II. OTHER INFORMATION' is followed directly by 'ITEM 2. UNREGISTERED SALES OF EQUITY SECURITIES AND USE OF PROCEEDS' with no Item 1 and no Item 1A between them. Form 10-Q lets a filer leave the item out when it has nothing to add to the 10-K's risk factors, so there is no heading to record and null is that absence, read off the filing like the other eleven"
   }
 }
