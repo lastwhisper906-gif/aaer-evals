@@ -17,9 +17,8 @@ that an arithmetic identity rather than a hope:
 * **A fact reported against a segment.** Companyfacts holds the entity-wide
   value alone. Asserted the other way too: of the `(tag, unit, period)` keys
   this fixture set reports *only* against a segment, companyfacts must hold a
-  row for none of them, and there must be `SEGMENT_ONLY_KEYS` of them. A class
-  that also swallowed undimensioned facts would show up here as a row that
-  exists, or as a class that had grown.
+  row for none of them. A class that had grown to swallow an undimensioned fact
+  would show up here as a row that exists.
 * **A same-day duration.** A context whose `startDate` equals its `endDate` --
   a settlement on 2026-04-03, a stock split on 2024-12-12 -- is a duration of
   no length, and companyfacts carries no row for one. Asserted both ways: every
@@ -38,6 +37,14 @@ that an arithmetic identity rather than a hope:
   up. A fact that is not nil and whose text is not a number would be a
   comparison this file cannot make, so it is listed rather than passed over.
 
+Neither class carries a size constant. How big a class is over this fixture
+set is stated by neither EDGAR document -- it could only come from running this
+file's own classifier over the fixtures, and an expected value does not come
+from the code it judges. What stops a class from growing is that both are
+asserted from both sides against companyfacts itself: widen one and the
+both-sides test finds a row that should not exist, narrow it and the value
+comparison finds a fact it cannot look up. Both directions were run.
+
 Company-extension tags are absent from companyfacts by design, as
 `docs/INPUT_SPEC.md` says. They are also outside the claim: the judge is over
 `us-gaap`, which is the namespace companyfacts holds.
@@ -45,6 +52,7 @@ Company-extension tags are absent from companyfacts by design, as
 
 from __future__ import annotations
 
+import ast
 import functools
 import gzip
 import hashlib
@@ -56,9 +64,10 @@ import pytest
 
 from src import fetch_companyfacts
 from src.extract_numbers import facts_from_instance
-from src.fetch_fixtures import TICKERS
+from src.fetch_fixtures import FIXTURE_CHANGED, TICKERS
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
+SRC = Path(__file__).resolve().parent.parent / "src"
 INSTANCE_ROLES = ("xbrl_instance", "prior_period_xbrl_instance")
 
 # A gzipped fixture says so in its first two bytes, so a reader never has to ask
@@ -74,13 +83,6 @@ NOT_YET_IN_COMPANYFACTS = {
     ("CARR", "10-Q", "0001783180-26-000032"),   # filed 2026-07-28
     ("LFUS", "10-Q", "0001628280-26-050481"),   # filed 2026-07-29
 }
-
-# How big the two exclusions are over this frozen fixture set, counted by
-# `test_the_segment_class_is_the_size_it_is` and
-# `test_the_same_day_class_is_the_size_it_is`. A class that is allowed to grow
-# without anyone noticing is a class a real miss can hide inside.
-SEGMENT_ONLY_KEYS = 3544
-SAME_DAY_GROUPS = 16
 
 
 # --- reading the two records -------------------------------------------------
@@ -185,14 +187,23 @@ def named(key: tuple) -> str:
     return f"{tag} [{unit}] {start + '..' if start else 'at '}{end}"
 
 
+def values_under(index: dict, key: tuple, accession: str) -> tuple:
+    """What companyfacts records under one instance key, in that one filing.
+
+    An instance key carries no accession -- the same tag, unit and period is
+    reported by several filings -- so this is where the two records are joined.
+    """
+    tag, unit, start, end = key
+    return index.get((tag, unit, accession, start, end), ())
+
+
 def compare(grouped: dict[tuple, list[dict]], index: dict,
             accession: str) -> tuple[int, list[str]]:
     """Look every group up in companyfacts. One line per difference, all of them."""
     matched, differences = 0, []
     for key in sorted(grouped):
         members = grouped[key]
-        tag, unit, start, end = key
-        values = set(index.get((tag, unit, accession, start, end), ()))
+        values = set(values_under(index, key, accession))
         filed = sorted({member["number"] for member in members})
         if not values:
             differences.append(f"{named(key)}: no companyfacts row under "
@@ -232,8 +243,7 @@ def comparison(ticker: str) -> dict:
               "checked": 0, "differences": [], "unreadable": [],
               "no_value": 0, "in_an_unloaded_filing": 0, "unloaded": [],
               "against_a_segment": 0, "in_a_same_day_period": 0,
-              "same_day": [], "same_day_with_a_row": [],
-              "dimensional_only": 0, "dimensional_with_a_row": []}
+              "same_day_with_a_row": [], "dimensional_with_a_row": []}
 
     for entry in manifest(ticker)["documents"]:
         if entry["role"] not in INSTANCE_ROLES:
@@ -259,15 +269,11 @@ def comparison(ticker: str) -> dict:
         # A key the instance reports only against a segment: companyfacts holds
         # the entity-wide value alone, so there must be no row under it.
         for key in sorted(segmented - set(undimensioned)):
-            report["dimensional_only"] += 1
-            tag, unit, start, end = key
-            if index.get((tag, unit, accession, start, end)):
+            if values_under(index, key, accession):
                 report["dimensional_with_a_row"].append(f"{entry['role']} {named(key)}")
         for key in sorted(key for key in undimensioned if same_day(key)):
-            tag, unit, start, end = key
-            report["same_day"].append(f"{entry['role']} {named(key)}")
             report["in_a_same_day_period"] += len(undimensioned[key])
-            if index.get((tag, unit, accession, start, end)):
+            if values_under(index, key, accession):
                 report["same_day_with_a_row"].append(f"{entry['role']} {named(key)}")
 
         payable = looked_up(undimensioned)
@@ -323,6 +329,23 @@ def test_the_recorded_date_is_the_latest_filing_the_record_carries(ticker):
     assert entry["date_basis"] == fetch_companyfacts.DATE_BASIS
 
 
+@pytest.mark.parametrize("ticker", TICKERS)
+def test_the_manifest_row_is_the_shape_the_catalogue_row_already_uses(ticker):
+    """companyfacts is a catalogue drawn from many filings, and the submissions
+    index recorded beside it is the other one. One row shape, so every reader of
+    the manifest -- `assemble_bundle.documents_on_record` among them -- meets a
+    row it already carries, with no accession because neither is a filing."""
+    catalogue = next(row for row in manifest(ticker)["documents"]
+                     if row["role"] == "submissions_index")
+    entry = companyfacts_entry(ticker)
+    assert entry.keys() == catalogue.keys(), \
+        f"{ticker}: fields differ by {sorted(entry.keys() ^ catalogue.keys())}"
+    for field in ("accession", "report_date", "items"):
+        assert entry[field] == catalogue[field] == "", (
+            f"{ticker}: companyfacts {field} is {entry[field]!r}, the "
+            f"submissions index has {catalogue[field]!r}")
+
+
 def test_a_fact_filed_after_the_cutoff_is_dropped_and_its_concept_with_it():
     """The filter, on a document built here so the expected output is planted."""
     served = {
@@ -342,6 +365,37 @@ def test_a_fact_filed_after_the_cutoff_is_dropped_and_its_concept_with_it():
         == ["before"]
     assert fetch_companyfacts.latest_filed(kept) == "2026-04-30"
     assert fetch_companyfacts.undated({"us-gaap": served}) == []
+
+
+def test_a_record_that_no_longer_reads_back_is_refused_and_not_repaired(tmp_path):
+    """Exit 4 is "a fixture on disk disagrees with its manifest". A gzip that no
+    longer decompresses disagrees with it as surely as one whose bytes changed,
+    and the fetcher leaves it exactly as it found it."""
+    root = tmp_path / "fixtures"
+    ticker_dir = root / "ZZZZ"
+    ticker_dir.mkdir(parents=True)
+    raw = b'{"facts": {}}\n'
+    packed = gzip.compress(raw, mtime=0)
+    on_disk = ticker_dir / "companyfacts.json.gz"
+    on_disk.write_bytes(packed)
+    (ticker_dir / "manifest.json").write_text(json.dumps({
+        "ticker": "ZZZZ", "cik": "0000000000", "as_of": "2026-09-01",
+        "documents": [{
+            "form": fetch_companyfacts.FORM, "role": fetch_companyfacts.ROLE,
+            "accession": "", "filing_date": "2026-07-31", "report_date": "",
+            "items": "", "date_basis": fetch_companyfacts.DATE_BASIS,
+            "url": fetch_companyfacts.COMPANYFACTS_URL.format(cik="0000000000"),
+            "path": on_disk.name, "stored": "gzip", "bytes": len(raw),
+            "sha256": hashlib.sha256(raw).hexdigest()}]}) + "\n")
+
+    argv = ["--out", str(root), "--ticker", "ZZZZ"]
+    assert fetch_companyfacts.main(argv) == 0, \
+        "a record already held is neither re-fetched nor reported"
+
+    on_disk.write_bytes(packed[:20])
+    assert fetch_companyfacts.main(argv) == FIXTURE_CHANGED
+    assert on_disk.read_bytes() == packed[:20], \
+        "the fixture was repaired, and a record is not repaired here"
 
 
 # --- the judge ---------------------------------------------------------------
@@ -422,12 +476,6 @@ def test_a_fact_reported_only_against_a_segment_has_no_companyfacts_row(ticker):
         f"against a segment:\n" + "\n".join(report["dimensional_with_a_row"]))
 
 
-def test_the_segment_class_is_the_size_it_is():
-    """A class nobody sizes is a class that can quietly grow to cover a miss."""
-    total = sum(comparison(ticker)["dimensional_only"] for ticker in TICKERS)
-    assert total == SEGMENT_ONLY_KEYS
-
-
 @pytest.mark.parametrize("ticker", TICKERS)
 def test_a_same_day_duration_has_no_companyfacts_row(ticker):
     report = comparison(ticker)
@@ -436,6 +484,36 @@ def test_a_same_day_duration_has_no_companyfacts_row(ticker):
         + "\n".join(report["same_day_with_a_row"]))
 
 
-def test_the_same_day_class_is_the_size_it_is():
-    total = sum(len(comparison(ticker)["same_day"]) for ticker in TICKERS)
-    assert total == SAME_DAY_GROUPS
+# --- upstream of the gate ----------------------------------------------------
+
+# `tests/test_cutoff_guard.py` scans `src/` for a fixture read that walks around
+# `src/cutoff_guard.py`, and what it reads is the call itself: a fixture reached
+# through the fetcher's own helpers -- read or written -- is not a call it can
+# see. The fetchers sit outside the gate because they are what puts a fixture on
+# record in the first place, so that scan's answer stays true only while they
+# are the only borrowers of those helpers. This module is one borrower. Nothing
+# else may quietly become another.
+FETCHER_HELPERS = ("read_stored", "load_manifest", "store")
+
+
+def borrows_a_fetcher_helper(module: Path) -> bool:
+    for node in ast.walk(ast.parse(module.read_text(encoding="utf-8"),
+                                   filename=str(module))):
+        if (isinstance(node, ast.Attribute) and node.attr in FETCHER_HELPERS
+                and isinstance(node.value, ast.Name)
+                and node.value.id == "fetch_fixtures"):
+            return True
+        if (isinstance(node, ast.ImportFrom)
+                and (node.module or "").endswith("fetch_fixtures")
+                and any(alias.name in FETCHER_HELPERS for alias in node.names)):
+            return True
+    return False
+
+
+def test_only_the_companyfacts_fetcher_borrows_the_fetcher_file_helpers():
+    borrowers = {module.name for module in sorted(SRC.glob("*.py"))
+                 if borrows_a_fetcher_helper(module)}
+    assert borrowers == {"fetch_companyfacts.py"}, (
+        f"modules that reach a fixture through src/fetch_fixtures.py's helpers: "
+        f"{sorted(borrowers)}. The bypass scan in tests/test_cutoff_guard.py "
+        f"reads the call and cannot see one made through them.")

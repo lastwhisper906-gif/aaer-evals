@@ -142,14 +142,20 @@ def on_record(manifest: dict) -> dict | None:
 
 
 def verify_existing(ticker_dir: Path, entry: dict) -> list[str]:
-    """A fixture is a record: on disk it must still be the bytes that were hashed."""
+    """A fixture is a record: on disk it must still be the bytes that were hashed.
+
+    A file that no longer reads back at all -- a truncated gzip -- disagrees
+    with its manifest as surely as one whose bytes changed, and is reported the
+    same way, so both leave by the documented exit and neither is repaired.
+    """
     path = ticker_dir / entry["path"]
     if not path.exists():
         return [f"missing: {path}"]
-    if fetch_fixtures.sha256(fetch_fixtures.read_stored(path, entry["stored"])) \
-            != entry["sha256"]:
-        return [f"changed: {path}"]
-    return []
+    try:
+        raw = fetch_fixtures.read_stored(path, entry["stored"])
+    except Exception as exc:  # noqa: BLE001 - unreadable is one way of not matching
+        return [f"changed: {path}: {type(exc).__name__}: {exc}"]
+    return [] if fetch_fixtures.sha256(raw) == entry["sha256"] else [f"changed: {path}"]
 
 
 def fetch_company(fetcher: fetch_fixtures.Fetcher, ticker: str, as_of: str,
