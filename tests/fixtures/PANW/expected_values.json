@@ -154,5 +154,13 @@
   "prior_period_diff.10-Q.prior_accession": {
     "value": "0001327567-26-000005",
     "from": "the same reading as note_history.10-Q.prior_accession, which the two keys must agree on because they name the same prior report - the submissions index: the latest 10-Q filed strictly before the current 10-Q (0001327567-26-000015, filed 2026-06-03) is 0001327567-26-000005, filed 2026-02-18 - EDGAR's own catalogue, not a parser; it is also the manifest's ('10-Q','prior_period') row, whose bytes tests/test_fixtures.py verifies by sha256"
+  },
+  "risk_factors.10-K.ends_before": {
+    "value": "Item 1B. Unresolved Staff Comments",
+    "from": "the filing, read by eye in 10-K/panw-20250731.htm.gz, rendered to lines by tests/independent_text.py::block_paragraphs (html.parser) and importing nothing from src/: the LAST Item 1A heading in the document is the line 'Item 1A. Risk Factors'; the earlier candidate is the table-of-contents entry, where 'Item 1A.' sits alone above the title 'Risk Factors' and the page number below it. The first Item 1B heading after it is 'Item 1B. Unresolved Staff Comments'. Those two lines are where Item 1A starts and stops. docs/INPUT_SPEC.md carries this section as a diff and nothing else, so a boundary that slipped would not show up as an empty section — it would show up as a page of risk factors the prior period does not have"
+  },
+  "risk_factors.10-K.opens_at": {
+    "value": "Item 1A. Risk Factors",
+    "from": "the filing, read by eye in 10-K/panw-20250731.htm.gz, rendered to lines by tests/independent_text.py::block_paragraphs (html.parser) and importing nothing from src/: the LAST Item 1A heading in the document is the line 'Item 1A. Risk Factors'; the earlier candidate is the table-of-contents entry, where 'Item 1A.' sits alone above the title 'Risk Factors' and the page number below it. The first Item 1B heading after it is 'Item 1B. Unresolved Staff Comments'. Those two lines are where Item 1A starts and stops. docs/INPUT_SPEC.md carries this section as a diff and nothing else, so a boundary that slipped would not show up as an empty section — it would show up as a page of risk factors the prior period does not have"
   }
 }

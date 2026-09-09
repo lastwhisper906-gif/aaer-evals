@@ -1,10 +1,10 @@
 """The sections of a filing that carry no XBRL tag, cut out of the HTML.
 
-MD&A, the auditor's report and the controls items are not tagged, so there is
-no element to look up: the boundaries have to be found in the document. The
-trap is stated in the dispatch — *picking the first match is the classic way to
-extract three lines of index* — because the table of contents names every one
-of these sections before the section itself appears.
+MD&A, the auditor's report, the controls items and Item 1A are not tagged, so
+there is no element to look up: the boundaries have to be found in the
+document. The trap is stated in the dispatch — *picking the first match is the
+classic way to extract three lines of index* — because the table of contents
+names every one of these sections before the section itself appears.
 
 The rule, validated against all twelve 10-Ks in the fixture set: a heading is a
 **line of its own** in the stripped text, never a substring of running prose,
@@ -25,10 +25,15 @@ recorded here because it is the obvious rule and it is wrong.
 
     python3.12 -m src.split_sections --ticker AAPL --form 10-K --section mdna \\
         --out aapl-mdna.md
+    python3.12 -m src.split_sections --ticker AAPL --form 10-Q \\
+        --section risk_factors --out input_risk_factors.md
 
 The ids it mints are the bundle's — `{accession}:{section}:{n}` over the
 paragraphs that survive the cleaner — but the file is not: a bundle's MD&A has
-been through the diff layer. `--out input_*.md` is refused for that reason.
+been through the diff layer. `--out input_*.md` is refused for that reason,
+with one exception. Item 1A has no undiffed form: `docs/INPUT_SPEC.md` §1
+carries it **diff only**, so `--section risk_factors` runs the diff here and
+`input_risk_factors.md` is the file it is allowed to write.
 """
 
 from __future__ import annotations
@@ -110,6 +115,26 @@ SECTIONS = {
         # 25 paragraphs of which 22 were forward-looking-statement bullets.
         "end": [_item("1", r"legal proceedings"), r"^part ii\b", _item("1a"),
                 r"^cautionary note\b"],
+    },
+    # Item 1A takes the item rule unchanged, and twelve of twelve 10-Ks resolve
+    # on it: two candidates for ten of them, one for STX and ESE, whose tables
+    # of contents print the title without the item number. All twelve end at
+    # Item 1B; `Item 2. Properties` is the fallback for a filer that omits
+    # Item 1B, and it is a fallback rather than the rule because a bare
+    # `Item 2` in a 10-Q is Part I's MD&A.
+    ("10-K", "risk_factors"): {
+        "start": [_item("1a", r"risk factors")],
+        "marker": (_item("1a") + r"$", r"^risk factors"),
+        "end": [_item("1b"), _item("2", r"propert")],
+    },
+    # A 10-Q's Item 1A is in Part II, after Part I's Item 2, Item 3 and Item 4,
+    # so every remaining item number is ahead of it and a bare item marker is
+    # safe here in a way it is not in the 10-K. Item 2 ends it in eleven of the
+    # twelve; the rest are there because Part II Item 2 is itself omissible.
+    ("10-Q", "risk_factors"): {
+        "start": [_item("1a", r"risk factors")],
+        "marker": (_item("1a") + r"$", r"^risk factors"),
+        "end": [_item("2"), _item("3"), _item("4"), _item("5"), _item("6")],
     },
 }
 
@@ -316,6 +341,158 @@ def render(payload: dict) -> str:
     return "\n".join(lines)
 
 
+# --- Item 1A, which is the one section the input spec carries as a diff -----
+#
+# `docs/INPUT_SPEC.md` §1 marks Item 1A **diff only**, and §6 names the file it
+# goes in. So this section has no undiffed output: `risk_factors` below is what
+# `--section risk_factors` runs, and `input_risk_factors.md` is what it writes.
+#
+# **The always-verbatim list is not applied here**, and that is a decision, not
+# an omission. `docs/INPUT_SPEC.md` §2 item 6 keeps contingencies, litigation,
+# debt and covenants out of the diff because in a *note* an unchanged paragraph
+# is itself the finding. A risk factor is the opposite: `docs/CHECKLIST.md`
+# names the flag it feeds, `risk_factor_new_item` — "a new adverse risk factor
+# appears, or an existing one widens in substance rather than wording" — and an
+# unchanged risk factor is not that. The cost of the other reading is
+# measurable: 20 of Qualcomm's 217 risk-factor paragraphs match
+# `diff_periods.always_verbatim` on their words, and its 10-Q repeats all 217
+# of them word for word, so the rule would carry a tenth of an unchanged
+# section every quarter under a heading that says it is a diff.
+RISK_FACTORS_FILE = "input_risk_factors.md"
+
+
+def _risk_factor_paragraphs(html: str, form: str, accession: str) -> list[dict]:
+    """One entry per paragraph of Item 1A that survives the cleaner, with its id."""
+    cut = split(html, form, "risk_factors")
+    kept = clean_text.clean_stream(blocks=cut["blocks"])["paragraphs"]
+    return [{"id": f"{accession}:risk_factors:{index}", "text": text,
+             "note": "risk_factors"}
+            for index, text in enumerate(kept, start=1)]
+
+
+def risk_factor_diff(current: list[dict], prior: list[dict]) -> dict:
+    """What is new or changed, what is gone, and how many are neither.
+
+    A paragraph is unchanged when its own text is a paragraph of the prior
+    section, matched one for one as a multiset. That is `diff_periods
+    .diff_stream`, called rather than copied: it is the project's one diff rule
+    and a second copy of it here would be a second rule tomorrow. Order is not
+    part of the match, which is what makes a reordered section zero changes.
+
+    Split out of `risk_factors` so that the reordered fixture can be put to the
+    same function the filings go through, instead of to a copy of it assembled
+    in the test — which would pass whatever this then did.
+    """
+    # Late, and only here: `src/diff_periods.py` imports this module, so the
+    # arrow cannot point both ways while either one is still being read in.
+    from src import diff_periods
+
+    stream = diff_periods.diff_stream(current, prior)
+    changed = [entry for entry in stream if entry["kind"] == "verbatim"]
+    matched = {entry["prior_id"] for entry in stream if entry["kind"] == "collapsed"}
+    removed = [entry for entry in prior if entry["id"] not in matched]
+    return {"paragraphs": len(current), "changed": changed, "removed": removed,
+            "unchanged": len(current) - len(changed),
+            "changes": len(changed) + len(removed)}
+
+
+def risk_factors(ticker: str, form: str = "10-K", *, cutoff=None,
+                 fixtures_root=cutoff_guard.FIXTURES) -> dict:
+    """Item 1A against the prior filing of the same kind. The diff, and nothing else.
+
+    Three outcomes, each stated rather than left to be inferred from a zero:
+
+    - **absent** — the filing carries no Item 1A heading. A 10-Q may leave the
+      item out when it has nothing to add, and Esterline's does. That is not a
+      section that did not change, so it is not reported as one.
+    - **carried whole** — there is no prior filing of this kind on record, so
+      there is nothing to diff against and `docs/INPUT_SPEC.md` §2 reads the
+      first filing whole.
+    - **diffed** — `risk_factor_diff` above, over the two sections' paragraphs.
+    """
+    cutoff = cutoff or cutoff_guard.default_cutoff(ticker, fixtures_root=fixtures_root)
+    row = cutoff_guard.one_document(ticker, form, "primary_html",
+                                    fixtures_root=fixtures_root)
+    found = {
+        "ticker": ticker, "form": form, "section": "risk_factors",
+        "cutoff": str(cutoff), "accession": row["accession"],
+        "filing_date": row["filing_date"], "prior_accession": None,
+        "present": True, "absent": None, "prior_absent": None,
+        "has_prior_period": False, "carried_whole": False,
+        "paragraphs": 0, "changed": [], "removed": [], "unchanged": 0, "changes": 0,
+    }
+
+    html = cutoff_guard.load_document(row["full_path"], cutoff,
+                                      fixtures_root=fixtures_root)
+    try:
+        current = _risk_factor_paragraphs(html, form, row["accession"])
+    except SectionNotFound as exc:
+        found.update({"present": False, "absent": str(exc)})
+        return found
+
+    prior_rows = cutoff_guard.documents(ticker, form=form, role="prior_period",
+                                        fixtures_root=fixtures_root)
+    prior = []
+    if prior_rows:
+        prior_html = cutoff_guard.load_document(prior_rows[0]["full_path"], cutoff,
+                                                fixtures_root=fixtures_root)
+        try:
+            prior = _risk_factor_paragraphs(prior_html, form,
+                                            prior_rows[0]["accession"])
+        except SectionNotFound as exc:
+            # Every paragraph is then new, which is a true diff against a filing
+            # that carried no such section — but it is only true if the reader
+            # is told why, so the reason travels with it into the file.
+            found["prior_absent"] = str(exc)
+
+    found.update({
+        "has_prior_period": bool(prior_rows),
+        "prior_accession": prior_rows[0]["accession"] if prior_rows else None,
+        "carried_whole": not prior_rows,
+        **risk_factor_diff(current, prior),
+    })
+    return found
+
+
+def render_risk_factors(payload: dict) -> str:
+    """`input_risk_factors.md`: what changed, what went, and a count of the rest."""
+    out = [f"# {payload['ticker']} {payload['form']} Item 1A risk factors — "
+           f"{payload['accession']} filed {payload['filing_date']}", ""]
+
+    if not payload["present"]:
+        out += [f"This filing carries no Item 1A: {payload['absent']}.",
+                "Nothing was diffed. A section that is not in the filing is not a "
+                "section that did not change, and is not reported as one.", ""]
+        return "\n".join(out)
+
+    if payload["carried_whole"]:
+        out += [f"No prior {payload['form']} is on record for this company, so there "
+                f"is nothing to diff against and the section is carried whole — "
+                f"{payload['paragraphs']} paragraphs.", ""]
+    else:
+        out += [f"Diffed against {payload['prior_accession']}: "
+                f"{len(payload['changed'])} new or changed, "
+                f"{len(payload['removed'])} removed, "
+                f"{payload['unchanged']} unchanged and not repeated here.", ""]
+        if payload["prior_absent"]:
+            out += [f"That prior filing carried no Item 1A: {payload['prior_absent']}. "
+                    "Every paragraph below is new against a section that was not "
+                    "there.", ""]
+
+    if payload["changed"]:
+        out += ["## The section, carried whole" if payload["carried_whole"]
+                else "## New or changed", ""]
+        for entry in payload["changed"]:
+            out += [f"[{entry['id']}]", entry["text"], ""]
+    if payload["removed"]:
+        out += ["## Removed since the prior period", ""]
+        for entry in payload["removed"]:
+            out += [f"[{entry['id']}]", entry["text"], ""]
+    if not payload["changes"]:
+        out += ["Nothing was added, changed or removed.", ""]
+    return "\n".join(out)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="cut an untagged section out of the HTML")
     parser.add_argument("--ticker", required=True)
@@ -331,18 +508,47 @@ def main(argv: list[str] | None = None) -> int:
     # has been through the diff layer, so `input_mdna.md` written from here
     # would be a second file of that name with different content under the same
     # ids. Refusing the name is cheaper than reconciling the two.
-    if Path(args.out).name.startswith("input_"):
-        print(f"split_sections: {Path(args.out).name} is a bundle filename — "
+    #
+    # `input_risk_factors.md` is the exception, and it is that same sentence
+    # read the other way round. Item 1A has no undiffed form — the input spec
+    # carries it as a diff and nothing else — so the file written below *is*
+    # the one the bundle would carry, not a second file under the same name.
+    diff_only = args.section == "risk_factors"
+    name = Path(args.out).name
+    if name.startswith("input_") and not (diff_only and name == RISK_FACTORS_FILE):
+        print(f"split_sections: {name} is a bundle filename — "
               f"use src.assemble_bundle for a bundle, or another name here",
               file=sys.stderr)
         return BAD_INPUT
 
     try:
-        payload = extract(args.ticker.upper(), args.form, args.section,
-                          cutoff=args.cutoff, fixtures_root=Path(args.fixtures))
+        if diff_only:
+            payload = risk_factors(args.ticker.upper(), args.form,
+                                   cutoff=args.cutoff,
+                                   fixtures_root=Path(args.fixtures))
+        else:
+            payload = extract(args.ticker.upper(), args.form, args.section,
+                              cutoff=args.cutoff, fixtures_root=Path(args.fixtures))
     except (cutoff_guard.CutoffGuardError, SectionNotFound, KeyError) as exc:
         print(f"split_sections: {exc}", file=sys.stderr)
         return BAD_INPUT
+
+    if diff_only:
+        Path(args.out).write_text(render_risk_factors(payload), encoding="utf-8")
+        # The two outcomes that are not a diff say so on this line too. Either
+        # one printed as "N changes" reads as a section that moved by N, and
+        # that is the one thing neither of them says.
+        what = ("no Item 1A in this filing" if not payload["present"] else
+                f"no prior {args.form} on record, carried whole — "
+                f"{payload['paragraphs']} paragraphs" if payload["carried_whole"] else
+                f"{payload['changes']} changes "
+                f"({len(payload['changed'])} new or changed, "
+                f"{len(payload['removed'])} removed) of {payload['paragraphs']} "
+                f"paragraphs")
+        print(f"split_sections: {args.ticker.upper()} {args.form} risk factors "
+              f"{what} → {args.out}")
+        return 0
+
     Path(args.out).write_text(render(payload), encoding="utf-8")
     print(f"split_sections: {args.ticker.upper()} {args.form} {args.section} "
           f"{len(payload['carried'])} paragraphs of {len(payload['paragraphs'])} "
