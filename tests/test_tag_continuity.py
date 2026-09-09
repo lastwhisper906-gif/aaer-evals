@@ -49,7 +49,7 @@ from pathlib import Path
 
 import pytest
 
-from src import diff_periods, tag_continuity
+from src import cutoff_guard, diff_periods, tag_continuity
 from tests import expected_values
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
@@ -333,6 +333,21 @@ def test_the_cutoff_is_applied_to_the_rows():
     assert max({point["filed"] for point in revenue_series(cutoff=None)}) > CUTOFF
 
 
+@pytest.mark.parametrize("bad", ["2019-1-30", "30 January 2019", "garbage", ""])
+def test_a_cutoff_that_is_not_a_date_is_refused_rather_than_ignored(bad):
+    """A malformed cutoff must not fail open.
+
+    The row filter compares filing dates as strings, so a cutoff that is not an
+    ISO date narrows nothing: the test above shows the record holds rows filed
+    years past `CUTOFF`, and every one of them would arrive, silently and with a
+    zero exit. `tests/test_cutoff_guard.py::test_an_unparseable_cutoff_is_refused`
+    states the rule for the readers that go through `load_document`; this one
+    filters the rows itself, so it is asserted here too.
+    """
+    with pytest.raises(cutoff_guard.CutoffGuardError):
+        tag_continuity.series_quarters(TICKER, SERIES, bad)
+
+
 # --- a quarter two filings disagree about ------------------------------------
 
 def test_three_filings_report_that_quarter_and_two_of_them_disagree():
@@ -354,6 +369,62 @@ def test_the_latest_filing_wins_and_the_number_it_replaced_is_kept():
     assert (point["value"], point["accession"]) == RESTATED_AS
     assert [(row["value"], row["accession"]) for row in point["superseded"]] \
         == [FIRST_REPORTED_AS]
+
+
+# --- one filing that reports a quarter twice ---------------------------------
+#
+# Built here rather than read off a filing, for a reason worth stating: no
+# committed accession reports one quarter under two of the three names at all,
+# so this shape cannot be read off the record. It is asserted because the map is
+# what would produce it — an entry says two names are one line, and a filing
+# carrying both with different numbers says they are not. Left alone the winner
+# would be whichever name the record happens to list first, and the loser would
+# be filed under `superseded`, which claims an earlier filing said it.
+
+ONE_QUARTER = ("2018-04-01", "2018-06-30")
+
+
+def facts_for(*reported: tuple[str, int]) -> dict:
+    """A `facts` object: one quarter, one accession, one row per name given."""
+    start, end = ONE_QUARTER
+    built: dict[str, dict] = {}
+    for name, value in reported:
+        namespace, _, tag = name.partition(":")
+        built.setdefault(namespace, {})[tag] = {"units": {UNIT: [
+            {"start": start, "end": end, "val": value,
+             "accn": ANNUAL_10K, "filed": "2018-11-05"}]}}
+    return built
+
+
+def test_one_filing_reporting_a_quarter_under_two_names_with_two_values_is_refused():
+    with pytest.raises(tag_continuity.TagContinuityError,
+                       match="one filing, two values"):
+        tag_continuity.quarters(
+            facts_for((REVENUES, 53265000000), (SALES_REVENUE_NET, 99000000000)),
+            THE_THREE_NAMES, UNIT)
+
+
+def test_one_filing_carrying_both_names_with_one_number_is_not_a_disagreement():
+    """The control: the refusal above is about the two values, not about one
+    filing using both names — which is what the overlap every map entry cites
+    looks like, and it has to stay readable."""
+    points = tag_continuity.quarters(
+        facts_for((REVENUES, 53265000000), (SALES_REVENUE_NET, 53265000000)),
+        THE_THREE_NAMES, UNIT)
+    assert [(point["value"], point["superseded"]) for point in points] \
+        == [(53265000000, [])]
+
+
+def test_superseded_only_ever_names_another_filing():
+    """What `superseded` claims, asserted over the whole committed record: a row
+    in it was filed by a different accession, because the word means an earlier
+    filing said something else."""
+    for ticker in (TICKER, ESCO, CARRIER):
+        for point in tag_continuity.quarters(
+                tag_continuity.history(ticker), THE_THREE_NAMES, UNIT):
+            for row in point["superseded"]:
+                assert row["accession"] != point["accession"]
+                assert row["filed"] <= point["filed"]
 
 
 # --- a quarter no companyfacts row covers ------------------------------------

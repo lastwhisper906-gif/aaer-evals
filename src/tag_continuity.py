@@ -353,13 +353,21 @@ def history(ticker: str, cutoff=None, *, fixtures_root=cutoff_guard.FIXTURES) ->
     look-ahead actually lives. `src/fetch_companyfacts.within_cutoff` does that
     filtering, so the record read here at a cutoff is the record the fetcher
     would have stored at that cutoff.
+
+    The cutoff is parsed before it is used. `within_cutoff` compares filing
+    dates as strings, so a cutoff that is not an ISO date narrows nothing and
+    would let the whole record through while exiting 0 — the look-ahead this
+    gate exists to stop, arriving silently. Every other reader inherits the
+    refusal from `cutoff_guard.load_document`; this one reads the rows itself,
+    so it asks for the same parse itself.
     """
     row = cutoff_guard.one_document(ticker, fetch_companyfacts.FORM,
                                     fetch_companyfacts.ROLE, fixtures_root=fixtures_root)
     raw = cutoff_guard.load_bytes(row["full_path"], row["filing_date"],
                                   fixtures_root=fixtures_root)
-    as_of = str(cutoff or cutoff_guard.default_cutoff(ticker, fixtures_root=fixtures_root))
-    return fetch_companyfacts.within_cutoff(json.loads(raw)["facts"], as_of)
+    as_of = (cutoff_guard.parse_date(cutoff, "cutoff") if cutoff is not None
+             else cutoff_guard.default_cutoff(ticker, fixtures_root=fixtures_root))
+    return fetch_companyfacts.within_cutoff(json.loads(raw)["facts"], as_of.isoformat())
 
 
 def _days(start: str, end: str) -> int:
@@ -377,33 +385,48 @@ def quarters(facts: dict, tags, unit: str) -> list[dict]:
     point carries the value of the filing that won and `superseded` lists what
     the earlier ones said.
 
+    `superseded` says an *earlier filing* said something else, so only a row
+    from another accession can go in it. One filing reporting the same period
+    twice with two different values is not a supersession and has no later
+    filing to prefer: it is refused rather than settled by the order the record
+    happens to list the names in.
+
     A period nothing reports is not a point. Nothing is interpolated, carried
     forward or defaulted to zero.
     """
     wanted = set(tags)
+    shortest, longest = QUARTER_DAYS
     found: dict[tuple[str, str], list[dict]] = {}
     for namespace, concepts in facts.items():
         for tag, concept in concepts.items():
-            if f"{namespace}:{tag}" not in wanted:
+            name = f"{namespace}:{tag}"
+            if name not in wanted:
                 continue
             for row in concept.get("units", {}).get(unit, []):
                 start, end = row.get("start"), row.get("end")
                 if not start or not end:
                     continue  # an instant, which is a balance and not a period
-                shortest, longest = QUARTER_DAYS
                 if not shortest <= _days(start, end) <= longest:
                     continue
                 found.setdefault((start, end), []).append(
                     {"start": start, "end": end, "value": row["val"],
-                     "tag": f"{namespace}:{tag}", "accession": row["accn"],
-                     "filed": row["filed"]})
+                     "tag": name, "accession": row["accn"], "filed": row["filed"]})
 
     points = []
-    for period in sorted(found):
-        reported = sorted(found[period], key=lambda row: (row["filed"], row["accession"]))
+    for (start, end), reported in sorted(found.items()):
+        reported.sort(key=lambda row: (row["filed"], row["accession"]))
         point = dict(reported[-1])
-        point["superseded"] = [row for row in reported[:-1]
-                               if row["value"] != point["value"]]
+        earlier = reported[:-1]
+        disputed = [row for row in earlier if row["accession"] == point["accession"]
+                    and row["value"] != point["value"]]
+        if disputed:
+            conflict = disputed + [point]
+            raise TagContinuityError(
+                f"{point['accession']} reports {start}..{end} as "
+                f"{sorted({row['value'] for row in conflict})} under "
+                f"{sorted({row['tag'] for row in conflict})} — one filing, two "
+                "values, and no later filing to prefer")
+        point["superseded"] = [row for row in earlier if row["value"] != point["value"]]
         points.append(point)
     return points
 
