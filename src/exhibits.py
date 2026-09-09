@@ -493,6 +493,10 @@ def eight_k_submissions(ticker: str, *, cutoff,
     Folded to one entry per accession, because the record holds several
     documents of the same submission — a body, an exhibit, a header — and the
     trigger is a property of the submission and not of any one of its files.
+    The fold is also what collects them: `header` and the `stored` `EX-10`
+    documents by filename come off this one walk, so the cutoff is applied to
+    every document of the submission in one place and no later step re-reads
+    the record to ask what the same accession holds.
     """
     limit = str(cutoff)
     found: dict[str, dict] = {}
@@ -503,9 +507,11 @@ def eight_k_submissions(ticker: str, *, cutoff,
             "accession": row["accession"],
             "filing_date": row["filing_date"],
             "items": parse_8k.item_codes(row.get("items", "")),
-            "header": None})
+            "header": None, "stored": {}})
         if row["role"] == TRIGGER_HEADER_ROLE:
             entry["header"] = row
+        elif row["role"] == CONTRACT_EXHIBIT_ROLE:
+            entry["stored"][Path(row["path"]).name] = row
     return sorted(found.values(), reverse=True,
                   key=lambda entry: (entry["filing_date"], entry["accession"]))
 
@@ -529,11 +535,9 @@ def read_contract_exhibits(ticker: str, submission: dict, *, cutoff,
             f"the submission header names, and without the header nothing names it")
     header_text = cutoff_guard.load_document(header["full_path"], cutoff,
                                              fixtures_root=fixtures_root)
-    stored = {Path(row["path"]).name: row
-              for row in cutoff_guard.documents(ticker, form="8-K",
-                                                role=CONTRACT_EXHIBIT_ROLE,
-                                                fixtures_root=fixtures_root)
-              if row["accession"] == submission["accession"]}
+    # Copied because the loop below pops from it, and what is left over is the
+    # documents on record the header named nowhere.
+    stored = dict(submission["stored"])
 
     found = []
     for named in named_contract_exhibits(header_text):

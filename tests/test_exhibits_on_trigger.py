@@ -165,10 +165,6 @@ def manifest_of(root: Path, ticker: str) -> dict:
     return json.loads((root / ticker / "manifest.json").read_text(encoding="utf-8"))
 
 
-def rows_of(manifest: dict, accession: str) -> list[dict]:
-    return [entry for entry in manifest["documents"] if entry["accession"] == accession]
-
-
 # --- the trigger is the item code, and the index is where it is stated ---------
 
 @pytest.mark.parametrize("case", [TRIGGER, NO_TRIGGER, NAMES_NO_EXHIBIT],
@@ -294,7 +290,8 @@ def test_an_8k_with_no_triggering_item_pulls_nothing(tmp_path):
     intact = copy_eight_k(tmp_path / "intact", "STX")
     struck = copy_eight_k(tmp_path / "struck", "STX")
     manifest = manifest_of(struck, "STX")
-    rows = rows_of(manifest, TRIGGER["accession"])
+    rows = [entry for entry in manifest["documents"]
+            if entry["accession"] == TRIGGER["accession"]]
     assert len(rows) == 2, [row["role"] for row in rows]
     for row in rows:
         row["items"] = "2.02,9.01"
