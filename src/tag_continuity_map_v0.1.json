@@ -1,0 +1,53 @@
+{
+  "rules_version": "v0.1",
+  "note": "The tag pairs that are one series under two names. docs/INPUT_SPEC.md asks for this map so that a company which switched revenue tags still yields an unbroken series, and docs/rules.md versions it with the rules rather than with the code, because a pair changes what a number means.",
+  "how_a_pair_gets_in": "Two filings were read and the entry names both. Nothing here is inferred at read time and nothing here was produced by src/tag_continuity.py: a pair is a record of what two filings called the same line, so the entry carries the accession that stopped using the earlier name, the accession that started using the later one, and the one period both of them report under the two names with the same value. A pair with no such overlap is not written down as though it had one.",
+  "pairs": [
+    {
+      "ticker": "AAPL",
+      "series": "revenue",
+      "unit": "USD",
+      "earlier_tag": "us-gaap:SalesRevenueNet",
+      "later_tag": "us-gaap:Revenues",
+      "earlier_filing": {
+        "accession": "0000320193-18-000100",
+        "form": "10-Q",
+        "filed": "2018-08-01"
+      },
+      "later_filing": {
+        "accession": "0000320193-18-000145",
+        "form": "10-K",
+        "filed": "2018-11-05"
+      },
+      "both_report": {
+        "start": "2018-04-01",
+        "end": "2018-06-30",
+        "value": 53265000000
+      },
+      "read_from": "companyfacts for AAPL: every row naming accession 0000320193-18-000100 carries the top line under us-gaap:SalesRevenueNet and no row of that filing names us-gaap:Revenues; every row naming 0000320193-18-000145 carries it under us-gaap:Revenues and no row of that filing names us-gaap:SalesRevenueNet. The quarter 2018-04-01 to 2018-06-30 is in both, 53,265,000,000 each time."
+    },
+    {
+      "ticker": "AAPL",
+      "series": "revenue",
+      "unit": "USD",
+      "earlier_tag": "us-gaap:Revenues",
+      "later_tag": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+      "earlier_filing": {
+        "accession": "0000320193-18-000145",
+        "form": "10-K",
+        "filed": "2018-11-05"
+      },
+      "later_filing": {
+        "accession": "0000320193-19-000010",
+        "form": "10-Q",
+        "filed": "2019-01-30"
+      },
+      "both_report": {
+        "start": "2017-10-01",
+        "end": "2017-12-30",
+        "value": 88293000000
+      },
+      "read_from": "companyfacts for AAPL: every row naming accession 0000320193-18-000145 carries the top line under us-gaap:Revenues and no row of that filing names us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax; every row naming 0000320193-19-000010 carries it under us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax and no row of that filing names us-gaap:Revenues. The quarter 2017-10-01 to 2017-12-30 is in both, 88,293,000,000 each time."
+    }
+  ]
+}
