@@ -42,6 +42,28 @@ BEFORE_THE_CLOSE = "2026-05-08T15:30:00"
 EARNINGS_RELEASE_FILED = dt.date(2026, 4, 24)
 EARNINGS_RELEASE_ACCEPTED = "2026-04-24T16:05:00"
 
+# --- one instant, written two ways ---------------------------------------------
+#
+# Daylight saving ran from 2026-03-08 to 2026-11-01, so on 2026-05-08 New York
+# was four hours behind universal time: 19:00:00+00:00 is 15:00:00 there, an hour
+# before the 16:00 close. The stamp with no zone is that same wall clock, which
+# is how EDGAR writes acceptance.
+BEFORE_THE_CLOSE_IN_NEW_YORK = "2026-05-08T15:00:00"
+BEFORE_THE_CLOSE_IN_UNIVERSAL_TIME = "2026-05-08T19:00:00+00:00"
+ON_THE_EXCHANGE_CLOCK = "2026-05-08T15:00:00-04:00"
+# 20:00:00+00:00 is 16:00:00 in New York, which is at the close and not before
+# it; a second earlier is before it. Converted they straddle the close, and
+# dropped they would both sit four hours past it.
+AT_THE_CLOSE_IN_UNIVERSAL_TIME = "2026-05-08T20:00:00+00:00"
+A_SECOND_BEFORE_THE_CLOSE_IN_UNIVERSAL_TIME = "2026-05-08T19:59:59+00:00"
+
+# --- EDGAR's own close, which is not the exchange's ----------------------------
+#
+# A submission accepted after half past five in the evening, Eastern, is deemed
+# filed on the next business day. 2026-05-08 is a Friday, so that day is Monday.
+AFTER_EDGARS_CLOSE = "2026-05-08T17:45:00"
+NEXT_BUSINESS_DAY = dt.date(2026, 5, 11)
+
 # --- the returns the fixture is built from, as decimals that terminate ---------
 #
 # The broad market alternates between 400.00 and 409.60:
@@ -179,9 +201,9 @@ def reports():
     return market.read_short_interest(SHORT_INTEREST, TICKER)
 
 
-def build(accepted: str = AFTER_THE_CLOSE, *, earnings_release: bool = True,
-          prices_directory=PRICES) -> dict:
-    windows = [{"kind": "filing", "filing_date": FILING_DATE.isoformat(),
+def build(accepted: str = AFTER_THE_CLOSE, *, filing_date: dt.date = FILING_DATE,
+          earnings_release: bool = True, prices_directory=PRICES) -> dict:
+    windows = [{"kind": "filing", "filing_date": filing_date.isoformat(),
                 "accepted": accepted}]
     if earnings_release:
         windows.append({"kind": "earnings_release",
@@ -437,6 +459,151 @@ def test_a_window_whose_third_day_has_not_traded_is_refused(tmp_path):
         (short / f"{symbol}.csv").write_text("\n".join(kept) + "\n", encoding="utf-8")
     with pytest.raises(market.MarketError, match="reaction day two"):
         build(prices_directory=short)
+
+
+# --- one instant, one reaction day zero, however it is written -----------------
+
+def test_the_same_instant_written_with_and_without_a_zone_gives_one_day_zero(
+        calendar, tmp_path):
+    """15:00 in New York and 19:00 in universal time are one moment on 2026-05-08.
+
+    Read against a New York close, the second one's own wall clock says 19:00 and
+    moves day zero to the Monday, which carries the cutoff to 2026-05-13 -- one
+    trading day past reaction day two of the day the market actually reacted, and
+    a row of the table. So the stamp is converted before it is compared, and the
+    two writings are asserted equal to each other and to the day worked out here.
+    """
+    on_the_exchange_clock = build(BEFORE_THE_CLOSE_IN_NEW_YORK)
+    in_universal_time = build(BEFORE_THE_CLOSE_IN_UNIVERSAL_TIME)
+    assert on_the_exchange_clock == in_universal_time, \
+        "one instant written two ways, so it is one table"
+
+    for table in (on_the_exchange_clock, in_universal_time):
+        window = window_of(table, "filing")
+        assert window["accepted"] == ON_THE_EXCHANGE_CLOCK
+        # 15:00 is an hour before the 16:00 close, so day zero is the Friday.
+        assert window["day_zero"] == FILING_DATE.isoformat()
+        assert window["days"] == ["2026-05-08", "2026-05-11", "2026-05-12"]
+        assert table["cutoff"] == "2026-05-12"
+        assert window["reaction_window"] == pytest.approx(FILING_WINDOW_BEFORE_THE_CLOSE)
+        opens = market.outcome_window_opens(calendar, FILING_DATE)
+        assert opens == dt.date(2026, 5, 13)
+        assert dt.date.fromisoformat(window["days"][-1]) < opens
+
+    written = market.write_table(in_universal_time, tmp_path / "input_market.json")
+    text = written.read_text(encoding="utf-8")
+    on_file = json.loads(text)
+    assert not [row for row in on_file["rows"] if row["date"] > on_file["cutoff"]]
+    for day in ("2026-05-13", "2026-05-14", "2026-05-15", "2026-05-18"):
+        assert day not in text
+
+
+def test_a_zone_offset_is_converted_and_not_dropped(calendar):
+    """The control on the test above: an offset that really does land at the close.
+
+    Dropped, 20:00:00+00:00 would read as eight in the evening and
+    19:59:59+00:00 as a second before it -- both long past the close, both moving
+    day zero. Converted, the two straddle the close by one second and only one
+    of them moves.
+    """
+    assert market.reaction_day_zero(AT_THE_CLOSE_IN_UNIVERSAL_TIME, calendar) == \
+        dt.date(2026, 5, 11)
+    assert market.reaction_day_zero(
+        A_SECOND_BEFORE_THE_CLOSE_IN_UNIVERSAL_TIME, calendar) == FILING_DATE
+    assert window_of(build(AT_THE_CLOSE_IN_UNIVERSAL_TIME), "filing")["accepted"] == \
+        "2026-05-08T16:00:00-04:00"
+
+
+def test_the_universal_time_letter_is_refused_rather_than_read_as_one_zone(calendar):
+    """EDGAR writes Eastern and appends the letter, so the letter cannot be read.
+
+    The two readings of that stamp are four hours and one trading day apart:
+    EDGAR means half past four in New York, which is after the close, and the
+    standard means half past noon there, which is before it. The module picks
+    neither. The same zone written out as an offset says one thing only, and the
+    two assertions below are what it says and what EDGAR would have meant.
+    """
+    for letter in ("2026-05-08T16:30:00Z", "2026-05-08T16:30:00z"):
+        with pytest.raises(market.MarketError, match="universal-time letter"):
+            market.reaction_day_zero(letter, calendar)
+    assert market.reaction_day_zero("2026-05-08T16:30:00+00:00", calendar) == FILING_DATE
+    assert market.reaction_day_zero(AFTER_THE_CLOSE, calendar) == dt.date(2026, 5, 11)
+
+
+# --- EDGAR's own close, and the filing date it moves ---------------------------
+
+def test_the_filing_dates_one_acceptance_instant_permits():
+    """Half past five in the evening, on the same clock the exchange close is told by."""
+    assert market.EDGAR_ACCEPTANCE_CLOSE == dt.time(17, 30)
+    assert market.filing_dates_for("2026-05-08T17:29:59") == (FILING_DATE,)
+    assert market.filing_dates_for("2026-05-08T17:30:00") == \
+        (FILING_DATE, NEXT_BUSINESS_DAY)
+    assert market.business_days_after(FILING_DATE, 1) == NEXT_BUSINESS_DAY
+    # 21:30:00+00:00 is half past five in New York: one rule, one clock.
+    assert market.filing_dates_for("2026-05-08T21:30:00+00:00") == \
+        (FILING_DATE, NEXT_BUSINESS_DAY)
+
+
+def test_a_filing_accepted_after_edgars_close_is_filed_the_next_business_day(
+        calendar, tmp_path):
+    """The legitimate case in which the acceptance day and the filing date differ.
+
+    Accepted at 17:45 on the Friday, dated the Monday by EDGAR, and reacting on
+    the Monday: day zero is the next trading day after the acceptance day, so the
+    cutoff and the outcome window move with it and the window still ends before
+    the outcome window opens.
+    """
+    table = build(AFTER_EDGARS_CLOSE, filing_date=NEXT_BUSINESS_DAY)
+    window = window_of(table, "filing")
+    assert window["filing_date"] == "2026-05-11"
+    assert window["accepted"] == "2026-05-08T17:45:00-04:00", \
+        "the acceptance day and the filing date disagree, and both are kept"
+    assert window["day_zero"] == "2026-05-11"
+    assert window["days"] == ["2026-05-11", "2026-05-12", "2026-05-13"]
+    assert table["cutoff"] == "2026-05-13"
+    opens = market.outcome_window_opens(calendar, NEXT_BUSINESS_DAY)
+    assert opens == dt.date(2026, 5, 14)
+    assert dt.date.fromisoformat(window["days"][-1]) < opens
+
+    # Beta is measured over the 250 trading days before the filing date, so the
+    # moved filing date moves that window one trading day at each end. Read off
+    # the fixture rather than off the module: the last 250 days before 05-11 run
+    # from 2025-05-26 to 2026-05-08. They still end before day zero, so the days
+    # beta is measured over still touch neither the reaction window nor the
+    # filing date. Beta itself is a different number over that window and no hand
+    # value was worked out for it, so it is not asserted here.
+    before_the_filing_date = [day for day, _ in closes("SPY") if day < NEXT_BUSINESS_DAY]
+    assert before_the_filing_date[-250] == dt.date(2025, 5, 26)
+    assert before_the_filing_date[-1] == FILING_DATE
+    assert table["beta_estimation_window"] == {
+        "trading_days": 250, "first": "2025-05-26", "last": "2026-05-08"}
+    assert dt.date.fromisoformat(table["beta_estimation_window"]["last"]) < \
+        dt.date.fromisoformat(window["day_zero"])
+
+    written = market.write_table(table, tmp_path / "input_market.json")
+    text = written.read_text(encoding="utf-8")
+    on_file = json.loads(text)
+    assert not [row for row in on_file["rows"] if row["date"] > on_file["cutoff"]]
+    for day in ("2026-05-14", "2026-05-15", "2026-05-18"):
+        assert day not in text
+
+
+def test_a_filing_date_that_is_neither_permitted_day_is_refused(prices, reports):
+    """Two more directions, on top of the impossible one further down this file.
+
+    Two business days on from an after-hours acceptance is not a date EDGAR could
+    have written; and neither is the next business day when the acceptance was
+    before EDGAR's close -- 16:30 is past the exchange's close, which moves day
+    zero, and short of EDGAR's, which does not move the filing date.
+    """
+    for filing_date, accepted in ((dt.date(2026, 5, 12), AFTER_EDGARS_CLOSE),
+                                  (NEXT_BUSINESS_DAY, AFTER_THE_CLOSE)):
+        with pytest.raises(market.MarketError, match="dates the filing"):
+            market.market_table(
+                ticker=TICKER, sic=SIC, shares_outstanding=SHARES_OUTSTANDING,
+                prices=prices, short_interest=reports,
+                windows=[{"kind": "filing", "filing_date": filing_date.isoformat(),
+                          "accepted": accepted}])
 
 
 # --- two windows, kept apart ---------------------------------------------------
