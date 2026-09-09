@@ -203,13 +203,12 @@ def run(numbers_from: str, notes_from: str, *, numbers_bundle, notes_bundle,
     # control is two rows of one scorecard, and a run that wrote one of them and
     # then refused the other would leave a half-crossed pair on record in a
     # directory where nothing may be rewritten to finish it.
-    answers = {}
+    rendered = {}
     for question in QUESTIONS:
         answer = _predicted(question, predictor(question, dict(reports)))
         answer.update(question=question, rules_version=rules_version,
                       control=provenance(numbers_from, notes_from, question))
-        answers[question] = answer
-    rendered = {question: _rendered(answer) for question, answer in answers.items()}
+        rendered[question] = _rendered(answer)
     written = {question: _writable(out, CONTROL_FILES[question], text)
                for question, text in rendered.items()}
 

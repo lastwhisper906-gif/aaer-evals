@@ -120,18 +120,32 @@ def bundle(root: Path, ticker: str) -> Path:
     return folder
 
 
-@pytest.fixture
-def crossed_run(tmp_path):
-    """Both control files, written from the fixture pair by a stand-in supervisor."""
-    supervisor = StandInSupervisor()
-    out = tmp_path / "out"
-    out.mkdir()
-    result = control_shuffled.run(
+def run_crossed(tmp_path, out, predictor):
+    """The crossed run under test: AAPL's numbers side, CARR's notes side.
+
+    Only the supervisor varies between the tests that call this, so it is the
+    only thing they name.
+    """
+    return control_shuffled.run(
         NUMBERS_COMPANY, NOTES_COMPANY,
         numbers_bundle=bundle(tmp_path, NUMBERS_COMPANY),
         notes_bundle=bundle(tmp_path, NOTES_COMPANY),
-        out=out, predictor=supervisor)
-    return result, supervisor, out
+        out=out, predictor=predictor)
+
+
+@pytest.fixture
+def out(tmp_path):
+    """The empty run directory one crossed pair is written into."""
+    folder = tmp_path / "out"
+    folder.mkdir()
+    return folder
+
+
+@pytest.fixture
+def crossed_run(tmp_path, out):
+    """Both control files, written from the fixture pair by a stand-in supervisor."""
+    supervisor = StandInSupervisor()
+    return run_crossed(tmp_path, out, supervisor), supervisor, out
 
 
 # --- the fixture pair is what it claims to be --------------------------------
@@ -306,10 +320,8 @@ def test_the_control_file_is_the_prediction_schema(crossed_run):
 
 # --- what is refused ---------------------------------------------------------
 
-def test_a_supervisor_given_one_companys_own_two_halves_is_refused(tmp_path):
+def test_a_supervisor_given_one_companys_own_two_halves_is_refused(tmp_path, out):
     """Uncrossed is the real run. A control that is the real run measures nothing."""
-    out = tmp_path / "out"
-    out.mkdir()
     with pytest.raises(ControlError, match="real run"):
         control_shuffled.run(
             NUMBERS_COMPANY, NUMBERS_COMPANY,
@@ -319,9 +331,7 @@ def test_a_supervisor_given_one_companys_own_two_halves_is_refused(tmp_path):
     assert list(out.iterdir()) == []
 
 
-def test_one_bundle_used_for_both_halves_is_refused(tmp_path):
-    out = tmp_path / "out"
-    out.mkdir()
+def test_one_bundle_used_for_both_halves_is_refused(tmp_path, out):
     only = bundle(tmp_path, NUMBERS_COMPANY)
     with pytest.raises(ControlError):
         control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY,
@@ -330,10 +340,8 @@ def test_one_bundle_used_for_both_halves_is_refused(tmp_path):
     assert list(out.iterdir()) == []
 
 
-def test_a_missing_report_writes_no_control_file(tmp_path):
+def test_a_missing_report_writes_no_control_file(tmp_path, out):
     """Fail closed: half a crossing is not a control with one file missing."""
-    out = tmp_path / "out"
-    out.mkdir()
     notes = bundle(tmp_path, NOTES_COMPANY)
     (notes / "report_notes_vs_market.md").unlink()
     supervisor = StandInSupervisor()
@@ -346,21 +354,16 @@ def test_a_missing_report_writes_no_control_file(tmp_path):
 
 
 @pytest.mark.parametrize("missing", ["checklist", "market_direction", "tier"])
-def test_an_answer_short_of_the_schema_is_refused(tmp_path, missing):
+def test_an_answer_short_of_the_schema_is_refused(tmp_path, out, missing):
     short = {question: {key: value for key, value in answer.items() if key != missing}
              for question, answer in ANSWERS.items()}
-    out = tmp_path / "out"
-    out.mkdir()
     with pytest.raises(ControlError, match=missing):
-        control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY,
-                             numbers_bundle=bundle(tmp_path, NUMBERS_COMPANY),
-                             notes_bundle=bundle(tmp_path, NOTES_COMPANY),
-                             out=out, predictor=StandInSupervisor(short))
+        run_crossed(tmp_path, out, StandInSupervisor(short))
     assert list(out.iterdir()) == []
 
 
 @pytest.mark.parametrize("short_question", list(ANSWERS))
-def test_a_short_answer_to_either_question_writes_neither_file(tmp_path,
+def test_a_short_answer_to_either_question_writes_neither_file(tmp_path, out,
                                                                short_question):
     """Two rows of one scorecard. Half a crossed pair cannot be finished later:
     the directory it would land in is one where nothing may be rewritten."""
@@ -368,46 +371,31 @@ def test_a_short_answer_to_either_question_writes_neither_file(tmp_path,
     answers[short_question] = {key: value
                                for key, value in ANSWERS[short_question].items()
                                if key != "tier"}
-    out = tmp_path / "out"
-    out.mkdir()
     with pytest.raises(ControlError, match="tier"):
-        control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY,
-                             numbers_bundle=bundle(tmp_path, NUMBERS_COMPANY),
-                             notes_bundle=bundle(tmp_path, NOTES_COMPANY),
-                             out=out, predictor=StandInSupervisor(answers))
+        run_crossed(tmp_path, out, StandInSupervisor(answers))
     assert list(out.iterdir()) == []
 
 
-def test_continuous_on_the_accounting_question_is_refused(tmp_path):
+def test_continuous_on_the_accounting_question_is_refused(tmp_path, out):
     """`continuous` is financial pressure only (docs/CHECKLIST.md §7)."""
     answers = {"accounting_reliability": dict(ACCOUNTING_ANSWER,
                                               continuous=PRESSURE_ANSWER["continuous"]),
                "financial_pressure": PRESSURE_ANSWER}
-    out = tmp_path / "out"
-    out.mkdir()
     with pytest.raises(ControlError, match="continuous"):
-        control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY,
-                             numbers_bundle=bundle(tmp_path, NUMBERS_COMPANY),
-                             notes_bundle=bundle(tmp_path, NOTES_COMPANY),
-                             out=out, predictor=StandInSupervisor(answers))
+        run_crossed(tmp_path, out, StandInSupervisor(answers))
 
 
 @pytest.mark.parametrize("on_record", [ACCOUNTING_FILE, PRESSURE_FILE])
-def test_a_control_file_already_on_record_is_not_rewritten(tmp_path, on_record):
+def test_a_control_file_already_on_record_is_not_rewritten(tmp_path, out, on_record):
     """A run directory is append-only. A correction is a new run, not an overwrite.
 
     Either file being on record stops the whole run, so neither half of an
     earlier crossing is left standing beside a fresh half of another.
     """
-    out = tmp_path / "out"
-    out.mkdir()
     already = '{"question": "something else"}\n'
     (out / on_record).write_text(already, encoding="utf-8")
     with pytest.raises(ControlError, match="already on record"):
-        control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY,
-                             numbers_bundle=bundle(tmp_path, NUMBERS_COMPANY),
-                             notes_bundle=bundle(tmp_path, NOTES_COMPANY),
-                             out=out, predictor=StandInSupervisor())
+        run_crossed(tmp_path, out, StandInSupervisor())
     assert [path.name for path in out.iterdir()] == [on_record]
     assert (out / on_record).read_text(encoding="utf-8") == already
 
@@ -416,8 +404,5 @@ def test_writing_the_same_control_twice_is_allowed(crossed_run, tmp_path):
     """Rewriting identical content changes nothing on record, so it is not a change."""
     _, _, out = crossed_run
     before = (out / ACCOUNTING_FILE).read_text(encoding="utf-8")
-    control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY,
-                         numbers_bundle=bundle(tmp_path, NUMBERS_COMPANY),
-                         notes_bundle=bundle(tmp_path, NOTES_COMPANY),
-                         out=out, predictor=StandInSupervisor())
+    run_crossed(tmp_path, out, StandInSupervisor())
     assert (out / ACCOUNTING_FILE).read_text(encoding="utf-8") == before
