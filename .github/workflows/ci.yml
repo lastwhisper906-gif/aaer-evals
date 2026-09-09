@@ -23,15 +23,15 @@ jobs:
       - name: install
         run: pip install -r requirements.txt
 
-      # The append check needs the baseline branch, which checkout does not
-      # fetch on a pull request.
+      # The append check and the plain-name check both read the baseline branch,
+      # which checkout does not fetch on a pull request. The ref is named again
+      # in the step below rather than left to the Makefile default, so changing
+      # that default cannot quietly point CI at a branch nobody fetched.
       - name: fetch the baseline branch
         run: git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
 
-      # runs/, rules/ and events/ are append-only. A failure here means the
-      # prediction record is damaged, so it runs before the tests, not after.
-      - name: append check
-        run: python -m src.append_check --baseline origin/main
-
-      - name: tests
-        run: python -m pytest tests -q
+      # One gate, defined once, in the Makefile: the append check on the
+      # record, the plain-name check on the names, then the tests. Naming the
+      # steps again here would be the same rule written in two files.
+      - name: check
+        run: make check PYTHON=python BASELINE=origin/main
