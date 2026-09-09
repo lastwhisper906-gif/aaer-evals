@@ -26,6 +26,12 @@ predictions the stand-in supervisor returns are written out below, and the
 crossing is asserted against the fixture text, never against what the runner
 reported about itself.
 
+**Which filing each half was written from** is `tests/fixtures/{ticker}/manifest.json`,
+the record of what was fetched from EDGAR: AAPL's 10-K is accession
+`0000320193-25-000079` filed 2025-10-31, CARR's is `0001783180-26-000008` filed
+2026-02-05, and those two accessions are the ones the committed reports carry in
+their item ids. The ninety-seven days between them are counted out below.
+
 The crossing assertion carries its own control
 ----------------------------------------------
 
@@ -36,16 +42,25 @@ crossing assertions have something to bite on. The sharp form of the crossing is
 `test_the_notes_half_is_not_the_numbers_company_own_notes`: AAPL's own notes
 report is in the fixture and sitting in the bundle, and the supervisor did not
 get it.
+
+A label is not a crossing, and neither is a round trip
+------------------------------------------------------
+
+Two directories that both hold AAPL's reports satisfy every label a caller could
+pass, so `test_two_directories_of_one_companys_reports_are_refused` builds that
+pair and asserts the refusal names AAPL -- the company found on both sides --
+and not CARR, the company the label claimed.
 """
 
 from __future__ import annotations
 
+import datetime as dt
 import json
 from pathlib import Path
 
 import pytest
 
-from src import control_shuffled
+from src import control_shuffled, cutoff_guard
 from src.control_shuffled import ControlError
 from src.fetch_fixtures import TICKERS
 
@@ -57,6 +72,20 @@ PAIR = FIXTURES / "shuffled_report_pair"
 # supplies the notes side. docs/CHECKLIST.md §8, applied to the twelve.
 NUMBERS_COMPANY = "AAPL"
 NOTES_COMPANY = "CARR"
+
+# The filing each company's committed reports were written from, read off
+# tests/fixtures/{ticker}/manifest.json. Asserted against the manifests below
+# rather than trusted here.
+NUMBERS_ACCESSION = "0000320193-25-000079"
+NOTES_ACCESSION = "0001783180-26-000008"
+NUMBERS_FILED = "2025-10-31"
+NOTES_FILED = "2026-02-05"
+
+# One id AAPL's own notes-text report carries -- the report the crossing takes
+# away from the supervisor, so it is in none of the four reports it was handed --
+# and one the crossed set does hold, out of AAPL's numbers-versus-market report.
+UNCROSSED_ITEM = "0000320193-25-000079:notes:receivables:1"
+CROSSED_ITEM = "0000320193-25-000079:numbers_vs_market:1"
 
 # docs/INPUT_SPEC.md §6.
 ACCOUNTING_FILE = "control_shuffled_accounting.json"
@@ -120,6 +149,27 @@ def bundle(root: Path, ticker: str) -> Path:
     return folder
 
 
+def annual(ticker: str) -> dict:
+    """The 10-K row `tests/fixtures/{ticker}/manifest.json` records for a company."""
+    return cutoff_guard.one_document(ticker, "10-K", "primary_html")
+
+
+def scored_run(folder: Path, ticker: str) -> Path:
+    """Make a bundle say which filing it is scoring, the way a run directory does.
+
+    `src/assemble_bundle.py` writes the triggering report's own filing date into
+    `input_manifest.json`, and the cutoff is that date in those words. Nothing
+    here is invented: the accession and the date come out of the company's own
+    committed manifest.
+    """
+    row = annual(ticker)
+    (folder / control_shuffled.MANIFEST).write_text(
+        json.dumps({"ticker": ticker, "form": "10-K", "accession": row["accession"],
+                    "filing_date": row["filing_date"], "cutoff": row["filing_date"]},
+                   indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return folder
+
+
 def run_crossed(tmp_path, out, predictor):
     """The crossed run under test: AAPL's numbers side, CARR's notes side.
 
@@ -174,6 +224,45 @@ def test_each_report_names_its_own_company():
             text = report_text(ticker, name)
             assert text.startswith(f"# {ticker} ")
             assert other not in text
+
+
+def test_each_report_carries_the_accession_the_manifest_records_for_that_company():
+    """A half says which filing it came from, and the record agrees."""
+    for ticker, accession in ((NUMBERS_COMPANY, NUMBERS_ACCESSION),
+                              (NOTES_COMPANY, NOTES_ACCESSION)):
+        assert annual(ticker)["accession"] == accession
+        for name in control_shuffled.REPORTS:
+            assert control_shuffled.named_accession(
+                name, report_text(ticker, name)) == accession
+            assert control_shuffled.named_company(
+                name, report_text(ticker, name)) == ticker
+
+
+def test_the_partner_annual_report_is_ninety_seven_days_after_the_one_being_scored():
+    """Read off the two manifests, and counted out here rather than trusted.
+
+    2025-10-31 to 2025-11-30 is 30 days, to 2025-12-31 is 61, to 2026-01-31 is
+    92, and to 2026-02-05 is 97. The company being scored keeps the numbers
+    side, so the notes side is the later filing of the two.
+    """
+    assert annual(NUMBERS_COMPANY)["filing_date"] == NUMBERS_FILED
+    assert annual(NOTES_COMPANY)["filing_date"] == NOTES_FILED
+    apart = dt.date.fromisoformat(NOTES_FILED) - dt.date.fromisoformat(NUMBERS_FILED)
+    assert apart.days == 97
+
+
+def test_seven_of_the_twelve_pairings_put_the_partner_after_the_filing_being_scored():
+    """The adverse result, counted rather than described.
+
+    The pairing rule is fixed and the cutoff is absolute, and on the twelve as
+    they stand the two collide for seven companies. The seven are written out
+    here from the twelve annual filing dates in the committed manifests, so the
+    day the fixture set moves this test says which pairings moved with it.
+    """
+    late = tuple(ticker for ticker in control_shuffled.PAIRING_ORDER
+                 if annual(control_shuffled.partner(ticker))["filing_date"] >
+                 annual(ticker)["filing_date"])
+    assert late == ("AAPL", "CSCO", "ESE", "GNRC", "LFUS", "PANW", "QCOM")
 
 
 # --- which company is B ------------------------------------------------------
@@ -290,7 +379,27 @@ def test_the_control_file_records_which_company_each_half_came_from(crossed_run)
             "report_notes_text.md": NOTES_COMPANY,
             "report_notes_vs_market.md": NOTES_COMPANY,
         }
-        assert control["numbers_from"] != control["notes_from"]
+
+
+def test_the_control_file_records_which_run_each_half_came_from(crossed_run, tmp_path):
+    """The part a label cannot forge.
+
+    Everything above this reads back the two strings `run_crossed` passed in, so
+    it stands whether the halves were crossed or not. The run directory and the
+    accession are read off the halves themselves -- the directory the reports
+    were opened from, and the accession their own item ids begin with -- so a
+    control file written from one company's two halves cannot record two.
+    """
+    _, _, out = crossed_run
+    for name in (ACCOUNTING_FILE, PRESSURE_FILE):
+        control = written(out, name)["control"]
+        assert control["numbers_run"] == str((tmp_path / NUMBERS_COMPANY).resolve())
+        assert control["notes_run"] == str((tmp_path / NOTES_COMPANY).resolve())
+        assert control["numbers_accession"] == NUMBERS_ACCESSION
+        assert control["notes_accession"] == NOTES_ACCESSION
+        # Nothing here declared which filing was being scored, and rather than
+        # pass in silence the file says so in its own text.
+        assert control["scored_filing_date"] is None
 
 
 def test_the_control_file_names_the_scorecard_row_it_is_scored_on(crossed_run):
@@ -406,3 +515,166 @@ def test_writing_the_same_control_twice_is_allowed(crossed_run, tmp_path):
     before = (out / ACCOUNTING_FILE).read_text(encoding="utf-8")
     run_crossed(tmp_path, out, StandInSupervisor())
     assert (out / ACCOUNTING_FILE).read_text(encoding="utf-8") == before
+
+
+# --- the label is not the crossing -------------------------------------------
+
+def test_two_directories_of_one_companys_reports_are_refused(tmp_path, out):
+    """The real uncrossed run, wearing the label of the shuffled one.
+
+    Two directories and two labels satisfy every check a label can carry, and
+    what would land on disk is a control file recording AAPL and CARR over a
+    supervisor that read AAPL's own numbers beside AAPL's own notes. The reports
+    say whose they are, so the refusal names AAPL and not the label.
+    """
+    supervisor = StandInSupervisor()
+    with pytest.raises(ControlError, match="real run") as refusal:
+        control_shuffled.run(
+            NUMBERS_COMPANY, NOTES_COMPANY,
+            numbers_bundle=bundle(tmp_path / "first", NUMBERS_COMPANY),
+            notes_bundle=bundle(tmp_path / "second", NUMBERS_COMPANY),
+            out=out, predictor=supervisor)
+    assert NUMBERS_COMPANY in str(refusal.value)
+    assert NOTES_COMPANY not in str(refusal.value)
+    assert list(out.iterdir()) == []
+    assert supervisor.calls == []
+
+
+def test_a_half_whose_label_disagrees_with_its_own_reports_is_refused(tmp_path, out):
+    """The label is what the control file would carry, so the reports settle it."""
+    supervisor = StandInSupervisor()
+    with pytest.raises(ControlError, match="labelled"):
+        control_shuffled.run(NOTES_COMPANY, NUMBERS_COMPANY,
+                             numbers_bundle=bundle(tmp_path, NUMBERS_COMPANY),
+                             notes_bundle=bundle(tmp_path, NOTES_COMPANY),
+                             out=out, predictor=supervisor)
+    assert list(out.iterdir()) == []
+    assert supervisor.calls == []
+
+
+@pytest.mark.parametrize("side", ["numbers", "notes"])
+def test_a_ticker_outside_the_twelve_is_refused(tmp_path, out, side):
+    """`partner` has always checked; the runner never asked it to."""
+    labels = {"numbers": ("NOTATICKER", NOTES_COMPANY),
+              "notes": (NUMBERS_COMPANY, "NOTATICKER")}[side]
+    supervisor = StandInSupervisor()
+    with pytest.raises(ControlError, match="not one of the twelve"):
+        control_shuffled.run(*labels,
+                             numbers_bundle=bundle(tmp_path, NUMBERS_COMPANY),
+                             notes_bundle=bundle(tmp_path, NOTES_COMPANY),
+                             out=out, predictor=supervisor)
+    assert list(out.iterdir()) == []
+    assert supervisor.calls == []
+
+
+# --- the cutoff reaches the crossed set --------------------------------------
+
+def test_a_partner_filed_after_the_filing_being_scored_is_refused(tmp_path, out):
+    """CLAUDE.md: nothing filed after the triggering report enters the input.
+
+    The pair is the one the pairing rule itself produces for AAPL, and CARR's
+    annual report was filed ninety-seven days after the one being scored. The
+    crossed four reports are not a bundle and carry no manifest, so this is the
+    only place that gate can be applied.
+    """
+    numbers = scored_run(bundle(tmp_path, NUMBERS_COMPANY), NUMBERS_COMPANY)
+    supervisor = StandInSupervisor()
+    with pytest.raises(ControlError, match=NOTES_FILED):
+        control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY,
+                             numbers_bundle=numbers,
+                             notes_bundle=bundle(tmp_path, NOTES_COMPANY),
+                             out=out, predictor=supervisor)
+    assert list(out.iterdir()) == []
+    assert supervisor.calls == []
+
+
+def test_the_same_two_companies_crossed_the_other_way_is_inside_the_cutoff(tmp_path, out):
+    """The gate refuses a late partner, not every partner.
+
+    CARR filed after AAPL, so a run scoring CARR may be handed AAPL's notes.
+    That crossing is not the one the pairing rule draws -- `partner("CARR")` is
+    CIEN -- and `run` is handed two companies rather than drawing them, so it is
+    the dates that decide here and not the rule.
+
+    Nothing in the accounting answer resolves against this crossing: it cites
+    AAPL's numbers-versus-market report, which is on the numbers side and so is
+    CARR's here. One item drops, which is the citation gate working.
+    """
+    numbers = scored_run(bundle(tmp_path, NOTES_COMPANY), NOTES_COMPANY)
+    control_shuffled.run(NOTES_COMPANY, NUMBERS_COMPANY, numbers_bundle=numbers,
+                         notes_bundle=bundle(tmp_path, NUMBERS_COMPANY),
+                         out=out, predictor=StandInSupervisor())
+    assert sorted(path.name for path in out.iterdir()) == \
+           sorted((ACCOUNTING_FILE, PRESSURE_FILE))
+    control = written(out, ACCOUNTING_FILE)["control"]
+    assert control["scored_filing_date"] == NOTES_FILED
+    assert control["numbers_from"] == NOTES_COMPANY
+    assert control["notes_from"] == NUMBERS_COMPANY
+    assert control["counts"]["dropped_items"] == 1
+
+
+# --- what the citations resolve against --------------------------------------
+
+def test_the_planted_citations_are_what_this_file_says_they_are():
+    """The control on the two assertions below, read out of the fixture text."""
+    assert f"[{UNCROSSED_ITEM}]" in report_text(NUMBERS_COMPANY, "report_notes_text.md")
+    crossed = {name: report_text(
+        NUMBERS_COMPANY if name in control_shuffled.NUMBERS_SIDE else NOTES_COMPANY,
+        name) for name in control_shuffled.REPORTS}
+    declared = control_shuffled.declared_ids(crossed)
+    assert UNCROSSED_ITEM not in declared
+    assert CROSSED_ITEM in declared
+
+
+def test_an_item_citing_the_notes_report_that_was_taken_away_is_dropped_and_counted(
+        tmp_path, out):
+    """The sharp form of the citation gate.
+
+    A supervisor pattern-matching AAPL's own run would cite AAPL's own notes
+    item, and that item is in none of the four reports it was handed. The entry
+    goes whole, the top signal naming it goes with it, and the count says one.
+    """
+    answers = dict(ANSWERS)
+    answers["accounting_reliability"] = dict(
+        ACCOUNTING_ANSWER,
+        checklist=ACCOUNTING_ANSWER["checklist"] + [
+            {"key": "reserve_release_unexplained", "finding": "yes",
+             "confidence": 0.7,
+             "evidence": [{"upstream_item_id": UNCROSSED_ITEM}]}],
+        top_signals=["receivables_growth_outruns_revenue",
+                     "reserve_release_unexplained"])
+    run_crossed(tmp_path, out, StandInSupervisor(answers))
+
+    accounting = written(out, ACCOUNTING_FILE)
+    assert [entry["key"] for entry in accounting["checklist"]] == \
+           ["receivables_growth_outruns_revenue"]
+    assert accounting["top_signals"] == ["receivables_growth_outruns_revenue"]
+    assert accounting["control"]["counts"]["dropped_items"] == 1
+    dropped = accounting["control"]["dropped_items"][0]
+    assert dropped["item_id"] == \
+           "accounting_reliability:checklist:reserve_release_unexplained"
+    assert UNCROSSED_ITEM in dropped["reason"]
+    # The other question cited nothing that failed, so nothing left it.
+    assert written(out, PRESSURE_FILE)["control"]["counts"]["dropped_items"] == 0
+
+
+def test_a_market_call_resting_on_nothing_in_the_crossed_set_degrades(tmp_path, out):
+    """§7 requires the field, so it cannot go: it becomes the abstention §7 allows."""
+    answers = dict(ANSWERS)
+    answers["accounting_reliability"] = dict(
+        ACCOUNTING_ANSWER, market_direction={"p_up": 0.7, "basis": [UNCROSSED_ITEM]})
+    run_crossed(tmp_path, out, StandInSupervisor(answers))
+    accounting = written(out, ACCOUNTING_FILE)
+    assert accounting["market_direction"] == {"p_up": "insufficient", "basis": []}
+    assert accounting["control"]["counts"]["dropped_items"] == 1
+    assert accounting["control"]["dropped_items"][0]["item_id"] == \
+           "accounting_reliability:market_direction"
+
+
+def test_an_item_citing_the_crossed_set_stands(crossed_run):
+    """The control on the drop tests: the answer that resolves is written whole."""
+    _, _, out = crossed_run
+    accounting = written(out, ACCOUNTING_FILE)
+    assert accounting["checklist"] == ACCOUNTING_ANSWER["checklist"]
+    assert accounting["control"]["counts"]["dropped_items"] == 0
+    assert accounting["control"]["dropped_items"] == []
