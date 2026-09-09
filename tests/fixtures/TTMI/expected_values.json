@@ -1,0 +1,132 @@
+{
+  "auditors_report.10-K.audit_firm": {
+    "value": "KPMG LLP",
+    "from": "read by eye in 10-K/ttmi-20251229.htm.gz: the auditor's signature line closing the Report of Independent Registered Public Accounting Firm is '/s/ KPMG LLP', followed by 'We have served as the Company's auditor since 2014.', Irvine, California, February 13, 2026"
+  },
+  "auditors_report.10-K.critical_audit_matters": {
+    "value": 1,
+    "from": "read by eye in 10-K/ttmi-20251229.htm.gz: one matter under the singular heading 'Critical Audit Matter' - 'Evaluation of the sufficiency of audit evidence over net sales' ('We identified the evaluation of the sufficiency of audit evidence over net sales as a critical audit matter'); no second matter is introduced"
+  },
+  "auditors_report.10-K.paragraphs": {
+    "value": 27,
+    "from": "already judged: tests/test_split_controls.py::recount finds the auditor's report with regexes written out in the test file, over tests/independent_text.block_text (html.parser), selects by the content 'critical audit matter' and splits on blank lines, importing nothing from src/; that recount was re-run standalone here and returns 27"
+  },
+  "auditors_report.10-K.the_report_states": {
+    "value": "one",
+    "from": "read by eye in 10-K/ttmi-20251229.htm.gz: 'The critical audit matter communicated below is a matter arising from the current period audit of the consolidated financial statements' - singular"
+  },
+  "bundle.10-K.eight_k": {
+    "value": 0,
+    "from": "hand computation from manifest.json filing dates: the only stored 8-K (accession 0001193125-26-336163) was filed 2026-08-06, after the 10-K's filing date of 2026-02-17, so no 8-K paragraph reaches the 10-K bundle"
+  },
+  "bundle.10-Q.eight_k": {
+    "value": 0,
+    "from": "hand computation from manifest.json filing dates: the only stored 8-K (accession 0001193125-26-336163) was filed 2026-08-06, after the 10-Q's filing date of 2026-08-05, so no 8-K paragraph reaches the 10-Q bundle"
+  },
+  "cleaner.10-K.tables": {
+    "value": 67,
+    "from": "the filing: 67 <table> start tags in 10-K/ttmi-20251229.htm.gz, counted by feeding the gunzipped bytes to an html.parser.HTMLParser subclass whose handle_starttag increments on tag == 'table'; imports nothing from src/"
+  },
+  "cleaner.10-Q.tables": {
+    "value": 39,
+    "from": "the filing: 39 <table> start tags in 10-Q/ttmi-20260629.htm.gz, counted with the same html.parser start-tag counter; imports nothing from src/"
+  },
+  "cleaner.8-K.tables": {
+    "value": 21,
+    "from": "the filing: 21 <table> start tags in 8-K/d132953dex991.htm, counted with the same html.parser start-tag counter; equals earnings_release.8-K.exhibit_99_1_tables (21) because the cleaner's 8-K role is that same exhibit"
+  },
+  "cleaner.8-K.tables_already_in_xbrl": {
+    "value": 0,
+    "from": "zero by construction - no XBRL instance is fetched for an 8-K exhibit, so the cleaner is handed an empty fact set (tests/test_clean_text.py:201 passes facts=[]) and no table can match"
+  },
+  "earnings_release.8-K.eight_k_filings_in_the_index": {
+    "value": 102,
+    "from": "already judged: tests/test_parse_8k.py:57 reads submissions.json with json alone and counts the rows whose form is '8-K' or '8-K/A', importing nothing from src/; that recount was re-run standalone here and returns 102"
+  },
+  "earnings_release.8-K.exhibit_99_1_blocks_outside_tables": {
+    "value": 32,
+    "from": "the exhibit: 32 blocks with visible text in 8-K/d132953dex991.htm after every <table>...</table> region is replaced by an empty <p></p> and the remainder is block-split with tests/independent_text.block_paragraphs (html.parser); imports nothing from src/"
+  },
+  "earnings_release.8-K.exhibit_99_1_dropped": {
+    "value": 1,
+    "from": "read by eye over the 32 independent blocks of 8-K/d132953dex991.htm: no bare page numbers, and one safe-harbour paragraph - block 25, under the 'Forward-Looking Statements' heading, opening 'The preliminary financial results included in this press release represent the most current information available to management. This release contains forward-looking statements that relate to future events or performance.' DISAGREES with the parser branch's recorded 0: src/clean_text.py drops a paragraph only when _FORWARD_LOOKING and _SAFE_HARBOUR both match, and TTM's disclaimer uses none of the statutory phrasings _SAFE_HARBOUR looks for (it writes 'actual events or results may differ' and 'does not undertake to update', not 'actual results may differ' / 'undertake no obligation' / 'within the meaning of' / 'safe harbor' / Section 27A/21E)"
+  },
+  "earnings_release.8-K.exhibit_99_1_tables": {
+    "value": 21,
+    "from": "already judged: tests/test_parse_8k.py:119 re-derives it with a bare regex for <table> elements holding at least one cell with a character in it, importing nothing from src/; that recount was re-run standalone here and returns 21"
+  },
+  "earnings_release.8-K.held_items": {
+    "value": [
+      "2.02",
+      "9.01"
+    ],
+    "from": "the submissions index: the single filings row in submissions.json with accession 0001193125-26-336163 carries items '2.02,9.01', split on commas and stripped; docs/INPUT_SPEC.md section 1 names the index's items field as the source for 8-K item codes"
+  },
+  "item_4_controls.10-Q.paragraphs": {
+    "value": 7,
+    "from": "already judged: tests/test_split_controls.py::recount applies the Item 4 boundaries written out as regexes in the test file to tests/independent_text.block_text (html.parser) and splits on blank lines, importing nothing from src/; re-run standalone here it returns 7"
+  },
+  "item_9a.10-K.paragraphs": {
+    "value": 11,
+    "from": "already judged: tests/test_split_controls.py::recount, same mechanism against the Item 9A boundaries, importing nothing from src/; re-run standalone here it returns 11"
+  },
+  "mdna.10-K.heading_candidates": {
+    "value": 2,
+    "from": "the filing: two Item 7 MD&A heading lines in 10-K/ttmi-20251229.htm.gz - the table-of-contents entry (a bare 'Item 7.' whose next non-empty line is the MD&A title) and the section heading itself ('Item 7. Management's Discussion and Analysis of Financial Condition and Results of Operations'), found over tests/independent_text.block_text with a written-out regex"
+  },
+  "mdna.10-K.paragraphs": {
+    "value": 373,
+    "from": "already judged: tests/test_split_mdna.py:77 recount builds the block text with html.parser via tests/independent_text, takes the LAST Item 7 heading with its own regexes, stops at the first Item 7A or Item 8 heading and splits on blank lines, importing nothing from src/; re-run standalone here it returns 373 (this count is far too large to read off by eye, which is why the independent recount and not an eye-read is the source)"
+  },
+  "mdna.10-Q.heading_candidates": {
+    "value": 2,
+    "from": "the filing: two Item 2 MD&A heading lines in 10-Q/ttmi-20260629.htm.gz - the table-of-contents entry and the section heading itself, both printed in full as 'Item 2. Management's Discussion and Analysis of Financial Condition and Results of Operations'"
+  },
+  "mdna.10-Q.paragraphs": {
+    "value": 369,
+    "from": "already judged: tests/test_split_mdna.py:77 recount, Item 2 boundaries, importing nothing from src/; re-run standalone here it returns 369"
+  },
+  "note_history.10-Q.key_notes": {
+    "value": 8,
+    "from": "the two 10-Q XBRL instances, paired by hand: reading the TextBlock tag names with ElementTree and marking the six key notes docs/INPUT_SPEC.md section 5.3 lists, the current instance carries 8 - revenue recognition (RevenueFromContractWithCustomer, DisaggregationOfRevenue), critical accounting estimates (OrganizationConsolidationAndPresentationOfFinancialStatementsDisclosureAndSignificantAccountingPolicies), contingencies (CommitmentsAndContingenciesDisclosure), debt (LongTermDebt, ScheduleOfDebtInstruments, ttmi:ScheduleOfUnamortizedDiscountAndDebtIssuanceCosts, ScheduleOfMaturitiesOfLongTermDebt) - and the prior instance the same 8 less ScheduleOfMaturitiesOfLongTermDebt; 7 paired + 1 current-only + 0 prior-only = 8"
+  },
+  "note_history.10-Q.match_rules": {
+    "value": {
+      "tag_name": 7,
+      "no_prior_note": 1
+    },
+    "from": "the same hand pairing broken out by rule: 7 tag_name (the marked names present in both instances) and 1 no_prior_note (us-gaap:ScheduleOfMaturitiesOfLongTermDebtTableTextBlock, a debt table new this quarter); no marked name is in the prior instance alone, so no_current_note is 0 and is omitted, and no extension tag was renamed, so title_similarity is 0 and is omitted"
+  },
+  "note_history.10-Q.prior_accession": {
+    "value": "0001193125-26-201403",
+    "from": "the submissions index: the latest 10-Q row in submissions.json filed strictly before the current 10-Q's 2026-08-05 is accession 0001193125-26-201403, filed 2026-05-01; it equals the fetch manifest's ('10-Q','prior_period') accession, whose bytes tests/test_fixtures.py verifies by sha256"
+  },
+  "notes.10-K.extension_tag_count": {
+    "value": 8,
+    "from": "the XBRL instance: 8 TextBlock elements in 10-K/ttmi-20251229_htm.xml.gz carried on TTM's own extension namespace http://www.ttmtech.com/20251229 (ScheduleOfEstimatedUsefulLivesOfPropertyPlantAndEquipment, ScheduleOfRevenueRecognitionAndSalesReturnsAndAllowances, ScheduleOfCompositionOfCertainConsolidatedFinancialStatementCaptions, ScheduleOfUnamortizedDiscountAndDebtIssuanceCosts, SummaryOfIncomeTaxesPaidNetOfRefunds, ScheduleOfSupplementalCashFlowInformationRelatedToLeases, ScheduleOfSupplementalBalanceSheetInformationRelatedToLeases, ScheduleOfLesseeLeaseLiabilityMaturity), counted with ElementTree by excluding the namespaces containing /us-gaap/, /dei/, /srt/, xbrl.sec.gov and fasb.org; imports nothing from src/"
+  },
+  "notes.10-K.textblock_count": {
+    "value": 76,
+    "from": "already judged: tests/test_extract_notes.py:47 counts elements whose local name ends in 'TextBlock' straight off the instance with ElementTree and the input spec's rule, importing nothing from src/; re-counted standalone here it returns 76"
+  },
+  "notes.10-Q.extension_tag_count": {
+    "value": 2,
+    "from": "the XBRL instance: 2 TextBlock elements in 10-Q/ttmi-20260629_htm.xml.gz on TTM's own extension namespace http://www.ttmtech.com/20260629 (ScheduleOfCompositionOfCertainConsolidatedFinancialStatementCaptions, ScheduleOfUnamortizedDiscountAndDebtIssuanceCosts), counted with the same ElementTree rule; imports nothing from src/"
+  },
+  "notes.10-Q.textblock_count": {
+    "value": 28,
+    "from": "already judged: tests/test_extract_notes.py:47, same ElementTree hand count against the 10-Q instance; re-counted standalone here it returns 28"
+  },
+  "numbers.10-K.fact_count": {
+    "value": 1163,
+    "from": "already judged: tests/test_extract_numbers.py::_count_by_hand re-reads the instance with ElementTree and the selection rule as docs/INPUT_SPEC.md words it (a us-gaap or dei element carrying a unitRef), importing nothing from src/; re-counted standalone here it returns 1163. companyfacts cannot source this: it is a count of elements in one filing's instance, while companyfacts is the deduplicated standard-taxonomy record across all filings"
+  },
+  "numbers.10-Q.fact_count": {
+    "value": 1360,
+    "from": "already judged: the same hand counter summed over both 10-Q instances (current 10-Q/ttmi-20260629_htm.xml.gz and prior-period 10-Q/ttmi-20260330_htm.xml.gz); re-counted standalone here it returns 1360"
+  },
+  "prior_period_diff.10-Q.prior_accession": {
+    "value": "0001193125-26-201403",
+    "from": "the submissions index, by the same derivation as note_history.10-Q.prior_accession, and necessarily the same string: the latest 10-Q filed before 2026-08-05 is 0001193125-26-201403"
+  }
+}

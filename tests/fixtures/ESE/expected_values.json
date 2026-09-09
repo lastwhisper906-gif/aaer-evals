@@ -1,0 +1,133 @@
+{
+  "auditors_report.10-K.audit_firm": {
+    "value": "Grant Thornton LLP",
+    "from": "read by eye in 10-K/ese-20250930x10k.htm.gz: the auditor signs '/s/ GRANT THORNTON LLP', St. Louis, Missouri, December 1, 2025; recorded in ordinary case because the test normalises case and whitespace"
+  },
+  "auditors_report.10-K.critical_audit_matters": {
+    "value": 2,
+    "from": "read by eye in 10-K/ese-20250930x10k.htm.gz: two matters under 'Critical audit matters' - 'Revenue Recognition - Estimate of contract costs expected at completion' ('We identified the determination of the estimated total contract costs at completion ... as a critical audit matter') and 'Acquisition of ESCO Maritime Solutions - valuation of customer relationships' ('The principal consideration for our determination that the valuation of customer relationships is a critical audit matter')"
+  },
+  "auditors_report.10-K.paragraphs": {
+    "value": 77,
+    "from": "already judged: tests/test_split_controls.py::recount re-finds the section with regexes written out in that test file over tests/independent_text.block_text (html.parser) and splits it on blank lines, importing nothing from src/; 77 paragraphs from 10-K/ese-20250930x10k.htm.gz - the block selected by content runs from the financial-statement opinion through the separate internal-control report, because no line between them matches the recount's end regexes"
+  },
+  "auditors_report.10-K.the_report_states": {
+    "value": "many",
+    "from": "read by eye in 10-K/ese-20250930x10k.htm.gz: 'The critical audit matters communicated below are matters arising from the current period audit of the financial statements' - plural"
+  },
+  "bundle.10-K.eight_k": {
+    "value": 0,
+    "from": "hand computation from manifest.json filing dates: the stored 8-K exhibit (0001104659-26-092033) was filed 2026-08-06, after the 10-K's 2025-12-01, so no 8-K reaches the 10-K bundle and the count is 0"
+  },
+  "bundle.10-Q.eight_k": {
+    "value": 97,
+    "from": "hand computation: the 8-K (filed 2026-08-06) is before the 10-Q (filed 2026-08-10), so (66 blocks outside tables - 2 dropped) + 33 tables = 97; every term is the re-sourced key of the same name. This is one lower than the 98 the parser branch recorded, because the eye-read finds two safe-harbour paragraphs where the cleaner drops one - see earnings_release.8-K.exhibit_99_1_dropped"
+  },
+  "cleaner.10-K.tables": {
+    "value": 95,
+    "from": "the filing: 95 <table> start tags in 10-K/ese-20250930x10k.htm.gz (gunzipped on the gzip magic number), counted by an html.parser.HTMLParser subclass that increments on tag == 'table' and does nothing else; imports nothing from src/"
+  },
+  "cleaner.10-Q.tables": {
+    "value": 50,
+    "from": "the filing: 50 <table> start tags in 10-Q/ese-20260630x10q.htm, counted with the same html.parser start-tag counter; imports nothing from src/"
+  },
+  "cleaner.8-K.tables": {
+    "value": 33,
+    "from": "the filing: 33 <table> start tags in 8-K/tm2621646d1_ex99-1.htm, counted with the same html.parser start-tag counter; equals earnings_release.8-K.exhibit_99_1_tables because the cleaner's 8-K role is that exhibit, and that key is held to its own independent regex recount"
+  },
+  "cleaner.8-K.tables_already_in_xbrl": {
+    "value": 0,
+    "from": "zero by construction - no XBRL instance is fetched for an 8-K exhibit, so the cleaner is handed an empty fact set (tests/test_clean_text.py passes facts=[] for the 8-K branch) and no table can match"
+  },
+  "earnings_release.8-K.eight_k_filings_in_the_index": {
+    "value": 97,
+    "from": "already judged: tests/test_parse_8k.py::test_the_index_is_a_recount_of_the_stored_file reads submissions.json with `json` alone and counts the rows whose form is '8-K' or '8-K/A'; 97 such rows"
+  },
+  "earnings_release.8-K.exhibit_99_1_blocks_outside_tables": {
+    "value": 66,
+    "from": "the exhibit: 66 visible blocks in 8-K/tm2621646d1_ex99-1.htm after every <table>...</table> region is replaced by an empty <p></p> and the rest is block-split with tests/independent_text.block_paragraphs; imports nothing from src/"
+  },
+  "earnings_release.8-K.exhibit_99_1_dropped": {
+    "value": 2,
+    "from": "read by eye over those 66 blocks: no bare page numbers, and two safe-harbour paragraphs, printed as two separate <P> elements under the 'Forward-Looking Statements' heading - 'Statements in this press release regarding Management's intentions, expectations and guidance for fiscal 2026 ... are “forward-looking statements” within the meaning of the safe harbor provisions of the U.S. securities laws.' and 'Investors are cautioned that such statements are only predictions and speak only as of the date of this release, and the Company undertakes no duty to update them...'; the heading itself is not counted. The parser branch recorded 1"
+  },
+  "earnings_release.8-K.exhibit_99_1_tables": {
+    "value": 33,
+    "from": "already judged: tests/test_parse_8k.py::test_the_expected_counts_survive_an_independent_recount re-derives it with a bare regex for <table> elements holding at least one cell with a character in it, importing nothing from src/"
+  },
+  "earnings_release.8-K.held_items": {
+    "value": [
+      "2.02",
+      "7.01",
+      "9.01"
+    ],
+    "from": "the submissions index, which docs/INPUT_SPEC.md names as the source for 8-K item codes: the submissions.json filings row for accession 0001104659-26-092033 carries items '2.02,7.01,9.01', split on the commas"
+  },
+  "item_4_controls.10-Q.paragraphs": {
+    "value": 5,
+    "from": "already judged: tests/test_split_controls.py::recount re-finds the section with regexes written out in that test file over tests/independent_text.block_text (html.parser) and splits it on blank lines, importing nothing from src/; the Item 4 boundaries reproduce 5 paragraphs from 10-Q/ese-20260630x10q.htm, small enough to check by eye as well"
+  },
+  "item_9a.10-K.paragraphs": {
+    "value": 14,
+    "from": "already judged: tests/test_split_controls.py::recount re-finds the section with regexes written out in that test file over tests/independent_text.block_text (html.parser) and splits it on blank lines, importing nothing from src/; the Item 9A boundaries reproduce 14 paragraphs from 10-K/ese-20250930x10k.htm.gz"
+  },
+  "mdna.10-K.heading_candidates": {
+    "value": 1,
+    "from": "the filing: one Item 7 MD&A heading line in 10-K/ese-20250930x10k.htm.gz - the section heading itself; ESCO's index prints no separate 'Item 7.' MD&A entry that the heading rule sees, so there is no table-of-contents candidate"
+  },
+  "mdna.10-K.paragraphs": {
+    "value": 357,
+    "from": "already judged: tests/test_split_mdna.py::recount rebuilds the block text with html.parser via tests/independent_text, takes the LAST Item 7 heading with its own regexes, stops at the first Item 7A or Item 8 heading and splits on blank lines, importing nothing from src/; 357 from 10-K/ese-20250930x10k.htm.gz. Too many to read by eye, which is why the independent recount and not an eye-read is the source"
+  },
+  "mdna.10-Q.heading_candidates": {
+    "value": 1,
+    "from": "the filing: one Item 2 MD&A heading line in 10-Q/ese-20260630x10q.htm - the section heading itself, with no separate index entry"
+  },
+  "mdna.10-Q.paragraphs": {
+    "value": 141,
+    "from": "already judged: tests/test_split_mdna.py::recount rebuilds the block text with html.parser via tests/independent_text, takes the LAST Item 2 heading with its own regexes, stops at the first Item 3 or Item 4 heading and splits on blank lines, importing nothing from src/; 141 from 10-Q/ese-20260630x10q.htm"
+  },
+  "note_history.10-Q.key_notes": {
+    "value": 7,
+    "from": "the two 10-Q XBRL instances, paired by hand over TextBlock element names read against the six key notes docs/INPUT_SPEC.md lists: both periods mark OrganizationConsolidationAndPresentationOfFinancialStatementsDisclosure (Note 1 'BASIS OF PRESENTATION', which carries the use-of-estimates sentence), RevenueFromContractWithCustomer (Note 11 REVENUES), DisaggregationOfRevenueTable, DebtDisclosure (Note 7 DEBT), ScheduleOfDebtTable and RelatedPartyTransactionsDisclosure (Note 14 RELATED PARTIES); the prior period also marks SubsequentEvents (Note 15 SUBSEQUENT EVENT), gone this quarter; 6 shared + 0 current-only + 1 prior-only = 7"
+  },
+  "note_history.10-Q.match_rules": {
+    "value": {
+      "no_current_note": 1,
+      "tag_name": 6
+    },
+    "from": "the same hand pairing: 6 names carry over (OrganizationConsolidationAndPresentation..., RevenueFromContractWithCustomer, DisaggregationOfRevenueTable, DebtDisclosure, ScheduleOfDebtTable, RelatedPartyTransactionsDisclosure) and 1 key note has no counterpart this quarter (SubsequentEventsTextBlock, last quarter's Note 15 on the Megger agreement, which this quarter is told as Note 15 ACQUISITION under BusinessCombinationDisclosureTextBlock - not a key note); no new key note appeared and no tag was renamed, so no_prior_note and title_similarity are 0 and omitted"
+  },
+  "note_history.10-Q.prior_accession": {
+    "value": "0001104659-26-058482",
+    "from": "the submissions index: the latest 10-Q row in submissions.json filed strictly before the current 10-Q (0001104659-26-093266, filed 2026-08-10) is 0001104659-26-058482, filed 2026-05-11; it matches the manifest's ('10-Q','prior_period') row, whose bytes tests/test_fixtures.py verifies by sha256"
+  },
+  "notes.10-K.extension_tag_count": {
+    "value": 5,
+    "from": "the XBRL instance: 5 TextBlock elements in 10-K/ese-20250930x10k_htm.xml.gz on the filer's own namespace http://www.escotechnologies.com/20250930 - AccumulatedOtherComprehensiveIncomeLossPolicyPolicy, ScheduleOfIncomeTaxExpenseBenefitFromContinuingAndDiscontinuingOperationsTable, OperatingAndFinancingLeasesOfLesseeDisclosure, ScheduleOfAdditionalInformationRelatedToLeasesTable, ScheduleOfReconciliationOfFutureUndiscountedCashFlowsToOperatingAndFinanceLeaseLiabilitiesAndRelatedRightOfUseAssetsTable; counted with ElementTree after excluding us-gaap, dei, srt, xbrl.sec.gov and fasb.org namespaces"
+  },
+  "notes.10-K.textblock_count": {
+    "value": 54,
+    "from": "already judged: tests/test_extract_notes.py::_count_by_hand counts elements whose local name ends in 'TextBlock' straight off 10-K/ese-20250930x10k_htm.xml.gz with ElementTree and the input spec's rule, importing nothing from src/"
+  },
+  "notes.10-Q.extension_tag_count": {
+    "value": 3,
+    "from": "the XBRL instance: 3 TextBlock elements in 10-Q/ese-20260630x10q_htm.xml.gz on the filer's own namespace http://www.escotechnologies.com/20260630 - OperatingAndFinancingLeasesOfLesseeDisclosure, ScheduleOfAdditionalInformationRelatedToLeasesTable, ScheduleOfReconciliationOfFutureUndiscountedCashFlowsToOperatingAndFinanceLeaseLiabilitiesAndRelatedRightOfUseAssetsTable; same ElementTree rule as the 10-K key"
+  },
+  "notes.10-Q.textblock_count": {
+    "value": 26,
+    "from": "already judged: tests/test_extract_notes.py::_count_by_hand, the same ElementTree hand count against 10-Q/ese-20260630x10q_htm.xml.gz"
+  },
+  "numbers.10-K.fact_count": {
+    "value": 1064,
+    "from": "already judged: tests/test_extract_numbers.py::_count_by_hand re-reads the instance with ElementTree and the selection rule as docs/INPUT_SPEC.md words it (a us-gaap or dei element carrying a unitRef), importing nothing from src/; 1064 in 10-K/ese-20250930x10k_htm.xml.gz. companyfacts cannot source this - it is a count of elements in one filing's instance, and companyfacts is the deduplicated standard-taxonomy record across filings"
+  },
+  "numbers.10-Q.fact_count": {
+    "value": 1602,
+    "from": "already judged: the same hand counter summed over both 10-Q instances - 800 in the prior-period 10-Q/ese-20260331x10q_htm.xml.gz plus 802 in 10-Q/ese-20260630x10q_htm.xml.gz = 1602"
+  },
+  "prior_period_diff.10-Q.prior_accession": {
+    "value": "0001104659-26-058482",
+    "from": "the submissions index, the same derivation as note_history.10-Q.prior_accession, and necessarily the same string: the latest 10-Q filed before 2026-08-10 is 0001104659-26-058482, filed 2026-05-11"
+  }
+}

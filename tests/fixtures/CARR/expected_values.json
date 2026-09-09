@@ -1,0 +1,131 @@
+{
+  "auditors_report.10-K.audit_firm": {
+    "value": "PricewaterhouseCoopers LLP",
+    "from": "read by eye in 10-K/carr-20251231.htm.gz: the auditor's signature line '/s/ PricewaterhouseCoopers LLP', Miami, Florida, February 5, 2026, above 'We have served as the Company's auditor since 2019'"
+  },
+  "auditors_report.10-K.critical_audit_matters": {
+    "value": 1,
+    "from": "read by eye in 10-K/carr-20251231.htm.gz: one matter under the 'Critical Audit Matters' heading, 'Annual Goodwill Impairment Assessment - Climate Solutions Europe Reporting Unit'; no second sub-heading stands between it and the signature"
+  },
+  "auditors_report.10-K.paragraphs": {
+    "value": 28,
+    "from": "already judged: tests/test_split_controls.py::recount finds the report with regexes written out in the test file, over tests/independent_text.block_text (html.parser), selects the candidate containing 'critical audit matter' and splits on blank lines, importing nothing from src/; re-run here it gives 28"
+  },
+  "auditors_report.10-K.the_report_states": {
+    "value": "one",
+    "from": "read by eye in 10-K/carr-20251231.htm.gz: 'The critical audit matter communicated below is a matter arising from the current period audit of the consolidated financial statements' - singular"
+  },
+  "bundle.10-K.eight_k": {
+    "value": 0,
+    "from": "hand computation from manifest.json filing dates: the stored 8-K 0001783180-26-000030 was filed 2026-07-28, after the 10-K 0001783180-26-000008 was filed 2026-02-05, so no earnings release can be in a 10-K bundle"
+  },
+  "bundle.10-Q.eight_k": {
+    "value": 104,
+    "from": "hand computation: the 8-K was filed 2026-07-28, on or before the 10-Q's 2026-07-28, so the value is blocks_outside_tables - dropped + tables = 105 - 20 + 19 = 104 (the parser branch recorded 122, which follows from its dropped=2; see exhibit_99_1_dropped)"
+  },
+  "cleaner.10-K.tables": {
+    "value": 109,
+    "from": "the filing: 109 <table> start tags in 10-K/carr-20251231.htm.gz, counted by an html.parser.HTMLParser subclass whose handle_starttag increments on tag == 'table'; imports nothing from src/"
+  },
+  "cleaner.10-Q.tables": {
+    "value": 79,
+    "from": "the filing: 79 <table> start tags in 10-Q/carr-20260630.htm, counted with the same html.parser counter; imports nothing from src/"
+  },
+  "cleaner.8-K.tables": {
+    "value": 19,
+    "from": "the filing: 19 <table> start tags in 8-K/a99-q22026earningsexhibit.htm, counted with the same html.parser counter; equals earnings_release.8-K.exhibit_99_1_tables because the cleaner's 8-K role is that exhibit"
+  },
+  "cleaner.8-K.tables_already_in_xbrl": {
+    "value": 0,
+    "from": "zero by construction - no XBRL instance is fetched for an 8-K exhibit, so the cleaner is handed an empty fact set (tests/test_clean_text.py passes facts=[]) and no table can match"
+  },
+  "earnings_release.8-K.eight_k_filings_in_the_index": {
+    "value": 88,
+    "from": "already judged: tests/test_parse_8k.py::test_the_index_is_a_recount_of_the_stored_file reads submissions.json with json alone and counts rows whose form is '8-K' or '8-K/A'; re-counted here it gives 88"
+  },
+  "earnings_release.8-K.exhibit_99_1_blocks_outside_tables": {
+    "value": 105,
+    "from": "the exhibit: 105 blocks with visible text in 8-K/a99-q22026earningsexhibit.htm after every <table>...</table> region is replaced by an empty <p></p> and the rest is block-split with tests/independent_text.block_paragraphs; imports nothing from src/"
+  },
+  "earnings_release.8-K.exhibit_99_1_dropped": {
+    "value": 20,
+    "from": "read by eye over those 105 blocks of 8-K/a99-q22026earningsexhibit.htm: 18 bare page numbers ('1' through '18', each alone in the absolutely-positioned page-footer div that precedes <hr style=page-break-after:always>) and both blocks of the Cautionary Statement's forward-looking paragraph, which the page-7 footer splits mid-sentence ('...the imposition of tariffs, and' / 'currency exchange rates in the near term and beyond;'). The parser branch recorded 2 - it carries the 18 page numbers as paragraphs"
+  },
+  "earnings_release.8-K.exhibit_99_1_tables": {
+    "value": 19,
+    "from": "already judged: tests/test_parse_8k.py::test_the_expected_counts_survive_an_independent_recount re-derives it with a bare regex for <table> elements holding at least one cell with a character in it, importing nothing from src/; re-derived here it gives 19"
+  },
+  "earnings_release.8-K.held_items": {
+    "value": [
+      "2.02",
+      "9.01"
+    ],
+    "from": "the submissions index: the single filings row for accession 0001783180-26-000030 carries items '2.02,9.01', split on commas - docs/INPUT_SPEC.md names the index's items field as the source for 8-K item codes"
+  },
+  "item_4_controls.10-Q.paragraphs": {
+    "value": 3,
+    "from": "already judged: tests/test_split_controls.py::recount applies the Item 4 boundary regexes written out in the test file to tests/independent_text.block_text and splits on blank lines, importing nothing from src/; re-run here it gives 3"
+  },
+  "item_9a.10-K.paragraphs": {
+    "value": 6,
+    "from": "already judged: the same tests/test_split_controls.py::recount with the Item 9A boundaries, no src/ import; re-run here it gives 6"
+  },
+  "mdna.10-K.heading_candidates": {
+    "value": 2,
+    "from": "the filing: two Item 7 MD&A heading lines in 10-K/carr-20251231.htm.gz - the table-of-contents entry and the section heading itself, both reading 'Item 7. Management's Discussion and Analysis of Financial Condition and Results of Operations' - counted over tests/independent_text.block_text lines"
+  },
+  "mdna.10-K.paragraphs": {
+    "value": 626,
+    "from": "already judged: tests/test_split_mdna.py::recount builds the block text with html.parser via tests/independent_text, takes the LAST Item 7 heading, stops at the first Item 7A or Item 8 heading and splits on blank lines, importing nothing from src/; re-run here it gives 626"
+  },
+  "mdna.10-Q.heading_candidates": {
+    "value": 2,
+    "from": "the filing: two Item 2 MD&A heading lines in 10-Q/carr-20260630.htm - the table-of-contents entry and the section heading itself - counted over tests/independent_text.block_text lines"
+  },
+  "mdna.10-Q.paragraphs": {
+    "value": 997,
+    "from": "already judged: the same tests/test_split_mdna.py::recount with the Item 2 boundaries, no src/ import; re-run here it gives 997"
+  },
+  "note_history.10-Q.key_notes": {
+    "value": 12,
+    "from": "the two 10-Q XBRL instances, paired by hand over TextBlock element names read with ElementTree plus a start-ns pass: 12 names are one of the six key notes docs/INPUT_SPEC.md lists - revenue recognition (us-gaap:RevenueFromContractWithCustomerPolicy, :RevenueFromContractWithCustomer, :DisaggregationOfRevenueTable, :ContractWithCustomerAssetAndLiabilityTable), contingencies (:CommitmentsAndContingenciesDisclosure, :ScheduleOfLossContingenciesByContingency, :ScheduleOfEnvironmentalLossContingenciesBySite), debt (:DebtDisclosure, :ScheduleOfDebtInstruments, :ScheduleOfShortTermDebt), related parties (:RelatedPartyTransactionsDisclosure), critical accounting estimates (:BasisOfPresentationAndSignificantAccountingPolicies) - each appearing once in each instance, so 12 pairs and nothing unmatched"
+  },
+  "note_history.10-Q.match_rules": {
+    "value": {
+      "tag_name": 12
+    },
+    "from": "the same hand pairing: all 46 TextBlock names appear exactly once in both the current instance (0001783180-26-000032) and the prior one (0001783180-26-000026), so each of the 12 marked key notes pairs by tag name and no_prior_note, no_current_note and title_similarity are 0 and omitted"
+  },
+  "note_history.10-Q.prior_accession": {
+    "value": "0001783180-26-000026",
+    "from": "the submissions index: the latest 10-Q filed strictly before the current 10-Q's 2026-07-28 is 0001783180-26-000026, filed 2026-04-30; it is also the manifest's ('10-Q','prior_period') row, so index and manifest agree"
+  },
+  "notes.10-K.extension_tag_count": {
+    "value": 3,
+    "from": "the 10-K XBRL instance: 3 TextBlock elements on the filer's own namespace http://www.carrier.com/20251231 - carr:AssetsAndLiabilitiesLesseeTableTextBlock, carr:ScheduleOfShareBasedPaymentAwardValuationAssumptionsTableTextBlock, carr:ScheduleOfSelfInsuranceLiabilitiesTableTextBlock; the other 90 sit on fasb.org/us-gaap, xbrl.sec.gov/cyd or xbrl.sec.gov/dei"
+  },
+  "notes.10-K.textblock_count": {
+    "value": 93,
+    "from": "already judged: tests/test_extract_notes.py::_count_by_hand counts elements whose local name ends in 'TextBlock' straight off the instance with ElementTree and the input spec's rule, importing nothing from src/; re-counted here it gives 93"
+  },
+  "notes.10-Q.extension_tag_count": {
+    "value": 1,
+    "from": "the 10-Q XBRL instance: 1 TextBlock element on the filer's own namespace http://www.carrier.com/20260630 - carr:ScheduleOfEmployerContributionsToPlansTableTextBlock; the other 45 are fasb.org/us-gaap"
+  },
+  "notes.10-Q.textblock_count": {
+    "value": 46,
+    "from": "already judged: the same tests/test_extract_notes.py::_count_by_hand against the 10-Q instance, no src/ import; re-counted here it gives 46"
+  },
+  "numbers.10-K.fact_count": {
+    "value": 1766,
+    "from": "already judged: tests/test_extract_numbers.py::_count_by_hand re-reads the instance with ElementTree and the selection rule as docs/INPUT_SPEC.md words it (a us-gaap or dei element carrying a unitRef); the 10-K has one instance and it gives 1766. companyfacts cannot source this - it is the deduplicated standard-taxonomy record across filings and carries 736 rows for both fixture accessions combined"
+  },
+  "numbers.10-Q.fact_count": {
+    "value": 1842,
+    "from": "already judged: the same hand counter summed over both 10-Q instances - 1091 in 0001783180-26-000032 and 751 in the prior-period 0001783180-26-000026 - which is 1842"
+  },
+  "prior_period_diff.10-Q.prior_accession": {
+    "value": "0001783180-26-000026",
+    "from": "the submissions index, the same derivation as note_history.10-Q.prior_accession: the latest 10-Q filed before 2026-07-28 is 0001783180-26-000026, filed 2026-04-30"
+  }
+}

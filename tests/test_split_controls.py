@@ -13,17 +13,14 @@ the headings with its own regexes and its own parser.
 from __future__ import annotations
 
 import datetime as dt
-import json
 import re
-from pathlib import Path
 
 import pytest
 
 from src import cutoff_guard, html_text, split_sections
 from src.fetch_fixtures import TICKERS
 from tests import independent_text
-
-FIXTURES = Path(__file__).resolve().parent / "fixtures"
+from tests.expected_values import value
 
 # (form, section) → (heading, item-marker-alone or None, end, select-by-content)
 SPEC = {
@@ -54,10 +51,6 @@ SPEC = {
                    r"|^item\s*1a\b|^cautionary note\b"),
         None),
 }
-
-
-def expected(ticker: str) -> dict:
-    return json.loads((FIXTURES / ticker / "expected.json").read_text())
 
 
 def source_html(ticker: str, form: str) -> str:
@@ -112,7 +105,7 @@ def test_the_section_is_never_empty(ticker, section):
 def test_the_expected_paragraph_count_survives_an_independent_recount(ticker, section):
     form = SPEC[section][0]
     assert len(recount(source_html(ticker, form), section)) == \
-        expected(ticker)[section][form]["paragraphs"]
+        value(ticker, f"{section}.{form}.paragraphs")
 
 
 @pytest.mark.parametrize("ticker", TICKERS)
@@ -120,7 +113,7 @@ def test_the_expected_paragraph_count_survives_an_independent_recount(ticker, se
 def test_the_splitter_finds_exactly_that_many_paragraphs(ticker, section):
     form = SPEC[section][0]
     payload = split_sections.extract(ticker, form, section)
-    assert len(payload["paragraphs"]) == expected(ticker)[section][form]["paragraphs"]
+    assert len(payload["paragraphs"]) == value(ticker, f"{section}.{form}.paragraphs")
 
 
 @pytest.mark.parametrize("ticker", TICKERS)
@@ -136,7 +129,7 @@ def test_paragraph_ids_are_unique_and_dense(ticker, section):
 @pytest.mark.parametrize("ticker", TICKERS)
 def test_the_report_carries_the_audit_firms_name(ticker):
     payload = split_sections.extract(ticker, "10-K", "auditors_report")
-    firm = expected(ticker)["auditors_report"]["10-K"]["audit_firm"]
+    firm = value(ticker, "auditors_report.10-K.audit_firm")
     # PANW signs "Ernst\xa0& Young LLP" and ESE signs in capitals, so the
     # comparison flattens whitespace and case. Nothing emitted is changed.
     assert html_text.normalized(firm) in html_text.normalized(payload["text"])
@@ -145,16 +138,17 @@ def test_the_report_carries_the_audit_firms_name(ticker):
 @pytest.mark.parametrize("ticker", TICKERS)
 def test_the_parser_finds_the_critical_audit_matters_the_report_states(ticker):
     payload = split_sections.extract(ticker, "10-K", "auditors_report")
-    record = expected(ticker)["auditors_report"]["10-K"]
-    assert payload["critical_audit_matters"]["count"] == record["critical_audit_matters"]
-    assert payload["critical_audit_matters"]["stated"] == record["the_report_states"]
+    matters = value(ticker, "auditors_report.10-K.critical_audit_matters")
+    stated = value(ticker, "auditors_report.10-K.the_report_states")
+    assert payload["critical_audit_matters"]["count"] == matters
+    assert payload["critical_audit_matters"]["stated"] == stated
     # The report says in its own words how many there are; the count has to
     # agree with that sentence, and `critical_audit_matters` raises if it does
     # not. Asserted here as well so the rule is visible, not just enforced.
-    if record["the_report_states"] == "one":
-        assert record["critical_audit_matters"] == 1
-    elif record["the_report_states"] == "many":
-        assert record["critical_audit_matters"] >= 2
+    if stated == "one":
+        assert matters == 1
+    elif stated == "many":
+        assert matters >= 2
 
 
 def test_a_count_that_contradicts_the_report_is_an_error_not_a_guess():

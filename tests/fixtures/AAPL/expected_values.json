@@ -1,0 +1,131 @@
+{
+  "auditors_report.10-K.audit_firm": {
+    "from": "read by eye in 10-K/aapl-20250927.htm: the auditor's signature line of the report of independent registered public accounting firm reads '/s/ Ernst & Young LLP', above 'We have served as the Company's auditor since 2009.'",
+    "value": "Ernst & Young LLP"
+  },
+  "auditors_report.10-K.critical_audit_matters": {
+    "from": "read by eye in 10-K/aapl-20250927.htm: the auditor's report identifies one critical audit matter, 'Uncertain Tax Positions', with its own sub-heading, 'Description of the Matter' and 'How We Addressed the Matter in Our Audit'; no second matter appears before the signature",
+    "value": 1
+  },
+  "auditors_report.10-K.paragraphs": {
+    "from": "already judged: tests/test_split_controls.py::recount finds the report with regexes written out in the test file, over tests/independent_text.block_text (html.parser), selects the one containing 'critical audit matter' and splits on blank lines, importing nothing from src/",
+    "value": 39
+  },
+  "auditors_report.10-K.the_report_states": {
+    "from": "read by eye in 10-K/aapl-20250927.htm: 'The critical audit matter communicated below is a matter arising from the current period audit of the financial statements' \u2014 singular, under the singular heading 'Critical Audit Matter'",
+    "value": "one"
+  },
+  "bundle.10-K.eight_k": {
+    "from": "hand computation from manifest.json's filing dates: the stored 8-K (0000320193-26-000018) was filed 2026-07-30, after the 10-K (0000320193-25-000079) was filed 2025-10-31, so no earnings release is in the 10-K bundle",
+    "value": 0
+  },
+  "bundle.10-Q.eight_k": {
+    "from": "hand computation: the stored 8-K was filed 2026-07-30, on or before the 10-Q's 2026-07-31, so the release is in the bundle \u2014 (exhibit_99_1_blocks_outside_tables 35 - exhibit_99_1_dropped 1) + exhibit_99_1_tables 3 = 37, over the three re-sourced values in this file",
+    "value": 37
+  },
+  "cleaner.10-K.tables": {
+    "from": "the filing: 62 <table> start tags in 10-K/aapl-20250927.htm, counted by feeding the document's own bytes to an html.parser.HTMLParser subclass that increments on tag == 'table'; imports nothing from src/",
+    "value": 62
+  },
+  "cleaner.10-Q.tables": {
+    "from": "the filing: 40 <table> start tags in 10-Q/aapl-20260627.htm, counted with the same html.parser start-tag counter; imports nothing from src/",
+    "value": 40
+  },
+  "cleaner.8-K.tables": {
+    "from": "the filing: 3 <table> start tags in 8-K/a8-kex991q3202606272026.htm, counted with the same html.parser start-tag counter; equals earnings_release.8-K.exhibit_99_1_tables because the cleaner's 8-K role is that exhibit",
+    "value": 3
+  },
+  "cleaner.8-K.tables_already_in_xbrl": {
+    "from": "zero by construction \u2014 no XBRL instance is fetched for an 8-K exhibit, so the cleaner is handed an empty fact set (tests/test_clean_text.py passes facts=[]) and no table can match",
+    "value": 0
+  },
+  "earnings_release.8-K.eight_k_filings_in_the_index": {
+    "from": "already judged: tests/test_parse_8k.py::test_the_index_is_a_recount_of_the_stored_file reads submissions.json with `json` alone and counts the rows whose form is '8-K' or '8-K/A', importing nothing from src/ for the count",
+    "value": 105
+  },
+  "earnings_release.8-K.exhibit_99_1_blocks_outside_tables": {
+    "from": "the exhibit, measured independently: every <table>...</table> region of 8-K/a8-kex991q3202606272026.htm replaced with an empty <p></p>, block-split with tests/independent_text.block_paragraphs, blocks with visible text kept \u2014 35",
+    "value": 35
+  },
+  "earnings_release.8-K.exhibit_99_1_dropped": {
+    "from": "read by eye over those 35 blocks: exactly one is droppable \u2014 the safe-harbour paragraph opening 'This press release contains forward-looking statements, within the meaning of the Private Securities Litigation Reform Act of 1995'; no block is a bare page number",
+    "value": 1
+  },
+  "earnings_release.8-K.exhibit_99_1_tables": {
+    "from": "already judged: tests/test_parse_8k.py::test_the_expected_counts_survive_an_independent_recount re-derives it with a bare regex for <table> elements holding at least one cell with a character in it, importing nothing from src/",
+    "value": 3
+  },
+  "earnings_release.8-K.held_items": {
+    "from": "the submissions index, which docs/INPUT_SPEC.md names as the source for 8-K item codes: the single submissions.json filings row for accession 0000320193-26-000018 carries items '2.02,9.01'",
+    "value": [
+      "2.02",
+      "9.01"
+    ]
+  },
+  "item_4_controls.10-Q.paragraphs": {
+    "from": "already judged: tests/test_split_controls.py::recount applies the Item 4 boundaries written out as regexes in the test file to tests/independent_text.block_text (html.parser) and splits on blank lines, importing nothing from src/",
+    "value": 6
+  },
+  "item_9a.10-K.paragraphs": {
+    "from": "already judged: tests/test_split_controls.py::recount, same mechanism against the Item 9A boundaries, importing nothing from src/",
+    "value": 14
+  },
+  "mdna.10-K.heading_candidates": {
+    "from": "the filing, read by eye in 10-K/aapl-20250927.htm: 'Management's Discussion and Analysis of Financial Condition and Results of Operations' heads two lines \u2014 the table-of-contents entry, where 'Item 7.' sits alone above the title, and the section heading itself",
+    "value": 2
+  },
+  "mdna.10-K.paragraphs": {
+    "from": "already judged: tests/test_split_mdna.py::recount builds the block text with html.parser via tests/independent_text, finds the last Item 7 heading with its own regexes, stops at the first Item 7A or Item 8 heading and splits on blank lines, importing nothing from src/",
+    "value": 352
+  },
+  "mdna.10-Q.heading_candidates": {
+    "from": "the filing, read by eye in 10-Q/aapl-20260627.htm: the table-of-contents entry, where 'Item 2.' sits alone above the MD&A title, and the section heading itself; Part II's other 'Item 2.' is followed by 'Unregistered Sales of Equity Securities' and is not a candidate",
+    "value": 2
+  },
+  "mdna.10-Q.paragraphs": {
+    "from": "already judged: tests/test_split_mdna.py::recount, the same independent recount against the Item 2 boundaries, importing nothing from src/",
+    "value": 365
+  },
+  "note_history.10-Q.key_notes": {
+    "from": "the two 10-Q XBRL instances, paired by hand: the TextBlock names that name one of the six key notes of docs/INPUT_SPEC.md are BasisOfPresentationAndSignificantAccountingPolicies, CommitmentsAndContingenciesDisclosure, DebtDisclosure and RevenueFromContractWithCustomer \u2014 all four on both sides, so 4 pairings and none unmatched",
+    "value": 4
+  },
+  "note_history.10-Q.match_rules": {
+    "from": "the same hand pairing: all four marked TextBlock names appear once in each instance, so every pairing is by tag name; no key note is new this quarter and none went away, so no_prior_note and no_current_note are zero and are omitted",
+    "value": {
+      "tag_name": 4
+    }
+  },
+  "note_history.10-Q.prior_accession": {
+    "from": "the submissions index: the latest 10-Q filed strictly before the current one (0000320193-26-000020, filed 2026-07-31) is 0000320193-26-000013, filed 2026-05-01, which is also the manifest's ('10-Q','prior_period') accession",
+    "value": "0000320193-26-000013"
+  },
+  "notes.10-K.extension_tag_count": {
+    "from": "the 10-K XBRL instance: 3 TextBlock elements sit on Apple's own namespace http://www.apple.com/20250927 \u2014 CommercialPaperCashFlowSummaryTable, DisaggregatedNetSalesAndPortionOfNetSalesThatWasPreviouslyDeferredTable and OperatingandFinanceLeaseRightofUseAssetsandLeaseLiabilitiesTable; counted with ElementTree",
+    "value": 3
+  },
+  "notes.10-K.textblock_count": {
+    "from": "already judged: tests/test_extract_notes.py::test_the_expected_count_is_what_the_instance_contains counts elements whose local name ends in 'TextBlock' straight off the instance with ElementTree and the input spec's rule, importing nothing from src/",
+    "value": 58
+  },
+  "notes.10-Q.extension_tag_count": {
+    "from": "the 10-Q XBRL instance: 3 TextBlock elements sit on Apple's own namespace http://www.apple.com/20260627 \u2014 CommercialPaperCashFlowSummaryTable, DisaggregatedNetSalesAndPortionOfNetSalesThatWasPreviouslyDeferredTable and IntangibleAssetsTable; counted with ElementTree",
+    "value": 3
+  },
+  "notes.10-Q.textblock_count": {
+    "from": "already judged: tests/test_extract_notes.py::test_the_expected_count_is_what_the_instance_contains, the same ElementTree hand count against the 10-Q instance",
+    "value": 26
+  },
+  "numbers.10-K.fact_count": {
+    "from": "already judged: tests/test_extract_numbers.py::_count_by_hand re-reads the instance with ElementTree and the input spec's rule \u2014 a us-gaap or dei element carrying a unitRef \u2014 importing nothing from src/ (companyfacts cannot source this: it attributes 427 facts to this accession, being the deduplicated standard-taxonomy record rather than the instance's elements)",
+    "value": 898
+  },
+  "numbers.10-Q.fact_count": {
+    "from": "already judged: the same tests/test_extract_numbers.py::_count_by_hand, summed over both 10-Q instances \u2014 718 in the prior-period instance 0000320193-26-000013 and 723 in the current 0000320193-26-000020",
+    "value": 1441
+  },
+  "prior_period_diff.10-Q.prior_accession": {
+    "from": "the submissions index, the same reading as note_history.10-Q.prior_accession: the latest 10-Q filed strictly before 2026-07-31",
+    "value": "0000320193-26-000013"
+  }
+}

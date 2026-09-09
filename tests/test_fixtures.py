@@ -68,12 +68,17 @@ def test_the_8k_carries_item_2_02(ticker):
             assert "2.02" in entry["items"], f"{ticker}: 8-K items are {entry['items']!r}"
 
 
+# The manifest records filings. The three files beside them are this project's
+# own: the manifest itself, the expected values with their provenance notes, and
+# the extraction-drift baseline. None of them was served by EDGAR.
+NOT_A_FILING = ("manifest.json", "expected_values.json", "expected.json")
+
+
 def test_the_manifest_lists_every_file_that_is_there():
     """A file nobody recorded is not a record. Catches an untracked addition."""
     for ticker in TICKERS:
         listed = {(FIXTURES / ticker / e["path"]).resolve()
                   for e in manifest(ticker)["documents"]}
         on_disk = {p.resolve() for p in (FIXTURES / ticker).rglob("*")
-                   if p.is_file() and p.name != "manifest.json"
-                   and p.name != "expected.json"}
+                   if p.is_file() and p.name not in NOT_A_FILING}
         assert on_disk == listed, f"{ticker}: {sorted(on_disk ^ listed)}"

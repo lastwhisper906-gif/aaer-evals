@@ -11,22 +11,16 @@ from __future__ import annotations
 
 import collections
 import datetime as dt
-import json
 import re
-from pathlib import Path
 
 import pytest
 
 from src import assemble_bundle, cutoff_guard, diff_periods, extract_notes
 from src.fetch_fixtures import TICKERS
 from tests import independent_text
+from tests.expected_values import value
 
-FIXTURES = Path(__file__).resolve().parent / "fixtures"
 PLACEHOLDER = re.compile(r"^\[same as prior period, unchanged from (\S+)\]$")
-
-
-def expected(ticker: str) -> dict:
-    return json.loads((FIXTURES / ticker / "expected.json").read_text())
 
 
 def current_sources(ticker: str, cutoff) -> independent_text.Source:
@@ -96,12 +90,21 @@ def test_every_output_paragraph_is_the_filing_or_the_placeholder(ticker):
 
 
 @pytest.mark.parametrize("ticker", TICKERS)
-def test_the_collapsed_and_carried_counts(ticker):
+def test_the_prior_report_is_the_one_the_index_names(ticker):
+    """The report this layer diffs against is EDGAR's answer, not the parser's:
+    the latest 10-Q the submissions index lists before this one.
+
+    The collapsed and carried counts used to be asserted here too. They count
+    paragraphs of the cleaner's and splitter's own output, sorted by the diff's
+    masked-similarity rule, and nothing outside the pipeline produces either
+    number — so both were deleted. The property they were standing in for is
+    still guarded, and without an expected value:
+    `test_nothing_collapses_that_is_not_word_for_word_in_the_prior_filing` below
+    checks every collapse against the previous filing's own bytes.
+    """
     payload = diff_periods.extract(ticker)
-    record = expected(ticker)["prior_period_diff"]["10-Q"]
-    assert payload["collapsed"] == record["collapsed"]
-    assert payload["carried"] == record["carried_verbatim"]
-    assert payload["prior_accession"] == record["prior_accession"]
+    assert payload["prior_accession"] == \
+        value(ticker, "prior_period_diff.10-Q.prior_accession")
 
 
 @pytest.mark.parametrize("ticker", TICKERS)

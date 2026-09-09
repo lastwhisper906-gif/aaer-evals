@@ -2,24 +2,22 @@
 
 The recount here is not a call into `src/`. `tests/independent_text.py` builds
 the block text with `html.parser`, this module finds the headings with its own
-regexes, and the paragraph count that comes out is what `expected.json` is held
-to. Twenty-four sections, twenty-four agreements, or the number is wrong.
+regexes, and the paragraph count that comes out is what the recorded value is
+held to. Twenty-four sections, twenty-four agreements, or the number is wrong.
 """
 
 from __future__ import annotations
 
 import datetime as dt
-import json
 import re
-from pathlib import Path
 
 import pytest
 
 from src import cutoff_guard, html_text, split_sections
 from src.fetch_fixtures import TICKERS
 from tests import independent_text
+from tests.expected_values import value
 
-FIXTURES = Path(__file__).resolve().parent / "fixtures"
 FORMS = ("10-K", "10-Q")
 
 TITLE = r"management.{0,3}s discussion and analysis"
@@ -34,10 +32,6 @@ SPEC = {
              re.compile(r"^item\s*3\b|^item\s*4\b")),
 }
 TITLE_START = re.compile(rf"^{TITLE}")
-
-
-def expected(ticker: str) -> dict:
-    return json.loads((FIXTURES / ticker / "expected.json").read_text())
 
 
 def source_html(ticker: str, form: str) -> str:
@@ -76,14 +70,14 @@ def recount(html: str, form: str) -> list[str]:
 @pytest.mark.parametrize("form", FORMS)
 def test_the_expected_paragraph_count_survives_an_independent_recount(ticker, form):
     assert len(recount(source_html(ticker, form), form)) == \
-        expected(ticker)["mdna"][form]["paragraphs"]
+        value(ticker, f"mdna.{form}.paragraphs")
 
 
 @pytest.mark.parametrize("ticker", TICKERS)
 @pytest.mark.parametrize("form", FORMS)
 def test_the_splitter_finds_exactly_that_many_paragraphs(ticker, form):
     payload = split_sections.extract(ticker, form, "mdna")
-    assert len(payload["paragraphs"]) == expected(ticker)["mdna"][form]["paragraphs"]
+    assert len(payload["paragraphs"]) == value(ticker, f"mdna.{form}.paragraphs")
 
 
 @pytest.mark.parametrize("ticker", TICKERS)
@@ -135,7 +129,7 @@ def test_the_table_of_contents_entry_is_not_the_one_selected(ticker, form):
     text = html_text.strip_tags(html)
     spec = split_sections.SECTIONS[(form, "mdna")]
     candidates = split_sections.headings(text, spec)
-    assert len(candidates) == expected(ticker)["mdna"][form]["heading_candidates"]
+    assert len(candidates) == value(ticker, f"mdna.{form}.heading_candidates")
 
     start, stop, _, rule = split_sections.bounds(text, form, "mdna")
     assert rule == "last candidate"

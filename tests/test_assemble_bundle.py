@@ -21,7 +21,7 @@ from pathlib import Path
 import pytest
 
 from src import (assemble_bundle, clean_text, cutoff_guard, diff_periods,
-                 extract_notes, split_sections)
+                 extract_notes, note_history, split_sections)
 from src.fetch_fixtures import TICKERS
 from tests import independent_text
 
@@ -440,19 +440,28 @@ def test_the_section_cli_refuses_to_write_a_bundle_filename(tmp_path, capsys):
 @pytest.mark.parametrize("ticker", TICKERS)
 @pytest.mark.parametrize("form", ("10-K", "10-Q"))
 def test_the_note_history_count_is_its_entries_plus_its_changed_ones(ticker, form):
-    """The recorded count is not free-floating: a changed entry puts two
-    paragraphs in the file, so the count is entries + changed, and both halves
-    are recorded separately in the same expected.json."""
+    """A changed entry puts two paragraphs in the file — the new text and the
+    text it replaced — so the count the manifest lists is entries + changed.
+
+    This is an identity between two things the run itself produced, so it is
+    read off the history rather than out of a fixture. It never needed an
+    expected value, and the fixture it used to read held the added / removed /
+    changed split, which had no source outside the similarity threshold that
+    decides it and has been deleted.
+    """
     manifest = built(ticker, form)["manifest"]
     listed = manifest["counts"]["note_history"]
-    record = json.loads((REPO_ROOT / "tests" / "fixtures" / ticker /
-                         "expected.json").read_text())
-    if "note_history" not in record or form not in record["note_history"]:
-        assert listed == 0 or form == "10-K"
+    on_record = {(row["form"], row["role"]) for row in manifest["on_record_at_cutoff"]}
+    if not {("10-Q", "xbrl_instance"),
+            ("10-Q", "prior_period_xbrl_instance")} <= on_record:
+        # A history needs two 10-Qs at or before the cutoff. A 10-K filed before
+        # this year's 10-Q has neither, and the bundle says so instead of
+        # counting.
+        assert listed == 0
         return
-    block = record["note_history"][form]
-    assert listed == sum(block[kind] for kind in ("added", "removed", "changed")) \
-        + block["changed"]
+    history = note_history.history(ticker, cutoff=manifest["cutoff"])
+    changed = sum(1 for entry in history["entries"] if entry["kind"] == "changed")
+    assert listed == len(history["entries"]) + changed
 
 
 # --- the untagged sections reach the bundle ----------------------------------

@@ -1,111 +1,11 @@
 {
-  "auditors_report": {
-    "10-K": {
-      "audit_firm": "PricewaterhouseCoopers LLP",
-      "critical_audit_matters": 1,
-      "paragraphs": 27,
-      "the_report_states": "one"
-    }
-  },
+  "_what_this_is": "the extraction-drift baseline src/extraction_checks.py reads, not an expected value. Every number here is mirrored from expected_values.json, which carries the provenance; tests/test_expected_values.py asserts the mirror.",
   "bundle": {
     "10-K": {
-      "controls": 40,
-      "eight_k": 0,
-      "mdna": 156,
-      "note_history": 0,
-      "notes": 383,
-      "paragraphs": 579
+      "eight_k": 0
     },
     "10-Q": {
-      "controls": 6,
-      "eight_k": 78,
-      "mdna": 165,
-      "note_history": 82,
-      "notes": 157,
-      "paragraphs": 488
-    }
-  },
-  "cleaner": {
-    "10-K": {
-      "tables": 86,
-      "tables_already_in_xbrl": 34
-    },
-    "10-Q": {
-      "tables": 57,
-      "tables_already_in_xbrl": 23
-    },
-    "8-K": {
-      "tables": 7,
-      "tables_already_in_xbrl": 0
-    }
-  },
-  "earnings_release": {
-    "8-K": {
-      "eight_k_filings_in_the_index": 52,
-      "exhibit_99_1_dropped": 7,
-      "exhibit_99_1_paragraphs": 71,
-      "exhibit_99_1_tables": 7,
-      "held_items": [
-        "2.02",
-        "9.01"
-      ]
-    }
-  },
-  "item_4_controls": {
-    "10-Q": {
-      "paragraphs": 6
-    }
-  },
-  "item_9a": {
-    "10-K": {
-      "paragraphs": 15
-    }
-  },
-  "mdna": {
-    "10-K": {
-      "heading_candidates": 2,
-      "paragraphs": 580
-    },
-    "10-Q": {
-      "heading_candidates": 2,
-      "paragraphs": 912
-    }
-  },
-  "note_history": {
-    "10-Q": {
-      "added": 11,
-      "changed": 31,
-      "key_notes": 9,
-      "match_rules": {
-        "tag_name": 9
-      },
-      "prior_accession": "0001628280-26-015152",
-      "removed": 9
-    }
-  },
-  "notes": {
-    "10-K": {
-      "extension_tag_count": 8,
-      "textblock_count": 102
-    },
-    "10-Q": {
-      "extension_tag_count": 0,
-      "textblock_count": 40
-    }
-  },
-  "numbers": {
-    "10-K": {
-      "fact_count": 1538
-    },
-    "10-Q": {
-      "fact_count": 2074
-    }
-  },
-  "prior_period_diff": {
-    "10-Q": {
-      "carried_verbatim": 181,
-      "collapsed": 141,
-      "prior_accession": "0001628280-26-015152"
+      "eight_k": 72
     }
   }
 }

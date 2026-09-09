@@ -13,17 +13,15 @@ not on Apple's is a cleaner that does not work.
 
 from __future__ import annotations
 
-import json
 import re
-from pathlib import Path
 
 import pytest
 
 from src import clean_text, cutoff_guard, extract_notes, extract_numbers, html_text, split_sections
 from src.fetch_fixtures import TICKERS
 from tests import independent_text
+from tests.expected_values import value
 
-FIXTURES = Path(__file__).resolve().parent / "fixtures"
 # The six roles per company the dispatch counted as "all 72 fixture documents".
 DISPATCHED_ROLES = (("10-K", "primary_html"), ("10-K", "xbrl_instance"),
                     ("10-Q", "primary_html"), ("10-Q", "xbrl_instance"),
@@ -35,10 +33,6 @@ HTML_DOCUMENTS = (("10-K", "primary_html"), ("10-Q", "primary_html"),
                   ("8-K", "primary_html"), ("8-K", "exhibit_99_1"))
 INSTANCES = (("10-K", "xbrl_instance"), ("10-Q", "xbrl_instance"),
              ("10-Q", "prior_period_xbrl_instance"))
-
-
-def expected(ticker: str) -> dict:
-    return json.loads((FIXTURES / ticker / "expected.json").read_text())
 
 
 def document(ticker: str, form: str, role: str) -> str:
@@ -198,18 +192,18 @@ def test_every_table_cell_is_the_documents_own_text(ticker, form, role):
 
 @pytest.mark.parametrize("ticker", TICKERS)
 @pytest.mark.parametrize("form", ("10-K", "10-Q", "8-K"))
-def test_the_dropped_table_count(ticker, form):
-    """"Already in the XBRL instance" means *this* filing's instance.
+def test_the_cleaner_finds_every_table_the_document_holds(ticker, form):
+    """The count is the document's own: `<table>` start tags, counted off the
+    filing's bytes with `html.parser` and nothing from `src/`.
 
-    `extract_numbers.extract` also reads the previous quarter's instance now, so
-    taking the fact set from it would test a different rule than the one the
-    reason names — and a wider fact set makes the match looser rather than
-    tighter: `fact_values` records every fact at four scales and both signs, so
-    a set that size contains most small integers. Fed both instances, QCOM's
-    *table of contents* matches 17 of 17 on its page numbers and two Carrier
-    percent-change tables match 4 of 4. Six of the nine tables that changed that
-    way are real comparative statements; three are coincidence. The rule's
-    weakness is worth its own item — this test pins the rule it is named for.
+    There used to be a second assertion here, on how many of those tables the
+    cleaner dropped as already-in-XBRL. It had no source outside the rule it was
+    judging — reproducing it means restating `table_is_in_xbrl`, thresholds and
+    all — so the value was deleted and the assertion with it. The rule's known
+    weakness is why: fed both instances, QCOM's *table of contents* matches 17 of
+    17 on its page numbers and two Carrier percent-change tables match 4 of 4, so
+    a recorded drop count would have pinned the coincidences along with the real
+    matches. Judging that rule needs a source, and finding one is its own item.
     """
     role = "exhibit_99_1" if form == "8-K" else "primary_html"
     facts = []
@@ -219,17 +213,25 @@ def test_the_dropped_table_count(ticker, form):
             cutoff_guard.load_bytes(row["full_path"], row["filing_date"]),
             accession=row["accession"], filing_date=row["filing_date"], form=form)
     result = clean_text.clean(document(ticker, form, role), facts=facts)
-    record = expected(ticker)["cleaner"][form]
-    assert len(result["tables"]) == record["tables"]
-    assert result["dropped_tables"] == record["tables_already_in_xbrl"]
+    assert len(result["tables"]) == value(ticker, f"cleaner.{form}.tables")
 
 
 @pytest.mark.parametrize("ticker", TICKERS)
 def test_no_earnings_release_table_is_dropped(ticker):
     """The non-GAAP reconciliation and the guidance table are the two tables
     whose numbers are nowhere in XBRL, and they are the reason the exhibit is
-    fetched at all."""
-    assert expected(ticker)["cleaner"]["8-K"]["tables_already_in_xbrl"] == 0
+    fetched at all.
+
+    This used to assert that the recorded number was 0, which tests the record
+    and not the cleaner. It runs the cleaner instead: handed the empty fact set
+    an 8-K exhibit gets, it must keep every table it found. The recorded 0 is 0
+    by construction and not by a run — no XBRL instance is fetched for an
+    exhibit, so there is nothing a table could match.
+    """
+    result = clean_text.clean(document(ticker, "8-K", "exhibit_99_1"), facts=[])
+    assert result["tables"], f"{ticker}: no table to have kept"
+    assert result["dropped_tables"] == \
+        value(ticker, "cleaner.8-K.tables_already_in_xbrl")
 
 
 def test_a_table_of_tagged_numbers_is_dropped_and_one_with_a_stranger_is_not():
