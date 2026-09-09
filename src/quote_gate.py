@@ -19,14 +19,47 @@ joined line wrap `VERIFIED` on an exact match, and the ellipsis `ALTERED` at
 0.807 rather than a fabrication. Two of the three alterations this gate exists
 to catch are invisible to it, so none of its normalizing comes across.
 
-**Computed rows are quotable too.** A trend-table cell, an articulation check
-and a numeric fact live in a JSON input rather than in prose, so they are named
-in two ways: a numeric fact by the `id` it already carries in
-`input_numbers.json`, and any other row by a JSON pointer into the file it lives
-in -- `input_trends.json#/quarters/0/ratios/days_sales_outstanding`. The
-quotable text is the row as printed: one line, keys sorted, which is what
-`printed_row` gives it. The indentation a row wears inside the file is the
-file's layout and not part of the row.
+**A computed row is the committed file's own characters.** A trend cell and a
+numeric fact live in a JSON input rather than in prose, and the text they offer
+to be quoted is the slice of the committed file they occupy -- indentation, line
+breaks and key order as the file wrote them. `printed_row` re-renders a node and
+then *locates* it in the file, so what comes back is a slice and not a rendering
+that merely looks like one. Matching against a re-rendering is matching against
+text the reader never saw: `{"days": 91, "value": 51.7}` appears in no committed
+input, because `input_trends.json` writes those two keys on two lines under a
+two-space indent, and a gate that accepted that string would be accepting a
+quote of nothing while refusing the same characters copied out of the file.
+
+**A row's id is one its reader can write.** `docs/INPUT_SPEC.md` §2.2 gives a
+trend cell `{accession}:trends:{metric}:{period}`: the metric is the ratio's own
+key and the period is the row's own `label`, both printed in `input_trends.json`
+where the reader can read them. A numeric fact is named by the `id` the fact
+already carries and the file already prints. The spec's other spelling for a
+fact, `{accession}:facts:{tag}:{period}`, is not resolved here: a fact's period
+has no printed spelling in the committed input -- a context is a start and an
+end, or an instant -- and tag-and-period is not unique across segments, so the
+gate would be minting a name that neither the writer of the file nor its reader
+could produce. That divergence between the spec and the file is the spec's to
+settle. Articulation checks have no committed input yet -- `src/articulation.py`
+is unwritten -- so their ids resolve to nothing and an item quoting one is
+dropped, which is the fail-closed direction and reverses itself the day the
+input exists.
+
+**Only what the input declares is quotable.** The index holds the ids the
+committed files carry: the `[id]` lines of the prose, the facts of
+`input_numbers.json`, the cells of `input_trends.json`. There is no way to name
+an arbitrary file and an arbitrary depth inside it. An earlier draft had one, a
+JSON pointer, and it made every JSON file that happened to sit in the directory
+quotable -- `input_manifest.json`, which carries the text of the paragraphs the
+pipeline *excluded* from that reader's input, and `input_market.json` if a
+broken run put one there. Certifying a quote of text the reader was never given
+is the failure this gate exists to catch, not one for it to commit.
+
+**One id names one item.** An item id carried by more than one item in the run
+-- twice in one report, or once in each of two -- is dropped everywhere it
+appears and resolves for nobody. A citation is meant to name one upstream claim;
+against a repeated id it names a set, and a dropped item's id would go on being
+citable through its twin.
 
 **Fail closed.** A paragraph id that resolves to nothing, an item with no id, an
 empty quote, a citation that is not a string -- each is a drop and never a pass.
@@ -40,8 +73,10 @@ published record. It leaves every other key alone and follows the manifest's own
 convention -- the list under `dropped_items`, its length under `counts` -- which
 is how `paragraphs` and `exclusions` are already written.
 
-There is no command line here. The on-disk shape of a report file is not settled
--- `docs/INPUT_SPEC.md` names `report_numbers.md` while `docs/CHECKLIST.md` §7
+There is no command line here, and nothing calls `gate` yet because there is no
+stage runner to call it: `docs/HOW_WE_WORK.md` names the stages and no module
+runs them. The on-disk shape of a report file is unsettled too --
+`docs/INPUT_SPEC.md` names `report_numbers.md` while `docs/CHECKLIST.md` §7
 gives the items as JSON -- and a gate that had to guess it would be guessing
 about the file it polices. The runner holds the parsed items and calls `gate`.
 """
@@ -50,6 +85,7 @@ from __future__ import annotations
 
 import json
 import sys
+from collections import Counter
 from pathlib import Path
 
 try:
@@ -60,10 +96,16 @@ except ImportError:  # invoked as a plain script
 
 MANIFEST = "input_manifest.json"
 NUMBERS = "input_numbers.json"
+TRENDS = "input_trends.json"
 
-# A pointer that resolves to a JSON `null` and a pointer that resolves to
-# nothing are different answers, and only one of them is a paragraph.
-_ABSENT = object()
+# The indent every committed JSON input is written under.
+INDENT = 2
+
+# How deep a computed row sits in the file that holds it: a fact is the `n`th
+# entry of `facts`, a trend cell the `metric` of the `n`th period's `ratios`.
+# The depth is what tells the row's own indentation from the file's.
+FACT_DEPTH = 2
+RATIO_DEPTH = 4
 
 
 class QuoteGateError(Exception):
@@ -72,42 +114,77 @@ class QuoteGateError(Exception):
 
 # --- what a committed input offers to be quoted ------------------------------
 
-def printed_row(node) -> str:
-    """A computed row as printed: one line, keys sorted. A string prints as itself."""
-    if isinstance(node, str):
-        return node
-    return json.dumps(node, sort_keys=True)
+def printed_row(file_text: str, node, depth: int) -> str | None:
+    """The slice of a committed file one computed row occupies, or None.
+
+    `json.dumps` lays a node out from the node alone, so the only things the
+    file adds are the indent the row's depth carries and whether whoever wrote
+    the file sorted the keys -- `src/trends.py:509` does and
+    `src/assemble_bundle.py:499` does not. Both are settled by finding the
+    result in the file rather than by being told, and a row that is not found
+    there is not quotable at all.
+    """
+    for sort_keys in (False, True):
+        block = json.dumps(node, indent=INDENT, sort_keys=sort_keys)
+        block = block.replace("\n", "\n" + " " * (INDENT * depth))
+        if block in file_text:
+            return block
+    return None
 
 
-def _at_pointer(payload, pointer: str):
-    """The node a JSON pointer names, or `_ABSENT`. RFC 6901 and nothing beyond it."""
-    if pointer == "":
-        return payload
-    if not pointer.startswith("/"):
-        return _ABSENT
-    node = payload
-    for token in pointer.split("/")[1:]:
-        token = token.replace("~1", "/").replace("~0", "~")
-        if isinstance(node, list):
-            if not token.isdigit() or int(token) >= len(node):
-                return _ABSENT
-            node = node[int(token)]
-        elif isinstance(node, dict):
-            if token not in node:
-                return _ABSENT
-            node = node[token]
-        else:
-            return _ABSENT
-    return node
+def _json_input(bundle_root, name: str) -> tuple[str, dict]:
+    """One committed JSON file of a bundle, as its text and its object."""
+    text = cutoff_guard.load_bundle_file(bundle_root, name)
+    try:
+        payload = json.loads(text)
+    except ValueError as exc:
+        raise QuoteGateError(f"{name} does not parse as JSON: {exc}") from exc
+    if not isinstance(payload, dict):
+        raise QuoteGateError(f"{name} is not an object, so it holds nothing to quote")
+    return text, payload
 
 
-def quotable(input_dir) -> dict[str, str]:
+def _computed_rows(folder: Path, accession: str):
+    """(id, printed row, file) for every computed row a committed input declares.
+
+    A numeric fact by the `id` it already carries; a trend cell by the id
+    `docs/INPUT_SPEC.md` §2.2 gives it, `{accession}:trends:{metric}:{period}`,
+    whose metric is the ratio's own key and whose period is the row's own
+    `label` — both printed in the file, so the reader can write the id it
+    quotes. A row the file does not print as this module expects yields
+    nothing, and an item quoting it is dropped.
+    """
+    if cutoff_guard.bundle_files(folder, NUMBERS):
+        text, payload = _json_input(folder, NUMBERS)
+        for fact in payload.get("facts") or []:
+            if not isinstance(fact, dict) or not isinstance(fact.get("id"), str):
+                continue
+            row = printed_row(text, fact, FACT_DEPTH)
+            if row is not None:
+                yield fact["id"], row, NUMBERS
+
+    if cutoff_guard.bundle_files(folder, TRENDS):
+        text, payload = _json_input(folder, TRENDS)
+        for section in ("quarters", "years"):
+            for period in payload.get(section) or []:
+                if not isinstance(period, dict):
+                    continue
+                label, ratios = period.get("label"), period.get("ratios")
+                if not isinstance(label, str) or not isinstance(ratios, dict):
+                    continue
+                for metric, cell in ratios.items():
+                    row = printed_row(text, cell, RATIO_DEPTH)
+                    if row is not None:
+                        yield f"{accession}:trends:{metric}:{label}", row, TRENDS
+
+
+def quotable(input_dir, accession: str) -> dict[str, str]:
     """Paragraph id → the committed text it owns, for one agent's input directory.
 
-    The prose files by their `[id]` lines, and `input_numbers.json` by the id
-    each fact already carries. Rows named by a JSON pointer are resolved when a
-    quote asks for one, because a pointer names a row that need not be indexed
-    in advance.
+    The prose files by their `[id]` lines, and the computed rows by the ids
+    `_computed_rows` gives them. A file that declares no ids of its own — the
+    market table, the manifest, anything else that lands in the directory —
+    offers nothing here for a quote to be matched against.
     """
     folder = Path(input_dir)
     if not folder.is_dir():
@@ -128,31 +205,10 @@ def quotable(input_dir) -> dict[str, str]:
         for identifier, body in assemble_bundle.paragraph_blocks(
                 cutoff_guard.load_bundle_file(folder, name)):
             record(identifier, body, name)
-    if cutoff_guard.bundle_files(folder, NUMBERS):
-        payload = json.loads(cutoff_guard.load_bundle_file(folder, NUMBERS))
-        for fact in payload.get("facts") or []:
-            if isinstance(fact, dict) and isinstance(fact.get("id"), str):
-                record(fact["id"], printed_row(fact), NUMBERS)
+
+    for identifier, row, where in _computed_rows(folder, accession):
+        record(identifier, row, where)
     return index
-
-
-def committed_text(input_dir, paragraph_id: str, index: dict | None = None) -> str | None:
-    """The text one paragraph id owns, or None when it names nothing in this input."""
-    if "#" in paragraph_id:
-        name, _, pointer = paragraph_id.partition("#")
-        if not name or name != Path(name).name:
-            return None
-        if not cutoff_guard.bundle_files(input_dir, name):
-            return None
-        try:
-            payload = json.loads(cutoff_guard.load_bundle_file(input_dir, name))
-        except ValueError:
-            return None
-        node = _at_pointer(payload, pointer)
-        return None if node is _ABSENT else printed_row(node)
-    if index is None:
-        index = quotable(input_dir)
-    return index.get(paragraph_id)
 
 
 # --- why one item is dropped -------------------------------------------------
@@ -163,7 +219,7 @@ def item_id(item) -> str | None:
     return identifier if isinstance(identifier, str) and identifier.strip() else None
 
 
-def quote_drop_reason(item, input_dir, index: dict | None = None) -> str | None:
+def quote_drop_reason(item, index: dict) -> str | None:
     """Why this reader item is dropped, or None when it stands."""
     if item_id(item) is None:
         return "the item carries no id, so nothing downstream could cite it"
@@ -173,10 +229,9 @@ def quote_drop_reason(item, input_dir, index: dict | None = None) -> str | None:
     quote = item.get("quote")
     if not isinstance(quote, str) or not quote:
         return "the item carries no quote, and an empty quote matches every text"
-    text = committed_text(input_dir, paragraph_id, index)
-    if text is None:
+    if paragraph_id not in index:
         return f"paragraph id {paragraph_id} is not in this reader's committed input"
-    if quote not in text:
+    if quote not in index[paragraph_id]:
         return f"the quote does not string-match {paragraph_id} in the committed input"
     return None
 
@@ -219,21 +274,23 @@ def citation_drop_reason(item, upstream_ids) -> str | None:
 
 # --- the gate over a whole run -----------------------------------------------
 
-def write_counts(bundle_root, dropped: list[dict]) -> dict:
+def _write_counts(bundle_root, manifest: dict, dropped: list[dict]) -> None:
     """The drop count into `input_manifest.json`. Every other key is left alone."""
-    try:
-        manifest = json.loads(cutoff_guard.load_bundle_file(bundle_root, MANIFEST))
-    except ValueError as exc:
-        raise QuoteGateError(f"{MANIFEST} does not parse as JSON: {exc}") from exc
-    if not isinstance(manifest, dict):
-        raise QuoteGateError(f"{MANIFEST} is not an object, so it has no counts to write")
+    manifest = dict(manifest)
     manifest["dropped_items"] = [dict(row) for row in dropped]
-    if not isinstance(manifest.get("counts"), dict):
-        manifest["counts"] = {}
+    counts = manifest.get("counts")
+    manifest["counts"] = dict(counts) if isinstance(counts, dict) else {}
     manifest["counts"]["dropped_items"] = len(dropped)
     (Path(bundle_root) / MANIFEST).write_text(
-        json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    return manifest
+        json.dumps(manifest, indent=INDENT, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def _repeated_ids(reports: list[dict]) -> set[str]:
+    """Every item id that more than one item in the run carries."""
+    counted = Counter(item_id(item) for entry in reports
+                      for item in entry.get("items") or [])
+    return {identifier for identifier, count in counted.items()
+            if identifier is not None and count > 1}
 
 
 def gate(reports: list[dict], bundle_root) -> dict:
@@ -247,10 +304,20 @@ def gate(reports: list[dict], bundle_root) -> dict:
 
     A report naming an `input` is a reader's and its items are quoted against
     that directory; a report naming what it `cites` is a comparer's or a
-    supervisor's and its items cite. A citation resolves against the ids the
-    upstream report **kept**, so an item dropped at one layer cannot be cited at
-    the next — which is what "dropped before the next layer sees it" means.
+    supervisor's and its items cite. `cites` is what the report is allowed to
+    label, not what its layer can see — `docs/INPUT_SPEC.md` gives a comparer
+    both reader reports and lets it label only its own. A citation resolves
+    against the ids the upstream report **kept**, so an item dropped at one
+    layer cannot be cited at the next — which is what "dropped before the next
+    layer sees it" means.
     """
+    manifest = _json_input(bundle_root, MANIFEST)[1]
+    accession = manifest.get("accession")
+    if not isinstance(accession, str) or not accession:
+        raise QuoteGateError(
+            f"{MANIFEST} names no accession, and a computed row's id begins with one")
+    repeated = _repeated_ids(reports)
+
     kept: dict[str, list[dict]] = {}
     kept_ids: dict[str, set[str]] = {}
     dropped: list[dict] = []
@@ -262,28 +329,34 @@ def gate(reports: list[dict], bundle_root) -> dict:
             raise QuoteGateError(
                 f"{name} has to name either the input its items quote or the "
                 "reports its items cite, and exactly one of the two")
-        items = list(entry.get("items") or [])
+
+        index, upstream_ids = None, set()
         if "input" in entry:
-            index = quotable(entry["input"])
-            reasons = [quote_drop_reason(item, entry["input"], index) for item in items]
+            index = quotable(entry["input"], accession)
         else:
-            upstream_ids: set[str] = set()
             for upstream in entry["cites"]:
                 if upstream not in kept_ids:
                     raise QuoteGateError(
                         f"{name} cites {upstream}, which has not been gated yet — a "
                         "citation resolves against what the upstream report kept")
                 upstream_ids |= kept_ids[upstream]
-            reasons = [citation_drop_reason(item, upstream_ids) for item in items]
 
         standing, standing_ids = [], set()
-        for item, why in zip(items, reasons):
+        for item in entry.get("items") or []:
+            identifier = item_id(item)
+            if identifier in repeated:
+                why = (f"the item id {identifier} is on more than one item in this "
+                       "run, so a citation naming it would not name one item")
+            elif index is not None:
+                why = quote_drop_reason(item, index)
+            else:
+                why = citation_drop_reason(item, upstream_ids)
             if why is None:
                 standing.append(item)
-                standing_ids.add(item_id(item))
+                standing_ids.add(identifier)
             else:
-                dropped.append({"report": name, "item_id": item_id(item), "reason": why})
+                dropped.append({"report": name, "item_id": identifier, "reason": why})
         kept[name], kept_ids[name] = standing, standing_ids
 
-    write_counts(bundle_root, dropped)
+    _write_counts(bundle_root, manifest, dropped)
     return {"kept": kept, "dropped": dropped}
