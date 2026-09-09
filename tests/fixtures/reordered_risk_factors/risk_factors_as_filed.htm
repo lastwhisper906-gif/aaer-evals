@@ -1,0 +1,127 @@
+<!--
+Constructed, not filed. This pair of documents exists to answer one question:
+does a risk-factor section that has been reordered and not otherwise touched
+come out of the diff as no change? Nothing here was served by EDGAR, and
+neither file is recorded in a company manifest.
+
+Each of the eight risk factors is introduced by a delimiting HTML comment. The
+other document in this directory holds the same eight delimited blocks,
+character for character, in a different order, and
+tests/test_split_risk_factors.py proves that at the byte level before it asks
+the splitter anything.
+-->
+<html>
+<head><title>Constructed filing — risk factors as filed</title></head>
+<body>
+
+<p>PART I</p>
+
+<div>Item 1.</div>
+<div>Business</div>
+<div>Item 1A.</div>
+<div>Risk Factors</div>
+<div>Item 1B.</div>
+<div>Unresolved Staff Comments</div>
+<div>Item 2.</div>
+<div>Properties</div>
+
+<div><b>Item 1. Business</b></div>
+<p>We design and sell industrial control equipment to original equipment
+manufacturers in North America, Europe and Asia.</p>
+
+<div><b>Item 1A. Risk Factors</b></div>
+<p>You should consider each of the following factors in evaluating our business
+and our prospects.</p>
+
+<!-- risk factor -->
+<div>
+<p><b>We buy the controller in our flagship product from a single supplier.</b></p>
+<p>One supplier makes the motion controller used in every unit of our flagship
+product line, and it is manufactured at a single plant. If that plant stops
+producing, whether through equipment failure, a labour dispute or a natural
+disaster, we have no qualified second source and would be unable to ship the
+product line until a replacement part is designed, qualified and certified.</p>
+</div>
+
+<!-- risk factor -->
+<div>
+<p><b>Three customers account for most of our revenue.</b></p>
+<p>Our three largest customers together accounted for a majority of our revenue
+in each of the last three fiscal years, and none of them is obliged to buy any
+minimum quantity from us. A decision by any one of them to move a programme to
+a competitor, or to build the assembly in house, would reduce our revenue
+sharply and on short notice.</p>
+</div>
+
+<!-- risk factor -->
+<div>
+<p><b>We are a defendant in litigation that could result in substantial
+damages.</b></p>
+<p>We are a defendant in patent litigation brought by a competitor in the
+Eastern District of Texas, and we are subject to other legal proceedings that
+arise in the ordinary course of our business. An adverse judgment, or a
+settlement on terms we do not now expect, could exceed the amounts we have
+accrued and would reduce our earnings in the period in which it is
+recorded.</p>
+</div>
+
+<!-- risk factor -->
+<div>
+<p><b>Our credit agreement restricts what we may do with our cash.</b></p>
+<p>Our revolving credit agreement contains a leverage covenant and an interest
+coverage covenant, each tested at the end of every fiscal quarter. A decline in
+earnings could put us out of compliance, and a waiver, if our lenders granted
+one at all, would come at a cost. If we could not obtain one, the lenders could
+accelerate the borrowings outstanding under the agreement.</p>
+</div>
+
+<!-- risk factor -->
+<div>
+<p><b>Our markets change faster than our development cycle.</b></p>
+<p>The control systems our customers design into their equipment are replaced
+on a cycle shorter than the one on which we develop new products. If a
+generation of our products misses the design window for a customer programme,
+we do not get another opportunity at that programme until the following
+generation, which may be several years away.</p>
+</div>
+
+<!-- risk factor -->
+<div>
+<p><b>A failure of our information systems would interrupt our operations.</b></p>
+<p>We depend on our own information systems, and on those our suppliers and
+logistics providers operate, to take orders, schedule production and ship
+product. An intrusion, a ransomware event or an extended outage would stop us
+taking and filling orders, and the cost of restoring the systems and of
+notifying the people whose data they hold could be material.</p>
+</div>
+
+<!-- risk factor -->
+<div>
+<p><b>Tariffs and trade restrictions raise our costs and can close a
+market.</b></p>
+<p>We import components and export finished assemblies, and both are subject to
+tariffs, export licences and country of origin rules that governments change
+with little notice. A change that adds duty to a component we import, or that
+requires a licence to ship a finished assembly to a customer abroad, raises our
+cost or removes the sale altogether.</p>
+</div>
+
+<!-- risk factor -->
+<div>
+<p><b>We may not realise what we expect from the businesses we buy.</b></p>
+<p>We have acquired four businesses in the last five years and expect to
+acquire others. An acquisition can fail to earn what we paid for it because the
+products do not sell as we forecast, because the engineering teams do not
+stay, or because the accounting systems take longer to combine than we planned,
+and a shortfall would lead us to write down goodwill or other intangible
+assets.</p>
+</div>
+
+<div><b>Item 1B. Unresolved Staff Comments</b></div>
+<p>None.</p>
+
+<div><b>Item 2. Properties</b></div>
+<p>We own our headquarters and lease three manufacturing sites.</p>
+
+</body>
+</html>

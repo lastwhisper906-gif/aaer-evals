@@ -167,5 +167,21 @@
   "prior_period_diff.10-Q.prior_accession": {
     "value": "0001783180-26-000026",
     "from": "the submissions index, the same derivation as note_history.10-Q.prior_accession: the latest 10-Q filed before 2026-07-28 is 0001783180-26-000026, filed 2026-04-30"
+  },
+  "risk_factors.10-K.ends_before": {
+    "value": "ITEM 1B. UNRESOLVED STAFF COMMENTS",
+    "from": "the filing, read by eye in 10-K/carr-20251231.htm.gz, rendered to lines by tests/independent_text.py::block_paragraphs (html.parser) and importing nothing from src/: the LAST Item 1A heading in the document is the line 'ITEM 1A. RISK FACTORS'; the earlier candidate is the table-of-contents entry, which prints the same words in title case as 'Item 1A. Risk Factors' with the page number on the next line. The first Item 1B heading after it is 'ITEM 1B. UNRESOLVED STAFF COMMENTS'. Those two lines are where Item 1A starts and stops. docs/INPUT_SPEC.md carries this section as a diff and nothing else, so a boundary that slipped would not show up as an empty section — it would show up as a page of risk factors the prior period does not have"
+  },
+  "risk_factors.10-K.opens_at": {
+    "value": "ITEM 1A. RISK FACTORS",
+    "from": "the filing, read by eye in 10-K/carr-20251231.htm.gz, rendered to lines by tests/independent_text.py::block_paragraphs (html.parser) and importing nothing from src/: the LAST Item 1A heading in the document is the line 'ITEM 1A. RISK FACTORS'; the earlier candidate is the table-of-contents entry, which prints the same words in title case as 'Item 1A. Risk Factors' with the page number on the next line. The first Item 1B heading after it is 'ITEM 1B. UNRESOLVED STAFF COMMENTS'. Those two lines are where Item 1A starts and stops. docs/INPUT_SPEC.md carries this section as a diff and nothing else, so a boundary that slipped would not show up as an empty section — it would show up as a page of risk factors the prior period does not have"
+  },
+  "risk_factors.10-Q.ends_before": {
+    "value": "Item 2. Unregistered Sales of Equity Securities and Use of Proceeds",
+    "from": "the filing, read by eye in 10-Q/carr-20260630.htm, rendered to lines by tests/independent_text.py::block_paragraphs (html.parser) and importing nothing from src/: the earlier candidate is the table-of-contents entry, which prints the same words with the page number 47 on the next line. The LAST Item 1A heading in the document is the line 'Item 1A. Risk Factors', in Part II after Part I's Item 4, and the first item heading after it is 'Item 2. Unregistered Sales of Equity Securities and Use of Proceeds'. Those two lines are where Part II's Item 1A starts and stops. docs/INPUT_SPEC.md carries this section as a diff and nothing else, so a boundary that slipped would not show up as an empty section — it would show up as a page of risk factors the prior period does not have"
+  },
+  "risk_factors.10-Q.opens_at": {
+    "value": "Item 1A. Risk Factors",
+    "from": "the filing, read by eye in 10-Q/carr-20260630.htm, rendered to lines by tests/independent_text.py::block_paragraphs (html.parser) and importing nothing from src/: the earlier candidate is the table-of-contents entry, which prints the same words with the page number 47 on the next line. The LAST Item 1A heading in the document is the line 'Item 1A. Risk Factors', in Part II after Part I's Item 4, and the first item heading after it is 'Item 2. Unregistered Sales of Equity Securities and Use of Proceeds'. Those two lines are where Part II's Item 1A starts and stops. docs/INPUT_SPEC.md carries this section as a diff and nothing else, so a boundary that slipped would not show up as an empty section — it would show up as a page of risk factors the prior period does not have"
   }
 }
