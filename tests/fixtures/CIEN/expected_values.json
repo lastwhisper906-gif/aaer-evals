@@ -1,0 +1,163 @@
+{
+  "auditors_report.10-K.audit_firm": {
+    "value": "PricewaterhouseCoopers LLP",
+    "from": "read by eye in 10-K/cien-20251101.htm.gz: the report is signed '/s/ PricewaterhouseCoopers LLP', Baltimore, Maryland, December 12, 2025, followed by 'We have served as the Company's auditor since 1992'"
+  },
+  "auditors_report.10-K.critical_audit_matters": {
+    "value": 1,
+    "from": "read by eye in 10-K/cien-20251101.htm.gz: the report identifies one matter, 'Reserve for Excess and Obsolete Inventory' - 'The principal considerations for our determination that performing procedures relating to the reserve for excess and obsolete inventory is a critical audit matter...'; no second sub-heading follows before the signature"
+  },
+  "auditors_report.10-K.paragraphs": {
+    "value": 27,
+    "from": "already judged: tests/test_split_controls.py::recount finds the report with regexes written out in that test file over tests/independent_text.block_text (html.parser), selects the candidate whose body says 'critical audit matter' and splits on blank lines, importing nothing from src/; that recount was re-run here against the stored 10-K and gives 27"
+  },
+  "auditors_report.10-K.the_report_states": {
+    "value": "one",
+    "from": "read by eye in 10-K/cien-20251101.htm.gz: 'The critical audit matter communicated below is a matter arising from the current period audit of the consolidated financial statements' - singular"
+  },
+  "bundle.10-K.eight_k": {
+    "value": 0,
+    "from": "hand computation from tests/fixtures/CIEN/manifest.json: the stored 8-K exhibit was filed 2026-06-04, after the 10-K's filing date of 2025-12-12, so no earnings release can be in a 10-K bundle cut at that date"
+  },
+  "bundle.10-Q.eight_k": {
+    "value": 72,
+    "from": "hand computation: the 8-K and the 10-Q were both filed 2026-06-04, so the 8-K is not later and the release contributes (78 blocks outside tables - 13 dropped) + 7 tables = 72, from the three re-sourced earnings_release keys of this file; NOTE the parser branch recorded 78, which follows from its own dropped count of 7"
+  },
+  "cleaner.10-K.tables": {
+    "value": 86,
+    "from": "the filing: 86 <table> start tags in 10-K/cien-20251101.htm.gz, counted with an html.parser.HTMLParser subclass that increments on tag == 'table' and nothing else; imports nothing from src/"
+  },
+  "cleaner.10-Q.tables": {
+    "value": 57,
+    "from": "the filing: 57 <table> start tags in 10-Q/cien-20260502.htm, counted with html.parser the same way; imports nothing from src/"
+  },
+  "cleaner.8-K.tables": {
+    "value": 7,
+    "from": "the filing: 7 <table> start tags in 8-K/ex9912026q2earningspressre.htm, counted with html.parser; the cleaner's 8-K role is that exhibit, so this equals earnings_release.8-K.exhibit_99_1_tables, which the independent regex recount at tests/test_parse_8k.py::test_the_expected_counts_survive_an_independent_recount also gives as 7"
+  },
+  "cleaner.8-K.tables_already_in_xbrl": {
+    "value": 0,
+    "from": "zero by construction - no XBRL instance is fetched for an 8-K exhibit, so the cleaner is handed an empty fact set (tests/test_clean_text.py::test_the_cleaner_finds_every_table_the_document_holds passes facts=[]) and no table can match"
+  },
+  "earnings_release.8-K.eight_k_filings_in_the_index": {
+    "value": 52,
+    "from": "already judged: tests/test_parse_8k.py::test_the_index_is_a_recount_of_the_stored_file reads tests/fixtures/CIEN/submissions.json with json alone and counts the rows whose form is '8-K' or '8-K/A'; that count was re-run here and gives 52"
+  },
+  "earnings_release.8-K.exhibit_99_1_blocks_outside_tables": {
+    "value": 78,
+    "from": "the exhibit: 78 blocks with visible text in 8-K/ex9912026q2earningspressre.htm after every <table>...</table> region is replaced by an empty <p></p> and the rest is block-split with tests/independent_text.block_paragraphs (html.parser); the measurement the recount at tests/test_parse_8k.py::test_the_expected_counts_survive_an_independent_recount already performs, importing nothing from src/"
+  },
+  "earnings_release.8-K.exhibit_99_1_dropped": {
+    "value": 13,
+    "from": "read by eye in 8-K/ex9912026q2earningspressre.htm: 10 bare page-footer numerals (1 to 10, each alone in the bottom-positioned footer div immediately before <hr page-break-after:always>, the last one at the end of the document) and 3 safe-harbour paragraphs ('Statements relating to business outlook are forward-looking in nature and actual results may differ materially...', 'Forward-Looking Statements. You are encouraged to review the Investors section of our website...', 'Ciena's actual results, performance or events may differ materially from these forward-looking statements...'); the parser branch recorded 7"
+  },
+  "earnings_release.8-K.exhibit_99_1_tables": {
+    "value": 7,
+    "from": "already judged: tests/test_parse_8k.py::test_the_expected_counts_survive_an_independent_recount re-derives this with a bare regex for <table> elements holding at least one cell with a visible character, importing nothing from src/; that recount was re-run here and gives 7"
+  },
+  "earnings_release.8-K.held_items": {
+    "value": [
+      "2.02",
+      "9.01"
+    ],
+    "from": "the submissions index: the one filings row in tests/fixtures/CIEN/submissions.json with accession 0001628280-26-040614 carries items '2.02,9.01', split on commas - EDGAR's own catalogue, which docs/INPUT_SPEC.md section 1 names as the source for 8-K item codes"
+  },
+  "item_4_controls.10-Q.paragraphs": {
+    "value": 6,
+    "from": "already judged: tests/test_split_controls.py::recount applies the Item 4 boundaries written out as regexes in that test file to tests/independent_text.block_text (html.parser) and splits on blank lines, importing nothing from src/; re-run here it gives 6, and six paragraphs are eye-checkable"
+  },
+  "item_9a.10-K.paragraphs": {
+    "value": 15,
+    "from": "already judged: tests/test_split_controls.py::recount, same mechanism against the Item 9A boundaries, importing nothing from src/; re-run here it gives 15"
+  },
+  "mdna.10-K.ends_before": {
+    "value": "Item 7A. Quantitative and Qualitative Disclosures About Market Risk",
+    "from": "the filing, read by eye in 10-K/cien-20251101.htm.gz, rendered to lines by tests/independent_text.block_paragraphs (html.parser) and importing nothing from src/: the LAST Item 7 heading in the document is the line 'Item 7. Management’s Discussion and Analysis of Financial Condition and Results of Operations' — the earlier one is the table-of-contents entry — and the first Item 7A or Item 8 heading after it is 'Item 7A. Quantitative and Qualitative Disclosures About Market Risk'. Those two lines are where the section starts and stops; every other MD&A expectation is a count, and a count cannot say the section began in the right place"
+  },
+  "mdna.10-K.heading_candidates": {
+    "value": 2,
+    "from": "the filing: two Item 7 MD&A heading lines in 10-K/cien-20251101.htm.gz - the table-of-contents entry ('Item 7. Management's Discussion and Analysis of Financial Condition and Results of Operations 26', sitting between 'Item 6. [Reserved] 25' and 'Item 7A. Quantitative and Qualitative Disclosures about Market Risk 38') and the section heading itself, which is followed by 'The following discussion and analysis should be read in conjunction with our consolidated'; counted over tests/independent_text.block_text and read by eye"
+  },
+  "mdna.10-K.opens_at": {
+    "value": "Item 7. Management’s Discussion and Analysis of Financial Condition and Results of Operations",
+    "from": "the filing, read by eye in 10-K/cien-20251101.htm.gz, rendered to lines by tests/independent_text.block_paragraphs (html.parser) and importing nothing from src/: the LAST Item 7 heading in the document is the line 'Item 7. Management’s Discussion and Analysis of Financial Condition and Results of Operations' — the earlier one is the table-of-contents entry — and the first Item 7A or Item 8 heading after it is 'Item 7A. Quantitative and Qualitative Disclosures About Market Risk'. Those two lines are where the section starts and stops; every other MD&A expectation is a count, and a count cannot say the section began in the right place"
+  },
+  "mdna.10-K.paragraphs": {
+    "value": 580,
+    "from": "already judged: tests/test_split_mdna.py::recount builds the block text with html.parser through tests/independent_text, takes the LAST Item 7 heading, stops at the first Item 7A or Item 8 heading and splits on blank lines, with its own regexes and no src/ import; re-run here it gives 580"
+  },
+  "mdna.10-Q.ends_before": {
+    "value": "Item 3. Quantitative and Qualitative Disclosures About Market Risk",
+    "from": "the filing, read by eye in 10-Q/cien-20260502.htm, rendered to lines by tests/independent_text.block_paragraphs (html.parser) and importing nothing from src/: the LAST Item 2 heading in the document is the line 'Item 2. Management’s Discussion and Analysis of Financial Condition and Results of Operations' — the earlier one is the table-of-contents entry — and the first Item 3 or Item 4 heading after it is 'Item 3. Quantitative and Qualitative Disclosures About Market Risk'. Those two lines are where the section starts and stops; every other MD&A expectation is a count, and a count cannot say the section began in the right place"
+  },
+  "mdna.10-Q.heading_candidates": {
+    "value": 2,
+    "from": "the filing: two Item 2 MD&A heading lines in 10-Q/cien-20260502.htm - the table-of-contents entry ('Item 2. Management's Discussion and Analysis of Financial Condition and Results of Operations 26', followed by 'Item 3. Quantitative and Qualitative Disclosures About Market Risk 36') and the section heading itself, which is followed by 'Cautionary Note Regarding Forward-Looking Statements'; counted over tests/independent_text.block_text and read by eye"
+  },
+  "mdna.10-Q.opens_at": {
+    "value": "Item 2. Management’s Discussion and Analysis of Financial Condition and Results of Operations",
+    "from": "the filing, read by eye in 10-Q/cien-20260502.htm, rendered to lines by tests/independent_text.block_paragraphs (html.parser) and importing nothing from src/: the LAST Item 2 heading in the document is the line 'Item 2. Management’s Discussion and Analysis of Financial Condition and Results of Operations' — the earlier one is the table-of-contents entry — and the first Item 3 or Item 4 heading after it is 'Item 3. Quantitative and Qualitative Disclosures About Market Risk'. Those two lines are where the section starts and stops; every other MD&A expectation is a count, and a count cannot say the section began in the right place"
+  },
+  "mdna.10-Q.paragraphs": {
+    "value": 912,
+    "from": "already judged: tests/test_split_mdna.py::recount, the same independent mechanism against the Item 2 boundaries; re-run here it gives 912"
+  },
+  "note_history.10-Q.key_note_tags": {
+    "value": [
+      "us-gaap:CommitmentsAndContingenciesDisclosureTextBlock",
+      "us-gaap:DebtDisclosureTextBlock",
+      "us-gaap:DisaggregationOfRevenueTableTextBlock",
+      "us-gaap:OrganizationConsolidationAndPresentationOfFinancialStatementsDisclosureTextBlock",
+      "us-gaap:RevenueFromContractWithCustomerTextBlock",
+      "us-gaap:ScheduleOfCarryingValuesAndEstimatedFairValuesOfDebtInstrumentsTableTextBlock",
+      "us-gaap:SignificantAccountingPoliciesTextBlock",
+      "us-gaap:SubsequentEventsTextBlock"
+    ],
+    "from": "the current 10-Q XBRL instance 10-Q/cien-20260502_htm.xml: every element whose local name ends in 'TextBlock' listed with ElementTree and a start-ns pass for the prefixes, importing nothing from src/, then each name read against the six key notes docs/INPUT_SPEC.md section 5 names — contingencies: us-gaap:CommitmentsAndContingenciesDisclosureTextBlock; critical_accounting_estimates: us-gaap:OrganizationConsolidationAndPresentationOfFinancialStatementsDisclosureTextBlock, us-gaap:SignificantAccountingPoliciesTextBlock; debt: us-gaap:DebtDisclosureTextBlock, us-gaap:ScheduleOfCarryingValuesAndEstimatedFairValuesOfDebtInstrumentsTableTextBlock; revenue_recognition_policy: us-gaap:DisaggregationOfRevenueTableTextBlock, us-gaap:RevenueFromContractWithCustomerTextBlock; subsequent_events: us-gaap:SubsequentEventsTextBlock. The instance also holds us-gaap:InvestmentsInDebtAndMarketableEquitySecuritiesAndCertainTradingAssetsDisclosureTextBlock — the investments note, which is what this company owns and not what it owes, so nothing in it is one of the six. src/note_history.py's 'debt' pattern matches the bare substring 'debt' and pairs it as the debt note anyway: this is the one place the reading above DISAGREES with the parser"
+  },
+  "note_history.10-Q.prior_accession": {
+    "value": "0001628280-26-015152",
+    "from": "the submissions index: in tests/fixtures/CIEN/submissions.json the latest 10-Q filed strictly before the current 10-Q (0001628280-26-040767, filed 2026-06-04) is 0001628280-26-015152, filed 2026-03-05; it is also the accession on the manifest's prior_period row"
+  },
+  "note_history.10-Q.prior_key_note_tags": {
+    "value": [
+      "us-gaap:CommitmentsAndContingenciesDisclosureTextBlock",
+      "us-gaap:DebtDisclosureTextBlock",
+      "us-gaap:DisaggregationOfRevenueTableTextBlock",
+      "us-gaap:OrganizationConsolidationAndPresentationOfFinancialStatementsDisclosureTextBlock",
+      "us-gaap:RevenueFromContractWithCustomerTextBlock",
+      "us-gaap:ScheduleOfCarryingValuesAndEstimatedFairValuesOfDebtInstrumentsTableTextBlock",
+      "us-gaap:SignificantAccountingPoliciesTextBlock",
+      "us-gaap:SubsequentEventsTextBlock"
+    ],
+    "from": "the prior 10-Q XBRL instance 10-Q/cien-20260131_htm.xml: every element whose local name ends in 'TextBlock' listed with ElementTree and a start-ns pass for the prefixes, importing nothing from src/, then each name read against the six key notes docs/INPUT_SPEC.md section 5 names — contingencies: us-gaap:CommitmentsAndContingenciesDisclosureTextBlock; critical_accounting_estimates: us-gaap:OrganizationConsolidationAndPresentationOfFinancialStatementsDisclosureTextBlock, us-gaap:SignificantAccountingPoliciesTextBlock; debt: us-gaap:DebtDisclosureTextBlock, us-gaap:ScheduleOfCarryingValuesAndEstimatedFairValuesOfDebtInstrumentsTableTextBlock; revenue_recognition_policy: us-gaap:DisaggregationOfRevenueTableTextBlock, us-gaap:RevenueFromContractWithCustomerTextBlock; subsequent_events: us-gaap:SubsequentEventsTextBlock. The instance also holds us-gaap:InvestmentsInDebtAndMarketableEquitySecuritiesAndCertainTradingAssetsDisclosureTextBlock — the investments note, which is what this company owns and not what it owes, so nothing in it is one of the six. src/note_history.py's 'debt' pattern matches the bare substring 'debt' and pairs it as the debt note anyway: this is the one place the reading above DISAGREES with the parser"
+  },
+  "notes.10-K.extension_tag_count": {
+    "value": 8,
+    "from": "the 10-K XBRL instance (10-K/cien-20251101_htm.xml.gz): 8 TextBlock elements carried on the filer's own namespace http://www.ciena.com/20251101, counted with ElementTree; the naive 'namespace is not us-gaap' rule would give 19 by sweeping in dei:, ecd: and cyd: blocks"
+  },
+  "notes.10-K.textblock_count": {
+    "value": 102,
+    "from": "already judged: tests/test_extract_notes.py::_count_by_hand counts every element whose local name ends in 'TextBlock' straight off the instance with ElementTree and the input spec's rule, importing nothing from src/; that count was re-run here and gives 102"
+  },
+  "notes.10-Q.extension_tag_count": {
+    "value": 0,
+    "from": "the 10-Q XBRL instance (10-Q/cien-20260502_htm.xml): no TextBlock element is carried on a namespace of the filer's own - every one of the 40 is us-gaap: except a single ecd: block - so the count is 0, read off the instance with ElementTree"
+  },
+  "notes.10-Q.textblock_count": {
+    "value": 40,
+    "from": "already judged: tests/test_extract_notes.py::_count_by_hand, the same ElementTree hand count against the current 10-Q instance; re-run here it gives 40"
+  },
+  "numbers.10-K.fact_count": {
+    "value": 1538,
+    "from": "already judged: tests/test_extract_numbers.py::_count_by_hand re-reads the instance with ElementTree and the selection rule as docs/INPUT_SPEC.md words it - a us-gaap or dei element carrying a unitRef - importing nothing from src/; re-run here the 10-K's one instance gives 1538"
+  },
+  "numbers.10-Q.fact_count": {
+    "value": 2074,
+    "from": "already judged: the same hand counter summed over both 10-Q instances - 1169 in the current instance plus 905 in the prior-period instance = 2074"
+  },
+  "prior_period_diff.10-Q.prior_accession": {
+    "value": "0001628280-26-015152",
+    "from": "the submissions index, by the same derivation as note_history.10-Q.prior_accession and necessarily the same string: the latest 10-Q filed before 2026-06-04 is 0001628280-26-015152, filed 2026-03-05"
+  }
+}

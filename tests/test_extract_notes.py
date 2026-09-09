@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import datetime as dt
 import gzip
-import json
 import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -20,15 +19,11 @@ import pytest
 from src import cutoff_guard, extract_notes, html_text
 from src.fetch_fixtures import TICKERS
 from tests import independent_text
+from tests.expected_values import value
 
-FIXTURES = Path(__file__).resolve().parent / "fixtures"
 FORMS = ("10-K", "10-Q")
 ENTITY = re.compile(r"&(amp|lt|gt|quot|nbsp|#[0-9]+);")
 HEADING = re.compile(r"^## ", re.MULTILINE)
-
-
-def expected(ticker: str) -> dict:
-    return json.loads((FIXTURES / ticker / "expected.json").read_text())
 
 
 def _raw(path: Path) -> bytes:
@@ -46,7 +41,8 @@ def _count_by_hand(path: Path) -> int:
 @pytest.mark.parametrize("form", FORMS)
 def test_the_expected_count_is_what_the_instance_contains(ticker, form):
     row = cutoff_guard.one_document(ticker, form, "xbrl_instance")
-    assert _count_by_hand(row["full_path"]) == expected(ticker)["notes"][form]["textblock_count"]
+    assert _count_by_hand(row["full_path"]) == \
+        value(ticker, f"notes.{form}.textblock_count")
 
 
 @pytest.mark.parametrize("ticker", TICKERS)
@@ -54,7 +50,7 @@ def test_the_expected_count_is_what_the_instance_contains(ticker, form):
 def test_one_heading_per_textblock(ticker, form):
     payload = extract_notes.extract(ticker, form)
     document = extract_notes.render(payload)
-    count = expected(ticker)["notes"][form]["textblock_count"]
+    count = value(ticker, f"notes.{form}.textblock_count")
     assert len(payload["sections"]) == count
     assert len(HEADING.findall(document)) == count
 
@@ -84,11 +80,17 @@ def test_every_section_is_the_filings_own_text(ticker, form):
 
 
 @pytest.mark.parametrize("ticker", TICKERS)
-def test_the_selection_is_not_a_standard_tag_list(ticker):
-    """A fixed list of standard tags would miss every one of these."""
-    payload = extract_notes.extract(ticker, "10-K")
+@pytest.mark.parametrize("form", FORMS)
+def test_the_selection_is_not_a_standard_tag_list(ticker, form):
+    """A fixed list of standard tags would miss every one of these.
+
+    Both forms. The 10-Q count was recorded and read by nothing, because this
+    test was parameterised over tickers alone and named the 10-K itself — and an
+    expectation nobody reads checks nothing.
+    """
+    payload = extract_notes.extract(ticker, form)
     extensions = [section for section in payload["sections"] if section["extension"]]
-    assert len(extensions) == expected(ticker)["notes"]["10-K"]["extension_tag_count"]
+    assert len(extensions) == value(ticker, f"notes.{form}.extension_tag_count")
     for section in extensions:
         assert not section["namespace"].startswith("http://fasb.org/us-gaap/")
         assert section["name"].startswith(f"{section['prefix']}:")

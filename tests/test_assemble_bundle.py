@@ -21,9 +21,10 @@ from pathlib import Path
 import pytest
 
 from src import (assemble_bundle, clean_text, cutoff_guard, diff_periods,
-                 extract_notes, split_sections)
+                 extract_notes, note_history, split_sections)
 from src.fetch_fixtures import TICKERS
 from tests import independent_text
+from tests.expected_values import value
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 BAR = chr(124)
@@ -213,6 +214,42 @@ def test_a_bundle_with_an_eight_k_carries_its_paragraphs():
     assert bundle["manifest"]["counts"]["eight_k"] > 0
     assert not [entry for entry in bundle["manifest"]["exclusions"]
                 if entry["id"].endswith(":file:input_8k.md")]
+
+
+# How many 8-K paragraphs a bundle should hold is arithmetic over three values
+# read off the filings — the exhibit's blocks outside tables, the blocks the
+# exhibit says to drop, and its tables — plus the manifest's filing dates saying
+# whether the exhibit is inside the cutoff at all. Where `src/clean_text.py`
+# under-drops (`tests/test_parse_8k.py`'s `UNDER_DROPPED`) the bundle carries the
+# page furniture as prose and comes out high by exactly that many blocks.
+#
+# This is the assertion that makes the gap bite. `src/extraction_checks.py`
+# compares the same count against `expected.json` — the pipeline's own previous
+# output — inside a ±20% band, where an 18-paragraph excess on Carrier is 3
+# points of headroom and reads as nothing at all.
+UNDER_DROPPED_BUNDLE = {
+    ("CARR", "10-Q"): "18 bare page numerals carried as prose; 104 read, 122 built",
+    ("GNRC", "10-Q"): "10 page numerals and 3 forward-looking blocks carried; "
+                      "118 read, 132 built",
+    ("CIEN", "10-Q"): "4 page numerals and 2 safe-harbour blocks carried; "
+                      "72 read, 78 built",
+    ("LFUS", "10-Q"): "one Safe Harbor paragraph carried; 91 read, 92 built",
+    ("ESE", "10-Q"): "one safe-harbour paragraph carried; 97 read, 98 built",
+    ("NVDA", "10-Q"): "half a page-broken forward-looking paragraph carried; "
+                      "75 read, 76 built",
+}
+
+EIGHT_K_CASES = [
+    pytest.param(ticker, form, marks=pytest.mark.xfail(
+        strict=True, reason=f"{ticker} {form}: {UNDER_DROPPED_BUNDLE[(ticker, form)]}"))
+    if (ticker, form) in UNDER_DROPPED_BUNDLE else pytest.param(ticker, form)
+    for ticker in TICKERS for form in ("10-K", "10-Q")]
+
+
+@pytest.mark.parametrize("ticker,form", EIGHT_K_CASES)
+def test_the_bundles_eight_k_count_is_what_the_exhibit_was_read_to_hold(ticker, form):
+    assert built(ticker, form)["manifest"]["counts"]["eight_k"] == \
+        value(ticker, f"bundle.{form}.eight_k")
 
 
 # --- prior predictions -------------------------------------------------------
@@ -440,19 +477,28 @@ def test_the_section_cli_refuses_to_write_a_bundle_filename(tmp_path, capsys):
 @pytest.mark.parametrize("ticker", TICKERS)
 @pytest.mark.parametrize("form", ("10-K", "10-Q"))
 def test_the_note_history_count_is_its_entries_plus_its_changed_ones(ticker, form):
-    """The recorded count is not free-floating: a changed entry puts two
-    paragraphs in the file, so the count is entries + changed, and both halves
-    are recorded separately in the same expected.json."""
+    """A changed entry puts two paragraphs in the file — the new text and the
+    text it replaced — so the count the manifest lists is entries + changed.
+
+    This is an identity between two things the run itself produced, so it is
+    read off the history rather than out of a fixture. It never needed an
+    expected value, and the fixture it used to read held the added / removed /
+    changed split, which had no source outside the similarity threshold that
+    decides it and has been deleted.
+    """
     manifest = built(ticker, form)["manifest"]
     listed = manifest["counts"]["note_history"]
-    record = json.loads((REPO_ROOT / "tests" / "fixtures" / ticker /
-                         "expected.json").read_text())
-    if "note_history" not in record or form not in record["note_history"]:
-        assert listed == 0 or form == "10-K"
+    on_record = {(row["form"], row["role"]) for row in manifest["on_record_at_cutoff"]}
+    if not {("10-Q", "xbrl_instance"),
+            ("10-Q", "prior_period_xbrl_instance")} <= on_record:
+        # A history needs two 10-Qs at or before the cutoff. A 10-K filed before
+        # this year's 10-Q has neither, and the bundle says so instead of
+        # counting.
+        assert listed == 0
         return
-    block = record["note_history"][form]
-    assert listed == sum(block[kind] for kind in ("added", "removed", "changed")) \
-        + block["changed"]
+    history = note_history.history(ticker, cutoff=manifest["cutoff"])
+    changed = sum(1 for entry in history["entries"] if entry["kind"] == "changed")
+    assert listed == len(history["entries"]) + changed
 
 
 # --- the untagged sections reach the bundle ----------------------------------

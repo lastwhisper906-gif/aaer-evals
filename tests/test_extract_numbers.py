@@ -1,10 +1,10 @@
 """Every numeric fact, counted twice: once by the extractor, once from the file.
 
-The second count is the point. `expected.json` is drafted from the extractor's
-own first run, so a test that only compared the two would agree with itself.
-`_count_by_hand` re-reads the instance with nothing but ElementTree and the
-selection rule as the input spec words it, and that is what the expected value
-is held to.
+The second count is the point. A count drafted from the extractor's own first
+run and then compared to that extractor would agree with itself. `_count_by_hand`
+re-reads the instance with nothing but ElementTree and the selection rule as the
+input spec words it, and that is what the expected value is held to — which is
+what `expected_values.json` records as its source.
 """
 
 from __future__ import annotations
@@ -19,13 +19,10 @@ import pytest
 
 from src import cutoff_guard, extract_numbers, trends
 from src.fetch_fixtures import TICKERS
+from tests.expected_values import value
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 FORMS = ("10-K", "10-Q")
-
-
-def expected(ticker: str) -> dict:
-    return json.loads((FIXTURES / ticker / "expected.json").read_text())
 
 
 def _raw(path: Path) -> bytes:
@@ -60,14 +57,14 @@ def test_the_expected_count_is_what_the_instances_contain(ticker, form):
     read it and this module did not, so `input_trends.json` reported quarters as
     missing whose facts were in a document the manifest listed as an input."""
     counted = sum(_count_by_hand(row["full_path"]) for row in _instances(ticker, form))
-    assert counted == expected(ticker)["numbers"][form]["fact_count"]
+    assert counted == value(ticker, f"numbers.{form}.fact_count")
 
 
 @pytest.mark.parametrize("ticker", TICKERS)
 @pytest.mark.parametrize("form", FORMS)
 def test_the_extractor_finds_every_fact_and_no_others(ticker, form):
     payload = extract_numbers.extract(ticker, (form,))
-    assert len(payload["facts"]) == expected(ticker)["numbers"][form]["fact_count"]
+    assert len(payload["facts"]) == value(ticker, f"numbers.{form}.fact_count")
 
 
 @pytest.mark.parametrize("ticker", TICKERS)

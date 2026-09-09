@@ -38,7 +38,7 @@ exists to enforce.
 
 [ ] write the plain-name check · `src/plain_name_check.py` and the post-write hook that calls it · `.venv/bin/python -m pytest tests/test_plain_name_check.py -q` · a letter-number code planted in a fixture file by the test itself, and a filter output that is greped rather than a filter that is inspected — a no-op regular expression fails quietly. It is written rather than ported: the display-name filter lives only inside the old harness, not on this branch and not on the parser branch · PR: #21
 
-[ ] re-judge the parsers that arrive from the parser branch · no new code — a replacement expected-value file per company, and the deletion of every expected value that came from a parser run · `.venv/bin/python -m pytest tests -q` against the replaced fixtures · companyfacts for every numeric expectation, and the filing itself, read by eye, for every section boundary and paragraph count; each replaced value carries a one-line note naming where it came from. Do this before any item below builds on those parsers · PR:
+[ ] re-judge the parsers that arrive from the parser branch · no new code — a replacement expected-value file per company, and the deletion of every expected value that came from a parser run · `.venv/bin/python -m pytest tests -q` against the replaced fixtures · companyfacts for every numeric expectation, and the filing itself, read by eye, for every section boundary and paragraph count; each replaced value carries a one-line note naming where it came from. Do this before any item below builds on those parsers · PR: #22
 
 [ ] companyfacts fetcher · `src/fetch_companyfacts.py` and one `companyfacts.json` fixture per company, with its sha256 in the manifest · `python3.12 -m pytest tests/test_fetch_companyfacts.py -q` · every `us-gaap` numeric fact in the committed XBRL instance, looked up in companyfacts and matched by value, with every difference listed rather than tolerated · PR:
 
@@ -80,6 +80,10 @@ exists to enforce.
 
 [ ] monthly canary scheduled task · the task definition and its ledger line · one dry run, exit status checked directly · a defect planted on a branch on purpose; the expected result is that `refute-check` names it, and either a hit or a miss is appended to `events/ledger.jsonl` · PR:
 
+[ ] narrow the key-note debt rule so it stops sweeping in investment securities · `src/note_history.py` · `python3.12 -m pytest tests/test_note_history.py -q` with the strict expected-failure marks removed · the key-note tag lists recorded per company by the re-judge, read off the two instances with ElementTree and marked against the six topics `docs/INPUT_SPEC.md` names; the rule matches on the bare substring debt, which pulls the available-for-sale and marketable-equity securities tags into four companies' key notes. Found by the re-judge, which widened the recorded blast radius from one company to four · PR:
+
+[ ] stop the cleaner under-dropping, so the carried block count holds for all twelve earnings releases · `src/clean_text.py` · `python3.12 -m pytest tests/test_parse_8k.py tests/test_assemble_bundle.py -q` with the strict expected-failure marks removed · the independently recounted block count already recorded per company, and the bundle's earnings-release paragraph count computed by hand from it; both are strict expected failures today, so a fix turns the suite red until the marks come off. Found by the re-judge · PR:
+
 ---
 
 ## Needs judgment
@@ -102,3 +106,5 @@ answer.
 [ ] whether the plain-name check should read source files and directory names · it reads `.py` and `.sh` by name only, because code quotes vocabulary that is not ours — a period offset, a linter's rule in a comment, the codes the check's own test plants — and it reads a file's own name but not the directories above it. The second-vendor lens calls both a blind spot. Widening either needs a rule for which quoted vocabulary is exempt, and a list of language suffixes has no rule to appeal to · needs judgment
 
 [ ] the letter-number codes the archived project left in `CITATION.cff`, `LICENSE` and `LICENSE-docs` · a whole-tree sweep names six occurrences, four in the citation file and one in each licence file. Nothing waits: the check reads what a branch changed, and nothing changes those files. The two licence files are text that is not ours to edit and the citation file is a published record, so what to do with them is not a code change · needs judgment
+
+[ ] the judge line that reads "companyfacts for every numeric expectation" · no expectation in the parser fixtures is a financial figure: each one counts elements, tables or paragraphs inside one document, and companyfacts is the deduplicated standard-taxonomy record across every filing — Apple's annual accession carries 427 facts there against 898 unit-bearing elements in the instance itself. The re-judge sourced every value from the document instead and said so value by value, so nothing waits; whether that line stands as written for the items still to be built is the owner's · needs judgment

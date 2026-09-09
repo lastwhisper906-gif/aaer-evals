@@ -1,12 +1,5 @@
 {
-  "auditors_report": {
-    "10-K": {
-      "audit_firm": "KPMG LLP",
-      "critical_audit_matters": 1,
-      "paragraphs": 27,
-      "the_report_states": "one"
-    }
-  },
+  "_what_this_is": "the extraction-drift baseline src/extraction_checks.py reads, not an expected value and not readable as one. Every count here is the pipeline's own output on purpose: \"has this moved since last time?\" is a question you ask of a previous run, and a baseline sourced from anywhere else answers a different one. The expected values, each naming where it came from, are in expected_values.json; where one of them disagrees with the count here, the disagreement is a recorded parser defect and the test that holds it says so.",
   "bundle": {
     "10-K": {
       "controls": 38,
@@ -23,90 +16,6 @@
       "note_history": 62,
       "notes": 113,
       "paragraphs": 270
-    }
-  },
-  "cleaner": {
-    "10-K": {
-      "tables": 67,
-      "tables_already_in_xbrl": 18
-    },
-    "10-Q": {
-      "tables": 39,
-      "tables_already_in_xbrl": 11
-    },
-    "8-K": {
-      "tables": 21,
-      "tables_already_in_xbrl": 0
-    }
-  },
-  "earnings_release": {
-    "8-K": {
-      "eight_k_filings_in_the_index": 102,
-      "exhibit_99_1_dropped": 0,
-      "exhibit_99_1_paragraphs": 32,
-      "exhibit_99_1_tables": 21,
-      "held_items": [
-        "2.02",
-        "9.01"
-      ]
-    }
-  },
-  "item_4_controls": {
-    "10-Q": {
-      "paragraphs": 7
-    }
-  },
-  "item_9a": {
-    "10-K": {
-      "paragraphs": 11
-    }
-  },
-  "mdna": {
-    "10-K": {
-      "heading_candidates": 2,
-      "paragraphs": 373
-    },
-    "10-Q": {
-      "heading_candidates": 2,
-      "paragraphs": 369
-    }
-  },
-  "note_history": {
-    "10-Q": {
-      "added": 31,
-      "changed": 13,
-      "key_notes": 8,
-      "match_rules": {
-        "no_prior_note": 1,
-        "tag_name": 7
-      },
-      "prior_accession": "0001193125-26-201403",
-      "removed": 5
-    }
-  },
-  "notes": {
-    "10-K": {
-      "extension_tag_count": 8,
-      "textblock_count": 76
-    },
-    "10-Q": {
-      "extension_tag_count": 2,
-      "textblock_count": 28
-    }
-  },
-  "numbers": {
-    "10-K": {
-      "fact_count": 1163
-    },
-    "10-Q": {
-      "fact_count": 1360
-    }
-  },
-  "prior_period_diff": {
-    "10-Q": {
-      "carried_verbatim": 130,
-      "collapsed": 71,
-      "prior_accession": "0001193125-26-201403"
     }
   }
 }
