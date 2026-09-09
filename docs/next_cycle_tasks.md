@@ -36,7 +36,7 @@ exists to enforce.
 
 ## Ready to build
 
-[ ] write the plain-name check · `src/plain_name_check.py` and the post-write hook that calls it · `.venv/bin/python -m pytest tests/test_plain_name_check.py -q` · a letter-number code planted in a fixture file by the test itself, and a filter output that is greped rather than a filter that is inspected — a no-op regular expression fails quietly. It is written rather than ported: the display-name filter lives only inside the old harness, not on this branch and not on the parser branch · PR:
+[ ] write the plain-name check · `src/plain_name_check.py` and the post-write hook that calls it · `.venv/bin/python -m pytest tests/test_plain_name_check.py -q` · a letter-number code planted in a fixture file by the test itself, and a filter output that is greped rather than a filter that is inspected — a no-op regular expression fails quietly. It is written rather than ported: the display-name filter lives only inside the old harness, not on this branch and not on the parser branch · PR: #21
 
 [ ] re-judge the parsers that arrive from the parser branch · no new code — a replacement expected-value file per company, and the deletion of every expected value that came from a parser run · `.venv/bin/python -m pytest tests -q` against the replaced fixtures · companyfacts for every numeric expectation, and the filing itself, read by eye, for every section boundary and paragraph count; each replaced value carries a one-line note naming where it came from. Do this before any item below builds on those parsers · PR:
 
@@ -96,3 +96,9 @@ answer.
 [ ] narrowing the map from SIC code to sector ETF · the default is one ETF per SIC division and it ships with the market module, so nothing waits; whether a finer map by major group gives a better sector return is a modelling choice no test can settle · needs judgment
 
 [ ] whether the review-response branch's published results merge into this history · two published-results histories diverge, and merging them is a claim about the record · needs judgment
+
+[ ] whether the post-write plain-name hook should block the writer · the check names a code on stderr and exits 1; Claude Code hands any non-zero status other than 2 to the person at the keyboard and only 2 back to the agent that wrote the line, so today the writer is not told. Nothing waits: the check runs inside `make check` and CI runs `make check`, so a pull request carrying a code is red either way. Blocking would buy an earlier correction at the price of an interrupted turn, and that price is the owner's · needs judgment
+
+[ ] whether the plain-name check should read source files and directory names · it reads `.py` and `.sh` by name only, because code quotes vocabulary that is not ours — a period offset, a linter's rule in a comment, the codes the check's own test plants — and it reads a file's own name but not the directories above it. The second-vendor lens calls both a blind spot. Widening either needs a rule for which quoted vocabulary is exempt, and a list of language suffixes has no rule to appeal to · needs judgment
+
+[ ] the letter-number codes the archived project left in `CITATION.cff`, `LICENSE` and `LICENSE-docs` · a whole-tree sweep names six occurrences, four in the citation file and one in each licence file. Nothing waits: the check reads what a branch changed, and nothing changes those files. The two licence files are text that is not ours to edit and the citation file is a published record, so what to do with them is not a code change · needs judgment
