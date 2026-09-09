@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "$note": "A Stop hook is a safety net, not a judge -- Claude Code ends the turn after eight consecutive blocks, so a hook that keeps failing stops blocking. CI is the judge. The gate runs under .venv/bin/python because the pinned interpreter on this machine has no pytest and a hook that cannot run is worse than no hook: it reports green by saying nothing. A fresh worktree has no .venv of its own, so link one before relying on the hook there: ln -s ../../../.venv .venv. The plain-name check tests for its own file first, so it stays silent until that module lands rather than printing an import error on every edit.",
+  "$note": "A Stop hook is a safety net, not a judge -- Claude Code ends the turn after eight consecutive blocks, so a hook that keeps failing stops blocking. CI is the judge. The gate runs under .venv/bin/python because the pinned interpreter on this machine has no pytest and a hook that cannot run is worse than no hook: it reports green by saying nothing. A fresh worktree has no .venv of its own, so link one before relying on the hook there: ln -s ../../../.venv .venv. The plain-name check tests for its own file first, so it stays silent on a branch that predates it rather than printing an import error on every edit; the guard exits early instead of trailing `|| true`, because `|| true` discarded the check's exit status as well as the guard's, which is the same shape as a gate hook that reports green by saying nothing. It runs under bare python3.12, so it imports the standard library only.",
   "hooks": {
     "SessionStart": [
       {
@@ -30,7 +30,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "test -f src/plain_name_check.py && python3.12 -m src.plain_name_check --changed || true",
+            "command": "test -f src/plain_name_check.py || exit 0; python3.12 -m src.plain_name_check --changed",
             "timeout": 30
           }
         ]

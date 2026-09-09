@@ -1,0 +1,29 @@
+# The archived project's own identifier families, copied verbatim out of
+# archive/ so that tests/test_plain_name_check.py can plant real codes rather
+# than invented ones. Read out on 2026-09-09 with
+#
+#     grep -rhoE '\b[A-Z]{1,4}-[0-9]{1,4}\b' archive/ | sort | uniq -c | sort -rn
+#
+# One token per line, most frequent first, with the count that grep reported.
+# The first line is the one a test plants when it needs a single code.
+#
+# They live here, and not as literals in the test, because tests/fixtures/ is
+# text quoted verbatim from somewhere else -- which is exactly what these are,
+# and which is why the plain-name check does not read this directory. A check
+# that reported its own test's vocabulary on every write is a check somebody
+# turns off in a week.
+
+GA-001    105
+RP-09     105
+E-002      84
+INV-06     70
+L-5        63
+F-01       51
+GP-9       39
+FB-01      39
+S-01       16
+D-2        16
+B-1        13
+C-8         4
+W-8         3
+AAER-4443 152
