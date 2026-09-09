@@ -201,12 +201,21 @@ def _opened(path) -> None:
             seen.append(resolved)
 
 
-def load_bytes(path, cutoff_date, *, fixtures_root=FIXTURES) -> bytes:
-    """The document's raw bytes as EDGAR served them, gate first."""
-    row = check(path, cutoff_date, fixtures_root=fixtures_root)
+def _read(path, row: dict) -> bytes:
+    """The open itself: record it, then undo whatever `stored` the manifest says.
+
+    Called only once the row describing the document has been checked, which is
+    what makes `_opened` a record of documents this module let through.
+    """
     data = Path(path).read_bytes()
     _opened(path)
     return gzip.decompress(data) if row.get("stored") == "gzip" else data
+
+
+def load_bytes(path, cutoff_date, *, fixtures_root=FIXTURES) -> bytes:
+    """The document's raw bytes as EDGAR served them, gate first."""
+    row = check(path, cutoff_date, fixtures_root=fixtures_root)
+    return _read(path, row)
 
 
 def load_document(path, cutoff_date, *, fixtures_root=FIXTURES, encoding="utf-8") -> str:
@@ -233,9 +242,7 @@ def load_index(path, *, fixtures_root=FIXTURES) -> bytes:
         raise CutoffGuardError(
             f"{path} is a {row.get('role')}, not a submissions index — "
             "only the index of filings skips the date gate")
-    data = Path(path).read_bytes()
-    _opened(path)
-    return gzip.decompress(data) if row.get("stored") == "gzip" else data
+    return _read(path, row)
 
 
 # --- the other catalogue: companyfacts ---------------------------------------
