@@ -62,17 +62,25 @@ the run, it is outside it, and naming it would put a document the run may not
 see into the run's own output.
 
 **The cutoff.** companyfacts is a catalogue drawn from many filings, and its
-manifest row is dated with the newest filing it carries a fact from. The gate
-therefore refuses the whole document to a run whose cutoff is earlier than that
-— the run is refused rather than quietly reading a record it cannot vouch for —
-and the rows are filtered to `filed <= cutoff` on top of it.
+manifest row is dated with the newest filing it carries a fact from — which is
+why the whole-file date gate is the wrong gate for it: that date is later than
+almost every cutoff a run will have, so gating the file on it refused the whole
+record to every earlier trigger. Eleven of the twelve committed records are
+dated after the company's own 10-K, so eleven annual runs got nothing.
 
-The adverse half of that, said plainly: with the fixture set as it stands, two
-of the twelve records are dated later than the company's own last committed
-report — CSCO's 2026-08-20 against a 10-Q filed 2026-08-12, QCOM's 2026-07-31
-against 2026-07-29 — so a run at the triggering report's own filing date is
-refused for those two and the trace does not run for them at all. That is the
-gate working, and it is a smaller answer than twelve.
+The record is therefore read through `cutoff_guard.load_catalogue`, the route
+built for exactly these two catalogue documents: the path is checked against the
+manifest and the bytes against the hash it recorded, and the cutoff is applied
+row by row, which is where the look-ahead in a catalogue lives. An annual run
+now gets the rows filed on or before its trigger instead of a refusal —
+Carrier's 10-K filed 2026-02-05 against a record dated 2026-04-30 reaches 11,676
+of the record's 12,011 rows, where before it reached none.
+
+The adverse half, said plainly: a smaller answer is still smaller. At Carrier's
+annual trigger the scan reports 315 traces over 6,107 periods; at the fixture
+set's own as-of date it reports 318 over 6,278. Nothing later than the trigger
+enters, and the three traces that disappear are three findings a run at that
+date is not entitled to.
 
     python3.12 -m src.restatement_trace --ticker CARR --out restatement_trace.json
 
@@ -131,22 +139,27 @@ def difference(restated, first_reported):
     return float(Decimal(str(restated)) - Decimal(str(first_reported)))
 
 
-def by_period(facts: dict, cutoff: str) -> dict[tuple, list[dict]]:
-    """Every fact row filed at or before the cutoff, gathered by the period it is about.
+def by_period(facts: dict) -> dict[tuple, list[dict]]:
+    """Every fact row, gathered by the period it is about.
 
     The key is what makes two rows the same fact: namespace, tag, unit and the
-    period itself. `filed` is read straight off the row: `fetch_companyfacts`
-    refuses to record a document holding a row without one, so every row that
-    reaches here has a filing date of its own.
+    period itself.
+
+    **The rows arriving here are already inside the cutoff.**
+    `cutoff_guard.load_catalogue` applies it row by row, parsing each row's own
+    `filed` and refusing a row whose date is missing or unreadable rather than
+    dropping it. This function used to compare `row["filed"] <= cutoff` itself,
+    as strings — the second filter, and the weaker one: a cutoff that is not an
+    ISO date sorts after every date, so it narrowed nothing and the whole record
+    went through at exit 0.
     """
     grouped: dict[tuple, list[dict]] = defaultdict(list)
     for namespace, concepts in facts.items():
         for tag, concept in concepts.items():
             for unit, rows in concept.get("units", {}).items():
                 for row in rows:
-                    if row["filed"] <= cutoff:
-                        grouped[(namespace, tag, unit,
-                                 row.get("start"), row["end"])].append(row)
+                    grouped[(namespace, tag, unit,
+                             row.get("start"), row["end"])].append(row)
     return dict(grouped)
 
 
@@ -258,17 +271,23 @@ def absent_from_companyfacts(ticker: str, reported: set, cutoff: dt.date, *,
 
 
 def scan(ticker: str, *, cutoff=None, fixtures_root=cutoff_guard.FIXTURES) -> dict:
-    """One company's companyfacts, read through the gate, scanned for traces."""
+    """One company's companyfacts, read through the catalogue route, scanned for traces.
+
+    The route is `cutoff_guard.load_catalogue`, and what it returns is the
+    document with its rows already cut to the cutoff. The only date decision
+    left here is what "no cutoff given" means — the fixture set's own as-of date
+    — and the payload needs the resolved date to say which run this was.
+    """
     fixtures_root = Path(fixtures_root)
     cutoff = cutoff_guard.parse_date(
         cutoff or cutoff_guard.default_cutoff(ticker, fixtures_root=fixtures_root),
         "cutoff")
     record = cutoff_guard.one_document(ticker, COMPANYFACTS_FORM, COMPANYFACTS_ROLE,
                                        fixtures_root=fixtures_root)
-    document = json.loads(cutoff_guard.load_bytes(record["full_path"], cutoff,
-                                                  fixtures_root=fixtures_root))
+    document = cutoff_guard.load_catalogue(record["full_path"], cutoff,
+                                           fixtures_root=fixtures_root)
 
-    grouped = by_period(document["facts"], str(cutoff))
+    grouped = by_period(document["facts"])
     found, ambiguous = traces(grouped)
     reported_by = {row["accn"] for rows in grouped.values() for row in rows}
     return {
