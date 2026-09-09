@@ -1,0 +1,47 @@
+{
+  "ticker": "CARR",
+  "cik": "0001783180",
+  "as_of": "2026-09-01",
+  "fetched_utc": "2026-09-07T22:55:55Z",
+  "source": "EDGAR, then one value changed by hand — see `planted` below",
+  "documents": [
+    {
+      "form": "companyfacts",
+      "role": "standard_taxonomy_history",
+      "accession": "",
+      "filing_date": "2026-04-30",
+      "report_date": "",
+      "items": "",
+      "date_basis": "the latest filing whose facts this record contains; companyfacts is a catalogue of facts drawn from many filings and is not itself a filing",
+      "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001783180.json",
+      "path": "companyfacts.json.gz",
+      "stored": "gzip",
+      "bytes": 3766167,
+      "sha256": "cec5f753cde311db6c5cc4c3eae40597f33c55b63db663574980a09f7b546397"
+    }
+  ],
+  "planted": {
+    "what": "one value, changed in a copy of tests/fixtures/CARR/companyfacts.json.gz so that a period comes back at a different number than the filing that first reported it",
+    "namespace": "us-gaap",
+    "tag": "NetIncomeLoss",
+    "unit": "USD",
+    "period": {
+      "start": "2025-01-01",
+      "end": "2025-03-31"
+    },
+    "first_reported": {
+      "value": 412000000,
+      "accession": "0001783180-25-000030",
+      "filing_date": "2025-05-01",
+      "form": "10-Q"
+    },
+    "restated": {
+      "value": 389000000,
+      "accession": "0001783180-26-000026",
+      "filing_date": "2026-04-30",
+      "form": "10-Q"
+    },
+    "difference": -23000000,
+    "one_document_only": "this directory holds the copied companyfacts record and nothing else, and the manifest records exactly that. The filings themselves stay under tests/fixtures/CARR/, so a scan rooted here reports no absent filing: the absence of Carrier's July 2026 10-Q from companyfacts is judged against the committed record, where it is real."
+  }
+}
