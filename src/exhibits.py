@@ -67,14 +67,13 @@ from __future__ import annotations
 import argparse
 import re
 import sys
-from collections import defaultdict
 from pathlib import Path
 
 try:
-    from src import cutoff_guard, html_text, interpreter_pin
+    from src import cutoff_guard, diff_periods, html_text, interpreter_pin
 except ImportError:  # invoked as a plain script
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from src import cutoff_guard, html_text, interpreter_pin
+    from src import cutoff_guard, diff_periods, html_text, interpreter_pin
 
 BAD_INPUT = 2
 
@@ -204,35 +203,35 @@ def _key(entry: dict) -> str:
 def diff(current: list[dict], prior: list[dict]) -> dict:
     """What the subsidiary list gained, lost and moved since the prior 10-K.
 
-    Matched as a **multiset**, name by name: a company that lists the same name
-    twice has two entries and loses one of them when one goes, rather than the
-    second collapsing onto the first. That is the same rule
-    `src/diff_periods.py::match_paragraphs` follows, and for the same reason.
+    Matched as a **multiset** by `src/diff_periods.py::match_paragraphs`, which
+    is where that rule lives: a company that lists the same name twice has two
+    entries and loses one of them when one goes, rather than the second
+    collapsing onto the first. That module learned the expensive way what an
+    index lookup does to a repeated line, and the rule is not worth writing
+    twice.
+
+    What is matched on is the name alone, so a subsidiary whose jurisdiction
+    moved pairs with itself and is reported as a move rather than as one
+    subsidiary gained and one lost. What is left over on either side comes back
+    in the order its own exhibit lists it, which is the order `sections` renders.
     """
-    grouped_current: dict[str, list[dict]] = defaultdict(list)
-    grouped_prior: dict[str, list[dict]] = defaultdict(list)
-    for entry in current:
-        grouped_current[_key(entry)].append(entry)
-    for entry in prior:
-        grouped_prior[_key(entry)].append(entry)
+    paired = diff_periods.match_paragraphs([_key(entry) for entry in current],
+                                           [_key(entry) for entry in prior])
 
-    added, removed, moved, unchanged = [], [], [], 0
-    for key in list(grouped_current) + [k for k in grouped_prior
-                                        if k not in grouped_current]:
-        mine, theirs = grouped_current.get(key, []), grouped_prior.get(key, [])
-        for now, before in zip(mine, theirs):
-            if now["jurisdiction"] == before["jurisdiction"]:
-                unchanged += 1
-            else:
-                moved.append({"name": now["name"],
-                              "prior_jurisdiction": before["jurisdiction"],
-                              "jurisdiction": now["jurisdiction"]})
-        added.extend(mine[len(theirs):])
-        removed.extend(theirs[len(mine):])
+    moved, unchanged = [], 0
+    for now, before in paired["matched"]:
+        this_year, last_year = current[now], prior[before]
+        if this_year["jurisdiction"] == last_year["jurisdiction"]:
+            unchanged += 1
+        else:
+            moved.append({"name": this_year["name"],
+                          "prior_jurisdiction": last_year["jurisdiction"],
+                          "jurisdiction": this_year["jurisdiction"]})
 
-    return {"added": added, "removed": removed, "jurisdiction_changed": moved,
-            "unchanged": unchanged, "current_count": len(current),
-            "prior_count": len(prior)}
+    return {"added": [current[index] for index in paired["added"]],
+            "removed": [prior[index] for index in paired["removed"]],
+            "jurisdiction_changed": moved, "unchanged": unchanged,
+            "current_count": len(current), "prior_count": len(prior)}
 
 
 # --- what is on record -------------------------------------------------------
@@ -359,9 +358,9 @@ def counts(payload: dict) -> str:
     """The one arithmetic line. Python does it; nobody downstream re-counts."""
     changes = payload["diff"]
     if changes is None:
-        return (f"- {len(payload['exhibit']['subsidiaries'])} subsidiaries in this "
-                f"10-K, and no earlier 10-K to diff against")
-    return (f"- {changes['current_count']} subsidiaries in this 10-K against "
+        return (f"{len(payload['exhibit']['subsidiaries'])} subsidiaries in this "
+                "10-K, and no earlier 10-K to diff against")
+    return (f"{changes['current_count']} subsidiaries in this 10-K against "
             f"{changes['prior_count']} in the prior: {len(changes['added'])} added, "
             f"{len(changes['removed'])} dropped, "
             f"{len(changes['jurisdiction_changed'])} with a changed jurisdiction, "
@@ -386,16 +385,19 @@ def render(payload: dict) -> str:
            "", "The type is the `<TYPE>` line of each submission's own SGML header. "
            "No document here was chosen by the name of its file.", ""]
 
+    # Below the first id, every line this module writes is a `#` heading and
+    # every other line is a subsidiary row. `assemble_bundle.paragraph_blocks`
+    # skips headings and folds anything else into the block of the id above it,
+    # so an empty section and the counts sentence ride on their own headings:
+    # otherwise they would land inside the last row's block and a quote gate
+    # would match a reader quoting arithmetic against a subsidiary's id.
     number = 0
     for title, rows in sections(payload):
-        out.extend([f"## {title}", ""])
-        if not rows:
-            out.extend(["- none", ""])
-            continue
+        out.extend([f"## {title}" if rows else f"## {title} (none)", ""])
         for line in rows:
             number += 1
             out.extend([f"[{accession}:exhibits:{number}]", line, ""])
-    out.extend(["## counts", "", counts(payload), ""])
+    out.extend([f"## counts — {counts(payload)}", ""])
     return "\n".join(out)
 
 

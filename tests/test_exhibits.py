@@ -38,7 +38,7 @@ from pathlib import Path
 
 import pytest
 
-from src import cutoff_guard, exhibits
+from src import assemble_bundle, cutoff_guard, exhibits
 from src.fetch_fixtures import TICKERS
 from tests import expected_values, independent_text
 
@@ -563,6 +563,23 @@ def test_every_paragraph_id_names_this_ten_k_and_counts_from_one(ticker):
     expected = (len(changes["added"]) + len(changes["removed"])
                 + len(changes["jurisdiction_changed"]))
     assert found == [f"{accession}:exhibits:{n}" for n in range(1, expected + 1)]
+
+
+@pytest.mark.parametrize("ticker", TICKERS)
+def test_every_quotable_block_is_a_subsidiary_row_and_nothing_this_module_wrote(ticker):
+    """`assemble_bundle.paragraph_blocks` skips `#` headings and folds every
+    other line into the block of the id above it, and a quote gate matches a
+    reader's quote against that block. So the counts sentence and an empty
+    section's marker ride on headings: were they plain lines they would land in
+    the last subsidiary's block, and a reader quoting arithmetic under that
+    subsidiary's id would pass the gate. What is quotable here is what the
+    exhibit said."""
+    payload = built(ticker)
+    changes = payload["diff"]
+    rows = ([exhibits.row(entry) for entry in changes["added"] + changes["removed"]]
+            + [exhibits.moved_row(entry) for entry in changes["jurisdiction_changed"]])
+    blocks = assemble_bundle.paragraph_blocks(exhibits.render(payload))
+    assert [text for _, text in blocks] == rows
 
 
 def test_the_command_writes_the_file_the_input_spec_names(tmp_path):
