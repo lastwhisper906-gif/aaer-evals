@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "$note": "A Stop hook is a safety net, not a judge -- Claude Code ends the turn after eight consecutive blocks, so a hook that keeps failing stops blocking. CI is the judge. The plain-name check is suffixed with || true so a session is never blocked by the check being absent; the check itself is a task-list item with its own test. make check needs the pinned interpreter with requirements.txt installed.",
+  "$note": "A Stop hook is a safety net, not a judge -- Claude Code ends the turn after eight consecutive blocks, so a hook that keeps failing stops blocking. CI is the judge. The gate runs under .venv/bin/python because the pinned interpreter on this machine has no pytest and a hook that cannot run is worse than no hook: it reports green by saying nothing. A fresh worktree has no .venv of its own, so link one before relying on the hook there: ln -s ../../../.venv .venv. The plain-name check tests for its own file first, so it stays silent until that module lands rather than printing an import error on every edit.",
   "hooks": {
     "SessionStart": [
       {
@@ -8,6 +8,17 @@
           {
             "type": "command",
             "command": "cat lessons.md",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "grep -F 'Cutoff:' CLAUDE.md",
             "timeout": 15
           }
         ]
@@ -30,8 +41,13 @@
         "hooks": [
           {
             "type": "command",
-            "command": "make check",
+            "command": "make check PYTHON=.venv/bin/python",
             "timeout": 300
+          },
+          {
+            "type": "command",
+            "command": "sh .claude/hooks/notify_if_shipped.sh",
+            "timeout": 30
           }
         ]
       }

@@ -42,21 +42,47 @@ make a test pass.
 Red means there is no next step. Not "red but unrelated", not "red on a
 pre-existing failure" — fix it or stop.
 
-Run it on the pinned interpreter, Python 3.12. A result from another interpreter
-is not worth producing. Never put a pipe between the test run and anything that
+Run it as `make check PYTHON=.venv/bin/python`, on the pinned interpreter,
+Python 3.12. A result from another interpreter is not worth producing, and the
+bare `make check` reaches for a system interpreter that has no pytest. A
+worktree has no `.venv` of its own: `ln -s ../../../.venv .venv` before the
+first run there. Never put a pipe between the test run and anything that
 depends on it passing; a pipeline's exit status is the last command's, and a red
 suite has been committed that way before.
 
-## 4. Call `refute-check`
+## 4. Two lenses, not one
 
-Hand it the diff and the item's four fields.
+**4a. `refute-check` (Claude).** Hand it the diff and the item's four fields.
 
-- `fail` → fix it and go back to step 3.
-- `needs judgment` → mark the item, stop, leave one line. Do not decide it
-  yourself and do not open a pull request that carries the question.
-- `pass` → continue.
+**4b. `/codex:adversarial-review` (Codex).** Hand it the same diff and the same
+five rules `refute-check` works through, in the same order, the first being:
 
-## 5. Open the pull request with auto-merge on
+> every expected value must come from the source — the document, companyfacts,
+> or a hand computation written into the test — never from the code under test.
+
+Then: a change with no test, schema or check is `needs judgment`; anything filed
+after the triggering report, or market data past reaction day two, is a failure;
+every reader quote must string-match its committed input and every citation must
+resolve upstream; each agent input directory holds only what its layer may see.
+
+Codex is here as a **second vendor, not a second opinion**. The refute lens and
+the builder are both Claude, so a blind spot in the family is a blind spot in
+both, and a verifier that shares a model family with the builder is a weaker
+check than it looks. Codex reviews. Codex never builds.
+
+**4c. If either lens fails**, fix it and go back to step 3. On `needs judgment`
+from either, mark the item, stop, leave one line — do not decide it yourself and
+do not open a pull request that carries the question.
+
+## 5. `/simplify`
+
+Once both lenses pass and before the pull request opens. Quality only — it does
+not hunt for bugs, and it runs after the lenses so it is tidying verified code
+rather than hiding an unverified change under a cleanup.
+
+Re-run `make check` after it. A simplification that breaks the gate is not one.
+
+## 6. Open the pull request with auto-merge on
 
 ```sh
 gh pr create --fill
@@ -70,7 +96,7 @@ finished until the merge is automatic.
 Write the pull request number into the item's `PR` field in
 `docs/next_cycle_tasks.md` and commit that line.
 
-## 6. Leave the record
+## 7. Leave the record
 
 Append this item's mistakes to `lessons.md`, one line each, no judgment. If it
 produced none, append nothing.

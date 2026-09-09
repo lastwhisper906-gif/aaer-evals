@@ -167,8 +167,14 @@ marked "needs judgment" — not a signature request.
 Configured in `.claude/settings.json`, not written by hand each session.
 
 - **session start** — read `lessons.md`.
+- **after a compaction** — re-inject the cutoff line from `CLAUDE.md`. Of every
+  rule here it is the one whose violation is silent, so it is the one that must
+  not fall out of context.
 - **after a write or edit** — the plain-name check on the changed files.
-- **session end** — `make check`.
+- **session end** — `make check` under the pinned interpreter, then one line to
+  the notification centre if the turn opened a pull request or wrote a
+  needs-judgment item. Silent otherwise; a notifier that speaks every turn is
+  one you stop reading.
 
 Writing this session's mistakes into `lessons.md` is not a hook and cannot be
 one: only the session knows what it got wrong. It is a rule in `CLAUDE.md`, and
@@ -211,6 +217,7 @@ blocks, so a hook that keeps failing stops blocking. CI is the judge.
 | **supervisor-accounting, supervisor-pressure** | **Fable, pinned for one year together with rules v0.1** | keeping the pin matters more than raw capability — a track record only means something as quarter-to-quarter comparison under the same model and the same rules. Check subscription-path stability from the served-model record on the first run; if fallbacks are frequent, drop the pin to Opus. |
 | single-agent baseline control | the same model as the supervisor | a control on a different model would measure the model, not the structure. Its prompt lives inside the control's run script, not in `.claude/agents/` — it is a control, not a layer, and it must not become something a session can invoke by name |
 | refute verification, claim-strength review | Fable | heavy judgment, where a mistake is expensive |
+| adversarial review, second lens | Codex, on the subscription login | the builder and the refute lens are both Claude, so a blind spot in the family is a blind spot in both. Codex reviews and never builds; it runs the same five rules in the same order, and its automatic stop-time gate stays off because the Stop hook already runs every turn |
 | reproduce verification, full review | Opus, effort xhigh | the existing pins |
 | when a model change is needed | run both models in parallel for one quarter, then switch | a switch without a bridge quarter contaminates the record |
 | paragraph classifier | Haiku class | labels only |
