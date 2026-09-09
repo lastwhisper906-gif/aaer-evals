@@ -69,12 +69,10 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 try:
-    from src import (cutoff_guard, fetch_companyfacts, fetch_fixtures,
-                     interpreter_pin)
+    from src import cutoff_guard, fetch_companyfacts, interpreter_pin
 except ImportError:  # invoked as a plain script
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from src import (cutoff_guard, fetch_companyfacts, fetch_fixtures,
-                     interpreter_pin)
+    from src import cutoff_guard, fetch_companyfacts, interpreter_pin
 
 BAD_INPUT = 2
 
@@ -341,8 +339,13 @@ def _history_fact(tag: str, unit: str, row: dict) -> dict:
     }
 
 
-def history_facts(record: dict, cutoff: dt.date | None) -> list[dict]:
-    """Every companyfacts row filed at or before the cutoff, as a fact.
+def history_facts(record: dict) -> list[dict]:
+    """Every companyfacts row the record holds, as a fact.
+
+    The rows arrive cut to the cutoff already: `read_history` reads them through
+    `cutoff_guard.load_catalogue`, which drops every row filed after it and
+    refuses a row whose own `filed` will not parse. Cutting them again here
+    would be a second copy of the rule, and the one that would go stale.
 
     Every unit, not only dollars. A ratio reads dollars alone, but a period is
     on record when the record holds any duration of that length: ESCO's July to
@@ -354,53 +357,44 @@ def history_facts(record: dict, cutoff: dt.date | None) -> list[dict]:
             for tag, concept in sorted((record.get("facts") or {})
                                        .get("us-gaap", {}).items())
             for unit, rows in sorted(concept.get("units", {}).items())
-            for row in rows
-            if cutoff is None or _date(row["filed"]) <= cutoff]
+            for row in rows]
 
 
-def read_history(ticker: str, fixtures_root) -> dict:
-    """The companyfacts document on record for one company.
+def read_history(ticker: str, cutoff: dt.date | None, fixtures_root) -> dict:
+    """The companyfacts document on record for one company, cut to the cutoff.
 
-    Which file, and how it is stored, comes from the fixture manifest through
-    `cutoff_guard.document_record`, so a file nobody recorded is refused here
-    exactly as it is anywhere else. The bytes are then read with
-    `fetch_fixtures.read_stored` -- the reader the fetcher itself verifies
-    fixtures with -- and checked against the sha256 the manifest holds, so a
-    document that is no longer the one that was fetched fails rather than being
-    used.
+    `cutoff_guard.load_catalogue` is the route, and it is the whole of it.
+    Which file, and how it is stored, comes from the fixture manifest, so a file
+    nobody recorded is refused here exactly as it is anywhere else; the bytes
+    are checked against the sha256 the manifest holds, so a document that is no
+    longer the one that was fetched fails rather than being used; and the read
+    is recorded, so a bundle lists the catalogue it read.
 
     **The date gate is not the gate for this document, and it cannot be.**
     companyfacts is a catalogue of facts drawn from many filings and is not
     itself a filing: the fixture manifest says exactly that in the row's own
     `date_basis`, and the date it records is the newest filing the catalogue
-    carries. `cutoff_guard.load_index` already makes this exception for the
-    submissions index and states the rule that comes with it -- the look-ahead
-    lives in the rows, and the caller drops them. That is `history_facts`, and
-    `test_no_fact_filed_after_the_cutoff_reaches_a_cell` and
+    carries, so gating the file on that date refuses the whole record to every
+    earlier cutoff. The gate makes the exception by role -- the same one
+    `load_index` makes for the submissions index -- and then applies the cutoff
+    to the *rows*, which is where the look-ahead in a catalogue lives. Nothing
+    is filtered again on this side: what comes back is what was filed at or
+    before the cutoff. `test_no_fact_filed_after_the_cutoff_reaches_a_cell` and
     `test_an_earlier_cutoff_takes_the_later_filings_back_out` are what hold it.
 
-    One consequence is worth stating rather than leaving to be discovered: a
-    read through `cutoff_guard.load_bytes` is what puts a document into a
-    bundle's `documents_used` list, and this read is not one, so a bundle does
-    not yet list the catalogue it read. Listing it needs the same exception by
-    role that `assemble_bundle.INDEX_ROLE` already makes for the submissions
-    index, in `assemble_bundle.documents_used` and in
-    `extraction_checks.check_cutoff`, and `docs/INPUT_SPEC.md` §6 names the file
-    it would carry, `input_companyfacts.json`. That is the bundle's piece of
-    work and not this one.
+    A run with no cutoff is refused rather than read whole. A catalogue with no
+    date to cut it to is every row the record holds, which is the look-ahead
+    the gate exists to stop, arriving as a fuller table.
     """
-    rows = cutoff_guard.documents(ticker, form=fetch_companyfacts.FORM,
-                                  role=fetch_companyfacts.ROLE,
-                                  fixtures_root=fixtures_root)
-    if len(rows) != 1:
+    if cutoff is None:
         raise cutoff_guard.CutoffGuardError(
-            f"{ticker}: {len(rows)} companyfacts documents on record, expected one")
-    row = cutoff_guard.document_record(rows[0]["full_path"], fixtures_root=fixtures_root)
-    raw = fetch_fixtures.read_stored(rows[0]["full_path"], row["stored"])
-    if fetch_fixtures.sha256(raw) != row["sha256"]:
-        raise cutoff_guard.CutoffGuardError(
-            f"{ticker}: {row['path']} is no longer the bytes the manifest hashed")
-    record = json.loads(raw.decode("utf-8"))
+            f"{ticker}: no cutoff, so there is no date to cut the catalogue's "
+            "rows to — refused, because the whole record is look-ahead")
+    row = cutoff_guard.one_document(ticker, fetch_companyfacts.FORM,
+                                    cutoff_guard.CATALOGUE_ROLE,
+                                    fixtures_root=fixtures_root)
+    record = cutoff_guard.load_catalogue(row["full_path"], cutoff,
+                                         fixtures_root=fixtures_root)
     record["path"] = row["path"]
     return record
 
@@ -830,8 +824,8 @@ def trends(numbers: dict, *, fixtures_root=cutoff_guard.FIXTURES) -> dict:
     instance = [dict(fact, record=INSTANCE) for fact in numbers["facts"]
                 if cutoff is None or _date(fact["filing_date"]) <= cutoff]
     try:
-        record = read_history(ticker, fixtures_root)
-        history = history_facts(record, cutoff)
+        record = read_history(ticker, cutoff, fixtures_root)
+        history = history_facts(record)
         # What the catalogue holds *for this run*, which is not what the
         # catalogue holds. Its own as-of date and the date of the newest filing
         # it carries are both later than every cutoff a run can have — that is
