@@ -36,9 +36,9 @@ exists to enforce.
 
 ## Ready to build
 
-[ ] re-judge the parsers that arrive from the parser branch · no new code — a replacement expected-value file per company, and the deletion of every expected value that came from a parser run · `python3.12 -m pytest tests -q` against the replaced fixtures · companyfacts for every numeric expectation, and the filing itself, read by eye, for every section boundary and paragraph count; each replaced value carries a one-line note naming where it came from. Do this before any item below builds on those parsers · PR:
+[ ] write the plain-name check · `src/plain_name_check.py` and the post-write hook that calls it · `.venv/bin/python -m pytest tests/test_plain_name_check.py -q` · a letter-number code planted in a fixture file by the test itself, and a filter output that is greped rather than a filter that is inspected — a no-op regular expression fails quietly. It is written rather than ported: the display-name filter lives only inside the old harness, not on this branch and not on the parser branch · PR:
 
-[ ] write the plain-name check · `src/plain_name_check.py` and the post-write hook that calls it · `python3.12 -m pytest tests/test_plain_name_check.py -q` · a letter-number code planted in a fixture file by the test itself, and a filter output that is greped rather than a filter that is inspected — a no-op regular expression fails quietly · PR:
+[ ] re-judge the parsers that arrive from the parser branch · no new code — a replacement expected-value file per company, and the deletion of every expected value that came from a parser run · `.venv/bin/python -m pytest tests -q` against the replaced fixtures · companyfacts for every numeric expectation, and the filing itself, read by eye, for every section boundary and paragraph count; each replaced value carries a one-line note naming where it came from. Do this before any item below builds on those parsers · PR:
 
 [ ] companyfacts fetcher · `src/fetch_companyfacts.py` and one `companyfacts.json` fixture per company, with its sha256 in the manifest · `python3.12 -m pytest tests/test_fetch_companyfacts.py -q` · every `us-gaap` numeric fact in the committed XBRL instance, looked up in companyfacts and matched by value, with every difference listed rather than tolerated · PR:
 
@@ -66,7 +66,7 @@ exists to enforce.
 
 [ ] market module · `src/market.py` writing `input_market.json` · `python3.12 -m pytest tests/test_market.py -q` · abnormal returns computed by hand from a frozen price fixture and written out in the test; an after-close acceptance time that must move reaction day zero to the next trading day and carry the cutoff and the outcome window with it, so the window is still three days and still ends before the outcome window opens; a FINRA row that must attach by publication date and must not attach by settlement date; a two-year short-interest median computed by hand for one company · PR:
 
-[ ] price-source delisting probe · a probe script and one line in `docs/structure_changes.md` · the probe run, exit status checked directly · a ticker known to have been delisted, whose history must come back; the source's own response is the expected value · PR:
+[ ] price-source delisting probe · a probe script and one line in `docs/structure_changes.md` · the probe run, exit status checked directly · a ticker known to have been delisted, whose history must come back; the source's own response is the expected value. Probe the three candidates named in the needs-judgment list below, in that order, and stop at the first that returns the history — this item gathers the evidence, it does not pick the source · PR:
 
 [ ] per-agent input directory builder · `src/agent_inputs.py` · `python3.12 -m pytest tests/test_agent_inputs.py -q` · the layer table in `docs/INPUT_SPEC.md`, asserted file by file: a reader directory with no price file, a comparer directory with both reader reports and no filing, a supervisor directory with neither a filing nor the market table. The test must also assert the session root, because a directory that holds the right files but sits beside a readable sibling is not isolated — walk up from the root and fail if another agent's directory is reachable · PR:
 
@@ -87,12 +87,12 @@ exists to enforce.
 Not launched. No judge exists for these, and inventing one would be inventing the
 answer.
 
+[ ] the price source · three candidates, in this order: **Stooq daily bulk zip** — a file download rather than an API call, which is why it survives the scripted-request block, delisted coverage unknown; **WRDS with CRSP through a Stony Brook account** — free if the school subscribes, and delisting returns handled the way the literature handles them, which is the only candidate that answers the delisted question properly; **a low-cost provider such as Tiingo or EODHD** — delisted coverage to be confirmed. Session 1 probed the two obvious free routes and neither served data: Stooq answers a scripted request with a JavaScript proof-of-work under both a plain and a browser user agent, and the Yahoo chart endpoint returns 429 unauthenticated, so the delisted-ticker question is still unanswered and the market module is built against a frozen price fixture. **Must be decided before the pattern study, not before expansion, because the study needs fifteen years of prices.** The project's no-paid-data rule named consensus data, not prices · needs judgment
+
 [ ] thresholds for the four new numeric indicators — `articulation_gap`, `asset_growth_high`, `rnd_capitalization_shift`, `net_stock_issuance` · nothing waits: until rules v0.1 all four report their value and do not flag, so they measure from the first run and contribute nothing to a tier. What size of gap or growth should raise a flag needs the distribution over the 30 past cases, and a threshold is the owner's · needs judgment
 
 [ ] the two-by-two flag thresholds · the accounting flag count grew from 26 to 33 and the pressure count from 16 to 17 while "4 or more" and "3 or more" stayed put, which loosens both tiers · needs judgment
 
 [ ] narrowing the map from SIC code to sector ETF · the default is one ETF per SIC division and it ships with the market module, so nothing waits; whether a finer map by major group gives a better sector return is a modelling choice no test can settle · needs judgment
-
-[ ] the price source, if no free source retains delisted tickers · the probe item above answers whether one does; if none does, the choice is between a paid source, a narrower universe, and dropping the abnormal-return target · needs judgment
 
 [ ] whether the review-response branch's published results merge into this history · two published-results histories diverge, and merging them is a claim about the record · needs judgment
