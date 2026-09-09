@@ -1,0 +1,113 @@
+{
+  "what_this_is": "The frozen market fixtures src/market.py is built and tested against. They are constructed, not fetched: docs/INPUT_SPEC.md says the price source is not chosen and that the market module is built against a frozen price fixture so the choice does not block it. Nothing here was served by a market data source and nothing here is a record of what any real company's stock did.",
+  "why_it_is_not_named_manifest": "src/cutoff_guard.py indexes every tests/fixtures/*/manifest.json and gates the documents it lists by the filing date recorded beside each one. A daily price series has no filing date, so a filing_date field here would be a false statement and gating a price file by one would refuse the file for every cutoff before its last row. Market data is bounded separately -- by reaction day two, on the rows -- and market_table is where that bound lives.",
+  "the_company": "ZZZZ, a constructed company, with YYYY and XXXX beside it in the short-interest files as rows that must not be read. The ticker is deliberately not one of the twelve, so no row of this fixture can be mistaken for a record of one of them. tests/test_cutoff_guard.py uses ZZZZ for its constructed fixture too.",
+  "shares_outstanding_the_tests_use": 1000000000,
+  "price_series": {
+    "columns": "date,open,close,adjusted_close -- the columns docs/INPUT_SPEC.md says are fetched. src/market.py reads adjusted_close and nothing else.",
+    "the_calendar": "Every weekday from 2025-05-09 to 2026-05-18, 267 trading days, no holidays. The 261st day, 2026-05-08, is a Friday and is the filing date of the report that triggers the run; the 250 trading days before it, 2025-05-23 to 2026-05-07, are beta's estimation window.",
+    "every_price_is_exact": "Every close is 2^a * 5^b divided by a power of ten, so every ratio between two of them is a terminating decimal and every return in this fixture is exact rather than rounded. That is what lets the tests write the arithmetic out.",
+    "the_estimation_window": "The broad market alternates 400.00 and 409.60, so its return is +0.024 on 125 days and -0.0234375 on the other 125. The stock alternates 100.00 and 104.8576 in phase with it, so its return is +0.048576 and -0.04632568359375 on the same days. beta is therefore (0.048576 + 0.04632568359375) / (0.024 + 0.0234375) = 2.0005625, and tests/test_market.py writes that out term by term.",
+    "the_days_before_it": "2025-05-09 to 2025-05-22 the stock moves against the market instead of with it, so an estimation window that reached one day too far back would not return 2.0005625.",
+    "the_reaction_days": "On 2026-05-11 the sector return is zero, on 2026-05-12 the stock return is zero and on 2026-05-13 the market return is zero, so each day of the window leaves a different term of raw - beta * market - sector doing the work.",
+    "the_split": "A two-for-one split effective 2025-11-05: before that day the close column is twice the adjusted close, and from it the two agree. A module reading the close column would report a -50% return on the split day and a different beta."
+  },
+  "short_interest": {
+    "layout": "FINRA's Consolidated Short Interest file: pipe-delimited, one header line, the fourteen columns archive/analysis/test_b4_short_interest.py records the source as carrying, one file per settlement date named shrt{YYYYMMDD}.csv.",
+    "shrt20240415_is_written_differently_on_purpose": "Its columns are in a different order and its settlementDate is written 20240415 rather than 2024-04-15. A bulk source's members have moved their columns and dropped their date separators between vintages, so the reader finds columns by name and accepts both date shapes, and this file is what says so.",
+    "why_there_are_only_fifteen": "The real file is twice monthly, which is about forty-eight reports in two years. A median hand-computed over forty-eight values is a generator rather than a hand computation, and the rule under test is which reports are in the window, not how many. Fifteen settlement dates: thirteen inside the two-year window and published in time, one older than two years, and one settled before the cutoff and published after it.",
+    "publication_is_computed": "The file carries no publication column. src/market.py computes it as settlement plus eight business days, which is the rule docs/INPUT_SPEC.md states."
+  },
+  "files": [
+    {
+      "path": "prices/SPY.csv",
+      "bytes": 8581,
+      "sha256": "2cb5231a8ad9b9a39b7d9a5649a4d1789a1d2ceddbbd3ca471daba3fb65a3067"
+    },
+    {
+      "path": "prices/XLI.csv",
+      "bytes": 8581,
+      "sha256": "b1b64e975bc3abeb762d8ddc739fb5ba636553b67050d3de007580992f6eed0b"
+    },
+    {
+      "path": "prices/ZZZZ.csv",
+      "bytes": 9403,
+      "sha256": "22cadb051fc4d4b5facbb4ebc78aa1d71f59b4c19d5ce49345e58c1083dadbf9"
+    },
+    {
+      "path": "short_interest/shrt20240415.csv",
+      "bytes": 530,
+      "sha256": "cabef239af3b13025022873fa60c2ae867b32d09fd7aa066a5672cb9c9a001b5"
+    },
+    {
+      "path": "short_interest/shrt20240614.csv",
+      "bytes": 538,
+      "sha256": "12390d538207852460b18798c11a4e68f3e324ed0eff5b2c0d7c87f32ef5091d"
+    },
+    {
+      "path": "short_interest/shrt20240815.csv",
+      "bytes": 538,
+      "sha256": "60d49b98b0a8b1abc47ad31037bee2029816099be0b278a601e47c390d1d6195"
+    },
+    {
+      "path": "short_interest/shrt20241015.csv",
+      "bytes": 536,
+      "sha256": "6cae64c07110fb63f02a1f5b5ea3491cbc8be432d27fb6e929d18232453fabc7"
+    },
+    {
+      "path": "short_interest/shrt20241213.csv",
+      "bytes": 538,
+      "sha256": "972b77ed812f4034cf41d3eeb4f703c601fef0a205f1fdbbe0fba5d8dc3247d7"
+    },
+    {
+      "path": "short_interest/shrt20250214.csv",
+      "bytes": 538,
+      "sha256": "2b336cb66f37393666acb096cb32d5f86a59b37fc939340645784404aaac605f"
+    },
+    {
+      "path": "short_interest/shrt20250415.csv",
+      "bytes": 538,
+      "sha256": "c09232bf0ba2d4f2018968b6bc5bf9c5a7aa6cf46c85e4ff38986fe57ef3b1f2"
+    },
+    {
+      "path": "short_interest/shrt20250613.csv",
+      "bytes": 538,
+      "sha256": "53b4b74774495e0f8f2ccf707ee8b625bd8eeb16b22d74804eab5077f67ebdfb"
+    },
+    {
+      "path": "short_interest/shrt20250815.csv",
+      "bytes": 538,
+      "sha256": "1e214c70af9745b0dfa825d8a8e7da87d8dbf5926fe4e325c179a5135699e23f"
+    },
+    {
+      "path": "short_interest/shrt20251015.csv",
+      "bytes": 538,
+      "sha256": "c797ce05ffd8fa5044ffe455712f94907f52a854c1ba6321d614c62c7426b787"
+    },
+    {
+      "path": "short_interest/shrt20251215.csv",
+      "bytes": 538,
+      "sha256": "92740dd225e4cbd8948492d81297e0bbb5a83693fd35e225c759e6fc801711a4"
+    },
+    {
+      "path": "short_interest/shrt20260213.csv",
+      "bytes": 538,
+      "sha256": "b70198a70d279e7503b2f0f718f40520f4858330c40b42ce0b85e129212f4187"
+    },
+    {
+      "path": "short_interest/shrt20260331.csv",
+      "bytes": 538,
+      "sha256": "c0784ee6c66cceb1c8e303b080f444b9219496888bb9e0eab2fe6754f8b1b798"
+    },
+    {
+      "path": "short_interest/shrt20260421.csv",
+      "bytes": 538,
+      "sha256": "d9e2bbc10d776c8d97429e72a2014a31ba8dae048cb021cd9d389a19ff374d03"
+    },
+    {
+      "path": "short_interest/shrt20260511.csv",
+      "bytes": 538,
+      "sha256": "6fed5d79be47b6c075249ac62c125681f646d0b1ede03905a844d28eeb16a8a8"
+    }
+  ]
+}
