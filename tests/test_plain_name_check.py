@@ -36,7 +36,7 @@ from pathlib import Path
 
 import pytest
 
-from src import plain_name_check
+from src import interpreter_pin, plain_name_check
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -75,7 +75,8 @@ KEPT_VOCABULARY = [
     ("The earnings release is EX-99.1, and the header sometimes says only EX-99.", "lessons.md"),
     (
         "The section key is item_9a and the finding is receivables_outrun_revenue.",
-        "src/split_sections.py and docs/HOW_WE_WORK.md",
+        "src/split_sections.py for item_9a, docs/HOW_WE_WORK.md line 7 for "
+        "receivables_outrun_revenue",
     ),
     ("us-gaap:Revenues and us-gaap:AccountsReceivableNetCurrent.", "src/extract_numbers.py"),
     (
@@ -89,7 +90,10 @@ KEPT_VOCABULARY = [
         "uppercase forms are kept because a standard's name is not ours to change",
     ),
     ("Q4 is derived, never reported, and post-2006 drift is near zero.", "docs/INPUT_SPEC.md"),
-    ("Post-2006 drift again, and the fiscal year is FY2025.", "docs/CHECKLIST.md"),
+    (
+        "Post-2006 drift again, and the fiscal year is FY2025.",
+        "docs/CHECKLIST.md line 223 for Post-2006, tests/test_trends.py line 278 for FY2025",
+    ),
     ("Accession 0000320193-26-000001, filed 2026-09-06, ticker AAPL.", "tests/test_append_check.py"),
     ("The bundle key is AAPL_10K and the document is aapl-20250927.htm.", "tests/test_cutoff_guard.py"),
     ("The prose is CC-BY-4.0 and the dedication is CC0 Public Domain.", "CITATION.cff and LICENSE-docs"),
@@ -123,7 +127,6 @@ def test_a_planted_code_is_named_with_its_file_and_its_line(tmp_path, capsys):
 
     assert status == plain_name_check.FOUND
     assert lines == [f"{document}:2: {PLANTED}"]
-    assert PLANTED in "\n".join(lines)
 
 
 @pytest.mark.parametrize("code", CODES_THIS_PROJECT_WROTE)
@@ -202,6 +205,29 @@ def test_a_kept_line_alone_is_not_named(tmp_path, capsys, kept, source):
 
 
 # --- a code in the file's own name -------------------------------------------
+
+
+@pytest.mark.parametrize("dated", ["FY2025", "CY2025", "FY1999", "CY2026"])
+def test_the_year_a_period_is_named_by_is_kept(tmp_path, capsys, dated):
+    document = tmp_path / "period.md"
+    document.write_text(f"the quarter closes in {dated}\n")
+
+    assert run(capsys, str(document)) == (0, [])
+
+
+@pytest.mark.parametrize("dated_code", ["RP2019", "B2020", "INV1999", "GA2026"])
+def test_a_code_whose_number_is_a_year_is_still_a_code(tmp_path, capsys, dated_code):
+    """The boundary of the exemption above, planted on purpose. `FY2025` is kept
+    as a word; keeping it as a shape -- any capital tag on a four-digit year --
+    exempts the archive's own families whenever the serial lands in 1900-2099,
+    and a check with that hole in it passes everything it was written to catch."""
+    document = tmp_path / "report.md"
+    document.write_text(f"the item {dated_code} was closed\n")
+
+    status, lines = run(capsys, str(document))
+
+    assert status == plain_name_check.FOUND
+    assert lines == [f"{document}:1: {dated_code}"]
 
 
 def test_a_code_in_the_file_name_is_named_at_line_zero(tmp_path, capsys):
@@ -344,11 +370,53 @@ def test_changed_on_a_branch_that_touched_nothing_prints_nothing(repo, capsys):
     assert run(capsys, "--changed", "--baseline", "baseline") == (0, [])
 
 
+def test_changed_names_the_same_code_from_a_subdirectory(repo, capsys, monkeypatch):
+    """Run it from anywhere. `git ls-files --others` prints names relative to the
+    working directory, so without --full-name an untracked file's name was joined
+    onto the repository root, resolved to nothing, and was skipped in silence --
+    a clean exit from inside docs/ for the file that failed from the root."""
+    (repo / "docs" / "untracked.md").write_text(f"raised as {PLANTED}\n")
+
+    from_root = run(capsys, "--changed", "--baseline", "baseline")
+    monkeypatch.chdir(repo / "docs")
+    from_subdirectory = run(capsys, "--changed", "--baseline", "baseline")
+
+    assert from_root == (plain_name_check.FOUND, [f"docs/untracked.md:1: {PLANTED}"])
+    assert from_subdirectory == (plain_name_check.FOUND, [f"untracked.md:1: {PLANTED}"])
+
+
+def test_a_name_git_hands_back_that_is_not_a_file_is_not_a_pass(repo, capsys, monkeypatch):
+    """The same silence, reached the other way: whatever produces the list, a name
+    in it that does not resolve to a file is not a clean file."""
+    monkeypatch.setattr(
+        plain_name_check, "changed_files", lambda baseline: [repo / "docs" / "gone.md"]
+    )
+
+    status, lines = run(capsys, "--changed", "--baseline", "baseline")
+
+    assert status == plain_name_check.CANNOT_RUN
+    assert lines == [f"plain_name_check: {repo / 'docs' / 'gone.md'} is not there"]
+
+
+def test_the_wrong_interpreter_stops_it_before_it_reads_anything(repo, capsys, monkeypatch):
+    """The pin is the first statement of main(), not a comment about one. Told the
+    interpreter is wrong, it returns that status and does not go on to read the
+    file with the code in it."""
+    (repo / "docs" / "untracked.md").write_text(f"raised as {PLANTED}\n")
+    monkeypatch.setattr(
+        plain_name_check.interpreter_pin, "enforce", lambda: interpreter_pin.WRONG_INTERPRETER
+    )
+
+    status, lines = run(capsys, "--changed", "--baseline", "baseline")
+
+    assert status == interpreter_pin.WRONG_INTERPRETER
+    assert lines == []
+
+
 def test_an_unresolvable_baseline_is_not_a_pass(repo, capsys):
     status, _ = run(capsys, "--changed", "--baseline", "no-such-ref")
 
     assert status == plain_name_check.CANNOT_RUN
-    assert status != 0
 
 
 def test_a_path_that_is_not_there_is_not_a_pass(tmp_path, capsys):
@@ -407,10 +475,11 @@ def test_both_entry_points_run_under_the_bare_pinned_interpreter(tmp_path, entry
     assert result.stderr.splitlines() == [f"{document}:1: {PLANTED}"]
 
 
-def _post_write_hook_commands() -> list[str]:
+def _post_write_hooks() -> list[tuple[str, str]]:
+    """Every post-write hook that runs this module, as (matcher, command)."""
     settings = json.loads((REPO_ROOT / ".claude" / "settings.json").read_text(encoding="utf-8"))
     return [
-        hook["command"]
+        (entry.get("matcher", ""), hook["command"])
         for entry in settings["hooks"]["PostToolUse"]
         for hook in entry["hooks"]
         if "plain_name_check" in hook["command"]
@@ -418,23 +487,17 @@ def _post_write_hook_commands() -> list[str]:
 
 
 def test_the_post_write_hook_calls_this_module():
-    settings = json.loads((REPO_ROOT / ".claude" / "settings.json").read_text(encoding="utf-8"))
-    matchers = [
-        entry.get("matcher", "")
-        for entry in settings["hooks"]["PostToolUse"]
-        for hook in entry["hooks"]
-        if "plain_name_check" in hook["command"]
-    ]
+    hooks = _post_write_hooks()
 
-    assert len(_post_write_hook_commands()) == 1
-    assert matchers == ["Write|Edit"]
+    assert len(hooks) == 1
+    matcher, _ = hooks[0]
+    assert matcher == "Write|Edit"
 
 
-@pytest.mark.skipif(shutil.which("python3.12") is None, reason="no bare python3.12 here")
-def test_the_post_write_hook_names_a_planted_code_and_keeps_the_exit_status(tmp_path):
-    """Proof that the hook is wired in, not just written: run the line itself."""
+def _repo_that_can_run_the_check(tmp_path):
+    """A throwaway repository carrying the module, a baseline, and a planted code."""
+    (tmp_path / "src").mkdir(exist_ok=True)
     for name in ("__init__.py", "interpreter_pin.py", "plain_name_check.py"):
-        (tmp_path / "src").mkdir(exist_ok=True)
         shutil.copy(REPO_ROOT / "src" / name, tmp_path / "src" / name)
     git(tmp_path, "init", "-q", "-b", "main")
     git(tmp_path, "config", "user.email", "test@example.invalid")
@@ -443,15 +506,52 @@ def test_the_post_write_hook_names_a_planted_code_and_keeps_the_exit_status(tmp_
     git(tmp_path, "commit", "-qm", "baseline")
     git(tmp_path, "update-ref", "refs/remotes/origin/main", "HEAD")
     (tmp_path / "report.md").write_text(f"the finding was raised as {PLANTED}\n")
+    return tmp_path
 
-    command, = _post_write_hook_commands()
+
+def _names_the_planted_code(command: str, repo: Path):
+    """Run one gate command in the throwaway repository and read what it said."""
     result = subprocess.run(
         ("sh", "-c", command),
-        cwd=tmp_path,
+        cwd=repo,
         env=_without_pythonpath(),
         capture_output=True,
         text=True,
     )
-
     assert result.stderr.splitlines() == [f"report.md:1: {PLANTED}"]
     assert result.returncode == plain_name_check.FOUND
+
+
+def test_the_gate_runs_the_check(tmp_path):
+    """A code named on stderr is for whoever is at the keyboard; the gate is what
+    makes a pull request red. Proof by running the command make says it will run,
+    not by reading the Makefile and believing it."""
+    printed = subprocess.run(
+        ("make", "-n", "check", f"PYTHON={sys.executable}", "BASELINE=origin/main"),
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+    command, = [line for line in printed.splitlines() if "plain_name_check" in line]
+
+    _names_the_planted_code(command, _repo_that_can_run_the_check(tmp_path))
+
+
+def test_the_workflow_runs_that_same_gate():
+    """One gate, defined once. If the workflow listed the steps itself, this check
+    could be added to the Makefile and never run on a pull request. Read only the
+    steps -- a comment naming what the gate contains is a comment, not a step."""
+    workflow = (REPO_ROOT / ".github" / "workflows" / "ci.yml").read_text()
+    steps = [line.split("run:", 1)[1].strip() for line in workflow.splitlines() if "run:" in line]
+
+    assert "make check PYTHON=python BASELINE=origin/main" in steps
+    assert not [step for step in steps if "src.append_check" in step or "pytest" in step]
+
+
+@pytest.mark.skipif(shutil.which("python3.12") is None, reason="no bare python3.12 here")
+def test_the_post_write_hook_names_a_planted_code_and_keeps_the_exit_status(tmp_path):
+    """Proof that the hook is wired in, not just written: run the line itself."""
+    (_, command), = _post_write_hooks()
+
+    _names_the_planted_code(command, _repo_that_can_run_the_check(tmp_path))
