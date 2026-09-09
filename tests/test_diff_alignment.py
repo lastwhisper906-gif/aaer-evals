@@ -1,4 +1,4 @@
-"""Pair first, then compare: three filings where nothing was disclosed anew.
+"""Pair first, then compare: four filings where nothing was disclosed anew.
 
 `docs/INPUT_SPEC.md` §2 Alignment asks for three things in one order — pair a
 section against its prior-period counterpart by tag name, falling back to title
@@ -6,7 +6,7 @@ similarity; match one paragraph list against the other as a multiset; score each
 paragraph for boilerplate before it counts as a change — and states what they
 buy: a reordered or retitled section yields zero changes.
 
-The three fixtures below are built here, in the test, so a reader can see why
+The three the item names are built here, in the test, so a reader can see why
 zero is the right answer without opening anything else:
 
 * **reordered** — the same two notes and the same paragraphs, printed in
@@ -19,13 +19,20 @@ zero is the right answer without opening anything else:
   one for one is the mistake this repository already made and wrote down
   (`lessons.md`, 2026-09-07): ninety-nine of them looked removed.
 
+A fourth fixture holds the rule *order* to the one the spec states: a heading
+reworded to what the heading below it said last quarter must not take the
+section that the note below it is tagged as. Every tag pair is made before the
+first title pair, or two notes are compared against the wrong note each.
+
 Zero is only worth asserting if something could have moved it, so every fixture
 carries a positive control: one sentence added, one tag renamed past the floor,
-one cell replaced by a sentence — each of which must move the count by exactly
-the amount written out beside it.
+one cell replaced by a sentence, one deliberate mis-pairing — each of which must
+move the count by exactly the amount written out beside it.
 """
 
 from __future__ import annotations
+
+import re
 
 import pytest
 
@@ -231,6 +238,98 @@ def test_a_sentence_in_place_of_a_cell_is_the_one_change():
     assert len(result["boilerplate"]) == 4
 
 
+# --- fixture four: a heading that reads like the note below it -------------
+
+ACCRUED_TAG = "esterline:AccruedLiabilitiesTextBlock"
+RENAMED_ACCRUED_TAG = "esterline:AccruedExpensesTextBlock"
+ACCRUED = [
+    "Accrued liabilities consist of payroll, warranty and customer rebates.",
+    "| Accrued payroll | 312 | 298 |",
+]
+OTHER_LIABILITIES_TAG = "us-gaap:OtherLiabilitiesDisclosureTextBlock"
+OTHER_LIABILITIES = [
+    "Other liabilities include the long-term portion of deferred compensation.",
+    "| Deferred compensation | 96 | 91 |",
+]
+
+
+def reworded_heading() -> tuple[list[dict], list[dict]]:
+    """One heading is reworded to what the heading below it said last quarter.
+
+    The company folded "and other" into the first note's heading and renamed
+    the extension tag with it. The second note carries the same `us-gaap` tag
+    in both filings and shortened its own heading. Neither note's paragraphs
+    changed.
+    """
+    prior = [section(ACCRUED_TAG, "Note 6 — Accrued Liabilities", ACCRUED),
+             section(OTHER_LIABILITIES_TAG,
+                     "Note 7 — Accrued and Other Liabilities", OTHER_LIABILITIES)]
+    current = [section(RENAMED_ACCRUED_TAG,
+                       "Note 6 — Accrued and Other Liabilities", ACCRUED),
+               section(OTHER_LIABILITIES_TAG, "Note 7 — Other Liabilities",
+                       OTHER_LIABILITIES)]
+    return current, prior
+
+
+def test_every_tag_pair_is_made_before_the_first_title_pair():
+    """The rules run one whole rule at a time, in the order the spec states.
+
+    The reworded heading resembles the note *below* it more than the note it
+    belongs to. A single pass in section order would hand it the `us-gaap`
+    section, and the section actually filed under that tag — its own
+    counterpart taken — would fall to the fallback and take what was left. Both
+    notes would then be compared against the wrong note.
+    """
+    current, prior = reworded_heading()
+    reworded = diff_periods.title_of(current[0])
+    assert diff_periods.similarity(reworded, diff_periods.title_of(prior[1])) > \
+        diff_periods.similarity(reworded, diff_periods.title_of(prior[0]))
+    # Why zero: both notes' paragraphs are last quarter's, word for word.
+    assert texts(current) == texts(prior)
+
+    pairs = diff_periods.pair_sections(current, prior)
+    # The tag is the same string in both filings, so it pairs first...
+    assert (pairs[1]["matched_by"], pairs[1]["prior"]["name"]) == \
+        ("tag_name", OTHER_LIABILITIES_TAG)
+    # ...and the reworded heading pairs with what is left, which is its own.
+    assert (pairs[0]["matched_by"], pairs[0]["prior"]["name"]) == \
+        ("title_similarity", ACCRUED_TAG)
+
+    result = diff_periods.changes(current, prior)
+    assert result["count"] == 0
+    assert result["boilerplate"] == []
+
+
+def test_what_the_wrong_pairing_would_have_cost():
+    """The positive control for the pass order: the count these two notes carry
+    when they are compared against each other. Two paragraphs added, two
+    removed, and no furniture among the four."""
+    current, prior = reworded_heading()
+
+    mispaired = diff_periods.changes([current[0]], [prior[1]])
+    assert mispaired["count"] == 2 + 2
+    assert mispaired["boilerplate"] == []
+    assert [entry["matched_by"] for entry in mispaired["entries"]] == \
+        ["title_similarity"] * 4
+
+
+def test_the_pairing_does_not_depend_on_the_order_the_sections_are_in():
+    """A filing printed in another order is the same filing — of the pairing as
+    much as of the paragraphs. The fallback takes its best score first and not
+    its earliest section, so reversing both sides forms the same two pairs."""
+    current, prior = reworded_heading()
+
+    def made(pairs: list[dict]) -> set[tuple[str, str, str]]:
+        return {(pair["current"]["name"], pair["prior"]["name"],
+                 pair["matched_by"]) for pair in pairs}
+
+    forward = made(diff_periods.pair_sections(current, prior))
+    assert forward == {(RENAMED_ACCRUED_TAG, ACCRUED_TAG, "title_similarity"),
+                       (OTHER_LIABILITIES_TAG, OTHER_LIABILITIES_TAG, "tag_name")}
+    assert made(diff_periods.pair_sections(current[::-1], prior[::-1])) == forward
+    assert diff_periods.changes(current[::-1], prior[::-1])["count"] == 0
+
+
 # --- the two rules the count turns on --------------------------------------
 
 def test_a_paragraph_is_furniture_or_it_makes_a_claim():
@@ -281,6 +380,54 @@ def test_a_paragraph_that_moved_to_another_section_is_a_change_in_both():
 
 
 # --- the layer as the pipeline runs it -------------------------------------
+
+# What `render` writes above every paragraph: the entry's id, alone in
+# brackets. The collapsed placeholder is bracketed too and holds spaces, which
+# is what tells the two apart.
+ID_LINE = re.compile(r"^\[\S+:(?:notes|mdna):\d+\]$")
+
+
+def test_the_flat_stream_regroups_into_the_sections_it_came_out_of():
+    """`notes` and `extract` carry one flat list whose entries name their note.
+
+    Alignment pairs sections, so it needs them back: in the filing's own order,
+    and one section per note however far apart that note's paragraphs sit.
+    """
+    entries = [{"note": INVENTORIES_TAG, "text": INVENTORIES[0]},
+               {"note": REVENUE_TAG, "text": REVENUE[0]},
+               {"note": INVENTORIES_TAG, "text": INVENTORIES[1]}]
+
+    assert diff_periods.sections_of(entries) == [
+        {"name": INVENTORIES_TAG, "paragraphs": [INVENTORIES[0], INVENTORIES[1]]},
+        {"name": REVENUE_TAG, "paragraphs": [REVENUE[0]]}]
+
+
+def test_the_command_says_how_much_moved(tmp_path, capsys):
+    """The summary line is where the change count is read out loud.
+
+    Two of its four numbers are recounted here from the two files the same run
+    wrote: an entry is an id line, and a collapsed entry is the one the
+    placeholder follows. The change count is not one of them — no one has
+    counted these two filings by hand — so what is asserted of it is that the
+    line reports the payload's own count and not some other number.
+    """
+    notes_file, mdna_file = tmp_path / "input_notes.md", tmp_path / "input_mdna.md"
+    assert diff_periods.main(["--ticker", "qcom", "--out-notes", str(notes_file),
+                              "--out-mdna", str(mdna_file)]) == 0
+    line = capsys.readouterr().out.strip()
+
+    written = (notes_file.read_text(encoding="utf-8").splitlines()
+               + mdna_file.read_text(encoding="utf-8").splitlines())
+    ids = [index for index, text in enumerate(written) if ID_LINE.match(text)]
+    collapsed = sum(1 for index in ids
+                    if diff_periods.is_collapsed_line(written[index + 1]))
+    assert line.startswith(f"diff_periods: QCOM {collapsed} collapsed, "
+                           f"{len(ids) - collapsed} carried verbatim, ")
+
+    payload = diff_periods.extract("QCOM")
+    assert line.endswith(f"{payload['changes']['count']} changes over "
+                         f"{payload['changes']['sections']} paired sections")
+
 
 @pytest.mark.parametrize("ticker", ["QCOM"])
 def test_the_change_count_is_read_off_a_real_pair_of_filings(ticker):

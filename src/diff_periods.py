@@ -217,39 +217,57 @@ def pair_sections(current: list[dict], prior: list[dict]) -> list[dict]:
     Every section on either side is in exactly one pair, and each pair records
     which rule made it, because a pairing a reader cannot reproduce from the
     same two filings is a pairing they have to take on faith.
+
+    One whole rule at a time, in the spec's order: **every** tag-name pair is
+    made before the first title pair, and the fallback sees only what is left.
+    A single pass in current order lets a title match made for an earlier
+    section eat the prior section a later one is named after — and the later
+    section, its own tag gone, falls to the fallback too. A tag is the same
+    string in both filings; a heading is what stands in when there is none.
+
+    Inside the fallback the best score goes first, not the earliest section, so
+    permuting the sections cannot change which pairs form.
     """
-    taken = [False] * len(prior)
+    paired: dict[int, tuple[int, str, float]] = {}
+    taken: set[int] = set()
+
     by_name: dict[str, list[int]] = {}
     for index, section in enumerate(prior):
         by_name.setdefault(section["name"], []).append(index)
+    for index, section in enumerate(current):
+        queue = by_name.get(section["name"])
+        if queue:
+            match = queue.pop(0)
+            paired[index] = (match, "tag_name", 1.0)
+            taken.add(match)
+
+    headings = [(index, title_of(section))
+                for index, section in enumerate(current) if index not in paired]
+    prior_headings = [(index, title_of(section))
+                      for index, section in enumerate(prior) if index not in taken]
+    candidates = sorted(
+        ((similarity(title, prior_title), index, prior_index)
+         for index, title in headings if title
+         for prior_index, prior_title in prior_headings),
+        key=lambda candidate: (-candidate[0], candidate[1], candidate[2]))
+    for score, index, prior_index in candidates:
+        if score < TITLE_SIMILARITY_FLOOR:
+            break
+        if index in paired or prior_index in taken:
+            continue
+        paired[index] = (prior_index, "title_similarity", score)
+        taken.add(prior_index)
 
     pairs = []
-    for section in current:
-        chosen, matched_by, score = None, NO_PRIOR_SECTION, 0.0
-        queue = by_name.get(section["name"], [])
-        while queue and taken[queue[0]]:  # claimed already, by a title match
-            queue.pop(0)
-        title = title_of(section)
-        if queue:
-            chosen, matched_by, score = queue.pop(0), "tag_name", 1.0
-        elif title:
-            best, best_score = None, 0.0
-            for index, candidate in enumerate(prior):
-                if taken[index]:
-                    continue
-                candidate_score = similarity(title, title_of(candidate))
-                if candidate_score > best_score:
-                    best, best_score = index, candidate_score
-            if best is not None and best_score >= TITLE_SIMILARITY_FLOOR:
-                chosen, matched_by, score = best, "title_similarity", best_score
-        if chosen is not None:
-            taken[chosen] = True
+    for index, section in enumerate(current):
+        prior_index, matched_by, score = paired.get(
+            index, (None, NO_PRIOR_SECTION, 0.0))
         pairs.append({"current": section,
-                      "prior": prior[chosen] if chosen is not None else None,
+                      "prior": prior[prior_index] if prior_index is not None else None,
                       "matched_by": matched_by, "score": score})
 
     for index, section in enumerate(prior):  # last period had it, this one does not
-        if not taken[index]:
+        if index not in taken:
             pairs.append({"current": None, "prior": section,
                           "matched_by": NO_CURRENT_SECTION, "score": 0.0})
     return pairs
@@ -283,14 +301,18 @@ def match_paragraphs(current: list[str], prior: list[str]) -> dict:
             matched.append((index, counterparts.pop(0)))
         else:
             added.append(index)
-    claimed = {prior_index for _, prior_index in matched}
-    removed = [index for index in range(len(prior)) if index not in claimed]
+    removed = sorted(index for counterparts in pool.values() for index in counterparts)
     return {"matched": matched, "added": added, "removed": removed}
 
 
 def is_furniture(token: str) -> bool:
-    """One token that makes no claim: no letters in it, or only stock words."""
-    return all(run in FURNITURE_WORDS for run in _LETTERS.findall(token))
+    """One token that makes no claim: no letters in it, or only stock words.
+
+    Cased like the filing prints it. `boilerplate_score` lowercases the whole
+    paragraph on its way in, so this only matters to a caller holding one token
+    — for whom `Total` and `total` are the same word and were not.
+    """
+    return all(run in FURNITURE_WORDS for run in _LETTERS.findall(token.lower()))
 
 
 def boilerplate_score(text: str) -> float:
@@ -341,10 +363,11 @@ def changes(current: list[dict], prior: list[dict]) -> dict:
         for kind, leftover, texts in (("added", matched["added"], current_paragraphs),
                                       ("removed", matched["removed"], prior_paragraphs)):
             for index in leftover:
+                score = boilerplate_score(texts[index])
                 entry = {"kind": kind, "note": section["name"], "text": texts[index],
-                         "matched_by": pair["matched_by"],
-                         "boilerplate_score": boilerplate_score(texts[index])}
-                (furniture if is_boilerplate(texts[index]) else entries).append(entry)
+                         "matched_by": pair["matched_by"], "boilerplate_score": score}
+                # `is_boilerplate`, on a score already in hand.
+                (furniture if score == 1.0 else entries).append(entry)
     return {
         "entries": entries,
         "count": len(entries),
@@ -361,15 +384,12 @@ def sections_of(entries: list[dict]) -> list[dict]:
     `notes` and `extract` carry one flat list whose entries name their note.
     Alignment pairs sections, so it needs them back, in the filing's own order.
     """
-    out: list[dict] = []
-    index: dict[str, dict] = {}
+    out: dict[str, dict] = {}
     for entry in entries:
-        section = index.get(entry["note"])
-        if section is None:
-            section = index[entry["note"]] = {"name": entry["note"], "paragraphs": []}
-            out.append(section)
+        section = out.setdefault(entry["note"],
+                                 {"name": entry["note"], "paragraphs": []})
         section["paragraphs"].append(entry["text"])
-    return out
+    return list(out.values())
 
 
 def diff_stream(current: list[dict], prior: list[dict]) -> list[dict]:
