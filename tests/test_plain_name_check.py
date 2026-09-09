@@ -1,26 +1,27 @@
 """plain_name_check has to name a planted code and stay silent on kept vocabulary.
 
-Every expected value here is planted by this file. The codes are real tokens
-from the archived project's own identifier families, and they are read from
-`tests/fixtures/letter_number_codes.txt`, which records where each came from and
-how often it appears in `archive/`. They live in a fixture rather than as
-literals here for a reason worth stating: the post-write hook runs the check over
-everything a branch changed, so literals in this file would make the hook report
-this file on every write, for good, and a check that cries wolf about its own
-test is one somebody turns off in a week. The kept vocabulary below stays inline,
-because none of it is reported.
-
-The kept vocabulary comes from `CLAUDE.md`, `docs/HOW_WE_WORK.md`,
-`docs/INPUT_SPEC.md` and the two places on this branch where a kept token already
-takes the forbidden shape: `EX-99.1` in `src/fetch_fixtures.py` and `CC-BY-4.0`
-in `LICENSE` and `CITATION.cff`.
-
 Every assertion reads the **output the check printed**, never the regular
 expression. A no-op regular expression fails quietly -- that is how the
-display-name filter passed on 2026-09-07 with word boundaries macOS sed accepts
-and silently ignores -- so each test that asserts silence also plants one code
-into the same input and asserts that it, and only it, comes back. A check that
-never fires must not be able to pass a test about staying quiet.
+display-name filter passed on 2026-09-07, with word boundaries macOS sed accepts
+and silently ignores -- so a pattern that matches nothing fails the tests that
+plant a code, and a pattern that matches everything fails the tests that plant a
+plain name beside it. Every test that asserts silence also plants one code into
+the same input, so a check that never fires cannot pass a test about staying
+quiet.
+
+Where the planted codes come from, all of them written by this project:
+
+* `B1` and `B2` reached `docs/structure_changes.md` and were taken out again in
+  commit 4090c9e, "plain names in the structure-change record".
+* `B3`, `B4`, `D15`, `GA-001`, `RP-05`, `RP-09`, `INV-03`, `INV-06` are families
+  in `archive/`, counted with the check's own patterns over `archive/**/*.md`:
+  `B3` 168 times, `B4` 148, `GA-001` 100, `RP-05` 84, `D15` 77, `INV-03` 68,
+  `RP-09` 65 and `INV-06` 51.
+* `D-P83`, `D-P75`, `E-003`, `PKT-R2`, `INV11`, `TASK_P6A`, `TASK_R101` and
+  `P4c` are in the commit subjects of this repository's own history.
+* `Q-O10`, `Q-R03` and `D43` sit in `CITATION.cff` and `LICENSE` today.
+
+Where the kept vocabulary comes from is named beside each line below.
 """
 
 from __future__ import annotations
@@ -39,39 +40,68 @@ from src import plain_name_check
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
-CODE_LIST = Path(__file__).resolve().parent / "fixtures" / "letter_number_codes.txt"
+PLANTED = "B2"
 
+# One code per family this project actually wrote. Nothing invented here.
+CODES_THIS_PROJECT_WROTE = [
+    "B1",
+    "B2",
+    "B3",
+    "B4",
+    "D15",
+    "D43",
+    "GA-001",
+    "RP-05",
+    "RP-09",
+    "INV-03",
+    "INV-06",
+    "INV11",
+    "E-003",
+    "D-P83",
+    "D-P75",
+    "PKT-R2",
+    "TASK_P6A",
+    "TASK_R101",
+    "P4c",
+    "Q-O10",
+    "Q-R03",
+]
 
-def invented_families() -> list[str]:
-    """The archived project's own codes, in the order the fixture records them."""
-    lines = CODE_LIST.read_text(encoding="utf-8").splitlines()
-    return [line.split()[0] for line in lines if line.strip() and not line.startswith("#")]
+# Vocabulary this repository has to keep, and where each line comes from.
+# Nothing here may be reported.
+KEPT_VOCABULARY = [
+    ("This filing is a 10-K; the prior one was a 10-Q and the release was an 8-K.", "README.md"),
+    ("Item 1A and Item 7A; item 2.02 and item 4.02.", "docs/INPUT_SPEC.md"),
+    ("The earnings release is EX-99.1, and the header sometimes says only EX-99.", "lessons.md"),
+    (
+        "The section key is item_9a and the finding is receivables_outrun_revenue.",
+        "src/split_sections.py and docs/HOW_WE_WORK.md",
+    ),
+    ("us-gaap:Revenues and us-gaap:AccountsReceivableNetCurrent.", "src/extract_numbers.py"),
+    (
+        "Python 3.12 is the pin, rules v0.1 the version, archive-v1 the tag.",
+        "the Makefile, src/assemble_bundle.py and docs/structure_changes.md",
+    ),
+    ("The hash file is runs/MANIFEST.sha256 and the algorithm is sha256.", "lessons.md"),
+    (
+        "SHA-256, UTF-8 and ISO-8859-1 by their standard names.",
+        "the standards bodies -- this repository writes them lowercase, and the "
+        "uppercase forms are kept because a standard's name is not ours to change",
+    ),
+    ("Q4 is derived, never reported, and post-2006 drift is near zero.", "docs/INPUT_SPEC.md"),
+    ("Post-2006 drift again, and the fiscal year is FY2025.", "docs/CHECKLIST.md"),
+    ("Accession 0000320193-26-000001, filed 2026-09-06, ticker AAPL.", "tests/test_append_check.py"),
+    ("The bundle key is AAPL_10K and the document is aapl-20250927.htm.", "tests/test_cutoff_guard.py"),
+    ("The prose is CC-BY-4.0 and the dedication is CC0 Public Domain.", "CITATION.cff and LICENSE-docs"),
+]
 
-
-INVENTED_FAMILIES = invented_families()
-
-# Vocabulary this repository has to keep. Nothing here may be reported.
-KEPT_VOCABULARY = """\
-This filing is a 10-K; the prior one was a 10-Q and the release was an 8-K.
-Item 1A and Item 7A, and item 2.02, 4.01, 4.02, 1.01 and 5.02.
-Exhibit 21 and Exhibit 10; the earnings release is EX-99.1, and the submission
-header sometimes says only EX-99.
-us-gaap:AccountsReceivableNetCurrent and us-gaap:Revenues.
-Python 3.12, rules v0.1, sha256 and SHA-256, UTF-8, ISO 8601, rule 10-b5.
-AAPL, PANW, QCOM, STX, CIEN, CARR, NVDA, CSCO.
-Accession 0000320193-26-000001, filed 2026-09-09, accepted after the close.
-tests/fixtures/AAPL/10-K/aapl-20250927.htm, and the branch harness/cycle-020.
-The prose is CC-BY-4.0 and the legacy encoding table is ISO-8859-1.
-"""
-
-PLANTED, SECOND, THIRD = INVENTED_FAMILIES[0], INVENTED_FAMILIES[1], INVENTED_FAMILIES[2]
+KEPT_LINES = [line for line, _ in KEPT_VOCABULARY]
 
 
 def run(capsys, *argv):
     """Exit status and the lines the check printed, which is all a caller sees."""
     status = plain_name_check.main(list(argv))
-    printed = capsys.readouterr().err
-    return status, printed.splitlines()
+    return status, capsys.readouterr().err.splitlines()
 
 
 def git(repo, *args):
@@ -91,34 +121,33 @@ def test_a_planted_code_is_named_with_its_file_and_its_line(tmp_path, capsys):
 
     status, lines = run(capsys, str(document))
 
-    assert status == 1
+    assert status == plain_name_check.FOUND
     assert lines == [f"{document}:2: {PLANTED}"]
+    assert PLANTED in "\n".join(lines)
 
 
-def test_every_family_the_old_project_invented_is_named(tmp_path, capsys):
+@pytest.mark.parametrize("code", CODES_THIS_PROJECT_WROTE)
+def test_every_code_this_project_wrote_is_named(tmp_path, capsys, code):
     document = tmp_path / "ledger.md"
-    document.write_text("".join(f"item {code} carried over\n" for code in INVENTED_FAMILIES))
+    document.write_text(f"the item {code} was carried over from the last cycle\n")
 
     status, lines = run(capsys, str(document))
 
-    assert status == 1
-    assert lines == [
-        f"{document}:{number}: {code}"
-        for number, code in enumerate(INVENTED_FAMILIES, start=1)
-    ]
+    assert status == plain_name_check.FOUND
+    assert lines == [f"{document}:1: {code}"]
 
 
 def test_a_code_is_named_once_for_every_occurrence(tmp_path, capsys):
     document = tmp_path / "notes.md"
-    document.write_text(f"{PLANTED} supersedes {PLANTED}, and closes {SECOND}.\n")
+    document.write_text(f"{PLANTED} supersedes {PLANTED}, and closes RP-09.\n")
 
     status, lines = run(capsys, str(document))
 
-    assert status == 1
+    assert status == plain_name_check.FOUND
     assert lines == [
         f"{document}:1: {PLANTED}",
         f"{document}:1: {PLANTED}",
-        f"{document}:1: {SECOND}",
+        f"{document}:1: RP-09",
     ]
 
 
@@ -132,42 +161,96 @@ def test_a_file_with_no_code_prints_nothing_and_exits_zero(tmp_path, capsys):
 # --- staying silent on the vocabulary the repository keeps -------------------
 
 
+def test_a_plain_name_beside_a_planted_code_is_not_named(tmp_path, capsys):
+    """The guard against a pattern that matches everything."""
+    document = tmp_path / "structure_changes.md"
+    document.write_text(
+        "the branch review-response/2026-09-04 is preserved at tag archive-v1\n"
+        f"the cross-tier work {PLANTED} and the response to external review\n"
+    )
+
+    status, lines = run(capsys, str(document))
+
+    printed = "\n".join(lines)
+    assert status == plain_name_check.FOUND
+    assert lines == [f"{document}:2: {PLANTED}"]
+    for plain_name in ("review-response", "2026-09-04", "archive-v1", "cross-tier"):
+        assert plain_name not in printed
+
+
 def test_the_vocabulary_the_repository_keeps_is_not_named(tmp_path, capsys):
     document = tmp_path / "vocabulary.md"
-    document.write_text(KEPT_VOCABULARY)
+    document.write_text("".join(f"{line}\n" for line in KEPT_LINES))
 
     assert run(capsys, str(document)) == (0, [])
 
     # The same input with one code added, so a check that never fires cannot
-    # pass the paragraph above.
-    document.write_text(KEPT_VOCABULARY + f"Raised as {PLANTED}.\n")
-    planted_line = len(KEPT_VOCABULARY.splitlines()) + 1
+    # pass the assertion above.
+    document.write_text("".join(f"{line}\n" for line in KEPT_LINES) + f"Raised as {PLANTED}.\n")
     status, lines = run(capsys, str(document))
 
-    assert status == 1
-    assert lines == [f"{document}:{planted_line}: {PLANTED}"]
+    assert status == plain_name_check.FOUND
+    assert lines == [f"{document}:{len(KEPT_LINES) + 1}: {PLANTED}"]
 
 
-@pytest.mark.parametrize(
-    "kept",
-    ["10-K", "8-K", "EX-99.1", "EX-99", "SHA-256", "UTF-8", "ISO-8859-1", "CC-BY-4.0"],
-)
-def test_a_kept_token_alone_on_a_line_is_not_named(tmp_path, capsys, kept):
-    document = tmp_path / "one_token.md"
+@pytest.mark.parametrize("kept,source", KEPT_VOCABULARY)
+def test_a_kept_line_alone_is_not_named(tmp_path, capsys, kept, source):
+    document = tmp_path / "one_line.md"
     document.write_text(f"{kept}\n")
 
-    assert run(capsys, str(document)) == (0, [])
+    assert run(capsys, str(document)) == (0, []), f"reported vocabulary kept in {source}"
 
-    # The same line with a code beside it: the exemption has to skip the kept
-    # token, not the line, and the check has to still be capable of firing.
-    document.write_text(f"{kept} and {PLANTED}\n")
+
+# --- a code in the file's own name -------------------------------------------
+
+
+def test_a_code_in_the_file_name_is_named_at_line_zero(tmp_path, capsys):
+    document = tmp_path / "GA-001_review.md"
+    document.write_text("the text of this file is clean\n")
+
     status, lines = run(capsys, str(document))
 
-    assert status == 1
-    assert lines == [f"{document}:1: {PLANTED}"]
+    assert status == plain_name_check.FOUND
+    assert lines == [f"{document}:0: GA-001_review.md"]
 
 
-# --- the files it does not read ---------------------------------------------
+def test_a_plain_file_name_is_not_named(tmp_path, capsys):
+    (tmp_path / "aapl-20250927.htm").write_text("a filing whose name carries a date\n")
+    named = tmp_path / "GA-001.md"
+    named.write_text("clean\n")
+
+    status, lines = run(capsys, str(tmp_path))
+
+    # The sibling is the positive control: silence on the first name has to mean
+    # "read it and found nothing", not "read nothing".
+    assert status == plain_name_check.FOUND
+    assert lines == [f"{named}:0: GA-001.md"]
+
+
+# --- the files it reads by name only, and the files it does not read ---------
+
+
+@pytest.mark.parametrize("source_file", ["trends.py", "notify.sh"])
+def test_a_source_file_is_read_by_name_only(tmp_path, capsys, source_file):
+    """`Q-1` is a period offset in src/trends.py; code quotes other vocabulary."""
+    (tmp_path / source_file).write_text(f"period = 'Q-1'  # and the finding {PLANTED}\n")
+    ours = tmp_path / "report.md"
+    ours.write_text(f"the finding {PLANTED} again\n")
+
+    status, lines = run(capsys, str(tmp_path))
+
+    assert status == plain_name_check.FOUND
+    assert lines == [f"{ours}:1: {PLANTED}"]
+
+
+def test_a_code_in_a_source_file_name_is_still_named(tmp_path, capsys):
+    named = tmp_path / "GA-001.py"
+    named.write_text(f"# {PLANTED} is inside, and is not read\n")
+
+    status, lines = run(capsys, str(named))
+
+    assert status == plain_name_check.FOUND
+    assert lines == [f"{named}:0: GA-001.py"]
 
 
 @pytest.mark.parametrize(
@@ -188,9 +271,7 @@ def test_a_file_whose_text_is_not_ours_to_correct_is_not_read(tmp_path, capsys, 
 
     status, lines = run(capsys, str(tmp_path))
 
-    # The sibling is the positive control: silence here has to mean "skipped
-    # that file", not "found nothing anywhere".
-    assert status == 1
+    assert status == plain_name_check.FOUND
     assert lines == [f"{ours}:1: {PLANTED}"]
 
 
@@ -201,34 +282,13 @@ def test_a_file_that_is_not_text_is_not_read(tmp_path, capsys):
 
     status, lines = run(capsys, str(tmp_path))
 
-    assert status == 1
+    assert status == plain_name_check.FOUND
     assert lines == [f"{ours}:1: {PLANTED}"]
 
 
-def test_the_check_names_no_code_in_its_own_test(capsys):
-    """Otherwise the hook reports this file on every write on any branch that
-
-    touches it, for good, and nobody leaves a check like that switched on. This
-    is why the codes are read from a fixture instead of written here.
-    """
-    assert run(capsys, str(Path(__file__).resolve())) == (0, [])
-
-
-def test_the_check_names_no_code_in_its_own_module(tmp_path, capsys):
+def test_the_check_names_nothing_in_its_own_module_or_test(capsys):
     """The hook runs on every write; a check that reports itself gets turned off."""
-    module = Path(plain_name_check.__file__)
-
-    assert run(capsys, str(module)) == (0, [])
-
-    # A copy of the same module with one code appended, so the silence above
-    # cannot be silence about that file rather than about its text.
-    copy = tmp_path / "plain_name_check_copy.py"
-    text = module.read_text(encoding="utf-8")
-    copy.write_text(f"{text}# raised as {PLANTED}\n")
-    status, lines = run(capsys, str(copy))
-
-    assert status == 1
-    assert lines == [f"{copy}:{len(text.splitlines()) + 1}: {PLANTED}"]
+    assert run(capsys, str(Path(plain_name_check.__file__)), str(Path(__file__))) == (0, [])
 
 
 # --- selecting what this branch changed --------------------------------------
@@ -254,18 +314,18 @@ def test_changed_names_the_committed_the_staged_and_the_untracked(repo, capsys):
     (repo / "docs" / "committed.md").write_text(f"raised as {PLANTED}\n")
     git(repo, "add", "docs/committed.md")
     git(repo, "commit", "-qm", "work")
-    (repo / "docs" / "staged.md").write_text(f"first line clean\nraised as {SECOND}\n")
+    (repo / "docs" / "staged.md").write_text("first line clean\nraised as RP-09\n")
     git(repo, "add", "docs/staged.md")
-    (repo / "docs" / "untracked.md").write_text(f"raised as {THIRD}\n")
+    (repo / "docs" / "untracked.md").write_text("raised as INV-06\n")
 
     status, lines = run(capsys, "--changed", "--baseline", "baseline")
 
-    assert status == 1
+    assert status == plain_name_check.FOUND
     assert sorted(lines) == sorted(
         [
             f"docs/committed.md:1: {PLANTED}",
-            f"docs/staged.md:2: {SECOND}",
-            f"docs/untracked.md:1: {THIRD}",
+            "docs/staged.md:2: RP-09",
+            "docs/untracked.md:1: INV-06",
         ]
     )
 
@@ -276,7 +336,7 @@ def test_changed_leaves_alone_a_published_file_this_branch_did_not_touch(repo, c
 
     status, lines = run(capsys, "--changed", "--baseline", "baseline")
 
-    assert status == 1
+    assert status == plain_name_check.FOUND
     assert lines == [f"docs/new.md:1: {PLANTED}"]
 
 
@@ -287,7 +347,16 @@ def test_changed_on_a_branch_that_touched_nothing_prints_nothing(repo, capsys):
 def test_an_unresolvable_baseline_is_not_a_pass(repo, capsys):
     status, _ = run(capsys, "--changed", "--baseline", "no-such-ref")
 
-    assert status == 2
+    assert status == plain_name_check.CANNOT_RUN
+    assert status != 0
+
+
+def test_a_path_that_is_not_there_is_not_a_pass(tmp_path, capsys):
+    """Silence about a file it never opened reads like silence about a clean one."""
+    status, lines = run(capsys, str(tmp_path / "no_such_report.md"))
+
+    assert status == plain_name_check.CANNOT_RUN
+    assert lines == [f"plain_name_check: {tmp_path / 'no_such_report.md'} is not there"]
 
 
 def test_neither_changed_nor_a_path_is_refused():
@@ -295,7 +364,7 @@ def test_neither_changed_nor_a_path_is_refused():
         plain_name_check.main([])
 
 
-# --- the hook runs it under bare python3.12, which has no site-packages ------
+# --- the two entry points, and the hook that calls one of them ---------------
 
 
 def test_it_imports_nothing_outside_the_standard_library():
@@ -312,65 +381,77 @@ def test_it_imports_nothing_outside_the_standard_library():
     assert imported <= sys.stdlib_module_names | {"src"}
 
 
-def post_write_hook_command() -> str:
-    """The command .claude/settings.json actually runs after a Write or an Edit."""
-    settings = json.loads((REPO_ROOT / ".claude" / "settings.json").read_text(encoding="utf-8"))
-    matched = [
-        hook["command"]
-        for entry in settings["hooks"]["PostToolUse"]
-        if entry["matcher"] == "Write|Edit"
-        for hook in entry["hooks"]
-    ]
-    assert len(matched) == 1
-    return matched[0]
+def _without_pythonpath() -> dict[str, str]:
+    return {key: value for key, value in os.environ.items() if key != "PYTHONPATH"}
 
 
 @pytest.mark.skipif(shutil.which("python3.12") is None, reason="no bare python3.12 here")
-def test_the_configured_hook_names_a_planted_code(tmp_path):
-    """Run the command before trusting the config: the 2026-09-07 lesson."""
-    repo = tmp_path / "repo"
-    shutil.copytree(REPO_ROOT / "src", repo / "src", ignore=shutil.ignore_patterns("__pycache__"))
-    git(repo, "init", "-q", "-b", "main")
-    git(repo, "config", "user.email", "test@example.invalid")
-    git(repo, "config", "user.name", "test")
-    git(repo, "add", "-A")
-    git(repo, "commit", "-qm", "baseline")
-    git(repo, "update-ref", "refs/remotes/origin/main", "HEAD")
-    (repo / "docs").mkdir()
-    (repo / "docs" / "note.md").write_text(f"raised as {PLANTED}\n")
-
-    result = subprocess.run(
-        post_write_hook_command(), shell=True, cwd=repo, capture_output=True, text=True
-    )
-
-    assert result.returncode == 1
-    assert result.stderr.splitlines() == [f"docs/note.md:1: {PLANTED}"]
-
-
-@pytest.mark.skipif(shutil.which("python3.12") is None, reason="no bare python3.12 here")
-def test_the_configured_hook_is_silent_where_the_module_does_not_exist(tmp_path):
-    """A worktree branched before this landed must not get an import error."""
-    result = subprocess.run(
-        post_write_hook_command(), shell=True, cwd=tmp_path, capture_output=True, text=True
-    )
-
-    assert (result.returncode, result.stdout, result.stderr) == (0, "", "")
-
-
-@pytest.mark.skipif(shutil.which("python3.12") is None, reason="no bare python3.12 here")
-def test_it_runs_as_a_module_under_the_bare_pinned_interpreter(tmp_path):
-    """`python3.12 -m src.plain_name_check` is what .claude/settings.json calls."""
+@pytest.mark.parametrize(
+    "entry_point",
+    [("-m", "src.plain_name_check"), ("src/plain_name_check.py",)],
+)
+def test_both_entry_points_run_under_the_bare_pinned_interpreter(tmp_path, entry_point):
+    """The module form is what the hook calls; the script form is what a person types."""
     document = tmp_path / "notes.md"
     document.write_text(f"raised as {PLANTED}\n")
-    environment = {key: value for key, value in os.environ.items() if key != "PYTHONPATH"}
 
     result = subprocess.run(
-        ("python3.12", "-m", "src.plain_name_check", str(document)),
+        ("python3.12", *entry_point, str(document)),
         cwd=REPO_ROOT,
-        env=environment,
+        env=_without_pythonpath(),
         capture_output=True,
         text=True,
     )
 
-    assert result.returncode == 1
+    assert result.returncode == plain_name_check.FOUND
     assert result.stderr.splitlines() == [f"{document}:1: {PLANTED}"]
+
+
+def _post_write_hook_commands() -> list[str]:
+    settings = json.loads((REPO_ROOT / ".claude" / "settings.json").read_text(encoding="utf-8"))
+    return [
+        hook["command"]
+        for entry in settings["hooks"]["PostToolUse"]
+        for hook in entry["hooks"]
+        if "plain_name_check" in hook["command"]
+    ]
+
+
+def test_the_post_write_hook_calls_this_module():
+    settings = json.loads((REPO_ROOT / ".claude" / "settings.json").read_text(encoding="utf-8"))
+    matchers = [
+        entry.get("matcher", "")
+        for entry in settings["hooks"]["PostToolUse"]
+        for hook in entry["hooks"]
+        if "plain_name_check" in hook["command"]
+    ]
+
+    assert len(_post_write_hook_commands()) == 1
+    assert matchers == ["Write|Edit"]
+
+
+@pytest.mark.skipif(shutil.which("python3.12") is None, reason="no bare python3.12 here")
+def test_the_post_write_hook_names_a_planted_code_and_keeps_the_exit_status(tmp_path):
+    """Proof that the hook is wired in, not just written: run the line itself."""
+    for name in ("__init__.py", "interpreter_pin.py", "plain_name_check.py"):
+        (tmp_path / "src").mkdir(exist_ok=True)
+        shutil.copy(REPO_ROOT / "src" / name, tmp_path / "src" / name)
+    git(tmp_path, "init", "-q", "-b", "main")
+    git(tmp_path, "config", "user.email", "test@example.invalid")
+    git(tmp_path, "config", "user.name", "test")
+    git(tmp_path, "add", "-A")
+    git(tmp_path, "commit", "-qm", "baseline")
+    git(tmp_path, "update-ref", "refs/remotes/origin/main", "HEAD")
+    (tmp_path / "report.md").write_text(f"the finding was raised as {PLANTED}\n")
+
+    command, = _post_write_hook_commands()
+    result = subprocess.run(
+        ("sh", "-c", command),
+        cwd=tmp_path,
+        env=_without_pythonpath(),
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.stderr.splitlines() == [f"report.md:1: {PLANTED}"]
+    assert result.returncode == plain_name_check.FOUND
