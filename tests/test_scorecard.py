@@ -300,6 +300,20 @@ def test_every_run_is_listed_with_the_side_and_the_dates_it_was_placed_by():
         assert "forward cycle" in line
 
 
+def test_a_runs_root_with_no_runs_in_it_renders_a_page_that_says_so(tmp_path):
+    """The state the first cycle starts in. Every row keeps its place, the page
+    says there is nothing to compare, and no cell is filled with a zero that
+    could be read as a score."""
+    empty = tmp_path / "runs"
+    empty.mkdir()
+    rendered = scorecard.render(empty)
+    assert "No run has left an outcome on record" in rendered
+    assert "Nothing to compare yet" in rendered
+    rows = table(section(rendered, "Accounting reliability", "Financial pressure"))
+    assert [cells[0] for cells in rows][:2] == ["beneish_m_score"] * 2
+    assert all(cells[4] == "not on record" for cells in rows)
+
+
 # --- what the page says when the answer is adverse ---------------------------
 
 

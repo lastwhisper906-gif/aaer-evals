@@ -39,6 +39,13 @@ recorded as a label that could be wrong. A run that names neither is refused; a
 number that travels without that label eventually gets quoted without it. Pilot
 rows carry `pipeline check` in the table itself, never a footnote.
 
+One line on the gap that leaves: `src/assemble_bundle.py` does not write
+`rules_version_frozen` yet, because `rules/v0.1` does not exist and there is no
+freeze date to write. Refusing is the default this module proceeds with -- the
+alternative is a hard-coded freeze date, which would be a threshold this module
+has no source for. The key is read from the manifest so that whoever freezes the
+rules version writes it once, beside `rules_version`, rather than here.
+
 What a run has to leave behind
 ------------------------------
 
@@ -172,8 +179,9 @@ PRESSURE_ROWS = (
 
 # The rows the two verdict sentences compare, per question. The first row of the
 # accounting scorecard is the one the structure has to beat; the single-agent
-# control is the one it has to beat to be more than decoration.
-FIRST_ROW = "beneish_m_score"
+# control is the one it has to beat to be more than decoration. Read off the
+# order above rather than named again, so the two cannot drift apart.
+FIRST_ROW = ACCOUNTING_ROWS[0].key
 
 
 @dataclass(frozen=True)
@@ -242,6 +250,11 @@ def _fill(block: str, **values) -> str:
 
 def _rate(value: float) -> str:
     return f"{value:.{PLACES}f}"
+
+
+def _side_label(side: str) -> str:
+    """How the page names one side of the rules-version freeze."""
+    return blocks()[f"side_{side}"]
 
 
 # --- what a run left behind --------------------------------------------------
@@ -380,21 +393,19 @@ def score(runs: list[Run], row: Row) -> Score:
 
 
 def _row_line(row: Row, side: str, one: Score) -> str:
-    if one.answers == 0:
-        cells = {"runs": "0", "brier": blocks()["no_answer"],
-                 "hit_rate": blocks()["no_answer"],
-                 "insufficient": blocks()["no_answer"]}
+    """One table line. A row with nothing to score carries words, not zeroes."""
+    if one.scored:
+        runs, brier, hit_rate = str(one.scored), _rate(one.brier), _rate(one.hit_rate)
     else:
-        counted = _fill("insufficient_of", insufficient=one.insufficient,
-                        answers=one.answers)
-        if one.scored == 0:
-            cells = {"runs": "0", "brier": blocks()["not_scored"],
-                     "hit_rate": blocks()["not_scored"], "insufficient": counted}
-        else:
-            cells = {"runs": str(one.scored), "brier": _rate(one.brier),
-                     "hit_rate": _rate(one.hit_rate), "insufficient": counted}
+        # Nothing answered at all reads differently from answered-but-abstained.
+        nothing = blocks()["no_answer" if one.answers == 0 else "not_scored"]
+        runs, brier, hit_rate = "0", nothing, nothing
+    counted = (blocks()["no_answer"] if one.answers == 0 else
+               _fill("insufficient_of", insufficient=one.insufficient,
+                     answers=one.answers))
     return _fill("row", row=row.key, computed_by=row.computed_by,
-                 side=blocks()[f"side_{side}"], **cells)
+                 side=_side_label(side), runs=runs, brier=brier,
+                 hit_rate=hit_rate, insufficient=counted)
 
 
 def _verdict(side: str, pipeline: Score, other: Score,
@@ -403,7 +414,7 @@ def _verdict(side: str, pipeline: Score, other: Score,
     if pipeline.scored == 0 or other.scored == 0:
         return None
     block = beats if pipeline.brier < other.brier else misses
-    return _fill(block, side=blocks()[f"side_{side}"],
+    return _fill(block, side=_side_label(side),
                  pipeline=_rate(pipeline.brier), pipeline_runs=pipeline.scored,
                  other=_rate(other.brier), other_runs=other.scored)
 
@@ -430,16 +441,15 @@ def _verdicts(rows: tuple[Row, ...], scored: dict[tuple[str, str], Score]) -> st
     keys = {row.key for row in rows}
     pipeline = next(row for row in rows if row.computed_by == "the pipeline")
     single_agent = next(row for row in rows if row.key.startswith("single_agent"))
-    said = []
-    for side in SIDES:
-        against = [(FIRST_ROW, "pipeline_beats_the_first_row",
-                    "pipeline_misses_the_first_row"),
-                   (single_agent.key, "pipeline_beats_the_single_agent",
-                    "pipeline_misses_the_single_agent")]
-        for key, beats, misses in against:
-            if key in keys:
-                said.append(_verdict(side, scored[(pipeline.key, side)],
-                                     scored[(key, side)], beats, misses))
+    # The Beneish M-score is an accounting row, so the pressure table compares
+    # against its single-agent control alone.
+    against = [(key, f"pipeline_beats_the_{name}", f"pipeline_misses_the_{name}")
+               for key, name in ((FIRST_ROW, "first_row"),
+                                 (single_agent.key, "single_agent"))
+               if key in keys]
+    said = [_verdict(side, scored[(pipeline.key, side)], scored[(key, side)],
+                     beats, misses)
+            for side in SIDES for key, beats, misses in against]
     said = [sentence for sentence in said if sentence is not None]
     return "\n\n".join(said) if said else blocks()["no_verdict"]
 
@@ -451,7 +461,7 @@ def _run_list(runs: list[Run]) -> str:
         _fill("run_entry", ticker=run.ticker, accession=run.accession,
               filing_date=run.filing_date, rules_version=run.rules_version,
               rules_version_frozen=run.rules_version_frozen,
-              side=blocks()[f"side_{run.side}"],
+              side=_side_label(run.side),
               abnormal_return=(blocks()["no_answer"] if run.abnormal_return is None
                                else f"{run.abnormal_return:+.{PLACES}f}"))
         for run in runs)
