@@ -20,7 +20,9 @@ petition under Chapter 11 on 2008-09-15. The Exchange suspended the securities
 from trading on 2008-09-17 and applied to the Commission for their removal from
 listing and registration; the common stock closed at fourteen cents on the day
 of the suspension. A source that serves this history returns daily rows for LEH
-that run into September 2008 and stop there.
+that run into September 2008 and stop there. Rows that stop before that month
+are reported as what they are -- rows came back and the history did not -- and
+leave the exit status where it was.
 
 Whether they come back is the source's answer and not this script's. The rows
 are printed as they arrive and the exit status says whether any candidate
@@ -59,7 +61,10 @@ Exit 0 the history came back and the report names the candidate that served it,
 from __future__ import annotations
 
 import dataclasses
+import datetime
+import itertools
 import json
+import math
 import re
 import sys
 import tempfile
@@ -79,7 +84,11 @@ COMPANY = "Lehman Brothers Holdings Inc."
 DELISTING = ("Chapter 11 petition 2008-09-15; the New York Stock Exchange "
              "suspended trading 2008-09-17 and applied to remove the securities "
              "from listing and registration")
-LAST_MONTH_TRADED = "September 2008"
+# The month the rows have to reach, written the way a row dates itself. A
+# source that answers with LEH rows ending in 2006 has not served the history of
+# a company that traded until the suspension; the delisting fixes that month,
+# not this probe.
+LAST_MONTH_TRADED = "2008-09"
 
 # Session 1 found the block under both of these. The pair is kept because the
 # open question is the bulk file rather than the user agent, and an answer that
@@ -107,7 +116,6 @@ NOTHING_ANSWERED = 2
 
 BROWSER_CHECK = re.compile(
     rb"requires JavaScript to verify your browser|crypto\.subtle\.digest")
-DATE = re.compile(r"^(?:19|20)[0-9]{2}-[0-9]{2}-[0-9]{2}$")
 DATE_FIELDS = ("date", "Date", "priceDate")
 CLOSE_FIELDS = ("close", "Close", "adjusted_close", "adjClose")
 
@@ -158,7 +166,13 @@ class Finding:
 
     @property
     def served(self) -> bool:
-        return bool(self.rows)
+        """The delisted ticker's history came back.
+
+        Rows on their own are not enough. They have to reach the month the
+        trading stopped, or they are not the history of a company that stopped
+        trading.
+        """
+        return reached_the_delisting(self.rows)
 
     @property
     def answered(self) -> bool:
@@ -219,15 +233,19 @@ def is_browser_check(text: bytes) -> bool:
 def history_rows(text: bytes) -> list[str]:
     """The dated daily rows in a price answer, whatever shape it arrived in.
 
-    Stooq serves comma-separated text under a header naming its columns; EODHD
-    and Tiingo serve a list of objects each carrying a date and a close. Both are
-    read here because the probe has to say the same thing about both: these are
-    the rows that came back. A body carrying dates and no prices -- a block page
-    with a copyright year, an error object -- yields nothing, which is the answer
-    that matters.
+    Three shapes turn up. Stooq's bulk members head their columns
+    <TICKER>,<PER>,<DATE>,<TIME>,<OPEN>,<HIGH>,<LOW>,<CLOSE>,<VOL>,<OPENINT>
+    and date a row 20080917; its per-ticker download and a csv from EODHD head
+    them Date,Open,High,Low,Close and date a row 2008-09-17; EODHD and Tiingo
+    also serve a list of objects each carrying a date and a close. All three are
+    read here because the probe has to say the same thing about each: these are
+    the rows that came back.
 
     The columns are found by their names in the header rather than by position,
-    so a source that orders them its own way is still read correctly.
+    so a source that orders them its own way is still read correctly. A body
+    carrying dates and no prices yields nothing, which is the answer that
+    matters: a block page with a copyright year, an error object whose message
+    is a date, a row whose close reads "unavailable".
     """
     decoded = text.decode("utf-8", "replace")
     rows = _rows_from_objects(decoded)
@@ -247,11 +265,9 @@ def _rows_from_objects(text: str) -> list[str]:
     for entry in parsed:
         if not isinstance(entry, dict):
             continue
-        day = _first(entry, DATE_FIELDS)
-        close = _first(entry, CLOSE_FIELDS)
-        if day is None or close is None:
-            continue
-        rows.append(f"{str(day)[:10]} close {close}")
+        row = _row(_first(entry, DATE_FIELDS), _first(entry, CLOSE_FIELDS))
+        if row:
+            rows.append(row)
     return rows
 
 
@@ -265,18 +281,108 @@ def _first(entry: dict, names: tuple[str, ...]):
 def _rows_from_table(text: str) -> list[str]:
     lines = [line.strip() for line in text.splitlines() if line.strip()]
     for index, line in enumerate(lines):
-        columns = [column.strip().lower() for column in line.split(",")]
+        columns = [_column(name) for name in line.split(",")]
         if "date" not in columns or "close" not in columns:
             continue
         day_at, close_at = columns.index("date"), columns.index("close")
         rows = []
         for row in lines[index + 1:]:
             fields = [field.strip() for field in row.split(",")]
-            if len(fields) != len(columns) or not DATE.match(fields[day_at]):
+            if len(fields) != len(columns):
                 continue
-            rows.append(f"{fields[day_at]} close {fields[close_at]}")
+            row = _row(fields[day_at], fields[close_at])
+            if row:
+                rows.append(row)
         return rows
     return []
+
+
+def _column(name: str) -> str:
+    """A header name as the columns are matched.
+
+    Stooq's bulk file writes its column names inside angle brackets: <DATE>,
+    <CLOSE>. Everyone else writes them plainly, in whatever case they like.
+    """
+    return name.strip().strip("<>").lower()
+
+
+def _row(day, close) -> str | None:
+    """One daily row, or None when the pair is not a dated price.
+
+    Both halves have to be real, and this is the one place that says so: a date
+    with a message where the price belongs is not a row, and neither is a price
+    on something that is not a date.
+    """
+    day, close = _day(day), _price(close)
+    return f"{day} close {close}" if day and close else None
+
+
+def _day(value) -> str | None:
+    """A trading date written 2008-09-17, or None when the field is not a date.
+
+    Stooq's bulk file dates a row 20080917, Tiingo dates it with a time after
+    it, and the rest write the date alone. All of them come back in one form, so
+    a row reads the same whichever source sent it.
+    """
+    if value is None:
+        return None
+    try:
+        return datetime.date.fromisoformat(str(value).strip()[:10]).isoformat()
+    except ValueError:
+        return None
+
+
+def _price(value) -> str | None:
+    """A close as the source wrote it, or None when it is not a number.
+
+    A payload shaped like a price row but carrying no price -- a date beside a
+    close reading "unavailable" -- would otherwise be counted as history, and
+    the probe would exit green on an error message.
+    """
+    if value is None:
+        return None
+    text = str(value).strip()
+    try:
+        number = float(text)
+    except ValueError:
+        return None
+    return text if math.isfinite(number) else None
+
+
+def reached_the_delisting(rows: list[str]) -> bool:
+    """True when the rows reach the month the ticker stopped trading."""
+    return any(row.startswith(LAST_MONTH_TRADED) for row in rows)
+
+
+def what_came_back(rows: list[str]) -> str:
+    """The verdict for a candidate that returned rows: how many, over what span.
+
+    A source that answers with three days has not served fifteen years, and a
+    verdict reading only "the history came back" would say the same for both.
+    Whether a span is enough for a study is not this probe's question and is not
+    answered here -- the span is reported. The one part of it the delisting
+    itself fixes is answered: rows that never reach the month the trading
+    stopped are not the history of a company that stopped trading.
+    """
+    days = sorted(row.split()[0] for row in rows)
+    count = f"{len(rows)} row" if len(rows) == 1 else f"{len(rows)} rows"
+    span = f"{count} dated {days[0]} to {days[-1]}"
+    if reached_the_delisting(rows):
+        return f"the history came back: {span}"
+    return (f"rows came back and the history did not: {span}, none of them in "
+            f"{LAST_MONTH_TRADED}, the month the trading stopped")
+
+
+def finish(candidate: str, attempts: list[Attempt], otherwise: str) -> Finding:
+    """The finding for a candidate that is done being asked.
+
+    What came back outranks any verdict written in advance: rows decide the
+    verdict when rows came, and `otherwise` is what to say when none did.
+    """
+    finding = Finding(candidate, attempts, otherwise)
+    if not finding.rows:
+        return finding
+    return dataclasses.replace(finding, verdict=what_came_back(finding.rows))
 
 
 def describe(reply: Reply) -> str:
@@ -341,34 +447,30 @@ def probe_stooq_bulk_file(workspace: Path) -> Finding:
     )
     attempts = []
     archives = []
-    for what, url in targets:
-        for label, agent in AGENTS:
-            reply = fetch(url, agent, workspace)
-            answer = f"{what} -- {describe(reply)}"
-            rows = []
-            if reply.status == 200:
-                note, rows = rows_from_archive(reply)
-                if note is not None:
-                    answer = f"{answer}, {note}"
-                    archives.append(note)
-                elif not is_browser_check(head(reply)):
-                    rows = history_rows(body(reply))
-            attempts.append(Attempt(url, label, answer, rows,
-                                    reply.status is not None))
-            if rows:
-                return Finding("the Stooq daily bulk file", attempts,
-                               "the history came back")
-    if archives:
-        # The download worked and the ticker is not in it. That is a different
-        # answer from a block, and a verdict fixed in advance would have called
-        # it one.
-        return Finding("the Stooq daily bulk file", attempts,
-                       f"the file downloaded and {TICKER} is not in it: "
-                       f"{archives[-1]}")
-    return Finding("the Stooq daily bulk file", attempts,
-                   "blocked before any data: the file download meets the same "
-                   "browser check as the scripted request, and the static host "
-                   "asks for a password")
+    for (what, url), (label, agent) in itertools.product(targets, AGENTS):
+        reply = fetch(url, agent, workspace)
+        answer = f"{what} -- {describe(reply)}"
+        rows = []
+        if reply.status == 200:
+            note, rows = rows_from_archive(reply)
+            if note is not None:
+                answer = f"{answer}, {note}"
+                archives.append(note)
+            elif not is_browser_check(head(reply)):
+                rows = history_rows(body(reply))
+        attempts.append(Attempt(url, label, answer, rows,
+                                reply.status is not None))
+        if reached_the_delisting(rows):
+            break
+    # A download that worked with the ticker missing from it is a different
+    # answer from a block, and a verdict fixed in advance would have called it
+    # one.
+    verdict_if_nothing_came = (
+        f"the file downloaded and {TICKER} is not in it: {archives[-1]}"
+        if archives else
+        "blocked before any data: the file download meets the same browser "
+        "check as the scripted request, and the static host asks for a password")
+    return finish("the Stooq daily bulk file", attempts, verdict_if_nothing_came)
 
 
 def probe_wrds_crsp(workspace: Path) -> Finding:
@@ -389,7 +491,7 @@ def probe_wrds_crsp(workspace: Path) -> Finding:
             answer = f"{answer}, names CRSP among the sources available to its users"
         attempts.append(Attempt(url, AGENTS[1][0], answer, [],
                                 reply.status is not None))
-    return Finding(
+    return finish(
         "WRDS with CRSP through a Stony Brook account", attempts,
         "needs an account the owner must open: the data page redirects to a "
         "login, and no history can be requested without one")
@@ -413,15 +515,17 @@ def probe_low_cost_provider(workspace: Path) -> Finding:
     for what, url in targets:
         reply = fetch(url, AGENTS[0][1], workspace)
         rows = history_rows(body(reply)) if reply.status == 200 else []
-        delisted = asks_for_the_delisted_ticker(url)
-        attempts.append(Attempt(url, AGENTS[0][0], f"{what} -- {describe(reply)}",
-                                rows if delisted else [],
+        answer = f"{what} -- {describe(reply)}"
+        if rows and not asks_for_the_delisted_ticker(url):
+            # The control's rows say the endpoint answers. They are not the
+            # history this probe asked for, and counting them would answer the
+            # wrong question with a green exit status.
+            answer, rows = f"{answer}, {len(rows)} rows", []
+        attempts.append(Attempt(url, AGENTS[0][0], answer, rows,
                                 reply.status is not None))
-        if rows and delisted:
-            return Finding("a low-cost provider", attempts, "the history came back")
-        if rows:
-            attempts[-1].answer = f"{attempts[-1].answer}, {len(rows)} rows"
-    return Finding(
+        if reached_the_delisting(rows):
+            break
+    return finish(
         "a low-cost provider", attempts,
         "needs an account the owner must open: the demonstration token is "
         "restricted to a fixed list of listed tickers and Tiingo serves nothing "
@@ -439,11 +543,11 @@ def report(finding: Finding) -> None:
     rows = finding.rows
     if rows:
         # Few enough rows to print whole is itself worth seeing: a source that
-        # answers with three days has not served fifteen years.
+        # answers with three days has not served fifteen years. The count and
+        # the span are in the verdict below.
         shown = rows if len(rows) <= 6 else rows[:3] + ["..."] + rows[-3:]
         for row in shown:
             print(f"    {row}")
-        print(f"    {len(rows)} rows came back")
     print(f"  verdict: {finding.verdict}")
 
 
@@ -454,8 +558,8 @@ def main() -> int:
 
     print(f"Probing for the price history of {COMPANY}, ticker {TICKER}.")
     print(f"Delisted: {DELISTING}.")
-    print(f"A source that serves it returns daily rows ending in "
-          f"{LAST_MONTH_TRADED}.")
+    print(f"A source that serves it returns daily rows reaching "
+          f"{LAST_MONTH_TRADED}, the month the trading stopped.")
     print("No credentials are sent. The candidates are asked in order and the "
           "probe stops at the first that serves the history.")
 
