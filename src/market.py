@@ -32,6 +32,30 @@ The outcome window is a function here and is never written into the table. The
 scorer reads it after the horizon expires; a layer that could read it would be
 reading its own answer.
 
+The acceptance stamp is read on the exchange's clock
+----------------------------------------------------
+
+"Before the close" is a wall-clock claim in one city, so every acceptance stamp
+is converted to New York before anything reads its date or its time. Without
+that step one instant gives two day zeros: `2026-05-08T15:00:00` and
+`2026-05-08T19:00:00+00:00` are the same moment, and reading the second one's
+own wall clock against a New York close moves day zero from the Friday to the
+Monday and carries the cutoff a trading day past reaction day two, onto a row
+of the table.
+
+A stamp with no zone is already on that clock, because EDGAR stamps acceptance
+in Eastern time. EDGAR also appends the universal-time letter to its own
+stamps, Eastern clock and all -- a convention written down nowhere -- so a stamp
+carrying that letter is refused here rather than read as one zone or the other.
+Written out as an offset, the same zone is unambiguous and is read as one.
+
+EDGAR's close is not the exchange's: a submission accepted after half past five
+in the evening is deemed filed on the next business day, and a few forms are
+deemed filed the same day whatever the hour. So the filing date recorded beside
+an acceptance stamp is either the acceptance day or, after that hour, the next
+business day; refusing the second would refuse a legitimate after-close filing,
+whose day zero is the next trading day under either.
+
 Why the date gate is not on this path
 -------------------------------------
 
@@ -95,6 +119,7 @@ import math
 import statistics
 import sys
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 try:
     from src import interpreter_pin
@@ -107,9 +132,21 @@ BAD_INPUT = 2
 RULES_VERSION = "v0.1"
 MAP_PATH = Path(__file__).resolve().parent / f"sic_to_sector_etf_map_{RULES_VERSION}.json"
 
+# The clock the close is told by, and the clock every acceptance stamp is read
+# on. `zoneinfo` is the standard library reading the system's time-zone
+# database, so the daylight-saving rule is not written out here and is not a
+# dependency either.
+EXCHANGE_TIMEZONE = ZoneInfo("America/New_York")
+
 # New York close. A filing accepted at 16:00:00 exactly was not accepted before
 # the close, so it moves to the next trading day: at the close is not before it.
 MARKET_CLOSE = dt.time(16, 0)
+
+# EDGAR's own close, which is a different hour and answers a different question:
+# a submission accepted after it is deemed filed on the next business day. It
+# decides which filing dates can stand beside an acceptance stamp, and never
+# which day the market reacted on -- that is `MARKET_CLOSE` and nothing else.
+EDGAR_ACCEPTANCE_CLOSE = dt.time(17, 30)
 
 BETA_TRADING_DAYS = 250
 # Day zero, day one, day two. `docs/INPUT_SPEC.md`: "An agent may see market data
@@ -288,6 +325,24 @@ def next_trading_day(calendar: list[dt.date], day: dt.date) -> dt.date:
     raise MarketError(f"the price series ends on or before {day}")
 
 
+def business_days_after(day: dt.date, count: int) -> dt.date:
+    """`count` weekdays after `day`, which is not a walk along the trading calendar.
+
+    Both callers count in this unit and neither counts in trading days: EDGAR
+    dates an after-hours submission on the next business day, and FINRA
+    publishes eight business days after settlement. This module carries no
+    holiday calendar, so a holiday inside either count puts the real day one
+    later than this returns; the limit is named in both places rather than
+    hidden, and the day a real calendar arrives it belongs here.
+    """
+    found = day
+    while count:
+        found += dt.timedelta(days=1)
+        if found.weekday() < 5:
+            count -= 1
+    return found
+
+
 def trading_days_from(calendar: list[dt.date], day: dt.date, count: int) -> list[dt.date]:
     """`count` trading days starting at `day`, which has to be one."""
     start = _index(calendar, day)
@@ -299,37 +354,76 @@ def trading_days_from(calendar: list[dt.date], day: dt.date, count: int) -> list
 
 
 def reaction_day_zero(accepted, calendar: list[dt.date]) -> dt.date:
-    """The filing date when EDGAR accepted before the close, else the next trading day.
+    """The acceptance day when EDGAR accepted before the close, else the next trading day.
 
-    A date with no time of day is refused. "Before the close" is a claim about
-    the acceptance *time*, and a filing whose time nobody recorded cannot make it.
+    The stamp is read on the exchange's clock first, because the close is a
+    wall-clock time there and one instant has to give one day zero however it
+    was written. A date with no time of day is refused. "Before the close" is a
+    claim about the acceptance *time*, and a filing whose time nobody recorded
+    cannot make it.
+
+    `docs/INPUT_SPEC.md` says "the filing date", and it is the same day: EDGAR
+    dates a filing by the day it accepted it, or -- past its own close -- by the
+    next business day, which is the day this counts from too. The two part only
+    across a market holiday, which the business-day count does not know about
+    and this walk along the price series does.
     """
-    when = accepted if isinstance(accepted, dt.datetime) else _acceptance(accepted)
-    filed = when.date()
+    when = _acceptance(accepted)
+    accepted_on = when.date()
     if when.time() < MARKET_CLOSE:
-        return _on_or_after(calendar, filed)
-    return next_trading_day(calendar, filed)
+        return _on_or_after(calendar, accepted_on)
+    return next_trading_day(calendar, accepted_on)
 
 
 def _acceptance(value) -> dt.datetime:
-    """An acceptance timestamp, refusing a date with no time of day.
+    """One acceptance instant, read on the exchange's clock.
 
-    `datetime.fromisoformat` reads a bare date as midnight, which is before the
-    close, so a filing whose acceptance time nobody recorded would silently take
-    the earlier day zero and carry the cutoff back with it.
+    A stamp carrying a zone offset names an instant, and the instant is what is
+    converted; a stamp with no zone is already on this clock, because EDGAR
+    stamps acceptance in Eastern time.
+
+    Two shapes are refused rather than guessed at:
+
+    * A date with no time of day. `datetime.fromisoformat` reads it as midnight,
+      which is before the close, so a filing whose acceptance time nobody
+      recorded would silently take the earlier day zero and carry the cutoff
+      back with it.
+    * A zone written as the universal-time letter. EDGAR appends that letter to
+      stamps whose clock is Eastern, a convention written down nowhere, so
+      `2026-05-08T16:30:00Z` reads as half past four to EDGAR and half past noon
+      to the standard -- four hours and, here, one trading day apart. Whichever
+      this module picked it would be silently wrong about the other, so it picks
+      neither. The same zone written out as an offset says one thing only, and
+      is read as that.
     """
+    if isinstance(value, dt.datetime):
+        return _on_the_exchange_clock(value)
     text = str(value).strip()
     _, separator, time_of_day = text.partition("T")
     if not separator:
         _, separator, time_of_day = text.partition(" ")
-    if not separator or not time_of_day.strip():
+    time_of_day = time_of_day.strip()
+    if not separator or not time_of_day:
         raise MarketError(
             f"accepted={value!r} carries no time of day -- a date alone cannot say "
             f"whether the filing arrived before the close")
+    if time_of_day[-1] in "Zz":
+        raise MarketError(
+            f"accepted={value!r} carries the universal-time letter, which EDGAR "
+            f"writes on stamps whose clock is Eastern -- hand over the Eastern wall "
+            f"clock with no zone, or the offset written out")
     try:
-        return dt.datetime.fromisoformat(text)
+        when = dt.datetime.fromisoformat(text)
     except ValueError as exc:
         raise MarketError(f"accepted={value!r} is not an acceptance timestamp") from exc
+    return _on_the_exchange_clock(when)
+
+
+def _on_the_exchange_clock(when: dt.datetime) -> dt.datetime:
+    """The same instant on the exchange's clock; a stamp with no zone is on it already."""
+    if when.tzinfo is None:
+        return when.replace(tzinfo=EXCHANGE_TIMEZONE)
+    return when.astimezone(EXCHANGE_TIMEZONE)
 
 
 def reaction_window(calendar: list[dt.date], day_zero: dt.date) -> list[dt.date]:
@@ -412,16 +506,6 @@ def abnormal_return(raw: float, market: float, sector: float, slope: float) -> f
 
 # --- short interest ----------------------------------------------------------
 
-def business_days_after(day: dt.date, count: int) -> dt.date:
-    """`count` weekdays after `day`. FINRA counts business days, not trading days."""
-    found = day
-    while count:
-        found += dt.timedelta(days=1)
-        if found.weekday() < 5:
-            count -= 1
-    return found
-
-
 def publication_date(settlement: dt.date) -> dt.date:
     """When the market had the number: settlement plus eight business days."""
     return business_days_after(settlement, SHORT_INTEREST_PUBLICATION_BUSINESS_DAYS)
@@ -485,17 +569,38 @@ class Window:
                 "reaction_window": self.reaction_window}
 
 
+def filing_dates_for(accepted) -> tuple[dt.date, ...]:
+    """The filing dates EDGAR can put on a submission it accepted at this instant.
+
+    EDGAR's own rule, and not the exchange's: a submission accepted after half
+    past five in the evening, Eastern, is deemed filed on the next business day.
+    A few forms are deemed filed the same day whatever the hour, so after that
+    hour both dates stand and before it only the acceptance day does. The pair
+    is here so that a legitimate after-close filing is not refused; deciding
+    which of the two EDGAR actually wrote would take the form type, which this
+    module is not given and does not need -- day zero is the next trading day
+    under either.
+    """
+    when = _acceptance(accepted)
+    accepted_on = when.date()
+    if when.time() < EDGAR_ACCEPTANCE_CLOSE:
+        return (accepted_on,)
+    return (accepted_on, business_days_after(accepted_on, 1))
+
+
 def window_from(kind: str, filing_date, accepted, calendar: list[dt.date]) -> Window:
     """One window, with day zero decided by the acceptance time and nothing else."""
     if kind not in WINDOW_KINDS:
         raise MarketError(f"{kind!r} is not a window kind: {', '.join(WINDOW_KINDS)}")
     filed = filing_date if isinstance(filing_date, dt.date) else _iso_date(
         filing_date, "filing_date", kind)
-    when = accepted if isinstance(accepted, dt.datetime) else _acceptance(accepted)
-    if when.date() != filed:
+    when = _acceptance(accepted)
+    permitted = filing_dates_for(when)
+    if filed not in permitted:
         raise MarketError(
-            f"{kind}: accepted {when.date()} and filed {filed} -- the acceptance "
-            f"timestamp is what dates the filing")
+            f"{kind}: accepted {when.date()} at {when.time()} and filed {filed} -- "
+            f"the acceptance timestamp is what dates the filing, and it dates this "
+            f"one {' or '.join(day.isoformat() for day in permitted)}")
     day_zero = reaction_day_zero(when, calendar)
     return Window(kind, filed, when, day_zero, reaction_window(calendar, day_zero))
 
