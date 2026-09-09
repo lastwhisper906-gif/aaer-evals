@@ -163,6 +163,12 @@ def phase(opened: dict, *files: str):
 
 
 INDEX_ROLE = "submissions_index"
+# companyfacts, read through `cutoff_guard.load_catalogue`. The role is the
+# gate's own constant, because the gate is what makes the exception.
+FACTS_ROLE = cutoff_guard.CATALOGUE_ROLE
+# The two documents that are catalogues drawn from many filings rather than
+# filings. Neither has a filing date, and the cutoff applies to their rows.
+CATALOGUE_ROLES = (INDEX_ROLE, FACTS_ROLE)
 
 
 def documents_used(opened: dict, cutoff, fixtures_root) -> list[dict]:
@@ -171,27 +177,30 @@ def documents_used(opened: dict, cutoff, fixtures_root) -> list[dict]:
     `contributed_to` names the bundle files it fed. A document that fed nothing
     is not here, because nothing opened it.
 
-    The submissions index is the one row that carries no filing date, and the
-    fixture manifest is where that comes from: its `date_basis` reads *"the
-    latest filing this index contains; the index is not itself a filing and has
-    no filing date"*. Copying that value into a bundle as `filing_date` would
-    publish a date the record itself says is not one — and, since it is the
-    newest date in the fixture set, publish it into every bundle as look-ahead.
-    What the bundle used is stated instead: the rows at or before the cutoff.
+    The two catalogues are the rows that carry no filing date, and the fixture
+    manifest is where that comes from: the submissions index records `date_basis`
+    as *"the latest filing this index contains; the index is not itself a filing
+    and has no filing date"*, and companyfacts records *"the latest filing whose
+    facts this record contains"*. Copying either into a bundle as `filing_date`
+    would publish a date the record itself says is not one — and, since both are
+    later than the cutoff of every annual run in this fixture set, publish it as
+    look-ahead. What the bundle used is stated instead: the rows at or before
+    the cutoff. `src/cutoff_guard.py` makes the same exception on the way in,
+    and `src/extraction_checks.py` reads these two roles the same way.
     """
     rows = []
     for path, files in opened.items():
         row = cutoff_guard.document_record(path, fixtures_root=fixtures_root)
-        is_index = row.get("role") == INDEX_ROLE
+        is_catalogue = row.get("role") in CATALOGUE_ROLES
         entry = {"form": row["form"], "role": row["role"],
                  "accession": row["accession"], "path": row["path"],
-                 "filing_date": None if is_index else row["filing_date"],
+                 "filing_date": None if is_catalogue else row["filing_date"],
                  "sha256": row["sha256"],
                  # The only pointer the bundle gave a reader was a path into a
                  # fixture store they do not have. The URL is EDGAR's own.
                  "url": row.get("url"), "report_date": row.get("report_date"),
                  "contributed_to": sorted(files)}
-        if is_index:
+        if is_catalogue:
             entry["date_basis"] = row.get("date_basis")
             entry["rows_used_through"] = str(cutoff)
         rows.append(entry)

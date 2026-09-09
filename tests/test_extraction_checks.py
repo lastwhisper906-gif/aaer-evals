@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-from src import assemble_bundle, extraction_checks
+from src import assemble_bundle, cutoff_guard, extraction_checks
 from src.fetch_fixtures import TICKERS
 
 
@@ -230,6 +230,75 @@ def test_a_manifest_with_no_filing_date_for_its_trigger_fails_the_cutoff_gate(tm
     assert code != 0
     assert "records no filing date for the report that triggered it" in \
         "\n".join(gate_lines(lines, "cutoff"))
+
+
+# --- the two catalogues ------------------------------------------------------
+#
+# The submissions index has always been the row with no filing date. companyfacts
+# is the second, and the gate reads them the same way: no filing date, and a
+# statement of the cutoff its rows were read through. Apple's 10-K bundle is the
+# case that matters — its cutoff is 2025-10-31 and the companyfacts record is
+# dated 2026-07-31, so a listing that copied that date in would be look-ahead in
+# the manifest of a run that is entitled to the record's earlier rows.
+
+CATALOGUE_TICKER = "AAPL"
+TEN_K_CUTOFF = "2025-10-31"
+CATALOGUE_RECORDED_DATE = "2026-07-31"
+
+
+def catalogue_row(ticker: str = CATALOGUE_TICKER, cutoff: str = TEN_K_CUTOFF) -> dict:
+    """The listing `assemble_bundle` writes for a catalogue a build opened."""
+    opened: dict = {}
+    record = cutoff_guard.one_document(ticker, "companyfacts",
+                                       assemble_bundle.FACTS_ROLE)
+    with assemble_bundle.phase(opened, "input_trends.json"):
+        cutoff_guard.load_catalogue(record["full_path"], cutoff)
+    return assemble_bundle.documents_used(opened, cutoff, cutoff_guard.FIXTURES)[0]
+
+
+def with_the_catalogue(bundle: Path, change=None) -> None:
+    """Add the catalogue to a bundle's manifest, as a build that read it would."""
+    def damage(payload):
+        row = catalogue_row()
+        if change is not None:
+            change(row)
+        payload["documents"].append(row)
+    rewrite(bundle, "input_manifest.json", damage)
+
+
+def test_a_bundle_that_lists_the_catalogue_it_read_passes_every_gate(tmp_path):
+    bundle = good_bundle(tmp_path, CATALOGUE_TICKER, "10-K")
+    with_the_catalogue(bundle)
+    code, lines = extraction_checks.run(bundle)
+    assert code == 0, "\n".join(lines)
+    assert CATALOGUE_RECORDED_DATE > TEN_K_CUTOFF
+
+
+def test_a_listed_catalogue_carrying_a_filing_date_fails_the_cutoff_gate(tmp_path):
+    """The date the record carries is the newest filing whose facts are in it,
+    which is after this run's cutoff. Published as a filing date it is a
+    violation, and it is one whether or not it is the row's own."""
+    bundle = good_bundle(tmp_path, CATALOGUE_TICKER, "10-K")
+    with_the_catalogue(bundle, lambda row: row.update(
+        {"filing_date": CATALOGUE_RECORDED_DATE}))
+    code, lines = extraction_checks.run(bundle)
+    assert code != 0
+    failures = gate_lines(lines, "cutoff")
+    assert len(failures) == 1
+    assert "carries a filing date" in failures[0]
+    assert assemble_bundle.FACTS_ROLE in failures[0]
+
+
+def test_a_listed_catalogue_that_does_not_name_its_cutoff_fails_the_gate(tmp_path):
+    """A catalogue row is exempt from the date comparison, so the sentence that
+    replaces it has to be there: through what date were the rows read."""
+    bundle = good_bundle(tmp_path, CATALOGUE_TICKER, "10-K")
+    with_the_catalogue(bundle, lambda row: row.pop("rows_used_through"))
+    code, lines = extraction_checks.run(bundle)
+    assert code != 0
+    failures = gate_lines(lines, "cutoff")
+    assert len(failures) == 1
+    assert f"does not say it was read through the cutoff {TEN_K_CUTOFF}" in failures[0]
 
 
 def test_a_manifest_with_no_documents_fails_the_cutoff_gate(tmp_path):

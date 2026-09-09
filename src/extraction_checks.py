@@ -197,16 +197,17 @@ def check_cutoff(manifest: dict | None) -> Result:
         return result
     for row in documents:
         named = f"{row.get('form')} {row.get('role')} {row.get('accession')}"
-        # The submissions index is a catalogue of filings, not a filing, and it
-        # is the one thing the date gate does not apply to — `cutoff_guard.
-        # load_index` states the rule and the fixture manifest states the same
-        # in the row's own `date_basis`. The cutoff applies to its *rows*, which
-        # is where the look-ahead lives, and the row it names has to say through
-        # what date this bundle read them.
-        if row.get("role") == assemble_bundle.INDEX_ROLE:
+        # The submissions index and the companyfacts record are catalogues drawn
+        # from many filings, not filings, and they are the two things the date
+        # gate does not apply to — `cutoff_guard.load_index` and
+        # `cutoff_guard.load_catalogue` state the rule and the fixture manifest
+        # states the same in each row's own `date_basis`. The cutoff applies to
+        # their *rows*, which is where the look-ahead lives, and a row that
+        # names one has to say through what date this bundle read them.
+        if row.get("role") in assemble_bundle.CATALOGUE_ROLES:
             if row.get("filing_date"):
-                result.fail(f"{named} carries a filing date — the submissions index "
-                            f"is a catalogue of filings and has none")
+                result.fail(f"{named} carries a filing date — a catalogue drawn "
+                            f"from many filings is not a filing and has none")
             elif row.get("rows_used_through") != str(cutoff):
                 result.fail(f"{named} does not say it was read through the cutoff "
                             f"{cutoff}, it says {row.get('rows_used_through')!r}")
