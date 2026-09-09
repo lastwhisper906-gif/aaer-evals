@@ -127,19 +127,80 @@ CARRIER = "CARR"
 CARRIER_10Q_NOT_LOADED = "0001783180-26-000032"
 CARRIER_NEWEST_QUARTER = ("2026-01-01", "2026-03-31", 5341000000)
 
+# The twelve companies, and Apple's annual trigger: the 10-K filed 2025-10-31,
+# whose date is the cutoff of a run it triggers. Apple's companyfacts record is
+# dated 2026-07-31 — a catalogue is dated with the newest filing it carries a
+# fact from — so the whole-file date gate refuses the whole record at that
+# cutoff, and `src/cutoff_guard.load_catalogue` is the route that serves it.
+TWELVE = ("AAPL", "CARR", "CIEN", "CSCO", "ESE", "GNRC",
+          "LFUS", "NVDA", "PANW", "QCOM", "STX", "TTMI")
+ANNUAL_TRIGGER = "2025-10-31"
+CATALOGUE_RECORDED_DATE = "2026-07-31"
+FIXTURE_SET_AS_OF = "2026-09-01"
+
+# Apple's revenue series at the annual trigger and at the fixture set's own
+# as-of date, read off the record by hand and not from a run: the USD duration
+# rows filed at or before each date under any of the three names, of a length
+# `src/trends.QUARTER_DAYS` calls a quarter, with the latest filing winning a
+# period two of them report. 64 quarters against 67, and the newest quarter of
+# each. The three between them are reported by filings later than the 10-K, so a
+# run triggered by the 10-K is not entitled to them.
+QUARTERS_AT_THE_ANNUAL_TRIGGER = 64
+QUARTERS_AT_THE_FIXTURE_AS_OF = 67
+NEWEST_QUARTER_AT_THE_ANNUAL_TRIGGER = (
+    "2025-03-30", "2025-06-28", 94036000000, REVENUE_FROM_CONTRACTS,
+    "0000320193-25-000073")
+NEWEST_QUARTER_AT_THE_FIXTURE_AS_OF = (
+    "2026-03-29", "2026-06-27", 109417000000, REVENUE_FROM_CONTRACTS,
+    "0000320193-26-000020")
+
 
 # --- a second reader, for the tests alone ------------------------------------
 
 def companyfacts(ticker: str) -> dict:
     """One company's companyfacts document, opened without help from `src/`.
 
-    `src/tag_continuity.py` reads this same file through the date gate and then
-    filters it. Asserting its output against its own reading of the source would
-    assert that it agrees with itself, so this reads the bytes and the JSON the
-    plain way and nothing else.
+    `src/tag_continuity.py` reads this same file through `load_catalogue`, which
+    filters its rows. Asserting its output against its own reading of the source
+    would assert that it agrees with itself, so this reads the bytes and the
+    JSON the plain way and nothing else.
     """
     return json.loads(gzip.decompress(
         (FIXTURES / ticker / "companyfacts.json.gz").read_bytes()))
+
+
+# The role `src/fetch_companyfacts.py` records the record under, written here
+# rather than imported for the same reason the reader above is.
+CATALOGUE_ROLE = "standard_taxonomy_history"
+
+
+def manifest(ticker: str) -> dict:
+    return json.loads((FIXTURES / ticker / "manifest.json").read_text(encoding="utf-8"))
+
+
+def catalogue_row(ticker: str) -> dict:
+    """The manifest row describing one company's companyfacts record."""
+    return next(row for row in manifest(ticker)["documents"]
+                if row["role"] == CATALOGUE_ROLE)
+
+
+def annual_trigger(ticker: str) -> str:
+    """The filing date of the company's 10-K, which is an annual run's cutoff."""
+    return max(row["filing_date"] for row in manifest(ticker)["documents"]
+               if (row["form"], row["role"]) == ("10-K", "primary_html"))
+
+
+def filing_dates_in_the_file(ticker: str, cutoff: str) -> list[str]:
+    """The `filed` date of every row of the record on or before the cutoff.
+
+    `CLAUDE.md`'s rule applied by hand: document filing date <= the filing date
+    of the triggering report.
+    """
+    return [row["filed"]
+            for concepts in companyfacts(ticker)["facts"].values()
+            for concept in concepts.values()
+            for rows in concept["units"].values()
+            for row in rows if row["filed"] <= cutoff]
 
 
 def revenue_rows(ticker: str, accession: str | None = None) -> dict[str, list[dict]]:
@@ -175,6 +236,10 @@ def accessions_in(ticker: str) -> set[str]:
 def as_tuples(points: list[dict]) -> list[tuple]:
     return [(point["start"], point["end"], point["value"],
              point["tag"], point["accession"]) for point in points]
+
+
+def periods_of(points: list[dict]) -> list[tuple]:
+    return [(point["start"], point["end"]) for point in points]
 
 
 # --- the two tag names, read off the two filings -----------------------------
@@ -337,15 +402,98 @@ def test_the_cutoff_is_applied_to_the_rows():
 def test_a_cutoff_that_is_not_a_date_is_refused_rather_than_ignored(bad):
     """A malformed cutoff must not fail open.
 
-    The row filter compares filing dates as strings, so a cutoff that is not an
-    ISO date narrows nothing: the test above shows the record holds rows filed
-    years past `CUTOFF`, and every one of them would arrive, silently and with a
-    zero exit. `tests/test_cutoff_guard.py::test_an_unparseable_cutoff_is_refused`
-    states the rule for the readers that go through `load_document`; this one
-    filters the rows itself, so it is asserted here too.
+    The row filter this module used to carry compared filing dates as strings,
+    so a cutoff that is not an ISO date narrowed nothing: the test above shows
+    the record holds rows filed years past `CUTOFF`, and every one of them would
+    have arrived, silently and with a zero exit. The refusal is
+    `cutoff_guard.load_catalogue`'s now, which parses the cutoff before anything
+    is compared to it; it is asserted here as well because this module is the
+    caller, and a caller that stopped going through the route would lose it.
     """
     with pytest.raises(cutoff_guard.CutoffGuardError):
         tag_continuity.series_quarters(TICKER, SERIES, bad)
+
+
+# --- the annual trigger, and the route that serves it ------------------------
+#
+# The map reader takes its rows from `cutoff_guard.load_catalogue`, which is the
+# sanctioned route into a catalogue. What it replaced was a gate that satisfied
+# itself — the file was checked against the record's own recorded date, which is
+# the newest filing in the record — and a row filter that compared filing dates
+# as strings. The tests below are about the route being real: the same document
+# at the same cutoff, refused by the whole-file gate and served by this one.
+
+
+def test_the_whole_file_gate_refuses_the_record_at_apples_annual_trigger():
+    """The record is dated later than the 10-K, so the date gate refuses it."""
+    record = cutoff_guard.one_document(TICKER, "companyfacts", CATALOGUE_ROLE)
+    assert record["filing_date"] == CATALOGUE_RECORDED_DATE > ANNUAL_TRIGGER
+    with pytest.raises(cutoff_guard.CutoffViolationError):
+        cutoff_guard.load_bytes(record["full_path"], ANNUAL_TRIGGER)
+
+
+def test_the_annual_trigger_gets_the_quarters_the_record_supports_at_that_date():
+    """Which quarters, read off the record and not from a run.
+
+    Apple's 10-K was filed 2025-10-31, so the newest quarter a run it triggers
+    can see is the one the 10-Q filed 2025-08-01 reported. Sixty-four quarters,
+    against sixty-seven at the fixture set's own as-of date.
+    """
+    at_the_trigger = tag_continuity.series_quarters(TICKER, SERIES, ANNUAL_TRIGGER)
+    assert len(at_the_trigger) == QUARTERS_AT_THE_ANNUAL_TRIGGER
+    assert as_tuples(at_the_trigger)[-1] == NEWEST_QUARTER_AT_THE_ANNUAL_TRIGGER
+
+    later = tag_continuity.series_quarters(TICKER, SERIES, FIXTURE_SET_AS_OF)
+    assert len(later) == QUARTERS_AT_THE_FIXTURE_AS_OF
+    assert as_tuples(later)[-1] == NEWEST_QUARTER_AT_THE_FIXTURE_AS_OF
+
+    # The same periods, three fewer of them, and every point at the trigger is
+    # carried by a filing the trigger allows.
+    assert periods_of(at_the_trigger) == \
+        periods_of(later)[:QUARTERS_AT_THE_ANNUAL_TRIGGER]
+    assert max(point["filed"] for point in at_the_trigger) <= ANNUAL_TRIGGER
+
+    # Not the same answer with a shorter tail: where the two disagree about
+    # which filing reported a period, the later side names a filing made after
+    # the trigger. That is the look-ahead the cutoff exists to stop, one period
+    # at a time, and it is why "the latest filing wins" has to be read at the
+    # cutoff rather than at the record's own date.
+    reread = [(before, after) for before, after in zip(at_the_trigger, later)
+              if before["accession"] != after["accession"]]
+    assert reread
+    assert all(after["filed"] > ANNUAL_TRIGGER for _, after in reread)
+
+
+@pytest.mark.parametrize("ticker", TWELVE)
+def test_the_newest_row_the_history_sees_is_on_or_before_its_cutoff(ticker):
+    """The cutoff rule, over all twelve, at each company's own annual trigger.
+
+    The second assertion is what keeps the first from being satisfied by
+    silence: every one of the twelve 10-Ks put facts into its own record, so the
+    newest row the reader sees is the trigger's own date and not merely earlier
+    than it. The count on the third is the hand-filtered file's.
+    """
+    cutoff = annual_trigger(ticker)
+    facts = tag_continuity.history(ticker, cutoff)
+    seen = [row["filed"] for concepts in facts.values() for concept in concepts.values()
+            for rows in concept["units"].values() for row in rows]
+    assert seen, f"{ticker} sees no rows at {cutoff}"
+    assert max(seen) <= cutoff
+    assert max(seen) == cutoff
+    assert len(seen) == len(filing_dates_in_the_file(ticker, cutoff))
+
+
+@pytest.mark.parametrize("ticker", TWELVE)
+def test_a_catalogues_recorded_date_is_its_own_newest_row(ticker):
+    """The invariant this reader leans on, over the twelve committed records.
+
+    A catalogue is dated with the newest filing it carries a fact from — the
+    manifest row says so in its own `date_basis` — which is why gating the whole
+    file on that date refuses it to every earlier cutoff.
+    """
+    filed = filing_dates_in_the_file(ticker, "9999-12-31")
+    assert filed, f"{ticker}'s record holds no rows"
+    assert catalogue_row(ticker)["filing_date"] == max(filed)
 
 
 # --- a quarter two filings disagree about ------------------------------------

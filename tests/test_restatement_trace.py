@@ -20,6 +20,15 @@ with itself, and it would pass just as well if the scan reported nothing at all
 — so it asserts, in the same file, that the period is one the scan does reach,
 and the planted copy next door is the positive control that the scan speaks when
 there is something to say.
+
+**The annual trigger.** The record is read through
+`src/cutoff_guard.load_catalogue`, the sanctioned route into a catalogue, and
+the reason is at the bottom of this file: a catalogue is dated with the newest
+filing it carries a fact from, so the whole-file date gate refused the whole
+record to eleven of the twelve annual runs, and the scan exited 2 for them. What
+those runs get instead is asserted here — the traces the record supports at the
+trigger's own date, derived from the file by `traces_in_the_file`, which opens
+`companyfacts.json.gz` and imports nothing from `src/`.
 """
 
 from __future__ import annotations
@@ -27,6 +36,7 @@ from __future__ import annotations
 import gzip
 import hashlib
 import json
+from collections import defaultdict
 from pathlib import Path
 
 import pytest
@@ -78,6 +88,34 @@ DIVIDEND_DIFFERENCE = -0.01
 NOT_YET_LOADED = "0001783180-26-000032"
 NOT_YET_LOADED_FILED = "2026-07-28"
 
+# The twelve companies, and the run this item is about: Carrier's 10-K, filed
+# 2026-02-05, is the triggering report of an annual run and therefore that run's
+# cutoff. Carrier's companyfacts record is dated 2026-04-30 — a catalogue is
+# dated with the newest filing it carries a fact from — so the whole-file date
+# gate refused the whole record to that run and the scan exited 2.
+TWELVE = ("AAPL", "CARR", "CIEN", "CSCO", "ESE", "GNRC",
+          "LFUS", "NVDA", "PANW", "QCOM", "STX", "TTMI")
+ANNUAL_TRIGGER = "2026-02-05"
+CATALOGUE_RECORDED_DATE = "2026-04-30"
+FIXTURE_SET_AS_OF = "2026-09-01"
+
+# Eleven of the twelve records are dated after the company's own 10-K, so eleven
+# annual runs were refused. Seagate is the twelfth: its 10-K was filed the same
+# day its record is dated, and `doc_date == cutoff_date` is allowed.
+REFUSED_AT_THEIR_ANNUAL_TRIGGER = 11
+SERVED_AT_ITS_ANNUAL_TRIGGER = "STX"
+
+# Counted from tests/fixtures/CARR/companyfacts.json.gz by the reader below,
+# which opens the file and imports nothing from `src/`. At the 10-K's own date
+# the record supports 315 traces over 6,107 periods, 3,119 of them reported by
+# more than one filing; at the fixture set's as-of date, 318 over 6,278. The
+# annual answer is smaller, and it is an answer.
+TRACES_AT_THE_ANNUAL_TRIGGER = 315
+PERIODS_AT_THE_ANNUAL_TRIGGER = 6107
+REPORTED_MORE_THAN_ONCE_AT_THE_ANNUAL_TRIGGER = 3119
+TRACES_AT_THE_FIXTURE_AS_OF = 318
+PERIODS_AT_THE_FIXTURE_AS_OF = 6278
+
 
 # --- the two documents, read as documents ------------------------------------
 
@@ -103,6 +141,89 @@ def every_row(document: dict) -> list[tuple]:
             for tag, concept in concepts.items()
             for unit, rows in concept["units"].items()
             for index, row in enumerate(rows)]
+
+
+# --- a second reader, for the tests alone ------------------------------------
+#
+# The scan reads the record through `cutoff_guard.load_catalogue` and then
+# groups and compares. Judging its answer against its own reading of the file
+# would assert that it agrees with itself, so everything below opens the gzip by
+# name and imports nothing from `src/`.
+
+def manifest(ticker: str) -> dict:
+    return json.loads((FIXTURES / ticker / "manifest.json").read_text(encoding="utf-8"))
+
+
+def catalogue_row(ticker: str) -> dict:
+    """The manifest row describing one company's companyfacts record."""
+    return next(row for row in manifest(ticker)["documents"]
+                if row["role"] == restatement_trace.COMPANYFACTS_ROLE)
+
+
+def annual_trigger(ticker: str) -> str:
+    """The filing date of the company's 10-K, which is an annual run's cutoff."""
+    return max(row["filing_date"] for row in manifest(ticker)["documents"]
+               if (row["form"], row["role"]) == ("10-K", "primary_html"))
+
+
+def catalogue_in_the_file(ticker: str) -> dict:
+    """One companyfacts record, decompressed and parsed the plain way."""
+    return json.loads(gzip.decompress(
+        (FIXTURES / ticker / "companyfacts.json.gz").read_bytes()))
+
+
+def rows_in_the_file(ticker: str, cutoff: str) -> dict[tuple, list[dict]]:
+    """Rows filed on or before the cutoff, gathered by the period they are about.
+
+    `CLAUDE.md`'s rule applied by hand: document filing date <= the triggering
+    report's. The key is namespace, tag, unit and the period, which is what makes
+    two rows the same fact.
+    """
+    grouped: dict[tuple, list[dict]] = defaultdict(list)
+    for namespace, concepts in catalogue_in_the_file(ticker)["facts"].items():
+        for tag, concept in concepts.items():
+            for unit, rows in concept["units"].items():
+                for row in rows:
+                    if row["filed"] <= cutoff:
+                        grouped[(namespace, tag, unit,
+                                 row.get("start"), row["end"])].append(row)
+    return grouped
+
+
+def traces_in_the_file(ticker: str, cutoff: str) -> set[tuple]:
+    """The disagreements with the first-reported value, derived here from the file.
+
+    The rule restated from `CLAUDE.md` and `docs/CHECKLIST.md` rather than
+    borrowed from the module: the earliest filing to report a period is ground
+    truth, one trace per distinct later value recorded at the filing that first
+    carried it, and a filing that reports the period at two values is left out
+    of the comparison — the whole period only when that filing is the first one.
+    The tuple is `key()`'s, so the two sides are comparable.
+    """
+    found = set()
+    for period, rows in rows_in_the_file(ticker, cutoff).items():
+        namespace, tag, unit, start, end = period
+        values: dict[str, set] = defaultdict(set)
+        filed: dict[str, str] = {}
+        for row in rows:
+            values[row["accn"]].add(row["val"])
+            filed.setdefault(row["accn"], row["filed"])
+        at_two_values = {accession for accession in values if len(values[accession]) > 1}
+        order = sorted(values, key=lambda accession: (filed[accession], accession))
+        first = order[0]
+        if first in at_two_values:
+            continue
+        first_value = next(iter(values[first]))
+        reported = {first_value}
+        for accession in order[1:]:
+            if accession in at_two_values:
+                continue
+            value = next(iter(values[accession]))
+            if value not in reported:
+                reported.add(value)
+                found.add((namespace, tag, unit, start, end,
+                           first, first_value, accession, value))
+    return found
 
 
 def test_the_committed_record_reports_the_period_at_one_value_from_two_filings():
@@ -315,7 +436,7 @@ def test_a_value_that_comes_back_to_the_first_reported_one_is_not_a_second_trace
     found, ambiguous = restatement_trace.traces(restatement_trace.by_period(
         facts(row(100, "first", "2025-05-01"),
               row(90, "second", "2025-08-01"),
-              row(100, "third", "2025-11-01")), "2026-09-01"))
+              row(100, "third", "2025-11-01"))))
     assert ambiguous == []
     assert [(trace["first_reported"]["value"], trace["restated"]["value"],
              trace["restated"]["accession"]) for trace in found] == [(100, 90, "second")]
@@ -327,7 +448,7 @@ def test_one_restated_value_repeated_by_later_filings_is_one_trace():
         facts(row(100, "first", "2025-05-01"),
               row(90, "second", "2025-08-01"),
               row(90, "third", "2025-11-01"),
-              row(90, "fourth", "2026-02-01")), "2026-09-01"))
+              row(90, "fourth", "2026-02-01"))))
     assert [trace["restated"]["accession"] for trace in found] == ["second"]
 
 
@@ -342,7 +463,7 @@ def test_a_filing_that_reports_one_period_at_two_values_is_left_out_and_named():
         facts(row(100, "first", "2025-05-01"),
               row(90, "second", "2025-08-01"),
               row(90.4, "second", "2025-08-01"),
-              row(80, "third", "2025-11-01")), "2026-09-01"))
+              row(80, "third", "2025-11-01"))))
     assert len(ambiguous) == 1
     assert ambiguous[0]["accessions"] == ["second"]
     assert ambiguous[0]["values"] == {"second": [90, 90.4]}
@@ -355,33 +476,207 @@ def test_a_period_whose_first_filing_reports_two_values_has_no_ground_truth():
     found, ambiguous = restatement_trace.traces(restatement_trace.by_period(
         facts(row(100, "first", "2025-05-01"),
               row(101, "first", "2025-05-01"),
-              row(90, "second", "2025-08-01")), "2026-09-01"))
+              row(90, "second", "2025-08-01"))))
     assert found == []
     assert [entry["accessions"] for entry in ambiguous] == [["first"]]
 
 
 def test_a_row_filed_after_the_cutoff_does_not_enter_the_scan():
-    """Nothing filed later enters the input, whatever the document as a whole holds."""
-    written = facts(row(100, "first", "2025-05-01"), row(90, "second", "2025-08-01"))
-    assert restatement_trace.traces(restatement_trace.by_period(written, "2025-06-30")) \
-        == ([], [])
-    found, _ = restatement_trace.traces(restatement_trace.by_period(written, "2025-08-01"))
-    assert len(found) == 1
+    """Nothing filed later enters the input, whatever the document as a whole holds.
+
+    The row filter is `cutoff_guard.load_catalogue`'s now and not this module's,
+    so this is asserted over the committed record rather than over rows written
+    here: Carrier's first quarter of 2025 is reported by two filings, and at the
+    annual trigger only the earlier of the two has happened.
+    """
+    period = (NAMESPACE, TAG, UNIT, PERIOD["start"], PERIOD["end"])
+    assert FIRST_REPORTED_FILED <= ANNUAL_TRIGGER < LATER_FILED
+
+    at_the_trigger = grouped_at(ANNUAL_TRIGGER)[period]
+    assert [(entry["accn"], entry["filed"]) for entry in at_the_trigger] == [
+        (FIRST_REPORTED_ACCESSION, FIRST_REPORTED_FILED)]
+
+    later = grouped_at(FIXTURE_SET_AS_OF)[period]
+    assert [(entry["accn"], entry["filed"]) for entry in later] == [
+        (FIRST_REPORTED_ACCESSION, FIRST_REPORTED_FILED),
+        (LATER_ACCESSION, LATER_FILED)]
 
 
 def test_an_amendment_is_marked_rather_than_passed_off_as_quiet():
     """A 10-K/A says out loud what a quiet restatement does not say at all."""
     found, _ = restatement_trace.traces(restatement_trace.by_period(
         facts(row(100, "first", "2025-05-01"),
-              row(90, "second", "2025-08-01", form="10-K/A")), "2026-09-01"))
+              row(90, "second", "2025-08-01", form="10-K/A"))))
     assert [trace["amendment"] for trace in found] == [True]
     assert restatement_trace.is_amendment("10-Q") is False
 
 
-def test_a_cutoff_earlier_than_the_record_refuses_the_run_rather_than_reading_less():
-    """companyfacts is dated with the newest filing it carries a fact from."""
+# --- the annual trigger: a smaller answer, where there used to be none --------
+#
+# `test_a_cutoff_earlier_than_the_record_refuses_the_run_rather_than_reading
+# _less` used to stand here and assert the opposite: that `scan` raises
+# `CutoffViolationError` at Carrier's own 10-K date. That refusal was the
+# whole-file date gate applied to a catalogue, and the route this module now
+# reads through is what replaced it. The assertion comes off, and what the run
+# gets instead is asserted in its place.
+
+
+def grouped_at(cutoff: str, ticker: str = TICKER) -> dict[tuple, list[dict]]:
+    """What the scan groups at a cutoff, through the route the scan reads through."""
+    record = cutoff_guard.one_document(ticker, restatement_trace.COMPANYFACTS_FORM,
+                                       restatement_trace.COMPANYFACTS_ROLE,
+                                       fixtures_root=FIXTURES)
+    document = cutoff_guard.load_catalogue(record["full_path"], cutoff,
+                                           fixtures_root=FIXTURES)
+    return restatement_trace.by_period(document["facts"])
+
+
+@pytest.fixture(scope="module")
+def annual_scan() -> dict:
+    return restatement_trace.scan(TICKER, cutoff=ANNUAL_TRIGGER, fixtures_root=FIXTURES)
+
+
+def test_the_whole_file_gate_refuses_the_record_to_the_annual_run():
+    """What the route replaced, stated as a fact about the gate and not assumed.
+
+    Carrier's record is dated after Carrier's 10-K, so `load_bytes` refuses it
+    to the annual run — and every row that run is entitled to goes with it.
+    """
+    record = cutoff_guard.one_document(TICKER, restatement_trace.COMPANYFACTS_FORM,
+                                       restatement_trace.COMPANYFACTS_ROLE,
+                                       fixtures_root=FIXTURES)
+    assert record["filing_date"] == CATALOGUE_RECORDED_DATE > ANNUAL_TRIGGER
     with pytest.raises(CutoffViolationError):
-        restatement_trace.scan(TICKER, cutoff="2026-02-05", fixtures_root=FIXTURES)
+        cutoff_guard.load_bytes(record["full_path"], ANNUAL_TRIGGER,
+                                fixtures_root=FIXTURES)
+
+
+def test_the_annual_trigger_gets_the_traces_the_record_supports_at_that_date(annual_scan):
+    """Which traces, not merely that the scan did not raise.
+
+    The right-hand side is `traces_in_the_file`, which opens the gzip and
+    derives the disagreements by hand. The three counts are what that reader
+    counts, written down so that two empty answers cannot agree with each other.
+    """
+    assert annual_scan["cutoff"] == ANNUAL_TRIGGER
+    assert {key(trace) for trace in annual_scan["traces"]} == \
+        traces_in_the_file(TICKER, ANNUAL_TRIGGER)
+    assert annual_scan["counts"]["traces"] == TRACES_AT_THE_ANNUAL_TRIGGER
+    assert annual_scan["counts"]["periods"] == PERIODS_AT_THE_ANNUAL_TRIGGER
+    assert annual_scan["counts"]["periods_reported_more_than_once"] == \
+        REPORTED_MORE_THAN_ONCE_AT_THE_ANNUAL_TRIGGER
+
+
+def test_the_dividend_restatement_is_one_of_them(annual_scan):
+    """A named trace inside the annual run, with the two values read by hand.
+
+    Carrier reported the second quarter of 2023 at 0.38 a share on 2023-07-27
+    and at 0.37 on 2023-10-26 — both inside a run triggered on 2026-02-05, and
+    both refused to it before this route.
+    """
+    found = trace_for_the_period(annual_scan, DIVIDEND_TAG, DIVIDEND_UNIT,
+                                 DIVIDEND_PERIOD)
+    assert len(found) == 1
+    assert found[0]["first_reported"]["value"] == DIVIDEND_FIRST_REPORTED
+    assert found[0]["restated"]["value"] == DIVIDEND_RESTATED
+    assert found[0]["restated"]["filing_date"] == "2023-10-26" <= ANNUAL_TRIGGER
+
+
+def test_the_period_the_planted_copy_restates_is_not_yet_restated_here(annual_scan):
+    """The control on the assertion above: silence where the record is silent.
+
+    The 10-Q that reports Carrier's first quarter of 2025 back was filed
+    2026-04-30, after the trigger, so at this cutoff the period has one filing
+    and nothing to disagree with.
+    """
+    assert trace_for_the_period(annual_scan) == []
+
+
+def test_the_annual_answer_is_smaller_than_the_fixture_sets_own(annual_scan, committed_scan):
+    """Smaller, and smaller by rows filed after the trigger. Not the same answer."""
+    assert committed_scan["cutoff"] == FIXTURE_SET_AS_OF
+    assert committed_scan["counts"]["traces"] == TRACES_AT_THE_FIXTURE_AS_OF
+    assert committed_scan["counts"]["periods"] == PERIODS_AT_THE_FIXTURE_AS_OF
+
+    annual = {key(trace) for trace in annual_scan["traces"]}
+    later = {key(trace) for trace in committed_scan["traces"]}
+    assert annual < later
+    assert len(later - annual) == \
+        TRACES_AT_THE_FIXTURE_AS_OF - TRACES_AT_THE_ANNUAL_TRIGGER
+    assert all(trace["restated"]["filing_date"] > ANNUAL_TRIGGER
+               for trace in committed_scan["traces"] if key(trace) in later - annual)
+
+
+def test_the_annual_run_names_no_absent_filing_it_may_not_see(annual_scan):
+    """The 10-K's own facts are in the record, and the July 10-Q is outside the run."""
+    assert annual_scan["absent_from_companyfacts"] == []
+    assert NOT_YET_LOADED_FILED > ANNUAL_TRIGGER
+
+
+def test_the_annual_run_exits_zero_rather_than_two(tmp_path):
+    """It exited 2 before this: the gate refused the record and the run had
+    nothing to say about the company at all."""
+    assert restatement_trace.main([
+        "--ticker", TICKER, "--fixtures", str(FIXTURES),
+        "--cutoff", ANNUAL_TRIGGER,
+        "--out", str(tmp_path / "annual.json"),
+        "--ledger", str(tmp_path / "ledger.jsonl")]) == 0
+    written = json.loads((tmp_path / "annual.json").read_text())
+    assert written["cutoff"] == ANNUAL_TRIGGER
+    assert len(written["traces"]) == TRACES_AT_THE_ANNUAL_TRIGGER
+    line = json.loads((tmp_path / "ledger.jsonl").read_text())
+    assert line["traces"] == TRACES_AT_THE_ANNUAL_TRIGGER
+
+
+# --- the invariant both readers lean on, over the twelve committed records ----
+
+
+@pytest.mark.parametrize("ticker", TWELVE)
+def test_a_catalogues_recorded_date_is_its_own_newest_row(ticker):
+    """A catalogue is dated with the newest filing it carries a fact from.
+
+    That is what the manifest row says in its own `date_basis`, and it is the
+    whole reason the whole-file date gate is the wrong gate for these two
+    documents. It was asserted only against a record written for the purpose;
+    here it is asserted over the twelve committed ones.
+    """
+    filed = [row["filed"] for rows in rows_in_the_file(ticker, "9999-12-31").values()
+             for row in rows]
+    assert filed, f"{ticker}'s record holds no rows"
+    assert catalogue_row(ticker)["filing_date"] == max(filed)
+
+
+def test_the_whole_file_gate_refused_eleven_of_the_twelve_annual_runs():
+    """Why this item exists, counted over the fixture set rather than argued.
+
+    Seagate is the twelfth: its 10-K was filed the same day its record is dated,
+    and `doc_date == cutoff_date` is allowed.
+    """
+    refused = [ticker for ticker in TWELVE
+               if annual_trigger(ticker) < catalogue_row(ticker)["filing_date"]]
+    assert len(refused) == REFUSED_AT_THEIR_ANNUAL_TRIGGER
+    assert [ticker for ticker in TWELVE if ticker not in refused] == \
+        [SERVED_AT_ITS_ANNUAL_TRIGGER]
+
+
+@pytest.mark.parametrize("ticker", TWELVE)
+def test_the_newest_row_the_scan_sees_is_on_or_before_its_cutoff(ticker):
+    """The cutoff rule, over all twelve, at each company's own annual trigger.
+
+    The second assertion is what keeps the first from being satisfied by
+    silence: every one of the twelve 10-Ks put facts into its own record, so the
+    newest row the reader sees is the trigger's own date and not merely earlier
+    than it. The count is the independent reader's.
+    """
+    cutoff = annual_trigger(ticker)
+    grouped = grouped_at(cutoff, ticker)
+    seen = [row["filed"] for rows in grouped.values() for row in rows]
+    counted = [row["filed"] for rows in rows_in_the_file(ticker, cutoff).values()
+               for row in rows]
+    assert seen, f"{ticker} sees no rows at {cutoff}"
+    assert max(seen) <= cutoff
+    assert max(seen) == cutoff
+    assert len(seen) == len(counted)
 
 
 # --- the one ledger line -----------------------------------------------------
