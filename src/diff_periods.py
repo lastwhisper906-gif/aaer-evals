@@ -15,6 +15,15 @@ table cell `54,252` masked to `#` and matched any number anywhere. The mask
 survives as `src/note_history.py`'s pairing key, where being approximate is the
 point. Here it decides nothing.
 
+**Pair first, then compare.** `docs/INPUT_SPEC.md` §2 Alignment: a section is
+paired with its prior-period counterpart by tag name, falling back to title
+similarity, and only the paragraphs inside a pair are compared — as a multiset,
+so a table of a hundred identical cells pairs cell for cell instead of matching
+all hundred against cell one. What is left over is scored for boilerplate
+before it counts as a change, so a reordered or retitled section yields none.
+That count is what `extract` reports under `changes`; what the bundle prints is
+still one decision per paragraph, below.
+
 **Never diffed away**, whatever it says and however often it repeats:
 contingencies and litigation, subsequent events, related parties, debt and
 covenants, accounting changes and corrections. That is `docs/INPUT_SPEC.md` §2
@@ -28,6 +37,7 @@ unchanged paragraph is itself the finding.
 from __future__ import annotations
 
 import argparse
+import difflib
 import re
 import sys
 from pathlib import Path
@@ -119,6 +129,247 @@ def always_verbatim(note_name: str, text: str = "") -> str | None:
 def mask(text: str) -> str:
     """The paragraph with its numbers taken out, for matching only."""
     return _NUMBER.sub("#", html_text.normalized(text))
+
+
+# --- alignment: pair first, then compare -----------------------------------
+#
+# `docs/INPUT_SPEC.md` §2 Alignment, in the order it states the three rules:
+# pair a section against its prior-period counterpart by tag name, falling back
+# to title similarity, and only then diff the paragraphs inside the pair; match
+# one paragraph list against the other as a multiset; score each paragraph for
+# boilerplate before it counts as a change.
+#
+# What this layer decides is **the change count** — how much of the disclosure
+# moved between the two periods. It decides nothing about what the bundle
+# prints: `diff_stream` still carries every new or changed paragraph verbatim,
+# and a paragraph scored as boilerplate here is still printed in full there.
+# No text is dropped from a file by anything below.
+
+# The floor `src/note_history.py` already records for this same fallback, and
+# not a new number: silence about a threshold means the existing value stands.
+# The same rule written in two files is two rules until something reads both,
+# so `tests/test_diff_alignment.py` reads both and fails when they part.
+TITLE_SIMILARITY_FLOOR = 0.70
+
+# The two labels for a section that has no counterpart at all. A section that
+# appeared and a section that went away are changes, not absences, so they are
+# pairs that say why they are half empty.
+NO_PRIOR_SECTION = "no_prior_section"
+NO_CURRENT_SECTION = "no_current_section"
+MATCH_RULES = ("tag_name", "title_similarity", NO_PRIOR_SECTION, NO_CURRENT_SECTION)
+
+# A token is furniture when it makes no claim: it holds no letter at all — `$`,
+# `%`, `—`, `(1)`, `54,252`, the `|` a rendered table row is built from — or
+# every run of letters in it is one of the words a table prints as its own
+# scaffolding. `| (In millions) | 2025 | | 2024 | | 2023 |` heads thirteen of
+# Carrier's tables (`src/clean_text.py`), and `Three Months Ended June 30, 2025`
+# is the column head a quarterly table carries whether or not anything in it
+# moved: its date changes every quarter on its own.
+#
+# Period, unit and total words only. A row label naming an account — `Net loss`,
+# `Goodwill` — is deliberately not here: a line item that appears for the first
+# time is a change, and this layer must not be what hides it. `may` is here as
+# a month and reads as a modal verb; a paragraph whose every token is furniture
+# says nothing under either reading.
+#
+# A cell holding nothing but a number is furniture for the same reason. What
+# moved in it is `src/extract_numbers.py`'s and `src/trends.py`'s to report, and
+# `docs/INPUT_SPEC.md` §2.4 keeps the tables already in XBRL out of the text
+# stream entirely; counting those cells here would make the text change count a
+# second and much worse numbers report.
+FURNITURE_WORDS = frozenset("""
+    as at of the and to in per
+    three six nine twelve
+    month months quarter quarters year years week weeks ended ending
+    january february march april may june july august september october
+    november december
+    million millions thousand thousands billion billions dollars
+    share shares unaudited
+    total totals subtotal
+""".split())
+
+_LETTERS = re.compile(r"[^\W\d_]+")
+
+
+def title_of(section: dict) -> str:
+    """The heading the filer wrote over this section.
+
+    A caller that knows the title says so. A caller holding only the section's
+    paragraphs gets the first line of the first one, which is where a note
+    prints its heading.
+    """
+    if section.get("title"):
+        return html_text.normalized(section["title"])
+    for paragraph in section.get("paragraphs") or []:
+        for start, end in html_text.lines(paragraph):
+            return html_text.normalized(paragraph[start:end])
+    return ""
+
+
+def similarity(left: str, right: str) -> float:
+    return round(difflib.SequenceMatcher(None, left, right).ratio(), 4)
+
+
+def pair_sections(current: list[dict], prior: list[dict]) -> list[dict]:
+    """Pair this period's sections with last period's. Tag name, then title.
+
+    A section is `{name, paragraphs}` and, when the caller has one, `{title}`.
+    Every section on either side is in exactly one pair, and each pair records
+    which rule made it, because a pairing a reader cannot reproduce from the
+    same two filings is a pairing they have to take on faith.
+    """
+    taken = [False] * len(prior)
+    by_name: dict[str, list[int]] = {}
+    for index, section in enumerate(prior):
+        by_name.setdefault(section["name"], []).append(index)
+
+    pairs = []
+    for section in current:
+        chosen, matched_by, score = None, NO_PRIOR_SECTION, 0.0
+        queue = by_name.get(section["name"], [])
+        while queue and taken[queue[0]]:  # claimed already, by a title match
+            queue.pop(0)
+        title = title_of(section)
+        if queue:
+            chosen, matched_by, score = queue.pop(0), "tag_name", 1.0
+        elif title:
+            best, best_score = None, 0.0
+            for index, candidate in enumerate(prior):
+                if taken[index]:
+                    continue
+                candidate_score = similarity(title, title_of(candidate))
+                if candidate_score > best_score:
+                    best, best_score = index, candidate_score
+            if best is not None and best_score >= TITLE_SIMILARITY_FLOOR:
+                chosen, matched_by, score = best, "title_similarity", best_score
+        if chosen is not None:
+            taken[chosen] = True
+        pairs.append({"current": section,
+                      "prior": prior[chosen] if chosen is not None else None,
+                      "matched_by": matched_by, "score": score})
+
+    for index, section in enumerate(prior):  # last period had it, this one does not
+        if not taken[index]:
+            pairs.append({"current": None, "prior": section,
+                          "matched_by": NO_CURRENT_SECTION, "score": 0.0})
+    return pairs
+
+
+def match_paragraphs(current: list[str], prior: list[str]) -> dict:
+    """Match one paragraph list against the other as a **multiset**.
+
+    A paragraph pairs with a prior paragraph holding the same text, one for
+    one; what is left over on each side is what moved. `added` are this
+    period's leftover indices, `removed` are last period's, and `matched` names
+    both indices of every pair so a reader can walk them back.
+
+    A multiset, not an index lookup. The lookup this replaces held one index
+    per distinct text, so a table of a hundred identical cells matched every one
+    of them against cell one and left ninety-nine looking removed — lessons.md,
+    2026-09-07. Order decides nothing: the same paragraphs in another order are
+    the same multiset, which is why a reordered section has no changes in it.
+
+    Text is compared as the paragraph prints it, unmasked. A number that moved
+    is a change here, exactly as it is in `diff_stream`.
+    """
+    pool: dict[str, list[int]] = {}
+    for index, paragraph in enumerate(prior):
+        pool.setdefault(paragraph, []).append(index)
+
+    matched, added = [], []
+    for index, paragraph in enumerate(current):
+        counterparts = pool.get(paragraph)
+        if counterparts:
+            matched.append((index, counterparts.pop(0)))
+        else:
+            added.append(index)
+    claimed = {prior_index for _, prior_index in matched}
+    removed = [index for index in range(len(prior)) if index not in claimed]
+    return {"matched": matched, "added": added, "removed": removed}
+
+
+def is_furniture(token: str) -> bool:
+    """One token that makes no claim: no letters in it, or only stock words."""
+    return all(run in FURNITURE_WORDS for run in _LETTERS.findall(token))
+
+
+def boilerplate_score(text: str) -> float:
+    """The share of this paragraph's tokens that are table furniture.
+
+    1.0 is the whole of it: the paragraph makes no claim of its own, so it is
+    not evidence that anything was disclosed differently. Anything under 1.0
+    means some token said something, and this layer does not weigh how much — a
+    line drawn anywhere in between would be a number nobody set from a source.
+
+    The ratio is not rounded, unlike the similarity beside it. 1.0 is the only
+    value that decides anything here, and a paragraph holding one word among
+    twenty thousand rounds to 1.0 at four places — which would take that word
+    out of the count.
+    """
+    tokens = html_text.normalized(text).split()
+    if not tokens:  # nothing to make a claim with
+        return 1.0
+    return sum(1 for token in tokens if is_furniture(token)) / len(tokens)
+
+
+def is_boilerplate(text: str) -> bool:
+    """Every token is furniture, so nothing here counts as a change."""
+    return boilerplate_score(text) == 1.0
+
+
+def changes(current: list[dict], prior: list[dict]) -> dict:
+    """How much of the disclosure moved: pair, compare inside the pair, score.
+
+    A paragraph with no counterpart in the section it was paired with counts as
+    a change unless it is boilerplate, and its `kind` says which side it was
+    left over on. A paragraph that was *edited* is therefore two entries, one
+    `added` and one `removed`: pairing those two back together and recording
+    the similarity that did it is `src/note_history.py`'s job, and it needs a
+    second floor to do it.
+
+    What the score took out is kept: `boilerplate` holds every paragraph it
+    excluded, so the count can be checked against them instead of being taken
+    on trust.
+    """
+    pairs = pair_sections(current, prior)
+    entries, furniture = [], []
+    for pair in pairs:
+        section = pair["current"] or pair["prior"]
+        current_paragraphs = (pair["current"] or {}).get("paragraphs") or []
+        prior_paragraphs = (pair["prior"] or {}).get("paragraphs") or []
+        matched = match_paragraphs(current_paragraphs, prior_paragraphs)
+        for kind, leftover, texts in (("added", matched["added"], current_paragraphs),
+                                      ("removed", matched["removed"], prior_paragraphs)):
+            for index in leftover:
+                entry = {"kind": kind, "note": section["name"], "text": texts[index],
+                         "matched_by": pair["matched_by"],
+                         "boilerplate_score": boilerplate_score(texts[index])}
+                (furniture if is_boilerplate(texts[index]) else entries).append(entry)
+    return {
+        "entries": entries,
+        "count": len(entries),
+        "boilerplate": furniture,
+        "sections": len(pairs),
+        "match_rules": {rule: sum(1 for pair in pairs if pair["matched_by"] == rule)
+                        for rule in MATCH_RULES},
+    }
+
+
+def sections_of(entries: list[dict]) -> list[dict]:
+    """The flat paragraph stream regrouped into the sections it came out of.
+
+    `notes` and `extract` carry one flat list whose entries name their note.
+    Alignment pairs sections, so it needs them back, in the filing's own order.
+    """
+    out: list[dict] = []
+    index: dict[str, dict] = {}
+    for entry in entries:
+        section = index.get(entry["note"])
+        if section is None:
+            section = index[entry["note"]] = {"name": entry["note"], "paragraphs": []}
+            out.append(section)
+        section["paragraphs"].append(entry["text"])
+    return out
 
 
 def diff_stream(current: list[dict], prior: list[dict]) -> list[dict]:
@@ -247,6 +498,10 @@ def extract(ticker: str, *, cutoff=None, fixtures_root=cutoff_guard.FIXTURES) ->
     notes = diff_stream(notes_now, notes_before)
     mdna = diff_stream(mdna_entries, mdna_before)
     entries = notes + mdna
+    # Pair first, then compare: the change count is read off the sections, not
+    # off the flat stream the two `diff_stream` calls above walk.
+    aligned = changes(sections_of(notes_now) + sections_of(mdna_entries),
+                      sections_of(notes_before) + sections_of(mdna_before))
     return {
         "ticker": ticker,
         "cutoff": str(cutoff),
@@ -258,6 +513,7 @@ def extract(ticker: str, *, cutoff=None, fixtures_root=cutoff_guard.FIXTURES) ->
         "mdna": mdna,
         "collapsed": sum(1 for entry in entries if entry["kind"] == "collapsed"),
         "carried": sum(1 for entry in entries if entry["kind"] == "verbatim"),
+        "changes": aligned,
     }
 
 
@@ -303,7 +559,9 @@ def main(argv: list[str] | None = None) -> int:
                                 f"diffed against {payload['prior_accession']}"),
         encoding="utf-8")
     print(f"diff_periods: {ticker} {payload['collapsed']} collapsed, "
-          f"{payload['carried']} carried verbatim")
+          f"{payload['carried']} carried verbatim, "
+          f"{payload['changes']['count']} changes over "
+          f"{payload['changes']['sections']} paired sections")
     return 0
 
 
