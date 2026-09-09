@@ -22,6 +22,15 @@ report that triggered the run, and that report is itself an input.
 Every other module in `src/` reads its documents through `load_document` /
 `load_bytes`. `tests/test_cutoff_guard.py` walks `src/*.py` and fails on any
 module that opens a fixture or a bundle behind the gate's back.
+
+**Two of these files are not filings.** The submissions index and the
+companyfacts record are catalogues drawn from many filings, each carrying a
+recorded date that is the newest filing in it, so the whole-file date gate would
+refuse them to every earlier cutoff. They are read through `load_index` and
+`load_catalogue`, which check the path against the manifest exactly as the gate
+does and then apply the cutoff to the *rows*, which is where the look-ahead in a
+catalogue lives. Nothing else skips the date gate, and the role is what says
+which is which.
 """
 
 from __future__ import annotations
@@ -29,6 +38,7 @@ from __future__ import annotations
 import contextlib
 import datetime as dt
 import gzip
+import hashlib
 import json
 from pathlib import Path
 
@@ -191,12 +201,21 @@ def _opened(path) -> None:
             seen.append(resolved)
 
 
-def load_bytes(path, cutoff_date, *, fixtures_root=FIXTURES) -> bytes:
-    """The document's raw bytes as EDGAR served them, gate first."""
-    row = check(path, cutoff_date, fixtures_root=fixtures_root)
+def _read(path, row: dict) -> bytes:
+    """The open itself: record it, then undo whatever `stored` the manifest says.
+
+    Called only once the row describing the document has been checked, which is
+    what makes `_opened` a record of documents this module let through.
+    """
     data = Path(path).read_bytes()
     _opened(path)
     return gzip.decompress(data) if row.get("stored") == "gzip" else data
+
+
+def load_bytes(path, cutoff_date, *, fixtures_root=FIXTURES) -> bytes:
+    """The document's raw bytes as EDGAR served them, gate first."""
+    row = check(path, cutoff_date, fixtures_root=fixtures_root)
+    return _read(path, row)
 
 
 def load_document(path, cutoff_date, *, fixtures_root=FIXTURES, encoding="utf-8") -> str:
@@ -223,9 +242,127 @@ def load_index(path, *, fixtures_root=FIXTURES) -> bytes:
         raise CutoffGuardError(
             f"{path} is a {row.get('role')}, not a submissions index — "
             "only the index of filings skips the date gate")
+    return _read(path, row)
+
+
+# --- the other catalogue: companyfacts ---------------------------------------
+
+# The role `src/fetch_companyfacts.py` records the companyfacts document under.
+# It is written here as well as there because this module imports nothing from
+# `src/`: the gate is what everything else reads through, so it depends on
+# nothing that reads through it.
+CATALOGUE_ROLE = "standard_taxonomy_history"
+
+
+def _catalogue_bytes(path, row: dict) -> bytes:
+    """The catalogue's bytes, checked against the hash the manifest recorded.
+
+    Every other document is vouched for by the date gate, which reads the
+    manifest row before the file is opened. This route skips that gate, so the
+    manifest's `sha256` is what says the file is still the record — and a gzip
+    that no longer decompresses is one way of not matching a manifest, so it
+    leaves by the same door rather than raising out of the reader.
+    """
     data = Path(path).read_bytes()
+    if row.get("stored") == "gzip":
+        try:
+            data = gzip.decompress(data)
+        except (OSError, EOFError) as exc:
+            raise CutoffGuardError(
+                f"{path} does not decompress — refused, because a document that "
+                "cannot be read is not the one the manifest hashed") from exc
+    recorded = row.get("sha256")
+    if not recorded:
+        raise CutoffGuardError(
+            f"{path} is recorded with no sha256 — refused, because nothing else "
+            "on this route says the file is still the record")
+    if hashlib.sha256(data).hexdigest() != recorded:
+        raise CutoffGuardError(
+            f"{path} is no longer the bytes the manifest hashed")
+    return data
+
+
+def _rows_filed_by(facts: dict, cutoff: dt.date, ticker: str) -> dict:
+    """A `facts` object with every row filed after the cutoff taken out.
+
+    A unit left with no row is dropped and so is a concept left with no unit: a
+    tag that is in the record only because a later filing introduced it is that
+    filing showing through, which is the look-ahead the cutoff exists to stop.
+
+    Every row's own `filed` is parsed, and a row with no date or an unreadable
+    one is refused rather than dropped. Dropping it would be the same silence
+    the whole-file refusal makes, one row at a time: an absent date is not an
+    early date, and it is not a late one either.
+    """
+    kept: dict[str, dict] = {}
+    for namespace, concepts in facts.items():
+        namespace_kept: dict[str, dict] = {}
+        for tag, concept in concepts.items():
+            units = {}
+            for unit, rows in (concept.get("units") or {}).items():
+                inside = [row for row in rows
+                          if parse_date(row.get("filed"),
+                                        f"{ticker} {namespace}:{tag} {unit} row filed")
+                          <= cutoff]
+                if inside:
+                    units[unit] = inside
+            if units:
+                namespace_kept[tag] = dict(concept, units=units)
+        if namespace_kept:
+            kept[namespace] = namespace_kept
+    return kept
+
+
+def load_catalogue(path, cutoff_date, *, fixtures_root=FIXTURES) -> dict:
+    """The companyfacts record, with the cutoff applied to its rows.
+
+    companyfacts is the other catalogue, and it gets the treatment `load_index`
+    gives the submissions index, by role: a catalogue of facts drawn from many
+    filings is not a filing, its manifest row says exactly that in `date_basis`,
+    and the date recorded there is the newest filing it carries. Gating the file
+    on that date refuses the whole record to every earlier cutoff — Carrier's
+    record is dated 2026-04-30 and its 10-K was filed 2026-02-05, so the annual
+    trigger got nothing where 11,676 of the record's 12,011 rows were inside its
+    cutoff (counted in `tests/test_cutoff_guard.py`, which asserts both). That
+    is the fail-closed silence, not a smaller answer.
+
+    **The cutoff does not move; the granularity does.** Nothing filed after the
+    triggering report enters the input, and on this route that rule is applied
+    row by row, which is where the look-ahead in a catalogue actually lives.
+
+    One difference from `load_index`, and it is the reason this returns rows
+    rather than bytes: a reader that filters its own rows inherits none of this
+    module's refusals, and the first one it loses is the parse. `within_cutoff`
+    in `src/fetch_companyfacts.py` compares filing dates as strings, so a cutoff
+    of `"garbage"` is greater than every ISO date and admits the whole record at
+    exit 0 — the look-ahead this gate exists to stop, arriving in silence. The
+    cutoff is parsed here before anything is compared to it, every row's own
+    `filed` is parsed too, and the path is checked against the manifest exactly
+    as it is anywhere else.
+
+    The read is recorded like any other, so a bundle lists the catalogue it read
+    — `assemble_bundle.CATALOGUE_ROLES` is the matching exception on the way
+    out, because a row whose date does not gate the document must not be
+    published as that document's filing date either.
+
+    What comes back is the document as it was stored, with `facts` replaced by
+    the rows that were filed on or before the cutoff.
+    """
+    cutoff = parse_date(cutoff_date, "cutoff_date")
+    row = document_record(path, fixtures_root=fixtures_root)
+    if row.get("role") != CATALOGUE_ROLE:
+        raise CutoffGuardError(
+            f"{path} is a {row.get('role')}, not a companyfacts catalogue — "
+            "only a catalogue of facts drawn from many filings skips the date gate")
+    document = json.loads(_catalogue_bytes(path, row))
+    facts = document.get("facts")
+    if not isinstance(facts, dict):
+        raise CutoffGuardError(
+            f"{path} carries no facts object — refused, because a document with "
+            "no rows to cut is not the catalogue this route was asked for")
+    kept = _rows_filed_by(facts, cutoff, row.get("ticker", "?"))
     _opened(path)
-    return gzip.decompress(data) if row.get("stored") == "gzip" else data
+    return dict(document, facts=kept)
 
 
 def prior_runs(root, ticker: str) -> list[Path]:

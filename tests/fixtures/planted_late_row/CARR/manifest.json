@@ -1,0 +1,41 @@
+{
+  "ticker": "CARR",
+  "cik": "0001783180",
+  "as_of": "2026-09-01",
+  "fetched_utc": "2026-09-09T11:06:38Z",
+  "source": "EDGAR, then one filing date changed by hand — see `planted` below",
+  "documents": [
+    {
+      "form": "companyfacts",
+      "role": "standard_taxonomy_history",
+      "accession": "",
+      "filing_date": "2026-04-30",
+      "report_date": "",
+      "items": "",
+      "date_basis": "the latest filing whose facts this record contains; companyfacts is a catalogue of facts drawn from many filings and is not itself a filing",
+      "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001783180.json",
+      "path": "companyfacts.json.gz",
+      "stored": "gzip",
+      "bytes": 3766167,
+      "sha256": "918a9b2d2b58c86538c7e4c94684d00076904edac925a1974bef2541664f993d"
+    }
+  ],
+  "planted": {
+    "what": "one filing date, changed in a copy of tests/fixtures/CARR/companyfacts.json.gz so that a row the annual report filed is dated after the annual report — the row a run triggered by that report must not see",
+    "namespace": "us-gaap",
+    "tag": "Assets",
+    "unit": "USD",
+    "period": {
+      "start": null,
+      "end": "2025-12-31"
+    },
+    "value": 37190000000,
+    "accession": "0001783180-26-000008",
+    "form": "10-K",
+    "filed_in_the_committed_record": "2026-02-05",
+    "filed_in_this_copy": "2026-04-30",
+    "why_that_date": "2026-04-30 is a date the record already carries: it is when the 10-Q filed the same period's total assets back. The newest filing date in this copy is therefore the same 2026-04-30 the committed record's manifest row records, so this directory's `filing_date` is the committed one and nothing about the record's own date is planted.",
+    "what_it_judges": "Carrier's 10-K was filed 2026-02-05 and this record is dated 2026-04-30, so a run triggered by the 10-K reads a catalogue dated after its own cutoff. Of the 12,011 rows, 11,676 are filed on or before 2026-02-05 in the committed record and 11,675 here: the one row of difference is the planted one, and it is the row that must not reach the reader.",
+    "one_document_only": "this directory holds the copied companyfacts record and nothing else, and the manifest records exactly that. The filings themselves stay under tests/fixtures/CARR/."
+  }
+}

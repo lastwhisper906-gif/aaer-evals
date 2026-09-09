@@ -341,6 +341,70 @@ def test_the_index_loader_refuses_anything_that_is_not_the_index():
     assert json.loads(cutoff_guard.load_index(index["full_path"]))["filings"]
 
 
+# --- the second catalogue ----------------------------------------------------
+#
+# companyfacts is the other document that is not a filing. Nothing in this file
+# reads it yet — the trend table, the articulation checks and the
+# research-and-development column are the items that will — so what is asserted
+# here is the listing a build gets when it does: the row `documents_used` writes
+# for a document opened through `cutoff_guard.load_catalogue`.
+
+# Carrier's 10-K was filed on this date and its companyfacts record is dated
+# 2026-04-30, the newest filing whose facts are in it. Both come from
+# `tests/fixtures/CARR/manifest.json`, which is the record of what was fetched.
+CARR_10K_FILED = "2026-02-05"
+CARR_CATALOGUE_DATE = "2026-04-30"
+
+
+def opened_catalogue(ticker: str = "CARR", cutoff: str = CARR_10K_FILED) -> list[dict]:
+    """The listing for a build whose only read was the companyfacts record."""
+    opened: dict = {}
+    row = cutoff_guard.one_document(ticker, "companyfacts",
+                                    assemble_bundle.FACTS_ROLE)
+    with assemble_bundle.phase(opened, "input_trends.json"):
+        cutoff_guard.load_catalogue(row["full_path"], cutoff)
+    return assemble_bundle.documents_used(opened, cutoff, cutoff_guard.FIXTURES)
+
+
+def test_the_catalogue_is_the_second_role_with_no_filing_date():
+    assert assemble_bundle.CATALOGUE_ROLES == (
+        assemble_bundle.INDEX_ROLE, assemble_bundle.FACTS_ROLE)
+    assert assemble_bundle.FACTS_ROLE == cutoff_guard.CATALOGUE_ROLE
+    recorded = cutoff_guard.one_document("CARR", "companyfacts",
+                                         assemble_bundle.FACTS_ROLE)
+    assert recorded["filing_date"] == CARR_CATALOGUE_DATE
+
+
+def test_a_bundle_lists_the_catalogue_it_read_without_a_filing_date():
+    """Its recorded date is later than the cutoff of every annual run in this
+    fixture set — Carrier's is 2026-04-30 against a 10-K filed 2026-02-05 — so
+    copying it into a bundle as a filing date would publish look-ahead. What the
+    bundle used is stated instead: the rows at or before the cutoff."""
+    rows = opened_catalogue()
+    assert len(rows) == 1
+    assert rows[0]["role"] == assemble_bundle.FACTS_ROLE
+    assert rows[0]["filing_date"] is None
+    assert rows[0]["rows_used_through"] == CARR_10K_FILED
+    assert "not itself a filing" in rows[0]["date_basis"]
+    assert rows[0]["contributed_to"] == ["input_trends.json"]
+    assert rows[0]["url"].startswith("https://data.sec.gov/api/xbrl/companyfacts/")
+    assert CARR_CATALOGUE_DATE not in json.dumps(rows)
+
+
+def test_a_filing_the_same_build_read_still_carries_its_own_date():
+    """The exception is two roles wide and not one bundle wide."""
+    opened: dict = {}
+    row = cutoff_guard.one_document("CARR", "10-K", "primary_html")
+    with assemble_bundle.phase(opened, "input_notes.md"):
+        cutoff_guard.load_bytes(row["full_path"], CARR_10K_FILED)
+    listed = assemble_bundle.documents_used(opened, CARR_10K_FILED,
+                                            cutoff_guard.FIXTURES)
+    assert len(listed) == 1
+    assert listed[0]["filing_date"] == CARR_10K_FILED
+    assert "rows_used_through" not in listed[0]
+    assert "date_basis" not in listed[0]
+
+
 # --- the notes arrive as a reader can quote them -----------------------------
 #
 # `docs/INPUT_SPEC.md` asks for tables as pipe-delimited rows and the notes file
