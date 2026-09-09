@@ -62,6 +62,22 @@
     ],
     "from": "the submissions index: the one filings row in tests/fixtures/CIEN/submissions.json with accession 0001628280-26-040614 carries items '2.02,9.01', split on commas - EDGAR's own catalogue, which docs/INPUT_SPEC.md section 1 names as the source for 8-K item codes"
   },
+  "exhibits.10-K.exhibit_filename": {
+    "value": "ex2112025111-subsidiarieso.htm",
+    "from": "read by eye in 10-K/0001628280-25-056698/0001628280-25-056698-index-headers.html: the <FILENAME> line the header pairs with the <TYPE>EX-21.1 of document 5 is ex2112025111-subsidiarieso.htm. The header is what says which file it is; the name itself does not"
+  },
+  "exhibits.10-K.exhibit_type": {
+    "value": "EX-21.1",
+    "from": "read by eye in 10-K/0001628280-25-056698/0001628280-25-056698-index-headers.html: the submission's SGML header gives document 5 as <TYPE>EX-21.1 <SEQUENCE>5 <FILENAME>ex2112025111-subsidiarieso.htm, and it is the only document in the submission whose type is EX-21 or an EX-21 with a suffix"
+  },
+  "exhibits.10-K.prior_year_exhibit_filename": {
+    "value": "ex2112024112-subsidiarieso.htm",
+    "from": "read by eye in 10-K/0000936395-24-000044/0000936395-24-000044-index-headers.html: the <FILENAME> line the header pairs with the <TYPE>EX-21.1 of document 4 is ex2112024112-subsidiarieso.htm. The header is what says which file it is; the name itself does not"
+  },
+  "exhibits.10-K.prior_year_exhibit_type": {
+    "value": "EX-21.1",
+    "from": "read by eye in 10-K/0000936395-24-000044/0000936395-24-000044-index-headers.html: the submission's SGML header gives document 4 as <TYPE>EX-21.1 <SEQUENCE>4 <FILENAME>ex2112024112-subsidiarieso.htm, and it is the only document in the submission whose type is EX-21 or an EX-21 with a suffix"
+  },
   "item_4_controls.10-Q.paragraphs": {
     "value": 6,
     "from": "already judged: tests/test_split_controls.py::recount applies the Item 4 boundaries written out as regexes in that test file to tests/independent_text.block_text (html.parser) and splits on blank lines, importing nothing from src/; re-run here it gives 6, and six paragraphs are eye-checkable"

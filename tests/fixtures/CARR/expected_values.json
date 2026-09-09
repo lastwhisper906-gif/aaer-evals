@@ -62,6 +62,22 @@
     ],
     "from": "the submissions index: the single filings row for accession 0001783180-26-000030 carries items '2.02,9.01', split on commas - docs/INPUT_SPEC.md names the index's items field as the source for 8-K item codes"
   },
+  "exhibits.10-K.exhibit_filename": {
+    "value": "a2025-12x3110xkex21xsubsid.htm",
+    "from": "read by eye in 10-K/0001783180-26-000008/0001783180-26-000008-index-headers.html: the <FILENAME> line the header pairs with the <TYPE>EX-21 of document 5 is a2025-12x3110xkex21xsubsid.htm. The header is what says which file it is; the name itself does not"
+  },
+  "exhibits.10-K.exhibit_type": {
+    "value": "EX-21",
+    "from": "read by eye in 10-K/0001783180-26-000008/0001783180-26-000008-index-headers.html: the submission's SGML header gives document 5 as <TYPE>EX-21 <SEQUENCE>5 <FILENAME>a2025-12x3110xkex21xsubsid.htm, and it is the only document in the submission whose type is EX-21 or an EX-21 with a suffix"
+  },
+  "exhibits.10-K.prior_year_exhibit_filename": {
+    "value": "a2024-12x3110xkex21xsubsid.htm",
+    "from": "read by eye in 10-K/0001783180-25-000008/0001783180-25-000008-index-headers.html: the <FILENAME> line the header pairs with the <TYPE>EX-21 of document 5 is a2024-12x3110xkex21xsubsid.htm. The header is what says which file it is; the name itself does not"
+  },
+  "exhibits.10-K.prior_year_exhibit_type": {
+    "value": "EX-21",
+    "from": "read by eye in 10-K/0001783180-25-000008/0001783180-25-000008-index-headers.html: the submission's SGML header gives document 5 as <TYPE>EX-21 <SEQUENCE>5 <FILENAME>a2024-12x3110xkex21xsubsid.htm, and it is the only document in the submission whose type is EX-21 or an EX-21 with a suffix"
+  },
   "item_4_controls.10-Q.paragraphs": {
     "value": 3,
     "from": "already judged: tests/test_split_controls.py::recount applies the Item 4 boundary regexes written out in the test file to tests/independent_text.block_text and splits on blank lines, importing nothing from src/; re-run here it gives 3"
