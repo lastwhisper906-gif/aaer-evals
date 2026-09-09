@@ -23,6 +23,8 @@ REQUIRED_ROLES = {
     ("10-K", "primary_html"), ("10-K", "xbrl_instance"),
     ("10-Q", "primary_html"), ("10-Q", "xbrl_instance"),
     ("8-K", "primary_html"), ("8-K", "exhibit_99_1"),
+    # The submissions index: an 8-K's item codes are stated nowhere else.
+    ("submissions", "submissions_index"),
 }
 
 

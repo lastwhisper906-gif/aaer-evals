@@ -4,12 +4,19 @@ For each company, as of a fixed date, this pulls three filings:
 
     10-K   the latest annual report      XBRL instance + primary HTML
     10-Q   the latest quarterly report   XBRL instance + primary HTML
+    10-Q   the one before it             the same two, as `prior_period`
     8-K    the latest one carrying item 2.02, with exhibit 99.1
 
 and stores them under `tests/fixtures/{ticker}/{form}/`, with one
 `manifest.json` per company recording, for every file, the accession number,
 the URL it came from, the filing date and the sha256 of the bytes as EDGAR
 served them.
+
+Beside them it stores `tests/fixtures/{ticker}/submissions.json`: the rows of
+the EDGAR submissions index, which is where an 8-K's item codes come from and
+the only place they are stated. It is filtered to the cutoff and projected to
+the fields used — see `submissions_record` for why both, and for the one place
+in this file where "the bytes EDGAR served" is deliberately not the rule.
 
 **Fixtures are records.** A file already on disk is never re-fetched and never
 overwritten: if its bytes no longer match the manifest the script stops with
@@ -137,12 +144,71 @@ def recent_filings(fetcher: Fetcher, cik: str) -> list[dict]:
             for i in range(len(recent["form"]))]
 
 
+def submissions_record(ticker: str, cik: str, as_of: str,
+                       filings: list[dict]) -> tuple[dict, bytes]:
+    """The submissions index, as a fixture.
+
+    Two departures from "store the bytes EDGAR served", both deliberate.
+
+    It is **filtered to `filing_date <= as_of`**. The live index grows: fetched
+    today it lists filings made after the cutoff this fixture set is pinned to,
+    and a fixture carrying post-cutoff rows is the look-ahead the whole project
+    exists to prevent — a gate downstream would be guarding a file that should
+    never have contained them. The cutoff is applied where the document enters
+    the record, not where it is read.
+
+    It is **projected to the fields the index is used for**. `recent_filings`
+    already reduces EDGAR's parallel arrays to rows; storing those rows is
+    storing the index this program actually read. The url is recorded so the
+    original is one request away.
+
+    The manifest's `filing_date` for this record is the latest filing in it, so
+    reading it under an earlier cutoff is refused rather than quietly allowed.
+    """
+    rows = [{"accession": filing["accessionNumber"],
+             "filing_date": filing["filingDate"],
+             "report_date": filing["reportDate"],
+             "form": filing["form"],
+             "items": filing["items"] or "",
+             "primary_document": filing["primaryDocument"],
+             "primary_doc_description": filing["primaryDocDescription"] or ""}
+            for filing in filings if filing["filingDate"] <= as_of]
+    rows.sort(key=lambda row: (row["filing_date"], row["accession"]), reverse=True)
+    payload = {
+        "ticker": ticker,
+        "cik": cik,
+        "as_of": as_of,
+        "url": SUBMISSIONS_URL.format(cik=cik),
+        "note": ("the recent-filings rows of the EDGAR submissions index, "
+                 "projected to these fields and filtered to filing_date <= as_of"),
+        "filings": rows,
+    }
+    return payload, (json.dumps(payload, indent=2) + "\n").encode("utf-8")
+
+
 def pick(filings: list[dict], as_of: str, form: str, item: str | None = None):
     """The latest filing of this form at or before the cutoff date."""
     matches = [f for f in filings
                if f["form"] == form and f["filingDate"] <= as_of
                and (item is None or item in (f["items"] or ""))]
     return max(matches, key=lambda f: (f["filingDate"], f["accessionNumber"]), default=None)
+
+
+def pick_previous(filings: list[dict], as_of: str, form: str):
+    """The filing of this form before the latest one, still at or before the cutoff.
+
+    The prior-period diff needs a pair. One 10-Q per company is one period, and
+    a differ with nothing to diff against silently carries the full text and
+    looks like it works.
+    """
+    latest = pick(filings, as_of, form)
+    if latest is None:
+        return None
+    key = (latest["filingDate"], latest["accessionNumber"])
+    earlier = [f for f in filings
+               if f["form"] == form and f["filingDate"] <= as_of
+               and (f["filingDate"], f["accessionNumber"]) < key]
+    return max(earlier, key=lambda f: (f["filingDate"], f["accessionNumber"]), default=None)
 
 
 def directory(fetcher: Fetcher, cik: str, accession: str) -> list[str]:
@@ -235,6 +301,30 @@ def fetch_company(fetcher: Fetcher, ticker: str, cik: str, as_of: str,
     documents = list(manifest.get("documents", []))
     filings = recent_filings(fetcher, cik)
 
+    if ("submissions", "submissions_index") not in have:
+        record, raw = submissions_record(ticker, cik, as_of, filings)
+        if not record["filings"]:
+            problems.append(f"{ticker}: the submissions index has no filing on or before {as_of}")
+        else:
+            path, encoding = store(ticker_dir / "submissions.json", raw)
+            documents.append({
+                "form": "submissions",
+                "role": "submissions_index",
+                "accession": "",
+                "filing_date": record["filings"][0]["filing_date"],
+                "report_date": "",
+                "items": "",
+                "date_basis": ("the latest filing this index contains; the index "
+                               "is not itself a filing and has no filing date"),
+                "url": record["url"],
+                "path": str(path.relative_to(ticker_dir)),
+                "stored": encoding,
+                "bytes": len(raw),
+                "sha256": sha256(raw),
+            })
+            print(f"  {ticker} {'index':5s} {'submissions':14s} {len(raw):>9,d} B  "
+                  f"{len(record['filings'])} filings ≤ {as_of}")
+
     for form, item in (("10-K", None), ("10-Q", None), ("8-K", "2.02")):
         filing = pick(filings, as_of, form, item)
         if filing is None:
@@ -271,6 +361,44 @@ def fetch_company(fetcher: Fetcher, ticker: str, cik: str, as_of: str,
                 "sha256": sha256(raw),
             })
             print(f"  {ticker} {form:5s} {role:14s} {len(raw):>9,d} B  {name}")
+
+    # The 10-Q before the one already held, so the prior-period diff has a real
+    # pair to work on. Both its documents: the differ reads the HTML, the note
+    # change history reads the instance.
+    previous = pick_previous(filings, as_of, "10-Q")
+    if previous is None:
+        if ("10-Q", "prior_period") not in have:
+            problems.append(f"{ticker}: only one 10-Q filed on or before {as_of}")
+    else:
+        accession = previous["accessionNumber"]
+        names = directory(fetcher, cik, accession)
+        wanted, unfound = wanted_documents("10-Q", previous, names, [])
+        prior_roles = {"primary_html": "prior_period",
+                       "xbrl_instance": "prior_period_xbrl_instance"}
+        problems.extend(f"{ticker}: prior period {line}" for role, line in unfound
+                        if ("10-Q", prior_roles[role]) not in have)
+        for role, name in wanted:
+            prior_role = prior_roles[role]
+            if ("10-Q", prior_role) in have:
+                continue
+            url = ARCHIVE_URL.format(cik_int=int(cik),
+                                     accession=accession.replace("-", ""), name=name)
+            raw = fetcher.get(url)
+            path, encoding = store(ticker_dir / "10-Q" / name, raw)
+            documents.append({
+                "form": "10-Q",
+                "role": prior_role,
+                "accession": accession,
+                "filing_date": previous["filingDate"],
+                "report_date": previous["reportDate"],
+                "items": previous["items"] or "",
+                "url": url,
+                "path": str(path.relative_to(ticker_dir)),
+                "stored": encoding,
+                "bytes": len(raw),
+                "sha256": sha256(raw),
+            })
+            print(f"  {ticker} {'10-Q':5s} {prior_role:26s} {len(raw):>9,d} B  {name}")
 
     manifest = {
         "ticker": ticker,

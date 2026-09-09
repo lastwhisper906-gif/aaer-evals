@@ -2,7 +2,7 @@
   "ticker": "AAPL",
   "cik": "0000320193",
   "as_of": "2026-09-01",
-  "fetched_utc": "2026-09-07T19:55:12Z",
+  "fetched_utc": "2026-09-07T22:55:50Z",
   "source": "EDGAR",
   "documents": [
     {
@@ -46,6 +46,32 @@
     },
     {
       "form": "10-Q",
+      "role": "prior_period",
+      "accession": "0000320193-26-000013",
+      "filing_date": "2026-05-01",
+      "report_date": "2026-03-28",
+      "items": "",
+      "url": "https://www.sec.gov/Archives/edgar/data/320193/000032019326000013/aapl-20260328.htm",
+      "path": "10-Q/aapl-20260328.htm",
+      "stored": "identity",
+      "bytes": 999810,
+      "sha256": "bb90060d61a273e51b5a472d65ae15d8b51bfd037ddf91e559f9d9adfe2a0228"
+    },
+    {
+      "form": "10-Q",
+      "role": "prior_period_xbrl_instance",
+      "accession": "0000320193-26-000013",
+      "filing_date": "2026-05-01",
+      "report_date": "2026-03-28",
+      "items": "",
+      "url": "https://www.sec.gov/Archives/edgar/data/320193/000032019326000013/aapl-20260328_htm.xml",
+      "path": "10-Q/aapl-20260328_htm.xml",
+      "stored": "identity",
+      "bytes": 930243,
+      "sha256": "a1b35d4b237423ca52e512a2efcff19246c8cd33debacfa0c9268b069ef4fe4c"
+    },
+    {
+      "form": "10-Q",
       "role": "xbrl_instance",
       "accession": "0000320193-26-000020",
       "filing_date": "2026-07-31",
@@ -82,6 +108,20 @@
       "stored": "identity",
       "bytes": 38350,
       "sha256": "d8a173f0b8cb911e41d27ca69261bd1f0461940a73f7654fc46f41ec7912b660"
+    },
+    {
+      "form": "submissions",
+      "role": "submissions_index",
+      "accession": "",
+      "filing_date": "2026-09-01",
+      "report_date": "",
+      "items": "",
+      "date_basis": "the latest filing this index contains; the index is not itself a filing and has no filing date",
+      "url": "https://data.sec.gov/submissions/CIK0000320193.json",
+      "path": "submissions.json",
+      "stored": "identity",
+      "bytes": 266591,
+      "sha256": "49a2b8732853ac1d61a87121c5bc19f3856de311b996605ecc4c351da3d3fc22"
     }
   ]
 }
