@@ -9,6 +9,12 @@ read off those two places by hand, file by file, and are written out in full:
 a directory-by-directory check ("the reader has five files") passes a directory
 holding the wrong five.
 
+Two other documents are read the same way, because the rule they carry is one
+this router has to hold: `docs/CHECKLIST.md` §7 names the keys a prediction
+gives a probability to, which is what may not travel into a reader's input, and
+each prompt in `.claude/agents/` names the one file its agent writes, which is
+what its own directory legitimately holds afterwards.
+
 Nothing here writes into the real `runs/`. Every run directory is under
 pytest's `tmp_path`.
 
@@ -27,6 +33,7 @@ from src.agent_inputs import AgentInputError
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 INPUT_SPEC = REPO_ROOT / "docs" / "INPUT_SPEC.md"
+CHECKLIST = REPO_ROOT / "docs" / "CHECKLIST.md"
 PROMPTS = REPO_ROOT / ".claude" / "agents"
 
 # docs/INPUT_SPEC.md, the three rows of the layer table, verbatim.
@@ -94,6 +101,26 @@ SUPERVISORS = ("supervisor-accounting", "supervisor-pressure")
 # The price file. "prices, short interest" is one file in the bundle: the
 # market table §4 describes, whose last three columns are the short interest.
 PRICE_FILE = "input_market.json"
+
+# Every key the prediction schema in `docs/CHECKLIST.md` §7 gives a probability
+# to, read off the block by hand: `checklist[].confidence`,
+# `events[].p_within_horizon`, `explanations[].realization_p` and
+# `market_direction.p_up`. Written out one by one, because a gate covering two
+# of the four calls a file clean while a prior run's own score sits in it.
+# `continuous[]`'s `point`, `low` and `high` are an interval, not a probability.
+PREDICTION_PROBABILITY_KEYS = ("confidence", "p_within_horizon",
+                               "realization_p", "p_up")
+
+# What each agent writes, read off the "Write `x`. Nothing else, anywhere."
+# line of its own prompt in `.claude/agents/`.
+WRITES = {
+    "numbers-reader": "report_numbers.md",
+    "notes-text-reader": "report_notes_text.md",
+    "numbers-vs-market": "report_numbers_vs_market.md",
+    "notes-vs-market": "report_notes_vs_market.md",
+    "supervisor-accounting": "prediction_accounting.json",
+    "supervisor-pressure": "prediction_pressure.json",
+}
 
 
 def spec_bundle_names() -> tuple[str, ...]:
@@ -168,6 +195,28 @@ def test_a_comparer_prompt_says_it_holds_both_reader_reports(agent):
     prompt = (PROMPTS / f"{agent}.md").read_text(encoding="utf-8")
     for report in ("report_numbers.md", "report_notes_text.md"):
         assert report in prompt
+
+
+@pytest.mark.parametrize("agent", sorted(WRITES))
+def test_each_prompt_names_the_one_file_its_agent_writes(agent):
+    """Where an agent's output lands is decided by its prompt, not guessed here.
+
+    Each prompt says "Write `x`. Nothing else, anywhere.", and each agent has
+    `Write` and a session rooted at its own directory, so `x` lands there and
+    nowhere else. That is why a directory holding it after the run is clean.
+    """
+    prompt = (PROMPTS / f"{agent}.md").read_text(encoding="utf-8")
+    assert f"Write `{WRITES[agent]}`" in prompt
+    assert agent_inputs.AGENTS[agent].writes == WRITES[agent]
+
+
+def test_the_prediction_schema_still_names_every_probability_the_gate_covers():
+    """The four keys the gate below is asserted against are §7's, still."""
+    section = CHECKLIST.read_text(encoding="utf-8").split(
+        "### The two predictions", 1)[1]
+    schema = section.split("```", 2)[1]
+    for key in PREDICTION_PROBABILITY_KEYS:
+        assert f'"{key}"' in schema, f"docs/CHECKLIST.md §7 no longer names {key}"
 
 
 # --- file by file -------------------------------------------------------------
@@ -271,12 +320,17 @@ def test_nothing_inside_a_session_root_resolves_outside_it(tmp_path):
 def test_climbing_out_of_a_session_root_meets_no_other_agent_directory(tmp_path):
     """Walk up from the root, and find nothing an agent may not see.
 
-    A filesystem cannot make a sibling unreachable — six directories that
-    coexist under one run share an ancestor, and everything hangs off it. What
-    the tree carries is the rest: no other agent's directory is on the way up,
-    and the one directory that holds the six holds no file at all, so the step
-    out of a session root yields no report, no filing and no market table. The
-    run directory above that holds the committed bundle, because it is the
+    `docs/INPUT_SPEC.md` says what "unreachable" means here: "The agent's
+    session is **rooted at that directory**, so a sibling directory is not
+    merely undeclared, it is unreachable." The spec expects the siblings to
+    exist — six directories that coexist under one run share an ancestor, and no
+    tree can do otherwise — and puts the last step, the one out of the root, on
+    the session root rather than on the filesystem.
+
+    So this asserts everything up to that step: no other agent's directory is on
+    the way up, and every directory on the way up holds no file at all, so the
+    step out of a session root yields no report, no filing and no market table.
+    The run directory above that holds the committed bundle, because it is the
     record of what was fetched, and the session root is what stands between a
     reader and it.
     """
@@ -296,6 +350,9 @@ def test_climbing_out_of_a_session_root_meets_no_other_agent_directory(tmp_path)
                 f"{agent} sits inside {found.get(ancestor)}'s directory")
             assert [path for path in ancestor.iterdir() if path.is_file()] == []
 
+    # The one directory the step out of a root lands in: six directories and
+    # nothing readable. A seventh entry here — a stray report, a scratch file —
+    # is a file every agent reaches with one `..`.
     holder = agent_inputs.agents_root(run)
     assert sorted(path.name for path in holder.iterdir()) == sorted(agent_inputs.AGENTS)
     assert all(path.is_dir() for path in holder.iterdir())
@@ -350,6 +407,25 @@ def test_one_agent_s_directory_inside_another_s_is_a_broken_boundary(tmp_path):
     assert any("sits inside" in line for line in broken)
 
 
+def test_a_session_root_beside_the_bundle_is_a_broken_boundary(tmp_path):
+    """The layout the holder directory exists to forbid.
+
+    Right files in the root, and the whole bundle one `..` away: the market
+    table, the other reader's report, every filing. This is why the six do not
+    sit directly under the run directory.
+    """
+    run = _run_directory(tmp_path)
+    beside = run / "numbers-reader"
+    beside.mkdir()
+    for name in EXPECTED["numbers-reader"]:
+        (beside / name).write_bytes((run / name).read_bytes())
+
+    broken = agent_inputs.isolation_violations(run)
+    assert any("not at its session root" in line for line in broken)
+    assert any("yields no file" in line for line in broken)
+    assert (beside.parent / PRICE_FILE).is_file()  # one step out, plainly
+
+
 def test_a_file_the_layer_never_sees_is_a_broken_boundary(tmp_path):
     run = _run_directory(tmp_path)
     agent_inputs.build_all(run)
@@ -362,16 +438,25 @@ def test_a_file_the_layer_never_sees_is_a_broken_boundary(tmp_path):
 
 # --- what the build refuses ---------------------------------------------------
 
-def test_a_prior_prediction_that_still_carries_a_probability_is_refused(tmp_path):
-    """A prior run's own score in a reader's input makes the next one unfalsifiable."""
+@pytest.mark.parametrize("key", ("probability",) + PREDICTION_PROBABILITY_KEYS)
+def test_a_prior_prediction_that_still_carries_a_probability_is_refused(
+        key, tmp_path):
+    """A prior run's own score in a reader's input makes the next one unfalsifiable.
+
+    Every key §7 gives a probability to, one by one. A gate that caught
+    `confidence` and `p_up` and let `p_within_horizon` through would say the
+    file was clean, and "the probabilities were removed" would be a sentence
+    nobody had checked.
+    """
     run = _run_directory(tmp_path)
     (run / "input_prior_predictions.md").write_text(
         '[0000320193-25-000073:prior:prediction_accounting:1]\n'
-        '{"flag": "receivables_outrun_revenue", "probability": 0.71}\n',
+        f'{{"flag": "receivables_outrun_revenue", "{key}": 0.71}}\n',
         encoding="utf-8")
     with pytest.raises(AgentInputError) as caught:
         agent_inputs.build(run, "numbers-reader")
-    assert "probability" in str(caught.value)
+    assert key in str(caught.value)
+    assert not agent_inputs.session_root(run, "numbers-reader").exists()
 
 
 def test_a_named_baseline_is_not_read_as_a_probability(tmp_path):
@@ -424,6 +509,75 @@ def test_rebuilding_places_the_same_bytes_and_refuses_different_ones(tmp_path):
         "this is input_trends.json\n")
 
 
+def test_a_link_standing_where_a_copy_belongs_is_refused(tmp_path):
+    """Right bytes, wrong ancestors: the link's `..` is the bundle.
+
+    Reading through the link finds the bytes the builder was going to write, so
+    a check that asked only "is it already there, and does it match?" leaves the
+    link in place and records it as copied.
+    """
+    run = _run_directory(tmp_path)
+    root = agent_inputs.session_root(run, "numbers-reader")
+    root.mkdir(parents=True)
+    (root / "input_trends.json").symlink_to(Path("..") / ".." / "input_trends.json")
+
+    with pytest.raises(AgentInputError) as caught:
+        agent_inputs.build(run, "numbers-reader")
+    assert "symlink" in str(caught.value)
+    assert (root / "input_trends.json").is_symlink()  # left as found, not rewritten
+
+
+def test_a_completed_run_holds_each_agent_s_own_report_and_is_clean(tmp_path):
+    """The agent wrote the one file its prompt names, into the only root it has.
+
+    A boundary check that read that as a stray would report all six broken on
+    every finished run, which is a check nobody can use.
+    """
+    run = _run_directory(tmp_path)
+    agent_inputs.build_all(run)
+    for agent, name in WRITES.items():
+        (agent_inputs.session_root(run, agent) / name).write_text(
+            f"{agent} wrote this\n", encoding="utf-8")
+
+    assert agent_inputs.isolation_violations(run) == []
+    # And the build stays idempotent over a directory the agent has run in.
+    agent_inputs.build_all(run)
+    for agent, name in WRITES.items():
+        assert (agent_inputs.session_root(run, agent) / name).read_text(
+            encoding="utf-8") == f"{agent} wrote this\n"
+
+
+def test_another_agent_s_report_is_a_leak_even_where_its_own_is_not(tmp_path):
+    """`writes` is one file, not a licence for the layer's whole vocabulary."""
+    run = _run_directory(tmp_path)
+    agent_inputs.build_all(run)
+    root = agent_inputs.session_root(run, "supervisor-accounting")
+    (root / "prediction_pressure.json").write_text("{}\n", encoding="utf-8")
+
+    broken = agent_inputs.isolation_violations(run)
+    assert any("prediction_pressure.json" in line and "never sees" in line
+               for line in broken)
+
+
+def test_a_routed_name_over_other_bytes_is_a_broken_boundary(tmp_path):
+    """The market table hardlinked in under a report's name passes on names alone.
+
+    `resolve()` does not see a hardlink and the name is one the layer may hold,
+    so nothing but the bytes tells this from the file the run committed.
+    """
+    run = _run_directory(tmp_path)
+    agent_inputs.build_all(run)
+    root = agent_inputs.session_root(run, "numbers-vs-market")
+    smuggled = root / "report_numbers.md"
+    smuggled.unlink()
+    smuggled.hardlink_to(run / PRICE_FILE)
+
+    assert agent_inputs.escapes(root) == []  # a hardlink resolves inside the root
+    broken = agent_inputs.isolation_violations(run)
+    assert any("report_numbers.md" in line and "other bytes" in line
+               for line in broken)
+
+
 def test_a_run_directory_that_is_not_there_is_refused(tmp_path):
     with pytest.raises(AgentInputError):
         agent_inputs.build(tmp_path / "no-such-run", "numbers-reader")
@@ -445,8 +599,76 @@ def test_naming_a_session_root_does_not_create_one(tmp_path):
 
 def test_the_light_run_wakes_four_agents_and_not_the_other_two(tmp_path):
     """An 8-K 2.02 produces three reports, so supervisor-accounting does not run."""
-    run = _run_directory(tmp_path, skip=("report_notes_vs_market.md",))
-    built = agent_inputs.build_all(run, agent_inputs.LIGHT_RUN)
+    run = _run_directory(tmp_path, skip=agent_inputs.LIGHT_RUN_ABSENT)
+    built = agent_inputs.build_all(run, agent_inputs.LIGHT_RUN, light=True)
     assert [record["agent"] for record in built] == list(agent_inputs.LIGHT_RUN)
     assert not agent_inputs.session_root(run, "supervisor-accounting").exists()
     assert not agent_inputs.session_root(run, "notes-vs-market").exists()
+
+
+@pytest.mark.parametrize("agent", SUPERVISORS)
+def test_a_supervisor_over_three_reports_is_the_light_run_and_nothing_else(
+        agent, tmp_path):
+    """The same directory: allowed on an 8-K 2.02, refused on a full run.
+
+    `report_notes_vs_market.md` is absent on a light run because that comparer
+    never runs, and absent on a full run because it has not run *yet*. The two
+    look identical on disk and only one of them is a finished run, so the
+    allowance is the light run's and the full run is refused rather than built
+    over three reports and reported complete.
+    """
+    run = _run_directory(tmp_path, skip=agent_inputs.LIGHT_RUN_ABSENT)
+
+    with pytest.raises(AgentInputError) as caught:
+        agent_inputs.build(run, agent)
+    assert "report_notes_vs_market.md" in str(caught.value)
+
+    record = agent_inputs.build(run, agent, light=True)
+    assert record["absent"] == list(agent_inputs.LIGHT_RUN_ABSENT)
+    assert _names(agent_inputs.session_root(run, agent)) == [
+        name for name in EXPECTED[agent]
+        if name not in agent_inputs.LIGHT_RUN_ABSENT]
+
+
+# --- the command --------------------------------------------------------------
+
+def test_the_command_builds_the_six_and_reports_them(tmp_path, capsys):
+    run = _run_directory(tmp_path)
+    assert agent_inputs.main(["--run", str(run)]) == 0
+    printed = capsys.readouterr().out
+    for agent in agent_inputs.AGENTS:
+        assert agent in printed
+    assert agent_inputs.isolation_violations(run) == []
+
+
+def test_the_command_builds_a_light_run_over_three_reports(tmp_path, capsys):
+    run = _run_directory(tmp_path, skip=agent_inputs.LIGHT_RUN_ABSENT)
+    assert agent_inputs.main(["--run", str(run), "--light"]) == 0
+    assert "1 absent" in capsys.readouterr().out
+    assert not agent_inputs.session_root(run, "notes-vs-market").exists()
+
+
+def test_the_command_reports_a_broken_boundary_it_did_not_build(tmp_path, capsys):
+    """The build can be clean and the tree still wrong; the exit code says so."""
+    run = _run_directory(tmp_path)
+    agent_inputs.build_all(run)
+    (agent_inputs.agents_root(run) / "scratch").mkdir()
+
+    assert agent_inputs.main(["--run", str(run)]) == agent_inputs.BAD_INPUT
+    assert "the boundary is broken" in capsys.readouterr().err
+
+
+def test_the_command_will_not_take_one_agent_and_a_light_run_at_once(tmp_path, capsys):
+    """Two different sets of agents. Guessing which was meant builds the wrong one."""
+    run = _run_directory(tmp_path)
+    assert agent_inputs.main(
+        ["--run", str(run), "--agent", "numbers-reader", "--light"]
+    ) == agent_inputs.BAD_INPUT
+    assert "pick one" in capsys.readouterr().err
+    assert not agent_inputs.agents_root(run).exists()
+
+
+def test_the_command_refuses_a_run_directory_that_is_not_there(tmp_path, capsys):
+    assert agent_inputs.main(
+        ["--run", str(tmp_path / "no-such-run")]) == agent_inputs.BAD_INPUT
+    assert "not a run directory" in capsys.readouterr().err
