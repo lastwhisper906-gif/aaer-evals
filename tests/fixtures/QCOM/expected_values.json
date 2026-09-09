@@ -62,6 +62,22 @@
     ],
     "from": "the submissions index, which docs/INPUT_SPEC.md names as the source for 8-K item codes: the submissions.json filings row for accession 0000804328-26-000085 carries items '2.02,9.01', split on the comma"
   },
+  "exhibits.10-K.exhibit_filename": {
+    "value": "qcom092825ex21.htm",
+    "from": "read by eye in 10-K/0000804328-25-000085/0000804328-25-000085-index-headers.html: the <FILENAME> line the header pairs with the <TYPE>EX-21 of document 6 is qcom092825ex21.htm. The header is what says which file it is; the name itself does not"
+  },
+  "exhibits.10-K.exhibit_type": {
+    "value": "EX-21",
+    "from": "read by eye in 10-K/0000804328-25-000085/0000804328-25-000085-index-headers.html: the submission's SGML header gives document 6 as <TYPE>EX-21 <SEQUENCE>6 <FILENAME>qcom092825ex21.htm, and it is the only document in the submission whose type is EX-21 or an EX-21 with a suffix"
+  },
+  "exhibits.10-K.prior_year_exhibit_filename": {
+    "value": "qcom092924ex21.htm",
+    "from": "read by eye in 10-K/0000804328-24-000075/0000804328-24-000075-index-headers.html: the <FILENAME> line the header pairs with the <TYPE>EX-21 of document 6 is qcom092924ex21.htm. The header is what says which file it is; the name itself does not"
+  },
+  "exhibits.10-K.prior_year_exhibit_type": {
+    "value": "EX-21",
+    "from": "read by eye in 10-K/0000804328-24-000075/0000804328-24-000075-index-headers.html: the submission's SGML header gives document 6 as <TYPE>EX-21 <SEQUENCE>6 <FILENAME>qcom092924ex21.htm, and it is the only document in the submission whose type is EX-21 or an EX-21 with a suffix"
+  },
   "item_4_controls.10-Q.paragraphs": {
     "value": 4,
     "from": "already judged: tests/test_split_controls.py::recount re-finds the section with regexes written out in that test file over tests/independent_text.block_text (html.parser) and splits it on blank lines, importing nothing from src/; the Item 4 boundaries reproduce 4 paragraphs from 10-Q/qcom-20260628.htm, small enough to check by eye as well"

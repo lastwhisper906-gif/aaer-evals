@@ -63,6 +63,22 @@
     ],
     "from": "the submissions index: the single filings row for accession 0001628280-26-050382 carries items '2.02,7.01,9.01', split on commas - docs/INPUT_SPEC.md names the index's items field as the source for 8-K item codes"
   },
+  "exhibits.10-K.exhibit_filename": {
+    "value": "exhibit211-12272510k.htm",
+    "from": "read by eye in 10-K/0001628280-26-009585/0001628280-26-009585-index-headers.html: the <FILENAME> line the header pairs with the <TYPE>EX-21.1 of document 4 is exhibit211-12272510k.htm. The header is what says which file it is; the name itself does not"
+  },
+  "exhibits.10-K.exhibit_type": {
+    "value": "EX-21.1",
+    "from": "read by eye in 10-K/0001628280-26-009585/0001628280-26-009585-index-headers.html: the submission's SGML header gives document 4 as <TYPE>EX-21.1 <SEQUENCE>4 <FILENAME>exhibit211-12272510k.htm, and it is the only document in the submission whose type is EX-21 or an EX-21 with a suffix"
+  },
+  "exhibits.10-K.prior_year_exhibit_filename": {
+    "value": "exhibit211-12282410k.htm",
+    "from": "read by eye in 10-K/0000889331-25-000039/0000889331-25-000039-index-headers.html: the <FILENAME> line the header pairs with the <TYPE>EX-21.1 of document 6 is exhibit211-12282410k.htm. The header is what says which file it is; the name itself does not"
+  },
+  "exhibits.10-K.prior_year_exhibit_type": {
+    "value": "EX-21.1",
+    "from": "read by eye in 10-K/0000889331-25-000039/0000889331-25-000039-index-headers.html: the submission's SGML header gives document 6 as <TYPE>EX-21.1 <SEQUENCE>6 <FILENAME>exhibit211-12282410k.htm, and it is the only document in the submission whose type is EX-21 or an EX-21 with a suffix"
+  },
   "item_4_controls.10-Q.paragraphs": {
     "value": 8,
     "from": "already judged: tests/test_split_controls.py::recount applies the Item 4 boundary regexes written out in the test file to tests/independent_text.block_text and splits on blank lines, importing nothing from src/; re-run here it gives 8"

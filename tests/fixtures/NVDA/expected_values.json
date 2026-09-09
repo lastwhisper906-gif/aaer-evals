@@ -62,6 +62,22 @@
     ],
     "from": "the submissions index: the single filings row in submissions.json with accession 0001045810-26-000073 carries items '2.02,9.01', split on commas and stripped; docs/INPUT_SPEC.md section 1 names the index's items field as the source for 8-K item codes"
   },
+  "exhibits.10-K.exhibit_filename": {
+    "value": "subsidiariesofregistrantfy.htm",
+    "from": "read by eye in 10-K/0001045810-26-000021/0001045810-26-000021-index-headers.html: the <FILENAME> line the header pairs with the <TYPE>EX-21.1 of document 3 is subsidiariesofregistrantfy.htm. The header is what says which file it is; the name itself does not"
+  },
+  "exhibits.10-K.exhibit_type": {
+    "value": "EX-21.1",
+    "from": "read by eye in 10-K/0001045810-26-000021/0001045810-26-000021-index-headers.html: the submission's SGML header gives document 3 as <TYPE>EX-21.1 <SEQUENCE>3 <FILENAME>subsidiariesofregistrantfy.htm, and it is the only document in the submission whose type is EX-21 or an EX-21 with a suffix"
+  },
+  "exhibits.10-K.prior_year_exhibit_filename": {
+    "value": "subsidiariesofregistrantfy.htm",
+    "from": "read by eye in 10-K/0001045810-25-000023/0001045810-25-000023-index-headers.html: the <FILENAME> line the header pairs with the <TYPE>EX-21.1 of document 7 is subsidiariesofregistrantfy.htm. The header is what says which file it is; the name itself does not"
+  },
+  "exhibits.10-K.prior_year_exhibit_type": {
+    "value": "EX-21.1",
+    "from": "read by eye in 10-K/0001045810-25-000023/0001045810-25-000023-index-headers.html: the submission's SGML header gives document 7 as <TYPE>EX-21.1 <SEQUENCE>7 <FILENAME>subsidiariesofregistrantfy.htm, and it is the only document in the submission whose type is EX-21 or an EX-21 with a suffix"
+  },
   "item_4_controls.10-Q.paragraphs": {
     "value": 9,
     "from": "already judged: tests/test_split_controls.py::recount applies the Item 4 boundaries written out as regexes in the test file to tests/independent_text.block_text (html.parser) and splits on blank lines, importing nothing from src/; re-run standalone here it returns 9"

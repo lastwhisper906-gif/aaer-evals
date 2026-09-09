@@ -62,6 +62,22 @@
     ],
     "from": "the submissions index: the single filings row for accession 0001327567-26-000019 (the manifest's 8-K exhibit_99_1) carries items '2.02,9.01', split on commas - EDGAR's own catalogue, which docs/INPUT_SPEC.md section 1 names as the source for 8-K item codes"
   },
+  "exhibits.10-K.exhibit_filename": {
+    "value": "panwex211fy25.htm",
+    "from": "read by eye in 10-K/0001327567-25-000027/0001327567-25-000027-index-headers.html: the <FILENAME> line the header pairs with the <TYPE>EX-21.1 of document 8 is panwex211fy25.htm. The header is what says which file it is; the name itself does not"
+  },
+  "exhibits.10-K.exhibit_type": {
+    "value": "EX-21.1",
+    "from": "read by eye in 10-K/0001327567-25-000027/0001327567-25-000027-index-headers.html: the submission's SGML header gives document 8 as <TYPE>EX-21.1 <SEQUENCE>8 <FILENAME>panwex211fy25.htm, and it is the only document in the submission whose type is EX-21 or an EX-21 with a suffix"
+  },
+  "exhibits.10-K.prior_year_exhibit_filename": {
+    "value": "panwex211fy24.htm",
+    "from": "read by eye in 10-K/0001327567-24-000029/0001327567-24-000029-index-headers.html: the <FILENAME> line the header pairs with the <TYPE>EX-21.1 of document 8 is panwex211fy24.htm. The header is what says which file it is; the name itself does not"
+  },
+  "exhibits.10-K.prior_year_exhibit_type": {
+    "value": "EX-21.1",
+    "from": "read by eye in 10-K/0001327567-24-000029/0001327567-24-000029-index-headers.html: the submission's SGML header gives document 8 as <TYPE>EX-21.1 <SEQUENCE>8 <FILENAME>panwex211fy24.htm, and it is the only document in the submission whose type is EX-21 or an EX-21 with a suffix"
+  },
   "item_4_controls.10-Q.paragraphs": {
     "value": 9,
     "from": "already judged: tests/test_split_controls.py::recount applies the section boundary regexes written out in the test file to tests/independent_text.block_text (html.parser) and splits on blank lines, importing nothing from src/; that recount re-run on 10-Q/panw-20260430.htm.gz gives 9"
