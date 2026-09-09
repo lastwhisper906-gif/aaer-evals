@@ -19,11 +19,21 @@ three companies every figure the derivation used carries the accession of the
 filing the number above was read off. Two records of the same two documents, and
 the numbers have to agree.
 
+Two more cases are read off the record rather than off a filing, because the
+filings that carry them are not in this fixture set and the record is the source
+this module reads: Seagate's 2024 net income, where the fourth quarter is bigger
+than the year it sits in, and Carrier's 2022 revenue, where the year was recast
+after its nine months was last stated. Both are transcribed row by row with the
+accession each row carries, checked against companyfacts read straight, and
+subtracted here.
+
 The rest is over all twelve: the quarter re-adds to the year, the two periods
 share a start and leave one quarter between their ends, a measure that is not
-there says why and never arrives as a zero, and the indicator reports its value
-and raises no flag. The planted documents at the end are the guards -- an absent
-nine months, two of them, a filing that reports one period twice, a residual
+there says why and never arrives as a zero, no company reports two fiscal years
+ending on the same day, and the indicator reports its value and raises no flag.
+The planted documents at the end are the guards -- an absent nine months, two of
+them, a filing that reports one period twice, a figure restated after the other
+was last stated, an annual duration under a tag no measure names, a residual
 that is not a quarter, a fact filed after the cutoff -- each with the control
 that shows the same document derives cleanly once the fault is taken out.
 """
@@ -40,7 +50,8 @@ import pytest
 
 from src import cutoff_guard, fetch_companyfacts, fourth_quarter
 from src.fetch_fixtures import TICKERS
-from tests.test_fetch_companyfacts import NOT_YET_IN_COMPANYFACTS
+from tests.test_fetch_companyfacts import (NOT_YET_IN_COMPANYFACTS,
+                                           record as companyfacts_record)
 
 # --- what the filings say ---------------------------------------------------
 #
@@ -145,6 +156,12 @@ def latest_year(ticker: str) -> dict:
     return derived(ticker)["fiscal_years"][0]
 
 
+def year_ending(ticker: str, end: str) -> dict:
+    """One named fiscal year, for the two cases read off the record by hand."""
+    return next(year for year in derived(ticker)["fiscal_years"]
+                if year["fiscal_year"]["end"] == end)
+
+
 def leaves(payload) -> list:
     """Every leaf in the payload, for the assertions that are about all of them."""
     if isinstance(payload, dict):
@@ -152,6 +169,28 @@ def leaves(payload) -> list:
     if isinstance(payload, list):
         return [leaf for value in payload for leaf in leaves(value)]
     return [payload]
+
+
+def record_row(value: int, accession: str, start: str, end: str) -> dict:
+    """One companyfacts row, as it was transcribed off the record by hand."""
+    return {"value": value, "accession": accession, "start": start, "end": end}
+
+
+def value_on_record(ticker: str, tag: str, transcribed: dict) -> int:
+    """A transcribed row's value, checked against companyfacts read straight.
+
+    `tests/test_fetch_companyfacts.py` keys the record by tag, unit, accession
+    and period, which is what a row transcribed by hand names. Nothing here
+    passes through `src/fourth_quarter.py`, so a figure it hands back is a
+    figure from the source and not from the module it is used to measure.
+    """
+    index = companyfacts_record(ticker)["index"]
+    key = (tag, "USD", transcribed["accession"],
+           transcribed["start"], transcribed["end"])
+    assert index.get(key) == (float(transcribed["value"]),), \
+        f"companyfacts holds {index.get(key)} under {key}, " \
+        f"not {transcribed['value']:,}"
+    return transcribed["value"]
 
 
 # --- the three companies, read off the filings -------------------------------
@@ -250,23 +289,71 @@ def test_the_dump_indicator_reports_a_value_and_raises_no_flag(ticker):
         assert set(indicator["margin_move"]) == set(fourth_quarter.MARGINS)
 
 
+# Seagate's fiscal 2024 net income, taken from the two rows of the committed
+# companyfacts record -- the source this module reads -- with the accession each
+# row carries. Neither figure and neither subtraction below comes from
+# `src/fourth_quarter.py`; the year the fourth quarter is bigger than is named
+# here so a reader can check it against the record rather than against a run.
+#
+#   us-gaap:NetIncomeLoss [USD]
+#     2023-07-01..2024-06-28    335,000,000   10-K  0001137789-26-000159
+#     2023-07-01..2024-03-29   -178,000,000   10-Q  0001137789-25-000075
+#
+#     fourth quarter    335,000,000 - (-178,000,000) = 513,000,000
+#     share of the year 513,000,000 / 335,000,000    = 1.531343283...
+A_QUARTER_BIGGER_THAN_ITS_YEAR = {
+    "ticker": "STX",
+    "term": "net_income",
+    "tag": "NetIncomeLoss",
+    "fiscal_year_end": "2024-06-28",
+    "annual": record_row(335_000_000, "0001137789-26-000159",
+                         "2023-07-01", "2024-06-28"),
+    "nine_months": record_row(-178_000_000, "0001137789-25-000075",
+                              "2023-07-01", "2024-03-29"),
+    "fourth_quarter": 513_000_000,
+    "share": 1.531343283,
+}
+
+
+def test_the_two_rows_the_biggest_quarter_was_read_from_are_in_the_record():
+    """The transcription above, checked against companyfacts read straight and
+    subtracted here -- so the case the next test names rests on the source and
+    not on the module the next test measures."""
+    case = A_QUARTER_BIGGER_THAN_ITS_YEAR
+    annual = value_on_record(case["ticker"], case["tag"], case["annual"])
+    nine = value_on_record(case["ticker"], case["tag"], case["nine_months"])
+    assert annual - nine == case["fourth_quarter"]
+    assert case["fourth_quarter"] / annual \
+        == pytest.approx(case["share"], abs=1e-9)
+
+
 def test_a_quarter_that_carries_more_than_the_whole_year_is_still_only_a_value():
     """The control on the silence above. A share over one means the fourth
     quarter carried more than the entire year -- a boundary, not a chosen level
-    -- and this fixture set has such a quarter. It is reported, and nothing in
-    the payload turns it into a flag."""
+    -- and the record holds such a quarter: the one read off it above. It is
+    reported, and nothing in the payload turns it into a flag."""
+    case = A_QUARTER_BIGGER_THAN_ITS_YEAR
     extreme = [(ticker, year["fiscal_year"]["end"], term, share)
                for ticker in TICKERS
                for year in derived(ticker)["fiscal_years"]
                for term, share
                in sorted(year["dump_indicator"]["share_of_the_year"].items())
                if "value" in share and abs(share["value"]) > 1]
-    assert extreme, "no fourth quarter in this fixture set carries a whole year"
+    assert (case["ticker"], case["fiscal_year_end"], case["term"]) \
+        in {(ticker, end, term) for ticker, end, term, _ in extreme}, \
+        f"{case['ticker']} {case['fiscal_year_end']} {case['term']} is a share " \
+        f"of {case['share']} in the record and is not reported as one"
     for ticker, end, term, share in extreme:
         # The ratio never travels alone: a negative annual figure flips its
         # sign, so the two figures it was divided from go with it.
         assert set(share) == {"value", "formula", "fourth_quarter", "annual"}, \
             f"{ticker} {end} {term}"
+
+    cell = year_ending(case["ticker"],
+                       case["fiscal_year_end"])["measures"][case["term"]]
+    assert cell["annual"] == case["annual"]["value"]
+    assert cell["nine_months"] == case["nine_months"]["value"]
+    assert cell["fourth_quarter"] == case["fourth_quarter"]
 
 
 def test_the_share_of_the_year_is_the_quarter_over_the_year():
@@ -439,6 +526,112 @@ def test_the_derivation_is_the_same_twice(ticker):
         == fourth_quarter.render(fourth_quarter.fourth_quarters(ticker))
 
 
+# --- the two figures have to stand on one basis ------------------------------
+
+# Carrier's fiscal 2022 revenue, taken from the committed companyfacts record:
+# four rows under one tag, each with the accession that filed it and the date it
+# was filed. Neither filing that moved the year is in this fixture set as a
+# document -- the record is the source for them, and it is the source this
+# module reads.
+#
+#   us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax [USD]
+#     2022-01-01..2022-12-31  20,421,000,000  10-K 0001783180-23-000012  2023-02-07
+#     2022-01-01..2022-12-31  20,421,000,000  10-K 0001783180-24-000009  2024-02-06
+#     2022-01-01..2022-12-31  17,288,000,000   8-K 0001783180-25-000058  2025-07-29
+#     2022-01-01..2022-09-30  15,316,000,000  10-Q 0001783180-23-000065  2023-10-26
+#
+# The year was re-presented at 17,288,000,000 once the discontinued businesses
+# came out of it. The nine months has not been re-presented since October 2023,
+# when the year on record was still 20,421,000,000. So the two subtractions a
+# reader can actually write are
+#
+#     old basis   20,421,000,000 - 15,316,000,000 = 5,105,000,000
+#     new basis   17,288,000,000 - (a nine months nobody has restated)
+#
+# and taking the latest of each gives 17,288,000,000 - 15,316,000,000 =
+# 1,972,000,000, which is Carrier's fourth quarter on neither of them.
+RECAST_APART_FROM_ITS_NINE_MONTHS = {
+    "ticker": "CARR",
+    "term": "revenue",
+    "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+    "fiscal_year_end": "2022-12-31",
+    "year_as_first_filed": record_row(
+        20_421_000_000, "0001783180-23-000012", "2022-01-01", "2022-12-31"),
+    "year_the_recast_displaced": record_row(
+        20_421_000_000, "0001783180-24-000009", "2022-01-01", "2022-12-31"),
+    "year_as_it_now_stands": record_row(
+        17_288_000_000, "0001783180-25-000058", "2022-01-01", "2022-12-31"),
+    "nine_months": record_row(
+        15_316_000_000, "0001783180-23-000065", "2022-01-01", "2022-09-30"),
+    "on_the_old_basis": 5_105_000_000,
+    "across_the_two": 1_972_000_000,
+}
+
+def test_the_rows_behind_carriers_recast_year_are_in_the_record():
+    """The transcription above against companyfacts read straight, and both
+    subtractions done here. The second is the one this module must not publish."""
+    case = RECAST_APART_FROM_ITS_NINE_MONTHS
+    figures = {side: value_on_record(case["ticker"], case["tag"], case[side])
+               for side in ("year_as_first_filed", "year_the_recast_displaced",
+                            "year_as_it_now_stands", "nine_months")}
+    assert figures["year_as_first_filed"] - figures["nine_months"] \
+        == case["on_the_old_basis"]
+    assert figures["year_as_it_now_stands"] - figures["nine_months"] \
+        == case["across_the_two"]
+
+
+def test_a_year_restated_after_its_nine_months_was_last_stated_is_refused():
+    """1,972,000,000 is not Carrier's fourth quarter of 2022 on any basis, so it
+    is not published as one. The reason names both filings and what the later of
+    them displaced, because the reader has to be able to see which two figures
+    were not subtracted and why."""
+    case = RECAST_APART_FROM_ITS_NINE_MONTHS
+    cell = year_ending(case["ticker"],
+                       case["fiscal_year_end"])["measures"][case["term"]]
+    assert set(cell) == {"missing"}, \
+        f"Carrier's 2022 revenue carries {sorted(set(cell) - {'missing'})}"
+    reason = cell["missing"]
+    assert "different reporting bases" in reason
+    assert str(case["across_the_two"]) not in reason, \
+        "the reason must not read as a fourth quarter"
+    displaced = case["year_the_recast_displaced"]
+    for side in ("year_the_recast_displaced", "year_as_it_now_stands",
+                 "nine_months"):
+        assert case[side]["accession"] in reason, \
+            f"{side} ({case[side]['accession']}) is not named in: {reason}"
+    assert str(displaced["value"]) in reason, \
+        f"the year the recast displaced is not named in: {reason}"
+
+
+# --- a fiscal year is one an income-statement tag reports --------------------
+
+def test_a_mis_started_duration_under_another_tag_is_not_a_second_fiscal_year():
+    """TTM Technologies' 2025 year runs 2024-12-31..2025-12-29. One
+    us-gaap:LossOnContracts row starts it a day early, and that row is in the
+    record -- checked here against companyfacts read straight. It is one fact's
+    date, not a year the company closed, so it is not a fiscal year."""
+    index = companyfacts_record("TTMI")["index"]
+    mis_started = [key for key in index
+                   if key[0] == "LossOnContracts"
+                   and key[3:] == ("2024-12-30", "2025-12-29")]
+    assert mis_started, \
+        "TTM Technologies' record no longer holds the row this test is about"
+
+    years = [year["fiscal_year"] for year in derived("TTMI")["fiscal_years"]]
+    ending_then = [year for year in years if year["end"] == "2025-12-29"]
+    assert len(ending_then) == 1, ending_then
+    assert ending_then[0]["start"] == "2024-12-31"
+
+
+@pytest.mark.parametrize("ticker", TICKERS)
+def test_no_company_reports_two_fiscal_years_ending_on_the_same_day(ticker):
+    """A company closes one fiscal year on a given date. Two of them ending
+    together is a duration read as a year that is not one."""
+    ends = [year["fiscal_year"]["end"] for year in derived(ticker)["fiscal_years"]]
+    assert len(ends) == len(set(ends)), f"{ticker}: {sorted(ends)}"
+
+
+
 # --- planted documents, where the expected output is put there on purpose ----
 
 YEAR = ("2025-01-01", "2025-12-31")
@@ -483,6 +676,83 @@ def only_year(root: Path, **kwargs) -> dict:
     return payload["fiscal_years"][0]["measures"]["revenue"]
 
 
+def test_a_figure_restated_after_the_other_was_last_stated_is_refused(tmp_path):
+    """The control first: the same two filings, with the year never restated,
+    derive. Then the fault, in each direction -- the year moving after the nine
+    months was last stated, and the nine months moving after the year was."""
+    steady = plant(tmp_path / "steady", revenue(
+        fact(YEAR[0], NINE_MONTHS_END, 700, accession="0000000000-00-000001",
+             filed="2025-11-01"),
+        fact(YEAR[0], YEAR[1], 1000, accession="0000000000-00-000002",
+             filed="2026-02-01")))
+    assert only_year(steady)["fourth_quarter"] == 300
+
+    year_moved = plant(tmp_path / "year", revenue(
+        fact(YEAR[0], YEAR[1], 1200, accession="0000000000-00-000001",
+             filed="2025-11-01"),
+        fact(YEAR[0], NINE_MONTHS_END, 700, accession="0000000000-00-000002",
+             filed="2025-11-01"),
+        fact(YEAR[0], YEAR[1], 1000, accession="0000000000-00-000003",
+             filed="2026-02-01")))
+    cell = only_year(year_moved)
+    assert set(cell) == {"missing"}
+    assert "the annual figure was reported 2026-02-01" in cell["missing"]
+    assert "over 1200 filed 2025-11-01" in cell["missing"]
+    assert "300" not in cell["missing"], \
+        "the reason must not read as a fourth quarter"
+
+    nine_moved = plant(tmp_path / "nine", revenue(
+        fact(YEAR[0], YEAR[1], 1000, accession="0000000000-00-000001",
+             filed="2025-11-01"),
+        fact(YEAR[0], NINE_MONTHS_END, 650, accession="0000000000-00-000002",
+             filed="2025-11-01"),
+        fact(YEAR[0], NINE_MONTHS_END, 700, accession="0000000000-00-000003",
+             filed="2026-02-01")))
+    cell = only_year(nine_moved)
+    assert set(cell) == {"missing"}
+    assert "the nine-month figure was reported 2026-02-01" in cell["missing"]
+    assert "over 650 filed 2025-11-01" in cell["missing"]
+
+
+def test_a_restatement_both_figures_were_re_presented_under_still_derives(tmp_path):
+    """The rule is about one figure moving under the other, not about a
+    restatement. Where the later filing restates both, the pair stands."""
+    root = plant(tmp_path, revenue(
+        fact(YEAR[0], YEAR[1], 1200, accession="0000000000-00-000001",
+             filed="2025-11-01"),
+        fact(YEAR[0], NINE_MONTHS_END, 840, accession="0000000000-00-000001",
+             filed="2025-11-01"),
+        fact(YEAR[0], YEAR[1], 1000, accession="0000000000-00-000002",
+             filed="2026-02-01"),
+        fact(YEAR[0], NINE_MONTHS_END, 700, accession="0000000000-00-000002",
+             filed="2026-02-01")))
+    cell = only_year(root)
+    assert cell["fourth_quarter"] == 300
+    assert cell["annual_as_filed"]["superseded"] == [
+        {"filed": "2025-11-01", "accession": "0000000000-00-000001", "value": 1200}]
+
+
+def test_an_annual_duration_under_no_measured_tag_is_not_a_fiscal_year(tmp_path):
+    """The control comes first: the tag reports an annual-length duration and
+    no fiscal year comes back, because there is no measure to read one off it.
+    Beside a real year it would otherwise be a second one, ending the same day."""
+    alone = plant(tmp_path / "alone", {"LossOnContracts": {"units": {"USD": [
+        fact(YEAR[0], YEAR[1], 40)]}}})
+    payload = fourth_quarter.fourth_quarters("ZZZZ", fixtures_root=alone)
+    assert payload["fiscal_years"] == []
+    assert payload["fiscal_years_on_record"] == 0
+    assert payload["source"]["duration_facts"] == 1
+
+    beside = plant(tmp_path / "beside", dict(
+        revenue(fact(YEAR[0], YEAR[1], 1000),
+                fact(YEAR[0], NINE_MONTHS_END, 700)),
+        LossOnContracts={"units": {"USD": [fact("2024-12-31", YEAR[1], 40)]}}))
+    payload = fourth_quarter.fourth_quarters("ZZZZ", fixtures_root=beside)
+    assert payload["fiscal_years_on_record"] == 1
+    assert [year["fiscal_year"]["start"] for year in payload["fiscal_years"]] \
+        == [YEAR[0]]
+
+
 def test_a_year_with_no_nine_month_figure_is_absent_and_not_a_zero(tmp_path):
     """The control comes first: with both rows the same document derives."""
     both = plant(tmp_path / "both", revenue(
@@ -520,12 +790,18 @@ def test_one_filing_reporting_a_period_twice_is_refused(tmp_path):
 
 
 def test_the_later_filing_wins_and_says_what_it_displaced(tmp_path):
+    """The later filing re-presents the nine months as well, at the figure it
+    already carried. That is what keeps the pair on one basis while the year
+    moves under it -- a year that moves alone is the case above."""
     root = plant(tmp_path, revenue(
         fact(YEAR[0], YEAR[1], 1000, accession="0000000000-00-000001",
              filed="2026-02-01"),
+        fact(YEAR[0], NINE_MONTHS_END, 700, accession="0000000000-00-000001",
+             filed="2026-02-01"),
         fact(YEAR[0], YEAR[1], 900, accession="0000000000-00-000002",
              filed="2026-05-01"),
-        fact(YEAR[0], NINE_MONTHS_END, 700)))
+        fact(YEAR[0], NINE_MONTHS_END, 700, accession="0000000000-00-000002",
+             filed="2026-05-01")))
     cell = only_year(root, cutoff="2026-05-01")
     assert cell["annual"] == 900
     assert cell["fourth_quarter"] == 200

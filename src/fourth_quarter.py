@@ -28,7 +28,10 @@ XBRL instance a filing carries would give a single year and a single quarter,
 which is one subtraction and no history.
 
 **How a period is identified.** A fiscal year is a duration of `YEAR_DAYS`, the
-same window `src/trends.py` already calls a year. Its nine-month year-to-date
+same window `src/trends.py` already calls a year, *under a tag one of the
+measures below names* -- an annual-length duration under `LossOnContracts` or a
+credit facility's commitment fee is one fact's date, not a year the company
+closed, and reading it as one puts a phantom year in the window. Its nine-month
 period is the duration that *starts on the same day*, ends before it, and runs
 `NINE_MONTH_DAYS`. Sharing the start date is what makes the subtraction mean
 anything: two periods that begin together and one ends later, so the difference
@@ -58,6 +61,34 @@ own 10-K and 161,400,000 in a filing eight weeks later. The rule takes the later
 figure in all three, and `superseded` carries what it displaced, with the filing
 that reported it -- `quiet_restatement` is the indicator that judges such a
 difference, and it cannot judge what this one throws away.
+
+**And the two figures have to stand on one basis.** "Latest filing wins" is
+settled for the year and for the nine months separately, and a recast reaches
+them at different times: a 10-Q re-presents one prior year, so the fiscal year
+two back pairs a restated annual with a nine months nobody has restated.
+Carrier's 2022 is the shape of it -- revenue 20,421,000,000 as filed and
+17,288,000,000 once the discontinued businesses come out of it, against a nine
+months of 15,316,000,000 last stated in October 2023 on the old basis. The
+difference is 1,972,000,000, eleven per cent of the year, where every Carrier
+year that does derive closes between twenty-two and twenty-five per cent of
+itself in the fourth quarter -- and it is Carrier's fourth quarter on neither
+basis. So a pair whose later figure *moved* -- its value displacing one the
+record still held when the other figure was last stated -- is refused, with both
+filings and the displaced figure named. It is the same refusal the one-tag
+paragraph above makes, for the same reason.
+
+That is fail-closed and it costs real cells: 27 across three companies, where
+429 derive. Ten are Carrier's case, where the nine months has never been
+restated at all. Ten more are recasts that reached both figures but at separate
+filings -- Carrier's 2023 and ESCO's 2024, where the two figures look like one
+basis and the record does not say they are. The last seven are a rounding: Palo
+Alto Networks' nine-month revenue coarsening from 6,685,200,000 to
+6,685,000,000 costs its whole 2025 year. Separating the last seventeen from the
+first ten takes a size, which is a threshold this file does not have and is not
+the place to set. Where a company's second tag for a measure carries a
+consistent pair the fall-back finds it: Generac's net income comes back under
+`ProfitLoss` from its 10-K and 10-Q rather than under `NetIncomeLoss` from a
+proxy statement's pay-versus-performance row.
 
 **A missing figure is never a zero.** Two accessions in this fixture set are in
 no companyfacts row at all -- Carrier's and Littelfuse's quarterlies filed in
@@ -138,6 +169,8 @@ MEASURES: dict[str, tuple[str, ...]] = {
     "asset_impairment_charges": ("AssetImpairmentCharges",),
     "goodwill_impairment": ("GoodwillImpairmentLoss",),
 }
+
+MEASURED_TAGS = frozenset(tag for tags in MEASURES.values() for tag in tags)
 
 # The margin move the checklist names, computed on the derived quarter and on
 # the nine months it was derived against. Python does the division.
@@ -248,9 +281,22 @@ def as_filed(rows: list[dict]) -> dict:
 # --- finding the two periods -------------------------------------------------
 
 def fiscal_years(gathered: dict[tuple, list[dict]]) -> list[dict]:
-    """Every annual period in the record, newest first."""
-    spans = {(start, end) for _, _, start, end in gathered
-             if YEAR_DAYS[0] <= _days(start, end) <= YEAR_DAYS[1]}
+    """Every annual period an income-statement tag reports, newest first.
+
+    An annual-length duration under a tag no measure names is not evidence of a
+    fiscal year. TTM Technologies' 2025 year runs 2024-12-31..2025-12-29 under
+    132 tags; one `us-gaap:LossOnContracts` fact in a 2026 10-Q starts it a day
+    early, and reading every annual duration as a year turns that one fact into
+    a second fiscal year ending the same day -- which takes a slot in the window
+    from a real year and then answers all eleven measures with "none of them
+    reports the year". Nine such spans sit in the twelve records, each under one
+    to three tags, none of them an income-statement line, one of them a credit
+    facility's commitment-fee period. `MEASURES` is already this file's account
+    of what it can read a year off, so it is what a year is counted from.
+    """
+    spans = {(start, end) for tag, _, start, end in gathered
+             if tag in MEASURED_TAGS
+             and YEAR_DAYS[0] <= _days(start, end) <= YEAR_DAYS[1]}
     return [_period(start, end) for start, end
             in sorted(spans, key=lambda span: (span[1], span[0]), reverse=True)]
 
@@ -300,6 +346,31 @@ def candidates(ends_by_tag, term: str, year: dict) -> tuple[list, list]:
     return found, reasons
 
 
+def different_bases(annual: dict, nine: dict) -> str:
+    """Why the two figures do not stand on one reporting basis, or "" when they do.
+
+    `as_filed` settles the year and the nine months separately, and a recast
+    reaches them at different times: a 10-Q re-presents one prior year, so the
+    fiscal year two back pairs a restated annual with a nine months nobody has
+    restated. The figure filed later having *moved* -- its value displacing one
+    the record still held when the other figure was last stated -- is what says
+    so, and it is a fact about the record rather than a size, which is the only
+    kind of test this file is allowed to make.
+    """
+    for side, later, earlier in (("annual", annual, nine),
+                                 ("nine-month", nine, annual)):
+        if later["filed"] > earlier["filed"] and later["superseded"]:
+            displaced = later["superseded"][-1]
+            return (f"the {side} figure was reported {later['filed']} "
+                    f"({', '.join(later['accessions'])}) over "
+                    f"{displaced['value']} filed {displaced['filed']} "
+                    f"({displaced['accession']}), and the other figure has not "
+                    f"been reported since {earlier['filed']} "
+                    f"({', '.join(earlier['accessions'])}), so the two stand on "
+                    f"different reporting bases")
+    return ""
+
+
 def why_missing(term: str, reasons: list[str]) -> str:
     """The reason line, which never says or implies zero."""
     named = ", ".join(f"us-gaap:{tag}" for tag in MEASURES[term])
@@ -322,6 +393,12 @@ def measure(gathered, ends_by_tag, term: str, year: dict) -> dict:
         if "missing" in nine:
             reasons.append(f"us-gaap:{tag} [{unit}] {year['start']}..{nine_end}: "
                            f"{nine['missing']}")
+            continue
+        apart = different_bases(annual, nine)
+        if apart:
+            reasons.append(f"us-gaap:{tag} [{unit}] {year['start']}..{year['end']} "
+                           f"less {year['start']}..{nine_end}: {apart}, and their "
+                           f"difference is not a fourth quarter")
             continue
         quarter = _period((_date(nine_end) + dt.timedelta(days=1)).isoformat(),
                           year["end"])
