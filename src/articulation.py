@@ -29,13 +29,34 @@ same period, and joining across them would be comparing a filing with a later
 filing's restatement of it -- a different check, and `docs/next_cycle_tasks.md`
 gives it to `src/restatement_trace.py`.
 
-**Pairing a period.** A balance-sheet instant belongs to a cash-flow duration
-when it is the day before the duration starts, or the day it ends. Nothing else
-pairs: over the twelve companies' thirty-six filings no period needed a looser
-rule, and a looser rule is how a quarter gets differenced against a year. A
-10-K's earlier cash-flow columns therefore carry no row, because their opening
-balance sheet is not in that filing -- it is in the previous one. They are
-counted in `coverage` rather than dropped in silence.
+**Pairing a period.** A filing prints one balance sheet, as of its report date,
+beside one comparative column. So the only cash-flow column both of whose ends
+that balance sheet carries is the one ending on the report date, and that is the
+only column differenced here: the opening instant is the day before it starts
+and the closing instant is the day it ends. A 10-K's two earlier cash-flow
+columns carry no row, because their opening balance sheet is in the previous
+filing, and they are counted in `coverage` rather than dropped in silence.
+
+The report date is what makes that rule hold, and dropping it is not safe.
+ESCO's 10-K states three cash-flow years and tags a receivables figure at
+2023-09-30 -- the revenue note's "accounts receivable totaled $189.3 million",
+rounded to a tenth of a million and not a balance sheet. Pairing on the instants
+alone differenced the 2024 column against that sentence and reported a gap of
+1,186,000 to the dollar out of a figure good to 50,000.
+
+**Which concept stands for the account.** The cash-flow line chooses, and the
+balance sheet is then read under that choice alone. Receivables has two scopes
+in the taxonomy and a filing states which it means:
+`IncreaseDecreaseInAccountsReceivable` is trade receivables and
+`IncreaseDecreaseInReceivables` is receivables of every kind. Reading the
+balance sheet on its own preference order instead compares a wide cash-flow line
+with a narrow balance. Qualcomm is the measured case: its 10-K prints "Accounts
+receivable, net 4,315 3,929" and tags it `AccountsAndOtherReceivablesNetCurrent`,
+states the cash-flow line as `IncreaseDecreaseInReceivables` 365, and separately
+tags Note 2's "Trade, net of allowances 2,855 2,347" subtotal
+`AccountsReceivableNetCurrent`. Differencing the note subtotal gives 143,000,000
+where the two statements give 21,000,000, and switches concept between one
+company's 10-K and its 10-Qs.
 
 **What it refuses to compare.** A cash-flow line that covers more than the
 account is not this account's line, and three of these companies state one.
@@ -123,34 +144,43 @@ NAMESPACE = "us-gaap"
 UNIT = "USD"
 INSTANCE_ROLES = ("xbrl_instance", "prior_period_xbrl_instance")
 
-# The three accounts, in the order `docs/CHECKLIST.md` names them. `cash_flow`
-# and `balance_sheet` are the concepts that may stand for the account, best
-# first; the first one a filing reports is the one used, and the row says which.
-# `wider` is the concepts that state a change covering more than this account:
-# finding one is the reason the comparison is refused, not a fallback.
-ACCOUNTS: dict[str, dict[str, tuple[str, ...]]] = {
+# A change stated over the whole of working capital, which is wider than any one
+# of these accounts and is a reason to refuse the comparison rather than a
+# fallback for it.
+WORKING_CAPITAL = ("IncreaseDecreaseInOperatingCapital",
+                   "IncreaseDecreaseInOtherOperatingCapitalNet")
+
+# The two spellings of the one payables caption. Qualcomm prints "Trade accounts
+# payable" on its balance sheet and tags it `AccountsPayableCurrent`, so these
+# are not two scopes the way the receivables concepts are, and both cash-flow
+# spellings read the same pair.
+PAYABLE_BALANCES = ("AccountsPayableCurrent", "AccountsPayableTradeCurrent")
+
+# The three accounts, in the order `docs/CHECKLIST.md` names them. `scopes` maps
+# each cash-flow concept that may state the account to the balance-sheet
+# concepts standing for the same thing, best first. The first one a filing
+# states its cash-flow line under is the one used, its balance sheet is read
+# under that entry alone, and the row says which concepts both were. `wider` is
+# the concepts stating a change that covers more than this account.
+ACCOUNTS: dict[str, dict] = {
     "receivables": {
-        "cash_flow": ("IncreaseDecreaseInAccountsReceivable",
-                      "IncreaseDecreaseInReceivables"),
-        "balance_sheet": ("AccountsReceivableNetCurrent", "ReceivablesNetCurrent",
-                          "AccountsAndOtherReceivablesNetCurrent",
-                          "AccountsReceivableNet"),
-        "wider": ("IncreaseDecreaseInOperatingCapital",
-                  "IncreaseDecreaseInOtherOperatingCapitalNet"),
+        "scopes": {
+            "IncreaseDecreaseInAccountsReceivable":
+                ("AccountsReceivableNetCurrent", "AccountsReceivableNet"),
+            "IncreaseDecreaseInReceivables":
+                ("ReceivablesNetCurrent", "AccountsAndOtherReceivablesNetCurrent"),
+        },
+        "wider": WORKING_CAPITAL,
     },
     "inventory": {
-        "cash_flow": ("IncreaseDecreaseInInventories",),
-        "balance_sheet": ("InventoryNet",),
-        "wider": ("IncreaseDecreaseInOperatingCapital",
-                  "IncreaseDecreaseInOtherOperatingCapitalNet"),
+        "scopes": {"IncreaseDecreaseInInventories": ("InventoryNet",)},
+        "wider": WORKING_CAPITAL,
     },
     "payables": {
-        "cash_flow": ("IncreaseDecreaseInAccountsPayable",
-                      "IncreaseDecreaseInAccountsPayableTrade"),
-        "balance_sheet": ("AccountsPayableCurrent", "AccountsPayableTradeCurrent"),
+        "scopes": {"IncreaseDecreaseInAccountsPayable": PAYABLE_BALANCES,
+                   "IncreaseDecreaseInAccountsPayableTrade": PAYABLE_BALANCES},
         "wider": ("IncreaseDecreaseInAccountsPayableAndAccruedLiabilities",
-                  "IncreaseDecreaseInOperatingCapital",
-                  "IncreaseDecreaseInOtherOperatingCapitalNet"),
+                  *WORKING_CAPITAL),
     },
 }
 
@@ -310,7 +340,7 @@ def account_rows(held: dict, filing: dict, account: str) -> tuple[list[dict], di
     accession, concepts = filing["accession"], ACCOUNTS[account]
     entry = {"accession": accession, "form": filing["form"], "account": account}
 
-    cash_flow_tag = _stated(held, concepts["cash_flow"])
+    cash_flow_tag = _stated(held, tuple(concepts["scopes"]))
     if cash_flow_tag is None:
         wider = _stated(held, concepts["wider"])
         if wider is not None:
@@ -319,15 +349,22 @@ def account_rows(held: dict, filing: dict, account: str) -> tuple[list[dict], di
                 f"us-gaap:{wider}, which covers more than {account} and does not "
                 f"articulate with a balance sheet that carries the account alone"))
         return [], dict(entry, status="no_cash_flow_line", reason=(
-            f"this filing reports none of {', '.join(concepts['cash_flow'])} as a "
+            f"this filing reports none of {', '.join(concepts['scopes'])} as a "
             f"change in {account} over any period"))
+    balances = concepts["scopes"][cash_flow_tag]
 
     rows, not_paired = [], []
     for (start, end), cash_flow_change in sorted(held[cash_flow_tag]["durations"].items()):
         opening, period = _opening(start), _period(start, end)
-        pair = _balance_sheet_pair(held, concepts["balance_sheet"], opening, end)
+        if end != filing["report_date"]:
+            not_paired.append({"period": period, "reason": (
+                f"this filing's balance sheet is as of {filing['report_date']} and "
+                f"this column ends {end}; only the column ending on the report date "
+                f"has both its ends on the balance sheet this filing prints")})
+            continue
+        pair = _balance_sheet_pair(held, balances, opening, end)
         if pair is None:
-            carried = _balance_dates(held, concepts["balance_sheet"])
+            carried = _balance_dates(held, balances)
             not_paired.append({"period": period, "reason": (
                 f"this filing carries no {account} balance at both {opening} and "
                 f"{end}; it carries one at "

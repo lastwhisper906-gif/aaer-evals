@@ -1,14 +1,23 @@
 """The articulation rows, against the statements they are supposed to reproduce.
 
-The expected values here are not this module's output. They are the lines two
-companies printed on two facing pages of four filings -- Apple's 10-K for the
+The expected values here are not this module's output. They are the lines three
+companies printed on two facing pages of five filings -- Apple's 10-K for the
 year ended 27 September 2025 and its 10-Q for the nine months ended 27 June
 2026, Littelfuse's 10-K for the year ended 27 December 2025 and its 10-Q for the
-three months ended 28 March 2026 -- typed in from the committed documents and
-differenced here, term by term, so a reader can follow the arithmetic without
-running anything. Each of the twelve account-periods carries four numbers off
-the statements: the two balance-sheet ends, the cash-flow line as the statement
-prints it, and the same line as the us-gaap element states it.
+three months ended 28 March 2026, and Qualcomm's 10-K for the year ended 28
+September 2025 -- typed in from the committed documents and differenced here,
+term by term, so a reader can follow the arithmetic without running anything.
+Each of the fifteen account-periods carries four numbers off the statements: the
+two balance-sheet ends, the cash-flow line as the statement prints it, and the
+same line as the us-gaap element states it.
+
+Qualcomm is here because it is the company whose filing distinguishes the
+balance sheet from a note. Its 10-K prints "Accounts receivable, net 4,315
+3,929" on the balance sheet and "Trade, net of allowances 2,855 2,347" in Note
+2, and tags the two under different concepts. Differencing the note subtotal
+against the statement's own cash-flow line gives 143,000,000 where the two
+statements give 21,000,000, so a hand check that reads the balance sheet is what
+tells the two apart.
 
 **The sign is the thing a hand check exists to catch.** A cash-flow statement
 prints the effect on cash, so for an asset the printed figure is the change in
@@ -54,6 +63,8 @@ APPLE_ANNUAL = "0000320193-25-000079"        # 10-K filed 2025-10-31
 APPLE_QUARTERLY = "0000320193-26-000020"     # 10-Q filed 2026-07-31
 LITTELFUSE_ANNUAL = "0001628280-26-009585"   # 10-K filed 2026-02-19
 LITTELFUSE_QUARTERLY = "0001628280-26-031041"  # 10-Q filed 2026-05-06
+QUALCOMM_ANNUAL = "0000804328-25-000085"     # 10-K filed 2025-11-05
+ESCO_ANNUAL = "0001104659-25-117276"         # 10-K filed 2025-12-01
 
 # The two filings in no companyfacts row at all, which
 # `tests/test_fetch_companyfacts.py` records as EDGAR's own loading lag.
@@ -122,9 +133,33 @@ def coverage(ticker: str, accession: str, account: str | None) -> dict:
 #     Trade receivables         (21,783)
 #     Inventories                (6,740)
 #     Accounts payable            8,567
+#
+# Qualcomm, in millions, from `tests/fixtures/QCOM/10-K/qcom-20250928.htm`.
+#
+# CONSOLIDATED BALANCE SHEETS, Qualcomm, September 28, 2025 and September 29, 2024
+#     Accounts receivable, net     4,315     3,929
+#     Inventories                  6,526     6,423
+#     Trade accounts payable       2,791     2,584
+# CONSOLIDATED STATEMENTS OF CASH FLOWS, Qualcomm, year ended September 28, 2025
+#     Accounts receivable, net     (365)
+#     Inventories                  (138)
+#     Trade accounts payable         119
+#
+# And, on another page of the same 10-K, the figure that is not the balance
+# sheet and must not be differenced as though it were:
+#
+# Note 2. Composition of Certain Financial Statement Items -- Accounts Receivable
+#     Trade, net of allowances for doubtful accounts   2,855     2,347
+#     Unbilled                                         1,443     1,546
+#     Other                                               17        36
+#                                                      4,315     3,929
 
 MILLION = 1_000_000
 THOUSAND = 1_000
+
+# The two ends of Note 2's trade subtotal, which is what a preference order over
+# the balance-sheet concepts picked up instead of the statement's own line.
+QUALCOMM_NOTE_SUBTOTAL = (2_347 * MILLION, 2_855 * MILLION)
 
 # ticker, accession, account, period, opening, closing, as printed on the
 # cash-flow statement, the us-gaap element, and the gap differenced by hand.
@@ -168,6 +203,16 @@ BY_HAND = [
     ("LFUS", LITTELFUSE_QUARTERLY, "payables", "2025-12-28..2026-03-28",
      211_079 * THOUSAND, 222_666 * THOUSAND, 8_567 * THOUSAND,
      8_567 * THOUSAND, 3_020 * THOUSAND),
+
+    ("QCOM", QUALCOMM_ANNUAL, "receivables", "2024-09-30..2025-09-28",
+     3_929 * MILLION, 4_315 * MILLION, -365 * MILLION, 365 * MILLION,
+     21 * MILLION),
+    ("QCOM", QUALCOMM_ANNUAL, "inventory", "2024-09-30..2025-09-28",
+     6_423 * MILLION, 6_526 * MILLION, -138 * MILLION, 138 * MILLION,
+     -35 * MILLION),
+    ("QCOM", QUALCOMM_ANNUAL, "payables", "2024-09-30..2025-09-28",
+     2_584 * MILLION, 2_791 * MILLION, 119 * MILLION, 119 * MILLION,
+     88 * MILLION),
 ]
 
 BY_HAND_IDS = [f"{ticker}-{account}-{period}"
@@ -239,6 +284,14 @@ def companyfacts(ticker: str) -> dict:
         for fact in concept["units"].get("USD", []):
             held[(tag, fact["accn"], fact.get("start"), fact["end"])] = fact["val"]
     return held
+
+
+@functools.lru_cache(maxsize=None)
+def report_dates(ticker: str) -> dict[str, str]:
+    """`accession` → the date the filing reports as of, read from the manifest."""
+    manifest = json.loads((FIXTURES / ticker / "manifest.json").read_text())
+    return {row["accession"]: row["report_date"] for row in manifest["documents"]
+            if row.get("role") in articulation.INSTANCE_ROLES}
 
 
 @functools.lru_cache(maxsize=None)
@@ -318,6 +371,60 @@ def test_the_two_balance_sheet_ends_come_from_one_concept():
         closing = entry["inputs"]["balance_sheet_closing"]["tag"]
         if opening != closing:
             wrong.append(f"{ticker} {entry['id']}: {opening} against {closing}")
+    assert wrong == [], "\n".join(wrong)
+
+
+def test_the_balance_sheet_line_is_the_one_the_cash_flow_line_names():
+    """Qualcomm's 10-K tags both, and only one of the two is the balance sheet.
+
+    `IncreaseDecreaseInReceivables` is the change in receivables of every kind
+    and the caption facing it is `AccountsAndOtherReceivablesNetCurrent`, 4,315
+    against 3,929. `AccountsReceivableNetCurrent` in the same filing is Note 2's
+    trade subtotal, 2,855 against 2,347. Reading the balance sheet on its own
+    preference order takes the note and reports a gap in an account no page of
+    the filing states.
+    """
+    held = companyfacts("QCOM")
+    note = tuple(held[("AccountsReceivableNetCurrent", QUALCOMM_ANNUAL, None, day)]
+                 for day in ("2024-09-29", "2025-09-28"))
+    assert note == QUALCOMM_NOTE_SUBTOTAL, (
+        "the premise of this test is that this filing tags the note subtotal too")
+
+    found = row("QCOM", f"{QUALCOMM_ANNUAL}:articulation:receivables:"
+                        f"2024-09-30..2025-09-28")
+    assert found["inputs"]["cash_flow"]["tag"] == "IncreaseDecreaseInReceivables"
+    for side in ("balance_sheet_opening", "balance_sheet_closing"):
+        assert found["inputs"][side]["tag"] == "AccountsAndOtherReceivablesNetCurrent"
+    assert note[1] - note[0] - found["cash_flow_change"] == 143 * MILLION, (
+        "the note subtotal differences to the number this check must not report")
+    assert found["gap"] == 21 * MILLION
+
+
+def test_one_company_reads_one_account_under_one_pair_of_concepts():
+    """A series that changes concept between two filings is not a series.
+
+    Qualcomm's 10-Qs read the balance-sheet caption at 4,315 and its 10-K read
+    the note subtotal at 2,855, so one account of one company moved by 1,460
+    million between two filings for no reason a statement gives.
+    """
+    for ticker in TICKERS:
+        used: dict[str, set] = {}
+        for entry in payload(ticker)["rows"]:
+            used.setdefault(entry["account"], set()).add(
+                (entry["inputs"]["cash_flow"]["tag"],
+                 entry["inputs"]["balance_sheet_opening"]["tag"]))
+        for account, pairs in sorted(used.items()):
+            assert len(pairs) == 1, f"{ticker} {account}: {sorted(pairs)}"
+
+
+def test_every_row_closes_on_the_filings_own_report_date():
+    """The filing prints one balance sheet, and this is the column it spans."""
+    wrong = []
+    for ticker, entry in all_rows():
+        reported = report_dates(ticker)[entry["accession"]]
+        if entry["end"] != reported:
+            wrong.append(f"{ticker} {entry['id']}: closes {entry['end']} and the "
+                         f"filing reports as of {reported}")
     assert wrong == [], "\n".join(wrong)
 
 
@@ -441,6 +548,30 @@ def test_an_earlier_cash_flow_column_is_counted_and_not_differenced():
     assert entry["periods"] == ["2024-09-29..2025-09-27"]
     assert [absent["period"] for absent in entry["not_paired"]] == [
         "2022-09-25..2023-09-30", "2023-10-01..2024-09-28"]
+
+
+def test_a_note_figure_is_not_a_balance_sheet_end():
+    """ESCO tags a receivables figure at a date its balance sheet does not carry.
+
+    The revenue note of that 10-K says accounts receivable totaled $189.3
+    million at 30 September 2023 and tags it `AccountsReceivableNetCurrent`,
+    rounded to a tenth of a million, while the balance sheet in the same filing
+    carries 2025 and 2024 only. Pairing on the instants alone found both ends of
+    the 2024 cash-flow column and reported a gap of 1,186,000 to the dollar out
+    of a figure good to 50,000. Only the column ending on the report date is
+    differenced, so that column carries no row and is named instead.
+    """
+    held = companyfacts("ESE")
+    assert held[("AccountsReceivableNetCurrent", ESCO_ANNUAL, None,
+                 "2023-09-30")] == 189_300_000, (
+        "the premise of this test is that the note figure is in the record")
+
+    entry = coverage("ESE", ESCO_ANNUAL, "receivables")
+    assert entry["periods"] == ["2024-10-01..2025-09-30"]
+    assert [absent["period"] for absent in entry["not_paired"]] == [
+        "2022-10-01..2023-09-30", "2023-10-01..2024-09-30"]
+    assert not [found for found in payload("ESE")["rows"]
+                if found["inputs"]["balance_sheet_opening"]["period"] == "2023-09-30"]
 
 
 def test_a_cash_flow_line_with_no_balance_sheet_behind_it_is_named_and_not_zeroed():
