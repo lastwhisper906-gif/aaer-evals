@@ -66,18 +66,25 @@ AAPL's partner CARR by ninety-seven days. So the run being scored is asked what
 filing it is scoring -- its `input_manifest.json`, whose `filing_date` is the
 triggering report's own -- and any half written from a later filing is refused
 rather than crossed. A directory that carries no manifest is a directory of
-reports and not a run: it declares no filing being scored, and the control block
-records `scored_filing_date: null` so an ungated file says so in its own text.
-Whoever owns `docs/CHECKLIST.md` §8 has a pairing rule to settle; until then the
-cutoff wins and those seven pairings are refused.
+reports and not a run, and it declares no filing being scored -- but the numbers
+half does: its accession is on record with a filing date, and that is the date
+the notes half may not be later than. Leaving the gate off when the manifest was
+absent was the one route with no gate at all, and it is the route the fixture
+pair took. The control block records the date and where it came from, so a file
+says in its own text which of the two answered. Whoever owns `docs/CHECKLIST.md`
+§8 has a pairing rule to settle; until then the cutoff wins and those seven
+pairings are refused.
 
 **Citations resolve against the four reports the supervisor saw.** `CLAUDE.md`:
 an item carries an upstream id that Python verifies, and a failed item is
 dropped and counted. Here the upstream *is* the crossed set, so an item citing
 an id that none of the four reports carries is dropped and counted in the
-control block. An item citing nothing at all is left standing: requiring a
-citation is `src/quote_gate.py`'s rule at the layer that owns the report, and a
-control that added it would be measuring two changes at once.
+control block -- and so is an item citing nothing at all, in the sentence
+`src/quote_gate.py` uses for it. Leaving those standing made the two controls
+apply different gates to one schema: `src/control_single_agent.py` drops them
+through `quote_gate.citation_drop_reason`, so a supervisor citing nothing kept
+every item here and lost them there, and the difference between the two controls
+would have been the gate rather than the crossing.
 
 **The control file is never merged into the pipeline's number.** It carries a
 `control` block naming the scorecard row it is scored on, the company each half
@@ -99,6 +106,10 @@ PAIRING_ORDER = tuple(sorted(TICKERS))
 
 # The two halves, by the names `docs/INPUT_SPEC.md` §6 gives them. A is the
 # company being scored and keeps the numbers side; B supplies the notes side.
+# Where the filing being scored was read from, as the control file records it.
+MANIFEST_BASIS = "the run's own input_manifest.json"
+HALF_BASIS = "the numbers half's accession, on record in its ticker's manifest"
+
 NUMBERS_SIDE = ("report_numbers.md", "report_numbers_vs_market.md")
 NOTES_SIDE = ("report_notes_text.md", "report_notes_vs_market.md")
 REPORTS = NUMBERS_SIDE + NOTES_SIDE
@@ -318,10 +329,27 @@ def declared_ids(reports: dict[str, str]) -> set[str]:
             for identifier in assemble_bundle.paragraph_ids(text)}
 
 
-def _unresolved(item, declared: set[str]) -> list:
-    """The citations this item makes that none of the four reports carries."""
-    return [one for one in quote_gate.citations(item)
-            if not isinstance(one, str) or one not in declared]
+# `src/quote_gate.py`'s own sentence for an item that cites nothing, quoted so
+# the two gates say one thing about one failure. It is not imported because it is
+# written inline there, inside `citation_drop_reason`.
+CITES_NOTHING = "the item cites no upstream item"
+
+
+def _drop_reason(item, declared: set[str]) -> str | None:
+    """Why this item is dropped, or None when it stands.
+
+    The same two failures `quote_gate.citation_drop_reason` names, in the same
+    order: an item that cites nothing, then a citation none of the four crossed
+    reports carries. That function is not called directly because it also
+    requires an item id, and a checklist entry here is named by its key.
+    """
+    cited = quote_gate.citations(item)
+    if not cited:
+        return CITES_NOTHING
+    for one in cited:
+        if not isinstance(one, str) or one not in declared:
+            return (f"the citation {one!r} is in none of the four crossed reports")
+    return None
 
 
 def _a_list(question: str, key: str, value):
@@ -344,10 +372,8 @@ def resolved(question: str, answer: dict, declared: set[str]) -> tuple[dict, lis
     """
     kept, dropped = dict(answer), []
 
-    def drop(identifier: str, missing: list) -> None:
-        dropped.append({"item_id": identifier,
-                        "reason": f"the citation {missing[0]!r} is in none of "
-                                  "the four crossed reports"})
+    def drop(identifier: str, reason: str) -> None:
+        dropped.append({"item_id": identifier, "reason": reason})
 
     standing = []
     for entry in _a_list(question, "checklist", answer["checklist"]):
@@ -355,9 +381,9 @@ def resolved(question: str, answer: dict, declared: set[str]) -> tuple[dict, lis
             raise ControlError(
                 f"a {question} checklist entry carries no key, and an item with "
                 "no name can neither be cited nor dropped by name")
-        missing = _unresolved(entry, declared)
-        if missing:
-            drop(f"{question}:checklist:{entry['key']}", missing)
+        reason = _drop_reason(entry, declared)
+        if reason:
+            drop(f"{question}:checklist:{entry['key']}", reason)
         else:
             standing.append(entry)
     kept["checklist"] = standing
@@ -367,16 +393,21 @@ def resolved(question: str, answer: dict, declared: set[str]) -> tuple[dict, lis
                            _a_list(question, "top_signals", answer["top_signals"])
                            if one in names]
 
+    # `market_direction` abstains by naming no basis, which `docs/CHECKLIST.md`
+    # §7 allows, so citing nothing is not a failure here the way it is for a
+    # checklist entry: only a basis naming an id the crossed set does not carry
+    # is. The field cannot be dropped, so it degrades to that same abstention.
     market = answer["market_direction"]
-    missing = _unresolved(market, declared) if isinstance(market, dict) else []
-    if missing:
-        drop(f"{question}:market_direction", missing)
-        kept["market_direction"] = {"p_up": INSUFFICIENT, "basis": []}
+    if isinstance(market, dict) and quote_gate.citations(market):
+        reason = _drop_reason(market, declared)
+        if reason:
+            drop(f"{question}:market_direction", reason)
+            kept["market_direction"] = {"p_up": INSUFFICIENT, "basis": []}
     return kept, dropped
 
 
 def provenance(numbers: dict, notes: dict, question: str, *, scored_filing_date,
-               dropped: list[dict]) -> dict:
+               scored_filing_date_from: str, dropped: list[dict]) -> dict:
     """Which run each half came from, as the control file records it.
 
     `numbers` and `notes` are the two half records: the company each one's own
@@ -394,6 +425,10 @@ def provenance(numbers: dict, notes: dict, question: str, *, scored_filing_date,
         "notes_run": notes["run"],
         "notes_accession": notes["accession"],
         "scored_filing_date": str(scored_filing_date) if scored_filing_date else None,
+        # Which of the two said so: the run's own manifest, or the numbers
+        # half's accession on record. A date with no basis is a date nobody can
+        # check, and the two are not the same claim.
+        "scored_filing_date_from": scored_filing_date_from,
         "reports": {name: (numbers["from"] if name in NUMBERS_SIDE else notes["from"])
                     for name in REPORTS},
         "dropped_items": [dict(row) for row in dropped],
@@ -476,10 +511,16 @@ def run(numbers_from: str, notes_from: str, *, numbers_bundle, notes_bundle,
                 f"{half['from']}'s, out of {half['run']}. The label is what the "
                 "control file would carry, so it is the reports that settle it.")
 
-    scored = scored_filing(numbers_bundle)
-    if scored is not None:
-        _within_cutoff("numbers", numbers, scored)
-        _within_cutoff("notes", notes, scored)
+    scored, scored_basis = scored_filing(numbers_bundle), MANIFEST_BASIS
+    if scored is None:
+        # A directory of reports declares no filing being scored, and the gate
+        # used to come off with it -- the one route through this module with no
+        # cutoff at all, and the route a pair of report directories takes. The
+        # numbers half declares one all the same: its accession is on record
+        # with a filing date, which is what `filed` reads for both halves.
+        scored, scored_basis = filed(numbers["from"], numbers["accession"]), HALF_BASIS
+    _within_cutoff("numbers", numbers, scored)
+    _within_cutoff("notes", notes, scored)
 
     reports = {**numbers["reports"], **notes["reports"]}
     declared = declared_ids(reports)
@@ -495,6 +536,7 @@ def run(numbers_from: str, notes_from: str, *, numbers_bundle, notes_bundle,
         answer.update(question=question, rules_version=rules_version,
                       control=provenance(numbers, notes, question,
                                          scored_filing_date=scored,
+                                         scored_filing_date_from=scored_basis,
                                          dropped=drops[question]))
         rendered[question] = _rendered(answer)
     written = {question: _writable(out, CONTROL_FILES[question], text)
