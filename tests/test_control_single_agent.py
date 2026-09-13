@@ -23,15 +23,19 @@ one call belongs to whoever runs the stage.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
+import shutil
 from pathlib import Path
 
 import pytest
 
-from src import agent_inputs, control_single_agent, cutoff_guard, quote_gate
+from src import (agent_inputs, assemble_bundle, control_single_agent,
+                 cutoff_guard, quote_gate)
 from src.control_single_agent import ControlError
+from src.fetch_fixtures import TICKERS
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 CHECKLIST = REPO_ROOT / "docs" / "CHECKLIST.md"
@@ -80,8 +84,12 @@ The allowance for credit losses was reduced during the period.
 """
 
 # `input_trends.json` as `src/trends.py` commits it: two-space indent, sorted
-# keys, one key to a line.
+# keys, one key to a line. The `cutoff` is the file's own account of the
+# boundary it was built at, and it is the manifest's — a real trend table
+# carries it, and this fixture did not, so nothing here could have noticed that
+# the two can disagree.
 TRENDS = """{
+  "cutoff": "2025-08-01",
   "quarters": [
     {
       "filled": true,
@@ -188,13 +196,55 @@ def plant(tmp_path: Path) -> tuple[Path, Path]:
     folder = tmp_path / "single-agent"
     root.mkdir()
     folder.mkdir()
-    for name, text in (("input_notes.md", NOTES), ("input_trends.json", TRENDS),
-                       ("input_market.json", MARKET)):
+    planted = (("input_notes.md", NOTES), ("input_trends.json", TRENDS),
+               ("input_market.json", MARKET))
+    for name, text in planted:
         (root / name).write_text(text, encoding="utf-8")
         (folder / name).write_text(text, encoding="utf-8")
+    # `docs/INPUT_SPEC.md` §6's manifest accounts for what the build wrote: a
+    # hash and a byte count per file, and one row per `[id]` block with the file
+    # it landed in. Both are computed here, by this test, from the planted text
+    # -- `hashlib` and a bracket scan, nothing imported from `src/`. They used
+    # to be absent, and the control read the text with nothing saying it was the
+    # text the build wrote.
+    manifest = dict(
+        MANIFEST,
+        files={name: {"sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
+                      "bytes": len(text.encode("utf-8"))}
+               for name, text in planted},
+        paragraphs=[{"id": line.strip()[1:-1], "file": name, "kind": "planted"}
+                    for name, text in planted if name.endswith(".md")
+                    for line in text.split("\n")
+                    if line.strip().startswith("[") and line.strip().endswith("]")])
     (root / "input_manifest.json").write_text(
-        json.dumps(MANIFEST, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return root, folder
+
+
+def replant(root: Path, folder: Path, name: str, text: str) -> None:
+    """Rewrite one planted file in both copies **and** in the manifest.
+
+    The manifest's `files` hash and `paragraphs` rows are what say the handed
+    text is the text the build wrote, so a tamper that leaves them alone is
+    refused by that check and never reaches the rule under test. Every test
+    below whose subject is a later date, an unrecorded filing or a period past
+    the cutoff uses this, so the refusal it asserts is its own rule's.
+    """
+    for where in (root, folder):
+        (where / name).write_text(text, encoding="utf-8")
+    path = root / "input_manifest.json"
+    manifest = json.loads(path.read_text(encoding="utf-8"))
+    manifest["files"][name] = {
+        "sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
+        "bytes": len(text.encode("utf-8"))}
+    if name.endswith(".md"):
+        manifest["paragraphs"] = [row for row in manifest["paragraphs"]
+                                  if row["file"] != name] + [
+            {"id": line.strip()[1:-1], "file": name, "kind": "planted"}
+            for line in text.split("\n")
+            if line.strip().startswith("[") and line.strip().endswith("]")]
+    path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n",
+                    encoding="utf-8")
 
 
 # --- what the stub model answers ---------------------------------------------
@@ -600,9 +650,7 @@ def test_a_run_with_no_rules_version_carries_the_null_the_manifest_carries(tmp_p
     """`src/assemble_bundle.py` writes `rules_version: null` until `rules/v0.1`
     exists, so that is what a prediction from such a run carries."""
     root, folder = plant(tmp_path)
-    (root / "input_manifest.json").write_text(
-        json.dumps(MANIFEST | {"rules_version": None}, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8")
+    _replant_manifest(root, _planted_manifest(root) | {"rules_version": None})
     answer = accounting_answer()
     answer["rules_version"] = None
     go(root, folder, "accounting_reliability", answer)
@@ -1149,9 +1197,7 @@ def test_a_paragraph_under_a_later_filings_accession_is_refused(tmp_path):
     root, folder = plant(tmp_path)
     filed, late = _the_next_filing()
     extra = f"\n[{late}:notes:9]\nInventories rose sharply during the quarter.\n"
-    for holder in (root, folder):
-        path = holder / "input_notes.md"
-        path.write_text(path.read_text(encoding="utf-8") + extra, encoding="utf-8")
+    replant(root, folder, "input_notes.md", NOTES + extra)
 
     stub = Stub(accounting_answer())
     with pytest.raises(ControlError) as caught:
@@ -1169,9 +1215,7 @@ def test_a_paragraph_under_a_filing_nobody_recorded_is_refused(tmp_path):
     to check, so it is refused rather than read as early."""
     root, folder = plant(tmp_path)
     extra = f"\n[{OTHER_ACCESSION}:notes:9]\nDeferred revenue rose.\n"
-    for holder in (root, folder):
-        path = holder / "input_notes.md"
-        path.write_text(path.read_text(encoding="utf-8") + extra, encoding="utf-8")
+    replant(root, folder, "input_notes.md", NOTES + extra)
 
     stub = Stub(accounting_answer())
     with pytest.raises(ControlError, match="in no row of"):
@@ -1188,6 +1232,10 @@ def test_the_control_runs_under_the_cutoff_the_manifest_names(tmp_path):
     root, folder = plant(tmp_path)
     result = go(root, folder, "accounting_reliability", accounting_answer())
     assert result["cutoff"] == MANIFEST["cutoff"]
+
+
+def _planted_manifest(root: Path) -> dict:
+    return json.loads((root / "input_manifest.json").read_text(encoding="utf-8"))
 
 
 def _replant_manifest(root: Path, manifest: dict) -> None:
@@ -1298,45 +1346,114 @@ def test_a_run_copy_hard_linked_out_of_the_run_is_refused(tmp_path):
     assert "one name of" in str(caught.value)
 
 
-def test_a_sentence_under_no_id_at_all_is_refused(tmp_path):
-    """The text the model reads and nothing dates.
+def test_a_sentence_added_inside_a_block_is_refused(tmp_path):
+    """The text the model reads and the record does not account for.
 
-    `src/assemble_bundle.py`'s `paragraph_blocks` opens a block at an `[id]`
-    line, so a sentence above the first one is in no block: not quotable, which
-    sounds like a protection and is the reverse of one. The quote gate has
-    nothing to match it against and `the_text_names_no_later_filing` has no id
-    to look up, while the model reads the file from the top.
+    The first rule here refused prose sitting under no `[id]` line, and refused
+    all twenty-four bundles this repository assembles with it: the assembler
+    writes undated prose of its own in three of the eight files. The judge was
+    already in the directory. A sentence appended *inside* an existing block is
+    in a block, quotable, cited and dated like its neighbours -- and it changes
+    the file's sha256, which `docs/INPUT_SPEC.md` §6 records per file.
     """
     root, folder = plant(tmp_path)
-    planted = ("The next quarter's receivables fell sharply.\n\n" + NOTES)
+    inside = NOTES.replace("The allowance for credit losses",
+                           "Receivables will fall next quarter. The allowance for "
+                           "credit losses")
+    assert inside != NOTES
     for where in (root, folder):
-        (where / "input_notes.md").write_text(planted, encoding="utf-8")
+        (where / "input_notes.md").write_text(inside, encoding="utf-8")
     with pytest.raises(ControlError) as caught:
         go(root, folder, "accounting_reliability", accounting_answer())
-    assert "text under no id" in str(caught.value)
-    assert "input_notes.md line 1" in str(caught.value)
+    assert "input_notes.md is not the file the build wrote" in str(caught.value)
 
 
-def test_a_heading_above_the_first_id_is_not_a_sentence_under_no_id(tmp_path):
-    """The control on the test above: `plant` writes `# Notes` as line 1 and the
-    run stands. A heading is the file's own scaffolding — `paragraph_blocks`
-    skips it for that reason and this reads the same rule out of the same
-    function."""
+def test_a_block_added_under_the_manifests_own_accession_is_refused(tmp_path):
+    """The variant the accession gate cannot see, and the paragraph list can.
+
+    `the_text_names_no_later_filing` dates an id's accession against the
+    submissions index, so a block planted under the *manifest's own* accession
+    dates as the triggering report and passes. Nothing in the record says the
+    build wrote it — except `paragraphs`, one row per block with its file. Here
+    the hash is re-recorded and the list is not, which is the half of the record
+    that catches this one.
+    """
     root, folder = plant(tmp_path)
-    assert NOTES.split("\n")[0] == "# Notes"
-    go(root, folder, "accounting_reliability", accounting_answer())
-    assert written(root, "accounting_reliability")["tier"]
+    added = NOTES + f"\n[{ACCESSION}:notes:9]\nReceivables will fall next quarter.\n"
+    for where in (root, folder):
+        (where / "input_notes.md").write_text(added, encoding="utf-8")
+    manifest = _planted_manifest(root)
+    manifest["files"]["input_notes.md"] = {
+        "sha256": hashlib.sha256(added.encode("utf-8")).hexdigest(),
+        "bytes": len(added.encode("utf-8"))}
+    _replant_manifest(root, manifest)
+    with pytest.raises(ControlError) as caught:
+        go(root, folder, "accounting_reliability", accounting_answer())
+    assert f"added {ACCESSION}:notes:9" in str(caught.value)
+    assert "the record does not know about" in str(caught.value)
 
 
-def test_the_unattributed_lines_come_from_the_bundles_own_reader():
-    """One rule for what an id line is, read out of `src/assemble_bundle.py`."""
-    from src import assemble_bundle
-    text = "# heading\nloose sentence\n[0000320193-25-000079:notes:1]\nowned\n"
-    assert assemble_bundle.unattributed_lines(text) == [(2, "loose sentence")]
-    assert assemble_bundle.unattributed_lines(NOTES) == []
-    # and the ids the blocks carry are the ids this stops at
-    assert [identifier for identifier, _ in assemble_bundle.paragraph_blocks(text)] \
-        == ["0000320193-25-000079:notes:1"]
+def test_a_run_whose_manifest_hashes_nothing_is_refused(tmp_path):
+    """An absent `files` is not an empty one: a manifest that accounts for no
+    file leaves every sentence the model reads undated, so the control refuses
+    the run rather than reading it."""
+    root, folder = plant(tmp_path)
+    _replant_manifest(root, {key: value for key, value in
+                             _planted_manifest(root).items() if key != "files"})
+    with pytest.raises(ControlError, match="records no file hashes"):
+        go(root, folder, "accounting_reliability", accounting_answer())
+
+
+def test_a_run_whose_manifest_lists_no_paragraphs_is_refused(tmp_path):
+    root, folder = plant(tmp_path)
+    _replant_manifest(root, {key: value for key, value in
+                             _planted_manifest(root).items() if key != "paragraphs"})
+    with pytest.raises(ControlError, match="records no paragraph list"):
+        go(root, folder, "accounting_reliability", accounting_answer())
+
+
+def test_a_handed_file_the_manifest_never_hashed_is_refused(tmp_path):
+    """The allowlist says the name is one the control may see; `files` says the
+    build wrote it. A file that passes the first and not the second is a file
+    somebody put in the directory."""
+    root, folder = plant(tmp_path)
+    manifest = _planted_manifest(root)
+    del manifest["files"]["input_notes.md"]
+    _replant_manifest(root, manifest)
+    with pytest.raises(ControlError) as caught:
+        go(root, folder, "accounting_reliability", accounting_answer())
+    assert "records no hash for it" in str(caught.value)
+
+
+@pytest.mark.parametrize("ticker", TICKERS)
+@pytest.mark.parametrize("form", ["10-K", "10-Q"])
+def test_a_bundle_this_repository_assembles_is_read_rather_than_refused(
+        tmp_path, ticker, form):
+    """The judge the first version of the check above did not have.
+
+    It refused every one of these -- twelve companies, both triggering forms --
+    before the model call, and the only input it had ever been run against was
+    the two-block `input_notes.md` this file plants. So the bundle the assembler
+    writes is built here and handed to the four gates that run before the call,
+    in the order `run()` runs them, and the assertion is that none of them
+    speaks. A guard nothing real is ever passed through is a guard whose reach
+    is unknown.
+    """
+    run = tmp_path / "run"
+    manifest = assemble_bundle.assemble(ticker, form, run, prior_runs=tmp_path / "none")
+    handed = tmp_path / "single-agent"
+    handed.mkdir()
+    for name in control_single_agent.CONTROL_SEES:
+        if (run / name).is_file():
+            shutil.copy2(run / name, handed / name)
+    cutoff = cutoff_guard.parse_date(manifest["cutoff"], "the manifest's cutoff")
+
+    control_single_agent.the_runs_own_copies(
+        control_single_agent.input_files(handed), handed, run)
+    control_single_agent.the_files_are_the_ones_the_manifest_hashed(handed, manifest)
+    control_single_agent.the_trends_name_no_later_period(handed, cutoff)
+    control_single_agent.the_text_names_no_later_filing(
+        quote_gate.quotable(handed, manifest["accession"]), cutoff, ticker)
 
 
 def test_a_trend_row_reaching_past_the_cutoff_is_refused(tmp_path):
@@ -1353,13 +1470,12 @@ def test_a_trend_row_reaching_past_the_cutoff_is_refused(tmp_path):
     root, folder = plant(tmp_path)
     later = json.loads(TRENDS)
     later["quarters"][0]["end"] = "2025-09-30"      # after MANIFEST's 2025-08-01
-    planted = json.dumps(later, indent=2, sort_keys=True) + "\n"
-    for where in (root, folder):
-        (where / "input_trends.json").write_text(planted, encoding="utf-8")
+    replant(root, folder, "input_trends.json",
+            json.dumps(later, indent=2, sort_keys=True) + "\n")
     with pytest.raises(ControlError) as caught:
         go(root, folder, "accounting_reliability", accounting_answer())
     assert "after the cutoff 2025-08-01" in str(caught.value)
-    assert "Q-0" in str(caught.value)
+    assert "input_trends.json.quarters[0].end" in str(caught.value)
 
 
 @pytest.mark.parametrize("field", ["start", "end", "target_end"])
@@ -1370,10 +1486,9 @@ def test_every_date_a_trend_row_prints_is_inside_the_cutoff(tmp_path, field):
     root, folder = plant(tmp_path)
     later = json.loads(TRENDS)
     later["quarters"][0][field] = "2026-01-31"
-    planted = json.dumps(later, indent=2, sort_keys=True) + "\n"
-    for where in (root, folder):
-        (where / "input_trends.json").write_text(planted, encoding="utf-8")
-    with pytest.raises(ControlError, match=field):
+    replant(root, folder, "input_trends.json",
+            json.dumps(later, indent=2, sort_keys=True) + "\n")
+    with pytest.raises(ControlError, match=re.escape(field)):
         go(root, folder, "accounting_reliability", accounting_answer())
 
 
@@ -1383,9 +1498,8 @@ def test_a_trend_row_inside_the_cutoff_stands(tmp_path):
     inside = json.loads(TRENDS)
     inside["quarters"][0] |= {"start": "2025-04-01", "end": "2025-06-30",
                               "target_end": "2025-06-30"}
-    planted = json.dumps(inside, indent=2, sort_keys=True) + "\n"
-    for where in (root, folder):
-        (where / "input_trends.json").write_text(planted, encoding="utf-8")
+    replant(root, folder, "input_trends.json",
+            json.dumps(inside, indent=2, sort_keys=True) + "\n")
     result = go(root, folder, "accounting_reliability", accounting_answer())
     assert written(root, "accounting_reliability")["tier"]
     # The one drop is the dash-changed quote this file plants in every run. The
