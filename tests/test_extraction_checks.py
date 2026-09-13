@@ -224,7 +224,12 @@ def test_a_cutoff_that_is_not_the_triggering_reports_filing_date_fails(tmp_path)
     catalogues = [row for row in manifest["documents"]
                   if row["role"] in assemble_bundle.CATALOGUE_ROLES]
     assert len(catalogues) == 2, catalogues
-    assert len(failures) == len(catalogues) + 1
+    # The trend table states the cutoff it was built at, and moving the
+    # manifest's after the fact contradicts that too.
+    trends_line = [line for line in failures if "input_trends.json says" in line]
+    assert len(trends_line) == 1
+    assert "manifest says 2027-01-01" in trends_line[0]
+    assert len(failures) == len(catalogues) + 2
     for row in catalogues:
         named = f"{row['form']} {row['role']}"
         assert any(named in line and "read through the cutoff 2027-01-01" in line

@@ -90,3 +90,18 @@ def accessions(ticker: str) -> frozenset[str]:
 def as_of(ticker: str) -> str:
     """The date the record was filtered to when it was fetched."""
     return _document(ticker)["as_of"]
+
+
+@functools.lru_cache(maxsize=None)
+def rows_filed_after(ticker: str, cutoff: str) -> int:
+    """How many facts the record holds that were filed after `cutoff`.
+
+    The far side of a boundary, counted from the document rather than from the
+    table. A test that asserts nothing past the cutoff reached a cell is only a
+    test where there is something past the cutoff to reach it.
+    """
+    return sum(1
+               for concept in _document(ticker)["facts"]["us-gaap"].values()
+               for rows in concept["units"].values()
+               for row in rows
+               if row.get("filed", "") > cutoff)

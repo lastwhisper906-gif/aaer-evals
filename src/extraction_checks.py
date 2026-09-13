@@ -179,7 +179,7 @@ def _date(value, what: str) -> dt.date:
     return dt.date.fromisoformat(str(value))
 
 
-def check_cutoff(manifest: dict | None) -> Result:
+def check_cutoff(manifest: dict | None, trends: dict | None = None) -> Result:
     """Fail-closed, the same rule as the loader: no date is a violation."""
     result = Result("cutoff")
     if manifest is None:
@@ -190,6 +190,21 @@ def check_cutoff(manifest: dict | None) -> Result:
     except ValueError as exc:
         result.fail(f"unusable cutoff: {exc}")
         return result
+
+    # The trend table reads the catalogue at its own cutoff and the manifest
+    # publishes `rows_used_through` from the assembler's. They agree today
+    # because one build sets both, and nothing said so: a table built at an
+    # earlier cutoff still published the manifest's, and the row count it came
+    # from was smaller than the row count the manifest claimed it read through.
+    # The file states the cutoff it used, so it is read rather than assumed.
+    if trends is not None:
+        stated = trends.get("cutoff")
+        if stated != str(cutoff):
+            result.fail(
+                f"input_trends.json says it was built at cutoff {stated!r} and the "
+                f"manifest says {cutoff}. `rows_used_through` is written from the "
+                "manifest's, so the two disagreeing means the bundle publishes a "
+                "boundary the table did not read at")
 
     documents = manifest.get("documents")
     if not documents:
@@ -263,7 +278,7 @@ def run(root: Path, *, fixtures_root=cutoff_guard.FIXTURES) -> tuple[int, list[s
     manifest = parsed.get("input_manifest.json")
     results = [schema,
                check_counts(manifest, fixtures_root=fixtures_root),
-               check_cutoff(manifest),
+               check_cutoff(manifest, parsed.get("input_trends.json")),
                check_notes(texts)]
     lines = [line for result in results for line in result.lines()]
     return (0 if all(result.passed for result in results) else FAILED), lines

@@ -177,8 +177,20 @@ def test_no_document_in_the_manifest_was_filed_after_the_cutoff(ticker):
             continue
         assert row["filing_date"] <= manifest["cutoff"], row
     assert manifest["cutoff"] == manifest["filing_date"]
+    # `on_record_at_cutoff` is the same record read the same way: a catalogue is
+    # on record whatever the cutoff is, and carries no filing date there either.
+    # It used to carry its real recorded date -- so one manifest published, for
+    # one file, both the date the other list says must not be published and the
+    # `date_basis` sentence saying why.
     for row in manifest["on_record_at_cutoff"]:
+        if row["role"] in assemble_bundle.CATALOGUE_ROLES:
+            assert row["filing_date"] is None, row
+            assert row["rows_used_through"] == manifest["cutoff"], row
+            continue
         assert row["filing_date"] <= manifest["cutoff"], row
+    listed = {(row["form"], row["role"]) for row in manifest["on_record_at_cutoff"]}
+    for row in manifest["documents"]:
+        assert (row["form"], row["role"]) in listed, row
 
 
 def test_a_ten_k_bundle_leaves_out_the_ten_q_that_came_after_it():
@@ -361,6 +373,17 @@ CARR_CATALOGUE_DATE = "2026-04-30"
 
 # Where EDGAR serves each catalogue: one JSON file per CIK, off the fixture
 # manifests' own `url` for the two roles.
+def _cik(ticker: str) -> str:
+    """The company's own CIK, read off the committed fixture manifest.
+
+    Not off the bundle, which is what is being checked: a catalogue row carries
+    no accession, so its URL was tied to nothing but the endpoint prefix and
+    another company's catalogue could have worn this bundle's row.
+    """
+    return json.loads((cutoff_guard.FIXTURES / ticker / "manifest.json")
+                      .read_text(encoding="utf-8"))["cik"]
+
+
 CATALOGUE_URL = {
     assemble_bundle.INDEX_ROLE: "https://data.sec.gov/submissions/",
     assemble_bundle.FACTS_ROLE: "https://data.sec.gov/api/xbrl/companyfacts/",
@@ -922,10 +945,17 @@ def test_every_listed_document_points_a_reader_at_edgar(ticker, form):
     Their URLs are asserted against that shape instead, each against its own
     address.
     """
-    for row in built(ticker, form)["manifest"]["documents"]:
+    manifest = built(ticker, form)["manifest"]
+    for row in manifest["documents"]:
         assert row["url"], row
         if row["role"] in assemble_bundle.CATALOGUE_ROLES:
-            assert row["url"].startswith(CATALOGUE_URL[row["role"]]), row
+            # The prefix says which endpoint; the CIK says which company. A
+            # catalogue row carries no accession, so the prefix alone left
+            # another company's catalogue able to wear this bundle's row — the
+            # filing rows are tied to their company by the accession in the URL
+            # and these two were tied to nothing.
+            assert row["url"] == \
+                f"{CATALOGUE_URL[row['role']]}CIK{_cik(ticker)}.json", row
             assert row["accession"] == "" and row["report_date"] == ""
             continue
         assert row["accession"].replace("-", "") in row["url"], row

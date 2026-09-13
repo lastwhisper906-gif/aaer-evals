@@ -64,6 +64,35 @@ def table(ticker: str) -> dict:
     return trends.trends(numbers(ticker))
 
 
+def table_at(ticker: str, cutoff: str) -> dict:
+    """The table for one company at a cutoff of the caller's choosing.
+
+    The cutoff is overridden on a copy of the numbers payload, which is the
+    route `src/assemble_bundle.py` takes -- the table reads the catalogue at
+    `numbers["cutoff"]`. Re-running the extractor at an early cutoff instead
+    would refuse the later instances outright, which is a different rule being
+    tested (the document gate, not the row filter).
+    """
+    return trends.trends(dict(numbers(ticker), cutoff=cutoff))
+
+
+@functools.lru_cache(maxsize=None)
+def _earlier_annual(ticker: str) -> str:
+    """The filing date of the earlier of this company's two 10-Ks, off its
+    committed manifest.
+
+    A boundary well inside the record, not at its edge: each fixture set runs to
+    an as-of of 2026-09-01, and the earlier annual leaves a year and more of
+    filings on the far side of it for every one of the twelve. That far side is
+    what makes a no-look-ahead assertion able to fail, and it is counted from
+    the companyfacts document below rather than assumed.
+    """
+    dates = sorted({row["filing_date"]
+                    for row in cutoff_guard.documents(ticker, form="10-K")})
+    assert len(dates) >= 2, f"{ticker}: {dates}"
+    return dates[0]
+
+
 def rows(payload: dict) -> list[dict]:
     return payload["quarters"] + payload["years"]
 
@@ -1056,6 +1085,14 @@ def test_the_two_quarterlies_edgar_had_not_loaded_are_read_out_of_the_instance()
 
 @pytest.mark.parametrize("ticker", TICKERS)
 def test_no_fact_filed_after_the_cutoff_reaches_a_cell(ticker):
+    """At the fixture set's own as-of date, which is the table's default.
+
+    This alone cannot fail and must not be read as the judge of the rule: the
+    as-of is 2026-09-01 and the newest filing any of the twelve records holds is
+    2026-08-31, so there is nothing on either side of the boundary to sort. The
+    test below moves the boundary inside the record, which is where the rule
+    either holds or does not; this one says the default run is consistent.
+    """
     payload = table(ticker)
     cutoff = payload["cutoff"]
     assert cutoff
@@ -1063,6 +1100,34 @@ def test_no_fact_filed_after_the_cutoff_reaches_a_cell(ticker):
         for cell in row["ratios"].values():
             for source in (cell.get("inputs") or {}).values():
                 assert source["filed"] <= cutoff, f"{ticker} {source['fact_id']}"
+
+
+@pytest.mark.parametrize("ticker", TICKERS)
+def test_no_fact_filed_after_an_earlier_cutoff_reaches_a_cell(ticker):
+    """The same rule with a boundary that cuts the record in two.
+
+    The cutoff is the earlier of each company's two annual filings, read off its
+    committed manifest -- a date every one of the twelve has filings on both
+    sides of, so a cell drawing on a later fact is a cell this catches. The
+    default run above cannot: nothing in the fixture set is filed after the
+    as-of.
+
+    The count of facts on the far side is asserted too, from the companyfacts
+    record read by a test-side reader, so a table that returned nothing at all
+    would not pass this by having no cells to check.
+    """
+    cutoff = _earlier_annual(ticker)
+    payload = table_at(ticker, cutoff)
+    assert payload["cutoff"] == cutoff
+    seen = 0
+    for row in rows(payload):
+        for cell in row["ratios"].values():
+            for source in (cell.get("inputs") or {}).values():
+                assert source["filed"] <= cutoff, f"{ticker} {source['fact_id']}"
+                seen += 1
+    assert seen, f"{ticker} produced no cell to check at {cutoff}"
+    later = companyfacts_source.rows_filed_after(ticker, cutoff)
+    assert later, f"{ticker} has nothing filed after {cutoff} — no boundary here"
 
 
 def test_no_document_after_the_cutoff_is_listed_in_the_payloads_own_source():

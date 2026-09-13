@@ -132,15 +132,35 @@ def paragraph_blocks(text: str) -> list[tuple[str, str]]:
 # --- the pieces --------------------------------------------------------------
 
 def documents_on_record(ticker: str, cutoff, fixtures_root) -> list[dict]:
-    """Every fixture document filed at or before the cutoff, as the record has
-    it. A document filed later is not in the bundle and not in the manifest."""
+    """Every fixture document filed at or before the cutoff, as the record has it.
+
+    A document filed later is not in the bundle and not in the manifest.
+
+    The two catalogues are the exception `documents_used` below states at
+    length, and they get it here for the same reason: a catalogue is one file
+    spanning many filings, its recorded date is the newest filing it carries,
+    and publishing that as a filing date publishes a date the record itself
+    says is not one. Gating them on it would be worse still -- a catalogue
+    whose date falls after the cutoff would drop out of this list entirely,
+    while the bundle read its earlier rows and listed it in `documents`, so one
+    manifest would say both that the file was used and that it was not on
+    record. They are always on record; the cutoff selects their rows.
+    """
     rows = []
     for row in cutoff_guard.documents(ticker, fixtures_root=fixtures_root):
-        if row["filing_date"] <= str(cutoff):
-            rows.append({"form": row["form"], "role": row["role"],
-                         "accession": row["accession"], "path": row["path"],
-                         "filing_date": row["filing_date"], "sha256": row["sha256"]})
-    rows.sort(key=lambda row: (row["filing_date"], row["accession"], row["role"]))
+        is_catalogue = row["role"] in CATALOGUE_ROLES
+        if not is_catalogue and row["filing_date"] > str(cutoff):
+            continue
+        entry = {"form": row["form"], "role": row["role"],
+                 "accession": row["accession"], "path": row["path"],
+                 "filing_date": None if is_catalogue else row["filing_date"],
+                 "sha256": row["sha256"]}
+        if is_catalogue:
+            entry["date_basis"] = row.get("date_basis")
+            entry["rows_used_through"] = str(cutoff)
+        rows.append(entry)
+    rows.sort(key=lambda row: (row["filing_date"] or "9999-12-31",
+                               row["accession"], row["role"]))
     return rows
 
 
