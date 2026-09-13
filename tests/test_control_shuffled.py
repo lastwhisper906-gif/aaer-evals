@@ -93,6 +93,10 @@ NOTES_FILED = "2025-10-31"
 # numbers-versus-market report.
 UNCROSSED_ITEM = "0001783180-26-000008:notes:inventory:1"
 CROSSED_ITEM = "0001783180-26-000008:numbers_vs_market:1"
+# And one out of the *other* half. Every citation in this file used to come from
+# the numbers side, so indexing only that side passed every test -- in a control
+# whose whole point is that the two halves are two companies'.
+NOTES_HALF_ITEM = "0000320193-25-000079:notes:receivables:1"
 
 # The pairing rule's own example, which is not the way this file's fixture pair
 # runs: the rule hands a run scoring Apple the notes of a filing ninety-seven
@@ -693,30 +697,32 @@ def test_a_manifest_naming_no_accession_at_all_is_refused(tmp_path, out):
     assert supervisor.calls == []
 
 
-def test_the_numbers_half_is_checked_against_the_filing_being_scored_too(tmp_path, out):
-    """Both halves go through the cutoff, not just the partner's.
+@pytest.mark.parametrize("claimed", ["2025-06-30", "2026-08-01"])
+def test_a_manifest_that_disagrees_with_the_record_is_refused(tmp_path, out, claimed):
+    """One filing has one date, and the manifest holds it twice.
 
-    Nothing asked: removing the numbers-side check left every test in this file
-    passing. The record here contradicts itself -- it names the accession its
-    reports were written from and dates the run before that filing existed --
-    and an input assembled against a boundary earlier than its own trigger is
-    refused rather than crossed.
+    The half was checked against the scored date in one direction only, so a
+    manifest dated *earlier* than the record was refused and one dated later
+    was not -- and later is the direction that loosens the boundary. Claiming
+    2026-08-01 for a filing the record files 2026-02-05 admits a notes half
+    from any day up to it. `src/assemble_bundle.py` writes `filing_date` out of
+    the very record row this reads, so any difference is a run contradicting
+    itself.
     """
+    assert claimed != NUMBERS_FILED
     numbers = bundle(tmp_path, NUMBERS_COMPANY)
-    earlier = "2025-06-30"
-    assert earlier < NOTES_FILED < NUMBERS_FILED
     (numbers / control_shuffled.MANIFEST).write_text(
         json.dumps({"ticker": NUMBERS_COMPANY, "form": "10-K",
-                    "accession": NUMBERS_ACCESSION, "filing_date": earlier,
-                    "cutoff": earlier}, indent=2, sort_keys=True) + "\n",
+                    "accession": NUMBERS_ACCESSION, "filing_date": claimed,
+                    "cutoff": claimed}, indent=2, sort_keys=True) + "\n",
         encoding="utf-8")
     supervisor = StandInSupervisor()
-    with pytest.raises(ControlError, match="the numbers half") as refusal:
+    with pytest.raises(ControlError, match="one date") as refusal:
         control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY, numbers_bundle=numbers,
                              notes_bundle=bundle(tmp_path, NOTES_COMPANY),
                              out=out, predictor=supervisor)
     assert NUMBERS_FILED in str(refusal.value)
-    assert earlier in str(refusal.value)
+    assert claimed in str(refusal.value)
     assert list(out.iterdir()) == []
     assert supervisor.calls == []
 
@@ -904,6 +910,87 @@ def test_an_item_citing_nothing_at_all_is_dropped_and_counted(tmp_path, out):
     assert dropped["reason"] == control_shuffled.CITES_NOTHING
     # The other question cited the crossed set, so nothing left it.
     assert written(out, ACCOUNTING_FILE)["control"]["counts"]["dropped_items"] == 0
+
+
+@pytest.mark.parametrize("shape", [0.7, "up", [0.7], {"p_up": 0.7},
+                                   {"p_up": 0.7, "basis": [], "extra": 1}])
+def test_a_market_direction_that_is_not_the_schemas_shape_is_refused(
+        tmp_path, out, shape):
+    """A bare probability is not an abstention.
+
+    The citation gate reads `basis`, so anything with no `basis` to read went
+    through it untouched and was written standing with no drop counted. The
+    sibling control refuses the shape in its schema check; so does this one.
+    """
+    answers = dict(ANSWERS)
+    answers["accounting_reliability"] = dict(ACCOUNTING_ANSWER,
+                                             market_direction=shape)
+    supervisor = StandInSupervisor(answers)
+    with pytest.raises(ControlError, match="market_direction"):
+        run_crossed(tmp_path, out, supervisor)
+    assert list(out.iterdir()) == []
+
+
+def test_an_item_citing_the_notes_half_stands(tmp_path, out):
+    """The crossed set is both halves.
+
+    Every citation in this file came out of the numbers half, so indexing only
+    that side passed all of them -- in a control whose point is that the two
+    halves are two companies'. This cites the notes company's own notes report,
+    which the supervisor was handed, and it must stand.
+    """
+    answers = dict(ANSWERS)
+    answers["accounting_reliability"] = dict(
+        ACCOUNTING_ANSWER,
+        checklist=[{"key": "receivables_growth_outruns_revenue", "finding": "yes",
+                    "confidence": 0.6,
+                    "evidence": [{"upstream_item_id": NOTES_HALF_ITEM}]}])
+    run_crossed(tmp_path, out, StandInSupervisor(answers))
+    accounting = written(out, ACCOUNTING_FILE)
+    assert accounting["checklist"] == answers["accounting_reliability"]["checklist"]
+    assert accounting["control"]["counts"]["dropped_items"] == 0
+
+
+def test_the_notes_half_item_is_in_the_committed_notes_report():
+    """The id above, located in the fixture text rather than taken on trust."""
+    text = report_text(NOTES_COMPANY, "report_notes_text.md")
+    assert f"[{NOTES_HALF_ITEM}]" in text
+    assert NOTES_HALF_ITEM.startswith(NOTES_ACCESSION)
+
+
+def test_an_explanation_citing_outside_the_crossed_set_is_dropped_and_counted(
+        tmp_path, out):
+    """`docs/CHECKLIST.md` §7 assembles explanations from what the supervisors
+    say about upstream items, so the id names one and resolves like one. It was
+    read by nothing here: an explanation naming the notes report the crossing
+    took away was written standing and uncounted, which is the same hole the
+    sibling control's own ledger item closed."""
+    answers = dict(ANSWERS)
+    answers["accounting_reliability"] = dict(
+        ACCOUNTING_ANSWER,
+        explanations=[{"id": UNCROSSED_ITEM, "support": "sufficient",
+                       "realization_p": 0.4}])
+    run_crossed(tmp_path, out, StandInSupervisor(answers))
+    accounting = written(out, ACCOUNTING_FILE)
+    assert accounting["explanations"] == []
+    dropped = accounting["control"]["dropped_items"]
+    assert [row["item_id"] for row in dropped] == \
+        [f"accounting_reliability:explanations:{UNCROSSED_ITEM}"]
+    assert UNCROSSED_ITEM in dropped[0]["reason"]
+    assert accounting["control"]["counts"]["dropped_items"] == 1
+
+
+def test_an_explanation_citing_the_crossed_set_stands(tmp_path, out):
+    """The control on the drop above, from the other half."""
+    answers = dict(ANSWERS)
+    standing = [{"id": NOTES_HALF_ITEM, "support": "sufficient",
+                 "realization_p": 0.4}]
+    answers["accounting_reliability"] = dict(ACCOUNTING_ANSWER,
+                                             explanations=standing)
+    run_crossed(tmp_path, out, StandInSupervisor(answers))
+    accounting = written(out, ACCOUNTING_FILE)
+    assert accounting["explanations"] == standing
+    assert accounting["control"]["counts"]["dropped_items"] == 0
 
 
 def test_the_sentence_for_citing_nothing_is_the_pipelines_own():

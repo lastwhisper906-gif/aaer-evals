@@ -144,6 +144,11 @@ CONTINUOUS_QUESTION = "financial_pressure"
 # The abstention `docs/CHECKLIST.md` §7 allows, which is where a market call
 # whose basis resolves to nothing lands: the field cannot leave, so it degrades.
 INSUFFICIENT = "insufficient"
+# §7 gives `market_direction` a probability and the ids under it, and nothing
+# else. The sibling control refuses any other shape in its schema check, so this
+# one does too -- a bare float reaches the gate below as something with no
+# citations to resolve and was written standing.
+MARKET_FIELDS = ("p_up", "basis")
 
 
 class ControlError(Exception):
@@ -287,6 +292,22 @@ def _crossed_pair(numbers_bundle, notes_bundle):
                 f"{numbers['accession']}. The date the cutoff is read off "
                 "belongs to the filing the manifest names, so a run that names "
                 "two filings has not said which one it is")
+        # One filing, one date, held in two places. Comparing the half against
+        # the manifest in one direction refused a manifest dated *earlier* than
+        # the record and accepted one dated later, which is the direction that
+        # loosens the boundary: a manifest saying 2026-08-01 for a filing the
+        # record files 2026-02-05 let a notes half from 2026-07-31 through.
+        # `src/assemble_bundle.py` writes `filing_date` out of the very row
+        # `filed` reads, so any difference at all is a record contradicting
+        # itself.
+        on_record = filed(numbers["from"], numbers["accession"])
+        if scored != on_record:
+            raise ControlError(
+                f"{Path(numbers_bundle).resolve() / MANIFEST} says "
+                f"{numbers['accession']} was filed {scored} and "
+                f"{numbers['from']}'s own record says {on_record}. The filing "
+                "being scored has one date, and a run whose manifest disagrees "
+                "with the record set its own boundary")
     _within_cutoff("numbers", numbers, scored)
     _within_cutoff("notes", notes, scored)
     return numbers, notes, scored, scored_basis
@@ -453,6 +474,24 @@ def resolved(question: str, answer: dict, declared: set[str]) -> tuple[dict, lis
             standing.append(entry)
     kept["checklist"] = standing
 
+    standing_explanations = []
+    for entry in _a_list(question, "explanations", answer["explanations"]):
+        if not isinstance(entry, dict) or not isinstance(entry.get("id"), str):
+            raise ControlError(
+                f"a {question} explanation carries no id, and an item with no "
+                "name can neither be resolved nor dropped by name")
+        # §7 spells this field `id` rather than `upstream_item_id`, and says
+        # explanations are assembled from what the supervisors say about those
+        # items -- so the id names an upstream item and resolves like one. The
+        # sibling control resolves it through `quote_gate.citation_drop_reason`;
+        # this is the same rule in the same two sentences.
+        reason = _drop_reason({"upstream_item_id": entry["id"]}, declared)
+        if reason:
+            drop(f"{question}:explanations:{entry['id']}", reason)
+        else:
+            standing_explanations.append(entry)
+    kept["explanations"] = standing_explanations
+
     names = {entry["key"] for entry in standing}
     kept["top_signals"] = [one for one in
                            _a_list(question, "top_signals", answer["top_signals"])
@@ -466,8 +505,7 @@ def resolved(question: str, answer: dict, declared: set[str]) -> tuple[dict, lis
     # empty left the two controls applying two gates to one schema. The field
     # cannot be dropped, so it degrades to that same abstention.
     market = answer["market_direction"]
-    if isinstance(market, dict) and (market.get("p_up") != INSUFFICIENT
-                                     or quote_gate.citations(market)):
+    if market.get("p_up") != INSUFFICIENT or quote_gate.citations(market):
         reason = _drop_reason(market, declared)
         if reason:
             drop(f"{question}:market_direction", reason)
@@ -517,6 +555,14 @@ def _predicted(question: str, answer) -> dict:
             f"the {question} answer has no {', '.join(missing)}; a control is "
             "scored on the same targets as the pipeline and cannot be short of "
             "them (docs/CHECKLIST.md §7)")
+    market = answer["market_direction"]
+    if not isinstance(market, dict) or set(market) != set(MARKET_FIELDS):
+        raise ControlError(
+            f"the {question} answer gives market_direction as "
+            f"{type(market).__name__ if not isinstance(market, dict) else sorted(market)}"
+            f", and docs/CHECKLIST.md §7 gives it a {' and a '.join(MARKET_FIELDS)}. "
+            "A probability with no basis beside it is not an abstention, it is a "
+            "field the citation gate has nothing to read")
     wants_continuous = question == CONTINUOUS_QUESTION
     if wants_continuous and CONTINUOUS not in answer:
         raise ControlError(f"the {question} answer has no {CONTINUOUS}, which the "
