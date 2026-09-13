@@ -410,11 +410,13 @@ def load_bundle_file(bundle_root, name: str) -> str:
     reader. Routing bundle reads through this function is what keeps
     `extraction_checks` honest about the bypass scan.
 
-    A link is refused. `is_file()` and `read_text()` both follow one, so a
-    bundle file that is a link to another run's is read as this run's own
-    record — the cutoff, the accession and the rules version all arriving from
-    a run nobody named. The same rule as `src/agent_inputs.py` applies to what
-    a layer is handed; this is the run's own side of it.
+    A link is refused, of either kind. `is_file()` and `read_text()` both follow
+    a symbolic one, so a bundle file that links to another run's is read as this
+    run's own record — the cutoff, the accession and the rules version all
+    arriving from a run nobody named. A hard link is the same leak with nothing
+    to see: one file under two names, and no original to prefer. The same rule
+    as `src/agent_inputs.py` applies to what a layer is handed; this is the
+    run's own side of it.
     """
     root = Path(bundle_root)
     if root.is_symlink():
@@ -429,4 +431,10 @@ def load_bundle_file(bundle_root, name: str) -> str:
             "run's own, and a link makes another run's file answer for it")
     if not path.is_file():
         raise CutoffGuardError(f"{path} is not in the bundle")
+    if path.stat().st_nlink > 1:
+        raise CutoffGuardError(
+            f"{path} is one name of {path.stat().st_nlink} for the same file. A "
+            "hard link answers `is_file()` and reads as this run's own record "
+            "while the bytes belong to whichever directory wrote them — there is "
+            "no original to prefer, so a run's record has to be a file of its own")
     return path.read_text(encoding="utf-8")

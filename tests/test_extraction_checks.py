@@ -153,8 +153,14 @@ def test_a_document_dated_after_the_cutoff_fails_the_cutoff_gate(tmp_path):
     code, lines = extraction_checks.run(bundle)
     assert code != 0
     failures = gate_lines(lines, "cutoff")
-    assert len(failures) == 1
+    # Two lines, both true of the one damaged row: it is after the cutoff, and
+    # the record says it was filed 2025-10-31. The second is what the gate reads
+    # outside the bundle, and a manifest that moved its own boundary to match
+    # the planted date would still be caught by it.
+    assert len(failures) == 2
     assert "was filed 2027-01-01, after the cutoff" in failures[0]
+    assert "is recorded as filed 2025-10-31 and the manifest says 2027-01-01" \
+        in failures[1]
 
 
 def test_an_empty_notes_file_fails_the_notes_gate(tmp_path):
@@ -250,6 +256,43 @@ def test_a_cutoff_moved_along_with_the_trigger_date_fails_the_cutoff_gate(tmp_pa
     disagreement = [line for line in failures if filed in line and later in line]
     assert disagreement, failures
     assert manifest["accession"] in disagreement[0]
+
+
+def test_a_manifest_that_moves_every_date_it_holds_still_fails(tmp_path):
+    """The last boundary a bundle can move is the one it writes itself.
+
+    Moving `cutoff`, `filing_date` and the triggering report's own row together
+    leaves the manifest agreeing with itself at any date it likes, and the
+    filing it then sweeps in is dated on the new boundary. What it cannot move
+    is the submissions index, EDGAR's own catalogue of what a company filed and
+    when, so that is where the gate reads the filing dates of record. The date
+    planted here is Apple's latest quarterly, which the record files nine months
+    after the annual report this bundle is.
+    """
+    bundle = good_bundle(tmp_path, "AAPL", "10-K")
+    manifest = json.loads((bundle / "input_manifest.json").read_text(encoding="utf-8"))
+    truthful = manifest["cutoff"]
+    later = max(row["filing_date"]
+                for row in cutoff_guard.documents("AAPL", form="10-Q"))
+    assert later > truthful
+
+    def move(payload):
+        payload["cutoff"] = later
+        payload["filing_date"] = later
+        for row in payload["documents"]:
+            if row.get("role") in assemble_bundle.CATALOGUE_ROLES:
+                row["rows_used_through"] = later
+            elif row["accession"] == payload["accession"]:
+                row["filing_date"] = later
+
+    rewrite(bundle, "input_manifest.json", move)
+    code, lines = extraction_checks.run(bundle)
+    assert code != 0
+    failures = gate_lines(lines, "cutoff")
+    recorded = [line for line in failures
+                if "recorded as filed" in line and truthful in line and later in line]
+    assert recorded, failures
+    assert manifest["accession"] in recorded[0]
 
 
 def test_a_manifest_about_a_filing_its_own_list_does_not_hold_fails(tmp_path):

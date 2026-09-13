@@ -179,7 +179,8 @@ def _date(value, what: str) -> dt.date:
     return dt.date.fromisoformat(str(value))
 
 
-def check_cutoff(manifest: dict | None) -> Result:
+def check_cutoff(manifest: dict | None, *,
+                 fixtures_root=cutoff_guard.FIXTURES) -> Result:
     """Fail-closed, the same rule as the loader: no date is a violation."""
     result = Result("cutoff")
     if manifest is None:
@@ -266,6 +267,43 @@ def check_cutoff(manifest: dict | None) -> Result:
                             f"cutoff is that filing's date, and a run whose record "
                             f"of it disagrees with itself set its own boundary")
 
+    # And the record the bundle does not write. Every date above is one the
+    # manifest states about itself, so a manifest that moved all of them
+    # together still agreed with itself: the two keys and the trigger's own row
+    # all read 2025-10-31, and the gate reported "none filed after" a boundary
+    # nobody set while the 10-K filed on it came in. The submissions index is
+    # EDGAR's own catalogue of what a company filed and when, committed and
+    # hashed, and no bundle writes it — so every row's date is read there, which
+    # closes the boundary and a row understating its own date at once.
+    ticker = manifest.get("ticker")
+    try:
+        index = cutoff_guard.one_document(ticker, "submissions",
+                                          assemble_bundle.INDEX_ROLE,
+                                          fixtures_root=fixtures_root)
+        filings = json.loads(cutoff_guard.load_index(index["full_path"],
+                                                     fixtures_root=fixtures_root))
+    except (cutoff_guard.CutoffGuardError, ValueError, TypeError) as exc:
+        result.fail(f"{exc} — a run whose company has no submissions index has no "
+                    f"filing date of record this gate can check its own copy "
+                    f"against")
+        return result
+    of_record = {row.get("accession"): row.get("filing_date")
+                 for row in filings.get("filings", []) if row.get("accession")}
+    for row in documents:
+        if row.get("role") in assemble_bundle.CATALOGUE_ROLES:
+            continue
+        held = of_record.get(row.get("accession"))
+        named = f"{row.get('form')} {row.get('role')} {row.get('accession')}"
+        if held is None:
+            result.fail(f"{named} is in the manifest and in no row of {ticker}'s "
+                        f"submissions index — a filing EDGAR's own catalogue does "
+                        f"not list has no date to check, and the bundle's word "
+                        f"for it is the thing being checked")
+        elif held != row.get("filing_date"):
+            result.fail(f"{named} is recorded as filed {held} and the manifest "
+                        f"says {row.get('filing_date')}. The index is the record "
+                        f"and the bundle does not write it")
+
     result.detail = (f"{len(documents)} documents, none filed after {cutoff}, "
                      f"which is the {manifest.get('form')}'s own filing date")
     return result
@@ -292,7 +330,7 @@ def run(root: Path, *, fixtures_root=cutoff_guard.FIXTURES) -> tuple[int, list[s
     manifest = parsed.get("input_manifest.json")
     results = [schema,
                check_counts(manifest, fixtures_root=fixtures_root),
-               check_cutoff(manifest),
+               check_cutoff(manifest, fixtures_root=fixtures_root),
                check_notes(texts)]
     lines = [line for result in results for line in result.lines()]
     return (0 if all(result.passed for result in results) else FAILED), lines

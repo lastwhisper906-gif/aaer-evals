@@ -15,6 +15,7 @@ import datetime as dt
 import gzip
 import hashlib
 import json
+import os
 from collections import Counter
 from pathlib import Path
 
@@ -130,6 +131,22 @@ def test_a_bundle_file_that_is_a_link_to_another_runs_file_is_refused(tmp_path):
     with pytest.raises(CutoffGuardError) as caught:
         cutoff_guard.load_bundle_file(mine, "input_manifest.json")
     assert "symlink" in str(caught.value)
+
+
+def test_a_bundle_file_hard_linked_to_another_runs_file_is_refused(tmp_path):
+    """A hard link is the same leak with nothing to see: one file under two
+    names, `is_file()` true and `is_symlink()` false, and no original to prefer.
+    A run's own record has to be a file of its own."""
+    mine, other = tmp_path / "run", tmp_path / "another-run"
+    mine.mkdir()
+    other.mkdir()
+    (other / "input_manifest.json").write_text('{"cutoff": "2026-01-30"}\n',
+                                               encoding="utf-8")
+    os.link(other / "input_manifest.json", mine / "input_manifest.json")
+    assert not (mine / "input_manifest.json").is_symlink()
+    with pytest.raises(CutoffGuardError) as caught:
+        cutoff_guard.load_bundle_file(mine, "input_manifest.json")
+    assert "hard link" in str(caught.value)
 
 
 def test_a_run_directory_that_is_a_link_to_another_run_is_refused(tmp_path):
