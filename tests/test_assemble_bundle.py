@@ -423,6 +423,9 @@ def test_a_build_reads_the_fixture_root_it_was_given(tmp_path):
                  if row["role"] == assemble_bundle.FACTS_ROLE]
     assert len(catalogue) == 1
     assert catalogue[0]["rows_used_through"] == CARR_10K_FILED
+    # and the row says which file it fed, which is the trend table alone. The
+    # instances feed the numbers file as well; the catalogue never does.
+    assert catalogue[0]["contributed_to"] == ["input_trends.json"]
 
 
 def test_a_filing_the_same_build_read_still_carries_its_own_date():

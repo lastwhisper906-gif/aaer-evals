@@ -470,9 +470,15 @@ def build(ticker: str, form: str, *, cutoff=None, fixtures_root=cutoff_guard.FIX
     # Each phase records what it opened and which file that document fed.
     opened: dict[Path, set[str]] = {}
 
+    # Two phases, because the instances and the catalogue feed different files.
+    # The instances are the numbers file and the table built from them; the
+    # catalogue is read by the table alone, and listing it as having fed
+    # `input_numbers.json` would be the manifest saying something untrue about a
+    # document it published.
     with phase(opened, "input_numbers.json", "input_trends.json"):
         numbers = extract_numbers.extract(ticker, forms, cutoff=cutoff,
                                           fixtures_root=fixtures_root)
+    with phase(opened, "input_trends.json"):
         # The root travels with the call. The trend table read no fixture until
         # it read the catalogue, so leaving it off was harmless; now a build
         # given another root read the catalogue out of the repository's own
