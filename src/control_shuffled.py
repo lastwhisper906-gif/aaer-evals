@@ -198,6 +198,13 @@ def named_accession(name: str, text: str) -> str:
         raise ControlError(
             f"{name} carries no item id, so nothing in it says which filing it "
             "was written from")
+    if "" in found:
+        raise ControlError(
+            f"{name} carries an item id that begins with no accession. An empty "
+            "accession names no filing, and `filed` would look it up against the "
+            "rows that carry none -- the submissions index and the companyfacts "
+            "record, which are catalogues and not filings, and whose recorded "
+            "date is the newest filing in them")
     if len(found) > 1:
         raise ControlError(
             f"{name} carries items from {', '.join(sorted(found))}. One report "
@@ -240,15 +247,62 @@ def _half(bundle_root, names: tuple[str, ...]) -> dict:
             "reports": text}
 
 
+def _crossed_pair(numbers_bundle, notes_bundle):
+    """The two halves and the filing date they are scored against, or a refusal.
+
+    Everything that is true of a pair rather than of a half: two directories,
+    two companies, and both halves written from filings at or before the one
+    being scored. `run` adds the label check, because a label is a caller's
+    claim and not something a pair of directories carries.
+    """
+    if Path(numbers_bundle).resolve() == Path(notes_bundle).resolve():
+        raise ControlError(
+            f"both halves would come out of {Path(numbers_bundle).resolve()}. "
+            "Two companies' reports are two bundles.")
+
+    numbers = _half(numbers_bundle, NUMBERS_SIDE)
+    notes = _half(notes_bundle, NOTES_SIDE)
+    if numbers["from"] == notes["from"]:
+        raise ControlError(
+            f"both halves are {numbers['from']}'s own reports: {numbers['run']} "
+            f"and {notes['run']} each hold reports {numbers['from']} wrote about "
+            "itself. A supervisor given one company's own numbers and notes is "
+            "the real run, not the shuffled control -- the control is the two "
+            "halves not corresponding.")
+
+    declared = scored_filing(numbers_bundle)
+    if declared is None:
+        # A directory of reports declares no filing being scored, and the gate
+        # used to come off with it -- the one route through this module with no
+        # cutoff at all, and the route a pair of report directories takes. The
+        # numbers half declares one all the same: its accession is on record
+        # with a filing date, which is what `filed` reads for both halves.
+        scored, scored_basis = filed(numbers["from"], numbers["accession"]), HALF_BASIS
+    else:
+        scored, scored_basis = declared["filing_date"], MANIFEST_BASIS
+        if declared["accession"] != numbers["accession"]:
+            raise ControlError(
+                f"{Path(numbers_bundle).resolve() / MANIFEST} says the run is "
+                f"{declared['accession']} and its own reports were written from "
+                f"{numbers['accession']}. The date the cutoff is read off "
+                "belongs to the filing the manifest names, so a run that names "
+                "two filings has not said which one it is")
+    _within_cutoff("numbers", numbers, scored)
+    _within_cutoff("notes", notes, scored)
+    return numbers, notes, scored, scored_basis
+
+
 def crossed(numbers_bundle, notes_bundle) -> dict[str, str]:
     """The four reports a shuffled supervisor sees: two out of each bundle.
 
-    Each side is read for what it says about itself on the way through, and the
-    text handed on is the text on disk. Whether the two sides are two companies
-    is `run`'s to refuse, because that is the pair and not a half.
+    Every refusal the pair carries runs first. This used to read the two halves
+    and hand them straight back while `run` held the checks, so the one function
+    the docstring calls "what the supervisor sees" was the one route with no
+    cutoff on it and no refusal of a company crossed with itself. Nothing
+    outside this module calls it, which is the only reason that was never a
+    live leak.
     """
-    numbers = _half(numbers_bundle, NUMBERS_SIDE)
-    notes = _half(notes_bundle, NOTES_SIDE)
+    numbers, notes, _, _ = _crossed_pair(numbers_bundle, notes_bundle)
     return {**numbers["reports"], **notes["reports"]}
 
 
@@ -261,6 +315,10 @@ def scored_filing(run_directory):
     four reports and no manifest is not a run and declares no filing; a manifest
     that is there but says nothing readable is a broken record and is refused,
     because an absent date is not an early date.
+
+    The accession comes back with the date. The date is only the date of the
+    filing the manifest *names*, and a run whose manifest and whose reports name
+    two different filings has not said which one it is.
     """
     if not cutoff_guard.bundle_files(run_directory, MANIFEST):
         return None
@@ -274,12 +332,19 @@ def scored_filing(run_directory):
             f"{Path(run_directory) / MANIFEST} is not an object, so it names no "
             "filing being scored")
     try:
-        return cutoff_guard.parse_date(manifest.get("filing_date"),
+        when = cutoff_guard.parse_date(manifest.get("filing_date"),
                                        f"{MANIFEST} filing_date")
     except cutoff_guard.CutoffGuardError as exc:
         raise ControlError(
             f"{Path(run_directory) / MANIFEST} names no filing date this control "
             f"could check the crossed reports against: {exc}") from exc
+    accession = manifest.get("accession")
+    if not isinstance(accession, str) or not accession:
+        raise ControlError(
+            f"{Path(run_directory) / MANIFEST} names no accession, so nothing "
+            "says the filing date it carries belongs to the filing these "
+            "reports were written from")
+    return {"filing_date": when, "accession": accession}
 
 
 def filed(ticker: str, accession: str):
@@ -394,11 +459,15 @@ def resolved(question: str, answer: dict, declared: set[str]) -> tuple[dict, lis
                            if one in names]
 
     # `market_direction` abstains by naming no basis, which `docs/CHECKLIST.md`
-    # §7 allows, so citing nothing is not a failure here the way it is for a
-    # checklist entry: only a basis naming an id the crossed set does not carry
-    # is. The field cannot be dropped, so it degrades to that same abstention.
+    # §7 allows -- but the abstention §7 allows is `p_up: "insufficient"`, not a
+    # number resting on an empty basis. A probability standing on nothing is
+    # exactly what the abstention is for, and `src/control_single_agent.py`
+    # drops it in this same sentence; skipping the field whenever the basis was
+    # empty left the two controls applying two gates to one schema. The field
+    # cannot be dropped, so it degrades to that same abstention.
     market = answer["market_direction"]
-    if isinstance(market, dict) and quote_gate.citations(market):
+    if isinstance(market, dict) and (market.get("p_up") != INSUFFICIENT
+                                     or quote_gate.citations(market)):
         reason = _drop_reason(market, declared)
         if reason:
             drop(f"{question}:market_direction", reason)
@@ -489,20 +558,7 @@ def run(numbers_from: str, notes_from: str, *, numbers_bundle, notes_bundle,
     else. It is called once for each question, on the same crossed evidence.
     """
     numbers_from, notes_from = one_of_the_twelve(numbers_from), one_of_the_twelve(notes_from)
-    if Path(numbers_bundle).resolve() == Path(notes_bundle).resolve():
-        raise ControlError(
-            f"both halves would come out of {Path(numbers_bundle).resolve()}. "
-            "Two companies' reports are two bundles.")
-
-    numbers = _half(numbers_bundle, NUMBERS_SIDE)
-    notes = _half(notes_bundle, NOTES_SIDE)
-    if numbers["from"] == notes["from"]:
-        raise ControlError(
-            f"both halves are {numbers['from']}'s own reports: {numbers['run']} "
-            f"and {notes['run']} each hold reports {numbers['from']} wrote about "
-            "itself. A supervisor given one company's own numbers and notes is "
-            "the real run, not the shuffled control -- the control is the two "
-            "halves not corresponding.")
+    numbers, notes, scored, scored_basis = _crossed_pair(numbers_bundle, notes_bundle)
     for side, half, label in (("numbers", numbers, numbers_from),
                               ("notes", notes, notes_from)):
         if half["from"] != label:
@@ -510,17 +566,6 @@ def run(numbers_from: str, notes_from: str, *, numbers_bundle, notes_bundle,
                 f"the {side} half is labelled {label} and its reports are "
                 f"{half['from']}'s, out of {half['run']}. The label is what the "
                 "control file would carry, so it is the reports that settle it.")
-
-    scored, scored_basis = scored_filing(numbers_bundle), MANIFEST_BASIS
-    if scored is None:
-        # A directory of reports declares no filing being scored, and the gate
-        # used to come off with it -- the one route through this module with no
-        # cutoff at all, and the route a pair of report directories takes. The
-        # numbers half declares one all the same: its accession is on record
-        # with a filing date, which is what `filed` reads for both halves.
-        scored, scored_basis = filed(numbers["from"], numbers["accession"]), HALF_BASIS
-    _within_cutoff("numbers", numbers, scored)
-    _within_cutoff("notes", notes, scored)
 
     reports = {**numbers["reports"], **notes["reports"]}
     declared = declared_ids(reports)
