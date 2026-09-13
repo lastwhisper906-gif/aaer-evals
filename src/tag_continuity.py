@@ -346,28 +346,31 @@ def history(ticker: str, cutoff=None, *, fixtures_root=cutoff_guard.FIXTURES) ->
     """One company's standard-taxonomy facts, filtered to the cutoff.
 
     companyfacts is a catalogue of facts drawn from many filings and is not
-    itself a filing, so the date gate is applied the way
-    `src/cutoff_guard.load_index` applies it to the submissions index: the path
-    is checked against the manifest, the record's own date basis is what it is
-    gated on, and **the cutoff is applied to the rows**, which is where the
-    look-ahead actually lives. `src/fetch_companyfacts.within_cutoff` does that
-    filtering, so the record read here at a cutoff is the record the fetcher
-    would have stored at that cutoff.
+    itself a filing, so it is read through `cutoff_guard.load_catalogue`, which
+    is the one sanctioned route into it: the path is checked against the
+    manifest, the bytes against the hash the manifest recorded, and **the cutoff
+    is applied to the rows**, which is where the look-ahead in a catalogue
+    actually lives.
 
-    The cutoff is parsed before it is used. `within_cutoff` compares filing
-    dates as strings, so a cutoff that is not an ISO date narrows nothing and
-    would let the whole record through while exiting 0 — the look-ahead this
-    gate exists to stop, arriving silently. Every other reader inherits the
-    refusal from `cutoff_guard.load_document`; this one reads the rows itself,
-    so it asks for the same parse itself.
+    **Nothing about the cutoff is decided here any more, and the two things that
+    were are why.** This module used to gate the file on the record's own
+    recorded date — which is the newest filing the record carries, so it is a
+    gate that satisfies itself and refuses nothing — and then filter the rows
+    through `fetch_companyfacts.within_cutoff`, which compares filing dates as
+    strings; a cutoff that is not an ISO date is greater than every date, so it
+    narrowed nothing and the whole record arrived at exit 0. The route parses
+    the cutoff and every row's own `filed` before either is compared, and
+    refuses a row with no date rather than dropping it.
+
+    What is left here is what "no cutoff given" means: the fixture set's own
+    as-of date, which is this project's default and not a rule about catalogues.
     """
     row = cutoff_guard.one_document(ticker, fetch_companyfacts.FORM,
                                     fetch_companyfacts.ROLE, fixtures_root=fixtures_root)
-    raw = cutoff_guard.load_bytes(row["full_path"], row["filing_date"],
-                                  fixtures_root=fixtures_root)
-    as_of = (cutoff_guard.parse_date(cutoff, "cutoff") if cutoff is not None
-             else cutoff_guard.default_cutoff(ticker, fixtures_root=fixtures_root))
-    return fetch_companyfacts.within_cutoff(json.loads(raw)["facts"], as_of.isoformat())
+    if cutoff is None:
+        cutoff = cutoff_guard.default_cutoff(ticker, fixtures_root=fixtures_root)
+    return cutoff_guard.load_catalogue(row["full_path"], cutoff,
+                                       fixtures_root=fixtures_root)["facts"]
 
 
 def _days(start: str, end: str) -> int:
