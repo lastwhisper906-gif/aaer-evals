@@ -1384,18 +1384,77 @@ def test_a_half_whose_accession_no_manifest_records_is_refused(tmp_path, out):
     accession no manifest holds, the file stayed green: nothing asked what it
     does when the record has never heard of the filing, and an absent date is
     not an early date.
+
+    The invented accession goes into **both** reports on the side. Putting it in
+    one left the side holding two accessions, which `_half` refuses first — so
+    the test was named for `filed` and never reached it, and the refusal it
+    asserted was the neighbouring rule's. That is the same defect this commit
+    fixed in two other tests, made once more while fixing them.
     """
     notes = bundle(tmp_path, NOTES_COMPANY)
-    text = report_text(NOTES_COMPANY, "report_notes_text.md")
     invented = "9999999999-99-999999"
-    (notes / "report_notes_text.md").write_text(
-        text.replace(NOTES_ACCESSION, invented), encoding="utf-8")
+    for name in control_shuffled.NOTES_SIDE:
+        (notes / name).write_text(
+            report_text(NOTES_COMPANY, name).replace(NOTES_ACCESSION, invented),
+            encoding="utf-8")
     with pytest.raises(ControlError) as caught:
         control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY,
                              numbers_bundle=bundle(tmp_path, NUMBERS_COMPANY),
                              notes_bundle=notes, out=out,
                              predictor=StandInSupervisor())
+    assert "no manifest records" in str(caught.value)
     assert invented in str(caught.value)
+    assert list(out.iterdir()) == []
+
+
+def test_two_reports_on_one_side_naming_two_filings_are_refused(tmp_path, out):
+    """One half is one run's, across its two files and not only inside each.
+
+    `named_accession` refuses two filings inside one report and had a judge;
+    `_half` refuses two filings across the side's two reports and had none —
+    while it sits on the cutoff path. With it gone, a side whose notes-text
+    report is Apple's and whose notes-versus-market report is Carrier's own
+    filing being scored is accepted, the control file records only the first
+    accession, and the second filing is dated against nothing at all. Which of
+    the two leaks depends on the order of `NOTES_SIDE`, which is not a thing to
+    rest a boundary on.
+    """
+    notes = bundle(tmp_path, NOTES_COMPANY)
+    (notes / "report_notes_vs_market.md").write_text(
+        report_text(NOTES_COMPANY, "report_notes_vs_market.md")
+        .replace(NOTES_ACCESSION, NUMBERS_ACCESSION), encoding="utf-8")
+    with pytest.raises(ControlError) as caught:
+        control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY,
+                             numbers_bundle=bundle(tmp_path, NUMBERS_COMPANY),
+                             notes_bundle=notes, out=out,
+                             predictor=StandInSupervisor())
+    said = str(caught.value)
+    assert "more than one filing on one side" in said
+    assert NUMBERS_ACCESSION in said and NOTES_ACCESSION in said
+    assert list(out.iterdir()) == []
+
+
+@pytest.mark.parametrize("damage", ["not json", "not an object", "no filing date"])
+def test_a_manifest_that_says_nothing_readable_is_refused(tmp_path, out, damage):
+    """A broken record is refused, because an absent date is not an early date.
+
+    Each of the three refusals could be turned into `return None` with the file
+    green — and `None` is the branch that skips both manifest cross-checks, the
+    two rules that stop a run's own manifest from setting its own boundary. The
+    fallback date is the numbers half's own record date, so this is not a live
+    leak; it is the module's stated rule asserted by nothing.
+    """
+    numbers = bundle(tmp_path, NUMBERS_COMPANY)
+    body = {"not json": "{not json at all",
+            "not an object": "[]",
+            "no filing date": json.dumps({"accession": NUMBERS_ACCESSION})}[damage]
+    (numbers / "input_manifest.json").write_text(body, encoding="utf-8")
+    with pytest.raises(ControlError) as caught:
+        control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY,
+                             numbers_bundle=numbers,
+                             notes_bundle=bundle(tmp_path, NOTES_COMPANY),
+                             out=out, predictor=StandInSupervisor())
+    assert "input_manifest.json" in str(caught.value)
     assert list(out.iterdir()) == []
 
 
@@ -1461,15 +1520,47 @@ def test_the_two_controls_answer_one_schema_in_behaviour_too(tmp_path, out):
             return True
         return False
 
-    # The sibling's evidence carries a quote as well, for the reason its own
-    # docstring gives, so every answer here carries one and this control ignores
-    # the field it does not ask for by refusing the entry -- which is why the
-    # evidence shape is the one case the two are allowed to differ on and is
-    # left out of the battery.
+    # Evidence is the one field the two are allowed to differ on, for the reason
+    # each module's docstring gives: the sibling's upstream is the committed
+    # filing, so an id there names a paragraph and a quote travels with it. So
+    # each answer is handed to each control in the evidence shape *that* control
+    # asks for, and nothing else about it changes.
+    #
+    # Reading it the other way round is how this test was first written and it
+    # judged nothing: with no quote anywhere, the sibling refused all twelve
+    # rows for the missing quote rather than for the mutation, and deleting
+    # every other §7 rule from the sibling left this green.
+    def quoted(answer: dict) -> dict:
+        """The same answer with a quote beside each upstream id.
+
+        Left alone if the entry is not the shape a quote goes in -- a battery
+        row whose whole point is a malformed checklist must reach the sibling
+        malformed, not repaired on the way.
+        """
+        entries = answer.get("checklist")
+        if not isinstance(entries, list):
+            return dict(answer)
+        rebuilt = []
+        for entry in entries:
+            cites = entry.get("evidence") if isinstance(entry, dict) else None
+            if not isinstance(cites, list):
+                rebuilt.append(entry)
+                continue
+            rebuilt.append(dict(entry, evidence=[
+                dict(cited, quote="a sentence") if isinstance(cited, dict) else cited
+                for cited in cites]))
+        return dict(answer, checklist=rebuilt)
+
     good = dict(ACCOUNTING_ANSWER)
+    # The row that cannot be written while the evidence shapes are confused: a
+    # well-formed answer, which both controls have to *accept*.
+    assert not this_refuses(good), "the good answer is the baseline"
+    assert not sibling_refuses(quoted(good)), "the good answer is the baseline"
+
     battery = {
         "a fourth finding": {"checklist": [dict(good["checklist"][0],
                                                 finding="yes")]},
+        "a checklist entry that is not an object": {"checklist": [good, "x"]},
         "a confidence outside its range": {
             "checklist": [dict(good["checklist"][0], confidence=1.4)]},
         "a tier the thresholds never produce": {"tier": "banana"},
@@ -1500,5 +1591,6 @@ def test_the_two_controls_answer_one_schema_in_behaviour_too(tmp_path, out):
     }
     for what, change in battery.items():
         answer = dict(good, **change)
-        mine, theirs = this_refuses(answer), sibling_refuses(answer)
+        mine = this_refuses(answer)
+        theirs = sibling_refuses(quoted(answer))
         assert mine and theirs, f"{what}: this control {mine}, the sibling {theirs}"

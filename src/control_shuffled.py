@@ -539,9 +539,11 @@ def resolved(question: str, answer: dict, declared: set[str]) -> tuple[dict, lis
                 "name can neither be resolved nor dropped by name")
         # §7 spells this field `id` rather than `upstream_item_id`, and says
         # explanations are assembled from what the supervisors say about those
-        # items -- so the id names an upstream item and resolves like one. The
-        # sibling control resolves it through `quote_gate.citation_drop_reason`;
-        # this is the same rule in the same two sentences.
+        # items -- so the id names an upstream item and resolves like one. That
+        # reading is inferred from one sentence rather than stated, which is why
+        # it is a row in `docs/needs_judgment.md`; until it is decided, an
+        # explanation naming an item the crossing removed is dropped and counted
+        # like any other citation that resolves against nothing.
         reason = _drop_reason({"upstream_item_id": entry["id"]}, declared)
         if reason:
             drop(f"{question}:explanations:{entry['id']}", reason)
