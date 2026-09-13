@@ -124,35 +124,15 @@ exists to enforce.
 
 ## Needs judgment
 
-Not launched. No judge exists for these, and inventing one would be inventing the
-answer.
+The rows moved to `docs/needs_judgment.md` on 2026-09-13, which is now the only
+owner inbox: every row there names the default already in force, so nothing in
+this list waits on an answer. Two rows left the list instead of moving, because
+the builder prompt of 2026-09-13 settled them:
 
-[ ] the price source · three candidates, in this order: **Stooq daily bulk zip** — a file download rather than an API call, which is why it survives the scripted-request block, delisted coverage unknown; **WRDS with CRSP through a Stony Brook account** — free if the school subscribes, and delisting returns handled the way the literature handles them, which is the only candidate that answers the delisted question properly; **a low-cost provider such as Tiingo or EODHD** — delisted coverage to be confirmed. Session 1 probed the two obvious free routes and neither served data: Stooq answers a scripted request with a JavaScript proof-of-work under both a plain and a browser user agent, and the Yahoo chart endpoint returns 429 unauthenticated, so the delisted-ticker question is still unanswered and the market module is built against a frozen price fixture. **Must be decided before the pattern study, not before expansion, because the study needs fifteen years of prices.** The project's no-paid-data rule named consensus data, not prices · needs judgment
-
-[ ] thresholds for the four new numeric indicators — `articulation_gap`, `asset_growth_high`, `rnd_capitalization_shift`, `net_stock_issuance` · nothing waits: until rules v0.1 all four report their value and do not flag, so they measure from the first run and contribute nothing to a tier. What size of gap or growth should raise a flag needs the distribution over the 30 past cases, and a threshold is the owner's · needs judgment
-
-[ ] the two-by-two flag thresholds · the accounting flag count grew from 26 to 33 and the pressure count from 16 to 17 while "4 or more" and "3 or more" stayed put, which loosens both tiers · needs judgment
-
-[ ] narrowing the map from SIC code to sector ETF · the default is one ETF per SIC division and it ships with the market module, so nothing waits; whether a finer map by major group gives a better sector return is a modelling choice no test can settle · needs judgment
-
-[ ] whether the review-response branch's published results merge into this history · two published-results histories diverge, and merging them is a claim about the record · needs judgment
-
-[ ] whether the post-write plain-name hook should block the writer · the check names a code on stderr and exits 1; Claude Code hands any non-zero status other than 2 to the person at the keyboard and only 2 back to the agent that wrote the line, so today the writer is not told. Nothing waits: the check runs inside `make check` and CI runs `make check`, so a pull request carrying a code is red either way. Blocking would buy an earlier correction at the price of an interrupted turn, and that price is the owner's · needs judgment
-
-[ ] whether the plain-name check should read source files and directory names · it reads `.py` and `.sh` by name only, because code quotes vocabulary that is not ours — a period offset, a linter's rule in a comment, the codes the check's own test plants — and it reads a file's own name but not the directories above it. The second-vendor lens calls both a blind spot. Widening either needs a rule for which quoted vocabulary is exempt, and a list of language suffixes has no rule to appeal to · needs judgment
-
-[ ] the letter-number codes the archived project left in `CITATION.cff`, `LICENSE` and `LICENSE-docs` · a whole-tree sweep names six occurrences, four in the citation file and one in each licence file. Nothing waits: the check reads what a branch changed, and nothing changes those files. The two licence files are text that is not ours to edit and the citation file is a published record, so what to do with them is not a code change · needs judgment
-
-[ ] the judge line that reads "companyfacts for every numeric expectation" · no expectation in the parser fixtures is a financial figure: each one counts elements, tables or paragraphs inside one document, and companyfacts is the deduplicated standard-taxonomy record across every filing — Apple's annual accession carries 427 facts there against 898 unit-bearing elements in the instance itself. The re-judge sourced every value from the document instead and said so value by value, so nothing waits; whether that line stands as written for the items still to be built is the owner's · needs judgment
-[ ] whether the supervisor may see `docs/CHECKLIST.md` · both supervisor prompts say to write against the schema in that document, and from a session rooted at the supervisor's own directory it is unreachable by design. Nothing waits: rules v0.1 does not exist and `docs/INPUT_SPEC.md` section 6 names no file for the checklist keys, so there is nothing to route today. Routing it would put a file that is not a report into a supervisor's directory, which is a change to the layer table and not a code change · needs judgment
-
-[ ] the four branches the second-vendor lens never read · the Codex adversarial review died on an account usage limit, reported as resetting on the ninth of October, against the companyfacts fetcher, the Item 1A splitter, the diff alignment and the per-agent input directories. All four merged on one lens and a green gate. Zero findings from a lens that errored is not an approve, and whether to re-run it over the merged history when the quota returns or to accept those four as read once is the owner's · needs judgment
-
-[ ] the section fallbacks that fire on no committed filing · the annual Item 2 fallback and the quarterly Item 3 through Item 6 fallbacks are exercised by none of the twelve filings on record, and an annual report omitting Item 1B would sweep the cybersecurity item into the risk factors. There is no fixture that judges a rule for it, and constructing one would be inventing the filing rather than reading it · needs judgment
-[ ] whether the bundle's catalogue exception should be keyed on the route rather than the role · nothing records how a document was opened, so one read through the ordinary gate and handed out unfiltered still writes a manifest row claiming its rows were filtered to the run's cutoff, and the check passes it; before the route landed, that row carried a filing date and failed. A live caller is already shaped to trigger it. Latent today only because the bundle assembler imports neither companyfacts reader. Beside it, `rows_used_through` is unfalsifiable on real output — the assembler writes the cutoff and the row's claim from one variable and then compares them — so a green suite says nothing about whether the exception is safe. Recording the route inside the guard would close both, and it changes what the manifest means · needs judgment
-
-[ ] where the acceptance time comes from · it decides reaction day zero, the reaction window and the market cutoff, and nothing upstream records it: the fixture fetcher stores the filing and report dates and never the acceptance stamp, no fixture carries one, and the manifests hold the filing date only. Today it is a free-form argument on the command line. Whether to fetch and commit it per filing, or to keep it an argument the caller must justify, is not a code change · needs judgment
-
-[ ] whether the pilot side of the scorecard may print a comparative verdict · `docs/CHECKLIST.md` says nothing observed on pilot filings is recorded as an observation about signal anywhere, and separately permits a labelled score in the table. The page prints a stated conclusion beside those numbers, and the suite requires those sentences. Whether a labelled comparative sentence is a number or an observation is a reading of that section · needs judgment
-
-[ ] both review lenses are gone, and the count of unreviewed merges is now eighteen · the Codex second vendor has been over its usage limit since wave C, reported as resetting on the ninth of October, and the refute lens hit its own model limit during wave E. Wave C merged four items on one lens, wave D six, and wave E all six on none. The refute lens was re-run afterwards from the main session on a different model — not a second vendor, and late — and returned fail on five of wave E's six, including two breaches of rules in CLAUDE.md that are now in merged code. Whether to keep building while both lenses are down, to spend the next waves on the findings instead, or to wait for the quota, is the owner's · needs judgment
+* the review lenses being gone is answered by the degraded-quota policy — both
+  lenses run on the same model in two fresh contexts, the row is marked
+  `confirmed - same-model lenses`, one lens alone is marked `confirmed - one
+  lens`, and both lenses failing to run is never an approval, so the pull request
+  stays open. A severe item about the cutoff is not deferred for quota.
+* the four branches the second vendor never read are re-verified when the quota
+  returns, on the same terms.

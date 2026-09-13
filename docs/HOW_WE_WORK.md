@@ -130,6 +130,11 @@ Every routine below is a **scheduled task**, not a loop run.
 - **rules-precedence check** — the rules-version commit is an ancestor of the
   prediction commit
 - **event-gap check** — EDGAR events against the ledger
+- **daily summary** — one notification at eight in the morning, local: where the
+  pipeline stands, what moved in the ledger since yesterday, which pull requests
+  are open, and the `docs/needs_judgment.md` rows. Status only. It never asks a
+  question and never waits for an answer; `tools/daily_summary.sh` writes it and
+  the notifier speaks it
 
 ### Weekly
 
@@ -146,6 +151,13 @@ Every routine below is a **scheduled task**, not a loop run.
   cannot fit replaces a line rather than appending one — the file is read in
   full at the start of every session, and a rules file nobody finishes is a
   rules file nobody follows
+
+### Every five minutes, while a pull request is open
+
+- **pull-request babysit** — rebase on a conflict, fix red CI at its root, and
+  confirm auto-merge is armed. Three attempts, never touching `runs/`, `rules/`
+  or `events/`, never changing a test expectation; after the third, an issue.
+  It does nothing at all when no pull request is open.
 
 ### On red CI
 
