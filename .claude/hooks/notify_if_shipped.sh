@@ -1,7 +1,9 @@
 # Speak when a turn shipped something. Stay silent otherwise.
 #
 # "Shipped" is one of two things: a pull request now exists for this branch that
-# did not before, or docs/next_cycle_tasks.md gained a "needs judgment" line.
+# did not before, or docs/needs_judgment.md gained a row. The inbox moved out of
+# docs/next_cycle_tasks.md on 2026-09-13 and this count moved with it; counting
+# the old file would have gone quietly to zero and stayed there.
 # Both are read back out of the repository, because a hook cannot see what the
 # session did -- only what it left behind.
 #
@@ -22,7 +24,7 @@ branch="$(git branch --show-current 2>/dev/null)"
 pr="$(gh pr list --head "$branch" --state all --limit 1 --json number --jq '.[0].number' 2>/dev/null)"
 [ -n "$pr" ] || pr="none"
 
-judged="$(grep -c 'needs judgment$' docs/next_cycle_tasks.md 2>/dev/null)"
+judged="$(grep -c '^\[ \]' docs/needs_judgment.md 2>/dev/null)"
 [ -n "$judged" ] || judged=0
 
 now="$pr $judged"
