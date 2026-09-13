@@ -122,15 +122,18 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import re
 import sys
 from collections import Counter
 from pathlib import Path
 
 try:
-    from src import agent_inputs, cutoff_guard, interpreter_pin, quote_gate
+    from src import (agent_inputs, cutoff_guard, extraction_checks,
+                     interpreter_pin, quote_gate)
 except ImportError:  # invoked as a plain script
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from src import agent_inputs, cutoff_guard, interpreter_pin, quote_gate
+    from src import (agent_inputs, cutoff_guard, extraction_checks,
+                     interpreter_pin, quote_gate)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 AGENT_PROMPTS = REPO_ROOT / ".claude" / "agents"
@@ -182,12 +185,41 @@ CONTINUOUS_FIELDS = ("key", "point", "direction", "low", "high")
 EVENT_FIELDS = ("key", "p_within_horizon")
 EXPLANATION_FIELDS = ("id", "support", "realization_p")
 MARKET_FIELDS = ("p_up", "basis")
-# `upstream_item_id` is §7's; `quote` is the branch of `CLAUDE.md`'s rule that
-# an agent with no upstream report has left. The docstring says why.
-# Nothing ties this tuple to `docs/CHECKLIST.md` §7: it and the list in
-# `tests/test_control_single_agent.py` were written by the same hand, so they
-# agree with each other and would go on agreeing if §7 moved.
-EVIDENCE_FIELDS = ("upstream_item_id", "quote")
+# `quote` is the branch of `CLAUDE.md`'s rule that an agent with no upstream
+# report has left. The docstring says why.
+QUOTE_FIELD = "quote"
+
+# Everything else in the evidence object is read out of `SCHEMA` above, which
+# the suite asserts is a slice of `docs/CHECKLIST.md` §7 character for
+# character -- so the document names these fields and this module does not. A
+# hand-written tuple here and a hand-written list in the test agreed with each
+# other and would have gone on agreeing if §7 moved; that is what the refute
+# lens called the shape nothing ties to the checklist.
+EVIDENCE_OBJECT = re.compile(r'"evidence":\s*\[\s*\{(?P<fields>.*?)\}\s*\]', re.S)
+
+
+def _schema_evidence_fields() -> tuple[str, ...]:
+    """The evidence object's field names, as §7 writes them.
+
+    Raised at import rather than at call: a module that cannot read the schema
+    it shows the model has nothing to gate with, and a silent empty tuple would
+    accept evidence carrying no anchor at all.
+    """
+    block = EVIDENCE_OBJECT.search(SCHEMA)
+    if block is None:
+        raise ValueError(
+            "the schema copied out of docs/CHECKLIST.md §7 carries no evidence "
+            "object, so the fields an evidence item must have cannot be read "
+            "from the document this control shows the model")
+    found = tuple(re.findall(r'"([^"]+)"\s*:', block.group("fields")))
+    if not found:
+        raise ValueError(
+            "the evidence object in the schema copied out of docs/CHECKLIST.md "
+            "§7 names no fields")
+    return found
+
+
+EVIDENCE_FIELDS = _schema_evidence_fields() + (QUOTE_FIELD,)
 
 # `docs/CHECKLIST.md` §1: "An LLM answer is always `flag` / `no_flag` /
 # `insufficient`, plus a confidence and a verbatim quote with its paragraph id."
@@ -584,19 +616,62 @@ def input_files(input_dir) -> list[str]:
     would make this a reader of the pipeline rather than a control beside it,
     and a name in neither list is a file nobody decided to route, which is the
     worse of the two because nobody weighed it at all.
+
+    An allowlist over *names* is not an allowlist over what the directory holds.
+    Three things got through one written that way, and the prompt says "you see
+    these files and nothing else" over every one of them:
+
+    * a subdirectory. `cutoff_guard.bundle_files` keeps what `is_file()` says is
+      a file, so `outcome/prices_after_the_filing.json` was neither listed nor
+      refused -- the outcome window sitting in the directory, unnamed. The walk
+      here is `iterdir()`, the same one `src/agent_inputs.py` makes, and it
+      judges every entry whatever its kind.
+    * a symlink under an allowed name. `input_notes.md -> ../MSFT_notes.md`
+      answers `is_file()` and reads as another company's notes; `quotable` then
+      indexes that company's paragraph ids and an explanation citing one
+      resolves. A link is refused by name and the boundary is checked again with
+      `agent_inputs.escapes`, which is where the rule is written.
+    * nothing here catches a **hardlink**: it resolves inside the directory and
+      answers to the allowed name. `src/agent_inputs.py` catches one by
+      comparing bytes against the run's own copy, and this control is handed a
+      directory with no copy to compare against. Named rather than closed.
     """
-    names = cutoff_guard.bundle_files(input_dir, "*")
-    if not names:
+    folder = Path(input_dir)
+    if not folder.is_dir():
+        raise ControlError(
+            f"{input_dir} is not a directory — a control is handed the run's "
+            "input directory, and one with nowhere to read from is not a control")
+    held = sorted(path.name for path in folder.iterdir())
+    if not held:
         raise ControlError(
             f"{input_dir} holds no files — a control with no input is not a control")
-    stray = [name for name in names if name not in CONTROL_SEES]
+    stray = [name for name in held if name not in CONTROL_SEES]
     if stray:
         raise ControlError(
             f"{input_dir} holds {', '.join(stray)}, which this control is not "
             f"handed. It sees the {len(CONTROL_SEES)} input files of the bundle "
             "and nothing else: the pipeline's own output would make it a reader "
             "of the pipeline, and a file nobody routed is a leak nobody chose")
-    return names
+    for name in held:
+        path = folder / name
+        if path.is_symlink():
+            raise ControlError(
+                f"{path} is a symlink to {path.readlink()}. A control reads the "
+                "files it was handed, and a link under an allowed name is "
+                "whatever it points at wearing that name")
+        if not path.is_file():
+            raise ControlError(
+                f"{path} carries a name this control may hold and is not a file. "
+                "The prompt lists it as one of the files the model sees, so what "
+                "it actually is has to be what it says")
+    escaped = agent_inputs.escapes(folder)
+    if escaped:
+        raise ControlError(
+            f"{input_dir} reaches outside itself: {'; '.join(escaped)}. "
+            "`src/agent_inputs.py` states the rule — walking up from what a link "
+            "resolves to lands in the run directory, and every other agent's "
+            "input hangs off that")
+    return held
 
 
 def prompt(question: str, input_dir) -> str:
@@ -634,12 +709,15 @@ def _place(path: Path, text: str) -> Path:
 def run_cutoff(manifest: dict) -> dt.date:
     """The boundary this run was assembled under, or a refusal.
 
-    Fail-closed on both keys and on their disagreement.
-    `src/extraction_checks.py` settles what a bundle's own record has to say --
-    "the cutoff is the triggering report's own filing date" -- and a manifest
-    naming one key without the other, or a cutoff years off the filing, is a run
-    whose boundary nobody can read. The control refuses it rather than answering
-    against an input that may already hold the outcome.
+    Fail-closed on both keys, on their disagreement, and on the record they
+    stand in front of. `src/extraction_checks.py` settles what a bundle's own
+    record has to say -- "the cutoff is the triggering report's own filing
+    date", and no document row filed after it -- so that check is called here
+    rather than described here. Before it was called, this docstring named it
+    while the code compared two keys and read no document at all: a manifest
+    recording a 10-Q filed three months past its own cutoff ran to completion.
+    The control refuses it rather than answering against an input that may
+    already hold the outcome.
     """
     try:
         cutoff = cutoff_guard.parse_date(manifest.get("cutoff"), f"{MANIFEST} cutoff")
@@ -655,6 +733,18 @@ def run_cutoff(manifest: dict) -> dt.date:
             f"{MANIFEST} names the cutoff {cutoff} and the triggering report's "
             f"filing date {filed}. The cutoff is that filing date; a run whose "
             "own record disagrees was assembled against a boundary nobody set")
+    # Two keys agreeing is not the record. `src/extraction_checks.py` reads the
+    # manifest's `documents` -- every row's filing date against the cutoff, and
+    # a catalogue row's `rows_used_through` against it -- which is the gate the
+    # docstring above used to name while checking neither. It is called here
+    # rather than restated: a bundle whose own list says it read something filed
+    # after the boundary is not one this control answers against, and a manifest
+    # listing no documents cannot show that it did not.
+    record = extraction_checks.check_cutoff(manifest)
+    if not record.passed:
+        raise ControlError(
+            f"{MANIFEST} does not hold up as its own record of the cutoff: "
+            + "; ".join(record.failures))
     return cutoff
 
 

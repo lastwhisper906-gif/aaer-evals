@@ -110,8 +110,26 @@ MARKET = """{
 # `src/extraction_checks.py`: "the cutoff is the triggering report's own filing
 # date" -- and a planted manifest naming one without the other would be planting
 # a run this repository does not assemble.
-MANIFEST = {"ticker": "AAPL", "accession": ACCESSION, "cutoff": "2025-10-31",
-            "filing_date": "2025-10-31",
+#
+# Every date and form below is read off the committed record,
+# `tests/fixtures/AAPL/submissions.json`, and `test_the_planted_manifest_is_the
+# _record` reads them back out of that file rather than trusting this block:
+# accession 0000320193-25-000073 is a 10-Q filed 2025-08-01, and the quarter
+# before it is 0000320193-25-000057, filed 2025-05-02. The manifest used to pair
+# this accession with 2025-10-31, which is the *10-K's* filing date -- a run
+# whose own record put its triggering report three months after the document it
+# names, and which every check here passed because none of them read a document.
+PRIOR_ACCESSION = "0000320193-25-000057"
+MANIFEST = {"ticker": "AAPL", "accession": ACCESSION, "form": "10-Q",
+            "cutoff": "2025-08-01", "filing_date": "2025-08-01",
+            "documents": [
+                {"form": "10-Q", "role": "primary_html", "accession": ACCESSION,
+                 "filing_date": "2025-08-01"},
+                {"form": "10-Q", "role": "xbrl_instance", "accession": ACCESSION,
+                 "filing_date": "2025-08-01"},
+                {"form": "10-Q", "role": "prior_period",
+                 "accession": PRIOR_ACCESSION, "filing_date": "2025-05-02"},
+            ],
             "rules_version": "0.1", "counts": {"paragraphs": 2, "exclusions": 0}}
 
 # Another company's accession, and a paragraph number the planted notes stop
@@ -789,7 +807,132 @@ def test_the_prompt_lists_the_files_and_the_directory_holds_nothing_else(tmp_pat
     assert all(name in control_single_agent.CONTROL_SEES for name in listed)
 
 
+# --- the guard is an allowlist over what the directory holds ------------------
+
+def test_a_symlink_under_an_allowed_name_is_refused(tmp_path):
+    """A link answers `is_file()` and reads as whatever it points at.
+
+    Planted as the refute lens planted it: another company's notes, outside the
+    directory, wearing a name the control may hold. Before the guard walked the
+    entries, `quotable` followed the link, indexed that company's paragraph ids,
+    and an explanation citing one of them was written out as resolved.
+    """
+    root, folder = plant(tmp_path)
+    elsewhere = tmp_path / "elsewhere"
+    elsewhere.mkdir()
+    other = elsewhere / "MSFT_notes.md"
+    other.write_text(OTHER_NOTES, encoding="utf-8")
+    link = folder / "input_notes.md"
+    link.unlink()
+    link.symlink_to(other)
+    stub = Stub(accounting_answer())
+    with pytest.raises(ControlError) as caught:
+        control_single_agent.run("accounting_reliability", input_dir=folder,
+                                 bundle_root=root, ask=stub)
+    assert "input_notes.md" in str(caught.value)
+    assert str(other) in str(caught.value)
+    assert stub.prompts == []
+    assert not (root / "control_single_agent_accounting.json").exists()
+
+
+def test_a_directory_holding_the_outcome_window_is_refused(tmp_path):
+    """A name the allowlist does not carry is refused whatever kind of thing it is.
+
+    `cutoff_guard.bundle_files` keeps what `is_file()` says is a file, so a
+    subdirectory was neither listed to the model nor refused: the outcome window
+    sat in the directory under "you see these files and nothing else".
+    """
+    root, folder = plant(tmp_path)
+    outcome = folder / "outcome"
+    outcome.mkdir()
+    (outcome / "prices_after_the_filing.json").write_text(OUTCOME_PRICES,
+                                                          encoding="utf-8")
+    stub = Stub(accounting_answer())
+    with pytest.raises(ControlError) as caught:
+        control_single_agent.run("accounting_reliability", input_dir=folder,
+                                 bundle_root=root, ask=stub)
+    assert "outcome" in str(caught.value)
+    assert stub.prompts == []
+    assert not (root / "control_single_agent_accounting.json").exists()
+
+
+def test_an_allowed_name_that_is_not_a_file_is_refused(tmp_path):
+    """The prompt calls every listed name a file, so it has to be one."""
+    root, folder = plant(tmp_path)
+    (folder / "input_notes.md").unlink()
+    (folder / "input_notes.md").mkdir()
+    stub = Stub(accounting_answer())
+    with pytest.raises(ControlError) as caught:
+        control_single_agent.run("accounting_reliability", input_dir=folder,
+                                 bundle_root=root, ask=stub)
+    assert "input_notes.md" in str(caught.value)
+    assert stub.prompts == []
+
+
+def test_the_evidence_fields_are_the_checklist_documents_own(tmp_path):
+    """Read out of `docs/CHECKLIST.md` §7 by this test, not out of the module.
+
+    The module parses the same object out of the schema it shows the model, and
+    the suite asserts that schema is a slice of the document. Both sides used to
+    be hand-written lists that agreed with each other and would have gone on
+    agreeing if §7 moved.
+    """
+    document = CHECKLIST.read_text(encoding="utf-8")
+    assert SCHEMA_BLOCK in document
+    evidence = SCHEMA_BLOCK.split('"evidence": [', 1)[1].split("]", 1)[0]
+    named = tuple(re.findall(r'"([^"]+)"\s*:', evidence))
+    assert named == ("upstream_item_id",)
+    assert control_single_agent.EVIDENCE_FIELDS == named + ("quote",)
+    assert control_single_agent.QUOTE_FIELD == "quote"
+
+
 # --- the cutoff the run was assembled under ----------------------------------
+
+def test_the_planted_manifest_is_the_record(tmp_path):
+    """Every date in `MANIFEST` read back out of the committed submissions index."""
+    rows = json.loads(
+        (REPO_ROOT / "tests" / "fixtures" / "AAPL" / "submissions.json")
+        .read_text(encoding="utf-8"))["filings"]
+    by_accession = {row["accession"]: row for row in rows}
+    assert by_accession[ACCESSION]["form"] == MANIFEST["form"] == "10-Q"
+    assert by_accession[ACCESSION]["filing_date"] == MANIFEST["filing_date"]
+    assert by_accession[PRIOR_ACCESSION]["filing_date"] == "2025-05-02"
+    for row in MANIFEST["documents"]:
+        recorded = by_accession[row["accession"]]
+        assert row["filing_date"] == recorded["filing_date"]
+        assert row["form"] == recorded["form"]
+        assert row["filing_date"] <= MANIFEST["cutoff"]
+
+
+def test_a_document_filed_after_the_cutoff_is_refused(tmp_path):
+    """The row the manifest itself carries, dated after the boundary it names.
+
+    The date planted is the *next* quarter's own filing date from the committed
+    index — the document a bundle triggered by this 10-Q could not have read.
+    Two keys agreeing said nothing about it, and the control answered.
+    """
+    root, folder = plant(tmp_path)
+    rows = json.loads(
+        (REPO_ROOT / "tests" / "fixtures" / "AAPL" / "submissions.json")
+        .read_text(encoding="utf-8"))["filings"]
+    later = [row for row in rows
+             if row["form"] == "10-Q" and row["filing_date"] > MANIFEST["cutoff"]]
+    after = min(row["filing_date"] for row in later)
+    ahead = min(row for row in later if row["filing_date"] == after)
+    planted = dict(MANIFEST)
+    planted["documents"] = MANIFEST["documents"] + [
+        {"form": "10-Q", "role": "prior_period", "accession": ahead["accession"],
+         "filing_date": ahead["filing_date"]}]
+    _replant_manifest(root, planted)
+    stub = Stub(accounting_answer())
+    with pytest.raises(ControlError) as caught:
+        control_single_agent.run("accounting_reliability", input_dir=folder,
+                                 bundle_root=root, ask=stub)
+    assert ahead["filing_date"] in str(caught.value)
+    assert MANIFEST["cutoff"] in str(caught.value)
+    assert stub.prompts == []
+    assert not (root / "control_single_agent_accounting.json").exists()
+
 
 def test_the_planted_manifest_names_the_cutoff_the_filing_date_gives_it():
     assert MANIFEST["cutoff"] == MANIFEST["filing_date"]
