@@ -122,9 +122,17 @@ reported more than once, the latest filing before the cutoff wins.
 **Market data is bounded separately, and it is keyed to reaction day zero, not
 to the filing date.**
 
-> **Reaction day zero** is the filing date when EDGAR accepted the filing before
-> the close, and the next trading day when it accepted after the close. Every
-> market bound below counts from it.
+> **Reaction day zero** is the day EDGAR accepted the filing when it accepted
+> before the close, and the next trading day when it accepted after the close.
+> The acceptance stamp is read on the exchange's clock, so one instant gives one
+> day zero however the stamp was written. Every market bound below counts from
+> it.
+>
+> The acceptance day and the filing date are the same day except past EDGAR's
+> own close, half past five in the evening, after which a submission is deemed
+> filed on the next business day. Day zero counts from the acceptance day in
+> that case too: it is the market's first session after the filing arrived, and
+> the earlier of the two boundaries.
 
 An agent may see market data through **reaction day two**. That is the reaction
 window, and it is already public by the time the run happens. Nothing beyond it
