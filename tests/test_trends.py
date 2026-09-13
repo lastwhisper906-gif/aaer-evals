@@ -1058,6 +1058,38 @@ def test_no_fact_filed_after_the_cutoff_reaches_a_cell(ticker):
                 assert source["filed"] <= cutoff, f"{ticker} {source['fact_id']}"
 
 
+def test_no_document_after_the_cutoff_is_listed_in_the_payloads_own_source():
+    """The echoed document list, cut at the same date as the facts.
+
+    `input_numbers.json` lists one row per instance read, and Apple's fixture
+    set holds three filings after the ten-K: the table used to print its own
+    cutoff of 2025-10-31 beside their filing dates, because the list was copied
+    whole while the facts and the unloaded-accession list were filtered. The
+    expected split is read off the numbers file, not off the table.
+    """
+    listed = numbers("AAPL")["documents"]
+    inside = sorted({row["accession"] for row in listed
+                     if row["filing_date"] <= "2025-10-31"})
+    after = sorted({row["accession"] for row in listed
+                    if row["filing_date"] > "2025-10-31"})
+    assert after, "the fixture set must hold a filing after the cutoff for this to bite"
+
+    early = trends.trends(dict(numbers("AAPL"), cutoff="2025-10-31"))
+    carried = early["source"]["documents"]
+    assert sorted({row["accession"] for row in carried}) == inside
+    assert all(row["filing_date"] <= early["cutoff"] for row in carried)
+    assert not [row for row in carried if row["accession"] in after]
+
+
+def test_a_document_row_with_no_readable_date_is_refused_rather_than_dropped():
+    """A row that cannot be placed against the cutoff is not quietly left out."""
+    planted = numbers("AAPL")
+    planted["documents"] = [dict(planted["documents"][0], filing_date="the autumn")]
+    with pytest.raises(trends.TrendInputError) as caught:
+        trends.trends(planted)
+    assert "the autumn" in str(caught.value)
+
+
 def test_an_earlier_cutoff_takes_the_later_filings_back_out():
     """companyfacts is a catalogue of many filings, so the cutoff is applied to
     its rows and not to the document. Apple's ten-K run stops at 2025-10-31, and

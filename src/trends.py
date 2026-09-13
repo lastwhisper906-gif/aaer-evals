@@ -809,6 +809,39 @@ def _unloaded(facts: list[dict], ticker: str, cutoff: dt.date | None,
                     one["report_date"]) for one in out})
 
 
+def _documents_within(rows: list[dict], cutoff: dt.date | None) -> list[dict]:
+    """The numbers file's document list, cut to this table's own cutoff.
+
+    The facts are cut at the cutoff and so is the unloaded-accessions list; this
+    list was echoed whole, so a table run at a cutoff earlier than the numbers
+    file's -- which is what `trends(dict(numbers, cutoff=...))` does, and what a
+    ten-K trigger does to a numbers file extracted later -- printed its own
+    cutoff beside the filing dates of documents filed after it. A bundle the
+    assembler builds gives both records one cutoff and loses nothing here.
+
+    Every row in `input_numbers.json`'s list is a filing with a date --
+    `src/extract_numbers.py` writes one row per instance it read -- so a row
+    with no readable date is refused rather than dropped: it cannot be shown to
+    be inside the cutoff, and silently leaving it out would make the list shorter
+    than the record with nothing said.
+    """
+    if cutoff is None:
+        return list(rows)
+    kept = []
+    for row in rows:
+        filed = row.get("filing_date")
+        try:
+            when = _date(filed)
+        except (TypeError, ValueError) as exc:
+            raise TrendInputError(
+                f"input_numbers.json lists {row.get('accession')!r} with the "
+                f"filing date {filed!r}, which is not a date this table can "
+                f"place against its cutoff {cutoff}") from exc
+        if when <= cutoff:
+            kept.append(row)
+    return kept
+
+
 def trends(numbers: dict, *, fixtures_root=cutoff_guard.FIXTURES) -> dict:
     """The whole table: companyfacts first, the instances for what it lacks."""
     for key in ("ticker", "facts"):
@@ -854,7 +887,8 @@ def trends(numbers: dict, *, fixtures_root=cutoff_guard.FIXTURES) -> dict:
         "ticker": ticker,
         "cutoff": numbers.get("cutoff") or (cutoff.isoformat() if cutoff else None),
         "source": {"companyfacts": source,
-                   "documents": numbers.get("documents", []),
+                   "documents": _documents_within(numbers.get("documents", []),
+                                                  cutoff),
                    "facts": len(facts),
                    "facts_used": sum(1 for fact in facts if usable(fact)),
                    "accessions_with_no_companyfacts_row": [
