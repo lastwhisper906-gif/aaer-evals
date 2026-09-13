@@ -950,6 +950,51 @@ def test_a_file_the_run_does_not_hold_is_refused(tmp_path):
     assert stub.prompts == []
 
 
+def test_a_file_rewritten_during_the_call_is_refused_before_it_is_quoted(tmp_path):
+    """A directory checked before the call and read after it is two directories.
+
+    `verify` rebuilds the quote index from the handed directory as it stands
+    when the answer comes back, and in this repository's own model of a call the
+    writer can be the model: every layer runs as a session with `Write` rooted
+    at its own directory. An `ask` that rewrites `input_notes.md` while it
+    answers had the other company's paragraph ids resolving, with no drop row --
+    the same leak as a planted copy, one step later.
+    """
+    root, folder = plant(tmp_path)
+
+    class Rewrites(Stub):
+        def __call__(self, prompt: str, *, model: str) -> dict:
+            (folder / "input_notes.md").write_text(OTHER_NOTES, encoding="utf-8")
+            return super().__call__(prompt, model=model)
+
+    stub = Rewrites(accounting_answer())
+    with pytest.raises(ControlError) as caught:
+        control_single_agent.run("accounting_reliability", input_dir=folder,
+                                 bundle_root=root, ask=stub)
+    assert "input_notes.md" in str(caught.value)
+    assert stub.prompts != []          # the call did happen
+    assert not (root / "control_single_agent_accounting.json").exists()
+
+
+def test_a_linked_copy_in_the_run_is_refused_as_the_thing_to_check_against(tmp_path):
+    """`is_file()` and `read_bytes()` both follow a link, so a linked run copy
+    would make the comparison agree with whatever it points at."""
+    root, folder = plant(tmp_path)
+    elsewhere = tmp_path / "elsewhere"
+    elsewhere.mkdir()
+    other = elsewhere / "MSFT_notes.md"
+    other.write_text(OTHER_NOTES, encoding="utf-8")
+    (root / "input_notes.md").unlink()
+    (root / "input_notes.md").symlink_to(other)
+    (folder / "input_notes.md").write_text(OTHER_NOTES, encoding="utf-8")
+    stub = Stub(accounting_answer())
+    with pytest.raises(ControlError) as caught:
+        control_single_agent.run("accounting_reliability", input_dir=folder,
+                                 bundle_root=root, ask=stub)
+    assert str(other) in str(caught.value)
+    assert stub.prompts == []
+
+
 def test_the_evidence_fields_are_the_checklist_documents_own(tmp_path):
     """Read out of `docs/CHECKLIST.md` §7 by this test, not out of the module.
 

@@ -705,6 +705,12 @@ def the_runs_own_copies(names: list[str], input_dir, bundle_root) -> None:
             "against itself")
     for name in names:
         handed, source = folder / name, run / name
+        if source.is_symlink():
+            raise ControlError(
+                f"{source} is a symlink to {source.readlink()}. The run's own "
+                "copy is what everything handed to the control is checked "
+                "against, so a link there makes the check agree with whatever "
+                "it points at — `is_file()` and `read_bytes()` both follow one")
         if not source.is_file():
             raise ControlError(
                 f"{name} is in the directory handed to the control and the run "
@@ -820,6 +826,15 @@ def run(question: str, *, input_dir, bundle_root, ask,
     the_runs_own_copies(input_files(input_dir), input_dir, bundle_root)
 
     answer = ask(prompt(question, input_dir), model=family)
+    # Again, after the call. `verify` rebuilds the quote index from the handed
+    # directory as it stands *then*, and in this repository's own model of a
+    # call the writer can be the model itself -- every layer runs as a session
+    # with `Write` rooted at its own directory. A directory checked before the
+    # call and read after it is two directories, and an `ask` that rewrote
+    # `input_notes.md` mid-call had the other company's ids resolving with no
+    # drop row. `CLAUDE.md` asks for the text the model saw; this is the pair of
+    # checks that makes the file on disk that text.
+    the_runs_own_copies(input_files(input_dir), input_dir, bundle_root)
     served = answer.get("served_model") if isinstance(answer, dict) else None
     if not served_names_family(served, family):
         raise ControlError(
