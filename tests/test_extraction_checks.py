@@ -221,6 +221,49 @@ def test_a_cutoff_that_is_not_the_triggering_reports_filing_date_fails(tmp_path)
     assert "read through the cutoff 2027-01-01" in "\n".join(failures)
 
 
+def test_a_cutoff_moved_along_with_the_trigger_date_fails_the_cutoff_gate(tmp_path):
+    """The identity check compares two keys of the manifest to each other, and
+    a bundle that moves both keeps them equal. What it cannot move with them is
+    the row for the filing it says it is about: the triggering report's own
+    filing date is in the document list, and that is what the cutoff has to be.
+    """
+    bundle = good_bundle(tmp_path)
+    manifest = json.loads((bundle / "input_manifest.json").read_text(encoding="utf-8"))
+    own = [row for row in manifest["documents"]
+           if row["accession"] == manifest["accession"]]
+    assert own, "the bundle records the filing it is about"
+    filed = own[0]["filing_date"]
+    assert filed == manifest["cutoff"]
+    later = "2027-01-01"
+
+    def move(payload):
+        payload["cutoff"] = later
+        payload["filing_date"] = later
+        for row in payload["documents"]:
+            if row.get("role") in assemble_bundle.CATALOGUE_ROLES:
+                row["rows_used_through"] = later
+
+    rewrite(bundle, "input_manifest.json", move)
+    code, lines = extraction_checks.run(bundle)
+    assert code != 0
+    failures = gate_lines(lines, "cutoff")
+    disagreement = [line for line in failures if filed in line and later in line]
+    assert disagreement, failures
+    assert manifest["accession"] in disagreement[0]
+
+
+def test_a_manifest_about_a_filing_its_own_list_does_not_hold_fails(tmp_path):
+    """A manifest that names an accession no document row carries has nothing
+    on the record to read the cutoff off. Fail-closed, the same as a missing
+    date: the absence is not a pass."""
+    bundle = good_bundle(tmp_path)
+    rewrite(bundle, "input_manifest.json",
+            lambda payload: payload.update(accession="0000000000-00-000000"))
+    code, lines = extraction_checks.run(bundle)
+    assert code != 0
+    assert "holds no row for it" in "\n".join(gate_lines(lines, "cutoff"))
+
+
 def test_a_manifest_with_no_filing_date_for_its_trigger_fails_the_cutoff_gate(tmp_path):
     """Fail-closed the same way as a document with no date: a cutoff that
     cannot be shown to be the report's own date is a violation, not a pass."""

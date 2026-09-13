@@ -409,8 +409,24 @@ def load_bundle_file(bundle_root, name: str) -> str:
     able to *report* a violation as a failed gate rather than die inside the
     reader. Routing bundle reads through this function is what keeps
     `extraction_checks` honest about the bypass scan.
+
+    A link is refused. `is_file()` and `read_text()` both follow one, so a
+    bundle file that is a link to another run's is read as this run's own
+    record — the cutoff, the accession and the rules version all arriving from
+    a run nobody named. The same rule as `src/agent_inputs.py` applies to what
+    a layer is handed; this is the run's own side of it.
     """
-    path = Path(bundle_root) / name
+    root = Path(bundle_root)
+    if root.is_symlink():
+        raise CutoffGuardError(
+            f"{bundle_root} is a symlink to {root.readlink()} — a run is a "
+            "directory of its own files, and a link to another one is that "
+            "other run wearing this name")
+    path = root / name
+    if path.is_symlink():
+        raise CutoffGuardError(
+            f"{path} is a symlink to {path.readlink()} — a bundle file is the "
+            "run's own, and a link makes another run's file answer for it")
     if not path.is_file():
         raise CutoffGuardError(f"{path} is not in the bundle")
     return path.read_text(encoding="utf-8")

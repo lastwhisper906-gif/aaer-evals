@@ -237,6 +237,35 @@ def check_cutoff(manifest: dict | None) -> Result:
                     f"{manifest.get('accession')} was filed {filed} — the cutoff "
                     f"is the triggering report's own filing date")
 
+    # Two keys agreeing is still two keys. A bundle that moved `cutoff` and
+    # `filing_date` together kept them equal and passed, and the later filing it
+    # swept in was the proof: its own date had become the boundary. What the
+    # manifest cannot move with them is the row for the filing it says it is
+    # about, so that row is where the triggering report's filing date is read.
+    accession = manifest.get("accession")
+    if not accession:
+        result.fail("the manifest names no accession, so nothing in its own "
+                    "document list can be shown to be the filing it is about")
+    else:
+        own = [row for row in documents if row.get("accession") == accession]
+        if not own:
+            result.fail(f"the manifest says it is about {accession} and its "
+                        f"document list holds no row for it — the cutoff is that "
+                        f"filing's own date and it is not on the record")
+        for row in own:
+            named = f"{row.get('form')} {row.get('role')} {accession}"
+            try:
+                own_filed = _date(row.get("filing_date"), named)
+            except ValueError as exc:
+                result.fail(f"{named}: {exc} — the triggering report's own row is "
+                            f"what says when it was filed")
+                continue
+            if own_filed != filed:
+                result.fail(f"the manifest says {accession} was filed {filed} and "
+                            f"its own {row.get('role')} row says {own_filed}. The "
+                            f"cutoff is that filing's date, and a run whose record "
+                            f"of it disagrees with itself set its own boundary")
+
     result.detail = (f"{len(documents)} documents, none filed after {cutoff}, "
                      f"which is the {manifest.get('form')}'s own filing date")
     return result

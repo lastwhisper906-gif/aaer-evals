@@ -29,7 +29,7 @@ from pathlib import Path
 
 import pytest
 
-from src import agent_inputs, control_single_agent, quote_gate
+from src import agent_inputs, control_single_agent, cutoff_guard, quote_gate
 from src.control_single_agent import ControlError
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -1056,6 +1056,70 @@ def test_a_document_filed_after_the_cutoff_is_refused(tmp_path):
                                  bundle_root=root, ask=stub)
     assert ahead["filing_date"] in str(caught.value)
     assert MANIFEST["cutoff"] in str(caught.value)
+    assert stub.prompts == []
+    assert not (root / "control_single_agent_accounting.json").exists()
+
+
+def test_a_cutoff_moved_along_with_the_filing_date_is_refused(tmp_path):
+    """Both keys moved together, and the record they claim to describe did not.
+
+    `cutoff == filing_date` is satisfied by moving the pair, and every document
+    row is then under the new boundary — including the next quarter, which this
+    run could not have read. What cannot move with them is the row for the
+    filing the manifest says it is about: the triggering report's own filing
+    date is on the record, and the run is refused when the two disagree.
+    """
+    root, folder = plant(tmp_path)
+    rows = json.loads(
+        (REPO_ROOT / "tests" / "fixtures" / "AAPL" / "submissions.json")
+        .read_text(encoding="utf-8"))["filings"]
+    later = min((row["filing_date"] for row in rows
+                 if row["form"] == "10-Q" and row["filing_date"] > MANIFEST["cutoff"]))
+    ahead = min(row for row in rows if row["filing_date"] == later)
+    planted = dict(MANIFEST, cutoff=later, filing_date=later)
+    planted["documents"] = MANIFEST["documents"] + [
+        {"form": ahead["form"], "role": "prior_period",
+         "accession": ahead["accession"], "filing_date": ahead["filing_date"]}]
+    _replant_manifest(root, planted)
+    stub = Stub(accounting_answer())
+    with pytest.raises(ControlError) as caught:
+        control_single_agent.run("accounting_reliability", input_dir=folder,
+                                 bundle_root=root, ask=stub)
+    # the pair agreed with each other; the accession's own row is what refused
+    assert ACCESSION in str(caught.value)
+    assert MANIFEST["filing_date"] in str(caught.value)
+    assert later in str(caught.value)
+    assert stub.prompts == []
+    assert not (root / "control_single_agent_accounting.json").exists()
+
+
+def test_a_manifest_the_run_holds_only_as_a_link_is_refused(tmp_path):
+    """The run's own record, read through a link to another run's.
+
+    Every other file the control reads is compared against the run's copy, and
+    this one *is* the run's copy — the cutoff, the accession and the rules
+    version all come out of it. `is_file()` and `read_text()` both follow a
+    link, so a linked manifest hands the control another run's boundary under
+    this run's name, and nothing downstream can see the difference.
+    """
+    root, folder = plant(tmp_path)
+    elsewhere = tmp_path / "another-run"
+    elsewhere.mkdir()
+    other = dict(MANIFEST, accession=OTHER_ACCESSION,
+                 cutoff="2026-01-30", filing_date="2026-01-30")
+    other["documents"] = [{"form": "10-Q", "role": "primary_html",
+                           "accession": OTHER_ACCESSION,
+                           "filing_date": "2026-01-30"}]
+    (elsewhere / "input_manifest.json").write_text(
+        json.dumps(other, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    (root / "input_manifest.json").unlink()
+    (root / "input_manifest.json").symlink_to(elsewhere / "input_manifest.json")
+
+    stub = Stub(accounting_answer())
+    with pytest.raises((ControlError, cutoff_guard.CutoffGuardError)) as caught:
+        control_single_agent.run("accounting_reliability", input_dir=folder,
+                                 bundle_root=root, ask=stub)
+    assert "symlink" in str(caught.value)
     assert stub.prompts == []
     assert not (root / "control_single_agent_accounting.json").exists()
 

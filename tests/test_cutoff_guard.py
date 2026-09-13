@@ -117,6 +117,35 @@ def test_a_bundle_file_that_is_not_there_is_refused(tmp_path):
         cutoff_guard.load_bundle_file(tmp_path, "input_numbers.json")
 
 
+def test_a_bundle_file_that_is_a_link_to_another_runs_file_is_refused(tmp_path):
+    """`is_file()` and `read_text()` both follow a link, so a run holding one
+    reads another run's file as its own record. The name is this run's and the
+    bytes are not, and nothing downstream can tell."""
+    mine, other = tmp_path / "run", tmp_path / "another-run"
+    mine.mkdir()
+    other.mkdir()
+    (other / "input_manifest.json").write_text('{"cutoff": "2026-01-30"}\n',
+                                               encoding="utf-8")
+    (mine / "input_manifest.json").symlink_to(other / "input_manifest.json")
+    with pytest.raises(CutoffGuardError) as caught:
+        cutoff_guard.load_bundle_file(mine, "input_manifest.json")
+    assert "symlink" in str(caught.value)
+
+
+def test_a_run_directory_that_is_a_link_to_another_run_is_refused(tmp_path):
+    """The same leak one level up: every file read out of it is the other
+    run's, and the link is the only place it is visible."""
+    other = tmp_path / "another-run"
+    other.mkdir()
+    (other / "input_manifest.json").write_text('{"cutoff": "2026-01-30"}\n',
+                                               encoding="utf-8")
+    linked = tmp_path / "run"
+    linked.symlink_to(other, target_is_directory=True)
+    with pytest.raises(CutoffGuardError) as caught:
+        cutoff_guard.load_bundle_file(linked, "input_manifest.json")
+    assert "symlink" in str(caught.value)
+
+
 # --- the companyfacts catalogue ----------------------------------------------
 #
 # The record is not a filing, so the cutoff is applied to its rows. Every
