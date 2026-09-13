@@ -150,6 +150,32 @@ INSUFFICIENT = "insufficient"
 # citations to resolve and was written standing.
 MARKET_FIELDS = ("p_up", "basis")
 
+# The rest of §7, field by field. Every value below is read out of
+# `docs/CHECKLIST.md` §7 and §1, which is also where `src/control_single_agent.py`
+# reads them: the two controls answer one schema, and a field one of them checks
+# and the other does not is a difference between the controls that is not the
+# crossing. They agree here by reading one document rather than by sharing code,
+# which is a duplication to remove once both are on main -- it is a row in
+# `docs/next_cycle_tasks.md`, not something to do inside this item.
+#
+# `evidence` carries `upstream_item_id` alone. The sibling's evidence also
+# carries `quote`, because its upstream is the committed filing and an id there
+# names a paragraph; this supervisor's upstream is four reports, so §7's own
+# shape is the whole of it.
+CHECKLIST_FIELDS = ("key", "finding", "confidence", "evidence")
+CONTINUOUS_FIELDS = ("key", "point", "direction", "low", "high")
+EVENT_FIELDS = ("key", "p_within_horizon")
+EXPLANATION_FIELDS = ("id", "support", "realization_p")
+EVIDENCE_FIELDS = ("upstream_item_id",)
+FINDINGS = ("flag", "no_flag", "insufficient")
+SUPPORT = ("sufficient", "insufficient", "unknown")
+TIERS = ("elevated", "watch", "clear")
+TOP_SIGNALS_MAX = 5
+
+# A signal naming no checklist item at all. One naming an item that was dropped
+# is not this: that drop is already on record, and the signal leaves with it.
+SIGNAL_WITHOUT_ITEM = "the signal names no checklist item"
+
 
 class ControlError(Exception):
     """The control cannot be run as `docs/CHECKLIST.md` §8 describes it."""
@@ -492,10 +518,19 @@ def resolved(question: str, answer: dict, declared: set[str]) -> tuple[dict, lis
             standing_explanations.append(entry)
     kept["explanations"] = standing_explanations
 
+    # A signal whose item was dropped leaves with it, and that drop is already
+    # on record. One that names no item at all was removed in silence, which is
+    # the thing `CLAUDE.md` has a phrase for: a failed item is dropped *and
+    # counted*.
+    named_anywhere = {entry["key"] for entry in answer["checklist"]}
     names = {entry["key"] for entry in standing}
-    kept["top_signals"] = [one for one in
-                           _a_list(question, "top_signals", answer["top_signals"])
-                           if one in names]
+    signals = []
+    for one in _a_list(question, "top_signals", answer["top_signals"]):
+        if one in names:
+            signals.append(one)
+        elif one not in named_anywhere:
+            drop(f"{question}:top_signals:{one}", SIGNAL_WITHOUT_ITEM)
+    kept["top_signals"] = signals
 
     # `market_direction` abstains by naming no basis, which `docs/CHECKLIST.md`
     # §7 allows -- but the abstention §7 allows is `p_up: "insufficient"`, not a
@@ -543,8 +578,63 @@ def provenance(numbers: dict, notes: dict, question: str, *, scored_filing_date,
     }
 
 
+def _fields(entry, expected: tuple[str, ...], where: str) -> None:
+    if not isinstance(entry, dict):
+        raise ControlError(f"{where} is {type(entry).__name__}, not an object")
+    found = tuple(sorted(entry))
+    if found != tuple(sorted(expected)):
+        raise ControlError(
+            f"{where} carries {', '.join(found) or 'no fields'} and "
+            f"docs/CHECKLIST.md §7 gives it {', '.join(sorted(expected))}")
+
+
+def _text(entry, field: str, where: str) -> str:
+    value = entry.get(field)
+    if not isinstance(value, str) or not value.strip():
+        raise ControlError(
+            f"{where}.{field} is {value!r}, and the schema gives it a name")
+    return value
+
+
+def _one_of(entry, field: str, allowed: tuple[str, ...], where: str) -> str:
+    value = entry.get(field)
+    if value not in allowed:
+        raise ControlError(
+            f"{where}.{field} is {value!r}; the schema allows {', '.join(allowed)}")
+    return value
+
+
+def _number(entry, field: str, where: str, *, low=None, high=None) -> float:
+    value = entry.get(field)
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ControlError(
+            f"{where}.{field} is {value!r}, and the schema gives it a number")
+    if low is not None and not low <= value <= high:
+        raise ControlError(
+            f"{where}.{field} is {value}, outside {low} to {high} — a probability "
+            "outside its own range is not a probability")
+    return float(value)
+
+
+def _unique(keys: list[str], where: str) -> None:
+    """One indicator, one key — `docs/CHECKLIST.md` §2 says it in those words."""
+    repeated = sorted({key for key in keys if keys.count(key) > 1})
+    if repeated:
+        raise ControlError(
+            f"{where} names {', '.join(repeated)} more than once; one indicator, "
+            "one key, and a repeated key names a set")
+
+
 def _predicted(question: str, answer) -> dict:
-    """The supervisor's answer, checked against the schema before it is written."""
+    """The supervisor's answer against `docs/CHECKLIST.md` §7, field by field.
+
+    The gate below reads citations, so a field with no citations in it used to
+    pass through untouched whatever it held: `p_up: "up"`, `p_up: 1.7`,
+    `tier: "banana"`, `events: "lots"` were all written standing and uncounted.
+    A control file is scored -- §8 scores market direction by Brier and hit rate
+    and events by Brier -- so an unscorable value on record is a row of the
+    scorecard that cannot be computed, found later and with nothing to recover.
+    """
     if not isinstance(answer, dict):
         raise ControlError(
             f"the supervisor answered {question} with {type(answer).__name__}, "
@@ -555,14 +645,6 @@ def _predicted(question: str, answer) -> dict:
             f"the {question} answer has no {', '.join(missing)}; a control is "
             "scored on the same targets as the pipeline and cannot be short of "
             "them (docs/CHECKLIST.md §7)")
-    market = answer["market_direction"]
-    if not isinstance(market, dict) or set(market) != set(MARKET_FIELDS):
-        raise ControlError(
-            f"the {question} answer gives market_direction as "
-            f"{type(market).__name__ if not isinstance(market, dict) else sorted(market)}"
-            f", and docs/CHECKLIST.md §7 gives it a {' and a '.join(MARKET_FIELDS)}. "
-            "A probability with no basis beside it is not an abstention, it is a "
-            "field the citation gate has nothing to read")
     wants_continuous = question == CONTINUOUS_QUESTION
     if wants_continuous and CONTINUOUS not in answer:
         raise ControlError(f"the {question} answer has no {CONTINUOUS}, which the "
@@ -570,6 +652,79 @@ def _predicted(question: str, answer) -> dict:
     if not wants_continuous and CONTINUOUS in answer:
         raise ControlError(f"the {question} answer carries {CONTINUOUS}, which the "
                            "schema gives to financial pressure alone")
+
+    checklist = _a_list(question, "checklist", answer["checklist"])
+    for position, entry in enumerate(checklist, start=1):
+        where = f"checklist[{position}]"
+        _fields(entry, CHECKLIST_FIELDS, where)
+        _text(entry, "key", where)
+        _one_of(entry, "finding", FINDINGS, where)
+        _number(entry, "confidence", where, low=0, high=1)
+        evidence = _a_list(question, f"{where}.evidence", entry["evidence"])
+        for index, cited in enumerate(evidence, start=1):
+            cited_where = f"{where}.evidence[{index}]"
+            _fields(cited, EVIDENCE_FIELDS, cited_where)
+            _text(cited, "upstream_item_id", cited_where)
+    _unique([entry["key"] for entry in checklist], "checklist")
+
+    if wants_continuous:
+        continuous = _a_list(question, CONTINUOUS, answer[CONTINUOUS])
+        if not continuous:
+            raise ControlError(
+                "continuous is empty; financial pressure predicts next quarter's "
+                "revenue growth, operating margin and operating cash flow")
+        for position, entry in enumerate(continuous, start=1):
+            where = f"{CONTINUOUS}[{position}]"
+            _fields(entry, CONTINUOUS_FIELDS, where)
+            _text(entry, "key", where)
+            # §7 gives `direction` a string and does not enumerate its values.
+            _text(entry, "direction", where)
+            point = _number(entry, "point", where)
+            low = _number(entry, "low", where)
+            high = _number(entry, "high", where)
+            if not low <= point <= high:
+                raise ControlError(
+                    f"{where} puts its point {point} outside its own range "
+                    f"{low} to {high}")
+        _unique([entry["key"] for entry in continuous], CONTINUOUS)
+
+    events = _a_list(question, "events", answer["events"])
+    for position, entry in enumerate(events, start=1):
+        where = f"events[{position}]"
+        _fields(entry, EVENT_FIELDS, where)
+        _text(entry, "key", where)
+        _number(entry, "p_within_horizon", where, low=0, high=1)
+    _unique([entry["key"] for entry in events], "events")
+
+    explanations = _a_list(question, "explanations", answer["explanations"])
+    for position, entry in enumerate(explanations, start=1):
+        where = f"explanations[{position}]"
+        _fields(entry, EXPLANATION_FIELDS, where)
+        _text(entry, "id", where)
+        _one_of(entry, "support", SUPPORT, where)
+        _number(entry, "realization_p", where, low=0, high=1)
+    _unique([entry["id"] for entry in explanations], "explanations")
+
+    market = answer["market_direction"]
+    _fields(market, MARKET_FIELDS, "market_direction")
+    if market["p_up"] != INSUFFICIENT:
+        _number(market, "p_up", "market_direction", low=0, high=1)
+    basis = market["basis"]
+    if not isinstance(basis, list) or not all(
+            isinstance(one, str) and one.strip() for one in basis):
+        raise ControlError(
+            f"market_direction.basis is {basis!r}; §7 gives it a list of upstream "
+            "item ids, and an id that is not a name resolves for nobody")
+
+    _one_of(answer, "tier", TIERS, "the prediction")
+    signals = _a_list(question, "top_signals", answer["top_signals"])
+    for position, one in enumerate(signals, start=1):
+        _text({"key": one}, "key", f"top_signals[{position}]")
+    _unique(list(signals), "top_signals")
+    if len(signals) > TOP_SIGNALS_MAX:
+        raise ControlError(
+            f"top_signals names {len(signals)} signals and §7 allows "
+            f"{TOP_SIGNALS_MAX}")
     return dict(answer)
 
 

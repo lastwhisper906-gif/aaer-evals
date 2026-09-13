@@ -113,8 +113,13 @@ PRESSURE_FILE = "control_shuffled_pressure.json"
 # What the pipeline's own supervisor would return, written here by hand so that
 # nothing the runner writes is judged against something the runner produced. The
 # shapes are docs/CHECKLIST.md §7; `continuous` is financial pressure only.
+#
+# The findings read `flag` and `no_flag` because those are the two §7 lists,
+# beside `insufficient`. They used to read `yes` and `no`, which §7 lists
+# nowhere and the control accepted, because the control checked the fields the
+# citation gate reads and let every other field through untouched.
 ACCOUNTING_ANSWER = {
-    "checklist": [{"key": "receivables_growth_outruns_revenue", "finding": "yes",
+    "checklist": [{"key": "receivables_growth_outruns_revenue", "finding": "flag",
                    "confidence": 0.6,
                    "evidence": [{"upstream_item_id": CROSSED_ITEM}]}],
     "events": [{"key": "restatement", "p_within_horizon": 0.1}],
@@ -127,7 +132,7 @@ ACCOUNTING_ANSWER = {
     "top_signals": ["receivables_growth_outruns_revenue"],
 }
 PRESSURE_ANSWER = {
-    "checklist": [{"key": "liquidity_headroom", "finding": "no", "confidence": 0.3,
+    "checklist": [{"key": "liquidity_headroom", "finding": "no_flag", "confidence": 0.3,
                    "evidence": [{"upstream_item_id": CROSSED_ITEM}]}],
     "continuous": [{"key": "revenue_next_quarter", "point": 100.0,
                     "direction": "down", "low": 90.0, "high": 110.0}],
@@ -819,7 +824,7 @@ def test_an_item_citing_the_notes_report_that_was_taken_away_is_dropped_and_coun
     answers["accounting_reliability"] = dict(
         ACCOUNTING_ANSWER,
         checklist=ACCOUNTING_ANSWER["checklist"] + [
-            {"key": "reserve_release_unexplained", "finding": "yes",
+            {"key": "reserve_release_unexplained", "finding": "flag",
              "confidence": 0.7,
              "evidence": [{"upstream_item_id": UNCROSSED_ITEM}]}],
         top_signals=["receivables_growth_outruns_revenue",
@@ -896,7 +901,7 @@ def test_an_item_citing_nothing_at_all_is_dropped_and_counted(tmp_path, out):
     answers = dict(ANSWERS)
     answers["financial_pressure"] = dict(
         PRESSURE_ANSWER,
-        checklist=[{"key": "liquidity_headroom", "finding": "no",
+        checklist=[{"key": "liquidity_headroom", "finding": "no_flag",
                     "confidence": 0.3, "evidence": []}],
         top_signals=["liquidity_headroom"])
     run_crossed(tmp_path, out, StandInSupervisor(answers))
@@ -942,7 +947,7 @@ def test_an_item_citing_the_notes_half_stands(tmp_path, out):
     answers = dict(ANSWERS)
     answers["accounting_reliability"] = dict(
         ACCOUNTING_ANSWER,
-        checklist=[{"key": "receivables_growth_outruns_revenue", "finding": "yes",
+        checklist=[{"key": "receivables_growth_outruns_revenue", "finding": "flag",
                     "confidence": 0.6,
                     "evidence": [{"upstream_item_id": NOTES_HALF_ITEM}]}])
     run_crossed(tmp_path, out, StandInSupervisor(answers))
@@ -1012,3 +1017,246 @@ def test_an_item_citing_the_crossed_set_stands(crossed_run):
     assert accounting["checklist"] == ACCOUNTING_ANSWER["checklist"]
     assert accounting["control"]["counts"]["dropped_items"] == 0
     assert accounting["control"]["dropped_items"] == []
+
+
+# --- the rest of §7, field by field ------------------------------------------
+#
+# The gate above reads citations, so every field with no citations in it went
+# through untouched: `tier: "banana"`, `events: "lots"`, a bare-string evidence
+# entry and two explanations under one id all reached the file standing, with
+# `dropped_items: 0` beside them. `docs/CHECKLIST.md` §8 scores market direction
+# by Brier and hit rate and events by Brier, so an unscorable value on record is
+# a scorecard row that cannot be computed, found months later with nothing left
+# to recover.
+
+
+@pytest.mark.parametrize("p_up", ["up", "0.7", 1.7, -0.1, True, None])
+def test_a_market_probability_that_is_not_one_is_refused(tmp_path, out, p_up):
+    """§7 gives `p_up` a number in zero to one, or the word `insufficient`.
+
+    `True` is in the list because Python calls it an `int` and `0 <= True <= 1`;
+    a scorer reading it as a probability of one is reading an abstention nobody
+    wrote.
+    """
+    answers = dict(ANSWERS)
+    answers["accounting_reliability"] = dict(
+        ACCOUNTING_ANSWER, market_direction={"p_up": p_up, "basis": [CROSSED_ITEM]})
+    with pytest.raises(ControlError, match="p_up"):
+        run_crossed(tmp_path, out, StandInSupervisor(answers))
+    assert list(out.iterdir()) == []
+
+
+@pytest.mark.parametrize("basis", [CROSSED_ITEM, [""], ["  "], [CROSSED_ITEM, 7],
+                                   {"0": CROSSED_ITEM}])
+def test_a_basis_that_is_not_a_list_of_names_is_refused(tmp_path, out, basis):
+    """The gate resolves what is in `basis`, and an entry that is not a name
+    resolves for nobody -- a bare string is fifty-odd single characters, none of
+    which is an item id."""
+    answers = dict(ANSWERS)
+    answers["accounting_reliability"] = dict(
+        ACCOUNTING_ANSWER, market_direction={"p_up": 0.4, "basis": basis})
+    with pytest.raises(ControlError, match="basis"):
+        run_crossed(tmp_path, out, StandInSupervisor(answers))
+    assert list(out.iterdir()) == []
+
+
+@pytest.mark.parametrize("tier", ["banana", "Elevated", "", None, 1])
+def test_a_tier_outside_the_three_is_refused(tmp_path, out, tier):
+    """The two-by-two thresholds in `docs/CHECKLIST.md` produce one of three
+    words, and a fourth is a row the scorecard has no column for."""
+    answers = dict(ANSWERS)
+    answers["accounting_reliability"] = dict(ACCOUNTING_ANSWER, tier=tier)
+    with pytest.raises(ControlError, match="tier"):
+        run_crossed(tmp_path, out, StandInSupervisor(answers))
+    assert list(out.iterdir()) == []
+
+
+@pytest.mark.parametrize("finding", ["yes", "no", "flagged", "", None])
+def test_a_checklist_finding_outside_the_three_is_refused(tmp_path, out, finding):
+    """`flag`, `no_flag`, `insufficient` -- and the count of insufficient answers
+    is reported beside the score, so a fourth word is a denominator nobody can
+    reconstruct."""
+    answers = dict(ANSWERS)
+    answers["accounting_reliability"] = dict(
+        ACCOUNTING_ANSWER,
+        checklist=[dict(ACCOUNTING_ANSWER["checklist"][0], finding=finding)])
+    with pytest.raises(ControlError, match="finding"):
+        run_crossed(tmp_path, out, StandInSupervisor(answers))
+    assert list(out.iterdir()) == []
+
+
+@pytest.mark.parametrize("confidence", [1.4, -0.2, "high", None, True])
+def test_a_confidence_that_is_not_a_probability_is_refused(tmp_path, out, confidence):
+    answers = dict(ANSWERS)
+    answers["accounting_reliability"] = dict(
+        ACCOUNTING_ANSWER,
+        checklist=[dict(ACCOUNTING_ANSWER["checklist"][0], confidence=confidence)])
+    with pytest.raises(ControlError, match="confidence"):
+        run_crossed(tmp_path, out, StandInSupervisor(answers))
+    assert list(out.iterdir()) == []
+
+
+@pytest.mark.parametrize("cited", [CROSSED_ITEM, [CROSSED_ITEM],
+                                   {"upstream_item_id": CROSSED_ITEM, "quote": "x"},
+                                   {"quote": CROSSED_ITEM}, {}])
+def test_an_evidence_entry_that_is_not_the_schemas_shape_is_refused(
+        tmp_path, out, cited):
+    """This supervisor's upstream is four reports, so §7's evidence here is an
+    `upstream_item_id` and nothing else. A bare string passed the gate, because
+    the gate asks each entry for that field and a string answers nothing -- the
+    item was dropped for citing nothing, silently turning a malformed entry into
+    an uncited one."""
+    answers = dict(ANSWERS)
+    answers["accounting_reliability"] = dict(
+        ACCOUNTING_ANSWER,
+        checklist=[dict(ACCOUNTING_ANSWER["checklist"][0], evidence=[cited])])
+    with pytest.raises(ControlError, match="evidence"):
+        run_crossed(tmp_path, out, StandInSupervisor(answers))
+    assert list(out.iterdir()) == []
+
+
+@pytest.mark.parametrize("events", ["lots", {"restatement": 0.1}, 3])
+def test_an_events_field_that_is_not_a_list_is_refused(tmp_path, out, events):
+    answers = dict(ANSWERS)
+    answers["accounting_reliability"] = dict(ACCOUNTING_ANSWER, events=events)
+    with pytest.raises(ControlError, match="events"):
+        run_crossed(tmp_path, out, StandInSupervisor(answers))
+    assert list(out.iterdir()) == []
+
+
+@pytest.mark.parametrize("chance", [1.4, -0.1, "likely", None])
+def test_an_event_probability_that_is_not_one_is_refused(tmp_path, out, chance):
+    """§8 scores events by Brier, and Brier of `"likely"` is not a number."""
+    answers = dict(ANSWERS)
+    answers["accounting_reliability"] = dict(
+        ACCOUNTING_ANSWER,
+        events=[{"key": "restatement", "p_within_horizon": chance}])
+    with pytest.raises(ControlError, match="p_within_horizon"):
+        run_crossed(tmp_path, out, StandInSupervisor(answers))
+    assert list(out.iterdir()) == []
+
+
+def test_two_checklist_entries_under_one_key_are_refused(tmp_path, out):
+    """One indicator, one key. Two entries under one key is a set, and the
+    scorer reading the first would score a coin flip about which came back."""
+    entry = ACCOUNTING_ANSWER["checklist"][0]
+    answers = dict(ANSWERS)
+    answers["accounting_reliability"] = dict(
+        ACCOUNTING_ANSWER, checklist=[entry, dict(entry, finding="no_flag")])
+    with pytest.raises(ControlError, match="receivables_growth_outruns_revenue"):
+        run_crossed(tmp_path, out, StandInSupervisor(answers))
+    assert list(out.iterdir()) == []
+
+
+def test_two_explanations_under_one_id_are_refused(tmp_path, out):
+    """The explanations file is assembled by id, so two under one id is one of
+    them silently discarded at assembly."""
+    entry = {"id": CROSSED_ITEM, "support": "sufficient", "realization_p": 0.4}
+    answers = dict(ANSWERS)
+    answers["accounting_reliability"] = dict(
+        ACCOUNTING_ANSWER, explanations=[entry, dict(entry, support="unknown")])
+    with pytest.raises(ControlError, match="explanations"):
+        run_crossed(tmp_path, out, StandInSupervisor(answers))
+    assert list(out.iterdir()) == []
+
+
+@pytest.mark.parametrize("support", ["maybe", "", None, "Sufficient"])
+def test_an_explanation_support_outside_the_three_is_refused(tmp_path, out, support):
+    answers = dict(ANSWERS)
+    answers["accounting_reliability"] = dict(
+        ACCOUNTING_ANSWER,
+        explanations=[{"id": CROSSED_ITEM, "support": support,
+                       "realization_p": 0.4}])
+    with pytest.raises(ControlError, match="support"):
+        run_crossed(tmp_path, out, StandInSupervisor(answers))
+    assert list(out.iterdir()) == []
+
+
+def test_a_continuous_point_outside_its_own_range_is_refused(tmp_path, out):
+    """A point estimate outside the interval it came with is not a wide
+    interval, it is two numbers that cannot both be the same prediction."""
+    answers = dict(ANSWERS)
+    answers["financial_pressure"] = dict(
+        PRESSURE_ANSWER,
+        continuous=[dict(PRESSURE_ANSWER["continuous"][0], point=200.0)])
+    with pytest.raises(ControlError, match="outside its own range"):
+        run_crossed(tmp_path, out, StandInSupervisor(answers))
+    assert list(out.iterdir()) == []
+
+
+def test_an_empty_continuous_is_refused(tmp_path, out):
+    """Financial pressure predicts next quarter's three numbers; an empty list
+    is the field present and the prediction absent."""
+    answers = dict(ANSWERS)
+    answers["financial_pressure"] = dict(PRESSURE_ANSWER, continuous=[])
+    with pytest.raises(ControlError, match="continuous"):
+        run_crossed(tmp_path, out, StandInSupervisor(answers))
+    assert list(out.iterdir()) == []
+
+
+def test_more_top_signals_than_the_schema_allows_are_refused(tmp_path, out):
+    answers = dict(ANSWERS)
+    answers["accounting_reliability"] = dict(
+        ACCOUNTING_ANSWER,
+        checklist=[dict(ACCOUNTING_ANSWER["checklist"][0], key=f"signal_{n}")
+                   for n in range(6)],
+        top_signals=[f"signal_{n}" for n in range(6)])
+    with pytest.raises(ControlError, match="top_signals"):
+        run_crossed(tmp_path, out, StandInSupervisor(answers))
+    assert list(out.iterdir()) == []
+
+
+def test_one_signal_repeated_is_refused(tmp_path, out):
+    """Six entries of one key is one signal and five wasted slots, and the
+    length check alone would call it a full list."""
+    answers = dict(ANSWERS)
+    answers["accounting_reliability"] = dict(
+        ACCOUNTING_ANSWER,
+        top_signals=["receivables_growth_outruns_revenue"] * 6)
+    with pytest.raises(ControlError, match="top_signals"):
+        run_crossed(tmp_path, out, StandInSupervisor(answers))
+    assert list(out.iterdir()) == []
+
+
+def test_a_signal_naming_no_checklist_item_is_dropped_and_counted(tmp_path, out):
+    """The distinction the count rests on.
+
+    A signal naming an item that was dropped leaves with it, and that drop is
+    already on record under the item's own name -- the test above asserts it.
+    A signal naming an item that never existed was removed in silence, and
+    CLAUDE.md's sentence is that a failed item is dropped *and counted*.
+    """
+    answers = dict(ANSWERS)
+    answers["accounting_reliability"] = dict(
+        ACCOUNTING_ANSWER,
+        top_signals=["receivables_growth_outruns_revenue", "margin_collapse"])
+    run_crossed(tmp_path, out, StandInSupervisor(answers))
+
+    accounting = written(out, ACCOUNTING_FILE)
+    assert accounting["top_signals"] == ["receivables_growth_outruns_revenue"]
+    dropped = accounting["control"]["dropped_items"]
+    assert [row["item_id"] for row in dropped] == \
+        ["accounting_reliability:top_signals:margin_collapse"]
+    assert dropped[0]["reason"] == control_shuffled.SIGNAL_WITHOUT_ITEM
+    assert accounting["control"]["counts"]["dropped_items"] == 1
+
+
+def test_the_two_controls_answer_one_schema():
+    """Both read `docs/CHECKLIST.md` §7, so the values they allow are the same
+    values. They agree here by reading one document, not by sharing code -- the
+    single §7 checker both should call is a row in docs/next_cycle_tasks.md, and
+    until it lands this assertion is what keeps them from drifting apart.
+    """
+    from src import control_single_agent
+    for field in ("CHECKLIST_FIELDS", "CONTINUOUS_FIELDS", "EVENT_FIELDS",
+                  "EXPLANATION_FIELDS", "MARKET_FIELDS", "FINDINGS", "SUPPORT",
+                  "TIERS", "TOP_SIGNALS_MAX", "INSUFFICIENT"):
+        assert getattr(control_shuffled, field) == \
+               getattr(control_single_agent, field), field
+    # Evidence is the one field that differs, and it differs for a reason: the
+    # sibling's upstream is the committed filing, so an id there names a
+    # paragraph and a quote travels with it. This supervisor's upstream is four
+    # reports.
+    assert control_shuffled.EVIDENCE_FIELDS == ("upstream_item_id",)
+    assert control_single_agent.EVIDENCE_FIELDS == \
+        control_shuffled.EVIDENCE_FIELDS + ("quote",)
