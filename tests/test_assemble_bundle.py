@@ -163,14 +163,16 @@ def test_the_default_root_is_named_but_never_created(tmp_path):
 
 @pytest.mark.parametrize("ticker", TICKERS)
 def test_no_document_in_the_manifest_was_filed_after_the_cutoff(ticker):
-    """The submissions index is the one row with no filing date — it is a
-    catalogue of filings and not a filing, and the exemption is asserted
-    separately rather than skipped here."""
+    """The two catalogues are the rows with no filing date — each is a catalogue
+    of filings and not a filing. They are not waved through: the cutoff applies
+    to their rows, and the row says through which rows it was read. The
+    exemption itself is asserted separately rather than skipped here."""
     manifest = built(ticker)["manifest"]
     assert manifest["documents"]
     for row in manifest["documents"]:
-        if row["role"] == assemble_bundle.INDEX_ROLE:
+        if row["role"] in assemble_bundle.CATALOGUE_ROLES:
             assert row["filing_date"] is None, row
+            assert row["rows_used_through"] == manifest["cutoff"], row
             continue
         assert row["filing_date"] <= manifest["cutoff"], row
     assert manifest["cutoff"] == manifest["filing_date"]
@@ -343,17 +345,25 @@ def test_the_index_loader_refuses_anything_that_is_not_the_index():
 
 # --- the second catalogue ----------------------------------------------------
 #
-# companyfacts is the other document that is not a filing. Nothing in this file
-# reads it yet — the trend table, the articulation checks and the
-# research-and-development column are the items that will — so what is asserted
-# here is the listing a build gets when it does: the row `documents_used` writes
-# for a document opened through `cutoff_guard.load_catalogue`.
+# companyfacts is the other document that is not a filing. The trend table now
+# reads it, so every build in this file lists two catalogue rows; the
+# articulation checks and the research-and-development column are the items
+# still to come. What is asserted here is the listing on its own: the row
+# `documents_used` writes for a document opened through
+# `cutoff_guard.load_catalogue`.
 
 # Carrier's 10-K was filed on this date and its companyfacts record is dated
 # 2026-04-30, the newest filing whose facts are in it. Both come from
 # `tests/fixtures/CARR/manifest.json`, which is the record of what was fetched.
 CARR_10K_FILED = "2026-02-05"
 CARR_CATALOGUE_DATE = "2026-04-30"
+
+# Where EDGAR serves each catalogue: one JSON file per CIK, off the fixture
+# manifests' own `url` for the two roles.
+CATALOGUE_URL = {
+    assemble_bundle.INDEX_ROLE: "https://data.sec.gov/submissions/",
+    assemble_bundle.FACTS_ROLE: "https://data.sec.gov/api/xbrl/companyfacts/",
+}
 
 
 def opened_catalogue(ticker: str = "CARR", cutoff: str = CARR_10K_FILED) -> list[dict]:
@@ -852,9 +862,13 @@ def test_the_manifest_lists_the_documents_the_build_opened(ticker, form, monkeyp
     """Instrument the gateway itself and compare. `manifest.documents` used to
     be every fixture filed at or before the cutoff — AAPL's 10-Q listed the 10-K
     primary HTML, which nothing opens, and left out `submissions.json`, which
-    supplies the whole item-code section of `input_8k.md`."""
+    supplies the whole item-code section of `input_8k.md`.
+
+    All three doors of the gateway are watched. `load_catalogue` is the third,
+    and the trend table opens it: a build whose catalogue read went unwatched
+    would look like a manifest listing a document nothing opened."""
     seen: list[Path] = []
-    for name in ("load_bytes", "load_index"):
+    for name in ("load_bytes", "load_index", "load_catalogue"):
         original = getattr(cutoff_guard, name)
 
         def watched(path, *args, _original=original, **kwargs):
@@ -876,14 +890,15 @@ def test_the_manifest_lists_the_documents_the_build_opened(ticker, form, monkeyp
 def test_every_listed_document_points_a_reader_at_edgar(ticker, form):
     """A path into a fixture store the reader does not have is not a pointer.
 
-    The submissions index is the one row with no accession and no report date:
-    it is EDGAR's catalogue for a company, one JSON file per CIK, not a filing.
-    Its URL is asserted against that shape instead.
+    The two catalogues are the rows with no accession and no report date: each
+    is EDGAR's catalogue for a company, one JSON file per CIK, not a filing.
+    Their URLs are asserted against that shape instead, each against its own
+    address.
     """
     for row in built(ticker, form)["manifest"]["documents"]:
         assert row["url"], row
-        if row["role"] == assemble_bundle.INDEX_ROLE:
-            assert row["url"].startswith("https://data.sec.gov/submissions/")
+        if row["role"] in assemble_bundle.CATALOGUE_ROLES:
+            assert row["url"].startswith(CATALOGUE_URL[row["role"]]), row
             assert row["accession"] == "" and row["report_date"] == ""
             continue
         assert row["accession"].replace("-", "") in row["url"], row

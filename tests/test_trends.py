@@ -45,6 +45,13 @@ from src.fetch_fixtures import TICKERS
 from tests import companyfacts_source
 
 
+# Carrier's 10-K was filed on this date; the quarterly EDGAR had not loaded
+# into companyfacts was filed 2026-07-28, months after it. Both are rows of
+# `tests/fixtures/CARR/manifest.json`.
+CARR_ANNUAL_CUTOFF = "2026-02-05"
+CARR_UNLOADED_QUARTERLY = "0001783180-26-000032"
+
+
 @functools.lru_cache(maxsize=None)
 def numbers(ticker: str) -> dict:
     """`input_numbers.json` for one company, exactly as `--out` would write it."""
@@ -1081,9 +1088,34 @@ def test_no_document_after_the_cutoff_is_listed_in_the_payloads_own_source():
     assert not [row for row in carried if row["accession"] in after]
 
 
+def test_a_filing_after_the_cutoff_is_not_named_as_a_gap_in_companyfacts():
+    """The gap list is the filings companyfacts had not loaded *by the cutoff*.
+
+    Carrier's July 2026 quarterly is the fixture set's clearest gap, and at the
+    annual run's own cutoff — 2026-02-05, five months earlier — it is not a gap
+    but a filing that had not happened. Naming it would tell a reader at the
+    annual report that a quarter they cannot see is thin.
+    """
+    filed = {row["accession"]: row["filing_date"]
+             for row in cutoff_guard.documents("CARR", form="10-Q")}
+    assert filed[CARR_UNLOADED_QUARTERLY] > CARR_ANNUAL_CUTOFF
+
+    early = trends.trends(dict(numbers("CARR"), cutoff=CARR_ANNUAL_CUTOFF))
+    gaps = early["source"]["accessions_with_no_companyfacts_row"]
+    assert CARR_UNLOADED_QUARTERLY not in {entry["accession"] for entry in gaps}
+    assert all(entry["filing_date"] <= CARR_ANNUAL_CUTOFF for entry in gaps), gaps
+    # and it is a gap at the as-of date, so the filter is what took it out
+    assert CARR_UNLOADED_QUARTERLY in {
+        entry["accession"]
+        for entry in table("CARR")["source"]["accessions_with_no_companyfacts_row"]}
+
+
 def test_a_document_row_with_no_readable_date_is_refused_rather_than_dropped():
     """A row that cannot be placed against the cutoff is not quietly left out."""
-    planted = numbers("AAPL")
+    # `numbers` is cached and hands every caller the same object, so the bad
+    # row goes into a copy. Planting it in place left the next test reading a
+    # document list with "the autumn" in it.
+    planted = dict(numbers("AAPL"))
     planted["documents"] = [dict(planted["documents"][0], filing_date="the autumn")]
     with pytest.raises(trends.TrendInputError) as caught:
         trends.trends(planted)
