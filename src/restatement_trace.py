@@ -279,9 +279,14 @@ def scan(ticker: str, *, cutoff=None, fixtures_root=cutoff_guard.FIXTURES) -> di
     — and the payload needs the resolved date to say which run this was.
     """
     fixtures_root = Path(fixtures_root)
-    cutoff = cutoff_guard.parse_date(
-        cutoff or cutoff_guard.default_cutoff(ticker, fixtures_root=fixtures_root),
-        "cutoff")
+    # `cutoff or default` made the empty string a request for the default, so
+    # `--cutoff ""` ran at the fixture set's as-of date and said so in a payload
+    # nobody had asked for. Only an absent cutoff means the default; anything
+    # given is parsed, and `parse_date`'s rule is "never a silent default".
+    # `src/tag_continuity.py` reads it this way and the two readers disagreed.
+    if cutoff is None:
+        cutoff = cutoff_guard.default_cutoff(ticker, fixtures_root=fixtures_root)
+    cutoff = cutoff_guard.parse_date(cutoff, "cutoff")
     record = cutoff_guard.one_document(ticker, COMPANYFACTS_FORM, COMPANYFACTS_ROLE,
                                        fixtures_root=fixtures_root)
     document = cutoff_guard.load_catalogue(record["full_path"], cutoff,
@@ -293,7 +298,19 @@ def scan(ticker: str, *, cutoff=None, fixtures_root=cutoff_guard.FIXTURES) -> di
     return {
         "ticker": ticker,
         "cutoff": str(cutoff),
-        "record": {"path": record["path"], "filing_date": record["filing_date"],
+        # A catalogue has no filing date of its own to publish. The date its
+        # manifest row carries is the newest filing whose facts it holds, which
+        # is later than every cutoff a run can have -- that is what makes it a
+        # catalogue -- so writing it here put a document the run may not see
+        # into the run's own output. `src/assemble_bundle.py` already writes a
+        # catalogue row this way, `src/cutoff_guard.py` states the rule, and
+        # `src/extraction_checks.py` fails a bundle row that does otherwise.
+        # Before the route landed this was unreachable: the scan refused every
+        # run whose cutoff was earlier than that date, and the route is what
+        # makes those runs succeed.
+        "record": {"path": record["path"], "filing_date": None,
+                   "date_basis": record.get("date_basis"),
+                   "rows_used_through": str(cutoff),
                    "sha256": record["sha256"], "url": record["url"]},
         "counts": {
             "periods": len(grouped),

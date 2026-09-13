@@ -42,7 +42,7 @@ from pathlib import Path
 import pytest
 
 from src import cutoff_guard, restatement_trace
-from src.cutoff_guard import CutoffViolationError
+from src.cutoff_guard import CutoffGuardError, CutoffViolationError
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 PLANTED = FIXTURES / "planted_restatement"
@@ -534,6 +534,37 @@ def grouped_at(cutoff: str, ticker: str = TICKER) -> dict[tuple, list[dict]]:
 @pytest.fixture(scope="module")
 def annual_scan() -> dict:
     return restatement_trace.scan(TICKER, cutoff=ANNUAL_TRIGGER, fixtures_root=FIXTURES)
+
+
+def test_the_payload_publishes_no_date_the_run_may_not_see(annual_scan):
+    """The catalogue's own recorded date is not this run's to print.
+
+    `CATALOGUE_RECORDED_DATE` is the newest filing whose facts the record holds,
+    and it is later than this run's cutoff — the test above asserts that
+    ordering off the manifest. The record block used to publish it as the
+    document's filing date, which `src/assemble_bundle.py` nulls for a catalogue
+    row and `src/extraction_checks.py` fails a bundle for. Before the route
+    landed the scan refused this run outright, so no payload could carry it;
+    making the run succeed is what made the field reachable.
+    """
+    block = annual_scan["record"]
+    assert block["filing_date"] is None
+    assert block["rows_used_through"] == ANNUAL_TRIGGER == annual_scan["cutoff"]
+    assert "catalogue" in block["date_basis"]
+    printed = json.dumps(annual_scan)
+    assert CATALOGUE_RECORDED_DATE > ANNUAL_TRIGGER
+    assert CATALOGUE_RECORDED_DATE not in printed
+
+
+def test_an_empty_cutoff_is_refused_rather_than_read_as_no_cutoff():
+    """`cutoff or default` made the empty string a request for the as-of date.
+
+    `src/tag_continuity.py` refuses the same input, and `parse_date`'s rule is
+    that there is never a silent default; the two readers disagreed about one
+    argument.
+    """
+    with pytest.raises(CutoffGuardError):
+        restatement_trace.scan(TICKER, cutoff="", fixtures_root=FIXTURES)
 
 
 def test_the_whole_file_gate_refuses_the_record_to_the_annual_run():
