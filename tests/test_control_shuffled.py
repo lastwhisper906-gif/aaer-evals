@@ -474,11 +474,19 @@ def test_a_supervisor_given_one_companys_own_two_halves_is_refused(tmp_path, out
 
 
 def test_one_bundle_used_for_both_halves_is_refused(tmp_path, out):
+    """Named, because the same-company refusal fires on this input too.
+
+    With a bare `pytest.raises(ControlError)` this test passed with the
+    same-directory refusal deleted: the two halves are also one company's, so
+    the later sentence caught it and the test could not tell the two rules
+    apart. It names the sentence it is about.
+    """
     only = bundle(tmp_path, NUMBERS_COMPANY)
-    with pytest.raises(ControlError):
+    with pytest.raises(ControlError) as caught:
         control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY,
                              numbers_bundle=only, notes_bundle=only,
                              out=out, predictor=StandInSupervisor())
+    assert "both halves would come out of" in str(caught.value)
     assert list(out.iterdir()) == []
 
 
@@ -1207,38 +1215,47 @@ def test_more_top_signals_than_the_schema_allows_are_refused(tmp_path, out):
 
 
 def test_one_signal_repeated_is_refused(tmp_path, out):
-    """Six entries of one key is one signal and five wasted slots, and the
-    length check alone would call it a full list."""
+    """Two entries of one key, not six.
+
+    At six the length check fired first, so deleting the uniqueness rule left
+    this test green — it was named for a rule it never reached. Two is under
+    the ceiling, so only uniqueness can refuse it.
+    """
     answers = dict(ANSWERS)
     answers["accounting_reliability"] = dict(
         ACCOUNTING_ANSWER,
-        top_signals=["receivables_growth_outruns_revenue"] * 6)
-    with pytest.raises(ControlError, match="top_signals"):
+        top_signals=["receivables_growth_outruns_revenue"] * 2)
+    with pytest.raises(ControlError) as caught:
         run_crossed(tmp_path, out, StandInSupervisor(answers))
+    assert "more than once" in str(caught.value)
+    assert "receivables_growth_outruns_revenue" in str(caught.value)
     assert list(out.iterdir()) == []
 
 
-def test_a_signal_naming_no_checklist_item_is_dropped_and_counted(tmp_path, out):
-    """The distinction the count rests on.
+def test_a_signal_naming_no_checklist_item_is_refused(tmp_path, out):
+    """The distinction, and which side of it this falls on.
 
-    A signal naming an item that was dropped leaves with it, and that drop is
-    already on record under the item's own name -- the test above asserts it.
-    A signal naming an item that never existed was removed in silence, and
-    CLAUDE.md's sentence is that a failed item is dropped *and counted*.
+    A signal naming an entry that was *dropped* leaves with it and writes no
+    second drop row: that drop is on record under the entry's own key, and
+    counting it twice would say two items failed where one did. The test above
+    asserts that.
+
+    A signal naming an entry that never existed is not a failed item at all --
+    it is the answer contradicting itself before any citation is resolved, and
+    `src/control_single_agent.py` refuses the whole prediction for it. This
+    control used to drop and count it instead, which made the two controls
+    disagree about one schema: one schema gets one gate, and the difference
+    between the controls is the crossing and nothing else.
     """
     answers = dict(ANSWERS)
     answers["accounting_reliability"] = dict(
         ACCOUNTING_ANSWER,
         top_signals=["receivables_growth_outruns_revenue", "margin_collapse"])
-    run_crossed(tmp_path, out, StandInSupervisor(answers))
-
-    accounting = written(out, ACCOUNTING_FILE)
-    assert accounting["top_signals"] == ["receivables_growth_outruns_revenue"]
-    dropped = accounting["control"]["dropped_items"]
-    assert [row["item_id"] for row in dropped] == \
-        ["accounting_reliability:top_signals:margin_collapse"]
-    assert dropped[0]["reason"] == control_shuffled.SIGNAL_WITHOUT_ITEM
-    assert accounting["control"]["counts"]["dropped_items"] == 1
+    with pytest.raises(ControlError) as caught:
+        run_crossed(tmp_path, out, StandInSupervisor(answers))
+    assert "margin_collapse" in str(caught.value)
+    assert "names no entry" in str(caught.value)
+    assert list(out.iterdir()) == []
 
 
 def test_the_two_controls_answer_one_schema():
@@ -1260,3 +1277,228 @@ def test_the_two_controls_answer_one_schema():
     assert control_shuffled.EVIDENCE_FIELDS == ("upstream_item_id",)
     assert control_single_agent.EVIDENCE_FIELDS == \
         control_shuffled.EVIDENCE_FIELDS + ("quote",)
+
+
+# --- the refusals that had no judge ------------------------------------------
+#
+# Every one of these survived a fail-open mutation with the file green, and they
+# sit on the cutoff and identity path this control is about. The pattern is one
+# input each, built out of the committed fixture pair, and the sentence named.
+
+
+def test_a_report_of_the_wrong_kind_under_the_right_name_is_refused(tmp_path, out):
+    """"Verify the reports it crossed" is company, filing **and** kind.
+
+    Only the *name* of a file said which of the four reports it held. A file
+    called `report_notes_text.md` holding the numbers report crossed with
+    everything else checking out — one company, one filing, both halves inside
+    the cutoff — and the supervisor was handed one company's numbers twice under
+    two names, which is not the crossing and is not the pipeline either.
+    """
+    notes = bundle(tmp_path, NOTES_COMPANY)
+    (notes / "report_notes_text.md").write_text(
+        report_text(NOTES_COMPANY, "report_numbers.md"), encoding="utf-8")
+    with pytest.raises(ControlError) as caught:
+        control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY,
+                             numbers_bundle=bundle(tmp_path, NUMBERS_COMPANY),
+                             notes_bundle=notes, out=out,
+                             predictor=StandInSupervisor())
+    assert "report_notes_text.md" in str(caught.value)
+    assert "notes-text reader" in str(caught.value)
+    assert list(out.iterdir()) == []
+
+
+def test_the_heading_this_file_expects_is_the_one_every_committed_report_carries():
+    """The map read against the source rather than agreed with.
+
+    `REPORT_HEADING` is written out by hand in `src/control_shuffled.py`, so it
+    is checked against all twenty-four committed reports here — both companies
+    of the pair, every report, first line. A map agreeing only with itself is
+    the hand-written list on both sides this project has been burned by.
+    """
+    for ticker in (NUMBERS_COMPANY, NOTES_COMPANY):
+        for name in control_shuffled.REPORTS:
+            first = report_text(ticker, name).split("\n", 1)[0].strip()
+            assert first == f"# {ticker} — {control_shuffled.REPORT_HEADING[name]}"
+    assert sorted(control_shuffled.REPORT_HEADING) == sorted(control_shuffled.REPORTS)
+
+
+def test_a_report_carrying_no_item_id_is_refused(tmp_path, out):
+    """A half that names no filing cannot be dated, and an undatable half is the
+    cutoff not applying to it."""
+    notes = bundle(tmp_path, NOTES_COMPANY)
+    stripped = "\n".join(
+        line for line in report_text(NOTES_COMPANY, "report_notes_text.md").split("\n")
+        if not (line.strip().startswith("[") and line.strip().endswith("]")))
+    (notes / "report_notes_text.md").write_text(stripped, encoding="utf-8")
+    with pytest.raises(ControlError) as caught:
+        control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY,
+                             numbers_bundle=bundle(tmp_path, NUMBERS_COMPANY),
+                             notes_bundle=notes, out=out,
+                             predictor=StandInSupervisor())
+    assert "carries no item id" in str(caught.value)
+    assert list(out.iterdir()) == []
+
+
+def test_a_report_with_no_heading_is_refused(tmp_path, out):
+    """Nothing in it says whose half it is, and the label the caller passed is
+    the caller's word — which is the thing the heading exists to check."""
+    notes = bundle(tmp_path, NOTES_COMPANY)
+    body = report_text(NOTES_COMPANY, "report_notes_text.md").split("\n", 1)[1]
+    (notes / "report_notes_text.md").write_text(body, encoding="utf-8")
+    with pytest.raises(ControlError) as caught:
+        control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY,
+                             numbers_bundle=bundle(tmp_path, NUMBERS_COMPANY),
+                             notes_bundle=notes, out=out,
+                             predictor=StandInSupervisor())
+    assert "does not open with a heading" in str(caught.value)
+    assert list(out.iterdir()) == []
+
+
+def test_two_filings_on_one_side_are_refused(tmp_path, out):
+    """One half is one run's. A side holding items from two filings is two runs
+    spliced, and `named_accession` is the only thing that says so — deleting it
+    left the file green."""
+    notes = bundle(tmp_path, NOTES_COMPANY)
+    text = report_text(NOTES_COMPANY, "report_notes_text.md")
+    # The numbers company's own filing, spliced into the notes company's half:
+    # two accessions in one report, which is two runs spliced.
+    other = NUMBERS_ACCESSION
+    (notes / "report_notes_text.md").write_text(
+        text + f"\n[{other}:notes:receivables:9]\nA later paragraph.\n",
+        encoding="utf-8")
+    with pytest.raises(ControlError) as caught:
+        control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY,
+                             numbers_bundle=bundle(tmp_path, NUMBERS_COMPANY),
+                             notes_bundle=notes, out=out,
+                             predictor=StandInSupervisor())
+    assert "carries items from" in str(caught.value)
+    assert other in str(caught.value)
+    assert list(out.iterdir()) == []
+
+
+def test_a_half_whose_accession_no_manifest_records_is_refused(tmp_path, out):
+    """The load-bearing fail-closed direction of the whole gate.
+
+    `filed` is what dates a half. Mutated to answer `1900-01-01` for an
+    accession no manifest holds, the file stayed green: nothing asked what it
+    does when the record has never heard of the filing, and an absent date is
+    not an early date.
+    """
+    notes = bundle(tmp_path, NOTES_COMPANY)
+    text = report_text(NOTES_COMPANY, "report_notes_text.md")
+    invented = "9999999999-99-999999"
+    (notes / "report_notes_text.md").write_text(
+        text.replace(NOTES_ACCESSION, invented), encoding="utf-8")
+    with pytest.raises(ControlError) as caught:
+        control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY,
+                             numbers_bundle=bundle(tmp_path, NUMBERS_COMPANY),
+                             notes_bundle=notes, out=out,
+                             predictor=StandInSupervisor())
+    assert invented in str(caught.value)
+    assert list(out.iterdir()) == []
+
+
+def test_an_output_that_is_not_a_directory_is_refused(tmp_path):
+    """A control file has a directory to land in, or the run does not start."""
+    not_a_directory = tmp_path / "out.txt"
+    not_a_directory.write_text("", encoding="utf-8")
+    with pytest.raises(ControlError):
+        control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY,
+                             numbers_bundle=bundle(tmp_path, NUMBERS_COMPANY),
+                             notes_bundle=bundle(tmp_path, NOTES_COMPANY),
+                             out=not_a_directory,
+                             predictor=StandInSupervisor())
+
+
+def test_the_prediction_object_is_closed(tmp_path, out):
+    """Every nested object was closed and the prediction itself was not.
+
+    A `scored_filing_date`, a `price_on_reaction_day_60` and a note to the
+    scorer were written into the control file whole — the first of them beside
+    the audited `scored_filing_date` this module writes into `control`, so one
+    file carried two answers to one question and only one of them had been
+    checked against anything.
+    """
+    answers = dict(ANSWERS)
+    answers["accounting_reliability"] = dict(
+        ACCOUNTING_ANSWER, scored_filing_date="2030-01-01",
+        price_on_reaction_day_60=412.77,
+        note_to_the_scorer="merge this into the pipeline number")
+    with pytest.raises(ControlError) as caught:
+        run_crossed(tmp_path, out, StandInSupervisor(answers))
+    said = str(caught.value)
+    for stray in ("note_to_the_scorer", "price_on_reaction_day_60",
+                  "scored_filing_date"):
+        assert stray in said
+    assert list(out.iterdir()) == []
+
+
+def test_the_two_controls_answer_one_schema_in_behaviour_too(tmp_path, out):
+    """Equal constants are not one gate; equal verdicts are.
+
+    `test_the_two_controls_answer_one_schema` compares tuples, and the two
+    controls disagreed about `top_signals` under identical tuples — one dropped
+    and counted where the other refused. Each answer below is put to both
+    modules' schema checks, and both have to say the same word about it.
+    """
+    from src import control_single_agent
+
+    def sibling_refuses(answer: dict) -> bool:
+        payload = dict(answer, question="accounting_reliability",
+                       rules_version="0.1")
+        try:
+            control_single_agent.check_schema(payload, "accounting_reliability",
+                                              rules_version="0.1")
+        except control_single_agent.ControlError:
+            return True
+        return False
+
+    def this_refuses(answer: dict) -> bool:
+        try:
+            control_shuffled._predicted("accounting_reliability", answer)
+        except ControlError:
+            return True
+        return False
+
+    # The sibling's evidence carries a quote as well, for the reason its own
+    # docstring gives, so every answer here carries one and this control ignores
+    # the field it does not ask for by refusing the entry -- which is why the
+    # evidence shape is the one case the two are allowed to differ on and is
+    # left out of the battery.
+    good = dict(ACCOUNTING_ANSWER)
+    battery = {
+        "a fourth finding": {"checklist": [dict(good["checklist"][0],
+                                                finding="yes")]},
+        "a confidence outside its range": {
+            "checklist": [dict(good["checklist"][0], confidence=1.4)]},
+        "a tier the thresholds never produce": {"tier": "banana"},
+        "events that are not a list": {"events": "lots"},
+        "an event probability that is a word": {
+            "events": [{"key": "restatement", "p_within_horizon": "likely"}]},
+        "a market probability that is a word": {
+            "market_direction": {"p_up": "up", "basis": [CROSSED_ITEM]}},
+        "a market probability outside its range": {
+            "market_direction": {"p_up": 1.7, "basis": [CROSSED_ITEM]}},
+        "two explanations under one id": {
+            "explanations": [{"id": CROSSED_ITEM, "support": "sufficient",
+                              "realization_p": 0.4},
+                             {"id": CROSSED_ITEM, "support": "unknown",
+                              "realization_p": 0.1}]},
+        "an explanation support outside the three": {
+            "explanations": [{"id": CROSSED_ITEM, "support": "maybe",
+                              "realization_p": 0.4}]},
+        "one signal repeated": {
+            "top_signals": ["receivables_growth_outruns_revenue"] * 2},
+        "a signal naming no entry": {
+            "top_signals": ["receivables_growth_outruns_revenue",
+                            "margin_collapse"]},
+        "six signals": {
+            "checklist": [dict(good["checklist"][0], key=f"signal_{n}")
+                          for n in range(6)],
+            "top_signals": [f"signal_{n}" for n in range(6)]},
+    }
+    for what, change in battery.items():
+        answer = dict(good, **change)
+        mine, theirs = this_refuses(answer), sibling_refuses(answer)
+        assert mine and theirs, f"{what}: this control {mine}, the sibling {theirs}"
