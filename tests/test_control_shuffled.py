@@ -115,7 +115,10 @@ ACCOUNTING_ANSWER = {
                    "evidence": [{"upstream_item_id": CROSSED_ITEM}]}],
     "events": [{"key": "restatement", "p_within_horizon": 0.1}],
     "explanations": [],
-    "market_direction": {"p_up": 0.4, "basis": []},
+    # A number resting on an id the crossed set carries. It used to rest on an
+    # empty basis, which stood only because this control skipped the field
+    # whenever the basis was empty -- the fixture was holding the gate open.
+    "market_direction": {"p_up": 0.4, "basis": [CROSSED_ITEM]},
     "tier": "watch",
     "top_signals": ["receivables_growth_outruns_revenue"],
 }
@@ -185,7 +188,7 @@ def scored_run(folder: Path, ticker: str) -> Path:
 
 
 def run_crossed(tmp_path, out, predictor):
-    """The crossed run under test: AAPL's numbers side, CARR's notes side.
+    """The crossed run under test: Carrier's numbers side, Apple's notes side.
 
     Only the supervisor varies between the tests that call this, so it is the
     only thing they name.
@@ -648,6 +651,143 @@ def test_the_manifest_is_what_declares_the_filing_when_the_run_carries_one(tmp_p
     assert control["notes_from"] == NOTES_COMPANY
 
 
+def test_a_manifest_naming_a_filing_its_own_reports_do_not_is_refused(tmp_path, out):
+    """The date belongs to the filing the manifest *names*.
+
+    A run directory whose manifest says one accession and whose reports were
+    written from another has not said which filing it is, and the cutoff would
+    be read off whichever of the two the module happened to look at. The module
+    has both in hand, so it refuses instead.
+    """
+    numbers = bundle(tmp_path, NUMBERS_COMPANY)
+    (numbers / control_shuffled.MANIFEST).write_text(
+        json.dumps({"ticker": NOTES_COMPANY, "form": "10-K",
+                    "accession": NOTES_ACCESSION, "filing_date": NOTES_FILED,
+                    "cutoff": NOTES_FILED}, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8")
+    supervisor = StandInSupervisor()
+    with pytest.raises(ControlError) as refusal:
+        control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY, numbers_bundle=numbers,
+                             notes_bundle=bundle(tmp_path, NOTES_COMPANY),
+                             out=out, predictor=supervisor)
+    assert NOTES_ACCESSION in str(refusal.value)
+    assert NUMBERS_ACCESSION in str(refusal.value)
+    assert list(out.iterdir()) == []
+    assert supervisor.calls == []
+
+
+def test_a_manifest_naming_no_accession_at_all_is_refused(tmp_path, out):
+    """Fail-closed: a date with no filing beside it says nothing about which
+    filing it is the date of."""
+    numbers = bundle(tmp_path, NUMBERS_COMPANY)
+    (numbers / control_shuffled.MANIFEST).write_text(
+        json.dumps({"ticker": NUMBERS_COMPANY, "form": "10-K",
+                    "filing_date": NUMBERS_FILED, "cutoff": NUMBERS_FILED},
+                   indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    supervisor = StandInSupervisor()
+    with pytest.raises(ControlError, match="names no accession"):
+        control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY, numbers_bundle=numbers,
+                             notes_bundle=bundle(tmp_path, NOTES_COMPANY),
+                             out=out, predictor=supervisor)
+    assert list(out.iterdir()) == []
+    assert supervisor.calls == []
+
+
+def test_the_numbers_half_is_checked_against_the_filing_being_scored_too(tmp_path, out):
+    """Both halves go through the cutoff, not just the partner's.
+
+    Nothing asked: removing the numbers-side check left every test in this file
+    passing. The record here contradicts itself -- it names the accession its
+    reports were written from and dates the run before that filing existed --
+    and an input assembled against a boundary earlier than its own trigger is
+    refused rather than crossed.
+    """
+    numbers = bundle(tmp_path, NUMBERS_COMPANY)
+    earlier = "2025-06-30"
+    assert earlier < NOTES_FILED < NUMBERS_FILED
+    (numbers / control_shuffled.MANIFEST).write_text(
+        json.dumps({"ticker": NUMBERS_COMPANY, "form": "10-K",
+                    "accession": NUMBERS_ACCESSION, "filing_date": earlier,
+                    "cutoff": earlier}, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8")
+    supervisor = StandInSupervisor()
+    with pytest.raises(ControlError, match="the numbers half") as refusal:
+        control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY, numbers_bundle=numbers,
+                             notes_bundle=bundle(tmp_path, NOTES_COMPANY),
+                             out=out, predictor=supervisor)
+    assert NUMBERS_FILED in str(refusal.value)
+    assert earlier in str(refusal.value)
+    assert list(out.iterdir()) == []
+    assert supervisor.calls == []
+
+
+def test_two_companies_reports_on_one_side_are_refused(tmp_path, out):
+    """One half is one company's.
+
+    Nothing asked this one either. A side holding one company's numbers report
+    beside another's is not a half of one run, and the accession the side is
+    dated by would be whichever of the two the set happened to pop.
+    """
+    mixed = tmp_path / "mixed"
+    mixed.mkdir()
+    first, second = control_shuffled.NUMBERS_SIDE
+    (mixed / first).write_text(report_text(NUMBERS_COMPANY, first), encoding="utf-8")
+    (mixed / second).write_text(report_text(NOTES_COMPANY, second), encoding="utf-8")
+    supervisor = StandInSupervisor()
+    with pytest.raises(ControlError, match="more than one company") as refusal:
+        control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY, numbers_bundle=mixed,
+                             notes_bundle=bundle(tmp_path, NOTES_COMPANY),
+                             out=out, predictor=supervisor)
+    assert NUMBERS_COMPANY in str(refusal.value)
+    assert NOTES_COMPANY in str(refusal.value)
+    assert list(out.iterdir()) == []
+    assert supervisor.calls == []
+
+
+def test_a_report_whose_item_ids_begin_with_no_accession_is_refused(tmp_path, out):
+    """An empty accession names no filing.
+
+    `filed` looks an accession up in the company's own manifest, and the rows
+    there carrying no accession are the submissions index and the companyfacts
+    record -- catalogues drawn from many filings, each dated by the newest
+    filing in it. A half whose ids begin with nothing would be dated off one of
+    those, months after the filing its reports were written from.
+    """
+    catalogues = [row for row in cutoff_guard.documents(NUMBERS_COMPANY)
+                  if not row.get("accession")]
+    assert catalogues, "the record holds rows with no accession: the two catalogues"
+
+    numbers = bundle(tmp_path, NUMBERS_COMPANY)
+    for name in control_shuffled.NUMBERS_SIDE:
+        blanked = (numbers / name).read_text(encoding="utf-8").replace(
+            NUMBERS_ACCESSION, "")
+        (numbers / name).write_text(blanked, encoding="utf-8")
+    supervisor = StandInSupervisor()
+    with pytest.raises(ControlError, match="begins with no accession"):
+        control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY, numbers_bundle=numbers,
+                             notes_bundle=bundle(tmp_path, NOTES_COMPANY),
+                             out=out, predictor=supervisor)
+    assert list(out.iterdir()) == []
+    assert supervisor.calls == []
+
+
+def test_the_four_reports_the_supervisor_sees_go_through_the_pair_check(tmp_path):
+    """`crossed` is the function the module docstring calls what the supervisor
+    sees, and it used to read the two halves and hand them straight back: the
+    one route through here with no cutoff on it and no refusal of a company
+    crossed with itself. Nothing outside the module calls it, which is the only
+    reason that was never a live leak."""
+    with pytest.raises(ControlError, match="real run"):
+        control_shuffled.crossed(bundle(tmp_path / "first", NUMBERS_COMPANY),
+                                 bundle(tmp_path / "second", NUMBERS_COMPANY))
+    with pytest.raises(ControlError, match="Nothing filed after"):
+        control_shuffled.crossed(bundle(tmp_path / "rule", PAIRING_EXAMPLE),
+                                 bundle(tmp_path / "partner", PAIRING_PARTNER))
+    reports = control_shuffled.crossed(bundle(tmp_path, NUMBERS_COMPANY),
+                                       bundle(tmp_path, NOTES_COMPANY))
+    assert sorted(reports) == sorted(control_shuffled.REPORTS)
+
+
 # --- what the citations resolve against --------------------------------------
 
 def test_the_planted_citations_are_what_this_file_says_they_are():
@@ -704,6 +844,38 @@ def test_a_market_call_resting_on_nothing_in_the_crossed_set_degrades(tmp_path, 
     assert accounting["control"]["counts"]["dropped_items"] == 1
     assert accounting["control"]["dropped_items"][0]["item_id"] == \
            "accounting_reliability:market_direction"
+
+
+def test_a_probability_resting_on_an_empty_basis_is_dropped_and_counted(tmp_path, out):
+    """`docs/CHECKLIST.md` §7's abstention is `p_up: "insufficient"`, not a
+    number with nothing under it. `src/control_single_agent.py` drops that in
+    this same sentence, and one schema gets one gate: the field cannot be
+    dropped, so it degrades to the abstention and the drop is counted.
+    """
+    answers = dict(ANSWERS)
+    answers["accounting_reliability"] = dict(
+        ACCOUNTING_ANSWER, market_direction={"p_up": 0.4, "basis": []})
+    run_crossed(tmp_path, out, StandInSupervisor(answers))
+
+    accounting = written(out, ACCOUNTING_FILE)
+    assert accounting["market_direction"] == {"p_up": "insufficient", "basis": []}
+    dropped = accounting["control"]["dropped_items"]
+    assert [row["item_id"] for row in dropped] == \
+        ["accounting_reliability:market_direction"]
+    assert dropped[0]["reason"] == control_shuffled.CITES_NOTHING
+    assert accounting["control"]["counts"]["dropped_items"] == 1
+
+
+def test_the_abstention_itself_stands_on_an_empty_basis(crossed_run):
+    """The one case §7 allows nothing to be resolved: `"insufficient"` resting
+    on no basis is the abstention and not a failure, and it is not counted as a
+    drop. `PRESSURE_ANSWER` is written that way, so this is the fixture pair's
+    own second question."""
+    _, _, out = crossed_run
+    pressure = written(out, PRESSURE_FILE)
+    assert pressure["market_direction"] == PRESSURE_ANSWER["market_direction"]
+    assert pressure["market_direction"] == {"p_up": "insufficient", "basis": []}
+    assert pressure["control"]["counts"]["dropped_items"] == 0
 
 
 def test_an_item_citing_nothing_at_all_is_dropped_and_counted(tmp_path, out):
