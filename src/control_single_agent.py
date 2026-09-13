@@ -631,10 +631,11 @@ def input_files(input_dir) -> list[str]:
       indexes that company's paragraph ids and an explanation citing one
       resolves. A link is refused by name and the boundary is checked again with
       `agent_inputs.escapes`, which is where the rule is written.
-    * nothing here catches a **hardlink**: it resolves inside the directory and
-      answers to the allowed name. `src/agent_inputs.py` catches one by
-      comparing bytes against the run's own copy, and this control is handed a
-      directory with no copy to compare against. Named rather than closed.
+    A name check cannot see the rest, and `run` closes those against the run's
+    own copies -- see `the_runs_own_copies`. A hardlink, a plain copy of another
+    company's file written under an allowed name, and an input directory that is
+    itself a link to somewhere else all answer every check here and are caught
+    there, by bytes.
     """
     folder = Path(input_dir)
     if not folder.is_dir():
@@ -672,6 +673,51 @@ def input_files(input_dir) -> list[str]:
             "resolves to lands in the run directory, and every other agent's "
             "input hangs off that")
     return held
+
+
+def the_runs_own_copies(names: list[str], input_dir, bundle_root) -> None:
+    """Every file handed to the control is the run's own, byte for byte, or a refusal.
+
+    The guard above reads names and kinds, and three things answer both while
+    being another company's file: a **hardlink**, which resolves inside the
+    directory; a **plain copy** written under an allowed name, which is not a
+    link at all; and an **input directory that is itself a link**, which
+    `agent_inputs.escapes` cannot see because it resolves the root along with
+    everything under it, so a linked root is judged against its own target.
+
+    `src/agent_inputs.py` closes the same hole the same way -- "the right name
+    over other bytes ... a hardlink included" -- by comparing what it routed
+    against the run's copy. The run directory is handed in here as
+    `bundle_root`, and `docs/INPUT_SPEC.md` §6 is what says it holds the
+    bundle's `input_` files, so there is a copy to compare against and the
+    earlier claim that there was none was wrong.
+
+    A name the run does not hold at all is refused too: a file nobody assembled
+    is not one the control may read, whatever it says inside.
+    """
+    folder = Path(input_dir)
+    run = Path(bundle_root)
+    if folder.is_symlink():
+        raise ControlError(
+            f"{input_dir} is itself a symlink to {folder.readlink()}. The control "
+            "is handed a directory, and a link to another one is that other one "
+            "wearing this name — every check inside it then judges the target "
+            "against itself")
+    for name in names:
+        handed, source = folder / name, run / name
+        if not source.is_file():
+            raise ControlError(
+                f"{name} is in the directory handed to the control and the run "
+                f"{bundle_root} does not hold it. A file nobody assembled into "
+                "the run is not one the control reads, whatever it says inside")
+        if handed.resolve() == source.resolve():
+            continue
+        if handed.read_bytes() != source.read_bytes():
+            raise ControlError(
+                f"{handed} is not the run's own {name}: its bytes differ from "
+                f"{source}. The right name over other bytes is the leak a name "
+                "check cannot see — `src/agent_inputs.py` refuses it for the "
+                "same reason, hardlink and plain copy alike")
 
 
 def prompt(question: str, input_dir) -> str:
@@ -771,6 +817,7 @@ def run(question: str, *, input_dir, bundle_root, ask,
         raise ControlError(
             f"{MANIFEST} names no accession, and a computed row's id begins with one")
     cutoff = run_cutoff(manifest)
+    the_runs_own_copies(input_files(input_dir), input_dir, bundle_root)
 
     answer = ask(prompt(question, input_dir), model=family)
     served = answer.get("served_model") if isinstance(answer, dict) else None

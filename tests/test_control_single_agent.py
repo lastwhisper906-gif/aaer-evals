@@ -175,14 +175,22 @@ ALTERED_QUOTE = "rose to $29,508 million - the"
 
 
 def plant(tmp_path: Path) -> tuple[Path, Path]:
-    """The run directory, and the directory the control is handed."""
+    """The run directory, and the directory the control is handed.
+
+    The bundle is written into the run and copied into the control's directory,
+    which is the shape `src/agent_inputs.py` builds -- the run holds every
+    `input_` file `docs/INPUT_SPEC.md` §6 names, and an agent's directory holds
+    the copies it was routed. Planting them only in the agent's directory made a
+    run in which nothing the control read had a copy to be checked against.
+    """
     root = tmp_path / "AAPL-10-K"
     folder = tmp_path / "single-agent"
     root.mkdir()
     folder.mkdir()
-    (folder / "input_notes.md").write_text(NOTES, encoding="utf-8")
-    (folder / "input_trends.json").write_text(TRENDS, encoding="utf-8")
-    (folder / "input_market.json").write_text(MARKET, encoding="utf-8")
+    for name, text in (("input_notes.md", NOTES), ("input_trends.json", TRENDS),
+                       ("input_market.json", MARKET)):
+        (root / name).write_text(text, encoding="utf-8")
+        (folder / name).write_text(text, encoding="utf-8")
     (root / "input_manifest.json").write_text(
         json.dumps(MANIFEST, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return root, folder
@@ -866,6 +874,79 @@ def test_an_allowed_name_that_is_not_a_file_is_refused(tmp_path):
         control_single_agent.run("accounting_reliability", input_dir=folder,
                                  bundle_root=root, ask=stub)
     assert "input_notes.md" in str(caught.value)
+    assert stub.prompts == []
+
+
+def test_a_plain_copy_of_another_companys_notes_is_refused(tmp_path):
+    """No link anywhere: the right name written over other bytes.
+
+    The second lens wrote MSFT's notes into `input_notes.md` directly. Every
+    name check, kind check and boundary check passed it, the model was handed
+    it under "you see these files and nothing else", and the explanation citing
+    MSFT's paragraph was written out as resolved.
+    """
+    root, folder = plant(tmp_path)
+    (folder / "input_notes.md").write_text(OTHER_NOTES, encoding="utf-8")
+    stub = Stub(accounting_answer())
+    with pytest.raises(ControlError) as caught:
+        control_single_agent.run("accounting_reliability", input_dir=folder,
+                                 bundle_root=root, ask=stub)
+    assert "input_notes.md" in str(caught.value)
+    assert stub.prompts == []
+    assert not (root / "control_single_agent_accounting.json").exists()
+
+
+def test_a_hardlink_under_an_allowed_name_is_refused(tmp_path):
+    """A hardlink resolves inside the directory and answers to the name."""
+    root, folder = plant(tmp_path)
+    elsewhere = tmp_path / "elsewhere"
+    elsewhere.mkdir()
+    other = elsewhere / "MSFT_notes.md"
+    other.write_text(OTHER_NOTES, encoding="utf-8")
+    handed = folder / "input_notes.md"
+    handed.unlink()
+    handed.hardlink_to(other)
+    assert not handed.is_symlink()
+    stub = Stub(accounting_answer())
+    with pytest.raises(ControlError) as caught:
+        control_single_agent.run("accounting_reliability", input_dir=folder,
+                                 bundle_root=root, ask=stub)
+    assert "input_notes.md" in str(caught.value)
+    assert stub.prompts == []
+
+
+def test_an_input_directory_that_is_itself_a_link_is_refused(tmp_path):
+    """`agent_inputs.escapes` resolves the root with everything under it, so a
+    linked directory is judged against its own target and nothing escapes."""
+    root, folder = plant(tmp_path)
+    elsewhere = tmp_path / "another-run"
+    elsewhere.mkdir()
+    for name in ("input_notes.md", "input_trends.json", "input_market.json"):
+        (elsewhere / name).write_text(OTHER_NOTES if name.endswith(".md")
+                                      else (folder / name).read_text(encoding="utf-8"),
+                                      encoding="utf-8")
+    link = tmp_path / "handed-to-the-control"
+    link.symlink_to(elsewhere, target_is_directory=True)
+    assert control_single_agent.agent_inputs.escapes(link) == []
+    stub = Stub(accounting_answer())
+    with pytest.raises(ControlError) as caught:
+        control_single_agent.run("accounting_reliability", input_dir=link,
+                                 bundle_root=root, ask=stub)
+    assert str(elsewhere) in str(caught.value)
+    assert stub.prompts == []
+
+
+def test_a_file_the_run_does_not_hold_is_refused(tmp_path):
+    """An allowed name, real bytes, and no copy in the run to be checked against."""
+    root, folder = plant(tmp_path)
+    (folder / "input_mdna.md").write_text(NOTES, encoding="utf-8")
+    assert "input_mdna.md" in control_single_agent.CONTROL_SEES
+    assert not (root / "input_mdna.md").exists()
+    stub = Stub(accounting_answer())
+    with pytest.raises(ControlError) as caught:
+        control_single_agent.run("accounting_reliability", input_dir=folder,
+                                 bundle_root=root, ask=stub)
+    assert "input_mdna.md" in str(caught.value)
     assert stub.prompts == []
 
 
