@@ -295,6 +295,39 @@ def test_a_manifest_that_moves_every_date_it_holds_still_fails(tmp_path):
     assert manifest["accession"] in recorded[0]
 
 
+def test_a_filing_wearing_a_catalogues_role_fails_the_cutoff_gate(tmp_path):
+    """The catalogue exemption is from the date gate, so a filing that wears it
+    skips both the cutoff compare and the record compare. A catalogue is drawn
+    from many filings and names none — every fixture manifest records both with
+    an empty accession — so a row that names one is not a catalogue."""
+    bundle = good_bundle(tmp_path)
+    later = max(row["filing_date"]
+                for row in cutoff_guard.documents("AAPL", form="10-Q"))
+
+    def dress(payload):
+        payload["documents"].append(
+            {"form": "10-Q", "role": assemble_bundle.INDEX_ROLE,
+             "accession": "0000320193-26-000020", "filing_date": None,
+             "rows_used_through": payload["cutoff"], "date_basis": "not a filing"})
+
+    assert later  # the record holds a filing after this bundle's cutoff
+    rewrite(bundle, "input_manifest.json", dress)
+    code, lines = extraction_checks.run(bundle)
+    assert code != 0
+    assert "wearing the exemption" in "\n".join(gate_lines(lines, "cutoff"))
+
+
+def test_a_document_row_naming_its_filing_as_a_list_fails_rather_than_raises(tmp_path):
+    """Fail-closed as a gate line, not as a traceback: the gate's job is to
+    report a violation, and a row shaped wrongly is one."""
+    bundle = good_bundle(tmp_path)
+    rewrite(bundle, "input_manifest.json",
+            lambda payload: payload["documents"][0].update(accession=["a", "b"]))
+    code, lines = extraction_checks.run(bundle)
+    assert code != 0
+    assert "an accession is a string" in "\n".join(gate_lines(lines, "cutoff"))
+
+
 def test_a_manifest_about_a_filing_its_own_list_does_not_hold_fails(tmp_path):
     """A manifest that names an accession no document row carries has nothing
     on the record to read the cutoff off. Fail-closed, the same as a missing

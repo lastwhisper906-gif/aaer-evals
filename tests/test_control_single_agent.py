@@ -1124,6 +1124,61 @@ def test_a_manifest_the_run_holds_only_as_a_link_is_refused(tmp_path):
     assert not (root / "control_single_agent_accounting.json").exists()
 
 
+def _the_next_filing() -> tuple[str, str]:
+    """The first filing the record holds after the planted run's cutoff."""
+    rows = json.loads(
+        (REPO_ROOT / "tests" / "fixtures" / "AAPL" / "submissions.json")
+        .read_text(encoding="utf-8"))["filings"]
+    later = sorted((row["filing_date"], row["accession"]) for row in rows
+                   if row["filing_date"] > MANIFEST["cutoff"])
+    assert later, "the record must hold a filing after the cutoff for this to bite"
+    return later[0]
+
+
+def test_a_paragraph_under_a_later_filings_accession_is_refused(tmp_path):
+    """The manifest's list is the run's word; the text says where it came from.
+
+    A paragraph appended to `input_notes.md` under the next filing's accession
+    is in no `documents` row, so the gate over that list never sees it; it is in
+    both copies, so the byte check agrees; and `src/quote_gate.py` indexes it as
+    quotable like any other. It was handed to the model, and its quote verified
+    and its citation resolved, while the run reported a clean cutoff. The id
+    names the filing and the submissions index dates it.
+    """
+    root, folder = plant(tmp_path)
+    filed, late = _the_next_filing()
+    extra = f"\n[{late}:notes:9]\nInventories rose sharply during the quarter.\n"
+    for holder in (root, folder):
+        path = holder / "input_notes.md"
+        path.write_text(path.read_text(encoding="utf-8") + extra, encoding="utf-8")
+
+    stub = Stub(accounting_answer())
+    with pytest.raises(ControlError) as caught:
+        control_single_agent.run("accounting_reliability", input_dir=folder,
+                                 bundle_root=root, ask=stub)
+    assert late in str(caught.value)
+    assert filed in str(caught.value)
+    assert MANIFEST["cutoff"] in str(caught.value)
+    assert stub.prompts == []
+    assert not (root / "control_single_agent_accounting.json").exists()
+
+
+def test_a_paragraph_under_a_filing_nobody_recorded_is_refused(tmp_path):
+    """Fail-closed: an accession EDGAR's own catalogue does not list has no date
+    to check, so it is refused rather than read as early."""
+    root, folder = plant(tmp_path)
+    extra = f"\n[{OTHER_ACCESSION}:notes:9]\nDeferred revenue rose.\n"
+    for holder in (root, folder):
+        path = holder / "input_notes.md"
+        path.write_text(path.read_text(encoding="utf-8") + extra, encoding="utf-8")
+
+    stub = Stub(accounting_answer())
+    with pytest.raises(ControlError, match="in no row of"):
+        control_single_agent.run("accounting_reliability", input_dir=folder,
+                                 bundle_root=root, ask=stub)
+    assert stub.prompts == []
+
+
 def test_the_planted_manifest_names_the_cutoff_the_filing_date_gives_it():
     assert MANIFEST["cutoff"] == MANIFEST["filing_date"]
 

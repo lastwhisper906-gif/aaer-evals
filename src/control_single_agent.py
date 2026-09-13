@@ -50,6 +50,14 @@ scored on an input that may hold the outcome it is predicting, and that is not a
 baseline, it is a leak with a number on it. The cutoff it ran under goes back
 with the drop rows, for the runner to record.
 
+That record is the run's own, though, and a gate over it can only check the rows
+that are in it. The text itself says more: an item id begins with the accession
+of the filing it came from, and the submissions index dates accessions. So every
+id in the handed directory is dated against the cutoff before the call is made,
+which catches a paragraph carried under a later filing's accession -- in both
+copies, so the byte check agrees, and quotable like any other -- that the
+manifest never listed.
+
 **Evidence carries a quote, and here is why.** `CLAUDE.md`: "Every report item
 carries a verbatim quote or an upstream item id that Python verifies." A
 supervisor's `evidence[].upstream_item_id` names an item of one of the four
@@ -574,6 +582,50 @@ def drop_reasons(payload: dict, question: str, index: dict) -> dict[str, str]:
     return found
 
 
+def the_text_names_no_later_filing(index, cutoff, ticker, *,
+                                   fixtures_root=cutoff_guard.FIXTURES) -> None:
+    """Every filing the handed text's own ids name, dated against the cutoff.
+
+    The manifest's `documents` list is the run's word about what it read, and
+    the gate over it can only check the rows that are there. A paragraph
+    appended to `input_notes.md` under the next filing's accession is not in
+    that list, is in both copies so the byte check agrees, and is indexed by
+    `src/quote_gate.py` as quotable like any other -- so its quote verified and
+    its citation resolved while the run reported a clean cutoff.
+
+    An item id begins with the accession of the filing it came from
+    (`docs/INPUT_SPEC.md` §2.2), and the submissions index dates accessions. The
+    text the model is handed is therefore checkable against the boundary
+    directly, which is the claim `CLAUDE.md` actually makes: the inputs do not
+    violate the cutoff.
+    """
+    try:
+        of_record = cutoff_guard.filed_on_record(ticker, fixtures_root=fixtures_root)
+    except (cutoff_guard.CutoffGuardError, TypeError) as exc:
+        raise ControlError(
+            f"{exc} — the ids in the handed text name filings, and with no record "
+            "to date them the control cannot show its input is inside the cutoff"
+        ) from exc
+    for identifier in sorted(index):
+        named = identifier.split(":", 1)[0]
+        held = of_record.get(named)
+        if held is None:
+            raise ControlError(
+                f"{identifier} in the handed text names {named!r}, which is in no "
+                f"row of {ticker}'s submissions index. A filing EDGAR's own "
+                "catalogue does not list has no date to check against the cutoff")
+        try:
+            filed = cutoff_guard.parse_date(held, f"{named} filing_date")
+        except cutoff_guard.CutoffGuardError as exc:
+            raise ControlError(f"{identifier}: {exc}") from exc
+        if filed > cutoff:
+            raise ControlError(
+                f"{identifier} in the handed text comes from {named}, filed "
+                f"{filed}, after the cutoff {cutoff}. Nothing filed after the "
+                "triggering report enters the input (CLAUDE.md), and a paragraph "
+                "the manifest does not list is still a paragraph the model reads")
+
+
 def verify(payload: dict, question: str, input_dir, accession: str) -> tuple[dict, list[dict]]:
     """The prediction with what did not verify taken out, and one row per drop.
 
@@ -824,6 +876,12 @@ def run(question: str, *, input_dir, bundle_root, ask,
             f"{MANIFEST} names no accession, and a computed row's id begins with one")
     cutoff = run_cutoff(manifest)
     the_runs_own_copies(input_files(input_dir), input_dir, bundle_root)
+    # The manifest's list is the run's word about what it read; the ids in the
+    # text are the text's own word about where it came from, and the index dates
+    # them. A paragraph carried under a later filing's accession is caught here
+    # whether or not the manifest ever mentioned that filing.
+    the_text_names_no_later_filing(quote_gate.quotable(input_dir, accession),
+                                   cutoff, manifest.get("ticker"))
 
     answer = ask(prompt(question, input_dir), model=family)
     # Again, after the call. `verify` rebuilds the quote index from the handed

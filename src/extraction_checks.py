@@ -206,6 +206,15 @@ def check_cutoff(manifest: dict | None, *,
         # their *rows*, which is where the look-ahead lives, and a row that
         # names one has to say through what date this bundle read them.
         if row.get("role") in assemble_bundle.CATALOGUE_ROLES:
+            # A catalogue is drawn from many filings and is not one, so it names
+            # no accession -- every fixture manifest records both with an empty
+            # one. A row carrying an accession under a catalogue's role is a
+            # filing wearing the exemption, and the exemption is from the date
+            # gate: it would skip both the cutoff compare and the record compare.
+            if row.get("accession"):
+                result.fail(f"{named} carries an accession — a catalogue is drawn "
+                            f"from many filings and names none, so a row that "
+                            f"names one is a filing wearing the exemption")
             if row.get("filing_date"):
                 result.fail(f"{named} carries a filing date — a catalogue drawn "
                             f"from many filings is not a filing and has none")
@@ -277,23 +286,23 @@ def check_cutoff(manifest: dict | None, *,
     # closes the boundary and a row understating its own date at once.
     ticker = manifest.get("ticker")
     try:
-        index = cutoff_guard.one_document(ticker, "submissions",
-                                          assemble_bundle.INDEX_ROLE,
-                                          fixtures_root=fixtures_root)
-        filings = json.loads(cutoff_guard.load_index(index["full_path"],
-                                                     fixtures_root=fixtures_root))
-    except (cutoff_guard.CutoffGuardError, ValueError, TypeError) as exc:
+        of_record = cutoff_guard.filed_on_record(ticker, fixtures_root=fixtures_root)
+    except (cutoff_guard.CutoffGuardError, TypeError) as exc:
         result.fail(f"{exc} — a run whose company has no submissions index has no "
                     f"filing date of record this gate can check its own copy "
                     f"against")
         return result
-    of_record = {row.get("accession"): row.get("filing_date")
-                 for row in filings.get("filings", []) if row.get("accession")}
     for row in documents:
         if row.get("role") in assemble_bundle.CATALOGUE_ROLES:
             continue
-        held = of_record.get(row.get("accession"))
-        named = f"{row.get('form')} {row.get('role')} {row.get('accession')}"
+        listed = row.get("accession")
+        named = f"{row.get('form')} {row.get('role')} {listed}"
+        if not isinstance(listed, str):
+            result.fail(f"{named} names its filing as {type(listed).__name__}, "
+                        f"and an accession is a string — refused rather than "
+                        f"looked up as whatever it is")
+            continue
+        held = of_record.get(listed)
         if held is None:
             result.fail(f"{named} is in the manifest and in no row of {ticker}'s "
                         f"submissions index — a filing EDGAR's own catalogue does "

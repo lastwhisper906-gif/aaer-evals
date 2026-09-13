@@ -223,6 +223,12 @@ def load_document(path, cutoff_date, *, fixtures_root=FIXTURES, encoding="utf-8"
     return load_bytes(path, cutoff_date, fixtures_root=fixtures_root).decode(encoding)
 
 
+# The role `src/fetch_fixtures.py` records the submissions index under, written
+# here for the same reason `CATALOGUE_ROLE` is: this module imports nothing from
+# `src/`.
+INDEX_ROLE = "submissions_index"
+
+
 def load_index(path, *, fixtures_root=FIXTURES) -> bytes:
     """The submissions index, which is a list of filings and not a filing.
 
@@ -235,14 +241,49 @@ def load_index(path, *, fixtures_root=FIXTURES) -> bytes:
     `tests/test_parse_8k.py` asserts it drops every row past the cutoff.
 
     The path is still checked against the manifest, so an unrecorded file is
-    refused here exactly as it is anywhere else.
+    refused here exactly as it is anywhere else, and the bytes are checked
+    against the manifest's `sha256` — the same check the companyfacts route
+    makes, for the same reason it states: a route that skips the date gate has
+    the hash and nothing else to say the file is still the record.
     """
     row = document_record(path, fixtures_root=fixtures_root)
-    if row.get("role") != "submissions_index":
+    if row.get("role") != INDEX_ROLE:
         raise CutoffGuardError(
             f"{path} is a {row.get('role')}, not a submissions index — "
             "only the index of filings skips the date gate")
-    return _read(path, row)
+    data = _hashed_bytes(path, row)
+    # `_hashed_bytes` does not record the open, because `load_catalogue` returns
+    # rows and records its own after it has parsed them. Recording it here is
+    # what keeps the index in the manifest's `documents` list: it was `_read`
+    # that recorded it before the hash check was added, and dropping the record
+    # with the read would have quietly taken the one catalogue a 10-Q bundle
+    # lists out of every manifest.
+    _opened(path)
+    return data
+
+
+def filed_on_record(ticker, *, fixtures_root=FIXTURES) -> dict:
+    """Every filing the company's submissions index lists, and the date it names.
+
+    EDGAR's own catalogue of what a company has filed, which no run writes. It
+    is the record a bundle's own account of itself is checked against: a
+    manifest states its documents' filing dates and a report's item ids name the
+    filings they came from, and both are the run's word until they are looked up
+    here.
+    """
+    row = one_document(ticker, "submissions", INDEX_ROLE, fixtures_root=fixtures_root)
+    try:
+        listed = json.loads(load_index(row["full_path"], fixtures_root=fixtures_root))
+    except ValueError as exc:
+        raise CutoffGuardError(
+            f"{row['full_path']} does not read as JSON: {exc}") from exc
+    filings = listed.get("filings") if isinstance(listed, dict) else None
+    if not filings:
+        raise CutoffGuardError(
+            f"{row['full_path']} lists no filings — refused, because an empty "
+            "record dates nothing and an absent date is not an early date")
+    return {entry.get("accession"): entry.get("filing_date") for entry in filings
+            if isinstance(entry, dict) and entry.get("accession")}
 
 
 # --- the other catalogue: companyfacts ---------------------------------------
@@ -254,14 +295,21 @@ def load_index(path, *, fixtures_root=FIXTURES) -> bytes:
 CATALOGUE_ROLE = "standard_taxonomy_history"
 
 
-def _catalogue_bytes(path, row: dict) -> bytes:
-    """The catalogue's bytes, checked against the hash the manifest recorded.
+def _hashed_bytes(path, row: dict) -> bytes:
+    """A catalogue's bytes, checked against the hash the manifest recorded.
 
     Every other document is vouched for by the date gate, which reads the
-    manifest row before the file is opened. This route skips that gate, so the
-    manifest's `sha256` is what says the file is still the record — and a gzip
-    that no longer decompresses is one way of not matching a manifest, so it
-    leaves by the same door rather than raising out of the reader.
+    manifest row before the file is opened. Both catalogue routes skip that
+    gate, so the manifest's `sha256` is what says the file is still the record —
+    and a gzip that no longer decompresses is one way of not matching a
+    manifest, so it leaves by the same door rather than raising out of the
+    reader.
+
+    The submissions index took this route late. It skipped the date gate from
+    the beginning with no hash check at all, which was the one ungated document
+    with nothing vouching for it; `src/extraction_checks.py` now reads the
+    filing dates of record out of it, so what says it is still the record is
+    load-bearing for the cutoff itself.
     """
     data = Path(path).read_bytes()
     if row.get("stored") == "gzip":
@@ -354,7 +402,7 @@ def load_catalogue(path, cutoff_date, *, fixtures_root=FIXTURES) -> dict:
         raise CutoffGuardError(
             f"{path} is a {row.get('role')}, not a companyfacts catalogue — "
             "only a catalogue of facts drawn from many filings skips the date gate")
-    document = json.loads(_catalogue_bytes(path, row))
+    document = json.loads(_hashed_bytes(path, row))
     facts = document.get("facts")
     if not isinstance(facts, dict):
         raise CutoffGuardError(

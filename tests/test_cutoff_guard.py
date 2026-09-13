@@ -113,6 +113,47 @@ def test_default_cutoff_is_the_fixture_set_as_of_date():
     assert cutoff_guard.default_cutoff("AAPL") == dt.date(2026, 9, 1)
 
 
+def test_the_submissions_index_is_checked_against_the_hash_the_manifest_recorded(
+        tmp_path):
+    """The one ungated document with nothing vouching for it.
+
+    `load_index` skips the date gate for the reason its own docstring gives, and
+    skipped the hash check too — while `src/extraction_checks.py` reads the
+    filing dates of record out of it, so what says it is still the record is
+    load-bearing for the cutoff itself. The companyfacts route has made this
+    check from the start and says why.
+    """
+    root = tmp_path / "fixtures"
+    (root / "AAPL").mkdir(parents=True)
+    committed = cutoff_guard.one_document("AAPL", "submissions",
+                                          cutoff_guard.INDEX_ROLE)
+    manifest = json.loads(
+        (cutoff_guard.FIXTURES / "AAPL" / "manifest.json").read_text(encoding="utf-8"))
+    listed = json.loads(committed["full_path"].read_bytes())
+    # one row's date moved, and nothing else touched
+    listed["filings"][0]["filing_date"] = "2020-01-01"
+    (root / "AAPL" / committed["path"]).write_text(
+        json.dumps(listed), encoding="utf-8")
+    (root / "AAPL" / "manifest.json").write_text(json.dumps(manifest),
+                                                 encoding="utf-8")
+    with pytest.raises(CutoffGuardError) as caught:
+        cutoff_guard.load_index(root / "AAPL" / committed["path"], fixtures_root=root)
+    assert "hashed" in str(caught.value)
+
+
+def test_the_filings_of_record_come_out_of_the_index(tmp_path):
+    """`filed_on_record` is the record a bundle's own account is checked
+    against, so it is asserted against the committed index read by hand."""
+    committed = cutoff_guard.one_document("AAPL", "submissions",
+                                          cutoff_guard.INDEX_ROLE)
+    by_hand = {row["accession"]: row["filing_date"]
+               for row in json.loads(committed["full_path"].read_bytes())["filings"]}
+    assert cutoff_guard.filed_on_record("AAPL") == by_hand
+    assert by_hand
+    with pytest.raises(CutoffGuardError):
+        cutoff_guard.filed_on_record("ZZZZ")
+
+
 def test_a_bundle_file_that_is_not_there_is_refused(tmp_path):
     with pytest.raises(CutoffGuardError):
         cutoff_guard.load_bundle_file(tmp_path, "input_numbers.json")
