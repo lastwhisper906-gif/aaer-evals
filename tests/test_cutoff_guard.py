@@ -497,3 +497,73 @@ if __name__ == "__main__":
     print("\n".join(lines) if lines else
           f"bypass scan: {len(list(SRC.glob('*.py')))} modules in src/, "
           f"{len(EXEMPT)} exempt ({', '.join(sorted(EXEMPT))}), 0 reads skip the gate")
+
+
+def _record_root(tmp_path: Path, listed) -> Path:
+    """A fixtures root holding one company whose submissions index is `listed`.
+
+    The manifest's hash is recomputed over the bytes written, so the integrity
+    check above passes and what is under test here is the *shape* of the record
+    rather than whether it is still the committed one.
+    """
+    root = tmp_path / "fixtures"
+    (root / "AAPL").mkdir(parents=True)
+    committed = cutoff_guard.one_document("AAPL", "submissions",
+                                          cutoff_guard.INDEX_ROLE)
+    manifest = json.loads(
+        (cutoff_guard.FIXTURES / "AAPL" / "manifest.json").read_text(encoding="utf-8"))
+    raw = json.dumps(listed).encode("utf-8")
+    (root / "AAPL" / committed["path"]).write_bytes(raw)
+    for row in manifest["documents"]:
+        if row["role"] == cutoff_guard.INDEX_ROLE:
+            row["sha256"] = hashlib.sha256(raw).hexdigest()
+    (root / "AAPL" / "manifest.json").write_text(json.dumps(manifest),
+                                                 encoding="utf-8")
+    return root
+
+
+@pytest.mark.parametrize("listed", [
+    {"filings": {"recent": {"accessionNumber": ["0000320193-25-000079"]}}},
+    {"filings": ["0000320193-25-000079"]},
+    {"filings": [["0000320193-25-000079", "2025-10-31"]]},
+    {"filings": [{"filing_date": "2025-10-31"}]},
+    {"filings": [{"accession": "", "filing_date": "2025-10-31"}]},
+    {"filings": [{"accession": "0000320193-25-000079"}]},
+    {"filings": [{"accession": "0000320193-25-000079", "filing_date": None}]},
+])
+def test_a_record_shape_this_cannot_read_is_refused_rather_than_returned_empty(
+        tmp_path, listed):
+    """An empty map is not "nothing to object to".
+
+    `filed_on_record` built its answer by skipping rows it did not recognise, so
+    a record in a shape it could not read came back as `{}` — and every caller
+    that looks a filing up in `{}` either finds nothing to check or reports the
+    filing as unlisted, which is fail-closed only where there is a row to look
+    up. The first case is EDGAR's own live document, which nests the rows under
+    `recent`: the shape most likely to arrive here by accident.
+    """
+    root = _record_root(tmp_path, listed)
+    with pytest.raises(CutoffGuardError):
+        cutoff_guard.filed_on_record("AAPL", fixtures_root=root)
+
+
+def test_one_filing_recorded_on_two_days_is_refused(tmp_path):
+    """A record that gives one accession two dates says whichever the reader
+    reaches first, and the reader here was a dict comprehension: the last row
+    won, silently."""
+    root = _record_root(tmp_path, {"filings": [
+        {"accession": "0000320193-25-000079", "filing_date": "2025-10-31"},
+        {"accession": "0000320193-25-000079", "filing_date": "2026-01-31"}]})
+    with pytest.raises(CutoffGuardError) as caught:
+        cutoff_guard.filed_on_record("AAPL", fixtures_root=root)
+    assert "one date" in str(caught.value)
+
+
+def test_the_same_filing_twice_on_one_day_is_the_record_agreeing_with_itself(tmp_path):
+    """The control on the test above: a repeated row that says the same thing is
+    not a contradiction, and refusing it would refuse a record EDGAR may write."""
+    root = _record_root(tmp_path, {"filings": [
+        {"accession": "0000320193-25-000079", "filing_date": "2025-10-31"},
+        {"accession": "0000320193-25-000079", "filing_date": "2025-10-31"}]})
+    assert cutoff_guard.filed_on_record("AAPL", fixtures_root=root) == \
+        {"0000320193-25-000079": "2025-10-31"}

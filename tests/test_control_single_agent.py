@@ -24,6 +24,7 @@ one call belongs to whoever runs the stage.
 from __future__ import annotations
 
 import json
+import os
 import re
 from pathlib import Path
 
@@ -1227,3 +1228,169 @@ def test_a_cutoff_years_before_the_filing_is_refused_rather_than_run(tmp_path):
     assert MANIFEST["filing_date"] in str(caught.value)
     assert stub.prompts == []
     assert not (root / "control_single_agent_accounting.json").exists()
+
+
+# --- the guard's own two sides, and the text nothing dates -------------------
+
+def test_the_run_directory_handed_to_itself_is_refused(tmp_path):
+    """The whole guard is one directory compared against another.
+
+    `the_runs_own_copies` compares each handed file with the run's own copy, and
+    every other check here rests on that comparison holding. Handed the run
+    directory as its own input directory, every comparison passed by identity:
+    the pre-call and post-call byte checks were both no-ops, an `ask` that
+    appended a paragraph under the next filing's accession wrote it into the one
+    file both sides read, and the run reported the cutoff clean with no drop.
+
+    `docs/HOW_WE_WORK.md` makes the per-run, per-agent input directory the
+    isolation boundary. A boundary with one side is not one.
+    """
+    root, _ = plant(tmp_path)
+    with pytest.raises(ControlError) as caught:
+        control_single_agent.run("accounting_reliability", input_dir=root,
+                                 bundle_root=root, ask=Stub(accounting_answer()))
+    assert "is the run directory" in str(caught.value)
+    # and by the resolved path, not only by the spelling
+    with pytest.raises(ControlError, match="is the run directory"):
+        control_single_agent.run("accounting_reliability",
+                                 input_dir=root / "." , bundle_root=root,
+                                 ask=Stub(accounting_answer()))
+
+
+def test_a_handed_file_that_is_a_link_to_the_runs_own_is_refused(tmp_path):
+    """Two names for one file is one file, and the comparison reads it twice.
+
+    The handed side was never checked for a link: `read_bytes` follows one, so a
+    symlink pointing at the run's own copy compared equal to itself, and a
+    rewrite during the call landed on both sides at once — the same hole as
+    handing over the run directory, one file at a time.
+    """
+    root, folder = plant(tmp_path)
+    name = "input_notes.md"
+    (folder / name).unlink()
+    (folder / name).symlink_to(root / name)
+    with pytest.raises(ControlError) as caught:
+        go(root, folder, "accounting_reliability", accounting_answer())
+    assert "symlink" in str(caught.value)
+
+    (folder / name).unlink()
+    os.link(root / name, folder / name)
+    with pytest.raises(ControlError) as caught:
+        go(root, folder, "accounting_reliability", accounting_answer())
+    assert "same file" in str(caught.value) or "one name of" in str(caught.value)
+
+
+def test_a_run_copy_hard_linked_out_of_the_run_is_refused(tmp_path):
+    """The reference side, closed the way `src/cutoff_guard.py` closes it.
+
+    A hard link has no target to read and no link bit to test, so the run's copy
+    and another directory's file are one file — and whoever holds the other name
+    writes the bytes this compares against. The symlink on this side was already
+    refused; the link with no arrow was not.
+    """
+    root, folder = plant(tmp_path)
+    elsewhere = tmp_path / "elsewhere"
+    elsewhere.mkdir()
+    name = "input_notes.md"
+    os.link(root / name, elsewhere / name)
+    with pytest.raises(ControlError) as caught:
+        go(root, folder, "accounting_reliability", accounting_answer())
+    assert "one name of" in str(caught.value)
+
+
+def test_a_sentence_under_no_id_at_all_is_refused(tmp_path):
+    """The text the model reads and nothing dates.
+
+    `src/assemble_bundle.py`'s `paragraph_blocks` opens a block at an `[id]`
+    line, so a sentence above the first one is in no block: not quotable, which
+    sounds like a protection and is the reverse of one. The quote gate has
+    nothing to match it against and `the_text_names_no_later_filing` has no id
+    to look up, while the model reads the file from the top.
+    """
+    root, folder = plant(tmp_path)
+    planted = ("The next quarter's receivables fell sharply.\n\n" + NOTES)
+    for where in (root, folder):
+        (where / "input_notes.md").write_text(planted, encoding="utf-8")
+    with pytest.raises(ControlError) as caught:
+        go(root, folder, "accounting_reliability", accounting_answer())
+    assert "text under no id" in str(caught.value)
+    assert "input_notes.md line 1" in str(caught.value)
+
+
+def test_a_heading_above_the_first_id_is_not_a_sentence_under_no_id(tmp_path):
+    """The control on the test above: `plant` writes `# Notes` as line 1 and the
+    run stands. A heading is the file's own scaffolding — `paragraph_blocks`
+    skips it for that reason and this reads the same rule out of the same
+    function."""
+    root, folder = plant(tmp_path)
+    assert NOTES.split("\n")[0] == "# Notes"
+    go(root, folder, "accounting_reliability", accounting_answer())
+    assert written(root, "accounting_reliability")["tier"]
+
+
+def test_the_unattributed_lines_come_from_the_bundles_own_reader():
+    """One rule for what an id line is, read out of `src/assemble_bundle.py`."""
+    from src import assemble_bundle
+    text = "# heading\nloose sentence\n[0000320193-25-000079:notes:1]\nowned\n"
+    assert assemble_bundle.unattributed_lines(text) == [(2, "loose sentence")]
+    assert assemble_bundle.unattributed_lines(NOTES) == []
+    # and the ids the blocks carry are the ids this stops at
+    assert [identifier for identifier, _ in assemble_bundle.paragraph_blocks(text)] \
+        == ["0000320193-25-000079:notes:1"]
+
+
+def test_a_trend_row_reaching_past_the_cutoff_is_refused(tmp_path):
+    """The ids the record cannot date, dated by their own periods.
+
+    A trend cell's id is `{accession}:trends:{metric}:{period}`, and that
+    accession is the manifest's own — so looking it up in the submissions index
+    dates the manifest against the index, which the cutoff gate already does. It
+    says nothing about the cell. The period is the part that carries a fact's
+    own date, it is printed in the file the model reads, and a row ending after
+    the triggering report is a fact from after the triggering report whatever
+    its id says.
+    """
+    root, folder = plant(tmp_path)
+    later = json.loads(TRENDS)
+    later["quarters"][0]["end"] = "2025-09-30"      # after MANIFEST's 2025-08-01
+    planted = json.dumps(later, indent=2, sort_keys=True) + "\n"
+    for where in (root, folder):
+        (where / "input_trends.json").write_text(planted, encoding="utf-8")
+    with pytest.raises(ControlError) as caught:
+        go(root, folder, "accounting_reliability", accounting_answer())
+    assert "after the cutoff 2025-08-01" in str(caught.value)
+    assert "Q-0" in str(caught.value)
+
+
+@pytest.mark.parametrize("field", ["start", "end", "target_end"])
+def test_every_date_a_trend_row_prints_is_inside_the_cutoff(tmp_path, field):
+    """All three, because a row names the period it measured and the period it
+    was meant to measure, and either one past the boundary is a look-ahead the
+    model reads."""
+    root, folder = plant(tmp_path)
+    later = json.loads(TRENDS)
+    later["quarters"][0][field] = "2026-01-31"
+    planted = json.dumps(later, indent=2, sort_keys=True) + "\n"
+    for where in (root, folder):
+        (where / "input_trends.json").write_text(planted, encoding="utf-8")
+    with pytest.raises(ControlError, match=field):
+        go(root, folder, "accounting_reliability", accounting_answer())
+
+
+def test_a_trend_row_inside_the_cutoff_stands(tmp_path):
+    """The control on the two above."""
+    root, folder = plant(tmp_path)
+    inside = json.loads(TRENDS)
+    inside["quarters"][0] |= {"start": "2025-04-01", "end": "2025-06-30",
+                              "target_end": "2025-06-30"}
+    planted = json.dumps(inside, indent=2, sort_keys=True) + "\n"
+    for where in (root, folder):
+        (where / "input_trends.json").write_text(planted, encoding="utf-8")
+    result = go(root, folder, "accounting_reliability", accounting_answer())
+    assert written(root, "accounting_reliability")["tier"]
+    # The one drop is the dash-changed quote this file plants in every run. The
+    # trend cell still resolves: three dates added beside the ratios leave the
+    # ratio's own printed lines where they were. Nothing was dropped for the
+    # cutoff, which is the assertion.
+    assert [row["item_id"] for row in result["dropped"]] == \
+        ["accounting_reliability:checklist:estimate_change_favorable"]

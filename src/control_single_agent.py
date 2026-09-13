@@ -136,12 +136,12 @@ from collections import Counter
 from pathlib import Path
 
 try:
-    from src import (agent_inputs, cutoff_guard, extraction_checks,
-                     interpreter_pin, quote_gate)
+    from src import (agent_inputs, assemble_bundle, cutoff_guard,
+                     extraction_checks, interpreter_pin, quote_gate)
 except ImportError:  # invoked as a plain script
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from src import (agent_inputs, cutoff_guard, extraction_checks,
-                     interpreter_pin, quote_gate)
+    from src import (agent_inputs, assemble_bundle, cutoff_guard,
+                     extraction_checks, interpreter_pin, quote_gate)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 AGENT_PROMPTS = REPO_ROOT / ".claude" / "agents"
@@ -626,6 +626,74 @@ def the_text_names_no_later_filing(index, cutoff, ticker, *,
                 "the manifest does not list is still a paragraph the model reads")
 
 
+def every_paragraph_carries_an_id(input_dir) -> None:
+    """No prose in the handed text outside an `[id]` block.
+
+    `src/assemble_bundle.py`'s `paragraph_blocks` emits a block only for text
+    that follows an `[id]` line, so a sentence written above the first one is in
+    no block at all. It is not quotable, which sounds like a protection and is
+    the opposite of one: the model reads the file top to bottom, and text no id
+    owns is text `the_text_names_no_later_filing` has nothing to look up and the
+    quote gate has nothing to match. A post-cutoff sentence put there reaches
+    the model with every check reporting clean.
+
+    Headings are the file's own scaffolding and `paragraph_blocks` skips them
+    for that reason, so they are skipped here on the same rule.
+    """
+    folder = Path(input_dir)
+    for name in cutoff_guard.bundle_files(folder, "*.md"):
+        loose = assemble_bundle.unattributed_lines(
+            cutoff_guard.load_bundle_file(folder, name))
+        if loose:
+            number, line = loose[0]
+            raise ControlError(
+                f"{name} line {number} is text under no id: {line.strip()[:60]!r}"
+                f" ({len(loose)} such lines). The model reads it and nothing "
+                "dates it — an id is what says which filing a sentence came "
+                "from, and a sentence above the first one is read by the model "
+                "and looked up by nobody")
+
+
+def the_trends_name_no_later_period(input_dir, cutoff) -> None:
+    """Every period the trend table publishes, inside the cutoff.
+
+    A trend cell's id is `{accession}:trends:{metric}:{period}`, and that
+    accession is the manifest's own — so dating those ids against the index
+    dates the manifest against the index, which the gate above already does.
+    The period is the part that carries a fact's own date, and it is printed in
+    the file the model reads. A row ending after the cutoff is a fact from after
+    the triggering report however its id reads.
+    """
+    folder = Path(input_dir)
+    if not cutoff_guard.bundle_files(folder, quote_gate.TRENDS):
+        return
+    payload = json.loads(cutoff_guard.load_bundle_file(folder, quote_gate.TRENDS))
+    for section in ("quarters", "years"):
+        for period in payload.get(section) or []:
+            if not isinstance(period, dict):
+                raise ControlError(
+                    f"{quote_gate.TRENDS} {section} carries "
+                    f"{type(period).__name__}, and a period is an object")
+            label = period.get("label")
+            for field in ("start", "end", "target_end"):
+                dated = period.get(field)
+                if dated is None:
+                    continue
+                try:
+                    when = cutoff_guard.parse_date(
+                        dated, f"{quote_gate.TRENDS} {label} {field}")
+                except cutoff_guard.CutoffGuardError as exc:
+                    raise ControlError(str(exc)) from exc
+                if when > cutoff:
+                    raise ControlError(
+                        f"{quote_gate.TRENDS} {section} row {label!r} has {field} "
+                        f"{when}, after the cutoff {cutoff}. The row's id carries "
+                        "the manifest's own accession, so the record dates it as "
+                        "the triggering report; the period is what says when the "
+                        "fact is from, and nothing filed after the triggering "
+                        "report enters the input (CLAUDE.md)")
+
+
 def verify(payload: dict, question: str, input_dir, accession: str) -> tuple[dict, list[dict]]:
     """The prediction with what did not verify taken out, and one row per drop.
 
@@ -755,6 +823,15 @@ def the_runs_own_copies(names: list[str], input_dir, bundle_root) -> None:
             "is handed a directory, and a link to another one is that other one "
             "wearing this name — every check inside it then judges the target "
             "against itself")
+    if folder.resolve() == run.resolve():
+        raise ControlError(
+            f"{input_dir} is the run directory {bundle_root} itself. Every "
+            "comparison below is a file against the run's own copy of it, and "
+            "one directory is its own copy — so every comparison passes by "
+            "identity, and the control reads whatever is in that file at the "
+            "moment it reads it, before the call and after. "
+            "`docs/HOW_WE_WORK.md` makes the per-run, per-agent input directory "
+            "the isolation boundary; a boundary with one side is not one")
     for name in names:
         handed, source = folder / name, run / name
         if source.is_symlink():
@@ -768,8 +845,26 @@ def the_runs_own_copies(names: list[str], input_dir, bundle_root) -> None:
                 f"{name} is in the directory handed to the control and the run "
                 f"{bundle_root} does not hold it. A file nobody assembled into "
                 "the run is not one the control reads, whatever it says inside")
-        if handed.resolve() == source.resolve():
-            continue
+        if source.stat().st_nlink > 1:
+            raise ControlError(
+                f"{source} is one name of {source.stat().st_nlink} for the same "
+                "bytes. A hard link has no target to read and no link bit to "
+                "test, so the run's copy and another directory's file are one "
+                "file, and whoever holds the other name writes the reference "
+                "this compares against — `src/cutoff_guard.py` refuses one on "
+                "the same reasoning")
+        if handed.is_symlink():
+            raise ControlError(
+                f"{handed} is a symlink to {handed.readlink()}. What the control "
+                "was handed has to be bytes of its own: a link compares equal to "
+                "whatever it points at, including the file it is meant to be "
+                "checked against, and then the check has read one file twice")
+        if handed.samefile(source):
+            raise ControlError(
+                f"{handed} and {source} are the same file. The comparison below "
+                "is what makes the handed copy the run's own; between one file "
+                "and itself there is nothing to compare, and a rewrite during "
+                "the call lands on both sides at once")
         if handed.read_bytes() != source.read_bytes():
             raise ControlError(
                 f"{handed} is not the run's own {name}: its bytes differ from "
@@ -876,6 +971,8 @@ def run(question: str, *, input_dir, bundle_root, ask,
             f"{MANIFEST} names no accession, and a computed row's id begins with one")
     cutoff = run_cutoff(manifest)
     the_runs_own_copies(input_files(input_dir), input_dir, bundle_root)
+    every_paragraph_carries_an_id(input_dir)
+    the_trends_name_no_later_period(input_dir, cutoff)
     # The manifest's list is the run's word about what it read; the ids in the
     # text are the text's own word about where it came from, and the index dates
     # them. A paragraph carried under a later filing's accession is caught here
@@ -893,6 +990,10 @@ def run(question: str, *, input_dir, bundle_root, ask,
     # drop row. `CLAUDE.md` asks for the text the model saw; this is the pair of
     # checks that makes the file on disk that text.
     the_runs_own_copies(input_files(input_dir), input_dir, bundle_root)
+    every_paragraph_carries_an_id(input_dir)
+    the_trends_name_no_later_period(input_dir, cutoff)
+    the_text_names_no_later_filing(quote_gate.quotable(input_dir, accession),
+                                   cutoff, manifest.get("ticker"))
     served = answer.get("served_model") if isinstance(answer, dict) else None
     if not served_names_family(served, family):
         raise ControlError(

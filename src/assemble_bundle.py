@@ -129,6 +129,28 @@ def paragraph_blocks(text: str) -> list[tuple[str, str]]:
     return out
 
 
+def unattributed_lines(text: str) -> list[tuple[int, str]]:
+    """(line number, line) for every line of prose no `[id]` owns.
+
+    `paragraph_blocks` above opens a block at an `[id]` line, so text written
+    before the first one is in no block: not quotable, which sounds like a
+    protection and is the opposite of one, because the model still reads the
+    file top to bottom. Headings are the file's own scaffolding and are skipped
+    here for the same reason they are skipped there.
+
+    The two share `_is_id_line`, so what counts as an id is decided once. A
+    reader of this function that tested for a bracketed line itself would be the
+    same rule written twice, and the copy would be the one that drifted.
+    """
+    loose = []
+    for number, line in enumerate(text.split("\n"), start=1):
+        if _is_id_line(line):
+            break
+        if line.strip() and not line.startswith("#"):
+            loose.append((number, line))
+    return loose
+
+
 # --- the pieces --------------------------------------------------------------
 
 def documents_on_record(ticker: str, cutoff, fixtures_root) -> list[dict]:

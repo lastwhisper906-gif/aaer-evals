@@ -278,12 +278,38 @@ def filed_on_record(ticker, *, fixtures_root=FIXTURES) -> dict:
         raise CutoffGuardError(
             f"{row['full_path']} does not read as JSON: {exc}") from exc
     filings = listed.get("filings") if isinstance(listed, dict) else None
-    if not filings:
+    if not isinstance(filings, list) or not filings:
         raise CutoffGuardError(
-            f"{row['full_path']} lists no filings — refused, because an empty "
-            "record dates nothing and an absent date is not an early date")
-    return {entry.get("accession"): entry.get("filing_date") for entry in filings
-            if isinstance(entry, dict) and entry.get("accession")}
+            f"{row['full_path']} has no list of filings under 'filings', it "
+            f"has {type(filings).__name__} — refused. EDGAR's live document "
+            "nests the rows under 'recent', and a shape this could not read "
+            "returned an empty map, which reads downstream as a record with "
+            "nothing to object to")
+    of_record = {}
+    for position, entry in enumerate(filings, start=1):
+        where = f"{row['full_path']} filing {position}"
+        if not isinstance(entry, dict):
+            raise CutoffGuardError(
+                f"{where} is {type(entry).__name__}, and a row of the record is "
+                "an object with an accession and a date")
+        accession, filed = entry.get("accession"), entry.get("filing_date")
+        if not isinstance(accession, str) or not accession.strip():
+            raise CutoffGuardError(
+                f"{where} names no accession — the record is read by accession, "
+                "and a row without one is a filing nothing can be dated against")
+        if not isinstance(filed, str) or not filed.strip():
+            raise CutoffGuardError(
+                f"{where} ({accession}) carries no filing date. An absent date is "
+                "not an early date, and a row that dates nothing must not be the "
+                "record something is dated against")
+        held = of_record.get(accession)
+        if held is not None and held != filed:
+            raise CutoffGuardError(
+                f"{where}: {accession} is recorded as filed {held} and {filed}. "
+                "One filing has one date, and a record that gives two says "
+                "whichever the reader reaches first")
+        of_record[accession] = filed
+    return of_record
 
 
 # --- the other catalogue: companyfacts ---------------------------------------
