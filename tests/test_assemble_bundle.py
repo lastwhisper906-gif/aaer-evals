@@ -16,6 +16,7 @@ from __future__ import annotations
 import functools
 import json
 import re
+import shutil
 from pathlib import Path
 
 import pytest
@@ -399,6 +400,29 @@ def test_a_bundle_lists_the_catalogue_it_read_without_a_filing_date():
     assert rows[0]["contributed_to"] == ["input_trends.json"]
     assert rows[0]["url"].startswith("https://data.sec.gov/api/xbrl/companyfacts/")
     assert CARR_CATALOGUE_DATE not in json.dumps(rows)
+
+
+def test_a_build_reads_the_fixture_root_it_was_given(tmp_path):
+    """`--fixtures` names where the documents are, and every reader it calls has
+    to be handed it.
+
+    The trend table read no fixture at all until it read the catalogue, so the
+    root never travelled to it and nothing noticed. Once it did, a build given
+    any other root opened the repository's own `companyfacts.json.gz` and
+    `documents_used` could not place the path that came back: the option exited
+    2 on every company. Carrier is copied whole because the build reads its
+    manifest, its filings and its catalogue out of the root it is given.
+    """
+    root = tmp_path / "fixroot"
+    shutil.copytree(REPO_ROOT / "tests" / "fixtures" / "CARR", root / "CARR")
+    manifest = assemble_bundle.build("CARR", "10-K", fixtures_root=root)["manifest"]
+    listed = {row["path"] for row in manifest["documents"]}
+    assert "companyfacts.json.gz" in listed
+    assert manifest["cutoff"] == CARR_10K_FILED
+    catalogue = [row for row in manifest["documents"]
+                 if row["role"] == assemble_bundle.FACTS_ROLE]
+    assert len(catalogue) == 1
+    assert catalogue[0]["rows_used_through"] == CARR_10K_FILED
 
 
 def test_a_filing_the_same_build_read_still_carries_its_own_date():

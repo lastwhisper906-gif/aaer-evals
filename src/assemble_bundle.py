@@ -473,7 +473,12 @@ def build(ticker: str, form: str, *, cutoff=None, fixtures_root=cutoff_guard.FIX
     with phase(opened, "input_numbers.json", "input_trends.json"):
         numbers = extract_numbers.extract(ticker, forms, cutoff=cutoff,
                                           fixtures_root=fixtures_root)
-        table = trends.trends(json.loads(json.dumps(numbers, default=str)))
+        # The root travels with the call. The trend table read no fixture until
+        # it read the catalogue, so leaving it off was harmless; now a build
+        # given another root read the catalogue out of the repository's own
+        # store and `documents_used` could not place the path it came back with.
+        table = trends.trends(json.loads(json.dumps(numbers, default=str)),
+                              fixtures_root=fixtures_root)
 
     with phase(opened, "input_notes.md", "input_mdna.md"):
         notes, mdna, prior_accession = note_stream(ticker, form, cutoff=cutoff,
