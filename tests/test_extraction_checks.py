@@ -214,11 +214,21 @@ def test_a_cutoff_that_is_not_the_triggering_reports_filing_date_fails(tmp_path)
     assert len(identity) == 1
     assert "the cutoff is 2027-01-01" in identity[0]
     assert "was filed 2026-07-31" in identity[0]
-    # The submissions index says which cutoff it was read through, so moving the
-    # cutoff after the fact contradicts it too. Both lines are true; neither is
-    # the gate shading into another one.
-    assert len(failures) == 2
-    assert "read through the cutoff 2027-01-01" in "\n".join(failures)
+    # Every catalogue says which cutoff it was read through, so moving the cutoff
+    # after the fact contradicts each of them too. All of those lines are true;
+    # none is the gate shading into another one. The count is read off the
+    # manifest rather than written as a number, because the bundle now carries
+    # two catalogues and a literal two would have to be edited every time one is
+    # added -- which is the edit that hides the line it stops counting.
+    manifest = json.loads((bundle / "input_manifest.json").read_text(encoding="utf-8"))
+    catalogues = [row for row in manifest["documents"]
+                  if row["role"] in assemble_bundle.CATALOGUE_ROLES]
+    assert len(catalogues) == 2, catalogues
+    assert len(failures) == len(catalogues) + 1
+    for row in catalogues:
+        named = f"{row['form']} {row['role']}"
+        assert any(named in line and "read through the cutoff 2027-01-01" in line
+                   for line in failures), named
 
 
 def test_a_manifest_with_no_filing_date_for_its_trigger_fails_the_cutoff_gate(tmp_path):
