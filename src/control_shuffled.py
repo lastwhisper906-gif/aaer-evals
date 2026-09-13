@@ -114,6 +114,18 @@ NUMBERS_SIDE = ("report_numbers.md", "report_numbers_vs_market.md")
 NOTES_SIDE = ("report_notes_text.md", "report_notes_vs_market.md")
 REPORTS = NUMBERS_SIDE + NOTES_SIDE
 
+# What each report says it is, after the company, on its own first line. The
+# heading was read for the company and the rest of it for nothing, so a file
+# named `report_notes_text.md` holding the numbers report crossed cleanly and
+# the supervisor was handed one company's numbers twice. `tests/` asserts this
+# map against all twenty-four committed reports rather than agreeing with it.
+REPORT_HEADING = {
+    "report_numbers.md": "numbers reader",
+    "report_numbers_vs_market.md": "numbers versus market",
+    "report_notes_text.md": "notes-text reader",
+    "report_notes_vs_market.md": "notes versus market",
+}
+
 # What a run directory calls the record of the filing it was built from.
 MANIFEST = "input_manifest.json"
 
@@ -172,9 +184,6 @@ SUPPORT = ("sufficient", "insufficient", "unknown")
 TIERS = ("elevated", "watch", "clear")
 TOP_SIGNALS_MAX = 5
 
-# A signal naming no checklist item at all. One naming an item that was dropped
-# is not this: that drop is already on record, and the signal leaves with it.
-SIGNAL_WITHOUT_ITEM = "the signal names no checklist item"
 
 
 class ControlError(Exception):
@@ -201,11 +210,18 @@ def partner(ticker: str, order: tuple[str, ...] = PAIRING_ORDER) -> str:
 
 
 def named_company(name: str, text: str) -> str:
-    """The company a report names on its own first line.
+    """The company a report names on its own first line, and what it says it is.
 
     Every report opens `# TICKER — what it is`, so the heading is what a half
     can be identified by without parsing a line of the body. A report that opens
     with no heading names no company and cannot be placed on either side.
+
+    The rest of the heading is read too. It was not, so only the *name* of a
+    file said which of the four reports it held -- and a file named
+    `report_notes_text.md` holding the numbers report crossed with everything
+    checking out: one company, one filing, both sides inside the cutoff, and a
+    supervisor handed one company's numbers twice under two names. "Verify the
+    reports it crossed" is company, filing and kind.
     """
     first = text.split("\n", 1)[0].strip()
     heading = first[2:].split() if first.startswith("# ") else []
@@ -213,7 +229,16 @@ def named_company(name: str, text: str) -> str:
         raise ControlError(
             f"{name} does not open with a heading naming the company it is "
             "about, so nothing in it says whose half it is")
-    return one_of_the_twelve(heading[0])
+    company = one_of_the_twelve(heading[0])
+    wanted = REPORT_HEADING.get(name)
+    said = first.split("—", 1)[1].strip() if "—" in first else ""
+    if wanted is not None and said != wanted:
+        raise ControlError(
+            f"{name} opens {said!r} and a file of that name is the {wanted!r} "
+            "report. The name is the caller's word for what is inside; the "
+            "heading is the report's own, and a report of the wrong kind under "
+            "the right name hands the supervisor one half twice")
+    return company
 
 
 def named_accession(name: str, text: str) -> str:
@@ -334,7 +359,13 @@ def _crossed_pair(numbers_bundle, notes_bundle):
                 f"{numbers['from']}'s own record says {on_record}. The filing "
                 "being scored has one date, and a run whose manifest disagrees "
                 "with the record set its own boundary")
-    _within_cutoff("numbers", numbers, scored)
+    # Only the notes half is gated, and that is the whole of the rule rather
+    # than half of it: `scored` *is* the numbers half's own filing date, by one
+    # of the two routes above -- either read straight off it, or read off a
+    # manifest that has just been proved to name the same accession and the
+    # same date. `_within_cutoff("numbers", ...)` compared that date with
+    # itself. It was a line no test could ever fail and no input could ever
+    # trip, which reads as a check and is a comment.
     _within_cutoff("notes", notes, scored)
     return numbers, notes, scored, scored_basis
 
@@ -518,19 +549,15 @@ def resolved(question: str, answer: dict, declared: set[str]) -> tuple[dict, lis
             standing_explanations.append(entry)
     kept["explanations"] = standing_explanations
 
-    # A signal whose item was dropped leaves with it, and that drop is already
-    # on record. One that names no item at all was removed in silence, which is
-    # the thing `CLAUDE.md` has a phrase for: a failed item is dropped *and
-    # counted*.
-    named_anywhere = {entry["key"] for entry in answer["checklist"]}
+    # A signal whose entry was dropped leaves with it, and no second drop row is
+    # written: the drop is already on record under the entry's own key, and
+    # counting it twice would say two items failed where one did. A signal
+    # naming no entry at all never reaches here -- `_predicted` refuses the
+    # answer, the way the sibling control does.
     names = {entry["key"] for entry in standing}
-    signals = []
-    for one in _a_list(question, "top_signals", answer["top_signals"]):
-        if one in names:
-            signals.append(one)
-        elif one not in named_anywhere:
-            drop(f"{question}:top_signals:{one}", SIGNAL_WITHOUT_ITEM)
-    kept["top_signals"] = signals
+    kept["top_signals"] = [one for one in
+                           _a_list(question, "top_signals", answer["top_signals"])
+                           if one in names]
 
     # `market_direction` abstains by naming no basis, which `docs/CHECKLIST.md`
     # §7 allows -- but the abstention §7 allows is `p_up: "insufficient"`, not a
@@ -646,6 +673,19 @@ def _predicted(question: str, answer) -> dict:
             "scored on the same targets as the pipeline and cannot be short of "
             "them (docs/CHECKLIST.md §7)")
     wants_continuous = question == CONTINUOUS_QUESTION
+    # Every nested object below is closed and the prediction itself was not, so
+    # a `scored_filing_date`, a `price_on_reaction_day_60` and a note to the
+    # scorer were written into the control file whole, beside the audited
+    # `scored_filing_date` this module writes in `control`. The sibling closes
+    # the prediction in one line; so does this.
+    allowed = PREDICTED_KEYS + ((CONTINUOUS,) if wants_continuous else ())
+    stray = sorted(set(answer) - set(allowed))
+    if stray:
+        raise ControlError(
+            f"the {question} answer carries {', '.join(stray)}, which "
+            "docs/CHECKLIST.md §7 does not give it. `question`, `rules_version` "
+            "and `control` are this module's to write, and a field the schema "
+            "has no column for is a row of the scorecard nobody can score")
     if wants_continuous and CONTINUOUS not in answer:
         raise ControlError(f"the {question} answer has no {CONTINUOUS}, which the "
                            "schema requires of this question")
@@ -719,12 +759,28 @@ def _predicted(question: str, answer) -> dict:
     _one_of(answer, "tier", TIERS, "the prediction")
     signals = _a_list(question, "top_signals", answer["top_signals"])
     for position, one in enumerate(signals, start=1):
-        _text({"key": one}, "key", f"top_signals[{position}]")
+        if not isinstance(one, str) or not one.strip():
+            raise ControlError(
+                f"top_signals[{position}] is {one!r}, and a signal is the key of "
+                "a checklist entry")
     _unique(list(signals), "top_signals")
     if len(signals) > TOP_SIGNALS_MAX:
         raise ControlError(
             f"top_signals names {len(signals)} signals and §7 allows "
             f"{TOP_SIGNALS_MAX}")
+    # A signal naming no checklist entry at all is the answer contradicting
+    # itself before any citation is resolved, so it is refused here rather than
+    # dropped later. `src/control_single_agent.py` refuses it in these words,
+    # and one schema gets one gate: the difference between the two controls is
+    # the crossing and nothing else. A signal whose entry is dropped *later*,
+    # for citing nothing in the crossed set, still leaves quietly with it --
+    # that drop is on record under the entry's own key.
+    unknown = [one for one in signals
+               if one not in {entry["key"] for entry in checklist}]
+    if unknown:
+        raise ControlError(
+            f"top_signals names {', '.join(unknown)}, which no checklist entry "
+            "carries — a top signal that names no entry names nothing")
     return dict(answer)
 
 
