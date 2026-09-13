@@ -393,7 +393,7 @@ def read_history(ticker: str, cutoff: dt.date | None, fixtures_root) -> dict:
     row = cutoff_guard.one_document(ticker, fetch_companyfacts.FORM,
                                     cutoff_guard.CATALOGUE_ROLE,
                                     fixtures_root=fixtures_root)
-    record = cutoff_guard.load_catalogue(row["full_path"], dt.date(2099, 1, 1),
+    record = cutoff_guard.load_catalogue(row["full_path"], cutoff,
                                          fixtures_root=fixtures_root)
     record["path"] = row["path"]
     return record
