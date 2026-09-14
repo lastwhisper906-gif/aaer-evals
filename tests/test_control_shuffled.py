@@ -57,6 +57,7 @@ from __future__ import annotations
 import datetime as dt
 import json
 import math
+import re
 from pathlib import Path
 
 import pytest
@@ -1264,6 +1265,10 @@ def test_the_two_controls_answer_one_schema():
     values. They agree here by reading one document, not by sharing code -- the
     single §7 checker both should call is a row in docs/next_cycle_tasks.md, and
     until it lands this assertion is what keeps them from drifting apart.
+
+    Two hand-written lists agreeing is not a reading of §7, though: both could
+    be wrong in the same way, which is the defect this project keeps finding in
+    its own instruments. The test below reads the document.
     """
     from src import control_single_agent
     for field in ("CHECKLIST_FIELDS", "CONTINUOUS_FIELDS", "EVENT_FIELDS",
@@ -1278,6 +1283,78 @@ def test_the_two_controls_answer_one_schema():
     assert control_shuffled.EVIDENCE_FIELDS == ("upstream_item_id",)
     assert control_single_agent.EVIDENCE_FIELDS == \
         control_shuffled.EVIDENCE_FIELDS + ("quote",)
+
+
+def section_seven() -> dict:
+    """§7's prediction schema, parsed out of `docs/CHECKLIST.md` as JSON.
+
+    The block in the document is not JSON -- three fields give their values as
+    `"a" | "b"` unions -- so each union is collapsed into the one `|`-joined
+    string §7 already uses for `support`. Nothing else is rewritten, and a
+    document whose §7 block stops being parseable fails here rather than
+    quietly falling back to what the module says.
+    """
+    document = (REPO_ROOT / "docs" / "CHECKLIST.md").read_text(encoding="utf-8")
+    heading = document.index("## 7. Output schemas")
+    block = document.index("```json", heading) + len("```json")
+    pseudo = document[block:document.index("```", block)]
+    real = re.sub(r'"[^"\n]*"(?:\s*\|\s*"[^"\n]*")+',
+                  lambda union: '"%s"' % "|".join(
+                      found.strip('"') for found in re.findall(r'"[^"\n]*"', union.group(0))),
+                  pseudo)
+    return json.loads(real)
+
+
+def test_the_section_seven_value_lists_are_the_documents_own():
+    """The lists read off §7 itself, not off the other module.
+
+    `test_the_two_controls_answer_one_schema` above asserts the two controls
+    hold the same values. That is drift between them, and it says nothing about
+    whether either matches the document both docstrings cite -- a value mistyped
+    in one and copied into the other passes it. Everything here comes out of
+    `docs/CHECKLIST.md`: the field sets out of §7's own block, the three closed
+    value lists out of the strings inside it and out of §1's sentence, and the
+    ceiling out of the prose under the block.
+    """
+    schema = section_seven()
+    # The keys, in §7's order. `question` and `rules_version` are the module's
+    # own to write and `continuous` is asked of one question only, so those
+    # three are named here rather than counted in.
+    assert tuple(name for name in schema
+                 if name not in ("question", "rules_version", control_shuffled.CONTINUOUS)
+                 ) == control_shuffled.PREDICTED_KEYS
+    assert control_shuffled.CONTINUOUS in schema
+    assert tuple(schema["question"].split("|")) == control_shuffled.QUESTIONS
+    assert schema["rules_version"] == control_shuffled.RULES_VERSION
+
+    # Every nested entry's closed field set, and the evidence inside the
+    # checklist entry rather than beside it.
+    assert tuple(schema["checklist"][0]) == control_shuffled.CHECKLIST_FIELDS
+    assert tuple(schema["checklist"][0]["evidence"][0]) == \
+        control_shuffled.EVIDENCE_FIELDS
+    assert tuple(schema["continuous"][0]) == control_shuffled.CONTINUOUS_FIELDS
+    assert tuple(schema["events"][0]) == control_shuffled.EVENT_FIELDS
+    assert tuple(schema["explanations"][0]) == control_shuffled.EXPLANATION_FIELDS
+    assert tuple(schema["market_direction"]) == control_shuffled.MARKET_FIELDS
+
+    # The two closed lists §7 spells out inside the block, and the one it
+    # leaves empty there: `"finding": ""` says nothing, so the findings are §1's
+    # sentence, which is the only place the three are written down.
+    assert tuple(schema["tier"].split("|")) == control_shuffled.TIERS
+    assert tuple(schema["explanations"][0]["support"].split("|")) == \
+        control_shuffled.SUPPORT
+    collapsed = " ".join(
+        (REPO_ROOT / "docs" / "CHECKLIST.md").read_text(encoding="utf-8").split())
+    said = re.search(r"An LLM answer is always (.+?), plus a confidence", collapsed)
+    assert said, "docs/CHECKLIST.md §1 no longer says what an LLM answer is"
+    assert tuple(one.strip(" `") for one in said.group(1).split("/")) == \
+        control_shuffled.FINDINGS
+
+    # The ceiling and the abstention, out of the prose under the block.
+    assert "`top_signals` holds at most five keys" in collapsed
+    assert control_shuffled.TOP_SIGNALS_MAX == 5
+    assert '`p_up` may be `"insufficient"` instead of a number' in collapsed
+    assert control_shuffled.INSUFFICIENT == "insufficient"
 
 
 # --- the refusals that had no judge ------------------------------------------
@@ -1354,6 +1431,57 @@ def test_a_report_with_no_heading_is_refused(tmp_path, out):
                              predictor=StandInSupervisor())
     assert "does not open with a heading" in str(caught.value)
     assert list(out.iterdir()) == []
+
+
+def test_a_heading_naming_a_thirteenth_company_is_refused(tmp_path, out):
+    """The twelve are the whole population, and the heading is where a report
+    says which of them it is about.
+
+    `run` reads its two *labels* through `one_of_the_twelve` and that call has a
+    judge below. The call inside `named_company` reads what the report itself
+    says, and had none -- it is a bare call to a plain function, so neither of
+    the mutation probe's two patterns could even enumerate it. A half headed
+    `# ZZZZ` was placed by the caller's label while the heading it is checked
+    against named a company with no reports on record, no pairing, and no
+    scorecard row to be scored on.
+    """
+    notes = bundle(tmp_path, NOTES_COMPANY)
+    first, rest = report_text(NOTES_COMPANY, "report_notes_text.md").split("\n", 1)
+    (notes / "report_notes_text.md").write_text(
+        first.replace(NOTES_COMPANY, "ZZZZ", 1) + "\n" + rest, encoding="utf-8")
+    with pytest.raises(ControlError) as caught:
+        control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY,
+                             numbers_bundle=bundle(tmp_path, NUMBERS_COMPANY),
+                             notes_bundle=notes, out=out,
+                             predictor=StandInSupervisor())
+    assert "ZZZZ is not one of the twelve" in str(caught.value)
+    for ticker in control_shuffled.PAIRING_ORDER:
+        assert ticker in str(caught.value)
+    assert list(out.iterdir()) == []
+
+
+def test_a_heading_naming_its_company_in_lower_case_is_that_company(tmp_path, out):
+    """The other half of the same call: the case of the heading is not a company.
+
+    `one_of_the_twelve` upper-cases before it looks, so `# carr` is Carrier's
+    report and the run goes through. Without a judge on the accepting side, the
+    refusal above stands whether the upper-casing is there or not -- and with it
+    gone every lower-case heading becomes a thirteenth company. What the control
+    file records is the heading read through that call, not the label the caller
+    passed, so the assertion is on `numbers_from` in the written file.
+    """
+    numbers = bundle(tmp_path, NUMBERS_COMPANY)
+    for name in control_shuffled.NUMBERS_SIDE:
+        first, rest = report_text(NUMBERS_COMPANY, name).split("\n", 1)
+        (numbers / name).write_text(
+            first.replace(NUMBERS_COMPANY, NUMBERS_COMPANY.lower(), 1) + "\n" + rest,
+            encoding="utf-8")
+    control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY,
+                         numbers_bundle=numbers,
+                         notes_bundle=bundle(tmp_path, NOTES_COMPANY),
+                         out=out, predictor=StandInSupervisor())
+    for name in (ACCOUNTING_FILE, PRESSURE_FILE):
+        assert written(out, name)["control"]["numbers_from"] == NUMBERS_COMPANY
 
 
 def test_two_filings_on_one_side_are_refused(tmp_path, out):
@@ -1913,6 +2041,51 @@ def test_one_accession_recorded_on_two_dates_is_refused(tmp_path):
         NUMBERS_COMPANY, accession, fixtures_root=one_date) == dt.date(2026, 2, 5)
 
 
+def test_a_company_with_no_record_at_all_dates_no_half(tmp_path):
+    """The first of `filed`'s two translations, which carry no `if` of their own.
+
+    A refusal that is an `except` clause rather than an `if` is still a rule,
+    and the two in `filed` had no judge: the probe enumerates `if`s, and neither
+    of these is one. This is the fail-closed direction of the cutoff at its
+    root -- a company whose record cannot be opened at all dates nothing, and an
+    unopenable record is not an early date. The reader's own words come through
+    the translation, because a refusal that drops its cause says a filing is
+    undatable without saying why.
+    """
+    empty = tmp_path / "no-record"
+    empty.mkdir()
+    with pytest.raises(ControlError) as caught:
+        control_shuffled.filed(NUMBERS_COMPANY, NUMBERS_ACCESSION, fixtures_root=empty)
+    said = str(caught.value)
+    assert f"{NUMBERS_COMPANY} has no record to date {NUMBERS_ACCESSION}" in said
+    assert "manifest.json does not exist" in said
+
+
+def test_a_recorded_filing_date_that_is_not_a_date_dates_no_half(tmp_path):
+    """The second translation: a row that is there and says nothing readable.
+
+    `cutoff_guard.parse_date` refuses rather than guesses, and `filed` hands
+    that refusal on under this control's own error type so the caller sees one
+    kind of failure. Mutated to return the string untouched, the comparison in
+    `_within_cutoff` would be `str > date`, which raises `TypeError` somewhere
+    else entirely -- so the judge is on the message, and it names which
+    company's which accession could not be dated.
+    """
+    root = tmp_path / "unreadable-date"
+    (root / NUMBERS_COMPANY).mkdir(parents=True)
+    (root / NUMBERS_COMPANY / "manifest.json").write_text(json.dumps({
+        "as_of": "2026-02-05",
+        "documents": [
+            {"accession": NUMBERS_ACCESSION, "form": "10-K", "role": "primary_html",
+             "path": "primary.html", "filing_date": "the fifth of February"}]},
+        indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    with pytest.raises(ControlError) as caught:
+        control_shuffled.filed(NUMBERS_COMPANY, NUMBERS_ACCESSION, fixtures_root=root)
+    said = str(caught.value)
+    assert f"{NUMBERS_COMPANY} {NUMBERS_ACCESSION} filing_date" in said
+    assert "is not an ISO date" in said
+
+
 # --- the four the first sweep missed -----------------------------------------
 #
 # The sweep above was a table of twenty rules, and a table is not a sweep: an
@@ -1921,6 +2094,15 @@ def test_one_accession_recorded_on_two_dates_is_refused(tmp_path):
 # are live rules with their own sentences, and with any of them off a clean
 # refusal becomes an uncaught `TypeError` — or, for the explanation id, nothing
 # at all.
+#
+# Three of the sixty-six are judged as a function contract and not as pipeline
+# coverage: the two entry-carries-no-key rules and the top_signals-is-a-list
+# rule sit inside `resolved`, behind a `_predicted` that refuses those shapes
+# first, so no input handed to `run` can reach them and the three tests below
+# call the gate directly. A mutation row for one of them says the rule is
+# judged. It does not say a run could trip it — and the day `resolved` gains a
+# second caller, that is the difference between defence in depth and a rule
+# nothing upstream is holding.
 
 
 class LiteralSupervisor:
@@ -1962,7 +2144,11 @@ def test_a_top_signal_that_is_not_a_name_is_refused(tmp_path, out, signal):
     resolution against the entries that stood — and each of them was reached
     with a non-name in it. With the rule off, `3` raises `TypeError: sequence
     item 0: expected str instance, int found` inside the refusal that names the
-    signals, and `["x"]` raises `unhashable type: 'list'` inside `_unique`.
+    signals, and `["x"]` raises `unhashable type: 'list'` where that refusal
+    asks which signals name no checklist entry. Not inside `_unique`, which
+    this docstring said until the mutation was run: it counts before it
+    collects, so a list appearing once is never hashed and `_unique` lets it
+    straight through.
     """
     answers = dict(ANSWERS)
     answers["accounting_reliability"] = dict(ACCOUNTING_ANSWER, top_signals=[signal])
@@ -2024,3 +2210,55 @@ def test_the_gate_refuses_top_signals_that_are_not_a_list(signals):
     said = str(caught.value)
     assert "gives top_signals as" in said
     assert "docs/CHECKLIST.md §7 gives it as a list" in said
+
+
+# --- the five a sweep that read only statements could not see ----------------
+#
+# The sweep enumerated a helper call only when the call was the whole statement,
+# so `checklist = _a_list(...)` was not a rule it had ever heard of: five of the
+# six `_a_list` call sites are assignments, and the sixth is the one it reported
+# COULD NOT RUN. Enumerating the assignments too meant mutating them into a
+# passthrough rather than into `pass` -- `pass` on an assignment leaves the name
+# unbound, and the `NameError` that follows is red for the wrong reason -- and
+# with the value handed through untouched, all five were green.
+#
+# What each one costs is what the sixth cost: a string is a sequence, so
+# `for entry in "lots"` iterates letters and the refusal that arrives is the
+# next rule's, about a letter, naming a position in a list that was never a
+# list. `events` was the one of the six with a judge, and it has one by accident
+# -- its test hands `3`, which is not iterable at all, so the `TypeError` is
+# what fails the test rather than the rule being consulted. These assert the
+# rule's own sentence.
+
+@pytest.mark.parametrize("question, field, answer", [
+    ("accounting_reliability", "checklist",
+     dict(ACCOUNTING_ANSWER, checklist="two flags")),
+    ("accounting_reliability", "checklist[1].evidence",
+     dict(ACCOUNTING_ANSWER,
+          checklist=[dict(ACCOUNTING_ANSWER["checklist"][0],
+                          evidence="the crossed item")])),
+    ("financial_pressure", "continuous",
+     dict(PRESSURE_ANSWER, continuous="revenue down")),
+    ("accounting_reliability", "explanations",
+     dict(ACCOUNTING_ANSWER, explanations="none this time")),
+    ("accounting_reliability", "top_signals",
+     dict(ACCOUNTING_ANSWER, top_signals="receivables_growth_outruns_revenue")),
+])
+def test_a_field_the_schema_gives_as_a_list_is_refused_when_it_is_not_one(
+        tmp_path, out, question, field, answer):
+    """Every `_a_list` call site, named by the field it is standing over.
+
+    A string reaching any of these is the answer iterated letter by letter, and
+    the refusal that comes back is about `'t'` at `checklist[1]` -- so the file
+    was green while a prediction shaped nothing like §7 was being read as one.
+    The assertion is `_a_list`'s own sentence, which is the only thing a
+    passthrough removes.
+    """
+    answers = dict(ANSWERS)
+    answers[question] = answer
+    with pytest.raises(ControlError) as caught:
+        run_crossed(tmp_path, out, StandInSupervisor(answers))
+    said = str(caught.value)
+    assert f"the {question} answer gives {field} as str" in said
+    assert "docs/CHECKLIST.md §7 gives it as a list" in said
+    assert list(out.iterdir()) == []

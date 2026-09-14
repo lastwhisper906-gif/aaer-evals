@@ -171,6 +171,8 @@ with no second lens on it; the follow-up that confirms it is a row above.
 
 [ ] judge the correspondence between `RATIOS` and `DENOMINATORS` · `src/trends.py` · `.venv/bin/python -m pytest tests/test_trends.py -q` · two hand-written tables, one naming eleven ratios and one naming the denominator each refuses at zero, with nothing asserting they name the same eleven. A ratio added to one and not the other raises `KeyError` when a period is computed rather than when the module is imported, which is loud but is loud in the wrong place; the test asserts every ratio whose formula divides has a row and no row names a ratio that is gone. Today they agree: eleven and eleven, checked by hand while the shuffled control's own non-finite rule was written.
 
+[ ] the rule sweep lives in the repository and not in a session's scratch directory · `tools/sweep_rules.py`, `tests/test_sweep_rules.py` · `.venv/bin/python -m pytest tests/test_sweep_rules.py -q` · a fixture module holding two rules and a fixture suite judging one of them: the sweep prints RED for the judged rule and GREEN for the other, COULD-NOT-RUN for a mutation that does not compile, and enumerates the assignment form of a helper call as well as the statement form — each asserted against the printed rows, and the fixture suite written so that the expected verdicts are read off the fixture and not off the sweep's first run. Every claim this cycle has made about all the rules in a module rests on an instrument in `~/.claude/jobs/<id>/tmp/`, which no reader of the commit can run and no CI can: the claim is reproducible only while one session's directory exists. Moving it needs a judge of its own, which is the point of the item · PR: not yet
+
 ---
 
 ## Needs judgment
