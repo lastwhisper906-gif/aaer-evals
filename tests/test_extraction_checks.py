@@ -340,6 +340,35 @@ def test_a_manifest_about_a_filing_its_own_list_does_not_hold_fails(tmp_path):
     assert "holds no row for it" in "\n".join(gate_lines(lines, "cutoff"))
 
 
+def test_a_manifest_naming_no_accession_at_all_fails_the_cutoff_gate(tmp_path):
+    """An empty accession is not an accession no row holds — it is a manifest
+    that never said which filing it is about, and the gate says so in its own
+    words. Switching that branch off left the run refused with the other
+    sentence and nothing in the suite red."""
+    bundle = good_bundle(tmp_path)
+    rewrite(bundle, "input_manifest.json",
+            lambda payload: payload.update(accession=""))
+    code, lines = extraction_checks.run(bundle)
+    assert code != 0
+    assert "the manifest names no accession" in "\n".join(gate_lines(lines, "cutoff"))
+
+
+def test_a_document_row_naming_a_filing_the_index_does_not_list_fails(tmp_path):
+    """Not listed at all, said in its own words.
+
+    `held is None` and `held != row["filing_date"]` were two branches reading
+    one condition: `None` differs from every date, so the second answered for
+    both and the first could not be turned off. The lookup is by membership now.
+    """
+    bundle = good_bundle(tmp_path)
+    rewrite(bundle, "input_manifest.json",
+            lambda payload: payload["documents"][0].update(
+                accession="0000000000-00-000000"))
+    code, lines = extraction_checks.run(bundle)
+    assert code != 0
+    assert "in no row of" in "\n".join(gate_lines(lines, "cutoff"))
+
+
 def test_a_manifest_with_no_filing_date_for_its_trigger_fails_the_cutoff_gate(tmp_path):
     """Fail-closed the same way as a document with no date: a cutoff that
     cannot be shown to be the report's own date is a violation, not a pass."""

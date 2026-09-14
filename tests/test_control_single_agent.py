@@ -83,6 +83,24 @@ largest quarterly increase this company has on record.
 The allowance for credit losses was reduced during the period.
 """
 
+# The five files `plant` did not write, each a shape the assembler produces:
+# two of them carry the undated prose that the first version of the paragraph
+# rule refused all twenty-four bundles for, and they are written here so the
+# fixture holds it too.
+NOTES_HISTORY = "# Note change history\n\nNo note change history on record.\n"
+MDNA = f"""# Management's discussion and analysis
+
+[{ACCESSION}:mdna:1]
+Gross margin was 46.5% of net sales, against 46.3% a year ago.
+"""
+CONTROLS = f"""# Controls and procedures
+
+[{ACCESSION}:controls:1]
+Disclosure controls and procedures were effective as of the end of the period.
+"""
+EIGHT_K = "# Current reports\n\nNo 8-K filed at or before this cutoff is on record.\n"
+PRIOR_PREDICTIONS = "# Prior predictions\n\nNone on record.\n"
+
 NUMBERS = json.dumps({
     "ticker": "AAPL",
     "cutoff": "2025-08-01",
@@ -222,7 +240,10 @@ def plant(tmp_path: Path) -> tuple[Path, Path]:
     root.mkdir()
     folder.mkdir()
     planted = (("input_notes.md", NOTES), ("input_trends.json", TRENDS),
-               ("input_numbers.json", NUMBERS), ("input_market.json", MARKET))
+               ("input_numbers.json", NUMBERS), ("input_market.json", MARKET),
+               ("input_notes_history.md", NOTES_HISTORY), ("input_mdna.md", MDNA),
+               ("input_controls.md", CONTROLS), ("input_8k.md", EIGHT_K),
+               ("input_prior_predictions.md", PRIOR_PREDICTIONS))
     for name, text in planted:
         (root / name).write_text(text, encoding="utf-8")
         (folder / name).write_text(text, encoding="utf-8")
@@ -619,6 +640,37 @@ def test_a_directory_holding_the_pipelines_own_output_is_refused(tmp_path):
     assert "report_numbers.md" in str(caught.value)
 
 
+def test_a_directory_holding_part_of_the_bundle_is_refused(tmp_path):
+    """§8 hands this control the whole bundle plus the market table.
+
+    An allowlist says what may be handed and this said nothing about what must
+    be: handed one price file and nothing else, every check passed, the model
+    was called, and a tier was written for the accounting question off a table
+    holding no filing at all. A baseline scored on a fragment is a baseline the
+    layers beat for free, which is the one thing the scorecard exists to rule on.
+    """
+    root, folder = plant(tmp_path)
+    for name in ("input_notes.md", "input_mdna.md"):
+        (folder / name).unlink()
+    stub = Stub(accounting_answer())
+    with pytest.raises(ControlError) as caught:
+        control_single_agent.run("accounting_reliability", input_dir=folder,
+                                 bundle_root=root, ask=stub)
+    assert "input_mdna.md, input_notes.md" in str(caught.value)   # sorted
+    assert "a baseline the layers beat for free" in str(caught.value)
+    assert stub.prompts == []
+
+
+def test_the_three_names_no_builder_writes_yet_are_not_required(tmp_path):
+    """Absent and recorded, the way `src/agent_inputs.py` treats them."""
+    for name in agent_inputs.NOT_BUILT_YET:
+        assert name in control_single_agent.CONTROL_SEES
+        assert name not in control_single_agent.CONTROL_NEEDS
+    root, folder = plant(tmp_path)
+    go(root, folder, "accounting_reliability", accounting_answer())
+    assert written(root, "accounting_reliability")["tier"]
+
+
 def test_an_empty_directory_is_refused(tmp_path):
     root, _ = plant(tmp_path)
     empty = tmp_path / "nothing"
@@ -940,6 +992,38 @@ def test_a_directory_holding_the_outcome_window_is_refused(tmp_path):
     assert not (root / "control_single_agent_accounting.json").exists()
 
 
+def test_the_boundary_call_cannot_be_reached_and_reports_the_escape_anyway(
+        tmp_path):
+    """`agent_inputs.escapes` is asked, and two earlier rules always answer.
+
+    Switching the call off turned nothing red, and this says why rather than
+    deleting it. Everything that escapes the handed directory is refused before
+    the call: a link under a name no layer routes goes by name, a link under an
+    allowed name goes by the symlink rule, and an allowed name that is a
+    directory goes by the kind rule. So what is asserted here is what can be —
+    that the helper does report the escape, and that `input_files` refuses such
+    a directory whichever rule speaks. The third reading's deletion of a rule
+    reasoned unreachable is why this one stays.
+    """
+    root, folder = plant(tmp_path)
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (outside / "input_notes.md").write_text(OTHER_NOTES, encoding="utf-8")
+    (folder / "reaches_out").symlink_to(outside)
+    assert agent_inputs.escapes(folder)          # the helper's own report
+    with pytest.raises(ControlError) as caught:  # and the directory is refused
+        control_single_agent.input_files(folder)
+    assert "reaches_out" in str(caught.value)
+
+    # under an allowed name, the symlink rule is the one that answers
+    (folder / "reaches_out").unlink()
+    (folder / "input_notes.md").unlink()
+    (folder / "input_notes.md").symlink_to(outside / "input_notes.md")
+    assert agent_inputs.escapes(folder)
+    with pytest.raises(ControlError, match="is a symlink to"):
+        control_single_agent.input_files(folder)
+
+
 def test_an_allowed_name_that_is_not_a_file_is_refused(tmp_path):
     """The prompt calls every listed name a file, so it has to be one."""
     root, folder = plant(tmp_path)
@@ -949,7 +1033,12 @@ def test_an_allowed_name_that_is_not_a_file_is_refused(tmp_path):
     with pytest.raises(ControlError) as caught:
         control_single_agent.run("accounting_reliability", input_dir=folder,
                                  bundle_root=root, ask=stub)
-    assert "input_notes.md" in str(caught.value)
+    # This rule's own sentence. The file name alone was also satisfied by the
+    # handed-hardlink rule below, which counts links and finds two or more on
+    # any directory -- so switching this rule off left the run refused and the
+    # reason wrong, reported as "one name of 2 for the same bytes" about a
+    # directory, with nothing in the suite red.
+    assert "carries a name this control may hold and is not a file" in str(caught.value)
     assert stub.prompts == []
 
 
@@ -1000,10 +1089,10 @@ def test_an_input_directory_that_is_itself_a_link_is_refused(tmp_path):
     root, folder = plant(tmp_path)
     elsewhere = tmp_path / "another-run"
     elsewhere.mkdir()
-    for name in ("input_notes.md", "input_trends.json", "input_market.json"):
-        (elsewhere / name).write_text(OTHER_NOTES if name.endswith(".md")
-                                      else (folder / name).read_text(encoding="utf-8"),
-                                      encoding="utf-8")
+    for name in control_single_agent.CONTROL_NEEDS:
+        (elsewhere / name).write_text(
+            OTHER_NOTES if name == "input_notes.md"
+            else (folder / name).read_text(encoding="utf-8"), encoding="utf-8")
     link = tmp_path / "handed-to-the-control"
     link.symlink_to(elsewhere, target_is_directory=True)
     assert control_single_agent.agent_inputs.escapes(link) == []
@@ -1018,14 +1107,18 @@ def test_an_input_directory_that_is_itself_a_link_is_refused(tmp_path):
 def test_a_file_the_run_does_not_hold_is_refused(tmp_path):
     """An allowed name, real bytes, and no copy in the run to be checked against."""
     root, folder = plant(tmp_path)
-    (folder / "input_mdna.md").write_text(NOTES, encoding="utf-8")
-    assert "input_mdna.md" in control_single_agent.CONTROL_SEES
-    assert not (root / "input_mdna.md").exists()
+    name = "input_risk_factors.md"
+    (folder / name).write_text(NOTES, encoding="utf-8")
+    assert name in control_single_agent.CONTROL_SEES
+    # and not in `CONTROL_NEEDS`, so the missing-name rule has nothing to say:
+    # it is a name the control may hold and this run did not assemble.
+    assert name not in control_single_agent.CONTROL_NEEDS
+    assert not (root / name).exists()
     stub = Stub(accounting_answer())
     with pytest.raises(ControlError) as caught:
         control_single_agent.run("accounting_reliability", input_dir=folder,
                                  bundle_root=root, ask=stub)
-    assert "input_mdna.md" in str(caught.value)
+    assert f"{name} is in the directory handed to the control" in str(caught.value)
     assert stub.prompts == []
 
 
@@ -1273,6 +1366,39 @@ def _replant_manifest(root: Path, manifest: dict) -> None:
         json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
+def test_a_manifest_whose_two_dates_disagree_is_refused_by_the_first_rule_too(
+        tmp_path):
+    """The two keys, compared before the record is read.
+
+    `run_cutoff` compares `cutoff` with `filing_date` and then calls
+    `extraction_checks.check_cutoff`, which dates every document row against
+    EDGAR's index. The second gate is strictly stronger and answers first on
+    anything planted here, which is why switching the comparison off turned
+    nothing red. It is the cheaper of the two and it is what the manifest says
+    about itself, so it is asserted where it speaks.
+    """
+    manifest = MANIFEST | {"cutoff": "2025-07-01"}
+    with pytest.raises(ControlError) as caught:
+        control_single_agent.run_cutoff(manifest)
+    assert "names the cutoff 2025-07-01 and the triggering report's filing date" \
+        in str(caught.value)
+    assert "a boundary nobody set" in str(caught.value)
+
+
+@pytest.mark.parametrize("manifest,says", [
+    ({key: value for key, value in MANIFEST.items() if key != "cutoff"},
+     "cutoff is missing"),
+    ({key: value for key, value in MANIFEST.items() if key != "filing_date"},
+     "filing_date is missing"),
+    (MANIFEST | {"cutoff": "the fourth quarter"}, "not an ISO date"),
+])
+def test_a_manifest_with_no_readable_cutoff_is_refused_by_run_cutoff(
+        tmp_path, manifest, says):
+    """The same three shapes, straight at the function, so the refusal is its."""
+    with pytest.raises(ControlError, match=says):
+        control_single_agent.run_cutoff(manifest)
+
+
 @pytest.mark.parametrize("manifest,says", [
     ({key: value for key, value in MANIFEST.items() if key != "cutoff"},
      "cutoff is missing"),
@@ -1342,6 +1468,19 @@ def test_the_run_directory_handed_to_itself_is_refused(tmp_path):
     with pytest.raises(ControlError, match="is the run directory"):
         control_single_agent.the_runs_own_copies(
             ["input_notes.md"], root / ".", root)
+    # and by inode, which is the one `resolve()` cannot do. `resolve()`
+    # normalises `.`, `..` and links and leaves case alone, and this filesystem
+    # is case-insensitive -- so one directory under two spellings compared
+    # unequal, `st_nlink` was 1 on both names, and every rule below passed by
+    # identity. The third reading's fix deleted the per-file `samefile` call as
+    # unreachable; the fourth found this, which is the same case one level up.
+    spelled = root.parent / root.name.lower()
+    if spelled != root and spelled.is_dir():
+        assert spelled.samefile(root)
+        assert spelled.resolve() != root.resolve()
+        with pytest.raises(ControlError, match="is the run directory"):
+            control_single_agent.the_runs_own_copies(
+                ["input_notes.md"], spelled, root)
 
 
 def test_a_handed_file_that_is_a_link_to_the_runs_own_is_refused(tmp_path):

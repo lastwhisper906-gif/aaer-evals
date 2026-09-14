@@ -177,6 +177,20 @@ INPUT_PREFIX = "input_"
 CONTROL_SEES = tuple(name for name in agent_inputs.BUNDLE_CATALOGUE
                      if name.startswith(INPUT_PREFIX) and name != MANIFEST)
 
+# Of those, the ones a run has to hold. `docs/CHECKLIST.md` §8 hands this
+# control "the whole bundle plus the market table", and an allowlist says only
+# what may be handed: a directory holding one price file and nothing else
+# passed every check here, the model was called, and a tier was written for the
+# accounting question off a table holding no filing at all. A baseline scored on
+# a fragment of the bundle is a baseline the layers beat for free, which is the
+# one thing the scorecard exists to rule on. `src/agent_inputs.py` refuses this
+# shape for all six layers and states the reason in the words this borrows: a
+# directory assembled before the stage that fills it "is a broken run wearing
+# the right shape". The three names no builder writes yet are absent and
+# recorded, exactly as they are there.
+CONTROL_NEEDS = tuple(name for name in CONTROL_SEES
+                      if name not in agent_inputs.NOT_BUILT_YET)
+
 # What `src/assemble_bundle.py` writes, and so what its manifest's `files` can
 # account for. `input_market.json` is written by `src/market.py`, and
 # `docs/CHECKLIST.md` §8 hands this control "the whole bundle plus the market
@@ -977,6 +991,16 @@ def input_files(input_dir) -> list[str]:
                 f"{path} carries a name this control may hold and is not a file. "
                 "The prompt lists it as one of the files the model sees, so what "
                 "it actually is has to be what it says")
+    missing = [name for name in CONTROL_NEEDS if name not in held]
+    if missing:
+        raise ControlError(
+            f"{input_dir} holds {len(held)} of the {len(CONTROL_NEEDS)} files "
+            f"this control is handed and not {', '.join(sorted(missing))}. "
+            f"`docs/CHECKLIST.md` §8 hands it the whole bundle plus the market "
+            "table, and a control answering on part of the bundle is a baseline "
+            "the layers beat for free — the comparison, not the cutoff, is what "
+            "a fragment breaks. The three names no builder writes yet are not "
+            "required, the way `src/agent_inputs.py` does not require them")
     escaped = agent_inputs.escapes(folder)
     if escaped:
         raise ControlError(
@@ -985,6 +1009,34 @@ def input_files(input_dir) -> list[str]:
             "resolves to lands in the run directory, and every other agent's "
             "input hangs off that")
     return held
+
+
+def _one_directory(folder: Path, run: Path) -> bool:
+    """Whether two paths are one directory — by inode, not by spelling.
+
+    `resolve()` normalises `.`, `..` and links and does not normalise case, and
+    APFS is case-insensitive by default. So `AAPL-10-K` and `aapl-10-k` are one
+    directory with two unequal resolved paths, and a guard comparing those
+    strings accepted the run directory handed as its own input: `st_nlink` is 1
+    on both names, no link bit is set, and every comparison below then passes by
+    identity. `samefile` compares device and inode and is spelling-independent.
+
+    The fourth reading found this because the third reading's fix deleted the
+    per-file `samefile` call, on the reasoning that a hard link raises the link
+    count on both names so the run-side rule always answers first. That much was
+    true and it was not the whole of it: two paths to one file do not have to be
+    a link. With this rule reading inodes the case is closed where it belongs,
+    at the directory — and a per-file `samefile` is then unreachable for a
+    stated reason rather than a guessed one, because inside one pair of distinct
+    directories two paths to one file can only be a symlink or a hard link, and
+    both are refused by name and by link count below.
+    """
+    try:
+        return folder.samefile(run)
+    except OSError:
+        # One of the two is not there to compare against. The rules below refuse
+        # that by name a line or two later.
+        return folder.resolve() == run.resolve()
 
 
 def the_runs_own_copies(names: list[str], input_dir, bundle_root) -> None:
@@ -1015,7 +1067,7 @@ def the_runs_own_copies(names: list[str], input_dir, bundle_root) -> None:
             "is handed a directory, and a link to another one is that other one "
             "wearing this name — every check inside it then judges the target "
             "against itself")
-    if folder.resolve() == run.resolve():
+    if _one_directory(folder, run):
         raise ControlError(
             f"{input_dir} is the run directory {bundle_root} itself. Every "
             "comparison below is a file against the run's own copy of it, and "

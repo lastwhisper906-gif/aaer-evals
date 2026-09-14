@@ -303,7 +303,7 @@ def check_cutoff(manifest: dict | None, *,
                         f"looked up as whatever it is")
             continue
         held = of_record.get(listed)
-        if held is None:
+        if listed not in of_record:
             result.fail(f"{named} is in the manifest and in no row of {ticker}'s "
                         f"submissions index — a filing EDGAR's own catalogue does "
                         f"not list has no date to check, and the bundle's word "
