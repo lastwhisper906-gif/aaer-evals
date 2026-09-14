@@ -209,11 +209,16 @@ Deferred revenue rose during the period.
 # `input_manifest.json` is not here: it is the run's bookkeeping, the control
 # reads it from the run directory, and it carries the text of the paragraphs
 # the pipeline kept out of a reader's input.
+# `input_market.json` is not here. `docs/CHECKLIST.md` §8 names it beside the
+# bundle and this control is no longer handed it: nothing here could date it,
+# and the two comparers it is routed to are the two disabled until the owner
+# picks a price source, so no layer sees one today. `src/control_single_agent.py`
+# says it at length and `docs/needs_judgment.md` carries the row.
 CONTROL_MAY_SEE = (
     "input_numbers.json", "input_companyfacts.json", "input_trends.json",
     "input_notes.md", "input_notes_history.md", "input_mdna.md",
     "input_exhibits.md", "input_risk_factors.md", "input_8k.md",
-    "input_prior_predictions.md", "input_market.json", "input_controls.md")
+    "input_prior_predictions.md", "input_controls.md")
 
 NOTES_ONE = f"{ACCESSION}:notes:1"
 NOTES_TWO = f"{ACCESSION}:notes:2"
@@ -240,13 +245,21 @@ def plant(tmp_path: Path) -> tuple[Path, Path]:
     root.mkdir()
     folder.mkdir()
     planted = (("input_notes.md", NOTES), ("input_trends.json", TRENDS),
-               ("input_numbers.json", NUMBERS), ("input_market.json", MARKET),
+               ("input_numbers.json", NUMBERS),
                ("input_notes_history.md", NOTES_HISTORY), ("input_mdna.md", MDNA),
                ("input_controls.md", CONTROLS), ("input_8k.md", EIGHT_K),
                ("input_prior_predictions.md", PRIOR_PREDICTIONS))
     for name, text in planted:
         (root / name).write_text(text, encoding="utf-8")
         (folder / name).write_text(text, encoding="utf-8")
+    # The run holds the market table and the control is not handed it, which is
+    # the shape `src/agent_inputs.py` builds: every run that reaches a layer has
+    # one, and the two comparers are the only agents it is routed to. It is not
+    # in the manifest's `files` below because `src/assemble_bundle.py` does not
+    # write it -- `src/market.py` does -- and a fixture manifest hashing a file
+    # the assembler never wrote would be planting a run this repository does not
+    # assemble.
+    (root / "input_market.json").write_text(MARKET, encoding="utf-8")
     # `docs/INPUT_SPEC.md` §6's manifest accounts for what the build wrote: a
     # hash and a byte count per file, and one row per `[id]` block with the file
     # it landed in. Both are computed here, by this test, from the planted text
@@ -839,8 +852,9 @@ def test_the_prompt_carries_the_schema_the_question_and_the_files(tmp_path):
     assert SCHEMA_BLOCK in text
     assert "You answer one question: **accounting reliability**." in text
     assert "**financial pressure**" not in text
-    for name in ("input_market.json", "input_notes.md", "input_trends.json"):
+    for name in ("input_numbers.json", "input_notes.md", "input_trends.json"):
         assert f"- {name}" in text
+    assert "input_market.json" not in text
 
 
 def test_the_command_line_prints_the_call_it_would_make(tmp_path, capsys):
@@ -1739,20 +1753,22 @@ def test_a_bundle_this_repository_assembles_is_read_rather_than_refused(
     """
     run = tmp_path / "run"
     manifest = assemble_bundle.assemble(ticker, form, run, prior_runs=tmp_path / "none")
-    # `docs/CHECKLIST.md` §8 hands this control "the whole bundle plus the
-    # market table", and `src/agent_inputs.py` refuses to assemble a comparer
-    # directory unless the run holds one -- so every run that reaches a layer
-    # has it. `src/assemble_bundle.py` does not write it and its manifest
-    # therefore records no hash for it, which is exactly the case the first
-    # version of the hash check refused. It is written here for that reason.
+    # The run holds a market table, because `src/agent_inputs.py` refuses to
+    # assemble a comparer directory unless it does. The control is not handed
+    # it: `src/assemble_bundle.py` does not write it, no manifest accounts for
+    # it, and nothing here can date it -- so it is not in `CONTROL_SEES` and the
+    # copy loop below does not pick it up. The assertion is that the routing
+    # leaves it behind on a real bundle, not only on the planted one.
     (run / "input_market.json").write_text(MARKET, encoding="utf-8")
     handed = tmp_path / "single-agent"
     handed.mkdir()
     for name in control_single_agent.CONTROL_SEES:
         if (run / name).is_file():
             shutil.copy2(run / name, handed / name)
-    assert (handed / "input_market.json").is_file()
+    assert not (handed / "input_market.json").exists()
     assert "input_market.json" not in manifest["files"]
+    assert sorted(path.name for path in handed.iterdir()) == sorted(
+        control_single_agent.CONTROL_NEEDS)
     assert not (handed / "input_manifest.json").exists()
     cutoff = cutoff_guard.parse_date(manifest["cutoff"], "the manifest's cutoff")
 
@@ -1864,3 +1880,120 @@ def test_a_trend_row_inside_the_cutoff_stands(tmp_path):
     # cutoff, which is the assertion.
     assert [row["item_id"] for row in result["dropped"]] == \
         ["accounting_reliability:checklist:estimate_change_favorable"]
+
+
+# --- the market table, and every other name the record does not account for ---
+#
+# The sixth reading's finding, and the severest this branch has had. The market
+# table was the one file the control was required to hold whose contents no rule
+# read: dated by nothing, hashed by nothing, indexed by nothing, and holding
+# post-filing market data by definition. The tests below are that finding, kept.
+
+
+def test_the_market_table_is_not_a_name_this_control_may_be_handed(tmp_path):
+    """§8's "plus the market table" is not routed here any more.
+
+    Refused by name, like any other file no layer routes — and the sentence it
+    is refused with is the allowlist's, so this passes only while the name is
+    out of `CONTROL_SEES` rather than out of some later rule.
+    """
+    assert "input_market.json" not in control_single_agent.CONTROL_SEES
+    assert "input_market.json" not in control_single_agent.CONTROL_NEEDS
+    assert "input_market.json" in agent_inputs.BUNDLE_CATALOGUE
+    root, folder = plant(tmp_path)
+    shutil.copy2(root / "input_market.json", folder / "input_market.json")
+    stub = Stub(accounting_answer())
+    with pytest.raises(ControlError) as caught:
+        control_single_agent.run("accounting_reliability", input_dir=folder,
+                                 bundle_root=root, ask=stub)
+    said = str(caught.value)
+    assert "holds input_market.json, which this control is not handed" in said
+    assert "a file nobody routed is a leak nobody chose" in said
+    assert stub.prompts == []
+    assert not (root / "control_single_agent_accounting.json").exists()
+
+
+def test_the_outcome_window_under_the_market_tables_own_name_is_refused(tmp_path):
+    """The same bytes the suite refuses twice elsewhere, under the one name that
+    used to be allowed to hold them.
+
+    `OUTCOME_PRICES` is the sixty-day abnormal return the prediction is scored
+    on and a reaction day three months past the planted cutoff. It is refused as
+    `outcome/prices_after_the_filing.json` and as `prices_after_the_filing.json`
+    by two tests above; written into the run and into the control's directory
+    under `input_market.json`, with both copies agreeing and the manifest
+    hashing it, it reached the model and the control file was written. Every
+    gate was silent, because byte-equality with the run's own copy was the whole
+    of what the table was asked.
+    """
+    root, folder = plant(tmp_path)
+    for where in (root, folder):
+        (where / "input_market.json").write_text(OUTCOME_PRICES, encoding="utf-8")
+    path = root / "input_manifest.json"
+    manifest = json.loads(path.read_text(encoding="utf-8"))
+    manifest["files"]["input_market.json"] = {
+        "sha256": hashlib.sha256(OUTCOME_PRICES.encode("utf-8")).hexdigest(),
+        "bytes": len(OUTCOME_PRICES.encode("utf-8"))}
+    path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n",
+                    encoding="utf-8")
+    stub = Stub(accounting_answer())
+    with pytest.raises(ControlError) as caught:
+        control_single_agent.run("accounting_reliability", input_dir=folder,
+                                 bundle_root=root, ask=stub)
+    said = str(caught.value)
+    assert "holds input_market.json, which this control is not handed" in said
+    assert "0.184" not in said            # nothing of the window is quoted back
+    assert stub.prompts == []
+    assert not (root / "control_single_agent_accounting.json").exists()
+
+
+def test_a_handed_file_the_manifest_does_not_account_for_is_refused(tmp_path):
+    """The exemption the market table used to need, and what it let through.
+
+    `input_companyfacts.json` is in the allowlist — it is routed the day its
+    writer exists — and no manifest hashes it, so the old rule skipped it
+    outright: a companyfacts record carrying rows filed after the cutoff was
+    read by the model with every gate silent. It is not dated anywhere else
+    either; `the_computed_files_name_no_later_period` reads the trend table and
+    the numbers file by name. With the market table gone the exemption goes with
+    it, and the rule is that the control reads what the record accounts for.
+    """
+    root, folder = plant(tmp_path)
+    later = json.dumps({"ticker": "AAPL", "facts": [
+        {"concept": "us-gaap:Revenues", "value": 1,
+         "accession": "0000320193-27-000010", "filed": "2027-01-29"}]}, indent=2)
+    for where in (root, folder):
+        (where / "input_companyfacts.json").write_text(later, encoding="utf-8")
+    assert "input_companyfacts.json" in control_single_agent.CONTROL_SEES
+    stub = Stub(accounting_answer())
+    with pytest.raises(ControlError) as caught:
+        control_single_agent.run("accounting_reliability", input_dir=folder,
+                                 bundle_root=root, ask=stub)
+    said = str(caught.value)
+    assert "input_companyfacts.json" in said
+    assert "records no hash for it" in said
+    assert stub.prompts == []
+
+
+def test_prose_carrying_no_id_under_an_allowed_name_is_refused(tmp_path):
+    """A `.md` with no `[id]` line at all matched an empty list and passed.
+
+    The paragraph rule asks that the ids a file carries are the ids the manifest
+    recorded for it. A file carrying none, whose manifest row is also none,
+    satisfies that by having nothing on either side — so arbitrary prose reached
+    the model under an allowed name. The hash rule is what answers it: the bytes
+    are either the build's or they are not.
+    """
+    root, folder = plant(tmp_path)
+    prose = "The company expects the SEC to file charges next quarter.\n"
+    for where in (root, folder):
+        (where / "input_risk_factors.md").write_text(prose, encoding="utf-8")
+    assert assemble_bundle.paragraph_ids(prose) == []
+    stub = Stub(accounting_answer())
+    with pytest.raises(ControlError) as caught:
+        control_single_agent.run("accounting_reliability", input_dir=folder,
+                                 bundle_root=root, ask=stub)
+    said = str(caught.value)
+    assert "input_risk_factors.md" in said
+    assert "records no hash for it" in said
+    assert stub.prompts == []

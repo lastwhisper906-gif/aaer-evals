@@ -174,8 +174,40 @@ CONTROL_FILES = {
 # among the archived project's ten errors. A baseline handed more than the
 # layers get does not measure the layers.
 INPUT_PREFIX = "input_"
+
+# Nor is the market table, and that is this reading's own finding rather than
+# something the catalogue settled. `docs/CHECKLIST.md` §8 hands this control
+# "the whole bundle plus the market table", and until now it did: the table
+# passed every gate here on a byte-compare against the run's own copy and
+# nothing else. Nothing dated it. `the_computed_files_name_no_later_period`
+# reads the trend table and the numbers file; the manifest hashes what
+# `src/assemble_bundle.py` writes and another stage writes this; `quote_gate`
+# indexes no ids in it; `the_text_names_no_later_filing` never sees it. So the
+# one file in the directory whose entire content is post-filing market data was
+# the one file with no rule about dates, and a run whose table carried rows past
+# reaction day two -- or the sixty-day abnormal return the prediction is scored
+# on -- reached the model with every gate silent. That is not hypothetical: a
+# day past reaction day two on this table is one of the two cutoff violations
+# `docs/next_cycle_tasks.md` records as having shipped.
+#
+# The control cannot date it. Reaction day zero is the next trading day when
+# EDGAR accepted after the close, and day two is two trading days on from there
+# -- a trading calendar, which lives in the prices, which is what the table is
+# made of. Dating the table against the table is the defect this whole branch is
+# about. So the table is not routed here at all: it is refused by name, like any
+# other file no layer routes.
+#
+# That costs the comparison nothing today. `src/agent_inputs.py` routes the
+# market table to the two `*-vs-market` comparers and to nobody else, and those
+# two are disabled until the owner picks a price source -- so no layer sees a
+# market table, and a control that was handed one was the only agent in the
+# pipeline reading post-filing prices. Parity is restored, not broken.
+# `docs/needs_judgment.md` carries the row and `docs/next_cycle_tasks.md` the
+# build item that would let it come back.
 CONTROL_SEES = tuple(name for name in agent_inputs.BUNDLE_CATALOGUE
-                     if name.startswith(INPUT_PREFIX) and name != MANIFEST)
+                     if name.startswith(INPUT_PREFIX)
+                     and name != MANIFEST
+                     and name != agent_inputs.MARKET_TABLE)
 
 # Of those, the ones a run has to hold. `docs/CHECKLIST.md` §8 hands this
 # control "the whole bundle plus the market table", and an allowlist says only
@@ -190,17 +222,6 @@ CONTROL_SEES = tuple(name for name in agent_inputs.BUNDLE_CATALOGUE
 # recorded, exactly as they are there.
 CONTROL_NEEDS = tuple(name for name in CONTROL_SEES
                       if name not in agent_inputs.NOT_BUILT_YET)
-
-# What `src/assemble_bundle.py` writes, and so what its manifest's `files` can
-# account for. `input_market.json` is written by `src/market.py`, and
-# `docs/CHECKLIST.md` §8 hands this control "the whole bundle plus the market
-# table"; `input_companyfacts.json`, `input_exhibits.md` and
-# `input_risk_factors.md` are routed the day they exist. None of them is the
-# assembler's to hash, so requiring a hash for them refused the one file §8
-# names beside the bundle. Their anchor is the byte-compare against the run's
-# own copy, and `docs/next_cycle_tasks.md` carries the item that would give
-# each writing stage its own row in `files`.
-HASHED = frozenset(assemble_bundle.FILES) - {MANIFEST}
 
 # The two supervisors whose model this control borrows. Both, not one per
 # question: they run under one pin and this refuses if they ever disagree.
@@ -722,26 +743,22 @@ def the_files_are_the_ones_the_manifest_hashed(input_dir, manifest: dict) -> Non
             "blocks the build wrote and an added block is invisible")
 
     for name in input_files(input_dir):
-        # Only what the assembler wrote. `HASHED` says which names those are and
-        # why the others are not -- requiring a hash for every handed file
-        # refused `input_market.json`, which `docs/CHECKLIST.md` §8 hands this
-        # control by name and which no manifest accounts for because another
-        # stage writes it. A file outside `HASHED` is still refused by name
-        # unless a layer routes it, and still byte-compared against the run's
-        # own copy; what it is not is required to carry a hash from a record
-        # that never saw it.
+        # Every handed file, with no name list and no exemption. There used to
+        # be one: `input_market.json` is written by another stage, so no
+        # manifest accounted for it, so requiring a hash refused it -- and the
+        # exemption that made room for it made room for every other unhashed
+        # name too. A handed `input_companyfacts.json` carrying rows filed after
+        # the cutoff, or an `input_risk_factors.md` carrying prose with no `[id]`
+        # line in it at all, went to the model with every gate silent. The
+        # market table is no longer routed here (see `CONTROL_SEES`), and with
+        # it gone the rule is the plain one: the control reads what the record
+        # accounts for, and a file the record does not account for is not
+        # something to read past.
         #
-        # `not in recorded` is the second half, and without it this skipped a
-        # file the manifest *did* hash. `HASHED` is a list of names and the
-        # question is what the record accounts for -- the fifth reading wrote
-        # the suite's own `OUTCOME_PRICES`, the sixty-day window, into
-        # `input_market.json` in both copies of a run whose manifest carried
-        # that file's sha256, and the check read past the hash it had. A
-        # required name may also be zero bytes or hold `null`, and those went
-        # the same way. So the name list says what may be *missing* from the
-        # record, and anything the record holds is checked against it.
-        if name not in HASHED and name not in recorded:
-            continue
+        # The fifth reading found the earlier form of this the other way round:
+        # a name list said what to check, so the suite's own `OUTCOME_PRICES` --
+        # the sixty-day window -- went into a file the manifest *had* hashed and
+        # the check read past the hash it held.
         held = recorded.get(name)
         if not isinstance(held, dict) or not isinstance(held.get("sha256"), str):
             raise ControlError(
@@ -761,7 +778,7 @@ def the_files_are_the_ones_the_manifest_hashed(input_dir, manifest: dict) -> Non
                 f"{name} is {len(raw)} bytes and {MANIFEST} records "
                 f"{held['bytes']}")
 
-    # Every `.md` file, not the six inside `HASHED`. `src/quote_gate.py`
+    # Every `.md` file the directory holds. `src/quote_gate.py`
     # indexes every `*.md` in the handed directory, so a file this skipped put
     # paragraphs into the quote index that `paragraphs` has no row for -- the
     # fifth reading planted a covenant sentence in `input_risk_factors.md`, cited
