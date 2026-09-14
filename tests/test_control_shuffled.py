@@ -56,6 +56,7 @@ from __future__ import annotations
 
 import datetime as dt
 import json
+import math
 from pathlib import Path
 
 import pytest
@@ -1594,3 +1595,315 @@ def test_the_two_controls_answer_one_schema_in_behaviour_too(tmp_path, out):
         mine = this_refuses(answer)
         theirs = sibling_refuses(quoted(answer))
         assert mine and theirs, f"{what}: this control {mine}, the sibling {theirs}"
+
+
+# --- the nested entries of §7, and the record the cutoff is read off ----------
+#
+# Sixteen rules below this line survived a fail-open mutation with the file
+# green: every `_fields` call on a nested entry, every `key` and `id` asked to
+# be a name, the uniqueness of `continuous` and `events` keys, `realization_p`'s
+# range, the rule that one accession is one filing on one day -- and `_text`'s
+# own guard, which no test reached through any of its seven call sites. Thirteen
+# of them accept a malformed value onto the record rather than refusing it, and
+# one of the sixteen is on the cutoff path. The probe that found them is the
+# same one used on the sibling: turn the rule off, run this file, require red.
+
+
+@pytest.mark.parametrize("question,field,entries", [
+    ("accounting_reliability", "checklist",
+     [dict(ACCOUNTING_ANSWER["checklist"][0], note="see above")]),
+    ("accounting_reliability", "events",
+     [dict(ACCOUNTING_ANSWER["events"][0], note="see above")]),
+    ("accounting_reliability", "explanations",
+     [{"id": CROSSED_ITEM, "support": "sufficient", "realization_p": 0.4,
+       "note": "see above"}]),
+    ("financial_pressure", "continuous",
+     [dict(PRESSURE_ANSWER["continuous"][0], note="see above")]),
+])
+def test_a_stray_field_on_a_nested_entry_is_refused(
+        tmp_path, out, question, field, entries):
+    """The prediction object is closed and so is every entry inside it.
+
+    `test_the_prediction_object_is_closed` judges the outer object only. Each
+    nested entry has its own closed field set in `docs/CHECKLIST.md` §7 and each
+    `_fields` call enforcing one of them had no judge, so a `note` beside a
+    finding — or a second point estimate beside `point` — was written into the
+    control file whole, under a column §8 has no way to score.
+    """
+    answers = dict(ANSWERS)
+    answers[question] = dict(ANSWERS[question], **{field: entries})
+    with pytest.raises(ControlError) as caught:
+        run_crossed(tmp_path, out, StandInSupervisor(answers))
+    said = str(caught.value)
+    assert "note" in said
+    assert "docs/CHECKLIST.md §7 gives it" in said
+    assert list(out.iterdir()) == []
+
+
+@pytest.mark.parametrize("key", ["", "   ", None, 3, ["a"]])
+@pytest.mark.parametrize("question,field", [
+    ("accounting_reliability", "checklist"),
+    ("accounting_reliability", "events"),
+    ("financial_pressure", "continuous"),
+])
+def test_an_entry_naming_no_key_is_refused(tmp_path, out, question, field, key):
+    """One indicator, one key — and a key that is not a name names nothing.
+
+    The uniqueness rule below reads these keys and a scorer joins on them, so an
+    empty string or a `None` is a row of the scorecard that cannot be matched to
+    an indicator. `_text` is the rule, and none of its seven call sites had a
+    judge: turning its own guard off left this file green.
+    """
+    answers = dict(ANSWERS)
+    answers[question] = dict(
+        ANSWERS[question], **{field: [dict(ANSWERS[question][field][0], key=key)]})
+    with pytest.raises(ControlError) as caught:
+        run_crossed(tmp_path, out, StandInSupervisor(answers))
+    said = str(caught.value)
+    assert f"{field}[1].key" in said
+    assert "the schema gives it a name" in said
+    assert list(out.iterdir()) == []
+
+
+@pytest.mark.parametrize("named", ["", "   ", None, 3])
+def test_an_explanation_naming_no_id_is_refused(tmp_path, out, named):
+    """An explanation's `id` is what it resolves against: the gate looks it up in
+    the four reports the crossing handed over, and an empty id resolves against
+    nothing while reading as an id that failed to resolve. The two are different
+    rows of the scorecard — one is a malformed answer, the other a dropped
+    item — so the malformed one is refused before the gate counts anything."""
+    answers = dict(ANSWERS)
+    answers["accounting_reliability"] = dict(
+        ACCOUNTING_ANSWER,
+        explanations=[{"id": named, "support": "sufficient", "realization_p": 0.4}])
+    with pytest.raises(ControlError) as caught:
+        run_crossed(tmp_path, out, StandInSupervisor(answers))
+    said = str(caught.value)
+    assert "explanations[1].id" in said
+    assert "the schema gives it a name" in said
+    assert list(out.iterdir()) == []
+
+
+@pytest.mark.parametrize("named", ["", "   ", None, 3])
+def test_an_evidence_entry_naming_no_id_is_refused(tmp_path, out, named):
+    """`test_an_evidence_entry_that_is_not_the_schemas_shape_is_refused` judges
+    the entry's field set; this judges the field. An entry carrying the right
+    field and an empty string in it reached the citation gate, which resolved it
+    against nothing and dropped the item — a malformed answer counted as a
+    failed citation, which is the count §8 reports beside the score."""
+    answers = dict(ANSWERS)
+    answers["accounting_reliability"] = dict(
+        ACCOUNTING_ANSWER,
+        checklist=[dict(ACCOUNTING_ANSWER["checklist"][0],
+                        evidence=[{"upstream_item_id": named}])])
+    with pytest.raises(ControlError) as caught:
+        run_crossed(tmp_path, out, StandInSupervisor(answers))
+    said = str(caught.value)
+    assert "checklist[1].evidence[1].upstream_item_id" in said
+    assert "the schema gives it a name" in said
+    assert list(out.iterdir()) == []
+
+
+@pytest.mark.parametrize("direction", ["", "   ", None, 3])
+def test_a_continuous_entry_naming_no_direction_is_refused(tmp_path, out, direction):
+    """§7 gives `direction` a string and does not enumerate its values, so a
+    name is the whole of what this rule can ask — and it was asking nobody."""
+    answers = dict(ANSWERS)
+    answers["financial_pressure"] = dict(
+        PRESSURE_ANSWER,
+        continuous=[dict(PRESSURE_ANSWER["continuous"][0], direction=direction)])
+    with pytest.raises(ControlError) as caught:
+        run_crossed(tmp_path, out, StandInSupervisor(answers))
+    said = str(caught.value)
+    assert "continuous[1].direction" in said
+    assert "the schema gives it a name" in said
+    assert list(out.iterdir()) == []
+
+
+def test_two_continuous_entries_under_one_key_are_refused(tmp_path, out):
+    """Financial pressure predicts three numbers, one per key, and §8 scores
+    each against the reported value. Two entries under `revenue_next_quarter`
+    are two predictions of one number, and the scorer reading the first would
+    score whichever the model happened to write first."""
+    entry = PRESSURE_ANSWER["continuous"][0]
+    answers = dict(ANSWERS)
+    answers["financial_pressure"] = dict(
+        PRESSURE_ANSWER, continuous=[entry, dict(entry, point=250.0, high=300.0)])
+    with pytest.raises(ControlError) as caught:
+        run_crossed(tmp_path, out, StandInSupervisor(answers))
+    said = str(caught.value)
+    assert "revenue_next_quarter" in said
+    assert "more than once" in said
+    assert list(out.iterdir()) == []
+
+
+def test_two_events_under_one_key_are_refused(tmp_path, out):
+    """§8 scores events by Brier, one probability per event."""
+    entry = ACCOUNTING_ANSWER["events"][0]
+    answers = dict(ANSWERS)
+    answers["accounting_reliability"] = dict(
+        ACCOUNTING_ANSWER, events=[entry, dict(entry, p_within_horizon=0.9)])
+    with pytest.raises(ControlError) as caught:
+        run_crossed(tmp_path, out, StandInSupervisor(answers))
+    said = str(caught.value)
+    assert "restatement" in said
+    assert "more than once" in said
+    assert list(out.iterdir()) == []
+
+
+@pytest.mark.parametrize("chance", [1.4, -0.1, "likely", None, True])
+def test_a_realization_probability_that_is_not_one_is_refused(tmp_path, out, chance):
+    """An explanation carries how likely the supervisor thinks its own account is
+    to be borne out, and §8 scores that number. `True` is in the list because
+    `isinstance(True, int)` is true in Python and a boolean scored as a
+    probability is a 1.0 nobody wrote."""
+    answers = dict(ANSWERS)
+    answers["accounting_reliability"] = dict(
+        ACCOUNTING_ANSWER,
+        explanations=[{"id": CROSSED_ITEM, "support": "sufficient",
+                       "realization_p": chance}])
+    with pytest.raises(ControlError) as caught:
+        run_crossed(tmp_path, out, StandInSupervisor(answers))
+    assert "realization_p" in str(caught.value)
+    assert list(out.iterdir()) == []
+
+
+def test_financial_pressure_with_no_continuous_is_refused(tmp_path, out):
+    """The field the schema gives this question and no other, absent."""
+    answers = dict(ANSWERS)
+    answers["financial_pressure"] = {
+        key: value for key, value in PRESSURE_ANSWER.items() if key != "continuous"}
+    with pytest.raises(ControlError) as caught:
+        run_crossed(tmp_path, out, StandInSupervisor(answers))
+    said = str(caught.value)
+    assert "has no continuous" in said
+    assert "the schema requires of this question" in said
+    assert list(out.iterdir()) == []
+
+
+def test_accounting_reliability_carrying_continuous_is_refused(tmp_path, out):
+    """And the same field on the question it does not belong to, which said the
+    wrong thing for a different reason: the closed-prediction check answered
+    first and reported `continuous` as a field §7 does not have, which is not
+    what is wrong with it — §7 has it, for the other question. The branch
+    saying so was unreachable, so it is asked before the closed check now."""
+    answers = dict(ANSWERS)
+    answers["accounting_reliability"] = dict(
+        ACCOUNTING_ANSWER, continuous=PRESSURE_ANSWER["continuous"])
+    with pytest.raises(ControlError) as caught:
+        run_crossed(tmp_path, out, StandInSupervisor(answers))
+    said = str(caught.value)
+    assert "carries continuous" in said
+    assert "gives to financial pressure alone" in said
+    assert list(out.iterdir()) == []
+
+
+def test_neither_control_writes_a_number_that_is_not_json(tmp_path, out):
+    """A prediction the scorer cannot read back is the prediction lost.
+
+    Run before the rule existed, this wrote `"point": Infinity` into
+    `control_shuffled_pressure.json` — `json.dumps` spells an infinity with a
+    bare token RFC 8259 does not have, and a reader passing `parse_constant`
+    refuses the file. Nothing else in §7 was asking: every other number is a
+    probability with a range, and `0 <= inf <= 1` is false, so the range rule
+    caught it there. `point`, `low` and `high` have no range.
+
+    The sibling is asserted in the same test because the two controls answer one
+    schema, and this is the third rule found on one of them and missing from the
+    other.
+    """
+    from src import control_single_agent
+    reckless = dict(PRESSURE_ANSWER,
+                    continuous=[dict(PRESSURE_ANSWER["continuous"][0],
+                                     point=math.inf, high=math.inf)])
+    with pytest.raises(ControlError, match="not JSON"):
+        control_shuffled._predicted("financial_pressure", reckless)
+    quoted = dict(reckless, checklist=[
+        dict(entry, evidence=[dict(cited, quote="as filed")
+                              for cited in entry["evidence"]])
+        for entry in reckless["checklist"]])
+    with pytest.raises(control_single_agent.ControlError, match="not JSON"):
+        control_single_agent.check_schema(
+            dict(quoted, question="financial_pressure", rules_version="0.1"),
+            "financial_pressure", rules_version="0.1")
+
+    answers = dict(ANSWERS)
+    answers["financial_pressure"] = reckless
+    with pytest.raises(ControlError, match="not JSON"):
+        run_crossed(tmp_path, out, StandInSupervisor(answers))
+    assert list(out.iterdir()) == []
+
+
+@pytest.mark.parametrize("field", ["point", "low", "high"])
+def test_a_continuous_bound_that_is_not_a_number_at_all_is_refused(
+        tmp_path, out, field):
+    """`nan` compares false against everything, so `low <= point <= high` was
+    false and the range rule refused it with the wrong sentence — the interval
+    is not the problem, the value is not a number."""
+    answers = dict(ANSWERS)
+    answers["financial_pressure"] = dict(
+        PRESSURE_ANSWER,
+        continuous=[dict(PRESSURE_ANSWER["continuous"][0], **{field: math.nan})])
+    with pytest.raises(ControlError) as caught:
+        run_crossed(tmp_path, out, StandInSupervisor(answers))
+    said = str(caught.value)
+    assert f"continuous[1].{field}" in said
+    assert "not JSON" in said
+    assert list(out.iterdir()) == []
+
+
+def test_the_written_control_files_are_json_a_strict_reader_accepts(crossed_run):
+    """`json.loads` accepts `Infinity` and `NaN` by default, so reading a file
+    back with it is not evidence the file is JSON. `parse_constant` is where a
+    reader that refuses them says so."""
+    _, _, out = crossed_run
+
+    def refuse(name):
+        raise AssertionError(f"{name} is not a JSON value")
+
+    for name in (ACCOUNTING_FILE, PRESSURE_FILE):
+        json.loads((out / name).read_text(encoding="utf-8"), parse_constant=refuse)
+
+
+def test_one_accession_recorded_on_two_dates_is_refused(tmp_path):
+    """The sharp one: this is the cutoff.
+
+    `filed` is what dates both halves, and with two dates on one accession the
+    set it built had two members and `.pop()` returned an arbitrary one — so
+    "nothing filed after the triggering report enters the input" would be read
+    off a record contradicting itself, and which way it fell would depend on set
+    ordering. No committed manifest records an accession twice, and writing one
+    that does under `tests/fixtures/` would be inventing the record this control
+    reads, so the two rows are written here.
+    """
+    accession = "0001783180-26-000008"
+    two_dates = tmp_path / "two-dates"
+    (two_dates / NUMBERS_COMPANY).mkdir(parents=True)
+    (two_dates / NUMBERS_COMPANY / "manifest.json").write_text(json.dumps({
+        "as_of": "2026-02-05",
+        "documents": [
+            {"accession": accession, "form": "10-K", "role": "primary_html",
+             "path": "primary.html", "filing_date": "2026-02-05"},
+            {"accession": accession, "form": "10-K", "role": "exhibit",
+             "path": "exhibit.html", "filing_date": "2026-02-06"}]},
+        indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    with pytest.raises(ControlError) as caught:
+        control_shuffled.filed(NUMBERS_COMPANY, accession, fixtures_root=two_dates)
+    said = str(caught.value)
+    assert "2026-02-05" in said and "2026-02-06" in said
+    assert "one accession is one filing on one day" in said
+
+    # And the same reader on the same two rows filed on the same day, so that
+    # the refusal above is about the disagreement and not about two rows.
+    one_date = tmp_path / "one-date"
+    (one_date / NUMBERS_COMPANY).mkdir(parents=True)
+    (one_date / NUMBERS_COMPANY / "manifest.json").write_text(json.dumps({
+        "as_of": "2026-02-05",
+        "documents": [
+            {"accession": accession, "form": "10-K", "role": "primary_html",
+             "path": "primary.html", "filing_date": "2026-02-05"},
+            {"accession": accession, "form": "10-K", "role": "exhibit",
+             "path": "exhibit.html", "filing_date": "2026-02-05"}]},
+        indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    assert control_shuffled.filed(
+        NUMBERS_COMPANY, accession, fixtures_root=one_date) == dt.date(2026, 2, 5)
