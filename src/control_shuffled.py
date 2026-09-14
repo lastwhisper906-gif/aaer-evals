@@ -96,6 +96,7 @@ told from a prediction by reading it, not by trusting its name.
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 
 from src import assemble_bundle, cutoff_guard, quote_gate
@@ -425,10 +426,16 @@ def scored_filing(run_directory):
     return {"filing_date": when, "accession": accession}
 
 
-def filed(ticker: str, accession: str):
-    """When the filing behind one half's reports was filed, off the manifests."""
+def filed(ticker: str, accession: str, *, fixtures_root=cutoff_guard.FIXTURES):
+    """When the filing behind one half's reports was filed, off the manifests.
+
+    `fixtures_root` is here for the rule below: no committed manifest records one
+    accession twice, and inventing one under `tests/fixtures/` to judge the rule
+    would be writing the record this control reads. The test writes its own two
+    rows in a directory of its own instead.
+    """
     try:
-        rows = cutoff_guard.documents(ticker)
+        rows = cutoff_guard.documents(ticker, fixtures_root=fixtures_root)
     except cutoff_guard.CutoffGuardError as exc:
         raise ControlError(f"{ticker} has no record to date {accession}: {exc}") from exc
     dates = {row.get("filing_date") for row in rows
@@ -638,6 +645,18 @@ def _number(entry, field: str, where: str, *, low=None, high=None) -> float:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise ControlError(
             f"{where}.{field} is {value!r}, and the schema gives it a number")
+    # An infinity is an instance of `float`, and the range below runs only on a
+    # field §7 gives a range to. `point`, `low` and `high` have none, so an
+    # infinity there reached `_rendered` untouched and `json.dumps` wrote it as
+    # `Infinity` -- a bare token RFC 8259 does not have. A number outside its
+    # range costs one item; a number outside JSON costs the file. And nothing
+    # downstream would have said so: `json.loads` reads `Infinity` back without
+    # complaint unless it is handed a `parse_constant`.
+    if not math.isfinite(value):
+        raise ControlError(
+            f"{where}.{field} is {value!r} — json.dumps spells these Infinity "
+            "and NaN, which are not JSON, and a control file the scorer cannot "
+            "read back is the prediction lost")
     if low is not None and not low <= value <= high:
         raise ControlError(
             f"{where}.{field} is {value}, outside {low} to {high} — a probability "
@@ -675,6 +694,19 @@ def _predicted(question: str, answer) -> dict:
             "scored on the same targets as the pipeline and cannot be short of "
             "them (docs/CHECKLIST.md §7)")
     wants_continuous = question == CONTINUOUS_QUESTION
+    # `continuous` before the closed-prediction check below, because the closed
+    # check refuses every field §7 does not give this question -- `continuous` on
+    # accounting reliability among them -- and it refuses them all in one
+    # sentence. So the sentence naming this field, "the schema gives it to
+    # financial pressure alone", was written for a branch nothing could reach:
+    # the stray check answered first, and answered less precisely. Asked in this
+    # order both rules are reachable and each says its own thing.
+    if wants_continuous and CONTINUOUS not in answer:
+        raise ControlError(f"the {question} answer has no {CONTINUOUS}, which the "
+                           "schema requires of this question")
+    if not wants_continuous and CONTINUOUS in answer:
+        raise ControlError(f"the {question} answer carries {CONTINUOUS}, which the "
+                           "schema gives to financial pressure alone")
     # Every nested object below is closed and the prediction itself was not, so
     # a `scored_filing_date`, a `price_on_reaction_day_60` and a note to the
     # scorer were written into the control file whole, beside the audited
@@ -688,12 +720,6 @@ def _predicted(question: str, answer) -> dict:
             "docs/CHECKLIST.md §7 does not give it. `question`, `rules_version` "
             "and `control` are this module's to write, and a field the schema "
             "has no column for is a row of the scorecard nobody can score")
-    if wants_continuous and CONTINUOUS not in answer:
-        raise ControlError(f"the {question} answer has no {CONTINUOUS}, which the "
-                           "schema requires of this question")
-    if not wants_continuous and CONTINUOUS in answer:
-        raise ControlError(f"the {question} answer carries {CONTINUOUS}, which the "
-                           "schema gives to financial pressure alone")
 
     checklist = _a_list(question, "checklist", answer["checklist"])
     for position, entry in enumerate(checklist, start=1):

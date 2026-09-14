@@ -87,6 +87,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 from collections import Counter
 from pathlib import Path
@@ -283,6 +284,15 @@ def _number(entry, field: str, where: str, *, low=None, high=None) -> float:
     value = entry.get(field)
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise ControlError(f"{where}.{field} is {value!r}, and the schema gives it a number")
+    # `json.dumps` spells an infinity `Infinity`, which RFC 8259 does not have,
+    # so the prediction file this writes would not parse in a strict reader. The
+    # sibling control refuses it in the same sentence for the same reason: one
+    # schema, one gate.
+    if not math.isfinite(value):
+        raise ControlError(
+            f"{where}.{field} is {value!r} — json.dumps spells these Infinity "
+            "and NaN, which are not JSON, and a prediction file the scorer "
+            "cannot read back is the prediction lost")
     if low is not None and not low <= value <= high:
         raise ControlError(
             f"{where}.{field} is {value}, outside {low} to {high} — a probability "
