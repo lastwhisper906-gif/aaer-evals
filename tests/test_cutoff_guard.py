@@ -523,6 +523,8 @@ def _record_root(tmp_path: Path, listed) -> Path:
 
 
 @pytest.mark.parametrize("listed", [
+    {},
+    {"filings": []},
     {"filings": {"recent": {"accessionNumber": ["0000320193-25-000079"]}}},
     {"filings": ["0000320193-25-000079"]},
     {"filings": [["0000320193-25-000079", "2025-10-31"]]},

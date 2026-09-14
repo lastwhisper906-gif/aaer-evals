@@ -83,6 +83,28 @@ largest quarterly increase this company has on record.
 The allowance for credit losses was reduced during the period.
 """
 
+NUMBERS = json.dumps({
+    "ticker": "AAPL",
+    "cutoff": "2025-08-01",
+    "documents": [{"accession": ACCESSION, "filing_date": "2025-08-01",
+                   "form": "10-Q", "path": "10-Q/aapl_htm.xml",
+                   "role": "xbrl_instance"}],
+    "facts": [
+        {"id": f"{ACCESSION}:f-1", "source_accession": ACCESSION,
+         "filing_date": "2025-08-01", "form": "10-Q", "tag": "AccountsReceivableNetCurrent",
+         "prefix": "us-gaap", "namespace": "http://fasb.org/us-gaap/2025",
+         "unit": "iso4217:USD", "decimals": "-6", "nil": False,
+         "value": "29508000000", "number": 29508000000.0,
+         "context_ref": "c-1", "context": {"instant": "2025-06-28", "segment": []}},
+        {"id": f"{ACCESSION}:f-2", "source_accession": ACCESSION,
+         "filing_date": "2025-08-01", "form": "10-Q", "tag": "AllowanceForDoubtfulAccountsReceivableCurrent",
+         "prefix": "us-gaap", "namespace": "http://fasb.org/us-gaap/2025",
+         "unit": "iso4217:USD", "decimals": "-6", "nil": False,
+         "value": "550000000", "number": 550000000.0,
+         "context_ref": "c-1", "context": {"instant": "2025-06-28", "segment": []}},
+    ],
+}, indent=2, sort_keys=True) + "\n"
+
 # `input_trends.json` as `src/trends.py` commits it: two-space indent, sorted
 # keys, one key to a line. The `cutoff` is the file's own account of the
 # boundary it was built at, and it is the manifest's — a real trend table
@@ -165,12 +187,15 @@ Deferred revenue rose during the period.
 # `docs/INPUT_SPEC.md` §6's file list, the `input_` half of it, copied out by
 # hand -- plus `input_controls.md`, the one input name §6's list does not carry
 # and `src/agent_inputs.py` adds to the catalogue in those words.
+# `docs/CHECKLIST.md` §8: "handed the whole bundle plus the market table".
+# `input_manifest.json` is not here: it is the run's bookkeeping, the control
+# reads it from the run directory, and it carries the text of the paragraphs
+# the pipeline kept out of a reader's input.
 CONTROL_MAY_SEE = (
     "input_numbers.json", "input_companyfacts.json", "input_trends.json",
     "input_notes.md", "input_notes_history.md", "input_mdna.md",
     "input_exhibits.md", "input_risk_factors.md", "input_8k.md",
-    "input_prior_predictions.md", "input_market.json", "input_manifest.json",
-    "input_controls.md")
+    "input_prior_predictions.md", "input_market.json", "input_controls.md")
 
 NOTES_ONE = f"{ACCESSION}:notes:1"
 NOTES_TWO = f"{ACCESSION}:notes:2"
@@ -197,7 +222,7 @@ def plant(tmp_path: Path) -> tuple[Path, Path]:
     root.mkdir()
     folder.mkdir()
     planted = (("input_notes.md", NOTES), ("input_trends.json", TRENDS),
-               ("input_market.json", MARKET))
+               ("input_numbers.json", NUMBERS), ("input_market.json", MARKET))
     for name, text in planted:
         (root / name).write_text(text, encoding="utf-8")
         (folder / name).write_text(text, encoding="utf-8")
@@ -829,7 +854,9 @@ def test_the_allowlist_is_the_input_half_of_the_committed_bundle():
     assert sorted(CONTROL_MAY_SEE) == sorted(control_single_agent.CONTROL_SEES)
     for name in ("report_numbers.md", "prediction_accounting.json",
                  "explanations.json", "baselines.json",
-                 "control_single_agent_accounting.json"):
+                 "control_single_agent_accounting.json",
+                 # The run's own bookkeeping, refused by name like any report.
+                 "input_manifest.json"):
         assert name in agent_inputs.BUNDLE_CATALOGUE
         assert name not in control_single_agent.CONTROL_SEES
 
@@ -940,7 +967,10 @@ def test_a_plain_copy_of_another_companys_notes_is_refused(tmp_path):
     with pytest.raises(ControlError) as caught:
         control_single_agent.run("accounting_reliability", input_dir=folder,
                                  bundle_root=root, ask=stub)
-    assert "input_notes.md" in str(caught.value)
+    # The byte-compare's own sentence, not the file name. Asserting the name
+    # alone let the manifest's sha256 refusal stand in for this rule, and
+    # switching the byte-compare off turned nothing in the suite red.
+    assert "is not the run's own input_notes.md" in str(caught.value)
     assert stub.prompts == []
     assert not (root / "control_single_agent_accounting.json").exists()
 
@@ -960,7 +990,7 @@ def test_a_hardlink_under_an_allowed_name_is_refused(tmp_path):
     with pytest.raises(ControlError) as caught:
         control_single_agent.run("accounting_reliability", input_dir=folder,
                                  bundle_root=root, ask=stub)
-    assert "input_notes.md" in str(caught.value)
+    assert "one name of 2" in str(caught.value)
     assert stub.prompts == []
 
 
@@ -1020,7 +1050,7 @@ def test_a_file_rewritten_during_the_call_is_refused_before_it_is_quoted(tmp_pat
     with pytest.raises(ControlError) as caught:
         control_single_agent.run("accounting_reliability", input_dir=folder,
                                  bundle_root=root, ask=stub)
-    assert "input_notes.md" in str(caught.value)
+    assert "is not the run's own input_notes.md" in str(caught.value)
     assert stub.prompts != []          # the call did happen
     assert not (root / "control_single_agent_accounting.json").exists()
 
@@ -1297,12 +1327,21 @@ def test_the_run_directory_handed_to_itself_is_refused(tmp_path):
     with pytest.raises(ControlError) as caught:
         control_single_agent.run("accounting_reliability", input_dir=root,
                                  bundle_root=root, ask=Stub(accounting_answer()))
-    assert "is the run directory" in str(caught.value)
+    # `run()` never reaches the identity rule: the run directory holds
+    # `input_manifest.json`, which no layer routes to a control, so the
+    # allowlist refuses the directory by name one step earlier. That refusal is
+    # the one this path actually makes, and the identity rule is asserted below
+    # where it can speak.
+    assert "input_manifest.json" in str(caught.value)
+    assert "a file nobody routed" in str(caught.value)
+    with pytest.raises(ControlError) as direct:
+        control_single_agent.the_runs_own_copies(["input_notes.md"], root, root)
+    assert "is the run directory" in str(direct.value)
+    assert "a boundary with one side is not one" in str(direct.value)
     # and by the resolved path, not only by the spelling
     with pytest.raises(ControlError, match="is the run directory"):
-        control_single_agent.run("accounting_reliability",
-                                 input_dir=root / "." , bundle_root=root,
-                                 ask=Stub(accounting_answer()))
+        control_single_agent.the_runs_own_copies(
+            ["input_notes.md"], root / ".", root)
 
 
 def test_a_handed_file_that_is_a_link_to_the_runs_own_is_refused(tmp_path):
@@ -1325,7 +1364,12 @@ def test_a_handed_file_that_is_a_link_to_the_runs_own_is_refused(tmp_path):
     os.link(root / name, folder / name)
     with pytest.raises(ControlError) as caught:
         go(root, folder, "accounting_reliability", accounting_answer())
-    assert "same file" in str(caught.value) or "one name of" in str(caught.value)
+    # The run's own side speaks, because a hard link raises the link count on
+    # both names and that rule is asked first. The `or` this assertion used to
+    # carry was hiding which of the two sentences fires -- and the other branch
+    # it allowed for, `samefile`, could never fire at all and is gone.
+    assert "is one name of 2" in str(caught.value)
+    assert str(root / name) in str(caught.value)
 
 
 def test_a_run_copy_hard_linked_out_of_the_run_is_refused(tmp_path):
@@ -1344,6 +1388,79 @@ def test_a_run_copy_hard_linked_out_of_the_run_is_refused(tmp_path):
     with pytest.raises(ControlError) as caught:
         go(root, folder, "accounting_reliability", accounting_answer())
     assert "one name of" in str(caught.value)
+
+
+def test_a_handed_file_that_is_a_symlink_is_refused_by_the_comparison_too(tmp_path):
+    """The handed side's link rule, reached directly.
+
+    Inside `run()` nothing gets here: `input_files` refuses every symlink in the
+    handed directory by name before the comparison is reached, which is why
+    switching this rule off turned nothing red. It is the comparison's own floor
+    all the same -- `read_bytes` follows a link, so a link pointing at the run's
+    copy compares equal to itself -- so it is asserted where it can speak, and
+    the test above covers the path `run()` actually takes.
+    """
+    root, folder = plant(tmp_path)
+    name = "input_notes.md"
+    (folder / name).unlink()
+    (folder / name).symlink_to(root / name)
+    with pytest.raises(ControlError) as caught:
+        control_single_agent.the_runs_own_copies([name], folder, root)
+    assert "is a symlink to" in str(caught.value)
+
+
+def test_a_manifest_whose_byte_count_disagrees_with_its_own_hash_is_refused(tmp_path):
+    """A record that contradicts itself is not a record.
+
+    No tamper reaches this: the same bytes give the same count, so a matching
+    sha256 and a wrong `bytes` can only both be true if the manifest was written
+    wrong. That is worth refusing and it had no judge, which is how the third
+    reading found the field unasserted.
+    """
+    root, folder = plant(tmp_path)
+    manifest = _planted_manifest(root)
+    manifest["files"]["input_notes.md"]["bytes"] += 1
+    _replant_manifest(root, manifest)
+    with pytest.raises(ControlError) as caught:
+        go(root, folder, "accounting_reliability", accounting_answer())
+    assert "bytes and input_manifest.json records" in str(caught.value)
+
+
+def test_a_context_the_filing_itself_dates_past_the_cutoff_stands(tmp_path):
+    """The control on the test above, and the reason it is filing dates only.
+
+    A filing filed on the first of the month may state a value measured on the
+    fifth: NVIDIA's 10-Q filed 2026-08-26 carries an instant of 2026-08-31, and
+    Apple's remaining-performance-obligation axis carries fiscal year-ends into
+    2028. Those are disclosures, not documents, and refusing them refused
+    thirteen of the twenty-four bundles this repository assembles.
+    """
+    root, folder = plant(tmp_path)
+    payload = json.loads(NUMBERS)
+    payload["facts"][0]["context"]["instant"] = "2027-01-15"
+    replant(root, folder, "input_numbers.json",
+            json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    go(root, folder, "accounting_reliability", accounting_answer())
+    assert written(root, "accounting_reliability")["tier"]
+
+
+@pytest.mark.parametrize("name", ["input_trends.json", "input_numbers.json"])
+def test_a_computed_file_built_at_another_cutoff_is_refused(tmp_path, name):
+    """The boundary a computed file says it read at, against the run's.
+
+    `src/trends.py` publishes the cutoff it was handed, so the two can disagree
+    only if the file and the run came from different boundaries -- and that is
+    exactly the case worth refusing. The fixture carried the matching value from
+    the day it was written, so nothing had ever planted a disagreement.
+    """
+    root, folder = plant(tmp_path)
+    payload = json.loads(TRENDS if name == "input_trends.json" else NUMBERS)
+    payload["cutoff"] = "2030-01-01"
+    replant(root, folder, name,
+            json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    with pytest.raises(ControlError) as caught:
+        go(root, folder, "accounting_reliability", accounting_answer())
+    assert f"{name} says it was built at cutoff '2030-01-01'" in str(caught.value)
 
 
 def test_a_sentence_added_inside_a_block_is_refused(tmp_path):
@@ -1441,19 +1558,77 @@ def test_a_bundle_this_repository_assembles_is_read_rather_than_refused(
     """
     run = tmp_path / "run"
     manifest = assemble_bundle.assemble(ticker, form, run, prior_runs=tmp_path / "none")
+    # `docs/CHECKLIST.md` §8 hands this control "the whole bundle plus the
+    # market table", and `src/agent_inputs.py` refuses to assemble a comparer
+    # directory unless the run holds one -- so every run that reaches a layer
+    # has it. `src/assemble_bundle.py` does not write it and its manifest
+    # therefore records no hash for it, which is exactly the case the first
+    # version of the hash check refused. It is written here for that reason.
+    (run / "input_market.json").write_text(MARKET, encoding="utf-8")
     handed = tmp_path / "single-agent"
     handed.mkdir()
     for name in control_single_agent.CONTROL_SEES:
         if (run / name).is_file():
             shutil.copy2(run / name, handed / name)
+    assert (handed / "input_market.json").is_file()
+    assert "input_market.json" not in manifest["files"]
+    assert not (handed / "input_manifest.json").exists()
     cutoff = cutoff_guard.parse_date(manifest["cutoff"], "the manifest's cutoff")
 
     control_single_agent.the_runs_own_copies(
         control_single_agent.input_files(handed), handed, run)
     control_single_agent.the_files_are_the_ones_the_manifest_hashed(handed, manifest)
-    control_single_agent.the_trends_name_no_later_period(handed, cutoff)
+    control_single_agent.the_computed_files_name_no_later_period(handed, cutoff)
     control_single_agent.the_text_names_no_later_filing(
         quote_gate.quotable(handed, manifest["accession"]), cutoff, ticker)
+
+
+@pytest.mark.parametrize("where,plant_it", [
+    ("facts[0].filing_date", lambda p: p["facts"][0].update(filing_date="2027-01-15")),
+    ("documents[0].filing_date",
+     lambda p: p["documents"][0].update(filing_date="2027-05-05")),
+])
+def test_a_filing_date_the_numbers_file_prints_past_the_cutoff_is_refused(
+        tmp_path, where, plant_it):
+    """The larger computed file, and the only one whose rows carry their own date.
+
+    A fact's id begins with the accession of the filing it was drawn from, so a
+    fact planted under an in-cutoff accession is dated in-cutoff by
+    `the_text_names_no_later_filing` however late its own `filing_date` reads.
+    The trend table had this check and the numbers file did not, and the lens
+    read a fact dated 2027-01-15 straight through to the model.
+
+    Filing dates only. The first version of this walked every date the file
+    prints, the way the trend table's does, and refused thirteen of the
+    twenty-four real bundles on contexts the filings themselves state -- see
+    `_dates_inside`. A context instant is the filing's subject, not a filing.
+    """
+    root, folder = plant(tmp_path)
+    payload = json.loads(NUMBERS)
+    plant_it(payload)
+    replant(root, folder, "input_numbers.json",
+            json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    with pytest.raises(ControlError) as caught:
+        go(root, folder, "accounting_reliability", accounting_answer())
+    assert f"input_numbers.json.{where}" in str(caught.value)
+    assert "after the cutoff 2025-08-01" in str(caught.value)
+
+
+def test_a_date_used_as_a_key_is_read_like_any_other(tmp_path):
+    """A table keyed by period prints its dates on the left of the colon.
+
+    `_iso_dates` recursed on a dict's values only, so a document keyed by date
+    published every one of them unread — the same omission as checking two of
+    the five places `src/trends.py` prints one, a level further down.
+    """
+    root, folder = plant(tmp_path)
+    payload = json.loads(TRENDS)
+    payload["by_period"] = {"2027-03-31": {"days_sales_outstanding": 41.2}}
+    replant(root, folder, "input_trends.json",
+            json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    with pytest.raises(ControlError) as caught:
+        go(root, folder, "accounting_reliability", accounting_answer())
+    assert "input_trends.json.by_period.2027-03-31 (key)" in str(caught.value)
 
 
 def test_a_trend_row_reaching_past_the_cutoff_is_refused(tmp_path):

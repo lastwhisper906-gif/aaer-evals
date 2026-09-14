@@ -160,9 +160,33 @@ CONTROL_FILES = {
 # What the control may be handed, by name: the catalogue's `input_` files and
 # nothing else. Read off `src/agent_inputs.py`'s catalogue rather than listed
 # again here, so a name routed there is routed here on the same day.
+#
+# The manifest is not one of them. It carries the `input_` prefix and it is the
+# run's bookkeeping, not the run's input: `run()` reads it from `bundle_root`,
+# which is the run directory, so taking it out of what the control is handed
+# costs the control nothing. What handing it over cost was the comparison the
+# control exists for. A real manifest carries `exclusions`, one row per
+# paragraph the pipeline kept *out* of a reader's input, each with its text --
+# the text `src/quote_gate.py`'s own docstring says it refused to make
+# quotable, because "certifying a quote of text the reader was never given is
+# the failure this gate exists to catch" -- and `on_record_at_cutoff`,
+# thirteen rows of documents provided, which `docs/HOW_WE_WORK.md` lists first
+# among the archived project's ten errors. A baseline handed more than the
+# layers get does not measure the layers.
 INPUT_PREFIX = "input_"
 CONTROL_SEES = tuple(name for name in agent_inputs.BUNDLE_CATALOGUE
-                     if name.startswith(INPUT_PREFIX))
+                     if name.startswith(INPUT_PREFIX) and name != MANIFEST)
+
+# What `src/assemble_bundle.py` writes, and so what its manifest's `files` can
+# account for. `input_market.json` is written by `src/market.py`, and
+# `docs/CHECKLIST.md` §8 hands this control "the whole bundle plus the market
+# table"; `input_companyfacts.json`, `input_exhibits.md` and
+# `input_risk_factors.md` are routed the day they exist. None of them is the
+# assembler's to hash, so requiring a hash for them refused the one file §8
+# names beside the bundle. Their anchor is the byte-compare against the run's
+# own copy, and `docs/next_cycle_tasks.md` carries the item that would give
+# each writing stage its own row in `files`.
+HASHED = frozenset(assemble_bundle.FILES) - {MANIFEST}
 
 # The two supervisors whose model this control borrows. Both, not one per
 # question: they run under one pin and this refuses if they ever disagree.
@@ -649,11 +673,25 @@ def the_files_are_the_ones_the_manifest_hashed(input_dir, manifest: dict) -> Non
     first id: each changes the hash, and the second changes the paragraph list
     as well.
 
-    This is the run's word about itself, like the manifest's document list, and
-    the same answer applies: a tamperer has to edit the file, the run's copy of
-    it, and both copies of the manifest, and `src/extraction_checks.py` gates
-    the manifest before a control opens it. A run directory nobody may write is
-    the floor under all of it, which `the_runs_own_copies` states at length.
+    This is the run's word about itself, and the honest statement of its reach
+    is short: it binds the handed text to one file in the run directory, and
+    nothing in this repository binds that file to anything. The third reading
+    checked the two anchors an earlier version of this docstring claimed and
+    found neither. The byte-compare in `the_runs_own_copies` establishes that
+    the two copies agree, which is not the same as either being the record.
+    `src/extraction_checks.py` asserts that `files` and `paragraphs` are
+    *present* and never recomputes either, its `run()` has no caller in `src/`,
+    the Makefile or CI, and nothing enforces an ordering against a control -- so
+    "gated before a control opens it" was not true of any code here.
+
+    What makes the binding worth having anyway is that the manifest is no longer
+    an input. `CONTROL_SEES` refuses it by name, `run()` reads it from the run
+    directory, and a run directory nobody may write is the floor under all of
+    it, which `the_runs_own_copies` states at length. A tamperer who can write
+    the run directory has already won, and one who can only write the handed
+    directory is refused by this check. `docs/next_cycle_tasks.md` carries the
+    item that would make the record checkable in its own right: a gate that
+    recomputes `files` and `paragraphs` from the bundle's bytes.
     """
     folder = Path(input_dir)
     recorded = manifest.get("files")
@@ -670,14 +708,14 @@ def the_files_are_the_ones_the_manifest_hashed(input_dir, manifest: dict) -> Non
             "blocks the build wrote and an added block is invisible")
 
     for name in input_files(input_dir):
-        # The manifest is the record, and a record does not hash itself. What
-        # anchors it is the floor under everything here: `the_runs_own_copies`
-        # byte-compares the handed manifest against the run's own, and
-        # `src/extraction_checks.py` gates the run's own before a control opens
-        # the directory. Requiring a hash for it refused all twenty-four
-        # bundles, because `src/assemble_bundle.py` writes `files` for the eight
-        # files it wrote and cannot write one for the file it is writing.
-        if name == MANIFEST:
+        # Only what the assembler wrote. `HASHED` says which names those are and
+        # why the others are not -- requiring a hash for every handed file
+        # refused `input_market.json`, which `docs/CHECKLIST.md` §8 hands this
+        # control by name and which no manifest accounts for because another
+        # stage writes it. A file outside `HASHED` is still refused by name
+        # unless a layer routes it, and still byte-compared against the run's
+        # own copy; what it is not is hashed by a record that never saw it.
+        if name not in HASHED:
             continue
         held = recorded.get(name)
         if not isinstance(held, dict) or not isinstance(held.get("sha256"), str):
@@ -699,7 +737,7 @@ def the_files_are_the_ones_the_manifest_hashed(input_dir, manifest: dict) -> Non
                 f"{held['bytes']}")
 
     for name in input_files(input_dir):
-        if not name.endswith(".md"):
+        if not name.endswith(".md") or name not in HASHED:
             continue
         wrote = [row.get("id") for row in listed
                  if isinstance(row, dict) and row.get("file") == name]
@@ -721,14 +759,18 @@ ISO_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
 def _iso_dates(payload, where: str):
-    """(path, value) for every string in a document that is an ISO date.
+    """(path, value) for every ISO date a document holds, in a key or a value.
 
     A list of the paths dates appear at is a list that has to be kept in step
     with the writer, and it was not: three of the four places `src/trends.py`
-    prints one were unchecked.
+    prints one were unchecked. Keys are walked as well as values, because a
+    table keyed by period prints its dates on the left of the colon and reading
+    only the right of it was the same omission one level down.
     """
     if isinstance(payload, dict):
         for key, value in payload.items():
+            if isinstance(key, str) and ISO_DATE.match(key):
+                yield f"{where}.{key} (key)", key
             yield from _iso_dates(value, f"{where}.{key}")
     elif isinstance(payload, list):
         for index, value in enumerate(payload):
@@ -737,8 +779,18 @@ def _iso_dates(payload, where: str):
         yield where, payload
 
 
-def the_trends_name_no_later_period(input_dir, cutoff) -> None:
-    """Every period the trend table publishes, inside the cutoff.
+def the_computed_files_name_no_later_period(input_dir, cutoff) -> None:
+    """Every date the two computed files publish, inside the cutoff.
+
+    Both of them, because the reason for walking the whole trend table applies
+    word for word to the file beside it. `input_numbers.json` prints its own
+    `cutoff`, a `documents` list with a `filing_date` per row, and two thousand
+    facts each carrying a `filing_date` and an instant -- and it is the larger
+    file, and the one whose rows carry their own dates. A fact's id begins with
+    the accession of the filing it was drawn from, so a fact planted under an
+    in-cutoff accession is dated in-cutoff by `the_text_names_no_later_filing`
+    however its own `filing_date` reads. Checking the trend table alone left
+    that open; the lens read a fact dated 2027-01-15 straight through.
 
     A trend cell's id is `{accession}:trends:{metric}:{period}`, and that
     accession is the manifest's own — so dating those ids against the index
@@ -747,18 +799,38 @@ def the_trends_name_no_later_period(input_dir, cutoff) -> None:
     the file the model reads. A row ending after the cutoff is a fact from after
     the triggering report however its id reads.
     """
+    if cutoff_guard.bundle_files(Path(input_dir), quote_gate.TRENDS):
+        _dates_inside(input_dir, quote_gate.TRENDS, cutoff, walk_everything=True)
+    if cutoff_guard.bundle_files(Path(input_dir), quote_gate.NUMBERS):
+        _dates_inside(input_dir, quote_gate.NUMBERS, cutoff, walk_everything=False)
+
+
+def _dates_inside(input_dir, name: str, cutoff, *, walk_everything: bool) -> None:
+    """One rule for the boundary each file says it read at, two for its dates.
+
+    The trend table is walked whole. Every date it prints is either the boundary
+    or a period it computed from facts on record, so a date after the cutoff is
+    a fact from after the triggering report whatever its id says.
+
+    The numbers file is not, and the reason is the mistake this check nearly
+    repeated. Walking it whole refused thirteen of the twenty-four bundles this
+    repository assembles, on dates the filings themselves state: Apple's
+    remaining-performance-obligation axis carries its future fiscal year-ends
+    (`facts[310].context.typed_segment[0].value` is 2028-10-01 in a 10-Q filed
+    2026-07-31), and NVIDIA's 10-Q filed 2026-08-26 measures an instant of
+    2026-08-31. A filing's subject matter reaches past its own filing date; the
+    cutoff rule is about what was *filed*, not about what a filing talks about.
+    So the two fields that are filing dates are checked, and the contexts are
+    left to the filing.
+    """
     folder = Path(input_dir)
-    if not cutoff_guard.bundle_files(folder, quote_gate.TRENDS):
-        return
     try:
-        payload = json.loads(cutoff_guard.load_bundle_file(folder, quote_gate.TRENDS))
+        payload = json.loads(cutoff_guard.load_bundle_file(folder, name))
     except (cutoff_guard.CutoffGuardError, ValueError) as exc:
-        raise ControlError(
-            f"{quote_gate.TRENDS} does not read as JSON: {exc}") from exc
+        raise ControlError(f"{name} does not read as JSON: {exc}") from exc
     if not isinstance(payload, dict):
         raise ControlError(
-            f"{quote_gate.TRENDS} is {type(payload).__name__}, and the trend "
-            "table is an object")
+            f"{name} is {type(payload).__name__}, and a computed file is an object")
 
     # Its own stated cutoff first. `src/trends.py` reads the catalogue at the
     # cutoff the numbers file carries, and the manifest publishes
@@ -768,9 +840,9 @@ def the_trends_name_no_later_period(input_dir, cutoff) -> None:
     stated = payload.get("cutoff")
     if stated != str(cutoff):
         raise ControlError(
-            f"{quote_gate.TRENDS} says it was built at cutoff {stated!r} and this "
-            f"run's is {cutoff}. The table states the boundary it read at, and a "
-            "run whose two answers differ has not said which one the cells are "
+            f"{name} says it was built at cutoff {stated!r} and this run's is "
+            f"{cutoff}. A computed file states the boundary it read at, and a run "
+            "whose two answers differ has not said which one its cells are "
             "inside")
 
     # Every date the file prints, wherever it prints it. Checking `quarters` and
@@ -780,18 +852,38 @@ def the_trends_name_no_later_period(input_dir, cutoff) -> None:
     # `source.documents` while the docstring above claimed every period was
     # inside the boundary. The whole document is walked instead of a list of
     # paths being kept in step with `src/trends.py`.
-    for where, dated in _iso_dates(payload, quote_gate.TRENDS):
+    dated_at = (_iso_dates(payload, name) if walk_everything
+                else _filing_dates(payload, name))
+    for where, dated in dated_at:
         try:
             when = cutoff_guard.parse_date(dated, where)
         except cutoff_guard.CutoffGuardError as exc:
             raise ControlError(str(exc)) from exc
         if when > cutoff:
             raise ControlError(
-                f"{where} is {when}, after the cutoff {cutoff}. A trend cell's id "
-                "carries the manifest's own accession, so the record dates it as "
-                "the triggering report; the dates the file prints are what say "
-                "when its facts are from, and nothing filed after the triggering "
-                "report enters the input (CLAUDE.md)")
+                f"{where} is {when}, after the cutoff {cutoff}. A computed cell's "
+                "id carries the accession of the filing it was drawn from, so the "
+                "record dates it as that filing however late the cell's own "
+                "period or filing date reads; the dates the file prints are what "
+                "say when its facts are from, and nothing filed after the "
+                "triggering report enters the input (CLAUDE.md)")
+
+
+def _filing_dates(payload, where: str):
+    """(path, value) for the fields of a computed file that are filing dates.
+
+    `documents[].filing_date` is the row for a document the run read, and
+    `facts[].filing_date` is the date of the filing that reported the fact --
+    both are claims about what was filed, which is what the cutoff rules on. A
+    context's instant or period is the filing's own subject and is not here.
+    """
+    for key in ("documents", "facts"):
+        rows = payload.get(key)
+        if not isinstance(rows, list):
+            continue
+        for position, row in enumerate(rows):
+            if isinstance(row, dict) and isinstance(row.get("filing_date"), str):
+                yield f"{where}.{key}[{position}].filing_date", row["filing_date"]
 
 
 def verify(payload: dict, question: str, input_dir, accession: str) -> tuple[dict, list[dict]]:
@@ -965,12 +1057,6 @@ def the_runs_own_copies(names: list[str], input_dir, bundle_root) -> None:
                 "bytes. The run's side is refused a hard link for a stated "
                 "reason and the handed side was not, which left the two sides "
                 "of one comparison judged by different rules")
-        if handed.samefile(source):
-            raise ControlError(
-                f"{handed} and {source} are the same file. The comparison below "
-                "is what makes the handed copy the run's own; between one file "
-                "and itself there is nothing to compare, and a rewrite during "
-                "the call lands on both sides at once")
         if handed.read_bytes() != source.read_bytes():
             raise ControlError(
                 f"{handed} is not the run's own {name}: its bytes differ from "
@@ -1078,7 +1164,7 @@ def run(question: str, *, input_dir, bundle_root, ask,
     cutoff = run_cutoff(manifest)
     the_runs_own_copies(input_files(input_dir), input_dir, bundle_root)
     the_files_are_the_ones_the_manifest_hashed(input_dir, manifest)
-    the_trends_name_no_later_period(input_dir, cutoff)
+    the_computed_files_name_no_later_period(input_dir, cutoff)
     # The manifest's list is the run's word about what it read; the ids in the
     # text are the text's own word about where it came from, and the index dates
     # them. A paragraph carried under a later filing's accession is caught here
@@ -1097,7 +1183,7 @@ def run(question: str, *, input_dir, bundle_root, ask,
     # checks that makes the file on disk that text.
     the_runs_own_copies(input_files(input_dir), input_dir, bundle_root)
     the_files_are_the_ones_the_manifest_hashed(input_dir, manifest)
-    the_trends_name_no_later_period(input_dir, cutoff)
+    the_computed_files_name_no_later_period(input_dir, cutoff)
     the_text_names_no_later_filing(quote_gate.quotable(input_dir, accession),
                                    cutoff, manifest.get("ticker"))
     served = answer.get("served_model") if isinstance(answer, dict) else None
