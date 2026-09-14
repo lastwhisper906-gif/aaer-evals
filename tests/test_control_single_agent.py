@@ -672,10 +672,14 @@ def test_the_three_names_no_builder_writes_yet_are_not_required(tmp_path):
 
 
 def test_an_empty_directory_is_refused(tmp_path):
+    """Its own sentence. `CONTROL_NEEDS` arrived in front of this rule and
+    answers for an empty directory too, so a bare `pytest.raises` was satisfied
+    by the wrong rule and switching this one off turned nothing red. A new gate
+    ahead of older ones is the thing that quietly makes their judges vacuous."""
     root, _ = plant(tmp_path)
     empty = tmp_path / "nothing"
     empty.mkdir()
-    with pytest.raises(ControlError):
+    with pytest.raises(ControlError, match="holds no files"):
         go(root, empty, "accounting_reliability", accounting_answer())
 
 
@@ -1366,6 +1370,27 @@ def _replant_manifest(root: Path, manifest: dict) -> None:
         json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
+def test_a_manifest_naming_no_accession_is_refused_by_run_too(tmp_path):
+    """`run()`'s own sentence for it, which `check_cutoff` answers after.
+
+    The fourth reading's fix gave `src/extraction_checks.py` a judge for this
+    condition and left the second rule reading it, one module over, with none —
+    switching that one off left the run refused with the gate's sentence, which
+    is the thing that commit said it was correcting.
+    """
+    root, folder = plant(tmp_path)
+    _replant_manifest(root, {key: value for key, value
+                             in _planted_manifest(root).items()
+                             if key != "accession"})
+    stub = Stub(accounting_answer())
+    with pytest.raises(ControlError) as caught:
+        control_single_agent.run("accounting_reliability", input_dir=folder,
+                                 bundle_root=root, ask=stub)
+    assert "names no accession, and a computed row's id begins with one" \
+        in str(caught.value)
+    assert stub.prompts == []
+
+
 def test_a_manifest_whose_two_dates_disagree_is_refused_by_the_first_rule_too(
         tmp_path):
     """The two keys, compared before the record is read.
@@ -1468,19 +1493,36 @@ def test_the_run_directory_handed_to_itself_is_refused(tmp_path):
     with pytest.raises(ControlError, match="is the run directory"):
         control_single_agent.the_runs_own_copies(
             ["input_notes.md"], root / ".", root)
-    # and by inode, which is the one `resolve()` cannot do. `resolve()`
-    # normalises `.`, `..` and links and leaves case alone, and this filesystem
-    # is case-insensitive -- so one directory under two spellings compared
-    # unequal, `st_nlink` was 1 on both names, and every rule below passed by
-    # identity. The third reading's fix deleted the per-file `samefile` call as
-    # unreachable; the fourth found this, which is the same case one level up.
+    # and by inode, which is the one `resolve()` cannot do. Two spellings of
+    # one directory is the case that broke it: `resolve()` normalises `.`, `..`
+    # and links and leaves case alone, so on a case-insensitive filesystem the
+    # two compared unequal, `st_nlink` was 1 on both names, and every rule below
+    # passed by identity. The third reading's fix had deleted the per-file
+    # `samefile` call as unreachable; the fourth found this, the same case one
+    # level up.
+    #
+    # A directory reached through a symlinked *parent* is the same identity with
+    # no dependence on the filesystem's case rules, so that is what is asserted
+    # unconditionally -- CI runs on ext4, where the case-variant branch below
+    # does not exist and used to skip in silence, which reads as coverage.
+    above = tmp_path / "above"
+    above.symlink_to(root.parent, target_is_directory=True)
+    through = above / root.name
+    assert through.samefile(root)
+    assert through != root
+    with pytest.raises(ControlError, match="is the run directory"):
+        control_single_agent.the_runs_own_copies(["input_notes.md"], through, root)
+
+    # and the case variant itself where the filesystem has one
     spelled = root.parent / root.name.lower()
-    if spelled != root and spelled.is_dir():
-        assert spelled.samefile(root)
-        assert spelled.resolve() != root.resolve()
-        with pytest.raises(ControlError, match="is the run directory"):
-            control_single_agent.the_runs_own_copies(
-                ["input_notes.md"], spelled, root)
+    if spelled == root or not spelled.is_dir():
+        pytest.skip("case-sensitive filesystem: one directory has one spelling "
+                    "here, and the symlinked-parent case above is the "
+                    "platform-independent form of the same identity")
+    assert spelled.samefile(root)
+    assert spelled.resolve() != root.resolve()
+    with pytest.raises(ControlError, match="is the run directory"):
+        control_single_agent.the_runs_own_copies(["input_notes.md"], spelled, root)
 
 
 def test_a_handed_file_that_is_a_link_to_the_runs_own_is_refused(tmp_path):

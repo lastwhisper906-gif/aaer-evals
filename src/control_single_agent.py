@@ -728,8 +728,19 @@ def the_files_are_the_ones_the_manifest_hashed(input_dir, manifest: dict) -> Non
         # control by name and which no manifest accounts for because another
         # stage writes it. A file outside `HASHED` is still refused by name
         # unless a layer routes it, and still byte-compared against the run's
-        # own copy; what it is not is hashed by a record that never saw it.
-        if name not in HASHED:
+        # own copy; what it is not is required to carry a hash from a record
+        # that never saw it.
+        #
+        # `not in recorded` is the second half, and without it this skipped a
+        # file the manifest *did* hash. `HASHED` is a list of names and the
+        # question is what the record accounts for -- the fifth reading wrote
+        # the suite's own `OUTCOME_PRICES`, the sixty-day window, into
+        # `input_market.json` in both copies of a run whose manifest carried
+        # that file's sha256, and the check read past the hash it had. A
+        # required name may also be zero bytes or hold `null`, and those went
+        # the same way. So the name list says what may be *missing* from the
+        # record, and anything the record holds is checked against it.
+        if name not in HASHED and name not in recorded:
             continue
         held = recorded.get(name)
         if not isinstance(held, dict) or not isinstance(held.get("sha256"), str):
@@ -750,8 +761,15 @@ def the_files_are_the_ones_the_manifest_hashed(input_dir, manifest: dict) -> Non
                 f"{name} is {len(raw)} bytes and {MANIFEST} records "
                 f"{held['bytes']}")
 
+    # Every `.md` file, not the six inside `HASHED`. `src/quote_gate.py`
+    # indexes every `*.md` in the handed directory, so a file this skipped put
+    # paragraphs into the quote index that `paragraphs` has no row for -- the
+    # fifth reading planted a covenant sentence in `input_risk_factors.md`, cited
+    # it as evidence, and it was written out verified with no drop. A file with
+    # no rows in the record has an empty list to match against, which is the
+    # right answer for a file the build did not write.
     for name in input_files(input_dir):
-        if not name.endswith(".md") or name not in HASHED:
+        if not name.endswith(".md"):
             continue
         wrote = [row.get("id") for row in listed
                  if isinstance(row, dict) and row.get("file") == name]
