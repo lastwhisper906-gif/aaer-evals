@@ -1603,10 +1603,14 @@ def test_the_two_controls_answer_one_schema_in_behaviour_too(tmp_path, out):
 # green: every `_fields` call on a nested entry, every `key` and `id` asked to
 # be a name, the uniqueness of `continuous` and `events` keys, `realization_p`'s
 # range, the rule that one accession is one filing on one day -- and `_text`'s
-# own guard, which no test reached through any of its seven call sites. Thirteen
+# own guard, which no test reached through any of its six call sites. Thirteen
 # of them accept a malformed value onto the record rather than refusing it, and
-# one of the sixteen is on the cutoff path. The probe that found them is the
-# same one used on the sibling: turn the rule off, run this file, require red.
+# one of the sixteen is on the cutoff path. A seventeenth row of the same probe
+# was green on the parent commit too, and is not counted here because it was the
+# unreachable branch the reorder in `_predicted` opened up rather than a live
+# rule nobody judged. The probe is the one used on the sibling: turn the rule
+# off, run this file, require red -- and see the section below, because a table
+# of twenty rules is not a sweep of sixty-six.
 
 
 @pytest.mark.parametrize("question,field,entries", [
@@ -1907,3 +1911,116 @@ def test_one_accession_recorded_on_two_dates_is_refused(tmp_path):
         indent=2, sort_keys=True) + "\n", encoding="utf-8")
     assert control_shuffled.filed(
         NUMBERS_COMPANY, accession, fixtures_root=one_date) == dt.date(2026, 2, 5)
+
+
+# --- the four the first sweep missed -----------------------------------------
+#
+# The sweep above was a table of twenty rules, and a table is not a sweep: an
+# exhaustive mutation of all sixty-six guarded rules in the module found four
+# more that left this file green. Two are inside `_predicted` itself. All four
+# are live rules with their own sentences, and with any of them off a clean
+# refusal becomes an uncaught `TypeError` — or, for the explanation id, nothing
+# at all.
+
+
+class LiteralSupervisor:
+    """Hands back exactly what it was given, object or not.
+
+    `StandInSupervisor` copies its answer with `dict()`, so a non-object cannot
+    survive the stub — which is why the rule refusing one could not be reached
+    through it and had no judge. A real model call returns whatever the model
+    returned.
+    """
+
+    def __init__(self, answer):
+        self.answer = answer
+
+    def __call__(self, question: str, reports: dict):
+        return self.answer
+
+
+@pytest.mark.parametrize("answer", [7, None, "watch", ["checklist"]])
+def test_a_supervisor_answering_with_something_other_than_an_object_is_refused(
+        tmp_path, out, answer):
+    """The first line of the schema check: the model is a subprocess and a
+    control file holds a prediction. With the rule off, `7` reaches
+    `key not in answer` and raises `TypeError: argument of type 'int' is not
+    iterable`."""
+    with pytest.raises(ControlError) as caught:
+        run_crossed(tmp_path, out, LiteralSupervisor(answer))
+    said = str(caught.value)
+    assert "and a control file holds a prediction" in said
+    assert type(answer).__name__ in said
+    assert list(out.iterdir()) == []
+
+
+@pytest.mark.parametrize("signal", [3, None, ["receivables_growth_outruns_revenue"], ""])
+def test_a_top_signal_that_is_not_a_name_is_refused(tmp_path, out, signal):
+    """A signal is the key of a checklist entry, so it is a name.
+
+    Three rules downstream read this list — uniqueness, the ceiling, and the
+    resolution against the entries that stood — and each of them was reached
+    with a non-name in it. With the rule off, `3` raises `TypeError: sequence
+    item 0: expected str instance, int found` inside the refusal that names the
+    signals, and `["x"]` raises `unhashable type: 'list'` inside `_unique`.
+    """
+    answers = dict(ANSWERS)
+    answers["accounting_reliability"] = dict(ACCOUNTING_ANSWER, top_signals=[signal])
+    with pytest.raises(ControlError) as caught:
+        run_crossed(tmp_path, out, StandInSupervisor(answers))
+    said = str(caught.value)
+    assert "top_signals[1] is" in said
+    assert "a signal is the key of a checklist entry" in said
+    assert list(out.iterdir()) == []
+
+
+@pytest.mark.parametrize("entry", ["oops", 3, None, {"finding": "flag"}])
+def test_a_checklist_entry_the_gate_cannot_name_is_refused(entry):
+    """`resolved()` called directly, the way the schema battery calls
+    `_predicted` directly.
+
+    In the one call path `_predicted` runs first and refuses this shape, so the
+    rule is defence in depth — but it is the gate's own, and what the gate does
+    with an entry is drop it *by name*, which an entry with no name cannot be.
+    With the rule off, `"oops"` raises `TypeError: string indices must be
+    integers` inside `_drop_reason`.
+    """
+    answer = dict(ACCOUNTING_ANSWER, checklist=[entry])
+    with pytest.raises(ControlError) as caught:
+        control_shuffled.resolved("accounting_reliability", answer, {CROSSED_ITEM})
+    assert "checklist entry carries no key" in str(caught.value)
+
+
+@pytest.mark.parametrize("entry", [{"id": 3, "support": "sufficient",
+                                    "realization_p": 0.4},
+                                   "an explanation", None])
+def test_an_explanation_the_gate_cannot_name_is_refused(entry):
+    """The same rule for the explanations, and the one of the four that failed
+    silently rather than loudly: with it off, an explanation carrying `id: 3`
+    was neither resolved nor dropped — it went onto the record standing, with an
+    id no citation could ever resolve against."""
+    answer = dict(ACCOUNTING_ANSWER, explanations=[entry])
+    with pytest.raises(ControlError) as caught:
+        control_shuffled.resolved("accounting_reliability", answer, {CROSSED_ITEM})
+    assert "explanation carries no id" in str(caught.value)
+
+
+@pytest.mark.parametrize("signals", ["receivables_growth_outruns_revenue", 3, None,
+                                     {"receivables_growth_outruns_revenue": True}])
+def test_the_gate_refuses_top_signals_that_are_not_a_list(signals):
+    """The sixty-sixth rule, and the one the sweep could not express.
+
+    Replacing this call with `pass` is a syntax error — it sits on the
+    continuation line of a list comprehension — so the sweep reported "could not
+    run" rather than a verdict, and the rule had to be mutated by hand into a
+    passthrough to find out. It was green: a string reached the comprehension
+    and was iterated character by character, and `top_signals` came out `[]`
+    because no single letter is a checklist key. Behind `_predicted` in the one
+    call path, like the two rules above, so the test calls the gate directly.
+    """
+    answer = dict(ACCOUNTING_ANSWER, top_signals=signals)
+    with pytest.raises(ControlError) as caught:
+        control_shuffled.resolved("accounting_reliability", answer, {CROSSED_ITEM})
+    said = str(caught.value)
+    assert "gives top_signals as" in said
+    assert "docs/CHECKLIST.md §7 gives it as a list" in said
