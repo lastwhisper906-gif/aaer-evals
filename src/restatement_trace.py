@@ -111,12 +111,11 @@ except ImportError:  # invoked as a plain script: python3.12 src/restatement_tra
 EVENT = "quiet_restatement"
 LEDGER = cutoff_guard.REPO_ROOT / "events" / "ledger.jsonl"
 
-# The companyfacts document, as `src/fetch_companyfacts.py` records it in the
-# manifest. The roles beside it are the documents that carry XBRL facts, taken
-# from the module that reads them rather than listed again here: a third role
-# would otherwise have to be remembered in two places.
+# The companyfacts document, and the roles beside it that carry XBRL facts. Both
+# are taken from the module that reads them rather than spelled again here: a
+# role listed in two places is two places to get a rename right.
 COMPANYFACTS_FORM = "companyfacts"
-COMPANYFACTS_ROLE = "standard_taxonomy_history"
+COMPANYFACTS_ROLE = cutoff_guard.CATALOGUE_ROLE
 INSTANCE_ROLES = extract_numbers.INSTANCE_ROLES
 
 BAD_INPUT = 2

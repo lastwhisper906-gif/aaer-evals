@@ -28,9 +28,11 @@ companyfacts record are catalogues drawn from many filings, each carrying a
 recorded date that is the newest filing in it, so the whole-file date gate would
 refuse them to every earlier cutoff. They are read through `load_index` and
 `load_catalogue`, which check the path against the manifest exactly as the gate
-does and then apply the cutoff to the *rows*, which is where the look-ahead in a
-catalogue lives. Nothing else skips the date gate, and the role is what says
-which is which.
+does, check the bytes against the hash the manifest recorded — with no date gate
+in front of it, that hash is the only thing left saying the file is still the
+record — and then apply the cutoff to the *rows*, which is where the look-ahead
+in a catalogue lives. Nothing else skips the date gate, and the role is what
+says which is which.
 """
 
 from __future__ import annotations
@@ -79,21 +81,56 @@ def parse_date(value, field: str = "date") -> dt.date:
         ) from exc
 
 
-def _manifests(fixtures_root: Path) -> list[tuple[str, dict]]:
+def _records(manifest, source) -> list[dict]:
+    """One manifest's `documents`, refused rather than unpacked half-way.
+
+    A record of the wrong shape used to leave this module as whatever Python
+    raised where it was touched — a `ValueError` out of `dict(entry)` for a
+    record that is not an object, a `KeyError` out of `entry["path"]` for one
+    that never says which file it describes. Neither is a `CutoffGuardError`,
+    and `src/extract_numbers.py` and `src/extract_notes.py` catch that and
+    nothing else, so the readers that were written to print a refusal and exit
+    on bad input died in a traceback instead. The shape is checked here, once,
+    and every refusal leaves by the gate's own door.
+    """
+    entries = manifest.get("documents", []) if isinstance(manifest, dict) else None
+    if not isinstance(entries, list):
+        raise CutoffGuardError(
+            f"{source}: `documents` is not a list — refused, because a manifest "
+            "that is not a list of records has no record to read a date out of")
+    records = []
+    for position, entry in enumerate(entries):
+        if not isinstance(entry, dict):
+            raise CutoffGuardError(
+                f"{source}: record {position} is a {type(entry).__name__}, not an "
+                "object — refused, because a record with no fields carries no "
+                "path and no filing date")
+        relative = entry.get("path")
+        if not isinstance(relative, str) or not relative.strip():
+            raise CutoffGuardError(
+                f"{source}: record {position} has no usable `path` ({relative!r}) "
+                "— refused, because a record that does not say which file it "
+                "describes cannot vouch for one")
+        records.append(entry)
+    return records
+
+
+def _manifests(fixtures_root: Path) -> list[tuple[str, dict, Path]]:
     root = Path(fixtures_root)
     found = []
     for manifest_path in sorted(root.glob("*/manifest.json")):
         found.append((manifest_path.parent.name,
-                      json.loads(manifest_path.read_text(encoding="utf-8"))))
+                      json.loads(manifest_path.read_text(encoding="utf-8")),
+                      manifest_path))
     return found
 
 
 def _index(fixtures_root: Path) -> dict[Path, dict]:
     """Every recorded document path → its manifest row, with the ticker attached."""
     index: dict[Path, dict] = {}
-    for ticker, manifest in _manifests(fixtures_root):
+    for ticker, manifest, manifest_path in _manifests(fixtures_root):
         ticker_dir = Path(fixtures_root) / ticker
-        for entry in manifest.get("documents", []):
+        for entry in _records(manifest, manifest_path):
             row = dict(entry)
             row["ticker"] = ticker
             row["as_of"] = manifest.get("as_of")
@@ -123,7 +160,7 @@ def documents(ticker: str, *, form: str | None = None, role: str | None = None,
         raise CutoffGuardError(f"{manifest_path} does not exist — no record for {ticker}")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     rows = []
-    for entry in manifest.get("documents", []):
+    for entry in _records(manifest, manifest_path):
         if form is not None and entry.get("form") != form:
             continue
         if role is not None and entry.get("role") != role:
@@ -223,45 +260,39 @@ def load_document(path, cutoff_date, *, fixtures_root=FIXTURES, encoding="utf-8"
     return load_bytes(path, cutoff_date, fixtures_root=fixtures_root).decode(encoding)
 
 
-def load_index(path, *, fixtures_root=FIXTURES) -> bytes:
-    """The submissions index, which is a list of filings and not a filing.
+# --- the two documents the date gate does not apply to -----------------------
+#
+# Neither is a filing. Each is a catalogue drawn from many filings, carrying a
+# recorded date that is the newest filing in it, so the whole-file date gate
+# would refuse it to every earlier cutoff. The role is what says which is which.
+#
+# The names live here because this module imports nothing from `src/`: the gate
+# is what everything else reads through, so it depends on nothing that reads
+# through it and anything that needs a name can take it from here.
+# `CATALOGUE_ROLE` is the only spelling of the companyfacts role left in `src/`
+# — it had been hand-copied into three modules, which is three things to keep
+# true. `INDEX_ROLE` is not the only spelling of its own: `src/fetch_fixtures.py`
+# writes the manifest row this module reads back and sits upstream of the gate
+# rather than behind it, so it does not import it.
 
-    The date gate does not apply and must not: the index is EDGAR's catalogue of
-    what a company has filed, fetched once at the fixture set's as-of date, so
-    its own recorded date is always the newest date in the set and gating it
-    would make every earlier cutoff unusable. The cutoff still applies — to the
-    *rows*, which is where the look-ahead actually lives, and the caller has to
-    do that filtering. `src/parse_8k.py` is the only caller and
-    `tests/test_parse_8k.py` asserts it drops every row past the cutoff.
-
-    The path is still checked against the manifest, so an unrecorded file is
-    refused here exactly as it is anywhere else.
-    """
-    row = document_record(path, fixtures_root=fixtures_root)
-    if row.get("role") != "submissions_index":
-        raise CutoffGuardError(
-            f"{path} is a {row.get('role')}, not a submissions index — "
-            "only the index of filings skips the date gate")
-    return _read(path, row)
-
-
-# --- the other catalogue: companyfacts ---------------------------------------
-
-# The role `src/fetch_companyfacts.py` records the companyfacts document under.
-# It is written here as well as there because this module imports nothing from
-# `src/`: the gate is what everything else reads through, so it depends on
-# nothing that reads through it.
+INDEX_ROLE = "submissions_index"
 CATALOGUE_ROLE = "standard_taxonomy_history"
 
 
-def _catalogue_bytes(path, row: dict) -> bytes:
-    """The catalogue's bytes, checked against the hash the manifest recorded.
+def _ungated_bytes(path, row: dict) -> bytes:
+    """An ungated document's bytes, checked against the hash the manifest recorded.
 
     Every other document is vouched for by the date gate, which reads the
-    manifest row before the file is opened. This route skips that gate, so the
-    manifest's `sha256` is what says the file is still the record — and a gzip
-    that no longer decompresses is one way of not matching a manifest, so it
-    leaves by the same door rather than raising out of the reader.
+    manifest row before the file is opened. These two routes skip that gate, so
+    on them the manifest's `sha256` is what says the file is still the record —
+    and a gzip that no longer decompresses is one way of not matching a
+    manifest, so it leaves by the same door rather than raising out of the
+    reader.
+
+    Both routes take it. The submissions index went without for as long as the
+    companyfacts record had it, which left the index as the one document in the
+    fixture set with neither a date gate nor an integrity check: nothing at all
+    said the bytes served were the bytes fetched.
     """
     data = Path(path).read_bytes()
     if row.get("stored") == "gzip":
@@ -279,6 +310,32 @@ def _catalogue_bytes(path, row: dict) -> bytes:
     if hashlib.sha256(data).hexdigest() != recorded:
         raise CutoffGuardError(
             f"{path} is no longer the bytes the manifest hashed")
+    return data
+
+
+def load_index(path, *, fixtures_root=FIXTURES) -> bytes:
+    """The submissions index, which is a list of filings and not a filing.
+
+    The date gate does not apply and must not: the index is EDGAR's catalogue of
+    what a company has filed, fetched once at the fixture set's as-of date, so
+    its own recorded date is always the newest date in the set and gating it
+    would make every earlier cutoff unusable. The cutoff still applies — to the
+    *rows*, which is where the look-ahead actually lives, and the caller has to
+    do that filtering. `src/parse_8k.py` is the only caller and
+    `tests/test_parse_8k.py` asserts it drops every row past the cutoff.
+
+    The path is still checked against the manifest, so an unrecorded file is
+    refused here exactly as it is anywhere else — and so is the hash, which on a
+    route that skips the date gate is the only thing left that says the file is
+    still the record.
+    """
+    row = document_record(path, fixtures_root=fixtures_root)
+    if row.get("role") != INDEX_ROLE:
+        raise CutoffGuardError(
+            f"{path} is a {row.get('role')}, not a submissions index — "
+            "only the index of filings skips the date gate")
+    data = _ungated_bytes(path, row)
+    _opened(path)
     return data
 
 
@@ -354,7 +411,7 @@ def load_catalogue(path, cutoff_date, *, fixtures_root=FIXTURES) -> dict:
         raise CutoffGuardError(
             f"{path} is a {row.get('role')}, not a companyfacts catalogue — "
             "only a catalogue of facts drawn from many filings skips the date gate")
-    document = json.loads(_catalogue_bytes(path, row))
+    document = json.loads(_ungated_bytes(path, row))
     facts = document.get("facts")
     if not isinstance(facts, dict):
         raise CutoffGuardError(
