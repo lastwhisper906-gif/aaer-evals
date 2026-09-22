@@ -29,6 +29,16 @@ from tests.expected_values import value
 REPO_ROOT = Path(__file__).resolve().parent.parent
 BAR = chr(124)
 
+# The two catalogues, spelled as the committed fixture manifests spell them
+# rather than read off the module under test: one file spanning many filings,
+# with no filing date of its own, where the cutoff selects rows instead of
+# refusing the file. `test_the_two_catalogues_are_the_ones_the_fixture_manifests_record`
+# holds these two literals against the manifests themselves.
+CATALOGUES = ("submissions_index", "standard_taxonomy_history")
+CATALOGUE_URLS = {"submissions_index": "https://data.sec.gov/submissions/",
+                  "standard_taxonomy_history":
+                      "https://data.sec.gov/api/xbrl/companyfacts/"}
+
 
 @functools.lru_cache(maxsize=None)
 def built(ticker: str, form: str = "10-Q") -> dict:
@@ -163,16 +173,22 @@ def test_the_default_root_is_named_but_never_created(tmp_path):
 
 @pytest.mark.parametrize("ticker", TICKERS)
 def test_no_document_in_the_manifest_was_filed_after_the_cutoff(ticker):
-    """The submissions index is the one row with no filing date — it is a
-    catalogue of filings and not a filing, and the exemption is asserted
-    separately rather than skipped here."""
+    """The two catalogues are the rows with no filing date — a catalogue of
+    filings and a catalogue of facts, neither of them a filing — and each says
+    which cutoff its rows were read through. Both exemptions are asserted here
+    and paid for separately: the index by its own test below, companyfacts by
+    every fact date in `input_trends.json`."""
     manifest = built(ticker)["manifest"]
     assert manifest["documents"]
+    catalogues = []
     for row in manifest["documents"]:
-        if row["role"] == assemble_bundle.INDEX_ROLE:
+        if row["role"] in CATALOGUES:
             assert row["filing_date"] is None, row
+            assert row["rows_used_through"] == manifest["cutoff"], row
+            catalogues.append(row["role"])
             continue
         assert row["filing_date"] <= manifest["cutoff"], row
+    assert sorted(catalogues) == sorted(CATALOGUES)
     assert manifest["cutoff"] == manifest["filing_date"]
     for row in manifest["on_record_at_cutoff"]:
         assert row["filing_date"] <= manifest["cutoff"], row
@@ -852,9 +868,14 @@ def test_the_manifest_lists_the_documents_the_build_opened(ticker, form, monkeyp
     """Instrument the gateway itself and compare. `manifest.documents` used to
     be every fixture filed at or before the cutoff — AAPL's 10-Q listed the 10-K
     primary HTML, which nothing opens, and left out `submissions.json`, which
-    supplies the whole item-code section of `input_8k.md`."""
+    supplies the whole item-code section of `input_8k.md`.
+
+    Every door the gate opens is watched here, `load_catalogue` included: the
+    trend table reads companyfacts through it, and a door this list does not
+    know about is a document the manifest can list with nothing having opened
+    it — or open with nothing listing it."""
     seen: list[Path] = []
-    for name in ("load_bytes", "load_index"):
+    for name in ("load_bytes", "load_index", "load_catalogue"):
         original = getattr(cutoff_guard, name)
 
         def watched(path, *args, _original=original, **kwargs):
@@ -876,14 +897,17 @@ def test_the_manifest_lists_the_documents_the_build_opened(ticker, form, monkeyp
 def test_every_listed_document_points_a_reader_at_edgar(ticker, form):
     """A path into a fixture store the reader does not have is not a pointer.
 
-    The submissions index is the one row with no accession and no report date:
-    it is EDGAR's catalogue for a company, one JSON file per CIK, not a filing.
-    Its URL is asserted against that shape instead.
+    The two catalogues are the rows with no accession and no report date: the
+    submissions index, EDGAR's catalogue of a company's filings, and
+    companyfacts, its catalogue of that company's facts — one JSON file per CIK
+    each, neither of them a filing. Their URLs are asserted against those two
+    shapes instead, one endpoint apiece, so a row that lost its accession
+    cannot pass as either.
     """
     for row in built(ticker, form)["manifest"]["documents"]:
         assert row["url"], row
-        if row["role"] == assemble_bundle.INDEX_ROLE:
-            assert row["url"].startswith("https://data.sec.gov/submissions/")
+        if row["role"] in CATALOGUES:
+            assert row["url"].startswith(CATALOGUE_URLS[row["role"]]), row
             assert row["accession"] == "" and row["report_date"] == ""
             continue
         assert row["accession"].replace("-", "") in row["url"], row
@@ -900,11 +924,72 @@ def test_the_submissions_index_carries_no_filing_date_and_says_why(ticker, form)
     says is false: the index is not a filing and has no filing date."""
     manifest = built(ticker, form)["manifest"]
     rows = [row for row in manifest["documents"]
-            if row["role"] == assemble_bundle.INDEX_ROLE]
+            if row["role"] == "submissions_index"]
     assert len(rows) == 1
     assert rows[0]["filing_date"] is None
     assert "not itself a filing" in rows[0]["date_basis"]
     assert rows[0]["rows_used_through"] == manifest["cutoff"]
+
+
+def test_the_two_catalogues_are_the_ones_the_fixture_manifests_record():
+    """The two literals above, held against the committed manifests rather than
+    against the module under test: a row with no accession is a catalogue, and
+    these twelve records carry exactly two of them apiece."""
+    found = set()
+    for ticker in TICKERS:
+        listed = json.loads((REPO_ROOT / "tests" / "fixtures" / ticker /
+                             "manifest.json").read_text(encoding="utf-8"))
+        blank = [row for row in listed["documents"] if row["accession"] == ""]
+        assert len(blank) == 2, ticker
+        found |= {row["role"] for row in blank}
+    assert found == set(CATALOGUES) == set(CATALOGUE_URLS)
+
+
+@pytest.mark.parametrize("ticker", TICKERS)
+@pytest.mark.parametrize("form", ("10-K", "10-Q"))
+def test_the_companyfacts_record_is_a_catalogue_and_its_rows_pay_for_that(ticker, form):
+    """The second catalogue, and the one this bundle gained with the trend table.
+
+    It is exempt from the filing-date column for the same reason the index is —
+    a record of facts drawn from many filings has no filing date of its own, and
+    the date the fixture manifest carries for it is the newest filing inside it,
+    later than every annual cutoff here. The exemption is paid for row by row:
+    every fact `input_trends.json` names carries the filing date of the filing
+    that reported it, and none of those is past the cutoff. A document with no
+    date to check is not a document nothing is checked about.
+    """
+    bundle = built(ticker, form)
+    manifest = bundle["manifest"]
+    rows = [row for row in manifest["documents"]
+            if row["role"] == "standard_taxonomy_history"]
+    assert len(rows) == 1
+    assert rows[0]["filing_date"] is None
+    assert "not itself a filing" in rows[0]["date_basis"]
+    assert rows[0]["rows_used_through"] == manifest["cutoff"]
+    assert rows[0]["contributed_to"] == ["input_trends.json"]
+
+    table = json.loads(bundle["texts"]["input_trends.json"])
+    assert table["cutoff"] == manifest["cutoff"]
+    # And the window is the run's own: `Q-0` is the quarter the triggering
+    # report is about, which the manifest's own row for that report names as its
+    # period of report. Anchored on the record instead, a record fetched before
+    # the trigger — two of these twelve — labels the quarter before the run's
+    # `Q-0` and the run's own period appears in no slot at all.
+    of_report = [row["report_date"] for row in manifest["documents"]
+                 if row["accession"] == manifest["accession"]
+                 and row["role"] == "primary_html"]
+    assert len(of_report) == 1, of_report
+    assert table["window"]["triggering_period_end"] == of_report[0]
+    assert table["window"]["quarters_end"] == of_report[0]
+    assert table["coverage"]["quarters"][0]["target_end"] == of_report[0]
+    named = 0
+    for period in table["quarters"] + table["years"]:
+        for name, cell in period["ratios"].items():
+            for term, got in (cell.get("inputs") or {}).items():
+                assert got["filed"] <= manifest["cutoff"], \
+                    f"{ticker} {form} {period['label']} {name} {term}: {got}"
+                named += 1
+    assert named, f"{ticker} {form}: the trend table names no fact at all"
 
 
 @pytest.mark.parametrize("ticker", TICKERS)

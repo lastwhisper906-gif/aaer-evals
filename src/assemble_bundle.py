@@ -471,10 +471,25 @@ def build(ticker: str, form: str, *, cutoff=None, fixtures_root=cutoff_guard.FIX
     # Each phase records what it opened and which file that document fed.
     opened: dict[Path, set[str]] = {}
 
-    with phase(opened, "input_numbers.json", "input_trends.json"):
+    with phase(opened, "input_numbers.json"):
         numbers = extract_numbers.extract(ticker, forms, cutoff=cutoff,
                                           fixtures_root=fixtures_root)
-        table = trends.trends(json.loads(json.dumps(numbers, default=str)))
+
+    # The trend table is the companyfacts record's, not the instance's:
+    # `docs/INPUT_SPEC.md` §5 item 1 asks for eight quarters and five years, and
+    # one 10-K with one 10-Q carries three years and two quarters. The record is
+    # a catalogue and not a filing, so it arrives through the gate's catalogue
+    # route and is listed in the manifest without a filing date — see
+    # `documents_used` and `CATALOGUE_ROLES`.
+    #
+    # The window is anchored on the triggering report's own period of report, so
+    # `Q-0` is the quarter this run is about whether or not the record reaches
+    # it. Anchored on the record instead, a record fetched before the trigger
+    # renames every quarter one step back and the run's own period goes missing
+    # without a word — two of these twelve records are older than their 10-Q.
+    with phase(opened, "input_trends.json"):
+        table = trends.table(ticker, cutoff, period_end=trigger["report_date"],
+                             fixtures_root=fixtures_root)
 
     with phase(opened, "input_notes.md", "input_mdna.md"):
         notes, mdna, prior_accession = note_stream(ticker, form, cutoff=cutoff,

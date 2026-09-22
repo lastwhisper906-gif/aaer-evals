@@ -25,7 +25,9 @@ from __future__ import annotations
 
 import functools
 import json
+import re
 import shutil
+from fractions import Fraction
 from pathlib import Path
 
 import pytest
@@ -318,18 +320,28 @@ def test_a_runs_root_with_no_runs_in_it_renders_a_page_that_says_so(tmp_path):
 
 
 def test_the_scorecard_says_the_structure_adds_nothing_when_the_first_row_wins():
-    """The forward pipeline scored 0.3600 against the Beneish M-score's 0.0250.
-    §8 says that sentence in those words, and it is not softened."""
+    """§8 says that sentence in those words, and it is not softened.
+
+    On the forward side the two rows answered one run in common. NVDA is set
+    aside — the pipeline abstained on it and the Beneish M-score did not — so
+    the comparison is QCOM alone, which went down: the pipeline said 0.6 and
+    scores (0.6 - 0)², the M-score said 0.1 and scores (0.1 - 0)².
+    """
     verdicts = section(page(), "Accounting reliability", "Financial pressure")
     adverse = [line for line in verdicts.splitlines()
                if line.startswith("forward cycle")]
     assert len(adverse) == 1
-    assert "does not beat the Beneish M-score's 0.0250" in adverse[0]
+    assert "on the 1 runs both rows answered, with the side's other 1 set aside" in adverse[0]
+    assert f"the pipeline's Brier of {(0.6 - 0) ** 2:.4f}" in adverse[0]
+    assert f"does not beat the Beneish M-score's {(0.1 - 0) ** 2:.4f}" in adverse[0]
+    assert "0.3600" in adverse[0] and "0.0100" in adverse[0]
     assert adverse[0].endswith("The structure adds nothing.")
-    # And the pilot side, where it did beat it, says so without the sentence.
+    # And the pilot side, where both rows answered all four runs, says it beat
+    # it — the same four, so nothing is set aside there.
     beaten = [line for line in verdicts.splitlines()
               if line.startswith(PILOT) and "Beneish" in line]
     assert len(beaten) == 1
+    assert "on the 4 runs both rows answered, with the side's other 0 set aside" in beaten[0]
     assert "beats the Beneish M-score's 0.1625" in beaten[0]
     assert "adds nothing" not in beaten[0]
 
@@ -337,11 +349,18 @@ def test_the_scorecard_says_the_structure_adds_nothing_when_the_first_row_wins()
 def test_the_scorecard_says_the_structure_is_decoration_when_one_call_wins():
     """§8: if the layers do not beat the single-agent control, the structure is
     decoration, and the scorecard says so in those words. On the pressure
-    question the control scored 0.0250 against the pipeline's 0.0750."""
+    question both rows answered all four pilot runs, which went up, up, down,
+    down. The control said 0.9, 0.8, 0.1, 0.2 and the pipeline 0.8, 0.6, 0.1,
+    0.3, so the control is the better of the two and the sentence is adverse."""
+    control = ((0.9 - 1) ** 2 + (0.8 - 1) ** 2 + (0.1 - 0) ** 2 + (0.2 - 0) ** 2) / 4
+    pipeline = ((0.8 - 1) ** 2 + (0.6 - 1) ** 2 + (0.1 - 0) ** 2 + (0.3 - 0) ** 2) / 4
+    assert f"{control:.4f}" == "0.0250" and f"{pipeline:.4f}" == "0.0750"
     verdicts = section(page(), "Financial pressure", "The runs this was")
     adverse = [line for line in verdicts.splitlines() if line.startswith(PILOT)]
     assert len(adverse) == 1
-    assert "does not beat the single-agent control's 0.0250" in adverse[0]
+    assert "on the 4 runs both rows answered, with the side's other 0 set aside" in adverse[0]
+    assert f"the pipeline's Brier of {pipeline:.4f}" in adverse[0]
+    assert f"does not beat the single-agent control's {control:.4f}" in adverse[0]
     assert adverse[0].endswith("The structure is decoration.")
 
 
@@ -394,12 +413,352 @@ def test_a_tie_on_brier_is_not_beating(tmp_path):
              lambda payload, value=p_up: payload["market_direction"].__setitem__(
                  "p_up", value))
 
+    # The control now answers 0.8, 0.6, 0.1, 0.3 against up, up, down, down,
+    # which is the pipeline's own pressure answers term for term.
+    tied = ((0.8 - 1) ** 2 + (0.6 - 1) ** 2 + (0.1 - 0) ** 2 + (0.3 - 0) ** 2) / 4
     rendered = scorecard.render(changed)
     rows = table(section(rendered, "Financial pressure", "The runs this was"))
     assert brier_of(rows, "single_agent_pressure", PILOT) == \
-        brier_of(rows, "pipeline_pressure", PILOT) == "0.0750"
+        brier_of(rows, "pipeline_pressure", PILOT) == f"{tied:.4f}" == "0.0750"
     verdicts = section(rendered, "Financial pressure", "The runs this was")
     assert "The structure is decoration." in verdicts
+
+
+def test_a_tie_the_two_rows_reach_by_different_terms_is_still_not_beating(tmp_path):
+    """The tie above is term for term, so its two sums are equal bit for bit and
+    a float `<` ranks it correctly by accident. This one is not.
+
+    On the pilot outcomes up, up, down, down the pipeline answers 0.9, 0.9,
+    0.0, 0.1 and the Beneish M-score 0.9, 1.0, 0.1, 0.1. Both are three
+    four-hundredths:
+
+        pipeline  (0.01 + 0.01 + 0.00 + 0.01) / 4 = 0.03 / 4
+        M-score   (0.01 + 0.00 + 0.01 + 0.01) / 4 = 0.03 / 4
+
+    but the terms arrive in a different order, the left sum lands one bit below
+    the right, and a strict `<` on the sums prints `0.0075 beats 0.0075` — a
+    win between two numbers the page shows as the same. The expected sentence
+    is the adverse one, because a tie on Brier is not beating.
+    """
+    changed = copy_of(tmp_path)
+    for ticker, accession, mine, theirs in (
+            ("AAPL", "0000320193-26-000012", 0.9, 0.9),
+            ("CSCO", "0000858877-26-000015", 0.9, 1.0),
+            ("PANW", "0001327567-26-000009", 0.0, 0.1),
+            ("STX", "0001137789-26-000008", 0.1, 0.1)):
+        edit(changed / ticker / accession, "prediction_accounting.json",
+             lambda payload, value=mine: payload["market_direction"].__setitem__(
+                 "p_up", value))
+        edit(changed / ticker / accession, "baselines.json",
+             lambda payload, value=theirs: payload["beneish_m_score"][
+                 "market_direction"].__setitem__("p_up", value))
+
+    tie = 0.03 / 4
+    assert f"{tie:.4f}" == "0.0075"
+
+    rendered = scorecard.render(changed)
+    rows = table(section(rendered, "Accounting reliability", "Financial pressure"))
+    assert brier_of(rows, "pipeline_accounting", PILOT) == \
+        brier_of(rows, "beneish_m_score", PILOT) == f"{tie:.4f}"
+
+    verdicts = section(rendered, "Accounting reliability", "Financial pressure")
+    line = [row for row in verdicts.splitlines()
+            if row.startswith(PILOT) and "Beneish" in row][0]
+    assert f"does not beat the Beneish M-score's {tie:.4f}" in line
+    assert line.endswith("The structure adds nothing.")
+
+
+def test_a_tie_that_straddles_a_rounding_boundary_is_still_not_beating(tmp_path):
+    """The seam that rounding the sums leaves behind, one boundary over.
+
+    Deciding the sentence on the four places the page prints removes the
+    last-bit seam above and puts a new one at the rounding boundary. On the
+    pilot outcomes up, up, down, down the pipeline answers 0.0, 0.0, 0.05,
+    0.05 and the Beneish M-score 0.0, 0.2, 0.25, 0.55:
+
+        pipeline  (1 + 1 + 0.0025 + 0.0025) / 4 = 2.005 / 4
+        M-score   (1 + 0.64 + 0.0625 + 0.3025) / 4 = 2.005 / 4
+
+    The same number, 0.50125, which is exactly half way between two of the four
+    places the page prints. The float sums land either side of it, so the page
+    rounds one to 0.5012 and the other to 0.5013 and says the first beat the
+    second. A reader recomputing by hand from the published probabilities gets
+    one number twice. The expected sentence is the adverse one.
+    """
+    changed = copy_of(tmp_path)
+    for ticker, accession, mine, theirs in (
+            ("AAPL", "0000320193-26-000012", 0.0, 0.0),
+            ("CSCO", "0000858877-26-000015", 0.0, 0.2),
+            ("PANW", "0001327567-26-000009", 0.05, 0.25),
+            ("STX", "0001137789-26-000008", 0.05, 0.55)):
+        edit(changed / ticker / accession, "prediction_accounting.json",
+             lambda payload, value=mine: payload["market_direction"].__setitem__(
+                 "p_up", value))
+        edit(changed / ticker / accession, "baselines.json",
+             lambda payload, value=theirs: payload["beneish_m_score"][
+                 "market_direction"].__setitem__("p_up", value))
+
+    tie = Fraction(2005, 1000) / 4
+    assert tie == Fraction(401, 800) and float(tie) == 0.50125
+
+    rendered = scorecard.render(changed)
+    verdicts = section(rendered, "Accounting reliability", "Financial pressure")
+    line = [row for row in verdicts.splitlines()
+            if row.startswith(PILOT) and "Beneish" in row][0]
+    assert "does not beat the Beneish M-score's" in line
+    assert line.endswith("The structure adds nothing.")
+
+    # Both rows carry the one number, whichever way four places round it.
+    rows = table(section(rendered, "Accounting reliability", "Financial pressure"))
+    assert brier_of(rows, "pipeline_accounting", PILOT) == \
+        brier_of(rows, "beneish_m_score", PILOT)
+
+
+def test_a_margin_the_page_cannot_print_is_not_a_win(tmp_path):
+    """Exact arithmetic on its own leaves the opposite seam.
+
+    On the pilot outcomes up, up, down, down the pipeline answers 0.0 four
+    times and the Beneish M-score 0.0, 0.0, 0.0, 0.01:
+
+        pipeline  (1 + 1 + 0 + 0) / 4 = 0.5
+        M-score   (1 + 1 + 0 + 0.0001) / 4 = 2.0001 / 4 = 0.500025
+
+    The pipeline really is the better of the two, by twenty-five millionths.
+    Both print 0.5000, so a page that called that a win would read `the
+    pipeline's Brier of 0.5000 beats the Beneish M-score's 0.5000` — a claim
+    nobody can check against the two numbers beside it. A margin the page
+    cannot show is not a win, and the sentence is the adverse one.
+    """
+    changed = copy_of(tmp_path)
+    for ticker, accession, theirs in (
+            ("AAPL", "0000320193-26-000012", 0.0),
+            ("CSCO", "0000858877-26-000015", 0.0),
+            ("PANW", "0001327567-26-000009", 0.0),
+            ("STX", "0001137789-26-000008", 0.01)):
+        edit(changed / ticker / accession, "prediction_accounting.json",
+             lambda payload: payload["market_direction"].__setitem__("p_up", 0.0))
+        edit(changed / ticker / accession, "baselines.json",
+             lambda payload, value=theirs: payload["beneish_m_score"][
+                 "market_direction"].__setitem__("p_up", value))
+
+    pipeline = Fraction(2) / 4
+    m_score = Fraction(20001, 10000) / 4
+    assert pipeline < m_score
+    assert f"{float(pipeline):.4f}" == f"{float(m_score):.4f}" == "0.5000"
+
+    rendered = scorecard.render(changed)
+    verdicts = section(rendered, "Accounting reliability", "Financial pressure")
+    line = [row for row in verdicts.splitlines()
+            if row.startswith(PILOT) and "Beneish" in row][0]
+    assert "does not beat the Beneish M-score's 0.5000" in line
+    assert line.endswith("The structure adds nothing.")
+
+
+def test_a_row_is_never_compared_against_a_row_scored_on_other_runs(tmp_path):
+    """The defect this item closes.
+
+    AAPL is the run both rows get badly wrong, and only one of them can decline
+    it: `insufficient` is an answer the model rows may give and the Beneish
+    M-score, being arithmetic, may not. Planted by hand on the pilot side,
+    whose outcomes are up, up, down, down — the M-score answers 0.0 on AAPL and
+    keeps its own 0.4, 0.2, 0.3 on the other three; the pipeline abstains on
+    AAPL and answers 0.3, 0.4, 0.2.
+
+    Scored on its own four runs the M-score carries AAPL's whole miss
+
+        ((0.0 - 1)^2 + (0.4 - 1)^2 + (0.2 - 0)^2 + (0.3 - 0)^2) / 4 = 0.3725
+
+    while the pipeline is scored on the three it answered
+
+        ((0.3 - 1)^2 + (0.4 - 0)^2 + (0.2 - 0)^2) / 3 = 0.2300
+
+    and 0.2300 against 0.3725 reads as a win the pipeline bought by declining.
+    On the three runs both rows answered the M-score scores
+
+        ((0.4 - 1)^2 + (0.2 - 0)^2 + (0.3 - 0)^2) / 3 = 0.1633
+
+    and the pipeline does not beat it.
+    """
+    changed = copy_of(tmp_path)
+    edit(changed / "AAPL" / "0000320193-26-000012", "baselines.json",
+         lambda payload: payload["beneish_m_score"]["market_direction"].__setitem__(
+             "p_up", 0.0))
+    edit(changed / "AAPL" / "0000320193-26-000012", "prediction_accounting.json",
+         lambda payload: payload["market_direction"].__setitem__(
+             "p_up", "insufficient"))
+    edit(changed / "CSCO" / "0000858877-26-000015", "prediction_accounting.json",
+         lambda payload: payload["market_direction"].__setitem__("p_up", 0.3))
+
+    over_four = ((0.0 - 1) ** 2 + (0.4 - 1) ** 2 + (0.2 - 0) ** 2 + (0.3 - 0) ** 2) / 4
+    over_three = ((0.4 - 1) ** 2 + (0.2 - 0) ** 2 + (0.3 - 0) ** 2) / 3
+    pipeline = ((0.3 - 1) ** 2 + (0.4 - 0) ** 2 + (0.2 - 0) ** 2) / 3
+    assert f"{over_four:.4f}" == "0.3725"
+    assert f"{over_three:.4f}" == "0.1633"
+    assert f"{pipeline:.4f}" == "0.2300"
+    assert pipeline < over_four and pipeline > over_three  # the verdict turns on it
+
+    rendered = scorecard.render(changed)
+    verdicts = section(rendered, "Accounting reliability", "Financial pressure")
+    line = [row for row in verdicts.splitlines()
+            if row.startswith(PILOT) and "Beneish" in row][0]
+    assert "on the 3 runs both rows answered, with the side's other 1 set aside" in line
+    assert f"the pipeline's Brier of {pipeline:.4f}" in line
+    assert f"does not beat the Beneish M-score's {over_three:.4f}" in line
+    assert line.endswith("The structure adds nothing.")
+    # The denominator the sentence used to be measured against is not in it.
+    assert f"{over_four:.4f}" not in line
+
+    # The table above is unchanged: each row there is still scored on everything
+    # it answered, with the abstention counted beside it.
+    rows = table(section(rendered, "Accounting reliability", "Financial pressure"))
+    assert brier_of(rows, "beneish_m_score", PILOT) == f"{over_four:.4f}"
+    assert brier_of(rows, "pipeline_accounting", PILOT) == f"{pipeline:.4f}"
+    assert row_of(rows, "pipeline_accounting", PILOT)[6] == "1 of 4"
+
+
+def test_a_run_both_rows_declined_is_set_aside_and_not_counted_as_nothing(tmp_path):
+    """The abstention a count of one-sided declines would have hidden.
+
+    Set aside has to be every run the comparison could not use, not only the
+    ones exactly one row declined — otherwise a run *both* rows abstained on
+    falls between the two numbers, and the sentence says nought set aside while
+    the table over it says each row abstained once. That is an abstention hidden
+    by the arithmetic whose whole job is to report abstentions.
+
+    Both rows abstain on AAPL, the pilot side's first up. The three left are
+    CSCO up, PANW down, STX down, and both rows keep their own answers there:
+    the pipeline's 0.7, 0.4, 0.2 and the M-score's 0.4, 0.2, 0.3.
+
+        pipeline  ((0.7 - 1)^2 + (0.4 - 0)^2 + (0.2 - 0)^2) / 3 = 0.0967
+        M-score   ((0.4 - 1)^2 + (0.2 - 0)^2 + (0.3 - 0)^2) / 3 = 0.1633
+    """
+    changed = copy_of(tmp_path)
+    for name in ("prediction_accounting.json", "baselines.json"):
+        edit(changed / "AAPL" / "0000320193-26-000012", name,
+             lambda payload, file=name: (
+                 payload if file == "prediction_accounting.json"
+                 else payload["beneish_m_score"])["market_direction"].__setitem__(
+                     "p_up", "insufficient"))
+
+    pipeline = ((0.7 - 1) ** 2 + (0.4 - 0) ** 2 + (0.2 - 0) ** 2) / 3
+    m_score = ((0.4 - 1) ** 2 + (0.2 - 0) ** 2 + (0.3 - 0) ** 2) / 3
+    assert f"{pipeline:.4f}" == "0.0967" and f"{m_score:.4f}" == "0.1633"
+
+    rendered = scorecard.render(changed)
+    verdicts = section(rendered, "Accounting reliability", "Financial pressure")
+    line = [row for row in verdicts.splitlines()
+            if row.startswith(PILOT) and "Beneish" in row][0]
+    # Three scored and one set aside is the side's four runs, with nothing
+    # falling between the two counts.
+    assert "on the 3 runs both rows answered, with the side's other 1 set aside" in line
+    assert f"the pipeline's Brier of {pipeline:.4f}" in line
+    assert f"beats the Beneish M-score's {m_score:.4f}" in line
+
+    # And the table over it counts that same abstention against both rows, which
+    # is the reading a set-aside count of nought would have contradicted.
+    rows = table(section(rendered, "Accounting reliability", "Financial pressure"))
+    assert row_of(rows, "pipeline_accounting", PILOT)[6] == "1 of 4"
+    assert row_of(rows, "beneish_m_score", PILOT)[6] == "1 of 4"
+
+
+def test_the_pipeline_is_cut_to_the_shared_runs_too_when_the_other_row_declines(
+        tmp_path):
+    """The other half of the symmetry, which the fixture never reaches.
+
+    In the shipped runs it is always the pipeline that abstains, so its own
+    answered set is the shared set and a comparison that restricted only the
+    baseline would score identically. The single-agent control is a model row
+    and may decline as well, so here it declines AAPL and the pipeline answers
+    all four. The pipeline has to be cut to the three they share.
+
+        pipeline over the shared three
+            ((0.7 - 1)^2 + (0.4 - 0)^2 + (0.2 - 0)^2) / 3 = 0.0967
+        control over the shared three
+            ((0.6 - 1)^2 + (0.3 - 0)^2 + (0.4 - 0)^2) / 3 = 0.1367
+
+    Over its own four the pipeline scores 0.0750, and a comparison that left it
+    at that would print 0.0750 beside the control's 0.1367 and still say beats.
+    """
+    changed = copy_of(tmp_path)
+    edit(changed / "AAPL" / "0000320193-26-000012",
+         "control_single_agent_accounting.json",
+         lambda payload: payload["market_direction"].__setitem__(
+             "p_up", "insufficient"))
+
+    pipeline = ((0.7 - 1) ** 2 + (0.4 - 0) ** 2 + (0.2 - 0) ** 2) / 3
+    control = ((0.6 - 1) ** 2 + (0.3 - 0) ** 2 + (0.4 - 0) ** 2) / 3
+    over_its_own_four = ((0.9 - 1) ** 2 + (0.7 - 1) ** 2 + (0.4 - 0) ** 2
+                         + (0.2 - 0) ** 2) / 4
+    assert f"{pipeline:.4f}" == "0.0967" and f"{control:.4f}" == "0.1367"
+    assert f"{over_its_own_four:.4f}" == "0.0750"
+
+    rendered = scorecard.render(changed)
+    verdicts = section(rendered, "Accounting reliability", "Financial pressure")
+    line = [row for row in verdicts.splitlines()
+            if row.startswith(PILOT) and "single-agent" in row][0]
+    assert "on the 3 runs both rows answered, with the side's other 1 set aside" in line
+    assert f"the pipeline's Brier of {pipeline:.4f}" in line
+    assert f"beats the single-agent control's {control:.4f}" in line
+    # The number the sentence would carry if only the declining row were cut.
+    assert f"{over_its_own_four:.4f}" not in line
+
+    # And that number is still the pipeline's own row in the table, over the
+    # four runs it answered. The table is what did not change.
+    rows = table(section(rendered, "Accounting reliability", "Financial pressure"))
+    assert brier_of(rows, "pipeline_accounting", PILOT) == f"{over_its_own_four:.4f}"
+    assert row_of(rows, "pipeline_accounting", PILOT)[6] == "0 of 4"
+
+
+def test_a_run_neither_row_answered_is_set_aside_as_the_page_promises(tmp_path):
+    """The identity the page tells the reader to rely on: the runs a sentence
+    was made on plus the runs it set aside are everything that side had to
+    score. A run neither compared row answered at all — the baseline has no key
+    and the pipeline has no file — is still one of that side's four, so it is
+    set aside rather than dropped out of both counts.
+
+    The three left are CSCO up, PANW down, STX down, where the pipeline says
+    0.7, 0.4, 0.2 and the M-score 0.4, 0.2, 0.3.
+    """
+    changed = copy_of(tmp_path)
+    edit(changed / "AAPL" / "0000320193-26-000012", "baselines.json",
+         lambda payload: payload.pop("beneish_m_score"))
+    (changed / "AAPL" / "0000320193-26-000012" / "prediction_accounting.json").unlink()
+
+    pipeline = ((0.7 - 1) ** 2 + (0.4 - 0) ** 2 + (0.2 - 0) ** 2) / 3
+    m_score = ((0.4 - 1) ** 2 + (0.2 - 0) ** 2 + (0.3 - 0) ** 2) / 3
+    assert f"{pipeline:.4f}" == "0.0967" and f"{m_score:.4f}" == "0.1633"
+
+    rendered = scorecard.render(changed)
+    verdicts = section(rendered, "Accounting reliability", "Financial pressure")
+    line = [row for row in verdicts.splitlines()
+            if row.startswith(PILOT) and "Beneish" in row][0]
+    assert "on the 3 runs both rows answered, with the side's other 1 set aside" in line
+    assert f"beats the Beneish M-score's {m_score:.4f}" in line
+
+    # The identity itself, read back off the sentence: the two counts in it add
+    # up to the four pilot runs the fixture carries.
+    scored = int(re.search(r"on the (\d+) runs both rows answered", line).group(1))
+    aside = int(re.search(r"other (\d+) set aside", line).group(1))
+    assert scored + aside == len(PILOT_RUNS) == 4
+
+
+def test_two_rows_that_answered_no_run_in_common_are_not_compared(tmp_path):
+    """Two Briers over runs that do not overlap at all are measurements of
+    different things, and no sentence can make them a comparison. The forward
+    pipeline already abstains on NVDA; let the M-score abstain on QCOM and the
+    two rows have one scored run each and nothing shared."""
+    changed = copy_of(tmp_path)
+    edit(changed / "QCOM" / "0000804328-26-000033", "baselines.json",
+         lambda payload: payload["beneish_m_score"]["market_direction"].__setitem__(
+             "p_up", "insufficient"))
+
+    rendered = scorecard.render(changed)
+    verdicts = section(rendered, "Accounting reliability", "Financial pressure")
+    assert not [line for line in verdicts.splitlines() if line.startswith("forward")]
+    # Both rows still carry their own number in the table, each over its own run.
+    rows = table(section(rendered, "Accounting reliability", "Financial pressure"))
+    assert brier_of(rows, "beneish_m_score", FORWARD) == f"{(0.8 - 1) ** 2:.4f}"
+    assert brier_of(rows, "pipeline_accounting", FORWARD) == f"{(0.6 - 0) ** 2:.4f}"
 
 
 def test_rendering_the_same_record_twice_gives_the_same_page():

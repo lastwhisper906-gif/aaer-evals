@@ -12,25 +12,108 @@ lens and writes down what came back.
 
 ## 1. Find the rows
 
-Two sources, and a row in either one qualifies:
+**The queue is keyed on the item, not on the row.** `events/ledger.jsonl` is
+append-only, so a row that qualifies once qualifies forever — and this routine
+writes a row every time it runs. The first version selected rows, so every
+re-read it performed re-qualified the following week, and the week after, with
+the task row long since moved to done: a `<merge>^1` pin is not `main`, a merge
+whose first parent predates the lens still writes `judge_from: "tree"`, and a
+fallback row stays in the ledger after Codex has re-read it. Three of the five
+sources looped that way. The second lens found it twice — once for the pin, and
+once more for the three it had not reached.
+
+An item's **last** row is its state. An item whose last row is a Codex answer
+**taken under a pinned judge** has had the cross-vendor reading this routine
+exists to get, and is done, whatever the rows behind it say.
+
+`judge_from: "tree"` is not done, and a Codex row does not excuse it. The prompt
+and the schema came out of the branch then, so the change wrote the questions it
+was asked -- a branch can rewrite `tools/lens_prompt.md`, take a Codex `pass`
+under its own prompt and exit 0 with auto-merge on. `.claude/skills/build-item`
+step 4b and `docs/HOW_WE_WORK.md` §6 both say a `tree` row is read again, and
+for a while this queue closed it anyway.
+
+**When a `tree` row cannot be improved, retire it rather than leave it.** A
+merge whose first parent predates the lens has no pinned judge to be had: a
+re-read at `<merge>^1` writes `judge_from: "tree"` again, every week, forever.
+Append one correction line for it (`src/lens_verdict.py`'s `correction_line`)
+naming what was read and why no pin was available. A correction naming a row
+that is still open in **This cycle** or **Next cycle** is ignored, so this
+cannot be used to clear live work. **Landed** is not open work -- and reading
+the whole file instead of the section made every merged item unretirable, which
+is the one case this exists for, because every row in that file starts with
+`[ ] ` including the landed ones.
 
 ```sh
-# every lens run that answered on the fallback
-grep '"lens": "claude-fable-fallback"' events/ledger.jsonl
+.venv/bin/python - <<'PY'
+import json
 
-# every lens run where neither lens answered
-grep '"lens": "none"' events/ledger.jsonl
+import pathlib
 
-# every lens run whose judge was not the pinned one. The change that builds the
-# lens is one cause; a merge whose first parent predates the lens is another,
-# and so is a reader that answered from somewhere other than the pinned copy
-grep '"judge_from": "tree"' events/ledger.jsonl
+# A correction may not retire work that is still on the list. `events/` is
+# append-only and a branch writes to it, so one line naming a live row would
+# take a fallback `pass` out of this queue permanently.
+# and **Landed** is not open work. Every row in the file starts with `[ ] ` --
+# there is no `[x]` anywhere, and the Landed section keeps the same spelling --
+# so reading the whole file made every merged item unretirable, which is the one
+# case the retirement exists for. The section is what says whether a row is open.
+still_open, section = set(), None
+for line in pathlib.Path("docs/next_cycle_tasks.md").read_text(
+        encoding="utf-8").splitlines():
+    if line.startswith("## "):
+        section = line[3:].strip()
+    elif line.startswith("[ ] ") and section in ("This cycle", "Next cycle"):
+        still_open.add(line[4:].split(" \u00b7 ", 1)[0])
 
-# every lens run where `tools/second_lens.sh` itself differed from the pinned
-# ref. The script cannot pin itself, so this row says the pinner was the
-# branch's own copy — read the diff of that file before trusting the verdict
+state, retired = {}, set()
+for line in open("events/ledger.jsonl"):
+    row = json.loads(line)
+    if "corrects" in row:
+        if row["corrects"] not in still_open:
+            retired.add(row["corrects"])  # a title no later run can append under
+    elif "lens" in row and "item" in row:
+        state[row["item"]] = row          # append-only, so the last wins
+
+for item, row in state.items():
+    if item in retired:
+        continue                          # retired by a correction line
+    if row["lens"] == "codex" and row.get("judge_from") != "tree":
+        continue                          # read by the cross-vendor lens, pinned
+    print(f"{row['lens']}\t{row.get('judge_from')}\t{row.get('verdict')}\t{item}")
+PY
+```
+
+A title that is not a row in `docs/next_cycle_tasks.md` is the one item no
+re-read can close: the script refuses such a title before writing anything, so
+nothing can ever be appended under it and the queue would report it forever. One
+correction line retires it — `src/lens_verdict.py`'s `correction_line`, which
+carries `corrects` and no `lens`, so every grep above steps over it.
+
+That covers all three of the old sources at once: a fallback answered, no lens
+answered, or the judge did not come off the trunk — each leaves a last row that
+is not Codex's, and a successful re-read replaces it with one that is.
+
+## 1b. And two things to read rather than re-run
+
+Neither is a queue. Re-running cannot change either, so they are reported once
+and a person reads them.
+
+```sh
+# the script could not pin itself on this run, so the pinner was the branch's
+# own copy — read the diff of that one file before trusting the verdict
 grep '"lens_from": "tree"' events/ledger.jsonl
 
+# a judge pinned off the trunk. `tools/second_lens.sh` refuses one now, so a row
+# like this can only predate that guard; it is not something a re-read fixes.
+for pin in $(grep '"lens"' events/ledger.jsonl \
+             | sed -n 's/.*"judge_from": "\([^"]*\)".*/\1/p' \
+             | grep -v '^main$' | grep -v '^tree$' | sort -u); do
+    git merge-base --is-ancestor "$pin" main 2>/dev/null \
+        || echo "read: judge pinned off the trunk at $pin"
+done
+```
+
+```sh
 # every pull request that opened with the label because no lens read it
 gh pr list --state all --label one-lens --json number,title,mergeCommit,state
 ```
