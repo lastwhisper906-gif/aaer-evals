@@ -12,6 +12,34 @@ rows are simply not there.
 
 This script asks. It gathers the evidence; it does not pick the source.
 
+Two halves, and the second one was added when the source was picked
+-------------------------------------------------------------------
+
+The first half is unchanged: the three candidates asked with **no credentials**,
+which is what a stranger can learn about them and is the evidence
+`docs/needs_judgment.md` recorded. The second half asks the **configured
+backends** in `src/prices/` -- crsp, tiingo, eodhd -- with whatever credential
+the environment actually holds, and it asks about two delistings rather than
+one, because one delisting cannot tell a source's coverage from its silence:
+
+* **Lehman Brothers Holdings, LEH, 2008.** The Tiingo free tier is *documented*
+  as starting its delisted history around 2015, so a refusal here is the answer
+  the tier's own documentation predicts. It is recorded as an expected refusal
+  and it is not a failure of the backend or of the probe. Recording it as a
+  failure would be scoring a source against a claim it never made.
+* **Activision Blizzard, ATVI, delisted 2023-10-13** on the Microsoft
+  acquisition. This one is after 2015, so it is what the forward-track backend
+  *does* claim, and a refusal here is the backend failing what it says it does.
+
+That is the whole reason there are two: a backend is judged on what it claims,
+and the only way to do that is to ask it one question inside its claim and one
+outside it.
+
+A backend with no credential in the environment is recorded as **unconfigured**.
+That is a finding -- it says the switch is off and why -- and it is not a
+failure. Nothing here ever writes a credential down: `src/secret_scan.py` fails
+the gate if one reaches a file in this tree.
+
 The delisted ticker
 -------------------
 
@@ -51,11 +79,13 @@ hash with four leading zeroes and post the nonce back, and a script that does
 that is a tool for getting around a block the site put there on purpose. The
 block is what gets reported.
 
-    python3.12 src/probe_price_sources.py
+    .venv/bin/python src/probe_price_sources.py
 
 Exit 0 the history came back and the report names the candidate that served it,
 1 no candidate served it, 2 no source answered at all so nothing was learned,
-3 the wrong interpreter.
+3 the wrong interpreter. A backend that refused a delisting it never claimed to
+carry does not move the status: an expected refusal is not a failure, and a
+probe whose exit status cannot tell the two apart is a probe nobody reads.
 """
 
 from __future__ import annotations
@@ -532,7 +562,164 @@ def probe_low_cost_provider(workspace: Path) -> Finding:
         "without one")
 
 
-CANDIDATES = (probe_stooq_bulk_file, probe_wrds_crsp, probe_low_cost_provider)
+# --- the configured backends ------------------------------------------------
+#
+# The half added when the source was picked. Everything above asks a stranger's
+# question; everything below asks with whatever credential the environment
+# holds.
+
+
+@dataclasses.dataclass(frozen=True)
+class Delisting:
+    """One company that stopped trading, and the month its rows have to reach."""
+
+    ticker: str
+    company: str
+    last_month_traded: str
+    day: str
+    note: str
+
+
+DELISTINGS = (
+    Delisting(
+        ticker=TICKER,
+        company=COMPANY,
+        last_month_traded=LAST_MONTH_TRADED,
+        day="2008-09-17",
+        note=DELISTING,
+    ),
+    Delisting(
+        ticker="ATVI",
+        company="Activision Blizzard, Inc.",
+        last_month_traded="2023-10",
+        day="2023-10-13",
+        note="acquired by Microsoft Corporation; the last trading day was "
+             "2023-10-13 and the shares were removed from listing after it",
+    ),
+)
+
+# What each backend says about each delisting, read off the provider's own
+# documentation and not off a run. A refusal inside a claim is a failure of the
+# backend; a refusal outside one is the documentation being right.
+CLAIMS_TO_SERVE = {
+    ("tiingo", "LEH"): False,
+    ("tiingo", "ATVI"): True,
+    ("eodhd", "LEH"): True,
+    ("eodhd", "ATVI"): True,
+    ("crsp", "LEH"): True,
+    ("crsp", "ATVI"): True,
+}
+
+WHY_NOT_CLAIMED = ("the free tier's delisted history starts around 2015, so "
+                   "this delisting is before anything it says it holds")
+
+
+def claims_to_serve(backend_name: str, ticker: str) -> bool:
+    """Whether that backend's own documentation says it carries that history."""
+    return CLAIMS_TO_SERVE.get((backend_name, ticker), True)
+
+
+def rows_of(frame: list[dict]) -> list[str]:
+    """A price frame in the one row shape this report prints.
+
+    The same shape every candidate above prints, so a reader compares a backend
+    with a bare request without translating between two formats.
+    """
+    return [f"{entry['date'].isoformat()} close {entry['close']!r}" for entry in frame]
+
+
+def delisting_returns_in(frame: list[dict]) -> list[str]:
+    """One line per row that carried a delisting return, which is the whole point.
+
+    A source that serves the rows and not the return is the survivorship
+    problem one step further along: the history looks complete and the day that
+    decides the study is flat. So the two are reported separately and a source
+    is never credited with the second for having the first.
+    """
+    return [
+        f"{entry['date'].isoformat()} delisting return {entry['delisting_return']!r}"
+        f" code {entry['delisting_code']!r}"
+        for entry in frame
+        if entry.get("delisting_return") is not None
+    ]
+
+
+def ask_one_backend(module, delisting: Delisting) -> Attempt:
+    """One backend, one delisting, and the one line this report has to say.
+
+    Three outcomes, and they are not the same thing:
+
+    * **unconfigured** -- no credential in this environment, so it was never
+      asked. `reached` is False: nothing was learned about the source.
+    * **answered** -- rows came back, or a refusal did. `reached` is True either
+      way, because a refusal from the source is a fact about the source and a
+      timeout on this machine is not.
+    * **refused as documented** -- it answered, the history did not come, and
+      its own documentation said it would not. Reported as expected.
+    """
+    from src import prices
+
+    name = module.NAME
+    where = f"{name} asked for {delisting.ticker} through {delisting.day}"
+    start = datetime.date(int(delisting.day[:4]) - 1, 1, 1)
+    end = datetime.date.fromisoformat(delisting.day)
+    try:
+        frame = module.history(delisting.ticker, start, end)
+    except prices.Unconfigured as reason:
+        return Attempt(where, name, f"{where} -- unconfigured: {reason}", [], False)
+    except Exception as error:  # a refusal, a timeout, a shape nobody expected
+        expected = "" if claims_to_serve(name, delisting.ticker) else (
+            f", which is expected: {WHY_NOT_CLAIMED}")
+        return Attempt(
+            where, name,
+            f"{where} -- {type(error).__name__}: {str(error)[:200]}{expected}",
+            [], True,
+        )
+    rows = rows_of(frame)
+    returns = delisting_returns_in(frame)
+    answer = f"{where} -- {len(rows)} row(s)"
+    if returns:
+        answer = f"{answer}, {len(returns)} carrying a delisting return"
+    else:
+        answer = f"{answer}, none carrying a delisting return"
+    if not any(row.startswith(delisting.last_month_traded) for row in rows):
+        expected = "" if claims_to_serve(name, delisting.ticker) else (
+            f", which is expected: {WHY_NOT_CLAIMED}")
+        answer = (f"{answer}, none of them in {delisting.last_month_traded}, the "
+                  f"month the trading stopped{expected}")
+    return Attempt(where, name, answer, rows, True)
+
+
+def probe_configured_backends(workspace: Path) -> Finding:
+    """Every backend in `src/prices/`, put to both delistings.
+
+    `workspace` is unused: a backend writes nothing to disk. It is in the
+    signature so this reads like every other candidate and can stand in the same
+    list.
+    """
+    from src import prices
+
+    attempts = [
+        ask_one_backend(prices.backend(name), delisting)
+        for name in prices.BACKENDS
+        for delisting in DELISTINGS
+    ]
+    configured = sorted({
+        attempt.agent for attempt in attempts if attempt.reached
+    })
+    if not configured:
+        otherwise = ("no backend is configured in this environment: "
+                     "$TIINGO_TOKEN and $EODHD_TOKEN are unset and ~/.pgpass "
+                     "does not exist, so nothing was asked and nothing was "
+                     "learned about any of them")
+    else:
+        otherwise = (f"asked: {', '.join(configured)}. None served a delisting's "
+                     f"history to the month the trading stopped")
+    return finish("the configured backends in src/prices", attempts, otherwise)
+
+
+CANDIDATES = (probe_stooq_bulk_file, probe_wrds_crsp,
+              probe_low_cost_provider, probe_configured_backends)
 
 
 def report(finding: Finding) -> None:
@@ -560,8 +747,16 @@ def main() -> int:
     print(f"Delisted: {DELISTING}.")
     print(f"A source that serves it returns daily rows reaching "
           f"{LAST_MONTH_TRADED}, the month the trading stopped.")
-    print("No credentials are sent. The candidates are asked in order and the "
-          "probe stops at the first that serves the history.")
+    print("The three candidates are asked with no credentials at all, which is "
+          "what a stranger can learn about them. The configured backends in "
+          "src/prices are then asked with whatever credential this environment "
+          "holds, about two delistings rather than one -- LEH in 2008 and "
+          "Activision Blizzard, ATVI, on 2023-10-13 -- so a backend is judged "
+          "on what it claims rather than on what it never claimed. A backend "
+          "with no credential here is recorded as unconfigured, which is a "
+          "finding and not a failure.")
+    print("The candidates are asked in order and the probe stops at the first "
+          "that serves the history.")
 
     findings = []
     with tempfile.TemporaryDirectory(prefix="price-source-probe-") as directory:
