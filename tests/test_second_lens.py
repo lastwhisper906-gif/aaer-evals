@@ -1068,34 +1068,85 @@ def test_a_codex_answer_that_will_not_clear_is_not_this_run_s(
     assert "pass" not in second.stdout.split("no_lens_ran")[0]
 
 
-def test_a_stale_fallback_answer_is_not_read_as_this_run_s(
+def a_file_the_shell_cannot_overwrite(path: Path) -> None:
+    """Read-only, and *measured* to be -- a uid that ignores the mode is not a
+    passing test.
+
+    `> "$file"` on a file bash cannot open for writing does not truncate it:
+    the redirection fails with `Permission denied`, the command never starts,
+    and the contents stand. That sentence is the whole of the hole these two
+    tests guard, so the barrier is verified here rather than assumed. Under
+    root -- some CI containers -- there is no barrier to measure, and the test
+    says so instead of going green on nothing.
+    """
+    path.chmod(0o444)
+    probe = subprocess.run(
+        ["bash", "-c", f"echo probe > {shlex.quote(str(path))}"],
+        capture_output=True, text=True)
+    if probe.returncode == 0:
+        path.chmod(0o644)
+        pytest.skip("this uid writes through mode 0444, so there is no barrier to test")
+
+
+def test_a_fallback_answer_the_shell_cannot_overwrite_is_not_read_as_this_run_s(
     tmp_path: Path, stubs: Path
 ) -> None:
-    """The same property on the other side, judged instead of the check.
+    """The redirection is not a clearing check, and the difference is the hole.
 
-    There is no clearing check on `$FABLE_FILE` and there should not be. Codex
-    is handed `-o` and writes the file itself, so a file it never wrote is an
-    earlier run's; the fallback answers on stdout and this script redirects it,
-    and `> "$FABLE_FILE"` truncates before the command runs -- whether it then
-    writes, times out, or is not installed. A check there had no reachable
-    branch: deleting it left all seventy-nine tests passing, because the
-    redirection had already done the work, and a guard that cannot be told from
-    its absence is not a guard.
+    This check was deleted once, on the reasoning that `> "$FABLE_FILE"`
+    truncates before the command runs and on a mutation that killed nothing.
+    Both were right about a writable file and silent about an unwritable one:
+    measured, bash refuses the redirection on mode 0444, leaves the contents
+    standing and never starts the lens, and the read below then reports last
+    week's `pass` as this run's -- exit 0, auto-merge on. `.lens/` is
+    git-ignored, so the file is invisible to the diff, to the uncommitted-work
+    refusal and to `DEFINES_THE_JUDGE`, and with Codex out of quota every real
+    run reaches that line.
 
-    So what is asserted is the property the guard was for: a valid `pass` left
-    from an earlier run, which cannot be removed, is not reported as this one.
+    The standing answer here is a real earlier run's, not a planted literal, so
+    what is asserted is the case that actually happens.
     """
     codex_stub(stubs, exit_code=1, verdict=None)
     claude_stub(stubs, exit_code=0, result=json.dumps(PASS_VERDICT))
     assert run_lens(tmp_path).returncode == 0
-    assert (tmp_path / "worktree" / ".lens" / "fable.json").exists()
+    answer = tmp_path / "worktree" / ".lens" / "fable.json"
+    standing = json.loads(json.loads(answer.read_text(encoding="utf-8"))["result"])
+    assert standing["verdict"] == "pass", "the earlier run has to have left an approval standing"
 
+    a_file_the_shell_cannot_overwrite(answer)
     claude_stub(stubs, exit_code=1, result=None)
-    a_removal_that_the_directory_refuses(stubs, "*/.lens/fable.json")
     second = run_lens(tmp_path)
 
-    assert second.returncode == 3, second.stdout
+    assert second.returncode == lens_verdict.NO_LENS_RAN, second.stdout
     assert ledger_lines(tmp_path)[-1]["lens"] == "none"
+
+
+def test_a_fallback_answer_that_will_not_clear_is_refused_before_the_lens_is_spent(
+    tmp_path: Path, stubs: Path
+) -> None:
+    """The other half: removal itself failing.
+
+    `rm -f` unlinks a 0444 file in a writable directory, which is why the check
+    above suffices for the ordinary case. It does not unlink a `uchg` file, or
+    one in a directory that will not have it removed -- and there the script has
+    an answer file it can neither clear nor overwrite. That run must refuse
+    rather than read, and must refuse *before* a lens is paid for, so the
+    assertion is on what was invoked as well as on the status.
+    """
+    codex_stub(stubs, exit_code=1, verdict=None)
+    claude_stub(stubs, exit_code=0, result=json.dumps(PASS_VERDICT))
+    assert run_lens(tmp_path).returncode == 0
+    answer = tmp_path / "worktree" / ".lens" / "fable.json"
+
+    a_file_the_shell_cannot_overwrite(answer)
+    a_removal_that_the_directory_refuses(stubs, "*/.lens/fable.json")
+    claude_stub(stubs, exit_code=1, result=None)
+    before = len(calls(tmp_path))
+    second = run_lens(tmp_path)
+
+    assert second.returncode == lens_verdict.NO_LENS_RAN, second.stdout
+    assert ledger_lines(tmp_path)[-1]["lens"] == "none"
+    assert calls(tmp_path)[before:] == ["codex"], "the fallback was spent on a run already lost"
 
 
 def test_an_uncommitted_worktree_is_not_a_change_the_lens_can_judge(

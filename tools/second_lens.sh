@@ -572,17 +572,31 @@ fi
 if [ -z "$LENS" ]; then
     FABLE_FILE="$LENS_DIR/fable.json"
     FABLE_LOG="$LENS_DIR/fable.log"
-    # No clearing check here, and the asymmetry with `$CODEX_FILE` is the
-    # point. Codex is given `-o "$CODEX_FILE"` and writes it itself, so a file
-    # it never wrote is a file from an earlier run and `cleared` is what says
-    # so. The fallback's answer arrives on stdout and this script redirects it:
-    # `> "$FABLE_FILE"` truncates before the command runs, whether the command
-    # then writes, times out, or is not installed at all. A check here had no
-    # reachable branch -- deleting it left every test passing, because the
-    # redirection had already done the work. The property is judged instead of
-    # the check: `test_a_stale_fallback_answer_is_not_read_as_this_run_s`
-    # plants a valid `pass` that cannot be removed and asserts it is not read.
-    if command -v claude >/dev/null 2>&1; then
+    # `> "$FABLE_FILE"` looks like it makes this check unnecessary. It does
+    # not, and the difference is the whole hole. Measured, not reasoned: on a
+    # file the shell cannot open for writing -- mode 0444, or `uchg` -- bash
+    # refuses the redirection, says `Permission denied`, *leaves the contents
+    # standing* and never starts the command. The read below then reports what
+    # was already in the file as this run's answer. `.lens/` is git-ignored, so
+    # a `pass` planted there is invisible to the diff, to the uncommitted-work
+    # refusal and to `DEFINES_THE_JUDGE`, and with Codex out of quota every
+    # real run reaches this line. `rm -f` unlinks a 0444 file in a writable
+    # directory, which clears the ordinary case; the case it cannot clear is
+    # refused rather than read.
+    #
+    # This check was deleted once, on the reasoning in the first sentence and
+    # on a mutation that killed nothing. Both were right about the writable
+    # file and silent about the unwritable one. A mutation that kills nothing
+    # says the tests do not distinguish the branch, never that the branch is
+    # dead.
+    FABLE_CLEARED=yes
+    cleared "$FABLE_FILE" || FABLE_CLEARED=no
+
+    if [ "$FABLE_CLEARED" = no ]; then
+        echo "second_lens: $FABLE_FILE holds an earlier run's answer and could not be cleared" \
+            > "$FABLE_LOG"
+        FABLE_EXIT=126
+    elif command -v claude >/dev/null 2>&1; then
         # Started *in* the worktree, the way Codex is with -C. The prompt's
         # first instruction is "the working tree you were started in", and this
         # script is called from the repository root against a detached worktree
@@ -617,9 +631,13 @@ if [ -z "$LENS" ]; then
         echo "second_lens: no claude on PATH" > "$FABLE_LOG"
         FABLE_EXIT=127
     fi
-    # Read whatever the exit status was, for the same reason as above.
-    READING="$(read_the_verdict claude "$FABLE_FILE" \
-        --lens "$FALLBACK_LENS" --normalised "$NORMALISED" 2>>"$FABLE_LOG")"
+    # Read whatever the exit status was, for the same reason as above -- but
+    # only a file this run is known to have started empty.
+    READING=""
+    if [ "$FABLE_CLEARED" = yes ]; then
+        READING="$(read_the_verdict claude "$FABLE_FILE" \
+            --lens "$FALLBACK_LENS" --normalised "$NORMALISED" 2>>"$FABLE_LOG")"
+    fi
     if [ -n "$READING" ]; then
         read_verdict "$READING"
         LENS="$FALLBACK_LENS"
