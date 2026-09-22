@@ -84,8 +84,23 @@ Where the edges are drawn
 * A hit needs the probability on the right side of one half. Exactly one half is
   not a hit, in either direction.
 * An abnormal return of exactly zero is not positive, so the direction is down.
-* A tie on Brier is not beating. The pipeline has to be strictly better than the
-  first row for the page to say it beat it.
+* A tie on Brier is not beating, and neither is a margin the page cannot show.
+  The Briers compared are exact rationals over the decimals the runs carry, and
+  the win has to survive the four places printed. Float sums call a tie a win in
+  the last bit (`0.0075 beats 0.0075`); rounding those sums moves the seam to
+  the rounding boundary (`0.5012 beats 0.5013`, both of them 2.005/4); and exact
+  arithmetic alone lets `0.5000 beat 0.5000` on twenty-five millionths.
+* **A verdict sentence compares two rows only on the runs both of them
+  answered.** A Brier over four runs and a Brier over three are two
+  measurements, not a comparison: a row that declines the run it would have got
+  wrong is scored on what is left while the row beside it carries that run in
+  full, and the page reads the missing term as a win. The sentence therefore
+  says how many runs it was made on and how many it set aside -- and set aside
+  is every other scorable run on that side, so that a run *both* rows declined
+  is counted rather than falling between the two numbers. Two rows with no run
+  in common get no sentence at all rather than a comparison across different
+  runs. The table above it is unchanged: each row there is still scored over
+  everything it answered.
 * A `p_up` that is neither a probability nor `insufficient` stops the render
   rather than being dropped quietly.
 
@@ -108,6 +123,7 @@ import json
 import re
 import sys
 from dataclasses import dataclass
+from fractions import Fraction
 from pathlib import Path
 from string import Template
 
@@ -215,8 +231,29 @@ class Score:
     answers: int
     insufficient: int
     scored: int
-    brier: float | None
+    brier: Fraction | None
     hit_rate: float | None
+
+
+@dataclass(frozen=True)
+class Comparison:
+    """Two rows scored on exactly the runs both of them put a probability on.
+
+    `runs` is how many runs that was and `set_aside` is every other run on that
+    side of the freeze -- one row abstained, or both did, or one of them left no
+    answer at all. The two add up to the side's whole scorable set on purpose: a
+    count of only the runs *one* row declined says nought on the side where both
+    declined the same run, which is an abstention hidden by the arithmetic that
+    reports abstentions. Both Briers are over `runs`, so a sentence built from
+    this is a comparison rather than two measurements printed side by side.
+    `runs` of nought means the two rows answered nothing in common and there is
+    no sentence to write.
+    """
+
+    runs: int
+    set_aside: int
+    pipeline: Fraction | None
+    other: Fraction | None
 
 
 # --- the template ------------------------------------------------------------
@@ -248,8 +285,9 @@ def _fill(block: str, **values) -> str:
     return Template(words[block]).substitute(**values)
 
 
-def _rate(value: float) -> str:
-    return f"{value:.{PLACES}f}"
+def _rate(value: Fraction) -> str:
+    """An exact Brier as the page prints it. The rounding happens here alone."""
+    return f"{float(value):.{PLACES}f}"
 
 
 def _side_label(side: str) -> str:
@@ -375,18 +413,76 @@ def _hit(p_up: float, up: bool) -> bool:
     return (p_up > 0.5 and up) or (p_up < 0.5 and not up)
 
 
+def _answers(runs: list[Run], row: Row) -> list[tuple[Run, float | str]]:
+    """What this row said on each run that carries an answer for it at all."""
+    said = [(run, answer(run, row)) for run in runs]
+    return [(run, value) for run, value in said if value is not None]
+
+
+def _probabilities(runs: list[Run], row: Row) -> dict[Run, float]:
+    """The runs this row put a probability on, and the probability it put."""
+    return {run: value for run, value in _answers(runs, row)
+            if value != INSUFFICIENT}
+
+
+def _brier(scored: list[tuple[Run, float]]) -> Fraction:
+    """Mean squared error against the direction that happened, exactly.
+
+    Exactly, because two Briers that are equal in arithmetic need not be equal
+    in binary, and the page has one sentence that turns on whether they are:
+    a tie on Brier is not beating. Summed as floats, 0.9, 0.9, 0.0, 0.1 and
+    0.9, 1.0, 0.1, 0.1 on up, up, down, down land one bit apart although both
+    are three four-hundredths, and rounding the sums to the four places the
+    page prints only moves the seam -- 0.0, 0.0, 0.05, 0.05 against 0.0, 0.2,
+    0.25, 0.55 are both 2.005/4 and straddle a rounding boundary, so the page
+    printed 0.5012 beating 0.5013 on an exact tie.
+
+    `p_up` and the outcome are decimal literals in the run's own JSON, so
+    `Fraction(str(...))` recovers the decimal the record carries and the
+    arithmetic over it has no seam anywhere. Never over nothing: the caller
+    hands in the runs that were scored.
+    """
+    return sum((Fraction(str(value)) - (1 if run.up else 0)) ** 2
+               for run, value in scored) / len(scored)
+
+
 def score(runs: list[Run], row: Row) -> Score:
     """One row over the runs handed in. Brier and hit rate over what was scored."""
-    answered = [(run, answer(run, row)) for run in runs]
-    answered = [pair for pair in answered if pair[1] is not None]
+    answered = _answers(runs, row)
     scored = [(run, value) for run, value in answered if value != INSUFFICIENT]
     insufficient = len(answered) - len(scored)
     if not scored:
         return Score(len(answered), insufficient, 0, None, None)
-    brier = sum((value - (1.0 if run.up else 0.0)) ** 2
-                for run, value in scored) / len(scored)
     hits = sum(1 for run, value in scored if _hit(value, run.up))
-    return Score(len(answered), insufficient, len(scored), brier, hits / len(scored))
+    return Score(len(answered), insufficient, len(scored), _brier(scored),
+                 hits / len(scored))
+
+
+def compare(runs: list[Run], pipeline: Row, other: Row) -> Comparison:
+    """Two rows scored on the runs both of them answered, and what that left out.
+
+    Each row's own Brier is over whatever that row answered, and two of those
+    are not comparable when the two rows answered different runs. A row that
+    declines a run drops it from its own denominator while the row beside it
+    carries that run in full, and the page would read the missing term as a
+    win: `insufficient` is an answer, and a row that abstains its way to a good
+    Brier has not predicted anything, which is the line `docs/CHECKLIST.md` §5
+    draws. So the comparison is made on the runs both rows put a probability
+    on, and every run it could not use is counted beside it rather than
+    disappearing.
+    """
+    mine = _probabilities(runs, pipeline)
+    theirs = _probabilities(runs, other)
+    shared = [run for run in runs if run in mine and run in theirs]
+    # Every run on this side that the comparison could not use, not only the
+    # ones exactly one row declined. `runs + set_aside` is the side's whole
+    # scorable set, so no abstention can fall between the two counts.
+    set_aside = len(runs) - len(shared)
+    if not shared:
+        return Comparison(0, set_aside, None, None)
+    return Comparison(len(shared), set_aside,
+                      _brier([(run, mine[run]) for run in shared]),
+                      _brier([(run, theirs[run]) for run in shared]))
 
 
 # --- the page ----------------------------------------------------------------
@@ -408,23 +504,39 @@ def _row_line(row: Row, side: str, one: Score) -> str:
                  hit_rate=hit_rate, insufficient=counted)
 
 
-def _verdict(side: str, pipeline: Score, other: Score,
-             beats: str, misses: str) -> str | None:
-    """One comparison sentence, or None when there is nothing to compare."""
-    if pipeline.scored == 0 or other.scored == 0:
+def _verdict(side: str, made: Comparison, beats: str, misses: str) -> str | None:
+    """One comparison sentence, or None when the two rows share no run.
+
+    The sentence carries one run count because there is one: both Briers in it
+    are over the same runs. It carries the set-aside count beside that, so a
+    verdict resting on a handful of runs cannot be read without seeing how many
+    were left out of it.
+
+    Beaten takes both: `_brier` is exact, so a tie is a tie whatever order the
+    terms arrived in, and the win then has to survive the four places the page
+    prints. Exact arithmetic alone would let the page say `0.5000 beats
+    0.5000` on a margin of twenty-five millionths, and four places alone are
+    not enough either -- rounding two float sums of one exact number lands
+    either side of a boundary. Rounding is monotonic, so a win that survives it
+    is a real one; a margin that does not is one no reader can check against
+    the numbers in front of them.
+    """
+    if made.runs == 0:
         return None
-    block = beats if pipeline.brier < other.brier else misses
-    return _fill(block, side=_side_label(side),
-                 pipeline=_rate(pipeline.brier), pipeline_runs=pipeline.scored,
-                 other=_rate(other.brier), other_runs=other.scored)
+    pipeline, other = _rate(made.pipeline), _rate(made.other)
+    block = beats if float(pipeline) < float(other) else misses
+    return _fill(block, side=_side_label(side), runs=made.runs,
+                 set_aside=made.set_aside, pipeline=pipeline, other=other)
 
 
 def scores(rows: tuple[Row, ...], runs: list[Run]) -> dict[tuple[str, str], Score]:
-    """One score per row per side of the freeze, computed once.
+    """One score per row per side of the freeze, for the table.
 
-    Once, so that the table and the sentences underneath it cannot quote
-    different numbers for the same row — which is the one way a page assembled
-    in two passes could contradict itself and still look finished.
+    Computed once, so no two cells of the table can quote different numbers for
+    the same row. The sentences underneath the table are not built from this:
+    they are comparisons, and a comparison is scored on the runs both of its
+    rows answered rather than on each row's own. Where those differ the
+    sentence says which runs it was made on.
     """
     return {(row.key, side): score([run for run in runs if run.side == side], row)
             for row in rows for side in SIDES}
@@ -436,20 +548,23 @@ def _table(rows: tuple[Row, ...], scored: dict[tuple[str, str], Score]) -> str:
                      for row in rows for side in SIDES)
 
 
-def _verdicts(rows: tuple[Row, ...], scored: dict[tuple[str, str], Score]) -> str:
+def _verdicts(rows: tuple[Row, ...], runs: list[Run]) -> str:
     """What the page says about whether the layers beat what they have to beat."""
-    keys = {row.key for row in rows}
+    by_key = {row.key: row for row in rows}
     pipeline = next(row for row in rows if row.computed_by == "the pipeline")
     single_agent = next(row for row in rows if row.key.startswith("single_agent"))
     # The Beneish M-score is an accounting row, so the pressure table compares
     # against its single-agent control alone.
-    against = [(key, f"pipeline_beats_the_{name}", f"pipeline_misses_the_{name}")
+    against = [(by_key[key], f"pipeline_beats_the_{name}",
+                f"pipeline_misses_the_{name}")
                for key, name in ((FIRST_ROW, "first_row"),
                                  (single_agent.key, "single_agent"))
-               if key in keys]
-    said = [_verdict(side, scored[(pipeline.key, side)], scored[(key, side)],
+               if key in by_key]
+    said = [_verdict(side,
+                     compare([run for run in runs if run.side == side],
+                             pipeline, other),
                      beats, misses)
-            for side in SIDES for key, beats, misses in against]
+            for side in SIDES for other, beats, misses in against]
     said = [sentence for sentence in said if sentence is not None]
     return "\n\n".join(said) if said else blocks()["no_verdict"]
 
@@ -471,14 +586,12 @@ def render(root) -> str:
     """The whole page, from a runs root, with nothing added on the way through."""
     found = load_runs(root)
     scorable = [run for run in found if run.abnormal_return is not None]
-    accounting = scores(ACCOUNTING_ROWS, scorable)
-    pressure = scores(PRESSURE_ROWS, scorable)
     return _fill(
         "page",
-        accounting_rows=_table(ACCOUNTING_ROWS, accounting),
-        accounting_verdicts=_verdicts(ACCOUNTING_ROWS, accounting),
-        pressure_rows=_table(PRESSURE_ROWS, pressure),
-        pressure_verdicts=_verdicts(PRESSURE_ROWS, pressure),
+        accounting_rows=_table(ACCOUNTING_ROWS, scores(ACCOUNTING_ROWS, scorable)),
+        accounting_verdicts=_verdicts(ACCOUNTING_ROWS, scorable),
+        pressure_rows=_table(PRESSURE_ROWS, scores(PRESSURE_ROWS, scorable)),
+        pressure_verdicts=_verdicts(PRESSURE_ROWS, scorable),
         run_list=_run_list(found),
     )
 

@@ -12,15 +12,108 @@ lens and writes down what came back.
 
 ## 1. Find the rows
 
-Two sources, and a row in either one qualifies:
+**The queue is keyed on the item, not on the row.** `events/ledger.jsonl` is
+append-only, so a row that qualifies once qualifies forever — and this routine
+writes a row every time it runs. The first version selected rows, so every
+re-read it performed re-qualified the following week, and the week after, with
+the task row long since moved to done: a `<merge>^1` pin is not `main`, a merge
+whose first parent predates the lens still writes `judge_from: "tree"`, and a
+fallback row stays in the ledger after Codex has re-read it. Three of the five
+sources looped that way. The second lens found it twice — once for the pin, and
+once more for the three it had not reached.
+
+An item's **last** row is its state. An item whose last row is a Codex answer
+**taken under a pinned judge** has had the cross-vendor reading this routine
+exists to get, and is done, whatever the rows behind it say.
+
+`judge_from: "tree"` is not done, and a Codex row does not excuse it. The prompt
+and the schema came out of the branch then, so the change wrote the questions it
+was asked -- a branch can rewrite `tools/lens_prompt.md`, take a Codex `pass`
+under its own prompt and exit 0 with auto-merge on. `.claude/skills/build-item`
+step 4b and `docs/HOW_WE_WORK.md` §6 both say a `tree` row is read again, and
+for a while this queue closed it anyway.
+
+**When a `tree` row cannot be improved, retire it rather than leave it.** A
+merge whose first parent predates the lens has no pinned judge to be had: a
+re-read at `<merge>^1` writes `judge_from: "tree"` again, every week, forever.
+Append one correction line for it (`src/lens_verdict.py`'s `correction_line`)
+naming what was read and why no pin was available. A correction naming a row
+that is still open in **This cycle** or **Next cycle** is ignored, so this
+cannot be used to clear live work. **Landed** is not open work -- and reading
+the whole file instead of the section made every merged item unretirable, which
+is the one case this exists for, because every row in that file starts with
+`[ ] ` including the landed ones.
 
 ```sh
-# every lens run that answered on the fallback
-grep '"lens": "claude-fable-fallback"' events/ledger.jsonl
+.venv/bin/python - <<'PY'
+import json
 
-# every lens run where neither lens answered
-grep '"lens": "none"' events/ledger.jsonl
+import pathlib
 
+# A correction may not retire work that is still on the list. `events/` is
+# append-only and a branch writes to it, so one line naming a live row would
+# take a fallback `pass` out of this queue permanently.
+# and **Landed** is not open work. Every row in the file starts with `[ ] ` --
+# there is no `[x]` anywhere, and the Landed section keeps the same spelling --
+# so reading the whole file made every merged item unretirable, which is the one
+# case the retirement exists for. The section is what says whether a row is open.
+still_open, section = set(), None
+for line in pathlib.Path("docs/next_cycle_tasks.md").read_text(
+        encoding="utf-8").splitlines():
+    if line.startswith("## "):
+        section = line[3:].strip()
+    elif line.startswith("[ ] ") and section in ("This cycle", "Next cycle"):
+        still_open.add(line[4:].split(" \u00b7 ", 1)[0])
+
+state, retired = {}, set()
+for line in open("events/ledger.jsonl"):
+    row = json.loads(line)
+    if "corrects" in row:
+        if row["corrects"] not in still_open:
+            retired.add(row["corrects"])  # a title no later run can append under
+    elif "lens" in row and "item" in row:
+        state[row["item"]] = row          # append-only, so the last wins
+
+for item, row in state.items():
+    if item in retired:
+        continue                          # retired by a correction line
+    if row["lens"] == "codex" and row.get("judge_from") != "tree":
+        continue                          # read by the cross-vendor lens, pinned
+    print(f"{row['lens']}\t{row.get('judge_from')}\t{row.get('verdict')}\t{item}")
+PY
+```
+
+A title that is not a row in `docs/next_cycle_tasks.md` is the one item no
+re-read can close: the script refuses such a title before writing anything, so
+nothing can ever be appended under it and the queue would report it forever. One
+correction line retires it — `src/lens_verdict.py`'s `correction_line`, which
+carries `corrects` and no `lens`, so every grep above steps over it.
+
+That covers all three of the old sources at once: a fallback answered, no lens
+answered, or the judge did not come off the trunk — each leaves a last row that
+is not Codex's, and a successful re-read replaces it with one that is.
+
+## 1b. And two things to read rather than re-run
+
+Neither is a queue. Re-running cannot change either, so they are reported once
+and a person reads them.
+
+```sh
+# the script could not pin itself on this run, so the pinner was the branch's
+# own copy — read the diff of that one file before trusting the verdict
+grep '"lens_from": "tree"' events/ledger.jsonl
+
+# a judge pinned off the trunk. `tools/second_lens.sh` refuses one now, so a row
+# like this can only predate that guard; it is not something a re-read fixes.
+for pin in $(grep '"lens"' events/ledger.jsonl \
+             | sed -n 's/.*"judge_from": "\([^"]*\)".*/\1/p' \
+             | grep -v '^main$' | grep -v '^tree$' | sort -u); do
+    git merge-base --is-ancestor "$pin" main 2>/dev/null \
+        || echo "read: judge pinned off the trunk at $pin"
+done
+```
+
+```sh
 # every pull request that opened with the label because no lens read it
 gh pr list --state all --label one-lens --json number,title,mergeCommit,state
 ```
@@ -37,8 +130,32 @@ verdict names the change that actually landed.
 ```sh
 git worktree add --detach .claude/worktrees/relens-<number> <merge commit>
 ln -s ../../../.venv .claude/worktrees/relens-<number>/.venv
-tools/second_lens.sh .claude/worktrees/relens-<number> "<item title>"
+LENS_JUDGE_BASE=<merge commit>^1 \
+    tools/second_lens.sh .claude/worktrees/relens-<number> "<item title>"
 ```
+
+`LENS_JUDGE_BASE` is the ref the script pins its judge out of **and the base of
+the diff the lens is told to read**, and it must be **the merge commit's first
+parent**, not the default `main`.
+
+The second half of that is what this routine got wrong for as long as it has
+existed. `tools/lens_prompt.md` used to fix the change as "the working tree you
+were started in, against its merge base with `origin/main`", and a worktree
+detached at a merge commit is *already on* `main` — so that merge base is the
+commit itself and the diff is empty. Measured on this repository: 0 lines for
+each of three merges carrying 2220, 2435 and 594 lines of real change. The lens
+was handed nothing, read nothing, and `pass` is the one verdict in the table
+below that moves a row to **done**. The script now names the range
+`<pinned ref>...HEAD` in the prompt and refuses an empty one as exit 3, so this
+cannot be got wrong silently again — but set the ref correctly anyway. The script also
+refuses to answer when the tree it is reading changes what a lens takes as its
+own definition — `CLAUDE.md`, `AGENTS.md`, `.claude/agents/refute-check.md`, the
+settings files — and that comparison is against the pinned ref. Left at `main`,
+every old merge commit would differ from a `main` that has moved since (the
+weekly fold edits `CLAUDE.md` by design), so every row would come back
+*no lens ran* forever and the *pass* row below would be unreachable. The first
+parent is what `main` held the moment that work landed, which is the comparison
+the question actually asks.
 
 The script appends its own ledger line, so the record of the re-run is written
 by the same code that wrote the record of the first run. Remove the worktree
@@ -52,6 +169,14 @@ afterwards.
 | fail | 1 | open an issue marked **needs judgment** naming the merged pull request, the rule number and the file and line. Do not fix it here |
 | needs judgment | 2 | the same issue, marked the same way, carrying what a judge would have to decide |
 | no lens ran | 3 | nothing changes. The row stays unconfirmed and comes back next week |
+
+A row that comes back *no lens ran* three weeks running is not waiting for a
+quota any more. Open an issue marked **needs judgment** naming the reason the
+script printed — the pinned ref could not be resolved, the tree changes what a
+lens reads as its own definition, an answer file could not be cleared — because
+a row that can never be confirmed has to become somebody's question rather than
+a permanent line in a weekly report.
+
 
 A fail here is not a revert and not a hotfix. It is an issue with a number on
 it, because the change is merged and a routine that edits merged work at three
