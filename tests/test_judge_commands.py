@@ -28,6 +28,7 @@ so a pattern that matches nothing cannot pass by finding nothing.
 
 from __future__ import annotations
 
+import re
 import shutil
 import subprocess
 import sys
@@ -52,10 +53,34 @@ def task_list() -> str:
 # --- the file ---------------------------------------------------------------
 
 
+# How many judge commands the ledger held before this item rewrote them:
+#     git show resume/lens-and-prices:docs/next_cycle_tasks.md
+#         | grep -c '`python3.12 -m pytest'
+# gave 39, and nine rows already said `.venv/bin/python`. The floor is that
+# count, not a number chosen to pass.
+JUDGE_COMMANDS_BEFORE = 39
+
+# An independent reading of the same file: any one-line backtick span that runs
+# pytest. It is deliberately not the module's own extractor -- a bound checked
+# with the code under test would move whenever that code dropped something.
+A_JUDGE_COMMAND = re.compile(r"`([^`\n]*-m pytest[^`\n]*)`")
+
+
 def test_the_task_list_has_judge_commands_to_read() -> None:
-    """A check that found nothing to read would pass by reading nothing."""
+    """A check that found nothing to read would pass by reading nothing.
+
+    Two readings of the same file have to agree. `>= 39` alone is loose by the
+    nine rows that already named the project interpreter, so an extractor that
+    silently dropped up to nine commands would still pass it -- and
+    `problems() == []` below would then be silent about every one it dropped.
+    """
     found = judge_commands.judge_commands(task_list())
-    assert len(found) >= 39, f"only {len(found)} judge commands found"
+    assert len(found) >= JUDGE_COMMANDS_BEFORE, f"only {len(found)} judge commands found"
+
+    independently = A_JUDGE_COMMAND.findall(task_list())
+    assert len(found) == len(independently), (
+        f"the extractor read {len(found)} judge commands where a plain scan of the "
+        f"same file found {len(independently)}")
 
 
 def test_every_judge_command_names_the_project_interpreter() -> None:
@@ -76,6 +101,42 @@ def test_the_interpreter_every_judge_names_imports_pytest() -> None:
         assert answer, f"{interpreter} cannot import pytest, so its judge cannot run"
     if shutil.which(judge_commands.ACCEPTED) or (REPO_ROOT / judge_commands.ACCEPTED).exists():
         assert asked, "the project interpreter is here and was not asked"
+
+
+def _planted_interpreter(directory: Path, name: str, exit_code: int) -> str:
+    """An executable that answers `-c "import pytest"` the way we tell it to."""
+    planted = directory / name
+    planted.write_text(f"#!/bin/sh\nexit {exit_code}\n", encoding="utf-8")
+    planted.chmod(0o755)
+    return str(planted)
+
+
+def test_an_interpreter_without_pytest_is_answered_false(tmp_path: Path) -> None:
+    """The branch the six failed runs actually took, asserted rather than skipped.
+
+    `test_the_interpreter_the_old_judges_named_still_cannot_run_them` above can
+    only *record* this machine's answer -- it skips when the bare interpreter
+    happens to have pytest, which is right, because that is a fact about
+    somebody's machine. But then nothing asserted the False branch at all, and
+    `return result.returncode == 0` could have been `return True` with the suite
+    still green. So the interpreter is planted here instead of found: one that
+    cannot import pytest, one that can, and one that is not there.
+    """
+    without = _planted_interpreter(tmp_path, "no-pytest", 1)
+    assert judge_commands.imports_pytest(without) is False
+
+    with_it = _planted_interpreter(tmp_path, "has-pytest", 0)
+    assert judge_commands.imports_pytest(with_it) is True
+
+    assert judge_commands.imports_pytest(str(tmp_path / "not-here")) is None
+
+
+def test_a_relative_interpreter_is_read_from_the_root_it_was_given(tmp_path: Path) -> None:
+    """`.venv/bin/python` is relative; which tree it means is the whole question."""
+    (tmp_path / "here").mkdir()
+    _planted_interpreter(tmp_path / "here", "python", 1)
+    assert judge_commands.imports_pytest("here/python", root=tmp_path) is False
+    assert judge_commands.imports_pytest("here/python", root=tmp_path / "elsewhere") is None
 
 
 def test_the_makefile_default_is_the_same_interpreter() -> None:

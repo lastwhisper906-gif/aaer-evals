@@ -31,12 +31,12 @@ the code it is testing.
 
 So the field reads, for example:
 
-> `python3.12 -m pytest tests/test_trends.py -q` — expected ratios computed by
+> `.venv/bin/python -m pytest tests/test_trends.py -q` — expected ratios computed by
 > hand from `tests/fixtures/AAPL/companyfacts.json`, written out in the test.
 
 and never:
 
-> `python3.12 -m pytest tests/test_trends.py -q` — expected ratios in
+> `.venv/bin/python -m pytest tests/test_trends.py -q` — expected ratios in
 > `tests/fixtures/AAPL/expected.json`.
 
 unless that file's provenance is stated and is not "the parser wrote it".
