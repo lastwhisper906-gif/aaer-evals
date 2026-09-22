@@ -67,6 +67,15 @@ FILED = "2025-10-31"
 OTHER_ACCESSION = "0001045810-25-000023"
 NO_SUCH_PARAGRAPH = f"{ACCESSION}:notes:99"
 
+# An earlier quarter of this company and a later one, both out of the same
+# fixture record and asserted against it below. The earlier is what
+# `input_prior_predictions.md` mints its ids from, so it has to stay allowed;
+# the later is the cutoff rule read over the record.
+PRIOR_ACCESSION = "0000320193-24-000123"
+LATER_ACCESSION = "0000320193-26-000020"
+
+MANIFEST_NAME = "input_manifest.json"
+
 # What a control directory may not hold: a price file carrying the outcome
 # window, and another company's notes. The first wears the `input_` prefix the
 # old guard read as sufficient; the second wears no catalogue name at all.
@@ -106,6 +115,26 @@ def schema_members(field: str) -> tuple[str, ...]:
     assert found is not None, f"§7 shows no object under {field}"
     return tuple(re.findall(r'"([a-z_]+)":', found.group(1)))
 
+
+def spec_input_names() -> tuple[str, ...]:
+    """The `input_` files `docs/INPUT_SPEC.md` §6 lists, read off that list.
+
+    The document, not the module's own comprehension over
+    `agent_inputs.BUNDLE_CATALOGUE`. Two readings of one document can be
+    compared; a reading compared with itself cannot.
+    """
+    text = INPUT_SPEC.read_text(encoding="utf-8")
+    block = re.search(r"```\n(input_numbers\.json.*?)```", text, flags=re.DOTALL)
+    assert block is not None, "§6 shows no file list"
+    return tuple(re.findall(r"^(input_\S+)", block.group(1), flags=re.MULTILINE))
+
+
+# §6's own line for the manifest, read out of the document so the test that
+# says what it holds is quoting rather than remembering.
+SPEC_MANIFEST_LINE = re.search(
+    r"^input_manifest\.json.*?(?=^\S)",
+    INPUT_SPEC.read_text(encoding="utf-8"),
+    flags=re.MULTILINE | re.DOTALL).group(0)
 
 # §7 shows `evidence` with `upstream_item_id` alone. This control has no
 # upstream report — its upstream is the committed filing — so the id it writes
@@ -650,15 +679,132 @@ def test_another_companys_notes_in_the_control_directory_are_refused(tmp_path):
 
 
 def test_the_files_the_control_may_hold_are_the_bundles_and_the_market_table(tmp_path):
-    """The allowlist is §6's names, not a prefix and not a list written here."""
+    """The allowlist is §6's own list, read off §6 and not off the module.
+
+    The first version of this test asserted the set against the comprehension
+    the module builds it with, which is the module's answer restated: a prefix
+    reading that swept in a file no layer sees would have moved this expected
+    value along with it. §6's fenced list is the document, and it is what the
+    control is measured against here.
+    """
     _, folder = plant(tmp_path)
-    assert set(control_single_agent.CONTROL_SEES) == {
-        name for name in agent_inputs.BUNDLE_CATALOGUE if name.startswith("input_")}
-    assert "input_market.json" in control_single_agent.CONTROL_SEES
+    listed = spec_input_names()
+    assert "input_market.json" in listed and MANIFEST_NAME in listed
+    # `input_controls.md` is the one bundle file §6's list does not print, and
+    # `src/agent_inputs.py` says so where it adds it. Named here once, with its
+    # source asserted, rather than taken on faith from the catalogue.
+    assert "input_controls.md" not in listed
+    assert "§6 names, plus `input_controls.md`" in (
+        REPO_ROOT / "src" / "agent_inputs.py").read_text(encoding="utf-8")
+    assert set(control_single_agent.CONTROL_SEES) == (
+        set(listed) | {"input_controls.md"}) - {MANIFEST_NAME}
     assert "report_numbers.md" not in control_single_agent.CONTROL_SEES
     assert OUTCOME_WINDOW_PRICES not in control_single_agent.CONTROL_SEES
     assert control_single_agent.input_files(folder) == [
         "input_market.json", "input_notes.md", "input_trends.json"]
+
+
+def test_the_manifest_is_the_runs_bookkeeping_and_no_layer_sees_it(tmp_path):
+    """Why `input_manifest.json` is the one `input_` name left off the list.
+
+    §6's own line for it — read here, not paraphrased — gives it the
+    dropped-item counts and the served models. `src/quote_gate.py` writes the
+    three layers' dropped rows there, and they are written before `controls`
+    runs, so a control reading it reads the pipeline's own output: the thing the
+    guard refuses a report for. No agent in `src/agent_inputs.py` sees it
+    either, which is the second reading of the same fact.
+    """
+    assert "dropped-item" in SPEC_MANIFEST_LINE and "served models" in SPEC_MANIFEST_LINE
+    assert [name for name, spec in agent_inputs.AGENTS.items()
+            if MANIFEST_NAME in spec.sees] == []
+    root, folder = plant(tmp_path)
+    (folder / MANIFEST_NAME).write_text(
+        json.dumps(MANIFEST | {"dropped_items": [
+            {"report": "report_numbers.md", "item_id": f"{NOTES_ONE}",
+             "reason": "the quote does not match"}],
+            "served_models": {"numbers-reader": "claude-opus-4-20250514"}},
+            indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    with pytest.raises(ControlError) as caught:
+        go(root, folder, "accounting_reliability", accounting_answer())
+    assert MANIFEST_NAME in str(caught.value)
+    assert not (root / "control_single_agent_accounting.json").exists()
+
+
+def test_a_prior_predictions_file_still_carrying_a_probability_is_refused(tmp_path):
+    """An allowed name whose contents are not allowed.
+
+    `docs/INPUT_SPEC.md` §6 gives this file "prior flags and outcomes,
+    probabilities removed" and `docs/HOW_WE_WORK.md` §8 forbids putting "a prior
+    run's probability into any agent's input". `src/agent_inputs.py` refuses to
+    place one that still carries one; the control's directory is not one that
+    file builds, so the same reader is run here rather than the rule being
+    assumed to have been applied upstream.
+    """
+    assert "probabilities removed" in INPUT_SPEC.read_text(encoding="utf-8")
+    assert ("a prior run's probability into any agent's input"
+            in HOW_WE_WORK.read_text(encoding="utf-8"))
+    root, folder = plant(tmp_path)
+    (folder / "input_prior_predictions.md").write_text(
+        f"# AAPL prior predictions\n\n## {OTHER_ACCESSION} — prediction_accounting.json\n\n"
+        f'[{OTHER_ACCESSION}:prior:prediction_accounting:1]\n'
+        '{"finding": "flag", "p_up": 0.71, "confidence": 0.9}\n',
+        encoding="utf-8")
+    stub = Stub(accounting_answer())
+    with pytest.raises(ControlError) as caught:
+        control_single_agent.run("accounting_reliability", input_dir=folder,
+                                 bundle_root=root, ask=stub)
+    assert "probability" in str(caught.value)
+    assert stub.prompts == []
+
+
+def test_another_companys_prose_under_an_allowed_name_is_refused(tmp_path):
+    """The hole a name-only allowlist leaves, and the one the record closes.
+
+    `src/quote_gate.py` indexes every `[id]` line in the directory and scopes
+    none of them by accession — it cannot, because
+    `src/assemble_bundle.py`'s `prior_predictions` mints ids from a prior run's
+    accession and those belong in the bundle. So another company's prose copied
+    into a file wearing an allowed name would have made every id in it resolve:
+    the explanation id, the evidence quote and `market_direction.basis` would
+    all have landed in this company's control file with nothing dropped and
+    nothing counted. The record is what separates the two — NVDA's accession is
+    in NVDA's manifest and in no AAPL one.
+    """
+    root, folder = plant(tmp_path)
+    (folder / "input_notes.md").write_text(
+        f"# Notes\n\n[{OTHER_ACCESSION}:notes:1]\nAnother company's prose.\n",
+        encoding="utf-8")
+    answer = accounting_answer()
+    answer["checklist"] = [
+        {"key": "receivables_outrun_revenue", "finding": "flag", "confidence": 0.6,
+         "evidence": evidence(f"{OTHER_ACCESSION}:notes:1",
+                              "Another company's prose.")}]
+    answer["explanations"] = [{"id": f"{OTHER_ACCESSION}:notes:1",
+                               "support": "sufficient", "realization_p": 0.4}]
+    answer["market_direction"] = {"p_up": 0.45,
+                                  "basis": [f"{OTHER_ACCESSION}:notes:1"]}
+    answer["top_signals"] = ["receivables_outrun_revenue"]
+    stub = Stub(answer)
+    with pytest.raises(ControlError) as caught:
+        control_single_agent.run("accounting_reliability", input_dir=folder,
+                                 bundle_root=root, ask=stub)
+    assert OTHER_ACCESSION in str(caught.value)
+    assert not (root / "control_single_agent_accounting.json").exists()
+
+
+def test_the_accessions_the_record_allows_are_this_tickers_by_the_cutoff(tmp_path):
+    """The set the check above is made of, against the fixture record.
+
+    A prior quarter of this company is in it — that is what carries
+    `input_prior_predictions.md`'s ids — and a later quarter is not, which is
+    the cutoff rule read over the same record.
+    """
+    allowed = control_single_agent.recorded_accessions(
+        TICKER, dt.date.fromisoformat(FILED))
+    assert ACCESSION in allowed
+    assert PRIOR_ACCESSION in allowed
+    assert LATER_ACCESSION not in allowed
+    assert OTHER_ACCESSION not in allowed
 
 
 def test_the_allowlist_reads_the_name_and_a_symlink_carries_someone_elses_bytes(tmp_path):

@@ -38,6 +38,20 @@ is not one `src/agent_inputs.py` builds: that file builds the six layer
 directories and its `agents/` holds nothing else, and a seventh is the stage
 runner's to place. The shape is named here rather than minted there.
 
+**A name is not the whole of it.** Two of the allowlist's names carry more than
+a name can say, and both are checked. `input_prior_predictions.md` is refused
+when it still carries a probability, through `src/agent_inputs.py`'s own reader
+-- §6 gives that file "prior flags and outcomes, probabilities removed", and
+`docs/HOW_WE_WORK.md` §8 forbids putting a prior run's probability into any
+agent's input. And any allowed name can hold another company's prose, so
+`resolvable` refuses a directory declaring paragraphs of an accession the record
+does not give this ticker by the cutoff; without it, NVDA's paragraphs in a file
+called `input_notes.md` would have made every NVDA id the model wrote resolve,
+gate clean and land in this company's control file. `input_manifest.json` is not
+on the allowlist at all: §6's line for it is "dropped-item counts ... served
+models", which is the pipeline's own output, and `run` reads it from
+`bundle_root` where the run keeps it rather than from what the control sees.
+
 **The cutoff is bound here.** `cutoff_on_record` holds the bundle's `cutoff`
 against the date EDGAR recorded for the accession the bundle itself names, and
 `run` calls it before the model call rather than after. Nothing in this module
@@ -130,6 +144,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 AGENT_PROMPTS = REPO_ROOT / ".claude" / "agents"
 
 MANIFEST = "input_manifest.json"
+PRIOR_PREDICTIONS = "input_prior_predictions.md"
 INDENT = 2
 BAD_INPUT = 2
 
@@ -154,8 +169,17 @@ SUPERVISOR_PROMPTS = ("supervisor-accounting.md", "supervisor-pressure.md")
 # those are the `input_` names `docs/INPUT_SPEC.md` §6 gives. Taken off the
 # catalogue rather than written out again, so §6 moves it; used as an allowlist,
 # so a name nobody has thought of is refused rather than waved through.
+#
+# `input_manifest.json` is the one `input_` name that is not the bundle. §6's own
+# line for it reads "paragraph ids, exclusion reasons, dropped-item counts, rules
+# version, cutoff, served models": the dropped-item counts are what
+# `src/quote_gate.py` writes there for the three layers, which run before
+# `controls` does, so a control reading it would be reading the pipeline's own
+# output -- the thing `input_files` refuses a report for. No agent in
+# `src/agent_inputs.py`'s `AGENTS` sees it either; it is the run's bookkeeping,
+# and `run` reads it from `bundle_root` where the run keeps it.
 CONTROL_SEES = tuple(name for name in agent_inputs.BUNDLE_CATALOGUE
-                     if name.startswith("input_"))
+                     if name.startswith("input_") and name != MANIFEST)
 
 # The output schema, copied out of `docs/CHECKLIST.md` §7 character for
 # character so the prompt shows the model the document's own shape.
@@ -565,7 +589,68 @@ def drop_reasons(payload: dict, question: str, index: dict) -> dict[str, str]:
     return found
 
 
-def verify(payload: dict, question: str, input_dir, accession: str) -> tuple[dict, list[dict]]:
+def recorded_accessions(ticker: str, cutoff: dt.date, *,
+                        fixtures_root=cutoff_guard.FIXTURES) -> set[str]:
+    """Every accession EDGAR recorded for this company at or before the cutoff.
+
+    `CLAUDE.md`: "document filing date ≤ filing date of the triggering report."
+    The cutoff **is** that filing date, so this is that sentence as a set, over
+    the record rather than over what the run says about itself.
+    """
+    found = set()
+    for row in cutoff_guard.documents(ticker, fixtures_root=fixtures_root):
+        accession, filed = row.get("accession"), row.get("filing_date")
+        if not accession or not filed:
+            continue
+        if cutoff_guard.parse_date(filed, f"{accession} filing_date") <= cutoff:
+            found.add(accession)
+    return found
+
+
+def resolvable(input_dir, manifest: dict, cutoff: dt.date, *,
+               fixtures_root) -> dict[str, str]:
+    """What the committed input declares, or a refusal naming whose it is.
+
+    `src/quote_gate.py` builds the index by reading every `[id]` line in the
+    directory, and it scopes nothing by accession -- correctly, because it
+    cannot: `input_prior_predictions.md` legitimately carries ids minted from a
+    *prior run's* accession, `src/assemble_bundle.py`'s `prior_predictions`
+    writing `f"{accession}:prior:..."` off the earlier run's own directory name.
+    So an id is not this run's because it repeats this run's accession, and a
+    check written that way would refuse the prior flags the bundle is supposed
+    to carry.
+
+    What makes an id this *company's* is the record. Another company's prose
+    copied into a file wearing an allowed name -- `input_notes.md`, say, holding
+    NVDA's paragraphs -- passes `input_files`, which reads names, and would then
+    make every NVDA id in it resolve: the explanation id this control now gates,
+    its evidence quote, and `market_direction.basis` would all be written into
+    this company's control file with nothing dropped and nothing counted. So
+    every accession the directory declares has to be one EDGAR recorded for this
+    ticker, filed at or before the cutoff -- which admits the prior runs and
+    refuses both another company's filing and a later quarter of this one.
+
+    Refused rather than dropped, and before the call rather than after: a
+    directory holding another company's paragraphs is a directory that is wrong,
+    not an answer that cited badly, and the layer rule is about what an agent was
+    shown.
+    """
+    index = quote_gate.quotable(input_dir, manifest.get("accession"))
+    allowed = recorded_accessions(manifest["ticker"], cutoff,
+                                  fixtures_root=fixtures_root)
+    foreign = sorted({identifier.split(":", 1)[0] for identifier in index}
+                     - allowed)
+    if foreign:
+        raise ControlError(
+            f"{input_dir} declares paragraphs of {', '.join(foreign)}, which is "
+            f"no accession {manifest['ticker']} is recorded as having filed by "
+            f"{cutoff}. A file wearing an allowed name can still hold another "
+            "company's prose, or a later quarter's, and every id in it would "
+            "then resolve for this run")
+    return index
+
+
+def verify(payload: dict, question: str, index: dict) -> tuple[dict, list[dict]]:
     """The prediction with what did not verify taken out, and one row per drop.
 
     Runs after `check_schema`, which is what makes one checklist key one entry:
@@ -580,7 +665,6 @@ def verify(payload: dict, question: str, input_dir, accession: str) -> tuple[dic
     basis, and the drop is counted like any other. A `top_signals` entry naming
     a key that left goes with it.
     """
-    index = quote_gate.quotable(input_dir, accession)
     reasons = drop_reasons(payload, question, index)
     kept = dict(payload)
     kept["checklist"] = [entry for entry in payload["checklist"]
@@ -718,6 +802,24 @@ def input_files(input_dir) -> list[str]:
             "not one of the files. The prompt lists what the control sees, and "
             "a directory carrying an allowed name carries whatever is under it "
             "under no name at all")
+    prior = folder / PRIOR_PREDICTIONS
+    if prior.is_file():
+        # The name is allowed and the contents still have to be. `docs/INPUT_SPEC.md`
+        # §6 gives this file "prior flags and outcomes, probabilities removed",
+        # and `docs/HOW_WE_WORK.md` §8 forbids putting "a prior run's probability
+        # into any agent's input" -- `src/agent_inputs.py` refuses to place one
+        # that still carries one, calling it the leak that makes the next
+        # prediction unfalsifiable. Its reader is used rather than a second
+        # pattern written here, so one file decides what a probability looks
+        # like.
+        leak = agent_inputs._probability_leak(
+            prior.read_text(encoding="utf-8", errors="replace"))
+        if leak is not None:
+            raise ControlError(
+                f"{prior} still carries a probability ({leak}). A prior run's "
+                "own score in this control's input makes the next prediction "
+                "unfalsifiable, and the control is scored beside the pipeline "
+                "on the same targets")
     return [path.name for path in entries]
 
 
@@ -764,10 +866,12 @@ def run(question: str, *, input_dir, bundle_root, ask,
     the call belongs to whoever runs the stage; what belongs here is the prompt,
     the pin, the schema and the gate.
 
-    The cutoff is checked before the call, not after: `cutoff_on_record` holds
-    the bundle's own `cutoff` against when EDGAR recorded its accession as
-    filed, and a run whose boundary cannot be established is one no model is
-    shown.
+    Everything about the input is settled before the call, not after it: the
+    directory holds what it may hold, `cutoff_on_record` holds the bundle's own
+    `cutoff` against when EDGAR recorded its accession as filed, and `resolvable`
+    reads what the directory declares and refuses another company's paragraphs.
+    A refusal after the answer has come back is a refusal that has already paid
+    for the look-ahead, and a directory that is wrong is one no model may see.
 
     Returns the payload as written, the file it was written to, the requested
     and served model, and one row per drop -- `docs/INPUT_SPEC.md` §6 puts the
@@ -780,12 +884,13 @@ def run(question: str, *, input_dir, bundle_root, ask,
     if not isinstance(accession, str) or not accession:
         raise ControlError(
             f"{MANIFEST} names no accession, and a computed row's id begins with one")
-    # Before the call, not after it: a run whose boundary cannot be established
-    # is one no model may be shown, and a refusal after the answer has come back
-    # is a refusal that has already paid for the look-ahead.
-    cutoff_on_record(manifest, fixtures_root=fixtures_root)
+    # The directory first, because `quote_gate.quotable` reads every `.md` in it
+    # and a stray one would be indexed before anything had said it may be there.
+    text = prompt(question, input_dir)
+    filed = cutoff_on_record(manifest, fixtures_root=fixtures_root)
+    index = resolvable(input_dir, manifest, filed, fixtures_root=fixtures_root)
 
-    answer = ask(prompt(question, input_dir), model=family)
+    answer = ask(text, model=family)
     served = answer.get("served_model") if isinstance(answer, dict) else None
     if not served_names_family(served, family):
         raise ControlError(
@@ -798,7 +903,7 @@ def run(question: str, *, input_dir, bundle_root, ask,
         raise ControlError(f"the control's answer is not JSON: {exc}") from exc
 
     check_schema(payload, question, rules_version=manifest.get("rules_version"))
-    kept, dropped = verify(payload, question, input_dir, accession)
+    kept, dropped = verify(payload, question, index)
     path = _place(Path(bundle_root) / CONTROL_FILES[question],
                   json.dumps(kept, indent=INDENT, sort_keys=True) + "\n")
     return {"question": question, "path": path, "prediction": kept,
