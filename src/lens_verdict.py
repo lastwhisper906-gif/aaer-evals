@@ -209,6 +209,13 @@ def normalise(verdict: dict[str, Any], lens: str) -> dict[str, Any]:
     return out
 
 
+# `main` when the judge was pinned out of the agreed ref, which is the ordinary
+# case; `tree` when the change under review is the one that builds the lens and
+# the pinned ref has no copy to take. The weekly routine reads the rows that say
+# `tree` for the same reason it reads the fallback rows.
+JUDGE_FROM_TREE = "tree"
+
+
 def ledger_line(
     item: str,
     lens: str,
@@ -216,6 +223,7 @@ def ledger_line(
     findings_count: int,
     at: str,
     model: str = UNRECORDED_MODEL,
+    judge_from: str = JUDGE_FROM_TREE,
 ) -> str:
     """The one line this lens run appends to the ledger."""
     return json.dumps(
@@ -223,6 +231,7 @@ def ledger_line(
             "item": item,
             "lens": lens,
             "model": model,
+            "judge_from": judge_from,
             "verdict": verdict,
             "findings_count": findings_count,
             "at": at,
@@ -266,6 +275,7 @@ def main(argv: list[str] | None = None) -> int:
     line.add_argument("--verdict", required=True)
     line.add_argument("--findings", type=int, default=0)
     line.add_argument("--model", default=UNRECORDED_MODEL)
+    line.add_argument("--judge-from", default=JUDGE_FROM_TREE)
 
     args = parser.parse_args(argv)
 
@@ -273,7 +283,8 @@ def main(argv: list[str] | None = None) -> int:
         append_ledger(
             args.ledger,
             ledger_line(
-                args.item, args.lens, args.verdict, args.findings, _now(), args.model
+                args.item, args.lens, args.verdict, args.findings, _now(), args.model,
+                args.judge_from,
             ),
         )
         return 0

@@ -21,6 +21,10 @@ grep '"lens": "claude-fable-fallback"' events/ledger.jsonl
 # every lens run where neither lens answered
 grep '"lens": "none"' events/ledger.jsonl
 
+# every lens run whose judge came from the tree it judged, because the ref it
+# pins out of did not carry the lens yet — the change that builds the lens
+grep '"judge_from": "tree"' events/ledger.jsonl
+
 # every pull request that opened with the label because no lens read it
 gh pr list --state all --label one-lens --json number,title,mergeCommit,state
 ```
@@ -37,8 +41,20 @@ verdict names the change that actually landed.
 ```sh
 git worktree add --detach .claude/worktrees/relens-<number> <merge commit>
 ln -s ../../../.venv .claude/worktrees/relens-<number>/.venv
-tools/second_lens.sh .claude/worktrees/relens-<number> "<item title>"
+LENS_JUDGE_BASE=<merge commit>^1 \
+    tools/second_lens.sh .claude/worktrees/relens-<number> "<item title>"
 ```
+
+`LENS_JUDGE_BASE` is the ref the script pins its judge out of, and it must be
+**the merge commit's first parent**, not the default `main`. The script also
+refuses to answer when the tree it is reading changes what a lens takes as its
+own definition — `CLAUDE.md`, `AGENTS.md`, `.claude/agents/refute-check.md`, the
+settings files — and that comparison is against the pinned ref. Left at `main`,
+every old merge commit would differ from a `main` that has moved since (the
+weekly fold edits `CLAUDE.md` by design), so every row would come back
+*no lens ran* forever and the *pass* row below would be unreachable. The first
+parent is what `main` held the moment that work landed, which is the comparison
+the question actually asks.
 
 The script appends its own ledger line, so the record of the re-run is written
 by the same code that wrote the record of the first run. Remove the worktree
@@ -52,6 +68,14 @@ afterwards.
 | fail | 1 | open an issue marked **needs judgment** naming the merged pull request, the rule number and the file and line. Do not fix it here |
 | needs judgment | 2 | the same issue, marked the same way, carrying what a judge would have to decide |
 | no lens ran | 3 | nothing changes. The row stays unconfirmed and comes back next week |
+
+A row that comes back *no lens ran* three weeks running is not waiting for a
+quota any more. Open an issue marked **needs judgment** naming the reason the
+script printed — the pinned ref could not be resolved, the tree changes what a
+lens reads as its own definition, an answer file could not be cleared — because
+a row that can never be confirmed has to become somebody's question rather than
+a permanent line in a weekly report.
+
 
 A fail here is not a revert and not a hotfix. It is an issue with a number on
 it, because the change is merged and a routine that edits merged work at three

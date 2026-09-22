@@ -89,8 +89,14 @@ The pull request body carries **both verdicts and the name of the lens that gave
 the second one**, in the line the script prints:
 
 ```
-second lens: claude-fable-fallback · pass · tried to break it and could not
+second lens: claude-fable-fallback · claude-fable-5-1 · pass · judge from main · tried to break it and could not
 ```
+
+Five fields: the lens, the model that actually served it, the verdict, the ref
+the judge was pinned out of, and the reason. `judge from tree` means the pinned
+ref did not carry the lens yet, which is true only of the change that builds it;
+every other row says `judge from main`, and the weekly routine reads the `tree`
+rows again for the same reason it reads the fallback rows.
 
 A fallback verdict is recorded as `confirmed - same-family fallback`, never as
 `confirmed - cross-vendor`. The ledger line the script appends is what the
