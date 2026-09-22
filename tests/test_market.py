@@ -874,3 +874,160 @@ def test_the_command_line_says_what_it_could_not_do(tmp_path, capsys):
         "--out", str(tmp_path / "input_market.json")])
     assert code == market.BAD_INPUT
     assert "divisions" in capsys.readouterr().err
+
+
+# --- where the prices come from ---------------------------------------------
+#
+# The frozen fixture above is untouched, and that is the point: every abnormal
+# return in this file is still computed by hand from it, so changing the source
+# underneath cannot move one of them. What is judged here is the fetch route --
+# that it writes the shape `read_prices` already reads, that it refuses an empty
+# answer rather than treating it as a company with no trading days, and that the
+# record of the fetch never lands where an agent could read it.
+#
+# No test here touches the network. The wire is judged by
+# `src/probe_price_sources.py` with a real credential, and the probe run of
+# 2026-09-21 recorded every backend as unconfigured -- which is the state the
+# last test below asserts, because it is the state this repository is in.
+
+import datetime as _dt
+
+from src import prices as _prices
+
+
+class _StubBackend:
+    """A backend that answers with the frame this test hands it."""
+
+    NAME = "tiingo"
+
+    def __init__(self, frame):
+        self._frame = frame
+        self.asked = []
+
+    def history(self, ticker, start=None, end=None):
+        self.asked.append((ticker, start, end))
+        return list(self._frame)
+
+
+def _bar(day, close, adjusted):
+    return _prices.row(
+        date=_dt.date.fromisoformat(day),
+        security_id="US000000000999",
+        ticker="ZZZZ",
+        close=close,
+        adjusted_close=adjusted,
+        volume=1000.0,
+        delisting_return=None,
+        delisting_code=None,
+    )
+
+
+def _stub(monkeypatch, frame):
+    backend = _StubBackend(frame)
+    monkeypatch.setattr(market, "_inside_an_agent_directory",
+                        market._inside_an_agent_directory)
+    monkeypatch.setattr(_prices, "backend", lambda name=None: backend)
+    return backend
+
+
+def test_a_fetched_series_reads_back_through_the_reader_unchanged(
+        tmp_path, monkeypatch):
+    """The one path that matters: the frame out, the reader in, values intact.
+
+    `195.3125 / 2 = 97.65625` exactly -- both are exact in binary -- so this is
+    an equality and not a tolerance, and a source swapped underneath cannot hide
+    a wrong number inside a rounding allowance.
+    """
+    _stub(monkeypatch, [_bar("2025-05-12", 195.3125, 97.65625),
+                        _bar("2025-05-13", 200.00, 100.00)])
+    folder = tmp_path / "prices"
+    record = market.fetch_prices(symbols=["ZZZZ"],
+                                 start=_dt.date(2025, 5, 1),
+                                 end=_dt.date(2025, 5, 31),
+                                 into=folder,
+                                 now=_dt.datetime(2026, 9, 21, 12, 0,
+                                                  tzinfo=_dt.timezone.utc))
+    series = market.read_prices(folder)
+    assert [day for day, _ in series["ZZZZ"]] == [_dt.date(2025, 5, 12),
+                                                  _dt.date(2025, 5, 13)]
+    assert series["ZZZZ"][0][1] == 97.65625
+    assert record["backend"] == "tiingo"
+    assert record["fetched_at"] == "2026-09-21T12:00:00+00:00"
+    assert record["served"]["ZZZZ"]["rows"] == 2
+    assert record["served"]["ZZZZ"]["first_day"] == "2025-05-12"
+
+
+def test_an_empty_answer_is_refused_rather_than_written(tmp_path, monkeypatch):
+    """A company with no trading days and a source that served nothing look
+    identical on disk, and only one of them is a fact."""
+    _stub(monkeypatch, [])
+    with pytest.raises(market.MarketError, match="no rows"):
+        market.fetch_prices(symbols=["ZZZZ"], start=_dt.date(2025, 1, 1),
+                            end=_dt.date(2025, 2, 1), into=tmp_path / "prices")
+
+
+def test_the_fetch_record_is_refused_inside_an_agent_directory(tmp_path):
+    """A wall-clock time is later than every date in a run.
+
+    In a directory an agent's session is rooted at, that is a document past
+    reaction day two in front of a reader -- the cutoff rule broken by the
+    evidence that the cutoff was kept.
+    """
+    inside = tmp_path / "run" / "agents" / "numbers-reader" / market.FETCH_RECORD
+    inside.parent.mkdir(parents=True)
+    with pytest.raises(market.MarketError, match="numbers-reader"):
+        market.write_fetch_record({"backend": "tiingo"}, inside)
+    assert not inside.exists()
+
+
+def test_the_fetch_record_is_refused_under_a_layer_grouped_layout(tmp_path):
+    """Found rather than assumed, the way `agent_inputs.agent_directories` is.
+
+    A layout that groups the six by layer puts an agent directory one step
+    deeper, and a check that looked only where it expected would call it clean.
+    """
+    inside = (tmp_path / "run" / "agents" / "readers" / "notes-text-reader"
+              / market.FETCH_RECORD)
+    inside.parent.mkdir(parents=True)
+    with pytest.raises(market.MarketError, match="notes-text-reader"):
+        market.write_fetch_record({"backend": "tiingo"}, inside)
+
+
+def test_the_fetch_record_is_written_to_a_run_log_outside_the_agent_tree(tmp_path):
+    outside = tmp_path / "run" / "logs" / market.FETCH_RECORD
+    written = market.write_fetch_record(
+        {"backend": "tiingo", "fetched_at": "2026-09-21T12:00:00+00:00"}, outside)
+    assert json.loads(written.read_text(encoding="utf-8"))["backend"] == "tiingo"
+
+
+def test_the_six_agent_names_are_read_from_the_layer_table_and_not_copied():
+    """A second list of the six would agree with the first until one moved."""
+    from src import agent_inputs
+
+    for agent in agent_inputs.AGENTS:
+        assert market._inside_an_agent_directory(Path("/run") / "agents" / agent) == agent
+    assert market._inside_an_agent_directory(Path("/run/logs")) is None
+
+
+def test_no_token_is_a_reported_state_and_not_an_error(tmp_path, monkeypatch):
+    """The state this repository is in: the switch is off and it says why."""
+    class _Unconfigured:
+        NAME = "tiingo"
+
+        def history(self, ticker, start=None, end=None):
+            raise _prices.Unconfigured("$TIINGO_TOKEN is not set")
+
+    monkeypatch.setattr(_prices, "backend", lambda name=None: _Unconfigured())
+    record, reason = market.prices_from_the_source(
+        symbols=["ZZZZ"], start=_dt.date(2025, 1, 1), end=_dt.date(2025, 2, 1),
+        into=tmp_path / "prices")
+    assert record == {}
+    assert "TIINGO_TOKEN" in reason
+    assert market.PRICES_UNAVAILABLE == "unavailable"
+
+
+def test_the_backend_defaults_to_the_forward_track_s(monkeypatch):
+    monkeypatch.delenv("PRICE_BACKEND", raising=False)
+    assert _prices.name_from_environment() == "tiingo"
+    monkeypatch.setenv("PRICE_BACKEND", "crsp")
+    assert _prices.name_from_environment() == "crsp"

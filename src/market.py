@@ -703,6 +703,128 @@ def write_table(table: dict, path) -> Path:
     return target
 
 
+# --- where the prices come from ---------------------------------------------
+#
+# Everything above reads a directory of daily series and does not care who wrote
+# it. This is what writes it: one fetch through `src/prices`, whichever backend
+# `$PRICE_BACKEND` names, into the shape `read_prices` already reads. The point
+# of writing it in that shape rather than teaching `read_prices` a new one is
+# that every expected value in `tests/test_market.py` is computed by hand from a
+# frozen fixture, and changing the source underneath must not move one of them.
+
+
+# The live-fetch record, and where it may not go. It carries a wall-clock time,
+# and a wall-clock time is later than every date in a run -- so in a file an
+# agent can open it is a document past reaction day two in front of a reader,
+# which is the cutoff rule broken by the evidence that the cutoff was kept. It
+# is a run log and it lives outside every agent input directory.
+FETCH_RECORD = "price_fetch.json"
+
+PRICES_UNAVAILABLE = "unavailable"
+
+
+def _inside_an_agent_directory(path: Path) -> str | None:
+    """The part of this path that belongs to an agent, or None.
+
+    Read off `src/agent_inputs.py` rather than matched against a list written
+    here: the six names and the directory that holds them live there, and a
+    second copy would agree with the first only until one of them moved.
+    """
+    from src import agent_inputs
+
+    parts = Path(path).resolve().parts
+    # The agent's own name where there is one, and the directory that holds the
+    # six otherwise. Both are refusals; naming the deeper one makes the message
+    # say which agent would have been able to read the file.
+    named = [part for part in parts if part in agent_inputs.AGENTS]
+    if named:
+        return named[-1]
+    if agent_inputs.AGENTS_DIRNAME in parts:
+        return agent_inputs.AGENTS_DIRNAME
+    return None
+
+
+def write_fetch_record(record: dict, path) -> Path:
+    """Write the fetch record, or refuse the path an agent could read it from."""
+    target = Path(path)
+    reachable = _inside_an_agent_directory(target.parent)
+    if reachable is not None:
+        raise MarketError(
+            f"{target} sits under {reachable!r}, which an agent's session is "
+            f"rooted at -- the fetch record carries a wall-clock time and a "
+            f"wall-clock time in an agent's directory is a document past "
+            f"reaction day two. Write it to a run log outside the agent tree.")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n",
+                      encoding="utf-8")
+    return target
+
+
+def fetch_prices(*, symbols, start, end, into, backend=None, environ=None,
+                 now=None) -> dict:
+    """One daily series per symbol, written where `read_prices` will find it.
+
+    Returns the record of the fetch: which backend served it, when, and how
+    many rows came back per symbol. That record is evidence that the wire was
+    touched. It is never an expected value, and `write_fetch_record` is what
+    keeps it out of the directories that would make it an input.
+
+    A backend with no credential raises `prices.Unconfigured`, which the caller
+    reports rather than hides: that is the state the forward track is switched
+    off in today, and a fetch that quietly returned nothing would look exactly
+    like a company with no trading days.
+    """
+    from src import prices
+
+    chosen = prices.backend(backend)
+    folder = Path(into)
+    folder.mkdir(parents=True, exist_ok=True)
+    served = {}
+    for symbol in symbols:
+        frame = chosen.history(symbol, start, end)
+        if not frame:
+            raise MarketError(
+                f"{chosen.NAME} returned no rows for {symbol} between {start} "
+                f"and {end}; an empty series is not a company with no trading "
+                f"days")
+        written = prices.as_csv_rows(frame)
+        with (folder / f"{symbol}.csv").open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=list(written[0]))
+            writer.writeheader()
+            writer.writerows(written)
+        served[symbol] = {
+            "rows": len(written),
+            "first_day": written[0]["date"],
+            "last_day": written[-1]["date"],
+        }
+    return {
+        "backend": chosen.NAME,
+        "fetched_at": (now or dt.datetime.now(dt.timezone.utc)).isoformat(
+            timespec="seconds"),
+        "asked_for": {"start": str(start), "end": str(end)},
+        "served": served,
+    }
+
+
+def prices_from_the_source(*, symbols, start, end, into, backend=None,
+                           environ=None, now=None) -> tuple[dict, str | None]:
+    """The fetch record, or the reason the forward track is still switched off.
+
+    Two returns rather than an exception, because "no token" is not an error
+    here: it is the published state of this project, written into
+    `docs/needs_judgment.md`, and the caller writes the literal
+    `unavailable` and goes on without prices. An error from the source itself is
+    a different thing and is raised.
+    """
+    from src import prices
+
+    try:
+        return fetch_prices(symbols=symbols, start=start, end=end, into=into,
+                            backend=backend, environ=environ, now=now), None
+    except prices.Unconfigured as reason:
+        return {}, str(reason)
+
+
 # --- the command line -------------------------------------------------------
 
 def _window_argument(text: str) -> dict:
