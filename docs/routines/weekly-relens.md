@@ -21,14 +21,28 @@ grep '"lens": "claude-fable-fallback"' events/ledger.jsonl
 # every lens run where neither lens answered
 grep '"lens": "none"' events/ledger.jsonl
 
-# every lens run whose judge was not `main`. `tree` is one value; the change
-# that builds the lens produces it, so does a merge whose first parent predates
-# the lens, and so does a reader that answered from somewhere other than the
-# pinned copy. But `judge_from` records whatever `LENS_JUDGE_BASE` held, so a
-# run pinned at `HEAD~1` or at the branch's own name writes *that* string and
-# passes a `"tree"` grep untouched -- the prompt and the schema having come from
-# the branch under review. So the grep is the complement: anything but `main`.
-grep '"lens"' events/ledger.jsonl | grep -v '"judge_from": "main"'
+# every lens run whose judge did not come from the trunk. `tree` is one value;
+# the change that builds the lens produces it, so does a merge whose first
+# parent predates the lens, and so does a reader that answered from somewhere
+# other than the pinned copy.
+grep '"lens"' events/ledger.jsonl | grep '"judge_from": "tree"'
+
+# and every other non-`main` value, tested rather than assumed. `judge_from`
+# records whatever `LENS_JUDGE_BASE` held, and `tools/second_lens.sh` now
+# refuses a pin that is not an ancestor of the trunk -- so a row pinned at a
+# branch's own name can only predate that guard. This is what finds those.
+#
+# It is **not** the complement of `main`, which is what stood here and was
+# wrong: this routine pins `LENS_JUDGE_BASE=<merge>^1`, so every row the routine
+# itself writes carries that sha and a complement grep re-selects the routine's
+# own work every week, forever. An on-trunk pin is the thing being asked about,
+# and a sha on `main` is on `main`.
+for pin in $(grep '"lens"' events/ledger.jsonl \
+             | sed -n 's/.*"judge_from": "\([^"]*\)".*/\1/p' \
+             | grep -v '^main$' | grep -v '^tree$' | sort -u); do
+    git merge-base --is-ancestor "$pin" main 2>/dev/null \
+        || echo "re-read: judge pinned off the trunk at $pin"
+done
 
 # every lens run where `tools/second_lens.sh` itself differed from the pinned
 # ref. The script cannot pin itself, so this row says the pinner was the

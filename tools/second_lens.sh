@@ -114,6 +114,32 @@ fi
 # pinned one, and wrote `judge_from: tree` for it. Conservative, but a false
 # record, and the weekly routine re-reads rows on the strength of that field.
 WORKTREE="$(cd "$WORKTREE" && pwd -P)"
+
+# The ledger keys a run by `item`, and the weekly routine moves "the row in
+# docs/next_cycle_tasks.md" by that same string. A title that is not a row is a
+# verdict filed against nothing: this script was itself invoked with "one
+# verdict schema, two lenses, and prices with two backends" for a row titled
+# "... and a price source that is decided", and the second lens is what noticed.
+# Nothing was checking, so the record and the list could drift apart silently.
+#
+# Read out of the worktree, which can of course add a row to match -- this
+# catches a title that does not correspond to work, not a branch determined to
+# lie. A branch that adds the row has added the row.
+TASK_LIST="$WORKTREE/docs/next_cycle_tasks.md"
+ITEM_IS_A_ROW=no
+if [ -f "$TASK_LIST" ]; then
+    while IFS= read -r row; do
+        case "$row" in
+            "[ ] $ITEM · "*|"[x] $ITEM · "*) ITEM_IS_A_ROW=yes; break ;;
+        esac
+    done < "$TASK_LIST"
+fi
+if [ "$ITEM_IS_A_ROW" = no ]; then
+    echo "second_lens: \"$ITEM\" is not a row in $TASK_LIST" >&2
+    echo "second lens: none · none · no_lens_ran · \"$ITEM\" is not a row in docs/next_cycle_tasks.md, so the ledger row would name work the list does not carry"
+    exit "$NO_LENS_RAN"
+fi
+
 LENS_DIR="$WORKTREE/.lens"
 mkdir -p "$LENS_DIR"
 
@@ -126,9 +152,21 @@ mkdir -p "$LENS_DIR"
 # was paid for and dropped without trace. So the interpreter is asked one
 # question before anything is spent, and a run whose outcome could not be
 # recorded is refused before it begins rather than after it is billed.
-if ! read_the_verdict where >/dev/null 2>&1; then
-    echo "second_lens: $LENS_PYTHON cannot run the verdict reader" >&2
-    echo "second lens: none · none · no_lens_ran · $LENS_PYTHON cannot run the verdict reader, so no lens was invoked and no row could be written"
+#
+# The question is asked of the *interpreter* and of nothing in this repository.
+# It used to be asked by running `src.lens_verdict where`, which at this point
+# is the worktree's own copy -- the branch under review executing before the
+# pin, before the diff range is known and before the judge directory is even
+# cleared. The second lens found it: a reviewer reading the diff of this file,
+# which `docs/HOW_WE_WORK.md` §6 names as the one thing closing this hole, would
+# not see code planted in the tree's `src/lens_verdict.py`, and that code runs
+# with this script's privileges over the still-running script, the `.venv` link
+# `$LENS_PYTHON` resolves through, and the ledger. So: does the interpreter
+# exist and run at all. The pinned reader is asked whether *it* runs once it
+# has been materialised, below.
+if ! "$LENS_PYTHON" -c 'import json, sys' >/dev/null 2>&1; then
+    echo "second_lens: $LENS_PYTHON cannot run" >&2
+    echo "second lens: none · none · no_lens_ran · $LENS_PYTHON cannot run, so no lens was invoked and no row could be written"
     exit "$NO_LENS_RAN"
 fi
 
@@ -294,6 +332,16 @@ else
     JUDGE_FROM="tree"
     JUDGE_HOME="$REPO_ROOT"
     CAVEATS="$CAVEATS the judge came from the tree because $JUDGE_BASE has none;"
+fi
+
+# Now the reader that will write the row is the pinned one, and it is asked the
+# question the tree's copy used to be asked: can it run. A run whose outcome
+# cannot be recorded is refused before it is billed -- that is what the early
+# probe was for, and this is where it can be answered without the tree.
+if ! read_the_verdict where >/dev/null 2>&1; then
+    echo "second_lens: the judge from $JUDGE_FROM cannot run its verdict reader" >&2
+    echo "second lens: none · none · no_lens_ran · the judge from $JUDGE_FROM cannot run its verdict reader, so no lens was invoked and no row could be written"
+    exit "$NO_LENS_RAN"
 fi
 
 READER_RAN="$(read_the_verdict where 2>/dev/null)"

@@ -152,6 +152,18 @@ def a_repository_on_main(worktree: Path, *, carrying_the_judge: bool = True) -> 
         # pin failing, and did not.
         shutil.copytree(REPO_ROOT / "src", worktree / "src")
         shutil.copytree(REPO_ROOT / "tools", worktree / "tools")
+    # The ledger keys a run by its item title and the weekly routine moves the
+    # row of that name, so the script refuses a title the list does not carry.
+    # These are the two titles the tests below pass; one that means to exercise
+    # the refusal passes something else, which is the only way this can be
+    # judged -- a harness that planted whatever title it was given would make
+    # the check unfalsifiable.
+    (worktree / "docs").mkdir(parents=True, exist_ok=True)
+    (worktree / "docs" / "next_cycle_tasks.md").write_text(
+        "# Next cycle tasks\n\n"
+        "[ ] a task-list item · a_file.py · a judge · a source · PR:\n"
+        "[ ] an item · a_file.py · a judge · a source · PR:\n",
+        encoding="utf-8")
     (worktree / "a_file.py").write_text("x = 1\n", encoding="utf-8")
     run("git", "add", "-A")
     run("git", "commit", "-qm", "main")
@@ -428,6 +440,102 @@ def test_a_fenced_answer_is_read_on_the_claude_side(tmp_path: Path) -> None:
 def test_a_fence_is_not_read_on_the_codex_side(tmp_path: Path) -> None:
     written = tmp_path / "codex.json"
     written.write_text("```json\n" + json.dumps(PASS_VERDICT) + "\n```", encoding="utf-8")
+    with pytest.raises(lens_verdict.NotAVerdict):
+        lens_verdict.read_codex(written)
+
+
+# The fallback lens's own answer to the lens design, 2026-09-22, copied out of
+# that run's `.lens/` directory byte for byte. It is the source for the tests
+# below in the sense `CLAUDE.md` means: what a lens actually did with the
+# prompt, not what this project imagined it would do.
+PROSE_BEFORE_THE_VERDICT = REPO_ROOT / "tests" / "fixtures" / "lens" / \
+    "fable_prose_before_the_verdict.json"
+
+
+def test_a_sentence_in_front_of_the_verdict_does_not_retire_the_lens() -> None:
+    """The answer that was thrown away, read back.
+
+    The run this file came from recorded `no_lens_ran` and exited 3 -- a `fail`
+    carrying three findings, reported as the lens having said nothing. That is
+    the defect this module was written to refuse in the other direction: a
+    verdict judged by the prose around it is a verdict judged by a string match,
+    which is what reading the exit status was abandoned for.
+
+    The counts below are read out of the committed answer rather than typed, so
+    they are that lens's numbers; what is asserted is that they arrive at all.
+    """
+    envelope = json.loads(PROSE_BEFORE_THE_VERDICT.read_text(encoding="utf-8"))
+    result = envelope["result"]
+    assert not result.lstrip().startswith("{")      # the deviation, still there
+    answered = json.loads(result[result.index("{"):])
+
+    read = lens_verdict.read_claude(PROSE_BEFORE_THE_VERDICT)
+    assert read["verdict"] == answered["verdict"] == "fail"
+    assert len(read["findings"]) == len(answered["findings"]) == 3
+    assert read["reads"] == answered["reads"]
+    assert lens_verdict.EXIT_FOR_VERDICT[read["verdict"]] == lens_verdict.FAIL
+
+
+def test_an_object_quoted_on_the_way_to_the_verdict_is_not_the_verdict(
+        tmp_path: Path) -> None:
+    """A lens reads diffs, and diffs carry JSON. Only four keys make a verdict."""
+    envelope = tmp_path / "fable.json"
+    envelope.write_text(
+        json.dumps({
+            "result": 'The diff adds {"ticker": "AAPL", "cik": "0000320193"} to '
+                      'universe.json, which is fine.\n\n'
+                      + json.dumps(PASS_VERDICT),
+            "is_error": False,
+        }),
+        encoding="utf-8",
+    )
+    assert lens_verdict.read_claude(envelope)["verdict"] == "pass"
+
+
+def test_the_last_validating_object_is_the_one_the_lens_ended_on(
+        tmp_path: Path) -> None:
+    """A lens that shows its working answers with the last thing it writes."""
+    first = {**PASS_VERDICT, "verdict": "needs_judgment", "reads": 1}
+    envelope = tmp_path / "fable.json"
+    envelope.write_text(
+        json.dumps({
+            "result": "My first reading was " + json.dumps(first)
+                      + " but on the second pass:\n" + json.dumps(PASS_VERDICT),
+            "is_error": False,
+        }),
+        encoding="utf-8",
+    )
+    assert lens_verdict.read_claude(envelope)["verdict"] == "pass"
+
+
+def test_prose_carrying_no_verdict_at_all_is_still_not_a_verdict(
+        tmp_path: Path) -> None:
+    """The quota sentence this module exists for does not become a pass."""
+    envelope = tmp_path / "fable.json"
+    envelope.write_text(
+        json.dumps({
+            "result": "I could not complete the review: the usage limit was "
+                      'reached. {"note": "nothing to report"}',
+            "is_error": False,
+        }),
+        encoding="utf-8",
+    )
+    with pytest.raises(lens_verdict.NotAVerdict):
+        lens_verdict.read_claude(envelope)
+
+
+def test_a_sentence_in_front_of_the_verdict_is_still_refused_from_codex(
+        tmp_path: Path) -> None:
+    """The asymmetry, held where the reason for it holds.
+
+    Codex answers under `--output-schema`, so its last message is the object.
+    Prose there is not a lens deviating inside a free-text field; it is the
+    structured channel carrying something it cannot carry, and reading it would
+    be reading whatever else wrote to that file.
+    """
+    written = tmp_path / "codex.json"
+    written.write_text("Here is my verdict:\n" + json.dumps(PASS_VERDICT),
+                       encoding="utf-8")
     with pytest.raises(lens_verdict.NotAVerdict):
         lens_verdict.read_codex(written)
 
@@ -895,6 +1003,18 @@ def _repository_that(tmp_path: Path, *, edits: str | None) -> Path:
     (worktree / ".claude" / "agents" / "refute-check.md").write_text(
         "the five rules\n", encoding="utf-8")
     (worktree / "CLAUDE.md").write_text("the project rules\n", encoding="utf-8")
+    # The ledger keys a run by its item title and the weekly routine moves the
+    # row of that name, so the script refuses a title the list does not carry.
+    # These are the two titles the tests below pass; one that means to exercise
+    # the refusal passes something else, which is the only way this can be
+    # judged -- a harness that planted whatever title it was given would make
+    # the check unfalsifiable.
+    (worktree / "docs").mkdir(parents=True, exist_ok=True)
+    (worktree / "docs" / "next_cycle_tasks.md").write_text(
+        "# Next cycle tasks\n\n"
+        "[ ] a task-list item · a_file.py · a judge · a source · PR:\n"
+        "[ ] an item · a_file.py · a judge · a source · PR:\n",
+        encoding="utf-8")
     (worktree / "a_file.py").write_text("x = 1\n", encoding="utf-8")
     run("git", "add", "-A")
     run("git", "commit", "-qm", "main")
@@ -1150,6 +1270,66 @@ def test_a_stuck_normalised_file_stops_the_run_before_a_lens_is_paid_for(
 # --- the weekly routine has to be able to find its rows ---------------------
 
 
+def _routine_selection() -> str:
+    """The routine's own loop over `judge_from`, lifted out of the document.
+
+    Executed rather than string-matched: a check that the routine says the right
+    words is a check on prose, and what went wrong was the prose being run.
+    """
+    routine = (REPO_ROOT / "docs" / "routines" / "weekly-relens.md").read_text(
+        encoding="utf-8")
+    start = routine.index("for pin in $(grep")
+    end = routine.index("done", start) + len("done")
+    return routine[start:end]
+
+
+def test_the_routine_does_not_re_select_its_own_work_every_week(
+        tmp_path: Path) -> None:
+    """The selection that could never finish.
+
+    `docs/routines/weekly-relens.md` runs the lens with
+    `LENS_JUDGE_BASE=<merge commit>^1`, and `tools/second_lens.sh` writes that
+    string into `judge_from` verbatim. The selection here used to be the
+    complement of `main` -- so every row the routine itself wrote qualified
+    again the following week, and the week after, with the task row moved to
+    done and the ledger row still queued forever. The second lens found it.
+
+    What the routine actually wants to know is whether the judge came off the
+    trunk, and a sha on `main` is on `main`. The four rows below are the four
+    cases, and the repository they are tested against is a real one.
+    """
+    worktree = tmp_path / "worktree"
+    a_repository_on_main(worktree)
+    run = lambda *argv: subprocess.run(argv, cwd=worktree, check=True,
+                                       capture_output=True, text=True)
+    run("git", "checkout", "-q", "main")
+    (worktree / "later.py").write_text("z = 3\n", encoding="utf-8")
+    run("git", "add", "-A")
+    run("git", "commit", "-qm", "a later commit on main")
+    head_of_main = subprocess.run(["git", "rev-parse", "main"], cwd=worktree,
+                                  check=True, capture_output=True,
+                                  text=True).stdout.strip()
+
+    ledger = worktree / "events"
+    ledger.mkdir()
+    (ledger / "ledger.jsonl").write_text("".join(
+        json.dumps({"lens": "codex", "judge_from": pin}) + "\n" for pin in (
+            "main",                    # the ordinary run
+            "tree",                    # the change that builds the lens
+            f"{head_of_main}^1",       # this routine's own row, last week
+            "item/under-review",       # a pin that never came off the trunk
+        )), encoding="utf-8")
+
+    selected = subprocess.run(["bash", "-c", _routine_selection()], cwd=worktree,
+                              capture_output=True, text=True).stdout
+
+    assert "item/under-review" in selected
+    assert f"{head_of_main}^1" not in selected, (
+        "the routine re-selects the rows it wrote itself, forever: " + selected)
+    assert head_of_main not in selected
+    assert "tree" not in selected      # the grep above is what finds those
+
+
 def test_the_weekly_routine_greps_a_string_the_ledger_actually_writes() -> None:
     """The routine's grep strings are read out of the routine, not typed here.
 
@@ -1386,7 +1566,7 @@ def test_a_worktree_reached_through_a_symlink_is_still_the_pinned_judge(
     environment["LENS_PYTHON"] = sys.executable
     environment["LENS_TIMEOUT"] = "60"
     result = subprocess.run(
-        ["bash", str(SCRIPT), str(through), "an item reached through a link"],
+        ["bash", str(SCRIPT), str(through), "an item"],
         capture_output=True, text=True, env=environment, cwd=through)
 
     assert result.returncode == 0, result.stdout
@@ -1423,10 +1603,131 @@ def test_an_interpreter_that_cannot_run_spends_no_lens_and_says_so(
         capture_output=True, text=True, env=environment, cwd=worktree)
 
     assert result.returncode == lens_verdict.NO_LENS_RAN, result.stdout
-    assert "cannot run the verdict reader" in result.stdout
+    assert "cannot run" in result.stdout
     assert calls(tmp_path) == [], (
         "a lens was invoked on a run whose outcome could not be recorded"
     )
+
+
+def test_the_interpreter_is_asked_without_running_the_tree_s_own_reader(
+    tmp_path: Path, stubs: Path
+) -> None:
+    """The probe that asked the question by running the branch's answer to it.
+
+    The check above used to be `src.lens_verdict where`, which at that point in
+    the script is the worktree's own copy: the tree under review executing
+    before the pin, before the diff range, before the judge directory is even
+    cleared -- with this script's privileges over the still-running script, over
+    the `.venv` link the interpreter resolves through, and over the ledger. And
+    `docs/HOW_WE_WORK.md` §6 says the remaining hole is closed by a person
+    reading the diff of `tools/second_lens.sh` alone, which that falsified.
+
+    A reader planted in the tree that would refuse to run, beside a pin that
+    carries a working one: the run must reach a lens, which it can only do if
+    the tree's copy was never asked.
+    """
+    worktree = tmp_path / "worktree"
+    a_repository_on_main(worktree)
+    (worktree / "src" / "lens_verdict.py").write_text(
+        'import sys\nsys.exit("the tree\'s reader was asked")\n', encoding="utf-8")
+    subprocess.run(["git", "add", "-A"], cwd=worktree, check=True, capture_output=True)
+    subprocess.run(["git", "commit", "-qm", "a reader that refuses"],
+                   cwd=worktree, check=True, capture_output=True)
+    codex_stub(stubs, exit_code=0, verdict=PASS_VERDICT)
+    claude_stub(stubs, exit_code=127, result=None)
+
+    environment = dict(os.environ)
+    environment["PATH"] = f"{tmp_path / 'stubs'}:{environment['PATH']}"
+    environment["STUB_CALLS"] = str(tmp_path / "calls")
+    environment["STUB_CWD"] = str(tmp_path / "cwd")
+    environment["STUB_ARGV"] = str(tmp_path / "argv")
+    environment["LENS_LEDGER"] = str(tmp_path / "ledger.jsonl")
+    environment["LENS_PYTHON"] = sys.executable
+    environment["LENS_TIMEOUT"] = "60"
+    result = subprocess.run(
+        ["bash", str(SCRIPT), str(worktree), "an item"],
+        capture_output=True, text=True, env=environment, cwd=worktree)
+
+    assert "the tree's reader was asked" not in result.stdout + result.stderr
+    assert calls(tmp_path) != [], (
+        "no lens ran, so the pinned reader never answered: " + result.stdout)
+    assert ledger_lines(tmp_path)[-1]["judge_from"] == "main"
+
+
+def test_a_pinned_reader_that_cannot_run_spends_no_lens_either(
+    tmp_path: Path, stubs: Path
+) -> None:
+    """The other half of the same question, asked where it can be answered.
+
+    An interpreter that starts is not an interpreter that can write the row.
+    That question belongs after the judge is materialised, because before it
+    the only reader to ask is the branch's.
+
+    So the reader is broken **on `main`**, which is what gets pinned, while the
+    branch keeps a working one. A script that fell back to the tree when the pin
+    would not run would reach a lens here, and that is the thing being refused.
+    """
+    worktree = tmp_path / "worktree"
+    a_repository_on_main(worktree)
+    run = lambda *argv: subprocess.run(argv, cwd=worktree, check=True,
+                                       capture_output=True, text=True)
+    run("git", "checkout", "-q", "main")
+    (worktree / "src" / "lens_verdict.py").write_text(
+        "raise SystemExit('this reader does not run')\n", encoding="utf-8")
+    run("git", "add", "-A")
+    run("git", "commit", "-qm", "a pinned reader that does not run")
+    run("git", "checkout", "-q", "item/under-review")
+    codex_stub(stubs, exit_code=0, verdict=PASS_VERDICT)
+    claude_stub(stubs, exit_code=0, result=json.dumps(PASS_VERDICT))
+
+    environment = dict(os.environ)
+    environment["PATH"] = f"{tmp_path / 'stubs'}:{environment['PATH']}"
+    environment["STUB_CALLS"] = str(tmp_path / "calls")
+    environment["STUB_CWD"] = str(tmp_path / "cwd")
+    environment["LENS_LEDGER"] = str(tmp_path / "ledger.jsonl")
+    environment["LENS_PYTHON"] = sys.executable
+    environment["LENS_TIMEOUT"] = "60"
+    result = subprocess.run(
+        ["bash", str(SCRIPT), str(worktree), "an item"],
+        capture_output=True, text=True, env=environment, cwd=worktree)
+
+    assert result.returncode == lens_verdict.NO_LENS_RAN, result.stdout
+    assert "verdict reader" in result.stdout
+    assert calls(tmp_path) == [], (
+        "a lens was invoked on a run whose outcome could not be recorded")
+
+
+def test_a_title_that_is_not_a_row_spends_no_lens(
+    tmp_path: Path, stubs: Path
+) -> None:
+    """The record keyed by a name the list does not carry.
+
+    `events/ledger.jsonl` keys a run by `item` and the weekly routine moves
+    "the row in docs/next_cycle_tasks.md" of that name. This script was itself
+    invoked with "one verdict schema, two lenses, and prices with two backends"
+    against a row titled "... and a price source that is decided", and the
+    second lens is what noticed: the verdict and the row it was meant to settle
+    would never have found each other, and nothing was checking.
+    """
+    worktree = tmp_path / "worktree"
+    a_repository_on_main(worktree)
+    codex_stub(stubs, exit_code=0, verdict=PASS_VERDICT)
+    claude_stub(stubs, exit_code=0, result=json.dumps(PASS_VERDICT))
+
+    environment = dict(os.environ)
+    environment["PATH"] = f"{tmp_path / 'stubs'}:{environment['PATH']}"
+    environment["STUB_CALLS"] = str(tmp_path / "calls")
+    environment["STUB_CWD"] = str(tmp_path / "cwd")
+    environment["LENS_LEDGER"] = str(tmp_path / "ledger.jsonl")
+    environment["LENS_PYTHON"] = sys.executable
+    environment["LENS_TIMEOUT"] = "60"
+    result = subprocess.run(
+        ["bash", str(SCRIPT), str(worktree), "a row nobody wrote down"],
+        capture_output=True, text=True, env=environment, cwd=worktree)
+
+    assert result.returncode == lens_verdict.NO_LENS_RAN, result.stdout
+    assert "next_cycle_tasks.md" in result.stdout
+    assert calls(tmp_path) == [], "a lens was spent on a verdict nothing could file"
 
 
 def test_the_row_records_whether_the_script_itself_came_from_the_pinned_ref(
@@ -1627,9 +1928,23 @@ def test_the_routine_s_own_pin_is_still_accepted(
     which is on the trunk by construction. A guard that blocked it would turn
     every weekly re-read into exit 3 forever, which is the failure mode that
     paragraph already exists to warn about.
+
+    The `<sha>^1` form is the one the routine actually writes, and this test
+    used to pass `main` -- so the routine's real invocation went unexercised and
+    the second lens said so. `main^1` is the same shape and resolves here.
     """
     worktree = tmp_path / "worktree"
     a_repository_on_main(worktree)
+    run = lambda *argv: subprocess.run(argv, cwd=worktree, check=True,
+                                       capture_output=True, text=True)
+    run("git", "checkout", "-q", "main")
+    (worktree / "later.py").write_text("z = 3\n", encoding="utf-8")
+    run("git", "add", "-A")
+    run("git", "commit", "-qm", "a later commit on main")
+    run("git", "checkout", "-q", "item/under-review")
+    the_routines_pin = subprocess.run(
+        ["git", "rev-parse", "main"], cwd=worktree, check=True,
+        capture_output=True, text=True).stdout.strip() + "^1"
     codex_stub(stubs, exit_code=0, verdict=PASS_VERDICT)
     claude_stub(stubs, exit_code=127, result=None)
 
@@ -1641,10 +1956,10 @@ def test_the_routine_s_own_pin_is_still_accepted(
     environment["LENS_LEDGER"] = str(tmp_path / "ledger.jsonl")
     environment["LENS_PYTHON"] = sys.executable
     environment["LENS_TIMEOUT"] = "60"
-    environment["LENS_JUDGE_BASE"] = "main"
+    environment["LENS_JUDGE_BASE"] = the_routines_pin
     result = subprocess.run(
         ["bash", str(SCRIPT), str(worktree), "an item"],
         capture_output=True, text=True, env=environment, cwd=worktree)
 
     assert result.returncode == 0, result.stdout
-    assert ledger_lines(tmp_path)[-1]["judge_from"] == "main"
+    assert ledger_lines(tmp_path)[-1]["judge_from"] == the_routines_pin

@@ -24,12 +24,16 @@ assistant's final text; the verdict is inside that string. `read_claude` unwraps
 one level and then reads the same shape, so the two lenses are compared on the
 same bytes rather than on two dialects.
 
-A fenced block is accepted on the Claude side and only there. The instruction
-says one JSON object and nothing else, and Codex's structured output cannot
-carry a fence, so accepting one there would be accepting a violation. On the
-Claude side the fence is the commonest deviation from an otherwise complete
-answer, and reading it as "the lens did not run" would retire the fallback over
-three backticks.
+A fence, and prose around the object, are accepted on the Claude side and only
+there. The instruction says one JSON object and nothing else; Codex runs under
+`--output-schema`, so its last message *is* the object and cannot carry either,
+and accepting one there would be accepting a violation. The Claude side has no
+such constraint on it: the `result` string is free text, and a fence or a
+sentence in front of the verdict is the commonest deviation from an otherwise
+complete answer. Reading that as "the lens did not run" retires the fallback
+over three backticks or one sentence -- and it did, on 2026-09-22, turning a
+`fail` with three findings into `no_lens_ran`. `_verdict_in` is where that is
+handled and why.
 
     python3.12 -m src.lens_verdict codex .lens/codex.json --lens codex
     python3.12 -m src.lens_verdict claude .lens/fable.json --lens claude-fable-fallback
@@ -151,6 +155,70 @@ def read_codex(path: Path) -> dict[str, Any]:
     return validate(_parse(_load(path), str(path)))
 
 
+def _validates(obj: Any) -> bool:
+    try:
+        validate(obj)
+    except NotAVerdict:
+        return False
+    return True
+
+
+def _objects_in(text: str) -> list[Any]:
+    """Every JSON object that starts somewhere in a string, in start order.
+
+    `raw_decode` is offered each `{` in turn, so a nested object is found as
+    well as the one containing it. That is wanted: the caller keeps only what
+    validates, and which bracket the verdict starts at is not something this
+    can know in advance.
+    """
+    decoder = json.JSONDecoder()
+    found: list[Any] = []
+    for start, character in enumerate(text):
+        if character != "{":
+            continue
+        try:
+            obj, _ = decoder.raw_decode(text, start)
+        except ValueError:
+            continue
+        found.append(obj)
+    return found
+
+
+def _verdict_in(text: str, where: str) -> dict[str, Any]:
+    """The verdict, whatever the lens wrote around it.
+
+    The prompt asks for one JSON object and nothing else, and a sentence the
+    model is trusted to obey is not a check -- `lessons.md` carries that one
+    already. On 2026-09-22 the fallback lens answered the lens design's own
+    review with "Finishing up: I've read the full diff..." and then a
+    schema-valid `fail` carrying three findings. The reader threw the whole
+    answer away, the run recorded `no_lens_ran`, and a `fail` became silence.
+    `tests/fixtures/lens/fable_prose_before_the_verdict.json` is that answer.
+
+    That is the same mistake this module exists to refuse in the other
+    direction: "a file that validates against the schema is the lens's answer,
+    whatever it says". Judging the answer by the prose around it is judging by a
+    string match, which is what the exit status was taken away for.
+
+    This is the Claude side only. Codex answers under `--output-schema`, where
+    the message is the object, so anything around it there is a violation and
+    stays one -- `read_codex` is strict on purpose.
+
+    Strict first, so an answer that is exactly one object is read exactly. Only
+    when that fails is the text searched, and only an object that validates
+    counts -- a JSON blob quoted out of the diff is not a verdict because it
+    does not have the four keys. The **last** one wins: the verdict is what the
+    lens ends on, and anything it quoted on the way there came earlier.
+    """
+    try:
+        return validate(_parse(_unfence(text), where))
+    except NotAVerdict:
+        answers = [obj for obj in _objects_in(text) if _validates(obj)]
+        if not answers:
+            raise
+        return validate(answers[-1])
+
+
 def _unfence(text: str) -> str:
     """The body of a single fenced block, or the text unchanged."""
     stripped = text.strip()
@@ -195,7 +263,7 @@ def read_claude(path: Path) -> dict[str, Any]:
         raise NotAVerdict(f"{path} reports an error: {str(result)[:200]}")
     if not isinstance(result, str):
         raise NotAVerdict(f"{path} carries no result text")
-    verdict = validate(_parse(_unfence(result), f"the result text in {path}"))
+    verdict = _verdict_in(result, f"the result text in {path}")
     return {**verdict, "served_model": served_model(envelope)}
 
 

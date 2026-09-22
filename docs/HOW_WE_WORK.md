@@ -273,7 +273,7 @@ lessons.md` — the lessons file verbatim. A sentinel line in `lessons.md` came
 back to the model in one turn with no tool call; the same probe answered
 `ABSENT` once the flag was added.
 
-**Two trust roots remain, and they are named rather than papered over.**
+**Three trust roots remain, and they are named rather than papered over.**
 
 1. **`tools/second_lens.sh` cannot pin itself.** It is already running, and the
    build skill invokes it by relative path from inside the worktree, so a branch
@@ -283,7 +283,25 @@ back to the model in one turn with no tool call; the same probe answered
    and in the line it prints; the weekly routine greps the `tree` rows. **The
    hole itself is closed by a person reading the diff of that one file**, and
    nothing else closes it.
-2. **A hook that runs the tree's own code prints the tree's own output.**
+2. **Four refusal paths still write their ledger row with the tree's reader.**
+   The judge directory is inside the worktree, so it cannot be materialised
+   until the pin has been checked — and the checks that decide whether the pin
+   is usable at all (the ref resolves, the ref is on the trunk, the directory
+   cleared, the diff is not empty) run before it exists. Each of those refuses
+   with exit 3, so nothing merges on the strength of one; what the tree gets is
+   arbitrary code execution on a path where the run was failing anyway, and a
+   ledger row it could falsify. The fix is to put the judge somewhere the tree
+   cannot reach and pin before anything else runs, which is a row in
+   `docs/next_cycle_tasks.md`. Until that lands this is a hole, not a design.
+
+   The claim that stood here — that the first root is "closed by a person
+   reading the diff of that one file" — was false while the interpreter probe
+   ran `src.lens_verdict` out of the worktree before the pin: a reviewer reading
+   `tools/second_lens.sh` would not have seen code planted in the tree's reader,
+   and that code ran with the script's privileges over the running script, over
+   the `.venv` link and over the ledger. The second lens found it on 2026-09-22;
+   the probe now asks the interpreter a question with no repository code in it.
+3. **A hook that runs the tree's own code prints the tree's own output.**
    `make check` at Stop is the tree's test suite. Reading a tree's output is
    what reviewing a tree is, so this is inherent rather than fixable. It is
    bounded by the fact that opening a *new* channel means editing
