@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-from src import assemble_bundle, cutoff_guard, extraction_checks
+from src import assemble_bundle, extraction_checks
 from src.fetch_fixtures import TICKERS
 
 
@@ -214,11 +214,16 @@ def test_a_cutoff_that_is_not_the_triggering_reports_filing_date_fails(tmp_path)
     assert len(identity) == 1
     assert "the cutoff is 2027-01-01" in identity[0]
     assert "was filed 2026-07-31" in identity[0]
-    # The submissions index says which cutoff it was read through, so moving the
-    # cutoff after the fact contradicts it too. Both lines are true; neither is
-    # the gate shading into another one.
-    assert len(failures) == 2
-    assert "read through the cutoff 2027-01-01" in "\n".join(failures)
+    # Each catalogue says which cutoff its rows were read through, so moving the
+    # cutoff after the fact contradicts both of them — the submissions index and,
+    # since the trend table reads it, the companyfacts record. All three lines
+    # are true; none is the gate shading into another one.
+    through = [line for line in failures
+               if "read through the cutoff 2027-01-01" in line]
+    for role in ("submissions_index", "standard_taxonomy_history"):
+        assert [line for line in through if role in line], role
+    assert len(through) == 2
+    assert len(failures) == len(identity) + len(through) == 3
 
 
 def test_a_manifest_with_no_filing_date_for_its_trigger_fails_the_cutoff_gate(tmp_path):
@@ -246,29 +251,37 @@ TEN_K_CUTOFF = "2025-10-31"
 CATALOGUE_RECORDED_DATE = "2026-07-31"
 
 
-def catalogue_row(ticker: str = CATALOGUE_TICKER, cutoff: str = TEN_K_CUTOFF) -> dict:
-    """The listing `assemble_bundle` writes for a catalogue a build opened."""
-    opened: dict = {}
-    record = cutoff_guard.one_document(ticker, "companyfacts",
-                                       assemble_bundle.FACTS_ROLE)
-    with assemble_bundle.phase(opened, "input_trends.json"):
-        cutoff_guard.load_catalogue(record["full_path"], cutoff)
-    return assemble_bundle.documents_used(opened, cutoff, cutoff_guard.FIXTURES)[0]
+def catalogue_row(bundle: Path) -> dict:
+    """The listing the build itself wrote for the catalogue it read.
+
+    The trend table reads companyfacts, so this row is in every real bundle now
+    and no longer has to be simulated here. A helper that appended a second copy
+    would be damaging a manifest no build produces.
+    """
+    payload = json.loads((bundle / "input_manifest.json").read_text(encoding="utf-8"))
+    rows = [row for row in payload["documents"]
+            if row["role"] == assemble_bundle.FACTS_ROLE]
+    assert len(rows) == 1, rows
+    return rows[0]
 
 
-def with_the_catalogue(bundle: Path, change=None) -> None:
-    """Add the catalogue to a bundle's manifest, as a build that read it would."""
+def damage_the_catalogue(bundle: Path, change) -> None:
+    """Change the catalogue row the build wrote, in place."""
     def damage(payload):
-        row = catalogue_row()
-        if change is not None:
-            change(row)
-        payload["documents"].append(row)
+        rows = [row for row in payload["documents"]
+                if row["role"] == assemble_bundle.FACTS_ROLE]
+        assert len(rows) == 1, rows
+        change(rows[0])
     rewrite(bundle, "input_manifest.json", damage)
 
 
 def test_a_bundle_that_lists_the_catalogue_it_read_passes_every_gate(tmp_path):
+    """Apple's annual bundle, unmodified: it reads the record, lists it, and
+    passes — while the date the record carries is later than its cutoff."""
     bundle = good_bundle(tmp_path, CATALOGUE_TICKER, "10-K")
-    with_the_catalogue(bundle)
+    row = catalogue_row(bundle)
+    assert row["filing_date"] is None
+    assert row["rows_used_through"] == TEN_K_CUTOFF
     code, lines = extraction_checks.run(bundle)
     assert code == 0, "\n".join(lines)
     assert CATALOGUE_RECORDED_DATE > TEN_K_CUTOFF
@@ -279,7 +292,7 @@ def test_a_listed_catalogue_carrying_a_filing_date_fails_the_cutoff_gate(tmp_pat
     which is after this run's cutoff. Published as a filing date it is a
     violation, and it is one whether or not it is the row's own."""
     bundle = good_bundle(tmp_path, CATALOGUE_TICKER, "10-K")
-    with_the_catalogue(bundle, lambda row: row.update(
+    damage_the_catalogue(bundle, lambda row: row.update(
         {"filing_date": CATALOGUE_RECORDED_DATE}))
     code, lines = extraction_checks.run(bundle)
     assert code != 0
@@ -293,7 +306,7 @@ def test_a_listed_catalogue_that_does_not_name_its_cutoff_fails_the_gate(tmp_pat
     """A catalogue row is exempt from the date comparison, so the sentence that
     replaces it has to be there: through what date were the rows read."""
     bundle = good_bundle(tmp_path, CATALOGUE_TICKER, "10-K")
-    with_the_catalogue(bundle, lambda row: row.pop("rows_used_through"))
+    damage_the_catalogue(bundle, lambda row: row.pop("rows_used_through"))
     code, lines = extraction_checks.run(bundle)
     assert code != 0
     failures = gate_lines(lines, "cutoff")
