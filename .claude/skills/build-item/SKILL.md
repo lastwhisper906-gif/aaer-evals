@@ -54,25 +54,47 @@ suite has been committed that way before.
 
 **4a. `refute-check` (Claude).** Hand it the diff and the item's four fields.
 
-**4b. `/codex:adversarial-review` (Codex).** Hand it the same diff and the same
-five rules `refute-check` works through, in the same order, the first being:
+**4b. `tools/second_lens.sh <worktree> "<item title>"`.** It runs Codex first,
+read-only, on the same five rules in the same order, and falls back to Claude
+Fable in a fresh context when Codex cannot run. Both lenses read
+`tools/lens_prompt.md` and answer `tools/lens_verdict.schema.json`, so the two
+verdicts are comparable and neither can drift from the rules the first lens
+works through.
 
-> every expected value must come from the source — the document, companyfacts,
-> or a hand computation written into the test — never from the code under test.
+Codex is a **second vendor, not a second opinion**. The builder and the refute
+lens are both Claude, so a blind spot in the family is a blind spot in both, and
+a verifier sharing a model family with the builder is a weaker check than it
+looks. Codex reviews. Codex never builds.
 
-Then: a change with no test, schema or check is `needs judgment`; anything filed
-after the triggering report, or market data past reaction day two, is a failure;
-every reader quote must string-match its committed input and every citation must
-resolve upstream; each agent input directory holds only what its layer may see.
+Read the exit status, never the output:
 
-Codex is here as a **second vendor, not a second opinion**. The refute lens and
-the builder are both Claude, so a blind spot in the family is a blind spot in
-both, and a verifier that shares a model family with the builder is a weaker
-check than it looks. Codex reviews. Codex never builds.
+| Exit | Meaning | What you do |
+|---|---|---|
+| 0 | pass | go to step 5 |
+| 1 | fail | fix it, back to step 3 |
+| 2 | needs judgment | mark the item, stop, leave one line |
+| 3 | **no lens ran** | open the pull request with the label `one-lens` and **leave auto-merge off** |
 
-**4c. If either lens fails**, fix it and go back to step 3. On `needs judgment`
-from either, mark the item, stop, leave one line — do not decide it yourself and
-do not open a pull request that carries the question.
+**Exit 3 is never an approval.** It is the quota failure this is built for: the
+lens says nothing about the change, and a script that read its output instead of
+its exit status would read "no findings" as "no problems". A `one-lens` pull
+request waits for a person or for the weekly re-lens routine
+(`docs/routines/weekly-relens.md`), which re-runs it when the quota returns.
+
+**4c.** If either lens returns fail, fix it and go back to step 3. On `needs
+judgment` from either, mark the item, stop, leave one line — do not decide it
+yourself and do not open a pull request that carries the question.
+
+The pull request body carries **both verdicts and the name of the lens that gave
+the second one**, in the line the script prints:
+
+```
+second lens: claude-fable-fallback · pass · tried to break it and could not
+```
+
+A fallback verdict is recorded as `confirmed - same-family fallback`, never as
+`confirmed - cross-vendor`. The ledger line the script appends is what the
+weekly routine reads, so the distinction has to survive the pull request.
 
 ## 5. `/simplify`
 
@@ -92,6 +114,17 @@ gh pr merge --auto --squash
 Auto-merge goes on the moment the pull request opens. A pull request waiting for
 a click is the bottleneck the rules forbid, not a safety measure — a step is not
 finished until the merge is automatic.
+
+**One exception, and it is the only one:** when step 4b exited 3, no second lens
+read this change. Then:
+
+```sh
+gh pr create --fill --label one-lens
+```
+
+and **no `gh pr merge --auto`**. That pull request is not waiting for a click on
+principle; it is waiting for a lens. The weekly re-lens routine is what clears
+it, and the babysit routine leaves it alone.
 
 Write the pull request number into the item's `PR` field in
 `docs/next_cycle_tasks.md` and commit that line.

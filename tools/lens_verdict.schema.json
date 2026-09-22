@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "second lens verdict",
+  "description": "The only shape either lens may answer in. Both lenses read tools/lens_prompt.md and answer this file, so a verdict from one is comparable with a verdict from the other. Kept to the subset a structured-output provider accepts strictly -- types, enums, required and additionalProperties, and nothing else -- because a keyword the provider silently drops is a constraint that is enforced on one lens and not the other.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["lens", "verdict", "findings", "reads"],
+  "properties": {
+    "lens": {
+      "type": "string",
+      "description": "The lens that answered: codex, or claude-fable-fallback."
+    },
+    "verdict": {
+      "type": "string",
+      "enum": ["pass", "fail", "needs_judgment"],
+      "description": "pass only when the lens tried to break the change and could not."
+    },
+    "findings": {
+      "type": "array",
+      "description": "One entry per hole found, most severe first. Empty on pass.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["rule", "file", "line", "reason"],
+        "properties": {
+          "rule": {
+            "type": "integer",
+            "enum": [1, 2, 3, 4, 5],
+            "description": "Which of the five rules this finding is under."
+          },
+          "file": {"type": "string"},
+          "line": {"type": "integer"},
+          "reason": {"type": "string"}
+        }
+      }
+    },
+    "reads": {
+      "type": "integer",
+      "description": "How many files the lens actually opened. A pass with no reads is a lens that did not look."
+    }
+  }
+}
