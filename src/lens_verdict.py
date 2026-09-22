@@ -124,8 +124,9 @@ def validate(obj: Any) -> dict[str, Any]:
                 f"a pass carrying {len(obj['findings'])} finding(s) is a contradiction, "
                 f"not a verdict"
             )
-        if obj["reads"] == 0:
-            raise NotAVerdict("a pass with no reads is a lens that did not look")
+        if obj["reads"] <= 0:
+            raise NotAVerdict(
+                f"a pass claiming {obj['reads']} reads is a lens that did not look")
     return obj
 
 

@@ -90,6 +90,15 @@ PROMPT="$LENS_DIR/prompt.md"
     cat "$LENS_PROMPT"
 } > "$PROMPT"
 
+# An answer file left over from an earlier run reads exactly like this run's,
+# and the file's presence is the whole test of whether a lens answered. `rm -f`
+# succeeds silently when the directory is not writable, so the removal is
+# checked: a file still standing after it is a file this run may not read.
+cleared() {
+    rm -f "$1" 2>/dev/null
+    [ ! -e "$1" ]
+}
+
 run_with_timeout() {
     if command -v timeout >/dev/null 2>&1; then
         timeout "$LENS_TIMEOUT" "$@"
@@ -106,13 +115,51 @@ prompt_for() {
     echo "$LENS_DIR/prompt.$1.md"
 }
 
+# --- what defines the judge may not come from the tree being judged --------
+#
+# Both lenses are started inside the worktree, so both read that tree's
+# `CLAUDE.md`, and each reads its own definition from it as well: Codex takes
+# `AGENTS.md`, the fallback takes `.claude/agents/refute-check.md` and whatever
+# hooks `.claude/settings.json` installs. A change that edits any of those is
+# judged by the edit. That is not a verdict about the change, it is the change
+# grading its own exam, so it lands where everything else that says nothing
+# lands: no lens ran, the pull request gets `one-lens`, and a person looks.
+#
+# Compared against `main` rather than against the item's own base, because the
+# question is whether the judge differs from the one the project agreed on, not
+# whether this branch is the one that moved it.
+JUDGE_BASE="${LENS_JUDGE_BASE:-main}"
+DEFINES_THE_JUDGE=".claude/agents/refute-check.md AGENTS.md CLAUDE.md .claude/settings.json"
+EDITED_ITS_JUDGE=""
+
+if git -C "$WORKTREE" rev-parse --verify --quiet "$JUDGE_BASE" >/dev/null 2>&1; then
+    for definition in $DEFINES_THE_JUDGE; do
+        if ! git -C "$WORKTREE" diff --quiet "$JUDGE_BASE" -- "$definition" 2>/dev/null; then
+            EDITED_ITS_JUDGE="$EDITED_ITS_JUDGE $definition"
+        fi
+    done
+fi
+
+if [ -n "$EDITED_ITS_JUDGE" ]; then
+    "$LENS_PYTHON" -m src.lens_verdict ledger \
+        --ledger "$LENS_LEDGER" --item "$ITEM" --lens "none" \
+        --verdict "no_lens_ran" --findings 0 --model "none" || true
+    echo "second lens: none · none · no_lens_ran · the tree under review changes what defines its judge:$EDITED_ITS_JUDGE"
+    exit "$NO_LENS_RAN"
+fi
+
 # --- the cross-vendor lens -------------------------------------------------
 
 CODEX_FILE="$LENS_DIR/codex.json"
-rm -f "$CODEX_FILE"
 CODEX_LOG="$LENS_DIR/codex.log"
+CODEX_CLEARED=yes
+cleared "$CODEX_FILE" || CODEX_CLEARED=no
 
-if command -v codex >/dev/null 2>&1; then
+if [ "$CODEX_CLEARED" = no ]; then
+    echo "second_lens: $CODEX_FILE holds an earlier run's answer and could not be cleared" \
+        > "$CODEX_LOG"
+    CODEX_EXIT=126
+elif command -v codex >/dev/null 2>&1; then
     CODEX_PROMPT="$(prompt_for "$CODEX_LENS")"
     run_with_timeout codex exec \
         --sandbox read-only \
@@ -129,17 +176,22 @@ fi
 VERDICT=""
 LENS=""
 NORMALISED="$LENS_DIR/verdict.json"
-rm -f "$NORMALISED"
+NORMALISED_CLEARED=yes
+cleared "$NORMALISED" || NORMALISED_CLEARED=no
 
 # The reading is four fields -- verdict, how many findings, the exit code this
 # script answers with, and the model that served it. The code comes from
 # src/lens_verdict.py rather than from a mapping written a second time here.
+#
+# The model is the *rest of the line*, not a fourth word. A session that served
+# two models records them joined with ", " and a provider is free to put a space
+# in a name, so `set -- $1` kept the first word and dropped the rest -- the first
+# two-model fallback run would have ledgered `claude-fable-5-1,`. `read` with
+# four names does the opposite: the last name takes everything left, and a line
+# with only three fields leaves MODEL empty instead of dying on `$4` under
+# `set -u` with no ledger line and no verdict printed at all.
 read_verdict() {
-    set -- $1
-    VERDICT="$1"
-    FINDINGS="$2"
-    CODE="$3"
-    MODEL="$4"
+    IFS=' ' read -r VERDICT FINDINGS CODE MODEL <<< "$1"
 }
 
 # The file is read whatever the exit status was. A verdict that validates
@@ -149,9 +201,12 @@ read_verdict() {
 # throwing that away would let the same-family fallback overwrite a cross-vendor
 # fail with a pass, which is the one path this whole design says cannot happen.
 # The status is kept for the reason line and for nothing else.
-READING="$("$LENS_PYTHON" -m src.lens_verdict codex "$CODEX_FILE" \
-    --lens "$CODEX_LENS" --normalised "$NORMALISED" 2>>"$CODEX_LOG")"
-if [ $? -eq 0 ]; then
+READING=""
+if [ "$CODEX_CLEARED" = yes ] && [ "$NORMALISED_CLEARED" = yes ]; then
+    READING="$("$LENS_PYTHON" -m src.lens_verdict codex "$CODEX_FILE" \
+        --lens "$CODEX_LENS" --normalised "$NORMALISED" 2>>"$CODEX_LOG")"
+fi
+if [ -n "$READING" ]; then
     read_verdict "$READING"
     LENS="$CODEX_LENS"
     # Codex names the model it ran in its own banner. Read from the run rather
@@ -166,9 +221,14 @@ fi
 
 if [ -z "$LENS" ]; then
     FABLE_FILE="$LENS_DIR/fable.json"
-    rm -f "$FABLE_FILE"
     FABLE_LOG="$LENS_DIR/fable.log"
-    if command -v claude >/dev/null 2>&1; then
+    FABLE_CLEARED=yes
+    cleared "$FABLE_FILE" || FABLE_CLEARED=no
+    if [ "$FABLE_CLEARED" = no ]; then
+        echo "second_lens: $FABLE_FILE holds an earlier run's answer and could not be cleared" \
+            > "$FABLE_LOG"
+        FABLE_EXIT=126
+    elif command -v claude >/dev/null 2>&1; then
         # Started *in* the worktree, the way Codex is with -C. The prompt's
         # first instruction is "the working tree you were started in", and this
         # script is called from the repository root against a detached worktree
@@ -187,9 +247,12 @@ if [ -z "$LENS" ]; then
         FABLE_EXIT=127
     fi
     # Read whatever the exit status was, for the same reason as above.
-    READING="$("$LENS_PYTHON" -m src.lens_verdict claude "$FABLE_FILE" \
-        --lens "$FALLBACK_LENS" --normalised "$NORMALISED" 2>>"$FABLE_LOG")"
-    if [ $? -eq 0 ]; then
+    READING=""
+    if [ "$FABLE_CLEARED" = yes ] && [ "$NORMALISED_CLEARED" = yes ]; then
+        READING="$("$LENS_PYTHON" -m src.lens_verdict claude "$FABLE_FILE" \
+            --lens "$FALLBACK_LENS" --normalised "$NORMALISED" 2>>"$FABLE_LOG")"
+    fi
+    if [ -n "$READING" ]; then
         read_verdict "$READING"
         LENS="$FALLBACK_LENS"
     fi

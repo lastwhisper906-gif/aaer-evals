@@ -320,8 +320,10 @@ recorded as a failure. A pin that exists only in this table is not a pin.
     literature and nothing reads them.
 
     Paying for EODHD, if it comes to that, is a decision recorded in
-    `docs/needs_judgment.md` and not a rule already written: `docs/INPUT_SPEC.md`
-    §1 excludes consensus data by name and says nothing about prices.
+    `docs/needs_judgment.md` that **overrides** a line already written:
+    `docs/INPUT_SPEC.md` says the price source is free in the preamble, in §1's
+    own table and in §4. The consensus exclusion is about consensus. The day a
+    paid month is used, §4 is what has to be amended.
 
 Each step starts when the previous step's condition is met. Never wait for owner
 confirmation.

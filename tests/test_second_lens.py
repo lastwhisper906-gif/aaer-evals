@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import json
 import os
+import shlex
 import shutil
 import subprocess
 import sys
@@ -92,14 +93,16 @@ def codex_stub(directory: Path, *, exit_code: int, verdict: dict | str | None) -
     )
 
 
-def claude_stub(directory: Path, *, exit_code: int, result: str | None) -> None:
+def claude_stub(directory: Path, *, exit_code: int, result: str | None,
+                model_usage: dict | None = None) -> None:
     """A `claude -p --output-format json` that prints one envelope."""
     if result is None:
         envelope = ""
     else:
-        envelope = json.dumps(
-            {"type": "result", "subtype": "success", "is_error": False, "result": result}
-        )
+        body = {"type": "result", "subtype": "success", "is_error": False, "result": result}
+        if model_usage is not None:
+            body["modelUsage"] = model_usage
+        envelope = json.dumps(body)
     _write_stub(
         directory,
         "claude",
@@ -658,3 +661,206 @@ def test_no_lens_ran_records_no_model_rather_than_the_last_one_tried(
 
     (line,) = ledger_lines(tmp_path)
     assert (line["lens"], line["model"], line["verdict"]) == ("none", "none", "no_lens_ran")
+
+
+# --- the model is the rest of the line, not the fourth word -----------------
+
+
+def test_two_models_that_served_one_answer_are_both_recorded(
+    tmp_path: Path, stubs: Path
+) -> None:
+    """A `claude -p` session routinely serves a small model beside the big one.
+
+    The ledger row is what `docs/routines/weekly-relens.md` reads to decide what
+    to look at again, and a row naming half the models that answered is a row
+    that names the wrong thing. The reading used to split on whitespace and keep
+    the fourth word, so this line came back as `claude-fable-5-1,` -- trailing
+    comma, second model gone.
+    """
+    codex_stub(stubs, exit_code=127, verdict=None)
+    claude_stub(
+        stubs,
+        exit_code=0,
+        result=json.dumps({"lens": "fable", "verdict": "pass", "findings": [], "reads": 4}),
+        model_usage={"claude-fable-5-1": {"inputTokens": 2},
+                     "claude-haiku-4-5-20251001": {"inputTokens": 1}},
+    )
+    result = run_lens(tmp_path)
+
+    assert result.returncode == 0
+    recorded = ledger_lines(tmp_path)[-1]["model"]
+    assert recorded == "claude-fable-5-1, claude-haiku-4-5-20251001"
+    assert recorded in result.stdout
+
+
+def test_a_model_name_with_a_space_survives_the_reading(
+    tmp_path: Path, stubs: Path
+) -> None:
+    """Nothing forbids a provider a space in a name, and the split assumed none."""
+    codex_stub(stubs, exit_code=127, verdict=None)
+    claude_stub(
+        stubs,
+        exit_code=0,
+        result=json.dumps({"lens": "fable", "verdict": "pass", "findings": [], "reads": 4}),
+        model_usage={"a model with spaces": {"inputTokens": 2}},
+    )
+    result = run_lens(tmp_path)
+
+    assert result.returncode == 0
+    assert ledger_lines(tmp_path)[-1]["model"] == "a model with spaces"
+
+
+def test_a_reading_with_no_model_at_all_is_not_a_crash(
+    tmp_path: Path, stubs: Path
+) -> None:
+    """Three fields where four were expected killed the script under `set -u`.
+
+    `$4: unbound variable` exits 1, which the build skill's table reads as
+    *fail* -- a verdict -- with no ledger line and nothing printed. The reading
+    has to degrade to `unrecorded`, which is what the ledger already says when
+    nobody named a model.
+    """
+    codex_stub(stubs, exit_code=127, verdict=None)
+    claude_stub(stubs, exit_code=0, result=json.dumps(
+        {"lens": "fable", "verdict": "pass", "findings": [], "reads": 4}))
+
+    # A stand-in for the module that prints the three fields it printed before
+    # the model was added to the line, and otherwise defers to the real one.
+    older = _write_stub(
+        stubs,
+        "older_lens_verdict",
+        f'if [ "$3" = "ledger" ]; then exec {shlex.quote(sys.executable)} "$@"; fi\n'
+        f'{shlex.quote(sys.executable)} "$@" | cut -d" " -f1-3\n',
+    )
+    environment = dict(os.environ)
+    environment["PATH"] = f"{stubs}:{environment['PATH']}"
+    environment["STUB_CALLS"] = str(tmp_path / "calls")
+    environment["STUB_CWD"] = str(tmp_path / "cwd")
+    environment["LENS_LEDGER"] = str(tmp_path / "ledger.jsonl")
+    environment["LENS_PYTHON"] = str(older)
+    environment["LENS_TIMEOUT"] = "60"
+    worktree = tmp_path / "worktree"
+    worktree.mkdir(exist_ok=True)
+    result = subprocess.run(
+        ["bash", str(SCRIPT), str(worktree), "a task-list item"],
+        capture_output=True, text=True, env=environment, cwd=tmp_path)
+
+    assert result.returncode == 0
+    assert "unbound variable" not in result.stderr
+    assert ledger_lines(tmp_path)[-1]["model"] == "unrecorded"
+
+
+# --- an answer from an earlier run is not this run's -------------------------
+
+
+def test_an_answer_left_from_an_earlier_run_is_not_read_as_this_one(
+    tmp_path: Path, stubs: Path
+) -> None:
+    """The file's presence is the whole test of whether a lens answered.
+
+    Since a verdict is read whatever the exit status was, a `codex.json` that
+    could not be removed is indistinguishable from one this run wrote -- and
+    `rm -f` says nothing when the directory refuses it. The first run passes,
+    the second run's lens writes nothing, and without the check the second run
+    reports the first run's pass.
+    """
+    codex_stub(stubs, exit_code=0, verdict={
+        "lens": "codex", "verdict": "pass", "findings": [], "reads": 9})
+    claude_stub(stubs, exit_code=127, result=None)
+    first = run_lens(tmp_path)
+    assert first.returncode == 0
+
+    lens_dir = tmp_path / "worktree" / ".lens"
+    codex_stub(stubs, exit_code=1, verdict=None)
+    before = lens_dir.stat().st_mode
+    lens_dir.chmod(0o500)
+    try:
+        second = run_lens(tmp_path)
+    finally:
+        lens_dir.chmod(before)
+
+    assert second.returncode == 3, second.stdout
+    assert ledger_lines(tmp_path)[-1]["lens"] == "none"
+
+
+# --- a pass that opened no files --------------------------------------------
+
+
+def test_a_pass_claiming_fewer_than_one_read_did_not_look(tmp_path: Path) -> None:
+    """`reads` carries no lower bound in the schema, so the check needs one.
+
+    Strict structured-output providers drop `minimum`, which is why the schema
+    does not carry it; a check written as `== 0` then let `-1` through, and the
+    rule the prompt states is "a lens that opened no files did not look".
+    """
+    for claimed in (0, -1, -100):
+        with pytest.raises(lens_verdict.NotAVerdict, match="did not look"):
+            lens_verdict.validate(
+                {"lens": "codex", "verdict": "pass", "findings": [], "reads": claimed})
+
+
+# --- the tree under review may not define its own judge ----------------------
+
+
+def _repository_that(tmp_path: Path, *, edits: str | None) -> Path:
+    """A worktree on `main` plus one commit, optionally touching a judge's file."""
+    worktree = tmp_path / "worktree"
+    worktree.mkdir(exist_ok=True)
+    run = lambda *argv: subprocess.run(argv, cwd=worktree, check=True,
+                                       capture_output=True, text=True)
+    run("git", "init", "-q", "-b", "main")
+    run("git", "config", "user.email", "lens@example.invalid")
+    run("git", "config", "user.name", "lens")
+    (worktree / ".claude" / "agents").mkdir(parents=True)
+    (worktree / ".claude" / "agents" / "refute-check.md").write_text(
+        "the five rules\n", encoding="utf-8")
+    (worktree / "CLAUDE.md").write_text("the project rules\n", encoding="utf-8")
+    (worktree / "a_file.py").write_text("x = 1\n", encoding="utf-8")
+    run("git", "add", "-A")
+    run("git", "commit", "-qm", "main")
+    if edits is not None:
+        # On a branch, the way an item is: the comparison is against `main`,
+        # and a change committed onto `main` itself is not a change under review.
+        run("git", "checkout", "-q", "-b", "item/under-review")
+        (worktree / edits).write_text("moved\n", encoding="utf-8")
+        run("git", "add", "-A")
+        run("git", "commit", "-qm", "the change under review")
+    return worktree
+
+
+def test_a_change_that_edits_what_defines_its_judge_gets_no_lens(
+    tmp_path: Path, stubs: Path
+) -> None:
+    """Both lenses read their own definition out of the tree they are judging.
+
+    Codex takes `AGENTS.md`, the fallback takes `.claude/agents/refute-check.md`
+    and the hooks in `.claude/settings.json`, and both take `CLAUDE.md`. A
+    branch that moves one of those is graded by its own edit, which says nothing
+    about the change -- so it lands where everything else that says nothing
+    lands: exit 3, the `one-lens` label, and a person.
+    """
+    _repository_that(tmp_path, edits=".claude/agents/refute-check.md")
+    codex_stub(stubs, exit_code=0, verdict={
+        "lens": "codex", "verdict": "pass", "findings": [], "reads": 9})
+    claude_stub(stubs, exit_code=0, result=json.dumps(
+        {"lens": "fable", "verdict": "pass", "findings": [], "reads": 9}))
+    result = run_lens(tmp_path)
+
+    assert result.returncode == 3, result.stdout
+    assert "changes what defines its judge" in result.stdout
+    assert calls(tmp_path) == [], "a lens ran on a tree that had already disqualified it"
+    assert ledger_lines(tmp_path)[-1]["lens"] == "none"
+
+
+def test_a_change_that_leaves_its_judge_alone_is_judged_normally(
+    tmp_path: Path, stubs: Path
+) -> None:
+    """The guard has to let ordinary work through, or it is just an off switch."""
+    _repository_that(tmp_path, edits="a_file.py")
+    codex_stub(stubs, exit_code=0, verdict={
+        "lens": "codex", "verdict": "pass", "findings": [], "reads": 9})
+    claude_stub(stubs, exit_code=127, result=None)
+    result = run_lens(tmp_path)
+
+    assert result.returncode == 0, result.stdout
+    assert calls(tmp_path) == ["codex"]
