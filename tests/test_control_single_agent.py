@@ -656,13 +656,49 @@ def test_a_checklist_entry_resting_on_nothing_is_dropped(tmp_path):
 
 
 # --- what the control refuses ------------------------------------------------
+#
+# Every name the allowlist refuses is planted **in the run directory as well**,
+# by `hand`, with the same bytes. That is what makes the allowlist the thing
+# under test: the two checks after it -- the run has no file of that name, and
+# the bytes are not the run's -- both raise naming the same file, so a test that
+# planted the stray copy alone stayed green with the allowlist deleted and was
+# reading another branch's message. Planted in both places there is nothing left
+# to refuse it but the list, and `stub.prompts == []` says the model never saw
+# the directory. `REFUSED_BY_THE_LIST` is that branch's own sentence, so a
+# refusal arriving from anywhere else is not mistaken for this one.
 
-def test_a_directory_holding_the_pipelines_own_output_is_refused(tmp_path):
-    root, folder = plant(tmp_path)
-    (folder / "report_numbers.md").write_text("# the numbers reader\n", encoding="utf-8")
+REFUSED_BY_THE_LIST = "which this control may not see"
+
+
+def refused(root: Path, folder: Path) -> str:
+    """One run the directory has to stop, and the refusal it raised.
+
+    The model is never called and no control file is written -- asserted here
+    once rather than in every test below, because `run` settles the input
+    before the call on purpose: "a refusal after the answer has come back is a
+    refusal that has already paid for the look-ahead".
+    """
+    stub = Stub(accounting_answer())
     with pytest.raises(ControlError) as caught:
-        go(root, folder, "accounting_reliability", accounting_answer())
-    assert "report_numbers.md" in str(caught.value)
+        control_single_agent.run("accounting_reliability", input_dir=folder,
+                                 bundle_root=root, ask=stub)
+    assert stub.prompts == []
+    assert not (root / "control_single_agent_accounting.json").exists()
+    return str(caught.value)
+
+
+def test_a_report_the_run_wrote_is_refused_even_though_the_run_wrote_it(tmp_path):
+    """The pipeline's own output, in the run directory where it belongs.
+
+    A reader report *is* in the run's directory -- that is where the read stage
+    writes it -- so the control's copy of it is a true copy and the byte check
+    has nothing to say. The control is a control beside the pipeline, not a
+    reader of it, and the list is what says so.
+    """
+    root, folder = plant(tmp_path)
+    hand(folder, root, "report_numbers.md", "# the numbers reader\n")
+    message = refused(root, folder)
+    assert "report_numbers.md" in message and REFUSED_BY_THE_LIST in message
 
 
 def test_a_price_file_carrying_the_outcome_window_is_refused(tmp_path):
@@ -675,23 +711,18 @@ def test_a_price_file_carrying_the_outcome_window_is_refused(tmp_path):
     this is the same rule at the control's directory.
     """
     root, folder = plant(tmp_path)
-    (folder / OUTCOME_WINDOW_PRICES).write_text(
-        '{"ticker": "AAPL", "close": [190.1, 193.4], "window": "reaction_day_60"}\n',
-        encoding="utf-8")
-    with pytest.raises(ControlError) as caught:
-        go(root, folder, "accounting_reliability", accounting_answer())
-    assert OUTCOME_WINDOW_PRICES in str(caught.value)
-    assert not (root / "control_single_agent_accounting.json").exists()
+    hand(folder, root, OUTCOME_WINDOW_PRICES,
+         '{"ticker": "AAPL", "close": [190.1, 193.4], "window": "reaction_day_60"}\n')
+    message = refused(root, folder)
+    assert OUTCOME_WINDOW_PRICES in message and REFUSED_BY_THE_LIST in message
 
 
 def test_another_companys_notes_in_the_control_directory_are_refused(tmp_path):
     root, folder = plant(tmp_path)
-    (folder / OTHER_COMPANY_NOTES).write_text(
-        f"# Notes\n\n[{OTHER_ACCESSION}:notes:1]\nAnother company's prose.\n",
-        encoding="utf-8")
-    with pytest.raises(ControlError) as caught:
-        go(root, folder, "accounting_reliability", accounting_answer())
-    assert OTHER_COMPANY_NOTES in str(caught.value)
+    hand(folder, root, OTHER_COMPANY_NOTES,
+         f"# Notes\n\n[{OTHER_ACCESSION}:notes:1]\nAnother company's prose.\n")
+    message = refused(root, folder)
+    assert OTHER_COMPANY_NOTES in message and REFUSED_BY_THE_LIST in message
 
 
 def test_the_files_the_control_may_hold_are_the_bundles_and_the_market_table(tmp_path):
@@ -734,16 +765,17 @@ def test_the_manifest_is_the_runs_bookkeeping_and_no_layer_sees_it(tmp_path):
     assert [name for name, spec in agent_inputs.AGENTS.items()
             if MANIFEST_NAME in spec.sees] == []
     root, folder = plant(tmp_path)
-    (folder / MANIFEST_NAME).write_text(
-        json.dumps(MANIFEST | {"dropped_items": [
-            {"report": "report_numbers.md", "item_id": f"{NOTES_ONE}",
-             "reason": "the quote does not match"}],
-            "served_models": {"numbers-reader": "claude-opus-4-20250514"}},
-            indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    with pytest.raises(ControlError) as caught:
-        go(root, folder, "accounting_reliability", accounting_answer())
-    assert MANIFEST_NAME in str(caught.value)
-    assert not (root / "control_single_agent_accounting.json").exists()
+    # The run's own manifest, and the control handed a true copy of it: this is
+    # the file the run keeps and `run` reads from `bundle_root`, so the copy is
+    # byte for byte the run's and the list is the only thing that refuses it.
+    hand(folder, root, MANIFEST_NAME,
+         json.dumps(MANIFEST | {"dropped_items": [
+             {"report": "report_numbers.md", "item_id": f"{NOTES_ONE}",
+              "reason": "the quote does not match"}],
+             "served_models": {"numbers-reader": "claude-opus-4-20250514"}},
+             indent=2, sort_keys=True) + "\n")
+    message = refused(root, folder)
+    assert MANIFEST_NAME in message and REFUSED_BY_THE_LIST in message
 
 
 def test_a_prior_predictions_file_still_carrying_a_probability_is_refused(tmp_path):
@@ -901,44 +933,57 @@ def test_the_accessions_the_record_allows_are_this_tickers_by_the_cutoff(tmp_pat
     assert OTHER_ACCESSION not in allowed
 
 
-def test_the_allowlist_reads_the_name_and_a_symlink_carries_someone_elses_bytes(tmp_path):
-    """An allowed name on a link into another run, refused before the call.
+def test_a_link_to_the_runs_own_file_is_refused_though_the_bytes_are_right(tmp_path):
+    """The one case the symlink check is the only thing that reaches.
+
+    A link into *another* run is refused whether this check exists or not: its
+    target's bytes are not the run's, so the byte check two steps down says so,
+    which is why the earlier form of this test stayed green with the symlink
+    check deleted. The case left is the link that passes everything else — the
+    run's own file, under its own name, same bytes. `is_file()` follows a link,
+    so the allowlist sees a file; `read_bytes()` follows one too, so `_differs`
+    sees the run's own bytes. What is refused is the link itself: the directory
+    is committed as what the control saw, its ancestors are outside it, and a
+    target that changes after the commit changes the record with it.
 
     The order is `src/agent_inputs.py`'s, and so is the reason: it tests the
     symlink "before the source is read, and before `exists()`", because both
-    that and `read_bytes()` follow the link. `is_file()` follows one too, so an
-    allowlist standing on it reads the name of a file whose bytes are another
-    company's — the leak this guard exists to refuse, wearing a name it allows.
+    that and `read_bytes()` follow the link.
     """
     root, folder = plant(tmp_path)
-    elsewhere = tmp_path / "NVDA-10-K"
-    elsewhere.mkdir()
-    theirs = elsewhere / "input_notes.md"
-    theirs.write_text(
-        f"# Notes\n\n[{OTHER_ACCESSION}:notes:1]\nAnother company's prose.\n",
-        encoding="utf-8")
-    (folder / "input_companyfacts.json").symlink_to(theirs)
-    stub = Stub(accounting_answer())
-    with pytest.raises(ControlError) as caught:
-        control_single_agent.run("accounting_reliability", input_dir=folder,
-                                 bundle_root=root, ask=stub)
-    assert "input_companyfacts.json" in str(caught.value)
-    assert stub.prompts == []
-    assert not (root / "control_single_agent_accounting.json").exists()
+    placed = folder / "input_notes.md"
+    placed.unlink()
+    placed.symlink_to(root / "input_notes.md")
+    # Everything after this check passes: an allowed name, a file to `is_file()`,
+    # and the run's own bytes.
+    assert placed.is_file() and placed.read_text(encoding="utf-8") == NOTES
+    assert not agent_inputs._differs(placed, root / "input_notes.md")
+    message = refused(root, folder)
+    assert "input_notes.md" in message
+    assert "A control reads the directory it was handed" in message
 
 
 def test_a_directory_under_an_allowed_name_is_refused(tmp_path):
     """`bundle_files` keeps what `is_file()` says yes to, and that drops a
     directory — so an allowlist built on it never sees one. Whatever is under
-    it reaches the control's directory under no name the prompt lists."""
+    it reaches the control's directory under no name the prompt lists.
+
+    The name is one the run has a file of, because nothing else here judges
+    this check: a directory named for a file the run never wrote is refused by
+    the check below it, and `agent_inputs._differs` answers False the moment
+    `placed.is_file()` is False — so with this check gone a directory reads as
+    a faithful copy of the run's own file and is listed to the model as one.
+    """
     root, folder = plant(tmp_path)
-    nested = folder / "input_exhibits.md"
+    nested = folder / "input_notes.md"
+    nested.unlink()
     nested.mkdir()
     (nested / "NVDA_notes.md").write_text("Another company's prose.\n",
                                           encoding="utf-8")
-    with pytest.raises(ControlError) as caught:
-        go(root, folder, "accounting_reliability", accounting_answer())
-    assert "input_exhibits.md" in str(caught.value)
+    assert (root / "input_notes.md").is_file()
+    assert not agent_inputs._differs(nested, root / "input_notes.md")
+    message = refused(root, folder)
+    assert "input_notes.md" in message and "which is a directory" in message
 
 
 def test_an_empty_directory_is_refused(tmp_path):
@@ -1006,27 +1051,53 @@ def test_a_run_with_no_rules_version_carries_the_null_the_manifest_carries(tmp_p
     assert written(root, "accounting_reliability")["rules_version"] is None
 
 
-def test_a_cutoff_that_is_not_the_filing_date_on_record_is_refused(tmp_path):
+def test_a_cutoff_earlier_than_the_filing_date_on_record_is_refused(tmp_path):
     """`CLAUDE.md`: the cutoff is the filing date of the triggering report.
 
     Nothing in this module read the key at all, so a run carrying a cutoff of
-    1999 — or of 2026, which is the direction that sweeps documents in — was
-    answered, gated and written out. The date it is held against is EDGAR's
-    record of the accession the manifest itself names, not the manifest's own
-    second opinion about it.
+    1999 was answered, gated and written out. The date it is held against is
+    EDGAR's record of the accession the manifest itself names, not the
+    manifest's own second opinion about it.
     """
     root, folder = plant(tmp_path)
     (root / "input_manifest.json").write_text(
         json.dumps(MANIFEST | {"cutoff": "1999-01-01"}, indent=2, sort_keys=True)
         + "\n", encoding="utf-8")
-    stub = Stub(accounting_answer())
-    with pytest.raises(ControlError) as caught:
-        control_single_agent.run("accounting_reliability", input_dir=folder,
-                                 bundle_root=root, ask=stub)
-    assert "1999-01-01" in str(caught.value) and FILED in str(caught.value)
-    # Refused before the call: a run outside its own cutoff never reaches a model.
-    assert stub.prompts == []
-    assert not (root / "control_single_agent_accounting.json").exists()
+    # `refused` is what says the model was never called: a run outside its own
+    # cutoff is stopped before the look-ahead has been paid for.
+    message = refused(root, folder)
+    assert "1999-01-01" in message and FILED in message
+
+
+def test_a_cutoff_later_than_the_filing_date_on_record_is_refused(tmp_path):
+    """The other direction, and the only one that lets a document in.
+
+    The test above plants 1999, and a check written as "the cutoff may not be
+    *before* the filing date" passes it — while the run that moved its boundary
+    forward is the one `CLAUDE.md` is about: "document filing date ≤ filing date
+    of the triggering report. Nothing later enters the input." The date planted
+    here is the one EDGAR's record gives the next quarter's 10-Q, read out of
+    `tests/fixtures/AAPL/manifest.json` with `json` alone — so this is not a
+    date chosen to fail but the exact boundary that would sweep that filing in,
+    and `recorded_accessions` above shows the same record admitting it once the
+    cutoff reaches it.
+    """
+    recorded = json.loads((FIXTURES / TICKER / "manifest.json").read_text(
+        encoding="utf-8"))
+    later = {row["filing_date"] for row in recorded["documents"]
+             if row["accession"] == LATER_ACCESSION}
+    assert len(later) == 1
+    moved = later.pop()
+    assert moved > FILED
+    assert LATER_ACCESSION in control_single_agent.recorded_accessions(
+        TICKER, dt.date.fromisoformat(moved))
+
+    root, folder = plant(tmp_path)
+    (root / "input_manifest.json").write_text(
+        json.dumps(MANIFEST | {"cutoff": moved}, indent=2, sort_keys=True)
+        + "\n", encoding="utf-8")
+    message = refused(root, folder)
+    assert moved in message and FILED in message
 
 
 def test_a_manifest_with_no_cutoff_at_all_is_refused(tmp_path):
