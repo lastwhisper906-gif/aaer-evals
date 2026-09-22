@@ -273,7 +273,17 @@ fi
 # The commit message is the one a builder would have written for this change. It
 # does not say the change is planted: a defect that announces itself measures
 # the announcement.
-if ! git -C "$TREE" commit -q -m "$SUBJECT" >>"$LOG" 2>&1; then
+#
+# The identity is passed rather than assumed. A developer's machine has one in
+# `~/.gitconfig` and `ubuntu-latest` does not, so this line committed here and
+# refused in CI -- `not_planted`, exit 4, on a routine whose whole purpose is to
+# find out whether the lens still catches a defect. A canary that cannot plant
+# reports nothing about the lens, and it reported it only where nobody was
+# reading. It is the routine's own commit, so the name is the routine's.
+if ! git -C "$TREE" \
+        -c user.name="monthly canary" \
+        -c user.email="canary@aaer-evals.invalid" \
+        commit -q -m "$SUBJECT" >>"$LOG" 2>&1; then
     could_not_plant "the plant did not commit on $BRANCH"
 fi
 

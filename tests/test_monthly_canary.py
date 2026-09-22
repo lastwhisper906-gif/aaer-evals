@@ -189,6 +189,7 @@ def run_canary(
     result: str | None,
     exit_code: int = 0,
     keep: bool = False,
+    with_no_git_identity: bool = False,
 ) -> subprocess.CompletedProcess:
     """One dry run of the routine, against a ledger this test owns."""
     stubs = tmp_path / "stubs"
@@ -212,6 +213,42 @@ def run_canary(
     environment["CANARY_TIMEOUT"] = "60"
     if keep:
         environment["CANARY_KEEP"] = "yes"
+    if with_no_git_identity:
+        # `ubuntu-latest` as the workflow actually finds it: no `~/.gitconfig`,
+        # no system config, and none of the four identity variables set.
+        #
+        # Emptying those is not enough, and the first version of this helper
+        # that stopped there was not a judge: with nothing configured git
+        # *guesses* an identity from the username and the hostname and commits
+        # with a warning, which is what a developer's machine does. The runner
+        # is where the guess fails -- no sensible mail domain -- and git errors
+        # instead. `user.useConfigOnly` is the switch that forbids the guess
+        # everywhere, so the same refusal happens here. It is injected through
+        # `GIT_CONFIG_COUNT` because it has to reach a `git` this test does not
+        # call itself. A `-c user.email` on the routine's own command line
+        # satisfies it, which is the whole point.
+        #
+        # And the fixture's own repository, which `repository()` gives a local
+        # `user.email` and `user.name` so it can make its first commit. Local
+        # config outranks everything set here and is inherited by the worktree
+        # the plant lands in, so with it in place the commit succeeds however
+        # bare the environment is -- which is exactly why no test in this file
+        # could ever have caught the runner failing. The real repository under
+        # `actions/checkout` carries no such entry.
+        for setting in ("user.email", "user.name"):
+            subprocess.run(["git", "config", "--unset", setting],
+                           cwd=repo, capture_output=True)
+        empty = tmp_path / "no_home"
+        empty.mkdir(exist_ok=True)
+        environment["HOME"] = str(empty)
+        environment["GIT_CONFIG_GLOBAL"] = os.devnull
+        environment["GIT_CONFIG_SYSTEM"] = os.devnull
+        environment["GIT_CONFIG_COUNT"] = "1"
+        environment["GIT_CONFIG_KEY_0"] = "user.useConfigOnly"
+        environment["GIT_CONFIG_VALUE_0"] = "true"
+        for name in ("GIT_AUTHOR_NAME", "GIT_AUTHOR_EMAIL",
+                     "GIT_COMMITTER_NAME", "GIT_COMMITTER_EMAIL", "EMAIL"):
+            environment.pop(name, None)
     return subprocess.run(
         ["bash", str(SCRIPT)],
         capture_output=True,
@@ -391,6 +428,29 @@ def test_no_lens_binary_at_all_is_not_an_approval(tmp_path: Path) -> None:
 
     assert result.returncode == 3, result.stderr
     assert ledger_lines(tmp_path)[0]["result"] == "no_lens_ran"
+
+
+def test_the_plant_commits_where_no_git_identity_is_configured(tmp_path: Path) -> None:
+    """The one environment the routine actually runs in.
+
+    `git commit` takes its author from `~/.gitconfig`, and a developer's machine
+    has one. `ubuntu-latest` does not, and neither does any container that has
+    not been told to: the commit refuses, the plant never lands, and the routine
+    exits `COULD_NOT_PLANT` saying "the plant did not commit". Measured, not
+    supposed -- that is what run 35784142955 on `item/monthly-canary` did, and
+    every local run passed while it did it.
+
+    A canary that cannot plant says nothing about whether the lens still catches
+    a defect, and it says nothing in the one place the schedule is going to run
+    it. So the identity is passed on the command line and this test removes
+    every source of one before asking.
+    """
+    result = run_canary(tmp_path, result=FOUND_NOTHING, with_no_git_identity=True)
+
+    assert result.returncode == canary.MISS, result.stdout + result.stderr
+    (line,) = ledger_lines(tmp_path)
+    assert line["result"] == "miss"
+    assert "did not commit" not in line.get("reason", "")
 
 
 def test_a_month_that_could_not_plant_still_leaves_a_row(tmp_path: Path) -> None:
