@@ -56,7 +56,16 @@ suite has been committed that way before.
 
 **4b. `tools/second_lens.sh <worktree> "<item title>"`.** It runs Codex first,
 read-only, on the same five rules in the same order, and falls back to Claude
-Fable in a fresh context when Codex cannot run. Both lenses read
+Fable in a fresh context when Codex cannot run.
+
+**The title is the row's own, copied out of `docs/next_cycle_tasks.md`** —
+everything between `[ ] ` and the first ` · `, character for character. The
+ledger keys a run by it and the weekly routine moves the row of that name, so a
+title that is not a row is a verdict filed against nothing; the script refuses
+one with exit 3 rather than spending a lens. This is not hypothetical: the lens
+design's own review was invoked as "...and prices with two backends" against a
+row titled "...and a price source that is decided", and the verdict and the row
+would never have found each other. Both lenses read
 `tools/lens_prompt.md` and answer `tools/lens_verdict.schema.json`, so the two
 verdicts are comparable and neither can drift from the rules the first lens
 works through.

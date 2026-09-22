@@ -12,43 +12,62 @@ lens and writes down what came back.
 
 ## 1. Find the rows
 
-Two sources, and a row in either one qualifies:
+**The queue is keyed on the item, not on the row.** `events/ledger.jsonl` is
+append-only, so a row that qualifies once qualifies forever — and this routine
+writes a row every time it runs. The first version selected rows, so every
+re-read it performed re-qualified the following week, and the week after, with
+the task row long since moved to done: a `<merge>^1` pin is not `main`, a merge
+whose first parent predates the lens still writes `judge_from: "tree"`, and a
+fallback row stays in the ledger after Codex has re-read it. Three of the five
+sources looped that way. The second lens found it twice — once for the pin, and
+once more for the three it had not reached.
+
+An item's **last** row is its state. An item whose last row is a Codex answer
+has had the cross-vendor reading this routine exists to get, and is done,
+whatever the rows behind it say.
 
 ```sh
-# every lens run that answered on the fallback
-grep '"lens": "claude-fable-fallback"' events/ledger.jsonl
+.venv/bin/python - <<'PY'
+import json
 
-# every lens run where neither lens answered
-grep '"lens": "none"' events/ledger.jsonl
+state = {}
+for line in open("events/ledger.jsonl"):
+    row = json.loads(line)
+    if "lens" in row and "item" in row:
+        state[row["item"]] = row          # append-only, so the last wins
 
-# every lens run whose judge did not come from the trunk. `tree` is one value;
-# the change that builds the lens produces it, so does a merge whose first
-# parent predates the lens, and so does a reader that answered from somewhere
-# other than the pinned copy.
-grep '"lens"' events/ledger.jsonl | grep '"judge_from": "tree"'
+for item, row in state.items():
+    if row["lens"] == "codex":
+        continue                          # the cross-vendor lens answered
+    print(f"{row['lens']}\t{row.get('verdict')}\t{item}")
+PY
+```
 
-# and every other non-`main` value, tested rather than assumed. `judge_from`
-# records whatever `LENS_JUDGE_BASE` held, and `tools/second_lens.sh` now
-# refuses a pin that is not an ancestor of the trunk -- so a row pinned at a
-# branch's own name can only predate that guard. This is what finds those.
-#
-# It is **not** the complement of `main`, which is what stood here and was
-# wrong: this routine pins `LENS_JUDGE_BASE=<merge>^1`, so every row the routine
-# itself writes carries that sha and a complement grep re-selects the routine's
-# own work every week, forever. An on-trunk pin is the thing being asked about,
-# and a sha on `main` is on `main`.
+That covers all three of the old sources at once: a fallback answered, no lens
+answered, or the judge did not come off the trunk — each leaves a last row that
+is not Codex's, and a successful re-read replaces it with one that is.
+
+## 1b. And two things to read rather than re-run
+
+Neither is a queue. Re-running cannot change either, so they are reported once
+and a person reads them.
+
+```sh
+# the script could not pin itself on this run, so the pinner was the branch's
+# own copy — read the diff of that one file before trusting the verdict
+grep '"lens_from": "tree"' events/ledger.jsonl
+
+# a judge pinned off the trunk. `tools/second_lens.sh` refuses one now, so a row
+# like this can only predate that guard; it is not something a re-read fixes.
 for pin in $(grep '"lens"' events/ledger.jsonl \
              | sed -n 's/.*"judge_from": "\([^"]*\)".*/\1/p' \
              | grep -v '^main$' | grep -v '^tree$' | sort -u); do
     git merge-base --is-ancestor "$pin" main 2>/dev/null \
-        || echo "re-read: judge pinned off the trunk at $pin"
+        || echo "read: judge pinned off the trunk at $pin"
 done
+```
 
-# every lens run where `tools/second_lens.sh` itself differed from the pinned
-# ref. The script cannot pin itself, so this row says the pinner was the
-# branch's own copy — read the diff of that file before trusting the verdict
-grep '"lens_from": "tree"' events/ledger.jsonl
-
+```sh
 # every pull request that opened with the label because no lens read it
 gh pr list --state all --label one-lens --json number,title,mergeCommit,state
 ```

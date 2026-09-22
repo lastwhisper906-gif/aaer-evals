@@ -207,8 +207,22 @@ def _verdict_in(text: str, where: str) -> dict[str, Any]:
     Strict first, so an answer that is exactly one object is read exactly. Only
     when that fails is the text searched, and only an object that validates
     counts -- a JSON blob quoted out of the diff is not a verdict because it
-    does not have the four keys. The **last** one wins: the verdict is what the
-    lens ends on, and anything it quoted on the way there came earlier.
+    does not have the four keys.
+
+    **Exactly one**, or nothing. The first version of this took the last one, on
+    the reasoning that the verdict is what the lens ends on -- which is an
+    assumption about model behaviour, in a function written because the model
+    does not obey the one-object instruction. The next reading found what that
+    costs: a lens reviewing a change to this project reads
+    `tests/test_second_lens.py`, which carries a valid `pass` object verbatim,
+    and a `fail` followed by a quotation of that object would have been read as
+    a `pass` and exited 0. A same-family lens turning a non-approval into an
+    approval by the shape of its output is the one path the design says cannot
+    happen. Two answers are an ambiguous answer; ambiguous is exit 3, which is a
+    person reading it, which is the right outcome.
+
+    Identical repeats are one answer, not two -- a lens that restates its
+    verdict has not given two.
     """
     try:
         return validate(_parse(_unfence(text), where))
@@ -216,7 +230,12 @@ def _verdict_in(text: str, where: str) -> dict[str, Any]:
         answers = [obj for obj in _objects_in(text) if _validates(obj)]
         if not answers:
             raise
-        return validate(answers[-1])
+        distinct = {json.dumps(obj, sort_keys=True) for obj in answers}
+        if len(distinct) > 1:
+            raise NotAVerdict(
+                f"{where} carries {len(distinct)} different verdicts, and an "
+                "answer that says two things is not an answer")
+        return validate(answers[0])
 
 
 def _unfence(text: str) -> str:
