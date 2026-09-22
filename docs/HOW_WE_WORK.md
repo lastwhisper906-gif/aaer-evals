@@ -273,7 +273,7 @@ lessons.md` — the lessons file verbatim. A sentinel line in `lessons.md` came
 back to the model in one turn with no tool call; the same probe answered
 `ABSENT` once the flag was added.
 
-**Three trust roots remain, and they are named rather than papered over.**
+**Four trust roots remain, and they are named rather than papered over.**
 
 1. **`tools/second_lens.sh` cannot pin itself.** It is already running, and the
    build skill invokes it by relative path from inside the worktree, so a branch
@@ -301,7 +301,19 @@ back to the model in one turn with no tool call; the same probe answered
    and that code ran with the script's privileges over the running script, over
    the `.venv` link and over the ledger. The second lens found it on 2026-09-22;
    the probe now asks the interpreter a question with no repository code in it.
-3. **A hook that runs the tree's own code prints the tree's own output.**
+3. **The interpreter that runs the judge comes out of the worktree.**
+   `LENS_PYTHON` defaults to `$REPO_ROOT/.venv/bin/python`, and in the build
+   topology `REPO_ROOT` *is* the tree under review. `.venv/` is git-ignored, so
+   a binary planted there is invisible to `git diff`, to the uncommitted-changes
+   refusal and to `DEFINES_THE_JUDGE` — and it is what runs the pinned reader,
+   reads both answers, maps the exit code and writes the ledger row. This
+   document already watches the equally-ignored `.claude/settings.local.json` on
+   exactly that reasoning. Refusing it outright would be wrong, because on the
+   main checkout the repository is the worktree and that is the ordinary case,
+   so the run records a caveat when the interpreter resolves inside the tree it
+   is judging. Closing it means an interpreter the tree cannot write, which is
+   the same row as moving the judge directory out of the worktree.
+4. **A hook that runs the tree's own code prints the tree's own output.**
    `make check` at Stop is the tree's test suite. Reading a tree's output is
    what reviewing a tree is, so this is inherent rather than fixable. It is
    bounded by the fact that opening a *new* channel means editing

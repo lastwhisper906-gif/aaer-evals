@@ -304,7 +304,13 @@ fi
 # were the uncommitted ones, and the build skill has no commit step between
 # `make check` and this call. An approval the lens never gave is one commit
 # away. So the tree has to be settled before it is judged.
-if [ -n "$(git -C "$WORKTREE" status --porcelain 2>/dev/null)" ]; then
+# `.lens/` is excluded because this script made it, forty lines ago. It reaches
+# `.gitignore` only in the change that builds the lens, so a worktree detached
+# at any commit before that -- which is every row the weekly re-lens routine
+# exists to re-read -- shows `?? .lens/` and would exit 3 on "uncommitted
+# changes" every week, forever. The harness hid it by writing `.gitignore` into
+# every fixture repository, so the refusal was judged only where it cannot fire.
+if [ -n "$(git -C "$WORKTREE" status --porcelain -- ':(exclude).lens' 2>/dev/null)" ]; then
     read_the_verdict ledger \
         --ledger "$LENS_LEDGER" --item "$ITEM" --lens "none" \
         --verdict "no_lens_ran" --findings 0 --model "none" || true
@@ -389,6 +395,20 @@ esac
 # detached worktree -- so the old comparison answered a question about a copy
 # nobody was running, and `SKILL.md` and `HOW_WE_WORK.md` §6 both describe this
 # field as a fact about the running script.
+# `$LENS_PYTHON` defaults to `$REPO_ROOT/.venv/bin/python`, and in the build
+# topology `REPO_ROOT` is the worktree under review. `.venv/` is ignored, so a
+# binary planted there is invisible to `git diff`, to the status check above and
+# to `DEFINES_THE_JUDGE` -- and it is what runs the pinned reader, reads both
+# answers, maps the exit code and writes this row. Refusing it outright is
+# wrong: on the main checkout the repository *is* the worktree and that is the
+# ordinary case. So it is recorded, the way `judge from tree` is, and named as a
+# trust root in `docs/HOW_WE_WORK.md` §6 rather than implied closed.
+INTERPRETER_HOME="$(cd "$(dirname "$LENS_PYTHON")" 2>/dev/null && pwd -P)" || INTERPRETER_HOME=""
+case "$INTERPRETER_HOME" in
+    "$WORKTREE"/*)
+        CAVEATS="$CAVEATS the interpreter resolves inside the worktree ($LENS_PYTHON);" ;;
+esac
+
 LENS_FROM="$JUDGE_BASE"
 RUNNING_SCRIPT="$(cd "$(dirname "$0")" && pwd -P)/$(basename "$0")"
 if ! git -C "$WORKTREE" show "$JUDGE_BASE:tools/second_lens.sh" 2>/dev/null \

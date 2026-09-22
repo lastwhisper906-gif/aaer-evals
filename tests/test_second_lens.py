@@ -124,7 +124,8 @@ THE_JUDGE = (
 )
 
 
-def a_repository_on_main(worktree: Path, *, carrying_the_judge: bool = True) -> None:
+def a_repository_on_main(worktree: Path, *, carrying_the_judge: bool = True,
+                         carrying_the_ignore: bool = True) -> None:
     """A worktree that is a repository with a `main`, which every item's is.
 
     The script pins the prompt, the schema and the verdict reader out of `main`
@@ -160,8 +161,12 @@ def a_repository_on_main(worktree: Path, *, carrying_the_judge: bool = True) -> 
     # the check unfalsifiable.
     # `.lens/` is ignored in this project, and the harness has to carry that or
     # the script's own scratch directory makes the second run of any test look
-    # like an uncommitted change.
-    (worktree / ".gitignore").write_text(".lens/\n", encoding="utf-8")
+    # like an uncommitted change. `carrying_the_ignore=False` is every commit
+    # made before the lens existed -- which is every row the weekly routine
+    # re-reads -- and writing this line into all of them hid a refusal that
+    # fired on all of them.
+    if carrying_the_ignore:
+        (worktree / ".gitignore").write_text(".lens/\n", encoding="utf-8")
     (worktree / "docs").mkdir(parents=True, exist_ok=True)
     (worktree / "docs" / "next_cycle_tasks.md").write_text(
         "# Next cycle tasks\n\n"
@@ -1466,16 +1471,26 @@ def _routine_queue() -> str:
 
 
 def _a_ledger_and_a_list(tmp_path: Path, rows: list[dict],
-                         open_rows: tuple[str, ...] = ()) -> None:
-    """The two files the queue reads, planted side by side."""
+                         open_rows: tuple[str, ...] = (),
+                         landed_rows: tuple[str, ...] = ()) -> None:
+    """The two files the queue reads, planted side by side.
+
+    The sections are the point: every row in the real file starts with `[ ] `,
+    landed ones included, so only the heading above a row says whether it is
+    still open.
+    """
+    def rows_under(heading: str, titles: tuple[str, ...]) -> str:
+        return f"## {heading}\n\n" + "".join(
+            f"[ ] {title} · a_file.py · a judge · a source · PR:\n"
+            for title in titles) + "\n"
+
     (tmp_path / "events").mkdir(exist_ok=True)
     (tmp_path / "events" / "ledger.jsonl").write_text(
         "".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
     (tmp_path / "docs").mkdir(exist_ok=True)
     (tmp_path / "docs" / "next_cycle_tasks.md").write_text(
-        "# Next cycle tasks\n\n" + "".join(
-            f"[ ] {title} · a_file.py · a judge · a source · PR:\n"
-            for title in open_rows), encoding="utf-8")
+        "# Next cycle tasks\n\n" + rows_under("This cycle", open_rows)
+        + rows_under("Landed", landed_rows), encoding="utf-8")
 
 
 def _queued(tmp_path: Path) -> set[str]:
@@ -1585,6 +1600,28 @@ def test_a_correction_cannot_retire_work_that_is_still_on_the_list(
     ], open_rows=(live,))
 
     assert _queued(tmp_path) == {live}
+
+
+def test_a_landed_row_can_be_retired_though_it_is_written_like_an_open_one(
+        tmp_path: Path) -> None:
+    """The retirement the whole-file reading made unreachable.
+
+    Every row in `docs/next_cycle_tasks.md` starts with `[ ] ` -- there is no
+    `[x]` anywhere, and **Landed** keeps the same spelling -- so reading the
+    file line by line made every merged item unretirable, which is the one case
+    the retirement exists for. A merge whose first parent predates the lens has
+    no pinned judge to be had, so its row would have been queued every week
+    forever, which is what the queue above says it closes.
+    """
+    landed = "an item that merged before the lens existed"
+    _a_ledger_and_a_list(tmp_path, [
+        {"item": landed, "lens": "codex", "verdict": "pass",
+         "judge_from": "tree"},
+        {"at": "2026-09-22T00:00:00+00:00", "corrects": landed,
+         "item": landed, "note": "no pinned judge exists for this merge"},
+    ], open_rows=("something else entirely",), landed_rows=(landed,))
+
+    assert _queued(tmp_path) == set()
 
 
 def test_a_correction_line_is_invisible_to_everything_that_greps_a_lens(
@@ -2252,6 +2289,37 @@ def test_the_routine_s_real_shape_is_a_merge_read_against_its_first_parent(
     assert result.returncode == 0, result.stdout
     assert "empty diff" not in result.stdout
     assert ledger_lines(tmp_path)[-1]["judge_from"] == f"{merge}^1"
+
+
+def test_a_worktree_from_before_the_lens_is_not_refused_for_this_run_s_scratch(
+    tmp_path: Path, stubs: Path
+) -> None:
+    """The refusal that would have retired the weekly routine outright.
+
+    `.lens/` reaches `.gitignore` in the change that builds the lens, so every
+    commit the routine re-reads predates that line -- and this script creates
+    `$WORKTREE/.lens` itself, forty lines before checking `git status`. Without
+    the exclusion the routine's every run is exit 3 on "uncommitted changes",
+    forever, against the six merges it exists for.
+
+    The harness hid it by writing `.gitignore` into every fixture repository,
+    so the refusal was judged only in the one topology where it cannot fire.
+    """
+    worktree = tmp_path / "worktree"
+    a_repository_on_main(worktree, carrying_the_ignore=False)
+    codex_stub(stubs, exit_code=0, verdict=PASS_VERDICT)
+    claude_stub(stubs, exit_code=127, result=None)
+
+    first = run_lens(tmp_path)
+    assert first.returncode == 0, first.stdout
+    assert (worktree / ".lens").is_dir()
+
+    # The second run is the one that matters: `.lens/` is on disk now, untracked
+    # and unignored, exactly as it is on the routine's second visit.
+    second = run_lens(tmp_path)
+
+    assert second.returncode == 0, second.stdout
+    assert "uncommitted" not in second.stdout
 
 
 def test_the_build_skill_s_exit_table_is_the_one_the_script_uses() -> None:

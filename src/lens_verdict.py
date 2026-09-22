@@ -356,7 +356,8 @@ def ledger_line(
     )
 
 
-def correction_line(item: str, corrects: str, note: str, at: str) -> str:
+def correction_line(item: str, corrects: str, note: str,
+                    at: str | None = None) -> str:
     """One line retiring an item title the ledger can never close.
 
     `CLAUDE.md`: "Append-only under runs/ · rules/ · events/ ... A correction is
@@ -370,9 +371,15 @@ def correction_line(item: str, corrects: str, note: str, at: str) -> str:
     append under that name, the queue keys on the item, and a queue that cannot
     be emptied reports the same phantom every week. Retiring it is a fact about
     the record, so it goes in the record.
+
+    The clock is this function's, not the caller's. The first correction ever
+    written carried an `at` typed by hand, which landed eighteen minutes ahead
+    of real time and so sat above a row appended after it -- a false timestamp
+    in the file `CLAUDE.md` says is never edited. `at` stays an argument only so
+    a test can pin one.
     """
     return json.dumps(
-        {"at": at, "corrects": corrects, "item": item, "note": note},
+        {"at": at or _now(), "corrects": corrects, "item": item, "note": note},
         ensure_ascii=False, sort_keys=True)
 
 

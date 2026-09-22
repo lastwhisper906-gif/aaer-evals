@@ -38,8 +38,11 @@ merge whose first parent predates the lens has no pinned judge to be had: a
 re-read at `<merge>^1` writes `judge_from: "tree"` again, every week, forever.
 Append one correction line for it (`src/lens_verdict.py`'s `correction_line`)
 naming what was read and why no pin was available. A correction naming a row
-that is still open in `docs/next_cycle_tasks.md` is ignored, so this cannot be
-used to clear live work.
+that is still open in **This cycle** or **Next cycle** is ignored, so this
+cannot be used to clear live work. **Landed** is not open work -- and reading
+the whole file instead of the section made every merged item unretirable, which
+is the one case this exists for, because every row in that file starts with
+`[ ] ` including the landed ones.
 
 ```sh
 .venv/bin/python - <<'PY'
@@ -50,10 +53,17 @@ import pathlib
 # A correction may not retire work that is still on the list. `events/` is
 # append-only and a branch writes to it, so one line naming a live row would
 # take a fallback `pass` out of this queue permanently.
-still_open = {line[4:].split(" \u00b7 ", 1)[0]
-              for line in pathlib.Path("docs/next_cycle_tasks.md")
-                                 .read_text(encoding="utf-8").splitlines()
-              if line.startswith("[ ] ")}
+# and **Landed** is not open work. Every row in the file starts with `[ ] ` --
+# there is no `[x]` anywhere, and the Landed section keeps the same spelling --
+# so reading the whole file made every merged item unretirable, which is the one
+# case the retirement exists for. The section is what says whether a row is open.
+still_open, section = set(), None
+for line in pathlib.Path("docs/next_cycle_tasks.md").read_text(
+        encoding="utf-8").splitlines():
+    if line.startswith("## "):
+        section = line[3:].strip()
+    elif line.startswith("[ ] ") and section in ("This cycle", "Next cycle"):
+        still_open.add(line[4:].split(" \u00b7 ", 1)[0])
 
 state, retired = {}, set()
 for line in open("events/ledger.jsonl"):
