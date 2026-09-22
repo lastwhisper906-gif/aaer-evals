@@ -19,6 +19,13 @@ whether it was given on the command line or handed back by git -- and 3 on the
 wrong interpreter. Silence about a file it never opened reads exactly like
 silence about a file with nothing in it, so it does not exit 0 for either.
 
+The one absence that is not a failure is a path a sparse checkout left out of
+this worktree. `git diff` still compares it from the index, so it comes back as
+changed with nothing on disk; a worktree told not to hold a file has nothing in
+it to name. Those are dropped in `changed_files`, because exit 2 is the code
+Claude Code treats as a blocking hook error, and refusing to run in a sparse
+worktree means refusing to run in the two shapes this repository uses one for.
+
 One line per occurrence, on stderr, in the shape grep prints: `path:line: CODE`.
 A code in the file's own name is reported at line 0, because a name sits on no
 line of the file it names.
@@ -255,17 +262,46 @@ def _git(*args: str) -> str:
     ).stdout
 
 
+def sparse_names() -> set[str]:
+    """What the index holds and this worktree deliberately does not.
+
+    `git ls-files -v` tags a skip-worktree entry `S`. A sparse checkout leaves
+    those paths out of the working tree while `git diff` still compares them
+    from the index, so they come back as changed with no file on disk to read.
+
+    That is not the missing file main() refuses over. A path this worktree was
+    told not to have is a path with nothing in it to name, and a worktree told
+    not to have some of what it tracks is routine here: `docs/HOW_WE_WORK.md`
+    says a scheduled-task session starts from a clone checked out to one
+    company's `runs/`, and a scheduled task may leave more than that behind.
+    Refusing to run in either shape is refusing to run where the check is most
+    wanted.
+    """
+    skipped = set()
+    # --full-name for the reason `git ls-files --others` needs it above: run
+    # from a subdirectory, `ls-files` lists only what is under it and names it
+    # relative to there, so not one entry would match the root-relative names
+    # `git diff --name-only` returns and every skipped path would come back.
+    for line in _git("ls-files", "-v", "--full-name").splitlines():
+        tag, _, name = line.partition(" ")
+        if tag == "S" and name:
+            skipped.add(name)
+    return skipped
+
+
 def changed_files(baseline: str = "origin/main") -> list[Path]:
     """Everything this branch touched: the merge-base diff, staged, untracked.
 
     `git diff <merge-base>` compares that commit with the working tree, so a
     change that is committed, staged or neither is in the list exactly once.
-    Deletions are dropped -- there is no file left to read.
+    Deletions are dropped -- there is no file left to read. So are the paths a
+    sparse checkout left out of this worktree, for the same reason.
     """
     root = Path(_git("rev-parse", "--show-toplevel").strip())
     base = _git("merge-base", baseline, "HEAD").strip()
     names = set(_git("diff", "--name-only", "--diff-filter=d", base).splitlines())
     names |= set(_git("ls-files", "--others", "--exclude-standard", "--full-name").splitlines())
+    names -= sparse_names()
     return sorted(root / name for name in names if name)
 
 

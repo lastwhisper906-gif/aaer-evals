@@ -1,0 +1,47 @@
+"""Days of revenue sitting in receivables, one number per period end.
+
+The expected file the test reads is written from here:
+
+    python3.12 -m src.receivable_days tests/fixtures/receivable_days.json
+"""
+
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+DAYS_IN_YEAR = 360
+
+PERIODS = [
+    {"ends": "2025-03-29", "receivables": 1_250_000.0, "revenue": 9_000_000.0},
+    {"ends": "2025-06-28", "receivables": 1_480_000.0, "revenue": 9_600_000.0},
+    {"ends": "2025-09-27", "receivables": 1_910_000.0, "revenue": 9_400_000.0},
+]
+
+
+def receivable_days(receivables: float, revenue: float) -> float:
+    """How many days of revenue are sitting in receivables."""
+    return receivables / revenue * DAYS_IN_YEAR
+
+
+def over(periods: list[dict]) -> dict[str, float]:
+    """One rounded number per period end."""
+    return {
+        period["ends"]: round(receivable_days(period["receivables"], period["revenue"]), 2)
+        for period in periods
+    }
+
+
+def main(argv: list[str] | None = None) -> int:
+    arguments = sys.argv[1:] if argv is None else argv
+    destination = Path(arguments[0])
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(
+        json.dumps(over(PERIODS), indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

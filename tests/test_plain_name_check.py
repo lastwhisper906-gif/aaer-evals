@@ -385,6 +385,47 @@ def test_changed_names_the_same_code_from_a_subdirectory(repo, capsys, monkeypat
     assert from_subdirectory == (plain_name_check.FOUND, [f"untracked.md:1: {PLANTED}"])
 
 
+def test_a_path_a_sparse_checkout_left_out_is_skipped_rather_than_refused(repo, capsys):
+    """A worktree told not to hold some of what it tracks, which happens here.
+
+    A scheduled-task session starts from a clone checked out to one company's
+    `runs/`, and a scheduled task may leave more than that behind. Either way
+    `git diff` still compares the skipped path from the index, so it comes back
+    as changed with no file on disk -- and the check exited 2, which is the code
+    Claude Code treats as a blocking hook error. That is a refusal to run in the
+    place it is most wanted.
+    """
+    (repo / "docs" / "sparse.md").write_text(f"raised as {PLANTED}\n")
+    (repo / "docs" / "present.md").write_text("raised as RP-09\n")
+    git(repo, "add", "-A")
+    git(repo, "commit", "-qm", "work")
+    git(repo, "update-index", "--skip-worktree", "docs/sparse.md")
+    (repo / "docs" / "sparse.md").unlink()
+
+    status, lines = run(capsys, "--changed", "--baseline", "baseline")
+
+    assert status == plain_name_check.FOUND
+    assert lines == ["docs/present.md:1: RP-09"]
+
+
+def test_a_skipped_path_is_skipped_from_a_subdirectory_too(repo, capsys, monkeypatch):
+    """`ls-files` run from a subdirectory lists only what is under it.
+
+    Without --full-name not one `S` entry matches the root-relative names the
+    diff returns, so every skipped path comes back and the exit is 2 again --
+    from `docs/` but not from the root, which is the shape that made the
+    untracked-file bug above so quiet.
+    """
+    (repo / "docs" / "sparse.md").write_text(f"raised as {PLANTED}\n")
+    git(repo, "add", "-A")
+    git(repo, "commit", "-qm", "work")
+    git(repo, "update-index", "--skip-worktree", "docs/sparse.md")
+    (repo / "docs" / "sparse.md").unlink()
+    monkeypatch.chdir(repo / "docs")
+
+    assert run(capsys, "--changed", "--baseline", "baseline") == (0, [])
+
+
 def test_a_name_git_hands_back_that_is_not_a_file_is_not_a_pass(repo, capsys, monkeypatch):
     """The same silence, reached the other way: whatever produces the list, a name
     in it that does not resolve to a file is not a clean file."""
