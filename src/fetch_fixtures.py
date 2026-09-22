@@ -55,13 +55,18 @@ import urllib.request
 from pathlib import Path
 
 try:
-    from src import interpreter_pin
+    from src import interpreter_pin, universe
 except ImportError:  # invoked as a plain script: python3.12 src/fetch_fixtures.py
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from src import interpreter_pin
+    from src import interpreter_pin, universe
 
-TICKERS = ("AAPL", "STX", "CSCO", "PANW", "CARR", "LFUS",
-           "GNRC", "CIEN", "QCOM", "ESE", "TTMI", "NVDA")
+# The twelve were a literal here and three other modules imported it from this
+# one, which made the universe a code change. It is `universe.json` at the
+# repository root now. This name stays because the tests parametrise on it at
+# import time, and it is a snapshot: `main` below asks `universe.tickers()`
+# again when it runs, so a row appended to the file is a company this process
+# will fetch without being restarted.
+TICKERS = universe.tickers()
 
 AS_OF = "2026-09-01"
 FIXTURES = Path(__file__).resolve().parent.parent / "tests" / "fixtures"
@@ -422,7 +427,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out", default=str(FIXTURES), help="fixture root")
     args = parser.parse_args(argv)
 
-    tickers = tuple(t.upper() for t in args.ticker) if args.ticker else TICKERS
+    # Read from the file here rather than trusting the import-time snapshot: a
+    # thirteenth row is a thirteenth company to plan for, not a restart.
+    tickers = (tuple(t.upper() for t in args.ticker) if args.ticker
+               else universe.tickers())
     out = Path(args.out)
     fetcher = Fetcher(os.environ.get("EDGAR_USER_AGENT", DEFAULT_USER_AGENT))
 

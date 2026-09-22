@@ -57,10 +57,10 @@ import sys
 from pathlib import Path
 
 try:
-    from src import fetch_fixtures, interpreter_pin
+    from src import fetch_fixtures, interpreter_pin, universe
 except ImportError:  # invoked as a plain script: python3.12 src/fetch_companyfacts.py
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from src import fetch_fixtures, interpreter_pin
+    from src import fetch_fixtures, interpreter_pin, universe
 
 COMPANYFACTS_URL = "https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json"
 
@@ -226,8 +226,10 @@ def main(argv: list[str] | None = None) -> int:
                         help="fixture root")
     args = parser.parse_args(argv)
 
+    # `universe.tickers()`, not the fetcher's import-time snapshot: the universe
+    # is a file, and a row appended to it is a company this run fetches.
     tickers = tuple(t.upper() for t in args.ticker) if args.ticker \
-        else fetch_fixtures.TICKERS
+        else universe.tickers()
     out = Path(args.out)
     fetcher = fetch_fixtures.Fetcher(
         os.environ.get("EDGAR_USER_AGENT", fetch_fixtures.DEFAULT_USER_AGENT))

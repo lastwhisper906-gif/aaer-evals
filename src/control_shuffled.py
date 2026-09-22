@@ -53,11 +53,20 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from src import cutoff_guard
-from src.fetch_fixtures import TICKERS
+from src import cutoff_guard, universe
 
-# The twelve in ticker order. See the module docstring for the reading.
-PAIRING_ORDER = tuple(sorted(TICKERS))
+
+def pairing_order() -> tuple[str, ...]:
+    """The twelve in ticker order. See the module docstring for the reading.
+
+    Read from `universe.json` when it is called rather than fixed when this
+    module is imported, so a thirteenth company is a row in a file and not an
+    edit here.
+    """
+    return tuple(sorted(universe.tickers()))
+
+
+PAIRING_ORDER = pairing_order()
 
 # The two halves, by the names `docs/INPUT_SPEC.md` §6 gives them. A is the
 # company being scored and keeps the numbers side; B supplies the notes side.
