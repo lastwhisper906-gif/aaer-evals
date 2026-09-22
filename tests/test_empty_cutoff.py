@@ -29,6 +29,7 @@ from pathlib import Path
 import pytest
 
 from src import (
+    assemble_bundle,
     articulation,
     clean_text,
     cutoff_guard,
@@ -42,6 +43,7 @@ from src import (
     restatement_trace,
     split_sections,
     tag_continuity,
+    trends,
 )
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -113,6 +115,43 @@ def test_the_command_line_refuses_an_empty_cutoff(tmp_path: Path, capsys) -> Non
     assert code != 0, "a refused cutoff that exits zero is a pass"
     assert "cutoff is missing" in capsys.readouterr().err
     assert not out.exists(), "a refused run wrote a reading anyway"
+
+
+def test_the_trend_command_line_refuses_an_empty_cutoff(tmp_path: Path, capsys) -> None:
+    """The same shape as `clean_text`, in the module the merge reverted.
+
+    `src/trends.py` reached the default directly -- `default_cutoff(ticker) if
+    args.cutoff is None else args.cutoff` -- which is correct about `None` and
+    silent about `""`, and the merge that brought the companyfacts trend table
+    in is what put it back. The AST walk above is what noticed; this is the
+    behaviour behind it, read off the exit code and the file never written.
+    """
+    out = tmp_path / "trends.json"
+    code = trends.main(["--ticker", TICKER, "--cutoff", "", "--out", str(out)])
+
+    assert code == trends.BAD_INPUT
+    assert code != 0, "a refused cutoff that exits zero is a pass"
+    assert "cutoff is missing" in capsys.readouterr().err
+    assert not out.exists(), "a refused run wrote a table anyway"
+
+
+def test_the_bundle_refuses_an_empty_cutoff_rather_than_defaulting(tmp_path: Path) -> None:
+    """The one call site neither net above could see.
+
+    `src/assemble_bundle.py` does not call `default_cutoff` and does not call
+    `resolve_cutoff`, so the AST walk and the grep both step over it -- and it
+    wrote `str(cutoff) if cutoff else trigger["filing_date"]`, which is this
+    item's own conflation in a module the row never named. The default it falls
+    to is the trigger's own filing date, so nothing later is swept in and this
+    is not a look-ahead; it is a run given to a caller who typed nothing.
+
+    Found by the second lens on this branch, not by either net.
+    """
+    with pytest.raises(assemble_bundle.BundleError) as refused:
+        assemble_bundle.assemble(TICKER, "10-K", cutoff="", out=tmp_path / "bundle")
+
+    assert "cutoff is missing" in str(refused.value)
+    assert not (tmp_path / "bundle").exists(), "a refused run wrote a bundle anyway"
 
 
 def test_an_absent_cutoff_still_means_the_default() -> None:
@@ -194,8 +233,10 @@ def test_every_call_site_in_the_source_has_a_reader_in_this_file() -> None:
         and path.stem != "cutoff_guard"
     }
     covered = {name.split(".")[0] for name in READERS}
-    # `clean_text` is reached through its command line, which has its own test.
-    covered.add("clean_text")
+    # Two modules call it from `main` rather than from a reader function, so
+    # they are covered by a command-line test each rather than by an entry in
+    # the table above.
+    covered.update({"clean_text", "trends"})
     assert calling == covered, f"not planted into: {sorted(calling - covered)}"
 
 
