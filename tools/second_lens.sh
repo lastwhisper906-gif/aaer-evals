@@ -235,6 +235,7 @@ fi
 # routine it is the merge commit's first parent, which is an ancestor, so the
 # diff is exactly what that merge brought in.
 DIFF_RANGE="$JUDGE_BASE...HEAD"
+CHANGE_DIFF="$LENS_DIR/change.diff"
 if [ -z "$(git -C "$WORKTREE" diff --numstat "$DIFF_RANGE" 2>/dev/null)" ]; then
     read_the_verdict ledger \
         --ledger "$LENS_LEDGER" --item "$ITEM" --lens "none" \
@@ -350,11 +351,33 @@ fi
 # One composed prompt, handed to both lenses unchanged. The item and the tree it
 # is in are the only thing added to tools/lens_prompt.md, and they are added
 # once rather than per lens, so the two cannot be given different work.
+# `--restricted` is what keeps the tree from writing the lens's instructions,
+# and it takes the shell away with them: a real run came back saying it had "no
+# bash execution tool available ... Read, Grep, Glob" while the prompt was
+# telling it to run `git diff main...HEAD`. It read nineteen files and never saw
+# the change. So the diff is produced here, by this script, which does have a
+# shell, and handed over as a file.
+if ! git -C "$WORKTREE" diff "$DIFF_RANGE" > "$CHANGE_DIFF" 2>/dev/null \
+   || [ ! -s "$CHANGE_DIFF" ]; then
+    read_the_verdict ledger \
+        --ledger "$LENS_LEDGER" --item "$ITEM" --lens "none" \
+        --verdict "no_lens_ran" --findings 0 --model "none" || true
+    echo "second lens: none · none · no_lens_ran · the diff for $DIFF_RANGE could not be written to $CHANGE_DIFF"
+    exit "$NO_LENS_RAN"
+fi
+
 PROMPT="$LENS_DIR/prompt.md"
 {
     printf 'The change under the lens is the task-list item titled:\n\n    %s\n\n' "$ITEM"
-    printf 'Its worktree is %s, and the change is `git diff %s` run there.\n' "$WORKTREE" "$DIFF_RANGE"
-    printf 'That range is the change, not a merge base you work out yourself.\n\n'
+    printf 'Its worktree is %s.\n\n' "$WORKTREE"
+    printf 'The change is `git diff %s`, and it is already written out for you\n' "$DIFF_RANGE"
+    printf 'at %s -- read that file first. Do not work out a\n' "$CHANGE_DIFF"
+    printf 'merge base yourself: on a commit already on the pinned ref that base is\n'
+    printf 'the commit itself, which is an empty diff and a pass nobody earned.\n\n'
+    printf 'The fallback lens runs sandboxed and has **no shell**: Read, Grep and\n'
+    printf 'Glob only, and nothing outside this worktree. That is why the diff is a\n'
+    printf 'file rather than a command. Measured in a real run before it was written\n'
+    printf 'down -- a lens told to run `git diff` reported it had no way to.\n\n'
     printf 'Call yourself `%%LENS%%` in the `lens` key.\n\n---\n\n'
     cat "$LENS_PROMPT"
 } > "$PROMPT"

@@ -1285,7 +1285,7 @@ def test_the_range_the_lens_is_told_to_read_is_in_the_prompt(
 
     prompt = (tmp_path / "worktree" / ".lens" / "prompt.codex.md").read_text(encoding="utf-8")
     assert "git diff main...HEAD" in prompt
-    assert "merge base you work out yourself" in prompt
+    assert "Do not work out a\nmerge base yourself" in prompt
 
 
 def test_the_tripwire_fires_when_the_reader_that_ran_is_not_the_pinned_one(
@@ -1442,14 +1442,13 @@ def test_the_fallback_is_started_where_the_tree_cannot_instruct_it(
     `.claude/settings.local.json` -- and, through the SessionStart hook
     `cat lessons.md`, the lessons file verbatim. Measured, not reasoned about: a
     sentinel line in `lessons.md` came back `FOUND` in one turn with no tool
-    call, and `ABSENT` with these flags; `CLAUDE.md` and `AGENTS.md` went the
+    call, and `ABSENT` with `--restricted`; `CLAUDE.md` and `AGENTS.md` went the
     same way.
 
     Watching those files instead was the first fix and it was the wrong one --
     `CLAUDE.md` requires a line appended to `lessons.md` every session, so a
     watched `lessons.md` is exit 3 on every pull request this project can
-    produce. The expected values here are the two flags, read out of
-    `claude --help`, and the tool list the script passes.
+    produce.
     """
     codex_stub(stubs, exit_code=1, verdict=None)
     claude_stub(stubs, exit_code=0, result=json.dumps(PASS_VERDICT))
@@ -1459,11 +1458,46 @@ def test_the_fallback_is_started_where_the_tree_cannot_instruct_it(
     assert "--restricted" in argv, (
         "the fallback read the tree's own settings, hooks and memory"
     )
-    definition = json.loads(argv[argv.index("--agents") + 1])
-    assert "refute-check" in definition, (
-        "--restricted drops the tree's agents, so the definition must travel here"
+
+
+def test_the_sandboxed_lens_is_handed_the_diff_because_it_has_no_shell(
+    tmp_path: Path, stubs: Path
+) -> None:
+    """`--restricted` takes the shell away with the settings.
+
+    The first version of this passed `--restricted` and left the prompt saying
+    "the change is `git diff main...HEAD` run there". A real run answered that
+    it had "no bash execution tool available -- Read, Grep, Glob": it read
+    nineteen files and never saw the change it was reviewing. The test that was
+    here asserted `definition["tools"] == [...]` against the same string the
+    script passes, so it could only ever agree with the script and judged
+    nothing about the session that actually served.
+
+    What is judged here instead is the thing that failed: the diff has to be on
+    disk, it has to be the real one, and the prompt has to point at it. The
+    expected value is `git diff` computed by this test from the fixture
+    repository -- not read back out of anything the script wrote.
+    """
+    codex_stub(stubs, exit_code=1, verdict=None)
+    claude_stub(stubs, exit_code=0, result=json.dumps(PASS_VERDICT))
+    assert run_lens(tmp_path).returncode == 0
+
+    worktree = tmp_path / "worktree"
+    expected = subprocess.run(
+        ["git", "diff", "main...HEAD"], cwd=worktree,
+        capture_output=True, text=True, check=True).stdout
+    assert expected.strip(), "the fixture left nothing to review"
+
+    written = (worktree / ".lens" / "change.diff").read_text(encoding="utf-8")
+    assert written == expected, "the lens was handed something other than the change"
+    assert "the_change.py" in written
+
+    prompt = (worktree / ".lens" / "prompt.claude-fable-fallback.md").read_text(
+        encoding="utf-8")
+    assert str(worktree / ".lens" / "change.diff") in prompt
+    assert "no shell" in prompt, (
+        "the lens was told to run a command it has no way to run"
     )
-    assert definition["refute-check"]["tools"] == ["Read", "Grep", "Glob", "Bash"]
 
 
 def test_the_watch_list_does_not_fire_on_the_line_every_session_appends(

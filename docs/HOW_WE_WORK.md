@@ -341,8 +341,10 @@ recorded as a failure. A pin that exists only in this table is not a pin.
     cross-section is cut by calendar frames, never by company fiscal quarters.
     Nothing here starts until step 9 is done.
 
-    **Prices.** The study reads **CRSP through WRDS**, the one free source that
-    carries the delisting return; the forward track's twelve are all currently
+    **Prices.** The study reads **CRSP through WRDS**, the only source in reach
+    that carries the delisting return — free *to us*, through a subscription
+    Stony Brook already pays for, which is not the same as free and is the
+    distinction `docs/needs_judgment.md` turns on; the forward track's twelve are all currently
     listed and read through the **Tiingo** free tier instead. A row whose
     delisting return is missing takes **−30%**, and **−55%** on Nasdaq —
     Shumway (1997), and Shumway and Warther (1999) — recorded per row as the
