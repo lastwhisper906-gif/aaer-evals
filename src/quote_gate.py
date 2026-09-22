@@ -119,10 +119,12 @@ def printed_row(file_text: str, node, depth: int) -> str | None:
 
     `json.dumps` lays a node out from the node alone, so the only things the
     file adds are the indent the row's depth carries and whether whoever wrote
-    the file sorted the keys -- `src/trends.py:509` does and
-    `src/assemble_bundle.py:499` does not. Both are settled by finding the
-    result in the file rather than by being told, and a row that is not found
-    there is not quotable at all.
+    the file sorted the keys -- `src/trends.py`'s `render` does and the
+    `input_numbers.json` dump in `src/assemble_bundle.py` does not. Named by
+    what they are rather than by line number, because a line number is stale the
+    next time either file is edited. Both are settled by finding the result in
+    the file rather than by being told, and a row that is not found there is not
+    quotable at all.
     """
     for sort_keys in (False, True):
         block = json.dumps(node, indent=INDENT, sort_keys=sort_keys)
