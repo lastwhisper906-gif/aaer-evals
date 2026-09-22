@@ -47,7 +47,18 @@ agent's input. And any allowed name can hold another company's prose, so
 `resolvable` refuses a directory declaring paragraphs of an accession the record
 does not give this ticker by the cutoff; without it, NVDA's paragraphs in a file
 called `input_notes.md` would have made every NVDA id the model wrote resolve,
-gate clean and land in this company's control file. `input_manifest.json` is not
+gate clean and land in this company's control file.
+
+Under all of it is the one check a name cannot stand in for: every file the
+directory holds is held against the run's own file of that name, byte for byte,
+through `src/agent_inputs.py`'s `_differs` -- "a hardlink to another file
+resolves inside the root and answers to the right name". Two of the allowlist's
+names declare no paragraph ids at all, `input_market.json` and
+`input_companyfacts.json`, so nothing downstream can tell whose they are; and a
+foreign `input_trends.json` is worse than invisible, because `src/quote_gate.py`
+mints its cell ids from *this* run's accession rather than out of the file, so
+another company's values string-match as verbatim quotes under this run's own
+ids. `input_manifest.json` is not
 on the allowlist at all: §6's line for it is "dropped-item counts ... served
 models", which is the pipeline's own output, and `run` reads it from
 `bundle_root` where the run keeps it rather than from what the control sees.
@@ -116,7 +127,8 @@ This module never names `runs/`. It writes into the directory it is handed, and
 it never writes over what is already there: a run directory is append-only, so a
 second call carrying different content is refused and a correction is a new run.
 
-    python3.12 -m src.control_single_agent --question accounting_reliability --input <dir>
+    python3.12 -m src.control_single_agent --question accounting_reliability \
+        --input <the control's directory> --bundle <the run directory>
 
 prints the exact call the control would make. There is no model client in this
 repository, so the command line prints the prompt rather than sending it; `run`
@@ -744,7 +756,7 @@ def cutoff_on_record(manifest: dict, *,
 
 # --- the call ----------------------------------------------------------------
 
-def input_files(input_dir) -> list[str]:
+def input_files(input_dir, bundle_root) -> list[str]:
     """What the control was handed, or a refusal naming what it may not hold.
 
     `docs/CHECKLIST.md` §8 hands this control "the whole bundle plus the market
@@ -770,6 +782,23 @@ def input_files(input_dir) -> list[str]:
     *before* anything that follows one, "because both it and `read_bytes()`
     follow the link"; the same order is the only one that works here, since
     `is_file()` on a link into another company's run says yes.
+
+    **And then the bytes.** A name says which file this is meant to be and
+    nothing about whose it is. Another company's `input_trends.json`,
+    `input_market.json` or `input_companyfacts.json`, *copied* under its allowed
+    name, answers every question above: it is not a link, it is not a directory,
+    and its name is on the list. Two of those three declare no paragraph ids at
+    all, so `resolvable` cannot see them either, and the third has its ids minted
+    from this run's accession by `src/quote_gate.py` rather than read out of the
+    file -- so a foreign trend table is indexed under this run's ids and its
+    values string-match as verbatim quotes. `src/agent_inputs.py` has the check
+    this needs and says why in one line: "the one thing a check on names cannot
+    see: a hardlink to another file resolves inside the root and answers to the
+    right name." So every admitted file is held against the run's own file of
+    that name, byte for byte, through that same `_differs`. The run directory is
+    what `docs/HOW_WE_WORK.md` §1.6 makes the boundary -- "the per-run, per-agent
+    input directory ... is committed as what that agent saw" -- and a directory
+    that is not a copy of the run is not a record of anything.
     """
     folder = Path(input_dir)
     entries = sorted(folder.iterdir(), key=lambda path: path.name) \
@@ -802,6 +831,23 @@ def input_files(input_dir) -> list[str]:
             "not one of the files. The prompt lists what the control sees, and "
             "a directory carrying an allowed name carries whatever is under it "
             "under no name at all")
+
+    run_dir = Path(bundle_root)
+    for path in entries:
+        ours = run_dir / path.name
+        if not ours.is_file():
+            raise ControlError(
+                f"{input_dir} holds {path.name} and {bundle_root} has none. The "
+                "control's directory is a copy of the run's own files, and a "
+                "file the run never wrote is one nobody assembled for it")
+        if agent_inputs._differs(path, ours):
+            raise ControlError(
+                f"{input_dir} holds a {path.name} that is not the run's — the "
+                "right name over other bytes. Another company's file answers to "
+                "the same name, and a name is all the list above can read; the "
+                "directory is committed as what the control saw, so what is in "
+                "it has to be what the run assembled")
+
     prior = folder / PRIOR_PREDICTIONS
     if prior.is_file():
         # The name is allowed and the contents still have to be. `docs/INPUT_SPEC.md`
@@ -823,10 +869,15 @@ def input_files(input_dir) -> list[str]:
     return [path.name for path in entries]
 
 
-def prompt(question: str, input_dir) -> str:
-    """The one prompt this control sends, with the question and its files in it."""
+def prompt(question: str, input_dir, bundle_root) -> str:
+    """The one prompt this control sends, with the question and its files in it.
+
+    `bundle_root` is here because the file list is not a listing: every name
+    in it is a file `input_files` has held against the run's own copy, so the
+    sentence "you see these files and nothing else" is about those bytes.
+    """
     _a_question(question)
-    listed = "\n".join(f"- {name}" for name in input_files(input_dir))
+    listed = "\n".join(f"- {name}" for name in input_files(input_dir, bundle_root))
     return CONTROL_PROMPT.format(question=question.replace("_", " "),
                                  files=listed, schema=SCHEMA)
 
@@ -886,7 +937,7 @@ def run(question: str, *, input_dir, bundle_root, ask,
             f"{MANIFEST} names no accession, and a computed row's id begins with one")
     # The directory first, because `quote_gate.quotable` reads every `.md` in it
     # and a stray one would be indexed before anything had said it may be there.
-    text = prompt(question, input_dir)
+    text = prompt(question, input_dir, bundle_root)
     filed = cutoff_on_record(manifest, fixtures_root=fixtures_root)
     index = resolvable(input_dir, manifest, filed, fixtures_root=fixtures_root)
 
@@ -919,12 +970,14 @@ def main(argv=None) -> int:
     parser.add_argument("--question", required=True, choices=sorted(CONTROL_FILES))
     parser.add_argument("--input", required=True,
                         help="the directory the control is handed")
+    parser.add_argument("--bundle", required=True,
+                        help="the run directory, whose files that directory copies")
     parser.add_argument("--prompts", default=str(AGENT_PROMPTS),
                         help="where the supervisor prompts are, for the model pin")
     args = parser.parse_args(argv)
     try:
         model = supervisor_model(Path(args.prompts))
-        text = prompt(args.question, args.input)
+        text = prompt(args.question, args.input, args.bundle)
     except (ControlError, OSError) as exc:
         print(exc, file=sys.stderr)
         return BAD_INPUT

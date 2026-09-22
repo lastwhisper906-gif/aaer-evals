@@ -204,18 +204,34 @@ TREND_QUOTE = '"days": 91,\n          "value": 51.7'
 ALTERED_QUOTE = "rose to $29,508 million - the"
 
 
+BUNDLE = {"input_notes.md": NOTES, "input_trends.json": TRENDS,
+          "input_market.json": MARKET}
+
+
 def plant(tmp_path: Path) -> tuple[Path, Path]:
-    """The run directory, and the directory the control is handed."""
+    """The run directory, and the directory the control is handed.
+
+    The bundle is written into the run directory and *copied* into the
+    control's, which is how `src/agent_inputs.py` places a layer's files and
+    what the byte check below is measured against. A control directory that
+    were not a copy of the run would be a directory nobody assembled.
+    """
     root = tmp_path / "AAPL-10-K"
     folder = tmp_path / "single-agent"
     root.mkdir()
     folder.mkdir()
-    (folder / "input_notes.md").write_text(NOTES, encoding="utf-8")
-    (folder / "input_trends.json").write_text(TRENDS, encoding="utf-8")
-    (folder / "input_market.json").write_text(MARKET, encoding="utf-8")
+    for name, text in BUNDLE.items():
+        (root / name).write_text(text, encoding="utf-8")
+        (folder / name).write_text(text, encoding="utf-8")
     (root / "input_manifest.json").write_text(
         json.dumps(MANIFEST, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return root, folder
+
+
+def hand(folder: Path, root: Path, name: str, text: str) -> None:
+    """One file the run assembled and the control was handed, both the same."""
+    (root / name).write_text(text, encoding="utf-8")
+    (folder / name).write_text(text, encoding="utf-8")
 
 
 # --- what the stub model answers ---------------------------------------------
@@ -687,7 +703,6 @@ def test_the_files_the_control_may_hold_are_the_bundles_and_the_market_table(tmp
     value along with it. §6's fenced list is the document, and it is what the
     control is measured against here.
     """
-    _, folder = plant(tmp_path)
     listed = spec_input_names()
     assert "input_market.json" in listed and MANIFEST_NAME in listed
     # `input_controls.md` is the one bundle file §6's list does not print, and
@@ -700,7 +715,8 @@ def test_the_files_the_control_may_hold_are_the_bundles_and_the_market_table(tmp
         set(listed) | {"input_controls.md"}) - {MANIFEST_NAME}
     assert "report_numbers.md" not in control_single_agent.CONTROL_SEES
     assert OUTCOME_WINDOW_PRICES not in control_single_agent.CONTROL_SEES
-    assert control_single_agent.input_files(folder) == [
+    root, folder = plant(tmp_path)
+    assert control_single_agent.input_files(folder, root) == [
         "input_market.json", "input_notes.md", "input_trends.json"]
 
 
@@ -744,11 +760,12 @@ def test_a_prior_predictions_file_still_carrying_a_probability_is_refused(tmp_pa
     assert ("a prior run's probability into any agent's input"
             in HOW_WE_WORK.read_text(encoding="utf-8"))
     root, folder = plant(tmp_path)
-    (folder / "input_prior_predictions.md").write_text(
-        f"# AAPL prior predictions\n\n## {OTHER_ACCESSION} — prediction_accounting.json\n\n"
-        f'[{OTHER_ACCESSION}:prior:prediction_accounting:1]\n'
-        '{"finding": "flag", "p_up": 0.71, "confidence": 0.9}\n',
-        encoding="utf-8")
+    # In the run's own bundle as well as in the copy: the question is whether
+    # the control reads what it was handed, not whether the copy was faithful.
+    hand(folder, root, "input_prior_predictions.md",
+         f"# AAPL prior predictions\n\n## {PRIOR_ACCESSION} — prediction_accounting.json\n\n"
+         f'[{PRIOR_ACCESSION}:prior:prediction_accounting:1]\n'
+         '{"finding": "flag", "p_up": 0.71, "confidence": 0.9}\n')
     stub = Stub(accounting_answer())
     with pytest.raises(ControlError) as caught:
         control_single_agent.run("accounting_reliability", input_dir=folder,
@@ -771,9 +788,11 @@ def test_another_companys_prose_under_an_allowed_name_is_refused(tmp_path):
     in NVDA's manifest and in no AAPL one.
     """
     root, folder = plant(tmp_path)
-    (folder / "input_notes.md").write_text(
-        f"# Notes\n\n[{OTHER_ACCESSION}:notes:1]\nAnother company's prose.\n",
-        encoding="utf-8")
+    # Assembled wrong, not copied wrong: the bytes match the run's own file,
+    # so the byte check below has nothing to say and the record is the only
+    # thing left that knows whose paragraphs these are.
+    hand(folder, root, "input_notes.md",
+         f"# Notes\n\n[{OTHER_ACCESSION}:notes:1]\nAnother company's prose.\n")
     answer = accounting_answer()
     answer["checklist"] = [
         {"key": "receivables_outrun_revenue", "finding": "flag", "confidence": 0.6,
@@ -790,6 +809,81 @@ def test_another_companys_prose_under_an_allowed_name_is_refused(tmp_path):
                                  bundle_root=root, ask=stub)
     assert OTHER_ACCESSION in str(caught.value)
     assert not (root / "control_single_agent_accounting.json").exists()
+
+
+def test_a_foreign_trend_table_under_its_allowed_name_is_refused(tmp_path):
+    """The case no id check can reach, and the reason the bytes are read.
+
+    `src/quote_gate.py` mints a trend cell's id from the run's own accession
+    rather than out of the file, so another company's table is indexed under
+    *this* run's ids and its values string-match as verbatim quotes. `resolvable`
+    sees nothing wrong — the ids are this run's — and the row would be kept,
+    quoted and written. `src/agent_inputs.py` names the only check that reaches
+    it: "a hardlink to another file resolves inside the root and answers to the
+    right name."
+    """
+    root, folder = plant(tmp_path)
+    theirs = TRENDS.replace('"value": 51.7', '"value": 88.2')
+    assert theirs != TRENDS
+    (folder / "input_trends.json").write_text(theirs, encoding="utf-8")
+    # The id the model would quote is this run's, and the quote does match the
+    # bytes in the directory — which is exactly why the name check passes it.
+    assert TREND_CELL in quote_gate.quotable(folder, ACCESSION)
+    assert '"value": 88.2' in (folder / "input_trends.json").read_text(
+        encoding="utf-8")
+    stub = Stub(accounting_answer())
+    with pytest.raises(ControlError) as caught:
+        control_single_agent.run("accounting_reliability", input_dir=folder,
+                                 bundle_root=root, ask=stub)
+    assert "input_trends.json" in str(caught.value)
+    assert stub.prompts == []
+    assert not (root / "control_single_agent_accounting.json").exists()
+
+
+def test_a_market_table_that_is_not_the_runs_own_is_refused(tmp_path):
+    """`input_market.json` declares no paragraph ids, so nothing else can tell.
+
+    The outcome-window rows the earlier test plants wear a name the allowlist
+    does not carry, which is the easy half. Under the allowed name the same
+    rows pass every check that reads names, and the market table offers no id
+    for `resolvable` to scope — so the run's own copy is the only thing that
+    says whether this is the table `src/market.py` bounded at reaction day two.
+    """
+    root, folder = plant(tmp_path)
+    assert quote_gate.quotable(folder, ACCESSION).keys() == {
+        NOTES_ONE, NOTES_TWO, TREND_CELL}
+    (folder / "input_market.json").write_text(
+        '{\n  "ticker": "AAPL",\n  "rows": [\n'
+        '    {"date": "2026-12-31", "window": "outcome_day_60", '
+        '"abnormal_return": 0.061}\n  ]\n}\n', encoding="utf-8")
+    with pytest.raises(ControlError) as caught:
+        go(root, folder, "accounting_reliability", accounting_answer())
+    assert "input_market.json" in str(caught.value)
+
+
+def test_a_file_the_run_never_assembled_is_refused(tmp_path):
+    """An allowed name the run has no copy of is a file nobody routed."""
+    root, folder = plant(tmp_path)
+    (folder / "input_mdna.md").write_text(
+        f"# MD&A\n\n[{ACCESSION}:mdna:1]\nManagement's discussion.\n",
+        encoding="utf-8")
+    with pytest.raises(ControlError) as caught:
+        go(root, folder, "accounting_reliability", accounting_answer())
+    assert "input_mdna.md" in str(caught.value)
+
+
+def test_the_prior_and_later_accessions_planted_here_are_the_records_own(tmp_path):
+    """The second and third dates this file leans on, read the way the first is.
+
+    `FILED` is read off the fixture record above with `json`; these two were
+    asserted only through `recorded_accessions`, the function they judge, so
+    the claim that they came off the record was not one this file made good.
+    """
+    recorded = json.loads((FIXTURES / TICKER / "manifest.json").read_text(
+        encoding="utf-8"))
+    filed = {row["accession"]: row["filing_date"] for row in recorded["documents"]}
+    assert filed[PRIOR_ACCESSION] < FILED
+    assert filed[LATER_ACCESSION] > FILED
 
 
 def test_the_accessions_the_record_allows_are_this_tickers_by_the_cutoff(tmp_path):
@@ -1104,9 +1198,10 @@ def test_the_prompt_carries_the_schema_the_question_and_the_files(tmp_path):
 
 
 def test_the_command_line_prints_the_call_it_would_make(tmp_path, capsys):
-    _, folder = plant(tmp_path)
+    root, folder = plant(tmp_path)
     code = control_single_agent.main(
-        ["--question", "financial_pressure", "--input", str(folder)])
+        ["--question", "financial_pressure", "--input", str(folder),
+         "--bundle", str(root)])
     printed = capsys.readouterr().out
     assert code == 0
     assert f"model: {SUPERVISOR_MODEL}" in printed
@@ -1115,7 +1210,9 @@ def test_the_command_line_prints_the_call_it_would_make(tmp_path, capsys):
 
 
 def test_the_command_line_refuses_a_directory_it_cannot_read(tmp_path, capsys):
+    root, _ = plant(tmp_path)
     code = control_single_agent.main(
-        ["--question", "financial_pressure", "--input", str(tmp_path / "nowhere")])
+        ["--question", "financial_pressure", "--input", str(tmp_path / "nowhere"),
+         "--bundle", str(root)])
     assert code == control_single_agent.BAD_INPUT
     assert "not a control" in capsys.readouterr().err
