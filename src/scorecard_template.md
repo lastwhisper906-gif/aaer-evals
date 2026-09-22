@@ -20,6 +20,15 @@ than estimated.
 A lower Brier is better and a higher hit rate is better. A row with no answer in
 the runs says so and carries no number.
 
+The table scores each row over every run that row answered. The sentences under
+it are comparisons, and a comparison is made only on the runs both of its rows
+answered, so a Brier quoted in a sentence can differ from the same row's Brier in
+the table above it. That is not a contradiction and it is not a rounding:
+scoring a row that declined a run against a row that answered it would credit
+the declining row for the run it left out. Each sentence says how many runs it
+was made on and how many of that side's runs it set aside, and the two add up to
+everything that side had to score.
+
 ## Accounting reliability
 
 | Row | Computed by | Side of the rules-version freeze | Runs | Brier | Direction hit rate | Insufficient |
@@ -77,19 +86,19 @@ not on record
 no answer to score
 
 === pipeline_beats_the_first_row ===
-$side — the pipeline's Brier of $pipeline (scored on $pipeline_runs) beats the Beneish M-score's $other (scored on $other_runs).
+$side — on the $runs runs both rows answered, with the side's other $set_aside set aside because one row or both put no probability on them, the pipeline's Brier of $pipeline beats the Beneish M-score's $other.
 
 === pipeline_misses_the_first_row ===
-$side — the pipeline's Brier of $pipeline (scored on $pipeline_runs) does not beat the Beneish M-score's $other (scored on $other_runs). The structure adds nothing.
+$side — on the $runs runs both rows answered, with the side's other $set_aside set aside because one row or both put no probability on them, the pipeline's Brier of $pipeline does not beat the Beneish M-score's $other. The structure adds nothing.
 
 === pipeline_beats_the_single_agent ===
-$side — the pipeline's Brier of $pipeline (scored on $pipeline_runs) beats the single-agent control's $other (scored on $other_runs).
+$side — on the $runs runs both rows answered, with the side's other $set_aside set aside because one row or both put no probability on them, the pipeline's Brier of $pipeline beats the single-agent control's $other.
 
 === pipeline_misses_the_single_agent ===
-$side — the pipeline's Brier of $pipeline (scored on $pipeline_runs) does not beat the single-agent control's $other (scored on $other_runs). The structure is decoration.
+$side — on the $runs runs both rows answered, with the side's other $set_aside set aside because one row or both put no probability on them, the pipeline's Brier of $pipeline does not beat the single-agent control's $other. The structure is decoration.
 
 === no_verdict ===
-Nothing to compare yet: no side of the freeze carries both a pipeline number and a baseline number.
+Nothing to compare yet: no side of the freeze carries a run that both a pipeline row and a baseline row answered.
 
 === run_entry ===
 - $ticker $accession · filed $filing_date · rules version $rules_version frozen $rules_version_frozen · $side · 60-trading-day abnormal return $abnormal_return

@@ -270,11 +270,17 @@ a rule that will be evaluated by guessing.
   settlement date. Attaching it by settlement date would hand an agent a number
   the market did not have. The denominator is
   `dei:EntityCommonStockSharesOutstanding` from companyfacts.
-- **Price source**: free, split- and dividend-adjusted, and it must retain
-  delisted tickers, because the expansion universe keeps companies that stopped
-  trading. The source is not yet chosen — see `docs/structure_changes.md` for
-  the probe result — and the market module is built and tested against a frozen
-  price fixture, so the choice does not block it.
+- **Price source**: split- and dividend-adjusted, and it must retain delisted
+  tickers, because the expansion universe keeps companies that stopped trading.
+  **Chosen 2026-09-21** (`docs/needs_judgment.md`): CRSP through WRDS for the
+  pattern study, the Tiingo free tier for the forward track, EODHD All World for
+  one paid month if the WRDS account is refused. This line used to say *free*
+  and *not yet chosen*, and both halves were overtaken: CRSP is free to us only
+  through a subscription the university pays for, and the EODHD fallback is a
+  deliberate, recorded departure from *free* rather than an oversight. It is
+  taken only if WRDS refuses, and this paragraph is what has to be amended the
+  day it is used. The market module is built and tested against a frozen price
+  fixture, so none of this blocks it.
 - **Fama-French factor adjustment** is deferred to the first scorecard.
 
 **Who sees it**: the comparers, and nothing else. Not a reader, not the
