@@ -145,6 +145,11 @@ Every routine below is a **scheduled task**, not a loop run.
 - **dependencies** — update, hash-lock, test, pull request
 - **document numbers recomputed**
 - **broken links and paragraph ids**
+- **re-lens** — every row the second lens read on the same-family fallback, and
+  every pull request labelled `one-lens`, re-read at the commit it merged at
+  once the Codex quota is back. `docs/routines/weekly-relens.md`. A pass moves
+  the row to done; a fail opens an issue marked "needs judgment" naming the
+  merged pull request, and fixes nothing itself
 - **fold lessons** — `lessons.md` into `CLAUDE.md` for rules and into skills for
   procedures; merge duplicates; strengthen anything seen three or more times;
   open a pull request. **`CLAUDE.md` is capped at 22 lines**, so a fold that
@@ -216,6 +221,17 @@ judges; and the **seeded-defect canary**, monthly, as a scheduled task.
 | the STOP file | the owner interrupting the session |
 | the `claude --bg` launcher | scheduled tasks |
 
+**The two lenses.** Every item is read twice before its pull request opens:
+`refute-check` (Claude), then `tools/second_lens.sh`. Both lenses read
+`tools/lens_prompt.md` and answer `tools/lens_verdict.schema.json`, so the two
+verdicts are comparable and neither drifts from the five rules. Codex is the
+cross-vendor lens; when it cannot run, Claude Fable answers in a fresh context
+and the row is marked `confirmed - same-family fallback` rather than `confirmed
+- cross-vendor`. When neither runs the script exits 3, which is never an
+approval: the pull request opens labelled `one-lens` with auto-merge off. The
+weekly re-lens routine re-reads every fallback and every `one-lens` row once the
+Codex quota returns.
+
 A Stop hook is a safety net, not a judge — the turn ends after eight consecutive
 blocks, so a hook that keeps failing stops blocking. CI is the judge.
 
@@ -229,7 +245,8 @@ blocks, so a hook that keeps failing stops blocking. CI is the judge.
 | **supervisor-accounting, supervisor-pressure** | **Fable, pinned for one year together with rules v0.1** | keeping the pin matters more than raw capability — a track record only means something as quarter-to-quarter comparison under the same model and the same rules. Check subscription-path stability from the served-model record on the first run; if fallbacks are frequent, drop the pin to Opus. |
 | single-agent baseline control | the same model as the supervisor | a control on a different model would measure the model, not the structure. Its prompt lives inside the control's run script, not in `.claude/agents/` — it is a control, not a layer, and it must not become something a session can invoke by name |
 | refute verification, claim-strength review | Fable | heavy judgment, where a mistake is expensive |
-| adversarial review, second lens | Codex, on the subscription login | the builder and the refute lens are both Claude, so a blind spot in the family is a blind spot in both. Codex reviews and never builds; it runs the same five rules in the same order, and its automatic stop-time gate stays off because the Stop hook already runs every turn |
+| second lens, cross-vendor | Codex, read-only, on the subscription login | the builder and the refute lens are both Claude, so a blind spot in the family is a blind spot in both. Codex reviews and never builds; it runs the same five rules in the same order from `tools/lens_prompt.md`, and its automatic stop-time gate stays off because the Stop hook already runs every turn |
+| second lens, fallback | Fable, in a fresh context, when Codex cannot run | a different vendor is the stronger check and a different context is the one still available when the quota is out. It is recorded as the weaker check it is — `confirmed - same-family fallback` — and re-read by the weekly routine when the quota returns. The alias `fable` resolves to `claude-fable-5-1` here |
 | reproduce verification, full review | Opus, effort xhigh | the existing pins |
 | when a model change is needed | run both models in parallel for one quarter, then switch | a switch without a bridge quarter contaminates the record |
 | paragraph classifier | Haiku class | labels only |
@@ -290,6 +307,14 @@ recorded as a failure. A pin that exists only in this table is not a pin.
     is checked for delisted coverage before the universe is frozen. The
     cross-section is cut by calendar frames, never by company fiscal quarters.
     Nothing here starts until step 9 is done.
+
+    **Prices.** The study reads **CRSP through WRDS**, the one free source that
+    carries the delisting return; the forward track's twelve are all currently
+    listed and read through the **Tiingo** free tier instead. A row whose
+    delisting return is missing takes **−30%**, and **−55%** on Nasdaq —
+    Shumway (1997), and Shumway and Warther (1999) — recorded per row as the
+    value used and the reason it was used, so the cross-section is reported both
+    with and without the correction.
 
 Each step starts when the previous step's condition is met. Never wait for owner
 confirmation.

@@ -24,9 +24,18 @@ page has a default that runs without an answer.
 
 ---
 
-## Open
+## Decided
 
-[ ] **the price source** · comparers and the `priced_in` rule are disabled, `input_prices.json` is written as the literal `unavailable`, and the first predictions publish on EDGAR inputs alone; the market module stays built and tested against the frozen price fixture · deciding turns both comparers on and lets the pattern study run, which needs fifteen years of prices and cannot start without a source. Three candidates, in this order: the **Stooq daily bulk zip**, a file download rather than an API call, blocked today by a browser check on the download link and by a password prompt on the static host; **CRSP through a Stony Brook account**, the only candidate that answers the delisted question the way the literature does, behind a login the owner would have to open; **a low-cost provider such as Tiingo or EODHD**, each of which refused the delisted ticker on a token nobody has yet. `src/probe_price_sources.py` put Lehman Brothers Holdings to all three and none served the history. The no-paid-data rule named consensus data, not prices.
+A row that has been decided stays on this page with `[x]`, the date, and what
+the decision put in force, until the rules version that carries it is cut. A
+decision that leaves no trace here reads, a month later, exactly like a default
+nobody ever questioned.
+
+[x] **the price source** — *decided 2026-09-21, recorded in `docs/structure_changes.md` the same day* · **CRSP through WRDS for the pattern study; the Tiingo free tier for the forward track; EODHD All World for one paid month if the WRDS account is refused.** CRSP is the only free source that carries the delisting return, which is the question that decides a study drawn from a past date, and Stony Brook subscribes to it — a student registers at `wrds-www.wharton.upenn.edu/register` and the school's representative approves. The forward track is twelve currently-listed companies, so it has no delisting problem at all and the free tier answers it; a company that delists mid-record is retained by Tiingo for anything after about 2015. Stooq is dropped: its download sits behind a browser check the project will not answer. The no-paid-data rule named consensus data, not prices, so the paid fallback is allowed · **what is still in force until the credentials exist:** `$TIINGO_TOKEN` is unset and `~/.pgpass` does not exist, so both backends answer *unconfigured*, `input_prices.json` is still written as the literal `unavailable`, and the two comparers and the `priced_in` rule are still off. That is blocked on a token, not on a judgment — the interface and the three backends are built and judged against frozen response fixtures, and the switch flips on the first session that exports one.
+
+[x] **the delisting return when the source carries none** — *decided 2026-09-21, in force from the first pattern-study row* · **`dlret` when CRSP has it. Where it is missing: −30%, and −55% on Nasdaq.** The first is Shumway (1997), the second Shumway and Warther (1999), and they are the literature's own defaults rather than this project's guess. The correction is recorded **per row**, as the value used and the reason it was used, so the study reports the cross-section both with and without it and a reader can see how much of any result is the correction. A missing delisting return left at zero is the survivorship bias the whole universe design exists to avoid, and it is silent: the request succeeds and the row is simply flat.
+
+## Open
 
 [ ] **thresholds for the four numeric indicators** — `articulation_gap`, `asset_growth_high`, `rnd_capitalization_shift`, `net_stock_issuance` · all four report their value and flag nothing until rules v0.1, so they measure from the first run and contribute to no tier · deciding lets them raise a flag, which needs the distribution over the past cases first.
 
