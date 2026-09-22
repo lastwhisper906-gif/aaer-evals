@@ -17,7 +17,7 @@ from pathlib import Path
 
 import pytest
 
-from src import cutoff_guard, extract_numbers, trends
+from src import cutoff_guard, extract_numbers
 from src.fetch_fixtures import TICKERS
 from tests.expected_values import value
 
@@ -189,7 +189,7 @@ def test_cienas_amortized_cost_components_are_distinguishable():
     typed = [fact for fact in here if fact["context"].get("typed_segment")]
     assert {fact["number"] for fact in typed} == {110563000.0, 157619000.0, 200248000.0}
     # And the parts are no longer read as consolidated totals.
-    assert not [fact for fact in typed if trends.usable(fact)]
+    assert not [fact for fact in typed if extract_numbers.usable(fact)]
 
 
 def test_a_superseded_fact_is_kept_not_dropped():

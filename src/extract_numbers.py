@@ -189,6 +189,25 @@ def identity(fact: dict) -> tuple:
             context.get("instant"), segment, typed, fact["unit"])
 
 
+def usable(fact: dict) -> bool:
+    """Consolidated, reported, still current, and a number.
+
+    The question anything reading `input_numbers.json` has to answer before it
+    uses a fact, so it is answered here, where the facts are made. Consolidated
+    means no dimension of either kind. A typed member is a dimension: NVIDIA's
+    cash equivalents broken out by
+    `StatementOfFinancialPositionLocationBalanceAxis`, and Ciena's amortized
+    cost split between cash equivalents, short-term investments and non-current
+    marketable securities, carry an empty `segment` and are not totals.
+    """
+    if fact.get("nil") or fact.get("number") is None:
+        return False
+    if fact.get("superseded_by"):
+        return False
+    context = fact.get("context") or {}
+    return not context.get("segment") and not context.get("typed_segment")
+
+
 def apply_point_in_time(facts: list[dict]) -> list[dict]:
     """Mark every fact a later filing replaced. Nothing is dropped.
 
