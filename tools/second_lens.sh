@@ -85,7 +85,11 @@ read_the_verdict() {
 # `--restricted` can drop the tree's copy without dropping the lens. The five
 # rules travel in the composed prompt, which comes from the pinned ref; this is
 # only the standing instruction and the tool list.
-LENS_AGENT='{"refute-check":{"description":"the second lens on one change","prompt":"You look for holes in a change and never for reasons it passes. A clean report means you tried to break the change and could not. You answer with one JSON object and nothing else.","tools":["Read","Grep","Glob","Bash"]}}'
+# No `Bash` in the tool list. `--restricted` takes the shell away whatever this
+# says, and a definition that claims one is a claim contradicted by the prompt,
+# by `SKILL.md` step 4b and by §6 -- the second lens found the three of them
+# disagreeing. The list says what the session actually gets.
+LENS_AGENT='{"refute-check":{"description":"the second lens on one change","prompt":"You look for holes in a change and never for reasons it passes. A clean report means you tried to break the change and could not. You have no shell: the change is written out for you as a diff file. You answer with one JSON object and nothing else.","tools":["Read","Grep","Glob"]}}'
 
 CODEX_LENS="codex"
 FALLBACK_LENS="claude-fable-fallback"
@@ -110,6 +114,32 @@ fi
 # pinned one, and wrote `judge_from: tree` for it. Conservative, but a false
 # record, and the weekly routine re-reads rows on the strength of that field.
 WORKTREE="$(cd "$WORKTREE" && pwd -P)"
+
+# The ledger keys a run by `item`, and the weekly routine moves "the row in
+# docs/next_cycle_tasks.md" by that same string. A title that is not a row is a
+# verdict filed against nothing: this script was itself invoked with "one
+# verdict schema, two lenses, and prices with two backends" for a row titled
+# "... and a price source that is decided", and the second lens is what noticed.
+# Nothing was checking, so the record and the list could drift apart silently.
+#
+# Read out of the worktree, which can of course add a row to match -- this
+# catches a title that does not correspond to work, not a branch determined to
+# lie. A branch that adds the row has added the row.
+TASK_LIST="$WORKTREE/docs/next_cycle_tasks.md"
+ITEM_IS_A_ROW=no
+if [ -f "$TASK_LIST" ]; then
+    while IFS= read -r row; do
+        case "$row" in
+            "[ ] $ITEM · "*|"[x] $ITEM · "*) ITEM_IS_A_ROW=yes; break ;;
+        esac
+    done < "$TASK_LIST"
+fi
+if [ "$ITEM_IS_A_ROW" = no ]; then
+    echo "second_lens: \"$ITEM\" is not a row in $TASK_LIST" >&2
+    echo "second lens: none · none · no_lens_ran · \"$ITEM\" is not a row in docs/next_cycle_tasks.md, so the ledger row would name work the list does not carry"
+    exit "$NO_LENS_RAN"
+fi
+
 LENS_DIR="$WORKTREE/.lens"
 mkdir -p "$LENS_DIR"
 
@@ -122,9 +152,21 @@ mkdir -p "$LENS_DIR"
 # was paid for and dropped without trace. So the interpreter is asked one
 # question before anything is spent, and a run whose outcome could not be
 # recorded is refused before it begins rather than after it is billed.
-if ! read_the_verdict where >/dev/null 2>&1; then
-    echo "second_lens: $LENS_PYTHON cannot run the verdict reader" >&2
-    echo "second lens: none · none · no_lens_ran · $LENS_PYTHON cannot run the verdict reader, so no lens was invoked and no row could be written"
+#
+# The question is asked of the *interpreter* and of nothing in this repository.
+# It used to be asked by running `src.lens_verdict where`, which at this point
+# is the worktree's own copy -- the branch under review executing before the
+# pin, before the diff range is known and before the judge directory is even
+# cleared. The second lens found it: a reviewer reading the diff of this file,
+# which `docs/HOW_WE_WORK.md` §6 names as the one thing closing this hole, would
+# not see code planted in the tree's `src/lens_verdict.py`, and that code runs
+# with this script's privileges over the still-running script, the `.venv` link
+# `$LENS_PYTHON` resolves through, and the ledger. So: does the interpreter
+# exist and run at all. The pinned reader is asked whether *it* runs once it
+# has been materialised, below.
+if ! "$LENS_PYTHON" -c 'import json, sys' >/dev/null 2>&1; then
+    echo "second_lens: $LENS_PYTHON cannot run" >&2
+    echo "second lens: none · none · no_lens_ran · $LENS_PYTHON cannot run, so no lens was invoked and no row could be written"
     exit "$NO_LENS_RAN"
 fi
 
@@ -221,6 +263,28 @@ if ! git -C "$WORKTREE" rev-parse --verify --quiet "$JUDGE_BASE^{commit}" >/dev/
     exit "$NO_LENS_RAN"
 fi
 
+# A pin that is not on the trunk is not a pin. `judge_from` records whatever
+# `LENS_JUDGE_BASE` held, and the routine reading it can only read what is
+# there -- so `LENS_JUDGE_BASE=HEAD~1`, or the branch's own name, pinned the
+# prompt, the schema and the reader out of the branch under review, wrote that
+# ref into the row, and sailed past a grep looking for `tree`. Visible is not
+# read. The question that settles it is whether the ref is on the trunk's own
+# history: the weekly routine's `<merge commit>^1` is, because it is what
+# `main` held when that work landed, and `HEAD~1` on a branch is not.
+TRUNK=""
+for candidate in origin/main main; do
+    if git -C "$WORKTREE" rev-parse --verify --quiet "$candidate^{commit}" >/dev/null 2>&1; then
+        TRUNK="$candidate"; break
+    fi
+done
+if [ -n "$TRUNK" ] && ! git -C "$WORKTREE" merge-base --is-ancestor "$JUDGE_BASE" "$TRUNK" 2>/dev/null; then
+    read_the_verdict ledger \
+        --ledger "$LENS_LEDGER" --item "$ITEM" --lens "none" \
+        --verdict "no_lens_ran" --findings 0 --model "none" || true
+    echo "second lens: none · none · no_lens_ran · $JUDGE_BASE is not on $TRUNK, so the judge would have come from the branch under review"
+    exit "$NO_LENS_RAN"
+fi
+
 # What the lens is asked to read, named here rather than worked out there.
 # `tools/lens_prompt.md` used to fix the change as "the working tree you were
 # started in, against its merge base with `origin/main`", and nothing was ever
@@ -234,6 +298,27 @@ fi
 # branch `$JUDGE_BASE` is `main` and it is the branch's own change; in the
 # routine it is the merge commit's first parent, which is an ancestor, so the
 # diff is exactly what that merge brought in.
+# Both lenses are handed `git diff <pin>...HEAD`, which is committed history --
+# and `DEFINES_THE_JUDGE` below reads the working tree. Two states, one verdict:
+# a lens could pass the committed part while the definition files it checked
+# were the uncommitted ones, and the build skill has no commit step between
+# `make check` and this call. An approval the lens never gave is one commit
+# away. So the tree has to be settled before it is judged.
+# `.lens/` is excluded because this script made it, forty lines ago. It reaches
+# `.gitignore` only in the change that builds the lens, so a worktree detached
+# at any commit before that -- which is every row the weekly re-lens routine
+# exists to re-read -- shows `?? .lens/` and would exit 3 on "uncommitted
+# changes" every week, forever. The harness hid it by writing `.gitignore` into
+# every fixture repository, so the refusal was judged only where it cannot fire.
+if [ -n "$(git -C "$WORKTREE" status --porcelain -- ':(exclude).lens' 2>/dev/null)" ]; then
+    read_the_verdict ledger \
+        --ledger "$LENS_LEDGER" --item "$ITEM" --lens "none" \
+        --verdict "no_lens_ran" --findings 0 --model "none" || true
+    echo "second_lens: $WORKTREE has uncommitted changes" >&2
+    echo "second lens: none · none · no_lens_ran · $WORKTREE has uncommitted changes, and the lens reads committed history -- a verdict on part of a change is not a verdict on it"
+    exit "$NO_LENS_RAN"
+fi
+
 DIFF_RANGE="$JUDGE_BASE...HEAD"
 CHANGE_DIFF="$LENS_DIR/change.diff"
 if [ -z "$(git -C "$WORKTREE" diff --numstat "$DIFF_RANGE" 2>/dev/null)" ]; then
@@ -270,6 +355,16 @@ else
     CAVEATS="$CAVEATS the judge came from the tree because $JUDGE_BASE has none;"
 fi
 
+# Now the reader that will write the row is the pinned one, and it is asked the
+# question the tree's copy used to be asked: can it run. A run whose outcome
+# cannot be recorded is refused before it is billed -- that is what the early
+# probe was for, and this is where it can be answered without the tree.
+if ! read_the_verdict where >/dev/null 2>&1; then
+    echo "second_lens: the judge from $JUDGE_FROM cannot run its verdict reader" >&2
+    echo "second lens: none · none · no_lens_ran · the judge from $JUDGE_FROM cannot run its verdict reader, so no lens was invoked and no row could be written"
+    exit "$NO_LENS_RAN"
+fi
+
 READER_RAN="$(read_the_verdict where 2>/dev/null)"
 case "$READER_RAN" in
     "$JUDGE_DIR"/*) ;;
@@ -292,8 +387,32 @@ esac
 # rows of both. The hole that stays open is closed by a person reading the diff
 # of this file, and `docs/HOW_WE_WORK.md` §6 says so rather than implying the
 # guard covers it.
+#
+# Compared against `$0`, the file that is actually executing, and not against
+# `$WORKTREE/tools/second_lens.sh`. Those are the same file when the build skill
+# runs the command from inside the worktree, and they are *different files* in
+# the weekly routine, which invokes the script from the main checkout against a
+# detached worktree -- so the old comparison answered a question about a copy
+# nobody was running, and `SKILL.md` and `HOW_WE_WORK.md` §6 both describe this
+# field as a fact about the running script.
+# `$LENS_PYTHON` defaults to `$REPO_ROOT/.venv/bin/python`, and in the build
+# topology `REPO_ROOT` is the worktree under review. `.venv/` is ignored, so a
+# binary planted there is invisible to `git diff`, to the status check above and
+# to `DEFINES_THE_JUDGE` -- and it is what runs the pinned reader, reads both
+# answers, maps the exit code and writes this row. Refusing it outright is
+# wrong: on the main checkout the repository *is* the worktree and that is the
+# ordinary case. So it is recorded, the way `judge from tree` is, and named as a
+# trust root in `docs/HOW_WE_WORK.md` §6 rather than implied closed.
+INTERPRETER_HOME="$(cd "$(dirname "$LENS_PYTHON")" 2>/dev/null && pwd -P)" || INTERPRETER_HOME=""
+case "$INTERPRETER_HOME" in
+    "$WORKTREE"/*)
+        CAVEATS="$CAVEATS the interpreter resolves inside the worktree ($LENS_PYTHON);" ;;
+esac
+
 LENS_FROM="$JUDGE_BASE"
-if ! git -C "$WORKTREE" diff --quiet "$JUDGE_BASE" -- "tools/second_lens.sh" 2>/dev/null; then
+RUNNING_SCRIPT="$(cd "$(dirname "$0")" && pwd -P)/$(basename "$0")"
+if ! git -C "$WORKTREE" show "$JUDGE_BASE:tools/second_lens.sh" 2>/dev/null \
+     | cmp -s - "$RUNNING_SCRIPT" 2>/dev/null; then
     LENS_FROM="tree"
     CAVEATS="$CAVEATS this script differs from $JUDGE_BASE and is running as itself;"
 fi
@@ -453,8 +572,26 @@ fi
 if [ -z "$LENS" ]; then
     FABLE_FILE="$LENS_DIR/fable.json"
     FABLE_LOG="$LENS_DIR/fable.log"
+    # `> "$FABLE_FILE"` looks like it makes this check unnecessary. It does
+    # not, and the difference is the whole hole. Measured, not reasoned: on a
+    # file the shell cannot open for writing -- mode 0444, or `uchg` -- bash
+    # refuses the redirection, says `Permission denied`, *leaves the contents
+    # standing* and never starts the command. The read below then reports what
+    # was already in the file as this run's answer. `.lens/` is git-ignored, so
+    # a `pass` planted there is invisible to the diff, to the uncommitted-work
+    # refusal and to `DEFINES_THE_JUDGE`, and with Codex out of quota every
+    # real run reaches this line. `rm -f` unlinks a 0444 file in a writable
+    # directory, which clears the ordinary case; the case it cannot clear is
+    # refused rather than read.
+    #
+    # This check was deleted once, on the reasoning in the first sentence and
+    # on a mutation that killed nothing. Both were right about the writable
+    # file and silent about the unwritable one. A mutation that kills nothing
+    # says the tests do not distinguish the branch, never that the branch is
+    # dead.
     FABLE_CLEARED=yes
     cleared "$FABLE_FILE" || FABLE_CLEARED=no
+
     if [ "$FABLE_CLEARED" = no ]; then
         echo "second_lens: $FABLE_FILE holds an earlier run's answer and could not be cleared" \
             > "$FABLE_LOG"
@@ -494,7 +631,8 @@ if [ -z "$LENS" ]; then
         echo "second_lens: no claude on PATH" > "$FABLE_LOG"
         FABLE_EXIT=127
     fi
-    # Read whatever the exit status was, for the same reason as above.
+    # Read whatever the exit status was, for the same reason as above -- but
+    # only a file this run is known to have started empty.
     READING=""
     if [ "$FABLE_CLEARED" = yes ]; then
         READING="$(read_the_verdict claude "$FABLE_FILE" \
