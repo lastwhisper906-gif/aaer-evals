@@ -670,15 +670,19 @@ def test_a_checklist_entry_resting_on_nothing_is_dropped(tmp_path):
 REFUSED_BY_THE_LIST = "which this control may not see"
 
 
-def refused(root: Path, folder: Path) -> str:
+def refused(root: Path, folder: Path, answer: dict | None = None) -> str:
     """One run the directory has to stop, and the refusal it raised.
 
     The model is never called and no control file is written -- asserted here
     once rather than in every test below, because `run` settles the input
     before the call on purpose: "a refusal after the answer has come back is a
-    refusal that has already paid for the look-ahead".
+    refusal that has already paid for the look-ahead". That ordering is a claim
+    this change makes and `stub.prompts == []` is the only thing that holds it:
+    move `resolvable` below the call and every refusal below still raises, just
+    after the model has read the directory. So a test carrying its own answer
+    passes it here rather than raising on its own.
     """
-    stub = Stub(accounting_answer())
+    stub = Stub(accounting_answer() if answer is None else answer)
     with pytest.raises(ControlError) as caught:
         control_single_agent.run("accounting_reliability", input_dir=folder,
                                  bundle_root=root, ask=stub)
@@ -835,12 +839,52 @@ def test_another_companys_prose_under_an_allowed_name_is_refused(tmp_path):
     answer["market_direction"] = {"p_up": 0.45,
                                   "basis": [f"{OTHER_ACCESSION}:notes:1"]}
     answer["top_signals"] = ["receivables_outrun_revenue"]
-    stub = Stub(answer)
-    with pytest.raises(ControlError) as caught:
-        control_single_agent.run("accounting_reliability", input_dir=folder,
-                                 bundle_root=root, ask=stub)
-    assert OTHER_ACCESSION in str(caught.value)
-    assert not (root / "control_single_agent_accounting.json").exists()
+    assert OTHER_ACCESSION in refused(root, folder, answer)
+
+
+def test_a_later_quarter_of_this_company_under_an_allowed_name_is_refused(tmp_path):
+    """The other half of the record check, and the half no other test reaches.
+
+    The test above plants another company's accession, which `recorded_accessions`
+    refuses on the ticker alone -- so the cutoff it is handed could be any date
+    and that test would still pass. This one plants the *next quarter of this
+    company*: `tests/fixtures/AAPL/manifest.json` records it, and the only thing
+    that keeps it out is the cutoff `run` passes down. Replace that argument with
+    a date far in the future and this is the test that notices.
+
+    It is `CLAUDE.md`'s cutoff rule read at the control's own directory --
+    "document filing date <= filing date of the triggering report. Nothing later
+    enters the input" -- and it is a different failure from the manifest's own
+    cutoff being wrong: the manifest here is right, and the directory holds a
+    paragraph the manifest does not cover.
+    """
+    root, folder = plant(tmp_path)
+    # Appended rather than substituted: the run's own paragraphs stay indexed,
+    # so what refuses the directory is the added id and nothing else about it.
+    hand(folder, root, "input_notes.md",
+         NOTES + f"\n[{LATER_ACCESSION}:notes:1]\nNext quarter's prose.\n")
+    message = refused(root, folder)
+    assert LATER_ACCESSION in message
+    assert FILED in message
+
+
+def test_a_manifest_naming_no_accession_is_refused_as_that_and_not_as_a_miss(tmp_path):
+    """The guard `run` opens with, and the misreading that stands in for it.
+
+    Delete it and the run still refuses -- `cutoff_on_record` looks the accession
+    up, finds no row and raises -- but it raises "AAPL None is in no fixture
+    manifest", which says EDGAR has no record of a filing when what happened is
+    that the bundle named none. A manifest with no accession is a manifest, not
+    a missing filing, and the two get fixed in different places. So this asserts
+    the reason as well as the refusal.
+    """
+    root, folder = plant(tmp_path)
+    without = {key: value for key, value in MANIFEST.items() if key != "accession"}
+    (root / "input_manifest.json").write_text(
+        json.dumps(without, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    message = refused(root, folder)
+    assert "accession" in message
+    assert "None" not in message
 
 
 def test_a_foreign_trend_table_under_its_allowed_name_is_refused(tmp_path):
