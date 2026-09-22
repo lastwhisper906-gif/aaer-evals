@@ -104,6 +104,7 @@ def claude_stub(directory: Path, *, exit_code: int, result: str | None) -> None:
         directory,
         "claude",
         'echo claude >> "$STUB_CALLS"\n'
+        'pwd >> "$STUB_CWD"\n'
         f'printf %s {json.dumps(envelope)}\n'
         f'exit {exit_code}\n',
     )
@@ -117,6 +118,7 @@ def run_lens(tmp_path: Path, item: str = "a task-list item") -> subprocess.Compl
     environment = dict(os.environ)
     environment["PATH"] = f"{stubs}:{environment['PATH']}"
     environment["STUB_CALLS"] = str(tmp_path / "calls")
+    environment["STUB_CWD"] = str(tmp_path / "cwd")
     environment["LENS_LEDGER"] = str(ledger)
     environment["LENS_PYTHON"] = sys.executable
     environment["LENS_TIMEOUT"] = "60"
@@ -244,6 +246,7 @@ def test_missing_binaries_are_no_lens_rather_than_a_crash(tmp_path: Path, stubs:
     assert shutil.which("codex", path=environment["PATH"]) is None
     assert shutil.which("claude", path=environment["PATH"]) is None
     environment["STUB_CALLS"] = str(tmp_path / "calls")
+    environment["STUB_CWD"] = str(tmp_path / "cwd")
     environment["LENS_LEDGER"] = str(ledger)
     environment["LENS_PYTHON"] = sys.executable
     result = subprocess.run(
@@ -389,12 +392,269 @@ def test_a_ledger_with_no_trailing_newline_still_gets_its_own_line(tmp_path: Pat
 
 
 def test_the_exit_codes_are_the_ones_the_script_uses() -> None:
-    """The script writes them once; nothing here may write a second copy."""
+    """One copy of the mapping, and the script reads it rather than repeating it.
+
+    `NO_LENS_RAN` is the one number the script has to know before any Python
+    runs -- a usage error answers with it -- so it is written in both places and
+    pinned equal here. The other three are printed by the module as the third
+    field of its reading and are not in the script at all.
+    """
+    # Written out literally. Every scenario above compares against
+    # `lens_verdict.NO_LENS_RAN`, so if both copies of it became 0 the whole
+    # file would still pass while no-lens-ran had become an approval and the
+    # table in SKILL.md had become false. This one line is what stops that.
+    assert lens_verdict.NO_LENS_RAN == 3
+    assert lens_verdict.NO_LENS_RAN not in lens_verdict.EXIT_FOR_VERDICT.values()
     script = SCRIPT.read_text(encoding="utf-8")
-    assert f"NO_LENS_RAN={lens_verdict.NO_LENS_RAN}" in script
+    assert "NO_LENS_RAN=3" in script
     assert lens_verdict.EXIT_FOR_VERDICT == {"pass": 0, "fail": 1, "needs_judgment": 2}
+    for verdict, code in lens_verdict.EXIT_FOR_VERDICT.items():
+        assert f"{verdict})" not in script or f"CODE={code}" not in script, (
+            f"the script carries its own exit code for {verdict}"
+        )
 
 
 @pytest.mark.skipif(shutil.which("bash") is None, reason="no bash on this machine")
 def test_the_script_is_executable() -> None:
     assert os.access(SCRIPT, os.X_OK)
+
+
+# --- what a pass has to be before it is one --------------------------------
+#
+# These five are the second lens's own findings on this change, turned into
+# judges. Each one was reachable before it was written: a pass that opened no
+# files exited 0, a pass listing findings exited 0, the fallback reviewed
+# whatever directory the caller happened to be in, and a ledger line that was
+# never written took a pull request through to auto-merge with no row for the
+# weekly routine to find.
+
+
+def test_a_pass_that_opened_no_files_did_not_run(tmp_path: Path, stubs: Path) -> None:
+    """`tools/lens_prompt.md` says so; until this, nothing but the model did."""
+    codex_stub(stubs, exit_code=0, verdict={**PASS_VERDICT, "reads": 0})
+    claude_stub(stubs, exit_code=1, result=None)
+
+    result = run_lens(tmp_path)
+
+    assert result.returncode == lens_verdict.NO_LENS_RAN, result.stderr
+    assert [line["verdict"] for line in ledger_lines(tmp_path)] == ["no_lens_ran"]
+
+
+def test_a_pass_carrying_findings_is_not_a_verdict(tmp_path: Path, stubs: Path) -> None:
+    """Whichever half is true, the half that must not win is the one exiting 0."""
+    contradiction = {**PASS_VERDICT, "findings": FAIL_VERDICT["findings"]}
+    codex_stub(stubs, exit_code=0, verdict=contradiction)
+    claude_stub(stubs, exit_code=1, result=None)
+
+    result = run_lens(tmp_path)
+
+    assert result.returncode == lens_verdict.NO_LENS_RAN, result.stderr
+
+
+def test_a_fail_with_no_findings_still_blocks(tmp_path: Path, stubs: Path) -> None:
+    """A poor verdict, and still not an approval -- so it is left as a fail."""
+    codex_stub(stubs, exit_code=0, verdict={**FAIL_VERDICT, "findings": []})
+    claude_stub(stubs, exit_code=1, result=None)
+
+    result = run_lens(tmp_path)
+
+    assert result.returncode == lens_verdict.FAIL, result.stderr
+
+
+def test_needs_judgment_exits_two_and_is_not_a_merge(tmp_path: Path, stubs: Path) -> None:
+    codex_stub(
+        stubs,
+        exit_code=0,
+        verdict={
+            "lens": "codex",
+            "verdict": "needs_judgment",
+            "findings": [
+                {
+                    "rule": 2,
+                    "file": "src/market.py",
+                    "line": 1,
+                    "reason": "nothing judges the acceptance-time argument",
+                }
+            ],
+            "reads": 4,
+        },
+    )
+    claude_stub(stubs, exit_code=0, result=json.dumps(PASS_VERDICT))
+
+    result = run_lens(tmp_path)
+
+    assert result.returncode == lens_verdict.NEEDS_JUDGMENT, result.stderr
+    (line,) = ledger_lines(tmp_path)
+    assert line["verdict"] == "needs_judgment"
+    assert calls(tmp_path) == ["codex"]
+
+
+def test_the_fallback_is_started_in_the_tree_it_judges(tmp_path: Path, stubs: Path) -> None:
+    """Codex gets -C; the fallback got whatever directory the caller was in.
+
+    `docs/routines/weekly-relens.md` runs this script from the repository root
+    against a detached worktree, so an unbound fallback reviews main and answers
+    about a tree the item never produced.
+    """
+    codex_stub(stubs, exit_code=1, verdict=None)
+    claude_stub(stubs, exit_code=0, result=json.dumps(PASS_VERDICT))
+
+    run_lens(tmp_path)
+
+    where = (tmp_path / "cwd").read_text(encoding="utf-8").split()
+    assert where == [str((tmp_path / "worktree").resolve())]
+
+
+def test_a_ledger_line_that_could_not_be_written_is_not_an_approval(
+    tmp_path: Path, stubs: Path
+) -> None:
+    """The row the weekly routine greps for. No row, no re-lens, ever."""
+    codex_stub(stubs, exit_code=0, verdict=PASS_VERDICT)
+    claude_stub(stubs, exit_code=1, result=None)
+
+    stubs_dir = tmp_path / "stubs"
+    worktree = tmp_path / "worktree"
+    worktree.mkdir(exist_ok=True)
+    # A ledger whose parent is a regular file: the append cannot make the
+    # directory and cannot write the line.
+    blocked = tmp_path / "not-a-directory"
+    blocked.write_text("", encoding="utf-8")
+    environment = dict(os.environ)
+    environment["PATH"] = f"{stubs_dir}:{environment['PATH']}"
+    environment["STUB_CALLS"] = str(tmp_path / "calls")
+    environment["STUB_CWD"] = str(tmp_path / "cwd")
+    environment["LENS_LEDGER"] = str(blocked / "ledger.jsonl")
+    environment["LENS_PYTHON"] = sys.executable
+    result = subprocess.run(
+        ["bash", str(SCRIPT), str(worktree), "an item"],
+        capture_output=True,
+        text=True,
+        env=environment,
+        cwd=tmp_path,
+    )
+
+    assert result.returncode == lens_verdict.NO_LENS_RAN, result.stdout + result.stderr
+    assert "not an approval" in result.stdout
+
+
+def test_the_reading_carries_the_exit_code_the_script_answers_with(
+    tmp_path: Path,
+) -> None:
+    """Four fields: verdict, findings, exit code, model. The last two are fixes."""
+    written = tmp_path / "codex.json"
+    written.write_text(json.dumps(FAIL_VERDICT), encoding="utf-8")
+    result = subprocess.run(
+        [sys.executable, "-m", "src.lens_verdict", "codex", str(written), "--lens", "codex"],
+        capture_output=True,
+        text=True,
+        cwd=REPO_ROOT,
+        env={**os.environ, "PYTHONPATH": str(REPO_ROOT)},
+    )
+    assert result.returncode == 0
+    assert result.stdout.split() == [
+        "fail",
+        "1",
+        str(lens_verdict.FAIL),
+        lens_verdict.UNRECORDED_MODEL,
+    ]
+
+
+def test_a_pass_with_no_reads_is_refused_at_the_module_too(tmp_path: Path) -> None:
+    written = tmp_path / "codex.json"
+    written.write_text(json.dumps({**PASS_VERDICT, "reads": 0}), encoding="utf-8")
+    with pytest.raises(lens_verdict.NotAVerdict, match="did not look"):
+        lens_verdict.read_codex(written)
+
+
+def test_a_pass_carrying_findings_is_refused_at_the_module_too(tmp_path: Path) -> None:
+    written = tmp_path / "codex.json"
+    written.write_text(
+        json.dumps({**PASS_VERDICT, "findings": FAIL_VERDICT["findings"]}), encoding="utf-8"
+    )
+    with pytest.raises(lens_verdict.NotAVerdict, match="contradiction"):
+        lens_verdict.read_codex(written)
+
+
+def test_a_verdict_written_before_a_non_zero_exit_is_still_the_answer(
+    tmp_path: Path, stubs: Path
+) -> None:
+    """A timeout killed after the file was flushed is not a lens that did not run.
+
+    The cross-vendor lens writing a complete `fail` and then exiting non-zero,
+    with the same-family fallback overwriting it with a `pass`, is the one path
+    the design says cannot happen. It could, until the file was read whatever
+    the exit status was.
+    """
+    codex_stub(stubs, exit_code=124, verdict=FAIL_VERDICT)  # 124: killed by timeout
+    claude_stub(stubs, exit_code=0, result=json.dumps(PASS_VERDICT))
+
+    result = run_lens(tmp_path)
+
+    assert result.returncode == lens_verdict.FAIL, result.stderr
+    (line,) = ledger_lines(tmp_path)
+    assert line["lens"] == "codex"
+    assert calls(tmp_path) == ["codex"], "the fallback overwrote a cross-vendor fail"
+
+
+def test_the_ledger_records_the_model_and_not_only_the_lens_name(
+    tmp_path: Path, stubs: Path
+) -> None:
+    """`LENS_FALLBACK_MODEL` can put another model behind the same lens name."""
+    codex_stub(stubs, exit_code=1, verdict=None)
+    stub = tmp_path / "stubs" / "claude"
+    envelope = json.dumps(
+        {
+            "result": json.dumps(PASS_VERDICT),
+            "is_error": False,
+            "modelUsage": {"claude-fable-5-1": {"inputTokens": 2}},
+        }
+    )
+    stub.write_text(
+        "#!/bin/sh\n"
+        'echo claude >> "$STUB_CALLS"\n'
+        'pwd >> "$STUB_CWD"\n'
+        f"printf %s {json.dumps(envelope)}\n"
+        "exit 0\n",
+        encoding="utf-8",
+    )
+    stub.chmod(0o755)
+
+    result = run_lens(tmp_path)
+
+    (line,) = ledger_lines(tmp_path)
+    assert line["lens"] == "claude-fable-fallback"
+    assert line["model"] == "claude-fable-5-1"
+    assert "claude-fable-5-1" in result.stdout
+
+
+def test_a_model_the_answer_does_not_name_is_recorded_as_unrecorded(
+    tmp_path: Path, stubs: Path
+) -> None:
+    """Unrecorded is a fact about the record. It is never a guess at the model."""
+    codex_stub(stubs, exit_code=1, verdict=None)
+    claude_stub(stubs, exit_code=0, result=json.dumps(PASS_VERDICT))
+
+    run_lens(tmp_path)
+
+    (line,) = ledger_lines(tmp_path)
+    assert line["model"] == lens_verdict.UNRECORDED_MODEL
+
+
+def test_the_served_model_is_read_out_of_the_usage_record() -> None:
+    assert lens_verdict.served_model(
+        {"modelUsage": {"claude-fable-5-1": {"inputTokens": 2}}}
+    ) == "claude-fable-5-1"
+    assert lens_verdict.served_model({}) == lens_verdict.UNRECORDED_MODEL
+    assert lens_verdict.served_model("not an object") == lens_verdict.UNRECORDED_MODEL
+
+
+def test_no_lens_ran_records_no_model_rather_than_the_last_one_tried(
+    tmp_path: Path, stubs: Path
+) -> None:
+    codex_stub(stubs, exit_code=1, verdict=None)
+    claude_stub(stubs, exit_code=1, result=None)
+
+    run_lens(tmp_path)
+
+    (line,) = ledger_lines(tmp_path)
+    assert (line["lens"], line["model"], line["verdict"]) == ("none", "none", "no_lens_ran")

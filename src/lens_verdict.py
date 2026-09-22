@@ -35,9 +35,14 @@ three backticks.
     python3.12 -m src.lens_verdict claude .lens/fable.json --lens claude-fable-fallback
     python3.12 -m src.lens_verdict ledger --ledger events/ledger.jsonl ...
 
-`codex` and `claude` print `<verdict> <findings_count>` on stdout and exit 0
-when the file is a verdict, and exit 1 with one line on stderr when it is not.
-`ledger` appends one line and exits 0. Exit 3 is the wrong interpreter.
+`codex` and `claude` print `<verdict> <findings_count> <exit_code> <model>` on stdout
+and exit 0 when the file is a verdict, and exit 1 with one line on stderr when
+it is not. The third field is the status `tools/second_lens.sh` answers with,
+printed here so the mapping from verdict to exit code lives in one file: two
+copies of a number that decides whether a pull request merges is one copy too
+many. `ledger` appends one line and exits 0, and a ledger line that could not be
+written is not an approval either -- the script reads that status too. Exit 3 is
+the wrong interpreter.
 
 The `lens` key as the model wrote it is not trusted. The script knows which
 binary it invoked; the model only knows what it was told. `normalise` puts the
@@ -88,11 +93,39 @@ def schema() -> dict[str, Any]:
 
 
 def validate(obj: Any) -> dict[str, Any]:
-    """The object when it is a verdict; raise NotAVerdict when it is not."""
+    """The object when it is a verdict; raise NotAVerdict when it is not.
+
+    Two contradictions are refused here rather than in the schema, because a
+    structured-output provider enforces types and enums and cannot enforce a
+    relation between two fields:
+
+    * **A `pass` carrying findings.** The lens said it could not break the
+      change and then listed what broke. Whichever half is true, the object is
+      not an answer, and the one reading that must never win by default is the
+      half that exits 0.
+    * **A `pass` with `reads` of zero.** `tools/lens_prompt.md` tells the lens
+      that a pass with no reads is read as a lens that did not look. It was a
+      sentence the model was trusted to obey until this refused it: a lens that
+      opened no files has reviewed nothing, and "reviewed nothing" is the same
+      outcome as "did not run" and takes the same exit code.
+
+    Both land on `NotAVerdict`, so both reach exit 3, which is never an
+    approval. A `fail` with no findings is left alone: it gives the builder
+    nothing to fix, which is a poor verdict, but it blocks either way and
+    turning it into exit 3 would lose the only signal in it.
+    """
     try:
         jsonschema.validate(obj, schema())
     except jsonschema.ValidationError as error:
         raise NotAVerdict(f"does not match the verdict schema: {error.message}") from error
+    if obj["verdict"] == "pass":
+        if obj["findings"]:
+            raise NotAVerdict(
+                f"a pass carrying {len(obj['findings'])} finding(s) is a contradiction, "
+                f"not a verdict"
+            )
+        if obj["reads"] == 0:
+            raise NotAVerdict("a pass with no reads is a lens that did not look")
     return obj
 
 
@@ -128,6 +161,26 @@ def _unfence(text: str) -> str:
     return "\n".join(lines[1:-1])
 
 
+UNRECORDED_MODEL = "unrecorded"
+
+
+def served_model(envelope: Any) -> str:
+    """The model that actually answered, out of the envelope's usage record.
+
+    The lens name and the model are two different facts. `LENS_FALLBACK_MODEL`
+    can put a different model behind the name `claude-fable-fallback`, and a
+    ledger that carried only the name would not show it -- so the name comes
+    from the script, which knows what it invoked, and the model comes from here,
+    which knows what answered.
+    """
+    if not isinstance(envelope, dict):
+        return UNRECORDED_MODEL
+    usage = envelope.get("modelUsage")
+    if isinstance(usage, dict) and usage:
+        return ", ".join(sorted(str(name) for name in usage))
+    return UNRECORDED_MODEL
+
+
 def read_claude(path: Path) -> dict[str, Any]:
     """The verdict inside a `claude -p --output-format json` envelope."""
     envelope = _parse(_load(path), str(path))
@@ -141,7 +194,8 @@ def read_claude(path: Path) -> dict[str, Any]:
         raise NotAVerdict(f"{path} reports an error: {str(result)[:200]}")
     if not isinstance(result, str):
         raise NotAVerdict(f"{path} carries no result text")
-    return validate(_parse(_unfence(result), f"the result text in {path}"))
+    verdict = validate(_parse(_unfence(result), f"the result text in {path}"))
+    return {**verdict, "served_model": served_model(envelope)}
 
 
 def normalise(verdict: dict[str, Any], lens: str) -> dict[str, Any]:
@@ -154,12 +208,20 @@ def normalise(verdict: dict[str, Any], lens: str) -> dict[str, Any]:
     return out
 
 
-def ledger_line(item: str, lens: str, verdict: str, findings_count: int, at: str) -> str:
+def ledger_line(
+    item: str,
+    lens: str,
+    verdict: str,
+    findings_count: int,
+    at: str,
+    model: str = UNRECORDED_MODEL,
+) -> str:
     """The one line this lens run appends to the ledger."""
     return json.dumps(
         {
             "item": item,
             "lens": lens,
+            "model": model,
             "verdict": verdict,
             "findings_count": findings_count,
             "at": at,
@@ -202,13 +264,16 @@ def main(argv: list[str] | None = None) -> int:
     line.add_argument("--lens", required=True)
     line.add_argument("--verdict", required=True)
     line.add_argument("--findings", type=int, default=0)
+    line.add_argument("--model", default=UNRECORDED_MODEL)
 
     args = parser.parse_args(argv)
 
     if args.command == "ledger":
         append_ledger(
             args.ledger,
-            ledger_line(args.item, args.lens, args.verdict, args.findings, _now()),
+            ledger_line(
+                args.item, args.lens, args.verdict, args.findings, _now(), args.model
+            ),
         )
         return 0
 
@@ -224,7 +289,14 @@ def main(argv: list[str] | None = None) -> int:
             json.dumps(verdict, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
             encoding="utf-8",
         )
-    print(f"{verdict['verdict']} {len(verdict['findings'])}")
+    # Three fields, and the third is the exit code the script answers with. The
+    # script used to carry its own copy of the mapping; two copies of a number
+    # that decides whether a pull request merges is one copy too many.
+    print(
+        f"{verdict['verdict']} {len(verdict['findings'])} "
+        f"{EXIT_FOR_VERDICT[verdict['verdict']]} "
+        f"{verdict.get('served_model', UNRECORDED_MODEL)}"
+    )
     return 0
 
 

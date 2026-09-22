@@ -314,7 +314,14 @@ recorded as a failure. A pin that exists only in this table is not a pin.
     delisting return is missing takes **−30%**, and **−55%** on Nasdaq —
     Shumway (1997), and Shumway and Warther (1999) — recorded per row as the
     value used and the reason it was used, so the cross-section is reported both
-    with and without the correction.
+    with and without the correction. The function that applies the default and
+    records which of the two it was lands with the price-interface row in
+    `docs/next_cycle_tasks.md`; until then these are two numbers out of the
+    literature and nothing reads them.
+
+    Paying for EODHD, if it comes to that, is a decision recorded in
+    `docs/needs_judgment.md` and not a rule already written: `docs/INPUT_SPEC.md`
+    §1 excludes consensus data by name and says nothing about prices.
 
 Each step starts when the previous step's condition is met. Never wait for owner
 confirmation.

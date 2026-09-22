@@ -33,9 +33,17 @@
 # and they all have to land in the same place. src/lens_verdict.py is what
 # decides that, and the exit codes above are written there too.
 #
+# The ledger line carries the model as well as the lens, because they are not
+# the same fact: LENS_FALLBACK_MODEL can put a different model behind the name
+# `claude-fable-fallback`, and a record that says only the name would not show
+# it. The fallback's model is read out of the answer's own usage record, and
+# Codex's out of the banner its run prints, so both are what served rather than
+# what was asked for.
+#
 # Environment, all with defaults, all overridden by the test:
 #
 #     LENS_PROMPT  LENS_SCHEMA  LENS_LEDGER  LENS_PYTHON  LENS_TIMEOUT
+#     LENS_FALLBACK_MODEL
 
 set -u
 
@@ -123,13 +131,34 @@ LENS=""
 NORMALISED="$LENS_DIR/verdict.json"
 rm -f "$NORMALISED"
 
-if [ "$CODEX_EXIT" -eq 0 ]; then
-    READING="$("$LENS_PYTHON" -m src.lens_verdict codex "$CODEX_FILE" \
-        --lens "$CODEX_LENS" --normalised "$NORMALISED" 2>>"$CODEX_LOG")"
-    if [ $? -eq 0 ]; then
-        VERDICT="${READING%% *}"
-        FINDINGS="${READING##* }"
-        LENS="$CODEX_LENS"
+# The reading is four fields -- verdict, how many findings, the exit code this
+# script answers with, and the model that served it. The code comes from
+# src/lens_verdict.py rather than from a mapping written a second time here.
+read_verdict() {
+    set -- $1
+    VERDICT="$1"
+    FINDINGS="$2"
+    CODE="$3"
+    MODEL="$4"
+}
+
+# The file is read whatever the exit status was. A verdict that validates
+# against the schema is the lens's answer, and the exit status is not part of
+# that sentence: Codex can write a complete `fail` and then exit non-zero -- a
+# timeout killed after the file was flushed, a cleanup that failed -- and
+# throwing that away would let the same-family fallback overwrite a cross-vendor
+# fail with a pass, which is the one path this whole design says cannot happen.
+# The status is kept for the reason line and for nothing else.
+READING="$("$LENS_PYTHON" -m src.lens_verdict codex "$CODEX_FILE" \
+    --lens "$CODEX_LENS" --normalised "$NORMALISED" 2>>"$CODEX_LOG")"
+if [ $? -eq 0 ]; then
+    read_verdict "$READING"
+    LENS="$CODEX_LENS"
+    # Codex names the model it ran in its own banner. Read from the run rather
+    # than assumed, and left unrecorded when the banner is not there.
+    FROM_BANNER="$(sed -n 's/^model: //p' "$CODEX_LOG" | head -1)"
+    if [ -n "$FROM_BANNER" ]; then
+        MODEL="$FROM_BANNER"
     fi
 fi
 
@@ -140,24 +169,29 @@ if [ -z "$LENS" ]; then
     rm -f "$FABLE_FILE"
     FABLE_LOG="$LENS_DIR/fable.log"
     if command -v claude >/dev/null 2>&1; then
-        run_with_timeout claude -p \
+        # Started *in* the worktree, the way Codex is with -C. The prompt's
+        # first instruction is "the working tree you were started in", and this
+        # script is called from the repository root against a detached worktree
+        # by docs/routines/weekly-relens.md -- so a fallback left in the
+        # caller's directory would review main and answer about a tree the item
+        # never produced.
+        FABLE_PROMPT="$(prompt_for "$FALLBACK_LENS")"
+        ( cd "$WORKTREE" && run_with_timeout claude -p \
             --agent refute-check \
             --model "${LENS_FALLBACK_MODEL:-fable}" \
             --output-format json \
-            "$(cat "$(prompt_for "$FALLBACK_LENS")")" > "$FABLE_FILE" 2>"$FABLE_LOG"
+            "$(cat "$FABLE_PROMPT")" ) > "$FABLE_FILE" 2>"$FABLE_LOG"
         FABLE_EXIT=$?
     else
         echo "second_lens: no claude on PATH" > "$FABLE_LOG"
         FABLE_EXIT=127
     fi
-    if [ "$FABLE_EXIT" -eq 0 ]; then
-        READING="$("$LENS_PYTHON" -m src.lens_verdict claude "$FABLE_FILE" \
-            --lens "$FALLBACK_LENS" --normalised "$NORMALISED" 2>>"$FABLE_LOG")"
-        if [ $? -eq 0 ]; then
-            VERDICT="${READING%% *}"
-            FINDINGS="${READING##* }"
-            LENS="$FALLBACK_LENS"
-        fi
+    # Read whatever the exit status was, for the same reason as above.
+    READING="$("$LENS_PYTHON" -m src.lens_verdict claude "$FABLE_FILE" \
+        --lens "$FALLBACK_LENS" --normalised "$NORMALISED" 2>>"$FABLE_LOG")"
+    if [ $? -eq 0 ]; then
+        read_verdict "$READING"
+        LENS="$FALLBACK_LENS"
     fi
 fi
 
@@ -167,22 +201,32 @@ if [ -z "$LENS" ]; then
     LENS="none"
     VERDICT="no_lens_ran"
     FINDINGS=0
+    CODE="$NO_LENS_RAN"
+    MODEL="none"
 fi
 
-"$LENS_PYTHON" -m src.lens_verdict ledger \
+# The ledger line is what docs/routines/weekly-relens.md greps for to find the
+# rows only one lens read. A pass whose ledger write failed would merge with no
+# row, and the routine would never come back to it -- so a ledger that could not
+# be written is not an approval either.
+if ! "$LENS_PYTHON" -m src.lens_verdict ledger \
     --ledger "$LENS_LEDGER" \
     --item "$ITEM" \
     --lens "$LENS" \
     --verdict "$VERDICT" \
-    --findings "$FINDINGS"
+    --findings "$FINDINGS" \
+    --model "${MODEL:-unrecorded}"; then
+    echo "second lens: $LENS said $VERDICT and the ledger line could not be written" >&2
+    echo "second lens: none · no_lens_ran · the record of the run was not written, which is not an approval"
+    exit "$NO_LENS_RAN"
+fi
 
 case "$VERDICT" in
-    pass)           REASON="tried to break it and could not"; CODE=0 ;;
-    fail)           REASON="$FINDINGS finding(s), see $NORMALISED"; CODE=1 ;;
-    needs_judgment) REASON="$FINDINGS open question(s), see $NORMALISED"; CODE=2 ;;
-    *)              REASON="codex exit $CODEX_EXIT, fallback exit ${FABLE_EXIT:-not reached}"
-                    CODE="$NO_LENS_RAN" ;;
+    pass)           REASON="tried to break it and could not" ;;
+    fail)           REASON="$FINDINGS finding(s), see $NORMALISED" ;;
+    needs_judgment) REASON="$FINDINGS open question(s), see $NORMALISED" ;;
+    *)              REASON="codex exit $CODEX_EXIT, fallback exit ${FABLE_EXIT:-not reached}" ;;
 esac
 
-echo "second lens: $LENS · $VERDICT · $REASON"
+echo "second lens: $LENS · ${MODEL:-unrecorded} · $VERDICT · $REASON"
 exit "$CODE"
