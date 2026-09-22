@@ -107,7 +107,7 @@ def extract(ticker: str, form: str = "10-K", *, role: str = "xbrl_instance",
     """`role` is `xbrl_instance` for the current filing; the prior period's
     instance is stored under `prior_period_xbrl_instance` and is read the same
     way, which is what the note change history pairs."""
-    cutoff = cutoff or cutoff_guard.default_cutoff(ticker, fixtures_root=fixtures_root)
+    cutoff = cutoff_guard.resolve_cutoff(cutoff, ticker, fixtures_root=fixtures_root)
     row = cutoff_guard.one_document(ticker, form, role, fixtures_root=fixtures_root)
     raw = cutoff_guard.load_bytes(row["full_path"], cutoff, fixtures_root=fixtures_root)
     sections = sections_from_instance(raw, accession=row["accession"],

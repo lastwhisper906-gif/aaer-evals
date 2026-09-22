@@ -154,6 +154,28 @@ def default_cutoff(ticker: str, *, fixtures_root=FIXTURES) -> dt.date:
     return parse_date(manifest.get("as_of"), f"{ticker} manifest as_of")
 
 
+def resolve_cutoff(cutoff, ticker: str, *, fixtures_root=FIXTURES) -> dt.date:
+    """The cutoff to read at. The default only when none was given.
+
+    Ten call sites across eight readers wrote `cutoff or default_cutoff(ticker)`,
+    and `or` cannot tell *absent* from *empty*. An empty cutoff is not a missing
+    cutoff that fails: the fixture set's own as-of date is months after most
+    triggers, so `--cutoff ""` is a *later* cutoff that passes, and the documents
+    it sweeps in are the proof. A reader handed an empty string then reads
+    filings its trigger could never have seen, and says nothing about it.
+
+    So: `None` means the default, and anything given is parsed. `parse_date`'s
+    own rule is "never None, never a silent default", and it already refuses the
+    empty string -- what was missing was letting it see one.
+    `src/restatement_trace.py` has read it this way since the day the two
+    companyfacts readers disagreed about it; this is that shape, in one place,
+    so the ten sites cannot drift apart again.
+    """
+    if cutoff is None:
+        cutoff = default_cutoff(ticker, fixtures_root=fixtures_root)
+    return parse_date(cutoff, "cutoff")
+
+
 def check(path, cutoff_date, *, fixtures_root=FIXTURES) -> dict:
     """Refuse the document, or return its manifest row. No I/O on the document."""
     cutoff = parse_date(cutoff_date, "cutoff_date")
