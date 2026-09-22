@@ -1,0 +1,2358 @@
+{
+  "coverage": {
+    "periods_on_record": 7,
+    "periods_with_at_least_one_ratio": 7,
+    "quarters": [
+      {
+        "end": "2026-07-26",
+        "label": "Q-0",
+        "ratios_filled": 7,
+        "ratios_missing": {
+          "accruals_over_total_assets": "no fact for operating_cash_flow in 2026-04-27..2026-07-26: us-gaap:NetCashProvidedByUsedInOperatingActivities, us-gaap:NetCashProvidedByUsedInOperatingActivitiesContinuingOperations is reported, but not for this period",
+          "bad_debt_reserve_ratio": "no fact for bad_debt_allowance: the filings tag none of us-gaap:AccountsReceivableAllowanceForCreditLossCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivableCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivable",
+          "inventory_reserve_ratio": "no fact for inventory_reserve: the filings tag none of us-gaap:InventoryValuationReserves",
+          "non_gaap_gap": "no fact for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and input_numbers.json holds us-gaap and dei facts only"
+        },
+        "start": "2026-04-27",
+        "status": "filled",
+        "target_end": "2026-07-26"
+      },
+      {
+        "end": "2026-04-26",
+        "label": "Q-1",
+        "ratios_filled": 8,
+        "ratios_missing": {
+          "bad_debt_reserve_ratio": "no fact for bad_debt_allowance: the filings tag none of us-gaap:AccountsReceivableAllowanceForCreditLossCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivableCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivable",
+          "inventory_reserve_ratio": "no fact for inventory_reserve: the filings tag none of us-gaap:InventoryValuationReserves",
+          "non_gaap_gap": "no fact for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and input_numbers.json holds us-gaap and dei facts only"
+        },
+        "start": "2026-01-26",
+        "status": "filled",
+        "target_end": "2026-04-26"
+      },
+      {
+        "label": "Q-2",
+        "reason": "no period ending within 20 days of 2026-01-25 is in input_numbers.json",
+        "status": "missing",
+        "target_end": "2026-01-25"
+      },
+      {
+        "label": "Q-3",
+        "reason": "no period ending within 20 days of 2025-10-26 is in input_numbers.json",
+        "status": "missing",
+        "target_end": "2025-10-26"
+      },
+      {
+        "end": "2025-07-27",
+        "label": "Q-4",
+        "ratios_filled": 3,
+        "ratios_missing": {
+          "accruals_over_total_assets": "no fact for operating_cash_flow in 2025-04-28..2025-07-27: us-gaap:NetCashProvidedByUsedInOperatingActivities, us-gaap:NetCashProvidedByUsedInOperatingActivitiesContinuingOperations is reported, but not for this period",
+          "bad_debt_reserve_ratio": "no fact for bad_debt_allowance: the filings tag none of us-gaap:AccountsReceivableAllowanceForCreditLossCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivableCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivable",
+          "days_sales_of_inventory": "no fact for inventory in 2025-04-28..2025-07-27: us-gaap:InventoryNet is reported, but not for this period",
+          "days_sales_outstanding": "no fact for receivables in 2025-04-28..2025-07-27: us-gaap:AccountsReceivableNetCurrent, us-gaap:ReceivablesNetCurrent, us-gaap:AccountsReceivableNet is reported, but not for this period",
+          "inventory_reserve_ratio": "no fact for inventory_reserve: the filings tag none of us-gaap:InventoryValuationReserves",
+          "non_gaap_gap": "no fact for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and input_numbers.json holds us-gaap and dei facts only",
+          "receivables_over_revenue": "no fact for receivables in 2025-04-28..2025-07-27: us-gaap:AccountsReceivableNetCurrent, us-gaap:ReceivablesNetCurrent, us-gaap:AccountsReceivableNet is reported, but not for this period",
+          "soft_asset_share": "no fact for assets in 2025-04-28..2025-07-27: us-gaap:Assets is reported, but not for this period"
+        },
+        "start": "2025-04-28",
+        "status": "filled",
+        "target_end": "2025-07-27"
+      },
+      {
+        "end": "2025-04-27",
+        "label": "Q-5",
+        "ratios_filled": 3,
+        "ratios_missing": {
+          "accruals_over_total_assets": "no fact for assets in 2025-01-27..2025-04-27: us-gaap:Assets is reported, but not for this period",
+          "bad_debt_reserve_ratio": "no fact for bad_debt_allowance: the filings tag none of us-gaap:AccountsReceivableAllowanceForCreditLossCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivableCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivable",
+          "days_sales_of_inventory": "no fact for inventory in 2025-01-27..2025-04-27: us-gaap:InventoryNet is reported, but not for this period",
+          "days_sales_outstanding": "no fact for receivables in 2025-01-27..2025-04-27: us-gaap:AccountsReceivableNetCurrent, us-gaap:ReceivablesNetCurrent, us-gaap:AccountsReceivableNet is reported, but not for this period",
+          "inventory_reserve_ratio": "no fact for inventory_reserve: the filings tag none of us-gaap:InventoryValuationReserves",
+          "non_gaap_gap": "no fact for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and input_numbers.json holds us-gaap and dei facts only",
+          "receivables_over_revenue": "no fact for receivables in 2025-01-27..2025-04-27: us-gaap:AccountsReceivableNetCurrent, us-gaap:ReceivablesNetCurrent, us-gaap:AccountsReceivableNet is reported, but not for this period",
+          "soft_asset_share": "no fact for assets in 2025-01-27..2025-04-27: us-gaap:Assets is reported, but not for this period"
+        },
+        "start": "2025-01-27",
+        "status": "filled",
+        "target_end": "2025-04-27"
+      },
+      {
+        "label": "Q-6",
+        "reason": "no period ending within 20 days of 2025-01-26 is in input_numbers.json",
+        "status": "missing",
+        "target_end": "2025-01-26"
+      },
+      {
+        "label": "Q-7",
+        "reason": "no period ending within 20 days of 2024-10-27 is in input_numbers.json",
+        "status": "missing",
+        "target_end": "2024-10-27"
+      }
+    ],
+    "ratios": [
+      {
+        "filled": 4,
+        "missing": [
+          {
+            "period": "Q-2",
+            "reason": "no period ending within 20 days of 2026-01-25 is in input_numbers.json"
+          },
+          {
+            "period": "Q-3",
+            "reason": "no period ending within 20 days of 2025-10-26 is in input_numbers.json"
+          },
+          {
+            "period": "Q-4",
+            "reason": "no fact for receivables in 2025-04-28..2025-07-27: us-gaap:AccountsReceivableNetCurrent, us-gaap:ReceivablesNetCurrent, us-gaap:AccountsReceivableNet is reported, but not for this period"
+          },
+          {
+            "period": "Q-5",
+            "reason": "no fact for receivables in 2025-01-27..2025-04-27: us-gaap:AccountsReceivableNetCurrent, us-gaap:ReceivablesNetCurrent, us-gaap:AccountsReceivableNet is reported, but not for this period"
+          },
+          {
+            "period": "Q-6",
+            "reason": "no period ending within 20 days of 2025-01-26 is in input_numbers.json"
+          },
+          {
+            "period": "Q-7",
+            "reason": "no period ending within 20 days of 2024-10-27 is in input_numbers.json"
+          },
+          {
+            "period": "FY-2",
+            "reason": "no fact for receivables in 2023-01-30..2024-01-28: us-gaap:AccountsReceivableNetCurrent, us-gaap:ReceivablesNetCurrent, us-gaap:AccountsReceivableNet is reported, but not for this period"
+          },
+          {
+            "period": "FY-3",
+            "reason": "no period ending within 20 days of 2023-01-29 is in input_numbers.json"
+          },
+          {
+            "period": "FY-4",
+            "reason": "no period ending within 20 days of 2022-01-30 is in input_numbers.json"
+          }
+        ],
+        "ratio": "receivables_over_revenue"
+      },
+      {
+        "filled": 4,
+        "missing": [
+          {
+            "period": "Q-2",
+            "reason": "no period ending within 20 days of 2026-01-25 is in input_numbers.json"
+          },
+          {
+            "period": "Q-3",
+            "reason": "no period ending within 20 days of 2025-10-26 is in input_numbers.json"
+          },
+          {
+            "period": "Q-4",
+            "reason": "no fact for receivables in 2025-04-28..2025-07-27: us-gaap:AccountsReceivableNetCurrent, us-gaap:ReceivablesNetCurrent, us-gaap:AccountsReceivableNet is reported, but not for this period"
+          },
+          {
+            "period": "Q-5",
+            "reason": "no fact for receivables in 2025-01-27..2025-04-27: us-gaap:AccountsReceivableNetCurrent, us-gaap:ReceivablesNetCurrent, us-gaap:AccountsReceivableNet is reported, but not for this period"
+          },
+          {
+            "period": "Q-6",
+            "reason": "no period ending within 20 days of 2025-01-26 is in input_numbers.json"
+          },
+          {
+            "period": "Q-7",
+            "reason": "no period ending within 20 days of 2024-10-27 is in input_numbers.json"
+          },
+          {
+            "period": "FY-2",
+            "reason": "no fact for receivables in 2023-01-30..2024-01-28: us-gaap:AccountsReceivableNetCurrent, us-gaap:ReceivablesNetCurrent, us-gaap:AccountsReceivableNet is reported, but not for this period"
+          },
+          {
+            "period": "FY-3",
+            "reason": "no period ending within 20 days of 2023-01-29 is in input_numbers.json"
+          },
+          {
+            "period": "FY-4",
+            "reason": "no period ending within 20 days of 2022-01-30 is in input_numbers.json"
+          }
+        ],
+        "ratio": "days_sales_outstanding"
+      },
+      {
+        "filled": 4,
+        "missing": [
+          {
+            "period": "Q-2",
+            "reason": "no period ending within 20 days of 2026-01-25 is in input_numbers.json"
+          },
+          {
+            "period": "Q-3",
+            "reason": "no period ending within 20 days of 2025-10-26 is in input_numbers.json"
+          },
+          {
+            "period": "Q-4",
+            "reason": "no fact for inventory in 2025-04-28..2025-07-27: us-gaap:InventoryNet is reported, but not for this period"
+          },
+          {
+            "period": "Q-5",
+            "reason": "no fact for inventory in 2025-01-27..2025-04-27: us-gaap:InventoryNet is reported, but not for this period"
+          },
+          {
+            "period": "Q-6",
+            "reason": "no period ending within 20 days of 2025-01-26 is in input_numbers.json"
+          },
+          {
+            "period": "Q-7",
+            "reason": "no period ending within 20 days of 2024-10-27 is in input_numbers.json"
+          },
+          {
+            "period": "FY-2",
+            "reason": "no fact for inventory in 2023-01-30..2024-01-28: us-gaap:InventoryNet is reported, but not for this period"
+          },
+          {
+            "period": "FY-3",
+            "reason": "no period ending within 20 days of 2023-01-29 is in input_numbers.json"
+          },
+          {
+            "period": "FY-4",
+            "reason": "no period ending within 20 days of 2022-01-30 is in input_numbers.json"
+          }
+        ],
+        "ratio": "days_sales_of_inventory"
+      },
+      {
+        "filled": 3,
+        "missing": [
+          {
+            "period": "Q-0",
+            "reason": "no fact for operating_cash_flow in 2026-04-27..2026-07-26: us-gaap:NetCashProvidedByUsedInOperatingActivities, us-gaap:NetCashProvidedByUsedInOperatingActivitiesContinuingOperations is reported, but not for this period"
+          },
+          {
+            "period": "Q-2",
+            "reason": "no period ending within 20 days of 2026-01-25 is in input_numbers.json"
+          },
+          {
+            "period": "Q-3",
+            "reason": "no period ending within 20 days of 2025-10-26 is in input_numbers.json"
+          },
+          {
+            "period": "Q-4",
+            "reason": "no fact for operating_cash_flow in 2025-04-28..2025-07-27: us-gaap:NetCashProvidedByUsedInOperatingActivities, us-gaap:NetCashProvidedByUsedInOperatingActivitiesContinuingOperations is reported, but not for this period"
+          },
+          {
+            "period": "Q-5",
+            "reason": "no fact for assets in 2025-01-27..2025-04-27: us-gaap:Assets is reported, but not for this period"
+          },
+          {
+            "period": "Q-6",
+            "reason": "no period ending within 20 days of 2025-01-26 is in input_numbers.json"
+          },
+          {
+            "period": "Q-7",
+            "reason": "no period ending within 20 days of 2024-10-27 is in input_numbers.json"
+          },
+          {
+            "period": "FY-2",
+            "reason": "no fact for assets in 2023-01-30..2024-01-28: us-gaap:Assets is reported, but not for this period"
+          },
+          {
+            "period": "FY-3",
+            "reason": "no period ending within 20 days of 2023-01-29 is in input_numbers.json"
+          },
+          {
+            "period": "FY-4",
+            "reason": "no period ending within 20 days of 2022-01-30 is in input_numbers.json"
+          }
+        ],
+        "ratio": "accruals_over_total_assets"
+      },
+      {
+        "filled": 7,
+        "missing": [
+          {
+            "period": "Q-2",
+            "reason": "no period ending within 20 days of 2026-01-25 is in input_numbers.json"
+          },
+          {
+            "period": "Q-3",
+            "reason": "no period ending within 20 days of 2025-10-26 is in input_numbers.json"
+          },
+          {
+            "period": "Q-6",
+            "reason": "no period ending within 20 days of 2025-01-26 is in input_numbers.json"
+          },
+          {
+            "period": "Q-7",
+            "reason": "no period ending within 20 days of 2024-10-27 is in input_numbers.json"
+          },
+          {
+            "period": "FY-3",
+            "reason": "no period ending within 20 days of 2023-01-29 is in input_numbers.json"
+          },
+          {
+            "period": "FY-4",
+            "reason": "no period ending within 20 days of 2022-01-30 is in input_numbers.json"
+          }
+        ],
+        "ratio": "gross_margin"
+      },
+      {
+        "filled": 0,
+        "missing": [
+          {
+            "period": "Q-0",
+            "reason": "no fact for bad_debt_allowance: the filings tag none of us-gaap:AccountsReceivableAllowanceForCreditLossCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivableCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivable"
+          },
+          {
+            "period": "Q-1",
+            "reason": "no fact for bad_debt_allowance: the filings tag none of us-gaap:AccountsReceivableAllowanceForCreditLossCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivableCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivable"
+          },
+          {
+            "period": "Q-2",
+            "reason": "no period ending within 20 days of 2026-01-25 is in input_numbers.json"
+          },
+          {
+            "period": "Q-3",
+            "reason": "no period ending within 20 days of 2025-10-26 is in input_numbers.json"
+          },
+          {
+            "period": "Q-4",
+            "reason": "no fact for bad_debt_allowance: the filings tag none of us-gaap:AccountsReceivableAllowanceForCreditLossCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivableCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivable"
+          },
+          {
+            "period": "Q-5",
+            "reason": "no fact for bad_debt_allowance: the filings tag none of us-gaap:AccountsReceivableAllowanceForCreditLossCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivableCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivable"
+          },
+          {
+            "period": "Q-6",
+            "reason": "no period ending within 20 days of 2025-01-26 is in input_numbers.json"
+          },
+          {
+            "period": "Q-7",
+            "reason": "no period ending within 20 days of 2024-10-27 is in input_numbers.json"
+          },
+          {
+            "period": "FY-0",
+            "reason": "no fact for bad_debt_allowance: the filings tag none of us-gaap:AccountsReceivableAllowanceForCreditLossCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivableCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivable"
+          },
+          {
+            "period": "FY-1",
+            "reason": "no fact for bad_debt_allowance: the filings tag none of us-gaap:AccountsReceivableAllowanceForCreditLossCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivableCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivable"
+          },
+          {
+            "period": "FY-2",
+            "reason": "no fact for bad_debt_allowance: the filings tag none of us-gaap:AccountsReceivableAllowanceForCreditLossCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivableCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivable"
+          },
+          {
+            "period": "FY-3",
+            "reason": "no period ending within 20 days of 2023-01-29 is in input_numbers.json"
+          },
+          {
+            "period": "FY-4",
+            "reason": "no period ending within 20 days of 2022-01-30 is in input_numbers.json"
+          }
+        ],
+        "ratio": "bad_debt_reserve_ratio"
+      },
+      {
+        "filled": 0,
+        "missing": [
+          {
+            "period": "Q-0",
+            "reason": "no fact for inventory_reserve: the filings tag none of us-gaap:InventoryValuationReserves"
+          },
+          {
+            "period": "Q-1",
+            "reason": "no fact for inventory_reserve: the filings tag none of us-gaap:InventoryValuationReserves"
+          },
+          {
+            "period": "Q-2",
+            "reason": "no period ending within 20 days of 2026-01-25 is in input_numbers.json"
+          },
+          {
+            "period": "Q-3",
+            "reason": "no period ending within 20 days of 2025-10-26 is in input_numbers.json"
+          },
+          {
+            "period": "Q-4",
+            "reason": "no fact for inventory_reserve: the filings tag none of us-gaap:InventoryValuationReserves"
+          },
+          {
+            "period": "Q-5",
+            "reason": "no fact for inventory_reserve: the filings tag none of us-gaap:InventoryValuationReserves"
+          },
+          {
+            "period": "Q-6",
+            "reason": "no period ending within 20 days of 2025-01-26 is in input_numbers.json"
+          },
+          {
+            "period": "Q-7",
+            "reason": "no period ending within 20 days of 2024-10-27 is in input_numbers.json"
+          },
+          {
+            "period": "FY-0",
+            "reason": "no fact for inventory_reserve: the filings tag none of us-gaap:InventoryValuationReserves"
+          },
+          {
+            "period": "FY-1",
+            "reason": "no fact for inventory_reserve: the filings tag none of us-gaap:InventoryValuationReserves"
+          },
+          {
+            "period": "FY-2",
+            "reason": "no fact for inventory_reserve: the filings tag none of us-gaap:InventoryValuationReserves"
+          },
+          {
+            "period": "FY-3",
+            "reason": "no period ending within 20 days of 2023-01-29 is in input_numbers.json"
+          },
+          {
+            "period": "FY-4",
+            "reason": "no period ending within 20 days of 2022-01-30 is in input_numbers.json"
+          }
+        ],
+        "ratio": "inventory_reserve_ratio"
+      },
+      {
+        "filled": 7,
+        "missing": [
+          {
+            "period": "Q-2",
+            "reason": "no period ending within 20 days of 2026-01-25 is in input_numbers.json"
+          },
+          {
+            "period": "Q-3",
+            "reason": "no period ending within 20 days of 2025-10-26 is in input_numbers.json"
+          },
+          {
+            "period": "Q-6",
+            "reason": "no period ending within 20 days of 2025-01-26 is in input_numbers.json"
+          },
+          {
+            "period": "Q-7",
+            "reason": "no period ending within 20 days of 2024-10-27 is in input_numbers.json"
+          },
+          {
+            "period": "FY-3",
+            "reason": "no period ending within 20 days of 2023-01-29 is in input_numbers.json"
+          },
+          {
+            "period": "FY-4",
+            "reason": "no period ending within 20 days of 2022-01-30 is in input_numbers.json"
+          }
+        ],
+        "ratio": "warranty_reserve_ratio"
+      },
+      {
+        "filled": 4,
+        "missing": [
+          {
+            "period": "Q-2",
+            "reason": "no period ending within 20 days of 2026-01-25 is in input_numbers.json"
+          },
+          {
+            "period": "Q-3",
+            "reason": "no period ending within 20 days of 2025-10-26 is in input_numbers.json"
+          },
+          {
+            "period": "Q-4",
+            "reason": "no fact for assets in 2025-04-28..2025-07-27: us-gaap:Assets is reported, but not for this period"
+          },
+          {
+            "period": "Q-5",
+            "reason": "no fact for assets in 2025-01-27..2025-04-27: us-gaap:Assets is reported, but not for this period"
+          },
+          {
+            "period": "Q-6",
+            "reason": "no period ending within 20 days of 2025-01-26 is in input_numbers.json"
+          },
+          {
+            "period": "Q-7",
+            "reason": "no period ending within 20 days of 2024-10-27 is in input_numbers.json"
+          },
+          {
+            "period": "FY-2",
+            "reason": "no fact for assets in 2023-01-30..2024-01-28: us-gaap:Assets is reported, but not for this period"
+          },
+          {
+            "period": "FY-3",
+            "reason": "no period ending within 20 days of 2023-01-29 is in input_numbers.json"
+          },
+          {
+            "period": "FY-4",
+            "reason": "no period ending within 20 days of 2022-01-30 is in input_numbers.json"
+          }
+        ],
+        "ratio": "soft_asset_share"
+      },
+      {
+        "filled": 7,
+        "missing": [
+          {
+            "period": "Q-2",
+            "reason": "no period ending within 20 days of 2026-01-25 is in input_numbers.json"
+          },
+          {
+            "period": "Q-3",
+            "reason": "no period ending within 20 days of 2025-10-26 is in input_numbers.json"
+          },
+          {
+            "period": "Q-6",
+            "reason": "no period ending within 20 days of 2025-01-26 is in input_numbers.json"
+          },
+          {
+            "period": "Q-7",
+            "reason": "no period ending within 20 days of 2024-10-27 is in input_numbers.json"
+          },
+          {
+            "period": "FY-3",
+            "reason": "no period ending within 20 days of 2023-01-29 is in input_numbers.json"
+          },
+          {
+            "period": "FY-4",
+            "reason": "no period ending within 20 days of 2022-01-30 is in input_numbers.json"
+          }
+        ],
+        "ratio": "contract_liabilities_over_revenue"
+      },
+      {
+        "filled": 0,
+        "missing": [
+          {
+            "period": "Q-0",
+            "reason": "no fact for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and input_numbers.json holds us-gaap and dei facts only"
+          },
+          {
+            "period": "Q-1",
+            "reason": "no fact for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and input_numbers.json holds us-gaap and dei facts only"
+          },
+          {
+            "period": "Q-2",
+            "reason": "no period ending within 20 days of 2026-01-25 is in input_numbers.json"
+          },
+          {
+            "period": "Q-3",
+            "reason": "no period ending within 20 days of 2025-10-26 is in input_numbers.json"
+          },
+          {
+            "period": "Q-4",
+            "reason": "no fact for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and input_numbers.json holds us-gaap and dei facts only"
+          },
+          {
+            "period": "Q-5",
+            "reason": "no fact for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and input_numbers.json holds us-gaap and dei facts only"
+          },
+          {
+            "period": "Q-6",
+            "reason": "no period ending within 20 days of 2025-01-26 is in input_numbers.json"
+          },
+          {
+            "period": "Q-7",
+            "reason": "no period ending within 20 days of 2024-10-27 is in input_numbers.json"
+          },
+          {
+            "period": "FY-0",
+            "reason": "no fact for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and input_numbers.json holds us-gaap and dei facts only"
+          },
+          {
+            "period": "FY-1",
+            "reason": "no fact for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and input_numbers.json holds us-gaap and dei facts only"
+          },
+          {
+            "period": "FY-2",
+            "reason": "no fact for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and input_numbers.json holds us-gaap and dei facts only"
+          },
+          {
+            "period": "FY-3",
+            "reason": "no period ending within 20 days of 2023-01-29 is in input_numbers.json"
+          },
+          {
+            "period": "FY-4",
+            "reason": "no period ending within 20 days of 2022-01-30 is in input_numbers.json"
+          }
+        ],
+        "ratio": "non_gaap_gap"
+      }
+    ],
+    "requested": {
+      "quarters": 8,
+      "years": 5
+    },
+    "years": [
+      {
+        "end": "2026-01-25",
+        "label": "FY-0",
+        "ratios_filled": 8,
+        "ratios_missing": {
+          "bad_debt_reserve_ratio": "no fact for bad_debt_allowance: the filings tag none of us-gaap:AccountsReceivableAllowanceForCreditLossCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivableCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivable",
+          "inventory_reserve_ratio": "no fact for inventory_reserve: the filings tag none of us-gaap:InventoryValuationReserves",
+          "non_gaap_gap": "no fact for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and input_numbers.json holds us-gaap and dei facts only"
+        },
+        "start": "2025-01-27",
+        "status": "filled",
+        "target_end": "2026-01-25"
+      },
+      {
+        "end": "2025-01-26",
+        "label": "FY-1",
+        "ratios_filled": 8,
+        "ratios_missing": {
+          "bad_debt_reserve_ratio": "no fact for bad_debt_allowance: the filings tag none of us-gaap:AccountsReceivableAllowanceForCreditLossCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivableCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivable",
+          "inventory_reserve_ratio": "no fact for inventory_reserve: the filings tag none of us-gaap:InventoryValuationReserves",
+          "non_gaap_gap": "no fact for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and input_numbers.json holds us-gaap and dei facts only"
+        },
+        "start": "2024-01-29",
+        "status": "filled",
+        "target_end": "2025-01-26"
+      },
+      {
+        "end": "2024-01-28",
+        "label": "FY-2",
+        "ratios_filled": 3,
+        "ratios_missing": {
+          "accruals_over_total_assets": "no fact for assets in 2023-01-30..2024-01-28: us-gaap:Assets is reported, but not for this period",
+          "bad_debt_reserve_ratio": "no fact for bad_debt_allowance: the filings tag none of us-gaap:AccountsReceivableAllowanceForCreditLossCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivableCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivable",
+          "days_sales_of_inventory": "no fact for inventory in 2023-01-30..2024-01-28: us-gaap:InventoryNet is reported, but not for this period",
+          "days_sales_outstanding": "no fact for receivables in 2023-01-30..2024-01-28: us-gaap:AccountsReceivableNetCurrent, us-gaap:ReceivablesNetCurrent, us-gaap:AccountsReceivableNet is reported, but not for this period",
+          "inventory_reserve_ratio": "no fact for inventory_reserve: the filings tag none of us-gaap:InventoryValuationReserves",
+          "non_gaap_gap": "no fact for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and input_numbers.json holds us-gaap and dei facts only",
+          "receivables_over_revenue": "no fact for receivables in 2023-01-30..2024-01-28: us-gaap:AccountsReceivableNetCurrent, us-gaap:ReceivablesNetCurrent, us-gaap:AccountsReceivableNet is reported, but not for this period",
+          "soft_asset_share": "no fact for assets in 2023-01-30..2024-01-28: us-gaap:Assets is reported, but not for this period"
+        },
+        "start": "2023-01-30",
+        "status": "filled",
+        "target_end": "2024-01-28"
+      },
+      {
+        "label": "FY-3",
+        "reason": "no period ending within 20 days of 2023-01-29 is in input_numbers.json",
+        "status": "missing",
+        "target_end": "2023-01-29"
+      },
+      {
+        "label": "FY-4",
+        "reason": "no period ending within 20 days of 2022-01-30 is in input_numbers.json",
+        "status": "missing",
+        "target_end": "2022-01-30"
+      }
+    ]
+  },
+  "cutoff": "2026-08-26",
+  "quarters": [
+    {
+      "days": 91,
+      "end": "2026-07-26",
+      "filled": true,
+      "label": "Q-0",
+      "ratios": {
+        "accruals_over_total_assets": {
+          "missing": "no fact for operating_cash_flow in 2026-04-27..2026-07-26: us-gaap:NetCashProvidedByUsedInOperatingActivities, us-gaap:NetCashProvidedByUsedInOperatingActivitiesContinuingOperations is reported, but not for this period",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "accruals_over_total_assets is not filled in Q-0"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "accruals_over_total_assets is not filled in Q-0"
+          }
+        },
+        "bad_debt_reserve_ratio": {
+          "missing": "no fact for bad_debt_allowance: the filings tag none of us-gaap:AccountsReceivableAllowanceForCreditLossCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivableCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivable",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "bad_debt_reserve_ratio is not filled in Q-0"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "bad_debt_reserve_ratio is not filled in Q-0"
+          }
+        },
+        "contract_liabilities_over_revenue": {
+          "formula": "contract_liabilities / revenue",
+          "inputs": {
+            "contract_liabilities": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000075:f-648",
+              "tag": "ContractWithCustomerLiabilityCurrent",
+              "unit": "iso4217:USD",
+              "value": 4616000000.0
+            },
+            "revenue": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000075:f-30",
+              "tag": "Revenues",
+              "unit": "iso4217:USD",
+              "value": 96221000000.0
+            }
+          },
+          "quarter_over_quarter": {
+            "against": "Q-1",
+            "change": 0.02697185425440342
+          },
+          "value": 0.04797289572962243,
+          "year_over_year": {
+            "against": "Q-4",
+            "reason": "contract_liabilities_over_revenue rests on a different concept in each period, so the difference would not be a change \u2014 contract_liabilities: us-gaap:ContractWithCustomerLiabilityCurrent in Q-0 and us-gaap:ContractWithCustomerLiability in Q-4"
+          }
+        },
+        "days_sales_of_inventory": {
+          "formula": "inventory / cost_of_revenue * days_in_period",
+          "inputs": {
+            "cost_of_revenue": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000075:f-34",
+              "tag": "CostOfRevenue",
+              "unit": "iso4217:USD",
+              "value": 24079000000.0
+            },
+            "inventory": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000075:f-635",
+              "tag": "InventoryNet",
+              "unit": "iso4217:USD",
+              "value": 31575000000.0
+            }
+          },
+          "quarter_over_quarter": {
+            "against": "Q-1",
+            "change": 4.58047653175197
+          },
+          "value": 119.32908343369742,
+          "year_over_year": {
+            "against": "Q-4",
+            "reason": "days_sales_of_inventory is not filled in Q-4"
+          }
+        },
+        "days_sales_outstanding": {
+          "formula": "receivables / revenue * days_in_period",
+          "inputs": {
+            "receivables": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000075:f-116",
+              "tag": "AccountsReceivableNetCurrent",
+              "unit": "iso4217:USD",
+              "value": 63059000000.0
+            },
+            "revenue": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000075:f-30",
+              "tag": "Revenues",
+              "unit": "iso4217:USD",
+              "value": 96221000000.0
+            }
+          },
+          "quarter_over_quarter": {
+            "against": "Q-1",
+            "change": 14.246098482915471
+          },
+          "value": 59.63738684902464,
+          "year_over_year": {
+            "against": "Q-4",
+            "reason": "days_sales_outstanding is not filled in Q-4"
+          }
+        },
+        "gross_margin": {
+          "formula": "(revenue - cost_of_revenue) / revenue",
+          "inputs": {
+            "cost_of_revenue": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000075:f-34",
+              "tag": "CostOfRevenue",
+              "unit": "iso4217:USD",
+              "value": 24079000000.0
+            },
+            "revenue": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000075:f-30",
+              "tag": "Revenues",
+              "unit": "iso4217:USD",
+              "value": 96221000000.0
+            }
+          },
+          "quarter_over_quarter": {
+            "against": "Q-1",
+            "change": 0.0004178786271317181
+          },
+          "value": 0.7497531723844068,
+          "year_over_year": {
+            "against": "Q-4",
+            "change": 0.025516388266998757
+          }
+        },
+        "inventory_reserve_ratio": {
+          "missing": "no fact for inventory_reserve: the filings tag none of us-gaap:InventoryValuationReserves",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "inventory_reserve_ratio is not filled in Q-0"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "inventory_reserve_ratio is not filled in Q-0"
+          }
+        },
+        "non_gaap_gap": {
+          "missing": "no fact for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and input_numbers.json holds us-gaap and dei facts only",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "non_gaap_gap is not filled in Q-0"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "non_gaap_gap is not filled in Q-0"
+          }
+        },
+        "receivables_over_revenue": {
+          "formula": "receivables / revenue",
+          "inputs": {
+            "receivables": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000075:f-116",
+              "tag": "AccountsReceivableNetCurrent",
+              "unit": "iso4217:USD",
+              "value": 63059000000.0
+            },
+            "revenue": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000075:f-30",
+              "tag": "Revenues",
+              "unit": "iso4217:USD",
+              "value": 96221000000.0
+            }
+          },
+          "quarter_over_quarter": {
+            "against": "Q-1",
+            "change": 0.15655053277929087
+          },
+          "value": 0.6553558994398312,
+          "year_over_year": {
+            "against": "Q-4",
+            "reason": "receivables_over_revenue is not filled in Q-4"
+          }
+        },
+        "soft_asset_share": {
+          "formula": "(assets - property_plant_and_equipment - cash) / assets",
+          "inputs": {
+            "assets": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000075:f-138",
+              "tag": "Assets",
+              "unit": "iso4217:USD",
+              "value": 320272000000.0
+            },
+            "cash": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000075:f-110",
+              "tag": "CashAndCashEquivalentsAtCarryingValue",
+              "unit": "iso4217:USD",
+              "value": 22443000000.0
+            },
+            "property_plant_and_equipment": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000075:f-124",
+              "tag": "PropertyPlantAndEquipmentNet",
+              "unit": "iso4217:USD",
+              "value": 14285000000.0
+            }
+          },
+          "quarter_over_quarter": {
+            "against": "Q-1",
+            "change": -0.015862228545033163
+          },
+          "value": 0.8853224758954888,
+          "year_over_year": {
+            "against": "Q-4",
+            "reason": "soft_asset_share is not filled in Q-4"
+          }
+        },
+        "warranty_reserve_ratio": {
+          "formula": "warranty_accrual / revenue",
+          "inputs": {
+            "revenue": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000075:f-30",
+              "tag": "Revenues",
+              "unit": "iso4217:USD",
+              "value": 96221000000.0
+            },
+            "warranty_accrual": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000075:f-917",
+              "tag": "ProductWarrantyAccrual",
+              "unit": "iso4217:USD",
+              "value": 2938000000.0
+            }
+          },
+          "quarter_over_quarter": {
+            "against": "Q-1",
+            "change": -0.0055869359838047646
+          },
+          "value": 0.030533875141601104,
+          "year_over_year": {
+            "against": "Q-4",
+            "change": -0.015333955335689615
+          }
+        }
+      },
+      "start": "2026-04-27",
+      "target_end": "2026-07-26"
+    },
+    {
+      "days": 91,
+      "end": "2026-04-26",
+      "filled": true,
+      "label": "Q-1",
+      "ratios": {
+        "accruals_over_total_assets": {
+          "formula": "(net_income - operating_cash_flow) / assets",
+          "inputs": {
+            "assets": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000052:f-104",
+              "tag": "Assets",
+              "unit": "iso4217:USD",
+              "value": 259474000000.0
+            },
+            "net_income": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000052:f-66",
+              "tag": "NetIncomeLoss",
+              "unit": "iso4217:USD",
+              "value": 58321000000.0
+            },
+            "operating_cash_flow": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000052:f-226",
+              "tag": "NetCashProvidedByUsedInOperatingActivities",
+              "unit": "iso4217:USD",
+              "value": 50344000000.0
+            }
+          },
+          "quarter_over_quarter": {
+            "against": "Q-2",
+            "reason": "accruals_over_total_assets is not filled in Q-2"
+          },
+          "value": 0.030742964613024813,
+          "year_over_year": {
+            "against": "Q-5",
+            "reason": "accruals_over_total_assets is not filled in Q-5"
+          }
+        },
+        "bad_debt_reserve_ratio": {
+          "missing": "no fact for bad_debt_allowance: the filings tag none of us-gaap:AccountsReceivableAllowanceForCreditLossCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivableCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivable",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "bad_debt_reserve_ratio is not filled in Q-1"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "bad_debt_reserve_ratio is not filled in Q-1"
+          }
+        },
+        "contract_liabilities_over_revenue": {
+          "formula": "contract_liabilities / revenue",
+          "inputs": {
+            "contract_liabilities": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000052:f-548",
+              "tag": "ContractWithCustomerLiabilityCurrent",
+              "unit": "iso4217:USD",
+              "value": 1714000000.0
+            },
+            "revenue": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000052:f-759",
+              "tag": "Revenues",
+              "unit": "iso4217:USD",
+              "value": 81615000000.0
+            }
+          },
+          "quarter_over_quarter": {
+            "against": "Q-2",
+            "reason": "contract_liabilities_over_revenue is not filled in Q-2"
+          },
+          "value": 0.021001041475219015,
+          "year_over_year": {
+            "against": "Q-5",
+            "reason": "contract_liabilities_over_revenue rests on a different concept in each period, so the difference would not be a change \u2014 contract_liabilities: us-gaap:ContractWithCustomerLiabilityCurrent in Q-1 and us-gaap:ContractWithCustomerLiability in Q-5"
+          }
+        },
+        "days_sales_of_inventory": {
+          "formula": "inventory / cost_of_revenue * days_in_period",
+          "inputs": {
+            "cost_of_revenue": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000052:f-32",
+              "tag": "CostOfRevenue",
+              "unit": "iso4217:USD",
+              "value": 20458000000.0
+            },
+            "inventory": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000052:f-84",
+              "tag": "InventoryNet",
+              "unit": "iso4217:USD",
+              "value": 25797000000.0
+            }
+          },
+          "quarter_over_quarter": {
+            "against": "Q-2",
+            "reason": "days_sales_of_inventory is not filled in Q-2"
+          },
+          "value": 114.74860690194545,
+          "year_over_year": {
+            "against": "Q-5",
+            "reason": "days_sales_of_inventory is not filled in Q-5"
+          }
+        },
+        "days_sales_outstanding": {
+          "formula": "receivables / revenue * days_in_period",
+          "inputs": {
+            "receivables": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000052:f-82",
+              "tag": "AccountsReceivableNetCurrent",
+              "unit": "iso4217:USD",
+              "value": 40710000000.0
+            },
+            "revenue": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000052:f-759",
+              "tag": "Revenues",
+              "unit": "iso4217:USD",
+              "value": 81615000000.0
+            }
+          },
+          "quarter_over_quarter": {
+            "against": "Q-2",
+            "reason": "days_sales_outstanding is not filled in Q-2"
+          },
+          "value": 45.391288366109166,
+          "year_over_year": {
+            "against": "Q-5",
+            "reason": "days_sales_outstanding is not filled in Q-5"
+          }
+        },
+        "gross_margin": {
+          "formula": "(revenue - cost_of_revenue) / revenue",
+          "inputs": {
+            "cost_of_revenue": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000052:f-32",
+              "tag": "CostOfRevenue",
+              "unit": "iso4217:USD",
+              "value": 20458000000.0
+            },
+            "revenue": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000052:f-759",
+              "tag": "Revenues",
+              "unit": "iso4217:USD",
+              "value": 81615000000.0
+            }
+          },
+          "quarter_over_quarter": {
+            "against": "Q-2",
+            "reason": "gross_margin is not filled in Q-2"
+          },
+          "value": 0.749335293757275,
+          "year_over_year": {
+            "against": "Q-5",
+            "change": 0.1440972201337446
+          }
+        },
+        "inventory_reserve_ratio": {
+          "missing": "no fact for inventory_reserve: the filings tag none of us-gaap:InventoryValuationReserves",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "inventory_reserve_ratio is not filled in Q-1"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "inventory_reserve_ratio is not filled in Q-1"
+          }
+        },
+        "non_gaap_gap": {
+          "missing": "no fact for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and input_numbers.json holds us-gaap and dei facts only",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "non_gaap_gap is not filled in Q-1"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "non_gaap_gap is not filled in Q-1"
+          }
+        },
+        "receivables_over_revenue": {
+          "formula": "receivables / revenue",
+          "inputs": {
+            "receivables": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000052:f-82",
+              "tag": "AccountsReceivableNetCurrent",
+              "unit": "iso4217:USD",
+              "value": 40710000000.0
+            },
+            "revenue": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000052:f-759",
+              "tag": "Revenues",
+              "unit": "iso4217:USD",
+              "value": 81615000000.0
+            }
+          },
+          "quarter_over_quarter": {
+            "against": "Q-2",
+            "reason": "receivables_over_revenue is not filled in Q-2"
+          },
+          "value": 0.4988053666605403,
+          "year_over_year": {
+            "against": "Q-5",
+            "reason": "receivables_over_revenue is not filled in Q-5"
+          }
+        },
+        "soft_asset_share": {
+          "formula": "(assets - property_plant_and_equipment - cash) / assets",
+          "inputs": {
+            "assets": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000052:f-104",
+              "tag": "Assets",
+              "unit": "iso4217:USD",
+              "value": 259474000000.0
+            },
+            "cash": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000052:f-76",
+              "tag": "CashAndCashEquivalentsAtCarryingValue",
+              "unit": "iso4217:USD",
+              "value": 13237000000.0
+            },
+            "property_plant_and_equipment": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000052:f-90",
+              "tag": "PropertyPlantAndEquipmentNet",
+              "unit": "iso4217:USD",
+              "value": 12403000000.0
+            }
+          },
+          "quarter_over_quarter": {
+            "against": "Q-2",
+            "reason": "soft_asset_share is not filled in Q-2"
+          },
+          "value": 0.901184704440522,
+          "year_over_year": {
+            "against": "Q-5",
+            "reason": "soft_asset_share is not filled in Q-5"
+          }
+        },
+        "warranty_reserve_ratio": {
+          "formula": "warranty_accrual / revenue",
+          "inputs": {
+            "revenue": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000052:f-759",
+              "tag": "Revenues",
+              "unit": "iso4217:USD",
+              "value": 81615000000.0
+            },
+            "warranty_accrual": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000075:f-903",
+              "tag": "ProductWarrantyAccrual",
+              "unit": "iso4217:USD",
+              "value": 2948000000.0
+            }
+          },
+          "quarter_over_quarter": {
+            "against": "Q-2",
+            "reason": "warranty_reserve_ratio is not filled in Q-2"
+          },
+          "value": 0.03612081112540587,
+          "year_over_year": {
+            "against": "Q-5",
+            "change": -0.0110853983067579
+          }
+        }
+      },
+      "start": "2026-01-26",
+      "target_end": "2026-04-26"
+    },
+    {
+      "filled": false,
+      "label": "Q-2",
+      "ratios": {},
+      "reason": "no period ending within 20 days of 2026-01-25 is in input_numbers.json",
+      "target_end": "2026-01-25"
+    },
+    {
+      "filled": false,
+      "label": "Q-3",
+      "ratios": {},
+      "reason": "no period ending within 20 days of 2025-10-26 is in input_numbers.json",
+      "target_end": "2025-10-26"
+    },
+    {
+      "days": 91,
+      "end": "2025-07-27",
+      "filled": true,
+      "label": "Q-4",
+      "ratios": {
+        "accruals_over_total_assets": {
+          "missing": "no fact for operating_cash_flow in 2025-04-28..2025-07-27: us-gaap:NetCashProvidedByUsedInOperatingActivities, us-gaap:NetCashProvidedByUsedInOperatingActivitiesContinuingOperations is reported, but not for this period",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "accruals_over_total_assets is not filled in Q-4"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "accruals_over_total_assets is not filled in Q-4"
+          }
+        },
+        "bad_debt_reserve_ratio": {
+          "missing": "no fact for bad_debt_allowance: the filings tag none of us-gaap:AccountsReceivableAllowanceForCreditLossCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivableCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivable",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "bad_debt_reserve_ratio is not filled in Q-4"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "bad_debt_reserve_ratio is not filled in Q-4"
+          }
+        },
+        "contract_liabilities_over_revenue": {
+          "formula": "contract_liabilities / revenue",
+          "inputs": {
+            "contract_liabilities": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000075:f-687",
+              "tag": "ContractWithCustomerLiability",
+              "unit": "iso4217:USD",
+              "value": 2035000000.0
+            },
+            "revenue": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000075:f-31",
+              "tag": "Revenues",
+              "unit": "iso4217:USD",
+              "value": 46743000000.0
+            }
+          },
+          "quarter_over_quarter": {
+            "against": "Q-5",
+            "change": -0.003624888332511504
+          },
+          "value": 0.0435359305136598,
+          "year_over_year": {
+            "against": null,
+            "reason": "the quarter 4 back is outside the requested window"
+          }
+        },
+        "days_sales_of_inventory": {
+          "missing": "no fact for inventory in 2025-04-28..2025-07-27: us-gaap:InventoryNet is reported, but not for this period",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "days_sales_of_inventory is not filled in Q-4"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "days_sales_of_inventory is not filled in Q-4"
+          }
+        },
+        "days_sales_outstanding": {
+          "missing": "no fact for receivables in 2025-04-28..2025-07-27: us-gaap:AccountsReceivableNetCurrent, us-gaap:ReceivablesNetCurrent, us-gaap:AccountsReceivableNet is reported, but not for this period",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "days_sales_outstanding is not filled in Q-4"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "days_sales_outstanding is not filled in Q-4"
+          }
+        },
+        "gross_margin": {
+          "formula": "(revenue - cost_of_revenue) / revenue",
+          "inputs": {
+            "cost_of_revenue": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000075:f-35",
+              "tag": "CostOfRevenue",
+              "unit": "iso4217:USD",
+              "value": 12890000000.0
+            },
+            "revenue": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000075:f-31",
+              "tag": "Revenues",
+              "unit": "iso4217:USD",
+              "value": 46743000000.0
+            }
+          },
+          "quarter_over_quarter": {
+            "against": "Q-5",
+            "change": 0.11899871049387756
+          },
+          "value": 0.724236784117408,
+          "year_over_year": {
+            "against": null,
+            "reason": "the quarter 4 back is outside the requested window"
+          }
+        },
+        "inventory_reserve_ratio": {
+          "missing": "no fact for inventory_reserve: the filings tag none of us-gaap:InventoryValuationReserves",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "inventory_reserve_ratio is not filled in Q-4"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "inventory_reserve_ratio is not filled in Q-4"
+          }
+        },
+        "non_gaap_gap": {
+          "missing": "no fact for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and input_numbers.json holds us-gaap and dei facts only",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "non_gaap_gap is not filled in Q-4"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "non_gaap_gap is not filled in Q-4"
+          }
+        },
+        "receivables_over_revenue": {
+          "missing": "no fact for receivables in 2025-04-28..2025-07-27: us-gaap:AccountsReceivableNetCurrent, us-gaap:ReceivablesNetCurrent, us-gaap:AccountsReceivableNet is reported, but not for this period",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "receivables_over_revenue is not filled in Q-4"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "receivables_over_revenue is not filled in Q-4"
+          }
+        },
+        "soft_asset_share": {
+          "missing": "no fact for assets in 2025-04-28..2025-07-27: us-gaap:Assets is reported, but not for this period",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "soft_asset_share is not filled in Q-4"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "soft_asset_share is not filled in Q-4"
+          }
+        },
+        "warranty_reserve_ratio": {
+          "formula": "warranty_accrual / revenue",
+          "inputs": {
+            "revenue": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000075:f-31",
+              "tag": "Revenues",
+              "unit": "iso4217:USD",
+              "value": 46743000000.0
+            },
+            "warranty_accrual": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000075:f-918",
+              "tag": "ProductWarrantyAccrual",
+              "unit": "iso4217:USD",
+              "value": 2144000000.0
+            }
+          },
+          "quarter_over_quarter": {
+            "against": "Q-5",
+            "change": -0.0013383789548730499
+          },
+          "value": 0.04586783047729072,
+          "year_over_year": {
+            "against": null,
+            "reason": "the quarter 4 back is outside the requested window"
+          }
+        }
+      },
+      "start": "2025-04-28",
+      "target_end": "2025-07-27"
+    },
+    {
+      "days": 91,
+      "end": "2025-04-27",
+      "filled": true,
+      "label": "Q-5",
+      "ratios": {
+        "accruals_over_total_assets": {
+          "missing": "no fact for assets in 2025-01-27..2025-04-27: us-gaap:Assets is reported, but not for this period",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "accruals_over_total_assets is not filled in Q-5"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "accruals_over_total_assets is not filled in Q-5"
+          }
+        },
+        "bad_debt_reserve_ratio": {
+          "missing": "no fact for bad_debt_allowance: the filings tag none of us-gaap:AccountsReceivableAllowanceForCreditLossCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivableCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivable",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "bad_debt_reserve_ratio is not filled in Q-5"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "bad_debt_reserve_ratio is not filled in Q-5"
+          }
+        },
+        "contract_liabilities_over_revenue": {
+          "formula": "contract_liabilities / revenue",
+          "inputs": {
+            "contract_liabilities": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000052:f-579",
+              "tag": "ContractWithCustomerLiability",
+              "unit": "iso4217:USD",
+              "value": 2078000000.0
+            },
+            "revenue": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000052:f-760",
+              "tag": "Revenues",
+              "unit": "iso4217:USD",
+              "value": 44062000000.0
+            }
+          },
+          "quarter_over_quarter": {
+            "against": "Q-6",
+            "reason": "contract_liabilities_over_revenue is not filled in Q-6"
+          },
+          "value": 0.04716081884617131,
+          "year_over_year": {
+            "against": null,
+            "reason": "the quarter 4 back is outside the requested window"
+          }
+        },
+        "days_sales_of_inventory": {
+          "missing": "no fact for inventory in 2025-01-27..2025-04-27: us-gaap:InventoryNet is reported, but not for this period",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "days_sales_of_inventory is not filled in Q-5"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "days_sales_of_inventory is not filled in Q-5"
+          }
+        },
+        "days_sales_outstanding": {
+          "missing": "no fact for receivables in 2025-01-27..2025-04-27: us-gaap:AccountsReceivableNetCurrent, us-gaap:ReceivablesNetCurrent, us-gaap:AccountsReceivableNet is reported, but not for this period",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "days_sales_outstanding is not filled in Q-5"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "days_sales_outstanding is not filled in Q-5"
+          }
+        },
+        "gross_margin": {
+          "formula": "(revenue - cost_of_revenue) / revenue",
+          "inputs": {
+            "cost_of_revenue": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000052:f-33",
+              "tag": "CostOfRevenue",
+              "unit": "iso4217:USD",
+              "value": 17394000000.0
+            },
+            "revenue": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000052:f-760",
+              "tag": "Revenues",
+              "unit": "iso4217:USD",
+              "value": 44062000000.0
+            }
+          },
+          "quarter_over_quarter": {
+            "against": "Q-6",
+            "reason": "gross_margin is not filled in Q-6"
+          },
+          "value": 0.6052380736235304,
+          "year_over_year": {
+            "against": null,
+            "reason": "the quarter 4 back is outside the requested window"
+          }
+        },
+        "inventory_reserve_ratio": {
+          "missing": "no fact for inventory_reserve: the filings tag none of us-gaap:InventoryValuationReserves",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "inventory_reserve_ratio is not filled in Q-5"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "inventory_reserve_ratio is not filled in Q-5"
+          }
+        },
+        "non_gaap_gap": {
+          "missing": "no fact for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and input_numbers.json holds us-gaap and dei facts only",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "non_gaap_gap is not filled in Q-5"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "non_gaap_gap is not filled in Q-5"
+          }
+        },
+        "receivables_over_revenue": {
+          "missing": "no fact for receivables in 2025-01-27..2025-04-27: us-gaap:AccountsReceivableNetCurrent, us-gaap:ReceivablesNetCurrent, us-gaap:AccountsReceivableNet is reported, but not for this period",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "receivables_over_revenue is not filled in Q-5"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "receivables_over_revenue is not filled in Q-5"
+          }
+        },
+        "soft_asset_share": {
+          "missing": "no fact for assets in 2025-01-27..2025-04-27: us-gaap:Assets is reported, but not for this period",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "soft_asset_share is not filled in Q-5"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "soft_asset_share is not filled in Q-5"
+          }
+        },
+        "warranty_reserve_ratio": {
+          "formula": "warranty_accrual / revenue",
+          "inputs": {
+            "revenue": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000052:f-760",
+              "tag": "Revenues",
+              "unit": "iso4217:USD",
+              "value": 44062000000.0
+            },
+            "warranty_accrual": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000075:f-904",
+              "tag": "ProductWarrantyAccrual",
+              "unit": "iso4217:USD",
+              "value": 2080000000.0
+            }
+          },
+          "quarter_over_quarter": {
+            "against": "Q-6",
+            "reason": "warranty_reserve_ratio is not filled in Q-6"
+          },
+          "value": 0.04720620943216377,
+          "year_over_year": {
+            "against": null,
+            "reason": "the quarter 4 back is outside the requested window"
+          }
+        }
+      },
+      "start": "2025-01-27",
+      "target_end": "2025-04-27"
+    },
+    {
+      "filled": false,
+      "label": "Q-6",
+      "ratios": {},
+      "reason": "no period ending within 20 days of 2025-01-26 is in input_numbers.json",
+      "target_end": "2025-01-26"
+    },
+    {
+      "filled": false,
+      "label": "Q-7",
+      "ratios": {},
+      "reason": "no period ending within 20 days of 2024-10-27 is in input_numbers.json",
+      "target_end": "2024-10-27"
+    }
+  ],
+  "source": {
+    "documents": [
+      {
+        "accession": "0001045810-26-000021",
+        "filing_date": "2026-02-25",
+        "form": "10-K",
+        "path": "10-K/nvda-20260125_htm.xml",
+        "role": "xbrl_instance"
+      },
+      {
+        "accession": "0001045810-26-000052",
+        "filing_date": "2026-05-20",
+        "form": "10-Q",
+        "path": "10-Q/nvda-20260426_htm.xml",
+        "role": "prior_period_xbrl_instance"
+      },
+      {
+        "accession": "0001045810-26-000075",
+        "filing_date": "2026-08-26",
+        "form": "10-Q",
+        "path": "10-Q/nvda-20260726_htm.xml",
+        "role": "xbrl_instance"
+      }
+    ],
+    "facts": 2645,
+    "facts_used": 1260
+  },
+  "ticker": "NVDA",
+  "years": [
+    {
+      "days": 364,
+      "end": "2026-01-25",
+      "filled": true,
+      "label": "FY-0",
+      "ratios": {
+        "accruals_over_total_assets": {
+          "formula": "(net_income - operating_cash_flow) / assets",
+          "inputs": {
+            "assets": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000075:f-139",
+              "tag": "Assets",
+              "unit": "iso4217:USD",
+              "value": 206803000000.0
+            },
+            "net_income": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000021:f-532",
+              "tag": "NetIncomeLoss",
+              "unit": "iso4217:USD",
+              "value": 120067000000.0
+            },
+            "operating_cash_flow": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000021:f-335",
+              "tag": "NetCashProvidedByUsedInOperatingActivities",
+              "unit": "iso4217:USD",
+              "value": 102718000000.0
+            }
+          },
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "value": 0.08389143290958062,
+          "year_over_year": {
+            "against": "FY-1",
+            "change": 0.0051197373154551196
+          }
+        },
+        "bad_debt_reserve_ratio": {
+          "missing": "no fact for bad_debt_allowance: the filings tag none of us-gaap:AccountsReceivableAllowanceForCreditLossCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivableCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivable",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "bad_debt_reserve_ratio is not filled in FY-0"
+          }
+        },
+        "contract_liabilities_over_revenue": {
+          "formula": "contract_liabilities / revenue",
+          "inputs": {
+            "contract_liabilities": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000075:f-649",
+              "tag": "ContractWithCustomerLiabilityCurrent",
+              "unit": "iso4217:USD",
+              "value": 1379000000.0
+            },
+            "revenue": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000021:f-72",
+              "tag": "Revenues",
+              "unit": "iso4217:USD",
+              "value": 215938000000.0
+            }
+          },
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "value": 0.0063860923042725224,
+          "year_over_year": {
+            "against": "FY-1",
+            "change": -2.7848246084956688e-05
+          }
+        },
+        "days_sales_of_inventory": {
+          "formula": "inventory / cost_of_revenue * days_in_period",
+          "inputs": {
+            "cost_of_revenue": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000021:f-75",
+              "tag": "CostOfRevenue",
+              "unit": "iso4217:USD",
+              "value": 62475000000.0
+            },
+            "inventory": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000075:f-636",
+              "tag": "InventoryNet",
+              "unit": "iso4217:USD",
+              "value": 21403000000.0
+            }
+          },
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "value": 124.70095238095239,
+          "year_over_year": {
+            "against": "FY-1",
+            "change": 12.285743581663198
+          }
+        },
+        "days_sales_outstanding": {
+          "formula": "receivables / revenue * days_in_period",
+          "inputs": {
+            "receivables": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000075:f-117",
+              "tag": "AccountsReceivableNetCurrent",
+              "unit": "iso4217:USD",
+              "value": 38466000000.0
+            },
+            "revenue": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000021:f-72",
+              "tag": "Revenues",
+              "unit": "iso4217:USD",
+              "value": 215938000000.0
+            }
+          },
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "value": 64.84094508608953,
+          "year_over_year": {
+            "against": "FY-1",
+            "change": 0.5049067097283881
+          }
+        },
+        "gross_margin": {
+          "formula": "(revenue - cost_of_revenue) / revenue",
+          "inputs": {
+            "cost_of_revenue": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000021:f-75",
+              "tag": "CostOfRevenue",
+              "unit": "iso4217:USD",
+              "value": 62475000000.0
+            },
+            "revenue": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000021:f-72",
+              "tag": "Revenues",
+              "unit": "iso4217:USD",
+              "value": 215938000000.0
+            }
+          },
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "value": 0.7106808435754708,
+          "year_over_year": {
+            "against": "FY-1",
+            "change": -0.039206127006228386
+          }
+        },
+        "inventory_reserve_ratio": {
+          "missing": "no fact for inventory_reserve: the filings tag none of us-gaap:InventoryValuationReserves",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "inventory_reserve_ratio is not filled in FY-0"
+          }
+        },
+        "non_gaap_gap": {
+          "missing": "no fact for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and input_numbers.json holds us-gaap and dei facts only",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "non_gaap_gap is not filled in FY-0"
+          }
+        },
+        "receivables_over_revenue": {
+          "formula": "receivables / revenue",
+          "inputs": {
+            "receivables": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000075:f-117",
+              "tag": "AccountsReceivableNetCurrent",
+              "unit": "iso4217:USD",
+              "value": 38466000000.0
+            },
+            "revenue": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000021:f-72",
+              "tag": "Revenues",
+              "unit": "iso4217:USD",
+              "value": 215938000000.0
+            }
+          },
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "value": 0.17813446452222398,
+          "year_over_year": {
+            "against": "FY-1",
+            "change": 0.001387106345407646
+          }
+        },
+        "soft_asset_share": {
+          "formula": "(assets - property_plant_and_equipment - cash) / assets",
+          "inputs": {
+            "assets": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000075:f-139",
+              "tag": "Assets",
+              "unit": "iso4217:USD",
+              "value": 206803000000.0
+            },
+            "cash": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000075:f-111",
+              "tag": "CashAndCashEquivalentsAtCarryingValue",
+              "unit": "iso4217:USD",
+              "value": 10605000000.0
+            },
+            "property_plant_and_equipment": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000075:f-125",
+              "tag": "PropertyPlantAndEquipmentNet",
+              "unit": "iso4217:USD",
+              "value": 10383000000.0
+            }
+          },
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "value": 0.8985121105593246,
+          "year_over_year": {
+            "against": "FY-1",
+            "change": 0.031772565214748805
+          }
+        },
+        "warranty_reserve_ratio": {
+          "formula": "warranty_accrual / revenue",
+          "inputs": {
+            "revenue": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000021:f-72",
+              "tag": "Revenues",
+              "unit": "iso4217:USD",
+              "value": 215938000000.0
+            },
+            "warranty_accrual": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000075:f-905",
+              "tag": "ProductWarrantyAccrual",
+              "unit": "iso4217:USD",
+              "value": 2807000000.0
+            }
+          },
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "value": 0.012999101593976048,
+          "year_over_year": {
+            "against": "FY-1",
+            "change": 0.0031138168747871005
+          }
+        }
+      },
+      "start": "2025-01-27",
+      "target_end": "2026-01-25"
+    },
+    {
+      "days": 364,
+      "end": "2025-01-26",
+      "filled": true,
+      "label": "FY-1",
+      "ratios": {
+        "accruals_over_total_assets": {
+          "formula": "(net_income - operating_cash_flow) / assets",
+          "inputs": {
+            "assets": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000021:f-168",
+              "tag": "Assets",
+              "unit": "iso4217:USD",
+              "value": 111601000000.0
+            },
+            "net_income": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000021:f-533",
+              "tag": "NetIncomeLoss",
+              "unit": "iso4217:USD",
+              "value": 72880000000.0
+            },
+            "operating_cash_flow": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000021:f-336",
+              "tag": "NetCashProvidedByUsedInOperatingActivities",
+              "unit": "iso4217:USD",
+              "value": 64089000000.0
+            }
+          },
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "value": 0.0787716955941255,
+          "year_over_year": {
+            "against": "FY-2",
+            "reason": "accruals_over_total_assets is not filled in FY-2"
+          }
+        },
+        "bad_debt_reserve_ratio": {
+          "missing": "no fact for bad_debt_allowance: the filings tag none of us-gaap:AccountsReceivableAllowanceForCreditLossCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivableCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivable",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "bad_debt_reserve_ratio is not filled in FY-1"
+          }
+        },
+        "contract_liabilities_over_revenue": {
+          "formula": "contract_liabilities / revenue",
+          "inputs": {
+            "contract_liabilities": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000021:f-790",
+              "tag": "ContractWithCustomerLiabilityCurrent",
+              "unit": "iso4217:USD",
+              "value": 837000000.0
+            },
+            "revenue": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000021:f-73",
+              "tag": "Revenues",
+              "unit": "iso4217:USD",
+              "value": 130497000000.0
+            }
+          },
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "value": 0.006413940550357479,
+          "year_over_year": {
+            "against": "FY-2",
+            "reason": "contract_liabilities_over_revenue rests on a different concept in each period, so the difference would not be a change \u2014 contract_liabilities: us-gaap:ContractWithCustomerLiabilityCurrent in FY-1 and us-gaap:ContractWithCustomerLiability in FY-2"
+          }
+        },
+        "days_sales_of_inventory": {
+          "formula": "inventory / cost_of_revenue * days_in_period",
+          "inputs": {
+            "cost_of_revenue": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000021:f-76",
+              "tag": "CostOfRevenue",
+              "unit": "iso4217:USD",
+              "value": 32639000000.0
+            },
+            "inventory": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000021:f-749",
+              "tag": "InventoryNet",
+              "unit": "iso4217:USD",
+              "value": 10080000000.0
+            }
+          },
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "value": 112.41520879928919,
+          "year_over_year": {
+            "against": "FY-2",
+            "reason": "days_sales_of_inventory is not filled in FY-2"
+          }
+        },
+        "days_sales_outstanding": {
+          "formula": "receivables / revenue * days_in_period",
+          "inputs": {
+            "receivables": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000021:f-146",
+              "tag": "AccountsReceivableNetCurrent",
+              "unit": "iso4217:USD",
+              "value": 23065000000.0
+            },
+            "revenue": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000021:f-73",
+              "tag": "Revenues",
+              "unit": "iso4217:USD",
+              "value": 130497000000.0
+            }
+          },
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "value": 64.33603837636115,
+          "year_over_year": {
+            "against": "FY-2",
+            "reason": "days_sales_outstanding is not filled in FY-2"
+          }
+        },
+        "gross_margin": {
+          "formula": "(revenue - cost_of_revenue) / revenue",
+          "inputs": {
+            "cost_of_revenue": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000021:f-76",
+              "tag": "CostOfRevenue",
+              "unit": "iso4217:USD",
+              "value": 32639000000.0
+            },
+            "revenue": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000021:f-73",
+              "tag": "Revenues",
+              "unit": "iso4217:USD",
+              "value": 130497000000.0
+            }
+          },
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "value": 0.7498869705816992,
+          "year_over_year": {
+            "against": "FY-2",
+            "change": 0.022711237677329632
+          }
+        },
+        "inventory_reserve_ratio": {
+          "missing": "no fact for inventory_reserve: the filings tag none of us-gaap:InventoryValuationReserves",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "inventory_reserve_ratio is not filled in FY-1"
+          }
+        },
+        "non_gaap_gap": {
+          "missing": "no fact for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and input_numbers.json holds us-gaap and dei facts only",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "non_gaap_gap is not filled in FY-1"
+          }
+        },
+        "receivables_over_revenue": {
+          "formula": "receivables / revenue",
+          "inputs": {
+            "receivables": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000021:f-146",
+              "tag": "AccountsReceivableNetCurrent",
+              "unit": "iso4217:USD",
+              "value": 23065000000.0
+            },
+            "revenue": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000021:f-73",
+              "tag": "Revenues",
+              "unit": "iso4217:USD",
+              "value": 130497000000.0
+            }
+          },
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "value": 0.17674735817681633,
+          "year_over_year": {
+            "against": "FY-2",
+            "reason": "receivables_over_revenue is not filled in FY-2"
+          }
+        },
+        "soft_asset_share": {
+          "formula": "(assets - property_plant_and_equipment - cash) / assets",
+          "inputs": {
+            "assets": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000021:f-168",
+              "tag": "Assets",
+              "unit": "iso4217:USD",
+              "value": 111601000000.0
+            },
+            "cash": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000021:f-142",
+              "tag": "CashAndCashEquivalentsAtCarryingValue",
+              "unit": "iso4217:USD",
+              "value": 8589000000.0
+            },
+            "property_plant_and_equipment": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000021:f-768",
+              "tag": "PropertyPlantAndEquipmentNet",
+              "unit": "iso4217:USD",
+              "value": 6283000000.0
+            }
+          },
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "value": 0.8667395453445758,
+          "year_over_year": {
+            "against": "FY-2",
+            "reason": "soft_asset_share is not filled in FY-2"
+          }
+        },
+        "warranty_reserve_ratio": {
+          "formula": "warranty_accrual / revenue",
+          "inputs": {
+            "revenue": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000021:f-73",
+              "tag": "Revenues",
+              "unit": "iso4217:USD",
+              "value": 130497000000.0
+            },
+            "warranty_accrual": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000075:f-906",
+              "tag": "ProductWarrantyAccrual",
+              "unit": "iso4217:USD",
+              "value": 1290000000.0
+            }
+          },
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "value": 0.009885284719188947,
+          "year_over_year": {
+            "against": "FY-2",
+            "change": 0.004862468659309101
+          }
+        }
+      },
+      "start": "2024-01-29",
+      "target_end": "2025-01-26"
+    },
+    {
+      "days": 364,
+      "end": "2024-01-28",
+      "filled": true,
+      "label": "FY-2",
+      "ratios": {
+        "accruals_over_total_assets": {
+          "missing": "no fact for assets in 2023-01-30..2024-01-28: us-gaap:Assets is reported, but not for this period",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "accruals_over_total_assets is not filled in FY-2"
+          }
+        },
+        "bad_debt_reserve_ratio": {
+          "missing": "no fact for bad_debt_allowance: the filings tag none of us-gaap:AccountsReceivableAllowanceForCreditLossCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivableCurrent, us-gaap:AllowanceForDoubtfulAccountsReceivable",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "bad_debt_reserve_ratio is not filled in FY-2"
+          }
+        },
+        "contract_liabilities_over_revenue": {
+          "formula": "contract_liabilities / revenue",
+          "inputs": {
+            "contract_liabilities": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000021:f-814",
+              "tag": "ContractWithCustomerLiability",
+              "unit": "iso4217:USD",
+              "value": 1337000000.0
+            },
+            "revenue": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000021:f-74",
+              "tag": "Revenues",
+              "unit": "iso4217:USD",
+              "value": 60922000000.0
+            }
+          },
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "value": 0.021946095006729918,
+          "year_over_year": {
+            "against": "FY-3",
+            "reason": "contract_liabilities_over_revenue is not filled in FY-3"
+          }
+        },
+        "days_sales_of_inventory": {
+          "missing": "no fact for inventory in 2023-01-30..2024-01-28: us-gaap:InventoryNet is reported, but not for this period",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "days_sales_of_inventory is not filled in FY-2"
+          }
+        },
+        "days_sales_outstanding": {
+          "missing": "no fact for receivables in 2023-01-30..2024-01-28: us-gaap:AccountsReceivableNetCurrent, us-gaap:ReceivablesNetCurrent, us-gaap:AccountsReceivableNet is reported, but not for this period",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "days_sales_outstanding is not filled in FY-2"
+          }
+        },
+        "gross_margin": {
+          "formula": "(revenue - cost_of_revenue) / revenue",
+          "inputs": {
+            "cost_of_revenue": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000021:f-77",
+              "tag": "CostOfRevenue",
+              "unit": "iso4217:USD",
+              "value": 16621000000.0
+            },
+            "revenue": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000021:f-74",
+              "tag": "Revenues",
+              "unit": "iso4217:USD",
+              "value": 60922000000.0
+            }
+          },
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "value": 0.7271757329043695,
+          "year_over_year": {
+            "against": "FY-3",
+            "reason": "gross_margin is not filled in FY-3"
+          }
+        },
+        "inventory_reserve_ratio": {
+          "missing": "no fact for inventory_reserve: the filings tag none of us-gaap:InventoryValuationReserves",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "inventory_reserve_ratio is not filled in FY-2"
+          }
+        },
+        "non_gaap_gap": {
+          "missing": "no fact for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and input_numbers.json holds us-gaap and dei facts only",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "non_gaap_gap is not filled in FY-2"
+          }
+        },
+        "receivables_over_revenue": {
+          "missing": "no fact for receivables in 2023-01-30..2024-01-28: us-gaap:AccountsReceivableNetCurrent, us-gaap:ReceivablesNetCurrent, us-gaap:AccountsReceivableNet is reported, but not for this period",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "receivables_over_revenue is not filled in FY-2"
+          }
+        },
+        "soft_asset_share": {
+          "missing": "no fact for assets in 2023-01-30..2024-01-28: us-gaap:Assets is reported, but not for this period",
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "year_over_year": {
+            "against": null,
+            "reason": "soft_asset_share is not filled in FY-2"
+          }
+        },
+        "warranty_reserve_ratio": {
+          "formula": "warranty_accrual / revenue",
+          "inputs": {
+            "revenue": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000021:f-74",
+              "tag": "Revenues",
+              "unit": "iso4217:USD",
+              "value": 60922000000.0
+            },
+            "warranty_accrual": {
+              "decimals": "-6",
+              "fact_id": "0001045810-26-000021:f-918",
+              "tag": "ProductWarrantyAccrual",
+              "unit": "iso4217:USD",
+              "value": 306000000.0
+            }
+          },
+          "quarter_over_quarter": {
+            "against": null,
+            "reason": "an annual period has no preceding quarter"
+          },
+          "value": 0.005022816059879846,
+          "year_over_year": {
+            "against": "FY-3",
+            "reason": "warranty_reserve_ratio is not filled in FY-3"
+          }
+        }
+      },
+      "start": "2023-01-30",
+      "target_end": "2024-01-28"
+    },
+    {
+      "filled": false,
+      "label": "FY-3",
+      "ratios": {},
+      "reason": "no period ending within 20 days of 2023-01-29 is in input_numbers.json",
+      "target_end": "2023-01-29"
+    },
+    {
+      "filled": false,
+      "label": "FY-4",
+      "ratios": {},
+      "reason": "no period ending within 20 days of 2022-01-30 is in input_numbers.json",
+      "target_end": "2022-01-30"
+    }
+  ]
+}
