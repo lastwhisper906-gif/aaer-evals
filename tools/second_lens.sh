@@ -61,10 +61,25 @@ LENS_LEDGER="${LENS_LEDGER:-$REPO_ROOT/events/ledger.jsonl}"
 LENS_PYTHON="${LENS_PYTHON:-$REPO_ROOT/.venv/bin/python}"
 LENS_TIMEOUT="${LENS_TIMEOUT:-1800}"
 
-# `-m src.lens_verdict` has to resolve to this repository's module whatever
-# directory the caller ran from -- a worktree, the repository root, or neither.
-PYTHONPATH="$REPO_ROOT${PYTHONPATH:+:$PYTHONPATH}"
-export PYTHONPATH
+# Until the judge is pinned, the reader is this repository's own copy. The
+# pinning block below moves JUDGE_HOME to the materialised tree.
+JUDGE_HOME="$REPO_ROOT"
+
+# `python -m` puts the **current directory** first on `sys.path`, ahead of
+# PYTHONPATH -- and the build skill writes `tools/second_lens.sh <worktree>` run
+# from inside the worktree, so the tree's own `src/lens_verdict.py` decided the
+# exit code however carefully the rest was pinned. A branch rewriting
+# `"fail": FAIL` to `"fail": PASS` was demonstrated exiting 0 on a valid `fail`
+# while the row said `judge_from: main`. So the reader runs from the judge's own
+# directory, with `PYTHONSAFEPATH` so nothing but the path set here is consulted.
+read_the_verdict() {
+    ( cd "$JUDGE_HOME" && PYTHONSAFEPATH=1 PYTHONPATH="$JUDGE_HOME" \
+        "$LENS_PYTHON" -m src.lens_verdict "$@" )
+}
+
+# And `judge_from` is read off the copy that actually answered rather than off
+# the copy we meant to use. The row the weekly routine reads to decide what to
+# look at again cannot be a claim the run makes about itself.
 
 CODEX_LENS="codex"
 FALLBACK_LENS="claude-fable-fallback"
@@ -154,7 +169,7 @@ if ! git -C "$WORKTREE" rev-parse --verify --quiet "$JUDGE_BASE^{commit}" >/dev/
     # A clone that carries only `origin/main` lands here, and so does a worktree
     # outside a repository. Silently skipping the whole question is what the
     # first version did; it is the same defect as an unchecked `rm -f`.
-    "$LENS_PYTHON" -m src.lens_verdict ledger \
+    read_the_verdict ledger \
         --ledger "$LENS_LEDGER" --item "$ITEM" --lens "none" \
         --verdict "no_lens_ran" --findings 0 --model "none" || true
     echo "second lens: none · none · no_lens_ran · no ref $JUDGE_BASE here, so the judge could not be pinned"
@@ -177,15 +192,26 @@ if [ -s "$JUDGE_DIR/tools/lens_prompt.md" ] \
    && [ -s "$JUDGE_DIR/src/lens_verdict.py" ]; then
     LENS_PROMPT="$JUDGE_DIR/tools/lens_prompt.md"
     LENS_SCHEMA="$JUDGE_DIR/tools/lens_verdict.schema.json"
-    PYTHONPATH="$JUDGE_DIR:$PYTHONPATH"
-    export PYTHONPATH
+    JUDGE_HOME="$JUDGE_DIR"
 else
     # The change that builds the lens is the one case where the pinned ref does
     # not have it yet. That is recorded, not waved through: the row says the
     # judge came from the tree, and the weekly routine reads those rows again.
     JUDGE_FROM="tree"
+    JUDGE_HOME="$REPO_ROOT"
     CAVEATS="$CAVEATS the judge came from the tree because $JUDGE_BASE has none;"
 fi
+
+READER_RAN="$(read_the_verdict where 2>/dev/null)"
+case "$READER_RAN" in
+    "$JUDGE_DIR"/*) ;;
+    *)
+        if [ "$JUDGE_FROM" != "tree" ]; then
+            CAVEATS="$CAVEATS the pinned reader was not the one that ran ($READER_RAN);"
+        fi
+        JUDGE_FROM="tree"
+        ;;
+esac
 
 if ! git -C "$WORKTREE" diff --quiet "$JUDGE_BASE" -- "tools/second_lens.sh" 2>/dev/null; then
     CAVEATS="$CAVEATS this script differs from $JUDGE_BASE and is running as itself;"
@@ -207,7 +233,7 @@ for definition in $DEFINES_THE_JUDGE; do
 done
 
 if [ -n "$EDITED_ITS_JUDGE" ]; then
-    "$LENS_PYTHON" -m src.lens_verdict ledger \
+    read_the_verdict ledger \
         --ledger "$LENS_LEDGER" --item "$ITEM" --lens "none" \
         --verdict "no_lens_ran" --findings 0 --model "none" || true
     echo "second lens: none · none · no_lens_ran · the tree under review changes what a lens reads as its own definition:$EDITED_ITS_JUDGE"
@@ -222,7 +248,7 @@ fi
 # have a verdict.
 NORMALISED="$LENS_DIR/verdict.json"
 if ! cleared "$NORMALISED"; then
-    "$LENS_PYTHON" -m src.lens_verdict ledger \
+    read_the_verdict ledger \
         --ledger "$LENS_LEDGER" --item "$ITEM" --lens "none" \
         --verdict "no_lens_ran" --findings 0 --model "none" || true
     echo "second lens: none · none · no_lens_ran · $NORMALISED holds an earlier run's answer and could not be cleared"
@@ -291,7 +317,7 @@ read_verdict() {
 # The status is kept for the reason line and for nothing else.
 READING=""
 if [ "$CODEX_CLEARED" = yes ]; then
-    READING="$("$LENS_PYTHON" -m src.lens_verdict codex "$CODEX_FILE" \
+    READING="$(read_the_verdict codex "$CODEX_FILE" \
         --lens "$CODEX_LENS" --normalised "$NORMALISED" 2>>"$CODEX_LOG")"
 fi
 if [ -n "$READING" ]; then
@@ -337,7 +363,7 @@ if [ -z "$LENS" ]; then
     # Read whatever the exit status was, for the same reason as above.
     READING=""
     if [ "$FABLE_CLEARED" = yes ]; then
-        READING="$("$LENS_PYTHON" -m src.lens_verdict claude "$FABLE_FILE" \
+        READING="$(read_the_verdict claude "$FABLE_FILE" \
             --lens "$FALLBACK_LENS" --normalised "$NORMALISED" 2>>"$FABLE_LOG")"
     fi
     if [ -n "$READING" ]; then
@@ -360,7 +386,7 @@ fi
 # rows only one lens read. A pass whose ledger write failed would merge with no
 # row, and the routine would never come back to it -- so a ledger that could not
 # be written is not an approval either.
-if ! "$LENS_PYTHON" -m src.lens_verdict ledger \
+if ! read_the_verdict ledger \
     --ledger "$LENS_LEDGER" \
     --item "$ITEM" \
     --lens "$LENS" \

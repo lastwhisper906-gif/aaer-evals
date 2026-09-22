@@ -144,11 +144,13 @@ def a_repository_on_main(worktree: Path, *, carrying_the_judge: bool = True) -> 
     run("git", "config", "user.email", "lens@example.invalid")
     run("git", "config", "user.name", "lens")
     if carrying_the_judge:
-        for name in THE_JUDGE:
-            destination = worktree / name
-            destination.parent.mkdir(parents=True, exist_ok=True)
-            destination.write_text((REPO_ROOT / name).read_text(encoding="utf-8"),
-                                   encoding="utf-8")
+        # The whole of `src/` and `tools/`, not the four files the script reads.
+        # A pinned `src/` holding one module and no `__init__.py` is a namespace
+        # package, which loses the import to any regular `src` package on the
+        # path -- so a harness that copied four files could not have caught the
+        # pin failing, and did not.
+        shutil.copytree(REPO_ROOT / "src", worktree / "src")
+        shutil.copytree(REPO_ROOT / "tools", worktree / "tools")
     (worktree / "a_file.py").write_text("x = 1\n", encoding="utf-8")
     run("git", "add", "-A")
     run("git", "commit", "-qm", "main")
@@ -166,12 +168,18 @@ def run_lens(tmp_path: Path, item: str = "a task-list item") -> subprocess.Compl
     environment["LENS_LEDGER"] = str(ledger)
     environment["LENS_PYTHON"] = sys.executable
     environment["LENS_TIMEOUT"] = "60"
+    # **From inside the worktree**, which is how `.claude/skills/build-item`
+    # step 4b writes the command -- and the only place the defect this harness
+    # exists to catch can appear. `python -m` puts the current directory first
+    # on `sys.path`, so running from anywhere without a `src/` in it hides the
+    # question entirely: the first version of this harness ran from `tmp_path`
+    # and a mutation that undid the whole pin passed all fifty-one tests.
     return subprocess.run(
         ["bash", str(SCRIPT), str(worktree), item],
         capture_output=True,
         text=True,
         env=environment,
-        cwd=tmp_path,
+        cwd=worktree,
     )
 
 
@@ -852,11 +860,8 @@ def _repository_that(tmp_path: Path, *, edits: str | None) -> Path:
     run("git", "init", "-q", "-b", "main")
     run("git", "config", "user.email", "lens@example.invalid")
     run("git", "config", "user.name", "lens")
-    for name in THE_JUDGE:
-        destination = worktree / name
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        destination.write_text((REPO_ROOT / name).read_text(encoding="utf-8"),
-                               encoding="utf-8")
+    shutil.copytree(REPO_ROOT / "src", worktree / "src")
+    shutil.copytree(REPO_ROOT / "tools", worktree / "tools")
     (worktree / ".claude" / "agents").mkdir(parents=True, exist_ok=True)
     (worktree / ".claude" / "agents" / "refute-check.md").write_text(
         "the five rules\n", encoding="utf-8")
@@ -976,6 +981,10 @@ def test_a_verdict_reader_the_branch_rewrote_is_not_the_one_that_maps_the_exit(
 
     assert result.returncode == lens_verdict.FAIL, result.stdout
     assert result.returncode == 1
+    # And the row says the ref it pinned, which is only true if the pinned copy
+    # is the one that answered -- the script asks the module where it was
+    # imported from rather than assuming.
+    assert ledger_lines(tmp_path)[-1]["judge_from"] == "main"
 
 
 def test_a_tree_with_no_pinning_ref_is_no_lens_rather_than_a_silent_skip(
@@ -1013,11 +1022,8 @@ def test_a_ref_that_does_not_carry_the_lens_yet_is_recorded_not_waved_through(
     """
     worktree = tmp_path / "worktree"
     a_repository_on_main(worktree, carrying_the_judge=False)
-    for name in THE_JUDGE:
-        destination = worktree / name
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        destination.write_text((REPO_ROOT / name).read_text(encoding="utf-8"),
-                               encoding="utf-8")
+    shutil.copytree(REPO_ROOT / "src", worktree / "src")
+    shutil.copytree(REPO_ROOT / "tools", worktree / "tools")
     _on_a_branch(worktree, "the change that builds the lens")
 
     codex_stub(stubs, exit_code=0, verdict={
@@ -1134,3 +1140,40 @@ def test_the_weekly_routine_greps_a_string_the_ledger_actually_writes() -> None:
             judge_from=value if key == "judge_from" else "main")
         assert f'"{key}": "{value}"' in line, (
             f"the routine greps {key}={value!r} and the ledger writes {line}")
+
+
+def test_a_reader_that_is_not_the_pinned_one_is_recorded_as_coming_from_the_tree(
+    tmp_path: Path, stubs: Path
+) -> None:
+    """`judge_from` is read off what ran, not off what the run meant to use.
+
+    `python -m` puts the current directory first on `sys.path`, ahead of
+    `PYTHONPATH`, and the build skill's invocation runs from inside the
+    worktree -- so the tree's own reader decided the exit code while the row
+    said `judge_from: main`. A value the weekly routine uses to pick which rows
+    to read again cannot be a claim the run makes about itself, so the script
+    asks the module for its own path. Here the pinned tree is made unusable
+    after the fact, which is the only way to get a reader that is neither.
+    """
+    worktree = tmp_path / "worktree"
+    a_repository_on_main(worktree)
+    (worktree / "a_file.py").write_text("x = 9\n", encoding="utf-8")
+    _on_a_branch(worktree)
+
+    codex_stub(stubs, exit_code=0, verdict={
+        "lens": "codex", "verdict": "pass", "findings": [], "reads": 9})
+    claude_stub(stubs, exit_code=127, result=None)
+
+    # A `main` whose `src/` cannot be read back is a pin that cannot hold.
+    subprocess.run(["git", "rm", "-rq", "--cached", "src/lens_verdict.py"],
+                   cwd=worktree, check=True, capture_output=True, text=True)
+    subprocess.run(["git", "commit", "-qm", "main loses the reader"],
+                   cwd=worktree, check=True, capture_output=True, text=True)
+    subprocess.run(["git", "branch", "-qf", "main", "HEAD"],
+                   cwd=worktree, check=True, capture_output=True, text=True)
+
+    result = run_lens(tmp_path)
+
+    assert result.returncode == 0, result.stdout
+    assert ledger_lines(tmp_path)[-1]["judge_from"] == "tree"
+    assert "judge from tree" in result.stdout

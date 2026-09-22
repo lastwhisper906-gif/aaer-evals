@@ -277,7 +277,17 @@ def main(argv: list[str] | None = None) -> int:
     line.add_argument("--model", default=UNRECORDED_MODEL)
     line.add_argument("--judge-from", default=JUDGE_FROM_TREE)
 
+    sub.add_parser(
+        "where",
+        help="print the file this module was imported from, so a caller can "
+             "check which copy of it actually ran rather than assume",
+    )
+
     args = parser.parse_args(argv)
+
+    if args.command == "where":
+        print(Path(__file__).resolve())
+        return 0
 
     if args.command == "ledger":
         append_ledger(
