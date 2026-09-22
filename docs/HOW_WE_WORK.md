@@ -256,6 +256,39 @@ Agent prompts are committed under `.claude/agents/` and versioned with the
 rules. **Nothing in the read, compare or decide stages writes a prompt at run
 time.**
 
+**The lens does not read its instructions out of the tree it is judging.** That
+sentence had to be earned. Four lens readings and four refute-checks of the lens
+itself found fourteen defects in it, five of which ended in an approval, and
+every one of them was a version of the same mistake: the thing deciding the
+verdict was reachable from the branch being judged. The prompt, the schema and
+the module that decides what a verdict is now come out of a pinned ref rather
+than the worktree; the reader runs from the judge's own directory so `python -m`
+cannot put the branch's `src/` first on the path; the judge directory is cleared
+with the removal checked, because a planted one that survives `rm -rf` answers
+from exactly where the pinned one would have; and the fallback is started
+`--restricted`, with its agent definition passed inline, because a session
+started in the worktree is handed that tree's `CLAUDE.md`, `AGENTS.md`, its
+`.claude/` settings and agents, and — through the SessionStart hook `cat
+lessons.md` — the lessons file verbatim. A sentinel line in `lessons.md` came
+back to the model in one turn with no tool call; the same probe answered
+`ABSENT` once the flag was added.
+
+**Two trust roots remain, and they are named rather than papered over.**
+
+1. **`tools/second_lens.sh` cannot pin itself.** It is already running, and the
+   build skill invokes it by relative path from inside the worktree, so a branch
+   that replaces the file gets whatever exit status it writes. No check inside a
+   file survives that file being replaced. What the script does instead is
+   record whether it matched the pinned ref, as `lens_from` in the ledger row
+   and in the line it prints; the weekly routine greps the `tree` rows. **The
+   hole itself is closed by a person reading the diff of that one file**, and
+   nothing else closes it.
+2. **A hook that runs the tree's own code prints the tree's own output.**
+   `make check` at Stop is the tree's test suite. Reading a tree's output is
+   what reviewing a tree is, so this is inherent rather than fixable. It is
+   bounded by the fact that opening a *new* channel means editing
+   `.claude/settings.json`, which is on the watch list.
+
 **An agent file names a family, not a pin.** `model: opus` and `model: fable`
 are aliases and carry no effort setting, so the pin proper — the dated model id
 and the effort — lives in the rules version and is applied at invocation. The

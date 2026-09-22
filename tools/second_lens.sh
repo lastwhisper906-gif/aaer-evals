@@ -81,6 +81,12 @@ read_the_verdict() {
 # the copy we meant to use. The row the weekly routine reads to decide what to
 # look at again cannot be a claim the run makes about itself.
 
+# The fallback's agent definition, here rather than in `.claude/agents/`, so
+# `--restricted` can drop the tree's copy without dropping the lens. The five
+# rules travel in the composed prompt, which comes from the pinned ref; this is
+# only the standing instruction and the tool list.
+LENS_AGENT='{"refute-check":{"description":"the second lens on one change","prompt":"You look for holes in a change and never for reasons it passes. A clean report means you tried to break the change and could not. You answer with one JSON object and nothing else.","tools":["Read","Grep","Glob","Bash"]}}'
+
 CODEX_LENS="codex"
 FALLBACK_LENS="claude-fable-fallback"
 NO_LENS_RAN=3
@@ -97,9 +103,30 @@ if [ ! -d "$WORKTREE" ]; then
     echo "second_lens: no worktree at $WORKTREE" >&2
     exit "$NO_LENS_RAN"
 fi
-WORKTREE="$(cd "$WORKTREE" && pwd)"
+# `pwd` keeps the symlinks it was given. A worktree under a macOS temp
+# directory is handed to us as `/var/folders/...` and the reader answers
+# `/private/var/folders/...`, so the tripwire below reported "the pinned
+# reader was not the one that ran" about a reader that was byte-for-byte the
+# pinned one, and wrote `judge_from: tree` for it. Conservative, but a false
+# record, and the weekly routine re-reads rows on the strength of that field.
+WORKTREE="$(cd "$WORKTREE" && pwd -P)"
 LENS_DIR="$WORKTREE/.lens"
 mkdir -p "$LENS_DIR"
+
+# Every exit from here on records itself by appending a ledger line, and that
+# line is written by `$LENS_PYTHON` -- so an interpreter that cannot run the
+# reader cannot write the record of its own failure either. With no `.venv` link
+# in the worktree, which the build skill asks for by hand, that combination ran
+# to the end: both lenses invoked, a valid cross-vendor `fail` sitting in
+# `codex.json`, every read of it failing, exit 3, and no row at all. A verdict
+# was paid for and dropped without trace. So the interpreter is asked one
+# question before anything is spent, and a run whose outcome could not be
+# recorded is refused before it begins rather than after it is billed.
+if ! read_the_verdict where >/dev/null 2>&1; then
+    echo "second_lens: $LENS_PYTHON cannot run the verdict reader" >&2
+    echo "second lens: none · none · no_lens_ran · $LENS_PYTHON cannot run the verdict reader, so no lens was invoked and no row could be written"
+    exit "$NO_LENS_RAN"
+fi
 
 
 # An answer file left over from an earlier run reads exactly like this run's,
@@ -162,8 +189,26 @@ prompt_for() {
 
 JUDGE_BASE="${LENS_JUDGE_BASE:-main}"
 JUDGE_DIR="$LENS_DIR/judge"
-rm -rf "$JUDGE_DIR"
+
+# `rm -rf` succeeds silently on a directory it cannot empty, and what is left
+# standing afterwards is a judge this run did not put there. A tree can plant
+# one: `.lens/` is ignored, so a `.lens/judge/src/lens_verdict.py` reading
+# `"fail": PASS` is invisible to every diff this script takes. Make its
+# directory unwritable, or set `uchg` on its files, and it survives the removal,
+# survives the archive overlaid on top of it, and answers `where` from inside
+# `$JUDGE_DIR` -- so the tripwire below is satisfied by it. Demonstrated: exit 0
+# on a valid `fail`, with the ledger row saying `judge_from: main`. The removal
+# is checked for the same reason `cleared` checks `rm -f`.
+rm -rf "$JUDGE_DIR" 2>/dev/null
+if [ -e "$JUDGE_DIR" ]; then
+    read_the_verdict ledger \
+        --ledger "$LENS_LEDGER" --item "$ITEM" --lens "none" \
+        --verdict "no_lens_ran" --findings 0 --model "none" || true
+    echo "second lens: none · none · no_lens_ran · $JUDGE_DIR held an earlier judge and could not be cleared"
+    exit "$NO_LENS_RAN"
+fi
 mkdir -p "$JUDGE_DIR"
+JUDGE_DIR="$(cd "$JUDGE_DIR" && pwd -P)"
 
 if ! git -C "$WORKTREE" rev-parse --verify --quiet "$JUDGE_BASE^{commit}" >/dev/null 2>&1; then
     # A clone that carries only `origin/main` lands here, and so does a worktree
@@ -173,6 +218,28 @@ if ! git -C "$WORKTREE" rev-parse --verify --quiet "$JUDGE_BASE^{commit}" >/dev/
         --ledger "$LENS_LEDGER" --item "$ITEM" --lens "none" \
         --verdict "no_lens_ran" --findings 0 --model "none" || true
     echo "second lens: none · none · no_lens_ran · no ref $JUDGE_BASE here, so the judge could not be pinned"
+    exit "$NO_LENS_RAN"
+fi
+
+# What the lens is asked to read, named here rather than worked out there.
+# `tools/lens_prompt.md` used to fix the change as "the working tree you were
+# started in, against its merge base with `origin/main`", and nothing was ever
+# passed to say otherwise. The weekly re-lens routine detaches a worktree at a
+# commit that is already on `main`, where that merge base is the commit itself
+# and the diff is empty: 0 lines for each of three merges carrying 2220, 2435
+# and 594 lines of real change. A lens handed nothing to read reaches `pass`
+# honestly, and `pass` is the one row in that routine that moves a task to done.
+#
+# Three dots, so this is the merge-base diff whichever ref is pinned. On an item
+# branch `$JUDGE_BASE` is `main` and it is the branch's own change; in the
+# routine it is the merge commit's first parent, which is an ancestor, so the
+# diff is exactly what that merge brought in.
+DIFF_RANGE="$JUDGE_BASE...HEAD"
+if [ -z "$(git -C "$WORKTREE" diff --numstat "$DIFF_RANGE" 2>/dev/null)" ]; then
+    read_the_verdict ledger \
+        --ledger "$LENS_LEDGER" --item "$ITEM" --lens "none" \
+        --verdict "no_lens_ran" --findings 0 --model "none" || true
+    echo "second lens: none · none · no_lens_ran · $DIFF_RANGE is an empty diff, so there was no change to read"
     exit "$NO_LENS_RAN"
 fi
 
@@ -213,7 +280,20 @@ case "$READER_RAN" in
         ;;
 esac
 
+# The one thing this script cannot materialise is itself, and the build skill
+# invokes it by relative path from inside the worktree -- so a branch that
+# replaces `tools/second_lens.sh` with `exit 0` gets exit 0, no lens invoked and
+# no row written, and nothing here runs to notice. That is a trust root, not a
+# bug with a fix: no check written in a file survives that file being replaced.
+# What is closable is the ordinary case, where the script is edited for some
+# other reason and the difference is simply recorded -- so the row carries
+# `lens_from` beside `judge_from`, and the weekly routine re-reads the `tree`
+# rows of both. The hole that stays open is closed by a person reading the diff
+# of this file, and `docs/HOW_WE_WORK.md` §6 says so rather than implying the
+# guard covers it.
+LENS_FROM="$JUDGE_BASE"
 if ! git -C "$WORKTREE" diff --quiet "$JUDGE_BASE" -- "tools/second_lens.sh" 2>/dev/null; then
+    LENS_FROM="tree"
     CAVEATS="$CAVEATS this script differs from $JUDGE_BASE and is running as itself;"
 fi
 
@@ -221,7 +301,19 @@ fi
 # `git diff <ref> -- <path>` cannot see a file that is untracked or ignored --
 # `.claude/settings.local.json` is ignored globally here and Claude Code still
 # reads it -- so the status of those paths is asked for separately.
-DEFINES_THE_JUDGE=".claude/agents/refute-check.md AGENTS.md CLAUDE.md .claude/settings.json .claude/settings.local.json"
+#
+# Shorter than it looks like it should be, because `--restricted` below closes
+# for the fallback what a list can only watch. `lessons.md`, `Makefile` and
+# `.claude/hooks` went on when the hook channel was found and came straight off
+# again: they reach a lens only through hooks, hooks no longer run, and
+# `lessons.md` changes on every branch by `CLAUDE.md`'s own rule -- watching it
+# would have been exit 3 on every pull request this project can produce.
+#
+# What is left is what still reaches a lens. `AGENTS.md` is Codex's project
+# memory and Codex has no equivalent flag, so the cross-vendor lens does read it
+# out of the tree. The other three are the fallback's belt: near-static here,
+# and the channel again the day `--restricted` is dropped.
+DEFINES_THE_JUDGE="AGENTS.md CLAUDE.md .claude/agents/refute-check.md .claude/settings.json .claude/settings.local.json"
 EDITED_ITS_JUDGE=""
 
 for definition in $DEFINES_THE_JUDGE; do
@@ -261,7 +353,9 @@ fi
 PROMPT="$LENS_DIR/prompt.md"
 {
     printf 'The change under the lens is the task-list item titled:\n\n    %s\n\n' "$ITEM"
-    printf 'Its worktree is %s. Call yourself `%%LENS%%` in the `lens` key.\n\n---\n\n' "$WORKTREE"
+    printf 'Its worktree is %s, and the change is `git diff %s` run there.\n' "$WORKTREE" "$DIFF_RANGE"
+    printf 'That range is the change, not a merge base you work out yourself.\n\n'
+    printf 'Call yourself `%%LENS%%` in the `lens` key.\n\n---\n\n'
     cat "$LENS_PROMPT"
 } > "$PROMPT"
 
@@ -350,8 +444,25 @@ if [ -z "$LENS" ]; then
         # caller's directory would review main and answer about a tree the item
         # never produced.
         FABLE_PROMPT="$(prompt_for "$FALLBACK_LENS")"
+        # `--restricted` and a pinned `--agents` are what stop the tree under
+        # review from writing the lens's own instructions. Without them the
+        # fallback starts as an ordinary session in that tree: the SessionStart
+        # hook `cat lessons.md` puts the file in front of it verbatim, and
+        # `CLAUDE.md`, `AGENTS.md`, `.claude/settings.local.json` and
+        # `.claude/agents/refute-check.md` are all loaded from the worktree too.
+        # Measured rather than assumed -- a sentinel line in `lessons.md` came
+        # back `FOUND` in one turn with no tool call, and `ABSENT` once these two
+        # flags were added, with `CLAUDE.md` and `AGENTS.md` going the same way.
+        #
+        # Watching those files instead was the first fix and it was wrong:
+        # `CLAUDE.md` requires a line appended to `lessons.md` every session, so
+        # a watched `lessons.md` is exit 3 on every pull request this project
+        # can produce. A guard that fires on all of the work and none of the
+        # attack is not a guard. This closes the channel instead of policing it.
         ( cd "$WORKTREE" && run_with_timeout claude -p \
+            --restricted \
             --agent refute-check \
+            --agents "$LENS_AGENT" \
             --model "${LENS_FALLBACK_MODEL:-fable}" \
             --output-format json \
             "$(cat "$FABLE_PROMPT")" ) > "$FABLE_FILE" 2>"$FABLE_LOG"
@@ -393,7 +504,8 @@ if ! read_the_verdict ledger \
     --verdict "$VERDICT" \
     --findings "$FINDINGS" \
     --model "${MODEL:-unrecorded}" \
-    --judge-from "$JUDGE_FROM"; then
+    --judge-from "$JUDGE_FROM" \
+    --lens-from "$LENS_FROM"; then
     echo "second lens: $LENS said $VERDICT and the ledger line could not be written" >&2
     echo "second lens: none · no_lens_ran · the record of the run was not written, which is not an approval"
     exit "$NO_LENS_RAN"
@@ -410,5 +522,5 @@ if [ -n "$CAVEATS" ]; then
     REASON="$REASON ·$CAVEATS"
 fi
 
-echo "second lens: $LENS · ${MODEL:-unrecorded} · $VERDICT · judge from $JUDGE_FROM · $REASON"
+echo "second lens: $LENS · ${MODEL:-unrecorded} · $VERDICT · judge from $JUDGE_FROM · lens from $LENS_FROM · $REASON"
 exit "$CODE"

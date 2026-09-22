@@ -215,6 +215,15 @@ def normalise(verdict: dict[str, Any], lens: str) -> dict[str, Any]:
 # `tree` for the same reason it reads the fallback rows.
 JUDGE_FROM_TREE = "tree"
 
+# And `lens_from`, the same question asked about `tools/second_lens.sh` itself.
+# The script cannot materialise itself out of the pinned ref -- it is already
+# running -- so all it can do is say whether it differs from that ref. A branch
+# that replaces the script can delete the line that says so, which is why
+# `docs/HOW_WE_WORK.md` names this as a trust root a person closes by reading
+# one diff, rather than a hole this field covers. What the field does cover is
+# the ordinary case: the script edited for some other reason, recorded, and
+# re-read next week alongside the fallback and `judge_from` rows.
+
 
 def ledger_line(
     item: str,
@@ -224,6 +233,7 @@ def ledger_line(
     at: str,
     model: str = UNRECORDED_MODEL,
     judge_from: str = JUDGE_FROM_TREE,
+    lens_from: str = JUDGE_FROM_TREE,
 ) -> str:
     """The one line this lens run appends to the ledger."""
     return json.dumps(
@@ -232,6 +242,7 @@ def ledger_line(
             "lens": lens,
             "model": model,
             "judge_from": judge_from,
+            "lens_from": lens_from,
             "verdict": verdict,
             "findings_count": findings_count,
             "at": at,
@@ -276,6 +287,7 @@ def main(argv: list[str] | None = None) -> int:
     line.add_argument("--findings", type=int, default=0)
     line.add_argument("--model", default=UNRECORDED_MODEL)
     line.add_argument("--judge-from", default=JUDGE_FROM_TREE)
+    line.add_argument("--lens-from", default=JUDGE_FROM_TREE)
 
     sub.add_parser(
         "where",
@@ -294,7 +306,7 @@ def main(argv: list[str] | None = None) -> int:
             args.ledger,
             ledger_line(
                 args.item, args.lens, args.verdict, args.findings, _now(), args.model,
-                args.judge_from,
+                args.judge_from, args.lens_from,
             ),
         )
         return 0

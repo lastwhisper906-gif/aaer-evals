@@ -89,14 +89,27 @@ The pull request body carries **both verdicts and the name of the lens that gave
 the second one**, in the line the script prints:
 
 ```
-second lens: claude-fable-fallback · claude-fable-5-1 · pass · judge from main · tried to break it and could not
+second lens: claude-fable-fallback · claude-fable-5-1 · pass · judge from main · lens from main · tried to break it and could not
 ```
 
-Five fields: the lens, the model that actually served it, the verdict, the ref
-the judge was pinned out of, and the reason. `judge from tree` means the pinned
-ref did not carry the lens yet, which is true only of the change that builds it;
-every other row says `judge from main`, and the weekly routine reads the `tree`
-rows again for the same reason it reads the fallback rows.
+Six fields: the lens, the model that actually served it, the verdict, the ref
+the judge was pinned out of, the ref this script itself came from, and the
+reason.
+
+`judge from tree` means the pinned reader was not the one that answered. The
+sentence that stood here said that is "true only of the change that builds the
+lens; every other row says `judge from main`" — and it was false three ways,
+which a refute-check demonstrated rather than argued: the change that builds the
+lens, yes, but also every one of the six unconfirmed merges, whose first parent
+carries no lens file either, and every merge from before the lens existed. It is
+a row to read again, not a row that can only mean one thing.
+
+`lens from tree` means `tools/second_lens.sh` differs from the pinned ref. The
+script cannot materialise itself — it is already running — so a branch that
+replaces it outright wins, and no line written inside a file survives that file
+being replaced. That is a trust root, closed by a person reading one diff, and
+`docs/HOW_WE_WORK.md` §6 says so. The field covers the ordinary case: the script
+edited for some other reason, recorded, and re-read next week.
 
 A fallback verdict is recorded as `confirmed - same-family fallback`, never as
 `confirmed - cross-vendor`. The ledger line the script appends is what the

@@ -21,9 +21,15 @@ grep '"lens": "claude-fable-fallback"' events/ledger.jsonl
 # every lens run where neither lens answered
 grep '"lens": "none"' events/ledger.jsonl
 
-# every lens run whose judge came from the tree it judged, because the ref it
-# pins out of did not carry the lens yet — the change that builds the lens
+# every lens run whose judge was not the pinned one. The change that builds the
+# lens is one cause; a merge whose first parent predates the lens is another,
+# and so is a reader that answered from somewhere other than the pinned copy
 grep '"judge_from": "tree"' events/ledger.jsonl
+
+# every lens run where `tools/second_lens.sh` itself differed from the pinned
+# ref. The script cannot pin itself, so this row says the pinner was the
+# branch's own copy — read the diff of that file before trusting the verdict
+grep '"lens_from": "tree"' events/ledger.jsonl
 
 # every pull request that opened with the label because no lens read it
 gh pr list --state all --label one-lens --json number,title,mergeCommit,state
@@ -45,8 +51,20 @@ LENS_JUDGE_BASE=<merge commit>^1 \
     tools/second_lens.sh .claude/worktrees/relens-<number> "<item title>"
 ```
 
-`LENS_JUDGE_BASE` is the ref the script pins its judge out of, and it must be
-**the merge commit's first parent**, not the default `main`. The script also
+`LENS_JUDGE_BASE` is the ref the script pins its judge out of **and the base of
+the diff the lens is told to read**, and it must be **the merge commit's first
+parent**, not the default `main`.
+
+The second half of that is what this routine got wrong for as long as it has
+existed. `tools/lens_prompt.md` used to fix the change as "the working tree you
+were started in, against its merge base with `origin/main`", and a worktree
+detached at a merge commit is *already on* `main` — so that merge base is the
+commit itself and the diff is empty. Measured on this repository: 0 lines for
+each of three merges carrying 2220, 2435 and 594 lines of real change. The lens
+was handed nothing, read nothing, and `pass` is the one verdict in the table
+below that moves a row to **done**. The script now names the range
+`<pinned ref>...HEAD` in the prompt and refuses an empty one as exit 3, so this
+cannot be got wrong silently again — but set the ref correctly anyway. The script also
 refuses to answer when the tree it is reading changes what a lens takes as its
 own definition — `CLAUDE.md`, `AGENTS.md`, `.claude/agents/refute-check.md`, the
 settings files — and that comparison is against the pinned ref. Left at `main`,

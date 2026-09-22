@@ -109,6 +109,7 @@ def claude_stub(directory: Path, *, exit_code: int, result: str | None,
         "claude",
         'echo claude >> "$STUB_CALLS"\n'
         'pwd >> "$STUB_CWD"\n'
+        'printf \'%s\\n\' "$@" >> "$STUB_ARGV"\n'
         f'printf %s {json.dumps(envelope)}\n'
         f'exit {exit_code}\n',
     )
@@ -155,6 +156,17 @@ def a_repository_on_main(worktree: Path, *, carrying_the_judge: bool = True) -> 
     run("git", "add", "-A")
     run("git", "commit", "-qm", "main")
 
+    # And a change on top of it, because a worktree sitting on `main` is a
+    # worktree with nothing to review. Forty-four of the fifty-one tests here
+    # left HEAD at `main`, so every lens they exercised was handed an empty
+    # diff -- the same hole the weekly routine had, sitting in the harness that
+    # was meant to find it. `_on_a_branch` stays additive: it sees a branch
+    # already checked out and commits again on it.
+    run("git", "checkout", "-q", "-b", "item/under-review")
+    (worktree / "the_change.py").write_text("y = 2\n", encoding="utf-8")
+    run("git", "add", "-A")
+    run("git", "commit", "-qm", "the change under review")
+
 
 def run_lens(tmp_path: Path, item: str = "a task-list item") -> subprocess.CompletedProcess:
     stubs = tmp_path / "stubs"
@@ -165,6 +177,7 @@ def run_lens(tmp_path: Path, item: str = "a task-list item") -> subprocess.Compl
     environment["PATH"] = f"{stubs}:{environment['PATH']}"
     environment["STUB_CALLS"] = str(tmp_path / "calls")
     environment["STUB_CWD"] = str(tmp_path / "cwd")
+    environment["STUB_ARGV"] = str(tmp_path / "argv")
     environment["LENS_LEDGER"] = str(ledger)
     environment["LENS_PYTHON"] = sys.executable
     environment["LENS_TIMEOUT"] = "60"
@@ -869,13 +882,17 @@ def _repository_that(tmp_path: Path, *, edits: str | None) -> Path:
     (worktree / "a_file.py").write_text("x = 1\n", encoding="utf-8")
     run("git", "add", "-A")
     run("git", "commit", "-qm", "main")
+    # On a branch, the way an item is: the comparison is against `main`, and a
+    # change committed onto `main` itself is not a change under review -- it is
+    # an empty diff, which the script now refuses rather than lets a lens pass
+    # on. So the branch and one ordinary change are unconditional, and `edits`
+    # names the extra file this particular test wants moved on top.
+    run("git", "checkout", "-q", "-b", "item/under-review")
+    (worktree / "the_change.py").write_text("y = 2\n", encoding="utf-8")
     if edits is not None:
-        # On a branch, the way an item is: the comparison is against `main`,
-        # and a change committed onto `main` itself is not a change under review.
-        run("git", "checkout", "-q", "-b", "item/under-review")
         (worktree / edits).write_text("moved\n", encoding="utf-8")
-        run("git", "add", "-A")
-        run("git", "commit", "-qm", "the change under review")
+    run("git", "add", "-A")
+    run("git", "commit", "-qm", "the change under review")
     return worktree
 
 
@@ -994,8 +1011,6 @@ def test_a_tree_with_no_pinning_ref_is_no_lens_rather_than_a_silent_skip(
     silently off there, which is the same defect as an unchecked `rm -f`."""
     worktree = tmp_path / "worktree"
     a_repository_on_main(worktree)
-    subprocess.run(["git", "checkout", "-q", "-b", "item/under-review"],
-                   cwd=worktree, check=True, capture_output=True, text=True)
     subprocess.run(["git", "branch", "-q", "-D", "main"],
                    cwd=worktree, check=True, capture_output=True, text=True)
 
@@ -1171,9 +1186,306 @@ def test_a_reader_that_is_not_the_pinned_one_is_recorded_as_coming_from_the_tree
                    cwd=worktree, check=True, capture_output=True, text=True)
     subprocess.run(["git", "branch", "-qf", "main", "HEAD"],
                    cwd=worktree, check=True, capture_output=True, text=True)
+    # `main` now stands where the branch does, so there is nothing between them
+    # to review and the run would exit 3 on the empty diff before reaching the
+    # question this test asks. One more commit puts the change back.
+    (worktree / "the_change.py").write_text("y = 3\n", encoding="utf-8")
+    subprocess.run(["git", "commit", "-aqm", "the change under review"],
+                   cwd=worktree, check=True, capture_output=True, text=True)
 
     result = run_lens(tmp_path)
 
     assert result.returncode == 0, result.stdout
     assert ledger_lines(tmp_path)[-1]["judge_from"] == "tree"
     assert "judge from tree" in result.stdout
+
+
+# --- what the fourth reading of this change found ---------------------------
+#
+# Four lens readings and four refute-checks found fourteen defects in the lens
+# machinery, five of which ended in an approval. The tests below are the seven
+# from the fourth reading. Every one of them is a judge for a guard that was
+# already written and that nothing was checking: three mutations to
+# `tools/second_lens.sh` -- neutering the `where` tripwire, deleting the
+# judge-directory removal, and either half of the `cd`/`PYTHONSAFEPATH` pair --
+# passed all fifty-one tests before these were added.
+
+
+def test_a_judge_directory_that_will_not_clear_is_not_a_judge(
+    tmp_path: Path, stubs: Path
+) -> None:
+    """A planted `.lens/judge/` that survives `rm -rf` is exit 3, not a pass.
+
+    `.lens/` is ignored, so a judge planted there is invisible to every diff
+    the script takes. Make its directory unwritable and `rm -rf` fails, reports
+    to a stderr nobody reads, and returns -- leaving a reader the tree chose
+    standing exactly where the pinned one was going to go. The archive is
+    overlaid on top of it and `where` answers from inside `$JUDGE_DIR`, so the
+    tripwire is satisfied too: the run exits on the planted judge's word with
+    the row saying `judge_from: main`. The expected status is the one the
+    script already gives an `rm -f` that leaves a file standing.
+    """
+    worktree = tmp_path / "worktree"
+    a_repository_on_main(worktree)
+    planted = worktree / ".lens" / "judge" / "src"
+    planted.mkdir(parents=True)
+    (planted / "lens_verdict.py").write_text("# the tree's own\n", encoding="utf-8")
+    planted.chmod(0o500)
+    try:
+        codex_stub(stubs, exit_code=0, verdict=PASS_VERDICT)
+        claude_stub(stubs, exit_code=127, result=None)
+        result = run_lens(tmp_path)
+
+        assert result.returncode == lens_verdict.NO_LENS_RAN, result.stdout
+        assert "could not be cleared" in result.stdout
+        assert calls(tmp_path) == [], "a lens was paid for on a judge we could not clear"
+        assert not any(line["verdict"] == "pass" for line in ledger_lines(tmp_path))
+    finally:
+        planted.chmod(0o700)
+
+
+def test_an_empty_diff_is_no_change_to_read_rather_than_a_pass(
+    tmp_path: Path, stubs: Path
+) -> None:
+    """The weekly routine's one row that moves a task to done, on nothing.
+
+    `docs/routines/weekly-relens.md` detaches a worktree at the commit a merge
+    landed at. That commit is on `main`, so its merge base with `main` is
+    itself, and the merge base is what the prompt used to tell the lens to
+    diff: 0 lines for each of three merges carrying 2220, 2435 and 594 lines of
+    real change, measured off this repository. A lens with nothing in front of
+    it reaches `pass` honestly, and that `pass` moved the row to **done**.
+    """
+    worktree = tmp_path / "worktree"
+    a_repository_on_main(worktree)
+    subprocess.run(["git", "checkout", "-q", "main"], cwd=worktree, check=True,
+                   capture_output=True, text=True)
+
+    codex_stub(stubs, exit_code=0, verdict=PASS_VERDICT)
+    claude_stub(stubs, exit_code=127, result=None)
+    result = run_lens(tmp_path)
+
+    assert result.returncode == lens_verdict.NO_LENS_RAN, result.stdout
+    assert "empty diff" in result.stdout
+    assert calls(tmp_path) == [], "a lens was paid for a change with no diff in it"
+
+
+def test_the_range_the_lens_is_told_to_read_is_in_the_prompt(
+    tmp_path: Path, stubs: Path
+) -> None:
+    """Named for the lens, not worked out by it.
+
+    The expected value is the range the script prints in its own refusal above
+    -- `<pinned ref>...HEAD` -- which is read here off `LENS_JUDGE_BASE`'s
+    default written in `tools/second_lens.sh`, not off a run of the script.
+    """
+    codex_stub(stubs, exit_code=0, verdict=PASS_VERDICT)
+    claude_stub(stubs, exit_code=127, result=None)
+    run_lens(tmp_path)
+
+    prompt = (tmp_path / "worktree" / ".lens" / "prompt.codex.md").read_text(encoding="utf-8")
+    assert "git diff main...HEAD" in prompt
+    assert "merge base you work out yourself" in prompt
+
+
+def test_the_tripwire_fires_when_the_reader_that_ran_is_not_the_pinned_one(
+    tmp_path: Path, stubs: Path
+) -> None:
+    """The guard that catches the pin being beaten, with a judge of its own.
+
+    Two tests asserted `judge_from == "tree"` before this one and neither
+    reached the tripwire: both got there through the `-s` checks above it,
+    because `main` carried no lens. Neutering the tripwire's `*` branch left
+    all fifty-one of them passing. What fires it is a reader that answers from
+    somewhere other than the materialised judge -- which is exactly the shape
+    of the defect it exists for, where `python -m` put the tree's own `src`
+    first on the path and the row still said `judge_from: main`.
+
+    So `main` here carries a lens whose `where` answers a fixed path outside
+    the judge directory. Everything else about the run is ordinary.
+    """
+    worktree = tmp_path / "worktree"
+    a_repository_on_main(worktree)
+    subprocess.run(["git", "checkout", "-q", "main"], cwd=worktree, check=True,
+                   capture_output=True, text=True)
+    reader = worktree / "src" / "lens_verdict.py"
+    source = reader.read_text(encoding="utf-8")
+    assert 'print(Path(__file__).resolve())' in source, (
+        "the `where` subcommand this plants over has moved"
+    )
+    reader.write_text(
+        source.replace('print(Path(__file__).resolve())',
+                       'print("/somewhere/else/lens_verdict.py")'),
+        encoding="utf-8")
+    subprocess.run(["git", "commit", "-aqm", "a reader that answers elsewhere"],
+                   cwd=worktree, check=True, capture_output=True, text=True)
+    subprocess.run(["git", "checkout", "-q", "item/under-review"], cwd=worktree,
+                   check=True, capture_output=True, text=True)
+
+    codex_stub(stubs, exit_code=0, verdict=PASS_VERDICT)
+    claude_stub(stubs, exit_code=127, result=None)
+    result = run_lens(tmp_path)
+
+    assert ledger_lines(tmp_path)[-1]["judge_from"] == "tree", (
+        "the pinned reader was not what answered and the row still said main"
+    )
+    assert "the pinned reader was not the one that ran" in result.stdout
+
+
+def test_a_worktree_reached_through_a_symlink_is_still_the_pinned_judge(
+    tmp_path: Path, stubs: Path
+) -> None:
+    """A false `tree` is a false record, and the routine acts on that field.
+
+    `pwd` keeps the symlinks it is handed. A worktree under a macOS temp
+    directory arrives as `/var/folders/...` while the reader resolves to
+    `/private/var/folders/...`, so the tripwire reported "the pinned reader was
+    not the one that ran" about a reader that was byte-for-byte the pinned one.
+    pytest hands out an already-resolved `tmp_path`, which is why the harness
+    could not see it; this test puts the symlink back.
+    """
+    worktree = tmp_path / "worktree"
+    a_repository_on_main(worktree)
+    through = tmp_path / "through-a-link"
+    through.symlink_to(worktree, target_is_directory=True)
+
+    codex_stub(stubs, exit_code=0, verdict=PASS_VERDICT)
+    claude_stub(stubs, exit_code=127, result=None)
+    environment = dict(os.environ)
+    environment["PATH"] = f"{tmp_path / 'stubs'}:{environment['PATH']}"
+    environment["STUB_CALLS"] = str(tmp_path / "calls")
+    environment["STUB_CWD"] = str(tmp_path / "cwd")
+    environment["LENS_LEDGER"] = str(tmp_path / "ledger.jsonl")
+    environment["LENS_PYTHON"] = sys.executable
+    environment["LENS_TIMEOUT"] = "60"
+    result = subprocess.run(
+        ["bash", str(SCRIPT), str(through), "an item reached through a link"],
+        capture_output=True, text=True, env=environment, cwd=through)
+
+    assert result.returncode == 0, result.stdout
+    assert ledger_lines(tmp_path)[-1]["judge_from"] == "main", result.stdout
+    assert "the pinned reader was not the one that ran" not in result.stdout
+
+
+def test_an_interpreter_that_cannot_run_spends_no_lens_and_says_so(
+    tmp_path: Path, stubs: Path
+) -> None:
+    """The row is written by the interpreter, so no interpreter is no row.
+
+    With no `.venv` link in the worktree -- which the build skill asks for by
+    hand, and which a fresh worktree does not have -- every read failed, the
+    script ran to the end, and it exited 3 with no ledger line at all. Both
+    lenses had been invoked by then and `codex.json` held a valid cross-vendor
+    `fail`. A verdict was paid for, discarded, and left no trace for the weekly
+    routine to come back to. The expected behaviour is the one the script
+    already applies to the normalised file: settle it before a lens is asked.
+    """
+    worktree = tmp_path / "worktree"
+    a_repository_on_main(worktree)
+    codex_stub(stubs, exit_code=0, verdict=FAIL_VERDICT)
+    claude_stub(stubs, exit_code=0, result=json.dumps(PASS_VERDICT))
+
+    environment = dict(os.environ)
+    environment["PATH"] = f"{tmp_path / 'stubs'}:{environment['PATH']}"
+    environment["STUB_CALLS"] = str(tmp_path / "calls")
+    environment["STUB_CWD"] = str(tmp_path / "cwd")
+    environment["LENS_LEDGER"] = str(tmp_path / "ledger.jsonl")
+    environment["LENS_PYTHON"] = str(tmp_path / "no-such-python")
+    result = subprocess.run(
+        ["bash", str(SCRIPT), str(worktree), "an item"],
+        capture_output=True, text=True, env=environment, cwd=worktree)
+
+    assert result.returncode == lens_verdict.NO_LENS_RAN, result.stdout
+    assert "cannot run the verdict reader" in result.stdout
+    assert calls(tmp_path) == [], (
+        "a lens was invoked on a run whose outcome could not be recorded"
+    )
+
+
+def test_the_row_records_whether_the_script_itself_came_from_the_pinned_ref(
+    tmp_path: Path, stubs: Path
+) -> None:
+    """`lens_from`, beside `judge_from`, for the file that cannot pin itself.
+
+    A branch that replaces `tools/second_lens.sh` outright wins -- no check
+    written in a file survives that file being replaced, and
+    `docs/HOW_WE_WORK.md` names it as a trust root rather than implying this
+    field covers it. What the field covers is the ordinary case: the script
+    edited for some other reason, recorded, and re-read next week.
+    """
+    worktree = tmp_path / "worktree"
+    a_repository_on_main(worktree)
+    codex_stub(stubs, exit_code=0, verdict=PASS_VERDICT)
+    claude_stub(stubs, exit_code=127, result=None)
+
+    assert run_lens(tmp_path).returncode == 0
+    assert ledger_lines(tmp_path)[-1]["lens_from"] == "main"
+
+    (worktree / "tools" / "second_lens.sh").write_text(
+        SCRIPT.read_text(encoding="utf-8") + "\n# a branch edited the pinner\n",
+        encoding="utf-8")
+    subprocess.run(["git", "commit", "-aqm", "edit the pinner"], cwd=worktree,
+                   check=True, capture_output=True, text=True)
+    result = run_lens(tmp_path)
+
+    assert ledger_lines(tmp_path)[-1]["lens_from"] == "tree", result.stdout
+    assert "lens from tree" in result.stdout
+
+
+def test_the_fallback_is_started_where_the_tree_cannot_instruct_it(
+    tmp_path: Path, stubs: Path
+) -> None:
+    """The tree under review writes none of the lens's own instructions.
+
+    Started as an ordinary session in the worktree, the fallback is handed that
+    tree's `CLAUDE.md`, `AGENTS.md`, `.claude/agents/refute-check.md`,
+    `.claude/settings.local.json` -- and, through the SessionStart hook
+    `cat lessons.md`, the lessons file verbatim. Measured, not reasoned about: a
+    sentinel line in `lessons.md` came back `FOUND` in one turn with no tool
+    call, and `ABSENT` with these flags; `CLAUDE.md` and `AGENTS.md` went the
+    same way.
+
+    Watching those files instead was the first fix and it was the wrong one --
+    `CLAUDE.md` requires a line appended to `lessons.md` every session, so a
+    watched `lessons.md` is exit 3 on every pull request this project can
+    produce. The expected values here are the two flags, read out of
+    `claude --help`, and the tool list the script passes.
+    """
+    codex_stub(stubs, exit_code=1, verdict=None)
+    claude_stub(stubs, exit_code=0, result=json.dumps(PASS_VERDICT))
+    assert run_lens(tmp_path).returncode == 0
+
+    argv = (tmp_path / "argv").read_text(encoding="utf-8").splitlines()
+    assert "--restricted" in argv, (
+        "the fallback read the tree's own settings, hooks and memory"
+    )
+    definition = json.loads(argv[argv.index("--agents") + 1])
+    assert "refute-check" in definition, (
+        "--restricted drops the tree's agents, so the definition must travel here"
+    )
+    assert definition["refute-check"]["tools"] == ["Read", "Grep", "Glob", "Bash"]
+
+
+def test_the_watch_list_does_not_fire_on_the_line_every_session_appends(
+    tmp_path: Path, stubs: Path
+) -> None:
+    """`lessons.md` is not watched, because every branch is required to move it.
+
+    `CLAUDE.md`: "Write this session's mistakes to lessons.md, one line each, at
+    session end." A guard that fires on all of the work and none of the attack
+    is not a guard, and the channel it stood in for is closed above.
+    """
+    worktree = _repository_that(tmp_path, edits=None)
+    with (worktree / "lessons.md").open("a", encoding="utf-8") as handle:
+        handle.write("2026-09-22 a line this session learned.\n")
+    subprocess.run(["git", "add", "-A"], cwd=worktree, check=True,
+                   capture_output=True, text=True)
+    subprocess.run(["git", "commit", "-qm", "the session's lessons"], cwd=worktree,
+                   check=True, capture_output=True, text=True)
+
+    codex_stub(stubs, exit_code=0, verdict=PASS_VERDICT)
+    claude_stub(stubs, exit_code=127, result=None)
+    result = run_lens(tmp_path)
+
+    assert result.returncode == 0, result.stdout
+    assert calls(tmp_path) == ["codex"]
