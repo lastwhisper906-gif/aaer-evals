@@ -169,7 +169,8 @@ def resolve_cutoff(cutoff, ticker: str, *, fixtures_root=FIXTURES) -> dt.date:
     empty string -- what was missing was letting it see one.
     `src/restatement_trace.py` has read it this way since the day the two
     companyfacts readers disagreed about it; this is that shape, in one place,
-    so the ten sites cannot drift apart again.
+    so no reader can drift away from it again: this function is the only
+    thing in `src/` that calls `default_cutoff`, and a test asserts it.
     """
     if cutoff is None:
         cutoff = default_cutoff(ticker, fixtures_root=fixtures_root)

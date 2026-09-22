@@ -12,8 +12,8 @@ Where the expected value comes from: `src/restatement_trace.py`, which has
 refused the empty string since the day the two companyfacts readers disagreed
 about what `--cutoff ""` meant, and said why in a comment at the line. The
 expected behaviour is read off that sibling rather than invented here, and the
-rule now lives in one function, `cutoff_guard.resolve_cutoff`, which all eleven
-sites call. There is nothing to recompute: the expected result is a refusal.
+rule now lives in one function, `cutoff_guard.resolve_cutoff`, and it is the
+only thing in `src/` that calls `default_cutoff` at all. There is nothing to recompute: the expected result is a refusal.
 
 Every entry point below is listed by hand, from `grep` over the modules the task
 list names. The last test asserts that the list is complete -- it re-greps the
@@ -29,6 +29,7 @@ from pathlib import Path
 import pytest
 
 from src import (
+    articulation,
     clean_text,
     cutoff_guard,
     diff_periods,
@@ -36,9 +37,11 @@ from src import (
     extract_notes,
     extract_numbers,
     note_history,
+    fourth_quarter,
     parse_8k,
     restatement_trace,
     split_sections,
+    tag_continuity,
 )
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -65,6 +68,17 @@ READERS = {
         TICKER, cutoff=cutoff
     ),
     "restatement_trace.scan": lambda cutoff: restatement_trace.scan(TICKER, cutoff=cutoff),
+    # Found by the refute lens after the first pass: the same rule in two other
+    # shapes, in three readers the task-list row did not name.
+    "articulation.articulation": lambda cutoff: articulation.articulation(
+        TICKER, cutoff=cutoff
+    ),
+    "fourth_quarter.fourth_quarters": lambda cutoff: fourth_quarter.fourth_quarters(
+        TICKER, cutoff=cutoff
+    ),
+    "tag_continuity.history": lambda cutoff: tag_continuity.history(
+        TICKER, cutoff=cutoff
+    ),
 }
 
 # The strings that are not a date and are not an absent cutoff either.
@@ -114,6 +128,15 @@ def test_a_date_given_is_the_date_used() -> None:
     assert cutoff_guard.resolve_cutoff(dt.date(2024, 1, 31), TICKER) == dt.date(2024, 1, 31)
 
 
+def _inside(tree: ast.Module, wanted: ast.AST, function: str) -> bool:
+    """Is this node in the body of `function`? The one sanctioned caller."""
+    for node in ast.walk(tree):
+        if isinstance(node, ast.FunctionDef) and node.name == function:
+            if any(child is wanted for child in ast.walk(node)):
+                return True
+    return False
+
+
 def _called_name(node: ast.expr) -> str:
     """`default_cutoff` out of either `default_cutoff` or `mod.default_cutoff`."""
     if isinstance(node, ast.Attribute):
@@ -123,25 +146,37 @@ def _called_name(node: ast.expr) -> str:
     return ""
 
 
-def test_the_rule_is_written_once_and_every_site_calls_it() -> None:
-    """The ten sites had ten copies of `cutoff or default`. They have none now.
+def test_the_default_is_reached_through_one_function_and_no_other_way() -> None:
+    """The invariant, not one spelling of the defect.
 
-    Read off the syntax tree rather than off the text: `resolve_cutoff`'s own
-    docstring quotes the old shape on purpose, to say what it replaced, and a
-    grep cannot tell that prose from a line that runs. An `or` whose right side
-    calls `default_cutoff` is the defect itself, in any spelling and across any
-    line break, and it does not exist in a docstring.
+    The first version of this test looked for an `or` whose right side called
+    `default_cutoff`, which is what eight of the readers happened to be written
+    as. It passed while the rule was written four more times in two other
+    shapes: `src/articulation.py` had the same truthiness bug as a conditional
+    expression — `parse_date(cutoff) if cutoff else default_cutoff(...)` — and
+    two more readers wrote `if cutoff is None:` inline, which is correct
+    behaviour but is still a second copy of the rule that can drift. The lens
+    proved the gap by rewriting a call site in the conditional shape and
+    watching this test stay green.
+
+    So the question is not "does any site look like the old bug". It is: does
+    anything but `cutoff_guard.resolve_cutoff` call `default_cutoff` at all.
+    There is one right answer and it does not depend on how the caller is
+    spelled. Prose in a docstring is invisible to the syntax tree, which is why
+    `resolve_cutoff` can go on quoting the shape it replaced.
     """
     stale = []
     for path in sorted(SRC.glob("*.py")):
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
         for node in ast.walk(tree):
-            if not isinstance(node, ast.BoolOp) or not isinstance(node.op, ast.Or):
+            if not isinstance(node, ast.Call) or _called_name(node.func) != "default_cutoff":
                 continue
-            for value in node.values:
-                if isinstance(value, ast.Call) and _called_name(value.func) == "default_cutoff":
-                    stale.append(f"{path.name}:{node.lineno}")
-    assert stale == [], f"a call site still reads the empty string as the default: {stale}"
+            if path.name == "cutoff_guard.py" and _inside(tree, node, "resolve_cutoff"):
+                continue
+            stale.append(f"{path.name}:{node.lineno}")
+    assert stale == [], (
+        "the default is reached without going through the shared rule at: "
+        f"{stale}")
 
 
 def test_every_call_site_in_the_source_has_a_reader_in_this_file() -> None:

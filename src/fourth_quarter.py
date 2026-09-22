@@ -491,9 +491,7 @@ def fourth_quarters(ticker: str, cutoff=None, *,
                     fixtures_root=cutoff_guard.FIXTURES,
                     years=YEARS_REQUESTED) -> dict:
     """Every fiscal year in the window, each derived or explained."""
-    if cutoff is None:
-        cutoff = cutoff_guard.default_cutoff(ticker, fixtures_root=fixtures_root)
-    cutoff = cutoff_guard.parse_date(cutoff, "cutoff_date")
+    cutoff = cutoff_guard.resolve_cutoff(cutoff, ticker, fixtures_root=fixtures_root)
 
     held = read_record(ticker, cutoff, fixtures_root=fixtures_root)
     document, row = held["document"], held["row"]
