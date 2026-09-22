@@ -292,8 +292,18 @@ esac
 # rows of both. The hole that stays open is closed by a person reading the diff
 # of this file, and `docs/HOW_WE_WORK.md` §6 says so rather than implying the
 # guard covers it.
+#
+# Compared against `$0`, the file that is actually executing, and not against
+# `$WORKTREE/tools/second_lens.sh`. Those are the same file when the build skill
+# runs the command from inside the worktree, and they are *different files* in
+# the weekly routine, which invokes the script from the main checkout against a
+# detached worktree -- so the old comparison answered a question about a copy
+# nobody was running, and `SKILL.md` and `HOW_WE_WORK.md` §6 both describe this
+# field as a fact about the running script.
 LENS_FROM="$JUDGE_BASE"
-if ! git -C "$WORKTREE" diff --quiet "$JUDGE_BASE" -- "tools/second_lens.sh" 2>/dev/null; then
+RUNNING_SCRIPT="$(cd "$(dirname "$0")" && pwd -P)/$(basename "$0")"
+if ! git -C "$WORKTREE" show "$JUDGE_BASE:tools/second_lens.sh" 2>/dev/null \
+     | cmp -s - "$RUNNING_SCRIPT" 2>/dev/null; then
     LENS_FROM="tree"
     CAVEATS="$CAVEATS this script differs from $JUDGE_BASE and is running as itself;"
 fi

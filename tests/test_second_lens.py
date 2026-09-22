@@ -305,7 +305,12 @@ def test_missing_binaries_are_no_lens_rather_than_a_crash(tmp_path: Path, stubs:
     """
     ledger = tmp_path / "ledger.jsonl"
     worktree = tmp_path / "worktree"
-    worktree.mkdir()
+    # A bare `mkdir` stood here, and the run exited 3 at "no ref main here, so
+    # the judge could not be pinned" -- before `command -v codex` was ever
+    # evaluated. The test passed and judged nothing, twice: the second lens
+    # found it, a fix was written that never landed because the edit carrying
+    # it aborted on an earlier assertion, and the lens found it again.
+    a_repository_on_main(worktree)
     environment = dict(os.environ)
     environment["PATH"] = f"{stubs}:/usr/bin:/bin:/usr/sbin:/sbin"
     assert shutil.which("codex", path=environment["PATH"]) is None
@@ -319,9 +324,20 @@ def test_missing_binaries_are_no_lens_rather_than_a_crash(tmp_path: Path, stubs:
         capture_output=True,
         text=True,
         env=environment,
-        cwd=tmp_path,
+        cwd=worktree,
     )
     assert result.returncode == lens_verdict.NO_LENS_RAN, result.stderr
+    assert "no ref" not in result.stdout, (
+        "exit 3 arrived on the pinning question, so the missing binaries this "
+        "test names were never reached"
+    )
+    # The two `127` branches, which no other test in this file reaches: every
+    # other scenario puts a stub on PATH for at least one of them.
+    assert "no codex on PATH" in (
+        worktree / ".lens" / "codex.log").read_text(encoding="utf-8")
+    assert "no claude on PATH" in (
+        worktree / ".lens" / "fable.log").read_text(encoding="utf-8")
+    assert ledger_lines(tmp_path)[-1]["lens"] == "none"
 
 
 def test_both_lenses_are_handed_the_same_prompt(tmp_path: Path, stubs: Path) -> None:
@@ -1407,11 +1423,20 @@ def test_the_row_records_whether_the_script_itself_came_from_the_pinned_ref(
 ) -> None:
     """`lens_from`, beside `judge_from`, for the file that cannot pin itself.
 
-    A branch that replaces `tools/second_lens.sh` outright wins -- no check
-    written in a file survives that file being replaced, and
-    `docs/HOW_WE_WORK.md` names it as a trust root rather than implying this
-    field covers it. What the field covers is the ordinary case: the script
-    edited for some other reason, recorded, and re-read next week.
+    The question is about `$0` -- the file that is executing -- and not about
+    `$WORKTREE/tools/second_lens.sh`. Those are the same file when the build
+    skill runs the command from inside the worktree, and different files in the
+    weekly routine, which invokes the script from the main checkout against a
+    detached worktree. The first version compared the worktree's copy to the
+    ref, so it answered about a copy nobody was running, while `SKILL.md` and
+    `docs/HOW_WE_WORK.md` §6 both describe the field as a fact about the
+    running script.
+
+    So the fixture's *pinned* copy is what moves here, and the script under test
+    stays the one the harness invokes. A branch that replaces the script
+    outright still wins -- no line inside a file survives that file being
+    replaced -- and §6 names that as a trust root rather than implying this
+    field closes it.
     """
     worktree = tmp_path / "worktree"
     a_repository_on_main(worktree)
@@ -1419,13 +1444,20 @@ def test_the_row_records_whether_the_script_itself_came_from_the_pinned_ref(
     claude_stub(stubs, exit_code=127, result=None)
 
     assert run_lens(tmp_path).returncode == 0
-    assert ledger_lines(tmp_path)[-1]["lens_from"] == "main"
+    assert ledger_lines(tmp_path)[-1]["lens_from"] == "main", (
+        "the running script is byte-for-byte the pinned one"
+    )
 
     (worktree / "tools" / "second_lens.sh").write_text(
-        SCRIPT.read_text(encoding="utf-8") + "\n# a branch edited the pinner\n",
+        SCRIPT.read_text(encoding="utf-8") + "\n# the pinned ref moved\n",
         encoding="utf-8")
-    subprocess.run(["git", "commit", "-aqm", "edit the pinner"], cwd=worktree,
+    subprocess.run(["git", "commit", "-aqm", "the pinned script moved"],
+                   cwd=worktree, check=True, capture_output=True, text=True)
+    subprocess.run(["git", "branch", "-qf", "main", "HEAD"], cwd=worktree,
                    check=True, capture_output=True, text=True)
+    (worktree / "the_change.py").write_text("y = 4\n", encoding="utf-8")
+    subprocess.run(["git", "commit", "-aqm", "the change under review"],
+                   cwd=worktree, check=True, capture_output=True, text=True)
     result = run_lens(tmp_path)
 
     assert ledger_lines(tmp_path)[-1]["lens_from"] == "tree", result.stdout
