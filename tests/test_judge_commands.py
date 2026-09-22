@@ -56,8 +56,12 @@ def task_list() -> str:
 # How many judge commands the ledger held before this item rewrote them:
 #     git show resume/lens-and-prices:docs/next_cycle_tasks.md
 #         | grep -c '`python3.12 -m pytest'
-# gave 39, and nine rows already said `.venv/bin/python`. The floor is that
-# count, not a number chosen to pass.
+# gave 39. The floor is that count, not a number chosen to pass.
+#
+# The same file with `.venv/bin/python` in place of `python3.12` gives 11 --
+# rows that already named the interpreter this item is moving the rest onto.
+# Written as the command rather than as a number, because the number was wrong
+# here: it said nine, nothing asserted it, and the second lens counted.
 JUDGE_COMMANDS_BEFORE = 39
 
 # An independent reading of the same file: any one-line backtick span that runs
