@@ -1,5 +1,11 @@
-# Python 3.12 is the pinned interpreter; the entry points refuse anything else.
-PYTHON ?= python3.12
+# The project's own interpreter, which is Python 3.12 and has this project's
+# site-packages; the entry points refuse any other version. The default is a
+# path and not a bare name on purpose: bare `python3.12` on a developer machine
+# resolves to an interpreter with no pytest, and every judge command in
+# `docs/next_cycle_tasks.md` named that one until six reproduce runs in a row
+# exited before collecting a test. Continuous integration overrides this with
+# `PYTHON=python`, which is the interpreter it installed the requirements into.
+PYTHON ?= .venv/bin/python
 BASELINE ?= origin/main
 
 .PHONY: check append-check plain-name-check test
