@@ -21,10 +21,14 @@ grep '"lens": "claude-fable-fallback"' events/ledger.jsonl
 # every lens run where neither lens answered
 grep '"lens": "none"' events/ledger.jsonl
 
-# every lens run whose judge was not the pinned one. The change that builds the
-# lens is one cause; a merge whose first parent predates the lens is another,
-# and so is a reader that answered from somewhere other than the pinned copy
-grep '"judge_from": "tree"' events/ledger.jsonl
+# every lens run whose judge was not `main`. `tree` is one value; the change
+# that builds the lens produces it, so does a merge whose first parent predates
+# the lens, and so does a reader that answered from somewhere other than the
+# pinned copy. But `judge_from` records whatever `LENS_JUDGE_BASE` held, so a
+# run pinned at `HEAD~1` or at the branch's own name writes *that* string and
+# passes a `"tree"` grep untouched -- the prompt and the schema having come from
+# the branch under review. So the grep is the complement: anything but `main`.
+grep '"lens"' events/ledger.jsonl | grep -v '"judge_from": "main"'
 
 # every lens run where `tools/second_lens.sh` itself differed from the pinned
 # ref. The script cannot pin itself, so this row says the pinner was the

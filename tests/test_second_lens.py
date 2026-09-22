@@ -1160,15 +1160,26 @@ def test_the_weekly_routine_greps_a_string_the_ledger_actually_writes() -> None:
     """
     routine = (REPO_ROOT / "docs" / "routines" / "weekly-relens.md").read_text(
         encoding="utf-8")
-    wanted = re.findall(r'\'"(lens|judge_from)": "([a-z-]+)"\'', routine)
-    wanted += re.findall(r'"\\"(lens|judge_from)\\": \\"([a-z-]+)\\""', routine)
+    # Every key the routine greps for, not a hand-written subset. The first
+    # version captured `(lens|judge_from)` only, so the routine's `lens_from`
+    # grep was judged by nothing and matched today by the accident that
+    # `json.dumps` spells it that way -- which is the whole failure this test
+    # exists to prevent, one key to the left of where it was looking.
+    wanted = re.findall(r'\'"([a-z_]+)": "([a-z-]+)"\'', routine)
+    wanted += re.findall(r'"\\"([a-z_]+)\\": \\"([a-z-]+)\\""', routine)
     assert wanted, "the routine names no ledger row to grep for"
+    assert {key for key, _ in wanted} >= {"lens", "judge_from", "lens_from"}, (
+        f"the routine stopped grepping one of the three fields: {sorted({k for k, _ in wanted})}"
+    )
 
     for key, value in wanted:
+        fields = {"lens": "claude-fable-fallback", "judge_from": "main",
+                  "lens_from": "main"}
+        assert key in fields, f"the routine greps a field the ledger has no column for: {key}"
+        fields[key] = value
         line = lens_verdict.ledger_line(
-            "an item", value if key == "lens" else "claude-fable-fallback",
-            "pass", 0, "2026-09-22T00:00:00+00:00",
-            judge_from=value if key == "judge_from" else "main")
+            "an item", fields["lens"], "pass", 0, "2026-09-22T00:00:00+00:00",
+            judge_from=fields["judge_from"], lens_from=fields["lens_from"])
         assert f'"{key}": "{value}"' in line, (
             f"the routine greps {key}={value!r} and the ledger writes {line}")
 
@@ -1555,3 +1566,85 @@ def test_the_watch_list_does_not_fire_on_the_line_every_session_appends(
 
     assert result.returncode == 0, result.stdout
     assert calls(tmp_path) == ["codex"]
+
+
+def test_a_pin_that_is_not_on_the_trunk_is_refused_rather_than_recorded(
+    tmp_path: Path, stubs: Path
+) -> None:
+    """`LENS_JUDGE_BASE` pointing into the branch under review is exit 3.
+
+    `judge_from` records the string it was given, and the weekly routine can
+    only read what is written -- so a run pinned at `HEAD~1`, or at the branch's
+    own name, took the prompt, the schema and the verdict reader out of the
+    branch being judged, wrote *that ref* into the row, and passed a grep
+    looking for `tree` untouched. Widening the routine's grep to "anything but
+    main" catches it a week later; this refuses it at the time.
+
+    The question is whether the ref is on the trunk's own history, because that
+    is exactly what separates the two cases: the routine's `<merge commit>^1`
+    is what `main` held when that work landed, and `HEAD~1` on a branch is not.
+    """
+    worktree = tmp_path / "worktree"
+    a_repository_on_main(worktree)
+    # A second commit on the branch, so `HEAD~1` is the branch's own work and
+    # not `main`. With one commit it would be `main` -- on the trunk, and the
+    # guard would rightly let it through.
+    (worktree / "more_of_the_change.py").write_text("z = 5\n", encoding="utf-8")
+    subprocess.run(["git", "add", "-A"], cwd=worktree, check=True,
+                   capture_output=True, text=True)
+    subprocess.run(["git", "commit", "-qm", "more of the change"], cwd=worktree,
+                   check=True, capture_output=True, text=True)
+    codex_stub(stubs, exit_code=0, verdict=PASS_VERDICT)
+    claude_stub(stubs, exit_code=0, result=json.dumps(PASS_VERDICT))
+
+    environment = dict(os.environ)
+    environment["PATH"] = f"{tmp_path / 'stubs'}:{environment['PATH']}"
+    environment["STUB_CALLS"] = str(tmp_path / "calls")
+    environment["STUB_CWD"] = str(tmp_path / "cwd")
+    environment["STUB_ARGV"] = str(tmp_path / "argv")
+    environment["LENS_LEDGER"] = str(tmp_path / "ledger.jsonl")
+    environment["LENS_PYTHON"] = sys.executable
+    environment["LENS_TIMEOUT"] = "60"
+    # Off the trunk and with a real diff behind it, so the refusal this test
+    # asserts cannot be the empty-diff one wearing the same exit code.
+    environment["LENS_JUDGE_BASE"] = "HEAD~1"
+    result = subprocess.run(
+        ["bash", str(SCRIPT), str(worktree), "an item"],
+        capture_output=True, text=True, env=environment, cwd=worktree)
+
+    assert result.returncode == lens_verdict.NO_LENS_RAN, result.stdout
+    assert "is not on" in result.stdout
+    assert calls(tmp_path) == [], "a lens ran on a judge taken from the branch"
+    assert not any(line["verdict"] == "pass" for line in ledger_lines(tmp_path))
+
+
+def test_the_routine_s_own_pin_is_still_accepted(
+    tmp_path: Path, stubs: Path
+) -> None:
+    """The guard above must not refuse the one caller that sets the variable.
+
+    `docs/routines/weekly-relens.md` sets `LENS_JUDGE_BASE=<merge commit>^1`,
+    which is on the trunk by construction. A guard that blocked it would turn
+    every weekly re-read into exit 3 forever, which is the failure mode that
+    paragraph already exists to warn about.
+    """
+    worktree = tmp_path / "worktree"
+    a_repository_on_main(worktree)
+    codex_stub(stubs, exit_code=0, verdict=PASS_VERDICT)
+    claude_stub(stubs, exit_code=127, result=None)
+
+    environment = dict(os.environ)
+    environment["PATH"] = f"{tmp_path / 'stubs'}:{environment['PATH']}"
+    environment["STUB_CALLS"] = str(tmp_path / "calls")
+    environment["STUB_CWD"] = str(tmp_path / "cwd")
+    environment["STUB_ARGV"] = str(tmp_path / "argv")
+    environment["LENS_LEDGER"] = str(tmp_path / "ledger.jsonl")
+    environment["LENS_PYTHON"] = sys.executable
+    environment["LENS_TIMEOUT"] = "60"
+    environment["LENS_JUDGE_BASE"] = "main"
+    result = subprocess.run(
+        ["bash", str(SCRIPT), str(worktree), "an item"],
+        capture_output=True, text=True, env=environment, cwd=worktree)
+
+    assert result.returncode == 0, result.stdout
+    assert ledger_lines(tmp_path)[-1]["judge_from"] == "main"

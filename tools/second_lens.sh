@@ -85,7 +85,11 @@ read_the_verdict() {
 # `--restricted` can drop the tree's copy without dropping the lens. The five
 # rules travel in the composed prompt, which comes from the pinned ref; this is
 # only the standing instruction and the tool list.
-LENS_AGENT='{"refute-check":{"description":"the second lens on one change","prompt":"You look for holes in a change and never for reasons it passes. A clean report means you tried to break the change and could not. You answer with one JSON object and nothing else.","tools":["Read","Grep","Glob","Bash"]}}'
+# No `Bash` in the tool list. `--restricted` takes the shell away whatever this
+# says, and a definition that claims one is a claim contradicted by the prompt,
+# by `SKILL.md` step 4b and by §6 -- the second lens found the three of them
+# disagreeing. The list says what the session actually gets.
+LENS_AGENT='{"refute-check":{"description":"the second lens on one change","prompt":"You look for holes in a change and never for reasons it passes. A clean report means you tried to break the change and could not. You have no shell: the change is written out for you as a diff file. You answer with one JSON object and nothing else.","tools":["Read","Grep","Glob"]}}'
 
 CODEX_LENS="codex"
 FALLBACK_LENS="claude-fable-fallback"
@@ -218,6 +222,28 @@ if ! git -C "$WORKTREE" rev-parse --verify --quiet "$JUDGE_BASE^{commit}" >/dev/
         --ledger "$LENS_LEDGER" --item "$ITEM" --lens "none" \
         --verdict "no_lens_ran" --findings 0 --model "none" || true
     echo "second lens: none · none · no_lens_ran · no ref $JUDGE_BASE here, so the judge could not be pinned"
+    exit "$NO_LENS_RAN"
+fi
+
+# A pin that is not on the trunk is not a pin. `judge_from` records whatever
+# `LENS_JUDGE_BASE` held, and the routine reading it can only read what is
+# there -- so `LENS_JUDGE_BASE=HEAD~1`, or the branch's own name, pinned the
+# prompt, the schema and the reader out of the branch under review, wrote that
+# ref into the row, and sailed past a grep looking for `tree`. Visible is not
+# read. The question that settles it is whether the ref is on the trunk's own
+# history: the weekly routine's `<merge commit>^1` is, because it is what
+# `main` held when that work landed, and `HEAD~1` on a branch is not.
+TRUNK=""
+for candidate in origin/main main; do
+    if git -C "$WORKTREE" rev-parse --verify --quiet "$candidate^{commit}" >/dev/null 2>&1; then
+        TRUNK="$candidate"; break
+    fi
+done
+if [ -n "$TRUNK" ] && ! git -C "$WORKTREE" merge-base --is-ancestor "$JUDGE_BASE" "$TRUNK" 2>/dev/null; then
+    read_the_verdict ledger \
+        --ledger "$LENS_LEDGER" --item "$ITEM" --lens "none" \
+        --verdict "no_lens_ran" --findings 0 --model "none" || true
+    echo "second lens: none · none · no_lens_ran · $JUDGE_BASE is not on $TRUNK, so the judge would have come from the branch under review"
     exit "$NO_LENS_RAN"
 fi
 
