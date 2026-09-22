@@ -30,18 +30,28 @@ whatever the rows behind it say.
 .venv/bin/python - <<'PY'
 import json
 
-state = {}
+state, retired = {}, set()
 for line in open("events/ledger.jsonl"):
     row = json.loads(line)
-    if "lens" in row and "item" in row:
+    if "corrects" in row:
+        retired.add(row["corrects"])      # a title no later run can append under
+    elif "lens" in row and "item" in row:
         state[row["item"]] = row          # append-only, so the last wins
 
 for item, row in state.items():
+    if item in retired:
+        continue                          # retired by a correction line
     if row["lens"] == "codex":
         continue                          # the cross-vendor lens answered
     print(f"{row['lens']}\t{row.get('verdict')}\t{item}")
 PY
 ```
+
+A title that is not a row in `docs/next_cycle_tasks.md` is the one item no
+re-read can close: the script refuses such a title before writing anything, so
+nothing can ever be appended under it and the queue would report it forever. One
+correction line retires it — `src/lens_verdict.py`'s `correction_line`, which
+carries `corrects` and no `lens`, so every grep above steps over it.
 
 That covers all three of the old sources at once: a fallback answered, no lens
 answered, or the judge did not come off the trunk — each leaves a last row that

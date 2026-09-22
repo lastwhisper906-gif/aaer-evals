@@ -491,13 +491,13 @@ def test_an_object_quoted_on_the_way_to_the_verdict_is_not_the_verdict(
     envelope.write_text(
         json.dumps({
             "result": 'The diff adds {"ticker": "AAPL", "cik": "0000320193"} to '
-                      'universe.json, which is fine.\n\n'
-                      + json.dumps(PASS_VERDICT),
+                      'universe.json, which is not judged.\n\n'
+                      + json.dumps(FAIL_VERDICT),
             "is_error": False,
         }),
         encoding="utf-8",
     )
-    assert lens_verdict.read_claude(envelope)["verdict"] == "pass"
+    assert lens_verdict.read_claude(envelope)["verdict"] == "fail"
 
 
 def test_an_answer_carrying_two_verdicts_is_not_an_answer(tmp_path: Path) -> None:
@@ -536,29 +536,62 @@ def test_a_lens_that_restates_its_verdict_has_still_given_one(
     envelope = tmp_path / "fable.json"
     envelope.write_text(
         json.dumps({
-            "result": "In short: " + json.dumps(PASS_VERDICT)
-                      + "\n\nAgain, in full:\n" + json.dumps(PASS_VERDICT),
+            "result": "In short: " + json.dumps(FAIL_VERDICT)
+                      + "\n\nAgain, in full:\n" + json.dumps(FAIL_VERDICT),
             "is_error": False,
         }),
         encoding="utf-8",
     )
-    assert lens_verdict.read_claude(envelope)["verdict"] == "pass"
+    assert lens_verdict.read_claude(envelope)["verdict"] == "fail"
 
 
-def test_prose_carrying_no_verdict_at_all_is_still_not_a_verdict(
+def test_a_quota_sentence_quoting_a_pass_does_not_become_a_pass(
         tmp_path: Path) -> None:
-    """The quota sentence this module exists for does not become a pass."""
+    """The approval the one-object case would have handed out.
+
+    This test used to plant `{"note": ...}`, which fails the schema -- so it
+    could not tell "the prose was ignored" from "the quoted object was judged",
+    and the case it was named for went unjudged. `PASS_VERDICT` is what a lens
+    reviewing this project reads a few lines from here, and a refusal that
+    quotes it is one validating object with no second one to make it ambiguous.
+
+    Recovery may return a `fail` or a `needs_judgment` and never a `pass`: the
+    risk is not symmetric, so the rule is not. Losing a finding costs the
+    project the finding; recovering an approval costs it the approval.
+    """
     envelope = tmp_path / "fable.json"
     envelope.write_text(
         json.dumps({
             "result": "I could not complete the review: the usage limit was "
-                      'reached. {"note": "nothing to report"}',
+                      "reached. For reference the shape is "
+                      + json.dumps(PASS_VERDICT),
             "is_error": False,
         }),
         encoding="utf-8",
     )
     with pytest.raises(lens_verdict.NotAVerdict):
         lens_verdict.read_claude(envelope)
+
+
+def test_prose_carrying_no_object_at_all_is_still_not_a_verdict(
+        tmp_path: Path) -> None:
+    """And the plainest case, which has to keep working."""
+    envelope = tmp_path / "fable.json"
+    envelope.write_text(
+        json.dumps({"result": "the usage limit was reached", "is_error": False}),
+        encoding="utf-8",
+    )
+    with pytest.raises(lens_verdict.NotAVerdict):
+        lens_verdict.read_claude(envelope)
+
+
+def test_a_pass_that_is_the_whole_answer_is_still_read(tmp_path: Path) -> None:
+    """The strict path is untouched: an approval that stands alone is one."""
+    envelope = tmp_path / "fable.json"
+    envelope.write_text(
+        json.dumps({"result": json.dumps(PASS_VERDICT), "is_error": False}),
+        encoding="utf-8")
+    assert lens_verdict.read_claude(envelope)["verdict"] == "pass"
 
 
 def test_a_sentence_in_front_of_the_verdict_is_still_refused_from_codex(
@@ -976,6 +1009,73 @@ def test_a_reading_with_no_model_at_all_is_not_a_crash(
 # --- an answer from an earlier run is not this run's -------------------------
 
 
+def a_removal_that_the_directory_refuses(directory: Path, target: str) -> None:
+    """An `rm` that fails on one path and is the real one everywhere else.
+
+    `cleared` exists because `rm -f` succeeds silently when the directory will
+    not have the file removed, and the answer file left standing is then read as
+    this run's. Reproducing that needs the removal to fail while the file stays
+    readable -- which `chmod` on the directory cannot do, because the judge
+    directory is cleared first and refuses the run before the answer files are
+    reached, and which a directory planted in the file's place cannot do either,
+    because there is then nothing valid left to misread. So the failure is
+    injected where it actually happens.
+    """
+    _write_stub(directory, "rm",
+                'for arg in "$@"; do\n'
+                '  case "$arg" in\n'
+                f'    {target}) exit 1 ;;\n'
+                '  esac\n'
+                'done\n'
+                'exec /bin/rm "$@"')
+
+
+def test_a_codex_answer_that_will_not_clear_is_not_this_run_s(
+    tmp_path: Path, stubs: Path
+) -> None:
+    """The stale `pass` that would have been reported as this run's.
+
+    The first run leaves a valid Codex `pass` in `.lens/codex.json`. The second
+    run's Codex writes nothing, and the file will not clear. Without the check
+    the script reads what is there and exits 0 on an answer about the previous
+    change; with it, Codex is recorded as not having run and the fallback is
+    asked.
+
+    The test above plants the failure on the whole directory, which the judge
+    check catches first -- so this branch and the fallback's had no judge, and
+    removing either `cleared` call left the suite green.
+    """
+    codex_stub(stubs, exit_code=0, verdict=PASS_VERDICT)
+    claude_stub(stubs, exit_code=127, result=None)
+    assert run_lens(tmp_path).returncode == 0
+    assert (tmp_path / "worktree" / ".lens" / "codex.json").exists()
+
+    codex_stub(stubs, exit_code=1, verdict=None)
+    a_removal_that_the_directory_refuses(stubs, "*/.lens/codex.json")
+    second = run_lens(tmp_path)
+
+    assert second.returncode == 3, second.stdout
+    assert ledger_lines(tmp_path)[-1]["lens"] == "none"
+    assert "pass" not in second.stdout.split("no_lens_ran")[0]
+
+
+def test_a_fallback_answer_that_will_not_clear_is_not_this_run_s(
+    tmp_path: Path, stubs: Path
+) -> None:
+    """The same file on the other side, which had no judge either."""
+    codex_stub(stubs, exit_code=1, verdict=None)
+    claude_stub(stubs, exit_code=0, result=json.dumps(PASS_VERDICT))
+    assert run_lens(tmp_path).returncode == 0
+    assert (tmp_path / "worktree" / ".lens" / "fable.json").exists()
+
+    claude_stub(stubs, exit_code=1, result=None)
+    a_removal_that_the_directory_refuses(stubs, "*/.lens/fable.json")
+    second = run_lens(tmp_path)
+
+    assert second.returncode == 3, second.stdout
+    assert ledger_lines(tmp_path)[-1]["lens"] == "none"
+
+
 def test_an_answer_left_from_an_earlier_run_is_not_read_as_this_one(
     tmp_path: Path, stubs: Path
 ) -> None:
@@ -1368,6 +1468,54 @@ def test_the_routine_does_not_re_select_its_own_work_every_week(
         "the routine re-selects the rows it wrote itself, forever")
 
 
+def test_a_title_that_is_not_a_row_is_retired_rather_than_queued_forever(
+        tmp_path: Path) -> None:
+    """The one item no re-read can close.
+
+    `tools/second_lens.sh` refuses an item title that is not a row in
+    `docs/next_cycle_tasks.md` -- which is why the row already written under one
+    can never be closed: nothing can be appended under that name again, the
+    queue keys on the item, and it would be reported every week forever. The
+    change that added the title check left exactly such a row in
+    `events/ledger.jsonl` and did not retire it.
+
+    `CLAUDE.md` says a correction is a new file plus one ledger line, so the
+    retirement is a line rather than an edit, and the ledger stays append-only.
+    """
+    ledger = tmp_path / "events"
+    ledger.mkdir()
+    phantom = "a title nobody wrote down"
+    (ledger / "ledger.jsonl").write_text(
+        json.dumps({"item": phantom, "lens": "none", "verdict": "no_lens_ran",
+                    "judge_from": "tree", "lens_from": "tree"}) + "\n",
+        encoding="utf-8")
+
+    def queued() -> set[str]:
+        out = subprocess.run([sys.executable, "-c", _routine_queue()],
+                             cwd=tmp_path, capture_output=True, text=True)
+        assert out.returncode == 0, out.stderr
+        return {line.split("\t")[-1] for line in out.stdout.splitlines() if line}
+
+    assert queued() == {phantom}
+
+    with (ledger / "ledger.jsonl").open("a", encoding="utf-8") as handle:
+        handle.write(lens_verdict.correction_line(
+            "the row it belonged to", phantom,
+            "invoked under a title the list does not carry",
+            "2026-09-22T00:00:00+00:00") + "\n")
+
+    assert queued() == set(), "a retired title is still queued"
+
+
+def test_a_correction_line_is_invisible_to_everything_that_greps_a_lens(
+) -> None:
+    """It is a fact about the record, not a lens run, and must not read as one."""
+    line = lens_verdict.correction_line(
+        "the row it belonged to", "a phantom", "why", "2026-09-22T00:00:00+00:00")
+    assert '"lens"' not in line
+    assert json.loads(line)["corrects"] == "a phantom"
+
+
 def test_the_weekly_routine_reads_fields_the_ledger_actually_writes() -> None:
     """The routine's field names are read out of the routine, not typed here.
 
@@ -1380,9 +1528,13 @@ def test_the_weekly_routine_reads_fields_the_ledger_actually_writes() -> None:
     """
     routine = (REPO_ROOT / "docs" / "routines" / "weekly-relens.md").read_text(
         encoding="utf-8")
+    # Both shapes the ledger carries: a lens run, and a correction retiring an
+    # item title. A field the routine reads has to be written by one of them.
     line = json.loads(lens_verdict.ledger_line(
         "an item", "claude-fable-fallback", "pass", 0,
         "2026-09-22T00:00:00+00:00", judge_from="main", lens_from="main"))
+    line |= json.loads(lens_verdict.correction_line(
+        "an item", "a phantom", "why", "2026-09-22T00:00:00+00:00"))
 
     grepped = re.findall(r"'\"([a-z_]+)\": \"([a-z-]+)\"'", routine)
     grepped += re.findall(r'"\\"([a-z_]+)\\": \\"([a-z-]+)\\""', routine)
@@ -1390,7 +1542,7 @@ def test_the_weekly_routine_reads_fields_the_ledger_actually_writes() -> None:
     sed_read = set(re.findall(r'\.\*"([a-z_]+)": ', routine))
 
     read = {key for key, _ in grepped} | subscripted | sed_read
-    assert read >= {"lens", "item", "judge_from", "lens_from"}, (
+    assert read >= {"lens", "item", "judge_from", "lens_from", "corrects"}, (
         f"the routine stopped reading one of the four fields: {sorted(read)}")
     for key in read:
         assert key in line, (

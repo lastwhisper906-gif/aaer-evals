@@ -223,6 +223,18 @@ def _verdict_in(text: str, where: str) -> dict[str, Any]:
 
     Identical repeats are one answer, not two -- a lens that restates its
     verdict has not given two.
+
+    **And recovery never produces an approval.** Closing the two-object case
+    left the one-object case open, which is the same hole with the quotation on
+    its own: "I could not finish; the shape is {...a valid pass...}" carries
+    exactly one validating object and would have been read as a `pass` at exit
+    0 with auto-merge on. The risk is not symmetric -- reading an answer
+    loosely can only ever let a change through, or only ever stop one,
+    depending on what it says -- so the rule is not symmetric either. A `pass`
+    has to be the whole answer, strictly parsed. A `fail` or a `needs_judgment`
+    may be recovered from around the prose, because recovering one costs a
+    person a reading and losing one costs the project the finding. Anything
+    else is exit 3, which is where a quota sentence has always belonged.
     """
     try:
         return validate(_parse(_unfence(text), where))
@@ -235,7 +247,12 @@ def _verdict_in(text: str, where: str) -> dict[str, Any]:
             raise NotAVerdict(
                 f"{where} carries {len(distinct)} different verdicts, and an "
                 "answer that says two things is not an answer")
-        return validate(answers[0])
+        recovered = validate(answers[0])
+        if EXIT_FOR_VERDICT[recovered["verdict"]] == PASS:
+            raise NotAVerdict(
+                f"{where} is prose around a `pass`, and an approval has to be "
+                "the whole answer -- a quoted example reads exactly like one")
+        return recovered
 
 
 def _unfence(text: str) -> str:
@@ -337,6 +354,26 @@ def ledger_line(
         ensure_ascii=False,
         sort_keys=True,
     )
+
+
+def correction_line(item: str, corrects: str, note: str, at: str) -> str:
+    """One line retiring an item title the ledger can never close.
+
+    `CLAUDE.md`: "Append-only under runs/ · rules/ · events/ ... A correction is
+    a new file plus one ledger line." This is that line. It carries no `lens`
+    key, so everything that greps for one steps over it, and the weekly queue
+    reads `corrects` to know that an item is no longer open.
+
+    The case it was written for: a run recorded under a title that is not a row
+    in `docs/next_cycle_tasks.md`. The script refuses such a title now, which is
+    exactly why the row it left behind can never be closed -- no later run can
+    append under that name, the queue keys on the item, and a queue that cannot
+    be emptied reports the same phantom every week. Retiring it is a fact about
+    the record, so it goes in the record.
+    """
+    return json.dumps(
+        {"at": at, "corrects": corrects, "item": item, "note": note},
+        ensure_ascii=False, sort_keys=True)
 
 
 def append_ledger(path: Path, line: str) -> None:
