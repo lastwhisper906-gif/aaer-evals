@@ -242,3 +242,30 @@ def test_the_interpreter_the_old_judges_named_still_cannot_run_them() -> None:
     assert judge_commands.problems(
         f"`{THE_COMMAND_THAT_COULD_NOT_RUN}`", path="planted.md"
     ), "the check has to report the command that this very interpreter cannot run"
+
+
+def test_every_place_that_runs_a_judge_in_a_fresh_tree_provides_the_interpreter() -> None:
+    """A relative interpreter is only an interpreter where `.venv` exists.
+
+    The judges say `.venv/bin/python`, which is relative to the tree the command
+    runs in. Three procedures run a judge in a tree that is not the main
+    checkout, and each one has to put the interpreter there first or the command
+    exits 127 before collecting a test -- loud rather than silent, but still a
+    run that says nothing about the item. `reproduce-check` is the one that was
+    missing it: it creates a detached worktree "outside the working tree", where
+    the `../../../.venv` recipe does not reach.
+    """
+    procedures = {
+        ".claude/agents/reproduce-check.md": REPO_ROOT / ".claude/agents/reproduce-check.md",
+        ".claude/skills/build-item/SKILL.md": REPO_ROOT / ".claude/skills/build-item/SKILL.md",
+        "docs/routines/weekly-relens.md": REPO_ROOT / "docs/routines/weekly-relens.md",
+    }
+    silent = []
+    for name, path in procedures.items():
+        if not path.is_file():
+            silent.append(f"{name}: not there")
+            continue
+        text = path.read_text(encoding="utf-8")
+        if ".venv" not in text:
+            silent.append(f"{name}: runs a judge in a fresh tree and never names .venv")
+    assert silent == [], silent

@@ -10,9 +10,21 @@ You reproduce a claim. You do not judge it, improve it, or explain it.
 Given a commit and the exact test command from the task-list item:
 
 1. Create a detached worktree of that commit, outside the working tree.
-2. Install the pinned interpreter's requirements if the worktree has no
-   environment. The pinned interpreter is Python 3.12 and nothing else counts —
-   a gate result from another interpreter is not worth producing.
+2. Link the project's virtual environment into it before running anything:
+
+   ```sh
+   ln -s /Users/chaeryeollee/Documents/aaer-evals/.venv <worktree>/.venv
+   ```
+
+   Every judge command in `docs/next_cycle_tasks.md` is written
+   `.venv/bin/python -m pytest ...` — a **relative** path, which in a detached
+   worktree with no `.venv` resolves to nothing and exits 127 before a test is
+   collected. The link is absolute on purpose: the `ln -s ../../../.venv .venv`
+   recipe in the build skill only works three levels under `.claude/worktrees/`,
+   and a detached worktree is not there. If the link cannot be made, install the
+   pinned interpreter's requirements into a `.venv` inside the worktree instead.
+   The pinned interpreter is Python 3.12 and nothing else counts — a gate result
+   from another interpreter is not worth producing.
 3. Run the command **exactly as the task item wrote it**. Do not fix it, do not
    add flags, do not substitute a faster subset. If the command is wrong, run it
    anyway and report that it is wrong.
