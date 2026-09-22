@@ -23,27 +23,53 @@ sources looped that way. The second lens found it twice — once for the pin, an
 once more for the three it had not reached.
 
 An item's **last** row is its state. An item whose last row is a Codex answer
-has had the cross-vendor reading this routine exists to get, and is done,
-whatever the rows behind it say.
+**taken under a pinned judge** has had the cross-vendor reading this routine
+exists to get, and is done, whatever the rows behind it say.
+
+`judge_from: "tree"` is not done, and a Codex row does not excuse it. The prompt
+and the schema came out of the branch then, so the change wrote the questions it
+was asked -- a branch can rewrite `tools/lens_prompt.md`, take a Codex `pass`
+under its own prompt and exit 0 with auto-merge on. `.claude/skills/build-item`
+step 4b and `docs/HOW_WE_WORK.md` §6 both say a `tree` row is read again, and
+for a while this queue closed it anyway.
+
+**When a `tree` row cannot be improved, retire it rather than leave it.** A
+merge whose first parent predates the lens has no pinned judge to be had: a
+re-read at `<merge>^1` writes `judge_from: "tree"` again, every week, forever.
+Append one correction line for it (`src/lens_verdict.py`'s `correction_line`)
+naming what was read and why no pin was available. A correction naming a row
+that is still open in `docs/next_cycle_tasks.md` is ignored, so this cannot be
+used to clear live work.
 
 ```sh
 .venv/bin/python - <<'PY'
 import json
 
+import pathlib
+
+# A correction may not retire work that is still on the list. `events/` is
+# append-only and a branch writes to it, so one line naming a live row would
+# take a fallback `pass` out of this queue permanently.
+still_open = {line[4:].split(" \u00b7 ", 1)[0]
+              for line in pathlib.Path("docs/next_cycle_tasks.md")
+                                 .read_text(encoding="utf-8").splitlines()
+              if line.startswith("[ ] ")}
+
 state, retired = {}, set()
 for line in open("events/ledger.jsonl"):
     row = json.loads(line)
     if "corrects" in row:
-        retired.add(row["corrects"])      # a title no later run can append under
+        if row["corrects"] not in still_open:
+            retired.add(row["corrects"])  # a title no later run can append under
     elif "lens" in row and "item" in row:
         state[row["item"]] = row          # append-only, so the last wins
 
 for item, row in state.items():
     if item in retired:
         continue                          # retired by a correction line
-    if row["lens"] == "codex":
-        continue                          # the cross-vendor lens answered
-    print(f"{row['lens']}\t{row.get('verdict')}\t{item}")
+    if row["lens"] == "codex" and row.get("judge_from") != "tree":
+        continue                          # read by the cross-vendor lens, pinned
+    print(f"{row['lens']}\t{row.get('judge_from')}\t{row.get('verdict')}\t{item}")
 PY
 ```
 

@@ -54,6 +54,8 @@ suite has been committed that way before.
 
 **4a. `refute-check` (Claude).** Hand it the diff and the item's four fields.
 
+**4a-commit. Commit before the lens.** Both lenses read `git diff <pin>...HEAD`, which is committed history, so uncommitted work is invisible to them — and the script refuses a worktree that has any, because a `pass` on the committed part followed by a commit of the rest is an approval the lens never gave.
+
 **4b. `tools/second_lens.sh <worktree> "<item title>"`.** It runs Codex first,
 read-only, on the same five rules in the same order, and falls back to Claude
 Fable in a fresh context when Codex cannot run.

@@ -298,6 +298,21 @@ fi
 # branch `$JUDGE_BASE` is `main` and it is the branch's own change; in the
 # routine it is the merge commit's first parent, which is an ancestor, so the
 # diff is exactly what that merge brought in.
+# Both lenses are handed `git diff <pin>...HEAD`, which is committed history --
+# and `DEFINES_THE_JUDGE` below reads the working tree. Two states, one verdict:
+# a lens could pass the committed part while the definition files it checked
+# were the uncommitted ones, and the build skill has no commit step between
+# `make check` and this call. An approval the lens never gave is one commit
+# away. So the tree has to be settled before it is judged.
+if [ -n "$(git -C "$WORKTREE" status --porcelain 2>/dev/null)" ]; then
+    read_the_verdict ledger \
+        --ledger "$LENS_LEDGER" --item "$ITEM" --lens "none" \
+        --verdict "no_lens_ran" --findings 0 --model "none" || true
+    echo "second_lens: $WORKTREE has uncommitted changes" >&2
+    echo "second lens: none · none · no_lens_ran · $WORKTREE has uncommitted changes, and the lens reads committed history -- a verdict on part of a change is not a verdict on it"
+    exit "$NO_LENS_RAN"
+fi
+
 DIFF_RANGE="$JUDGE_BASE...HEAD"
 CHANGE_DIFF="$LENS_DIR/change.diff"
 if [ -z "$(git -C "$WORKTREE" diff --numstat "$DIFF_RANGE" 2>/dev/null)" ]; then
@@ -537,13 +552,17 @@ fi
 if [ -z "$LENS" ]; then
     FABLE_FILE="$LENS_DIR/fable.json"
     FABLE_LOG="$LENS_DIR/fable.log"
-    FABLE_CLEARED=yes
-    cleared "$FABLE_FILE" || FABLE_CLEARED=no
-    if [ "$FABLE_CLEARED" = no ]; then
-        echo "second_lens: $FABLE_FILE holds an earlier run's answer and could not be cleared" \
-            > "$FABLE_LOG"
-        FABLE_EXIT=126
-    elif command -v claude >/dev/null 2>&1; then
+    # No clearing check here, and the asymmetry with `$CODEX_FILE` is the
+    # point. Codex is given `-o "$CODEX_FILE"` and writes it itself, so a file
+    # it never wrote is a file from an earlier run and `cleared` is what says
+    # so. The fallback's answer arrives on stdout and this script redirects it:
+    # `> "$FABLE_FILE"` truncates before the command runs, whether the command
+    # then writes, times out, or is not installed at all. A check here had no
+    # reachable branch -- deleting it left every test passing, because the
+    # redirection had already done the work. The property is judged instead of
+    # the check: `test_a_stale_fallback_answer_is_not_read_as_this_run_s`
+    # plants a valid `pass` that cannot be removed and asserts it is not read.
+    if command -v claude >/dev/null 2>&1; then
         # Started *in* the worktree, the way Codex is with -C. The prompt's
         # first instruction is "the working tree you were started in", and this
         # script is called from the repository root against a detached worktree
@@ -579,11 +598,8 @@ if [ -z "$LENS" ]; then
         FABLE_EXIT=127
     fi
     # Read whatever the exit status was, for the same reason as above.
-    READING=""
-    if [ "$FABLE_CLEARED" = yes ]; then
-        READING="$(read_the_verdict claude "$FABLE_FILE" \
-            --lens "$FALLBACK_LENS" --normalised "$NORMALISED" 2>>"$FABLE_LOG")"
-    fi
+    READING="$(read_the_verdict claude "$FABLE_FILE" \
+        --lens "$FALLBACK_LENS" --normalised "$NORMALISED" 2>>"$FABLE_LOG")"
     if [ -n "$READING" ]; then
         read_verdict "$READING"
         LENS="$FALLBACK_LENS"

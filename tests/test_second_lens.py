@@ -158,6 +158,10 @@ def a_repository_on_main(worktree: Path, *, carrying_the_judge: bool = True) -> 
     # the refusal passes something else, which is the only way this can be
     # judged -- a harness that planted whatever title it was given would make
     # the check unfalsifiable.
+    # `.lens/` is ignored in this project, and the harness has to carry that or
+    # the script's own scratch directory makes the second run of any test look
+    # like an uncommitted change.
+    (worktree / ".gitignore").write_text(".lens/\n", encoding="utf-8")
     (worktree / "docs").mkdir(parents=True, exist_ok=True)
     (worktree / "docs" / "next_cycle_tasks.md").write_text(
         "# Next cycle tasks\n\n"
@@ -1059,10 +1063,23 @@ def test_a_codex_answer_that_will_not_clear_is_not_this_run_s(
     assert "pass" not in second.stdout.split("no_lens_ran")[0]
 
 
-def test_a_fallback_answer_that_will_not_clear_is_not_this_run_s(
+def test_a_stale_fallback_answer_is_not_read_as_this_run_s(
     tmp_path: Path, stubs: Path
 ) -> None:
-    """The same file on the other side, which had no judge either."""
+    """The same property on the other side, judged instead of the check.
+
+    There is no clearing check on `$FABLE_FILE` and there should not be. Codex
+    is handed `-o` and writes the file itself, so a file it never wrote is an
+    earlier run's; the fallback answers on stdout and this script redirects it,
+    and `> "$FABLE_FILE"` truncates before the command runs -- whether it then
+    writes, times out, or is not installed. A check there had no reachable
+    branch: deleting it left all seventy-nine tests passing, because the
+    redirection had already done the work, and a guard that cannot be told from
+    its absence is not a guard.
+
+    So what is asserted is the property the guard was for: a valid `pass` left
+    from an earlier run, which cannot be removed, is not reported as this one.
+    """
     codex_stub(stubs, exit_code=1, verdict=None)
     claude_stub(stubs, exit_code=0, result=json.dumps(PASS_VERDICT))
     assert run_lens(tmp_path).returncode == 0
@@ -1074,6 +1091,31 @@ def test_a_fallback_answer_that_will_not_clear_is_not_this_run_s(
 
     assert second.returncode == 3, second.stdout
     assert ledger_lines(tmp_path)[-1]["lens"] == "none"
+
+
+def test_an_uncommitted_worktree_is_not_a_change_the_lens_can_judge(
+    tmp_path: Path, stubs: Path
+) -> None:
+    """Two states, one verdict.
+
+    Both lenses are handed `git diff <pin>...HEAD` -- committed history -- while
+    `DEFINES_THE_JUDGE` reads the working tree, and `.claude/skills/build-item`
+    has no commit step between `make check` at step 3 and this call at step 4b.
+    So a lens could pass the committed part while the definition files it
+    checked were the uncommitted ones, and the rest of the change is one commit
+    and one pull request away from an approval the lens never gave.
+    """
+    worktree = tmp_path / "worktree"
+    a_repository_on_main(worktree)
+    codex_stub(stubs, exit_code=0, verdict=PASS_VERDICT)
+    claude_stub(stubs, exit_code=0, result=json.dumps(PASS_VERDICT))
+    (worktree / "the_rest_of_it.py").write_text("z = 3\n", encoding="utf-8")
+
+    result = run_lens(tmp_path)
+
+    assert result.returncode == lens_verdict.NO_LENS_RAN, result.stdout
+    assert "uncommitted" in result.stdout
+    assert calls(tmp_path) == [], "a lens was spent on half a change"
 
 
 def test_an_answer_left_from_an_earlier_run_is_not_read_as_this_one(
@@ -1146,6 +1188,10 @@ def _repository_that(tmp_path: Path, *, edits: str | None) -> Path:
     # the refusal passes something else, which is the only way this can be
     # judged -- a harness that planted whatever title it was given would make
     # the check unfalsifiable.
+    # `.lens/` is ignored in this project, and the harness has to carry that or
+    # the script's own scratch directory makes the second run of any test look
+    # like an uncommitted change.
+    (worktree / ".gitignore").write_text(".lens/\n", encoding="utf-8")
     (worktree / "docs").mkdir(parents=True, exist_ok=True)
     (worktree / "docs" / "next_cycle_tasks.md").write_text(
         "# Next cycle tasks\n\n"
@@ -1419,6 +1465,26 @@ def _routine_queue() -> str:
     return routine[start:routine.index("\nPY", start)]
 
 
+def _a_ledger_and_a_list(tmp_path: Path, rows: list[dict],
+                         open_rows: tuple[str, ...] = ()) -> None:
+    """The two files the queue reads, planted side by side."""
+    (tmp_path / "events").mkdir(exist_ok=True)
+    (tmp_path / "events" / "ledger.jsonl").write_text(
+        "".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+    (tmp_path / "docs").mkdir(exist_ok=True)
+    (tmp_path / "docs" / "next_cycle_tasks.md").write_text(
+        "# Next cycle tasks\n\n" + "".join(
+            f"[ ] {title} · a_file.py · a judge · a source · PR:\n"
+            for title in open_rows), encoding="utf-8")
+
+
+def _queued(tmp_path: Path) -> set[str]:
+    out = subprocess.run([sys.executable, "-c", _routine_queue()],
+                         cwd=tmp_path, capture_output=True, text=True)
+    assert out.returncode == 0, out.stderr
+    return {line.split("\t")[-1] for line in out.stdout.splitlines() if line}
+
+
 def test_the_routine_does_not_re_select_its_own_work_every_week(
         tmp_path: Path) -> None:
     """The queue that could never finish.
@@ -1430,42 +1496,46 @@ def test_the_routine_does_not_re_select_its_own_work_every_week(
     ledger after Codex has re-read it. Three of the five sources looped, the
     task row moved to done, and the ledger row stayed queued.
 
-    Keyed on the item, the last row is the state and a Codex answer ends it.
-    The two halves asserted here are that every open shape is found, and that
-    the routine's own successful re-read closes the item rather than renewing
-    it -- which is the half that was missing.
+    Keyed on the item, the last row is the state and a **pinned** Codex answer
+    ends it. Both halves are asserted: every open shape is found, and the
+    routine's own successful re-read closes the item rather than renewing it.
     """
-    ledger = tmp_path / "events"
-    ledger.mkdir()
-    rows = [
-        ("read by the fallback only", "claude-fable-fallback", "tree"),
-        ("read by nobody", "none", "tree"),
-        ("read by codex off the trunk", "codex", "main"),
-    ]
-    written = [json.dumps({"item": item, "lens": lens, "verdict": "pass",
-                           "judge_from": pin, "lens_from": "main"})
-               for item, lens, pin in rows]
-    (ledger / "ledger.jsonl").write_text("\n".join(written) + "\n",
-                                         encoding="utf-8")
+    _a_ledger_and_a_list(tmp_path, [
+        {"item": "read by the fallback only", "lens": "claude-fable-fallback",
+         "verdict": "pass", "judge_from": "tree"},
+        {"item": "read by nobody", "lens": "none", "verdict": "no_lens_ran",
+         "judge_from": "tree"},
+        {"item": "read by codex from the pin", "lens": "codex",
+         "verdict": "pass", "judge_from": "main"},
+    ])
+    assert _queued(tmp_path) == {"read by the fallback only", "read by nobody"}
 
-    def queued() -> set[str]:
-        out = subprocess.run([sys.executable, "-c", _routine_queue()],
-                             cwd=tmp_path, capture_output=True, text=True)
-        assert out.returncode == 0, out.stderr
-        return {line.split("\t")[-1] for line in out.stdout.splitlines() if line}
-
-    assert queued() == {"read by the fallback only", "read by nobody"}
-
-    # The routine runs, and appends what it always appends: its own re-read of
-    # each queued item, pinned at `<merge>^1`, on a merge that predates the lens.
-    with (ledger / "ledger.jsonl").open("a", encoding="utf-8") as handle:
+    with (tmp_path / "events" / "ledger.jsonl").open("a", encoding="utf-8") as f:
         for item in ("read by the fallback only", "read by nobody"):
-            handle.write(json.dumps({
-                "item": item, "lens": "codex", "verdict": "pass",
-                "judge_from": "tree", "lens_from": "tree"}) + "\n")
+            f.write(json.dumps({"item": item, "lens": "codex", "verdict": "pass",
+                                "judge_from": "main"}) + "\n")
 
-    assert queued() == set(), (
+    assert _queued(tmp_path) == set(), (
         "the routine re-selects the rows it wrote itself, forever")
+
+
+def test_a_codex_answer_taken_under_the_branch_s_own_prompt_is_not_done(
+        tmp_path: Path) -> None:
+    """The approval the queue used to accept without looking at the judge.
+
+    `judge_from: "tree"` means the prompt and the schema came out of the branch
+    under review, so the change wrote the questions it was asked. A branch can
+    rewrite `tools/lens_prompt.md`, take a Codex `pass` under its own prompt and
+    exit 0 with auto-merge on -- and the row was never re-read or reported,
+    while `.claude/skills/build-item` step 4b and `docs/HOW_WE_WORK.md` §6 both
+    say that row is read again. The queue closed on the lens name alone, and the
+    test that covered it planted no such row.
+    """
+    _a_ledger_and_a_list(tmp_path, [
+        {"item": "read by codex under its own prompt", "lens": "codex",
+         "verdict": "pass", "judge_from": "tree"},
+    ])
+    assert _queued(tmp_path) == {"read by codex under its own prompt"}
 
 
 def test_a_title_that_is_not_a_row_is_retired_rather_than_queued_forever(
@@ -1475,36 +1545,46 @@ def test_a_title_that_is_not_a_row_is_retired_rather_than_queued_forever(
     `tools/second_lens.sh` refuses an item title that is not a row in
     `docs/next_cycle_tasks.md` -- which is why the row already written under one
     can never be closed: nothing can be appended under that name again, the
-    queue keys on the item, and it would be reported every week forever. The
-    change that added the title check left exactly such a row in
-    `events/ledger.jsonl` and did not retire it.
+    queue keys on the item, and it would be reported every week forever.
 
     `CLAUDE.md` says a correction is a new file plus one ledger line, so the
     retirement is a line rather than an edit, and the ledger stays append-only.
     """
-    ledger = tmp_path / "events"
-    ledger.mkdir()
     phantom = "a title nobody wrote down"
-    (ledger / "ledger.jsonl").write_text(
-        json.dumps({"item": phantom, "lens": "none", "verdict": "no_lens_ran",
-                    "judge_from": "tree", "lens_from": "tree"}) + "\n",
-        encoding="utf-8")
+    _a_ledger_and_a_list(tmp_path, [
+        {"item": phantom, "lens": "none", "verdict": "no_lens_ran",
+         "judge_from": "tree"}])
+    assert _queued(tmp_path) == {phantom}
 
-    def queued() -> set[str]:
-        out = subprocess.run([sys.executable, "-c", _routine_queue()],
-                             cwd=tmp_path, capture_output=True, text=True)
-        assert out.returncode == 0, out.stderr
-        return {line.split("\t")[-1] for line in out.stdout.splitlines() if line}
-
-    assert queued() == {phantom}
-
-    with (ledger / "ledger.jsonl").open("a", encoding="utf-8") as handle:
-        handle.write(lens_verdict.correction_line(
+    with (tmp_path / "events" / "ledger.jsonl").open("a", encoding="utf-8") as f:
+        f.write(lens_verdict.correction_line(
             "the row it belonged to", phantom,
             "invoked under a title the list does not carry",
             "2026-09-22T00:00:00+00:00") + "\n")
 
-    assert queued() == set(), "a retired title is still queued"
+    assert _queued(tmp_path) == set(), "a retired title is still queued"
+
+
+def test_a_correction_cannot_retire_work_that_is_still_on_the_list(
+        tmp_path: Path) -> None:
+    """The line that would have cleared a live row out of the queue.
+
+    `events/` is append-only and the branch under review writes to it --
+    `LENS_LEDGER` defaults into the worktree, which is `REPO_ROOT` in the build
+    topology. One correction line naming its own item would have taken a
+    fallback `pass` out of this queue permanently, and the append-only rule has
+    no check behind it. So the queue reads the list: a title still carried as an
+    open row is not something a correction may retire.
+    """
+    live = "a row that is still open"
+    _a_ledger_and_a_list(tmp_path, [
+        {"item": live, "lens": "claude-fable-fallback", "verdict": "pass",
+         "judge_from": "main"},
+        {"at": "2026-09-22T00:00:00+00:00", "corrects": live,
+         "item": live, "note": "retiring my own row"},
+    ], open_rows=(live,))
+
+    assert _queued(tmp_path) == {live}
 
 
 def test_a_correction_line_is_invisible_to_everything_that_greps_a_lens(
@@ -1590,9 +1670,13 @@ def test_a_reader_that_is_not_the_pinned_one_is_recorded_as_coming_from_the_tree
                    cwd=worktree, check=True, capture_output=True, text=True)
     # `main` now stands where the branch does, so there is nothing between them
     # to review and the run would exit 3 on the empty diff before reaching the
-    # question this test asks. One more commit puts the change back.
+    # question this test asks. One more commit puts the change back -- and puts
+    # `src/lens_verdict.py` back under the branch, because `git rm --cached`
+    # leaves the file untracked and an untracked file is an uncommitted change.
     (worktree / "the_change.py").write_text("y = 3\n", encoding="utf-8")
-    subprocess.run(["git", "commit", "-aqm", "the change under review"],
+    subprocess.run(["git", "add", "-A"], cwd=worktree, check=True,
+                   capture_output=True, text=True)
+    subprocess.run(["git", "commit", "-qm", "the change under review"],
                    cwd=worktree, check=True, capture_output=True, text=True)
 
     result = run_lens(tmp_path)
@@ -2119,6 +2203,82 @@ def test_a_pin_that_is_not_on_the_trunk_is_refused_rather_than_recorded(
     assert "is not on" in result.stdout
     assert calls(tmp_path) == [], "a lens ran on a judge taken from the branch"
     assert not any(line["verdict"] == "pass" for line in ledger_lines(tmp_path))
+
+
+def test_the_routine_s_real_shape_is_a_merge_read_against_its_first_parent(
+    tmp_path: Path, stubs: Path
+) -> None:
+    """The one shape the routine actually runs, which no test had.
+
+    `docs/routines/weekly-relens.md` detaches a worktree at the commit a merge
+    landed on and pins `LENS_JUDGE_BASE=<merge>^1`. Everything here exercised
+    `HEAD == main` with a named ref instead, and the one time the real shape ran
+    in production every row came back on an empty diff -- the merge base of a
+    commit with itself is the commit, which was the defect the empty-diff
+    refusal was added for. So the refusal was judged only in the shape that
+    cannot produce it.
+
+    `<merge>^1...<merge>` is the merge-base diff of the first parent and the
+    merge, which is the branch's own change: the run has something to read, the
+    pin is on the trunk by construction, and the row records the pin verbatim.
+    """
+    worktree = tmp_path / "worktree"
+    a_repository_on_main(worktree)
+    run = lambda *argv: subprocess.run(argv, cwd=worktree, check=True,
+                                       capture_output=True, text=True)
+    run("git", "checkout", "-q", "main")
+    run("git", "merge", "-q", "--no-ff", "-m", "the item merged",
+        "item/under-review")
+    merge = subprocess.run(["git", "rev-parse", "HEAD"], cwd=worktree,
+                           check=True, capture_output=True,
+                           text=True).stdout.strip()
+    run("git", "checkout", "-q", "--detach", merge)
+
+    codex_stub(stubs, exit_code=0, verdict=PASS_VERDICT)
+    claude_stub(stubs, exit_code=127, result=None)
+    environment = dict(os.environ)
+    environment["PATH"] = f"{tmp_path / 'stubs'}:{environment['PATH']}"
+    environment["STUB_CALLS"] = str(tmp_path / "calls")
+    environment["STUB_CWD"] = str(tmp_path / "cwd")
+    environment["STUB_ARGV"] = str(tmp_path / "argv")
+    environment["LENS_LEDGER"] = str(tmp_path / "ledger.jsonl")
+    environment["LENS_PYTHON"] = sys.executable
+    environment["LENS_TIMEOUT"] = "60"
+    environment["LENS_JUDGE_BASE"] = f"{merge}^1"
+    result = subprocess.run(
+        ["bash", "tools/second_lens.sh", str(worktree), "an item"],
+        capture_output=True, text=True, env=environment, cwd=worktree)
+
+    assert result.returncode == 0, result.stdout
+    assert "empty diff" not in result.stdout
+    assert ledger_lines(tmp_path)[-1]["judge_from"] == f"{merge}^1"
+
+
+def test_the_build_skill_s_exit_table_is_the_one_the_script_uses() -> None:
+    """The table the builder acts on, against the numbers that are produced.
+
+    `.claude/skills/build-item/SKILL.md` step 4b tells the builder what each
+    exit status means, and nothing read it -- the exit codes were pinned in the
+    module and in the script while the table beside them could say anything.
+    The table is what a person follows, so a table that drifts is the whole
+    mechanism drifting.
+    """
+    skill = (REPO_ROOT / ".claude" / "skills" / "build-item" /
+             "SKILL.md").read_text(encoding="utf-8")
+    rows = re.findall(r"^\| (\d+) \| \**([a-z ]+?)\** \|", skill, re.M)
+    assert rows, "the build skill carries no exit table"
+
+    expected = dict(lens_verdict.EXIT_FOR_VERDICT)
+    expected["no lens ran"] = lens_verdict.NO_LENS_RAN
+    for number, meaning in rows:
+        key = meaning.strip().replace(" ", "_")
+        key = meaning.strip() if meaning.strip() == "no lens ran" else key
+        assert key in expected, f"the table names an outcome nothing produces: {meaning}"
+        assert int(number) == expected[key], (
+            f"the skill says {meaning} is {number} and the code says "
+            f"{expected[key]}")
+    assert {m.strip() for _, m in rows} == {"pass", "fail", "needs judgment",
+                                            "no lens ran"}
 
 
 def test_the_routine_s_own_pin_is_still_accepted(
