@@ -1124,21 +1124,21 @@ def test_a_fallback_answer_the_shell_cannot_overwrite_is_not_read_as_this_run_s(
 def test_a_fallback_answer_that_will_not_clear_is_refused_before_the_lens_is_spent(
     tmp_path: Path, stubs: Path
 ) -> None:
-    """The other half: removal itself failing.
+    """The other half: removal failing on a file that is still writable.
 
-    `rm -f` unlinks a 0444 file in a writable directory, which is why the check
-    above suffices for the ordinary case. It does not unlink a `uchg` file, or
-    one in a directory that will not have it removed -- and there the script has
-    an answer file it can neither clear nor overwrite. That run must refuse
-    rather than read, and must refuse *before* a lens is paid for, so the
-    assertion is on what was invoked as well as on the status.
+    The read below is guarded on the clearing too, so on an *unwritable* file
+    the refusal and its absence come to the same exit 3 and the same silence --
+    a mutation removing this branch killed nothing, and that said the test did
+    not distinguish it, not that it was dead. What the branch buys is visible
+    one shape over: a file the directory will not have removed but that the
+    shell can still truncate. Without the refusal the fallback is started,
+    billed, and its answer then dropped unread by the guard on `FABLE_CLEARED`.
+    So the file here stays writable and the assertion is on what was invoked.
     """
     codex_stub(stubs, exit_code=1, verdict=None)
     claude_stub(stubs, exit_code=0, result=json.dumps(PASS_VERDICT))
     assert run_lens(tmp_path).returncode == 0
-    answer = tmp_path / "worktree" / ".lens" / "fable.json"
 
-    a_file_the_shell_cannot_overwrite(answer)
     a_removal_that_the_directory_refuses(stubs, "*/.lens/fable.json")
     claude_stub(stubs, exit_code=1, result=None)
     before = len(calls(tmp_path))
