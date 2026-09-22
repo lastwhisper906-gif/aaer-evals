@@ -54,9 +54,20 @@ suite has been committed that way before.
 
 **4a. `refute-check` (Claude).** Hand it the diff and the item's four fields.
 
+**4a-commit. Commit before the lens.** Both lenses read `git diff <pin>...HEAD`, which is committed history, so uncommitted work is invisible to them — and the script refuses a worktree that has any, because a `pass` on the committed part followed by a commit of the rest is an approval the lens never gave.
+
 **4b. `tools/second_lens.sh <worktree> "<item title>"`.** It runs Codex first,
 read-only, on the same five rules in the same order, and falls back to Claude
-Fable in a fresh context when Codex cannot run. Both lenses read
+Fable in a fresh context when Codex cannot run.
+
+**The title is the row's own, copied out of `docs/next_cycle_tasks.md`** —
+everything between `[ ] ` and the first ` · `, character for character. The
+ledger keys a run by it and the weekly routine moves the row of that name, so a
+title that is not a row is a verdict filed against nothing; the script refuses
+one with exit 3 rather than spending a lens. This is not hypothetical: the lens
+design's own review was invoked as "...and prices with two backends" against a
+row titled "...and a price source that is decided", and the verdict and the row
+would never have found each other. Both lenses read
 `tools/lens_prompt.md` and answer `tools/lens_verdict.schema.json`, so the two
 verdicts are comparable and neither can drift from the rules the first lens
 works through.
@@ -89,8 +100,27 @@ The pull request body carries **both verdicts and the name of the lens that gave
 the second one**, in the line the script prints:
 
 ```
-second lens: claude-fable-fallback · pass · tried to break it and could not
+second lens: claude-fable-fallback · claude-fable-5-1 · pass · judge from main · lens from main · tried to break it and could not
 ```
+
+Six fields: the lens, the model that actually served it, the verdict, the ref
+the judge was pinned out of, the ref this script itself came from, and the
+reason.
+
+`judge from tree` means the pinned reader was not the one that answered. The
+sentence that stood here said that is "true only of the change that builds the
+lens; every other row says `judge from main`" — and it was false three ways,
+which a refute-check demonstrated rather than argued: the change that builds the
+lens, yes, but also every one of the six unconfirmed merges, whose first parent
+carries no lens file either, and every merge from before the lens existed. It is
+a row to read again, not a row that can only mean one thing.
+
+`lens from tree` means `tools/second_lens.sh` differs from the pinned ref. The
+script cannot materialise itself — it is already running — so a branch that
+replaces it outright wins, and no line written inside a file survives that file
+being replaced. That is a trust root, closed by a person reading one diff, and
+`docs/HOW_WE_WORK.md` §6 says so. The field covers the ordinary case: the script
+edited for some other reason, recorded, and re-read next week.
 
 A fallback verdict is recorded as `confirmed - same-family fallback`, never as
 `confirmed - cross-vendor`. The ledger line the script appends is what the
