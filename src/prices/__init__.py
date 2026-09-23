@@ -49,9 +49,10 @@ agrees with the parser that captured it whatever either of them does.
 one module each backend talks through -- `requests` for Tiingo and EODHD, `wrds`
 for CRSP -- answering the shape that module answers, so the request each backend
 builds and the path from that answer to the frame are both exercised. What no
-test here reaches is the service itself: no credential exists yet, and
-`src/probe_price_sources.py` is a separate read-only probe that imports nothing
-from this package.
+test here reaches is the service itself. `src/probe_price_sources.py` is what
+puts each backend's `history` to it, about two delisted tickers, with whatever
+credential the environment holds -- and while none exists, every backend
+answers `Unconfigured` there and the service is still never reached.
 
 Credentials
 -----------

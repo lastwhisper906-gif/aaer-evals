@@ -1,6 +1,10 @@
 """Ask the three candidate price sources for a delisted ticker's history.
 
-Read-only. No credentials are sent and no account is opened.
+Read-only, and no account is opened. The three candidates are sent no
+credentials; the configured backends are sent whatever credential this
+environment holds, and no credential value is ever printed -- every one this
+environment holds is replaced by its variable's name before a backend's answer
+is shown.
 
 The market module is built against a frozen price fixture because the price
 source is unchosen, and it is unchosen because the question that decides it has
@@ -71,8 +75,9 @@ The probe stops at the first candidate that returns the history.
 What it will not do
 -------------------
 
-It sends no credentials. A candidate that needs an account is recorded as
-needing one, and that is a finding rather than a failure of the probe.
+It sends the three candidates no credentials. A candidate that needs an account
+is recorded as needing one, and that is a finding rather than a failure of the
+probe.
 
 It does not answer Stooq's browser check. That page asks the caller to find a
 hash with four leading zeroes and post the nonce back, and a script that does
@@ -81,11 +86,14 @@ block is what gets reported.
 
     .venv/bin/python src/probe_price_sources.py
 
-Exit 0 the history came back and the report names the candidate that served it,
-1 no candidate served it, 2 no source answered at all so nothing was learned,
-3 the wrong interpreter. A backend that refused a delisting it never claimed to
-carry does not move the status: an expected refusal is not a failure, and a
-probe whose exit status cannot tell the two apart is a probe nobody reads.
+Exit 0 a delisted company's history came back -- rows reaching the month that
+company stopped trading -- and the report names the ticker and the candidate
+that served it, 1 no candidate served one, 2 no source answered at all so
+nothing was learned, 3 the wrong interpreter. A backend that refused a delisting
+it never claimed to carry does not move the status: an expected refusal is not a
+failure, and a probe whose exit status cannot tell the two apart is a probe
+nobody reads. Nor does a backend whose request never reached the source -- a
+timeout or a refused connection on this machine says nothing about the source.
 """
 
 from __future__ import annotations
@@ -95,6 +103,7 @@ import datetime
 import itertools
 import json
 import math
+import os
 import re
 import sys
 import tempfile
@@ -104,10 +113,10 @@ import zipfile
 from pathlib import Path
 
 try:
-    from src import interpreter_pin
+    from src import interpreter_pin, secret_scan
 except ImportError:  # invoked as a plain script: python3.12 src/probe_price_sources.py
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from src import interpreter_pin
+    from src import interpreter_pin, secret_scan
 
 TICKER = "LEH"
 COMPANY = "Lehman Brothers Holdings Inc."
@@ -170,6 +179,17 @@ class Attempt:
     `reached` is whether the source answered at all, refusal included. A machine
     with no network refuses every request too, and a probe that could not tell
     the two apart would report a block that nobody imposed.
+
+    `ticker` and `month` are the delisting this request asked about and the
+    month its rows have to reach. The three candidates ask about LEH alone; the
+    configured backends ask about two, and rows for Activision Blizzard judged
+    against Lehman's month would be called short of a suspension they were
+    never about.
+
+    `never_reached` marks a request that was sent and got no answer -- a
+    timeout, a refused connection. It is kept apart from a request never sent
+    because no credential was configured: both leave `reached` False, and only
+    the second says the switch is off.
     """
 
     url: str
@@ -177,6 +197,9 @@ class Attempt:
     answer: str
     rows: list[str]
     reached: bool
+    ticker: str = TICKER
+    month: str = LAST_MONTH_TRADED
+    never_reached: bool = False
 
 
 @dataclasses.dataclass
@@ -188,21 +211,35 @@ class Finding:
     verdict: str
 
     @property
+    def shown(self) -> Attempt | None:
+        """The attempt the verdict speaks of.
+
+        The first whose rows reach the month its own delisting stopped trading,
+        or failing that the first that carried any rows at all -- so a candidate
+        is never reported short of the delisting because an earlier request
+        answered with less.
+        """
+        with_rows = [attempt for attempt in self.attempts if attempt.rows]
+        for attempt in with_rows:
+            if reached_the_delisting(attempt.rows, attempt.month):
+                return attempt
+        return with_rows[0] if with_rows else None
+
+    @property
     def rows(self) -> list[str]:
-        for attempt in self.attempts:
-            if attempt.rows:
-                return attempt.rows
-        return []
+        shown = self.shown
+        return shown.rows if shown else []
 
     @property
     def served(self) -> bool:
-        """The delisted ticker's history came back.
+        """A delisted ticker's history came back.
 
-        Rows on their own are not enough. They have to reach the month the
-        trading stopped, or they are not the history of a company that stopped
-        trading.
+        Rows on their own are not enough. They have to reach the month that
+        ticker's trading stopped, or they are not the history of a company that
+        stopped trading.
         """
-        return reached_the_delisting(self.rows)
+        shown = self.shown
+        return shown is not None and reached_the_delisting(shown.rows, shown.month)
 
     @property
     def answered(self) -> bool:
@@ -379,12 +416,12 @@ def _price(value) -> str | None:
     return text if math.isfinite(number) else None
 
 
-def reached_the_delisting(rows: list[str]) -> bool:
+def reached_the_delisting(rows: list[str], month: str = LAST_MONTH_TRADED) -> bool:
     """True when the rows reach the month the ticker stopped trading."""
-    return any(row.startswith(LAST_MONTH_TRADED) for row in rows)
+    return any(row.startswith(month) for row in rows)
 
 
-def what_came_back(rows: list[str]) -> str:
+def what_came_back(rows: list[str], month: str = LAST_MONTH_TRADED) -> str:
     """The verdict for a candidate that returned rows: how many, over what span.
 
     A source that answers with three days has not served fifteen years, and a
@@ -397,10 +434,10 @@ def what_came_back(rows: list[str]) -> str:
     days = sorted(row.split()[0] for row in rows)
     count = f"{len(rows)} row" if len(rows) == 1 else f"{len(rows)} rows"
     span = f"{count} dated {days[0]} to {days[-1]}"
-    if reached_the_delisting(rows):
+    if reached_the_delisting(rows, month):
         return f"the history came back: {span}"
     return (f"rows came back and the history did not: {span}, none of them in "
-            f"{LAST_MONTH_TRADED}, the month the trading stopped")
+            f"{month}, the month the trading stopped")
 
 
 def finish(candidate: str, attempts: list[Attempt], otherwise: str) -> Finding:
@@ -410,9 +447,11 @@ def finish(candidate: str, attempts: list[Attempt], otherwise: str) -> Finding:
     verdict when rows came, and `otherwise` is what to say when none did.
     """
     finding = Finding(candidate, attempts, otherwise)
-    if not finding.rows:
+    shown = finding.shown
+    if shown is None:
         return finding
-    return dataclasses.replace(finding, verdict=what_came_back(finding.rows))
+    return dataclasses.replace(
+        finding, verdict=what_came_back(shown.rows, shown.month))
 
 
 def describe(reply: Reply) -> str:
@@ -644,18 +683,70 @@ def delisting_returns_in(frame: list[dict]) -> list[str]:
     ]
 
 
+# A credential written into a query string, as EODHD takes its token. Matched by
+# the same names `src/secret_scan.py` watches for.
+QUERY_CREDENTIAL = re.compile(rf"([?&]{secret_scan.NAMES}=)[^&\s'\"<>]+",
+                              re.IGNORECASE)
+
+
+def redacted(text: str, environ: dict[str, str] | None = None) -> str:
+    """Text with every credential this environment holds replaced by its name.
+
+    A backend's error is printed, and an error can carry its request: EODHD
+    takes its token in the query string, so a connection to it that fails is
+    reported by `requests` with the address, token and all. Every value of a
+    variable `src/secret_scan.py` watches is replaced by that variable's name,
+    and whatever is left after a credential's name in a query string is replaced
+    too -- `requests` percent-encodes the address, so a token carrying a
+    character it encodes no longer matches its own value there. Both happen
+    before the text is cut short, because half a token is not the value being
+    looked for.
+    """
+    source = os.environ if environ is None else environ
+    for name in secret_scan.CREDENTIAL_VARIABLES:
+        value = source.get(name, "").strip()
+        if value:
+            text = text.replace(value, f"${name}")
+    return QUERY_CREDENTIAL.sub(r"\1<redacted>", text)
+
+
+def never_reached_the_source(error: BaseException) -> bool:
+    """True when a request got no answer at all: a timeout, a refused connection.
+
+    `requests` raises its own classes for both, and they are not the built-in
+    ones. A body that would not decode is a `requests` exception too, and that
+    one is an answer -- the source sent something that is not a price history --
+    so the classes are named rather than caught by their common parent.
+
+    What is not told apart: a WRDS connection that fails. The `wrds` package
+    raises the same class for a refused password, which is the source's answer,
+    as for a host that never answered, so a CRSP failure is counted as an answer.
+    """
+    try:
+        from requests import exceptions
+    except ImportError:
+        wire: tuple[type[BaseException], ...] = ()
+    else:
+        wire = (exceptions.ConnectionError, exceptions.Timeout)
+    return isinstance(error, wire + (ConnectionError, TimeoutError))
+
+
 def ask_one_backend(module, delisting: Delisting) -> Attempt:
     """One backend, one delisting, and the one line this report has to say.
 
-    Three outcomes, and they are not the same thing:
+    Four outcomes, and they are not the same thing:
 
     * **unconfigured** -- no credential in this environment, so it was never
       asked. `reached` is False: nothing was learned about the source.
+    * **never reached** -- asked, and no answer came: a timeout or a refused
+      connection on this machine. `reached` is False, because that is a fact
+      about this machine and not about the source.
     * **answered** -- rows came back, or a refusal did. `reached` is True either
-      way, because a refusal from the source is a fact about the source and a
-      timeout on this machine is not.
+      way, because a refusal from the source is a fact about the source.
     * **refused as documented** -- it answered, the history did not come, and
       its own documentation said it would not. Reported as expected.
+
+    Whatever the backend said is passed through `redacted` before it is shown.
     """
     from src import prices
 
@@ -663,18 +754,21 @@ def ask_one_backend(module, delisting: Delisting) -> Attempt:
     where = f"{name} asked for {delisting.ticker} through {delisting.day}"
     start = datetime.date(int(delisting.day[:4]) - 1, 1, 1)
     end = datetime.date.fromisoformat(delisting.day)
+    about = {"ticker": delisting.ticker, "month": delisting.last_month_traded}
+    expected = "" if claims_to_serve(name, delisting.ticker) else (
+        f", which is expected: {WHY_NOT_CLAIMED}")
     try:
         frame = module.history(delisting.ticker, start, end)
     except prices.Unconfigured as reason:
-        return Attempt(where, name, f"{where} -- unconfigured: {reason}", [], False)
+        return Attempt(where, name, f"{where} -- unconfigured: {reason}", [], False,
+                       **about)
     except Exception as error:  # a refusal, a timeout, a shape nobody expected
-        expected = "" if claims_to_serve(name, delisting.ticker) else (
-            f", which is expected: {WHY_NOT_CLAIMED}")
-        return Attempt(
-            where, name,
-            f"{where} -- {type(error).__name__}: {str(error)[:200]}{expected}",
-            [], True,
-        )
+        said = f"{type(error).__name__}: {redacted(str(error))[:200]}"
+        if never_reached_the_source(error):
+            return Attempt(where, name, f"{where} -- no answer at all: {said}", [],
+                           False, **about, never_reached=True)
+        return Attempt(where, name, f"{where} -- {said}{expected}", [], True,
+                       **about)
     rows = rows_of(frame)
     returns = delisting_returns_in(frame)
     answer = f"{where} -- {len(rows)} row(s)"
@@ -682,12 +776,10 @@ def ask_one_backend(module, delisting: Delisting) -> Attempt:
         answer = f"{answer}, {len(returns)} carrying a delisting return"
     else:
         answer = f"{answer}, none carrying a delisting return"
-    if not any(row.startswith(delisting.last_month_traded) for row in rows):
-        expected = "" if claims_to_serve(name, delisting.ticker) else (
-            f", which is expected: {WHY_NOT_CLAIMED}")
+    if not reached_the_delisting(rows, delisting.last_month_traded):
         answer = (f"{answer}, none of them in {delisting.last_month_traded}, the "
                   f"month the trading stopped{expected}")
-    return Attempt(where, name, answer, rows, True)
+    return Attempt(where, name, answer, rows, True, **about)
 
 
 def probe_configured_backends(workspace: Path) -> Finding:
@@ -704,18 +796,23 @@ def probe_configured_backends(workspace: Path) -> Finding:
         for name in prices.BACKENDS
         for delisting in DELISTINGS
     ]
-    configured = sorted({
-        attempt.agent for attempt in attempts if attempt.reached
+    asked = sorted({
+        attempt.agent for attempt in attempts
+        if attempt.reached or attempt.never_reached
     })
-    if not configured:
-        otherwise = ("no backend is configured in this environment: "
-                     "$TIINGO_TOKEN and $EODHD_TOKEN are unset and ~/.pgpass "
-                     "does not exist, so nothing was asked and nothing was "
-                     "learned about any of them")
+    if not asked:
+        otherwise = ("no backend is configured in this environment, so nothing "
+                     "was asked and nothing was learned about any of them; the "
+                     "line for each backend above says why")
     else:
-        otherwise = (f"asked: {', '.join(configured)}. None served a delisting's "
+        otherwise = (f"asked: {', '.join(asked)}. None served a delisting's "
                      f"history to the month the trading stopped")
-    return finish("the configured backends in src/prices", attempts, otherwise)
+    finding = finish("the configured backends in src/prices", attempts, otherwise)
+    shown = finding.shown
+    if shown is None:
+        return finding
+    return dataclasses.replace(
+        finding, verdict=f"{shown.agent} for {shown.ticker}: {finding.verdict}")
 
 
 CANDIDATES = (probe_stooq_bulk_file, probe_wrds_crsp,
@@ -724,9 +821,14 @@ CANDIDATES = (probe_stooq_bulk_file, probe_wrds_crsp,
 
 def report(finding: Finding) -> None:
     print(f"\n{finding.candidate}")
+    user_agents = {label for label, _ in AGENTS}
     for attempt in finding.attempts:
+        # A bare request is labelled by the user agent it went out under; a
+        # configured backend by its own name, which is not a user agent.
+        who = (f"{attempt.agent} user agent" if attempt.agent in user_agents
+               else attempt.agent)
         print(f"  {attempt.url}")
-        print(f"    [{attempt.agent} user agent] {attempt.answer}")
+        print(f"    [{who}] {attempt.answer}")
     rows = finding.rows
     if rows:
         # Few enough rows to print whole is itself worth seeing: a source that
@@ -771,15 +873,18 @@ def main() -> int:
     served = [finding for finding in findings if finding.served]
     print()
     if served:
-        print(f"{TICKER} history came back from {served[0].candidate}. "
+        print(f"{served[0].shown.ticker} history came back from "
+              f"{served[0].candidate}. "
               f"{len(CANDIDATES) - len(findings)} candidate(s) not probed.")
         return 0
     if not any(finding.answered for finding in findings):
         print("No candidate answered at all -- this machine reached none of "
               "them, so the probe learned nothing about any source.")
         return NOTHING_ANSWERED
-    print(f"No candidate served {TICKER}'s history. Each verdict above is what "
-          f"the source itself answered.")
+    later = ", ".join(one.ticker for one in DELISTINGS if one.ticker != TICKER)
+    print(f"No candidate served {TICKER}'s history, and no configured backend "
+          f"served {later}'s. Each verdict above is what the source itself "
+          f"answered, or says that it was never asked.")
     return NO_HISTORY
 
 
