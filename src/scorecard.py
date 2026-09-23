@@ -103,6 +103,12 @@ Where the edges are drawn
   everything it answered.
 * A `p_up` that is neither a probability nor `insufficient` stops the render
   rather than being dropped quietly.
+* So does an answer that is there but has no `p_up` to read: an answer file,
+  or a `baselines.json` entry, with no `market_direction` object or with one
+  that carries no `p_up`. Absent is a file or key that is not there at all;
+  a present answer with nothing in it is malformed, and reading it as absent
+  would take the run out of that row's count and out of every comparison it
+  is in, with nothing on the page to say so.
 
 Every read of a run goes through `src/cutoff_guard.py`, which is what keeps the
 bypass scan in `tests/test_cutoff_guard.py` a true statement about `src/`. No
@@ -379,7 +385,8 @@ def answer(run: Run, row: Row):
     """This row's probability that the abnormal return was positive.
 
     A float, the string `insufficient`, or None when this run carries no answer
-    for this row at all.
+    for this row at all -- no file, or no key in `baselines.json`. An answer
+    that is there but carries no probability is refused.
     """
     document = _document(run.directory, row.answered_in)
     if document is None:
@@ -391,9 +398,21 @@ def answer(run: Run, row: Row):
         if not isinstance(document, dict):
             raise ScorecardError(
                 f"{run.directory / BASELINES}: {row.key} is not an object")
+    # The file (or the baseline's entry) is there, so the row did answer this
+    # run; an answer with no probability in it is malformed, not absent. Read as
+    # None it would leave this row's denominator and every comparison's shared
+    # set with nothing said -- the quiet drop the edge list forbids.
     direction = document.get("market_direction")
-    if not isinstance(direction, dict) or "p_up" not in direction:
-        return None
+    if not isinstance(direction, dict):
+        raise ScorecardError(
+            f"{run.directory / row.answered_in}: {row.key} carries no "
+            f"market_direction object -- an answer file that is present but "
+            f"malformed is refused rather than dropped from the ratio")
+    if "p_up" not in direction:
+        raise ScorecardError(
+            f"{run.directory / row.answered_in}: {row.key} has a market_direction "
+            f"with no p_up -- an answer file that is present but malformed is "
+            f"refused rather than dropped from the ratio")
     p_up = direction["p_up"]
     if p_up == INSUFFICIENT:
         return INSUFFICIENT
