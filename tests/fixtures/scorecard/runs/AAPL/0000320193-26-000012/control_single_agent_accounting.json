@@ -11,6 +11,18 @@
       "notes_vs_market_reserves"
     ]
   },
-  "tier": "watch",
-  "top_signals": []
+  "anomalies": [
+    {
+      "name": "revenue_receivables_outrun_sales",
+      "axis": "accounting_reliability",
+      "what": "receivables grew faster than revenue",
+      "numbers_vs_prose": "contradicts",
+      "evidence": [
+        {
+          "upstream_item_id": "numbers_vs_market_receivables"
+        }
+      ],
+      "market_label": "not_priced"
+    }
+  ]
 }

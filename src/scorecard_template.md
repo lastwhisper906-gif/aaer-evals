@@ -63,6 +63,29 @@ $pressure_rows
 
 $pressure_verdicts
 
+## Anomalies on record
+
+Each prediction is an anomaly register: every anomaly found on its question's
+axis, listed whole. The tables below compare the rows that write one — the
+single-agent control, the shuffled control and the pipeline — one anomaly kind
+at a time, a kind being the anomaly's name as the register wrote it. A cell says
+on how many of that side's runs the row listed that kind, out of the runs it
+left a register for. A register that lists nothing is an honest answer and is
+counted in that denominator like any other.
+
+Nothing here is scored, summed across kinds or put in order across companies: a
+register has no threshold, and a number of anomalies is not a verdict. A
+register is read rather than scored against an outcome, so every run is counted
+here, including one still inside its horizon.
+
+### On the accounting reliability axis
+
+$accounting_anomalies
+
+### On the financial pressure axis
+
+$pressure_anomalies
+
 ## The runs this was computed from
 
 $run_list
@@ -96,6 +119,20 @@ $side — on the $runs runs both rows answered, with the side's other $set_aside
 
 === pipeline_misses_the_single_agent ===
 $side — on the $runs runs both rows answered, with the side's other $set_aside set aside because one row or both put no probability on them, the pipeline's Brier of $pipeline does not beat the single-agent control's $other. The structure is decoration.
+
+=== register_table ===
+| Anomaly | Side of the rules-version freeze | $columns |
+|---|---|$rule
+$lines
+
+=== register_line ===
+| $anomaly | $side | $cells |
+
+=== listed_of ===
+$listed of $registers
+
+=== no_anomalies ===
+No register on record lists an anomaly on this axis.
 
 === no_verdict ===
 Nothing to compare yet: no side of the freeze carries a run that both a pipeline row and a baseline row answered.

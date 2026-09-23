@@ -20,8 +20,8 @@ Nothing published is edited afterwards.
 
 This is forward prediction, so there is nothing to anonymize and nothing to
 perturb. It is also an honest-negative test: accounting-reliability events will
-barely occur in twelve large filers in year one, and a pipeline that says "clear"
-when things are clear is the result being tested.
+barely occur in twelve large filers in year one, and a pipeline that returns an
+empty anomaly register when nothing is wrong is the result being tested.
 
 ## Where things are
 

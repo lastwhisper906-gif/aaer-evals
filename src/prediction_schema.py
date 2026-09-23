@@ -6,10 +6,18 @@ numbers beside another company's notes. `docs/CHECKLIST.md` §8 scores them on
 the same rows as the pipeline, so a field one of them checks and the other does
 not is a difference between the controls that is not the thing either of them
 tests. Each used to carry its own copy of the check: the field lists, the three
-findings, the three support words, the three tiers and the signal ceiling were
-written out twice, and a test asserted the two copies equal. They agreed by both
-reading §7, and the assertion was a test standing in for a function. This is the
-function, and both controls call it.
+findings and the three support words were written out twice, and a test
+asserted the two copies equal. They agreed by both reading §7, and the assertion
+was a test standing in for a function. This is the function, and both controls
+call it.
+
+**The prediction is an anomaly register, and nothing here counts it.** The
+owner's decision of 2026-09-23: the goal is to find every anomaly, not to count
+flags against a cutoff. So `anomalies` is checked entry by entry -- a plain
+name, the answer's own axis, a reconciliation word, evidence, a market label --
+and never summed, capped or ranked. `tier` and `top_signals`, and the ceiling
+of five that came with them, are gone from §7 and are refused here as fields
+the schema does not give an answer. An empty register is an answer.
 
 **`evidence` is the one field they legitimately differ on, so it is an
 argument.** §7 gives an evidence entry one member, `upstream_item_id`, which
@@ -32,7 +40,7 @@ itself is scored against nothing, and only the caller knows the run's.
 Every value below is §7 read by hand, and §1 for the one list §7 leaves blank:
 `"finding": ""` names no values, and §1's "An LLM answer is always `flag` /
 `no_flag` / `insufficient`" is the only place the three are written down.
-`tests/test_control_shuffled.py` holds them against §7 twice over: once written
+`tests/test_prediction_schema.py` holds them against §7 twice over: once written
 out by hand in the test, and once parsed out of the document.
 
 This module raises `SchemaError` and nothing else. Each control turns it into
@@ -43,6 +51,7 @@ the same whichever control met it.
 from __future__ import annotations
 
 import math
+import re
 from collections import Counter
 
 # `docs/CHECKLIST.md` §7: `"question": "accounting_reliability" | "financial_pressure"`.
@@ -56,7 +65,7 @@ RUN_KEYS = ("question", "rules_version")
 # financial pressure only", so it is required of one question and refused on
 # the other rather than tolerated on both.
 PREDICTED_KEYS = ("checklist", "events", "explanations", "market_direction",
-                  "tier", "top_signals")
+                  "anomalies")
 CONTINUOUS = "continuous"
 CONTINUOUS_QUESTION = "financial_pressure"
 
@@ -67,19 +76,28 @@ CONTINUOUS_FIELDS = ("key", "point", "direction", "low", "high")
 EVENT_FIELDS = ("key", "p_within_horizon")
 EXPLANATION_FIELDS = ("id", "support", "realization_p")
 MARKET_FIELDS = ("p_up", "basis")
+ANOMALY_FIELDS = ("name", "axis", "what", "numbers_vs_prose", "evidence",
+                  "market_label")
 
-# The three closed value lists: §1's findings, and §7's support words and tiers.
+# The closed value lists: §1's findings, and §7's support words and the
+# anomaly register's three. An anomaly's axis is one of the two questions --
+# "each supervisor lists the anomalies on its own axis" -- so the two lists are
+# one list under two names.
 FINDINGS = ("flag", "no_flag", "insufficient")
 SUPPORT = ("sufficient", "insufficient", "unknown")
-TIERS = ("elevated", "watch", "clear")
+AXES = QUESTIONS
+NUMBERS_VS_PROSE = ("confirms", "contradicts", "unresolved")
+MARKET_LABELS = ("priced_in", "not_priced", "opposite_direction", "absent")
+
+# "a plain descriptive name: lowercase snake_case, letters and underscores only,
+# starting with its area and then saying what it is". Two words at least: an
+# area alone names where to look, not what was found there.
+ANOMALY_NAME = re.compile(r"[a-z]+(?:_[a-z]+)+")
 
 # "`p_up` may be `"insufficient"` instead of a number, and that is recorded and
 # counted." Also the abstention a market call degrades to when its basis
 # resolves to nothing: §7 requires the field, so it cannot be dropped.
 INSUFFICIENT = "insufficient"
-
-# "`top_signals` holds at most five keys."
-TOP_SIGNALS_MAX = 5
 
 SCHEMA = "docs/CHECKLIST.md §7"
 
@@ -146,6 +164,27 @@ def _number(entry, field: str, where: str, *, low=None, high=None) -> float:
             f"{where}.{field} is {value}, outside {low} to {high} — a probability "
             "outside its own range is not a probability")
     return float(value)
+
+
+def _evidence(question: str, entry: dict, where: str, members: tuple[str, ...],
+              given_by: str) -> None:
+    """One entry's `evidence`: a list of objects carrying the caller's members."""
+    cites = _a_list(question, f"{where}.evidence", entry["evidence"])
+    for index, cited in enumerate(cites, start=1):
+        cited_where = f"{where}.evidence[{index}]"
+        _fields(cited, members, cited_where, given_by=given_by)
+        for member in members:
+            _text(cited, member, cited_where)
+
+
+def _anomaly_name(entry: dict, where: str) -> str:
+    name = _text(entry, "name", where)
+    if not ANOMALY_NAME.fullmatch(name):
+        raise SchemaError(
+            f"{where}.name is {name!r}; {SCHEMA} gives an anomaly a plain "
+            "descriptive name -- lowercase letters and underscores only, its area "
+            "first and then what it is")
+    return name
 
 
 def _unique(keys: list[str], where: str) -> None:
@@ -219,12 +258,7 @@ def check(answer, question: str, *, evidence: tuple[str, ...]) -> dict:
         _text(entry, "key", where)
         _one_of(entry, "finding", FINDINGS, where)
         _number(entry, "confidence", where, low=0, high=1)
-        cites = _a_list(question, f"{where}.evidence", entry["evidence"])
-        for index, cited in enumerate(cites, start=1):
-            cited_where = f"{where}.evidence[{index}]"
-            _fields(cited, evidence, cited_where, given_by=evidence_given_by)
-            for member in evidence:
-                _text(cited, member, cited_where)
+        _evidence(question, entry, where, evidence, evidence_given_by)
     _unique([entry["key"] for entry in checklist], "checklist")
 
     if wants_continuous:
@@ -277,28 +311,22 @@ def check(answer, question: str, *, evidence: tuple[str, ...]) -> dict:
             "the ids the probability rests on, and an id that is not a name "
             "resolves for nobody")
 
-    _one_of(answer, "tier", TIERS, "the prediction")
-
-    signals = _a_list(question, "top_signals", answer["top_signals"])
-    for position, one in enumerate(signals, start=1):
-        if not isinstance(one, str) or not one.strip():
+    # Every entry checked and none counted: the register has no length a
+    # verdict could be read off, and an empty one is an answer.
+    anomalies = _a_list(question, "anomalies", answer["anomalies"])
+    for position, entry in enumerate(anomalies, start=1):
+        where = f"anomalies[{position}]"
+        _fields(entry, ANOMALY_FIELDS, where)
+        _anomaly_name(entry, where)
+        axis = _one_of(entry, "axis", AXES, where)
+        if axis != question:
             raise SchemaError(
-                f"top_signals[{position}] is {one!r}, and a signal is the key of "
-                "a checklist entry")
-    _unique(signals, "top_signals")
-    if len(signals) > TOP_SIGNALS_MAX:
-        raise SchemaError(
-            f"top_signals names {len(signals)} signals and {SCHEMA} allows at "
-            f"most {TOP_SIGNALS_MAX}")
-    # A signal naming no checklist entry at all is the answer contradicting
-    # itself before any citation is resolved, so it is refused here rather than
-    # dropped later. A signal whose entry is dropped later, for citing nothing a
-    # control can resolve, leaves quietly with it: that drop is on record under
-    # the entry's own key.
-    keys = {entry["key"] for entry in checklist}
-    unknown = [one for one in signals if one not in keys]
-    if unknown:
-        raise SchemaError(
-            f"top_signals names {', '.join(unknown)}, which no checklist entry "
-            "carries — a top signal that names no entry names nothing")
+                f"{where}.axis is {axis!r} in the {question} answer. Each "
+                "supervisor lists the anomalies on its own axis, and the two "
+                "questions are never merged")
+        _text(entry, "what", where)
+        _one_of(entry, "numbers_vs_prose", NUMBERS_VS_PROSE, where)
+        _evidence(question, entry, where, evidence, evidence_given_by)
+        _one_of(entry, "market_label", MARKET_LABELS, where)
+    _unique([entry["name"] for entry in anomalies], "anomalies")
     return answer

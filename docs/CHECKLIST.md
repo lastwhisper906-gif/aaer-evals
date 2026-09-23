@@ -276,8 +276,8 @@ These are the ones that actually happen inside a year.
 
 Zero of these in year one is the expected outcome, not a failure. Year-one
 accounting reliability is read as a specificity test — does the pipeline honestly
-say "clear" when nothing is wrong. That sentence goes at the top of the results
-document.
+return an empty anomaly register when nothing is wrong. That sentence goes at the
+top of the results document.
 
 Impairment is where the two questions meet. Classify it as a financial-pressure
 event, and cross-record whether `goodwill_headroom_shrinking` had been flagged
@@ -315,11 +315,15 @@ The same shape for both questions.
   "explanations": [ {"id": "", "support": "sufficient|insufficient|unknown",
                      "realization_p": 0} ],
   "market_direction": {"p_up": 0, "basis": []},
-  "tier": "elevated" | "watch" | "clear",
-  "top_signals": [] }
+  "anomalies": [ {"name": "",
+                  "axis": "accounting_reliability" | "financial_pressure",
+                  "what": "",
+                  "numbers_vs_prose": "confirms" | "contradicts" | "unresolved",
+                  "evidence": [{"upstream_item_id": ""}],
+                  "market_label": "priced_in" | "not_priced" | "opposite_direction" | "absent"} ] }
 ```
 
-`continuous` is financial pressure only. `top_signals` holds at most five keys.
+`continuous` is financial pressure only.
 `market_direction.basis` holds the upstream item ids the probability rests on;
 `p_up` may be `"insufficient"` instead of a number, and that is recorded and
 counted.
@@ -328,6 +332,28 @@ counted.
 model's: an answer carrying another is refused. A pipeline check on the twelve
 carries `"pilot"` (decided 2026-09-23) and a frozen rules version carries its own
 number; the `"0.1"` above shows the field's shape.
+
+`anomalies` is the anomaly register: every anomaly found on the question's own
+axis, each one listed, with no cut and no ranking. The goal is to find every
+anomaly, not to count flags against a cutoff (the owner's decision of
+2026-09-23), so no count of anomalies or of flags is turned into a verdict
+anywhere (§9). An empty `anomalies` list is an allowed, honest answer.
+
+- `name` is a plain descriptive name: lowercase snake_case, letters and
+  underscores only, starting with its area and then saying what it is —
+  `revenue_receivables_outrun_sales`, not `receivables`. Two entries of one
+  register never share a name.
+- `axis` is the prediction's own `question`. Each supervisor lists the anomalies
+  on its own axis, and the two are never merged.
+- `what` says in words what is anomalous.
+- `numbers_vs_prose` is the reconciliation: `confirms` when the numbers show
+  what the prose said they would, `contradicts` when they show the opposite,
+  `unresolved` when the numbers say nothing either way.
+- `evidence` holds the upstream item ids the anomaly rests on, in the checklist
+  entry's shape. An anomaly whose evidence does not resolve is dropped and
+  counted, like a checklist entry.
+- `market_label` is the comparers' label for those items (§3), or `absent` when
+  none was assigned. An anomaly with no market label is still listed.
 
 ### A reader item
 
@@ -439,32 +465,24 @@ inputs.
 
 ---
 
-## 9. The two-by-two
+## 9. No count is a verdict
 
-Thresholds live in `rules/thresholds_v0.1.json`.
+The prediction is the anomaly register (§7): every anomaly each supervisor finds
+on its own axis, listed whole. There is no tier and no count of flags against a
+cutoff — the owner's decision of 2026-09-23 is that the goal is to find every
+anomaly, from the accounting side and the financial side, not to count flags.
+The two-by-two that used to stand here, accounting reliability low and financial
+pressure high by a number of flags, is gone with the counts that defined its
+cells.
 
-- accounting reliability **low** = tier `elevated`, or 4 or more of the 33 flags
-- financial pressure **high** = tier `elevated`, or 3 or more of the 17 flags
+**The cross-tabulation of accounting against financial anomalies moves to the
+pattern study, as a descriptive table with no count cut:** which anomalies on one
+axis appear beside which on the other, and which events followed. It is read,
+not thresholded.
 
-The flag counts grew from 26 and 16 while these two numbers stayed where they
-were, which loosens both tiers. That is deliberate: a threshold is the owner's
-to move, and moving one while adding the indicators it counts would hide the
-change inside the addition. The drift is named here so it is visible when the
-flag distribution over the 30 past cases is read.
-
-**Four of the new indicators have no threshold yet** — `articulation_gap`,
+**Four indicators have no threshold yet** — `articulation_gap`,
 `asset_growth_high`, `rnd_capitalization_shift` and `net_stock_issuance`. Until
-rules v0.1 they **report their value and do not flag**, so they are in the 33
-and the 17 as measurements and contribute nothing to a tier. A counted flag that
-cannot fire would make the denominator a lie.
-
-The test is whether the event rate in the "low accounting reliability × high
-financial pressure" cell is higher than in the other three cells. The "low × low"
-cell is reported separately — an accounting anomaly with no pressure behind it.
-
-These are initial values. The owner adjusts them once, after seeing the flag
-distribution over the 30 past cases. If the owner does not adjust them, the
-initial values take effect as they are.
+rules v0.1 they **report their value and do not flag**.
 
 ---
 

@@ -11,6 +11,18 @@
       "notes_vs_market_reserves"
     ]
   },
-  "tier": "watch",
-  "top_signals": []
+  "anomalies": [
+    {
+      "name": "reserves_allowance_released",
+      "axis": "accounting_reliability",
+      "what": "the allowance was released while receivables grew",
+      "numbers_vs_prose": "unresolved",
+      "evidence": [
+        {
+          "upstream_item_id": "notes_vs_market_reserves"
+        }
+      ],
+      "market_label": "absent"
+    }
+  ]
 }

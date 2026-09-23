@@ -10,6 +10,18 @@
       "numbers_vs_market_operating_cash_flow"
     ]
   },
-  "tier": "clear",
-  "top_signals": []
+  "anomalies": [
+    {
+      "name": "liquidity_cash_runway_short",
+      "axis": "financial_pressure",
+      "what": "cash against the trailing burn is short",
+      "numbers_vs_prose": "unresolved",
+      "evidence": [
+        {
+          "upstream_item_id": "numbers_vs_market_operating_cash_flow"
+        }
+      ],
+      "market_label": "absent"
+    }
+  ]
 }
