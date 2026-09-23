@@ -28,6 +28,14 @@ the three it was: shown, contradicted, or unresolved.
 **Weight `not_priced` items first.** An item the market has already absorbed
 carries less. You do not see prices — you see the comparers' labels.
 
+**When there is no market table, every label is `absent`.** A run with no
+market table runs no comparer, so `report_numbers_vs_market.md` and
+`report_notes_vs_market.md` are not in your directory, and every item on the two
+reader reports has the label `absent`. `absent` is not `not_priced`: nobody read
+the market, so nothing says the market missed an item. Do not infer a label.
+Weigh the items on what the two reader reports say, cite only their items, and
+write `market_direction` as `{"p_up": "insufficient", "basis": []}`.
+
 Write `prediction_pressure.json` against the schema in `docs/CHECKLIST.md`.
 Nothing else, anywhere. This question fills `continuous`: next quarter's revenue
 growth year over year, next quarter's operating margin, and next quarter's

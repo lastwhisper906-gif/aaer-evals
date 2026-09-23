@@ -37,6 +37,14 @@ carries less. An item nobody reacted to is where a prediction can still be wrong
 in a useful way. You do not see prices — you see the labels the comparers
 assigned, and you trust them.
 
+**When there is no market table, every label is `absent`.** A run with no
+market table runs no comparer, so `report_numbers_vs_market.md` and
+`report_notes_vs_market.md` are not in your directory, and every item on the two
+reader reports has the label `absent`. `absent` is not `not_priced`: nobody read
+the market, so nothing says the market missed an item. Do not infer a label.
+Weigh the items on what the two reader reports say, cite only their items, and
+write `market_direction` as `{"p_up": "insufficient", "basis": []}`.
+
 Write `prediction_accounting.json` against the schema in `docs/CHECKLIST.md`.
 Nothing else, anywhere. Every entry in `evidence` and in `market_direction.basis`
 is an `upstream_item_id` from one of the four reports; Python checks that each

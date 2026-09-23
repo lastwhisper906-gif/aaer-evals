@@ -32,7 +32,9 @@ alone. Of 2026-09-23: the supervisors then run on the two reader reports,
 `market_direction` is written `"insufficient"`, and the manifest says why --
 `"no price source"`. `mark_market_unavailable` writes that into
 `input_manifest.json` as `market_table: "unavailable"` beside
-`market_table_reason`, and refuses a run that holds a market table or a
+`market_table_reason`, with each comparer's label written `absent` under
+`comparer_labels` -- not `not_priced`, which is a reading of a market, and not a
+guess -- and refuses a run that holds a market table or a
 comparer report, because such a run would be saying two things about its
 market. `src/agent_inputs.py` reads the key, builds no comparer, and builds
 each supervisor over the two reader reports. `published` writes the
@@ -102,6 +104,14 @@ NO_PRICE_SOURCE = "no price source"
 ABSTAIN = {"p_up": prediction_schema.INSUFFICIENT, "basis": []}
 OVERRIDE_KEY = "market_direction_written_insufficient"
 
+# The label a comparer that did not run leaves, written for each one. Not
+# `not_priced`: that says the market was read and showed nothing, and with no
+# market table nobody read it.
+ABSENT = "absent"
+COMPARER_LABELS_KEY = "comparer_labels"
+COMPARERS = tuple(name for name, agent in agent_inputs.AGENTS.items()
+                  if agent.layer == "comparer")
+
 
 class DecideError(Exception):
     """The decide stage cannot go on with what it was handed."""
@@ -134,7 +144,8 @@ def _update_manifest(run, changes: dict) -> dict:
 
 
 def mark_market_unavailable(run, reason: str = NO_PRICE_SOURCE) -> dict:
-    """Say in the manifest that this run has no market table, and why."""
+    """Say in the manifest that this run has no market table, and why, and
+    that each comparer's label is `absent`."""
     run = Path(run)
     if not isinstance(reason, str) or not reason.strip():
         raise DecideError("a run with no market table says why, and no reason was given")
@@ -146,13 +157,17 @@ def mark_market_unavailable(run, reason: str = NO_PRICE_SOURCE) -> dict:
             "comparer has already read one; a run that also said its market "
             "table is unavailable would be saying two things")
     manifest = _manifest(run)
-    said = (manifest.get(MARKET_TABLE_KEY), manifest.get(MARKET_REASON_KEY))
-    if said != (None, None) and said != (UNAVAILABLE, reason):
+    labels = {name: ABSENT for name in COMPARERS}
+    said = (manifest.get(MARKET_TABLE_KEY), manifest.get(MARKET_REASON_KEY),
+            manifest.get(COMPARER_LABELS_KEY))
+    if said != (None, None, None) and said != (UNAVAILABLE, reason, labels):
         raise DecideError(
             f"{run / MANIFEST} already says the market table is {said[0]!r} "
-            f"({said[1]!r}); it is written once")
+            f"({said[1]!r}) and the comparer labels are {said[2]!r}; it is "
+            "written once")
     return _update_manifest(run, {MARKET_TABLE_KEY: UNAVAILABLE,
-                                  MARKET_REASON_KEY: reason})
+                                  MARKET_REASON_KEY: reason,
+                                  COMPARER_LABELS_KEY: labels})
 
 
 # --- the rules beside the reports ---------------------------------------------

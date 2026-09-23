@@ -206,6 +206,59 @@ def test_a_supervisor_runs_on_the_two_reader_reports_and_its_rules(tmp_path):
     assert agent_inputs.isolation_violations(run) == []
 
 
+def test_the_supervisors_hold_exactly_the_two_reader_reports_and_the_comparers_refuse(tmp_path):
+    """The brief's judge: a run with two reader reports and no market table.
+    Each supervisor's directory holds those two reports byte for byte and no
+    comparer report, and both comparer steps refuse and build nothing."""
+    run = plant(tmp_path)
+    decide.write_rules(run)
+    decide.mark_market_unavailable(run)
+    assert not (run / "input_market.json").exists()
+    for comparer in ("numbers-vs-market", "notes-vs-market"):
+        with pytest.raises(AgentInputError, match="nothing to compare"):
+            agent_inputs.build(run, comparer)
+        assert not agent_inputs.session_root(run, comparer).exists()
+    for agent in ("supervisor-accounting", "supervisor-pressure"):
+        agent_inputs.build(run, agent)
+        root = agent_inputs.session_root(run, agent)
+        reports = sorted(path.name for path in root.iterdir()
+                         if path.name.startswith("report_"))
+        assert reports == ["report_notes_text.md", "report_numbers.md"]
+        for name in reports:
+            assert (root / name).read_bytes() == (run / name).read_bytes()
+
+
+def test_the_missing_comparers_labels_are_written_absent(tmp_path):
+    """No comparer ran, so no item carries a reading of the market. The label
+    is `absent`: not `not_priced`, which says the market was read and showed
+    nothing, and not a label anyone guessed."""
+    run = plant(tmp_path)
+    decide.mark_market_unavailable(run)
+    assert manifest(run)["comparer_labels"] == {
+        "numbers-vs-market": "absent", "notes-vs-market": "absent"}
+
+
+def test_a_run_not_marked_unavailable_writes_no_comparer_label(tmp_path):
+    """Only `mark_market_unavailable` writes the labels; a run left for the
+    comparers carries none, and the comparers label its items."""
+    run = plant(tmp_path)
+    assert "comparer_labels" not in manifest(run)
+
+
+@pytest.mark.parametrize("agent", ["supervisor-accounting", "supervisor-pressure"])
+def test_each_supervisors_prompt_says_what_absent_means(agent):
+    """The prompt is the only place a supervisor learns it: it never sees the
+    manifest. `absent` is named, it is set apart from `not_priced`, and the
+    direction it leaves is the abstention §7 allows."""
+    text = (Path(__file__).resolve().parent.parent / ".claude" / "agents"
+            / f"{agent}.md").read_text(encoding="utf-8")
+    paragraph = next(block for block in text.split("\n\n") if "`absent`" in block)
+    assert "`not_priced`" in paragraph
+    assert '"insufficient"' in paragraph
+    for name in ("report_numbers_vs_market.md", "report_notes_vs_market.md"):
+        assert name in paragraph
+
+
 def test_without_the_manifest_saying_so_a_supervisor_still_waits_for_the_comparers(tmp_path):
     run = plant(tmp_path)
     decide.write_rules(run)
