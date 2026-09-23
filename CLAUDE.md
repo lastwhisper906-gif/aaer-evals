@@ -1,9 +1,9 @@
-# aaer-evals — read 12 companies' filings and predict accounting reliability and financial pressure separately
+# aaer-evals — read 12 companies' filings and find every anomaly, accounting reliability and financial pressure kept separate
 
 Read: docs/INPUT_SPEC.md (what we fetch), docs/CHECKLIST.md (what we look at), docs/HOW_WE_WORK.md (who does what)
 
 Rules
-- Plain names. No letter-number codes. Machine keys are readable slugs.
+- Plain names. No letter-number codes. Machine keys are readable slugs. An item id says what it looks at: its area, then its subject, letters and underscores only.
 - Append-only under runs/ · rules/ · events/: existing content is never changed or deleted; appending to the end of a ledger file is allowed. A correction is a new file plus one ledger line.
 - Text handed to the predictor is verbatim. No summaries. Commit the text the model saw. Every report item carries a verbatim quote or an upstream item id that Python verifies; a failed item is dropped and counted.
 - Python does the arithmetic. The LLM judges text only.
