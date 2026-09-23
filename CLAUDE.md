@@ -18,9 +18,5 @@ Rules
 - Never soften an adverse result.
 - Read lessons.md at session start. Write this session's mistakes to lessons.md, one line each, at session end.
 - Start long runs under `caffeinate -s` so a locked screen never stops them. The lock is harmless; system sleep is what halts the loop.
-- A run with no summary line is "could not run", which is never a pass — and read a checking command's own failure as a failure, not as an answer: `pgrep -c` does not exist on macOS, so `pgrep -c -f 'make check' || echo gone` prints `gone` for a usage error while the gate is running perfectly well.
-- A probe that looks for rules no test judges needs a judge of its own: mutate one rule the tests demonstrably catch in the same pass. A probe that cannot run reads exactly like a file with nothing wrong in it.
-- A probe that enumerates rules out of a file: compile every mutation before running it, skip the definitions of whatever it is enumerating calls to, mutate a call whose value is used into a passthrough rather than into `pass`, and print what the enumeration does not cover. The number it prints is the rules it can reach and not the rules in the file.
-- Two hand-written lists agreeing with each other is not a reading of the document they both cite: the same value mistyped in both passes. Parse the document.
 
 Success criterion: every published prediction is reproducible from its published inputs alone, every quote exists in those inputs, the inputs do not violate the cutoff, and every layer saw only what its directory held.
