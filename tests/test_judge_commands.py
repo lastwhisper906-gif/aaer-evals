@@ -74,8 +74,9 @@ def test_the_task_list_has_judge_commands_to_read() -> None:
     """A check that found nothing to read would pass by reading nothing.
 
     Two readings of the same file have to agree. `>= 39` alone is loose by the
-    nine rows that already named the project interpreter, so an extractor that
-    silently dropped up to nine commands would still pass it -- and
+    rows that already named the project interpreter (the command in the comment
+    above counts them), so an extractor that silently dropped that many
+    commands would still pass it -- and
     `problems() == []` below would then be silent about every one it dropped.
     """
     found = judge_commands.judge_commands(task_list())
