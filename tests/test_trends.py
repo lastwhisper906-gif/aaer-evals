@@ -1309,8 +1309,9 @@ def test_nothing_the_table_writes_is_a_letter_number_code(ticker):
     The period labels were `Q-0` and `FY-3`. `input_trends.json` is exempt from
     the check as the text an agent saw, but the numbers reader's report quotes
     those labels back, and the first pipeline check's report was refused for it
-    fifty-two times (PR #52, issue #63). So the whole table, every key and value
-    as it is written to disk, is put through the same check here.
+    thirty-six times, of the forty-six codes issue #63 counts on PR #52. So the
+    whole table, every key and value as it is written to disk, is put through
+    the same check here.
     """
     from src import plain_name_check
     text = json.dumps(table(ticker), indent=2, ensure_ascii=False)
