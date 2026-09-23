@@ -115,6 +115,28 @@ Every changed file's own name, whatever it is. Its contents too, unless:
   source documents, and the verbatim rule forbids editing them anyway.
 * its name begins with `input_` -- the text handed to an agent, committed as
   what the agent saw. Correcting a code inside one would falsify the record.
+
+And one kind of occurrence is read and not reported: **a code in a run record
+that the same run's prose inputs already carry.** Those inputs are the filing's
+own text -- the notes, the MD&A, the controls sections, the 8-Ks -- plus the
+prior flags built from reports that were held to this rule in their own run:
+the files whose paragraphs `src/quote_gate.py` makes a reader quote character
+for character. A product name the filing spells `H200` reaches a report as
+`H200` or not at all, and the same token in the reader's own sentence about it
+is the filer's name for the product, not a code this project minted. The rule
+is about the names this project makes, so the exemption is the filer's token,
+in any record of the run that carries it: a reader's quote, a reader's own
+prose, or a comparer or supervisor repeating what the reader carried.
+
+It is scoped three ways, each judged. The token, not the file: a code the run's
+prose inputs do not carry is still reported in the same report. The run: a code
+from another run's inputs is not this run's, and nothing outside `runs/` is
+exempted by anything a run holds. And the prose: the JSON inputs are this
+project's structures -- ids, labels and keys Python wrote around the filer's
+numbers -- so a code carried only by one of them is ours, and it is reported
+wherever a record repeats it. The trend table's period labels were exactly that
+kind of code, and an exemption reaching `input_trends.json` would have silenced
+them in every report that quoted a cell.
 * it is `.git`, `.venv`, `__pycache__`, `.pytest_cache`, `node_modules`, or does
   not decode as UTF-8.
 """
@@ -226,10 +248,58 @@ def _shown(path: Path, here: Path) -> str:
         return str(path)
 
 
+RUNS_DIRECTORY = "runs"
+
+
+def run_directory(path: Path) -> Path | None:
+    """`runs/<ticker>/<accession>/` for a file somewhere inside one, else None."""
+    parts = path.parts
+    # The innermost `runs`, so a checkout that happens to sit under a directory
+    # of that name is not mistaken for a run.
+    for index in range(len(parts) - 4, -1, -1):
+        if parts[index] == RUNS_DIRECTORY:
+            return Path(*parts[: index + 3])
+    return None
+
+
+# The run's prose inputs: the files whose `[id]` paragraphs a reader quotes and
+# `src/quote_gate.py` matches character for character. The same six names as
+# `src/assemble_bundle.py`'s `PARAGRAPH_FILES`, written out here so this check
+# keeps importing nothing but the interpreter pin; a test holds the two equal.
+QUOTABLE_PROSE = frozenset({"input_notes.md", "input_notes_history.md", "input_mdna.md",
+                            "input_controls.md", "input_8k.md",
+                            "input_prior_predictions.md"})
+
+
+def quoted_codes(run: Path) -> frozenset[str]:
+    """Every code the run's prose inputs carry: the filer's tokens its records may repeat."""
+    carried = set()
+    for path in _all_files_under(run):
+        if path.name not in QUOTABLE_PROSE or not path.is_file():
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (UnicodeDecodeError, OSError):
+            continue
+        for line in text.splitlines():
+            carried.update(codes_in(line))
+    return frozenset(carried)
+
+
+def _all_files_under(path: Path) -> list[Path]:
+    """Like `_files_under`, but inside a run: a run's `agents/` copies count."""
+    found = []
+    for parent, directories, names in os.walk(path):
+        directories.sort()
+        found.extend(Path(parent) / name for name in sorted(names))
+    return found
+
+
 def occurrences(paths: list[Path]) -> list[str]:
     """One report line per offending occurrence: path, line number, code."""
     found = []
     here = Path.cwd()  # fixed for the whole run; it was being re-read per file
+    carried_by: dict[Path, frozenset[str]] = {}
     for given in paths:
         for path in _files_under(given):
             # main() has already refused a path that is not there. What is left
@@ -244,8 +314,13 @@ def occurrences(paths: list[Path]) -> list[str]:
                 text = path.read_text(encoding="utf-8")
             except (UnicodeDecodeError, OSError):
                 continue  # not text this project wrote
+            run = run_directory(path)
+            if run is not None and run not in carried_by:
+                carried_by[run] = quoted_codes(run)
+            quoted = carried_by.get(run, frozenset())
             for number, line in enumerate(text.splitlines(), start=1):
-                found.extend(f"{shown}:{number}: {code}" for code in codes_in(line))
+                found.extend(f"{shown}:{number}: {code}" for code in codes_in(line)
+                             if code not in quoted)
     return found
 
 
