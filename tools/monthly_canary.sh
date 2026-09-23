@@ -379,11 +379,15 @@ PROMPT="$CANARY_DIR/prompt.md"
     cat "$CANARY_PROMPT"
 } > "$PROMPT"
 
+# macOS ships no `timeout`, and §2 schedules this there: without a limit a lens
+# that hangs never returns, no row is written, and the month reads as one nobody
+# scheduled. perl's alarm survives the exec, so it is the same limit, and perl
+# is on every machine this runs on.
 run_with_timeout() {
     if command -v timeout >/dev/null 2>&1; then
         timeout "$CANARY_TIMEOUT" "$@"
     else
-        "$@"
+        perl -e 'alarm shift @ARGV; exec @ARGV or exit 127' "$CANARY_TIMEOUT" "$@"
     fi
 }
 

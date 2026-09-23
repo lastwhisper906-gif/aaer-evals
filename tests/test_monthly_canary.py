@@ -195,16 +195,25 @@ def run_canary(
     with_no_git_identity: bool = False,
     base: str | None = None,
     python: str | None = None,
+    lens_timeout: str = "60",
+    bare_path: bool = False,
+    hang: bool = False,
 ) -> subprocess.CompletedProcess:
     """One dry run of the routine, against a ledger this test owns."""
     stubs = tmp_path / "stubs"
     stubs.mkdir(exist_ok=True)
     claude_stub(stubs, exit_code=exit_code, result=result)
+    if hang:
+        # A lens that never answers: the stub sleeps well past any limit here.
+        (stubs / "claude").write_text("#!/bin/sh\nsleep 60\n", encoding="utf-8")
     repo = tmp_path / "repo"
     if not repo.exists():
         repository(tmp_path)
     environment = dict(os.environ)
-    environment["PATH"] = f"{stubs}:{environment['PATH']}"
+    # A bare PATH is the one a scheduled task on macOS is started with, which
+    # has no `timeout` on it.
+    environment["PATH"] = (f"{stubs}:/usr/bin:/bin" if bare_path
+                           else f"{stubs}:{environment['PATH']}")
     environment["STUB_CWD"] = str(tmp_path / "cwd")
     environment["CANARY_REPO"] = str(repo)
     environment["CANARY_SEED"] = str(SEED)
@@ -215,7 +224,7 @@ def run_canary(
     # `test_the_tree_stands_outside_the_checkout_it_came_from` is what checks;
     # here it is named so the tests below can read it.
     environment["CANARY_WORKTREE"] = str(tmp_path / "tree")
-    environment["CANARY_TIMEOUT"] = "60"
+    environment["CANARY_TIMEOUT"] = lens_timeout
     if keep:
         environment["CANARY_KEEP"] = "yes"
     if with_no_git_identity:
@@ -1310,4 +1319,19 @@ def test_a_missing_interpreter_is_reported_as_itself(tmp_path: Path) -> None:
     assert "does not describe the plant" not in completed.stderr
     assert not (tmp_path / "ledger.jsonl").exists()
     assert branches(tmp_path) == []
+
+
+@pytest.mark.parametrize("bare_path", [False, True])
+def test_a_lens_that_hangs_is_stopped_and_leaves_a_row(tmp_path: Path, bare_path: bool) -> None:
+    """With `timeout` on PATH and without it, as on the macOS machine §2
+    schedules the routine on: a lens that never returns is stopped at
+    CANARY_TIMEOUT and the month still has its row."""
+    import time
+
+    began = time.monotonic()
+    completed = run_canary(tmp_path, result=FOUND_NOTHING, lens_timeout="2",
+                           bare_path=bare_path, hang=True)
+    assert time.monotonic() - began < 45
+    assert completed.returncode == 3
+    assert ledger_lines(tmp_path)[0]["result"] == "no_lens_ran"
 
