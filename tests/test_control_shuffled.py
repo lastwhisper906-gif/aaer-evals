@@ -82,6 +82,11 @@ PAIR = FIXTURES / "shuffled_report_pair"
 NUMBERS_COMPANY = "CARR"
 NOTES_COMPANY = "AAPL"
 
+# The rules version a pipeline check carries, by the owner's decision of
+# 2026-09-23 (`docs/structure_changes.md`). A pair of report directories carries
+# no manifest, so the crossing tests name it; a run directory's manifest says it.
+RULES_VERSION = "pilot"
+
 # The filing each company's committed reports were written from, read off
 # tests/fixtures/{ticker}/manifest.json. Asserted against the manifests below
 # rather than trusted here.
@@ -197,7 +202,8 @@ def scored_run(folder: Path, ticker: str) -> Path:
     row = annual(ticker)
     (folder / control_shuffled.MANIFEST).write_text(
         json.dumps({"ticker": ticker, "form": "10-K", "accession": row["accession"],
-                    "filing_date": row["filing_date"], "cutoff": row["filing_date"]},
+                    "filing_date": row["filing_date"], "cutoff": row["filing_date"],
+                    "rules_version": RULES_VERSION},
                    indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return folder
 
@@ -212,7 +218,7 @@ def run_crossed(tmp_path, out, predictor):
         NUMBERS_COMPANY, NOTES_COMPANY,
         numbers_bundle=bundle(tmp_path, NUMBERS_COMPANY),
         notes_bundle=bundle(tmp_path, NOTES_COMPANY),
-        out=out, predictor=predictor)
+        out=out, predictor=predictor, rules_version=RULES_VERSION)
 
 
 @pytest.fixture
@@ -478,7 +484,7 @@ def test_the_control_file_is_the_prediction_schema(crossed_run):
     assert pressure["question"] == "financial_pressure"
     for payload, answer in ((accounting, ACCOUNTING_ANSWER),
                             (pressure, PRESSURE_ANSWER)):
-        assert payload["rules_version"] == control_shuffled.RULES_VERSION
+        assert payload["rules_version"] == RULES_VERSION
         for key, value in answer.items():
             assert payload[key] == value
     # `continuous` is financial pressure only.
@@ -684,7 +690,8 @@ def test_the_manifest_is_what_declares_the_filing_when_the_run_carries_one(tmp_p
     numbers = scored_run(bundle(tmp_path, NUMBERS_COMPANY), NUMBERS_COMPANY)
     control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY, numbers_bundle=numbers,
                          notes_bundle=bundle(tmp_path, NOTES_COMPANY),
-                         out=out, predictor=StandInSupervisor())
+                         out=out, predictor=StandInSupervisor(),
+                         rules_version=RULES_VERSION)
     assert sorted(path.name for path in out.iterdir()) == \
            sorted((ACCOUNTING_FILE, PRESSURE_FILE))
     control = written(out, ACCOUNTING_FILE)["control"]
@@ -1482,7 +1489,9 @@ def test_the_section_seven_value_lists_are_the_documents_own():
     assert prediction_schema.CONTINUOUS in schema
     assert tuple(schema["question"].split("|")) == prediction_schema.QUESTIONS
     assert tuple(schema["question"].split("|")) == control_shuffled.QUESTIONS
-    assert schema["rules_version"] == control_shuffled.RULES_VERSION
+    # §7 prints "0.1" as the rules version's shape, and the value is the run's:
+    # the tests under "the rules version" below hold the control to it.
+    assert isinstance(schema["rules_version"], str)
 
     # Every nested entry's closed field set, and the evidence inside the
     # checklist entry rather than beside it.
@@ -1634,7 +1643,8 @@ def test_a_heading_naming_its_company_in_lower_case_is_that_company(tmp_path, ou
     control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY,
                          numbers_bundle=numbers,
                          notes_bundle=bundle(tmp_path, NOTES_COMPANY),
-                         out=out, predictor=StandInSupervisor())
+                         out=out, predictor=StandInSupervisor(),
+                         rules_version=RULES_VERSION)
     for name in (ACCOUNTING_FILE, PRESSURE_FILE):
         assert written(out, name)["control"]["numbers_from"] == NUMBERS_COMPANY
 
@@ -1866,7 +1876,8 @@ def test_a_copy_of_the_scored_run_is_where_its_control_may_land(tmp_path):
     copy = Path(shutil.copytree(numbers, tmp_path / "the-same-run-elsewhere"))
     control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY, numbers_bundle=numbers,
                          notes_bundle=bundle(tmp_path, NOTES_COMPANY),
-                         out=copy, predictor=StandInSupervisor())
+                         out=copy, predictor=StandInSupervisor(),
+                         rules_version=RULES_VERSION)
     assert written(copy, ACCOUNTING_FILE)["control"]["numbers_accession"] == \
            NUMBERS_ACCESSION
     assert (copy / PRESSURE_FILE).is_file()
@@ -2593,3 +2604,147 @@ def test_a_field_the_schema_gives_as_a_list_is_refused_when_it_is_not_one(
     assert f"the {question} answer gives {field} as str" in said
     assert "docs/CHECKLIST.md §7 gives it as a list" in said
     assert list(out.iterdir()) == []
+
+
+# --- the rules version is the run's -------------------------------------------
+#
+# The owner's decision of 2026-09-23: a pipeline check carries rules_version
+# "pilot", and both controls accept it. The files used to carry "0.1" whatever
+# run they scored -- §7's example, a version no run carried.
+
+
+def with_rules_version(folder: Path, version) -> Path:
+    """The manifest `scored_run` writes, carrying `version` instead."""
+    manifest = json.loads((folder / control_shuffled.MANIFEST).read_text(encoding="utf-8"))
+    manifest["rules_version"] = version
+    (folder / control_shuffled.MANIFEST).write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return folder
+
+
+def two_runs(tmp_path: Path) -> tuple[Path, Path]:
+    """Both halves as run directories, each with its own company's manifest."""
+    return (scored_run(bundle(tmp_path, NUMBERS_COMPANY), NUMBERS_COMPANY),
+            scored_run(bundle(tmp_path, NOTES_COMPANY), NOTES_COMPANY))
+
+
+def test_a_pilot_run_writes_pilot_into_both_control_files(tmp_path, out):
+    numbers, notes = two_runs(tmp_path)
+    control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY, numbers_bundle=numbers,
+                         notes_bundle=notes, out=out, predictor=StandInSupervisor())
+    for name in (ACCOUNTING_FILE, PRESSURE_FILE):
+        assert written(out, name)["rules_version"] == "pilot"
+
+
+def test_the_version_is_the_manifests_and_not_the_documents_example(tmp_path, out):
+    """A run under another version writes that version; nothing writes "0.1"
+    unless a run carried it."""
+    numbers, notes = two_runs(tmp_path)
+    for folder in (numbers, notes):
+        with_rules_version(folder, "0.2")
+    control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY, numbers_bundle=numbers,
+                         notes_bundle=notes, out=out, predictor=StandInSupervisor())
+    assert written(out, ACCOUNTING_FILE)["rules_version"] == "0.2"
+
+
+def test_a_run_whose_manifest_carries_null_writes_null(tmp_path, out):
+    """`src/assemble_bundle.py` writes null when a run names no version, and the
+    single-agent control carries that null through; so does this one."""
+    numbers, notes = two_runs(tmp_path)
+    for folder in (numbers, notes):
+        with_rules_version(folder, None)
+    control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY, numbers_bundle=numbers,
+                         notes_bundle=notes, out=out, predictor=StandInSupervisor())
+    assert written(out, PRESSURE_FILE)["rules_version"] is None
+
+
+def test_two_halves_under_two_rules_versions_are_refused_before_the_call(tmp_path, out):
+    numbers, notes = two_runs(tmp_path)
+    with_rules_version(notes, "0.2")
+    supervisor = StandInSupervisor()
+    with pytest.raises(ControlError) as caught:
+        control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY, numbers_bundle=numbers,
+                             notes_bundle=notes, out=out, predictor=supervisor)
+    said = str(caught.value)
+    assert "two rules versions" in said
+    assert "'pilot'" in said and "'0.2'" in said
+    assert supervisor.calls == []
+    assert list(out.iterdir()) == []
+
+
+def test_a_caller_naming_a_version_the_run_does_not_carry_is_refused(tmp_path, out):
+    numbers, notes = two_runs(tmp_path)
+    for folder in (numbers, notes):
+        with_rules_version(folder, "0.2")
+    supervisor = StandInSupervisor()
+    with pytest.raises(ControlError, match="two rules versions"):
+        control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY, numbers_bundle=numbers,
+                             notes_bundle=notes, out=out, predictor=supervisor,
+                             rules_version="pilot")
+    assert supervisor.calls == []
+
+
+@pytest.mark.parametrize("asked", ["0.1", "", "Pilot"])
+def test_a_caller_cannot_name_a_version_no_run_may_carry(tmp_path, out, asked):
+    """A pair of report directories carries no manifest, so the caller's word
+    is the whole of the version; it is held to the list a run is built under,
+    `src/assemble_bundle.py`'s, and "0.1" -- §7's example -- does not come back
+    through it."""
+    supervisor = StandInSupervisor()
+    with pytest.raises(ControlError, match="not one a run may name"):
+        control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY,
+                             numbers_bundle=bundle(tmp_path, NUMBERS_COMPANY),
+                             notes_bundle=bundle(tmp_path, NOTES_COMPANY),
+                             out=out, predictor=supervisor, rules_version=asked)
+    assert supervisor.calls == []
+    assert list(out.iterdir()) == []
+
+
+def test_a_pair_of_report_directories_naming_no_version_is_refused(tmp_path, out):
+    """No manifest and no word from the caller: the version is refused rather
+    than defaulted, which is what "0.1" was."""
+    supervisor = StandInSupervisor()
+    with pytest.raises(ControlError, match="no rules version was named"):
+        control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY,
+                             numbers_bundle=bundle(tmp_path, NUMBERS_COMPANY),
+                             notes_bundle=bundle(tmp_path, NOTES_COMPANY),
+                             out=out, predictor=supervisor)
+    assert supervisor.calls == []
+    assert list(out.iterdir()) == []
+
+
+def test_a_manifest_with_no_rules_version_key_is_refused(tmp_path, out):
+    numbers, notes = two_runs(tmp_path)
+    manifest = json.loads((notes / control_shuffled.MANIFEST).read_text(encoding="utf-8"))
+    del manifest["rules_version"]
+    (notes / control_shuffled.MANIFEST).write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    supervisor = StandInSupervisor()
+    with pytest.raises(ControlError, match="names no rules_version"):
+        control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY, numbers_bundle=numbers,
+                             notes_bundle=notes, out=out, predictor=supervisor)
+    assert supervisor.calls == []
+
+
+def test_a_run_crossed_with_a_directory_of_reports_needs_the_version_named(tmp_path, out):
+    """One half's manifest says nothing about the other half's version.
+
+    With the scored half a directory and the partner a run under "0.2", the
+    partner's version was written as the scored run's own; with the scored half
+    a run, its version was written for a notes half nothing had asked.
+    """
+    notes_run = with_rules_version(
+        scored_run(bundle(tmp_path, NOTES_COMPANY), NOTES_COMPANY), "0.2")
+    supervisor = StandInSupervisor()
+    with pytest.raises(ControlError, match="numbers half carries no manifest"):
+        control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY,
+                             numbers_bundle=bundle(tmp_path, NUMBERS_COMPANY),
+                             notes_bundle=notes_run, out=out, predictor=supervisor)
+    with pytest.raises(ControlError, match="two rules versions"):
+        control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY,
+                             numbers_bundle=bundle(tmp_path, NUMBERS_COMPANY),
+                             notes_bundle=notes_run, out=out, predictor=supervisor,
+                             rules_version="pilot")
+    assert supervisor.calls == []
+    assert list(out.iterdir()) == []
+

@@ -1571,3 +1571,72 @@ def test_the_command_line_refuses_a_directory_it_cannot_read(tmp_path, capsys):
          "--bundle", str(root)])
     assert code == control_single_agent.BAD_INPUT
     assert "not a control" in capsys.readouterr().err
+
+
+# --- a pilot run --------------------------------------------------------------
+#
+# The owner's decision of 2026-09-23: a pipeline check carries rules_version
+# "pilot". On the second pipeline check (PR #73) both calls came back from the
+# pinned model carrying the "0.1" the prompt's schema showed them, and both were
+# refused against the run's null. The prompt now shows the run's version.
+
+
+def pilot(root: Path) -> Path:
+    (root / "input_manifest.json").write_text(
+        json.dumps(MANIFEST | {"rules_version": "pilot"}, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8")
+    return root
+
+
+def test_the_prompt_shows_the_runs_rules_version_where_section_seven_prints_one(tmp_path):
+    root, folder = plant(tmp_path)
+    pilot(root)
+    stub = Stub(accounting_answer() | {"rules_version": "pilot"})
+    control_single_agent.run("accounting_reliability", input_dir=folder,
+                             bundle_root=root, ask=stub)
+    text = stub.prompts[0]
+    assert '"rules_version": "pilot",' in text
+    assert '"rules_version": "0.1"' not in text
+    # Everything else is §7 character for character.
+    assert SCHEMA_BLOCK.replace('"rules_version": "0.1",', '"rules_version": "pilot",') in text
+
+
+def test_a_pilot_answer_carrying_pilot_is_written(tmp_path):
+    root, folder = plant(tmp_path)
+    pilot(root)
+    go(root, folder, "financial_pressure",
+       pressure_answer() | {"rules_version": "pilot"})
+    assert written(root, "financial_pressure")["rules_version"] == "pilot"
+
+
+def test_a_pilot_answer_carrying_the_documents_example_is_refused(tmp_path):
+    """The refusal #73 hit, still in force: the version is the run's."""
+    root, folder = plant(tmp_path)
+    pilot(root)
+    with pytest.raises(ControlError, match="scored against its own rules version"):
+        go(root, folder, "accounting_reliability", accounting_answer())
+    assert not (root / "control_single_agent_accounting.json").exists()
+
+
+def test_the_null_a_run_carries_is_what_its_prompt_shows(tmp_path):
+    root, folder = plant(tmp_path)
+    (root / "input_manifest.json").write_text(
+        json.dumps(MANIFEST | {"rules_version": None}, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8")
+    stub = Stub(accounting_answer() | {"rules_version": None})
+    control_single_agent.run("accounting_reliability", input_dir=folder,
+                             bundle_root=root, ask=stub)
+    assert '"rules_version": null,' in stub.prompts[0]
+
+
+def test_a_manifest_naming_no_rules_version_is_refused_before_the_call(tmp_path):
+    root, folder = plant(tmp_path)
+    (root / "input_manifest.json").write_text(
+        json.dumps({key: value for key, value in MANIFEST.items()
+                    if key != "rules_version"}, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8")
+    stub = Stub(accounting_answer())
+    with pytest.raises(ControlError, match="names no rules_version"):
+        control_single_agent.run("accounting_reliability", input_dir=folder,
+                                 bundle_root=root, ask=stub)
+    assert stub.prompts == []

@@ -1055,3 +1055,87 @@ def test_the_command_line_prints_the_page(capsys):
 def test_the_command_line_refuses_a_root_it_cannot_score(capsys, tmp_path):
     assert scorecard.main(["--runs", str(tmp_path / "nothing_here")]) == 2
     assert "scorecard:" in capsys.readouterr().err
+
+
+# --- a run under the pilot rules version ------------------------------------
+#
+# The owner's decision of 2026-09-23: a pipeline check carries rules_version
+# "pilot" and no freeze date, and the scorecard labels it pilot. NVDA was filed
+# after the fixture's freeze and is forward; relabelled pilot, it moves.
+
+
+def as_pilot(payload: dict) -> None:
+    payload["rules_version"] = "pilot"
+    payload.pop("rules_version_frozen")
+
+
+NVDA_RUN = ("NVDA", "0001045810-26-000041")
+
+
+def test_a_pilot_run_is_on_the_pilot_side_whatever_its_filing_date(tmp_path):
+    changed = copy_of(tmp_path)
+    edit(changed.joinpath(*NVDA_RUN), "input_manifest.json", as_pilot)
+    rendered = scorecard.render(changed)
+    rows = table(section(rendered, "Accounting reliability", "Financial pressure"))
+    # The fixture's own counts are four pilot and two forward; one moves across.
+    assert row_of(rows, "beneish_m_score", PILOT)[3] == str(len(PILOT_RUNS) + 1)
+    assert row_of(rows, "beneish_m_score", FORWARD)[3] == str(len(FORWARD_RUNS) - 1)
+    assert row_of(rows, "beneish_m_score", PILOT)[2] == "pilot · pipeline check"
+    foot = rendered.split("## The runs this was computed from")[1]
+    line = [row for row in foot.splitlines() if row.startswith("- NVDA ")][0]
+    assert "rules version pilot never frozen" in line
+    assert "pilot · pipeline check" in line
+    assert "frozen None" not in rendered
+
+
+def test_a_pilot_run_that_also_names_a_freeze_date_is_refused(tmp_path):
+    """Two things said about which side the run is on; the page stops rather
+    than choosing one."""
+    changed = copy_of(tmp_path)
+    edit(changed.joinpath(*NVDA_RUN), "input_manifest.json",
+         lambda payload: payload.__setitem__("rules_version", "pilot"))
+    with pytest.raises(scorecard.ScorecardError) as refused:
+        scorecard.render(changed)
+    assert "'pilot'" in str(refused.value)
+    assert "rules_version_frozen" in str(refused.value)
+
+
+def test_a_run_under_another_version_still_needs_its_freeze_date(tmp_path):
+    """Only "pilot" is placed by its version; "0.1" with no freeze date is the
+    unplaceable run it always was."""
+    changed = copy_of(tmp_path)
+    edit(changed.joinpath(*NVDA_RUN), "input_manifest.json",
+         lambda payload: payload.pop("rules_version_frozen"))
+    with pytest.raises(scorecard.ScorecardError, match="rules_version_frozen"):
+        scorecard.render(changed)
+
+
+@pytest.mark.parametrize("version", [None, "", "  "])
+def test_a_freeze_date_beside_a_run_naming_no_version_is_refused(tmp_path, version):
+    """The module's own sentence: a freeze date is the freeze of a version, and a
+    run built without `--rules-version` carries null. Placing that run by the
+    date would put it on a side no version was frozen for."""
+    changed = copy_of(tmp_path)
+    edit(changed.joinpath(*NVDA_RUN), "input_manifest.json",
+         lambda payload: payload.__setitem__("rules_version", version))
+    with pytest.raises(scorecard.ScorecardError) as refused:
+        scorecard.render(changed)
+    assert "rules_version_frozen" in str(refused.value)
+    assert repr(version) in str(refused.value)
+
+
+@pytest.mark.parametrize("cutoff", ["not a date", None])
+def test_a_pilot_run_still_needs_a_readable_cutoff(tmp_path, cutoff):
+    """The module's own rule: a run whose cutoff cannot be read is refused. A
+    pilot run is placed by its version, and its row still prints its filing."""
+    changed = copy_of(tmp_path)
+
+    def pilot_without_a_cutoff(payload):
+        payload["rules_version"] = "pilot"
+        payload.pop("rules_version_frozen")
+        payload["cutoff"] = cutoff
+
+    edit(changed.joinpath(*NVDA_RUN), "input_manifest.json", pilot_without_a_cutoff)
+    with pytest.raises(scorecard.ScorecardError, match="cutoff"):
+        scorecard.render(changed)
+
