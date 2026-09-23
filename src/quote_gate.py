@@ -30,20 +30,21 @@ input, because `input_trends.json` writes those two keys on two lines under a
 two-space indent, and a gate that accepted that string would be accepting a
 quote of nothing while refusing the same characters copied out of the file.
 
-**A row's id is one its reader can write.** `docs/INPUT_SPEC.md` §2.2 gives a
-trend cell `{accession}:trends:{metric}:{period}`: the metric is the ratio's own
-key and the period is the row's own `label`, both printed in `input_trends.json`
-where the reader can read them. A numeric fact is named by the `id` the fact
-already carries and the file already prints. The spec's other spelling for a
-fact, `{accession}:facts:{tag}:{period}`, is not resolved here: a fact's period
-has no printed spelling in the committed input -- a context is a start and an
-end, or an instant -- and tag-and-period is not unique across segments, so the
-gate would be minting a name that neither the writer of the file nor its reader
-could produce. That divergence between the spec and the file is the spec's to
-settle. Articulation checks have no committed input yet -- `src/articulation.py`
-is unwritten -- so their ids resolve to nothing and an item quoting one is
-dropped, which is the fail-closed direction and reverses itself the day the
-input exists.
+**A row's id is the one it prints.** `docs/INPUT_SPEC.md` §2 gives a trend cell
+`{accession}:trends:{metric}:{period}` and a numeric fact
+`{accession}:facts:{tag}:{period}`, and each row of `input_trends.json` and
+`input_numbers.json` now prints that id as its `paragraph_id` --
+`src/trends.py`'s `name_cells` and `src/extract_numbers.py`'s `paragraph_id`
+write them. The gate indexes those printed ids and composes none of its own.
+It used to: a cell by the row's `label` and a fact by its element's `id`, while
+the numbers reader composed the spec's shapes from the prompt, and on the
+second pipeline check all eight of its items were dropped on the id alone. A
+fact the spec's shape would leave ambiguous prints more than the shape: its
+dimension members after the period, and its unit when that is a currency
+other than the dollar. Articulation checks have no committed input yet --
+`src/articulation.py` writes none into a bundle -- so their ids resolve to
+nothing and an item quoting one is dropped, which is the fail-closed direction
+and reverses itself the day the input exists.
 
 **Only what the input declares is quotable.** The index holds the ids the
 committed files carry: the `[id]` lines of the prose, the facts of
@@ -128,6 +129,7 @@ import json
 import re
 import sys
 from collections import Counter
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
 try:
@@ -211,62 +213,139 @@ def _json_input(bundle_root, name: str) -> tuple[str, dict]:
     return text, payload
 
 
+def _printed_id(node) -> str | None:
+    """The `paragraph_id` a computed row prints, or None when it prints none."""
+    identifier = node.get("paragraph_id") if isinstance(node, dict) else None
+    return identifier if isinstance(identifier, str) and identifier else None
+
+
+# What a numeric fact is, as its row prints it. Two rows printing one id agree on
+# every one of these.
+FACT_FIELDS = ("prefix", "tag", "context", "unit")
+
+
+def _covers(fact: dict) -> tuple[Decimal, Decimal] | None:
+    """The interval a row's printed value covers at its own `decimals`, or None
+    when the row prints no number."""
+    try:
+        number = Decimal(str(fact.get("value")))
+        if not number.is_finite():
+            return None
+        if fact.get("decimals") in (None, "INF"):
+            return number, number
+        half = Decimal(5).scaleb(-int(fact["decimals"]) - 1)
+    except (InvalidOperation, ValueError, TypeError):
+        return None
+    return number - half, number + half
+
+
+def _one_fact(stated: dict, identifier: str, fact: dict) -> None:
+    """Refuse a row printing an id an earlier row printed, unless both state one fact.
+
+    One fact is the same concept, context and unit, and a number every row
+    covers once each is read at its own `decimals`. `stated` holds, per id, what
+    the rows so far agree on.
+    """
+    fields = tuple(json.dumps(fact.get(field), sort_keys=True) for field in FACT_FIELDS)
+    covered = _covers(fact)
+    if identifier not in stated:
+        stated[identifier] = fields, covered, fact.get("value")
+        return
+    first, so_far, value = stated[identifier]
+    if covered is not None and so_far is not None:
+        covered = max(so_far[0], covered[0]), min(so_far[1], covered[1])
+        agrees = covered[0] <= covered[1]
+    else:
+        agrees = covered is None and so_far is None and fact.get("value") == value
+    if fields != first or not agrees:
+        raise QuoteGateError(
+            f"{identifier} is printed by rows of {NUMBERS} that state different "
+            "facts — one id names one fact, the same concept, context and unit at "
+            "a number every row rounds to, and a quote of one would stand for the "
+            "other")
+    stated[identifier] = first, covered, value
+
+
 def _computed_rows(folder: Path, accession: str):
     """(id, printed row, file) for every computed row a committed input declares.
 
-    A numeric fact by the `id` it already carries; a trend cell by the id
-    `docs/INPUT_SPEC.md` §2.2 gives it, `{accession}:trends:{metric}:{period}`,
-    whose metric is the ratio's own key and whose period is the row's own
-    `label` — both printed in the file, so the reader can write the id it
-    quotes. A row the file does not print as this module expects yields
-    nothing, and an item quoting it is dropped.
+    Each row by the `paragraph_id` it prints, and by nothing else: a numeric
+    fact of `input_numbers.json` and a trend cell of `input_trends.json`. The
+    reader copies that id off the row, so there is no second spelling for the
+    gate to compose and the reader to guess. A trend cell's id carries the run's
+    own accession, because the table is the companyfacts record's and names no
+    filing -- a cell printing another one was named for another run, and is
+    not quotable in this one. A formula input inside a cell prints the fact's
+    `id` and no `paragraph_id` of its own: it is part of its cell's row, and is
+    quoted under the cell. A row that prints no id, or that the file does not
+    print as this module expects, yields nothing, and an item quoting it is
+    dropped.
     """
     if cutoff_guard.bundle_files(folder, NUMBERS):
         text, payload = _json_input(folder, NUMBERS)
+        stated: dict = {}
         for fact in payload.get("facts") or []:
-            if not isinstance(fact, dict) or not isinstance(fact.get("id"), str):
-                continue
-            row = printed_row(text, fact, FACT_DEPTH)
+            identifier = _printed_id(fact)
+            row = printed_row(text, fact, FACT_DEPTH) if identifier else None
             if row is not None:
-                yield fact["id"], row, NUMBERS
+                _one_fact(stated, identifier, fact)
+                yield identifier, row, NUMBERS
 
     if cutoff_guard.bundle_files(folder, TRENDS):
         text, payload = _json_input(folder, TRENDS)
         for section in ("quarters", "years"):
             for period in payload.get(section) or []:
-                if not isinstance(period, dict):
+                ratios = period.get("ratios") if isinstance(period, dict) else None
+                if not isinstance(ratios, dict):
                     continue
-                label, ratios = period.get("label"), period.get("ratios")
-                if not isinstance(label, str) or not isinstance(ratios, dict):
-                    continue
-                for metric, cell in ratios.items():
+                for cell in ratios.values():
+                    identifier = _printed_id(cell)
+                    if not identifier or not identifier.startswith(f"{accession}:trends:"):
+                        continue
                     row = printed_row(text, cell, RATIO_DEPTH)
                     if row is not None:
-                        yield f"{accession}:trends:{metric}:{label}", row, TRENDS
+                        yield identifier, row, TRENDS
 
 
-def quotable(input_dir, accession: str) -> dict[str, str]:
+def quotable(input_dir, accession: str) -> dict[str, str | tuple[str, ...]]:
     """Paragraph id → the committed text it owns, for one agent's input directory.
 
     The prose files by their `[id]` lines, and the computed rows by the ids
-    `_computed_rows` gives them. A file that declares no ids of its own — the
-    market table, the manifest, anything else that lands in the directory —
-    offers nothing here for a quote to be matched against.
+    they print. A file that declares no ids of its own — the market table, the
+    manifest, anything else that lands in the directory — offers nothing here
+    for a quote to be matched against.
+
+    One id names one paragraph, with one exception: a filing can state one fact
+    more than once -- NVIDIA's 10-Q 0001045810-26-000075 prints its inventory
+    balance as two elements -- and every row stating it prints the fact's one
+    id. That id owns each of those rows, as a tuple; `rows_of` reads either shape.
+    The rows need not print the same digits. Its 10-K 0001045810-26-000021
+    states goodwill at 2026-01-25 as 20832000000 to the million and as
+    20800000000 to the hundred million, and a quote of either row stands under
+    the one id. Rows printing one id over two concepts, contexts or units, or
+    over numbers no rounding reconciles, are refused: the id is trusted only as
+    far as the rows agree.
     """
     folder = Path(input_dir)
     if not folder.is_dir():
         raise QuoteGateError(
             f"{folder} is not a directory — an agent whose committed input is not "
             "on disk has nothing for a quote to be matched against")
-    index: dict[str, str] = {}
+    index: dict[str, str | tuple[str, ...]] = {}
+    facts: set[str] = set()
 
     def record(identifier: str, text: str, where: str) -> None:
+        if identifier in facts and where == NUMBERS:
+            index[identifier] = rows_of(index, identifier) + (text,)
+            return
         if identifier in index:
             raise QuoteGateError(
                 f"{identifier} is in {where} and already in this input — one id "
                 "names one paragraph, and a quote matched against the wrong "
                 "paragraph is not a verified quote")
         index[identifier] = text
+        if where == NUMBERS:
+            facts.add(identifier)
 
     for name in cutoff_guard.bundle_files(folder, "*.md"):
         for identifier, body in assemble_bundle.paragraph_blocks(
@@ -276,6 +355,12 @@ def quotable(input_dir, accession: str) -> dict[str, str]:
     for identifier, row, where in _computed_rows(folder, accession):
         record(identifier, row, where)
     return index
+
+
+def rows_of(index: dict, paragraph_id: str) -> tuple[str, ...]:
+    """Every committed row one id owns: one, or each row stating a fact printed twice."""
+    owned = index[paragraph_id]
+    return owned if isinstance(owned, tuple) else (owned,)
 
 
 # --- why one item is dropped -------------------------------------------------
@@ -298,7 +383,7 @@ def quote_drop_reason(item, index: dict) -> str | None:
         return "the item carries no quote, and an empty quote matches every text"
     if paragraph_id not in index:
         return f"paragraph id {paragraph_id} is not in this reader's committed input"
-    if quote not in index[paragraph_id]:
+    if not any(quote in row for row in rows_of(index, paragraph_id)):
         return f"the quote does not string-match {paragraph_id} in the committed input"
     return None
 
