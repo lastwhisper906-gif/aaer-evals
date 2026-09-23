@@ -32,7 +32,8 @@ Apple's annual gross margin, five years, is the odd count whose middle year is
 equally near both ends. NVIDIA's annual gross margin and receivables over
 revenue are the case where one year's revenue is tagged
 `RevenueFromContractWithCustomerExcludingAssessedTax` and the other four years'
-`Revenues` — the first term of one ratio and the second of the other — read the
+`Revenues` — the first term of one ratio and the second of the other — and
+Carrier's annual accruals the case where the change is in net income, read the
 same way. Nothing here came from running `src/trends.py`.
 
     .venv/bin/python -m pytest tests/test_trend_history_position.py -q
@@ -298,6 +299,55 @@ def test_a_concept_change_in_the_second_term_also_keeps_a_year_out():
         assert cell["inputs"]["receivables"]["tag"] == "AccountsReceivableNetCurrent"
         assert cell["inputs"]["revenue"]["tag"] == revenue_tag
         assert cell["value"] == pytest.approx(receivables / revenue, rel=0, abs=1e-12)
+        assert cell["position_in_history"] == position, label
+
+
+# --- Carrier, accruals over total assets, a concept change with no revenue in it -
+#
+# `(net_income - operating_cash_flow) / assets`. Net income is `NetIncomeLoss`
+# in 2022 to 2025 and `ProfitLoss` in 2021, the one year the record carries only
+# the second tag, so the change sits in the ratio's first term and no term is
+# revenue. Operating cash flow is
+# `NetCashProvidedByUsedInOperatingActivities` and assets `Assets` at the year
+# end, in all five years.
+#
+#   years-back-1   (5,604 -   563) / 37,403 =  0.13478
+#   years-back-3   (3,534 - 1,743) / 26,086 =  0.06866
+#   years-back-0   (1,484 - 2,513) / 37,190 = -0.02767
+#   years-back-2   (1,349 - 2,607) / 32,822 = -0.03833
+#   years-back-4   (1,701 - 2,237) / 26,172 = -0.02048, on the other concept
+CARRIER_ACCRUALS = {
+    "years-back-0": ("2025-01-01", "2025-12-31", "NetIncomeLoss", 1_484_000_000.0,
+                     2_513_000_000.0, 37_190_000_000.0, f"second lowest {AGAINST_FOUR}"),
+    "years-back-1": ("2024-01-01", "2024-12-31", "NetIncomeLoss", 5_604_000_000.0,
+                     563_000_000.0, 37_403_000_000.0, f"highest {AGAINST_FOUR}"),
+    "years-back-2": ("2023-01-01", "2023-12-31", "NetIncomeLoss", 1_349_000_000.0,
+                     2_607_000_000.0, 32_822_000_000.0, f"lowest {AGAINST_FOUR}"),
+    "years-back-3": ("2022-01-01", "2022-12-31", "NetIncomeLoss", 3_534_000_000.0,
+                     1_743_000_000.0, 26_086_000_000.0, f"second highest {AGAINST_FOUR}"),
+    "years-back-4": ("2021-01-01", "2021-12-31", "ProfitLoss", 1_701_000_000.0,
+                     2_237_000_000.0, 26_172_000_000.0,
+                     "the only filled year on the same concepts; 4 other filled years "
+                     "rest on a different concept and are not compared"),
+}
+
+
+def test_a_concept_change_outside_revenue_also_keeps_a_year_out():
+    cutoff = trigger("CARR")["filing_date"]
+    by_label = cells("CARR", "years", "accruals_over_total_assets")
+    assert {label for label, (_, cell) in by_label.items() if "value" in cell} \
+        == set(CARRIER_ACCRUALS)
+    for label, (start, end, income_tag, income, cash_flow, assets, position) in \
+            CARRIER_ACCRUALS.items():
+        span = f"{start}..{end}"
+        assert source.one_value("CARR", income_tag, span, cutoff) == income
+        assert source.one_value(
+            "CARR", "NetCashProvidedByUsedInOperatingActivities", span, cutoff) == cash_flow
+        assert source.one_value("CARR", "Assets", end, cutoff) == assets
+        row, cell = by_label[label]
+        assert (row["start"], row["end"]) == (start, end)
+        assert cell["inputs"]["net_income"]["tag"] == income_tag
+        assert cell["value"] == pytest.approx((income - cash_flow) / assets, rel=0, abs=1e-12)
         assert cell["position_in_history"] == position, label
 
 
