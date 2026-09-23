@@ -40,9 +40,10 @@ Accounts receivable rose to $22.1 billion from $23.1 billion.
 """
 QUOTE = "Accounts receivable rose to $22.1 billion"
 
-# Two reader items over it: one quoted verbatim, one with a word changed.
-KEPT = f"{NOTE}:receivables-moved"
-FALLS = f"{NOTE}:receivables-invented"
+# Two reader items over it: one quoted verbatim, one with a word changed. Each
+# id names its area and then its subject, as the gate asks of a reader's item.
+KEPT = "revenue_recognition_receivables_moved"
+FALLS = "revenue_recognition_receivables_invented"
 
 
 def plant(tmp_path: Path, *, rules_version="pilot") -> Path:
