@@ -251,15 +251,34 @@ def test_the_default_root_is_named_but_never_created(tmp_path):
 
 
 def _a_committed_run(root: Path) -> Path:
-    """A `runs/` holding one run, its files dated in the past so a write shows."""
+    """A `runs/` holding one ESE run filed before ESE's latest 10-Q, with one
+    flag a later build carries forward, its files dated in the past so a write
+    shows."""
     run = root / "runs" / "ESE" / "0000000000-26-000001"
     run.mkdir(parents=True)
-    for name, text in (("input_manifest.json", '{"accession": "0000000000-26-000001"}\n'),
-                       ("input_notes.md", "[0000000000-26-000001:notes:1] a note\n")):
+    for name, text in (("input_manifest.json",
+                        '{"accession": "0000000000-26-000001", "filing_date": "2026-01-02"}\n'),
+                       ("input_notes.md", "[0000000000-26-000001:notes:1] a note\n"),
+                       ("prediction_accounting.json", '{"flags": ["a flag"]}\n')):
         (run / name).write_text(text, encoding="utf-8")
     for path in [*run.rglob("*"), run, run.parent, root / "runs"]:
         os.utime(path, ns=(1_000_000_000_000_000_000, 1_000_000_000_000_000_000))
     return root / "runs"
+
+
+def test_a_build_that_reads_a_committed_run_as_its_prior_run_leaves_it_as_it_was(tmp_path):
+    """From the repository root the default prior-runs root is the committed
+    `runs/`, so a build there reads a committed run of its own company. Reading
+    it is all the build may do: the flag reaches the new bundle, and the run it
+    came from is exactly what it was."""
+    runs = _a_committed_run(tmp_path)
+    before = _state_of(runs)
+
+    assemble_bundle.assemble("ESE", "10-Q", tmp_path / "somewhere", prior_runs=runs)
+
+    carried = (tmp_path / "somewhere" / "input_prior_predictions.md").read_text(encoding="utf-8")
+    assert "[0000000000-26-000001:prior:prediction_accounting:1]" in carried
+    assert _state_of(runs) == before
 
 
 def test_a_committed_run_that_nothing_touched_reads_the_same_twice(tmp_path):
