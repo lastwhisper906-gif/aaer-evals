@@ -1197,6 +1197,7 @@ def test_crsp_through_the_fetch_logs_in_with_the_handed_in_home(tmp_path, monkey
         home.mkdir()
         (home / ".pgpass").write_text(
             wrds_line.format(user=user, password=user[:4] + "-pw"), encoding="utf-8")
+        (home / ".pgpass").chmod(0o600)
     monkeypatch.setenv("HOME", str(process_home))
     monkeypatch.setenv("PGPASSFILE", str(process_home / ".pgpass"))
     connected = []
@@ -1220,4 +1221,56 @@ def test_crsp_through_the_fetch_logs_in_with_the_handed_in_home(tmp_path, monkey
                             environ={"PRICE_BACKEND": "crsp", "HOME": str(handed_in)})
     assert [(one["wrds_username"], one["wrds_password"]) for one in connected] == [
         ("handed-in-user", "hand-pw")]
+
+
+@pytest.mark.parametrize("symbol", ["../agents/numbers-reader/ZZZZ", "ZZZZ/..", ".ZZZZ",
+                                    "", "ZZ ZZ"])
+def test_a_symbol_that_is_not_a_file_name_in_the_folder_is_refused(
+        tmp_path, monkeypatch, symbol):
+    """A symbol is also the name of the file its series lands in."""
+    backend = _stub(monkeypatch, [_bar("2025-05-12", 195.3125, 97.65625)])
+    run = tmp_path / "run"
+    with pytest.raises(market.MarketError, match="not a ticker symbol"):
+        market.fetch_prices(symbols=[symbol], start=_dt.date(2025, 5, 1),
+                            end=_dt.date(2025, 5, 31), into=run / "prices", environ={})
+    assert backend.asked == []
+    assert not run.exists()
+
+
+def test_a_symbol_with_a_share_class_is_a_symbol(tmp_path, monkeypatch):
+    _stub(monkeypatch, [_bar("2025-05-12", 195.3125, 97.65625)])
+    market.fetch_prices(symbols=["BRK.B", "BF-B"], start=_dt.date(2025, 5, 1),
+                        end=_dt.date(2025, 5, 31), into=tmp_path / "prices", environ={})
+    assert sorted(path.name for path in (tmp_path / "prices").iterdir()) == [
+        "BF-B.csv", "BRK.B.csv"]
+
+
+def test_a_source_failing_on_the_second_symbol_leaves_no_series_written(
+        tmp_path, monkeypatch):
+    class _FailsSecond(_StubBackend):
+        def history(self, ticker, start=None, end=None, **credential):
+            if ticker == "YYYY":
+                return []
+            return super().history(ticker, start, end, **credential)
+
+    backend = _FailsSecond([_bar("2025-05-12", 195.3125, 97.65625)])
+    monkeypatch.setattr(_prices, "backend",
+                        lambda name=None: backend if name == "tiingo" else None)
+    with pytest.raises(market.MarketError, match="no rows for YYYY"):
+        market.fetch_prices(symbols=["ZZZZ", "YYYY"], start=_dt.date(2025, 5, 1),
+                            end=_dt.date(2025, 5, 31), into=tmp_path / "prices",
+                            environ={})
+    assert not (tmp_path / "prices").exists()
+
+
+def test_a_folder_holding_an_earlier_fetch_is_refused(tmp_path, monkeypatch):
+    """`read_prices` takes every series in a folder as one fetch."""
+    backend = _stub(monkeypatch, [_bar("2025-05-12", 195.3125, 97.65625)])
+    folder = tmp_path / "prices"
+    folder.mkdir()
+    (folder / "XXXX.csv").write_text("date,close,adjusted_close\n", encoding="utf-8")
+    with pytest.raises(market.MarketError, match="already holds XXXX.csv"):
+        market.fetch_prices(symbols=["ZZZZ"], start=_dt.date(2025, 5, 1),
+                            end=_dt.date(2025, 5, 31), into=folder, environ={})
+    assert backend.asked == []
 

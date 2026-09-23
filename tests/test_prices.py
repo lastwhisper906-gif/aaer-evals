@@ -160,6 +160,7 @@ def test_crsp_without_a_pgpass_file_is_unconfigured(tmp_path: Path) -> None:
 def test_crsp_with_a_pgpass_file_is_configured(tmp_path: Path) -> None:
     pgpass = tmp_path / ".pgpass"
     pgpass.write_text(WRDS_LINE, encoding="utf-8")
+    pgpass.chmod(0o600)
     assert crsp.credential(pgpass) == pgpass
 
 
@@ -232,6 +233,7 @@ def test_crsp_history_reads_the_frame_the_wire_answers(
 ) -> None:
     pgpass = tmp_path / ".pgpass"
     pgpass.write_text(WRDS_LINE, encoding="utf-8")
+    pgpass.chmod(0o600)
     seen = stand_in_wrds(monkeypatch, CRSP_FRAME_RECORDS)
     rows = crsp.history(
         "zzzz", dt.date(2008, 9, 1), dt.date(2008, 9, 30), pgpass=pgpass
@@ -259,6 +261,7 @@ def test_crsp_history_and_the_fixture_agree_row_for_row(
     """The JSON fixture and the pandas frame are one set of rows in two shapes."""
     pgpass = tmp_path / ".pgpass"
     pgpass.write_text(WRDS_LINE, encoding="utf-8")
+    pgpass.chmod(0o600)
     stand_in_wrds(monkeypatch, CRSP_FRAME_RECORDS)
     wire = crsp.history(TICKER, pgpass=pgpass)
     shaped = crsp.rows_from(fixture("crsp_daily.json"), ticker=TICKER)
@@ -274,6 +277,7 @@ def test_crsp_history_refuses_a_missing_price_rather_than_reading_nan(
 ) -> None:
     pgpass = tmp_path / ".pgpass"
     pgpass.write_text(WRDS_LINE, encoding="utf-8")
+    pgpass.chmod(0o600)
     records = [dict(entry) for entry in CRSP_FRAME_RECORDS]
     records[0]["prc"] = NAN
     stand_in_wrds(monkeypatch, records)
@@ -654,6 +658,7 @@ def test_crsp_logs_in_with_the_line_of_the_pgpass_handed_in(monkeypatch, tmp_pat
     pgpass.write_text("# a comment\n"
                       "other.example.org:5432:other:someone:not-this\n" + WRDS_LINE,
                       encoding="utf-8")
+    pgpass.chmod(0o600)
     seen = stand_in_wrds(monkeypatch, CRSP_FRAME_RECORDS)
     crsp.history(TICKER, dt.date(2008, 9, 1), dt.date(2008, 9, 30), pgpass=pgpass)
     assert seen["connected_with"] == {
@@ -666,6 +671,7 @@ def test_a_pgpass_line_is_read_as_postgres_reads_it(tmp_path):
     """A `*` matches any host, and a backslash escapes a colon inside a field."""
     pgpass = tmp_path / ".pgpass"
     pgpass.write_text("*:*:wrds:some\\:one:pass\\:word\\\\x\n", encoding="utf-8")
+    pgpass.chmod(0o600)
     assert crsp.login(pgpass)["wrds_username"] == "some:one"
     assert crsp.login(pgpass)["wrds_password"] == "pass:word\\x"
 
@@ -675,6 +681,7 @@ def test_a_pgpass_with_no_wrds_line_is_unconfigured_and_never_connects(
     _the_process_says_otherwise(monkeypatch, tmp_path)
     pgpass = tmp_path / "handed-in.pgpass"
     pgpass.write_text("other.example.org:5432:other:someone:not-this\n", encoding="utf-8")
+    pgpass.chmod(0o600)
     seen = stand_in_wrds(monkeypatch, CRSP_FRAME_RECORDS)
     with pytest.raises(prices.Unconfigured, match="no line for wrds-pgdata"):
         crsp.history(TICKER, pgpass=pgpass)
@@ -696,6 +703,7 @@ def test_a_refused_login_with_no_terminal_is_unconfigured(monkeypatch, tmp_path)
     monkeypatch.setitem(sys.modules, "wrds", module)
     pgpass = tmp_path / ".pgpass"
     pgpass.write_text(WRDS_LINE, encoding="utf-8")
+    pgpass.chmod(0o600)
     with pytest.raises(prices.Unconfigured, match="refused the login"):
         crsp.history(TICKER, pgpass=pgpass)
 
@@ -730,4 +738,43 @@ def test_an_error_answer_echoing_the_token_is_printed_without_it(monkeypatch):
         eodhd.history(TICKER, environ={"EODHD_TOKEN": token})
     assert "401" in str(caught.value)
     assert token not in str(caught.value)
+
+
+def test_a_pgpass_others_can_read_is_ignored_as_postgres_ignores_it(tmp_path):
+    pgpass = tmp_path / ".pgpass"
+    pgpass.write_text(WRDS_LINE, encoding="utf-8")
+    pgpass.chmod(0o644)
+    with pytest.raises(prices.Unconfigured, match="read by others"):
+        crsp.login(pgpass)
+
+
+def test_a_wildcard_user_names_no_one_to_log_in_as(tmp_path):
+    pgpass = tmp_path / ".pgpass"
+    pgpass.write_text("wrds-pgdata.wharton.upenn.edu:9737:wrds:*:stand-in\n",
+                      encoding="utf-8")
+    pgpass.chmod(0o600)
+    with pytest.raises(prices.Unconfigured, match="names no user"):
+        crsp.login(pgpass)
+
+
+def test_eodhd_asks_through_a_session_that_trusts_nothing_in_the_process(monkeypatch):
+    """EODHD's token rides in the query string, so a proxy the process names
+    would see it."""
+    calls = stand_in_requests(monkeypatch, {
+        "https://eodhd.com/api/eod/ZZZZ.US": StandInResponse(fixture("eodhd_daily.json"))})
+    eodhd.history(TICKER, environ={"EODHD_TOKEN": "stand-in"})
+    assert [call["trust_env"] for call in calls] == [False]
+
+
+def test_a_token_across_the_cut_is_taken_out_before_the_message_is_cut(monkeypatch):
+    """Cut first and a token straddling character 200 leaves its head behind."""
+    token = "planted-tok"
+    address = "https://eodhd.com/api/eod/ZZZZ.US"
+    body = "x" * 195 + token
+    answer = StandInResponse({}, status_code=500)
+    answer.text = body
+    stand_in_requests(monkeypatch, {address: answer})
+    with pytest.raises(prices.PriceError) as caught:
+        eodhd.history(TICKER, environ={"EODHD_TOKEN": token})
+    assert "plant" not in str(caught.value)
 

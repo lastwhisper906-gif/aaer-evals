@@ -142,9 +142,25 @@ def login(pgpass: Path) -> dict[str, str]:
     """The `wrds.Connection` arguments the WRDS line of `pgpass` gives, or Unconfigured.
 
     The first line whose host, port and database match WRDS's -- a `*` matches
-    anything, as Postgres reads it -- is the one Postgres itself would use.
+    anything, as Postgres reads it -- is the one Postgres itself would use. Two
+    more of Postgres's own readings: it ignores a `.pgpass` that its group or
+    anyone else can read, and so does this; and a `*` in the user field matches
+    any user rather than naming one, so a line whose user is `*` gives no user
+    to log in as and is Unconfigured, not a login as the user `*`.
+
+    What the connection is handed is `wrds.Connection`'s own keywords, read off
+    the package's source (`wrds/sql.py`, 3.5.0, `Connection.__init__`):
+    `wrds_username`, `wrds_password`, `wrds_hostname`, `wrds_port` and
+    `wrds_dbname`, which it puts into the connection address it hands the
+    driver, so the password in the address is the one used. The package is not
+    a requirement, so no test here can run against it; the stand-ins record what
+    they were handed, and the keyword names are the source's.
     """
     path = credential(pgpass)
+    if path.stat().st_mode & 0o077:
+        raise Unconfigured(
+            f"{path} can be read by others than its owner, and Postgres ignores "
+            f"such a file; chmod 600 it")
     for line in path.read_text(encoding="utf-8").splitlines():
         if not line.strip() or line.lstrip().startswith("#"):
             continue
@@ -154,6 +170,10 @@ def login(pgpass: Path) -> dict[str, str]:
         host, port, database, user, password = fields
         if host in ("*", WRDS_HOST) and port in ("*", WRDS_PORT) and \
                 database in ("*", WRDS_DATABASE):
+            if user == "*" or not user:
+                raise Unconfigured(
+                    f"{path}'s line for {WRDS_HOST} names no user (a `*` matches "
+                    f"any), so there is no one for the {NAME} backend to log in as")
             return {"wrds_hostname": WRDS_HOST, "wrds_port": int(WRDS_PORT),
                     "wrds_dbname": WRDS_DATABASE, "wrds_username": user,
                     "wrds_password": password}

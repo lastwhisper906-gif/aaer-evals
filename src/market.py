@@ -116,6 +116,7 @@ import datetime as dt
 import functools
 import json
 import math
+import re
 import statistics
 import sys
 from pathlib import Path
@@ -720,6 +721,11 @@ def write_table(table: dict, path) -> Path:
 # is a run log and it lives outside every agent input directory.
 FETCH_RECORD = "price_fetch.json"
 
+# A ticker symbol as the price sources and the sector map spell one: letters and
+# digits, with a dot or a dash inside (BRK.B, BF-B). It is also a file name
+# under the fetch's folder, so nothing that walks out of the folder fits it.
+SYMBOL = re.compile(r"[A-Za-z0-9]+(?:[.-][A-Za-z0-9]+)*")
+
 PRICES_UNAVAILABLE = "unavailable"
 
 
@@ -796,6 +802,12 @@ def fetch_prices(*, symbols, start, end, into, environ, backend=None,
                 f"the fetch's {side} is {day!r}; both ends of the window are "
                 f"named dates, because an open end is whatever the source had "
                 f"on the day it was asked")
+    for symbol in symbols:
+        if not isinstance(symbol, str) or not SYMBOL.fullmatch(symbol):
+            raise MarketError(
+                f"{symbol!r} is not a ticker symbol, and it names the file its series "
+                f"is written to: a separator or a leading dot puts the file "
+                f"somewhere other than {into}")
     reachable = _inside_an_agent_directory(Path(into))
     if reachable is not None:
         raise MarketError(
@@ -807,8 +819,16 @@ def fetch_prices(*, symbols, start, end, into, environ, backend=None,
         backend if backend is not None else prices.name_from_environment(environ))
     credential = prices.credentials(chosen.NAME, environ)
     folder = Path(into)
-    folder.mkdir(parents=True, exist_ok=True)
-    served = {}
+    # `read_prices` reads every series in the folder as one fetch, so a folder
+    # already holding one would be read as a mix of two windows.
+    earlier = sorted(path.name for path in folder.glob("*.csv")) if folder.is_dir() else []
+    if earlier:
+        raise MarketError(
+            f"{folder} already holds {', '.join(earlier)}; the reader takes every "
+            f"series in a folder as one fetch, so each fetch gets a folder of its own")
+    # Every series is asked for before one is written: a source that fails on
+    # the third symbol leaves no folder holding two.
+    fetched = {}
     for symbol in symbols:
         frame = chosen.history(symbol, start, end, **credential)
         if not frame:
@@ -816,7 +836,10 @@ def fetch_prices(*, symbols, start, end, into, environ, backend=None,
                 f"{chosen.NAME} returned no rows for {symbol} between {start} "
                 f"and {end}; an empty series is not a company with no trading "
                 f"days")
-        written = prices.as_csv_rows(frame)
+        fetched[symbol] = prices.as_csv_rows(frame)
+    folder.mkdir(parents=True, exist_ok=True)
+    served = {}
+    for symbol, written in fetched.items():
         with (folder / f"{symbol}.csv").open("w", encoding="utf-8", newline="") as handle:
             writer = csv.DictWriter(handle, fieldnames=list(written[0]))
             writer.writeheader()

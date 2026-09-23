@@ -140,7 +140,7 @@ def _get(path: str, params: dict[str, str], token: str) -> Any:
     if response.status_code != 200:
         raise PriceError(
             f"{NAME} answered {response.status_code} for {path}: "
-            f"{response.text[:200].replace(token, '<token>')}"
+            f"{response.text.replace(token, '<token>')[:200]}"
         )
     return response.json()
 
