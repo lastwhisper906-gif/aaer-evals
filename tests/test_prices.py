@@ -38,8 +38,8 @@ the legacy CRSP columns -- a missing number is `float('nan')`, not `None`, and
 `permno` and `dlstcd` are double precision, so a code arrives as `574.0`. That is
 the shape the JSON fixture cannot carry, and the one a `history` that only
 passed rows through would refuse. What no test here reaches is the service
-itself: nobody has a credential yet, and `src/probe_price_sources.py` is a
-separate read-only probe that imports nothing from `src.prices`.
+itself: `src/probe_price_sources.py` puts each `history` to it with whatever
+credential the environment holds, and nobody has a credential yet.
 """
 
 from __future__ import annotations
