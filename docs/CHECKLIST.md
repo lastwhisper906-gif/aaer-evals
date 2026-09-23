@@ -336,6 +336,14 @@ and Python string-matches it against that reader's committed input.
   "explanation": false }
 ```
 
+`id` is a plain name that says what the item looks at: lowercase words joined
+by underscores with no digit, starting with one of the eleven areas in
+`rules/pilot/areas.json` — the `###` headings of §1 and §2 — and then naming
+what it looks at, as in `revenue_recognition_extended_payment_terms`; where the
+item came from stays in `paragraph_id`, a period or a date never goes in the id,
+an id is unique across the four reports of a run, and Python drops and counts
+an item whose id has any other shape.
+
 `explanation` is set by the notes-text reader on a sentence where management
 explains the cause of a number in receivables, inventory or reserves. It is the
 only route into `explanations.json`, which Python assembles from what the two
@@ -356,6 +364,10 @@ to re-derive which was which.
   "abnormal_return": 0, "short_interest_above_median": false,
   "reasoning": "" }
 ```
+
+`id` is the comparer item's own name, the reader item id it labels followed by
+`_versus_market` — `revenue_recognition_extended_payment_terms_versus_market` —
+held to the reader item's shape and never the id it cites.
 
 `upstream_item_id` is checked against the upstream report. An item whose
 citation does not resolve is dropped before the next layer sees it, and the drop

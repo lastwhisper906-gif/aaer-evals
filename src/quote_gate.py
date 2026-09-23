@@ -59,7 +59,37 @@ is the failure this gate exists to catch, not one for it to commit.
 -- twice in one report, or once in each of two -- is dropped everywhere it
 appears and resolves for nobody. A citation is meant to name one upstream claim;
 against a repeated id it names a set, and a dropped item's id would go on being
-citable through its twin.
+citable through its twin. A comparer item that wears the id of the reader item
+it cites is the same case: its id is its own name, and `docs/CHECKLIST.md` §7
+gives it the reader's id followed by `_versus_market`.
+
+**A reader or comparer item's id says what the item looks at.** The owner's
+rule, 2026-09-23: lowercase words joined by underscores, no digit, starting with
+its area and then saying what it looks at -- `revenue_recognition_extended_payment_terms`.
+The areas are the eleven `###` headings of `docs/CHECKLIST.md` §1 and §2, written
+once, into `rules/pilot/areas.json`; this module reads that file and holds no
+copy of its own. The location stays in `paragraph_id`, so an id carrying a
+period or a date is carrying something that belongs elsewhere, and the no-digit
+shape refuses every one written in figures. A period spelled out in words is
+not refused here: `fourth_quarter` is also how a checklist key names a concept,
+and a word list that refused the one would refuse the other. An id of any other
+shape is dropped and counted with its reason, like every other drop. The second
+pipeline check (PR #73) numbered its forty notes items with a capital and two
+digits and named its eight numbers items after the paragraph each quoted, dates
+included; under this rule all forty-eight are refused for the id alone.
+
+The rule reaches a report by its file name -- the last part of the name it is
+handed, so a report under a path is still its layer's -- and the gate places
+every name it is handed in the layer table of `src/agent_inputs.py` before it
+gates a single item. The four reader and comparer reports are held to the rule;
+the supervisors' predictions are not, because their entries are named by the
+checklist keys, which stay as they are; nor are the single-agent control's two
+files, which quote the committed input under handles of their own. A name the
+table does not give, or a name handed on the wrong side -- a reader's report
+citing, a comparer's or a supervisor's quoting an input, the control's citing --
+stops the gate rather than being gated under a rule that is not its own. What
+the gate cannot see is a runner that hands a reader's items under the control's
+file name; the name is the runner's word for which layer wrote them.
 
 **Fail closed.** A paragraph id that resolves to nothing, an item with no id, an
 empty quote, a citation that is not a string -- each is a drop and never a pass.
@@ -84,19 +114,43 @@ about the file it polices. The runner holds the parsed items and calls `gate`.
 from __future__ import annotations
 
 import json
+import re
 import sys
 from collections import Counter
 from pathlib import Path
 
 try:
-    from src import assemble_bundle, cutoff_guard
+    from src import agent_inputs, assemble_bundle, cutoff_guard
 except ImportError:  # invoked as a plain script
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from src import assemble_bundle, cutoff_guard
+    from src import agent_inputs, assemble_bundle, cutoff_guard
 
 MANIFEST = "input_manifest.json"
 NUMBERS = "input_numbers.json"
 TRENDS = "input_trends.json"
+
+# The areas a reader or comparer item id starts with: slug beside the heading it
+# came from. Read when the gate runs, never copied into this module.
+AREAS = Path(__file__).resolve().parent.parent / "rules" / "pilot" / "areas.json"
+
+# A plain name: lowercase ASCII words joined by single underscores. No digit, no
+# capital, no other mark, and nothing before the first word or after the last.
+PLAIN_NAME = re.compile(r"[a-z]+(?:_[a-z]+)*")
+
+# Each report name the gate will take, and the side its items stand on: a
+# reader's quote the committed input, everyone else's cite. The six agents'
+# files come from the layer table; the single-agent control's two files quote
+# the input directly and are named in the same catalogue.
+QUOTES = "input"
+CITES = "cites"
+REPORT_SIDES = {agent.writes: QUOTES if agent.layer == "reader" else CITES
+                for agent in agent_inputs.AGENTS.values()}
+REPORT_SIDES.update({name: QUOTES for name in agent_inputs.BUNDLE_CATALOGUE
+                     if name.startswith("control_single_agent_")})
+
+# The four reports whose item ids are held to the name rule.
+NAMED_ITEMS = frozenset(agent.writes for agent in agent_inputs.AGENTS.values()
+                        if agent.layer in ("reader", "comparer"))
 
 # The indent every committed JSON input is written under.
 INDENT = 2
@@ -238,6 +292,51 @@ def quote_drop_reason(item, index: dict) -> str | None:
     return None
 
 
+def _one_key_once(pairs: list) -> dict:
+    """A JSON object, refusing a key written twice rather than keeping the last."""
+    keys = [key for key, _ in pairs]
+    if len(set(keys)) != len(keys):
+        raise ValueError("a key is written twice")
+    return dict(pairs)
+
+
+def areas() -> tuple[str, ...]:
+    """The area slugs `rules/pilot/areas.json` lists, in the order it lists them.
+
+    Every slug is itself a plain name and every heading beside it is text. A
+    file that is not there, not an object, empty, or anything else stops the
+    gate: without the list no reader or comparer id can be judged, and a gate
+    that judged none would pass them all.
+    """
+    try:
+        text = AREAS.read_text(encoding="utf-8")
+        payload = json.loads(text, object_pairs_hook=_one_key_once)
+    except (OSError, ValueError) as exc:
+        raise QuoteGateError(
+            f"{AREAS} cannot be read as the area list, and without it no item id "
+            f"can be judged: {exc}") from exc
+    if not isinstance(payload, dict) or not payload:
+        raise QuoteGateError(f"{AREAS} is not an object naming at least one area")
+    for slug, heading in payload.items():
+        if PLAIN_NAME.fullmatch(slug) is None:
+            raise QuoteGateError(f"{AREAS} lists {slug!r}, which is not a plain name")
+        if not isinstance(heading, str) or not heading.strip():
+            raise QuoteGateError(f"{AREAS} gives {slug} no heading it came from")
+    return tuple(payload)
+
+
+def name_drop_reason(identifier: str, known_areas) -> str | None:
+    """Why a reader or comparer item's id is not a plain descriptive name, or None."""
+    if PLAIN_NAME.fullmatch(identifier) is None:
+        return (f"the item id {identifier!r} is not a plain name: a reader or "
+                "comparer item id is lowercase words joined by underscores, with "
+                "no digit, no capital and no other mark (docs/CHECKLIST.md §7)")
+    if not any(identifier.startswith(area + "_") for area in known_areas):
+        return (f"the item id {identifier!r} does not start with an area from "
+                "rules/pilot/areas.json followed by what the item looks at")
+    return None
+
+
 def citations(item) -> list:
     """Every upstream item id this item leans on, from the three places a schema puts one.
 
@@ -318,6 +417,7 @@ def gate(reports: list[dict], bundle_root) -> dict:
     if not isinstance(accession, str) or not accession:
         raise QuoteGateError(
             f"{MANIFEST} names no accession, and a computed row's id begins with one")
+    known_areas = areas()
     repeated = _repeated_ids(reports)
 
     kept: dict[str, list[dict]] = {}
@@ -331,6 +431,17 @@ def gate(reports: list[dict], bundle_root) -> dict:
             raise QuoteGateError(
                 f"{name} has to name either the input its items quote or the "
                 "reports its items cite, and exactly one of the two")
+        file_name = Path(name).name if isinstance(name, str) else None
+        if file_name not in REPORT_SIDES:
+            raise QuoteGateError(
+                f"{name!r} is not a report the layer table names, so the gate cannot "
+                "say which rule its items are held to")
+        side = REPORT_SIDES[file_name]
+        if side not in entry:
+            what = "quote an input" if side == QUOTES else "cite upstream reports"
+            raise QuoteGateError(
+                f"{name} is a report whose items {what}, and it was handed the other")
+        named_items = file_name in NAMED_ITEMS
 
         index, upstream_ids = None, set()
         if "input" in entry:
@@ -346,13 +457,15 @@ def gate(reports: list[dict], bundle_root) -> dict:
         standing, standing_ids = [], set()
         for item in entry.get("items") or []:
             identifier = item_id(item)
-            if identifier in repeated:
+            why = None
+            if named_items and identifier is not None:
+                why = name_drop_reason(identifier, known_areas)
+            if why is None and identifier in repeated:
                 why = (f"the item id {identifier} is on more than one item in this "
                        "run, so a citation naming it would not name one item")
-            elif index is not None:
-                why = quote_drop_reason(item, index)
-            else:
-                why = citation_drop_reason(item, upstream_ids)
+            if why is None:
+                why = (quote_drop_reason(item, index) if index is not None
+                       else citation_drop_reason(item, upstream_ids))
             if why is None:
                 standing.append(item)
                 standing_ids.add(identifier)

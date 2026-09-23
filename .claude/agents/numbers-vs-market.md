@@ -53,6 +53,13 @@ first become public. Say which window you used in every item.
 `upstream_item_id` must be an id that exists in `report_numbers.md`. Python
 checks it, and an item whose citation does not resolve is dropped and counted.
 
+`id` is your item's own name: its `upstream_item_id` followed by
+`_versus_market`, so the item labelling `revenue_recognition_extended_payment_terms`
+is `revenue_recognition_extended_payment_terms_versus_market`. Never the
+reader's id itself and never a number. Python drops and counts an item whose id
+is not lowercase words joined by underscores starting with an area, and every
+item that shares its id with another.
+
 The interesting output is the divergence: fundamentals moving one way while the
 abnormal return moves the other, or does not move at all. Say plainly when there
 is none.
