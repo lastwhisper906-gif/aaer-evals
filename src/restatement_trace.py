@@ -111,12 +111,11 @@ except ImportError:  # invoked as a plain script: python3.12 src/restatement_tra
 EVENT = "quiet_restatement"
 LEDGER = cutoff_guard.REPO_ROOT / "events" / "ledger.jsonl"
 
-# The companyfacts document, as `src/fetch_companyfacts.py` records it in the
-# manifest. The roles beside it are the documents that carry XBRL facts, taken
-# from the module that reads them rather than listed again here: a third role
-# would otherwise have to be remembered in two places.
+# The companyfacts document, and the roles beside it that carry XBRL facts. Both
+# are taken from the module that reads them rather than spelled again here: a
+# role listed in two places is two places to get a rename right.
 COMPANYFACTS_FORM = "companyfacts"
-COMPANYFACTS_ROLE = "standard_taxonomy_history"
+COMPANYFACTS_ROLE = cutoff_guard.CATALOGUE_ROLE
 INSTANCE_ROLES = extract_numbers.INSTANCE_ROLES
 
 BAD_INPUT = 2
@@ -279,14 +278,11 @@ def scan(ticker: str, *, cutoff=None, fixtures_root=cutoff_guard.FIXTURES) -> di
     — and the payload needs the resolved date to say which run this was.
     """
     fixtures_root = Path(fixtures_root)
-    # `cutoff or default` made the empty string a request for the default, so
-    # `--cutoff ""` ran at the fixture set's as-of date and said so in a payload
-    # nobody had asked for. Only an absent cutoff means the default; anything
-    # given is parsed, and `parse_date`'s rule is "never a silent default".
-    # `src/tag_continuity.py` reads it this way and the two readers disagreed.
-    if cutoff is None:
-        cutoff = cutoff_guard.default_cutoff(ticker, fixtures_root=fixtures_root)
-    cutoff = cutoff_guard.parse_date(cutoff, "cutoff")
+    # This rule was written here first, after the two companyfacts readers
+    # disagreed about what `--cutoff ""` meant. It now lives in
+    # `cutoff_guard.resolve_cutoff` and every reader calls it, so the ten call
+    # sites that had their own copy cannot drift apart again.
+    cutoff = cutoff_guard.resolve_cutoff(cutoff, ticker, fixtures_root=fixtures_root)
     record = cutoff_guard.one_document(ticker, COMPANYFACTS_FORM, COMPANYFACTS_ROLE,
                                        fixtures_root=fixtures_root)
     document = cutoff_guard.load_catalogue(record["full_path"], cutoff,

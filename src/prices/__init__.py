@@ -45,9 +45,14 @@ against a response fixture hand-written from the provider's published format --
 never from a call this code made, because a fixture captured from the wire
 agrees with the parser that captured it whatever either of them does.
 
-`history` is the wire, and it is judged by `src/probe_price_sources.py` putting
-a real delisted ticker to a real credential. A backend that shapes a fixture
-correctly and mis-shapes the wire is caught there, and only there.
+`history` is the wire. `tests/test_prices.py` judges it with a stand-in for the
+one module each backend talks through -- `requests` for Tiingo and EODHD, `wrds`
+for CRSP -- answering the shape that module answers, so the request each backend
+builds and the path from that answer to the frame are both exercised. What no
+test here reaches is the service itself. `src/probe_price_sources.py` is what
+puts each backend's `history` to it, about two delisted tickers, with whatever
+credential the environment holds -- and while none exists, every backend
+answers `Unconfigured` there and the service is still never reached.
 
 Credentials
 -----------

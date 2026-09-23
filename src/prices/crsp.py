@@ -39,10 +39,21 @@ module handles rather than passes on:
   because a return that has been corrected twice looks exactly like one that has
   been corrected once.
 
+One convention of the wire rather than of CRSP: `wrds.Connection.raw_sql`
+answers a pandas frame, and `history` hands its rows over with
+`to_dict("records")`. A missing value in a numeric column arrives there as
+`float('nan')`, not `None`, and the legacy CRSP tables store `permno` and
+`dlstcd` as double precision, so a column with one missing value carries every
+code as a float -- `574.0`, `90001.0`. `_known` and `_code` turn the first back
+into `None` and the second back into the integer CRSP publishes. Without them
+every row that is not a delisting day -- nearly every row of every series --
+would be refused for a delisting return that "is not finite".
+
 `rows_from` takes the rows the query returned and is what the fixture judges.
-`history` is the wire, and nothing here imports `wrds` until it is called --
-the package is not in `requirements.txt` and the module has to stay importable
-on a machine that has never had a WRDS account.
+`history` is the wire; `tests/test_prices.py` judges it with a stand-in `wrds`
+module whose frame answers the shape pandas does. Nothing here imports `wrds`
+until it is called -- the package is not in `requirements.txt` and the module
+has to stay importable on a machine that has never had a WRDS account.
 """
 
 from __future__ import annotations
@@ -92,9 +103,24 @@ def credential(pgpass: Path | None = None) -> Path:
     return path
 
 
+def _known(value: Any) -> Any:
+    """`None` for a missing value, whether it arrived as `None` or as pandas' NaN."""
+    if isinstance(value, float) and value != value:
+        return None
+    return value
+
+
+def _code(value: Any) -> Any:
+    """A code CRSP publishes as an integer, back from the float pandas made of it."""
+    value = _known(value)
+    if isinstance(value, float) and value.is_integer():
+        return int(value)
+    return value
+
+
 def _price(value: Any) -> float:
     """The magnitude of `prc`, whose sign marks a bid/ask average."""
-    if value is None:
+    if _known(value) is None:
         raise PriceError("prc is null, so the row carries no price")
     try:
         return abs(float(value))
@@ -128,7 +154,7 @@ def rows_from(payload: Any, *, ticker: str | None = None) -> list[dict]:
                 f"adjusted close is prc over cfacpr and neither can be guessed"
             )
         close = _price(entry["prc"])
-        factor = entry["cfacpr"]
+        factor = _known(entry["cfacpr"])
         try:
             factor = float(factor)
         except (TypeError, ValueError) as error:
@@ -144,13 +170,13 @@ def rows_from(payload: Any, *, ticker: str | None = None) -> list[dict]:
         out.append(
             row(
                 date=_day(entry["date"]),
-                security_id=entry["permno"],
+                security_id=_code(entry["permno"]),
                 ticker=str(symbol).upper(),
                 close=close,
                 adjusted_close=close / factor,
-                volume=entry.get("vol"),
-                delisting_return=entry.get("dlret"),
-                delisting_code=entry.get("dlstcd"),
+                volume=_known(entry.get("vol")),
+                delisting_return=_known(entry.get("dlret")),
+                delisting_code=_code(entry.get("dlstcd")),
             )
         )
     return sorted(out, key=lambda entry: entry["date"])
@@ -163,7 +189,12 @@ def history(
     *,
     pgpass: Path | None = None,
 ) -> list[dict]:
-    """The daily history, from WRDS. Judged by `src/probe_price_sources.py`."""
+    """The daily history, from WRDS.
+
+    Judged by `tests/test_prices.py` against a stand-in `wrds` module answering
+    the frame shape pandas does, NaN included. Against the real service it has
+    never been run: nobody here has a WRDS account yet.
+    """
     credential(pgpass)
     try:
         import wrds

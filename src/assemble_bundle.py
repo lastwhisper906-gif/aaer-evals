@@ -162,9 +162,10 @@ def phase(opened: dict, *files: str):
         opened.setdefault(path, set()).update(files)
 
 
-INDEX_ROLE = "submissions_index"
-# companyfacts, read through `cutoff_guard.load_catalogue`. The role is the
-# gate's own constant, because the gate is what makes the exception.
+# The submissions index, read through `cutoff_guard.load_index`. Both roles are
+# the gate's own constants, because the gate is what makes the exception.
+INDEX_ROLE = cutoff_guard.INDEX_ROLE
+# companyfacts, read through `cutoff_guard.load_catalogue`.
 FACTS_ROLE = cutoff_guard.CATALOGUE_ROLE
 # The two documents that are catalogues drawn from many filings rather than
 # filings. Neither has a filing date, and the cutoff applies to their rows.
@@ -449,7 +450,22 @@ def build(ticker: str, form: str, *, cutoff=None, fixtures_root=cutoff_guard.FIX
     # The cutoff is the triggering report's own filing date unless a run names
     # another one. Nothing filed after it is read, so the rule is enforced by
     # what is loaded rather than by remembering to check.
-    cutoff = str(cutoff) if cutoff else trigger["filing_date"]
+    #
+    # `if cutoff` was the same truthiness conflation this item removes from the
+    # readers: `--cutoff ""` is a cutoff that was *given* and is not a date, and
+    # reading it as absent is a silent default where `parse_date`'s rule is
+    # "never a silent default". Here it defaults to the trigger's own filing
+    # date, so nothing later is swept in and it is not a look-ahead -- but a
+    # caller who typed an empty string got a run, and a run is not an answer to
+    # a question nobody asked. `None` still means the default.
+    if cutoff is None:
+        cutoff = trigger["filing_date"]
+    else:
+        cutoff = str(cutoff)
+        if not cutoff.strip():
+            raise BundleError(
+                "cutoff is missing: an empty cutoff was given rather than none, "
+                "and an empty string is not the triggering report's filing date")
     if cutoff < trigger["filing_date"]:
         raise BundleError(f"cutoff {cutoff} is before {form} {trigger['accession']} "
                           f"was filed on {trigger['filing_date']}")
@@ -482,8 +498,8 @@ def build(ticker: str, form: str, *, cutoff=None, fixtures_root=cutoff_guard.FIX
     # `documents_used` and `CATALOGUE_ROLES`.
     #
     # The window is anchored on the triggering report's own period of report, so
-    # `Q-0` is the quarter this run is about whether or not the record reaches
-    # it. Anchored on the record instead, a record fetched before the trigger
+    # `quarters-back-0` is the quarter this run is about whether or not the
+    # record reaches it. Anchored on the record instead, a record fetched before the trigger
     # renames every quarter one step back and the run's own period goes missing
     # without a word — two of these twelve records are older than their 10-Q.
     with phase(opened, "input_trends.json"):

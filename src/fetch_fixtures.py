@@ -55,19 +55,23 @@ import urllib.request
 from pathlib import Path
 
 try:
-    from src import interpreter_pin
+    from src import interpreter_pin, universe
 except ImportError:  # invoked as a plain script: python3.12 src/fetch_fixtures.py
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from src import interpreter_pin
+    from src import interpreter_pin, universe
 
-TICKERS = ("AAPL", "STX", "CSCO", "PANW", "CARR", "LFUS",
-           "GNRC", "CIEN", "QCOM", "ESE", "TTMI", "NVDA")
+# The twelve were a literal here and three other modules imported it from this
+# one, which made the universe a code change. It is `universe.json` at the
+# repository root now. This name stays because the tests parametrise on it at
+# import time, and it is a snapshot: `main` below asks `universe.tickers()`
+# again when it runs, so a row appended to the file is a company this process
+# will fetch without being restarted.
+TICKERS = universe.tickers()
 
 AS_OF = "2026-09-01"
 FIXTURES = Path(__file__).resolve().parent.parent / "tests" / "fixtures"
 
 DEFAULT_USER_AGENT = "aaer-evals research lastwhisper906@gmail.com"
-TICKER_MAP_URL = "https://www.sec.gov/files/company_tickers.json"
 SUBMISSIONS_URL = "https://data.sec.gov/submissions/CIK{cik}.json"
 ARCHIVE_URL = "https://www.sec.gov/Archives/edgar/data/{cik_int}/{accession}/{name}"
 
@@ -126,12 +130,6 @@ class Fetcher:
 
 def sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
-
-
-def cik_map(fetcher: Fetcher) -> dict[str, str]:
-    raw = fetcher.get_json(TICKER_MAP_URL)
-    return {row["ticker"].upper(): f"{int(row['cik_str']):010d}"
-            for row in raw.values()}
 
 
 def recent_filings(fetcher: Fetcher, cik: str) -> list[dict]:
@@ -422,21 +420,23 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out", default=str(FIXTURES), help="fixture root")
     args = parser.parse_args(argv)
 
-    tickers = tuple(t.upper() for t in args.ticker) if args.ticker else TICKERS
+    # Read from the file here rather than trusting the import-time snapshot: a
+    # thirteenth row is a thirteenth company to plan for, not a restart.
+    tickers = (tuple(t.upper() for t in args.ticker) if args.ticker
+               else universe.tickers())
     out = Path(args.out)
     fetcher = Fetcher(os.environ.get("EDGAR_USER_AGENT", DEFAULT_USER_AGENT))
 
-    try:
-        ciks = cik_map(fetcher)
-    except Exception as exc:  # noqa: BLE001 - the reason matters more than the type
-        print(f"fetch_fixtures: could not read the EDGAR ticker map: {exc}", file=sys.stderr)
-        return FETCH_FAILED
-
+    # The CIK is the file's, not EDGAR's ticker map's. The map was a second
+    # answer to "which registrant is this?" that `universe.json` never got a
+    # say in: a row whose ticker the map lacked failed whatever CIK it carried,
+    # and a ticker the map had re-pointed would be fetched as someone else.
     problems, changed = [], []
     for ticker in tickers:
-        cik = ciks.get(ticker)
-        if cik is None:
-            problems.append(f"{ticker}: not in the EDGAR ticker map")
+        try:
+            cik = universe.cik(ticker)
+        except universe.UniverseError as exc:
+            problems.append(f"{ticker}: {exc}")
             continue
         print(f"{ticker} (CIK {cik})")
         try:

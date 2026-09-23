@@ -27,14 +27,14 @@ a file that is.
 
 **The window is anchored on the run's own period, not on the record's newest
 one.** The caller passes the triggering report's period of report. The eight
-quarters are walked back from there, so `Q-0` is the quarter this run is about
-whether or not the record reaches it, and `FY-0` is the newest fiscal year at or
-before that period — the trigger's own year on an annual report, and the last
+quarters are walked back from there, so `quarters-back-0` is the quarter this
+run is about whether or not the record reaches it, and `years-back-0` is the
+newest fiscal year at or before that period — the trigger's own year on an annual report, and the last
 year to end on a quarterly one. companyfacts can lag the filing that triggered
 the run — two of these twelve records were fetched before their 10-Q — and
 anchored on the record those tables labelled the quarter *before* the run's own
-`Q-0`, left the run's own period in no slot at all, and said twelve of thirteen
-periods were on record. A slot the record cannot reach is reported empty with
+`quarters-back-0`, left the run's own period in no slot at all, and said twelve
+of thirteen periods were on record. A slot the record cannot reach is reported empty with
 that named as the reason.
 
 **The rules that decide which row is the row**, all of them mechanical:
@@ -62,6 +62,20 @@ fourth quarter is not reported as a duration by anyone: a 10-K states the year
 and the three 10-Qs state Q1 to Q3, so the fourth quarter has to be derived —
 `src/fourth_quarter.py` does that, and this table reports the slot as missing
 with the derivation named instead of quietly skipping the period.
+
+**Research and development, capitalized.** The spec's one further column —
+book value and earnings with research and development capitalized — is on each
+fiscal year and not on the quarters, because the life it amortizes over is
+counted in years. Six years of `ResearchAndDevelopmentExpense` are read, the
+year and five before it; the asset is what five-year straight-line amortization
+leaves unamortized, earnings add back the year's expense and take off the
+year's amortization, and book value adds the asset. No tax effect is applied.
+Beside it is the development cost the company itself capitalized, read only
+from `CapitalizedComputerSoftwareAdditions`: of the twelve, ESCO alone
+capitalizes one in its latest 10-K, and it tags that line with its own
+extension, which companyfacts does not carry, so the cell says missing. A
+filing that says in words that nothing was capitalized, as Ciena's does, has
+not tagged a zero, and this file does not read a zero into it.
 
 The non-GAAP gap is missing for a different reason and says so: `Revenues` is a
 us-gaap concept and "adjusted net income" is not, so no non-GAAP measure is in
@@ -155,15 +169,32 @@ CONCEPTS: dict[str, tuple[str, tuple[str, ...]]] = {
     # Never present: no non-GAAP measure is a us-gaap concept. Kept in the
     # table so the gap is reported as missing rather than forgotten.
     "non_gaap_net_income": ("duration", ()),
+    # The research-and-development-capitalized column, and nothing else, reads
+    # these three. One tag each, so six years of expense are six years of one
+    # concept and never a sum across two.
+    "research_and_development_expense": ("duration", ("ResearchAndDevelopmentExpense",)),
+    # Development cost the company itself capitalized, as a statement line.
+    # Only the additions: `CapitalizedComputerSoftwarePeriodIncreaseDecrease`
+    # is a net change in the balance and may be net of amortization.
+    "capitalized_development_cost": ("duration", ("CapitalizedComputerSoftwareAdditions",)),
+    "stockholders_equity": ("instant", ("StockholdersEquity",)),
 }
+
+# Terms of the research-and-development column alone. They are not evidence
+# that a fiscal period exists: that list was measured on the ratio terms, and a
+# column added beside the table does not get to move the table's periods.
+COLUMN_ONLY_TERMS = frozenset({"research_and_development_expense",
+                               "capitalized_development_cost",
+                               "stockholders_equity"})
 
 # The tags whose durations are evidence that a fiscal period exists at all. An
 # annual-length span under a tag no term names is not a fiscal year: TTM
 # Technologies' record carries one `us-gaap:LossOnContracts` fact that starts
 # its 2025 year a day early, and counting that as a second year ending the same
 # day takes a slot from a real one.
-PERIOD_TAGS = frozenset(tag for kind, tags in CONCEPTS.values()
-                        if kind == "duration" for tag in tags)
+PERIOD_TAGS = frozenset(tag for term, (kind, tags) in CONCEPTS.items()
+                        if kind == "duration" and term not in COLUMN_ONLY_TERMS
+                        for tag in tags)
 
 # docs/INPUT_SPEC.md §5 item 1, in the order the spec lists them — §4 is the
 # market table, which this file has nothing to do with.
@@ -413,8 +444,8 @@ def requested(available: list[dict], count: int, step: int, kind: str,
     looks identical until the record is older than the trigger, and then it
     quietly renames the periods: Carrier's record was fetched on 2026-04-30 and
     its 10-Q was filed 2026-07-28, so the quarter before the run's own was
-    labelled `Q-0`, the run's own quarter appeared nowhere, and the table said
-    twelve of thirteen periods were on record. A reader comparing that against
+    labelled `quarters-back-0`, the run's own quarter appeared nowhere, and the
+    table said twelve of thirteen periods were on record. A reader comparing that against
     `input_numbers.json`, which does carry the June quarter, has two inputs
     disagreeing about which quarter this is.
 
@@ -473,9 +504,9 @@ def year_end_anchor(available: list[dict], period_end: str | None) -> str | None
     record does not carry the year. It is projected, by the same 364-day step
     `requested` already walks back on: a record fetched the day before a 10-K
     lands holds last year's annual figures and nothing else, and reading its
-    newest year as `FY-0` hands a reader the prior year under the label of the
-    year the run is about. Projected instead, `FY-0` is the year the run is
-    about and the slot is empty with the reason.
+    newest year as `years-back-0` hands a reader the prior year under the label
+    of the year the run is about. Projected instead, `years-back-0` is the year
+    the run is about and the slot is empty with the reason.
 
     `None` when there is no anchor to place — no trigger period, or a record
     with no annual duration at all — and then the caller falls back to the
@@ -498,7 +529,8 @@ def year_end_anchor(available: list[dict], period_end: str | None) -> str | None
 
 # --- one term, one period ----------------------------------------------------
 
-def why_missing(document: dict, index: dict, term: str, period: dict) -> str:
+def why_missing(document: dict, index: dict, term: str, period: dict,
+                concepts: dict | None = None) -> str:
     """Which of the five ways this term is not here.
 
     The reader's next step differs for each: a concept nobody tags, a concept
@@ -506,7 +538,8 @@ def why_missing(document: dict, index: dict, term: str, period: dict) -> str:
     not read reported, a concept reported for other periods, and the one concept
     that is in no filing's standard taxonomy at all.
     """
-    tags = CONCEPTS[term][1]
+    concepts = CONCEPTS if concepts is None else concepts
+    tags = concepts[term][1]
     if not tags:
         return f"no row for {term}: {NO_NON_GAAP}"
     named = ", ".join(f"us-gaap:{tag}" for tag in tags)
@@ -529,12 +562,13 @@ def why_missing(document: dict, index: dict, term: str, period: dict) -> str:
                 f"states only by segment — the filing says which, and this record "
                 f"cannot")
     wanted = _spelled(period["start"], period["end"]) \
-        if CONCEPTS[term][0] == "duration" else period["end"]
+        if concepts[term][0] == "duration" else period["end"]
     return (f"no row for {term} in {wanted}: "
             f"{named} is in the record, but not for this period")
 
 
-def term_source(document: dict, index: dict, term: str, period: dict) -> dict:
+def term_source(document: dict, index: dict, term: str, period: dict,
+                concepts: dict | None = None) -> dict:
     """The one row behind a term for one period, or the reason there is none.
 
     The first tag in `CONCEPTS[term]` the record carries for this period is the
@@ -542,8 +576,13 @@ def term_source(document: dict, index: dict, term: str, period: dict) -> dict:
     than falling through to the next concept. Falling through would swap the
     concept under the reader without saying so, which is the mistake
     `_change` refuses across periods.
+
+    `concepts` is another term map read by this same rule. `src/baselines.py`
+    passes its own, because the formula baselines need terms this table does
+    not read, and a term they share is picked out of the record the same way.
     """
-    kind, tags = CONCEPTS[term]
+    concepts = CONCEPTS if concepts is None else concepts
+    kind, tags = concepts[term]
     for tag in tags:
         key = (period["start"], period["end"]) if kind == "duration" \
             else (None, period["end"])
@@ -558,7 +597,7 @@ def term_source(document: dict, index: dict, term: str, period: dict) -> dict:
                 "value": settled["value"], "accession": settled["accession"],
                 "filed": settled["filed"],
                 "id": f"{settled['accession']}:facts:{tag}:{spelled}"}
-    return {"missing": why_missing(document, index, term, period)}
+    return {"missing": why_missing(document, index, term, period, concepts)}
 
 
 def ratio(document: dict, index: dict, name: str, period: dict) -> dict:
@@ -582,6 +621,13 @@ def ratio(document: dict, index: dict, name: str, period: dict) -> dict:
 # --- the series --------------------------------------------------------------
 
 def _label(prefix: str, index: int) -> str:
+    """`quarters-back-0`, `years-back-3`: how far back, in words and a count.
+
+    They were `Q-0` and `FY-3`, which is the letter-number shape `CLAUDE.md`
+    forbids. A reader quotes these labels into a report, and the report is read
+    by the plain-name check even though this table, as the text the agent saw,
+    is not.
+    """
     return f"{prefix}-{index}"
 
 
@@ -717,6 +763,118 @@ def coverage(quarters: list[dict], years: list[dict]) -> dict:
     }
 
 
+# --- research and development, capitalized --------------------------------
+
+# `docs/INPUT_SPEC.md` §5 item 1's one further column: book value and earnings
+# with research and development capitalized. The spec names the column and not
+# the life, so the life is a default and `docs/needs_judgment.md` carries it:
+# five years, straight line, a full year's weight on the year the money was
+# spent, and no tax effect.
+RND_LIFE_YEARS = 5
+
+RND_FORMULAS = {
+    "research_and_development_asset":
+        "sum over k = 0..4 of research_and_development_expense[year - k] * (5 - k) / 5",
+    "research_and_development_amortization":
+        "sum over k = 1..5 of research_and_development_expense[year - k] / 5",
+    "earnings_with_rnd_capitalized":
+        "net_income + research_and_development_expense[year] "
+        "- research_and_development_amortization",
+    "book_value_with_rnd_capitalized":
+        "stockholders_equity + research_and_development_asset",
+    "capitalized_over_expense":
+        "capitalized_development_cost / research_and_development_expense[year]",
+}
+
+
+def rnd_capitalized(document: dict, index: dict, row: dict,
+                    annual: list[dict]) -> dict:
+    """One fiscal year of the research-and-development-capitalized column.
+
+    Six years of expense are read — the year and the five before it — each
+    found by walking back from this year's own end on the step the year window
+    uses, and each one a row of the record with its accession. A year the record
+    does not carry is not a zero: every quantity that needs it is missing, and
+    the reason names the year. A company that states in words that it
+    capitalized nothing has not tagged a zero, and a zero is not read into it.
+
+    `capitalized_development_cost` is the development cost the company itself
+    capitalized, beside the expense, for `rnd_capitalization_shift` in
+    `docs/CHECKLIST.md`. It is not added to the asset: an amount already on the
+    balance sheet was never in the expense line this capitalizes.
+    """
+    if not row["filled"]:
+        return {"missing": f"no fiscal year in this slot: {row['reason']}"}
+    period = {"start": row["start"], "end": row["end"], "days": row["days"]}
+    chain = requested(annual, RND_LIFE_YEARS + 1, YEAR_STEP, "year", row["end"])
+    expense: list[dict] = []
+    for slot in chain:
+        back = slot["index"]
+        if slot["period"] is None:
+            expense.append({"years_back": back,
+                            "missing": f"{back} year(s) back: {slot['reason']}"})
+            continue
+        found = term_source(document, index, "research_and_development_expense",
+                            slot["period"])
+        expense.append({"years_back": back, **found} if "missing" not in found
+                       else {"years_back": back,
+                             "missing": f"{back} year(s) back: {found['missing']}"})
+
+    def needs(backs, *cells) -> str | None:
+        gaps = [expense[back]["missing"] for back in backs
+                if "missing" in expense[back]]
+        gaps += [cell["missing"] for cell in cells if "missing" in cell]
+        return "; ".join(gaps) or None
+
+    life = RND_LIFE_YEARS
+    net_income = term_source(document, index, "net_income", period)
+    equity = term_source(document, index, "stockholders_equity", period)
+    capitalized = term_source(document, index, "capitalized_development_cost", period)
+    out: dict = {"life_years": life, "formulas": RND_FORMULAS,
+                 "research_and_development_expense": expense,
+                 "net_income": net_income, "stockholders_equity": equity,
+                 "capitalized_development_cost": capitalized}
+
+    gap = needs(range(life))
+    asset = None if gap else sum(expense[k]["value"] * (life - k) / life
+                                 for k in range(life))
+    out["research_and_development_asset"] = \
+        {"missing": gap} if gap else {"value": asset}
+    gap = needs(range(1, life + 1))
+    amortization = None if gap else sum(expense[k]["value"] / life
+                                        for k in range(1, life + 1))
+    out["research_and_development_amortization"] = \
+        {"missing": gap} if gap else {"value": amortization}
+
+    gap = needs(range(life + 1), net_income)
+    out["earnings_with_rnd_capitalized"] = {"missing": gap} if gap else {
+        "value": net_income["value"] + expense[0]["value"] - amortization}
+    gap = needs(range(life), equity)
+    out["book_value_with_rnd_capitalized"] = {"missing": gap} if gap else {
+        "value": equity["value"] + asset}
+
+    gap = needs([0], capitalized)
+    if gap:
+        out["capitalized_over_expense"] = {"missing": gap}
+    elif expense[0]["value"] == 0:
+        out["capitalized_over_expense"] = {
+            "missing": "research_and_development_expense is zero in "
+                       f"{_spelled(period['start'], period['end'])}"}
+    else:
+        out["capitalized_over_expense"] = {
+            "value": capitalized["value"] / expense[0]["value"]}
+    return out
+
+
+def rnd_sources(row: dict) -> list[dict]:
+    """Every record row the column read for one fiscal year."""
+    column = row.get("research_and_development_capitalized") or {}
+    cells = list(column.get("research_and_development_expense") or [])
+    cells += [column.get(term) or {} for term in
+              ("net_income", "stockholders_equity", "capitalized_development_cost")]
+    return [cell for cell in cells if "accession" in cell]
+
+
 # --- the table ---------------------------------------------------------------
 
 def read_record(ticker: str, cutoff, *, fixtures_root=cutoff_guard.FIXTURES) -> dict:
@@ -782,16 +940,23 @@ def trends(document: dict, cutoff, *, period_end=None) -> dict:
                  f"report is the first to state are not in it")
     quarters = _series(document, index,
                        requested(periods(index, "quarter"), QUARTERS_REQUESTED,
-                                 QUARTER_STEP, "quarter", period_end, stale), "Q")
+                                 QUARTER_STEP, "quarter", period_end, stale),
+                       "quarters-back")
     annual = periods(index, "year")
     years = _series(document, index,
                     requested(annual, YEARS_REQUESTED, YEAR_STEP, "year",
-                              year_end_anchor(annual, period_end), stale), "FY")
+                              year_end_anchor(annual, period_end), stale),
+                    "years-back")
     add_changes(quarters, years)
+    for row in years:
+        row["research_and_development_capitalized"] = rnd_capitalized(
+            document, index, row, annual)
     used = sorted({entry["accession"]
                    for row in quarters + years
                    for cell in row["ratios"].values()
-                   for entry in (cell.get("inputs") or {}).values()})
+                   for entry in (cell.get("inputs") or {}).values()}
+                  | {entry["accession"] for row in years
+                     for entry in rnd_sources(row)})
     return {
         "ticker": document["ticker"],
         "cutoff": stated.isoformat(),
@@ -849,8 +1014,13 @@ def main(argv: list[str] | None = None) -> int:
         # months after the trigger without saying so, which is the look-ahead
         # this module refuses everywhere else. An empty string reaches
         # `parse_date` and is refused there, by name.
-        cutoff = (cutoff_guard.default_cutoff(args.ticker)
-                  if args.cutoff is None else args.cutoff)
+        # Through the shared rule, not around it. This line was written the
+        # long way and then reverted to `default_cutoff` by the merge that
+        # brought the companyfacts trend table in, and the AST walk in
+        # `tests/test_empty_cutoff.py` is what said so -- the invariant
+        # `resolve_cutoff` claims in its own docstring was false on the tree
+        # that claimed it.
+        cutoff = cutoff_guard.resolve_cutoff(args.cutoff, args.ticker)
         payload = table(args.ticker, cutoff, period_end=args.period_end)
     except (OSError, ValueError, TrendInputError,
             cutoff_guard.CutoffGuardError) as exc:

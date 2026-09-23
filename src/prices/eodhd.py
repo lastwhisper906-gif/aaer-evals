@@ -138,7 +138,12 @@ def history(
     *,
     environ: dict[str, str] | None = None,
 ) -> list[dict]:
-    """The daily history, from the wire. Judged by `src/probe_price_sources.py`."""
+    """The daily history, from the wire.
+
+    Judged by `tests/test_prices.py` against a stand-in `requests` module, which
+    checks the address, the parameters and where the token goes. Against the
+    real service it has never been run: nobody here has a token yet.
+    """
     token = credential(environ)
     params = {}
     if start is not None:
