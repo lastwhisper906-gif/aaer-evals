@@ -208,17 +208,20 @@ BUNDLE = {"input_notes.md": NOTES, "input_trends.json": TRENDS,
           "input_market.json": MARKET}
 
 
-def plant(tmp_path: Path) -> tuple[Path, Path]:
+def plant(tmp_path: Path, root: Path | None = None) -> tuple[Path, Path]:
     """The run directory, and the directory the control is handed.
 
     The bundle is written into the run directory and *copied* into the
     control's, which is how `src/agent_inputs.py` places a layer's files and
     what the byte check below is measured against. A control directory that
     were not a copy of the run would be a directory nobody assembled.
+
+    `root` is where the run directory sits, when a test needs it somewhere in
+    particular; everything else plants it beside the control's directory.
     """
-    root = tmp_path / "AAPL-10-K"
+    root = tmp_path / "AAPL-10-K" if root is None else root
     folder = tmp_path / "single-agent"
-    root.mkdir()
+    root.mkdir(parents=True)
     folder.mkdir()
     for name, text in BUNDLE.items():
         (root / name).write_text(text, encoding="utf-8")
@@ -1062,6 +1065,92 @@ def test_the_control_file_is_never_written_through_a_link_out_of_the_run(tmp_pat
         go(root, folder, "accounting_reliability", accounting_answer())
     assert "never through a link" in str(caught.value)
     assert elsewhere.read_text(encoding="utf-8") == "{}\n"
+
+
+# --- where the control's file may land ---------------------------------------
+#
+# The expected value is read off two documents and one check that predates this
+# control's rule. `docs/INPUT_SPEC.md` §6 lists the control files in the
+# committed bundle under `runs/{ticker}/{accession}/` -- the run directory -- and
+# says in the same breath that "each agent's input directory is committed as
+# what it saw, and the directory is the isolation boundary";
+# `docs/HOW_WE_WORK.md` §1.6 says it again. `src/agent_inputs.py` is that
+# boundary as directories: `runs/{ticker}/{accession}/agents/{agent}/`. So a
+# control file inside another run's `agents/` tree is written into what that
+# tree records its agents as having seen, and the refusal is the expected
+# result.
+
+OTHER_RUN_TICKER = "NVDA"
+OUTSIDE_THE_BOUNDARY = "per-agent input"
+
+
+def another_run(tmp_path: Path, *, built: bool = True) -> Path:
+    """A second company's run, with its numbers reader's input directory built.
+
+    Built by `src/agent_inputs.py` itself rather than by `mkdir`, so the
+    directory the control is pointed into is one the layer table made. The
+    reader's files are placeholders: what is under test is where they sit.
+    `built=False` is the same run before any agent's directory exists.
+    """
+    run = tmp_path / "runs" / OTHER_RUN_TICKER / OTHER_ACCESSION
+    run.mkdir(parents=True)
+    for name in agent_inputs.AGENTS["numbers-reader"].required():
+        (run / name).write_text(f"# {OTHER_RUN_TICKER} {name}\n", encoding="utf-8")
+    (run / MANIFEST_NAME).write_text(
+        json.dumps({"ticker": OTHER_RUN_TICKER, "accession": OTHER_ACCESSION},
+                   indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    if built:
+        agent_inputs.build(run, "numbers-reader")
+    assert agent_inputs.isolation_violations(run) == []
+    return run
+
+
+@pytest.mark.parametrize("where", ["a reader's own directory",
+                                   "the directory the six sit in",
+                                   "a link into a reader's directory",
+                                   "a reader's directory where the layout does not put it",
+                                   "the directory the six sit in, before any is built"])
+def test_a_run_directory_inside_another_runs_input_tree_is_refused(tmp_path, where):
+    """This control writes into the run directory it is handed, so that is its output.
+
+    Planted five ways: under the numbers reader's session root; under the
+    `agents/` directory that holds the six and nothing else; at an ordinary
+    path that is a link into the first, because a link's ancestors are wherever
+    it points and the file follows the link; under a reader's directory sitting
+    somewhere the layout does not put it, which `agent_directories` finds by its
+    name "wherever it sits"; and under a run's `agents/` before any agent's
+    directory is in it, which the layout says holds nothing but the six, ever.
+    """
+    other = another_run(tmp_path, built=not where.endswith("before any is built"))
+    held = agent_inputs.session_root(other, "numbers-reader")
+    if where.startswith("the directory the six sit in"):
+        held = agent_inputs.agents_root(other)
+    elif where == "a reader's directory where the layout does not put it":
+        held = other / "readers" / "numbers-reader"
+    planted, folder = plant(tmp_path, held / "AAPL-10-K")
+    root = planted
+    if where == "a link into a reader's directory":
+        root = tmp_path / "AAPL-10-K"
+        root.symlink_to(planted, target_is_directory=True)
+    message = refused(root, folder)
+    assert OUTSIDE_THE_BOUNDARY in message
+    assert str(held.resolve()) in message
+    assert sorted(other.rglob("control_single_agent_*")) == []
+
+
+def test_a_run_directory_that_holds_its_own_input_tree_still_takes_its_file(tmp_path):
+    """The positive side: the run directory is where §6 puts the control file.
+
+    A run directory holds the bundle *and* its `agents/` directory, so the rule
+    cannot be "no agent directory nearby" -- that would refuse every run the
+    stage runner finishes. The file lands beside the bundle, and the boundary
+    check `src/agent_inputs.py` already runs finds nothing wrong with the tree.
+    """
+    root, folder = plant(tmp_path)
+    agent_inputs.session_root(root, "numbers-reader").mkdir(parents=True)
+    go(root, folder, "accounting_reliability", accounting_answer())
+    assert (root / "control_single_agent_accounting.json").is_file()
+    assert agent_inputs.isolation_violations(root) == []
 
 
 def test_a_served_model_from_another_family_is_refused(tmp_path):

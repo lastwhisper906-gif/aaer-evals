@@ -123,9 +123,12 @@ runner yet -- the same gap `src/quote_gate.py` names, "nothing calls `gate` yet
 because there is no stage runner to call it" -- and the runner that calls this
 holds both and records them.
 
-This module never names `runs/`. It writes into the directory it is handed, and
-it never writes over what is already there: a run directory is append-only, so a
-second call carrying different content is refused and a correction is a new run.
+This module never names `runs/`. It writes into the run directory it is handed,
+which is where `docs/INPUT_SPEC.md` §6 lists the control files, and nowhere
+inside a run's per-agent input tree: `destination` refuses a run directory
+sitting in one, because that tree is committed as what each agent saw. It never
+writes over what is already there: a run directory is append-only, so a second
+call carrying different content is refused and a correction is a new run.
 
     python3.12 -m src.control_single_agent --question accounting_reliability \
         --input <the control's directory> --bundle <the run directory>
@@ -892,6 +895,29 @@ def prompt(question: str, input_dir, bundle_root) -> str:
                                  files=listed, schema=SCHEMA)
 
 
+def destination(bundle_root) -> Path:
+    """Where this control's file may land: the run directory, and outside every input tree.
+
+    `docs/INPUT_SPEC.md` §6 lists the two control files in the committed bundle,
+    under `runs/{ticker}/{accession}/` -- the run directory, which is what
+    `bundle_root` is and where `run` writes. The same paragraph makes "each
+    agent's input directory" the isolation boundary, "committed as what it
+    saw", and `docs/HOW_WE_WORK.md` §1.6 says it again. A run directory planted
+    under another run's `agents/` tree reads, gates and answers like any other,
+    and the file it would write is then part of what that tree records one of
+    its agents as having seen. Checked before anything is read, so no model is
+    asked a question whose answer has nowhere it may go.
+    """
+    held = agent_inputs.input_tree_holding(bundle_root)
+    if held is not None:
+        raise ControlError(
+            f"{bundle_root} is inside {held}, a run's per-agent input tree. That "
+            "tree is committed as what each agent saw, so a control file written "
+            "there rewrites another agent's record of its input; a control's "
+            "files land in the run directory, beside the bundle")
+    return Path(bundle_root)
+
+
 def _place(path: Path, text: str) -> Path:
     """The control file where it was asked for, without changing what is there.
 
@@ -939,6 +965,7 @@ def run(question: str, *, input_dir, bundle_root, ask,
     drop count and the served model in `input_manifest.json` and the module
     docstring says why this hands them back rather than writing them there.
     """
+    out = destination(bundle_root)
     family = supervisor_model(prompts_dir)
     manifest = json.loads(cutoff_guard.load_bundle_file(bundle_root, MANIFEST))
     accession = manifest.get("accession")
@@ -965,7 +992,7 @@ def run(question: str, *, input_dir, bundle_root, ask,
 
     check_schema(payload, question, rules_version=manifest.get("rules_version"))
     kept, dropped = verify(payload, question, index)
-    path = _place(Path(bundle_root) / CONTROL_FILES[question],
+    path = _place(out / CONTROL_FILES[question],
                   json.dumps(kept, indent=INDENT, sort_keys=True) + "\n")
     return {"question": question, "path": path, "prediction": kept,
             "dropped": dropped, "requested_model": family, "served_model": served}

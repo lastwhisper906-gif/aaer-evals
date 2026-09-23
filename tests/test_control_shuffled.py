@@ -58,11 +58,12 @@ import datetime as dt
 import json
 import math
 import re
+import shutil
 from pathlib import Path
 
 import pytest
 
-from src import control_shuffled, cutoff_guard
+from src import agent_inputs, control_shuffled, cutoff_guard
 from src.control_shuffled import ControlError
 from src.fetch_fixtures import TICKERS
 
@@ -1597,6 +1598,179 @@ def test_an_output_that_is_not_a_directory_is_refused(tmp_path):
                              notes_bundle=bundle(tmp_path, NOTES_COMPANY),
                              out=not_a_directory,
                              predictor=StandInSupervisor())
+
+
+# --- where the control files may land, and what one run is -------------------
+#
+# The expected values are read off the documents and off a check that predates
+# this control's rule, never off the control. `docs/INPUT_SPEC.md` §6 lists
+# `control_shuffled_accounting.json` and `control_shuffled_pressure.json` in the
+# committed bundle under `runs/{ticker}/{accession}/`, and says in the same
+# paragraph that "each agent's input directory is committed as what it saw, and
+# the directory is the isolation boundary"; `docs/HOW_WE_WORK.md` §1.6 says it
+# again. `src/agent_inputs.py` is that boundary as directories, and its
+# `isolation_violations` is what says a tree is broken -- asked here before and
+# after, and asked once more with a control file put where the refusal kept one
+# out, so the refusal is shown to have prevented something that check calls a
+# break rather than something this file calls one.
+#
+# The run a directory is, is the manifest it committed: `src/assemble_bundle.py`
+# writes the triggering report's accession into `input_manifest.json` and files
+# the run under that accession. A copy of a run carries the same manifest at a
+# different path, and a link carries it at a path that resolves to the first;
+# the path said a copy was two runs and a link one.
+
+OUTSIDE_THE_BOUNDARY = "per-agent input"
+ONE_RUN = "one run"
+
+
+def another_run(tmp_path: Path) -> Path:
+    """A run beside the pair, with its accounting supervisor's directory built.
+
+    Built by `src/agent_inputs.py` itself, so the directory the control is
+    pointed into is one the layer table made and not one this file shaped.
+    """
+    other = bundle(tmp_path / "another", NOTES_COMPANY)
+    agent_inputs.build(other, "supervisor-accounting")
+    assert agent_inputs.isolation_violations(other) == []
+    return other
+
+
+@pytest.mark.parametrize("where", ["a supervisor's own directory",
+                                   "the directory the six sit in",
+                                   "a link into a supervisor's directory"])
+def test_a_control_pointed_inside_another_runs_input_tree_is_refused(tmp_path, where):
+    other = another_run(tmp_path)
+    held = agent_inputs.session_root(other, "supervisor-accounting")
+    if where == "the directory the six sit in":
+        held = agent_inputs.agents_root(other)
+    target = held
+    if where == "a link into a supervisor's directory":
+        target = tmp_path / "looks-like-a-run"
+        target.symlink_to(held, target_is_directory=True)
+    supervisor = StandInSupervisor()
+    with pytest.raises(ControlError) as refusal:
+        control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY,
+                             numbers_bundle=bundle(tmp_path, NUMBERS_COMPANY),
+                             notes_bundle=bundle(tmp_path, NOTES_COMPANY),
+                             out=target, predictor=supervisor)
+    assert OUTSIDE_THE_BOUNDARY in str(refusal.value)
+    assert str(held.resolve()) in str(refusal.value)
+    assert supervisor.calls == []
+    assert agent_inputs.isolation_violations(other) == []
+    # What the refusal kept out, put there by hand: the boundary check that
+    # predates this rule calls the tree broken.
+    (held / ACCOUNTING_FILE).write_text("{}\n", encoding="utf-8")
+    assert agent_inputs.isolation_violations(other) != []
+
+
+def test_a_control_file_that_is_a_link_out_of_the_output_is_refused(tmp_path, out):
+    """The directory can be right and the file still land somewhere else.
+
+    `write_text` follows a link, and a link whose target does not exist yet is
+    not a file, so the "already on record" check reads it as absent and the
+    write creates the target -- here, inside another run's supervisor directory.
+    The sibling control refuses a link at its file name in the same words.
+    """
+    other = another_run(tmp_path)
+    inside = agent_inputs.session_root(other, "supervisor-accounting") / ACCOUNTING_FILE
+    (out / ACCOUNTING_FILE).symlink_to(inside)
+    supervisor = StandInSupervisor()
+    with pytest.raises(ControlError, match="never through a link"):
+        run_crossed(tmp_path, out, supervisor)
+    assert not inside.exists()
+    assert supervisor.calls == []
+    assert agent_inputs.isolation_violations(other) == []
+
+
+def test_an_output_that_is_another_run_is_refused(tmp_path):
+    """The control files are the scored run's, so they land in the scored run.
+
+    §6 lists them in the bundle of one run, and §8 makes that run company A's:
+    the numbers side is the company being scored. Written into the partner's
+    run, they sit under the two names §6 gives the partner's *own* shuffled
+    control, and the partner's run can then never be given its own.
+    """
+    partner = scored_run(bundle(tmp_path / "partner-run", NOTES_COMPANY), NOTES_COMPANY)
+    supervisor = StandInSupervisor()
+    with pytest.raises(ControlError) as refusal:
+        run_crossed(tmp_path, partner, supervisor)
+    assert NOTES_ACCESSION in str(refusal.value)
+    assert NUMBERS_ACCESSION in str(refusal.value)
+    assert supervisor.calls == []
+    assert sorted(partner.glob("control_*")) == []
+
+
+def test_a_copy_of_the_scored_run_is_where_its_control_may_land(tmp_path):
+    """The positive side of the rule above, and the reason it reads a manifest.
+
+    A rule reading paths would refuse this: the output is not the directory the
+    numbers half was read out of. It is the same run, by the manifest it
+    carries, and the files land in it.
+    """
+    numbers = scored_run(bundle(tmp_path, NUMBERS_COMPANY), NUMBERS_COMPANY)
+    copy = Path(shutil.copytree(numbers, tmp_path / "the-same-run-elsewhere"))
+    control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY, numbers_bundle=numbers,
+                         notes_bundle=bundle(tmp_path, NOTES_COMPANY),
+                         out=copy, predictor=StandInSupervisor())
+    assert written(copy, ACCOUNTING_FILE)["control"]["numbers_accession"] == \
+           NUMBERS_ACCESSION
+    assert (copy / PRESSURE_FILE).is_file()
+
+
+@pytest.mark.parametrize("how", ["a copy", "a link"])
+def test_the_scored_run_again_is_one_run_whatever_path_it_sits_at(tmp_path, out, how):
+    """A copy made two and a link made one; by the manifest both are one.
+
+    The copy carries the partner's two notes reports in place of its own, so
+    every other check on the pair passes -- two companies, two filings, the
+    notes half filed before the scored one -- and the only thing wrong is that
+    the notes half is, by the manifest it committed, the run being scored. The
+    path said it was a second run, and the pair was crossed and written.
+    """
+    numbers = scored_run(bundle(tmp_path, NUMBERS_COMPANY), NUMBERS_COMPANY)
+    again = tmp_path / "again"
+    if how == "a copy":
+        shutil.copytree(numbers, again)
+        for name in control_shuffled.NOTES_SIDE:
+            (again / name).write_text(report_text(NOTES_COMPANY, name), encoding="utf-8")
+    else:
+        again.symlink_to(numbers, target_is_directory=True)
+    supervisor = StandInSupervisor()
+    with pytest.raises(ControlError) as refusal:
+        control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY, numbers_bundle=numbers,
+                             notes_bundle=again, out=out, predictor=supervisor)
+    assert ONE_RUN in str(refusal.value)
+    assert NUMBERS_ACCESSION in str(refusal.value)
+    assert supervisor.calls == []
+    assert list(out.iterdir()) == []
+
+
+def test_a_notes_half_whose_manifest_names_another_filing_is_refused(tmp_path, out):
+    """A half's run is its manifest, so the manifest has to be the half's own.
+
+    The numbers side has refused this since the cutoff was bound; the notes side
+    never read its manifest at all. Without it, the manifest a notes half
+    carries could name any run, and "which run the half came from" would be
+    whatever it said.
+    """
+    elsewhere = annual("NVDA")
+    notes = bundle(tmp_path, NOTES_COMPANY)
+    (notes / control_shuffled.MANIFEST).write_text(
+        json.dumps({"ticker": "NVDA", "form": "10-K",
+                    "accession": elsewhere["accession"],
+                    "filing_date": elsewhere["filing_date"],
+                    "cutoff": elsewhere["filing_date"]},
+                   indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    supervisor = StandInSupervisor()
+    with pytest.raises(ControlError) as refusal:
+        control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY,
+                             numbers_bundle=bundle(tmp_path, NUMBERS_COMPANY),
+                             notes_bundle=notes, out=out, predictor=supervisor)
+    assert elsewhere["accession"] in str(refusal.value)
+    assert NOTES_ACCESSION in str(refusal.value)
+    assert supervisor.calls == []
+    assert list(out.iterdir()) == []
 
 
 def test_the_prediction_object_is_closed(tmp_path, out):

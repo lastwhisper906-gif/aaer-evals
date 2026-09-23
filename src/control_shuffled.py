@@ -86,6 +86,18 @@ through `quote_gate.citation_drop_reason`, so a supervisor citing nothing kept
 every item here and lost them there, and the difference between the two controls
 would have been the gate rather than the crossing.
 
+**One run is one manifest, and the files land in the scored run.** Two bundles
+were told apart by their paths, which a copy makes two of and a link one of: a
+copy of the scored run, carrying the partner's notes reports in place of its
+own, crossed and was written as though its notes had come from a second run.
+`run_identity` reads the manifest each directory committed instead, and each
+half's manifest is held to the half's own reports, the notes side included,
+which nobody had read. Where the two files may go is `destination`'s, read off
+`docs/INPUT_SPEC.md` §6: in the scored run's directory, never inside any run's
+per-agent input tree, which that paragraph makes the isolation boundary, and
+never through a link. Nothing said so before, and a control pointed into
+another run's supervisor directory wrote both files there.
+
 **The control file is never merged into the pipeline's number.** It carries a
 `control` block naming the scorecard row it is scored on, the company each half
 came from, the run directory and accession each half came from, the filing being
@@ -99,7 +111,7 @@ import json
 import math
 from pathlib import Path
 
-from src import assemble_bundle, cutoff_guard, quote_gate
+from src import agent_inputs, assemble_bundle, cutoff_guard, quote_gate
 from src.fetch_fixtures import TICKERS
 
 # The twelve in ticker order. See the module docstring for the reading.
@@ -307,18 +319,26 @@ def _half(bundle_root, names: tuple[str, ...]) -> dict:
 def _crossed_pair(numbers_bundle, notes_bundle):
     """The two halves and the filing date they are scored against, or a refusal.
 
-    Everything that is true of a pair rather than of a half: two directories,
-    two companies, and both halves written from filings at or before the one
-    being scored. `run` adds the label check, because a label is a caller's
-    claim and not something a pair of directories carries.
+    Everything that is true of a pair rather than of a half: two runs, two
+    companies, each half the run its own manifest names, and both halves written
+    from filings at or before the one being scored. `run` adds the label check,
+    because a label is a caller's claim and not something a pair of directories
+    carries.
     """
-    if Path(numbers_bundle).resolve() == Path(notes_bundle).resolve():
-        raise ControlError(
-            f"both halves would come out of {Path(numbers_bundle).resolve()}. "
-            "Two companies' reports are two bundles.")
-
     numbers = _half(numbers_bundle, NUMBERS_SIDE)
     notes = _half(notes_bundle, NOTES_SIDE)
+    one_run = run_identity(numbers_bundle)
+    if one_run == run_identity(notes_bundle):
+        kind, which = one_run
+        if kind == "manifest":
+            raise ControlError(
+                f"both halves would come out of one run, {which}: "
+                f"{numbers['run']} and {notes['run']} each carry its manifest. A "
+                "run is the manifest it committed and not the directory it sits "
+                "in -- a copy of one run is that run, and so is a link to it")
+        raise ControlError(
+            f"both halves would come out of {which}. Two companies' reports "
+            "are two bundles.")
     if numbers["from"] == notes["from"]:
         raise ControlError(
             f"both halves are {numbers['from']}'s own reports: {numbers['run']} "
@@ -326,6 +346,19 @@ def _crossed_pair(numbers_bundle, notes_bundle):
             "itself. A supervisor given one company's own numbers and notes is "
             "the real run, not the shuffled control -- the control is the two "
             "halves not corresponding.")
+    # A half is the run its manifest names, so the manifest has to be the
+    # half's own. The numbers side was held to this for the cutoff's sake -- the
+    # date is read off the filing the manifest names -- and the notes side never
+    # had its manifest read at all, so the run it named could be any run and
+    # the comparison above would be comparing a label.
+    for bundle_root, half in ((numbers_bundle, numbers), (notes_bundle, notes)):
+        named = committed_run(bundle_root)
+        if named is not None and named != half["accession"]:
+            raise ControlError(
+                f"{Path(bundle_root).resolve() / MANIFEST} says the run is "
+                f"{named} and its own reports were written from "
+                f"{half['accession']}. A half is the run its manifest names, and "
+                "one that names two filings has not said which one it is")
 
     declared = scored_filing(numbers_bundle)
     if declared is None:
@@ -336,14 +369,9 @@ def _crossed_pair(numbers_bundle, notes_bundle):
         # with a filing date, which is what `filed` reads for both halves.
         scored, scored_basis = filed(numbers["from"], numbers["accession"]), HALF_BASIS
     else:
+        # The manifest names the numbers half's own filing -- the loop above
+        # refused one that did not -- so the date it carries is that filing's.
         scored, scored_basis = declared["filing_date"], MANIFEST_BASIS
-        if declared["accession"] != numbers["accession"]:
-            raise ControlError(
-                f"{Path(numbers_bundle).resolve() / MANIFEST} says the run is "
-                f"{declared['accession']} and its own reports were written from "
-                f"{numbers['accession']}. The date the cutoff is read off "
-                "belongs to the filing the manifest names, so a run that names "
-                "two filings has not said which one it is")
         # One filing, one date, held in two places. Comparing the half against
         # the manifest in one direction refused a manifest dated *earlier* than
         # the record and accepted one dated later, which is the direction that
@@ -385,6 +413,61 @@ def crossed(numbers_bundle, notes_bundle) -> dict[str, str]:
     return {**numbers["reports"], **notes["reports"]}
 
 
+def _manifest(directory) -> dict | None:
+    """A directory's committed `input_manifest.json`, or None when it carries none.
+
+    One that is there but does not read is a broken record and is refused: an
+    absent date is not an early date, and an absent accession is not another
+    run.
+    """
+    if not cutoff_guard.bundle_files(directory, MANIFEST):
+        return None
+    try:
+        manifest = json.loads(cutoff_guard.load_bundle_file(directory, MANIFEST))
+    except (cutoff_guard.CutoffGuardError, ValueError) as exc:
+        raise ControlError(
+            f"{Path(directory) / MANIFEST} does not read as JSON: {exc}") from exc
+    if not isinstance(manifest, dict):
+        raise ControlError(
+            f"{Path(directory) / MANIFEST} is not an object, so it names no filing")
+    return manifest
+
+
+def committed_run(directory) -> str | None:
+    """Which run a directory is: the accession its committed manifest names.
+
+    `src/assemble_bundle.py` writes the triggering report's accession into
+    `input_manifest.json` and files the run under it, so that is the run's name
+    wherever the directory sits. None when the directory carries no manifest --
+    a directory of reports, which is not a run.
+    """
+    manifest = _manifest(directory)
+    if manifest is None:
+        return None
+    accession = manifest.get("accession")
+    if not isinstance(accession, str) or not accession:
+        raise ControlError(
+            f"{Path(directory) / MANIFEST} names no accession, so it does not say "
+            "which run the directory is")
+    return accession
+
+
+def run_identity(directory) -> tuple[str, str]:
+    """What makes two directories one run: the manifest, and failing that the place.
+
+    The place used to be the whole of it, and a path is what a copy changes and
+    a link does not: a copy of the scored run read as a second run, and a link
+    to it as the same one. A run is the manifest it committed. A directory that
+    committed none has nothing but its place to be told apart by, so its
+    resolved path is what it is compared on -- one directory of reports handed
+    in as both halves is still one directory.
+    """
+    accession = committed_run(directory)
+    if accession is not None:
+        return ("manifest", accession)
+    return ("directory", str(Path(directory).resolve()))
+
+
 def scored_filing(run_directory):
     """The filing date the run being scored declares, or None when it declares none.
 
@@ -399,17 +482,9 @@ def scored_filing(run_directory):
     filing the manifest *names*, and a run whose manifest and whose reports name
     two different filings has not said which one it is.
     """
-    if not cutoff_guard.bundle_files(run_directory, MANIFEST):
+    manifest = _manifest(run_directory)
+    if manifest is None:
         return None
-    try:
-        manifest = json.loads(cutoff_guard.load_bundle_file(run_directory, MANIFEST))
-    except (cutoff_guard.CutoffGuardError, ValueError) as exc:
-        raise ControlError(
-            f"{Path(run_directory) / MANIFEST} does not read as JSON: {exc}") from exc
-    if not isinstance(manifest, dict):
-        raise ControlError(
-            f"{Path(run_directory) / MANIFEST} is not an object, so it names no "
-            "filing being scored")
     try:
         when = cutoff_guard.parse_date(manifest.get("filing_date"),
                                        f"{MANIFEST} filing_date")
@@ -816,16 +891,65 @@ def _rendered(payload: dict) -> str:
     return json.dumps(payload, indent=2, sort_keys=True) + "\n"
 
 
-def _writable(out, name: str, text: str) -> Path:
-    """Where one control file will land, refusing one already on record.
+def destination(out, scored: dict) -> Path:
+    """Where the two control files may land, or a refusal before anyone is asked.
 
-    A run directory is append-only: a new file may be added to it, and an
-    existing one is never rewritten. A correction is a new run. Rewriting the
-    identical bytes changes nothing on record and so is not a change.
+    `docs/INPUT_SPEC.md` §6 lists both files in one run's committed bundle,
+    under `runs/{ticker}/{accession}/`, and in the same paragraph makes "each
+    agent's input directory" the isolation boundary, "committed as what it
+    saw"; `docs/HOW_WE_WORK.md` §1.6 says it again. So, in order:
+
+    - never inside a run's per-agent input tree, whoever's run it is, and not
+      through a link into one -- a file written there is part of what that tree
+      records an agent as having seen;
+    - when the directory is a run, the run being scored: `scored` is the numbers
+      half, which is company A's, and in the partner's run the two files would
+      sit under the names §6 gives the partner's own shuffled control. Which run
+      a directory is, is its manifest -- a copy of the scored run is the scored
+      run. A directory carrying no manifest is not a run and says nothing
+      either way, which is the route a pair of report directories takes;
+    - no link at either file's name. `write_text` follows one, and a link whose
+      target does not exist yet is not a file, so `_writable` would read it as
+      absent and the write would create the target wherever it points.
+
+    Asked before the supervisor is, because an answer with nowhere it may go is
+    a call paid for nothing.
     """
     folder = Path(out)
     if not folder.is_dir():
         raise ControlError(f"{folder} is not a directory to write a control into")
+    held = agent_inputs.input_tree_holding(folder)
+    if held is not None:
+        raise ControlError(
+            f"{folder} is inside {held}, a run's per-agent input tree. That tree "
+            "is committed as what each agent saw, so a control file written there "
+            "rewrites another agent's record of its input; a control's files "
+            "land in the run directory, beside the bundle")
+    which = committed_run(folder)
+    if which is not None and which != scored["accession"]:
+        raise ControlError(
+            f"{folder} is the run of {which}, and this control scores "
+            f"{scored['from']}'s {scored['accession']}. The two control files are "
+            "the scored run's, and in another run they would sit under the names "
+            "that run's own shuffled control is written to")
+    linked = [folder / name for name in CONTROL_FILES.values()
+              if (folder / name).is_symlink()]
+    if linked:
+        named = ", ".join(f"{path} to {path.readlink()}" for path in linked)
+        raise ControlError(
+            f"{named}. A control's file is written where it was handed, never "
+            "through a link out of it")
+    return folder
+
+
+def _writable(folder: Path, name: str, text: str) -> Path:
+    """Where one control file will land, refusing one already on record.
+
+    A run directory is append-only: a new file may be added to it, and an
+    existing one is never rewritten. A correction is a new run. Rewriting the
+    identical bytes changes nothing on record and so is not a change. `folder`
+    is one `destination` has already allowed.
+    """
     if cutoff_guard.bundle_files(folder, name) and \
             cutoff_guard.load_bundle_file(folder, name) != text:
         raise ControlError(
@@ -851,6 +975,7 @@ def run(numbers_from: str, notes_from: str, *, numbers_bundle, notes_bundle,
                 f"the {side} half is labelled {label} and its reports are "
                 f"{half['from']}'s, out of {half['run']}. The label is what the "
                 "control file would carry, so it is the reports that settle it.")
+    folder = destination(out, numbers)
 
     reports = {**numbers["reports"], **notes["reports"]}
     declared = declared_ids(reports)
@@ -869,7 +994,7 @@ def run(numbers_from: str, notes_from: str, *, numbers_bundle, notes_bundle,
                                          scored_filing_date_from=scored_basis,
                                          dropped=drops[question]))
         rendered[question] = _rendered(answer)
-    written = {question: _writable(out, CONTROL_FILES[question], text)
+    written = {question: _writable(folder, CONTROL_FILES[question], text)
                for question, text in rendered.items()}
 
     for question, path in written.items():
