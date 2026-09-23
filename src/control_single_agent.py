@@ -202,39 +202,24 @@ SUPERVISOR_PROMPTS = ("supervisor-accounting.md", "supervisor-pressure.md")
 CONTROL_SEES = tuple(name for name in agent_inputs.BUNDLE_CATALOGUE
                      if name.startswith("input_") and name != MANIFEST)
 
-# The output schema, copied out of `docs/CHECKLIST.md` §7 character for
-# character so the prompt shows the model the document's own shape.
-# `tests/test_control_single_agent.py` asserts it is still a slice of that file.
-SCHEMA = '''{ "question": "accounting_reliability" | "financial_pressure",
-  "rules_version": "0.1",
-  "checklist": [ {"key": "", "finding": "", "confidence": 0,
-                  "evidence": [{"upstream_item_id": ""}]} ],
-  "continuous": [ {"key": "", "point": 0, "direction": "", "low": 0, "high": 0} ],
-  "events": [ {"key": "", "p_within_horizon": 0} ],
-  "explanations": [ {"id": "", "support": "sufficient|insufficient|unknown",
-                     "realization_p": 0} ],
-  "market_direction": {"p_up": 0, "basis": []},
-  "tier": "elevated" | "watch" | "clear",
-  "top_signals": [] }'''
-
-# §7 prints "0.1" where a prediction's rules version goes, and the version is
-# the run's, not the document's: `check_schema` refuses any answer carrying
-# another. So the prompt shows the model the run's own, in that one place, and
-# is otherwise §7 character for character. Asking for "0.1" and holding the
-# answer to the run's null is how both calls on the second pipeline check
-# (PR #73) were refused; a pilot run carries "pilot" since the owner's decision
-# of 2026-09-23.
-SCHEMA_RULES_VERSION = '"rules_version": "0.1",'
+# The output schema, `docs/CHECKLIST.md` §7 character for character, so the
+# prompt shows the model the document's own shape. It is held in
+# `src/prediction_schema.py`, the one module for §7, because the decide stage
+# hands the same block to both supervisors. `tests/test_control_single_agent.py`
+# asserts it is still a slice of that file.
+SCHEMA = prediction_schema.BLOCK
 
 
 def schema(rules_version) -> str:
-    """§7's schema, with the run's rules version where §7 prints "0.1"."""
-    if SCHEMA.count(SCHEMA_RULES_VERSION) != 1:
-        raise ControlError(
-            "the schema no longer carries §7's rules_version line once, so there "
-            "is no one place to put the run's version")
-    return SCHEMA.replace(SCHEMA_RULES_VERSION,
-                          f'"rules_version": {json.dumps(rules_version)},')
+    """§7's schema, with the run's rules version where §7 prints "0.1".
+
+    `check_schema` refuses any answer carrying another version, so the prompt
+    shows the model the run's own.
+    """
+    try:
+        return prediction_schema.block(rules_version)
+    except prediction_schema.SchemaError as exc:
+        raise ControlError(str(exc)) from exc
 
 
 # §7 gives `evidence` one member, `upstream_item_id`. `quote` is the branch of

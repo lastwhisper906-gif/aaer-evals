@@ -42,6 +42,7 @@ the same whichever control met it.
 
 from __future__ import annotations
 
+import json
 import math
 from collections import Counter
 
@@ -82,6 +83,41 @@ INSUFFICIENT = "insufficient"
 TOP_SIGNALS_MAX = 5
 
 SCHEMA = "docs/CHECKLIST.md §7"
+
+# §7's block, copied out of the document character for character, so a model
+# that is shown the schema is shown the document's own shape. The single-agent
+# control's prompt carries it, and the decide stage hands it to both supervisors
+# as a file of their directory. `tests/test_control_single_agent.py` asserts it
+# is still a slice of `docs/CHECKLIST.md`.
+BLOCK = '''{ "question": "accounting_reliability" | "financial_pressure",
+  "rules_version": "0.1",
+  "checklist": [ {"key": "", "finding": "", "confidence": 0,
+                  "evidence": [{"upstream_item_id": ""}]} ],
+  "continuous": [ {"key": "", "point": 0, "direction": "", "low": 0, "high": 0} ],
+  "events": [ {"key": "", "p_within_horizon": 0} ],
+  "explanations": [ {"id": "", "support": "sufficient|insufficient|unknown",
+                     "realization_p": 0} ],
+  "market_direction": {"p_up": 0, "basis": []},
+  "tier": "elevated" | "watch" | "clear",
+  "top_signals": [] }'''
+
+# §7 prints "0.1" where a prediction's rules version goes, and the version is
+# the run's, not the document's. So a model is shown the run's own, in that one
+# place, and §7 character for character everywhere else. Asking for "0.1" and
+# holding the answer to the run's null is how both single-agent calls on the
+# second pipeline check (PR #73) were refused; a pilot run carries "pilot" since
+# the owner's decision of 2026-09-23.
+BLOCK_RULES_VERSION = '"rules_version": "0.1",'
+
+
+def block(rules_version) -> str:
+    """§7's schema, with the run's rules version where §7 prints "0.1"."""
+    if BLOCK.count(BLOCK_RULES_VERSION) != 1:
+        raise SchemaError(
+            "the schema no longer carries §7's rules_version line once, so there "
+            "is no one place to put the run's version")
+    return BLOCK.replace(BLOCK_RULES_VERSION,
+                         f'"rules_version": {json.dumps(rules_version)},')
 
 
 class SchemaError(Exception):
