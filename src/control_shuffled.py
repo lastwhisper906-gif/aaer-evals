@@ -436,8 +436,9 @@ def run_rules_version(numbers_bundle, notes_bundle, asked=None):
     run's `input_manifest.json` carries, null included.
 
     Every manifest the pair carries is read, and so is `asked`, the caller's
-    word for a pair of report directories that carry none; they must all say
-    one thing. Two halves written under two rules versions are refused -- the
+    word for a pair of report directories that carry none, which has to be a
+    version `src/assemble_bundle.py` lets a run name; they must all say one
+    thing. Two halves written under two rules versions are refused -- the
     real run read both sides under one set of rules, and a crossed pair that
     did not measures the rules change along with the crossing. Nothing to read
     at all is refused rather than defaulted, which is what "0.1" was.
@@ -453,6 +454,14 @@ def run_rules_version(numbers_bundle, notes_bundle, asked=None):
                 "half's run was read under one; a control file carries it")
         said.append((f"the {side} half's manifest", manifest["rules_version"]))
     if asked is not None:
+        # A manifest's version was held to the list when the run was built;
+        # the caller's word is held to the same list here, so a pair of report
+        # directories cannot bring back a version no run may carry.
+        if asked not in assemble_bundle.RULES_VERSIONS:
+            raise ControlError(
+                f"rules version {asked!r} is not one a run may name "
+                f"({', '.join(map(repr, assemble_bundle.RULES_VERSIONS))}), so "
+                "no control file carries it")
         said.append(("the caller", asked))
     if not said:
         raise ControlError(

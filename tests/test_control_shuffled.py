@@ -2757,12 +2757,30 @@ def test_two_halves_under_two_rules_versions_are_refused_before_the_call(tmp_pat
 
 def test_a_caller_naming_a_version_the_run_does_not_carry_is_refused(tmp_path, out):
     numbers, notes = two_runs(tmp_path)
+    for folder in (numbers, notes):
+        with_rules_version(folder, "0.2")
     supervisor = StandInSupervisor()
     with pytest.raises(ControlError, match="two rules versions"):
         control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY, numbers_bundle=numbers,
                              notes_bundle=notes, out=out, predictor=supervisor,
-                             rules_version="0.1")
+                             rules_version="pilot")
     assert supervisor.calls == []
+
+
+@pytest.mark.parametrize("asked", ["0.1", "", "Pilot"])
+def test_a_caller_cannot_name_a_version_no_run_may_carry(tmp_path, out, asked):
+    """A pair of report directories carries no manifest, so the caller's word
+    is the whole of the version; it is held to the list a run is built under,
+    `src/assemble_bundle.py`'s, and "0.1" -- §7's example -- does not come back
+    through it."""
+    supervisor = StandInSupervisor()
+    with pytest.raises(ControlError, match="not one a run may name"):
+        control_shuffled.run(NUMBERS_COMPANY, NOTES_COMPANY,
+                             numbers_bundle=bundle(tmp_path, NUMBERS_COMPANY),
+                             notes_bundle=bundle(tmp_path, NOTES_COMPANY),
+                             out=out, predictor=supervisor, rules_version=asked)
+    assert supervisor.calls == []
+    assert list(out.iterdir()) == []
 
 
 def test_a_pair_of_report_directories_naming_no_version_is_refused(tmp_path, out):

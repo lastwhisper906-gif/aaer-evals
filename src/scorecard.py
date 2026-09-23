@@ -53,7 +53,8 @@ labels it pilot. The side is still read off the run's own manifest rather than
 typed here -- off the version, because a version that was never frozen has no
 date to compare a cutoff with. A pilot run that also carries a freeze date says
 two things about which side it is on and is refused, and so is a
-`rules_version_frozen` beside anything but a frozen version.
+`rules_version_frozen` beside a run that names no rules version -- null, as a
+bundle built without `--rules-version` carries, or an empty string.
 
 What a run has to leave behind
 ------------------------------
@@ -344,6 +345,12 @@ def _side(directory: Path, filed: str, frozen: str, version=None) -> str:
                 "any rules version was frozen, so a freeze date beside it says a "
                 "second thing about which side the run is on")
         return PILOT
+    if not isinstance(version, str) or not version.strip():
+        raise ScorecardError(
+            f"{directory / MANIFEST}: rules_version is {version!r} and "
+            f"rules_version_frozen is {frozen!r}. A freeze date belongs to the "
+            "version that was frozen, and a run that names none has no version "
+            "for the date to be the freeze of")
     try:
         filing_date = cutoff_guard.parse_date(filed, "cutoff")
         freeze_date = cutoff_guard.parse_date(frozen, "rules_version_frozen")
