@@ -14,10 +14,11 @@ what it plans -- a module-level snapshot would answer twelve and be wrong in
 exactly the way that matters.
 
 Each row carries the ticker, the CIK, the SIC and the date the row entered the
-project. The CIK and SIC are the SEC's own submissions header for that CIK,
-committed beside the fixtures at `tests/fixtures/universe/<ticker>.json` by
-`src/fetch_universe_source.py`; the date is the `as_of` of the fixture set the
-row entered with. None of them is a value this repository computed.
+project. The CIK and SIC are what the SEC's header prints for the company's
+latest annual report filed on or before that date -- the submission header the
+fixture fetcher already commits and hashes in the company's manifest -- and the
+date is the `as_of` of the fixture set the row entered with. None of them is a
+value this repository computed.
 
     from src import universe
     universe.tickers()           # ('AAPL', 'STX', ...)

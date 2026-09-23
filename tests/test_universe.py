@@ -16,10 +16,13 @@ Where the expected values come from. The twelve tickers and their order are
 read out of the commit that introduced them (`d182fcb`, 2026-09-07) and are the
 same literal that stood in `src/fetch_fixtures.py`. Each CIK is the one in that
 company's own committed `tests/fixtures/<ticker>/manifest.json`, which came
-from EDGAR. Each SIC, SIC description and name is read here out of the SEC's
-submissions header for that CIK, committed at
-`tests/fixtures/universe/<ticker>.json` with the sha256 of the document as
-served. Each added-on date is that company's manifest `as_of`: the twelve
+from EDGAR. Each SIC is read here, with a parser written in this file, out of
+the SEC's header for the company's latest annual report filed on or before the
+row's added-on date: the `submission_header` document the fixture fetcher
+already commits, whose bytes are checked against the sha256 the manifest
+recorded. That header is a filing's, dated before the cutoff, so the row's SIC
+is the classification the SEC printed then and not one fetched later. Each
+added-on date is that company's manifest `as_of`: the twelve
 entered with the fixture set pinned to 2026-09-01, which the item's own
 acceptance line names. None of them is typed into this file, and none was read
 back out of `src/universe.py` to make this test agree with it.
@@ -27,9 +30,10 @@ back out of `src/universe.py` to make this test agree with it.
 
 from __future__ import annotations
 
+import hashlib
+import html
 import json
-import subprocess
-import sys
+import re
 from pathlib import Path
 
 import pytest
@@ -43,16 +47,38 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 THE_TWELVE = ("AAPL", "STX", "CSCO", "PANW", "CARR", "LFUS",
               "GNRC", "CIEN", "QCOM", "ESE", "TTMI", "NVDA")
 
-HEADERS = REPO_ROOT / "tests" / "fixtures" / "universe"
-
 
 def _manifest(ticker: str) -> dict:
     return json.loads((REPO_ROOT / "tests" / "fixtures" / ticker / "manifest.json")
                       .read_text(encoding="utf-8"))
 
 
-def _header(ticker: str) -> dict:
-    return json.loads((HEADERS / f"{ticker}.json").read_text(encoding="utf-8"))
+def _annual_header(ticker: str, on_or_before: str) -> tuple[dict, str]:
+    """The company's latest annual-report header filed by the given date.
+
+    Read off the manifest, not found by globbing, so the document is one the
+    fixture set declares -- and its bytes are held to the sha256 the manifest
+    recorded before a word of it is believed.
+    """
+    manifest = _manifest(ticker)
+    headers = [d for d in manifest["documents"]
+               if d.get("form") == "10-K" and d.get("path", "").endswith("-index-headers.html")
+               and d["filing_date"] <= on_or_before]
+    assert headers, f"{ticker}: no annual-report header filed by {on_or_before}"
+    entry = max(headers, key=lambda d: d["filing_date"])
+    raw = (REPO_ROOT / "tests" / "fixtures" / ticker / entry["path"]).read_bytes()
+    assert hashlib.sha256(raw).hexdigest() == entry["sha256"], (
+        f"{ticker}: {entry['path']} is not the bytes the manifest recorded")
+    return entry, html.unescape(raw.decode("utf-8"))
+
+
+def _filer(header_text: str) -> dict[str, str]:
+    """CIK and SIC from the header's first FILER block, as the SEC prints them."""
+    filer = header_text[header_text.index("FILER:"):]
+    cik = re.search(r"CENTRAL INDEX KEY:\s*(\d{10})", filer)
+    sic = re.search(r"STANDARD INDUSTRIAL CLASSIFICATION:[^\n\[]*\[(\d{4})\]", filer)
+    assert cik and sic, "the header carries no CIK or SIC in its FILER block"
+    return {"cik": cik.group(1), "sic": sic.group(1)}
 
 
 def test_the_universe_file_is_at_the_repository_root() -> None:
@@ -90,28 +116,33 @@ def test_each_rows_cik_is_the_one_in_that_companys_manifest(ticker: str) -> None
     )
 
 
-def test_every_row_has_a_committed_sec_header_behind_it() -> None:
-    """A row with nothing committed behind its SIC is a typed SIC."""
-    missing = [t for t in universe.tickers() if not (HEADERS / f"{t}.json").is_file()]
-    assert missing == [], (
-        f"no SEC header at tests/fixtures/universe/ for {missing}; "
-        "run python3.12 -m src.fetch_universe_source"
-    )
-
-
 @pytest.mark.parametrize("ticker", THE_TWELVE)
-def test_each_rows_sic_is_the_one_the_sec_header_gives(ticker: str) -> None:
-    record = _header(ticker)
-    header = record["header"]
+def test_each_rows_cik_and_sic_are_the_ones_its_annual_report_header_prints(
+        ticker: str) -> None:
     row = universe._one(ticker)
-    assert record["url"].endswith(f"CIK{row['cik']}.json")
-    assert f"{int(header['cik']):010d}" == row["cik"]
-    assert ticker in header["tickers"]
-    assert row["sic"] == header["sic"]
-    assert row["sic_description"] == header["sicDescription"]
-    assert row["name"] == header["name"]
-    assert len(record["served_sha256"]) == 64 and record["served_bytes"] > 0
-    assert "filings" not in header, "the header must not carry post-cutoff filings"
+    entry, text = _annual_header(ticker, row["added_on"])
+    assert entry["filing_date"] <= row["added_on"]
+    assert _filer(text) == {"cik": row["cik"], "sic": row["sic"]}
+
+
+def test_the_header_reader_finds_what_a_person_reads_in_one_header() -> None:
+    """One value read by eye, so the parser above is not only checked by itself.
+
+    `tests/fixtures/NVDA/10-K/0001045810-26-000021/0001045810-26-000021-index-headers.html`
+    prints, under FILER: `CENTRAL INDEX KEY: 0001045810` and
+    `STANDARD INDUSTRIAL CLASSIFICATION: SEMICONDUCTORS & RELATED DEVICES [3674]`.
+    """
+    entry, text = _annual_header("NVDA", "2026-09-01")
+    assert entry["accession"] == "0001045810-26-000021"
+    assert _filer(text) == {"cik": "0001045810", "sic": "3674"}
+
+
+def test_a_header_filed_after_the_rows_date_is_not_its_source() -> None:
+    """STX's 10-K of 2026-08-04 is the newest; dated a day before it, the row
+    must be read off the 2025-08-01 filing instead -- the SIC is the one the SEC
+    printed by the row's own date, never a later one."""
+    entry, _ = _annual_header("STX", "2026-08-03")
+    assert entry["filing_date"] == "2025-08-01"
 
 
 @pytest.mark.parametrize("ticker", THE_TWELVE)
@@ -126,8 +157,7 @@ def _universe_with_a_thirteenth(tmp_path: Path) -> Path:
     document = json.loads((REPO_ROOT / "universe.json").read_text(encoding="utf-8"))
     document["companies"].append({
         "ticker": "ZZZZ", "cik": "0000000013", "sic": "3674",
-        "sic_description": "Semiconductors & Related Devices",
-        "name": "A Thirteenth Company", "added_on": "2026-09-22",
+        "added_on": "2026-09-22",
     })
     path = root / "universe.json"
     path.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
