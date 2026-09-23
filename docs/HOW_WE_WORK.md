@@ -73,7 +73,7 @@ a prediction.
 | read | two calls: the numbers reader and the notes-text reader, each seeing only its own input directory. **Waits until reaction day two has closed** | every item carries a verbatim quote that string-matches that reader's committed input; unverifiable items are dropped and counted |
 | compare | two calls: numbers versus market, notes versus market. Neither sees a filing | every item cites an upstream item id that resolves, and carries exactly one of the three labels |
 | decide | two calls: supervisor-accounting and supervisor-pressure. Neither sees a filing or the market table | output schema valid, every citation resolves to an upstream report, served model equals the pin |
-| controls | the formula baselines (Python), the single-agent baseline, the shuffled-report control | every baseline computed, both controls wrote their files, none merged into the pipeline's number |
+| controls | the formula baselines (Python), the single-agent baseline | every baseline computed, the single-agent control wrote both its files, none merged into the pipeline's number |
 | publish | commit → pull request → auto-merge on green CI → `ots stamp input_manifest.json` | the merge succeeded and the `.ots` file exists |
 | record events | 8-K 4.01 / 4.02 / 1.01 / 5.02, late filings, amendments, comment letters, material-weakness language, quiet restatements, explanation materialization → `events/ledger.jsonl` | the append succeeded |
 | score | on horizon expiry or event occurrence, recompute the metrics and regenerate the results document | deterministic match |
@@ -347,11 +347,11 @@ recorded as a failure. A pin that exists only in this table is not a pin.
    judgment". Two weeks.
 5. **Detect-filing and extract scheduled tasks, plus CI.** Done when the first
    automatic extraction lands in `runs/` as a pull request.
-6. **Report shapes, agent definitions, then the three controls.** The four
-   report shapes and the per-agent input directories first; then the six agent
-   definitions run against a fixture; then the formula baselines, the
-   single-agent control and the shuffled-report control. Done when one fixture
-   filing produces four reports, two predictions, `baselines.json` and both
+6. **Report shapes, agent definitions, then the baselines and the control.**
+   The four report shapes and the per-agent input directories first; then the
+   six agent definitions run against a fixture; then the formula baselines and
+   the single-agent control. Done when one fixture filing produces four reports,
+   two predictions, `baselines.json` and both
    control files, with every citation resolving.
 7. **The 30 past cases, then rules v0.1 in force.** Run the input spec and the
    input indicators over the archived cases at their cutoff dates and produce the

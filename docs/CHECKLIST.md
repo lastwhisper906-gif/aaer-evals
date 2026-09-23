@@ -391,7 +391,6 @@ the same targets, and none of them is ever merged into the pipeline's number.
 | `note_cosine_similarity` | cosine similarity of consecutive note text — the Lazy Prices signal | Python |
 | `loughran_mcdonald_negative` | the negative-word share of the notes and MD&A, on the Loughran and McDonald list, with the dictionary's hash recorded | Python |
 | `single_agent_accounting` | the single-agent control | one model call |
-| `shuffled_accounting` | the shuffled-report control | one model call |
 | `pipeline_accounting` | the three-layer pipeline | the pipeline |
 
 **Financial pressure scorecard:**
@@ -404,28 +403,20 @@ the same targets, and none of them is ever merged into the pipeline's number.
 | `altman_z_score` | the Altman Z-score | Python |
 | `short_interest_ratio` | the ratio alone, as a signal | Python |
 | `single_agent_pressure` | the single-agent control | one model call |
-| `shuffled_pressure` | the shuffled-report control | one model call |
 | `pipeline_pressure` | the three-layer pipeline | the pipeline |
 
-**The two controls, and what each one falsifies:**
+**The control, and what it falsifies:**
 
 - **single-agent baseline** — one call per question, the same model as the
   supervisor, handed the whole bundle plus the market table, answering the same
   schema. If the layers do not beat it, the structure is decoration, and the
   scorecard says so in those words.
-- **shuffled-report control** — the supervisor is fed one company's numbers
-  report together with **another company's** notes report, on every pilot
-  filing. If its score matches the real run, the supervisor is not reconciling
-  the two reports, it is pattern-matching one of them.
 
-  Exactly what is swapped, because "one company's report" leaves the comparer
-  reports undefined: company A keeps `report_numbers.md` and
-  `report_numbers_vs_market.md`; `report_notes_text.md` and
-  `report_notes_vs_market.md` come from company B. The notes side travels with
-  its own comparer report, so the only thing broken is the correspondence
-  between the two sides — which is the thing being tested. Company B is the next
-  company in the twelve by ticker, wrapping around, so the pairing is fixed
-  rather than drawn.
+No control asks whether the supervisor reconciles the numbers side with the
+notes side. The shuffled-report control that asked it paired each company with
+another and was retired by the owner on 2026-09-23; it is kept under
+`archive/controls/shuffled/`. The control that would ask it with no second
+company is an open row in `docs/needs_judgment.md`, not built.
 
 **No composite rank.** Indicators are never combined into a single score ranked
 across companies. That is the crowded thing factor funds already do, and it is

@@ -6,8 +6,8 @@ the whole bundle plus the market table, answering the same schema. If the layers
 do not beat it, the structure is decoration, and the scorecard says so in those
 words." It is scored beside `pipeline_accounting` and `pipeline_pressure` and
 **never merged into either** -- `docs/HOW_WE_WORK.md` §3, the `controls` stage:
-"every baseline computed, both controls wrote their files, none merged into the
-pipeline's number."
+"every baseline computed, the single-agent control wrote both its files, none
+merged into the pipeline's number."
 
 **The model is read off the supervisor's own prompt, not restated here.**
 `docs/HOW_WE_WORK.md` §6: "a control on a different model would measure the
@@ -81,7 +81,7 @@ only branch available, which is why `EVIDENCE_FIELDS` carries `quote` beside the
 `upstream_item_id` `docs/CHECKLIST.md` §7 shows -- and it is the *only* thing
 that tuple adds: the rest is `src/prediction_schema.py`'s own `EVIDENCE_FIELDS`.
 
-**The schema is checked by the one function both controls call.**
+**The schema is checked by the one function in `src/prediction_schema.py`.**
 `src/prediction_schema.py` holds §7's field lists, its three findings, support
 words and tiers and its signal ceiling, once, and `check_schema` hands it every
 field the model answers with this control's evidence shape as the argument. What
@@ -330,8 +330,8 @@ def check_schema(payload, question: str, *, rules_version) -> dict:
     model does not get to invent the rules version -- a prediction scored
     against a rules version it named itself is scored against nothing, so it
     is the run's own, out of `input_manifest.json`. Every other field goes
-    through `src/prediction_schema.py`, the one check both controls call, with
-    this control's evidence shape as the argument.
+    through `src/prediction_schema.py`, the one check of §7, with this
+    control's evidence shape as the argument.
     """
     _a_question(question)
     if not isinstance(payload, dict):

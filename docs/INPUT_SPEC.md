@@ -358,8 +358,6 @@ explanations.json             management explanations and their judgments
 baselines.json                every formula baseline, computed by Python
 control_single_agent_accounting.json
 control_single_agent_pressure.json
-control_shuffled_accounting.json
-control_shuffled_pressure.json
 ```
 
 Size targets per layer, for a 10-K, and about half of each for a 10-Q:

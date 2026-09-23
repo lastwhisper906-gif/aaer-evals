@@ -178,6 +178,19 @@ def test_every_file_the_bundle_names_is_a_file_this_router_knows():
     assert unknown == [], f"§6 names files nobody routed or refused: {unknown}"
 
 
+def test_the_router_knows_no_file_the_bundle_does_not_name():
+    """The other direction: every file the router knows is one §6 names.
+
+    `input_controls.md` is the one the catalogue adds, for the reason written
+    beside it. Anything else is a name the bundle has retired and the router
+    still waves through -- the two shuffled-control files, the day the owner
+    retired that control, until this was asked.
+    """
+    named = set(spec_bundle_names()) | {"input_controls.md"}
+    stale = sorted(set(agent_inputs.BUNDLE_CATALOGUE) - named)
+    assert stale == [], f"the router knows files §6 no longer names: {stale}"
+
+
 def test_the_six_agents_are_the_six_prompts_committed():
     prompts = {path.stem for path in PROMPTS.glob("*.md")}
     # refute-check and reproduce-check are verification subagents, not layers.

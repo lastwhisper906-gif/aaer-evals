@@ -133,8 +133,6 @@ BUNDLE_CATALOGUE = (
     "baselines.json",
     "control_single_agent_accounting.json",
     "control_single_agent_pressure.json",
-    "control_shuffled_accounting.json",
-    "control_shuffled_pressure.json",
 )
 
 # The three §6 names no builder in this repository writes yet. They are routed

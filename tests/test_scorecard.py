@@ -159,7 +159,9 @@ def test_the_beneish_m_score_is_the_first_accounting_row():
      ("Financial pressure scorecard", pressure)])
 def test_the_rows_are_in_the_checklists_order_and_say_who_computes_them(heading, rows):
     recorded = checklist_rows(heading)
-    assert len(recorded) == 8, f"{heading}: the document lists {len(recorded)} rows"
+    # Seven since 2026-09-23, when the owner retired the shuffled-report control
+    # and its two rows with it.
+    assert len(recorded) == 7, f"{heading}: the document lists {len(recorded)} rows"
     printed = rows()
     # Each row is printed once per side of the freeze, the sides adjacent.
     assert [cells[0] for cells in printed] == [key for key, _ in recorded
@@ -235,16 +237,12 @@ def test_the_pipelines_pilot_score_is_the_hand_computation():
     assert hit_rate_of(accounting(), "pipeline_accounting", PILOT) == f"{4 / 4:.4f}"
 
 
-def test_the_two_controls_are_scored_in_the_same_table_as_the_pipeline():
+def test_the_control_is_scored_in_the_same_table_as_the_pipeline():
     """§8: every baseline and control on the same targets, none of them merged
-    into the pipeline's number. The shuffled control was wrong every time."""
+    into the pipeline's number."""
     single_agent = ((0.7 - 1) ** 2 + (0.6 - 1) ** 2 + (0.3 - 0) ** 2 + (0.4 - 0) ** 2) / 4
-    shuffled = ((0.4 - 1) ** 2 + (0.3 - 1) ** 2 + (0.7 - 0) ** 2 + (0.6 - 0) ** 2) / 4
     assert brier_of(accounting(), "single_agent_accounting", PILOT) == \
         f"{single_agent:.4f}" == "0.1250"
-    assert brier_of(accounting(), "shuffled_accounting", PILOT) == \
-        f"{shuffled:.4f}" == "0.4250"
-    assert hit_rate_of(accounting(), "shuffled_accounting", PILOT) == f"{0 / 4:.4f}"
 
 
 def test_the_pressure_rows_are_the_hand_computation():
@@ -276,7 +274,7 @@ def test_a_row_no_run_answered_keeps_its_place_and_carries_no_number():
         cells = row_of(accounting(), key, PILOT)
         assert cells[3:] == ["0", "not on record", "not on record", "not on record"]
     for key in ("naive_forecast", "ohlson_o_score", "altman_z_score",
-                "short_interest_ratio", "shuffled_pressure"):
+                "short_interest_ratio"):
         assert row_of(pressure(), key, PILOT)[4] == "not on record"
 
 

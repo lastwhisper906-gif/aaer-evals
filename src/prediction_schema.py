@@ -1,43 +1,40 @@
 """The two predictions' schema, `docs/CHECKLIST.md` §7, and the one check of it.
 
-Both controls answer this schema: the single-agent control, which does the whole
-job alone, and the shuffled control, whose supervisor reads one company's
-numbers beside another company's notes. `docs/CHECKLIST.md` §8 scores them on
-the same rows as the pipeline, so a field one of them checks and the other does
-not is a difference between the controls that is not the thing either of them
-tests. Each used to carry its own copy of the check: the field lists, the three
-findings, the three support words, the three tiers and the signal ceiling were
-written out twice, and a test asserted the two copies equal. They agreed by both
-reading §7, and the assertion was a test standing in for a function. This is the
-function, and both controls call it.
+The single-agent control answers this schema, and `docs/CHECKLIST.md` §8 scores
+it on the same rows as the pipeline. The check was written for two controls:
+the single-agent one and the shuffled-report control, which the owner retired on
+2026-09-23 and which now sits under `archive/controls/shuffled/`. Each of them
+used to carry its own copy -- the field lists, the three findings, the three
+support words, the three tiers and the signal ceiling were written out twice,
+and a test asserted the two copies equal. They agreed by both reading §7, and
+the assertion was a test standing in for a function. This is the function. One
+control calls it now; the next caller calls it too rather than copying it.
 
-**`evidence` is the one field they legitimately differ on, so it is an
-argument.** §7 gives an evidence entry one member, `upstream_item_id`, which
-names an item of an upstream report. The shuffled control's supervisor has four
-upstream reports, so §7's own shape is the whole of it. The single-agent
-control's upstream is the committed filing itself, so the id it writes names a
-paragraph, and `CLAUDE.md`'s rule -- "a verbatim quote or an upstream item id
-that Python verifies" -- leaves it one way to verify one: a quote travels with
-it. `check` takes the members an evidence entry carries and refuses a set that
-leaves out §7's own, so a caller may add to the schema there and never take
-away from it.
+**`evidence` is an argument, because it depends on what the caller's upstream
+is.** §7 gives an evidence entry one member, `upstream_item_id`, which names an
+item of an upstream report. A caller whose upstream is reports -- as the
+supervisors' is -- needs nothing more. The single-agent control's upstream is
+the committed filing itself, so the id it writes names a paragraph, and
+`CLAUDE.md`'s rule -- "a verbatim quote or an upstream item id that Python
+verifies" -- leaves it one way to verify one: a quote travels with it. `check`
+takes the members an evidence entry carries and refuses a set that leaves out
+§7's own, so a caller may add to the schema there and never take away from it.
 
 **`question` and `rules_version` are the run's, and are not checked here.** The
-shuffled control writes both itself and refuses them in the supervisor's answer;
-the single-agent control asks the model for both and holds them against the
-question it asked and the run's manifest. Each does that before calling this,
-and hands it the rest. A prediction scored against a rules version it named for
-itself is scored against nothing, and only the caller knows the run's.
+single-agent control asks the model for both and holds them against the
+question it asked and the run's manifest before calling this, and hands it the
+rest. A prediction scored against a rules version it named for itself is scored
+against nothing, and only the caller knows the run's.
 
 Every value below is §7 read by hand, and §1 for the one list §7 leaves blank:
 `"finding": ""` names no values, and §1's "An LLM answer is always `flag` /
 `no_flag` / `insufficient`" is the only place the three are written down.
-`tests/test_control_shuffled.py` holds them against §7 twice over: once written
-out by hand in the test, and once parsed out of the document.
+`tests/test_prediction_schema.py` holds them against §7 twice over: once written
+out by hand in the test, and once parsed out of the document -- and calls
+`check` directly for every refusal it makes.
 
-This module raises `SchemaError` and nothing else. Each control turns it into
-its own `ControlError` at the one line that calls `check`, so a refusal reads
-the same whichever control met it.
+This module raises `SchemaError` and nothing else. A caller turns it into its
+own error at the one line that calls `check`.
 """
 
 from __future__ import annotations

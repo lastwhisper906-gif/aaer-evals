@@ -345,8 +345,9 @@ def test_the_evidence_members_are_the_schemas_own_plus_the_quote():
     """The one member this control adds to §7's, and nothing else.
 
     This side comes off the block above; the module's is
-    `src/prediction_schema.py`'s own member with the quote beside it, and the
-    shuffled control's tests hold that member against §7 by hand and parsed.
+    `src/prediction_schema.py`'s own member with the quote beside it, and
+    `tests/test_prediction_schema.py` holds that member against §7 by hand and
+    parsed.
     """
     assert schema_members("evidence") == ("upstream_item_id",)
     assert control_single_agent.EVIDENCE_FIELDS == EVIDENCE_MEMBERS
@@ -1410,8 +1411,8 @@ def test_a_prediction_carrying_no_rules_version_is_refused_when_the_run_has_none
 
 
 def test_the_control_answers_through_the_one_checker(tmp_path, monkeypatch):
-    """Called, not copied: the production path reaches the one §7 checker the
-    shuffled control also calls, with this control's evidence shape -- §7's
+    """Called, not copied: the production path reaches the one §7 checker in
+    `src/prediction_schema.py`, with this control's evidence shape -- §7's
     `upstream_item_id` and the quote beside it -- and with every field but the
     two the run settles.
 

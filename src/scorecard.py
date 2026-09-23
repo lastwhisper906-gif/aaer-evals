@@ -53,8 +53,7 @@ What a run has to leave behind
     outcome.json          the realized 60-trading-day abnormal return
     baselines.json        one entry per Python-computed row
     prediction_accounting.json, prediction_pressure.json
-    control_single_agent_accounting.json, control_shuffled_accounting.json
-    control_single_agent_pressure.json, control_shuffled_pressure.json
+    control_single_agent_accounting.json, control_single_agent_pressure.json
 
 Each answer file carries `market_direction.p_up` in the shape
 `docs/CHECKLIST.md` §7 gives the two predictions; `baselines.json` carries one
@@ -183,7 +182,6 @@ ACCOUNTING_ROWS = (
     Row("loughran_mcdonald_negative", "Python", BASELINES),
     Row("single_agent_accounting", "one model call",
         "control_single_agent_accounting.json"),
-    Row("shuffled_accounting", "one model call", "control_shuffled_accounting.json"),
     Row("pipeline_accounting", "the pipeline", "prediction_accounting.json"),
 )
 
@@ -195,7 +193,6 @@ PRESSURE_ROWS = (
     Row("short_interest_ratio", "Python", BASELINES),
     Row("single_agent_pressure", "one model call",
         "control_single_agent_pressure.json"),
-    Row("shuffled_pressure", "one model call", "control_shuffled_pressure.json"),
     Row("pipeline_pressure", "the pipeline", "prediction_pressure.json"),
 )
 
