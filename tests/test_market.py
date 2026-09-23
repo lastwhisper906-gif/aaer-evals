@@ -924,10 +924,20 @@ def _bar(day, close, adjusted):
 
 
 def _stub(monkeypatch, frame):
+    """The stand-in answers only for the backend the fetch was meant to ask.
+
+    `environ={}` names no backend, so the fetch asks for the forward track's
+    default, tiingo; a fetch asking for any other name reaches a refusal
+    rather than the stand-in.
+    """
     backend = _StubBackend(frame)
-    monkeypatch.setattr(market, "_inside_an_agent_directory",
-                        market._inside_an_agent_directory)
-    monkeypatch.setattr(_prices, "backend", lambda name=None: backend)
+
+    def chosen(name=None):
+        if name != "tiingo":
+            raise AssertionError(f"the fetch asked for backend {name!r}")
+        return backend
+
+    monkeypatch.setattr(_prices, "backend", chosen)
     return backend
 
 
@@ -1142,3 +1152,72 @@ def test_there_is_no_default_environment_to_fall_back_on(tmp_path):
     with pytest.raises(TypeError):
         market.prices_from_the_source(symbols=["ZZZZ"], start=_dt.date(2025, 1, 1),
                                       end=_dt.date(2025, 2, 1), into=tmp_path / "prices")
+
+
+def test_the_price_files_are_refused_inside_an_agent_directory(tmp_path, monkeypatch):
+    """A raw series runs past reaction day two, where `market_table` stops.
+
+    The fetch record was already kept out of the agent tree; the series it
+    records the fetch of was not, and a reader's directory would have held the
+    market's future.
+    """
+    backend = _stub(monkeypatch, [_bar("2025-05-12", 195.3125, 97.65625)])
+    inside = tmp_path / "run" / "agents" / "numbers-reader"
+    with pytest.raises(market.MarketError, match="numbers-reader"):
+        market.fetch_prices(symbols=["ZZZZ"], start=_dt.date(2025, 5, 1),
+                            end=_dt.date(2025, 5, 31), into=inside, environ={})
+    assert not inside.exists()
+    assert backend.asked == []
+
+
+@pytest.mark.parametrize("start, end", [
+    (_dt.date(2025, 5, 1), None),
+    (None, _dt.date(2025, 5, 31)),
+    ("2025-05-01", _dt.date(2025, 5, 31)),
+])
+def test_a_window_with_an_open_end_is_refused(tmp_path, monkeypatch, start, end):
+    """An open end is whatever the source had on the day it was asked."""
+    backend = _stub(monkeypatch, [_bar("2025-05-12", 195.3125, 97.65625)])
+    with pytest.raises(market.MarketError, match="both ends of the window"):
+        market.fetch_prices(symbols=["ZZZZ"], start=start, end=end,
+                            into=tmp_path / "prices", environ={})
+    assert backend.asked == []
+
+
+def test_crsp_through_the_fetch_logs_in_with_the_handed_in_home(tmp_path, monkeypatch):
+    """The whole path, the real crsp module to a stand-in `wrds`: the process's
+    home holds a .pgpass for another user, and the handed-in home's is used."""
+    import sys
+    import types
+
+    _no_backend_stub(monkeypatch)
+    wrds_line = "wrds-pgdata.wharton.upenn.edu:9737:wrds:{user}:{password}\n"
+    process_home, handed_in = tmp_path / "process", tmp_path / "handed-in"
+    for home, user in ((process_home, "process-user"), (handed_in, "handed-in-user")):
+        home.mkdir()
+        (home / ".pgpass").write_text(
+            wrds_line.format(user=user, password=user[:4] + "-pw"), encoding="utf-8")
+    monkeypatch.setenv("HOME", str(process_home))
+    monkeypatch.setenv("PGPASSFILE", str(process_home / ".pgpass"))
+    connected = []
+
+    class Connection:
+        def __init__(self, **arguments):
+            connected.append(arguments)
+
+        def raw_sql(self, sql, params):
+            raise AssertionError("stopped after the login, which is the part under test")
+
+        def close(self):
+            pass
+
+    module = types.ModuleType("wrds")
+    module.Connection = Connection
+    monkeypatch.setitem(sys.modules, "wrds", module)
+    with pytest.raises(AssertionError, match="stopped after the login"):
+        market.fetch_prices(symbols=["ZZZZ"], start=_dt.date(2025, 1, 1),
+                            end=_dt.date(2025, 2, 1), into=tmp_path / "prices",
+                            environ={"PRICE_BACKEND": "crsp", "HOME": str(handed_in)})
+    assert [(one["wrds_username"], one["wrds_password"]) for one in connected] == [
+        ("handed-in-user", "hand-pw")]
+

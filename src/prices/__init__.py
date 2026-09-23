@@ -197,10 +197,10 @@ def credentials(name: str, environ) -> dict[str, Any]:
 
     Read out of `environ`, the mapping the caller hands in, and out of nothing
     else. Tiingo and EODHD take the environment itself and read their token
-    variable from it. CRSP's credential is the `~/.pgpass` the `wrds` package
-    reads, and the home it sits in is the `HOME` that mapping names -- the same
-    file `crsp.PGPASS` names when the mapping is the process's own environment,
-    because `Path.home()` reads `HOME` there too. A mapping naming no `HOME`
+    variable from it. CRSP's credential is a `.pgpass` in the `HOME` that
+    mapping names, and `crsp.login` reads the WRDS line out of that file and
+    hands it to the connection, so the process's own `.pgpass`, `PGPASSFILE`,
+    `PGHOST` and `PGUSER` are never what logs in. A mapping naming no `HOME`
     leaves CRSP with no file to look for, and that is `Unconfigured`, not a
     fall back to the process's.
     """

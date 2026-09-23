@@ -159,7 +159,7 @@ def test_crsp_without_a_pgpass_file_is_unconfigured(tmp_path: Path) -> None:
 
 def test_crsp_with_a_pgpass_file_is_configured(tmp_path: Path) -> None:
     pgpass = tmp_path / ".pgpass"
-    pgpass.write_text("", encoding="utf-8")
+    pgpass.write_text(WRDS_LINE, encoding="utf-8")
     assert crsp.credential(pgpass) == pgpass
 
 
@@ -188,6 +188,9 @@ def stand_in_wrds(monkeypatch: pytest.MonkeyPatch, records: list[dict]) -> dict:
     seen: dict = {}
 
     class Connection:
+        def __init__(self, **arguments) -> None:
+            seen["connected_with"] = arguments
+
         def raw_sql(self, sql: str, params: dict) -> StandInFrame:
             seen["sql"], seen["params"] = sql, params
             return StandInFrame(records)
@@ -202,6 +205,11 @@ def stand_in_wrds(monkeypatch: pytest.MonkeyPatch, records: list[dict]) -> dict:
 
 
 NAN = float("nan")
+
+# A `.pgpass` line for WRDS, in Postgres's own format
+# (hostname:port:database:username:password), with the host, port and database
+# the `wrds` package's own defaults name (wrds/sql.py, 3.5.0).
+WRDS_LINE = "wrds-pgdata.wharton.upenn.edu:9737:wrds:handed-in-user:handed-in-pw\n"
 
 # The fixture's three rows as pandas hands them over from the legacy CRSP
 # tables: every numeric column double precision, every missing number NaN, and
@@ -223,7 +231,7 @@ def test_crsp_history_reads_the_frame_the_wire_answers(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     pgpass = tmp_path / ".pgpass"
-    pgpass.write_text("", encoding="utf-8")
+    pgpass.write_text(WRDS_LINE, encoding="utf-8")
     seen = stand_in_wrds(monkeypatch, CRSP_FRAME_RECORDS)
     rows = crsp.history(
         "zzzz", dt.date(2008, 9, 1), dt.date(2008, 9, 30), pgpass=pgpass
@@ -250,7 +258,7 @@ def test_crsp_history_and_the_fixture_agree_row_for_row(
 ) -> None:
     """The JSON fixture and the pandas frame are one set of rows in two shapes."""
     pgpass = tmp_path / ".pgpass"
-    pgpass.write_text("", encoding="utf-8")
+    pgpass.write_text(WRDS_LINE, encoding="utf-8")
     stand_in_wrds(monkeypatch, CRSP_FRAME_RECORDS)
     wire = crsp.history(TICKER, pgpass=pgpass)
     shaped = crsp.rows_from(fixture("crsp_daily.json"), ticker=TICKER)
@@ -265,7 +273,7 @@ def test_crsp_history_refuses_a_missing_price_rather_than_reading_nan(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     pgpass = tmp_path / ".pgpass"
-    pgpass.write_text("", encoding="utf-8")
+    pgpass.write_text(WRDS_LINE, encoding="utf-8")
     records = [dict(entry) for entry in CRSP_FRAME_RECORDS]
     records[0]["prc"] = NAN
     stand_in_wrds(monkeypatch, records)
@@ -299,12 +307,23 @@ def stand_in_requests(monkeypatch: pytest.MonkeyPatch, answers: dict) -> list[di
 
     calls: list[dict] = []
 
-    def get(url, params=None, headers=None, timeout=None):
-        calls.append({"url": url, "params": params, "headers": headers, "timeout": timeout})
-        return answers[url]
+    class RequestException(OSError):
+        pass
+
+    class Session:
+        trust_env = True
+
+        def get(self, url, params=None, headers=None, timeout=None):
+            calls.append({"url": url, "params": params, "headers": headers,
+                          "timeout": timeout, "trust_env": self.trust_env})
+            answer = answers[url]
+            if isinstance(answer, Exception):
+                raise answer
+            return answer
 
     module = types.ModuleType("requests")
-    module.get = get
+    module.Session = Session
+    module.RequestException = RequestException
     monkeypatch.setitem(sys.modules, "requests", module)
     return calls
 
@@ -338,6 +357,8 @@ def test_tiingo_history_asks_the_documented_addresses_with_the_token_in_a_header
     for call in calls:
         assert call["headers"]["Authorization"] == "Token stand-in"
         assert "stand-in" not in json.dumps(call["params"])
+        # a session that reads no ~/.netrc and no proxy variable of the process
+        assert call["trust_env"] is False
     assert {entry["security_id"] for entry in rows} == {"US000000000999"}
     assert {entry["ticker"] for entry in rows} == {TICKER}
     assert [entry["adjusted_close"] for entry in rows] == [100.00, 97.65625, 94.42]
@@ -605,3 +626,108 @@ def test_a_row_builder_refuses_a_row_with_no_ticker() -> None:
             adjusted_close=1.0,
             volume=1.0,
         )
+
+
+# --- the credential handed in is the one that logs in -------------------------
+#
+# PR #60's refute-check: `wrds.Connection()` took no argument, so Postgres's
+# client library logged in with the process's own .pgpass, PGPASSFILE, PGHOST
+# and PGUSER, whatever file was handed in; and `requests` read the process's
+# ~/.netrc, which replaces an Authorization header. Each test below sets the
+# process to say something else, so a read of the wrong one shows.
+
+def _the_process_says_otherwise(monkeypatch, tmp_path):
+    elsewhere = tmp_path / "the-process"
+    elsewhere.mkdir()
+    (elsewhere / ".pgpass").write_text(
+        "wrds-pgdata.wharton.upenn.edu:9737:wrds:process-user:process-pw\n",
+        encoding="utf-8")
+    monkeypatch.setenv("HOME", str(elsewhere))
+    monkeypatch.setenv("PGPASSFILE", str(elsewhere / ".pgpass"))
+    monkeypatch.setenv("PGUSER", "process-user")
+    monkeypatch.setenv("PGHOST", "process-host.invalid")
+
+
+def test_crsp_logs_in_with_the_line_of_the_pgpass_handed_in(monkeypatch, tmp_path):
+    _the_process_says_otherwise(monkeypatch, tmp_path)
+    pgpass = tmp_path / "handed-in.pgpass"
+    pgpass.write_text("# a comment\n"
+                      "other.example.org:5432:other:someone:not-this\n" + WRDS_LINE,
+                      encoding="utf-8")
+    seen = stand_in_wrds(monkeypatch, CRSP_FRAME_RECORDS)
+    crsp.history(TICKER, dt.date(2008, 9, 1), dt.date(2008, 9, 30), pgpass=pgpass)
+    assert seen["connected_with"] == {
+        "wrds_hostname": "wrds-pgdata.wharton.upenn.edu", "wrds_port": 9737,
+        "wrds_dbname": "wrds", "wrds_username": "handed-in-user",
+        "wrds_password": "handed-in-pw"}
+
+
+def test_a_pgpass_line_is_read_as_postgres_reads_it(tmp_path):
+    """A `*` matches any host, and a backslash escapes a colon inside a field."""
+    pgpass = tmp_path / ".pgpass"
+    pgpass.write_text("*:*:wrds:some\\:one:pass\\:word\\\\x\n", encoding="utf-8")
+    assert crsp.login(pgpass)["wrds_username"] == "some:one"
+    assert crsp.login(pgpass)["wrds_password"] == "pass:word\\x"
+
+
+def test_a_pgpass_with_no_wrds_line_is_unconfigured_and_never_connects(
+        monkeypatch, tmp_path):
+    _the_process_says_otherwise(monkeypatch, tmp_path)
+    pgpass = tmp_path / "handed-in.pgpass"
+    pgpass.write_text("other.example.org:5432:other:someone:not-this\n", encoding="utf-8")
+    seen = stand_in_wrds(monkeypatch, CRSP_FRAME_RECORDS)
+    with pytest.raises(prices.Unconfigured, match="no line for wrds-pgdata"):
+        crsp.history(TICKER, pgpass=pgpass)
+    assert seen == {}
+
+
+def test_a_refused_login_with_no_terminal_is_unconfigured(monkeypatch, tmp_path):
+    """The package falls back to asking at the terminal; with none, that is an
+    end-of-file, reported as the login refused."""
+    import sys
+    import types
+
+    class Connection:
+        def __init__(self, **arguments):
+            raise EOFError
+
+    module = types.ModuleType("wrds")
+    module.Connection = Connection
+    monkeypatch.setitem(sys.modules, "wrds", module)
+    pgpass = tmp_path / ".pgpass"
+    pgpass.write_text(WRDS_LINE, encoding="utf-8")
+    with pytest.raises(prices.Unconfigured, match="refused the login"):
+        crsp.history(TICKER, pgpass=pgpass)
+
+
+@pytest.mark.parametrize("backend, variable, address", [
+    (eodhd, "EODHD_TOKEN", "https://eodhd.com/api/eod/ZZZZ.US"),
+    (tiingo, "TIINGO_TOKEN", "https://api.tiingo.com/tiingo/daily/zzzz"),
+])
+def test_a_request_that_fails_carries_no_token_into_its_error(
+        monkeypatch, backend, variable, address):
+    """EODHD sends the token in the query string, and `requests` puts the
+    address of a failed request into its message."""
+    import sys
+
+    token = "planted-tok"
+    answers: dict = {}
+    stand_in_requests(monkeypatch, answers)
+    answers[address] = sys.modules["requests"].RequestException(
+        f"Max retries exceeded with url: {address}?api_token={token}")
+    with pytest.raises(prices.PriceError) as caught:
+        backend.history(TICKER, environ={variable: token})
+    assert token not in str(caught.value)
+    assert caught.value.__cause__ is None and caught.value.__suppress_context__
+
+
+def test_an_error_answer_echoing_the_token_is_printed_without_it(monkeypatch):
+    token = "planted-tok"
+    address = "https://eodhd.com/api/eod/ZZZZ.US"
+    stand_in_requests(monkeypatch, {address: StandInResponse(
+        {"error": f"invalid api_token={token}"}, status_code=401)})
+    with pytest.raises(prices.PriceError) as caught:
+        eodhd.history(TICKER, environ={"EODHD_TOKEN": token})
+    assert "401" in str(caught.value)
+    assert token not in str(caught.value)
+

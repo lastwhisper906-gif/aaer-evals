@@ -8,11 +8,21 @@ standard the literature reads because of exactly that. Stony Brook subscribes,
 so it is free here; a student registers at `wrds-www.wharton.upenn.edu/register`
 and the school's representative approves the account.
 
-The `wrds` package reads `~/.pgpass`, which is Postgres's own credential file
-and lives outside this tree. There is no token to set and nothing to write down
-here: no credential file, no credential argument, nothing this module could
-leak. Until that file exists this backend answers `Unconfigured` and the study
-does not start, which is the state recorded in `docs/needs_judgment.md`.
+The credential is a `.pgpass`, Postgres's own credential file, which lives
+outside this tree. There is no token to set and nothing to write down here.
+Until that file exists this backend answers `Unconfigured` and the study does
+not start, which is the state recorded in `docs/needs_judgment.md`.
+
+**The file handed in is the one the login uses.** Left to itself the `wrds`
+package logs in through Postgres's client library, which reads the process's
+own `PGPASSFILE` or `$HOME/.pgpass`, and `PGHOST` and `PGUSER` besides -- so a
+caller that handed in one home was checked against that home's file and logged
+in with the process's. `login` reads the WRDS line out of the file handed in and
+`history` passes host, port, database, user and password to `wrds.Connection`
+explicitly, which is the one route the package gives that none of those
+variables can override. If that login is refused, the package falls back to
+asking at the terminal; with no terminal that is an end-of-file, which is
+reported as the login refused rather than as anything the process holds.
 
 The query
 ---------
@@ -67,6 +77,13 @@ from src.prices import PriceError, Unconfigured, row
 NAME = "crsp"
 PGPASS = Path.home() / ".pgpass"
 
+# Where WRDS serves its Postgres, as the `wrds` package's own defaults give it
+# (`wrds/sql.py`, 3.5.0: WRDS_POSTGRES_HOST, _PORT and _DB). A `.pgpass` line
+# names the server it is for, and these are what it is matched against.
+WRDS_HOST = "wrds-pgdata.wharton.upenn.edu"
+WRDS_PORT = "9737"
+WRDS_DATABASE = "wrds"
+
 DAILY_TABLE = "crsp.dsf"
 DELIST_TABLE = "crsp.dsedelist"
 
@@ -101,6 +118,48 @@ def credential(pgpass: Path | None = None) -> Path:
             f"`wrds` package asks for on its first connection."
         )
     return path
+
+
+def _fields(line: str) -> list[str]:
+    """One `.pgpass` line's five fields, with `\\:` and `\\\\` read as Postgres reads them."""
+    fields, current, escaped = [], [], False
+    for character in line:
+        if escaped:
+            current.append(character)
+            escaped = False
+        elif character == "\\":
+            escaped = True
+        elif character == ":":
+            fields.append("".join(current))
+            current = []
+        else:
+            current.append(character)
+    fields.append("".join(current))
+    return fields
+
+
+def login(pgpass: Path) -> dict[str, str]:
+    """The `wrds.Connection` arguments the WRDS line of `pgpass` gives, or Unconfigured.
+
+    The first line whose host, port and database match WRDS's -- a `*` matches
+    anything, as Postgres reads it -- is the one Postgres itself would use.
+    """
+    path = credential(pgpass)
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        fields = _fields(line)
+        if len(fields) != 5:
+            continue
+        host, port, database, user, password = fields
+        if host in ("*", WRDS_HOST) and port in ("*", WRDS_PORT) and \
+                database in ("*", WRDS_DATABASE):
+            return {"wrds_hostname": WRDS_HOST, "wrds_port": int(WRDS_PORT),
+                    "wrds_dbname": WRDS_DATABASE, "wrds_username": user,
+                    "wrds_password": password}
+    raise Unconfigured(
+        f"{path} has no line for {WRDS_HOST}:{WRDS_PORT}:{WRDS_DATABASE}, so the "
+        f"{NAME} backend was never asked")
 
 
 def _known(value: Any) -> Any:
@@ -192,10 +251,11 @@ def history(
     """The daily history, from WRDS.
 
     Judged by `tests/test_prices.py` against a stand-in `wrds` module answering
-    the frame shape pandas does, NaN included. Against the real service it has
-    never been run: nobody here has a WRDS account yet.
+    the frame shape pandas does, NaN included, and recording what the
+    connection was handed. Against the real service it has never been run:
+    nobody here has a WRDS account yet.
     """
-    credential(pgpass)
+    arguments = login(PGPASS if pgpass is None else pgpass)
     try:
         import wrds
     except ImportError as error:  # the package is deliberately not a requirement
@@ -205,7 +265,12 @@ def history(
             "study alone, and every other entry point has to stay importable on a "
             "machine that has no WRDS account."
         ) from error
-    connection = wrds.Connection()
+    try:
+        connection = wrds.Connection(**arguments)
+    except EOFError as error:
+        raise Unconfigured(
+            f"WRDS refused the login the .pgpass handed in gives, and the "
+            f"package's fallback asked at a terminal there is none of") from None
     try:
         frame = connection.raw_sql(
             QUERY,

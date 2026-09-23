@@ -780,9 +780,29 @@ def fetch_prices(*, symbols, start, end, into, environ, backend=None,
     reports rather than hides: that is the state the forward track is switched
     off in today, and a fetch that quietly returned nothing would look exactly
     like a company with no trading days.
+
+    The price files go where the fetch record may go and nowhere else: a raw
+    series runs past reaction day two, which `market_table` stops at, so in a
+    directory an agent's session is rooted at it is the market table's future
+    in front of a reader. And the window is the caller's, both ends named: a
+    missing end asks the source for everything through today, which is a fetch
+    nobody can repeat.
     """
     from src import prices
 
+    for side, day in (("start", start), ("end", end)):
+        if not isinstance(day, dt.date):
+            raise MarketError(
+                f"the fetch's {side} is {day!r}; both ends of the window are "
+                f"named dates, because an open end is whatever the source had "
+                f"on the day it was asked")
+    reachable = _inside_an_agent_directory(Path(into))
+    if reachable is not None:
+        raise MarketError(
+            f"{into} sits under {reachable!r}, which an agent's session is rooted "
+            f"at -- a raw price series runs past reaction day two, and there it "
+            f"is a document past the cutoff in front of an agent. Fetch into a "
+            f"directory outside the agent tree.")
     chosen = prices.backend(
         backend if backend is not None else prices.name_from_environment(environ))
     credential = prices.credentials(chosen.NAME, environ)

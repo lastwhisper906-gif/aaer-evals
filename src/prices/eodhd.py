@@ -119,14 +119,28 @@ def delisted_from(payload: Any) -> dict[str, dict[str, str]]:
 def _get(path: str, params: dict[str, str], token: str) -> Any:
     import requests
 
-    response = requests.get(
-        f"{BASE}{path}",
-        params={**params, "api_token": token, "fmt": "json"},
-        timeout=TIMEOUT_SECONDS,
-    )
+    session = requests.Session()
+    # `requests` otherwise reads the process's `~/.netrc` and its proxy
+    # variables, which route the request.
+    session.trust_env = False
+    try:
+        response = session.get(
+            f"{BASE}{path}",
+            params={**params, "api_token": token, "fmt": "json"},
+            timeout=TIMEOUT_SECONDS,
+        )
+    except requests.RequestException as error:
+        # EODHD takes the token in the query string, so the address of a failed
+        # request -- which `requests` puts in its message -- carries the token.
+        # The name of the failure is enough to act on, and `from None` drops
+        # the chain that would print the address anyway.
+        raise PriceError(
+            f"{NAME} could not be reached for {path}: {type(error).__name__}"
+        ) from None
     if response.status_code != 200:
         raise PriceError(
-            f"{NAME} answered {response.status_code} for {path}: {response.text[:200]}"
+            f"{NAME} answered {response.status_code} for {path}: "
+            f"{response.text[:200].replace(token, '<token>')}"
         )
     return response.json()
 
