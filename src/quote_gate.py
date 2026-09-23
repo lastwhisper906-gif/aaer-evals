@@ -91,10 +91,16 @@ stops the gate rather than being gated under a rule that is not its own, and so
 does one file name handed twice under two paths. What the gate cannot see is a
 runner that hands one layer's items under another layer's name on the same
 side: a reader's items under the control's file name, which quotes as a reader
-does, or a comparer's under a supervisor's, which cites in the same three places
-a comparer does -- no shape tells a comparer item from a supervisor entry. The
-name is the runner's word for which layer wrote them, and nothing in an item
-checks that word.
+does, or a comparer's under a supervisor's. The second could be told by shape --
+§7 gives a comparer item a top-level `upstream_item_id` and a `label`, and a
+supervisor entry `evidence` or `basis` -- but this gate does not ask: `citations`
+reads all three from any citing report, and how the runner will hand in a
+supervisor's `explanations` is unwritten, while the single-agent control already
+hands its own to `citation_drop_reason` with a top-level `upstream_item_id`
+(`src/control_single_agent.py`, `drop_reasons`), the comparer's shape. A
+shape rule here would be a guess about that runner, so the gap is left open and
+named. The name is the runner's word for which layer wrote the items, and
+nothing in an item checks that word.
 
 **Fail closed.** A paragraph id that resolves to nothing, an item with no id, an
 empty quote, a citation that is not a string -- each is a drop and never a pass.
