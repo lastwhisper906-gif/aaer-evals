@@ -131,8 +131,12 @@ ACCOUNTING_ANSWER = {
     # empty basis, which stood only because this control skipped the field
     # whenever the basis was empty -- the fixture was holding the gate open.
     "market_direction": {"p_up": 0.4, "basis": [CROSSED_ITEM]},
-    "tier": "watch",
-    "top_signals": ["receivables_growth_outruns_revenue"],
+    "anomalies": [{"name": "revenue_receivables_outrun_sales",
+                   "axis": "accounting_reliability",
+                   "what": "receivables grew faster than revenue",
+                   "numbers_vs_prose": "contradicts",
+                   "evidence": [{"upstream_item_id": CROSSED_ITEM}],
+                   "market_label": "not_priced"}],
 }
 PRESSURE_ANSWER = {
     "checklist": [{"key": "liquidity_headroom", "finding": "no_flag", "confidence": 0.3,
@@ -142,8 +146,7 @@ PRESSURE_ANSWER = {
     "events": [{"key": "covenant_breach", "p_within_horizon": 0.05}],
     "explanations": [],
     "market_direction": {"p_up": "insufficient", "basis": []},
-    "tier": "clear",
-    "top_signals": [],
+    "anomalies": [],
 }
 ANSWERS = {"accounting_reliability": ACCOUNTING_ANSWER,
            "financial_pressure": PRESSURE_ANSWER}
@@ -526,7 +529,7 @@ def test_a_missing_report_writes_no_control_file(tmp_path, out):
     assert supervisor.calls == []
 
 
-@pytest.mark.parametrize("missing", ["checklist", "market_direction", "tier"])
+@pytest.mark.parametrize("missing", ["checklist", "market_direction", "anomalies"])
 def test_an_answer_short_of_the_schema_is_refused(tmp_path, out, missing):
     short = {question: {key: value for key, value in answer.items() if key != missing}
              for question, answer in ANSWERS.items()}
@@ -543,8 +546,8 @@ def test_a_short_answer_to_either_question_writes_neither_file(tmp_path, out,
     answers = dict(ANSWERS)
     answers[short_question] = {key: value
                                for key, value in ANSWERS[short_question].items()
-                               if key != "tier"}
-    with pytest.raises(ControlError, match="tier"):
+                               if key != "anomalies"}
+    with pytest.raises(ControlError, match="anomalies"):
         run_crossed(tmp_path, out, StandInSupervisor(answers))
     assert list(out.iterdir()) == []
 
@@ -849,7 +852,7 @@ def test_an_item_citing_the_notes_report_that_was_taken_away_is_dropped_and_coun
 
     A supervisor pattern-matching AAPL's own run would cite AAPL's own notes
     item, and that item is in none of the four reports it was handed. The entry
-    goes whole, the top signal naming it goes with it, and the count says one.
+    goes whole and the count says one.
     """
     answers = dict(ANSWERS)
     answers["accounting_reliability"] = dict(
@@ -857,15 +860,12 @@ def test_an_item_citing_the_notes_report_that_was_taken_away_is_dropped_and_coun
         checklist=ACCOUNTING_ANSWER["checklist"] + [
             {"key": "reserve_release_unexplained", "finding": "flag",
              "confidence": 0.7,
-             "evidence": [{"upstream_item_id": UNCROSSED_ITEM}]}],
-        top_signals=["receivables_growth_outruns_revenue",
-                     "reserve_release_unexplained"])
+             "evidence": [{"upstream_item_id": UNCROSSED_ITEM}]}])
     run_crossed(tmp_path, out, StandInSupervisor(answers))
 
     accounting = written(out, ACCOUNTING_FILE)
     assert [entry["key"] for entry in accounting["checklist"]] == \
            ["receivables_growth_outruns_revenue"]
-    assert accounting["top_signals"] == ["receivables_growth_outruns_revenue"]
     assert accounting["control"]["counts"]["dropped_items"] == 1
     dropped = accounting["control"]["dropped_items"][0]
     assert dropped["item_id"] == \
@@ -873,6 +873,28 @@ def test_an_item_citing_the_notes_report_that_was_taken_away_is_dropped_and_coun
     assert UNCROSSED_ITEM in dropped["reason"]
     # The other question cited nothing that failed, so nothing left it.
     assert written(out, PRESSURE_FILE)["control"]["counts"]["dropped_items"] == 0
+
+
+def test_an_anomaly_citing_the_notes_report_that_was_taken_away_is_dropped_and_counted(
+        tmp_path, out):
+    """The register is gated like the checklist: an anomaly resting on AAPL's
+    own notes item goes whole, the one resting on the crossed set stays, and the
+    count says one."""
+    answers = dict(ANSWERS)
+    uncrossed = dict(ACCOUNTING_ANSWER["anomalies"][0],
+                     name="reserves_release_unexplained",
+                     evidence=[{"upstream_item_id": UNCROSSED_ITEM}])
+    answers["accounting_reliability"] = dict(
+        ACCOUNTING_ANSWER, anomalies=ACCOUNTING_ANSWER["anomalies"] + [uncrossed])
+    run_crossed(tmp_path, out, StandInSupervisor(answers))
+
+    accounting = written(out, ACCOUNTING_FILE)
+    assert accounting["anomalies"] == ACCOUNTING_ANSWER["anomalies"]
+    assert accounting["control"]["counts"]["dropped_items"] == 1
+    dropped = accounting["control"]["dropped_items"][0]
+    assert dropped["item_id"] == \
+           "accounting_reliability:anomalies:reserves_release_unexplained"
+    assert UNCROSSED_ITEM in dropped["reason"]
 
 
 def test_a_market_call_resting_on_nothing_in_the_crossed_set_degrades(tmp_path, out):
@@ -933,13 +955,11 @@ def test_an_item_citing_nothing_at_all_is_dropped_and_counted(tmp_path, out):
     answers["financial_pressure"] = dict(
         PRESSURE_ANSWER,
         checklist=[{"key": "liquidity_headroom", "finding": "no_flag",
-                    "confidence": 0.3, "evidence": []}],
-        top_signals=["liquidity_headroom"])
+                    "confidence": 0.3, "evidence": []}])
     run_crossed(tmp_path, out, StandInSupervisor(answers))
 
     pressure = written(out, PRESSURE_FILE)
     assert pressure["checklist"] == []
-    assert pressure["top_signals"] == []
     assert pressure["control"]["counts"]["dropped_items"] == 1
     dropped = pressure["control"]["dropped_items"][0]
     assert dropped["item_id"] == "financial_pressure:checklist:liquidity_headroom"
@@ -1091,17 +1111,6 @@ def test_a_basis_that_is_not_a_list_of_names_is_refused(tmp_path, out, basis):
     assert list(out.iterdir()) == []
 
 
-@pytest.mark.parametrize("tier", ["banana", "Elevated", "", None, 1])
-def test_a_tier_outside_the_three_is_refused(tmp_path, out, tier):
-    """The two-by-two thresholds in `docs/CHECKLIST.md` produce one of three
-    words, and a fourth is a row the scorecard has no column for."""
-    answers = dict(ANSWERS)
-    answers["accounting_reliability"] = dict(ACCOUNTING_ANSWER, tier=tier)
-    with pytest.raises(ControlError, match="tier"):
-        run_crossed(tmp_path, out, StandInSupervisor(answers))
-    assert list(out.iterdir()) == []
-
-
 @pytest.mark.parametrize("finding", ["yes", "no", "flagged", "", None])
 def test_a_checklist_finding_outside_the_three_is_refused(tmp_path, out, finding):
     """`flag`, `no_flag`, `insufficient` -- and the count of insufficient answers
@@ -1225,62 +1234,6 @@ def test_an_empty_continuous_is_refused(tmp_path, out):
     assert list(out.iterdir()) == []
 
 
-def test_more_top_signals_than_the_schema_allows_are_refused(tmp_path, out):
-    answers = dict(ANSWERS)
-    answers["accounting_reliability"] = dict(
-        ACCOUNTING_ANSWER,
-        checklist=[dict(ACCOUNTING_ANSWER["checklist"][0], key=f"signal_{n}")
-                   for n in range(6)],
-        top_signals=[f"signal_{n}" for n in range(6)])
-    with pytest.raises(ControlError, match="top_signals"):
-        run_crossed(tmp_path, out, StandInSupervisor(answers))
-    assert list(out.iterdir()) == []
-
-
-def test_one_signal_repeated_is_refused(tmp_path, out):
-    """Two entries of one key, not six.
-
-    At six the length check fired first, so deleting the uniqueness rule left
-    this test green — it was named for a rule it never reached. Two is under
-    the ceiling, so only uniqueness can refuse it.
-    """
-    answers = dict(ANSWERS)
-    answers["accounting_reliability"] = dict(
-        ACCOUNTING_ANSWER,
-        top_signals=["receivables_growth_outruns_revenue"] * 2)
-    with pytest.raises(ControlError) as caught:
-        run_crossed(tmp_path, out, StandInSupervisor(answers))
-    assert "more than once" in str(caught.value)
-    assert "receivables_growth_outruns_revenue" in str(caught.value)
-    assert list(out.iterdir()) == []
-
-
-def test_a_signal_naming_no_checklist_item_is_refused(tmp_path, out):
-    """The distinction, and which side of it this falls on.
-
-    A signal naming an entry that was *dropped* leaves with it and writes no
-    second drop row: that drop is on record under the entry's own key, and
-    counting it twice would say two items failed where one did. The test above
-    asserts that.
-
-    A signal naming an entry that never existed is not a failed item at all --
-    it is the answer contradicting itself before any citation is resolved, and
-    `src/control_single_agent.py` refuses the whole prediction for it. This
-    control used to drop and count it instead, which made the two controls
-    disagree about one schema: one schema gets one gate, and the difference
-    between the controls is the crossing and nothing else.
-    """
-    answers = dict(ANSWERS)
-    answers["accounting_reliability"] = dict(
-        ACCOUNTING_ANSWER,
-        top_signals=["receivables_growth_outruns_revenue", "margin_collapse"])
-    with pytest.raises(ControlError) as caught:
-        run_crossed(tmp_path, out, StandInSupervisor(answers))
-    assert "margin_collapse" in str(caught.value)
-    assert "names no entry" in str(caught.value)
-    assert list(out.iterdir()) == []
-
-
 # --- one §7 checker, called by both controls ---------------------------------
 #
 # `docs/CHECKLIST.md` §7 read by hand, and §1 for the one list §7 leaves blank.
@@ -1297,14 +1250,16 @@ def test_a_signal_naming_no_checklist_item_is_refused(tmp_path, out):
 #     "explanations": [ {"id": "", "support": "sufficient|insufficient|unknown",
 #                        "realization_p": 0} ],
 #     "market_direction": {"p_up": 0, "basis": []},
-#     "tier": "elevated" | "watch" | "clear",
-#     "top_signals": [] }
+#     "anomalies": [ {"name": "",
+#                     "axis": "accounting_reliability" | "financial_pressure",
+#                     ... } ] }
 #
-# Under it: "`continuous` is financial pressure only. `top_signals` holds at
-# most five keys." and "`p_up` may be `"insufficient"` instead of a number".
-# §1: "An LLM answer is always `flag` / `no_flag` / `insufficient`".
+# Under it: "`continuous` is financial pressure only." and "`p_up` may be
+# `"insufficient"` instead of a number". §1: "An LLM answer is always `flag` /
+# `no_flag` / `insufficient`". The anomaly register's own fields and lists are
+# held against the owner's words in `tests/test_prediction_schema.py`.
 BY_HAND_FIELDS = ("question", "rules_version", "checklist", "continuous", "events",
-                  "explanations", "market_direction", "tier", "top_signals")
+                  "explanations", "market_direction", "anomalies")
 BY_HAND_QUESTIONS = ("accounting_reliability", "financial_pressure")
 BY_HAND_CHECKLIST = ("key", "finding", "confidence", "evidence")
 BY_HAND_EVIDENCE = ("upstream_item_id",)
@@ -1314,8 +1269,6 @@ BY_HAND_EXPLANATIONS = ("id", "support", "realization_p")
 BY_HAND_MARKET = ("p_up", "basis")
 BY_HAND_FINDINGS = ("flag", "no_flag", "insufficient")
 BY_HAND_SUPPORT = ("sufficient", "insufficient", "unknown")
-BY_HAND_TIERS = ("elevated", "watch", "clear")
-BY_HAND_SIGNAL_CEILING = 5
 
 
 def test_the_one_checker_holds_what_section_seven_says():
@@ -1341,8 +1294,6 @@ def test_the_one_checker_holds_what_section_seven_says():
     assert prediction_schema.MARKET_FIELDS == BY_HAND_MARKET
     assert prediction_schema.FINDINGS == BY_HAND_FINDINGS
     assert prediction_schema.SUPPORT == BY_HAND_SUPPORT
-    assert prediction_schema.TIERS == BY_HAND_TIERS
-    assert prediction_schema.TOP_SIGNALS_MAX == BY_HAND_SIGNAL_CEILING
     assert prediction_schema.INSUFFICIENT == "insufficient"
 
 
@@ -1392,18 +1343,6 @@ def test_the_one_checker_takes_every_value_section_seven_allows_and_nothing_besi
     assert "support" in schema_refuses(dict(good, explanations=[
         {"id": CROSSED_ITEM, "support": "maybe", "realization_p": 0.4}]))
 
-    for tier in BY_HAND_TIERS:
-        assert schema_refuses(dict(good, tier=tier)) is None, tier
-    assert "tier" in schema_refuses(dict(good, tier="alert"))
-
-    def signalled(count: int) -> dict:
-        keys = [f"signal_{n}" for n in range(count)]
-        return dict(good, checklist=[dict(entry, key=key) for key in keys],
-                    top_signals=keys)
-    assert schema_refuses(signalled(BY_HAND_SIGNAL_CEILING)) is None
-    assert f"at most {BY_HAND_SIGNAL_CEILING}" in \
-        schema_refuses(signalled(BY_HAND_SIGNAL_CEILING + 1))
-
     assert schema_refuses(dict(good, market_direction={
         "p_up": "insufficient", "basis": []})) is None
     assert "p_up" in schema_refuses(dict(good, market_direction={
@@ -1442,7 +1381,9 @@ def test_evidence_is_the_one_field_the_caller_names():
     name paragraphs and a quote travels with each; the shuffled control's
     upstream is four reports, and §7's own member is the whole of it.
     """
-    plain = dict(ACCOUNTING_ANSWER)
+    # The register carries evidence of the same shape; its half of this is
+    # `tests/test_prediction_schema.py`'s, so here the checklist carries it alone.
+    plain = dict(ACCOUNTING_ANSWER, anomalies=[])
     quoted = dict(plain, checklist=[dict(plain["checklist"][0], evidence=[
         {"upstream_item_id": CROSSED_ITEM, "quote": "a sentence"}])])
     with_quote = BY_HAND_EVIDENCE + ("quote",)
@@ -1499,27 +1440,6 @@ def test_a_refusal_from_the_one_checker_is_the_controls_refusal(tmp_path, out,
     assert list(out.iterdir()) == []
 
 
-def test_neither_control_writes_out_a_section_seven_list_of_its_own():
-    """The lists are written once, in `src/prediction_schema.py`.
-
-    Read off each control's source rather than asked of its attributes: a copy
-    under a new name is still a copy, and the next one to drift.
-    """
-    import ast
-    by_hand = {BY_HAND_CHECKLIST, BY_HAND_EVIDENCE, BY_HAND_CONTINUOUS,
-               BY_HAND_EVENTS, BY_HAND_EXPLANATIONS, BY_HAND_MARKET,
-               BY_HAND_FINDINGS, BY_HAND_SUPPORT, BY_HAND_TIERS}
-    for name in ("control_single_agent.py", "control_shuffled.py"):
-        tree = ast.parse((REPO_ROOT / "src" / name).read_text(encoding="utf-8"))
-        written = {tuple(element.value for element in node.elts)
-                   for node in ast.walk(tree)
-                   if isinstance(node, (ast.Tuple, ast.List)) and node.elts
-                   and all(isinstance(element, ast.Constant)
-                           and isinstance(element.value, str)
-                           for element in node.elts)}
-        assert not written & by_hand, f"{name} writes out {sorted(written & by_hand)}"
-
-
 def section_seven() -> dict:
     """§7's prediction schema, parsed out of `docs/CHECKLIST.md` as JSON.
 
@@ -1547,8 +1467,8 @@ def test_the_section_seven_value_lists_are_the_documents_own():
     one parses the document instead, so the day §7 moves and the hand reading
     above is not updated, the two disagree here rather than both going quietly
     stale. Everything comes out of `docs/CHECKLIST.md`: the field sets out of
-    §7's own block, the three closed value lists out of the strings inside it
-    and out of §1's sentence, and the ceiling out of the prose under the block.
+    §7's own block, the closed value lists out of the strings inside it and out
+    of §1's sentence, and the abstention out of the prose under the block.
     """
     schema = section_seven()
     # The keys, in §7's order. `question` and `rules_version` are the module's
@@ -1574,10 +1494,10 @@ def test_the_section_seven_value_lists_are_the_documents_own():
     assert tuple(schema["explanations"][0]) == prediction_schema.EXPLANATION_FIELDS
     assert tuple(schema["market_direction"]) == prediction_schema.MARKET_FIELDS
 
-    # The two closed lists §7 spells out inside the block, and the one it
-    # leaves empty there: `"finding": ""` says nothing, so the findings are §1's
-    # sentence, which is the only place the three are written down.
-    assert tuple(schema["tier"].split("|")) == prediction_schema.TIERS
+    # The closed list §7 spells out inside the block, and the one it leaves
+    # empty there: `"finding": ""` says nothing, so the findings are §1's
+    # sentence, which is the only place the three are written down. The
+    # register's three are `tests/test_prediction_schema.py`'s.
     assert tuple(schema["explanations"][0]["support"].split("|")) == \
         prediction_schema.SUPPORT
     collapsed = " ".join(
@@ -1587,9 +1507,7 @@ def test_the_section_seven_value_lists_are_the_documents_own():
     assert tuple(one.strip(" `") for one in said.group(1).split("/")) == \
         prediction_schema.FINDINGS
 
-    # The ceiling and the abstention, out of the prose under the block.
-    assert "`top_signals` holds at most five keys" in collapsed
-    assert prediction_schema.TOP_SIGNALS_MAX == 5
+    # The abstention, out of the prose under the block.
     assert '`p_up` may be `"insufficient"` instead of a number' in collapsed
     assert prediction_schema.INSUFFICIENT == "insufficient"
 
@@ -2072,25 +1990,29 @@ def test_the_two_controls_answer_one_schema_in_behaviour_too(tmp_path, out):
     # rows for the missing quote rather than for the mutation, and deleting
     # every other §7 rule from the sibling left this green.
     def quoted(answer: dict) -> dict:
-        """The same answer with a quote beside each upstream id.
+        """The same answer with a quote beside each upstream id, in the
+        checklist and in the anomaly register, which carry evidence alike.
 
         Left alone if the entry is not the shape a quote goes in -- a battery
         row whose whole point is a malformed checklist must reach the sibling
         malformed, not repaired on the way.
         """
-        entries = answer.get("checklist")
-        if not isinstance(entries, list):
-            return dict(answer)
-        rebuilt = []
-        for entry in entries:
-            cites = entry.get("evidence") if isinstance(entry, dict) else None
-            if not isinstance(cites, list):
-                rebuilt.append(entry)
+        rebuilt_answer = dict(answer)
+        for field in ("checklist", "anomalies"):
+            entries = answer.get(field)
+            if not isinstance(entries, list):
                 continue
-            rebuilt.append(dict(entry, evidence=[
-                dict(cited, quote="a sentence") if isinstance(cited, dict) else cited
-                for cited in cites]))
-        return dict(answer, checklist=rebuilt)
+            rebuilt = []
+            for entry in entries:
+                cites = entry.get("evidence") if isinstance(entry, dict) else None
+                if not isinstance(cites, list):
+                    rebuilt.append(entry)
+                    continue
+                rebuilt.append(dict(entry, evidence=[
+                    dict(cited, quote="a sentence") if isinstance(cited, dict)
+                    else cited for cited in cites]))
+            rebuilt_answer[field] = rebuilt
+        return rebuilt_answer
 
     good = dict(ACCOUNTING_ANSWER)
     # The row that cannot be written while the evidence shapes are confused: a
@@ -2104,7 +2026,7 @@ def test_the_two_controls_answer_one_schema_in_behaviour_too(tmp_path, out):
         "a checklist entry that is not an object": {"checklist": [good, "x"]},
         "a confidence outside its range": {
             "checklist": [dict(good["checklist"][0], confidence=1.4)]},
-        "a tier the thresholds never produce": {"tier": "banana"},
+        "a tier, which §7 no longer has": {"tier": "watch"},
         "events that are not a list": {"events": "lots"},
         "an event probability that is a word": {
             "events": [{"key": "restatement", "p_within_horizon": "likely"}]},
@@ -2120,15 +2042,16 @@ def test_the_two_controls_answer_one_schema_in_behaviour_too(tmp_path, out):
         "an explanation support outside the three": {
             "explanations": [{"id": CROSSED_ITEM, "support": "maybe",
                               "realization_p": 0.4}]},
-        "one signal repeated": {
-            "top_signals": ["receivables_growth_outruns_revenue"] * 2},
-        "a signal naming no entry": {
-            "top_signals": ["receivables_growth_outruns_revenue",
-                            "margin_collapse"]},
-        "six signals": {
-            "checklist": [dict(good["checklist"][0], key=f"signal_{n}")
-                          for n in range(6)],
-            "top_signals": [f"signal_{n}" for n in range(6)]},
+        "top signals, which §7 no longer has": {"top_signals": []},
+        "an anomaly on the other axis": {"anomalies": [
+            dict(good["anomalies"][0], axis="financial_pressure")]},
+        "a fourth reconciliation word": {"anomalies": [
+            dict(good["anomalies"][0], numbers_vs_prose="agrees")]},
+        "a fifth market label": {"anomalies": [
+            dict(good["anomalies"][0], market_label="unpriced")]},
+        "two anomalies under one name": {"anomalies": good["anomalies"] * 2},
+        "an anomaly name that is not a plain name": {"anomalies": [
+            dict(good["anomalies"][0], name="Revenue-Receivables")]},
     }
     for what, change in battery.items():
         answer = dict(good, **change)
@@ -2512,10 +2435,12 @@ def test_a_recorded_filing_date_that_is_not_a_date_dates_no_half(tmp_path):
 # at all.
 #
 # Three of the sixty-six are judged as a function contract and not as pipeline
-# coverage: the two entry-carries-no-key rules and the top_signals-is-a-list
-# rule sit inside `resolved`, behind a `_predicted` that refuses those shapes
-# first, so no input handed to `run` can reach them and the three tests below
-# call the gate directly. A mutation row for one of them says the rule is
+# coverage: the two entry-carries-no-key rules and the rule that the list is a
+# list sit inside `resolved`, behind a `_predicted` that refuses those shapes
+# first, so no input handed to `run` can reach them and the tests below call the
+# gate directly. The list rule stood over `top_signals` until the owner's
+# decision of 2026-09-23 replaced that field with the anomaly register, and it
+# stands over the register now, beside a third entry-carries-no-name rule. A mutation row for one of them says the rule is
 # judged. It does not say a run could trip it — and the day `resolved` gains a
 # second caller, that is the difference between defence in depth and a rule
 # nothing upstream is holding.
@@ -2552,30 +2477,6 @@ def test_a_supervisor_answering_with_something_other_than_an_object_is_refused(
     assert list(out.iterdir()) == []
 
 
-@pytest.mark.parametrize("signal", [3, None, ["receivables_growth_outruns_revenue"], ""])
-def test_a_top_signal_that_is_not_a_name_is_refused(tmp_path, out, signal):
-    """A signal is the key of a checklist entry, so it is a name.
-
-    Three rules downstream read this list — uniqueness, the ceiling, and the
-    resolution against the entries that stood — and each of them was reached
-    with a non-name in it. With the rule off, `3` raises `TypeError: sequence
-    item 0: expected str instance, int found` inside the refusal that names the
-    signals, and `["x"]` raises `unhashable type: 'list'` where that refusal
-    asks which signals name no checklist entry. Not inside `_unique`, which
-    this docstring said until the mutation was run: it counts before it
-    collects, so a list appearing once is never hashed and `_unique` lets it
-    straight through.
-    """
-    answers = dict(ANSWERS)
-    answers["accounting_reliability"] = dict(ACCOUNTING_ANSWER, top_signals=[signal])
-    with pytest.raises(ControlError) as caught:
-        run_crossed(tmp_path, out, StandInSupervisor(answers))
-    said = str(caught.value)
-    assert "top_signals[1] is" in said
-    assert "a signal is the key of a checklist entry" in said
-    assert list(out.iterdir()) == []
-
-
 @pytest.mark.parametrize("entry", ["oops", 3, None, {"finding": "flag"}])
 def test_a_checklist_entry_the_gate_cannot_name_is_refused(entry):
     """`resolved()` called directly, the way the schema battery calls
@@ -2607,24 +2508,34 @@ def test_an_explanation_the_gate_cannot_name_is_refused(entry):
     assert "explanation carries no id" in str(caught.value)
 
 
-@pytest.mark.parametrize("signals", ["receivables_growth_outruns_revenue", 3, None,
-                                     {"receivables_growth_outruns_revenue": True}])
-def test_the_gate_refuses_top_signals_that_are_not_a_list(signals):
-    """The sixty-sixth rule, and the one the sweep could not express.
+@pytest.mark.parametrize("entry", ["an anomaly", 3, None,
+                                   {"what": "receivables grew", "evidence": []},
+                                   {"name": 7, "evidence": []}])
+def test_an_anomaly_the_gate_cannot_name_is_refused(entry):
+    """The same rule for the register: the gate drops an anomaly by its name,
+    which an entry with no name cannot be dropped by."""
+    answer = dict(ACCOUNTING_ANSWER, anomalies=[entry])
+    with pytest.raises(ControlError) as caught:
+        control_shuffled.resolved("accounting_reliability", answer, {CROSSED_ITEM})
+    assert "anomaly carries no name" in str(caught.value)
 
-    Replacing this call with `pass` is a syntax error — it sits on the
-    continuation line of a list comprehension — so the sweep reported "could not
-    run" rather than a verdict, and the rule had to be mutated by hand into a
-    passthrough to find out. It was green: a string reached the comprehension
-    and was iterated character by character, and `top_signals` came out `[]`
-    because no single letter is a checklist key. Behind `_predicted` in the one
-    call path, like the two rules above, so the test calls the gate directly.
+
+@pytest.mark.parametrize("anomalies", ["revenue_receivables_outrun_sales", 3, None,
+                                       {"revenue_receivables_outrun_sales": True}])
+def test_the_gate_refuses_anomalies_that_are_not_a_list(anomalies):
+    """The sixty-sixth rule, over the register now that `top_signals` is gone.
+
+    Over `top_signals` it was green under a passthrough: a string reached the
+    comprehension and was iterated character by character, and the field came
+    out `[]` because no single letter is a checklist key. Behind `_predicted` in
+    the one call path, like the rules above, so the test calls the gate
+    directly.
     """
-    answer = dict(ACCOUNTING_ANSWER, top_signals=signals)
+    answer = dict(ACCOUNTING_ANSWER, anomalies=anomalies)
     with pytest.raises(ControlError) as caught:
         control_shuffled.resolved("accounting_reliability", answer, {CROSSED_ITEM})
     said = str(caught.value)
-    assert "gives top_signals as" in said
+    assert "gives anomalies as" in said
     assert "docs/CHECKLIST.md §7 gives it as a list" in said
 
 
@@ -2657,8 +2568,12 @@ def test_the_gate_refuses_top_signals_that_are_not_a_list(signals):
      dict(PRESSURE_ANSWER, continuous="revenue down")),
     ("accounting_reliability", "explanations",
      dict(ACCOUNTING_ANSWER, explanations="none this time")),
-    ("accounting_reliability", "top_signals",
-     dict(ACCOUNTING_ANSWER, top_signals="receivables_growth_outruns_revenue")),
+    ("accounting_reliability", "anomalies",
+     dict(ACCOUNTING_ANSWER, anomalies="revenue_receivables_outrun_sales")),
+    ("accounting_reliability", "anomalies[1].evidence",
+     dict(ACCOUNTING_ANSWER,
+          anomalies=[dict(ACCOUNTING_ANSWER["anomalies"][0],
+                          evidence="the crossed item")])),
 ])
 def test_a_field_the_schema_gives_as_a_list_is_refused_when_it_is_not_one(
         tmp_path, out, question, field, answer):

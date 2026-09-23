@@ -94,12 +94,22 @@ SCHEMA_BLOCK = '''{ "question": "accounting_reliability" | "financial_pressure",
   "explanations": [ {"id": "", "support": "sufficient|insufficient|unknown",
                      "realization_p": 0} ],
   "market_direction": {"p_up": 0, "basis": []},
-  "tier": "elevated" | "watch" | "clear",
-  "top_signals": [] }'''
+  "anomalies": [ {"name": "",
+                  "axis": "accounting_reliability" | "financial_pressure",
+                  "what": "",
+                  "numbers_vs_prose": "confirms" | "contradicts" | "unresolved",
+                  "evidence": [{"upstream_item_id": ""}],
+                  "market_label": "priced_in" | "not_priced" | "opposite_direction" | "absent"} ] }'''
 
 # Every top-level field of that block, read off it one line at a time.
 SCHEMA_FIELDS = ("question", "rules_version", "checklist", "continuous", "events",
-                 "explanations", "market_direction", "tier", "top_signals")
+                 "explanations", "market_direction", "anomalies")
+
+# The members of one anomaly, in the owner's words of 2026-09-23 as the brief
+# carried them. `schema_members` cannot read them off the block: the entry holds
+# an `evidence` list of its own, and the pattern stops at the first `}]`.
+ANOMALY_MEMBERS = ("name", "axis", "what", "numbers_vs_prose", "evidence",
+                   "market_label")
 
 
 def schema_members(field: str) -> tuple[str, ...]:
@@ -243,8 +253,18 @@ def evidence(paragraph_id: str, quote: str) -> list[dict]:
     return [{"upstream_item_id": paragraph_id, "quote": quote}]
 
 
+def anomaly(name: str, paragraph_id: str, quote: str, **change) -> dict:
+    """One entry of the accounting register, quoted out of the planted notes."""
+    return {"name": name, "axis": "accounting_reliability",
+            "what": "the allowance fell while receivables rose to a record",
+            "numbers_vs_prose": "contradicts",
+            "evidence": evidence(paragraph_id, quote),
+            "market_label": "absent"} | change
+
+
 def accounting_answer() -> dict:
-    """Four checklist entries, three quoted verbatim and one with the dash changed."""
+    """Four checklist entries, three quoted verbatim and one with the dash changed,
+    and a register of one anomaly quoted verbatim, with no market label."""
     return {
         "question": "accounting_reliability",
         "rules_version": "0.1",
@@ -262,13 +282,14 @@ def accounting_answer() -> dict:
         "explanations": [{"id": f"{ACCESSION}:notes:2", "support": "insufficient",
                           "realization_p": 0.3}],
         "market_direction": {"p_up": 0.45, "basis": [NOTES_ONE]},
-        "tier": "watch",
-        "top_signals": ["receivables_outrun_revenue", "estimate_change_favorable"],
+        "anomalies": [anomaly("reserves_allowance_cut_as_receivables_grow",
+                              NOTES_TWO, ALLOWANCE_QUOTE)],
     }
 
 
 def pressure_answer() -> dict:
-    """The same shape with `continuous`, which is financial pressure's alone."""
+    """The same shape with `continuous`, which is financial pressure's alone, and
+    an empty register, which is an honest answer."""
     return {
         "question": "financial_pressure",
         "rules_version": "0.1",
@@ -287,8 +308,7 @@ def pressure_answer() -> dict:
         "events": [{"key": "guidance_cut", "p_within_horizon": 0.2}],
         "explanations": [],
         "market_direction": {"p_up": "insufficient", "basis": []},
-        "tier": "clear",
-        "top_signals": ["gross_margin_falling"],
+        "anomalies": [],
     }
 
 
@@ -432,9 +452,14 @@ def test_the_accounting_file_carries_every_field_of_the_schema_and_no_other(tmp_
     assert sorted(payload) == sorted(set(SCHEMA_FIELDS) - {"continuous"})
     assert payload["question"] == "accounting_reliability"
     assert payload["rules_version"] == MANIFEST["rules_version"]
-    assert payload["tier"] in ("elevated", "watch", "clear")
-    assert payload["top_signals"] == ["receivables_outrun_revenue"]
-    assert len(payload["top_signals"]) <= prediction_schema.TOP_SIGNALS_MAX
+    # The register as the model wrote it: one anomaly, its quote verbatim, with
+    # no market label -- listed all the same.
+    assert payload["anomalies"] == accounting_answer()["anomalies"]
+    for entry in payload["anomalies"]:
+        assert sorted(entry) == sorted(ANOMALY_MEMBERS)
+        assert entry["market_label"] == "absent"
+        for cited in entry["evidence"]:
+            assert sorted(cited) == sorted(EVIDENCE_MEMBERS)
 
 
 def test_every_checklist_entry_carries_the_schemas_four_members(tmp_path):
@@ -559,8 +584,67 @@ def test_the_altered_quote_is_dropped_whole_and_counted(tmp_path):
     assert result["dropped"][0]["report"] == "control_single_agent_accounting.json"
     payload = written(root, "accounting_reliability")
     assert "estimate_change_favorable" not in [e["key"] for e in payload["checklist"]]
-    # The top signal that named it goes with it.
-    assert "estimate_change_favorable" not in payload["top_signals"]
+
+
+def test_an_anomaly_whose_quote_is_altered_is_dropped_whole_and_counted(tmp_path):
+    """The register's evidence is gated like the checklist's: the same em dash
+    written as a hyphen, and the anomaly goes while the one quoted verbatim
+    stays."""
+    root, folder = plant(tmp_path)
+    answer = accounting_answer()
+    answer["anomalies"].append(anomaly("revenue_receivables_at_a_record",
+                                       NOTES_ONE, ALTERED_QUOTE,
+                                       market_label="not_priced"))
+    result = go(root, folder, "accounting_reliability", answer)
+    rows = [row for row in result["dropped"] if ":anomalies:" in row["item_id"]]
+    assert [row["item_id"] for row in rows] == [
+        "accounting_reliability:anomalies:revenue_receivables_at_a_record"]
+    assert "does not string-match" in rows[0]["reason"]
+    assert rows[0]["report"] == "control_single_agent_accounting.json"
+    assert [entry["name"] for entry in
+            written(root, "accounting_reliability")["anomalies"]] == [
+        "reserves_allowance_cut_as_receivables_grow"]
+
+
+def test_an_anomaly_resting_on_nothing_is_dropped_and_counted(tmp_path):
+    root, folder = plant(tmp_path)
+    answer = accounting_answer()
+    answer["anomalies"][0]["evidence"] = []
+    result = go(root, folder, "accounting_reliability", answer)
+    reason = next(row["reason"] for row in result["dropped"] if row["item_id"]
+                  == "accounting_reliability:anomalies:"
+                     "reserves_allowance_cut_as_receivables_grow")
+    assert "cites no upstream item" in reason
+    assert written(root, "accounting_reliability")["anomalies"] == []
+
+
+def test_an_anomaly_naming_a_paragraph_that_exists_nowhere_is_dropped(tmp_path):
+    root, folder = plant(tmp_path)
+    answer = accounting_answer()
+    answer["anomalies"][0]["evidence"] = evidence(NO_SUCH_PARAGRAPH, ALLOWANCE_QUOTE)
+    result = go(root, folder, "accounting_reliability", answer)
+    assert "accounting_reliability:anomalies:reserves_allowance_cut_as_receivables_grow" \
+        in [row["item_id"] for row in result["dropped"]]
+    assert written(root, "accounting_reliability")["anomalies"] == []
+
+
+def test_an_anomaly_evidence_entry_with_no_quote_is_refused(tmp_path):
+    """The same rule as a checklist entry's: an id naming a paragraph is verified
+    by its quote, so evidence without one is not this control's shape."""
+    root, folder = plant(tmp_path)
+    answer = accounting_answer()
+    answer["anomalies"][0]["evidence"] = [{"upstream_item_id": NOTES_TWO}]
+    with pytest.raises(ControlError) as caught:
+        go(root, folder, "accounting_reliability", answer)
+    assert "anomalies[1].evidence[1]" in str(caught.value)
+    assert "quote" in str(caught.value)
+
+
+def test_an_empty_register_is_written_as_the_answer_it_is(tmp_path):
+    root, folder = plant(tmp_path)
+    result = go(root, folder, "financial_pressure", pressure_answer())
+    assert written(root, "financial_pressure")["anomalies"] == []
+    assert result["dropped"] == []
 
 
 def test_a_basis_that_resolves_to_nothing_becomes_the_schemas_own_abstention(tmp_path):
@@ -844,7 +928,9 @@ def test_another_companys_prose_under_an_allowed_name_is_refused(tmp_path):
                                "support": "sufficient", "realization_p": 0.4}]
     answer["market_direction"] = {"p_up": 0.45,
                                   "basis": [f"{OTHER_ACCESSION}:notes:1"]}
-    answer["top_signals"] = ["receivables_outrun_revenue"]
+    answer["anomalies"] = [anomaly("revenue_receivables_outrun_sales",
+                                   f"{OTHER_ACCESSION}:notes:1",
+                                   "Another company's prose.")]
     assert OTHER_ACCESSION in refused(root, folder, answer)
 
 
@@ -1051,7 +1137,7 @@ def test_a_second_call_never_writes_over_the_first(tmp_path):
     # The same answer again is the same bytes, and that is not a change.
     go(root, folder, "accounting_reliability", accounting_answer())
     answer = accounting_answer()
-    answer["tier"] = "elevated"
+    answer["anomalies"] = []
     with pytest.raises(ControlError) as caught:
         go(root, folder, "accounting_reliability", answer)
     assert "append-only" in str(caught.value)
@@ -1319,8 +1405,14 @@ def test_an_answer_to_the_other_question_is_refused(tmp_path):
 
 
 @pytest.mark.parametrize("field,value", [
-    ("tier", "somewhat elevated"),
-    ("top_signals", ["receivables_outrun_revenue", "no_such_indicator"]),
+    # Both gone from §7 by the owner's decision of 2026-09-23, so both are
+    # fields the schema does not give an answer, whatever they hold.
+    ("tier", "clear"),
+    ("top_signals", []),
+    ("anomalies", [anomaly("reserves_allowance_cut_as_receivables_grow", NOTES_TWO,
+                           ALLOWANCE_QUOTE, numbers_vs_prose="agrees")]),
+    ("anomalies", [anomaly("reserves_allowance_cut_as_receivables_grow", NOTES_TWO,
+                           ALLOWANCE_QUOTE, axis="financial_pressure")]),
     ("events", [{"key": "late_filing", "p_within_horizon": 1.4}]),
     ("explanations", [{"id": "x", "support": "probably", "realization_p": 0.2}]),
     ("market_direction", {"p_up": 0.4}),
@@ -1350,17 +1442,15 @@ def test_a_confidence_that_is_not_a_probability_is_refused(confidence):
                                           rules_version="0.1")
 
 
-def test_more_than_five_top_signals_is_refused():
+def test_a_register_has_no_ceiling():
+    """The owner's decision of 2026-09-23: every anomaly is listed, and nothing
+    cuts the list. Six stand where `top_signals` used to refuse a sixth."""
     answer = accounting_answer()
-    answer["checklist"] = [
-        {"key": f"indicator_{name}", "finding": "flag", "confidence": 0.5,
-         "evidence": evidence(NOTES_ONE, RECEIVABLES_QUOTE)}
+    answer["anomalies"] = [
+        anomaly(f"reserves_allowance_{name}", NOTES_TWO, ALLOWANCE_QUOTE)
         for name in ("one", "two", "three", "four", "five", "six")]
-    answer["top_signals"] = [entry["key"] for entry in answer["checklist"]]
-    with pytest.raises(ControlError) as caught:
-        control_single_agent.check_schema(answer, "accounting_reliability",
-                                          rules_version="0.1")
-    assert "at most 5" in str(caught.value)
+    assert control_single_agent.check_schema(
+        answer, "accounting_reliability", rules_version="0.1") is answer
 
 
 def test_one_indicator_one_key():
@@ -1453,6 +1543,13 @@ def test_the_prompt_carries_the_schema_the_question_and_the_files(tmp_path):
     assert "**financial pressure**" not in text
     for name in ("input_market.json", "input_notes.md", "input_trends.json"):
         assert f"- {name}" in text
+    # The owner's rule of 2026-09-23 in the prompt, and nothing of the tiers.
+    # Read with the line breaks folded, because the prompt is wrapped prose.
+    said = " ".join(text.split())
+    assert "An empty `anomalies` list is an allowed, honest answer" in said
+    assert "Every `axis` is `accounting_reliability`." in said
+    for gone in ("`tier`", "`clear`", "top_signals"):
+        assert gone not in said, gone
 
 
 def test_the_command_line_prints_the_call_it_would_make(tmp_path, capsys):

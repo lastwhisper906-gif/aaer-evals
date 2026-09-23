@@ -47,6 +47,23 @@ return is positive, read through this question only. `"insufficient"` is an
 allowed value and is recorded; use it when you mean it, and do not use it to
 avoid being scored.
 
-`tier` is `clear` when nothing is wrong. Say `clear` when things are clear —
-a pipeline that honestly says so is the result being tested, and softening an
-adverse finding and inflating a benign one are the same mistake.
+**Write every anomaly you find into `anomalies`.** Your goal is to find every
+accounting anomaly, not to count flags against a cutoff: nothing cuts the list,
+ranks it or counts it into a verdict. Each entry carries:
+
+- `name` — a plain descriptive name in lowercase letters and underscores, its
+  area first and then what it is, such as `revenue_receivables_outrun_sales`;
+- `axis` — `accounting_reliability`, always: the pressure axis is the other
+  supervisor's;
+- `what` — what is anomalous, in words;
+- `numbers_vs_prose` — the reconciliation above: `confirms` when the numbers
+  show what the prose said, `contradicts` when they show the opposite,
+  `unresolved` when the numbers report says nothing either way;
+- `evidence` — the `upstream_item_id` of every item it rests on;
+- `market_label` — the comparers' label on those items, `priced_in`,
+  `not_priced` or `opposite_direction`, or `absent` when no comparer labelled
+  them. An anomaly with no market label is still listed.
+
+An empty `anomalies` list is an allowed, honest answer. Give it when nothing is
+anomalous — a pipeline that honestly says so is the result being tested, and
+softening an adverse finding and inflating a benign one are the same mistake.

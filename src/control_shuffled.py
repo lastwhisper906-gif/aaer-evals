@@ -583,7 +583,7 @@ def resolved(question: str, answer: dict, declared: set[str]) -> tuple[dict, lis
     """The answer with every item citing nothing in the crossed set taken out.
 
     A checklist entry goes whole, because that is what the gate does with an
-    item, and a `top_signals` entry naming a key that left goes with it.
+    item, and so does an anomaly in the register.
     `market_direction` cannot go -- `docs/CHECKLIST.md` §7 requires the field --
     so it degrades to the abstention §7 already allows and the drop is counted
     like any other.
@@ -626,15 +626,21 @@ def resolved(question: str, answer: dict, declared: set[str]) -> tuple[dict, lis
             standing_explanations.append(entry)
     kept["explanations"] = standing_explanations
 
-    # A signal whose entry was dropped leaves with it, and no second drop row is
-    # written: the drop is already on record under the entry's own key, and
-    # counting it twice would say two items failed where one did. A signal
-    # naming no entry at all never reaches here -- `_predicted` refuses the
-    # answer, the way the sibling control does.
-    names = {entry["key"] for entry in standing}
-    kept["top_signals"] = [one for one in
-                           _a_list(question, "top_signals", answer["top_signals"])
-                           if one in names]
+    # The anomaly register rests on evidence of the checklist's own shape, so an
+    # anomaly citing nothing in the crossed set goes the same way: whole, by its
+    # name, and counted.
+    standing_anomalies = []
+    for entry in _a_list(question, "anomalies", answer["anomalies"]):
+        if not isinstance(entry, dict) or not isinstance(entry.get("name"), str):
+            raise ControlError(
+                f"a {question} anomaly carries no name, and an item with no "
+                "name can neither be cited nor dropped by name")
+        reason = _drop_reason(entry, declared)
+        if reason:
+            drop(f"{question}:anomalies:{entry['name']}", reason)
+        else:
+            standing_anomalies.append(entry)
+    kept["anomalies"] = standing_anomalies
 
     # `market_direction` abstains by naming no basis, which `docs/CHECKLIST.md`
     # §7 allows -- but the abstention §7 allows is `p_up: "insufficient"`, not a

@@ -17,7 +17,7 @@ waits in.
 
 ## Decided elsewhere and named in `docs/HOW_WE_WORK.md`
 
-The six decisions that are the owner's and only the owner's — the two-by-two
+The six decisions that are the owner's and only the owner's — the indicator
 thresholds, a rules-version bump, a universe change, the price source, a model
 change for the predictors, and placing or lifting a stop. Everything else on this
 page has a default that runs without an answer.
@@ -35,11 +35,11 @@ nobody ever questioned.
 
 [x] **the delisting return when the source carries none** — *decided 2026-09-21, in force from the first pattern-study row* · **`dlret` when CRSP has it. Where it is missing: −30%, and −55% on Nasdaq.** The first is Shumway (1997), the second Shumway and Warther (1999), and they are the literature's own defaults rather than this project's guess. The correction is recorded **per row**, as the value used and the reason it was used, so the study reports the cross-section both with and without it and a reader can see how much of any result is the correction. A missing delisting return left at zero is the survivorship bias the whole universe design exists to avoid, and it is silent: the request succeeds and the row is simply flat. **The judge is the price-interface row in This cycle** — the function that applies the default and records the reason lands with it. Until that merges these are two numbers out of the literature with no code behind them, which is what a decision looks like before it is built.
 
+[x] **the two-by-two flag thresholds** — *superseded by owner decision, 2026-09-23, recorded in `docs/structure_changes.md` the same day* · the row as it stood: "4 or more" on accounting and "3 or more" on pressure stand as written while the accounting count has grown from 26 to 33 keys and the pressure count from 16 to 17, which loosens both tiers · deciding tightens or keeps them; the historical distribution is what the numbers should be read off · **what the decision put in force: no count and no tier.** The goal is to find every anomaly, not to count flags against a cutoff, so each prediction is an anomaly register listing every anomaly found on its own axis, and no count of flags or of anomalies is turned into a verdict anywhere (`docs/CHECKLIST.md` §7 and §9). The cross-tabulation of accounting against financial anomalies moves to the pattern study as a descriptive table with no count cut. There is nothing left to tighten or keep.
+
 ## Open
 
-[ ] **thresholds for the four numeric indicators** — `articulation_gap`, `asset_growth_high`, `rnd_capitalization_shift`, `net_stock_issuance` · all four report their value and flag nothing until rules v0.1, so they measure from the first run and contribute to no tier · deciding lets them raise a flag, which needs the distribution over the past cases first.
-
-[ ] **the two-by-two flag thresholds** · "4 or more" on accounting and "3 or more" on pressure stand as written while the accounting count has grown from 26 to 33 keys and the pressure count from 16 to 17, which loosens both tiers · deciding tightens or keeps them; the historical distribution is what the numbers should be read off.
+[ ] **thresholds for the four numeric indicators** — `articulation_gap`, `asset_growth_high`, `rnd_capitalization_shift`, `net_stock_issuance` · all four report their value and flag nothing until rules v0.1, so they measure from the first run · deciding lets them raise a flag, which needs the distribution over the past cases first.
 
 [ ] **the map from SIC code to sector ETF** · one ETF per SIC division, shipped with the market module, so the table computes from the first run · deciding narrows it to major group, which is a modelling choice no test can settle.
 

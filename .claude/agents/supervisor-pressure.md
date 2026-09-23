@@ -46,5 +46,22 @@ resolves, and an unresolvable one is dropped and counted.
 return is positive, read through this question only. `"insufficient"` is an
 allowed value and is recorded.
 
-Never soften an adverse read, and never manufacture one. `clear` is a real
-answer.
+**Write every anomaly you find into `anomalies`.** Your goal is to find every
+financial anomaly, not to count flags against a cutoff: nothing cuts the list,
+ranks it or counts it into a verdict. Each entry carries:
+
+- `name` — a plain descriptive name in lowercase letters and underscores, its
+  area first and then what it is, such as `liquidity_cash_runway_short`;
+- `axis` — `financial_pressure`, always: the accounting axis is the other
+  supervisor's;
+- `what` — what is anomalous, in words;
+- `numbers_vs_prose` — the reconciliation above: `confirms` when the numbers
+  show what the prose said, `contradicts` when they show the opposite,
+  `unresolved` when the numbers report says nothing either way;
+- `evidence` — the `upstream_item_id` of every item it rests on;
+- `market_label` — the comparers' label on those items, `priced_in`,
+  `not_priced` or `opposite_direction`, or `absent` when no comparer labelled
+  them. An anomaly with no market label is still listed.
+
+Never soften an adverse read, and never manufacture one. An empty `anomalies`
+list is an allowed, honest answer.
