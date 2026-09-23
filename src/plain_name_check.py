@@ -102,9 +102,10 @@ Which files it reads
 Every changed file's own name, whatever it is. Its contents too, unless:
 
 * it is source -- `.py`, `.sh`. Code quotes other people's vocabulary and gets
-  reported for it: `Q-0` and `Q-1` are period offsets in `src/trends.py`,
-  `BLE001` is a linter's rule in a `noqa` comment, and this check's own test
-  plants real codes on purpose. The hook runs on every write, and a check
+  reported for it: `BLE001` is a linter's rule in a `noqa` comment, and this
+  check's own test plants real codes on purpose. (The trend table's period
+  labels were `Q-0` and `FY-3` until 2026-09-23 -- exempt here as code, and
+  reported the day a reader quoted them into a report.) The hook runs on every write, and a check
   that fires on green code the first day is a check that is off by the second.
   The cost is stated rather than hidden: a code in a Python comment is left to
   review. Reports, ledgers, predictions, documents and configuration -- where

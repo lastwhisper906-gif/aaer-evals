@@ -172,7 +172,7 @@ def test_apples_fiscal_2025_every_ratio_by_hand():
     days = 364
     annual, quarterly = "0000320193-25-000079", "0000320193-26-000020"
     hand(
-        period("AAPL", "FY-0"),
+        period("AAPL", "years-back-0"),
         dates=("2024-09-29", "2025-09-27", days),
         terms={
             "revenue": ("RevenueFromContractWithCustomerExcludingAssessedTax",
@@ -220,7 +220,7 @@ def test_apples_june_2026_quarter_every_ratio_by_hand():
     quarter-length duration carries it, and the cell says so."""
     filing, filed = "0000320193-26-000020", "2026-07-31"
     hand(
-        period("AAPL", "Q-0"),
+        period("AAPL", "quarters-back-0"),
         dates=("2026-03-29", "2026-06-27", 91),
         terms={
             "revenue": ("RevenueFromContractWithCustomerExcludingAssessedTax",
@@ -268,7 +268,7 @@ def test_ciscos_april_2026_quarter_every_ratio_by_hand():
     """
     filing, filed = "0000858877-26-000078", "2026-05-19"
     hand(
-        period("CSCO", "Q-0"),
+        period("CSCO", "quarters-back-0"),
         dates=("2026-01-25", "2026-04-25", 91),
         terms={
             "revenue": ("RevenueFromContractWithCustomerExcludingAssessedTax",
@@ -316,7 +316,7 @@ def test_ciscos_fiscal_2025_every_ratio_by_hand():
     with the balance sheet as the April 2026 10-Q holds it."""
     annual, quarterly = "0000858877-25-000111", "0000858877-26-000078"
     hand(
-        period("CSCO", "FY-0"),
+        period("CSCO", "years-back-0"),
         dates=("2024-07-28", "2025-07-26", 364),
         terms={
             "revenue": ("RevenueFromContractWithCustomerExcludingAssessedTax",
@@ -374,7 +374,7 @@ def test_carriers_2024_every_ratio_by_hand():
     twenty_five = "0001783180-26-000008"
     quarterly = "0001783180-26-000026"
     hand(
-        period("CARR", "FY-1"),
+        period("CARR", "years-back-1"),
         dates=("2024-01-01", "2024-12-31", 366),
         terms={
             "revenue": ("RevenueFromContractWithCustomerExcludingAssessedTax",
@@ -429,17 +429,17 @@ def test_carriers_march_2026_quarter_every_ratio_by_hand():
     service axes and companyfacts holds the entity-wide fact alone, so the two
     ratios that need it are absent and say which of the ways.
 
-    `Q-1`, not `Q-0`, and the label comes off the manifest rather than off the
+    `quarters-back-1`, not `quarters-back-0`, and the label comes off the manifest rather than off the
     table: the run's trigger is the 10-Q whose period of report is 2026-06-30,
-    which is `Q-0`, and this quarter is the one before it. Carrier's record was
-    fetched on 2026-04-30 and holds no June quarter, so `Q-0` is empty and says
+    which is `quarters-back-0`, and this quarter is the one before it. Carrier's record was
+    fetched on 2026-04-30 and holds no June quarter, so `quarters-back-0` is empty and says
     why — anchored on the record instead, this quarter would wear the label of
     the one the run is actually about.
     """
     assert trigger("CARR")["report_date"] == "2026-06-30"
     filing, filed = "0001783180-26-000026", "2026-04-30"
     hand(
-        period("CARR", "Q-1"),
+        period("CARR", "quarters-back-1"),
         dates=("2026-01-01", "2026-03-31", 90),
         terms={
             "revenue": ("RevenueFromContractWithCustomerExcludingAssessedTax",
@@ -565,7 +565,7 @@ def test_generacs_year_takes_the_ten_ks_net_income_and_not_the_proxy_statements(
     assert both["0001104659-26-051499"] == 161_400_000
     assert "DEF 14A" in forms_by_accession("GNRC")["0001104659-26-051499"]
 
-    cell = period("GNRC", "FY-0")["ratios"]["accruals_over_total_assets"]
+    cell = period("GNRC", "years-back-0")["ratios"]["accruals_over_total_assets"]
     assert cell["inputs"]["net_income"]["value"] == 159_554_000.0
     assert cell["inputs"]["net_income"]["accession"] == "0001437749-26-004568"
     assert cell["inputs"]["net_income"]["filed"] == "2026-02-18"
@@ -739,14 +739,14 @@ def test_an_earlier_cutoff_yields_the_value_that_filing_reported():
     later one. Both are `22,486` — the record has no restatement here — so the
     claim the test makes is about which filing is named, not about the value."""
     early = trends.table("CARR", "2025-02-11")
-    year = {row["label"]: row for row in early["years"]}["FY-0"]
+    year = {row["label"]: row for row in early["years"]}["years-back-0"]
     assert (year["start"], year["end"]) == ("2024-01-01", "2024-12-31")
     revenue = year["ratios"]["gross_margin"]["inputs"]["revenue"]
     assert revenue["accession"] == "0001783180-25-000008"
     assert revenue["filed"] == "2025-02-11"
     assert revenue["value"] == 22_486_000_000.0
 
-    late = period("CARR", "FY-1")["ratios"]["gross_margin"]["inputs"]["revenue"]
+    late = period("CARR", "years-back-1")["ratios"]["gross_margin"]["inputs"]["revenue"]
     assert late["accession"] == "0001783180-26-000008"
     assert late["filed"] == "2026-02-05"
     assert late["value"] == revenue["value"]
@@ -785,10 +785,10 @@ def test_no_ratio_is_ever_filled_for_the_non_gaap_gap():
 
 def test_a_fiscal_fourth_quarter_is_named_as_derived_and_not_as_an_absence():
     """Nobody reports it: the 10-K states the year and the three 10-Qs state the
-    first three quarters. Apple's Q-3 and Q-7 are the fourth quarters of its two
+    first three quarters. Apple's quarters-back-3 and quarters-back-7 are the fourth quarters of its two
     fiscal years, and the slot says where the number comes from instead."""
     quarters = {row["label"]: row for row in table("AAPL")["quarters"]}
-    for label, target in (("Q-3", "2025-09-27"), ("Q-7", "2024-09-28")):
+    for label, target in (("quarters-back-3", "2025-09-27"), ("quarters-back-7", "2024-09-28")):
         assert not quarters[label]["filled"]
         assert quarters[label]["target_end"] == target
         assert "derived by src/fourth_quarter.py" in quarters[label]["reason"]
@@ -804,7 +804,7 @@ def test_carriers_cost_of_sales_is_missing_because_the_record_holds_no_such_row(
     """Carrier tags cost of sales on the product and service axes, and
     companyfacts holds the entity-wide fact alone. The reason names both ways
     that can happen rather than asserting the one the record cannot see."""
-    missing = period("CARR", "Q-1")["ratios"]["gross_margin"]["missing"]
+    missing = period("CARR", "quarters-back-1")["ratios"]["gross_margin"]["missing"]
     assert "cost_of_revenue" in missing
     assert "us-gaap:CostOfGoodsAndServicesSold" in missing
     assert "not for this period" in missing
@@ -917,9 +917,9 @@ def test_coverage_lists_all_eight_quarters_and_five_years(ticker):
     payload = table(ticker)
     assert payload["coverage"]["requested"] == {"quarters": 8, "years": 5}
     assert [row["label"] for row in payload["coverage"]["quarters"]] == \
-        [f"Q-{index}" for index in range(8)]
+        [f"quarters-back-{index}" for index in range(8)]
     assert [row["label"] for row in payload["coverage"]["years"]] == \
-        [f"FY-{index}" for index in range(5)]
+        [f"years-back-{index}" for index in range(5)]
     for entry in payload["coverage"]["quarters"] + payload["coverage"]["years"]:
         assert entry["status"] in ("filled", "missing")
         if entry["status"] == "missing":
@@ -983,12 +983,12 @@ def record_newest_filing(ticker: str) -> str:
 
 @pytest.mark.parametrize("ticker", TICKERS)
 def test_the_window_is_anchored_on_the_triggering_reports_own_period(ticker):
-    """`Q-0` is the quarter this run is about, filled or not.
+    """`quarters-back-0` is the quarter this run is about, filled or not.
 
     Anchored on the newest quarter in the record instead, a record fetched
     before its trigger renames every quarter one step back: Carrier's record was
     fetched 2026-04-30 against a 10-Q filed 2026-07-28, so the March quarter
-    wore `Q-0`, the June quarter the run is about appeared in no slot, and the
+    wore `quarters-back-0`, the June quarter the run is about appeared in no slot, and the
     table reported twelve of thirteen periods on record. The anchor is the
     manifest's `report_date` for the trigger — EDGAR's period of report — and
     not a date this table chose.
@@ -997,7 +997,7 @@ def test_the_window_is_anchored_on_the_triggering_reports_own_period(ticker):
     end = trigger(ticker)["report_date"]
     assert payload["window"]["triggering_period_end"] == end
     assert payload["window"]["quarters_end"] == end
-    assert payload["quarters"][0]["label"] == "Q-0"
+    assert payload["quarters"][0]["label"] == "quarters-back-0"
     assert payload["coverage"]["quarters"][0]["target_end"] == end
     if payload["quarters"][0]["filled"]:
         assert payload["quarters"][0]["end"] == end
@@ -1026,14 +1026,14 @@ def test_a_record_older_than_its_trigger_says_so_where_the_period_is_missing(tic
 @pytest.mark.parametrize("ticker", TICKERS)
 @pytest.mark.parametrize("form", ("10-K", "10-Q"))
 def test_the_year_window_ends_at_the_fiscal_year_the_run_is_about(ticker, form):
-    """`FY-0` is the newest fiscal year at or before the run's own period.
+    """`years-back-0` is the newest fiscal year at or before the run's own period.
 
     On an annual trigger that is the trigger's own period; on a quarterly one it
     is the last fiscal year that ended before it. Both sides of the comparison
     come from the manifest and from EDGAR's own `FY` labelling inside the
     record, read by `companyfacts_source` — never from the table. The quarter
     window had this and the year window did not, which left a record fetched the
-    day before a 10-K reporting the prior year as `FY-0`.
+    day before a 10-K reporting the prior year as `years-back-0`.
     """
     report = cutoff_guard.one_document(ticker, form, "primary_html")
     payload = trends.table(ticker, report["filing_date"],
@@ -1048,7 +1048,7 @@ def test_the_year_window_ends_at_the_fiscal_year_the_run_is_about(ticker, form):
         assert max(ends) == report["report_date"]
     else:
         assert year["target_end"] == max(ends)
-    assert year["label"] == "FY-0"
+    assert year["label"] == "years-back-0"
     assert payload["window"]["years_end"] == year["target_end"]
     if year["filled"]:
         assert year["end"] == max(ends)
@@ -1058,7 +1058,7 @@ def test_a_record_older_than_an_annual_trigger_leaves_the_year_empty(tmp_path):
     """The path a stale record opens on the annual route, which no committed
     bundle takes: Carrier's 10-K was filed 2026-02-05 for the year ended
     2025-12-31, and a record fetched the day before holds 2024 as its newest
-    year. Reading that as `FY-0` hands a reader the wrong year under the right
+    year. Reading that as `years-back-0` hands a reader the wrong year under the right
     label — every ratio in the slot correct, and about a year earlier than the
     run. The expected values are the manifest's dates and the record filtered by
     hand at the planted fetch date."""
@@ -1073,7 +1073,7 @@ def test_a_record_older_than_an_annual_trigger_leaves_the_year_empty(tmp_path):
     payload = trends.trends(trends.read_record("CARR", before),
                             report["filing_date"], period_end=report["report_date"])
     year = payload["years"][0]
-    assert year["label"] == "FY-0"
+    assert year["label"] == "years-back-0"
     assert year["target_end"] == "2025-12-31"
     assert not year["filled"]
     assert "fetched before the triggering report" in year["reason"]
@@ -1298,3 +1298,22 @@ def test_an_empty_record_still_lists_all_thirteen_periods():
     assert all(entry["status"] == "missing"
                for entry in payload["coverage"]["quarters"] + payload["coverage"]["years"])
     assert all(block["filled"] == 0 for block in payload["coverage"]["ratios"])
+
+
+# --- the table's own words are plain names -------------------------------------
+
+@pytest.mark.parametrize("ticker", TICKERS)
+def test_nothing_the_table_writes_is_a_letter_number_code(ticker):
+    """A reader quotes this table, and its report is read by the plain-name check.
+
+    The period labels were `Q-0` and `FY-3`. `input_trends.json` is exempt from
+    the check as the text an agent saw, but the numbers reader's report quotes
+    those labels back, and the first pipeline check's report was refused for it
+    fifty-two times (PR #52, issue #63). So the whole table, every key and value
+    as it is written to disk, is put through the same check here.
+    """
+    from src import plain_name_check
+    text = json.dumps(table(ticker), indent=2, ensure_ascii=False)
+    found = [(number, code) for number, line in enumerate(text.splitlines(), 1)
+             for code in plain_name_check.codes_in(line)]
+    assert found == [], found[:10]

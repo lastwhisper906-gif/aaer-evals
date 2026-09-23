@@ -52,7 +52,7 @@ TRENDS = """{
   "quarters": [
     {
       "filled": true,
-      "label": "Q-0",
+      "label": "quarters-back-0",
       "ratios": {
         "days_sales_outstanding": {
           "days": 91,
@@ -90,7 +90,7 @@ MANIFEST_BEFORE = {
     "counts": {"paragraphs": 2, "exclusions": 0},
 }
 
-TREND_CELL = f"{ACCESSION}:trends:days_sales_outstanding:Q-0"
+TREND_CELL = f"{ACCESSION}:trends:days_sales_outstanding:quarters-back-0"
 FACT_ROW_ID = f"{ACCESSION}:receivables_net_current"
 
 # The two rows above as the two files print them, copied out of the text.
@@ -363,9 +363,9 @@ def test_a_row_with_its_keys_reordered_does_not_match(tmp_path):
 def test_a_computed_row_that_is_not_in_the_input_names_nothing(tmp_path):
     root = plant(tmp_path)
     index = quote_gate.quotable(root / "numbers_reader", ACCESSION)
-    for absent in (f"{ACCESSION}:trends:days_sales_outstanding:Q-1",
-                   f"{ACCESSION}:trends:gross_margin:Q-0",
-                   f"{ACCESSION}:articulation:receivables:Q-0",
+    for absent in (f"{ACCESSION}:trends:days_sales_outstanding:quarters-back-1",
+                   f"{ACCESSION}:trends:gross_margin:quarters-back-0",
+                   f"{ACCESSION}:articulation:receivables:quarters-back-0",
                    f"{ACCESSION}:receivables_net_prior"):
         assert absent not in index
 

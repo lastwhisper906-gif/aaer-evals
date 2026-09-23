@@ -497,8 +497,8 @@ def build(ticker: str, form: str, *, cutoff=None, fixtures_root=cutoff_guard.FIX
     # `documents_used` and `CATALOGUE_ROLES`.
     #
     # The window is anchored on the triggering report's own period of report, so
-    # `Q-0` is the quarter this run is about whether or not the record reaches
-    # it. Anchored on the record instead, a record fetched before the trigger
+    # `quarters-back-0` is the quarter this run is about whether or not the
+    # record reaches it. Anchored on the record instead, a record fetched before the trigger
     # renames every quarter one step back and the run's own period goes missing
     # without a word — two of these twelve records are older than their 10-Q.
     with phase(opened, "input_trends.json"):
