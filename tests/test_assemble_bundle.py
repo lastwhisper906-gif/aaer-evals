@@ -7,8 +7,8 @@ it does not have — a missing 8-K, a missing note history, no prior run — whi
 in this fixture set is most of the interesting cases.
 
 Nothing writes to `runs/`. Every test names its own output directory, and one
-test asserts the default root was not created as a side effect of importing or
-running anything.
+test asserts that building a bundle elsewhere neither creates the default root
+nor touches the repository's own, whether or not a run is committed there.
 """
 
 from __future__ import annotations
@@ -158,13 +158,34 @@ def test_the_rules_version_and_served_model_are_null_with_a_note(ticker):
 
 # --- (f) nothing writes runs/ ------------------------------------------------
 
-def test_the_default_root_is_named_but_never_created(tmp_path):
+def _everything_under(root: Path) -> set[str] | None:
+    """Every path under `root`, or None when there is no `root` at all."""
+    if not root.exists():
+        return None
+    return {str(path.relative_to(root)) for path in root.rglob("*")}
+
+
+def test_the_default_root_is_named_but_never_created(tmp_path, monkeypatch):
     """Trap 1. The default is `runs/`, the loop cannot write it, and building a
-    bundle somewhere else must not bring it into being."""
+    bundle somewhere else must not bring it into being.
+
+    What is guarded is that sentence, not the absence of the directory. It used
+    to assert the repository had no `runs/` at all, which holds only until the
+    first run is committed there -- and committing one is what the pipeline is
+    for. So the build runs from an empty working directory, where a relative
+    `runs/` would appear, and the repository's own `runs/`, absent or holding
+    committed runs, has to be exactly what it was before the build.
+    """
     assert assemble_bundle.DEFAULT_ROOT == Path("runs")
+    working = tmp_path / "working-directory"
+    working.mkdir()
+    monkeypatch.chdir(working)
+    before = _everything_under(REPO_ROOT / "runs")
+
     assemble_bundle.assemble("ESE", "10-Q", tmp_path / "somewhere")
-    assert not (REPO_ROOT / "runs").exists()
-    assert not (Path.cwd() / "runs").exists()
+
+    assert not (working / "runs").exists()
+    assert _everything_under(REPO_ROOT / "runs") == before
     assert assemble_bundle.default_out("ESE", "0001-2") == \
         Path("runs") / "ESE" / "0001-2"
 
