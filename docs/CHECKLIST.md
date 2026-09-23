@@ -175,10 +175,11 @@ table itself — it reads the labels the comparers assigned.
 
 **With no market table, the label is `absent`.** A run whose market table is
 unavailable runs no comparer. `input_manifest.json` writes each comparer's label
-as `absent`, and so every item's label is `absent`. That is not `not_priced`,
-which is a reading of the market, and it is not a label anyone infers. The
-supervisors weigh the items on the two reader reports alone and write
-`market_direction` as `"insufficient"`.
+as `absent`, and so every item's label is `absent`. It is not a fourth row of
+the table above: no comparer writes it, and it stands where no comparer ran.
+It is not `not_priced`, which is a reading of the market, and it is not a label
+anyone infers. The supervisors weigh the items on the two reader reports alone
+and write `market_direction` as `"insufficient"`.
 
 ---
 

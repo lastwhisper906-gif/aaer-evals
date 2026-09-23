@@ -78,7 +78,8 @@ more of the checklist than that.
 `src/decide.py` writes, and then no comparer directory is built -- there is
 nothing to compare -- and each supervisor is built over the two reader reports.
 A run that says its market table is unavailable and holds a comparer report is
-saying two things and is refused. The owner's decisions of 2026-09-13 and
+saying two things and is refused, and so is one whose manifest labels either
+comparer anything but `absent`. The owner's decisions of 2026-09-13 and
 2026-09-23: the first predictions publish on filings alone.
 
 **Where an agent's own output lands.** Each prompt names exactly one file to
@@ -278,6 +279,12 @@ AGENTS: dict[str, Agent] = {
     )
 }
 
+# A run with no market table runs no comparer, and its manifest writes each
+# comparer's label as `absent`: not `not_priced`, which is a reading of a market.
+COMPARERS = tuple(name for name, agent in AGENTS.items() if agent.layer == "comparer")
+COMPARER_LABELS_KEY = "comparer_labels"
+ABSENT = "absent"
+
 
 def agents_root(run: Path) -> Path:
     """The one directory that holds the six. Naming it does not make it."""
@@ -298,7 +305,8 @@ def market_unavailable(run) -> str | None:
     A run with no manifest, or one that does not name `market_table`, is a run
     whose market table is expected like any other input. One that names it
     `unavailable` and gives no reason is refused: the reason is what the
-    owner's decision puts on the record.
+    owner's decision puts on the record. So is one whose comparer labels are
+    anything but `absent` for every comparer: no comparer ran.
     """
     path = Path(run) / MANIFEST
     if not path.is_file():
@@ -317,6 +325,12 @@ def market_unavailable(run) -> str | None:
         raise AgentInputError(
             f"{path} says the market table is {said!r} because {reason!r}. The "
             f"one thing it may say is {MARKET_UNAVAILABLE!r}, with a reason")
+    labels = {name: ABSENT for name in COMPARERS}
+    if manifest.get(COMPARER_LABELS_KEY) != labels:
+        raise AgentInputError(
+            f"{path} says the market table is unavailable and writes the comparer "
+            f"labels as {manifest.get(COMPARER_LABELS_KEY)!r}. No comparer ran, so "
+            f"each is {ABSENT!r}: {labels!r}")
     return reason
 
 

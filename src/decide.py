@@ -106,11 +106,10 @@ OVERRIDE_KEY = "market_direction_written_insufficient"
 
 # The label a comparer that did not run leaves, written for each one. Not
 # `not_priced`: that says the market was read and showed nothing, and with no
-# market table nobody read it.
-ABSENT = "absent"
-COMPARER_LABELS_KEY = "comparer_labels"
-COMPARERS = tuple(name for name, agent in agent_inputs.AGENTS.items()
-                  if agent.layer == "comparer")
+# market table nobody read it. `src/agent_inputs.py` holds a manifest to it.
+ABSENT = agent_inputs.ABSENT
+COMPARER_LABELS_KEY = agent_inputs.COMPARER_LABELS_KEY
+COMPARERS = agent_inputs.COMPARERS
 
 
 class DecideError(Exception):
@@ -151,6 +150,10 @@ def mark_market_unavailable(run, reason: str = NO_PRICE_SOURCE) -> dict:
         raise DecideError("a run with no market table says why, and no reason was given")
     present = [name for name in (agent_inputs.MARKET_TABLE,) + agent_inputs.COMPARER_REPORTS
                if (run / name).is_file()]
+    # A comparer's directory is built over a market table, so one that exists
+    # ran, or is about to, whether or not its report has reached the run.
+    present += [f"{agent_inputs.AGENTS_DIRNAME}/{name}/" for name in COMPARERS
+                if agent_inputs.session_root(run, name).exists()]
     if present:
         raise DecideError(
             f"{run} holds {', '.join(present)}, so it has a market table or a "

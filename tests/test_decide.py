@@ -190,6 +190,19 @@ def test_a_run_that_has_a_market_cannot_say_it_has_none(tmp_path, present):
     with pytest.raises(DecideError, match="two things"):
         decide.mark_market_unavailable(run)
     assert "market_table" not in manifest(run)
+    assert "comparer_labels" not in manifest(run)
+
+
+@pytest.mark.parametrize("comparer", ["numbers-vs-market", "notes-vs-market"])
+def test_a_run_whose_comparer_was_built_is_not_labelled_absent(tmp_path, comparer):
+    """A comparer's directory is built over a market table. A run holding one
+    had a comparer, whether or not its report has reached the run yet, so
+    labelling that comparer `absent` would be false."""
+    run = plant(tmp_path)
+    agent_inputs.session_root(run, comparer).mkdir(parents=True)
+    with pytest.raises(DecideError, match="two things"):
+        decide.mark_market_unavailable(run)
+    assert "comparer_labels" not in manifest(run)
 
 
 def test_a_supervisor_runs_on_the_two_reader_reports_and_its_rules(tmp_path):
@@ -221,10 +234,10 @@ def test_the_supervisors_hold_exactly_the_two_reader_reports_and_the_comparers_r
     for agent in ("supervisor-accounting", "supervisor-pressure"):
         agent_inputs.build(run, agent)
         root = agent_inputs.session_root(run, agent)
-        reports = sorted(path.name for path in root.iterdir()
-                         if path.name.startswith("report_"))
-        assert reports == ["report_notes_text.md", "report_numbers.md"]
-        for name in reports:
+        assert sorted(path.name for path in root.iterdir()) == [
+            "report_notes_text.md", "report_numbers.md",
+            "rules_checklist_keys.md", "rules_output_schema.md"]
+        for name in ("report_notes_text.md", "report_numbers.md"):
             assert (root / name).read_bytes() == (run / name).read_bytes()
 
 
@@ -238,11 +251,33 @@ def test_the_missing_comparers_labels_are_written_absent(tmp_path):
         "numbers-vs-market": "absent", "notes-vs-market": "absent"}
 
 
-def test_a_run_not_marked_unavailable_writes_no_comparer_label(tmp_path):
-    """Only `mark_market_unavailable` writes the labels; a run left for the
-    comparers carries none, and the comparers label its items."""
+@pytest.mark.parametrize("labels", [
+    None,
+    {"numbers-vs-market": "not_priced", "notes-vs-market": "not_priced"},
+    {"numbers-vs-market": "absent"},
+], ids=["no labels", "not priced", "one comparer"])
+def test_a_manifest_saying_no_market_with_any_other_labels_is_refused(tmp_path, labels):
+    """What reads the manifest holds it to what the writer writes: with no
+    market table, both comparers `absent`. A manifest that says the market is
+    unavailable and labels an item `not_priced`, or labels nothing, builds no
+    supervisor."""
     run = plant(tmp_path)
-    assert "comparer_labels" not in manifest(run)
+    decide.write_rules(run)
+    body = manifest(run) | {"market_table": "unavailable",
+                            "market_table_reason": "no price source"}
+    if labels is not None:
+        body["comparer_labels"] = labels
+    (run / MANIFEST).write_text(json.dumps(body) + "\n", encoding="utf-8")
+    with pytest.raises(AgentInputError, match="absent"):
+        agent_inputs.market_unavailable(run)
+    with pytest.raises(AgentInputError, match="absent"):
+        agent_inputs.build(run, "supervisor-accounting")
+    assert not agent_inputs.session_root(run, "supervisor-accounting").exists()
+
+
+def _prompt(agent: str) -> str:
+    return (Path(__file__).resolve().parent.parent / ".claude" / "agents"
+            / f"{agent}.md").read_text(encoding="utf-8")
 
 
 @pytest.mark.parametrize("agent", ["supervisor-accounting", "supervisor-pressure"])
@@ -250,13 +285,46 @@ def test_each_supervisors_prompt_says_what_absent_means(agent):
     """The prompt is the only place a supervisor learns it: it never sees the
     manifest. `absent` is named, it is set apart from `not_priced`, and the
     direction it leaves is the abstention §7 allows."""
-    text = (Path(__file__).resolve().parent.parent / ".claude" / "agents"
-            / f"{agent}.md").read_text(encoding="utf-8")
-    paragraph = next(block for block in text.split("\n\n") if "`absent`" in block)
-    assert "`not_priced`" in paragraph
+    paragraph = next(block for block in _prompt(agent).split("\n\n")
+                     if block.startswith("**When there is no market table"))
+    assert "`absent`" in paragraph and "`not_priced`" in paragraph
     assert '"insufficient"' in paragraph
     for name in ("report_numbers_vs_market.md", "report_notes_vs_market.md"):
         assert name in paragraph
+
+
+@pytest.mark.parametrize("agent", ["supervisor-accounting", "supervisor-pressure"])
+def test_no_sentence_of_a_supervisors_prompt_counts_four_reports_without_the_exception(agent):
+    """The description, what the directory holds and what a citation resolves
+    against each counted four reports. A run with no market table hands over
+    two, so every place the prompt counts four also says when it is two, and
+    the sentence about trusting the comparers' labels says there are none."""
+    # Each paragraph as one line, so a phrase the prompt wraps is still found.
+    blocks = [" ".join(block.split()) for block in _prompt(agent).split("\n\n")]
+    counted = [block for block in blocks
+               if "four reports" in block or "four files" in block]
+    assert len(counted) == 3
+    for block in counted:
+        assert "no market table" in block, block
+    weighed = next(block for block in blocks
+                   if block.startswith("**Weight `not_priced` items first.**"))
+    assert "`absent`" in weighed
+
+
+def test_the_checklist_says_absent_is_no_comparers_label():
+    """§3 lists the three labels a comparer writes. `absent` is not a fourth:
+    no comparer writes it. The paragraph says so, and says what the supervisors
+    do with it."""
+    section = CHECKLIST.read_text(encoding="utf-8").split(
+        "## 3. Market comparison labels")[1].split("\n## ")[0]
+    paragraph = next(block for block in section.split("\n\n")
+                     if block.startswith("**With no market table"))
+    assert "`absent`" in paragraph and "`not_priced`" in paragraph
+    assert "no comparer writes it" in paragraph
+    assert '"insufficient"' in paragraph
+    table = [line for line in section.splitlines() if line.startswith("| `")]
+    assert [line.split("`")[1] for line in table] == [
+        "priced_in", "not_priced", "opposite_direction"]
 
 
 def test_without_the_manifest_saying_so_a_supervisor_still_waits_for_the_comparers(tmp_path):
