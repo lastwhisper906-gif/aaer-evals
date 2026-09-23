@@ -970,11 +970,11 @@ def test_the_companyfacts_record_is_a_catalogue_and_its_rows_pay_for_that(ticker
 
     table = json.loads(bundle["texts"]["input_trends.json"])
     assert table["cutoff"] == manifest["cutoff"]
-    # And the window is the run's own: `Q-0` is the quarter the triggering
+    # And the window is the run's own: `quarters-back-0` is the quarter the triggering
     # report is about, which the manifest's own row for that report names as its
     # period of report. Anchored on the record instead, a record fetched before
     # the trigger — two of these twelve — labels the quarter before the run's
-    # `Q-0` and the run's own period appears in no slot at all.
+    # `quarters-back-0` and the run's own period appears in no slot at all.
     of_report = [row["report_date"] for row in manifest["documents"]
                  if row["accession"] == manifest["accession"]
                  and row["role"] == "primary_html"]
@@ -1007,15 +1007,15 @@ def test_every_xbrl_document_the_manifest_lists_is_in_the_numbers(ticker, form):
 
 
 def test_apples_previous_quarter_is_filled_because_its_instance_is_read():
-    """`Q-1` was `missing` — "no period ending within 20 days of 2026-03-28 is
+    """`quarters-back-1` was `missing` — "no period ending within 20 days of 2026-03-28 is
     in input_numbers.json" — for a quarter whose facts sit in the prior-period
     instance the same manifest listed."""
     bundle = built("AAPL", "10-Q")
     quarters = {quarter["label"]: quarter for quarter
                 in json.loads(bundle["texts"]["input_trends.json"])["coverage"]["quarters"]}
-    assert quarters["Q-1"]["status"] == "filled"
-    assert quarters["Q-1"]["end"] == "2026-03-28"
-    assert quarters["Q-1"]["ratios_filled"] > 0
+    assert quarters["quarters-back-1"]["status"] == "filled"
+    assert quarters["quarters-back-1"]["end"] == "2026-03-28"
+    assert quarters["quarters-back-1"]["ratios_filled"] > 0
 
 
 def test_a_cutoff_equal_to_the_triggering_reports_own_date_is_the_default():

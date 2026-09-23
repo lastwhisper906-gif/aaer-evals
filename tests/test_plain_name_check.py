@@ -258,7 +258,7 @@ def test_a_plain_file_name_is_not_named(tmp_path, capsys):
 
 @pytest.mark.parametrize("source_file", ["trends.py", "notify.sh"])
 def test_a_source_file_is_read_by_name_only(tmp_path, capsys, source_file):
-    """`Q-1` is a period offset in src/trends.py; code quotes other vocabulary."""
+    """Code quotes other vocabulary; a code in a `.py` or `.sh` is left to review."""
     (tmp_path / source_file).write_text(f"period = 'Q-1'  # and the finding {PLANTED}\n")
     ours = tmp_path / "report.md"
     ours.write_text(f"the finding {PLANTED} again\n")

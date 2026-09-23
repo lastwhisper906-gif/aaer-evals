@@ -169,7 +169,7 @@ TRENDS = """{
   "quarters": [
     {
       "filled": true,
-      "label": "Q-0",
+      "label": "quarters-back-0",
       "ratios": {
         "days_sales_outstanding": {
           "days": 91,
@@ -195,7 +195,7 @@ MANIFEST = {"ticker": TICKER, "accession": ACCESSION, "cutoff": FILED,
 
 NOTES_ONE = f"{ACCESSION}:notes:1"
 NOTES_TWO = f"{ACCESSION}:notes:2"
-TREND_CELL = f"{ACCESSION}:trends:days_sales_outstanding:Q-0"
+TREND_CELL = f"{ACCESSION}:trends:days_sales_outstanding:quarters-back-0"
 
 RECEIVABLES_QUOTE = "Accounts receivable, net of allowances, rose to $29,508 million"
 ALLOWANCE_QUOTE = "The allowance for credit losses was reduced"
