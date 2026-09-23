@@ -1347,6 +1347,19 @@ def test_the_one_checker_takes_every_value_section_seven_allows_and_nothing_besi
     assert schema_refuses(good) is None, "the good answer is the baseline"
     assert schema_refuses(dict(PRESSURE_ANSWER), "financial_pressure") is None
 
+    # Two questions and no third. Both controls settle the question before
+    # they call the checker, so only a caller that did not is refused here --
+    # and without this an answer to a question §7 does not have is judged as
+    # accounting reliability, the one that asks for no `continuous`.
+    said = schema_refuses(good, "accounting")
+    assert said is not None and "'accounting' is not a question" in said
+    # And an answer that is an object. Both controls refuse anything else in
+    # their own words first; a caller that did not would otherwise have a
+    # string's letters read as its field names.
+    for shaped in (["checklist"], "checklist events tier"):
+        said = schema_refuses(shaped)
+        assert said is not None and "not an object" in said, shaped
+
     entry = good["checklist"][0]
     for finding in BY_HAND_FINDINGS:
         assert schema_refuses(dict(good, checklist=[dict(entry, finding=finding)])) \
