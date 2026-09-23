@@ -483,7 +483,7 @@ def _note_paragraphs(ticker: str, form: str, role: str, *, cutoff, fixtures_root
 
 def extract(ticker: str, *, cutoff=None, fixtures_root=cutoff_guard.FIXTURES) -> dict:
     """Diff this company's 10-Q against the 10-Q before it."""
-    cutoff = cutoff or cutoff_guard.default_cutoff(ticker, fixtures_root=fixtures_root)
+    cutoff = cutoff_guard.resolve_cutoff(cutoff, ticker, fixtures_root=fixtures_root)
     current = cutoff_guard.one_document(ticker, "10-Q", "primary_html",
                                         fixtures_root=fixtures_root)
     prior_rows = cutoff_guard.documents(ticker, form="10-Q", role="prior_period",

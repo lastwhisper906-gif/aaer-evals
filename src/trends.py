@@ -849,8 +849,13 @@ def main(argv: list[str] | None = None) -> int:
         # months after the trigger without saying so, which is the look-ahead
         # this module refuses everywhere else. An empty string reaches
         # `parse_date` and is refused there, by name.
-        cutoff = (cutoff_guard.default_cutoff(args.ticker)
-                  if args.cutoff is None else args.cutoff)
+        # Through the shared rule, not around it. This line was written the
+        # long way and then reverted to `default_cutoff` by the merge that
+        # brought the companyfacts trend table in, and the AST walk in
+        # `tests/test_empty_cutoff.py` is what said so -- the invariant
+        # `resolve_cutoff` claims in its own docstring was false on the tree
+        # that claimed it.
+        cutoff = cutoff_guard.resolve_cutoff(args.cutoff, args.ticker)
         payload = table(args.ticker, cutoff, period_end=args.period_end)
     except (OSError, ValueError, TrendInputError,
             cutoff_guard.CutoffGuardError) as exc:
