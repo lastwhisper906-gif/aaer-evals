@@ -56,8 +56,12 @@ def task_list() -> str:
 # How many judge commands the ledger held before this item rewrote them:
 #     git show resume/lens-and-prices:docs/next_cycle_tasks.md
 #         | grep -c '`python3.12 -m pytest'
-# gave 39, and nine rows already said `.venv/bin/python`. The floor is that
-# count, not a number chosen to pass.
+# gave 39. The floor is that count, not a number chosen to pass.
+#
+# The rows that already named the interpreter this item moves the rest onto
+# are counted by the same command with `.venv/bin/python` in place of
+# `python3.12`. No number is written here: nothing asserts one, and the last
+# number written here was wrong.
 JUDGE_COMMANDS_BEFORE = 39
 
 # An independent reading of the same file: any one-line backtick span that runs
@@ -70,8 +74,9 @@ def test_the_task_list_has_judge_commands_to_read() -> None:
     """A check that found nothing to read would pass by reading nothing.
 
     Two readings of the same file have to agree. `>= 39` alone is loose by the
-    nine rows that already named the project interpreter, so an extractor that
-    silently dropped up to nine commands would still pass it -- and
+    rows that already named the project interpreter (the command in the comment
+    above counts them), so an extractor that silently dropped that many
+    commands would still pass it -- and
     `problems() == []` below would then be silent about every one it dropped.
     """
     found = judge_commands.judge_commands(task_list())

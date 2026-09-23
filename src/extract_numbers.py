@@ -240,7 +240,7 @@ INSTANCE_ROLES = ("xbrl_instance", "prior_period_xbrl_instance")
 def extract(ticker: str, forms=("10-K",), *, cutoff=None,
             fixtures_root=cutoff_guard.FIXTURES) -> dict:
     """Every numeric fact for one company, from the forms asked for."""
-    cutoff = cutoff or cutoff_guard.default_cutoff(ticker, fixtures_root=fixtures_root)
+    cutoff = cutoff_guard.resolve_cutoff(cutoff, ticker, fixtures_root=fixtures_root)
     rows = [row for form in forms for role in INSTANCE_ROLES
             for row in cutoff_guard.documents(ticker, form=form, role=role,
                                               fixtures_root=fixtures_root)]

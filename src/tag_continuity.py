@@ -367,8 +367,7 @@ def history(ticker: str, cutoff=None, *, fixtures_root=cutoff_guard.FIXTURES) ->
     """
     row = cutoff_guard.one_document(ticker, fetch_companyfacts.FORM,
                                     fetch_companyfacts.ROLE, fixtures_root=fixtures_root)
-    if cutoff is None:
-        cutoff = cutoff_guard.default_cutoff(ticker, fixtures_root=fixtures_root)
+    cutoff = cutoff_guard.resolve_cutoff(cutoff, ticker, fixtures_root=fixtures_root)
     return cutoff_guard.load_catalogue(row["full_path"], cutoff,
                                        fixtures_root=fixtures_root)["facts"]
 

@@ -487,12 +487,14 @@ def test_a_same_day_duration_has_no_companyfacts_row(ticker):
 # --- upstream of the gate ----------------------------------------------------
 
 # `tests/test_cutoff_guard.py` scans `src/` for a fixture read that walks around
-# `src/cutoff_guard.py`, and what it reads is the call itself: a fixture reached
-# through the fetcher's own helpers -- read or written -- is not a call it can
-# see. The fetchers sit outside the gate because they are what puts a fixture on
-# record in the first place, so that scan's answer stays true only while they
-# are the only borrowers of those helpers. This module is one borrower. Nothing
-# else may quietly become another.
+# `src/cutoff_guard.py`, and it now follows a borrow into the helper being
+# borrowed. What it still does not do is follow a path across a call boundary,
+# and that is the shape this module's borrow has: `verify_existing` is handed a
+# directory built two frames up out of a parameter, so the scan sees the read
+# and cannot tell what it reads. The fetchers sit outside the gate because they
+# are what puts a fixture on record in the first place, so that scan's answer
+# stays true only while they are the only borrowers of those helpers. This
+# module is one borrower. Nothing else may quietly become another.
 FETCHER_HELPERS = ("read_stored", "load_manifest", "store")
 
 
@@ -516,4 +518,5 @@ def test_only_the_companyfacts_fetcher_borrows_the_fetcher_file_helpers():
     assert borrowers == {"fetch_companyfacts.py"}, (
         f"modules that reach a fixture through src/fetch_fixtures.py's helpers: "
         f"{sorted(borrowers)}. The bypass scan in tests/test_cutoff_guard.py "
-        f"reads the call and cannot see one made through them.")
+        f"follows a borrowed reader, but not a path handed in from another "
+        f"frame, which is how this borrow passes one.")
