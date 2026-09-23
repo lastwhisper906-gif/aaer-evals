@@ -120,10 +120,12 @@ recorded instead.
 Every outcome leaves a row, exit 4 included — a month with no row reads exactly
 like a month nobody scheduled, which is the reading under which nobody comes
 back to it. A `not_planted` row names no lens and no model, because nothing was
-asked; it carries the reason instead. The two failures that happen before
-`plant.json` can be read — `CANARY_DIR` could not be made, or the manifest does
-not describe a plant — are the exceptions, and they can leave no row because
-there is no defect and no rule to write one with.
+asked; it carries the reason instead. Three failures are the exceptions, and
+each exits 4 with no row: `CANARY_DIR` could not be made; there is no
+interpreter at `CANARY_PYTHON`, which every row is written through, and which a
+fresh clone does not have until its `.venv` is made; or the manifest does not
+describe a plant, so there is no defect and no rule to write one with. Each
+says which on standard error and in the log.
 
 The ledger append is checked. A run whose record could not be written exits 3
 and says so, for the reason `tools/second_lens.sh` gives: a result nobody wrote
@@ -267,7 +269,7 @@ or "monthly canary"; the only files naming `skip-worktree` were
 here might be told to skip something. `docs/HOW_WE_WORK.md` still says the
 routine exists, which is the subject of §6.
 
-**The eighth** ran the routine as it stands: the tree outside the checkout, the
+**The eighth** ran the routine as it stood at that commit: the tree outside the checkout, the
 kept-out files emptied rather than deleted, `planted_on` naming the base. It
 exited **0** with four findings, and the reason in its row is the strongest
 evidence in this document that the hit was earned:
@@ -287,8 +289,18 @@ present and zero bytes, so nothing that opens them printed a missing path; and
 `grep -rl` over the whole tree found the defect sentence, the item title,
 `tools/seeded_defect` and `plant.json` in no file at all.
 
-So the committed routine, under the conditions every scheduled run will meet,
-has produced a hit — four times, on three keep-out lists and two mechanisms.
+So the routine as it stood then, under the conditions every scheduled run will
+meet, produced a hit — four times, on three keep-out lists and two mechanisms.
+**No real lens has run the routine as it is committed now.** Four changes came
+after the eighth dry run, each found by a lens reading the change rather than by
+a run: the plant commits under a passed identity, then under the base commit's
+own; the base is resolved to a commit before the tree is made; the prompt names
+`.lens/change.diff` and a fixed diff range, and the scratch moved to the
+checkout's `logs/`; and a missing interpreter is reported as itself. Each is
+judged by the stub lens in `tests/test_monthly_canary.py`, which can say the
+routine plants, asks and records, and cannot say what a real lens makes of the
+tree. The first scheduled run is the first real one of this version, and its
+row is the evidence; a miss there is read against this paragraph first.
 
 **What the dry runs are for.** The stub lens in `tests/test_monthly_canary.py`
 cannot find a hole in the lens's surroundings, because the lens is the one thing
@@ -373,7 +385,7 @@ of the sort was shown. That is the circularity of rule 1, pointed at the routine
 itself, and it is a `fail`.
 
 So `plant.json` carries a `keep_out` list, and before the script plants
-anything it marks every index entry under those paths and deletes them from the
+anything it marks every index entry under those paths and empties them in the
 worktree:
 
 ```sh
@@ -410,8 +422,14 @@ of planted paths, the lens's answer and the log used to default to
 `$TMPDIR/seeded-defect-<stamp>`, next to `$TMPDIR/<name>-<stamp>` with the same
 stamp — so `ls ..` from the planted tree showed `planted.txt`, the three landing
 paths, one directory up. The second lens found it. They default to the
-checkout's ignored `logs/monthly-canary-<stamp>` now, which the tree reaches
-only through the same deliberate question as the checkout itself.
+checkout's ignored `logs/monthly-canary-<stamp>` now. The tree reaches them
+through the checkout, and it reaches the checkout two ways: the deliberate
+question below, and the `.venv` link §7 puts in the tree, which plain `ls -la`
+prints. Those logs keep `planted.txt` every month, and a hit's `verdict.json`
+names what was found, so last month's answer sits one `readlink` and one `ls`
+from this month's lens. That is the same place the `.git` file path below
+reaches, and it is inside the same limit; it is named here because it takes
+less than the path this section first said was the only one.
 
 **Not a sparse checkout**, which is what this was first written as and which
 signposts exactly what it hides. Plain `git status` in a sparse worktree opens
@@ -471,7 +489,9 @@ And one channel that is not git at all and that no keep-out list can reach:
 repository, so a lens started in the planted tree is handed
 `~/.claude/projects/<this repository>/memory/MEMORY.md` — a file outside the
 tree, outside the checkout, written by every session that has ever worked here.
-It carries nothing about the plant today. Nothing in this routine reads it,
+It carries nothing about the plant today: on 2026-09-23 a memory written about
+a merge on this item's pull request named the routine and its keep-out test,
+and it was rewritten to name neither. Nothing in this routine reads it,
 nothing in `tests/test_monthly_canary.py` can see it, and if somebody writes a
 line about the canary into it the routine will go on recording hits with no way
 to know. Whoever replaces the plant should grep it; the first lens found this

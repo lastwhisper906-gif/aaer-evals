@@ -83,13 +83,23 @@ STAMP="$(date -u '+%Y-%m-%d-%H%M%S')"
 # tree. Both used to default to `$TMPDIR` with the same stamp, so `ls ..` from
 # inside the planted tree showed `seeded-defect-<stamp>/planted.txt`: the three
 # landing paths, one directory up, with no git and no guessing. The second lens
-# found it. The checkout is reachable from the tree only by a deliberate
-# question (`git worktree list`), the class docs/routines/monthly-canary.md §6
-# already names.
+# found it. The checkout is reachable from the tree by a deliberate question
+# (`git worktree list`), and by the `.venv` link below, which `ls -la` prints:
+# the class docs/routines/monthly-canary.md §6 already names, and the reason
+# its logs are one of the places §6 lists.
 CANARY_DIR="${CANARY_DIR:-$CANARY_REPO/logs/monthly-canary-$STAMP}"
 
 mkdir -p "$CANARY_DIR" || exit "$COULD_NOT_PLANT"
 LOG="$CANARY_DIR/canary.log"
+
+# The interpreter before anything is asked of it: every row is written through
+# it, and a fresh clone has no .venv. Without this the first call to it failed
+# inside the manifest read and the month ended saying plant.json did not
+# describe the plant -- the wrong cause, and no row.
+if [ ! -x "$CANARY_PYTHON" ]; then
+    echo "monthly_canary: there is no interpreter at $CANARY_PYTHON, so no row can be written; make the repository's .venv or set CANARY_PYTHON" | tee -a "$LOG" >&2
+    exit "$COULD_NOT_PLANT"
+fi
 
 # One place the run says what went wrong, and the ledger line is written before
 # the script can exit on any path that had a lens to report on.
@@ -297,13 +307,20 @@ fi
 # The identity is passed rather than assumed. A developer's machine has one in
 # `~/.gitconfig` and `ubuntu-latest` does not, so this line committed here and
 # refused in CI -- `not_planted`, exit 4, on a routine whose whole purpose is to
-# find out whether the lens still catches a defect. A canary that cannot plant
-# reports nothing about the lens, and it reported it only where nobody was
-# reading. It is the routine's own commit, so the name is the routine's.
-if ! git -C "$TREE" \
-        -c user.name="monthly canary" \
-        -c user.email="canary@aaer-evals.invalid" \
-        commit -q -m "$SUBJECT" >>"$LOG" 2>&1; then
+# find out whether the lens still catches a defect. And it is the base commit's
+# own author and committer, not a name of the routine's: `git log -1` on the
+# change under review printed the routine's name to the lens, which is the
+# announcement the commit message above is written not to make.
+IDENTITY="$(git -C "$CANARY_REPO" log -1 --format='%an%n%ae%n%cn%n%ce' "$BASE_COMMIT" 2>>"$LOG")"
+{
+    IFS= read -r AUTHOR_NAME
+    IFS= read -r AUTHOR_EMAIL
+    IFS= read -r COMMITTER_NAME
+    IFS= read -r COMMITTER_EMAIL
+} <<< "$IDENTITY"
+if ! GIT_AUTHOR_NAME="$AUTHOR_NAME" GIT_AUTHOR_EMAIL="$AUTHOR_EMAIL" \
+        GIT_COMMITTER_NAME="$COMMITTER_NAME" GIT_COMMITTER_EMAIL="$COMMITTER_EMAIL" \
+        git -C "$TREE" commit -q -m "$SUBJECT" >>"$LOG" 2>&1; then
     could_not_plant "the plant did not commit on $BRANCH"
 fi
 

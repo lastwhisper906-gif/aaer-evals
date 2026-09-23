@@ -13,6 +13,8 @@ from pathlib import Path
 
 DAYS_IN_YEAR = 360
 
+# Three quarters made up for the worked example: round figures, not a
+# company's, so there is no filing for them to be checked against.
 PERIODS = [
     {"ends": "2025-03-29", "receivables": 1_250_000.0, "revenue": 9_000_000.0},
     {"ends": "2025-06-28", "receivables": 1_480_000.0, "revenue": 9_600_000.0},

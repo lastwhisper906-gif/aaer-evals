@@ -54,7 +54,7 @@ stable.
     python3.12 -m src.canary ledger --ledger events/ledger.jsonl ...
 
 `keep-out` prints the paths that may not be in the tree the lens reads, one per
-line, for the caller to hand to `git sparse-checkout` before it plants anything.
+line, for the caller to mark skip-worktree and empty before it plants anything.
 `plant` prints one landed path per line, in the order the manifest lists them,
 so the caller adds exactly those files and nothing it did not plant. `read`
 prints `<result> <findings_count> <exit_code> <model>` and exits 0 when the file

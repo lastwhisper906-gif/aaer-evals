@@ -174,8 +174,11 @@ def repository(tmp_path: Path) -> Path:
             shutil.copyfile(source, destination)
     for command in (
         ["git", "init", "-q", "-b", "main"],
-        ["git", "config", "user.email", "canary@example.invalid"],
-        ["git", "config", "user.name", "canary"],
+        # A builder's identity, as the real repository's commits carry one: the
+        # plant commits under the base's own author, so a fixture base signed
+        # "canary" would hand the name to every assertion about the plant.
+        ["git", "config", "user.email", "builder@example.invalid"],
+        ["git", "config", "user.name", "a builder"],
         ["git", "add", "-A"],
         ["git", "commit", "-q", "-m", "the tree the branch grows from"],
     ):
@@ -191,6 +194,7 @@ def run_canary(
     keep: bool = False,
     with_no_git_identity: bool = False,
     base: str | None = None,
+    python: str | None = None,
 ) -> subprocess.CompletedProcess:
     """One dry run of the routine, against a ledger this test owns."""
     stubs = tmp_path / "stubs"
@@ -205,7 +209,7 @@ def run_canary(
     environment["CANARY_REPO"] = str(repo)
     environment["CANARY_SEED"] = str(SEED)
     environment["CANARY_LEDGER"] = str(tmp_path / "ledger.jsonl")
-    environment["CANARY_PYTHON"] = sys.executable
+    environment["CANARY_PYTHON"] = python or sys.executable
     environment["CANARY_DIR"] = str(tmp_path / "canary")
     # Where the routine would put it by default is outside the checkout, which
     # `test_the_tree_stands_outside_the_checkout_it_came_from` is what checks;
@@ -549,6 +553,17 @@ def test_the_planted_tree_carries_no_marker_saying_it_is_planted(tmp_path: Path)
         check=True,
     ).stdout.lower()
     assert "planted" not in subject and "canary" not in subject
+    # `git log -1` prints the author too, and the routine's own name there was
+    # the announcement. The plant carries the base commit's identity.
+    identity = "%an%n%ae%n%cn%n%ce"
+    planted_by = subprocess.run(["git", "log", "-1", f"--format={identity}"],
+                                cwd=tree, capture_output=True, text=True,
+                                check=True).stdout
+    base_by = subprocess.run(["git", "log", "-1", f"--format={identity}", "main"],
+                             cwd=tmp_path / "repo", capture_output=True, text=True,
+                             check=True).stdout
+    assert planted_by == base_by
+    assert "planted" not in planted_by.lower() and "canary" not in planted_by.lower()
     # The branch and the directory are in front of the lens too: the prompt
     # names the worktree's path and `git status` names the branch. Only the
     # names the routine chose are read -- the directory above them belongs to
@@ -1282,3 +1297,17 @@ def test_the_exit_codes_are_the_ones_the_routine_answers_with() -> None:
     assert (canary.HIT, canary.MISS, canary.NO_LENS_RAN, canary.COULD_NOT_PLANT) == (0, 1, 3, 4)
     assert "NO_LENS_RAN=3" in SCRIPT.read_text(encoding="utf-8")
     assert "COULD_NOT_PLANT=4" in SCRIPT.read_text(encoding="utf-8")
+
+
+def test_a_missing_interpreter_is_reported_as_itself(tmp_path: Path) -> None:
+    """A fresh clone has no .venv. The first call to the interpreter used to be
+    the manifest read, so the month ended saying plant.json did not describe the
+    plant: exit 4, the wrong cause, and no row."""
+    completed = run_canary(tmp_path, result=FOUND_NOTHING,
+                           python=str(tmp_path / "no-venv" / "bin" / "python"))
+    assert completed.returncode == 4
+    assert "there is no interpreter at" in completed.stderr
+    assert "does not describe the plant" not in completed.stderr
+    assert not (tmp_path / "ledger.jsonl").exists()
+    assert branches(tmp_path) == []
+

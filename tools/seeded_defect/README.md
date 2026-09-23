@@ -33,8 +33,8 @@ it back out, the tree the lens reads holds this README, `plant.json` and files
 byte-identical to what was planted, and a lens that never applies rule 1 still
 scores a hit by reading them. `keep_out` lists what the routine takes back
 out of that worktree before it plants anything — with
-`git update-index --skip-worktree` and a delete, so that `git status` stays
-clean. It is not only this directory: the routine's own script and decision,
+`git update-index --skip-worktree` and an emptied file, so that `git status`
+stays clean and nothing prints a missing path. It is not only this directory: the routine's own script and decision,
 its document, its test, the task list the prompt sends a lens to, the ledger it
 writes, `lessons.md` (which `.claude/settings.json` reads aloud to every session
 that starts here) and the two records that describe the mechanism are all on it.
