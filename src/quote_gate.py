@@ -265,16 +265,22 @@ def folded_characters(quote: str, text: str) -> int | None:
     """How many characters of `quote` match `text` only through the fold.
 
     0 when the quote is in the text as it stands, None when it is not in the
-    text even folded. The fold is one for one, so the folded match sits at the
+    text even folded. The fold is one for one, so a folded match sits at the
     same place in the text as it stands and the two can be read side by side.
+    Where the text holds the quote more than once, the count is the fewest any
+    one place needed, so it does not depend on which place comes first.
     """
     if quote in text:
         return 0
-    at = folded(text).find(folded(quote))
-    if at < 0:
-        return None
-    return sum(1 for mine, theirs in zip(quote, text[at:at + len(quote)])
-               if mine != theirs)
+    needle, haystack = folded(quote), folded(text)
+    fewest = None
+    at = haystack.find(needle)
+    while at >= 0:
+        count = sum(1 for mine, theirs in zip(quote, text[at:at + len(quote)])
+                    if mine != theirs)
+        fewest = count if fewest is None else min(fewest, count)
+        at = haystack.find(needle, at + 1)
+    return fewest
 
 
 def quote_drop_reason(item, index: dict) -> str | None:

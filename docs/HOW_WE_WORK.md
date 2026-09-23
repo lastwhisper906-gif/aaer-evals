@@ -14,7 +14,9 @@
    default. The only stop is one the owner placed personally.
 4. **Text goes through verbatim.** A model may select paragraphs; it never
    rewrites or summarizes text for the predictor. Commit exactly the text the
-   predictor saw. Every quote is string-matched against the committed input.
+   predictor saw. Every quote is string-matched against the committed input,
+   with every whitespace character read as an ordinary space, one for one, and
+   every quote that stood only through that counted.
 5. **Python does the arithmetic.** Ratios, trends, diffs, baselines — all
    deterministic code. The model judges text only.
 6. **Layers see only their own input.** A reader sees filings; a comparer sees

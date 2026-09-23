@@ -908,3 +908,35 @@ def test_a_run_with_nothing_folded_says_zero(tmp_path):
 ])
 def test_folded_characters_counts_the_characters_the_fold_changed(quote, text, expected):
     assert quote_gate.folded_characters(quote, text) == expected
+
+
+@pytest.mark.parametrize("text", [
+    f"a{NBSP}b{NBSP}c, and a b{NBSP}c",
+    f"a b{NBSP}c, and a{NBSP}b{NBSP}c",
+])
+def test_a_quote_the_input_holds_twice_is_counted_where_it_needed_the_fewest(text):
+    """The count is the quote's own, not the order the text happens to be in."""
+    assert quote_gate.folded_characters("a b c", text) == 1
+
+
+@pytest.mark.parametrize("character", [
+    "\u001c",   # a file separator: `str.isspace` says yes, White_Space says no
+    "\u200b",   # a zero-width space
+    "\u180e",   # the Mongolian vowel separator, out of White_Space since 6.3
+    "\ufeff",   # a zero-width no-break space
+])
+def test_a_character_outside_white_space_is_not_folded(character):
+    assert quote_gate.folded(f"a{character}b") == f"a{character}b"
+    assert quote_gate.folded_characters("a b", f"a{character}b") is None
+    assert quote_gate.folded_characters(f"a{character}b", "a b") is None
+
+
+@pytest.mark.parametrize("quote, text", [
+    ("\u201cnet\u201d", '"net"'),    # curly quotation marks are not straight ones
+    ("x\u00b2", "x2"),               # a superscript two is not a two
+    ("\uff21", "A"),                 # a fullwidth letter is not a letter
+    ("a\u2014b", "a-b"),             # an em dash is not a hyphen
+])
+def test_nothing_but_whitespace_is_folded(quote, text):
+    assert quote_gate.folded_characters(quote, text) is None
+    assert quote_gate.folded_characters(text, quote) is None

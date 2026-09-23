@@ -28,8 +28,9 @@ would pass that test on air, so the same gate is run over the altered quote on
 its own and asserted to drop it -- the positive control beside the silence.
 
 The altered quote is the ordinary shape of the failure: the filing's em dash
-written as a hyphen. `src/quote_gate.py` normalizes nothing, so that is one
-character of difference and the item goes.
+written as a hyphen. `src/quote_gate.py` normalizes nothing but whitespace,
+which it reads as an ordinary space one for one, so that is one character of
+difference and the item goes.
 
 The model is not called. `ask` here is a stub returning a payload written out in
 this file, which is what makes the schema and the gate the only things under
@@ -589,6 +590,35 @@ def test_a_control_with_nothing_folded_hands_back_none(tmp_path):
     root, folder = plant(tmp_path)
     result = go(root, folder, "accounting_reliability", accounting_answer())
     assert result["normalized"] == []
+
+
+def test_a_folded_quote_in_an_entry_that_was_dropped_is_not_counted(tmp_path):
+    """The entry goes whole on its altered quote, so nothing of it stood."""
+    root, folder = plant(tmp_path)
+    answer = accounting_answer()
+    answer["checklist"][3]["evidence"] = [
+        {"upstream_item_id": NOTES_ONE,
+         "quote": "million — the largest quarterly increase"},
+        {"upstream_item_id": NOTES_ONE, "quote": ALTERED_QUOTE}]
+    result = go(root, folder, "accounting_reliability", answer)
+    assert [row["item_id"] for row in result["dropped"]] == [
+        "accounting_reliability:checklist:estimate_change_favorable"]
+    assert result["normalized"] == []
+
+
+def test_every_evidence_quote_of_an_entry_that_stood_is_read_for_the_fold(tmp_path):
+    """The folded quote is the entry's second, not its first."""
+    root, folder = plant(tmp_path)
+    answer = accounting_answer()
+    answer["checklist"][0]["evidence"] = [
+        {"upstream_item_id": NOTES_ONE, "quote": RECEIVABLES_QUOTE},
+        {"upstream_item_id": NOTES_ONE,
+         "quote": "million — the largest quarterly increase"}]
+    result = go(root, folder, "accounting_reliability", answer)
+    assert result["normalized"] == [{
+        "report": "control_single_agent_accounting.json",
+        "item_id": "accounting_reliability:checklist:receivables_outrun_revenue",
+        "paragraph_id": NOTES_ONE, "characters": 1}]
 
 
 def test_a_basis_that_resolves_to_nothing_becomes_the_schemas_own_abstention(tmp_path):
