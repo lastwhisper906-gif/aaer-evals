@@ -54,9 +54,10 @@ trend table, in `quarters-back-0` and in `years-back-0`, one item: its value,
 its change, and where it sits in the company's own filed history. Where it sits
 is printed on the row as `position_in_history` — quote it; never work a position
 out. A metric the table could not fill in a period it holds is an item too:
-quote the reason its cell gives and mark it `insufficient`. A period the record
-does not reach has no cells at all, so there is nothing to quote: say so once,
-outside the items, with the reason the period gives. Then every articulation
+quote the reason its cell gives, and say in `what_changed` that it is
+`insufficient`. A period the record does not reach has no cells at all, so there
+is nothing to quote: say so once, outside the items, with the reason the period
+gives. Then every articulation
 gap, every restated prior value — a period an earlier filing reported
 differently — and every change of tag, wherever your input says a period rests
 on a different concept. Nothing is left out because it is small, and there is

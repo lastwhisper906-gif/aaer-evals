@@ -41,6 +41,7 @@ same way. Nothing here came from running `src/trends.py`.
 
 from __future__ import annotations
 
+import datetime as dt
 import functools
 import json
 
@@ -62,6 +63,31 @@ def table(ticker: str) -> dict:
     """The table as `src/assemble_bundle.py` builds it: cutoff and anchor both."""
     report = trigger(ticker)
     return trends.table(ticker, report["filing_date"], period_end=report["report_date"])
+
+
+def quarter_tags_ending_near(ticker: str, end: str) -> set[str]:
+    """Every us-gaap tag, in any unit, with a statement row inside the cutoff for
+    a quarter-length span (80 to 100 days) ending within 20 days of `end`.
+
+    Read out of the record by `tests/companyfacts_source.py`, over every tag and
+    not only the ones the table reads, so the size of a history is checked
+    against the record rather than against the table's own list of periods.
+    """
+    target = dt.date.fromisoformat(end)
+    cutoff = trigger(ticker)["filing_date"]
+    found = set()
+    for tag, concept in source.record(ticker)["facts"][source.NAMESPACE].items():
+        for rows in concept.get("units", {}).values():
+            for row in source.inside([one for one in rows if source.a_statement(one)],
+                                     cutoff):
+                if not row.get("start"):
+                    continue
+                days = (dt.date.fromisoformat(row["end"])
+                        - dt.date.fromisoformat(row["start"])).days + 1
+                if 80 <= days <= 100 and \
+                        abs((dt.date.fromisoformat(row["end"]) - target).days) <= 20:
+                    found.add(tag)
+    return found
 
 
 def cells(ticker: str, section: str, ratio: str) -> dict[str, tuple[dict, dict]]:
@@ -118,6 +144,20 @@ def test_apples_gross_margin_is_placed_among_its_six_filled_quarters():
         assert "position_in_history" not in by_label[label][1], label
 
 
+def test_apples_two_empty_quarters_are_empty_in_the_record_under_every_tag():
+    """Why the history is six long, asked of the record and not of the table.
+
+    The window steps back 91 days from the 10-Q's period, 2026-06-27, so
+    `quarters-back-3` looks for a quarter ending near 2025-09-27 and
+    `quarters-back-7` near 2024-09-28: Apple's fiscal fourth quarters. No
+    statement row under any us-gaap tag spans a quarter ending there.
+    """
+    by_label = cells("AAPL", "quarters", "gross_margin")
+    for label, end in (("quarters-back-3", "2025-09-27"), ("quarters-back-7", "2024-09-28")):
+        assert by_label[label][0]["target_end"] == end
+        assert quarter_tags_ending_near("AAPL", end) == set(), label
+
+
 # --- Cisco, days sales outstanding, the six filled quarters --------------------
 #
 # `AccountsReceivableNetCurrent` at the quarter's end over
@@ -165,6 +205,23 @@ def test_ciscos_days_sales_outstanding_is_placed_among_its_six_filled_quarters()
         assert cell["position_in_history"] == position, label
     for label in set(by_label) - filled:
         assert "position_in_history" not in by_label[label][1], label
+
+
+def test_ciscos_two_empty_quarters_hold_no_revenue_in_the_record():
+    """Why Cisco's history is six long, asked of the record.
+
+    Stepping back from 2026-04-25, `quarters-back-3` looks near 2025-07-26 and
+    `quarters-back-7` near 2024-07-27: Cisco's fiscal fourth quarters. The only
+    statement rows spanning a quarter ending there are the share repurchases, which
+    are no term of days sales outstanding, so no revenue for the quarter exists
+    to divide by.
+    """
+    repurchases = {"StockRepurchasedAndRetiredDuringPeriodShares",
+                   "StockRepurchasedAndRetiredDuringPeriodValue"}
+    by_label = cells("CSCO", "quarters", "days_sales_outstanding")
+    for label, end in (("quarters-back-3", "2025-07-26"), ("quarters-back-7", "2024-07-27")):
+        assert by_label[label][0]["target_end"] == end
+        assert quarter_tags_ending_near("CSCO", end) == repurchases, label
 
 
 # --- Apple, gross margin, the five fiscal years ---------------------------------
