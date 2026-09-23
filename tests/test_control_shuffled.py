@@ -63,7 +63,7 @@ from pathlib import Path
 
 import pytest
 
-from src import agent_inputs, control_shuffled, cutoff_guard
+from src import agent_inputs, control_shuffled, cutoff_guard, prediction_schema
 from src.control_shuffled import ControlError
 from src.fetch_fixtures import TICKERS
 
@@ -1261,29 +1261,230 @@ def test_a_signal_naming_no_checklist_item_is_refused(tmp_path, out):
     assert list(out.iterdir()) == []
 
 
-def test_the_two_controls_answer_one_schema():
-    """Both read `docs/CHECKLIST.md` §7, so the values they allow are the same
-    values. They agree here by reading one document, not by sharing code -- the
-    single §7 checker both should call is a row in docs/next_cycle_tasks.md, and
-    until it lands this assertion is what keeps them from drifting apart.
+# --- one §7 checker, called by both controls ---------------------------------
+#
+# `docs/CHECKLIST.md` §7 read by hand, and §1 for the one list §7 leaves blank.
+# Not read off either control and not off `src/prediction_schema.py`: a list
+# copied out of the code it judges agrees with it by construction. The block,
+# as the document prints it:
+#
+#   { "question": "accounting_reliability" | "financial_pressure",
+#     "rules_version": "0.1",
+#     "checklist": [ {"key": "", "finding": "", "confidence": 0,
+#                     "evidence": [{"upstream_item_id": ""}]} ],
+#     "continuous": [ {"key": "", "point": 0, "direction": "", "low": 0, "high": 0} ],
+#     "events": [ {"key": "", "p_within_horizon": 0} ],
+#     "explanations": [ {"id": "", "support": "sufficient|insufficient|unknown",
+#                        "realization_p": 0} ],
+#     "market_direction": {"p_up": 0, "basis": []},
+#     "tier": "elevated" | "watch" | "clear",
+#     "top_signals": [] }
+#
+# Under it: "`continuous` is financial pressure only. `top_signals` holds at
+# most five keys." and "`p_up` may be `"insufficient"` instead of a number".
+# §1: "An LLM answer is always `flag` / `no_flag` / `insufficient`".
+BY_HAND_FIELDS = ("question", "rules_version", "checklist", "continuous", "events",
+                  "explanations", "market_direction", "tier", "top_signals")
+BY_HAND_QUESTIONS = ("accounting_reliability", "financial_pressure")
+BY_HAND_CHECKLIST = ("key", "finding", "confidence", "evidence")
+BY_HAND_EVIDENCE = ("upstream_item_id",)
+BY_HAND_CONTINUOUS = ("key", "point", "direction", "low", "high")
+BY_HAND_EVENTS = ("key", "p_within_horizon")
+BY_HAND_EXPLANATIONS = ("id", "support", "realization_p")
+BY_HAND_MARKET = ("p_up", "basis")
+BY_HAND_FINDINGS = ("flag", "no_flag", "insufficient")
+BY_HAND_SUPPORT = ("sufficient", "insufficient", "unknown")
+BY_HAND_TIERS = ("elevated", "watch", "clear")
+BY_HAND_SIGNAL_CEILING = 5
 
-    Two hand-written lists agreeing is not a reading of §7, though: both could
-    be wrong in the same way, which is the defect this project keeps finding in
-    its own instruments. The test below reads the document.
+
+def test_the_one_checker_holds_what_section_seven_says():
+    """The values the checker holds, against §7 as a person reads it.
+
+    This stood as two controls' constants asserted equal to each other, which
+    is a test standing in for a function: both could be wrong the same way and
+    agree. There is one copy now, and it is held against the document.
     """
-    from src import control_single_agent
-    for field in ("CHECKLIST_FIELDS", "CONTINUOUS_FIELDS", "EVENT_FIELDS",
-                  "EXPLANATION_FIELDS", "MARKET_FIELDS", "FINDINGS", "SUPPORT",
-                  "TIERS", "TOP_SIGNALS_MAX", "INSUFFICIENT"):
-        assert getattr(control_shuffled, field) == \
-               getattr(control_single_agent, field), field
-    # Evidence is the one field that differs, and it differs for a reason: the
-    # sibling's upstream is the committed filing, so an id there names a
-    # paragraph and a quote travels with it. This supervisor's upstream is four
-    # reports.
-    assert control_shuffled.EVIDENCE_FIELDS == ("upstream_item_id",)
-    assert control_single_agent.EVIDENCE_FIELDS == \
-        control_shuffled.EVIDENCE_FIELDS + ("quote",)
+    assert prediction_schema.QUESTIONS == BY_HAND_QUESTIONS
+    # `question` and `rules_version` are the run's, `continuous` is one
+    # question's, and the rest is what every answer carries: nine between them.
+    assert prediction_schema.RUN_KEYS == ("question", "rules_version")
+    assert prediction_schema.CONTINUOUS == "continuous"
+    assert prediction_schema.CONTINUOUS_QUESTION == "financial_pressure"
+    assert sorted(prediction_schema.RUN_KEYS + prediction_schema.PREDICTED_KEYS
+                  + (prediction_schema.CONTINUOUS,)) == sorted(BY_HAND_FIELDS)
+    assert prediction_schema.CHECKLIST_FIELDS == BY_HAND_CHECKLIST
+    assert prediction_schema.EVIDENCE_FIELDS == BY_HAND_EVIDENCE
+    assert prediction_schema.CONTINUOUS_FIELDS == BY_HAND_CONTINUOUS
+    assert prediction_schema.EVENT_FIELDS == BY_HAND_EVENTS
+    assert prediction_schema.EXPLANATION_FIELDS == BY_HAND_EXPLANATIONS
+    assert prediction_schema.MARKET_FIELDS == BY_HAND_MARKET
+    assert prediction_schema.FINDINGS == BY_HAND_FINDINGS
+    assert prediction_schema.SUPPORT == BY_HAND_SUPPORT
+    assert prediction_schema.TIERS == BY_HAND_TIERS
+    assert prediction_schema.TOP_SIGNALS_MAX == BY_HAND_SIGNAL_CEILING
+    assert prediction_schema.INSUFFICIENT == "insufficient"
+
+
+def schema_refuses(answer, question="accounting_reliability",
+                   evidence=BY_HAND_EVIDENCE) -> str | None:
+    """The one checker's refusal of an answer, or None when it stands."""
+    try:
+        prediction_schema.check(answer, question, evidence=evidence)
+    except prediction_schema.SchemaError as refused:
+        return str(refused)
+    return None
+
+
+def test_the_one_checker_takes_every_value_section_seven_allows_and_nothing_beside():
+    """Equal constants are not a gate; what the function does with them is.
+
+    Every value §7 and §1 allow stands, one at a time, and the first value
+    beside them is refused -- so a list the checker holds and then never
+    consults, or consults against the wrong field, turns this red.
+    """
+    good = dict(ACCOUNTING_ANSWER)
+    assert schema_refuses(good) is None, "the good answer is the baseline"
+    assert schema_refuses(dict(PRESSURE_ANSWER), "financial_pressure") is None
+
+    entry = good["checklist"][0]
+    for finding in BY_HAND_FINDINGS:
+        assert schema_refuses(dict(good, checklist=[dict(entry, finding=finding)])) \
+            is None, finding
+    assert "finding" in schema_refuses(dict(good, checklist=[dict(entry, finding="yes")]))
+
+    for support in BY_HAND_SUPPORT:
+        explained = [{"id": CROSSED_ITEM, "support": support, "realization_p": 0.4}]
+        assert schema_refuses(dict(good, explanations=explained)) is None, support
+    assert "support" in schema_refuses(dict(good, explanations=[
+        {"id": CROSSED_ITEM, "support": "maybe", "realization_p": 0.4}]))
+
+    for tier in BY_HAND_TIERS:
+        assert schema_refuses(dict(good, tier=tier)) is None, tier
+    assert "tier" in schema_refuses(dict(good, tier="alert"))
+
+    def signalled(count: int) -> dict:
+        keys = [f"signal_{n}" for n in range(count)]
+        return dict(good, checklist=[dict(entry, key=key) for key in keys],
+                    top_signals=keys)
+    assert schema_refuses(signalled(BY_HAND_SIGNAL_CEILING)) is None
+    assert f"at most {BY_HAND_SIGNAL_CEILING}" in \
+        schema_refuses(signalled(BY_HAND_SIGNAL_CEILING + 1))
+
+    assert schema_refuses(dict(good, market_direction={
+        "p_up": "insufficient", "basis": []})) is None
+    assert "p_up" in schema_refuses(dict(good, market_direction={
+        "p_up": "unsure", "basis": []}))
+
+    # "`continuous` is financial pressure only": asked of one question,
+    # refused on the other.
+    assert "has no continuous" in schema_refuses(
+        {key: value for key, value in PRESSURE_ANSWER.items() if key != "continuous"},
+        "financial_pressure")
+    assert "carries continuous" in schema_refuses(
+        dict(good, continuous=PRESSURE_ANSWER["continuous"]))
+
+    # A field of every nested object, taken away, is named.
+    for field, broken in (
+            ("confidence", dict(good, checklist=[
+                {k: v for k, v in entry.items() if k != "confidence"}])),
+            ("p_within_horizon", dict(good, events=[{"key": "restatement"}])),
+            ("realization_p", dict(good, explanations=[
+                {"id": CROSSED_ITEM, "support": "unknown"}])),
+            ("basis", dict(good, market_direction={"p_up": 0.4})),
+            ("high", dict(PRESSURE_ANSWER, continuous=[
+                {k: v for k, v in PRESSURE_ANSWER["continuous"][0].items()
+                 if k != "high"}]))):
+        question = "financial_pressure" if "continuous" in broken else \
+            "accounting_reliability"
+        said = schema_refuses(broken, question)
+        assert said is not None and field in said, field
+
+
+def test_evidence_is_the_one_field_the_caller_names():
+    """The two controls differ on `evidence` and on nothing else, so it is the
+    argument -- and the argument may add to §7's shape, never take from it.
+
+    The single-agent control's upstream is the committed filing, so its ids
+    name paragraphs and a quote travels with each; the shuffled control's
+    upstream is four reports, and §7's own member is the whole of it.
+    """
+    plain = dict(ACCOUNTING_ANSWER)
+    quoted = dict(plain, checklist=[dict(plain["checklist"][0], evidence=[
+        {"upstream_item_id": CROSSED_ITEM, "quote": "a sentence"}])])
+    with_quote = BY_HAND_EVIDENCE + ("quote",)
+
+    assert schema_refuses(plain, evidence=BY_HAND_EVIDENCE) is None
+    assert schema_refuses(quoted, evidence=with_quote) is None
+    # Each shape is refused under the other's argument, naming the member.
+    assert "quote" in schema_refuses(quoted, evidence=BY_HAND_EVIDENCE)
+    assert "quote" in schema_refuses(plain, evidence=with_quote)
+    # The member a caller adds is held to be a name like §7's own.
+    blank = dict(plain, checklist=[dict(plain["checklist"][0], evidence=[
+        {"upstream_item_id": CROSSED_ITEM, "quote": "  "}])])
+    assert "evidence[1].quote" in schema_refuses(blank, evidence=with_quote)
+    # An argument leaving out §7's own member is refused, whatever the answer.
+    said = schema_refuses(quoted, evidence=("quote",))
+    assert said is not None and "leaves out upstream_item_id" in said
+
+
+def test_the_shuffled_control_answers_through_the_one_checker(tmp_path, out, monkeypatch):
+    """Called, not copied: the production path reaches the one checker once per
+    question, with §7's own evidence shape, and the file it writes is what that
+    checker let through.
+
+    A copy of the check kept here beside a call nobody makes would pass every
+    schema test in this file and this one would still fail.
+    """
+    calls = []
+    real = prediction_schema.check
+
+    def recording(answer, question, *, evidence):
+        calls.append((question, evidence, sorted(answer)))
+        return real(answer, question, evidence=evidence)
+
+    monkeypatch.setattr(prediction_schema, "check", recording)
+    run_crossed(tmp_path, out, StandInSupervisor())
+    assert calls == [
+        ("accounting_reliability", BY_HAND_EVIDENCE,
+         sorted(set(BY_HAND_FIELDS) - {"question", "rules_version", "continuous"})),
+        ("financial_pressure", BY_HAND_EVIDENCE,
+         sorted(set(BY_HAND_FIELDS) - {"question", "rules_version"})),
+    ]
+
+
+def test_a_refusal_from_the_one_checker_is_the_controls_refusal(tmp_path, out,
+                                                                 monkeypatch):
+    """Whatever the one checker refuses, this control refuses in its own error
+    type and writes nothing -- the refusal is not lost on the way back."""
+    def refusing(answer, question, *, evidence):
+        raise prediction_schema.SchemaError("the one checker refused this")
+
+    monkeypatch.setattr(prediction_schema, "check", refusing)
+    with pytest.raises(ControlError, match="the one checker refused this"):
+        run_crossed(tmp_path, out, StandInSupervisor())
+    assert list(out.iterdir()) == []
+
+
+def test_neither_control_writes_out_a_section_seven_list_of_its_own():
+    """The lists are written once, in `src/prediction_schema.py`.
+
+    Read off each control's source rather than asked of its attributes: a copy
+    under a new name is still a copy, and the next one to drift.
+    """
+    import ast
+    by_hand = {BY_HAND_CHECKLIST, BY_HAND_EVIDENCE, BY_HAND_CONTINUOUS,
+               BY_HAND_EVENTS, BY_HAND_EXPLANATIONS, BY_HAND_MARKET,
+               BY_HAND_FINDINGS, BY_HAND_SUPPORT, BY_HAND_TIERS}
+    for name in ("control_single_agent.py", "control_shuffled.py"):
+        tree = ast.parse((REPO_ROOT / "src" / name).read_text(encoding="utf-8"))
+        written = {tuple(element.value for element in node.elts)
+                   for node in ast.walk(tree)
+                   if isinstance(node, (ast.Tuple, ast.List)) and node.elts
+                   and all(isinstance(element, ast.Constant)
+                           and isinstance(element.value, str)
+                           for element in node.elts)}
+        assert not written & by_hand, f"{name} writes out {sorted(written & by_hand)}"
 
 
 def section_seven() -> dict:
@@ -1309,53 +1510,55 @@ def section_seven() -> dict:
 def test_the_section_seven_value_lists_are_the_documents_own():
     """The lists read off §7 itself, not off the other module.
 
-    `test_the_two_controls_answer_one_schema` above asserts the two controls
-    hold the same values. That is drift between them, and it says nothing about
-    whether either matches the document both docstrings cite -- a value mistyped
-    in one and copied into the other passes it. Everything here comes out of
-    `docs/CHECKLIST.md`: the field sets out of §7's own block, the three closed
-    value lists out of the strings inside it and out of §1's sentence, and the
-    ceiling out of the prose under the block.
+    The tests above hold the one checker against §7 as a person reads it. This
+    one parses the document instead, so the day §7 moves and the hand reading
+    above is not updated, the two disagree here rather than both going quietly
+    stale. Everything comes out of `docs/CHECKLIST.md`: the field sets out of
+    §7's own block, the three closed value lists out of the strings inside it
+    and out of §1's sentence, and the ceiling out of the prose under the block.
     """
     schema = section_seven()
     # The keys, in §7's order. `question` and `rules_version` are the module's
     # own to write and `continuous` is asked of one question only, so those
     # three are named here rather than counted in.
     assert tuple(name for name in schema
-                 if name not in ("question", "rules_version", control_shuffled.CONTINUOUS)
-                 ) == control_shuffled.PREDICTED_KEYS
-    assert control_shuffled.CONTINUOUS in schema
+                 if name not in prediction_schema.RUN_KEYS + (prediction_schema.CONTINUOUS,)
+                 ) == prediction_schema.PREDICTED_KEYS
+    assert tuple(name for name in schema if name in prediction_schema.RUN_KEYS) == \
+        prediction_schema.RUN_KEYS
+    assert prediction_schema.CONTINUOUS in schema
+    assert tuple(schema["question"].split("|")) == prediction_schema.QUESTIONS
     assert tuple(schema["question"].split("|")) == control_shuffled.QUESTIONS
     assert schema["rules_version"] == control_shuffled.RULES_VERSION
 
     # Every nested entry's closed field set, and the evidence inside the
     # checklist entry rather than beside it.
-    assert tuple(schema["checklist"][0]) == control_shuffled.CHECKLIST_FIELDS
+    assert tuple(schema["checklist"][0]) == prediction_schema.CHECKLIST_FIELDS
     assert tuple(schema["checklist"][0]["evidence"][0]) == \
-        control_shuffled.EVIDENCE_FIELDS
-    assert tuple(schema["continuous"][0]) == control_shuffled.CONTINUOUS_FIELDS
-    assert tuple(schema["events"][0]) == control_shuffled.EVENT_FIELDS
-    assert tuple(schema["explanations"][0]) == control_shuffled.EXPLANATION_FIELDS
-    assert tuple(schema["market_direction"]) == control_shuffled.MARKET_FIELDS
+        prediction_schema.EVIDENCE_FIELDS
+    assert tuple(schema["continuous"][0]) == prediction_schema.CONTINUOUS_FIELDS
+    assert tuple(schema["events"][0]) == prediction_schema.EVENT_FIELDS
+    assert tuple(schema["explanations"][0]) == prediction_schema.EXPLANATION_FIELDS
+    assert tuple(schema["market_direction"]) == prediction_schema.MARKET_FIELDS
 
     # The two closed lists §7 spells out inside the block, and the one it
     # leaves empty there: `"finding": ""` says nothing, so the findings are §1's
     # sentence, which is the only place the three are written down.
-    assert tuple(schema["tier"].split("|")) == control_shuffled.TIERS
+    assert tuple(schema["tier"].split("|")) == prediction_schema.TIERS
     assert tuple(schema["explanations"][0]["support"].split("|")) == \
-        control_shuffled.SUPPORT
+        prediction_schema.SUPPORT
     collapsed = " ".join(
         (REPO_ROOT / "docs" / "CHECKLIST.md").read_text(encoding="utf-8").split())
     said = re.search(r"An LLM answer is always (.+?), plus a confidence", collapsed)
     assert said, "docs/CHECKLIST.md §1 no longer says what an LLM answer is"
     assert tuple(one.strip(" `") for one in said.group(1).split("/")) == \
-        control_shuffled.FINDINGS
+        prediction_schema.FINDINGS
 
     # The ceiling and the abstention, out of the prose under the block.
     assert "`top_signals` holds at most five keys" in collapsed
-    assert control_shuffled.TOP_SIGNALS_MAX == 5
+    assert prediction_schema.TOP_SIGNALS_MAX == 5
     assert '`p_up` may be `"insufficient"` instead of a number' in collapsed
-    assert control_shuffled.INSUFFICIENT == "insufficient"
+    assert prediction_schema.INSUFFICIENT == "insufficient"
 
 
 # --- the refusals that had no judge ------------------------------------------
@@ -1799,10 +2002,12 @@ def test_the_prediction_object_is_closed(tmp_path, out):
 def test_the_two_controls_answer_one_schema_in_behaviour_too(tmp_path, out):
     """Equal constants are not one gate; equal verdicts are.
 
-    `test_the_two_controls_answer_one_schema` compares tuples, and the two
-    controls disagreed about `top_signals` under identical tuples — one dropped
-    and counted where the other refused. Each answer below is put to both
-    modules' schema checks, and both have to say the same word about it.
+    The two controls once disagreed about `top_signals` under identical tuples
+    — one dropped and counted where the other refused. Both call one checker
+    now, and each still has its own way in: this control's `_predicted` and the
+    sibling's `check_schema`, which settles `question` and `rules_version`
+    first. Each answer below is put to both, and both have to say the same word
+    about it.
     """
     from src import control_single_agent
 
@@ -1913,6 +2118,10 @@ def test_the_two_controls_answer_one_schema_in_behaviour_too(tmp_path, out):
 # rule nobody judged. The probe is the one used on the sibling: turn the rule
 # off, run this file, require red -- and see the section below, because a table
 # of twenty rules is not a sweep of sixty-six.
+#
+# The §7 rules named here and in the two sections below have since moved out of
+# `_predicted` into `src/prediction_schema.py`, the one check both controls
+# call. The tests still reach them the way a run does, through this control.
 
 
 @pytest.mark.parametrize("question,field,entries", [

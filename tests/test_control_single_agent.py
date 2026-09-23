@@ -46,7 +46,7 @@ from pathlib import Path
 
 import pytest
 
-from src import agent_inputs, control_single_agent, quote_gate
+from src import agent_inputs, control_single_agent, prediction_schema, quote_gate
 from src.control_single_agent import ControlError
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -334,16 +334,19 @@ def test_the_fields_asserted_here_are_every_field_that_schema_has():
     """
     found = re.findall(r'^(?:\{ |  )"([a-z_]+)":', SCHEMA_BLOCK, flags=re.MULTILINE)
     assert found == list(SCHEMA_FIELDS)
+    # The fields the run settles, the fields the answer carries, and the one
+    # the schema gives financial pressure alone: between them, every field.
     assert sorted(SCHEMA_FIELDS) == sorted(
-        control_single_agent.FIELDS + (control_single_agent.CONTINUOUS,))
+        prediction_schema.RUN_KEYS + prediction_schema.PREDICTED_KEYS
+        + (prediction_schema.CONTINUOUS,))
 
 
 def test_the_evidence_members_are_the_schemas_own_plus_the_quote():
     """The one member this control adds to §7's, and nothing else.
 
-    Both sides now come off the block above: the module derives its own tuple
-    the same way, so a member added to §7 reaches the control instead of being
-    outvoted by two copies of the old shape.
+    This side comes off the block above; the module's is
+    `src/prediction_schema.py`'s own member with the quote beside it, and the
+    shuffled control's tests hold that member against §7 by hand and parsed.
     """
     assert schema_members("evidence") == ("upstream_item_id",)
     assert control_single_agent.EVIDENCE_FIELDS == EVIDENCE_MEMBERS
@@ -431,7 +434,7 @@ def test_the_accounting_file_carries_every_field_of_the_schema_and_no_other(tmp_
     assert payload["rules_version"] == MANIFEST["rules_version"]
     assert payload["tier"] in ("elevated", "watch", "clear")
     assert payload["top_signals"] == ["receivables_outrun_revenue"]
-    assert len(payload["top_signals"]) <= control_single_agent.TOP_SIGNALS_MAX
+    assert len(payload["top_signals"]) <= prediction_schema.TOP_SIGNALS_MAX
 
 
 def test_every_checklist_entry_carries_the_schemas_four_members(tmp_path):
@@ -1384,6 +1387,57 @@ def test_financial_pressure_with_no_continuous_values_is_refused():
     with pytest.raises(ControlError):
         control_single_agent.check_schema(answer, "financial_pressure",
                                           rules_version="0.1")
+
+
+def test_a_prediction_carrying_no_rules_version_is_refused_when_the_run_has_none(tmp_path):
+    """§7 gives every prediction a `rules_version`, and a run whose manifest
+    carries `null` does not make the field optional.
+
+    The field is the run's, so it is checked here and not handed to the one
+    checker. Read with `.get`, an answer with no such field would have been
+    taken as carrying the run's null and written standing.
+    """
+    root, folder = plant(tmp_path)
+    (root / "input_manifest.json").write_text(
+        json.dumps(MANIFEST | {"rules_version": None}, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8")
+    answer = accounting_answer()
+    del answer["rules_version"]
+    with pytest.raises(ControlError) as caught:
+        go(root, folder, "accounting_reliability", answer)
+    assert "carries no rules_version" in str(caught.value)
+    assert not (root / "control_single_agent_accounting.json").exists()
+
+
+def test_the_control_answers_through_the_one_checker(tmp_path, monkeypatch):
+    """Called, not copied: the production path reaches the one §7 checker the
+    shuffled control also calls, with this control's evidence shape -- §7's
+    `upstream_item_id` and the quote beside it -- and with every field but the
+    two the run settles.
+
+    A copy of the check kept here beside a call nobody makes would pass every
+    schema test in this file and this one would still fail.
+    """
+    calls = []
+    real = prediction_schema.check
+
+    def recording(answer, question, *, evidence):
+        calls.append((question, evidence, sorted(answer)))
+        return real(answer, question, evidence=evidence)
+
+    monkeypatch.setattr(prediction_schema, "check", recording)
+    root, folder = plant(tmp_path)
+    go(root, folder, "financial_pressure", pressure_answer())
+    assert calls == [("financial_pressure", EVIDENCE_MEMBERS,
+                      sorted(set(SCHEMA_FIELDS) - {"question", "rules_version"}))]
+
+    def refusing(answer, question, *, evidence):
+        raise prediction_schema.SchemaError("the one checker refused this")
+
+    monkeypatch.setattr(prediction_schema, "check", refusing)
+    with pytest.raises(ControlError, match="the one checker refused this"):
+        go(root, folder, "accounting_reliability", accounting_answer())
+    assert not (root / "control_single_agent_accounting.json").exists()
 
 
 # --- the prompt, and the command line ----------------------------------------

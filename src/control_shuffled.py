@@ -86,6 +86,13 @@ through `quote_gate.citation_drop_reason`, so a supervisor citing nothing kept
 every item here and lost them there, and the difference between the two controls
 would have been the gate rather than the crossing.
 
+**The answer is checked by the one function both controls call.** Before any
+citation is resolved, the supervisor's answer goes through
+`src/prediction_schema.py`, which holds `docs/CHECKLIST.md` §7 once and which
+the single-agent control calls too, so the two controls cannot apply two
+readings of one schema. `evidence` is the argument: this supervisor's upstream
+is four reports, so §7's own `upstream_item_id` is the whole of it.
+
 **One run is one manifest, and the files land in the scored run.** Two bundles
 were told apart by their paths, which a copy makes two of and a link one of: a
 copy of the scored run, carrying the partner's notes reports in place of its
@@ -108,10 +115,10 @@ told from a prediction by reading it, not by trusting its name.
 from __future__ import annotations
 
 import json
-import math
 from pathlib import Path
 
-from src import agent_inputs, assemble_bundle, cutoff_guard, quote_gate
+from src import (agent_inputs, assemble_bundle, cutoff_guard,
+                 prediction_schema, quote_gate)
 from src.fetch_fixtures import TICKERS
 
 # The twelve in ticker order. See the module docstring for the reading.
@@ -156,47 +163,16 @@ QUESTIONS = tuple(CONTROL_FILES)
 CONTROL_NAME = "shuffled_report"
 RULES_VERSION = "0.1"
 
-# The prediction schema, `docs/CHECKLIST.md` §7. `question` and `rules_version`
-# are this module's to write -- the supervisor is answering the question it was
-# handed -- so they are not asked of the predictor. `continuous` is financial
-# pressure only, which the schema says in those words, so it is required on one
-# question and refused on the other rather than merely tolerated on both.
-PREDICTED_KEYS = ("checklist", "events", "explanations", "market_direction",
-                  "tier", "top_signals")
-CONTINUOUS = "continuous"
-CONTINUOUS_QUESTION = "financial_pressure"
-
-# The abstention `docs/CHECKLIST.md` §7 allows, which is where a market call
-# whose basis resolves to nothing lands: the field cannot leave, so it degrades.
-INSUFFICIENT = "insufficient"
-# §7 gives `market_direction` a probability and the ids under it, and nothing
-# else. The sibling control refuses any other shape in its schema check, so this
-# one does too -- a bare float reaches the gate below as something with no
-# citations to resolve and was written standing.
-MARKET_FIELDS = ("p_up", "basis")
-
-# The rest of §7, field by field. Every value below is read out of
-# `docs/CHECKLIST.md` §7 and §1, which is also where `src/control_single_agent.py`
-# reads them: the two controls answer one schema, and a field one of them checks
-# and the other does not is a difference between the controls that is not the
-# crossing. They agree here by reading one document rather than by sharing code,
-# which is a duplication to remove once both are on main -- it is a row in
-# `docs/next_cycle_tasks.md`, not something to do inside this item.
+# `docs/CHECKLIST.md` §7's `question` and `rules_version` are this module's to
+# write -- the supervisor is answering the question it was handed -- so they
+# are not asked of the predictor, and `src/prediction_schema.py` refuses them in
+# its answer. Every other field of §7 is checked there, once, for both controls.
 #
-# `evidence` carries `upstream_item_id` alone. The sibling's evidence also
-# carries `quote`, because its upstream is the committed filing and an id there
-# names a paragraph; this supervisor's upstream is four reports, so §7's own
-# shape is the whole of it.
-CHECKLIST_FIELDS = ("key", "finding", "confidence", "evidence")
-CONTINUOUS_FIELDS = ("key", "point", "direction", "low", "high")
-EVENT_FIELDS = ("key", "p_within_horizon")
-EXPLANATION_FIELDS = ("id", "support", "realization_p")
-EVIDENCE_FIELDS = ("upstream_item_id",)
-FINDINGS = ("flag", "no_flag", "insufficient")
-SUPPORT = ("sufficient", "insufficient", "unknown")
-TIERS = ("elevated", "watch", "clear")
-TOP_SIGNALS_MAX = 5
-
+# `evidence` is the one field the two controls are allowed to differ on, and it
+# is the argument. The sibling's evidence also carries `quote`, because its
+# upstream is the committed filing and an id there names a paragraph; this
+# supervisor's upstream is four reports, so §7's own shape is the whole of it.
+EVIDENCE_FIELDS = prediction_schema.EVIDENCE_FIELDS
 
 
 class ControlError(Exception):
@@ -651,11 +627,13 @@ def resolved(question: str, answer: dict, declared: set[str]) -> tuple[dict, lis
     # empty left the two controls applying two gates to one schema. The field
     # cannot be dropped, so it degrades to that same abstention.
     market = answer["market_direction"]
-    if market.get("p_up") != INSUFFICIENT or quote_gate.citations(market):
+    if (market.get("p_up") != prediction_schema.INSUFFICIENT
+            or quote_gate.citations(market)):
         reason = _drop_reason(market, declared)
         if reason:
             drop(f"{question}:market_direction", reason)
-            kept["market_direction"] = {"p_up": INSUFFICIENT, "basis": []}
+            kept["market_direction"] = {"p_up": prediction_schema.INSUFFICIENT,
+                                         "basis": []}
     return kept, dropped
 
 
@@ -689,201 +667,25 @@ def provenance(numbers: dict, notes: dict, question: str, *, scored_filing_date,
     }
 
 
-def _fields(entry, expected: tuple[str, ...], where: str) -> None:
-    if not isinstance(entry, dict):
-        raise ControlError(f"{where} is {type(entry).__name__}, not an object")
-    found = tuple(sorted(entry))
-    if found != tuple(sorted(expected)):
-        raise ControlError(
-            f"{where} carries {', '.join(found) or 'no fields'} and "
-            f"docs/CHECKLIST.md §7 gives it {', '.join(sorted(expected))}")
-
-
-def _text(entry, field: str, where: str) -> str:
-    value = entry.get(field)
-    if not isinstance(value, str) or not value.strip():
-        raise ControlError(
-            f"{where}.{field} is {value!r}, and the schema gives it a name")
-    return value
-
-
-def _one_of(entry, field: str, allowed: tuple[str, ...], where: str) -> str:
-    value = entry.get(field)
-    if value not in allowed:
-        raise ControlError(
-            f"{where}.{field} is {value!r}; the schema allows {', '.join(allowed)}")
-    return value
-
-
-def _number(entry, field: str, where: str, *, low=None, high=None) -> float:
-    value = entry.get(field)
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        raise ControlError(
-            f"{where}.{field} is {value!r}, and the schema gives it a number")
-    # An infinity is an instance of `float`, and the range below runs only on a
-    # field §7 gives a range to. `point`, `low` and `high` have none, so an
-    # infinity there reached `_rendered` untouched and `json.dumps` wrote it as
-    # `Infinity` -- a bare token RFC 8259 does not have. A number outside its
-    # range costs one item; a number outside JSON costs the file. And nothing
-    # downstream would have said so: `json.loads` reads `Infinity` back without
-    # complaint unless it is handed a `parse_constant`.
-    if not math.isfinite(value):
-        raise ControlError(
-            f"{where}.{field} is {value!r} — json.dumps spells these Infinity "
-            "and NaN, which are not JSON, and a control file the scorer cannot "
-            "read back is the prediction lost")
-    if low is not None and not low <= value <= high:
-        raise ControlError(
-            f"{where}.{field} is {value}, outside {low} to {high} — a probability "
-            "outside its own range is not a probability")
-    return float(value)
-
-
-def _unique(keys: list[str], where: str) -> None:
-    """One indicator, one key — `docs/CHECKLIST.md` §2 says it in those words."""
-    repeated = sorted({key for key in keys if keys.count(key) > 1})
-    if repeated:
-        raise ControlError(
-            f"{where} names {', '.join(repeated)} more than once; one indicator, "
-            "one key, and a repeated key names a set")
-
-
 def _predicted(question: str, answer) -> dict:
     """The supervisor's answer against `docs/CHECKLIST.md` §7, field by field.
 
     The gate below reads citations, so a field with no citations in it used to
     pass through untouched whatever it held: `p_up: "up"`, `p_up: 1.7`,
     `tier: "banana"`, `events: "lots"` were all written standing and uncounted.
-    A control file is scored -- §8 scores market direction by Brier and hit rate
-    and events by Brier -- so an unscorable value on record is a row of the
-    scorecard that cannot be computed, found later and with nothing to recover.
+    The check is `src/prediction_schema.py`'s, the one the sibling control
+    calls; what is this control's own is the sentence for a supervisor that
+    answered with something other than an object, because the supervisor is
+    who answered.
     """
     if not isinstance(answer, dict):
         raise ControlError(
             f"the supervisor answered {question} with {type(answer).__name__}, "
             "and a control file holds a prediction")
-    missing = [key for key in PREDICTED_KEYS if key not in answer]
-    if missing:
-        raise ControlError(
-            f"the {question} answer has no {', '.join(missing)}; a control is "
-            "scored on the same targets as the pipeline and cannot be short of "
-            "them (docs/CHECKLIST.md §7)")
-    wants_continuous = question == CONTINUOUS_QUESTION
-    # `continuous` before the closed-prediction check below, because the closed
-    # check refuses every field §7 does not give this question -- `continuous` on
-    # accounting reliability among them -- and it refuses them all in one
-    # sentence. So the sentence naming this field, "the schema gives it to
-    # financial pressure alone", was written for a branch nothing could reach:
-    # the stray check answered first, and answered less precisely. Asked in this
-    # order both rules are reachable and each says its own thing.
-    if wants_continuous and CONTINUOUS not in answer:
-        raise ControlError(f"the {question} answer has no {CONTINUOUS}, which the "
-                           "schema requires of this question")
-    if not wants_continuous and CONTINUOUS in answer:
-        raise ControlError(f"the {question} answer carries {CONTINUOUS}, which the "
-                           "schema gives to financial pressure alone")
-    # Every nested object below is closed and the prediction itself was not, so
-    # a `scored_filing_date`, a `price_on_reaction_day_60` and a note to the
-    # scorer were written into the control file whole, beside the audited
-    # `scored_filing_date` this module writes in `control`. The sibling closes
-    # the prediction in one line; so does this.
-    allowed = PREDICTED_KEYS + ((CONTINUOUS,) if wants_continuous else ())
-    stray = sorted(set(answer) - set(allowed))
-    if stray:
-        raise ControlError(
-            f"the {question} answer carries {', '.join(stray)}, which "
-            "docs/CHECKLIST.md §7 does not give it. `question`, `rules_version` "
-            "and `control` are this module's to write, and a field the schema "
-            "has no column for is a row of the scorecard nobody can score")
-
-    checklist = _a_list(question, "checklist", answer["checklist"])
-    for position, entry in enumerate(checklist, start=1):
-        where = f"checklist[{position}]"
-        _fields(entry, CHECKLIST_FIELDS, where)
-        _text(entry, "key", where)
-        _one_of(entry, "finding", FINDINGS, where)
-        _number(entry, "confidence", where, low=0, high=1)
-        evidence = _a_list(question, f"{where}.evidence", entry["evidence"])
-        for index, cited in enumerate(evidence, start=1):
-            cited_where = f"{where}.evidence[{index}]"
-            _fields(cited, EVIDENCE_FIELDS, cited_where)
-            _text(cited, "upstream_item_id", cited_where)
-    _unique([entry["key"] for entry in checklist], "checklist")
-
-    if wants_continuous:
-        continuous = _a_list(question, CONTINUOUS, answer[CONTINUOUS])
-        if not continuous:
-            raise ControlError(
-                "continuous is empty; financial pressure predicts next quarter's "
-                "revenue growth, operating margin and operating cash flow")
-        for position, entry in enumerate(continuous, start=1):
-            where = f"{CONTINUOUS}[{position}]"
-            _fields(entry, CONTINUOUS_FIELDS, where)
-            _text(entry, "key", where)
-            # §7 gives `direction` a string and does not enumerate its values.
-            _text(entry, "direction", where)
-            point = _number(entry, "point", where)
-            low = _number(entry, "low", where)
-            high = _number(entry, "high", where)
-            if not low <= point <= high:
-                raise ControlError(
-                    f"{where} puts its point {point} outside its own range "
-                    f"{low} to {high}")
-        _unique([entry["key"] for entry in continuous], CONTINUOUS)
-
-    events = _a_list(question, "events", answer["events"])
-    for position, entry in enumerate(events, start=1):
-        where = f"events[{position}]"
-        _fields(entry, EVENT_FIELDS, where)
-        _text(entry, "key", where)
-        _number(entry, "p_within_horizon", where, low=0, high=1)
-    _unique([entry["key"] for entry in events], "events")
-
-    explanations = _a_list(question, "explanations", answer["explanations"])
-    for position, entry in enumerate(explanations, start=1):
-        where = f"explanations[{position}]"
-        _fields(entry, EXPLANATION_FIELDS, where)
-        _text(entry, "id", where)
-        _one_of(entry, "support", SUPPORT, where)
-        _number(entry, "realization_p", where, low=0, high=1)
-    _unique([entry["id"] for entry in explanations], "explanations")
-
-    market = answer["market_direction"]
-    _fields(market, MARKET_FIELDS, "market_direction")
-    if market["p_up"] != INSUFFICIENT:
-        _number(market, "p_up", "market_direction", low=0, high=1)
-    basis = market["basis"]
-    if not isinstance(basis, list) or not all(
-            isinstance(one, str) and one.strip() for one in basis):
-        raise ControlError(
-            f"market_direction.basis is {basis!r}; §7 gives it a list of upstream "
-            "item ids, and an id that is not a name resolves for nobody")
-
-    _one_of(answer, "tier", TIERS, "the prediction")
-    signals = _a_list(question, "top_signals", answer["top_signals"])
-    for position, one in enumerate(signals, start=1):
-        if not isinstance(one, str) or not one.strip():
-            raise ControlError(
-                f"top_signals[{position}] is {one!r}, and a signal is the key of "
-                "a checklist entry")
-    _unique(list(signals), "top_signals")
-    if len(signals) > TOP_SIGNALS_MAX:
-        raise ControlError(
-            f"top_signals names {len(signals)} signals and §7 allows "
-            f"{TOP_SIGNALS_MAX}")
-    # A signal naming no checklist entry at all is the answer contradicting
-    # itself before any citation is resolved, so it is refused here rather than
-    # dropped later. `src/control_single_agent.py` refuses it in these words,
-    # and one schema gets one gate: the difference between the two controls is
-    # the crossing and nothing else. A signal whose entry is dropped *later*,
-    # for citing nothing in the crossed set, still leaves quietly with it --
-    # that drop is on record under the entry's own key.
-    unknown = [one for one in signals
-               if one not in {entry["key"] for entry in checklist}]
-    if unknown:
-        raise ControlError(
-            f"top_signals names {', '.join(unknown)}, which no checklist entry "
-            "carries — a top signal that names no entry names nothing")
+    try:
+        prediction_schema.check(answer, question, evidence=EVIDENCE_FIELDS)
+    except prediction_schema.SchemaError as exc:
+        raise ControlError(str(exc)) from exc
     return dict(answer)
 
 
