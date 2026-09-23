@@ -190,6 +190,7 @@ def run_canary(
     exit_code: int = 0,
     keep: bool = False,
     with_no_git_identity: bool = False,
+    base: str | None = None,
 ) -> subprocess.CompletedProcess:
     """One dry run of the routine, against a ledger this test owns."""
     stubs = tmp_path / "stubs"
@@ -250,7 +251,7 @@ def run_canary(
                      "GIT_COMMITTER_NAME", "GIT_COMMITTER_EMAIL", "EMAIL"):
             environment.pop(name, None)
     return subprocess.run(
-        ["bash", str(SCRIPT)],
+        ["bash", str(SCRIPT)] + ([base] if base else []),
         capture_output=True,
         text=True,
         env=environment,
@@ -879,6 +880,31 @@ def test_the_row_names_the_commit_the_plant_grew_from(tmp_path: Path) -> None:
     base = subprocess.run(
         ["git", "rev-parse", "--short", "main"],
         cwd=tmp_path / "repo",
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
+    assert ledger_lines(tmp_path)[0]["planted_on"] == base
+
+
+def test_a_base_named_relative_to_head_is_the_commit_the_plant_grew_from(tmp_path: Path) -> None:
+    """`HEAD` as the base, from a checkout that is not on a branch.
+
+    `actions/checkout` on a pull request leaves a detached HEAD, so
+    `git rev-parse --abbrev-ref HEAD` answers `HEAD` and that is the base the
+    repository test hands the routine there. Inside the planted tree `HEAD` is
+    the plant's own commit, so a diff against it is empty and the routine said
+    `not_planted` on CI while passing on every machine that sits on a branch.
+    The base is the commit the name meant in the repository it was given for.
+    """
+    repo = repository(tmp_path)
+    subprocess.run(["git", "checkout", "-q", "--detach"], cwd=repo, check=True, capture_output=True)
+    ran = run_canary(tmp_path, result=FOUND_NOTHING, keep=True, base="HEAD")
+    assert ran.returncode == canary.MISS, ran.stdout + ran.stderr
+
+    base = subprocess.run(
+        ["git", "rev-parse", "--short", "main"],
+        cwd=repo,
         capture_output=True,
         text=True,
         check=True,

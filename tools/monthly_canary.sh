@@ -159,7 +159,17 @@ TREE="${CANARY_WORKTREE:-${TMPDIR:-/tmp}/$TREE_NAME-$STAMP}"
 
 # --- plant -----------------------------------------------------------------
 
-if ! git -C "$CANARY_REPO" worktree add -b "$BRANCH" "$TREE" "$BASE" >>"$LOG" 2>&1; then
+# The base as a commit, resolved once in the repository it was named for. A name
+# read later inside the planted tree can mean something else there: `HEAD` --
+# what a detached checkout such as `actions/checkout` on a pull request reports
+# as its branch -- is the plant's own commit once the plant commits, so the diff
+# below came back empty and the routine said `not_planted` on CI only.
+BASE_COMMIT="$(git -C "$CANARY_REPO" rev-parse --verify --quiet "$BASE^{commit}" 2>>"$LOG")"
+if [ -z "$BASE_COMMIT" ]; then
+    could_not_plant "$BASE does not name a commit in $CANARY_REPO"
+fi
+
+if ! git -C "$CANARY_REPO" worktree add -b "$BRANCH" "$TREE" "$BASE_COMMIT" >>"$LOG" 2>&1; then
     could_not_plant "could not put a worktree on $BASE at $TREE"
 fi
 
@@ -289,7 +299,7 @@ fi
 
 # A plant the lens cannot see in the diff is not a plant. Checked against the
 # base the branch came from, which is what the lens reads the change against.
-SEEN="$(git -C "$TREE" diff --name-only "$BASE" 2>>"$LOG")"
+SEEN="$(git -C "$TREE" diff --name-only "$BASE_COMMIT" 2>>"$LOG")"
 while IFS= read -r landed; do
     [ -n "$landed" ] || continue
     case "
@@ -310,7 +320,7 @@ fi
 # is reachable from nothing, so a row naming it names an object that will be
 # pruned -- which is the reading this repository already refuses elsewhere. The
 # base is a commit of `main` and resolves for as long as the history does.
-PLANTED_ON="$(git -C "$TREE" rev-parse --short "$BASE" 2>>"$LOG")"
+PLANTED_ON="$(git -C "$TREE" rev-parse --short "$BASE_COMMIT" 2>>"$LOG")"
 [ -n "$PLANTED_ON" ] || PLANTED_ON="unrecorded"
 
 # --- ask the lens ----------------------------------------------------------
