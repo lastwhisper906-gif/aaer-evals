@@ -66,7 +66,20 @@ across the four reports of a run: if two items would share a name, add a word
 that tells them apart, never a number. Python drops and counts an item whose id
 has any other shape, and every item that shares its id with another.
 
+**Report everything your input holds, however small.** For every metric of the
+trend table, in `quarters-back-0` and in `years-back-0`, one item: its value,
+its change, and where it sits in the company's own filed history. Where it sits
+is printed on the row as `position_in_history` — quote it; never work a position
+out. A metric the table could not fill in a period it holds is an item too:
+quote the reason its cell gives, and say in `what_changed` that it is
+`insufficient`. A period the record does not reach has no cells at all, so there
+is nothing to quote: say so once, outside the items, with the reason the period
+gives. Then every articulation gap, every restated prior value — a period an
+earlier filing reported differently — and every change of tag, wherever your
+input says a period rests on a different concept. Nothing is left out because
+it is small, and there is no item limit. Where a value sits in its history
+describes it and never decides whether it is reported: a value in the middle of
+its history is an item exactly as one at the top is.
+
 Say `insufficient` freely. An account with two periods of history does not
-support a trend claim, and saying so is a result. Do not fill the report to look
-thorough — a short report with six real items beats twenty padded ones, and the
-comparer downstream has to label every one you write.
+support a trend claim, and saying so is a result.
