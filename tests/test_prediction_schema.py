@@ -577,6 +577,76 @@ def test_a_top_signal_that_is_not_a_name_is_refused(signal):
     assert "a signal is the key of a checklist entry" in said
 
 
+# The sweep above turns a rule off; it does not weaken one, so a value list
+# compared without case, or an evidence loop that checks the quote and skips
+# `upstream_item_id`, leaves every mutant it makes red and the rule half-judged.
+# The retired file held those with the values below, and they are held here the
+# same way, value for value.
+
+
+@pytest.mark.parametrize("tier", ["banana", "Elevated", "", None, 1])
+def test_a_tier_outside_the_three_is_refused(tier):
+    """The thresholds produce one of three words, spelled as §7 spells them;
+    `check` returns the answer unchanged, so `Elevated` would be written as
+    a tier the scorecard has no column for."""
+    said = refusal(dict(ACCOUNTING_ANSWER, tier=tier), "accounting_reliability")
+    assert "the prediction.tier" in said
+
+
+@pytest.mark.parametrize("finding", ["yes", "no", "flagged", "", None])
+def test_a_checklist_finding_outside_the_three_is_refused(finding):
+    said = refusal(dict(ACCOUNTING_ANSWER, checklist=[
+        dict(ACCOUNTING_ANSWER["checklist"][0], finding=finding)]),
+        "accounting_reliability")
+    assert "checklist[1].finding" in said
+
+
+@pytest.mark.parametrize("support", ["maybe", "", None, "Sufficient"])
+def test_an_explanation_support_outside_the_three_is_refused(support):
+    said = refusal(dict(ACCOUNTING_ANSWER, explanations=[
+        {"id": UPSTREAM_ITEM, "support": support, "realization_p": 0.4}]),
+        "accounting_reliability")
+    assert "explanations[1].support" in said
+
+
+@pytest.mark.parametrize("named", ["", "   ", None, 3])
+def test_an_evidence_entry_naming_no_id_is_refused(named):
+    """The entry carries the right field with nothing in it. Reaching a
+    citation gate, it would resolve against nothing and be counted as a failed
+    citation -- a malformed answer in the drop count §8 reports beside the
+    score."""
+    said = refusal(dict(ACCOUNTING_ANSWER, checklist=[
+        dict(ACCOUNTING_ANSWER["checklist"][0],
+             evidence=[{"upstream_item_id": named}])]),
+        "accounting_reliability")
+    assert "checklist[1].evidence[1].upstream_item_id" in said
+    assert "the schema gives it a name" in said
+
+
+@pytest.mark.parametrize("cited", [UPSTREAM_ITEM, [UPSTREAM_ITEM],
+                                   {"upstream_item_id": UPSTREAM_ITEM, "quote": "x"},
+                                   {"quote": UPSTREAM_ITEM}, {}])
+def test_an_evidence_entry_that_is_not_the_schemas_shape_is_refused(cited):
+    """With §7's own member as the whole evidence shape, a bare string, a list,
+    an extra member or a missing one is refused rather than read as uncited."""
+    said = refusal(dict(ACCOUNTING_ANSWER, checklist=[
+        dict(ACCOUNTING_ANSWER["checklist"][0], evidence=[cited])]),
+        "accounting_reliability")
+    assert "checklist[1].evidence[1]" in said
+
+
+@pytest.mark.parametrize("events", ["lots", {"restatement": 0.1}, 3])
+def test_an_events_field_that_is_not_a_list_is_refused(events):
+    said = refusal(dict(ACCOUNTING_ANSWER, events=events), "accounting_reliability")
+    assert f"gives events as {type(events).__name__}" in said
+
+
+@pytest.mark.parametrize("answer", [7, None, "watch", ["checklist"]])
+def test_an_answer_that_is_not_an_object_is_refused(answer):
+    said = refusal(answer, "accounting_reliability")
+    assert f"the prediction is {type(answer).__name__}, not an object" in said
+
+
 # Six more the single-agent control's run judges and nothing above did, asked
 # directly for the same reason: a shared function's rules need a caller that is
 # not the control. With these, every one of the fifty-five rules the same sweep
