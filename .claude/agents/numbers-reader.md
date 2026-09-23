@@ -49,7 +49,17 @@ Two headings, in this order:
    A later version splits this into its own reader, and that split must not have
    to re-derive which findings came from where.
 
+**Report everything your input holds, however small.** For every metric of the
+trend table, in `quarters-back-0` and in `years-back-0`, one item: its value,
+its change, and where it sits in the company's own filed history. Where it sits
+is printed on the row as `position_in_history` — quote it; never work a position
+out. A metric the table could not fill is an item too: quote the reason the row
+gives and mark it `insufficient`. Then every articulation gap, every restated
+prior value — a period an earlier filing reported differently — and every change
+of tag, wherever your input says a period rests on a different concept. Nothing
+is left out because it is small, and there is no item limit. Where a value sits
+in its history describes it and never decides whether it is reported: a value in
+the middle of its history is an item exactly as one at the top is.
+
 Say `insufficient` freely. An account with two periods of history does not
-support a trend claim, and saying so is a result. Do not fill the report to look
-thorough — a short report with six real items beats twenty padded ones, and the
-comparer downstream has to label every one you write.
+support a trend claim, and saying so is a result.

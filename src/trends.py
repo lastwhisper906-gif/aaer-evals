@@ -712,6 +712,69 @@ def add_changes(quarters: list[dict], years: list[dict]) -> None:
                 "against": None, "reason": "an annual period has no preceding quarter"}
 
 
+# Counted from the nearer end, so with eight quarters the furthest in is the
+# fourth: a list that runs out is a window that grew, and it should say so loudly.
+ORDINALS = ("second", "third", "fourth", "fifth", "sixth")
+
+
+def _place(above: int, below: int) -> str:
+    """`highest`, `third lowest`: from whichever end is nearer, the top on a tie."""
+    if above <= below:
+        return "highest" if above == 0 else f"{ORDINALS[above - 1]} highest"
+    return "lowest" if below == 0 else f"{ORDINALS[below - 1]} lowest"
+
+
+def position_in_history(rows: list[dict], index: int, name: str, kind: str) -> str:
+    """Where this period's value sits among the filled periods of the same ratio.
+
+    The numbers reader does no arithmetic, so "the highest in six quarters" is a
+    sentence it can only quote, and this is where it is printed. It is a
+    description, not a filter: every filled cell carries one. The history is the
+    window the table already holds, quarters among the quarters and years among
+    the years, and "filled" means this ratio has a value in that period.
+
+    A period whose value rests on a different us-gaap concept for one of its
+    terms is not compared, for the reason `_change` refuses to subtract across
+    one, and the sentence says how many were left out rather than dropping them
+    silently.
+    """
+    here = rows[index]["ratios"][name]
+    mine = _tags(here)
+    filled = [row["ratios"][name] for row in rows
+              if "value" in row["ratios"].get(name, {})]
+    same = [cell["value"] for cell in filled if _tags(cell) == mine]
+    others = len(filled) - len(same)
+    concepts = " on the same concepts" if others else ""
+    if len(same) == 1:
+        text = f"the only filled {kind}{concepts}"
+    else:
+        above = sum(1 for value in same if value > here["value"])
+        below = sum(1 for value in same if value < here["value"])
+        if above == below == 0:
+            every = "both" if len(same) == 2 else f"all {len(same)}"
+            text = f"the same value in {every} filled {kind}s{concepts}"
+        else:
+            tied = "tied for " if len(same) - 1 - above - below else ""
+            text = (f"{tied}{_place(above, below)} of the {len(same)} "
+                    f"filled {kind}s{concepts}")
+    if others:
+        one = others == 1
+        text += (f"; {others} other filled {kind}{'' if one else 's'} "
+                 f"{'rests' if one else 'rest'} on a different concept and "
+                 f"{'is' if one else 'are'} not compared")
+    return text
+
+
+def add_positions(quarters: list[dict], years: list[dict]) -> None:
+    """`position_in_history` on every filled cell, in place."""
+    for rows, kind in ((quarters, "quarter"), (years, "year")):
+        for index, row in enumerate(rows):
+            for name, cell in row["ratios"].items():
+                if "value" in cell:
+                    cell["position_in_history"] = position_in_history(
+                        rows, index, name, kind)
+
+
 def coverage(quarters: list[dict], years: list[dict]) -> dict:
     """Every requested period, and every ratio, either filled or explained."""
     def period_rows(rows):
@@ -948,6 +1011,7 @@ def trends(document: dict, cutoff, *, period_end=None) -> dict:
                               year_end_anchor(annual, period_end), stale),
                     "years-back")
     add_changes(quarters, years)
+    add_positions(quarters, years)
     for row in years:
         row["research_and_development_capitalized"] = rnd_capitalized(
             document, index, row, annual)

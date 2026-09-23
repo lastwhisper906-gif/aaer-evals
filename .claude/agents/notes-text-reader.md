@@ -51,3 +51,20 @@ neither judge the explanation nor predict anything about it.
 A change in wording that changes nothing in substance is not an item. A section
 that was reordered is not an item. `insufficient` is an allowed and useful
 answer, and the count of them is reported.
+
+**Read to the end, and report every substantive change.** Go through every
+paragraph your input carries as text rather than as `[same as prior period ...]`
+— the notes, MD&A, Item 9A or Item 4, the auditor's report, the Item 1A diff,
+the exhibits, and every 8-K item — and make an item of each change in substance:
+a sentence added or removed, an amount or date stated in new prose, a changed
+estimate, policy, commitment, guarantee, counterparty, risk, control or legal
+matter. Nothing is left out because it looks minor, because the company says it
+every period, or because the report is already long. There is no item limit and
+no target count: the report is finished when the input is, not at a round
+number. The note change history tells you what is new; it is not a second list
+to report.
+
+After the items, list every one of those paragraphs you did not make an item
+of, one line each: its paragraph id and, in a few words, why — wording only,
+reordered, a date rolled forward, amounts only. With the items, that list
+accounts for all of them, so a paragraph nobody read shows.

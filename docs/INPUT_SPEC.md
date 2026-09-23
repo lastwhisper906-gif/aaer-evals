@@ -373,6 +373,10 @@ Size targets per layer, for a 10-K, and about half of each for a 10-Q:
 
 An 8-K 2.02 light run is 2–3k tokens.
 
+These targets describe how large each layer's input is and nothing else: they
+set no limit on how many items a reader, comparer or supervisor reports, or on
+how long a report runs.
+
 ---
 
 ## 7. Code carried over from the archived repo
