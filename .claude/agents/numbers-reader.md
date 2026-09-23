@@ -53,13 +53,16 @@ Two headings, in this order:
 trend table, in `quarters-back-0` and in `years-back-0`, one item: its value,
 its change, and where it sits in the company's own filed history. Where it sits
 is printed on the row as `position_in_history` — quote it; never work a position
-out. A metric the table could not fill is an item too: quote the reason the row
-gives and mark it `insufficient`. Then every articulation gap, every restated
-prior value — a period an earlier filing reported differently — and every change
-of tag, wherever your input says a period rests on a different concept. Nothing
-is left out because it is small, and there is no item limit. Where a value sits
-in its history describes it and never decides whether it is reported: a value in
-the middle of its history is an item exactly as one at the top is.
+out. A metric the table could not fill in a period it holds is an item too:
+quote the reason its cell gives and mark it `insufficient`. A period the record
+does not reach has no cells at all, so there is nothing to quote: say so once,
+outside the items, with the reason the period gives. Then every articulation
+gap, every restated prior value — a period an earlier filing reported
+differently — and every change of tag, wherever your input says a period rests
+on a different concept. Nothing is left out because it is small, and there is
+no item limit. Where a value sits in its history describes it and never decides
+whether it is reported: a value in the middle of its history is an item exactly
+as one at the top is.
 
 Say `insufficient` freely. An account with two periods of history does not
 support a trend claim, and saying so is a result.
