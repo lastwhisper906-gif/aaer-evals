@@ -255,10 +255,11 @@ allowed value; use it when you mean it, and do not use it to avoid being scored.
 Every entry of `evidence` carries two members: `upstream_item_id`, the paragraph
 id of the file you read it in, and `quote`, that paragraph's own text, verbatim.
 Python string-matches the quote against the file you were handed, character for
-character -- not a dash, not a quotation mark, not a run of whitespace is
-normalized -- and a checklist entry whose evidence does not match is dropped
-whole and counted. Every id in `market_direction.basis` is a paragraph id of
-those same files.
+character. Any whitespace character -- a non-breaking space, a tab, a line
+break -- is read as an ordinary space, one for one; nothing else is normalized
+-- not a dash, not a quotation mark, not a run of whitespace -- and a checklist
+entry whose evidence does not match is dropped whole and counted. Every id in
+`market_direction.basis` is a paragraph id of those same files.
 """
 
 

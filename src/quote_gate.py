@@ -8,16 +8,35 @@ an upstream item id. An item that does neither is dropped before the next layer
 sees it, and how many were dropped is written into `input_manifest.json`.
 
 **String-match means string-match.** The quote has to be a substring of the
-committed paragraph, character for character. Nothing is normalized: not a dash,
-not a quotation mark, not a run of whitespace, not the case of a letter. What is
-carried over from `archive/tools/memo_verify.py` is the idea and not the
-mechanism -- that one lowercases, folds the en and em dash onto the hyphen,
-folds curly quotation marks onto straight ones, collapses every whitespace run
-to a single space, and only then compares, accepting a difflib ratio of 0.95.
-Run over this gate's own planted paragraph it calls the changed dash and the
-joined line wrap `VERIFIED` on an exact match, and the ellipsis `ALTERED` at
-0.807 rather than a fabrication. Two of the three alterations this gate exists
-to catch are invisible to it, so none of its normalizing comes across.
+committed paragraph, character for character. Nothing is normalized but one
+thing, below: not a dash, not a quotation mark, not a run of whitespace, not the
+case of a letter. What is carried over from `archive/tools/memo_verify.py` is
+the idea and not the mechanism -- that one lowercases, folds the en and em dash
+onto the hyphen, folds curly quotation marks onto straight ones, collapses every
+whitespace run to a single space, and only then compares, accepting a difflib
+ratio of 0.95. Run over this gate's own planted paragraph it calls the changed
+dash and the joined line wrap `VERIFIED` on an exact match, and the ellipsis
+`ALTERED` at 0.807 rather than a fabrication. The changed dash and the ellipsis
+are alterations this gate exists to catch, so none of that normalizing comes
+across; the line wrap joined with a space is the one case the fold below now
+admits, one character for one and counted.
+
+**The one fold: whitespace is a space.** Every character Unicode gives the
+White_Space property -- the non-breaking space U+00A0, the tab, the line break,
+the thin, narrow and ideographic spaces, twenty-five in all with U+0020 itself
+-- is read as U+0020 on both sides before the quote is matched, one character
+for one. The owner decided it on 2026-09-23, after two pipeline checks measured
+the same failure: 11 of 41 and then 7 of 40 notes-reader items dropped on
+NVDA's 10-Q, every one differing from its paragraph only by U+00A0 where the
+model wrote U+0020, and a probe showed the model does that on its own. The
+committed input keeps the filer's U+00A0 -- `src/html_text.py` says why -- so
+the fold is here, where nothing is committed. It is one for one, so a quote
+cannot grow or shrink through it: a run is not collapsed, a space is neither
+dropped nor added, and a line wrap trimmed out so two words run together is
+still a drop. A changed dash, quotation mark, letter or word is still a changed
+character. Every item that stood only because of the fold is written into
+`input_manifest.json` beside the drops, under `normalized_quotes`, with how many
+characters were folded, so the count is on the record and not inside the gate.
 
 **A computed row is the committed file's own characters.** A trend cell and a
 numeric fact live in a JSON input rather than in prose, and the text they offer
@@ -221,6 +240,38 @@ def item_id(item) -> str | None:
     return identifier if isinstance(identifier, str) and identifier.strip() else None
 
 
+# Unicode's White_Space property less U+0020 itself: the one fold the module
+# docstring allows. Written out, because the standard library exposes no such
+# property, and `tests/test_quote_gate.py` holds the list to the Unicode
+# Character Database's PropList.txt.
+WHITESPACE = ("\t", "\n", "\u000b", "\u000c", "\r", "\u0085", "\u00a0", "\u1680",
+              "\u2000", "\u2001", "\u2002", "\u2003", "\u2004", "\u2005", "\u2006",
+              "\u2007", "\u2008", "\u2009", "\u200a", "\u2028", "\u2029", "\u202f",
+              "\u205f", "\u3000")
+_AS_SPACE = str.maketrans({character: " " for character in WHITESPACE})
+
+
+def folded(text: str) -> str:
+    """`text` with every whitespace character read as U+0020, one for one."""
+    return text.translate(_AS_SPACE)
+
+
+def folded_characters(quote: str, text: str) -> int | None:
+    """How many characters of `quote` match `text` only through the fold.
+
+    0 when the quote is in the text as it stands, None when it is not in the
+    text even folded. The fold is one for one, so the folded match sits at the
+    same place in the text as it stands and the two can be read side by side.
+    """
+    if quote in text:
+        return 0
+    at = folded(text).find(folded(quote))
+    if at < 0:
+        return None
+    return sum(1 for mine, theirs in zip(quote, text[at:at + len(quote)])
+               if mine != theirs)
+
+
 def quote_drop_reason(item, index: dict) -> str | None:
     """Why this reader item is dropped, or None when it stands."""
     if item_id(item) is None:
@@ -233,7 +284,7 @@ def quote_drop_reason(item, index: dict) -> str | None:
         return "the item carries no quote, and an empty quote matches every text"
     if paragraph_id not in index:
         return f"paragraph id {paragraph_id} is not in this reader's committed input"
-    if quote not in index[paragraph_id]:
+    if folded_characters(quote, index[paragraph_id]) is None:
         return f"the quote does not string-match {paragraph_id} in the committed input"
     return None
 
@@ -276,13 +327,19 @@ def citation_drop_reason(item, upstream_ids) -> str | None:
 
 # --- the gate over a whole run -----------------------------------------------
 
-def _write_counts(bundle_root, manifest: dict, dropped: list[dict]) -> None:
-    """The drop count into `input_manifest.json`. Every other key is left alone."""
+def _write_counts(bundle_root, manifest: dict, dropped: list[dict],
+                  normalized: list[dict]) -> None:
+    """The drop count and the fold count into `input_manifest.json`.
+
+    Every other key is left alone.
+    """
     manifest = dict(manifest)
     manifest["dropped_items"] = [dict(row) for row in dropped]
+    manifest["normalized_quotes"] = [dict(row) for row in normalized]
     counts = manifest.get("counts")
     manifest["counts"] = dict(counts) if isinstance(counts, dict) else {}
     manifest["counts"]["dropped_items"] = len(dropped)
+    manifest["counts"]["normalized_quotes"] = len(normalized)
     (Path(bundle_root) / MANIFEST).write_text(
         json.dumps(manifest, indent=INDENT, sort_keys=True) + "\n", encoding="utf-8")
 
@@ -323,6 +380,7 @@ def gate(reports: list[dict], bundle_root) -> dict:
     kept: dict[str, list[dict]] = {}
     kept_ids: dict[str, set[str]] = {}
     dropped: list[dict] = []
+    normalized: list[dict] = []
     for entry in reports:
         name = entry["report"]
         if name in kept:
@@ -356,9 +414,15 @@ def gate(reports: list[dict], bundle_root) -> dict:
             if why is None:
                 standing.append(item)
                 standing_ids.add(identifier)
+                if index is not None:
+                    count = folded_characters(item["quote"], index[item["paragraph_id"]])
+                    if count:
+                        normalized.append({"report": name, "item_id": identifier,
+                                           "paragraph_id": item["paragraph_id"],
+                                           "characters": count})
             else:
                 dropped.append({"report": name, "item_id": identifier, "reason": why})
         kept[name], kept_ids[name] = standing, standing_ids
 
-    _write_counts(bundle_root, manifest, dropped)
-    return {"kept": kept, "dropped": dropped}
+    _write_counts(bundle_root, manifest, dropped, normalized)
+    return {"kept": kept, "dropped": dropped, "normalized": normalized}
