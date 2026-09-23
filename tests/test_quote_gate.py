@@ -598,6 +598,30 @@ def test_the_owners_example_name_stands(tmp_path):
     assert result["dropped"] == []
 
 
+@pytest.mark.parametrize("area", list(AREAS_BY_HAND))
+def test_every_area_on_the_list_opens_a_name_that_stands(tmp_path, area):
+    """All eleven, not the two the fixtures happen to use: a gate that kept a
+    shorter list would drop every finding filed under the areas it lost."""
+    root = plant(tmp_path)
+    identifier = f"{area}_wording_changed"
+    result = gate_one(root, reader_item(identifier))
+    assert kept_ids(result) == [identifier]
+    assert result["dropped"] == []
+
+
+def test_the_gate_reads_the_area_list_rather_than_holding_one(tmp_path, monkeypatch):
+    """Point the gate at a list with one area of its own and it follows the file."""
+    root = plant(tmp_path)
+    areas = tmp_path / "areas.json"
+    areas.write_text('{"segment_reporting": "Segment reporting"}\n', encoding="utf-8")
+    monkeypatch.setattr(quote_gate, "AREAS", areas)
+    result = gate_one(root, reader_item("segment_reporting_new_segment"))
+    assert kept_ids(result) == ["segment_reporting_new_segment"]
+    result = gate_one(root, reader_item(EXAMPLE))
+    assert kept_ids(result) == []
+    assert NO_AREA in reason_for(result, EXAMPLE)
+
+
 @pytest.mark.parametrize("identifier, why", [
     ("T01", NOT_A_NAME),                                     # the numbering it replaces
     # the first numbers item of the second pipeline check (PR #73), as committed
@@ -760,6 +784,19 @@ def test_a_report_handed_under_a_path_is_held_to_the_rule_by_its_file_name(tmp_p
     ], root)
     assert kept_ids(result) == [EXAMPLE]
     assert NOT_A_NAME in reason_for(result, "T01")
+
+
+def test_one_report_handed_twice_under_two_paths_is_refused(tmp_path):
+    """The rule reaches a report by its file name, so being gated once is by
+    file name too; otherwise a path is a second pass through the gate."""
+    root = plant(tmp_path)
+    with pytest.raises(QuoteGateError):
+        quote_gate.gate([
+            {"report": "report_notes_text.md", "input": root / "notes_reader",
+             "items": [reader_item(EXAMPLE)]},
+            {"report": "agents/notes-text-reader/report_notes_text.md",
+             "input": root / "notes_reader", "items": []},
+        ], root)
 
 
 @pytest.mark.parametrize("report, side", [

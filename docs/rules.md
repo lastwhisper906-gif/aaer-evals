@@ -14,7 +14,10 @@ then on. Nothing is ever rescored under new rules.
 
 `docs/CHECKLIST.md` is the readable draft these files are cut from. They are
 written once the flag distribution over the 30 archived cases exists — until
-then the directory is empty on purpose.
+then the directory is empty on purpose, but for one file. `pilot/areas.json`,
+added on 2026-09-23, lists the eleven areas a reader or comparer item id starts
+with, each beside the `###` heading of `docs/CHECKLIST.md` §1 or §2 it came from,
+and `src/quote_gate.py` reads it every time the gate runs.
 
 **Append-only**, on the same terms as `runs/`. This page lives in `docs/` rather
 than inside the directory, for the same reason: a file inside an append-only

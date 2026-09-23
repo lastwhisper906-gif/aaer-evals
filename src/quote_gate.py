@@ -87,9 +87,14 @@ checklist keys, which stay as they are; nor are the single-agent control's two
 files, which quote the committed input under handles of their own. A name the
 table does not give, or a name handed on the wrong side -- a reader's report
 citing, a comparer's or a supervisor's quoting an input, the control's citing --
-stops the gate rather than being gated under a rule that is not its own. What
-the gate cannot see is a runner that hands a reader's items under the control's
-file name; the name is the runner's word for which layer wrote them.
+stops the gate rather than being gated under a rule that is not its own, and so
+does one file name handed twice under two paths. What the gate cannot see is a
+runner that hands one layer's items under another layer's name on the same
+side: a reader's items under the control's file name, which quotes as a reader
+does, or a comparer's under a supervisor's, which cites in the same three places
+a comparer does -- no shape tells a comparer item from a supervisor entry. The
+name is the runner's word for which layer wrote them, and nothing in an item
+checks that word.
 
 **Fail closed.** A paragraph id that resolves to nothing, an item with no id, an
 empty quote, a citation that is not a string -- each is a drop and never a pass.
@@ -423,15 +428,18 @@ def gate(reports: list[dict], bundle_root) -> dict:
     kept: dict[str, list[dict]] = {}
     kept_ids: dict[str, set[str]] = {}
     dropped: list[dict] = []
+    gated: set[str] = set()
     for entry in reports:
         name = entry["report"]
-        if name in kept:
-            raise QuoteGateError(f"{name} is gated twice; one report is gated once")
+        file_name = Path(name).name if isinstance(name, str) else None
+        if file_name in gated:
+            raise QuoteGateError(
+                f"{name} is gated twice; one report is gated once, under whatever "
+                "path it is handed")
         if ("input" in entry) == ("cites" in entry):
             raise QuoteGateError(
                 f"{name} has to name either the input its items quote or the "
                 "reports its items cite, and exactly one of the two")
-        file_name = Path(name).name if isinstance(name, str) else None
         if file_name not in REPORT_SIDES:
             raise QuoteGateError(
                 f"{name!r} is not a report the layer table names, so the gate cannot "
@@ -441,6 +449,7 @@ def gate(reports: list[dict], bundle_root) -> dict:
             what = "quote an input" if side == QUOTES else "cite upstream reports"
             raise QuoteGateError(
                 f"{name} is a report whose items {what}, and it was handed the other")
+        gated.add(file_name)
         named_items = file_name in NAMED_ITEMS
 
         index, upstream_ids = None, set()
