@@ -1224,10 +1224,12 @@ def test_every_row_the_numbers_reader_can_cite_prints_its_id(ticker):
     """`docs/INPUT_SPEC.md` §2's shapes, filled from what the row itself prints.
 
     A trend cell's id is the run's accession, the ratio's key and its period's
-    own `start..end`; a fact's begins with its own filing's accession, its tag
-    and its period. The numbers reader copies these off the row, so each is
-    checked against the row's printed fields and not against the code that
-    wrote it."""
+    own `start..end`. A fact's is its own filing's accession, its tag and its
+    period, then each dimension as `{dimension}={member}` (a typed member's
+    value in place of a member) joined by commas, then `unit={unit}` when the
+    amount is in a currency other than the dollar. The numbers reader copies
+    these off the row, so each is checked against the row's printed fields and
+    not against the code that wrote it."""
     bundle = built(ticker)
     accession = bundle["manifest"]["accession"]
     table = json.loads(bundle["texts"]["input_trends.json"])
@@ -1240,8 +1242,18 @@ def test_every_row_the_numbers_reader_can_cite_prints_its_id(ticker):
     for fact in json.loads(bundle["texts"]["input_numbers.json"])["facts"]:
         context = fact["context"]
         period = context.get("instant") or f"{context['start']}..{context['end']}"
-        assert fact["paragraph_id"].startswith(
-            f"{fact['source_accession']}:facts:{fact['tag']}:{period}")
+        spelled = [f"{fact['source_accession']}:facts:{fact['tag']}:{period}"]
+        members = [f"{one['dimension']}={one['member']}"
+                   for one in context.get("segment") or []]
+        members += [f"{one['dimension']}={one['value']}"
+                    for one in context.get("typed_segment") or []]
+        if members:
+            spelled.append(",".join(members))
+        currencies = [measure for measure in fact["unit"].replace("*", "/").split("/")
+                      if measure.startswith("iso4217:")]
+        if any(currency != "iso4217:USD" for currency in currencies):
+            spelled.append(f"unit={fact['unit']}")
+        assert fact["paragraph_id"] == ":".join(spelled)
 
 
 def test_a_cutoff_equal_to_the_triggering_reports_own_date_is_the_default():

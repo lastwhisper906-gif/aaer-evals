@@ -129,6 +129,7 @@ import json
 import re
 import sys
 from collections import Counter
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
 try:
@@ -218,6 +219,53 @@ def _printed_id(node) -> str | None:
     return identifier if isinstance(identifier, str) and identifier else None
 
 
+# What a numeric fact is, as its row prints it. Two rows printing one id agree on
+# every one of these.
+FACT_FIELDS = ("prefix", "tag", "context", "unit")
+
+
+def _covers(fact: dict) -> tuple[Decimal, Decimal] | None:
+    """The interval a row's printed value covers at its own `decimals`, or None
+    when the row prints no number."""
+    try:
+        number = Decimal(str(fact.get("value")))
+        if not number.is_finite():
+            return None
+        if fact.get("decimals") in (None, "INF"):
+            return number, number
+        half = Decimal(5).scaleb(-int(fact["decimals"]) - 1)
+    except (InvalidOperation, ValueError, TypeError):
+        return None
+    return number - half, number + half
+
+
+def _one_fact(stated: dict, identifier: str, fact: dict) -> None:
+    """Refuse a row printing an id an earlier row printed, unless both state one fact.
+
+    One fact is the same concept, context and unit, and a number every row
+    covers once each is read at its own `decimals`. `stated` holds, per id, what
+    the rows so far agree on.
+    """
+    fields = tuple(json.dumps(fact.get(field), sort_keys=True) for field in FACT_FIELDS)
+    covered = _covers(fact)
+    if identifier not in stated:
+        stated[identifier] = fields, covered, fact.get("value")
+        return
+    first, so_far, value = stated[identifier]
+    if covered is not None and so_far is not None:
+        covered = max(so_far[0], covered[0]), min(so_far[1], covered[1])
+        agrees = covered[0] <= covered[1]
+    else:
+        agrees = covered is None and so_far is None and fact.get("value") == value
+    if fields != first or not agrees:
+        raise QuoteGateError(
+            f"{identifier} is printed by rows of {NUMBERS} that state different "
+            "facts — one id names one fact, the same concept, context and unit at "
+            "a number every row rounds to, and a quote of one would stand for the "
+            "other")
+    stated[identifier] = first, covered, value
+
+
 def _computed_rows(folder: Path, accession: str):
     """(id, printed row, file) for every computed row a committed input declares.
 
@@ -235,10 +283,12 @@ def _computed_rows(folder: Path, accession: str):
     """
     if cutoff_guard.bundle_files(folder, NUMBERS):
         text, payload = _json_input(folder, NUMBERS)
+        stated: dict = {}
         for fact in payload.get("facts") or []:
             identifier = _printed_id(fact)
             row = printed_row(text, fact, FACT_DEPTH) if identifier else None
             if row is not None:
+                _one_fact(stated, identifier, fact)
                 yield identifier, row, NUMBERS
 
     if cutoff_guard.bundle_files(folder, TRENDS):
@@ -272,7 +322,9 @@ def quotable(input_dir, accession: str) -> dict[str, str | tuple[str, ...]]:
     The rows need not print the same digits. Its 10-K 0001045810-26-000021
     states goodwill at 2026-01-25 as 20832000000 to the million and as
     20800000000 to the hundred million, and a quote of either row stands under
-    the one id.
+    the one id. Rows printing one id over two concepts, contexts or units, or
+    over numbers no rounding reconciles, are refused: the id is trusted only as
+    far as the rows agree.
     """
     folder = Path(input_dir)
     if not folder.is_dir():

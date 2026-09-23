@@ -29,6 +29,7 @@ import pytest
 
 from src import assemble_bundle, cutoff_guard, quote_gate, trends
 from src.cutoff_guard import CutoffGuardError
+from src.fetch_fixtures import TICKERS
 from src.quote_gate import QuoteGateError
 
 MANIFEST = "input_manifest.json"
@@ -452,6 +453,69 @@ def test_a_fact_printed_by_two_elements_is_quotable_out_of_either_row(tmp_path):
     assert quote_gate.quote_drop_reason(
         {"id": "receivables_balance", "paragraph_id": FACT_ROW_ID,
          "quote": across}, index) is not None
+
+
+def _numbers_with_twin(root: Path, first: dict, twin: dict) -> Path:
+    """`input_numbers.json` holding the planted fact changed by `first`, and a
+    second row printing the same id changed by `twin`."""
+    payload = json.loads(NUMBERS)
+    fact = dict(payload["facts"][0], **first)
+    payload["facts"] = [fact, dict(fact, id=f"{ACCESSION}:receivables_net_current_again",
+                                   **twin)]
+    folder = root / "numbers_reader"
+    (folder / "input_numbers.json").write_text(
+        json.dumps(payload, indent=2, sort_keys=False) + "\n", encoding="utf-8")
+    return folder
+
+
+@pytest.mark.parametrize("twin", [
+    {"tag": "AccountsReceivableGrossCurrent"},
+    {"prefix": "aapl"},
+    {"unit": "iso4217:EUR"},
+    {"context": {"instant": "2025-03-29"}},
+    {"value": "29000000000"},
+], ids=["tag", "prefix", "unit", "context", "value"])
+def test_two_facts_printing_one_id_are_refused(tmp_path, twin):
+    """One id owns two rows only when they state one fact. A file whose rows
+    print one id over two concepts, contexts, units or numbers was not written
+    by the extractor, and a quote of one row would stand for the other."""
+    folder = _numbers_with_twin(plant(tmp_path), {}, twin)
+    with pytest.raises(quote_gate.QuoteGateError, match="one id names one fact"):
+        quote_gate.quotable(folder, ACCESSION)
+
+
+def test_one_fact_at_two_precisions_is_quotable_out_of_either_row(tmp_path):
+    """NVIDIA's 10-K 0001045810-26-000021 states goodwill at 2026-01-25 as
+    20832000000 at decimals -6 and as 20800000000 at decimals -8. Each is the
+    other rounded to its own precision, so both are the one fact."""
+    folder = _numbers_with_twin(plant(tmp_path),
+                                {"value": "20832000000", "decimals": "-6"},
+                                {"value": "20800000000", "decimals": "-8"})
+    index = quote_gate.quotable(folder, ACCESSION)
+    assert [('"value": "20832000000"' in row, '"value": "20800000000"' in row)
+            for row in quote_gate.rows_of(index, FACT_ROW_ID)] == [(True, False), (False, True)]
+
+
+def test_two_numbers_no_rounding_reconciles_are_refused(tmp_path):
+    """21000000000 to the hundred million covers 20950000000 to 21050000000,
+    and 20832000000 to the million is outside it: two numbers, not one fact
+    rounded twice."""
+    folder = _numbers_with_twin(plant(tmp_path),
+                                {"value": "20832000000", "decimals": "-6"},
+                                {"value": "21000000000", "decimals": "-8"})
+    with pytest.raises(quote_gate.QuoteGateError, match="one id names one fact"):
+        quote_gate.quotable(folder, ACCESSION)
+
+
+@pytest.mark.parametrize("ticker", TICKERS)
+def test_every_companys_rows_under_one_id_state_one_fact(ticker, tmp_path):
+    """The refusal above is for a file the extractor did not write. Each of the
+    twelve companies' 10-Q bundles, as `src/assemble_bundle.py` writes it,
+    indexes without it, and states some fact more than once."""
+    built = assemble_bundle.build(ticker, "10-Q")
+    assemble_bundle.write(built, tmp_path)
+    index = quote_gate.quotable(tmp_path, built["manifest"]["accession"])
+    assert any(len(quote_gate.rows_of(index, identifier)) > 1 for identifier in index)
 
 
 def test_a_trend_cell_named_for_another_run_is_not_quotable_in_this_one(tmp_path):
