@@ -101,7 +101,13 @@ $side — on the $runs runs both rows answered, with the side's other $set_aside
 Nothing to compare yet: no side of the freeze carries a run that both a pipeline row and a baseline row answered.
 
 === run_entry ===
-- $ticker $accession · filed $filing_date · rules version $rules_version frozen $rules_version_frozen · $side · 60-trading-day abnormal return $abnormal_return
+- $ticker $accession · filed $filing_date · rules version $rules_version $frozen · $side · 60-trading-day abnormal return $abnormal_return
+
+=== frozen_on ===
+frozen $rules_version_frozen
+
+=== never_frozen ===
+never frozen
 
 === no_runs ===
 No run has left an outcome on record, so every row above is empty.

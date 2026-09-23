@@ -159,6 +159,46 @@ def test_the_rules_version_and_served_model_are_null_with_a_note(ticker):
     assert manifest["served_model"] is None
     assert "rules/v0.1" in manifest["rules_version_comment"]
     assert "pinned-model runner" in manifest["served_model_comment"]
+    # A run that names no version is not marked a pipeline check either.
+    assert "run_kind" not in manifest
+
+
+# The owner's decision of 2026-09-23: a pipeline check carries rules_version
+# "pilot". `docs/CHECKLIST.md` §10 names what the pilot produces.
+PILOT_RUN = ("NVDA", "10-Q")
+
+
+@functools.lru_cache(maxsize=None)
+def built_pilot() -> dict:
+    return assemble_bundle.build(*PILOT_RUN, rules_version="pilot")
+
+
+def test_a_pilot_run_carries_pilot_and_is_marked_a_pipeline_check():
+    manifest = built_pilot()["manifest"]
+    assert manifest["rules_version"] == "pilot"
+    assert manifest["run_kind"] == "pipeline check"
+    assert "2026-09-23" in manifest["rules_version_comment"]
+    assert manifest["served_model"] is None
+    # The written manifest is the one described, key for key.
+    assert json.loads(built_pilot()["texts"]["input_manifest.json"]) == manifest
+
+
+def test_naming_the_pilot_version_changes_nothing_but_the_manifest():
+    """The version is a label on the run, and the text every agent reads is the
+    same bytes whichever label it carries."""
+    plain, labelled = built(*PILOT_RUN), built_pilot()
+    for name in assemble_bundle.FILES:
+        if name != "input_manifest.json":
+            assert labelled["texts"][name] == plain["texts"][name], name
+    changed = {key for key in set(plain["manifest"]) | set(labelled["manifest"])
+               if plain["manifest"].get(key) != labelled["manifest"].get(key)}
+    assert changed == {"rules_version", "rules_version_comment", "run_kind"}
+
+
+@pytest.mark.parametrize("version", ["0.1", "v0.1", "Pilot", ""])
+def test_a_rules_version_nobody_froze_is_refused_before_anything_is_read(version):
+    with pytest.raises(assemble_bundle.BundleError, match="is not one a run may name"):
+        assemble_bundle.build(*PILOT_RUN, rules_version=version)
 
 
 # --- (f) nothing writes runs/ ------------------------------------------------
@@ -1184,3 +1224,23 @@ def test_a_cutoff_equal_to_the_triggering_reports_own_date_is_the_default():
     is an upper bound and not an off-by-one that forbids the normal case."""
     named = assemble_bundle.build("AAPL", "10-K", cutoff="2025-10-31")["texts"]
     assert named == built("AAPL", "10-K")["texts"]
+
+
+def test_the_command_writes_a_pilot_run_when_asked_for_one(tmp_path):
+    out = tmp_path / "bundle"
+    code = assemble_bundle.main(["--ticker", "nvda", "--form", "10-Q",
+                                 "--rules-version", "pilot", "--out", str(out)])
+    assert code == 0
+    manifest = json.loads((out / "input_manifest.json").read_text(encoding="utf-8"))
+    assert manifest["rules_version"] == "pilot"
+    assert manifest["run_kind"] == "pipeline check"
+
+
+def test_the_command_refuses_a_rules_version_it_does_not_know(tmp_path, capsys):
+    out = tmp_path / "bundle"
+    with pytest.raises(SystemExit) as exited:
+        assemble_bundle.main(["--ticker", "nvda", "--form", "10-Q",
+                              "--rules-version", "0.1", "--out", str(out)])
+    assert exited.value.code == 2
+    assert "pilot" in capsys.readouterr().err
+    assert not out.exists()

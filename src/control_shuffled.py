@@ -168,7 +168,6 @@ SCORECARD_ROWS = {
 QUESTIONS = tuple(CONTROL_FILES)
 
 CONTROL_NAME = "shuffled_report"
-RULES_VERSION = "0.1"
 
 # `docs/CHECKLIST.md` §7's `question` and `rules_version` are this module's to
 # write -- the supervisor is answering the question it was handed -- so they
@@ -424,6 +423,68 @@ def _manifest(directory) -> dict | None:
         raise ControlError(
             f"{Path(directory) / MANIFEST} is not an object, so it names no filing")
     return manifest
+
+
+def run_rules_version(numbers_bundle, notes_bundle, asked=None):
+    """The rules version both control files carry: the scored run's own.
+
+    It used to be "0.1", written into every control file whatever run it
+    scored -- `docs/CHECKLIST.md` §7's example, when no run carried that
+    version and a pilot run carries "pilot" (the owner's decision of
+    2026-09-23). A prediction is scored against its own rules version, and a
+    control is scored beside the run it crosses, so the version is the one that
+    run's `input_manifest.json` carries, null included.
+
+    Every manifest the pair carries is read, and so is `asked`, the caller's
+    word for a half that carries none, which has to be a version
+    `src/assemble_bundle.py` lets a run name; they must all say one thing. A
+    half with no manifest needs the caller's word even when the other half has
+    one, because one half's version says nothing about the other's. Two halves written under two rules versions are refused -- the
+    real run read both sides under one set of rules, and a crossed pair that
+    did not measures the rules change along with the crossing. Nothing to read
+    at all is refused rather than defaulted, which is what "0.1" was.
+    """
+    said, unsaid = [], []
+    for side, bundle in (("numbers", numbers_bundle), ("notes", notes_bundle)):
+        manifest = _manifest(bundle)
+        if manifest is None:
+            unsaid.append(side)
+            continue
+        if "rules_version" not in manifest:
+            raise ControlError(
+                f"{Path(bundle) / MANIFEST} names no rules_version, and the {side} "
+                "half's run was read under one; a control file carries it")
+        said.append((f"the {side} half's manifest", manifest["rules_version"]))
+    if asked is not None:
+        # A manifest's version was held to the list when the run was built;
+        # the caller's word is held to the same list here, so a pair of report
+        # directories cannot bring back a version no run may carry.
+        if asked not in assemble_bundle.RULES_VERSIONS:
+            raise ControlError(
+                f"rules version {asked!r} is not one a run may name "
+                f"({', '.join(map(repr, assemble_bundle.RULES_VERSIONS))}), so "
+                "no control file carries it")
+        said.append(("the caller", asked))
+    if not said:
+        raise ControlError(
+            "neither half carries a manifest and no rules version was named, so "
+            "the control files would carry a version nobody said; name the run's")
+    if unsaid and asked is None:
+        # One half a run and the other a directory of reports: the run's
+        # version would be written for both, and nothing says the other half
+        # was read under it -- or, when the directory is the scored half, the
+        # partner's version would be written as the scored run's own.
+        raise ControlError(
+            f"the {unsaid[0]} half carries no manifest, so nothing says which "
+            "rules version it was read under, and the other half's would be "
+            "written for both; name the version, and the manifest must agree")
+    if len({json.dumps(version) for _, version in said}) > 1:
+        named = ", ".join(f"{who} {version!r}" for who, version in said)
+        raise ControlError(
+            f"the pair says two rules versions: {named}. The real run read both "
+            "sides under one, and a control crossing two measures the rules "
+            "change along with the crossing")
+    return said[0][1]
 
 
 def committed_run(directory) -> str | None:
@@ -778,12 +839,16 @@ def _writable(folder: Path, name: str, text: str) -> Path:
 
 
 def run(numbers_from: str, notes_from: str, *, numbers_bundle, notes_bundle,
-        out, predictor, rules_version: str = RULES_VERSION) -> dict:
+        out, predictor, rules_version: str | None = None) -> dict:
     """Both control files for one crossed pair, and what was crossed to get them.
 
     `predictor(question, reports) -> dict` is the one model call per question:
     the pipeline's own supervisor, handed the crossed four reports and nothing
     else. It is called once for each question, on the same crossed evidence.
+
+    `rules_version` is only for a pair that carries no manifest; the version
+    the files carry is `run_rules_version`'s, and a caller who names one the
+    manifests disagree with is refused there.
     """
     numbers_from, notes_from = one_of_the_twelve(numbers_from), one_of_the_twelve(notes_from)
     numbers, notes, scored, scored_basis = _crossed_pair(numbers_bundle, notes_bundle)
@@ -795,6 +860,7 @@ def run(numbers_from: str, notes_from: str, *, numbers_bundle, notes_bundle,
                 f"{half['from']}'s, out of {half['run']}. The label is what the "
                 "control file would carry, so it is the reports that settle it.")
     folder = destination(out, numbers)
+    version = run_rules_version(numbers_bundle, notes_bundle, rules_version)
 
     reports = {**numbers["reports"], **notes["reports"]}
     declared = declared_ids(reports)
@@ -807,7 +873,7 @@ def run(numbers_from: str, notes_from: str, *, numbers_bundle, notes_bundle,
     for question in QUESTIONS:
         answer = _predicted(question, predictor(question, dict(reports)))
         answer, drops[question] = resolved(question, answer, declared)
-        answer.update(question=question, rules_version=rules_version,
+        answer.update(question=question, rules_version=version,
                       control=provenance(numbers, notes, question,
                                          scored_filing_date=scored,
                                          scored_filing_date_from=scored_basis,
