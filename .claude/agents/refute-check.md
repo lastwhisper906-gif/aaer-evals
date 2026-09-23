@@ -39,10 +39,15 @@ outcome window. Outcome-window data reaching any agent is `fail`.
 
 Every reader item's quote must string-match that reader's committed input.
 Every comparer and supervisor citation must resolve to an upstream item id in
-the upstream report. A quote that "obviously" matches but has different
-whitespace, a different dash or an ellipsis is a `fail` — string-match means
-string-match. Check that unresolved items are dropped and counted, not passed
-through.
+the upstream report. A quote that "obviously" matches but has a different
+dash, a different word, an ellipsis, or a different number of whitespace
+characters is a `fail` — string-match means string-match. One exception, the
+owner's decision of 2026-09-23: a whitespace character of another kind (a
+non-breaking space against an ordinary space, one for one) is folded to an
+ordinary space on both sides before matching, and every quote that stood only
+through the fold is counted in the manifest. Check that the fold is one for one
+and touches whitespace only, and that unresolved items are dropped and counted,
+not passed through.
 
 **5. Layer isolation.**
 
