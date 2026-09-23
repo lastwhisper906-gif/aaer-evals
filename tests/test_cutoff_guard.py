@@ -26,10 +26,12 @@ from pathlib import Path
 import pytest
 
 try:
-    from src import cutoff_guard
+    from src import (assemble_bundle, cutoff_guard, extract_notes, extract_numbers,
+                     fetch_companyfacts, restatement_trace)
 except ImportError:  # run as a plain script: python3.12 tests/test_cutoff_guard.py
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from src import cutoff_guard
+    from src import (assemble_bundle, cutoff_guard, extract_notes, extract_numbers,
+                     fetch_companyfacts, restatement_trace)
 from src.cutoff_guard import CutoffGuardError, CutoffViolationError
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -370,6 +372,198 @@ def test_a_refused_catalogue_is_not_recorded_as_opened():
         with pytest.raises(CutoffGuardError):
             cutoff_guard.load_catalogue(COMMITTED_CATALOGUE, "garbage")
     assert seen == []
+
+
+# --- the submissions index ---------------------------------------------------
+#
+# The other document the date gate does not apply to, and for a while the only
+# one in the fixture set with no integrity check either: `load_index` skipped
+# the gate the way `load_catalogue` does but never looked at the hash, so
+# nothing at all said the bytes it served were the bytes that were fetched.
+#
+# Every expectation below is read out of the committed fixture set — the index
+# file and the `sha256` that `src/fetch_fixtures.py` wrote into the manifest
+# beside it — and never out of a run of the guard.
+
+COMMITTED_INDEX = FIXTURES / "CARR" / "submissions.json"
+INDEX_FORM = "submissions"
+
+
+def _role_recorded_for(form: str) -> str:
+    """The role the committed manifests record one form under, read from them."""
+    roles = {entry["role"]
+             for manifest_path in sorted(FIXTURES.glob("*/manifest.json"))
+             for entry in json.loads(manifest_path.read_text(encoding="utf-8"))["documents"]
+             if entry["form"] == form}
+    assert len(roles) == 1, f"{form} is recorded under {sorted(roles)}"
+    return roles.pop()
+
+
+def _committed_index_row() -> dict:
+    manifest = json.loads((FIXTURES / "CARR" / "manifest.json").read_text(encoding="utf-8"))
+    return next(entry for entry in manifest["documents"]
+                if entry["form"] == INDEX_FORM)
+
+
+def _index_tree(root: Path, body: bytes | None = None, *, sha256=_MISSING) -> Path:
+    """A fixture root holding a copy of the committed index and its own row.
+
+    The bytes and the recorded hash both come from the fixture set. What a test
+    passes here is what it changed about the copy afterwards.
+    """
+    row = dict(_committed_index_row())
+    if sha256 is None:
+        row.pop("sha256", None)
+    elif sha256 is not _MISSING:
+        row["sha256"] = sha256
+    (root / "CARR").mkdir(parents=True)
+    (root / "CARR" / row["path"]).write_bytes(
+        COMMITTED_INDEX.read_bytes() if body is None else body)
+    (root / "CARR" / "manifest.json").write_text(json.dumps(
+        {"ticker": "CARR", "as_of": "2026-09-01", "documents": [row]}) + "\n")
+    return root / "CARR" / row["path"]
+
+
+def test_the_committed_index_is_served_as_the_file_on_record():
+    """The route hands back the file, and the file is the one the fetcher
+    hashed — read here off the disk and out of the manifest, not from the gate."""
+    served = cutoff_guard.load_index(COMMITTED_INDEX)
+    assert served == COMMITTED_INDEX.read_bytes()
+    assert hashlib.sha256(COMMITTED_INDEX.read_bytes()).hexdigest() == \
+        _committed_index_row()["sha256"]
+    assert json.loads(served)["filings"]
+
+
+def test_an_index_whose_bytes_no_longer_match_the_manifest_is_refused(tmp_path):
+    """The date gate vouches for every other document and this route skips it,
+    so here the hash is the only thing that says the file is still the record.
+
+    The same copy is served untouched and refused with one filing's form
+    changed, so it is the alteration that did it and not the copying.
+    """
+    untouched = _index_tree(tmp_path / "as-committed")
+    assert json.loads(cutoff_guard.load_index(
+        untouched, fixtures_root=untouched.parent.parent))["filings"]
+
+    original = COMMITTED_INDEX.read_bytes()
+    altered = original.replace(b'"form": "8-K"', b'"form": "S-1"', 1)
+    assert altered != original and len(altered) == len(original)
+    tampered = _index_tree(tmp_path / "altered", altered)
+    with pytest.raises(CutoffGuardError):
+        cutoff_guard.load_index(tampered, fixtures_root=tampered.parent.parent)
+
+
+def test_an_index_recorded_with_no_hash_is_refused(tmp_path):
+    """Nothing else on this route says the file is still the record."""
+    path = _index_tree(tmp_path, sha256=None)
+    with pytest.raises(CutoffGuardError):
+        cutoff_guard.load_index(path, fixtures_root=path.parent.parent)
+
+
+def test_a_refused_index_is_not_recorded_as_opened(tmp_path):
+    """`assemble_bundle` lists what was opened, so a refusal that recorded the
+    read would publish the index as a document the bundle used."""
+    path = _index_tree(tmp_path, b'{"filings": []}')
+    with cutoff_guard.recording() as seen:
+        with pytest.raises(CutoffGuardError):
+            cutoff_guard.load_index(path, fixtures_root=path.parent.parent)
+    assert seen == []
+
+
+def test_the_index_read_is_still_recorded_when_it_passes():
+    with cutoff_guard.recording() as seen:
+        cutoff_guard.load_index(COMMITTED_INDEX)
+    assert seen == [COMMITTED_INDEX.resolve()]
+
+
+def test_a_document_that_is_not_the_index_is_refused_on_this_route():
+    for path in (COMMITTED_CATALOGUE, AAPL_10K):
+        with pytest.raises(CutoffGuardError):
+            cutoff_guard.load_index(path)
+
+
+# --- the shape of a manifest record ------------------------------------------
+#
+# A record of the wrong shape used to leave the gate as whatever Python raised
+# where it was touched — `ValueError` out of `dict(entry)`, `KeyError` out of
+# `entry["path"]`, `AttributeError` out of `entry.get(...)`. The two readers
+# catch `CutoffGuardError` and nothing else, so each of those was a traceback
+# where the reader had been written to print a refusal and exit on bad input.
+
+MALFORMED_RECORDS = {
+    "a record that is a string": ["not an object at all"],
+    "a record that is a list": [["10-K", "doc.htm"]],
+    "a record with no path": [{"form": "10-K", "role": "primary_html",
+                               "filing_date": "2025-10-31"}],
+    "a record whose path is null": [{"form": "10-K", "role": "primary_html",
+                                     "filing_date": "2025-10-31", "path": None}],
+    "a record whose path is empty": [{"form": "10-K", "role": "primary_html",
+                                      "filing_date": "2025-10-31", "path": "  "}],
+    "documents that is not a list": {"10-K": "doc.htm"},
+    "documents that is a string": "10-K/doc.htm",
+}
+
+
+def _malformed_tree(tmp_path: Path, documents) -> Path:
+    root = tmp_path / "fixtures"
+    (root / "ZZZZ").mkdir(parents=True)
+    (root / "ZZZZ" / "manifest.json").write_text(json.dumps(
+        {"ticker": "ZZZZ", "as_of": "2026-09-01", "documents": documents}) + "\n")
+    return root
+
+
+@pytest.mark.parametrize("shape", sorted(MALFORMED_RECORDS))
+def test_a_malformed_manifest_record_raises_the_gates_own_error(tmp_path, shape):
+    root = _malformed_tree(tmp_path, MALFORMED_RECORDS[shape])
+    stranger = root / "ZZZZ" / "10-K" / "doc.htm"
+    for call in (lambda: cutoff_guard.documents("ZZZZ", fixtures_root=root),
+                 lambda: cutoff_guard.document_record(stranger, fixtures_root=root),
+                 lambda: cutoff_guard.load_document(stranger, "2026-09-01",
+                                                    fixtures_root=root)):
+        with pytest.raises(CutoffGuardError):
+            call()
+
+
+@pytest.mark.parametrize("shape", sorted(MALFORMED_RECORDS))
+def test_the_two_readers_report_a_malformed_record_rather_than_dying(tmp_path, shape):
+    """What the wrong error type actually cost: `src/extract_numbers.py:264`
+    and `src/extract_notes.py:150` catch `CutoffGuardError` and nothing else,
+    so a `ValueError` from the same manifest read came out as a traceback."""
+    root = _malformed_tree(tmp_path, MALFORMED_RECORDS[shape])
+    out = tmp_path / "out"
+    assert extract_numbers.main(
+        ["--ticker", "ZZZZ", "--fixtures", str(root), "--out", str(out)]
+    ) == extract_numbers.BAD_INPUT
+    assert extract_notes.main(
+        ["--ticker", "ZZZZ", "--fixtures", str(root), "--out", str(out)]
+    ) == extract_notes.BAD_INPUT
+    assert not out.exists()
+
+
+# --- one spelling of the catalogue role --------------------------------------
+
+
+def test_the_gate_names_the_roles_the_committed_manifests_record():
+    """Both constants against the fixture set, not against each other."""
+    assert cutoff_guard.CATALOGUE_ROLE == _role_recorded_for("companyfacts")
+    assert cutoff_guard.INDEX_ROLE == _role_recorded_for(INDEX_FORM)
+
+
+def _string_constants(path: Path) -> set[str]:
+    tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+    return {node.value for node in ast.walk(tree)
+            if isinstance(node, ast.Constant) and isinstance(node.value, str)}
+
+
+def test_the_catalogue_role_is_written_once_and_the_rest_take_it_from_there():
+    """It was hand-copied into three modules with nothing holding them equal, so
+    a rename was three edits and a missed one was a role nothing would match."""
+    written = [path.name for path in sorted(SRC.glob("*.py"))
+               if cutoff_guard.CATALOGUE_ROLE in _string_constants(path)]
+    assert written == ["cutoff_guard.py"]
+    assert fetch_companyfacts.ROLE == cutoff_guard.CATALOGUE_ROLE
+    assert restatement_trace.COMPANYFACTS_ROLE == cutoff_guard.CATALOGUE_ROLE
+    assert assemble_bundle.FACTS_ROLE == cutoff_guard.CATALOGUE_ROLE
 
 
 # --- the bypass scan -------------------------------------------------------

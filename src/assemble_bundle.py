@@ -162,9 +162,10 @@ def phase(opened: dict, *files: str):
         opened.setdefault(path, set()).update(files)
 
 
-INDEX_ROLE = "submissions_index"
-# companyfacts, read through `cutoff_guard.load_catalogue`. The role is the
-# gate's own constant, because the gate is what makes the exception.
+# The submissions index, read through `cutoff_guard.load_index`. Both roles are
+# the gate's own constants, because the gate is what makes the exception.
+INDEX_ROLE = cutoff_guard.INDEX_ROLE
+# companyfacts, read through `cutoff_guard.load_catalogue`.
 FACTS_ROLE = cutoff_guard.CATALOGUE_ROLE
 # The two documents that are catalogues drawn from many filings rather than
 # filings. Neither has a filing date, and the cutoff applies to their rows.
