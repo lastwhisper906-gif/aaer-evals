@@ -13,11 +13,21 @@ change history (there is one 10-K on record, and a history needs two) while a
 10-Q bundle has one. The absence is written into the file and into the manifest
 rather than left for a reader to notice.
 
-**`rules_version` and `served_model` are null.** `rules/v0.1` does not exist and
-no prediction has been served, so a value here would be a guess about the two
-fields that decide how a prediction is scored. They are null with a comment
-saying what has to happen first, and a test asserts they are still null — the
-day they become real is a change someone makes on purpose.
+**`rules_version` and `served_model` are null unless a run names one.**
+`rules/v0.1` does not exist and no prediction has been served, so a value here
+would be a guess about the two fields that decide how a prediction is scored.
+They are null with a comment saying what has to happen first, and a test asserts
+they are still null — the day they become real is a change someone makes on
+purpose.
+
+The one version a run may name today is `pilot`, the owner's decision of
+2026-09-23: a pipeline check on the twelve carries `rules_version: "pilot"`, so
+both controls have a version to hold an answer to and the scorecard puts the run
+on the pilot side without a freeze date. It is asked for with
+`--rules-version pilot` and nothing else turns it on; the manifest then also
+carries `run_kind: "pipeline check"`, the words `docs/CHECKLIST.md` §10 gives
+what the pilot produces. `rules_version_comment` says which of the two a
+manifest is.
 
 **The output root is an argument** and the default is never created as a side
 effect. The loop that runs this cannot write `runs/`, and nothing here tries.
@@ -72,6 +82,17 @@ CONTROL_SECTIONS = {"10-K": ("auditors_report", "item_9a"),
 RULES_VERSION_COMMENT = (
     "null until rules/v0.1 exists; a prediction is scored against its own rules "
     "version and guessing one here would decide that scoring by accident")
+
+# The one rules version a run may name before `rules/v0.1` exists, and what a
+# run that names it is. `docs/structure_changes.md`, 2026-09-23.
+PILOT = "pilot"
+PIPELINE_CHECK = "pipeline check"
+RULES_VERSIONS = (PILOT,)
+PILOT_RULES_VERSION_COMMENT = (
+    "pilot: a pipeline check on the twelve, run before any rules version is "
+    "frozen (the owner's decision of 2026-09-23); both controls hold an answer "
+    "to it, the scorecard prints every such run on the pilot side, and nothing "
+    "observed on it is a signal")
 SERVED_MODEL_COMMENT = (
     "null until a prediction is served; the pinned-model runner records what it "
     "actually served, and nothing else may claim to know it")
@@ -440,11 +461,23 @@ def prior_predictions(ticker: str, root: Path, cutoff=None) -> tuple[str, list[d
 # --- the bundle ---------------------------------------------------------------
 
 def build(ticker: str, form: str, *, cutoff=None, fixtures_root=cutoff_guard.FIXTURES,
-          prior_runs: Path = DEFAULT_ROOT) -> dict:
-    """Every file's text, plus what the manifest needs to describe them."""
+          prior_runs: Path = DEFAULT_ROOT, rules_version: str | None = None) -> dict:
+    """Every file's text, plus what the manifest needs to describe them.
+
+    `rules_version` is None, which writes the null the module docstring
+    explains, or one of `RULES_VERSIONS`. Refused before anything is read: a
+    version nobody froze would decide how every prediction off this bundle is
+    scored.
+    """
     if form not in TRIGGERING_FORMS:
         raise BundleError(f"{form} is not a triggering report; "
                           f"one of {', '.join(TRIGGERING_FORMS)}")
+    if rules_version is not None and rules_version not in RULES_VERSIONS:
+        raise BundleError(
+            f"rules version {rules_version!r} is not one a run may name: "
+            f"{', '.join(RULES_VERSIONS)} or none. rules/ holds no frozen "
+            "version yet, and a run scored against a version nobody froze is "
+            "scored against nothing")
     trigger = cutoff_guard.one_document(ticker, form, "primary_html",
                                         fixtures_root=fixtures_root)
     # The cutoff is the triggering report's own filing date unless a run names
@@ -604,8 +637,9 @@ def build(ticker: str, form: str, *, cutoff=None, fixtures_root=cutoff_guard.FIX
         "filing_date": trigger["filing_date"],
         "cutoff": str(cutoff),
         "prior_accession": prior_accession,
-        "rules_version": None,
-        "rules_version_comment": RULES_VERSION_COMMENT,
+        "rules_version": rules_version,
+        "rules_version_comment": (PILOT_RULES_VERSION_COMMENT if rules_version == PILOT
+                                  else RULES_VERSION_COMMENT),
         "served_model": None,
         "served_model_comment": SERVED_MODEL_COMMENT,
         "documents": documents_used(opened, cutoff, fixtures_root),
@@ -628,6 +662,8 @@ def build(ticker: str, form: str, *, cutoff=None, fixtures_root=cutoff_guard.FIX
                          "bytes": len(text.encode("utf-8"))}
                   for name, text in sorted(texts.items())},
     }
+    if rules_version == PILOT:
+        manifest["run_kind"] = PIPELINE_CHECK
     texts["input_manifest.json"] = json.dumps(manifest, indent=2, sort_keys=True) + "\n"
     return {"texts": texts, "manifest": manifest}
 
@@ -641,9 +677,9 @@ def write(bundle: dict, out: Path) -> Path:
 
 def assemble(ticker: str, form: str, out: Path, *, cutoff=None,
              fixtures_root=cutoff_guard.FIXTURES,
-             prior_runs: Path = DEFAULT_ROOT) -> dict:
+             prior_runs: Path = DEFAULT_ROOT, rules_version: str | None = None) -> dict:
     bundle = build(ticker, form, cutoff=cutoff, fixtures_root=fixtures_root,
-                   prior_runs=prior_runs)
+                   prior_runs=prior_runs, rules_version=rules_version)
     write(bundle, Path(out))
     return bundle["manifest"]
 
@@ -664,13 +700,17 @@ def main(argv: list[str] | None = None) -> int:
                         help="where earlier runs live; missing is fine and is recorded")
     parser.add_argument("--out", default=None,
                         help=f"the bundle directory; default {DEFAULT_ROOT}/TICKER/ACCESSION")
+    parser.add_argument("--rules-version", default=None, choices=list(RULES_VERSIONS),
+                        help="the rules version the run is scored against; "
+                             "default none, which the manifest records as null")
     args = parser.parse_args(argv)
 
     ticker = args.ticker.upper()
     try:
         bundle = build(ticker, args.form, cutoff=args.cutoff,
                        fixtures_root=Path(args.fixtures),
-                       prior_runs=Path(args.prior_runs))
+                       prior_runs=Path(args.prior_runs),
+                       rules_version=args.rules_version)
         out = Path(args.out) if args.out else default_out(
             ticker, bundle["manifest"]["accession"])
         write(bundle, out)

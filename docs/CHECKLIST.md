@@ -324,6 +324,11 @@ The same shape for both questions.
 `p_up` may be `"insufficient"` instead of a number, and that is recorded and
 counted.
 
+`rules_version` is the run's, out of its `input_manifest.json`, and never the
+model's: an answer carrying another is refused. A pipeline check on the twelve
+carries `"pilot"` (decided 2026-09-23) and a frozen rules version carries its own
+number; the `"0.1"` above shows the field's shape.
+
 ### A reader item
 
 Written by the numbers reader and the notes-text reader. The quote is verbatim
@@ -335,6 +340,14 @@ and Python string-matches it against that reader's committed input.
   "horizon": "", "quote": "", "paragraph_id": "",
   "explanation": false }
 ```
+
+`id` is a plain name that says what the item looks at: lowercase words joined
+by underscores with no digit, starting with one of the eleven areas in
+`rules/pilot/areas.json` — the `###` headings of §1 and §2 — and then naming
+what it looks at, as in `revenue_recognition_extended_payment_terms`; where the
+item came from stays in `paragraph_id`, a period or a date never goes in the id,
+an id is unique across the four reports of a run, and Python drops and counts
+an item whose id has any other shape.
 
 `explanation` is set by the notes-text reader on a sentence where management
 explains the cause of a number in receivables, inventory or reserves. It is the
@@ -356,6 +369,10 @@ to re-derive which was which.
   "abnormal_return": 0, "short_interest_above_median": false,
   "reasoning": "" }
 ```
+
+`id` is the comparer item's own name, the reader item id it labels followed by
+`_versus_market` — `revenue_recognition_extended_payment_terms_versus_market` —
+held to the reader item's shape and never the id it cites.
 
 `upstream_item_id` is checked against the upstream report. An item whose
 citation does not resolve is dropped before the next layer sees it, and the drop
@@ -471,6 +488,11 @@ The line is drawn by **when the filing existed**, not by which company filed it.
 |---|---|---|
 | **pilot** | a filing already on EDGAR when the rules version was frozen | pipeline check only |
 | **forward cycle** | a filing that did not exist when the rules version was frozen | a result |
+
+A pipeline check run before any rules version is frozen carries
+`rules_version: "pilot"` in its manifest, and that is what places it on the pilot
+side: a version that was never frozen has no date to compare a filing with
+(decided 2026-09-23).
 
 The same twelve companies appear on both sides of that line. The pilot filings
 are among the most-read documents on earth and any model reading them already

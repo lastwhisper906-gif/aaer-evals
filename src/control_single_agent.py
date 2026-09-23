@@ -217,6 +217,26 @@ SCHEMA = '''{ "question": "accounting_reliability" | "financial_pressure",
   "tier": "elevated" | "watch" | "clear",
   "top_signals": [] }'''
 
+# §7 prints "0.1" where a prediction's rules version goes, and the version is
+# the run's, not the document's: `check_schema` refuses any answer carrying
+# another. So the prompt shows the model the run's own, in that one place, and
+# is otherwise §7 character for character. Asking for "0.1" and holding the
+# answer to the run's null is how both calls on the second pipeline check
+# (PR #73) were refused; a pilot run carries "pilot" since the owner's decision
+# of 2026-09-23.
+SCHEMA_RULES_VERSION = '"rules_version": "0.1",'
+
+
+def schema(rules_version) -> str:
+    """§7's schema, with the run's rules version where §7 prints "0.1"."""
+    if SCHEMA.count(SCHEMA_RULES_VERSION) != 1:
+        raise ControlError(
+            "the schema no longer carries §7's rules_version line once, so there "
+            "is no one place to put the run's version")
+    return SCHEMA.replace(SCHEMA_RULES_VERSION,
+                          f'"rules_version": {json.dumps(rules_version)},')
+
+
 # §7 gives `evidence` one member, `upstream_item_id`. `quote` is the branch of
 # `CLAUDE.md`'s rule that an agent with no upstream report has left, and the
 # docstring says why; it is named here, once, and the rest of the shape is the
@@ -730,12 +750,25 @@ def prompt(question: str, input_dir, bundle_root) -> str:
 
     `bundle_root` is here because the file list is not a listing: every name
     in it is a file `input_files` has held against the run's own copy, so the
-    sentence "you see these files and nothing else" is about those bytes.
+    sentence "you see these files and nothing else" is about those bytes. It
+    is also where the run's `input_manifest.json` is, whose `rules_version` the
+    schema in the prompt carries -- the one `check_schema` holds the answer to.
     """
     _a_question(question)
     listed = "\n".join(f"- {name}" for name in input_files(input_dir, bundle_root))
+    try:
+        manifest = json.loads(cutoff_guard.load_bundle_file(bundle_root, MANIFEST))
+    except (cutoff_guard.CutoffGuardError, ValueError) as exc:
+        raise ControlError(
+            f"{Path(bundle_root) / MANIFEST} does not read, so the run's rules "
+            f"version is unknown: {exc}") from exc
+    if not isinstance(manifest, dict) or "rules_version" not in manifest:
+        raise ControlError(
+            f"{Path(bundle_root) / MANIFEST} names no rules_version, and §7 gives "
+            "every prediction the run's")
     return CONTROL_PROMPT.format(question=question.replace("_", " "),
-                                 files=listed, schema=SCHEMA)
+                                 files=listed,
+                                 schema=schema(manifest["rules_version"]))
 
 
 def destination(bundle_root) -> Path:

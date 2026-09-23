@@ -46,6 +46,16 @@ alternative is a hard-coded freeze date, which would be a threshold this module
 has no source for. The key is read from the manifest so that whoever freezes the
 rules version writes it once, beside `rules_version`, rather than here.
 
+**A run whose `rules_version` is `pilot` is on the pilot side, and names no
+freeze date.** The owner's decision of 2026-09-23: a pipeline check run before
+any rules version is frozen carries `rules_version: "pilot"`, and the scorecard
+labels it pilot. The side is still read off the run's own manifest rather than
+typed here -- off the version, because a version that was never frozen has no
+date to compare a cutoff with. A pilot run that also carries a freeze date says
+two things about which side it is on and is refused, and so is a
+`rules_version_frozen` beside a run that names no rules version -- null, as a
+bundle built without `--rules-version` carries, or an empty string.
+
 What a run has to leave behind
 ------------------------------
 
@@ -216,7 +226,7 @@ class Run:
     side: str
     filing_date: str
     rules_version: str
-    rules_version_frozen: str
+    rules_version_frozen: str | None
     abnormal_return: float | None
 
     @property
@@ -319,15 +329,33 @@ def _document(directory: Path, name: str) -> dict | None:
     return loaded
 
 
-def _side(directory: Path, filed: str, frozen: str) -> str:
+def _side(directory: Path, filed: str, frozen: str, version=None) -> str:
     """Which side of the rules-version freeze this filing fell on.
 
     `docs/CHECKLIST.md` §10: a filing already on EDGAR when the rules version was
     frozen is pilot, and one that did not exist then is the forward cycle. The
-    day of the freeze counts as already there.
+    day of the freeze counts as already there. A run under the `pilot` rules
+    version is pilot by its version, and names no freeze.
     """
     try:
         filing_date = cutoff_guard.parse_date(filed, "cutoff")
+    except cutoff_guard.CutoffGuardError as exc:
+        raise ScorecardError(f"{directory / MANIFEST}: {exc}") from exc
+    if version == PILOT:
+        if frozen is not None:
+            raise ScorecardError(
+                f"{directory / MANIFEST}: rules_version is {PILOT!r} and "
+                f"rules_version_frozen is {frozen!r}. A pilot run was read before "
+                "any rules version was frozen, so a freeze date beside it says a "
+                "second thing about which side the run is on")
+        return PILOT
+    if not isinstance(version, str) or not version.strip():
+        raise ScorecardError(
+            f"{directory / MANIFEST}: rules_version is {version!r} and "
+            f"rules_version_frozen is {frozen!r}. A freeze date belongs to the "
+            "version that was frozen, and a run that names none has no version "
+            "for the date to be the freeze of")
+    try:
         freeze_date = cutoff_guard.parse_date(frozen, "rules_version_frozen")
     except cutoff_guard.CutoffGuardError as exc:
         raise ScorecardError(f"{directory / MANIFEST}: {exc}") from exc
@@ -358,10 +386,12 @@ def _run(ticker: str, directory: Path) -> Run:
         accession=directory.name,
         directory=directory,
         side=_side(directory, manifest.get("cutoff"),
-                   manifest.get("rules_version_frozen")),
+                   manifest.get("rules_version_frozen"),
+                   manifest.get("rules_version")),
         filing_date=str(manifest.get("cutoff")),
         rules_version=str(manifest.get("rules_version")),
-        rules_version_frozen=str(manifest.get("rules_version_frozen")),
+        rules_version_frozen=(None if manifest.get("rules_version") == PILOT
+                              else str(manifest.get("rules_version_frozen"))),
         abnormal_return=_abnormal_return(directory),
     )
 
@@ -596,7 +626,9 @@ def _run_list(runs: list[Run]) -> str:
     return "\n".join(
         _fill("run_entry", ticker=run.ticker, accession=run.accession,
               filing_date=run.filing_date, rules_version=run.rules_version,
-              rules_version_frozen=run.rules_version_frozen,
+              frozen=(blocks()["never_frozen"] if run.rules_version_frozen is None
+                      else _fill("frozen_on",
+                                 rules_version_frozen=run.rules_version_frozen)),
               side=_side_label(run.side),
               abnormal_return=(blocks()["no_answer"] if run.abnormal_return is None
                                else f"{run.abnormal_return:+.{PLACES}f}"))
