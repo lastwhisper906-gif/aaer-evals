@@ -179,12 +179,32 @@ def test_each_report_names_its_own_company():
 # --- which company is B ------------------------------------------------------
 
 def test_the_partner_is_the_next_company_in_the_twelve_by_ticker():
-    assert control_shuffled.PAIRING_ORDER == tuple(sorted(TICKERS))
+    assert control_shuffled.pairing_order() == tuple(sorted(TICKERS))
     assert control_shuffled.partner(NUMBERS_COMPANY) == NOTES_COMPANY
 
 
+def test_a_row_appended_to_the_universe_enters_the_pairing_without_a_restart(
+        tmp_path, monkeypatch):
+    """The order is asked of the file at each call, not bound at import.
+
+    ZZZZ sorts after every one of the twelve, so it becomes the last company:
+    the old last company pairs with it, and it wraps round to the first.
+    """
+    from src import universe
+    document = json.loads(universe.PATH.read_text(encoding="utf-8"))
+    document["companies"].append({"ticker": "ZZZZ", "cik": "0000000013",
+                                  "sic": "3674", "added_on": "2026-09-22"})
+    path = tmp_path / "universe.json"
+    path.write_text(json.dumps(document), encoding="utf-8")
+    last, first = sorted(TICKERS)[-1], sorted(TICKERS)[0]
+    assert control_shuffled.partner(last) == first
+    monkeypatch.setattr(universe, "PATH", path)
+    assert control_shuffled.partner(last) == "ZZZZ"
+    assert control_shuffled.partner("ZZZZ") == first
+
+
 def test_the_pairing_wraps_around_and_pairs_nobody_with_themselves():
-    order = control_shuffled.PAIRING_ORDER
+    order = control_shuffled.pairing_order()
     assert control_shuffled.partner(order[-1]) == order[0]
     assert all(control_shuffled.partner(ticker) != ticker for ticker in order)
     # One cycle over all twelve, so every company is somebody's notes side.

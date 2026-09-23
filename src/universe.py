@@ -14,8 +14,10 @@ what it plans -- a module-level snapshot would answer twelve and be wrong in
 exactly the way that matters.
 
 Each row carries the ticker, the CIK, the SIC and the date the row entered the
-project. The first three come from the SEC's own submissions record for that
-CIK; none of them is a value this repository computed.
+project. The CIK and SIC are the SEC's own submissions header for that CIK,
+committed beside the fixtures at `tests/fixtures/universe/<ticker>.json` by
+`src/fetch_universe_source.py`; the date is the `as_of` of the fixture set the
+row entered with. None of them is a value this repository computed.
 
     from src import universe
     universe.tickers()           # ('AAPL', 'STX', ...)
@@ -25,7 +27,9 @@ CIK; none of them is a value this repository computed.
 
 from __future__ import annotations
 
+import datetime as dt
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -59,27 +63,52 @@ def rows(path: Path | None = None) -> tuple[dict[str, Any], ...]:
     Read on every call. A thirteenth row appended while the process is running
     is a thirteenth company, which is the whole point of the file.
     """
-    document = _document(PATH if path is None else Path(path))
+    where = PATH if path is None else Path(path)
+    document = _document(where)
     out = []
     seen = set()
     for index, row in enumerate(document["companies"]):
         if not isinstance(row, dict):
             raise UniverseError(f"companies[{index}] is not an object")
-        missing = [key for key in REQUIRED if not str(row.get(key, "")).strip()]
-        if missing:
-            raise UniverseError(
-                f"companies[{index}] ({row.get('ticker', 'unnamed')}) is missing "
-                f"{', '.join(missing)}"
-            )
-        ticker = str(row["ticker"]).strip().upper()
-        if ticker in seen:
-            raise UniverseError(f"{ticker} appears twice; a company is in the universe once")
-        seen.add(ticker)
-        out.append({**row, "ticker": ticker, "cik": str(row["cik"]).strip(),
-                    "sic": str(row["sic"]).strip()})
+        out.append(_checked(index, row, seen))
     if not out:
-        raise UniverseError(f"{path or PATH} lists no companies")
+        raise UniverseError(f"{where} lists no companies")
     return tuple(out)
+
+
+def _checked(index: int, row: dict[str, Any], seen: set[str]) -> dict[str, Any]:
+    """One row, refused unless every required field is a non-empty string.
+
+    `str(None)` is "None", so a check that stringified first let `"cik": null`
+    through as a CIK spelled N-o-n-e. Each field must *be* a string, not merely
+    print as one, and the CIK, SIC and date must look like what they are.
+    """
+    name = row.get("ticker") if isinstance(row.get("ticker"), str) else "unnamed"
+    problems = []
+    for key in REQUIRED:
+        if key not in row:
+            problems.append(f"{key} is missing")
+        elif not isinstance(row[key], str):
+            problems.append(f"{key} is {row[key]!r}, not a string")
+        elif not row[key].strip():
+            problems.append(f"{key} is empty")
+    if not problems:
+        if not re.fullmatch(r"\d{10}", row["cik"].strip()):
+            problems.append(f"cik {row['cik']!r} is not ten digits")
+        if not re.fullmatch(r"\d{4}", row["sic"].strip()):
+            problems.append(f"sic {row['sic']!r} is not four digits")
+        try:
+            dt.date.fromisoformat(row["added_on"].strip())
+        except ValueError:
+            problems.append(f"added_on {row['added_on']!r} is not a YYYY-MM-DD date")
+    if problems:
+        raise UniverseError(f"companies[{index}] ({name}): {'; '.join(problems)}")
+    ticker = row["ticker"].strip().upper()
+    if ticker in seen:
+        raise UniverseError(f"{ticker} appears twice; a company is in the universe once")
+    seen.add(ticker)
+    return {**row, "ticker": ticker, "cik": row["cik"].strip(),
+            "sic": row["sic"].strip(), "added_on": row["added_on"].strip()}
 
 
 def tickers(path: Path | None = None) -> tuple[str, ...]:

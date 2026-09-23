@@ -16,11 +16,13 @@ Where the expected values come from. The twelve tickers and their order are
 read out of the commit that introduced them (`d182fcb`, 2026-09-07) and are the
 same literal that stood in `src/fetch_fixtures.py`. Each CIK is the one in that
 company's own committed `tests/fixtures/<ticker>/manifest.json`, which came
-from EDGAR. Each SIC came from the SEC's own submissions record for that CIK --
-`data.sec.gov/submissions/CIK<cik>.json`, the `sic` field -- fetched once and
-written into the file. None of the three is a value this repository computed,
-and none was read back out of `src/universe.py` to make this test agree with
-it.
+from EDGAR. Each SIC, SIC description and name is read here out of the SEC's
+submissions header for that CIK, committed at
+`tests/fixtures/universe/<ticker>.json` with the sha256 of the document as
+served. Each added-on date is that company's manifest `as_of`: the twelve
+entered with the fixture set pinned to 2026-09-01, which the item's own
+acceptance line names. None of them is typed into this file, and none was read
+back out of `src/universe.py` to make this test agree with it.
 """
 
 from __future__ import annotations
@@ -41,16 +43,16 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 THE_TWELVE = ("AAPL", "STX", "CSCO", "PANW", "CARR", "LFUS",
               "GNRC", "CIEN", "QCOM", "ESE", "TTMI", "NVDA")
 
-# ticker -> (CIK from that company's committed manifest, SIC from the SEC's
-# submissions record for that CIK).
-FROM_THE_SOURCE = {
-    "AAPL": ("0000320193", "3571"), "STX": ("0001137789", "3572"),
-    "CSCO": ("0000858877", "3576"), "PANW": ("0001327567", "3577"),
-    "CARR": ("0001783180", "3585"), "LFUS": ("0000889331", "3613"),
-    "GNRC": ("0001474735", "3621"), "CIEN": ("0000936395", "3661"),
-    "QCOM": ("0000804328", "3663"), "ESE": ("0000866706", "3669"),
-    "TTMI": ("0001116942", "3672"), "NVDA": ("0001045810", "3674"),
-}
+HEADERS = REPO_ROOT / "tests" / "fixtures" / "universe"
+
+
+def _manifest(ticker: str) -> dict:
+    return json.loads((REPO_ROOT / "tests" / "fixtures" / ticker / "manifest.json")
+                      .read_text(encoding="utf-8"))
+
+
+def _header(ticker: str) -> dict:
+    return json.loads((HEADERS / f"{ticker}.json").read_text(encoding="utf-8"))
 
 
 def test_the_universe_file_is_at_the_repository_root() -> None:
@@ -82,22 +84,39 @@ def test_no_module_in_src_still_carries_the_list_as_a_literal() -> None:
 
 
 @pytest.mark.parametrize("ticker", THE_TWELVE)
-def test_each_row_carries_the_cik_and_sic_the_source_gives(ticker: str) -> None:
-    cik, sic = FROM_THE_SOURCE[ticker]
-    assert universe.cik(ticker) == cik
-    assert universe.sic(ticker) == sic
-    manifest = json.loads(
-        (REPO_ROOT / "tests" / "fixtures" / ticker / "manifest.json").read_text(
-            encoding="utf-8"))
-    assert manifest["cik"] == cik, (
+def test_each_rows_cik_is_the_one_in_that_companys_manifest(ticker: str) -> None:
+    assert universe.cik(ticker) == _manifest(ticker)["cik"], (
         "the row disagrees with that company's own committed manifest"
     )
 
 
+def test_every_row_has_a_committed_sec_header_behind_it() -> None:
+    """A row with nothing committed behind its SIC is a typed SIC."""
+    missing = [t for t in universe.tickers() if not (HEADERS / f"{t}.json").is_file()]
+    assert missing == [], (
+        f"no SEC header at tests/fixtures/universe/ for {missing}; "
+        "run python3.12 -m src.fetch_universe_source"
+    )
+
+
 @pytest.mark.parametrize("ticker", THE_TWELVE)
-def test_every_row_says_when_it_was_added(ticker: str) -> None:
-    added = universe._one(ticker)["added_on"]
-    assert len(added) == 10 and added[4] == added[7] == "-", added
+def test_each_rows_sic_is_the_one_the_sec_header_gives(ticker: str) -> None:
+    record = _header(ticker)
+    header = record["header"]
+    row = universe._one(ticker)
+    assert record["url"].endswith(f"CIK{row['cik']}.json")
+    assert f"{int(header['cik']):010d}" == row["cik"]
+    assert ticker in header["tickers"]
+    assert row["sic"] == header["sic"]
+    assert row["sic_description"] == header["sicDescription"]
+    assert row["name"] == header["name"]
+    assert len(record["served_sha256"]) == 64 and record["served_bytes"] > 0
+    assert "filings" not in header, "the header must not carry post-cutoff filings"
+
+
+@pytest.mark.parametrize("ticker", THE_TWELVE)
+def test_each_row_was_added_on_its_fixture_sets_as_of(ticker: str) -> None:
+    assert universe._one(ticker)["added_on"] == _manifest(ticker)["as_of"]
 
 
 def _universe_with_a_thirteenth(tmp_path: Path) -> Path:
@@ -139,14 +158,13 @@ def test_the_fetcher_plans_thirteen_when_the_file_carries_thirteen(
 
     path = _universe_with_a_thirteenth(tmp_path)
     monkeypatch.setattr(universe, "PATH", path)
-    monkeypatch.setattr(
-        fetch_fixtures, "cik_map",
-        lambda fetcher: {t: universe.cik(t, path) for t in universe.tickers(path)})
 
     planned: list[str] = []
+    ciks: dict[str, str] = {}
 
     def record(fetcher, ticker, cik, as_of, out):  # noqa: ANN001
         planned.append(ticker)
+        ciks[ticker] = cik
         return None, []
 
     monkeypatch.setattr(fetch_fixtures, "fetch_company", record)
@@ -158,8 +176,97 @@ def test_the_fetcher_plans_thirteen_when_the_file_carries_thirteen(
         "file is not a company until something restarts"
     )
     assert len(planned) == 13
+    # The CIK the fetcher uses is the file's. ZZZZ is in no EDGAR ticker map,
+    # so a fetcher that still resolved CIKs there would not have planned it.
+    assert ciks["ZZZZ"] == "0000000013"
+    assert all(ciks[t] == _manifest(t)["cik"] for t in THE_TWELVE)
     assert code == 0, capsys.readouterr().err
     assert fetch_fixtures.TICKERS == THE_TWELVE, (
         "the snapshot is untouched in this process, so the thirteen above came "
         "from the file and not from a mutated module global"
     )
+
+
+def test_the_fetcher_refuses_a_ticker_the_file_does_not_carry(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
+) -> None:
+    from src import fetch_fixtures
+
+    def unreachable(*args, **kwargs):  # noqa: ANN002, ANN003
+        raise AssertionError("a ticker outside the universe reached EDGAR")
+
+    monkeypatch.setattr(fetch_fixtures, "fetch_company", unreachable)
+    code = fetch_fixtures.main(["--ticker", "NOTINFILE",
+                                "--out", str(tmp_path / "fixtures")])
+    assert code == fetch_fixtures.FETCH_FAILED
+    assert "NOTINFILE is not in the universe" in capsys.readouterr().err
+
+
+# --- a malformed file is refused, not read ------------------------------------
+
+GOOD = {"ticker": "ZZZZ", "cik": "0000000013", "sic": "3674", "added_on": "2026-09-22"}
+
+
+def _write(tmp_path: Path, companies) -> Path:  # noqa: ANN001
+    path = tmp_path / "universe.json"
+    path.write_text(json.dumps({"companies": companies}), encoding="utf-8")
+    return path
+
+
+@pytest.mark.parametrize("key", ["ticker", "cik", "sic", "added_on"])
+def test_a_row_missing_a_field_is_refused(tmp_path: Path, key: str) -> None:
+    row = {k: v for k, v in GOOD.items() if k != key}
+    with pytest.raises(universe.UniverseError, match=f"{key} is missing"):
+        universe.rows(_write(tmp_path, [row]))
+
+
+@pytest.mark.parametrize("key", ["ticker", "cik", "sic", "added_on"])
+def test_a_null_field_is_refused_and_not_read_as_the_string_none(
+        tmp_path: Path, key: str) -> None:
+    with pytest.raises(universe.UniverseError, match=f"{key} is None"):
+        universe.rows(_write(tmp_path, [{**GOOD, key: None}]))
+
+
+@pytest.mark.parametrize("key", ["ticker", "cik", "sic", "added_on"])
+def test_an_empty_field_is_refused(tmp_path: Path, key: str) -> None:
+    with pytest.raises(universe.UniverseError, match=f"{key} is empty"):
+        universe.rows(_write(tmp_path, [{**GOOD, key: "  "}]))
+
+
+def test_a_number_where_a_string_belongs_is_refused(tmp_path: Path) -> None:
+    # 320193 as a JSON number has lost the leading zeroes the CIK is written with.
+    with pytest.raises(universe.UniverseError, match="not a string"):
+        universe.rows(_write(tmp_path, [{**GOOD, "cik": 320193}]))
+
+
+@pytest.mark.parametrize("field,value,says", [
+    ("cik", "320193", "not ten digits"),
+    ("sic", "36741", "not four digits"),
+    ("added_on", "22 Sept 2026", "not a YYYY-MM-DD date"),
+])
+def test_a_field_that_is_not_what_it_names_is_refused(
+        tmp_path: Path, field: str, value: str, says: str) -> None:
+    with pytest.raises(universe.UniverseError, match=says):
+        universe.rows(_write(tmp_path, [{**GOOD, field: value}]))
+
+
+def test_a_duplicate_ticker_is_refused_whatever_its_case(tmp_path: Path) -> None:
+    with pytest.raises(universe.UniverseError, match="appears twice"):
+        universe.rows(_write(tmp_path, [GOOD, {**GOOD, "ticker": "zzzz"}]))
+
+
+def test_an_empty_universe_is_refused(tmp_path: Path) -> None:
+    with pytest.raises(universe.UniverseError, match="lists no companies"):
+        universe.rows(_write(tmp_path, []))
+
+
+def test_a_row_that_is_not_an_object_is_refused(tmp_path: Path) -> None:
+    with pytest.raises(universe.UniverseError, match="is not an object"):
+        universe.rows(_write(tmp_path, ["ZZZZ"]))
+
+
+def test_a_file_with_no_companies_list_is_refused(tmp_path: Path) -> None:
+    path = tmp_path / "universe.json"
+    path.write_text(json.dumps({"companies": {"ZZZZ": GOOD}}), encoding="utf-8")
+    with pytest.raises(universe.UniverseError, match="no `companies` list"):
+        universe.rows(path)

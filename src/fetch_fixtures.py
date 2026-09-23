@@ -72,7 +72,6 @@ AS_OF = "2026-09-01"
 FIXTURES = Path(__file__).resolve().parent.parent / "tests" / "fixtures"
 
 DEFAULT_USER_AGENT = "aaer-evals research lastwhisper906@gmail.com"
-TICKER_MAP_URL = "https://www.sec.gov/files/company_tickers.json"
 SUBMISSIONS_URL = "https://data.sec.gov/submissions/CIK{cik}.json"
 ARCHIVE_URL = "https://www.sec.gov/Archives/edgar/data/{cik_int}/{accession}/{name}"
 
@@ -131,12 +130,6 @@ class Fetcher:
 
 def sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
-
-
-def cik_map(fetcher: Fetcher) -> dict[str, str]:
-    raw = fetcher.get_json(TICKER_MAP_URL)
-    return {row["ticker"].upper(): f"{int(row['cik_str']):010d}"
-            for row in raw.values()}
 
 
 def recent_filings(fetcher: Fetcher, cik: str) -> list[dict]:
@@ -434,17 +427,16 @@ def main(argv: list[str] | None = None) -> int:
     out = Path(args.out)
     fetcher = Fetcher(os.environ.get("EDGAR_USER_AGENT", DEFAULT_USER_AGENT))
 
-    try:
-        ciks = cik_map(fetcher)
-    except Exception as exc:  # noqa: BLE001 - the reason matters more than the type
-        print(f"fetch_fixtures: could not read the EDGAR ticker map: {exc}", file=sys.stderr)
-        return FETCH_FAILED
-
+    # The CIK is the file's, not EDGAR's ticker map's. The map was a second
+    # answer to "which registrant is this?" that `universe.json` never got a
+    # say in: a row whose ticker the map lacked failed whatever CIK it carried,
+    # and a ticker the map had re-pointed would be fetched as someone else.
     problems, changed = [], []
     for ticker in tickers:
-        cik = ciks.get(ticker)
-        if cik is None:
-            problems.append(f"{ticker}: not in the EDGAR ticker map")
+        try:
+            cik = universe.cik(ticker)
+        except universe.UniverseError as exc:
+            problems.append(f"{ticker}: {exc}")
             continue
         print(f"{ticker} (CIK {cik})")
         try:

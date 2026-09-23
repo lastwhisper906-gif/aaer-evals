@@ -6,8 +6,15 @@ Each holds three saved filings — a 10-K, a 10-Q and an 8-K 2.02 — with an
 expected-value file beside each one. Twelve companies by three filings is 36
 fixtures, and the parsers are done when 36 of 36 pass.
 
-Companies: AAPL · STX · CSCO · PANW · CARR · LFUS · GNRC · CIEN · QCOM · ESE ·
-TTMI · NVDA.
+Companies: the rows of `universe.json` at the repository root, which is the
+only list of them.
+
+`tests/fixtures/universe/{ticker}.json` is not a filing and not under a company
+directory: it is the SEC submissions header for that company's CIK (name, SIC,
+SIC description, tickers) as `src/fetch_universe_source.py` fetched it, every
+field but the `filings` list, with the sha256 of the whole document as served.
+It is what a row's SIC is checked against, so a new row in `universe.json`
+needs one before `tests/test_universe.py` passes.
 
 ## The two files that are not filings
 

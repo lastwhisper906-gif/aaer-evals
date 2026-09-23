@@ -3,9 +3,12 @@
     "The companies this pipeline reads. Adding one is an edit to this file and",
     "nothing else: every fetcher, every fixture path and every routine takes the",
     "universe from here, so a thirteenth row needs no code change.",
-    "ticker, cik and sic come from the SEC's own submissions record for that CIK",
-    "(data.sec.gov/submissions/CIK<cik>.json, the sic and sicDescription fields);",
-    "added_on is the date the row entered this project.",
+    "cik, sic, sic_description and name are the SEC's own submissions header for",
+    "that CIK, committed at tests/fixtures/universe/<ticker>.json by",
+    "src/fetch_universe_source.py; the cik also matches that company's manifest.",
+    "added_on is the as_of of the fixture set the row entered with: for the",
+    "original twelve, tests/fixtures/<ticker>/manifest.json as_of, 2026-09-01.",
+    "A new row needs its header fetched too: python3.12 -m src.fetch_universe_source",
     "The twelve test the pipeline, not the signal."
   ],
   "as_of": "2026-09-01",
@@ -16,7 +19,7 @@
       "sic": "3571",
       "sic_description": "Electronic Computers",
       "name": "Apple Inc.",
-      "added_on": "2026-09-07"
+      "added_on": "2026-09-01"
     },
     {
       "ticker": "STX",
@@ -24,7 +27,7 @@
       "sic": "3572",
       "sic_description": "Computer Storage Devices",
       "name": "Seagate Technology Holdings plc",
-      "added_on": "2026-09-07"
+      "added_on": "2026-09-01"
     },
     {
       "ticker": "CSCO",
@@ -32,7 +35,7 @@
       "sic": "3576",
       "sic_description": "Computer Communications Equipment",
       "name": "CISCO SYSTEMS, INC.",
-      "added_on": "2026-09-07"
+      "added_on": "2026-09-01"
     },
     {
       "ticker": "PANW",
@@ -40,7 +43,7 @@
       "sic": "3577",
       "sic_description": "Computer Peripheral Equipment, NEC",
       "name": "Palo Alto Networks Inc",
-      "added_on": "2026-09-07"
+      "added_on": "2026-09-01"
     },
     {
       "ticker": "CARR",
@@ -48,7 +51,7 @@
       "sic": "3585",
       "sic_description": "Air-Cond & Warm Air Heatg Equip & Comm & Indl Refrig Equip",
       "name": "CARRIER GLOBAL Corp",
-      "added_on": "2026-09-07"
+      "added_on": "2026-09-01"
     },
     {
       "ticker": "LFUS",
@@ -56,7 +59,7 @@
       "sic": "3613",
       "sic_description": "Switchgear & Switchboard Apparatus",
       "name": "LITTELFUSE INC /DE",
-      "added_on": "2026-09-07"
+      "added_on": "2026-09-01"
     },
     {
       "ticker": "GNRC",
@@ -64,7 +67,7 @@
       "sic": "3621",
       "sic_description": "Motors & Generators",
       "name": "GENERAC HOLDINGS INC.",
-      "added_on": "2026-09-07"
+      "added_on": "2026-09-01"
     },
     {
       "ticker": "CIEN",
@@ -72,7 +75,7 @@
       "sic": "3661",
       "sic_description": "Telephone & Telegraph Apparatus",
       "name": "CIENA CORP",
-      "added_on": "2026-09-07"
+      "added_on": "2026-09-01"
     },
     {
       "ticker": "QCOM",
@@ -80,7 +83,7 @@
       "sic": "3663",
       "sic_description": "Radio & Tv Broadcasting & Communications Equipment",
       "name": "QUALCOMM INC/DE",
-      "added_on": "2026-09-07"
+      "added_on": "2026-09-01"
     },
     {
       "ticker": "ESE",
@@ -88,7 +91,7 @@
       "sic": "3669",
       "sic_description": "Communications Equipment, NEC",
       "name": "ESCO TECHNOLOGIES INC",
-      "added_on": "2026-09-07"
+      "added_on": "2026-09-01"
     },
     {
       "ticker": "TTMI",
@@ -96,7 +99,7 @@
       "sic": "3672",
       "sic_description": "Printed Circuit Boards",
       "name": "TTM TECHNOLOGIES INC",
-      "added_on": "2026-09-07"
+      "added_on": "2026-09-01"
     },
     {
       "ticker": "NVDA",
@@ -104,7 +107,7 @@
       "sic": "3674",
       "sic_description": "Semiconductors & Related Devices",
       "name": "NVIDIA CORP",
-      "added_on": "2026-09-07"
+      "added_on": "2026-09-01"
     }
   ]
 }

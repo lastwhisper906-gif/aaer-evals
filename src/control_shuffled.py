@@ -39,7 +39,7 @@ by ticker, wrapping around, so the pairing is fixed rather than drawn". Read as
 the twelve in ticker order -- `by ticker` is what distinguishes the pairing from
 the order `src/fetch_fixtures.py` and `tests/fixtures/README.md` happen to list
 them in, which is a fetch order and not a canonical one. That reading is
-`PAIRING_ORDER` below and nothing else depends on it, so a correction is one
+`pairing_order()` below and nothing else depends on it, so a correction is one
 line.
 
 **The control file is never merged into the pipeline's number.** It carries a
@@ -65,8 +65,6 @@ def pairing_order() -> tuple[str, ...]:
     """
     return tuple(sorted(universe.tickers()))
 
-
-PAIRING_ORDER = pairing_order()
 
 # The two halves, by the names `docs/INPUT_SPEC.md` §6 gives them. A is the
 # company being scored and keeps the numbers side; B supplies the notes side.
@@ -103,8 +101,14 @@ class ControlError(Exception):
     """The control cannot be run as `docs/CHECKLIST.md` §8 describes it."""
 
 
-def partner(ticker: str, order: tuple[str, ...] = PAIRING_ORDER) -> str:
-    """Company B for this company: the next in the twelve, wrapping around."""
+def partner(ticker: str, order: tuple[str, ...] | None = None) -> str:
+    """Company B for this company: the next in the twelve, wrapping around.
+
+    `order` defaults to `pairing_order()` asked at this call, not a tuple bound
+    when the module was imported, so a row appended to `universe.json` is in
+    the pairing without a restart.
+    """
+    order = pairing_order() if order is None else order
     ticker = ticker.upper()
     if ticker not in order:
         raise ControlError(f"{ticker} is not one of the twelve: {', '.join(order)}")
