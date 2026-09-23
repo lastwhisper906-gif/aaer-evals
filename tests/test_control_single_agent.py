@@ -46,7 +46,7 @@ from pathlib import Path
 
 import pytest
 
-from src import agent_inputs, control_single_agent, quote_gate
+from src import agent_inputs, control_single_agent, prediction_schema, quote_gate
 from src.control_single_agent import ControlError
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -169,7 +169,7 @@ TRENDS = """{
   "quarters": [
     {
       "filled": true,
-      "label": "Q-0",
+      "label": "quarters-back-0",
       "ratios": {
         "days_sales_outstanding": {
           "days": 91,
@@ -195,7 +195,7 @@ MANIFEST = {"ticker": TICKER, "accession": ACCESSION, "cutoff": FILED,
 
 NOTES_ONE = f"{ACCESSION}:notes:1"
 NOTES_TWO = f"{ACCESSION}:notes:2"
-TREND_CELL = f"{ACCESSION}:trends:days_sales_outstanding:Q-0"
+TREND_CELL = f"{ACCESSION}:trends:days_sales_outstanding:quarters-back-0"
 
 RECEIVABLES_QUOTE = "Accounts receivable, net of allowances, rose to $29,508 million"
 ALLOWANCE_QUOTE = "The allowance for credit losses was reduced"
@@ -208,17 +208,20 @@ BUNDLE = {"input_notes.md": NOTES, "input_trends.json": TRENDS,
           "input_market.json": MARKET}
 
 
-def plant(tmp_path: Path) -> tuple[Path, Path]:
+def plant(tmp_path: Path, root: Path | None = None) -> tuple[Path, Path]:
     """The run directory, and the directory the control is handed.
 
     The bundle is written into the run directory and *copied* into the
     control's, which is how `src/agent_inputs.py` places a layer's files and
     what the byte check below is measured against. A control directory that
     were not a copy of the run would be a directory nobody assembled.
+
+    `root` is where the run directory sits, when a test needs it somewhere in
+    particular; everything else plants it beside the control's directory.
     """
-    root = tmp_path / "AAPL-10-K"
+    root = tmp_path / "AAPL-10-K" if root is None else root
     folder = tmp_path / "single-agent"
-    root.mkdir()
+    root.mkdir(parents=True)
     folder.mkdir()
     for name, text in BUNDLE.items():
         (root / name).write_text(text, encoding="utf-8")
@@ -331,16 +334,19 @@ def test_the_fields_asserted_here_are_every_field_that_schema_has():
     """
     found = re.findall(r'^(?:\{ |  )"([a-z_]+)":', SCHEMA_BLOCK, flags=re.MULTILINE)
     assert found == list(SCHEMA_FIELDS)
+    # The fields the run settles, the fields the answer carries, and the one
+    # the schema gives financial pressure alone: between them, every field.
     assert sorted(SCHEMA_FIELDS) == sorted(
-        control_single_agent.FIELDS + (control_single_agent.CONTINUOUS,))
+        prediction_schema.RUN_KEYS + prediction_schema.PREDICTED_KEYS
+        + (prediction_schema.CONTINUOUS,))
 
 
 def test_the_evidence_members_are_the_schemas_own_plus_the_quote():
     """The one member this control adds to §7's, and nothing else.
 
-    Both sides now come off the block above: the module derives its own tuple
-    the same way, so a member added to §7 reaches the control instead of being
-    outvoted by two copies of the old shape.
+    This side comes off the block above; the module's is
+    `src/prediction_schema.py`'s own member with the quote beside it, and the
+    shuffled control's tests hold that member against §7 by hand and parsed.
     """
     assert schema_members("evidence") == ("upstream_item_id",)
     assert control_single_agent.EVIDENCE_FIELDS == EVIDENCE_MEMBERS
@@ -428,7 +434,7 @@ def test_the_accounting_file_carries_every_field_of_the_schema_and_no_other(tmp_
     assert payload["rules_version"] == MANIFEST["rules_version"]
     assert payload["tier"] in ("elevated", "watch", "clear")
     assert payload["top_signals"] == ["receivables_outrun_revenue"]
-    assert len(payload["top_signals"]) <= control_single_agent.TOP_SIGNALS_MAX
+    assert len(payload["top_signals"]) <= prediction_schema.TOP_SIGNALS_MAX
 
 
 def test_every_checklist_entry_carries_the_schemas_four_members(tmp_path):
@@ -1064,6 +1070,92 @@ def test_the_control_file_is_never_written_through_a_link_out_of_the_run(tmp_pat
     assert elsewhere.read_text(encoding="utf-8") == "{}\n"
 
 
+# --- where the control's file may land ---------------------------------------
+#
+# The expected value is read off two documents and one check that predates this
+# control's rule. `docs/INPUT_SPEC.md` §6 lists the control files in the
+# committed bundle under `runs/{ticker}/{accession}/` -- the run directory -- and
+# says in the same breath that "each agent's input directory is committed as
+# what it saw, and the directory is the isolation boundary";
+# `docs/HOW_WE_WORK.md` §1.6 says it again. `src/agent_inputs.py` is that
+# boundary as directories: `runs/{ticker}/{accession}/agents/{agent}/`. So a
+# control file inside another run's `agents/` tree is written into what that
+# tree records its agents as having seen, and the refusal is the expected
+# result.
+
+OTHER_RUN_TICKER = "NVDA"
+OUTSIDE_THE_BOUNDARY = "per-agent input"
+
+
+def another_run(tmp_path: Path, *, built: bool = True) -> Path:
+    """A second company's run, with its numbers reader's input directory built.
+
+    Built by `src/agent_inputs.py` itself rather than by `mkdir`, so the
+    directory the control is pointed into is one the layer table made. The
+    reader's files are placeholders: what is under test is where they sit.
+    `built=False` is the same run before any agent's directory exists.
+    """
+    run = tmp_path / "runs" / OTHER_RUN_TICKER / OTHER_ACCESSION
+    run.mkdir(parents=True)
+    for name in agent_inputs.AGENTS["numbers-reader"].required():
+        (run / name).write_text(f"# {OTHER_RUN_TICKER} {name}\n", encoding="utf-8")
+    (run / MANIFEST_NAME).write_text(
+        json.dumps({"ticker": OTHER_RUN_TICKER, "accession": OTHER_ACCESSION},
+                   indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    if built:
+        agent_inputs.build(run, "numbers-reader")
+    assert agent_inputs.isolation_violations(run) == []
+    return run
+
+
+@pytest.mark.parametrize("where", ["a reader's own directory",
+                                   "the directory the six sit in",
+                                   "a link into a reader's directory",
+                                   "a reader's directory where the layout does not put it",
+                                   "the directory the six sit in, before any is built"])
+def test_a_run_directory_inside_another_runs_input_tree_is_refused(tmp_path, where):
+    """This control writes into the run directory it is handed, so that is its output.
+
+    Planted five ways: under the numbers reader's session root; under the
+    `agents/` directory that holds the six and nothing else; at an ordinary
+    path that is a link into the first, because a link's ancestors are wherever
+    it points and the file follows the link; under a reader's directory sitting
+    somewhere the layout does not put it, which `agent_directories` finds by its
+    name "wherever it sits"; and under a run's `agents/` before any agent's
+    directory is in it, which the layout says holds nothing but the six, ever.
+    """
+    other = another_run(tmp_path, built=not where.endswith("before any is built"))
+    held = agent_inputs.session_root(other, "numbers-reader")
+    if where.startswith("the directory the six sit in"):
+        held = agent_inputs.agents_root(other)
+    elif where == "a reader's directory where the layout does not put it":
+        held = other / "readers" / "numbers-reader"
+    planted, folder = plant(tmp_path, held / "AAPL-10-K")
+    root = planted
+    if where == "a link into a reader's directory":
+        root = tmp_path / "AAPL-10-K"
+        root.symlink_to(planted, target_is_directory=True)
+    message = refused(root, folder)
+    assert OUTSIDE_THE_BOUNDARY in message
+    assert str(held.resolve()) in message
+    assert sorted(other.rglob("control_single_agent_*")) == []
+
+
+def test_a_run_directory_that_holds_its_own_input_tree_still_takes_its_file(tmp_path):
+    """The positive side: the run directory is where §6 puts the control file.
+
+    A run directory holds the bundle *and* its `agents/` directory, so the rule
+    cannot be "no agent directory nearby" -- that would refuse every run the
+    stage runner finishes. The file lands beside the bundle, and the boundary
+    check `src/agent_inputs.py` already runs finds nothing wrong with the tree.
+    """
+    root, folder = plant(tmp_path)
+    agent_inputs.session_root(root, "numbers-reader").mkdir(parents=True)
+    go(root, folder, "accounting_reliability", accounting_answer())
+    assert (root / "control_single_agent_accounting.json").is_file()
+    assert agent_inputs.isolation_violations(root) == []
+
+
 def test_a_served_model_from_another_family_is_refused(tmp_path):
     root, folder = plant(tmp_path)
     with pytest.raises(ControlError) as caught:
@@ -1295,6 +1387,57 @@ def test_financial_pressure_with_no_continuous_values_is_refused():
     with pytest.raises(ControlError):
         control_single_agent.check_schema(answer, "financial_pressure",
                                           rules_version="0.1")
+
+
+def test_a_prediction_carrying_no_rules_version_is_refused_when_the_run_has_none(tmp_path):
+    """§7 gives every prediction a `rules_version`, and a run whose manifest
+    carries `null` does not make the field optional.
+
+    The field is the run's, so it is checked here and not handed to the one
+    checker. Read with `.get`, an answer with no such field would have been
+    taken as carrying the run's null and written standing.
+    """
+    root, folder = plant(tmp_path)
+    (root / "input_manifest.json").write_text(
+        json.dumps(MANIFEST | {"rules_version": None}, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8")
+    answer = accounting_answer()
+    del answer["rules_version"]
+    with pytest.raises(ControlError) as caught:
+        go(root, folder, "accounting_reliability", answer)
+    assert "carries no rules_version" in str(caught.value)
+    assert not (root / "control_single_agent_accounting.json").exists()
+
+
+def test_the_control_answers_through_the_one_checker(tmp_path, monkeypatch):
+    """Called, not copied: the production path reaches the one §7 checker the
+    shuffled control also calls, with this control's evidence shape -- §7's
+    `upstream_item_id` and the quote beside it -- and with every field but the
+    two the run settles.
+
+    A copy of the check kept here beside a call nobody makes would pass every
+    schema test in this file and this one would still fail.
+    """
+    calls = []
+    real = prediction_schema.check
+
+    def recording(answer, question, *, evidence):
+        calls.append((question, evidence, sorted(answer)))
+        return real(answer, question, evidence=evidence)
+
+    monkeypatch.setattr(prediction_schema, "check", recording)
+    root, folder = plant(tmp_path)
+    go(root, folder, "financial_pressure", pressure_answer())
+    assert calls == [("financial_pressure", EVIDENCE_MEMBERS,
+                      sorted(set(SCHEMA_FIELDS) - {"question", "rules_version"}))]
+
+    def refusing(answer, question, *, evidence):
+        raise prediction_schema.SchemaError("the one checker refused this")
+
+    monkeypatch.setattr(prediction_schema, "check", refusing)
+    with pytest.raises(ControlError, match="the one checker refused this"):
+        go(root, folder, "accounting_reliability", accounting_answer())
+    assert not (root / "control_single_agent_accounting.json").exists()
 
 
 # --- the prompt, and the command line ----------------------------------------

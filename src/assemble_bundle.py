@@ -162,9 +162,10 @@ def phase(opened: dict, *files: str):
         opened.setdefault(path, set()).update(files)
 
 
-INDEX_ROLE = "submissions_index"
-# companyfacts, read through `cutoff_guard.load_catalogue`. The role is the
-# gate's own constant, because the gate is what makes the exception.
+# The submissions index, read through `cutoff_guard.load_index`. Both roles are
+# the gate's own constants, because the gate is what makes the exception.
+INDEX_ROLE = cutoff_guard.INDEX_ROLE
+# companyfacts, read through `cutoff_guard.load_catalogue`.
 FACTS_ROLE = cutoff_guard.CATALOGUE_ROLE
 # The two documents that are catalogues drawn from many filings rather than
 # filings. Neither has a filing date, and the cutoff applies to their rows.
@@ -497,8 +498,8 @@ def build(ticker: str, form: str, *, cutoff=None, fixtures_root=cutoff_guard.FIX
     # `documents_used` and `CATALOGUE_ROLES`.
     #
     # The window is anchored on the triggering report's own period of report, so
-    # `Q-0` is the quarter this run is about whether or not the record reaches
-    # it. Anchored on the record instead, a record fetched before the trigger
+    # `quarters-back-0` is the quarter this run is about whether or not the
+    # record reaches it. Anchored on the record instead, a record fetched before the trigger
     # renames every quarter one step back and the run's own period goes missing
     # without a word — two of these twelve records are older than their 10-Q.
     with phase(opened, "input_trends.json"):

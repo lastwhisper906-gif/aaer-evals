@@ -7,15 +7,20 @@ it does not have — a missing 8-K, a missing note history, no prior run — whi
 in this fixture set is most of the interesting cases.
 
 Nothing writes to `runs/`. Every test names its own output directory, and one
-test asserts the default root was not created as a side effect of importing or
-running anything.
+test asserts that importing the module and building a bundle elsewhere neither
+creates the default root nor touches the repository's own, whether or not a run
+is committed there.
 """
 
 from __future__ import annotations
 
 import functools
+import hashlib
 import json
+import os
 import re
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -158,15 +163,171 @@ def test_the_rules_version_and_served_model_are_null_with_a_note(ticker):
 
 # --- (f) nothing writes runs/ ------------------------------------------------
 
+def _state_of(root: Path) -> dict[str, tuple] | None:
+    """Every path under `root` with its size, its write time and its bytes'
+    digest, or None when there is no `root` at all.
+
+    Names alone would call a build that rewrote a committed run's nine files in
+    place "unchanged": every name was already there. The digest catches other
+    bytes under the same name and the write time catches the same bytes written
+    again, which is still a write into a directory the build was not handed.
+    """
+    if not root.exists():
+        return None
+    state = {}
+    for path in sorted(root.rglob("*")):
+        stat = path.lstat()
+        digest = hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else None
+        state[str(path.relative_to(root))] = (stat.st_size if digest else None,
+                                              stat.st_mtime_ns, digest)
+    return state
+
+
+def _runs_without_a_manifest(runs: Path) -> list[str]:
+    """The shapes in a `runs/` directory that code brings into being and a
+    pipeline never commits.
+
+    A run is `runs/<ticker>/<accession>/` holding its `input_manifest.json`, the
+    file every bundle writes -- the one layout `docs/HOW_WE_WORK.md` and
+    `src/agent_inputs.py` fix. So three things are named: an empty `runs/`, an
+    empty ticker directory (git carries no empty directory, so a checkout never
+    has one), and a directory under a ticker with no manifest. A file is left
+    alone wherever it sits: nothing forbids a `runs/README.md`, the append check
+    treats one as published content, and a Finder `.DS_Store` is nobody's run.
+    """
+    entries = sorted(runs.iterdir())
+    if not entries:
+        return [f"{runs} holds nothing"]
+    strays = []
+    for ticker in (entry for entry in entries if entry.is_dir()):
+        children = [child for child in sorted(ticker.iterdir()) if child.is_dir()]
+        if not any(ticker.iterdir()):
+            strays.append(f"{ticker.name} holds nothing")
+        strays += [str(run.relative_to(runs)) for run in children
+                   if not (run / "input_manifest.json").is_file()]
+    return strays
+
+
+BUILD_IN_A_FRESH_INTERPRETER = """
+import sys
+sys.path.insert(0, sys.argv[1])
+from src import assemble_bundle
+assemble_bundle.assemble("ESE", "10-Q", sys.argv[2])
+"""
+
+
 def test_the_default_root_is_named_but_never_created(tmp_path):
     """Trap 1. The default is `runs/`, the loop cannot write it, and building a
-    bundle somewhere else must not bring it into being."""
+    bundle somewhere else must not bring it into being.
+
+    What is guarded is that sentence, not the absence of the directory. It used
+    to assert the repository had no `runs/` at all, which holds only until the
+    first run is committed there -- and committing one is what the pipeline is
+    for. So the repository's own `runs/` is recorded first, and then a fresh
+    interpreter started in an empty working directory imports the module and
+    builds, so a write made on import happens after the record and not before
+    it. No `runs/` may appear in that working directory, the repository's own
+    has to be exactly what it was, and if the repository has one at all it has
+    to hold committed runs and nothing else.
+    """
     assert assemble_bundle.DEFAULT_ROOT == Path("runs")
-    assemble_bundle.assemble("ESE", "10-Q", tmp_path / "somewhere")
-    assert not (REPO_ROOT / "runs").exists()
-    assert not (Path.cwd() / "runs").exists()
+    runs = REPO_ROOT / "runs"
+    working = tmp_path / "working-directory"
+    working.mkdir()
+    before = _state_of(runs)
+
+    subprocess.run([sys.executable, "-c", BUILD_IN_A_FRESH_INTERPRETER,
+                    str(REPO_ROOT), str(tmp_path / "somewhere")],
+                   cwd=working, check=True)
+
+    assert (tmp_path / "somewhere" / "input_manifest.json").is_file()
+    assert not (working / "runs").exists()
+    assert _state_of(runs) == before
+    if before is not None:
+        assert _runs_without_a_manifest(runs) == []
     assert assemble_bundle.default_out("ESE", "0001-2") == \
         Path("runs") / "ESE" / "0001-2"
+
+
+def _a_committed_run(root: Path) -> Path:
+    """A `runs/` holding one ESE run filed before ESE's latest 10-Q, with one
+    flag a later build carries forward, its files dated in the past so a write
+    shows."""
+    run = root / "runs" / "ESE" / "0000000000-26-000001"
+    run.mkdir(parents=True)
+    for name, text in (("input_manifest.json",
+                        '{"accession": "0000000000-26-000001", "filing_date": "2026-01-02"}\n'),
+                       ("input_notes.md", "[0000000000-26-000001:notes:1] a note\n"),
+                       ("prediction_accounting.json", '{"flags": ["a flag"]}\n')):
+        (run / name).write_text(text, encoding="utf-8")
+    for path in [*run.rglob("*"), run, run.parent, root / "runs"]:
+        os.utime(path, ns=(1_000_000_000_000_000_000, 1_000_000_000_000_000_000))
+    return root / "runs"
+
+
+def test_a_build_that_reads_a_committed_run_as_its_prior_run_leaves_it_as_it_was(tmp_path):
+    """From the repository root the default prior-runs root is the committed
+    `runs/`, so a build there reads a committed run of its own company. Reading
+    it is all the build may do: the flag reaches the new bundle, and the run it
+    came from is exactly what it was."""
+    runs = _a_committed_run(tmp_path)
+    before = _state_of(runs)
+
+    assemble_bundle.assemble("ESE", "10-Q", tmp_path / "somewhere", prior_runs=runs)
+
+    carried = (tmp_path / "somewhere" / "input_prior_predictions.md").read_text(encoding="utf-8")
+    assert "[0000000000-26-000001:prior:prediction_accounting:1]" in carried
+    assert _state_of(runs) == before
+
+
+def test_a_committed_run_that_nothing_touched_reads_the_same_twice(tmp_path):
+    runs = _a_committed_run(tmp_path)
+    assert _state_of(runs) is not None
+    assert _state_of(runs) == _state_of(runs)
+    assert _runs_without_a_manifest(runs) == []
+
+
+@pytest.mark.parametrize("rewrite", ["other bytes under the same name",
+                                     "the same bytes written again",
+                                     "one file added"])
+def test_a_write_into_a_committed_run_changes_what_the_test_compares(tmp_path, rewrite):
+    runs = _a_committed_run(tmp_path)
+    before = _state_of(runs)
+    run = runs / "ESE" / "0000000000-26-000001"
+    if rewrite == "other bytes under the same name":
+        (run / "input_manifest.json").write_text('{"accession": "0000000000-26-000009"}\n',
+                                                 encoding="utf-8")
+    elif rewrite == "the same bytes written again":
+        (run / "input_notes.md").write_bytes((run / "input_notes.md").read_bytes())
+    else:
+        (run / "input_mdna.md").write_text("[0000000000-26-000001:mdna:1] text\n",
+                                          encoding="utf-8")
+    assert _state_of(runs) != before
+
+
+@pytest.mark.parametrize("made", ["a bare runs directory",
+                                  "a ticker directory with nothing in it",
+                                  "a run with no manifest"])
+def test_a_runs_directory_that_code_made_is_not_a_committed_run(tmp_path, made):
+    if made == "a bare runs directory":
+        runs = tmp_path / "runs"
+        runs.mkdir()
+    else:
+        runs = _a_committed_run(tmp_path)
+        if made == "a ticker directory with nothing in it":
+            (runs / "AAPL").mkdir()
+        else:
+            (runs / "ESE" / "0000000000-26-000002").mkdir()
+    assert _runs_without_a_manifest(runs) != []
+
+
+def test_a_file_beside_the_runs_is_not_taken_for_one(tmp_path):
+    """A committed `runs/README.md` and a Finder `.DS_Store` are files nobody's
+    build made; the rule is about the directories a build would leave."""
+    runs = _a_committed_run(tmp_path)
+    for where in (runs / "README.md", runs / ".DS_Store", runs / "ESE" / ".DS_Store"):
+        where.write_text("x\n", encoding="utf-8")
+    assert _runs_without_a_manifest(runs) == []
 
 
 # --- the cutoff --------------------------------------------------------------
@@ -970,11 +1131,11 @@ def test_the_companyfacts_record_is_a_catalogue_and_its_rows_pay_for_that(ticker
 
     table = json.loads(bundle["texts"]["input_trends.json"])
     assert table["cutoff"] == manifest["cutoff"]
-    # And the window is the run's own: `Q-0` is the quarter the triggering
+    # And the window is the run's own: `quarters-back-0` is the quarter the triggering
     # report is about, which the manifest's own row for that report names as its
     # period of report. Anchored on the record instead, a record fetched before
     # the trigger — two of these twelve — labels the quarter before the run's
-    # `Q-0` and the run's own period appears in no slot at all.
+    # `quarters-back-0` and the run's own period appears in no slot at all.
     of_report = [row["report_date"] for row in manifest["documents"]
                  if row["accession"] == manifest["accession"]
                  and row["role"] == "primary_html"]
@@ -1007,15 +1168,15 @@ def test_every_xbrl_document_the_manifest_lists_is_in_the_numbers(ticker, form):
 
 
 def test_apples_previous_quarter_is_filled_because_its_instance_is_read():
-    """`Q-1` was `missing` — "no period ending within 20 days of 2026-03-28 is
+    """`quarters-back-1` was `missing` — "no period ending within 20 days of 2026-03-28 is
     in input_numbers.json" — for a quarter whose facts sit in the prior-period
     instance the same manifest listed."""
     bundle = built("AAPL", "10-Q")
     quarters = {quarter["label"]: quarter for quarter
                 in json.loads(bundle["texts"]["input_trends.json"])["coverage"]["quarters"]}
-    assert quarters["Q-1"]["status"] == "filled"
-    assert quarters["Q-1"]["end"] == "2026-03-28"
-    assert quarters["Q-1"]["ratios_filled"] > 0
+    assert quarters["quarters-back-1"]["status"] == "filled"
+    assert quarters["quarters-back-1"]["end"] == "2026-03-28"
+    assert quarters["quarters-back-1"]["ratios_filled"] > 0
 
 
 def test_a_cutoff_equal_to_the_triggering_reports_own_date_is_the_default():
