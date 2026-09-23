@@ -340,6 +340,14 @@ def test_a_reason_is_carried_character_for_character(tmp_path: Path) -> None:
     assert ledger_lines(tmp_path)[0]["reason"] == said
 
 
+def test_a_reason_ending_in_a_newline_keeps_it(tmp_path: Path) -> None:
+    """Command substitution strips trailing newlines; the row may not."""
+    said = "Ends on a line break.\n\n"
+    run_canary(tmp_path, result=verdict(finding(1, PLANTED_TEST, said)))
+
+    assert ledger_lines(tmp_path)[0]["reason"] == said
+
+
 def test_a_miss_carries_no_reason_because_no_finding_counted(tmp_path: Path) -> None:
     run_canary(tmp_path, result=NAMED_SOMETHING_ELSE)
 
@@ -599,10 +607,17 @@ def reads_the_tree(tree: Path, word: str) -> list[str]:
     `.git` is skipped and symlinks are not followed, which is what `grep -r`
     does here too: the question is what a lens finds by reading the working
     tree, not what the object store still holds.
+
+    `.lens` is skipped as well. It holds the change the lens is asked about,
+    written out as the diff it is told to read first -- the question, not the
+    answer key -- and it names the planted files because the change does.
+    `test_the_lens_is_handed_the_diff_of_the_plant_and_nothing_else` holds
+    what is in it to git's own diff and the manifest's landing paths, so
+    skipping it here leaves nothing in it unjudged.
     """
     found = []
     for directory, subdirectories, files in os.walk(tree):
-        subdirectories[:] = [one for one in subdirectories if one != ".git"]
+        subdirectories[:] = [one for one in subdirectories if one not in (".git", ".lens")]
         for name in files:
             path = Path(directory) / name
             if path.is_symlink():
@@ -818,6 +833,101 @@ def test_a_seed_that_keeps_nothing_out_plants_nothing(tmp_path: Path) -> None:
 
     assert result.returncode == canary.COULD_NOT_PLANT, result.stderr
     assert ledger_lines(tmp_path) == []
+
+
+def test_the_lens_is_handed_the_diff_of_the_plant_and_nothing_else(tmp_path: Path) -> None:
+    """The file the prompt's first rule sends the lens to, and what it holds.
+
+    tools/lens_prompt.md opens with "the diff written out for you at the path
+    named above. Read that file first. Do not work out a merge base yourself."
+    The routine used to name no path and write no file, so the lens computed
+    its own base -- the second lens found it. The diff is compared with what
+    git itself says the branch changed, and its paths with the manifest.
+    """
+    run_canary(tmp_path, result=FOUND_NOTHING, keep=True)
+
+    tree = tmp_path / "tree"
+    change = tree / ".lens" / "change.diff"
+    base = subprocess.run(
+        ["git", "rev-parse", "main"],
+        cwd=tmp_path / "repo",
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
+    said_by_git = subprocess.run(
+        ["git", "diff", f"{base}...HEAD"],
+        cwd=tree,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+    assert change.read_text(encoding="utf-8") == said_by_git
+    touched = subprocess.run(
+        ["git", "diff", "--name-only", f"{base}...HEAD"],
+        cwd=tree,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.split()
+    landing = [plant["lands"] for plant in canary.read_plant(SEED)["plants"]]
+    assert sorted(touched) == sorted(landing)
+
+    composed = (tmp_path / "canary" / "prompt.md").read_text(encoding="utf-8")
+    assert str(change) in composed
+    assert f"git diff {base}...HEAD" in composed
+    # And `git status` in the tree still says nothing: `.lens/` is ignored.
+    status = subprocess.run(
+        ["git", "status", "--porcelain"], cwd=tree, capture_output=True, text=True, check=True
+    ).stdout
+    assert status.strip() == ""
+
+
+def test_the_routine_scratch_is_not_beside_the_tree(tmp_path: Path) -> None:
+    """Where the prompt, the planted paths and the log go when nobody says.
+
+    Both used to default to `$TMPDIR` with one stamp, so `ls ..` from inside
+    the planted tree showed a directory holding `planted.txt` -- the three
+    landing paths -- one level up. The second lens found it; the test beside
+    this one named CANARY_DIR itself and so never ran the default.
+    """
+    stubs = tmp_path / "stubs"
+    stubs.mkdir()
+    claude_stub(stubs, exit_code=0, result=FOUND_NOTHING)
+    repo = repository(tmp_path)
+    elsewhere = tmp_path / "elsewhere"
+    elsewhere.mkdir()
+
+    environment = dict(os.environ)
+    environment["PATH"] = f"{stubs}:{environment['PATH']}"
+    environment["STUB_CWD"] = str(tmp_path / "cwd")
+    environment.update(
+        CANARY_REPO=str(repo),
+        CANARY_SEED=str(SEED),
+        CANARY_LEDGER=str(tmp_path / "ledger.jsonl"),
+        CANARY_PYTHON=sys.executable,
+        CANARY_TIMEOUT="60",
+        CANARY_KEEP="yes",
+        TMPDIR=str(elsewhere),
+    )
+    for name in ("CANARY_DIR", "CANARY_WORKTREE"):
+        environment.pop(name, None)
+    ran = subprocess.run(
+        ["bash", str(SCRIPT)], capture_output=True, text=True, env=environment
+    )
+    assert ran.returncode == canary.MISS, ran.stdout + ran.stderr
+
+    # The tree is the only thing the routine put in `$TMPDIR`.
+    (tree,) = list(elsewhere.iterdir())
+    assert (tree / ".git").exists()
+    for scratch in ("planted.txt", "prompt.md", "canary.log"):
+        assert list(elsewhere.rglob(scratch)) == [], scratch
+    # It is under the checkout's ignored `logs/` instead.
+    assert len(list((repo / "logs").glob("*/planted.txt"))) == 1
+    status = subprocess.run(
+        ["git", "status", "--porcelain"], cwd=repo, capture_output=True, text=True, check=True
+    ).stdout
+    assert status.strip() == ""
 
 
 def test_the_prompt_is_the_one_both_lenses_read(tmp_path: Path) -> None:
@@ -1084,7 +1194,19 @@ def test_the_file_that_names_the_routine_and_stays_holds_no_path_into_the_seed()
     says = (REPO_ROOT / NAMES_THE_ROUTINE_AND_STAYS).read_text(encoding="utf-8")
 
     assert "tools/monthly_canary.sh" in says, "the exemption is for naming the routine"
-    for way_in in ("tools/seeded_defect", "plant.json", "keep_out"):
+    # Every file on the manifest's keep-out list that exists for this routine
+    # alone, and not only the seed. The routine's document is emptied in the
+    # planted tree but `git show HEAD:<path>` still reads it, so a path to it
+    # is a path to the rule and the landing file; the second lens found this
+    # file naming it while passing the three-name version of this test.
+    for way_in in (
+        "tools/seeded_defect",
+        "plant.json",
+        "keep_out",
+        "monthly-canary.md",
+        "src/canary.py",
+        "test_monthly_canary.py",
+    ):
         assert way_in not in says, f"{NAMES_THE_ROUTINE_AND_STAYS} hands over {way_in}"
 
 

@@ -176,12 +176,12 @@ marked "needs judgment" — not a signature request.
   `refute-check` subagent against it, and append hit or miss to
   `events/ledger.jsonl`. A verification layer that has never been shown to catch
   a defect is not known to work. This is the one piece of the old harness kept
-  as a routine. `tools/monthly_canary.sh` and
-  `docs/routines/monthly-canary.md`, which is where what is planted is written
-  down — the routine keeps that document, its own test and the plant out of the
-  tree it hands the lens, because the plant ships on `main` and grows on a
-  worktree off `main`. Only a hit is an approval: exit 3 and exit 4 are months
-  in which the lens was not shown to work, and neither is softened into a pass.
+  as a routine, run by `tools/monthly_canary.sh`. The routine keeps its own
+  document, its test and the plant out of the tree it hands the lens, because
+  the plant ships on `main` and grows on a worktree off `main` — and this line
+  names none of their paths, because it is the one that stays in that tree.
+  Only a hit is an approval: exit 3 and exit 4 are months in which the lens was
+  not shown to work, and neither is softened into a pass.
 - **monthly scorecard** — the evaluation metric tables, with no judgment added.
 
 ### Hooks

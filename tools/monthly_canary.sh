@@ -44,7 +44,9 @@
 # Nothing of this script's own lands in the tree under review. Its prompt, the
 # lens's answer and its log go to CANARY_DIR, outside the worktree: a script
 # that drops its machine output into the tree it reviews has already cost this
-# repository a red gate once.
+# repository a red gate once. The one exception is the lens's input,
+# `.lens/change.diff`, ignored, written exactly where tools/second_lens.sh
+# writes it in every tree it lenses.
 #
 # Environment, all with defaults, all overridden by the test:
 #
@@ -76,7 +78,15 @@ COULD_NOT_PLANT=4
 
 BASE="${1:-${CANARY_BASE:-main}}"
 STAMP="$(date -u '+%Y-%m-%d-%H%M%S')"
-CANARY_DIR="${CANARY_DIR:-${TMPDIR:-/tmp}/seeded-defect-$STAMP}"
+# The routine's own scratch -- the prompt, the list of planted paths, the lens's
+# answer, the log -- goes under the checkout's ignored `logs/`, not beside the
+# tree. Both used to default to `$TMPDIR` with the same stamp, so `ls ..` from
+# inside the planted tree showed `seeded-defect-<stamp>/planted.txt`: the three
+# landing paths, one directory up, with no git and no guessing. The second lens
+# found it. The checkout is reachable from the tree only by a deliberate
+# question (`git worktree list`), the class docs/routines/monthly-canary.md §6
+# already names.
+CANARY_DIR="${CANARY_DIR:-$CANARY_REPO/logs/monthly-canary-$STAMP}"
 
 mkdir -p "$CANARY_DIR" || exit "$COULD_NOT_PLANT"
 LOG="$CANARY_DIR/canary.log"
@@ -325,10 +335,30 @@ PLANTED_ON="$(git -C "$TREE" rev-parse --short "$BASE_COMMIT" 2>>"$LOG")"
 
 # --- ask the lens ----------------------------------------------------------
 
+# The same preamble tools/second_lens.sh composes, and the diff it names. The
+# rules in tools/lens_prompt.md open with "the diff written out for you at the
+# path named above. Read that file first. Do not work out a merge base
+# yourself." A prompt that names no path sends the lens to compute its own base,
+# which is what the sixth dry run recorded; the second lens found the gap. The
+# file goes where tools/second_lens.sh puts it, `.lens/` in the tree, which is
+# ignored, so `git status` stays clean.
+DIFF_RANGE="$BASE_COMMIT...HEAD"
+CHANGE_DIFF="$TREE/.lens/change.diff"
+if ! mkdir -p "$TREE/.lens" 2>>"$LOG" \
+   || ! git -C "$TREE" diff "$DIFF_RANGE" > "$CHANGE_DIFF" 2>>"$LOG" \
+   || [ ! -s "$CHANGE_DIFF" ]; then
+    could_not_plant "the diff for $DIFF_RANGE could not be written to $CHANGE_DIFF"
+fi
+
 PROMPT="$CANARY_DIR/prompt.md"
 {
     printf 'The change under the lens is the task-list item titled:\n\n    %s\n\n' "$ITEM"
-    printf 'Its worktree is %s. Call yourself `%s` in the `lens` key.\n\n---\n\n' "$TREE" "$LENS"
+    printf 'Its worktree is %s.\n\n' "$TREE"
+    printf 'The change is `git diff %s`, and it is already written out for you\n' "$DIFF_RANGE"
+    printf 'at %s -- read that file first. Do not work out a\n' "$CHANGE_DIFF"
+    printf 'merge base yourself: on a commit already on the pinned ref that base is\n'
+    printf 'the commit itself, which is an empty diff and a pass nobody earned.\n\n'
+    printf 'Call yourself `%s` in the `lens` key.\n\n---\n\n' "$LENS"
     cat "$CANARY_PROMPT"
 } > "$PROMPT"
 
@@ -363,15 +393,21 @@ READING="$("$CANARY_PYTHON" -m src.canary read "$ANSWER" \
 # than its first word.
 if [ -n "$READING" ]; then
     IFS=' ' read -r RESULT FINDINGS CODE MODEL <<< "$READING"
+    # Each value is printed with a closing `.` that is then taken off, because
+    # command substitution strips every trailing newline and the row is matched
+    # back to verdict.json character for character. The second lens found a
+    # reason ending in a newline written without it.
     NAMED="$("$CANARY_PYTHON" -c \
-        'import json,sys;print(json.load(open(sys.argv[1])).get("canary_named") or "")' \
+        'import json,sys;sys.stdout.write((json.load(open(sys.argv[1])).get("canary_named") or "") + ".")' \
         "$CANARY_DIR/verdict.json" 2>>"$LOG")"
+    NAMED="${NAMED%.}"
     # And why it counted, in the lens's words: a row saying only which file was
     # named cannot tell a lens that found the planted defect from one that
     # found a different one in the same file.
     WHY="$("$CANARY_PYTHON" -c \
-        'import json,sys;print(json.load(open(sys.argv[1])).get("canary_reason") or "")' \
+        'import json,sys;sys.stdout.write((json.load(open(sys.argv[1])).get("canary_reason") or "") + ".")' \
         "$CANARY_DIR/verdict.json" 2>>"$LOG")"
+    WHY="${WHY%.}"
 else
     RESULT="no_lens_ran"
     FINDINGS=0

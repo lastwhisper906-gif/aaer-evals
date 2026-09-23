@@ -19,8 +19,10 @@ The script puts a worktree on `main`, takes the answer key back out of it (§6),
 copies `tools/seeded_defect` into it, commits it under the cover story in
 `plant.json`, and starts `refute-check` inside that tree with
 `tools/lens_prompt.md` — the same prompt and the same answer schema both lenses
-in `tools/second_lens.sh` read. The canary measures the lens the project
-actually uses, not a second one written for the occasion.
+in `tools/second_lens.sh` read, under the same preamble: the diff of the branch
+against the resolved base is written to `.lens/change.diff` in the tree, where
+`tools/second_lens.sh` writes it, and the prompt names it. The canary measures
+the lens the project actually uses, not a second one written for the occasion.
 
 **This document is part of the answer key.** It names the rule the plant breaks
 and the file it lands on, so it is one of the paths the routine keeps out of the
@@ -402,6 +404,14 @@ is `$TMPDIR/<name>-<stamp>` now. What stays reachable is the checkout itself:
 `git worktree add` writes a `.git` file naming it and `git worktree list`
 prints it, which is a deliberate question of the same class as
 `git show HEAD:<path>` — below, with the rest of them.
+
+**And the routine's own scratch is not beside the tree.** The prompt, the list
+of planted paths, the lens's answer and the log used to default to
+`$TMPDIR/seeded-defect-<stamp>`, next to `$TMPDIR/<name>-<stamp>` with the same
+stamp — so `ls ..` from the planted tree showed `planted.txt`, the three landing
+paths, one directory up. The second lens found it. They default to the
+checkout's ignored `logs/monthly-canary-<stamp>` now, which the tree reaches
+only through the same deliberate question as the checkout itself.
 
 **Not a sparse checkout**, which is what this was first written as and which
 signposts exactly what it hides. Plain `git status` in a sparse worktree opens
