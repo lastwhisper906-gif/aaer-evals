@@ -13,6 +13,7 @@ import datetime as dt
 import gzip
 import json
 import xml.etree.ElementTree as ET
+from decimal import Decimal
 from pathlib import Path
 
 import pytest
@@ -369,7 +370,10 @@ def test_one_printed_id_names_one_fact(ticker):
     """Every fact prints an id, and two facts printing the same one are the same
     fact -- the same concept, context and unit in the same filing -- printed
     more than once. The id is what the gate resolves, so an id naming two
-    different facts would let a quote of one stand for the other."""
+    different facts would let a quote of one stand for the other.
+
+    `identity` leaves out the value and its precision, so this does not say the
+    rows print the same digits. The next test says what they do print."""
     facts = extract_numbers.extract(ticker, FORMS)["facts"]
     named: dict[str, set] = {}
     for fact in facts:
@@ -377,6 +381,49 @@ def test_one_printed_id_names_one_fact(ticker):
         named.setdefault(fact["paragraph_id"], set()).add(
             (fact["source_accession"],) + extract_numbers.identity(fact))
     assert [one for one, facts_named in named.items() if len(facts_named) > 1] == []
+
+
+def _stands_for(fact: dict) -> tuple[Decimal, Decimal]:
+    """The interval a filed value covers at its own `decimals`."""
+    number = Decimal(fact["value"])
+    if fact.get("decimals") in (None, "INF"):
+        return number, number
+    half = Decimal(5).scaleb(-int(fact["decimals"]) - 1)
+    return number - half, number + half
+
+
+@pytest.mark.parametrize("ticker", TICKERS)
+def test_rows_under_one_id_state_one_number_each_at_its_own_precision(ticker):
+    """Rows under one id can print different digits. Where they do, each is the
+    same number rounded to its own `decimals`: the intervals they cover overlap.
+    A quote of either row stands under the id, and neither can carry a number
+    the other contradicts."""
+    named: dict[str, list[dict]] = {}
+    for fact in extract_numbers.extract(ticker, FORMS)["facts"]:
+        named.setdefault(fact["paragraph_id"], []).append(fact)
+    contradicted = []
+    for identifier, rows in named.items():
+        if len({row["value"] for row in rows}) < 2:
+            continue
+        covered = [_stands_for(row) for row in rows]
+        if max(low for low, _ in covered) > min(high for _, high in covered):
+            contradicted.append(identifier)
+    assert contradicted == []
+
+
+def test_nvidias_goodwill_prints_to_the_million_and_to_the_hundred_million_under_one_id():
+    """Read by hand from `tests/fixtures/NVDA/10-K/nvda-20260125_htm.xml`: two
+    `us-gaap:Goodwill` elements in context c-11, unit usd -- `f-157`,
+    20832000000 at decimals -6, and `f-554`, 20800000000 at decimals -8. One
+    fact, two roundings, one id."""
+    facts = extract_numbers.extract("NVDA", FORMS)["facts"]
+    rows = {fact["id"]: fact for fact in facts
+            if fact["id"] in ("0001045810-26-000021:f-157", "0001045810-26-000021:f-554")}
+    assert {name: (row["value"], row["decimals"]) for name, row in rows.items()} == {
+        "0001045810-26-000021:f-157": ("20832000000", "-6"),
+        "0001045810-26-000021:f-554": ("20800000000", "-8")}
+    assert {row["paragraph_id"] for row in rows.values()} == {
+        "0001045810-26-000021:facts:Goodwill:2026-01-25"}
 
 
 def test_the_receivables_row_the_numbers_reader_cited_prints_the_id_it_wrote():

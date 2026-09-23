@@ -269,6 +269,10 @@ def quotable(input_dir, accession: str) -> dict[str, str | tuple[str, ...]]:
     more than once -- NVIDIA's 10-Q 0001045810-26-000075 prints its inventory
     balance as two elements -- and every row stating it prints the fact's one
     id. That id owns each of those rows, as a tuple; `rows_of` reads either shape.
+    The rows need not print the same digits. Its 10-K 0001045810-26-000021
+    states goodwill at 2026-01-25 as 20832000000 to the million and as
+    20800000000 to the hundred million, and a quote of either row stands under
+    the one id.
     """
     folder = Path(input_dir)
     if not folder.is_dir():
