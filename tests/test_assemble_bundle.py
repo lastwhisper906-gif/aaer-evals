@@ -184,28 +184,27 @@ def _state_of(root: Path) -> dict[str, tuple] | None:
 
 
 def _runs_without_a_manifest(runs: Path) -> list[str]:
-    """What sits in a `runs/` directory and is not a committed run.
+    """The shapes in a `runs/` directory that code brings into being and a
+    pipeline never commits.
 
     A run is `runs/<ticker>/<accession>/` holding its `input_manifest.json`, the
-    file every bundle writes. A bare `runs/`, an empty ticker directory -- git
-    carries no empty directory, so a checkout never has one -- or anything else
-    in there is what code brings into being, not what a pipeline commits.
+    file every bundle writes -- the one layout `docs/HOW_WE_WORK.md` and
+    `src/agent_inputs.py` fix. So three things are named: an empty `runs/`, an
+    empty ticker directory (git carries no empty directory, so a checkout never
+    has one), and a directory under a ticker with no manifest. A file is left
+    alone wherever it sits: nothing forbids a `runs/README.md`, the append check
+    treats one as published content, and a Finder `.DS_Store` is nobody's run.
     """
-    found, strays = [], []
-    for ticker in sorted(runs.iterdir()):
-        if not ticker.is_dir():
-            strays.append(ticker.name)
-            continue
-        children = sorted(ticker.iterdir())
-        if not children:
-            strays.append(f"{ticker.name} holds no run")
-        for run in children:
-            if run.is_dir() and (run / "input_manifest.json").is_file():
-                found.append(run)
-            else:
-                strays.append(str(run.relative_to(runs)))
-    if not found and not strays:
-        return [f"{runs} holds no run"]
+    entries = sorted(runs.iterdir())
+    if not entries:
+        return [f"{runs} holds nothing"]
+    strays = []
+    for ticker in (entry for entry in entries if entry.is_dir()):
+        children = [child for child in sorted(ticker.iterdir()) if child.is_dir()]
+        if not any(ticker.iterdir()):
+            strays.append(f"{ticker.name} holds nothing")
+        strays += [str(run.relative_to(runs)) for run in children
+                   if not (run / "input_manifest.json").is_file()]
     return strays
 
 
@@ -308,8 +307,7 @@ def test_a_write_into_a_committed_run_changes_what_the_test_compares(tmp_path, r
 
 @pytest.mark.parametrize("made", ["a bare runs directory",
                                   "a ticker directory with nothing in it",
-                                  "a run with no manifest",
-                                  "a file beside the tickers"])
+                                  "a run with no manifest"])
 def test_a_runs_directory_that_code_made_is_not_a_committed_run(tmp_path, made):
     if made == "a bare runs directory":
         runs = tmp_path / "runs"
@@ -318,11 +316,18 @@ def test_a_runs_directory_that_code_made_is_not_a_committed_run(tmp_path, made):
         runs = _a_committed_run(tmp_path)
         if made == "a ticker directory with nothing in it":
             (runs / "AAPL").mkdir()
-        elif made == "a run with no manifest":
-            (runs / "ESE" / "0000000000-26-000002").mkdir()
         else:
-            (runs / "stray.json").write_text("{}\n", encoding="utf-8")
+            (runs / "ESE" / "0000000000-26-000002").mkdir()
     assert _runs_without_a_manifest(runs) != []
+
+
+def test_a_file_beside_the_runs_is_not_taken_for_one(tmp_path):
+    """A committed `runs/README.md` and a Finder `.DS_Store` are files nobody's
+    build made; the rule is about the directories a build would leave."""
+    runs = _a_committed_run(tmp_path)
+    for where in (runs / "README.md", runs / ".DS_Store", runs / "ESE" / ".DS_Store"):
+        where.write_text("x\n", encoding="utf-8")
+    assert _runs_without_a_manifest(runs) == []
 
 
 # --- the cutoff --------------------------------------------------------------
