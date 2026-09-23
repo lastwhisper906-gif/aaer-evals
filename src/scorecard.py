@@ -104,8 +104,8 @@ Where the edges are drawn
 * A `p_up` that is neither a probability nor `insufficient` stops the render
   rather than being dropped quietly.
 * So does an answer that is there but has no `p_up` to read: an answer file,
-  or a `baselines.json` entry, with no `market_direction` object or with one
-  that carries no `p_up`. Absent is a file or key that is not there at all;
+  or a `baselines.json` entry (one written as null too), with no
+  `market_direction` object or with one that carries no `p_up`. Absent is a file or key that is not there at all;
   a present answer with nothing in it is malformed, and reading it as absent
   would take the run out of that row's count and out of every comparison it
   is in, with nothing on the page to say so.
@@ -392,9 +392,11 @@ def answer(run: Run, row: Row):
     if document is None:
         return None
     if row.answered_in == BASELINES:
-        document = document.get(row.key)
-        if document is None:
+        # A key that is not there is a row that did not run; a key written as
+        # null is an entry with nothing in it, and falls through to the refusal.
+        if row.key not in document:
             return None
+        document = document[row.key]
         if not isinstance(document, dict):
             raise ScorecardError(
                 f"{run.directory / BASELINES}: {row.key} is not an object")

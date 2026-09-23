@@ -802,9 +802,19 @@ def test_an_answer_that_is_neither_a_probability_nor_insufficient_stops_the_page
      lambda payload: payload.pop("market_direction"), "market_direction"),
     ("prediction_accounting.json",
      lambda payload: payload["market_direction"].pop("p_up"), "p_up"),
+    ("prediction_accounting.json",
+     lambda payload: payload.__setitem__("market_direction", None),
+     "market_direction"),
     ("baselines.json",
      lambda payload: payload["beneish_m_score"].pop("market_direction"),
      "market_direction"),
+    ("baselines.json",
+     lambda payload: payload["beneish_m_score"]["market_direction"].pop("p_up"),
+     "p_up"),
+    # The entry written as null: present, with nothing in it.
+    ("baselines.json",
+     lambda payload: payload.__setitem__("beneish_m_score", None),
+     "beneish_m_score"),
 ])
 def test_an_answer_file_with_no_probability_in_it_stops_the_page(
         tmp_path, name, change, named):
