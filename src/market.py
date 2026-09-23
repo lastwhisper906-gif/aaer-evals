@@ -760,7 +760,7 @@ def write_fetch_record(record: dict, path) -> Path:
     return target
 
 
-def fetch_prices(*, symbols, start, end, into, backend=None, environ=None,
+def fetch_prices(*, symbols, start, end, into, environ, backend=None,
                  now=None) -> dict:
     """One daily series per symbol, written where `read_prices` will find it.
 
@@ -769,6 +769,13 @@ def fetch_prices(*, symbols, start, end, into, backend=None, environ=None,
     touched. It is never an expected value, and `write_fetch_record` is what
     keeps it out of the directories that would make it an input.
 
+    `environ` is the environment the caller hands in, and it is the only one
+    read here: the backend is the one its `PRICE_BACKEND` names unless
+    `backend` names one, and the credential is the one it carries. It has no
+    default, because a default of the process's own environment is exactly the
+    read this function does not make -- a caller that means the process's
+    environment says so by passing `os.environ`.
+
     A backend with no credential raises `prices.Unconfigured`, which the caller
     reports rather than hides: that is the state the forward track is switched
     off in today, and a fetch that quietly returned nothing would look exactly
@@ -776,12 +783,14 @@ def fetch_prices(*, symbols, start, end, into, backend=None, environ=None,
     """
     from src import prices
 
-    chosen = prices.backend(backend)
+    chosen = prices.backend(
+        backend if backend is not None else prices.name_from_environment(environ))
+    credential = prices.credentials(chosen.NAME, environ)
     folder = Path(into)
     folder.mkdir(parents=True, exist_ok=True)
     served = {}
     for symbol in symbols:
-        frame = chosen.history(symbol, start, end)
+        frame = chosen.history(symbol, start, end, **credential)
         if not frame:
             raise MarketError(
                 f"{chosen.NAME} returned no rows for {symbol} between {start} "
@@ -806,8 +815,8 @@ def fetch_prices(*, symbols, start, end, into, backend=None, environ=None,
     }
 
 
-def prices_from_the_source(*, symbols, start, end, into, backend=None,
-                           environ=None, now=None) -> tuple[dict, str | None]:
+def prices_from_the_source(*, symbols, start, end, into, environ, backend=None,
+                           now=None) -> tuple[dict, str | None]:
     """The fetch record, or the reason the forward track is still switched off.
 
     Two returns rather than an exception, because "no token" is not an error

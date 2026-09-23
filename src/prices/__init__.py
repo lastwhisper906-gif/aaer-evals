@@ -192,6 +192,32 @@ def backend(name: str | None = None):
     return import_module(f"{__name__}.{chosen}")
 
 
+def credentials(name: str, environ) -> dict[str, Any]:
+    """The keyword arguments backend `name`'s `history` takes its credential through.
+
+    Read out of `environ`, the mapping the caller hands in, and out of nothing
+    else. Tiingo and EODHD take the environment itself and read their token
+    variable from it. CRSP's credential is the `~/.pgpass` the `wrds` package
+    reads, and the home it sits in is the `HOME` that mapping names -- the same
+    file `crsp.PGPASS` names when the mapping is the process's own environment,
+    because `Path.home()` reads `HOME` there too. A mapping naming no `HOME`
+    leaves CRSP with no file to look for, and that is `Unconfigured`, not a
+    fall back to the process's.
+    """
+    if name not in BACKENDS:
+        raise PriceError(f"{name!r} is not one of {', '.join(BACKENDS)}")
+    if name == "crsp":
+        home = (environ.get("HOME") or "").strip()
+        if not home:
+            raise Unconfigured(
+                "the environment handed in names no HOME, so there is no "
+                "~/.pgpass for the crsp backend to look for")
+        from pathlib import Path
+
+        return {"pgpass": Path(home) / ".pgpass"}
+    return {"environ": dict(environ)}
+
+
 def as_csv_rows(rows: list[dict[str, Any]]) -> list[dict[str, str]]:
     """The frame in the shape `src/market.py:read_prices` already reads.
 

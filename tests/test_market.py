@@ -904,8 +904,9 @@ class _StubBackend:
         self._frame = frame
         self.asked = []
 
-    def history(self, ticker, start=None, end=None):
+    def history(self, ticker, start=None, end=None, **credential):
         self.asked.append((ticker, start, end))
+        self.credential = credential
         return list(self._frame)
 
 
@@ -944,7 +945,7 @@ def test_a_fetched_series_reads_back_through_the_reader_unchanged(
     record = market.fetch_prices(symbols=["ZZZZ"],
                                  start=_dt.date(2025, 5, 1),
                                  end=_dt.date(2025, 5, 31),
-                                 into=folder,
+                                 into=folder, environ={},
                                  now=_dt.datetime(2026, 9, 21, 12, 0,
                                                   tzinfo=_dt.timezone.utc))
     series = market.read_prices(folder)
@@ -963,7 +964,8 @@ def test_an_empty_answer_is_refused_rather_than_written(tmp_path, monkeypatch):
     _stub(monkeypatch, [])
     with pytest.raises(market.MarketError, match="no rows"):
         market.fetch_prices(symbols=["ZZZZ"], start=_dt.date(2025, 1, 1),
-                            end=_dt.date(2025, 2, 1), into=tmp_path / "prices")
+                            end=_dt.date(2025, 2, 1), into=tmp_path / "prices",
+                            environ={})
 
 
 def test_the_fetch_record_is_refused_inside_an_agent_directory(tmp_path):
@@ -1014,13 +1016,13 @@ def test_no_token_is_a_reported_state_and_not_an_error(tmp_path, monkeypatch):
     class _Unconfigured:
         NAME = "tiingo"
 
-        def history(self, ticker, start=None, end=None):
+        def history(self, ticker, start=None, end=None, **credential):
             raise _prices.Unconfigured("$TIINGO_TOKEN is not set")
 
     monkeypatch.setattr(_prices, "backend", lambda name=None: _Unconfigured())
     record, reason = market.prices_from_the_source(
         symbols=["ZZZZ"], start=_dt.date(2025, 1, 1), end=_dt.date(2025, 2, 1),
-        into=tmp_path / "prices")
+        into=tmp_path / "prices", environ={})
     assert record == {}
     assert "TIINGO_TOKEN" in reason
     assert market.PRICES_UNAVAILABLE == "unavailable"
@@ -1031,3 +1033,112 @@ def test_the_backend_defaults_to_the_forward_track_s(monkeypatch):
     assert _prices.name_from_environment() == "tiingo"
     monkeypatch.setenv("PRICE_BACKEND", "crsp")
     assert _prices.name_from_environment() == "crsp"
+
+
+# --- the environment the caller hands in is the only one read ----------------
+#
+# PR #60's first version took an `environ` argument and never used it: the
+# backend came from `prices.backend(None)`, which reads the process's own
+# `$PRICE_BACKEND`, and `history` was called with no credential, so each backend
+# fell back to the process's own token. Every test above stubs `prices.backend`
+# with a history that takes no credential, so none of them could see it. These
+# run the real backend modules and stop them at the one call that would leave
+# the machine, and the process environment is always set to disagree with the
+# mapping handed in, so a read of the wrong one shows.
+
+def _no_backend_stub(monkeypatch):
+    """The process's own environment, set to say something else entirely."""
+    monkeypatch.setenv("PRICE_BACKEND", "crsp")
+    monkeypatch.setenv("TIINGO_TOKEN", "from-the-process")
+    monkeypatch.setenv("EODHD_TOKEN", "from-the-process")
+
+
+def test_the_backend_is_the_one_the_handed_in_environment_names(tmp_path, monkeypatch):
+    _no_backend_stub(monkeypatch)
+    from src.prices import eodhd
+
+    asked = []
+
+    def wire(path, params, token):
+        asked.append(token)
+        return []
+
+    monkeypatch.setattr(eodhd, "_get", wire)
+    # The stand-in answers no rows, which the fetch refuses -- after the wire
+    # was asked, which is the part under test.
+    with pytest.raises(market.MarketError, match="eodhd returned no rows"):
+        market.prices_from_the_source(
+            symbols=["ZZZZ"], start=_dt.date(2025, 1, 1), end=_dt.date(2025, 2, 1),
+            into=tmp_path / "prices",
+            environ={"PRICE_BACKEND": "eodhd", "EODHD_TOKEN": "handed-in"})
+    # eodhd, not the process's crsp, and asked with the handed-in token
+    assert asked == ["handed-in"]
+
+
+def test_the_credential_is_the_one_the_handed_in_environment_carries(tmp_path, monkeypatch):
+    _no_backend_stub(monkeypatch)
+    from src.prices import tiingo
+
+    asked = []
+
+    def wire(path, params, token):
+        asked.append((path, token))
+        # The metadata request answers an object and the price request a list,
+        # as Tiingo's do; the list is empty, which the fetch refuses.
+        return [] if path.endswith("/prices") else {}
+
+    monkeypatch.setattr(tiingo, "_get", wire)
+    with pytest.raises(market.MarketError, match="tiingo returned no rows"):
+        market.fetch_prices(
+            symbols=["ZZZZ"], start=_dt.date(2025, 1, 1), end=_dt.date(2025, 2, 1),
+            into=tmp_path / "prices",
+            environ={"PRICE_BACKEND": "tiingo", "TIINGO_TOKEN": "handed-in"})
+    assert [path for path, _ in asked] == ["/zzzz", "/zzzz/prices"]
+    assert {token for _, token in asked} == {"handed-in"}
+
+
+def test_a_handed_in_environment_with_no_token_is_unconfigured_whatever_the_process_holds(
+        tmp_path, monkeypatch):
+    """The state this repository is in, reached through the real Tiingo module."""
+    _no_backend_stub(monkeypatch)
+    from src.prices import tiingo
+
+    def wire(path, params, token):
+        raise AssertionError("the wire was reached with the process's token")
+
+    monkeypatch.setattr(tiingo, "_get", wire)
+    record, reason = market.prices_from_the_source(
+        symbols=["ZZZZ"], start=_dt.date(2025, 1, 1), end=_dt.date(2025, 2, 1),
+        into=tmp_path / "prices", environ={"PRICE_BACKEND": "tiingo"})
+    assert record == {}
+    assert "TIINGO_TOKEN" in reason
+
+
+def test_crsp_looks_for_the_pgpass_under_the_handed_in_home(tmp_path, monkeypatch):
+    _no_backend_stub(monkeypatch)
+    home = tmp_path / "someone"
+    home.mkdir()
+    record, reason = market.prices_from_the_source(
+        symbols=["ZZZZ"], start=_dt.date(2025, 1, 1), end=_dt.date(2025, 2, 1),
+        into=tmp_path / "prices", environ={"PRICE_BACKEND": "crsp", "HOME": str(home)})
+    assert record == {}
+    assert str(home / ".pgpass") in reason
+
+
+def test_crsp_with_no_home_handed_in_is_unconfigured_rather_than_the_process_home(
+        tmp_path, monkeypatch):
+    _no_backend_stub(monkeypatch)
+    record, reason = market.prices_from_the_source(
+        symbols=["ZZZZ"], start=_dt.date(2025, 1, 1), end=_dt.date(2025, 2, 1),
+        into=tmp_path / "prices", environ={"PRICE_BACKEND": "crsp"})
+    assert record == {}
+    assert "names no HOME" in reason
+
+
+def test_there_is_no_default_environment_to_fall_back_on(tmp_path):
+    with pytest.raises(TypeError):
+        market.fetch_prices(symbols=["ZZZZ"], start=_dt.date(2025, 1, 1),
+                            end=_dt.date(2025, 2, 1), into=tmp_path / "prices")
+    with pytest.raises(TypeError):
+        market.prices_from_the_source(symbols=["ZZZZ"], start=_dt.date(2025, 1, 1),
+                                      end=_dt.date(2025, 2, 1), into=tmp_path / "prices")
