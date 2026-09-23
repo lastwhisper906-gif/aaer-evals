@@ -41,8 +41,9 @@ What it does not do
 It does not look for high entropy. An entropy threshold over a repository that
 carries hashes, accession numbers and base-sixteen digests is a check that
 either fires constantly or is tuned until it fires never, and a check that has
-been tuned until it is quiet is the failure mode `docs/HOW_WE_WORK.md` names
-about the seeded-defect canary. The three rules above fire on what a credential
+been tuned until it is quiet is the failure mode `docs/HOW_WE_WORK.md` names:
+a verification layer that has never been shown to catch a defect is not known
+to work. The three rules above fire on what a credential
 *is called* and on what a credential *is*, and they are extended by adding a
 variable name when one turns up, never by widening a pattern.
 
