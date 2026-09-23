@@ -71,10 +71,13 @@ account. `coverage` names the wider concept instead.
 **Through the gate, like every other extractor.** The companyfacts record is
 read with `src/cutoff_guard.py`'s `load_catalogue`, and the filings it is read
 against come from that module's `documents`. Borrowing
-`fetch_fixtures.read_stored` would have read the same bytes and left the bypass
-scan in `tests/test_cutoff_guard.py` unable to see the read, which is what
+`fetch_fixtures.read_stored` would have read the same bytes with no date gate in
+front of them, which is what
 `tests/test_fetch_companyfacts.py::test_only_the_companyfacts_fetcher_borrows_the_fetcher_file_helpers`
-exists to stop; it caught this module doing it.
+exists to stop; it caught this module doing it. The bypass scan in
+`tests/test_cutoff_guard.py` follows a borrowed reader now, but only as far as
+the path the borrowing module names itself, so the borrower list is still what
+keeps this honest.
 
 `load_catalogue` is the route, and which route it is decides whether the annual
 trigger gets a number at all. companyfacts is a catalogue of facts drawn from
