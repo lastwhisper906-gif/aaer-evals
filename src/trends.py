@@ -529,7 +529,8 @@ def year_end_anchor(available: list[dict], period_end: str | None) -> str | None
 
 # --- one term, one period ----------------------------------------------------
 
-def why_missing(document: dict, index: dict, term: str, period: dict) -> str:
+def why_missing(document: dict, index: dict, term: str, period: dict,
+                concepts: dict | None = None) -> str:
     """Which of the five ways this term is not here.
 
     The reader's next step differs for each: a concept nobody tags, a concept
@@ -537,7 +538,8 @@ def why_missing(document: dict, index: dict, term: str, period: dict) -> str:
     not read reported, a concept reported for other periods, and the one concept
     that is in no filing's standard taxonomy at all.
     """
-    tags = CONCEPTS[term][1]
+    concepts = CONCEPTS if concepts is None else concepts
+    tags = concepts[term][1]
     if not tags:
         return f"no row for {term}: {NO_NON_GAAP}"
     named = ", ".join(f"us-gaap:{tag}" for tag in tags)
@@ -560,12 +562,13 @@ def why_missing(document: dict, index: dict, term: str, period: dict) -> str:
                 f"states only by segment — the filing says which, and this record "
                 f"cannot")
     wanted = _spelled(period["start"], period["end"]) \
-        if CONCEPTS[term][0] == "duration" else period["end"]
+        if concepts[term][0] == "duration" else period["end"]
     return (f"no row for {term} in {wanted}: "
             f"{named} is in the record, but not for this period")
 
 
-def term_source(document: dict, index: dict, term: str, period: dict) -> dict:
+def term_source(document: dict, index: dict, term: str, period: dict,
+                concepts: dict | None = None) -> dict:
     """The one row behind a term for one period, or the reason there is none.
 
     The first tag in `CONCEPTS[term]` the record carries for this period is the
@@ -573,8 +576,13 @@ def term_source(document: dict, index: dict, term: str, period: dict) -> dict:
     than falling through to the next concept. Falling through would swap the
     concept under the reader without saying so, which is the mistake
     `_change` refuses across periods.
+
+    `concepts` is another term map read by this same rule. `src/baselines.py`
+    passes its own, because the formula baselines need terms this table does
+    not read, and a term they share is picked out of the record the same way.
     """
-    kind, tags = CONCEPTS[term]
+    concepts = CONCEPTS if concepts is None else concepts
+    kind, tags = concepts[term]
     for tag in tags:
         key = (period["start"], period["end"]) if kind == "duration" \
             else (None, period["end"])
@@ -589,7 +597,7 @@ def term_source(document: dict, index: dict, term: str, period: dict) -> dict:
                 "value": settled["value"], "accession": settled["accession"],
                 "filed": settled["filed"],
                 "id": f"{settled['accession']}:facts:{tag}:{spelled}"}
-    return {"missing": why_missing(document, index, term, period)}
+    return {"missing": why_missing(document, index, term, period, concepts)}
 
 
 def ratio(document: dict, index: dict, name: str, period: dict) -> dict:
