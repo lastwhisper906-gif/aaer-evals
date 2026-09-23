@@ -79,10 +79,16 @@ input itself -- so the id it can write names a *paragraph*, not an item, and an
 id that names a paragraph is verified by quoting it. The quote branch is the
 only branch available, which is why `EVIDENCE_FIELDS` carries `quote` beside the
 `upstream_item_id` `docs/CHECKLIST.md` §7 shows -- and it is the *only* thing
-that tuple adds by hand: the rest is `schema_members("evidence")`, read off
-`SCHEMA`, which the test asserts is still a slice of §7. Written out here and
-written out again in the test, the two lists would agree with each other and not
-with the document the day §7 moved. `src/quote_gate.py` does every piece of the
+that tuple adds: the rest is `src/prediction_schema.py`'s own `EVIDENCE_FIELDS`.
+
+**The schema is checked by the one function both controls call.**
+`src/prediction_schema.py` holds §7's field lists, its three findings, support
+words and tiers and its signal ceiling, once, and `check_schema` hands it every
+field the model answers with this control's evidence shape as the argument. What
+stays here is the two fields that are the run's: the question this control
+asked, and the rules version out of the run's manifest.
+
+`src/quote_gate.py` does every piece of the
 verifying: `quotable` builds the index of what the committed input declares,
 `quote_drop_reason` matches one quote against it, and `citation_drop_reason`
 resolves the ids -- the `evidence` ids, `market_direction.basis`, and an
@@ -123,9 +129,12 @@ runner yet -- the same gap `src/quote_gate.py` names, "nothing calls `gate` yet
 because there is no stage runner to call it" -- and the runner that calls this
 holds both and records them.
 
-This module never names `runs/`. It writes into the directory it is handed, and
-it never writes over what is already there: a run directory is append-only, so a
-second call carrying different content is refused and a correction is a new run.
+This module never names `runs/`. It writes into the run directory it is handed,
+which is where `docs/INPUT_SPEC.md` §6 lists the control files, and nowhere
+inside a run's per-agent input tree: `destination` refuses a run directory
+sitting in one, because that tree is committed as what each agent saw. It never
+writes over what is already there: a run directory is append-only, so a second
+call carrying different content is refused and a correction is a new run.
 
     python3.12 -m src.control_single_agent --question accounting_reliability \
         --input <the control's directory> --bundle <the run directory>
@@ -141,16 +150,16 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
-import re
 import sys
-from collections import Counter
 from pathlib import Path
 
 try:
-    from src import agent_inputs, cutoff_guard, interpreter_pin, quote_gate
+    from src import (agent_inputs, cutoff_guard, interpreter_pin,
+                     prediction_schema, quote_gate)
 except ImportError:  # invoked as a plain script
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from src import agent_inputs, cutoff_guard, interpreter_pin, quote_gate
+    from src import (agent_inputs, cutoff_guard, interpreter_pin,
+                     prediction_schema, quote_gate)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 AGENT_PROMPTS = REPO_ROOT / ".claude" / "agents"
@@ -208,47 +217,12 @@ SCHEMA = '''{ "question": "accounting_reliability" | "financial_pressure",
   "tier": "elevated" | "watch" | "clear",
   "top_signals": [] }'''
 
-# Every field of that schema, by the name it carries there. `continuous` is not
-# in this list because it belongs to one question only.
-FIELDS = ("question", "rules_version", "checklist", "events", "explanations",
-          "market_direction", "tier", "top_signals")
-CONTINUOUS = "continuous"
-CHECKLIST_FIELDS = ("key", "finding", "confidence", "evidence")
-CONTINUOUS_FIELDS = ("key", "point", "direction", "low", "high")
-EVENT_FIELDS = ("key", "p_within_horizon")
-EXPLANATION_FIELDS = ("id", "support", "realization_p")
-MARKET_FIELDS = ("p_up", "basis")
-
-
-def schema_members(field: str) -> tuple[str, ...]:
-    """The members `docs/CHECKLIST.md` §7 gives one of its list-of-objects fields.
-
-    Read off `SCHEMA`, which `tests/test_control_single_agent.py` asserts is
-    still a character-for-character slice of that document. A tuple written out
-    by hand here agrees with the tuple written out by hand in the test and with
-    nothing else, so the day §7 gains a member the two go on agreeing with each
-    other about a shape neither of them has any more.
-    """
-    found = re.search(rf'"{field}":\s*\[\s*\{{(.*?)\}}\s*\]', SCHEMA, flags=re.DOTALL)
-    if found is None:
-        raise ControlError(f"the schema shows no object under {field}")
-    return tuple(re.findall(r'"([a-z_]+)":', found.group(1)))
-
-
 # §7 gives `evidence` one member, `upstream_item_id`. `quote` is the branch of
 # `CLAUDE.md`'s rule that an agent with no upstream report has left, and the
 # docstring says why; it is named here, once, and the rest of the shape is the
-# document's.
+# document's, held in `src/prediction_schema.py`.
 QUOTE = "quote"
-EVIDENCE_FIELDS = schema_members("evidence") + (QUOTE,)
-
-# `docs/CHECKLIST.md` §1: "An LLM answer is always `flag` / `no_flag` /
-# `insufficient`, plus a confidence and a verbatim quote with its paragraph id."
-FINDINGS = ("flag", "no_flag", "insufficient")
-SUPPORT = ("sufficient", "insufficient", "unknown")
-TIERS = ("elevated", "watch", "clear")
-INSUFFICIENT = "insufficient"
-TOP_SIGNALS_MAX = 5
+EVIDENCE_FIELDS = prediction_schema.EVIDENCE_FIELDS + (QUOTE,)
 
 CONTROL_PROMPT = """You are the single-agent baseline control, and you do the
 whole job alone: you read the filing bundle, you put it beside the market table,
@@ -346,165 +320,47 @@ def served_names_family(served: str, family: str) -> bool:
     return isinstance(served, str) and family.lower() in served.lower()
 
 
-# --- the schema, field by field ----------------------------------------------
-
-def _fields(entry, expected: tuple[str, ...], where: str) -> None:
-    if not isinstance(entry, dict):
-        raise ControlError(f"{where} is {type(entry).__name__}, not an object")
-    found = tuple(sorted(entry))
-    if found != tuple(sorted(expected)):
-        raise ControlError(
-            f"{where} carries {', '.join(found) or 'no fields'} and the schema "
-            f"gives it {', '.join(sorted(expected))}")
-
-
-def _text(entry, field: str, where: str) -> str:
-    value = entry.get(field)
-    if not isinstance(value, str) or not value.strip():
-        raise ControlError(f"{where}.{field} is {value!r}, and the schema gives it a name")
-    return value
-
-
-def _one_of(entry, field: str, allowed: tuple[str, ...], where: str) -> str:
-    value = entry.get(field)
-    if value not in allowed:
-        raise ControlError(
-            f"{where}.{field} is {value!r}; the schema allows {', '.join(allowed)}")
-    return value
-
-
-def _number(entry, field: str, where: str, *, low=None, high=None) -> float:
-    value = entry.get(field)
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        raise ControlError(f"{where}.{field} is {value!r}, and the schema gives it a number")
-    if low is not None and not low <= value <= high:
-        raise ControlError(
-            f"{where}.{field} is {value}, outside {low} to {high} — a probability "
-            "outside its own range is not a probability")
-    return float(value)
-
-
-def _unique(keys: list[str], where: str) -> None:
-    """One indicator, one key — `docs/CHECKLIST.md` §2 says it in those words."""
-    repeated = [key for key, count in Counter(keys).items() if count > 1]
-    if repeated:
-        raise ControlError(
-            f"{where} names {', '.join(sorted(repeated))} more than once; one "
-            "indicator, one key, and a repeated key names a set")
-
+# --- the schema -------------------------------------------------------------
 
 def check_schema(payload, question: str, *, rules_version) -> dict:
     """The payload against `docs/CHECKLIST.md` §7, field by field, or a refusal.
 
-    `rules_version` is the run's own, out of `input_manifest.json`. The model
-    does not get to invent it: a prediction scored against a rules version it
-    named itself is scored against nothing.
+    `question` and `rules_version` are checked here, because they are the
+    run's: the answer has to be to the question this control asked, and the
+    model does not get to invent the rules version -- a prediction scored
+    against a rules version it named itself is scored against nothing, so it
+    is the run's own, out of `input_manifest.json`. Every other field goes
+    through `src/prediction_schema.py`, the one check both controls call, with
+    this control's evidence shape as the argument.
     """
     _a_question(question)
     if not isinstance(payload, dict):
         raise ControlError(
             f"the prediction is {type(payload).__name__}, not an object")
-    # Before the field set, because `continuous` belongs to one question and an
+    # Before anything else, because `continuous` belongs to one question and an
     # answer to the wrong question would be reported as a stray field.
     if payload.get("question") != question:
         raise ControlError(
             f"the prediction answers {payload.get('question')!r} and was asked "
             f"{question!r}; the two questions are never merged")
-    expected = FIELDS + ((CONTINUOUS,) if question == "financial_pressure" else ())
-    _fields(payload, expected, "the prediction")
-
+    # Asked for by name and not through `.get`: a run whose manifest carries
+    # `rules_version: null` would otherwise take an answer with no such field
+    # as one carrying the run's null.
+    if "rules_version" not in payload:
+        raise ControlError(
+            "the prediction carries no rules_version, and §7 gives every "
+            "prediction one: the run's")
     if payload["rules_version"] != rules_version:
         raise ControlError(
             f"the prediction carries rules_version {payload['rules_version']!r} "
             f"and this run's is {rules_version!r} — each prediction is scored "
             "against its own rules version, and that version is the run's")
-
-    checklist = payload["checklist"]
-    if not isinstance(checklist, list):
-        raise ControlError("checklist is not a list")
-    for position, entry in enumerate(checklist, start=1):
-        where = f"checklist[{position}]"
-        _fields(entry, CHECKLIST_FIELDS, where)
-        _text(entry, "key", where)
-        _one_of(entry, "finding", FINDINGS, where)
-        _number(entry, "confidence", where, low=0, high=1)
-        evidence = entry["evidence"]
-        if not isinstance(evidence, list):
-            raise ControlError(f"{where}.evidence is not a list")
-        for index, cited in enumerate(evidence, start=1):
-            cited_where = f"{where}.evidence[{index}]"
-            _fields(cited, EVIDENCE_FIELDS, cited_where)
-            for field in EVIDENCE_FIELDS:
-                _text(cited, field, cited_where)
-    _unique([entry["key"] for entry in checklist], "checklist")
-
-    if question == "financial_pressure":
-        continuous = payload[CONTINUOUS]
-        if not isinstance(continuous, list) or not continuous:
-            raise ControlError(
-                "continuous is empty; financial pressure predicts next quarter's "
-                "revenue growth, operating margin and operating cash flow")
-        for position, entry in enumerate(continuous, start=1):
-            where = f"continuous[{position}]"
-            _fields(entry, CONTINUOUS_FIELDS, where)
-            _text(entry, "key", where)
-            # §7 gives `direction` a string and does not enumerate its values.
-            _text(entry, "direction", where)
-            point = _number(entry, "point", where)
-            low = _number(entry, "low", where)
-            high = _number(entry, "high", where)
-            if not low <= point <= high:
-                raise ControlError(
-                    f"{where} puts its point {point} outside its own range "
-                    f"{low} to {high}")
-        _unique([entry["key"] for entry in continuous], "continuous")
-
-    events = payload["events"]
-    if not isinstance(events, list):
-        raise ControlError("events is not a list")
-    for position, entry in enumerate(events, start=1):
-        where = f"events[{position}]"
-        _fields(entry, EVENT_FIELDS, where)
-        _text(entry, "key", where)
-        _number(entry, "p_within_horizon", where, low=0, high=1)
-    _unique([entry["key"] for entry in events], "events")
-
-    explanations = payload["explanations"]
-    if not isinstance(explanations, list):
-        raise ControlError("explanations is not a list")
-    for position, entry in enumerate(explanations, start=1):
-        where = f"explanations[{position}]"
-        _fields(entry, EXPLANATION_FIELDS, where)
-        _text(entry, "id", where)
-        _one_of(entry, "support", SUPPORT, where)
-        _number(entry, "realization_p", where, low=0, high=1)
-    _unique([entry["id"] for entry in explanations], "explanations")
-
-    market = payload["market_direction"]
-    _fields(market, MARKET_FIELDS, "market_direction")
-    if market["p_up"] != INSUFFICIENT:
-        _number(market, "p_up", "market_direction", low=0, high=1)
-    basis = market["basis"]
-    if not isinstance(basis, list) or not all(
-            isinstance(one, str) and one.strip() for one in basis):
-        raise ControlError("market_direction.basis is not a list of paragraph ids")
-
-    _one_of(payload, "tier", TIERS, "the prediction")
-
-    signals = payload["top_signals"]
-    if not isinstance(signals, list) or not all(isinstance(one, str) for one in signals):
-        raise ControlError("top_signals is not a list of keys")
-    if len(signals) > TOP_SIGNALS_MAX:
-        raise ControlError(
-            f"top_signals holds {len(signals)} keys and the schema allows "
-            f"at most {TOP_SIGNALS_MAX}")
-    _unique(signals, "top_signals")
-    keys = {entry["key"] for entry in checklist}
-    unknown = [one for one in signals if one not in keys]
-    if unknown:
-        raise ControlError(
-            f"top_signals names {', '.join(unknown)}, which no checklist entry "
-            "carries — a top signal that names no entry names nothing")
+    answer = {key: value for key, value in payload.items()
+              if key not in prediction_schema.RUN_KEYS}
+    try:
+        prediction_schema.check(answer, question, evidence=EVIDENCE_FIELDS)
+    except prediction_schema.SchemaError as exc:
+        raise ControlError(str(exc)) from exc
     return payload
 
 
@@ -592,7 +448,7 @@ def drop_reasons(payload: dict, question: str, index: dict) -> dict[str, str]:
     # The abstention rests on nothing by design, so an `"insufficient"` p_up with
     # an empty basis is the one thing here that resolves nothing. Anything the
     # basis does name is resolved, whatever p_up says.
-    if market["p_up"] != INSUFFICIENT or market["basis"]:
+    if market["p_up"] != prediction_schema.INSUFFICIENT or market["basis"]:
         market_id = market_gate_id(question)
         why = quote_gate.citation_drop_reason(
             {"id": market_id, "basis": market["basis"]}, declared)
@@ -687,7 +543,7 @@ def verify(payload: dict, question: str, index: dict) -> tuple[dict, list[dict]]
     standing = {entry["key"] for entry in kept["checklist"]}
     kept["top_signals"] = [one for one in payload["top_signals"] if one in standing]
     if market_gate_id(question) in reasons:
-        kept["market_direction"] = {"p_up": INSUFFICIENT, "basis": []}
+        kept["market_direction"] = {"p_up": prediction_schema.INSUFFICIENT, "basis": []}
     dropped = [{"report": CONTROL_FILES[question], "item_id": identifier,
                 "reason": reason} for identifier, reason in sorted(reasons.items())]
     return kept, dropped
@@ -882,6 +738,29 @@ def prompt(question: str, input_dir, bundle_root) -> str:
                                  files=listed, schema=SCHEMA)
 
 
+def destination(bundle_root) -> Path:
+    """Where this control's file may land: the run directory, and outside every input tree.
+
+    `docs/INPUT_SPEC.md` §6 lists the two control files in the committed bundle,
+    under `runs/{ticker}/{accession}/` -- the run directory, which is what
+    `bundle_root` is and where `run` writes. The same paragraph makes "each
+    agent's input directory" the isolation boundary, "committed as what it
+    saw", and `docs/HOW_WE_WORK.md` §1.6 says it again. A run directory planted
+    under another run's `agents/` tree reads, gates and answers like any other,
+    and the file it would write is then part of what that tree records one of
+    its agents as having seen. Checked before anything is read, so no model is
+    asked a question whose answer has nowhere it may go.
+    """
+    held = agent_inputs.input_tree_holding(bundle_root)
+    if held is not None:
+        raise ControlError(
+            f"{bundle_root} is inside {held}, a run's per-agent input tree. That "
+            "tree is committed as what each agent saw, so a control file written "
+            "there rewrites another agent's record of its input; a control's "
+            "files land in the run directory, beside the bundle")
+    return Path(bundle_root)
+
+
 def _place(path: Path, text: str) -> Path:
     """The control file where it was asked for, without changing what is there.
 
@@ -929,6 +808,7 @@ def run(question: str, *, input_dir, bundle_root, ask,
     drop count and the served model in `input_manifest.json` and the module
     docstring says why this hands them back rather than writing them there.
     """
+    out = destination(bundle_root)
     family = supervisor_model(prompts_dir)
     manifest = json.loads(cutoff_guard.load_bundle_file(bundle_root, MANIFEST))
     accession = manifest.get("accession")
@@ -955,7 +835,7 @@ def run(question: str, *, input_dir, bundle_root, ask,
 
     check_schema(payload, question, rules_version=manifest.get("rules_version"))
     kept, dropped = verify(payload, question, index)
-    path = _place(Path(bundle_root) / CONTROL_FILES[question],
+    path = _place(out / CONTROL_FILES[question],
                   json.dumps(kept, indent=INDENT, sort_keys=True) + "\n")
     return {"question": question, "path": path, "prediction": kept,
             "dropped": dropped, "requested_model": family, "served_model": served}
