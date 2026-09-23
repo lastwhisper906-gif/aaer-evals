@@ -34,9 +34,14 @@ the fold is here, where nothing is committed. It is one for one, so a quote
 cannot grow or shrink through it: a run is not collapsed, a space is neither
 dropped nor added, and a line wrap trimmed out so two words run together is
 still a drop. A changed dash, quotation mark, letter or word is still a changed
-character. Every item that stood only because of the fold is written into
-`input_manifest.json` beside the drops, under `normalized_quotes`, with how many
-characters were folded, so the count is on the record and not inside the gate.
+character. The fold reaches a computed row below as it reaches prose: a row's
+line break written as a space, its indent kept, stands, and the row re-rendered
+onto one line still falls, because collapsing the indent changes the row's
+length and the fold never does. Every item that stood only because of the fold
+is written into `input_manifest.json` beside the drops, under
+`normalized_quotes`, with how many characters were folded, so the count is on
+the record and not inside the gate. The single-agent control calls
+`quote_drop_reason` too and hands its fold rows back beside its drops.
 
 **A computed row is the committed file's own characters.** A trend cell and a
 numeric fact live in a JSON input rather than in prose, and the text they offer

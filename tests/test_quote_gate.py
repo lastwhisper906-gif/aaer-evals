@@ -616,14 +616,14 @@ def test_a_manifest_naming_no_accession_is_refused(tmp_path):
 # for one, and every quote that stood only through that is counted in the
 # manifest. Nothing else is folded.
 
-NBSP = " "
+NBSP = "\u00a0"
 
 # Unicode's White_Space property, copied by hand out of the Unicode Character
 # Database's PropList.txt: twenty-five code points, U+0020 among them.
 WHITE_SPACE = ([chr(code) for code in range(0x0009, 0x000D + 1)]
-               + [" ", "\u0085", " ", " "]
+               + ["\u0020", "\u0085", "\u00a0", "\u1680"]
                + [chr(code) for code in range(0x2000, 0x200A + 1)]
-               + [" ", " ", " ", " ", "　"])
+               + ["\u2028", "\u2029", "\u202f", "\u205f", "\u3000"])
 
 
 def test_the_fold_is_unicodes_own_whitespace():
@@ -648,30 +648,32 @@ def test_every_space_separator_unicodedata_knows_is_folded():
 # committed paragraph only where the paragraph holds U+00A0 and the reader wrote
 # U+0020. Four of those seven paragraphs are below, copied by hand out of
 # `runs/NVDA/0001045810-26-000075/agents/notes-text-reader/input_notes.md` on the
-# branch `runs/pipeline-check-2`, each U+00A0 written as an escape so it can be
-# seen; each quote is the reader's own, copied out of `report_notes_text.md`
-# beside it, where every space is U+0020. The item ids are written here: the
-# reader numbered its items, and a numbered id is a letter-number code.
+# branch `runs/pipeline-check-2`, which is not merged, so the source is read with
+# `git show origin/runs/pipeline-check-2:<that path>`. Each U+00A0 is written as
+# an escape so it can be seen; each quote is the reader's own, copied out of
+# `report_notes_text.md` beside it, where every space is U+0020. The item ids
+# are written here: the reader numbered its items, and a numbered id is a
+# letter-number code.
 
 NVDA = "0001045810-26-000075"
 NVDA_PARAGRAPHS = {
     f"{NVDA}:notes:61": (
-        "(1)    Included customer advances and unearned revenue "
+        "(1)\u00a0\u00a0\u00a0\u00a0Included customer advances and unearned revenue "
         "primarily related to hardware and software support, and license and "
-        "development arrangements. The balance as of July 26, 2026, and "
-        "January 25, 2026, included $2.8 billion and $160 million of customer "
+        "development arrangements. The balance as of July\u00a026, 2026, and "
+        "January\u00a025, 2026, included $2.8 billion and $160 million of customer "
         "advances, respectively."),
     f"{NVDA}:notes:90": (
-        "In June 2026, we issued an aggregate of $25.0 billion of senior "
+        "In June 2026, we issued an aggregate of $25.0\u00a0billion of senior "
         "unsecured notes across seven tranches for general corporate purposes."),
     f"{NVDA}:notes:93": (
-        "As of July 26, 2026, we complied with the required covenants under the "
+        "As of July\u00a026, 2026, we complied with the required covenants under the "
         "outstanding notes."),
     f"{NVDA}:notes:99": (
-        "Supply and capacity – We have partnered with our extensive network to "
+        "Supply and capacity \u2013 We have partnered with our extensive network to "
         "secure the necessary supply and critical components needed to meet demand "
         "for the next several years, increasing supply commitments from $119 billion "
-        "last quarter to $279 billion as of July 26, 2026. These supply "
+        "last quarter to $279 billion as of July\u00a026, 2026. These supply "
         "commitments are for our data center infrastructure systems, primarily "
         "memory and manufacturing facilities, to produce our products for long-term "
         "demand across current and future product architectures. We enter into "
@@ -771,7 +773,7 @@ def test_a_changed_dash_in_a_real_paragraph_still_falls(tmp_path):
     result = gate_nvda(root, [nvda_item(identifier, paragraph, hyphen)])
     assert kept_ids(result) == []
     assert "does not string-match" in reason_for(result, identifier)
-    en_dash = hyphen.replace(" - ", " – ")
+    en_dash = hyphen.replace(" - ", " \u2013 ")
     assert kept_ids(gate_nvda(root, [nvda_item(identifier, paragraph, en_dash)])) == [
         identifier]
 
@@ -821,6 +823,32 @@ def test_the_filings_line_wrap_written_as_a_space_now_stands_and_is_counted(tmp_
          "paragraph_id": f"{ACCESSION}:notes:1", "characters": 1}]
 
 
+def test_a_computed_row_is_folded_one_for_one_as_prose_is(tmp_path):
+    """The fold reaches the JSON inputs, and no further than it reaches prose.
+
+    The trend row's line break written as a space, with its ten-space indent
+    kept, stands and is counted. The row re-rendered onto one line still falls:
+    collapsing the indent changes the row's length, and the fold never does.
+    """
+    root = plant(tmp_path)
+    identifier = "days_sales_outstanding_high"
+    line_break_as_space = '"days": 91,' + " " * 11 + '"value": 51.7'
+    assert line_break_as_space.replace(" " * 11, "\n" + " " * 10) in TREND_ROW
+    result = gate_one(root, {"id": identifier, "paragraph_id": TREND_CELL,
+                             "quote": line_break_as_space}, "numbers_reader")
+    assert kept_ids(result) == [identifier]
+    assert manifest_of(root)["normalized_quotes"] == [
+        {"report": "report_notes_text.md", "item_id": identifier,
+         "paragraph_id": TREND_CELL, "characters": 1}]
+
+    root = plant(tmp_path / "again")
+    one_line = '{"days": 91, "value": 51.7}'
+    result = gate_one(root, {"id": identifier, "paragraph_id": TREND_CELL,
+                             "quote": one_line}, "numbers_reader")
+    assert kept_ids(result) == []
+    assert manifest_of(root)["normalized_quotes"] == []
+
+
 @pytest.mark.parametrize("quote", [
     "Revenue was $46.7  billion, up 56% from",     # a run is not collapsed
     "Revenue was $46.7billion, up 56% from",       # a space is not dropped
@@ -834,7 +862,7 @@ def test_the_fold_is_one_character_for_one_and_nothing_else(tmp_path, quote):
     assert manifest_of(root)["normalized_quotes"] == []
 
 
-@pytest.mark.parametrize("written", ["\t", "\n", " ", " ", "　"])
+@pytest.mark.parametrize("written", ["\t", "\n", "\u2028", "\u202f", "\u3000"])
 def test_any_whitespace_in_the_quote_reads_as_the_inputs_space(tmp_path, written):
     root = plant_spaced(tmp_path)
     quote = f"Revenue was $46.7{written}billion, up 56% from"
@@ -876,7 +904,7 @@ def test_a_run_with_nothing_folded_says_zero(tmp_path):
     ("a b", "a\r\nb", None),
     ("ab", "a b", None),
     ("a b", "a c", None),
-    ("a - b", "a – b", None),
+    ("a - b", "a \u2013 b", None),
 ])
 def test_folded_characters_counts_the_characters_the_fold_changed(quote, text, expected):
     assert quote_gate.folded_characters(quote, text) == expected

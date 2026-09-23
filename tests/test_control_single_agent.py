@@ -563,6 +563,34 @@ def test_the_altered_quote_is_dropped_whole_and_counted(tmp_path):
     assert "estimate_change_favorable" not in payload["top_signals"]
 
 
+def test_a_quote_that_stood_only_through_the_whitespace_fold_is_handed_back(tmp_path):
+    """The gate's fold reaches the control's evidence, so it is counted here too.
+
+    The owner's decision of 2026-09-23 reads every whitespace character as an
+    ordinary space, and every quote that stood only through that is counted.
+    The control hands its drops back rather than writing them, so it hands these
+    back beside them: here the filing's line wrap written as a space, one
+    character folded.
+    """
+    root, folder = plant(tmp_path)
+    answer = accounting_answer()
+    answer["checklist"][0]["evidence"] = evidence(
+        NOTES_ONE, "million — the largest quarterly increase")
+    result = go(root, folder, "accounting_reliability", answer)
+    assert result["normalized"] == [{
+        "report": "control_single_agent_accounting.json",
+        "item_id": "accounting_reliability:checklist:receivables_outrun_revenue",
+        "paragraph_id": NOTES_ONE, "characters": 1}]
+    assert "receivables_outrun_revenue" in [
+        entry["key"] for entry in written(root, "accounting_reliability")["checklist"]]
+
+
+def test_a_control_with_nothing_folded_hands_back_none(tmp_path):
+    root, folder = plant(tmp_path)
+    result = go(root, folder, "accounting_reliability", accounting_answer())
+    assert result["normalized"] == []
+
+
 def test_a_basis_that_resolves_to_nothing_becomes_the_schemas_own_abstention(tmp_path):
     root, folder = plant(tmp_path)
     answer = accounting_answer()

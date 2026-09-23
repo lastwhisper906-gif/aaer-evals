@@ -119,7 +119,8 @@ own abstention, which the scorecard counts against the control, rather than a
 probability standing on an id that resolves to nothing. A `top_signals` entry
 naming a checklist key that went with a dropped entry goes with it.
 
-**The drop rows and the served model are returned, not written.**
+**The drop rows and the served model are returned, not written.** So are the
+rows for quotes that stood only through the gate's whitespace fold.
 `docs/INPUT_SPEC.md` §6 gives `input_manifest.json` the dropped-item counts and
 `docs/HOW_WE_WORK.md` §6 gives it the requested pin and the served model, but
 `src/quote_gate.py`'s writer replaces `dropped_items` wholesale and this control
@@ -550,6 +551,27 @@ def verify(payload: dict, question: str, index: dict) -> tuple[dict, list[dict]]
     return kept, dropped
 
 
+def folded_quotes(kept: dict, question: str, index: dict) -> list[dict]:
+    """One row per standing quote that matched only through the gate's whitespace fold.
+
+    `src/quote_gate.py` reads every whitespace character as an ordinary space,
+    and every quote that stood only through that is counted. The gate's own
+    count is written by `gate`, which this control does not call, so the rows
+    are built here, in the shape the gate writes them, and handed back beside
+    the drops.
+    """
+    rows = []
+    for entry in kept["checklist"]:
+        identifier = checklist_gate_id(question, entry["key"])
+        for cited in entry["evidence"]:
+            paragraph = cited["upstream_item_id"]
+            characters = quote_gate.folded_characters(cited["quote"], index[paragraph])
+            if characters:
+                rows.append({"report": CONTROL_FILES[question], "item_id": identifier,
+                             "paragraph_id": paragraph, "characters": characters})
+    return rows
+
+
 # --- the cutoff, off the record rather than off the run's own word -----------
 
 def cutoff_on_record(manifest: dict, *,
@@ -805,9 +827,10 @@ def run(question: str, *, input_dir, bundle_root, ask,
     for the look-ahead, and a directory that is wrong is one no model may see.
 
     Returns the payload as written, the file it was written to, the requested
-    and served model, and one row per drop -- `docs/INPUT_SPEC.md` §6 puts the
-    drop count and the served model in `input_manifest.json` and the module
-    docstring says why this hands them back rather than writing them there.
+    and served model, one row per drop, and one row per quote that stood only
+    through the whitespace fold -- `docs/INPUT_SPEC.md` §6 puts the drop count
+    and the served model in `input_manifest.json` and the module docstring says
+    why this hands them back rather than writing them there.
     """
     out = destination(bundle_root)
     family = supervisor_model(prompts_dir)
@@ -839,7 +862,8 @@ def run(question: str, *, input_dir, bundle_root, ask,
     path = _place(out / CONTROL_FILES[question],
                   json.dumps(kept, indent=INDENT, sort_keys=True) + "\n")
     return {"question": question, "path": path, "prediction": kept,
-            "dropped": dropped, "requested_model": family, "served_model": served}
+            "dropped": dropped, "normalized": folded_quotes(kept, question, index),
+            "requested_model": family, "served_model": served}
 
 
 def main(argv=None) -> int:
