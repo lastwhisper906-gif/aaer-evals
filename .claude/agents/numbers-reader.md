@@ -49,6 +49,20 @@ Two headings, in this order:
    A later version splits this into its own reader, and that split must not have
    to re-derive which findings came from where.
 
+**Item ids.** `id` is a plain name that says what the item looks at: lowercase
+words joined by underscores, with no digit and no capital. It starts with one of
+these areas, written exactly as here — `estimates_and_discretion`,
+`revenue_recognition`, `earnings_quality`, `articulation_and_the_filed_history`,
+`controls_audit_and_filings`, `related_parties_contingencies_and_subsequent_events`,
+`structure_and_disclosure_changes`, `across_documents`,
+`results_against_expectations`, `liquidity_and_capital`,
+`narrative_signs_of_operating_pressure` — and then says what the item looks at:
+`revenue_recognition_extended_payment_terms`. Where the item came from goes in
+`paragraph_id` only; a period or a date never goes in the id. An id is unique
+across the four reports of a run: if two items would share a name, add a word
+that tells them apart, never a number. Python drops and counts an item whose id
+has any other shape, and every item that shares its id with another.
+
 Say `insufficient` freely. An account with two periods of history does not
 support a trend claim, and saying so is a result. Do not fill the report to look
 thorough — a short report with six real items beats twenty padded ones, and the
