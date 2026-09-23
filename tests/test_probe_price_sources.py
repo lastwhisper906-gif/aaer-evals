@@ -375,3 +375,383 @@ def test_a_candidate_with_no_rows_has_not_served_the_history():
         "no answer")
     assert unreachable.served is False
     assert unreachable.answered is False
+
+
+# --- the configured backends ------------------------------------------------
+#
+# The half added when the source was picked. No test here touches the network
+# either: what is judged is how the probe reads three outcomes -- unconfigured,
+# refused, served -- and whether it can tell a refusal inside a backend's own
+# claim from a refusal outside it. The claims themselves are read off each
+# provider's documentation and written into the probe as a table; the expected
+# values below are that table's own entries and the frames these tests build.
+
+
+import datetime as _dt
+
+import pytest as _pytest
+
+from src import prices as _prices
+
+
+class _Backend:
+    """A backend that answers however this test tells it to."""
+
+    def __init__(self, name, answer):
+        self.NAME = name
+        self._answer = answer
+        self.asked = []
+
+    def history(self, ticker, start=None, end=None):
+        self.asked.append((ticker, start, end))
+        if isinstance(self._answer, Exception):
+            raise self._answer
+        return self._answer
+
+
+def _frame(day, *, close=0.21, delisting_return=None, delisting_code=None):
+    return _prices.row(
+        date=_dt.date.fromisoformat(day),
+        security_id="90001",
+        ticker="ZZZZ",
+        close=close,
+        adjusted_close=close,
+        volume=1.0,
+        delisting_return=delisting_return,
+        delisting_code=delisting_code,
+    )
+
+
+def _delisting(ticker):
+    return next(one for one in probe.DELISTINGS if one.ticker == ticker)
+
+
+def test_the_probe_asks_about_two_delistings_one_each_side_of_the_free_tier():
+    """One inside the backend's claim and one outside it; one cannot do both."""
+    assert [one.ticker for one in probe.DELISTINGS] == ["LEH", "ATVI"]
+    assert _delisting("LEH").last_month_traded == "2008-09"
+    assert _delisting("ATVI").last_month_traded == "2023-10"
+    assert _delisting("ATVI").day == "2023-10-13"
+
+
+def test_the_free_tier_is_not_expected_to_serve_the_older_delisting():
+    """Read off Tiingo's own documentation: delisted history starts about 2015."""
+    assert probe.claims_to_serve("tiingo", "LEH") is False
+    assert probe.claims_to_serve("tiingo", "ATVI") is True
+    assert probe.claims_to_serve("crsp", "LEH") is True
+    assert probe.claims_to_serve("eodhd", "LEH") is True
+
+
+def test_a_backend_with_no_credential_is_unconfigured_and_not_a_failure():
+    backend = _Backend("tiingo", _prices.Unconfigured("$TIINGO_TOKEN is not set"))
+    attempt = probe.ask_one_backend(backend, _delisting("ATVI"))
+    assert "unconfigured" in attempt.answer
+    assert attempt.reached is False, "nothing was learned about the source"
+    assert attempt.rows == []
+
+
+def test_a_refusal_inside_a_backend_s_own_claim_is_reported_plainly():
+    backend = _Backend("tiingo", _prices.PriceError("tiingo answered 404"))
+    attempt = probe.ask_one_backend(backend, _delisting("ATVI"))
+    assert attempt.reached is True, "the source answered, and a refusal is an answer"
+    assert "expected" not in attempt.answer
+
+
+def test_a_refusal_outside_a_backend_s_claim_is_reported_as_expected():
+    backend = _Backend("tiingo", _prices.PriceError("tiingo answered 404"))
+    attempt = probe.ask_one_backend(backend, _delisting("LEH"))
+    assert "which is expected" in attempt.answer
+    assert "2015" in attempt.answer
+
+
+def test_rows_that_reach_the_month_the_trading_stopped_are_the_history():
+    backend = _Backend("crsp", [_frame("2008-09-15"), _frame("2008-09-17")])
+    attempt = probe.ask_one_backend(backend, _delisting("LEH"))
+    assert attempt.rows == ["2008-09-15 close 0.21", "2008-09-17 close 0.21"]
+    assert probe.reached_the_delisting(attempt.rows) is True
+    assert "none of them in" not in attempt.answer
+
+
+def test_rows_that_stop_short_say_so_even_when_many_came_back():
+    backend = _Backend("eodhd", [_frame("2008-01-02"), _frame("2008-01-03")])
+    attempt = probe.ask_one_backend(backend, _delisting("LEH"))
+    assert "none of them in 2008-09" in attempt.answer
+    assert "which is expected" not in attempt.answer, "eodhd claims this history"
+
+
+def test_a_delisting_return_is_counted_separately_from_the_rows():
+    """Serving the rows and serving the return are two different answers."""
+    served = [_frame("2008-09-15"),
+              _frame("2008-09-17", delisting_return=-0.30, delisting_code="574")]
+    assert probe.delisting_returns_in(served) == [
+        "2008-09-17 delisting return -0.3 code '574'"
+    ]
+    attempt = probe.ask_one_backend(_Backend("crsp", served), _delisting("LEH"))
+    assert "1 carrying a delisting return" in attempt.answer
+
+
+def test_a_source_with_the_rows_and_no_return_is_not_credited_with_one():
+    backend = _Backend("tiingo", [_frame("2023-10-12"), _frame("2023-10-13")])
+    attempt = probe.ask_one_backend(backend, _delisting("ATVI"))
+    assert "none carrying a delisting return" in attempt.answer
+
+
+def test_a_delisting_return_of_zero_is_a_return_and_not_a_silence():
+    zero = [_frame("2008-09-17", delisting_return=0.0, delisting_code="100")]
+    assert probe.delisting_returns_in(zero)
+
+
+def test_the_backend_is_asked_for_the_window_the_delisting_sits_in():
+    backend = _Backend("crsp", [])
+    probe.ask_one_backend(backend, _delisting("ATVI"))
+    (ticker, start, end), = backend.asked
+    assert ticker == "ATVI"
+    assert end == _dt.date(2023, 10, 13)
+    assert start < end
+
+
+def test_nothing_configured_says_nothing_was_learned(monkeypatch):
+    """The state this repository is in today, and it is not a failed probe."""
+    monkeypatch.setattr(
+        probe, "ask_one_backend",
+        lambda module, delisting: probe.Attempt(
+            "x", module.NAME, f"x -- unconfigured: no credential", [], False))
+    finding = probe.probe_configured_backends(None)
+    assert finding.answered is False
+    assert finding.served is False
+    assert "no backend is configured" in finding.verdict
+
+
+def test_every_backend_and_every_delisting_is_asked(monkeypatch):
+    asked = []
+    monkeypatch.setattr(
+        probe, "ask_one_backend",
+        lambda module, delisting: (
+            asked.append((module.NAME, delisting.ticker))
+            or probe.Attempt("x", module.NAME, "x", [], False)))
+    probe.probe_configured_backends(None)
+    assert sorted(asked) == sorted(
+        (name, one.ticker) for name in _prices.BACKENDS for one in probe.DELISTINGS)
+
+
+def test_the_configured_backends_are_a_candidate_the_probe_runs():
+    assert probe.probe_configured_backends in probe.CANDIDATES
+
+
+# --- each delisting against its own month, and what the machine did not reach --
+#
+# The expected verdicts below are written out from the frames each test builds
+# and the months `DELISTINGS` names; nothing here was read off a run.
+
+import requests as _requests
+
+
+class _ByTicker:
+    """A backend answering each ticker its own way, as a real one would."""
+
+    def __init__(self, name, answers):
+        self.NAME = name
+        self._answers = answers
+
+    def history(self, ticker, start=None, end=None):
+        answer = self._answers[ticker]
+        if isinstance(answer, Exception):
+            raise answer
+        return answer
+
+
+def _backends(monkeypatch, **by_name):
+    unconfigured = _prices.Unconfigured("no credential in this test")
+    monkeypatch.setattr(
+        _prices, "backend",
+        lambda name: by_name.get(name) or _Backend(name, unconfigured))
+
+
+def test_the_later_delisting_is_served_against_its_own_month(monkeypatch):
+    # Activision Blizzard's rows reach October 2023. Read against Lehman's
+    # month they would be "short of the suspension" and the probe would exit 1
+    # on the one answer the forward-track backend claims to give.
+    _backends(monkeypatch, tiingo=_ByTicker("tiingo", {
+        "LEH": _prices.PriceError("tiingo answered 404"),
+        "ATVI": [_frame("2023-10-12"), _frame("2023-10-13")],
+    }))
+    finding = probe.probe_configured_backends(None)
+    assert finding.served is True
+    assert finding.verdict == ("tiingo for ATVI: the history came back: 2 rows "
+                               "dated 2023-10-12 to 2023-10-13")
+
+
+def test_the_later_delisting_short_of_its_month_is_short_of_that_month(
+        monkeypatch):
+    _backends(monkeypatch, tiingo=_ByTicker("tiingo", {
+        "LEH": _prices.PriceError("tiingo answered 404"),
+        "ATVI": [_frame("2023-09-29")],
+    }))
+    finding = probe.probe_configured_backends(None)
+    assert finding.served is False
+    assert finding.verdict == (
+        "tiingo for ATVI: rows came back and the history did not: 1 row dated "
+        "2023-09-29 to 2023-09-29, none of them in 2023-10, the month the "
+        "trading stopped")
+
+
+def test_a_later_request_that_reached_the_month_outranks_an_earlier_short_one(
+        monkeypatch):
+    # crsp is asked first. Its LEH rows stop in January; tiingo's ATVI rows
+    # reach October. The candidate served a history, and the verdict says whose.
+    _backends(
+        monkeypatch,
+        crsp=_ByTicker("crsp", {"LEH": [_frame("2008-01-02")], "ATVI": []}),
+        tiingo=_ByTicker("tiingo", {
+            "LEH": _prices.PriceError("tiingo answered 404"),
+            "ATVI": [_frame("2023-10-13")],
+        }))
+    finding = probe.probe_configured_backends(None)
+    assert finding.served is True
+    assert finding.rows == ["2023-10-13 close 0.21"]
+    assert finding.verdict == ("tiingo for ATVI: the history came back: 1 row "
+                               "dated 2023-10-13 to 2023-10-13")
+
+
+@_pytest.mark.parametrize("error", [
+    _requests.exceptions.ConnectTimeout("connect timed out"),
+    _requests.exceptions.ReadTimeout("read timed out"),
+    _requests.exceptions.ConnectionError("Name or service not known"),
+    ConnectionRefusedError(61, "Connection refused"),
+])
+def test_a_request_that_got_no_answer_is_not_an_answer(error):
+    attempt = probe.ask_one_backend(_Backend("tiingo", error), _delisting("LEH"))
+    assert attempt.reached is False, "a timeout here says nothing about Tiingo"
+    assert attempt.never_reached is True
+    assert "no answer at all" in attempt.answer
+    assert "which is expected" not in attempt.answer, "no refusal came back"
+
+
+def test_a_body_that_would_not_decode_is_an_answer():
+    # A requests exception like the timeouts, and not one of them: the source
+    # sent something, and it was not a price history.
+    error = _requests.exceptions.JSONDecodeError("Expecting value", "<html>", 0)
+    attempt = probe.ask_one_backend(_Backend("tiingo", error), _delisting("ATVI"))
+    assert attempt.reached is True
+    assert attempt.never_reached is False
+
+
+def test_a_backend_that_got_no_answer_was_asked_and_is_not_unconfigured(
+        monkeypatch):
+    silent = _requests.exceptions.ConnectTimeout("connect timed out")
+    _backends(monkeypatch, tiingo=_Backend("tiingo", silent))
+    finding = probe.probe_configured_backends(None)
+    assert finding.answered is False
+    assert "no backend is configured" not in finding.verdict
+    assert finding.verdict.startswith("asked: tiingo.")
+
+
+def test_nothing_configured_names_no_cause_it_did_not_check(monkeypatch):
+    # The reasons are on each backend's own line; the verdict must not assert
+    # a cause -- an unset variable, a missing file -- that no line reported.
+    _backends(monkeypatch)
+    finding = probe.probe_configured_backends(None)
+    assert "no backend is configured" in finding.verdict
+    assert "TIINGO_TOKEN" not in finding.verdict
+    assert ".pgpass" not in finding.verdict
+
+
+# A made-up credential. The word `example` is in it so `src/secret_scan.py`
+# reads it as the placeholder it is.
+_MADE_UP = "example0credential0value"
+
+
+def test_a_credential_in_an_error_is_shown_as_its_variable(monkeypatch):
+    monkeypatch.setenv("EODHD_TOKEN", _MADE_UP)
+    error = _prices.PriceError(f"eodhd answered 401 for /eod/ATVI.US: {_MADE_UP}")
+    attempt = probe.ask_one_backend(_Backend("eodhd", error), _delisting("ATVI"))
+    assert _MADE_UP not in attempt.answer
+    assert "$EODHD_TOKEN" in attempt.answer
+
+
+def test_a_credential_in_a_failed_address_is_not_printed(monkeypatch):
+    # The shape `requests` gives a connection that failed: the address, query
+    # string and all -- and EODHD's token is in the query string.
+    monkeypatch.setenv("EODHD_TOKEN", _MADE_UP)
+    error = _requests.exceptions.ConnectionError(
+        "HTTPSConnectionPool(host='eodhd.com', port=443): Max retries exceeded "
+        f"with url: /api/eod/ATVI.US?from=2022-01-01&to=2023-10-13&api_token="
+        f"{_MADE_UP}&fmt=json (Caused by NameResolutionError)")
+    attempt = probe.ask_one_backend(_Backend("eodhd", error), _delisting("ATVI"))
+    assert _MADE_UP not in attempt.answer
+    assert "api_token=<redacted>" in attempt.answer
+
+
+def test_a_percent_encoded_credential_is_not_printed(monkeypatch):
+    # `requests` encodes the query string, so a token with a slash in it is not
+    # its own value in the address any more.
+    token = "example/credential+value"
+    monkeypatch.setenv("EODHD_TOKEN", token)
+    error = _requests.exceptions.ConnectionError(
+        "Max retries exceeded with url: /api/eod/ATVI.US?"
+        "api_token=example%2Fcredential%2Bvalue&fmt=json")
+    attempt = probe.ask_one_backend(_Backend("eodhd", error), _delisting("ATVI"))
+    assert "example%2Fcredential%2Bvalue" not in attempt.answer
+    assert token not in attempt.answer
+    assert "api_token=<redacted>" in attempt.answer
+
+
+def test_a_credential_is_taken_out_before_the_error_is_cut_short(monkeypatch):
+    # The token starts inside the two hundred characters that are shown and
+    # ends outside them. Cut first, and its first half is printed and no longer
+    # matches the whole value it would be looked for by.
+    monkeypatch.setenv("EODHD_TOKEN", _MADE_UP)
+    error = _prices.PriceError("x" * 190 + _MADE_UP)
+    attempt = probe.ask_one_backend(_Backend("eodhd", error), _delisting("ATVI"))
+    assert _MADE_UP[:10] not in attempt.answer
+
+
+def _finding(candidate, attempt):
+    return probe.finish(candidate, [attempt], "nothing came")
+
+
+def test_the_exit_names_the_ticker_that_was_served(monkeypatch, capsys):
+    refused = probe.Attempt("u", "plain", "status 403", [], True)
+    atvi = probe.Attempt("tiingo asked for ATVI", "tiingo", "2 row(s)",
+                         ["2023-10-12 close 0.21", "2023-10-13 close 0.21"],
+                         True, ticker="ATVI", month="2023-10")
+    monkeypatch.setattr(probe.interpreter_pin, "enforce", lambda: 0)
+    monkeypatch.setattr(probe, "CANDIDATES", (
+        lambda workspace: _finding("a bare request", refused),
+        lambda workspace: _finding("the configured backends in src/prices", atvi),
+    ))
+    assert probe.main() == 0
+    assert ("ATVI history came back from the configured backends in src/prices."
+            in capsys.readouterr().out)
+
+
+def test_the_exit_is_one_when_neither_delisting_came_back(monkeypatch, capsys):
+    refused = probe.Attempt("u", "plain", "status 403", [], True)
+    monkeypatch.setattr(probe.interpreter_pin, "enforce", lambda: 0)
+    monkeypatch.setattr(probe, "CANDIDATES", (
+        lambda workspace: _finding("a bare request", refused),))
+    assert probe.main() == probe.NO_HISTORY
+    assert ("No candidate served LEH's history, and no configured backend "
+            "served ATVI's." in capsys.readouterr().out)
+
+
+def test_a_backend_is_labelled_by_its_name_and_not_as_a_user_agent(capsys):
+    bare = probe.Attempt("https://stooq.com/q/d/l/?s=leh.us&i=d", "plain",
+                         "status 200", [], True)
+    backend = probe.Attempt("crsp asked for LEH through 2008-09-17", "crsp",
+                            "unconfigured", [], False)
+    probe.report(probe.Finding("both", [bare, backend], "nothing came"))
+    out = capsys.readouterr().out
+    assert "[plain user agent] status 200" in out
+    assert "[crsp] unconfigured" in out
+    assert "crsp user agent" not in out
+
+
+def test_an_unconfigured_reason_is_redacted_too(monkeypatch):
+    # The reasons are this package's own sentences today. A reason that ever
+    # quotes what it found is shown the same way an error is.
+    monkeypatch.setenv("TIINGO_TOKEN", _MADE_UP)
+    reason = _prices.Unconfigured(f"the token {_MADE_UP} was refused as malformed")
+    attempt = probe.ask_one_backend(_Backend("tiingo", reason), _delisting("ATVI"))
+    assert "unconfigured" in attempt.answer
+    assert _MADE_UP not in attempt.answer

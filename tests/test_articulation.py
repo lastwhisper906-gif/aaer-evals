@@ -620,8 +620,9 @@ def test_the_record_is_read_through_the_gate_and_not_around_it():
     """`cutoff_guard.recording()` sees the read, which a borrowed helper would not.
 
     `tests/test_fetch_companyfacts.py` fails any module but the fetcher that
-    reaches a fixture through `src/fetch_fixtures.py`'s helpers, because the
-    bypass scan reads the call and cannot see one made through them.
+    reaches a fixture through `src/fetch_fixtures.py`'s helpers. The bypass scan
+    follows a borrowed reader now, but only as far as the path the borrowing
+    module names itself, so that list is still what keeps the borrowers at one.
     """
     with cutoff_guard.recording() as opened:
         articulation.articulation("AAPL")

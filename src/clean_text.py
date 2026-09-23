@@ -463,7 +463,7 @@ def main(argv: list[str] | None = None) -> int:
     ticker = args.ticker.upper()
     fixtures_root = Path(args.fixtures)
     try:
-        cutoff = args.cutoff or cutoff_guard.default_cutoff(ticker, fixtures_root=fixtures_root)
+        cutoff = cutoff_guard.resolve_cutoff(args.cutoff, ticker, fixtures_root=fixtures_root)
         row = cutoff_guard.one_document(ticker, args.form, args.role,
                                         fixtures_root=fixtures_root)
         html = cutoff_guard.load_document(row["full_path"], cutoff,

@@ -327,7 +327,7 @@ def read_exhibit(pair: dict, *, cutoff, fixtures_root=cutoff_guard.FIXTURES) -> 
 
 def extract(ticker: str, *, cutoff=None, fixtures_root=cutoff_guard.FIXTURES) -> dict:
     """Exhibit 21 for the latest 10-K on record, diffed against the one before."""
-    cutoff = cutoff or cutoff_guard.default_cutoff(ticker, fixtures_root=fixtures_root)
+    cutoff = cutoff_guard.resolve_cutoff(cutoff, ticker, fixtures_root=fixtures_root)
     on_record = filings(ticker, cutoff=cutoff, fixtures_root=fixtures_root)
     if not on_record:
         raise ExhibitError(
@@ -565,7 +565,7 @@ def read_contract_exhibits(ticker: str, submission: dict, *, cutoff,
 def extract_on_trigger(ticker: str, *, cutoff=None,
                        fixtures_root=cutoff_guard.FIXTURES) -> dict:
     """Every Exhibit 10 the record's own 8-Ks ask for, at or before the cutoff."""
-    cutoff = cutoff or cutoff_guard.default_cutoff(ticker, fixtures_root=fixtures_root)
+    cutoff = cutoff_guard.resolve_cutoff(cutoff, ticker, fixtures_root=fixtures_root)
     submissions = eight_k_submissions(ticker, cutoff=cutoff, fixtures_root=fixtures_root)
     return {
         "ticker": ticker,

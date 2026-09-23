@@ -34,7 +34,7 @@ ending on the same day, and the indicator reports its value and raises no flag.
 The planted documents at the end are the guards -- an absent nine months, two of
 them, a filing that reports one period twice, a figure restated after the other
 was last stated, an annual duration under a tag no measure names, a residual
-that is not a quarter, a fact filed after the cutoff -- each with the control
+that is not a quarter, a fact filed after the cutoff (dropped, not refused) -- each with the control
 that shows the same document derives cleanly once the fault is taken out.
 """
 
@@ -50,6 +50,7 @@ import pytest
 
 from src import cutoff_guard, fetch_companyfacts, fourth_quarter
 from src.fetch_fixtures import TICKERS
+from tests import companyfacts_source
 from tests.test_fetch_companyfacts import (NOT_YET_IN_COMPANYFACTS,
                                            record as companyfacts_record)
 
@@ -526,6 +527,80 @@ def test_the_derivation_is_the_same_twice(ticker):
         == fourth_quarter.render(fourth_quarter.fourth_quarters(ticker))
 
 
+# --- at the annual trigger's own cutoff --------------------------------------
+#
+# Carrier's record is dated 2026-04-30, the 10-Q for March 2026; its 10-K for
+# 2025 was filed 2026-02-05. An annual run's cutoff is that 10-K's filing date,
+# and the record was refused whole to it. The figures below are the two rows
+# `tests/companyfacts_source.py` settles on at that cutoff -- a reader that opens
+# the gzipped record itself and imports nothing from `src/` -- written out with
+# the accession each row carries, and subtracted here. Dollars in millions.
+
+CARRIER_ANNUAL_CUTOFF = "2026-02-05"
+CARRIER_YEAR = "2025-01-01..2025-12-31"
+CARRIER_NINE_MONTHS = "2025-01-01..2025-09-30"
+CARRIER_TEN_K = "0001783180-26-000008"
+CARRIER_THIRD_QUARTER_TEN_Q = "0001783180-25-000066"
+CARRIER_BY_HAND = {
+    #  measure: (tag, annual, nine months, the quarter)
+    "revenue": ("RevenueFromContractWithCustomerExcludingAssessedTax",
+                21_747, 16_910, 4_837),
+    "operating_income": ("OperatingIncomeLoss", 2_172, 2_071, 101),
+    "net_income": ("NetIncomeLoss", 1_484, 1_431, 53),
+}
+
+
+def test_carriers_record_is_newer_than_its_annual_trigger():
+    """The case is the one the fix is for: read off the manifest, not the module."""
+    manifest = json.loads((cutoff_guard.FIXTURES / "CARR" / "manifest.json")
+                          .read_text(encoding="utf-8"))
+    dates = {(row["form"], row["role"]): row["filing_date"]
+             for row in manifest["documents"]}
+    assert dates[("10-K", "primary_html")] == CARRIER_ANNUAL_CUTOFF
+    assert dates[(fetch_companyfacts.FORM, fetch_companyfacts.ROLE)] \
+        > CARRIER_ANNUAL_CUTOFF
+
+
+@pytest.mark.parametrize("term", sorted(CARRIER_BY_HAND))
+def test_carriers_fourth_quarter_at_its_annual_cutoff_by_hand(term):
+    tag, annual, nine, quarter = CARRIER_BY_HAND[term]
+    assert annual - nine == quarter, f"{term}: the subtraction written out is wrong"
+    for period, value, accession in ((CARRIER_YEAR, annual, CARRIER_TEN_K),
+                                     (CARRIER_NINE_MONTHS, nine,
+                                      CARRIER_THIRD_QUARTER_TEN_Q)):
+        assert companyfacts_source.one_value(
+            "CARR", tag, period, CARRIER_ANNUAL_CUTOFF) == value * 1_000_000
+        assert {row["accn"] for row in companyfacts_source.reported(
+            "CARR", tag, period, CARRIER_ANNUAL_CUTOFF)} == {accession}
+
+    payload = fourth_quarter.fourth_quarters("CARR", CARRIER_ANNUAL_CUTOFF)
+    year = payload["fiscal_years"][0]
+    assert year["fiscal_year"]["end"] == CARRIER_YEAR.split("..")[1]
+    cell = year["measures"][term]
+    assert cell["tag"] == tag
+    assert cell["fourth_quarter"] == quarter * 1_000_000
+    assert cell["annual_as_filed"]["accessions"] == [CARRIER_TEN_K]
+    assert cell["nine_months_as_filed"]["accessions"] \
+        == [CARRIER_THIRD_QUARTER_TEN_Q]
+
+
+def test_carriers_rows_filed_after_its_annual_cutoff_are_in_the_record_and_not_read():
+    """Counted by the test-side reader: the record holds duration rows filed
+    after 2026-02-05, and the derivation read exactly the ones filed on or
+    before it."""
+    facts = companyfacts_source.record("CARR")["facts"]["us-gaap"]
+    duration = [row for concept in facts.values()
+                for rows in concept.get("units", {}).values()
+                for row in rows if row.get("start") and row.get("end")]
+    limit = dt.date.fromisoformat(CARRIER_ANNUAL_CUTOFF)
+    inside = [row for row in duration
+              if dt.date.fromisoformat(row["filed"]) <= limit]
+    assert len(inside) < len(duration)
+    payload = fourth_quarter.fourth_quarters("CARR", CARRIER_ANNUAL_CUTOFF)
+    assert payload["source"]["duration_facts"] == len(inside)
+    assert payload["source"]["filing_date"] is None
+
+
 # --- the two figures have to stand on one basis ------------------------------
 
 # Carrier's fiscal 2022 revenue, taken from the committed companyfacts record:
@@ -820,24 +895,59 @@ def test_a_residual_that_is_not_a_quarter_is_refused(tmp_path):
     assert "103 days, which is not a quarter" in cell["missing"]
 
 
-def test_a_fact_filed_after_the_cutoff_stops_the_derivation(tmp_path):
-    """The gate checks the date recorded for the document. This checks the rows,
-    so a record whose manifest date understates what is inside it is refused."""
+def test_a_fact_filed_after_the_cutoff_is_dropped_and_not_a_refusal(tmp_path):
+    """The control first: at the later cutoff both rows are inputs and the year
+    derives. At the earlier one the nine months was not yet filed, so it is not
+    an input -- the year says it has no nine months, rather than the whole
+    record being refused for holding a row the cutoff keeps out."""
     root = plant(tmp_path, revenue(
         fact(YEAR[0], YEAR[1], 1000),
-        fact(YEAR[0], NINE_MONTHS_END, 700, filed="2026-03-01")))
+        fact(YEAR[0], NINE_MONTHS_END, 700, filed="2026-03-01")),
+        filing_date="2026-03-01")
+    assert only_year(root, cutoff="2026-03-01")["fourth_quarter"] == 300
+
+    cell = only_year(root, cutoff="2026-02-01")
+    assert set(cell) == {"missing"}
+    assert "no nine-month year-to-date" in cell["missing"]
+    assert "1000" not in cell["missing"], \
+        "the reason must not read as a fourth quarter of the whole year"
+
+
+def test_a_record_newer_than_the_cutoff_is_read_at_the_cutoff(tmp_path):
+    """The record is dated by its newest row, 2026-02-01. A cutoff a day earlier
+    is not refused the whole file: it gets the year filed before it, and the
+    year filed on the record's own date is not in the answer at all."""
+    root = plant(tmp_path, revenue(
+        fact("2024-01-01", "2024-12-31", 900, filed="2025-02-01"),
+        fact("2024-01-01", "2024-09-30", 650, filed="2024-11-01"),
+        fact(YEAR[0], YEAR[1], 1000), fact(YEAR[0], NINE_MONTHS_END, 700)))
+    payload = fourth_quarter.fourth_quarters("ZZZZ", cutoff="2026-01-31",
+                                             fixtures_root=root)
+    assert [year["fiscal_year"]["end"] for year in payload["fiscal_years"]] \
+        == ["2024-12-31"]
+    assert payload["fiscal_years"][0]["measures"]["revenue"]["fourth_quarter"] \
+        == 250
+    assert payload["source"]["duration_facts"] == 2
+    assert payload["source"]["filing_date"] is None, \
+        "the record's own date is after this cutoff and is not a filing date"
+    assert payload["source"]["rows_used_through"] == "2026-01-31"
+
+
+def test_a_late_row_the_gate_let_through_stops_the_derivation(tmp_path, monkeypatch):
+    """The gate drops every late row, so a late row reaching the derivation is
+    the gate failing. The document is handed over ungated here to show that is
+    refused, not trimmed around."""
+    root = plant(tmp_path, revenue(
+        fact(YEAR[0], YEAR[1], 1000),
+        fact(YEAR[0], NINE_MONTHS_END, 700, filed="2026-03-01")),
+        filing_date="2026-03-01")
+    stored = json.loads((root / "ZZZZ" / "companyfacts.json").read_text())
+    monkeypatch.setattr(cutoff_guard, "load_catalogue",
+                        lambda path, cutoff, **_: stored)
     with pytest.raises(fourth_quarter.FourthQuarterError) as caught:
         fourth_quarter.fourth_quarters("ZZZZ", cutoff="2026-02-01",
                                        fixtures_root=root)
     assert "filed after the cutoff 2026-02-01" in str(caught.value)
-
-
-def test_the_record_itself_is_refused_after_the_cutoff(tmp_path):
-    root = plant(tmp_path, revenue(
-        fact(YEAR[0], YEAR[1], 1000), fact(YEAR[0], NINE_MONTHS_END, 700)))
-    with pytest.raises(cutoff_guard.CutoffViolationError):
-        fourth_quarter.fourth_quarters("ZZZZ", cutoff="2026-01-31",
-                                       fixtures_root=root)
 
 
 def test_an_instant_is_not_a_period_to_subtract_from(tmp_path):
