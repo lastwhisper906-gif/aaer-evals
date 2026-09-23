@@ -40,7 +40,7 @@ by ticker, wrapping around, so the pairing is fixed rather than drawn". Read as
 the twelve in ticker order -- `by ticker` is what distinguishes the pairing from
 the order `src/fetch_fixtures.py` and `tests/fixtures/README.md` happen to list
 them in, which is a fetch order and not a canonical one. That reading is
-`PAIRING_ORDER` below and nothing else depends on it, so a correction is one
+`pairing_order()` below and nothing else depends on it, so a correction is one
 line.
 
 A half is what its own reports say it is
@@ -118,11 +118,18 @@ import json
 from pathlib import Path
 
 from src import (agent_inputs, assemble_bundle, cutoff_guard,
-                 prediction_schema, quote_gate)
-from src.fetch_fixtures import TICKERS
+                 prediction_schema, quote_gate, universe)
 
-# The twelve in ticker order. See the module docstring for the reading.
-PAIRING_ORDER = tuple(sorted(TICKERS))
+
+def pairing_order() -> tuple[str, ...]:
+    """The twelve in ticker order. See the module docstring for the reading.
+
+    Read from `universe.json` when it is called rather than fixed when this
+    module is imported, so a thirteenth company is a row in a file and not an
+    edit here.
+    """
+    return tuple(sorted(universe.tickers()))
+
 
 # The two halves, by the names `docs/INPUT_SPEC.md` §6 gives them. A is the
 # company being scored and keeps the numbers side; B supplies the notes side.
@@ -179,21 +186,31 @@ class ControlError(Exception):
     """The control cannot be run as `docs/CHECKLIST.md` §8 describes it."""
 
 
-def one_of_the_twelve(ticker: str, order: tuple[str, ...] = PAIRING_ORDER) -> str:
+def one_of_the_twelve(ticker: str, order: tuple[str, ...] | None = None) -> str:
     """The ticker in upper case, or a refusal naming the twelve.
 
     The twelve are the whole population of this control: a thirteenth company
     has no reports on record, no pairing and no scorecard row, so a run named
-    for one is a run that could not be scored.
+    for one is a run that could not be scored. `order` defaults to
+    `pairing_order()` asked at this call, not a tuple bound when the module was
+    imported, so a row appended to `universe.json` is in the population without
+    a restart.
     """
+    order = pairing_order() if order is None else order
     ticker = ticker.upper()
     if ticker not in order:
         raise ControlError(f"{ticker} is not one of the twelve: {', '.join(order)}")
     return ticker
 
 
-def partner(ticker: str, order: tuple[str, ...] = PAIRING_ORDER) -> str:
-    """Company B for this company: the next in the twelve, wrapping around."""
+def partner(ticker: str, order: tuple[str, ...] | None = None) -> str:
+    """Company B for this company: the next in the twelve, wrapping around.
+
+    `order` defaults to `pairing_order()` asked at this call, like
+    `one_of_the_twelve`'s, so a row appended to `universe.json` is in the
+    pairing without a restart.
+    """
+    order = pairing_order() if order is None else order
     ticker = one_of_the_twelve(ticker, order)
     return order[(order.index(ticker) + 1) % len(order)]
 

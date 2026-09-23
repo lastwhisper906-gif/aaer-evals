@@ -1,0 +1,90 @@
+{
+  "comment": [
+    "The companies this pipeline reads. Adding one is an edit to this file and",
+    "nothing else: every fetcher, every fixture path and every routine takes the",
+    "universe from here, so a thirteenth row needs no code change.",
+    "cik and sic are what the SEC's own header prints for the company's latest",
+    "annual report filed on or before added_on: the submission header the fixture",
+    "fetcher commits at tests/fixtures/<ticker>/10-K/<accession>/, hashed in that",
+    "company's manifest. A new row is checked the same way once its fixtures are",
+    "fetched (python3.12 -m src.fetch_fixtures --ticker <ticker>).",
+    "added_on is the as_of of the fixture set the row entered with: for the",
+    "original twelve, tests/fixtures/<ticker>/manifest.json as_of, 2026-09-01.",
+    "The twelve test the pipeline, not the signal."
+  ],
+  "as_of": "2026-09-01",
+  "companies": [
+    {
+      "ticker": "AAPL",
+      "cik": "0000320193",
+      "sic": "3571",
+      "added_on": "2026-09-01"
+    },
+    {
+      "ticker": "STX",
+      "cik": "0001137789",
+      "sic": "3572",
+      "added_on": "2026-09-01"
+    },
+    {
+      "ticker": "CSCO",
+      "cik": "0000858877",
+      "sic": "3576",
+      "added_on": "2026-09-01"
+    },
+    {
+      "ticker": "PANW",
+      "cik": "0001327567",
+      "sic": "3577",
+      "added_on": "2026-09-01"
+    },
+    {
+      "ticker": "CARR",
+      "cik": "0001783180",
+      "sic": "3585",
+      "added_on": "2026-09-01"
+    },
+    {
+      "ticker": "LFUS",
+      "cik": "0000889331",
+      "sic": "3613",
+      "added_on": "2026-09-01"
+    },
+    {
+      "ticker": "GNRC",
+      "cik": "0001474735",
+      "sic": "3621",
+      "added_on": "2026-09-01"
+    },
+    {
+      "ticker": "CIEN",
+      "cik": "0000936395",
+      "sic": "3661",
+      "added_on": "2026-09-01"
+    },
+    {
+      "ticker": "QCOM",
+      "cik": "0000804328",
+      "sic": "3663",
+      "added_on": "2026-09-01"
+    },
+    {
+      "ticker": "ESE",
+      "cik": "0000866706",
+      "sic": "3669",
+      "added_on": "2026-09-01"
+    },
+    {
+      "ticker": "TTMI",
+      "cik": "0001116942",
+      "sic": "3672",
+      "added_on": "2026-09-01"
+    },
+    {
+      "ticker": "NVDA",
+      "cik": "0001045810",
+      "sic": "3674",
+      "added_on": "2026-09-01"
+    }
+  ]
+}
