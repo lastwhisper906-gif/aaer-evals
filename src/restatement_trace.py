@@ -278,14 +278,11 @@ def scan(ticker: str, *, cutoff=None, fixtures_root=cutoff_guard.FIXTURES) -> di
     — and the payload needs the resolved date to say which run this was.
     """
     fixtures_root = Path(fixtures_root)
-    # `cutoff or default` made the empty string a request for the default, so
-    # `--cutoff ""` ran at the fixture set's as-of date and said so in a payload
-    # nobody had asked for. Only an absent cutoff means the default; anything
-    # given is parsed, and `parse_date`'s rule is "never a silent default".
-    # `src/tag_continuity.py` reads it this way and the two readers disagreed.
-    if cutoff is None:
-        cutoff = cutoff_guard.default_cutoff(ticker, fixtures_root=fixtures_root)
-    cutoff = cutoff_guard.parse_date(cutoff, "cutoff")
+    # This rule was written here first, after the two companyfacts readers
+    # disagreed about what `--cutoff ""` meant. It now lives in
+    # `cutoff_guard.resolve_cutoff` and every reader calls it, so the ten call
+    # sites that had their own copy cannot drift apart again.
+    cutoff = cutoff_guard.resolve_cutoff(cutoff, ticker, fixtures_root=fixtures_root)
     record = cutoff_guard.one_document(ticker, COMPANYFACTS_FORM, COMPANYFACTS_ROLE,
                                        fixtures_root=fixtures_root)
     document = cutoff_guard.load_catalogue(record["full_path"], cutoff,

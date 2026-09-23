@@ -306,7 +306,7 @@ def critical_audit_matters(section_text: str) -> dict:
 
 def extract(ticker: str, form: str, section: str, *, cutoff=None,
             fixtures_root=cutoff_guard.FIXTURES) -> dict:
-    cutoff = cutoff or cutoff_guard.default_cutoff(ticker, fixtures_root=fixtures_root)
+    cutoff = cutoff_guard.resolve_cutoff(cutoff, ticker, fixtures_root=fixtures_root)
     row = cutoff_guard.one_document(ticker, form, "primary_html",
                                     fixtures_root=fixtures_root)
     html = cutoff_guard.load_document(row["full_path"], cutoff,
@@ -410,7 +410,7 @@ def risk_factors(ticker: str, form: str = "10-K", *, cutoff=None,
       first filing whole.
     - **diffed** — `risk_factor_diff` above, over the two sections' paragraphs.
     """
-    cutoff = cutoff or cutoff_guard.default_cutoff(ticker, fixtures_root=fixtures_root)
+    cutoff = cutoff_guard.resolve_cutoff(cutoff, ticker, fixtures_root=fixtures_root)
     row = cutoff_guard.one_document(ticker, form, "primary_html",
                                     fixtures_root=fixtures_root)
     found = {

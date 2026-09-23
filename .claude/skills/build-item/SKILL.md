@@ -43,8 +43,9 @@ Red means there is no next step. Not "red but unrelated", not "red on a
 pre-existing failure" — fix it or stop.
 
 Run it as `make check PYTHON=.venv/bin/python`, on the pinned interpreter,
-Python 3.12. A result from another interpreter is not worth producing, and the
-bare `make check` reaches for a system interpreter that has no pytest. A
+Python 3.12. A result from another interpreter is not worth producing. The
+`Makefile` default is the same interpreter, but a worktree's `.venv` is a link
+that has to exist before that default means anything. A
 worktree has no `.venv` of its own: `ln -s ../../../.venv .venv` before the
 first run there. Never put a pipe between the test run and anything that
 depends on it passing; a pipeline's exit status is the last command's, and a red
