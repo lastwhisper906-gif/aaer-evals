@@ -27,14 +27,14 @@ a file that is.
 
 **The window is anchored on the run's own period, not on the record's newest
 one.** The caller passes the triggering report's period of report. The eight
-quarters are walked back from there, so `Q-0` is the quarter this run is about
-whether or not the record reaches it, and `FY-0` is the newest fiscal year at or
-before that period — the trigger's own year on an annual report, and the last
+quarters are walked back from there, so `quarters-back-0` is the quarter this
+run is about whether or not the record reaches it, and `years-back-0` is the
+newest fiscal year at or before that period — the trigger's own year on an annual report, and the last
 year to end on a quarterly one. companyfacts can lag the filing that triggered
 the run — two of these twelve records were fetched before their 10-Q — and
 anchored on the record those tables labelled the quarter *before* the run's own
-`Q-0`, left the run's own period in no slot at all, and said twelve of thirteen
-periods were on record. A slot the record cannot reach is reported empty with
+`quarters-back-0`, left the run's own period in no slot at all, and said twelve
+of thirteen periods were on record. A slot the record cannot reach is reported empty with
 that named as the reason.
 
 **The rules that decide which row is the row**, all of them mechanical:
@@ -444,8 +444,8 @@ def requested(available: list[dict], count: int, step: int, kind: str,
     looks identical until the record is older than the trigger, and then it
     quietly renames the periods: Carrier's record was fetched on 2026-04-30 and
     its 10-Q was filed 2026-07-28, so the quarter before the run's own was
-    labelled `Q-0`, the run's own quarter appeared nowhere, and the table said
-    twelve of thirteen periods were on record. A reader comparing that against
+    labelled `quarters-back-0`, the run's own quarter appeared nowhere, and the
+    table said twelve of thirteen periods were on record. A reader comparing that against
     `input_numbers.json`, which does carry the June quarter, has two inputs
     disagreeing about which quarter this is.
 
@@ -504,9 +504,9 @@ def year_end_anchor(available: list[dict], period_end: str | None) -> str | None
     record does not carry the year. It is projected, by the same 364-day step
     `requested` already walks back on: a record fetched the day before a 10-K
     lands holds last year's annual figures and nothing else, and reading its
-    newest year as `FY-0` hands a reader the prior year under the label of the
-    year the run is about. Projected instead, `FY-0` is the year the run is
-    about and the slot is empty with the reason.
+    newest year as `years-back-0` hands a reader the prior year under the label
+    of the year the run is about. Projected instead, `years-back-0` is the year
+    the run is about and the slot is empty with the reason.
 
     `None` when there is no anchor to place — no trigger period, or a record
     with no annual duration at all — and then the caller falls back to the
@@ -621,6 +621,13 @@ def ratio(document: dict, index: dict, name: str, period: dict) -> dict:
 # --- the series --------------------------------------------------------------
 
 def _label(prefix: str, index: int) -> str:
+    """`quarters-back-0`, `years-back-3`: how far back, in words and a count.
+
+    They were `Q-0` and `FY-3`, which is the letter-number shape `CLAUDE.md`
+    forbids. A reader quotes these labels into a report, and the report is read
+    by the plain-name check even though this table, as the text the agent saw,
+    is not.
+    """
     return f"{prefix}-{index}"
 
 
@@ -933,11 +940,13 @@ def trends(document: dict, cutoff, *, period_end=None) -> dict:
                  f"report is the first to state are not in it")
     quarters = _series(document, index,
                        requested(periods(index, "quarter"), QUARTERS_REQUESTED,
-                                 QUARTER_STEP, "quarter", period_end, stale), "Q")
+                                 QUARTER_STEP, "quarter", period_end, stale),
+                       "quarters-back")
     annual = periods(index, "year")
     years = _series(document, index,
                     requested(annual, YEARS_REQUESTED, YEAR_STEP, "year",
-                              year_end_anchor(annual, period_end), stale), "FY")
+                              year_end_anchor(annual, period_end), stale),
+                    "years-back")
     add_changes(quarters, years)
     for row in years:
         row["research_and_development_capitalized"] = rnd_capitalized(

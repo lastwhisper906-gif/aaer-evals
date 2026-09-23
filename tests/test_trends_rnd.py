@@ -85,7 +85,7 @@ def printed(ticker: str, phrase: str) -> None:
         f"{ticker} 10-K does not print {phrase!r}"
 
 
-def column(ticker: str, label: str = "FY-0") -> dict:
+def column(ticker: str, label: str = "years-back-0") -> dict:
     row = {row["label"]: row for row in table(ticker)["years"]}[label]
     return row["research_and_development_capitalized"]
 
@@ -228,7 +228,7 @@ def test_the_asset_rolls_forward_by_expense_less_amortization():
     """
     in_the_record("CIEN", "ResearchAndDevelopmentExpense", "2018-11-04..2019-11-02",
                   548_139_000.0, "0000936395-21-000054", "2021-12-17")
-    this, last = column("CIEN", "FY-0"), column("CIEN", "FY-1")
+    this, last = column("CIEN", "years-back-0"), column("CIEN", "years-back-1")
     assert this["research_and_development_asset"]["value"] == pytest.approx(
         last["research_and_development_asset"]["value"] + 848_329_000.0
         - this["research_and_development_amortization"]["value"], rel=1e-12)
