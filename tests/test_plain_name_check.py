@@ -586,6 +586,9 @@ def _run_with_input(tmp_path, where=f"{RUN}/agents/notes-text-reader/input_mdna.
 
 
 def test_a_report_quoting_its_own_runs_input_is_not_named(tmp_path, capsys):
+    """The quote, and the reader's own sentence about it. `H200` is the filer's
+    name for the product, and a reader describing the charge has no other name
+    to give it; the rule is about names this project mints."""
     run_dir = _run_with_input(tmp_path)
     report = run_dir / "report_notes_text.md"
     report.write_text(f'"quote": "{H200_SENTENCE}"\n'
@@ -640,6 +643,41 @@ def test_a_code_in_a_run_files_name_is_still_named(tmp_path, capsys):
 
     assert status == plain_name_check.FOUND
     assert lines == [f"{named}:0: report_H200.md"]
+
+
+def test_a_downstream_record_of_the_run_may_repeat_the_filers_token(tmp_path, capsys):
+    """A supervisor citing the reader's item may name the product the item
+    names. The token is still the filer's two layers later."""
+    run_dir = _run_with_input(tmp_path)
+    prediction = run_dir / "prediction_accounting.json"
+    prediction.write_text('{"note": "the H200 inventory charge"}\n', encoding="utf-8")
+
+    status, lines = run(capsys, str(tmp_path))
+
+    assert (status, lines) == (0, [])
+
+
+def test_a_code_only_a_json_input_carries_is_named_in_the_runs_reports(tmp_path, capsys):
+    """The JSON inputs are this project's structures, so a code in one is ours.
+    The trend table's period labels were such codes, and an exemption that read
+    `input_trends.json` would have silenced them in every report quoting a cell."""
+    run_dir = _run_with_input(tmp_path)
+    for where in (run_dir, run_dir / "agents" / "numbers-reader"):
+        where.mkdir(parents=True, exist_ok=True)
+        (where / "input_trends.json").write_text(
+            f'{{"period": "{PLANTED}"}}\n', encoding="utf-8")
+    report = run_dir / "report_numbers.md"
+    report.write_text(f'"quote": "\\"period\\": \\"{PLANTED}\\""\n', encoding="utf-8")
+
+    status, lines = run(capsys, str(tmp_path))
+
+    assert status == plain_name_check.FOUND
+    assert lines == [f"{report}:1: {PLANTED}"]
+
+
+def test_the_prose_inputs_are_the_files_the_bundle_gives_paragraphs():
+    from src import assemble_bundle
+    assert plain_name_check.QUOTABLE_PROSE == frozenset(assemble_bundle.PARAGRAPH_FILES)
 
 
 def test_the_run_is_the_innermost_runs_directory():

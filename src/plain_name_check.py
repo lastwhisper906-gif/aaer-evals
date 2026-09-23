@@ -117,19 +117,26 @@ Every changed file's own name, whatever it is. Its contents too, unless:
   what the agent saw. Correcting a code inside one would falsify the record.
 
 And one kind of occurrence is read and not reported: **a code in a run record
-that the same run's inputs already carry.** A reader's report under
-`runs/<ticker>/<accession>/` quotes those inputs character for character --
-`src/quote_gate.py` drops any quote that does not match -- so a product name
-the filing spells `H200` reaches the report as `H200` or not at all. The input
-is exempt as source text; the quote of it cannot be held to a rule its source
-is exempt from, and a committed run record can never be corrected anyway. The
-exemption is the token, not the file: a code the run's inputs do not carry is
-still reported in the same report, a code from another run's inputs is not
-this run's, and nothing outside `runs/` is exempted by anything a run holds. It
-is as good as the input exemption and no better -- a project-made input that
-carried a code would carry it through -- which is why the trend table, the one
-project-made input that did, is judged for plain names on its own
-(`tests/test_trends.py`).
+that the same run's prose inputs already carry.** Those inputs are the filing's
+own text -- the notes, the MD&A, the controls sections, the 8-Ks -- plus the
+prior flags built from reports that were held to this rule in their own run:
+the files whose paragraphs `src/quote_gate.py` makes a reader quote character
+for character. A product name the filing spells `H200` reaches a report as
+`H200` or not at all, and the same token in the reader's own sentence about it
+is the filer's name for the product, not a code this project minted. The rule
+is about the names this project makes, so the exemption is the filer's token,
+in any record of the run that carries it: a reader's quote, a reader's own
+prose, or a comparer or supervisor repeating what the reader carried.
+
+It is scoped three ways, each judged. The token, not the file: a code the run's
+prose inputs do not carry is still reported in the same report. The run: a code
+from another run's inputs is not this run's, and nothing outside `runs/` is
+exempted by anything a run holds. And the prose: the JSON inputs are this
+project's structures -- ids, labels and keys Python wrote around the filer's
+numbers -- so a code carried only by one of them is ours, and it is reported
+wherever a record repeats it. The trend table's period labels were exactly that
+kind of code, and an exemption reaching `input_trends.json` would have silenced
+them in every report that quoted a cell.
 * it is `.git`, `.venv`, `__pycache__`, `.pytest_cache`, `node_modules`, or does
   not decode as UTF-8.
 """
@@ -255,11 +262,20 @@ def run_directory(path: Path) -> Path | None:
     return None
 
 
+# The run's prose inputs: the files whose `[id]` paragraphs a reader quotes and
+# `src/quote_gate.py` matches character for character. The same six names as
+# `src/assemble_bundle.py`'s `PARAGRAPH_FILES`, written out here so this check
+# keeps importing nothing but the interpreter pin; a test holds the two equal.
+QUOTABLE_PROSE = frozenset({"input_notes.md", "input_notes_history.md", "input_mdna.md",
+                            "input_controls.md", "input_8k.md",
+                            "input_prior_predictions.md"})
+
+
 def quoted_codes(run: Path) -> frozenset[str]:
-    """Every code the run's own inputs carry: what its reports may quote back."""
+    """Every code the run's prose inputs carry: the filer's tokens its records may repeat."""
     carried = set()
     for path in _all_files_under(run):
-        if not path.name.startswith(VERBATIM_INPUT_PREFIX) or not path.is_file():
+        if path.name not in QUOTABLE_PROSE or not path.is_file():
             continue
         try:
             text = path.read_text(encoding="utf-8")
