@@ -433,8 +433,7 @@ def articulation(ticker: str, fixtures: Path | None = None,
                  cutoff=None) -> dict:
     """Every articulation row this company's committed filings support."""
     root = Path(fixtures) if fixtures else cutoff_guard.FIXTURES
-    cutoff = (cutoff_guard.parse_date(cutoff, "cutoff") if cutoff
-              else cutoff_guard.default_cutoff(ticker, fixtures_root=root))
+    cutoff = cutoff_guard.resolve_cutoff(cutoff, ticker, fixtures_root=root)
     record, held_on_record = document(ticker, root, cutoff)
     index = facts_by_accession(record)
     latest = fetch_companyfacts.latest_filed(record.get("facts", {}))

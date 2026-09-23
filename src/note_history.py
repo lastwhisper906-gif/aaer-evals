@@ -166,7 +166,7 @@ def compare(current: list[str], prior: list[str]) -> list[dict]:
 
 
 def history(ticker: str, *, cutoff=None, fixtures_root=cutoff_guard.FIXTURES) -> dict:
-    cutoff = cutoff or cutoff_guard.default_cutoff(ticker, fixtures_root=fixtures_root)
+    cutoff = cutoff_guard.resolve_cutoff(cutoff, ticker, fixtures_root=fixtures_root)
     now = extract_notes.extract(ticker, "10-Q", cutoff=cutoff, fixtures_root=fixtures_root)
     before = extract_notes.extract(ticker, "10-Q", role="prior_period_xbrl_instance",
                                    cutoff=cutoff, fixtures_root=fixtures_root)
