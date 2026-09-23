@@ -116,7 +116,15 @@ done
 ```sh
 # every pull request that opened with the label because no lens read it
 gh pr list --state all --label one-lens --json number,title,mergeCommit,state
+# and every one whose second lens ran on Opus because Fable was unavailable
+gh pr list --state all --label "same-model lenses" --json number,title,mergeCommit,state
 ```
+
+A ledger row whose lens is `claude-opus (fable unavailable)` is the builder's own
+model reading its own change in a fresh context: a per-run substitution, taken
+only after the retries, when Fable answered 429, 529 or a usage limit. It is not
+Codex, so the queue in §1 already keeps it. This routine re-runs it through
+`tools/second_lens.sh`, whose fallback is Fable, and the new row replaces it.
 
 A `one-lens` pull request that is still open is not this routine's to merge. Run
 the lens on it, append the verdict, and leave the merge to the build skill's own

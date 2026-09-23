@@ -57,16 +57,20 @@ import sys
 from pathlib import Path
 
 try:
-    from src import fetch_fixtures, interpreter_pin, universe
+    from src import cutoff_guard, fetch_fixtures, interpreter_pin, universe
 except ImportError:  # invoked as a plain script: python3.12 src/fetch_companyfacts.py
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from src import fetch_fixtures, interpreter_pin, universe
+    from src import cutoff_guard, fetch_fixtures, interpreter_pin, universe
 
 COMPANYFACTS_URL = "https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json"
 
 # One more row in the manifest's `documents`, in the shape the filings use.
 FORM = "companyfacts"
-ROLE = "standard_taxonomy_history"
+# The role this script writes into the manifest is the role the gate reads back
+# out of it, so it is the gate's constant and not a second copy of the string.
+# `src/cutoff_guard.py` keeps the one spelling because it imports nothing from
+# `src/` and so can be depended on by everything that does.
+ROLE = cutoff_guard.CATALOGUE_ROLE
 FILENAME = "companyfacts.json"
 
 DATE_BASIS = ("the latest filing whose facts this record contains; companyfacts "
