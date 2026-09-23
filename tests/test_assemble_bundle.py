@@ -1219,6 +1219,43 @@ def test_apples_previous_quarter_is_filled_because_its_instance_is_read():
     assert quarters["quarters-back-1"]["ratios_filled"] > 0
 
 
+@pytest.mark.parametrize("ticker", TICKERS)
+def test_every_row_the_numbers_reader_can_cite_prints_its_id(ticker):
+    """`docs/INPUT_SPEC.md` §2's shapes, filled from what the row itself prints.
+
+    A trend cell's id is the run's accession, the ratio's key and its period's
+    own `start..end`. A fact's is its own filing's accession, its tag and its
+    period, then each dimension as `{dimension}={member}` (a typed member's
+    value in place of a member) joined by commas, then `unit={unit}` when the
+    amount is in a currency other than the dollar. The numbers reader copies
+    these off the row, so each is checked against the row's printed fields and
+    not against the code that wrote it."""
+    bundle = built(ticker)
+    accession = bundle["manifest"]["accession"]
+    table = json.loads(bundle["texts"]["input_trends.json"])
+    cells = [(row, metric, cell) for row in table["quarters"] + table["years"]
+             for metric, cell in row["ratios"].items()]
+    assert cells
+    for row, metric, cell in cells:
+        assert cell["paragraph_id"] == \
+            f"{accession}:trends:{metric}:{row['start']}..{row['end']}"
+    for fact in json.loads(bundle["texts"]["input_numbers.json"])["facts"]:
+        context = fact["context"]
+        period = context.get("instant") or f"{context['start']}..{context['end']}"
+        spelled = [f"{fact['source_accession']}:facts:{fact['tag']}:{period}"]
+        members = [f"{one['dimension']}={one['member']}"
+                   for one in context.get("segment") or []]
+        members += [f"{one['dimension']}={one['value']}"
+                    for one in context.get("typed_segment") or []]
+        if members:
+            spelled.append(",".join(members))
+        currencies = [measure for measure in fact["unit"].replace("*", "/").split("/")
+                      if measure.startswith("iso4217:")]
+        if any(currency != "iso4217:USD" for currency in currencies):
+            spelled.append(f"unit={fact['unit']}")
+        assert fact["paragraph_id"] == ":".join(spelled)
+
+
 def test_a_cutoff_equal_to_the_triggering_reports_own_date_is_the_default():
     """The boundary itself is allowed — it is the default — so the check above
     is an upper bound and not an off-by-one that forbids the normal case."""

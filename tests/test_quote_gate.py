@@ -29,6 +29,7 @@ import pytest
 
 from src import assemble_bundle, cutoff_guard, quote_gate, trends
 from src.cutoff_guard import CutoffGuardError
+from src.fetch_fixtures import TICKERS
 from src.quote_gate import QuoteGateError
 
 MANIFEST = "input_manifest.json"
@@ -51,14 +52,17 @@ The allowance for credit losses was reduced during the period.
 TRENDS = """{
   "quarters": [
     {
+      "end": "2025-06-28",
       "filled": true,
       "label": "quarters-back-0",
       "ratios": {
         "days_sales_outstanding": {
           "days": 91,
+          "paragraph_id": "0000320193-25-000073:trends:days_sales_outstanding:2025-03-30..2025-06-28",
           "value": 51.7
         }
-      }
+      },
+      "start": "2025-03-30"
     }
   ],
   "ticker": "AAPL"
@@ -72,6 +76,7 @@ NUMBERS = """{
   "facts": [
     {
       "id": "0000320193-25-000073:receivables_net_current",
+      "paragraph_id": "0000320193-25-000073:facts:AccountsReceivableNetCurrent:2025-06-28",
       "tag": "AccountsReceivableNetCurrent",
       "prefix": "us-gaap",
       "unit": "usd",
@@ -90,16 +95,21 @@ MANIFEST_BEFORE = {
     "counts": {"paragraphs": 2, "exclusions": 0},
 }
 
-TREND_CELL = f"{ACCESSION}:trends:days_sales_outstanding:quarters-back-0"
-FACT_ROW_ID = f"{ACCESSION}:receivables_net_current"
+# The ids the two rows print, copied out of the text above.
+TREND_CELL = f"{ACCESSION}:trends:days_sales_outstanding:2025-03-30..2025-06-28"
+FACT_ROW_ID = f"{ACCESSION}:facts:AccountsReceivableNetCurrent:2025-06-28"
 
 # The two rows above as the two files print them, copied out of the text.
 TREND_ROW = ('{\n'
              '          "days": 91,\n'
+             '          "paragraph_id": "0000320193-25-000073:trends:days_sales_outstanding'
+             ':2025-03-30..2025-06-28",\n'
              '          "value": 51.7\n'
              '        }')
 FACT_ROW = ('{\n'
             '      "id": "0000320193-25-000073:receivables_net_current",\n'
+            '      "paragraph_id": "0000320193-25-000073:facts:AccountsReceivableNetCurrent'
+            ':2025-06-28",\n'
             '      "tag": "AccountsReceivableNetCurrent",\n'
             '      "prefix": "us-gaap",\n'
             '      "unit": "usd",\n'
@@ -145,7 +155,7 @@ def numbers_items() -> list[dict]:
     return [
         {"id": "revenue_recognition_days_sales_outstanding_high",
          "paragraph_id": TREND_CELL,
-         "quote": '"days": 91,\n          "value": 51.7'},
+         "quote": f'"paragraph_id": "{TREND_CELL}",\n          "value": 51.7'},
         {"id": "revenue_recognition_receivables_on_the_balance_sheet",
          "paragraph_id": FACT_ROW_ID,
          "quote": '"tag": "AccountsReceivableNetCurrent"'},
@@ -353,7 +363,7 @@ def test_a_trend_cell_is_quotable_as_the_row_the_file_prints(tmp_path):
     assert quote_gate.quotable(root / "numbers_reader", ACCESSION)[TREND_CELL] == TREND_ROW
 
 
-def test_a_numeric_fact_is_quotable_by_the_id_it_already_carries(tmp_path):
+def test_a_numeric_fact_is_quotable_by_the_paragraph_id_it_prints(tmp_path):
     root = plant(tmp_path)
     assert FACT_ROW in NUMBERS
     assert quote_gate.quotable(root / "numbers_reader", ACCESSION)[FACT_ROW_ID] == FACT_ROW
@@ -362,11 +372,11 @@ def test_a_numeric_fact_is_quotable_by_the_id_it_already_carries(tmp_path):
 def test_a_row_re_rendered_onto_one_line_does_not_match(tmp_path):
     """The alteration a normalizing gate cannot see, and the one it invents.
 
-    `{"days": 91, "value": 51.7}` is the row with its indent and its line breaks
-    taken out. It is in no committed input, so it is not a quote of anything.
+    The row with its indent and its line breaks taken out is in no committed
+    input, so it is not a quote of anything.
     """
     root = plant(tmp_path)
-    one_line = '{"days": 91, "value": 51.7}'
+    one_line = f'{{"days": 91, "paragraph_id": "{TREND_CELL}", "value": 51.7}}'
     assert one_line not in TRENDS
     item = {"id": "revenue_recognition_days_sales_outstanding_high",
             "paragraph_id": TREND_CELL, "quote": one_line}
@@ -388,11 +398,146 @@ def test_a_row_with_its_keys_reordered_does_not_match(tmp_path):
 def test_a_computed_row_that_is_not_in_the_input_names_nothing(tmp_path):
     root = plant(tmp_path)
     index = quote_gate.quotable(root / "numbers_reader", ACCESSION)
-    for absent in (f"{ACCESSION}:trends:days_sales_outstanding:quarters-back-1",
-                   f"{ACCESSION}:trends:gross_margin:quarters-back-0",
-                   f"{ACCESSION}:articulation:receivables:quarters-back-0",
-                   f"{ACCESSION}:receivables_net_prior"):
+    for absent in (f"{ACCESSION}:trends:days_sales_outstanding:2024-12-29..2025-03-29",
+                   f"{ACCESSION}:trends:gross_margin:2025-03-30..2025-06-28",
+                   f"{ACCESSION}:articulation:receivables:2025-06-28",
+                   f"{ACCESSION}:facts:AccountsReceivableNetCurrent:2025-03-29"):
         assert absent not in index
+
+
+def test_only_the_ids_the_rows_print_are_indexed(tmp_path):
+    """The gate used to mint a trend cell's id from the row's `label`, and name a
+    fact by its element's `id`. Neither is the id the row prints now, and an id
+    the gate composes for itself is one the reader would have to compose too."""
+    root = plant(tmp_path)
+    index = quote_gate.quotable(root / "numbers_reader", ACCESSION)
+    assert sorted(index) == [FACT_ROW_ID, TREND_CELL]
+    assert f"{ACCESSION}:trends:days_sales_outstanding:quarters-back-0" not in index
+    assert f"{ACCESSION}:receivables_net_current" not in index
+
+
+def test_a_row_that_prints_no_id_offers_nothing_to_quote(tmp_path):
+    """A committed table from before the rows printed their ids: nothing in it
+    is quotable, so an item citing it is dropped rather than resolved by a
+    name the gate made up."""
+    root = plant(tmp_path)
+    reader = root / "numbers_reader"
+    for name, text in (("input_trends.json", TRENDS), ("input_numbers.json", NUMBERS)):
+        unnamed = "".join(line for line in text.splitlines(keepends=True)
+                          if '"paragraph_id"' not in line)
+        (reader / name).write_text(unnamed, encoding="utf-8")
+    assert quote_gate.quotable(reader, ACCESSION) == {}
+
+
+def test_a_fact_printed_by_two_elements_is_quotable_out_of_either_row(tmp_path):
+    """A filing can state one fact twice -- NVIDIA's 10-Q 0001045810-26-000075
+    prints its inventory balance as elements `f-118` and `f-635` -- and both rows
+    print one paragraph id. Each row is the file's own characters, so a quote
+    out of either stands, and a quote that runs across the two does not."""
+    root = plant(tmp_path)
+    payload = json.loads(NUMBERS)
+    twin = dict(payload["facts"][0], id=f"{ACCESSION}:receivables_net_current_again")
+    payload["facts"].append(twin)
+    text = json.dumps(payload, indent=2, sort_keys=False) + "\n"
+    (root / "numbers_reader" / "input_numbers.json").write_text(text, encoding="utf-8")
+    index = quote_gate.quotable(root / "numbers_reader", ACCESSION)
+    first, second = quote_gate.rows_of(index, FACT_ROW_ID)
+    assert first == FACT_ROW and first in text and second in text
+    for quote in (f'"id": "{ACCESSION}:receivables_net_current",',
+                  f'"id": "{ACCESSION}:receivables_net_current_again",'):
+        assert quote_gate.quote_drop_reason(
+            {"id": "receivables_balance", "paragraph_id": FACT_ROW_ID,
+             "quote": quote}, index) is None
+    across = '"value": "29508000000"\n    },\n    {'
+    assert across in text
+    assert quote_gate.quote_drop_reason(
+        {"id": "receivables_balance", "paragraph_id": FACT_ROW_ID,
+         "quote": across}, index) is not None
+
+
+def _numbers_with_twin(root: Path, first: dict, twin: dict) -> Path:
+    """`input_numbers.json` holding the planted fact changed by `first`, and a
+    second row printing the same id changed by `twin`."""
+    payload = json.loads(NUMBERS)
+    fact = dict(payload["facts"][0], **first)
+    payload["facts"] = [fact, dict(fact, id=f"{ACCESSION}:receivables_net_current_again",
+                                   **twin)]
+    folder = root / "numbers_reader"
+    (folder / "input_numbers.json").write_text(
+        json.dumps(payload, indent=2, sort_keys=False) + "\n", encoding="utf-8")
+    return folder
+
+
+@pytest.mark.parametrize("twin", [
+    {"tag": "AccountsReceivableGrossCurrent"},
+    {"prefix": "aapl"},
+    {"unit": "iso4217:EUR"},
+    {"context": {"instant": "2025-03-29"}},
+    {"value": "29000000000"},
+], ids=["tag", "prefix", "unit", "context", "value"])
+def test_two_facts_printing_one_id_are_refused(tmp_path, twin):
+    """One id owns two rows only when they state one fact. A file whose rows
+    print one id over two concepts, contexts, units or numbers was not written
+    by the extractor, and a quote of one row would stand for the other."""
+    folder = _numbers_with_twin(plant(tmp_path), {}, twin)
+    with pytest.raises(quote_gate.QuoteGateError, match="one id names one fact"):
+        quote_gate.quotable(folder, ACCESSION)
+
+
+def test_one_fact_at_two_precisions_is_quotable_out_of_either_row(tmp_path):
+    """NVIDIA's 10-K 0001045810-26-000021 states goodwill at 2026-01-25 as
+    20832000000 at decimals -6 and as 20800000000 at decimals -8. Each is the
+    other rounded to its own precision, so both are the one fact."""
+    folder = _numbers_with_twin(plant(tmp_path),
+                                {"value": "20832000000", "decimals": "-6"},
+                                {"value": "20800000000", "decimals": "-8"})
+    index = quote_gate.quotable(folder, ACCESSION)
+    assert [('"value": "20832000000"' in row, '"value": "20800000000"' in row)
+            for row in quote_gate.rows_of(index, FACT_ROW_ID)] == [(True, False), (False, True)]
+
+
+def test_two_numbers_no_rounding_reconciles_are_refused(tmp_path):
+    """21000000000 to the hundred million covers 20950000000 to 21050000000,
+    and 20832000000 to the million is outside it: two numbers, not one fact
+    rounded twice."""
+    folder = _numbers_with_twin(plant(tmp_path),
+                                {"value": "20832000000", "decimals": "-6"},
+                                {"value": "21000000000", "decimals": "-8"})
+    with pytest.raises(quote_gate.QuoteGateError, match="one id names one fact"):
+        quote_gate.quotable(folder, ACCESSION)
+
+
+@pytest.mark.parametrize("ticker", TICKERS)
+def test_every_companys_rows_under_one_id_state_one_fact(ticker, tmp_path):
+    """The refusal above is for a file the extractor did not write. Each of the
+    twelve companies' 10-Q bundles, as `src/assemble_bundle.py` writes it,
+    indexes without it, and states some fact more than once."""
+    built = assemble_bundle.build(ticker, "10-Q")
+    assemble_bundle.write(built, tmp_path)
+    index = quote_gate.quotable(tmp_path, built["manifest"]["accession"])
+    assert any(len(quote_gate.rows_of(index, identifier)) > 1 for identifier in index)
+
+
+def test_a_trend_cell_named_for_another_run_is_not_quotable_in_this_one(tmp_path):
+    """The table names no filing, so its cells carry the run's accession. One
+    printing another accession was assembled for another run."""
+    root = plant(tmp_path)
+    other = "0000320193-25-000079"
+    (root / "numbers_reader" / "input_trends.json").write_text(
+        TRENDS.replace(f"{ACCESSION}:trends:", f"{other}:trends:"), encoding="utf-8")
+    index = quote_gate.quotable(root / "numbers_reader", ACCESSION)
+    assert sorted(index) == [FACT_ROW_ID]
+
+
+def test_one_trend_cell_id_printed_twice_is_refused(tmp_path):
+    """Two facts can be one fact printed twice. Two cells cannot be one cell."""
+    root = plant(tmp_path)
+    payload = json.loads(TRENDS)
+    payload["years"] = [dict(payload["quarters"][0], label="years-back-0")]
+    (root / "numbers_reader" / "input_trends.json").write_text(
+        trends.render(payload), encoding="utf-8")
+    with pytest.raises(QuoteGateError):
+        quote_gate.quotable(root / "numbers_reader", ACCESSION)
 
 
 def test_a_file_that_is_not_this_readers_input_offers_nothing_to_quote(tmp_path):
@@ -895,10 +1040,10 @@ def test_a_real_bundles_computed_rows_are_slices_of_the_files_that_hold_them(rea
         assert index[one] in committed
 
     committed = cutoff_guard.load_bundle_file(bundle, "input_numbers.json")
-    facts = [fact["id"] for fact in json.loads(committed)["facts"]]
+    facts = [fact["paragraph_id"] for fact in json.loads(committed)["facts"]]
     assert facts
     for one in facts:
-        assert index[one] in committed
+        assert all(row in committed for row in quote_gate.rows_of(index, one))
 
 
 def test_a_real_bundles_fact_row_is_quoted_out_of_the_file(real_bundle):
@@ -906,17 +1051,94 @@ def test_a_real_bundles_fact_row_is_quoted_out_of_the_file(real_bundle):
     bundle, accession = real_bundle
     index = quote_gate.quotable(bundle, accession)
     committed = cutoff_guard.load_bundle_file(bundle, "input_numbers.json")
-    identifier = json.loads(committed)["facts"][0]["id"]
+    identifier = json.loads(committed)["facts"][0]["paragraph_id"]
+    row = quote_gate.rows_of(index, identifier)[0]
 
-    verbatim = index[identifier][:120]
+    verbatim = row[:120]
     assert verbatim in committed
     assert quote_gate.quote_drop_reason(
         {"id": "probe", "paragraph_id": identifier, "quote": verbatim}, index) is None
 
-    one_line = json.dumps(json.loads(index[identifier]), sort_keys=True)
+    one_line = json.dumps(json.loads(row), sort_keys=True)
     assert one_line not in committed
     assert quote_gate.quote_drop_reason(
         {"id": "probe", "paragraph_id": identifier, "quote": one_line}, index) is not None
+
+
+# --- the numbers reader's eight items on the second pipeline check -----------
+#
+# PR #73 ran NVIDIA's 10-Q 0001045810-26-000075 and dropped every one of the
+# numbers reader's eight items, each "is not in this reader's committed input".
+# The paragraph ids and quotes below are copied by hand out of that run's
+# committed `report_numbers.md`, and the rows they name read by hand out of its
+# committed `input_trends.json` and `input_numbers.json` -- `git show
+# origin/runs/pipeline-check-2:runs/NVDA/0001045810-26-000075/<file>`. The
+# item ids are this file's own: what an item is called is not what is tested.
+#
+# Five cite a trend cell by the quarter's dates, 2026-04-27..2026-07-26, which
+# the committed table prints as `quarters-back-0`'s `start` and `end`, and each
+# quotes a line of that cell. Three cite a fact as
+# `{accession}:facts:{tag}:2026-07-26` and quote `"value": ...` as the trend
+# table prints a formula input. The committed `input_numbers.json` prints the
+# same three facts with the value as a string -- `f-116` "63059000000",
+# `f-118` and `f-635` "31575000000", `f-648` "4616000000" -- so those three ids
+# now resolve and those three quotes do not match the row they name.
+
+NVDA_ACCESSION = "0001045810-26-000075"
+NVDA_CELLS = {
+    "days_sales_outstanding": '"value": 59.63738684902464',
+    "days_sales_of_inventory": '"value": 119.32908343369742',
+    "contract_liabilities_over_revenue": '"value": 0.04797289572962243',
+    "warranty_reserve_ratio": '"value": 0.030533875141601104',
+    "accruals_over_total_assets": "no row for operating_cash_flow in 2026-04-27..2026-07-26",
+}
+NVDA_FACTS = {
+    "AccountsReceivableNetCurrent": '"value": 63059000000.0',
+    "InventoryNet": '"value": 31575000000.0',
+    "ContractWithCustomerLiabilityCurrent": '"value": 4616000000.0',
+}
+
+
+@pytest.fixture(scope="module")
+def nvda_bundle(tmp_path_factory):
+    out = tmp_path_factory.mktemp("nvda")
+    built = assemble_bundle.build("NVDA", "10-Q")
+    assemble_bundle.write(built, out)
+    assert built["manifest"]["accession"] == NVDA_ACCESSION
+    return out
+
+
+def test_the_five_trend_items_stand_under_the_ids_the_cells_now_print(nvda_bundle):
+    index = quote_gate.quotable(nvda_bundle, NVDA_ACCESSION)
+    for metric, quote in NVDA_CELLS.items():
+        cited = f"{NVDA_ACCESSION}:trends:{metric}:2026-04-27..2026-07-26"
+        assert quote_gate.quote_drop_reason(
+            {"id": f"numbers_{metric}", "paragraph_id": cited, "quote": quote},
+            index) is None, metric
+
+
+def test_the_three_fact_items_resolve_and_are_dropped_for_their_quotes(nvda_bundle):
+    """The id is no longer the reason. The quote is the trend table's rendering
+    of the input, not the fact row's, and the reason says so."""
+    index = quote_gate.quotable(nvda_bundle, NVDA_ACCESSION)
+    for tag, quote in NVDA_FACTS.items():
+        cited = f"{NVDA_ACCESSION}:facts:{tag}:2026-07-26"
+        assert cited in index, tag
+        assert quote_gate.quote_drop_reason(
+            {"id": "numbers_balance", "paragraph_id": cited, "quote": quote}, index) == \
+            f"the quote does not string-match {cited} in the committed input", tag
+    assert len(quote_gate.rows_of(index, f"{NVDA_ACCESSION}:facts:InventoryNet:2026-07-26")) == 2
+
+
+def test_a_formula_input_is_quoted_under_the_cell_that_prints_it(nvda_bundle):
+    """What the numbers reader is now told: an input inside a trend cell is part
+    of that cell's row, so its value is cited by the cell's `paragraph_id`. The
+    receivables balance is the numerator of days sales outstanding."""
+    index = quote_gate.quotable(nvda_bundle, NVDA_ACCESSION)
+    cited = f"{NVDA_ACCESSION}:trends:days_sales_outstanding:2026-04-27..2026-07-26"
+    assert quote_gate.quote_drop_reason(
+        {"id": "receivables_balance", "paragraph_id": cited,
+         "quote": NVDA_FACTS["AccountsReceivableNetCurrent"]}, index) is None
 
 
 # --- the gate fails closed ---------------------------------------------------

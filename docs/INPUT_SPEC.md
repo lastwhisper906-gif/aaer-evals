@@ -197,7 +197,15 @@ Python only. No model touches this stage.
    `{accession}:trends:{metric}:{period}`, an articulation check is
    `{accession}:articulation:{account}:{period}`, and a numeric fact is
    `{accession}:facts:{tag}:{period}`. The quote is the row as printed, and the
-   gate string-matches it like any other.
+   gate string-matches it like any other. Each numeric fact and each trend cell
+   prints its id as `paragraph_id`, and the reader copies it rather than
+   composing it; no bundle prints an articulation row yet. A trend
+   cell's period is its row's `start..end` and its accession is the run's. A
+   fact's period is its instant or `start..end`, and where the shape alone
+   would name two facts it says more: a fact reported against a dimension
+   adds `:{dimension}={member}` (members joined by commas, a typed member's
+   value in place of a member), and an amount in a currency other than the
+   dollar ends in `:unit={unit}`.
 3. **Prior-period diff.** Match paragraphs against the previous report of the
    same kind: replace numbers with placeholders, then compare similarity. A new
    or changed paragraph goes in verbatim. An unchanged one is replaced by a

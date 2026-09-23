@@ -13,6 +13,7 @@ import datetime as dt
 import gzip
 import json
 import xml.etree.ElementTree as ET
+from decimal import Decimal
 from pathlib import Path
 
 import pytest
@@ -258,3 +259,203 @@ def test_the_extractor_goes_through_the_cutoff_gate():
     """A cutoff before the filing date refuses the run rather than filtering it."""
     with pytest.raises(cutoff_guard.CutoffViolationError):
         extract_numbers.extract("AAPL", ("10-K",), cutoff=dt.date(2020, 1, 1))
+
+
+# --- the id a fact prints on its row -----------------------------------------
+#
+# `docs/INPUT_SPEC.md` §2 gives a numeric fact the id
+# `{accession}:facts:{tag}:{period}`, and the trend table already prints that
+# shape for every fact it reads. Each fact now prints it too, as `paragraph_id`,
+# so the numbers reader copies the id off the row instead of composing it. The
+# expected ids below are that shape filled in by hand from the planted context.
+
+PRINTED = b"""<xbrl xmlns="http://www.xbrl.org/2003/instance"
+          xmlns:xbrldi="http://xbrl.org/2006/xbrldi"
+          xmlns:us-gaap="http://fasb.org/us-gaap/2025">
+      <context id="at"><period><instant>2025-09-27</instant></period></context>
+      <context id="over"><period><startDate>2025-06-29</startDate>
+        <endDate>2025-09-27</endDate></period></context>
+      <context id="by_member"><entity><segment>
+        <xbrldi:explicitMember dimension="srt:ProductOrServiceAxis"
+          >us-gaap:ServiceMember</xbrldi:explicitMember>
+      </segment></entity><period><startDate>2025-06-29</startDate>
+        <endDate>2025-09-27</endDate></period></context>
+      <context id="by_value"><entity><segment>
+        <xbrldi:typedMember dimension="us-gaap:StatementOfFinancialPositionLocationBalanceAxis"
+          ><us-gaap:BalanceSheetLocation>us-gaap:CashAndCashEquivalentsAtCarryingValue</us-gaap:BalanceSheetLocation
+        ></xbrldi:typedMember>
+      </segment></entity><period><instant>2025-09-27</instant></period></context>
+      <unit id="usd"><measure>iso4217:USD</measure></unit>
+      <unit id="chf"><measure>iso4217:CHF</measure></unit>
+      <unit id="usd_per_share"><divide>
+        <unitNumerator><measure>iso4217:USD</measure></unitNumerator>
+        <unitDenominator><measure>xbrli:shares</measure></unitDenominator>
+      </divide></unit>
+      <us-gaap:AccountsReceivableNetCurrent contextRef="at" unitRef="usd" id="a"
+        decimals="-6">29508000000</us-gaap:AccountsReceivableNetCurrent>
+      <us-gaap:Revenues contextRef="over" unitRef="usd" id="b"
+        decimals="-6">102466000000</us-gaap:Revenues>
+      <us-gaap:Revenues contextRef="by_member" unitRef="usd" id="c"
+        decimals="-6">28750000000</us-gaap:Revenues>
+      <us-gaap:CashEquivalentsAtCarryingValue contextRef="by_value" unitRef="usd" id="d"
+        decimals="-6">1000000</us-gaap:CashEquivalentsAtCarryingValue>
+      <us-gaap:AccountsReceivableNetCurrent contextRef="at" unitRef="usd" id="e"
+        decimals="-6">29508000000</us-gaap:AccountsReceivableNetCurrent>
+      <us-gaap:DerivativeNotionalAmount contextRef="at" unitRef="usd" id="f"
+        decimals="-3">381083000</us-gaap:DerivativeNotionalAmount>
+      <us-gaap:DerivativeNotionalAmount contextRef="at" unitRef="chf" id="g"
+        decimals="-3">306200000</us-gaap:DerivativeNotionalAmount>
+      <us-gaap:EarningsPerShareBasic contextRef="over" unitRef="usd_per_share" id="h"
+        decimals="2">1.85</us-gaap:EarningsPerShareBasic>
+    </xbrl>"""
+
+
+def printed_facts() -> list[dict]:
+    return extract_numbers.facts_from_instance(
+        PRINTED, accession="0000320193-25-000079", filing_date="2025-10-31")
+
+
+def test_a_fact_prints_its_id_in_the_shape_the_spec_gives():
+    assert [fact["paragraph_id"] for fact in printed_facts()] == [
+        "0000320193-25-000079:facts:AccountsReceivableNetCurrent:2025-09-27",
+        "0000320193-25-000079:facts:Revenues:2025-06-29..2025-09-27",
+        "0000320193-25-000079:facts:Revenues:2025-06-29..2025-09-27"
+        ":srt:ProductOrServiceAxis=us-gaap:ServiceMember",
+        "0000320193-25-000079:facts:CashEquivalentsAtCarryingValue:2025-09-27"
+        ":us-gaap:StatementOfFinancialPositionLocationBalanceAxis"
+        "=us-gaap:CashAndCashEquivalentsAtCarryingValue",
+        "0000320193-25-000079:facts:AccountsReceivableNetCurrent:2025-09-27",
+        "0000320193-25-000079:facts:DerivativeNotionalAmount:2025-09-27",
+        "0000320193-25-000079:facts:DerivativeNotionalAmount:2025-09-27"
+        ":unit=iso4217:CHF",
+        "0000320193-25-000079:facts:EarningsPerShareBasic:2025-06-29..2025-09-27",
+    ]
+
+
+def test_an_amount_the_filing_also_states_in_another_currency_names_that_currency():
+    """One notional, stated in dollars and again in Swiss francs, in one context.
+    The dollar figure keeps the spec's shape; the franc figure adds its unit, or
+    the two rows would answer to one id. A dollar-per-share unit is still dollars
+    and adds nothing."""
+    dollars, francs, per_share = printed_facts()[5:8]
+    assert (dollars["unit"], francs["unit"]) == ("iso4217:USD", "iso4217:CHF")
+    assert dollars["context"] == francs["context"]
+    assert per_share["unit"] == "iso4217:USD/xbrli:shares"
+    assert francs["paragraph_id"] == dollars["paragraph_id"] + ":unit=iso4217:CHF"
+
+
+def test_the_printed_id_sits_beside_the_element_id():
+    """`id` stays the element's own; `paragraph_id` is the one a reader copies."""
+    fact = printed_facts()[0]
+    assert list(fact)[:2] == ["id", "paragraph_id"]
+    assert fact["id"] == "0000320193-25-000079:a"
+
+
+def test_a_fact_reported_against_a_dimension_never_prints_its_totals_id():
+    """The service revenue is not the revenue, so it cannot answer to its id."""
+    total, part = printed_facts()[1:3]
+    assert total["tag"] == part["tag"] and part["context"]["segment"]
+    assert total["paragraph_id"] != part["paragraph_id"]
+
+
+def test_a_fact_the_filing_printed_twice_prints_one_id_twice():
+    """Two elements, one context, one value: one fact, and the element ids differ."""
+    facts = printed_facts()
+    assert facts[0]["id"] != facts[4]["id"]
+    assert facts[0]["paragraph_id"] == facts[4]["paragraph_id"]
+
+
+@pytest.mark.parametrize("ticker", TICKERS)
+def test_one_printed_id_names_one_fact(ticker):
+    """Every fact prints an id, and two facts printing the same one are the same
+    fact -- the same concept, context and unit in the same filing -- printed
+    more than once. The id is what the gate resolves, so an id naming two
+    different facts would let a quote of one stand for the other.
+
+    `identity` leaves out the value and its precision, so this does not say the
+    rows print the same digits. The next test says what they do print."""
+    facts = extract_numbers.extract(ticker, FORMS)["facts"]
+    named: dict[str, set] = {}
+    for fact in facts:
+        assert isinstance(fact["paragraph_id"], str) and fact["paragraph_id"]
+        named.setdefault(fact["paragraph_id"], set()).add(
+            (fact["source_accession"],) + extract_numbers.identity(fact))
+    assert [one for one, facts_named in named.items() if len(facts_named) > 1] == []
+
+
+def _stands_for(fact: dict) -> tuple[Decimal, Decimal]:
+    """The interval a filed value covers at its own `decimals`."""
+    number = Decimal(fact["value"])
+    if fact.get("decimals") in (None, "INF"):
+        return number, number
+    half = Decimal(5).scaleb(-int(fact["decimals"]) - 1)
+    return number - half, number + half
+
+
+@pytest.mark.parametrize("ticker", TICKERS)
+def test_rows_under_one_id_state_one_number_each_at_its_own_precision(ticker):
+    """Rows under one id can print different digits. Where they do, each is the
+    same number rounded to its own `decimals`: the intervals they cover overlap.
+    A quote of either row stands under the id, and neither can carry a number
+    the other contradicts."""
+    named: dict[str, list[dict]] = {}
+    for fact in extract_numbers.extract(ticker, FORMS)["facts"]:
+        named.setdefault(fact["paragraph_id"], []).append(fact)
+    contradicted = []
+    for identifier, rows in named.items():
+        if len({row["value"] for row in rows}) < 2:
+            continue
+        covered = [_stands_for(row) for row in rows]
+        if max(low for low, _ in covered) > min(high for _, high in covered):
+            contradicted.append(identifier)
+    assert contradicted == []
+
+
+def test_nvidias_goodwill_prints_to_the_million_and_to_the_hundred_million_under_one_id():
+    """Read by hand from `tests/fixtures/NVDA/10-K/nvda-20260125_htm.xml`: two
+    `us-gaap:Goodwill` elements in context c-11, unit usd -- `f-157`,
+    20832000000 at decimals -6, and `f-554`, 20800000000 at decimals -8. One
+    fact, two roundings, one id."""
+    facts = extract_numbers.extract("NVDA", FORMS)["facts"]
+    rows = {fact["id"]: fact for fact in facts
+            if fact["id"] in ("0001045810-26-000021:f-157", "0001045810-26-000021:f-554")}
+    assert {name: (row["value"], row["decimals"]) for name, row in rows.items()} == {
+        "0001045810-26-000021:f-157": ("20832000000", "-6"),
+        "0001045810-26-000021:f-554": ("20800000000", "-8")}
+    assert {row["paragraph_id"] for row in rows.values()} == {
+        "0001045810-26-000021:facts:Goodwill:2026-01-25"}
+
+
+def test_the_receivables_row_the_numbers_reader_cited_prints_the_id_it_wrote():
+    """The second pipeline check (PR #73) read NVDA's 10-Q 0001045810-26-000075.
+    Its committed `input_numbers.json`, read by hand, holds the receivables
+    balance as element `f-116`: `AccountsReceivableNetCurrent`, instant
+    2026-07-26, value "63059000000". The numbers reader cited it as
+    `0001045810-26-000075:facts:AccountsReceivableNetCurrent:2026-07-26`, the
+    spec's shape, and the row printed no such id; now it does."""
+    facts = extract_numbers.extract("NVDA", FORMS)["facts"]
+    row = next(fact for fact in facts if fact["id"] == "0001045810-26-000075:f-116")
+    assert (row["tag"], row["context"], row["value"]) == (
+        "AccountsReceivableNetCurrent", {"instant": "2026-07-26", "segment": []},
+        "63059000000")
+    assert row["paragraph_id"] == \
+        "0001045810-26-000075:facts:AccountsReceivableNetCurrent:2026-07-26"
+
+
+def test_ttm_technologies_notional_in_francs_prints_its_own_id():
+    """TTM Technologies' 10-Q 0001193125-26-335107, instance
+    `tests/fixtures/TTMI/10-Q/ttmi-20260629_htm.xml.gz`, read by hand: context
+    `C_5f828c03-...` is the instant 2026-06-18 with no segment, and in it
+    `DerivativeNotionalAmount` is stated twice -- element `F_68ce2092-...` in
+    `U_USD` as 381083000 and element `F_75cb79ee-...` in `U_CHF` (measure
+    `iso4217:CHF`) as 306200000. Two amounts, so two ids."""
+    facts = extract_numbers.extract("TTMI", FORMS)["facts"]
+    accession = "0001193125-26-335107"
+    by_element = {fact["id"]: fact for fact in facts}
+    dollars = by_element[f"{accession}:F_68ce2092-e393-4a80-956e-09b2d810af09"]
+    francs = by_element[f"{accession}:F_75cb79ee-0176-4104-a693-6d237b56dd92"]
+    assert (dollars["value"], francs["value"]) == ("381083000", "306200000")
+    assert dollars["paragraph_id"] == \
+        "0001193125-26-335107:facts:DerivativeNotionalAmount:2026-06-18"
+    assert francs["paragraph_id"] == \
+        "0001193125-26-335107:facts:DerivativeNotionalAmount:2026-06-18:unit=iso4217:CHF"

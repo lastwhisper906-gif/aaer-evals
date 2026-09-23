@@ -1318,3 +1318,82 @@ def test_nothing_the_table_writes_is_a_letter_number_code(ticker):
     found = [(number, code) for number, line in enumerate(text.splitlines(), 1)
              for code in plain_name_check.codes_in(line)]
     assert found == [], found[:10]
+
+
+# --- the id each cell prints ---------------------------------------------------
+#
+# `docs/INPUT_SPEC.md` §2 gives a trend cell `{accession}:trends:{metric}:{period}`.
+# The gate used to mint that id with the row's `label` for the period. The file
+# printed no id at all, so the numbers reader on the second pipeline check
+# (PR #73) wrote the quarter's dates there, and every trend item it wrote was
+# dropped on the id alone. Now each cell prints its id, and the reader copies it.
+
+PLANTED_TABLE = {
+    "quarters": [
+        {"label": "quarters-back-0", "filled": True, "start": "2026-04-27",
+         "end": "2026-07-26", "days": 91,
+         "ratios": {"days_sales_outstanding": {"value": 59.6},
+                    "accruals_over_total_assets": {"missing": "no row for "
+                                                   "operating_cash_flow"}}},
+        {"label": "quarters-back-2", "filled": False, "target_end": "2026-01-25",
+         "reason": "no period ends within 20 days of 2026-01-25", "ratios": {}},
+    ],
+    "years": [
+        {"label": "years-back-0", "filled": True, "start": "2025-01-27",
+         "end": "2026-01-25", "days": 364,
+         "ratios": {"gross_margin": {"value": 0.7}}},
+    ],
+}
+
+
+def test_each_cell_of_a_filled_period_prints_the_id_the_spec_gives():
+    """The period is the row's own `start..end`, and a cell recording a missing
+    ratio is a cell too. The accession is the run's, passed in, because the
+    table is the companyfacts record's and names no filing of its own."""
+    named = trends.name_cells(PLANTED_TABLE, "0001045810-26-000075")
+    quarter, gap = named["quarters"]
+    assert quarter["ratios"]["days_sales_outstanding"]["paragraph_id"] == \
+        "0001045810-26-000075:trends:days_sales_outstanding:2026-04-27..2026-07-26"
+    assert quarter["ratios"]["accruals_over_total_assets"]["paragraph_id"] == \
+        "0001045810-26-000075:trends:accruals_over_total_assets:2026-04-27..2026-07-26"
+    assert named["years"][0]["ratios"]["gross_margin"]["paragraph_id"] == \
+        "0001045810-26-000075:trends:gross_margin:2025-01-27..2026-01-25"
+    assert gap == PLANTED_TABLE["quarters"][1]
+
+
+def test_naming_the_cells_leaves_the_table_it_was_given_as_it_was():
+    before = json.dumps(PLANTED_TABLE, sort_keys=True)
+    trends.name_cells(PLANTED_TABLE, "0001045810-26-000075")
+    assert json.dumps(PLANTED_TABLE, sort_keys=True) == before
+
+
+def test_nvidias_quarter_prints_the_ids_its_numbers_reader_wrote():
+    """The second pipeline check's committed `input_trends.json` for NVIDIA's
+    10-Q 0001045810-26-000075, read by hand, prints `quarters-back-0` as start
+    2026-04-27 and end 2026-07-26. Its numbers reader cited five cells of that
+    quarter as `0001045810-26-000075:trends:{metric}:2026-04-27..2026-07-26`;
+    these are those five ids, copied out of its committed `report_numbers.md`."""
+    assert trigger("NVDA")["accession"] == "0001045810-26-000075"
+    named = trends.name_cells(table("NVDA"), trigger("NVDA")["accession"])
+    quarter = named["quarters"][0]
+    assert (quarter["start"], quarter["end"]) == ("2026-04-27", "2026-07-26")
+    metrics = ("days_sales_outstanding", "days_sales_of_inventory",
+               "contract_liabilities_over_revenue", "warranty_reserve_ratio",
+               "accruals_over_total_assets")
+    assert [quarter["ratios"][metric]["paragraph_id"] for metric in metrics] == [
+        "0001045810-26-000075:trends:days_sales_outstanding:2026-04-27..2026-07-26",
+        "0001045810-26-000075:trends:days_sales_of_inventory:2026-04-27..2026-07-26",
+        "0001045810-26-000075:trends:contract_liabilities_over_revenue"
+        ":2026-04-27..2026-07-26",
+        "0001045810-26-000075:trends:warranty_reserve_ratio:2026-04-27..2026-07-26",
+        "0001045810-26-000075:trends:accruals_over_total_assets:2026-04-27..2026-07-26",
+    ]
+
+
+@pytest.mark.parametrize("ticker", TICKERS)
+def test_every_cell_prints_an_id_and_no_two_cells_print_the_same_one(ticker):
+    named = trends.name_cells(table(ticker), trigger(ticker)["accession"])
+    printed = [cell.get("paragraph_id") for row in rows(named) if row["filled"]
+               for cell in row["ratios"].values()]
+    assert printed and all(isinstance(one, str) for one in printed)
+    assert len(printed) == len(set(printed))
