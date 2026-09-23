@@ -42,6 +42,11 @@ Every entry in `evidence` and in `market_direction.basis` is an
 `upstream_item_id` from one of the four reports; Python checks that each one
 resolves, and an unresolvable one is dropped and counted.
 
+Cite each id exactly as the report wrote it — `revenue_recognition_extended_payment_terms`,
+`revenue_recognition_extended_payment_terms_versus_market` — never shortened,
+renumbered or re-cased. An id that is not character for character one a report
+carries does not resolve.
+
 `market_direction.p_up` is the probability that the 60-trading-day abnormal
 return is positive, read through this question only. `"insufficient"` is an
 allowed value and is recorded.

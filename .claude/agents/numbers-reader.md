@@ -32,9 +32,12 @@ Each item:
 ```
 
 `quote` is verbatim from your input and `paragraph_id` names where it came from.
-A computed row has an id like any paragraph — `{accession}:trends:{metric}:{period}`,
-`{accession}:articulation:{account}:{period}`, `{accession}:facts:{tag}:{period}` —
-and is quoted as the row and its value, exactly as printed. Python string-matches every quote against your committed input, and an
+Every row you can quote prints its own id: a trend cell and a numeric fact as
+`"paragraph_id"`, a paragraph of prose on its `[id]` line. Copy the
+`paragraph_id` printed on the row you quote, character for character; never
+compose one. A formula input inside a trend cell prints an `"id"` and no
+`"paragraph_id"`: it is part of that cell's row, so quote it under the cell's
+`paragraph_id`. A row is quoted as the row and its value, exactly as printed. Python string-matches every quote against your committed input, and an
 item whose quote does not match is dropped before anything downstream sees it.
 An item you cannot quote is an item you do not write.
 
@@ -49,6 +52,20 @@ Two headings, in this order:
    A later version splits this into its own reader, and that split must not have
    to re-derive which findings came from where.
 
+**Item ids.** `id` is a plain name that says what the item looks at: lowercase
+words joined by underscores, with no digit and no capital. It starts with one of
+these areas, written exactly as here — `estimates_and_discretion`,
+`revenue_recognition`, `earnings_quality`, `articulation_and_the_filed_history`,
+`controls_audit_and_filings`, `related_parties_contingencies_and_subsequent_events`,
+`structure_and_disclosure_changes`, `across_documents`,
+`results_against_expectations`, `liquidity_and_capital`,
+`narrative_signs_of_operating_pressure` — and then says what the item looks at:
+`revenue_recognition_extended_payment_terms`. Where the item came from goes in
+`paragraph_id` only; a period or a date never goes in the id. An id is unique
+across the four reports of a run: if two items would share a name, add a word
+that tells them apart, never a number. Python drops and counts an item whose id
+has any other shape, and every item that shares its id with another.
+
 **Report everything your input holds, however small.** For every metric of the
 trend table, in `quarters-back-0` and in `years-back-0`, one item: its value,
 its change, and where it sits in the company's own filed history. Where it sits
@@ -57,13 +74,12 @@ out. A metric the table could not fill in a period it holds is an item too:
 quote the reason its cell gives, and say in `what_changed` that it is
 `insufficient`. A period the record does not reach has no cells at all, so there
 is nothing to quote: say so once, outside the items, with the reason the period
-gives. Then every articulation
-gap, every restated prior value — a period an earlier filing reported
-differently — and every change of tag, wherever your input says a period rests
-on a different concept. Nothing is left out because it is small, and there is
-no item limit. Where a value sits in its history describes it and never decides
-whether it is reported: a value in the middle of its history is an item exactly
-as one at the top is.
+gives. Then every articulation gap, every restated prior value — a period an
+earlier filing reported differently — and every change of tag, wherever your
+input says a period rests on a different concept. Nothing is left out because
+it is small, and there is no item limit. Where a value sits in its history
+describes it and never decides whether it is reported: a value in the middle of
+its history is an item exactly as one at the top is.
 
 Say `insufficient` freely. An account with two periods of history does not
 support a trend claim, and saying so is a result.

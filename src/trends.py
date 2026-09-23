@@ -88,6 +88,7 @@ exhibit, which is a different file.
 from __future__ import annotations
 
 import argparse
+import copy
 import datetime as dt
 import json
 import sys
@@ -1052,6 +1053,27 @@ def table(ticker: str, cutoff, *, period_end=None,
     """The record and the table in one call, for a caller that wants both done."""
     return trends(read_record(ticker, cutoff, fixtures_root=fixtures_root), cutoff,
                   period_end=period_end)
+
+
+def name_cells(payload: dict, accession: str) -> dict:
+    """The table with every cell of a filled period printing the id it is cited by.
+
+    `docs/INPUT_SPEC.md` §2 gives a trend cell `{accession}:trends:{metric}:{period}`.
+    The period is the row's own `start..end`, spelled as a fact id spells it,
+    and a cell recording why a ratio is missing is named like one that holds a
+    value, since the absence is what a reader may need to quote. The accession
+    is the run's, because the table is the companyfacts record's and names no
+    filing of its own; so the table is named where the run is assembled, and
+    the table given is left as it was.
+    """
+    named = copy.deepcopy(payload)
+    for row in (named.get("quarters") or []) + (named.get("years") or []):
+        if not row.get("filled"):
+            continue
+        period = _spelled(row["start"], row["end"])
+        for metric, cell in row["ratios"].items():
+            cell["paragraph_id"] = f"{accession}:trends:{metric}:{period}"
+    return named
 
 
 def render(payload: dict) -> str:

@@ -55,5 +55,12 @@ window contradicts that.
 `upstream_item_id` must exist in `report_notes_text.md`. Python checks it, and an
 item whose citation does not resolve is dropped and counted.
 
+`id` is your item's own name: its `upstream_item_id` followed by
+`_versus_market`, so the item labelling `revenue_recognition_extended_payment_terms`
+is `revenue_recognition_extended_payment_terms_versus_market`. Never the
+reader's id itself and never a number. Python drops and counts an item whose id
+is not lowercase words joined by underscores starting with an area, and every
+item that shares its id with another.
+
 A large disclosure with no reaction is the most informative thing you can find.
 Do not talk yourself out of `not_priced` because the change sounds important.

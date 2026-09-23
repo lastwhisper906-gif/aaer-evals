@@ -30,20 +30,21 @@ input, because `input_trends.json` writes those two keys on two lines under a
 two-space indent, and a gate that accepted that string would be accepting a
 quote of nothing while refusing the same characters copied out of the file.
 
-**A row's id is one its reader can write.** `docs/INPUT_SPEC.md` §2.2 gives a
-trend cell `{accession}:trends:{metric}:{period}`: the metric is the ratio's own
-key and the period is the row's own `label`, both printed in `input_trends.json`
-where the reader can read them. A numeric fact is named by the `id` the fact
-already carries and the file already prints. The spec's other spelling for a
-fact, `{accession}:facts:{tag}:{period}`, is not resolved here: a fact's period
-has no printed spelling in the committed input -- a context is a start and an
-end, or an instant -- and tag-and-period is not unique across segments, so the
-gate would be minting a name that neither the writer of the file nor its reader
-could produce. That divergence between the spec and the file is the spec's to
-settle. Articulation checks have no committed input yet -- `src/articulation.py`
-is unwritten -- so their ids resolve to nothing and an item quoting one is
-dropped, which is the fail-closed direction and reverses itself the day the
-input exists.
+**A row's id is the one it prints.** `docs/INPUT_SPEC.md` §2 gives a trend cell
+`{accession}:trends:{metric}:{period}` and a numeric fact
+`{accession}:facts:{tag}:{period}`, and each row of `input_trends.json` and
+`input_numbers.json` now prints that id as its `paragraph_id` --
+`src/trends.py`'s `name_cells` and `src/extract_numbers.py`'s `paragraph_id`
+write them. The gate indexes those printed ids and composes none of its own.
+It used to: a cell by the row's `label` and a fact by its element's `id`, while
+the numbers reader composed the spec's shapes from the prompt, and on the
+second pipeline check all eight of its items were dropped on the id alone. A
+fact the spec's shape would leave ambiguous prints more than the shape: its
+dimension members after the period, and its unit when that is a currency
+other than the dollar. Articulation checks have no committed input yet --
+`src/articulation.py` writes none into a bundle -- so their ids resolve to
+nothing and an item quoting one is dropped, which is the fail-closed direction
+and reverses itself the day the input exists.
 
 **Only what the input declares is quotable.** The index holds the ids the
 committed files carry: the `[id]` lines of the prose, the facts of
@@ -59,7 +60,48 @@ is the failure this gate exists to catch, not one for it to commit.
 -- twice in one report, or once in each of two -- is dropped everywhere it
 appears and resolves for nobody. A citation is meant to name one upstream claim;
 against a repeated id it names a set, and a dropped item's id would go on being
-citable through its twin.
+citable through its twin. A comparer item that wears the id of the reader item
+it cites is the same case: its id is its own name, and `docs/CHECKLIST.md` §7
+gives it the reader's id followed by `_versus_market`.
+
+**A reader or comparer item's id says what the item looks at.** The owner's
+rule, 2026-09-23: lowercase words joined by underscores, no digit, starting with
+its area and then saying what it looks at -- `revenue_recognition_extended_payment_terms`.
+The areas are the eleven `###` headings of `docs/CHECKLIST.md` §1 and §2, written
+once, into `rules/pilot/areas.json`; this module reads that file and holds no
+copy of its own. The location stays in `paragraph_id`, so an id carrying a
+period or a date is carrying something that belongs elsewhere, and the no-digit
+shape refuses every one written in figures. A period spelled out in words is
+not refused here: `fourth_quarter` is also how a checklist key names a concept,
+and a word list that refused the one would refuse the other. An id of any other
+shape is dropped and counted with its reason, like every other drop. The second
+pipeline check (PR #73) numbered its forty notes items with a capital and two
+digits and named its eight numbers items after the paragraph each quoted, dates
+included; under this rule all forty-eight are refused for the id alone.
+
+The rule reaches a report by its file name -- the last part of the name it is
+handed, so a report under a path is still its layer's -- and the gate places
+every name it is handed in the layer table of `src/agent_inputs.py` before it
+gates a single item. The four reader and comparer reports are held to the rule;
+the supervisors' predictions are not, because their entries are named by the
+checklist keys, which stay as they are; nor are the single-agent control's two
+files, which quote the committed input under handles of their own. A name the
+table does not give, or a name handed on the wrong side -- a reader's report
+citing, a comparer's or a supervisor's quoting an input, the control's citing --
+stops the gate rather than being gated under a rule that is not its own, and so
+does one file name handed twice under two paths. What the gate cannot see is a
+runner that hands one layer's items under another layer's name on the same
+side: a reader's items under the control's file name, which quotes as a reader
+does, or a comparer's under a supervisor's. The second could be told by shape --
+§7 gives a comparer item a top-level `upstream_item_id` and a `label`, and a
+supervisor entry `evidence` or `basis` -- but this gate does not ask: `citations`
+reads all three from any citing report, and how the runner will hand in a
+supervisor's `explanations` is unwritten, while the single-agent control already
+hands its own to `citation_drop_reason` with a top-level `upstream_item_id`
+(`src/control_single_agent.py`, `drop_reasons`), the comparer's shape. A
+shape rule here would be a guess about that runner, so the gap is left open and
+named. The name is the runner's word for which layer wrote the items, and
+nothing in an item checks that word.
 
 **Fail closed.** A paragraph id that resolves to nothing, an item with no id, an
 empty quote, a citation that is not a string -- each is a drop and never a pass.
@@ -84,19 +126,44 @@ about the file it polices. The runner holds the parsed items and calls `gate`.
 from __future__ import annotations
 
 import json
+import re
 import sys
 from collections import Counter
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
 try:
-    from src import assemble_bundle, cutoff_guard
+    from src import agent_inputs, assemble_bundle, cutoff_guard
 except ImportError:  # invoked as a plain script
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from src import assemble_bundle, cutoff_guard
+    from src import agent_inputs, assemble_bundle, cutoff_guard
 
 MANIFEST = "input_manifest.json"
 NUMBERS = "input_numbers.json"
 TRENDS = "input_trends.json"
+
+# The areas a reader or comparer item id starts with: slug beside the heading it
+# came from. Read when the gate runs, never copied into this module.
+AREAS = Path(__file__).resolve().parent.parent / "rules" / "pilot" / "areas.json"
+
+# A plain name: lowercase ASCII words joined by single underscores. No digit, no
+# capital, no other mark, and nothing before the first word or after the last.
+PLAIN_NAME = re.compile(r"[a-z]+(?:_[a-z]+)*")
+
+# Each report name the gate will take, and the side its items stand on: a
+# reader's quote the committed input, everyone else's cite. The six agents'
+# files come from the layer table; the single-agent control's two files quote
+# the input directly and are named in the same catalogue.
+QUOTES = "input"
+CITES = "cites"
+REPORT_SIDES = {agent.writes: QUOTES if agent.layer == "reader" else CITES
+                for agent in agent_inputs.AGENTS.values()}
+REPORT_SIDES.update({name: QUOTES for name in agent_inputs.BUNDLE_CATALOGUE
+                     if name.startswith("control_single_agent_")})
+
+# The four reports whose item ids are held to the name rule.
+NAMED_ITEMS = frozenset(agent.writes for agent in agent_inputs.AGENTS.values()
+                        if agent.layer in ("reader", "comparer"))
 
 # The indent every committed JSON input is written under.
 INDENT = 2
@@ -146,62 +213,139 @@ def _json_input(bundle_root, name: str) -> tuple[str, dict]:
     return text, payload
 
 
+def _printed_id(node) -> str | None:
+    """The `paragraph_id` a computed row prints, or None when it prints none."""
+    identifier = node.get("paragraph_id") if isinstance(node, dict) else None
+    return identifier if isinstance(identifier, str) and identifier else None
+
+
+# What a numeric fact is, as its row prints it. Two rows printing one id agree on
+# every one of these.
+FACT_FIELDS = ("prefix", "tag", "context", "unit")
+
+
+def _covers(fact: dict) -> tuple[Decimal, Decimal] | None:
+    """The interval a row's printed value covers at its own `decimals`, or None
+    when the row prints no number."""
+    try:
+        number = Decimal(str(fact.get("value")))
+        if not number.is_finite():
+            return None
+        if fact.get("decimals") in (None, "INF"):
+            return number, number
+        half = Decimal(5).scaleb(-int(fact["decimals"]) - 1)
+    except (InvalidOperation, ValueError, TypeError):
+        return None
+    return number - half, number + half
+
+
+def _one_fact(stated: dict, identifier: str, fact: dict) -> None:
+    """Refuse a row printing an id an earlier row printed, unless both state one fact.
+
+    One fact is the same concept, context and unit, and a number every row
+    covers once each is read at its own `decimals`. `stated` holds, per id, what
+    the rows so far agree on.
+    """
+    fields = tuple(json.dumps(fact.get(field), sort_keys=True) for field in FACT_FIELDS)
+    covered = _covers(fact)
+    if identifier not in stated:
+        stated[identifier] = fields, covered, fact.get("value")
+        return
+    first, so_far, value = stated[identifier]
+    if covered is not None and so_far is not None:
+        covered = max(so_far[0], covered[0]), min(so_far[1], covered[1])
+        agrees = covered[0] <= covered[1]
+    else:
+        agrees = covered is None and so_far is None and fact.get("value") == value
+    if fields != first or not agrees:
+        raise QuoteGateError(
+            f"{identifier} is printed by rows of {NUMBERS} that state different "
+            "facts — one id names one fact, the same concept, context and unit at "
+            "a number every row rounds to, and a quote of one would stand for the "
+            "other")
+    stated[identifier] = first, covered, value
+
+
 def _computed_rows(folder: Path, accession: str):
     """(id, printed row, file) for every computed row a committed input declares.
 
-    A numeric fact by the `id` it already carries; a trend cell by the id
-    `docs/INPUT_SPEC.md` §2.2 gives it, `{accession}:trends:{metric}:{period}`,
-    whose metric is the ratio's own key and whose period is the row's own
-    `label` — both printed in the file, so the reader can write the id it
-    quotes. A row the file does not print as this module expects yields
-    nothing, and an item quoting it is dropped.
+    Each row by the `paragraph_id` it prints, and by nothing else: a numeric
+    fact of `input_numbers.json` and a trend cell of `input_trends.json`. The
+    reader copies that id off the row, so there is no second spelling for the
+    gate to compose and the reader to guess. A trend cell's id carries the run's
+    own accession, because the table is the companyfacts record's and names no
+    filing -- a cell printing another one was named for another run, and is
+    not quotable in this one. A formula input inside a cell prints the fact's
+    `id` and no `paragraph_id` of its own: it is part of its cell's row, and is
+    quoted under the cell. A row that prints no id, or that the file does not
+    print as this module expects, yields nothing, and an item quoting it is
+    dropped.
     """
     if cutoff_guard.bundle_files(folder, NUMBERS):
         text, payload = _json_input(folder, NUMBERS)
+        stated: dict = {}
         for fact in payload.get("facts") or []:
-            if not isinstance(fact, dict) or not isinstance(fact.get("id"), str):
-                continue
-            row = printed_row(text, fact, FACT_DEPTH)
+            identifier = _printed_id(fact)
+            row = printed_row(text, fact, FACT_DEPTH) if identifier else None
             if row is not None:
-                yield fact["id"], row, NUMBERS
+                _one_fact(stated, identifier, fact)
+                yield identifier, row, NUMBERS
 
     if cutoff_guard.bundle_files(folder, TRENDS):
         text, payload = _json_input(folder, TRENDS)
         for section in ("quarters", "years"):
             for period in payload.get(section) or []:
-                if not isinstance(period, dict):
+                ratios = period.get("ratios") if isinstance(period, dict) else None
+                if not isinstance(ratios, dict):
                     continue
-                label, ratios = period.get("label"), period.get("ratios")
-                if not isinstance(label, str) or not isinstance(ratios, dict):
-                    continue
-                for metric, cell in ratios.items():
+                for cell in ratios.values():
+                    identifier = _printed_id(cell)
+                    if not identifier or not identifier.startswith(f"{accession}:trends:"):
+                        continue
                     row = printed_row(text, cell, RATIO_DEPTH)
                     if row is not None:
-                        yield f"{accession}:trends:{metric}:{label}", row, TRENDS
+                        yield identifier, row, TRENDS
 
 
-def quotable(input_dir, accession: str) -> dict[str, str]:
+def quotable(input_dir, accession: str) -> dict[str, str | tuple[str, ...]]:
     """Paragraph id → the committed text it owns, for one agent's input directory.
 
     The prose files by their `[id]` lines, and the computed rows by the ids
-    `_computed_rows` gives them. A file that declares no ids of its own — the
-    market table, the manifest, anything else that lands in the directory —
-    offers nothing here for a quote to be matched against.
+    they print. A file that declares no ids of its own — the market table, the
+    manifest, anything else that lands in the directory — offers nothing here
+    for a quote to be matched against.
+
+    One id names one paragraph, with one exception: a filing can state one fact
+    more than once -- NVIDIA's 10-Q 0001045810-26-000075 prints its inventory
+    balance as two elements -- and every row stating it prints the fact's one
+    id. That id owns each of those rows, as a tuple; `rows_of` reads either shape.
+    The rows need not print the same digits. Its 10-K 0001045810-26-000021
+    states goodwill at 2026-01-25 as 20832000000 to the million and as
+    20800000000 to the hundred million, and a quote of either row stands under
+    the one id. Rows printing one id over two concepts, contexts or units, or
+    over numbers no rounding reconciles, are refused: the id is trusted only as
+    far as the rows agree.
     """
     folder = Path(input_dir)
     if not folder.is_dir():
         raise QuoteGateError(
             f"{folder} is not a directory — an agent whose committed input is not "
             "on disk has nothing for a quote to be matched against")
-    index: dict[str, str] = {}
+    index: dict[str, str | tuple[str, ...]] = {}
+    facts: set[str] = set()
 
     def record(identifier: str, text: str, where: str) -> None:
+        if identifier in facts and where == NUMBERS:
+            index[identifier] = rows_of(index, identifier) + (text,)
+            return
         if identifier in index:
             raise QuoteGateError(
                 f"{identifier} is in {where} and already in this input — one id "
                 "names one paragraph, and a quote matched against the wrong "
                 "paragraph is not a verified quote")
         index[identifier] = text
+        if where == NUMBERS:
+            facts.add(identifier)
 
     for name in cutoff_guard.bundle_files(folder, "*.md"):
         for identifier, body in assemble_bundle.paragraph_blocks(
@@ -211,6 +355,12 @@ def quotable(input_dir, accession: str) -> dict[str, str]:
     for identifier, row, where in _computed_rows(folder, accession):
         record(identifier, row, where)
     return index
+
+
+def rows_of(index: dict, paragraph_id: str) -> tuple[str, ...]:
+    """Every committed row one id owns: one, or each row stating a fact printed twice."""
+    owned = index[paragraph_id]
+    return owned if isinstance(owned, tuple) else (owned,)
 
 
 # --- why one item is dropped -------------------------------------------------
@@ -233,8 +383,53 @@ def quote_drop_reason(item, index: dict) -> str | None:
         return "the item carries no quote, and an empty quote matches every text"
     if paragraph_id not in index:
         return f"paragraph id {paragraph_id} is not in this reader's committed input"
-    if quote not in index[paragraph_id]:
+    if not any(quote in row for row in rows_of(index, paragraph_id)):
         return f"the quote does not string-match {paragraph_id} in the committed input"
+    return None
+
+
+def _one_key_once(pairs: list) -> dict:
+    """A JSON object, refusing a key written twice rather than keeping the last."""
+    keys = [key for key, _ in pairs]
+    if len(set(keys)) != len(keys):
+        raise ValueError("a key is written twice")
+    return dict(pairs)
+
+
+def areas() -> tuple[str, ...]:
+    """The area slugs `rules/pilot/areas.json` lists, in the order it lists them.
+
+    Every slug is itself a plain name and every heading beside it is text. A
+    file that is not there, not an object, empty, or anything else stops the
+    gate: without the list no reader or comparer id can be judged, and a gate
+    that judged none would pass them all.
+    """
+    try:
+        text = AREAS.read_text(encoding="utf-8")
+        payload = json.loads(text, object_pairs_hook=_one_key_once)
+    except (OSError, ValueError) as exc:
+        raise QuoteGateError(
+            f"{AREAS} cannot be read as the area list, and without it no item id "
+            f"can be judged: {exc}") from exc
+    if not isinstance(payload, dict) or not payload:
+        raise QuoteGateError(f"{AREAS} is not an object naming at least one area")
+    for slug, heading in payload.items():
+        if PLAIN_NAME.fullmatch(slug) is None:
+            raise QuoteGateError(f"{AREAS} lists {slug!r}, which is not a plain name")
+        if not isinstance(heading, str) or not heading.strip():
+            raise QuoteGateError(f"{AREAS} gives {slug} no heading it came from")
+    return tuple(payload)
+
+
+def name_drop_reason(identifier: str, known_areas) -> str | None:
+    """Why a reader or comparer item's id is not a plain descriptive name, or None."""
+    if PLAIN_NAME.fullmatch(identifier) is None:
+        return (f"the item id {identifier!r} is not a plain name: a reader or "
+                "comparer item id is lowercase words joined by underscores, with "
+                "no digit, no capital and no other mark (docs/CHECKLIST.md §7)")
+    if not any(identifier.startswith(area + "_") for area in known_areas):
+        return (f"the item id {identifier!r} does not start with an area from "
+                "rules/pilot/areas.json followed by what the item looks at")
     return None
 
 
@@ -318,19 +513,35 @@ def gate(reports: list[dict], bundle_root) -> dict:
     if not isinstance(accession, str) or not accession:
         raise QuoteGateError(
             f"{MANIFEST} names no accession, and a computed row's id begins with one")
+    known_areas = areas()
     repeated = _repeated_ids(reports)
 
     kept: dict[str, list[dict]] = {}
     kept_ids: dict[str, set[str]] = {}
     dropped: list[dict] = []
+    gated: set[str] = set()
     for entry in reports:
         name = entry["report"]
-        if name in kept:
-            raise QuoteGateError(f"{name} is gated twice; one report is gated once")
+        file_name = Path(name).name if isinstance(name, str) else None
+        if file_name in gated:
+            raise QuoteGateError(
+                f"{name} is gated twice; one report is gated once, under whatever "
+                "path it is handed")
         if ("input" in entry) == ("cites" in entry):
             raise QuoteGateError(
                 f"{name} has to name either the input its items quote or the "
                 "reports its items cite, and exactly one of the two")
+        if file_name not in REPORT_SIDES:
+            raise QuoteGateError(
+                f"{name!r} is not a report the layer table names, so the gate cannot "
+                "say which rule its items are held to")
+        side = REPORT_SIDES[file_name]
+        if side not in entry:
+            what = "quote an input" if side == QUOTES else "cite upstream reports"
+            raise QuoteGateError(
+                f"{name} is a report whose items {what}, and it was handed the other")
+        gated.add(file_name)
+        named_items = file_name in NAMED_ITEMS
 
         index, upstream_ids = None, set()
         if "input" in entry:
@@ -346,13 +557,15 @@ def gate(reports: list[dict], bundle_root) -> dict:
         standing, standing_ids = [], set()
         for item in entry.get("items") or []:
             identifier = item_id(item)
-            if identifier in repeated:
+            why = None
+            if named_items and identifier is not None:
+                why = name_drop_reason(identifier, known_areas)
+            if why is None and identifier in repeated:
                 why = (f"the item id {identifier} is on more than one item in this "
                        "run, so a citation naming it would not name one item")
-            elif index is not None:
-                why = quote_drop_reason(item, index)
-            else:
-                why = citation_drop_reason(item, upstream_ids)
+            if why is None:
+                why = (quote_drop_reason(item, index) if index is not None
+                       else citation_drop_reason(item, upstream_ids))
             if why is None:
                 standing.append(item)
                 standing_ids.add(identifier)

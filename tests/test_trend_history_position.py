@@ -490,21 +490,26 @@ def test_every_filled_cell_says_where_it_sits_and_no_empty_cell_does(ticker):
 def test_the_position_is_quoted_under_the_cells_own_id(tmp_path):
     """The field is part of the row the reader already quotes, not a new row.
 
-    The id stays `{accession}:trends:{metric}:{period}` and the quote is a slice
-    of the committed file, so a reader item quoting the sentence stands at the
-    gate, and the same item with the sentence reworded is dropped.
+    The cell keeps the `paragraph_id` it prints, `{accession}:trends:{metric}:{period}`
+    with the row's own `start..end` as the period, named the way
+    `src/assemble_bundle.py` names it; the quote is a slice of the committed
+    file, so a reader item quoting the sentence stands at the gate, and the same
+    item with the sentence reworded is dropped.
     """
     accession = "0000320193-26-000020"
-    (tmp_path / "input_trends.json").write_text(trends.render(table("AAPL")),
-                                                encoding="utf-8")
+    (tmp_path / "input_trends.json").write_text(
+        trends.render(trends.name_cells(table("AAPL"), accession)), encoding="utf-8")
     index = quote_gate.quotable(tmp_path, accession)
-    identifier = f"{accession}:trends:gross_margin:quarters-back-0"
+    identifier = f"{accession}:trends:gross_margin:2026-03-29..2026-06-27"
     quote = '"position_in_history": "highest of the 6 filled quarters"'
-    assert quote in index[identifier]
-    item = {"id": "gross_margin_highest", "paragraph_id": identifier, "quote": quote}
+    (row,) = quote_gate.rows_of(index, identifier)
+    assert quote in row
+    item = {"id": "results_against_expectations_gross_margin_position",
+            "paragraph_id": identifier, "quote": quote}
     assert quote_gate.quote_drop_reason(item, index) is None
     reworded = dict(item, quote=quote.replace("highest of", "the highest of"))
     assert quote_gate.quote_drop_reason(reworded, index) is not None
-    # The row still parses back into the same table, so nothing else moved.
-    assert json.loads(index[identifier])["position_in_history"] == \
-        "highest of the 6 filled quarters"
+    # The row still parses back into the same cell, id and all.
+    cell = json.loads(row)
+    assert (cell["paragraph_id"], cell["position_in_history"]) == \
+        (identifier, "highest of the 6 filled quarters")
