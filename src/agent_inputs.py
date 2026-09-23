@@ -405,6 +405,31 @@ def agent_directories(run: Path) -> dict[Path, str]:
             if path.name in AGENTS and path.is_dir()}
 
 
+def input_tree_holding(path) -> Path | None:
+    """The agent directory, or the directory the six sit in, that holds `path`.
+
+    None when no run's input tree holds it. The boundary is those directories,
+    so a writer that is not an agent -- a control, a stage runner -- asks this
+    before it puts a file anywhere: a file landing in one is written into what
+    the directory records an agent as having seen.
+
+    Resolved first, because a link's ancestors are wherever it points and a
+    write follows the link. An agent's directory is found by its name wherever
+    it sits, the way `agent_directories` finds one. `agents` is a common word,
+    so it counts only where it is this layout's: beside a run's manifest, or
+    holding an agent's directory.
+    """
+    resolved = Path(path).resolve()
+    for place in (resolved, *resolved.parents):
+        if place.name in AGENTS:
+            return place
+        if place.name == AGENTS_DIRNAME and (
+                (place.parent / "input_manifest.json").is_file()
+                or any((place / name).is_dir() for name in AGENTS)):
+            return place
+    return None
+
+
 def isolation_violations(run: Path) -> list[str]:
     """Every way an agent could reach what its layer never sees. Empty is clean.
 

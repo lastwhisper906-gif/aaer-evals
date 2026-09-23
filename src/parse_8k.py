@@ -162,7 +162,7 @@ def body_items(html: str) -> dict[str, dict]:
 
 
 def extract(ticker: str, *, cutoff=None, fixtures_root=cutoff_guard.FIXTURES) -> dict:
-    cutoff = cutoff or cutoff_guard.default_cutoff(ticker, fixtures_root=fixtures_root)
+    cutoff = cutoff_guard.resolve_cutoff(cutoff, ticker, fixtures_root=fixtures_root)
     index = submissions(ticker, fixtures_root=fixtures_root)
     filings = eight_k_filings(index, cutoff)
     late = late_filings(index, cutoff)
