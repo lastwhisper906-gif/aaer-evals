@@ -555,3 +555,96 @@ def test_the_post_write_hook_names_a_planted_code_and_keeps_the_exit_status(tmp_
     (_, command), = _post_write_hooks()
 
     _names_the_planted_code(command, _repo_that_can_run_the_check(tmp_path))
+
+
+# --- a run record may quote what its own inputs carry --------------------------
+
+# Read out of the committed filing, not typed from memory: NVIDIA's 10-Q for the
+# quarter ended 2026-07-26 says this, and the first pipeline check's notes reader
+# quoted it. `H200` is the product's name. The plain-name check exempts the input
+# that carries it, and the report that quotes it is held to a verbatim match.
+NVDA_QUARTERLY = Path(__file__).resolve().parent / "fixtures" / "NVDA" / "10-Q" / "nvda-20260726.htm"
+H200_SENTENCE = ("During the first half of fiscal year 2027, we incurred a $0.4 billion "
+                 "charge associated with H200 for excess inventory and purchase "
+                 "obligations, as the demand for H200 products diminished.")
+RUN = "runs/NVDA/0001045810-26-000075"
+
+
+def test_the_quoted_sentence_is_the_filings_own():
+    import html
+    import re
+    text = html.unescape(re.sub(r"<[^>]+>", " ", NVDA_QUARTERLY.read_text(encoding="utf-8")))
+    assert H200_SENTENCE in re.sub(r"\s+", " ", text)
+    assert plain_name_check.codes_in(H200_SENTENCE) == ["H200", "H200"]
+
+
+def _run_with_input(tmp_path, where=f"{RUN}/agents/notes-text-reader/input_mdna.md"):
+    source = tmp_path / where
+    source.parent.mkdir(parents=True, exist_ok=True)
+    source.write_text(f"{H200_SENTENCE}\n", encoding="utf-8")
+    return tmp_path / RUN
+
+
+def test_a_report_quoting_its_own_runs_input_is_not_named(tmp_path, capsys):
+    run_dir = _run_with_input(tmp_path)
+    report = run_dir / "report_notes_text.md"
+    report.write_text(f'"quote": "{H200_SENTENCE}"\n'
+                      "the charge for H200 is new this quarter\n", encoding="utf-8")
+
+    status, lines = run(capsys, str(tmp_path))
+
+    assert (status, lines) == (0, [])
+
+
+def test_a_code_the_runs_inputs_do_not_carry_is_named_in_the_same_report(tmp_path, capsys):
+    run_dir = _run_with_input(tmp_path)
+    report = run_dir / "report_notes_text.md"
+    report.write_text(f"{H200_SENTENCE}\nraised as {PLANTED}\n", encoding="utf-8")
+
+    status, lines = run(capsys, str(tmp_path))
+
+    assert status == plain_name_check.FOUND
+    assert lines == [f"{report}:2: {PLANTED}"]
+
+
+def test_another_runs_inputs_exempt_nothing_here(tmp_path, capsys):
+    _run_with_input(tmp_path)
+    other = tmp_path / "runs" / "AAPL" / "0000320193-26-000001" / "report_notes_text.md"
+    other.parent.mkdir(parents=True)
+    other.write_text(f"{H200_SENTENCE}\n", encoding="utf-8")
+
+    status, lines = run(capsys, str(tmp_path))
+
+    assert status == plain_name_check.FOUND
+    assert lines == [f"{other}:1: H200", f"{other}:1: H200"]
+
+
+def test_nothing_outside_runs_is_exempted_by_what_a_run_holds(tmp_path, capsys):
+    _run_with_input(tmp_path)
+    ours = tmp_path / "docs" / "structure_changes.md"
+    ours.parent.mkdir()
+    ours.write_text("the reader quoted H200\n", encoding="utf-8")
+
+    status, lines = run(capsys, str(tmp_path))
+
+    assert status == plain_name_check.FOUND
+    assert lines == [f"{ours}:1: H200"]
+
+
+def test_a_code_in_a_run_files_name_is_still_named(tmp_path, capsys):
+    run_dir = _run_with_input(tmp_path)
+    named = run_dir / "report_H200.md"
+    named.write_text("plain\n", encoding="utf-8")
+
+    status, lines = run(capsys, str(tmp_path))
+
+    assert status == plain_name_check.FOUND
+    assert lines == [f"{named}:0: report_H200.md"]
+
+
+def test_the_run_is_the_innermost_runs_directory():
+    inside = Path("/somewhere/runs/checkout/runs/NVDA/0001045810-26-000075/agents/x/input_a.md")
+    assert plain_name_check.run_directory(inside) == \
+        Path("/somewhere/runs/checkout/runs/NVDA/0001045810-26-000075")
+    assert plain_name_check.run_directory(Path("runs/NVDA/report.md")) is None
+    assert plain_name_check.run_directory(Path("docs/structure_changes.md")) is None

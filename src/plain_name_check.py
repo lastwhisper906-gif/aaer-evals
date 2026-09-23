@@ -115,6 +115,21 @@ Every changed file's own name, whatever it is. Its contents too, unless:
   source documents, and the verbatim rule forbids editing them anyway.
 * its name begins with `input_` -- the text handed to an agent, committed as
   what the agent saw. Correcting a code inside one would falsify the record.
+
+And one kind of occurrence is read and not reported: **a code in a run record
+that the same run's inputs already carry.** A reader's report under
+`runs/<ticker>/<accession>/` quotes those inputs character for character --
+`src/quote_gate.py` drops any quote that does not match -- so a product name
+the filing spells `H200` reaches the report as `H200` or not at all. The input
+is exempt as source text; the quote of it cannot be held to a rule its source
+is exempt from, and a committed run record can never be corrected anyway. The
+exemption is the token, not the file: a code the run's inputs do not carry is
+still reported in the same report, a code from another run's inputs is not
+this run's, and nothing outside `runs/` is exempted by anything a run holds. It
+is as good as the input exemption and no better -- a project-made input that
+carried a code would carry it through -- which is why the trend table, the one
+project-made input that did, is judged for plain names on its own
+(`tests/test_trends.py`).
 * it is `.git`, `.venv`, `__pycache__`, `.pytest_cache`, `node_modules`, or does
   not decode as UTF-8.
 """
@@ -226,10 +241,49 @@ def _shown(path: Path, here: Path) -> str:
         return str(path)
 
 
+RUNS_DIRECTORY = "runs"
+
+
+def run_directory(path: Path) -> Path | None:
+    """`runs/<ticker>/<accession>/` for a file somewhere inside one, else None."""
+    parts = path.parts
+    # The innermost `runs`, so a checkout that happens to sit under a directory
+    # of that name is not mistaken for a run.
+    for index in range(len(parts) - 4, -1, -1):
+        if parts[index] == RUNS_DIRECTORY:
+            return Path(*parts[: index + 3])
+    return None
+
+
+def quoted_codes(run: Path) -> frozenset[str]:
+    """Every code the run's own inputs carry: what its reports may quote back."""
+    carried = set()
+    for path in _all_files_under(run):
+        if not path.name.startswith(VERBATIM_INPUT_PREFIX) or not path.is_file():
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (UnicodeDecodeError, OSError):
+            continue
+        for line in text.splitlines():
+            carried.update(codes_in(line))
+    return frozenset(carried)
+
+
+def _all_files_under(path: Path) -> list[Path]:
+    """Like `_files_under`, but inside a run: a run's `agents/` copies count."""
+    found = []
+    for parent, directories, names in os.walk(path):
+        directories.sort()
+        found.extend(Path(parent) / name for name in sorted(names))
+    return found
+
+
 def occurrences(paths: list[Path]) -> list[str]:
     """One report line per offending occurrence: path, line number, code."""
     found = []
     here = Path.cwd()  # fixed for the whole run; it was being re-read per file
+    carried_by: dict[Path, frozenset[str]] = {}
     for given in paths:
         for path in _files_under(given):
             # main() has already refused a path that is not there. What is left
@@ -244,8 +298,13 @@ def occurrences(paths: list[Path]) -> list[str]:
                 text = path.read_text(encoding="utf-8")
             except (UnicodeDecodeError, OSError):
                 continue  # not text this project wrote
+            run = run_directory(path)
+            if run is not None and run not in carried_by:
+                carried_by[run] = quoted_codes(run)
+            quoted = carried_by.get(run, frozenset())
             for number, line in enumerate(text.splitlines(), start=1):
-                found.extend(f"{shown}:{number}: {code}" for code in codes_in(line))
+                found.extend(f"{shown}:{number}: {code}" for code in codes_in(line)
+                             if code not in quoted)
     return found
 
 
