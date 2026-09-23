@@ -327,7 +327,12 @@ counted.
 ### A reader item
 
 Written by the numbers reader and the notes-text reader. The quote is verbatim
-and Python string-matches it against that reader's committed input.
+and Python string-matches it against that reader's committed input. One fold
+comes first, on both sides: every character Unicode gives the White_Space
+property -- the non-breaking space, the tab and the line break included -- is
+read as an ordinary space, one for one (decided 2026-09-23). Nothing else is
+folded, a run is not collapsed, and every quote that stood only through the fold
+is counted in `input_manifest.json`.
 
 ```json
 { "id": "", "what_changed": "", "account": "",
