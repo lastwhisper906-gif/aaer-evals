@@ -42,12 +42,14 @@ Every comparer and supervisor citation must resolve to an upstream item id in
 the upstream report. A quote that "obviously" matches but has a different
 dash, a different word, an ellipsis, or a different number of whitespace
 characters is a `fail` — string-match means string-match. One exception, the
-owner's decision of 2026-09-23: a whitespace character of another kind (a
-non-breaking space against an ordinary space, one for one) is folded to an
-ordinary space on both sides before matching, and every quote that stood only
-through the fold is counted in the manifest. Check that the fold is one for one
-and touches whitespace only, and that unresolved items are dropped and counted,
-not passed through.
+owner's decision of 2026-09-23 to normalize the non-breaking space and other
+Unicode whitespace on both sides before matching: a character Unicode gives the
+White_Space property (the non-breaking space, the tab, the line break, the thin
+and ideographic spaces) is read as an ordinary space on both sides, one
+character for one, and every quote that stood only through the fold is counted
+in the manifest. A zero-width character is not White_Space and is not folded.
+Check that the fold is one for one, reaches White_Space characters only, and is
+counted, and that unresolved items are dropped and counted, not passed through.
 
 **5. Layer isolation.**
 
