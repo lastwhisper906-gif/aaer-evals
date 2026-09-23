@@ -86,7 +86,9 @@ that tuple adds: the rest is `src/prediction_schema.py`'s own `EVIDENCE_FIELDS`.
 words and tiers and its signal ceiling, once, and `check_schema` hands it every
 field the model answers with this control's evidence shape as the argument. What
 stays here is the two fields that are the run's: the question this control
-asked, and the rules version out of the run's manifest. `src/quote_gate.py` does every piece of the
+asked, and the rules version out of the run's manifest.
+
+`src/quote_gate.py` does every piece of the
 verifying: `quotable` builds the index of what the committed input declares,
 `quote_drop_reason` matches one quote against it, and `citation_drop_reason`
 resolves the ids -- the `evidence` ids, `market_direction.basis`, and an
