@@ -98,13 +98,18 @@ the fourth quarter, in the exact shape a dump has. So a year whose nine-month
 figure cannot be found is reported with the reason it could not, and carries no
 number at all.
 
-**The cutoff.** The record is read through `src/cutoff_guard.py` like every other
-document, so it is refused unless its own recorded date -- the newest filing it
-carries a fact from -- is at or before the cutoff. That is fail-closed and it is
-also a limit worth stating: this record cannot be read at a cutoff earlier than
-its own newest fact, the way `cutoff_guard.load_index` lets the submissions index
-be read and filtered by row. A catalogue read at an earlier cutoff is the gate's
-to allow, not this module's to arrange around.
+**The cutoff.** The record is a catalogue of facts drawn from many filings, not
+a filing, so it is read through `cutoff_guard.load_catalogue` -- the route the
+trend table and the articulation checks already take -- which checks the path
+against the manifest and then applies the cutoff row by row, parsing each row's
+own `filed`. Gating the whole file on its recorded date, the newest filing it
+carries a fact from, refused it to every earlier cutoff: Carrier's record is
+dated 2026-04-30 and its 10-K was filed 2026-02-05, so the annual trigger got no
+fourth quarter at all where the record held every row it needed. A row filed
+after the cutoff is not an input and is dropped, which is a smaller answer and
+not a refusal. What comes back from the gate is counted again on the way in, and
+a row the gate should have dropped and did not stops the derivation: that is the
+gate failing, which is not a thing to trim around.
 
     python3.12 -m src.fourth_quarter --ticker AAPL --out fourth_quarter.json
 
@@ -209,13 +214,18 @@ def _period(start: str, end: str) -> dict:
 # --- reading the record ------------------------------------------------------
 
 def read_record(ticker: str, cutoff, *, fixtures_root=cutoff_guard.FIXTURES) -> dict:
-    """One company's companyfacts document, through the gate, with its row."""
+    """One company's companyfacts document, cut at the cutoff row by row.
+
+    `cutoff_guard.load_catalogue` and nothing else: it returns the document with
+    every row filed after the cutoff taken out, where the date gate would have
+    refused the whole record to any cutoff earlier than its newest fact.
+    """
     row = cutoff_guard.one_document(ticker, fetch_companyfacts.FORM,
                                     fetch_companyfacts.ROLE,
                                     fixtures_root=fixtures_root)
-    raw = cutoff_guard.load_bytes(row["full_path"], cutoff,
-                                  fixtures_root=fixtures_root)
-    return {"row": row, "document": json.loads(raw)}
+    document = cutoff_guard.load_catalogue(row["full_path"], cutoff,
+                                           fixtures_root=fixtures_root)
+    return {"row": row, "document": document}
 
 
 def duration_rows(document: dict) -> dict[tuple, list[dict]]:
@@ -238,12 +248,11 @@ def duration_rows(document: dict) -> dict[tuple, list[dict]]:
 
 
 def filed_after(gathered: dict[tuple, list[dict]], cutoff: dt.date) -> list[str]:
-    """Rows the cutoff should have kept out. On a consistent record, none.
+    """Rows the cutoff should have kept out. After the gate, always none.
 
-    The gate checks the document's *recorded* date, which `fetch_companyfacts`
-    writes as the newest filing the record carries a fact from. This checks the
-    rows themselves, so a record whose manifest date understates what is inside
-    it is refused here rather than quietly read.
+    `cutoff_guard.load_catalogue` drops every row filed after the cutoff, so a
+    row this finds is one the gate let through. That is the route failing, not
+    a late row to drop here, and `fourth_quarters` refuses on it.
     """
     late = cutoff.isoformat()
     return sorted({f"us-gaap:{tag} [{unit}] {row['accn']} filed {row['filed']}"
@@ -500,8 +509,8 @@ def fourth_quarters(ticker: str, cutoff=None, *,
     if late:
         raise FourthQuarterError(
             f"{ticker}: {len(late)} companyfacts rows were filed after the cutoff "
-            f"{cutoff.isoformat()}, so the record disagrees with the date recorded "
-            f"for it: " + "; ".join(late[:5]))
+            f"{cutoff.isoformat()} and came back through the gate that drops "
+            f"them: " + "; ".join(late[:5]))
 
     ends_by_tag = _ends_by_tag(gathered)
     available = fiscal_years(gathered)
@@ -517,8 +526,13 @@ def fourth_quarters(ticker: str, cutoff=None, *,
     return {
         "ticker": ticker,
         "cutoff": cutoff.isoformat(),
+        # The record's own date is the newest filing it carries, which is
+        # after the cutoff whenever the record is newer than the trigger: it is
+        # not published as a filing date, the way `assemble_bundle` does not
+        # publish it, and what stands in its place is how far the rows go.
         "source": {"path": row["path"], "url": row["url"],
-                   "filing_date": row["filing_date"],
+                   "filing_date": None,
+                   "rows_used_through": cutoff.isoformat(),
                    "date_basis": row.get("date_basis", ""),
                    "duration_facts": sum(len(rows) for rows in gathered.values())},
         "requested_years": years,
