@@ -7,15 +7,20 @@ it does not have — a missing 8-K, a missing note history, no prior run — whi
 in this fixture set is most of the interesting cases.
 
 Nothing writes to `runs/`. Every test names its own output directory, and one
-test asserts that building a bundle elsewhere neither creates the default root
-nor touches the repository's own, whether or not a run is committed there.
+test asserts that importing the module and building a bundle elsewhere neither
+creates the default root nor touches the repository's own, whether or not a run
+is committed there.
 """
 
 from __future__ import annotations
 
 import functools
+import hashlib
 import json
+import os
 import re
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -158,36 +163,147 @@ def test_the_rules_version_and_served_model_are_null_with_a_note(ticker):
 
 # --- (f) nothing writes runs/ ------------------------------------------------
 
-def _everything_under(root: Path) -> set[str] | None:
-    """Every path under `root`, or None when there is no `root` at all."""
+def _state_of(root: Path) -> dict[str, tuple] | None:
+    """Every path under `root` with its size, its write time and its bytes'
+    digest, or None when there is no `root` at all.
+
+    Names alone would call a build that rewrote a committed run's nine files in
+    place "unchanged": every name was already there. The digest catches other
+    bytes under the same name and the write time catches the same bytes written
+    again, which is still a write into a directory the build was not handed.
+    """
     if not root.exists():
         return None
-    return {str(path.relative_to(root)) for path in root.rglob("*")}
+    state = {}
+    for path in sorted(root.rglob("*")):
+        stat = path.lstat()
+        digest = hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else None
+        state[str(path.relative_to(root))] = (stat.st_size if digest else None,
+                                              stat.st_mtime_ns, digest)
+    return state
 
 
-def test_the_default_root_is_named_but_never_created(tmp_path, monkeypatch):
+def _runs_without_a_manifest(runs: Path) -> list[str]:
+    """What sits in a `runs/` directory and is not a committed run.
+
+    A run is `runs/<ticker>/<accession>/` holding its `input_manifest.json`, the
+    file every bundle writes. A bare `runs/`, an empty ticker directory -- git
+    carries no empty directory, so a checkout never has one -- or anything else
+    in there is what code brings into being, not what a pipeline commits.
+    """
+    found, strays = [], []
+    for ticker in sorted(runs.iterdir()):
+        if not ticker.is_dir():
+            strays.append(ticker.name)
+            continue
+        children = sorted(ticker.iterdir())
+        if not children:
+            strays.append(f"{ticker.name} holds no run")
+        for run in children:
+            if run.is_dir() and (run / "input_manifest.json").is_file():
+                found.append(run)
+            else:
+                strays.append(str(run.relative_to(runs)))
+    if not found and not strays:
+        return [f"{runs} holds no run"]
+    return strays
+
+
+BUILD_IN_A_FRESH_INTERPRETER = """
+import sys
+sys.path.insert(0, sys.argv[1])
+from src import assemble_bundle
+assemble_bundle.assemble("ESE", "10-Q", sys.argv[2])
+"""
+
+
+def test_the_default_root_is_named_but_never_created(tmp_path):
     """Trap 1. The default is `runs/`, the loop cannot write it, and building a
     bundle somewhere else must not bring it into being.
 
     What is guarded is that sentence, not the absence of the directory. It used
     to assert the repository had no `runs/` at all, which holds only until the
     first run is committed there -- and committing one is what the pipeline is
-    for. So the build runs from an empty working directory, where a relative
-    `runs/` would appear, and the repository's own `runs/`, absent or holding
-    committed runs, has to be exactly what it was before the build.
+    for. So the repository's own `runs/` is recorded first, and then a fresh
+    interpreter started in an empty working directory imports the module and
+    builds, so a write made on import happens after the record and not before
+    it. No `runs/` may appear in that working directory, the repository's own
+    has to be exactly what it was, and if the repository has one at all it has
+    to hold committed runs and nothing else.
     """
     assert assemble_bundle.DEFAULT_ROOT == Path("runs")
+    runs = REPO_ROOT / "runs"
     working = tmp_path / "working-directory"
     working.mkdir()
-    monkeypatch.chdir(working)
-    before = _everything_under(REPO_ROOT / "runs")
+    before = _state_of(runs)
 
-    assemble_bundle.assemble("ESE", "10-Q", tmp_path / "somewhere")
+    subprocess.run([sys.executable, "-c", BUILD_IN_A_FRESH_INTERPRETER,
+                    str(REPO_ROOT), str(tmp_path / "somewhere")],
+                   cwd=working, check=True)
 
+    assert (tmp_path / "somewhere" / "input_manifest.json").is_file()
     assert not (working / "runs").exists()
-    assert _everything_under(REPO_ROOT / "runs") == before
+    assert _state_of(runs) == before
+    if before is not None:
+        assert _runs_without_a_manifest(runs) == []
     assert assemble_bundle.default_out("ESE", "0001-2") == \
         Path("runs") / "ESE" / "0001-2"
+
+
+def _a_committed_run(root: Path) -> Path:
+    """A `runs/` holding one run, its files dated in the past so a write shows."""
+    run = root / "runs" / "ESE" / "0000000000-26-000001"
+    run.mkdir(parents=True)
+    for name, text in (("input_manifest.json", '{"accession": "0000000000-26-000001"}\n'),
+                       ("input_notes.md", "[0000000000-26-000001:notes:1] a note\n")):
+        (run / name).write_text(text, encoding="utf-8")
+    for path in [*run.rglob("*"), run, run.parent, root / "runs"]:
+        os.utime(path, ns=(1_000_000_000_000_000_000, 1_000_000_000_000_000_000))
+    return root / "runs"
+
+
+def test_a_committed_run_that_nothing_touched_reads_the_same_twice(tmp_path):
+    runs = _a_committed_run(tmp_path)
+    assert _state_of(runs) is not None
+    assert _state_of(runs) == _state_of(runs)
+    assert _runs_without_a_manifest(runs) == []
+
+
+@pytest.mark.parametrize("rewrite", ["other bytes under the same name",
+                                     "the same bytes written again",
+                                     "one file added"])
+def test_a_write_into_a_committed_run_changes_what_the_test_compares(tmp_path, rewrite):
+    runs = _a_committed_run(tmp_path)
+    before = _state_of(runs)
+    run = runs / "ESE" / "0000000000-26-000001"
+    if rewrite == "other bytes under the same name":
+        (run / "input_manifest.json").write_text('{"accession": "0000000000-26-000009"}\n',
+                                                 encoding="utf-8")
+    elif rewrite == "the same bytes written again":
+        (run / "input_notes.md").write_bytes((run / "input_notes.md").read_bytes())
+    else:
+        (run / "input_mdna.md").write_text("[0000000000-26-000001:mdna:1] text\n",
+                                          encoding="utf-8")
+    assert _state_of(runs) != before
+
+
+@pytest.mark.parametrize("made", ["a bare runs directory",
+                                  "a ticker directory with nothing in it",
+                                  "a run with no manifest",
+                                  "a file beside the tickers"])
+def test_a_runs_directory_that_code_made_is_not_a_committed_run(tmp_path, made):
+    if made == "a bare runs directory":
+        runs = tmp_path / "runs"
+        runs.mkdir()
+    else:
+        runs = _a_committed_run(tmp_path)
+        if made == "a ticker directory with nothing in it":
+            (runs / "AAPL").mkdir()
+        elif made == "a run with no manifest":
+            (runs / "ESE" / "0000000000-26-000002").mkdir()
+        else:
+            (runs / "stray.json").write_text("{}\n", encoding="utf-8")
+    assert _runs_without_a_manifest(runs) != []
 
 
 # --- the cutoff --------------------------------------------------------------
