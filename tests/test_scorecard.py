@@ -797,6 +797,60 @@ def test_an_answer_that_is_neither_a_probability_nor_insufficient_stops_the_page
     assert "'maybe'" in str(refused.value)
 
 
+@pytest.mark.parametrize("name, change, named", [
+    ("prediction_accounting.json",
+     lambda payload: payload.pop("market_direction"), "market_direction"),
+    ("prediction_accounting.json",
+     lambda payload: payload["market_direction"].pop("p_up"), "p_up"),
+    ("prediction_accounting.json",
+     lambda payload: payload.__setitem__("market_direction", None),
+     "market_direction"),
+    ("baselines.json",
+     lambda payload: payload["beneish_m_score"].pop("market_direction"),
+     "market_direction"),
+    ("baselines.json",
+     lambda payload: payload["beneish_m_score"]["market_direction"].pop("p_up"),
+     "p_up"),
+    # The entry written as null: present, with nothing in it.
+    ("baselines.json",
+     lambda payload: payload.__setitem__("beneish_m_score", None),
+     "beneish_m_score"),
+])
+def test_an_answer_file_with_no_probability_in_it_stops_the_page(
+        tmp_path, name, change, named):
+    """The four pilot runs each carry a pipeline answer and an M-score answer.
+    Plant one that is present but has no market-direction probability in it.
+    Read as absent, AAPL leaves the pipeline's pilot row (four runs become
+    three) and the verdict's shared set, with nothing on the page to say a run
+    went. `docs/CHECKLIST.md` §7 gives every answer a `market_direction.p_up`,
+    and the module's own edge list refuses a quiet drop, so the page stops and
+    says which file and what it lacked."""
+    changed = copy_of(tmp_path)
+    run = changed / "AAPL" / "0000320193-26-000012"
+    # The fixture as shipped carries the object, so the plant is what removes it.
+    before = json.loads((run / name).read_text(encoding="utf-8"))
+    direction = (before["beneish_m_score"] if name == "baselines.json"
+                 else before)["market_direction"]
+    assert "p_up" in direction
+    edit(run, name, change)
+    with pytest.raises(scorecard.ScorecardError) as refused:
+        scorecard.render(changed)
+    assert str(run / name) in str(refused.value)
+    assert named in str(refused.value)
+
+
+def test_a_missing_answer_file_is_still_not_on_record_rather_than_refused(tmp_path):
+    """The line the refusal draws: a file that is not there at all is a row that
+    did not answer this run, which the page already shows as `not on record`
+    in the table and as set aside in the sentence. Only a present file with no
+    probability in it is malformed."""
+    changed = copy_of(tmp_path)
+    (changed / "AAPL" / "0000320193-26-000012" / "prediction_accounting.json").unlink()
+    rows = table(section(scorecard.render(changed),
+                         "Accounting reliability", "Financial pressure"))
+    assert row_of(rows, "pipeline_accounting", PILOT)[3] == "3"
+
+
 def test_a_probability_outside_nought_to_one_stops_the_page(tmp_path):
     changed = copy_of(tmp_path)
     edit(changed / "STX" / "0001137789-26-000008", "baselines.json",
