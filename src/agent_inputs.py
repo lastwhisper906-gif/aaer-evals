@@ -7,7 +7,7 @@ turned into directories:
 |---|---|---|
 | readers | the filing bundle for one company | prices, short interest, any other company |
 | comparers | both reader reports plus the market table | any filing |
-| supervisor | the four reports | any filing, the market table |
+| supervisor | the four reports, and the rules version's checklist keys and output schema | any filing, the market table |
 
 A comparer holds **both** reader reports because the layer's directory is one
 directory; it labels only the items of its own report, and that is a rule its
@@ -59,17 +59,28 @@ Item 9A, and the 10-Q's Item 4 -- to reach the notes-text reader.
 `src/assemble_bundle.py` records that conflict and writes the file; this routes
 it where §1 sends it.
 
-**A supervisor gets the four reports and nothing else today.** Its prompt says
-its directory also holds the rules version's checklist keys and output schema.
-§6 names no file for those and `rules/v0.1` does not exist, so there is nothing
-to route; the default is the four reports, and the day the rules version exists
-its files are added to the supervisors' `sees` and to the catalogue. Until then
-the prompt's other half is a real gap and not this file's to close: it says to
-write `prediction_accounting.json` **against the schema in `docs/CHECKLIST.md`**,
-and from a session rooted at the supervisor's own directory that document is
-unreachable by design. Routing it is a change to the layer table — a supervisor
-would then see a file that is not a report — so it is reported here rather than
-decided here.
+**A supervisor gets the four reports and the rules version's two files.** Its
+prompt says its directory holds, alongside the reports, "the rules version's
+checklist keys and output schema", and tells it to write its prediction "against
+the schema in `docs/CHECKLIST.md`" -- a document a session rooted at the
+supervisor's own directory cannot reach. Until 2026-09-23 nothing was routed
+and the default was the four reports, which left the committed prompt asking
+for a §7 prediction it could not show. `src/decide.py` now writes
+`rules_output_schema.md` and `rules_checklist_keys.md` into the run directory,
+out of the checklist's §7 block and the key columns of §1 and §2, and they are
+routed here to the two supervisors and to nobody else. They are rules and not
+evidence. `docs/INPUT_SPEC.md`'s layer table says so, and
+`docs/needs_judgment.md` keeps the question of whether the supervisor may see
+more of the checklist than that.
+
+**A run with no market table.** `input_manifest.json` says so with
+`market_table: "unavailable"` and a `market_table_reason`, which
+`src/decide.py` writes, and then no comparer directory is built -- there is
+nothing to compare -- and each supervisor is built over the two reader reports.
+A run that says its market table is unavailable and holds a comparer report is
+saying two things and is refused, and so is one whose manifest labels either
+comparer anything but `absent`. The owner's decisions of 2026-09-13 and
+2026-09-23: the first predictions publish on filings alone.
 
 **Where an agent's own output lands.** Each prompt names exactly one file to
 write — `report_numbers.md`, `report_notes_text.md`, the two comparer reports,
@@ -88,6 +99,7 @@ Exit 0 clean, 2 the run directory cannot be routed, 3 the wrong interpreter.
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
 from dataclasses import dataclass
@@ -123,6 +135,8 @@ BUNDLE_CATALOGUE = (
     "input_prior_predictions.md",
     "input_market.json",
     "input_manifest.json",
+    "rules_checklist_keys.md",
+    "rules_output_schema.md",
     "report_numbers.md",
     "report_notes_text.md",
     "report_numbers_vs_market.md",
@@ -165,9 +179,19 @@ PROBABILITY_KEY = re.compile(
     '"(' + "|".join(PROBABILITY_KEYS) + r')"\s*:', re.IGNORECASE)
 
 READER_REPORTS = ("report_numbers.md", "report_notes_text.md")
-ALL_REPORTS = READER_REPORTS + ("report_numbers_vs_market.md",
-                                "report_notes_vs_market.md")
+COMPARER_REPORTS = ("report_numbers_vs_market.md", "report_notes_vs_market.md")
+ALL_REPORTS = READER_REPORTS + COMPARER_REPORTS
 MARKET_TABLE = "input_market.json"
+MANIFEST = "input_manifest.json"
+
+# The rules version's checklist keys and output schema, which both supervisor
+# prompts say their directory holds. Written by `src/decide.py`.
+RULES_FILES = ("rules_checklist_keys.md", "rules_output_schema.md")
+
+# How a run's manifest says it has no market table, and why.
+MARKET_TABLE_KEY = "market_table"
+MARKET_REASON_KEY = "market_table_reason"
+MARKET_UNAVAILABLE = "unavailable"
 
 
 class AgentInputError(Exception):
@@ -200,11 +224,18 @@ class Agent:
         return tuple(name for name in BUNDLE_CATALOGUE
                      if name not in self.may_hold)
 
-    def required(self, *, light: bool = False) -> tuple[str, ...]:
-        """The files that have to be on record before this directory is built."""
+    def required(self, *, light: bool = False, no_market: bool = False) -> tuple[str, ...]:
+        """The files that have to be on record before this directory is built.
+
+        `no_market` is a run whose manifest says its market table is
+        unavailable: no comparer ran, so no supervisor waits for a comparer's
+        report.
+        """
         absent = set(NOT_BUILT_YET)
         if light:
             absent |= set(LIGHT_RUN_ABSENT)
+        if no_market:
+            absent |= set(COMPARER_REPORTS)
         return tuple(name for name in self.sees if name not in absent)
 
 
@@ -239,13 +270,20 @@ AGENTS: dict[str, Agent] = {
               writes="report_numbers_vs_market.md"),
         Agent("notes-vs-market", "comparer", READER_REPORTS + (MARKET_TABLE,),
               writes="report_notes_vs_market.md"),
-        # supervisors: the four reports, and neither a filing nor the market table.
-        Agent("supervisor-accounting", "supervisor", ALL_REPORTS,
+        # supervisors: the four reports and the rules version's two files, and
+        # neither a filing nor the market table.
+        Agent("supervisor-accounting", "supervisor", ALL_REPORTS + RULES_FILES,
               writes="prediction_accounting.json"),
-        Agent("supervisor-pressure", "supervisor", ALL_REPORTS,
+        Agent("supervisor-pressure", "supervisor", ALL_REPORTS + RULES_FILES,
               writes="prediction_pressure.json"),
     )
 }
+
+# A run with no market table runs no comparer, and its manifest writes each
+# comparer's label as `absent`: not `not_priced`, which is a reading of a market.
+COMPARERS = tuple(name for name, agent in AGENTS.items() if agent.layer == "comparer")
+COMPARER_LABELS_KEY = "comparer_labels"
+ABSENT = "absent"
 
 
 def agents_root(run: Path) -> Path:
@@ -259,6 +297,41 @@ def session_root(run: Path, agent: str) -> Path:
         raise AgentInputError(f"{agent!r} is not an agent; "
                               f"one of {', '.join(AGENTS)}")
     return agents_root(run) / agent
+
+
+def market_unavailable(run) -> str | None:
+    """Why this run has no market table, or None when its manifest does not say it has none.
+
+    A run with no manifest, or one that does not name `market_table`, is a run
+    whose market table is expected like any other input. One that names it
+    `unavailable` and gives no reason is refused: the reason is what the
+    owner's decision puts on the record. So is one whose comparer labels are
+    anything but `absent` for every comparer: no comparer ran.
+    """
+    path = Path(run) / MANIFEST
+    if not path.is_file():
+        return None
+    try:
+        manifest = json.loads(path.read_text(encoding="utf-8"))
+    except ValueError as exc:
+        raise AgentInputError(f"{path} does not read as JSON: {exc}") from exc
+    if not isinstance(manifest, dict):
+        raise AgentInputError(f"{path} is not an object")
+    said = manifest.get(MARKET_TABLE_KEY)
+    if said is None:
+        return None
+    reason = manifest.get(MARKET_REASON_KEY)
+    if said != MARKET_UNAVAILABLE or not isinstance(reason, str) or not reason.strip():
+        raise AgentInputError(
+            f"{path} says the market table is {said!r} because {reason!r}. The "
+            f"one thing it may say is {MARKET_UNAVAILABLE!r}, with a reason")
+    labels = {name: ABSENT for name in COMPARERS}
+    if manifest.get(COMPARER_LABELS_KEY) != labels:
+        raise AgentInputError(
+            f"{path} says the market table is unavailable and writes the comparer "
+            f"labels as {manifest.get(COMPARER_LABELS_KEY)!r}. No comparer ran, so "
+            f"each is {ABSENT!r}: {labels!r}")
+    return reason
 
 
 def _probability_leak(text: str) -> str | None:
@@ -312,7 +385,25 @@ def build(run: Path, agent: str, *, light: bool = False) -> dict:
     if not run.is_dir():
         raise AgentInputError(f"{run} is not a run directory")
 
-    missing = [name for name in spec.required(light=light)
+    # A reader's directory does not depend on the market, so only the two
+    # layers that do read the manifest for it.
+    no_market = market_unavailable(run) if spec.layer != "reader" else None
+    if no_market is not None:
+        if spec.layer == "comparer":
+            raise AgentInputError(
+                f"{agent}: the run's market table is unavailable ({no_market}), "
+                "so a comparer has nothing to compare and is not built; the run "
+                "publishes on filings alone")
+        held = [name for name in COMPARER_REPORTS if (run / name).is_file()]
+        if spec.layer == "supervisor" and held:
+            raise AgentInputError(
+                f"{agent}: the run's manifest says its market table is "
+                f"unavailable ({no_market}) and the run holds {', '.join(held)}. "
+                "A comparer report is a reading of a market table, so the run is "
+                "saying two things")
+
+    missing = [name for name in spec.required(light=light,
+                                              no_market=no_market is not None)
                if not (run / name).is_file()]
     if missing:
         raise AgentInputError(

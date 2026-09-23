@@ -22,12 +22,21 @@ Three layers, and the two questions stay apart through all of them:
 |---|---|---|
 | readers | the filing bundle for one company | prices, short interest, any other company |
 | comparers | both reader reports plus the market table | any filing |
-| supervisor | the four reports | any filing, the market table |
+| supervisor | the four reports, and the rules version's checklist keys and output schema | any filing, the market table |
 
 A comparer holds both reader reports because the layer's directory is one
 directory, but it **labels only the items of its own report** — numbers versus
 market labels `report_numbers.md`, notes versus market labels
 `report_notes_text.md`. Labelling an item from the other report is a broken run.
+
+The supervisor's two rules files are what both supervisor prompts already say
+its directory holds: `rules_output_schema.md`, the §7 block of
+`docs/CHECKLIST.md` with the run's rules version, and `rules_checklist_keys.md`,
+the key columns of §1 and §2, names only. They are rules, not evidence, and
+`src/decide.py` writes them out of the checklist (routed from 2026-09-23). A run
+whose market table is unavailable — its manifest says `market_table:
+"unavailable"` and why — builds no comparer, and each supervisor sees the two
+reader reports.
 
 Isolation is enforced by a per-run, per-agent input directory holding only that
 agent's files, and a test asserts each directory's contents against the layer
@@ -360,6 +369,8 @@ report_numbers.md             the numbers reader
 report_notes_text.md          the notes-text reader
 report_numbers_vs_market.md   the numbers-versus-market comparer
 report_notes_vs_market.md     the notes-versus-market comparer
+rules_checklist_keys.md       the checklist's key names — supervisors only
+rules_output_schema.md        the prediction schema, the run's rules version — supervisors only
 prediction_accounting.json    the accounting reliability output
 prediction_pressure.json      the financial pressure output
 explanations.json             management explanations and their judgments

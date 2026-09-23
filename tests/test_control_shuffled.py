@@ -1877,6 +1877,9 @@ def another_run(tmp_path: Path) -> Path:
     pointed into is one the layer table made and not one this file shaped.
     """
     other = bundle(tmp_path / "another", NOTES_COMPANY)
+    # The rules version's two files a supervisor's directory also holds.
+    for name in agent_inputs.RULES_FILES:
+        (other / name).write_text(f"this is {name}\n", encoding="utf-8")
     agent_inputs.build(other, "supervisor-accounting")
     assert agent_inputs.isolation_violations(other) == []
     return other
