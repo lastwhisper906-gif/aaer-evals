@@ -520,6 +520,27 @@ def test_cosine_similarity_by_hand_on_planted_text():
     assert baselines.cosine(now, baselines.words("12,345 (678)")) is None
 
 
+def test_a_note_tagged_inside_another_is_counted_once():
+    """Planted: a table tagged inside its note repeats the note's words.
+
+    Counted once, both filings hold alpha 1 and beta 1, and the cosine is 1.
+    Counted twice, the later one would hold beta 2, (1 + 2) / (sqrt 5 * sqrt 2).
+    Qualcomm's instances nest nothing, so only a planted pair asks this.
+    """
+    def filing(sections):
+        return {"accession": "planted", "filing_date": "2026-01-01",
+                "sections": [{"name": name, "contained_in": inside, "text": text}
+                             for name, inside, text in sections]}
+
+    now = filing([("note", None, "Alpha beta"), ("note_table", "note", "beta")])
+    before = filing([("note", None, "alpha BETA")])
+    row = baselines.note_cosine_similarity(now, before)
+    assert row["value"] == pytest.approx(1.0, rel=1e-12)
+    assert row["current"]["words"] == 2
+    assert row["added"] == [] and row["removed"] == []
+    assert row["sections"] == {"note": pytest.approx(1.0, rel=1e-12)}
+
+
 def test_the_inventory_note_by_hand():
     """Qualcomm's inventory table in both 10-Qs, every word counted here.
 
