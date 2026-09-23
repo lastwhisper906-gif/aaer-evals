@@ -55,10 +55,10 @@ through `src/agent_inputs.py`'s `_differs` -- "a hardlink to another file
 resolves inside the root and answers to the right name". Two of the allowlist's
 names declare no paragraph ids at all, `input_market.json` and
 `input_companyfacts.json`, so nothing downstream can tell whose they are; and a
-foreign `input_trends.json` is worse than invisible, because `src/quote_gate.py`
-mints its cell ids from *this* run's accession rather than out of the file, so
-another company's values string-match as verbatim quotes under this run's own
-ids. `input_manifest.json` is not
+foreign `input_trends.json` is worse than invisible, because a cell's printed id
+says nothing about whose values sit beside it, so a table printing this run's
+ids with another company's values string-matches as verbatim quotes under this
+run's own ids. `input_manifest.json` is not
 on the allowlist at all: §6's line for it is "dropped-item counts ... served
 models", which is the pipeline's own output, and `run` reads it from
 `bundle_root` where the run keeps it rather than from what the control sees.
@@ -644,10 +644,10 @@ def input_files(input_dir, bundle_root) -> list[str]:
     `input_market.json` or `input_companyfacts.json`, *copied* under its allowed
     name, answers every question above: it is not a link, it is not a directory,
     and its name is on the list. Two of those three declare no paragraph ids at
-    all, so `resolvable` cannot see them either, and the third has its ids minted
-    from this run's accession by `src/quote_gate.py` rather than read out of the
-    file -- so a foreign trend table is indexed under this run's ids and its
-    values string-match as verbatim quotes. `src/agent_inputs.py` has the check
+    all, so `resolvable` cannot see them either, and the third prints ids that
+    say nothing about whose values sit beside them -- so a trend table printing
+    this run's ids is indexed under them whatever its values, and those values
+    string-match as verbatim quotes. `src/agent_inputs.py` has the check
     this needs and says why in one line: "the one thing a check on names cannot
     see: a hardlink to another file resolves inside the root and answers to the
     right name." So every admitted file is held against the run's own file of

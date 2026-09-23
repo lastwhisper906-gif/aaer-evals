@@ -502,9 +502,14 @@ def build(ticker: str, form: str, *, cutoff=None, fixtures_root=cutoff_guard.FIX
     # record reaches it. Anchored on the record instead, a record fetched before the trigger
     # renames every quarter one step back and the run's own period goes missing
     # without a word — two of these twelve records are older than their 10-Q.
+    #
+    # Each cell then prints the id the numbers reader cites it by, which carries
+    # this run's accession -- see `trends.name_cells`.
     with phase(opened, "input_trends.json"):
-        table = trends.table(ticker, cutoff, period_end=trigger["report_date"],
-                             fixtures_root=fixtures_root)
+        table = trends.name_cells(
+            trends.table(ticker, cutoff, period_end=trigger["report_date"],
+                         fixtures_root=fixtures_root),
+            trigger["accession"])
 
     with phase(opened, "input_notes.md", "input_mdna.md"):
         notes, mdna, prior_accession = note_stream(ticker, form, cutoff=cutoff,

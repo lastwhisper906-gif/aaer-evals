@@ -32,9 +32,12 @@ Each item:
 ```
 
 `quote` is verbatim from your input and `paragraph_id` names where it came from.
-A computed row has an id like any paragraph — `{accession}:trends:{metric}:{period}`,
-`{accession}:articulation:{account}:{period}`, `{accession}:facts:{tag}:{period}` —
-and is quoted as the row and its value, exactly as printed. Python string-matches every quote against your committed input, and an
+Every row you can quote prints its own id: a trend cell and a numeric fact as
+`"paragraph_id"`, a paragraph of prose on its `[id]` line. Copy the
+`paragraph_id` printed on the row you quote, character for character; never
+compose one. A formula input inside a trend cell prints an `"id"` and no
+`"paragraph_id"`: it is part of that cell's row, so quote it under the cell's
+`paragraph_id`. A row is quoted as the row and its value, exactly as printed. Python string-matches every quote against your committed input, and an
 item whose quote does not match is dropped before anything downstream sees it.
 An item you cannot quote is an item you do not write.
 

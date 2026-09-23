@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -120,6 +121,41 @@ def _unit(node: ET.Element) -> str:
     return "*".join(measures(node))
 
 
+def _foreign_currency(unit: str) -> bool:
+    """A unit that counts in a currency other than the dollar, alone or per share."""
+    return any(measure.startswith("iso4217:") and measure != "iso4217:USD"
+               for measure in re.split(r"[*/]", unit))
+
+
+def paragraph_id(accession: str, tag: str, context: dict, unit: str) -> str:
+    """The id a fact prints on its row, and the one a reader copies to cite it.
+
+    `docs/INPUT_SPEC.md` §2 gives a numeric fact `{accession}:facts:{tag}:{period}`,
+    and the trend table already prints that shape for every fact it reads: the
+    period is the instant, or `start..end` for a duration. A fact reported
+    against a dimension is not its total, so its members follow the period,
+    `{dimension}={member}` for each and a typed member's value in place of a
+    member, joined by commas -- without them the part would answer to the
+    total's id. An amount in a currency other than the dollar ends in
+    `unit={unit}`: a filing can state one amount twice, in dollars and in the
+    currency it was contracted in (Littelfuse's Polytronics stake in euros,
+    Ciena's Canadian pension cost in Canadian dollars, TTM's notional in Swiss
+    francs), and the second is a different number. The element's own `id`
+    stays beside it: it is the instance's name for one element, and two
+    elements can state one fact.
+    """
+    period = context.get("instant") or f"{context.get('start')}..{context.get('end')}"
+    members = [f"{m['dimension']}={m['member']}" for m in context.get("segment") or []]
+    members += [f"{m['dimension']}={m['value']}"
+                for m in context.get("typed_segment") or []]
+    parts = [f"{accession}:facts:{tag}:{period}"]
+    if members:
+        parts.append(",".join(members))
+    if _foreign_currency(unit):
+        parts.append(f"unit={unit}")
+    return ":".join(parts)
+
+
 def _number(text: str | None):
     if text is None:
         return None
@@ -154,14 +190,17 @@ def facts_from_instance(xml_bytes: bytes, *, accession: str, filing_date: str,
         nil = element.get(f"{{{XSI}}}nil") == "true"
         value = None if nil else (element.text or "").strip()
         element_id = element.get("id") or f"n{position}"
+        context = contexts.get(element.get("contextRef"), {})
+        unit = units.get(unit_ref, unit_ref)
         facts.append({
             "id": f"{accession}:{element_id}",
+            "paragraph_id": paragraph_id(accession, local, context, unit),
             "tag": local,
             "prefix": prefix,
             "namespace": uri,
-            "context": contexts.get(element.get("contextRef"), {}),
+            "context": context,
             "context_ref": element.get("contextRef"),
-            "unit": units.get(unit_ref, unit_ref),
+            "unit": unit,
             "decimals": element.get("decimals"),
             "value": value,
             "number": _number(value),

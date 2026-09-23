@@ -168,14 +168,17 @@ The allowance for credit losses was reduced during the period.
 TRENDS = """{
   "quarters": [
     {
+      "end": "2025-09-27",
       "filled": true,
       "label": "quarters-back-0",
       "ratios": {
         "days_sales_outstanding": {
           "days": 91,
+          "paragraph_id": "0000320193-25-000079:trends:days_sales_outstanding:2025-06-29..2025-09-27",
           "value": 51.7
         }
-      }
+      },
+      "start": "2025-06-29"
     }
   ],
   "ticker": "AAPL"
@@ -195,11 +198,11 @@ MANIFEST = {"ticker": TICKER, "accession": ACCESSION, "cutoff": FILED,
 
 NOTES_ONE = f"{ACCESSION}:notes:1"
 NOTES_TWO = f"{ACCESSION}:notes:2"
-TREND_CELL = f"{ACCESSION}:trends:days_sales_outstanding:quarters-back-0"
+TREND_CELL = f"{ACCESSION}:trends:days_sales_outstanding:2025-06-29..2025-09-27"
 
 RECEIVABLES_QUOTE = "Accounts receivable, net of allowances, rose to $29,508 million"
 ALLOWANCE_QUOTE = "The allowance for credit losses was reduced"
-TREND_QUOTE = '"days": 91,\n          "value": 51.7'
+TREND_QUOTE = f'"paragraph_id": "{TREND_CELL}",\n          "value": 51.7'
 # The same sentence with the filing's em dash written as a hyphen.
 ALTERED_QUOTE = "rose to $29,508 million - the"
 
@@ -896,13 +899,13 @@ def test_a_manifest_naming_no_accession_is_refused_as_that_and_not_as_a_miss(tmp
 def test_a_foreign_trend_table_under_its_allowed_name_is_refused(tmp_path):
     """The case no id check can reach, and the reason the bytes are read.
 
-    `src/quote_gate.py` mints a trend cell's id from the run's own accession
-    rather than out of the file, so another company's table is indexed under
-    *this* run's ids and its values string-match as verbatim quotes. `resolvable`
-    sees nothing wrong — the ids are this run's — and the row would be kept,
-    quoted and written. `src/agent_inputs.py` names the only check that reaches
-    it: "a hardlink to another file resolves inside the root and answers to the
-    right name."
+    A trend cell prints its own id, and a table assembled for this run's
+    accession with another table's values in it prints this run's ids, so it is
+    indexed under them and its values string-match as verbatim quotes.
+    `resolvable` sees nothing wrong — the ids are this run's — and the row would
+    be kept, quoted and written. `src/agent_inputs.py` names the only check that
+    reaches it: "a hardlink to another file resolves inside the root and answers
+    to the right name."
     """
     root, folder = plant(tmp_path)
     theirs = TRENDS.replace('"value": 51.7', '"value": 88.2')
