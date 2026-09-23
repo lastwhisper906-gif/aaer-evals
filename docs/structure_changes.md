@@ -138,3 +138,24 @@ codes, no cross-references, no approval state.
 2026-09-23 · **each agent on the second pipeline check ran in a session whose directory is the boundary in fact.** `claude -p --restricted` was started in the agent's own input directory, with the agent's definition passed unchanged through `--agents`. That confines Read and Write to the directory and loads no project settings, hooks, `CLAUDE.md` or `lessons.md`, and the JSON it returns names the model that served: `claude-opus-5-5` for both readers, `claude-fable-5-1` for the control, the models their definitions pin. A probe session started the same way could not read a file one level up. The invocation carried the listing, as #52's row asks, and both readers answered on the first call. The script that started them is in no file here -- nothing in `src/` runs a stage yet, as `src/quote_gate.py` and `src/control_single_agent.py` both say -- so the exact invocation each agent received is recorded in the run's manifest.
 
 2026-09-23 · **the prediction is an anomaly register, not a count of flags against a cutoff.** The owner's decision: the goal is to find every anomaly, from the accounting side and the financial side, not to count flags. `tier` and `top_signals` are gone from the §7 schema and `anomalies` takes their place, each entry with a descriptive `name`, its `axis`, `what`, `numbers_vs_prose` (`confirms`, `contradicts` or `unresolved`), `evidence` and `market_label` (`priced_in`, `not_priced`, `opposite_direction` or `absent`). An empty register is an allowed answer, and nothing caps, ranks or counts the list into a verdict. §9's "4 or more of the 33" and "3 or more of the 17" and the two-by-two they defined are removed, and the cross-tabulation of the two axes moves to the pattern study as a descriptive table with no count cut. One checker in `src/prediction_schema.py` enforces the register for both controls, in each an anomaly whose evidence fails is dropped and counted like a checklist entry, and the scorecard compares the registers per anomaly kind. The owner's inbox row on the two-by-two thresholds is marked superseded.
+2026-09-23 · **three owner decisions, recorded verbatim before any code changed.** They replace the morning's instructions (company pairing, "4 or more" tiers) and are in force from rules version pilot. The quotes are the owner's own words; the English line under each is the translation this repository works from.
+
+1. **Every anomaly, not a count against a cutoff.**
+
+   > 규칙 버전 1: 은 회계 지표가 4개 이상 ~ 이런걸 내가 원한게 아니라 회계 이상이 나온걸 모조리 찾는게 내 목표다. 데이터를 우선 다 모으고, 그 안에서 모든 문제를 찾고 분석할거다 [회계, 재무적 관점으로]
+
+   English: the goal is to find every anomaly, not to count flags against a cutoff. The "4 or more of the 33" and "3 or more of the 17" lines leave `docs/CHECKLIST.md` §9, the prediction's `tier` and `top_signals` give way to a complete `anomalies` list, and neither reader has an item cap.
+
+2. **No company pairing.**
+
+   > 짝지어진 회사 panw 같은 경우에는 굳이 후보들을 짝 지을 필요 없다고 생각한다
+
+   English: no company pairing. The shuffled-report control, which crossed one company's numbers report with the next company's notes report, is retired to `archive/`.
+
+3. **Item names say what they look at.**
+
+   > t1~t40 대신 쓸 쉬운 이름 revenue_recognition 같이 항목을 무엇을 보는지가 이름에 그대로 드러나게
+
+   English: item names say what they look at. A reader or comparer item's id is its area and then its subject, lowercase letters and underscores only, with the location left to `paragraph_id`.
+
+`CLAUDE.md` changes in two lines to match: its title says the project finds every anomaly on the two axes, and its plain-names rule says what an item id is.
