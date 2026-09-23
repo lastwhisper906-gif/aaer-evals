@@ -1,9 +1,25 @@
-"""Two expected values, and neither of them is anything this control produced.
+"""Four expected values, and none of them is anything this control produced.
 
 The **schema** is `docs/CHECKLIST.md` §7, transcribed into `SCHEMA_BLOCK` below
 by hand and then asserted to be a slice of that document, character for
 character. Every field the control writes is asserted against it by name here,
-not by handing the written file back to the checker that wrote it.
+not by handing the written file back to the checker that wrote it. The members
+of `evidence` are *read off that block* rather than written out a second time:
+two hand lists agree with each other and not with the document the day it moves,
+and §7 gives `evidence` one member while this control carries two, so the one it
+adds is named here beside the reason rather than mixed into a list.
+
+The **cutoff** is `tests/fixtures/AAPL/manifest.json`, EDGAR's own record of when
+the accession this run names was filed — 2025-10-31 for 0000320193-25-000079.
+The test reads it out of that file with `json`, importing nothing from `src/`,
+and the control has to agree with it. `CLAUDE.md` makes the cutoff the filing
+date of the triggering report, so a run whose manifest says otherwise is a run
+whose boundary has moved for itself.
+
+The **ids that resolve to nothing** are planted: one naming another company's
+accession, NVDA's 10-K, and one naming a paragraph of this company that no
+committed file declares. Neither is in the index `src/quote_gate.py` builds from
+the planted directory, which is what makes the expected result a drop.
 
 The **quotes** are slices of an input directory this file plants as characters,
 and the judge that says they match is `src/quote_gate.py`, run over the file the
@@ -23,6 +39,7 @@ one call belongs to whoever runs the stage.
 
 from __future__ import annotations
 
+import datetime as dt
 import json
 import re
 from pathlib import Path
@@ -35,9 +52,35 @@ from src.control_single_agent import ControlError
 REPO_ROOT = Path(__file__).resolve().parent.parent
 CHECKLIST = REPO_ROOT / "docs" / "CHECKLIST.md"
 INPUT_SPEC = REPO_ROOT / "docs" / "INPUT_SPEC.md"
+HOW_WE_WORK = REPO_ROOT / "docs" / "HOW_WE_WORK.md"
 SUPERVISOR_PROMPT = REPO_ROOT / ".claude" / "agents" / "supervisor-accounting.md"
+FIXTURES = REPO_ROOT / "tests" / "fixtures"
 
-ACCESSION = "0000320193-25-000073"
+# Apple's 10-K, and the date `tests/fixtures/AAPL/manifest.json` records it as
+# filed on. Both are asserted against that file below before anything runs.
+TICKER = "AAPL"
+ACCESSION = "0000320193-25-000079"
+FILED = "2025-10-31"
+
+# Another company's filing, and a paragraph of this one that no file declares.
+# Neither is in the index the planted directory offers, so both are drops.
+OTHER_ACCESSION = "0001045810-25-000023"
+NO_SUCH_PARAGRAPH = f"{ACCESSION}:notes:99"
+
+# An earlier quarter of this company and a later one, both out of the same
+# fixture record and asserted against it below. The earlier is what
+# `input_prior_predictions.md` mints its ids from, so it has to stay allowed;
+# the later is the cutoff rule read over the record.
+PRIOR_ACCESSION = "0000320193-24-000123"
+LATER_ACCESSION = "0000320193-26-000020"
+
+MANIFEST_NAME = "input_manifest.json"
+
+# What a control directory may not hold: a price file carrying the outcome
+# window, and another company's notes. The first wears the `input_` prefix the
+# old guard read as sufficient; the second wears no catalogue name at all.
+OUTCOME_WINDOW_PRICES = "input_prices_outcome_window.json"
+OTHER_COMPANY_NOTES = "NVDA_notes.md"
 
 # `docs/CHECKLIST.md` §7, "The two predictions", copied out by hand. The first
 # test asserts this is still a slice of that file, so the fields asserted below
@@ -57,6 +100,48 @@ SCHEMA_BLOCK = '''{ "question": "accounting_reliability" | "financial_pressure",
 # Every top-level field of that block, read off it one line at a time.
 SCHEMA_FIELDS = ("question", "rules_version", "checklist", "continuous", "events",
                  "explanations", "market_direction", "tier", "top_signals")
+
+
+def schema_members(field: str) -> tuple[str, ...]:
+    """The members §7 gives one of its list-of-objects fields, off the block.
+
+    Read rather than transcribed a second time: a list written out here agrees
+    with the list written out in `src/control_single_agent.py` and with nothing
+    else, so the day the document gains a member the two go on agreeing with
+    each other about a shape neither of them has any more.
+    """
+    found = re.search(rf'"{field}":\s*\[\s*\{{(.*?)\}}\s*\]',
+                      SCHEMA_BLOCK, flags=re.DOTALL)
+    assert found is not None, f"§7 shows no object under {field}"
+    return tuple(re.findall(r'"([a-z_]+)":', found.group(1)))
+
+
+def spec_input_names() -> tuple[str, ...]:
+    """The `input_` files `docs/INPUT_SPEC.md` §6 lists, read off that list.
+
+    The document, not the module's own comprehension over
+    `agent_inputs.BUNDLE_CATALOGUE`. Two readings of one document can be
+    compared; a reading compared with itself cannot.
+    """
+    text = INPUT_SPEC.read_text(encoding="utf-8")
+    block = re.search(r"```\n(input_numbers\.json.*?)```", text, flags=re.DOTALL)
+    assert block is not None, "§6 shows no file list"
+    return tuple(re.findall(r"^(input_\S+)", block.group(1), flags=re.MULTILINE))
+
+
+# §6's own line for the manifest, read out of the document so the test that
+# says what it holds is quoting rather than remembering.
+SPEC_MANIFEST_LINE = re.search(
+    r"^input_manifest\.json.*?(?=^\S)",
+    INPUT_SPEC.read_text(encoding="utf-8"),
+    flags=re.MULTILINE | re.DOTALL).group(0)
+
+# §7 shows `evidence` with `upstream_item_id` alone. This control has no
+# upstream report — its upstream is the committed filing — so the id it writes
+# names a paragraph, and a paragraph id is verified by quoting it. `quote` is
+# named here, once, beside that reason.
+QUOTE = "quote"
+EVIDENCE_MEMBERS = schema_members("evidence") + (QUOTE,)
 
 # The model family `.claude/agents/supervisor-accounting.md` and
 # `.claude/agents/supervisor-pressure.md` both name on their `model:` line.
@@ -105,7 +190,7 @@ MARKET = """{
 }
 """
 
-MANIFEST = {"ticker": "AAPL", "accession": ACCESSION, "cutoff": "2025-10-31",
+MANIFEST = {"ticker": TICKER, "accession": ACCESSION, "cutoff": FILED,
             "rules_version": "0.1", "counts": {"paragraphs": 2, "exclusions": 0}}
 
 NOTES_ONE = f"{ACCESSION}:notes:1"
@@ -119,18 +204,34 @@ TREND_QUOTE = '"days": 91,\n          "value": 51.7'
 ALTERED_QUOTE = "rose to $29,508 million - the"
 
 
+BUNDLE = {"input_notes.md": NOTES, "input_trends.json": TRENDS,
+          "input_market.json": MARKET}
+
+
 def plant(tmp_path: Path) -> tuple[Path, Path]:
-    """The run directory, and the directory the control is handed."""
+    """The run directory, and the directory the control is handed.
+
+    The bundle is written into the run directory and *copied* into the
+    control's, which is how `src/agent_inputs.py` places a layer's files and
+    what the byte check below is measured against. A control directory that
+    were not a copy of the run would be a directory nobody assembled.
+    """
     root = tmp_path / "AAPL-10-K"
     folder = tmp_path / "single-agent"
     root.mkdir()
     folder.mkdir()
-    (folder / "input_notes.md").write_text(NOTES, encoding="utf-8")
-    (folder / "input_trends.json").write_text(TRENDS, encoding="utf-8")
-    (folder / "input_market.json").write_text(MARKET, encoding="utf-8")
+    for name, text in BUNDLE.items():
+        (root / name).write_text(text, encoding="utf-8")
+        (folder / name).write_text(text, encoding="utf-8")
     (root / "input_manifest.json").write_text(
         json.dumps(MANIFEST, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return root, folder
+
+
+def hand(folder: Path, root: Path, name: str, text: str) -> None:
+    """One file the run assembled and the control was handed, both the same."""
+    (root / name).write_text(text, encoding="utf-8")
+    (folder / name).write_text(text, encoding="utf-8")
 
 
 # --- what the stub model answers ---------------------------------------------
@@ -234,6 +335,56 @@ def test_the_fields_asserted_here_are_every_field_that_schema_has():
         control_single_agent.FIELDS + (control_single_agent.CONTINUOUS,))
 
 
+def test_the_evidence_members_are_the_schemas_own_plus_the_quote():
+    """The one member this control adds to §7's, and nothing else.
+
+    Both sides now come off the block above: the module derives its own tuple
+    the same way, so a member added to §7 reaches the control instead of being
+    outvoted by two copies of the old shape.
+    """
+    assert schema_members("evidence") == ("upstream_item_id",)
+    assert control_single_agent.EVIDENCE_FIELDS == EVIDENCE_MEMBERS
+    assert QUOTE not in schema_members("evidence")
+
+
+def test_the_accession_and_cutoff_planted_here_are_the_ones_edgar_recorded():
+    """The expected cutoff, read out of the fixture record by this file.
+
+    `json` and a path, importing nothing from `src/`: the date the control has
+    to agree with comes from the record of what EDGAR published, not from the
+    module that checks it or from the manifest the run wrote about itself.
+    """
+    recorded = json.loads((FIXTURES / TICKER / "manifest.json").read_text(
+        encoding="utf-8"))
+    dates = {row["filing_date"] for row in recorded["documents"]
+             if row["accession"] == ACCESSION}
+    assert dates == {FILED}
+    assert MANIFEST["cutoff"] == FILED
+    # And the other company's accession is another company's, on its own record.
+    other = json.loads((FIXTURES / "NVDA" / "manifest.json").read_text(
+        encoding="utf-8"))
+    assert OTHER_ACCESSION in {row["accession"] for row in other["documents"]}
+    assert OTHER_ACCESSION not in {row["accession"] for row in recorded["documents"]}
+
+
+def test_the_controls_are_done_when_every_citation_resolves():
+    """What the explanation drops below are measured against."""
+    assert ("control files, with every citation resolving"
+            in HOW_WE_WORK.read_text(encoding="utf-8"))
+
+
+def test_the_layer_guard_this_directory_guard_copies_refuses_a_link_too():
+    """Where the symlink refusal below comes from: the committed layer guard.
+
+    `src/agent_inputs.py` refuses anything outside what a layer may hold, and a
+    link is one of the things it names by hand. The control's directory is not
+    one that file builds, so the rule is asserted against its source here rather
+    than inherited by calling it.
+    """
+    source = (REPO_ROOT / "src" / "agent_inputs.py").read_text(encoding="utf-8")
+    assert "a link's ancestors are the bundle's" in source
+
+
 def test_the_quotes_planted_here_are_slices_of_the_input_planted_here():
     assert RECEIVABLES_QUOTE in NOTES
     assert ALLOWANCE_QUOTE in NOTES
@@ -291,7 +442,7 @@ def test_every_checklist_entry_carries_the_schemas_four_members(tmp_path):
         assert entry["finding"] in ("flag", "no_flag", "insufficient")
         assert 0 <= entry["confidence"] <= 1
         for cited in entry["evidence"]:
-            assert sorted(cited) == ["quote", "upstream_item_id"]
+            assert sorted(cited) == sorted(EVIDENCE_MEMBERS)
 
 
 def test_the_events_and_explanations_carry_the_members_the_schema_gives_them(tmp_path):
@@ -436,6 +587,52 @@ def test_an_insufficient_p_up_still_resolves_the_basis_it_carries(tmp_path):
         row["item_id"] for row in result["dropped"]]
 
 
+def test_the_explanation_planted_here_resolves_and_stands(tmp_path):
+    """The positive control beside the two drops below.
+
+    A gate that dropped every explanation would pass those two on air, so the
+    one that resolves is asserted to survive into the written file first.
+    """
+    root, folder = plant(tmp_path)
+    result = go(root, folder, "accounting_reliability", accounting_answer())
+    assert [entry["id"] for entry in written(root, "accounting_reliability")
+            ["explanations"]] == [NOTES_TWO]
+    assert NOTES_TWO in quote_gate.quotable(folder, ACCESSION)
+    assert not [row for row in result["dropped"] if "explanations" in row["item_id"]]
+
+
+def test_an_explanation_naming_another_companys_accession_is_dropped_and_counted(tmp_path):
+    """§7 step 6: both control files, with every citation resolving."""
+    root, folder = plant(tmp_path)
+    answer = accounting_answer()
+    answer["explanations"] = [
+        {"id": f"{OTHER_ACCESSION}:notes:1", "support": "sufficient",
+         "realization_p": 0.4}]
+    result = go(root, folder, "accounting_reliability", answer)
+    assert written(root, "accounting_reliability")["explanations"] == []
+    row = next(row for row in result["dropped"]
+               if row["item_id"].endswith(f"{OTHER_ACCESSION}:notes:1"))
+    assert row["item_id"] == (
+        f"accounting_reliability:explanations:{OTHER_ACCESSION}:notes:1")
+    assert "does not resolve to an upstream item" in row["reason"]
+    assert row["report"] == "control_single_agent_accounting.json"
+
+
+def test_an_explanation_naming_a_paragraph_that_exists_nowhere_is_dropped(tmp_path):
+    root, folder = plant(tmp_path)
+    answer = accounting_answer()
+    answer["explanations"] = [
+        {"id": NO_SUCH_PARAGRAPH, "support": "unknown", "realization_p": 0.5},
+        {"id": NOTES_ONE, "support": "sufficient", "realization_p": 0.2}]
+    result = go(root, folder, "accounting_reliability", answer)
+    # The one that resolves stays; only the one that names nothing goes.
+    assert [entry["id"] for entry in written(root, "accounting_reliability")
+            ["explanations"]] == [NOTES_ONE]
+    assert [row["item_id"] for row in result["dropped"]
+            if "explanations" in row["item_id"]] == [
+        f"accounting_reliability:explanations:{NO_SUCH_PARAGRAPH}"]
+
+
 def test_an_evidence_entry_with_no_quote_is_refused(tmp_path):
     """§7 shows `evidence` with `upstream_item_id` alone; this control has no
     upstream report, so its id names a paragraph and the quote is the only
@@ -459,13 +656,378 @@ def test_a_checklist_entry_resting_on_nothing_is_dropped(tmp_path):
 
 
 # --- what the control refuses ------------------------------------------------
+#
+# Every name the allowlist refuses is planted **in the run directory as well**,
+# by `hand`, with the same bytes. That is what makes the allowlist the thing
+# under test: the two checks after it -- the run has no file of that name, and
+# the bytes are not the run's -- both raise naming the same file, so a test that
+# planted the stray copy alone stayed green with the allowlist deleted and was
+# reading another branch's message. Planted in both places there is nothing left
+# to refuse it but the list, and `stub.prompts == []` says the model never saw
+# the directory. `REFUSED_BY_THE_LIST` is that branch's own sentence, so a
+# refusal arriving from anywhere else is not mistaken for this one.
 
-def test_a_directory_holding_the_pipelines_own_output_is_refused(tmp_path):
+REFUSED_BY_THE_LIST = "which this control may not see"
+
+
+def refused(root: Path, folder: Path, answer: dict | None = None) -> str:
+    """One run the directory has to stop, and the refusal it raised.
+
+    The model is never called and no control file is written -- asserted here
+    once rather than in every test below, because `run` settles the input
+    before the call on purpose: "a refusal after the answer has come back is a
+    refusal that has already paid for the look-ahead". That ordering is a claim
+    this change makes and `stub.prompts == []` is the only thing that holds it:
+    move `resolvable` below the call and every refusal below still raises, just
+    after the model has read the directory. So a test carrying its own answer
+    passes it here rather than raising on its own.
+    """
+    stub = Stub(accounting_answer() if answer is None else answer)
+    with pytest.raises(ControlError) as caught:
+        control_single_agent.run("accounting_reliability", input_dir=folder,
+                                 bundle_root=root, ask=stub)
+    assert stub.prompts == []
+    assert not (root / "control_single_agent_accounting.json").exists()
+    return str(caught.value)
+
+
+def test_a_report_the_run_wrote_is_refused_even_though_the_run_wrote_it(tmp_path):
+    """The pipeline's own output, in the run directory where it belongs.
+
+    A reader report *is* in the run's directory -- that is where the read stage
+    writes it -- so the control's copy of it is a true copy and the byte check
+    has nothing to say. The control is a control beside the pipeline, not a
+    reader of it, and the list is what says so.
+    """
     root, folder = plant(tmp_path)
-    (folder / "report_numbers.md").write_text("# the numbers reader\n", encoding="utf-8")
+    hand(folder, root, "report_numbers.md", "# the numbers reader\n")
+    message = refused(root, folder)
+    assert "report_numbers.md" in message and REFUSED_BY_THE_LIST in message
+
+
+def test_a_price_file_carrying_the_outcome_window_is_refused(tmp_path):
+    """The `input_` prefix is not a passport.
+
+    The guard used to refuse only the names it recognised as the pipeline's, so
+    a file nobody routed went through and was listed to the model under "you
+    see these files and nothing else". `src/agent_inputs.py` refuses anything
+    outside what a layer may hold, for the reason its own message gives, and
+    this is the same rule at the control's directory.
+    """
+    root, folder = plant(tmp_path)
+    hand(folder, root, OUTCOME_WINDOW_PRICES,
+         '{"ticker": "AAPL", "close": [190.1, 193.4], "window": "reaction_day_60"}\n')
+    message = refused(root, folder)
+    assert OUTCOME_WINDOW_PRICES in message and REFUSED_BY_THE_LIST in message
+
+
+def test_another_companys_notes_in_the_control_directory_are_refused(tmp_path):
+    root, folder = plant(tmp_path)
+    hand(folder, root, OTHER_COMPANY_NOTES,
+         f"# Notes\n\n[{OTHER_ACCESSION}:notes:1]\nAnother company's prose.\n")
+    message = refused(root, folder)
+    assert OTHER_COMPANY_NOTES in message and REFUSED_BY_THE_LIST in message
+
+
+def test_the_files_the_control_may_hold_are_the_bundles_and_the_market_table(tmp_path):
+    """The allowlist is §6's own list, read off §6 and not off the module.
+
+    The first version of this test asserted the set against the comprehension
+    the module builds it with, which is the module's answer restated: a prefix
+    reading that swept in a file no layer sees would have moved this expected
+    value along with it. §6's fenced list is the document, and it is what the
+    control is measured against here.
+    """
+    listed = spec_input_names()
+    assert "input_market.json" in listed and MANIFEST_NAME in listed
+    # `input_controls.md` is the one bundle file §6's list does not print, and
+    # `src/agent_inputs.py` says so where it adds it. Named here once, with its
+    # source asserted, rather than taken on faith from the catalogue.
+    assert "input_controls.md" not in listed
+    assert "§6 names, plus `input_controls.md`" in (
+        REPO_ROOT / "src" / "agent_inputs.py").read_text(encoding="utf-8")
+    assert set(control_single_agent.CONTROL_SEES) == (
+        set(listed) | {"input_controls.md"}) - {MANIFEST_NAME}
+    assert "report_numbers.md" not in control_single_agent.CONTROL_SEES
+    assert OUTCOME_WINDOW_PRICES not in control_single_agent.CONTROL_SEES
+    root, folder = plant(tmp_path)
+    assert control_single_agent.input_files(folder, root) == [
+        "input_market.json", "input_notes.md", "input_trends.json"]
+
+
+def test_the_manifest_is_the_runs_bookkeeping_and_no_layer_sees_it(tmp_path):
+    """Why `input_manifest.json` is the one `input_` name left off the list.
+
+    §6's own line for it — read here, not paraphrased — gives it the
+    dropped-item counts and the served models. `src/quote_gate.py` writes the
+    three layers' dropped rows there, and they are written before `controls`
+    runs, so a control reading it reads the pipeline's own output: the thing the
+    guard refuses a report for. No agent in `src/agent_inputs.py` sees it
+    either, which is the second reading of the same fact.
+    """
+    assert "dropped-item" in SPEC_MANIFEST_LINE and "served models" in SPEC_MANIFEST_LINE
+    assert [name for name, spec in agent_inputs.AGENTS.items()
+            if MANIFEST_NAME in spec.sees] == []
+    root, folder = plant(tmp_path)
+    # The run's own manifest, and the control handed a true copy of it: this is
+    # the file the run keeps and `run` reads from `bundle_root`, so the copy is
+    # byte for byte the run's and the list is the only thing that refuses it.
+    hand(folder, root, MANIFEST_NAME,
+         json.dumps(MANIFEST | {"dropped_items": [
+             {"report": "report_numbers.md", "item_id": f"{NOTES_ONE}",
+              "reason": "the quote does not match"}],
+             "served_models": {"numbers-reader": "claude-opus-4-20250514"}},
+             indent=2, sort_keys=True) + "\n")
+    message = refused(root, folder)
+    assert MANIFEST_NAME in message and REFUSED_BY_THE_LIST in message
+
+
+def test_a_prior_predictions_file_still_carrying_a_probability_is_refused(tmp_path):
+    """An allowed name whose contents are not allowed.
+
+    `docs/INPUT_SPEC.md` §6 gives this file "prior flags and outcomes,
+    probabilities removed" and `docs/HOW_WE_WORK.md` §8 forbids putting "a prior
+    run's probability into any agent's input". `src/agent_inputs.py` refuses to
+    place one that still carries one; the control's directory is not one that
+    file builds, so the same reader is run here rather than the rule being
+    assumed to have been applied upstream.
+    """
+    assert "probabilities removed" in INPUT_SPEC.read_text(encoding="utf-8")
+    assert ("a prior run's probability into any agent's input"
+            in HOW_WE_WORK.read_text(encoding="utf-8"))
+    root, folder = plant(tmp_path)
+    # In the run's own bundle as well as in the copy: the question is whether
+    # the control reads what it was handed, not whether the copy was faithful.
+    hand(folder, root, "input_prior_predictions.md",
+         f"# AAPL prior predictions\n\n## {PRIOR_ACCESSION} — prediction_accounting.json\n\n"
+         f'[{PRIOR_ACCESSION}:prior:prediction_accounting:1]\n'
+         '{"finding": "flag", "p_up": 0.71, "confidence": 0.9}\n')
+    stub = Stub(accounting_answer())
+    with pytest.raises(ControlError) as caught:
+        control_single_agent.run("accounting_reliability", input_dir=folder,
+                                 bundle_root=root, ask=stub)
+    assert "probability" in str(caught.value)
+    assert stub.prompts == []
+
+
+def test_another_companys_prose_under_an_allowed_name_is_refused(tmp_path):
+    """The hole a name-only allowlist leaves, and the one the record closes.
+
+    `src/quote_gate.py` indexes every `[id]` line in the directory and scopes
+    none of them by accession — it cannot, because
+    `src/assemble_bundle.py`'s `prior_predictions` mints ids from a prior run's
+    accession and those belong in the bundle. So another company's prose copied
+    into a file wearing an allowed name would have made every id in it resolve:
+    the explanation id, the evidence quote and `market_direction.basis` would
+    all have landed in this company's control file with nothing dropped and
+    nothing counted. The record is what separates the two — NVDA's accession is
+    in NVDA's manifest and in no AAPL one.
+    """
+    root, folder = plant(tmp_path)
+    # Assembled wrong, not copied wrong: the bytes match the run's own file,
+    # so the byte check below has nothing to say and the record is the only
+    # thing left that knows whose paragraphs these are.
+    hand(folder, root, "input_notes.md",
+         f"# Notes\n\n[{OTHER_ACCESSION}:notes:1]\nAnother company's prose.\n")
+    answer = accounting_answer()
+    answer["checklist"] = [
+        {"key": "receivables_outrun_revenue", "finding": "flag", "confidence": 0.6,
+         "evidence": evidence(f"{OTHER_ACCESSION}:notes:1",
+                              "Another company's prose.")}]
+    answer["explanations"] = [{"id": f"{OTHER_ACCESSION}:notes:1",
+                               "support": "sufficient", "realization_p": 0.4}]
+    answer["market_direction"] = {"p_up": 0.45,
+                                  "basis": [f"{OTHER_ACCESSION}:notes:1"]}
+    answer["top_signals"] = ["receivables_outrun_revenue"]
+    assert OTHER_ACCESSION in refused(root, folder, answer)
+
+
+def test_a_later_quarter_of_this_company_under_an_allowed_name_is_refused(tmp_path):
+    """The other half of the record check, and the half no other test reaches.
+
+    The test above plants another company's accession, which `recorded_accessions`
+    refuses on the ticker alone -- so the cutoff it is handed could be any date
+    and that test would still pass. This one plants the *next quarter of this
+    company*: `tests/fixtures/AAPL/manifest.json` records it, and the only thing
+    that keeps it out is the cutoff `run` passes down. Replace that argument with
+    a date far in the future and this is the test that notices.
+
+    It is `CLAUDE.md`'s cutoff rule read at the control's own directory --
+    "document filing date <= filing date of the triggering report. Nothing later
+    enters the input" -- and it is a different failure from the manifest's own
+    cutoff being wrong: the manifest here is right, and the directory holds a
+    paragraph the manifest does not cover.
+    """
+    root, folder = plant(tmp_path)
+    # Appended rather than substituted: the run's own paragraphs stay indexed,
+    # so what refuses the directory is the added id and nothing else about it.
+    hand(folder, root, "input_notes.md",
+         NOTES + f"\n[{LATER_ACCESSION}:notes:1]\nNext quarter's prose.\n")
+    message = refused(root, folder)
+    assert LATER_ACCESSION in message
+    assert FILED in message
+
+
+def test_a_manifest_naming_no_accession_is_refused_as_that_and_not_as_a_miss(tmp_path):
+    """The guard `run` opens with, and the misreading that stands in for it.
+
+    Delete it and the run still refuses -- `cutoff_on_record` looks the accession
+    up, finds no row and raises -- but it raises "AAPL None is in no fixture
+    manifest", which says EDGAR has no record of a filing when what happened is
+    that the bundle named none. A manifest with no accession is a manifest, not
+    a missing filing, and the two get fixed in different places. So this asserts
+    the reason as well as the refusal.
+    """
+    root, folder = plant(tmp_path)
+    without = {key: value for key, value in MANIFEST.items() if key != "accession"}
+    (root / "input_manifest.json").write_text(
+        json.dumps(without, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    message = refused(root, folder)
+    assert "accession" in message
+    assert "None" not in message
+
+
+def test_a_foreign_trend_table_under_its_allowed_name_is_refused(tmp_path):
+    """The case no id check can reach, and the reason the bytes are read.
+
+    `src/quote_gate.py` mints a trend cell's id from the run's own accession
+    rather than out of the file, so another company's table is indexed under
+    *this* run's ids and its values string-match as verbatim quotes. `resolvable`
+    sees nothing wrong — the ids are this run's — and the row would be kept,
+    quoted and written. `src/agent_inputs.py` names the only check that reaches
+    it: "a hardlink to another file resolves inside the root and answers to the
+    right name."
+    """
+    root, folder = plant(tmp_path)
+    theirs = TRENDS.replace('"value": 51.7', '"value": 88.2')
+    assert theirs != TRENDS
+    (folder / "input_trends.json").write_text(theirs, encoding="utf-8")
+    # The id the model would quote is this run's, and the quote does match the
+    # bytes in the directory — which is exactly why the name check passes it.
+    assert TREND_CELL in quote_gate.quotable(folder, ACCESSION)
+    assert '"value": 88.2' in (folder / "input_trends.json").read_text(
+        encoding="utf-8")
+    stub = Stub(accounting_answer())
+    with pytest.raises(ControlError) as caught:
+        control_single_agent.run("accounting_reliability", input_dir=folder,
+                                 bundle_root=root, ask=stub)
+    assert "input_trends.json" in str(caught.value)
+    assert stub.prompts == []
+    assert not (root / "control_single_agent_accounting.json").exists()
+
+
+def test_a_market_table_that_is_not_the_runs_own_is_refused(tmp_path):
+    """`input_market.json` declares no paragraph ids, so nothing else can tell.
+
+    The outcome-window rows the earlier test plants wear a name the allowlist
+    does not carry, which is the easy half. Under the allowed name the same
+    rows pass every check that reads names, and the market table offers no id
+    for `resolvable` to scope — so the run's own copy is the only thing that
+    says whether this is the table `src/market.py` bounded at reaction day two.
+    """
+    root, folder = plant(tmp_path)
+    assert quote_gate.quotable(folder, ACCESSION).keys() == {
+        NOTES_ONE, NOTES_TWO, TREND_CELL}
+    (folder / "input_market.json").write_text(
+        '{\n  "ticker": "AAPL",\n  "rows": [\n'
+        '    {"date": "2026-12-31", "window": "outcome_day_60", '
+        '"abnormal_return": 0.061}\n  ]\n}\n', encoding="utf-8")
     with pytest.raises(ControlError) as caught:
         go(root, folder, "accounting_reliability", accounting_answer())
-    assert "report_numbers.md" in str(caught.value)
+    assert "input_market.json" in str(caught.value)
+
+
+def test_a_file_the_run_never_assembled_is_refused(tmp_path):
+    """An allowed name the run has no copy of is a file nobody routed."""
+    root, folder = plant(tmp_path)
+    (folder / "input_mdna.md").write_text(
+        f"# MD&A\n\n[{ACCESSION}:mdna:1]\nManagement's discussion.\n",
+        encoding="utf-8")
+    with pytest.raises(ControlError) as caught:
+        go(root, folder, "accounting_reliability", accounting_answer())
+    assert "input_mdna.md" in str(caught.value)
+
+
+def test_the_prior_and_later_accessions_planted_here_are_the_records_own(tmp_path):
+    """The second and third dates this file leans on, read the way the first is.
+
+    `FILED` is read off the fixture record above with `json`; these two were
+    asserted only through `recorded_accessions`, the function they judge, so
+    the claim that they came off the record was not one this file made good.
+    """
+    recorded = json.loads((FIXTURES / TICKER / "manifest.json").read_text(
+        encoding="utf-8"))
+    filed = {row["accession"]: row["filing_date"] for row in recorded["documents"]}
+    assert filed[PRIOR_ACCESSION] < FILED
+    assert filed[LATER_ACCESSION] > FILED
+
+
+def test_the_accessions_the_record_allows_are_this_tickers_by_the_cutoff(tmp_path):
+    """The set the check above is made of, against the fixture record.
+
+    A prior quarter of this company is in it — that is what carries
+    `input_prior_predictions.md`'s ids — and a later quarter is not, which is
+    the cutoff rule read over the same record.
+    """
+    allowed = control_single_agent.recorded_accessions(
+        TICKER, dt.date.fromisoformat(FILED))
+    assert ACCESSION in allowed
+    assert PRIOR_ACCESSION in allowed
+    assert LATER_ACCESSION not in allowed
+    assert OTHER_ACCESSION not in allowed
+
+
+def test_a_link_to_the_runs_own_file_is_refused_though_the_bytes_are_right(tmp_path):
+    """The one case the symlink check is the only thing that reaches.
+
+    A link into *another* run is refused whether this check exists or not: its
+    target's bytes are not the run's, so the byte check two steps down says so,
+    which is why the earlier form of this test stayed green with the symlink
+    check deleted. The case left is the link that passes everything else — the
+    run's own file, under its own name, same bytes. `is_file()` follows a link,
+    so the allowlist sees a file; `read_bytes()` follows one too, so `_differs`
+    sees the run's own bytes. What is refused is the link itself: the directory
+    is committed as what the control saw, its ancestors are outside it, and a
+    target that changes after the commit changes the record with it.
+
+    The order is `src/agent_inputs.py`'s, and so is the reason: it tests the
+    symlink "before the source is read, and before `exists()`", because both
+    that and `read_bytes()` follow the link.
+    """
+    root, folder = plant(tmp_path)
+    placed = folder / "input_notes.md"
+    placed.unlink()
+    placed.symlink_to(root / "input_notes.md")
+    # Everything after this check passes: an allowed name, a file to `is_file()`,
+    # and the run's own bytes.
+    assert placed.is_file() and placed.read_text(encoding="utf-8") == NOTES
+    assert not agent_inputs._differs(placed, root / "input_notes.md")
+    message = refused(root, folder)
+    assert "input_notes.md" in message
+    assert "A control reads the directory it was handed" in message
+
+
+def test_a_directory_under_an_allowed_name_is_refused(tmp_path):
+    """`bundle_files` keeps what `is_file()` says yes to, and that drops a
+    directory — so an allowlist built on it never sees one. Whatever is under
+    it reaches the control's directory under no name the prompt lists.
+
+    The name is one the run has a file of, because nothing else here judges
+    this check: a directory named for a file the run never wrote is refused by
+    the check below it, and `agent_inputs._differs` answers False the moment
+    `placed.is_file()` is False — so with this check gone a directory reads as
+    a faithful copy of the run's own file and is listed to the model as one.
+    """
+    root, folder = plant(tmp_path)
+    nested = folder / "input_notes.md"
+    nested.unlink()
+    nested.mkdir()
+    (nested / "NVDA_notes.md").write_text("Another company's prose.\n",
+                                          encoding="utf-8")
+    assert (root / "input_notes.md").is_file()
+    assert not agent_inputs._differs(nested, root / "input_notes.md")
+    message = refused(root, folder)
+    assert "input_notes.md" in message and "which is a directory" in message
 
 
 def test_an_empty_directory_is_refused(tmp_path):
@@ -531,6 +1093,118 @@ def test_a_run_with_no_rules_version_carries_the_null_the_manifest_carries(tmp_p
     answer["rules_version"] = None
     go(root, folder, "accounting_reliability", answer)
     assert written(root, "accounting_reliability")["rules_version"] is None
+
+
+def test_a_cutoff_earlier_than_the_filing_date_on_record_is_refused(tmp_path):
+    """`CLAUDE.md`: the cutoff is the filing date of the triggering report.
+
+    Nothing in this module read the key at all, so a run carrying a cutoff of
+    1999 was answered, gated and written out. The date it is held against is
+    EDGAR's record of the accession the manifest itself names, not the
+    manifest's own second opinion about it.
+    """
+    root, folder = plant(tmp_path)
+    (root / "input_manifest.json").write_text(
+        json.dumps(MANIFEST | {"cutoff": "1999-01-01"}, indent=2, sort_keys=True)
+        + "\n", encoding="utf-8")
+    # `refused` is what says the model was never called: a run outside its own
+    # cutoff is stopped before the look-ahead has been paid for.
+    message = refused(root, folder)
+    assert "1999-01-01" in message and FILED in message
+
+
+def test_a_cutoff_later_than_the_filing_date_on_record_is_refused(tmp_path):
+    """The other direction, and the only one that lets a document in.
+
+    The test above plants 1999, and a check written as "the cutoff may not be
+    *before* the filing date" passes it — while the run that moved its boundary
+    forward is the one `CLAUDE.md` is about: "document filing date ≤ filing date
+    of the triggering report. Nothing later enters the input." The date planted
+    here is the one EDGAR's record gives the next quarter's 10-Q, read out of
+    `tests/fixtures/AAPL/manifest.json` with `json` alone — so this is not a
+    date chosen to fail but the exact boundary that would sweep that filing in,
+    and `recorded_accessions` above shows the same record admitting it once the
+    cutoff reaches it.
+    """
+    recorded = json.loads((FIXTURES / TICKER / "manifest.json").read_text(
+        encoding="utf-8"))
+    later = {row["filing_date"] for row in recorded["documents"]
+             if row["accession"] == LATER_ACCESSION}
+    assert len(later) == 1
+    moved = later.pop()
+    assert moved > FILED
+    assert LATER_ACCESSION in control_single_agent.recorded_accessions(
+        TICKER, dt.date.fromisoformat(moved))
+
+    root, folder = plant(tmp_path)
+    (root / "input_manifest.json").write_text(
+        json.dumps(MANIFEST | {"cutoff": moved}, indent=2, sort_keys=True)
+        + "\n", encoding="utf-8")
+    message = refused(root, folder)
+    assert moved in message and FILED in message
+
+
+def test_a_manifest_with_no_cutoff_at_all_is_refused(tmp_path):
+    """An absent date is not an early date — `src/cutoff_guard.py` says so."""
+    root, folder = plant(tmp_path)
+    without = {key: value for key, value in MANIFEST.items() if key != "cutoff"}
+    (root / "input_manifest.json").write_text(
+        json.dumps(without, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    with pytest.raises(ControlError) as caught:
+        go(root, folder, "accounting_reliability", accounting_answer())
+    assert "cutoff" in str(caught.value)
+
+
+def test_a_manifest_naming_an_accession_nobody_recorded_is_refused(tmp_path):
+    """Fail-closed: an unrecorded accession has no filing date to be held to."""
+    root, folder = plant(tmp_path)
+    (root / "input_manifest.json").write_text(
+        json.dumps(MANIFEST | {"accession": "0000320193-25-000073"},
+                   indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    with pytest.raises(ControlError) as caught:
+        go(root, folder, "accounting_reliability", accounting_answer())
+    assert "0000320193-25-000073" in str(caught.value)
+
+
+def plant_record(tmp_path: Path, rows: list[dict]) -> Path:
+    """A fixture root holding one company's record, for the two branches the
+    committed twelve cannot show: a manifest with no ticker, and an accession
+    recorded twice under two filing dates."""
+    ticker_dir = tmp_path / "record" / TICKER
+    ticker_dir.mkdir(parents=True)
+    (ticker_dir / "manifest.json").write_text(
+        json.dumps({"ticker": TICKER, "as_of": FILED, "documents": rows},
+                   indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return tmp_path / "record"
+
+
+def test_the_cutoff_check_returns_the_date_the_record_carries(tmp_path):
+    root = plant_record(tmp_path, [
+        {"form": "10-K", "role": "primary_html", "accession": ACCESSION,
+         "filing_date": FILED, "path": "10-K/primary.htm"}])
+    assert control_single_agent.cutoff_on_record(
+        MANIFEST, fixtures_root=root) == dt.date.fromisoformat(FILED)
+
+
+def test_a_manifest_with_no_ticker_cannot_have_its_accession_looked_up(tmp_path):
+    root = plant_record(tmp_path, [])
+    without = {key: value for key, value in MANIFEST.items() if key != "ticker"}
+    with pytest.raises(ControlError) as caught:
+        control_single_agent.cutoff_on_record(without, fixtures_root=root)
+    assert "names no ticker" in str(caught.value)
+
+
+def test_one_accession_recorded_under_two_filing_dates_is_refused(tmp_path):
+    """A cutoff cannot be held to two dates, so it is held to neither."""
+    root = plant_record(tmp_path, [
+        {"form": "10-K", "role": "primary_html", "accession": ACCESSION,
+         "filing_date": FILED, "path": "10-K/primary.htm"},
+        {"form": "10-K", "role": "exhibit_21", "accession": ACCESSION,
+         "filing_date": "2025-11-04", "path": "10-K/exhibit21.htm"}])
+    with pytest.raises(ControlError) as caught:
+        control_single_agent.cutoff_on_record(MANIFEST, fixtures_root=root)
+    assert "one accession is one filing" in str(caught.value)
+    assert FILED in str(caught.value) and "2025-11-04" in str(caught.value)
 
 
 def test_an_answer_that_is_not_json_is_refused(tmp_path):
@@ -639,9 +1313,10 @@ def test_the_prompt_carries_the_schema_the_question_and_the_files(tmp_path):
 
 
 def test_the_command_line_prints_the_call_it_would_make(tmp_path, capsys):
-    _, folder = plant(tmp_path)
+    root, folder = plant(tmp_path)
     code = control_single_agent.main(
-        ["--question", "financial_pressure", "--input", str(folder)])
+        ["--question", "financial_pressure", "--input", str(folder),
+         "--bundle", str(root)])
     printed = capsys.readouterr().out
     assert code == 0
     assert f"model: {SUPERVISOR_MODEL}" in printed
@@ -650,7 +1325,9 @@ def test_the_command_line_prints_the_call_it_would_make(tmp_path, capsys):
 
 
 def test_the_command_line_refuses_a_directory_it_cannot_read(tmp_path, capsys):
+    root, _ = plant(tmp_path)
     code = control_single_agent.main(
-        ["--question", "financial_pressure", "--input", str(tmp_path / "nowhere")])
+        ["--question", "financial_pressure", "--input", str(tmp_path / "nowhere"),
+         "--bundle", str(root)])
     assert code == control_single_agent.BAD_INPUT
     assert "not a control" in capsys.readouterr().err
