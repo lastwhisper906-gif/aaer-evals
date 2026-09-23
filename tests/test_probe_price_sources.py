@@ -745,3 +745,13 @@ def test_a_backend_is_labelled_by_its_name_and_not_as_a_user_agent(capsys):
     assert "[plain user agent] status 200" in out
     assert "[crsp] unconfigured" in out
     assert "crsp user agent" not in out
+
+
+def test_an_unconfigured_reason_is_redacted_too(monkeypatch):
+    # The reasons are this package's own sentences today. A reason that ever
+    # quotes what it found is shown the same way an error is.
+    monkeypatch.setenv("TIINGO_TOKEN", _MADE_UP)
+    reason = _prices.Unconfigured(f"the token {_MADE_UP} was refused as malformed")
+    attempt = probe.ask_one_backend(_Backend("tiingo", reason), _delisting("ATVI"))
+    assert "unconfigured" in attempt.answer
+    assert _MADE_UP not in attempt.answer

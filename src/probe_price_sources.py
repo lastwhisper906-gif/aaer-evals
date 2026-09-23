@@ -2,9 +2,12 @@
 
 Read-only, and no account is opened. The three candidates are sent no
 credentials; the configured backends are sent whatever credential this
-environment holds, and no credential value is ever printed -- every one this
-environment holds is replaced by its variable's name before a backend's answer
-is shown.
+environment holds. Before a backend's error or reason is shown, every token
+variable `src/secret_scan.py` watches is replaced by that variable's name, and
+any value after a credential's name in a query string by `<redacted>`. The
+password in `~/.pgpass` is read by the `wrds` package and never by this
+script, and that package is not installed here, so what its errors print has
+not been seen.
 
 The market module is built against a frozen price fixture because the price
 source is unchosen, and it is unchosen because the question that decides it has
@@ -718,9 +721,9 @@ def never_reached_the_source(error: BaseException) -> bool:
     one is an answer -- the source sent something that is not a price history --
     so the classes are named rather than caught by their common parent.
 
-    What is not told apart: a WRDS connection that fails. The `wrds` package
-    raises the same class for a refused password, which is the source's answer,
-    as for a host that never answered, so a CRSP failure is counted as an answer.
+    What is not told apart: a WRDS connection that fails. The `wrds` package is
+    not installed here, so which class it raises for a host that never answered
+    has not been seen, and whatever it raises is counted as an answer.
     """
     try:
         from requests import exceptions
@@ -746,7 +749,8 @@ def ask_one_backend(module, delisting: Delisting) -> Attempt:
     * **refused as documented** -- it answered, the history did not come, and
       its own documentation said it would not. Reported as expected.
 
-    Whatever the backend said is passed through `redacted` before it is shown.
+    Every error and every reason a backend gives passes through `redacted`
+    before it is shown.
     """
     from src import prices
 
@@ -760,7 +764,8 @@ def ask_one_backend(module, delisting: Delisting) -> Attempt:
     try:
         frame = module.history(delisting.ticker, start, end)
     except prices.Unconfigured as reason:
-        return Attempt(where, name, f"{where} -- unconfigured: {reason}", [], False,
+        return Attempt(where, name,
+                       f"{where} -- unconfigured: {redacted(str(reason))}", [], False,
                        **about)
     except Exception as error:  # a refusal, a timeout, a shape nobody expected
         said = f"{type(error).__name__}: {redacted(str(error))[:200]}"
