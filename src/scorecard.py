@@ -337,6 +337,10 @@ def _side(directory: Path, filed: str, frozen: str, version=None) -> str:
     day of the freeze counts as already there. A run under the `pilot` rules
     version is pilot by its version, and names no freeze.
     """
+    try:
+        filing_date = cutoff_guard.parse_date(filed, "cutoff")
+    except cutoff_guard.CutoffGuardError as exc:
+        raise ScorecardError(f"{directory / MANIFEST}: {exc}") from exc
     if version == PILOT:
         if frozen is not None:
             raise ScorecardError(
@@ -352,7 +356,6 @@ def _side(directory: Path, filed: str, frozen: str, version=None) -> str:
             "version that was frozen, and a run that names none has no version "
             "for the date to be the freeze of")
     try:
-        filing_date = cutoff_guard.parse_date(filed, "cutoff")
         freeze_date = cutoff_guard.parse_date(frozen, "rules_version_frozen")
     except cutoff_guard.CutoffGuardError as exc:
         raise ScorecardError(f"{directory / MANIFEST}: {exc}") from exc

@@ -978,3 +978,20 @@ def test_a_freeze_date_beside_a_run_naming_no_version_is_refused(tmp_path, versi
         scorecard.render(changed)
     assert "rules_version_frozen" in str(refused.value)
     assert repr(version) in str(refused.value)
+
+
+@pytest.mark.parametrize("cutoff", ["not a date", None])
+def test_a_pilot_run_still_needs_a_readable_cutoff(tmp_path, cutoff):
+    """The module's own rule: a run whose cutoff cannot be read is refused. A
+    pilot run is placed by its version, and its row still prints its filing."""
+    changed = copy_of(tmp_path)
+
+    def pilot_without_a_cutoff(payload):
+        payload["rules_version"] = "pilot"
+        payload.pop("rules_version_frozen")
+        payload["cutoff"] = cutoff
+
+    edit(changed.joinpath(*NVDA_RUN), "input_manifest.json", pilot_without_a_cutoff)
+    with pytest.raises(scorecard.ScorecardError, match="cutoff"):
+        scorecard.render(changed)
+

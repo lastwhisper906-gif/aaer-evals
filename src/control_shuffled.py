@@ -436,17 +436,19 @@ def run_rules_version(numbers_bundle, notes_bundle, asked=None):
     run's `input_manifest.json` carries, null included.
 
     Every manifest the pair carries is read, and so is `asked`, the caller's
-    word for a pair of report directories that carry none, which has to be a
-    version `src/assemble_bundle.py` lets a run name; they must all say one
-    thing. Two halves written under two rules versions are refused -- the
+    word for a half that carries none, which has to be a version
+    `src/assemble_bundle.py` lets a run name; they must all say one thing. A
+    half with no manifest needs the caller's word even when the other half has
+    one, because one half's version says nothing about the other's. Two halves written under two rules versions are refused -- the
     real run read both sides under one set of rules, and a crossed pair that
     did not measures the rules change along with the crossing. Nothing to read
     at all is refused rather than defaulted, which is what "0.1" was.
     """
-    said = []
+    said, unsaid = [], []
     for side, bundle in (("numbers", numbers_bundle), ("notes", notes_bundle)):
         manifest = _manifest(bundle)
         if manifest is None:
+            unsaid.append(side)
             continue
         if "rules_version" not in manifest:
             raise ControlError(
@@ -467,6 +469,15 @@ def run_rules_version(numbers_bundle, notes_bundle, asked=None):
         raise ControlError(
             "neither half carries a manifest and no rules version was named, so "
             "the control files would carry a version nobody said; name the run's")
+    if unsaid and asked is None:
+        # One half a run and the other a directory of reports: the run's
+        # version would be written for both, and nothing says the other half
+        # was read under it -- or, when the directory is the scored half, the
+        # partner's version would be written as the scored run's own.
+        raise ControlError(
+            f"the {unsaid[0]} half carries no manifest, so nothing says which "
+            "rules version it was read under, and the other half's would be "
+            "written for both; name the version, and the manifest must agree")
     if len({json.dumps(version) for _, version in said}) > 1:
         named = ", ".join(f"{who} {version!r}" for who, version in said)
         raise ControlError(
