@@ -209,6 +209,15 @@ def test_main_refuses_a_since_that_is_not_a_date(three, tmp_path, monkeypatch, c
     assert "is not a YYYY-MM-DD date" in capsys.readouterr().err
 
 
+def test_main_has_no_default_since(three, tmp_path, monkeypatch):
+    # A default would decide, unseen, which filings of a missed night are lost.
+    monkeypatch.setattr(detect_filing.fetch_fixtures, "Fetcher",
+                        lambda _agent: pytest.fail("looked up with no since"))
+    with pytest.raises(SystemExit) as refused:
+        detect_filing.main(["--universe", str(three), "--runs", str(tmp_path / "runs")])
+    assert refused.value.code == 2
+
+
 def test_main_exits_two_when_a_lookup_fails(three, tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(detect_filing.fetch_fixtures, "Fetcher",
                         lambda _agent: StandIn(failing=("0000000003",)))

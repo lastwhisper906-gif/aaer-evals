@@ -19,14 +19,15 @@ lookup with its reason, never a company with no filings.
 
 **New** means a filing of one of those three forms, filed on or after `since`,
 for which no run directory exists under the run root yet. `since` is the day
-the caller last looked; nothing here remembers it, because a state file says
-what some earlier run believed and the caller has the record of what happened.
+the caller last looked, and it is required: nothing here remembers it, because
+a state file says what some earlier run believed and the caller has the record
+of what happened. A default such as "yesterday" would lose, without a line
+saying so, every filing of a night that did not run.
 
 Nothing is fetched beyond the index. Carrying a new filing through extract is
-the caller's job: `src/fetch_fixtures.py --accession` builds a store up to it
-and `src/assemble_bundle.py --accession` builds that filing and no other.
+the caller's job.
 
-    python3.12 -m src.detect_filing [--since 2026-09-23] [--out detect.json]
+    python3.12 -m src.detect_filing --since 2026-09-23 [--out detect.json]
 
 Exit 0 when every lookup succeeded, 2 when any failed, 3 the wrong interpreter.
 The JSON goes to `--out` when given and to standard output otherwise; one
@@ -158,17 +159,15 @@ def summary_line(found: dict) -> str:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="new filings for the universe, "
                                                  "from the EDGAR submissions index")
-    parser.add_argument("--since", default=None,
-                        help="ISO date; a filing on or after it is new. "
-                             "Default: yesterday, UTC")
+    parser.add_argument("--since", required=True,
+                        help="ISO date; a filing on or after it is new")
     parser.add_argument("--universe", default=None, help="the universe file")
     parser.add_argument("--runs", default="runs",
                         help="the run root; a filing with a run here is not new")
     parser.add_argument("--out", default=None, help="write the JSON here")
     args = parser.parse_args(argv)
 
-    since = args.since or (dt.datetime.now(dt.timezone.utc).date()
-                           - dt.timedelta(days=1)).isoformat()
+    since = args.since
     try:
         dt.date.fromisoformat(since)
     except ValueError:
