@@ -168,7 +168,7 @@ def test_a_run_already_on_record_is_never_overwritten(tmp_path, monkeypatch):
 
 
 def test_main_appends_one_line_and_exits_one_on_a_failure(world, monkeypatch):
-    monkeypatch.setattr(nightly.fetch_fixtures, "Fetcher",
+    monkeypatch.setattr(nightly.collect_history, "CachingFetcher",
                         lambda _agent: StandIn(failing=("0000000002",)))
     summary = world["root"] / "history" / "nightly.jsonl"
     code = nightly.main(["--summary", str(summary), "--runs", str(world["root"] / "runs"),
@@ -232,7 +232,7 @@ def test_a_step_that_fails_names_its_stage_and_leaves_no_run(tmp_path, monkeypat
 
 
 def test_one_half_of_a_named_filing_still_leaves_a_line_saying_so(world, monkeypatch):
-    monkeypatch.setattr(nightly.fetch_fixtures, "Fetcher", lambda _agent: StandIn())
+    monkeypatch.setattr(nightly.collect_history, "CachingFetcher", lambda _agent: StandIn())
     summary = world["root"] / "history" / "nightly.jsonl"
     code = nightly.main(["--summary", str(summary), "--runs", str(world["root"] / "runs"),
                          "--work", str(world["root"] / "work"), "--since", "2026-09-23",
@@ -244,7 +244,7 @@ def test_one_half_of_a_named_filing_still_leaves_a_line_saying_so(world, monkeyp
 
 
 def test_a_night_that_raises_still_leaves_a_line(world, monkeypatch):
-    monkeypatch.setattr(nightly.fetch_fixtures, "Fetcher", lambda _agent: StandIn())
+    monkeypatch.setattr(nightly.collect_history, "CachingFetcher", lambda _agent: StandIn())
 
     def boom(**_):
         raise RuntimeError("disk full")
@@ -256,8 +256,57 @@ def test_a_night_that_raises_still_leaves_a_line(world, monkeypatch):
     line = json.loads(summary.read_text())
     assert line["failures"] == ["the night crashed: RuntimeError: disk full"]
     assert line["lookups"]["passed"] is False
+
+
+def test_the_night_carries_historical_progress_and_a_listing_failure(world, monkeypatch):
+    asked = []
+
+    def stand_in_collect(fetcher, *, companies, history_root, work, batch):
+        asked.append((tuple(c["ticker"] for c in companies), batch))
+        return {"batch": batch, "collected_tonight": 2, "passed_tonight": 1,
+                "failed_tonight": ["AAA 10-Q 0000000001-11-000001 filed 2011-05-01: "
+                                   "fetch filings: no XBRL instance"],
+                "not_checkable_tonight": 0, "in_scope": 40, "collected": 2,
+                "passed": 1, "remaining": 38,
+                "listing_failures": ["BBB: the submissions index could not be listed"]}
+
+    monkeypatch.setattr(nightly.collect_history, "collect", stand_in_collect)
+    line = nightly.with_history(_night(world, fetcher=StandIn()), StandIn(),
+                                history_root=world["root"] / "history",
+                                work=world["root"] / "work", batch=30,
+                                companies=nightly.universe.rows(world["universe"]))
+    assert asked == [(("AAA", "BBB"), 30)]
+    assert line["history"]["collected"] == 2
+    # A past filing failing its checks is data, counted in `history`; a company
+    # whose index could not be listed is a failure of the night.
+    assert line["failures"] == [
+        "historical collection: BBB: the submissions index could not be listed"]
+
+
+def test_no_history_batch_collects_nothing(world, monkeypatch):
+    monkeypatch.setattr(nightly.collect_history, "collect",
+                        lambda *a, **k: pytest.fail("collected with a batch of 0"))
+    line = nightly.with_history(_night(world, fetcher=StandIn()), StandIn(),
+                                history_root=world["root"] / "history",
+                                work=world["root"] / "work", batch=0)
+    assert line["history"] is None
+
+
+def test_a_history_crash_keeps_the_nights_own_results(world, monkeypatch):
+    def boom(*a, **k):
+        raise ValueError("a manifest line is not JSON")
+    monkeypatch.setattr(nightly.collect_history, "collect", boom)
+    night = _night(world, fetcher=StandIn())
+    line = nightly.with_history(night, StandIn(), history_root=world["root"] / "history",
+                                work=world["root"] / "work", batch=30,
+                                companies=nightly.universe.rows(world["universe"]))
+    assert line["extractions"] == night["extractions"] and line["lookups"]["passed"]
+    assert line["failures"] == [
+        "historical collection crashed: ValueError: a manifest line is not JSON"]
+
+
 def test_an_unreadable_summary_ledger_is_the_nights_failure_line(world, monkeypatch):
-    monkeypatch.setattr(nightly.fetch_fixtures, "Fetcher", lambda _agent: StandIn())
+    monkeypatch.setattr(nightly.collect_history, "CachingFetcher", lambda _agent: StandIn())
     summary = world["root"] / "history" / "nightly.jsonl"
     summary.parent.mkdir(parents=True)
     summary.write_text("{not json\n")
