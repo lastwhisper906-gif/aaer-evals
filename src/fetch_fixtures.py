@@ -40,11 +40,15 @@ depends on should not announce a contact nobody reads.
 filing date the submissions index gives the accession, so nothing filed after it
 is in the store. An accession the index does not list for the company is refused
 before anything is fetched: a store built to some other date would hand extract
-a different filing. The store has to be new -- a directory that already holds
-the company's manifest keeps every document it has, whatever date it was
-fetched to -- and once fetched, the store's filing of that form has to be the
-one named: two filings of one form on one day are picked by accession, and the
-named one may be the other. Either is exit 2, never a store reported complete.
+a different filing. `--as-of` beside it is refused rather than replaced: a
+cutoff that was given is never silently swapped for a later one. The store has
+to be new -- a company directory that already exists keeps every document in
+it, whatever date it was fetched to -- and once fetched, the store's filing of
+that form has to be the one named: two filings of one form on one day are
+picked by accession, and the named one may be the other. Either is exit 2,
+never a store reported complete. The store also gets the companyfacts record
+as of the same date (`src/fetch_companyfacts.py`), because the trend table is
+built from it and a store without it is not one extract can build from.
 
 Exit 0 all requested fixtures present, 2 a fetch or parse failed, 3 the wrong
 interpreter, 4 a fixture on disk disagrees with its manifest.
@@ -437,8 +441,9 @@ def fetch_company(fetcher: Fetcher, ticker: str, cik: str, as_of: str,
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--as-of", default=AS_OF,
-                        help="cutoff date; nothing filed after it is fetched")
+    parser.add_argument("--as-of", default=None,
+                        help=f"cutoff date; nothing filed after it is fetched. "
+                             f"Default {AS_OF}")
     parser.add_argument("--ticker", action="append", default=None,
                         help="fetch one company (repeatable); default is all twelve")
     parser.add_argument("--out", default=str(FIXTURES), help="fixture root")
@@ -456,6 +461,12 @@ def main(argv: list[str] | None = None) -> int:
         print("fetch_fixtures: --accession names one filing of one company; "
               "give exactly one --ticker", file=sys.stderr)
         return FETCH_FAILED
+    if args.accession is not None and args.as_of is not None:
+        print("fetch_fixtures: --accession sets the as-of date to the filing's own; "
+              "give one or the other, not both", file=sys.stderr)
+        return FETCH_FAILED
+    if args.as_of is None:
+        args.as_of = AS_OF
     fetcher = Fetcher(os.environ.get("EDGAR_USER_AGENT", DEFAULT_USER_AGENT))
 
     if args.accession is not None:
@@ -470,7 +481,7 @@ def main(argv: list[str] | None = None) -> int:
                   file=sys.stderr)
             return FETCH_FAILED
         args.as_of = filing["filingDate"]
-        if (out / tickers[0] / "manifest.json").exists():
+        if (out / tickers[0]).exists():
             print(f"fetch_fixtures: {out / tickers[0]} already holds a store; a "
                   f"store up to {args.accession} is fetched into a new directory",
                   file=sys.stderr)
@@ -498,6 +509,14 @@ def main(argv: list[str] | None = None) -> int:
         for line in found:
             (changed if line.startswith(("changed:", "missing:")) else problems).append(line)
 
+    if args.accession is not None and not problems:
+        # Imported here: the companyfacts fetcher imports this module.
+        from src import fetch_companyfacts
+        try:
+            problems.extend(fetch_companyfacts.fetch_company(
+                fetcher, tickers[0], args.as_of, out))
+        except Exception as exc:  # noqa: BLE001
+            problems.append(f"{tickers[0]}: companyfacts: {type(exc).__name__}: {exc}")
     if args.accession is not None and not problems:
         held = {entry["accession"] for entry in
                 load_manifest(out / tickers[0]).get("documents", [])
