@@ -1,0 +1,124 @@
+name: nightly
+
+# The nightly crew's night work: Python only, no model. `src/nightly.py` says
+# what it does. Every EDGAR request of this project's nightly crew happens
+# here, because the cloud session that writes the morning report may not reach
+# sec.gov.
+#
+# It pushes one branch a night and opens no pull request. A pull request opened
+# with GITHUB_TOKEN does not start CI, so its auto-merge would never fire; the
+# morning routine opens it through its own GitHub connection, which does.
+
+on:
+  # 07:00 UTC is 03:00 US Eastern while daylight time is in force and 02:00
+  # after it ends; GitHub's schedule has no time zone.
+  schedule:
+    - cron: "0 7 * * *"
+  workflow_dispatch:
+    inputs:
+      ticker:
+        description: "with accession: extract this filing whether or not it is new"
+        required: false
+        default: ""
+      accession:
+        description: "the filing to extract, e.g. 0001628280-26-060361"
+        required: false
+        default: ""
+      since:
+        description: "a filing on or after this date is new (default: the last night that ran)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+
+jobs:
+  night:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      # Action versions are pinned by commit SHA, as in ci.yml.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5
+        with:
+          python-version: "3.12"
+
+      - name: install
+        run: pip install -r requirements.txt
+
+      # Start from main. If the last night's branch has not merged -- the
+      # morning routine did not run, or its pull request is red -- start from
+      # that branch instead, so tonight carries last night's lines rather than
+      # forking beside them.
+      - name: the night's branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "aaer-evals nightly"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          branch="nightly/$(date -u +%F)-${GITHUB_RUN_ID}"
+          git checkout -b "$branch" origin/main
+          previous="$(git ls-remote --heads origin 'refs/heads/nightly/*' \
+                      | awk '{print $2}' | sed 's#^refs/heads/##' | sort | tail -1)"
+          if [ -n "$previous" ]; then
+            merged="$(gh pr list --head "$previous" --state merged --json number --jq length)"
+            if [ "$merged" = "0" ]; then
+              echo "last night's branch $previous has not merged; building on it"
+              git fetch --no-tags origin "+refs/heads/$previous:refs/remotes/origin/$previous"
+              if ! git merge --no-edit "origin/$previous"; then
+                git merge --abort
+                echo "carried=$previous did not merge cleanly onto main" >> "$GITHUB_ENV"
+              fi
+            fi
+          fi
+          echo "branch=$branch" >> "$GITHUB_ENV"
+
+      - name: detect, extract, check
+        id: night
+        env:
+          HAND_TICKER: ${{ inputs.ticker }}
+          HAND_ACCESSION: ${{ inputs.accession }}
+          SINCE: ${{ inputs.since }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set +e
+          # An array, so an input holding a space stays one argument.
+          args=(--work "$RUNNER_TEMP/nightly" --run-url "$RUN_URL")
+          if [ -n "$SINCE" ]; then args+=(--since "$SINCE"); fi
+          if [ -n "$HAND_TICKER" ]; then args+=(--ticker "$HAND_TICKER"); fi
+          if [ -n "$HAND_ACCESSION" ]; then args+=(--accession "$HAND_ACCESSION"); fi
+          python -m src.nightly "${args[@]}"
+          echo "code=$?" >> "$GITHUB_OUTPUT"
+
+      # Whatever the night found, its summary line is pushed: a night that
+      # failed and left nothing is the failure nobody notices.
+      - name: push the night's branch
+        if: always()
+        run: |
+          # `git add` refuses every path when one does not exist, and a night
+          # that found nothing new has no runs/ to add.
+          for written in history runs; do
+            if [ -e "$written" ]; then git add "$written"; fi
+          done
+          if git diff --cached --quiet; then
+            echo "nothing to commit"
+          else
+            git commit -q -m "the nightly crew's night of $(date -u +%F): detect, extract, check
+
+          Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          fi
+          git push origin "$branch"
+
+      - name: the night's result
+        if: always()
+        run: |
+          if [ -n "${carried:-}" ]; then echo "$carried"; exit 1; fi
+          exit "${{ steps.night.outputs.code || 1 }}"
