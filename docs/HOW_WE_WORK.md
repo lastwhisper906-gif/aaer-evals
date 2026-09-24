@@ -67,7 +67,7 @@ a prediction.
 
 | Stage | Does | Passes when |
 |---|---|---|
-| detect filing | daily: new filings for the twelve, from the EDGAR submissions index | 12 of 12 lookups succeed |
+| detect filing | daily: new filings for the twelve, from the EDGAR submissions index — `src/detect_filing.py`, one lookup per `universe.json` row | 12 of 12 lookups succeed |
 | extract | the input spec, plus the diff, the trend table, the articulation checks and the histories | schema passes, paragraph counts in the normal range, zero cutoff violations, at least one `TextBlock` found |
 | market | the market table — abnormal returns, both reaction windows, the short-interest ratio and its two-year median | every trading day from the prior filing to reaction day two has a row, and nothing past reaction day two exists in it |
 | read | two calls: the numbers reader and the notes-text reader, each seeing only its own input directory. **Waits until reaction day two has closed** | every item carries a verbatim quote that string-matches that reader's committed input; unverifiable items are dropped and counted |
