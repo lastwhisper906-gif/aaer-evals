@@ -1350,9 +1350,11 @@ def test_the_store_is_fetched_up_to_the_named_filing(tmp_path, monkeypatch):
     index = _Index([DETECTED, STORE_HOLDS])
     asked_as_of = []
     monkeypatch.setattr(fetch_fixtures, "Fetcher", lambda _agent: index)
+    store = _stand_in_store(DETECTED[0])
     monkeypatch.setattr(fetch_fixtures, "fetch_company",
                         lambda _f, ticker, cik, as_of, out:
-                        asked_as_of.append((ticker, cik, as_of)) or ({}, []))
+                        asked_as_of.append((ticker, cik, as_of))
+                        or store(_f, ticker, cik, as_of, out))
     assert fetch_fixtures.main(["--ticker", "CIEN", "--accession", DETECTED[0],
                                 "--out", str(tmp_path / "store")]) == 0
     assert asked_as_of == [("CIEN", "0000936395", DETECTED[1])]
@@ -1368,3 +1370,64 @@ def test_an_accession_the_index_does_not_list_fetches_nothing(tmp_path, monkeypa
     assert code == fetch_fixtures.FETCH_FAILED
     assert "not in the EDGAR submissions index" in capsys.readouterr().err
     assert not (tmp_path / "store").exists()
+
+
+def _stand_in_store(held_accession):
+    """A `fetch_company` that records a store holding the given 10-Q."""
+    from src import fetch_fixtures
+
+    def fetch_company(_fetcher, ticker, cik, as_of, out):
+        manifest = {"ticker": ticker, "cik": cik, "as_of": as_of, "documents": [
+            {"form": "10-Q", "role": "primary_html", "accession": held_accession,
+             "filing_date": as_of}]}
+        (out / ticker).mkdir(parents=True)
+        (out / ticker / "manifest.json").write_text(json.dumps(manifest))
+        return manifest, []
+    return fetch_company
+
+
+def test_a_store_whose_filing_is_another_one_is_not_complete(tmp_path, monkeypatch, capsys):
+    from src import fetch_fixtures
+    # Two 10-Qs on one day: the store picks the larger accession, and the one
+    # named is the smaller. Planted; the second accession is invented.
+    other = "0001628280-26-060362"
+    monkeypatch.setattr(fetch_fixtures, "Fetcher",
+                        lambda _agent: _Index([DETECTED, (other, DETECTED[1])]))
+    monkeypatch.setattr(fetch_fixtures, "fetch_company", _stand_in_store(other))
+    code = fetch_fixtures.main(["--ticker", "CIEN", "--accession", DETECTED[0],
+                                "--out", str(tmp_path / "store")])
+    assert code == fetch_fixtures.FETCH_FAILED
+    assert f"the store's 10-Q is {other}, not {DETECTED[0]}" in capsys.readouterr().err
+
+
+def test_a_store_that_holds_the_named_filing_is_complete(tmp_path, monkeypatch):
+    from src import fetch_fixtures
+    monkeypatch.setattr(fetch_fixtures, "Fetcher", lambda _agent: _Index([DETECTED]))
+    monkeypatch.setattr(fetch_fixtures, "fetch_company", _stand_in_store(DETECTED[0]))
+    assert fetch_fixtures.main(["--ticker", "CIEN", "--accession", DETECTED[0],
+                                "--out", str(tmp_path / "store")]) == 0
+
+
+def test_an_existing_store_is_not_refetched_to_another_date(tmp_path, monkeypatch, capsys):
+    from src import fetch_fixtures
+    store = tmp_path / "store"
+    (store / "CIEN").mkdir(parents=True)
+    (store / "CIEN" / "manifest.json").write_text("{}")
+    monkeypatch.setattr(fetch_fixtures, "Fetcher", lambda _agent: _Index([DETECTED]))
+    monkeypatch.setattr(fetch_fixtures, "fetch_company",
+                        lambda *a: pytest.fail("fetched into a store that already exists"))
+    code = fetch_fixtures.main(["--ticker", "CIEN", "--accession", DETECTED[0],
+                                "--out", str(store)])
+    assert code == fetch_fixtures.FETCH_FAILED
+    assert "already holds a store" in capsys.readouterr().err
+    assert (store / "CIEN" / "manifest.json").read_text() == "{}"
+
+
+def test_an_accession_names_one_company(tmp_path, monkeypatch, capsys):
+    from src import fetch_fixtures
+    monkeypatch.setattr(fetch_fixtures, "Fetcher",
+                        lambda _agent: pytest.fail("looked up with two companies named"))
+    code = fetch_fixtures.main(["--ticker", "CIEN", "--ticker", "NVDA",
+                                "--accession", DETECTED[0], "--out", str(tmp_path / "s")])
+    assert code == fetch_fixtures.FETCH_FAILED
+    assert "give exactly one --ticker" in capsys.readouterr().err

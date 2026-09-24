@@ -37,10 +37,14 @@ depends on should not announce a contact nobody reads.
     python3.12 src/fetch_fixtures.py --ticker CIEN --accession 0001628280-26-060361 --out STORE
 
 **`--accession` fetches a store up to that filing.** The as-of date becomes the
-filing date the submissions index gives the accession, so the store's latest
-filing of its form is that one and nothing filed after it is in the store. An
-accession the index does not list for the company is refused before anything is
-fetched: a store built to some other date would hand extract a different filing.
+filing date the submissions index gives the accession, so nothing filed after it
+is in the store. An accession the index does not list for the company is refused
+before anything is fetched: a store built to some other date would hand extract
+a different filing. The store has to be new -- a directory that already holds
+the company's manifest keeps every document it has, whatever date it was
+fetched to -- and once fetched, the store's filing of that form has to be the
+one named: two filings of one form on one day are picked by accession, and the
+named one may be the other. Either is exit 2, never a store reported complete.
 
 Exit 0 all requested fixtures present, 2 a fetch or parse failed, 3 the wrong
 interpreter, 4 a fixture on disk disagrees with its manifest.
@@ -448,13 +452,13 @@ def main(argv: list[str] | None = None) -> int:
     tickers = (tuple(t.upper() for t in args.ticker) if args.ticker
                else universe.tickers())
     out = Path(args.out)
+    if args.accession is not None and len(tickers) != 1:
+        print("fetch_fixtures: --accession names one filing of one company; "
+              "give exactly one --ticker", file=sys.stderr)
+        return FETCH_FAILED
     fetcher = Fetcher(os.environ.get("EDGAR_USER_AGENT", DEFAULT_USER_AGENT))
 
     if args.accession is not None:
-        if len(tickers) != 1:
-            print("fetch_fixtures: --accession names one filing of one company; "
-                  "give exactly one --ticker", file=sys.stderr)
-            return FETCH_FAILED
         try:
             filing = filing_for(recent_filings(fetcher, universe.cik(tickers[0])),
                                 args.accession)
@@ -466,6 +470,11 @@ def main(argv: list[str] | None = None) -> int:
                   file=sys.stderr)
             return FETCH_FAILED
         args.as_of = filing["filingDate"]
+        if (out / tickers[0] / "manifest.json").exists():
+            print(f"fetch_fixtures: {out / tickers[0]} already holds a store; a "
+                  f"store up to {args.accession} is fetched into a new directory",
+                  file=sys.stderr)
+            return FETCH_FAILED
         print(f"{tickers[0]} {filing['form']} {args.accession} filed "
               f"{args.as_of}: the store is fetched as of that date")
 
@@ -488,6 +497,14 @@ def main(argv: list[str] | None = None) -> int:
             continue
         for line in found:
             (changed if line.startswith(("changed:", "missing:")) else problems).append(line)
+
+    if args.accession is not None and not problems:
+        held = {entry["accession"] for entry in
+                load_manifest(out / tickers[0]).get("documents", [])
+                if entry.get("form") == filing["form"] and entry.get("role") == "primary_html"}
+        if held != {args.accession}:
+            problems.append(f"{tickers[0]}: the store's {filing['form']} is "
+                            f"{', '.join(sorted(held)) or 'missing'}, not {args.accession}")
 
     if changed:
         print("fetch_fixtures: fixtures on disk no longer match their manifest — "
