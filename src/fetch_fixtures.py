@@ -34,6 +34,13 @@ declares the repository owner, because a fetch this project's whole input layer
 depends on should not announce a contact nobody reads.
 
     python3.12 src/fetch_fixtures.py [--as-of 2026-09-01] [--ticker AAPL ...]
+    python3.12 src/fetch_fixtures.py --ticker CIEN --accession 0001628280-26-060361 --out STORE
+
+**`--accession` fetches a store up to that filing.** The as-of date becomes the
+filing date the submissions index gives the accession, so the store's latest
+filing of its form is that one and nothing filed after it is in the store. An
+accession the index does not list for the company is refused before anything is
+fetched: a store built to some other date would hand extract a different filing.
 
 Exit 0 all requested fixtures present, 2 a fetch or parse failed, 3 the wrong
 interpreter, 4 a fixture on disk disagrees with its manifest.
@@ -182,6 +189,19 @@ def submissions_record(ticker: str, cik: str, as_of: str,
         "filings": rows,
     }
     return payload, (json.dumps(payload, indent=2) + "\n").encode("utf-8")
+
+
+class NotInIndex(LookupError):
+    """The submissions index does not list this accession for this company."""
+
+
+def filing_for(filings: list[dict], accession: str) -> dict:
+    """The submissions row for one accession, or NotInIndex."""
+    for filing in filings:
+        if filing["accessionNumber"] == accession:
+            return filing
+    raise NotInIndex(f"{accession} is not in the EDGAR submissions index for this "
+                     f"company ({len(filings)} filings listed)")
 
 
 def pick(filings: list[dict], as_of: str, form: str, item: str | None = None):
@@ -418,6 +438,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--ticker", action="append", default=None,
                         help="fetch one company (repeatable); default is all twelve")
     parser.add_argument("--out", default=str(FIXTURES), help="fixture root")
+    parser.add_argument("--accession", default=None,
+                        help="fetch a store up to this filing: the as-of date "
+                             "becomes its filing date; needs exactly one --ticker")
     args = parser.parse_args(argv)
 
     # Read from the file here rather than trusting the import-time snapshot: a
@@ -426,6 +449,25 @@ def main(argv: list[str] | None = None) -> int:
                else universe.tickers())
     out = Path(args.out)
     fetcher = Fetcher(os.environ.get("EDGAR_USER_AGENT", DEFAULT_USER_AGENT))
+
+    if args.accession is not None:
+        if len(tickers) != 1:
+            print("fetch_fixtures: --accession names one filing of one company; "
+                  "give exactly one --ticker", file=sys.stderr)
+            return FETCH_FAILED
+        try:
+            filing = filing_for(recent_filings(fetcher, universe.cik(tickers[0])),
+                                args.accession)
+        except (NotInIndex, universe.UniverseError) as exc:
+            print(f"fetch_fixtures: {tickers[0]}: {exc}", file=sys.stderr)
+            return FETCH_FAILED
+        except Exception as exc:  # noqa: BLE001
+            print(f"fetch_fixtures: {tickers[0]}: {type(exc).__name__}: {exc}",
+                  file=sys.stderr)
+            return FETCH_FAILED
+        args.as_of = filing["filingDate"]
+        print(f"{tickers[0]} {filing['form']} {args.accession} filed "
+              f"{args.as_of}: the store is fetched as of that date")
 
     # The CIK is the file's, not EDGAR's ticker map's. The map was a second
     # answer to "which registrant is this?" that `universe.json` never got a

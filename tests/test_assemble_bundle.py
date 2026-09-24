@@ -1281,3 +1281,90 @@ def test_the_command_refuses_a_rules_version_it_does_not_know(tmp_path, capsys):
     assert exited.value.code == 2
     assert "pilot" in capsys.readouterr().err
     assert not out.exists()
+
+
+# --- extract builds the accession detect names ---------------------------------
+#
+# On 2026-09-23 detect named CIEN's 10-Q 0001628280-26-060361, filed 2026-09-03,
+# and `assemble_bundle --ticker CIEN --form 10-Q` built 0001628280-26-040767,
+# filed 2026-06-04, out of the committed store fetched as of 2026-09-01. Both
+# accessions and both dates are the EDGAR submissions index's own rows as the
+# second pipeline check recorded them in `events/ledger.jsonl` (the row whose
+# ticker is CIEN and whose layers_that_refused is extract), typed here from it.
+
+DETECTED = ("0001628280-26-060361", "2026-09-03")
+STORE_HOLDS = ("0001628280-26-040767", "2026-06-04")
+
+
+def test_an_accession_the_store_does_not_hold_is_refused_not_replaced(tmp_path, capsys):
+    out = tmp_path / "bundle"
+    code = assemble_bundle.main(["--ticker", "CIEN", "--form", "10-Q",
+                                 "--accession", DETECTED[0], "--out", str(out)])
+    assert code == assemble_bundle.BAD_INPUT
+    assert not out.exists()
+    err = capsys.readouterr().err
+    assert DETECTED[0] in err
+    # The refusal names what the store holds instead, so the reader can see why.
+    assert STORE_HOLDS[0] in err and STORE_HOLDS[1] in err
+
+
+def test_the_refusal_comes_before_anything_is_read(monkeypatch):
+    opened = []
+    real = cutoff_guard.load_bytes
+    monkeypatch.setattr(cutoff_guard, "load_bytes",
+                        lambda *a, **k: opened.append(a) or real(*a, **k))
+    with pytest.raises(assemble_bundle.BundleError):
+        assemble_bundle.build("CIEN", "10-Q", accession=DETECTED[0])
+    assert opened == []
+
+
+def test_the_accession_the_store_holds_is_the_one_built(tmp_path):
+    out = tmp_path / "bundle"
+    assert assemble_bundle.main(["--ticker", "CIEN", "--form", "10-Q",
+                                 "--accession", STORE_HOLDS[0], "--out", str(out)]) == 0
+    manifest = json.loads((out / "input_manifest.json").read_text(encoding="utf-8"))
+    assert (manifest["accession"], manifest["filing_date"]) == STORE_HOLDS
+
+
+class _Index:
+    """A stand-in EDGAR answering one submissions index and nothing else."""
+
+    def __init__(self, rows):
+        self.rows, self.asked = rows, []
+
+    def get_json(self, url):
+        self.asked.append(url)
+        assert url == "https://data.sec.gov/submissions/CIK0000936395.json", url
+        return {"filings": {"recent": {
+            "accessionNumber": [r[0] for r in self.rows],
+            "filingDate": [r[1] for r in self.rows],
+            "reportDate": ["" for _ in self.rows],
+            "form": ["10-Q" for _ in self.rows],
+            "items": ["" for _ in self.rows],
+            "primaryDocument": ["x.htm" for _ in self.rows],
+            "primaryDocDescription": ["" for _ in self.rows]}}}
+
+
+def test_the_store_is_fetched_up_to_the_named_filing(tmp_path, monkeypatch):
+    from src import fetch_fixtures
+    index = _Index([DETECTED, STORE_HOLDS])
+    asked_as_of = []
+    monkeypatch.setattr(fetch_fixtures, "Fetcher", lambda _agent: index)
+    monkeypatch.setattr(fetch_fixtures, "fetch_company",
+                        lambda _f, ticker, cik, as_of, out:
+                        asked_as_of.append((ticker, cik, as_of)) or ({}, []))
+    assert fetch_fixtures.main(["--ticker", "CIEN", "--accession", DETECTED[0],
+                                "--out", str(tmp_path / "store")]) == 0
+    assert asked_as_of == [("CIEN", "0000936395", DETECTED[1])]
+
+
+def test_an_accession_the_index_does_not_list_fetches_nothing(tmp_path, monkeypatch, capsys):
+    from src import fetch_fixtures
+    monkeypatch.setattr(fetch_fixtures, "Fetcher", lambda _agent: _Index([STORE_HOLDS]))
+    monkeypatch.setattr(fetch_fixtures, "fetch_company",
+                        lambda *a: pytest.fail("fetched a store for an unlisted filing"))
+    code = fetch_fixtures.main(["--ticker", "CIEN", "--accession", DETECTED[0],
+                                "--out", str(tmp_path / "store")])
+    assert code == fetch_fixtures.FETCH_FAILED
+    assert "not in the EDGAR submissions index" in capsys.readouterr().err
+    assert not (tmp_path / "store").exists()
