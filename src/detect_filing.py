@@ -37,7 +37,6 @@ summary line goes to standard error either way.
 from __future__ import annotations
 
 import argparse
-import datetime as dt
 import json
 import os
 import sys
@@ -116,8 +115,11 @@ def detect(fetcher, *, since: str, companies=None,
     """One lookup per universe row, and what each lookup found.
 
     `companies` is `universe.rows()` unless a caller read another universe
-    file itself; this function reads no file of its own.
+    file itself; this function reads no file of its own. `since` is parsed
+    before it is compared, as every cutoff here is: compared as a string, an
+    empty one would make every filing new and a malformed one none.
     """
+    since = cutoff_guard.parse_date(since, "since").isoformat()
     if companies is None:
         companies = universe.rows()
     results = []
@@ -169,9 +171,9 @@ def main(argv: list[str] | None = None) -> int:
 
     since = args.since
     try:
-        dt.date.fromisoformat(since)
-    except ValueError:
-        print(f"detect_filing: --since {since!r} is not a YYYY-MM-DD date", file=sys.stderr)
+        cutoff_guard.parse_date(since, "--since")
+    except cutoff_guard.CutoffGuardError as exc:
+        print(f"detect_filing: {exc}", file=sys.stderr)
         return LOOKUP_FAILED
     fetcher = fetch_fixtures.Fetcher(
         os.environ.get("EDGAR_USER_AGENT", fetch_fixtures.DEFAULT_USER_AGENT))

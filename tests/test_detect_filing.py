@@ -206,7 +206,17 @@ def test_main_refuses_a_since_that_is_not_a_date(three, tmp_path, monkeypatch, c
     code = detect_filing.main(["--since", "yesterday", "--universe", str(three),
                                "--runs", str(tmp_path / "runs")])
     assert code == detect_filing.LOOKUP_FAILED
-    assert "is not a YYYY-MM-DD date" in capsys.readouterr().err
+    assert "is not an ISO date" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("since", ["", "garbage", "2026-9-1"])
+def test_detect_refuses_a_since_it_cannot_read_as_a_date(three, tmp_path, since):
+    # Compared as a string, "" makes every filing new and "garbage" none.
+    fetcher = StandIn()
+    with pytest.raises(detect_filing.cutoff_guard.CutoffGuardError):
+        detect_filing.detect(fetcher, since=since, companies=universe.rows(three),
+                             runs_root=tmp_path / "runs")
+    assert fetcher.asked == []
 
 
 def test_main_has_no_default_since(three, tmp_path, monkeypatch):
