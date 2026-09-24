@@ -24,9 +24,15 @@ not reach sec.gov and every EDGAR request happens here.
    again: every 10-K or 10-Q a summary line records as failed, and that still
    has no run directory, is extracted again whether or not it is new, until it
    passes.
-4. **One summary line**, appended to `history/nightly.jsonl`: lookups, new
-   filings, each extraction's result, and every failure with its reason. The
-   morning report reads it, failures first.
+4. **Historical collection**, `src/collect_history.py`: the next batch of the
+   twelve's past filings, oldest first, each hashed and, for a 10-K or 10-Q,
+   carried through the same extract and the same four checks. Its failures are
+   the checks' results on old filings and are counted in the summary's
+   `history`, not listed as the night's failures; a company whose index could
+   not be listed is a failure of the night.
+5. **One summary line**, appended to `history/nightly.jsonl`: lookups, new
+   filings, each extraction's result, historical progress, and every failure
+   with its reason. The morning report reads it, failures first.
 
 Read, compare and decide are not run: the price source is unresolved, and the
 target of this stage (`docs/HOW_WE_WORK.md` §7 step 5) is extraction.
@@ -49,10 +55,12 @@ import sys
 from pathlib import Path
 
 try:
-    from src import detect_filing, fetch_fixtures, interpreter_pin, universe
+    from src import (collect_history, detect_filing, fetch_fixtures, interpreter_pin,
+                     universe)
 except ImportError:  # invoked as a plain script
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from src import detect_filing, fetch_fixtures, interpreter_pin, universe
+    from src import (collect_history, detect_filing, fetch_fixtures, interpreter_pin,
+                     universe)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SUMMARY = Path("history") / "nightly.jsonl"
@@ -268,8 +276,32 @@ def night(*, fetcher, since: str, runs_root: Path, work: Path, fixtures: Path,
                           "extract builds 10-K and 10-Q bundles only"
                           for entry in not_extracted],
         "extractions": extractions,
+        "history": None,
         "failures": failures,
     }
+
+
+def with_history(line: dict, fetcher, *, history_root: Path, work: Path, batch: int,
+                 companies=None) -> dict:
+    """The night's line, with tonight's batch of past filings collected into it.
+
+    A past filing failing its checks is data and is counted under `history`; a
+    company whose index could not be listed is a failure of the night, and so is
+    the collection raising, which leaves the rest of the night's line as it was.
+    """
+    if not batch:
+        return line
+    try:
+        history = collect_history.collect(
+            fetcher, companies=companies if companies is not None else universe.rows(),
+            history_root=history_root, work=work, batch=batch)
+    except Exception as exc:  # noqa: BLE001 - the night's own results stand
+        return dict(line, failures=line["failures"] + [
+            f"historical collection crashed: {type(exc).__name__}: {exc}"],
+            finished_utc=now())
+    failures = line["failures"] + [f"historical collection: {entry}"
+                                   for entry in history["listing_failures"]]
+    return dict(line, history=history, failures=failures, finished_utc=now())
 
 
 def crashed(today: dt.date, since: str, run_url: str | None, exc: Exception) -> dict:
@@ -298,6 +330,9 @@ def main(argv: list[str] | None = None) -> int:
                                                        "this filing whether or not it is new")
     parser.add_argument("--accession", default=None)
     parser.add_argument("--run-url", default=None)
+    parser.add_argument("--history-batch", type=int, default=0,
+                        help="past filings to collect tonight; 0 collects none")
+    parser.add_argument("--history", default=str(collect_history.HISTORY))
     args = parser.parse_args(argv)
 
     summary = Path(args.summary)
@@ -312,7 +347,7 @@ def main(argv: list[str] | None = None) -> int:
                        f"{args.accession!r}); no filing was extracted by hand")
     today = dt.datetime.now(dt.timezone.utc).date()
     since = args.since
-    fetcher = fetch_fixtures.Fetcher(
+    fetcher = collect_history.CachingFetcher(
         os.environ.get("EDGAR_USER_AGENT", fetch_fixtures.DEFAULT_USER_AGENT))
     try:
         # Inside the try: an unreadable summary line is the night's failure
@@ -324,6 +359,8 @@ def main(argv: list[str] | None = None) -> int:
     except Exception as exc:  # noqa: BLE001 - a night that crashed still leaves a line
         line = crashed(today, since, args.run_url, exc)
     line["failures"] = refused + line["failures"]
+    line = with_history(line, fetcher, history_root=Path(args.history),
+                        work=Path(args.work) / "history", batch=args.history_batch)
     try:
         append(summary, line)
     except OSError as exc:

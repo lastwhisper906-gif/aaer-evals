@@ -128,7 +128,9 @@ class Fetcher:
                 with urllib.request.urlopen(request, timeout=60) as response:
                     return response.read()
             except urllib.error.HTTPError as exc:
-                if exc.code in (429, 502, 503, 504) and attempt < 3:
+                # EDGAR answers a client over its rate with 403 as well as 429,
+                # so both are backed off before they are believed.
+                if exc.code in (403, 429, 502, 503, 504) and attempt < 3:
                     time.sleep(2 ** attempt)
                     continue
                 raise
@@ -155,6 +157,35 @@ def recent_filings(fetcher: Fetcher, cik: str) -> list[dict]:
               "primaryDocument", "primaryDocDescription")
     return [{field: recent[field][i] for field in fields}
             for i in range(len(recent["form"]))]
+
+
+OLDER_URL = "https://data.sec.gov/submissions/{name}"
+ROW_FIELDS = ("accessionNumber", "filingDate", "reportDate", "form", "items",
+              "primaryDocument", "primaryDocDescription", "isXBRL")
+
+
+def every_filing(fetcher: Fetcher, cik: str) -> list[dict]:
+    """The whole submissions index: the recent list and every older page.
+
+    `filings.recent` stops at about a thousand rows; the rest are on the pages
+    `filings.files` names, each holding the same parallel arrays at its top
+    level. A company that files many ownership forms runs off the end of the
+    recent list within a few years, so a history read from it alone would begin
+    wherever that happened to be.
+    """
+    data = fetcher.get_json(SUBMISSIONS_URL.format(cik=cik))
+    pages = [data["filings"]["recent"]]
+    for older in data["filings"].get("files", []):
+        pages.append(fetcher.get_json(OLDER_URL.format(name=older["name"])))
+    rows, seen = [], set()
+    for page in pages:
+        for i in range(len(page["form"])):
+            row = {field: (page[field][i] if field in page else None)
+                   for field in ROW_FIELDS}
+            if row["accessionNumber"] not in seen:
+                seen.add(row["accessionNumber"])
+                rows.append(row)
+    return rows
 
 
 def submissions_record(ticker: str, cik: str, as_of: str,
@@ -316,7 +347,13 @@ def verify_existing(ticker_dir: Path, manifest: dict) -> list[str]:
 
 
 def fetch_company(fetcher: Fetcher, ticker: str, cik: str, as_of: str,
-                  out: Path) -> tuple[dict, list[str]]:
+                  out: Path, filings: list[dict] | None = None) -> tuple[dict, list[str]]:
+    """Fetch one company's store as of a date.
+
+    `filings` is the submissions index to pick from; `recent_filings` when not
+    given. A store for a date years back needs `every_filing`, because the
+    filings it picks may be older than the recent list reaches.
+    """
     ticker_dir = out / ticker
     manifest = load_manifest(ticker_dir)
     problems = verify_existing(ticker_dir, manifest)
@@ -325,7 +362,8 @@ def fetch_company(fetcher: Fetcher, ticker: str, cik: str, as_of: str,
 
     have = {(e["form"], e["role"]) for e in manifest.get("documents", [])}
     documents = list(manifest.get("documents", []))
-    filings = recent_filings(fetcher, cik)
+    if filings is None:
+        filings = recent_filings(fetcher, cik)
 
     if ("submissions", "submissions_index") not in have:
         record, raw = submissions_record(ticker, cik, as_of, filings)

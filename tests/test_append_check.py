@@ -135,3 +135,48 @@ def test_relocating_anywhere_but_archive_fails(repo):
 
 def test_an_unresolvable_baseline_is_not_a_pass(repo):
     assert append_check.main(["--baseline", "no-such-ref"]) == 2
+
+
+# --- history/ is a record too ----------------------------------------------
+#
+# The nightly crew appends one line per past filing to
+# history/{ticker}/manifest.jsonl and one line per night to
+# history/nightly.jsonl, and writes each built bundle gzipped beside them.
+# Existing content there is never changed, the same as under runs/.
+
+HISTORY_LINE = '{"accession": "0000320193-12-000001", "result": "passed"}\n'
+
+
+@pytest.fixture
+def history(repo):
+    git(repo, "checkout", "-q", "baseline")
+    ledger = repo / "history" / "AAPL" / "manifest.jsonl"
+    ledger.parent.mkdir(parents=True)
+    ledger.write_text(HISTORY_LINE)
+    bundle = repo / "history" / "AAPL" / "0000320193-12-000001"
+    bundle.mkdir()
+    (bundle / "input_manifest.json.gz").write_bytes(b"\x1f\x8b published")
+    commit_all(repo, "baseline history")
+    git(repo, "checkout", "-q", "-B", "work")
+    return repo
+
+
+def test_appending_to_a_history_manifest_is_clean(history):
+    ledger = history / "history" / "AAPL" / "manifest.jsonl"
+    ledger.write_text(HISTORY_LINE + '{"accession": "0000320193-12-000002"}\n')
+    commit_all(history)
+    assert append_check.violations("baseline") == []
+
+
+def test_rewriting_a_history_line_fails(history):
+    ledger = history / "history" / "AAPL" / "manifest.jsonl"
+    ledger.write_text(HISTORY_LINE.replace("passed", "failed"))
+    commit_all(history)
+    assert append_check.violations("baseline") == ["modified: history/AAPL/manifest.jsonl"]
+
+
+def test_deleting_a_kept_bundle_fails(history):
+    (history / "history" / "AAPL" / "0000320193-12-000001" / "input_manifest.json.gz").unlink()
+    commit_all(history)
+    assert append_check.violations("baseline") == [
+        "deleted: history/AAPL/0000320193-12-000001/input_manifest.json.gz"]

@@ -28,6 +28,10 @@ on:
         description: "a filing on or after this date is new (default: the last night that ran)"
         required: false
         default: ""
+      history_batch:
+        description: "past filings to collect tonight, oldest first"
+        required: false
+        default: "30"
 
 permissions:
   contents: write
@@ -87,11 +91,13 @@ jobs:
           HAND_TICKER: ${{ inputs.ticker }}
           HAND_ACCESSION: ${{ inputs.accession }}
           SINCE: ${{ inputs.since }}
+          HISTORY_BATCH: ${{ inputs.history_batch || '30' }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           set +e
           # An array, so an input holding a space stays one argument.
-          args=(--work "$RUNNER_TEMP/nightly" --run-url "$RUN_URL")
+          args=(--work "$RUNNER_TEMP/nightly" --run-url "$RUN_URL"
+                --history-batch "$HISTORY_BATCH")
           if [ -n "$SINCE" ]; then args+=(--since "$SINCE"); fi
           if [ -n "$HAND_TICKER" ]; then args+=(--ticker "$HAND_TICKER"); fi
           if [ -n "$HAND_ACCESSION" ]; then args+=(--accession "$HAND_ACCESSION"); fi
@@ -111,7 +117,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "nothing to commit"
           else
-            git commit -q -m "the nightly crew's night of $(date -u +%F): detect, extract, check
+            git commit -q -m "the nightly crew's night of $(date -u +%F): detect, extract, check, collect
 
           Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
           fi

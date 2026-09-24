@@ -21,7 +21,7 @@
    reader reports and the market table; a supervisor sees reports. The per-run,
    per-agent input directory is the boundary, and it is committed as what that
    agent saw.
-7. **Append-only under `runs/`, `rules/` and `events/`:** existing content is
+7. **Append-only under `runs/`, `rules/`, `events/` and `history/`:** existing content is
    never changed or deleted; appending to the end of a ledger file is allowed.
    A correction is a new file plus one ledger line.
 8. **The seal is nothing more than** auto-commit, pull request, auto-merge on

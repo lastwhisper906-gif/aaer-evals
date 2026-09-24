@@ -1,7 +1,7 @@
 """Fail if this branch modifies or deletes a published file.
 
-Published means: anything under runs/, rules/ or events/ that already exists on
-the baseline ref (origin/main by default). Those three directories are
+Published means: anything under runs/, rules/, events/ or history/ that already
+exists on the baseline ref (origin/main by default). Those four directories are
 append-only: existing content is never changed or deleted. A correction is a new
 file plus one ledger line.
 
@@ -10,7 +10,7 @@ published file that legitimately grows: it passes as long as its new bytes begin
 with its old bytes. Rewriting or truncating a line that was already published
 fails like any other change to existing content.
 
-Everything under those three prefixes is a record. Documentation about them
+Everything under those four prefixes is a record. Documentation about them
 lives in docs/, because a file inside an append-only directory can never be
 corrected.
 
@@ -46,7 +46,7 @@ except ImportError:  # invoked as a plain script: python3.12 src/append_check.py
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
     from src import interpreter_pin
 
-PROTECTED = ("runs/", "rules/", "events/")
+PROTECTED = ("runs/", "rules/", "events/", "history/")
 
 
 def _git(*args: str) -> str:
