@@ -110,10 +110,15 @@ def runs_on_record(runs_root: Path, ticker: str) -> set[str]:
     return {run.name for run in cutoff_guard.prior_runs(runs_root, ticker)}
 
 
-def detect(fetcher, *, since: str, universe_path: Path | None = None,
+def detect(fetcher, *, since: str, companies=None,
            runs_root: Path = Path("runs")) -> dict:
-    """One lookup per universe row, and what each lookup found."""
-    companies = universe.rows(universe_path)
+    """One lookup per universe row, and what each lookup found.
+
+    `companies` is `universe.rows()` unless a caller read another universe
+    file itself; this function reads no file of its own.
+    """
+    if companies is None:
+        companies = universe.rows()
     results = []
     for company in companies:
         ticker, cik = company["ticker"], company["cik"]
@@ -172,8 +177,8 @@ def main(argv: list[str] | None = None) -> int:
     fetcher = fetch_fixtures.Fetcher(
         os.environ.get("EDGAR_USER_AGENT", fetch_fixtures.DEFAULT_USER_AGENT))
     try:
-        found = detect(fetcher, since=since,
-                       universe_path=Path(args.universe) if args.universe else None,
+        companies = universe.rows(Path(args.universe) if args.universe else None)
+        found = detect(fetcher, since=since, companies=companies,
                        runs_root=Path(args.runs))
     except universe.UniverseError as exc:
         print(f"detect_filing: {exc}", file=sys.stderr)

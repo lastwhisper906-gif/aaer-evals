@@ -18,7 +18,7 @@ import urllib.error
 
 import pytest
 
-from src import detect_filing
+from src import detect_filing, universe
 
 
 def _company(ticker: str, cik: str) -> dict:
@@ -117,7 +117,7 @@ def three(tmp_path):
 
 def test_one_lookup_per_universe_row(three, tmp_path):
     fetcher = StandIn()
-    found = detect_filing.detect(fetcher, since="2026-09-01", universe_path=three,
+    found = detect_filing.detect(fetcher, since="2026-09-01", companies=universe.rows(three),
                                  runs_root=tmp_path / "runs")
     assert fetcher.asked == [
         "https://data.sec.gov/submissions/CIK0000000001.json",
@@ -130,7 +130,7 @@ def test_one_lookup_per_universe_row(three, tmp_path):
 
 
 def test_the_latest_filing_per_form_is_read_off_the_rows(three, tmp_path):
-    found = detect_filing.detect(StandIn(), since="2026-09-01", universe_path=three,
+    found = detect_filing.detect(StandIn(), since="2026-09-01", companies=universe.rows(three),
                                  runs_root=tmp_path / "runs")
     got = {c["ticker"]: {k: (v["accession"] if v else None)
                          for k, v in c["latest"].items()}
@@ -143,7 +143,7 @@ def test_a_thirteenth_row_is_a_thirteenth_lookup(tmp_path):
     rows = [_company("X" * (n + 1), "0000000001") for n in range(13)]
     path = _universe(tmp_path, rows)
     fetcher = StandIn()
-    found = detect_filing.detect(fetcher, since="2026-09-01", universe_path=path,
+    found = detect_filing.detect(fetcher, since="2026-09-01", companies=universe.rows(path),
                                  runs_root=tmp_path / "runs")
     assert len(fetcher.asked) == 13
     assert found["lookups"] == {"succeeded": 13, "of": 13}
@@ -151,7 +151,7 @@ def test_a_thirteenth_row_is_a_thirteenth_lookup(tmp_path):
 
 def test_a_failed_lookup_is_named_and_fails_the_stage(three, tmp_path):
     found = detect_filing.detect(StandIn(failing=("0000000002",)), since="2026-09-01",
-                                 universe_path=three, runs_root=tmp_path / "runs")
+                                 companies=universe.rows(three), runs_root=tmp_path / "runs")
     assert found["lookups"] == {"succeeded": 2, "of": 3}
     assert found["passed"] is False
     failed = [c for c in found["companies"] if c["lookup"] == "failed"]
@@ -164,7 +164,7 @@ def test_a_failed_lookup_is_named_and_fails_the_stage(three, tmp_path):
 def test_new_is_on_or_after_since_and_not_already_run(three, tmp_path):
     runs = tmp_path / "runs"
     (runs / "BBB" / "0000000002-26-000003").mkdir(parents=True)
-    found = detect_filing.detect(StandIn(), since="2026-09-10", universe_path=three,
+    found = detect_filing.detect(StandIn(), since="2026-09-10", companies=universe.rows(three),
                                  runs_root=runs)
     new = {c["ticker"]: [(e["kind"], e["accession"]) for e in c["new"]]
            for c in found["companies"]}
@@ -191,7 +191,7 @@ def test_a_row_carries_the_index_fields_under_their_own_names():
 def test_the_summary_line_names_each_new_filing(three, tmp_path):
     # Company by company in the universe's order, and within one company by
     # filing date and then accession: BBB's three all fall on 2026-09-22.
-    found = detect_filing.detect(StandIn(), since="2026-09-10", universe_path=three,
+    found = detect_filing.detect(StandIn(), since="2026-09-10", companies=universe.rows(three),
                                  runs_root=tmp_path / "runs")
     assert detect_filing.summary_line(found) == (
         "detect filing: 3 of 3 lookups succeeded, 4 new since 2026-09-10 ("
