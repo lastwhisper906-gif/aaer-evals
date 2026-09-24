@@ -34,6 +34,21 @@ declares the repository owner, because a fetch this project's whole input layer
 depends on should not announce a contact nobody reads.
 
     python3.12 src/fetch_fixtures.py [--as-of 2026-09-01] [--ticker AAPL ...]
+    python3.12 src/fetch_fixtures.py --ticker CIEN --accession 0001628280-26-060361 --out STORE
+
+**`--accession` fetches a store up to that filing.** The as-of date becomes the
+filing date the submissions index gives the accession, so nothing filed after it
+is in the store. An accession the index does not list for the company is refused
+before anything is fetched: a store built to some other date would hand extract
+a different filing. `--as-of` beside it is refused rather than replaced: a
+cutoff that was given is never silently swapped for a later one. The store has
+to be new -- a company directory that already exists keeps every document in
+it, whatever date it was fetched to -- and once fetched, the store's filing of
+that form has to be the one named: two filings of one form on one day are
+picked by accession, and the named one may be the other. Either is exit 2,
+never a store reported complete. The store also gets the companyfacts record
+as of the same date (`src/fetch_companyfacts.py`), because the trend table is
+built from it and a store without it is not one extract can build from.
 
 Exit 0 all requested fixtures present, 2 a fetch or parse failed, 3 the wrong
 interpreter, 4 a fixture on disk disagrees with its manifest.
@@ -182,6 +197,19 @@ def submissions_record(ticker: str, cik: str, as_of: str,
         "filings": rows,
     }
     return payload, (json.dumps(payload, indent=2) + "\n").encode("utf-8")
+
+
+class NotInIndex(LookupError):
+    """The submissions index does not list this accession for this company."""
+
+
+def filing_for(filings: list[dict], accession: str) -> dict:
+    """The submissions row for one accession, or NotInIndex."""
+    for filing in filings:
+        if filing["accessionNumber"] == accession:
+            return filing
+    raise NotInIndex(f"{accession} is not in the EDGAR submissions index for this "
+                     f"company ({len(filings)} filings listed)")
 
 
 def pick(filings: list[dict], as_of: str, form: str, item: str | None = None):
@@ -413,11 +441,15 @@ def fetch_company(fetcher: Fetcher, ticker: str, cik: str, as_of: str,
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--as-of", default=AS_OF,
-                        help="cutoff date; nothing filed after it is fetched")
+    parser.add_argument("--as-of", default=None,
+                        help=f"cutoff date; nothing filed after it is fetched. "
+                             f"Default {AS_OF}")
     parser.add_argument("--ticker", action="append", default=None,
                         help="fetch one company (repeatable); default is all twelve")
     parser.add_argument("--out", default=str(FIXTURES), help="fixture root")
+    parser.add_argument("--accession", default=None,
+                        help="fetch a store up to this filing: the as-of date "
+                             "becomes its filing date; needs exactly one --ticker")
     args = parser.parse_args(argv)
 
     # Read from the file here rather than trusting the import-time snapshot: a
@@ -425,7 +457,37 @@ def main(argv: list[str] | None = None) -> int:
     tickers = (tuple(t.upper() for t in args.ticker) if args.ticker
                else universe.tickers())
     out = Path(args.out)
+    if args.accession is not None and len(tickers) != 1:
+        print("fetch_fixtures: --accession names one filing of one company; "
+              "give exactly one --ticker", file=sys.stderr)
+        return FETCH_FAILED
+    if args.accession is not None and args.as_of is not None:
+        print("fetch_fixtures: --accession sets the as-of date to the filing's own; "
+              "give one or the other, not both", file=sys.stderr)
+        return FETCH_FAILED
+    if args.as_of is None:
+        args.as_of = AS_OF
     fetcher = Fetcher(os.environ.get("EDGAR_USER_AGENT", DEFAULT_USER_AGENT))
+
+    if args.accession is not None:
+        try:
+            filing = filing_for(recent_filings(fetcher, universe.cik(tickers[0])),
+                                args.accession)
+        except (NotInIndex, universe.UniverseError) as exc:
+            print(f"fetch_fixtures: {tickers[0]}: {exc}", file=sys.stderr)
+            return FETCH_FAILED
+        except Exception as exc:  # noqa: BLE001
+            print(f"fetch_fixtures: {tickers[0]}: {type(exc).__name__}: {exc}",
+                  file=sys.stderr)
+            return FETCH_FAILED
+        args.as_of = filing["filingDate"]
+        if (out / tickers[0]).exists():
+            print(f"fetch_fixtures: {out / tickers[0]} already holds a store; a "
+                  f"store up to {args.accession} is fetched into a new directory",
+                  file=sys.stderr)
+            return FETCH_FAILED
+        print(f"{tickers[0]} {filing['form']} {args.accession} filed "
+              f"{args.as_of}: the store is fetched as of that date")
 
     # The CIK is the file's, not EDGAR's ticker map's. The map was a second
     # answer to "which registrant is this?" that `universe.json` never got a
@@ -446,6 +508,22 @@ def main(argv: list[str] | None = None) -> int:
             continue
         for line in found:
             (changed if line.startswith(("changed:", "missing:")) else problems).append(line)
+
+    if args.accession is not None and not problems:
+        # Imported here: the companyfacts fetcher imports this module.
+        from src import fetch_companyfacts
+        try:
+            problems.extend(fetch_companyfacts.fetch_company(
+                fetcher, tickers[0], args.as_of, out))
+        except Exception as exc:  # noqa: BLE001
+            problems.append(f"{tickers[0]}: companyfacts: {type(exc).__name__}: {exc}")
+    if args.accession is not None and not problems:
+        held = {entry["accession"] for entry in
+                load_manifest(out / tickers[0]).get("documents", [])
+                if entry.get("form") == filing["form"] and entry.get("role") == "primary_html"}
+        if held != {args.accession}:
+            problems.append(f"{tickers[0]}: the store's {filing['form']} is "
+                            f"{', '.join(sorted(held)) or 'missing'}, not {args.accession}")
 
     if changed:
         print("fetch_fixtures: fixtures on disk no longer match their manifest — "

@@ -1281,3 +1281,265 @@ def test_the_command_refuses_a_rules_version_it_does_not_know(tmp_path, capsys):
     assert exited.value.code == 2
     assert "pilot" in capsys.readouterr().err
     assert not out.exists()
+
+
+# --- extract builds the accession detect names ---------------------------------
+#
+# On 2026-09-23 detect named CIEN's 10-Q 0001628280-26-060361, filed 2026-09-03,
+# and `assemble_bundle --ticker CIEN --form 10-Q` built 0001628280-26-040767,
+# filed 2026-06-04, out of the committed store fetched as of 2026-09-01. Both
+# accessions and both dates are the EDGAR submissions index's own rows as the
+# second pipeline check recorded them in `events/ledger.jsonl` (the row whose
+# ticker is CIEN and whose layers_that_refused is extract), typed here from it.
+
+DETECTED = ("0001628280-26-060361", "2026-09-03")
+STORE_HOLDS = ("0001628280-26-040767", "2026-06-04")
+
+
+def test_an_accession_the_store_does_not_hold_is_refused_not_replaced(tmp_path, capsys):
+    out = tmp_path / "bundle"
+    code = assemble_bundle.main(["--ticker", "CIEN", "--form", "10-Q",
+                                 "--accession", DETECTED[0], "--out", str(out)])
+    assert code == assemble_bundle.BAD_INPUT
+    assert not out.exists()
+    err = capsys.readouterr().err
+    assert DETECTED[0] in err
+    # The refusal names what the store holds instead, so the reader can see why.
+    assert STORE_HOLDS[0] in err and STORE_HOLDS[1] in err
+
+
+def test_the_refusal_comes_before_anything_is_read(monkeypatch):
+    # Both ways into a document: the dated route and the two catalogues' route.
+    opened = []
+    for name in ("load_bytes", "_ungated_bytes"):
+        real = getattr(cutoff_guard, name)
+        monkeypatch.setattr(cutoff_guard, name,
+                            lambda *a, _real=real, **k: opened.append(a) or _real(*a, **k))
+    with pytest.raises(assemble_bundle.BundleError):
+        assemble_bundle.build("CIEN", "10-Q", accession=DETECTED[0])
+    assert opened == []
+
+
+def test_the_accession_the_store_holds_is_the_one_built(tmp_path):
+    out = tmp_path / "bundle"
+    assert assemble_bundle.main(["--ticker", "CIEN", "--form", "10-Q",
+                                 "--accession", STORE_HOLDS[0], "--out", str(out)]) == 0
+    manifest = json.loads((out / "input_manifest.json").read_text(encoding="utf-8"))
+    assert (manifest["accession"], manifest["filing_date"]) == STORE_HOLDS
+
+
+class _Index:
+    """A stand-in EDGAR answering one submissions index and nothing else."""
+
+    def __init__(self, rows):
+        self.rows, self.asked = rows, []
+
+    def get_json(self, url):
+        self.asked.append(url)
+        assert url == "https://data.sec.gov/submissions/CIK0000936395.json", url
+        return {"filings": {"recent": {
+            "accessionNumber": [r[0] for r in self.rows],
+            "filingDate": [r[1] for r in self.rows],
+            "reportDate": ["" for _ in self.rows],
+            "form": ["10-Q" for _ in self.rows],
+            "items": ["" for _ in self.rows],
+            "primaryDocument": ["x.htm" for _ in self.rows],
+            "primaryDocDescription": ["" for _ in self.rows]}}}
+
+
+def test_the_store_is_fetched_up_to_the_named_filing(tmp_path, monkeypatch):
+    from src import fetch_fixtures
+    index = _Index([DETECTED, STORE_HOLDS])
+    asked_as_of = []
+    monkeypatch.setattr(fetch_fixtures, "Fetcher", lambda _agent: index)
+    store = _stand_in_store(DETECTED[0], monkeypatch)
+    monkeypatch.setattr(fetch_fixtures, "fetch_company",
+                        lambda _f, ticker, cik, as_of, out:
+                        asked_as_of.append((ticker, cik, as_of))
+                        or store(_f, ticker, cik, as_of, out))
+    assert fetch_fixtures.main(["--ticker", "CIEN", "--accession", DETECTED[0],
+                                "--out", str(tmp_path / "store")]) == 0
+    assert asked_as_of == [("CIEN", "0000936395", DETECTED[1])]
+
+
+def test_an_accession_the_index_does_not_list_fetches_nothing(tmp_path, monkeypatch, capsys):
+    from src import fetch_fixtures
+    monkeypatch.setattr(fetch_fixtures, "Fetcher", lambda _agent: _Index([STORE_HOLDS]))
+    monkeypatch.setattr(fetch_fixtures, "fetch_company",
+                        lambda *a: pytest.fail("fetched a store for an unlisted filing"))
+    code = fetch_fixtures.main(["--ticker", "CIEN", "--accession", DETECTED[0],
+                                "--out", str(tmp_path / "store")])
+    assert code == fetch_fixtures.FETCH_FAILED
+    assert "not in the EDGAR submissions index" in capsys.readouterr().err
+    assert not (tmp_path / "store").exists()
+
+
+def _stand_in_store(held_accession, monkeypatch):
+    """A `fetch_company` that records a store holding the given 10-Q.
+
+    The companyfacts fetch that follows it reports nothing, because the
+    stand-in index serves no companyfacts record.
+    """
+    from src import fetch_companyfacts
+    monkeypatch.setattr(fetch_companyfacts, "fetch_company", lambda *a: [])
+
+    def fetch_company(_fetcher, ticker, cik, as_of, out):
+        manifest = {"ticker": ticker, "cik": cik, "as_of": as_of, "documents": [
+            {"form": "10-Q", "role": "primary_html", "accession": held_accession,
+             "filing_date": as_of}]}
+        (out / ticker).mkdir(parents=True)
+        (out / ticker / "manifest.json").write_text(json.dumps(manifest))
+        return manifest, []
+    return fetch_company
+
+
+def test_a_store_whose_filing_is_another_one_is_not_complete(tmp_path, monkeypatch, capsys):
+    from src import fetch_fixtures
+    # Two 10-Qs on one day: the store picks the larger accession, and the one
+    # named is the smaller. Planted; the second accession is invented.
+    other = "0001628280-26-060362"
+    monkeypatch.setattr(fetch_fixtures, "Fetcher",
+                        lambda _agent: _Index([DETECTED, (other, DETECTED[1])]))
+    monkeypatch.setattr(fetch_fixtures, "fetch_company", _stand_in_store(other, monkeypatch))
+    code = fetch_fixtures.main(["--ticker", "CIEN", "--accession", DETECTED[0],
+                                "--out", str(tmp_path / "store")])
+    assert code == fetch_fixtures.FETCH_FAILED
+    assert f"the store's 10-Q is {other}, not {DETECTED[0]}" in capsys.readouterr().err
+
+
+def test_a_store_that_holds_the_named_filing_is_complete(tmp_path, monkeypatch):
+    from src import fetch_fixtures
+    monkeypatch.setattr(fetch_fixtures, "Fetcher", lambda _agent: _Index([DETECTED]))
+    monkeypatch.setattr(fetch_fixtures, "fetch_company", _stand_in_store(DETECTED[0], monkeypatch))
+    assert fetch_fixtures.main(["--ticker", "CIEN", "--accession", DETECTED[0],
+                                "--out", str(tmp_path / "store")]) == 0
+
+
+@pytest.mark.parametrize("held", ["manifest.json", "10-Q/cien-20260502.htm"])
+def test_an_existing_store_is_not_refetched_to_another_date(tmp_path, monkeypatch, capsys,
+                                                            held):
+    from src import fetch_fixtures
+    store = tmp_path / "store"
+    (store / "CIEN" / held).parent.mkdir(parents=True, exist_ok=True)
+    (store / "CIEN" / held).write_text("{}")
+    monkeypatch.setattr(fetch_fixtures, "Fetcher", lambda _agent: _Index([DETECTED]))
+    monkeypatch.setattr(fetch_fixtures, "fetch_company",
+                        lambda *a: pytest.fail("fetched into a store that already exists"))
+    code = fetch_fixtures.main(["--ticker", "CIEN", "--accession", DETECTED[0],
+                                "--out", str(store)])
+    assert code == fetch_fixtures.FETCH_FAILED
+    assert "already holds a store" in capsys.readouterr().err
+    assert (store / "CIEN" / held).read_text() == "{}"
+
+
+def test_an_accession_names_one_company(tmp_path, monkeypatch, capsys):
+    from src import fetch_fixtures
+    monkeypatch.setattr(fetch_fixtures, "Fetcher",
+                        lambda _agent: pytest.fail("looked up with two companies named"))
+    code = fetch_fixtures.main(["--ticker", "CIEN", "--ticker", "NVDA",
+                                "--accession", DETECTED[0], "--out", str(tmp_path / "s")])
+    assert code == fetch_fixtures.FETCH_FAILED
+    assert "give exactly one --ticker" in capsys.readouterr().err
+
+
+def test_a_given_as_of_is_refused_rather_than_replaced(tmp_path, monkeypatch, capsys):
+    from src import fetch_fixtures
+    monkeypatch.setattr(fetch_fixtures, "Fetcher",
+                        lambda _agent: pytest.fail("looked up with two cutoffs given"))
+    code = fetch_fixtures.main(["--ticker", "CIEN", "--accession", DETECTED[0],
+                                "--as-of", "2026-09-01", "--out", str(tmp_path / "s")])
+    assert code == fetch_fixtures.FETCH_FAILED
+    assert "not both" in capsys.readouterr().err
+
+
+class _CommittedEdgar:
+    """EDGAR as the committed CIEN fixtures recorded it, and nothing more.
+
+    Every answer is bytes the fixture fetcher stored and hashed: the documents
+    by the URL each manifest row records, the submissions index turned back
+    into EDGAR's parallel arrays, companyfacts under EDGAR's own keys, and each
+    submission's directory and header listing only the documents on record. A
+    URL the record does not hold is an error, so the real fetch cannot reach
+    past it.
+    """
+
+    def __init__(self):
+        from src import fetch_fixtures
+        root = REPO_ROOT / "tests" / "fixtures" / "CIEN"
+        manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+        self.documents, self.by_accession = {}, {}
+        for row in manifest["documents"]:
+            raw = fetch_fixtures.read_stored(root / row["path"], row["stored"])
+            assert hashlib.sha256(raw).hexdigest() == row["sha256"]
+            if row["role"] == "submissions_index":
+                index = json.loads(raw)["filings"]
+            elif row["role"] == "standard_taxonomy_history":
+                facts = json.loads(raw)
+            else:
+                self.documents[row["url"]] = raw
+                self.by_accession.setdefault(row["accession"], []).append(row)
+        self.index = {"filings": {"recent": {
+            "accessionNumber": [r["accession"] for r in index],
+            "filingDate": [r["filing_date"] for r in index],
+            "reportDate": [r["report_date"] for r in index],
+            "form": [r["form"] for r in index],
+            "items": [r["items"] for r in index],
+            "primaryDocument": [r["primary_document"] for r in index],
+            "primaryDocDescription": [r["primary_doc_description"] for r in index]}}}
+        self.facts = {"cik": int(facts["cik"]), "entityName": facts["entity_name"],
+                      "facts": facts["facts"]}
+
+    def _accession(self, url):
+        folder = url.split("/")[7]
+        for accession in self.by_accession:
+            if accession.replace("-", "") == folder:
+                return accession
+        raise AssertionError(f"no submission on record at {url}")
+
+    def get(self, url):
+        if url in self.documents:
+            return self.documents[url]
+        if url.endswith("-index-headers.html"):
+            return "".join(f"<TYPE>{'EX-99.1' if row['role'] == 'exhibit_99_1' else row['form']}"
+                           f"\n<FILENAME>{row['url'].rsplit('/', 1)[1]}\n"
+                           for row in self.by_accession[self._accession(url)]).encode()
+        raise AssertionError(f"not on record: {url}")
+
+    def get_json(self, url):
+        if url == "https://data.sec.gov/submissions/CIK0000936395.json":
+            return self.index
+        if url == "https://data.sec.gov/api/xbrl/companyfacts/CIK0000936395.json":
+            return self.facts
+        if url.endswith("/index.json"):
+            return {"directory": {"item": [
+                {"name": row["url"].rsplit("/", 1)[1]}
+                for row in self.by_accession[self._accession(url)]]}}
+        raise AssertionError(f"not on record: {url}")
+
+
+def test_a_store_fetched_up_to_a_filing_builds_that_filing(tmp_path, monkeypatch):
+    """The real fetch, against EDGAR as the committed record has it, then extract.
+
+    The expected accession and date are the index row the committed store
+    carries for CIEN's quarter filed 2026-06-04, the same row the ledger names.
+    Nothing is stubbed between the fetch and the bundle.
+    """
+    from src import fetch_fixtures
+    monkeypatch.setattr(fetch_fixtures, "Fetcher", lambda _agent: _CommittedEdgar())
+    monkeypatch.setattr(fetch_fixtures, "MIN_SECONDS_BETWEEN_REQUESTS", 0)
+    store = tmp_path / "store"
+    assert fetch_fixtures.main(["--ticker", "CIEN", "--accession", STORE_HOLDS[0],
+                                "--out", str(store)]) == 0
+    fetched = json.loads((store / "CIEN" / "manifest.json").read_text(encoding="utf-8"))
+    assert fetched["as_of"] == STORE_HOLDS[1]
+    assert {row["role"] for row in fetched["documents"]} >= {
+        "primary_html", "xbrl_instance", "submissions_index", "standard_taxonomy_history"}
+
+    out = tmp_path / "bundle"
+    assert assemble_bundle.main(["--ticker", "CIEN", "--form", "10-Q",
+                                 "--accession", STORE_HOLDS[0], "--fixtures", str(store),
+                                 "--prior-runs", str(tmp_path / "runs"),
+                                 "--out", str(out)]) == 0
+    manifest = json.loads((out / "input_manifest.json").read_text(encoding="utf-8"))
+    assert (manifest["accession"], manifest["filing_date"]) == STORE_HOLDS
+    assert manifest["cutoff"] == STORE_HOLDS[1]

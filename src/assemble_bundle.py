@@ -32,7 +32,18 @@ manifest is.
 **The output root is an argument** and the default is never created as a side
 effect. The loop that runs this cannot write `runs/`, and nothing here tries.
 
+**`--accession` builds that filing or nothing.** The store holds one triggering
+report per form -- the latest filed at or before its own as-of date -- so a
+build that takes no accession builds whatever the store happens to hold. On
+2026-09-23 detect named CIEN's 10-Q filed 2026-09-03 and this built the one
+filed 2026-06-04, from a store fetched as of 2026-09-01, and said nothing. Named,
+an accession the store does not hold as its triggering report is refused before
+anything is read; `src/fetch_fixtures.py --accession` is what builds a store up
+to it.
+
     python3.12 -m src.assemble_bundle --ticker AAPL --form 10-K --out /tmp/bundle
+    python3.12 -m src.assemble_bundle --ticker CIEN --form 10-Q \
+        --accession 0001628280-26-060361 --fixtures /tmp/store --out /tmp/bundle
 """
 
 from __future__ import annotations
@@ -461,8 +472,13 @@ def prior_predictions(ticker: str, root: Path, cutoff=None) -> tuple[str, list[d
 # --- the bundle ---------------------------------------------------------------
 
 def build(ticker: str, form: str, *, cutoff=None, fixtures_root=cutoff_guard.FIXTURES,
-          prior_runs: Path = DEFAULT_ROOT, rules_version: str | None = None) -> dict:
+          prior_runs: Path = DEFAULT_ROOT, rules_version: str | None = None,
+          accession: str | None = None) -> dict:
     """Every file's text, plus what the manifest needs to describe them.
+
+    `accession`, when given, is the filing this bundle must be: a store whose
+    triggering report of this form is any other filing is refused before
+    anything else is read, rather than built as a stand-in for it.
 
     `rules_version` is None, which writes the null the module docstring
     explains, or one of `RULES_VERSIONS`. Refused before anything is read: a
@@ -480,6 +496,13 @@ def build(ticker: str, form: str, *, cutoff=None, fixtures_root=cutoff_guard.FIX
             "scored against nothing")
     trigger = cutoff_guard.one_document(ticker, form, "primary_html",
                                         fixtures_root=fixtures_root)
+    if accession is not None and trigger["accession"] != accession:
+        raise BundleError(
+            f"{ticker} {form} {accession} is not in this store: its {form} is "
+            f"{trigger['accession']}, filed {trigger['filing_date']}. Fetch a "
+            f"store up to the filing named (python3.12 -m src.fetch_fixtures "
+            f"--ticker {ticker} --accession {accession} --out STORE) rather "
+            f"than build another filing in its place")
     # The cutoff is the triggering report's own filing date unless a run names
     # another one. Nothing filed after it is read, so the rule is enforced by
     # what is loaded rather than by remembering to check.
@@ -677,9 +700,11 @@ def write(bundle: dict, out: Path) -> Path:
 
 def assemble(ticker: str, form: str, out: Path, *, cutoff=None,
              fixtures_root=cutoff_guard.FIXTURES,
-             prior_runs: Path = DEFAULT_ROOT, rules_version: str | None = None) -> dict:
+             prior_runs: Path = DEFAULT_ROOT, rules_version: str | None = None,
+             accession: str | None = None) -> dict:
     bundle = build(ticker, form, cutoff=cutoff, fixtures_root=fixtures_root,
-                   prior_runs=prior_runs, rules_version=rules_version)
+                   prior_runs=prior_runs, rules_version=rules_version,
+                   accession=accession)
     write(bundle, Path(out))
     return bundle["manifest"]
 
@@ -703,6 +728,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--rules-version", default=None, choices=list(RULES_VERSIONS),
                         help="the rules version the run is scored against; "
                              "default none, which the manifest records as null")
+    parser.add_argument("--accession", default=None,
+                        help="the filing to build; refused unless the store holds "
+                             "it as its triggering report of --form")
     args = parser.parse_args(argv)
 
     ticker = args.ticker.upper()
@@ -710,7 +738,8 @@ def main(argv: list[str] | None = None) -> int:
         bundle = build(ticker, args.form, cutoff=args.cutoff,
                        fixtures_root=Path(args.fixtures),
                        prior_runs=Path(args.prior_runs),
-                       rules_version=args.rules_version)
+                       rules_version=args.rules_version,
+                       accession=args.accession)
         out = Path(args.out) if args.out else default_out(
             ticker, bundle["manifest"]["accession"])
         write(bundle, out)
