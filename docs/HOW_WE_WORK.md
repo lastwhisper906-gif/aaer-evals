@@ -135,6 +135,10 @@ Every routine below is a **scheduled task**, not a loop run.
   are open, and the `docs/needs_judgment.md` rows. Status only. It never asks a
   question and never waits for an answer; `tools/daily_summary.sh` writes it and
   the notifier speaks it
+- **morning report** — the nightly crew's results, failures first, as the final
+  message of a cloud scheduled task at 07:30 US Eastern; it also opens the
+  night's pull request. `docs/routines/morning-report.md`. The night itself is
+  `.github/workflows/nightly.yml`, Python with no model
 
 ### Weekly
 
