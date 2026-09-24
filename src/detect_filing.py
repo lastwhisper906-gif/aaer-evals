@@ -54,8 +54,9 @@ LOOKUP_FAILED = 2
 # the one that carries the earnings release.
 TRIGGERING_FORMS = ("10-K", "10-Q")
 EARNINGS_FORM, EARNINGS_ITEM = "8-K", "2.02"
-EARNINGS_KEY = "8-K item 2.02"
-KINDS = (*TRIGGERING_FORMS, EARNINGS_KEY)
+# The kind's machine key: an 8-K carrying item 2.02 is the earnings release.
+EARNINGS_RELEASE = "earnings_release"
+KINDS = (*TRIGGERING_FORMS, EARNINGS_RELEASE)
 
 
 def kind(filing: dict) -> str | None:
@@ -67,7 +68,7 @@ def kind(filing: dict) -> str | None:
     if filing["form"] in TRIGGERING_FORMS:
         return filing["form"]
     if filing["form"] == EARNINGS_FORM and EARNINGS_ITEM in (filing.get("items") or "").split(","):
-        return EARNINGS_KEY
+        return EARNINGS_RELEASE
     return None
 
 

@@ -47,8 +47,12 @@ def _index(rows: list[tuple[str, str, str, str]]) -> dict:
     }}}
 
 
-# Not in date order: the first company's older 10-Q and older 8-K come first, so
-# "latest" has to be read by date and not by position.
+# Not in date order, and not in accession order either. The first company lists
+# an older 10-Q and an older earnings release before the newer ones; the second
+# lists its newer 10-Q before an older one that carries the larger accession. So
+# "the first row", "the last row" and "the largest accession" each name a wrong
+# filing somewhere below, and only the filing date names the right one. Where
+# two filings of one kind share a date, the larger accession is the later one.
 PLANTED = {
     "0000000001": [
         ("0000000001-26-000005", "2026-05-01", "10-Q", ""),
@@ -58,11 +62,15 @@ PLANTED = {
         ("0000000001-26-000007", "2026-08-01", "8-K", "2.02,9.01"),
         ("0000000001-26-000010", "2026-09-21", "10-K/A", ""),
         ("0000000001-25-000006", "2025-11-01", "10-K", ""),
+        # An amended 8-K carrying 2.02 is an 8-K/A in the index, not an 8-K.
+        ("0000000001-26-000011", "2026-09-22", "8-K/A", "2.02,9.01"),
     ],
     "0000000002": [
         ("0000000002-26-000003", "2026-09-22", "10-K", ""),
         ("0000000002-26-000002", "2026-09-22", "8-K", "2.02,9.01"),
+        ("0000000002-26-000004", "2026-09-22", "8-K", "2.02"),
         ("0000000002-26-000001", "2026-06-01", "10-Q", ""),
+        ("0000000002-26-000009", "2026-03-01", "10-Q", ""),
     ],
     "0000000003": [
         ("0000000003-26-000002", "2026-03-01", "10-Q", ""),
@@ -73,11 +81,13 @@ PLANTED = {
 # Read off PLANTED by hand.
 EXPECTED_LATEST = {
     "AAA": {"10-K": "0000000001-25-000006", "10-Q": "0000000001-26-000008",
-            "8-K item 2.02": "0000000001-26-000007"},
+            "earnings_release": "0000000001-26-000007"},
+    # The 10-Q of 06-01 over the larger accession filed 03-01; of the two
+    # earnings releases filed 09-22, the larger accession.
     "BBB": {"10-K": "0000000002-26-000003", "10-Q": "0000000002-26-000001",
-            "8-K item 2.02": "0000000002-26-000002"},
+            "earnings_release": "0000000002-26-000004"},
     # No 10-K, and "12.02" is not item 2.02.
-    "CCC": {"10-K": None, "10-Q": "0000000003-26-000002", "8-K item 2.02": None},
+    "CCC": {"10-K": None, "10-Q": "0000000003-26-000002", "earnings_release": None},
 }
 
 
@@ -159,11 +169,44 @@ def test_new_is_on_or_after_since_and_not_already_run(three, tmp_path):
     new = {c["ticker"]: [(e["kind"], e["accession"]) for e in c["new"]]
            for c in found["companies"]}
     # AAA: the 10-Q of 2026-09-10 is on the day, so new; the 8-K of 09-20 is
-    # item 5.02 and the 10-K/A is an amendment, so neither is one of the three.
-    # BBB: the 10-K has a run already; the 8-K 2.02 of the same day does not.
+    # item 5.02, and the 10-K/A and the 8-K/A are amendments, so none of those.
+    # BBB: the 10-K has a run already; both earnings releases of the same day
+    # are new -- every one, not the latest -- in date and then accession order.
     assert new == {"AAA": [("10-Q", "0000000001-26-000008")],
-                   "BBB": [("8-K item 2.02", "0000000002-26-000002")],
+                   "BBB": [("earnings_release", "0000000002-26-000002"),
+                           ("earnings_release", "0000000002-26-000004")],
                    "CCC": []}
+
+
+def test_a_row_carries_the_index_fields_under_their_own_names():
+    filing = {"accessionNumber": "0000000001-26-000008", "filingDate": "2026-09-10",
+              "reportDate": "2026-08-01", "form": "10-Q", "items": "",
+              "primaryDocument": "q.htm"}
+    assert detect_filing.row(filing) == {
+        "accession": "0000000001-26-000008", "form": "10-Q",
+        "filing_date": "2026-09-10", "report_date": "2026-08-01", "items": "",
+        "primary_document": "q.htm"}
+
+
+def test_the_summary_line_names_each_new_filing(three, tmp_path):
+    # Company by company in the universe's order, and within one company by
+    # filing date and then accession: BBB's three all fall on 2026-09-22.
+    found = detect_filing.detect(StandIn(), since="2026-09-10", universe_path=three,
+                                 runs_root=tmp_path / "runs")
+    assert detect_filing.summary_line(found) == (
+        "detect filing: 3 of 3 lookups succeeded, 4 new since 2026-09-10 ("
+        "AAA 10-Q 0000000001-26-000008; "
+        "BBB earnings_release 0000000002-26-000002; BBB 10-K 0000000002-26-000003; "
+        "BBB earnings_release 0000000002-26-000004)")
+
+
+def test_main_refuses_a_since_that_is_not_a_date(three, tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(detect_filing.fetch_fixtures, "Fetcher",
+                        lambda _agent: pytest.fail("looked up with no valid since"))
+    code = detect_filing.main(["--since", "yesterday", "--universe", str(three),
+                               "--runs", str(tmp_path / "runs")])
+    assert code == detect_filing.LOOKUP_FAILED
+    assert "is not a YYYY-MM-DD date" in capsys.readouterr().err
 
 
 def test_main_exits_two_when_a_lookup_fails(three, tmp_path, monkeypatch, capsys):
