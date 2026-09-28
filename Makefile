@@ -8,7 +8,7 @@
 PYTHON ?= .venv/bin/python
 BASELINE ?= origin/main
 
-.PHONY: check append-check plain-name-check secret-check test
+.PHONY: check append-check plain-name-check secret-check test fetch
 
 # The whole gate. Run this before opening a pull request. CI runs this same
 # target, so the gate is defined once -- the same rule written in two files is
@@ -32,3 +32,11 @@ secret-check:
 
 test:
 	$(PYTHON) -m pytest tests -q
+
+# The SEC's Financial Statement and Notes data sets into ~/aaer-data, outside
+# this tree (src/fsn.py): every zip src/fsn_index/ names, fetched and checked
+# against its sha256, then loaded into ~/aaer-data/fsn.duckdb. Both steps stop
+# before a write that would leave less than 50 GB free on that disk.
+fetch:
+	$(PYTHON) -m src.fsn fetch
+	$(PYTHON) -m src.fsn load
