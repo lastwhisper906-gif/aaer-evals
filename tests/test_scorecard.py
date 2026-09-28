@@ -27,15 +27,15 @@ the fixture is empty, which is an answer:
                                      reserves_allowance_released
                 AAPL single agent    revenue_receivables_outrun_sales
                 CSCO pipeline        revenue_receivables_outrun_sales
-                CSCO shuffled        reserves_allowance_released
                 NVDA pipeline        revenue_receivables_outrun_sales
     pressure    AAPL pipeline        margins_gross_margin_falling
                 AAPL single agent    margins_gross_margin_falling
                 LFUS pipeline        liquidity_cash_runway_short
 
 A register is not scored against an outcome, so the anomaly tables count every
-run, LFUS included: the forward pipeline left three registers on each question,
-and no shuffled pressure file exists anywhere in the fixture.
+run, LFUS included: the forward pipeline left three registers on each question.
+The shuffled control's register on CSCO left with the control, retired on
+2026-09-23.
 """
 
 from __future__ import annotations
@@ -176,7 +176,9 @@ def test_the_beneish_m_score_is_the_first_accounting_row():
      ("Financial pressure scorecard", pressure)])
 def test_the_rows_are_in_the_checklists_order_and_say_who_computes_them(heading, rows):
     recorded = checklist_rows(heading)
-    assert len(recorded) == 8, f"{heading}: the document lists {len(recorded)} rows"
+    # Seven since 2026-09-23, when the owner retired the shuffled-report control
+    # and its two rows with it.
+    assert len(recorded) == 7, f"{heading}: the document lists {len(recorded)} rows"
     printed = rows()
     # Each row is printed once per side of the freeze, the sides adjacent.
     assert [cells[0] for cells in printed] == [key for key, _ in recorded
@@ -252,16 +254,12 @@ def test_the_pipelines_pilot_score_is_the_hand_computation():
     assert hit_rate_of(accounting(), "pipeline_accounting", PILOT) == f"{4 / 4:.4f}"
 
 
-def test_the_two_controls_are_scored_in_the_same_table_as_the_pipeline():
+def test_the_control_is_scored_in_the_same_table_as_the_pipeline():
     """§8: every baseline and control on the same targets, none of them merged
-    into the pipeline's number. The shuffled control was wrong every time."""
+    into the pipeline's number."""
     single_agent = ((0.7 - 1) ** 2 + (0.6 - 1) ** 2 + (0.3 - 0) ** 2 + (0.4 - 0) ** 2) / 4
-    shuffled = ((0.4 - 1) ** 2 + (0.3 - 1) ** 2 + (0.7 - 0) ** 2 + (0.6 - 0) ** 2) / 4
     assert brier_of(accounting(), "single_agent_accounting", PILOT) == \
         f"{single_agent:.4f}" == "0.1250"
-    assert brier_of(accounting(), "shuffled_accounting", PILOT) == \
-        f"{shuffled:.4f}" == "0.4250"
-    assert hit_rate_of(accounting(), "shuffled_accounting", PILOT) == f"{0 / 4:.4f}"
 
 
 def test_the_pressure_rows_are_the_hand_computation():
@@ -293,7 +291,7 @@ def test_a_row_no_run_answered_keeps_its_place_and_carries_no_number():
         cells = row_of(accounting(), key, PILOT)
         assert cells[3:] == ["0", "not on record", "not on record", "not on record"]
     for key in ("naive_forecast", "ohlson_o_score", "altman_z_score",
-                "short_interest_ratio", "shuffled_pressure"):
+                "short_interest_ratio"):
         assert row_of(pressure(), key, PILOT)[4] == "not on record"
 
 
@@ -804,7 +802,7 @@ def test_each_row_that_writes_a_register_is_a_column_in_the_checklists_order(
     baselines write none and have no column."""
     writes_a_register = [key for key, computed_by in checklist_rows(heading)
                          if computed_by != "Python"]
-    assert len(writes_a_register) == 3
+    assert len(writes_a_register) == 2
     header, _ = register_table(page(), axis)
     assert header == ["Anomaly", "Side of the rules-version freeze",
                       *writes_a_register]
@@ -816,29 +814,23 @@ def test_the_accounting_registers_are_the_hand_count():
     the controls left none on the forward side."""
     _, lines = register_table(page(), "accounting reliability")
     assert lines == [
-        ["reserves_allowance_released", PILOT_LABEL, "0 of 4", "1 of 4", "1 of 4"],
-        ["reserves_allowance_released", FORWARD_LABEL,
-         "not on record", "not on record", "0 of 3"],
-        ["revenue_receivables_outrun_sales", PILOT_LABEL, "1 of 4", "0 of 4", "2 of 4"],
-        ["revenue_receivables_outrun_sales", FORWARD_LABEL,
-         "not on record", "not on record", "1 of 3"],
+        ["reserves_allowance_released", PILOT_LABEL, "0 of 4", "1 of 4"],
+        ["reserves_allowance_released", FORWARD_LABEL, "not on record", "0 of 3"],
+        ["revenue_receivables_outrun_sales", PILOT_LABEL, "1 of 4", "2 of 4"],
+        ["revenue_receivables_outrun_sales", FORWARD_LABEL, "not on record", "1 of 3"],
     ]
 
 
 def test_the_pressure_registers_are_the_hand_count_and_count_a_run_still_waiting():
     """LFUS has left no outcome and is scored in nothing above, but a register
     is read, not scored: its runway anomaly is the forward pipeline's one of
-    three. No shuffled pressure file exists, so that column is not on record."""
+    three."""
     _, lines = register_table(page(), "financial pressure")
     assert lines == [
-        ["liquidity_cash_runway_short", PILOT_LABEL,
-         "0 of 4", "not on record", "0 of 4"],
-        ["liquidity_cash_runway_short", FORWARD_LABEL,
-         "not on record", "not on record", "1 of 3"],
-        ["margins_gross_margin_falling", PILOT_LABEL,
-         "1 of 4", "not on record", "1 of 4"],
-        ["margins_gross_margin_falling", FORWARD_LABEL,
-         "not on record", "not on record", "0 of 3"],
+        ["liquidity_cash_runway_short", PILOT_LABEL, "0 of 4", "0 of 4"],
+        ["liquidity_cash_runway_short", FORWARD_LABEL, "not on record", "1 of 3"],
+        ["margins_gross_margin_falling", PILOT_LABEL, "1 of 4", "1 of 4"],
+        ["margins_gross_margin_falling", FORWARD_LABEL, "not on record", "0 of 3"],
     ]
 
 
@@ -871,7 +863,7 @@ def test_nothing_counts_anomalies_into_a_verdict(tmp_path):
     for verdict_word in ("beats", "does not beat", "The structure", "decoration"):
         assert verdict_word not in anomalies, verdict_word
     _, lines = register_table(after, "accounting reliability")
-    assert ["reserves_allowance_six", PILOT_LABEL, "4 of 4", "0 of 4", "0 of 4"] in lines
+    assert ["reserves_allowance_six", PILOT_LABEL, "4 of 4", "0 of 4"] in lines
 
 
 @pytest.mark.parametrize("change, named", [

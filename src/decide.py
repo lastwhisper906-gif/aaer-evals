@@ -295,8 +295,7 @@ def gate_items(question: str, answer: dict) -> list[dict]:
 
     A checklist entry carries its evidence, and so does an anomaly in the
     register, in the checklist's own shape; an explanation's `id` names the
-    upstream item it is about, which is how the shuffled control reads it too
-    and which `docs/needs_judgment.md` still holds open; `market_direction`
+    upstream item it is about, which `docs/needs_judgment.md` still holds open; `market_direction`
     cites through `basis`, and is an item only when it answers.
     """
     items = [{"id": checklist_id(question, entry["key"]),

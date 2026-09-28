@@ -67,7 +67,7 @@ $pressure_verdicts
 
 Each prediction is an anomaly register: every anomaly found on its question's
 axis, listed whole. The tables below compare the rows that write one — the
-single-agent control, the shuffled control and the pipeline — one anomaly kind
+single-agent control and the pipeline — one anomaly kind
 at a time, a kind being the anomaly's name as the register wrote it. A cell says
 on how many of that side's runs the row listed that kind, out of the runs it
 left a register for. A register that lists nothing is an honest answer and is
