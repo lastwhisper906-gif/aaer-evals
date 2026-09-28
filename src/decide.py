@@ -49,8 +49,8 @@ the entries that cite into items `src/quote_gate.py`'s `gate` can hold, named
 by the question and the entry's own key, so the stage runner gates the
 supervisors in the same call as the readers and every drop in the run is
 counted in one place. `published` is the answer with every item the gate
-dropped taken out: a checklist entry whole, a `top_signals` name with its
-entry, and a `market_direction` that cannot be dropped -- §7 requires the
+dropped taken out: a checklist entry whole, an anomaly whole, and a
+`market_direction` that cannot be dropped -- §7 requires the
 field -- degraded to the abstention §7 allows. The prediction file is written
 once, into the run directory; the supervisor's own file stays in its session
 root as it wrote it.
@@ -282,6 +282,10 @@ def explanation_id(question: str, identifier: str) -> str:
     return f"{question}:explanations:{identifier}"
 
 
+def anomaly_id(question: str, name: str) -> str:
+    return f"{question}:anomalies:{name}"
+
+
 def market_id(question: str) -> str:
     return f"{question}:market_direction"
 
@@ -289,13 +293,16 @@ def market_id(question: str) -> str:
 def gate_items(question: str, answer: dict) -> list[dict]:
     """Every entry of a checked answer that cites, as an item the gate can hold.
 
-    A checklist entry carries its evidence; an explanation's `id` names the
+    A checklist entry carries its evidence, and so does an anomaly in the
+    register, in the checklist's own shape; an explanation's `id` names the
     upstream item it is about, which is how the shuffled control reads it too
     and which `docs/needs_judgment.md` still holds open; `market_direction`
     cites through `basis`, and is an item only when it answers.
     """
     items = [{"id": checklist_id(question, entry["key"]),
               "evidence": entry["evidence"]} for entry in answer["checklist"]]
+    items += [{"id": anomaly_id(question, entry["name"]),
+               "evidence": entry["evidence"]} for entry in answer["anomalies"]]
     items += [{"id": explanation_id(question, entry["id"]),
                "upstream_item_id": entry["id"]} for entry in answer["explanations"]]
     market = answer["market_direction"]
@@ -313,8 +320,8 @@ def published(run, question: str, answer: dict, kept: list[dict]) -> tuple[dict,
     prediction = dict(answer)
     prediction["checklist"] = [entry for entry in answer["checklist"]
                                if checklist_id(question, entry["key"]) in standing]
-    names = {entry["key"] for entry in prediction["checklist"]}
-    prediction["top_signals"] = [one for one in answer["top_signals"] if one in names]
+    prediction["anomalies"] = [entry for entry in answer["anomalies"]
+                               if anomaly_id(question, entry["name"]) in standing]
     prediction["explanations"] = [entry for entry in answer["explanations"]
                                   if explanation_id(question, entry["id"]) in standing]
     market = answer["market_direction"]

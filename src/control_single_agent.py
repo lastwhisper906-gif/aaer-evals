@@ -82,9 +82,10 @@ only branch available, which is why `EVIDENCE_FIELDS` carries `quote` beside the
 that tuple adds: the rest is `src/prediction_schema.py`'s own `EVIDENCE_FIELDS`.
 
 **The schema is checked by the one function both controls call.**
-`src/prediction_schema.py` holds §7's field lists, its three findings, support
-words and tiers and its signal ceiling, once, and `check_schema` hands it every
-field the model answers with this control's evidence shape as the argument. What
+`src/prediction_schema.py` holds §7's field lists, its three findings and support
+words and the anomaly register's closed lists, once, and `check_schema` hands it
+every field the model answers with this control's evidence shape as the
+argument. What
 stays here is the two fields that are the run's: the question this control
 asked, and the rules version out of the run's manifest.
 
@@ -110,14 +111,14 @@ probability abstains.
 
 **What a drop does.** A checklist entry whose evidence does not verify is
 dropped whole, because that is what the gate does with an item -- one failing
-citation drops the item, not the citation. An explanation whose id resolves to
-nothing goes the same way: §7 requires the field and not a row in it, so the
-entry leaves the list and the drop is counted. A `market_direction` whose basis
-does not resolve cannot be dropped, since §7 requires the field, so it degrades
-to `"insufficient"` with an empty basis and the drop is counted: the schema's
-own abstention, which the scorecard counts against the control, rather than a
-probability standing on an id that resolves to nothing. A `top_signals` entry
-naming a checklist key that went with a dropped entry goes with it.
+citation drops the item, not the citation -- and an anomaly in the register is
+gated and dropped the same way, under its name. An explanation whose id
+resolves to nothing goes the same way: §7 requires the field and not a row in
+it, so the entry leaves the list and the drop is counted. A `market_direction`
+whose basis does not resolve cannot be dropped, since §7 requires the field, so
+it degrades to `"insufficient"` with an empty basis and the drop is counted: the
+schema's own abstention, which the scorecard counts against the control, rather
+than a probability standing on an id that resolves to nothing.
 
 **The drop rows and the served model are returned, not written.** So are the
 rows for quotes that stood only through the gate's whitespace fold.
@@ -250,13 +251,22 @@ Write one JSON document against this schema, and nothing else:
 {schema}
 
 `continuous` is financial pressure only.
-`top_signals` holds at most five keys, and every one of them is the `key` of one
-of your own checklist entries.
-`tier` is `clear` when nothing is wrong. Say `clear` when things are clear, and
-never soften an adverse read or manufacture one.
 `market_direction.p_up` is the probability that the 60-trading-day abnormal
 return is positive, read through this question only. `"insufficient"` is an
 allowed value; use it when you mean it, and do not use it to avoid being scored.
+
+`anomalies` is the anomaly register: every anomaly you find on this question's
+axis, each one listed. Your goal is to find every anomaly, not to count flags
+against a cutoff, so nothing cuts the list, ranks it or counts it into a
+verdict. Every `axis` is `{axis}`. `name` is a plain descriptive name in
+lowercase letters and underscores, its area first and then what it is.
+`numbers_vs_prose` is `confirms` when the numbers show what the prose says they
+would, `contradicts` when they show the opposite, and `unresolved` when the
+numbers say nothing either way. `market_label` is what the market table shows
+for it -- `priced_in`, `not_priced` or `opposite_direction` -- or `absent` when
+you cannot label it; an anomaly with no market label is still listed. An empty
+`anomalies` list is an allowed, honest answer: give it when nothing is
+anomalous, and never soften an adverse read or manufacture one.
 
 Every entry of `evidence` carries two members: `upstream_item_id`, the paragraph
 id of the file you read it in, and `quote`, that paragraph's own text, verbatim.
@@ -264,8 +274,8 @@ Python string-matches the quote against the file you were handed, character for
 character. Any whitespace character -- a non-breaking space, a tab, a line
 break -- is read as an ordinary space, one for one; nothing else is normalized
 -- not a dash, not a quotation mark, not a run of whitespace -- and a checklist
-entry whose evidence does not match is dropped whole and counted. Every id in
-`market_direction.basis` is a paragraph id of those same files.
+entry or an anomaly whose evidence does not match is dropped whole and counted.
+Every id in `market_direction.basis` is a paragraph id of those same files.
 """
 
 
@@ -385,6 +395,12 @@ def checklist_gate_id(question: str, key: str) -> str:
     return f"{question}:checklist:{key}"
 
 
+def anomaly_gate_id(question: str, name: str) -> str:
+    """The handle the gate holds one anomaly by: its name, which `check_schema`
+    has already held to one entry per name, under the question."""
+    return f"{question}:anomalies:{name}"
+
+
 def market_gate_id(question: str) -> str:
     """The handle the gate holds `market_direction` by."""
     return f"{question}:market_direction"
@@ -429,12 +445,17 @@ def drop_reasons(payload: dict, question: str, index: dict) -> dict[str, str]:
     """
     declared = set(index)
     found: dict[str, str] = {}
-    for entry in payload["checklist"]:
-        identifier = checklist_gate_id(question, entry["key"])
+    cited = [(checklist_gate_id(question, entry["key"]), entry["evidence"])
+             for entry in payload["checklist"]]
+    # An anomaly rests on evidence of the checklist's own shape, so it is gated
+    # the same way and goes the same way: whole, and counted.
+    cited += [(anomaly_gate_id(question, entry["name"]), entry["evidence"])
+              for entry in payload["anomalies"]]
+    for identifier, evidence in cited:
         why = quote_gate.citation_drop_reason(
-            {"id": identifier, "evidence": entry["evidence"]}, declared)
+            {"id": identifier, "evidence": evidence}, declared)
         if why is None:
-            why = _first_bad_quote(identifier, entry["evidence"], index)
+            why = _first_bad_quote(identifier, evidence, index)
         if why is not None:
             found[identifier] = why
 
@@ -533,12 +554,12 @@ def verify(payload: dict, question: str, index: dict) -> tuple[dict, list[dict]]
     that names a set resolves for nobody.
 
     A checklist entry goes whole, because that is what the gate does with an
-    item. An explanation goes the same way: §7 does not require the list to
-    carry anything, so an explanation whose id resolves to nothing leaves and is
-    counted. `market_direction` cannot go -- §7 requires the field -- so it
-    degrades to the abstention §7 already allows, `"insufficient"` with an empty
-    basis, and the drop is counted like any other. A `top_signals` entry naming
-    a key that left goes with it.
+    item, and so does an anomaly. An explanation goes the same way: §7 does not
+    require the list to carry anything, so an explanation whose id resolves to
+    nothing leaves and is counted. `market_direction` cannot go -- §7 requires
+    the field -- so it degrades to the abstention §7 already allows,
+    `"insufficient"` with an empty basis, and the drop is counted like any
+    other.
     """
     reasons = drop_reasons(payload, question, index)
     kept = dict(payload)
@@ -547,8 +568,8 @@ def verify(payload: dict, question: str, index: dict) -> tuple[dict, list[dict]]
     kept["explanations"] = [
         entry for entry in payload["explanations"]
         if explanation_gate_id(question, entry["id"]) not in reasons]
-    standing = {entry["key"] for entry in kept["checklist"]}
-    kept["top_signals"] = [one for one in payload["top_signals"] if one in standing]
+    kept["anomalies"] = [entry for entry in payload["anomalies"]
+                         if anomaly_gate_id(question, entry["name"]) not in reasons]
     if market_gate_id(question) in reasons:
         kept["market_direction"] = {"p_up": prediction_schema.INSUFFICIENT, "basis": []}
     dropped = [{"report": CONTROL_FILES[question], "item_id": identifier,
@@ -563,12 +584,16 @@ def folded_quotes(kept: dict, question: str, index: dict) -> list[dict]:
     and every quote that stood only through that is counted. The gate's own
     count is written by `gate`, which this control does not call, so the rows
     are built here, in the shape the gate writes them, and handed back beside
-    the drops.
+    the drops. An anomaly's evidence is quoted the checklist's way and gated
+    under its name, so its folded quotes are counted under that name too.
     """
     rows = []
-    for entry in kept["checklist"]:
-        identifier = checklist_gate_id(question, entry["key"])
-        for cited in entry["evidence"]:
+    cited_by = [(checklist_gate_id(question, entry["key"]), entry["evidence"])
+                for entry in kept["checklist"]]
+    cited_by += [(anomaly_gate_id(question, entry["name"]), entry["evidence"])
+                 for entry in kept["anomalies"]]
+    for identifier, evidence in cited_by:
+        for cited in evidence:
             paragraph = cited["upstream_item_id"]
             characters = quote_gate.folded_in(index, paragraph, cited["quote"])
             if characters:
@@ -775,7 +800,7 @@ def prompt(question: str, input_dir, bundle_root) -> str:
             f"{Path(bundle_root) / MANIFEST} names no rules_version, and §7 gives "
             "every prediction the run's")
     return CONTROL_PROMPT.format(question=question.replace("_", " "),
-                                 files=listed,
+                                 axis=question, files=listed,
                                  schema=schema(manifest["rules_version"]))
 
 

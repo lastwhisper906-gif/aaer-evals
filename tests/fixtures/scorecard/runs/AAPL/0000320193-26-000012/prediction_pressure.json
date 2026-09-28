@@ -10,6 +10,18 @@
       "numbers_vs_market_operating_cash_flow"
     ]
   },
-  "tier": "clear",
-  "top_signals": []
+  "anomalies": [
+    {
+      "name": "margins_gross_margin_falling",
+      "axis": "financial_pressure",
+      "what": "gross margin fell year over year",
+      "numbers_vs_prose": "confirms",
+      "evidence": [
+        {
+          "upstream_item_id": "numbers_vs_market_operating_cash_flow"
+        }
+      ],
+      "market_label": "priced_in"
+    }
+  ]
 }

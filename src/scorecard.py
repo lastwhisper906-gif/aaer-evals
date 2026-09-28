@@ -30,6 +30,15 @@ margin after publication. `tests/test_scorecard.py` reads them out of the
 checklist and string-matches them against the rendered page, so the page and the
 document cannot drift apart quietly.
 
+**The anomaly registers are compared per kind, and counted into nothing.** The
+owner's decision of 2026-09-23 makes each prediction a register of every anomaly
+found, with no tier and no count against a cutoff. So the page puts the rows
+that write a register side by side one kind at a time -- on how many runs each
+listed it, out of the runs it left a register for -- and stops there: no cell
+is summed across kinds, no kind is ordered by its numbers, and no verdict
+sentence reads a register. A register is not scored against an outcome, so
+those tables count every run, including one still inside its horizon.
+
 **Every row carries which side of the rules-version freeze it came from.**
 §10 draws that line by when the filing existed, not by which company filed it, so
 each run's own `input_manifest.json` supplies two dates -- its `cutoff`, which the
@@ -66,15 +75,16 @@ What a run has to leave behind
     control_single_agent_accounting.json, control_shuffled_accounting.json
     control_single_agent_pressure.json, control_shuffled_pressure.json
 
-Each answer file carries `market_direction.p_up` in the shape
-`docs/CHECKLIST.md` §7 gives the two predictions; `baselines.json` carries one
-such object per row key, and whatever else the baseline computed is ignored
-here. A file that is not there, or a key that is not in `baselines.json`, makes
-that row read `not on record` -- the row keeps its place in the order and carries
-no number. `naive_forecast` and `short_interest_ratio` are scorecard rows that
-the formula-baselines item does not list, so they will read `not on record`
-until something writes them into `baselines.json`; naming the gap here beats
-inventing a second file for two rows.
+Each answer file carries `market_direction.p_up` and the `anomalies` register in
+the shape `docs/CHECKLIST.md` §7 gives the two predictions; `baselines.json`
+carries one `market_direction` object per row key and no register, and whatever
+else the baseline computed is ignored here. A file that is not there, or a key
+that is not in `baselines.json`, makes that row read `not on record` -- the row
+keeps its place in the order and carries no number. `naive_forecast` and
+`short_interest_ratio` are scorecard rows that the formula-baselines item does
+not list, so they will read `not on record` until something writes them into
+`baselines.json`; naming the gap here beats inventing a second file for two
+rows.
 
 `outcome.json` is not one of the files `docs/INPUT_SPEC.md` §6 lists, and that is
 stated rather than hidden. §6 lists what every layer saw and what each one said,
@@ -459,6 +469,38 @@ def answer(run: Run, row: Row):
     return float(p_up)
 
 
+def register(run: Run, row: Row) -> frozenset[str] | None:
+    """The anomaly kinds this row listed on this run, or None when it left no file.
+
+    `docs/CHECKLIST.md` §7 gives every answer an `anomalies` list and every
+    entry a `name`, and the name is the kind the anomaly tables compare. A file
+    that is there with no list, or with an entry that names nothing, is
+    malformed and refused -- the line `answer` draws for a missing probability,
+    for the same reason: read as absent, the run would leave that row's
+    denominator with nothing on the page to say a run went.
+    """
+    document = _document(run.directory, row.answered_in)
+    if document is None:
+        return None
+    where = run.directory / row.answered_in
+    # Missing and null are refused alike, so `.get` loses nothing here.
+    listed = document.get("anomalies")
+    if not isinstance(listed, list):
+        raise ScorecardError(
+            f"{where}: {row.key} carries no anomalies list -- an answer file that "
+            f"is present but malformed is refused rather than dropped from the "
+            f"count")
+    names = set()
+    for position, entry in enumerate(listed, start=1):
+        name = entry.get("name") if isinstance(entry, dict) else None
+        if not isinstance(name, str) or not name.strip():
+            raise ScorecardError(
+                f"{where}: {row.key} anomalies[{position}] names no anomaly -- a "
+                f"kind with no name cannot be compared with any other")
+        names.add(name)
+    return frozenset(names)
+
+
 def _hit(p_up: float, up: bool) -> bool:
     """A direction hit. Exactly one half is on neither side, so it is no hit."""
     return (p_up > 0.5 and up) or (p_up < 0.5 and not up)
@@ -620,6 +662,37 @@ def _verdicts(rows: tuple[Row, ...], runs: list[Run]) -> str:
     return "\n\n".join(said) if said else blocks()["no_verdict"]
 
 
+def _register_table(rows: tuple[Row, ...], runs: list[Run]) -> str:
+    """One axis's anomaly kinds, each on both sides of the freeze, compared.
+
+    One column per row that writes a register -- every row answered in a
+    prediction file rather than in `baselines.json`, in the checklist's order --
+    and one line per kind per side. A cell counts the runs that row listed the
+    kind on, out of the runs it left a register for there. No cell is summed
+    with another, and no line is placed by its numbers: kinds are in name order.
+    """
+    writing = [row for row in rows if row.answered_in != BASELINES]
+    held = {(row.key, run): register(run, row) for row in writing for run in runs}
+    kinds = sorted({name for names in held.values() if names for name in names})
+    if not kinds:
+        return blocks()["no_anomalies"]
+    lines = []
+    for kind in kinds:
+        for side in SIDES:
+            cells = []
+            for row in writing:
+                registers = [held[(row.key, run)] for run in runs
+                             if run.side == side and held[(row.key, run)] is not None]
+                cells.append(
+                    _fill("listed_of", registers=len(registers),
+                          listed=sum(1 for names in registers if kind in names))
+                    if registers else blocks()["no_answer"])
+            lines.append(_fill("register_line", anomaly=kind,
+                               side=_side_label(side), cells=" | ".join(cells)))
+    return _fill("register_table", columns=" | ".join(row.key for row in writing),
+                 rule="---|" * len(writing), lines="\n".join(lines))
+
+
 def _run_list(runs: list[Run]) -> str:
     if not runs:
         return blocks()["no_runs"]
@@ -645,6 +718,9 @@ def render(root) -> str:
         accounting_verdicts=_verdicts(ACCOUNTING_ROWS, scorable),
         pressure_rows=_table(PRESSURE_ROWS, scores(PRESSURE_ROWS, scorable)),
         pressure_verdicts=_verdicts(PRESSURE_ROWS, scorable),
+        # Every run, not the scorable ones: a register is read, not scored.
+        accounting_anomalies=_register_table(ACCOUNTING_ROWS, found),
+        pressure_anomalies=_register_table(PRESSURE_ROWS, found),
         run_list=_run_list(found),
     )
 

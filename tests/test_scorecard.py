@@ -19,6 +19,23 @@ The fixture is seven runs. Four fell before the rules-version freeze on
 abnormal returns were up, up, down, down. Two fell after it and are the forward
 cycle — NVDA up, QCOM down. The seventh, LFUS, was filed inside its horizon and
 has left no outcome, so it is listed on the page and scored in nothing.
+
+**The anomaly registers are planted by hand too**, and every other register in
+the fixture is empty, which is an answer:
+
+    accounting  AAPL pipeline        revenue_receivables_outrun_sales,
+                                     reserves_allowance_released
+                AAPL single agent    revenue_receivables_outrun_sales
+                CSCO pipeline        revenue_receivables_outrun_sales
+                CSCO shuffled        reserves_allowance_released
+                NVDA pipeline        revenue_receivables_outrun_sales
+    pressure    AAPL pipeline        margins_gross_margin_falling
+                AAPL single agent    margins_gross_margin_falling
+                LFUS pipeline        liquidity_cash_runway_short
+
+A register is not scored against an outcome, so the anomaly tables count every
+run, LFUS included: the forward pipeline left three registers on each question,
+and no shuffled pressure file exists anywhere in the fixture.
 """
 
 from __future__ import annotations
@@ -759,6 +776,133 @@ def test_two_rows_that_answered_no_run_in_common_are_not_compared(tmp_path):
     rows = table(section(rendered, "Accounting reliability", "Financial pressure"))
     assert brier_of(rows, "beneish_m_score", FORWARD) == f"{(0.8 - 1) ** 2:.4f}"
     assert brier_of(rows, "pipeline_accounting", FORWARD) == f"{(0.6 - 0) ** 2:.4f}"
+
+
+# --- the anomaly registers, compared per kind ---------------------------------
+
+PILOT_LABEL = "pilot · pipeline check"
+FORWARD_LABEL = "forward cycle · a result"
+
+
+def register_table(text: str, axis: str) -> tuple[list[str], list[list[str]]]:
+    """The header and the lines of one axis's anomaly table."""
+    below = text.split("## Anomalies on record")[1].split("## The runs this was")[0]
+    chunk = below.split(f"### On the {axis} axis")[1].split("###")[0]
+    lines = [[cell.strip() for cell in line.strip().strip("|").split("|")]
+             for line in chunk.splitlines() if line.startswith("|")]
+    header = lines[0]
+    return header, [cells for cells in lines[1:] if not set(cells[0]) <= set("-")]
+
+
+@pytest.mark.parametrize("heading, axis", [
+    ("Accounting reliability scorecard", "accounting reliability"),
+    ("Financial pressure scorecard", "financial pressure")])
+def test_each_row_that_writes_a_register_is_a_column_in_the_checklists_order(
+        heading, axis):
+    """§8's rows computed by a model call or by the pipeline are the ones that
+    answer the §7 schema, and so the ones that write a register. The Python
+    baselines write none and have no column."""
+    writes_a_register = [key for key, computed_by in checklist_rows(heading)
+                         if computed_by != "Python"]
+    assert len(writes_a_register) == 3
+    header, _ = register_table(page(), axis)
+    assert header == ["Anomaly", "Side of the rules-version freeze",
+                      *writes_a_register]
+
+
+def test_the_accounting_registers_are_the_hand_count():
+    """Kinds in name order, each on both sides. A cell is the runs that row
+    listed the kind on, out of the runs it left a register for on that side;
+    the controls left none on the forward side."""
+    _, lines = register_table(page(), "accounting reliability")
+    assert lines == [
+        ["reserves_allowance_released", PILOT_LABEL, "0 of 4", "1 of 4", "1 of 4"],
+        ["reserves_allowance_released", FORWARD_LABEL,
+         "not on record", "not on record", "0 of 3"],
+        ["revenue_receivables_outrun_sales", PILOT_LABEL, "1 of 4", "0 of 4", "2 of 4"],
+        ["revenue_receivables_outrun_sales", FORWARD_LABEL,
+         "not on record", "not on record", "1 of 3"],
+    ]
+
+
+def test_the_pressure_registers_are_the_hand_count_and_count_a_run_still_waiting():
+    """LFUS has left no outcome and is scored in nothing above, but a register
+    is read, not scored: its runway anomaly is the forward pipeline's one of
+    three. No shuffled pressure file exists, so that column is not on record."""
+    _, lines = register_table(page(), "financial pressure")
+    assert lines == [
+        ["liquidity_cash_runway_short", PILOT_LABEL,
+         "0 of 4", "not on record", "0 of 4"],
+        ["liquidity_cash_runway_short", FORWARD_LABEL,
+         "not on record", "not on record", "1 of 3"],
+        ["margins_gross_margin_falling", PILOT_LABEL,
+         "1 of 4", "not on record", "1 of 4"],
+        ["margins_gross_margin_falling", FORWARD_LABEL,
+         "not on record", "not on record", "0 of 3"],
+    ]
+
+
+def test_nothing_counts_anomalies_into_a_verdict(tmp_path):
+    """The owner's decision of 2026-09-23. Six anomalies planted in every
+    single-agent register move the anomaly table and nothing else: the score
+    tables and every verdict sentence are the page they were, and the anomaly
+    section carries no comparison sentence of its own."""
+    def listed_six(payload):
+        payload["anomalies"] = [
+            {"name": f"reserves_allowance_{word}", "axis": payload["question"],
+             "what": "planted", "numbers_vs_prose": "unresolved",
+             "evidence": [{"upstream_item_id": "notes_vs_market_reserves"}],
+             "market_label": "absent"}
+            for word in ("one", "two", "three", "four", "five", "six")]
+
+    changed = copy_of(tmp_path)
+    for ticker in PILOT_RUNS:
+        run = next((changed / ticker).iterdir())
+        for name in ("control_single_agent_accounting.json",
+                     "control_single_agent_pressure.json"):
+            edit(run, name, listed_six)
+
+    before, after = page(), scorecard.render(changed)
+    assert after != before
+    head = "## Anomalies on record"
+    assert after.split(head)[0] == before.split(head)[0]
+    anomalies = after.split(head)[1].split("## The runs this was")[0]
+    # The verdict blocks' own words, none of which the register section says.
+    for verdict_word in ("beats", "does not beat", "The structure", "decoration"):
+        assert verdict_word not in anomalies, verdict_word
+    _, lines = register_table(after, "accounting reliability")
+    assert ["reserves_allowance_six", PILOT_LABEL, "4 of 4", "0 of 4", "0 of 4"] in lines
+
+
+@pytest.mark.parametrize("change, named", [
+    (lambda payload: payload.pop("anomalies"), "anomalies"),
+    (lambda payload: payload.__setitem__("anomalies", None), "anomalies"),
+    (lambda payload: payload.__setitem__("anomalies", "none"), "anomalies"),
+    (lambda payload: payload["anomalies"][0].pop("name"), "anomalies[1]"),
+    (lambda payload: payload["anomalies"][0].__setitem__("name", ""), "anomalies[1]"),
+    (lambda payload: payload["anomalies"].__setitem__(0, "an anomaly"), "anomalies[1]"),
+])
+def test_an_answer_file_whose_register_cannot_be_read_stops_the_page(
+        tmp_path, change, named):
+    """§7 gives every answer an `anomalies` list. A file that is there with no
+    list, or with an entry that has no name, is malformed rather than absent:
+    read as absent it would leave that run out of the row's denominator with
+    nothing on the page to say so."""
+    changed = copy_of(tmp_path)
+    run = changed / "AAPL" / "0000320193-26-000012"
+    edit(run, "prediction_accounting.json", change)
+    with pytest.raises(scorecard.ScorecardError) as refused:
+        scorecard.render(changed)
+    assert str(run / "prediction_accounting.json") in str(refused.value)
+    assert named in str(refused.value)
+
+
+def test_a_root_with_no_register_says_so_under_both_axes(tmp_path):
+    empty = tmp_path / "runs"
+    empty.mkdir()
+    rendered = scorecard.render(empty)
+    below = rendered.split("## Anomalies on record")[1]
+    assert below.count("No register on record lists an anomaly on this axis.") == 2
 
 
 def test_rendering_the_same_record_twice_gives_the_same_page():
