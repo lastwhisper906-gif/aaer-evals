@@ -44,7 +44,7 @@ supervisor's own words are not lost.
 
 **What of an answer stands.** `check` holds the answer to the question it was
 asked and to the run's rules version, then to §7 field by field through
-`src/prediction_schema.py`, the check both controls call. `gate_items` turns
+`src/prediction_schema.py`, the check the single-agent control calls. `gate_items` turns
 the entries that cite into items `src/quote_gate.py`'s `gate` can hold, named
 by the question and the entry's own key, so the stage runner gates the
 supervisors in the same call as the readers and every drop in the run is
@@ -295,8 +295,7 @@ def gate_items(question: str, answer: dict) -> list[dict]:
 
     A checklist entry carries its evidence, and so does an anomaly in the
     register, in the checklist's own shape; an explanation's `id` names the
-    upstream item it is about, which is how the shuffled control reads it too
-    and which `docs/needs_judgment.md` still holds open; `market_direction`
+    upstream item it is about, which `docs/needs_judgment.md` still holds open; `market_direction`
     cites through `basis`, and is an item only when it answers.
     """
     items = [{"id": checklist_id(question, entry["key"]),
