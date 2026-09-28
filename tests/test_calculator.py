@@ -611,3 +611,14 @@ def test_a_price_left_in_another_section_is_refused(nvda):
     leaked = dict(nvda, ratios=dict(nvda["ratios"], stray={"price_at_cutoff": 1.0}))
     with pytest.raises(calculator.CalculatorInputError):
         calculator.filings_only(leaked)
+
+
+def test_qualcomms_debt_is_its_balance_sheets():
+    """Qualcomm's 10-Q for the quarter ended 2026-06-28 prints short-term debt 2,489
+    and long-term debt 12,781 (millions): total 15,270. The long-term line is tagged
+    `LongTermDebt`, and no noncurrent tag is on record at that date."""
+    out = calculator.calculate(ticker="QCOM", cutoff="2026-07-29", period_end="2026-06-28",
+                               form="10-Q")
+    debt = out["terms"]["debt_now"]
+    assert debt["value"] == 15_270 * MILLION
+    assert "check" in debt["parts"]["debt_noncurrent"]

@@ -180,8 +180,12 @@ FAMILIES: dict[str, dict] = {
     "debt_current": {"kind": "instant", "total": "DebtCurrent", "groups": (
         ("LongTermDebtAndCapitalLeaseObligationsCurrent", "LongTermDebtCurrent"),
         ("ShortTermBorrowings", "CommercialPaper"))},
+    # `LongTermDebt` is last: the taxonomy defines it as including current
+    # maturities, but Qualcomm tags its balance sheet's noncurrent line with it
+    # (12,781 million at 2026-06-28, beside short-term debt of 2,489). It is read
+    # only where neither noncurrent tag is on record, and flagged when it is.
     "debt_noncurrent": {"kind": "instant", "total": None, "groups": (
-        ("LongTermDebtAndCapitalLeaseObligations", "LongTermDebtNoncurrent"),)},
+        ("LongTermDebtAndCapitalLeaseObligations", "LongTermDebtNoncurrent", "LongTermDebt"),)},
     "acquisitions": {"kind": "duration", "total": None, "groups": (
         ("PaymentsToAcquireBusinessesNetOfCashAcquired",
          "PaymentsToAcquireBusinessesAndInterestInAffiliates"),)},
@@ -559,6 +563,11 @@ class Record:
         if not lines:
             out["note"] = (f"{name}: no line on record for this period -- the statement "
                            f"prints none of {', '.join(family_tags(name))}")
+        if "LongTermDebt" in used:
+            out["check"] = ("the noncurrent line is read from us-gaap:LongTermDebt, which the "
+                            "taxonomy defines as including current maturities; if this "
+                            "company's figure includes them, they are counted again in "
+                            "debt_current")
         return out
 
     def latest_balance(self, term: str, end: str) -> dict:
