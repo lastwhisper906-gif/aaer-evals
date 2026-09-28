@@ -147,6 +147,19 @@ BUNDLE_CATALOGUE = (
     "baselines.json",
     "control_single_agent_accounting.json",
     "control_single_agent_pressure.json",
+    # The owner's decision of 2026-09-28: the calculator, and the three analyses.
+    "calculator.json",
+    "calculator_before_analysts.json",
+    "calculator_before_drivers.json",
+    "calculator_filings_only.json",
+    "analysis_accounting.json",
+    "analysis_financial.json",
+    "assumptions.json",
+    "analysis_valuation.json",
+    "memo_ko.md",
+    "control_analysis_accounting.json",
+    "control_analysis_financial.json",
+    "control_assumptions.json",
 )
 
 # The three §6 names no builder in this repository writes yet. They are routed
@@ -179,6 +192,9 @@ PROBABILITY_KEY = re.compile(
 READER_REPORTS = ("report_numbers.md", "report_notes_text.md")
 COMPARER_REPORTS = ("report_numbers_vs_market.md", "report_notes_vs_market.md")
 ALL_REPORTS = READER_REPORTS + COMPARER_REPORTS
+FILINGS_ONLY = "calculator_filings_only.json"
+VALUATION_READS = ("analysis_accounting.json", "analysis_financial.json",
+                   "input_mdna.md", "input_8k.md")
 MARKET_TABLE = "input_market.json"
 MANIFEST = "input_manifest.json"
 
@@ -211,6 +227,14 @@ class Agent:
     layer: str
     sees: tuple[str, ...]
     writes: str
+    # The committed definition this directory runs, under `.claude/agents/`.
+    # The directory's own name unless one definition runs in two directories,
+    # as the valuation analyst's two passes do.
+    runs: str | None = None
+
+    @property
+    def prompt(self) -> str:
+        return self.runs or self.name
 
     @property
     def may_hold(self) -> tuple[str, ...]:
@@ -274,6 +298,25 @@ AGENTS: dict[str, Agent] = {
               writes="prediction_accounting.json"),
         Agent("supervisor-pressure", "supervisor", ALL_REPORTS + RULES_FILES,
               writes="prediction_pressure.json"),
+        # analysts: the two reader reports and what Python computed from the
+        # filings alone -- never a filing, never a price. The owner's decision of
+        # 2026-09-28; the three analyses are never merged.
+        Agent("accounting-analyst", "analyst", READER_REPORTS + (FILINGS_ONLY,),
+              writes="analysis_accounting.json"),
+        Agent("financial-analyst", "analyst", READER_REPORTS + (FILINGS_ONLY,),
+              writes="analysis_financial.json"),
+        # the valuation analyst: the whole calculator, price at the cutoff
+        # included, the two analyses, and the MD&A and the earnings release
+        # verbatim. Two passes, two directories, one definition.
+        # The first pass sees the calculator with the accounting adjustments
+        # applied and no DCF; the second, the calculator with the DCF Python ran
+        # on the first pass's drivers. Each is its own file, written once.
+        Agent("valuation-analyst", "valuation",
+              ("calculator_before_drivers.json",) + VALUATION_READS,
+              writes="assumptions.json"),
+        Agent("valuation-analyst-second-pass", "valuation",
+              ("calculator.json",) + VALUATION_READS + ("assumptions.json",),
+              writes="analysis_valuation.json", runs="valuation-analyst"),
     )
 }
 

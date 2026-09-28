@@ -556,7 +556,7 @@ class Record:
                     lines.append(found[chosen])
         used = {line["tag"] for line in lines}
         value = sum(line["value"] for line in lines)
-        out = {"value": value, "lines": lines, "rule": rule,
+        out = {"value": value, "lines": lines, "rule": rule, "unit": "USD",
                "formula": " + ".join(line["tag"] for line in lines) or "no line on record",
                "lines_not_added": [{"tag": tag, "value": fact["value"], "id": fact["id"]}
                                    for tag, fact in found.items() if tag not in used]}
@@ -798,7 +798,7 @@ def trailing_family(record: Record, name: str, periods: dict) -> dict:
              - parts["prior_year_to_date"]["value"])
     out = {"value": value,
            "formula": "prior_fiscal_year + this_year_to_date - prior_year_to_date",
-           "parts": parts}
+           "parts": parts, "unit": "USD"}
     if name in CASH_FLOW_FAMILIES:
         out["cash_effect"] = (effect["prior_fiscal_year"] + effect["this_year_to_date"]
                               - effect["prior_year_to_date"])
@@ -1318,13 +1318,14 @@ def quality_adjusted(simple: dict, compensation: dict, acquisitions: dict,
     for position, item in enumerate(adjustments or []):
         field = item.get("calculator_field")
         direction = item.get("direction")
-        amount = field_value(fields, field)
+        amount = adjustment_amount(fields, field)
         if direction not in ("reduce", "increase") or amount is None:
             refused.append({"position": position, "name": item.get("name"),
                             "calculator_field": field, "direction": direction,
                             "reason": ("direction is not 'reduce' or 'increase'"
                                        if direction not in ("reduce", "increase") else
-                                       f"{field!r} is not a number in calculator.json")})
+                                       f"{field!r} is not a dollar amount under "
+                                       f"{' or '.join(ADJUSTMENT_ROOTS)}")})
             continue
         before = value
         value = value - abs(amount) if direction == "reduce" else value + abs(amount)
@@ -1340,6 +1341,30 @@ def quality_adjusted(simple: dict, compensation: dict, acquisitions: dict,
             "adjustments_applied": applied, "adjustments_refused": refused,
             "rule": "an adjustment's amount is the absolute value of the field it names; "
                     "its direction is the analyst's"}
+
+
+# Where an adjustment's amount may come from: a dollar cell of the terms or of the
+# earnings-versus-cash section. A ratio or a count of days named as an amount
+# would be subtracted from free cash flow as though it were dollars.
+ADJUSTMENT_ROOTS = ("terms.", "earnings_versus_cash.")
+
+
+def adjustment_amount(fields: dict, path) -> float | None:
+    """The dollar amount at a path an adjustment names, or None. One rule, read by
+    the analysis gate and by the calculator alike."""
+    if not isinstance(path, str) or not path.startswith(ADJUSTMENT_ROOTS):
+        return None
+    node = fields
+    for part in path.split("."):
+        if isinstance(node, dict) and part in node:
+            node = node[part]
+        elif isinstance(node, list) and part.isdigit() and int(part) < len(node):
+            node = node[int(part)]
+        else:
+            return None
+    if not isinstance(node, dict) or node.get("unit") != "USD":
+        return None
+    return field_value(fields, path)
 
 
 def field_value(fields: dict, path: str | None) -> float | None:
@@ -1387,9 +1412,11 @@ def risk_free_rate(cutoff: dt.date) -> dict:
             best = (day, float(row[1]) / 100)
     if best is None:
         return {"missing": f"no DGS10 observation on or before {cutoff} is committed"}
+    # The file's own name and URL carry the date it was fetched to, which is later
+    # than most cutoffs, so the citation names the manifest entry and the hash.
     return {"value": best[1], "date": best[0].isoformat(), "series": entry["series"],
-            "source": entry["url"], "sha256": entry["sha256"],
-            "path": f"src/cost_of_capital/{entry['path']}"}
+            "source": "src/cost_of_capital/manifest.json, risk_free_rate",
+            "sha256": entry["sha256"]}
 
 
 def _xlsx_rows(raw: bytes) -> tuple[list[list], bool]:
@@ -1447,8 +1474,8 @@ def equity_risk_premium(cutoff: dt.date) -> dict:
     if best is None:
         return {"missing": f"no implied premium dated before {cutoff} is in the workbook"}
     return {"value": best[1], "month_start": best[0].isoformat(), "column": entry["column"],
-            "source": entry["url"], "sha256": entry["sha256"],
-            "path": f"src/cost_of_capital/{entry['path']}", "rule": entry["rule"]}
+            "source": "src/cost_of_capital/manifest.json, equity_risk_premium",
+            "sha256": entry["sha256"], "rule": entry["rule"]}
 
 
 NO_PRICES = ("no price series was given: the forward track's price source is Tiingo, "
@@ -1760,47 +1787,57 @@ def adjusted_value(base_revenue, drivers, tax, wacc, net_debt, leases, shares, b
                    moved: dict, ttm: dict) -> dict:
     """How much the accounting analyst's adjustments move the base value.
 
-    Two stated mechanisms, nothing else: an adjustment to earnings lowers the
-    operating margin in every year by its amount over trailing revenue; an
-    adjustment to cash flow raises the reinvestment rate in every year by its
-    amount over trailing after-tax operating income. Each is applied alone and
-    then all together, and the per-share change is printed for each.
+    An adjustment is one-time unless the analyst marks it `recurs`: a
+    receivables build or a reserve release happened once, and it moves value
+    once -- by its amount, over diluted shares, with no discounting because it
+    is already in the past. Only an adjustment the analyst marks as recurring,
+    with a quote saying why, is carried into every forecast year, by one of two
+    stated mechanisms: an earnings adjustment lowers the operating margin by its
+    amount over trailing revenue; a cash-flow adjustment raises the reinvestment
+    rate by its amount over trailing after-tax operating income. Each is applied
+    alone and then all together, and the per-share change is printed for each.
     """
     revenue = ttm["revenue"]["value"]
-    rows, margin_cut, reinvest_add = [], 0.0, 0.0
-    nopat = None
+    rows, margin_cut, reinvest_add, once = [], 0.0, 0.0, 0.0
+    nopat = moved.get("nopat")
     for item in moved.get("applied", []):
         amount = item["amount"] if item["direction"] == "reduce" else -item["amount"]
         target = item.get("applies_to", "cash_flow")
+        if not item.get("recurs"):
+            once += amount
+            rows.append({"name": item["name"], "applies_to": target, "recurs": False,
+                         "mechanism": "one-time: value lowered by the amount over diluted shares",
+                         "value_per_share": base_value - amount / shares,
+                         "moved_per_share": -amount / shares})
+            continue
         one = dict(drivers)
         if target == "earnings":
             cut = amount / revenue
             one["operating_margin_year_one"] -= cut
             one["operating_margin_year_ten"] -= cut
             margin_cut += cut
-            how = f"operating margin lowered by {cut} in every year"
+            how = f"recurring: operating margin lowered by {cut} in every year"
         else:
-            if nopat is None:
-                nopat = moved.get("nopat")
             if not nopat:
                 rows.append({"name": item["name"], "missing": "after-tax operating income is "
-                             "not computed, so a cash-flow adjustment cannot be expressed as "
-                             "reinvestment"})
+                             "not computed, so a recurring cash-flow adjustment cannot be "
+                             "expressed as reinvestment"})
                 continue
             add = amount / nopat
             one["reinvestment_rate_year_one"] += add
             one["reinvestment_rate_year_ten"] += add
             reinvest_add += add
-            how = f"reinvestment rate raised by {add} in every year"
+            how = f"recurring: reinvestment rate raised by {add} in every year"
         value = per_share(base_revenue, one, tax, wacc, net_debt, leases, shares)
-        rows.append({"name": item["name"], "applies_to": target, "mechanism": how,
-                     "value_per_share": value, "moved_per_share": value - base_value})
+        rows.append({"name": item["name"], "applies_to": target, "recurs": True,
+                     "mechanism": how, "value_per_share": value,
+                     "moved_per_share": value - base_value})
     together = dict(drivers)
     together["operating_margin_year_one"] -= margin_cut
     together["operating_margin_year_ten"] -= margin_cut
     together["reinvestment_rate_year_one"] += reinvest_add
     together["reinvestment_rate_year_ten"] += reinvest_add
-    value = per_share(base_revenue, together, tax, wacc, net_debt, leases, shares)
+    value = per_share(base_revenue, together, tax, wacc, net_debt, leases, shares) - once / shares
     return {"each": rows, "all_together": {"value_per_share": value,
                                            "moved_per_share": value - base_value},
             "base_value_per_share": base_value}
@@ -1924,12 +1961,15 @@ def calculate(*, ticker: str, cutoff, period_end: str, form: str, accession: str
     periods = trigger_periods(record.usd, period_end, form)
     terms = gather(record, periods)
     sections = ratios(record, terms, periods)
-    fields = {"trailing_four_quarters": terms["trailing_four_quarters"],
-              "balances_now": terms["balances_now"],
-              "balances_a_year_earlier": terms["balances_a_year_earlier"],
-              "cash_flow_families": terms["cash_flow_families"]}
+    # The paths an adjustment names are paths into calculator.json as it is written
+    # -- `terms.trailing_four_quarters....`, `earnings_versus_cash....` -- so the
+    # fields it is read from have that shape, and a path the gate admitted against
+    # the analyst's file is the path this reads.
     earnings = earnings_versus_cash(record, terms, periods)
-    fields["earnings_versus_cash"] = earnings
+    fields = {"terms": terms, "earnings_versus_cash": earnings,
+              "ratios": {key: sections[key] for key in ("profitability", "efficiency",
+                                                        "liquidity", "solvency", "growth")},
+              "ebit": sections["ebit"], "tax_rate": sections["tax_rate"]}
     adjustments = (accounting or {}).get("adjustments")
     free = free_cash_flows(terms, sections, adjustments, fields)
     if market_data is None:
@@ -1944,7 +1984,8 @@ def calculate(*, ticker: str, cutoff, period_end: str, form: str, accession: str
         nopat = (op["value"] * (1 - tax["value"])
                  if "value" in op and "value" in tax else None)
         moved = {"applied": [dict(item, applies_to=by_name.get(item["name"], {})
-                                  .get("applies_to", "cash_flow"))
+                                  .get("applies_to", "cash_flow"),
+                                  recurs=by_name.get(item["name"], {}).get("recurs") is True)
                              for item in quality["adjustments_applied"]],
                  "nopat": nopat}
     value = valuation(terms, sections, capital, assumptions, moved)

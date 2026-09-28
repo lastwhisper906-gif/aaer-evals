@@ -36,12 +36,14 @@ INPUT_SPEC = REPO_ROOT / "docs" / "INPUT_SPEC.md"
 CHECKLIST = REPO_ROOT / "docs" / "CHECKLIST.md"
 PROMPTS = REPO_ROOT / ".claude" / "agents"
 
-# docs/INPUT_SPEC.md, the three rows of the layer table, verbatim.
+# docs/INPUT_SPEC.md, the rows of the layer table, verbatim.
 LAYER_TABLE = (
     "| readers | the filing bundle for one company "
     "| prices, short interest, any other company |",
-    "| comparers | both reader reports plus the market table | any filing |",
-    "| supervisor | the four reports, and the rules version's checklist keys and output schema | any filing, the market table |",
+    "| comparers | both reader reports plus the market table — run only for the reaction-window labels | any filing |",
+    "| accounting and financial analysts | the two reader reports and `calculator_filings_only.json` | any filing, any price, the market table |",
+    "| valuation analyst | the calculator with the price at the cutoff (before its drivers, then with the DCF run on them), both checked analyses, the MD&A and the earnings release verbatim | a price after the cutoff, the market table |",
+    "| supervisor (retired from the live pipeline on 2026-09-28; its runs stay on record) | the four reports, and the rules version's checklist keys and output schema | any filing, the market table |",
 )
 
 # What each directory holds, sorted, read off the table above and off §1's
@@ -96,6 +98,32 @@ EXPECTED = {
         "rules_checklist_keys.md",
         "rules_output_schema.md",
     ),
+    # docs/INPUT_SPEC.md's layer table, the owner's decision of 2026-09-28.
+    "accounting-analyst": (
+        "calculator_filings_only.json",
+        "report_notes_text.md",
+        "report_numbers.md",
+    ),
+    "financial-analyst": (
+        "calculator_filings_only.json",
+        "report_notes_text.md",
+        "report_numbers.md",
+    ),
+    "valuation-analyst": (
+        "analysis_accounting.json",
+        "analysis_financial.json",
+        "calculator_before_drivers.json",
+        "input_8k.md",
+        "input_mdna.md",
+    ),
+    "valuation-analyst-second-pass": (
+        "analysis_accounting.json",
+        "analysis_financial.json",
+        "assumptions.json",
+        "calculator.json",
+        "input_8k.md",
+        "input_mdna.md",
+    ),
 }
 
 READERS = ("numbers-reader", "notes-text-reader")
@@ -124,6 +152,10 @@ WRITES = {
     "notes-vs-market": "report_notes_vs_market.md",
     "supervisor-accounting": "prediction_accounting.json",
     "supervisor-pressure": "prediction_pressure.json",
+    "accounting-analyst": "analysis_accounting.json",
+    "financial-analyst": "analysis_financial.json",
+    "valuation-analyst": "assumptions.json",
+    "valuation-analyst-second-pass": "analysis_valuation.json",
 }
 
 
@@ -204,7 +236,10 @@ def test_the_router_knows_no_file_the_bundle_does_not_name():
 def test_the_six_agents_are_the_six_prompts_committed():
     prompts = {path.stem for path in PROMPTS.glob("*.md")}
     # refute-check and reproduce-check are verification subagents, not layers.
-    assert set(agent_inputs.AGENTS) == prompts - {"refute-check", "reproduce-check"}
+    # One definition may run in two directories -- the valuation analyst's two
+    # passes -- so the rule is on the definitions the directories run.
+    assert {agent.prompt for agent in agent_inputs.AGENTS.values()} == \
+        prompts - {"refute-check", "reproduce-check"}
 
 
 @pytest.mark.parametrize("agent", COMPARERS)
@@ -228,7 +263,7 @@ def test_each_prompt_names_the_one_file_its_agent_writes(agent):
     `Write` and a session rooted at its own directory, so `x` lands there and
     nowhere else. That is why a directory holding it after the run is clean.
     """
-    prompt = (PROMPTS / f"{agent}.md").read_text(encoding="utf-8")
+    prompt = (PROMPTS / f"{agent_inputs.AGENTS[agent].prompt}.md").read_text(encoding="utf-8")
     assert f"Write `{WRITES[agent]}`" in prompt
     assert agent_inputs.AGENTS[agent].writes == WRITES[agent]
 
