@@ -44,7 +44,7 @@ supervisor's own words are not lost.
 
 **What of an answer stands.** `check` holds the answer to the question it was
 asked and to the run's rules version, then to §7 field by field through
-`src/prediction_schema.py`, the check both controls call. `gate_items` turns
+`src/prediction_schema.py`, the check the single-agent control calls. `gate_items` turns
 the entries that cite into items `src/quote_gate.py`'s `gate` can hold, named
 by the question and the entry's own key, so the stage runner gates the
 supervisors in the same call as the readers and every drop in the run is

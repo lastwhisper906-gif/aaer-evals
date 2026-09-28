@@ -22,7 +22,7 @@ purpose.
 
 The one version a run may name today is `pilot`, the owner's decision of
 2026-09-23: a pipeline check on the twelve carries `rules_version: "pilot"`, so
-both controls have a version to hold an answer to and the scorecard puts the run
+the single-agent control has a version to hold an answer to and the scorecard puts the run
 on the pilot side without a freeze date. It is asked for with
 `--rules-version pilot` and nothing else turns it on; the manifest then also
 carries `run_kind: "pipeline check"`, the words `docs/CHECKLIST.md` §10 gives
@@ -101,8 +101,8 @@ PIPELINE_CHECK = "pipeline check"
 RULES_VERSIONS = (PILOT,)
 PILOT_RULES_VERSION_COMMENT = (
     "pilot: a pipeline check on the twelve, run before any rules version is "
-    "frozen (the owner's decision of 2026-09-23); both controls hold an answer "
-    "to it, the scorecard prints every such run on the pilot side, and nothing "
+    "frozen (the owner's decision of 2026-09-23); the single-agent control "
+    "holds an answer to it, the scorecard prints every such run on the pilot side, and nothing "
     "observed on it is a signal")
 SERVED_MODEL_COMMENT = (
     "null until a prediction is served; the pinned-model runner records what it "
