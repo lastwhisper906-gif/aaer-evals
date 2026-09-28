@@ -181,6 +181,65 @@ CONCEPTS: dict[str, tuple[str, tuple[str, ...]]] = {
     "stockholders_equity": ("instant", ("StockholdersEquity",)),
 }
 
+# The terms `src/calculator.py` reads and no ratio of this table does: the
+# owner's decision of 2026-09-28 puts the free-cash-flow measures, the cost of
+# capital and the accounting analyst's cash-flow and off-balance-sheet areas on
+# the same record, read by the same first-tag-wins rule, so a term the two
+# files share is the same row in both. None of them is evidence that a fiscal
+# period exists (`PERIOD_TAGS` below), so adding them moves no period of this
+# table. Tag changes within these series are recorded in the tag-continuity map.
+CALCULATOR_TERMS: dict[str, tuple[str, tuple[str, ...]]] = {
+    "operating_income": ("duration", ("OperatingIncomeLoss",)),
+    "pretax_income": ("duration", (
+        "IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItems"
+        "NoncontrollingInterest",
+        "IncomeLossFromContinuingOperationsBeforeIncomeTaxesMinorityInterestAnd"
+        "IncomeLossFromEquityMethodInvestments")),
+    "income_tax_expense": ("duration", ("IncomeTaxExpenseBenefit",)),
+    "interest_expense": ("duration", (
+        "InterestExpense", "InterestExpenseNonoperating", "InterestExpenseDebt",
+        "InterestAndDebtExpense")),
+    "depreciation_and_amortization": ("duration", (
+        "DepreciationDepletionAndAmortization", "DepreciationAndAmortization",
+        "DepreciationAmortizationAndAccretionNet")),
+    "share_based_compensation": ("duration", (
+        "ShareBasedCompensation", "AllocatedShareBasedCompensationExpense")),
+    "capital_expenditure": ("duration", (
+        "PaymentsToAcquirePropertyPlantAndEquipment",
+        "PaymentsToAcquireProductiveAssets", "PaymentsForCapitalImprovements")),
+    "current_assets": ("instant", ("AssetsCurrent",)),
+    "current_liabilities": ("instant", ("LiabilitiesCurrent",)),
+    "accounts_payable": ("instant", ("AccountsPayableCurrent", "AccountsPayableTradeCurrent")),
+    "short_term_investments": ("instant", (
+        "ShortTermInvestments", "MarketableSecuritiesCurrent",
+        # NVIDIA's balance sheet line moved to this tag with its fiscal 2027
+        # 10-Qs; the same line, 34,143 million at 2026-07-26.
+        "DebtSecuritiesCurrent",
+        "AvailableForSaleSecuritiesDebtSecuritiesCurrent")),
+    "total_liabilities": ("instant", ("Liabilities",)),
+    "operating_lease_liability": ("instant", ("OperatingLeaseLiability",)),
+    "supplier_finance_obligation": ("instant", ("SupplierFinanceProgramObligation",)),
+    "unconditional_purchase_obligations": ("instant", (
+        "UnrecordedUnconditionalPurchaseObligationBalanceSheetAmount",
+        "PurchaseObligation")),
+    "inventory_write_down": ("duration", ("InventoryWriteDown",)),
+    "guarantee_maximum_exposure": ("instant", ("GuaranteeObligationsMaximumExposure",)),
+    "proceeds_from_sale_of_receivables": ("duration", (
+        "ProceedsFromSaleAndCollectionOfReceivables",
+        "TransferOfFinancialAssetsAccountedForAsSalesCashProceedsReceivedFor"
+        "AssetsDerecognizedAmount")),
+    "change_in_receivables": ("duration", (
+        "IncreaseDecreaseInAccountsReceivable",
+        "IncreaseDecreaseInReceivables",
+        "IncreaseDecreaseInAccountsAndOtherReceivables")),
+    "change_in_inventory": ("duration", ("IncreaseDecreaseInInventories",)),
+    "change_in_payables": ("duration", (
+        "IncreaseDecreaseInAccountsPayable", "IncreaseDecreaseInAccountsPayableTrade")),
+    "dividends_paid": ("duration", ("PaymentsOfDividends", "PaymentsOfDividendsCommonStock")),
+    "share_repurchases": ("duration", ("PaymentsForRepurchaseOfCommonStock",)),
+}
+CONCEPTS.update(CALCULATOR_TERMS)
+
 # Terms of the research-and-development column alone. They are not evidence
 # that a fiscal period exists: that list was measured on the ratio terms, and a
 # column added beside the table does not get to move the table's periods.
@@ -195,6 +254,7 @@ COLUMN_ONLY_TERMS = frozenset({"research_and_development_expense",
 # day takes a slot from a real one.
 PERIOD_TAGS = frozenset(tag for term, (kind, tags) in CONCEPTS.items()
                         if kind == "duration" and term not in COLUMN_ONLY_TERMS
+                        and term not in CALCULATOR_TERMS
                         for tag in tags)
 
 # docs/INPUT_SPEC.md §5 item 1, in the order the spec lists them — §4 is the
