@@ -1,4 +1,4 @@
-# aaer-evals — read 12 companies' filings and find every anomaly, accounting reliability and financial pressure kept separate
+# aaer-evals — read 12 companies' filings: accounting analysis, financial analysis and valuation from free cash flow, kept separate, every anomaly listed
 
 Read: docs/INPUT_SPEC.md (what we fetch), docs/CHECKLIST.md (what we look at), docs/HOW_WE_WORK.md (who does what)
 
@@ -6,8 +6,8 @@ Rules
 - Plain names. No letter-number codes. Machine keys are readable slugs. An item id says what it looks at: its area, then its subject, letters and underscores only.
 - Append-only under runs/ · rules/ · events/ · history/: existing content is never changed or deleted; appending to the end of a ledger file is allowed. A correction is a new file plus one ledger line.
 - Text handed to the predictor is verbatim. No summaries. Commit the text the model saw. Every report item carries a verbatim quote or an upstream item id that Python verifies; a failed item is dropped and counted.
-- Python does the arithmetic. The LLM judges text only.
-- Readers see filings. Comparers see reports and the market table. The supervisor sees reports. Nothing else crosses a layer.
+- Python does the arithmetic. Agents read, judge and choose assumptions with verbatim quotes; every number an agent writes comes from calculator.json or companyfacts. No composite score, no rank across companies.
+- Readers see filings. Comparers see reports and the market table. The accounting and financial analysts see reports and calculator.json, never prices; the valuation analyst adds MD&A and guidance paragraphs and the price at the cutoff. Nothing else crosses a layer.
 - An expected value comes from the source, never from the first run of the code it judges.
 - The twelve companies test the pipeline, not the signal.
 - Work with no judge (test, schema, check) is not a task. Leave it as "needs judgment".
