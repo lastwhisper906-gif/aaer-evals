@@ -8,21 +8,25 @@ consensus data: it is not on EDGAR and it is not free.
 Twelve companies: AAPL · STX · CSCO · PANW · CARR · LFUS · GNRC · CIEN · QCOM ·
 ESE · TTMI · NVDA.
 
-Two questions, never merged:
+Three analyses, never merged (the owner's decision of 2026-09-28):
 
-- **accounting reliability** — do these numbers reflect reality?
-- **financial pressure** — is this company under pressure?
+- **accounting** — do reported earnings and cash reflect economic reality?
+- **financial** — how healthy is this company?
+- **valuation** — what is it worth, and what does the price already assume?
 
-In fraud-triangle terms the first is opportunity plus traces in the numbers, the
-second is incentive.
-
-Three layers, and the two questions stay apart through all of them:
+There is no composite score and no rank across companies. Python computes every
+number, into `calculator.json`; the analysts read, judge and choose assumptions.
+The two questions of the first design — accounting reliability and financial
+pressure — are the first two analyses' ancestors, and the runs that answered
+them stay on record.
 
 | Layer | Sees | Never sees |
 |---|---|---|
 | readers | the filing bundle for one company | prices, short interest, any other company |
-| comparers | both reader reports plus the market table | any filing |
-| supervisor | the four reports, and the rules version's checklist keys and output schema | any filing, the market table |
+| comparers | both reader reports plus the market table — run only for the reaction-window labels | any filing |
+| accounting and financial analysts | the two reader reports and `calculator_filings_only.json` | any filing, any price, the market table |
+| valuation analyst | the calculator with the price at the cutoff (before its drivers, then with the DCF run on them), both checked analyses, the MD&A and the earnings release verbatim | a price after the cutoff, the market table |
+| supervisor (retired from the live pipeline on 2026-09-28; its runs stay on record) | the four reports, and the rules version's checklist keys and output schema | any filing, the market table |
 
 A comparer holds both reader reports because the layer's directory is one
 directory, but it **labels only the items of its own report** — numbers versus
@@ -375,6 +379,18 @@ prediction_accounting.json    the accounting reliability output
 prediction_pressure.json      the financial pressure output
 explanations.json             management explanations and their judgments
 baselines.json                every formula baseline, computed by Python
+calculator_before_analysts.json   every number Python computed before any analyst wrote
+calculator_filings_only.json  the same, with every section that reads a price removed
+calculator_before_drivers.json    with the accounting analyst's adjustments applied
+calculator.json               with the DCF run on the valuation analyst's drivers
+analysis_accounting.json      the accounting analysis, gated
+analysis_financial.json       the financial analysis, gated
+assumptions.json              the valuation analyst's drivers, gated
+analysis_valuation.json       the valuation analysis, gated
+memo_ko.md                    the three analyses in plain Korean, assembled by Python
+control_analysis_accounting.json  the single-agent control's three answers, gated
+control_analysis_financial.json
+control_assumptions.json
 control_single_agent_accounting.json
 control_single_agent_pressure.json
 ```
@@ -387,6 +403,8 @@ Size targets per layer, for a 10-K, and about half of each for a 10-Q:
 | notes-text reader | 12–20k tokens — the diffed prose only |
 | each comparer | 4–8k tokens — two reports plus the market table |
 | each supervisor | 3–6k tokens — the four reports |
+| accounting and financial analysts | the two reader reports and the filings-only calculator |
+| valuation analyst | the calculator, two analyses, MD&A and the earnings release |
 
 An 8-K 2.02 light run is 2–3k tokens.
 

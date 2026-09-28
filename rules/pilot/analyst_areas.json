@@ -1,0 +1,39 @@
+{
+  "note": "The owner's decision of 2026-09-28: the accounting analyst works seven areas in this order and an industry lens, and writes a finding or 'nothing found, and why' for each; the financial analyst files its pressure anomalies under the areas listed for it. An anomaly id starts with its area. docs/CHECKLIST.md carries the same lists with each indicator's source and who computes it. Added beside areas.json, which is not changed: rules/ is append-only.",
+  "accounting": {
+    "earnings_versus_cash": "Earnings versus cash",
+    "revenue_recognition": "Revenue recognition",
+    "estimates_and_reserves": "Estimates and reserves",
+    "cost_deferral": "Cost deferral (capitalization)",
+    "cash_flow_engineering_and_off_balance_sheet": "Cash-flow engineering and off-balance-sheet items",
+    "controls_audit_and_filing_signals": "Controls, audit and filing signals",
+    "cross_document_reconciliation": "Cross-document reconciliation",
+    "industry_lens": "Industry lens: semiconductors and hardware"
+  },
+  "financial": {
+    "results_against_expectations": "Results against expectations",
+    "liquidity_and_capital": "Liquidity and capital",
+    "narrative_signs_of_operating_pressure": "Narrative signs of operating pressure",
+    "profitability": "Profitability",
+    "efficiency": "Efficiency",
+    "solvency": "Solvency",
+    "growth": "Growth"
+  },
+  "new_indicators": {
+    "cash_flow_engineering_and_off_balance_sheet": {
+      "receivables_factoring_lifting_cash": "proceeds from the sale of receivables (calculator terms.trailing_four_quarters.proceeds_from_sale_of_receivables) or a factoring programme in the notes, lifting operating cash flow",
+      "supplier_finance_lifting_cash": "a supplier or supply-chain finance obligation (calculator terms.balances_now.supplier_finance_obligation) rising while payables days rise",
+      "cash_flow_classification_shift": "an item moving between operating and investing cash flows, or a new line in either, the notes explain or do not",
+      "purchase_obligations_growing": "unconditional purchase obligations (calculator terms.balances_now.unconditional_purchase_obligations) growing faster than cost of revenue",
+      "guarantees_and_variable_interest_entities": "guarantees (calculator terms.balances_now.guarantee_maximum_exposure), variable-interest entities or other off-balance-sheet arrangements added or widened",
+      "share_based_compensation_as_cost": "share-based compensation large against free cash flow (calculator free_cash_flow.free_cash_flow_quality_adjusted), treated as the real cost it is"
+    },
+    "industry_lens": {
+      "inventory_obsolescence": "inventory days rising, inventory write-downs (calculator terms.trailing_four_quarters.inventory_write_down) or reserve language changing",
+      "purchase_commitment_excess": "purchase commitments or prepaid supply agreements beyond what the revenue outlook absorbs",
+      "customer_concentration": "a customer's share of revenue or receivables rising (calculator concentration.facts, each a fact id with its axes)",
+      "channel_stuffing": "sell-in outrunning sell-through: receivables and distributor inventory rising faster than revenue, or end-of-quarter shipments",
+      "circular_or_vendor_financed_deals": "the company investing in, lending to or guaranteeing a customer that then buys from it"
+    }
+  }
+}

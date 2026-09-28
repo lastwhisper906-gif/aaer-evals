@@ -309,7 +309,70 @@ reliability event.
 
 ## 7. Output schemas
 
+### The three analyses
+
+The owner's decision of 2026-09-28 replaced the two predictions with three
+analyses, never merged: **accounting** (can these numbers be trusted),
+**financial** (how healthy is this company) and **valuation** (what is it worth,
+and what does the price already assume). There is no composite score and no
+rank across companies. The schemas are the three analyst prompts' own, under
+`.claude/agents/`; `src/analysis_check.py` is the gate that holds each output to
+them, and the area lists are `rules/pilot/analyst_areas.json`.
+
+**Numbers.** An analyst writes no digit in its own words. A number is written as
+the path of a `calculator.json` field in braces — `{ratios.liquidity.current_ratio}`,
+`{ratios.profitability.gross_margin|pct}` — and the memo puts the value there. A
+path that does not resolve drops the item it is in. Digits may appear only in a
+verbatim quote, an id, a form name (10-K, 10-Q, 8-K) or a four-digit year. The
+valuation analyst's driver values are the one exception: they are its
+assumptions.
+
+**`analysis_accounting.json`** — `areas` (the seven areas and the industry lens,
+each with `finding`, `verdict`, `evidence`, `fields`; an area is never left out,
+and one the gate drops keeps its name and says why), `reconciliation` (every
+notes item with an expected direction: `confirms`, `contradicts` or
+`unresolved`, never rounding a contradiction down), `anomalies` (every one, no
+count threshold: `id` = area then subject, `name`, `name_ko`, `area`, `what`,
+`numbers_vs_prose`, `evidence`, `fields`), `adjustments` (`direction` reduce or
+increase, `applies_to` cash_flow or earnings, the `calculator_field` whose value
+is the amount, a verbatim `quote`), `summary_ko`, `limits`.
+
+**`analysis_financial.json`** — `sections` (profitability, efficiency,
+liquidity, solvency, growth, free cash flow, each a `reading` with `fields`),
+`dupont`, `anomalies` (the financial-pressure register), `path_to_distress`,
+`summary_ko`, `limits`.
+
+**`assumptions.json`** — bear, base and bull, each with six drivers
+(`revenue_growth_year_one`, `terminal_growth` no higher than the risk-free
+rate, `operating_margin_year_one`, `operating_margin_year_ten`,
+`reinvestment_rate_year_one`, `reinvestment_rate_year_ten`) and for every driver
+a `reason`, a quote or calculator fields, and how it sits against history. A
+scenario missing any of it is dropped whole: the DCF runs on six drivers or not
+at all.
+
+**`analysis_valuation.json`** — `value_range`, `price_position`,
+`market_implied_growth`, `most_sensitive` (two), `accounting_adjustments`,
+`summary_ko`, `limits`. It states no recommendation to trade.
+
+**What each sees.** The accounting and financial analysts see the two reader
+reports and `calculator_filings_only.json`, which is `calculator.json` with
+every section that reads a price removed. The valuation analyst sees the whole
+`calculator.json`, both checked analyses, and the MD&A and the earnings release
+verbatim, in two directories: the first pass writes `assumptions.json`, the
+second, after Python has run the DCF on them, `analysis_valuation.json`.
+
+**The memo.** `src/memo.py` assembles `memo_ko.md` in plain Korean from the
+three analyses' `summary_ko` sentences and from `calculator.json`, one section
+per analysis, with no combined verdict.
+
+**The words.** "Fraud" and "manipulation" never appear in any analysis, and
+"buy", "sell" and "alpha" never in the valuation. The gate drops an item that
+uses one.
+
 ### The two predictions
+
+The supervisors' schema. It left the live pipeline on 2026-09-28, when the three
+analyses above replaced it; the pilot runs made under it stay scored against it.
 
 The same shape for both questions.
 
@@ -528,3 +591,44 @@ resolved, the scorer computed.
 ranking or an AUC computed over pilot filings is labelled `pipeline check` in
 the table itself, not in a footnote, because a number that travels without its
 label eventually gets quoted without it.
+
+---
+
+## 11. Analyst indicators added on 2026-09-28
+
+The owner's decision of 2026-09-28 gives the accounting analyst seven areas —
+earnings versus cash, revenue recognition, estimates and reserves, cost
+deferral, cash-flow engineering and off-balance-sheet items, controls, audit
+and filing signals, cross-document reconciliation — and an industry lens; the
+tables of §1 and §2 are what those areas read. Two are new, and their
+indicators are here. The area lists are `rules/pilot/analyst_areas.json`.
+These keys are read by the analysts; they are not keys of the two-question
+prediction schema of §7, whose counts in §1 and §2 are unchanged.
+
+### Cash-flow engineering and off-balance-sheet items
+
+Added by the owner's decision of 2026-09-28, as the accounting analyst's fifth
+area. The numbers come from `calculator.json`; the analyst reads them against
+the notes and names an adjustment where one moves free cash flow.
+
+| Key | Where | Computed by | Flags when |
+|---|---|---|---|
+| `receivables_factoring_lifting_cash` | cash-flow statement, receivables note | Python then LLM | proceeds from the sale of receivables are on record, or a factoring programme is disclosed, and operating cash flow rises with it |
+| `supplier_finance_lifting_cash` | supplier finance note (ASU 2022-04), balance sheet | Python then LLM | a supplier or supply-chain finance obligation rises while days payables outstanding rise |
+| `cash_flow_classification_shift` | cash-flow statement, policy notes | LLM | an item moves between operating and investing cash flows, or a new line appears in either |
+| `purchase_obligations_growing` | commitments note | Python then LLM | unconditional purchase obligations grow faster than cost of revenue |
+| `guarantees_and_variable_interest_entities` | guarantees, commitments and consolidation notes | Python then LLM | a guarantee, a variable-interest entity or another off-balance-sheet arrangement is added or widened |
+| `share_based_compensation_as_cost` | cash-flow statement | Python | share-based compensation is large against free cash flow; it is subtracted in the quality-adjusted measure whatever else is found |
+
+### Industry lens — semiconductors and hardware
+
+Most of the twelve make chips or hardware. The accounting analyst answers each
+of these with a finding or "nothing found, and why".
+
+| Key | Where | Computed by | Flags when |
+|---|---|---|---|
+| `inventory_obsolescence` | inventory note, trend table | Python then LLM | days of inventory rise, write-downs appear, or reserve language changes |
+| `purchase_commitment_excess` | commitments note, MD&A | LLM | purchase commitments or prepaid supply agreements run beyond what the revenue outlook absorbs |
+| `customer_concentration` | concentration disclosures (a fact per customer and benchmark axis) | Python then LLM | a customer's share of revenue or receivables rises |
+| `channel_stuffing` | receivables, distributor inventory, MD&A | Python then LLM | sell-in outruns sell-through: receivables and channel inventory rise faster than revenue, or shipments bunch at quarter end |
+| `circular_or_vendor_financed_deals` | investments, related-party and financing notes | LLM | the company invests in, lends to or guarantees a customer that then buys from it |

@@ -1,0 +1,348 @@
+"""The analysis gate and the memo, judged on analyses written here by hand.
+
+Every expected value below is a rule stated in `docs/CHECKLIST.md` §7 or in the
+three analyst prompts, applied by hand to an analysis written in this file:
+a `{path}` that resolves stands, one that does not drops its item; a digit in an
+analyst's own words drops its item; an evidence id that is not an item of a
+report the analyst saw drops its item; a quote that is not in the file it names
+drops its item; the owner's ruled-out words drop their item; and the memo puts
+the calculator's number where the analyst put the path.
+"""
+
+from __future__ import annotations
+
+import copy
+
+import pytest
+
+from src import analysis_check, memo
+
+FIELDS = {
+    "ticker": "TEST", "form": "10-Q", "period_end": "2026-06-30", "cutoff": "2026-07-30",
+    "missing": [],
+    "trend_table": {"quarters-back-0": {"ratios": {"gross_margin": {"value": 0.7}}}},
+    "ratios": {"liquidity": {"current_ratio": {"value": 2.5, "unit": "ratio"},
+                             "cash_runway_months": {"value": None, "not_burning_cash": True,
+                                                    "reason": "free cash flow is positive"}},
+               "profitability": {"gross_margin": {"value": 0.4, "unit": "ratio"}},
+               "efficiency": {"days_sales_outstanding": {"value": 61.25, "unit": "days"}}},
+    "terms": {"trailing_four_quarters": {"revenue": {"value": 1.5e9, "unit": "USD"},
+                                         "share_based_compensation": {"value": 3e7, "unit": "USD"}}},
+    "earnings_versus_cash": {"history": {"years": [{"revenue_growth": 0.1}]}},
+    "free_cash_flow": {"free_cash_flow_quality_adjusted": {"adjustments_applied": []}},
+    "valuation": {"missing": "no price"},
+}
+
+NUMBERS = '''```json
+{ "id": "revenue_recognition_receivables_rising", "what_changed": "x", "quote": "q", "paragraph_id": "p" }
+```'''
+NOTES = '''```json
+{ "id": "revenue_recognition_payment_terms_extended", "what_changed": "y",
+  "expected_direction": "up", "quote": "extended payment terms to certain customers",
+  "paragraph_id": "p2" }
+```
+[p2] We extended payment terms to certain customers during the quarter.'''
+SOURCES = {"report_numbers.md": NUMBERS, "report_notes_text.md": NOTES}
+
+AREA = {"finding": "Days sales outstanding rose to {ratios.efficiency.days_sales_outstanding}.",
+        "verdict": "weaker", "evidence": ["revenue_recognition_receivables_rising"],
+        "fields": ["ratios.efficiency.days_sales_outstanding"]}
+
+
+def accounting(**changes):
+    payload = {
+        "question": "do reported earnings and cash reflect economic reality?",
+        "areas": {name: copy.deepcopy(AREA) for name in analysis_check.ACCOUNTING_AREAS},
+        "reconciliation": [{"notes_item": "revenue_recognition_payment_terms_extended",
+                            "numbers_items": ["revenue_recognition_receivables_rising"],
+                            "outcome": "confirms", "why": "both rise"}],
+        "anomalies": [{"id": "revenue_recognition_receivables_outrun_revenue",
+                       "name": "receivables outrun revenue", "area": "revenue_recognition",
+                       "what": "DSO at {ratios.efficiency.days_sales_outstanding}",
+                       "numbers_vs_prose": "confirms",
+                       "evidence": ["revenue_recognition_payment_terms_extended"],
+                       "fields": []}],
+        "adjustments": [{"name": "extended terms", "direction": "reduce",
+                         "applies_to": "cash_flow",
+                         "calculator_field": "terms.trailing_four_quarters.revenue",
+                         "quote": "extended payment terms to certain customers",
+                         "quote_from": "report_notes_text.md", "evidence": []}],
+        "summary_ko": {"earnings_versus_cash": "매출채권 회전일수는 {ratios.efficiency.days_sales_outstanding}입니다."},
+        "limits": analysis_check.LIMITS["accounting"],
+    }
+    payload.update(changes)
+    return payload
+
+
+def test_a_clean_analysis_stands_whole():
+    out = analysis_check.check("accounting", accounting(), fields=FIELDS, sources=SOURCES)
+    assert out["dropped_count"] == 0
+    assert len(out["anomalies"]) == 1 and len(out["adjustments"]) == 1
+
+
+def test_a_number_in_the_analysts_own_words_drops_the_item():
+    payload = accounting()
+    payload["anomalies"][0]["what"] = "DSO rose to 61 days"
+    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
+    assert out["anomalies"] == []
+    assert out["dropped_count"] == 1
+
+
+def test_a_form_name_and_a_year_are_not_numbers():
+    payload = accounting()
+    payload["anomalies"][0]["what"] = "the 10-Q for fiscal 2026 says so"
+    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
+    assert out["dropped_count"] == 0
+
+
+def test_a_path_that_is_not_a_number_drops_the_item():
+    payload = accounting()
+    payload["anomalies"][0]["what"] = "{ratios.efficiency.nothing_here}"
+    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
+    assert out["anomalies"] == []
+
+
+def test_an_evidence_id_no_report_carries_drops_the_item():
+    payload = accounting()
+    payload["anomalies"][0]["evidence"] = ["revenue_recognition_invented"]
+    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
+    assert out["anomalies"] == []
+
+
+def test_a_quote_not_in_the_named_report_drops_the_adjustment():
+    payload = accounting()
+    payload["adjustments"][0]["quote"] = "payment terms were never changed"
+    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
+    assert out["adjustments"] == []
+
+
+def test_a_quote_folds_whitespace_one_for_one_as_the_quote_gate_does():
+    """The owner's fold of 2026-09-23: each whitespace character reads as one space,
+    one for one, and a quote that stood only through it is counted. A run of two
+    spaces against one is not the same text and is not folded into it."""
+    payload = accounting()
+    payload["adjustments"][0]["quote"] = "extended payment\nterms to certain customers"
+    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
+    assert len(out["adjustments"]) == 1
+    assert out["normalized_quotes"] == 1
+    payload["adjustments"][0]["quote"] = "extended  payment terms to certain customers"
+    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
+    assert out["adjustments"] == []
+
+
+def test_an_anomaly_that_cites_nothing_is_dropped():
+    payload = accounting()
+    payload["anomalies"][0]["evidence"] = []
+    payload["anomalies"][0]["fields"] = []
+    payload["anomalies"][0]["what"] = "something is off"
+    assert analysis_check.check("accounting", payload, fields=FIELDS,
+                                sources=SOURCES)["anomalies"] == []
+
+
+def test_a_bare_four_digit_number_is_a_number_and_a_named_year_is_not():
+    payload = accounting()
+    payload["anomalies"][0]["what"] = "inventory of 2048 million"
+    assert analysis_check.check("accounting", payload, fields=FIELDS,
+                                sources=SOURCES)["anomalies"] == []
+    payload["anomalies"][0]["what"] = "since fiscal 2024, under ASC 606 and ASU 2022-04, in Note 12"
+    assert analysis_check.check("accounting", payload, fields=FIELDS,
+                                sources=SOURCES)["dropped_count"] == 0
+
+
+def test_a_derivative_or_a_korean_ruled_out_word_is_caught():
+    for text in ("fraudulent activity", "the figures were manipulated", "분식 의심"):
+        payload = accounting()
+        payload["anomalies"][0]["what"] = text
+        assert analysis_check.check("accounting", payload, fields=FIELDS,
+                                    sources=SOURCES)["anomalies"] == [], text
+
+
+def test_the_korean_name_is_held_to_the_same_rule():
+    payload = accounting()
+    payload["anomalies"][0]["name_ko"] = "매출채권 61일"
+    assert analysis_check.check("accounting", payload, fields=FIELDS,
+                                sources=SOURCES)["anomalies"] == []
+
+
+def test_a_brace_that_is_not_a_placeholder_drops_the_item():
+    payload = accounting()
+    payload["anomalies"][0]["what"] = "DSO { ratios.efficiency.days_sales_outstanding }"
+    assert analysis_check.check("accounting", payload, fields=FIELDS,
+                                sources=SOURCES)["anomalies"] == []
+
+
+def test_the_ruled_out_words_drop_their_item():
+    payload = accounting()
+    payload["anomalies"][0]["what"] = "this looks like fraud"
+    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
+    assert out["anomalies"] == []
+
+
+def test_a_failing_area_keeps_its_name_and_says_it_was_dropped():
+    payload = accounting()
+    payload["areas"]["cost_deferral"]["finding"] = "capitalized cost rose 12 percent"
+    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
+    assert "dropped" in out["areas"]["cost_deferral"]
+    assert set(out["areas"]) == set(analysis_check.ACCOUNTING_AREAS)
+
+
+def test_an_area_left_out_is_named_as_missing():
+    payload = accounting()
+    del payload["areas"]["industry_lens"]
+    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
+    assert out["areas"]["industry_lens"] == {"dropped": "the analyst wrote nothing for it"}
+
+
+def test_a_contradiction_is_an_outcome_and_a_made_up_one_is_not():
+    payload = accounting()
+    payload["reconciliation"][0]["outcome"] = "contradicts"
+    assert analysis_check.check("accounting", payload, fields=FIELDS,
+                                sources=SOURCES)["reconciliation"]
+    payload["reconciliation"][0]["outcome"] = "mostly fine"
+    assert not analysis_check.check("accounting", payload, fields=FIELDS,
+                                    sources=SOURCES)["reconciliation"]
+
+
+def test_an_anomaly_id_starts_with_its_area():
+    payload = accounting()
+    payload["anomalies"][0]["id"] = "receivables_outrun_revenue"
+    assert analysis_check.check("accounting", payload, fields=FIELDS,
+                                sources=SOURCES)["anomalies"] == []
+
+
+def test_the_limits_sentence_is_the_rules_version_own():
+    payload = accounting(limits="we looked hard")
+    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
+    assert out["limits"] == analysis_check.LIMITS["accounting"]
+    assert any(row["where"] == "limits" for row in out["dropped_items"])
+
+
+def test_the_valuation_analysis_may_not_say_buy():
+    payload = {"value_range": {"reading": "a buy at this range", "fields": []},
+               "price_position": {"reading": "not computed", "fields": []},
+               "market_implied_growth": {"reading": "not computed", "fields": []},
+               "accounting_adjustments": {"reading": "none", "fields": []},
+               "most_sensitive": [], "summary_ko": {}, "limits": ""}
+    out = analysis_check.check("valuation", payload, fields=FIELDS, sources={})
+    assert "dropped" in out["value_range"]
+
+
+def test_an_assumption_scenario_without_a_reason_is_dropped_whole():
+    driver = {"reason": "the base case", "fields": ["ratios.profitability.gross_margin"]}
+    scenario = {name: 0.02 for name in ("revenue_growth_year_one", "terminal_growth",
+                                         "operating_margin_year_one",
+                                         "operating_margin_year_ten",
+                                         "reinvestment_rate_year_one",
+                                         "reinvestment_rate_year_ten")}
+    good = dict(scenario, reasons={name: driver for name in scenario})
+    bad = dict(scenario, reasons={})
+    out = analysis_check.check_assumptions({"scenarios": {"bear": bad, "base": good,
+                                                          "bull": good}},
+                                           fields=FIELDS, sources={})
+    assert set(out["scenarios"]) == {"base", "bull"}
+    assert out["dropped_count"] == 1
+
+
+# --- the memo ---------------------------------------------------------------------------
+
+def test_the_memo_puts_the_calculators_number_where_the_path_was():
+    """61.25 days is written '61.2일' or '61.3일'; Python's own format rounds half to even
+    on the binary value, so the test reads it as one decimal of 61.25."""
+    text = memo.fill("회전일수 {ratios.efficiency.days_sales_outstanding}", FIELDS)
+    assert text == f"회전일수 {61.25:,.1f}일"
+    assert memo.fill("{ratios.profitability.gross_margin|pct}", FIELDS) == "40.0%"
+    assert memo.fill("{terms.trailing_four_quarters.revenue}", FIELDS) == "15.0억 달러"
+
+
+def test_the_memo_keeps_the_three_analyses_apart_and_adds_nothing_up():
+    checked = analysis_check.check("accounting", accounting(), fields=FIELDS, sources=SOURCES)
+    text = memo.memo(ticker="TEST", form="10-Q", period_end="2026-06-30", cutoff="2026-07-30",
+                     fields=FIELDS, accounting=checked, financial=None, valuation=None,
+                     baselines=None)
+    assert text.index("## 1. 회계 분석") < text.index("## 2. 재무 분석") < text.index("## 3. 가치평가")
+    assert "no price" in text
+    for word in ("종합 점수", "순위", "매수", "매도"):
+        assert word not in text.replace("회사 간 순위는 없습니다", "")
+
+
+def test_a_trend_table_label_with_hyphens_is_a_path():
+    payload = accounting()
+    payload["anomalies"][0]["what"] = "gross margin {trend_table.quarters-back-0.ratios.gross_margin|pct}"
+    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
+    assert out["dropped_count"] == 0
+
+
+def test_a_cited_field_that_states_why_it_has_no_value_stands_but_not_in_a_sentence():
+    payload = accounting()
+    payload["anomalies"][0]["fields"] = ["ratios.liquidity.cash_runway_months"]
+    assert analysis_check.check("accounting", payload, fields=FIELDS,
+                                sources=SOURCES)["dropped_count"] == 0
+    payload["anomalies"][0]["what"] = "runway {ratios.liquidity.cash_runway_months}"
+    assert analysis_check.check("accounting", payload, fields=FIELDS,
+                                sources=SOURCES)["anomalies"] == []
+
+
+def test_a_filing_date_an_item_number_and_a_form_before_a_korean_particle_are_not_numbers():
+    payload = accounting()
+    payload["anomalies"][0]["what"] = "an 8-K filed 2026-07-02 under Item 5.02"
+    payload["summary_ko"]["earnings_versus_cash"] = "임원 변동 8-K의 본문은 없습니다."
+    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
+    assert out["dropped_count"] == 0
+
+
+def test_the_memo_never_prints_what_the_gate_dropped():
+    payload = accounting()
+    payload["areas"]["cost_deferral"]["finding"] = "capitalized cost rose 12 percent, fraud risk"
+    checked = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
+    text = memo.memo(ticker="TEST", form="10-Q", period_end="2026-06-30", cutoff="2026-07-30",
+                     fields=FIELDS, accounting=checked, financial=None, valuation=None,
+                     baselines=None)
+    assert "12 percent" not in text and "fraud" not in text
+    assert "제외된 문장" in text
+
+
+def test_the_control_cites_the_paragraphs_of_its_own_input():
+    sources = {"input_notes.md": "[acc:notes:1] We extended payment terms to certain customers.\n"}
+    payload = accounting()
+    payload["anomalies"][0]["evidence"] = ["acc:notes:1"]
+    payload["reconciliation"] = []
+    payload["adjustments"][0]["quote_from"] = "input_notes.md"
+    for area in payload["areas"].values():
+        area["evidence"] = ["acc:notes:1"]
+    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=sources,
+                               paragraph_ids=True)
+    assert out["dropped_count"] == 0
+
+
+def test_a_quantity_after_a_year_word_or_a_notes_word_is_still_a_number():
+    for text in ("grew by 1950 basis points", "sold in 2048 units", "senior notes 25 million",
+                 "non-recurring items 12 percent"):
+        payload = accounting()
+        payload["anomalies"][0]["what"] = text
+        assert analysis_check.check("accounting", payload, fields=FIELDS,
+                                    sources=SOURCES)["anomalies"] == [], text
+
+
+def test_innocent_korean_words_are_not_the_ruled_out_ones():
+    payload = accounting()
+    payload["anomalies"][0]["what"] = "사기업 고객과 검사기 재고, 자사주 매수, 매도가능증권"
+    assert analysis_check.check("accounting", payload, fields=FIELDS,
+                                sources=SOURCES)["dropped_count"] == 0
+
+
+def test_an_adjustment_amount_is_a_dollar_cell_and_nothing_else():
+    payload = accounting()
+    payload["adjustments"][0]["calculator_field"] = "ratios.efficiency.days_sales_outstanding"
+    assert analysis_check.check("accounting", payload, fields=FIELDS,
+                                sources=SOURCES)["adjustments"] == []
+
+
+def test_a_quarter_of_a_year_stands_and_a_labelled_quantity_does_not():
+    payload = accounting()
+    payload["anomalies"][0]["what"] = "Q4 2026 guidance, Q2 of fiscal 2027"
+    assert analysis_check.check("accounting", payload, fields=FIELDS,
+                                sources=SOURCES)["dropped_count"] == 0
+    for text in ("Note 12 million", "Item 12 million", "ASC 606 million"):
+        payload["anomalies"][0]["what"] = text
+        assert analysis_check.check("accounting", payload, fields=FIELDS,
+                                    sources=SOURCES)["anomalies"] == [], text

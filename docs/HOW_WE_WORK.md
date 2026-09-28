@@ -48,14 +48,22 @@
 
 ## 2. Vocabulary
 
-**Two questions**, never merged: **accounting reliability** — do these numbers
-reflect reality? **financial pressure** — is this company under pressure?
+**Three analyses**, never merged (the owner's decision of 2026-09-28):
+**accounting** — do reported earnings and cash reflect economic reality?
+**financial** — how healthy is this company? **valuation** — what is it worth,
+and what does the price already assume? No composite score, no rank across
+companies. The two questions of the first design — accounting reliability and
+financial pressure — are the first two analyses' ancestors; the pilot runs that
+answered them stay scored under their own rules version.
 
-**Three layers**: readers → comparers → supervisor. A reader reads filings. A
-comparer reads reader reports and the market table. A supervisor reads reports.
+**Layers**: readers → analysts. A reader reads filings. The accounting and
+financial analysts read the reader reports and what Python computed from the
+filings, never a price; the valuation analyst adds the price at the cutoff, the
+two analyses and the MD&A verbatim. A comparer reads reader reports and the
+market table, and runs only for the reaction-window labels.
 
-**Pipeline stages**: detect filing → extract → market → read → compare →
-decide → controls → publish → record events → score.
+**Pipeline stages**: detect filing → extract → market → read → calculate →
+analyse → controls → publish → record events → score.
 
 **Task-list states**, in `docs/next_cycle_tasks.md`: unchecked → has a pull
 request → merged. An item with no judge is "needs judgment" and is never
@@ -79,8 +87,9 @@ a prediction.
 | market | the market table — abnormal returns, both reaction windows, the short-interest ratio and its two-year median | every trading day from the prior filing to reaction day two has a row, and nothing past reaction day two exists in it |
 | read | two calls: the numbers reader and the notes-text reader, each seeing only its own input directory. **Waits until reaction day two has closed** | every item carries a verbatim quote that string-matches that reader's committed input; unverifiable items are dropped and counted |
 | compare | two calls: numbers versus market, notes versus market. Neither sees a filing | every item cites an upstream item id that resolves, and carries exactly one of the three labels |
-| decide | two calls: supervisor-accounting and supervisor-pressure. Neither sees a filing or the market table | output schema valid, every citation resolves to an upstream report, served model equals the pin |
-| controls | the formula baselines (Python), the single-agent baseline | every baseline computed, the single-agent control wrote both its files, none merged into the pipeline's number |
+| calculate | `src/calculator.py`: ratios, the four free-cash-flow measures, WACC and, once drivers exist, the DCF, reverse DCF and sensitivity grid — Python only, from the as-filed rows at the cutoff | every core input on record or named as missing; exit status says which |
+| analyse | `src/run_analysis.py`: the accounting and financial analysts (two calls, never merged, on the reader reports and the filings-only calculator), then the valuation analyst in two passes (drivers, then the reading of what Python computed from them), then the plain-Korean memo. The supervisors' decide stage left the live pipeline on 2026-09-28 | every item passes `src/analysis_check.py` — numbers only as calculator paths, citations and quotes verbatim — or is dropped and counted; every agent's model, tokens and cost in `input_manifest.json` |
+| controls | the formula baselines (Python) and the single-agent control answering the same three analyses from the whole bundle and the calculator | every baseline computed, the control wrote its files, none merged into the analyses; `src/analysis_scorecard.py` sets them side by side |
 | publish | commit → pull request → auto-merge on green CI → `ots stamp input_manifest.json` | the merge succeeded and the `.ots` file exists |
 | record events | 8-K 4.01 / 4.02 / 1.01 / 5.02, late filings, amendments, comment letters, material-weakness language, quiet restatements, explanation materialization → `events/ledger.jsonl` | the append succeeded |
 | score | on horizon expiry or event occurrence, recompute the metrics and regenerate the results document | deterministic match |
@@ -269,7 +278,7 @@ blocks, so a hook that keeps failing stops blocking. CI is the judge.
 | Role | Model | Why |
 |---|---|---|
 | numbers reader, notes-text reader, both comparers | Opus, effort xhigh | reading a filing and reading a report against a market table are the two places where a missed detail is not recoverable downstream |
-| **supervisor-accounting, supervisor-pressure** | **Fable, pinned for one year together with rules v0.1** | keeping the pin matters more than raw capability — a track record only means something as quarter-to-quarter comparison under the same model and the same rules. Check subscription-path stability from the served-model record on the first run; if fallbacks are frequent, drop the pin to Opus. |
+| **accounting-analyst, financial-analyst, valuation-analyst** (the supervisors until 2026-09-28, which keep the pin) | **Fable, pinned for one year together with rules v0.1** | keeping the pin matters more than raw capability — a track record only means something as quarter-to-quarter comparison under the same model and the same rules. Check subscription-path stability from the served-model record on the first run; if fallbacks are frequent, drop the pin to Opus. |
 | single-agent baseline control | the same model as the supervisor | a control on a different model would measure the model, not the structure. Its prompt lives inside the control's run script, not in `.claude/agents/` — it is a control, not a layer, and it must not become something a session can invoke by name |
 | refute verification, claim-strength review | Fable | heavy judgment, where a mistake is expensive |
 | second lens, cross-vendor | Codex, read-only, on the subscription login | the builder and the refute lens are both Claude, so a blind spot in the family is a blind spot in both. Codex reviews and never builds; it runs the same five rules in the same order from `tools/lens_prompt.md`, and its automatic stop-time gate stays off because the Stop hook already runs every turn |

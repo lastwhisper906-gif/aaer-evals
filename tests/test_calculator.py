@@ -316,22 +316,29 @@ def test_the_sensitivity_grid_moves_wacc_by_a_point():
 
 # --- adjustments ---------------------------------------------------------------------------
 
-def test_an_adjustment_takes_its_amount_from_the_field_it_names(nvda):
-    """The analyst names a field and a direction; the amount is the field's value."""
-    simple = nvda["free_cash_flow"]["free_cash_flow_simple"]
-    fields = {"trailing_four_quarters": nvda["terms"]["trailing_four_quarters"]}
-    cell = lambda v: {"value": v, "id": "x", "tag": "t", "period": "p"}
-    out = calculator.quality_adjusted(
-        simple, cell(10.0), {"value": 0.0, "lines": [], "formula": "no line"},
-        [{"name": "working capital pulled forward", "direction": "reduce",
-          "calculator_field": "trailing_four_quarters.change_in_receivables",
-          "quote": "q"},
-         {"name": "a field that is not there", "direction": "reduce",
-          "calculator_field": "nowhere.at_all", "quote": "q"}], fields)
-    receivables = nvda["terms"]["trailing_four_quarters"]["change_in_receivables"]["value"]
-    assert out["adjustments_applied"][0]["amount"] == receivables
-    assert out["value"] == simple["value"] - 10.0 - receivables
-    assert out["adjustments_refused"][0]["calculator_field"] == "nowhere.at_all"
+def test_an_adjustment_takes_its_amount_from_the_field_it_names():
+    """The analyst names a field by its path in calculator.json and a direction; the
+    amount is the field's value. The field here is the trailing-four-quarter increase
+    in receivables, from NVIDIA's cash-flow statements: fiscal 2026 (15,399) in the
+    10-K, plus six months of 2027 (24,590), less six months of 2026 (4,743), in the
+    10-Q -- 35,246 million."""
+    accounting = {"adjustments": [
+        {"name": "working capital pulled forward", "direction": "reduce",
+         "applies_to": "cash_flow",
+         "calculator_field": "terms.trailing_four_quarters.change_in_receivables",
+         "quote": "q"},
+        {"name": "a field that is not there", "direction": "reduce",
+         "calculator_field": "nowhere.at_all", "quote": "q"},
+        {"name": "days named as dollars", "direction": "reduce",
+         "calculator_field": "ratios.efficiency.days_sales_outstanding", "quote": "q"}]}
+    out = calculator.calculate(ticker="NVDA", cutoff=NVDA_CUTOFF, period_end=NVDA_PERIOD_END,
+                               form="10-Q", accounting=accounting)
+    quality = out["free_cash_flow"]["free_cash_flow_quality_adjusted"]
+    assert quality["adjustments_applied"][0]["amount"] == 35_246 * MILLION
+    assert [row["calculator_field"] for row in quality["adjustments_refused"]] == [
+        "nowhere.at_all", "ratios.efficiency.days_sales_outstanding"]
+    before = quality["adjustments_applied"][0]["before"]
+    assert quality["value"] == before - 35_246 * MILLION
 
 
 # --- the whole file on NVIDIA ------------------------------------------------------------------
@@ -554,6 +561,16 @@ def test_wacc_is_the_textbook_weighted_average():
 
 # --- what the accounting adjustments move -----------------------------------------------------
 
+def test_a_one_time_adjustment_moves_value_once():
+    """A receivables build of 35 on 10 diluted shares, not marked recurring: 140 - 3.5."""
+    moved = {"applied": [{"name": "receivables build", "direction": "reduce",
+                          "applies_to": "cash_flow", "amount": 35.0}], "nopat": 100.0}
+    out = calculator.adjusted_value(1000.0, GORDON, 0.25, 0.09, 100.0, 45.0, 10.0, 140.0,
+                                    moved, {"revenue": {"value": 1000.0}})
+    assert out["each"][0]["moved_per_share"] == pytest.approx(-3.5)
+    assert out["all_together"]["value_per_share"] == pytest.approx(136.5)
+
+
 def test_an_earnings_adjustment_lowers_the_margin_in_every_year():
     """The Gordon case, with an earnings adjustment of 10 against revenue of 1,000:
     margin 0.20 - 0.01 = 0.19; next year's cash flow 1,030 x 0.19 x 0.75 x 0.6 = 88.065;
@@ -561,7 +578,8 @@ def test_an_earnings_adjustment_lowers_the_margin_in_every_year():
     7.725 below the unadjusted 140."""
     ttm = {"revenue": {"value": 1000.0}}
     moved = {"applied": [{"name": "a reserve release", "direction": "reduce",
-                          "applies_to": "earnings", "amount": 10.0}], "nopat": None}
+                          "applies_to": "earnings", "amount": 10.0, "recurs": True}],
+             "nopat": None}
     out = calculator.adjusted_value(1000.0, GORDON, 0.25, 0.09, 100.0, 45.0, 10.0, 140.0,
                                     moved, ttm)
     assert out["each"][0]["value_per_share"] == pytest.approx(132.275)
@@ -622,3 +640,51 @@ def test_qualcomms_debt_is_its_balance_sheets():
     debt = out["terms"]["debt_now"]
     assert debt["value"] == 15_270 * MILLION
     assert "check" in debt["parts"]["debt_noncurrent"]
+
+
+def test_a_recurring_cash_flow_adjustment_raises_reinvestment_in_every_year():
+    """The Gordon case with a recurring cash-flow adjustment of 15 against after-tax
+    operating income of 100: reinvestment 0.40 + 0.15 = 0.55; next year's cash flow
+    1,030 x 0.20 x 0.75 x 0.45 = 69.525; value 69.525 / 0.06 = 1,158.75; per share
+    (1,158.75 - 145) / 10 = 101.375, which is 38.625 below 140."""
+    moved = {"applied": [{"name": "factoring that will continue", "direction": "reduce",
+                          "applies_to": "cash_flow", "amount": 15.0, "recurs": True}],
+             "nopat": 100.0}
+    out = calculator.adjusted_value(1000.0, GORDON, 0.25, 0.09, 100.0, 45.0, 10.0, 140.0,
+                                    moved, {"revenue": {"value": 1000.0}})
+    assert out["each"][0]["value_per_share"] == pytest.approx(101.375)
+    assert out["each"][0]["moved_per_share"] == pytest.approx(-38.625)
+
+
+def test_the_valuation_analyst_may_state_a_missing_cost_of_debt_with_a_quote():
+    """Interest expense is not on record; the analyst quotes the notes' rate, 5%.
+    With the textbook case above the WACC is 0.9 x 0.10 + 0.1 x 0.05 x 0.79 = 0.09395."""
+    cell = lambda v: {"value": v, "id": "x", "tag": "t", "period": "p"}
+    terms = {"trailing_four_quarters": {"interest_expense": {"missing": "no row"}},
+             "debt_now": {"value": 100.0}, "debt_a_year_earlier": {"value": 100.0},
+             "shares_outstanding": cell(100.0)}
+    original = calculator.risk_free_rate, calculator.equity_risk_premium
+    try:
+        calculator.risk_free_rate = lambda cutoff: {"value": 0.04}
+        calculator.equity_risk_premium = lambda cutoff: {"value": 0.05}
+        without = calculator.cost_of_capital(terms, {"tax_rate": {"value": 0.21}},
+                                             {"beta": {"value": 1.2}, "price": {"value": 9.0}},
+                                             dt.date(2026, 1, 1), None)
+        chosen = calculator.cost_of_capital(
+            terms, {"tax_rate": {"value": 0.21}},
+            {"beta": {"value": 1.2}, "price": {"value": 9.0}}, dt.date(2026, 1, 1),
+            {"pre_tax_cost_of_debt": {"value": 0.05, "reason": "the notes' coupon",
+                                      "quote": "bear interest at 5.00%"}})
+    finally:
+        calculator.risk_free_rate, calculator.equity_risk_premium = original
+    assert without["value"] is None
+    assert chosen["pre_tax_cost_of_debt"]["chosen_by"] == "the valuation analyst"
+    assert chosen["wacc"]["value"] == pytest.approx(0.09395)
+
+
+def test_cash_runway_is_months_of_cash_at_the_trailing_burn():
+    """Cash 120, free cash flow -24 a year: a burn of 2 a month, 60 months. With free
+    cash flow positive there is no burn and no runway, and it says so."""
+    out = calculator.runway_months({"value": 120.0}, {"value": -24.0})
+    assert out["value"] == pytest.approx(60.0)
+    assert calculator.runway_months({"value": 120.0}, {"value": 5.0})["not_burning_cash"]
