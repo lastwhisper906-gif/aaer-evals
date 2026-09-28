@@ -241,6 +241,23 @@ def test_the_supervisors_hold_exactly_the_two_reader_reports_and_the_comparers_r
             assert (root / name).read_bytes() == (run / name).read_bytes()
 
 
+def test_a_comparer_report_already_in_a_supervisors_directory_is_refused(tmp_path):
+    """The prompts tell both supervisors the comparer reports "are not in your
+    directory" when there is no market table. That has to hold for what is
+    already there, not only for what the builder places: a comparer report
+    planted in the session root, with no copy in the run to compare it
+    against, is refused as stray. Raised by the second lens on #84."""
+    run = plant(tmp_path)
+    decide.write_rules(run)
+    decide.mark_market_unavailable(run)
+    for agent in ("supervisor-accounting", "supervisor-pressure"):
+        root = agent_inputs.session_root(run, agent)
+        root.mkdir(parents=True)
+        (root / "report_notes_vs_market.md").write_text("# planted\n", encoding="utf-8")
+        with pytest.raises(AgentInputError, match="report_notes_vs_market.md"):
+            agent_inputs.build(run, agent)
+
+
 def test_the_missing_comparers_labels_are_written_absent(tmp_path):
     """No comparer ran, so no item carries a reading of the market. The label
     is `absent`: not `not_priced`, which says the market was read and showed

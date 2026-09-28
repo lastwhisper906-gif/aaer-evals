@@ -425,9 +425,16 @@ def build(run: Path, agent: str, *, light: bool = False) -> dict:
 
     root.mkdir(parents=True, exist_ok=True)
     # `may_hold`, not `sees`: rebuilding after the agent has run must not read
-    # the report the agent itself wrote here as somebody else's file.
+    # the report the agent itself wrote here as somebody else's file. With no
+    # market table no comparer ran, so a comparer report already sitting in a
+    # supervisor's directory is a file that run never produced, and it is
+    # refused as stray rather than passed over because the run holds no copy
+    # of it to compare against.
+    may_hold = set(spec.may_hold)
+    if no_market is not None:
+        may_hold -= set(COMPARER_REPORTS)
     stray = sorted(path.name for path in root.iterdir()
-                   if path.name not in spec.may_hold)
+                   if path.name not in may_hold)
     if stray:
         raise AgentInputError(
             f"{root} already holds {', '.join(stray)}, which a {spec.layer} "
