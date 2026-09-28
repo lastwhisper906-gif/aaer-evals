@@ -1,0 +1,27 @@
+{
+  "note": "The two market-wide inputs of the cost of capital, as their publishers served them on the day they were fetched. src/calculator.py reads both through this manifest and refuses a file whose bytes no longer hash to what is recorded here. Neither is revised after publication in the rows this reads: a daily Treasury yield is an observed market price, and the implied equity risk premium for a month is computed once, at the start of that month, and left in place.",
+  "risk_free_rate": {
+    "series": "DGS10",
+    "title": "Market Yield on U.S. Treasury Securities at 10-Year Constant Maturity, Quoted on an Investment Basis, percent, daily",
+    "publisher": "Board of Governors of the Federal Reserve System (H.15), read through FRED, Federal Reserve Bank of St. Louis",
+    "licence": "a public-domain series of the United States government",
+    "path": "dgs10_2024-01-01_2026-09-25.csv",
+    "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DGS10&cosd=2024-01-01&coed=2026-09-25",
+    "last_modified": "2026-09-28T20:16:51Z",
+    "retrieved_utc": "2026-09-28T20:47:10Z",
+    "sha256": "7fb742bb9749aab950d3696c3b55ec45716a51e49dad7833886529192221fd4f",
+    "rule": "the value on the last date on or before the cutoff that carries a number; FRED writes '.' on a day with no observation, and that day is skipped rather than read as zero"
+  },
+  "equity_risk_premium": {
+    "series": "Implied ERP by month, September 2008 to current",
+    "publisher": "Aswath Damodaran, Stern School of Business, New York University",
+    "path": "damodaran_implied_erp_by_month.xlsx",
+    "url": "https://pages.stern.nyu.edu/~adamodar/pc/implprem/ERPbymonth.xlsx",
+    "last_modified": "2026-09-01T22:03:04Z",
+    "retrieved_utc": "2026-09-28T20:47:10Z",
+    "sha256": "762bee964f6f77e893dd6bbdce05521bee97fbfe4f93875cb378eef0537e8ea2",
+    "column": "the trailing-twelve-month premium with sustainable payout, found by its header ending in 'with sustainable payout'",
+    "why_this_column": "it is the first of the five premiums Damodaran's own home page lists for each month -- 'Implied ERP on September 1, 2026 = 4.14% (Trailing 12 month, with adjusted payout); 4.09% (Trailing 12 month cash yield); ...' -- and the one his cost-of-capital updates carry",
+    "rule": "the row whose start-of-month date is strictly before the cutoff. The workbook carries no publication date; each month's premium is computed on the first of the month and posted in its first days, so a cutoff on the first of a month reads the month before rather than a number that may not yet have been posted"
+  }
+}

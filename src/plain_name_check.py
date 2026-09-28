@@ -80,6 +80,10 @@ shapes**:
   standard's name belongs to the body that set it, not to whoever cites it.
 * `Q1` to `Q4` -- the fiscal quarter, which `docs/INPUT_SPEC.md` derives.
 * a capital tag on a four-digit year, 1900 to 2099 -- `FY2025`, `FY2021`.
+* `DGS10` -- the Federal Reserve's own name for the ten-year Treasury yield
+  series, which FRED prints as the header of the file `src/calculator.py`
+  reads the risk-free rate from, committed verbatim under
+  `src/cost_of_capital/`. It turned up on 2026-09-28 with the calculator.
 * `CC0` -- the licence named in the Creative Commons text at `LICENSE-docs`
   line 397. It is the one word the first sweep of this repository turned up.
 
@@ -173,7 +177,7 @@ UNDASHED = re.compile(r"(?<![A-Za-z0-9])[A-Z]{1,4}[0-9]{1,4}[A-Za-z]?(?![A-Za-z0
 # Kept vocabulary. Words, never shapes. Add one when it turns up in the
 # repository; do not widen the patterns above.
 KEPT_PREFIXES = ("EX-", "SHA-", "UTF-", "ISO-")
-KEPT_WORDS = frozenset({"CC0"})
+KEPT_WORDS = frozenset({"CC0", "DGS10"})
 FISCAL_QUARTER = re.compile(r"Q[1-4]")
 # The fiscal and calendar year prefixes this project writes, and only those. A
 # wider rule here -- any capital tag on a four-digit year -- exempts RP2019,

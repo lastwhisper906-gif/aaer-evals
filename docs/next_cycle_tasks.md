@@ -223,3 +223,5 @@ the builder prompt of 2026-09-13 settled them:
   cutoff is not deferred for quota.
 * the four branches the second vendor never read are re-verified when the quota
   returns, on the same terms.
+
+[x] the calculator: ratios, four free-cash-flow measures, WACC, a three-scenario DCF, a reverse DCF and a sensitivity grid · stage 2 of the owner's decision of 2026-09-28, `src/calculator.py` writing `calculator.json` · judge: `.venv/bin/python -m pytest tests/test_calculator.py -q` — expected values from NVIDIA's printed free-cash-flow table (8-K exhibit 99.1 of 2026-08-26 and the fiscal 2026 10-K), the Gordon growth identity, and a ten-year fading forecast worked by hand in the test

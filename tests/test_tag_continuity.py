@@ -224,6 +224,18 @@ def revenue_rows(ticker: str, accession: str | None = None) -> dict[str, list[di
     return found
 
 
+def rows_named(ticker: str, accession: str, name: str) -> list[dict]:
+    """Every USD duration row one filing reports under one `namespace:tag` name.
+
+    `revenue_rows` reads the three revenue names only; a pair recorded for any
+    other series is checked against its own name, read the same way.
+    """
+    namespace, tag = name.split(":", 1)
+    concept = companyfacts(ticker)["facts"].get(namespace, {}).get(tag, {})
+    return [row for row in concept.get("units", {}).get(UNIT, [])
+            if row.get("start") and row["accn"] == accession]
+
+
 def accessions_in(ticker: str) -> set[str]:
     """Every accession named anywhere in one companyfacts record."""
     return {row["accn"]
@@ -278,7 +290,7 @@ def test_the_period_each_pair_cites_is_in_both_filings_under_both_names():
         overlap = pair["both_report"]
         for tag, filing in ((pair["earlier_tag"], pair["earlier_filing"]),
                             (pair["later_tag"], pair["later_filing"])):
-            rows = revenue_rows(pair["ticker"], filing["accession"]).get(tag, [])
+            rows = rows_named(pair["ticker"], filing["accession"], tag)
             matching = [row for row in rows
                         if row["start"] == overlap["start"]
                         and row["end"] == overlap["end"]]
