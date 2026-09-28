@@ -40,6 +40,11 @@
 12. **Mistakes compound.** When a session ends, its mistakes go into
     `lessons.md`, one line each. A weekly routine folds rules into `CLAUDE.md`
     and procedures into skills.
+13. **Less process.** A second lens reads only a change to `rules/`, scoring,
+    an agent prompt or a calculator formula; every other pull request merges on
+    green CI. A branch is merged or closed within a day. The weekly test is
+    whether a readable result was produced. Decided by the owner on 2026-09-28;
+    §5 says which files that is.
 
 ## 2. Vocabulary
 
@@ -156,6 +161,9 @@ Every routine below is a **scheduled task**, not a loop run.
   once the Codex quota is back. `docs/routines/weekly-relens.md`. A pass moves
   the row to done; a fail opens an issue marked "needs judgment" naming the
   merged pull request, and fixes nothing itself
+- **a readable result** — the weekly test: did the week produce a result a
+  person can read, such as an analysis of a filing or a scorecard page? A week
+  that produced only process has failed it, and says so in the summary
 - **fold lessons** — `lessons.md` into `CLAUDE.md` for rules and into skills for
   procedures; merge duplicates; strengthen anything seen three or more times;
   open a pull request. **`CLAUDE.md` is capped at 22 lines**, so a fold that
@@ -227,16 +235,29 @@ judges; and the **seeded-defect canary**, monthly, as a scheduled task.
 | the STOP file | the owner interrupting the session |
 | the `claude --bg` launcher | scheduled tasks |
 
-**The two lenses.** Every item is read twice before its pull request opens:
-`refute-check` (Claude), then `tools/second_lens.sh`. Both lenses read
-`tools/lens_prompt.md` and answer `tools/lens_verdict.schema.json`, so the two
-verdicts are comparable and neither drifts from the five rules. Codex is the
-cross-vendor lens; when it cannot run, Claude Fable answers in a fresh context
-and the row is marked `confirmed - same-family fallback` rather than `confirmed
-- cross-vendor`. When neither runs the script exits 3, which is never an
-approval: the pull request opens labelled `one-lens` with auto-merge off. The
-weekly re-lens routine re-reads every fallback and every `one-lens` row once the
-Codex quota returns.
+**Less process.** The owner adopted this on 2026-09-28
+(`docs/structure_changes.md`): a second lens is required only on a pull request that changes `rules/`,
+scoring (`src/scorecard.py`, `src/scorecard_template.md`), an agent prompt
+(`.claude/agents/`) or a calculator formula — the arithmetic in
+`src/calculator.py`, which writes `calculator.json`, or in `src/trends.py`,
+`src/articulation.py`, `src/baselines.py`, `src/fourth_quarter.py` or
+`src/market.py`. A change elsewhere in those files (a fetch, a refusal, a
+docstring) is not a formula. Every other pull request merges on green CI, with
+no lens. A branch is merged or closed within a
+day. The weekly test is whether a readable result was produced.
+
+**The two lenses, on the pull requests that need them.** Such a change is read
+twice before its pull request opens: `refute-check` (Claude), then
+`tools/second_lens.sh`. Both lenses read `tools/lens_prompt.md` and answer
+`tools/lens_verdict.schema.json`, so the two verdicts are comparable and neither
+drifts from the five rules. Codex is the cross-vendor lens; when it cannot run,
+Claude Fable answers in a fresh context and the row is marked `confirmed -
+same-family fallback` rather than `confirmed - cross-vendor`. When neither runs
+the script exits 3, which is never an approval: the pull request opens labelled
+`one-lens` with auto-merge off. The weekly re-lens routine re-reads every
+fallback and every `one-lens` row once the Codex quota returns.
+`.claude/skills/build-item/SKILL.md` step 4 is where the builder decides whether
+a change needs the lenses at all.
 
 A Stop hook is a safety net, not a judge — the turn ends after eight consecutive
 blocks, so a hook that keeps failing stops blocking. CI is the judge.

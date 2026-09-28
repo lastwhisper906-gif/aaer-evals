@@ -234,3 +234,15 @@ the builder prompt of 2026-09-13 settled them:
   returns, on the same terms.
 
 [x] the calculator: ratios, four free-cash-flow measures, WACC, a three-scenario DCF, a reverse DCF and a sensitivity grid · stage 2 of the owner's decision of 2026-09-28, `src/calculator.py` writing `calculator.json` · judge: `.venv/bin/python -m pytest tests/test_calculator.py -q` — expected values from NVIDIA's printed free-cash-flow table (8-K exhibit 99.1 of 2026-08-26 and the fiscal 2026 10-K), the Gordon growth identity, and a ten-year fading forecast worked by hand in the test
+
+## Closed unmerged, 2026-09-28
+
+Each branch is kept; its pull request is closed with the same reason.
+
+[x] `item/control-output-boundary` (#93) · closed: its own row landed inside #68 (`e261326`), and what is left on it is the shuffled-report control the owner retired on 2026-09-23 (#81)
+[x] `item/shuffled-crossing` (#57) · closed: the whole branch landed inside #68 (`e261326`), and the control it hardens is retired (#81)
+[x] `item/control-input-guard` (#94) · closed: superseded by #48, which landed the same row, the single-agent control's allowlist and explanation-id resolution; this is the 2026-09-13 attempt, 52 commits behind
+[x] `item/trends-on-companyfacts` (#95) · closed: superseded by #50, which landed the trend table on companyfacts; this is the 2026-09-13 attempt that stopped one file short of green, 52 commits behind
+[x] `bookkeeping/wave-g` (#96) · closed: its three inbox rows are settled — #51 merged the lens it asked about, the owner's whitespace decision (#77) answers the non-breaking-space row, and the decided price-source row records that neither backend is configured
+[x] `item/monthly-canary` (#62) · closed: its second lens returned needs judgment with six open rows, the planted answer key is reachable through git so a hit does not measure what its row claims, and it narrows the plain-name check to make its own tree quiet; under principle five the monthly canary row stays on the list to be rebuilt smaller or dropped
+[x] `item/lens-rule-whitespace` (#83) · not closed and not merged: rebased onto main and left open, labelled `one-lens`, because a second lens is required on an agent prompt and `tools/second_lens.sh` refuses any tree that edits `.claude/agents/refute-check.md`; it waits on the owner, and `docs/needs_judgment.md` Open says what blocks on it
