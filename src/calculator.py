@@ -44,8 +44,11 @@ A term with no row is written **missing**, with the trend table's own reason,
 and never filled. A measure that needs a missing term is missing too, and says
 which term. The run **fails loudly**: every missing core input is printed on
 standard error, listed under `missing` at the top of the file, and turns the
-exit status to `INCOMPLETE`. Nothing here is estimated, interpolated, carried
-forward or defaulted to zero -- with one rule stated in the open, below.
+exit status to `INCOMPLETE`. Nothing here is estimated, interpolated or
+defaulted to zero -- with two rules stated in the open: the one below, and an
+operating lease total that a quarterly report does not restate, which is read as
+the newest balance filed at or before the period end, dated with `as_of`, and
+flagged when a lease line the record holds at the period end is larger.
 
 **A line the statement does not print is not a missing number.** A cash-flow
 statement with no acquisitions line, or a balance sheet with no debt line, is a
@@ -573,12 +576,23 @@ class Record:
         instants = sorted({date for tag in tags + LEASE_LINES
                            for (start, date) in self.usd.get(tag, {})
                            if start is None and date <= end}, reverse=True)
+        partial = [{"tag": tag, "value": trends.as_filed(rows, tag).get("value")}
+                   for tag in LEASE_LINES
+                   for rows in [self.usd.get(tag, {}).get((None, end))] if rows]
         for date in instants:
             found = self.term(term, date)
             if "missing" not in found:
-                return dict(found, as_of=date,
-                            note=f"the filing for {end} does not state {term}; this is the "
-                                 f"newest balance filed at or before it, at {date}")
+                out = dict(found, as_of=date,
+                           note=f"the filing for {end} does not state {term}; this is the "
+                                f"newest balance filed at or before it, at {date}")
+                larger = [line for line in partial
+                          if isinstance(line["value"], float) and line["value"] > found["value"]]
+                if larger:
+                    out["contradicted_at_period_end"] = (
+                        f"the record holds {larger[0]['tag']} of {larger[0]['value']} at {end}, "
+                        f"larger than this carried total -- the balance grew and the carried "
+                        f"figure understates it")
+                return out
         return at_end
 
 
@@ -1327,6 +1341,8 @@ def field_value(fields: dict, path: str | None) -> float | None:
     for part in path.split("."):
         if isinstance(node, dict) and part in node:
             node = node[part]
+        elif isinstance(node, list) and part.isdigit() and int(part) < len(node):
+            node = node[int(part)]
         else:
             return None
     if isinstance(node, dict):
@@ -1786,7 +1802,8 @@ def adjusted_value(base_revenue, drivers, tax, wacc, net_debt, leases, shares, b
 FILING_UNITS = {"iso4217:USD": "USD", "shares": "shares"}
 
 
-def supplemented(document: dict, bundle: Path | None) -> tuple[dict, list[str]]:
+def supplemented(document: dict, bundle: Path | None,
+                 cutoff: dt.date | None = None) -> tuple[dict, list[str]]:
     """The record, plus the filing's own entity-wide facts for any filing it lacks.
 
     SEC's companyfacts can lag a filing by months: on 2026-09-28 it still held
@@ -1816,6 +1833,11 @@ def supplemented(document: dict, bundle: Path | None) -> tuple[dict, list[str]]:
         if (context.get("segment") or context.get("typed_segment") or unit is None
                 or fact.get("prefix") not in ("us-gaap", "dei") or accession in known
                 or fact.get("nil") or not isinstance(fact.get("number"), (int, float))):
+            continue
+        # The bundle's reader is ungated by design, so the cutoff is applied here,
+        # to the row, as the catalogue route applies it to companyfacts.
+        if cutoff is not None and (not fact.get("filing_date") or cutoff_guard.parse_date(
+                fact["filing_date"], "filing_date") > cutoff):
             continue
         row = {"start": context.get("start"), "end": context.get("end") or context.get("instant"),
                "val": fact["number"], "accn": accession, "form": fact.get("form"),
@@ -1888,7 +1910,7 @@ def calculate(*, ticker: str, cutoff, period_end: str, form: str, accession: str
     other than through the gate."""
     cutoff = cutoff_guard.parse_date(cutoff, "cutoff")
     document, from_the_filing = supplemented(
-        trends.read_record(ticker, cutoff, fixtures_root=fixtures_root), bundle)
+        trends.read_record(ticker, cutoff, fixtures_root=fixtures_root), bundle, cutoff)
     record = Record(document)
     periods = trigger_periods(record.usd, period_end, form)
     terms = gather(record, periods)
@@ -1955,10 +1977,40 @@ def calculate(*, ticker: str, cutoff, period_end: str, form: str, accession: str
         "free_cash_flow": free,
         "concentration": concentration(bundle),
         "trend_table": trend_values(document, cutoff, period_end),
+        "trend_table_note": ("computed on the same record as every figure above, which for "
+                             "an accession listed under "
+                             "read_from_the_filing_because_companyfacts_lagged includes that "
+                             "filing's own facts; the run's input_trends.json is computed on "
+                             "companyfacts alone and can hold fewer periods"),
         "market": market_data,
         "cost_of_capital": capital,
         "valuation": value,
     }
+
+
+# What the accounting and financial analysts may not see: every figure read off a
+# price. `CLAUDE.md` -- they "see reports and calculator.json, never prices; the
+# valuation analyst adds ... the price at the cutoff". So they are handed this
+# view, and the valuation analyst the whole file.
+PRICED_SECTIONS = ("market", "cost_of_capital", "valuation")
+FILINGS_ONLY = "calculator_filings_only.json"
+
+
+def filings_only(payload: dict) -> dict:
+    """calculator.json with every section that reads a price removed, and checked.
+
+    Refuses rather than trims if a price is still anywhere in what is left, so a
+    new section that carries one cannot reach an analyst who may not see it.
+    """
+    out = {key: value for key, value in payload.items() if key not in PRICED_SECTIONS}
+    out["sections_removed_for_this_view"] = list(PRICED_SECTIONS)
+    out["missing"] = [line for line in payload.get("missing", [])
+                      if not line.startswith(("wacc:", "valuation:"))]
+    text = json.dumps(out)
+    for word in ("price_at_cutoff", '"price"', "market_value_of_equity", '"beta"'):
+        if word in text:
+            raise CalculatorInputError(f"the filings-only view still carries {word}")
+    return out
 
 
 def read_json(path: str | None) -> dict | None:
@@ -2000,6 +2052,8 @@ def main(argv: list[str] | None = None) -> int:
         return BAD_INPUT
     Path(args.out).write_text(json.dumps(payload, indent=1, sort_keys=False) + "\n",
                               encoding="utf-8")
+    Path(args.out).with_name(FILINGS_ONLY).write_text(
+        json.dumps(filings_only(payload), indent=1) + "\n", encoding="utf-8")
     for line in payload["missing"]:
         print(f"calculator: NOT COMPUTED -- {line}", file=sys.stderr)
     return INCOMPLETE if payload["missing"] else 0

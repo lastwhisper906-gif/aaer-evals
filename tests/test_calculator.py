@@ -566,3 +566,48 @@ def test_an_earnings_adjustment_lowers_the_margin_in_every_year():
                                     moved, ttm)
     assert out["each"][0]["value_per_share"] == pytest.approx(132.275)
     assert out["each"][0]["moved_per_share"] == pytest.approx(-7.725)
+
+
+def test_a_filing_fact_filed_after_the_cutoff_is_not_added(tmp_path):
+    document = {"ticker": "TEST", "facts": {"us-gaap": {}}}
+    numbers = {"facts": [
+        {"id": "C-3:f-1", "tag": "Revenues", "prefix": "us-gaap", "unit": "iso4217:USD",
+         "context": {"start": "2026-07-01", "end": "2026-09-30", "segment": []},
+         "number": 70.0, "nil": False, "form": "10-Q", "source_accession": "C-3",
+         "filing_date": "2026-10-28"}]}
+    (tmp_path / "input_numbers.json").write_text(json.dumps(numbers))
+    out, added = calculator.supplemented(document, tmp_path, dt.date(2026, 7, 28))
+    assert added == []
+    assert out["facts"]["us-gaap"] == {}
+
+
+def test_a_carried_lease_says_when_the_period_end_holds_more():
+    """The shape the refute-check found at Palo Alto Networks on 2026-04-30: a total
+    of 417.4 million filed at the prior year end, and a noncurrent line alone of
+    719.0 million at the period end."""
+    record = calculator.Record(_rows(
+        OperatingLeaseLiability=[{"end": "2025-07-31", "val": 417_400_000}],
+        OperatingLeaseLiabilityNoncurrent=[{"end": "2026-04-30", "val": 719_000_000}]))
+    cell = record.latest_balance("operating_lease_liability", "2026-04-30")
+    assert cell["value"] == 417_400_000
+    assert "contradicted_at_period_end" in cell
+
+
+def test_a_field_path_may_index_a_list():
+    assert calculator.field_value({"a": {"b": [{"c": 1.5}]}}, "a.b.0.c") == 1.5
+    assert calculator.field_value({"a": {"b": [{"c": 1.5}]}}, "a.b.3.c") is None
+
+
+def test_the_filings_only_view_carries_no_price(nvda):
+    """The accounting and financial analysts never see a price (CLAUDE.md)."""
+    priced = dict(nvda, market={"price": {"value": 170.0}, "beta": {"value": 1.9}})
+    view = calculator.filings_only(priced)
+    assert "market" not in view and "cost_of_capital" not in view and "valuation" not in view
+    assert "price" not in json.dumps(view).replace("proceeds_from_sale", "")
+    assert view["free_cash_flow"] == nvda["free_cash_flow"]
+
+
+def test_a_price_left_in_another_section_is_refused(nvda):
+    leaked = dict(nvda, ratios=dict(nvda["ratios"], stray={"price_at_cutoff": 1.0}))
+    with pytest.raises(calculator.CalculatorInputError):
+        calculator.filings_only(leaked)
