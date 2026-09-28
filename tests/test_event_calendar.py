@@ -3,7 +3,7 @@
 The planted inputs are copied from what EDGAR serves: Apple's 8-K of
 2009-02-27 (accession 0001181431-09-012161, items 4.01) as its submissions
 record lists it; the first 10-K/A lines of `full-index/2009/QTR1/form.gz`;
-Apple's `0001193125-09-209633.hdr.sgml`; three rows of the SEC's list of
+Apple's `0001193125-09-209633.hdr.sgml`; six rows of the SEC's list of
 accounting and auditing enforcement releases as served on 2026-09-28; and
 sentences from the notes data sets `2011q2_notes.zip` and `2026_01_notes.zip`.
 Which event each is, is read off the source by hand: the item number the filer
@@ -20,6 +20,7 @@ import zipfile
 import pytest
 
 from src import event_calendar as calendar
+from src import plain_name_check
 
 APPLE_AUDITOR_CHANGE = {"accessionNumber": "0001181431-09-012161", "filingDate": "2009-02-27",
                         "acceptanceDateTime": "2009-02-27T21:30:39.000Z", "form": "8-K",
@@ -159,6 +160,10 @@ def test_the_indexes_add_what_the_bulk_file_lacks_and_read_an_8k_items_from_its_
         ("non_reliance", "0001193125-09-209633", "full_index")]
     source = calendar.sources(tmp_path)[0]
     assert (source["watched_filings_listed"], source["not_in_submissions"]) == (4, 3)
+    # The index is named by its year and quarter: its address spells the quarter
+    # as a capital tag on a digit, which the plain-name check reads as a code.
+    assert (source["year"], source["quarter"], "url" in source) == (2009, 1, False)
+    assert plain_name_check.codes_in((tmp_path / calendar.SOURCES).read_text()) == []
     # Apple's second 8-K header is not served: it is counted, not guessed at.
     assert len(source["headers_unread"]) == 1
     assert source["headers_unread"][0].startswith("0001181431-09-012161: OSError")
@@ -216,8 +221,9 @@ def test_from_notes_is_one_line_per_filing_naming_the_first_tag(tmp_path):
         "0001096906-11-000721\tAmendmentFlag\tdei/2009\tfalse"])
     with zipfile.ZipFile(path) as archive:
         lines = calendar.from_notes(archive, "2011q2")
+    # No form: the `sub` row holds it, and a registration statement's is a code.
     assert lines == [{"event": "going_concern_language", "cik": 1284452,
-                      "accession": "0001096906-11-000721", "form": "10-K",
+                      "accession": "0001096906-11-000721",
                       "filed": "2011-04-15", "accepted": "2011-04-14 22:01:00.0",
                       "source": "notes_data_set", "dataset": "2011q2",
                       "tag": "SignificantAccountingPoliciesTextBlock", "sentences": 3}]
@@ -276,16 +282,39 @@ LIST_PAGE = """<table><thead><tr><th>Date</th><th>Respondents</th></tr></thead><
 </tbody></table>"""
 
 
+# Three more rows as served on 2026-09-28, from pages 7, 10 and 15 of the list: a
+# respondent named with a capital and a digit, a row naming two releases, and
+# a row carrying another act's release number in the shape of a code.
+CODED_ROWS = """<table><tbody>
+<tr> <td headers="view-field-publish-date-table-column" class="views-field views-field-field-publish-date is-active"> <time datetime="2017-01-11T13:24:43Z" class="datetime">Jan. 11, 2017</time> </td> <td headers="view-nothing-1-table-column" class="views-field views-field-field-release-file-number views-field-nothing-1"><div class='release-view__respondents'><a href='https://www.sec.gov/files/litigation/admin/2017/34-79772.pdf'>L3 Technologies, Inc.</a></div> <div class="view-table_subfield view-table_subfield_release_number"> <span class="view-table_subfield_label">Release No.</span> <span class="view-table_subfield_value">34-79772, AAER-3844</span> </div> </td> </tr>
+<tr> <td headers="view-field-publish-date-table-column" class="views-field views-field-field-publish-date is-active"> <time datetime="2014-07-25T14:25:26Z" class="datetime">July 25, 2014</time> </td> <td headers="view-nothing-1-table-column" class="views-field views-field-field-release-file-number views-field-nothing-1"><div class='release-view__respondents'><a href='/enforcement-litigation/litigation-releases/lr-23051'>Volt Information Sciences, Inc. and Debra L. Hobbs; Jack J. Egan, Jr.</a></div> <div class="view-table_subfield view-table_subfield_release_number"> <span class="view-table_subfield_label">Release No.</span> <span class="view-table_subfield_value">LR-23051, AAER-3569 and AAER-3570, AAER-3569</span> </div> </td> </tr>
+<tr> <td headers="view-field-publish-date-table-column" class="views-field views-field-field-publish-date is-active"> <time datetime="2009-10-28T13:17:12Z" class="datetime">Oct. 28, 2009</time> </td> <td headers="view-nothing-1-table-column" class="views-field views-field-field-release-file-number views-field-nothing-1"><div class='release-view__respondents'><a href='https://www.sec.gov/files/litigation/admin/2009/34-60898.pdf'>Tab Keplinger, CPA</a></div> <div class="view-table_subfield view-table_subfield_release_number"> <span class="view-table_subfield_label">Release No.</span> <span class="view-table_subfield_value">34-60898, IA-2942, AAER-3061</span> </div> </td> </tr>
+</tbody></table>"""
+
+
 def test_releases_on_reads_each_row_of_the_list():
     releases = calendar.releases_on(LIST_PAGE)
     assert [line["release"] for line in releases] == [4602, 4601, 4600]
     assert releases[0] == {
         "event": "enforcement_release", "release": 4602, "filed": "2026-09-23",
-        "respondents": "L&L Energy, Inc. and Dickson Lee, CPA (Order Granting Extension of "
-                       "Time to File a Reply)",
-        "other_release_numbers": ["33-11440", "34-106474"],
         "document": "https://www.sec.gov/files/litigation/opinions/2026/33-11440.pdf",
         "cik": None, "source": "enforcement_list"}
+
+
+def test_a_row_naming_two_releases_is_a_line_for_each_and_no_line_holds_a_code():
+    releases = calendar.releases_on(CODED_ROWS)
+    assert [(line["release"], line["filed"]) for line in releases] == [
+        (3844, "2017-01-11"), (3569, "2014-07-25"), (3570, "2014-07-25"),
+        (3061, "2009-10-28")]
+    # The list's own link to a litigation release is relative.
+    assert releases[1]["document"] == ("https://www.sec.gov/enforcement-litigation/"
+                                       "litigation-releases/lr-23051")
+    # What the list prints that the check reads as a code: a respondent's name,
+    # every release number of the list's own kind, and another act's. The line
+    # keeps the numbers as numbers; the rest stays in the document.
+    assert plain_name_check.codes_in(CODED_ROWS) == [
+        "L3", "AAER-3844", "AAER-3569", "AAER-3570", "AAER-3569", "IA-2942", "AAER-3061"]
+    assert plain_name_check.codes_in(json.dumps(releases)) == []
 
 
 def test_a_release_is_dated_on_new_york_s_clock():
@@ -363,6 +392,7 @@ def test_daily_reads_each_business_day_after_the_last_one_read(tmp_path):
     assert calendar.read_through(tmp_path) == dt.date(2026, 9, 25)
     assert [source.get("unread", "")[:7] for source in calendar.sources(tmp_path)][-1] == \
         "OSError"
+    assert plain_name_check.codes_in((tmp_path / calendar.SOURCES).read_text()) == []
 
 
 def test_daily_before_any_index_was_read_says_so(tmp_path):

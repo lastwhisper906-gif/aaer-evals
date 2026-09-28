@@ -303,9 +303,10 @@ def candidates(archive: zipfile.ZipFile, count: int = SAMPLE_CANDIDATES) -> list
     filings = {}
     for values in body:
         record = dict(zip(header, values))
+        # No form: a registration statement's EDGAR name is a code to the
+        # plain-name check, and the accession finds the filing.
         filings[record["adsh"]] = {"accession": record["adsh"], "cik": int(record["cik"]),
-                                   "form": record["form"], "filed": record["filed"],
-                                   "rank": rank(record["adsh"])}
+                                   "filed": record["filed"], "rank": rank(record["adsh"])}
     chosen = dict(sorted(filings.items(), key=lambda item: item[1]["rank"])[:count])
     header, body = rows(archive, "num")
     best: dict[str, tuple[str, dict]] = {}

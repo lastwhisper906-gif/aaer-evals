@@ -56,7 +56,20 @@ one at the accession and tag the line names.
 **Enforcement releases.** The list gives a date, the respondents as the SEC
 wrote them, the release numbers and the document; it gives no CIK, so the line
 carries none. Tying a respondent's name to a filer is a judgment, and
-`docs/needs_judgment.md` holds it.
+`docs/needs_judgment.md` holds it. A row naming two accounting and auditing
+enforcement releases is a line for each.
+
+**Nothing here the plain-name check reads as a code.** `src/plain_name_check.py`
+reads every line of `events/`, and EDGAR's own vocabulary takes the shape it
+refuses: the quarter in an index's address, a registration statement's form,
+the SEC's other release numbers, and a respondent's name (a company named with
+a capital and a digit). None is this project's, and whether the check should
+keep them as words is the owner's (`docs/needs_judgment.md`). Until then none is
+written: an index read is named by its year and quarter, or its day, and its
+address is `FORM_INDEX_URL` or `DAILY_INDEX_URL` filled in; a going-concern line
+names its filing by accession and not by form, which the notes data set's `sub`
+row holds; and an enforcement line carries the release as a number and the
+document, which names the respondents and the other releases.
 
     python3.12 -m src.event_calendar submissions [--zip PATH]
     python3.12 -m src.event_calendar daily
@@ -74,7 +87,6 @@ import csv
 import datetime as dt
 import gzip
 import hashlib
-import html
 import io
 import json
 import os
@@ -324,7 +336,8 @@ def from_indexes(fetcher, seen: set[int], *, since: str, today: dt.date, root: P
         events, listed, missing, unread, through = from_index_text(fetcher, text, seen,
                                                                    since=since)
         found += events
-        record_source(root, {"source": "full_index", "url": url, "bytes": len(raw),
+        record_source(root, {"source": "full_index", "year": year, "quarter": quarter,
+                             "bytes": len(raw),
                              "sha256": hashlib.sha256(raw).hexdigest(),
                              "watched_filings_listed": listed,
                              "not_in_submissions": missing, "headers_unread": unread,
@@ -362,13 +375,15 @@ def from_daily(fetcher, *, start: dt.date, end: dt.date, root: Path) -> list[dic
             try:
                 raw = fetcher.get(url)
             except Exception as exc:  # noqa: BLE001 - a holiday has no index
-                record_source(root, {"source": "daily_index", "url": url, "day": day.isoformat(),
-                                     "unread": f"{type(exc).__name__}: {exc}"})
+                record_source(root, {"source": "daily_index", "day": day.isoformat(),
+                                     "unread": f"{type(exc).__name__}: "
+                                               f"{str(exc).replace(url, 'the index')}"})
             else:
                 events, listed, _, unread, _ = from_index_text(
                     fetcher, raw.decode("latin-1"), None, since=SINCE)
                 found += events
-                record_source(root, {"source": "daily_index", "url": url, "bytes": len(raw),
+                record_source(root, {"source": "daily_index", "day": day.isoformat(),
+                                     "bytes": len(raw),
                                      "sha256": hashlib.sha256(raw).hexdigest(),
                                      "watched_filings_listed": listed,
                                      "headers_unread": unread, "events": len(events),
@@ -427,11 +442,11 @@ def from_notes(archive: zipfile.ZipFile, dataset: str) -> list[dict]:
         if filing is None:
             continue
         filed = f"{filing['filed'][:4]}-{filing['filed'][4:6]}-{filing['filed'][6:8]}"
-        line = line_for(GOING_CONCERN, cik=int(filing["cik"]), accession=accession,
-                        form=filing["form"], filed=filed,
-                        accepted=filing.get("accepted") or None, source="notes_data_set")
-        line.update(dataset=dataset, **said)
-        out.append(line)
+        # No form: the data sets hold registration statements, whose EDGAR names
+        # the plain-name check reads as codes, and the `sub` row holds it.
+        out.append({"event": GOING_CONCERN, "cik": int(filing["cik"]), "accession": accession,
+                    "filed": filed, "accepted": filing.get("accepted") or None,
+                    "source": "notes_data_set", "dataset": dataset, **said})
     return out
 
 
@@ -454,33 +469,26 @@ PUBLISHED = re.compile(r'<time datetime="([^"]+)"')
 RESPONDENTS = re.compile(r"release-view__respondents'?\"?>\s*<a href=['\"]([^'\"]+)['\"]>(.*?)</a>",
                          re.DOTALL)
 NUMBERS = re.compile(r'view-table_subfield_value">\s*([^<]*)<')
-AAER_NUMBER = re.compile(r"\bAAER-(\d+)\b")
-TAGS = re.compile(r"<[^>]+>")
+# The number only: `AAER-3022A` on the list is release 3022 again.
+AAER_NUMBER = re.compile(r"\bAAER-(\d+)")
 
 
 def releases_on(page: str) -> list[dict]:
-    """The enforcement releases one page of the list holds."""
+    """The enforcement releases one page of the list holds, a line for each number."""
     out = []
     for row in ROW.findall(page):
         published, named, numbers = (PUBLISHED.search(row), RESPONDENTS.search(row),
                                      NUMBERS.search(row))
         if not (published and named and numbers):
             continue
-        release = AAER_NUMBER.search(numbers.group(1))
-        if not release:
-            continue
         stamp = dt.datetime.fromisoformat(published.group(1).replace("Z", "+00:00"))
-        others = [n.strip() for n in numbers.group(1).split(",")
-                  if n.strip() and not AAER_NUMBER.fullmatch(n.strip())]
         document = named.group(1)
-        out.append({"event": ENFORCEMENT, "release": int(release.group(1)),
-                    "filed": stamp.astimezone(EASTERN).date().isoformat(),
-                    "respondents": html.unescape(re.sub(r"\s+", " ",
-                                                        TAGS.sub("", named.group(2)))).strip(),
-                    "other_release_numbers": others,
-                    "document": document if document.startswith("http")
-                    else "https://www.sec.gov" + document,
-                    "cik": None, "source": "enforcement_list"})
+        for release in dict.fromkeys(int(n) for n in AAER_NUMBER.findall(numbers.group(1))):
+            out.append({"event": ENFORCEMENT, "release": release,
+                        "filed": stamp.astimezone(EASTERN).date().isoformat(),
+                        "document": document if document.startswith("http")
+                        else "https://www.sec.gov" + document,
+                        "cik": None, "source": "enforcement_list"})
     return out
 
 

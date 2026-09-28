@@ -199,6 +199,9 @@ def test_candidates_rank_filings_by_the_sha256_of_the_accession(tmp_path):
         drawn = fsn.candidates(archive, count=1)
     assert [value["accession"] for value in drawn] == [EXTRA_SPACE]
     assert drawn[0]["value"] == "881401000.0000" and drawn[0]["cik"] == 1289490
+    # The accession names the filing; a form would put EDGAR's registration
+    # statement names, codes to the plain-name check, into the index.
+    assert "form" not in drawn[0]
 
 
 def test_a_filing_value_is_its_lowest_ranked_eligible_row(tmp_path):
