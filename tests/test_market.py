@@ -874,3 +874,403 @@ def test_the_command_line_says_what_it_could_not_do(tmp_path, capsys):
         "--out", str(tmp_path / "input_market.json")])
     assert code == market.BAD_INPUT
     assert "divisions" in capsys.readouterr().err
+
+
+# --- where the prices come from ---------------------------------------------
+#
+# The frozen fixture above is untouched, and that is the point: every abnormal
+# return in this file is still computed by hand from it, so changing the source
+# underneath cannot move one of them. What is judged here is the fetch route --
+# that it writes the shape `read_prices` already reads, that it refuses an empty
+# answer rather than treating it as a company with no trading days, and that the
+# record of the fetch never lands where an agent could read it.
+#
+# No test here touches the network. The wire is judged by
+# `src/probe_price_sources.py` with a real credential, and the probe run of
+# 2026-09-21 recorded every backend as unconfigured -- which is the state the
+# last test below asserts, because it is the state this repository is in.
+
+import datetime as _dt
+
+from src import prices as _prices
+
+
+class _StubBackend:
+    """A backend that answers with the frame this test hands it."""
+
+    NAME = "tiingo"
+
+    def __init__(self, frame):
+        self._frame = frame
+        self.asked = []
+
+    def history(self, ticker, start=None, end=None, **credential):
+        self.asked.append((ticker, start, end))
+        self.credential = credential
+        return list(self._frame)
+
+
+def _bar(day, close, adjusted):
+    return _prices.row(
+        date=_dt.date.fromisoformat(day),
+        security_id="US000000000999",
+        ticker="ZZZZ",
+        close=close,
+        adjusted_close=adjusted,
+        volume=1000.0,
+        delisting_return=None,
+        delisting_code=None,
+    )
+
+
+def _stub(monkeypatch, frame):
+    """The stand-in answers only for the backend the fetch was meant to ask.
+
+    `environ={}` names no backend, so the fetch asks for the forward track's
+    default, tiingo; a fetch asking for any other name reaches a refusal
+    rather than the stand-in.
+    """
+    backend = _StubBackend(frame)
+
+    def chosen(name=None):
+        if name != "tiingo":
+            raise AssertionError(f"the fetch asked for backend {name!r}")
+        return backend
+
+    monkeypatch.setattr(_prices, "backend", chosen)
+    return backend
+
+
+def test_a_fetched_series_reads_back_through_the_reader_unchanged(
+        tmp_path, monkeypatch):
+    """The one path that matters: the frame out, the reader in, values intact.
+
+    `195.3125 / 2 = 97.65625` exactly -- both are exact in binary -- so this is
+    an equality and not a tolerance, and a source swapped underneath cannot hide
+    a wrong number inside a rounding allowance.
+    """
+    _stub(monkeypatch, [_bar("2025-05-12", 195.3125, 97.65625),
+                        _bar("2025-05-13", 200.00, 100.00)])
+    folder = tmp_path / "prices"
+    record = market.fetch_prices(symbols=["ZZZZ"],
+                                 start=_dt.date(2025, 5, 1),
+                                 end=_dt.date(2025, 5, 31),
+                                 into=folder, environ={},
+                                 now=_dt.datetime(2026, 9, 21, 12, 0,
+                                                  tzinfo=_dt.timezone.utc))
+    series = market.read_prices(folder)
+    assert [day for day, _ in series["ZZZZ"]] == [_dt.date(2025, 5, 12),
+                                                  _dt.date(2025, 5, 13)]
+    assert series["ZZZZ"][0][1] == 97.65625
+    assert record["backend"] == "tiingo"
+    assert record["fetched_at"] == "2026-09-21T12:00:00+00:00"
+    assert record["served"]["ZZZZ"]["rows"] == 2
+    assert record["served"]["ZZZZ"]["first_day"] == "2025-05-12"
+
+
+def test_an_empty_answer_is_refused_rather_than_written(tmp_path, monkeypatch):
+    """A company with no trading days and a source that served nothing look
+    identical on disk, and only one of them is a fact."""
+    _stub(monkeypatch, [])
+    with pytest.raises(market.MarketError, match="no rows"):
+        market.fetch_prices(symbols=["ZZZZ"], start=_dt.date(2025, 1, 1),
+                            end=_dt.date(2025, 2, 1), into=tmp_path / "prices",
+                            environ={})
+
+
+def test_the_fetch_record_is_refused_inside_an_agent_directory(tmp_path):
+    """A wall-clock time is later than every date in a run.
+
+    In a directory an agent's session is rooted at, that is a document past
+    reaction day two in front of a reader -- the cutoff rule broken by the
+    evidence that the cutoff was kept.
+    """
+    inside = tmp_path / "run" / "agents" / "numbers-reader" / market.FETCH_RECORD
+    inside.parent.mkdir(parents=True)
+    with pytest.raises(market.MarketError, match="numbers-reader"):
+        market.write_fetch_record({"backend": "tiingo"}, inside)
+    assert not inside.exists()
+
+
+def test_the_fetch_record_is_refused_under_a_layer_grouped_layout(tmp_path):
+    """Found rather than assumed, the way `agent_inputs.agent_directories` is.
+
+    A layout that groups the six by layer puts an agent directory one step
+    deeper, and a check that looked only where it expected would call it clean.
+    """
+    inside = (tmp_path / "run" / "agents" / "readers" / "notes-text-reader"
+              / market.FETCH_RECORD)
+    inside.parent.mkdir(parents=True)
+    with pytest.raises(market.MarketError, match="notes-text-reader"):
+        market.write_fetch_record({"backend": "tiingo"}, inside)
+
+
+def test_the_fetch_record_is_written_to_a_run_log_outside_the_agent_tree(tmp_path):
+    outside = tmp_path / "run" / "logs" / market.FETCH_RECORD
+    written = market.write_fetch_record(
+        {"backend": "tiingo", "fetched_at": "2026-09-21T12:00:00+00:00"}, outside)
+    assert json.loads(written.read_text(encoding="utf-8"))["backend"] == "tiingo"
+
+
+def test_the_six_agent_names_are_read_from_the_layer_table_and_not_copied():
+    """A second list of the six would agree with the first until one moved."""
+    from src import agent_inputs
+
+    for agent in agent_inputs.AGENTS:
+        assert market._inside_an_agent_directory(Path("/run") / "agents" / agent) == agent
+    assert market._inside_an_agent_directory(Path("/run/logs")) is None
+
+
+def test_no_token_is_a_reported_state_and_not_an_error(tmp_path, monkeypatch):
+    """The state this repository is in: the switch is off and it says why."""
+    class _Unconfigured:
+        NAME = "tiingo"
+
+        def history(self, ticker, start=None, end=None, **credential):
+            raise _prices.Unconfigured("$TIINGO_TOKEN is not set")
+
+    monkeypatch.setattr(_prices, "backend", lambda name=None: _Unconfigured())
+    record, reason = market.prices_from_the_source(
+        symbols=["ZZZZ"], start=_dt.date(2025, 1, 1), end=_dt.date(2025, 2, 1),
+        into=tmp_path / "prices", environ={})
+    assert record == {}
+    assert "TIINGO_TOKEN" in reason
+    assert market.PRICES_UNAVAILABLE == "unavailable"
+
+
+def test_the_backend_defaults_to_the_forward_track_s(monkeypatch):
+    monkeypatch.delenv("PRICE_BACKEND", raising=False)
+    assert _prices.name_from_environment() == "tiingo"
+    monkeypatch.setenv("PRICE_BACKEND", "crsp")
+    assert _prices.name_from_environment() == "crsp"
+
+
+# --- the environment the caller hands in is the only one read ----------------
+#
+# PR #60's first version took an `environ` argument and never used it: the
+# backend came from `prices.backend(None)`, which reads the process's own
+# `$PRICE_BACKEND`, and `history` was called with no credential, so each backend
+# fell back to the process's own token. Every test above stubs `prices.backend`
+# with a history that takes no credential, so none of them could see it. These
+# run the real backend modules and stop them at the one call that would leave
+# the machine, and the process environment is always set to disagree with the
+# mapping handed in, so a read of the wrong one shows.
+
+def _no_backend_stub(monkeypatch):
+    """The process's own environment, set to say something else entirely."""
+    monkeypatch.setenv("PRICE_BACKEND", "crsp")
+    monkeypatch.setenv("TIINGO_TOKEN", "from-the-process")
+    monkeypatch.setenv("EODHD_TOKEN", "from-the-process")
+
+
+def test_the_backend_is_the_one_the_handed_in_environment_names(tmp_path, monkeypatch):
+    _no_backend_stub(monkeypatch)
+    from src.prices import eodhd
+
+    asked = []
+
+    def wire(path, params, token):
+        asked.append(token)
+        return []
+
+    monkeypatch.setattr(eodhd, "_get", wire)
+    # The stand-in answers no rows, which the fetch refuses -- after the wire
+    # was asked, which is the part under test.
+    with pytest.raises(market.MarketError, match="eodhd returned no rows"):
+        market.prices_from_the_source(
+            symbols=["ZZZZ"], start=_dt.date(2025, 1, 1), end=_dt.date(2025, 2, 1),
+            into=tmp_path / "prices",
+            environ={"PRICE_BACKEND": "eodhd", "EODHD_TOKEN": "handed-in"})
+    # eodhd, not the process's crsp, and asked with the handed-in token
+    assert asked == ["handed-in"]
+
+
+def test_the_credential_is_the_one_the_handed_in_environment_carries(tmp_path, monkeypatch):
+    _no_backend_stub(monkeypatch)
+    from src.prices import tiingo
+
+    asked = []
+
+    def wire(path, params, token):
+        asked.append((path, token))
+        # The metadata request answers an object and the price request a list,
+        # as Tiingo's do; the list is empty, which the fetch refuses.
+        return [] if path.endswith("/prices") else {}
+
+    monkeypatch.setattr(tiingo, "_get", wire)
+    with pytest.raises(market.MarketError, match="tiingo returned no rows"):
+        market.fetch_prices(
+            symbols=["ZZZZ"], start=_dt.date(2025, 1, 1), end=_dt.date(2025, 2, 1),
+            into=tmp_path / "prices",
+            environ={"PRICE_BACKEND": "tiingo", "TIINGO_TOKEN": "handed-in"})
+    assert [path for path, _ in asked] == ["/zzzz", "/zzzz/prices"]
+    assert {token for _, token in asked} == {"handed-in"}
+
+
+def test_a_handed_in_environment_with_no_token_is_unconfigured_whatever_the_process_holds(
+        tmp_path, monkeypatch):
+    """The state this repository is in, reached through the real Tiingo module."""
+    _no_backend_stub(monkeypatch)
+    from src.prices import tiingo
+
+    def wire(path, params, token):
+        raise AssertionError("the wire was reached with the process's token")
+
+    monkeypatch.setattr(tiingo, "_get", wire)
+    record, reason = market.prices_from_the_source(
+        symbols=["ZZZZ"], start=_dt.date(2025, 1, 1), end=_dt.date(2025, 2, 1),
+        into=tmp_path / "prices", environ={"PRICE_BACKEND": "tiingo"})
+    assert record == {}
+    assert "TIINGO_TOKEN" in reason
+
+
+def test_crsp_looks_for_the_pgpass_under_the_handed_in_home(tmp_path, monkeypatch):
+    _no_backend_stub(monkeypatch)
+    home = tmp_path / "someone"
+    home.mkdir()
+    record, reason = market.prices_from_the_source(
+        symbols=["ZZZZ"], start=_dt.date(2025, 1, 1), end=_dt.date(2025, 2, 1),
+        into=tmp_path / "prices", environ={"PRICE_BACKEND": "crsp", "HOME": str(home)})
+    assert record == {}
+    assert str(home / ".pgpass") in reason
+
+
+def test_crsp_with_no_home_handed_in_is_unconfigured_rather_than_the_process_home(
+        tmp_path, monkeypatch):
+    _no_backend_stub(monkeypatch)
+    record, reason = market.prices_from_the_source(
+        symbols=["ZZZZ"], start=_dt.date(2025, 1, 1), end=_dt.date(2025, 2, 1),
+        into=tmp_path / "prices", environ={"PRICE_BACKEND": "crsp"})
+    assert record == {}
+    assert "names no HOME" in reason
+
+
+def test_there_is_no_default_environment_to_fall_back_on(tmp_path):
+    with pytest.raises(TypeError):
+        market.fetch_prices(symbols=["ZZZZ"], start=_dt.date(2025, 1, 1),
+                            end=_dt.date(2025, 2, 1), into=tmp_path / "prices")
+    with pytest.raises(TypeError):
+        market.prices_from_the_source(symbols=["ZZZZ"], start=_dt.date(2025, 1, 1),
+                                      end=_dt.date(2025, 2, 1), into=tmp_path / "prices")
+
+
+def test_the_price_files_are_refused_inside_an_agent_directory(tmp_path, monkeypatch):
+    """A raw series runs past reaction day two, where `market_table` stops.
+
+    The fetch record was already kept out of the agent tree; the series it
+    records the fetch of was not, and a reader's directory would have held the
+    market's future.
+    """
+    backend = _stub(monkeypatch, [_bar("2025-05-12", 195.3125, 97.65625)])
+    inside = tmp_path / "run" / "agents" / "numbers-reader"
+    with pytest.raises(market.MarketError, match="numbers-reader"):
+        market.fetch_prices(symbols=["ZZZZ"], start=_dt.date(2025, 5, 1),
+                            end=_dt.date(2025, 5, 31), into=inside, environ={})
+    assert not inside.exists()
+    assert backend.asked == []
+
+
+@pytest.mark.parametrize("start, end", [
+    (_dt.date(2025, 5, 1), None),
+    (None, _dt.date(2025, 5, 31)),
+    ("2025-05-01", _dt.date(2025, 5, 31)),
+])
+def test_a_window_with_an_open_end_is_refused(tmp_path, monkeypatch, start, end):
+    """An open end is whatever the source had on the day it was asked."""
+    backend = _stub(monkeypatch, [_bar("2025-05-12", 195.3125, 97.65625)])
+    with pytest.raises(market.MarketError, match="both ends of the window"):
+        market.fetch_prices(symbols=["ZZZZ"], start=start, end=end,
+                            into=tmp_path / "prices", environ={})
+    assert backend.asked == []
+
+
+def test_crsp_through_the_fetch_logs_in_with_the_handed_in_home(tmp_path, monkeypatch):
+    """The whole path, the real crsp module to a stand-in `wrds`: the process's
+    home holds a .pgpass for another user, and the handed-in home's is used."""
+    import sys
+    import types
+
+    _no_backend_stub(monkeypatch)
+    wrds_line = "wrds-pgdata.wharton.upenn.edu:9737:wrds:{user}:{password}\n"
+    process_home, handed_in = tmp_path / "process", tmp_path / "handed-in"
+    for home, user in ((process_home, "process-user"), (handed_in, "handed-in-user")):
+        home.mkdir()
+        (home / ".pgpass").write_text(
+            wrds_line.format(user=user, password=user[:4] + "-pw"), encoding="utf-8")
+        (home / ".pgpass").chmod(0o600)
+    monkeypatch.setenv("HOME", str(process_home))
+    monkeypatch.setenv("PGPASSFILE", str(process_home / ".pgpass"))
+    connected = []
+
+    class Connection:
+        def __init__(self, **arguments):
+            connected.append(arguments)
+
+        def raw_sql(self, sql, params):
+            raise AssertionError("stopped after the login, which is the part under test")
+
+        def close(self):
+            pass
+
+    module = types.ModuleType("wrds")
+    module.Connection = Connection
+    monkeypatch.setitem(sys.modules, "wrds", module)
+    with pytest.raises(AssertionError, match="stopped after the login"):
+        market.fetch_prices(symbols=["ZZZZ"], start=_dt.date(2025, 1, 1),
+                            end=_dt.date(2025, 2, 1), into=tmp_path / "prices",
+                            environ={"PRICE_BACKEND": "crsp", "HOME": str(handed_in)})
+    assert [(one["wrds_username"], one["wrds_password"]) for one in connected] == [
+        ("handed-in-user", "hand-pw")]
+
+
+@pytest.mark.parametrize("symbol", ["../agents/numbers-reader/ZZZZ", "ZZZZ/..", ".ZZZZ",
+                                    "", "ZZ ZZ"])
+def test_a_symbol_that_is_not_a_file_name_in_the_folder_is_refused(
+        tmp_path, monkeypatch, symbol):
+    """A symbol is also the name of the file its series lands in."""
+    backend = _stub(monkeypatch, [_bar("2025-05-12", 195.3125, 97.65625)])
+    run = tmp_path / "run"
+    with pytest.raises(market.MarketError, match="not a ticker symbol"):
+        market.fetch_prices(symbols=[symbol], start=_dt.date(2025, 5, 1),
+                            end=_dt.date(2025, 5, 31), into=run / "prices", environ={})
+    assert backend.asked == []
+    assert not run.exists()
+
+
+def test_a_symbol_with_a_share_class_is_a_symbol(tmp_path, monkeypatch):
+    _stub(monkeypatch, [_bar("2025-05-12", 195.3125, 97.65625)])
+    market.fetch_prices(symbols=["BRK.B", "BF-B"], start=_dt.date(2025, 5, 1),
+                        end=_dt.date(2025, 5, 31), into=tmp_path / "prices", environ={})
+    assert sorted(path.name for path in (tmp_path / "prices").iterdir()) == [
+        "BF-B.csv", "BRK.B.csv"]
+
+
+def test_a_source_failing_on_the_second_symbol_leaves_no_series_written(
+        tmp_path, monkeypatch):
+    class _FailsSecond(_StubBackend):
+        def history(self, ticker, start=None, end=None, **credential):
+            if ticker == "YYYY":
+                return []
+            return super().history(ticker, start, end, **credential)
+
+    backend = _FailsSecond([_bar("2025-05-12", 195.3125, 97.65625)])
+    monkeypatch.setattr(_prices, "backend",
+                        lambda name=None: backend if name == "tiingo" else None)
+    with pytest.raises(market.MarketError, match="no rows for YYYY"):
+        market.fetch_prices(symbols=["ZZZZ", "YYYY"], start=_dt.date(2025, 5, 1),
+                            end=_dt.date(2025, 5, 31), into=tmp_path / "prices",
+                            environ={})
+    assert not (tmp_path / "prices").exists()
+
+
+def test_a_folder_holding_an_earlier_fetch_is_refused(tmp_path, monkeypatch):
+    """`read_prices` takes every series in a folder as one fetch."""
+    backend = _stub(monkeypatch, [_bar("2025-05-12", 195.3125, 97.65625)])
+    folder = tmp_path / "prices"
+    folder.mkdir()
+    (folder / "XXXX.csv").write_text("date,close,adjusted_close\n", encoding="utf-8")
+    with pytest.raises(market.MarketError, match="already holds XXXX.csv"):
+        market.fetch_prices(symbols=["ZZZZ"], start=_dt.date(2025, 5, 1),
+                            end=_dt.date(2025, 5, 31), into=folder, environ={})
+    assert backend.asked == []
+
