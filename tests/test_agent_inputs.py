@@ -41,7 +41,7 @@ LAYER_TABLE = (
     "| readers | the filing bundle for one company "
     "| prices, short interest, any other company |",
     "| comparers | both reader reports plus the market table | any filing |",
-    "| supervisor | the four reports | any filing, the market table |",
+    "| supervisor | the four reports, and the rules version's checklist keys and output schema | any filing, the market table |",
 )
 
 # What each directory holds, sorted, read off the table above and off §1's
@@ -85,12 +85,16 @@ EXPECTED = {
         "report_notes_vs_market.md",
         "report_numbers.md",
         "report_numbers_vs_market.md",
+        "rules_checklist_keys.md",
+        "rules_output_schema.md",
     ),
     "supervisor-pressure": (
         "report_notes_text.md",
         "report_notes_vs_market.md",
         "report_numbers.md",
         "report_numbers_vs_market.md",
+        "rules_checklist_keys.md",
+        "rules_output_schema.md",
     ),
 }
 
@@ -147,6 +151,12 @@ def _run_directory(tmp_path: Path, *, skip: tuple[str, ...] = ()) -> Path:
         if name in skip:
             continue
         (run / name).write_text(f"this is {name}\n", encoding="utf-8")
+    # The manifest is routed to no agent, and a comparer or a supervisor reads
+    # it for whether the run has a market table, so it is the JSON a run's is.
+    if "input_manifest.json" not in skip:
+        (run / "input_manifest.json").write_text(
+            '{"accession": "0000320193-25-000073", "ticker": "AAPL"}\n',
+            encoding="utf-8")
     return run
 
 
