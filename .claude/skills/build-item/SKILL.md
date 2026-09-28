@@ -1,6 +1,6 @@
 ---
 name: build-item
-description: Build one item from docs/next_cycle_tasks.md end to end — worktree, expected values from the source, make check, refute-check, auto-merging pull request. Use for every task-list item; never build one without it.
+description: Build one item from docs/next_cycle_tasks.md end to end — worktree, expected values from the source, make check, the two lenses when the change needs them, auto-merging pull request. Use for every task-list item; never build one without it.
 ---
 
 # Build one task-list item
@@ -51,7 +51,24 @@ first run there. Never put a pipe between the test run and anything that
 depends on it passing; a pipeline's exit status is the last command's, and a red
 suite has been committed that way before.
 
-## 4. Two lenses, not one
+## 4. Two lenses, only where the change needs them
+
+**4-route. Does this change need a lens at all?** The owner decided on
+2026-09-28: a second lens is required only on a pull request that changes
+
+- anything under `rules/`;
+- scoring: `src/scorecard.py` or `src/scorecard_template.md`;
+- an agent prompt: anything under `.claude/agents/`;
+- a calculator formula: the arithmetic in `src/calculator.py`, which writes
+  `calculator.json`, or in `src/trends.py`, `src/articulation.py`,
+  `src/baselines.py`, `src/fourth_quarter.py` or `src/market.py`. A change
+  elsewhere in those files — a fetch, a refusal, a docstring — is not a
+  formula.
+
+Ask it of the committed diff, `git diff --name-only origin/main...HEAD`. If
+none of these is touched, **skip 4a to 4c**: the change merges on green CI, and
+you go to step 5. If one is, both lenses read it, as below. A branch is merged
+or closed within a day either way.
 
 **4a. `refute-check` (Claude).** Hand it the diff and the item's four fields.
 
@@ -129,7 +146,8 @@ weekly routine reads, so the distinction has to survive the pull request.
 
 ## 5. `/simplify`
 
-Once both lenses pass and before the pull request opens. Quality only — it does
+Once both lenses pass, or step 4-route found none needed, and before the pull
+request opens. Quality only — it does
 not hunt for bugs, and it runs after the lenses so it is tidying verified code
 rather than hiding an unverified change under a cleanup.
 
@@ -142,9 +160,10 @@ gh pr create --fill
 gh pr merge --auto --squash
 ```
 
-Auto-merge goes on the moment the pull request opens. A pull request waiting for
-a click is the bottleneck the rules forbid, not a safety measure — a step is not
-finished until the merge is automatic.
+Auto-merge goes on the moment the pull request opens, whether the change
+needed a lens or not. A pull request waiting for a click is the bottleneck the
+rules forbid, not a safety measure — a step is not finished until the merge is
+automatic.
 
 **One exception, and it is the only one:** when step 4b exited 3, no second lens
 read this change. Then:
