@@ -86,8 +86,18 @@ def answer(**changes) -> dict:
         "events": [],
         "explanations": [],
         "market_direction": {"p_up": 0.4, "basis": [KEPT]},
-        "tier": "watch",
-        "top_signals": ["receivables_growth_outruns_revenue", "bad_debt_reserve_thinning"],
+        "anomalies": [
+            {"name": "revenue_recognition_receivables_outrun_revenue",
+             "axis": "accounting_reliability",
+             "what": "receivables grew faster than revenue",
+             "numbers_vs_prose": "confirms",
+             "evidence": [{"upstream_item_id": KEPT}], "market_label": "not_priced"},
+            {"name": "estimates_and_discretion_bad_debt_reserve_thinning",
+             "axis": "accounting_reliability",
+             "what": "the bad-debt reserve thinned",
+             "numbers_vs_prose": "unresolved",
+             "evidence": [{"upstream_item_id": FALLS}], "market_label": "absent"},
+        ],
     }
     body.update(changes)
     return body
@@ -414,13 +424,17 @@ def test_an_entry_citing_a_dropped_reader_item_is_dropped_and_counted(tmp_path):
     prediction, override = gated(run, answer())
     assert [entry["key"] for entry in prediction["checklist"]] == [
         "receivables_growth_outruns_revenue"]
-    assert prediction["top_signals"] == ["receivables_growth_outruns_revenue"]
+    # An anomaly resting on the dropped item goes with it, as a checklist entry does.
+    assert [entry["name"] for entry in prediction["anomalies"]] == [
+        "revenue_recognition_receivables_outrun_revenue"]
     # A market is on record in this run, so the supervisor's direction stands.
     assert override is None
     assert prediction["market_direction"] == {"p_up": 0.4, "basis": [KEPT]}
     dropped = [row["item_id"] for row in manifest(run)["dropped_items"]]
-    assert dropped == [FALLS, "accounting_reliability:checklist:bad_debt_reserve_thinning"]
-    assert manifest(run)["counts"]["dropped_items"] == 2
+    assert dropped == [FALLS, "accounting_reliability:checklist:bad_debt_reserve_thinning",
+                       "accounting_reliability:anomalies:"
+                       "estimates_and_discretion_bad_debt_reserve_thinning"]
+    assert manifest(run)["counts"]["dropped_items"] == 3
 
 
 def test_with_no_market_table_the_direction_is_written_insufficient(tmp_path):
