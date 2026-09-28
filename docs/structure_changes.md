@@ -174,3 +174,19 @@ codes, no cross-references, no approval state.
 English: build a nightly crew. New filings are checked every night, and past filings are collected a little every night. Results arrive as one morning report. The night work is Python with no model; a model only reads and triages the results in the morning. The detect-filing row and the extract row move into this cycle.
 
 2026-09-24 · **historical collection keeps each built bundle, gzipped, under `history/`.** Measured before the choice: the largest bundle the committed fixtures build, gzipped file by file, is 205,560 bytes (CSCO's 10-Q; the twenty-four run from 67,065 to 205,560), and a company files four triggering reports a year, so the seventeen years since XBRL began come to about 14 MB a company, under the 50 MB line. So each bundle extract builds for a past 10-K or 10-Q is committed gzipped at `history/{ticker}/{accession}/`, beside the one-line-per-filing `history/{ticker}/manifest.jsonl`; raw filings are not committed, because EDGAR is the archive and each line carries the URL and sha256 to fetch and check them again. Every line also records its own bundle's gzipped size, so the measurement is re-read against real filings as they arrive. `history/` joins `runs/`, `rules/` and `events/` under the append check.
+
+2026-09-28 · **the owner's decision on what the agents are for, recorded verbatim before any code changed.** The quote is the owner's own words; the English line under it is the translation this repository works from.
+
+> 내가 하고싶은건 과거사례에서 뽑아내는것도 그거지만 그것보단 지금은 회계적 분석, 재무적 분석을 에이전트에게 맡기고싶 가능하다면 firm value 도 free cash flow 로 찾아서 다 계산했으면 좋겠고 솔직히 재무정보만 있으면 다 할수잇는거라 가능할거라 보는데
+
+English: the priority now is agents doing accounting analysis and financial analysis of current filings, plus firm value from free cash flow, fully computed. The historical pattern study continues, but second.
+
+2026-09-28 · **five design principles adopted the same day, under that decision.**
+
+1. Agents read and judge; Python calculates. No agent does arithmetic, and no agent outputs a probability that gets scored as a forecast. Every number in any output comes from `calculator.json` or from companyfacts. Agents choose assumptions and explain them, citing verbatim quotes.
+2. Three analyses, never merged: accounting (can these numbers be trusted), financial (how healthy is this company), valuation (what is it worth, and what does the price already assume). There is no composite score and no rank across companies.
+3. Wide and cheap first, narrow and deep second. Python computes everything for every company. Model reading is spent where it adds something, and its added value gets measured.
+4. The owner's goal still holds: every anomaly is listed, with no count threshold.
+5. Less process. A second lens is required only on pull requests that change `rules/`, scoring, agent prompts or calculator formulas. Every other pull request merges on green CI. A branch is merged or closed within a day. The weekly test is whether a readable result was produced.
+
+2026-09-28 · `CLAUDE.md` changed where it contradicted the decision: the title names three analyses instead of two questions, the arithmetic line says every number an agent writes comes from `calculator.json` or companyfacts, and the layer line names what the three analysts see. The two supervisors become the accounting analyst and the financial analyst, and a valuation analyst is added; the comparers stay only for the reaction-window labels.
