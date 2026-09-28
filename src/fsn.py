@@ -173,9 +173,13 @@ def free_bytes(path: Path) -> int:
     return shutil.disk_usage(probe).free
 
 
-def room_for(path: Path, needed: int, floor: int, *, free=free_bytes) -> None:
-    """Raise FloorReached when writing `needed` bytes at `path` crosses `floor`."""
-    left = free(path) - needed
+def room_for(path: Path, needed: int, floor: int, *, free=None) -> None:
+    """Raise FloorReached when writing `needed` bytes at `path` crosses `floor`.
+
+    `free` None reads the disk through `free_bytes` when called, not when this
+    module was loaded, so every entry point measures the disk the same way.
+    """
+    left = (free or free_bytes)(path) - needed
     if left < floor:
         raise FloorReached(
             f"{path}: {needed / 1e9:.1f} GB more would leave {left / 1e9:.1f} GB free, "
@@ -333,7 +337,7 @@ def candidates(archive: zipfile.ZipFile, count: int = SAMPLE_CANDIDATES) -> list
 
 
 def take_in(entry: dict, *, work: Path, user_agent: str, index_dir: Path = INDEX_DIR,
-            scan=None, keep: Path | None = None, free=free_bytes) -> dict:
+            scan=None, keep: Path | None = None, free=None) -> dict:
     """One zip: download, hash, count, draw candidates, scan, index, then delete it.
 
     `scan(zip_path, line)` is the calendar's reader; its return value goes on the
@@ -364,7 +368,7 @@ def take_in(entry: dict, *, work: Path, user_agent: str, index_dir: Path = INDEX
 
 
 def fetch(*, zips: Path, user_agent: str, index_dir: Path = INDEX_DIR,
-          periods=None, free=free_bytes) -> list[str]:
+          periods=None, free=None) -> list[str]:
     """Every indexed zip into `zips`, verified against its line. Problems, one per zip."""
     problems = []
     for period, line in latest(read_index(index_dir)).items():
@@ -452,7 +456,7 @@ def uncompressed(path: Path) -> int:
 
 
 def load(*, db: Path, zips: Path, index_dir: Path = INDEX_DIR, periods=None,
-         free=free_bytes) -> list[str]:
+         free=None) -> list[str]:
     """Every fetched and verified zip into `db`, skipping what is loaded already."""
     problems = []
     connection = _connect(db)
