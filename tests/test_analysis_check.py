@@ -254,6 +254,23 @@ def test_the_memo_puts_the_calculators_number_where_the_path_was():
     assert memo.fill("{terms.trailing_four_quarters.revenue}", FIELDS) == "15.0억 달러"
 
 
+def test_the_memo_prints_a_unit_once_and_a_particle_that_agrees_with_it():
+    """The CSCO memo of 2026-09-28 printed "37.2일일" and "65.2억 달러과". Expected
+    Korean worked by hand: 달러 ends in a vowel, so 과 becomes 와 and 이 becomes 가;
+    % is read 퍼센트, so 을 becomes 를; 5 is read 오 and 0 is read 영, so 1.5 takes
+    로 and 2.50 takes 으로; 일 ends in ㄹ, which takes 로, never 으로."""
+    fill = memo.fill
+    assert fill("회전일수 {ratios.efficiency.days_sales_outstanding}일로 높다", FIELDS) \
+        == f"회전일수 {61.25:,.1f}일로 높다"
+    assert fill("매출 {terms.trailing_four_quarters.revenue}과 이익", FIELDS) == "매출 15.0억 달러와 이익"
+    assert fill("매출 {terms.trailing_four_quarters.revenue}이 늘고", FIELDS) == "매출 15.0억 달러가 늘고"
+    assert fill("{ratios.profitability.gross_margin|pct}%을 넘어", FIELDS) == "40.0%를 넘어"
+    assert fill("{ratios.liquidity.current_ratio}으로", FIELDS) == "2.500으로"
+    assert fill("{ratios.efficiency.days_sales_outstanding}으로", FIELDS) == f"{61.25:,.1f}일로"
+    # a syllable that is not a particle stays as the analyst wrote it
+    assert fill("{ratios.liquidity.current_ratio}이상", FIELDS) == "2.500이상"
+
+
 def test_the_memo_keeps_the_three_analyses_apart_and_adds_nothing_up():
     checked = analysis_check.check("accounting", accounting(), fields=FIELDS, sources=SOURCES)
     text = memo.memo(ticker="TEST", form="10-Q", period_end="2026-06-30", cutoff="2026-07-30",

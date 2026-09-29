@@ -161,6 +161,10 @@ Moved here untouched. Nothing on this list is launched this cycle.
 
 ---
 
+[ ] the control's prompt carries the analysts' own schemas: each enum, the fixed limits sentences, `fields` as bare paths, drivers as decimals under `scenarios` · `CONTROL_PROMPT` in `src/run_analysis.py` · `.venv/bin/python -m pytest tests/test_run_analysis.py -q` · on the four runs of 2026-09-28 that finished whole (AAPL, CSCO, PANW, STX) the gate dropped between 35 and 42 of the control's accounting entries in each run — for AAPL, CSCO and PANW mostly a `fields` entry written as `{path}` or `path.value`, for STX mostly a `numbers_vs_prose` written as a sentence instead of one of its values — dropped all three of its scenarios in every run (drivers written as placeholders, or no `scenarios` key), and dropped its limits sentence; the analysts' prompts spell each of these out and the control's does not, so on these runs the control's count against the analysts' measures format as much as judgment. The expected values are the analysts' own prompts under `.claude/agents/`. An agent prompt, so a second lens reads it · PR:
+
+[ ] a bare year in an analyst's own words drops the whole item · `ALLOWED_DIGITS` in `src/analysis_check.py` · `.venv/bin/python -m pytest tests/test_analysis_check.py -q` · AAPL's valuation analyst of 2026-09-28 lost its base scenario to "to 2025" and its bull scenario to "2021" inside a reason, and a missing base scenario takes the reverse DCF and the sensitivity grid with it. The expected rule: a four-digit year from 1900 to 2099 not followed by a quantity word stands, as "fiscal 2025" already does. The gate is scoring, so a second lens reads it · PR:
+
 ## Landed
 
 Rows whose pull request merged. A row marked **done, not confirmed** merged
