@@ -1,0 +1,259 @@
+{
+  "ticker": "GNRC",
+  "accession": "0001437749-26-025669",
+  "form": "10-Q",
+  "purpose": "bear, base and bull drivers for a ten-year discounted cash flow",
+  "written_by": "single-agent control",
+  "constraints": {
+    "terminal_growth_ceiling": "{cost_of_capital.risk_free_rate.value}",
+    "discount_rate_reference": "{cost_of_capital.wacc.value}",
+    "base_revenue": "{terms.trailing_four_quarters.revenue.value}",
+    "base_operating_income": "{terms.trailing_four_quarters.operating_income.value}",
+    "base_operating_margin": "{ratios.profitability.operating_margin.value}",
+    "note": "year one is the twelve months following the trailing window that ends at the period end; the trailing base carries a legal charge in the prior fiscal year and a one-time tariff refund in the latest quarter, so year-one margins are set on the underlying business rather than on the trailing figure"
+  },
+  "scenarios": {
+    "bear": {
+      "revenue_growth_year_one": {
+        "value": 0.06,
+        "reason": "Residential stays in decline as the storage market shrinks under the tax-credit phase-out and outage activity is mild, and data center customers exercise the cancellation and delivery rights the company now lists as a risk; growth is what acquisitions and the already-shipped backlog deliver, well below the guide. The trailing window is essentially flat, so single-digit growth is a return to recent history rather than a collapse.",
+        "quote": "increase in contract risk related to terms with certain data center customers, including cancellation rights, delivery requirements, and potential liability exposure tied to our performance obligations or other claimed damages",
+        "quote_from": "input_mdna.md",
+        "evidence": [
+          "0001437749-26-025669:mdna:8",
+          "0001437749-26-025669:mdna:28",
+          "0001437749-26-025669:mdna:80"
+        ],
+        "fields": [
+          "{ratios.growth.revenue.trailing_four_quarters.value}",
+          "{earnings_versus_cash.history.revenue_growth_three_year_compound}"
+        ]
+      },
+      "terminal_growth": {
+        "value": 0.02,
+        "reason": "Outage-driven residential demand and a data center cycle that may saturate leave a mature industrial growth rate at maturity, below the risk-free ceiling.",
+        "fields": [
+          "{cost_of_capital.risk_free_rate.value}",
+          "{earnings_versus_cash.history.revenue_growth_three_year_compound}"
+        ]
+      },
+      "operating_margin_year_one": {
+        "value": 0.09,
+        "reason": "Strip the tariff refund out of the quarter, let C&I mix dilute gross margin, keep the higher input costs the MD&A cites, and layer rising amortization and capacity start-up costs; the result is a margin near the trailing figure, which itself was depressed by the legal charge.",
+        "quote": "This increase was partially offset by unfavorable sales mix and higher input costs that more than offset favorable price realization.",
+        "quote_from": "input_mdna.md",
+        "evidence": [
+          "0001437749-26-025669:mdna:82",
+          "0001437749-26-025669:mdna:66"
+        ],
+        "fields": [
+          "{ratios.profitability.operating_margin.value}",
+          "{earnings_versus_cash.history.operating_margin_three_year_average}"
+        ]
+      },
+      "operating_margin_year_ten": {
+        "value": 0.09,
+        "reason": "If C&I becomes the majority of revenue at its current margin structure and Residential never regains its pandemic-era scale, the consolidated margin settles near the three-year average with no operating leverage.",
+        "quote": "Adjusted EBITDA for the Commercial & Industrial segment, before deducting for noncontrolling interests, was $81.5 million, or 14.6% of C&I total sales, as compared to $53.3 million, or 12.4% of total sales, in the prior year.",
+        "quote_from": "input_mdna.md",
+        "evidence": [
+          "0001437749-26-025669:mdna:66",
+          "0001437749-26-025669:mdna:67"
+        ],
+        "fields": [
+          "{earnings_versus_cash.history.operating_margin_three_year_average}"
+        ]
+      },
+      "reinvestment_rate_year_one": {
+        "value": 0.65,
+        "reason": "Capacity for large megawatt generators is being added regardless of whether orders hold, the Enercon earnout is mostly current, and inventory days are long, so reinvestment stays heavy while growth disappoints; the trailing window already shows acquisitions and working capital consuming most of after-tax operating income.",
+        "quote": "we are investing aggressively in incremental production and packaging capacity for large megawatt generators and are planning to add further capacity as our pipeline of opportunities materializes.",
+        "quote_from": "input_8k.md",
+        "evidence": [
+          "0001437749-26-024731:8k_2_02:20",
+          "0001437749-26-025669:notes:58"
+        ],
+        "fields": [
+          "{terms.trailing_four_quarters.capital_expenditure.value}",
+          "{terms.cash_flow_families.acquisitions.value}",
+          "{free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital.value}",
+          "{free_cash_flow.free_cash_flow_to_firm.value}"
+        ]
+      },
+      "reinvestment_rate_year_ten": {
+        "value": 0.25,
+        "reason": "At low terminal growth and a return on capital near the trailing figure, the reinvestment needed to sustain growth is modest; maintenance capital roughly equals depreciation.",
+        "fields": [
+          "{ratios.profitability.return_on_invested_capital.value}",
+          "{terms.trailing_four_quarters.depreciation_and_amortization.value}",
+          "{terms.trailing_four_quarters.capital_expenditure.value}"
+        ]
+      }
+    },
+    "base": {
+      "revenue_growth_year_one": {
+        "value": 0.15,
+        "reason": "Management holds mid-to-high-teens growth for the year and has a committed hyperscale volume for the following year plus a second hyperscale agreement in negotiation; a year one that spans the second half and the first half of next year lands in the mid teens if Residential merely stabilizes and C&I keeps ramping. Trailing revenue is flat, so this is a genuine inflection, not a continuation.",
+        "quote": "The Company is maintaining its full-year 2026 net sales growth guidance of mid-to-high teens percent range as compared to the prior year.",
+        "quote_from": "input_8k.md",
+        "evidence": [
+          "0001437749-26-024731:8k_2_02:19",
+          "0001437749-26-024731:8k_2_02:16",
+          "0001437749-26-024731:8k_2_02:35"
+        ],
+        "fields": [
+          "{ratios.growth.revenue.year_over_year.value}",
+          "{ratios.growth.revenue.trailing_four_quarters.value}"
+        ]
+      },
+      "terminal_growth": {
+        "value": 0.03,
+        "reason": "A diversified power-equipment franchise with a data center leg grows with nominal industrial output at maturity; set below the risk-free rate.",
+        "fields": [
+          "{cost_of_capital.risk_free_rate.value}"
+        ]
+      },
+      "operating_margin_year_one": {
+        "value": 0.12,
+        "reason": "Full-year net income margin guidance of nine to ten percent includes the refund; removing the refund's roughly one-and-a-half-point contribution and adding back interest and tax gives a GAAP operating margin in the low teens, consistent with the fiscal years before the legal charge.",
+        "quote": "Additionally, the Company now expects net income margin, before deducting for non-controlling interests, to be approximately 9.0 to 10.0% for the full-year 2026, as compared to the previous guidance of 8.0 to 9.0%.",
+        "quote_from": "input_8k.md",
+        "evidence": [
+          "0001437749-26-024731:8k_2_02:36",
+          "0001437749-26-024731:8k_2_02:14"
+        ],
+        "fields": [
+          "{ratios.profitability.operating_margin.value}",
+          "{earnings_versus_cash.history.operating_margin_three_year_average}",
+          "{terms.trailing_four_quarters.interest_expense.value}"
+        ]
+      },
+      "operating_margin_year_ten": {
+        "value": 0.13,
+        "reason": "Operating leverage on data center volume and normalizing legal costs offset the structural mix shift toward lower-margin C&I; the outcome is a margin near the better of the last three fiscal years rather than the pandemic peak.",
+        "quote": "This margin increase was primarily driven by an impact from tariff refunds of approximately 2%, as well as the favorable impact of acquisitions/divestitures and improved operating leverage, offset by an unfavorable sales mix shift and strategic operating expense investments to support future growth.",
+        "quote_from": "input_mdna.md",
+        "evidence": [
+          "0001437749-26-025669:mdna:66"
+        ],
+        "fields": [
+          "{earnings_versus_cash.history.operating_margin_three_year_average}"
+        ]
+      },
+      "reinvestment_rate_year_one": {
+        "value": 0.55,
+        "reason": "Capacity additions, the Enercon earnout, continued bolt-on acquisitions and working capital for a longer cash cycle absorb more than half of after-tax operating income in the ramp year; the trailing window shows capital expenditure below depreciation, so the net investment comes mostly from acquisitions and working capital.",
+        "quote": "During the quarter, the Company completed the previously disclosed acquisition of Enercon, headquartered in East Peoria, Illinois, and acquired an additional facility in Belvidere, Illinois, significantly expanding capacity for large megawatt generator packaging.",
+        "quote_from": "input_8k.md",
+        "evidence": [
+          "0001437749-26-024731:8k_2_02:18",
+          "0001437749-26-025669:notes:90"
+        ],
+        "fields": [
+          "{terms.trailing_four_quarters.capital_expenditure.value}",
+          "{terms.trailing_four_quarters.depreciation_and_amortization.value}",
+          "{terms.cash_flow_families.acquisitions.value}",
+          "{ratios.efficiency.cash_conversion_cycle.value}"
+        ]
+      },
+      "reinvestment_rate_year_ten": {
+        "value": 0.30,
+        "reason": "Terminal reinvestment equals terminal growth divided by a return on capital modestly above the trailing figure; a mature manufacturer with acquisitions tapering reinvests roughly a third of after-tax operating income.",
+        "fields": [
+          "{ratios.profitability.return_on_invested_capital.value}",
+          "{cost_of_capital.wacc.value}"
+        ]
+      }
+    },
+    "bull": {
+      "revenue_growth_year_one": {
+        "value": 0.22,
+        "reason": "The second hyperscale customer's volumes are finalized on top of the disclosed backlog, an active outage season lifts Residential into the high-single-digit growth the guide assumes, and acquisitions annualize; year one lands above the top of the guided range.",
+        "quote": "our backlog for products serving the data center market has now increased to approximately $1.6 billion as of today, which does not include any committed volumes from the second hyperscale customer.",
+        "quote_from": "input_8k.md",
+        "evidence": [
+          "0001437749-26-024731:8k_2_02:20",
+          "0001437749-26-024731:8k_2_02:17",
+          "0001437749-26-024731:8k_2_02:35"
+        ],
+        "fields": [
+          "{ratios.growth.revenue.year_over_year.value}",
+          "{ratios.growth.operating_income.year_over_year.value}"
+        ]
+      },
+      "terminal_growth": {
+        "value": 0.04,
+        "reason": "Grid decentralization and sustained data center build-out keep the addressable market growing faster than the economy for a long time; still capped below the risk-free rate.",
+        "quote": "The recent introduction of our large-megawatt diesel generator line-up has substantially increased our served addressable market, allowing us to participate in the supply-constrained data center market which is expected to grow significantly over the coming years due to the mass adoption of artificial intelligence.",
+        "quote_from": "input_mdna.md",
+        "evidence": [
+          "0001437749-26-025669:mdna:12"
+        ],
+        "fields": [
+          "{cost_of_capital.risk_free_rate.value}"
+        ]
+      },
+      "operating_margin_year_one": {
+        "value": 0.14,
+        "reason": "Price realization and operating leverage on a fast-growing C&I base, lower legal expense and the refund's residual benefit flowing out of inventory push the GAAP operating margin toward the mid teens even without the refund recurring.",
+        "quote": "Gross profit margin was 44.5% as compared to 39.3% in the prior year second quarter. The increase was primarily driven by tariff refunds which contributed approximately 6% to gross margin growth during the quarter.",
+        "quote_from": "input_mdna.md",
+        "evidence": [
+          "0001437749-26-025669:mdna:61",
+          "0001437749-26-025669:mdna:62"
+        ],
+        "fields": [
+          "{trend_table.quarters-back-0.ratios.gross_margin.value}",
+          "{ratios.profitability.gross_margin.value}"
+        ]
+      },
+      "operating_margin_year_ten": {
+        "value": 0.16,
+        "reason": "Scale in large-megawatt packaging, a recovered Residential franchise and normalized litigation return the company partway toward the margins it earned before the post-pandemic reset, while never reaching those peaks because C&I remains a larger share.",
+        "fields": [
+          "{earnings_versus_cash.history.operating_margin_three_year_average}",
+          "{ratios.profitability.operating_margin.value}"
+        ]
+      },
+      "reinvestment_rate_year_one": {
+        "value": 0.50,
+        "reason": "Growth is funded efficiently: customer deposits and floor-plan financing carry part of the working capital, capacity spending is matched to contracted volume, and the treasury-stock component of deal consideration limits cash outlay; reinvestment is still half of after-tax operating income because the ramp is real.",
+        "quote": "Contract liabilities primarily consist of customer deposits that exceed revenue recognized.",
+        "quote_from": "input_notes.md",
+        "evidence": [
+          "0001437749-26-025669:notes:118",
+          "0001437749-26-025669:mdna:101",
+          "0001437749-26-025669:notes:22"
+        ],
+        "fields": [
+          "{terms.balances_now.contract_liabilities.value}",
+          "{terms.balances_a_year_earlier.contract_liabilities.value}",
+          "{terms.trailing_four_quarters.capital_expenditure.value}"
+        ]
+      },
+      "reinvestment_rate_year_ten": {
+        "value": 0.33,
+        "reason": "Higher terminal growth at a return on capital well above the cost of capital requires reinvesting about a third of after-tax operating income; the ratio of growth to return keeps it near the base case despite faster growth.",
+        "fields": [
+          "{ratios.profitability.return_on_invested_capital.value}",
+          "{cost_of_capital.wacc.value}",
+          "{cost_of_capital.risk_free_rate.value}"
+        ]
+      }
+    }
+  },
+  "cross_checks": [
+    "every terminal_growth is at or below {cost_of_capital.risk_free_rate.value}",
+    "year-one margins in all scenarios exclude the one-time tariff refund that sits inside the trailing and quarterly figures",
+    "year-one growth in the base case is anchored on management guidance, which the accounting analysis flags as dependent on a strong second half; the bear case is anchored on the flat trailing window",
+    "reinvestment rates in year one are above the terminal rates in every scenario because acquisitions, earnouts and capacity additions are front-loaded"
+  ],
+  "summary_ko": "기본 시나리오는 경영진 가이던스와 데이터센터 수주잔고에 따라 첫해 매출이 십 퍼센트대 중반으로 성장하고, 관세 환급을 제외한 영업이익률이 십 퍼센트대 초반에서 시작해 규모의 경제로 소폭 개선되며, 증설·조건부 대가·인수로 첫해 재투자율이 높다가 성숙기에 삼분의 일 수준으로 낮아지는 경로다. 약세 시나리오는 주거용 부진과 데이터센터 계약 취소로 성장이 한 자릿수에 머물고 마진이 후행 수준에 갇힌 채 이미 약정된 증설 부담만 남는 경우이며, 강세 시나리오는 두 번째 하이퍼스케일 고객 물량과 정전 수요 회복이 겹쳐 가이던스 상단을 넘고 마진이 십 퍼센트대 중반으로 회복하는 경우다. 모든 시나리오의 영구성장률은 계산기의 무위험이자율 이하로 두었다.",
+  "limits": [
+    "Year-one margin estimates remove the tariff refund by reading management's attribution in prose; the calculator has no field for the refund, so the removal is qualitative.",
+    "Guidance is on net sales and net income margin and adjusted EBITDA margin, not GAAP operating margin; the translation to operating margin is the analyst's.",
+    "Backlog and committed volumes are press-release figures outside the calculator and outside the remaining-performance-obligation disclosure.",
+    "The trailing base blends a legal-charge year and a refund quarter; neither the bear nor the bull anchor can be read directly from a single calculator field.",
+    "Reinvestment rates are stated as shares of after-tax operating income; the calculator's free cash flow to firm uses a statutory tax rate cap and a year-end operating lease balance."
+  ]
+}

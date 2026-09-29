@@ -1,0 +1,368 @@
+{
+ "ticker": "STX",
+ "accession": "0001137789-26-000159",
+ "question": "do reported earnings and cash reflect economic reality?",
+ "areas": {
+  "earnings_versus_cash": {
+   "finding": "Cash from operations {terms.trailing_four_quarters.operating_cash_flow.value} exceeds net income {terms.trailing_four_quarters.net_income.value}; the ratio is {earnings_versus_cash.operating_cash_flow_over_net_income.value} and accruals over average assets are {earnings_versus_cash.accruals_over_average_assets.value}, so cash runs ahead of book profit. The composition is less clean than the headline. The largest working-capital source was accrued expenses, income taxes and warranty, which the MD&A attributes to accrued income taxes and legal settlements: non-current income tax payable rose from almost nothing to a large balance while cash taxes paid were a small fraction of the provision {terms.trailing_four_quarters.income_tax_expense.value}. Net income was also depressed by a non-cash induced conversion expense on the exchangeable notes that was added back in operating cash flow. Against that, receivables absorbed {earnings_versus_cash.working_capital.receivables.balance_sheet_change.value}, or {earnings_versus_cash.working_capital.receivables.share_of_net_income.value} of net income, partly because the prior year had sold receivables and this year sold none. Quarterly income moved slightly less than quarterly cash (smoothness {earnings_versus_cash.smoothness.value}).",
+   "verdict": "cash backs earnings; part of the cash surplus is tax and settlement accruals not yet paid, part of the earnings shortfall is a non-cash debt charge",
+   "evidence": [
+    "0001137789-26-000159:mdna:56",
+    "0001137789-26-000159:mdna:57",
+    "0001137789-26-000159:mdna:59",
+    "0001137789-26-000159:notes:86",
+    "0001137789-26-000159:notes:148",
+    "0001137789-26-000159:notes:116",
+    "0001137789-26-000159:notes:70",
+    "0001137789-26-000153:8k_2_02:63"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.operating_cash_flow.value",
+    "terms.trailing_four_quarters.net_income.value",
+    "earnings_versus_cash.operating_cash_flow_over_net_income.value",
+    "earnings_versus_cash.accruals_over_average_assets.value",
+    "earnings_versus_cash.working_capital.receivables.balance_sheet_change.value",
+    "earnings_versus_cash.working_capital.receivables.share_of_net_income.value",
+    "terms.trailing_four_quarters.income_tax_expense.value",
+    "earnings_versus_cash.smoothness.value"
+   ]
+  },
+  "revenue_recognition": {
+   "dropped": "finding: {trend_table.years-back-0.ratios.receivables_over_revenue.position_in_history} is not a number in the calculator this analyst saw"
+  },
+  "estimates_and_reserves": {
+   "dropped": "finding: {trend_table.years-back-0.ratios.warranty_reserve_ratio.position_in_history} is not a number in the calculator this analyst saw"
+  },
+  "cost_deferral": {
+   "finding": "Research and development {terms.trailing_four_quarters.research_and_development_expense.value} is expensed, sales commissions are expensed, capitalized interest is immaterial and no capitalized software line is tagged, so classic cost deferral is absent. Two items shape reported cost lines instead. Government operating grants netted against cost of revenue, product development and marketing roughly tripled year over year and are recognized when receipt is reasonably assured, with grant receivables booked before cash arrives. Capital spending {terms.trailing_four_quarters.capital_expenditure.value} is about twice depreciation and amortization {terms.trailing_four_quarters.depreciation_and_amortization.value}, construction in progress grew, and net property rose from {terms.balances_a_year_earlier.property_plant_and_equipment.value} to {terms.balances_now.property_plant_and_equipment.value}; management expects higher capital spending next year for the HAMR ramp. A deferred liability from the earlier sale of SoC operations continues to be recognized ratably against the restructured purchase agreements.",
+   "verdict": "no deferral of operating cost; grants netted into expense lines and the amortizing SoC deferred liability flatter reported cost, and the capex cycle is accelerating",
+   "evidence": [
+    "0001137789-26-000159:notes:35",
+    "0001137789-26-000159:notes:47",
+    "0001137789-26-000159:notes:49",
+    "0001137789-26-000159:notes:50",
+    "0001137789-26-000159:notes:79",
+    "0001137789-26-000159:notes:80",
+    "0001137789-26-000159:notes:266",
+    "0001137789-26-000159:mdna:96"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.research_and_development_expense.value",
+    "terms.trailing_four_quarters.capital_expenditure.value",
+    "terms.trailing_four_quarters.depreciation_and_amortization.value",
+    "terms.balances_now.property_plant_and_equipment.value",
+    "terms.balances_a_year_earlier.property_plant_and_equipment.value"
+   ]
+  },
+  "cash_flow_engineering_and_off_balance_sheet": {
+   "finding": "The supplier finance obligation jumped from {terms.balances_a_year_earlier.supplier_finance_obligation.value} to {terms.balances_now.supplier_finance_obligation.value}; those amounts sit inside accounts payable and their settlement runs through operating cash flow, so days payable of {ratios.efficiency.days_payables_outstanding.value} and the cash conversion cycle of {ratios.efficiency.cash_conversion_cycle.value} are supported by bank-funded payables. Receivable factoring, which supplied cash a year earlier, was not used this year, so the two years are not comparable on working capital. Debt fell from {terms.debt_a_year_earlier.value} to {terms.debt_now.value}, but the reduction was achieved partly by issuing ordinary shares in exchange for the exchangeable notes while the capped call notional was unchanged. After year-end the company redeemed a large tranche of high-coupon notes for cash and will redeem the remaining exchangeable notes, so year-end cash {terms.balances_now.cash.value} overstates the post-period position. Off balance sheet: unconditional purchase obligations disclosed in the MD&A are far larger than the long-term commitment tagged at {terms.balances_now.unconditional_purchase_obligations.value}, operating leases are {terms.balances_now.operating_lease_liability.value}, and settlement installments to BIS are paid through operating activities.",
+   "verdict": "no reclassification games, but supplier financing and the end of factoring both moved operating cash, and the post-period debt redemptions materially reset cash",
+   "evidence": [
+    "0001137789-26-000159:notes:88",
+    "0001137789-26-000159:notes:89",
+    "0001137789-26-000159:notes:91",
+    "0001137789-26-000159:notes:70",
+    "0001137789-26-000159:notes:116",
+    "0001137789-26-000159:notes:125",
+    "0001137789-26-000159:mdna:13",
+    "0001137789-26-000159:mdna:94",
+    "0001137789-26-000159:mdna:101",
+    "0001137789-26-000159:notes:241",
+    "0001137789-26-000159:notes:249",
+    "0001137789-26-000159:notes:166"
+   ],
+   "fields": [
+    "terms.balances_now.supplier_finance_obligation.value",
+    "terms.balances_a_year_earlier.supplier_finance_obligation.value",
+    "ratios.efficiency.days_payables_outstanding.value",
+    "ratios.efficiency.cash_conversion_cycle.value",
+    "terms.debt_now.value",
+    "terms.debt_a_year_earlier.value",
+    "terms.cash_flow_families.borrowing_repaid.value",
+    "terms.balances_now.cash.value",
+    "terms.balances_now.unconditional_purchase_obligations.value",
+    "terms.balances_now.operating_lease_liability.value"
+   ]
+  },
+  "controls_audit_and_filing_signals": {
+   "finding": "Ernst & Young issued unqualified opinions on both the financial statements and internal control, has served since the company's early years, and communicated a single critical audit matter on sales incentive rebates and discounts. Management concluded disclosure controls and internal control were effective and reported no changes in the fourth quarter. No late-filing notices exist and the annual report followed the earnings release within about a week. Two softer signals: the securities class action, described a quarter earlier as without merit and to be vigorously defended, was settled for a large sum with insurers covering part; and the chief financial officer adopted a trading plan for a disposition of shares in the fourth quarter.",
+   "verdict": "clean audit and control record; the class-action settlement and the insider plan are context, not control failures",
+   "evidence": [
+    "0001137789-26-000159:auditors_report:4",
+    "0001137789-26-000159:auditors_report:5",
+    "0001137789-26-000159:auditors_report:11",
+    "0001137789-26-000159:auditors_report:15",
+    "0001137789-26-000159:auditors_report:22",
+    "0001137789-26-000159:item_9a:3",
+    "0001137789-26-000159:item_9a:6",
+    "0001137789-26-000159:item_9a:8",
+    "0001137789-26-000159:notes:236",
+    "0001137789-26-000026:note_history:2",
+    "0001137789-26-000088:note_history:2",
+    "0001137789-26-000159:notes:270"
+   ],
+   "fields": []
+  },
+  "cross_document_reconciliation": {
+   "finding": "The earnings release and the annual report agree on revenue {terms.trailing_four_quarters.revenue.value}, net income {terms.trailing_four_quarters.net_income.value}, operating cash flow {terms.trailing_four_quarters.operating_cash_flow.value}, capital spending {terms.trailing_four_quarters.capital_expenditure.value}, debt repaid {terms.cash_flow_families.borrowing_repaid.value}, dividends {terms.trailing_four_quarters.dividends_paid.value} and repurchases {terms.trailing_four_quarters.share_repurchases.value}; the release's total debt and share count match the debt table and the equity note. The accounts payable change on the cash-flow statement is smaller than the balance-sheet change by {earnings_versus_cash.working_capital.accounts_payable.articulation_gap.value}, which the MD&A explains as capex-related payables, while receivables and inventory articulate exactly. The one presentational spread is non-GAAP: non-GAAP net income and operating margin sit well above GAAP {ratios.profitability.operating_margin.value} because share-based compensation {terms.trailing_four_quarters.share_based_compensation.value}, the debt-transaction loss, the legal settlement and a lower non-GAAP tax rate are stripped out, and the non-GAAP share count excludes if-converted shares even though the capped call cap sits far below the current share price {cost_of_capital.price_at_cutoff.value}. Note history shows the credit-facility covenant moved from applying only when drawn to applying always, and the litigation note flipped from defense to settlement.",
+   "verdict": "documents reconcile; the non-GAAP presentation and the excluded dilution are the only gaps a reader must bridge",
+   "evidence": [
+    "0001137789-26-000153:8k_2_02:29",
+    "0001137789-26-000153:8k_2_02:31",
+    "0001137789-26-000153:8k_2_02:63",
+    "0001137789-26-000153:8k_2_02:71",
+    "0001137789-26-000153:8k_2_02:76",
+    "0001137789-26-000153:8k_2_02:77",
+    "0001137789-26-000153:8k_2_02:86",
+    "0001137789-26-000153:8k_2_02:109",
+    "0001137789-26-000159:mdna:20",
+    "0001137789-26-000159:mdna:60",
+    "0001137789-26-000159:notes:100",
+    "0001137789-26-000159:notes:114",
+    "0001137789-26-000159:notes:120",
+    "0001137789-26-000159:notes:188",
+    "0001137789-26-000026:note_history:19",
+    "0001137789-26-000088:note_history:19"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.revenue.value",
+    "terms.trailing_four_quarters.net_income.value",
+    "terms.trailing_four_quarters.operating_cash_flow.value",
+    "terms.trailing_four_quarters.capital_expenditure.value",
+    "terms.cash_flow_families.borrowing_repaid.value",
+    "terms.trailing_four_quarters.dividends_paid.value",
+    "terms.trailing_four_quarters.share_repurchases.value",
+    "earnings_versus_cash.working_capital.accounts_payable.articulation_gap.value",
+    "ratios.profitability.operating_margin.value",
+    "terms.trailing_four_quarters.share_based_compensation.value",
+    "terms.shares_outstanding.value",
+    "cost_of_capital.price_at_cutoff.value"
+   ]
+  },
+  "industry_lens": {
+   "finding": "Hard-drive economics are cyclical and the record shows it: operating margin was {earnings_versus_cash.history.years.3.operating_margin} in the trough year and {earnings_versus_cash.history.years.2.operating_margin} the year after, against {ratios.profitability.operating_margin.value} now and a three-year average of {earnings_versus_cash.history.operating_margin_three_year_average}. Revenue today is only moderately above the earlier peak of {earnings_versus_cash.history.years.4.revenue}, so this is a recovery to the top of the cycle on fewer, higher-capacity units rather than a new plateau. Data center is four fifths of revenue, nearline exabytes drove the year, and management cites pricing actions and supply discipline as structural. Customer concentration, single-source components and a limited number of factories are stated risks. Tax incentives in Singapore and Thailand expire into the next decade and Pillar Two already offsets part of them. Purchase-order cancellation fees appeared in the prior year's non-GAAP items, a reminder of what a demand reversal costs in this industry.",
+   "verdict": "accounting is sound; the economic question is whether peak-cycle margins persist, and the filing's own history says they have not before",
+   "evidence": [
+    "0001137789-26-000159:mdna:12",
+    "0001137789-26-000159:mdna:15",
+    "0001137789-26-000159:mdna:16",
+    "0001137789-26-000159:mdna:24",
+    "0001137789-26-000159:mdna:32",
+    "0001137789-26-000159:notes:54",
+    "0001137789-26-000159:notes:57",
+    "0001137789-26-000159:notes:58",
+    "0001137789-26-000159:notes:150",
+    "0001137789-26-000153:8k_2_02:99"
+   ],
+   "fields": [
+    "earnings_versus_cash.history.years.3.operating_margin",
+    "earnings_versus_cash.history.years.2.operating_margin",
+    "earnings_versus_cash.history.years.4.revenue",
+    "earnings_versus_cash.history.operating_margin_three_year_average",
+    "earnings_versus_cash.history.revenue_growth_three_year_compound",
+    "ratios.profitability.operating_margin.value"
+   ]
+  }
+ },
+ "reconciliation": [],
+ "anomalies": [],
+ "adjustments": [],
+ "summary_ko": {},
+ "limits": "This analysis finds where the numbers and the explanations disagree, and where the company differs from its own past. It does not judge intent, and it cannot see evidence outside the filings, such as invoices or contracts.",
+ "normalized_quotes": 0,
+ "dropped_items": [
+  {
+   "where": "areas.revenue_recognition",
+   "reason": "finding: {trend_table.years-back-0.ratios.receivables_over_revenue.position_in_history} is not a number in the calculator this analyst saw"
+  },
+  {
+   "where": "areas.estimates_and_reserves",
+   "reason": "finding: {trend_table.years-back-0.ratios.warranty_reserve_ratio.position_in_history} is not a number in the calculator this analyst saw"
+  },
+  {
+   "where": "reconciliation[0]",
+   "id": null,
+   "reason": "the item is not an object"
+  },
+  {
+   "where": "reconciliation[1]",
+   "id": null,
+   "reason": "the item is not an object"
+  },
+  {
+   "where": "reconciliation[2]",
+   "id": null,
+   "reason": "the item is not an object"
+  },
+  {
+   "where": "reconciliation[3]",
+   "id": null,
+   "reason": "the item is not an object"
+  },
+  {
+   "where": "reconciliation[4]",
+   "id": null,
+   "reason": "the item is not an object"
+  },
+  {
+   "where": "anomalies[0]",
+   "id": "earnings_versus_cash_unpaid_tax_provision_lifting_operating_cash_flow",
+   "reason": "numbers_vs_prose 'The MD&A names accrued income taxes as the reason for the increase in accrued expenses, income taxes and warranty; the tax note shows a top-up tax line and a cash-paid figure far below the provision. The prose is candid but the earnings release headlines record free cash flow without this caveat.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[1]",
+   "id": "earnings_versus_cash_non_cash_induced_conversion_expense_depressing_net_income",
+   "reason": "numbers_vs_prose 'The MD&A describes the year as a debt reduction of a stated size; the note discloses that the reduction was paid partly in ordinary shares and that the charge is non-cash, credited to paid-in capital. The non-GAAP reconciliation removes the charge entirely.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[2]",
+   "id": "revenue_recognition_receivables_growth_outpacing_revenue_after_factoring_ended",
+   "reason": "what: {trend_table.years-back-0.ratios.receivables_over_revenue.position_in_history} is not a number in the calculator this analyst saw"
+  },
+  {
+   "where": "anomalies[3]",
+   "id": "revenue_recognition_extra_week_in_the_fiscal_year_flattering_growth",
+   "reason": "numbers_vs_prose 'The MD&A discloses the week count in its basis paragraph but the growth discussion and the earnings release headline do not adjust for it.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[4]",
+   "id": "revenue_recognition_customer_concentration_in_receivables",
+   "reason": "numbers_vs_prose 'The concentration note is explicit; the MD&A narrative about long-term customer engagements and cloud demand is the other side of the same dependence.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[5]",
+   "id": "revenue_recognition_sales_incentive_rebate_estimate_as_critical_audit_matter",
+   "reason": "numbers_vs_prose 'No accrual balance for sales programs is tagged, so the numbers cannot be tested against the prose; the auditor reports retrospective review and sensitivity work without stating results.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[6]",
+   "id": "estimates_and_reserves_allowance_related_deferred_tax_lines_shrinking_while_balances_grow",
+   "reason": "fields: 'terms.balances_now.bad_debt_allowance.missing' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[7]",
+   "id": "estimates_and_reserves_deferred_tax_asset_reliant_on_future_taxable_income",
+   "reason": "numbers_vs_prose 'Management states it is more likely than not the assets will be realized; the same note says the amount considered realizable may change with the outlook, and the history in the calculator shows loss years within the last five.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[8]",
+   "id": "estimates_and_reserves_unrecognized_tax_benefits_rising",
+   "reason": "numbers_vs_prose 'The rate reconciliation shows the change in unrecognized benefits as a positive item in the provision; the prose calls interest and penalties immaterial.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[9]",
+   "id": "estimates_and_reserves_warranty_accrual_growth_and_adverse_development",
+   "reason": "fields: 'trend_table.years-back-0.ratios.warranty_reserve_ratio.position_in_history' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[10]",
+   "id": "estimates_and_reserves_work_in_process_inventory_build",
+   "reason": "what: {trend_table.years-back-0.ratios.days_sales_of_inventory.position_in_history} is not a number in the calculator this analyst saw"
+  },
+  {
+   "where": "anomalies[11]",
+   "id": "cost_deferral_government_grants_netted_against_expense_lines",
+   "reason": "numbers_vs_prose 'Gross margin {ratios.profitability.gross_margin.value} and operating margin {ratios.profitability.operating_margin.value} include these credits; the MD&A margin discussion cites pricing and mix only.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[12]",
+   "id": "cost_deferral_capital_spending_at_twice_depreciation_for_the_hamr_ramp",
+   "reason": "numbers_vs_prose \"Free cash flow simple {free_cash_flow.free_cash_flow_simple.value} already carries this year's spending; the prose signals the burden rises, which the earnings release's record free cash flow does not anticipate.\" is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[13]",
+   "id": "cash_flow_engineering_and_off_balance_sheet_supplier_finance_program_balance_surge",
+   "reason": "numbers_vs_prose 'The note says the program does not change contractual terms and the company pledges nothing; the balance nonetheless grew far faster than payables, and the MD&A does not mention it among the working-capital drivers.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[14]",
+   "id": "cash_flow_engineering_and_off_balance_sheet_debt_retired_with_shares_as_well_as_cash",
+   "reason": "numbers_vs_prose 'The release speaks of retiring debt and strengthening the balance sheet; the MD&A and note make clear that a meaningful part of the retirement was paid in equity.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[15]",
+   "id": "cash_flow_engineering_and_off_balance_sheet_post_period_redemptions_consuming_year_end_cash",
+   "reason": "numbers_vs_prose 'The liquidity section still lists year-end cash as the first source of liquidity; the subsequent redemption is disclosed in the debt paragraphs rather than in the liquidity summary.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[16]",
+   "id": "cash_flow_engineering_and_off_balance_sheet_purchase_obligations_exceeding_inventory",
+   "reason": "numbers_vs_prose 'Management frames supply discipline as a structural strength; the commitments mean a demand pause would leave the company paying for components or fees, which is the mechanism behind the prior-year cancellation charges.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[17]",
+   "id": "cash_flow_engineering_and_off_balance_sheet_deferred_divestiture_liability_amortizing_into_results",
+   "reason": "numbers_vs_prose 'The fair value was a Level-three management estimate; the credit is not called out in the margin discussion.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[18]",
+   "id": "cash_flow_engineering_and_off_balance_sheet_settlement_payments_routed_through_operating_activities",
+   "reason": "numbers_vs_prose \"The classification is correct; the point is that this year's operating cash bore only the installment while the accrual side supplied cash.\" is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[19]",
+   "id": "controls_audit_and_filing_signals_class_action_settled_after_defense_language",
+   "reason": "numbers_vs_prose 'The charge is inside operating expenses and excluded from non-GAAP; the control conclusions and audit opinions are unqualified.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[20]",
+   "id": "controls_audit_and_filing_signals_chief_financial_officer_trading_plan",
+   "reason": "numbers_vs_prose 'Disclosure is complete and the plan is ordinary; it is a datapoint on insider view of the price, not a control matter.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[21]",
+   "id": "cross_document_reconciliation_non_gaap_gap_and_excluded_dilution",
+   "reason": "numbers_vs_prose \"The reconciliation tables are complete; the footnote language about the capped call describes an offset that the note's cap price shows to be small relative to the exchange value.\" is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[22]",
+   "id": "cross_document_reconciliation_accounts_payable_articulation_gap",
+   "reason": "numbers_vs_prose 'The MD&A attributes the payables increase to capital expenditures, so the gap is capex-related payables that belong to investing; benign, and it means reported capital spending {terms.trailing_four_quarters.capital_expenditure.value} is slightly below accrual-basis spending.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[23]",
+   "id": "cross_document_reconciliation_covenant_language_change_in_note_history",
+   "reason": "numbers_vs_prose 'Headroom is ample now; the change matters only in a downturn where adjusted EBITDA collapses, as it did in the trough year in the calculator history.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[24]",
+   "id": "industry_lens_peak_cycle_margins_against_loss_history",
+   "reason": "fields: 'trend_table.years-back-0.ratios.gross_margin.position_in_history' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[25]",
+   "id": "industry_lens_tax_incentive_expiry_and_global_minimum_tax",
+   "reason": "numbers_vs_prose \"The calculator's after-tax return on invested capital {ratios.profitability.return_on_invested_capital.value} uses the low effective rate; the non-GAAP rate in the release is higher, and the note says incentives may be extended only if conditions are met.\" is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[26]",
+   "id": "industry_lens_data_center_dependence",
+   "reason": "numbers_vs_prose 'Revenue growth {ratios.growth.revenue.trailing_four_quarters.value} and guidance for further sequential growth rest on this one end market; the risk-factor references and the concentration note are the counterweight.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "adjustments[0]",
+   "id": null,
+   "reason": "applies_to 'net_debt' is not one of cash_flow, earnings"
+  },
+  {
+   "where": "adjustments[1]",
+   "id": null,
+   "reason": "applies_to 'net_debt' is not one of cash_flow, earnings"
+  },
+  {
+   "where": "adjustments[2]",
+   "id": null,
+   "reason": "direction 'decrease' is not one of reduce, increase"
+  },
+  {
+   "where": "adjustments[3]",
+   "id": null,
+   "reason": "direction 'decrease' is not one of reduce, increase"
+  },
+  {
+   "where": "limits",
+   "reason": "not the rules version's sentence; replaced by it"
+  }
+ ],
+ "dropped_count": 39
+}

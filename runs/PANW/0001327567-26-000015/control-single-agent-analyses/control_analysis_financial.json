@@ -1,0 +1,375 @@
+{
+  "ticker": "PANW",
+  "accession": "0001327567-26-000015",
+  "question": "How healthy is this company?",
+  "written_by": "single-agent control, one pass over the filing bundle and calculator_before_analysts.json",
+  "sections": {
+    "profitability": {
+      "finding": "Trailing gross margin is {ratios.profitability.gross_margin.value}, but the latest quarter sits at the lowest of the filled quarters ({trend_table.quarters-back-0.ratios.gross_margin.value}). Trailing operating margin is {ratios.profitability.operating_margin.value}, below the prior fiscal year ({earnings_versus_cash.history.years.0.operating_margin}) and roughly at the three-year average ({earnings_versus_cash.history.operating_margin_three_year_average}), and the quarter itself is an operating loss ({ratios.growth.operating_income.this_quarter.value}). Net margin is {ratios.profitability.net_margin.value}. Returns are thin — return on assets {ratios.profitability.return_on_assets.value}, return on equity {ratios.profitability.return_on_equity.value}, return on invested capital {ratios.profitability.return_on_invested_capital.value} — because average assets and equity roughly doubled and tripled with acquisition goodwill and share issuance while earnings absorbed amortization, accelerated vesting, severance and transaction costs. The trailing effective tax rate ({tax_rate.effective_rate}) is above statutory and the calculator caps it ({tax_rate.value}).",
+      "verdict": "weakening on reported measures, stable underneath",
+      "evidence": [
+        "0001327567-26-000015:mdna:51",
+        "0001327567-26-000015:mdna:60",
+        "0001327567-26-000015:notes:93",
+        "0001327567-26-000015:notes:176",
+        "0001327567-26-000015:notes:80",
+        "0001327567-26-000015:notes:179"
+      ],
+      "fields": [
+        "{ratios.profitability.gross_margin.value}",
+        "{trend_table.quarters-back-0.ratios.gross_margin.value}",
+        "{ratios.profitability.operating_margin.value}",
+        "{earnings_versus_cash.history.years.0.operating_margin}",
+        "{earnings_versus_cash.history.operating_margin_three_year_average}",
+        "{ratios.growth.operating_income.this_quarter.value}",
+        "{ratios.profitability.net_margin.value}",
+        "{ratios.profitability.return_on_assets.value}",
+        "{ratios.profitability.return_on_equity.value}",
+        "{ratios.profitability.return_on_invested_capital.value}",
+        "{tax_rate.effective_rate}",
+        "{tax_rate.value}"
+      ]
+    },
+    "efficiency": {
+      "finding": "Trailing days sales outstanding is {ratios.efficiency.days_sales_outstanding.value} and the quarterly measure is the highest of the filled quarters ({trend_table.quarters-back-0.ratios.days_sales_outstanding.value}), partly because acquired receivables entered with less than a full quarter of acquired revenue. Days payables outstanding is {ratios.efficiency.days_payables_outstanding.value}. Asset turnover fell to {ratios.efficiency.asset_turnover.value} as total assets more than doubled ({terms.balances_now.assets.value} against {terms.balances_a_year_earlier.assets.value}) on goodwill and intangibles. Inventory days and the cash conversion cycle are missing because the period's inventory is untagged.",
+      "verdict": "watch",
+      "evidence": [
+        "0001327567-26-000015:notes:77",
+        "0001327567-26-000015:notes:102",
+        "0001327567-26-000015:notes:105"
+      ],
+      "fields": [
+        "{ratios.efficiency.days_sales_outstanding.value}",
+        "{trend_table.quarters-back-0.ratios.days_sales_outstanding.value}",
+        "{ratios.efficiency.days_payables_outstanding.value}",
+        "{ratios.efficiency.asset_turnover.value}",
+        "{terms.balances_now.assets.value}",
+        "{terms.balances_a_year_earlier.assets.value}",
+        "{ratios.efficiency.days_sales_of_inventory.missing}",
+        "{ratios.efficiency.cash_conversion_cycle.missing}"
+      ]
+    },
+    "liquidity": {
+      "finding": "The current ratio is below one ({ratios.liquidity.current_ratio.value}) and the quick ratio lower still ({ratios.liquidity.quick_ratio.value}); the MD&A reports a working capital deficit that widened since year-end. The shape is typical of a prepaid subscription model: current contract liabilities ({terms.balances_now.contract_liabilities.value}) make up most of current liabilities ({terms.balances_now.current_liabilities.value}) and are settled by service delivery, not cash. Cash and short-term investments are {terms.cash_and_short_term_investments_now.value}; management counts a considerably larger total including long-term securities, and an undrawn revolving facility exists. There is no cash burn ({ratios.liquidity.cash_runway_months.not_burning_cash}). The one contingent call on cash is the assumed convertible notes, whose principal is payable in cash on conversion; management states existing resources are sufficient.",
+      "verdict": "adequate",
+      "evidence": [
+        "0001327567-26-000015:mdna:129",
+        "0001327567-26-000015:mdna:130",
+        "0001327567-26-000015:mdna:133",
+        "0001327567-26-000015:mdna:134",
+        "0001327567-26-000015:notes:50"
+      ],
+      "fields": [
+        "{ratios.liquidity.current_ratio.value}",
+        "{ratios.liquidity.quick_ratio.value}",
+        "{terms.balances_now.contract_liabilities.value}",
+        "{terms.balances_now.current_liabilities.value}",
+        "{terms.balances_now.current_assets.value}",
+        "{terms.cash_and_short_term_investments_now.value}",
+        "{ratios.liquidity.cash_runway_months.not_burning_cash}"
+      ]
+    },
+    "solvency": {
+      "finding": "The calculator shows no debt ({ratios.solvency.total_debt.value}), net cash ({ratios.solvency.net_debt.value}), zero interest expense and liabilities at {ratios.solvency.liabilities_over_assets.value} of assets; EBITDA is {ratios.solvency.ebitda.value}. The filing qualifies this: the notes assumed from CyberArk are carried at fair value as short-term and long-term liabilities, operating lease obligations are larger than the stale figure the calculator carries ({ratios.solvency.operating_lease_liability.value}), and unrecorded purchase commitments ({terms.balances_now.unconditional_purchase_obligations.value}) roughly doubled year over year. Even so, obligations are modest against trailing operating cash flow ({terms.trailing_four_quarters.operating_cash_flow.value}) and stockholders' equity ({terms.balances_now.stockholders_equity.value}) nearly quadrupled through share issuance for the acquisition and the warrants.",
+      "verdict": "strong, with obligations the calculator does not see",
+      "evidence": [
+        "0001327567-26-000015:notes:37",
+        "0001327567-26-000015:notes:129",
+        "0001327567-26-000015:mdna:139",
+        "0001327567-26-000015:notes:142",
+        "0001327567-26-000015:notes:138",
+        "0001327567-26-000015:notes:116"
+      ],
+      "fields": [
+        "{ratios.solvency.total_debt.value}",
+        "{ratios.solvency.net_debt.value}",
+        "{ratios.solvency.liabilities_over_assets.value}",
+        "{ratios.solvency.ebitda.value}",
+        "{ratios.solvency.debt_over_ebitda.value}",
+        "{ratios.solvency.interest_coverage.missing}",
+        "{ratios.solvency.operating_lease_liability.value}",
+        "{terms.balances_now.unconditional_purchase_obligations.value}",
+        "{terms.balances_a_year_earlier.unconditional_purchase_obligations.value}",
+        "{terms.trailing_four_quarters.operating_cash_flow.value}",
+        "{terms.balances_now.stockholders_equity.value}",
+        "{terms.balances_a_year_earlier.stockholders_equity.value}"
+      ]
+    },
+    "growth": {
+      "finding": "Trailing revenue grew {ratios.growth.revenue.trailing_four_quarters.value}, above the prior fiscal year ({earnings_versus_cash.history.years.0.revenue_growth}) and close to the three-year compound rate ({earnings_versus_cash.history.revenue_growth_three_year_compound}); the quarter grew {ratios.growth.revenue.year_over_year.value} year over year and {ratios.growth.revenue.quarter_over_quarter.value} sequentially, lifted by the first full consolidation of CyberArk and Chronosphere. Trailing operating income grew only {ratios.growth.operating_income.trailing_four_quarters.value} and trailing net income fell {ratios.growth.net_income.trailing_four_quarters.value}, the latter against a base year whose net income ({earnings_versus_cash.history.years.1.net_income}) far exceeded its operating income ({earnings_versus_cash.history.years.1.operating_income}) because of a tax benefit. Trailing operating cash flow grew {ratios.growth.operating_cash_flow.trailing_four_quarters.value}. Backlog indicators — remaining performance obligations and next-generation security annualized recurring revenue — rose strongly per the MD&A.",
+      "verdict": "strong top line, acquisition-assisted; earnings growth stalled by deal accounting",
+      "evidence": [
+        "0001327567-26-000015:mdna:50",
+        "0001327567-26-000015:mdna:51",
+        "0001327567-26-000015:notes:93",
+        "0001327567-26-000015:notes:95",
+        "0001327567-26-000015:notes:34"
+      ],
+      "fields": [
+        "{ratios.growth.revenue.trailing_four_quarters.value}",
+        "{earnings_versus_cash.history.years.0.revenue_growth}",
+        "{earnings_versus_cash.history.revenue_growth_three_year_compound}",
+        "{ratios.growth.revenue.year_over_year.value}",
+        "{ratios.growth.revenue.quarter_over_quarter.value}",
+        "{ratios.growth.operating_income.trailing_four_quarters.value}",
+        "{ratios.growth.net_income.trailing_four_quarters.value}",
+        "{earnings_versus_cash.history.years.1.net_income}",
+        "{earnings_versus_cash.history.years.1.operating_income}",
+        "{ratios.growth.operating_cash_flow.trailing_four_quarters.value}"
+      ]
+    },
+    "free_cash_flow": {
+      "finding": "Simple free cash flow is {free_cash_flow.free_cash_flow_simple.value}, up from the prior fiscal year ({earnings_versus_cash.history.years.0.free_cash_flow_simple}) and each year before it; free cash flow to equity is {free_cash_flow.free_cash_flow_to_equity.value} after the matured note repayment. Capital expenditure ({terms.trailing_four_quarters.capital_expenditure.value}) is small against operating cash flow but has risen and includes a land purchase. After share-based compensation ({terms.trailing_four_quarters.share_based_compensation.value}) and trailing acquisition cash ({terms.cash_flow_families.acquisitions.value}), quality-adjusted free cash flow is {free_cash_flow.free_cash_flow_quality_adjusted.value}: the business generates cash abundantly and then reinvests more than that in acquisitions, funded by liquidating the investment portfolio and issuing shares. Free cash flow to the firm is missing for want of inventory.",
+      "verdict": "strong before deals, negative after them",
+      "evidence": [
+        "0001327567-26-000015:mdna:56",
+        "0001327567-26-000015:mdna:153",
+        "0001327567-26-000015:mdna:121",
+        "0001327567-26-000015:notes:111",
+        "0001327567-26-000015:notes:75"
+      ],
+      "fields": [
+        "{free_cash_flow.free_cash_flow_simple.value}",
+        "{earnings_versus_cash.history.years.0.free_cash_flow_simple}",
+        "{free_cash_flow.free_cash_flow_to_equity.value}",
+        "{terms.trailing_four_quarters.capital_expenditure.value}",
+        "{terms.trailing_four_quarters.share_based_compensation.value}",
+        "{terms.cash_flow_families.acquisitions.value}",
+        "{free_cash_flow.free_cash_flow_quality_adjusted.value}",
+        "{free_cash_flow.free_cash_flow_to_firm.missing}"
+      ]
+    }
+  },
+  "dupont": {
+    "net_margin": "{ratios.profitability.dupont.net_margin.value}",
+    "asset_turnover": "{ratios.profitability.dupont.asset_turnover.value}",
+    "equity_multiplier": "{ratios.profitability.dupont.equity_multiplier.value}",
+    "return_on_equity": "{ratios.profitability.dupont.product.value}",
+    "reading": "Return on equity is low because all three legs are weak for a software franchise of this scale: the net margin is thin under acquisition charges and a high effective tax rate, asset turnover has collapsed because average assets ({ratios.profitability.return_on_assets.inputs.average_assets.value}) now carry the goodwill of a purchase price rather than operating capital, and the equity multiplier is modest because the acquisition was paid mostly in shares, so average equity ({ratios.profitability.return_on_equity.inputs.average_equity.value}) expanded alongside assets. Leverage is not the story; dilution and non-cash charges are.",
+    "evidence": ["0001327567-26-000015:notes:75", "0001327567-26-000015:notes:102", "0001327567-26-000015:notes:116"],
+    "fields": [
+      "{ratios.profitability.dupont.net_margin.value}",
+      "{ratios.profitability.dupont.asset_turnover.value}",
+      "{ratios.profitability.dupont.equity_multiplier.value}",
+      "{ratios.profitability.dupont.product.value}",
+      "{ratios.profitability.return_on_assets.inputs.average_assets.value}",
+      "{ratios.profitability.return_on_equity.inputs.average_equity.value}"
+    ]
+  },
+  "anomalies": [
+    {
+      "id": "profitability_quarterly_operating_margin_negative",
+      "name": "Quarterly operating income turned negative",
+      "name_ko": "분기 영업이익 적자 전환",
+      "area": "profitability",
+      "what": "Operating income for the quarter is {ratios.growth.operating_income.this_quarter.value}, down {ratios.growth.operating_income.year_over_year.value} year over year and {ratios.growth.operating_income.quarter_over_quarter.value} sequentially, while trailing operating margin is still positive at {ratios.profitability.operating_margin.value}.",
+      "numbers_vs_prose": "The MD&A table shows the same swing and attributes it to amortization, accelerated vesting, severance and transaction costs from the acquisitions; the notes quantify the acquired units' operating loss as larger than the consolidated loss.",
+      "evidence": ["0001327567-26-000015:mdna:51", "0001327567-26-000015:mdna:112", "0001327567-26-000015:notes:93"],
+      "fields": [
+        "{ratios.growth.operating_income.this_quarter.value}",
+        "{ratios.growth.operating_income.year_over_year.value}",
+        "{ratios.growth.operating_income.quarter_over_quarter.value}",
+        "{ratios.profitability.operating_margin.value}"
+      ]
+    },
+    {
+      "id": "profitability_returns_diluted_by_acquisition_capital",
+      "name": "Return on equity and invested capital fell as goodwill and share issuance swelled the base",
+      "name_ko": "영업권과 주식발행으로 자본이 급증하며 자본수익률 하락",
+      "area": "profitability",
+      "what": "Return on equity is {ratios.profitability.return_on_equity.value} and return on invested capital {ratios.profitability.return_on_invested_capital.value}; stockholders' equity rose to {terms.balances_now.stockholders_equity.value} from {terms.balances_a_year_earlier.stockholders_equity.value} and invested capital is {ratios.profitability.invested_capital.value}.",
+      "numbers_vs_prose": "The consideration table shows the acquisition was paid predominantly in stock and the goodwill roll-forward shows where the assets went; the returns are arithmetic consequences, not operating deterioration, but they will only recover if acquired revenue scales against a now-fixed capital base.",
+      "evidence": ["0001327567-26-000015:notes:75", "0001327567-26-000015:notes:102", "0001327567-26-000015:notes:78"],
+      "fields": [
+        "{ratios.profitability.return_on_equity.value}",
+        "{ratios.profitability.return_on_invested_capital.value}",
+        "{terms.balances_now.stockholders_equity.value}",
+        "{terms.balances_a_year_earlier.stockholders_equity.value}",
+        "{ratios.profitability.invested_capital.value}"
+      ]
+    },
+    {
+      "id": "profitability_effective_tax_rate_above_statutory",
+      "name": "Trailing effective tax rate above the statutory cap",
+      "name_ko": "최근 네 분기 실효세율이 법정세율 상한을 초과",
+      "area": "profitability",
+      "what": "The trailing effective rate is {tax_rate.effective_rate} against the capped rate {tax_rate.value}; the quarter's rate was negative because a provision was recorded on a pre-tax loss.",
+      "numbers_vs_prose": "The notes cite the CyberArk acquisition and reduced excess tax benefits on share-based pay and warn of continued fluctuation during integration.",
+      "evidence": ["0001327567-26-000015:notes:179", "0001327567-26-000015:mdna:123"],
+      "fields": ["{tax_rate.effective_rate}", "{tax_rate.value}"]
+    },
+    {
+      "id": "efficiency_asset_turnover_fell_as_assets_doubled",
+      "name": "Asset turnover fell as total assets more than doubled",
+      "name_ko": "총자산이 두 배 이상 늘며 자산회전율 하락",
+      "area": "efficiency",
+      "what": "Asset turnover is {ratios.efficiency.asset_turnover.value}; total assets are {terms.balances_now.assets.value} against {terms.balances_a_year_earlier.assets.value} a year earlier, and soft assets are the highest share of the filled quarters ({trend_table.quarters-back-0.ratios.soft_asset_share.value}).",
+      "numbers_vs_prose": "The goodwill and intangible schedules account for the increase; turnover on operating assets alone would look unchanged.",
+      "evidence": ["0001327567-26-000015:notes:102", "0001327567-26-000015:notes:105"],
+      "fields": [
+        "{ratios.efficiency.asset_turnover.value}",
+        "{terms.balances_now.assets.value}",
+        "{terms.balances_a_year_earlier.assets.value}",
+        "{trend_table.quarters-back-0.ratios.soft_asset_share.value}"
+      ]
+    },
+    {
+      "id": "efficiency_days_sales_outstanding_at_a_six_quarter_high",
+      "name": "Days sales outstanding at the highest of the filled quarters",
+      "name_ko": "매출채권회수기간이 최근 분기 중 최고치",
+      "area": "efficiency",
+      "what": "Quarterly days sales outstanding is {trend_table.quarters-back-0.ratios.days_sales_outstanding.value}, up year over year and sequentially; trailing days are {ratios.efficiency.days_sales_outstanding.value}.",
+      "numbers_vs_prose": "Acquired receivables entered the balance sheet with less than a full quarter of acquired revenue; the MD&A speaks of stronger collections, which the cash flow supports, so the ratio is more a consolidation artefact than a collection problem — to be confirmed next quarter.",
+      "evidence": ["0001327567-26-000015:notes:77", "0001327567-26-000015:mdna:149"],
+      "fields": ["{trend_table.quarters-back-0.ratios.days_sales_outstanding.value}", "{ratios.efficiency.days_sales_outstanding.value}"]
+    },
+    {
+      "id": "liquidity_current_ratio_below_one",
+      "name": "Current and quick ratios below one with a widening working capital deficit",
+      "name_ko": "유동비율과 당좌비율이 일 미만이며 운전자본 적자 확대",
+      "area": "liquidity",
+      "what": "Current ratio {ratios.liquidity.current_ratio.value}, quick ratio {ratios.liquidity.quick_ratio.value}; contract liabilities ({terms.balances_now.contract_liabilities.value}) dominate current liabilities ({terms.balances_now.current_liabilities.value}).",
+      "numbers_vs_prose": "The MD&A discloses the deficit and a much larger total of cash and investments than the calculator's liquid balance; deferred revenue is a service obligation, so the ratio overstates cash risk.",
+      "evidence": ["0001327567-26-000015:mdna:129", "0001327567-26-000015:mdna:130"],
+      "fields": [
+        "{ratios.liquidity.current_ratio.value}",
+        "{ratios.liquidity.quick_ratio.value}",
+        "{terms.balances_now.contract_liabilities.value}",
+        "{terms.balances_now.current_liabilities.value}"
+      ]
+    },
+    {
+      "id": "liquidity_convertible_notes_can_call_cash",
+      "name": "Assumed convertible notes can require cash settlement of principal",
+      "name_ko": "인수한 전환사채가 원금 현금상환을 요구할 수 있음",
+      "area": "liquidity",
+      "what": "The calculator carries no debt ({ratios.solvency.total_debt.value}), yet the MD&A says that if the sale price condition is met and holders convert, the remaining principal must be settled in cash; a portion already surrendered was settled in cash after quarter-end.",
+      "numbers_vs_prose": "Management states operating cash flow, investments and financing access are sufficient; against trailing operating cash flow ({terms.trailing_four_quarters.operating_cash_flow.value}) the principal is manageable but it is absent from every calculator solvency ratio.",
+      "evidence": ["0001327567-26-000015:mdna:133", "0001327567-26-000015:notes:128", "0001327567-26-000015:notes:129"],
+      "fields": ["{ratios.solvency.total_debt.value}", "{terms.trailing_four_quarters.operating_cash_flow.value}", "{terms.cash_and_short_term_investments_now.value}"]
+    },
+    {
+      "id": "solvency_purchase_commitments_exceed_liquid_balances",
+      "name": "Unrecorded purchase commitments exceed liquid balances and trailing operating cash flow",
+      "name_ko": "미인식 구매약정이 유동성 잔액과 연간 영업현금흐름을 초과",
+      "area": "solvency",
+      "what": "Commitments of {terms.balances_now.unconditional_purchase_obligations.value}, about double a year earlier ({terms.balances_a_year_earlier.unconditional_purchase_obligations.value}), exceed cash and short-term investments ({terms.cash_and_short_term_investments_now.value}) and trailing operating cash flow ({terms.trailing_four_quarters.operating_cash_flow.value}).",
+      "numbers_vs_prose": "The note schedules the commitments over several fiscal years, mostly cloud hosting, and a separate minimum commitment sits outside the table; they are spread out, but they are fixed while cloud subscription revenue is not.",
+      "evidence": ["0001327567-26-000015:notes:142", "0001327567-26-000015:notes:143", "0001327567-26-000015:note_history:2"],
+      "fields": [
+        "{terms.balances_now.unconditional_purchase_obligations.value}",
+        "{terms.balances_a_year_earlier.unconditional_purchase_obligations.value}",
+        "{terms.cash_and_short_term_investments_now.value}",
+        "{terms.trailing_four_quarters.operating_cash_flow.value}"
+      ]
+    },
+    {
+      "id": "solvency_lease_liability_understated_in_calculator",
+      "name": "Operating lease liability in the calculator is stale after headquarters lease extensions",
+      "name_ko": "본사 임차 연장 이후 계산기의 리스부채가 구버전",
+      "area": "solvency",
+      "what": "The calculator carries {ratios.solvency.operating_lease_liability.value} from the prior year-end and flags that the period-end noncurrent balance is larger; the MD&A states a materially larger total and the notes describe new lease amendments.",
+      "numbers_vs_prose": "Invested capital and return on invested capital use the stale figure.",
+      "evidence": ["0001327567-26-000015:mdna:139", "0001327567-26-000015:notes:139"],
+      "fields": ["{ratios.solvency.operating_lease_liability.value}", "{ratios.solvency.operating_lease_liability.contradicted_at_period_end}"]
+    },
+    {
+      "id": "growth_net_income_fell_against_a_tax_benefit_base",
+      "name": "Trailing net income fell against a base year inflated by a tax benefit",
+      "name_ko": "세금혜택으로 부풀려진 기저 대비 최근 네 분기 순이익 감소",
+      "area": "growth",
+      "what": "Trailing net income growth is {ratios.growth.net_income.trailing_four_quarters.value}; the earlier base includes a fiscal year whose net income ({earnings_versus_cash.history.years.1.net_income}) was several times its operating income ({earnings_versus_cash.history.years.1.operating_income}).",
+      "numbers_vs_prose": "Operating income over the same window rose slightly ({ratios.growth.operating_income.trailing_four_quarters.value}), so the decline in net income says more about the base than about the business.",
+      "evidence": ["0001327567-26-000015:mdna:123"],
+      "fields": [
+        "{ratios.growth.net_income.trailing_four_quarters.value}",
+        "{earnings_versus_cash.history.years.1.net_income}",
+        "{earnings_versus_cash.history.years.1.operating_income}",
+        "{ratios.growth.operating_income.trailing_four_quarters.value}"
+      ]
+    },
+    {
+      "id": "growth_quarterly_revenue_growth_acquisition_driven",
+      "name": "Quarterly revenue growth is acquisition-driven",
+      "name_ko": "분기 매출 성장이 인수 효과에 의존",
+      "area": "growth",
+      "what": "Quarterly growth of {ratios.growth.revenue.year_over_year.value} compares with trailing growth of {ratios.growth.revenue.trailing_four_quarters.value}; the notes quantify acquired revenue and give pro forma figures implying a lower organic rate.",
+      "numbers_vs_prose": "The MD&A attributes growth to demand and to recent acquisitions without splitting them.",
+      "evidence": ["0001327567-26-000015:notes:93", "0001327567-26-000015:notes:95", "0001327567-26-000015:mdna:77"],
+      "fields": ["{ratios.growth.revenue.year_over_year.value}", "{ratios.growth.revenue.trailing_four_quarters.value}"]
+    },
+    {
+      "id": "free_cash_flow_negative_after_share_based_pay_and_acquisitions",
+      "name": "Free cash flow is negative after share-based pay and acquisitions",
+      "name_ko": "주식보상과 인수를 차감한 잉여현금흐름이 음수",
+      "area": "free_cash_flow",
+      "what": "Simple free cash flow {free_cash_flow.free_cash_flow_simple.value} becomes {free_cash_flow.free_cash_flow_quality_adjusted.value} after share-based compensation ({terms.trailing_four_quarters.share_based_compensation.value}) and acquisitions ({terms.cash_flow_families.acquisitions.value}).",
+      "numbers_vs_prose": "The MD&A's investing discussion confirms acquisitions were funded by sales of investments; the pattern is a choice, but it means the cash the business throws off is not accumulating.",
+      "evidence": ["0001327567-26-000015:mdna:153", "0001327567-26-000015:mdna:121", "0001327567-26-000015:mdna:56"],
+      "fields": [
+        "{free_cash_flow.free_cash_flow_simple.value}",
+        "{free_cash_flow.free_cash_flow_quality_adjusted.value}",
+        "{terms.trailing_four_quarters.share_based_compensation.value}",
+        "{terms.cash_flow_families.acquisitions.value}"
+      ]
+    },
+    {
+      "id": "free_cash_flow_repurchase_smaller_than_share_issuance",
+      "name": "Share repurchase retired far fewer shares than were issued",
+      "name_ko": "자사주 매입 규모가 신주 발행 규모에 크게 못 미침",
+      "area": "free_cash_flow",
+      "what": "Trailing repurchases are {terms.trailing_four_quarters.share_repurchases.value}, while shares were issued for the acquisition consideration and for net settlement of the warrants; shares outstanding are {terms.shares_outstanding.value} against diluted weighted shares of {terms.diluted_shares.value} for the quarter.",
+      "numbers_vs_prose": "The equity note says the repurchase authorization was increased in the quarter; the debt note discloses the warrant settlement; per-share cash flow is diluted accordingly.",
+      "evidence": ["0001327567-26-000015:notes:157", "0001327567-26-000015:notes:116", "0001327567-26-000015:notes:75", "0001327567-26-000015:notes:182"],
+      "fields": ["{terms.trailing_four_quarters.share_repurchases.value}", "{terms.shares_outstanding.value}", "{terms.diluted_shares.value}"]
+    }
+  ],
+  "path_to_distress": {
+    "likelihood_next_twelve_months": "low",
+    "why_low": "Trailing operating cash flow ({terms.trailing_four_quarters.operating_cash_flow.value}) and simple free cash flow ({free_cash_flow.free_cash_flow_simple.value}) dwarf every fixed obligation; there is no term debt, the revolving facility is undrawn, deferred revenue funds growth, and the investment book extends liquidity beyond the calculator's balance ({terms.cash_and_short_term_investments_now.value}).",
+    "sequence_that_would_change_that": [
+      "Organic subscription growth slows toward the pro forma pace while cloud hosting commitments ({terms.balances_now.unconditional_purchase_obligations.value}) step up on their fixed schedule, so gross margin keeps falling from the six-quarter low ({trend_table.quarters-back-0.ratios.gross_margin.value}).",
+      "Acquired-intangible amortization on the published schedule keeps reported operating income near zero, the share price weakens, and share-based compensation ({terms.trailing_four_quarters.share_based_compensation.value}) has to be offset with repurchases to hold the share count, diverting cash.",
+      "Management keeps acquiring at the recent pace ({terms.cash_flow_families.acquisitions.value} over the trailing window) after the investment portfolio has been drawn down, so deals move from cash to new borrowing or further dilution.",
+      "If the share price stays below the conversion price the assumed notes are repaid in cash at maturity; if it rises above the trigger, holders convert and principal is due in cash sooner — either way a cash call the calculator does not model.",
+      "A goodwill impairment on the acquired platforms would not consume cash but would confirm that the purchase price is not earning its return on invested capital ({ratios.profitability.return_on_invested_capital.value})."
+    ],
+    "markers_to_watch": [
+      "contract liabilities over revenue ({trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue.value}) recovering from its six-quarter low as acquired deferred revenue rebuilds",
+      "days sales outstanding ({trend_table.quarters-back-0.ratios.days_sales_outstanding.value}) returning toward earlier quarters",
+      "gross margin ({trend_table.quarters-back-0.ratios.gross_margin.value}) against the trailing level ({ratios.profitability.gross_margin.value})",
+      "growth in unrecorded purchase commitments relative to subscription revenue",
+      "the acquired units' operating loss narrowing as integration costs and accelerated vesting roll off",
+      "remaining performance obligations and next-generation security annualized recurring revenue as reported in the MD&A"
+    ],
+    "evidence": [
+      "0001327567-26-000015:mdna:133",
+      "0001327567-26-000015:mdna:134",
+      "0001327567-26-000015:notes:142",
+      "0001327567-26-000015:notes:109",
+      "0001327567-26-000015:notes:93",
+      "0001327567-26-000015:mdna:50"
+    ],
+    "fields": [
+      "{terms.trailing_four_quarters.operating_cash_flow.value}",
+      "{free_cash_flow.free_cash_flow_simple.value}",
+      "{terms.cash_and_short_term_investments_now.value}",
+      "{terms.balances_now.unconditional_purchase_obligations.value}",
+      "{trend_table.quarters-back-0.ratios.gross_margin.value}",
+      "{terms.trailing_four_quarters.share_based_compensation.value}",
+      "{terms.cash_flow_families.acquisitions.value}",
+      "{ratios.profitability.return_on_invested_capital.value}"
+    ]
+  },
+  "summary_ko": "팔로알토네트웍스는 현금 창출력이 매우 강한 회사이지만, 이번 분기의 보고 지표는 대형 인수의 회계 효과에 가려져 있다. 최근 네 분기 매출은 두 자릿수 성장을 이어갔고 영업현금흐름과 단순 잉여현금흐름은 전년보다 늘었으며, 이자 부담이 있는 차입금은 계산기 기준으로 없다. 그러나 분기 영업이익은 적자로 돌아섰고, 매출총이익률은 최근 분기 중 최저이며, 자산과 자본이 영업권과 신주 발행으로 급증해 자산수익률·자본수익률·투하자본수익률이 모두 낮다. 듀폰 분해로 보면 레버리지가 아니라 얇은 순이익률과 무너진 자산회전율이 자본수익률 하락의 원인이다. 유동비율은 일 미만이지만 유동부채의 대부분이 서비스로 정산되는 계약부채이므로 현금 위험을 과장한다. 지급능력에서 주의할 점은 계산기가 보지 못하는 의무들이다. 사이버아크에서 인수한 전환사채는 조건에 따라 원금을 현금으로 상환해야 하고, 본사 임차 연장으로 리스부채가 커졌으며, 클라우드 호스팅 중심의 미인식 구매약정은 약 두 배로 늘어 보유 현금과 연간 영업현금흐름을 넘어선다. 잉여현금흐름은 주식보상과 인수 지출을 차감하면 음수로, 회사가 벌어들이는 현금이 쌓이지 않고 투자자산 매각과 신주 발행으로 보완되는 구조다. 향후 열두 달 내 재무적 곤경 가능성은 낮지만, 유기적 성장 둔화와 고정된 클라우드 약정, 인수 지속, 전환사채 현금상환이 겹치는 경로가 곤경으로 가는 길이며, 계약부채 비율·매출채권회수기간·매출총이익률·인수 사업부의 영업손실 축소가 관찰 지표다.",
+  "limits": [
+    "Solvency ratios are computed on zero debt because the fair-valued convertible notes are outside the calculator's debt tags; they were read from the notes and MD&A rather than measured.",
+    "Inventory is untagged for the period, so inventory days, the cash conversion cycle and free cash flow to the firm are missing.",
+    "The operating lease liability is the prior year-end balance and understates invested capital.",
+    "Liquid balances exclude long-term investments; liquidity looks tighter than management's stated total.",
+    "Quarterly operating cash flow is not tagged as a duration, so quarterly accruals are unavailable for the latest quarters and quarterly cash conversion relies on year-to-date differences.",
+    "The prior-year net income base includes a tax benefit year, which distorts trailing net income growth; operating income growth is the cleaner comparison.",
+    "No segment split of acquired versus legacy results exists beyond one sentence in the notes and a pro forma table, so the organic growth rate is inferred, not measured.",
+    "No prior run exists for this company, so there are no earlier predictions to score."
+  ]
+}

@@ -1,0 +1,58 @@
+{
+ "question": "what is this company worth, and what does the price already assume?",
+ "value_range": {
+  "dropped": "fields: 'valuation.scenarios.bear.missing' is not a field of calculator.json"
+ },
+ "price_position": {
+  "dropped": "fields: 'valuation.reverse_dcf.missing' is not a field of calculator.json"
+ },
+ "market_implied_growth": {
+  "dropped": "fields: 'valuation.reverse_dcf.missing' is not a field of calculator.json"
+ },
+ "most_sensitive": [],
+ "accounting_adjustments": {
+  "reading": "The valuation block carries no accounting-adjustment entry, because no scenario ran for an adjustment to move. The one adjustment the accounting analyst filed — \"payables supplied operating cash\", a reduction keyed to the trailing cash-flow-statement change in accounts payable of {earnings_versus_cash.working_capital.accounts_payable.cash_flow_statement_change} — was applied by Python only to quality-adjusted free cash flow, taking it from {free_cash_flow.free_cash_flow_quality_adjusted.adjustments_applied.0.before} to {free_cash_flow.free_cash_flow_quality_adjusted}, after share-based compensation of {terms.trailing_four_quarters.share_based_compensation} and acquisition spend of {terms.cash_flow_families.acquisitions} had already been taken off simple free cash flow of {free_cash_flow.free_cash_flow_simple}. It moved no DCF value, and as built the DCF would not have taken it in directly, since it runs on operating-margin and reinvestment drivers rather than on the adjusted cash-flow line; its bearing on a re-run is as a caution that part of the trailing operating cash flow was supplied by supplier credit that can reverse, which argues for a reinvestment assumption that does not lean on the trailing working-capital release.",
+  "fields": [
+   "earnings_versus_cash.working_capital.accounts_payable.cash_flow_statement_change",
+   "free_cash_flow.free_cash_flow_quality_adjusted.adjustments_applied.0.before",
+   "free_cash_flow.free_cash_flow_quality_adjusted",
+   "terms.trailing_four_quarters.share_based_compensation",
+   "terms.cash_flow_families.acquisitions",
+   "free_cash_flow.free_cash_flow_simple"
+  ]
+ },
+ "summary_ko": {
+  "value_range": "이번 실행에서는 가치 범위가 계산되지 않았다. 첫 번째 단계의 가정 파일에서 세 시나리오가 모두 탈락해 계산기는 각 시나리오에 \"assumptions.json has no base scenario\"와 같은 사유만 적었고, 기업가치·주주가치·주당가치는 존재하지 않는다. 계산기가 준비해 둔 틀은 기준 매출 {valuation.base_revenue}, 가중평균자본비용 {valuation.wacc|pct}, 세율 {valuation.tax_rate|pct}, 영구성장률 상한 {valuation.risk_free_rate_cap_on_terminal_growth|pct}이며, 출발점이 될 최근 네 분기 영업이익률 {ratios.profitability.operating_margin|pct}은 손상차손 탓에 삼 년 평균 {earnings_versus_cash.history.operating_margin_three_year_average|pct}를 크게 밑돈다.",
+  "price_position": "가격이 놓일 범위가 없으므로 위치를 읽을 수 없다. 기준일 주가는 {valuation.price_at_cutoff}, 시가총액은 {cost_of_capital.market_value_of_equity}, 순부채는 {ratios.solvency.net_debt}로 거의 영에 가깝지만, 역산 DCF와 민감도 표는 모두 \"no base scenario\"로 비어 있어 가격이 어느 시나리오보다 높은지 낮은지는 말할 수 없다.",
+  "market_implied_growth": "시장이 가정하는 성장률은 계산되지 않았다. 회사 기록을 보면 최근 회계연도까지 삼 년 연평균 매출 성장률은 {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}로 음(-)인 반면, 최근 분기 매출은 전년 동기 대비 {ratios.growth.revenue.year_over_year|pct}, 최근 네 분기는 {ratios.growth.revenue.trailing_four_quarters|pct} 늘었고 경영진은 다음 분기에도 큰 폭의 성장을 예상한다고 밝혔다. 가격이 이 둘 중 어느 쪽을 가정하는지는 기본 시나리오를 다시 돌려야 알 수 있다.",
+  "most_sensitive": "민감도 표가 계산되지 않아 표에서 읽을 수는 없고 입력의 구조로만 판단한다. 가장 큰 변수는 영업이익률 경로로, 최근 네 분기 영업이익률 {ratios.profitability.operating_margin|pct}과 삼 년 평균 {earnings_versus_cash.history.operating_margin_three_year_average|pct} 사이 어디에 두느냐가 가치를 가장 크게 움직인다. 다음은 첫해 매출 성장률로, 최근 네 분기 성장률 {ratios.growth.revenue.trailing_four_quarters|pct}과 삼 년 연평균 {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}의 간격이 그만큼 넓기 때문이다.",
+  "accounting_adjustments": "시나리오가 돌지 않았으므로 회계 조정이 DCF 가치를 움직인 것은 없다. 회계 분석가가 낸 유일한 조정(매입채무 증가가 영업현금을 공급)은 품질조정 잉여현금흐름에만 적용되어 {free_cash_flow.free_cash_flow_quality_adjusted.adjustments_applied.0.before}에서 {free_cash_flow.free_cash_flow_quality_adjusted}로 낮췄으며, 다시 계산할 때는 공급업체 신용에 기댄 현금이 되돌아갈 수 있다는 경고로 읽어야 한다."
+ },
+ "limits": "This valuation is a set of stated assumptions run through a stated formula. It states no recommendation to trade, and a different reader choosing different drivers would reach a different value.",
+ "normalized_quotes": 0,
+ "dropped_items": [
+  {
+   "where": "value_range",
+   "reason": "fields: 'valuation.scenarios.bear.missing' is not a field of calculator.json"
+  },
+  {
+   "where": "price_position",
+   "reason": "fields: 'valuation.reverse_dcf.missing' is not a field of calculator.json"
+  },
+  {
+   "where": "market_implied_growth",
+   "reason": "fields: 'valuation.reverse_dcf.missing' is not a field of calculator.json"
+  },
+  {
+   "where": "most_sensitive[0]",
+   "id": null,
+   "reason": "fields: 'valuation.sensitivity.missing' is not a field of calculator.json"
+  },
+  {
+   "where": "most_sensitive[1]",
+   "id": null,
+   "reason": "fields: 'valuation.sensitivity.missing' is not a field of calculator.json"
+  }
+ ],
+ "dropped_count": 5
+}

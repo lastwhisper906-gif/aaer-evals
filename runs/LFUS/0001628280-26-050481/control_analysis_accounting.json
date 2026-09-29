@@ -1,0 +1,268 @@
+{
+ "ticker": "LFUS",
+ "accession": "0001628280-26-050481",
+ "form": "10-Q",
+ "question": "Do reported earnings and cash reflect economic reality?",
+ "author": "single-agent control (one agent, no reader or analyst split)",
+ "areas": {
+  "earnings_versus_cash": {
+   "finding": "Over the trailing four quarters the company reports a net loss of {terms.trailing_four_quarters.net_income.value} against operating cash flow of {terms.trailing_four_quarters.operating_cash_flow.value}, so the cash-over-income ratio {earnings_versus_cash.operating_cash_flow_over_net_income.value} and the accruals ratio {earnings_versus_cash.accruals_over_average_assets.value} are dominated by a non-cash charge: the twelve-month consolidated EBITDA table in the earnings release adds back a large impairment charge, and the quarter that ended the prior fiscal year carried a deep loss in the smoothness series. Strip the window artifact away and the half-year picture is straightforward: net income of {terms.trailing_four_quarters.net_income.parts.this_year_to_date.value} against operating cash flow of {terms.trailing_four_quarters.operating_cash_flow.parts.this_year_to_date.value}, with cash comfortably ahead of earnings. The composition of that cash matters, though. The cash-flow statement shows trade receivables absorbing {terms.trailing_four_quarters.change_in_receivables.parts.this_year_to_date.value} and inventories absorbing {terms.trailing_four_quarters.change_in_inventory.parts.this_year_to_date.value}, while accounts payable supplied {terms.trailing_four_quarters.change_in_payables.parts.this_year_to_date.value} after having consumed {terms.trailing_four_quarters.change_in_payables.parts.prior_year_to_date.value} a year earlier. The MD&A attributes the whole increase in operating cash flow to higher cash earnings and does not mention the payables swing. Income is also more volatile than cash: the smoothness ratio {earnings_versus_cash.smoothness.value} is well above one, which is the signature of periodic impairments and restructuring rather than of smoothing.",
+   "verdict": "earnings are backed by cash; the trailing loss is an impairment artifact, and the half-year cash strength is real but partly financed by stretched payables",
+   "evidence": [
+    "0001628280-26-050382:8k_2_02:57",
+    "0001628280-26-050382:8k_2_02:82",
+    "0001628280-26-050481:mdna:10",
+    "0001628280-26-050481:mdna:110",
+    "0001628280-26-050481:mdna:107"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.net_income.value",
+    "terms.trailing_four_quarters.operating_cash_flow.value",
+    "earnings_versus_cash.operating_cash_flow_over_net_income.value",
+    "earnings_versus_cash.accruals_over_average_assets.value",
+    "earnings_versus_cash.smoothness.value",
+    "terms.trailing_four_quarters.net_income.parts.this_year_to_date.value",
+    "terms.trailing_four_quarters.operating_cash_flow.parts.this_year_to_date.value",
+    "terms.trailing_four_quarters.change_in_receivables.parts.this_year_to_date.value",
+    "terms.trailing_four_quarters.change_in_inventory.parts.this_year_to_date.value",
+    "terms.trailing_four_quarters.change_in_payables.parts.this_year_to_date.value",
+    "terms.trailing_four_quarters.change_in_payables.parts.prior_year_to_date.value"
+   ]
+  },
+  "revenue_recognition": {
+   "finding": "Quarterly revenue grew {ratios.growth.revenue.year_over_year.value} year over year and {ratios.growth.revenue.quarter_over_quarter.value} sequentially; the release decomposes the growth into organic volume, a small currency tailwind and the Basler acquisition inside the Industrial segment, and the MD&A repeats the same split with the same amounts. Receivables did not run ahead of sales: the balance rose by {earnings_versus_cash.working_capital.receivables.balance_sheet_change.value} over the year, but receivables over quarterly revenue {trend_table.quarters-back-0.ratios.receivables_over_revenue.value} is the lowest of the six filled quarters and trailing days sales outstanding is {ratios.efficiency.days_sales_outstanding.value}. Deferred revenue moved the other way: the accrued-liabilities note shows the deferred revenue balance falling to less than half of the year-end figure, so some of the half-year revenue was released from customer prepayments rather than newly billed; against a year earlier the balance {terms.balances_now.contract_liabilities.value} is still above {terms.balances_a_year_earlier.contract_liabilities.value}, and the ratio to revenue {trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue.value} is tiny for a components maker, so the effect is immaterial. The allowance netted against trade receivables is large for the business, {terms.balances_now.bad_debt_allowance.value} now against {terms.balances_a_year_earlier.bad_debt_allowance.value} a year earlier, with a reserve ratio {trend_table.quarters-back-0.ratios.bad_debt_reserve_ratio.value} that is the second lowest of six quarters. The balance sheet labels it allowances in the plural; for a company whose largest customer is a distributor, that balance almost certainly holds distributor price-protection and ship-and-debit reserves, which are a revenue estimate rather than a credit estimate. Related-party sales are negligible. Management guides the third quarter to revenue growth well above the current rate on record bookings, which is consistent with the receivables and inventory build rather than contradicting it.",
+   "verdict": "no sign of premature or stretched recognition; receivables track sales, deferred revenue is immaterial, and the large receivable allowance is a distributor-pricing estimate worth watching rather than a credit problem",
+   "evidence": [
+    "0001628280-26-050382:8k_2_02:8",
+    "0001628280-26-050382:8k_2_02:16",
+    "0001628280-26-050382:8k_2_02:73",
+    "0001628280-26-050481:mdna:9",
+    "0001628280-26-050481:mdna:19",
+    "0001628280-26-050382:8k_2_02:49",
+    "0001628280-26-050481:notes:79",
+    "0001628280-26-050481:notes:9",
+    "0001628280-26-050481:notes:213"
+   ],
+   "fields": [
+    "ratios.growth.revenue.year_over_year.value",
+    "ratios.growth.revenue.quarter_over_quarter.value",
+    "earnings_versus_cash.working_capital.receivables.balance_sheet_change.value",
+    "trend_table.quarters-back-0.ratios.receivables_over_revenue.value",
+    "ratios.efficiency.days_sales_outstanding.value",
+    "terms.balances_now.contract_liabilities.value",
+    "terms.balances_a_year_earlier.contract_liabilities.value",
+    "trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue.value",
+    "terms.balances_now.bad_debt_allowance.value",
+    "terms.balances_a_year_earlier.bad_debt_allowance.value",
+    "trend_table.quarters-back-0.ratios.bad_debt_reserve_ratio.value",
+    "concentration.facts.8.value"
+   ]
+  },
+  "estimates_and_reserves": {
+   "dropped": "fields: 'terms.balances_now.warranty_accrual.missing' is not a field of calculator.json"
+  },
+  "cost_deferral": {
+   "dropped": "fields: 'terms.trailing_four_quarters.depreciation_and_amortization.missing' is not a field of calculator.json"
+  },
+  "cash_flow_engineering_and_off_balance_sheet": {
+   "dropped": "fields: 'terms.balances_now.supplier_finance_obligation.missing' is not a field of calculator.json"
+  },
+  "controls_audit_and_filing_signals": {
+   "dropped": "fields: 'trend_table.quarters-back-0.ratios.non_gaap_gap.missing' is not a field of calculator.json"
+  },
+  "cross_document_reconciliation": {
+   "dropped": "fields: 'terms.trailing_four_quarters.depreciation_and_amortization.missing' is not a field of calculator.json"
+  },
+  "industry_lens": {
+   "finding": "This is a circuit-protection and power-semiconductor components maker with a distributor-heavy electronics channel, an automotive and commercial-vehicle segment, and an industrial segment now enlarged by Basler. Three industry facts frame the accounting. First, the electronics cycle: passive products grew organically at a rate that only happens when distributors restock, and the release itself credits volume leverage and mix for the margin jump; the history shows revenue fell two years running before this upswing, with three-year compound growth of {earnings_versus_cash.history.revenue_growth_three_year_compound}, so the highest gross margin in six quarters is a cyclical peak reading rather than a new structural level. Second, inventory: days of inventory {ratios.efficiency.days_sales_of_inventory.value} is normal for the sector, and the quarterly figure {trend_table.quarters-back-0.ratios.days_sales_of_inventory.value} is the lowest of six quarters, which is what an upcycle looks like; the risk is the reserve being trimmed at the top of the cycle. Third, the semiconductor sub-segment: the goodwill note shows accumulated impairment concentrated in Electronics, the company is closing two semiconductor manufacturing sites, and the prior-year impairment sits inside the trailing loss; this is the legacy of a power-semiconductor acquisition that has not earned its purchase price. Geographic and customer concentration is meaningful, with China at {concentration.facts.7.value} of sales in the last fiscal year and non-US sales at {concentration.facts.6.value}, and the largest distributor at {concentration.facts.8.value}; tariffs and currency run through both revenue and the net investment hedges. Transportation is the weak spot, with commercial-vehicle margin down on cost inflation and a deliberate exit from lower-margin sensor products.",
+   "verdict": "the accounting is conventional for the sector; the interpretive risk is mistaking a restocking-cycle margin peak, helped by a lighter inventory reserve, for a permanent step-up",
+   "evidence": [
+    "0001628280-26-050382:8k_2_02:24",
+    "0001628280-26-050382:8k_2_02:25",
+    "0001628280-26-050382:8k_2_02:27",
+    "0001628280-26-050382:8k_2_02:28",
+    "0001628280-26-050481:mdna:22",
+    "0001628280-26-050481:mdna:55",
+    "0001628280-26-050481:mdna:58",
+    "0001628280-26-050481:notes:67",
+    "0001628280-26-050481:notes:85",
+    "0001628280-26-050481:notes:189",
+    "0001628280-26-050481:notes:126"
+   ],
+   "fields": [
+    "earnings_versus_cash.history.revenue_growth_three_year_compound",
+    "earnings_versus_cash.history.years.1.revenue_growth",
+    "earnings_versus_cash.history.years.2.revenue_growth",
+    "ratios.efficiency.days_sales_of_inventory.value",
+    "trend_table.quarters-back-0.ratios.days_sales_of_inventory.value",
+    "trend_table.quarters-back-0.ratios.gross_margin.value",
+    "concentration.facts.7.value",
+    "concentration.facts.6.value",
+    "concentration.facts.8.value"
+   ]
+  }
+ },
+ "reconciliation": [],
+ "anomalies": [],
+ "adjustments": [],
+ "summary_ko": {},
+ "limits": "This analysis finds where the numbers and the explanations disagree, and where the company differs from its own past. It does not judge intent, and it cannot see evidence outside the filings, such as invoices or contracts.",
+ "normalized_quotes": 0,
+ "dropped_items": [
+  {
+   "where": "areas.estimates_and_reserves",
+   "reason": "fields: 'terms.balances_now.warranty_accrual.missing' is not a field of calculator.json"
+  },
+  {
+   "where": "areas.cost_deferral",
+   "reason": "fields: 'terms.trailing_four_quarters.depreciation_and_amortization.missing' is not a field of calculator.json"
+  },
+  {
+   "where": "areas.cash_flow_engineering_and_off_balance_sheet",
+   "reason": "fields: 'terms.balances_now.supplier_finance_obligation.missing' is not a field of calculator.json"
+  },
+  {
+   "where": "areas.controls_audit_and_filing_signals",
+   "reason": "fields: 'trend_table.quarters-back-0.ratios.non_gaap_gap.missing' is not a field of calculator.json"
+  },
+  {
+   "where": "areas.cross_document_reconciliation",
+   "reason": "fields: 'terms.trailing_four_quarters.depreciation_and_amortization.missing' is not a field of calculator.json"
+  },
+  {
+   "where": "reconciliation[0]",
+   "id": null,
+   "reason": "the item is not an object"
+  },
+  {
+   "where": "reconciliation[1]",
+   "id": null,
+   "reason": "the item is not an object"
+  },
+  {
+   "where": "reconciliation[2]",
+   "id": null,
+   "reason": "the item is not an object"
+  },
+  {
+   "where": "reconciliation[3]",
+   "id": null,
+   "reason": "the item is not an object"
+  },
+  {
+   "where": "reconciliation[4]",
+   "id": null,
+   "reason": "the item is not an object"
+  },
+  {
+   "where": "anomalies[0]",
+   "id": "earnings_versus_cash_trailing_net_loss_against_positive_operating_cash_flow",
+   "reason": "fields: 'earnings_versus_cash.smoothness.net_income' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[1]",
+   "id": "earnings_versus_cash_payables_swing_behind_operating_cash_flow_increase",
+   "reason": "numbers_vs_prose 'The MD&A says the increase in net cash provided by operating activities was primarily due to higher cash earnings, with no mention of working capital; the statement shows the payables swing alone as a substantial share of the increase.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[2]",
+   "id": "earnings_versus_cash_income_more_volatile_than_cash",
+   "reason": "fields: 'earnings_versus_cash.smoothness.net_income' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[3]",
+   "id": "revenue_recognition_deferred_revenue_drawdown",
+   "reason": "numbers_vs_prose 'The MD&A explains revenue growth entirely by volume, price, currency and Basler; the deferred revenue release is not mentioned, which is proportionate to its size but leaves the drawdown unexplained.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[4]",
+   "id": "revenue_recognition_large_receivable_allowances_relative_to_receivables",
+   "reason": "numbers_vs_prose 'The notes discuss credit-loss measurement only through the adoption of a new practical expedient with no material impact; nothing in the prose describes what the allowance contains or how the estimate moved.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[5]",
+   "id": "estimates_and_reserves_inventory_reserve_falls_while_inventory_and_gross_margin_rise",
+   "reason": "numbers_vs_prose 'The MD&A attributes the gross margin gain to volume leverage, operational execution, price and mix; a lighter reserve is consistent with those causes but is not named among them.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[6]",
+   "id": "estimates_and_reserves_goodwill_up_intangibles_down_in_measurement_period_adjustments",
+   "reason": "numbers_vs_prose 'The note describes the allocation as preliminary and subject to change; the direction of every adjustment to identifiable assets was downward, which the prose reports without comment.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[7]",
+   "id": "estimates_and_reserves_recall_contingency_without_accrual",
+   "reason": "fields: 'terms.balances_now.warranty_accrual.missing' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[8]",
+   "id": "estimates_and_reserves_effective_tax_rate_lowered_by_statute_lapses",
+   "reason": "numbers_vs_prose \"The MD&A presents the lower rate as a comparison-period effect; guidance for next quarter assumes an adjusted rate below this quarter's GAAP rate, so the benefit is being carried forward into the outlook.\" is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[9]",
+   "id": "cost_deferral_capital_expenditure_below_depreciation",
+   "reason": "numbers_vs_prose 'The release emphasizes free cash flow growth; the same free cash flow is partly the product of a shrinking capital budget while two manufacturing sites are being closed.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[10]",
+   "id": "cash_flow_engineering_and_off_balance_sheet_stock_award_proceeds_in_financing",
+   "reason": "numbers_vs_prose 'The release highlights cash from operations and free cash flow; the MD&A discloses the award proceeds in the financing discussion but the headline cash increase is not decomposed.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[11]",
+   "id": "cash_flow_engineering_and_off_balance_sheet_covenant_ebitda_definition_loosened",
+   "reason": "fields: 'ratios.solvency.debt_over_ebitda.missing' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[12]",
+   "id": "cash_flow_engineering_and_off_balance_sheet_acquisition_spend_outside_free_cash_flow",
+   "reason": "numbers_vs_prose 'The release reports free cash flow as operating cash flow less capital expenditure and presents it as a measure of the ability to generate cash; for a company that describes itself as deploying capital through acquisitions, that measure overstates distributable cash.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[13]",
+   "id": "controls_audit_and_filing_signals_non_gaap_adjustment_gap_widening",
+   "reason": "fields: 'trend_table.quarters-back-0.ratios.non_gaap_gap.missing' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[14]",
+   "id": "controls_audit_and_filing_signals_executive_change_filings_and_prior_late_annual_report",
+   "reason": "numbers_vs_prose 'Management reports effective disclosure controls and no change in internal control; nothing in the numbers contradicts that, but leadership turnover during a restructuring is the context in which estimates get reset.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[15]",
+   "id": "cross_document_reconciliation_working_capital_articulation_gaps_from_acquisition",
+   "reason": "numbers_vs_prose 'The purchase-price allocation table explains the gaps without the MD&A having to; no inconsistency remains once the acquired balances are counted.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[16]",
+   "id": "cross_document_reconciliation_calculator_trailing_figures_distorted_by_prior_year_impairment",
+   "reason": "numbers_vs_prose \"The filing's prose describes the current quarter and half year; the calculator's window describes twelve months that include a very different quarter. Both are correct for their period and neither is the run rate on its own.\" is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[17]",
+   "id": "industry_lens_electronics_restocking_cycle_driving_margin_peak",
+   "reason": "numbers_vs_prose 'The release attributes the margin to execution and mix as well as volume; the history says the largest single driver is where the cycle is.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[18]",
+   "id": "industry_lens_semiconductor_site_closures_after_goodwill_impairment",
+   "reason": "numbers_vs_prose 'Management describes the closures as portfolio optimization; the goodwill roll-forward describes an acquisition that did not earn its price, and the two readings are the same fact.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[19]",
+   "id": "industry_lens_china_and_distributor_concentration",
+   "reason": "numbers_vs_prose \"The release's risk language lists tariff and exchange-rate risks generically; the concentration facts make them the first-order sensitivity for both revenue and the receivable allowance.\" is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "adjustments[0]",
+   "id": null,
+   "reason": "direction 'reducing' is not one of reduce, increase"
+  },
+  {
+   "where": "limits",
+   "reason": "not the rules version's sentence; replaced by it"
+  }
+ ],
+ "dropped_count": 32
+}

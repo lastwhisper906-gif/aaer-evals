@@ -1,0 +1,106 @@
+{
+  "question": "what is this company worth, and what does the price already assume?",
+  "value_range": {
+    "reading": "Python computed no value range. The calculator's valuation block prints, scenario by scenario, \"assumptions.json has no bear scenario\", \"assumptions.json has no base scenario\" and \"assumptions.json has no bull scenario\": the first-pass assumptions file reached the calculator with an empty scenarios object, its dropped-items list recording that each scenario was removed for a number written in the analyst's own words inside the revenue-growth reason. So no enterprise value, equity value or value per share exists for any scenario, and there is no low or high end to report. Neither the price nor the cost of capital was missing — the calculator prints no missing reason under either — so the gap is the drivers alone. What the calculator had ready for a run is on record: base revenue of {valuation.base_revenue}; a weighted average cost of capital of {valuation.wacc|pct}, built from a cost of equity of {cost_of_capital.cost_of_equity|pct} (a risk-free rate of {cost_of_capital.risk_free_rate|pct}, a beta of {cost_of_capital.beta} against the market and an equity risk premium of {cost_of_capital.equity_risk_premium|pct}) and a pre-tax cost of debt of {cost_of_capital.pre_tax_cost_of_debt|pct}, at an equity weight of {cost_of_capital.weights.equity|pct}; a tax rate of {valuation.tax_rate|pct}; and a terminal-growth ceiling at the risk-free rate of {valuation.risk_free_rate_cap_on_terminal_growth|pct}. Against the company's own record, the trailing operating margin any scenario would start from is {ratios.profitability.operating_margin|pct}, a fraction of the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct} and of the {earnings_versus_cash.history.years.3.operating_margin|pct} earned three fiscal years before the newest, because the newest fiscal year's goodwill impairment sits inside the trailing window; the quarter just reported, by contrast, carried a gross margin of {trend_table.quarters-back-0.ratios.gross_margin|pct}, the highest of the filled quarters. No value is estimated here for what was not computed.",
+    "fields": [
+      "valuation.scenarios.bear.missing",
+      "valuation.scenarios.base.missing",
+      "valuation.scenarios.bull.missing",
+      "valuation.base_revenue",
+      "valuation.wacc",
+      "cost_of_capital.cost_of_equity",
+      "cost_of_capital.risk_free_rate",
+      "cost_of_capital.beta",
+      "cost_of_capital.equity_risk_premium",
+      "cost_of_capital.pre_tax_cost_of_debt",
+      "cost_of_capital.weights.equity",
+      "valuation.tax_rate",
+      "valuation.risk_free_rate_cap_on_terminal_growth",
+      "ratios.profitability.operating_margin",
+      "earnings_versus_cash.history.operating_margin_three_year_average",
+      "earnings_versus_cash.history.years.3.operating_margin",
+      "trend_table.quarters-back-0.ratios.gross_margin"
+    ]
+  },
+  "price_position": {
+    "reading": "There is no computed range for the price to sit in, so its position cannot be read. The price at the cutoff is {valuation.price_at_cutoff} per share; on {terms.shares_outstanding} shares outstanding that is a market value of equity of {cost_of_capital.market_value_of_equity}, against total debt of {ratios.solvency.total_debt} and cash and short-term investments of {terms.cash_and_short_term_investments_now}, leaving net debt of {ratios.solvency.net_debt}, close to nothing, so enterprise value and equity value would have been nearly the same number. The calculator prints \"no base scenario\" under both the reverse DCF and the sensitivity grid. What the price can be set against without a scenario is the company's trailing cash: simple free cash flow over the trailing four quarters is {free_cash_flow.free_cash_flow_simple}, from operating cash flow of {terms.trailing_four_quarters.operating_cash_flow} less capital expenditure of {terms.trailing_four_quarters.capital_expenditure}; free cash flow to the firm is not computed, because the calculator's own missing list says depreciation and amortization for the year-to-date period is not in the record. Whether the price is below, inside or above what a stated set of drivers would support is left open until the scenarios are re-run.",
+    "fields": [
+      "valuation.price_at_cutoff",
+      "terms.shares_outstanding",
+      "cost_of_capital.market_value_of_equity",
+      "ratios.solvency.total_debt",
+      "terms.cash_and_short_term_investments_now",
+      "ratios.solvency.net_debt",
+      "valuation.reverse_dcf.missing",
+      "valuation.sensitivity.missing",
+      "free_cash_flow.free_cash_flow_simple",
+      "terms.trailing_four_quarters.operating_cash_flow",
+      "terms.trailing_four_quarters.capital_expenditure",
+      "free_cash_flow.free_cash_flow_to_firm.missing"
+    ]
+  },
+  "market_implied_growth": {
+    "reading": "The market-implied growth was not computed: the calculator prints \"no base scenario\" under the reverse DCF, so there is no constant ten-year revenue growth at which a base case is worth the price of {valuation.price_at_cutoff}. What such a rate would be tested against is on record. The company's own history is uneven: three-year compound revenue growth to the newest fiscal year is {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, the product of two down years of {earnings_versus_cash.history.years.2.revenue_growth|pct} and {earnings_versus_cash.history.years.1.revenue_growth|pct} followed by {earnings_versus_cash.history.years.0.revenue_growth|pct} in the newest year, which itself came after two earlier years of {earnings_versus_cash.history.years.4.revenue_growth|pct} and {earnings_versus_cash.history.years.3.revenue_growth|pct}. The quarter just reported grew {ratios.growth.revenue.year_over_year|pct} year over year and the trailing four quarters grew {ratios.growth.revenue.trailing_four_quarters|pct}, with the Basler acquisition supplying part of both and organic growth the larger part according to the release. Management's guidance for the next quarter, quoted below, is a one-quarter figure that still includes an acquisition not yet lapped, and it says nothing about the ten years a reverse DCF spans. Without a computed implied rate the reading is only this: a reader who takes the trailing four quarters as the run-rate is assuming growth far above the company's own three-year record, and a reader who takes the three-year record is assuming the recovery stalls; which of the two the price assumes cannot be said until the base case is re-run.",
+    "fields": [
+      "valuation.reverse_dcf.missing",
+      "valuation.price_at_cutoff",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound",
+      "earnings_versus_cash.history.years.0.revenue_growth",
+      "earnings_versus_cash.history.years.1.revenue_growth",
+      "earnings_versus_cash.history.years.2.revenue_growth",
+      "earnings_versus_cash.history.years.3.revenue_growth",
+      "earnings_versus_cash.history.years.4.revenue_growth",
+      "ratios.growth.revenue.year_over_year",
+      "ratios.growth.revenue.trailing_four_quarters"
+    ],
+    "quote": "Looking ahead to the third quarter, we expect approximately 26% total revenue growth versus the prior year, supported by record bookings, continued customer momentum, and contributions from the Basler acquisition.",
+    "quote_from": "input_8k.md"
+  },
+  "most_sensitive": [
+    {
+      "assumption": "operating margin, year one to year ten",
+      "reading": "The sensitivity grid was not computed — the calculator prints \"no base scenario\" — so nothing here is read off a grid or a scenario spread; it is read off the inputs a re-run would have to reconcile. The margin path is the first. The DCF starts from a trailing operating margin of {ratios.profitability.operating_margin|pct}, which carries the newest fiscal year's impairment and restructuring; the company's three-year average is {earnings_versus_cash.history.operating_margin_three_year_average|pct}, its margin three fiscal years before the newest was {earnings_versus_cash.history.years.3.operating_margin|pct}, and the quarter just reported grew operating income {ratios.growth.operating_income.year_over_year|pct} year over year on a gross margin of {trend_table.quarters-back-0.ratios.gross_margin|pct}. Where a reader places year-one and year-ten margin inside that span — at the trailing figure, at the average, or at the quarter's run-rate — is the choice that would move value most, and it is also the choice the record supports least firmly, since the newest fiscal year's margin of {earnings_versus_cash.history.years.0.operating_margin|pct} against the year before's {earnings_versus_cash.history.years.1.operating_margin|pct} shows how quickly it has moved.",
+      "fields": [
+        "valuation.sensitivity.missing",
+        "ratios.profitability.operating_margin",
+        "earnings_versus_cash.history.operating_margin_three_year_average",
+        "earnings_versus_cash.history.years.3.operating_margin",
+        "earnings_versus_cash.history.years.1.operating_margin",
+        "earnings_versus_cash.history.years.0.operating_margin",
+        "ratios.growth.operating_income.year_over_year",
+        "trend_table.quarters-back-0.ratios.gross_margin"
+      ]
+    },
+    {
+      "assumption": "revenue growth, year one",
+      "reading": "The second is the starting growth rate, because the record offers two very different anchors. Trailing-four-quarter revenue growth is {ratios.growth.revenue.trailing_four_quarters|pct} and the latest quarter's year-over-year growth {ratios.growth.revenue.year_over_year|pct}, part of each acquired; three-year compound growth to the newest fiscal year is {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}. Python fades year-one growth in a straight line to the terminal rate at year ten, and the terminal rate is capped at the risk-free rate of {valuation.risk_free_rate_cap_on_terminal_growth|pct}, so the year-one choice sets the whole revenue path; and with a cost of capital of {valuation.wacc|pct} the far years are discounted hard, so the near-year growth choice carries relatively more of the value than it would at a lower rate. Which anchor a reader chooses is the second-largest swing, and no grid exists yet to size it.",
+      "fields": [
+        "valuation.sensitivity.missing",
+        "ratios.growth.revenue.trailing_four_quarters",
+        "ratios.growth.revenue.year_over_year",
+        "earnings_versus_cash.history.revenue_growth_three_year_compound",
+        "valuation.risk_free_rate_cap_on_terminal_growth",
+        "valuation.wacc"
+      ]
+    }
+  ],
+  "accounting_adjustments": {
+    "reading": "The valuation block carries no accounting-adjustment entry, because no scenario ran for an adjustment to move. The one adjustment the accounting analyst filed — \"payables supplied operating cash\", a reduction keyed to the trailing cash-flow-statement change in accounts payable of {earnings_versus_cash.working_capital.accounts_payable.cash_flow_statement_change} — was applied by Python only to quality-adjusted free cash flow, taking it from {free_cash_flow.free_cash_flow_quality_adjusted.adjustments_applied.0.before} to {free_cash_flow.free_cash_flow_quality_adjusted}, after share-based compensation of {terms.trailing_four_quarters.share_based_compensation} and acquisition spend of {terms.cash_flow_families.acquisitions} had already been taken off simple free cash flow of {free_cash_flow.free_cash_flow_simple}. It moved no DCF value, and as built the DCF would not have taken it in directly, since it runs on operating-margin and reinvestment drivers rather than on the adjusted cash-flow line; its bearing on a re-run is as a caution that part of the trailing operating cash flow was supplied by supplier credit that can reverse, which argues for a reinvestment assumption that does not lean on the trailing working-capital release.",
+    "fields": [
+      "earnings_versus_cash.working_capital.accounts_payable.cash_flow_statement_change",
+      "free_cash_flow.free_cash_flow_quality_adjusted.adjustments_applied.0.before",
+      "free_cash_flow.free_cash_flow_quality_adjusted",
+      "terms.trailing_four_quarters.share_based_compensation",
+      "terms.cash_flow_families.acquisitions",
+      "free_cash_flow.free_cash_flow_simple"
+    ]
+  },
+  "summary_ko": {
+    "value_range": "이번 실행에서는 가치 범위가 계산되지 않았다. 첫 번째 단계의 가정 파일에서 세 시나리오가 모두 탈락해 계산기는 각 시나리오에 \"assumptions.json has no base scenario\"와 같은 사유만 적었고, 기업가치·주주가치·주당가치는 존재하지 않는다. 계산기가 준비해 둔 틀은 기준 매출 {valuation.base_revenue}, 가중평균자본비용 {valuation.wacc|pct}, 세율 {valuation.tax_rate|pct}, 영구성장률 상한 {valuation.risk_free_rate_cap_on_terminal_growth|pct}이며, 출발점이 될 최근 네 분기 영업이익률 {ratios.profitability.operating_margin|pct}은 손상차손 탓에 삼 년 평균 {earnings_versus_cash.history.operating_margin_three_year_average|pct}를 크게 밑돈다.",
+    "price_position": "가격이 놓일 범위가 없으므로 위치를 읽을 수 없다. 기준일 주가는 {valuation.price_at_cutoff}, 시가총액은 {cost_of_capital.market_value_of_equity}, 순부채는 {ratios.solvency.net_debt}로 거의 영에 가깝지만, 역산 DCF와 민감도 표는 모두 \"no base scenario\"로 비어 있어 가격이 어느 시나리오보다 높은지 낮은지는 말할 수 없다.",
+    "market_implied_growth": "시장이 가정하는 성장률은 계산되지 않았다. 회사 기록을 보면 최근 회계연도까지 삼 년 연평균 매출 성장률은 {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}로 음(-)인 반면, 최근 분기 매출은 전년 동기 대비 {ratios.growth.revenue.year_over_year|pct}, 최근 네 분기는 {ratios.growth.revenue.trailing_four_quarters|pct} 늘었고 경영진은 다음 분기에도 큰 폭의 성장을 예상한다고 밝혔다. 가격이 이 둘 중 어느 쪽을 가정하는지는 기본 시나리오를 다시 돌려야 알 수 있다.",
+    "most_sensitive": "민감도 표가 계산되지 않아 표에서 읽을 수는 없고 입력의 구조로만 판단한다. 가장 큰 변수는 영업이익률 경로로, 최근 네 분기 영업이익률 {ratios.profitability.operating_margin|pct}과 삼 년 평균 {earnings_versus_cash.history.operating_margin_three_year_average|pct} 사이 어디에 두느냐가 가치를 가장 크게 움직인다. 다음은 첫해 매출 성장률로, 최근 네 분기 성장률 {ratios.growth.revenue.trailing_four_quarters|pct}과 삼 년 연평균 {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}의 간격이 그만큼 넓기 때문이다.",
+    "accounting_adjustments": "시나리오가 돌지 않았으므로 회계 조정이 DCF 가치를 움직인 것은 없다. 회계 분석가가 낸 유일한 조정(매입채무 증가가 영업현금을 공급)은 품질조정 잉여현금흐름에만 적용되어 {free_cash_flow.free_cash_flow_quality_adjusted.adjustments_applied.0.before}에서 {free_cash_flow.free_cash_flow_quality_adjusted}로 낮췄으며, 다시 계산할 때는 공급업체 신용에 기댄 현금이 되돌아갈 수 있다는 경고로 읽어야 한다."
+  },
+  "limits": "This valuation is a set of stated assumptions run through a stated formula. It states no recommendation to trade, and a different reader choosing different drivers would reach a different value."
+}

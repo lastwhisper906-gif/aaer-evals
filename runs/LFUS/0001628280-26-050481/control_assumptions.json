@@ -1,0 +1,257 @@
+{
+ "ticker": "LFUS",
+ "accession": "0001628280-26-050481",
+ "form": "10-Q",
+ "purpose": "bear, base and bull drivers for a ten-year discounted cash flow",
+ "author": "single-agent control (one agent, no reader or analyst split)",
+ "constraints": {
+  "terminal_growth_ceiling": "{cost_of_capital.risk_free_rate.value}",
+  "discount_rate_reference": "{cost_of_capital.wacc.value}",
+  "cost_of_equity_reference": "{cost_of_capital.cost_of_equity.value}",
+  "tax_rate_reference": "{tax_rate.value}",
+  "revenue_base": "{terms.trailing_four_quarters.revenue.value}",
+  "note": "the driver values below are the only digits written by the analyst, because the specification requires each driver as a decimal; every other number is a calculator path"
+ },
+ "bear": {
+  "revenue_growth_year_one": {
+   "value": 0.05,
+   "reason": "The cycle turns within the year: the guided third quarter still lands, but the fourth quarter and the first half of next year face the strong comparisons of this half and a distributor destocking like the one that produced two consecutive years of revenue decline in the history; Basler annualizes in December so the acquired lift fades. Growth over the next four quarters against the trailing base of {terms.trailing_four_quarters.revenue.value} ends up a fraction of the current year-over-year rate {ratios.growth.revenue.year_over_year.value}.",
+   "quote": "Looking ahead to the third quarter, we expect approximately 26% total revenue growth versus the prior year, supported by record bookings, continued customer momentum, and contributions from the Basler acquisition.",
+   "quote_from": "input_8k.md",
+   "calculator_fields": [
+    "ratios.growth.revenue.year_over_year.value",
+    "ratios.growth.revenue.trailing_four_quarters.value",
+    "earnings_versus_cash.history.years.2.revenue_growth",
+    "earnings_versus_cash.history.years.1.revenue_growth",
+    "terms.trailing_four_quarters.revenue.value"
+   ]
+  },
+  "terminal_growth": {
+   "value": 0.02,
+   "reason": "A components maker whose three-year compound revenue growth is {earnings_versus_cash.history.revenue_growth_three_year_compound} and whose revenue has only just regained its prior peak earns no more than inflation-like perpetual growth in the bear case, well under the ceiling {cost_of_capital.risk_free_rate.value}.",
+   "quote": null,
+   "quote_from": null,
+   "calculator_fields": [
+    "earnings_versus_cash.history.revenue_growth_three_year_compound",
+    "cost_of_capital.risk_free_rate.value",
+    "terms.trailing_four_quarters.revenue.value",
+    "earnings_versus_cash.history.years.3.revenue"
+   ]
+  },
+  "operating_margin_year_one": {
+   "value": 0.12,
+   "reason": "Volume leverage runs in reverse when the cycle turns, restructuring charges keep recurring as the restructuring note shows in every period, and the inventory reserve trimmed at the top of the cycle gets rebuilt. The year-one margin lands between the downturn year's {earnings_versus_cash.history.years.1.operating_margin} and the current half-year level, and well above the trailing {ratios.profitability.operating_margin.value} that carries the prior-year impairment.",
+   "quote": "For the three and six months ended June 27, 2026, the Company recorded total restructuring charges of $6.9 million and $14.3 million, respectively, primarily for employee termination costs.",
+   "quote_from": "input_notes.md",
+   "calculator_fields": [
+    "ratios.profitability.operating_margin.value",
+    "earnings_versus_cash.history.years.1.operating_margin",
+    "earnings_versus_cash.history.years.2.operating_margin",
+    "trend_table.quarters-back-0.ratios.inventory_reserve_ratio.value"
+   ]
+  },
+  "operating_margin_year_ten": {
+   "value": 0.13,
+   "reason": "Through-cycle GAAP margin settles near the three-year average with the impairment years included, {earnings_versus_cash.history.operating_margin_three_year_average}, lifted somewhat by the semiconductor site closures but held back by Transportation's cost inflation and recurring restructuring.",
+   "quote": "The decrease in operating income was primarily due to lower gross margin from the commercial vehicles business impacted by cost inflation and unfavorable product mix.",
+   "quote_from": "input_mdna.md",
+   "calculator_fields": [
+    "earnings_versus_cash.history.operating_margin_three_year_average",
+    "earnings_versus_cash.history.years.2.operating_margin",
+    "earnings_versus_cash.history.years.5.operating_margin"
+   ]
+  },
+  "reinvestment_rate_year_one": {
+   "value": 0.15,
+   "reason": "With little growth to fund, working capital releases as receivables and inventory unwind, and capital expenditure stays at its recent level of {terms.trailing_four_quarters.capital_expenditure.value}, below depreciation; net reinvestment out of after-tax operating income is small.",
+   "quote": "The Company recorded depreciation expense of $19.9 million and $19.4 million for the three months ended June 27, 2026 and June 28, 2025, respectively, and $38.8 million and $37.8 million for the six months ended June 27, 2026 and June 28, 2025, respectively",
+   "quote_from": "input_notes.md",
+   "calculator_fields": [
+    "terms.trailing_four_quarters.capital_expenditure.value",
+    "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now.value",
+    "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.a_year_earlier.value",
+    "terms.balances_now.property_plant_and_equipment.value"
+   ]
+  },
+  "reinvestment_rate_year_ten": {
+   "value": 0.2,
+   "reason": "Terminal reinvestment consistent with low perpetual growth on a return on invested capital that stays near the trailing {ratios.profitability.return_on_invested_capital.value} once impaired goodwill is carried; the company has to keep replacing plant and funding modest working capital but earns little on incremental capital.",
+   "quote": null,
+   "quote_from": null,
+   "calculator_fields": [
+    "ratios.profitability.return_on_invested_capital.value",
+    "ratios.profitability.invested_capital.value",
+    "trend_table.quarters-back-0.ratios.soft_asset_share.value"
+   ]
+  }
+ },
+ "base": {
+  "revenue_growth_year_one": {
+   "value": 0.14,
+   "reason": "The next four quarters blend a guided third quarter and a fourth quarter still carrying Basler with a first half of next year that laps this year's strong organic growth. Against the trailing base of {terms.trailing_four_quarters.revenue.value}, year one lands below the current quarterly rate {ratios.growth.revenue.year_over_year.value} but close to the trailing rate {ratios.growth.revenue.trailing_four_quarters.value}, with the acquisition contributing a few points until December.",
+   "quote": "Net sales in the range of $780 - $800 million, adjusted diluted EPS in the range of $4.85 – $5.05 and an adjusted effective tax rate of approximately 23% - 24%",
+   "quote_from": "input_8k.md",
+   "calculator_fields": [
+    "ratios.growth.revenue.year_over_year.value",
+    "ratios.growth.revenue.trailing_four_quarters.value",
+    "ratios.growth.revenue.quarter_over_quarter.value",
+    "terms.trailing_four_quarters.revenue.value",
+    "ratios.growth.revenue.this_quarter.value"
+   ]
+  },
+  "terminal_growth": {
+   "value": 0.035,
+   "reason": "Long-run growth a little below nominal growth in the economy, reflecting a cyclical components business with structural content gains in power density, data center and grid infrastructure but no pricing power; it sits under the risk-free ceiling {cost_of_capital.risk_free_rate.value}.",
+   "quote": "Basler is a leading designer and manufacturer of innovative electrical control and protection solutions for high-growth industrial markets including grid and utility infrastructure, power generation and data center.",
+   "quote_from": "input_mdna.md",
+   "calculator_fields": [
+    "cost_of_capital.risk_free_rate.value",
+    "earnings_versus_cash.history.revenue_growth_three_year_compound",
+    "earnings_versus_cash.history.years.3.revenue_growth"
+   ]
+  },
+  "operating_margin_year_one": {
+   "value": 0.16,
+   "reason": "The half-year GAAP operating margin implied by operating income of {terms.trailing_four_quarters.operating_income.parts.this_year_to_date.value} on revenue of {terms.trailing_four_quarters.revenue.parts.this_year_to_date.value} and the release's stated quarterly margin, carried forward with restructuring and impairment continuing at a lower rate as the site closures finish; this is a GAAP margin, so it sits below the adjusted margin management guides to and well above the trailing {ratios.profitability.operating_margin.value}.",
+   "quote": "GAAP operating margin of 16.2%, +110 bps; Adjusted EBITDA margin of 23.6%, +220 bps",
+   "quote_from": "input_8k.md",
+   "calculator_fields": [
+    "terms.trailing_four_quarters.operating_income.parts.this_year_to_date.value",
+    "terms.trailing_four_quarters.revenue.parts.this_year_to_date.value",
+    "ratios.growth.operating_income.this_quarter.value",
+    "ratios.growth.revenue.this_quarter.value",
+    "ratios.profitability.operating_margin.value"
+   ]
+  },
+  "operating_margin_year_ten": {
+   "value": 0.17,
+   "reason": "A through-cycle GAAP margin between the last upcycle's {earnings_versus_cash.history.years.3.operating_margin} and the downturn's {earnings_versus_cash.history.years.2.operating_margin}, assuming the semiconductor footprint reduction sticks, Basler amortization tapers on the schedule in the intangibles note, and restructuring becomes occasional rather than continuous.",
+   "quote": "During the second quarter of 2026, the Company recognized fixed asset impairment charges of $13.1 million, primarily related to the announced closure and/or disposition of two manufacturing sites for the semiconductor business within the Electronics segment.",
+   "quote_from": "input_mdna.md",
+   "calculator_fields": [
+    "earnings_versus_cash.history.years.3.operating_margin",
+    "earnings_versus_cash.history.years.4.operating_margin",
+    "earnings_versus_cash.history.years.2.operating_margin",
+    "earnings_versus_cash.history.operating_margin_three_year_average"
+   ]
+  },
+  "reinvestment_rate_year_one": {
+   "value": 0.3,
+   "reason": "Mid-teens growth has to be funded: trade working capital already rose from {free_cash_flow.free_cash_flow_to_firm.trade_working_capital.a_year_earlier.value} to {free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now.value}, and capital expenditure must at least return to depreciation after running below it at {terms.trailing_four_quarters.capital_expenditure.value}; acquisitions are excluded from the organic reinvestment rate and treated as separate capital allocation.",
+   "quote": "Capital expenditures for the six months ended June 27, 2026 were $33.0 million compared to $33.0 million for the six months ended June 28, 2025.",
+   "quote_from": "input_mdna.md",
+   "calculator_fields": [
+    "terms.trailing_four_quarters.capital_expenditure.value",
+    "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now.value",
+    "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.a_year_earlier.value",
+    "ratios.efficiency.cash_conversion_cycle.value"
+   ]
+  },
+  "reinvestment_rate_year_ten": {
+   "value": 0.28,
+   "reason": "Terminal reinvestment consistent with the base terminal growth on a return on invested capital in the low-to-mid teens once the impaired goodwill stops distorting the denominator; the trailing {ratios.profitability.return_on_invested_capital.value} is the impairment-window floor, not the steady state.",
+   "quote": null,
+   "quote_from": null,
+   "calculator_fields": [
+    "ratios.profitability.return_on_invested_capital.value",
+    "ratios.profitability.invested_capital.value",
+    "cost_of_capital.wacc.value"
+   ]
+  }
+ },
+ "bull": {
+  "revenue_growth_year_one": {
+   "value": 0.2,
+   "reason": "Record bookings carry through: the guided third-quarter rate is sustained into the fourth quarter, passives and semiconductor volumes keep growing on data center and power-density content, and the first half of next year holds high-single-digit organic growth on top of tough comparisons. Year one against the trailing base approaches the current quarterly rate {ratios.growth.revenue.year_over_year.value}.",
+   "quote": "Organic sales increased +20% driven by improved passive products (+26% organic) sales. Semiconductor product (+15% organic) sales also contributed to growth driven by increased protection and power semiconductor volumes.",
+   "quote_from": "input_8k.md",
+   "calculator_fields": [
+    "ratios.growth.revenue.year_over_year.value",
+    "ratios.growth.revenue.quarter_over_quarter.value",
+    "earnings_versus_cash.history.years.4.revenue_growth",
+    "earnings_versus_cash.history.years.3.revenue_growth"
+   ]
+  },
+  "terminal_growth": {
+   "value": 0.045,
+   "reason": "Perpetual growth close to but under the risk-free ceiling {cost_of_capital.risk_free_rate.value}, on the view that electrification, higher power density and grid investment give the portfolio content growth above the economy for a long time.",
+   "quote": "We continue to partner closely with our customers to drive the ongoing evolution to higher power and higher energy density solutions.",
+   "quote_from": "input_8k.md",
+   "calculator_fields": [
+    "cost_of_capital.risk_free_rate.value",
+    "earnings_versus_cash.history.years.4.revenue_growth"
+   ]
+  },
+  "operating_margin_year_one": {
+   "value": 0.18,
+   "reason": "Volume leverage continues, Electronics holds the margin it reached this quarter, restructuring winds down after the site closures, and the GAAP margin converges toward the adjusted operating margin the release reports for the quarter.",
+   "quote": "Adjusted EBITDA margin for the second quarter 2026 increased to 26.3% (+470 bps) due to volume leverage, favorable mix, and operational execution in both passive products and semiconductor products.",
+   "quote_from": "input_8k.md",
+   "calculator_fields": [
+    "ratios.growth.operating_income.this_quarter.value",
+    "ratios.growth.revenue.this_quarter.value",
+    "trend_table.quarters-back-0.ratios.gross_margin.value"
+   ]
+  },
+  "operating_margin_year_ten": {
+   "value": 0.2,
+   "reason": "A return to the last upcycle's fiscal-year operating margin of {earnings_versus_cash.history.years.3.operating_margin}, sustained by a smaller semiconductor footprint, Basler's higher gross margin, and amortization rolling off on the schedule in the intangibles note.",
+   "quote": "The improved margin was also favorably impacted by higher gross margin from the Basler acquisition.",
+   "quote_from": "input_mdna.md",
+   "calculator_fields": [
+    "earnings_versus_cash.history.years.3.operating_margin",
+    "earnings_versus_cash.history.years.4.operating_margin"
+   ]
+  },
+  "reinvestment_rate_year_one": {
+   "value": 0.35,
+   "reason": "Faster growth needs more working capital and a capital budget above depreciation to replace the capacity lost with the two closed sites; the reinvestment rate is higher than the base case because growth, not margin, is what the bull case adds.",
+   "quote": "Purchases of property, plant, and equipment |  | (33,021) |  |  | (32,999) |  |",
+   "quote_from": "input_8k.md",
+   "calculator_fields": [
+    "terms.trailing_four_quarters.capital_expenditure.value",
+    "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now.value",
+    "ratios.efficiency.days_sales_of_inventory.value",
+    "ratios.efficiency.days_sales_outstanding.value"
+   ]
+  },
+  "reinvestment_rate_year_ten": {
+   "value": 0.3,
+   "reason": "Terminal reinvestment consistent with the bull terminal growth on a mid-teens return on invested capital; a higher growth rate in perpetuity demands a higher reinvestment share even at a better return.",
+   "quote": null,
+   "quote_from": null,
+   "calculator_fields": [
+    "ratios.profitability.return_on_invested_capital.value",
+    "cost_of_capital.wacc.value",
+    "cost_of_capital.cost_of_equity.value"
+   ]
+  }
+ },
+ "summary_ko": "베어 케이스는 사이클이 일 년 안에 꺾여 성장률이 한 자릿수로 떨어지고 GAAP 영업이익률이 십 퍼센트대 초반으로 내려가며 영구성장률은 물가 수준에 그친다고 본다. 베이스 케이스는 가이던스대로 삼분기가 강하고 Basler가 십이월에 연환산되며 내년 상반기가 높은 기저를 만나 십 퍼센트대 중반 성장을 하고, GAAP 영업이익률은 현재 반기 수준에서 출발해 이전 호황기와 불황기 사이로 수렴하며, 영구성장률은 무위험수익률 아래에 둔다. 불 케이스는 기록적 수주가 이어져 성장이 현재 분기 수준에 근접하고 마진이 이전 고점으로 복귀하며, 그만큼 재투자율도 높아진다. 모든 시나리오에서 영구성장률은 계산기의 무위험수익률을 넘지 않고, 인수는 유기적 재투자율에서 제외한다.",
+ "limits": [
+  "Driver values are judgments expressed as decimals because the specification requires them; no arithmetic was performed to derive them and no other digits appear in the analyst's prose.",
+  "Year-one growth is measured against the calculator's trailing-four-quarter revenue base, which already contains the strong first half; the guided third-quarter rate is a quarterly comparison and is not carried straight into the annual figure.",
+  "Operating margins are GAAP margins, not the adjusted margins management guides to; the trailing calculator margin is not used as a starting point because it contains the prior fiscal year's impairment.",
+  "Reinvestment rates exclude acquisitions, which the company funds from cash and debt as separate capital allocation; a valuation that expects continued serial acquisition should treat that spend explicitly.",
+  "Free cash flow to the firm and EBITDA are missing from the calculator for a tagging reason, so the reinvestment anchors are capital expenditure, working capital and the depreciation stated in the notes rather than a computed firm free cash flow.",
+  "The tax rate reference is the calculator's statutory clamp because the trailing effective rate is distorted by the non-deductible impairment.",
+  "Beta in the calculator is elevated on a one-year window that includes the impairment quarter, which raises the reference cost of equity and weighted average cost of capital; the drivers here do not adjust for that."
+ ],
+ "scenarios": {},
+ "wacc_overrides": {},
+ "dropped_items": [
+  {
+   "where": "scenarios.bear",
+   "reason": "no such scenario"
+  },
+  {
+   "where": "scenarios.base",
+   "reason": "no such scenario"
+  },
+  {
+   "where": "scenarios.bull",
+   "reason": "no such scenario"
+  }
+ ],
+ "dropped_count": 3
+}

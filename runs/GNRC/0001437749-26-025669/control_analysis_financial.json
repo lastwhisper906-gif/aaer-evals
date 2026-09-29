@@ -1,0 +1,220 @@
+{
+ "ticker": "GNRC",
+ "accession": "0001437749-26-025669",
+ "form": "10-Q",
+ "question": "how healthy is this company?",
+ "written_by": "single-agent control",
+ "sections": {
+  "profitability": {
+   "dropped": "fields: '{ratios.profitability.gross_margin.value}' is not a field of calculator.json"
+  },
+  "efficiency": {
+   "dropped": "fields: '{ratios.efficiency.asset_turnover.value}' is not a field of calculator.json"
+  },
+  "liquidity": {
+   "dropped": "fields: '{ratios.liquidity.current_ratio.value}' is not a field of calculator.json"
+  },
+  "solvency": {
+   "dropped": "fields: '{ratios.solvency.total_debt.value}' is not a field of calculator.json"
+  },
+  "growth": {
+   "dropped": "fields: '{ratios.growth.revenue.year_over_year.value}' is not a field of calculator.json"
+  },
+  "free_cash_flow": {
+   "dropped": "fields: '{terms.trailing_four_quarters.operating_cash_flow.value}' is not a field of calculator.json"
+  }
+ },
+ "dupont": {
+  "dropped": "fields: '{ratios.profitability.dupont.net_margin.value}' is not a field of calculator.json"
+ },
+ "anomalies": [],
+ "path_to_distress": {
+  "current_distance": "far; positive free cash flow, an undrawn revolver, no maturities for four years and wide covenant headroom on the credit-agreement basis",
+  "sequence": [
+   {
+    "step": "residential demand stays weak because outage activity is mild and the storage market shrinks under the tax-credit phase-out, so the second-half Residential growth the guide requires does not arrive",
+    "watch": [
+     "{ratios.growth.revenue.year_over_year.value}",
+     "{trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue.value}"
+    ],
+    "evidence": [
+     "0001437749-26-025669:mdna:28",
+     "0001437749-26-025669:mdna:80"
+    ]
+   },
+   {
+    "step": "data center customers exercise cancellation rights or delay deliveries while capacity spending and Enercon earnout payments have already been committed; contract assets built under cost-to-cost accounting have to be unwound",
+    "watch": [
+     "{terms.trailing_four_quarters.capital_expenditure.value}",
+     "{ratios.efficiency.days_sales_of_inventory.value}",
+     "{ratios.efficiency.days_sales_outstanding.value}"
+    ],
+    "evidence": [
+     "0001437749-26-025669:mdna:8",
+     "0001437749-26-025669:notes:117",
+     "0001437749-26-025669:notes:58"
+    ]
+   },
+   {
+    "step": "margins fall back to the pre-refund level or below as mix shifts to C&I and input costs rise; adjusted EBITDA, the covenant metric, contracts and the covenant leverage climbs from near one toward the limit",
+    "watch": [
+     "{ratios.profitability.operating_margin.value}",
+     "{ratios.solvency.debt_over_ebitda.value}",
+     "{ratios.solvency.interest_coverage.value}"
+    ],
+    "evidence": [
+     "0001437749-26-025669:mdna:97",
+     "0001437749-26-025669:mdna:66"
+    ]
+   },
+   {
+    "step": "free cash flow after acquisitions and capacity turns negative, the revolver is drawn, and goodwill on the acquired C&I businesses is impaired, thinning tangible equity",
+    "watch": [
+     "{free_cash_flow.free_cash_flow_quality_adjusted.value}",
+     "{terms.balances_now.cash.value}",
+     "{trend_table.quarters-back-0.ratios.soft_asset_share.value}"
+    ],
+    "evidence": [
+     "0001437749-26-025669:mdna:103",
+     "0001437749-26-025669:notes:103"
+    ]
+   },
+   {
+    "step": "the term loan A balloon four years out and the term loan B balloon the year after must be refinanced on a weaker earnings base at floating rates; regulatory or litigation outcomes add cash calls",
+    "watch": [
+     "{ratios.solvency.total_debt.value}",
+     "{cost_of_capital.pre_tax_cost_of_debt.value}"
+    ],
+    "evidence": [
+     "0001437749-26-025669:notes:126",
+     "0001437749-26-025669:notes:153",
+     "0001437749-26-025669:notes:158"
+    ]
+   }
+  ],
+  "earliest_warning": "a quarter in which C&I revenue growth slows while inventory days and contract assets keep rising, and gross margin ex-refund falls below the prior-year quarter"
+ },
+ "summary_ko": {},
+ "limits": "This analysis reads the company's health from its own filed numbers against its own past. It forecasts nothing, and it cannot see what is not in the filings.",
+ "normalized_quotes": 0,
+ "dropped_items": [
+  {
+   "where": "sections.profitability",
+   "reason": "fields: '{ratios.profitability.gross_margin.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "sections.efficiency",
+   "reason": "fields: '{ratios.efficiency.asset_turnover.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "sections.liquidity",
+   "reason": "fields: '{ratios.liquidity.current_ratio.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "sections.solvency",
+   "reason": "fields: '{ratios.solvency.total_debt.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "sections.growth",
+   "reason": "fields: '{ratios.growth.revenue.year_over_year.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "sections.free_cash_flow",
+   "reason": "fields: '{terms.trailing_four_quarters.operating_cash_flow.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "dupont",
+   "reason": "fields: '{ratios.profitability.dupont.net_margin.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[0]",
+   "id": "profitability_return_on_invested_capital_below_cost_of_capital",
+   "reason": "fields: '{ratios.profitability.return_on_invested_capital.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[1]",
+   "id": "profitability_quarter_margin_carries_one_time_tariff_refund",
+   "reason": "fields: '{trend_table.quarters-back-0.ratios.gross_margin.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[2]",
+   "id": "profitability_trailing_operating_income_down_on_legal_charge",
+   "reason": "fields: '{ratios.growth.operating_income.trailing_four_quarters.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[3]",
+   "id": "efficiency_inventory_days_elevated_against_history",
+   "reason": "fields: '{ratios.efficiency.days_sales_of_inventory.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[4]",
+   "id": "efficiency_cash_conversion_cycle_long",
+   "reason": "fields: '{ratios.efficiency.cash_conversion_cycle.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[5]",
+   "id": "efficiency_asset_turnover_weighed_by_goodwill_and_intangibles",
+   "reason": "fields: '{ratios.efficiency.asset_turnover.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[6]",
+   "id": "liquidity_quick_ratio_below_one",
+   "reason": "fields: '{ratios.liquidity.quick_ratio.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[7]",
+   "id": "liquidity_cash_fell_as_deals_and_settlement_were_paid",
+   "reason": "fields: '{terms.balances_now.cash.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[8]",
+   "id": "solvency_back_loaded_maturities_with_balloon_payments",
+   "reason": "fields: '{ratios.solvency.total_debt.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[9]",
+   "id": "solvency_covenant_metrics_on_adjusted_basis_far_from_calculator",
+   "reason": "fields: '{ratios.solvency.interest_coverage.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[10]",
+   "id": "solvency_thin_tangible_equity",
+   "reason": "fields: '{terms.balances_now.stockholders_equity.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[11]",
+   "id": "growth_trailing_revenue_flat_against_mid_teens_guidance",
+   "reason": "fields: '{ratios.growth.revenue.trailing_four_quarters.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[12]",
+   "id": "growth_concentrated_in_data_center_with_cancellation_rights",
+   "reason": "fields: '{concentration.facts}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[13]",
+   "id": "growth_acquisitions_contribute_to_reported_growth",
+   "reason": "fields: '{terms.cash_flow_families.acquisitions.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[14]",
+   "id": "free_cash_flow_trailing_operating_cash_down_despite_one_time_inflows",
+   "reason": "fields: '{terms.trailing_four_quarters.operating_cash_flow.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[15]",
+   "id": "free_cash_flow_quality_adjusted_cushion_thin_after_deals_and_stock_compensation",
+   "reason": "fields: '{free_cash_flow.free_cash_flow_simple.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[16]",
+   "id": "free_cash_flow_capital_expenditure_below_depreciation_while_capacity_is_added",
+   "reason": "fields: '{terms.trailing_four_quarters.capital_expenditure.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "limits",
+   "reason": "not the rules version's sentence; replaced by it"
+  }
+ ],
+ "dropped_count": 25
+}

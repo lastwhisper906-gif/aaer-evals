@@ -1,0 +1,586 @@
+{
+  "ticker": "PANW",
+  "accession": "0001327567-26-000015",
+  "question": "Do reported earnings and cash reflect economic reality?",
+  "written_by": "single-agent control, one pass over the filing bundle and calculator_before_analysts.json",
+  "areas": {
+    "earnings_versus_cash": {
+      "finding": "Trailing operating cash flow is about five times trailing net income ({earnings_versus_cash.operating_cash_flow_over_net_income.value}) and accruals over average assets are deeply negative ({earnings_versus_cash.accruals_over_average_assets.value}), so cash earnings run far ahead of book earnings. The wedge is non-cash: trailing share-based compensation ({terms.trailing_four_quarters.share_based_compensation.value}) is larger than trailing operating income ({terms.trailing_four_quarters.operating_income.value}) and larger than trailing net income ({terms.trailing_four_quarters.net_income.value}); depreciation and amortization ({terms.trailing_four_quarters.depreciation_and_amortization.value}) has stepped up with acquired intangibles; and deferred revenue is collected before it is recognized. The latest quarter prints an operating loss ({ratios.growth.operating_income.this_quarter.value}) and a net loss ({ratios.growth.net_income.this_quarter.value}) while quarterly operating cash flow grew year over year ({ratios.growth.operating_cash_flow.year_over_year.value}); the notes attribute the loss to the acquired businesses, accelerated vesting and amortization rather than to the legacy operation. Net income is smoother than cash ({earnings_versus_cash.smoothness.value}), the reverse of an earnings-smoothing pattern.",
+      "verdict": "watch",
+      "evidence": [
+        "0001327567-26-000015:mdna:51",
+        "0001327567-26-000015:mdna:149",
+        "0001327567-26-000015:notes:93",
+        "0001327567-26-000015:notes:176",
+        "0001327567-26-000015:notes:107"
+      ],
+      "fields": [
+        "{earnings_versus_cash.operating_cash_flow_over_net_income.value}",
+        "{earnings_versus_cash.accruals_over_average_assets.value}",
+        "{terms.trailing_four_quarters.share_based_compensation.value}",
+        "{terms.trailing_four_quarters.operating_income.value}",
+        "{terms.trailing_four_quarters.net_income.value}",
+        "{terms.trailing_four_quarters.depreciation_and_amortization.value}",
+        "{ratios.growth.operating_income.this_quarter.value}",
+        "{ratios.growth.net_income.this_quarter.value}",
+        "{ratios.growth.operating_cash_flow.year_over_year.value}",
+        "{earnings_versus_cash.smoothness.value}"
+      ]
+    },
+    "revenue_recognition": {
+      "finding": "Roughly four fifths of revenue is subscription and support recognized ratably, and product revenue is recognized on shipment or license delivery; remaining performance obligations rose and a large slice is due within twelve months. Quarterly revenue growth ({ratios.growth.revenue.year_over_year.value}) far outruns trailing growth ({ratios.growth.revenue.trailing_four_quarters.value}) because the quarter consolidates CyberArk and Chronosphere; the notes quantify the acquired revenue and the pro forma table implies a much lower organic pace. Days sales outstanding for the quarter is the highest of the filled quarters ({trend_table.quarters-back-0.ratios.days_sales_outstanding.value}) and receivables over quarterly revenue likewise ({trend_table.quarters-back-0.ratios.receivables_over_revenue.value}); acquired receivables and a partial-period revenue contribution explain part of that, but not the whole year-over-year receivables build ({earnings_versus_cash.working_capital.receivables.balance_sheet_change.value}), which exceeds trailing net income ({earnings_versus_cash.working_capital.receivables.share_of_net_income.value}). Contract liabilities over quarterly revenue are the lowest of the filled quarters ({trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue.value}) even though the absolute balance rose ({terms.balances_now.contract_liabilities.value} against {terms.balances_a_year_earlier.contract_liabilities.value}) with acquired deferred revenue. Financing receivables are sold in small amounts and past dues are described as immaterial.",
+      "verdict": "watch",
+      "evidence": [
+        "0001327567-26-000015:mdna:70",
+        "0001327567-26-000015:mdna:77",
+        "0001327567-26-000015:notes:32",
+        "0001327567-26-000015:notes:34",
+        "0001327567-26-000015:notes:93",
+        "0001327567-26-000015:notes:95",
+        "0001327567-26-000015:notes:77",
+        "0001327567-26-000015:notes:59",
+        "0001327567-26-000015:notes:58"
+      ],
+      "fields": [
+        "{ratios.growth.revenue.year_over_year.value}",
+        "{ratios.growth.revenue.trailing_four_quarters.value}",
+        "{trend_table.quarters-back-0.ratios.days_sales_outstanding.value}",
+        "{trend_table.quarters-back-0.ratios.receivables_over_revenue.value}",
+        "{earnings_versus_cash.working_capital.receivables.balance_sheet_change.value}",
+        "{earnings_versus_cash.working_capital.receivables.share_of_net_income.value}",
+        "{trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue.value}",
+        "{terms.balances_now.contract_liabilities.value}",
+        "{terms.balances_a_year_earlier.contract_liabilities.value}"
+      ]
+    },
+    "estimates_and_reserves": {
+      "finding": "The bad-debt allowance fell ({terms.balances_now.bad_debt_allowance.value} from {terms.balances_a_year_earlier.bad_debt_allowance.value}) while receivables rose ({terms.balances_now.receivables.value} from {terms.balances_a_year_earlier.receivables.value}), leaving the reserve ratio at the lowest of the filled quarters ({trend_table.quarters-back-0.ratios.bad_debt_reserve_ratio.value}). A reduction in the unobservable-input contingent consideration estimate produced a gain that was booked inside general and administrative expense in the quarter, cushioning the operating loss. The assumed convertible notes are carried under the fair value option, so their revaluation runs through other income and produced a loss in the quarter. Goodwill and intangibles now dominate the balance sheet — soft assets are the highest share of the filled quarters ({trend_table.quarters-back-0.ratios.soft_asset_share.value}) — and the purchase price allocation remains open for the measurement period. The effective tax rate over the trailing window ({tax_rate.effective_rate}) sits above the statutory rate the calculator caps at ({tax_rate.value}), and the quarter's rate turned negative on a pre-tax loss; a valuation allowance remains on California deferred tax assets. The litigation accrual for the patent judgment continues to accrete interest.",
+      "verdict": "watch",
+      "evidence": [
+        "0001327567-26-000015:notes:8",
+        "0001327567-26-000015:notes:40",
+        "0001327567-26-000015:notes:42",
+        "0001327567-26-000015:mdna:112",
+        "0001327567-26-000015:notes:13",
+        "0001327567-26-000015:notes:130",
+        "0001327567-26-000015:notes:102",
+        "0001327567-26-000015:notes:97",
+        "0001327567-26-000015:notes:179",
+        "0001327567-26-000015:mdna:123",
+        "0001327567-26-000015:notes:150"
+      ],
+      "fields": [
+        "{terms.balances_now.bad_debt_allowance.value}",
+        "{terms.balances_a_year_earlier.bad_debt_allowance.value}",
+        "{terms.balances_now.receivables.value}",
+        "{terms.balances_a_year_earlier.receivables.value}",
+        "{trend_table.quarters-back-0.ratios.bad_debt_reserve_ratio.value}",
+        "{trend_table.quarters-back-0.ratios.soft_asset_share.value}",
+        "{tax_rate.effective_rate}",
+        "{tax_rate.value}"
+      ]
+    },
+    "cost_deferral": {
+      "finding": "The company defers contract costs over an estimated benefit period and capitalizes software development costs, both amortized into cost of revenue; neither balance is tagged in the calculator, so the trend cannot be checked numerically. Trailing capital expenditure rose ({terms.trailing_four_quarters.capital_expenditure.value} from {terms.trailing_four_quarters_a_year_earlier.capital_expenditure.value}) and includes a land purchase beside headquarters that is recorded in property and equipment and will not depreciate. The larger deferral is structural: acquisition accounting has moved a very large cost of acquired technology and customer relationships into intangibles that will be amortized over the coming years on a published schedule, which depresses reported margins without touching cash.",
+      "verdict": "watch",
+      "evidence": [
+        "0001327567-26-000015:notes:8",
+        "0001327567-26-000015:mdna:89",
+        "0001327567-26-000015:notes:111",
+        "0001327567-26-000015:notes:105",
+        "0001327567-26-000015:notes:109"
+      ],
+      "fields": [
+        "{terms.trailing_four_quarters.capital_expenditure.value}",
+        "{terms.trailing_four_quarters_a_year_earlier.capital_expenditure.value}",
+        "{terms.balances_now.property_plant_and_equipment.value}",
+        "{terms.balances_a_year_earlier.property_plant_and_equipment.value}"
+      ]
+    },
+    "cash_flow_engineering_and_off_balance_sheet": {
+      "finding": "Unrecorded purchase commitments roughly doubled year over year ({terms.balances_now.unconditional_purchase_obligations.value} against {terms.balances_a_year_earlier.unconditional_purchase_obligations.value}), and the note history shows the cloud hosting commitment jumping between the last two quarterly filings; a further minimum cloud commitment sits outside the table. Contingent consideration payments to IBM are presented in financing activities, so a piece of acquisition cost bypasses both operating and investing cash flow. The legacy warrants were net share settled, delivering a large number of shares with no cash outflow, and the repurchase in the quarter retired fewer shares than the warrants issued. Small financing-receivable sales occur but are not tagged. Simple free cash flow ({free_cash_flow.free_cash_flow_simple.value}) turns negative once share-based compensation and trailing acquisition spend ({terms.cash_flow_families.acquisitions.value}) are deducted ({free_cash_flow.free_cash_flow_quality_adjusted.value}); management's non-GAAP free cash flow deducts capital expenditure only. Headquarters lease extensions added right-of-use assets and lease liabilities that the calculator does not yet carry.",
+      "verdict": "watch",
+      "evidence": [
+        "0001327567-26-000015:notes:142",
+        "0001327567-26-000015:note_history:2",
+        "0001327567-26-000015:notes:143",
+        "0001327567-26-000015:mdna:155",
+        "0001327567-26-000015:notes:116",
+        "0001327567-26-000015:notes:157",
+        "0001327567-26-000015:notes:59",
+        "0001327567-26-000015:mdna:56",
+        "0001327567-26-000015:notes:139"
+      ],
+      "fields": [
+        "{terms.balances_now.unconditional_purchase_obligations.value}",
+        "{terms.balances_a_year_earlier.unconditional_purchase_obligations.value}",
+        "{free_cash_flow.free_cash_flow_simple.value}",
+        "{free_cash_flow.free_cash_flow_quality_adjusted.value}",
+        "{terms.cash_flow_families.acquisitions.value}",
+        "{terms.trailing_four_quarters.share_repurchases.value}",
+        "{terms.trailing_four_quarters.proceeds_from_sale_of_receivables.missing}"
+      ]
+    },
+    "controls_audit_and_filing_signals": {
+      "finding": "Management concludes disclosure controls are effective and reports no change in internal control over financial reporting during the quarter, even though the quarter consolidated a very large acquired company for the first time and the purchase price allocation is still provisional. A quarterly report carries no auditor's opinion, so the only external assurance is the review implicit in the filing. The bundle holds no earnings-release body for the current report filed the day before the quarterly report, and no late-filing notice is on record, so there is nothing in the filing calendar itself that signals stress.",
+      "verdict": "watch",
+      "evidence": [
+        "0001327567-26-000015:item_4_controls:3",
+        "0001327567-26-000015:item_4_controls:5",
+        "0001327567-26-000015:notes:3",
+        "0001327567-26-000015:notes:97"
+      ],
+      "fields": []
+    },
+    "cross_document_reconciliation": {
+      "finding": "The calculator reads total debt as zero ({ratios.solvency.total_debt.value}) and net debt as the negative of cash and short-term investments ({ratios.solvency.net_debt.value}), while the filing carries the assumed convertible notes at fair value as short-term and long-term liabilities and the MD&A warns that the remaining principal could be settled in cash on conversion; the cost-of-capital weights ({cost_of_capital.weights.equity}) therefore rest entirely on equity. The operating lease liability the calculator carries ({ratios.solvency.operating_lease_liability.value}) is the prior year-end balance and its own note says the period-end balance is larger; the MD&A states a materially bigger lease obligation. The calculator's liquid balance ({terms.cash_and_short_term_investments_now.value}) excludes long-term investments that management counts inside its total cash and investments. The receivables articulation gap ({earnings_versus_cash.working_capital.receivables.articulation_gap.value}) matches the shape of acquired receivables entering the balance sheet outside the cash flow statement. Management's nine-month free cash flow and the calculator's trailing figure are on different windows, not in conflict. Inventory is untagged for the period, so trade working capital and free cash flow to the firm are missing.",
+      "verdict": "concern",
+      "evidence": [
+        "0001327567-26-000015:notes:37",
+        "0001327567-26-000015:notes:128",
+        "0001327567-26-000015:notes:129",
+        "0001327567-26-000015:mdna:133",
+        "0001327567-26-000015:mdna:139",
+        "0001327567-26-000015:mdna:129",
+        "0001327567-26-000015:mdna:130",
+        "0001327567-26-000015:notes:77",
+        "0001327567-26-000015:mdna:56"
+      ],
+      "fields": [
+        "{ratios.solvency.total_debt.value}",
+        "{ratios.solvency.net_debt.value}",
+        "{cost_of_capital.weights.equity}",
+        "{ratios.solvency.operating_lease_liability.value}",
+        "{ratios.solvency.operating_lease_liability.contradicted_at_period_end}",
+        "{terms.cash_and_short_term_investments_now.value}",
+        "{earnings_versus_cash.working_capital.receivables.articulation_gap.value}",
+        "{free_cash_flow.free_cash_flow_to_firm.missing}"
+      ]
+    },
+    "industry_lens": {
+      "finding": "For a platform security vendor the relevant quality markers are recurring mix, remaining performance obligations, next-generation security annualized recurring revenue, gross margin on cloud-delivered subscriptions, and share-based pay intensity. Mix and backlog look healthy, but gross margin for the quarter is the lowest of the filled quarters ({trend_table.quarters-back-0.ratios.gross_margin.value}) against a trailing level of {ratios.profitability.gross_margin.value}, with the MD&A blaming acquired-intangible amortization, cloud hosting cost and tariffs. The acquired units contributed revenue but a larger operating loss in the quarter, so consolidated operating margin ({ratios.profitability.operating_margin.value}) now understates the legacy franchise and overstates the combined one until integration costs and accelerated vesting roll off. Receivables are concentrated in a handful of distributors ({concentration.facts.0.value}) under a two-tier channel model, operations in Israel are exposed to regional hostilities, and hardware is exposed to tariffs and component shortages.",
+      "verdict": "watch",
+      "evidence": [
+        "0001327567-26-000015:mdna:50",
+        "0001327567-26-000015:mdna:91",
+        "0001327567-26-000015:mdna:95",
+        "0001327567-26-000015:mdna:96",
+        "0001327567-26-000015:mdna:86",
+        "0001327567-26-000015:notes:93",
+        "0001327567-26-000015:mdna:44",
+        "0001327567-26-000015:mdna:45"
+      ],
+      "fields": [
+        "{trend_table.quarters-back-0.ratios.gross_margin.value}",
+        "{ratios.profitability.gross_margin.value}",
+        "{ratios.profitability.operating_margin.value}",
+        "{concentration.facts.0.value}",
+        "{concentration.facts.1.value}"
+      ]
+    }
+  },
+  "reconciliation": {
+    "net_income_to_operating_cash_flow": {
+      "finding": "Trailing net income ({terms.trailing_four_quarters.net_income.value}) reconciles to trailing operating cash flow ({terms.trailing_four_quarters.operating_cash_flow.value}) mainly through share-based compensation ({terms.trailing_four_quarters.share_based_compensation.value}) and depreciation and amortization ({terms.trailing_four_quarters.depreciation_and_amortization.value}), offset by the receivables build the statement records ({terms.trailing_four_quarters.change_in_receivables.value}) and helped by payables ({terms.trailing_four_quarters.change_in_payables.value}); the remainder is deferred revenue and other accruals the calculator does not tag. The MD&A attributes the nine-month cash increase to collections growth, which is consistent with a ratable subscription business collecting annual billings up front.",
+      "evidence": ["0001327567-26-000015:mdna:149", "0001327567-26-000015:mdna:144"],
+      "fields": [
+        "{terms.trailing_four_quarters.net_income.value}",
+        "{terms.trailing_four_quarters.operating_cash_flow.value}",
+        "{terms.trailing_four_quarters.share_based_compensation.value}",
+        "{terms.trailing_four_quarters.depreciation_and_amortization.value}",
+        "{terms.trailing_four_quarters.change_in_receivables.value}",
+        "{terms.trailing_four_quarters.change_in_payables.value}"
+      ]
+    },
+    "balance_sheet_to_cash_flow_statement": {
+      "finding": "Receivables grew on the balance sheet by more than the cash flow statement charges ({earnings_versus_cash.working_capital.receivables.balance_sheet_change.value} versus {earnings_versus_cash.working_capital.receivables.cash_flow_statement_change.value}, gap {earnings_versus_cash.working_capital.receivables.articulation_gap.value}); the CyberArk allocation lists acquired receivables, which enter through investing rather than operating activity, and that explains the direction and most of the size. Payables show a small gap of the same sign ({earnings_versus_cash.working_capital.accounts_payable.articulation_gap.value}) for the same reason. Inventory cannot be articulated because the period balance is untagged.",
+      "evidence": ["0001327567-26-000015:notes:77"],
+      "fields": [
+        "{earnings_versus_cash.working_capital.receivables.balance_sheet_change.value}",
+        "{earnings_versus_cash.working_capital.receivables.cash_flow_statement_change.value}",
+        "{earnings_versus_cash.working_capital.receivables.articulation_gap.value}",
+        "{earnings_versus_cash.working_capital.accounts_payable.articulation_gap.value}",
+        "{earnings_versus_cash.working_capital.inventory.articulation_gap.missing}"
+      ]
+    },
+    "calculator_to_filing": {
+      "finding": "Three calculator figures understate obligations relative to the filing: debt ({ratios.solvency.total_debt.value}) omits the fair-valued convertible notes; the lease liability ({ratios.solvency.operating_lease_liability.value}) is stale against the MD&A's stated obligation; and purchase commitments ({terms.balances_now.unconditional_purchase_obligations.value}) match the note table but exclude a separately disclosed minimum commitment. One figure understates resources: liquid balances ({terms.cash_and_short_term_investments_now.value}) exclude long-term investments that management includes in its total. The tax rate is capped ({tax_rate.value}) below the trailing effective rate ({tax_rate.effective_rate}).",
+      "evidence": [
+        "0001327567-26-000015:notes:37",
+        "0001327567-26-000015:mdna:139",
+        "0001327567-26-000015:notes:143",
+        "0001327567-26-000015:mdna:130",
+        "0001327567-26-000015:notes:179"
+      ],
+      "fields": [
+        "{ratios.solvency.total_debt.value}",
+        "{ratios.solvency.operating_lease_liability.value}",
+        "{terms.balances_now.unconditional_purchase_obligations.value}",
+        "{terms.cash_and_short_term_investments_now.value}",
+        "{tax_rate.value}",
+        "{tax_rate.effective_rate}"
+      ]
+    },
+    "prose_to_numbers": {
+      "finding": "The MD&A's explanation of the quarter — acquisitions lifting revenue while amortization, accelerated vesting, severance and transaction costs push operating income negative — is consistent with the notes' quantification of acquired revenue and acquired operating loss and with the calculator's quarterly operating income ({ratios.growth.operating_income.this_quarter.value}). The one item the prose softens is the contingent consideration gain, which it mentions as a partial offset inside general and administrative expense without noting that it is an estimate revision rather than an operating item.",
+      "evidence": [
+        "0001327567-26-000015:mdna:66",
+        "0001327567-26-000015:mdna:112",
+        "0001327567-26-000015:notes:93",
+        "0001327567-26-000015:notes:40"
+      ],
+      "fields": ["{ratios.growth.operating_income.this_quarter.value}"]
+    }
+  },
+  "anomalies": [
+    {
+      "id": "earnings_versus_cash_receivables_articulation_gap",
+      "name": "Receivables grew more on the balance sheet than the cash flow statement records",
+      "name_ko": "매출채권 증가폭이 현금흐름표 기록을 초과",
+      "area": "earnings_versus_cash",
+      "what": "The year-over-year balance sheet increase in receivables ({earnings_versus_cash.working_capital.receivables.balance_sheet_change.value}) exceeds the cash flow statement's cumulative charge ({earnings_versus_cash.working_capital.receivables.cash_flow_statement_change.value}) by {earnings_versus_cash.working_capital.receivables.articulation_gap.value}; the increase is larger than trailing net income ({earnings_versus_cash.working_capital.receivables.share_of_net_income.value}).",
+      "numbers_vs_prose": "The CyberArk allocation lists acquired receivables that enter outside operating activity, which accounts for the direction and much of the gap; the MD&A speaks only of growth in collections.",
+      "evidence": ["0001327567-26-000015:notes:77", "0001327567-26-000015:mdna:149"],
+      "fields": [
+        "{earnings_versus_cash.working_capital.receivables.balance_sheet_change.value}",
+        "{earnings_versus_cash.working_capital.receivables.cash_flow_statement_change.value}",
+        "{earnings_versus_cash.working_capital.receivables.articulation_gap.value}",
+        "{earnings_versus_cash.working_capital.receivables.share_of_net_income.value}"
+      ]
+    },
+    {
+      "id": "earnings_versus_cash_operating_loss_against_rising_operating_cash_flow",
+      "name": "Quarterly operating loss while quarterly operating cash flow grew",
+      "name_ko": "분기 영업손실에도 영업현금흐름은 증가",
+      "area": "earnings_versus_cash",
+      "what": "Operating income for the quarter is negative ({ratios.growth.operating_income.this_quarter.value}), down sharply year over year ({ratios.growth.operating_income.year_over_year.value}), while the quarter's operating cash flow ({ratios.growth.operating_cash_flow.this_quarter.value}) rose year over year ({ratios.growth.operating_cash_flow.year_over_year.value}).",
+      "numbers_vs_prose": "The notes state the acquired units produced revenue but a larger operating loss in the quarter, and that accelerated vesting added a large non-cash charge; the numbers agree, so the loss is an accounting consequence of the deals rather than a cash deterioration.",
+      "evidence": ["0001327567-26-000015:notes:93", "0001327567-26-000015:notes:176", "0001327567-26-000015:mdna:112"],
+      "fields": [
+        "{ratios.growth.operating_income.this_quarter.value}",
+        "{ratios.growth.operating_income.year_over_year.value}",
+        "{ratios.growth.operating_cash_flow.this_quarter.value}",
+        "{ratios.growth.operating_cash_flow.year_over_year.value}"
+      ]
+    },
+    {
+      "id": "earnings_versus_cash_share_based_compensation_exceeds_operating_income",
+      "name": "Share-based compensation exceeds operating income and net income",
+      "name_ko": "주식보상비용이 영업이익과 순이익을 초과",
+      "area": "earnings_versus_cash",
+      "what": "Trailing share-based compensation ({terms.trailing_four_quarters.share_based_compensation.value}) is larger than trailing operating income ({terms.trailing_four_quarters.operating_income.value}) and trailing net income ({terms.trailing_four_quarters.net_income.value}); the unrecognized cost still to be expensed is disclosed as very large.",
+      "numbers_vs_prose": "The MD&A discloses the unrecognized share-based cost and its amortization period; the notes disclose the accelerated vesting tied to the acquisitions. Cash flow is unaffected, but the dilution is real: the warrants alone were settled with a large share issuance.",
+      "evidence": ["0001327567-26-000015:mdna:99", "0001327567-26-000015:notes:176", "0001327567-26-000015:notes:177", "0001327567-26-000015:notes:116"],
+      "fields": [
+        "{terms.trailing_four_quarters.share_based_compensation.value}",
+        "{terms.trailing_four_quarters.operating_income.value}",
+        "{terms.trailing_four_quarters.net_income.value}",
+        "{terms.shares_outstanding.value}",
+        "{terms.diluted_shares.value}"
+      ]
+    },
+    {
+      "id": "earnings_versus_cash_net_income_smoother_than_cash",
+      "name": "Net income varies less than operating cash flow",
+      "name_ko": "순이익 변동성이 영업현금흐름보다 낮음",
+      "area": "earnings_versus_cash",
+      "what": "The smoothness ratio ({earnings_versus_cash.smoothness.value}) is well below one across the quarters read, meaning quarter-to-quarter changes in net income are far smaller than changes in operating cash flow.",
+      "numbers_vs_prose": "The prose explains the cash lumpiness by billing seasonality and the income stability by ratable recognition; no contradiction, but the pattern means net income is a poor guide to cash timing.",
+      "evidence": ["0001327567-26-000015:mdna:68"],
+      "fields": ["{earnings_versus_cash.smoothness.value}"]
+    },
+    {
+      "id": "revenue_recognition_quarterly_growth_inflated_by_acquisitions",
+      "name": "Quarterly revenue growth far above trailing growth because of acquisitions",
+      "name_ko": "인수 효과로 분기 매출성장률이 연간 추세를 크게 상회",
+      "area": "revenue_recognition",
+      "what": "Quarterly year-over-year revenue growth ({ratios.growth.revenue.year_over_year.value}) is well above trailing growth ({ratios.growth.revenue.trailing_four_quarters.value}) and prior fiscal-year growth ({earnings_versus_cash.history.years.0.revenue_growth}).",
+      "numbers_vs_prose": "The notes quantify acquired revenue in the quarter and give pro forma revenue for both years, which implies an organic pace closer to the trailing rate; the MD&A headline growth figure does not separate the two.",
+      "evidence": ["0001327567-26-000015:notes:93", "0001327567-26-000015:notes:95", "0001327567-26-000015:mdna:77", "0001327567-26-000015:mdna:66"],
+      "fields": [
+        "{ratios.growth.revenue.year_over_year.value}",
+        "{ratios.growth.revenue.trailing_four_quarters.value}",
+        "{earnings_versus_cash.history.years.0.revenue_growth}"
+      ]
+    },
+    {
+      "id": "revenue_recognition_days_sales_outstanding_at_a_six_quarter_high",
+      "name": "Days sales outstanding at the highest of the filled quarters",
+      "name_ko": "매출채권회수기간이 최근 분기 중 최고치",
+      "area": "revenue_recognition",
+      "what": "Quarterly days sales outstanding ({trend_table.quarters-back-0.ratios.days_sales_outstanding.value}) and receivables over quarterly revenue ({trend_table.quarters-back-0.ratios.receivables_over_revenue.value}) are both the highest of the filled quarters; the trailing measure is {ratios.efficiency.days_sales_outstanding.value}.",
+      "numbers_vs_prose": "Acquired receivables and less than a full quarter of acquired revenue mechanically raise the ratio; the filing does not discuss collection terms, and the four-distributor concentration of receivables ({concentration.facts.0.value}) means a small number of counterparties drive the balance.",
+      "evidence": ["0001327567-26-000015:notes:77", "0001327567-26-000015:notes:3", "0001327567-26-000015:mdna:37"],
+      "fields": [
+        "{trend_table.quarters-back-0.ratios.days_sales_outstanding.value}",
+        "{trend_table.quarters-back-0.ratios.receivables_over_revenue.value}",
+        "{ratios.efficiency.days_sales_outstanding.value}",
+        "{concentration.facts.0.value}"
+      ]
+    },
+    {
+      "id": "revenue_recognition_contract_liabilities_over_revenue_at_a_six_quarter_low",
+      "name": "Contract liabilities relative to revenue at the lowest of the filled quarters",
+      "name_ko": "매출 대비 계약부채 비율이 최근 분기 중 최저치",
+      "area": "revenue_recognition",
+      "what": "Contract liabilities over quarterly revenue ({trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue.value}) is the lowest of the filled quarters although the balance itself rose ({terms.balances_now.contract_liabilities.value} against {terms.balances_a_year_earlier.contract_liabilities.value}).",
+      "numbers_vs_prose": "Acquired deferred revenue is recorded at fair value, typically below the acquiree's book value, while acquired revenue enters the denominator; the notes report remaining performance obligations rising, so backlog is not shrinking.",
+      "evidence": ["0001327567-26-000015:notes:77", "0001327567-26-000015:notes:34", "0001327567-26-000015:mdna:50"],
+      "fields": [
+        "{trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue.value}",
+        "{terms.balances_now.contract_liabilities.value}",
+        "{terms.balances_a_year_earlier.contract_liabilities.value}"
+      ]
+    },
+    {
+      "id": "estimates_and_reserves_bad_debt_allowance_fell_while_receivables_rose",
+      "name": "Bad-debt allowance shrank as receivables grew",
+      "name_ko": "매출채권 증가에도 대손충당금 감소",
+      "area": "estimates_and_reserves",
+      "what": "The allowance ({terms.balances_now.bad_debt_allowance.value}) is below the year-earlier level ({terms.balances_a_year_earlier.bad_debt_allowance.value}) while receivables rose ({terms.balances_now.receivables.value} from {terms.balances_a_year_earlier.receivables.value}); the reserve ratio ({trend_table.quarters-back-0.ratios.bad_debt_reserve_ratio.value}) is the lowest of the filled quarters.",
+      "numbers_vs_prose": "The notes say allowance activity on financing receivables was insignificant and past dues immaterial, but they do not explain why the trade allowance fell; acquired receivables were booked net of allowance, which dilutes the ratio.",
+      "evidence": ["0001327567-26-000015:notes:58", "0001327567-26-000015:notes:77", "0001327567-26-000015:notes:21"],
+      "fields": [
+        "{terms.balances_now.bad_debt_allowance.value}",
+        "{terms.balances_a_year_earlier.bad_debt_allowance.value}",
+        "{terms.balances_now.receivables.value}",
+        "{terms.balances_a_year_earlier.receivables.value}",
+        "{trend_table.quarters-back-0.ratios.bad_debt_reserve_ratio.value}"
+      ]
+    },
+    {
+      "id": "estimates_and_reserves_contingent_consideration_gain_inside_operating_expense",
+      "name": "Estimate revision on contingent consideration booked as a gain in general and administrative expense",
+      "name_ko": "조건부대가 추정치 하향이 판관비 내 이익으로 계상",
+      "area": "estimates_and_reserves",
+      "what": "A downward revision of the unobservable-input contingent consideration liability produced a gain recorded inside general and administrative expense in the quarter, reducing the reported operating loss ({ratios.growth.operating_income.this_quarter.value}).",
+      "numbers_vs_prose": "The MD&A describes the gain as a partial offset to expense growth; the fair value note attributes it to reduced expectations of qualifying customer transactions for the acquired QRadar assets, which is also a statement about that product's traction.",
+      "evidence": ["0001327567-26-000015:mdna:112", "0001327567-26-000015:notes:40", "0001327567-26-000015:notes:42", "0001327567-26-000015:notes:38"],
+      "fields": ["{ratios.growth.operating_income.this_quarter.value}"]
+    },
+    {
+      "id": "estimates_and_reserves_convertible_notes_revalued_through_earnings",
+      "name": "Assumed convertible notes carried at fair value with changes in earnings",
+      "name_ko": "인수한 전환사채를 공정가치로 평가하여 손익에 반영",
+      "area": "estimates_and_reserves",
+      "what": "The company elected the fair value option for the notes assumed from CyberArk; revaluation losses ran through other income in the quarter and the notes' fair value moves with the share price, so pre-tax income will carry a share-price-linked swing each quarter.",
+      "numbers_vs_prose": "The policy is disclosed as a simplification; the effect is that a rising share price produces a loss in other income while lowering nothing in operations.",
+      "evidence": ["0001327567-26-000015:notes:13", "0001327567-26-000015:notes:130", "0001327567-26-000015:notes:187", "0001327567-26-000015:mdna:121"],
+      "fields": ["{terms.trailing_four_quarters.pretax_income.value}"]
+    },
+    {
+      "id": "estimates_and_reserves_goodwill_and_intangibles_dominate_assets",
+      "name": "Goodwill and intangibles now dominate total assets with the allocation still provisional",
+      "name_ko": "영업권과 무형자산이 총자산을 지배하며 배분은 잠정적",
+      "area": "estimates_and_reserves",
+      "what": "Soft assets are the highest share of the filled quarters ({trend_table.quarters-back-0.ratios.soft_asset_share.value}); total assets more than doubled year over year ({terms.balances_now.assets.value} against {terms.balances_a_year_earlier.assets.value}) mainly through goodwill and acquired intangibles, and the measurement period remains open.",
+      "numbers_vs_prose": "The goodwill roll-forward and the intangible schedule are explicit; the risk is not misstatement today but that return on assets ({ratios.profitability.return_on_assets.value}) and return on equity ({ratios.profitability.return_on_equity.value}) are now anchored to a purchase price rather than to operating capital.",
+      "evidence": ["0001327567-26-000015:notes:102", "0001327567-26-000015:notes:105", "0001327567-26-000015:notes:97", "0001327567-26-000015:notes:78"],
+      "fields": [
+        "{trend_table.quarters-back-0.ratios.soft_asset_share.value}",
+        "{terms.balances_now.assets.value}",
+        "{terms.balances_a_year_earlier.assets.value}",
+        "{ratios.profitability.return_on_assets.value}",
+        "{ratios.profitability.return_on_equity.value}"
+      ]
+    },
+    {
+      "id": "estimates_and_reserves_effective_tax_rate_above_statutory_and_negative_in_the_quarter",
+      "name": "Effective tax rate above statutory over the trailing window and negative in the quarter",
+      "name_ko": "실효세율이 법정세율을 상회하고 분기에는 음수",
+      "area": "estimates_and_reserves",
+      "what": "The trailing effective rate ({tax_rate.effective_rate}) is above the statutory rate the calculator applies ({tax_rate.value}); the quarter carried a tax provision on a pre-tax loss, so the quarterly rate is negative.",
+      "numbers_vs_prose": "The notes attribute the distortion to the CyberArk acquisition and to reduced excess tax benefits on share-based pay, and flag continued volatility as the acquired structure is integrated; a repatriation of foreign earnings is described as carrying immaterial tax.",
+      "evidence": ["0001327567-26-000015:notes:179", "0001327567-26-000015:mdna:123", "0001327567-26-000015:mdna:130"],
+      "fields": ["{tax_rate.effective_rate}", "{tax_rate.value}", "{terms.trailing_four_quarters.income_tax_expense.value}", "{terms.trailing_four_quarters.pretax_income.value}"]
+    },
+    {
+      "id": "cost_deferral_capital_expenditure_includes_land",
+      "name": "Capital expenditure rose and includes a non-depreciating land purchase",
+      "name_ko": "설비투자 증가분에 감가상각되지 않는 토지 매입 포함",
+      "area": "cost_deferral",
+      "what": "Trailing capital expenditure ({terms.trailing_four_quarters.capital_expenditure.value}) is roughly double the year-earlier trailing figure ({terms.trailing_four_quarters_a_year_earlier.capital_expenditure.value}); the notes disclose a land purchase adjacent to headquarters recorded in property and equipment.",
+      "numbers_vs_prose": "Management's non-GAAP free cash flow deducts this line in full, so the land is treated as a cash cost there; the calculator's simple free cash flow does the same. No deferral is hidden, but the step-up is partly one-off.",
+      "evidence": ["0001327567-26-000015:notes:111", "0001327567-26-000015:mdna:56"],
+      "fields": [
+        "{terms.trailing_four_quarters.capital_expenditure.value}",
+        "{terms.trailing_four_quarters_a_year_earlier.capital_expenditure.value}",
+        "{terms.balances_now.property_plant_and_equipment.value}"
+      ]
+    },
+    {
+      "id": "cost_deferral_acquired_intangible_amortization_step_up",
+      "name": "Amortization of acquired intangibles stepped up and is scheduled for years",
+      "name_ko": "인수 무형자산 상각비가 급증하며 수년간 지속 예정",
+      "area": "cost_deferral",
+      "what": "Trailing depreciation and amortization ({terms.trailing_four_quarters.depreciation_and_amortization.value}) is well above the prior fiscal year's figure ({terms.trailing_four_quarters.depreciation_and_amortization.parts.prior_fiscal_year.value}); the notes show quarterly intangible amortization several times the year-earlier level and publish a multi-year schedule of future charges.",
+      "numbers_vs_prose": "The MD&A attributes gross margin and sales expense pressure to this amortization; it is non-cash, so operating cash flow is untouched while the margin line falls, and EBITDA ({ratios.solvency.ebitda.value}) diverges further from operating income.",
+      "evidence": ["0001327567-26-000015:notes:107", "0001327567-26-000015:notes:109", "0001327567-26-000015:mdna:91", "0001327567-26-000015:mdna:96"],
+      "fields": [
+        "{terms.trailing_four_quarters.depreciation_and_amortization.value}",
+        "{terms.trailing_four_quarters.depreciation_and_amortization.parts.prior_fiscal_year.value}",
+        "{ratios.solvency.ebitda.value}"
+      ]
+    },
+    {
+      "id": "cash_flow_engineering_and_off_balance_sheet_purchase_commitments_doubled",
+      "name": "Unrecorded purchase commitments roughly doubled, driven by cloud hosting",
+      "name_ko": "미인식 구매약정이 클라우드 호스팅 중심으로 약 두 배 증가",
+      "area": "cash_flow_engineering_and_off_balance_sheet",
+      "what": "Unconditional purchase obligations ({terms.balances_now.unconditional_purchase_obligations.value}) are about twice the year-earlier balance ({terms.balances_a_year_earlier.unconditional_purchase_obligations.value}) and exceed liquid balances ({terms.cash_and_short_term_investments_now.value}) and trailing operating cash flow ({terms.trailing_four_quarters.operating_cash_flow.value}).",
+      "numbers_vs_prose": "The note history shows the cloud line stepping up between consecutive quarterly filings; a separate minimum cloud commitment is disclosed outside the table, so the table understates the total the MD&A rounds to.",
+      "evidence": ["0001327567-26-000015:notes:142", "0001327567-26-000015:note_history:2", "0001327567-26-000015:notes:143", "0001327567-26-000015:mdna:140"],
+      "fields": [
+        "{terms.balances_now.unconditional_purchase_obligations.value}",
+        "{terms.balances_a_year_earlier.unconditional_purchase_obligations.value}",
+        "{terms.cash_and_short_term_investments_now.value}",
+        "{terms.trailing_four_quarters.operating_cash_flow.value}"
+      ]
+    },
+    {
+      "id": "cash_flow_engineering_and_off_balance_sheet_contingent_consideration_paid_through_financing",
+      "name": "Contingent consideration payments classified in financing activities",
+      "name_ko": "조건부대가 지급을 재무활동으로 분류",
+      "area": "cash_flow_engineering_and_off_balance_sheet",
+      "what": "Payments on the QRadar contingent consideration are presented in financing activities, so neither operating cash flow nor the calculator's acquisition line ({terms.cash_flow_families.acquisitions.value}) captures that portion of acquisition cost.",
+      "numbers_vs_prose": "The MD&A lists these payments among financing uses; the fair value roll-forward shows the amounts paid; the classification is permitted but it flatters both free cash flow measures.",
+      "evidence": ["0001327567-26-000015:mdna:155", "0001327567-26-000015:mdna:156", "0001327567-26-000015:notes:42"],
+      "fields": ["{terms.cash_flow_families.acquisitions.value}", "{free_cash_flow.free_cash_flow_simple.value}"]
+    },
+    {
+      "id": "cash_flow_engineering_and_off_balance_sheet_warrants_settled_in_shares",
+      "name": "Legacy warrants net settled with a large share issuance and no cash",
+      "name_ko": "기존 워런트를 현금 없이 대규모 주식 발행으로 정산",
+      "area": "cash_flow_engineering_and_off_balance_sheet",
+      "what": "The warrants tied to the matured convertible notes were net share settled; the shares issued carried a fair value several times the year's repurchase spend ({terms.trailing_four_quarters.share_repurchases.value}), so the repurchase did not offset the dilution.",
+      "numbers_vs_prose": "The debt note discloses the settlement; the equity note discloses the repurchase; the cash flow statement shows only the repurchase, so cash-based measures miss the transfer of value.",
+      "evidence": ["0001327567-26-000015:notes:116", "0001327567-26-000015:notes:157", "0001327567-26-000015:notes:182"],
+      "fields": ["{terms.trailing_four_quarters.share_repurchases.value}", "{terms.shares_outstanding.value}", "{terms.diluted_shares.value}"]
+    },
+    {
+      "id": "cash_flow_engineering_and_off_balance_sheet_free_cash_flow_negative_after_share_based_pay_and_acquisitions",
+      "name": "Free cash flow turns negative after share-based pay and acquisitions",
+      "name_ko": "주식보상과 인수를 차감하면 잉여현금흐름이 음수",
+      "area": "cash_flow_engineering_and_off_balance_sheet",
+      "what": "Simple free cash flow ({free_cash_flow.free_cash_flow_simple.value}) becomes {free_cash_flow.free_cash_flow_quality_adjusted.value} after deducting share-based compensation ({terms.trailing_four_quarters.share_based_compensation.value}) and trailing acquisition cash ({terms.cash_flow_families.acquisitions.value}).",
+      "numbers_vs_prose": "Management's non-GAAP free cash flow deducts only purchases of property and equipment; the MD&A also notes that investments were sold to fund acquisitions, which is where the difference went.",
+      "evidence": ["0001327567-26-000015:mdna:56", "0001327567-26-000015:mdna:121", "0001327567-26-000015:mdna:153"],
+      "fields": [
+        "{free_cash_flow.free_cash_flow_simple.value}",
+        "{free_cash_flow.free_cash_flow_quality_adjusted.value}",
+        "{terms.trailing_four_quarters.share_based_compensation.value}",
+        "{terms.cash_flow_families.acquisitions.value}"
+      ]
+    },
+    {
+      "id": "cash_flow_engineering_and_off_balance_sheet_financing_receivable_sales_untagged",
+      "name": "Financing receivables are sold but the proceeds are not tagged",
+      "name_ko": "금융리스채권 매각이 있으나 태그되지 않음",
+      "area": "cash_flow_engineering_and_off_balance_sheet",
+      "what": "The notes disclose sales of financing receivables in the quarter and year to date; the calculator finds no tagged proceeds ({terms.trailing_four_quarters.proceeds_from_sale_of_receivables.missing}).",
+      "numbers_vs_prose": "Amounts are small relative to the receivable book and described as immaterial in gain or loss; noted for completeness because such sales pull cash forward.",
+      "evidence": ["0001327567-26-000015:notes:59", "0001327567-26-000015:notes:54"],
+      "fields": ["{terms.trailing_four_quarters.proceeds_from_sale_of_receivables.missing}"]
+    },
+    {
+      "id": "controls_audit_and_filing_signals_no_internal_control_change_despite_large_acquisition",
+      "name": "No internal control change reported in the quarter that consolidated a very large acquisition",
+      "name_ko": "대형 인수를 연결한 분기에 내부통제 변경 없음으로 보고",
+      "area": "controls_audit_and_filing_signals",
+      "what": "Management reports no change in internal control over financial reporting for the quarter in which CyberArk was consolidated for the first time and the purchase price allocation remains provisional; total assets more than doubled year over year ({terms.balances_now.assets.value} against {terms.balances_a_year_earlier.assets.value}).",
+      "numbers_vs_prose": "The statement is standard where an acquired entity is excluded from the year's assessment, but the filing does not say so explicitly, so the reader cannot tell whether the acquired processes are inside the control conclusion.",
+      "evidence": ["0001327567-26-000015:item_4_controls:5", "0001327567-26-000015:item_4_controls:3", "0001327567-26-000015:notes:3", "0001327567-26-000015:notes:97"],
+      "fields": ["{terms.balances_now.assets.value}", "{terms.balances_a_year_earlier.assets.value}"]
+    },
+    {
+      "id": "cross_document_reconciliation_calculator_debt_zero_versus_convertible_notes_in_filing",
+      "name": "Calculator debt is zero while the filing carries fair-valued convertible notes",
+      "name_ko": "계산기 부채는 영이나 공시에는 공정가치 전환사채 존재",
+      "area": "cross_document_reconciliation",
+      "what": "Total debt in the calculator is {ratios.solvency.total_debt.value} and debt over EBITDA is {ratios.solvency.debt_over_ebitda.value}, but the fair value table lists short-term and long-term convertible notes, and the MD&A says the remaining principal would be settled in cash on conversion; the equity-only capital weights ({cost_of_capital.weights.equity}) and net debt ({ratios.solvency.net_debt.value}) inherit the omission.",
+      "numbers_vs_prose": "The notes are tagged under fair-value concepts rather than the debt concepts the calculator scans; the prose is unambiguous that they are obligations.",
+      "evidence": ["0001327567-26-000015:notes:37", "0001327567-26-000015:notes:128", "0001327567-26-000015:notes:129", "0001327567-26-000015:mdna:133"],
+      "fields": [
+        "{ratios.solvency.total_debt.value}",
+        "{ratios.solvency.debt_over_ebitda.value}",
+        "{ratios.solvency.net_debt.value}",
+        "{cost_of_capital.weights.equity}",
+        "{cost_of_capital.weights.debt}"
+      ]
+    },
+    {
+      "id": "cross_document_reconciliation_operating_lease_liability_stale",
+      "name": "Operating lease liability carried from the prior year-end and contradicted by the filing",
+      "name_ko": "운용리스부채가 전기말 수치로 계산되어 공시와 불일치",
+      "area": "cross_document_reconciliation",
+      "what": "The calculator carries {ratios.solvency.operating_lease_liability.value} as of the prior fiscal year-end and its own note records that the period-end noncurrent balance alone is larger; the MD&A states a materially larger total lease obligation after headquarters lease extensions.",
+      "numbers_vs_prose": "Invested capital ({ratios.profitability.invested_capital.value}) and return on invested capital ({ratios.profitability.return_on_invested_capital.value}) are computed on the stale figure.",
+      "evidence": ["0001327567-26-000015:mdna:139", "0001327567-26-000015:notes:139"],
+      "fields": [
+        "{ratios.solvency.operating_lease_liability.value}",
+        "{ratios.solvency.operating_lease_liability.contradicted_at_period_end}",
+        "{ratios.profitability.invested_capital.value}",
+        "{ratios.profitability.return_on_invested_capital.value}"
+      ]
+    },
+    {
+      "id": "cross_document_reconciliation_liquid_balance_excludes_long_term_investments",
+      "name": "Calculator liquid balance excludes long-term investments that management counts",
+      "name_ko": "계산기 유동성 잔액이 경영진이 포함하는 장기투자를 제외",
+      "area": "cross_document_reconciliation",
+      "what": "Cash and short-term investments in the calculator ({terms.cash_and_short_term_investments_now.value}) are well below the total cash, cash equivalents and investments the MD&A reports, because long-term available-for-sale securities sit outside the tag set.",
+      "numbers_vs_prose": "The maturity table shows most of those securities mature within a few years and the MD&A treats them as available for acquisitions; liquidity ratios ({ratios.liquidity.quick_ratio.value}) and net debt therefore understate resources at the same time as debt is understated.",
+      "evidence": ["0001327567-26-000015:mdna:129", "0001327567-26-000015:mdna:130", "0001327567-26-000015:notes:50", "0001327567-26-000015:mdna:121"],
+      "fields": ["{terms.cash_and_short_term_investments_now.value}", "{ratios.liquidity.quick_ratio.value}", "{ratios.solvency.net_debt.value}"]
+    },
+    {
+      "id": "industry_lens_acquired_units_produce_operating_loss",
+      "name": "Acquired businesses added revenue but a larger operating loss in the quarter",
+      "name_ko": "인수 사업부가 매출보다 큰 영업손실을 분기에 추가",
+      "area": "industry_lens",
+      "what": "The notes state the combined acquired units contributed revenue and an operating loss larger than that revenue for the quarter; consolidated quarterly operating income ({ratios.growth.operating_income.this_quarter.value}) is therefore below what the legacy business earned.",
+      "numbers_vs_prose": "The MD&A frames the comparability problem but gives no segment split; the notes' single sentence is the only quantification, and it includes amortization and accelerated vesting allocated to the deals.",
+      "evidence": ["0001327567-26-000015:notes:93", "0001327567-26-000015:mdna:66", "0001327567-26-000015:notes:96"],
+      "fields": ["{ratios.growth.operating_income.this_quarter.value}", "{ratios.profitability.operating_margin.value}"]
+    },
+    {
+      "id": "industry_lens_gross_margin_at_a_six_quarter_low",
+      "name": "Gross margin at the lowest of the filled quarters",
+      "name_ko": "매출총이익률이 최근 분기 중 최저치",
+      "area": "industry_lens",
+      "what": "Quarterly gross margin ({trend_table.quarters-back-0.ratios.gross_margin.value}) is the lowest of the filled quarters and below the trailing level ({ratios.profitability.gross_margin.value}) and the prior fiscal year ({trend_table.years-back-0.ratios.gross_margin.value}).",
+      "numbers_vs_prose": "The MD&A attributes the fall to acquired-intangible amortization, cloud hosting cost, hardware margin and tariffs; only the amortization is non-cash, so part of the compression is a real cost-to-serve shift toward cloud delivery.",
+      "evidence": ["0001327567-26-000015:mdna:91", "0001327567-26-000015:mdna:95", "0001327567-26-000015:mdna:96", "0001327567-26-000015:mdna:86", "0001327567-26-000015:mdna:89"],
+      "fields": [
+        "{trend_table.quarters-back-0.ratios.gross_margin.value}",
+        "{ratios.profitability.gross_margin.value}",
+        "{trend_table.years-back-0.ratios.gross_margin.value}"
+      ]
+    },
+    {
+      "id": "industry_lens_distributor_concentration_of_receivables",
+      "name": "Receivables concentrated in a few distributors under a two-tier channel",
+      "name_ko": "이중 유통 구조에서 소수 유통사에 매출채권 집중",
+      "area": "industry_lens",
+      "what": "The latest annual concentration facts put a large share of receivables with four distributors ({concentration.facts.0.value}) and sizeable revenue shares with three named customers ({concentration.facts.1.value}, {concentration.facts.2.value}, {concentration.facts.3.value}).",
+      "numbers_vs_prose": "The MD&A describes the indirect fulfillment model; combined with the six-quarter-high days sales outstanding, collection depends on a handful of counterparties.",
+      "evidence": ["0001327567-26-000015:mdna:37"],
+      "fields": ["{concentration.facts.0.value}", "{concentration.facts.1.value}", "{concentration.facts.2.value}", "{concentration.facts.3.value}"]
+    }
+  ],
+  "adjustments": [],
+  "adjustments_note": "No additional adjustment is proposed. Share-based compensation and acquisition cash are already inside the calculator's quality-adjusted formula, and the other items that would merit one — contingent consideration payments in financing activities, the land purchase inside capital expenditure, the fair-valued convertible notes, and the period-end lease liability — have no calculator field to name, so a Python-applied adjustment cannot be expressed for them under the rule that an adjustment's amount is the absolute value of the field it names.",
+  "summary_ko": "팔로알토네트웍스의 이번 분기 보고서는 현금이 이익보다 강한 전형적인 구독형 소프트웨어 구조를 보여준다. 최근 네 분기 영업현금흐름은 순이익의 약 다섯 배이고 발생액 비율은 크게 음수이며, 순이익 변동성은 현금흐름보다 낮다. 그러나 손익계산서는 사이버아크와 크로노스피어 인수의 회계 효과에 지배되기 시작했다. 인수 사업부는 분기에 매출보다 큰 영업손실을 더했고, 인수 무형자산 상각비와 가속 베스팅된 주식보상비용이 매출총이익률을 최근 분기 중 최저로, 분기 영업이익을 적자로 끌어내렸다. 주식보상비용은 연간 영업이익과 순이익을 모두 초과하며, 워런트는 현금 없이 대규모 주식 발행으로 정산되어 자사주 매입으로는 희석을 상쇄하지 못했다. 추정치 측면에서는 매출채권이 늘었는데도 대손충당금이 줄어 충당금 비율이 최저치이고, 조건부대가 추정치 하향에 따른 이익이 판관비 안에 계상되어 분기 손실을 완화했으며, 인수한 전환사채는 공정가치 옵션으로 평가되어 주가에 연동된 손익 변동을 만든다. 계산기와 공시의 대조에서는 계산기의 부채가 영으로 잡혀 공정가치로 계상된 전환사채를 놓치고, 운용리스부채는 전기말 수치로 과소 계상되며, 유동성 잔액은 경영진이 포함하는 장기투자를 제외한다는 점이 가장 중요한 불일치다. 미인식 구매약정은 클라우드 호스팅 중심으로 약 두 배로 늘어 보유 현금과 연간 영업현금흐름을 넘어선다. 결론적으로 현금 창출력 자체는 실재하지만, 보고이익은 인수 회계로 왜곡되어 있고 계산기의 지급능력 지표는 실제 의무를 과소 반영하므로 주의가 필요하다.",
+  "limits": [
+    "Inventory is not tagged for the period, so trade working capital, free cash flow to the firm and the cash conversion cycle are missing ({free_cash_flow.free_cash_flow_to_firm.missing}); the balance is small for this business but the articulation check cannot be run.",
+    "The calculator's debt ({ratios.solvency.total_debt.value}) omits the fair-valued convertible notes because they are tagged under fair-value concepts; every solvency ratio, net debt and the capital weights are therefore optimistic and were read against the filing rather than trusted.",
+    "The operating lease liability is the prior year-end figure ({ratios.solvency.operating_lease_liability.value}); invested capital and return on invested capital are understated accordingly.",
+    "Long-term investments are outside the calculator's liquid balance ({terms.cash_and_short_term_investments_now.value}), so liquidity ratios understate resources.",
+    "The bundle contains no earnings-release body and no auditor's report, so non-GAAP reconciliations beyond the MD&A's free cash flow table and any auditor emphasis could not be checked.",
+    "Concentration facts come from the prior annual report and may have shifted with the acquisitions.",
+    "Quarterly accruals over assets are missing for the latest two quarters because quarterly operating cash flow is not tagged as a duration; the trailing figure was used instead.",
+    "No prior run exists for this company, so no earlier flags could be scored against outcomes.",
+    "Deferred contract costs, capitalized software and the acquired deferred revenue haircut are described in prose only and could not be measured.",
+    "Adjustments are empty because the items that merit one have no calculator field to name; the omissions are recorded in the cross-document area instead."
+  ]
+}

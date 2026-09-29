@@ -1,0 +1,851 @@
+{
+  "ticker": "GNRC",
+  "accession": "0001437749-26-025669",
+  "form": "10-Q",
+  "question": "do reported earnings and cash reflect economic reality?",
+  "written_by": "single-agent control",
+  "areas": {
+    "earnings_versus_cash": {
+      "finding": "Over the trailing four quarters operating cash flow of {terms.trailing_four_quarters.operating_cash_flow.value} runs well ahead of net income of {terms.trailing_four_quarters.net_income.value}, a ratio of {earnings_versus_cash.operating_cash_flow_over_net_income.value}, and accruals over average assets are negative at {earnings_versus_cash.accruals_over_average_assets.value}. That is the healthy direction. The quarter itself is a different picture: quarterly operating cash flow of {ratios.growth.operating_cash_flow.this_quarter.value} sits below quarterly net income of {ratios.growth.net_income.this_quarter.value}, and both income and cash were lifted by a one-time tariff recovery that management itself says is inside net income, adjusted net income and adjusted EBITDA. The six-month cash flow statement shows a receivables build, a large use of cash in other assets (contract assets and a tariff refund receivable) and a large drawdown of other accrued liabilities (the legal settlement payment), offset by a payables build and a deferred-tax swing to expense. Trailing operating cash flow fell {ratios.growth.operating_cash_flow.trailing_four_quarters.value} against the year-earlier trailing window while the quarter's net income rose {ratios.growth.net_income.year_over_year.value}, so the quarter's earnings jump has not yet shown up as trailing cash. Income is smoother than cash ({earnings_versus_cash.smoothness.value}), which for an outage-driven generator maker is expected rather than alarming.",
+      "verdict": "earnings quality is acceptable on a trailing basis but the current quarter overstates the recurring run-rate because of the tariff refund; cash conversion in the quarter lagged income",
+      "evidence": [
+        "0001437749-26-024731:8k_2_02:14",
+        "0001437749-26-024731:8k_2_02:25",
+        "0001437749-26-024731:8k_2_02:106",
+        "0001437749-26-025669:mdna:109",
+        "0001437749-26-025669:mdna:37",
+        "0001437749-26-025669:notes:10"
+      ],
+      "fields": [
+        "{terms.trailing_four_quarters.operating_cash_flow.value}",
+        "{terms.trailing_four_quarters.net_income.value}",
+        "{earnings_versus_cash.operating_cash_flow_over_net_income.value}",
+        "{earnings_versus_cash.accruals_over_average_assets.value}",
+        "{ratios.growth.operating_cash_flow.this_quarter.value}",
+        "{ratios.growth.net_income.this_quarter.value}",
+        "{ratios.growth.operating_cash_flow.trailing_four_quarters.value}",
+        "{ratios.growth.net_income.year_over_year.value}",
+        "{earnings_versus_cash.smoothness.value}",
+        "{terms.trailing_four_quarters.change_in_receivables.value}",
+        "{terms.trailing_four_quarters.change_in_payables.value}"
+      ]
+    },
+    "revenue_recognition": {
+      "finding": "Revenue is mostly point-in-time on shipment to dealers and distributors, but the data center ramp is introducing over-time, cost-to-cost recognition. The contract balances note was rewritten this quarter: a contract-asset disclosure appears for the first time and the unbilled balance rose sharply from a small base at year-end, meaning a growing slice of C&I revenue is recognized on costs incurred before it is billed. Contract liabilities (customer deposits) fell from year-end as deposits were consumed into revenue, although at {terms.balances_now.contract_liabilities.value} they remain far above the year-ago {terms.balances_a_year_earlier.contract_liabilities.value}. Remaining performance obligations disclosed in the notes fell from the prior quarter even as the press release describes a rapidly rising data center backlog; the note applies the practical expedient that excludes contracts of one year or less, so the two figures are not the same population, but the direction of the two measures diverges. Receivables rose over the six months ({terms.trailing_four_quarters.change_in_receivables.value} over the trailing window), yet days sales outstanding at {ratios.efficiency.days_sales_outstanding.value} and the quarter's receivables-to-revenue are near the low end of the recent range, and floor-plan financing keeps roughly an eighth of sales off the receivables ledger.",
+      "verdict": "no evidence of premature recognition, but the shift toward cost-to-cost accounting and the backlog-versus-RPO gap make revenue timing more judgment-dependent than a year ago",
+      "evidence": [
+        "0001437749-26-025669:notes:116",
+        "0001437749-26-025669:notes:117",
+        "0001437749-26-025669:notes:118",
+        "0001437749-26-025669:notes:119",
+        "0001437749-26-014882:note_history:41",
+        "0001437749-26-025669:notes:73",
+        "0001437749-26-024731:8k_2_02:20",
+        "0001437749-26-025669:mdna:101"
+      ],
+      "fields": [
+        "{terms.balances_now.contract_liabilities.value}",
+        "{terms.balances_a_year_earlier.contract_liabilities.value}",
+        "{terms.balances_now.receivables.value}",
+        "{terms.trailing_four_quarters.change_in_receivables.value}",
+        "{ratios.efficiency.days_sales_outstanding.value}",
+        "{trend_table.quarters-back-0.ratios.receivables_over_revenue.value}",
+        "{trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue.value}"
+      ]
+    },
+    "estimates_and_reserves": {
+      "finding": "Four estimates carry weight this quarter. First, the tariff recovery is booked under a loss-recovery model and includes a receivable management has deemed probable; the split between the amount taken to cost of goods sold and the remainder parked in inventory is itself a judgment. Second, the standard warranty provision issued in the quarter was lower than a year ago even though net sales grew {ratios.growth.revenue.year_over_year.value}, and the warranty accrual of {terms.balances_now.warranty_accrual.value} against quarterly revenue sits at the second-lowest reading of the last six quarters; changes in estimates for pre-existing warranties keep adding to the reserve, which says prior accruals were light. Third, the Enercon earnout is carried at fair value, is tied to target EBITDA levels, is partly payable in restricted shares, and now dominates a contingent-consideration liability that is mostly current; contingent-consideration adjustments are excluded from adjusted EBITDA, so later true-ups will not touch the headline metric. Fourth, the segment reorganization reshuffled reporting units, goodwill was reallocated on relative fair value, and the interim impairment test produced only a small charge in Residential while acquisitions added goodwill that is the majority of the purchase price. The credit-loss allowance of {terms.balances_now.bad_debt_allowance.value} is the lowest of the last six quarters relative to receivables.",
+      "verdict": "reserves are within normal bounds but several are drifting in the income-friendly direction at the same time: warranty accrual rate down, allowance rate down, goodwill largely unimpaired after a re-basing, and a tariff receivable recognized on a probability judgment",
+      "evidence": [
+        "0001437749-26-025669:notes:9",
+        "0001437749-26-025669:notes:10",
+        "0001437749-26-025669:notes:107",
+        "0001437749-26-025669:notes:108",
+        "0001437749-26-025669:notes:58",
+        "0001437749-26-025669:notes:60",
+        "0001437749-26-025669:notes:61",
+        "0001437749-26-025669:notes:102",
+        "0001437749-26-025669:notes:103",
+        "0001437749-26-025669:notes:26",
+        "0001437749-26-025669:mdna:117"
+      ],
+      "fields": [
+        "{terms.balances_now.warranty_accrual.value}",
+        "{terms.balances_a_year_earlier.warranty_accrual.value}",
+        "{trend_table.quarters-back-0.ratios.warranty_reserve_ratio.value}",
+        "{terms.balances_now.bad_debt_allowance.value}",
+        "{trend_table.quarters-back-0.ratios.bad_debt_reserve_ratio.value}",
+        "{ratios.growth.revenue.year_over_year.value}",
+        "{trend_table.quarters-back-0.ratios.soft_asset_share.value}"
+      ]
+    },
+    "cost_deferral": {
+      "finding": "Two forms of deferral matter. The part of the tariff recovery not taken through cost of goods sold was recorded in inventories, which lowers the carrying cost of goods still on hand and will flow through as lower cost of sales in later quarters; that is a deferred margin benefit, not a recurring cost improvement. Acquisition accounting capitalized intangibles and goodwill, and amortization of intangibles rose year over year; the company then adds that amortization back in adjusted net income, so the adjusted per-share figure is on a basis that never charges for the acquired assets. Research and development remains fully expensed ({terms.trailing_four_quarters.research_and_development_expense.value} trailing). Inventory of {terms.balances_now.inventory.value} is slightly below a year ago, with raw materials down and finished goods up; days of inventory at {ratios.efficiency.days_sales_of_inventory.value} remain elevated against the company's own history, and the record carries no inventory reserve tag, so the adequacy of obsolescence reserves cannot be checked from the data.",
+      "verdict": "no aggressive capitalization of operating costs; the deferrals to watch are the tariff benefit sitting in inventory and the growing amortization add-back",
+      "evidence": [
+        "0001437749-26-025669:notes:10",
+        "0001437749-26-025669:mdna:37",
+        "0001437749-26-025669:notes:26",
+        "0001437749-26-025669:notes:94",
+        "0001437749-26-025669:mdna:62",
+        "0001437749-26-025669:mdna:168"
+      ],
+      "fields": [
+        "{terms.balances_now.inventory.value}",
+        "{terms.balances_a_year_earlier.inventory.value}",
+        "{ratios.efficiency.days_sales_of_inventory.value}",
+        "{terms.trailing_four_quarters.research_and_development_expense.value}",
+        "{terms.trailing_four_quarters.depreciation_and_amortization.value}",
+        "{terms.trailing_four_quarters.inventory_write_down.missing}"
+      ]
+    },
+    "cash_flow_engineering_and_off_balance_sheet": {
+      "finding": "Reported operating cash flow benefits from several classification and timing effects. Cash taxes are running below book taxes under the new bonus-depreciation and R&D expensing rules, and the deferred tax line swung to a large expense from a benefit, so part of the operating cash flow is a timing gain. Taxes paid on equity awards, which are a cash cost of compensation, sit in financing and grew several-fold. Acquisition consideration was partly settled in treasury stock and the Enercon earnout is partly in restricted shares, so the investing outflow understates what was paid. The dealer floor-plan arrangement converts dealer receivables to cash on shipment and now carries a larger outstanding balance than at year-end; the company can be required to repurchase inventory if dealers default, which is an unrecorded contingent obligation. On the other side, the six-month operating cash flow absorbed the company's share of a large legal settlement and a working-capital build, so the quarter is not flattered on every line. Free cash flow simple over the trailing window is {free_cash_flow.free_cash_flow_simple.value}; after share-based compensation and acquisition cash it is {free_cash_flow.free_cash_flow_quality_adjusted.value}.",
+      "verdict": "moderate: no receivable sales or supplier-finance programs are disclosed, but stock-settled deals, financing-classified award taxes, floor-plan financing and a cash-tax holiday all make reported cash generation look better than the underlying economics",
+      "evidence": [
+        "0001437749-26-025669:mdna:45",
+        "0001437749-26-025669:mdna:109",
+        "0001437749-26-025669:mdna:112",
+        "0001437749-26-025669:notes:22",
+        "0001437749-26-025669:notes:62",
+        "0001437749-26-025669:notes:148",
+        "0001437749-26-025669:mdna:101",
+        "0001437749-26-025669:notes:100",
+        "0001437749-26-024731:8k_2_02:106"
+      ],
+      "fields": [
+        "{free_cash_flow.free_cash_flow_simple.value}",
+        "{free_cash_flow.free_cash_flow_quality_adjusted.value}",
+        "{free_cash_flow.free_cash_flow_to_equity.value}",
+        "{terms.cash_flow_families.acquisitions.value}",
+        "{terms.trailing_four_quarters.share_based_compensation.value}",
+        "{terms.balances_now.supplier_finance_obligation.missing}",
+        "{terms.trailing_four_quarters.proceeds_from_sale_of_receivables.missing}"
+      ]
+    },
+    "controls_audit_and_filing_signals": {
+      "finding": "Management concluded disclosure controls were effective and reported no change in internal control over financial reporting during the quarter, despite a segment reorganization that changed reporting units, three closed acquisitions and a first-time cost-to-cost revenue disclosure. The interim statements are unaudited. No late-filing notice is on record and the current-report history is routine earnings releases, an executive change and proxy votes. The legal docket is active: a DOJ grand jury subpoena and EPA/CARB emissions inquiry with a fresh EPA information request this quarter, appealed securities and derivative suits, a consumer class action narrowed by the court, and a patent case settled after the appellate court vacated the judgment. Adjusted EBITDA, which management admits involves judgment and discretion, is both the covenant metric and an executive compensation target.",
+      "verdict": "no control deficiency is reported, but the combination of unaudited interim numbers, a reorganized reporting structure, discretionary non-GAAP definitions tied to pay, and open regulatory inquiries keeps the signal amber rather than green",
+      "evidence": [
+        "0001437749-26-025669:item_4_controls:3",
+        "0001437749-26-025669:item_4_controls:5",
+        "0001437749-26-025669:notes:5",
+        "0001437749-26-025669:notes:71",
+        "0001437749-26-025669:notes:153",
+        "0001437749-26-025669:notes:151",
+        "0001437749-26-025669:notes:152",
+        "0001437749-26-025669:notes:154",
+        "0001437749-26-025669:mdna:144",
+        "0001437749-26-025669:notes:158"
+      ],
+      "fields": []
+    },
+    "cross_document_reconciliation": {
+      "finding": "The press release and the quarterly report agree on every headline figure checked: quarterly net sales, net income, operating cash flow, free cash flow, adjusted EBITDA and the segment tables match line for line, and the calculator's quarterly revenue of {ratios.growth.revenue.this_quarter.value} and operating income of {ratios.growth.operating_income.this_quarter.value} tie to both. The tariff amounts are stated consistently across the release, the MD&A and the note. Three narrative gaps remain. The release headline credits operating leverage, while the segment discussion attributes most of the Residential margin expansion and the entire guidance raise to the tariff refund. The release cites a data center backlog far larger than the remaining performance obligations in the note, which also fell from the prior quarter. Full-year guidance calls for Residential growth in the high single digits although first-half Residential sales declined. Separately, the covenant interest coverage disclosed in the MD&A is far above the calculator's EBIT-based coverage of {ratios.solvency.interest_coverage.value}, because the covenant uses adjusted EBITDA and the calculator uses operating income.",
+      "verdict": "numbers reconcile; narratives diverge on what drove the margin, how large the contracted backlog really is, and how the second half must perform to meet guidance",
+      "evidence": [
+        "0001437749-26-024731:8k_2_02:5",
+        "0001437749-26-024731:8k_2_02:8",
+        "0001437749-26-024731:8k_2_02:11",
+        "0001437749-26-024731:8k_2_02:15",
+        "0001437749-26-024731:8k_2_02:20",
+        "0001437749-26-024731:8k_2_02:35",
+        "0001437749-26-024731:8k_2_02:36",
+        "0001437749-26-025669:mdna:50",
+        "0001437749-26-025669:mdna:67",
+        "0001437749-26-025669:mdna:80",
+        "0001437749-26-025669:mdna:97",
+        "0001437749-26-025669:mdna:108",
+        "0001437749-26-025669:notes:119"
+      ],
+      "fields": [
+        "{ratios.growth.revenue.this_quarter.value}",
+        "{ratios.growth.operating_income.this_quarter.value}",
+        "{ratios.growth.net_income.this_quarter.value}",
+        "{ratios.growth.operating_cash_flow.this_quarter.value}",
+        "{ratios.solvency.interest_coverage.value}"
+      ]
+    },
+    "industry_lens": {
+      "finding": "Generac is a standby and portable power equipment maker whose Residential demand swings with outages, housing and consumer confidence, and whose C&I business is now being reshaped by hyperscale data center backup orders. The industry pattern that matters for accounting is mix: Residential adjusted EBITDA margin is more than double the C&I margin, and C&I is growing at close to thirty percent while Residential shrinks, so consolidated margins face structural dilution even as revenue accelerates. Data center contracts bring over-time recognition, customer deposits, cancellation rights and delivery penalties that the company itself lists as a new risk. Capital intensity is rising: C&I capital expenditure in the quarter was well above the prior year and management says it is investing aggressively in capacity. Inventory days of {ratios.efficiency.days_sales_of_inventory.value} and a cash conversion cycle of {ratios.efficiency.cash_conversion_cycle.value} are long even for a dealer-channel manufacturer, and the dealer floor-plan program is the channel's shock absorber. Tariff exposure cuts both ways: this quarter's refund is the reversal of costs absorbed earlier, and trade policy remains a listed risk.",
+      "verdict": "the accounting risks are those of a company pivoting from a high-margin consumer franchise to lower-margin, contract-heavy industrial supply: revenue timing, earnouts, capacity capitalization and customer concentration replace outage seasonality as the main judgment areas",
+      "evidence": [
+        "0001437749-26-025669:mdna:12",
+        "0001437749-26-025669:mdna:28",
+        "0001437749-26-025669:mdna:32",
+        "0001437749-26-025669:mdna:66",
+        "0001437749-26-025669:mdna:67",
+        "0001437749-26-025669:mdna:8",
+        "0001437749-26-025669:notes:90",
+        "0001437749-26-024731:8k_2_02:20",
+        "0001437749-26-025669:notes:148"
+      ],
+      "fields": [
+        "{ratios.efficiency.days_sales_of_inventory.value}",
+        "{ratios.efficiency.cash_conversion_cycle.value}",
+        "{ratios.efficiency.days_payables_outstanding.value}",
+        "{terms.trailing_four_quarters.capital_expenditure.value}",
+        "{terms.balances_now.property_plant_and_equipment.value}",
+        "{terms.balances_a_year_earlier.property_plant_and_equipment.value}"
+      ]
+    }
+  },
+  "reconciliation": {
+    "earnings_to_cash_bridge": {
+      "description": "trailing four quarters, from the calculator; the bridge explains why cash exceeds income on a trailing basis while the quarter runs the other way",
+      "net_income": "{terms.trailing_four_quarters.net_income.value}",
+      "operating_cash_flow": "{terms.trailing_four_quarters.operating_cash_flow.value}",
+      "ratio": "{earnings_versus_cash.operating_cash_flow_over_net_income.value}",
+      "non_cash_addbacks": {
+        "depreciation_and_amortization": "{terms.trailing_four_quarters.depreciation_and_amortization.value}",
+        "share_based_compensation": "{terms.trailing_four_quarters.share_based_compensation.value}"
+      },
+      "working_capital": {
+        "receivables_absorbed": "{terms.trailing_four_quarters.change_in_receivables.value}",
+        "inventory_released": "{terms.trailing_four_quarters.change_in_inventory.value}",
+        "payables_paid_down": "{terms.trailing_four_quarters.change_in_payables.value}",
+        "trade_working_capital_change": "{free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital.value}"
+      },
+      "articulation_gaps": {
+        "receivables": "{earnings_versus_cash.working_capital.receivables.articulation_gap.value}",
+        "inventory": "{earnings_versus_cash.working_capital.inventory.articulation_gap.value}",
+        "accounts_payable": "{earnings_versus_cash.working_capital.accounts_payable.articulation_gap.value}",
+        "explanation": "the balance-sheet changes include working capital acquired with Allmand, Enercon and Wolter (receivables, inventories and payables in the purchase price allocation) and the tariff recovery recorded in inventories, none of which pass through the cash-flow statement's operating lines"
+      },
+      "items_not_in_the_calculator": [
+        "tariff refund cash received in the quarter (in operating cash flow, non-recurring)",
+        "tariff refund receivable and contract-asset build (in other assets, absorbing cash)",
+        "legal settlement payment satisfied in April (in other accrued liabilities, absorbing cash)",
+        "deferred income tax expense swing (non-cash, adding to operating cash flow)",
+        "taxes paid on equity awards (financing outflow, excluded from operating cash flow)"
+      ]
+    },
+    "document_to_document": [
+      {
+        "item": "quarterly net sales",
+        "press_release": "0001437749-26-024731:8k_2_02:8",
+        "ten_q": "0001437749-26-025669:mdna:50",
+        "calculator": "{ratios.growth.revenue.this_quarter.value}",
+        "status": "agree"
+      },
+      {
+        "item": "quarterly net income attributable to the company",
+        "press_release": "0001437749-26-024731:8k_2_02:11",
+        "ten_q": "0001437749-26-025669:mdna:65",
+        "calculator": "{ratios.growth.net_income.this_quarter.value}",
+        "status": "agree"
+      },
+      {
+        "item": "quarterly operating cash flow and free cash flow",
+        "press_release": "0001437749-26-024731:8k_2_02:131",
+        "ten_q": "0001437749-26-025669:mdna:108",
+        "calculator": "{ratios.growth.operating_cash_flow.this_quarter.value}",
+        "status": "agree"
+      },
+      {
+        "item": "tariff refund amounts",
+        "press_release": "0001437749-26-024731:8k_2_02:14",
+        "ten_q": "0001437749-26-025669:notes:10",
+        "calculator": "not carried",
+        "status": "agree in rounding"
+      },
+      {
+        "item": "data center backlog versus remaining performance obligations",
+        "press_release": "0001437749-26-024731:8k_2_02:20",
+        "ten_q": "0001437749-26-025669:notes:119",
+        "calculator": "not carried",
+        "status": "different populations; backlog rose while disclosed RPO fell"
+      },
+      {
+        "item": "driver of margin expansion",
+        "press_release": "0001437749-26-024731:8k_2_02:5",
+        "ten_q": "0001437749-26-025669:mdna:67",
+        "calculator": "{trend_table.quarters-back-0.ratios.gross_margin.value}",
+        "status": "headline says operating leverage; segment text says tariff refunds"
+      },
+      {
+        "item": "interest coverage",
+        "press_release": "not stated",
+        "ten_q": "0001437749-26-025669:mdna:97",
+        "calculator": "{ratios.solvency.interest_coverage.value}",
+        "status": "covenant basis (adjusted EBITDA) far above EBIT basis"
+      }
+    ]
+  },
+  "anomalies": [
+    {
+      "id": "earnings_versus_cash_tariff_refund_lifts_quarter_earnings_and_cash",
+      "name": "One-time tariff refund inside net income, adjusted EBITDA and operating cash flow",
+      "name_ko": "일회성 관세 환급이 순이익·조정 EBITDA·영업현금흐름을 동시에 끌어올림",
+      "area": "earnings_versus_cash",
+      "what": "A Supreme Court decision invalidating IEEPA tariffs let the company book a recovery, most of it as a reduction of cost of goods sold in the quarter, and receive most of it in cash. Management does not exclude it from adjusted EBITDA or adjusted net income, the quarter's gross margin is the highest of the last six quarters, and the full-year margin guidance was raised primarily because of it.",
+      "numbers_vs_prose": "The calculator shows quarterly gross margin at {trend_table.quarters-back-0.ratios.gross_margin.value} against a trailing {ratios.profitability.gross_margin.value} and quarterly operating income up {ratios.growth.operating_income.year_over_year.value}; the prose says roughly six points of the quarter's gross margin and nine points of the Residential margin came from the refund. The release headline credits operating leverage.",
+      "evidence": [
+        "0001437749-26-024731:8k_2_02:14",
+        "0001437749-26-024731:8k_2_02:22",
+        "0001437749-26-024731:8k_2_02:36",
+        "0001437749-26-025669:mdna:37",
+        "0001437749-26-025669:mdna:67",
+        "0001437749-26-025669:notes:10"
+      ],
+      "fields": [
+        "{trend_table.quarters-back-0.ratios.gross_margin.value}",
+        "{ratios.profitability.gross_margin.value}",
+        "{ratios.growth.operating_income.year_over_year.value}",
+        "{ratios.growth.net_income.year_over_year.value}"
+      ]
+    },
+    {
+      "id": "earnings_versus_cash_quarter_operating_cash_below_net_income",
+      "name": "Quarterly operating cash flow below quarterly net income",
+      "name_ko": "분기 영업현금흐름이 분기 순이익을 하회",
+      "area": "earnings_versus_cash",
+      "what": "In the quarter, operating cash flow came in below net income even with the tariff cash receipt inside it. Receivables, contract assets and the tariff receivable absorbed cash, and other accrued liabilities fell as the legal settlement was paid.",
+      "numbers_vs_prose": "Calculator: quarterly operating cash flow {ratios.growth.operating_cash_flow.this_quarter.value} versus net income {ratios.growth.net_income.this_quarter.value}; receivable build {terms.trailing_four_quarters.change_in_receivables.value} on the trailing window. Prose attributes the offset to a greater use of cash for working capital.",
+      "evidence": [
+        "0001437749-26-024731:8k_2_02:106",
+        "0001437749-26-025669:mdna:109",
+        "0001437749-26-025669:notes:100"
+      ],
+      "fields": [
+        "{ratios.growth.operating_cash_flow.this_quarter.value}",
+        "{ratios.growth.net_income.this_quarter.value}",
+        "{terms.trailing_four_quarters.change_in_receivables.value}"
+      ]
+    },
+    {
+      "id": "earnings_versus_cash_trailing_cash_flow_fell_while_quarter_earnings_doubled",
+      "name": "Trailing operating cash flow down while quarterly earnings nearly doubled",
+      "name_ko": "후행 영업현금흐름은 감소, 분기 이익은 거의 두 배",
+      "area": "earnings_versus_cash",
+      "what": "The trailing four-quarter operating cash flow is below the year-earlier trailing window, and trailing operating income and net income are also down because the prior fiscal year absorbed a large legal charge; the quarter's earnings surge has not yet shown up in trailing cash.",
+      "numbers_vs_prose": "Calculator: trailing operating cash flow growth {ratios.growth.operating_cash_flow.trailing_four_quarters.value}, trailing operating income growth {ratios.growth.operating_income.trailing_four_quarters.value}, quarterly net income growth {ratios.growth.net_income.year_over_year.value}. Prose describes robust sales increase and operating leverage.",
+      "evidence": [
+        "0001437749-26-024731:8k_2_02:5",
+        "0001437749-26-025669:mdna:108",
+        "0001437749-26-025669:notes:155"
+      ],
+      "fields": [
+        "{ratios.growth.operating_cash_flow.trailing_four_quarters.value}",
+        "{ratios.growth.operating_income.trailing_four_quarters.value}",
+        "{ratios.growth.net_income.trailing_four_quarters.value}",
+        "{terms.trailing_four_quarters_a_year_earlier.operating_cash_flow.value}"
+      ]
+    },
+    {
+      "id": "earnings_versus_cash_deferred_tax_swing_and_low_cash_taxes",
+      "name": "Deferred tax expense swing and cash-tax holiday flatter operating cash flow",
+      "name_ko": "이연법인세 비용 전환과 현금세 절감이 영업현금흐름을 부풀림",
+      "area": "earnings_versus_cash",
+      "what": "The deferred income tax line moved from a benefit a year ago to a sizeable expense, the deferred tax asset on the balance sheet shrank, and the MD&A credits lower cash tax payments under bonus depreciation and domestic R&D expensing. Book tax expense rose but cash taxes fell, so operating cash flow carries a timing benefit.",
+      "numbers_vs_prose": "Calculator effective rate {tax_rate.effective_rate} over the trailing window; the prose says the tax-law changes did not affect the effective rate but are expected to bring cash tax savings.",
+      "evidence": [
+        "0001437749-26-025669:mdna:45",
+        "0001437749-26-025669:mdna:109",
+        "0001437749-26-024731:8k_2_02:100",
+        "0001437749-26-024731:8k_2_02:106"
+      ],
+      "fields": [
+        "{tax_rate.effective_rate}",
+        "{terms.trailing_four_quarters.income_tax_expense.value}",
+        "{terms.trailing_four_quarters.pretax_income.value}"
+      ]
+    },
+    {
+      "id": "earnings_versus_cash_non_gaap_addbacks_include_disposition_losses_and_amortization",
+      "name": "Adjusted net income adds back disposition losses, amortization and transaction costs",
+      "name_ko": "조정 순이익이 사업 매각손실·무형자산 상각·거래비용을 가산",
+      "area": "earnings_versus_cash",
+      "what": "Adjusted net income excludes losses on four business dispositions described as immaterial, all intangible amortization, transaction costs and fair-value swings on the Wallbox position; adjusted EBITDA is defined by the credit agreement, is a compensation target, and management acknowledges the adjustments involve judgment.",
+      "numbers_vs_prose": "Calculator net margin {ratios.profitability.net_margin.value} on GAAP net income {terms.trailing_four_quarters.net_income.value}; the prose reports adjusted per-share figures well above GAAP for both the quarter and the half.",
+      "evidence": [
+        "0001437749-26-025669:mdna:168",
+        "0001437749-26-025669:mdna:171",
+        "0001437749-26-025669:mdna:144",
+        "0001437749-26-025669:mdna:121",
+        "0001437749-26-025669:notes:28"
+      ],
+      "fields": [
+        "{ratios.profitability.net_margin.value}",
+        "{terms.trailing_four_quarters.net_income.value}",
+        "{terms.trailing_four_quarters.depreciation_and_amortization.value}"
+      ]
+    },
+    {
+      "id": "revenue_recognition_contract_assets_jump_under_cost_to_cost_method",
+      "name": "Contract assets rise sharply as cost-to-cost recognition begins",
+      "name_ko": "원가투입기준 수익인식 도입으로 계약자산 급증",
+      "area": "revenue_recognition",
+      "what": "The contract balances note was rewritten to disclose contract assets for the first time; unbilled receivables from cost-to-cost contracts rose sharply from a small year-end base. Revenue recognized on costs incurred ahead of billing is more estimate-dependent than shipment-based revenue.",
+      "numbers_vs_prose": "The calculator carries no contract-asset field; receivables-to-revenue is near the low end of six quarters at {trend_table.quarters-back-0.ratios.receivables_over_revenue.value} while the prose shows the unbilled balance growing many times over.",
+      "evidence": [
+        "0001437749-26-025669:notes:116",
+        "0001437749-26-025669:notes:117",
+        "0001437749-26-025669:note_history:37",
+        "0001437749-26-014882:note_history:40",
+        "0001437749-26-025669:notes:73"
+      ],
+      "fields": [
+        "{trend_table.quarters-back-0.ratios.receivables_over_revenue.value}",
+        "{terms.balances_now.receivables.value}"
+      ]
+    },
+    {
+      "id": "revenue_recognition_contract_liabilities_drawn_down_into_revenue",
+      "name": "Customer deposits consumed into first-half revenue",
+      "name_ko": "고객 선수금이 상반기 매출로 소진",
+      "area": "revenue_recognition",
+      "what": "Contract liabilities fell from year-end as a large portion of the December deposit balance was recognized as revenue; the quarter's contract-liabilities-to-revenue ratio is down from the prior quarter though still far above the year-ago level. Part of the half's growth was delivery against previously deposited orders.",
+      "numbers_vs_prose": "Calculator: contract liabilities now {terms.balances_now.contract_liabilities.value} versus {terms.balances_a_year_earlier.contract_liabilities.value} a year earlier; ratio to quarterly revenue {trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue.value}, down from {trend_table.quarters-back-1.ratios.contract_liabilities_over_revenue.value}.",
+      "evidence": [
+        "0001437749-26-025669:notes:118",
+        "0001437749-26-025669:note_history:38",
+        "0001437749-26-014882:note_history:41"
+      ],
+      "fields": [
+        "{terms.balances_now.contract_liabilities.value}",
+        "{terms.balances_a_year_earlier.contract_liabilities.value}",
+        "{trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue.value}",
+        "{trend_table.quarters-back-1.ratios.contract_liabilities_over_revenue.value}"
+      ]
+    },
+    {
+      "id": "estimates_and_reserves_warranty_provision_fell_as_sales_rose",
+      "name": "Warranty provision issued fell while sales grew",
+      "name_ko": "매출 증가에도 보증충당 설정액 감소",
+      "area": "estimates_and_reserves",
+      "what": "The standard warranty provision recorded on new sales in the quarter was lower than the year-ago quarter while net sales rose, and the reserve-to-revenue ratio is the second lowest of six quarters. Meanwhile changes in estimates for pre-existing warranties keep adding to the liability, which says earlier accruals were light. Mix toward C&I may explain some of it, but the note does not say so.",
+      "numbers_vs_prose": "Calculator: warranty accrual {terms.balances_now.warranty_accrual.value} against {terms.balances_a_year_earlier.warranty_accrual.value} a year ago; ratio {trend_table.quarters-back-0.ratios.warranty_reserve_ratio.value}; quarterly revenue growth {ratios.growth.revenue.year_over_year.value}. The note's roll-forward shows the provision issued down year over year.",
+      "evidence": [
+        "0001437749-26-025669:notes:107",
+        "0001437749-26-025669:notes:108",
+        "0001437749-26-025669:notes:114",
+        "0001437749-26-024731:8k_2_02:53"
+      ],
+      "fields": [
+        "{terms.balances_now.warranty_accrual.value}",
+        "{terms.balances_a_year_earlier.warranty_accrual.value}",
+        "{trend_table.quarters-back-0.ratios.warranty_reserve_ratio.value}",
+        "{ratios.growth.revenue.year_over_year.value}"
+      ]
+    },
+    {
+      "id": "estimates_and_reserves_tariff_refund_receivable_recognized_on_probability_judgment",
+      "name": "Tariff refund receivable recognized under a loss-recovery model",
+      "name_ko": "손실회수 모델에 따라 관세 환급 미수금 인식",
+      "area": "estimates_and_reserves",
+      "what": "Beyond the cash received, the company recorded a receivable for refunds it deems probable and split the total recovery between cost of goods sold and inventory. Both the probability call and the allocation are management judgments that directly set the quarter's gross margin.",
+      "numbers_vs_prose": "The calculator has no tariff field; the quarter's gross margin of {trend_table.quarters-back-0.ratios.gross_margin.value} is the highest of six quarters. The note states the receivable amount and the accounting election.",
+      "evidence": [
+        "0001437749-26-025669:notes:9",
+        "0001437749-26-025669:notes:10",
+        "0001437749-26-025669:mdna:37",
+        "0001437749-26-025669:note_history:11"
+      ],
+      "fields": [
+        "{trend_table.quarters-back-0.ratios.gross_margin.value}"
+      ]
+    },
+    {
+      "id": "estimates_and_reserves_enercon_earnout_at_fair_value_tied_to_target_ebitda",
+      "name": "Enercon contingent consideration is large, current and EBITDA-linked",
+      "name_ko": "Enercon 조건부 대가가 크고 유동성이며 EBITDA 목표에 연동",
+      "area": "estimates_and_reserves",
+      "what": "The Enercon earnout added a contingent liability of roughly the same size as the initial purchase price, is earned on target EBITDA levels through early next year, and is partly payable in restricted shares. Most of the total contingent consideration is now current. Contingent-consideration adjustments are excluded from adjusted EBITDA, so a later fair-value reversal would not dent the headline metric while a payout would be a real cash and share cost.",
+      "numbers_vs_prose": "Calculator acquisitions cash {terms.cash_flow_families.acquisitions.value} on the trailing window understates total consideration because treasury stock and the earnout are outside it; the note gives the earnout balance and terms.",
+      "evidence": [
+        "0001437749-26-025669:notes:58",
+        "0001437749-26-025669:notes:60",
+        "0001437749-26-025669:notes:61",
+        "0001437749-26-025669:notes:99",
+        "0001437749-26-014882:note_history:43",
+        "0001437749-26-025669:mdna:121"
+      ],
+      "fields": [
+        "{terms.cash_flow_families.acquisitions.value}"
+      ]
+    },
+    {
+      "id": "estimates_and_reserves_goodwill_reallocated_after_segment_change_with_small_impairment",
+      "name": "Goodwill re-based across new reporting units with only a small impairment",
+      "name_ko": "세그먼트 개편으로 영업권 재배분, 손상은 소액에 그침",
+      "area": "estimates_and_reserves",
+      "what": "The reorganization into Residential and C&I changed reporting-unit composition; goodwill was reassigned on relative fair value and the interim test produced a small impairment in one Residential unit. Acquisitions this year added goodwill equal to the majority of the purchase price. Goodwill and other intangibles are the largest asset group and are management's own most critical estimate.",
+      "numbers_vs_prose": "Calculator soft-asset share {trend_table.quarters-back-0.ratios.soft_asset_share.value} of total assets {terms.balances_now.assets.value}; the note shows goodwill rising with acquisitions and only a modest impairment.",
+      "evidence": [
+        "0001437749-26-025669:notes:102",
+        "0001437749-26-025669:notes:103",
+        "0001437749-26-025669:notes:105",
+        "0001437749-26-025669:notes:26",
+        "0001437749-26-025669:mdna:117",
+        "0001437749-26-025669:notes:71"
+      ],
+      "fields": [
+        "{trend_table.quarters-back-0.ratios.soft_asset_share.value}",
+        "{terms.balances_now.assets.value}"
+      ]
+    },
+    {
+      "id": "estimates_and_reserves_credit_loss_allowance_at_six_quarter_low",
+      "name": "Credit-loss allowance ratio at a six-quarter low as receivables rise",
+      "name_ko": "매출채권 증가에도 대손충당금 비율은 여섯 분기 최저",
+      "area": "estimates_and_reserves",
+      "what": "The allowance for credit losses relative to gross receivables is the lowest of the last six quarters while receivables grew, the customer base is tilting toward large contract customers, and the floor-plan program carries a repurchase obligation if dealers default.",
+      "numbers_vs_prose": "Calculator: allowance {terms.balances_now.bad_debt_allowance.value} versus {terms.balances_a_year_earlier.bad_debt_allowance.value}; ratio {trend_table.quarters-back-0.ratios.bad_debt_reserve_ratio.value}; receivables {terms.balances_now.receivables.value}. The MD&A describes the floor-plan repurchase exposure.",
+      "evidence": [
+        "0001437749-26-024731:8k_2_02:100",
+        "0001437749-26-025669:mdna:101",
+        "0001437749-26-025669:notes:148"
+      ],
+      "fields": [
+        "{terms.balances_now.bad_debt_allowance.value}",
+        "{terms.balances_a_year_earlier.bad_debt_allowance.value}",
+        "{trend_table.quarters-back-0.ratios.bad_debt_reserve_ratio.value}",
+        "{terms.balances_now.receivables.value}"
+      ]
+    },
+    {
+      "id": "cost_deferral_tariff_recovery_parked_in_inventory",
+      "name": "Remainder of the tariff recovery recorded in inventories",
+      "name_ko": "관세 회수액 잔여분을 재고자산에 반영",
+      "area": "cost_deferral",
+      "what": "The part of the recovery not taken through cost of goods sold lowered the carrying value of inventory. That benefit will surface as lower cost of sales in later quarters, so gross margin in the second half carries a deferred tailwind that is not operational.",
+      "numbers_vs_prose": "Calculator inventory {terms.balances_now.inventory.value}, slightly below a year ago, with the inventory articulation gap {earnings_versus_cash.working_capital.inventory.articulation_gap.value} partly explained by acquired inventory and this allocation.",
+      "evidence": [
+        "0001437749-26-025669:notes:10",
+        "0001437749-26-025669:mdna:37",
+        "0001437749-26-025669:notes:94"
+      ],
+      "fields": [
+        "{terms.balances_now.inventory.value}",
+        "{terms.balances_a_year_earlier.inventory.value}",
+        "{earnings_versus_cash.working_capital.inventory.articulation_gap.value}"
+      ]
+    },
+    {
+      "id": "cost_deferral_intangible_amortization_rising_and_added_back",
+      "name": "Rising acquired-intangible amortization excluded from adjusted earnings",
+      "name_ko": "증가하는 취득 무형자산 상각을 조정이익에서 제외",
+      "area": "cost_deferral",
+      "what": "Acquisitions capitalized customer lists, technology and tradenames; amortization rose year over year and is added back in adjusted net income. As acquisitions continue, the gap between GAAP and adjusted earnings widens structurally.",
+      "numbers_vs_prose": "Calculator depreciation and amortization {terms.trailing_four_quarters.depreciation_and_amortization.value} against operating income {terms.trailing_four_quarters.operating_income.value}; the MD&A cites higher intangible amortization as a driver of operating expense growth.",
+      "evidence": [
+        "0001437749-26-025669:mdna:62",
+        "0001437749-26-025669:mdna:83",
+        "0001437749-26-025669:mdna:168",
+        "0001437749-26-025669:notes:26"
+      ],
+      "fields": [
+        "{terms.trailing_four_quarters.depreciation_and_amortization.value}",
+        "{terms.trailing_four_quarters.operating_income.value}"
+      ]
+    },
+    {
+      "id": "cash_flow_engineering_and_off_balance_sheet_floor_plan_financing_balance_growing",
+      "name": "Dealer floor-plan financing balance growing with a repurchase obligation",
+      "name_ko": "딜러 플로어플랜 금융 잔액 증가와 재매입 의무",
+      "area": "cash_flow_engineering_and_off_balance_sheet",
+      "what": "A finance company pays Generac on shipment and gives dealers extended terms; the outstanding financed balance rose from year-end and roughly an eighth of sales run through it. Generac participates in financing cost and must repurchase repossessed product, an unrecorded contingent obligation that also keeps days sales outstanding lower than the channel's true credit exposure.",
+      "numbers_vs_prose": "Calculator days sales outstanding {ratios.efficiency.days_sales_outstanding.value} exclude this financed exposure; the MD&A states the outstanding financed amount and share of sales.",
+      "evidence": [
+        "0001437749-26-025669:mdna:101",
+        "0001437749-26-025669:notes:148",
+        "0001437749-26-025669:note_history:1"
+      ],
+      "fields": [
+        "{ratios.efficiency.days_sales_outstanding.value}",
+        "{terms.balances_now.guarantee_maximum_exposure.missing}"
+      ]
+    },
+    {
+      "id": "cash_flow_engineering_and_off_balance_sheet_stock_settled_acquisition_consideration",
+      "name": "Acquisition consideration partly settled in treasury stock and restricted shares",
+      "name_ko": "인수 대가 일부를 자기주식·제한주식으로 결제",
+      "area": "cash_flow_engineering_and_off_balance_sheet",
+      "what": "Part of the Enercon price was paid in treasury stock, the Chilicon earnout was paid in shares, and a share of the Enercon earnout will be in restricted shares. These are non-cash in the cash-flow statement, so investing outflows and the quality-adjusted free cash flow understate what shareholders gave up.",
+      "numbers_vs_prose": "Calculator acquisitions cash {terms.cash_flow_families.acquisitions.value} versus the note's combined purchase price that includes stock and estimated contingent consideration.",
+      "evidence": [
+        "0001437749-26-025669:notes:22",
+        "0001437749-26-025669:notes:62",
+        "0001437749-26-025669:notes:58",
+        "0001437749-26-025669:notes:139"
+      ],
+      "fields": [
+        "{terms.cash_flow_families.acquisitions.value}",
+        "{free_cash_flow.free_cash_flow_quality_adjusted.value}"
+      ]
+    },
+    {
+      "id": "cash_flow_engineering_and_off_balance_sheet_equity_award_taxes_in_financing",
+      "name": "Taxes paid on equity awards classified in financing and up sharply",
+      "name_ko": "주식보상 관련 납부세금을 재무활동으로 분류, 급증",
+      "area": "cash_flow_engineering_and_off_balance_sheet",
+      "what": "Cash paid to settle employee taxes on vested awards is a real cost of compensation but sits in financing; it rose several-fold year over year, so operating and free cash flow exclude a growing cash outflow tied to the share-based compensation that adjusted EBITDA also excludes.",
+      "numbers_vs_prose": "Calculator share-based compensation {terms.trailing_four_quarters.share_based_compensation.value} is subtracted in quality-adjusted free cash flow, but the financing-classified tax payment is outside every calculator cash measure.",
+      "evidence": [
+        "0001437749-26-025669:mdna:112",
+        "0001437749-26-024731:8k_2_02:106"
+      ],
+      "fields": [
+        "{terms.trailing_four_quarters.share_based_compensation.value}",
+        "{free_cash_flow.free_cash_flow_quality_adjusted.value}"
+      ]
+    },
+    {
+      "id": "cash_flow_engineering_and_off_balance_sheet_legal_settlement_paid_through_working_capital",
+      "name": "Large legal settlement paid in April flows through operating working capital",
+      "name_ko": "대규모 소송 합의금이 영업 운전자본을 통해 지급됨",
+      "area": "cash_flow_engineering_and_off_balance_sheet",
+      "what": "The Zawaski settlement reserve booked at year-end was satisfied in April by the company and its insurers; accrued legal fees collapsed and the insurance receivable was collected. The company's own share is a non-recurring operating outflow in the second quarter, so the quarter's operating cash flow is depressed by it and later quarters will look better by comparison.",
+      "numbers_vs_prose": "Calculator quarterly operating cash flow {ratios.growth.operating_cash_flow.this_quarter.value}; the note states the total payment and the company's portion.",
+      "evidence": [
+        "0001437749-26-025669:notes:99",
+        "0001437749-26-025669:notes:100",
+        "0001437749-26-025669:notes:155"
+      ],
+      "fields": [
+        "{ratios.growth.operating_cash_flow.this_quarter.value}",
+        "{terms.trailing_four_quarters.operating_cash_flow.value}"
+      ]
+    },
+    {
+      "id": "controls_audit_and_filing_signals_no_control_change_despite_reorganization_and_acquisitions",
+      "name": "No reported control change despite reorganization, three acquisitions and new revenue method",
+      "name_ko": "세그먼트 개편·세 건의 인수·신규 수익인식에도 내부통제 변경 없음 보고",
+      "area": "controls_audit_and_filing_signals",
+      "what": "The controls item reports effective disclosure controls and no change in internal control over financial reporting, while the quarter brought a segment reorganization that altered reporting units, closed acquisitions and a first-time cost-to-cost contract-asset disclosure. The statements are unaudited.",
+      "numbers_vs_prose": "No calculator field applies; the prose of the controls item and the notes sit side by side.",
+      "evidence": [
+        "0001437749-26-025669:item_4_controls:3",
+        "0001437749-26-025669:item_4_controls:5",
+        "0001437749-26-025669:notes:5",
+        "0001437749-26-025669:notes:71",
+        "0001437749-26-025669:notes:19",
+        "0001437749-26-025669:notes:117"
+      ],
+      "fields": []
+    },
+    {
+      "id": "controls_audit_and_filing_signals_open_doj_epa_emissions_inquiry",
+      "name": "Open DOJ grand jury subpoena and EPA emissions certification inquiry",
+      "name_ko": "법무부 대배심 소환장과 환경청 배출인증 조사 진행 중",
+      "area": "controls_audit_and_filing_signals",
+      "what": "A grand jury subpoena and EPA/CARB requests on portable generator emissions compliance remain open, the EPA moved to void certain certifications, and a new information request arrived this quarter. No reserve is quantified and management says a material adverse effect is presently unlikely.",
+      "numbers_vs_prose": "No calculator field; the note's language about difficulty estimating losses is the only quantification.",
+      "evidence": [
+        "0001437749-26-025669:notes:153",
+        "0001437749-26-025669:note_history:3",
+        "0001437749-26-025669:notes:158"
+      ],
+      "fields": []
+    },
+    {
+      "id": "cross_document_reconciliation_backlog_claim_versus_remaining_performance_obligations",
+      "name": "Press-release data center backlog versus falling disclosed performance obligations",
+      "name_ko": "보도자료의 데이터센터 수주잔고와 감소한 잔여이행의무 공시의 괴리",
+      "area": "cross_document_reconciliation",
+      "what": "The release describes a data center backlog of well over a billion dollars and a committed hyperscale volume for next year, while the note's remaining performance obligations are a small fraction of that and fell from the prior quarter. The note excludes contracts of one year or less, so the two are different populations, but the reader cannot tell how much of the backlog is contractually firm.",
+      "numbers_vs_prose": "Calculator trailing revenue {terms.trailing_four_quarters.revenue.value} and trailing revenue growth {ratios.growth.revenue.trailing_four_quarters.value} near zero; the release's backlog figure would be a large share of a year's revenue.",
+      "evidence": [
+        "0001437749-26-024731:8k_2_02:16",
+        "0001437749-26-024731:8k_2_02:17",
+        "0001437749-26-024731:8k_2_02:20",
+        "0001437749-26-025669:notes:119",
+        "0001437749-26-014882:note_history:41",
+        "0001437749-26-025669:mdna:8"
+      ],
+      "fields": [
+        "{terms.trailing_four_quarters.revenue.value}",
+        "{ratios.growth.revenue.trailing_four_quarters.value}"
+      ]
+    },
+    {
+      "id": "cross_document_reconciliation_operating_leverage_headline_versus_tariff_attribution",
+      "name": "Headline credits operating leverage while segment text credits tariff refunds",
+      "name_ko": "헤드라인은 영업레버리지, 세그먼트 설명은 관세 환급을 원인으로 제시",
+      "area": "cross_document_reconciliation",
+      "what": "The release's headline speaks of operating leverage, but the Residential margin discussion attributes most of the expansion to tariff refunds and the guidance section says the raised outlook is primarily due to the refund. The two statements are in the same document.",
+      "numbers_vs_prose": "Calculator quarterly operating income growth {ratios.growth.operating_income.year_over_year.value} on revenue growth {ratios.growth.revenue.year_over_year.value} looks like leverage until the refund is removed from cost of goods sold.",
+      "evidence": [
+        "0001437749-26-024731:8k_2_02:5",
+        "0001437749-26-024731:8k_2_02:32",
+        "0001437749-26-024731:8k_2_02:36",
+        "0001437749-26-025669:mdna:61",
+        "0001437749-26-025669:mdna:67"
+      ],
+      "fields": [
+        "{ratios.growth.operating_income.year_over_year.value}",
+        "{ratios.growth.revenue.year_over_year.value}"
+      ]
+    },
+    {
+      "id": "cross_document_reconciliation_residential_guidance_versus_first_half_decline",
+      "name": "Full-year Residential growth guidance against a first-half decline",
+      "name_ko": "상반기 감소에도 연간 주거용 부문 성장 가이던스 제시",
+      "area": "cross_document_reconciliation",
+      "what": "Residential sales fell slightly in the first half, yet the outlook calls for high-single-digit Residential growth for the year, which requires a strong outage-driven second half. Consolidated mid-to-high-teens growth likewise depends on the back half.",
+      "numbers_vs_prose": "Calculator trailing revenue growth {ratios.growth.revenue.trailing_four_quarters.value} and three-year compound growth {earnings_versus_cash.history.revenue_growth_three_year_compound} are both near or below zero; the prose projects mid-to-high teens for the year.",
+      "evidence": [
+        "0001437749-26-024731:8k_2_02:35",
+        "0001437749-26-025669:mdna:80",
+        "0001437749-26-025669:mdna:59",
+        "0001437749-26-025669:mdna:28"
+      ],
+      "fields": [
+        "{ratios.growth.revenue.trailing_four_quarters.value}",
+        "{earnings_versus_cash.history.revenue_growth_three_year_compound}",
+        "{ratios.growth.revenue.year_over_year.value}"
+      ]
+    },
+    {
+      "id": "cross_document_reconciliation_covenant_coverage_versus_ebit_coverage",
+      "name": "Covenant interest coverage far above EBIT-based coverage",
+      "name_ko": "약정상 이자보상배율이 영업이익 기준 배율을 크게 상회",
+      "area": "cross_document_reconciliation",
+      "what": "The MD&A reports covenant interest coverage and total leverage on the credit-agreement adjusted EBITDA basis; the calculator's EBIT-to-interest ratio is a fraction of the covenant figure and net-debt-to-EBITDA is above the covenant leverage. Both are correct on their own definitions, but covenant headroom is measured on the more generous one.",
+      "numbers_vs_prose": "Calculator interest coverage {ratios.solvency.interest_coverage.value}, debt over EBITDA {ratios.solvency.debt_over_ebitda.value}; the MD&A states much higher coverage and lower leverage.",
+      "evidence": [
+        "0001437749-26-025669:mdna:96",
+        "0001437749-26-025669:mdna:97",
+        "0001437749-26-025669:notes:129",
+        "0001437749-26-025669:notes:132"
+      ],
+      "fields": [
+        "{ratios.solvency.interest_coverage.value}",
+        "{ratios.solvency.debt_over_ebitda.value}",
+        "{ratios.solvency.ebitda.value}"
+      ]
+    },
+    {
+      "id": "industry_lens_mix_shift_to_lower_margin_commercial_and_industrial",
+      "name": "Growth concentrated in the lower-margin C&I segment",
+      "name_ko": "성장은 마진이 낮은 상업·산업 부문에 집중",
+      "area": "industry_lens",
+      "what": "C&I grew close to thirty percent while Residential declined; C&I adjusted EBITDA margin is less than half the Residential margin. As data center volumes ramp, consolidated margin faces dilution even with operating leverage, and the release's margin optimism rests on a one-time refund.",
+      "numbers_vs_prose": "Calculator trailing operating margin {ratios.profitability.operating_margin.value} versus the three-year average {earnings_versus_cash.history.operating_margin_three_year_average}; segment prose gives the two margins.",
+      "evidence": [
+        "0001437749-26-025669:mdna:58",
+        "0001437749-26-025669:mdna:66",
+        "0001437749-26-025669:mdna:67",
+        "0001437749-26-025669:mdna:78",
+        "0001437749-26-024731:8k_2_02:35"
+      ],
+      "fields": [
+        "{ratios.profitability.operating_margin.value}",
+        "{earnings_versus_cash.history.operating_margin_three_year_average}"
+      ]
+    },
+    {
+      "id": "industry_lens_data_center_contract_terms_and_customer_concentration",
+      "name": "Data center contract terms and hyperscale concentration",
+      "name_ko": "데이터센터 계약 조건과 하이퍼스케일 고객 집중",
+      "area": "industry_lens",
+      "what": "A new risk factor lists cancellation rights, delivery requirements and liability exposure tied to performance obligations with data center customers; two hyperscale supply agreements now anchor next year's growth. Concentration facts show a single customer already accounts for a meaningful share of receivables.",
+      "numbers_vs_prose": "Calculator concentration facts record one customer near a tenth of receivables in recent years; the prose describes supply agreements committing large volumes.",
+      "evidence": [
+        "0001437749-26-025669:mdna:8",
+        "0001437749-26-024731:8k_2_02:16",
+        "0001437749-26-024731:8k_2_02:17",
+        "0001437749-26-024731:8k_2_02:59"
+      ],
+      "fields": [
+        "{concentration.facts}"
+      ]
+    },
+    {
+      "id": "industry_lens_inventory_days_elevated_and_capacity_investment_rising",
+      "name": "Elevated inventory days alongside accelerating capacity spending",
+      "name_ko": "높은 재고일수와 가속되는 설비투자",
+      "area": "industry_lens",
+      "what": "Days of inventory are long against the company's own five-year history and the last fiscal year was the highest; finished goods rose while raw materials fell. At the same time C&I capital expenditure jumped and management plans further capacity, so capital tied up in the business is rising ahead of the revenue it is meant to serve.",
+      "numbers_vs_prose": "Calculator days of inventory {ratios.efficiency.days_sales_of_inventory.value}, cash conversion cycle {ratios.efficiency.cash_conversion_cycle.value}, trailing capital expenditure {terms.trailing_four_quarters.capital_expenditure.value}; the release describes aggressive investment in capacity.",
+      "evidence": [
+        "0001437749-26-025669:notes:94",
+        "0001437749-26-025669:notes:90",
+        "0001437749-26-024731:8k_2_02:18",
+        "0001437749-26-024731:8k_2_02:20"
+      ],
+      "fields": [
+        "{ratios.efficiency.days_sales_of_inventory.value}",
+        "{ratios.efficiency.cash_conversion_cycle.value}",
+        "{terms.trailing_four_quarters.capital_expenditure.value}",
+        "{trend_table.years-back-0.ratios.days_sales_of_inventory.value}"
+      ]
+    }
+  ],
+  "adjustments": [
+    {
+      "name": "remove the tariff recovery booked as a reduction of cost of goods sold",
+      "direction": "decrease",
+      "applies_to": "operating_income",
+      "calculator_field": null,
+      "calculator_field_note": "no calculator field carries the tariff recovery; the amount is stated verbatim in the quote and must be read from the filing rather than from a calculator path, so Python should refuse rather than apply a wrong field",
+      "quote": "Approximately $71,100 of the tariff recovery was recorded as a reduction of cost of goods sold in the condensed consolidated statements of comprehensive income",
+      "quote_from": "input_notes.md",
+      "evidence": [
+        "0001437749-26-025669:notes:10",
+        "0001437749-26-024731:8k_2_02:14"
+      ]
+    },
+    {
+      "name": "remove tariff refund cash receipts from operating and free cash flow",
+      "direction": "decrease",
+      "applies_to": "free_cash_flow_simple",
+      "calculator_field": null,
+      "calculator_field_note": "no calculator field carries the refund cash; the amount is in the quote",
+      "quote": "The increase in operating cash flows for the six months ended June 30, 2026 was driven by higher operating earnings, cash receipts from tariff refunds totaling $61 million, and lower cash tax payments in the current year period.",
+      "quote_from": "input_mdna.md",
+      "evidence": [
+        "0001437749-26-025669:mdna:109",
+        "0001437749-26-025669:notes:10"
+      ]
+    },
+    {
+      "name": "add back the company's share of the non-recurring legal settlement paid in the quarter",
+      "direction": "increase",
+      "applies_to": "free_cash_flow_simple",
+      "calculator_field": null,
+      "calculator_field_note": "no calculator field carries the settlement payment; the company's own share is in the quote, the insurers' share is not a company cash cost",
+      "quote": "The Company agreed to pay $104,500 in addition to the Company’s excess insurance for the applicable policy year.",
+      "quote_from": "input_notes.md",
+      "evidence": [
+        "0001437749-26-025669:notes:155",
+        "0001437749-26-025669:notes:100"
+      ]
+    },
+    {
+      "name": "treat acquisition consideration settled in treasury stock as an investing outflow",
+      "direction": "decrease",
+      "applies_to": "free_cash_flow_quality_adjusted",
+      "calculator_field": null,
+      "calculator_field_note": "the calculator's acquisitions family holds only the cash portion; the stock-settled portion is in the quote",
+      "quote": "of which $44,785 was funded through the issuance of treasury stock and the remainder in cash.",
+      "quote_from": "input_notes.md",
+      "evidence": [
+        "0001437749-26-025669:notes:22"
+      ]
+    },
+    {
+      "name": "treat taxes paid on equity awards as an operating cash cost",
+      "direction": "decrease",
+      "applies_to": "free_cash_flow_quality_adjusted",
+      "calculator_field": null,
+      "calculator_field_note": "the payment sits in financing and is not a calculator field; the amount is in the quote",
+      "quote": "$36.7 million for taxes paid related to equity awards",
+      "quote_from": "input_mdna.md",
+      "evidence": [
+        "0001437749-26-025669:mdna:112"
+      ]
+    }
+  ],
+  "summary_ko": "제너락의 이번 분기 이익 급증은 실제 영업 개선과 일회성 관세 환급이 섞여 있다. 대법원 판결로 회수한 관세 대부분이 매출원가 차감으로 반영되어 분기 매출총이익률이 최근 여섯 분기 중 최고를 기록했고, 회사는 이를 조정 EBITDA와 조정 순이익에서 제외하지 않았으며 연간 마진 가이던스 상향도 주로 이 환급 때문이라고 스스로 밝히고 있다. 후행 네 분기 기준으로는 영업현금흐름이 순이익을 크게 웃돌아 이익의 질은 양호하지만, 분기 단위로는 영업현금흐름이 순이익을 밑돌았고 후행 영업현금흐름은 전년 대비 감소했다. 데이터센터 사업 확대로 원가투입기준 수익인식과 계약자산이 새로 등장했고, 보도자료의 대규모 수주잔고와 주석의 감소한 잔여이행의무가 서로 다른 그림을 보여준다. 보증충당 설정률과 대손충당 비율은 낮아지는 방향이며, Enercon 조건부 대가는 EBITDA 목표에 연동되어 있고 조정 EBITDA에서는 제외된다. 자기주식으로 결제한 인수대가, 재무활동으로 분류된 주식보상 세금, 딜러 플로어플랜 금융, 현금세 절감은 보고된 현금창출력을 실제보다 좋아 보이게 한다. 내부통제 변경은 없다고 보고되었으나 세그먼트 개편·세 건의 인수·미감사 재무제표·진행 중인 규제 조사가 겹쳐 있어 신호는 황색이다.",
+  "limits": [
+    "The calculator carries no field for the tariff recovery, contract assets, the legal settlement, deferred taxes, equity-award taxes or stock-settled consideration, so the adjustments above name no calculator path and cannot be applied mechanically; the amounts live only in the quoted filing text.",
+    "Inventory valuation reserves and inventory write-downs are not tagged in the record, so obsolescence reserve adequacy cannot be assessed.",
+    "The quarter's operating cash flow is derived by differencing six-month and three-month statements; the fourth quarter of the prior year is missing from the trend table.",
+    "Segment margins are on management's adjusted EBITDA basis and prior periods were recast for the reorganization, so segment trends before the recast are not comparable.",
+    "Interim statements are unaudited; no auditor report exists for this period.",
+    "No prior-run predictions exist for this company, so no flags or management explanations are carried forward.",
+    "Digits inside calculator paths and paragraph identifiers are structural keys, not figures written by the analyst."
+  ]
+}

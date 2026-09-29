@@ -1,0 +1,2878 @@
+{
+ "accession": "0001327567-26-000015",
+ "comparer_labels": {
+  "notes-vs-market": "absent",
+  "numbers-vs-market": "absent"
+ },
+ "counts": {
+  "controls": 8,
+  "dropped_items": 0,
+  "eight_k": 0,
+  "exclusions": 18,
+  "facts": 3756,
+  "mdna": 162,
+  "normalized_quotes": 24,
+  "note_history": 81,
+  "notes": 189,
+  "paragraphs": 440
+ },
+ "cutoff": "2026-06-03",
+ "documents": [
+  {
+   "accession": "0001327567-25-000027",
+   "contributed_to": [
+    "input_numbers.json"
+   ],
+   "filing_date": "2025-08-29",
+   "form": "10-K",
+   "path": "10-K/panw-20250731_htm.xml.gz",
+   "report_date": "2025-07-31",
+   "role": "xbrl_instance",
+   "sha256": "7837a620d769ac781e89ffe0b341ffc7d664889c275830a198cb8790c6908579",
+   "url": "https://www.sec.gov/Archives/edgar/data/1327567/000132756725000027/panw-20250731_htm.xml"
+  },
+  {
+   "accession": "0001327567-26-000005",
+   "contributed_to": [
+    "input_mdna.md",
+    "input_notes.md"
+   ],
+   "filing_date": "2026-02-18",
+   "form": "10-Q",
+   "path": "10-Q/panw-20260131.htm",
+   "report_date": "2026-01-31",
+   "role": "prior_period",
+   "sha256": "29b753e672f0b6bef888d0e6256f11718c4536d469b687c0df9e09b910390164",
+   "url": "https://www.sec.gov/Archives/edgar/data/1327567/000132756726000005/panw-20260131.htm"
+  },
+  {
+   "accession": "0001327567-26-000005",
+   "contributed_to": [
+    "input_mdna.md",
+    "input_notes.md",
+    "input_notes_history.md",
+    "input_numbers.json"
+   ],
+   "filing_date": "2026-02-18",
+   "form": "10-Q",
+   "path": "10-Q/panw-20260131_htm.xml",
+   "report_date": "2026-01-31",
+   "role": "prior_period_xbrl_instance",
+   "sha256": "145b4fd6c3178d780b29fe19f5c18b5874c35cadfa55a969d67db02950d15523",
+   "url": "https://www.sec.gov/Archives/edgar/data/1327567/000132756726000005/panw-20260131_htm.xml"
+  },
+  {
+   "accession": "0001327567-26-000015",
+   "contributed_to": [
+    "input_controls.md",
+    "input_mdna.md",
+    "input_notes.md"
+   ],
+   "filing_date": "2026-06-03",
+   "form": "10-Q",
+   "path": "10-Q/panw-20260430.htm.gz",
+   "report_date": "2026-04-30",
+   "role": "primary_html",
+   "sha256": "2b3359f943630682e91a2b4ca6532c9dd259127467eff8104caa10c64a0a1e3a",
+   "url": "https://www.sec.gov/Archives/edgar/data/1327567/000132756726000015/panw-20260430.htm"
+  },
+  {
+   "accession": "0001327567-26-000015",
+   "contributed_to": [
+    "input_mdna.md",
+    "input_notes.md",
+    "input_notes_history.md",
+    "input_numbers.json"
+   ],
+   "filing_date": "2026-06-03",
+   "form": "10-Q",
+   "path": "10-Q/panw-20260430_htm.xml",
+   "report_date": "2026-04-30",
+   "role": "xbrl_instance",
+   "sha256": "5f82f98f15b51d1c498cde8e4e679de4534bc9f8315499b905fcb0bf59bb830e",
+   "url": "https://www.sec.gov/Archives/edgar/data/1327567/000132756726000015/panw-20260430_htm.xml"
+  },
+  {
+   "accession": "",
+   "contributed_to": [
+    "input_trends.json"
+   ],
+   "date_basis": "the latest filing whose facts this record contains; companyfacts is a catalogue of facts drawn from many filings and is not itself a filing",
+   "filing_date": null,
+   "form": "companyfacts",
+   "path": "companyfacts.json.gz",
+   "report_date": "",
+   "role": "standard_taxonomy_history",
+   "rows_used_through": "2026-06-03",
+   "sha256": "2e8b3cc28f5d9c8e84e5e406f9bd5ea59be168ae2636970e18f77c12aefb9529",
+   "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001327567.json"
+  },
+  {
+   "accession": "",
+   "contributed_to": [
+    "input_8k.md"
+   ],
+   "date_basis": "the latest filing this index contains; the index is not itself a filing and has no filing date",
+   "filing_date": null,
+   "form": "submissions",
+   "path": "submissions.json",
+   "report_date": "",
+   "role": "submissions_index",
+   "rows_used_through": "2026-06-03",
+   "sha256": "92747d5a054766a31ff319ff308ab023634d3e5e1927053f7f15b7dad814b48d",
+   "url": "https://data.sec.gov/submissions/CIK0001327567.json"
+  }
+ ],
+ "dropped_items": [],
+ "exclusions": [
+  {
+   "id": "0001327567-26-000015:mdna_excluded:1",
+   "reason": "forward_looking_boilerplate",
+   "source": "10-Q MD&A",
+   "text": "The following discussion and analysis of our financial condition and results of operations should be read in conjunction with our condensed consolidated financial statements and related notes appearing elsewhere in this Quarterly Report on Form 10-Q. This Quarterly Report on Form 10-Q, including, without limitation, the following discussion and analysis, contains forward-looking statements within the meaning of Section 27A of the Securities Act of 1933 and Section 21E of the Securities Exchange Act of 1934. Forward-looking statements generally can be identified by words such as “anticipate,” “believe,” “continue,” “could,” “estimate,” “expect,” “intend,” “may,” “plan,” “potentially,” “projects,” “will,” “will be,” “will continue,” “will likely result,” “would” and similar expressions that convey uncertainty of future events or outcomes. These forward-looking statements include, but are not limited to, statements concerning the following: expectations regarding the cybersecurity landscape; expectations regarding our platformization strategy and related progress and opportunities; expectations regarding annual recurring revenue, remaining performance obligations, and product development strategy; expectations regarding artificial intelligence; expectations regarding our strategic partnerships; expectations regarding drivers of and factors affecting growth in our business; statements regarding expected profitability, trends in annual recurring revenue, trends in remaining performance obligations, our mix of product and subscription and support revenue, cost of revenue, gross margin, cash flows, operating expenses, including future share-based compensation expense, income taxes, investment plans, and liquidity; expected recurring revenues resulting from growth in our end-customers and increased adoption of our products and cloud-delivered security solutions; the performance advantages of our products and subscription and support offerings and the potential benefits to our customers; expectations regarding future investments in research and development and product development, customer support, in our employees and in our sales force, including expectations regarding growth in our sales headcount; expectations that we will continue to expand our global presence; expectations regarding our revenues, including the seasonality and cyclicality from quarter to quarter; expectations relating to our customer financing activities; the sufficiency of our cash flow from operations with existing cash, cash equivalents, and investments to meet our cash needs for the foreseeable future; our ability to successfully acquire and integrate companies and assets and expectations and intentions with respect to the assets, products and technologies that we acquire; expectations regarding the benefits and synergies from our acquisition and integration of companies, assets and technology, including with respect to our acquisition of CyberArk Software Ltd.; expectations regarding contingent consideration obligations; expectations regarding the change in the fair value of our convertible senior notes and capped call transactions and its impact on us and our financial results; statements regarding our competition, including the expanded scope of our competitors as a result of entering into new product and service categories; the timing and amount of capital expenditures and share repurchases; the effects of worldwide economic and geopolitical conditions, including but not limited to hostilities in Israel, Iran, and the surrounding regions, inflation, interest rate levels, public or administration policies, trade regulations, trade policy, growth rates and other conditions, on our operating and financial results and performance; the manufacture, delivery and cost of certain of our products; the effects of litigation or regulatory developments involving us or affecting our industry; our or our subsidiaries’ debt repayment obligations; and other statements regarding our future operations, financial condition and prospects, and business strategies. These forward-looking statements are based on current expectations and assumptions that are subject to risks and uncertainties, which could cause our actual results to differ materially from those anticipated or implied by any forward-looking statements. Factors that could cause or contribute to such differences include, but are not limited to, those discussed in this Quarterly Report on Form 10-Q and, in particular, the risks discussed under the caption “Risk Factors” in Part II, Item 1A of this report and those discussed in other documents we file with the Securities and Exchange Commission (“SEC”) from time to time. We undertake no obligation to revise or publicly release the results of any revision to these forward-looking statements, except as required by law. Given these risks and uncertainties, readers are cautioned not to place undue reliance on such forward-looking statements."
+  },
+  {
+   "id": "0001327567-26-000015:mdna_excluded:2",
+   "reason": "table_of_contents_link",
+   "source": "10-Q MD&A",
+   "text": "Table of Contents"
+  },
+  {
+   "id": "0001327567-26-000015:mdna_excluded:3",
+   "reason": "table_of_contents_link",
+   "source": "10-Q MD&A",
+   "text": "Table of Contents"
+  },
+  {
+   "id": "0001327567-26-000015:mdna_excluded:4",
+   "reason": "table_of_contents_link",
+   "source": "10-Q MD&A",
+   "text": "Table of Contents"
+  },
+  {
+   "id": "0001327567-26-000015:mdna_excluded:5",
+   "reason": "table_of_contents_link",
+   "source": "10-Q MD&A",
+   "text": "Table of Contents"
+  },
+  {
+   "id": "0001327567-26-000015:mdna_excluded:6",
+   "reason": "table_of_contents_link",
+   "source": "10-Q MD&A",
+   "text": "Table of Contents"
+  },
+  {
+   "id": "0001327567-26-000015:mdna_excluded:7",
+   "reason": "table_of_contents_link",
+   "source": "10-Q MD&A",
+   "text": "Table of Contents"
+  },
+  {
+   "id": "0001327567-26-000015:mdna_excluded:8",
+   "reason": "table_of_contents_link",
+   "source": "10-Q MD&A",
+   "text": "Table of Contents"
+  },
+  {
+   "id": "0001327567-26-000015:mdna_excluded:9",
+   "reason": "table_of_contents_link",
+   "source": "10-Q MD&A",
+   "text": "Table of Contents"
+  },
+  {
+   "id": "0001327567-26-000015:mdna_excluded:10",
+   "reason": "table_of_contents_link",
+   "source": "10-Q MD&A",
+   "text": "Table of Contents"
+  },
+  {
+   "id": "0001327567-26-000015:mdna_excluded:11",
+   "reason": "table_of_contents_link",
+   "source": "10-Q MD&A",
+   "text": "Table of Contents"
+  },
+  {
+   "id": "0001327567-26-000015:mdna_excluded:12",
+   "reason": "table_of_contents_link",
+   "source": "10-Q MD&A",
+   "text": "Table of Contents"
+  },
+  {
+   "id": "0001327567-26-000015:mdna_excluded:13",
+   "reason": "table_of_contents_link",
+   "source": "10-Q MD&A",
+   "text": "Table of Contents"
+  },
+  {
+   "id": "0001327567-26-000015:mdna_excluded:14",
+   "reason": "table_of_contents_link",
+   "source": "10-Q MD&A",
+   "text": "Table of Contents"
+  },
+  {
+   "id": "0001327567-26-000015:mdna_excluded:15",
+   "reason": "table_of_contents_link",
+   "source": "10-Q MD&A",
+   "text": "Table of Contents"
+  },
+  {
+   "id": "0001327567-26-000015:mdna_excluded:16",
+   "reason": "table_of_contents_link",
+   "source": "10-Q MD&A",
+   "text": "Table of Contents"
+  },
+  {
+   "id": "0001327567-26-000015:mdna_excluded:17",
+   "reason": "table_of_contents_link",
+   "source": "10-Q MD&A",
+   "text": "Table of Contents"
+  },
+  {
+   "id": "0001327567-26-000015:file:input_8k.md",
+   "reason": "no 8-K filed at or before 2026-06-03 is on record, so this bundle has no earnings release and no verbatim item body",
+   "source": "input_8k.md",
+   "text": ""
+  }
+ ],
+ "files": {
+  "input_8k.md": {
+   "bytes": 4388,
+   "sha256": "8eb01b5c2d24ce6a07179e4bf65248069741d9cd91cfb83bbec70544cc4a42e4"
+  },
+  "input_controls.md": {
+   "bytes": 2673,
+   "sha256": "b29f28db2a205b8bae09cc4b309ca6827f257a4da2524f6f8764d22f2184bdbd"
+  },
+  "input_mdna.md": {
+   "bytes": 58603,
+   "sha256": "cbe58b96f683d1c2ce8c4fa08646273eed9eab3ae601c4c36e4395bdf68383c8"
+  },
+  "input_notes.md": {
+   "bytes": 72265,
+   "sha256": "1fbe3664aa5c7677d2027da4afdecf095834df37d6d2cea58b8e0e633ef0f0d5"
+  },
+  "input_notes_history.md": {
+   "bytes": 45554,
+   "sha256": "164d317746abba4c03864ac2b130470b6662c7bdae7a46704f8951a9a283175a"
+  },
+  "input_numbers.json": {
+   "bytes": 3333302,
+   "sha256": "b4c765d612f79cae4a29409ae7a35c8c1b116f63b3fdcfd2003788987eddbe5a"
+  },
+  "input_prior_predictions.md": {
+   "bytes": 184,
+   "sha256": "980579b9380be643dfef6db4545c5e8dedf99442e15bdeba2a6dd94aeb073588"
+  },
+  "input_trends.json": {
+   "bytes": 216932,
+   "sha256": "f987ce1cf85fcdf03d0a352b82fa6963a5a596f3a819b14633d61bc82891258b"
+  }
+ },
+ "filing_date": "2026-06-03",
+ "form": "10-Q",
+ "market_table": "unavailable",
+ "market_table_reason": "this run builds no market table: the table needs short interest, which no source here serves, so no comparer runs and every reaction-window label is absent; prices reach the calculator only",
+ "normalized_quotes": [
+  {
+   "characters": 2,
+   "item_id": "estimates_and_discretion_qradar_contingent_consideration_undiscounted_range_restated",
+   "paragraph_id": "0001327567-26-000015:notes:38",
+   "report": "report_notes_text.md"
+  },
+  {
+   "characters": 2,
+   "item_id": "earnings_quality_financing_receivables_sold",
+   "paragraph_id": "0001327567-26-000015:notes:59",
+   "report": "report_notes_text.md"
+  },
+  {
+   "characters": 1,
+   "item_id": "structure_and_disclosure_changes_pro_forma_combines_cyberark_on_different_period_ends",
+   "paragraph_id": "0001327567-26-000015:notes:96",
+   "report": "report_notes_text.md"
+  },
+  {
+   "characters": 1,
+   "item_id": "estimates_and_discretion_provisional_purchase_accounting_measurement_period",
+   "paragraph_id": "0001327567-26-000015:notes:97",
+   "report": "report_notes_text.md"
+  },
+  {
+   "characters": 1,
+   "item_id": "liquidity_and_capital_share_repurchase_authorization_raised_and_extended",
+   "paragraph_id": "0001327567-26-000015:notes:156",
+   "report": "report_notes_text.md"
+  },
+  {
+   "characters": 1,
+   "item_id": "earnings_quality_accelerated_vesting_charge_from_cyberark_and_koi",
+   "paragraph_id": "0001327567-26-000015:notes:176",
+   "report": "report_notes_text.md"
+  },
+  {
+   "characters": 1,
+   "item_id": "earnings_quality_negative_effective_tax_rate_tied_to_cyberark",
+   "paragraph_id": "0001327567-26-000015:notes:179",
+   "report": "report_notes_text.md"
+  },
+  {
+   "characters": 2,
+   "item_id": "liquidity_and_capital_assumed_cyberark_convertible_notes_exchangeable_into_company_shares",
+   "paragraph_id": "0001327567-26-000015:notes:119",
+   "report": "report_notes_text.md"
+  },
+  {
+   "characters": 1,
+   "item_id": "liquidity_and_capital_make_whole_conversions_elected_for_cash_settlement",
+   "paragraph_id": "0001327567-26-000015:notes:127",
+   "report": "report_notes_text.md"
+  },
+  {
+   "characters": 1,
+   "item_id": "liquidity_and_capital_remaining_assumed_notes_long_term_classification_rests_on_sale_price_condition",
+   "paragraph_id": "0001327567-26-000015:notes:129",
+   "report": "report_notes_text.md"
+  },
+  {
+   "characters": 1,
+   "item_id": "liquidity_and_capital_capped_calls_partially_terminated_for_cash",
+   "paragraph_id": "0001327567-26-000015:notes:133",
+   "report": "report_notes_text.md"
+  },
+  {
+   "characters": 1,
+   "item_id": "across_documents_eight_k_financing_obligation_not_described_in_debt_note",
+   "paragraph_id": "0001327567-26-000015:notes:136",
+   "report": "report_notes_text.md"
+  },
+  {
+   "characters": 1,
+   "item_id": "structure_and_disclosure_changes_unit_forty_two_frontier_ai_defense_services_launched",
+   "paragraph_id": "0001327567-26-000015:mdna:36",
+   "report": "report_notes_text.md"
+  },
+  {
+   "characters": 1,
+   "item_id": "results_against_expectations_product_revenue_increase_drivers_include_cyberark_licenses",
+   "paragraph_id": "0001327567-26-000015:mdna:72",
+   "report": "report_notes_text.md"
+  },
+  {
+   "characters": 3,
+   "item_id": "earnings_quality_subscription_cost_increase_from_cloud_hosting_amortization_and_personnel",
+   "paragraph_id": "0001327567-26-000015:mdna:91",
+   "report": "report_notes_text.md"
+  },
+  {
+   "characters": 1,
+   "item_id": "earnings_quality_subscription_margin_decline_attributed_to_acquisition_amortization",
+   "paragraph_id": "0001327567-26-000015:mdna:96",
+   "report": "report_notes_text.md"
+  },
+  {
+   "characters": 3,
+   "item_id": "earnings_quality_research_and_development_personnel_growth_including_acquired_headcount",
+   "paragraph_id": "0001327567-26-000015:mdna:103",
+   "report": "report_notes_text.md"
+  },
+  {
+   "characters": 2,
+   "item_id": "earnings_quality_contingent_consideration_gain_offsets_general_and_administrative_expense",
+   "paragraph_id": "0001327567-26-000015:mdna:112",
+   "report": "report_notes_text.md"
+  },
+  {
+   "characters": 1,
+   "item_id": "liquidity_and_capital_lower_average_cash_balances_reduce_interest_income",
+   "paragraph_id": "0001327567-26-000015:mdna:121",
+   "report": "report_notes_text.md"
+  },
+  {
+   "characters": 1,
+   "item_id": "liquidity_and_capital_foreign_earnings_repatriated_for_cyberark",
+   "paragraph_id": "0001327567-26-000015:mdna:130",
+   "report": "report_notes_text.md"
+  },
+  {
+   "characters": 1,
+   "item_id": "across_documents_operating_cash_flow_attributed_to_collections",
+   "paragraph_id": "0001327567-26-000015:mdna:149",
+   "report": "report_notes_text.md"
+  },
+  {
+   "characters": 1,
+   "item_id": "liquidity_and_capital_investments_liquidated_to_fund_acquisitions",
+   "paragraph_id": "0001327567-26-000015:mdna:153",
+   "report": "report_notes_text.md"
+  },
+  {
+   "characters": 1,
+   "item_id": "earnings_quality_contingent_consideration_payments_classified_in_financing",
+   "paragraph_id": "0001327567-26-000015:mdna:156",
+   "report": "report_notes_text.md"
+  },
+  {
+   "characters": 1,
+   "item_id": "liquidity_and_capital_headquarters_land_purchase_timing",
+   "paragraph_id": "0001327567-26-000015:notes:111",
+   "report": "report_notes_text.md"
+  }
+ ],
+ "on_record_at_cutoff": [
+  {
+   "accession": "0001327567-24-000029",
+   "filing_date": "2024-09-06",
+   "form": "10-K",
+   "path": "10-K/0001327567-24-000029/panwex211fy24.htm",
+   "role": "prior_year_exhibit_21",
+   "sha256": "9f3cb46e57afbaa25d7a4001a3b5c30f697958c17f7a917955c2cc3f6a59f8fa"
+  },
+  {
+   "accession": "0001327567-24-000029",
+   "filing_date": "2024-09-06",
+   "form": "10-K",
+   "path": "10-K/0001327567-24-000029/0001327567-24-000029-index-headers.html",
+   "role": "prior_year_submission_header",
+   "sha256": "134549f080b2930bc6ec8e792a14335a83d5a76eb36d25b7aa323338965a1c21"
+  },
+  {
+   "accession": "0001327567-25-000027",
+   "filing_date": "2025-08-29",
+   "form": "10-K",
+   "path": "10-K/0001327567-25-000027/panwex211fy25.htm",
+   "role": "exhibit_21",
+   "sha256": "dfe46be985fd86f9772d6d14d3e84014168c4e16e8ef3bea8c82fe363cabc66a"
+  },
+  {
+   "accession": "0001327567-25-000027",
+   "filing_date": "2025-08-29",
+   "form": "10-K",
+   "path": "10-K/panw-20250731.htm.gz",
+   "role": "primary_html",
+   "sha256": "ea13c0345aca7b29fefba670d3576f865653e046106038cc37add81daed327d6"
+  },
+  {
+   "accession": "0001327567-25-000027",
+   "filing_date": "2025-08-29",
+   "form": "10-K",
+   "path": "10-K/0001327567-25-000027/0001327567-25-000027-index-headers.html",
+   "role": "submission_header",
+   "sha256": "275fd80a8a4e89c9c355c08db0f051fdaacad56a3f7d79fe8fe5942887536f28"
+  },
+  {
+   "accession": "0001327567-25-000027",
+   "filing_date": "2025-08-29",
+   "form": "10-K",
+   "path": "10-K/panw-20250731_htm.xml.gz",
+   "role": "xbrl_instance",
+   "sha256": "7837a620d769ac781e89ffe0b341ffc7d664889c275830a198cb8790c6908579"
+  },
+  {
+   "accession": "0001327567-26-000005",
+   "filing_date": "2026-02-18",
+   "form": "10-Q",
+   "path": "10-Q/panw-20260131.htm",
+   "role": "prior_period",
+   "sha256": "29b753e672f0b6bef888d0e6256f11718c4536d469b687c0df9e09b910390164"
+  },
+  {
+   "accession": "0001327567-26-000005",
+   "filing_date": "2026-02-18",
+   "form": "10-Q",
+   "path": "10-Q/panw-20260131_htm.xml",
+   "role": "prior_period_xbrl_instance",
+   "sha256": "145b4fd6c3178d780b29fe19f5c18b5874c35cadfa55a969d67db02950d15523"
+  },
+  {
+   "accession": "",
+   "filing_date": "2026-06-03",
+   "form": "companyfacts",
+   "path": "companyfacts.json.gz",
+   "role": "standard_taxonomy_history",
+   "sha256": "2e8b3cc28f5d9c8e84e5e406f9bd5ea59be168ae2636970e18f77c12aefb9529"
+  },
+  {
+   "accession": "0001327567-26-000015",
+   "filing_date": "2026-06-03",
+   "form": "10-Q",
+   "path": "10-Q/panw-20260430.htm.gz",
+   "role": "primary_html",
+   "sha256": "2b3359f943630682e91a2b4ca6532c9dd259127467eff8104caa10c64a0a1e3a"
+  },
+  {
+   "accession": "0001327567-26-000015",
+   "filing_date": "2026-06-03",
+   "form": "10-Q",
+   "path": "10-Q/panw-20260430_htm.xml",
+   "role": "xbrl_instance",
+   "sha256": "5f82f98f15b51d1c498cde8e4e679de4534bc9f8315499b905fcb0bf59bb830e"
+  }
+ ],
+ "paragraphs": [
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:1",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:2",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:3",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:4",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:5",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:6",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:7",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:8",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:9",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:10",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:11",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:12",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:13",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:14",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:15",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:16",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:17",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:18",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:19",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:20",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:21",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:22",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:23",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:24",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:25",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:26",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:27",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:28",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:29",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:30",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:31",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:32",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:33",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:34",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:35",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:36",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:37",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:38",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:39",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:40",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:41",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:42",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:43",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:44",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:45",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:46",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:47",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:48",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:49",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:50",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:51",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:52",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:53",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:54",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:55",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:56",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:57",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:58",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:59",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:60",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:61",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:62",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:63",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:64",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:65",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:66",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:67",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:68",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:69",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:70",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:71",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:72",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:73",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:74",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:75",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:76",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:77",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:78",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:79",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:80",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:81",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:82",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:83",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:84",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:85",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:86",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:87",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:88",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:89",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:90",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:91",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:92",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:93",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:94",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:95",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:96",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:97",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:98",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:99",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:100",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:101",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:102",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:103",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:104",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:105",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:106",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:107",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:108",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:109",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:110",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:111",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:112",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:113",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:114",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:115",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:116",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:117",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:118",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:119",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:120",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:121",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:122",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:123",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:124",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:125",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:126",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:127",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:128",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:129",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:130",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:131",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:132",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:133",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:134",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:135",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:136",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:137",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:138",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:139",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:140",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:141",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:142",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:143",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:144",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:145",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:146",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:147",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:148",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:149",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:150",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:151",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:152",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:153",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:154",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:155",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:156",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:157",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:158",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:159",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:160",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:161",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:162",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:163",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:164",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:165",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:166",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:167",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:168",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:169",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:170",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:171",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:172",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:173",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:174",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:175",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:176",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:177",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:178",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:179",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:180",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:181",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:182",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:183",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:184",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:185",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:186",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:187",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:188",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001327567-26-000015:notes:189",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:1",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:2",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:3",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:4",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:5",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:6",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:7",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:8",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:9",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:10",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:11",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:12",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:13",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:14",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:15",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:16",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:17",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:18",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:19",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:20",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:21",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:22",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:23",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:24",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:25",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:26",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:27",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:28",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:29",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:30",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:31",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:32",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:33",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:34",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:35",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:36",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:37",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:38",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:39",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:40",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:41",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:42",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:43",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:44",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:45",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:46",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:47",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:48",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:49",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:50",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:51",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:52",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:53",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:54",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:55",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:56",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:57",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:58",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:59",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:60",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:61",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:62",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:63",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:64",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:65",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:66",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:67",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:68",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:69",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:70",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:71",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:72",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:73",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:74",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:75",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:76",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:77",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:78",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:79",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:80",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:81",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:82",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:83",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:84",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:85",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:86",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:87",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:88",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:89",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:90",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:91",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:92",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:93",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:94",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:95",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:96",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:97",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:98",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:99",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:100",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:101",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:102",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:103",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:104",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:105",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:106",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:107",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:108",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:109",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:110",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:111",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:112",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:113",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:114",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:115",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:116",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:117",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:118",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:119",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:120",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:121",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:122",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:123",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:124",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:125",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:126",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:127",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:128",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:129",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:130",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:131",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:132",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:133",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:134",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:135",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:136",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:137",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:138",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:139",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:140",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:141",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:142",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:143",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:144",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:145",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:146",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:147",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:148",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:149",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:150",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:151",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:152",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:153",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:154",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:155",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:156",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:157",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:158",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:159",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:160",
+   "kind": "collapsed"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:161",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001327567-26-000015:mdna:162",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:1",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000005:note_history:1",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:2",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000005:note_history:2",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:3",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000005:note_history:3",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:4",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000005:note_history:4",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:5",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:6",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:7",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000005:note_history:7",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:8",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:9",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:10",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:11",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:12",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000005:note_history:12",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:13",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000005:note_history:13",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:14",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000005:note_history:14",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000005:note_history:15",
+   "kind": "removed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:16",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000005:note_history:16",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:17",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000005:note_history:17",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:18",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:19",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:20",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:21",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:22",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:23",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:24",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:25",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:26",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:27",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:28",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:29",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:30",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:31",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:32",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:33",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:34",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:35",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:36",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:37",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000005:note_history:37",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000005:note_history:38",
+   "kind": "removed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:39",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:40",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:41",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:42",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:43",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000005:note_history:43",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:44",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000005:note_history:44",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:45",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000005:note_history:45",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:46",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000005:note_history:46",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:47",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000005:note_history:47",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:48",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000005:note_history:48",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:49",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000005:note_history:50",
+   "kind": "removed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:51",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000005:note_history:51",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:52",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:53",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000005:note_history:53",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:54",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000005:note_history:54",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000005:note_history:55",
+   "kind": "removed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:56",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000005:note_history:56",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000015:note_history:57",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000005:note_history:58",
+   "kind": "removed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000005:note_history:59",
+   "kind": "removed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001327567-26-000005:note_history:60",
+   "kind": "removed"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001327567-26-000015:item_4_controls:1",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001327567-26-000015:item_4_controls:2",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001327567-26-000015:item_4_controls:3",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001327567-26-000015:item_4_controls:4",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001327567-26-000015:item_4_controls:5",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001327567-26-000015:item_4_controls:6",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001327567-26-000015:item_4_controls:7",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001327567-26-000015:item_4_controls:8",
+   "kind": "verbatim"
+  }
+ ],
+ "prior_accession": "0001327567-26-000005",
+ "rules_version": null,
+ "rules_version_comment": "null until rules/v0.1 exists; a prediction is scored against its own rules version and guessing one here would decide that scoring by accident",
+ "served_model": null,
+ "served_model_comment": "null until a prediction is served; the pinned-model runner records what it actually served, and nothing else may claim to know it",
+ "ticker": "PANW",
+ "agents": {
+  "numbers-reader": {
+   "agent": "numbers-reader",
+   "model_requested": "opus",
+   "model_served": "claude-opus-5-5",
+   "effort": "xhigh",
+   "input_tokens": 38,
+   "cache_creation_input_tokens": 305210,
+   "cache_read_input_tokens": 2487705,
+   "output_tokens": 82537,
+   "turns": 30,
+   "cost_usd": 4.5901130000000006,
+   "session": "b288795c-8ed4-5d4e-9a98-a33715acf3de",
+   "seconds": 645.2,
+   "attempt": 1,
+   "is_error": false,
+   "stop_reason": "end_turn",
+   "result": "written"
+  },
+  "notes-text-reader": {
+   "agent": "notes-text-reader",
+   "model_requested": "opus",
+   "model_served": "claude-opus-5-5",
+   "effort": "xhigh",
+   "input_tokens": 8,
+   "cache_creation_input_tokens": 186035,
+   "cache_read_input_tokens": 162939,
+   "output_tokens": 107732,
+   "turns": 9,
+   "cost_usd": 3.6755398,
+   "session": "b288795c-8ed4-5d4e-9a98-a33715acf3de",
+   "seconds": 870.2,
+   "attempt": 1,
+   "is_error": false,
+   "stop_reason": "end_turn",
+   "result": "written"
+  },
+  "accounting-analyst": {
+   "agent": "accounting-analyst",
+   "model_requested": "fable",
+   "model_served": "claude-fable-5-1",
+   "effort": "xhigh",
+   "input_tokens": 106,
+   "cache_creation_input_tokens": 451219,
+   "cache_read_input_tokens": 643075,
+   "output_tokens": 233628,
+   "turns": 13,
+   "cost_usd": 20.86760875,
+   "session": "b288795c-8ed4-5d4e-9a98-a33715acf3de",
+   "seconds": 2409.4,
+   "attempt": 1,
+   "is_error": false,
+   "stop_reason": "end_turn",
+   "result": "written"
+  },
+  "financial-analyst": {
+   "agent": "financial-analyst",
+   "model_requested": "fable",
+   "model_served": "claude-fable-5-1",
+   "effort": "xhigh",
+   "input_tokens": 136,
+   "cache_creation_input_tokens": 281985,
+   "cache_read_input_tokens": 710154,
+   "output_tokens": 160093,
+   "turns": 12,
+   "cost_usd": 13.823248499999998,
+   "session": "b288795c-8ed4-5d4e-9a98-a33715acf3de",
+   "seconds": 1592.9,
+   "attempt": 1,
+   "is_error": false,
+   "stop_reason": "end_turn",
+   "result": "written"
+  },
+  "valuation-analyst": {
+   "agent": "valuation-analyst",
+   "model_requested": "fable",
+   "model_served": "claude-fable-5-1",
+   "effort": "xhigh",
+   "input_tokens": 98,
+   "cache_creation_input_tokens": 248334,
+   "cache_read_input_tokens": 282123,
+   "output_tokens": 56975,
+   "turns": 11,
+   "cost_usd": 7.88694075,
+   "session": "b288795c-8ed4-5d4e-9a98-a33715acf3de",
+   "seconds": 609.6,
+   "attempt": 1,
+   "is_error": false,
+   "stop_reason": "end_turn",
+   "result": "written"
+  },
+  "valuation-analyst-second-pass": {
+   "agent": "valuation-analyst",
+   "model_requested": "fable",
+   "model_served": "claude-fable-5-1",
+   "effort": "xhigh",
+   "input_tokens": 130,
+   "cache_creation_input_tokens": 230156,
+   "cache_read_input_tokens": 494841,
+   "output_tokens": 20752,
+   "turns": 14,
+   "cost_usd": 5.76573025,
+   "session": "b288795c-8ed4-5d4e-9a98-a33715acf3de",
+   "seconds": 235.5,
+   "attempt": 1,
+   "is_error": false,
+   "stop_reason": "end_turn",
+   "result": "written"
+  },
+  "control-single-agent": {
+   "agent": "control-single-agent",
+   "model_requested": "fable",
+   "model_served": "claude-fable-5-1",
+   "effort": "xhigh",
+   "input_tokens": 230,
+   "cache_creation_input_tokens": 316669,
+   "cache_read_input_tokens": 1634128,
+   "output_tokens": 175947,
+   "turns": 21,
+   "cost_usd": 15.541562000000003,
+   "session": "b288795c-8ed4-5d4e-9a98-a33715acf3de",
+   "seconds": 1928.9,
+   "attempt": 1,
+   "is_error": false,
+   "stop_reason": "end_turn",
+   "result": "written"
+  }
+ },
+ "analysis_stages": {
+  "quote_gate": {
+   "dropped": 0
+  },
+  "analysis_accounting": {
+   "dropped": 2
+  },
+  "analysis_financial": {
+   "dropped": 8
+  },
+  "assumptions": {
+   "dropped": 0
+  },
+  "analysis_valuation": {
+   "dropped": 2
+  },
+  "baselines": "written",
+  "control": {
+   "accounting": {
+    "dropped": 38
+   },
+   "financial": {
+    "dropped": 22
+   },
+   "assumptions": {
+    "dropped": 3
+   }
+  }
+ },
+ "analysis_failure": null,
+ "analysed_utc": "2026-09-29T01:19:10Z"
+}

@@ -1,0 +1,245 @@
+{
+  "ticker": "STX",
+  "accession": "0001137789-26-000159",
+  "horizon": "ten-year discounted cash flow, drivers for year one and year ten with a straight path between them",
+  "terminal_growth_ceiling": "{cost_of_capital.risk_free_rate.value}",
+  "discount_rate_reference": "{cost_of_capital.wacc.value}",
+  "base_year_reference": {
+    "revenue": "{terms.trailing_four_quarters.revenue.value}",
+    "operating_income": "{terms.trailing_four_quarters.operating_income.value}",
+    "operating_margin": "{ratios.profitability.operating_margin.value}",
+    "tax_rate": "{tax_rate.value}",
+    "free_cash_flow_to_firm": "{free_cash_flow.free_cash_flow_to_firm.value}",
+    "invested_capital": "{ratios.profitability.return_on_invested_capital.invested_capital.value}",
+    "return_on_invested_capital": "{ratios.profitability.return_on_invested_capital.value}"
+  },
+  "bear": {
+    "revenue_growth_year_one": {
+      "value": 0.10,
+      "reason": "The first quarter is already guided well above the year-ago quarter, so even a demand pause in the second half leaves the year modestly up; the bear case assumes the pause arrives, as it did in the trough year when revenue fell {earnings_versus_cash.history.years.3.revenue_growth}, and that the extra week in the base year is not repeated.",
+      "quote": "Revenue of $4.1 billion, plus or minus $100 million",
+      "quote_from": "input_8k.md",
+      "calculator_fields": [
+        "ratios.growth.revenue.this_quarter.value",
+        "ratios.growth.revenue.trailing_four_quarters.value",
+        "earnings_versus_cash.history.years.3.revenue_growth"
+      ]
+    },
+    "terminal_growth": {
+      "value": 0.01,
+      "reason": "Hard-drive revenue has cycled around a flat trend across the six-year history in the calculator, with today's revenue only moderately above the earlier peak {earnings_versus_cash.history.years.4.revenue}; a bear terminal rate assumes flash substitution and unit decline offset most exabyte growth. Below the risk-free ceiling {cost_of_capital.risk_free_rate.value}.",
+      "quote": "At the same time, the macroeconomic environment remains dynamic, marked by heightened geopolitical uncertainty and evolving trade policies. These factors may impact our business and results of operations.",
+      "quote_from": "input_mdna.md",
+      "calculator_fields": [
+        "earnings_versus_cash.history.years.4.revenue",
+        "earnings_versus_cash.history.revenue_growth_three_year_compound",
+        "cost_of_capital.risk_free_rate.value"
+      ]
+    },
+    "operating_margin_year_one": {
+      "value": 0.33,
+      "reason": "Roughly the base-year GAAP margin {ratios.profitability.operating_margin.value}: the first quarter lands at the guided level, then pricing softens and cancellation fees and underutilization return in the second half, as the prior year's non-GAAP items show they can.",
+      "quote": "Purchase order cancellation fees are the costs incurred to cancel certain purchase commitments made with the Company’s suppliers for component and equipment purchases that will not be received due to change in forecasted demand.",
+      "quote_from": "input_8k.md",
+      "calculator_fields": [
+        "ratios.profitability.operating_margin.value",
+        "ratios.growth.operating_income.this_quarter.value",
+        "ratios.growth.revenue.this_quarter.value"
+      ]
+    },
+    "operating_margin_year_ten": {
+      "value": 0.14,
+      "reason": "Reversion to the level of the earlier cycle peak {earnings_versus_cash.history.years.4.operating_margin} and the year before it {earnings_versus_cash.history.years.5.operating_margin}, treating pricing discipline as cyclical rather than structural and assuming tax incentives and grants fade.",
+      "quote": "A substantial portion of the Company's operations in Singapore and Thailand operate under various tax incentive programs, which expire in whole or in part at various dates into fiscal year 2034.",
+      "quote_from": "input_notes.md",
+      "calculator_fields": [
+        "earnings_versus_cash.history.years.4.operating_margin",
+        "earnings_versus_cash.history.years.5.operating_margin",
+        "earnings_versus_cash.history.operating_margin_three_year_average"
+      ]
+    },
+    "reinvestment_rate_year_one": {
+      "value": 0.28,
+      "reason": "Capital spending is committed to rise for the HAMR ramp regardless of demand, and the base year already reinvested capital expenditure {terms.trailing_four_quarters.capital_expenditure.value} less depreciation {terms.trailing_four_quarters.depreciation_and_amortization.value} plus a working-capital build of {free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital.value}; on a lower after-tax operating profit the same spending is a larger share.",
+      "quote": "For fiscal year 2027, supporting volume ramp of hard drives utilizing HAMR technology, we expect capital expenditures to be higher than fiscal year 2026 and still within our target range of 4-6% of revenue.",
+      "quote_from": "input_mdna.md",
+      "calculator_fields": [
+        "terms.trailing_four_quarters.capital_expenditure.value",
+        "terms.trailing_four_quarters.depreciation_and_amortization.value",
+        "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital.value",
+        "terms.trailing_four_quarters.operating_income.value",
+        "tax_rate.value"
+      ]
+    },
+    "reinvestment_rate_year_ten": {
+      "value": 0.12,
+      "reason": "Terminal reinvestment equals terminal growth divided by the return on capital that survives; with growth near the bear terminal rate and a return on capital that has fallen far below today's {ratios.profitability.return_on_invested_capital.value} toward a mature-manufacturer level, a low-teens rate keeps the capital base in step with a nearly flat business.",
+      "quote": "We incur material capital expenditures to design and manufacture our products that depend on advanced technologies and manufacturing techniques.",
+      "quote_from": "input_mdna.md",
+      "calculator_fields": [
+        "ratios.profitability.return_on_invested_capital.value",
+        "ratios.profitability.return_on_invested_capital.invested_capital.value"
+      ]
+    }
+  },
+  "base": {
+    "revenue_growth_year_one": {
+      "value": 0.30,
+      "reason": "First-quarter guidance sits well above both the fourth quarter {ratios.growth.revenue.this_quarter.value} and the year-ago quarter, management says momentum continues, and nearline exabyte demand plus pricing carried the base-year growth of {ratios.growth.revenue.trailing_four_quarters.value}; the base case holds the guided level with modest sequential growth through the year, less the extra week.",
+      "quote": "Our performance is being driven by robust cloud data center demand and disciplined execution, and we see the momentum continuing in 2027,",
+      "quote_from": "input_8k.md",
+      "calculator_fields": [
+        "ratios.growth.revenue.this_quarter.value",
+        "ratios.growth.revenue.quarter_over_quarter.value",
+        "ratios.growth.revenue.year_over_year.value",
+        "ratios.growth.revenue.trailing_four_quarters.value"
+      ]
+    },
+    "terminal_growth": {
+      "value": 0.025,
+      "reason": "Long-run growth in stored data supports mass-capacity demand, while unit declines and flash substitution cap it; a rate a little below the risk-free ceiling {cost_of_capital.risk_free_rate.value} treats the business as a mature but growing infrastructure supplier.",
+      "quote": "The ongoing adoption of these applications increases the volume of data being generated, retained and reused, which we believe supports demand growth for scalable, cost-efficient and reliable storage solutions.",
+      "quote_from": "input_mdna.md",
+      "calculator_fields": [
+        "cost_of_capital.risk_free_rate.value",
+        "earnings_versus_cash.history.revenue_growth_three_year_compound"
+      ]
+    },
+    "operating_margin_year_one": {
+      "value": 0.43,
+      "reason": "The fourth quarter's GAAP operating margin in the release was well above the annual {ratios.profitability.operating_margin.value}, the base year carried a legal settlement that will not recur, and guidance for non-GAAP earnings per share rises faster than guided revenue; the base case holds the exit-quarter margin for the year.",
+      "quote": "| Operating Margin | 43.0% |  | 23.2% |  | 44.6% |  | 26.2% |",
+      "quote_from": "input_8k.md",
+      "calculator_fields": [
+        "ratios.profitability.operating_margin.value",
+        "ratios.growth.operating_income.this_quarter.value",
+        "ratios.growth.revenue.this_quarter.value",
+        "terms.trailing_four_quarters.share_based_compensation.value"
+      ]
+    },
+    "operating_margin_year_ten": {
+      "value": 0.26,
+      "reason": "Halfway between today's peak and the historical mid-cycle: above the three-year average {earnings_versus_cash.history.operating_margin_three_year_average} and the earlier peak {earnings_versus_cash.history.years.4.operating_margin} to credit consolidation, higher-capacity mix and supply discipline, but well below the current {ratios.profitability.operating_margin.value} because incentives expire, grants fade and pricing normalizes.",
+      "quote": "However, we believe the structural changes that we have made to the business, including executing our pricing strategy and maintaining supply discipline, together with the long-term customer engagements we have in place provide greater visibility into future demand trends.",
+      "quote_from": "input_mdna.md",
+      "calculator_fields": [
+        "ratios.profitability.operating_margin.value",
+        "earnings_versus_cash.history.operating_margin_three_year_average",
+        "earnings_versus_cash.history.years.4.operating_margin"
+      ]
+    },
+    "reinvestment_rate_year_one": {
+      "value": 0.20,
+      "reason": "Capital spending rises for HAMR within management's stated share of revenue, depreciation {terms.trailing_four_quarters.depreciation_and_amortization.value} lags it, and working capital grows with revenue as it did in the base year; against a higher after-tax operating profit the share reinvested is somewhat below the base year's.",
+      "quote": "For fiscal year 2027, supporting volume ramp of hard drives utilizing HAMR technology, we expect capital expenditures to be higher than fiscal year 2026 and still within our target range of 4-6% of revenue.",
+      "quote_from": "input_mdna.md",
+      "calculator_fields": [
+        "terms.trailing_four_quarters.capital_expenditure.value",
+        "terms.trailing_four_quarters.depreciation_and_amortization.value",
+        "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital.value",
+        "free_cash_flow.free_cash_flow_to_firm.value"
+      ]
+    },
+    "reinvestment_rate_year_ten": {
+      "value": 0.17,
+      "reason": "Terminal reinvestment is terminal growth over a sustainable return on capital; with the base terminal rate and a return on capital settling in the mid-teens, far below today's {ratios.profitability.return_on_invested_capital.value} on a thin invested-capital base of {ratios.profitability.return_on_invested_capital.invested_capital.value}, the rate lands in the high teens.",
+      "quote": "We incur material capital expenditures to design and manufacture our products that depend on advanced technologies and manufacturing techniques.",
+      "quote_from": "input_mdna.md",
+      "calculator_fields": [
+        "ratios.profitability.return_on_invested_capital.value",
+        "ratios.profitability.return_on_invested_capital.invested_capital.value",
+        "cost_of_capital.wacc.value"
+      ]
+    }
+  },
+  "bull": {
+    "revenue_growth_year_one": {
+      "value": 0.40,
+      "reason": "Guidance already implies a large step up from the year-ago first quarter; the bull case extends the base year's sequential cadence {ratios.growth.revenue.quarter_over_quarter.value} through the year on strengthening exabyte demand, HAMR volume and continued price and mix gains.",
+      "quote": "Seagate is well positioned to address strengthening exabyte demand through our Mozaic platform and differentiated HAMR technology roadmap, enabling customers to scale efficiently while supporting our ability to drive profitable growth and value creation,",
+      "quote_from": "input_8k.md",
+      "calculator_fields": [
+        "ratios.growth.revenue.quarter_over_quarter.value",
+        "ratios.growth.revenue.year_over_year.value",
+        "ratios.growth.revenue.trailing_four_quarters.value"
+      ]
+    },
+    "terminal_growth": {
+      "value": 0.035,
+      "reason": "AI-driven data retention lifts long-run exabyte growth enough to outrun unit declines; still held below the risk-free ceiling {cost_of_capital.risk_free_rate.value}.",
+      "quote": "As AI accelerates data generation and its value, we see durable long-term demand for mass capacity storage.",
+      "quote_from": "input_8k.md",
+      "calculator_fields": [
+        "cost_of_capital.risk_free_rate.value"
+      ]
+    },
+    "operating_margin_year_one": {
+      "value": 0.47,
+      "reason": "Guided first-quarter non-GAAP earnings per share rises far faster than guided revenue, implying a margin above the fourth-quarter exit; the bull case holds that expansion through the year with pricing, mix and grant support intact.",
+      "quote": "Non-GAAP diluted EPS of $7.30, plus or minus $0.20",
+      "quote_from": "input_8k.md",
+      "calculator_fields": [
+        "ratios.growth.operating_income.this_quarter.value",
+        "ratios.growth.revenue.this_quarter.value",
+        "ratios.profitability.operating_margin.value"
+      ]
+    },
+    "operating_margin_year_ten": {
+      "value": 0.35,
+      "reason": "Roughly today's {ratios.profitability.operating_margin.value} sustained: the industry stays consolidated, HAMR keeps the cost-per-terabyte lead, and long-term customer agreements dampen the cycle so that the structural claim holds for a decade.",
+      "quote": "For fiscal year 2026, gross margin increased by 11 percentage points compared to the prior fiscal year primarily driven by pricing actions undertaken by the Company and product mix shift to higher capacity products.",
+      "quote_from": "input_mdna.md",
+      "calculator_fields": [
+        "ratios.profitability.operating_margin.value",
+        "ratios.profitability.gross_margin.value",
+        "trend_table.years-back-0.ratios.gross_margin.position_in_history"
+      ]
+    },
+    "reinvestment_rate_year_one": {
+      "value": 0.22,
+      "reason": "Faster growth needs more working capital and the HAMR capital program runs at the top of management's stated range, so the share of after-tax operating profit reinvested is a little above the base case even though profit is higher.",
+      "quote": "As of July 3, 2026, we had unconditional commitments of $465 million primarily related to purchases of equipment, of which approximately $375 million is expected to be paid within one year.",
+      "quote_from": "input_mdna.md",
+      "calculator_fields": [
+        "terms.trailing_four_quarters.capital_expenditure.value",
+        "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital.value",
+        "terms.trailing_four_quarters.operating_income.value"
+      ]
+    },
+    "reinvestment_rate_year_ten": {
+      "value": 0.18,
+      "reason": "Higher terminal growth over a higher sustained return on capital, still far below today's {ratios.profitability.return_on_invested_capital.value}; the ratio lands near the base case because both numerator and denominator rise.",
+      "quote": "We incur material capital expenditures to design and manufacture our products that depend on advanced technologies and manufacturing techniques.",
+      "quote_from": "input_mdna.md",
+      "calculator_fields": [
+        "ratios.profitability.return_on_invested_capital.value",
+        "cost_of_capital.wacc.value"
+      ]
+    }
+  },
+  "notes": [
+    "operating margins are GAAP, so share-based compensation {terms.trailing_four_quarters.share_based_compensation.value} is a cost in every scenario; the company's non-GAAP margins in the release run higher",
+    "the base-year tax rate {tax_rate.value} is below the Singapore statutory rate and the non-GAAP projected rate; a model that lifts the rate toward the higher figure over the horizon is consistent with the incentive expiry and top-up tax in the tax note",
+    "the base-year free cash flow to the firm {free_cash_flow.free_cash_flow_to_firm.value} charges the working-capital build and is the better anchor than free cash flow simple {free_cash_flow.free_cash_flow_simple.value}, which was lifted by unpaid tax and settlement accruals",
+    "the discount rate reference {cost_of_capital.wacc.value} rests on a beta of {cost_of_capital.beta.value}; the equity weight {cost_of_capital.weights.equity} makes the cost of equity {cost_of_capital.cost_of_equity.value} almost the whole rate",
+    "the base year contained an extra week; year-one growth rates above are stated against it without adjustment, which is slightly conservative",
+    "post-period debt redemptions lower net debt {ratios.solvency.net_debt.value} only by the cash they consumed; the bridge from firm value to equity should use debt and cash after those redemptions, which the calculator does not hold"
+  ],
+  "evidence": [
+    "0001137789-26-000153:8k_2_02:24",
+    "0001137789-26-000153:8k_2_02:25",
+    "0001137789-26-000153:8k_2_02:27",
+    "0001137789-26-000153:8k_2_02:37",
+    "0001137789-26-000153:8k_2_02:38",
+    "0001137789-26-000153:8k_2_02:99",
+    "0001137789-26-000153:8k_2_02:109",
+    "0001137789-26-000159:mdna:15",
+    "0001137789-26-000159:mdna:16",
+    "0001137789-26-000159:mdna:32",
+    "0001137789-26-000159:mdna:94",
+    "0001137789-26-000159:mdna:96",
+    "0001137789-26-000159:mdna:101",
+    "0001137789-26-000159:notes:150",
+    "0001137789-26-000159:notes:144"
+  ]
+}

@@ -1,0 +1,120 @@
+{
+ "question": "what is this company worth, and what does the price already assume?",
+ "value_range": {
+  "reading": "Python's three scenarios put the equity at {valuation.value_range_per_share.low} per share in the bear case, {valuation.scenarios.base.value_per_share} in the base case and {valuation.value_range_per_share.high} in the bull case, from enterprise values of {valuation.scenarios.bear.enterprise_value}, {valuation.scenarios.base.enterprise_value} and {valuation.scenarios.bull.enterprise_value}, each reduced by net debt of {valuation.scenarios.base.net_debt} and the year-end operating lease liability of {valuation.scenarios.base.operating_lease_liability} and divided by {valuation.scenarios.base.diluted_shares} diluted shares. The base case sits below the middle of the range; it is my best reading, not a midpoint. The range is wide for two reasons. First, the scenarios differ on every driver: the bear case holds the operating margin near the trailing GAAP figure of {ratios.profitability.operating_margin.value|pct}, which carries the first half's restructuring and the Riello impairment, and makes the company reinvest a rising share of after-tax operating income, while the bull case lets the GAAP margin climb to {valuation.scenarios.bull.drivers.operating_margin_year_ten|pct}, close to the adjusted margin the raised outlook implies, with nothing reinvested in year one. Second, net debt is a large fixed deduction, so equity is a residual: the bear enterprise value leaves equity of only {valuation.scenarios.bear.equity_value}, whereas the bull enterprise value leaves {valuation.scenarios.bull.equity_value}. In the base case the present value of the terminal value, {valuation.scenarios.base.terminal_value_present}, is the larger part of the enterprise value against {valuation.scenarios.base.explicit_present} from the ten explicit years, so the value rests mainly on what the business looks like a decade out. All three scenarios are taxed at the trailing effective rate of {valuation.tax_rate|pct}, which discrete tax benefits hold far below the statutory rate; Python applied that rate as found, and a higher rate would lower every scenario, by an amount that was not computed.",
+  "fields": [
+   "valuation.value_range_per_share.low",
+   "valuation.value_range_per_share.high",
+   "valuation.scenarios.bear.value_per_share",
+   "valuation.scenarios.base.value_per_share",
+   "valuation.scenarios.bull.value_per_share",
+   "valuation.scenarios.bear.enterprise_value",
+   "valuation.scenarios.base.enterprise_value",
+   "valuation.scenarios.bull.enterprise_value",
+   "valuation.scenarios.bear.equity_value",
+   "valuation.scenarios.base.equity_value",
+   "valuation.scenarios.bull.equity_value",
+   "valuation.scenarios.base.net_debt",
+   "valuation.scenarios.base.operating_lease_liability",
+   "valuation.scenarios.base.diluted_shares",
+   "valuation.scenarios.base.terminal_value_present",
+   "valuation.scenarios.base.explicit_present",
+   "valuation.scenarios.bull.drivers.operating_margin_year_ten",
+   "ratios.profitability.operating_margin.value",
+   "valuation.tax_rate"
+  ]
+ },
+ "price_position": {
+  "reading": "The price at the cutoff, {valuation.price_at_cutoff}, sits inside the range but in its upper reach: well above the base case of {valuation.scenarios.base.value_per_share} and just below the bull case of {valuation.value_range_per_share.high}. On the sensitivity grid, no combination of a one-point lower WACC and a half-point higher terminal growth on the base drivers reaches the price; the most favourable corner is {valuation.sensitivity.grid.0.2.value_per_share} and the least favourable {valuation.sensitivity.grid.2.0.value_per_share}. So the price is not explained by the base drivers under any discount rate or terminal rate Python tried; it needs something like the bull case's combination of growth at the top of the guided range, a GAAP margin that converges on the adjusted margin, and little reinvestment, all at once. The market value of equity Python used for the capital weights, {cost_of_capital.market_value_of_equity.value}, rests on this same price and on {terms.shares_outstanding.value} shares outstanding, so the discount rate itself already carries the price.",
+  "fields": [
+   "valuation.price_at_cutoff",
+   "valuation.price_position",
+   "valuation.scenarios.base.value_per_share",
+   "valuation.value_range_per_share.high",
+   "valuation.value_range_per_share.low",
+   "valuation.sensitivity.grid.0.2.value_per_share",
+   "valuation.sensitivity.grid.2.0.value_per_share",
+   "cost_of_capital.market_value_of_equity.value",
+   "terms.shares_outstanding.value"
+  ]
+ },
+ "market_implied_growth": {
+  "reading": "Holding the base case's margins, reinvestment rates and terminal growth, the constant revenue growth in each of the next ten years at which the base case is worth the price is {valuation.reverse_dcf.value|pct}. Against the company's own record that is above the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, which itself rests on the fiscal 2024 acquisition year's {earnings_versus_cash.history.years.1.revenue_growth|pct} rather than on organic growth; fiscal 2025 revenue fell {earnings_versus_cash.history.years.0.revenue_growth|pct}, the trailing four quarters are {ratios.growth.revenue.trailing_four_quarters.value|pct}, and the June quarter, the first to return to organic growth, grew {ratios.growth.revenue.year_over_year.value|pct}. In the filed history only fiscal 2021 and fiscal 2024, at {earnings_versus_cash.history.years.4.revenue_growth|pct} and {earnings_versus_cash.history.years.1.revenue_growth|pct}, exceeded the implied rate, fiscal 2023's {earnings_versus_cash.history.years.2.revenue_growth|pct} came close, and none of them was sustained: fiscal 2022 fell {earnings_versus_cash.history.years.3.revenue_growth|pct}. Against guidance, the raised outlook quoted below calls for organic growth in the mid-to-high single digits this year with a one-point currency tailwind less a two-point divestiture headwind, so even the top of that range, net of the exits, sits below the implied rate, and the prior outlook had been flat to low single digits organic. The release describes orders up sharply, record backlog and strong data-center demand, but it also defines orders as commitments that may not be subject to penalty if cancelled. Read the other way, the price does not strictly require a decade of near-double-digit growth on base margins; it can also be reached with the bull case's faster-starting but fading growth if the GAAP margin rises to {valuation.scenarios.bull.drivers.operating_margin_year_ten|pct} and reinvestment stays low. Either way the price assumes an outcome the company's filed history has delivered only in an acquisition year or a post-pandemic rebound year.",
+  "fields": [
+   "valuation.reverse_dcf.value",
+   "valuation.reverse_dcf.price",
+   "earnings_versus_cash.history.revenue_growth_three_year_compound",
+   "earnings_versus_cash.history.years.0.revenue_growth",
+   "earnings_versus_cash.history.years.1.revenue_growth",
+   "earnings_versus_cash.history.years.2.revenue_growth",
+   "earnings_versus_cash.history.years.3.revenue_growth",
+   "earnings_versus_cash.history.years.4.revenue_growth",
+   "ratios.growth.revenue.trailing_four_quarters.value",
+   "ratios.growth.revenue.year_over_year.value",
+   "valuation.scenarios.bull.drivers.operating_margin_year_ten"
+  ],
+  "quote": "~$23 billionOrganic* up ~M-HSDFX 1%Net, Acquisitions / Divestitures (2%) ~$225 million and ~$125 million year-over-year revenue headwind from Riello and NORESCO exits, respectively",
+  "quote_from": "input_8k.md"
+ },
+ "most_sensitive": [
+  {
+   "assumption": "Discount rate (WACC)",
+   "reading": "On the grid, moving the WACC of {valuation.wacc|pct} down one point lifts the base value from {valuation.sensitivity.grid.1.1.value_per_share} to {valuation.sensitivity.grid.0.1.value_per_share}, and moving it up one point cuts it to {valuation.sensitivity.grid.2.1.value_per_share}; that swing is larger than the terminal-growth columns produce at half a point each way, {valuation.sensitivity.grid.1.0.value_per_share} to {valuation.sensitivity.grid.1.2.value_per_share}. The WACC rests on a beta of {cost_of_capital.beta.value} measured over the year before the cutoff, an equity risk premium of {cost_of_capital.equity_risk_premium.value|pct}, a risk-free rate of {cost_of_capital.risk_free_rate.value|pct}, and a pre-tax cost of debt of {cost_of_capital.pre_tax_cost_of_debt.value|pct} that I supplied from the MD&A's stated weighted-average rate on the long-term notes, because interest expense is not tagged for the period; commercial paper borrowed since carries a rate not in the inputs, the tax shield is computed at the unusually low trailing rate of {valuation.tax_rate|pct}, and the debt weight of {cost_of_capital.weights.debt|pct} is at book against equity at the cutoff price. Because the terminal value is the larger part of enterprise value, and because net debt is subtracted before dividing by shares, a change in the discount rate moves the per-share value proportionally more than it moves enterprise value.",
+   "fields": [
+    "valuation.wacc",
+    "valuation.sensitivity.grid.1.1.value_per_share",
+    "valuation.sensitivity.grid.0.1.value_per_share",
+    "valuation.sensitivity.grid.2.1.value_per_share",
+    "valuation.sensitivity.grid.1.0.value_per_share",
+    "valuation.sensitivity.grid.1.2.value_per_share",
+    "cost_of_capital.beta.value",
+    "cost_of_capital.equity_risk_premium.value",
+    "cost_of_capital.risk_free_rate.value",
+    "cost_of_capital.pre_tax_cost_of_debt.value",
+    "cost_of_capital.weights.debt",
+    "valuation.tax_rate"
+   ]
+  },
+  {
+   "assumption": "Year-ten operating margin, together with the year-ten reinvestment rate it is paired with",
+   "reading": "Across the scenarios, the driver that separates the values most is where the GAAP operating margin ends up. The bear case ends at {valuation.scenarios.bear.drivers.operating_margin_year_ten|pct}, below fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct}, and is worth {valuation.scenarios.bear.value_per_share}; the base case ends at {valuation.scenarios.base.drivers.operating_margin_year_ten|pct}, above the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}, and is worth {valuation.scenarios.base.value_per_share}; the bull case ends at {valuation.scenarios.bull.drivers.operating_margin_year_ten|pct}, close to the adjusted margin the release reports, and is worth {valuation.scenarios.bull.value_per_share}. The year-ten margin, with the year-ten reinvestment rate of {valuation.scenarios.bear.drivers.reinvestment_rate_year_ten|pct}, {valuation.scenarios.base.drivers.reinvestment_rate_year_ten|pct} and {valuation.scenarios.bull.drivers.reinvestment_rate_year_ten|pct} across the three, sets the terminal free cash flow, {valuation.scenarios.base.terminal_free_cash_flow} in the base case, and the present value of the terminal value, {valuation.scenarios.base.terminal_value_present}, is the larger part of the base enterprise value of {valuation.scenarios.base.enterprise_value}. What it turns on is whether the gap between the GAAP margin and the adjusted margin closes: amortization of acquired intangibles, restructuring that has recurred in every period, this quarter's impairment, and whether tariffs, mix and price promotions are recovered. The trailing GAAP margin is {ratios.profitability.operating_margin.value|pct}, and every segment reported lower profit in the quarter and in the six months.",
+   "fields": [
+    "valuation.scenarios.bear.drivers.operating_margin_year_ten",
+    "valuation.scenarios.base.drivers.operating_margin_year_ten",
+    "valuation.scenarios.bull.drivers.operating_margin_year_ten",
+    "valuation.scenarios.bear.drivers.reinvestment_rate_year_ten",
+    "valuation.scenarios.base.drivers.reinvestment_rate_year_ten",
+    "valuation.scenarios.bull.drivers.reinvestment_rate_year_ten",
+    "valuation.scenarios.bear.value_per_share",
+    "valuation.scenarios.base.value_per_share",
+    "valuation.scenarios.bull.value_per_share",
+    "earnings_versus_cash.history.years.0.operating_margin",
+    "earnings_versus_cash.history.operating_margin_three_year_average",
+    "valuation.scenarios.base.terminal_free_cash_flow",
+    "valuation.scenarios.base.terminal_value_present",
+    "valuation.scenarios.base.enterprise_value",
+    "ratios.profitability.operating_margin.value"
+   ]
+  }
+ ],
+ "accounting_adjustments": {
+  "reading": "There were none. The accounting analysis proposed no adjustments (its adjustments list is empty), the calculator's quality-adjusted free cash flow applied and refused none, and calculator.json carries no accounting-adjustment entry under valuation; the scenarios were run on as-filed trailing operating income of {ebit.value} on trailing revenue of {valuation.base_revenue}, at the trailing effective tax rate of {valuation.tax_rate|pct}. Three items the accounting analysis flagged could not be tied to a calculator field, so they moved nothing, and they cut in different directions. The Swiss valuation-allowance release and the state audit settlement sit inside that tax rate, which flatters after-tax operating income in every scenario; a rate nearer the statutory one would lower every value. Restructuring that recurs in every period, the Riello impairment and amortization of acquired intangibles sit inside the trailing GAAP margin of {ratios.profitability.operating_margin.value|pct}, which is why the scenarios start at or above it rather than below it. The release's free-cash-flow measure, which starts from a line that includes discontinued operating cash, does not enter the DCF at all, since Python builds cash flow from operating income rather than from the cash-flow statement; for reference, simple free cash flow is {free_cash_flow.free_cash_flow_simple.value} and quality-adjusted free cash flow {free_cash_flow.free_cash_flow_quality_adjusted.value}, against free cash flow to the firm of {free_cash_flow.free_cash_flow_to_firm.value} that the same low tax rate and a trade working-capital release inflate.",
+  "fields": [
+   "ebit.value",
+   "valuation.base_revenue",
+   "valuation.tax_rate",
+   "ratios.profitability.operating_margin.value",
+   "free_cash_flow.free_cash_flow_simple.value",
+   "free_cash_flow.free_cash_flow_quality_adjusted.value",
+   "free_cash_flow.free_cash_flow_to_firm.value"
+  ]
+ },
+ "summary_ko": {
+  "value_range": "세 시나리오의 주당 가치는 약세 {valuation.value_range_per_share.low}, 기본 {valuation.scenarios.base.value_per_share}, 강세 {valuation.value_range_per_share.high}이며, 기업가치에서 순부채 {valuation.scenarios.base.net_debt}와 리스부채를 뺀 잔여가 주주 몫이어서 범위가 넓습니다. 기본 시나리오에서는 잔존가치의 현재가치 {valuation.scenarios.base.terminal_value_present}가 기업가치 {valuation.scenarios.base.enterprise_value}의 큰 부분을 차지합니다.",
+  "price_position": "기준일 주가 {valuation.price_at_cutoff}는 범위 안에 있지만 기본 시나리오 {valuation.scenarios.base.value_per_share}보다 훨씬 높고 강세 시나리오 {valuation.value_range_per_share.high} 바로 아래에 있습니다. 기본 가정으로는 할인율과 영구성장률을 어떻게 바꿔도 주가에 이르지 못하므로, 주가는 강세 시나리오에 가까운 결과를 이미 반영하고 있습니다.",
+  "market_implied_growth": "기본 시나리오의 마진·재투자·영구성장률을 그대로 두면, 주가를 정당화하는 향후 십 년간 매년 일정한 매출 성장률은 {valuation.reverse_dcf.value|pct}입니다. 이는 인수 효과가 포함된 삼년 복합성장률 {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}보다 높고, 2025 회계연도의 {earnings_versus_cash.history.years.0.revenue_growth|pct}나 최근 분기의 {ratios.growth.revenue.year_over_year.value|pct}와는 거리가 멀며, 회사가 올해 제시한 한 자릿수 중후반의 유기적 성장 전망 상단도 넘습니다.",
+  "most_sensitive": "가장 민감한 가정은 할인율로, 가중평균자본비용 {valuation.wacc|pct}를 일 퍼센트포인트 낮추면 주당 가치가 {valuation.sensitivity.grid.0.1.value_per_share}로 오르고 높이면 {valuation.sensitivity.grid.2.1.value_per_share}로 떨어집니다. 그다음은 십 년 뒤 영업이익률로, 시나리오별 {valuation.scenarios.bear.drivers.operating_margin_year_ten|pct}, {valuation.scenarios.base.drivers.operating_margin_year_ten|pct}, {valuation.scenarios.bull.drivers.operating_margin_year_ten|pct}의 차이가 주당 가치 범위의 대부분을 설명합니다.",
+  "accounting_adjustments": "회계 분석은 조정을 제안하지 않았고 계산기도 아무 조정을 적용하지 않아, 평가는 공시된 영업이익 {ebit.value}와 후행 실효세율 {valuation.tax_rate|pct}를 그대로 사용했습니다. 이 세율은 일회성 세금 혜택 때문에 법정세율보다 훨씬 낮아 모든 시나리오의 가치를 높이는 쪽으로 작용하고, 반복되는 구조조정비용과 손상은 후행 영업이익률 {ratios.profitability.operating_margin.value|pct} 안에 남아 있어 반대 방향으로 작용합니다."
+ },
+ "limits": "This valuation is a set of stated assumptions run through a stated formula. It states no recommendation to trade, and a different reader choosing different drivers would reach a different value."
+}

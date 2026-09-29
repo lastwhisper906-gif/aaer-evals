@@ -1,0 +1,258 @@
+{
+ "ticker": "GNRC",
+ "accession": "0001437749-26-025669",
+ "form": "10-Q",
+ "question": "do reported earnings and cash reflect economic reality?",
+ "written_by": "single-agent control",
+ "areas": {
+  "earnings_versus_cash": {
+   "dropped": "fields: '{terms.trailing_four_quarters.operating_cash_flow.value}' is not a field of calculator.json"
+  },
+  "revenue_recognition": {
+   "dropped": "fields: '{terms.balances_now.contract_liabilities.value}' is not a field of calculator.json"
+  },
+  "estimates_and_reserves": {
+   "dropped": "fields: '{terms.balances_now.warranty_accrual.value}' is not a field of calculator.json"
+  },
+  "cost_deferral": {
+   "dropped": "fields: '{terms.balances_now.inventory.value}' is not a field of calculator.json"
+  },
+  "cash_flow_engineering_and_off_balance_sheet": {
+   "dropped": "fields: '{free_cash_flow.free_cash_flow_simple.value}' is not a field of calculator.json"
+  },
+  "controls_audit_and_filing_signals": {
+   "finding": "Management concluded disclosure controls were effective and reported no change in internal control over financial reporting during the quarter, despite a segment reorganization that changed reporting units, three closed acquisitions and a first-time cost-to-cost revenue disclosure. The interim statements are unaudited. No late-filing notice is on record and the current-report history is routine earnings releases, an executive change and proxy votes. The legal docket is active: a DOJ grand jury subpoena and EPA/CARB emissions inquiry with a fresh EPA information request this quarter, appealed securities and derivative suits, a consumer class action narrowed by the court, and a patent case settled after the appellate court vacated the judgment. Adjusted EBITDA, which management admits involves judgment and discretion, is both the covenant metric and an executive compensation target.",
+   "verdict": "no control deficiency is reported, but the combination of unaudited interim numbers, a reorganized reporting structure, discretionary non-GAAP definitions tied to pay, and open regulatory inquiries keeps the signal amber rather than green",
+   "evidence": [
+    "0001437749-26-025669:item_4_controls:3",
+    "0001437749-26-025669:item_4_controls:5",
+    "0001437749-26-025669:notes:5",
+    "0001437749-26-025669:notes:71",
+    "0001437749-26-025669:notes:153",
+    "0001437749-26-025669:notes:151",
+    "0001437749-26-025669:notes:152",
+    "0001437749-26-025669:notes:154",
+    "0001437749-26-025669:mdna:144",
+    "0001437749-26-025669:notes:158"
+   ],
+   "fields": []
+  },
+  "cross_document_reconciliation": {
+   "dropped": "fields: '{ratios.growth.revenue.this_quarter.value}' is not a field of calculator.json"
+  },
+  "industry_lens": {
+   "dropped": "fields: '{ratios.efficiency.days_sales_of_inventory.value}' is not a field of calculator.json"
+  }
+ },
+ "reconciliation": [],
+ "anomalies": [],
+ "adjustments": [],
+ "summary_ko": {},
+ "limits": "This analysis finds where the numbers and the explanations disagree, and where the company differs from its own past. It does not judge intent, and it cannot see evidence outside the filings, such as invoices or contracts.",
+ "normalized_quotes": 0,
+ "dropped_items": [
+  {
+   "where": "areas.earnings_versus_cash",
+   "reason": "fields: '{terms.trailing_four_quarters.operating_cash_flow.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "areas.revenue_recognition",
+   "reason": "fields: '{terms.balances_now.contract_liabilities.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "areas.estimates_and_reserves",
+   "reason": "fields: '{terms.balances_now.warranty_accrual.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "areas.cost_deferral",
+   "reason": "fields: '{terms.balances_now.inventory.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "areas.cash_flow_engineering_and_off_balance_sheet",
+   "reason": "fields: '{free_cash_flow.free_cash_flow_simple.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "areas.cross_document_reconciliation",
+   "reason": "fields: '{ratios.growth.revenue.this_quarter.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "areas.industry_lens",
+   "reason": "fields: '{ratios.efficiency.days_sales_of_inventory.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "reconciliation[0]",
+   "id": null,
+   "reason": "the item is not an object"
+  },
+  {
+   "where": "reconciliation[1]",
+   "id": null,
+   "reason": "the item is not an object"
+  },
+  {
+   "where": "anomalies[0]",
+   "id": "earnings_versus_cash_tariff_refund_lifts_quarter_earnings_and_cash",
+   "reason": "fields: '{trend_table.quarters-back-0.ratios.gross_margin.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[1]",
+   "id": "earnings_versus_cash_quarter_operating_cash_below_net_income",
+   "reason": "fields: '{ratios.growth.operating_cash_flow.this_quarter.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[2]",
+   "id": "earnings_versus_cash_trailing_cash_flow_fell_while_quarter_earnings_doubled",
+   "reason": "fields: '{ratios.growth.operating_cash_flow.trailing_four_quarters.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[3]",
+   "id": "earnings_versus_cash_deferred_tax_swing_and_low_cash_taxes",
+   "reason": "fields: '{tax_rate.effective_rate}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[4]",
+   "id": "earnings_versus_cash_non_gaap_addbacks_include_disposition_losses_and_amortization",
+   "reason": "fields: '{ratios.profitability.net_margin.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[5]",
+   "id": "revenue_recognition_contract_assets_jump_under_cost_to_cost_method",
+   "reason": "fields: '{trend_table.quarters-back-0.ratios.receivables_over_revenue.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[6]",
+   "id": "revenue_recognition_contract_liabilities_drawn_down_into_revenue",
+   "reason": "fields: '{terms.balances_now.contract_liabilities.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[7]",
+   "id": "estimates_and_reserves_warranty_provision_fell_as_sales_rose",
+   "reason": "fields: '{terms.balances_now.warranty_accrual.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[8]",
+   "id": "estimates_and_reserves_tariff_refund_receivable_recognized_on_probability_judgment",
+   "reason": "fields: '{trend_table.quarters-back-0.ratios.gross_margin.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[9]",
+   "id": "estimates_and_reserves_enercon_earnout_at_fair_value_tied_to_target_ebitda",
+   "reason": "fields: '{terms.cash_flow_families.acquisitions.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[10]",
+   "id": "estimates_and_reserves_goodwill_reallocated_after_segment_change_with_small_impairment",
+   "reason": "fields: '{trend_table.quarters-back-0.ratios.soft_asset_share.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[11]",
+   "id": "estimates_and_reserves_credit_loss_allowance_at_six_quarter_low",
+   "reason": "fields: '{terms.balances_now.bad_debt_allowance.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[12]",
+   "id": "cost_deferral_tariff_recovery_parked_in_inventory",
+   "reason": "fields: '{terms.balances_now.inventory.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[13]",
+   "id": "cost_deferral_intangible_amortization_rising_and_added_back",
+   "reason": "fields: '{terms.trailing_four_quarters.depreciation_and_amortization.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[14]",
+   "id": "cash_flow_engineering_and_off_balance_sheet_floor_plan_financing_balance_growing",
+   "reason": "fields: '{ratios.efficiency.days_sales_outstanding.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[15]",
+   "id": "cash_flow_engineering_and_off_balance_sheet_stock_settled_acquisition_consideration",
+   "reason": "fields: '{terms.cash_flow_families.acquisitions.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[16]",
+   "id": "cash_flow_engineering_and_off_balance_sheet_equity_award_taxes_in_financing",
+   "reason": "fields: '{terms.trailing_four_quarters.share_based_compensation.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[17]",
+   "id": "cash_flow_engineering_and_off_balance_sheet_legal_settlement_paid_through_working_capital",
+   "reason": "fields: '{ratios.growth.operating_cash_flow.this_quarter.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[18]",
+   "id": "controls_audit_and_filing_signals_no_control_change_despite_reorganization_and_acquisitions",
+   "reason": "numbers_vs_prose 'No calculator field applies; the prose of the controls item and the notes sit side by side.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[19]",
+   "id": "controls_audit_and_filing_signals_open_doj_epa_emissions_inquiry",
+   "reason": "numbers_vs_prose \"No calculator field; the note's language about difficulty estimating losses is the only quantification.\" is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[20]",
+   "id": "cross_document_reconciliation_backlog_claim_versus_remaining_performance_obligations",
+   "reason": "fields: '{terms.trailing_four_quarters.revenue.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[21]",
+   "id": "cross_document_reconciliation_operating_leverage_headline_versus_tariff_attribution",
+   "reason": "fields: '{ratios.growth.operating_income.year_over_year.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[22]",
+   "id": "cross_document_reconciliation_residential_guidance_versus_first_half_decline",
+   "reason": "fields: '{ratios.growth.revenue.trailing_four_quarters.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[23]",
+   "id": "cross_document_reconciliation_covenant_coverage_versus_ebit_coverage",
+   "reason": "fields: '{ratios.solvency.interest_coverage.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[24]",
+   "id": "industry_lens_mix_shift_to_lower_margin_commercial_and_industrial",
+   "reason": "fields: '{ratios.profitability.operating_margin.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[25]",
+   "id": "industry_lens_data_center_contract_terms_and_customer_concentration",
+   "reason": "fields: '{concentration.facts}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[26]",
+   "id": "industry_lens_inventory_days_elevated_and_capacity_investment_rising",
+   "reason": "fields: '{ratios.efficiency.days_sales_of_inventory.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "adjustments[0]",
+   "id": null,
+   "reason": "direction 'decrease' is not one of reduce, increase"
+  },
+  {
+   "where": "adjustments[1]",
+   "id": null,
+   "reason": "direction 'decrease' is not one of reduce, increase"
+  },
+  {
+   "where": "adjustments[2]",
+   "id": null,
+   "reason": "applies_to 'free_cash_flow_simple' is not one of cash_flow, earnings"
+  },
+  {
+   "where": "adjustments[3]",
+   "id": null,
+   "reason": "direction 'decrease' is not one of reduce, increase"
+  },
+  {
+   "where": "adjustments[4]",
+   "id": null,
+   "reason": "direction 'decrease' is not one of reduce, increase"
+  },
+  {
+   "where": "limits",
+   "reason": "not the rules version's sentence; replaced by it"
+  }
+ ],
+ "dropped_count": 42
+}

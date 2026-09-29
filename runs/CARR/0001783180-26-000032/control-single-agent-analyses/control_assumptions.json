@@ -1,0 +1,282 @@
+{
+  "ticker": "CARR",
+  "accession": "0001783180-26-000032",
+  "purpose": "bear, base and bull drivers for a ten-year discounted-cash-flow model",
+  "basis": {
+    "revenue_base": "trailing four quarters of revenue in the calculator ({terms.trailing_four_quarters.revenue}); year-one growth is measured from that base",
+    "margin_basis": "GAAP operating income as the calculator's ebit basis ({ebit}), after amortization of acquired intangibles, restructuring and impairments; adjusted operating profit in the release is higher and is used only to reason about direction",
+    "reinvestment_basis": "net reinvestment (capital expenditure plus acquisitions plus working-capital change less depreciation and amortization) as a share of after-tax operating income; the calculator's trailing depreciation and amortization ({terms.trailing_four_quarters.depreciation_and_amortization}) exceeds capital expenditure ({terms.trailing_four_quarters.capital_expenditure}) because most of it is intangible amortization, so the rates below are set on economic reinvestment rather than the accounting difference",
+    "tax_rate_caution": "the calculator's trailing tax rate ({tax_rate}) reflects a one-time valuation-allowance release; a model should use a normal rate near the adjusted rate shown in the release, not the calculator field",
+    "terminal_growth_ceiling": "{cost_of_capital.risk_free_rate}",
+    "discount_rate_note": "cost of equity is available ({cost_of_capital.cost_of_equity}) but WACC is missing ({cost_of_capital.wacc}) because interest expense is not tagged; the filing's weighted-average coupon on long-term notes and the commercial-paper rate are the natural inputs for cost of debt"
+  },
+  "scenarios": {
+    "bear": {
+      "revenue_growth_year_one": {
+        "value": 0.01,
+        "reason": "Divestitures of Riello and Noresco remove roughly two points of revenue, residential and light-commercial recovery stalls, China stays weak and truck-and-trailer remains in a trough, so organic growth only just offsets the exits; the trailing base is already slightly below the year-earlier four quarters.",
+        "quote": "~$225 million and ~$125 million year-over-year revenue headwind from Riello and NORESCO exits, respectively",
+        "quote_from": "input_8k.md",
+        "evidence": [
+          "0001783180-26-000030:8k_2_02:48",
+          "0001783180-26-000032:mdna:107",
+          "0001783180-26-000032:mdna:114"
+        ],
+        "fields": [
+          "{ratios.growth.revenue.trailing_four_quarters}",
+          "{earnings_versus_cash.history.years.0.revenue_growth}"
+        ]
+      },
+      "terminal_growth": {
+        "value": 0.02,
+        "reason": "A mature climate-equipment franchise growing with replacement demand and modest price, held well below the risk-free rate because the bear case assumes tariff-driven cost inflation is not fully passed through and China does not recover.",
+        "quote": "Results in China decreased (down 14%) as end-markets experienced economic challenges impacting both demand and price.",
+        "quote_from": "input_mdna.md",
+        "evidence": [
+          "0001783180-26-000032:mdna:107"
+        ],
+        "fields": [
+          "{cost_of_capital.risk_free_rate}"
+        ]
+      },
+      "operating_margin_year_one": {
+        "value": 0.09,
+        "reason": "Set near the trailing GAAP margin with a small recovery as the Riello impairment does not repeat, but with restructuring continuing, tariffs and mix still compressing gross margin and joint-venture income lower; below the prior fiscal year's GAAP margin.",
+        "quote": "Gross margin decreased by $41 million compared with the three months ended June 30, 2025, primarily due to higher input costs, including the impact of tariffs, and unfavorable business mix.",
+        "quote_from": "input_mdna.md",
+        "evidence": [
+          "0001783180-26-000032:mdna:27",
+          "0001783180-26-000032:mdna:96",
+          "0001783180-26-000032:mdna:33"
+        ],
+        "fields": [
+          "{ratios.profitability.operating_margin}",
+          "{earnings_versus_cash.history.years.0.operating_margin}"
+        ]
+      },
+      "operating_margin_year_ten": {
+        "value": 0.1,
+        "reason": "Only modest improvement over the decade: intangible amortization keeps running, price-cost stays roughly neutral, antitrust and tariff overhangs cap pricing, and mix does not shift enough toward higher-margin data-center and aftermarket work.",
+        "quote": "Adjusted operating margin of 17.2% was down 190 basis points from last year, predominantly due to favorable volume and productivity more than offset by the impact of increased input costs and unfavorable business mix.",
+        "quote_from": "input_8k.md",
+        "evidence": [
+          "0001783180-26-000030:8k_2_02:21",
+          "0001783180-26-000032:notes:144"
+        ],
+        "fields": [
+          "{earnings_versus_cash.history.operating_margin_three_year_average}"
+        ]
+      },
+      "reinvestment_rate_year_one": {
+        "value": 0.25,
+        "reason": "The new United States factory and rising capital expenditure fall on a smaller after-tax operating profit, and a seasonal working-capital build is not fully released, so reinvestment takes a larger share of a weaker profit base.",
+        "quote": "Includes ~($0.05) adj. EPS impact from NORESCO exit and new U.S. factory costs",
+        "quote_from": "input_8k.md",
+        "evidence": [
+          "0001783180-26-000030:8k_2_02:12",
+          "0001783180-26-000032:mdna:178"
+        ],
+        "fields": [
+          "{terms.trailing_four_quarters.capital_expenditure}",
+          "{terms.trailing_four_quarters_a_year_earlier.capital_expenditure}"
+        ]
+      },
+      "reinvestment_rate_year_ten": {
+        "value": 0.25,
+        "reason": "Terminal reinvestment consistent with the bear growth rate and a return on capital only modestly above the cost of capital, given the low asset turnover of a goodwill-heavy balance sheet.",
+        "quote": "The primary driver of the outflow related to $211 million of capital expenditures.",
+        "quote_from": "input_mdna.md",
+        "evidence": [
+          "0001783180-26-000032:mdna:178"
+        ],
+        "fields": [
+          "{ratios.efficiency.asset_turnover}",
+          "{cost_of_capital.cost_of_equity}"
+        ]
+      }
+    },
+    "base": {
+      "revenue_growth_year_one": {
+        "value": 0.05,
+        "reason": "Raised full-year guidance implies mid-single-digit growth over the trailing base once the divestiture headwind is netted against mid-to-high-single-digit organic growth and a small currency tailwind; the quarter already returned to organic growth with residential and light commercial leading.",
+        "quote": "Given record backlog levels and our year-to-date performance, we are raising our full-year outlook and now expect sales of about $23 billion and adjusted EPS of ~$2.90.",
+        "quote_from": "input_8k.md",
+        "evidence": [
+          "0001783180-26-000030:8k_2_02:14",
+          "0001783180-26-000030:8k_2_02:48",
+          "0001783180-26-000030:8k_2_02:26"
+        ],
+        "fields": [
+          "{terms.trailing_four_quarters.revenue}",
+          "{earnings_versus_cash.history.years.0.revenue}",
+          "{ratios.growth.revenue.year_over_year}"
+        ]
+      },
+      "terminal_growth": {
+        "value": 0.03,
+        "reason": "Below the risk-free rate as required, reflecting long-run replacement demand, electrification and data-center cooling as structural supports for a global leader, tempered by cyclicality and a mature core.",
+        "quote": "Carrier Global Corporation, global leader in intelligent climate and energy solutions, is committed to creating innovations that bring comfort, safety and sustainability to life.",
+        "quote_from": "input_8k.md",
+        "evidence": [
+          "0001783180-26-000030:8k_2_02:58"
+        ],
+        "fields": [
+          "{cost_of_capital.risk_free_rate}",
+          "{earnings_versus_cash.history.revenue_growth_three_year_compound}"
+        ]
+      },
+      "operating_margin_year_one": {
+        "value": 0.11,
+        "reason": "Adjusted operating profit guidance on the guided sales level, less intangible amortization at roughly the current run rate and a normal restructuring charge, lands near the three-year average GAAP margin and above the prior fiscal year, with no repeat of the Riello impairment.",
+        "quote": "Raises full year outlook to ~$23B sales, ~$3.5B adj. op. profit and ~$2.90 adj. EPS",
+        "quote_from": "input_8k.md",
+        "evidence": [
+          "0001783180-26-000030:8k_2_02:11",
+          "0001783180-26-000030:8k_2_02:111",
+          "0001783180-26-000032:notes:22"
+        ],
+        "fields": [
+          "{earnings_versus_cash.history.operating_margin_three_year_average}",
+          "{earnings_versus_cash.history.years.0.operating_margin}",
+          "{ratios.profitability.operating_margin}"
+        ]
+      },
+      "operating_margin_year_ten": {
+        "value": 0.13,
+        "reason": "Gradual expansion as the lower-margin Riello and Noresco businesses leave the mix, data-center and aftermarket service grow faster than the core, restructuring savings arrive, and the amortization of acquired intangibles declines as customer-relationship assets age.",
+        "quote": "Total company orders1 up ~40%; Commercial HVAC1 up ~65%; data centers up >300%",
+        "quote_from": "input_8k.md",
+        "evidence": [
+          "0001783180-26-000030:8k_2_02:6",
+          "0001783180-26-000032:notes:20",
+          "0001783180-26-000032:notes:93"
+        ],
+        "fields": [
+          "{earnings_versus_cash.history.years.1.operating_margin}",
+          "{earnings_versus_cash.history.years.2.operating_margin}"
+        ]
+      },
+      "reinvestment_rate_year_one": {
+        "value": 0.2,
+        "reason": "Capital expenditure is stepping up for the new factory and working capital grows with sales, but intangible amortization far exceeds capital spending and small tuck-in acquisitions are the norm, so net economic reinvestment is a moderate share of after-tax operating profit.",
+        "quote": "During the six months ended June 30, 2026, net cash used in continuing investing activities was $235 million. The primary driver of the outflow related to $211 million of capital expenditures.",
+        "quote_from": "input_mdna.md",
+        "evidence": [
+          "0001783180-26-000032:mdna:178",
+          "0001783180-26-000030:8k_2_02:12"
+        ],
+        "fields": [
+          "{terms.trailing_four_quarters.capital_expenditure}",
+          "{terms.trailing_four_quarters.depreciation_and_amortization}",
+          "{terms.cash_flow_families.acquisitions}"
+        ]
+      },
+      "reinvestment_rate_year_ten": {
+        "value": 0.3,
+        "reason": "Terminal reinvestment equal to terminal growth divided by a return on capital in the low double digits, consistent with an asset turnover that stays low because goodwill and intangibles remain most of the asset base.",
+        "quote": "Free cash flow is a non-GAAP financial measure that represents net cash flows provided by continuing operating activities (a GAAP measure) less capital expenditures.",
+        "quote_from": "input_8k.md",
+        "evidence": [
+          "0001783180-26-000030:8k_2_02:78"
+        ],
+        "fields": [
+          "{ratios.efficiency.asset_turnover}",
+          "{ratios.profitability.return_on_assets}"
+        ]
+      }
+    },
+    "bull": {
+      "revenue_growth_year_one": {
+        "value": 0.08,
+        "reason": "Record backlog converts faster than guided, data-center and container demand stay strong, residential and light commercial keep recovering with price, and the currency tailwind persists, so growth exceeds the guidance midpoint even after the divestiture headwind.",
+        "quote": "Orders were very strong globally in the second quarter supported by continued data center demand.",
+        "quote_from": "input_8k.md",
+        "evidence": [
+          "0001783180-26-000030:8k_2_02:14",
+          "0001783180-26-000030:8k_2_02:6",
+          "0001783180-26-000030:8k_2_02:40"
+        ],
+        "fields": [
+          "{ratios.growth.revenue.year_over_year}",
+          "{trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue}"
+        ]
+      },
+      "terminal_growth": {
+        "value": 0.04,
+        "reason": "Still below the risk-free rate, but reflecting structural demand from electrification, heat pumps and data-center cooling sustaining above-inflation growth for a category leader.",
+        "quote": "The Company expects a majority of its current contract liabilities at the end of the period to be recognized as revenue in the next 12 months.",
+        "quote_from": "input_notes.md",
+        "evidence": [
+          "0001783180-26-000032:notes:82"
+        ],
+        "fields": [
+          "{cost_of_capital.risk_free_rate}"
+        ]
+      },
+      "operating_margin_year_one": {
+        "value": 0.125,
+        "reason": "Price-cost turns favorable as tariff costs are recovered through price, restructuring charges fall away after the front-loaded first half, the impairment does not repeat, and volume leverage on productivity lifts GAAP margin above the prior fiscal year and the three-year average.",
+        "quote": "CSA segment sales grew 4%. Organic sales were up 4% driven by Residential and Light Commercial (RLC), up 9% and 10% respectively, partially offset by Commercial1, down 8% due to the timing of customer deliveries.",
+        "quote_from": "input_8k.md",
+        "evidence": [
+          "0001783180-26-000030:8k_2_02:26",
+          "0001783180-26-000032:notes:89",
+          "0001783180-26-000032:mdna:8"
+        ],
+        "fields": [
+          "{earnings_versus_cash.history.years.0.operating_margin}",
+          "{earnings_versus_cash.history.operating_margin_three_year_average}"
+        ]
+      },
+      "operating_margin_year_ten": {
+        "value": 0.15,
+        "reason": "Mix shifts decisively toward data-center, commercial and aftermarket service, divested low-margin businesses are gone, intangible amortization tapers, and the margin approaches the fiscal year in the history with the strongest GAAP margin after the spin-off.",
+        "quote": "Raises full year outlook to ~$23B sales, ~$3.5B adj. op. profit and ~$2.90 adj. EPS",
+        "quote_from": "input_8k.md",
+        "evidence": [
+          "0001783180-26-000030:8k_2_02:11",
+          "0001783180-26-000030:8k_2_02:6"
+        ],
+        "fields": [
+          "{earnings_versus_cash.history.years.3.operating_margin}",
+          "{earnings_versus_cash.history.years.5.operating_margin}"
+        ]
+      },
+      "reinvestment_rate_year_one": {
+        "value": 0.18,
+        "reason": "Capacity additions are already under way and working capital is released as joint-venture receivables normalize, so a higher profit base carries the factory spend at a somewhat lower rate than the base case.",
+        "quote": "Net cash flows generated from operating activities were $927 million and capital expenditures were $117 million, resulting in free cash flow of $810 million.",
+        "quote_from": "input_8k.md",
+        "evidence": [
+          "0001783180-26-000030:8k_2_02:45",
+          "0001783180-26-000032:notes:123"
+        ],
+        "fields": [
+          "{terms.trailing_four_quarters.capital_expenditure}",
+          "{free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital}"
+        ]
+      },
+      "reinvestment_rate_year_ten": {
+        "value": 0.31,
+        "reason": "Higher terminal growth requires slightly more reinvestment than the base case even with a better return on capital; the rate is terminal growth over a low-teens return on capital.",
+        "quote": "Free cash flow is a non-GAAP financial measure that represents net cash flows provided by continuing operating activities (a GAAP measure) less capital expenditures.",
+        "quote_from": "input_8k.md",
+        "evidence": [
+          "0001783180-26-000030:8k_2_02:78"
+        ],
+        "fields": [
+          "{ratios.efficiency.asset_turnover}",
+          "{cost_of_capital.cost_of_equity}"
+        ]
+      }
+    }
+  },
+  "limits": [
+    "Margins are set on the calculator's GAAP operating-income basis; a model built on adjusted operating profit would need to add back intangible amortization and restructuring explicitly and treat them as ongoing cash-free and cash charges respectively.",
+    "The calculator's tax rate is not usable for after-tax operating profit; the release's adjusted rate is the better anchor and the model should apply its own normal rate.",
+    "WACC is missing because interest expense is not tagged; the weighted-average coupon on long-term notes and the commercial-paper rate in the filing are the inputs a model should use for cost of debt.",
+    "Year-one growth is measured from the trailing four quarters, which include Riello and Noresco revenue that will leave the base; the scenarios net the headwind rather than restate the base.",
+    "Reinvestment rates describe economic reinvestment, not the accounting gap between capital expenditure and depreciation and amortization, which is negative because of intangible amortization.",
+    "No scenario includes cash for the AFFF settlement or a loss on the antitrust class actions, and none includes tariff refunds or insurance recoveries; all four are outside the operating drivers and should be handled as separate equity adjustments."
+  ]
+}
