@@ -1,0 +1,140 @@
+{
+ "ticker": "PANW",
+ "accession": "0001327567-26-000015",
+ "question": "How healthy is this company?",
+ "written_by": "single-agent control, one pass over the filing bundle and calculator_before_analysts.json",
+ "sections": {
+  "profitability": {
+   "dropped": "fields: '{ratios.profitability.gross_margin.value}' is not a field of calculator.json"
+  },
+  "efficiency": {
+   "dropped": "fields: '{ratios.efficiency.days_sales_outstanding.value}' is not a field of calculator.json"
+  },
+  "liquidity": {
+   "dropped": "finding: {ratios.liquidity.cash_runway_months.not_burning_cash} is not a number in the calculator this analyst saw"
+  },
+  "solvency": {
+   "dropped": "fields: '{ratios.solvency.total_debt.value}' is not a field of calculator.json"
+  },
+  "growth": {
+   "dropped": "fields: '{ratios.growth.revenue.trailing_four_quarters.value}' is not a field of calculator.json"
+  },
+  "free_cash_flow": {
+   "dropped": "fields: '{free_cash_flow.free_cash_flow_simple.value}' is not a field of calculator.json"
+  }
+ },
+ "dupont": {
+  "dropped": "fields: '{ratios.profitability.dupont.net_margin.value}' is not a field of calculator.json"
+ },
+ "anomalies": [],
+ "path_to_distress": {
+  "dropped": "fields: '{terms.trailing_four_quarters.operating_cash_flow.value}' is not a field of calculator.json"
+ },
+ "summary_ko": {},
+ "limits": "This analysis reads the company's health from its own filed numbers against its own past. It forecasts nothing, and it cannot see what is not in the filings.",
+ "normalized_quotes": 0,
+ "dropped_items": [
+  {
+   "where": "sections.profitability",
+   "reason": "fields: '{ratios.profitability.gross_margin.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "sections.efficiency",
+   "reason": "fields: '{ratios.efficiency.days_sales_outstanding.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "sections.liquidity",
+   "reason": "finding: {ratios.liquidity.cash_runway_months.not_burning_cash} is not a number in the calculator this analyst saw"
+  },
+  {
+   "where": "sections.solvency",
+   "reason": "fields: '{ratios.solvency.total_debt.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "sections.growth",
+   "reason": "fields: '{ratios.growth.revenue.trailing_four_quarters.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "sections.free_cash_flow",
+   "reason": "fields: '{free_cash_flow.free_cash_flow_simple.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "dupont",
+   "reason": "fields: '{ratios.profitability.dupont.net_margin.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "path_to_distress",
+   "reason": "fields: '{terms.trailing_four_quarters.operating_cash_flow.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[0]",
+   "id": "profitability_quarterly_operating_margin_negative",
+   "reason": "fields: '{ratios.growth.operating_income.this_quarter.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[1]",
+   "id": "profitability_returns_diluted_by_acquisition_capital",
+   "reason": "what: {ratios.profitability.invested_capital.value} is not a number in the calculator this analyst saw"
+  },
+  {
+   "where": "anomalies[2]",
+   "id": "profitability_effective_tax_rate_above_statutory",
+   "reason": "fields: '{tax_rate.effective_rate}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[3]",
+   "id": "efficiency_asset_turnover_fell_as_assets_doubled",
+   "reason": "fields: '{ratios.efficiency.asset_turnover.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[4]",
+   "id": "efficiency_days_sales_outstanding_at_a_six_quarter_high",
+   "reason": "fields: '{trend_table.quarters-back-0.ratios.days_sales_outstanding.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[5]",
+   "id": "liquidity_current_ratio_below_one",
+   "reason": "fields: '{ratios.liquidity.current_ratio.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[6]",
+   "id": "liquidity_convertible_notes_can_call_cash",
+   "reason": "fields: '{ratios.solvency.total_debt.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[7]",
+   "id": "solvency_purchase_commitments_exceed_liquid_balances",
+   "reason": "fields: '{terms.balances_now.unconditional_purchase_obligations.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[8]",
+   "id": "solvency_lease_liability_understated_in_calculator",
+   "reason": "fields: '{ratios.solvency.operating_lease_liability.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[9]",
+   "id": "growth_net_income_fell_against_a_tax_benefit_base",
+   "reason": "fields: '{ratios.growth.net_income.trailing_four_quarters.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[10]",
+   "id": "growth_quarterly_revenue_growth_acquisition_driven",
+   "reason": "fields: '{ratios.growth.revenue.year_over_year.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[11]",
+   "id": "free_cash_flow_negative_after_share_based_pay_and_acquisitions",
+   "reason": "fields: '{free_cash_flow.free_cash_flow_simple.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[12]",
+   "id": "free_cash_flow_repurchase_smaller_than_share_issuance",
+   "reason": "fields: '{terms.trailing_four_quarters.share_repurchases.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "limits",
+   "reason": "not the rules version's sentence; replaced by it"
+  }
+ ],
+ "dropped_count": 22
+}

@@ -1,0 +1,232 @@
+{
+ "ticker": "PANW",
+ "accession": "0001327567-26-000015",
+ "question": "Do reported earnings and cash reflect economic reality?",
+ "written_by": "single-agent control, one pass over the filing bundle and calculator_before_analysts.json",
+ "areas": {
+  "earnings_versus_cash": {
+   "dropped": "fields: '{earnings_versus_cash.operating_cash_flow_over_net_income.value}' is not a field of calculator.json"
+  },
+  "revenue_recognition": {
+   "dropped": "fields: '{ratios.growth.revenue.year_over_year.value}' is not a field of calculator.json"
+  },
+  "estimates_and_reserves": {
+   "dropped": "fields: '{terms.balances_now.bad_debt_allowance.value}' is not a field of calculator.json"
+  },
+  "cost_deferral": {
+   "dropped": "fields: '{terms.trailing_four_quarters.capital_expenditure.value}' is not a field of calculator.json"
+  },
+  "cash_flow_engineering_and_off_balance_sheet": {
+   "dropped": "fields: '{terms.balances_now.unconditional_purchase_obligations.value}' is not a field of calculator.json"
+  },
+  "controls_audit_and_filing_signals": {
+   "finding": "Management concludes disclosure controls are effective and reports no change in internal control over financial reporting during the quarter, even though the quarter consolidated a very large acquired company for the first time and the purchase price allocation is still provisional. A quarterly report carries no auditor's opinion, so the only external assurance is the review implicit in the filing. The bundle holds no earnings-release body for the current report filed the day before the quarterly report, and no late-filing notice is on record, so there is nothing in the filing calendar itself that signals stress.",
+   "verdict": "watch",
+   "evidence": [
+    "0001327567-26-000015:item_4_controls:3",
+    "0001327567-26-000015:item_4_controls:5",
+    "0001327567-26-000015:notes:3",
+    "0001327567-26-000015:notes:97"
+   ],
+   "fields": []
+  },
+  "cross_document_reconciliation": {
+   "dropped": "fields: '{ratios.solvency.total_debt.value}' is not a field of calculator.json"
+  },
+  "industry_lens": {
+   "dropped": "fields: '{trend_table.quarters-back-0.ratios.gross_margin.value}' is not a field of calculator.json"
+  }
+ },
+ "reconciliation": [],
+ "anomalies": [],
+ "adjustments": [],
+ "adjustments_note": "No additional adjustment is proposed. Share-based compensation and acquisition cash are already inside the calculator's quality-adjusted formula, and the other items that would merit one — contingent consideration payments in financing activities, the land purchase inside capital expenditure, the fair-valued convertible notes, and the period-end lease liability — have no calculator field to name, so a Python-applied adjustment cannot be expressed for them under the rule that an adjustment's amount is the absolute value of the field it names.",
+ "summary_ko": {},
+ "limits": "This analysis finds where the numbers and the explanations disagree, and where the company differs from its own past. It does not judge intent, and it cannot see evidence outside the filings, such as invoices or contracts.",
+ "normalized_quotes": 0,
+ "dropped_items": [
+  {
+   "where": "areas.earnings_versus_cash",
+   "reason": "fields: '{earnings_versus_cash.operating_cash_flow_over_net_income.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "areas.revenue_recognition",
+   "reason": "fields: '{ratios.growth.revenue.year_over_year.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "areas.estimates_and_reserves",
+   "reason": "fields: '{terms.balances_now.bad_debt_allowance.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "areas.cost_deferral",
+   "reason": "fields: '{terms.trailing_four_quarters.capital_expenditure.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "areas.cash_flow_engineering_and_off_balance_sheet",
+   "reason": "fields: '{terms.balances_now.unconditional_purchase_obligations.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "areas.cross_document_reconciliation",
+   "reason": "fields: '{ratios.solvency.total_debt.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "areas.industry_lens",
+   "reason": "fields: '{trend_table.quarters-back-0.ratios.gross_margin.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "reconciliation[0]",
+   "id": null,
+   "reason": "the item is not an object"
+  },
+  {
+   "where": "reconciliation[1]",
+   "id": null,
+   "reason": "the item is not an object"
+  },
+  {
+   "where": "reconciliation[2]",
+   "id": null,
+   "reason": "the item is not an object"
+  },
+  {
+   "where": "reconciliation[3]",
+   "id": null,
+   "reason": "the item is not an object"
+  },
+  {
+   "where": "anomalies[0]",
+   "id": "earnings_versus_cash_receivables_articulation_gap",
+   "reason": "fields: '{earnings_versus_cash.working_capital.receivables.balance_sheet_change.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[1]",
+   "id": "earnings_versus_cash_operating_loss_against_rising_operating_cash_flow",
+   "reason": "fields: '{ratios.growth.operating_income.this_quarter.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[2]",
+   "id": "earnings_versus_cash_share_based_compensation_exceeds_operating_income",
+   "reason": "fields: '{terms.trailing_four_quarters.share_based_compensation.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[3]",
+   "id": "earnings_versus_cash_net_income_smoother_than_cash",
+   "reason": "fields: '{earnings_versus_cash.smoothness.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[4]",
+   "id": "revenue_recognition_quarterly_growth_inflated_by_acquisitions",
+   "reason": "fields: '{ratios.growth.revenue.year_over_year.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[5]",
+   "id": "revenue_recognition_days_sales_outstanding_at_a_six_quarter_high",
+   "reason": "fields: '{trend_table.quarters-back-0.ratios.days_sales_outstanding.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[6]",
+   "id": "revenue_recognition_contract_liabilities_over_revenue_at_a_six_quarter_low",
+   "reason": "fields: '{trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[7]",
+   "id": "estimates_and_reserves_bad_debt_allowance_fell_while_receivables_rose",
+   "reason": "fields: '{terms.balances_now.bad_debt_allowance.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[8]",
+   "id": "estimates_and_reserves_contingent_consideration_gain_inside_operating_expense",
+   "reason": "fields: '{ratios.growth.operating_income.this_quarter.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[9]",
+   "id": "estimates_and_reserves_convertible_notes_revalued_through_earnings",
+   "reason": "fields: '{terms.trailing_four_quarters.pretax_income.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[10]",
+   "id": "estimates_and_reserves_goodwill_and_intangibles_dominate_assets",
+   "reason": "fields: '{trend_table.quarters-back-0.ratios.soft_asset_share.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[11]",
+   "id": "estimates_and_reserves_effective_tax_rate_above_statutory_and_negative_in_the_quarter",
+   "reason": "fields: '{tax_rate.effective_rate}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[12]",
+   "id": "cost_deferral_capital_expenditure_includes_land",
+   "reason": "fields: '{terms.trailing_four_quarters.capital_expenditure.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[13]",
+   "id": "cost_deferral_acquired_intangible_amortization_step_up",
+   "reason": "fields: '{terms.trailing_four_quarters.depreciation_and_amortization.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[14]",
+   "id": "cash_flow_engineering_and_off_balance_sheet_purchase_commitments_doubled",
+   "reason": "fields: '{terms.balances_now.unconditional_purchase_obligations.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[15]",
+   "id": "cash_flow_engineering_and_off_balance_sheet_contingent_consideration_paid_through_financing",
+   "reason": "fields: '{terms.cash_flow_families.acquisitions.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[16]",
+   "id": "cash_flow_engineering_and_off_balance_sheet_warrants_settled_in_shares",
+   "reason": "fields: '{terms.trailing_four_quarters.share_repurchases.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[17]",
+   "id": "cash_flow_engineering_and_off_balance_sheet_free_cash_flow_negative_after_share_based_pay_and_acquisitions",
+   "reason": "fields: '{free_cash_flow.free_cash_flow_simple.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[18]",
+   "id": "cash_flow_engineering_and_off_balance_sheet_financing_receivable_sales_untagged",
+   "reason": "what: {terms.trailing_four_quarters.proceeds_from_sale_of_receivables.missing} is not a number in the calculator this analyst saw"
+  },
+  {
+   "where": "anomalies[19]",
+   "id": "controls_audit_and_filing_signals_no_internal_control_change_despite_large_acquisition",
+   "reason": "fields: '{terms.balances_now.assets.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[20]",
+   "id": "cross_document_reconciliation_calculator_debt_zero_versus_convertible_notes_in_filing",
+   "reason": "fields: '{ratios.solvency.total_debt.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[21]",
+   "id": "cross_document_reconciliation_operating_lease_liability_stale",
+   "reason": "fields: '{ratios.solvency.operating_lease_liability.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[22]",
+   "id": "cross_document_reconciliation_liquid_balance_excludes_long_term_investments",
+   "reason": "fields: '{terms.cash_and_short_term_investments_now.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[23]",
+   "id": "industry_lens_acquired_units_produce_operating_loss",
+   "reason": "fields: '{ratios.growth.operating_income.this_quarter.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[24]",
+   "id": "industry_lens_gross_margin_at_a_six_quarter_low",
+   "reason": "fields: '{trend_table.quarters-back-0.ratios.gross_margin.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[25]",
+   "id": "industry_lens_distributor_concentration_of_receivables",
+   "reason": "fields: '{concentration.facts.0.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "limits",
+   "reason": "not the rules version's sentence; replaced by it"
+  }
+ ],
+ "dropped_count": 38
+}

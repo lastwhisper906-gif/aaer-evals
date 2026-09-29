@@ -1,0 +1,255 @@
+{
+ "scenarios": {
+  "bear": {
+   "revenue_growth_year_one": 0.015,
+   "terminal_growth": 0.01,
+   "operating_margin_year_one": 0.08,
+   "operating_margin_year_ten": 0.095,
+   "reinvestment_rate_year_one": 0.15,
+   "reinvestment_rate_year_ten": 0.25,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "Year-one growth barely above zero. The release's raised outlook rests on orders and backlog, which the release itself defines as non-GAAP measures that may be cancelled without penalty; the Riello and NORESCO exits are a stated revenue headwind for the year; China is down on both demand and price; global truck and trailer volumes are down across regions; and Americas commercial deliveries slipped on timing that the record cannot test. If organic growth reverts to the first half's pace rather than the quarter's, the divestiture headwind absorbs most of it.",
+     "quote": "~$225 million and ~$125 million year-over-year revenue headwind from Riello and NORESCO exits, respectively",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "ratios.growth.revenue.trailing_four_quarters",
+      "earnings_versus_cash.history.years.0.revenue_growth",
+      "ratios.growth.revenue.year_over_year",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound"
+     ],
+     "history": "Above the trailing four-quarter change of {ratios.growth.revenue.trailing_four_quarters|pct} and fiscal 2025's {earnings_versus_cash.history.years.0.revenue_growth|pct}, both declines, but well below the quarter's {ratios.growth.revenue.year_over_year|pct} and far below the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, which the fiscal 2024 acquisition inflated."
+    },
+    "terminal_growth": {
+     "reason": "A mature heating, cooling and refrigeration business growing at roughly the rate of inflation less continued share and price loss in China and promotional pricing in Europe; set far below the risk-free rate of {cost_of_capital.risk_free_rate.value|pct}.",
+     "quote": "Results in China decreased (down 14%) as end-markets experienced economic challenges impacting both demand and price.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "cost_of_capital.risk_free_rate",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound",
+      "earnings_versus_cash.history.years.0.revenue_growth"
+     ],
+     "history": "Far below the three-year compound growth of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, which includes the acquisition-driven fiscal 2024 jump of {earnings_versus_cash.history.years.1.revenue_growth|pct}, and only a little above fiscal 2025's decline of {earnings_versus_cash.history.years.0.revenue_growth|pct}."
+    },
+    "operating_margin_year_one": {
+     "reason": "Roughly the trailing GAAP margin, held: higher input costs including tariffs, unfavorable mix, price promotions in Europe, lower joint-venture earnings, rising warranty expense and restructuring that recurs in every period keep operating profit where the last four quarters put it, with no recovery from the first half's charges. Every one of the four segments reported lower profit in the quarter and in the six months.",
+     "quote": "Restructuring charges appear in fiscal 2025, the first quarter, the second quarter and both prior-year periods, roughly doubling in the six months, concentrated in Europe and increasingly in cost of sales; all are excluded from adjusted results.",
+     "quote_from": "analysis_accounting.json",
+     "fields": [
+      "ratios.profitability.operating_margin",
+      "earnings_versus_cash.history.years.0.operating_margin",
+      "earnings_versus_cash.history.operating_margin_three_year_average",
+      "ratios.growth.operating_income.year_over_year"
+     ],
+     "history": "About the trailing margin of {ratios.profitability.operating_margin|pct}, below fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct} and the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}; operating income fell {ratios.growth.operating_income.year_over_year|pct} year over year in the quarter."
+    },
+    "operating_margin_year_ten": {
+     "reason": "Some lift as amortization of acquired intangibles runs off, but restructuring, promotions, warranty costs and mix pressure persist and tariffs are never fully priced through, so the year-ten GAAP margin stays below the fiscal 2025 level.",
+     "quote": "In addition, price promotions, higher selling, general and administrative expenses as well as higher warranty-related expenses further impacted the segment.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "earnings_versus_cash.history.years.0.operating_margin",
+      "earnings_versus_cash.history.operating_margin_three_year_average",
+      "ratios.profitability.operating_margin"
+     ],
+     "history": "Below fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct} and the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}, above only the trailing {ratios.profitability.operating_margin|pct} among the periods in the record."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "Trailing net reinvestment is negative because depreciation and amortization far exceed capital expenditure and trade working capital released cash. The bear case assumes the first half's payables and accruals build reverses, the new U.S. factory lifts capital expenditure, and receivables and inventory absorb cash as they rebuild, so a material share of after-tax operating income has to be reinvested.",
+     "quote": "And the first half's operating cash flow gain came from payables, accruals and other operating items rather than from earnings, which fell.",
+     "quote_from": "analysis_financial.json",
+     "fields": [
+      "terms.trailing_four_quarters.capital_expenditure",
+      "terms.trailing_four_quarters.depreciation_and_amortization",
+      "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital",
+      "earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change"
+     ],
+     "history": "Above the trailing record, where capital expenditure of {terms.trailing_four_quarters.capital_expenditure.value} sits far below depreciation and amortization of {terms.trailing_four_quarters.depreciation_and_amortization.value} and trade working capital moved by {free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital.value}; the year-over-year payables change of {earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change.value} shows the build is within the year."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "As the non-cash amortization inside operating income fades, the shield that lets capital expenditure run below depreciation and amortization disappears, and a lower return on capital means more must be reinvested for each point of terminal growth.",
+     "quote": "Research and development costs relate to new product development and new technology innovation. Due to the variable nature of program development schedules, year-over-year spending levels can fluctuate.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "terms.trailing_four_quarters.capital_expenditure",
+      "terms.trailing_four_quarters.depreciation_and_amortization",
+      "ratios.profitability.return_on_assets"
+     ],
+     "history": "Well above the trailing record, where net reinvestment is negative, and above the year-one rate; the trailing return on assets of {ratios.profitability.return_on_assets|pct} is the measure of how little each unit of capital currently earns."
+    }
+   }
+  },
+  "base": {
+   "revenue_growth_year_one": 0.05,
+   "terminal_growth": 0.025,
+   "operating_margin_year_one": 0.1,
+   "operating_margin_year_ten": 0.13,
+   "reinvestment_rate_year_one": 0.05,
+   "reinvestment_rate_year_ten": 0.2,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "The release raised the full-year sales outlook and calls for organic growth in the mid-to-high single digits with a small currency tailwind, less the stated Riello and NORESCO headwinds. The quarter returned to organic growth on Americas residential and light commercial volumes, and orders and backlog are described as records. Year one is set at the middle of that guidance net of the divestitures, applied to the trailing four-quarter base, which already carries the stronger second quarter.",
+     "quote": "~$23 billionOrganic* up ~M-HSDFX 1%Net, Acquisitions / Divestitures (2%) ~$225 million and ~$125 million year-over-year revenue headwind from Riello and NORESCO exits, respectively",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "ratios.growth.revenue.year_over_year",
+      "ratios.growth.revenue.trailing_four_quarters",
+      "terms.trailing_four_quarters.revenue",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound"
+     ],
+     "history": "Above the quarter's {ratios.growth.revenue.year_over_year|pct}, above the trailing four-quarter change of {ratios.growth.revenue.trailing_four_quarters|pct} and fiscal 2025's {earnings_versus_cash.history.years.0.revenue_growth|pct}, and below the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, which rests on the fiscal 2024 acquisition rather than on organic growth."
+    },
+    "terminal_growth": {
+     "reason": "Long-run nominal growth for a mature global climate and refrigeration business: replacement demand, regulation-driven refrigerant transitions and data-center cooling support growth at about inflation plus a little, comfortably below the risk-free rate of {cost_of_capital.risk_free_rate.value|pct}.",
+     "quote": "Orders were very strong globally in the second quarter supported by continued data center demand.",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "cost_of_capital.risk_free_rate",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound",
+      "earnings_versus_cash.history.years.2.revenue_growth"
+     ],
+     "history": "Below the three-year compound growth of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, which the fiscal 2024 acquisition inflated, and between fiscal 2025's decline of {earnings_versus_cash.history.years.0.revenue_growth|pct} and fiscal 2023's {earnings_versus_cash.history.years.2.revenue_growth|pct}."
+    },
+    "operating_margin_year_one": {
+     "reason": "Roughly the fiscal 2025 GAAP margin. The raised adjusted operating profit outlook implies an adjusted margin in the mid-teens, from which amortization of acquired intangibles, restructuring that has recurred in every period and acquisition and divestiture costs take several points; the June quarter's GAAP margin already sits well above the trailing figure, which carries the first half's restructuring and the Riello impairment. Note that Python applies the trailing effective tax rate of {tax_rate.value|pct}, which discrete benefits hold far below the statutory rate; the margins here are pre-tax GAAP margins and do not offset that.",
+     "quote": "Adjusted operating profit is a non-GAAP measure and defined as consolidated operating profit (a GAAP measure), excluding restructuring costs, amortization of acquired intangible assets and other significant items of a nonoperational nature.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "ratios.profitability.operating_margin",
+      "earnings_versus_cash.history.years.0.operating_margin",
+      "earnings_versus_cash.history.operating_margin_three_year_average",
+      "tax_rate"
+     ],
+     "history": "Above the trailing margin of {ratios.profitability.operating_margin|pct}, at fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct}, and below the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}."
+    },
+    "operating_margin_year_ten": {
+     "reason": "As acquired-intangible amortization runs off and restructuring savings and productivity come through, the GAAP margin converges toward the adjusted margin, stopping short of it because some amortization remains and restructuring has recurred in every period; tariffs and mix are assumed to be priced through over the decade.",
+     "quote": "These amounts were partially offset by favorable productivity initiatives, improved price and higher volumes in certain end-markets.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "earnings_versus_cash.history.years.1.operating_margin",
+      "earnings_versus_cash.history.years.4.operating_margin",
+      "earnings_versus_cash.history.operating_margin_three_year_average"
+     ],
+     "history": "Above fiscal 2024's {earnings_versus_cash.history.years.1.operating_margin|pct} and fiscal 2021's {earnings_versus_cash.history.years.4.operating_margin|pct}, and above the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}, but below the gain-inflated fiscal 2022 and fiscal 2020 margins."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "Capital expenditure runs at about the depreciation of tangible assets, while the larger part of depreciation and amortization is non-cash amortization of acquired intangibles that needs no replacement; trade working capital released cash over the trailing year and acquisitions were small. The new U.S. factory and a normal working-capital build with growth mean a small positive share of after-tax operating income is reinvested, consistent with the release holding its free-cash-flow outlook while raising profit.",
+     "quote": "Includes ~($0.05) adj. EPS impact from NORESCO exit and new U.S. factory costs",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "terms.trailing_four_quarters.capital_expenditure",
+      "terms.trailing_four_quarters.depreciation_and_amortization",
+      "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital",
+      "terms.cash_flow_families.acquisitions",
+      "free_cash_flow.free_cash_flow_simple"
+     ],
+     "history": "Above the trailing record, where capital expenditure of {terms.trailing_four_quarters.capital_expenditure.value} against depreciation and amortization of {terms.trailing_four_quarters.depreciation_and_amortization.value}, a trade working capital change of {free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital.value} and acquisitions of {terms.cash_flow_families.acquisitions.cash_effect} make net reinvestment negative; simple free cash flow was {free_cash_flow.free_cash_flow_simple.value}."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "By year ten the amortization shield has largely run off, so capital expenditure and working capital must be funded from after-tax operating income at a rate consistent with the terminal growth rate and a return on new capital in the low teens.",
+     "quote": "Free cash flow is a non-GAAP financial measure that represents net cash flows provided by continuing operating activities (a GAAP measure) less capital expenditures.",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "terms.trailing_four_quarters.capital_expenditure",
+      "terms.trailing_four_quarters.depreciation_and_amortization",
+      "earnings_versus_cash.history.years.0.free_cash_flow_simple",
+      "earnings_versus_cash.history.years.0.operating_income"
+     ],
+     "history": "Above the trailing record's negative net reinvestment and above the year-one rate; fiscal 2025's simple free cash flow of {earnings_versus_cash.history.years.0.free_cash_flow_simple} against operating income of {earnings_versus_cash.history.years.0.operating_income} shows how little of operating income the business has had to retain so far."
+    }
+   }
+  },
+  "bull": {
+   "revenue_growth_year_one": 0.08,
+   "terminal_growth": 0.035,
+   "operating_margin_year_one": 0.115,
+   "operating_margin_year_ten": 0.155,
+   "reinvestment_rate_year_one": 0.0,
+   "reinvestment_rate_year_ten": 0.15,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "Orders up sharply, commercial HVAC and data-center orders far higher, record backlog and organic growth back earlier than expected: the bull case takes the high end of the organic outlook, adds the currency tailwind and assumes backlog converts faster than the divestiture headwind bites.",
+     "quote": "Organic sales returned to growth earlier than expected, up 3%, driven by strong performance in our CSA segment. Improving Residential and Light Commercial markets in CSA and CSE are encouraging. Orders were very strong globally in the second quarter supported by continued data center demand. Given record backlog levels and our year-to-date performance, we are raising our full-year outlook and now expect sales of about $23 billion and adjusted EPS of ~$2.90.",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "ratios.growth.revenue.year_over_year",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound",
+      "trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue"
+     ],
+     "history": "About the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, which required an acquisition, and about twice the quarter's {ratios.growth.revenue.year_over_year|pct}; contract liabilities over quarterly revenue of {trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue.value} are near a record, consistent with the backlog narrative."
+    },
+    "terminal_growth": {
+     "reason": "Data-center cooling, electrification of heating and refrigerant transitions keep the business growing a little faster than nominal output for a long time; still below the risk-free rate of {cost_of_capital.risk_free_rate.value|pct}.",
+     "quote": "Total company orders1 up ~40%; Commercial HVAC1 up ~65%; data centers up >300%",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "cost_of_capital.risk_free_rate",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound",
+      "earnings_versus_cash.history.years.2.revenue_growth"
+     ],
+     "history": "Below the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and fiscal 2023's {earnings_versus_cash.history.years.2.revenue_growth|pct}, above fiscal 2025's decline of {earnings_versus_cash.history.years.0.revenue_growth|pct}."
+    },
+    "operating_margin_year_one": {
+     "reason": "Adjusted operating profit guidance raised, the June quarter's GAAP margin already well above the trailing figure, productivity and price offsetting input costs, and restructuring charges falling sharply in the quarter from the first quarter's peak: year one recovers to about the fiscal 2024 GAAP level.",
+     "quote": "Increases Full-year Outlook for Sales, Adj. Op. Profit and Adj. EPS",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "earnings_versus_cash.history.years.1.operating_margin",
+      "earnings_versus_cash.history.years.2.operating_margin",
+      "ratios.profitability.operating_margin",
+      "ratios.growth.operating_income.quarter_over_quarter"
+     ],
+     "history": "About fiscal 2024's {earnings_versus_cash.history.years.1.operating_margin|pct} and fiscal 2023's {earnings_versus_cash.history.years.2.operating_margin|pct}, well above the trailing {ratios.profitability.operating_margin|pct}; operating income rose {ratios.growth.operating_income.quarter_over_quarter|pct} from the restructuring-burdened first quarter."
+    },
+    "operating_margin_year_ten": {
+     "reason": "Amortization of acquired intangibles largely gone, restructuring complete and mix improving toward commercial HVAC and data-center cooling: the GAAP margin reaches roughly the adjusted margin the raised outlook implies for this year.",
+     "quote": "Adjusted operating margin of 17.2% was down 190 basis points from last year, predominantly due to favorable volume and productivity more than offset by the impact of increased input costs and unfavorable business mix.",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "earnings_versus_cash.history.years.5.operating_margin",
+      "earnings_versus_cash.history.operating_margin_three_year_average"
+     ],
+     "history": "Below fiscal 2020's {earnings_versus_cash.history.years.5.operating_margin|pct} and the gain-inflated fiscal 2022, above every other filled year and the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "Net reinvestment is negative on the trailing record: capital expenditure is a fraction of depreciation and amortization, trade working capital released cash and acquisitions were small. The bull case assumes that persists through year one, with the factory spend absorbed inside the depreciation shield, so none of after-tax operating income needs to be retained.",
+     "quote": "The year-over-year increase in net cash provided by continuing operating activities was primarily driven by favorable changes in working capital balances partially offset by lower net earnings compared with the prior period.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "terms.trailing_four_quarters.capital_expenditure",
+      "terms.trailing_four_quarters.depreciation_and_amortization",
+      "free_cash_flow.free_cash_flow_to_firm",
+      "earnings_versus_cash.operating_cash_flow_over_net_income"
+     ],
+     "history": "Still above the trailing record, where net reinvestment is negative and free cash flow to the firm of {free_cash_flow.free_cash_flow_to_firm.value} exceeds after-tax operating income; operating cash flow over net income is {earnings_versus_cash.operating_cash_flow_over_net_income.value}."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "Higher returns on new capital mean the terminal growth rate is funded with a smaller share of after-tax operating income even after the amortization shield has run off.",
+     "quote": "In addition, we continue to invest to prepare for future product innovations and digital controls technologies.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "terms.trailing_four_quarters.capital_expenditure",
+      "terms.trailing_four_quarters.depreciation_and_amortization"
+     ],
+     "history": "Above the trailing record's negative net reinvestment and above the year-one rate, below the base and bear year-ten rates."
+    }
+   }
+  }
+ },
+ "wacc_overrides": {
+  "pre_tax_cost_of_debt": {
+   "value": 0.0365,
+   "reason": "The calculator prints pre_tax_cost_of_debt as missing because interest expense is not tagged for the year-to-date period. The MD&A states the weighted-average interest rate on the long-term notes, which make up most of total debt of {terms.debt_now.value}; commercial paper within current debt of {terms.debt_now.parts.debt_current.value} carries a rate not stated in these inputs, and the quarter's interest expense rose because of it, so the true blended rate may sit a little above the notes' rate. The notes' stated rate is the only figure in the inputs and is used as the pre-tax cost of debt.",
+   "quote": "Interest payments related to long-term notes are expected to approximate $405 million per year, reflecting an approximate weighted-average interest rate of 3.65%.",
+   "quote_from": "input_mdna.md",
+   "fields": [
+    "cost_of_capital.pre_tax_cost_of_debt",
+    "terms.debt_now",
+    "terms.debt_now.parts.debt_current"
+   ]
+  }
+ },
+ "dropped_items": [],
+ "dropped_count": 0
+}

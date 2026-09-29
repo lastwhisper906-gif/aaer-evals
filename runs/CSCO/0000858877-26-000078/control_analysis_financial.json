@@ -1,0 +1,187 @@
+{
+ "ticker": "CSCO",
+ "filing": "the quarterly report identified by {accession}, form {form}, for the period ended {period_end}, read at the cutoff {cutoff}",
+ "question": "how healthy is this company?",
+ "author": "single-agent control (one agent, no reader or analyst layers)",
+ "sections": {
+  "profitability": {
+   "dropped": "fields: '{ratios.profitability.gross_margin.value}' is not a field of calculator.json"
+  },
+  "efficiency": {
+   "dropped": "fields: '{ratios.efficiency.days_sales_outstanding.value}' is not a field of calculator.json"
+  },
+  "liquidity": {
+   "dropped": "fields: '{ratios.liquidity.current_ratio.value}' is not a field of calculator.json"
+  },
+  "solvency": {
+   "dropped": "fields: '{ratios.solvency.total_debt.value}' is not a field of calculator.json"
+  },
+  "growth": {
+   "dropped": "fields: '{ratios.growth.revenue.year_over_year.value}' is not a field of calculator.json"
+  },
+  "free_cash_flow": {
+   "dropped": "fields: '{free_cash_flow.free_cash_flow_simple.value}' is not a field of calculator.json"
+  }
+ },
+ "dupont": {
+  "dropped": "fields: '{ratios.profitability.dupont.net_margin.value}' is not a field of calculator.json"
+ },
+ "anomalies": [],
+ "path_to_distress": {
+  "trigger": "A pause in AI-infrastructure orders from service-provider and cloud customers, or a memory-cost spike that cannot be passed through, after the company has already bought the inventory and signed the purchase commitments sized to that demand.",
+  "sequence": [
+   "Revenue growth reverts toward the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound} or turns negative as it did in the fiscal year with {earnings_versus_cash.history.years.1.revenue_growth}, while services and subscription revenue keep shrinking, so there is no recurring offset.",
+   "Inventory of {terms.balances_now.inventory.value}, held mostly as raw materials and work in process, and the firm purchase commitments due within a year must be written down or carried; the reserve that would absorb this has been shrinking, so the charge lands directly in product gross margin, which is already at a six-quarter low of {trend_table.quarters-back-0.ratios.gross_margin.value}.",
+   "Operating leverage runs in reverse: the operating margin expansion to {ratios.profitability.operating_margin.value} came from opex growing slower than revenue, so a revenue stall plus the announced restructuring charge pushes the margin back below the prior fiscal year's {earnings_versus_cash.history.years.0.operating_margin}.",
+   "Operating cash flow, already down {ratios.growth.operating_cash_flow.trailing_four_quarters.value} on a trailing basis, falls further while dividends of {terms.trailing_four_quarters.dividends_paid.value} continue and the current ratio sits at {ratios.liquidity.current_ratio.value}.",
+   "The funding gap that commercial paper of {terms.debt_now.parts.debt_current.value} in current debt has been bridging must be rolled or termed out; if the paper market tightens, the undrawn revolver is drawn and buybacks stop, which is where the sequence ends for an issuer with interest coverage of {ratios.solvency.interest_coverage.value} and a note ladder whose largest block is beyond five years.",
+   "Only if Security and Splunk keep stalling would the goodwill that exceeds stockholders' equity of {terms.balances_now.stockholders_equity.value} come under test, and an impairment would be non-cash but would leave book equity near zero."
+  ],
+  "mitigants": [
+   "Interest coverage on operating income of {ratios.solvency.interest_coverage.value} and a covenant minimum far below it.",
+   "Cash and investments of {terms.cash_and_short_term_investments_now.value}, an undrawn revolving facility, and commercial-paper capacity beyond current use.",
+   "Deferred revenue and remaining performance obligations that convert to revenue without new orders, with half of the obligations due within twelve months.",
+   "Trailing free cash flow of {free_cash_flow.free_cash_flow_simple.value} that remains large in absolute terms and the ability to suspend repurchases at any time.",
+   "A senior note ladder with only one meaningful maturity next fiscal year and the largest block beyond five years."
+  ],
+  "watch_items": [
+   "Nine-month provisions for inventory and purchase commitments relative to inventory {terms.balances_now.inventory.value} and to the commitment total in the next report.",
+   "Commercial paper outstanding and current debt {terms.debt_now.parts.debt_current.value} against cash and investments.",
+   "Remaining performance obligations and deferred revenue direction against reported revenue growth {ratios.growth.revenue.year_over_year.value}.",
+   "Product gross margin bridge: mix, pricing and memory-cost lines.",
+   "Days sales of inventory {trend_table.quarters-back-0.ratios.days_sales_of_inventory.value} and finished-goods share of inventory.",
+   "Whether dividends plus repurchases stay above free cash flow for a second trailing year."
+  ],
+  "assessment": "Distress in the sense of an inability to service debt is remote: coverage is high, maturities are long, and the company controls a large discretionary buyback. The realistic bad path is an earnings and cash-flow air pocket, with inventory charges, a margin reversal and a debt-funded dividend, not a solvency event.",
+  "evidence": [
+   "0000858877-26-000078:mdna:256",
+   "0000858877-26-000078:mdna:43",
+   "0000858877-26-000078:notes:184",
+   "0000858877-26-000078:mdna:200",
+   "0000858877-26-000078:mdna:273",
+   "0000858877-26-000078:mdna:274",
+   "0000858877-26-000078:notes:159",
+   "0000858877-26-000078:notes:83",
+   "0000858877-26-000078:mdna:114",
+   "0000858877-26-000078:notes:57"
+  ]
+ },
+ "summary_ko": {},
+ "limits": "This analysis reads the company's health from its own filed numbers against its own past. It forecasts nothing, and it cannot see what is not in the filings.",
+ "normalized_quotes": 0,
+ "dropped_items": [
+  {
+   "where": "sections.profitability",
+   "reason": "fields: '{ratios.profitability.gross_margin.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "sections.efficiency",
+   "reason": "fields: '{ratios.efficiency.days_sales_outstanding.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "sections.liquidity",
+   "reason": "fields: '{ratios.liquidity.current_ratio.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "sections.solvency",
+   "reason": "fields: '{ratios.solvency.total_debt.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "sections.growth",
+   "reason": "fields: '{ratios.growth.revenue.year_over_year.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "sections.free_cash_flow",
+   "reason": "fields: '{free_cash_flow.free_cash_flow_simple.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "dupont",
+   "reason": "fields: '{ratios.profitability.dupont.net_margin.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[0]",
+   "id": "liquidity_current_ratio_below_one",
+   "reason": "fields: '{ratios.liquidity.current_ratio.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[1]",
+   "id": "liquidity_short_term_debt_nearly_doubles_on_commercial_paper",
+   "reason": "fields: '{terms.debt_now.parts.debt_current.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[2]",
+   "id": "liquidity_purchase_commitments_due_within_one_year_approach_cash_and_investments",
+   "reason": "fields: '{terms.cash_and_short_term_investments_now.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[3]",
+   "id": "efficiency_days_sales_of_inventory_at_a_six_quarter_high",
+   "reason": "fields: '{trend_table.quarters-back-0.ratios.days_sales_of_inventory.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[4]",
+   "id": "efficiency_days_sales_outstanding_second_highest_of_six_quarters",
+   "reason": "fields: '{trend_table.quarters-back-0.ratios.days_sales_outstanding.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[5]",
+   "id": "profitability_gross_margin_at_a_six_quarter_low_while_operating_margin_expands",
+   "reason": "fields: '{trend_table.quarters-back-0.ratios.gross_margin.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[6]",
+   "id": "profitability_other_income_swing_from_investment_gains",
+   "reason": "fields: '{terms.trailing_four_quarters.pretax_income.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[7]",
+   "id": "profitability_effective_tax_rate_normalizes_after_a_prior_year_one_time_benefit",
+   "reason": "fields: '{tax_rate.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[8]",
+   "id": "growth_remaining_performance_obligations_flat_while_revenue_grows_double_digit",
+   "reason": "fields: '{ratios.growth.revenue.year_over_year.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[9]",
+   "id": "growth_services_and_subscription_revenue_shrink",
+   "reason": "fields: '{ratios.growth.revenue.year_over_year.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[10]",
+   "id": "free_cash_flow_operating_cash_flow_declines_while_earnings_rise",
+   "reason": "fields: '{terms.trailing_four_quarters.operating_cash_flow.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[11]",
+   "id": "free_cash_flow_shareholder_returns_exceed_free_cash_flow",
+   "reason": "fields: '{terms.trailing_four_quarters.dividends_paid.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[12]",
+   "id": "free_cash_flow_capital_expenditure_rising",
+   "reason": "fields: '{terms.trailing_four_quarters.capital_expenditure.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[13]",
+   "id": "solvency_negative_tangible_equity_from_goodwill",
+   "reason": "fields: '{terms.balances_now.stockholders_equity.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[14]",
+   "id": "solvency_net_debt_rises_year_over_year",
+   "reason": "fields: '{ratios.solvency.total_debt.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[15]",
+   "id": "solvency_ebitda_and_debt_to_ebitda_unavailable",
+   "reason": "what: {ratios.solvency.ebitda} is not a number in the calculator this analyst saw"
+  },
+  {
+   "where": "limits",
+   "reason": "not the rules version's sentence; replaced by it"
+  }
+ ],
+ "dropped_count": 24
+}

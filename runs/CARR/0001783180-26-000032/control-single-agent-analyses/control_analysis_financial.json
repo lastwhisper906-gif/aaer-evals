@@ -1,0 +1,705 @@
+{
+  "ticker": "CARR",
+  "accession": "0001783180-26-000032",
+  "question": "how healthy is this company?",
+  "sections": {
+    "profitability": {
+      "finding": "Trailing GAAP operating margin ({ratios.profitability.operating_margin}) sits well below the prior fiscal year ({earnings_versus_cash.history.years.0.operating_margin}) and the three-year average ({earnings_versus_cash.history.operating_margin_three_year_average}); net margin is {ratios.profitability.net_margin} and return on assets {ratios.profitability.return_on_assets}. The quarter was better than the half: quarterly operating profit fell by a high-single-digit percentage year on year ({ratios.growth.operating_income.year_over_year}) on revenue that rose ({ratios.growth.revenue.year_over_year}), so the margin decline is a tariff, input-cost and mix story rather than a volume one, and gross margin fell in the quarter and more in the half. Every segment's margin declined, Asia-Pacific most, partly on lower joint-venture income. Adjusted operating margin, which strips out intangible amortization, restructuring, the Riello impairment and deal costs, fell less, and the gap between GAAP and adjusted profit widened. Return on equity and return on invested capital cannot be computed from the record because equity is not tagged, although the balance sheet shows equity shrinking on repurchases and currency translation.",
+      "verdict": "profitable but compressing; GAAP margin is at a low relative to its own three-year average",
+      "evidence": [
+        "0001783180-26-000030:8k_2_02:19",
+        "0001783180-26-000030:8k_2_02:21",
+        "0001783180-26-000030:8k_2_02:97",
+        "0001783180-26-000032:mdna:26",
+        "0001783180-26-000032:mdna:27",
+        "0001783180-26-000032:mdna:57",
+        "0001783180-26-000032:mdna:58",
+        "0001783180-26-000032:mdna:110",
+        "0001783180-26-000030:8k_2_02:111",
+        "0001783180-26-000030:8k_2_02:88"
+      ],
+      "fields": [
+        "{ratios.profitability.operating_margin}",
+        "{ratios.profitability.net_margin}",
+        "{ratios.profitability.return_on_assets}",
+        "{ratios.profitability.return_on_equity}",
+        "{ratios.profitability.return_on_invested_capital}",
+        "{earnings_versus_cash.history.years.0.operating_margin}",
+        "{earnings_versus_cash.history.years.1.operating_margin}",
+        "{earnings_versus_cash.history.operating_margin_three_year_average}",
+        "{ratios.growth.operating_income.year_over_year}",
+        "{ratios.growth.revenue.year_over_year}"
+      ]
+    },
+    "efficiency": {
+      "finding": "Trailing days sales outstanding ({ratios.efficiency.days_sales_outstanding}) is ordinary for an industrial with distributor customers; the quarterly measure ({trend_table.quarters-back-0.ratios.days_sales_outstanding}) is the second lowest of seven quarters after the prior quarter's series high, so collection improved into the season. Asset turnover ({ratios.efficiency.asset_turnover}) is low because goodwill and intangibles are most of the asset base. Trade working capital fell year on year ({free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now} against {free_cash_flow.free_cash_flow_to_firm.trade_working_capital.a_year_earlier}) as receivables and inventory ended below the prior-year quarter, which shows up as a release in the firm-level free-cash-flow calculation ({free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital}). Inventory days and payable days cannot be computed for lack of a cost-of-revenue tag; the last filled annual inventory-days reading ({trend_table.years-back-1.ratios.days_sales_of_inventory}) was moderate. From year-end, inventory rose with finished goods leading, receivables rose seasonally, and receivables from equity-method joint ventures grew faster than the total.",
+      "verdict": "efficient on a year-on-year view; the seasonal build is within pattern, with joint-venture receivables the item to watch",
+      "evidence": [
+        "0001783180-26-000030:8k_2_02:88",
+        "0001783180-26-000032:notes:13",
+        "0001783180-26-000032:notes:123",
+        "0001783180-26-000030:8k_2_02:93"
+      ],
+      "fields": [
+        "{ratios.efficiency.days_sales_outstanding}",
+        "{trend_table.quarters-back-0.ratios.days_sales_outstanding}",
+        "{trend_table.quarters-back-1.ratios.days_sales_outstanding}",
+        "{ratios.efficiency.asset_turnover}",
+        "{ratios.efficiency.days_sales_of_inventory}",
+        "{ratios.efficiency.days_payables_outstanding}",
+        "{ratios.efficiency.cash_conversion_cycle}",
+        "{trend_table.years-back-1.ratios.days_sales_of_inventory}",
+        "{free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now}",
+        "{free_cash_flow.free_cash_flow_to_firm.trade_working_capital.a_year_earlier}",
+        "{free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital}"
+      ]
+    },
+    "liquidity": {
+      "finding": "The current ratio ({ratios.liquidity.current_ratio}) is barely above one and the quick ratio ({ratios.liquidity.quick_ratio}) is below one half. Cash ({terms.balances_now.cash}) is down from a year earlier ({terms.balances_a_year_earlier.cash}), and nearly all of it is held by foreign subsidiaries. Current debt ({terms.debt_now.parts.debt_current}) jumped from a year ago ({terms.debt_a_year_earlier.parts.debt_current}) because the notes maturing early next year were reclassified to current and commercial paper roughly doubled from December. Against that, the revolving credit facility is undrawn and supports the commercial-paper program, covenants are met, the Riello sale closed the day after quarter end bringing gross proceeds, and the company is not burning cash ({ratios.liquidity.cash_runway_months}). Broad net working capital excluding cash and current debt turned positive from negative a year earlier ({free_cash_flow.net_working_capital_broad_not_used.now}), so the thin current ratio is a financing-mix effect rather than an operating squeeze.",
+      "verdict": "thin on ratios, adequate on access; refinancing the current notes and rolling commercial paper is the near-term task",
+      "evidence": [
+        "0001783180-26-000030:8k_2_02:88",
+        "0001783180-26-000032:notes:24",
+        "0001783180-26-000032:notes:26",
+        "0001783180-26-000032:notes:29",
+        "0001783180-26-000032:notes:31",
+        "0001783180-26-000032:notes:35",
+        "0001783180-26-000032:mdna:156",
+        "0001783180-26-000032:mdna:162",
+        "0001783180-26-000032:mdna:167"
+      ],
+      "fields": [
+        "{ratios.liquidity.current_ratio}",
+        "{ratios.liquidity.quick_ratio}",
+        "{ratios.liquidity.cash_runway_months}",
+        "{terms.balances_now.cash}",
+        "{terms.balances_a_year_earlier.cash}",
+        "{terms.balances_now.current_assets}",
+        "{terms.balances_now.current_liabilities}",
+        "{terms.debt_now.parts.debt_current}",
+        "{terms.debt_a_year_earlier.parts.debt_current}",
+        "{free_cash_flow.net_working_capital_broad_not_used.now}",
+        "{free_cash_flow.net_working_capital_broad_not_used.a_year_earlier}"
+      ]
+    },
+    "solvency": {
+      "finding": "Total debt ({ratios.solvency.total_debt}) is up from a year earlier ({terms.debt_a_year_earlier}) and net debt ({ratios.solvency.net_debt}) rose from December as shareholder returns exceeded free cash flow. Debt over GAAP EBITDA ({ratios.solvency.debt_over_ebitda}) is close to four times, elevated for an investment-grade industrial, though this EBITDA ({ratios.solvency.ebitda}) is depressed by restructuring and the impairment and the company's adjusted profit would give a lower multiple. Liabilities over assets ({ratios.solvency.liabilities_over_assets}) is moderate and the debt-to-capitalization ratio management reports is under half. Interest coverage is missing from the calculator; the filing shows half-year interest expense covered several times by operating profit even in a weak half, the weighted-average coupon on the long-term notes is low, and maturities are laddered out nearly three decades. The fair value of the notes is below carrying value, a reflection of low coupons rather than credit stress. Operating lease liabilities ({ratios.solvency.operating_lease_liability}), the AFFF settlement instalments and debt inside held-for-sale groups add modest obligations outside the debt lines. Goodwill exceeds equity, so book solvency rests on intangibles holding their value.",
+      "verdict": "leverage elevated on GAAP EBITDA but structurally sound: low fixed coupons, a long maturity ladder and covenant headroom",
+      "evidence": [
+        "0001783180-26-000032:mdna:160",
+        "0001783180-26-000032:mdna:163",
+        "0001783180-26-000032:mdna:68",
+        "0001783180-26-000032:mdna:50",
+        "0001783180-26-000032:notes:28",
+        "0001783180-26-000032:notes:35",
+        "0001783180-26-000032:notes:49",
+        "0001783180-26-000032:notes:105",
+        "0001783180-26-000032:notes:140",
+        "0001783180-26-000030:8k_2_02:121",
+        "0001783180-26-000030:8k_2_02:88"
+      ],
+      "fields": [
+        "{ratios.solvency.total_debt}",
+        "{terms.debt_a_year_earlier}",
+        "{ratios.solvency.net_debt}",
+        "{ratios.solvency.ebitda}",
+        "{ratios.solvency.debt_over_ebitda}",
+        "{ratios.solvency.liabilities_over_assets}",
+        "{ratios.solvency.interest_coverage}",
+        "{ratios.solvency.operating_lease_liability}",
+        "{cost_of_capital.pre_tax_cost_of_debt}",
+        "{cost_of_capital.weights}"
+      ]
+    },
+    "growth": {
+      "finding": "Quarterly revenue grew ({ratios.growth.revenue.year_over_year}) with organic growth in the low single digits and currency a small tailwind, yet trailing revenue is slightly down ({ratios.growth.revenue.trailing_four_quarters}) because of divestitures and a weak first quarter; the three-year compound rate ({earnings_versus_cash.history.revenue_growth_three_year_compound}) reflects the large acquisition year and the disposals that followed rather than steady organic growth. Operating income fell year on year in the quarter ({ratios.growth.operating_income.year_over_year}) and far more on a trailing basis ({ratios.growth.operating_income.trailing_four_quarters}); the trailing net-income decline ({ratios.growth.net_income.trailing_four_quarters}) is distorted by prior-year disposal gains. Forward indicators are stronger than reported numbers: orders up sharply, record backlog, and raised full-year guidance for sales, adjusted operating profit and adjusted EPS, offset by roughly two points of revenue headwind from the Riello and Noresco exits. Quarter-on-quarter revenue growth ({ratios.growth.revenue.quarter_over_quarter}) is seasonal.",
+      "verdict": "revenue inflecting upward while profit lags; growth quality depends on converting cancellable orders at acceptable margin",
+      "evidence": [
+        "0001783180-26-000030:8k_2_02:6",
+        "0001783180-26-000030:8k_2_02:11",
+        "0001783180-26-000030:8k_2_02:14",
+        "0001783180-26-000030:8k_2_02:48",
+        "0001783180-26-000030:8k_2_02:78",
+        "0001783180-26-000032:mdna:22",
+        "0001783180-26-000032:mdna:23",
+        "0001783180-26-000032:mdna:53",
+        "0001783180-26-000032:mdna:54"
+      ],
+      "fields": [
+        "{ratios.growth.revenue.year_over_year}",
+        "{ratios.growth.revenue.quarter_over_quarter}",
+        "{ratios.growth.revenue.trailing_four_quarters}",
+        "{ratios.growth.operating_income.year_over_year}",
+        "{ratios.growth.operating_income.trailing_four_quarters}",
+        "{ratios.growth.net_income.year_over_year}",
+        "{ratios.growth.net_income.trailing_four_quarters}",
+        "{earnings_versus_cash.history.revenue_growth_three_year_compound}",
+        "{earnings_versus_cash.history.years.0.revenue_growth}",
+        "{earnings_versus_cash.history.years.1.revenue_growth}"
+      ]
+    },
+    "free_cash_flow": {
+      "finding": "Simple free cash flow over the trailing four quarters ({free_cash_flow.free_cash_flow_simple}) is well above net income, and the quality-adjusted figure after share-based compensation and acquisitions ({free_cash_flow.free_cash_flow_quality_adjusted}) remains healthy. Free cash flow to firm ({free_cash_flow.free_cash_flow_to_firm}) is higher still but rests on the calculator's depressed tax rate ({tax_rate}) and a working-capital release, so it overstates the sustainable level. Free cash flow to equity ({free_cash_flow.free_cash_flow_to_equity}) is inflated by net borrowing ({free_cash_flow.free_cash_flow_to_equity.net_borrowing}) that is almost entirely commercial paper. Half-year free cash flow was below the prior year even though the quarter was much stronger, because the first quarter produced little. Capital expenditure is rising ({terms.trailing_four_quarters.capital_expenditure} versus {terms.trailing_four_quarters_a_year_earlier.capital_expenditure}) for new factory capacity. Repurchases ({terms.trailing_four_quarters.share_repurchases}) plus dividends ({terms.trailing_four_quarters.dividends_paid}) exceeded free cash flow, so returns were partly borrowed. Guidance holds full-year free cash flow about level with last year, which requires a strong second half.",
+      "verdict": "free cash flow is real and above earnings but fully distributed; the second half must deliver most of the year",
+      "evidence": [
+        "0001783180-26-000030:8k_2_02:44",
+        "0001783180-26-000030:8k_2_02:48",
+        "0001783180-26-000030:8k_2_02:93",
+        "0001783180-26-000030:8k_2_02:12",
+        "0001783180-26-000032:mdna:178",
+        "0001783180-26-000032:mdna:179"
+      ],
+      "fields": [
+        "{free_cash_flow.free_cash_flow_simple}",
+        "{free_cash_flow.free_cash_flow_quality_adjusted}",
+        "{free_cash_flow.free_cash_flow_to_firm}",
+        "{free_cash_flow.free_cash_flow_to_equity}",
+        "{free_cash_flow.free_cash_flow_to_equity.net_borrowing}",
+        "{tax_rate}",
+        "{terms.trailing_four_quarters.capital_expenditure}",
+        "{terms.trailing_four_quarters_a_year_earlier.capital_expenditure}",
+        "{terms.trailing_four_quarters.share_repurchases}",
+        "{terms.trailing_four_quarters.dividends_paid}",
+        "{earnings_versus_cash.history.years.0.free_cash_flow_simple}",
+        "{ratios.growth.operating_cash_flow.year_over_year}"
+      ]
+    }
+  },
+  "dupont": {
+    "net_margin": "{ratios.profitability.dupont.net_margin}",
+    "asset_turnover": "{ratios.profitability.dupont.asset_turnover}",
+    "equity_multiplier": "{ratios.profitability.dupont.equity_multiplier}",
+    "return_on_assets": "{ratios.profitability.return_on_assets}",
+    "return_on_equity": "{ratios.profitability.return_on_equity}",
+    "reading": "Return on assets is low because both legs are weak: a mid-single-digit net margin depressed by amortization, restructuring and impairment, multiplied by an asset turnover well below one that reflects a goodwill-heavy balance sheet. The equity multiplier is missing in the record, but the balance sheet shows liabilities near two thirds of assets and equity shrinking through repurchases, so leverage is the leg that lifts return on equity above return on assets. Improvement has to come from margin recovery, since turnover is structurally capped by acquired intangibles.",
+    "evidence": [
+      "0001783180-26-000030:8k_2_02:88",
+      "0001783180-26-000032:notes:67"
+    ],
+    "fields": [
+      "{ratios.profitability.dupont.net_margin}",
+      "{ratios.profitability.dupont.asset_turnover}",
+      "{ratios.profitability.dupont.equity_multiplier}",
+      "{ratios.solvency.liabilities_over_assets}",
+      "{ratios.profitability.return_on_assets}"
+    ]
+  },
+  "anomalies": [
+    {
+      "id": "profitability_gaap_operating_margin_below_three_year_average",
+      "name": "GAAP operating margin below its three-year average",
+      "name_ko": "GAAP 영업이익률이 삼년 평균 하회",
+      "area": "profitability",
+      "what": "The trailing operating margin is far below the prior fiscal year and the three-year average, driven by tariffs, mix, restructuring and the Riello impairment.",
+      "numbers_vs_prose": "Management frames the quarter as better than expected on adjusted measures; the GAAP margin trend is weaker than the tone.",
+      "evidence": [
+        "0001783180-26-000030:8k_2_02:13",
+        "0001783180-26-000030:8k_2_02:19",
+        "0001783180-26-000032:mdna:58"
+      ],
+      "fields": [
+        "{ratios.profitability.operating_margin}",
+        "{earnings_versus_cash.history.years.0.operating_margin}",
+        "{earnings_versus_cash.history.operating_margin_three_year_average}"
+      ]
+    },
+    {
+      "id": "profitability_segment_margins_down_in_every_segment",
+      "name": "Segment margins down in every segment",
+      "name_ko": "전 부문 영업이익률 하락",
+      "area": "profitability",
+      "what": "All four segments reported lower operating margin year on year in both the quarter and the half; Asia-Pacific fell most on mix and lower joint-venture income, Americas on tariffs and mix.",
+      "numbers_vs_prose": "Consistent between release and management discussion.",
+      "evidence": [
+        "0001783180-26-000030:8k_2_02:97",
+        "0001783180-26-000032:mdna:87",
+        "0001783180-26-000032:mdna:121",
+        "0001783180-26-000032:mdna:96",
+        "0001783180-26-000032:mdna:110"
+      ],
+      "fields": [
+        "{ratios.growth.operating_income.year_over_year}"
+      ]
+    },
+    {
+      "id": "profitability_effective_tax_rate_swing_between_quarter_and_half",
+      "name": "Effective tax rate swings between quarter and half",
+      "name_ko": "분기와 반기 유효세율의 큰 괴리",
+      "area": "profitability",
+      "what": "The half-year effective rate is a single-digit percentage because of a valuation-allowance release and an audit settlement, while the quarter's rate is a quarter of pretax income because the Riello impairment is non-deductible; net margin for the trailing period is flattered.",
+      "numbers_vs_prose": "Fully disclosed; the calculator's bounded rate ({tax_rate}) understates the normal burden.",
+      "evidence": [
+        "0001783180-26-000032:mdna:40",
+        "0001783180-26-000032:mdna:71",
+        "0001783180-26-000032:mdna:72",
+        "0001783180-26-000030:8k_2_02:111"
+      ],
+      "fields": [
+        "{tax_rate}",
+        "{ratios.profitability.net_margin}",
+        "{terms.trailing_four_quarters.income_tax_expense}"
+      ]
+    },
+    {
+      "id": "profitability_equity_method_income_falling",
+      "name": "Equity-method income falling",
+      "name_ko": "지분법 이익 감소",
+      "area": "profitability",
+      "what": "Joint-venture earnings, which sit inside operating profit, fell by about a quarter in the quarter and the half on Americas and Asia-Pacific ventures and the Middle East conflict.",
+      "numbers_vs_prose": "Consistent; it is a recurring earnings line, not a one-off.",
+      "evidence": [
+        "0001783180-26-000032:mdna:33",
+        "0001783180-26-000032:mdna:64",
+        "0001783180-26-000030:8k_2_02:37"
+      ],
+      "fields": [
+        "{ratios.growth.operating_income.year_over_year}"
+      ]
+    },
+    {
+      "id": "efficiency_receivables_and_inventory_build_since_year_end",
+      "name": "Receivables and inventory built since year-end",
+      "name_ko": "연초 이후 매출채권·재고 증가",
+      "area": "efficiency",
+      "what": "Both balances rose materially from December, finished goods leading inventory; the half-year cash-flow lines show the absorption, though both balances are below the prior-year quarter.",
+      "numbers_vs_prose": "Seasonal and consistent with prose; the trailing changes ({terms.trailing_four_quarters.change_in_receivables}, {terms.trailing_four_quarters.change_in_inventory}) are small.",
+      "evidence": [
+        "0001783180-26-000030:8k_2_02:88",
+        "0001783180-26-000030:8k_2_02:93",
+        "0001783180-26-000032:notes:13"
+      ],
+      "fields": [
+        "{terms.trailing_four_quarters.change_in_receivables}",
+        "{terms.trailing_four_quarters.change_in_inventory}",
+        "{earnings_versus_cash.working_capital.receivables.balance_sheet_change}",
+        "{earnings_versus_cash.working_capital.inventory.balance_sheet_change}"
+      ]
+    },
+    {
+      "id": "efficiency_joint_venture_receivables_growing_faster_than_total",
+      "name": "Joint-venture receivables growing faster than total receivables",
+      "name_ko": "관계기업 매출채권이 전체보다 빠르게 증가",
+      "area": "efficiency",
+      "what": "Receivables from equity-method investees rose sharply from year-end and from the prior quarter, outpacing the rise in total receivables, as quarterly sales to those investees rebounded.",
+      "numbers_vs_prose": "Not discussed in the management narrative.",
+      "evidence": [
+        "0001783180-26-000032:notes:121",
+        "0001783180-26-000032:notes:123",
+        "0001783180-26-000032:note_history:23"
+      ],
+      "fields": [
+        "{terms.balances_now.receivables}",
+        "{trend_table.quarters-back-0.ratios.receivables_over_revenue}"
+      ]
+    },
+    {
+      "id": "efficiency_inventory_and_payables_day_metrics_unavailable",
+      "name": "Inventory and payables day metrics unavailable",
+      "name_ko": "재고·매입채무 회전일수 산출 불가",
+      "area": "efficiency",
+      "what": "Cost of revenue is not tagged at the entity level for the trailing periods, so inventory days, payables days and the cash conversion cycle are missing even though the filing prints cost of products and services sold.",
+      "numbers_vs_prose": "A record gap; the filing has the inputs.",
+      "evidence": [
+        "0001783180-26-000032:mdna:26",
+        "0001783180-26-000032:mdna:57"
+      ],
+      "fields": [
+        "{ratios.efficiency.days_sales_of_inventory}",
+        "{ratios.efficiency.days_payables_outstanding}",
+        "{ratios.efficiency.cash_conversion_cycle}",
+        "{ratios.profitability.gross_margin}"
+      ]
+    },
+    {
+      "id": "liquidity_current_ratio_near_one_with_notes_reclassified_to_current",
+      "name": "Current ratio near one as notes move to current",
+      "name_ko": "만기 도래 채권의 유동성 분류로 유동비율이 일에 근접",
+      "area": "liquidity",
+      "what": "Current debt rose more than tenfold from a year earlier as the notes due early next year became current and commercial paper grew, pushing the current ratio to barely above one.",
+      "numbers_vs_prose": "The revolver is undrawn and covenants are met, which the ratio alone does not show.",
+      "evidence": [
+        "0001783180-26-000032:notes:24",
+        "0001783180-26-000032:notes:29",
+        "0001783180-26-000032:notes:31",
+        "0001783180-26-000030:8k_2_02:88"
+      ],
+      "fields": [
+        "{ratios.liquidity.current_ratio}",
+        "{terms.debt_now.parts.debt_current}",
+        "{terms.debt_a_year_earlier.parts.debt_current}",
+        "{terms.balances_now.current_liabilities}",
+        "{terms.balances_a_year_earlier.current_liabilities}"
+      ]
+    },
+    {
+      "id": "liquidity_quick_ratio_below_one_half",
+      "name": "Quick ratio below one half",
+      "name_ko": "당좌비율이 절반 미만",
+      "area": "liquidity",
+      "what": "Cash plus receivables cover under half of current liabilities; inventory and held-for-sale assets make up the rest of current assets.",
+      "numbers_vs_prose": "Typical for a manufacturer with a commercial-paper program, but thin in absolute terms.",
+      "evidence": [
+        "0001783180-26-000030:8k_2_02:88"
+      ],
+      "fields": [
+        "{ratios.liquidity.quick_ratio}",
+        "{terms.balances_now.cash}",
+        "{terms.balances_now.receivables}"
+      ]
+    },
+    {
+      "id": "liquidity_cash_concentrated_in_foreign_subsidiaries",
+      "name": "Cash concentrated in foreign subsidiaries",
+      "name_ko": "현금이 해외 자회사에 집중",
+      "area": "liquidity",
+      "what": "Almost all cash is held abroad and some sits inside held-for-sale disposal groups, so domestic liquidity depends on the commercial-paper program and revolver.",
+      "numbers_vs_prose": "Disclosed; consistent with the rise in commercial paper.",
+      "evidence": [
+        "0001783180-26-000032:mdna:156",
+        "0001783180-26-000032:notes:105",
+        "0001783180-26-000032:mdna:162"
+      ],
+      "fields": [
+        "{terms.balances_now.cash}",
+        "{terms.cash_and_short_term_investments_now}"
+      ]
+    },
+    {
+      "id": "liquidity_cash_fell_year_on_year_while_debt_rose",
+      "name": "Cash fell year on year while debt rose",
+      "name_ko": "전년 대비 현금 감소, 부채 증가",
+      "area": "liquidity",
+      "what": "Cash is lower than a year earlier while total debt is higher, the mirror image of returns exceeding free cash flow.",
+      "numbers_vs_prose": "Net debt in the release rose from December, consistent.",
+      "evidence": [
+        "0001783180-26-000030:8k_2_02:121",
+        "0001783180-26-000032:mdna:160"
+      ],
+      "fields": [
+        "{terms.balances_now.cash}",
+        "{terms.balances_a_year_earlier.cash}",
+        "{ratios.solvency.total_debt}",
+        "{terms.debt_a_year_earlier}"
+      ]
+    },
+    {
+      "id": "solvency_debt_over_ebitda_near_four_on_gaap_ebitda",
+      "name": "Debt over EBITDA near four times on GAAP EBITDA",
+      "name_ko": "GAAP EBITDA 기준 차입금 배수가 네 배에 근접",
+      "area": "solvency",
+      "what": "Total debt over trailing GAAP EBITDA is close to four; the denominator is depressed by restructuring and the impairment, and the company's adjusted profit would give a lower multiple.",
+      "numbers_vs_prose": "Management reports debt to capitalization under half and does not discuss a leverage multiple.",
+      "evidence": [
+        "0001783180-26-000032:mdna:160",
+        "0001783180-26-000030:8k_2_02:111"
+      ],
+      "fields": [
+        "{ratios.solvency.debt_over_ebitda}",
+        "{ratios.solvency.ebitda}",
+        "{ratios.solvency.total_debt}"
+      ]
+    },
+    {
+      "id": "solvency_interest_coverage_not_computed_by_calculator",
+      "name": "Interest coverage not computed by the calculator",
+      "name_ko": "이자보상배율 미산출",
+      "area": "solvency",
+      "what": "Interest expense is not tagged for the current half, so coverage, cost of debt and WACC are missing; the filing shows half-year interest expense rising because of commercial paper and expected annual note interest at a low weighted-average coupon.",
+      "numbers_vs_prose": "Coverage from the filing's own figures is comfortable; the gap is in the record.",
+      "evidence": [
+        "0001783180-26-000032:mdna:68",
+        "0001783180-26-000032:mdna:69",
+        "0001783180-26-000032:mdna:163"
+      ],
+      "fields": [
+        "{ratios.solvency.interest_coverage}",
+        "{cost_of_capital.pre_tax_cost_of_debt}",
+        "{cost_of_capital.wacc}"
+      ]
+    },
+    {
+      "id": "solvency_notes_fair_value_below_carrying_value",
+      "name": "Notes trade below carrying value",
+      "name_ko": "장기채권 공정가치가 장부가 하회",
+      "area": "solvency",
+      "what": "The fair value of the long-term notes is below carrying value, reflecting coupons set below current rates rather than credit deterioration.",
+      "numbers_vs_prose": "Consistent with the low weighted-average rate management cites.",
+      "evidence": [
+        "0001783180-26-000032:notes:49",
+        "0001783180-26-000032:mdna:163"
+      ],
+      "fields": [
+        "{ratios.solvency.total_debt}"
+      ]
+    },
+    {
+      "id": "solvency_goodwill_exceeds_equity",
+      "name": "Goodwill exceeds total equity",
+      "name_ko": "영업권이 자본총계 초과",
+      "area": "solvency",
+      "what": "Goodwill alone is larger than total equity and intangibles add more; tangible equity is negative, so book solvency depends on acquired businesses holding value.",
+      "numbers_vs_prose": "No impairment discussion in the interim filing; goodwill moved on currency and reclassification only.",
+      "evidence": [
+        "0001783180-26-000030:8k_2_02:88",
+        "0001783180-26-000032:notes:17"
+      ],
+      "fields": [
+        "{trend_table.quarters-back-0.ratios.soft_asset_share}",
+        "{ratios.solvency.liabilities_over_assets}"
+      ]
+    },
+    {
+      "id": "solvency_settlement_and_lease_obligations_outside_debt_lines",
+      "name": "Settlement and lease obligations outside the debt lines",
+      "name_ko": "차입금 외 합의금·리스 부채",
+      "area": "solvency",
+      "what": "The AFFF settlement instalments over five years, operating lease liabilities and debt inside held-for-sale groups are obligations the calculator's debt total does not include.",
+      "numbers_vs_prose": "Each is disclosed; none is large relative to total debt.",
+      "evidence": [
+        "0001783180-26-000032:notes:140",
+        "0001783180-26-000030:8k_2_02:88",
+        "0001783180-26-000032:notes:105"
+      ],
+      "fields": [
+        "{ratios.solvency.operating_lease_liability}",
+        "{ratios.solvency.total_debt}"
+      ]
+    },
+    {
+      "id": "growth_trailing_revenue_down_while_quarter_up",
+      "name": "Trailing revenue down while the quarter is up",
+      "name_ko": "분기 매출 증가에도 최근 사분기 누적 매출은 감소",
+      "area": "growth",
+      "what": "Quarterly revenue grew year on year but the trailing four quarters are slightly below the year-earlier four quarters, because of divestitures and a weak first quarter.",
+      "numbers_vs_prose": "The release emphasizes the quarter's return to organic growth; the trailing view is flat to down.",
+      "evidence": [
+        "0001783180-26-000030:8k_2_02:7",
+        "0001783180-26-000030:8k_2_02:101",
+        "0001783180-26-000032:mdna:53"
+      ],
+      "fields": [
+        "{ratios.growth.revenue.year_over_year}",
+        "{ratios.growth.revenue.trailing_four_quarters}",
+        "{earnings_versus_cash.history.years.0.revenue_growth}"
+      ]
+    },
+    {
+      "id": "growth_orders_and_guidance_ahead_of_reported_sales",
+      "name": "Orders and guidance run ahead of reported sales",
+      "name_ko": "수주와 가이던스가 실적을 앞섬",
+      "area": "growth",
+      "what": "Orders up sharply, record backlog and raised guidance point to acceleration that reported organic growth in the low single digits has not yet shown; orders are cancellable by definition.",
+      "numbers_vs_prose": "The gap between order headline and revenue growth is the key forward uncertainty.",
+      "evidence": [
+        "0001783180-26-000030:8k_2_02:6",
+        "0001783180-26-000030:8k_2_02:14",
+        "0001783180-26-000030:8k_2_02:48",
+        "0001783180-26-000030:8k_2_02:78"
+      ],
+      "fields": [
+        "{ratios.growth.revenue.year_over_year}",
+        "{trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue}"
+      ]
+    },
+    {
+      "id": "growth_trailing_net_income_decline_reflects_prior_year_disposal_gains",
+      "name": "Trailing net-income decline reflects prior-year disposal gains",
+      "name_ko": "순이익 급감은 전년 매각차익 기저효과",
+      "area": "growth",
+      "what": "Trailing net income is down by more than two thirds, but the comparison base includes large discontinued-operations gains in the prior year that had almost no cash counterpart.",
+      "numbers_vs_prose": "The release compares continuing-operations earnings only; the calculator's trailing figure mixes bases.",
+      "evidence": [
+        "0001783180-26-000030:8k_2_02:84",
+        "0001783180-26-000030:8k_2_02:22"
+      ],
+      "fields": [
+        "{ratios.growth.net_income.trailing_four_quarters}",
+        "{terms.trailing_four_quarters_a_year_earlier.net_income}",
+        "{earnings_versus_cash.history.years.1.net_income}",
+        "{earnings_versus_cash.history.years.1.operating_cash_flow_over_net_income}"
+      ]
+    },
+    {
+      "id": "growth_divestiture_headwinds_to_revenue",
+      "name": "Divestiture headwinds to revenue",
+      "name_ko": "사업 매각에 따른 매출 감소 요인",
+      "area": "growth",
+      "what": "The Riello and Noresco exits remove roughly two points of revenue in the guidance bridge and the Noresco exit plus factory start-up costs cut adjusted EPS.",
+      "numbers_vs_prose": "Disclosed in the guidance table and footnotes.",
+      "evidence": [
+        "0001783180-26-000030:8k_2_02:48",
+        "0001783180-26-000030:8k_2_02:12",
+        "0001783180-26-000030:8k_2_02:49"
+      ],
+      "fields": [
+        "{ratios.growth.revenue.trailing_four_quarters}"
+      ]
+    },
+    {
+      "id": "free_cash_flow_shareholder_returns_exceed_free_cash_flow",
+      "name": "Shareholder returns exceed free cash flow",
+      "name_ko": "주주환원이 잉여현금흐름 초과",
+      "area": "free_cash_flow",
+      "what": "Trailing repurchases plus dividends are larger than simple free cash flow, with the difference funded by commercial paper and lower cash.",
+      "numbers_vs_prose": "Management describes the outflows as partially offset by short-term borrowings.",
+      "evidence": [
+        "0001783180-26-000032:mdna:179",
+        "0001783180-26-000030:8k_2_02:10",
+        "0001783180-26-000030:8k_2_02:93"
+      ],
+      "fields": [
+        "{free_cash_flow.free_cash_flow_simple}",
+        "{terms.trailing_four_quarters.share_repurchases}",
+        "{terms.trailing_four_quarters.dividends_paid}",
+        "{terms.cash_flow_families.borrowing_short_term_net}"
+      ]
+    },
+    {
+      "id": "free_cash_flow_first_half_below_prior_year_despite_strong_quarter",
+      "name": "First-half free cash flow below prior year despite a strong quarter",
+      "name_ko": "분기 호조에도 상반기 잉여현금흐름은 전년 하회",
+      "area": "free_cash_flow",
+      "what": "Quarterly operating cash flow rose sharply year on year, but half-year free cash flow is below last year's because the first quarter was very weak; full-year guidance is unchanged, so the second half carries the year.",
+      "numbers_vs_prose": "The release highlights the quarter; the half-year column in the same table shows the shortfall.",
+      "evidence": [
+        "0001783180-26-000030:8k_2_02:44",
+        "0001783180-26-000030:8k_2_02:48",
+        "0001783180-26-000030:8k_2_02:9"
+      ],
+      "fields": [
+        "{ratios.growth.operating_cash_flow.year_over_year}",
+        "{ratios.growth.operating_cash_flow.quarter_over_quarter}",
+        "{ratios.growth.operating_cash_flow.this_quarter}"
+      ]
+    },
+    {
+      "id": "free_cash_flow_capex_step_up_for_new_factory",
+      "name": "Capital expenditure stepping up for a new factory",
+      "name_ko": "신규 공장 투자로 설비투자 증가",
+      "area": "free_cash_flow",
+      "what": "Trailing capital expenditure is above the year-earlier level and the half-year spend rose, with new United States factory costs called out; free cash flow will carry a heavier investment load.",
+      "numbers_vs_prose": "Consistent; management still guides free cash flow level with last year.",
+      "evidence": [
+        "0001783180-26-000030:8k_2_02:12",
+        "0001783180-26-000032:mdna:178",
+        "0001783180-26-000030:8k_2_02:48"
+      ],
+      "fields": [
+        "{terms.trailing_four_quarters.capital_expenditure}",
+        "{terms.trailing_four_quarters_a_year_earlier.capital_expenditure}",
+        "{earnings_versus_cash.history.years.0.capital_expenditure}"
+      ]
+    },
+    {
+      "id": "free_cash_flow_to_equity_inflated_by_short_term_borrowing",
+      "name": "Free cash flow to equity inflated by short-term borrowing",
+      "name_ko": "단기차입으로 부풀려진 주주잉여현금흐름",
+      "area": "free_cash_flow",
+      "what": "Net borrowing inside free cash flow to equity is nearly all commercial paper, a revolving balance rather than permanent capital.",
+      "numbers_vs_prose": "Commercial paper is described as supported by the revolver and used for general purposes.",
+      "evidence": [
+        "0001783180-26-000032:notes:26",
+        "0001783180-26-000032:mdna:162"
+      ],
+      "fields": [
+        "{free_cash_flow.free_cash_flow_to_equity}",
+        "{free_cash_flow.free_cash_flow_to_equity.net_borrowing}",
+        "{terms.cash_flow_families.borrowing_short_term_net}"
+      ]
+    },
+    {
+      "id": "free_cash_flow_to_firm_rests_on_depressed_tax_rate",
+      "name": "Free cash flow to firm rests on a depressed tax rate",
+      "name_ko": "낮은 세율에 기댄 기업잉여현금흐름",
+      "area": "free_cash_flow",
+      "what": "The firm-level figure applies the calculator's bounded trailing tax rate, which reflects a one-time valuation-allowance release, and adds a working-capital release; both flatter the result.",
+      "numbers_vs_prose": "The release shows an adjusted quarterly tax rate in the low twenties.",
+      "evidence": [
+        "0001783180-26-000030:8k_2_02:111",
+        "0001783180-26-000032:mdna:72"
+      ],
+      "fields": [
+        "{free_cash_flow.free_cash_flow_to_firm}",
+        "{tax_rate}",
+        "{free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital}"
+      ]
+    },
+    {
+      "id": "free_cash_flow_quarterly_operating_cash_flow_volatility",
+      "name": "Quarterly operating cash flow is volatile",
+      "name_ko": "분기 영업현금흐름 변동성 큼",
+      "area": "free_cash_flow",
+      "what": "The quarter series shows swings from near zero or negative quarters to very large ones; the latest quarter-on-quarter change is more than tenfold, so single quarters say little about the run rate.",
+      "numbers_vs_prose": "Seasonality plus the prior-year discontinued-operations inflows explain most of it.",
+      "evidence": [
+        "0001783180-26-000030:8k_2_02:93",
+        "0001783180-26-000032:mdna:176"
+      ],
+      "fields": [
+        "{earnings_versus_cash.smoothness}",
+        "{ratios.growth.operating_cash_flow.quarter_over_quarter}"
+      ]
+    }
+  ],
+  "path_to_distress": {
+    "distance": "Distress is remote on current evidence: the company generates free cash flow above earnings, holds an undrawn revolver larger than its commercial paper program, carries low fixed coupons on notes laddered over decades, and is in covenant compliance.",
+    "sequence": [
+      "Residential and light-commercial recovery stalls while tariffs and mix keep compressing gross margin, pushing GAAP operating margin further below the three-year average.",
+      "Cancellable data-center and commercial orders convert more slowly than backlog implies, so revenue guidance is missed and adjusted profit falls short.",
+      "Management keeps repurchases and the dividend at the current pace, so returns keep exceeding free cash flow and commercial paper keeps growing; interest expense rises further.",
+      "The notes due early next year must be refinanced at coupons well above the retiring rate while debt over EBITDA is already near four times, and a rating review follows.",
+      "A goodwill impairment on a European or Asia-Pacific reporting unit erodes book equity that goodwill already exceeds, tightening the equity leg of the capital structure.",
+      "Legal overhangs crystallize: non-settling AFFF claimants or the antitrust class actions produce an estimable loss without matching insurance, adding cash calls on top of settlement instalments."
+    ],
+    "early_warnings": [
+      "commercial paper above the December-to-June growth path or any drawing on the revolver",
+      "quarterly days sales outstanding or joint-venture receivables rising while sales to investees keep outrunning organic growth",
+      "inventory reserve ratio continuing to fall as finished goods rise",
+      "adjusted-to-GAAP operating profit gap widening for a third consecutive period",
+      "free-cash-flow guidance lowered or the repurchase pace maintained through a cash shortfall",
+      "a change in the credit ratings table that is currently marked unchanged"
+    ],
+    "buffers": [
+      "undrawn revolving credit facility that supports the commercial-paper program",
+      "gross proceeds from the Riello sale received after quarter end and the pending Noresco sale",
+      "potential IEEPA tariff refunds and AFFF insurance recoveries, neither recorded",
+      "discretionary repurchases that can be cut without touching operations",
+      "low weighted-average coupon and maturities spread to the middle of the century"
+    ],
+    "evidence": [
+      "0001783180-26-000032:notes:26",
+      "0001783180-26-000032:notes:31",
+      "0001783180-26-000032:notes:35",
+      "0001783180-26-000032:notes:29",
+      "0001783180-26-000032:mdna:163",
+      "0001783180-26-000032:mdna:164",
+      "0001783180-26-000032:mdna:167",
+      "0001783180-26-000032:notes:103",
+      "0001783180-26-000032:mdna:8",
+      "0001783180-26-000032:notes:140",
+      "0001783180-26-000032:notes:141",
+      "0001783180-26-000032:notes:144",
+      "0001783180-26-000030:8k_2_02:78"
+    ],
+    "fields": [
+      "{ratios.solvency.debt_over_ebitda}",
+      "{ratios.liquidity.current_ratio}",
+      "{ratios.liquidity.cash_runway_months}",
+      "{free_cash_flow.free_cash_flow_simple}",
+      "{terms.trailing_four_quarters.share_repurchases}",
+      "{terms.cash_flow_families.borrowing_short_term_net}",
+      "{trend_table.quarters-back-0.ratios.soft_asset_share}"
+    ]
+  },
+  "summary_ko": "캐리어는 수익성은 압박받고 있으나 현금창출력과 재무구조는 견조한 회사다. 최근 사분기 누적 GAAP 영업이익률은 전년도와 삼년 평균을 크게 밑돌고, 분기에도 관세·투입원가·믹스 악화로 전 부문 마진이 하락했다. 다만 매출은 분기 기준으로 다시 성장했고 수주와 수주잔고, 상향된 연간 가이던스는 향후 가속을 시사한다. 운전자본 효율은 전년 대비 개선됐고 상반기 증가는 계절적이다. 유동성은 지표상 얇다. 유동비율은 일을 겨우 넘고 당좌비율은 절반 미만이며, 내년 초 만기 채권의 유동성 재분류와 기업어음 증가로 유동부채가 급증했다. 그러나 미사용 회전신용한도, 준수 중인 약정, 분기 말 직후 완료된 리엘로 매각 대금이 완충 역할을 한다. 차입금 대 GAAP EBITDA 배수는 네 배에 근접해 높은 편이나 분모가 구조조정과 손상으로 눌려 있고, 낮은 고정 쿠폰과 수십 년에 걸친 만기 구조가 구조적 건전성을 뒷받침한다. 잉여현금흐름은 순이익을 웃돌지만 자사주 매입과 배당이 이를 초과해 기업어음으로 보충됐고, 상반기 잉여현금흐름은 전년을 밑돌아 하반기 부담이 크다. 영업권이 자본총계를 넘는 점, 미인식된 관세 환급과 보험 회수, 추정 불가한 반독점 소송이 양방향의 잠재 변수다. 부실 경로는 멀지만 마진 회복 실패와 차입에 의존한 주주환원 지속이 겹칠 때 열린다.",
+  "limits": [
+    "Return on equity, the equity multiplier, return on invested capital, interest coverage, cost of debt and WACC are missing from the calculator because equity and interest expense are not tagged for the period; the filing prints both.",
+    "Gross margin, inventory days, payables days and the cash conversion cycle are missing because cost of revenue is not tagged for the trailing periods.",
+    "Trailing operating cash flow and free cash flow include discontinued-operations cash, so the continuing-only run rate is somewhat lower than the fields cited.",
+    "The trailing net-income growth figure compares against a prior year with large disposal gains and overstates the operating decline.",
+    "Free cash flow to firm uses a tax rate depressed by a one-time valuation-allowance release and includes a working-capital release; it is not a sustainable level.",
+    "Leverage is measured on GAAP EBITDA; the company's adjusted profit definition would give a lower multiple that could not be computed here.",
+    "The credit ratings table and several liquidity paragraphs are marked unchanged from the prior quarter and were not reproduced, so their content was inferred as unchanged rather than read.",
+    "No prior predictions exist, so no earlier flags could be scored against outcomes."
+  ]
+}

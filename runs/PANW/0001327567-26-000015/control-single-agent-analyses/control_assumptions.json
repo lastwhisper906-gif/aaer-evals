@@ -1,0 +1,184 @@
+{
+  "ticker": "PANW",
+  "accession": "0001327567-26-000015",
+  "purpose": "bear, base and bull drivers for a ten-year discounted cash flow",
+  "written_by": "single-agent control, one pass over the filing bundle and calculator_before_analysts.json",
+  "terminal_growth_ceiling": "{cost_of_capital.risk_free_rate.value}",
+  "discount_rate_reference": "{cost_of_capital.wacc.value}",
+  "base_year_reference": {
+    "revenue": "{terms.trailing_four_quarters.revenue.value}",
+    "operating_income": "{terms.trailing_four_quarters.operating_income.value}",
+    "operating_margin": "{ratios.profitability.operating_margin.value}",
+    "tax_rate": "{tax_rate.value}",
+    "capital_expenditure": "{terms.trailing_four_quarters.capital_expenditure.value}",
+    "depreciation_and_amortization": "{terms.trailing_four_quarters.depreciation_and_amortization.value}",
+    "acquisitions": "{terms.cash_flow_families.acquisitions.value}",
+    "invested_capital": "{ratios.profitability.invested_capital.value}",
+    "return_on_invested_capital": "{ratios.profitability.return_on_invested_capital.value}"
+  },
+  "scenarios": {
+    "bear": {
+      "revenue_growth_year_one": {
+        "value": 0.17,
+        "reason": "Year one still carries most of a year of CyberArk that the trailing base lacks, so even a bear case grows faster than the organic pace; the bear case assumes the pro forma organic rate slows further as macro and geopolitical conditions weigh on customer behaviour and the acquisition step-up is the only cushion.",
+        "quote": "Our overall performance depends in part on worldwide economic and geopolitical conditions and their impact on customer behavior.",
+        "quote_from": "input_mdna.md",
+        "evidence": ["0001327567-26-000015:mdna:44", "0001327567-26-000015:notes:95"],
+        "fields": ["{ratios.growth.revenue.trailing_four_quarters.value}", "{earnings_versus_cash.history.years.0.revenue_growth}"]
+      },
+      "terminal_growth": {
+        "value": 0.025,
+        "reason": "A mature security vendor growing with nominal enterprise IT budgets but below the risk-free ceiling, reflecting price competition and platform consolidation by rivals.",
+        "quote": null,
+        "quote_from": null,
+        "evidence": [],
+        "fields": ["{cost_of_capital.risk_free_rate.value}"]
+      },
+      "operating_margin_year_one": {
+        "value": 0.03,
+        "reason": "Acquired-intangible amortization is on a published schedule that peaks next fiscal year, cloud hosting cost keeps rising with the mix shift, and the acquired units are loss-making until integration completes; the bear case assumes little offset from the workforce plan and continued elevated share-based pay.",
+        "quote": "Subscription and support gross margin decreased for the three and nine months ended April 30, 2026 compared to the same periods in 2025 primarily due to higher amortization of intangible assets as a result of our recent acquisitions.",
+        "quote_from": "input_mdna.md",
+        "evidence": ["0001327567-26-000015:mdna:96", "0001327567-26-000015:notes:109", "0001327567-26-000015:notes:93"],
+        "fields": ["{ratios.profitability.operating_margin.value}", "{trend_table.quarters-back-0.ratios.gross_margin.value}"]
+      },
+      "operating_margin_year_ten": {
+        "value": 0.14,
+        "reason": "Amortization has rolled off but the cost to serve cloud-delivered subscriptions stays high, share-based pay remains a large recurring charge, and operating leverage on sales and marketing is limited; a margin near the prior fiscal year's level rather than a software-peer level.",
+        "quote": "We expect our cost of subscription and support revenue to increase as our installed end-customer base grows and adoption of our cloud-based subscription offerings increases.",
+        "quote_from": "input_mdna.md",
+        "evidence": ["0001327567-26-000015:mdna:89", "0001327567-26-000015:mdna:105"],
+        "fields": ["{earnings_versus_cash.history.years.0.operating_margin}", "{earnings_versus_cash.history.operating_margin_three_year_average}"]
+      },
+      "reinvestment_rate_year_one": {
+        "value": 1.1,
+        "reason": "Reinvestment counts capital expenditure net of depreciation, working capital and acquisitions; the bear case assumes the recent acquisition pace continues on a thin after-tax operating income, so reinvestment exceeds what the business earns, funded by the investment book and equity.",
+        "quote": "As of April 30, 2026, our commitments to purchase products, components, cloud hosting and other services totaled $8.6 billion.",
+        "quote_from": "input_mdna.md",
+        "evidence": ["0001327567-26-000015:mdna:140", "0001327567-26-000015:mdna:41"],
+        "fields": ["{terms.cash_flow_families.acquisitions.value}", "{terms.trailing_four_quarters.capital_expenditure.value}", "{terms.trailing_four_quarters.depreciation_and_amortization.value}"]
+      },
+      "reinvestment_rate_year_ten": {
+        "value": 0.35,
+        "reason": "Terminal reinvestment equals terminal growth divided by the return on capital the business can sustain; with a low return on a goodwill-heavy base and modest growth, a comparatively high share of after-tax operating income must be reinvested to hold that growth.",
+        "quote": null,
+        "quote_from": null,
+        "evidence": [],
+        "fields": ["{ratios.profitability.return_on_invested_capital.value}", "{cost_of_capital.risk_free_rate.value}"]
+      }
+    },
+    "base": {
+      "revenue_growth_year_one": {
+        "value": 0.24,
+        "reason": "The trailing organic rate plus a step-up from consolidating CyberArk and Chronosphere for a full year instead of a partial one; backlog due within twelve months supports the organic component.",
+        "quote": "Remaining performance obligations were $18.4 billion as of April 30, 2026, of which we expect to recognize as revenue approximately $8.3 billion over the next 12 months and the remainder thereafter.",
+        "quote_from": "input_notes.md",
+        "evidence": ["0001327567-26-000015:notes:34", "0001327567-26-000015:notes:93", "0001327567-26-000015:notes:95"],
+        "fields": ["{ratios.growth.revenue.trailing_four_quarters.value}", "{ratios.growth.revenue.year_over_year.value}", "{earnings_versus_cash.history.revenue_growth_three_year_compound}"]
+      },
+      "terminal_growth": {
+        "value": 0.035,
+        "reason": "Below the risk-free ceiling and near long-run nominal growth for enterprise security spending, which the company positions as recurring and expanding with platform consolidation.",
+        "quote": "We believe our portfolio will enable us to benefit from recurring revenues and new revenues as we continue to grow our end-customer base.",
+        "quote_from": "input_mdna.md",
+        "evidence": ["0001327567-26-000015:mdna:37"],
+        "fields": ["{cost_of_capital.risk_free_rate.value}"]
+      },
+      "operating_margin_year_one": {
+        "value": 0.07,
+        "reason": "Below the trailing margin because a full year of acquired-intangible amortization and integration cost lands, but above the bear case because the accelerated vesting and transaction costs of the closing quarter do not recur and the workforce plan takes cost out.",
+        "quote": "Since the date of acquisitions, the combined net impact of the Chronosphere and CyberArk acquisitions on our condensed consolidated statements of operations was revenue of $388 million and $391 million and operating loss of $523 million and $524 million for the three and nine months ended April 30, 2026, respectively.",
+        "quote_from": "input_notes.md",
+        "evidence": ["0001327567-26-000015:notes:93", "0001327567-26-000015:notes:176", "0001327567-26-000015:notes:81"],
+        "fields": ["{ratios.profitability.operating_margin.value}", "{earnings_versus_cash.history.years.0.operating_margin}"]
+      },
+      "operating_margin_year_ten": {
+        "value": 0.22,
+        "reason": "Amortization of the acquired intangibles is largely complete, operating expenses fall as a share of revenue as management expects, and share-based pay declines relative to a much larger revenue base; still a GAAP margin, so well under the non-GAAP levels the company reports elsewhere.",
+        "quote": "We expect operating expenses generally to increase in absolute dollars and to decrease over the long term as a percentage of revenue as we continue to scale our business.",
+        "quote_from": "input_mdna.md",
+        "evidence": ["0001327567-26-000015:mdna:99", "0001327567-26-000015:notes:109"],
+        "fields": ["{earnings_versus_cash.history.years.0.operating_margin}", "{ratios.profitability.gross_margin.value}"]
+      },
+      "reinvestment_rate_year_one": {
+        "value": 0.8,
+        "reason": "Capital expenditure is small and roughly matched by depreciation, working capital is funded by deferred revenue, so reinvestment is dominated by tuck-in acquisitions at a slower pace than the trailing window; against a thin year-one after-tax operating income that still consumes most of it.",
+        "quote": "On May 29, 2026, we completed the acquisition of Portkey, Inc., a privately-held AI Gateway company, to enhance our Prisma AIRS capabilities.",
+        "quote_from": "input_mdna.md",
+        "evidence": ["0001327567-26-000015:mdna:41", "0001327567-26-000015:notes:189"],
+        "fields": ["{terms.trailing_four_quarters.capital_expenditure.value}", "{terms.trailing_four_quarters.depreciation_and_amortization.value}", "{terms.cash_flow_families.acquisitions.value}"]
+      },
+      "reinvestment_rate_year_ten": {
+        "value": 0.3,
+        "reason": "Terminal growth divided by a return on invested capital that has recovered to a software-typical level once the goodwill base is earning; a moderate share of after-tax operating income.",
+        "quote": null,
+        "quote_from": null,
+        "evidence": [],
+        "fields": ["{ratios.profitability.return_on_invested_capital.value}", "{ratios.profitability.invested_capital.value}"]
+      }
+    },
+    "bull": {
+      "revenue_growth_year_one": {
+        "value": 0.3,
+        "reason": "The reported quarterly pace holds through year one as the identity platform expands into the installed base, next-generation security annualized recurring revenue keeps compounding, and the full-year consolidation step-up lands on top.",
+        "quote": "Subscription and support revenue increased for the three and nine months ended April 30, 2026 compared to the same periods in 2025 due to increased demand for our subscription and support offerings from our end-customers and our recent acquisitions.",
+        "quote_from": "input_mdna.md",
+        "evidence": ["0001327567-26-000015:mdna:77", "0001327567-26-000015:mdna:50"],
+        "fields": ["{ratios.growth.revenue.year_over_year.value}", "{ratios.growth.revenue.quarter_over_quarter.value}"]
+      },
+      "terminal_growth": {
+        "value": 0.04,
+        "reason": "Just under the risk-free ceiling, reflecting a durable share gain as security consolidates onto fewer platforms and AI workloads create new attack surfaces to protect.",
+        "quote": "A key element of our strategy is to help our customers simplify their security architectures through consolidating disparate point products.",
+        "quote_from": "input_mdna.md",
+        "evidence": ["0001327567-26-000015:mdna:11"],
+        "fields": ["{cost_of_capital.risk_free_rate.value}"]
+      },
+      "operating_margin_year_one": {
+        "value": 0.11,
+        "reason": "Integration synergies arrive early, severance and transaction costs fall away, and the acquired revenue scales quickly against its amortization, restoring a margin near the prior fiscal year's level despite the amortization step-up.",
+        "quote": "In connection with our acquisition integration strategy, we initiated a plan to optimize the combined entity’s workforce for a total estimated cost of $59 million. The activities associated with this plan are expected to be substantially completed by the end of fiscal 2027.",
+        "quote_from": "input_notes.md",
+        "evidence": ["0001327567-26-000015:notes:81", "0001327567-26-000015:notes:80"],
+        "fields": ["{earnings_versus_cash.history.years.0.operating_margin}", "{ratios.profitability.operating_margin.value}"]
+      },
+      "operating_margin_year_ten": {
+        "value": 0.28,
+        "reason": "Platform consolidation lifts gross margin back toward the prior fiscal year's level, sales productivity improves on a broader portfolio, amortization is gone and share-based pay is a small share of a much larger revenue base.",
+        "quote": "We expect operating expenses generally to increase in absolute dollars and to decrease over the long term as a percentage of revenue as we continue to scale our business.",
+        "quote_from": "input_mdna.md",
+        "evidence": ["0001327567-26-000015:mdna:99", "0001327567-26-000015:mdna:11"],
+        "fields": ["{trend_table.years-back-1.ratios.gross_margin.value}", "{earnings_versus_cash.history.years.0.operating_margin}"]
+      },
+      "reinvestment_rate_year_one": {
+        "value": 0.5,
+        "reason": "Deferred revenue keeps funding working capital, capital expenditure stays near depreciation, and the acquisition programme pauses to digest the identity and observability platforms, so only half of after-tax operating income is reinvested.",
+        "quote": "The increase was primarily due to growth of our business as reflected by increases in collections during the nine months ended April 30, 2026, partially offset by higher cash expenditure to support our business growth.",
+        "quote_from": "input_mdna.md",
+        "evidence": ["0001327567-26-000015:mdna:149", "0001327567-26-000015:notes:32"],
+        "fields": ["{terms.trailing_four_quarters.capital_expenditure.value}", "{terms.trailing_four_quarters.depreciation_and_amortization.value}", "{terms.balances_now.contract_liabilities.value}"]
+      },
+      "reinvestment_rate_year_ten": {
+        "value": 0.25,
+        "reason": "Terminal growth near the ceiling divided by a high return on invested capital once the acquired platforms earn on their purchase price, so a comparatively small share of after-tax operating income sustains growth.",
+        "quote": null,
+        "quote_from": null,
+        "evidence": [],
+        "fields": ["{ratios.profitability.return_on_invested_capital.value}", "{cost_of_capital.risk_free_rate.value}"]
+      }
+    }
+  },
+  "cross_scenario_notes": [
+    "Every terminal growth value is at or below the risk-free rate in the calculator ({cost_of_capital.risk_free_rate.value}).",
+    "Operating margins are GAAP margins after share-based compensation and acquired-intangible amortization, consistent with the calculator's operating income basis ({ebit.basis}); non-GAAP margins the company reports elsewhere are not used.",
+    "Year-one reinvestment rates are high because acquisitions are treated as reinvestment and after-tax operating income is thin; year-ten rates are derived as terminal growth divided by a sustainable return on invested capital.",
+    "The discount rate in the calculator ({cost_of_capital.wacc.value}) is an all-equity rate because the fair-valued convertible notes are outside the debt tags; a valuation should add those notes and the period-end lease liability to net debt and to invested capital by hand.",
+    "The tax rate applied to operating income should be the calculator's capped rate ({tax_rate.value}) rather than the trailing effective rate ({tax_rate.effective_rate}), which is distorted by the acquisition."
+  ],
+  "limits": [
+    "Organic growth is inferred from one sentence of acquired revenue and a pro forma table; no segment disclosure separates legacy from acquired results.",
+    "Free cash flow to the firm is missing in the calculator for want of inventory, so reinvestment rates are reasoned from capital expenditure, depreciation, acquisitions and deferred revenue rather than read from a computed figure.",
+    "The amortization schedule in the notes extends beyond year ten's horizon only in aggregate, so the year-ten margin assumes the acquired intangibles are largely amortized by then.",
+    "No earnings-release body is on record, so management's own outlook for the coming year could not be quoted."
+  ]
+}

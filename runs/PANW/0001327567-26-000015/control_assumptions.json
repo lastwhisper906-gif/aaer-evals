@@ -1,0 +1,49 @@
+{
+ "ticker": "PANW",
+ "accession": "0001327567-26-000015",
+ "purpose": "bear, base and bull drivers for a ten-year discounted cash flow",
+ "written_by": "single-agent control, one pass over the filing bundle and calculator_before_analysts.json",
+ "terminal_growth_ceiling": "{cost_of_capital.risk_free_rate.value}",
+ "discount_rate_reference": "{cost_of_capital.wacc.value}",
+ "base_year_reference": {
+  "revenue": "{terms.trailing_four_quarters.revenue.value}",
+  "operating_income": "{terms.trailing_four_quarters.operating_income.value}",
+  "operating_margin": "{ratios.profitability.operating_margin.value}",
+  "tax_rate": "{tax_rate.value}",
+  "capital_expenditure": "{terms.trailing_four_quarters.capital_expenditure.value}",
+  "depreciation_and_amortization": "{terms.trailing_four_quarters.depreciation_and_amortization.value}",
+  "acquisitions": "{terms.cash_flow_families.acquisitions.value}",
+  "invested_capital": "{ratios.profitability.invested_capital.value}",
+  "return_on_invested_capital": "{ratios.profitability.return_on_invested_capital.value}"
+ },
+ "scenarios": {},
+ "cross_scenario_notes": [
+  "Every terminal growth value is at or below the risk-free rate in the calculator ({cost_of_capital.risk_free_rate.value}).",
+  "Operating margins are GAAP margins after share-based compensation and acquired-intangible amortization, consistent with the calculator's operating income basis ({ebit.basis}); non-GAAP margins the company reports elsewhere are not used.",
+  "Year-one reinvestment rates are high because acquisitions are treated as reinvestment and after-tax operating income is thin; year-ten rates are derived as terminal growth divided by a sustainable return on invested capital.",
+  "The discount rate in the calculator ({cost_of_capital.wacc.value}) is an all-equity rate because the fair-valued convertible notes are outside the debt tags; a valuation should add those notes and the period-end lease liability to net debt and to invested capital by hand.",
+  "The tax rate applied to operating income should be the calculator's capped rate ({tax_rate.value}) rather than the trailing effective rate ({tax_rate.effective_rate}), which is distorted by the acquisition."
+ ],
+ "limits": [
+  "Organic growth is inferred from one sentence of acquired revenue and a pro forma table; no segment disclosure separates legacy from acquired results.",
+  "Free cash flow to the firm is missing in the calculator for want of inventory, so reinvestment rates are reasoned from capital expenditure, depreciation, acquisitions and deferred revenue rather than read from a computed figure.",
+  "The amortization schedule in the notes extends beyond year ten's horizon only in aggregate, so the year-ten margin assumes the acquired intangibles are largely amortized by then.",
+  "No earnings-release body is on record, so management's own outlook for the coming year could not be quoted."
+ ],
+ "wacc_overrides": {},
+ "dropped_items": [
+  {
+   "where": "scenarios.bear",
+   "reason": "revenue_growth_year_one is not a number"
+  },
+  {
+   "where": "scenarios.base",
+   "reason": "revenue_growth_year_one is not a number"
+  },
+  {
+   "where": "scenarios.bull",
+   "reason": "revenue_growth_year_one is not a number"
+  }
+ ],
+ "dropped_count": 3
+}

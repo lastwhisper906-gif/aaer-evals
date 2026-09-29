@@ -1,0 +1,237 @@
+{
+  "scenarios": {
+    "bear": {
+      "revenue_growth_year_one": 0.06,
+      "terminal_growth": 0.025,
+      "operating_margin_year_one": 0.08,
+      "operating_margin_year_ten": 0.09,
+      "reinvestment_rate_year_one": 0.50,
+      "reinvestment_rate_year_ten": 0.35,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "Data-center orders are subject to cancellation rights the company itself now lists as a risk, the filed remaining performance obligations fell in the quarter the backlog was said to build, the domestic industrial distributor channel is shrinking, and Residential is guided to grow for the year after declining in the quarter and the half. The bear case assumes the hyperscale ramp is delayed and partly cancelled, Residential stays roughly flat as storage demand fades with the tax-credit phase-out, and only the acquired revenue and the data-center volume already shipping lift the top line over the next twelve months.",
+          "quote": "increase in contract risk related to terms with certain data center customers, including cancellation rights, delivery requirements, and potential liability exposure tied to our performance obligations or other claimed damages;",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.growth.revenue.trailing_four_quarters.value",
+            "ratios.growth.revenue.year_over_year.value",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "terms.balances_now.contract_liabilities.value",
+            "terms.balances_a_year_earlier.contract_liabilities.value"
+          ],
+          "history": "Above the trailing-four-quarter change, which is close to flat, and above the negative three-year compound rate, because even a stalled ramp leaves the acquired businesses and the data-center volume shipped in the half inside the base; but well below the quarter's reported year-over-year rate and below the mid-to-high-teens full-year guidance, which the bear case treats as unmet."
+        },
+        "terminal_growth": {
+          "reason": "Below the risk-free rate, as required, and below the base case, because the bear case treats the company as a cyclical equipment maker whose demand follows outages, housing and tax-credit cycles, with the data-center opportunity a one-off capacity build rather than a durable growth engine; a rate near long-run inflation is all such a business earns in perpetuity.",
+          "quote": "uncertainty regarding the growth of the data center market;",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "cost_of_capital.risk_free_rate.value",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound"
+          ],
+          "history": "Above the company's own three-year compound rate, which is negative, so even the bear terminal rate assumes the post-pandemic decline does not repeat; below every positive annual growth rate in the six-year history block."
+        },
+        "operating_margin_year_one": {
+          "reason": "The trailing operating margin carries a one-time tariff credit to cost of goods sold that the company ties to a single quarter, while underneath it management describes unfavourable mix and higher input costs only partly offset by price. The bear case removes the refund, assumes the legal and regulatory charges that made the second half of 2025 loss-making recur in some form, and lets the mix shift toward lower-margin commercial and industrial products weigh on the blended margin.",
+          "quote": "This increase was partially offset by unfavorable sales mix and higher input costs that more than offset favorable price realization.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.profitability.operating_margin.value",
+            "earnings_versus_cash.history.years.0.operating_margin",
+            "earnings_versus_cash.history.operating_margin_three_year_average"
+          ],
+          "history": "Below the trailing operating margin, which the refund inflates, and below the three-year average, but above the prior fiscal year's margin, which carried the heavy legal charges of its second half; the bear case sits between those two records rather than repeating the worst of them."
+        },
+        "operating_margin_year_ten": {
+          "reason": "A modest recovery from year one as the legal charges fade, but no operating leverage from data-center volume: the commercial and industrial segment's adjusted EBITDA margin is less than half the Residential segment's, so a company whose growth comes from that segment ends the decade with a blended margin a little under its three-year average rather than near its pre-pandemic peak.",
+          "quote": "Adjusted EBITDA for the Commercial & Industrial segment, before deducting for noncontrolling interests, was $81.5 million, or 14.6% of C&I total sales, as compared to $53.3 million, or 12.4% of total sales, in the prior year.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "earnings_versus_cash.history.operating_margin_three_year_average",
+            "earnings_versus_cash.history.years.2.operating_margin",
+            "earnings_versus_cash.history.years.3.operating_margin",
+            "earnings_versus_cash.history.years.1.operating_margin"
+          ],
+          "history": "A little below the three-year average operating margin and below the margin of 2023; well under the margins of 2021, 2022 and the year before last, which the bear case treats as unrepeatable."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "The capacity build is already committed: the Belvidere facility and Enercon were bought in the quarter, the New Way agreement is signed, and management says it is investing aggressively and plans to add further capacity. In a bear case that spending happens anyway while after-tax operating income is lower, so the share of it reinvested is high.",
+          "quote": "To address this accelerating demand, we are investing aggressively in incremental production and packaging capacity for large megawatt generators and are planning to add further capacity as our pipeline of opportunities materializes.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "free_cash_flow.free_cash_flow_to_firm.inputs.capital_expenditure.value",
+            "free_cash_flow.free_cash_flow_to_firm.inputs.depreciation_and_amortization.value",
+            "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital.value",
+            "terms.cash_flow_families.acquisitions.value"
+          ],
+          "history": "Far above the trailing organic reinvestment, which was close to nil because depreciation and amortization exceeded capital expenditure plus the working-capital build, but below the share once the half's acquisition cash is added; the bear case assumes capacity spending stays near the acquisition-inclusive pace while earnings do not follow."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "Lower than year one once the capacity build is done, but still high relative to the terminal growth it buys: at this share and this terminal rate the implied return on new capital sits well below the cost of capital, which is the bear case's point. Capacity built for demand that does not fully arrive earns less than it costs.",
+          "quote": "the release describes aggressive capacity investment with no amount",
+          "quote_from": "analysis_accounting.json",
+          "fields": [
+            "ratios.profitability.return_on_invested_capital.value",
+            "cost_of_capital.wacc.value"
+          ],
+          "history": "Above the trailing organic reinvestment share and set against a return on invested capital that is already below the cost of capital on the trailing window; the bear case keeps that gap open through the terminal year."
+        }
+      }
+    },
+    "base": {
+      "revenue_growth_year_one": 0.14,
+      "terminal_growth": 0.04,
+      "operating_margin_year_one": 0.11,
+      "operating_margin_year_ten": 0.125,
+      "reinvestment_rate_year_one": 0.45,
+      "reinvestment_rate_year_ten": 0.35,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "The next twelve months blend the second half of 2026, for which the unchanged full-year guidance of mid-to-high-teens growth implies a pace above the first half's, with the first half of 2027, into which the committed hyperscale volume and the rest of the data-center backlog ship. The base case takes most but not all of that: the guidance includes a favourable contribution from acquisitions and currency that does not repeat, the Residential outlook requires a second-half acceleration the filings do not yet show, and part of the backlog carries cancellation rights.",
+          "quote": "Total net sales growth is still expected to be in the mid-to-high teens percent range as compared to the prior year, which includes an approximate 2% favorable impact from the net effect of foreign currency, acquisitions, and divestitures. C&I segment sales are now expected to grow in the low 30% range during the year as a result of continued significant momentum in the data center market, and Residential segment sales are now projected to increase in the high-single digit range from the prior year.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.growth.revenue.year_over_year.value",
+            "ratios.growth.revenue.trailing_four_quarters.value",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "terms.trailing_four_quarters.revenue.value"
+          ],
+          "history": "Well above the three-year compound rate, which is negative, and the trailing-four-quarter change, which is near flat, because those windows carry the post-pandemic Residential decline and the weak second half of 2025; above the quarter's and the half's reported year-over-year rates, because the guidance implies a faster second half; but below the second-half pace the guidance implies and below the growth of 2021 and 2022, which came from a pandemic-era home-standby surge the base case does not assume recurs."
+        },
+        "terminal_growth": {
+          "reason": "Below the risk-free rate, as required, and a little under long-run nominal growth for the economy: by year ten the data-center ramp is mature and the company is again a diversified power-equipment maker whose revenue tracks outages, housing, commercial construction and grid reliability. A durable position in natural-gas and large-megawatt generation justifies a rate above the bear case's, but not one that outruns the economy.",
+          "quote": "The recent introduction of our large-megawatt diesel generator line-up has substantially increased our served addressable market, allowing us to participate in the supply-constrained data center market which is expected to grow significantly over the coming years due to the mass adoption of artificial intelligence.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "cost_of_capital.risk_free_rate.value",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound"
+          ],
+          "history": "Far above the three-year compound rate, which is negative, but that window starts at the 2022 peak; the six-year history block spans a surge, a decline and a recovery, and the terminal rate is meant to be what remains once those swings cancel."
+        },
+        "operating_margin_year_one": {
+          "reason": "The trailing operating margin is pulled up by a one-time tariff credit to cost of goods sold and pulled down by the legal charges of the second half of 2025; neither should recur. Stripping the refund from the first half's operating margin leaves a level above the trailing figure, and the raised full-year outlook, once its stated refund contribution is removed and depreciation, amortization and share-based compensation are deducted, points to a similar level for the year. Mix and input-cost headwinds keep the base case from going higher.",
+          "quote": "Net income, adjusted net income, and adjusted EBITDA all include a pre-tax impact of approximately $71 million related to tariff refunds that were recorded during the current year quarter.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.profitability.operating_margin.value",
+            "earnings_versus_cash.history.operating_margin_three_year_average",
+            "earnings_versus_cash.history.years.0.operating_margin",
+            "earnings_versus_cash.history.years.1.operating_margin"
+          ],
+          "history": "Above the trailing operating margin and the three-year average, both of which carry the loss-making fourth quarter of 2025; below the margin of the year before last and well below the margins of 2020 and 2021; a little under the level the first half of 2026 earned once the refund is taken out."
+        },
+        "operating_margin_year_ten": {
+          "reason": "Operating leverage on data-center volume, lower legal costs and the shrinking of loss-making clean-energy lines push the margin up over the decade, but the growth comes from the commercial and industrial segment, whose adjusted EBITDA margin is well under half the Residential segment's, so mix caps the blended margin at roughly the level the company earned in 2022 and in the year before last rather than the pandemic-era peak.",
+          "quote": "Adjusted EBITDA for the Residential segment was $215.4 million, or 34.7% of Residential segment total sales, as compared to $146.4 million, or 23.1% of Residential sales, in the prior year.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "earnings_versus_cash.history.years.1.operating_margin",
+            "earnings_versus_cash.history.years.3.operating_margin",
+            "earnings_versus_cash.history.years.4.operating_margin"
+          ],
+          "history": "Equal to the margin of the year before last and of 2022, both years without the pandemic surge; well under the margins of 2020 and 2021, which the base case reads as a demand spike rather than a structural level."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "Capacity for large-megawatt generators is being added through capital spending and through acquisitions, namely Enercon, Belvidere, Wolter and the pending New Way deal, and management says more will follow as the pipeline materialises; working capital also absorbed cash over the trailing window as unbilled contract assets appeared. The base case assumes reinvestment runs a little under half of after-tax operating income while the build is under way.",
+          "quote": "During the quarter, the Company completed the previously disclosed acquisition of Enercon, headquartered in East Peoria, Illinois, and acquired an additional facility in Belvidere, Illinois, significantly expanding capacity for large megawatt generator packaging.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "free_cash_flow.free_cash_flow_to_firm.inputs.capital_expenditure.value",
+            "free_cash_flow.free_cash_flow_to_firm.inputs.depreciation_and_amortization.value",
+            "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital.value",
+            "terms.cash_flow_families.acquisitions.value",
+            "earnings_versus_cash.history.years.0.capital_expenditure"
+          ],
+          "history": "Between the two trailing readings: organic reinvestment, meaning capital expenditure plus the working-capital build less depreciation and amortization, was close to nil because amortization of acquired intangibles is large, while adding the half's acquisition cash lifts the share to roughly two-thirds of after-tax operating income; capital expenditure itself has risen in each of the last three fiscal years."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "Once the capacity build is complete the company needs only to fund terminal growth; at this share and the base terminal rate the implied return on new capital is a little under the cost of capital, consistent with a trailing return on invested capital that is below it and improving as margins recover and asset turnover normalises.",
+          "quote": "Asset turnover below one as acquired assets outpace flat trailing sales",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "ratios.profitability.return_on_invested_capital.value",
+            "cost_of_capital.wacc.value",
+            "ratios.efficiency.asset_turnover.value"
+          ],
+          "history": "Above the near-nil trailing organic reinvestment share but below the acquisition-inclusive share; the company has historically grown through acquisitions and the base case assumes that continues at a steadier pace than the current half."
+        }
+      }
+    },
+    "bull": {
+      "revenue_growth_year_one": 0.20,
+      "terminal_growth": 0.045,
+      "operating_margin_year_one": 0.125,
+      "operating_margin_year_ten": 0.15,
+      "reinvestment_rate_year_one": 0.50,
+      "reinvestment_rate_year_ten": 0.30,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "The unchanged full-year guidance, given a first half that grew in the low teens, implies a second half growing by around a fifth; the committed hyperscale volume for 2027, a data-center backlog that has grown to more than a third of trailing revenue, and a second hyperscale customer whose volumes are not yet in that backlog carry that pace into the first half of 2027. The bull case takes the guidance and the backlog at face value and adds the second hyperscaler.",
+          "quote": "In total, our backlog for products serving the data center market has now increased to approximately $1.6 billion as of today, which does not include any committed volumes from the second hyperscale customer.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.growth.revenue.year_over_year.value",
+            "terms.trailing_four_quarters.revenue.value",
+            "earnings_versus_cash.history.years.4.revenue_growth",
+            "earnings_versus_cash.history.years.3.revenue_growth"
+          ],
+          "history": "Roughly double the quarter's reported year-over-year rate and far above the flat trailing window and the negative three-year compound rate; comparable to the growth of 2022 but well below the pandemic-era surge of 2021, so even the bull case does not assume a repeat of the home-standby boom."
+        },
+        "terminal_growth": {
+          "reason": "Just under the risk-free rate, the ceiling: the bull case treats the data-center and grid-resilience markets as structural, with natural-gas and large-megawatt generation, microgrids and energy technology giving the company a lasting share of a growing market, so terminal growth matches long-run nominal growth for the economy.",
+          "quote": "Further C&I segment acceleration drives robust sales increase and operating leverage during the quarter; Rapidly increasing data center backlog provides visibility to significant 2027 growth",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "cost_of_capital.risk_free_rate.value",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound"
+          ],
+          "history": "The highest rate the calculator allows and well above the negative three-year compound rate; it assumes the decade ends with a larger, more diversified company than the one whose history the calculator holds."
+        },
+        "operating_margin_year_one": {
+          "reason": "The first half's operating margin, with the refund stripped out, already sits above the trailing figure, and the bull case adds operating leverage from the second-half volume ramp, lower legal costs than a year ago and continued price realisation.",
+          "quote": "The increase was primarily driven by increased operating expense investments to support future C&I growth and higher intangible amortization, partially offset by lower legal expenses in the current year.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.profitability.operating_margin.value",
+            "earnings_versus_cash.history.years.1.operating_margin",
+            "earnings_versus_cash.history.operating_margin_three_year_average"
+          ],
+          "history": "Equal to the margin of the year before last, above the trailing and three-year-average margins that carry the legal charges of late 2025, and above the first half of 2026 once the refund is removed; still well below the margins of 2020 and 2021."
+        },
+        "operating_margin_year_ten": {
+          "reason": "Sustained volume through a larger capacity base, mix within the commercial and industrial segment shifting to large-megawatt units, and the exit from loss-making clean-energy lines lift the margin toward but not to the pandemic-era peak; the bull case assumes operating leverage outweighs the segment mix shift.",
+          "quote": "as well as the favorable impact of acquisitions/divestitures and improved operating leverage",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "earnings_versus_cash.history.years.4.operating_margin",
+            "earnings_versus_cash.history.years.5.operating_margin",
+            "earnings_versus_cash.history.years.1.operating_margin"
+          ],
+          "history": "Above every margin since 2021 but below the margins of 2020 and 2021, which were earned on a surge in home-standby demand; the bull case reads those years as a ceiling, not a target."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "Faster growth needs more capacity: the bull case assumes the company keeps buying and building at the pace of the current half, including the pending New Way acquisition and the further capacity management says it plans to add, and funds the working capital that over-time data-center contracts require.",
+          "quote": "On June 24th, the Company secured a global supply agreement with a second hyperscale customer and is currently negotiating final product specific terms for 2027 and 2028 volumes.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "terms.cash_flow_families.acquisitions.value",
+            "free_cash_flow.free_cash_flow_to_firm.inputs.capital_expenditure.value",
+            "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital.value"
+          ],
+          "history": "Far above the near-nil trailing organic reinvestment and a little below the acquisition-inclusive share of the trailing window; higher than the base case because the bull case's growth has to be paid for."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "By year ten the capacity is built and the returns on it are high: at this share and the bull terminal rate the implied return on new capital is comfortably above the cost of capital, which is what a lasting position in a supply-constrained market would earn.",
+          "quote": "The $275.8 million net cash used in investing activities for the six months ended June 30, 2026 represents cash payments of $87.7 million related to the purchase of property and equipment and $211.8 million for acquisitions of businesses, net of cash acquired.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.profitability.return_on_invested_capital.value",
+            "cost_of_capital.wacc.value"
+          ],
+          "history": "Above the trailing organic reinvestment share, which was close to nil, and well below the acquisition-inclusive share; the bull case assumes the trailing return on invested capital, which is below the cost of capital, roughly doubles as margins and turnover recover."
+        }
+      }
+    }
+  },
+  "wacc_overrides": {}
+}

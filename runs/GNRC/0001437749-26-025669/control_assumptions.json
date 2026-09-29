@@ -1,0 +1,46 @@
+{
+ "ticker": "GNRC",
+ "accession": "0001437749-26-025669",
+ "form": "10-Q",
+ "purpose": "bear, base and bull drivers for a ten-year discounted cash flow",
+ "written_by": "single-agent control",
+ "constraints": {
+  "terminal_growth_ceiling": "{cost_of_capital.risk_free_rate.value}",
+  "discount_rate_reference": "{cost_of_capital.wacc.value}",
+  "base_revenue": "{terms.trailing_four_quarters.revenue.value}",
+  "base_operating_income": "{terms.trailing_four_quarters.operating_income.value}",
+  "base_operating_margin": "{ratios.profitability.operating_margin.value}",
+  "note": "year one is the twelve months following the trailing window that ends at the period end; the trailing base carries a legal charge in the prior fiscal year and a one-time tariff refund in the latest quarter, so year-one margins are set on the underlying business rather than on the trailing figure"
+ },
+ "scenarios": {},
+ "cross_checks": [
+  "every terminal_growth is at or below {cost_of_capital.risk_free_rate.value}",
+  "year-one margins in all scenarios exclude the one-time tariff refund that sits inside the trailing and quarterly figures",
+  "year-one growth in the base case is anchored on management guidance, which the accounting analysis flags as dependent on a strong second half; the bear case is anchored on the flat trailing window",
+  "reinvestment rates in year one are above the terminal rates in every scenario because acquisitions, earnouts and capacity additions are front-loaded"
+ ],
+ "summary_ko": "기본 시나리오는 경영진 가이던스와 데이터센터 수주잔고에 따라 첫해 매출이 십 퍼센트대 중반으로 성장하고, 관세 환급을 제외한 영업이익률이 십 퍼센트대 초반에서 시작해 규모의 경제로 소폭 개선되며, 증설·조건부 대가·인수로 첫해 재투자율이 높다가 성숙기에 삼분의 일 수준으로 낮아지는 경로다. 약세 시나리오는 주거용 부진과 데이터센터 계약 취소로 성장이 한 자릿수에 머물고 마진이 후행 수준에 갇힌 채 이미 약정된 증설 부담만 남는 경우이며, 강세 시나리오는 두 번째 하이퍼스케일 고객 물량과 정전 수요 회복이 겹쳐 가이던스 상단을 넘고 마진이 십 퍼센트대 중반으로 회복하는 경우다. 모든 시나리오의 영구성장률은 계산기의 무위험이자율 이하로 두었다.",
+ "limits": [
+  "Year-one margin estimates remove the tariff refund by reading management's attribution in prose; the calculator has no field for the refund, so the removal is qualitative.",
+  "Guidance is on net sales and net income margin and adjusted EBITDA margin, not GAAP operating margin; the translation to operating margin is the analyst's.",
+  "Backlog and committed volumes are press-release figures outside the calculator and outside the remaining-performance-obligation disclosure.",
+  "The trailing base blends a legal-charge year and a refund quarter; neither the bear nor the bull anchor can be read directly from a single calculator field.",
+  "Reinvestment rates are stated as shares of after-tax operating income; the calculator's free cash flow to firm uses a statutory tax rate cap and a year-end operating lease balance."
+ ],
+ "wacc_overrides": {},
+ "dropped_items": [
+  {
+   "where": "scenarios.bear",
+   "reason": "revenue_growth_year_one is not a number"
+  },
+  {
+   "where": "scenarios.base",
+   "reason": "revenue_growth_year_one is not a number"
+  },
+  {
+   "where": "scenarios.bull",
+   "reason": "revenue_growth_year_one is not a number"
+  }
+ ],
+ "dropped_count": 3
+}

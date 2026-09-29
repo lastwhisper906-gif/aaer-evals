@@ -1,0 +1,249 @@
+{
+ "ticker": "LFUS",
+ "accession": "0001628280-26-050481",
+ "form": "10-Q",
+ "question": "How healthy is this company?",
+ "author": "single-agent control (one agent, no reader or analyst split)",
+ "sections": {
+  "profitability": {
+   "finding": "Two profitability pictures coexist. The trailing-four-quarter window gives a gross margin of {ratios.profitability.gross_margin.value}, an operating margin of {ratios.profitability.operating_margin.value}, a net margin of {ratios.profitability.net_margin.value}, a return on assets of {ratios.profitability.return_on_assets.value}, a return on equity of {ratios.profitability.return_on_equity.value} and a return on invested capital of {ratios.profitability.return_on_invested_capital.value}; the prior fiscal year's operating margin was {earnings_versus_cash.history.years.0.operating_margin} on a net loss of {earnings_versus_cash.history.years.0.net_income}, and that impairment quarter sits inside the window. The current-period picture is far better: quarterly operating income of {ratios.growth.operating_income.this_quarter.value} on revenue of {ratios.growth.revenue.this_quarter.value}, a quarterly gross margin of {trend_table.quarters-back-0.ratios.gross_margin.value} that is the highest of six quarters, and a release-stated GAAP operating margin in the mid-teens with adjusted margins several points higher. Segment margins diverge: Electronics expanded by more than six points on volume leverage and mix, Transportation contracted on commercial-vehicle cost inflation, and Industrial slipped as Basler amortization outran its gross-margin contribution. The longer history frames both readings: the operating margin peaked at {earnings_versus_cash.history.years.3.operating_margin} in the last upcycle, ran {earnings_versus_cash.history.years.2.operating_margin} and {earnings_versus_cash.history.years.1.operating_margin} in the downturn, and averages {earnings_versus_cash.history.operating_margin_three_year_average} over three years including the impairment.",
+   "verdict": "run-rate profitability is good and rising on the cycle; trailing returns are an impairment artifact; the peak-cycle margin of the prior upswing has not yet been regained",
+   "evidence": [
+    "0001628280-26-050382:8k_2_02:12",
+    "0001628280-26-050382:8k_2_02:64",
+    "0001628280-26-050382:8k_2_02:70",
+    "0001628280-26-050481:mdna:31",
+    "0001628280-26-050481:mdna:51",
+    "0001628280-26-050481:mdna:58",
+    "0001628280-26-050481:mdna:65",
+    "0001628280-26-050382:8k_2_02:82"
+   ],
+   "fields": [
+    "ratios.profitability.gross_margin.value",
+    "ratios.profitability.operating_margin.value",
+    "ratios.profitability.net_margin.value",
+    "ratios.profitability.return_on_assets.value",
+    "ratios.profitability.return_on_equity.value",
+    "ratios.profitability.return_on_invested_capital.value",
+    "ratios.growth.operating_income.this_quarter.value",
+    "ratios.growth.revenue.this_quarter.value",
+    "trend_table.quarters-back-0.ratios.gross_margin.value",
+    "earnings_versus_cash.history.years.0.operating_margin",
+    "earnings_versus_cash.history.years.0.net_income",
+    "earnings_versus_cash.history.years.3.operating_margin",
+    "earnings_versus_cash.history.years.2.operating_margin",
+    "earnings_versus_cash.history.years.1.operating_margin",
+    "earnings_versus_cash.history.operating_margin_three_year_average"
+   ]
+  },
+  "efficiency": {
+   "finding": "Working capital is turning faster as volume returns. Trailing days sales outstanding is {ratios.efficiency.days_sales_outstanding.value}, days of inventory {ratios.efficiency.days_sales_of_inventory.value}, days payable {ratios.efficiency.days_payables_outstanding.value}, and the cash conversion cycle {ratios.efficiency.cash_conversion_cycle.value}. On the single-quarter basis the receivables ratio {trend_table.quarters-back-0.ratios.receivables_over_revenue.value} and inventory days {trend_table.quarters-back-0.ratios.days_sales_of_inventory.value} are both the lowest of six quarters, and the annual inventory days {trend_table.years-back-0.ratios.days_sales_of_inventory.value} is the lowest of five years after peaking at {trend_table.years-back-3.ratios.days_sales_of_inventory.value}. Asset turnover is {ratios.efficiency.asset_turnover.value}, held down by the goodwill and intangibles that make up a soft-asset share of {trend_table.quarters-back-0.ratios.soft_asset_share.value}. Part of the improvement in the cycle is the payables side lengthening, which is less durable than the receivables and inventory gains.",
+   "verdict": "efficiency is improving with the cycle and is at the best point in the six-quarter record; asset turnover stays structurally low because of acquisition goodwill",
+   "evidence": [
+    "0001628280-26-050382:8k_2_02:49",
+    "0001628280-26-050382:8k_2_02:57",
+    "0001628280-26-050481:notes:60",
+    "0001628280-26-050481:notes:67"
+   ],
+   "fields": [
+    "ratios.efficiency.days_sales_outstanding.value",
+    "ratios.efficiency.days_sales_of_inventory.value",
+    "ratios.efficiency.days_payables_outstanding.value",
+    "ratios.efficiency.cash_conversion_cycle.value",
+    "ratios.efficiency.asset_turnover.value",
+    "trend_table.quarters-back-0.ratios.receivables_over_revenue.value",
+    "trend_table.quarters-back-0.ratios.days_sales_of_inventory.value",
+    "trend_table.years-back-0.ratios.days_sales_of_inventory.value",
+    "trend_table.years-back-3.ratios.days_sales_of_inventory.value",
+    "trend_table.quarters-back-0.ratios.soft_asset_share.value"
+   ]
+  },
+  "liquidity": {
+   "dropped": "fields: 'ratios.liquidity.cash_runway_months.not_burning_cash' is not a field of calculator.json"
+  },
+  "solvency": {
+   "dropped": "fields: 'ratios.solvency.debt_over_ebitda.missing' is not a field of calculator.json"
+  },
+  "growth": {
+   "finding": "Revenue grew {ratios.growth.revenue.year_over_year.value} year over year in the quarter, {ratios.growth.revenue.quarter_over_quarter.value} sequentially and {ratios.growth.revenue.trailing_four_quarters.value} on a trailing basis, with the release splitting the quarter into organic growth in the mid-teens, a point of currency, and Basler. Operating income grew {ratios.growth.operating_income.year_over_year.value} and net income {ratios.growth.net_income.year_over_year.value} year over year; operating cash flow grew {ratios.growth.operating_cash_flow.year_over_year.value}. The trailing comparisons for operating income {ratios.growth.operating_income.trailing_four_quarters.value} and net income {ratios.growth.net_income.trailing_four_quarters.value} are negative because of the impairment quarter. The longer view is sobering: three-year compound revenue growth is {earnings_versus_cash.history.revenue_growth_three_year_compound}, revenue fell {earnings_versus_cash.history.years.2.revenue_growth} and {earnings_versus_cash.history.years.1.revenue_growth} in consecutive years before recovering {earnings_versus_cash.history.years.0.revenue_growth} last year, and the trailing revenue of {terms.trailing_four_quarters.revenue.value} is only now back above the peak fiscal year's {earnings_versus_cash.history.years.3.revenue}. Guidance for the third quarter calls for total growth above the current rate on record bookings plus Basler, and Basler's annualized sales at acquisition were a mid-single-digit share of the base. Passenger-vehicle and sensor products are shrinking by design; commercial vehicle and passives lead.",
+   "verdict": "growth is strong and broad in the current upswing, but it is a cyclical recovery back to prior-peak revenue rather than a new growth trajectory, with a fifth or so of the quarter's growth bought through acquisition",
+   "evidence": [
+    "0001628280-26-050382:8k_2_02:8",
+    "0001628280-26-050382:8k_2_02:73",
+    "0001628280-26-050382:8k_2_02:16",
+    "0001628280-26-050382:8k_2_02:19",
+    "0001628280-26-050481:mdna:102",
+    "0001628280-26-050481:mdna:19",
+    "0001628280-26-050481:mdna:55",
+    "0001628280-26-050481:notes:9",
+    "0001628280-26-050481:notes:10"
+   ],
+   "fields": [
+    "ratios.growth.revenue.year_over_year.value",
+    "ratios.growth.revenue.quarter_over_quarter.value",
+    "ratios.growth.revenue.trailing_four_quarters.value",
+    "ratios.growth.operating_income.year_over_year.value",
+    "ratios.growth.net_income.year_over_year.value",
+    "ratios.growth.operating_cash_flow.year_over_year.value",
+    "ratios.growth.operating_income.trailing_four_quarters.value",
+    "ratios.growth.net_income.trailing_four_quarters.value",
+    "earnings_versus_cash.history.revenue_growth_three_year_compound",
+    "earnings_versus_cash.history.years.2.revenue_growth",
+    "earnings_versus_cash.history.years.1.revenue_growth",
+    "earnings_versus_cash.history.years.0.revenue_growth",
+    "terms.trailing_four_quarters.revenue.value",
+    "earnings_versus_cash.history.years.3.revenue"
+   ]
+  },
+  "free_cash_flow": {
+   "dropped": "fields: 'free_cash_flow.free_cash_flow_to_firm.missing' is not a field of calculator.json"
+  }
+ },
+ "dupont": {
+  "net_margin": "{ratios.profitability.dupont.net_margin.value}",
+  "asset_turnover": "{ratios.profitability.dupont.asset_turnover.value}",
+  "equity_multiplier": "{ratios.profitability.dupont.equity_multiplier.value}",
+  "product": "{ratios.profitability.dupont.product.value}",
+  "reading": "The decomposition says where the return comes from and why it is negative on the trailing window. Leverage is low, with an equity multiplier of {ratios.profitability.dupont.equity_multiplier.value}, so the equity multiplier neither helps nor hurts much. Asset turnover of {ratios.profitability.dupont.asset_turnover.value} is structurally low for a manufacturer because roughly seven tenths of assets are goodwill, intangibles and cash rather than plant. That leaves the net margin to carry the return, and on the trailing window the net margin is {ratios.profitability.dupont.net_margin.value} because of the impairment quarter. On the run-rate margin the release reports for the quarter, the same turnover and multiplier would put return on equity comfortably into double digits; the return on invested capital of {ratios.profitability.return_on_invested_capital.value} on trailing operating income makes the same point from the other side. The structural lesson is that the company's returns depend almost entirely on operating margin, and its operating margin depends on where the electronics cycle is.",
+  "fields": [
+   "ratios.profitability.dupont.net_margin.value",
+   "ratios.profitability.dupont.asset_turnover.value",
+   "ratios.profitability.dupont.equity_multiplier.value",
+   "ratios.profitability.dupont.product.value",
+   "ratios.profitability.return_on_invested_capital.value",
+   "trend_table.quarters-back-0.ratios.soft_asset_share.value"
+  ],
+  "evidence": [
+   "0001628280-26-050382:8k_2_02:49",
+   "0001628280-26-050382:8k_2_02:70"
+  ]
+ },
+ "anomalies": [],
+ "path_to_distress": {
+  "starting_point": "Net debt of {ratios.solvency.net_debt.value} on total debt of {ratios.solvency.total_debt.value}, cash and short-term investments of {terms.cash_and_short_term_investments_now.value}, a current ratio of {ratios.liquidity.current_ratio.value}, most of an enlarged revolver undrawn, covenant net leverage far below the default threshold, and trailing simple free cash flow of {free_cash_flow.free_cash_flow_simple.value} that has stayed in a narrow band for five fiscal years including the downturn years. Distress is remote from here.",
+  "what_would_have_to_happen": [
+   "A cyclical reversal at least as deep as the last one, when revenue fell {earnings_versus_cash.history.years.2.revenue_growth} and then {earnings_versus_cash.history.years.1.revenue_growth} while operating margin dropped from {earnings_versus_cash.history.years.3.operating_margin} to {earnings_versus_cash.history.years.1.operating_margin}; even then operating cash flow stayed near {earnings_versus_cash.history.years.1.operating_cash_flow} and free cash flow near {earnings_versus_cash.history.years.1.free_cash_flow_simple}, so a downturn alone does not get there.",
+   "A large debt-funded acquisition layered onto the downturn: the covenant test is net leverage, the company has just enlarged the revolver and loosened the EBITDA definition, and its record is serial acquisition with one large impairment already; leverage would have to rise several multiples of EBITDA before the threshold binds.",
+   "A tariff or China shock that hits both the {concentration.facts.7.value} of revenue earned in China and the distributor channel at once, compressing margin faster than volume; the receivable allowance would grow and inventory reserves, trimmed at the top of the cycle, would need rebuilding.",
+   "A liquidity mismatch rather than a solvency one: only a minority of cash is in the United States, the senior notes maturing next year are a US obligation, and the dividend was just raised; if repatriation were constrained and the revolver drawn for a deal, domestic liquidity could tighten even while consolidated cash looked ample.",
+   "An unquantified contingency crystallizing: the customer recall carries no accrual and no estimated range."
+  ],
+  "early_warnings_to_watch": [
+   "Payables days shortening while receivables days lengthen, reversing this year's working-capital tailwind.",
+   "Inventory reserve ratio rising back toward {trend_table.quarters-back-3.ratios.inventory_reserve_ratio.value} while inventory days climb from {trend_table.quarters-back-0.ratios.days_sales_of_inventory.value}.",
+   "Restructuring charges continuing every quarter after the site closures are complete, which would mean the non-GAAP margin is the wrong margin.",
+   "Revolver drawings rising from the current balance ahead of the senior-note maturity next year.",
+   "Guidance for growth above the current rate not being met once Basler annualizes in December."
+  ],
+  "probability": "low over the next two years; the balance sheet could absorb a full down-cycle without covenant stress, and the failure mode would be self-inflicted through acquisition leverage rather than operational",
+  "evidence": [
+   "0001628280-26-050382:8k_2_02:82",
+   "0001628280-26-050382:8k_2_02:83",
+   "0001628280-26-050382:8k_2_02:84",
+   "0001628280-26-050481:mdna:81",
+   "0001628280-26-050481:mdna:89",
+   "0001628280-26-050481:mdna:100",
+   "0001628280-26-050481:notes:91",
+   "0001628280-26-050481:notes:200",
+   "0001628280-26-050481:notes:189"
+  ],
+  "fields": [
+   "ratios.solvency.net_debt.value",
+   "ratios.solvency.total_debt.value",
+   "terms.cash_and_short_term_investments_now.value",
+   "ratios.liquidity.current_ratio.value",
+   "free_cash_flow.free_cash_flow_simple.value",
+   "earnings_versus_cash.history.years.2.revenue_growth",
+   "earnings_versus_cash.history.years.1.revenue_growth",
+   "earnings_versus_cash.history.years.3.operating_margin",
+   "earnings_versus_cash.history.years.1.operating_margin",
+   "earnings_versus_cash.history.years.1.operating_cash_flow",
+   "earnings_versus_cash.history.years.1.free_cash_flow_simple",
+   "concentration.facts.7.value",
+   "trend_table.quarters-back-3.ratios.inventory_reserve_ratio.value",
+   "trend_table.quarters-back-0.ratios.days_sales_of_inventory.value"
+  ]
+ },
+ "summary_ko": {},
+ "limits": "This analysis reads the company's health from its own filed numbers against its own past. It forecasts nothing, and it cannot see what is not in the filings.",
+ "normalized_quotes": 0,
+ "dropped_items": [
+  {
+   "where": "sections.liquidity",
+   "reason": "fields: 'ratios.liquidity.cash_runway_months.not_burning_cash' is not a field of calculator.json"
+  },
+  {
+   "where": "sections.solvency",
+   "reason": "fields: 'ratios.solvency.debt_over_ebitda.missing' is not a field of calculator.json"
+  },
+  {
+   "where": "sections.free_cash_flow",
+   "reason": "fields: 'free_cash_flow.free_cash_flow_to_firm.missing' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[0]",
+   "id": "profitability_trailing_returns_negative_on_impairment_while_quarterly_margin_peaks",
+   "reason": "numbers_vs_prose 'The release presents a company at a margin high; the calculator presents a company that lost money over twelve months. Both are true and the difference is one impairment.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[1]",
+   "id": "profitability_segment_margins_diverge_with_transportation_contracting",
+   "reason": "numbers_vs_prose 'The release headline credits broad-based demand strength; the segment tables show one segment doing the lifting and one going the other way.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[2]",
+   "id": "efficiency_payables_lengthening_drives_part_of_the_cash_cycle_gain",
+   "reason": "numbers_vs_prose 'The MD&A discusses neither payables nor supplier terms; the cash-flow statement shows the swing.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[3]",
+   "id": "efficiency_asset_turnover_structurally_low_from_acquisition_goodwill",
+   "reason": "fields: 'ratios.profitability.invested_capital.value' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[4]",
+   "id": "liquidity_minority_of_cash_held_in_the_united_states",
+   "reason": "the area 'liquidity' is not one of results_against_expectations, liquidity_and_capital, narrative_signs_of_operating_pressure, profitability, efficiency, solvency, growth"
+  },
+  {
+   "where": "anomalies[5]",
+   "id": "solvency_interest_coverage_understated_by_trailing_operating_income",
+   "reason": "numbers_vs_prose 'The notes report covenant compliance on interest coverage and leverage; the calculator ratio would look strained on its own but is a window artifact.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[6]",
+   "id": "solvency_covenant_ebitda_definition_loosened_while_leverage_is_low",
+   "reason": "fields: 'ratios.solvency.debt_over_ebitda.missing' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[7]",
+   "id": "growth_recovery_to_prior_peak_revenue_not_a_new_trajectory",
+   "reason": "numbers_vs_prose \"Guidance and the chief executive's remarks describe scaling high-growth opportunities and record bookings; the history describes a cyclical business returning to its previous size.\" is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[8]",
+   "id": "growth_acquired_share_of_quarterly_growth",
+   "reason": "numbers_vs_prose 'Organic growth is disclosed cleanly; the headline growth figure and the third-quarter guidance both include the acquisition, which annualizes in December.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[9]",
+   "id": "free_cash_flow_quality_adjusted_figure_far_below_reported",
+   "reason": "the area 'free_cash_flow' is not one of results_against_expectations, liquidity_and_capital, narrative_signs_of_operating_pressure, profitability, efficiency, solvency, growth"
+  },
+  {
+   "where": "anomalies[10]",
+   "id": "free_cash_flow_capital_expenditure_below_depreciation",
+   "reason": "the area 'free_cash_flow' is not one of results_against_expectations, liquidity_and_capital, narrative_signs_of_operating_pressure, profitability, efficiency, solvency, growth"
+  },
+  {
+   "where": "anomalies[11]",
+   "id": "free_cash_flow_equity_award_proceeds_and_payables_lift_cash_balance",
+   "reason": "the area 'free_cash_flow' is not one of results_against_expectations, liquidity_and_capital, narrative_signs_of_operating_pressure, profitability, efficiency, solvency, growth"
+  },
+  {
+   "where": "limits",
+   "reason": "not the rules version's sentence; replaced by it"
+  }
+ ],
+ "dropped_count": 16
+}

@@ -1,0 +1,42 @@
+{
+ "ticker": "CIEN",
+ "accession": "0001628280-26-040767",
+ "form": "10-Q",
+ "purpose": "bear, base and bull drivers for a ten-year discounted cash flow",
+ "author": "single-agent control (one agent, no reader or analyst split)",
+ "conventions": {
+  "revenue_growth_year_one": "growth over the trailing-four-quarter revenue in the calculator, {terms.trailing_four_quarters.revenue.value}",
+  "operating_margin": "GAAP operating income over revenue, the same basis as {ratios.profitability.operating_margin.value}; the company guides only on an adjusted basis that excludes share-based compensation and amortisation, so its guidance is translated down to GAAP",
+  "reinvestment_rate": "net reinvestment (capital expenditure less depreciation plus the change in working capital) as a share of after-tax operating income; the trailing figure is negative because payables rose and inventory fell, which is not sustainable while purchase commitments convert to inventory",
+  "terminal_growth_ceiling": "{cost_of_capital.risk_free_rate.value}, the risk-free rate in the calculator; no scenario exceeds it",
+  "discount_rate_reference": "{cost_of_capital.wacc.value}, noting that it rests on a beta of {cost_of_capital.beta.value} measured over one volatile year"
+ },
+ "scenarios": {},
+ "cross_scenario_notes": [
+  "All three scenarios put year-one operating margin above the trailing figure because the trailing four quarters include a weak half from the prior fiscal year; the exit-rate quarter, not the trailing average, is the starting point.",
+  "Reinvestment in year one is positive in every scenario even though the trailing change in trade working capital was a release, because the payables build and inventory decline that produced the release are not repeatable while the purchase commitments convert into inventory.",
+  "Terminal growth in every scenario is at or below {cost_of_capital.risk_free_rate.value}.",
+  "The discount rate in the calculator is driven by a one-year beta of {cost_of_capital.beta.value}; a valuation using these drivers should test a lower beta, since the cost of equity as measured exceeds the trailing return on invested capital."
+ ],
+ "limits": [
+  "Guidance is given only on an adjusted basis and the company states it cannot reconcile it to GAAP; the translation to GAAP margin is a judgement that share-based compensation and amortisation run at several points of revenue, read from the reconciliation appendix rather than computed.",
+  "Year one is defined over the trailing-four-quarter base in the calculator, not over the fiscal year the guidance addresses, so the growth figures are not the guidance figures.",
+  "No arithmetic was performed; the decimals are analyst judgements anchored to the quoted disclosures and the named calculator fields."
+ ],
+ "wacc_overrides": {},
+ "dropped_items": [
+  {
+   "where": "scenarios.bear",
+   "reason": "revenue_growth_year_one is not a number"
+  },
+  {
+   "where": "scenarios.base",
+   "reason": "revenue_growth_year_one is not a number"
+  },
+  {
+   "where": "scenarios.bull",
+   "reason": "revenue_growth_year_one is not a number"
+  }
+ ],
+ "dropped_count": 3
+}

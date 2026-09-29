@@ -1,0 +1,251 @@
+{
+ "scenarios": {
+  "bear": {
+   "revenue_growth_year_one": 0.03,
+   "terminal_growth": 0.02,
+   "operating_margin_year_one": 0.21,
+   "operating_margin_year_ten": 0.2,
+   "reinvestment_rate_year_one": 0.3,
+   "reinvestment_rate_year_ten": 0.22,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "The bear case reads the current hardware surge as a cycle that pauses within the year, as the company's own record shows after its last strong year. Growth is narrow in source, coming from AI infrastructure shipped to hyperscalers, while subscription, services, Security and Collaboration are flat to down and remaining performance obligations are flat against fiscal year-end. If that one customer group slows its ordering, the recurring base cannot carry growth.",
+     "quote": "Total remaining performance obligations as of April 25, 2026 were flat compared to the end of fiscal 2025. Remaining performance obligations for product increased by 2% compared to the end of fiscal 2025, of which long-term product RPO was $11.7 billion, up 2%. Remaining performance obligations for services decreased 3%.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "ratios.growth.revenue.year_over_year",
+      "ratios.growth.revenue.trailing_four_quarters",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound",
+      "earnings_versus_cash.history.years.1.revenue_growth",
+      "earnings_versus_cash.history.years.2.revenue_growth"
+     ],
+     "history": "Bear year-one growth sits at about the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, far below the trailing rate of {ratios.growth.revenue.trailing_four_quarters|pct} and the quarter's {ratios.growth.revenue.year_over_year|pct}; the precedent is fiscal 2024, when revenue moved {earnings_versus_cash.history.years.1.revenue_growth|pct} the year after fiscal 2023's {earnings_versus_cash.history.years.2.revenue_growth|pct}."
+    },
+    "terminal_growth": {
+     "reason": "A mature networking franchise whose software and services base is shrinking is given a terminal rate below its own compound record and well below the risk-free rate; the recurring revenue that once made growth durable is no longer growing with total revenue.",
+     "quote": "Total subscription revenue decreased 2%.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "cost_of_capital.risk_free_rate",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound",
+      "earnings_versus_cash.history.years.3.revenue_growth",
+      "earnings_versus_cash.history.years.4.revenue_growth"
+     ],
+     "history": "Below the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and close to the fiscal 2021 and fiscal 2022 rates of {earnings_versus_cash.history.years.4.revenue_growth|pct} and {earnings_versus_cash.history.years.3.revenue_growth|pct}, the years before the last upcycle; under the risk-free rate of {cost_of_capital.risk_free_rate|pct}."
+    },
+    "operating_margin_year_one": {
+     "reason": "Gross margin is at its lowest of the six filled quarters on mix toward Networking hardware and higher memory costs, a new restructuring plan brings charges back in the fourth quarter and into fiscal 2027, and the nine-month margin gain was itself aided by the absence of such charges. The bear case takes the margin back toward the latest fiscal year's level.",
+     "quote": "In the fourth quarter of fiscal 2026, we announced a restructuring plan to allow us to invest in key growth opportunities including silicon, optics, security and AI. We expect to recognize approximately $450 million in pre-tax charges in the fourth quarter of fiscal 2026. The total pre-tax charges are estimated to be up to $1 billion, with the plan expected to be substantially completed by the end of fiscal 2027. We expect to reinvest substantially all of the cost savings from this restructuring plan in our key growth opportunities. As a result, the overall cost savings from this restructuring plan are not expected to be material.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "ratios.profitability.operating_margin",
+      "earnings_versus_cash.history.years.0.operating_margin",
+      "trend_table.quarters-back-0.ratios.gross_margin",
+      "trend_table.quarters-back-4.ratios.gross_margin"
+     ],
+     "history": "Just above fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct}, which carried the prior restructuring plan, and below the trailing {ratios.profitability.operating_margin|pct}; quarterly gross margin has fallen from {trend_table.quarters-back-4.ratios.gross_margin|pct} a year earlier to {trend_table.quarters-back-0.ratios.gross_margin|pct}."
+    },
+    "operating_margin_year_ten": {
+     "reason": "If the revenue mix stays tilted toward hardware built with variable-priced memory, restructuring recurs plan after plan, and the savings are reinvested rather than kept as the company itself says, the margin settles below the three-year average and well below the range of fiscal 2020 to fiscal 2023.",
+     "quote": "low concern on capitalisation, of which the record shows no sign; the recurring one-time item is restructuring, whose absence flattered the nine-month margin and whose return is already announced",
+     "quote_from": "analysis_accounting.json",
+     "fields": [
+      "earnings_versus_cash.history.operating_margin_three_year_average",
+      "earnings_versus_cash.history.years.0.operating_margin",
+      "earnings_versus_cash.history.years.2.operating_margin",
+      "earnings_versus_cash.history.years.5.operating_margin"
+     ],
+     "history": "Below the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct} and the fiscal 2025 level of {earnings_versus_cash.history.years.0.operating_margin|pct}; far below fiscal 2023's {earnings_versus_cash.history.years.2.operating_margin|pct} and fiscal 2020's {earnings_versus_cash.history.years.5.operating_margin|pct}."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "Trade working capital absorbed a large share of after-tax operating income this year as inventory and receivables rose, management expects inventory to rise further, firm purchase commitments have more than doubled, and capital expenditure is up. In the bear case that build persists, part of the committed memory becomes write-downs, and cash conversion stays weak.",
+     "quote": "Inventory as of April 25, 2026 increased by 49% and inventory purchase commitments with contract manufacturers and suppliers increased by 111% from our balances at the end of fiscal 2025. The combined increase of 93% in our inventory and inventory purchase commitments as compared with the end of fiscal 2025 was primarily related to commitments with contract manufacturers and suppliers related to manufacturing Cisco Silicon One and other products to meet the demand from hyperscalers and other customers. In the third quarter of fiscal 2026, we increased our purchase commitments with a certain supplier to help secure memory components. We expect our inventory balances may increase in future quarters as we work to fulfill this demand.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now",
+      "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.a_year_earlier",
+      "earnings_versus_cash.working_capital.inventory.share_of_net_income",
+      "terms.trailing_four_quarters.capital_expenditure",
+      "terms.trailing_four_quarters_a_year_earlier.capital_expenditure",
+      "ratios.growth.operating_cash_flow.trailing_four_quarters"
+     ],
+     "history": "Trade working capital moved from {free_cash_flow.free_cash_flow_to_firm.trade_working_capital.a_year_earlier} to {free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now}, the inventory rise alone absorbing {earnings_versus_cash.working_capital.inventory.share_of_net_income|pct} of trailing net income, and capital expenditure rose from {terms.trailing_four_quarters_a_year_earlier.capital_expenditure} to {terms.trailing_four_quarters.capital_expenditure}; operating cash flow moved {ratios.growth.operating_cash_flow.trailing_four_quarters|pct} while income rose. The rate chosen sits above this year's working-capital drag to allow for acquisitions, which were near nil this year but large in the company's record."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "With terminal growth at the low end and returns on new capital assumed to fall toward the cost of capital, sustaining even slow growth requires reinvestment at a rate well above the base case; acquisitions to replace a shrinking software base are the company's historical pattern.",
+     "quote": "",
+     "quote_from": "",
+     "fields": [
+      "ratios.profitability.return_on_invested_capital",
+      "cost_of_capital.wacc.value",
+      "terms.cash_flow_families.acquisitions.value"
+     ],
+     "history": "Trailing return on invested capital is {ratios.profitability.return_on_invested_capital|pct} against a cost of capital of {cost_of_capital.wacc.value|pct}; the bear case assumes new capital earns closer to the latter, so the terminal growth rate needs a higher share of income reinvested. Acquisitions over the trailing four quarters were only {terms.cash_flow_families.acquisitions.value}, unusually low for this company."
+    }
+   }
+  },
+  "base": {
+   "revenue_growth_year_one": 0.08,
+   "terminal_growth": 0.03,
+   "operating_margin_year_one": 0.23,
+   "operating_margin_year_ten": 0.24,
+   "reinvestment_rate_year_one": 0.22,
+   "reinvestment_rate_year_ten": 0.18,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "The best reading is that hardware momentum carries into the next year but below the quarter's pace. Firm purchase commitments have more than doubled and management expects inventory to keep rising to meet hyperscaler demand, which signals shipments ahead; against that, services and subscription revenue are declining, Security is flat, remaining performance obligations are flat, and the growth rests on one customer group.",
+     "quote": "Inventory as of April 25, 2026 increased by 49% and inventory purchase commitments with contract manufacturers and suppliers increased by 111% from our balances at the end of fiscal 2025. The combined increase of 93% in our inventory and inventory purchase commitments as compared with the end of fiscal 2025 was primarily related to commitments with contract manufacturers and suppliers related to manufacturing Cisco Silicon One and other products to meet the demand from hyperscalers and other customers. In the third quarter of fiscal 2026, we increased our purchase commitments with a certain supplier to help secure memory components. We expect our inventory balances may increase in future quarters as we work to fulfill this demand.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "ratios.growth.revenue.trailing_four_quarters",
+      "ratios.growth.revenue.year_over_year",
+      "ratios.growth.revenue.quarter_over_quarter",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound",
+      "earnings_versus_cash.history.years.0.revenue_growth"
+     ],
+     "history": "Below the trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters|pct} and the quarter's year-over-year {ratios.growth.revenue.year_over_year|pct}, but above fiscal 2025's {earnings_versus_cash.history.years.0.revenue_growth|pct} and well above the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, because the fade begins from a year in which the AI infrastructure cycle is still building."
+    },
+    "terminal_growth": {
+     "reason": "By year ten the company is taken to grow at its own long-run compound rate, a mature networking and software franchise growing a little below the economy, with the AI infrastructure cycle absorbed into the base; this sits below the risk-free rate as required.",
+     "quote": "The MD&A shows the growth is narrow in source — Americas product revenue led by AI infrastructure sold to service providers and cloud customers — while subscription revenue, services revenue, the Collaboration category and services remaining performance obligations all declined, and total remaining performance obligations were flat against fiscal year-end.",
+     "quote_from": "analysis_financial.json",
+     "fields": [
+      "earnings_versus_cash.history.revenue_growth_three_year_compound",
+      "cost_of_capital.risk_free_rate",
+      "earnings_versus_cash.history.years.3.revenue_growth"
+     ],
+     "history": "About level with the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and fiscal 2022's {earnings_versus_cash.history.years.3.revenue_growth|pct}; below the risk-free rate of {cost_of_capital.risk_free_rate|pct}."
+    },
+    "operating_margin_year_one": {
+     "reason": "The trailing margin carries a restructuring holiday that ends in the fourth quarter, when charges return under a plan running into fiscal 2027, and gross margin is compressing on Networking mix and memory costs. Operating expense leverage on growing revenue offsets part of that. Year one is set a little below the trailing margin.",
+     "quote": "As a percentage of revenue, research and development, sales and marketing, and general and administrative expenses, collectively, decreased by 3.8 percentage points. Operating income as a percentage of revenue increased by 2.4 percentage points, primarily driven by revenue growth, partially offset by lower gross margin in the third quarter of fiscal 2026.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "ratios.profitability.operating_margin",
+      "earnings_versus_cash.history.years.0.operating_margin",
+      "earnings_versus_cash.history.operating_margin_three_year_average",
+      "trend_table.quarters-back-0.ratios.gross_margin"
+     ],
+     "history": "Slightly below the trailing {ratios.profitability.operating_margin|pct} and about level with the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}; above fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct}, which carried the prior plan's charges."
+    },
+    "operating_margin_year_ten": {
+     "reason": "Amortization of purchased intangible assets is already falling as acquired assets become fully amortized, which lifts reported margin over time, and operating expenses are growing slower than revenue. Against that, the mix shift toward hardware and continued investment in AI, silicon and optics cap the recovery short of the fiscal 2020 to fiscal 2022 range.",
+     "quote": "For each of the third quarter and first nine months of fiscal 2026, the decrease in amortization of purchased intangible assets was primarily due to certain purchased intangible assets that became fully amortized and impairment charges of $19 million recognized in the first nine months of fiscal 2025.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "earnings_versus_cash.history.operating_margin_three_year_average",
+      "earnings_versus_cash.history.years.2.operating_margin",
+      "earnings_versus_cash.history.years.3.operating_margin",
+      "ratios.profitability.operating_margin"
+     ],
+     "history": "Above the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct} and the trailing {ratios.profitability.operating_margin|pct}, but below fiscal 2023's {earnings_versus_cash.history.years.2.operating_margin|pct} and fiscal 2022's {earnings_versus_cash.history.years.3.operating_margin|pct}."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "This year's reinvestment was dominated by working capital: inventory and receivables rose, capital expenditure grew, and management expects inventory to rise further, while acquisitions were near nil. The base case carries a working-capital build through year one at roughly this year's proportion of after-tax operating income, with a modest allowance for acquisitions resuming.",
+     "quote": "We expect our inventory balances may increase in future quarters as we work to fulfill this demand.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now",
+      "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.a_year_earlier",
+      "terms.trailing_four_quarters.capital_expenditure",
+      "terms.cash_flow_families.acquisitions.value",
+      "earnings_versus_cash.working_capital.inventory.share_of_net_income",
+      "ratios.efficiency.days_sales_of_inventory"
+     ],
+     "history": "Trade working capital rose from {free_cash_flow.free_cash_flow_to_firm.trade_working_capital.a_year_earlier} to {free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now}, the inventory portion equal to {earnings_versus_cash.working_capital.inventory.share_of_net_income|pct} of trailing net income, and days sales of inventory stand at {ratios.efficiency.days_sales_of_inventory}; capital expenditure of {terms.trailing_four_quarters.capital_expenditure} is small against income, and acquisitions of {terms.cash_flow_families.acquisitions.value} were far below the company's usual pattern."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "At terminal growth near the company's compound record and a return on new capital near the trailing return on invested capital, the share of after-tax operating income that must be reinvested is moderate; the working-capital build unwinds as the hardware cycle matures, but acquisitions remain part of how this company sustains its product lines.",
+     "quote": "",
+     "quote_from": "",
+     "fields": [
+      "ratios.profitability.return_on_invested_capital",
+      "cost_of_capital.wacc.value",
+      "terms.trailing_four_quarters.capital_expenditure"
+     ],
+     "history": "Trailing return on invested capital of {ratios.profitability.return_on_invested_capital|pct} against a cost of capital of {cost_of_capital.wacc.value|pct}: the terminal growth chosen, divided by a return near the former, gives a reinvestment share close to the rate set here."
+    }
+   }
+  },
+  "bull": {
+   "revenue_growth_year_one": 0.12,
+   "terminal_growth": 0.04,
+   "operating_margin_year_one": 0.245,
+   "operating_margin_year_ten": 0.27,
+   "reinvestment_rate_year_one": 0.18,
+   "reinvestment_rate_year_ten": 0.12,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "The bull case holds the quarter's pace for a year: Networking is growing strongly on AI infrastructure and campus refresh, product revenue grew across every geographic segment and customer market, and firm purchase commitments more than doubled with most due within a year, which is the company positioning for shipments well above the current run-rate.",
+     "quote": "Revenue from the Networking product category increased by 25%, or $1.7 billion primarily driven by our AI Infrastructure and Campus Networking solutions.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "ratios.growth.revenue.year_over_year",
+      "ratios.growth.revenue.quarter_over_quarter",
+      "ratios.growth.revenue.trailing_four_quarters",
+      "earnings_versus_cash.history.years.2.revenue_growth"
+     ],
+     "history": "Level with the quarter's year-over-year growth of {ratios.growth.revenue.year_over_year|pct}, above the trailing {ratios.growth.revenue.trailing_four_quarters|pct} and above the best fiscal year in the record, fiscal 2023's {earnings_versus_cash.history.years.2.revenue_growth|pct}."
+    },
+    "terminal_growth": {
+     "reason": "If AI infrastructure becomes a durable second growth leg alongside the installed networking base, the company can grow a little faster than its own long-run record; the rate stays below the risk-free rate.",
+     "quote": "Product revenue in the Americas segment increased by 20%, with growth across each of our customer markets, led by the Service Provider and Cloud customer market which was largely driven by revenue from our AI Infrastructure solutions.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "cost_of_capital.risk_free_rate",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound"
+     ],
+     "history": "Above the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and below the risk-free rate of {cost_of_capital.risk_free_rate|pct}."
+    },
+    "operating_margin_year_one": {
+     "reason": "The quarter's operating margin and the nine-month margin both already exceed this level; operating expenses fell sharply as a share of revenue on growth. The bull case assumes that leverage outweighs the fourth-quarter restructuring charge and the gross margin drag from mix and memory.",
+     "quote": "Operating income increased by 28%, and operating income as a percentage of revenue increased by 3.4 percentage points. These changes primarily resulted from revenue growth, lower restructuring and other charges and lower amortization of purchased intangible assets in the first nine months of fiscal 2026.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "ratios.profitability.operating_margin",
+      "earnings_versus_cash.history.operating_margin_three_year_average",
+      "ratios.growth.operating_income.trailing_four_quarters"
+     ],
+     "history": "Above the trailing {ratios.profitability.operating_margin|pct} and the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}; trailing operating income grew {ratios.growth.operating_income.trailing_four_quarters|pct}, far faster than revenue."
+    },
+    "operating_margin_year_ten": {
+     "reason": "As purchased intangible amortization from the Splunk acquisition rolls off and revenue scales over a largely fixed research and sales base, the margin returns to the range the company earned in fiscal 2020 through fiscal 2022, before that acquisition.",
+     "quote": "For each of the third quarter and first nine months of fiscal 2026, the decrease in amortization of purchased intangible assets was primarily due to certain purchased intangible assets that became fully amortized and impairment charges of $19 million recognized in the first nine months of fiscal 2025.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "earnings_versus_cash.history.years.3.operating_margin",
+      "earnings_versus_cash.history.years.4.operating_margin",
+      "earnings_versus_cash.history.years.5.operating_margin",
+      "earnings_versus_cash.history.years.2.operating_margin"
+     ],
+     "history": "Level with fiscal 2022's {earnings_versus_cash.history.years.3.operating_margin|pct} and fiscal 2020's {earnings_versus_cash.history.years.5.operating_margin|pct}, above fiscal 2023's {earnings_versus_cash.history.years.2.operating_margin|pct}: the top of the company's own record."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "The inventory build continues in year one as management says, but it converts to shipments and cash; the company outsources manufacturing and its capital expenditure is small against income, so reinvestment stays modest even at high growth.",
+     "quote": "We expect our inventory balances may increase in future quarters as we work to fulfill this demand.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "terms.trailing_four_quarters.capital_expenditure",
+      "free_cash_flow.free_cash_flow_simple",
+      "earnings_versus_cash.working_capital.inventory.share_of_net_income"
+     ],
+     "history": "Below this year's working-capital drag, in which inventory growth alone took {earnings_versus_cash.working_capital.inventory.share_of_net_income|pct} of trailing net income; capital expenditure of {terms.trailing_four_quarters.capital_expenditure} against simple free cash flow of {free_cash_flow.free_cash_flow_simple} shows how little fixed investment the model needs."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "High returns on incremental organic capital, with research expensed and manufacturing outsourced, mean the terminal growth rate can be sustained with a small share of income reinvested; the working-capital build unwinds and acquisitions are assumed small and bolt-on.",
+     "quote": "",
+     "quote_from": "",
+     "fields": [
+      "ratios.profitability.return_on_invested_capital",
+      "terms.trailing_four_quarters.research_and_development_expense",
+      "terms.trailing_four_quarters.capital_expenditure"
+     ],
+     "history": "Trailing return on invested capital of {ratios.profitability.return_on_invested_capital|pct} is measured on a base heavy with acquisition goodwill, so organic returns are higher and the terminal growth chosen needs a reinvestment share below the base case. Research and development expense of {terms.trailing_four_quarters.research_and_development_expense}, all expensed, is the true reinvestment and already sits inside operating income."
+    }
+   }
+  }
+ },
+ "wacc_overrides": {},
+ "dropped_items": [],
+ "dropped_count": 0
+}

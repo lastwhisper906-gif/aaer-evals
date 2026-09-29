@@ -1,0 +1,159 @@
+{
+ "ticker": "AAPL",
+ "accession": "{accession}",
+ "period_end": "{period_end}",
+ "question": "how healthy is this company?",
+ "sections": {
+  "profitability": {
+   "dropped": "fields: '{ratios.profitability.gross_margin.value}' is not a field of calculator.json"
+  },
+  "efficiency": {
+   "dropped": "fields: '{ratios.efficiency.asset_turnover.value}' is not a field of calculator.json"
+  },
+  "liquidity": {
+   "dropped": "finding: {ratios.liquidity.cash_runway_months.not_burning_cash} is not a number in the calculator this analyst saw"
+  },
+  "solvency": {
+   "dropped": "fields: '{ratios.solvency.total_debt.value}' is not a field of calculator.json"
+  },
+  "growth": {
+   "dropped": "fields: '{ratios.growth.revenue.year_over_year.value}' is not a field of calculator.json"
+  },
+  "free_cash_flow": {
+   "dropped": "fields: '{free_cash_flow.free_cash_flow_simple.value}' is not a field of calculator.json"
+  }
+ },
+ "dupont": {
+  "net_margin": "{ratios.profitability.dupont.net_margin.value}",
+  "asset_turnover": "{ratios.profitability.dupont.asset_turnover.value}",
+  "equity_multiplier": "{ratios.profitability.dupont.equity_multiplier.value}",
+  "return_on_equity": "{ratios.profitability.dupont.product.value}",
+  "reading": "Return on equity is the product of a high net margin, a moderate asset turnover and an equity multiplier that reflects a repurchase-shrunken equity base rather than operating leverage: liabilities are mostly payables, accrued items and fixed-rate notes, and equity moved sharply between the two balance dates ({terms.balances_a_year_earlier.stockholders_equity.value} to {terms.balances_now.stockholders_equity.value}) as retained earnings crossed back above zero. Return on assets ({ratios.profitability.return_on_assets.value}) is the cleaner read of operating performance, and return on invested capital ({ratios.profitability.return_on_invested_capital.value}) nets out current cash and securities but not the non-current portfolio, so it too is flattered relative to a fully cash-adjusted base."
+ },
+ "anomalies": [],
+ "path_to_distress": {
+  "assessment": "Remote. Distress would require a chain of events the current numbers do not support, and the first casualty along that chain would be discretionary shareholder returns, not creditors.",
+  "sequence": [
+   "Product gross margin is compressed by memory and storage cost inflation that management expects to intensify, and by renewed tariffs under the open semiconductor and trade actions, while the price increases taken to offset them reduce demand, as management itself warns they may.",
+   "Demand in Greater China, the fastest-growing segment and the most iPhone-dependent, weakens as the renminbi tailwind reverses, and the component stockpile built for a constrained market has to be written down.",
+   "Repurchases continue at the recent pace ({terms.trailing_four_quarters.share_repurchases.value}) while operating cash flow falls, pushing the current ratio ({ratios.liquidity.current_ratio.value}) below one and forcing sales from the long-dated non-current securities book at unrealized losses or new issuance at today's rates rather than the cheap coupons on the existing notes.",
+   "Only after all of that would the current portion of term debt ({terms.debt_now.parts.debt_current.value}) and the purchase obligations become a financing question rather than an allocation one."
+  ],
+  "buffers": [
+   "Trailing free cash flow ({free_cash_flow.free_cash_flow_simple.value}) is many times the current debt and covers the entire debt stack ({ratios.solvency.total_debt.value}) in well under a year of generation.",
+   "Debt over EBITDA is {ratios.solvency.debt_over_ebitda.value}, total debt fell year over year, and no term debt was issued in the current fiscal year.",
+   "A negative cash conversion cycle ({ratios.efficiency.cash_conversion_cycle.value}) means suppliers fund the operating cycle even in a downturn, provided volumes do not collapse.",
+   "The non-current securities portfolio, absent from the calculator's net-debt figure, exceeds the whole debt stack.",
+   "Repurchase programs carry no minimum obligation and can be stopped instantly; the dividend is an intention, not a covenant."
+  ],
+  "early_warning_fields": [
+   "quarter-end gross margin falling below the prior fiscal year's level ({trend_table.years-back-0.ratios.gross_margin.value})",
+   "inventory days staying at or above the current reading ({trend_table.quarters-back-0.ratios.days_sales_of_inventory.value}) while revenue growth slows toward the three-year compound rate ({earnings_versus_cash.history.revenue_growth_three_year_compound})",
+   "operating cash flow over net income ({earnings_versus_cash.operating_cash_flow_over_net_income.value}) dropping back below one",
+   "commercial paper rebuilding from its current small balance ({terms.debt_now.parts.debt_current.lines.1.value}) to fund repurchases"
+  ],
+  "evidence": [
+   "0000320193-26-000020:mdna:11",
+   "0000320193-26-000020:mdna:13",
+   "0000320193-26-000020:mdna:22",
+   "0000320193-26-000020:mdna:72",
+   "0000320193-26-000020:notes:15",
+   "0000320193-26-000020:notes:40",
+   "0000320193-26-000020:notes:43"
+  ]
+ },
+ "summary_ko": {},
+ "limits": "This analysis reads the company's health from its own filed numbers against its own past. It forecasts nothing, and it cannot see what is not in the filings.",
+ "normalized_quotes": 0,
+ "dropped_items": [
+  {
+   "where": "sections.profitability",
+   "reason": "fields: '{ratios.profitability.gross_margin.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "sections.efficiency",
+   "reason": "fields: '{ratios.efficiency.asset_turnover.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "sections.liquidity",
+   "reason": "finding: {ratios.liquidity.cash_runway_months.not_burning_cash} is not a number in the calculator this analyst saw"
+  },
+  {
+   "where": "sections.solvency",
+   "reason": "fields: '{ratios.solvency.total_debt.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "sections.growth",
+   "reason": "fields: '{ratios.growth.revenue.year_over_year.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "sections.free_cash_flow",
+   "reason": "fields: '{free_cash_flow.free_cash_flow_simple.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[0]",
+   "id": "profitability_return_on_equity_inflated_by_shrinking_equity_base",
+   "reason": "fields: '{ratios.profitability.return_on_equity.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[1]",
+   "id": "profitability_margin_peak_carries_non_recurring_tariff_refund",
+   "reason": "fields: '{trend_table.quarters-back-0.ratios.gross_margin.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[2]",
+   "id": "efficiency_inventory_days_highest_of_filled_quarters",
+   "reason": "fields: '{trend_table.quarters-back-0.ratios.days_sales_of_inventory.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[3]",
+   "id": "efficiency_receivable_days_second_highest_with_customer_concentration",
+   "reason": "fields: '{trend_table.quarters-back-0.ratios.days_sales_outstanding.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[4]",
+   "id": "liquidity_current_ratio_near_one_masks_non_current_securities",
+   "reason": "fields: '{ratios.liquidity.current_ratio.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[5]",
+   "id": "solvency_net_debt_excludes_long_term_securities_and_notes_trade_below_carrying",
+   "reason": "fields: '{ratios.solvency.net_debt.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[6]",
+   "id": "solvency_interest_coverage_not_computable",
+   "reason": "fields: '{terms.trailing_four_quarters.pretax_income.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[7]",
+   "id": "growth_quarter_growth_aided_by_tariff_refund_currency_and_product_cycle",
+   "reason": "fields: '{ratios.growth.revenue.year_over_year.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[8]",
+   "id": "growth_operating_income_outpaces_revenue_on_margin_expansion",
+   "reason": "fields: '{ratios.growth.operating_income.trailing_four_quarters.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[9]",
+   "id": "free_cash_flow_capital_expenditure_below_depreciation_during_ai_build",
+   "reason": "fields: '{terms.trailing_four_quarters.capital_expenditure.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[10]",
+   "id": "free_cash_flow_shareholder_returns_approach_free_cash_flow",
+   "reason": "fields: '{terms.trailing_four_quarters.share_repurchases.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[11]",
+   "id": "free_cash_flow_operating_cash_carries_offsetting_one_offs",
+   "reason": "fields: '{terms.trailing_four_quarters.operating_cash_flow.value}' is not a field of calculator.json"
+  },
+  {
+   "where": "limits",
+   "reason": "not the rules version's sentence; replaced by it"
+  }
+ ],
+ "dropped_count": 19
+}

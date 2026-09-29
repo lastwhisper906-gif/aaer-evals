@@ -1,0 +1,93 @@
+{
+ "scenarios": {
+  "bear": {
+   "revenue_growth_year_one": 0.02,
+   "terminal_growth": 0.02,
+   "operating_margin_year_one": 0.3,
+   "operating_margin_year_ten": 0.27,
+   "reinvestment_rate_year_one": 0.08,
+   "reinvestment_rate_year_ten": 0.15,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "Management states in the present tense that supply constraints and component cost increases are under way and expected to intensify, and that the price increases it has already taken may reduce demand. In this scenario the current acceleration, part of which the MD&A attributes to currency tailwinds in Greater China and Europe, does not repeat against a high comparison base, and growth falls back to the pace of the three fiscal years before this one.",
+     "quote": "The Company expects these trends to intensify, which may materially negatively impact the Company’s revenue, costs, gross margin, results of operations and financial condition. Actions, such as price increases, that have been and may in the future be taken by the Company may not effectively mitigate these negative impacts, and may also reduce demand for the Company’s products and materially adversely affect the Company’s revenue, costs, gross margin, results of operations and financial condition.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "earnings_versus_cash.history.revenue_growth_three_year_compound",
+      "earnings_versus_cash.history.years.1.revenue_growth",
+      "earnings_versus_cash.history.years.2.revenue_growth",
+      "ratios.growth.revenue.trailing_four_quarters.value"
+     ],
+     "history": "Roughly the three-year compound growth of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and fiscal 2024's {earnings_versus_cash.history.years.1.revenue_growth|pct}, and far below the trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters.value|pct}; it is still above fiscal 2023, when growth was {earnings_versus_cash.history.years.2.revenue_growth|pct}."
+    },
+    "terminal_growth": {
+     "reason": "A very large, mature company whose revenue compounded at about this rate over the three fiscal years before the current acceleration; the bear case treats the flat stretch as the pattern and lets the perpetual rate sit well under the risk-free rate, which is the ceiling Python enforces, on the view that trade disputes and consumer sentiment cap long-run growth near nominal prices.",
+     "quote": "Trade and other international disputes can have an adverse impact on the overall macroeconomic environment and result in shifts and reductions in consumer spending and negative consumer sentiment for the Company’s products and services, all of which can further adversely affect the Company’s business and results of operations.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "cost_of_capital.risk_free_rate.value",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound"
+     ],
+     "history": "About the three-year compound growth of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and well below the risk-free rate of {cost_of_capital.risk_free_rate.value|pct}; it assumes the company grows with nominal prices and little more once the current cycle passes."
+    },
+    "operating_margin_year_one": {
+     "reason": "Strip the tariff refund, which the release sizes at about two percentage points of the quarter's gross margin and the filing books only when received, and let the memory and semiconductor cost increases management expects to intensify land on products margin while research spending on artificial-intelligence infrastructure keeps rising faster than sales.",
+     "quote": "Products gross margin and gross margin percentage increased during the third quarter and first nine months of 2026 compared to the same periods in 2025 primarily due to a different mix of products and tariff refunds, partially offset by higher costs, including memory.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "ratios.profitability.operating_margin.value",
+      "earnings_versus_cash.history.operating_margin_three_year_average",
+      "earnings_versus_cash.history.years.2.operating_margin",
+      "trend_table.quarters-back-0.ratios.gross_margin.value"
+     ],
+     "history": "Below the trailing operating margin of {ratios.profitability.operating_margin.value|pct} and the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}, and roughly fiscal 2023's {earnings_versus_cash.history.years.2.operating_margin|pct}, the last year in which revenue fell."
+    },
+    "operating_margin_year_ten": {
+     "reason": "Component cost inflation and tariffs persist, price increases cost share, Services margin percentage stays flat as it did this quarter, and research and development stays elevated without a stated ceiling; the margin drifts back toward the levels of the years before the Services mix lifted it.",
+     "quote": "Services gross margin percentage was flat during the third quarter of 2026 compared to the third quarter of 2025.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "earnings_versus_cash.history.years.5.operating_margin",
+      "earnings_versus_cash.history.years.4.operating_margin",
+      "terms.trailing_four_quarters.research_and_development_expense.value"
+     ],
+     "history": "Between fiscal 2020's {earnings_versus_cash.history.years.5.operating_margin|pct} and fiscal 2021's {earnings_versus_cash.history.years.4.operating_margin|pct}, below every year since; it gives back the margin expansion of the last five years but not the level before it."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "The record shows almost no net reinvestment, but the filing now carries research infrastructure spending on artificial intelligence, intangible assets that nearly doubled from fiscal year-end, and other purchase obligations for capital assets tied to product manufacturing; in the bear case supply constraints and tariffs also force spending on supply-chain shifts, so the share of after-tax operating income reinvested rises above anything in the record.",
+     "quote": "The Company’s other purchase obligations primarily consist of noncancelable obligations related to supplier arrangements, licensed intellectual property and content, distribution rights, and the acquisition of capital assets related to product manufacturing.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "terms.trailing_four_quarters.capital_expenditure.value",
+      "terms.trailing_four_quarters.depreciation_and_amortization.value",
+      "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital.value"
+     ],
+     "history": "Well above the record, where trailing capital expenditure of {terms.trailing_four_quarters.capital_expenditure.value} sits below depreciation and amortization of {terms.trailing_four_quarters.depreciation_and_amortization.value} and the change in trade working capital of {free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital.value} was a source of cash, so net reinvestment has been close to nothing."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "Low growth bought with heavier investment: if the supply constraints and cost pressures persist, the company must fund capacity, components and infrastructure it once left to partners, and the internal-use software standard, effective in fiscal 2029, moves software cost from expense to the balance sheet, which raises measured reinvestment.",
+     "quote": "ASU 2025-06 removes all references to software development stages and requires capitalization of software costs when management has committed to the software project and it is probable the software will be completed and perform its intended use.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "ratios.profitability.return_on_invested_capital.value",
+      "earnings_versus_cash.history.years.0.capital_expenditure",
+      "earnings_versus_cash.history.years.0.operating_income"
+     ],
+     "history": "Far above any year in the record, in which fiscal 2025 capital expenditure was {earnings_versus_cash.history.years.0.capital_expenditure} against operating income of {earnings_versus_cash.history.years.0.operating_income}; the bear case assumes a return on invested capital of {ratios.profitability.return_on_invested_capital.value|pct} cannot be held and growth becomes expensive."
+    }
+   }
+  }
+ },
+ "wacc_overrides": {},
+ "dropped_items": [
+  {
+   "where": "scenarios.base",
+   "reason": "terminal_growth: reason: a number written in the analyst's own words: 'ing, and above the flat stretch of   to 2025, on the view that a growing install'"
+  },
+  {
+   "where": "scenarios.bull",
+   "reason": "revenue_growth_year_one: history: a number written in the analyst's own words: 'year in the record that grew faster was 2021 at  .'"
+  }
+ ],
+ "dropped_count": 2
+}

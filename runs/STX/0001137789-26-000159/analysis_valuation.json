@@ -1,0 +1,119 @@
+{
+ "question": "what is this company worth, and what does the price already assume?",
+ "value_range": {
+  "reading": "Python's three scenarios put the value per share between {valuation.value_range_per_share.low} in the bear case and {valuation.value_range_per_share.high} in the bull case, with the base case, my best reading rather than a midpoint, at {valuation.scenarios.base.value_per_share}. Behind those sit enterprise values of {valuation.scenarios.bear.enterprise_value}, {valuation.scenarios.base.enterprise_value} and {valuation.scenarios.bull.enterprise_value}; net debt of {valuation.scenarios.base.net_debt} and the operating lease liability of {valuation.scenarios.base.operating_lease_liability} come off each to give equity values of {valuation.scenarios.bear.equity_value}, {valuation.scenarios.base.equity_value} and {valuation.scenarios.bull.equity_value}, spread over diluted shares of {valuation.scenarios.base.diluted_shares}. All three are discounted at a WACC of {valuation.wacc|pct}, which is high because the cost of equity of {cost_of_capital.cost_of_equity|pct} rests on a beta of {cost_of_capital.beta} over a risk-free rate of {cost_of_capital.risk_free_rate|pct}; at that rate distant cash flows count for little, and in the base case the terminal value contributes {valuation.scenarios.base.terminal_value_present} of enterprise value against {valuation.scenarios.base.explicit_present} from the ten explicit years. The range is wide because the scenarios disagree about how much of the current upcycle is structural. The bear starts growth at {valuation.scenarios.bear.drivers.revenue_growth_year_one|pct} and lets the operating margin fade to {valuation.scenarios.bear.drivers.operating_margin_year_ten|pct} by year ten, near the fiscal 2021 and fiscal 2022 upcycle margins; the bull starts at {valuation.scenarios.bull.drivers.revenue_growth_year_one|pct} and holds a year-ten margin of {valuation.scenarios.bull.drivers.operating_margin_year_ten|pct}, about the trailing record of {ratios.profitability.operating_margin|pct}. Year-ten revenue accordingly runs from {valuation.scenarios.bear.years.9.revenue} to {valuation.scenarios.bull.years.9.revenue}, against trailing revenue of {terms.trailing_four_quarters.revenue}. The base takes year-one growth of {valuation.scenarios.base.drivers.revenue_growth_year_one|pct}, below the trailing {ratios.growth.revenue.trailing_four_quarters|pct} and above the three-year compound {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, and a margin fading from {valuation.scenarios.base.drivers.operating_margin_year_one|pct} to {valuation.scenarios.base.drivers.operating_margin_year_ten|pct}, which is still above every year on record before the trailing one.",
+  "fields": [
+   "valuation.value_range_per_share.low",
+   "valuation.value_range_per_share.high",
+   "valuation.scenarios.bear.value_per_share",
+   "valuation.scenarios.base.value_per_share",
+   "valuation.scenarios.bull.value_per_share",
+   "valuation.scenarios.bear.enterprise_value",
+   "valuation.scenarios.base.enterprise_value",
+   "valuation.scenarios.bull.enterprise_value",
+   "valuation.scenarios.bear.equity_value",
+   "valuation.scenarios.base.equity_value",
+   "valuation.scenarios.bull.equity_value",
+   "valuation.scenarios.base.net_debt",
+   "valuation.scenarios.base.operating_lease_liability",
+   "valuation.scenarios.base.diluted_shares",
+   "valuation.wacc",
+   "cost_of_capital.cost_of_equity",
+   "cost_of_capital.beta",
+   "cost_of_capital.risk_free_rate",
+   "valuation.scenarios.base.terminal_value_present",
+   "valuation.scenarios.base.explicit_present",
+   "valuation.scenarios.bear.drivers.revenue_growth_year_one",
+   "valuation.scenarios.bear.drivers.operating_margin_year_ten",
+   "valuation.scenarios.bull.drivers.revenue_growth_year_one",
+   "valuation.scenarios.bull.drivers.operating_margin_year_ten",
+   "ratios.profitability.operating_margin",
+   "valuation.scenarios.bear.years.9.revenue",
+   "valuation.scenarios.bull.years.9.revenue",
+   "terms.trailing_four_quarters.revenue",
+   "valuation.scenarios.base.drivers.revenue_growth_year_one",
+   "ratios.growth.revenue.trailing_four_quarters",
+   "earnings_versus_cash.history.revenue_growth_three_year_compound",
+   "valuation.scenarios.base.drivers.operating_margin_year_one",
+   "valuation.scenarios.base.drivers.operating_margin_year_ten"
+  ]
+ },
+ "price_position": {
+  "dropped": "reading: {valuation.price_position} is not a number in the calculator this analyst saw"
+ },
+ "market_implied_growth": {
+  "dropped": "reading: {valuation.reverse_dcf.held} is not a number in the calculator this analyst saw"
+ },
+ "most_sensitive": [
+  {
+   "assumption": "revenue growth over the ten explicit years",
+   "reading": "The scenario spread is the widest thing the calculator prints: value per share runs from {valuation.scenarios.bear.value_per_share} to {valuation.scenarios.bull.value_per_share} as year-one growth moves from {valuation.scenarios.bear.drivers.revenue_growth_year_one|pct} to {valuation.scenarios.bull.drivers.revenue_growth_year_one|pct} and year-ten revenue from {valuation.scenarios.bear.years.9.revenue} to {valuation.scenarios.bull.years.9.revenue}. That span is many times wider than the whole sensitivity grid, whose corners are {valuation.sensitivity.grid.2.0.value_per_share} and {valuation.sensitivity.grid.0.2.value_per_share}. The margin path moves with growth in each scenario, the year-ten margin from {valuation.scenarios.bear.drivers.operating_margin_year_ten|pct} to {valuation.scenarios.bull.drivers.operating_margin_year_ten|pct}, and compounds the effect, so the spread does not separate the two cleanly; but the reverse DCF, which holds the base margins and varies growth alone, shows growth is the lever the price is pulling, at {valuation.reverse_dcf.value|pct} held constant for ten years. Growth is also the assumption with the weakest anchor in the record: the last two years grew {earnings_versus_cash.history.years.1.revenue_growth|pct} and {ratios.growth.revenue.trailing_four_quarters|pct}, the two before them fell {earnings_versus_cash.history.years.3.revenue_growth|pct} and {earnings_versus_cash.history.years.2.revenue_growth|pct}, and the accounting analysis reads part of the latest year's growth as price rather than volume and part as an extra week.",
+   "fields": [
+    "valuation.scenarios.bear.value_per_share",
+    "valuation.scenarios.bull.value_per_share",
+    "valuation.scenarios.bear.drivers.revenue_growth_year_one",
+    "valuation.scenarios.bull.drivers.revenue_growth_year_one",
+    "valuation.scenarios.bear.years.9.revenue",
+    "valuation.scenarios.bull.years.9.revenue",
+    "valuation.sensitivity.grid.2.0.value_per_share",
+    "valuation.sensitivity.grid.0.2.value_per_share",
+    "valuation.scenarios.bear.drivers.operating_margin_year_ten",
+    "valuation.scenarios.bull.drivers.operating_margin_year_ten",
+    "valuation.reverse_dcf.value",
+    "earnings_versus_cash.history.years.1.revenue_growth",
+    "ratios.growth.revenue.trailing_four_quarters",
+    "earnings_versus_cash.history.years.3.revenue_growth",
+    "earnings_versus_cash.history.years.2.revenue_growth"
+   ]
+  },
+  {
+   "assumption": "the discount rate, which is almost entirely a beta-driven cost of equity",
+   "reading": "Within the grid, one point of WACC moves the base value from {valuation.sensitivity.grid.1.1.value_per_share} to {valuation.sensitivity.grid.0.1.value_per_share} at {valuation.sensitivity.grid.0.1.wacc|pct} and to {valuation.sensitivity.grid.2.1.value_per_share} at {valuation.sensitivity.grid.2.1.wacc|pct}, whereas half a point of terminal growth moves it only to {valuation.sensitivity.grid.1.0.value_per_share} at {valuation.sensitivity.grid.1.0.terminal_growth|pct} and {valuation.sensitivity.grid.1.2.value_per_share} at {valuation.sensitivity.grid.1.2.terminal_growth|pct}; of the two the grid varies, the discount rate is the stronger, and terminal growth, capped at the risk-free rate of {cost_of_capital.risk_free_rate|pct}, is the weakest of the tested assumptions. The discount rate matters more than the grid's single step shows. The WACC of {valuation.wacc|pct} is almost entirely the cost of equity of {cost_of_capital.cost_of_equity|pct}, since equity is {cost_of_capital.weights.equity|pct} of the capital structure at the cutoff price, and that cost of equity is the risk-free rate plus a beta of {cost_of_capital.beta}, measured against SPY over the {market.beta.trading_days} trading days before the cutoff, times a premium of {cost_of_capital.equity_risk_premium|pct}. A reader who took a lower beta would discount every year's cash flow less and reach a higher value in every scenario; the grid does not extend far enough to say where the price would be met, and I do not estimate it.",
+   "fields": [
+    "valuation.sensitivity.grid.1.1.value_per_share",
+    "valuation.sensitivity.grid.0.1.value_per_share",
+    "valuation.sensitivity.grid.0.1.wacc",
+    "valuation.sensitivity.grid.2.1.value_per_share",
+    "valuation.sensitivity.grid.2.1.wacc",
+    "valuation.sensitivity.grid.1.0.value_per_share",
+    "valuation.sensitivity.grid.1.0.terminal_growth",
+    "valuation.sensitivity.grid.1.2.value_per_share",
+    "valuation.sensitivity.grid.1.2.terminal_growth",
+    "cost_of_capital.risk_free_rate",
+    "valuation.wacc",
+    "cost_of_capital.cost_of_equity",
+    "cost_of_capital.weights.equity",
+    "cost_of_capital.beta",
+    "market.beta.trading_days",
+    "cost_of_capital.equity_risk_premium"
+   ]
+  }
+ ],
+ "accounting_adjustments": {
+  "dropped": "reading: {valuation.accounting_adjustments.each.0.name} is not a number in the calculator this analyst saw"
+ },
+ "summary_ko": {
+  "value_range": "세 시나리오로 계산한 주당 가치는 약세 {valuation.value_range_per_share.low}달러에서 강세 {valuation.value_range_per_share.high}달러 사이이며, 제 최선의 읽기인 기본 시나리오는 {valuation.scenarios.base.value_per_share}달러입니다. 할인율이 {valuation.wacc|pct}로 높아 먼 미래의 현금흐름이 크게 눌리고, 범위가 넓은 것은 지금의 호황 중 얼마가 구조적인지를 두고 시나리오마다 판단이 크게 다르기 때문입니다.",
+  "price_position": "기준일 주가 {valuation.price_at_cutoff}달러는 세 시나리오의 범위 위에 있으며, 강세 시나리오의 {valuation.scenarios.bull.value_per_share}달러보다도 높습니다. 따라서 주가는 세 시나리오 어디에도 없는 가정, 곧 강세보다 빠른 성장이나 기록적 마진의 십 년 유지, 혹은 베타에 기댄 {valuation.wacc|pct}보다 훨씬 낮은 할인율을 이미 전제하고 있습니다.",
+  "market_implied_growth": "역산 DCF에 따르면 기본 시나리오의 마진과 재투자율을 그대로 두고 주가에 이르려면 매출이 십 년 동안 매년 {valuation.reverse_dcf.value|pct}씩 꾸준히 성장해야 합니다. 이는 오십삼 주짜리였던 직전 연도의 {ratios.growth.revenue.trailing_four_quarters|pct}보다 높고 삼 년 복합성장률 {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}의 약 두 배이며, 회사의 가이던스는 다음 한 분기만을 제시합니다.",
+  "most_sensitive": "가치를 가장 크게 움직이는 가정은 향후 십 년의 매출 성장 경로로, 첫해 성장률이 {valuation.scenarios.bear.drivers.revenue_growth_year_one|pct}에서 {valuation.scenarios.bull.drivers.revenue_growth_year_one|pct}로 바뀌면 주당 가치가 {valuation.scenarios.bear.value_per_share}달러에서 {valuation.scenarios.bull.value_per_share}달러로 벌어집니다. 그다음은 할인율로, 민감도 표에서 WACC 일 퍼센트포인트 변화가 영구성장률 영점오 퍼센트포인트 변화보다 가치를 더 크게 움직이며, 그 할인율은 베타 {cost_of_capital.beta}에 기대고 있습니다.",
+  "accounting_adjustments": "회계 분석에서 넘어온 조정은 매입채무 안에 든 공급망금융 채무 {terms.balances_now.supplier_finance_obligation} 하나이며, 일회성 차감으로 기본 시나리오 주당 가치를 {valuation.accounting_adjustments.each.0.moved_per_share}달러만큼 움직여 {valuation.accounting_adjustments.base_value_per_share}달러에서 {valuation.accounting_adjustments.all_together.value_per_share}달러가 되었습니다. 기본 가치에 비해 작고, 범위와 주가 사이의 간격에 비하면 무시할 만한 크기입니다."
+ },
+ "limits": "This valuation is a set of stated assumptions run through a stated formula. It states no recommendation to trade, and a different reader choosing different drivers would reach a different value.",
+ "normalized_quotes": 0,
+ "dropped_items": [
+  {
+   "where": "price_position",
+   "reason": "reading: {valuation.price_position} is not a number in the calculator this analyst saw"
+  },
+  {
+   "where": "market_implied_growth",
+   "reason": "reading: {valuation.reverse_dcf.held} is not a number in the calculator this analyst saw"
+  },
+  {
+   "where": "accounting_adjustments",
+   "reason": "reading: {valuation.accounting_adjustments.each.0.name} is not a number in the calculator this analyst saw"
+  }
+ ],
+ "dropped_count": 3
+}

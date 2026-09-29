@@ -1,0 +1,177 @@
+{
+  "ticker": "CIEN",
+  "accession": "0001628280-26-040767",
+  "form": "10-Q",
+  "purpose": "bear, base and bull drivers for a ten-year discounted cash flow",
+  "author": "single-agent control (one agent, no reader or analyst split)",
+  "conventions": {
+    "revenue_growth_year_one": "growth over the trailing-four-quarter revenue in the calculator, {terms.trailing_four_quarters.revenue.value}",
+    "operating_margin": "GAAP operating income over revenue, the same basis as {ratios.profitability.operating_margin.value}; the company guides only on an adjusted basis that excludes share-based compensation and amortisation, so its guidance is translated down to GAAP",
+    "reinvestment_rate": "net reinvestment (capital expenditure less depreciation plus the change in working capital) as a share of after-tax operating income; the trailing figure is negative because payables rose and inventory fell, which is not sustainable while purchase commitments convert to inventory",
+    "terminal_growth_ceiling": "{cost_of_capital.risk_free_rate.value}, the risk-free rate in the calculator; no scenario exceeds it",
+    "discount_rate_reference": "{cost_of_capital.wacc.value}, noting that it rests on a beta of {cost_of_capital.beta.value} measured over one volatile year"
+  },
+  "scenarios": {
+    "bear": {
+      "revenue_growth_year_one": {
+        "value": 0.12,
+        "reason": "The two cloud customers digest after the current build: the third-quarter guide is still met but the following quarters flatten, and the year-one figure over the trailing base is only the carry-over of the strong first half. Product deferred revenue has already been drawn down and the backlog disclosure now carries a supply-timing caveat.",
+        "quote": "The timing of fulfillment of remaining performance obligations can be impacted by supply conditions.",
+        "quote_from": "input_notes.md",
+        "evidence": ["0001628280-26-040767:notes:60", "0001628280-26-040767:notes:57", "0001628280-26-040767:notes:47"],
+        "calculator_fields": ["terms.trailing_four_quarters.revenue.value", "ratios.growth.revenue.quarter_over_quarter.value", "earnings_versus_cash.history.years.1.revenue_growth"]
+      },
+      "terminal_growth": {
+        "value": 0.02,
+        "reason": "A mature telecom-equipment vendor growing with network traffic but losing share of cloud spending to in-house and merchant silicon; held well below the risk-free ceiling.",
+        "quote": "the development and use of artificial intelligence and its impact on overall networking technology spending",
+        "quote_from": "input_8k.md",
+        "evidence": ["0001628280-26-040614:8k_2_02:46"],
+        "calculator_fields": ["cost_of_capital.risk_free_rate.value", "earnings_versus_cash.history.revenue_growth_three_year_compound"]
+      },
+      "operating_margin_year_one": {
+        "value": 0.1,
+        "reason": "Roughly the trailing GAAP margin: the exit-rate quarter is not sustained because volume flattens, manufacturing inefficiencies noted in the MD&A persist, and inventory provisions rise as forecasts are cut for more products.",
+        "quote": "primarily driven by reductions in forecasted demand for certain products",
+        "quote_from": "input_notes.md",
+        "evidence": ["0001628280-26-040767:notes:86", "0001628280-26-040767:mdna:70"],
+        "calculator_fields": ["ratios.profitability.operating_margin.value", "trend_table.quarters-back-0.ratios.inventory_reserve_ratio.value"]
+      },
+      "operating_margin_year_ten": {
+        "value": 0.06,
+        "reason": "Reverts to the three-year average of the last cycle, when the company carried the same research budget on lower volume and gross margin sat at the low end of its five-year range.",
+        "quote": "Gross margin can fluctuate due to a number of factors, including technology-based price changes, product and service mix, the lifecycle stage of our products and cost reductions.",
+        "quote_from": "input_mdna.md",
+        "evidence": ["0001628280-26-040767:mdna:62", "0001628280-26-040767:mdna:12"],
+        "calculator_fields": ["earnings_versus_cash.history.operating_margin_three_year_average", "earnings_versus_cash.history.years.0.operating_margin", "trend_table.years-back-0.ratios.gross_margin.value"]
+      },
+      "reinvestment_rate_year_one": {
+        "value": 0.25,
+        "reason": "Even with flat demand the committed purchases arrive and finished goods stay elevated, so working capital absorbs cash while capital expenditure for supply-chain equipment continues above depreciation; lower than base only because a weaker top line needs less receivable funding.",
+        "quote": "•The change in inventories primarily reflects increased finished good inventory to mitigate supply chain volatility, partially offset by reduction in raw materials;",
+        "quote_from": "input_mdna.md",
+        "evidence": ["0001628280-26-040767:mdna:146", "0001628280-26-040767:mdna:161"],
+        "calculator_fields": ["terms.balances_now.unconditional_purchase_obligations.value", "terms.trailing_four_quarters.capital_expenditure.value", "terms.trailing_four_quarters.depreciation_and_amortization.value"]
+      },
+      "reinvestment_rate_year_ten": {
+        "value": 0.2,
+        "reason": "Consistent with the bear terminal growth at a return on capital around the cost of debt plus a small spread; a slow-growing hardware vendor still needs modest net investment in working capital and equipment.",
+        "quote": "We believe that our investment capacity and our efforts to push the pace of innovation are important competitive differentiators in our markets, which requires both investment capacity and expenditures.",
+        "quote_from": "input_mdna.md",
+        "evidence": ["0001628280-26-040767:mdna:12"],
+        "calculator_fields": ["ratios.profitability.return_on_invested_capital.value", "cost_of_capital.pre_tax_cost_of_debt.value"]
+      }
+    },
+    "base": {
+      "revenue_growth_year_one": {
+        "value": 0.25,
+        "reason": "The raised full-year guide and the third-quarter range imply a run rate well above the trailing base; year one over the trailing four quarters captures that step-up, tempered because part of the current growth was a drawdown of prepaid product backlog and because supply, not demand, gates shipments.",
+        "quote": "Raising revenue guidance for fiscal year 2026 to $6.3 billion plus or minus $100 million, a 32% increase YoY at the midpoint",
+        "quote_from": "input_8k.md",
+        "evidence": ["0001628280-26-040614:8k_2_02:9", "0001628280-26-040614:8k_2_02:23", "0001628280-26-040767:mdna:8"],
+        "calculator_fields": ["terms.trailing_four_quarters.revenue.value", "ratios.growth.revenue.trailing_four_quarters.value", "ratios.growth.revenue.year_over_year.value"]
+      },
+      "terminal_growth": {
+        "value": 0.03,
+        "reason": "Bandwidth demand grows faster than the economy but the company's own three-year compound growth is only high single digits, so the terminal rate sits between that record and the risk-free ceiling, below it.",
+        "quote": "This dynamic, together with an industry-wide constrained supply environment, has resulted in historically high backlog.",
+        "quote_from": "input_mdna.md",
+        "evidence": ["0001628280-26-040767:mdna:8"],
+        "calculator_fields": ["cost_of_capital.risk_free_rate.value", "earnings_versus_cash.history.revenue_growth_three_year_compound"]
+      },
+      "operating_margin_year_one": {
+        "value": 0.14,
+        "reason": "The adjusted guidance range translated to GAAP by deducting share-based compensation and intangible amortisation, which together run at several points of revenue; this is close to the exit-rate GAAP quarter and well above the trailing figure.",
+        "quote": "Adjusted (non-GAAP) operating margin in the range of 19% plus or minus 50bps",
+        "quote_from": "input_8k.md",
+        "evidence": ["0001628280-26-040614:8k_2_02:31", "0001628280-26-040614:8k_2_02:19", "0001628280-26-040614:8k_2_02:68"],
+        "calculator_fields": ["ratios.profitability.operating_margin.value", "ratios.growth.operating_income.this_quarter.value", "ratios.growth.revenue.this_quarter.value", "terms.trailing_four_quarters.share_based_compensation.value"]
+      },
+      "operating_margin_year_ten": {
+        "value": 0.12,
+        "reason": "Between the pre-downturn peak margins and the last cycle's trough: scale and a richer optical mix lift the floor, but pricing on cloud volume, a services margin that is already falling and the cyclicality of the record argue against holding the peak for a decade.",
+        "quote": "•Services gross margin decreased by 110 basis points, primarily due to a less favorable services mix, partially offset by improved margins on implementation services.",
+        "quote_from": "input_mdna.md",
+        "evidence": ["0001628280-26-040767:mdna:71", "0001628280-26-040767:mdna:70"],
+        "calculator_fields": ["earnings_versus_cash.history.years.4.operating_margin", "earnings_versus_cash.history.years.5.operating_margin", "earnings_versus_cash.history.operating_margin_three_year_average"]
+      },
+      "reinvestment_rate_year_one": {
+        "value": 0.35,
+        "reason": "Growth at this pace with a conversion cycle over a hundred days needs receivables and inventory funding; the purchase commitments that jumped in the quarter will land as inventory, the payables tailwind of the trailing year is not repeatable, and capital expenditure is running above depreciation for supply-chain equipment.",
+        "quote": "As of May 2, 2026, we had $2.8 billion in outstanding purchase order commitments to our contract manufacturers and component suppliers for inventory.",
+        "quote_from": "input_mdna.md",
+        "evidence": ["0001628280-26-040767:mdna:161", "0001628280-26-040767:mdna:14", "0001628280-26-040767:mdna:147"],
+        "calculator_fields": ["ratios.efficiency.cash_conversion_cycle.value", "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital.value", "terms.trailing_four_quarters.capital_expenditure.value", "terms.trailing_four_quarters.depreciation_and_amortization.value"]
+      },
+      "reinvestment_rate_year_ten": {
+        "value": 0.3,
+        "reason": "Set so that terminal growth and a return on capital in the low teens are consistent; a hardware business with a long conversion cycle keeps reinvesting a meaningful share of after-tax operating income even at maturity.",
+        "quote": "Consistent with our capital allocation priorities, during the first half of fiscal 2026, we invested $115 million in capital purchases, primarily for supply chain equipment and research and development",
+        "quote_from": "input_mdna.md",
+        "evidence": ["0001628280-26-040767:mdna:14"],
+        "calculator_fields": ["ratios.profitability.return_on_invested_capital.value", "ratios.efficiency.asset_turnover.value"]
+      }
+    },
+    "bull": {
+      "revenue_growth_year_one": {
+        "value": 0.35,
+        "reason": "Supply loosens and the historically high backlog ships faster than guidance assumes; year-on-year growth of the current quarter is sustained for the next four, and the second cloud customer keeps scaling as it did between the prior quarter and this one.",
+        "quote": "Our long-term strategy to be the global leader in high-speed connectivity - both across the WAN and in and around the data center - is tightly aligned to the structural, multi-year opportunities created by AI-driven demand, positioning us to capitalize on market dynamics and drive sustained, profitable growth.",
+        "quote_from": "input_8k.md",
+        "evidence": ["0001628280-26-040614:8k_2_02:11", "0001628280-26-040614:8k_2_02:9", "0001628280-26-040767:notes:47"],
+        "calculator_fields": ["ratios.growth.revenue.year_over_year.value", "ratios.growth.revenue.quarter_over_quarter.value"]
+      },
+      "terminal_growth": {
+        "value": 0.04,
+        "reason": "Optical interconnect inside and around the data centre becomes a structural growth market and the company keeps share; capped just under the risk-free rate in the calculator.",
+        "quote": "These products are often combined and sold as solutions that address network applications including cloud and artificial intelligence (AI) networking, datacenter interconnect, long haul, metro, submarine connectivity, and managed optical fiber networks (MOFN).",
+        "quote_from": "input_notes.md",
+        "evidence": ["0001628280-26-040767:notes:20"],
+        "calculator_fields": ["cost_of_capital.risk_free_rate.value"]
+      },
+      "operating_margin_year_one": {
+        "value": 0.17,
+        "reason": "The top of the adjusted guidance translated to GAAP, with operating leverage continuing as operating expense grows far slower than revenue and manufacturing inefficiencies fade.",
+        "quote": "Adjusted (non-GAAP) operating margin between 19% and 20%",
+        "quote_from": "input_8k.md",
+        "evidence": ["0001628280-26-040614:8k_2_02:26", "0001628280-26-040614:8k_2_02:12", "0001628280-26-040767:mdna:78"],
+        "calculator_fields": ["ratios.growth.operating_income.year_over_year.value", "trend_table.quarters-back-0.ratios.gross_margin.value"]
+      },
+      "operating_margin_year_ten": {
+        "value": 0.16,
+        "reason": "Holds near the peak margins of the pre-downturn years, which the company has already achieved once at lower scale; assumes the mix stays optical-heavy and pricing power with cloud customers persists.",
+        "quote": "Our demonstrated ability to drive operating leverage gives us confidence in continued earnings expansion and long-term value creation for customers and shareholders.",
+        "quote_from": "input_8k.md",
+        "evidence": ["0001628280-26-040614:8k_2_02:12"],
+        "calculator_fields": ["earnings_versus_cash.history.years.4.operating_margin", "earnings_versus_cash.history.years.5.operating_margin"]
+      },
+      "reinvestment_rate_year_one": {
+        "value": 0.45,
+        "reason": "Faster growth needs proportionally more receivables and inventory, and the company would keep adding supply-chain equipment and advances to its contract manufacturer to secure components.",
+        "quote": "•The change in prepaid expenses and other primarily reflects higher refundable cash advances to a third-party contract manufacturer and higher prepaid value-added tax (VAT);",
+        "quote_from": "input_mdna.md",
+        "evidence": ["0001628280-26-040767:mdna:147", "0001628280-26-040767:mdna:161"],
+        "calculator_fields": ["ratios.efficiency.cash_conversion_cycle.value", "terms.balances_now.unconditional_purchase_obligations.value"]
+      },
+      "reinvestment_rate_year_ten": {
+        "value": 0.3,
+        "reason": "Consistent with the bull terminal growth at a return on capital in the low-to-mid teens; the higher growth is funded by a higher return rather than a higher reinvestment share.",
+        "quote": "We continuously work to improve our cash cycle and evaluate alternatives to manage our capital structure in order to enhance our liquidity.",
+        "quote_from": "input_mdna.md",
+        "evidence": ["0001628280-26-040767:mdna:14"],
+        "calculator_fields": ["ratios.profitability.return_on_invested_capital.value", "cost_of_capital.wacc.value"]
+      }
+    }
+  },
+  "cross_scenario_notes": [
+    "All three scenarios put year-one operating margin above the trailing figure because the trailing four quarters include a weak half from the prior fiscal year; the exit-rate quarter, not the trailing average, is the starting point.",
+    "Reinvestment in year one is positive in every scenario even though the trailing change in trade working capital was a release, because the payables build and inventory decline that produced the release are not repeatable while the purchase commitments convert into inventory.",
+    "Terminal growth in every scenario is at or below {cost_of_capital.risk_free_rate.value}.",
+    "The discount rate in the calculator is driven by a one-year beta of {cost_of_capital.beta.value}; a valuation using these drivers should test a lower beta, since the cost of equity as measured exceeds the trailing return on invested capital."
+  ],
+  "limits": [
+    "Guidance is given only on an adjusted basis and the company states it cannot reconcile it to GAAP; the translation to GAAP margin is a judgement that share-based compensation and amortisation run at several points of revenue, read from the reconciliation appendix rather than computed.",
+    "Year one is defined over the trailing-four-quarter base in the calculator, not over the fiscal year the guidance addresses, so the growth figures are not the guidance figures.",
+    "No arithmetic was performed; the decimals are analyst judgements anchored to the quoted disclosures and the named calculator fields."
+  ]
+}

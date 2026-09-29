@@ -1,0 +1,99 @@
+{
+ "question": "what is this company worth, and what does the price already assume?",
+ "value_range": {
+  "reading": "Python's three scenarios put the value at {valuation.value_range_per_share.low} to {valuation.value_range_per_share.high} per share, with the base case at {valuation.scenarios.base.value_per_share}. The enterprise values are {valuation.scenarios.bear.enterprise_value}, {valuation.scenarios.base.enterprise_value} and {valuation.scenarios.bull.enterprise_value} for bear, base and bull; each becomes equity value by adding back net cash (net debt of {valuation.scenarios.base.net_debt}, negative because the calculator reads no debt) and subtracting the carried operating lease liability of {valuation.scenarios.base.operating_lease_liability}, giving {valuation.scenarios.bear.equity_value}, {valuation.scenarios.base.equity_value} and {valuation.scenarios.bull.equity_value}, then dividing by diluted shares of {valuation.scenarios.base.diluted_shares}. The range is wide because the drivers were set wide on purpose: the company has just closed CyberArk, the trailing base revenue of {valuation.base_revenue} holds under three months of it, the latest quarter printed an operating loss, and the margin the business will earn once acquisition charges settle is the open question. In every scenario the terminal value is the larger part of enterprise value (in the base case {valuation.scenarios.base.terminal_value_present} against an explicit-period value of {valuation.scenarios.base.explicit_present}), so the range is mostly a range of views on the mature company rather than on the next few years. Discounting is at a WACC of {valuation.wacc|pct}, entirely cost of equity, and terminal growth in every scenario sits under the risk-free cap of {valuation.risk_free_rate_cap_on_terminal_growth|pct}.",
+  "fields": [
+   "valuation.value_range_per_share.low",
+   "valuation.value_range_per_share.high",
+   "valuation.scenarios.base.value_per_share",
+   "valuation.scenarios.bear.enterprise_value",
+   "valuation.scenarios.base.enterprise_value",
+   "valuation.scenarios.bull.enterprise_value",
+   "valuation.scenarios.base.net_debt",
+   "valuation.scenarios.base.operating_lease_liability",
+   "valuation.scenarios.bear.equity_value",
+   "valuation.scenarios.base.equity_value",
+   "valuation.scenarios.bull.equity_value",
+   "valuation.scenarios.base.diluted_shares",
+   "valuation.base_revenue",
+   "valuation.scenarios.base.terminal_value_present",
+   "valuation.scenarios.base.explicit_present",
+   "valuation.wacc",
+   "valuation.risk_free_rate_cap_on_terminal_growth"
+  ]
+ },
+ "price_position": {
+  "dropped": "reading: {valuation.price_position} is not a number in the calculator this analyst saw"
+ },
+ "market_implied_growth": {
+  "dropped": "reading: {valuation.reverse_dcf.held} is not a number in the calculator this analyst saw"
+ },
+ "most_sensitive": [
+  {
+   "assumption": "operating margin at year ten (the terminal cash flow)",
+   "reading": "The scenario spread is far wider than the grid: value per share runs from {valuation.scenarios.bear.value_per_share} to {valuation.scenarios.bull.value_per_share} as the year-ten operating margin moves from {valuation.scenarios.bear.drivers.operating_margin_year_ten|pct} to {valuation.scenarios.bull.drivers.operating_margin_year_ten|pct}, with the growth and reinvestment drivers moving alongside it. The margin path matters most because the terminal value carries most of the enterprise value in every scenario — in the base case {valuation.scenarios.base.terminal_value_present} of {valuation.scenarios.base.enterprise_value} — and the terminal cash flow is year-ten revenue times the year-ten margin less reinvestment, so a few points of terminal margin move the answer more than anything in the explicit years. The company's record gives this path little anchor: the best fiscal-year operating margin on record is {earnings_versus_cash.history.years.0.operating_margin|pct}, the trailing figure is {ratios.profitability.operating_margin.value|pct}, and the latest quarter's operating income of {ratios.growth.operating_income.this_quarter.value} was a loss, so even the bear case assumes a margin climb that has not yet happened, and the bull case assumes one that nothing in the record yet demonstrates.",
+   "fields": [
+    "valuation.scenarios.bear.value_per_share",
+    "valuation.scenarios.bull.value_per_share",
+    "valuation.scenarios.bear.drivers.operating_margin_year_ten",
+    "valuation.scenarios.bull.drivers.operating_margin_year_ten",
+    "valuation.scenarios.base.terminal_value_present",
+    "valuation.scenarios.base.enterprise_value",
+    "earnings_versus_cash.history.years.0.operating_margin",
+    "ratios.profitability.operating_margin.value",
+    "ratios.growth.operating_income.this_quarter.value"
+   ]
+  },
+  {
+   "assumption": "WACC (the discount rate)",
+   "reading": "On the grid the discount rate is the stronger of the two axes. With terminal growth held at the base rate, one point less WACC lifts the base value from {valuation.sensitivity.grid.1.1.value_per_share} to {valuation.sensitivity.grid.0.1.value_per_share} and one point more cuts it to {valuation.sensitivity.grid.2.1.value_per_share}; half a point of terminal growth either way moves it only to {valuation.sensitivity.grid.1.2.value_per_share} or {valuation.sensitivity.grid.1.0.value_per_share}. Even the most favourable cell, {valuation.sensitivity.grid.0.2.value_per_share}, stays well below the price of {valuation.price_at_cutoff}, and the least favourable, {valuation.sensitivity.grid.2.0.value_per_share}, sits under the base case. The WACC of {cost_of_capital.wacc.value|pct} is the cost of equity alone — risk-free rate {cost_of_capital.risk_free_rate.value|pct} plus a beta of {cost_of_capital.beta.value} times a premium of {cost_of_capital.equity_risk_premium.value|pct} — because the calculator's debt rule finds no debt; the accounting analysis notes the assumed CyberArk convertible notes are tagged outside that rule, so a small debt weight would nudge the rate down and value up, in a direction the grid already shows and by an amount that would not close the gap to the price.",
+   "fields": [
+    "valuation.sensitivity.grid.1.1.value_per_share",
+    "valuation.sensitivity.grid.0.1.value_per_share",
+    "valuation.sensitivity.grid.2.1.value_per_share",
+    "valuation.sensitivity.grid.1.2.value_per_share",
+    "valuation.sensitivity.grid.1.0.value_per_share",
+    "valuation.sensitivity.grid.0.2.value_per_share",
+    "valuation.sensitivity.grid.2.0.value_per_share",
+    "valuation.price_at_cutoff",
+    "cost_of_capital.wacc.value",
+    "cost_of_capital.risk_free_rate.value",
+    "cost_of_capital.beta.value",
+    "cost_of_capital.equity_risk_premium.value"
+   ]
+  }
+ ],
+ "accounting_adjustments": {
+  "reading": "There were none. The accounting analysis wrote no adjustments (its adjustments list is empty), and the calculator records none applied and none refused, so every scenario runs on as-filed figures: trailing revenue of {valuation.base_revenue}, the statutory tax rate of {valuation.tax_rate|pct} (held there because the trailing effective rate of {tax_rate.effective_rate|pct} is above statutory), net debt of {valuation.scenarios.base.net_debt} and the operating lease liability of {valuation.scenarios.base.operating_lease_liability}. Two items the accounting analysis flagged but could not size sit inside those inputs and would push value down if they were: the CyberArk convertible notes are tagged under concepts the calculator's debt rule does not read, so net debt shows only cash and the equity bridge adds back cash without subtracting the notes; and the lease liability carried is the fiscal year-end figure, which the calculator itself flags as understated after the headquarters lease extension. Both would lower equity value per share, by an amount Python did not compute. The income-side items the accounting analysis raised — the allowance cut, the contingent-consideration gain, the smaller obsolescence charge — sit in trailing operating income of {terms.trailing_four_quarters.operating_income.value}, but the DCF uses my margin drivers rather than the trailing margin, so they do not enter the valuation directly; they bear on it only through how I read the margin path. The quality-adjusted free cash flow of {free_cash_flow.free_cash_flow_quality_adjusted.value}, negative against simple free cash flow of {free_cash_flow.free_cash_flow_simple.value}, is likewise not an adjustment to the DCF but the record behind the reinvestment drivers.",
+  "fields": [
+   "valuation.base_revenue",
+   "valuation.tax_rate",
+   "tax_rate.effective_rate",
+   "valuation.scenarios.base.net_debt",
+   "valuation.scenarios.base.operating_lease_liability",
+   "terms.trailing_four_quarters.operating_income.value",
+   "free_cash_flow.free_cash_flow_quality_adjusted.value",
+   "free_cash_flow.free_cash_flow_simple.value"
+  ]
+ },
+ "summary_ko": {
+  "value_range": "세 가지 시나리오로 계산한 주당 가치는 {valuation.value_range_per_share.low}에서 {valuation.value_range_per_share.high} 사이이고, 기본 시나리오는 {valuation.scenarios.base.value_per_share}입니다. 범위가 넓은 이유는 CyberArk 인수 직후라 성숙 단계의 영업이익률을 어떻게 보느냐에 따라, 기업가치의 대부분을 차지하는 잔존가치가 크게 달라지기 때문입니다.",
+  "price_position": "기준일 주가 {valuation.price_at_cutoff}는 이 범위 위에 있으며, 가장 낙관적인 시나리오의 {valuation.scenarios.bull.value_per_share}와 민감도 표의 최고값 {valuation.sensitivity.grid.0.2.value_per_share}보다도 높습니다. 즉 현재 주가는 제 낙관 시나리오보다 더 높은 성장이나 이익률, 또는 더 낮은 할인율을 이미 가정하고 있습니다.",
+  "market_implied_growth": "기본 시나리오의 이익률과 재투자율을 유지할 때 주가를 정당화하려면 앞으로 십 년 동안 매년 {valuation.reverse_dcf.value|pct}의 매출 성장이 꾸준히 필요합니다. 이는 최근 삼 년 연평균 성장률 {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}와 직전 회계연도의 {earnings_versus_cash.history.years.0.revenue_growth|pct}를 크게 웃돌고, 인수 효과가 포함된 최근 분기의 {ratios.growth.revenue.year_over_year.value|pct}에 가까운 수준입니다.",
+  "most_sensitive": "가치를 가장 크게 움직이는 가정은 십 년 차 영업이익률과 할인율입니다. 영업이익률 가정이 {valuation.scenarios.bear.drivers.operating_margin_year_ten|pct}에서 {valuation.scenarios.bull.drivers.operating_margin_year_ten|pct}로 가면 주당 가치가 {valuation.scenarios.bear.value_per_share}에서 {valuation.scenarios.bull.value_per_share}로 벌어지고, 할인율이 일 퍼센트포인트 낮아지면 기본 가치가 {valuation.sensitivity.grid.1.1.value_per_share}에서 {valuation.sensitivity.grid.0.1.value_per_share}로 오르는 반면 잔존성장률 반 퍼센트포인트는 {valuation.sensitivity.grid.1.2.value_per_share}까지만 올립니다.",
+  "accounting_adjustments": "회계 분석은 조정 항목을 하나도 쓰지 않았고 계산기도 적용하거나 거부한 조정이 없어, 이번 가치평가는 제출된 숫자 그대로 계산되었습니다. 다만 계산기가 부채로 읽지 못한 CyberArk 전환사채와 회계연도 말 기준의 오래된 리스부채 {valuation.scenarios.base.operating_lease_liability}는 반영될 경우 주당 가치를 낮추는 방향이며, 그 크기는 계산되지 않았습니다."
+ },
+ "limits": "This valuation is a set of stated assumptions run through a stated formula. It states no recommendation to trade, and a different reader choosing different drivers would reach a different value.",
+ "normalized_quotes": 0,
+ "dropped_items": [
+  {
+   "where": "price_position",
+   "reason": "reading: {valuation.price_position} is not a number in the calculator this analyst saw"
+  },
+  {
+   "where": "market_implied_growth",
+   "reason": "reading: {valuation.reverse_dcf.held} is not a number in the calculator this analyst saw"
+  }
+ ],
+ "dropped_count": 2
+}

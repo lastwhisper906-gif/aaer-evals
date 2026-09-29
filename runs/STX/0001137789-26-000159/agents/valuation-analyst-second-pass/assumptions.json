@@ -1,0 +1,253 @@
+{
+ "scenarios": {
+  "bear": {
+   "revenue_growth_year_one": 0.1,
+   "terminal_growth": 0.02,
+   "operating_margin_year_one": 0.3,
+   "operating_margin_year_ten": 0.15,
+   "reinvestment_rate_year_one": 0.3,
+   "reinvestment_rate_year_ten": 0.25,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "The bear case accepts the guided first quarter, which sits above the fourth, and has the cycle turn after it: the pricing actions management names as one of the two drivers of the trailing year's growth stop adding, the fifty-three-week base makes the comparison harder, and receivables that outran revenue and concentrated in three customers are read as a late-cycle sign. Growth for the year stays positive only because of the guided start, and is well below the guided run rate.",
+     "quote": "Management attributes revenue growth to nearline exabytes and to favorable pricing actions, so part of the growth is price rather than volume.",
+     "quote_from": "analysis_financial.json",
+     "fields": [
+      "ratios.growth.revenue.trailing_four_quarters",
+      "ratios.growth.revenue.quarter_over_quarter",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound",
+      "trend_table.years-back-0.ratios.days_sales_outstanding",
+      "concentration.facts.1.value"
+     ],
+     "history": "Far below the trailing year's {ratios.growth.revenue.trailing_four_quarters|pct} and the prior year's {earnings_versus_cash.history.years.1.revenue_growth|pct}, and below the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}; it stays above the fiscal 2023 fall of {earnings_versus_cash.history.years.3.revenue_growth|pct} and the fiscal 2024 fall of {earnings_versus_cash.history.years.2.revenue_growth|pct} because a straight-line fade cannot carry an outright contraction and the first quarter is already guided higher."
+    },
+    "terminal_growth": {
+     "reason": "Hard-drive revenue is a mature line whose record through a full cycle is close to flat: the trailing year only just passed the fiscal 2022 level after two years of decline. The bear terminal rate is set well below the risk-free rate, on the view that exabyte growth is offset by price per terabyte falling once supply catches up and flash takes share at the margin.",
+     "quote": "The company's own history is cyclical: revenue fell {earnings_versus_cash.history.years.3.revenue_growth|pct} in fiscal 2023 and {earnings_versus_cash.history.years.2.revenue_growth|pct} in fiscal 2024 before the current upswing, and the three-year compound growth rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} is far below the latest year's.",
+     "quote_from": "analysis_financial.json",
+     "fields": [
+      "cost_of_capital.risk_free_rate",
+      "earnings_versus_cash.history.years.4.revenue",
+      "terms.trailing_four_quarters.revenue",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound"
+     ],
+     "history": "Below the risk-free rate of {cost_of_capital.risk_free_rate|pct} and far below the three-year compound growth of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}; revenue of {terms.trailing_four_quarters.revenue} is only modestly above the fiscal 2022 figure of {earnings_versus_cash.history.years.4.revenue}, so the four-year record compounds below even this rate."
+    },
+    "operating_margin_year_one": {
+     "reason": "The first quarter of fiscal 2027 is guided at a margin above the fourth quarter's, but the bear case has pricing give back part of its gain in the second half as capacity is added, keeps the legal settlement and restructuring items that recur in the operating line, and has share-based compensation rise. The full-year margin lands a little under the trailing year's.",
+     "quote": "Read against its own past, this is a profitable company at a cyclical high, with the margin depending on pricing holding.",
+     "quote_from": "analysis_financial.json",
+     "fields": [
+      "ratios.profitability.operating_margin",
+      "earnings_versus_cash.history.years.1.operating_margin",
+      "earnings_versus_cash.history.operating_margin_three_year_average",
+      "terms.trailing_four_quarters.share_based_compensation"
+     ],
+     "history": "Just below the trailing year's {ratios.profitability.operating_margin|pct}, above the prior year's {earnings_versus_cash.history.years.1.operating_margin|pct} and above the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}; the fourth quarter ran higher still, so even the bear case does not assume an immediate reversal."
+    },
+    "operating_margin_year_ten": {
+     "reason": "The bear case returns the margin to the level of the fiscal 2021 and fiscal 2022 upcycle years, treating today's pricing power as cyclical rather than structural, with grants credited against cost liable to recapture. It stays above the fiscal 2023 loss because supply discipline in a two-supplier industry is assumed to prevent a repeat of that trough at the steady state.",
+     "quote": "For fiscal year 2026, gross margin increased by 11 percentage points compared to the prior fiscal year primarily driven by pricing actions undertaken by the Company and product mix shift to higher capacity products.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "earnings_versus_cash.history.years.4.operating_margin",
+      "earnings_versus_cash.history.years.5.operating_margin",
+      "earnings_versus_cash.history.years.3.operating_margin",
+      "earnings_versus_cash.history.operating_margin_three_year_average"
+     ],
+     "history": "Between the fiscal 2021 margin of {earnings_versus_cash.history.years.5.operating_margin|pct} and the fiscal 2022 margin of {earnings_versus_cash.history.years.4.operating_margin|pct}, below the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}, and well above the fiscal 2023 trough of {earnings_versus_cash.history.years.3.operating_margin|pct}."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "Capital expenditure is guided higher for the HAMR ramp, equipment commitments are mostly due within a year and inventory purchase commitments are non-cancellable, so the cash reinvested does not fall when profit does; on a lower margin the same dollars are a larger share of after-tax operating income, and working capital keeps absorbing cash as receivables lengthen.",
+     "quote": "These are the commitments of a company investing into demand; they become pressure if demand or pricing turns, since the payables and inventory they create would then run ahead of revenue.",
+     "quote_from": "analysis_financial.json",
+     "fields": [
+      "terms.trailing_four_quarters.capital_expenditure",
+      "terms.trailing_four_quarters.depreciation_and_amortization",
+      "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital",
+      "terms.balances_now.unconditional_purchase_obligations",
+      "terms.balances_a_year_earlier.unconditional_purchase_obligations"
+     ],
+     "history": "Above the trailing year's implied share, in which capital expenditure of {terms.trailing_four_quarters.capital_expenditure} less depreciation of {terms.trailing_four_quarters.depreciation_and_amortization} plus a trade working-capital rise of {free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital} was set against after-tax operating income earned at a margin of {ratios.profitability.operating_margin|pct}; the bear case holds the numerator and shrinks the denominator."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "At a lower steady-state margin and a low terminal rate, holding share in a capital-intensive process still takes a quarter of after-tax operating income, because the return on new capital is assumed to converge toward the cost of capital rather than stay near the current book figure.",
+     "quote": "For fiscal year 2027, supporting volume ramp of hard drives utilizing HAMR technology, we expect capital expenditures to be higher than fiscal year 2026 and still within our target range of 4-6% of revenue.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "ratios.profitability.return_on_invested_capital",
+      "ratios.profitability.return_on_invested_capital.invested_capital",
+      "cost_of_capital.wacc"
+     ],
+     "history": "The trailing return on invested capital of {ratios.profitability.return_on_invested_capital|pct} sits on a book base of {ratios.profitability.return_on_invested_capital.invested_capital} thinned by years of deficit equity, so it overstates the return on new capital; the bear rate assumes new capital earns close to the cost of capital of {cost_of_capital.wacc|pct}."
+    }
+   }
+  },
+  "base": {
+   "revenue_growth_year_one": 0.25,
+   "terminal_growth": 0.035,
+   "operating_margin_year_one": 0.4,
+   "operating_margin_year_ten": 0.26,
+   "reinvestment_rate_year_one": 0.2,
+   "reinvestment_rate_year_ten": 0.15,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "The first-quarter guide sits well above the fourth quarter and, held flat for the year, would already put fiscal 2027 growth above this rate. The base case takes less than the guided run rate because only one quarter is guided, the trailing year carried an extra week, part of its growth was price rather than volume, and the straight-line fade keeps growth in double digits for most of the decade regardless. It is the reading of a company whose near-term demand is visible and whose record says upcycles end.",
+     "quote": "Revenue of $4.1 billion, plus or minus $100 million",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "ratios.growth.revenue.this_quarter",
+      "ratios.growth.revenue.quarter_over_quarter",
+      "ratios.growth.revenue.trailing_four_quarters",
+      "ratios.growth.revenue.year_over_year",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound"
+     ],
+     "history": "Below the trailing year's {ratios.growth.revenue.trailing_four_quarters|pct} and the prior year's {earnings_versus_cash.history.years.1.revenue_growth|pct}, above the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} that spans the fiscal 2023 and fiscal 2024 declines, and below the fourth quarter's year-on-year growth of {ratios.growth.revenue.year_over_year|pct}."
+    },
+    "terminal_growth": {
+     "reason": "Data creation and retention are assumed to keep exabyte demand growing for the long run, while price per terabyte resumes its historical decline once the current supply tightness passes; the net is a terminal rate below the risk-free rate and above inflation-only growth.",
+     "quote": "As AI accelerates data generation and its value, we see durable long-term demand for mass capacity storage.",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "cost_of_capital.risk_free_rate",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound",
+      "earnings_versus_cash.history.years.4.revenue",
+      "terms.trailing_four_quarters.revenue"
+     ],
+     "history": "Below the risk-free rate of {cost_of_capital.risk_free_rate|pct} and well below the three-year compound growth of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}; from the fiscal 2022 revenue of {earnings_versus_cash.history.years.4.revenue} to the trailing {terms.trailing_four_quarters.revenue} the four-year record compounds below this rate, which is what a full cycle of a mature line looks like, so the base assumes data-centre demand adds a structural component the last cycle lacked."
+    },
+    "operating_margin_year_one": {
+     "reason": "The fourth quarter's operating margin ran well above the full year's, and the first-quarter earnings guide implies a margin higher again; the base case takes a full-year figure between the trailing year and the exit rate, allowing for share-based compensation, recurring restructuring and some giveback in the second half as industry capacity is added.",
+     "quote": "Non-GAAP diluted EPS of $7.30, plus or minus $0.20",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "ratios.profitability.operating_margin",
+      "ratios.growth.operating_income.this_quarter",
+      "ratios.growth.revenue.this_quarter",
+      "terms.trailing_four_quarters.share_based_compensation",
+      "earnings_versus_cash.history.operating_margin_three_year_average"
+     ],
+     "history": "Above the trailing year's {ratios.profitability.operating_margin|pct}, itself the highest of the six years on record, and roughly double the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}; the fourth quarter's operating income of {ratios.growth.operating_income.this_quarter} on revenue of {ratios.growth.revenue.this_quarter} shows the exit rate was higher than this."
+    },
+    "operating_margin_year_ten": {
+     "reason": "Pricing strategy, supply discipline and the HAMR cost position are read as partly structural, so the steady-state margin sits above every year before fiscal 2026; it is set well below the trailing year because the record shows margins mean-revert through a cycle and because grants credited against cost can be recaptured.",
+     "quote": "However, we believe the structural changes that we have made to the business, including executing our pricing strategy and maintaining supply discipline, together with the long-term customer engagements we have in place provide greater visibility into future demand trends.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "earnings_versus_cash.history.operating_margin_three_year_average",
+      "earnings_versus_cash.history.years.1.operating_margin",
+      "earnings_versus_cash.history.years.4.operating_margin",
+      "ratios.profitability.operating_margin"
+     ],
+     "history": "Above the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}, above the prior year's {earnings_versus_cash.history.years.1.operating_margin|pct} and the fiscal 2022 upcycle margin of {earnings_versus_cash.history.years.4.operating_margin|pct}, and below the trailing {ratios.profitability.operating_margin|pct}."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "Capital expenditure is guided higher for the HAMR ramp within the stated range of revenue, depreciation covers roughly half of it, and trade working capital grows with revenue at the trailing year's ratio; on a high margin the sum is a modest share of after-tax operating income, a little below the trailing year's share, which was lifted by the end of receivables factoring.",
+     "quote": "For fiscal year 2027, supporting volume ramp of hard drives utilizing HAMR technology, we expect capital expenditures to be higher than fiscal year 2026 and still within our target range of 4-6% of revenue.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "terms.trailing_four_quarters.capital_expenditure",
+      "terms.trailing_four_quarters_a_year_earlier.capital_expenditure",
+      "terms.trailing_four_quarters.depreciation_and_amortization",
+      "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital",
+      "free_cash_flow.free_cash_flow_to_firm"
+     ],
+     "history": "Capital expenditure of {terms.trailing_four_quarters.capital_expenditure} against {terms.trailing_four_quarters_a_year_earlier.capital_expenditure} a year earlier, depreciation of {terms.trailing_four_quarters.depreciation_and_amortization} and a trade working-capital rise of {free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital} left free cash flow to the firm at {free_cash_flow.free_cash_flow_to_firm}; the base rate sits slightly below that year's implied share because the working-capital rise included the one-off end of factoring."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "At the terminal rate a business earning a return on new capital in the high teens to low twenties needs to reinvest about this share of after-tax operating income; the base assumes a return well below the trailing book figure, which a thin capital base inflates, but comfortably above the cost of capital.",
+     "quote": "Return on invested capital, which uses debt plus equity plus leases less cash, is {ratios.profitability.return_on_invested_capital|pct} on invested capital of {ratios.profitability.return_on_invested_capital.invested_capital}, at an effective tax rate of {tax_rate|pct}.",
+     "quote_from": "analysis_financial.json",
+     "fields": [
+      "ratios.profitability.return_on_invested_capital",
+      "ratios.profitability.return_on_invested_capital.invested_capital",
+      "cost_of_capital.wacc",
+      "tax_rate"
+     ],
+     "history": "The trailing return on invested capital of {ratios.profitability.return_on_invested_capital|pct} on a base of {ratios.profitability.return_on_invested_capital.invested_capital} would fund terminal growth with far less reinvestment than this; the base rate assumes that return is not sustained on new capital."
+    }
+   }
+  },
+  "bull": {
+   "revenue_growth_year_one": 0.38,
+   "terminal_growth": 0.045,
+   "operating_margin_year_one": 0.45,
+   "operating_margin_year_ten": 0.35,
+   "reinvestment_rate_year_one": 0.15,
+   "reinvestment_rate_year_ten": 0.1,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "The bull case takes the first-quarter guide as a floor with sequential growth continuing through the year, as the chief executive says momentum continues into fiscal 2027 and cloud customers keep adding nearline capacity for AI workloads; pricing holds because supply stays tight in a two-supplier industry. Year-one growth then exceeds the trailing year's.",
+     "quote": "Our performance is being driven by robust cloud data center demand and disciplined execution, and we see the momentum continuing in 2027",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "ratios.growth.revenue.this_quarter",
+      "ratios.growth.revenue.year_over_year",
+      "ratios.growth.revenue.trailing_four_quarters",
+      "earnings_versus_cash.history.years.1.revenue_growth"
+     ],
+     "history": "Above the trailing year's {ratios.growth.revenue.trailing_four_quarters|pct} and near the prior year's {earnings_versus_cash.history.years.1.revenue_growth|pct}, below the fourth quarter's year-on-year growth of {ratios.growth.revenue.year_over_year|pct}, and about double the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}."
+    },
+    "terminal_growth": {
+     "reason": "The bull case has mass-capacity storage grow with the economy for the long run, AI-driven data retention offsetting price declines per terabyte; the rate is set just under the risk-free ceiling.",
+     "quote": "We believe our hard drive storage business will continue to benefit from growing demand for data creation, retention and utilization supported by the increasing value organizations derive from their data.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "cost_of_capital.risk_free_rate",
+      "earnings_versus_cash.history.years.3.revenue_growth",
+      "earnings_versus_cash.history.years.1.revenue_growth"
+     ],
+     "history": "Just below the risk-free rate of {cost_of_capital.risk_free_rate|pct} and far below the three-year compound growth of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}; the six years on record run from a fall of {earnings_versus_cash.history.years.3.revenue_growth|pct} to growth of {earnings_versus_cash.history.years.1.revenue_growth|pct}, and this terminal rate sits inside that range, above what the last full cycle averaged."
+    },
+    "operating_margin_year_one": {
+     "reason": "The fourth quarter's operating margin was close to this and the first-quarter earnings guide implies a higher one; the bull case holds the exit rate for the full year as pricing and mix keep improving and operating expenses grow slower than revenue.",
+     "quote": "GAAP gross margin of 52.3%; non-GAAP gross margin of 52.7%",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "ratios.growth.operating_income.this_quarter",
+      "ratios.growth.revenue.this_quarter",
+      "ratios.profitability.operating_margin",
+      "ratios.profitability.gross_margin"
+     ],
+     "history": "Well above the trailing year's {ratios.profitability.operating_margin|pct} and more than double the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}; fourth-quarter operating income of {ratios.growth.operating_income.this_quarter} on revenue of {ratios.growth.revenue.this_quarter} is the only period on record near it."
+    },
+    "operating_margin_year_ten": {
+     "reason": "The bull case treats the pricing regime as permanent: supply discipline and HAMR leadership hold a margin about the trailing year's through the decade, with mix shift to higher-capacity drives offsetting any price erosion.",
+     "quote": "Seagate is well positioned to address strengthening exabyte demand through our Mozaic platform and differentiated HAMR technology roadmap, enabling customers to scale efficiently while supporting our ability to drive profitable growth and value creation",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "ratios.profitability.operating_margin",
+      "earnings_versus_cash.history.operating_margin_three_year_average",
+      "earnings_versus_cash.history.years.3.operating_margin"
+     ],
+     "history": "About the trailing year's {ratios.profitability.operating_margin|pct}, the best year on record, and far above the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct} and every earlier year; it assumes the cycle that produced the fiscal 2023 margin of {earnings_versus_cash.history.years.3.operating_margin|pct} does not recur."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "Capital expenditure stays inside the stated range of revenue, depreciation grows with the asset base, and working capital is managed back toward the prior-year ratio now that the end of factoring is in the base; on a high margin the share of after-tax operating income reinvested is small.",
+     "quote": "Capital expenditure was {terms.trailing_four_quarters.capital_expenditure} against {terms.trailing_four_quarters_a_year_earlier.capital_expenditure} a year earlier, and the MD&A says fiscal 2027 capital expenditure will be higher again to support the HAMR volume ramp, with unconditional equipment commitments mostly due within one year.",
+     "quote_from": "analysis_financial.json",
+     "fields": [
+      "terms.trailing_four_quarters.capital_expenditure",
+      "terms.trailing_four_quarters.depreciation_and_amortization",
+      "terms.trailing_four_quarters.revenue",
+      "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital"
+     ],
+     "history": "Below the trailing year's implied share, since capital expenditure of {terms.trailing_four_quarters.capital_expenditure} on revenue of {terms.trailing_four_quarters.revenue} was already inside the stated target range and the working-capital rise of {free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital} is not assumed to repeat."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "At a terminal rate just under the risk-free rate, a return on new capital well above the cost of capital needs only about a tenth of after-tax operating income reinvested; the bull case keeps the return on capital high, though still a fraction of the trailing book figure.",
+     "quote": "Return on invested capital, which uses debt plus equity plus leases less cash, is {ratios.profitability.return_on_invested_capital|pct} on invested capital of {ratios.profitability.return_on_invested_capital.invested_capital}, at an effective tax rate of {tax_rate|pct}.",
+     "quote_from": "analysis_financial.json",
+     "fields": [
+      "ratios.profitability.return_on_invested_capital",
+      "cost_of_capital.wacc"
+     ],
+     "history": "Consistent with a return on new capital that is a fraction of the trailing {ratios.profitability.return_on_invested_capital|pct} yet well above the cost of capital of {cost_of_capital.wacc|pct}."
+    }
+   }
+  }
+ },
+ "wacc_overrides": {},
+ "dropped_items": [],
+ "dropped_count": 0
+}

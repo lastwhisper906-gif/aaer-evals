@@ -1,0 +1,38 @@
+{
+ "ticker": "CARR",
+ "accession": "0001783180-26-000032",
+ "purpose": "bear, base and bull drivers for a ten-year discounted-cash-flow model",
+ "basis": {
+  "revenue_base": "trailing four quarters of revenue in the calculator ({terms.trailing_four_quarters.revenue}); year-one growth is measured from that base",
+  "margin_basis": "GAAP operating income as the calculator's ebit basis ({ebit}), after amortization of acquired intangibles, restructuring and impairments; adjusted operating profit in the release is higher and is used only to reason about direction",
+  "reinvestment_basis": "net reinvestment (capital expenditure plus acquisitions plus working-capital change less depreciation and amortization) as a share of after-tax operating income; the calculator's trailing depreciation and amortization ({terms.trailing_four_quarters.depreciation_and_amortization}) exceeds capital expenditure ({terms.trailing_four_quarters.capital_expenditure}) because most of it is intangible amortization, so the rates below are set on economic reinvestment rather than the accounting difference",
+  "tax_rate_caution": "the calculator's trailing tax rate ({tax_rate}) reflects a one-time valuation-allowance release; a model should use a normal rate near the adjusted rate shown in the release, not the calculator field",
+  "terminal_growth_ceiling": "{cost_of_capital.risk_free_rate}",
+  "discount_rate_note": "cost of equity is available ({cost_of_capital.cost_of_equity}) but WACC is missing ({cost_of_capital.wacc}) because interest expense is not tagged; the filing's weighted-average coupon on long-term notes and the commercial-paper rate are the natural inputs for cost of debt"
+ },
+ "scenarios": {},
+ "limits": [
+  "Margins are set on the calculator's GAAP operating-income basis; a model built on adjusted operating profit would need to add back intangible amortization and restructuring explicitly and treat them as ongoing cash-free and cash charges respectively.",
+  "The calculator's tax rate is not usable for after-tax operating profit; the release's adjusted rate is the better anchor and the model should apply its own normal rate.",
+  "WACC is missing because interest expense is not tagged; the weighted-average coupon on long-term notes and the commercial-paper rate in the filing are the inputs a model should use for cost of debt.",
+  "Year-one growth is measured from the trailing four quarters, which include Riello and Noresco revenue that will leave the base; the scenarios net the headwind rather than restate the base.",
+  "Reinvestment rates describe economic reinvestment, not the accounting gap between capital expenditure and depreciation and amortization, which is negative because of intangible amortization.",
+  "No scenario includes cash for the AFFF settlement or a loss on the antitrust class actions, and none includes tariff refunds or insurance recoveries; all four are outside the operating drivers and should be handled as separate equity adjustments."
+ ],
+ "wacc_overrides": {},
+ "dropped_items": [
+  {
+   "where": "scenarios.bear",
+   "reason": "revenue_growth_year_one is not a number"
+  },
+  {
+   "where": "scenarios.base",
+   "reason": "revenue_growth_year_one is not a number"
+  },
+  {
+   "where": "scenarios.bull",
+   "reason": "revenue_growth_year_one is not a number"
+  }
+ ],
+ "dropped_count": 3
+}

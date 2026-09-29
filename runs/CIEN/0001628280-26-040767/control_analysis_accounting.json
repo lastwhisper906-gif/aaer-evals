@@ -1,0 +1,326 @@
+{
+ "ticker": "CIEN",
+ "accession": "0001628280-26-040767",
+ "form": "10-Q",
+ "question": "do reported earnings and cash reflect economic reality?",
+ "author": "single-agent control (one agent, no reader or analyst split)",
+ "areas": {
+  "earnings_versus_cash": {
+   "finding": "Over the trailing four quarters operating cash flow runs well ahead of net income: the ratio is {earnings_versus_cash.operating_cash_flow_over_net_income.value} and accruals over average assets are negative at {earnings_versus_cash.accruals_over_average_assets.value}, so cash, not accruals, is carrying the earnings. The gap is explained by non-cash charges rather than by working-capital timing: share-based compensation of {terms.trailing_four_quarters.share_based_compensation.value}, depreciation and amortization of {terms.trailing_four_quarters.depreciation_and_amortization.value} and an inventory provision of {terms.trailing_four_quarters.inventory_write_down.value} are all added back. The six-month bridge in the MD&A says the same thing: net income adjusted for non-cash charges provided the cash, and operating assets and liabilities consumed a part of it. Working capital absorbed cash in the half (receivables and prepaid advances grew, accrued compensation was paid out) yet the trailing-year picture shows trade working capital falling by {free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital.value} because payables rose by {earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change.value} and inventory fell by {earnings_versus_cash.working_capital.inventory.balance_sheet_change.value}. Net income moves less quarter to quarter than operating cash flow (smoothness {earnings_versus_cash.smoothness.value}), which for a hardware company with lumpy collections is ordinary rather than a sign of smoothing. The caveat is that share-based compensation is a large slice of the cash-over-earnings gap, and the company also spends real cash to settle tax withholding on vesting awards, which sits in financing rather than operating cash flow.",
+   "verdict": "earnings are backed by cash; the quality of the cash is reduced by the weight of share-based compensation and by the payables build that funded part of the trailing year",
+   "evidence": [
+    "0001628280-26-040614:8k_2_02:67",
+    "0001628280-26-040767:mdna:137",
+    "0001628280-26-040767:mdna:140",
+    "0001628280-26-040767:mdna:142",
+    "0001628280-26-040767:mdna:143",
+    "0001628280-26-040767:mdna:148",
+    "0001628280-26-040767:notes:134"
+   ],
+   "fields": [
+    "earnings_versus_cash.operating_cash_flow_over_net_income.value",
+    "earnings_versus_cash.accruals_over_average_assets.value",
+    "earnings_versus_cash.smoothness.value",
+    "terms.trailing_four_quarters.net_income.value",
+    "terms.trailing_four_quarters.operating_cash_flow.value",
+    "terms.trailing_four_quarters.share_based_compensation.value",
+    "terms.trailing_four_quarters.depreciation_and_amortization.value",
+    "terms.trailing_four_quarters.inventory_write_down.value",
+    "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital.value",
+    "earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change.value",
+    "earnings_versus_cash.working_capital.inventory.balance_sheet_change.value"
+   ]
+  },
+  "revenue_recognition": {
+   "finding": "Revenue grew {ratios.growth.revenue.year_over_year.value} year on year in the quarter and {ratios.growth.revenue.trailing_four_quarters.value} on a trailing basis, almost all of it in Networking Platforms hardware recognised at a point in time. The policy text is unchanged from the prior quarter; what changed is the shape of the backlog disclosure and of deferred revenue. The remaining-performance-obligation paragraph was rewritten: the prior quarter stated an expected share to be recognised within twelve months, the current quarter drops that figure, says the majority will be satisfied within a year, and adds that timing can be impacted by supply conditions. Product deferred revenue fell by roughly half between the fiscal year end and the quarter end while services deferred revenue rose, so the current-quarter ratio of contract liabilities to revenue is the lowest of the six quarters on record at {trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue.value}: previously prepaid product orders were shipped and recognised, which flatters the growth rate relative to fresh demand. Receivables are the other side: the quarterly days-sales-outstanding of {trend_table.quarters-back-0.ratios.days_sales_outstanding.value} is the lowest of six quarters, so collections keep pace with recognition, and the company's own DSO metric in the release is consistent. Contract assets for unbilled receivables and long-term receivables for software licences are modest and disclosed. Concentration is the substantive recognition risk: two cloud providers were each above ten percent of quarterly revenue and together about a third of it, and the ten-percent customer list changed from the prior quarter, when a service provider was also on it.",
+   "verdict": "recognition is conventional and consistent across documents; the growth print is partly a drawdown of prepaid product backlog and rests on two cloud customers",
+   "evidence": [
+    "0001628280-26-040767:notes:15",
+    "0001628280-26-040767:notes:47",
+    "0001628280-26-040767:notes:49",
+    "0001628280-26-040767:notes:52",
+    "0001628280-26-040767:notes:53",
+    "0001628280-26-040767:notes:55",
+    "0001628280-26-040767:notes:57",
+    "0001628280-26-040767:notes:60",
+    "0001628280-26-040767:note_history:44",
+    "0001628280-26-015152:note_history:48",
+    "0001628280-26-015152:note_history:46",
+    "0001628280-26-040614:8k_2_02:33",
+    "0001628280-26-040614:8k_2_02:34",
+    "0001628280-26-040767:mdna:8"
+   ],
+   "fields": [
+    "ratios.growth.revenue.year_over_year.value",
+    "ratios.growth.revenue.trailing_four_quarters.value",
+    "trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue.value",
+    "trend_table.quarters-back-1.ratios.contract_liabilities_over_revenue.value",
+    "trend_table.quarters-back-0.ratios.days_sales_outstanding.value",
+    "trend_table.quarters-back-0.ratios.receivables_over_revenue.value",
+    "terms.balances_now.contract_liabilities.value",
+    "terms.balances_a_year_earlier.contract_liabilities.value",
+    "terms.balances_now.receivables.value"
+   ]
+  },
+  "estimates_and_reserves": {
+   "finding": "The reserve that matters is inventory. The excess-and-obsolescence reserve stands at {terms.balances_now.inventory_reserve.value}, the reserve ratio of {trend_table.quarters-back-0.ratios.inventory_reserve_ratio.value} is the highest of six quarters and of five fiscal years, and the six-month provision is attributed in the note to reductions in forecasted demand for certain products. That sits oddly beside an MD&A that describes unprecedented demand and historically high backlog; the reconciliation is product mix, with older platforms being reserved while new ones ship, but the filing does not say so. The direction of the estimate is conservative for earnings. Warranty provisions ran ahead of settlements in the half and the accrual grew, again conservative. The bad-debt allowance of {terms.balances_now.bad_debt_allowance.value} is small against receivables and its ratio sits mid-history, consistent with a customer base of large cloud and service providers. The estimate that flatters earnings is tax: the trailing effective rate is {tax_rate.value}, well below the statutory band, explained by share-based-compensation deductions and mix, and the balance sheet carries a large net deferred tax asset whose realisation depends on continued taxable profits. The restructuring liability was almost fully paid down in the half and charges are trivial.",
+   "verdict": "reserves are being built, not released; the low effective tax rate is the one estimate that lifts reported net income above a normalised level",
+   "evidence": [
+    "0001628280-26-040767:notes:85",
+    "0001628280-26-040767:notes:86",
+    "0001628280-26-040767:notes:92",
+    "0001628280-26-040767:notes:71",
+    "0001628280-26-040767:notes:149",
+    "0001628280-26-040767:notes:63",
+    "0001628280-26-040614:8k_2_02:61",
+    "0001628280-26-040767:mdna:8"
+   ],
+   "fields": [
+    "terms.balances_now.inventory_reserve.value",
+    "terms.balances_a_year_earlier.inventory_reserve.value",
+    "trend_table.quarters-back-0.ratios.inventory_reserve_ratio.value",
+    "trend_table.quarters-back-7.ratios.inventory_reserve_ratio.value",
+    "trend_table.years-back-0.ratios.inventory_reserve_ratio.value",
+    "terms.trailing_four_quarters.inventory_write_down.value",
+    "terms.balances_now.bad_debt_allowance.value",
+    "trend_table.quarters-back-0.ratios.bad_debt_reserve_ratio.value",
+    "tax_rate.value",
+    "terms.trailing_four_quarters.income_tax_expense.value",
+    "terms.trailing_four_quarters.pretax_income.value"
+   ]
+  },
+  "cost_deferral": {
+   "finding": "Little cost is being parked on the balance sheet. Research and development of {terms.trailing_four_quarters.research_and_development_expense.value} over the trailing year is expensed as incurred and there is no capitalised development disclosure. Capitalised contract acquisition costs are a small balance of deferred commissions that is shrinking and amortising faster than it is added. Deferred cost of goods sold inside inventory is a minor line, and no share-based compensation was capitalised into inventory in the half. Capital expenditure of {terms.trailing_four_quarters.capital_expenditure.value} is above depreciation and amortization of {terms.trailing_four_quarters.depreciation_and_amortization.value} and above the prior trailing year's {terms.trailing_four_quarters_a_year_earlier.capital_expenditure.value}, which the MD&A attributes to supply-chain equipment and research and development; net property grew from {terms.balances_a_year_earlier.property_plant_and_equipment.value} to {terms.balances_now.property_plant_and_equipment.value}. The one balance that behaves like deferred cost is prepaid expenses and other, which rose on refundable cash advances to a contract manufacturer and prepaid value-added tax: cash paid ahead of inventory receipt, recoverable, but a real use of cash that does not yet appear in inventory.",
+   "verdict": "no material cost deferral; the prepaid advances to the contract manufacturer are the item to track",
+   "evidence": [
+    "0001628280-26-040767:notes:59",
+    "0001628280-26-040767:notes:85",
+    "0001628280-26-040767:notes:132",
+    "0001628280-26-040767:mdna:12",
+    "0001628280-26-040767:mdna:14",
+    "0001628280-26-040767:mdna:147",
+    "0001628280-26-040614:8k_2_02:61",
+    "0001628280-26-040614:8k_2_02:67"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.research_and_development_expense.value",
+    "terms.trailing_four_quarters.capital_expenditure.value",
+    "terms.trailing_four_quarters_a_year_earlier.capital_expenditure.value",
+    "terms.trailing_four_quarters.depreciation_and_amortization.value",
+    "terms.balances_now.property_plant_and_equipment.value",
+    "terms.balances_a_year_earlier.property_plant_and_equipment.value",
+    "trend_table.quarters-back-0.ratios.soft_asset_share.value"
+   ]
+  },
+  "cash_flow_engineering_and_off_balance_sheet": {
+   "finding": "Nothing in the cash flow statement looks engineered: there is no receivables factoring, no supplier-finance programme is disclosed and the calculator finds no tag for one, borrowing was flat with only scheduled term-loan amortisation of {terms.cash_flow_families.borrowing_repaid.value}, and the revolver is used for letters of credit rather than drawn. The commitments outside the balance sheet are large and growing fast. Purchase-order commitments to contract manufacturers and component suppliers stand at {terms.balances_now.unconditional_purchase_obligations.value} against {terms.balances_a_year_earlier.unconditional_purchase_obligations.value} a year earlier, and the note history shows the figure stepping up sharply from the prior quarter's disclosure to this one; the filing says only a portion is firm and non-cancelable without quantifying it. Payables are the working-capital lever that helped the trailing year: the balance grew by {earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change.value} and days payable are {ratios.efficiency.days_payables_outstanding.value}, and the calculator cannot articulate this against the cash flow statement because the statement merges payables with accruals, whose six-month movement was negative on the annual bonus payout. Hedging is ordinary: foreign-currency forwards designated as cash flow hedges for operating expense, interest-rate swaps fixing a part of the term loan, net-investment hedges. Operating leases are small at {terms.balances_now.operating_lease_liability.value}. Capital returned via the programme was {terms.trailing_four_quarters.share_repurchases.value} on a trailing basis, and in the half a comparable sum again went to repurchases for tax withholding on vesting awards, so cash leaving for equity holders and employees together is close to free cash flow.",
+   "verdict": "no engineering found; the purchase commitments are the off-balance-sheet exposure and the payables build is a non-durable source of cash",
+   "evidence": [
+    "0001628280-26-040767:mdna:161",
+    "0001628280-26-040767:notes:152",
+    "0001628280-26-040767:note_history:3",
+    "0001628280-26-015152:note_history:3",
+    "0001628280-26-040767:mdna:129",
+    "0001628280-26-040767:mdna:131",
+    "0001628280-26-040767:mdna:148",
+    "0001628280-26-040767:notes:89",
+    "0001628280-26-040767:notes:95",
+    "0001628280-26-040767:notes:100",
+    "0001628280-26-040767:notes:101",
+    "0001628280-26-040767:notes:106",
+    "0001628280-26-040614:8k_2_02:67"
+   ],
+   "fields": [
+    "terms.balances_now.unconditional_purchase_obligations.value",
+    "terms.balances_a_year_earlier.unconditional_purchase_obligations.value",
+    "earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change.value",
+    "earnings_versus_cash.working_capital.accounts_payable.share_of_net_income.value",
+    "ratios.efficiency.days_payables_outstanding.value",
+    "terms.cash_flow_families.borrowing_repaid.value",
+    "terms.cash_flow_families.borrowing_issued.value",
+    "terms.balances_now.operating_lease_liability.value",
+    "terms.trailing_four_quarters.share_repurchases.value",
+    "terms.balances_now.supplier_finance_obligation"
+   ]
+  },
+  "controls_audit_and_filing_signals": {
+   "finding": "Management concluded disclosure controls were effective and reported no change in internal control over financial reporting; a quarterly report carries no auditor opinion, so there is no audit signal to read. No late-filing notice exists on the record, and the earnings release and the report were filed the same day. The eight-K history is routine: earnings releases, annual-meeting votes, a debt refinancing, an officer change late last year. Two softer signals: the chief financial officer adopted a prearranged sales plan during the quarter covering up to a third of net after-tax shares from vesting awards, which is a normal diversification plan rather than an alarm; and the non-GAAP presentation excludes share-based compensation, intangible amortisation, restructuring and an acquisition holdback, lifting the quarterly operating margin from the GAAP figure to the adjusted one, while the non-GAAP tax provision at a blended statutory rate is higher than the GAAP rate, so the adjusted-to-GAAP gap in net income is narrower than the gap in operating income. The release cannot reconcile forward guidance to GAAP, which is the standard caveat.",
+   "verdict": "no control or filing red flags; the non-GAAP operating margin is the number to discount, with share-based compensation the reason",
+   "evidence": [
+    "0001628280-26-040767:item_4_controls:4",
+    "0001628280-26-040767:item_4_controls:6",
+    "0001628280-26-040767:notes:156",
+    "0001628280-26-040767:notes:157",
+    "0001628280-26-040614:8k_2_02:19",
+    "0001628280-26-040614:8k_2_02:47",
+    "0001628280-26-040614:8k_2_02:48",
+    "0001628280-26-040614:8k_2_02:68",
+    "0001628280-26-040614:8k_2_02:78"
+   ],
+   "fields": [
+    "ratios.profitability.operating_margin.value",
+    "terms.trailing_four_quarters.share_based_compensation.value",
+    "tax_rate.value",
+    "trend_table.quarters-back-0.ratios.non_gaap_gap"
+   ]
+  },
+  "cross_document_reconciliation": {
+   "finding": "The release, the MD&A and the notes agree on revenue, net income, operating cash flow, the balance sheet and the customer table; the two cloud providers in the note sum to the share the release states. The gaps are between the filing and the calculator. First, the calculator's depreciation-and-amortization term takes the amortization tag that appears in operating expense only, so it misses the intangible amortization charged to cost of goods sold that the cash flow statement and the EBITDA appendix include; EBITDA of {ratios.solvency.ebitda.value} and debt over EBITDA of {ratios.solvency.debt_over_ebitda.value} are therefore slightly conservative. Second, the calculator's cash and short-term investments of {terms.cash_and_short_term_investments_now.value} exclude long-term marketable debt securities that the MD&A counts inside its liquidity total, so net debt of {ratios.solvency.net_debt.value} is overstated relative to the company's own liquidity presentation. Third, the inventory articulation gap of {earnings_versus_cash.working_capital.inventory.articulation_gap.value} is almost entirely the non-cash provision of {terms.trailing_four_quarters.inventory_write_down.value}, which reduces the balance without passing through the change-in-inventory line; the receivables gap of {earnings_versus_cash.working_capital.receivables.articulation_gap.value} is small and consistent with allowance, currency and reclassification effects. Fourth, the calculator holds no tag for the change in payables because the statement merges payables with accruals. None of these is a filing inconsistency.",
+   "verdict": "documents reconcile; three calculator-level definitional gaps are noted and none changes the direction of any conclusion",
+   "evidence": [
+    "0001628280-26-040614:8k_2_02:55",
+    "0001628280-26-040614:8k_2_02:61",
+    "0001628280-26-040614:8k_2_02:67",
+    "0001628280-26-040614:8k_2_02:68",
+    "0001628280-26-040614:8k_2_02:71",
+    "0001628280-26-040614:8k_2_02:33",
+    "0001628280-26-040767:mdna:23",
+    "0001628280-26-040767:mdna:134",
+    "0001628280-26-040767:mdna:140",
+    "0001628280-26-040767:notes:47",
+    "0001628280-26-040767:notes:86"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.depreciation_and_amortization.value",
+    "terms.trailing_four_quarters.depreciation_and_amortization.parts.this_year_to_date.parts.1.value",
+    "ratios.solvency.ebitda.value",
+    "ratios.solvency.debt_over_ebitda.value",
+    "terms.cash_and_short_term_investments_now.value",
+    "ratios.solvency.net_debt.value",
+    "earnings_versus_cash.working_capital.inventory.articulation_gap.value",
+    "earnings_versus_cash.working_capital.receivables.articulation_gap.value",
+    "earnings_versus_cash.working_capital.accounts_payable.articulation_gap"
+   ]
+  },
+  "industry_lens": {
+   "dropped": "fields: 'concentration.facts' is not a field of calculator.json"
+  }
+ },
+ "reconciliation": [],
+ "anomalies": [],
+ "adjustments": [],
+ "summary_ko": {},
+ "limits": "This analysis finds where the numbers and the explanations disagree, and where the company differs from its own past. It does not judge intent, and it cannot see evidence outside the filings, such as invoices or contracts.",
+ "normalized_quotes": 0,
+ "dropped_items": [
+  {
+   "where": "areas.industry_lens",
+   "reason": "fields: 'concentration.facts' is not a field of calculator.json"
+  },
+  {
+   "where": "reconciliation[0]",
+   "id": null,
+   "reason": "the item is not an object"
+  },
+  {
+   "where": "reconciliation[1]",
+   "id": null,
+   "reason": "the item is not an object"
+  },
+  {
+   "where": "reconciliation[2]",
+   "id": null,
+   "reason": "the item is not an object"
+  },
+  {
+   "where": "reconciliation[3]",
+   "id": null,
+   "reason": "the item is not an object"
+  },
+  {
+   "where": "anomalies[0]",
+   "id": "estimates_and_reserves_inventory_reserve_build_against_unprecedented_demand",
+   "reason": "numbers_vs_prose 'The numbers show demand forecasts being cut for some products; the prose describes unprecedented industry demand and historically high backlog. Both can be true if mix is shifting to new platforms, but the filing does not name the products or the platform transition.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[1]",
+   "id": "revenue_recognition_product_deferred_revenue_drawdown",
+   "reason": "numbers_vs_prose \"The MD&A credits growth to demand; the deferred revenue roll shows that part of the quarter's product revenue was prepaid in earlier periods and shipped now, so the underlying order-to-revenue conversion is somewhat lower than the headline growth suggests.\" is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[2]",
+   "id": "revenue_recognition_remaining_performance_obligation_disclosure_change",
+   "reason": "numbers_vs_prose \"Backlog grew from the prior quarter's figure to the current one, so the numbers strengthen while the prose becomes less specific about timing; the new caveat points to component constraints as the gating factor for converting backlog to revenue.\" is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[3]",
+   "id": "revenue_recognition_customer_concentration_two_cloud_providers",
+   "reason": "fields: 'concentration.facts' is not a field of calculator.json"
+  },
+  {
+   "where": "anomalies[4]",
+   "id": "cash_flow_engineering_and_off_balance_sheet_purchase_commitments_jump",
+   "reason": "numbers_vs_prose 'The commitment now exceeds the backlog of remaining performance obligations, so the company is contracting for more supply than customers have contractually ordered; the prose frames this as securing long-lead components in a constrained market.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[5]",
+   "id": "cash_flow_engineering_and_off_balance_sheet_payables_build_funding_cash_flow",
+   "reason": "numbers_vs_prose 'The MD&A speaks of timing of payments to suppliers; the balance-sheet growth in payables outpaces cost-of-revenue growth, so a part of the trailing cash conversion is supplier credit rather than earnings.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[6]",
+   "id": "cost_deferral_contract_manufacturer_cash_advances",
+   "reason": "numbers_vs_prose 'Cash has gone out ahead of inventory receipt; the prose calls the advances refundable, which is a credit exposure to the manufacturer rather than a cost, but it is a use of cash that the inventory line does not show.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[7]",
+   "id": "earnings_versus_cash_share_based_compensation_weight_in_cash_conversion",
+   "reason": "numbers_vs_prose 'The release excludes share-based compensation from adjusted results as non-cash; the financing section shows a comparable cash outflow for withholding repurchases, so the economic cost is partly cash after all.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[8]",
+   "id": "earnings_versus_cash_accrued_compensation_payout_in_the_half",
+   "reason": "numbers_vs_prose \"The MD&A explains the movement as timing of the annual incentive plan; the size of the payout shows the prior fiscal year's earnings carried a large bonus accrual that has now been settled in cash.\" is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[9]",
+   "id": "estimates_and_reserves_effective_tax_rate_below_statutory",
+   "reason": "numbers_vs_prose 'The note attributes the low rate to share-based-compensation deductions and earnings mix; the non-GAAP appendix applies a much higher rate, so GAAP net income is flattered relative to a normalised tax charge.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[10]",
+   "id": "controls_audit_and_filing_signals_cfo_prearranged_sales_plan",
+   "reason": "numbers_vs_prose 'The plan is capped at a fraction of vesting shares and framed as routine; it coincides with the share price and adjusted earnings at highs, which is ordinary diversification rather than a control signal.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[11]",
+   "id": "controls_audit_and_filing_signals_non_gaap_operating_margin_gap",
+   "reason": "numbers_vs_prose 'Guidance is given only on the adjusted basis and the release says it cannot reconcile it to GAAP; the trailing GAAP operating margin in the calculator is far below the adjusted guidance range.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[12]",
+   "id": "cross_document_reconciliation_calculator_amortization_undercount",
+   "reason": "numbers_vs_prose \"The filing's own EBITDA is higher than the calculator's on this account; the direction of every leverage ratio is unchanged, only slightly conservative.\" is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[13]",
+   "id": "cross_document_reconciliation_net_debt_excludes_long_term_investments",
+   "reason": "numbers_vs_prose \"The MD&A's liquidity figure is larger than the calculator's; net debt is correspondingly overstated in the calculator, and the maturities note shows the securities are due within two years.\" is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[14]",
+   "id": "cross_document_reconciliation_inventory_articulation_gap",
+   "reason": "numbers_vs_prose 'The gap is close to the trailing inventory provision, which is a separate non-cash addback; the inventory note confirms reserve deductions came from sales and disposals, so this is presentation rather than inconsistency.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[15]",
+   "id": "industry_lens_services_margin_decline_and_blue_planet_loss",
+   "reason": "numbers_vs_prose 'The release headlines record adjusted margins; the segment table shows the software and services lines moving the other way, so the margin story is entirely hardware mix and volume.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "anomalies[16]",
+   "id": "industry_lens_finished_goods_build_to_mitigate_supply_volatility",
+   "reason": "numbers_vs_prose 'Holding finished goods against a concentrated customer base raises the exposure if those customers reschedule; the reserve build in the same note shows the company is already reserving some of what it holds.' is not one of confirms, contradicts, unresolved"
+  },
+  {
+   "where": "adjustments[0]",
+   "id": null,
+   "reason": "applies_to 'free_cash_flow_quality_adjusted' is not one of cash_flow, earnings"
+  },
+  {
+   "where": "limits",
+   "reason": "not the rules version's sentence; replaced by it"
+  }
+ ],
+ "dropped_count": 24
+}

@@ -1,0 +1,53 @@
+{
+ "ticker": "CSCO",
+ "filing": "the quarterly report identified by {accession}, form {form}, for the period ended {period_end}, read at the cutoff {cutoff}",
+ "purpose": "bear, base and bull drivers for a ten-year discounted cash flow; every driver is a decimal, and every reason rests on a verbatim quote or on calculator fields",
+ "author": "single-agent control (one agent, no reader or analyst layers)",
+ "shared": {
+  "risk_free_rate": "{cost_of_capital.risk_free_rate.value}",
+  "terminal_growth_ceiling": "terminal growth in every scenario is held at or below the risk-free rate {cost_of_capital.risk_free_rate.value}",
+  "cost_of_capital": "{cost_of_capital.wacc.value}",
+  "cost_of_equity": "{cost_of_capital.cost_of_equity.value}",
+  "pre_tax_cost_of_debt": "{cost_of_capital.pre_tax_cost_of_debt.value}",
+  "tax_rate": "{tax_rate.value}",
+  "beta": "{market.beta.value}",
+  "starting_revenue": "{terms.trailing_four_quarters.revenue.value}",
+  "starting_operating_income": "{ebit.value}",
+  "starting_operating_margin": "{ratios.profitability.operating_margin.value}",
+  "starting_return_on_invested_capital": "{ratios.profitability.return_on_invested_capital.value}",
+  "starting_invested_capital": "{ratios.profitability.return_on_invested_capital.invested_capital.value}",
+  "reinvestment_definition": "net capital expenditure plus the change in trade working capital plus acquisitions, as a share of after-tax operating income; depreciation and amortization are untagged for the period ({free_cash_flow.free_cash_flow_to_firm}), so the rates below are set on the gross capital expenditure {terms.trailing_four_quarters.capital_expenditure.value}, the rise in trade working capital from {free_cash_flow.free_cash_flow_to_firm.trade_working_capital.a_year_earlier.value} to {free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now.value}, and acquisitions of {terms.cash_flow_families.acquisitions.value}, with judgment for the untagged depreciation offset"
+ },
+ "scenarios": {},
+ "cross_scenario_notes": [
+  "Operating margin in every scenario is a GAAP margin including share-based compensation of {terms.trailing_four_quarters.share_based_compensation.value} and recurring restructuring; no non-GAAP add-backs are assumed.",
+  "Other income from Level three investment gains and any tariff refund are excluded from operating margin in every scenario; they are non-operating.",
+  "The starting invested capital {ratios.profitability.return_on_invested_capital.invested_capital.value} nets out cash and investments and includes operating leases, consistent with the calculator; inventory purchase commitments are not capitalized because they are untagged and will become inventory as they are honored.",
+  "Because depreciation and amortization are untagged for the period, reinvestment rates are judgments anchored on gross capital expenditure and the working-capital change rather than computed net figures; a valuation run should recompute them once the annual report tags the year.",
+  "Terminal growth never exceeds the risk-free rate {cost_of_capital.risk_free_rate.value}; the bull sits below it by design."
+ ],
+ "limits": [
+  "This is a single-agent control: the drivers were set by the same agent that wrote the accounting and financial analyses, with no separate valuation analyst to challenge them.",
+  "No earnings-release current report body or management guidance is on record before the cutoff, so revenue and margin drivers rest on the quarterly report alone.",
+  "Depreciation and amortization are missing from the calculator for the current year to date, so free cash flow to the firm and net reinvestment could not be computed; the reinvestment rates are set with judgment on gross figures.",
+  "The customer-concentration facts are empty in the calculator, so the dependence on service-provider and cloud customers is inferred from prose.",
+  "The trend table lacks fiscal fourth quarters and most MD&A paragraphs are marked unchanged and not reproduced, which limits the view of seasonality and of management's longer discussion.",
+  "There are no prior predictions for this company against which to calibrate the scenarios."
+ ],
+ "wacc_overrides": {},
+ "dropped_items": [
+  {
+   "where": "scenarios.bear",
+   "reason": "revenue_growth_year_one is not a number"
+  },
+  {
+   "where": "scenarios.base",
+   "reason": "revenue_growth_year_one is not a number"
+  },
+  {
+   "where": "scenarios.bull",
+   "reason": "revenue_growth_year_one is not a number"
+  }
+ ],
+ "dropped_count": 3
+}

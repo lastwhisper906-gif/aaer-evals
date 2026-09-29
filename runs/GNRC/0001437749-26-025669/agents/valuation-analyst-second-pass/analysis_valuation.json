@@ -1,0 +1,112 @@
+{
+  "question": "what is this company worth, and what does the price already assume?",
+  "value_range": {
+    "reading": "Python computed no value range. Under the three scenarios the calculator prints \"assumptions.json has no bear scenario\", \"assumptions.json has no base scenario\" and \"assumptions.json has no bull scenario\"; assumptions.json itself carries an empty scenarios block, and its dropped-items list records that each of the three scenarios was removed because a driver's reason field held a number written in the analyst's own words, in every case a four-digit year typed into the prose. So there is no enterprise value, no equity value and no value per share for bear, base or bull, and no low or high of a range. Neither the price nor the cost of capital is what is missing: the calculator prints no missing entry under cost of capital, the price at the cutoff is {valuation.price_at_cutoff}, and the discount rate the DCF would have used is {valuation.wacc|pct}, built from a cost of equity of {cost_of_capital.cost_of_equity.value|pct} (the risk-free rate of {cost_of_capital.risk_free_rate.value|pct} plus a beta of {cost_of_capital.beta.value} times an equity risk premium of {cost_of_capital.equity_risk_premium.value|pct}), a pre-tax cost of debt of {cost_of_capital.pre_tax_cost_of_debt.value|pct} at a tax rate of {valuation.tax_rate|pct}, and weights of {cost_of_capital.weights.equity|pct} equity and {cost_of_capital.weights.debt|pct} debt. The base revenue the scenarios would have grown from is {valuation.base_revenue}, and terminal growth is capped at {valuation.risk_free_rate_cap_on_terminal_growth|pct}. What the record offers in place of a range is the starting point any reader's drivers must be set against: a trailing operating margin of {ratios.profitability.operating_margin.value|pct} against a three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct} and a prior-fiscal-year margin of {earnings_versus_cash.history.years.0.operating_margin|pct}; trailing free cash flow to the firm of {free_cash_flow.free_cash_flow_to_firm.value} after capital expenditure of {terms.trailing_four_quarters.capital_expenditure.value}, depreciation and amortization of {terms.trailing_four_quarters.depreciation_and_amortization.value} and a trade working-capital build of {free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital.value}; and a return on invested capital of {ratios.profitability.return_on_invested_capital.value|pct}, which sits below the discount rate. I state no value that was not computed.",
+    "fields": [
+      "valuation.scenarios.bear.missing",
+      "valuation.scenarios.base.missing",
+      "valuation.scenarios.bull.missing",
+      "valuation.price_at_cutoff",
+      "valuation.wacc",
+      "valuation.tax_rate",
+      "valuation.base_revenue",
+      "valuation.risk_free_rate_cap_on_terminal_growth",
+      "cost_of_capital.cost_of_equity.value",
+      "cost_of_capital.risk_free_rate.value",
+      "cost_of_capital.beta.value",
+      "cost_of_capital.equity_risk_premium.value",
+      "cost_of_capital.pre_tax_cost_of_debt.value",
+      "cost_of_capital.weights.equity",
+      "cost_of_capital.weights.debt",
+      "ratios.profitability.operating_margin.value",
+      "earnings_versus_cash.history.operating_margin_three_year_average",
+      "earnings_versus_cash.history.years.0.operating_margin",
+      "free_cash_flow.free_cash_flow_to_firm.value",
+      "terms.trailing_four_quarters.capital_expenditure.value",
+      "terms.trailing_four_quarters.depreciation_and_amortization.value",
+      "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital.value",
+      "ratios.profitability.return_on_invested_capital.value"
+    ]
+  },
+  "price_position": {
+    "reading": "No price position was computed: the calculator carries no value range to place the price in, because every scenario is missing, the printed reason in each case being that assumptions.json has no scenario of that name. The price itself is present, {market.price.value} per share at the cutoff, which on {terms.shares_outstanding.value} shares gives a market value of equity of {cost_of_capital.market_value_of_equity.value}; net debt is {ratios.solvency.net_debt.value}, total debt of {ratios.solvency.total_debt.value} less cash of {terms.balances_now.cash.value}. Set against the filed record rather than a computed value, that market value of equity is well above book equity of {terms.balances_now.stockholders_equity.value} and a large multiple of trailing free cash flow to the firm of {free_cash_flow.free_cash_flow_to_firm.value} and of trailing operating income of {terms.trailing_four_quarters.operating_income.value}, at a time when trailing revenue changed by {ratios.growth.revenue.trailing_four_quarters.value|pct} and trailing operating income by {ratios.growth.operating_income.trailing_four_quarters.value|pct} against the year-earlier window. Whether the price sits below, inside or above a discounted-cash-flow range cannot be said until scenarios run; I do not estimate the position.",
+    "fields": [
+      "valuation.scenarios.base.missing",
+      "market.price.value",
+      "terms.shares_outstanding.value",
+      "cost_of_capital.market_value_of_equity.value",
+      "ratios.solvency.net_debt.value",
+      "ratios.solvency.total_debt.value",
+      "terms.balances_now.cash.value",
+      "terms.balances_now.stockholders_equity.value",
+      "free_cash_flow.free_cash_flow_to_firm.value",
+      "terms.trailing_four_quarters.operating_income.value",
+      "ratios.growth.revenue.trailing_four_quarters.value",
+      "ratios.growth.operating_income.trailing_four_quarters.value"
+    ]
+  },
+  "market_implied_growth": {
+    "reading": "The market-implied growth was not computed: under reverse_dcf the calculator prints \"no base scenario\", so the constant ten-year revenue growth at which a base case would be worth the price of {valuation.price_at_cutoff} does not exist in this run, and I do not estimate it. What can be read is the yardstick it would have been measured against. The company's own record: three-year compound revenue growth of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, from fiscal-year growth rates that run, oldest to newest, {earnings_versus_cash.history.years.4.revenue_growth|pct}, {earnings_versus_cash.history.years.3.revenue_growth|pct}, {earnings_versus_cash.history.years.2.revenue_growth|pct}, {earnings_versus_cash.history.years.1.revenue_growth|pct} and {earnings_versus_cash.history.years.0.revenue_growth|pct}, so the top line has been flat to falling since the two oldest years in the block; trailing four-quarter revenue is up only {ratios.growth.revenue.trailing_four_quarters.value|pct} on the year-earlier window even after a quarter that grew {ratios.growth.revenue.year_over_year.value|pct} year over year with a stated net contribution from non-annualized acquisitions and divestitures inside it. The company's guidance points the other way: the release keeps full-year net sales growth in the mid-to-high teens, a rate above every fiscal year in the history block except the two oldest, and it rests on a commercial and industrial segment guided to grow in the low thirties on data-center demand while the Residential segment, guided to high-single-digit growth for the year, fell in the quarter. The financial analysis adds that filed remaining performance obligations fell in the quarter the release says data-center backlog rose, so the guided path is asserted rather than filed. Any reader's base case therefore sits between a record that says roughly no growth and guidance that says mid-teens, and the rate the price itself implies is unknown until a base scenario runs.",
+    "fields": [
+      "valuation.reverse_dcf.missing",
+      "valuation.price_at_cutoff",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound",
+      "earnings_versus_cash.history.years.4.revenue_growth",
+      "earnings_versus_cash.history.years.3.revenue_growth",
+      "earnings_versus_cash.history.years.2.revenue_growth",
+      "earnings_versus_cash.history.years.1.revenue_growth",
+      "earnings_versus_cash.history.years.0.revenue_growth",
+      "ratios.growth.revenue.trailing_four_quarters.value",
+      "ratios.growth.revenue.year_over_year.value"
+    ],
+    "quote": "Total net sales growth is still expected to be in the mid-to-high teens percent range as compared to the prior year",
+    "quote_from": "input_8k.md"
+  },
+  "most_sensitive": [
+    {
+      "assumption": "operating margin path from year one to year ten",
+      "reading": "No sensitivity grid was computed; under sensitivity the calculator prints \"no base scenario\", so nothing can be read off a grid and no ranking of assumptions by their effect on value exists in this run. What the record shows is the spread within which the margin driver would have to be chosen: the trailing operating margin is {ratios.profitability.operating_margin.value|pct}, the three-year average {earnings_versus_cash.history.operating_margin_three_year_average|pct}, the prior fiscal year {earnings_versus_cash.history.years.0.operating_margin|pct}, the year before that {earnings_versus_cash.history.years.1.operating_margin|pct}, and the oldest year in the block {earnings_versus_cash.history.years.4.operating_margin|pct}. The quarter's gross margin of {trend_table.quarters-back-0.ratios.gross_margin.value|pct}, the highest of six quarters, carries a one-time tariff credit the company itself ties to that quarter and keeps inside net income and adjusted EBITDA, and the accounting analysis reads the underlying margin as below the year-ago quarter. A margin driver can be set anywhere across that spread on filed evidence, which is why on this calculator's conventions it would be expected to move value most; that is a reading of the record, not a computed sensitivity.",
+      "fields": [
+        "valuation.sensitivity.missing",
+        "ratios.profitability.operating_margin.value",
+        "earnings_versus_cash.history.operating_margin_three_year_average",
+        "earnings_versus_cash.history.years.0.operating_margin",
+        "earnings_versus_cash.history.years.1.operating_margin",
+        "earnings_versus_cash.history.years.4.operating_margin",
+        "trend_table.quarters-back-0.ratios.gross_margin.value"
+      ]
+    },
+    {
+      "assumption": "revenue growth in year one, which sets the whole faded ten-year path",
+      "reading": "Again no grid: the sensitivity block prints \"no base scenario\". The growth driver is the one on which history and guidance disagree most. History gives {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} compound over three fiscal years and {ratios.growth.revenue.trailing_four_quarters.value|pct} on the trailing window; the latest quarter gives {ratios.growth.revenue.year_over_year.value|pct} year over year with acquisitions and data-center shipments inside it; the release guides mid-to-high teens for the year and low thirties for the commercial and industrial segment on data-center backlog, while the financial analysis records that filed remaining performance obligations fell in the quarter the backlog was said to build and that the Residential segment fell against a full-year outlook of growth. Because the calculator fades growth in a straight line from year one to a terminal rate capped at {valuation.risk_free_rate_cap_on_terminal_growth|pct}, the year-one choice sets the whole ten-year revenue path, and the distance between the historical and guided starting points is the widest of any driver on the record. The terminal rate itself is bounded above by the cap and discounted at {valuation.wacc|pct}, so on these conventions its room to move value is narrower than the growth and margin paths. None of this is a computed sensitivity.",
+      "fields": [
+        "valuation.sensitivity.missing",
+        "earnings_versus_cash.history.revenue_growth_three_year_compound",
+        "ratios.growth.revenue.trailing_four_quarters.value",
+        "ratios.growth.revenue.year_over_year.value",
+        "valuation.risk_free_rate_cap_on_terminal_growth",
+        "valuation.wacc"
+      ]
+    }
+  ],
+  "accounting_adjustments": {
+    "reading": "There were none, and there was no valuation for them to move. The calculator has no accounting-adjustments block under valuation because no scenario ran, and the accounting analysis wrote no adjustment: its adjustments list is empty, and the free-cash-flow block shows no adjustment applied and none refused. The reason the accounting analyst gives is that the quarter's largest earnings item, the tariff recovery credited to cost of goods sold, which the release says is included in net income, adjusted net income and adjusted EBITDA, has no filed fact and so no calculator field: \"The tariff credit would be an earnings adjustment, but no calculator field carries it, so none is written.\" The only quality adjustment the calculator itself carries is in free cash flow: quality-adjusted free cash flow of {free_cash_flow.free_cash_flow_quality_adjusted.value} against simple free cash flow of {free_cash_flow.free_cash_flow_simple.value}, the formula subtracting share-based compensation of {terms.trailing_four_quarters.share_based_compensation.value} and acquisitions cash of {terms.cash_flow_families.acquisitions.value}. A reader running scenarios should know that the trailing operating margin of {ratios.profitability.operating_margin.value|pct} the DCF would start from already contains the one-time credit, and that the tax rate is held at {valuation.tax_rate|pct} while the trailing effective rate is {tax_rate.effective_rate|pct}.",
+    "fields": [
+      "free_cash_flow.free_cash_flow_quality_adjusted.value",
+      "free_cash_flow.free_cash_flow_simple.value",
+      "terms.trailing_four_quarters.share_based_compensation.value",
+      "terms.cash_flow_families.acquisitions.value",
+      "ratios.profitability.operating_margin.value",
+      "valuation.tax_rate",
+      "tax_rate.effective_rate"
+    ]
+  },
+  "summary_ko": {
+    "value_range": "파이썬은 가치 범위를 계산하지 못했습니다. 계산기는 세 시나리오 모두에 대해 assumptions.json에 해당 시나리오가 없다고 적었는데, 첫 번째 단계에서 가정의 근거 설명에 연도를 숫자로 직접 적는 바람에 세 시나리오가 모두 삭제되었기 때문입니다. 기준일 가격 {valuation.price_at_cutoff}과 가중평균자본비용 {valuation.wacc|pct}은 계산되어 있지만 시나리오별 기업가치·주주가치·주당가치는 존재하지 않으며, 저는 계산되지 않은 값을 추정하지 않습니다.",
+    "price_position": "가치 범위가 없으므로 가격이 범위의 어디에 있는지도 읽을 수 없습니다. 기준일 가격 {market.price.value}에 발행주식수 {terms.shares_outstanding.value}를 곱한 시가총액은 {cost_of_capital.market_value_of_equity.value}이고 순부채는 {ratios.solvency.net_debt.value}이며, 이는 장부상 자기자본 {terms.balances_now.stockholders_equity.value}과 최근 네 분기 기업잉여현금흐름 {free_cash_flow.free_cash_flow_to_firm.value}에 비해 매우 큰 값입니다.",
+    "market_implied_growth": "역산 DCF는 기본 시나리오가 없어 계산되지 않았으므로 가격에 내재된 성장률은 알 수 없습니다. 회사의 기록은 삼 년 복리 매출성장률 {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, 최근 네 분기 성장률 {ratios.growth.revenue.trailing_four_quarters.value|pct}인 반면 회사 가이던스는 연간 매출이 십 퍼센트대 중후반으로 늘어난다고 말해, 기록과 가이던스 사이의 간격이 매우 큽니다.",
+    "most_sensitive": "민감도 표가 계산되지 않아 어떤 가정이 가치를 가장 크게 움직이는지 표에서 읽을 수는 없습니다. 기록상 영업이익률은 최근 네 분기 {ratios.profitability.operating_margin.value|pct}에서 과거 최고 {earnings_versus_cash.history.years.4.operating_margin|pct}까지 폭이 넓고 이번 분기 마진에는 일회성 관세 환급이 섞여 있으며, 매출성장률은 과거 기록과 가이던스가 가장 크게 엇갈리는 가정이므로 이 두 가정의 선택 폭이 가장 넓습니다.",
+    "accounting_adjustments": "회계 조정은 없었고, 조정이 움직일 가치평가 자체도 실행되지 않았습니다. 회계 분석은 관세 환급 크레딧이 이익 조정 대상이지만 이를 담는 계산기 항목이 없어 아무 조정도 쓰지 않았고, 계산기가 스스로 반영한 유일한 품질 조정은 주식보상 {terms.trailing_four_quarters.share_based_compensation.value}과 인수 현금 {terms.cash_flow_families.acquisitions.value}을 뺀 품질조정 잉여현금흐름 {free_cash_flow.free_cash_flow_quality_adjusted.value}입니다."
+  },
+  "limits": "This valuation is a set of stated assumptions run through a stated formula. It states no recommendation to trade, and a different reader choosing different drivers would reach a different value."
+}

@@ -1,0 +1,155 @@
+{
+ "question": "what is this company worth, and what does the price already assume?",
+ "value_range": {
+  "reading": "Python's three scenarios put the share between {valuation.value_range_per_share.low} in the bear case and {valuation.value_range_per_share.high} in the bull case, with the base case at {valuation.scenarios.base.value_per_share}. In enterprise terms the bear case is worth {valuation.scenarios.bear.enterprise_value}, the base {valuation.scenarios.base.enterprise_value} and the bull {valuation.scenarios.bull.enterprise_value}; after net debt of {valuation.scenarios.base.net_debt} and operating lease liabilities of {valuation.scenarios.base.operating_lease_liability}, equity value is {valuation.scenarios.bear.equity_value}, {valuation.scenarios.base.equity_value} and {valuation.scenarios.bull.equity_value}, spread over diluted shares of {valuation.scenarios.base.diluted_shares}. The base case is my best reading rather than the midpoint of the other two. It takes year-one revenue growth of {valuation.scenarios.base.drivers.revenue_growth_year_one|pct}, below the trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters|pct} because the raised full-year guide already implies deceleration against a rising base, but well above the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}; a GAAP operating margin that starts at {valuation.scenarios.base.drivers.operating_margin_year_one|pct}, above every fiscal year in the filed record and near where the second quarter's operating income of {ratios.growth.operating_income.this_quarter} on revenue of {ratios.growth.revenue.this_quarter} already ran, and drifts to {valuation.scenarios.base.drivers.operating_margin_year_ten|pct}, just under the fiscal 2020 and fiscal 2021 margins of {earnings_versus_cash.history.years.5.operating_margin|pct} and {earnings_versus_cash.history.years.4.operating_margin|pct}; reinvestment falling from {valuation.scenarios.base.drivers.reinvestment_rate_year_one|pct} to {valuation.scenarios.base.drivers.reinvestment_rate_year_ten|pct} of after-tax operating income as the working-capital release the accounting analyst calls a timing effect reverses; and terminal growth of {valuation.scenarios.base.drivers.terminal_growth|pct}, under the risk-free cap of {valuation.risk_free_rate_cap_on_terminal_growth|pct}. Every scenario is discounted at a WACC of {valuation.wacc|pct} and taxed at the filed effective rate of {valuation.tax_rate|pct}. The discount rate is high enough that the present value of the base terminal value, {valuation.scenarios.base.terminal_value_present}, is smaller than the present value of the ten explicit years, {valuation.scenarios.base.explicit_present}; cash flows beyond year ten carry less weight here than in a typical ten-year model. The bull case, which takes the guided adjusted operating margin as a permanent GAAP margin of {valuation.scenarios.bull.drivers.operating_margin_year_ten|pct}, grows year one at {valuation.scenarios.bull.drivers.revenue_growth_year_one|pct} and fades to terminal growth of {valuation.scenarios.bull.drivers.terminal_growth|pct}, is worth {valuation.scenarios.bull.value_per_share}; the bear case, in which one of the two named cloud customers defers and the margin returns to the middle of the company's own range at {valuation.scenarios.bear.drivers.operating_margin_year_ten|pct}, is worth {valuation.scenarios.bear.value_per_share}.",
+  "fields": [
+   "valuation.value_range_per_share.low",
+   "valuation.value_range_per_share.high",
+   "valuation.scenarios.bear.enterprise_value",
+   "valuation.scenarios.bear.equity_value",
+   "valuation.scenarios.bear.value_per_share",
+   "valuation.scenarios.base.enterprise_value",
+   "valuation.scenarios.base.equity_value",
+   "valuation.scenarios.base.value_per_share",
+   "valuation.scenarios.bull.enterprise_value",
+   "valuation.scenarios.bull.equity_value",
+   "valuation.scenarios.bull.value_per_share",
+   "valuation.scenarios.base.net_debt",
+   "valuation.scenarios.base.operating_lease_liability",
+   "valuation.scenarios.base.diluted_shares",
+   "valuation.scenarios.base.drivers.revenue_growth_year_one",
+   "valuation.scenarios.base.drivers.operating_margin_year_one",
+   "valuation.scenarios.base.drivers.operating_margin_year_ten",
+   "valuation.scenarios.base.drivers.reinvestment_rate_year_one",
+   "valuation.scenarios.base.drivers.reinvestment_rate_year_ten",
+   "valuation.scenarios.base.drivers.terminal_growth",
+   "valuation.scenarios.bull.drivers.revenue_growth_year_one",
+   "valuation.scenarios.bull.drivers.operating_margin_year_ten",
+   "valuation.scenarios.bull.drivers.terminal_growth",
+   "valuation.scenarios.bear.drivers.operating_margin_year_ten",
+   "valuation.scenarios.base.terminal_value_present",
+   "valuation.scenarios.base.explicit_present",
+   "valuation.wacc",
+   "valuation.tax_rate",
+   "valuation.risk_free_rate_cap_on_terminal_growth",
+   "ratios.growth.revenue.trailing_four_quarters",
+   "ratios.growth.operating_income.this_quarter",
+   "ratios.growth.revenue.this_quarter",
+   "earnings_versus_cash.history.revenue_growth_three_year_compound",
+   "earnings_versus_cash.history.years.5.operating_margin",
+   "earnings_versus_cash.history.years.4.operating_margin"
+  ]
+ },
+ "price_position": {
+  "reading": "The price at the cutoff, {valuation.price_at_cutoff}, sits {valuation.price_position}: above the bull value of {valuation.value_range_per_share.high}, and far above the base value of {valuation.scenarios.base.value_per_share} and the bear value of {valuation.value_range_per_share.low}. In aggregate, the market value of equity at that price is {cost_of_capital.market_value_of_equity.value}, against a bull-case equity value of {valuation.scenarios.bull.equity_value} and a base-case equity value of {valuation.scenarios.base.equity_value}. No scenario I could build from the filed record reaches the price, including one that treats the company's adjusted-margin guidance as a permanent GAAP margin and grows revenue in year one faster than any fiscal year in its history. Part of the distance is the discount rate: the WACC of {cost_of_capital.wacc.value|pct} rests on a beta of {cost_of_capital.beta.value} measured from {cost_of_capital.beta.window_first} to {cost_of_capital.beta.window_last}, which lifts the cost of equity to {cost_of_capital.cost_of_equity.value|pct}; the sensitivity grid shows that a lower rate raises value, but a one-point step lifts the base only to {valuation.sensitivity.grid.0.1.value_per_share}, nowhere near the price. The rest of the distance is growth and margin that the price assumes and the record does not yet show, which the reverse DCF makes explicit.",
+  "fields": [
+   "valuation.price_at_cutoff",
+   "valuation.price_position",
+   "valuation.value_range_per_share.high",
+   "valuation.value_range_per_share.low",
+   "valuation.scenarios.base.value_per_share",
+   "valuation.scenarios.bull.equity_value",
+   "valuation.scenarios.base.equity_value",
+   "cost_of_capital.market_value_of_equity.value",
+   "cost_of_capital.wacc.value",
+   "cost_of_capital.beta.value",
+   "cost_of_capital.beta.window_first",
+   "cost_of_capital.beta.window_last",
+   "cost_of_capital.cost_of_equity.value",
+   "valuation.sensitivity.grid.0.1.value_per_share"
+  ]
+ },
+ "market_implied_growth": {
+  "reading": "Holding {valuation.reverse_dcf.held}, the constant annual revenue growth for ten years at which the base case is worth the price is {valuation.reverse_dcf.value|pct}. Against the company's own record that rate has no precedent. Three-year compound revenue growth is {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}; the best fiscal year in the filed history, fiscal 2023, grew {earnings_versus_cash.history.years.2.revenue_growth|pct} and fiscal 2024 then fell {earnings_versus_cash.history.years.1.revenue_growth|pct}; the trailing four quarters, which contain the strongest stretch of the AI-driven cycle, grew {ratios.growth.revenue.trailing_four_quarters|pct}, and the latest quarter grew {ratios.growth.revenue.year_over_year|pct} year over year. The company's own raised guide for fiscal 2026, quoted below, states a full-year rate below the implied rate, and the third-quarter revenue guide in the same release sits only modestly above the second quarter's revenue of {ratios.growth.revenue.this_quarter}, so the year-on-year pace is already decelerating as the prior-year base rises. The implied rate also does not fade: my bull case starts at {valuation.scenarios.bull.drivers.revenue_growth_year_one|pct} and fades to {valuation.scenarios.bull.drivers.terminal_growth|pct} by year ten, whereas the reverse DCF needs the implied rate held flat through year ten. Two caveats on how to read it. The implied growth is computed on base margins running from {valuation.scenarios.base.drivers.operating_margin_year_one|pct} to {valuation.scenarios.base.drivers.operating_margin_year_ten|pct}; a reader who believes the guided adjusted margin becomes the GAAP margin would need less growth to reach the price, but my bull case does exactly that and still lands at {valuation.scenarios.bull.value_per_share}. And it is computed at the WACC of {valuation.wacc|pct}; a lower discount rate would lower the implied growth, and the grid gives the scale of that effect. What the price assumes, then, is some combination of a decade of growth above anything in the filed record, margins above the company's own adjusted guidance, and a discount rate well below the one its own measured beta produces.",
+  "fields": [
+   "valuation.reverse_dcf.value",
+   "valuation.reverse_dcf.held",
+   "valuation.reverse_dcf.price",
+   "earnings_versus_cash.history.revenue_growth_three_year_compound",
+   "earnings_versus_cash.history.years.2.revenue_growth",
+   "earnings_versus_cash.history.years.1.revenue_growth",
+   "ratios.growth.revenue.trailing_four_quarters",
+   "ratios.growth.revenue.year_over_year",
+   "ratios.growth.revenue.this_quarter",
+   "valuation.scenarios.bull.drivers.revenue_growth_year_one",
+   "valuation.scenarios.bull.drivers.terminal_growth",
+   "valuation.scenarios.base.drivers.operating_margin_year_one",
+   "valuation.scenarios.base.drivers.operating_margin_year_ten",
+   "valuation.scenarios.bull.value_per_share",
+   "valuation.wacc"
+  ],
+  "quote": "Raising revenue guidance for fiscal year 2026 to $6.3 billion plus or minus $100 million, a 32% increase YoY at the midpoint",
+  "quote_from": "input_8k.md"
+ },
+ "most_sensitive": [
+  {
+   "assumption": "the revenue growth and operating margin path (the scenario drivers)",
+   "reading": "The scenario spread dwarfs the sensitivity grid. Moving year-one revenue growth from {valuation.scenarios.bear.drivers.revenue_growth_year_one|pct} to {valuation.scenarios.bull.drivers.revenue_growth_year_one|pct}, the year-ten operating margin from {valuation.scenarios.bear.drivers.operating_margin_year_ten|pct} to {valuation.scenarios.bull.drivers.operating_margin_year_ten|pct} and terminal growth from {valuation.scenarios.bear.drivers.terminal_growth|pct} to {valuation.scenarios.bull.drivers.terminal_growth|pct} takes value per share from {valuation.scenarios.bear.value_per_share} to {valuation.scenarios.bull.value_per_share}, around a base of {valuation.scenarios.base.value_per_share}. The two drivers compound through the terminal year: year-ten free cash flow to the firm is {valuation.scenarios.bear.years.9.free_cash_flow_to_firm} in the bear case, {valuation.scenarios.base.years.9.free_cash_flow_to_firm} in the base and {valuation.scenarios.bull.years.9.free_cash_flow_to_firm} in the bull, and the present value of the terminal value runs from {valuation.scenarios.bear.terminal_value_present} to {valuation.scenarios.bull.terminal_value_present}. Of the two, the margin path is the one the record argues about most. The second quarter's GAAP operating margin already sits near the base year-one level, but the three-year average is {earnings_versus_cash.history.operating_margin_three_year_average|pct} and the trailing figure {ratios.profitability.operating_margin|pct}, the filed history includes a year in which revenue fell, and the accounting analyst reads share-based compensation of {terms.trailing_four_quarters.share_based_compensation}, the Nubis holdback and the restructuring charge that recurs every period as real costs that the adjusted guide excludes. The growth path, in turn, rests on two cloud customers the release says together supplied about a third of quarterly revenue, on a backlog whose conversion language the filing loosened, and on purchase commitments of {terms.balances_now.unconditional_purchase_obligations} that must be honored by suppliers before the backlog can ship.",
+   "fields": [
+    "valuation.scenarios.bear.drivers.revenue_growth_year_one",
+    "valuation.scenarios.bull.drivers.revenue_growth_year_one",
+    "valuation.scenarios.bear.drivers.operating_margin_year_ten",
+    "valuation.scenarios.bull.drivers.operating_margin_year_ten",
+    "valuation.scenarios.bear.drivers.terminal_growth",
+    "valuation.scenarios.bull.drivers.terminal_growth",
+    "valuation.scenarios.bear.value_per_share",
+    "valuation.scenarios.base.value_per_share",
+    "valuation.scenarios.bull.value_per_share",
+    "valuation.scenarios.bear.years.9.free_cash_flow_to_firm",
+    "valuation.scenarios.base.years.9.free_cash_flow_to_firm",
+    "valuation.scenarios.bull.years.9.free_cash_flow_to_firm",
+    "valuation.scenarios.bear.terminal_value_present",
+    "valuation.scenarios.bull.terminal_value_present",
+    "earnings_versus_cash.history.operating_margin_three_year_average",
+    "ratios.profitability.operating_margin",
+    "terms.trailing_four_quarters.share_based_compensation",
+    "terms.balances_now.unconditional_purchase_obligations"
+   ]
+  },
+  {
+   "assumption": "the discount rate (WACC), which is beta-driven",
+   "reading": "On the grid, one point of WACC moves the base value from {valuation.sensitivity.grid.0.1.value_per_share} at a point lower to {valuation.sensitivity.grid.2.1.value_per_share} at a point higher, while half a point of terminal growth moves it only from {valuation.sensitivity.grid.1.0.value_per_share} to {valuation.sensitivity.grid.1.2.value_per_share}; the corners run from {valuation.sensitivity.grid.2.0.value_per_share} to {valuation.sensitivity.grid.0.2.value_per_share}. The discount rate therefore matters more than terminal growth, and the rate here is high. The WACC of {cost_of_capital.wacc.value|pct} is almost entirely the cost of equity of {cost_of_capital.cost_of_equity.value|pct}, since the equity weight is {cost_of_capital.weights.equity|pct}, and that cost of equity is the risk-free rate of {cost_of_capital.risk_free_rate.value|pct} plus a beta of {cost_of_capital.beta.value} times an equity risk premium of {cost_of_capital.equity_risk_premium.value|pct}. The beta is measured over the window {cost_of_capital.beta.window_first} to {cost_of_capital.beta.window_last}, a period in which the share moved far more than the market. A reader using a lower beta would discount at a lower rate and reach a higher value in every scenario, and the terminal value, which is a minority of enterprise value at this rate, would grow in weight; the grid's one-point step shows the direction and the scale, and shows that the price would remain well above the range. The cost of capital is not mine to choose, so the grid is the whole of what can be said about it here.",
+   "fields": [
+    "valuation.sensitivity.grid.0.1.value_per_share",
+    "valuation.sensitivity.grid.2.1.value_per_share",
+    "valuation.sensitivity.grid.1.0.value_per_share",
+    "valuation.sensitivity.grid.1.2.value_per_share",
+    "valuation.sensitivity.grid.2.0.value_per_share",
+    "valuation.sensitivity.grid.0.2.value_per_share",
+    "valuation.sensitivity.grid.1.1.value_per_share",
+    "cost_of_capital.wacc.value",
+    "cost_of_capital.cost_of_equity.value",
+    "cost_of_capital.weights.equity",
+    "cost_of_capital.risk_free_rate.value",
+    "cost_of_capital.beta.value",
+    "cost_of_capital.equity_risk_premium.value",
+    "cost_of_capital.beta.window_first",
+    "cost_of_capital.beta.window_last"
+   ]
+  }
+ ],
+ "accounting_adjustments": {
+  "reading": "One adjustment was applied: '{valuation.accounting_adjustments.each.0.name}', carried from the accounting analysis as a one-time reduction to cash flow ({valuation.accounting_adjustments.each.0.mechanism}). It moved the base value per share by {valuation.accounting_adjustments.each.0.moved_per_share}, from {valuation.accounting_adjustments.base_value_per_share} to {valuation.accounting_adjustments.all_together.value_per_share}; all adjustments together move {valuation.accounting_adjustments.all_together.moved_per_share} per share. The amount is the year-over-year build in accounts payable of {earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change}, which MD&A ties to the timing of payments to suppliers and the accounting analyst reads as a release that reverses, spread over diluted shares of {valuation.scenarios.base.diluted_shares}. It is small beside the scenario spread and beside the distance to the price. Items the accounting analyst flagged but could not size carry no adjustment: the new long-term unbilled software-licence receivable, the Nubis holdback labelled one-time, the restructuring charge excluded from adjusted results every period, and the Blue Planet goodwill left unchanged as that segment turned to losses. Two further things enter the valuation through the drivers rather than as adjustments. Share-based compensation of {terms.trailing_four_quarters.share_based_compensation} is inside the GAAP operating margins I chose, which is why the base margin sits below the adjusted guide. And the tax rate of {valuation.tax_rate|pct}, which the income-tax note attributes partly to share-based deductions and jurisdiction mix, is applied to every year's operating income in every scenario; a higher and more ordinary rate would lower every value in the range.",
+  "fields": [
+   "valuation.accounting_adjustments.each.0.name",
+   "valuation.accounting_adjustments.each.0.mechanism",
+   "valuation.accounting_adjustments.each.0.moved_per_share",
+   "valuation.accounting_adjustments.each.0.value_per_share",
+   "valuation.accounting_adjustments.base_value_per_share",
+   "valuation.accounting_adjustments.all_together.value_per_share",
+   "valuation.accounting_adjustments.all_together.moved_per_share",
+   "earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change",
+   "valuation.scenarios.base.diluted_shares",
+   "terms.trailing_four_quarters.share_based_compensation",
+   "valuation.tax_rate"
+  ]
+ },
+ "summary_ko": {
+  "value_range": "세 가지 시나리오로 계산한 주당 가치는 비관 {valuation.value_range_per_share.low}에서 낙관 {valuation.value_range_per_share.high} 사이이고, 제가 가장 타당하다고 보는 기본 시나리오는 {valuation.scenarios.base.value_per_share}입니다. 기본 시나리오는 첫해 매출 성장률 {valuation.scenarios.base.drivers.revenue_growth_year_one|pct}, 영업이익률이 {valuation.scenarios.base.drivers.operating_margin_year_one|pct}에서 {valuation.scenarios.base.drivers.operating_margin_year_ten|pct}로 완만히 내려가는 경로, 영구성장률 {valuation.scenarios.base.drivers.terminal_growth|pct}를 가정하고 가중평균자본비용 {valuation.wacc|pct}로 할인한 결과입니다.",
+  "price_position": "기준일 주가 {valuation.price_at_cutoff}는 산출된 범위 전체를 웃돌며, 낙관 시나리오 가치 {valuation.value_range_per_share.high}보다도 훨씬 높습니다. 회사의 조정 영업이익률 가이던스를 영구히 달성하고 역사상 어느 회계연도보다 빠르게 성장한다고 가정해도 현재 주가에는 닿지 않습니다.",
+  "market_implied_growth": "기본 시나리오의 이익률과 재투자율, 영구성장률을 그대로 두고 현재 주가를 정당화하려면 향후 십 년간 매년 {valuation.reverse_dcf.value|pct}의 매출 성장이 필요합니다. 이는 회사의 삼 년 복합 성장률 {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, 최근 네 분기 성장률 {ratios.growth.revenue.trailing_four_quarters|pct}, 최근 분기의 전년 동기 대비 성장률 {ratios.growth.revenue.year_over_year|pct}, 그리고 회사가 올린 회계연도 2026 매출 가이던스가 뜻하는 성장률을 모두 크게 넘어서는 수준입니다.",
+  "most_sensitive": "가치를 가장 크게 움직이는 것은 매출 성장과 영업이익률의 경로로, 비관에서 낙관 시나리오로 가면 주당 가치가 {valuation.value_range_per_share.low}에서 {valuation.value_range_per_share.high}로 바뀝니다. 그 다음은 할인율로, 민감도 표에서 가중평균자본비용이 일 퍼센트포인트 낮아지면 기본 가치가 {valuation.sensitivity.grid.0.1.value_per_share}, 높아지면 {valuation.sensitivity.grid.2.1.value_per_share}가 되어 영구성장률 반 퍼센트포인트 변화({valuation.sensitivity.grid.1.0.value_per_share}에서 {valuation.sensitivity.grid.1.2.value_per_share})보다 영향이 큽니다.",
+  "accounting_adjustments": "회계 조정은 한 가지로, 공급업체 지급 시점에 따른 매입채무 증가분 {earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change}를 일회성으로 차감한 것이며, 이로 인해 기본 시나리오 주당 가치가 {valuation.accounting_adjustments.base_value_per_share}에서 {valuation.accounting_adjustments.all_together.value_per_share}로 {valuation.accounting_adjustments.all_together.moved_per_share}만큼 움직였습니다. 시나리오 간 차이나 주가와의 거리에 비하면 작은 폭이며, 주식보상 {terms.trailing_four_quarters.share_based_compensation}과 낮은 유효세율 {valuation.tax_rate|pct}은 조정이 아니라 가정 자체에 들어가 있습니다."
+ },
+ "limits": "This valuation is a set of stated assumptions run through a stated formula. It states no recommendation to trade, and a different reader choosing different drivers would reach a different value."
+}
