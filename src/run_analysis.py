@@ -29,7 +29,10 @@ The control's prompt is `CONTROL_PROMPT` here, because a control is not a layer
 and must not become something a session can invoke by name.
 
 **A failed call is retried once with identical input**, then recorded as failed.
-A retry never changes the input.
+A retry never changes the input. The run goes on past a failed analyst, so what
+did write still reaches the memo, but the manifest's `analysis_failure` names
+every agent that did not write and the command exits non-zero: a run missing an
+analysis is never reported as finished.
 
 **Every agent's usage is recorded** in `input_manifest.json` under `agents`: the
 model asked for, the model that served, input, cache and output tokens, turns,
@@ -368,7 +371,9 @@ def run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: s
     agents["control-single-agent"] = run_control(run, logs)
     if agents["control-single-agent"]["result"] == "written":
         stages["control"] = check_control(run)
-    return finish(run, agents, stages, None)
+    silent = [name for name, record in agents.items() if record.get("result") != "written"]
+    return finish(run, agents, stages,
+                  f"did not write: {', '.join(silent)}" if silent else None)
 
 
 def control_sees(run: Path) -> list[str]:

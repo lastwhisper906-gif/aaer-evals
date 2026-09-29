@@ -310,3 +310,9 @@ strengthens anything that has shown up three or more times.
 2026-09-28 let `tools/second_lens.sh` pin its judge to the local `main`, which in a worktree session is whatever the checkout last fetched; set `LENS_JUDGE_BASE=origin/main` after every fetch, or the lens judges against a trunk that has moved.
 2026-09-28 armed auto-merge on three pull requests that all append to `docs/structure_changes.md`; each merge put the next one in conflict and cost it another full CI round, so a queue of appenders merges one at a time whatever is armed.
 2026-09-28 rebased a branch whose first commits were the early form of pull requests main already held, and got add/add conflicts on every file; `git merge --squash` of the branch onto main carries only its net change against its own merge of main.
+2026-09-28 ran `pkill -f` on a pattern that also matched the shell running it and killed the session's own command; match a process by its pid file or an exact argument, never a substring of the current command line.
+2026-09-28 wrote an agent prompt whose adjustment path had a different shape from the one the calculator resolves; a path an agent writes is checked against the resolver's own test before the prompt ships.
+2026-09-28 drafted a test whose expected value was read from the code's own output; an expected value is worked by hand from the filing before the code runs.
+2026-09-28 let `finish()` write the manifest from the copy loaded at the start, overwriting the agents' usage recorded meanwhile; a stage that closes a shared file rereads it first.
+2026-09-28 computed QCOM's pre-tax cost of debt at 55% because the debt balance picked up the wrong long-term-debt tag; a rate that far outside the range is a reading error until the balance behind it is checked.
+2026-09-28 fetched a fresh companyfacts store for all twelve before checking it against the committed drift baseline, and four refused; the drift check runs on the store before the bundle is built.

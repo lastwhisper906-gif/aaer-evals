@@ -120,18 +120,62 @@ def korean_number(value: float, unit: str, *, percent: bool = False) -> str:
     return f"{value:,.3f}"
 
 
+# What an analyst writes straight after a placeholder that the number already
+# carries, or that must agree with how the number is read aloud. The unit is
+# printed by `korean_number`, so an analyst's own "일" after a days figure would
+# print twice; and a particle chosen for a digit the analyst could not see
+# ("{x}과" before "달러") reads wrong once the unit is there.
+PARTICLES = {"과": ("과", "와"), "와": ("과", "와"), "이": ("이", "가"), "가": ("이", "가"),
+             "을": ("을", "를"), "를": ("을", "를"), "은": ("은", "는"), "는": ("은", "는"),
+             "으로": ("으로", "로"), "로": ("으로", "로")}
+UNIT_AFTER = re.compile(r"달러|개월|일|주|%")
+PARTICLE_AFTER = re.compile(r"(으로|과|와|을|를|은|는|이|가|로)(?![가-힣])")
+# A digit read aloud: 영 일 이 삼 사 오 육 칠 팔 구. Those ending in a consonant
+# take 과, 이, 을, 은; 일, 칠 and 팔 end in ㄹ, which takes 로, not 으로.
+DIGIT_FINAL = {"0": "ㅇ", "1": "ㄹ", "3": "ㅁ", "6": "ㄱ", "7": "ㄹ", "8": "ㄹ"}
+
+
+def _final_consonant(rendered: str) -> str | None:
+    last = rendered.rstrip()[-1:]
+    if last.isdigit():
+        return DIGIT_FINAL.get(last)
+    if "가" <= last <= "힣":
+        return "ㄱㄲㄳㄴㄵㄶㄷㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅄㅅㅆㅇㅈㅊㅋㅌㅍㅎ"[
+            (ord(last) - 0xAC00) % 28 - 1] if (ord(last) - 0xAC00) % 28 else None
+    return None          # "%" is read 퍼센트, and "(값 없음)" ends in a bracket
+
+
+def _particle(rendered: str, particle: str) -> str:
+    with_final, without = PARTICLES[particle]
+    final = _final_consonant(rendered)
+    if particle in ("으로", "로"):
+        return with_final if final and final != "ㄹ" else without
+    return with_final if final else without
+
+
 def fill(text: str | None, fields: dict) -> str:
     """An analyst's sentence with each `{path}` replaced by its number."""
     if not text:
         return "(작성되지 않음)"
-
-    def one(match: re.Match) -> str:
+    out, last = [], 0
+    for match in analysis_check.PLACEHOLDER.finditer(text):
         path, how = match.group(1), match.group(2)
         value = calculator.field_value(fields, path)
         node = field_node(fields, path)
-        return korean_number(value, unit_of(path, node), percent=how == "pct")
-
-    return analysis_check.PLACEHOLDER.sub(one, text)
+        rendered = korean_number(value, unit_of(path, node), percent=how == "pct")
+        at = match.end()
+        unit = UNIT_AFTER.match(text, at)
+        if unit:
+            if not rendered.endswith(unit.group()):
+                rendered += unit.group()     # the analyst's unit, where the number has none
+            at = unit.end()
+        particle = PARTICLE_AFTER.match(text, at)
+        if particle:
+            rendered += _particle(rendered, particle.group(1))
+            at = particle.end()
+        out.append(text[last:match.start()] + rendered)
+        last = at
+    return "".join(out) + text[last:]
 
 
 def _entry(summary: dict, key: str, analysis: dict, block: str | None, fields: dict) -> str:

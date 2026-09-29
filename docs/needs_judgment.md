@@ -68,6 +68,10 @@ force.
 
 [ ] **an accounting adjustment's life** · one-time unless the analyst marks it `recurs` with a quote: it moves value once, by its amount over diluted shares · deciding may make some kinds recurring by default (share-based compensation already is, inside the quality-adjusted measure).
 
+[ ] **the seal: `ots stamp` cannot reach a calendar from the cloud session** · the OpenTimestamps calendars answer 403 at this environment's network proxy, so the stage-5 runs of 2026-09-28 are sealed by their merge commit on `main` alone · deciding either runs the publish step's `ots stamp input_manifest.json` (`docs/HOW_WE_WORK.md`, the publish row) on each of those runs from the Mac, adding the `.ots` file beside the manifest as a new file, or opens the calendars in the cloud environment's network policy.
+
+[ ] **the drift check refuses a fresh store for four of the twelve** · CSCO, PANW, CIEN and TTMI ran from the committed fixture store, whose triggering filing is the one the baseline was drawn on, because the drift check refused a freshly fetched store against the committed baseline; so those four read the filing the fixtures hold (CSCO 2026-05-19, PANW 2026-06-03, CIEN 2026-06-04, TTMI 2026-08-05), not necessarily the latest; the other eight ran from a store fetched on 2026-09-28 and gated at each cutoff · deciding either re-draws the drift baseline from the fresh stores (a new baseline file, the old one kept) or keeps the fixture stores for these four until their next filing.
+
 ## Settled by default
 
 Every other row that was open on 2026-09-28. Nothing waits on any of them: the
