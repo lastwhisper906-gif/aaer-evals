@@ -28,6 +28,13 @@ its directory's file names and its one output interpolated, and nothing else.
 The control's prompt is `CONTROL_PROMPT` here, because a control is not a layer
 and must not become something a session can invoke by name.
 
+**One model for every agent, when the owner names one.** `--model` puts the named
+model in place of the one each committed definition carries, for every agent and
+the control alike; the definitions themselves are not touched, each agent's
+record says the model it asked for, and the manifest's `model_override` says why.
+The owner's decision of 2026-09-30 runs the analysts on Opus while the Fable
+limit holds (`docs/structure_changes.md`).
+
 **A failed call is retried once with identical input**, then recorded as failed.
 A retry never changes the input. The run goes on past a failed analyst, so what
 did write still reaches the memo, but the manifest's `analysis_failure` names
@@ -41,7 +48,7 @@ rather than estimated.
 
     python3.12 -m src.run_analysis --run runs/NVDA/0001045810-26-000075 \\
         --ticker NVDA --form 10-Q --cutoff 2026-08-26 --period-end 2026-07-26 \\
-        [--store tests/fixtures] [--prices <directory>]
+        [--store tests/fixtures] [--prices <directory>] [--model opus]
 """
 
 from __future__ import annotations
@@ -187,19 +194,26 @@ def ask(directory: Path, *, agent: str, writes: tuple[str, ...], message: str,
     return record
 
 
-def run_agent(run: Path, name: str, logs: Path) -> dict:
+def definition_for(prompt: str, model: str | None) -> dict:
+    """The committed definition, with the owner's model in place of its own if named."""
+    spec = definition(prompt)
+    return dict(spec, model=model) if model else spec
+
+
+def run_agent(run: Path, name: str, logs: Path, model: str | None = None) -> dict:
     agent_inputs.build(run, name)
     directory = agent_inputs.session_root(run, name)
     spec = agent_inputs.AGENTS[name]
     files = sorted(path.name for path in directory.iterdir() if path.name != spec.writes)
     message = INSTRUCTION.format(files=", ".join(files), writes=spec.writes)
     return ask(directory, agent=spec.prompt, writes=(spec.writes,), message=message,
-               spec=definition(spec.prompt), log=logs / f"{name}.log")
+               spec=definition_for(spec.prompt, model), log=logs / f"{name}.log")
 
 
-def parallel(run: Path, names: tuple[str, ...], logs: Path) -> dict[str, dict]:
+def parallel(run: Path, names: tuple[str, ...], logs: Path,
+             model: str | None = None) -> dict[str, dict]:
     with concurrent.futures.ThreadPoolExecutor(max_workers=len(names)) as pool:
-        futures = {name: pool.submit(run_agent, run, name, logs) for name in names}
+        futures = {name: pool.submit(run_agent, run, name, logs, model) for name in names}
         return {name: future.result() for name, future in futures.items()}
 
 
@@ -291,7 +305,7 @@ NO_MARKET_TABLE = ("this run builds no market table: the table needs short inter
 
 
 def run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: str,
-                store: Path, prices: Path | None) -> dict:
+                store: Path, prices: Path | None, model: str | None = None) -> dict:
     run = Path(run)
     logs = run.parent / f".{run.name}.logs"          # outside the record, beside it
     logs.mkdir(exist_ok=True)
@@ -317,15 +331,15 @@ def run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: s
         return payload
 
     # read
-    agents.update(parallel(run, ("numbers-reader", "notes-text-reader"), logs))
+    agents.update(parallel(run, ("numbers-reader", "notes-text-reader"), logs, model))
     if any(agents[name]["result"] != "written" for name in ("numbers-reader", "notes-text-reader")):
-        return finish(run, agents, stages, "a reader failed twice")
+        return finish(run, agents, stages, "a reader failed twice", model)
     stages["quote_gate"] = {"dropped": len(gate_readers(run).get("dropped", []))}
 
     # calculate, then the two analysts, never merged, on the view with no price
     base = calculate(BEFORE_ANALYSTS)
     write_json(run / calculator.FILINGS_ONLY, calculator.filings_only(base))
-    agents.update(parallel(run, ("accounting-analyst", "financial-analyst"), logs))
+    agents.update(parallel(run, ("accounting-analyst", "financial-analyst"), logs, model))
     for name, kind in (("accounting-analyst", "accounting"), ("financial-analyst", "financial")):
         if agents[name]["result"] == "written":
             checked = check_analysis(run, name, kind)
@@ -336,14 +350,14 @@ def run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: s
     # value: adjustments first, then drivers, then the reading
     calculate(BEFORE_DRIVERS, accounting=accounting)
     if (run / "analysis_accounting.json").is_file() and (run / "analysis_financial.json").is_file():
-        agents["valuation-analyst"] = run_agent(run, "valuation-analyst", logs)
+        agents["valuation-analyst"] = run_agent(run, "valuation-analyst", logs, model)
         if agents["valuation-analyst"]["result"] == "written":
             assumptions = check_analysis(run, "valuation-analyst", "assumptions")
             write_json(run / "assumptions.json", assumptions)
             stages["assumptions"] = {"dropped": assumptions["dropped_count"]}
             calculate(FINAL, accounting=accounting, assumptions=assumptions)
             agents["valuation-analyst-second-pass"] = run_agent(
-                run, "valuation-analyst-second-pass", logs)
+                run, "valuation-analyst-second-pass", logs, model)
             if agents["valuation-analyst-second-pass"]["result"] == "written":
                 checked = check_analysis(run, "valuation-analyst-second-pass", "valuation")
                 write_json(run / "analysis_valuation.json", checked)
@@ -368,12 +382,12 @@ def run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: s
         financial=_load(run / "analysis_financial.json"),
         valuation=_load(run / "analysis_valuation.json"),
         baselines=_load(run / "baselines.json")), encoding="utf-8")
-    agents["control-single-agent"] = run_control(run, logs)
+    agents["control-single-agent"] = run_control(run, logs, model)
     if agents["control-single-agent"]["result"] == "written":
         stages["control"] = check_control(run)
     silent = [name for name, record in agents.items() if record.get("result") != "written"]
     return finish(run, agents, stages,
-                  f"did not write: {', '.join(silent)}" if silent else None)
+                  f"did not write: {', '.join(silent)}" if silent else None, model)
 
 
 def control_sees(run: Path) -> list[str]:
@@ -389,7 +403,7 @@ def control_sees(run: Path) -> list[str]:
                   + [BEFORE_ANALYSTS])
 
 
-def run_control(run: Path, logs: Path) -> dict:
+def run_control(run: Path, logs: Path, model: str | None = None) -> dict:
     """The single-agent control: the whole bundle and the base calculator, one call."""
     directory = run / CONTROL_DIRNAME
     if directory.exists():
@@ -403,7 +417,7 @@ def run_control(run: Path, logs: Path) -> dict:
             raise RunError(f"{prior} still carries a probability ({leak})")
     for name in sees:
         shutil.copyfile(run / name, directory / name)
-    spec = definition("accounting-analyst")
+    spec = definition_for("accounting-analyst", model)
     control = {"description": "the single-agent control", "prompt": CONTROL_PROMPT.format(
         files=", ".join(sees)), "tools": ["Read", "Write"], "model": spec["model"]}
     return ask(directory, agent="control-single-agent", writes=CONTROL_WRITES,
@@ -433,7 +447,8 @@ def _load(path: Path) -> dict | None:
     return json.loads(path.read_text(encoding="utf-8")) if path.is_file() else None
 
 
-def finish(run: Path, agents: dict, stages: dict, failure: str | None) -> dict:
+def finish(run: Path, agents: dict, stages: dict, failure: str | None,
+           model: str | None = None) -> dict:
     # Read again: the quote gate and the market marker wrote to it since the start.
     manifest = json.loads((run / "input_manifest.json").read_text(encoding="utf-8"))
     manifest["agents"] = {name: {key: value for key, value in record.items()
@@ -441,6 +456,11 @@ def finish(run: Path, agents: dict, stages: dict, failure: str | None) -> dict:
                           for name, record in agents.items()}
     manifest["analysis_stages"] = stages
     manifest["analysis_failure"] = failure
+    if model:
+        manifest["model_override"] = {
+            "model": model, "applies_to": "every agent and the control",
+            "why": "named with --model in place of each definition's own; the owner's "
+                   "decision that names it is in docs/structure_changes.md"}
     manifest["analysed_utc"] = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     write_json(run / "input_manifest.json", manifest)
     return manifest
@@ -455,6 +475,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--period-end", required=True)
     parser.add_argument("--store", default=str(cutoff_guard.FIXTURES))
     parser.add_argument("--prices", default=None)
+    parser.add_argument("--model", default=None,
+                        help="one model for every agent, in place of each definition's own")
     args = parser.parse_args(argv)
     code = interpreter_pin.enforce()
     if code:
@@ -463,7 +485,8 @@ def main(argv: list[str] | None = None) -> int:
         manifest = run_company(run=Path(args.run), ticker=args.ticker, form=args.form,
                                cutoff=args.cutoff, period_end=args.period_end,
                                store=Path(args.store),
-                               prices=Path(args.prices) if args.prices else None)
+                               prices=Path(args.prices) if args.prices else None,
+                               model=args.model)
     except (RunError, agent_inputs.AgentInputError, calculator.CalculatorInputError,
             cutoff_guard.CutoffGuardError, decide.DecideError, OSError, ValueError) as exc:
         print(f"run_analysis: {exc}", file=sys.stderr)

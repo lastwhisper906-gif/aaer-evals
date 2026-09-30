@@ -252,3 +252,38 @@ def test_a_failed_analyst_is_named_and_the_run_is_not_finished(tmp_path, monkeyp
     assert not (run / "analysis_accounting.json").exists()
     assert (run / "analysis_financial.json").is_file()
     assert "valuation-analyst" not in manifest["agents"]
+
+
+def test_a_named_model_reaches_every_agent_and_the_manifest_says_so(tmp_path, monkeypatch):
+    # The owner's decision of 2026-09-30: Opus only while the Fable limit holds.
+    # The committed definitions carry fable for the analysts; with --model every
+    # session is asked for the named model and the definitions stay as they are.
+    assert run_analysis.definition("accounting-analyst")["model"] == "fable"
+    run = tmp_path / "NVDA" / NVDA_ACCESSION
+    bundle = assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,
+                                   prior_runs=run.parent.parent)
+    assemble_bundle.write(bundle, run)
+    written, asked = _fake_ask({}), []
+
+    def ask(directory, *, agent, writes, message, spec, log):
+        asked.append((agent, spec["model"]))
+        return dict(written(directory, agent=agent, writes=writes, message=message,
+                            spec=spec, log=log), model_requested=spec["model"])
+
+    monkeypatch.setattr(run_analysis, "ask", ask)
+    manifest = run_analysis.run_company(run=run, ticker="NVDA", form="10-Q",
+                                        cutoff="2026-08-26", period_end="2026-07-26",
+                                        store=run_analysis.cutoff_guard.FIXTURES,
+                                        prices=None, model="opus")
+    # both valuation passes run the one committed valuation-analyst definition
+    assert sorted(agent for agent, _ in asked) == sorted([
+        "numbers-reader", "notes-text-reader", "accounting-analyst", "financial-analyst",
+        "valuation-analyst", "valuation-analyst", "control-single-agent"])
+    assert {model for _, model in asked} == {"opus"}
+    assert manifest["model_override"]["model"] == "opus"
+    assert run_analysis.definition("accounting-analyst")["model"] == "fable"
+
+
+def test_with_no_model_named_each_agent_asks_for_its_own(finished):
+    _, manifest, _ = finished
+    assert "model_override" not in manifest
