@@ -821,7 +821,7 @@ def gather(record: Record, periods: dict) -> dict:
     now, year_ago = periods["balance_now"], periods["balance_year_ago"]
     flows = ("revenue", "cost_of_revenue", "net_income", "operating_cash_flow",
              "operating_income", "pretax_income", "income_tax_expense", "interest_expense",
-             "depreciation_and_amortization", "share_based_compensation",
+             "interest_paid", "depreciation_and_amortization", "share_based_compensation",
              "capital_expenditure", "dividends_paid", "share_repurchases",
              "proceeds_from_sale_of_receivables", "inventory_write_down",
              "change_in_receivables", "change_in_inventory", "change_in_payables",
@@ -1528,6 +1528,37 @@ def raw_close(path: Path, cutoff: dt.date) -> dict:
             "source": path.name}
 
 
+# The fallback when no interest expense is tagged: the default of
+# docs/needs_judgment.md until the owner names another source.
+FALLBACK_SPREAD_OVER_RISK_FREE = 0.01
+
+
+def cost_of_debt_fallback(ttm: dict, debt_now: dict, debt_ago: dict, rf: dict,
+                          why: str) -> dict:
+    """Interest paid over average debt, or else the risk-free rate plus one point,
+    each labelled a fallback. Never silent: the cell says what it stands in for."""
+    paid = ttm.get("interest_paid") or {"missing": "interest_paid is not gathered"}
+    if "missing" not in paid:
+        cell = measure("interest_paid / average debt",
+                       {"interest_paid": paid, "average_debt": average(debt_now, debt_ago)},
+                       lambda v: v["interest_paid"] / v["average_debt"],
+                       denominator="average_debt")
+        if "missing" not in cell:
+            cell["fallback"] = ("interest paid in cash in place of interest expense, which "
+                                f"is not on record: {why}")
+            return cell
+    if "missing" in rf:
+        return {"missing": f"{why}; and no risk-free rate for the fallback: {rf['missing']}"}
+    return {"value": rf["value"] + FALLBACK_SPREAD_OVER_RISK_FREE,
+            "formula": "risk_free_rate + 0.01",
+            "parts": {"risk_free_rate": rf,
+                      "spread": {"value": FALLBACK_SPREAD_OVER_RISK_FREE,
+                                 "note": "one point, the default of docs/needs_judgment.md"}},
+            "fallback": ("the risk-free rate plus one point, because neither interest "
+                         f"expense nor interest paid is on record: {why}"),
+            "needs_judgment": "docs/needs_judgment.md: AAPL's pre-tax cost of debt"}
+
+
 def cost_of_capital(terms: dict, sections: dict, market_data: dict, cutoff: dt.date,
                     overrides: dict | None) -> dict:
     ttm = terms["trailing_four_quarters"]
@@ -1548,6 +1579,9 @@ def cost_of_capital(terms: dict, sections: dict, market_data: dict, cutoff: dt.d
                                 "average_debt": average(debt_now, debt_ago)},
                                lambda v: v["interest_expense"] / v["average_debt"],
                                denominator="average_debt")
+        if "missing" in cost_of_debt and "missing" in ttm["interest_expense"]:
+            cost_of_debt = cost_of_debt_fallback(ttm, debt_now, debt_ago, rf,
+                                                 cost_of_debt["missing"])
     if "pre_tax_cost_of_debt" in overrides:
         chosen = overrides["pre_tax_cost_of_debt"]
         if isinstance(chosen.get("value"), (int, float)) and chosen.get("quote"):

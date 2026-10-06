@@ -199,6 +199,9 @@ CALCULATOR_TERMS: dict[str, tuple[str, tuple[str, ...]]] = {
     "interest_expense": ("duration", (
         "InterestExpense", "InterestExpenseNonoperating", "InterestExpenseDebt",
         "InterestAndDebtExpense")),
+    # Interest paid in cash: the cost of debt's fallback when no interest expense is
+    # tagged (queue item one, docs/needs_judgment.md).
+    "interest_paid": ("duration", ("InterestPaidNet", "InterestPaid")),
     "depreciation_and_amortization": ("duration", (
         "DepreciationDepletionAndAmortization", "DepreciationAndAmortization",
         "DepreciationAmortizationAndAccretionNet")),

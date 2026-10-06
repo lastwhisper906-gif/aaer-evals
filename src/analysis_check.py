@@ -104,6 +104,12 @@ ALLOWED_DIGITS = re.compile(
     r"|Notes? \d{1,2}(?![\d.,])(?!\s*(?:million|billion|thousand|percent|%|units))"
     r"|Q[1-4](?:\s+(?:of\s+)?(?:fiscal\s+)?(?:19|20)\d{2})?"
     r"|FY\d{2,4}"
+    # A bare year, 1950 to 2049, as in "the second half of 2026" or "through 2027":
+    # never after a dollar sign or a decimal point, never followed by a decimal or a
+    # quantity word, which keeps "2048 million" and "1950 basis points" numbers.
+    r"|(?<![$.,\d])(?:19[5-9]\d|20[0-4]\d)(?![.,]\d)"
+    r"(?!\s*(?:million|billion|thousand|percent|per\s*cent|%|units|basis|points|bps|shares"
+    r"|dollars|employees|customers|days|times))"
     r")(?![A-Za-z0-9])")
 # A brace that is not a whole placeholder is a placeholder written wrong, and is
 # printed literally if it stands.

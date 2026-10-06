@@ -677,9 +677,56 @@ def test_the_valuation_analyst_may_state_a_missing_cost_of_debt_with_a_quote():
                                       "quote": "bear interest at 5.00%"}})
     finally:
         calculator.risk_free_rate, calculator.equity_risk_premium = original
-    assert without["value"] is None
+    # Until 2026-10-06 a missing interest expense left the WACC uncomputed here. The
+    # owner's default of that day (docs/needs_judgment.md) fills it with the
+    # risk-free rate plus one point, labelled: 0.04 + 0.01 = 0.05, the same 0.09395.
+    assert "fallback" in without["pre_tax_cost_of_debt"]
+    assert without["wacc"]["value"] == pytest.approx(0.09395)
     assert chosen["pre_tax_cost_of_debt"]["chosen_by"] == "the valuation analyst"
     assert chosen["wacc"]["value"] == pytest.approx(0.09395)
+
+
+def _wacc_with(ttm: dict, rf: float = 0.04) -> dict:
+    cell = lambda v: {"value": v, "id": "x", "tag": "t", "period": "p"}
+    terms = {"trailing_four_quarters": ttm, "debt_now": {"value": 100.0},
+             "debt_a_year_earlier": {"value": 100.0}, "shares_outstanding": cell(100.0)}
+    original = calculator.risk_free_rate, calculator.equity_risk_premium
+    try:
+        calculator.risk_free_rate = lambda cutoff: {"value": rf}
+        calculator.equity_risk_premium = lambda cutoff: {"value": 0.05}
+        return calculator.cost_of_capital(terms, {"tax_rate": {"value": 0.21}},
+                                          {"beta": {"value": 1.2}, "price": {"value": 9.0}},
+                                          dt.date(2026, 1, 1), None)
+    finally:
+        calculator.risk_free_rate, calculator.equity_risk_premium = original
+
+
+def test_interest_paid_stands_in_when_no_interest_expense_is_tagged():
+    """No interest expense; interest paid 4 on average debt 100: cost of debt 0.04.
+    WACC = 0.9 x 0.10 + 0.1 x 0.04 x 0.79 = 0.09 + 0.00316 = 0.09316."""
+    cell = {"value": 4.0, "id": "x", "tag": "InterestPaidNet", "period": "p"}
+    out = _wacc_with({"interest_expense": {"missing": "no row"}, "interest_paid": cell})
+    assert out["pre_tax_cost_of_debt"]["value"] == pytest.approx(0.04)
+    assert "interest paid" in out["pre_tax_cost_of_debt"]["fallback"]
+    assert out["wacc"]["value"] == pytest.approx(0.09316)
+
+
+def test_the_risk_free_fallback_is_one_point_over_the_rate_and_says_so():
+    """Neither interest expense nor interest paid (AAPL tagged InterestPaidNet last for
+    fiscal 2023): risk-free 4.66% + 1 point = 5.66%."""
+    out = _wacc_with({"interest_expense": {"missing": "no row"},
+                      "interest_paid": {"missing": "no row"}}, rf=0.0466)
+    debt = out["pre_tax_cost_of_debt"]
+    assert debt["value"] == pytest.approx(0.0566)
+    assert "risk-free rate plus one point" in debt["fallback"]
+    assert debt["needs_judgment"].startswith("docs/needs_judgment.md")
+
+
+def test_tagged_interest_expense_is_never_replaced_by_a_fallback():
+    cell = lambda v: {"value": v, "id": "x", "tag": "t", "period": "p"}
+    out = _wacc_with({"interest_expense": cell(5.0), "interest_paid": cell(4.0)})
+    assert out["pre_tax_cost_of_debt"]["value"] == pytest.approx(0.05)
+    assert "fallback" not in out["pre_tax_cost_of_debt"]
 
 
 def test_cash_runway_is_months_of_cash_at_the_trailing_burn():

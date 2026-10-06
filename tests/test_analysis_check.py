@@ -338,6 +338,26 @@ def test_the_control_cites_the_paragraphs_of_its_own_input():
     assert out["dropped_count"] == 0
 
 
+def test_a_bare_year_in_a_reason_is_a_year_not_a_number():
+    """GNRC's and LFUS's scenarios of 2026-09-29 were dropped for these words
+    (their assumptions.json dropped_items)."""
+    for text in ("the second half of 2026", "through 2027, then flat", "laps in December 2026",
+                 "the June 2026 quarter", "year-end 2025"):
+        payload = accounting()
+        payload["anomalies"][0]["what"] = text
+        assert analysis_check.check("accounting", payload, fields=FIELDS,
+                                    sources=SOURCES)["dropped_count"] == 0, text
+
+
+def test_a_number_that_looks_like_a_year_is_still_a_number():
+    for text in ("revenue of $2026 thousand", "a ratio of 2026.5", "2030 employees",
+                 "2026 million of backlog", "1,995 units", "a 2049 percent rise"):
+        payload = accounting()
+        payload["anomalies"][0]["what"] = text
+        assert analysis_check.check("accounting", payload, fields=FIELDS,
+                                    sources=SOURCES)["anomalies"] == [], text
+
+
 def test_a_quantity_after_a_year_word_or_a_notes_word_is_still_a_number():
     for text in ("grew by 1950 basis points", "sold in 2048 units", "senior notes 25 million",
                  "non-recurring items 12 percent"):
