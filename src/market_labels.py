@@ -91,6 +91,11 @@ NEAR_ZERO_BAND_SOURCE = (
 # What each reader direction points the abnormal return to.
 DIRECTION_SIGN = {"up": 1, "down": -1}
 
+# After the close, day zero is the next trading day: at most a weekend and one
+# holiday away, four calendar days. The slack `windows` leaves, since the rows
+# are the only calendar it has (see its docstring).
+MOST_DAYS_TO_DAY_ZERO = 4
+
 MARKET_TABLE = agent_inputs.MARKET_TABLE
 READER_REPORTS = agent_inputs.READER_REPORTS
 LABELS_FILE = "market_labels.json"
@@ -98,6 +103,10 @@ VERSUS_MARKET = "_versus_market"
 
 NO_MARKET_TABLE = (f"the run holds no {MARKET_TABLE}, so there is no market to label "
                    "against; nothing is written and every item's label stays absent")
+MANIFEST = "input_manifest.json"
+NO_GATE_RECORD = ("{what}, so there is no record that the quote gate ran; an item the "
+                  "gate dropped may still sit in the run-root report, and only the "
+                  "drop list keeps it out of the labels. Nothing is written")
 
 
 class MarketLabelError(Exception):
@@ -193,10 +202,28 @@ def windows(table: dict, *, run_cutoff: str | None = None) -> list[dict]:
     one and two are the next two rows, the window's `filing_date` is one EDGAR can
     put on that acceptance (`market.filing_dates_for`), the table's cutoff is day
     two of the latest window, and no row lies past it. A window with no acceptance
-    stamp cannot say its day zero and is refused. Given the run's own cutoff (the
-    filing date), the filing window's `filing_date` must be it: a table counted
-    for some other filing is refused. A table whose window sum disagrees with the
-    rows it sums is refused too: that is two answers to one question.
+    stamp cannot say its day zero and is refused.
+
+    The rows are the only calendar on the record, so a table missing the row for
+    its own day zero would otherwise be checked against itself: day zero would
+    move to the next row the table does have, and the window would reach one
+    trading day past the real reaction day two and pass. Beside the day zero
+    read off the rows, then, the acceptance is held to the calendar it implies:
+    when EDGAR accepted before the four o'clock close on a weekday, the
+    acceptance day is day zero and has to be a row; when after the close, day
+    zero has to lie within four calendar days of the acceptance, which is what a
+    weekend and one holiday can take. The four days are the slack this leaves:
+    a row missing on a Monday after a Friday close reads as a holiday here, and
+    only the market module's own calendar can tell the two apart.
+
+    Given the run's own cutoff (the filing date), the filing window's
+    `filing_date` must be it: a table counted for some other filing is refused.
+    Every other window is an earlier filing's -- the earnings release before the
+    10-Q -- so one whose `filing_date` is after the run's cutoff is refused too:
+    it is not an input, and it would otherwise carry the table's cutoff and the
+    late-row limit out to its own day two. A table whose window sum disagrees
+    with the rows it sums is refused as well: that is two answers to one
+    question.
     """
     cutoff = table.get("cutoff")
     dates = sorted(str(row.get("date")) for row in table.get("rows") or [] if isinstance(row, dict))
@@ -218,8 +245,20 @@ def windows(table: dict, *, run_cutoff: str | None = None) -> list[dict]:
         try:
             day_zero = market.reaction_day_zero(window["accepted"], calendar)
             permitted = market.filing_dates_for(window["accepted"])
+            when = market._acceptance(window["accepted"])   # the exchange's clock
         except market.MarketError as exc:
             raise MarketLabelError(f"the {kind} window: {exc}") from exc
+        # the row check beside the day zero read off the rows: see the docstring
+        before_close = when.time() < market.MARKET_CLOSE
+        gap = (day_zero - when.date()).days
+        if before_close and when.date().weekday() < 5 and day_zero != when.date():
+            raise MarketLabelError(
+                f"the {kind} window: no row for its acceptance day {when.date()}, so its "
+                f"day zero {day_zero} is a trading day late")
+        if not before_close and gap > MOST_DAYS_TO_DAY_ZERO:
+            raise MarketLabelError(
+                f"the {kind} window: day zero {day_zero} is {gap} days after the "
+                f"acceptance {window['accepted']}, more than a weekend and a holiday")
         at = calendar.index(day_zero)
         expected = [day.isoformat() for day in calendar[at:at + 3]]
         if len(expected) < 3:
@@ -237,6 +276,11 @@ def windows(table: dict, *, run_cutoff: str | None = None) -> list[dict]:
             raise MarketLabelError(
                 f"the filing window is for a filing dated {filed}, not this run's cutoff "
                 f"{run_cutoff}: it is some other filing's table")
+        if run_cutoff is not None and kind != "filing" and filed > run_cutoff:
+            raise MarketLabelError(
+                f"the {kind} window is for a filing dated {filed}, after the run's cutoff "
+                f"{run_cutoff}: every window but the filing's is an earlier filing's, and "
+                "a later one is not an input")
         latest_day_two = max(latest_day_two or expected[2], expected[2])
     if latest_day_two is not None and cutoff != latest_day_two:
         raise MarketLabelError(
@@ -326,6 +370,14 @@ def write(run) -> dict:
     Returns `{"written": True, "path": ..., "items": n}` or, with no market
     table, `{"written": False, "reason": ...}` and nothing on disk. The file is
     written once: the same bytes again change nothing, other bytes are refused.
+
+    The quote gate's record is required. The run-root copy of a reader report
+    keeps a whole list block whenever one of its items stood, so an item the
+    gate dropped can still be in it, and the drop list in `input_manifest.json`
+    (`dropped_items`, written by `src.quote_gate`) is the only thing that keeps
+    it out of the labels. A run with no manifest, or a manifest with no
+    `dropped_items` list, has no record that the gate ran, and is refused rather
+    than read as "nothing dropped".
     """
     run = Path(run)
     if not run.is_dir():
@@ -337,13 +389,17 @@ def write(run) -> dict:
     except ValueError as exc:
         raise MarketLabelError(f"{MARKET_TABLE} does not read as JSON: {exc}") from exc
     reports = {name: report_items(_load(run, name)) for name in READER_REPORTS}
-    manifest_path = run / "input_manifest.json"
+    manifest_path = run / MANIFEST
+    if not manifest_path.is_file():
+        raise MarketLabelError(NO_GATE_RECORD.format(what=f"the run holds no {MANIFEST}"))
     try:
-        manifest = (json.loads(manifest_path.read_text(encoding="utf-8"))
-                    if manifest_path.is_file() else {})
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     except ValueError as exc:
-        raise MarketLabelError(f"input_manifest.json does not read as JSON: {exc}") from exc
-    dropped = {row.get("item_id") for row in manifest.get("dropped_items") or []
+        raise MarketLabelError(f"{MANIFEST} does not read as JSON: {exc}") from exc
+    if not isinstance(manifest, dict) or not isinstance(manifest.get("dropped_items"), list):
+        raise MarketLabelError(NO_GATE_RECORD.format(
+            what=f"{MANIFEST} carries no dropped_items list"))
+    dropped = {row.get("item_id") for row in manifest["dropped_items"]
                if isinstance(row, dict) and row.get("item_id")}
     document = labels(reports, table, dropped=dropped, run_cutoff=manifest.get("cutoff"))
     text = json.dumps(document, indent=2, sort_keys=True) + "\n"

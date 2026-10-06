@@ -309,13 +309,22 @@ def fenced(*items: dict) -> str:
     return "".join(f"```json\n{json.dumps(one)}\n```\n" for one in items)
 
 
-def plant(tmp_path: Path, *, market: dict | None) -> Path:
+GATE_RAN_NOTHING_DROPPED = {"cutoff": "2026-05-08", "dropped_items": []}
+
+
+def plant(tmp_path: Path, *, market: dict | None,
+          manifest: dict | None = GATE_RAN_NOTHING_DROPPED) -> Path:
+    """A run directory: the two reader reports, the market table when given, and
+    the manifest the quote gate leaves -- `dropped_items` -- unless `manifest` is
+    None, which plants a run with no manifest at all."""
     run = tmp_path / "ZZZZ" / "0000000000-26-000001"
     run.mkdir(parents=True)
     (run / "report_numbers.md").write_text(fenced(item(UP, "up")), encoding="utf-8")
     (run / "report_notes_text.md").write_text(fenced(item(DOWN, "down")), encoding="utf-8")
     if market is not None:
         (run / "input_market.json").write_text(json.dumps(market), encoding="utf-8")
+    if manifest is not None:
+        (run / "input_manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
     return run
 
 
@@ -420,9 +429,108 @@ def test_an_after_close_acceptance_may_carry_the_next_days_filing_date():
         market_labels.labels({"report_numbers.md": []}, found)
 
 
-def test_the_tables_cutoff_is_day_two_of_its_latest_window():
+def test_a_table_whose_rows_end_before_reaction_day_two_is_refused():
+    """Cut the table off at day one, the 11th: the window cannot reach its day two."""
     found = rose()
     found["cutoff"] = "2026-05-11"
     found["rows"] = [row for row in found["rows"] if row["date"] <= "2026-05-11"]
     with pytest.raises(MarketLabelError, match="rows end before reaction day two"):
         market_labels.labels({"report_numbers.md": []}, found)
+
+
+def test_the_tables_cutoff_is_day_two_of_its_latest_window():
+    """`rose`'s rows end on day two, the 12th, and its cutoff is the 12th: it stands.
+    The same rows under a cutoff of the 13th hold no row past the cutoff and reach
+    day two, so only the cutoff itself is wrong -- it is not the latest window's
+    day two -- and that is what is refused."""
+    market_labels.labels({"report_numbers.md": []}, rose())
+    found = rose()
+    found["cutoff"] = "2026-05-13"
+    with pytest.raises(MarketLabelError, match="not reaction day two of its latest window"):
+        market_labels.labels({"report_numbers.md": []}, found)
+
+
+# --- the rows are the only calendar: the acceptance is held to the calendar it implies --
+
+def test_a_table_missing_the_row_for_its_own_day_zero_is_refused():
+    """Accepted Friday the 8th at 09:00, before the close: the 8th is day zero and
+    has to be a row. A table with rows for the 11th, 12th and 13th only would read
+    its own day zero as the 11th and pass one trading day late; it is refused.
+    `rose`, whose rows start on the 8th, stands."""
+    market_labels.labels({"report_numbers.md": []}, rose())
+    late = table(("filing", ["2026-05-11", "2026-05-12", "2026-05-13"], [0.02, 0.0, 0.01],
+                  0.03, NO_SHORT_INTEREST),
+                 accepted="2026-05-08T09:00:00-04:00", filing_date="2026-05-08")
+    with pytest.raises(MarketLabelError, match="no row for its acceptance day 2026-05-08"):
+        market_labels.labels({"report_numbers.md": []}, late)
+
+
+def test_after_the_close_day_zero_may_be_a_weekend_and_a_holiday_away_and_no_more():
+    """Accepted Friday the 8th at 16:35, after the close: day zero is the next
+    trading row. Rows for Tuesday the 12th on, four calendar days out, read as
+    Monday the 11th being a holiday and stand -- the slack the rows leave. Rows
+    for Wednesday the 13th on are five days out, more than a weekend and a
+    holiday, and are refused. EDGAR's own close is half past five, so the filing
+    date is the 8th either way."""
+    holiday = table(("filing", ["2026-05-12", "2026-05-13", "2026-05-14"], [0.02, 0.0, 0.01],
+                     0.03, NO_SHORT_INTEREST),
+                    accepted="2026-05-08T16:35:00-04:00", filing_date="2026-05-08")
+    document = market_labels.labels({"report_numbers.md": [item(UP, "up")]}, holiday,
+                                    run_cutoff="2026-05-08")
+    assert document["windows"][0]["day_zero"] == "2026-05-12"
+    five_out = table(("filing", ["2026-05-13", "2026-05-14", "2026-05-15"], [0.02, 0.0, 0.01],
+                      0.03, NO_SHORT_INTEREST),
+                     accepted="2026-05-08T16:35:00-04:00", filing_date="2026-05-08")
+    with pytest.raises(MarketLabelError, match="5 days after the acceptance"):
+        market_labels.labels({"report_numbers.md": []}, five_out)
+
+
+# --- every window but the filing's is an earlier filing's -------------------------------
+
+def test_a_window_for_a_filing_after_the_runs_cutoff_is_refused():
+    """The earnings release of the 24th of April, a fortnight before the filing of
+    the 8th of May, stands under the run's cutoff of the 8th. A release dated the
+    15th of May is after the cutoff: not an input, and it would otherwise carry the
+    table's cutoff and the late-row limit out to the 19th."""
+    earlier = table(("earnings_release", EARNINGS_DAYS, [-0.02, 0.0, 0.0], -0.02,
+                     NO_SHORT_INTEREST),
+                    ("filing", FILING_DAYS, [0.02, 0.0, 0.01], 0.03, NO_SHORT_INTEREST))
+    document = market_labels.labels({"report_numbers.md": [item(UP, "up")]}, earlier,
+                                    run_cutoff="2026-05-08")
+    assert [one["window"] for one in document["windows"]] == ["earnings_release", "filing"]
+    later = table(("filing", FILING_DAYS, [0.02, 0.0, 0.01], 0.03, NO_SHORT_INTEREST),
+                  ("earnings_release", ["2026-05-15", "2026-05-18", "2026-05-19"],
+                   [-0.02, 0.0, 0.0], -0.02, NO_SHORT_INTEREST))
+    assert later["cutoff"] == "2026-05-19"
+    with pytest.raises(MarketLabelError, match="after the run's cutoff 2026-05-08"):
+        market_labels.labels({"report_numbers.md": []}, later, run_cutoff="2026-05-08")
+
+
+# --- the gate's record is required ------------------------------------------------------
+
+def test_a_manifest_with_an_empty_drop_list_labels_and_one_without_the_key_refuses(tmp_path):
+    with_record = plant(tmp_path / "ran", market=rose(), manifest={"dropped_items": []})
+    assert market_labels.write(with_record)["written"] is True
+    no_key = plant(tmp_path / "no_key", market=rose(), manifest={"cutoff": "2026-05-08"})
+    with pytest.raises(MarketLabelError, match="no dropped_items list"):
+        market_labels.write(no_key)
+    assert not (no_key / "market_labels.json").exists()
+
+
+def test_a_run_with_no_manifest_is_refused_and_the_command_says_so(tmp_path, capsys):
+    run = plant(tmp_path, market=rose(), manifest=None)
+    with pytest.raises(MarketLabelError, match="no input_manifest.json"):
+        market_labels.write(run)
+    assert market_labels.main(["--run", str(run)]) == market_labels.BAD_INPUT
+    assert "no record that the quote gate ran" in capsys.readouterr().err
+    assert not (run / "market_labels.json").exists()
+
+
+def test_a_dropped_item_in_the_manifest_is_set_aside_by_write(tmp_path):
+    run = plant(tmp_path, market=rose(),
+                manifest={"cutoff": "2026-05-08",
+                          "dropped_items": [{"item_id": DOWN, "reason": "quote not found"}]})
+    assert market_labels.write(run)["items"] == 1
+    written = json.loads((run / "market_labels.json").read_text(encoding="utf-8"))
+    assert [one["upstream_item_id"] for one in written["items"]] == [UP]
+    assert written["not_labelled"][0]["id"] == DOWN
