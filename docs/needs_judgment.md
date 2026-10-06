@@ -92,6 +92,8 @@ force.
 
 [ ] **the models' training cutoffs, for the memorization grader** · none on record, so every run is "unknown" rather than forward or historical (`evals/capability/memorization.py`); a date a model states about itself is not a source · deciding writes each serving model's training cutoff, with the published source the owner holds, into `TRAINING_CUTOFF`, in a pull request labelled `owner-approved-eval`.
 
+[ ] **the exchange's closures outside its holiday rules, for the market-table grader** · `evals/regression/mechanical.py` works the New York Stock Exchange calendar by rule (weekends, the nine holidays, Good Friday, the three early closes) and lists by hand the days it closed outside them (`SPECIAL_CLOSURES`: 2018-12-05 and 2025-01-09, national days of mourning); a closure the list lacks fails every run whose reaction window crosses it as "no row for" that day · deciding adds the day to the list, with the exchange's notice as the source, in a pull request labelled `owner-approved-eval`; until then the failure stands and is not softened.
+
 ## Settled by default
 
 Every other row that was open on 2026-09-28. Nothing waits on any of them: the

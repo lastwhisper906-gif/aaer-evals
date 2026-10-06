@@ -51,6 +51,16 @@ def test_the_clean_run_passes_every_grader(run):
     assert [r.grader for r in results if r.status != PASS] == []
 
 
+def test_the_graders_read_their_own_floors_and_cases_never_the_branchs(tmp_path, monkeypatch):
+    """In CI the graders are main's copy and the tree is the branch's: the floors
+    and the approved cases come from the copy that is running."""
+    import evals.common as common
+    assert runner.THRESHOLDS == common.EVALS / "thresholds.json"
+    assert golden.CASES == common.EVALS / "golden" / "cases"
+    assert common.EVALS == Path(mechanical.__file__).resolve().parent.parent
+    assert not str(runner.THRESHOLDS).startswith(str(tmp_path))
+
+
 def test_the_hand_worked_cases_reproduce():
     assert all(r.status == PASS for r in mechanical.check_hand_worked_cases())
 
@@ -263,6 +273,40 @@ def test_a_quote_of_a_key_name_or_the_id_is_not_a_quote_of_the_row(run):
                                      {"tag", "value"}, "x", metadata)
 
 
+def test_an_analysis_quote_of_key_names_or_across_report_items_fails_quotes_resolve(run):
+    """A report is markdown wrapping JSON: a quote made only of key names and
+    punctuation, or one that runs from the end of one item into the next, is a
+    substring of the file and a quote of nothing it says."""
+    for planted in ('"paragraph_id": "', '"quote": "', '"id": "', '},\n{'):
+        _edit(run / "analysis_accounting.json",
+              lambda d, p=planted: d["anomalies"][0].update(quote=p, quote_from="report_numbers.md"))
+        results = mechanical.grade(run)
+        assert _status(results, "mechanical.quotes_resolve") == FAIL, planted
+    # the item's own words stand
+    item = mechanical.report_items(run / "report_numbers.md")[0]
+    _edit(run / "analysis_accounting.json",
+          lambda d: d["anomalies"][0].update(quote=item["quote"][:40], quote_from="report_numbers.md"))
+    assert _status(mechanical.grade(run), "mechanical.quotes_resolve") == PASS
+
+
+def test_an_analysis_quote_across_two_paragraphs_of_a_filing_fails_quotes_resolve(run):
+    """The valuation analyst quotes MD&A: a quote is of one paragraph, not of the
+    text running from the end of one paragraph through the next id line."""
+    text = (run / "agents" / "valuation-analyst" / "input_mdna.md").read_text(encoding="utf-8")
+    ids = list(mechanical.ID_LINE.finditer(text))
+    assert len(ids) > 1
+    first, second = ids[0], ids[1]
+    across = text[second.start() - 30: second.end() + 30]
+    assert "[" in across and "]" in across
+    _edit(run / "analysis_valuation.json",
+          lambda d: d.setdefault("notes", []).append({"quote": across, "quote_from": "input_mdna.md"}))
+    assert _status(mechanical.grade(run), "mechanical.quotes_resolve") == FAIL
+    within = text[first.end(): second.start()].strip()[:60]
+    _edit(run / "analysis_valuation.json",
+          lambda d: d["notes"].__setitem__(-1, {"quote": within, "quote_from": "input_mdna.md"}))
+    assert _status(mechanical.grade(run), "mechanical.quotes_resolve") == PASS
+
+
 def test_a_quote_spanning_two_files_fails_quotes_resolve(run):
     directory = run / "agents" / "accounting-analyst"
     end = (directory / "report_notes_text.md").read_text(encoding="utf-8")[-30:]
@@ -432,6 +476,18 @@ def test_the_exchange_calendar_is_worked_by_hand():
     assert not mechanical.is_trading_day(dt.date(2025, 1, 9))
     assert mechanical.is_trading_day(dt.date(2026, 10, 12))
     assert mechanical.next_business_day(dt.date(2026, 10, 9)) == dt.date(2026, 10, 13)
+    # the federal calendar observes a Saturday New Year's Day on the Friday before;
+    # the exchange does not: 2027-12-31 is open and EDGAR is closed
+    assert dt.date(2027, 12, 31) in mechanical.federal_holidays(2027)
+    assert mechanical.next_business_day(dt.date(2027, 12, 30)) == dt.date(2028, 1, 3)
+    assert mechanical.is_trading_day(dt.date(2027, 12, 31))
+    # early closes: the day after Thanksgiving 2026, Christmas Eve 2026 (a Thursday),
+    # July 3 2025 (a Thursday); July 3 2026 is the observed holiday, not an early close
+    assert mechanical.close_time(dt.date(2026, 11, 27)) == dt.time(13, 0)
+    assert mechanical.close_time(dt.date(2026, 12, 24)) == dt.time(13, 0)
+    assert mechanical.close_time(dt.date(2025, 7, 3)) == dt.time(13, 0)
+    assert not mechanical.is_trading_day(dt.date(2026, 7, 3))
+    assert mechanical.close_time(dt.date(2026, 5, 19)) == dt.time(16, 0)
     assert mechanical.trading_days_from(dt.date(2026, 5, 22), 3) == [
         dt.date(2026, 5, 22), dt.date(2026, 5, 26), dt.date(2026, 5, 27)]
 
@@ -463,6 +519,25 @@ def test_a_market_window_over_a_holiday_passes_nothing_after_cutoff():
                 "rows": [{"date": d} for d in ("2025-01-07", "2025-01-08", "2025-01-10",
                                                "2025-01-13", "2025-01-14")]}
     assert mechanical.market_table_problems(mourning, dt.date(2025, 1, 8), '2025-01-08T16:35:00-05:00') == []
+
+
+def test_a_market_window_on_an_early_close_day_counts_from_the_next_trading_day():
+    """A filing accepted at 14:00 on 2026-11-27, the day after Thanksgiving, came
+    after that day's one o'clock close: day zero is Monday the 30th."""
+    import datetime as dt
+    stamp = "2026-11-27T14:00:00-05:00"
+    table = {"cutoff": "2026-12-02",
+             "windows": [{"kind": "filing", "filing_date": "2026-11-27", "accepted": stamp,
+                          "day_zero": "2026-11-30",
+                          "days": ["2026-11-30", "2026-12-01", "2026-12-02"]}],
+             "rows": [{"date": d} for d in ("2026-11-25", "2026-11-27", "2026-11-30",
+                                            "2026-12-01", "2026-12-02")]}
+    assert mechanical.market_table_problems(table, dt.date(2026, 11, 27), stamp) == []
+    same_day = dict(table, cutoff="2026-12-01")
+    same_day["windows"] = [dict(table["windows"][0], day_zero="2026-11-27",
+                                days=["2026-11-27", "2026-11-30", "2026-12-01"])]
+    assert any("not reaction days zero to two" in p for p in
+               mechanical.market_table_problems(same_day, dt.date(2026, 11, 27), stamp))
 
 
 def test_a_market_window_for_a_later_filing_fails_nothing_after_cutoff():
@@ -803,6 +878,21 @@ def test_a_grade_the_formula_cannot_read_scores_nothing_and_says_which_item():
     out = rubric_score.check(grade)
     assert out["score"] is None
     assert out["unreadable"] == ["items[1]: verdict 'maybe'", "items[2]: severity None"]
+
+
+def test_a_grade_with_a_repeated_item_or_a_dealbreaker_naming_no_item_scores_nothing():
+    """A repeated supported item would outweigh an unsupported one: 3 + 3 + 0 over 7
+    reads 0.857 where the honest grade is 3 + 0 over 4; the formula refuses it."""
+    grade = {"items": [{"id": "a", "verdict": "supported", "severity": "high"},
+                       {"id": "a", "verdict": "supported", "severity": "high"},
+                       {"id": "b", "verdict": "unsupported", "severity": "low"}], "score": 0.857}
+    assert rubric_score.unreadable(grade) == ["items[1]: id a given twice"]
+    assert rubric_score.recompute(grade) is None
+    honest = {"items": grade["items"][1:], "score": 0.75}
+    assert rubric_score.recompute(honest) == pytest.approx(0.75)
+    honest["dealbreakers"] = [{"kind": "post_cutoff_fact", "id": "zzz", "where": "x", "why": "y"}]
+    assert rubric_score.unreadable(honest) == ["dealbreakers[0]: names no item 'zzz'"]
+    assert rubric_score.recompute(honest) is None
 
 
 def test_a_grade_must_cover_every_anomaly_of_the_run_and_nothing_else():

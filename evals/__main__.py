@@ -21,11 +21,11 @@ from pathlib import Path
 
 from evals.capability import (consistency, golden, grader_agreement, memorization, outcomes,
                               rubric_score)
-from evals.common import FAIL, PASS, REPO, Result, find_runs, load, run_name
+from evals.common import EVALS, FAIL, PASS, REPO, Result, find_runs, load, run_name
 from evals.regression import coverage, mechanical
 
 SCOREBOARD = REPO / "evals" / "scoreboard.jsonl"
-THRESHOLDS = REPO / "evals" / "thresholds.json"
+THRESHOLDS = EVALS / "thresholds.json"      # the running graders' own floors
 
 
 def changed_runs(base: str = "origin/main") -> list[Path]:

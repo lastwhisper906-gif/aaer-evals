@@ -14,6 +14,10 @@ from pathlib import Path
 # tree through AAER_REPO; everywhere else the graders sit inside the tree they read.
 REPO = Path(os.environ.get("AAER_REPO") or Path(__file__).resolve().parent.parent).resolve()
 RUNS = REPO / "runs"
+# The graders' own directory: the floors, the approved cases and the rubric are read
+# from here, the copy that is running, never from the tree being graded -- in CI
+# that is main's copy, so a branch cannot lower a floor or swap a case it is graded by.
+EVALS = Path(__file__).resolve().parent
 
 PASS, FAIL, NOT_APPLICABLE = "pass", "fail", "not_applicable"
 

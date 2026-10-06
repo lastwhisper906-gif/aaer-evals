@@ -84,8 +84,16 @@ def read_report(path: Path) -> tuple[list[dict], int]:
     cannot be read holds items nobody can check, and is counted, never skipped."""
     if not path.is_file():
         return [], 0
+    return read_report_blocks(path.read_text(encoding="utf-8"))
+
+
+def read_report_text(text: str) -> list[dict]:
+    return read_report_blocks(text)[0]
+
+
+def read_report_blocks(text: str) -> tuple[list[dict], int]:
     items, malformed = [], 0
-    for block in FENCE.findall(path.read_text(encoding="utf-8")):
+    for block in FENCE.findall(text):
         try:
             data = json.loads(block)
         except ValueError:
@@ -274,6 +282,44 @@ def quote_stands(seen: dict[str, str], identifier: str, quote: str) -> str | Non
     return None
 
 
+def units_of(name: str, text: str) -> list[tuple[str, set[str], set[str]]]:
+    """The units an analyst's quote can stand in, as (text, keys, metadata): one
+    paragraph of a prose input; one string value of a JSON file; one item of a
+    reader report, with its key names and metadata so that a quote made only of
+    those is refused. A quote is of one thing one file said, not of the file."""
+    if name.endswith(".md") and ID_LINE.search(text):
+        return [(fold(body), set(), set()) for body in paragraphs_of(text).values()]
+    if name.startswith("report_"):
+        out = []
+        for item in read_report_text(text):
+            values = " \u241f ".join(fold(v) for _, v in walk_strings(item))
+            printed = json.dumps(item)
+            out.append((values, row_keys(printed), row_metadata(printed)))
+        return out
+    if name.endswith(".json"):
+        try:
+            tree = json.loads(text)
+        except ValueError:
+            return []
+        return [(fold(value), set(), set()) for _, value in walk_strings(tree)]
+    return [(fold(text), set(), set())]
+
+
+def analysis_quote_stands(seen: dict[str, str], quote: str) -> str | None:
+    """Why an analyst's quote stands in no unit of the files it was handed, or None."""
+    wanted = fold(quote)
+    found = False
+    for name, text in seen.items():
+        for body, keys, metadata in units_of(name, text):
+            if wanted in body:
+                found = True
+                if says_something(quote, keys, "", metadata):
+                    return None
+    if found:
+        return "the quote carries only key names, the item's metadata or the id, nothing it says"
+    return "in no one paragraph, value or report item it was handed"
+
+
 def quoted(node, where=""):
     """Every dictionary in a tree that carries a `quote`, with where it sits."""
     if isinstance(node, dict):
@@ -340,14 +386,14 @@ def check_quotes_resolve(run: Path) -> Result:
         for where, node in quoted(tree):
             count += 1
             source = node.get("quote_from")
-            quote = fold(node["quote"])
+            quote = node["quote"]
             if isinstance(source, str) and source not in seen:
                 failures.append(f"{name}:{where}: quote_from {source} is not a file it was handed")
-            elif isinstance(source, str):
-                if quote not in fold(seen[source]):
-                    failures.append(f"{name}:{where}")
-            elif not any(quote in fold(text) for text in seen.values()):
-                failures.append(f"{name}:{where}: in no one file it was handed")
+                continue
+            candidates = {source: seen[source]} if isinstance(source, str) else seen
+            why = analysis_quote_stands(candidates, quote)
+            if why:
+                failures.append(f"{name}:{where}: {why}")
     return Result("mechanical.quotes_resolve", run_name(run), FAIL if failures else PASS,
                   f"{count - len(failures)} of {count} quotes found in what the agent was handed",
                   failures)
@@ -573,8 +619,26 @@ def exchange_holidays(year: int) -> set[dt.date]:
 
 
 def federal_holidays(year: int) -> set[dt.date]:
-    return _shared_holidays(year) | {_nth_weekday(year, 10, 0, 2),          # Columbus Day
-                                     _observed(dt.date(year, 11, 11))}      # Veterans Day
+    out = _shared_holidays(year) | {_nth_weekday(year, 10, 0, 2),          # Columbus Day
+                                    _observed(dt.date(year, 11, 11))}      # Veterans Day
+    if dt.date(year + 1, 1, 1).weekday() == 5:
+        out.add(dt.date(year, 12, 31))     # a Saturday New Year's Day, observed the Friday before
+    return out
+
+
+EARLY_CLOSE = dt.time(13, 0)
+
+
+def close_time(day: dt.date) -> dt.time:
+    """When the exchange closes on `day`: one o'clock on the day after Thanksgiving,
+    on July the third and on Christmas Eve when those are trading days (when the
+    holiday falls on a Saturday, the Friday is the observed holiday, not an early
+    close), else four."""
+    early = (_nth_weekday(day.year, 11, 3, 4) + dt.timedelta(days=1),
+             dt.date(day.year, 7, 3), dt.date(day.year, 12, 24))
+    if day in early and is_trading_day(day):
+        return EARLY_CLOSE
+    return MARKET_CLOSE
 
 
 def is_trading_day(day: dt.date) -> bool:
@@ -610,7 +674,8 @@ def market_table_problems(table: dict, cutoff: dt.date, accepted=None) -> list[s
     CLAUDE.md's and `docs/HOW_WE_WORK.md` §4's, written out here against the
     exchange calendar above so the grader moves neither with `src/market.py` nor
     with the table's own rows: day zero is the acceptance day when EDGAR accepted
-    before the four o'clock close in New York and the next trading day when
+    before that day's close in New York (four o'clock, one on an early-close day)
+    and the next trading day when
     after it; days one and two are the next two trading days; each is a row; the
     table carries a filing window, whose filing date is the run's cutoff and is
     the acceptance day or (accepted after half past five) EDGAR's next business
@@ -643,7 +708,8 @@ def market_table_problems(table: dict, cutoff: dt.date, accepted=None) -> list[s
             problems.append(f"the {kind} window's acceptance stamp {stamp!r} is not a time")
             continue
         accepted_on = when.date()
-        start = accepted_on if when.time() < MARKET_CLOSE else accepted_on + dt.timedelta(days=1)
+        start = accepted_on if when.time() < close_time(accepted_on) \
+            else accepted_on + dt.timedelta(days=1)
         expected = [d.isoformat() for d in trading_days_from(start, 3)]
         if days != expected:
             problems.append(f"the {kind} window's days {days} are not reaction days zero to "

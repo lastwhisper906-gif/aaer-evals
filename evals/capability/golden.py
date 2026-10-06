@@ -23,11 +23,11 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from evals.common import REPO, find_runs, load, run_name
+from evals.common import EVALS, find_runs, load, run_name
 from evals.regression.mechanical import report_items
 from evals.golden_format import GoldenFormatError, load_case
 
-CASES = REPO / "evals" / "golden" / "cases"
+CASES = EVALS / "golden" / "cases"      # the running graders' own approved cases
 FRAME_FILES = {"accounting": ("analysis_accounting.json",),
                "finance": ("analysis_financial.json", "analysis_valuation.json")}
 

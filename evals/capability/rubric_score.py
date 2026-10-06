@@ -15,9 +15,11 @@ WEIGHT = {"high": 3, "medium": 2, "low": 1}
 
 def unreadable(grade: dict, anomalies: set[str] | None = None) -> list[str]:
     """Every reason the rubric's formula cannot score this grade: an item with no id,
-    verdict or severity it names; and, given the run's anomaly ids, an item naming
-    no anomaly of the run or an anomaly the grader left out -- a grader that drops
-    what it would have called unsupported would otherwise score itself up."""
+    verdict or severity it names; an id given twice (a repeated supported item
+    would outweigh an unsupported one); a dealbreaker naming an id no item has;
+    and, given the run's anomaly ids, an item naming no anomaly of the run or an
+    anomaly the grader left out -- a grader that drops what it would have called
+    unsupported would otherwise score itself up."""
     out = []
     ids = set()
     for index, item in enumerate(grade.get("items") or []):
@@ -29,10 +31,17 @@ def unreadable(grade: dict, anomalies: set[str] | None = None) -> list[str]:
             out.append(f"items[{index}]: verdict {item.get('verdict')!r}")
         elif item.get("severity") not in WEIGHT:
             out.append(f"items[{index}]: severity {item.get('severity')!r}")
+        elif item["id"] in ids:
+            out.append(f"items[{index}]: id {item['id']} given twice")
         else:
             ids.add(item["id"])
     if not isinstance(grade.get("items"), list):
         out.append("no items list")
+    for index, breaker in enumerate(grade.get("dealbreakers") or []):
+        if not isinstance(breaker, dict):
+            out.append(f"dealbreakers[{index}]: not an object")
+        elif breaker.get("id") is not None and breaker["id"] not in ids:
+            out.append(f"dealbreakers[{index}]: names no item {breaker['id']!r}")
     if anomalies is not None:
         out += [f"no anomaly {i} in the run" for i in sorted(ids - anomalies)]
         out += [f"anomaly {i} has no item" for i in sorted(anomalies - ids)]
