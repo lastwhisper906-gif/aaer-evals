@@ -75,11 +75,12 @@ import pytest
 from src import assemble_bundle
 
 NVDA_ACCESSION = "0001045810-26-000075"
-# EDGAR's acceptance of that 10-Q: `filings.recent.acceptanceDateTime` for the
-# accession in data.sec.gov/submissions/CIK0001045810.json, read on 2026-10-06 as
-# 2026-08-26T20:36:00.000Z. EDGAR writes its trailing Z on a stamp whose clock is
-# Eastern (src/market.py, `_acceptance`), so the Z is dropped and the stamp is
-# the Eastern wall clock. The fixture carries no acceptance time; see the test.
+# A planted acceptance stamp for that 10-Q, after the four o'clock close. The
+# fixture carries no acceptance time. EDGAR's submissions API gives
+# `filings.recent.acceptanceDateTime` = 2026-08-26T20:36:00.000Z for the
+# accession (read 2026-10-06); whether that Z is decorative on an Eastern wall
+# clock (the src/market.py reading, 20:36 Eastern) or marks UTC (16:36 Eastern)
+# is a row in docs/needs_judgment.md, and the test below says what it holds.
 NVDA_ACCEPTED = "2026-08-26T20:36:00"
 
 NUMBERS_REPORT = '''```json
@@ -296,14 +297,20 @@ def test_with_no_model_named_each_agent_asks_for_its_own(finished):
 
 
 def test_a_run_with_a_market_table_is_labelled_by_python_and_never_marked_unavailable(tmp_path, monkeypatch):
-    """NVDA's 10-Q was filed on 2026-08-26, a Wednesday, and EDGAR accepted it at
-    20:36 Eastern that day: `NVDA_ACCEPTED` below, from the submissions index.
-    The fixture under tests/fixtures/NVDA carries no acceptance time (the fetch
-    projects the index to filing dates, and every fixture file is held to the
-    manifest's hash, so the stamp cannot be written onto a row by hand; queue.md
-    carries the item that makes the fetch keep it). After the four o'clock close,
-    so day zero is Thursday the 27th and the window runs to Monday the 31st.
-    Abnormal returns 0.02, 0.01 and 0.00 sum to 0.03."""
+    """NVDA's 10-Q was filed on 2026-08-26, a Wednesday. The acceptance stamp here is
+    planted: the fixture under tests/fixtures/NVDA holds no acceptance time (the
+    fetch projects the index to filing dates, and every fixture file is held to
+    the manifest's hash, so none can be written onto a row by hand; queue.md
+    carries the item that makes the fetch keep it). EDGAR's submissions API gives
+    2026-08-26T20:36:00.000Z for this accession. Read as Eastern, the
+    src/market.py convention, that is 20:36, after EDGAR's half past five, and
+    EDGAR would then date the filing the 27th -- while the fixture dates it the
+    26th; read as UTC it is 16:36 Eastern and the 26th stands. So either the
+    convention or the fixture's date is wrong, and docs/needs_judgment.md holds
+    the question. This test holds only the window arithmetic for a stamp after
+    the four o'clock close: under either reading day zero is Thursday the 27th
+    and the window runs to Monday the 31st. Abnormal returns 0.02, 0.01 and 0.00
+    sum to 0.03."""
     accepted = NVDA_ACCEPTED
     run = tmp_path / "NVDA" / NVDA_ACCESSION
     bundle = assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,

@@ -204,7 +204,7 @@ def test_a_table_with_no_window_is_refused_and_an_item_with_none_is_not_priced()
     with pytest.raises(MarketLabelError, match="no filing window"):
         labelled_numbers(found, item(UP, "up"))
     entry = market_labels.item_labels(item(UP, "up"), "report_numbers.md", [])
-    assert entry["labels"] == [{"window": None, "abnormal_return": None,
+    assert entry["labels"] == [{"window": None, "filing_date": None, "abnormal_return": None,
                                 "label": "not_priced",
                                 "reason": "the market table records no reaction window"}]
 
@@ -734,8 +734,102 @@ def test_an_edited_label_word_window_or_return_fails_the_check_and_the_written_f
 
     def window(entry):
         entry["labels"][0]["window"] = "earnings_release"
-    assert "'earnings_release' is not one the market table records" in edited(window)
+    assert ("the earnings_release window of 2026-05-08 is not one the market table records"
+            in edited(window))
 
     def moved(entry):
         entry["labels"][0]["abnormal_return"] = -0.03
     assert "written -0.03, and the market table records 0.03" in edited(moved)
+
+
+# --- every other window is an earlier filing's, by the instant it was accepted ----------
+
+def test_a_window_accepted_later_on_the_day_of_the_filing_is_refused_and_the_day_before_stands():
+    """The 10-Q accepted Friday the 8th at 09:00 and an 8-K accepted the same day at
+    16:30: the same filing date, but the 8-K is the later filing, and its window
+    would carry the table's cutoff a trading day past the 10-Q's day two. The
+    same 8-K accepted Thursday the 7th at 16:30 is the earlier filing and stands."""
+    same_day = table(("filing", FILING_DAYS, [0.02, 0.0, 0.01], 0.03, NO_SHORT_INTEREST))
+    same_day["windows"].append({"kind": "earnings_release", "filing_date": "2026-05-08",
+                                "accepted": "2026-05-08T16:30:00-04:00", "day_zero": "2026-05-11",
+                                "days": ["2026-05-11", "2026-05-12", "2026-05-13"],
+                                "reaction_window": -0.02})
+    same_day["rows"] += rows(["2026-05-13"], [-0.03], "earnings_release", -0.02)
+    same_day["rows"][1]["abnormal_return"] = 0.0     # the 11th: shared by both windows
+    same_day["rows"][2]["abnormal_return"] = 0.01    # the 12th
+    same_day["cutoff"] = "2026-05-13"
+    # the sums: filing 0.02 + 0.0 + 0.01 = 0.03; earnings 0.0 + 0.01 - 0.03 = -0.02
+    with pytest.raises(MarketLabelError, match="accepted at 2026-05-08T16:30:00-04:00, after "
+                                               "the filing at 2026-05-08T09:00:00-04:00"):
+        market_labels.labels({"report_numbers.md": []}, same_day, run_cutoff="2026-05-08")
+    day_before = table(("earnings_release", ["2026-05-08", "2026-05-11", "2026-05-12"],
+                        [0.02, 0.0, 0.01], 0.03, NO_SHORT_INTEREST),
+                       accepted="2026-05-07T16:30:00-04:00", filing_date="2026-05-07")
+    day_before["windows"].append({"kind": "filing", "filing_date": "2026-05-08",
+                                  "accepted": "2026-05-08T09:00:00-04:00",
+                                  "day_zero": "2026-05-08", "days": FILING_DAYS,
+                                  "reaction_window": 0.03})
+    document = market_labels.labels({"report_numbers.md": [item(UP, "up")]}, day_before,
+                                    run_cutoff="2026-05-08")
+    assert [(one["window"], one["filing_date"]) for one in document["windows"]] == [
+        ("earnings_release", "2026-05-07"), ("filing", "2026-05-08")]
+
+
+# --- the check recomputes every label and counts every entry ------------------------------
+
+def test_a_flipped_label_word_fails_the_check(tmp_path):
+    """UP against `rose`'s +0.03 is priced_in; written opposite_direction, the word
+    recomputes from the item's direction, the window's return and the band."""
+    run = plant(tmp_path, market=rose())
+    market_labels.write(run)
+    document = json.loads((run / "market_labels.json").read_text(encoding="utf-8"))
+    entry = next(one for one in document["items"] if one["upstream_item_id"] == UP)
+    entry["labels"][0]["label"] = "opposite_direction"
+    (run / "market_labels.json").write_text(json.dumps(document), encoding="utf-8")
+    with pytest.raises(MarketLabelError, match="label opposite_direction recomputes as priced_in"):
+        market_labels.check(run)
+
+
+def test_a_dropped_entry_and_an_extra_entry_each_fail_the_check(tmp_path):
+    run = plant(tmp_path, market=rose())
+    market_labels.write(run)
+    written = (run / "market_labels.json").read_text(encoding="utf-8")
+    document = json.loads(written)
+    document["items"] = [one for one in document["items"] if one["upstream_item_id"] != DOWN]
+    (run / "market_labels.json").write_text(json.dumps(document), encoding="utf-8")
+    with pytest.raises(MarketLabelError, match=f"{DOWN}_versus_market: no entry, and {DOWN} "
+                                               "stands in report_notes_text.md"):
+        market_labels.check(run)
+    document = json.loads(written)
+    document["items"].append(dict(document["items"][0]))
+    (run / "market_labels.json").write_text(json.dumps(document), encoding="utf-8")
+    with pytest.raises(MarketLabelError, match=f"{UP}_versus_market: 2 entries for one item"):
+        market_labels.check(run)
+    document = json.loads(written)
+    document["items"][0]["labels"].append(dict(document["items"][0]["labels"][0]))
+    (run / "market_labels.json").write_text(json.dumps(document), encoding="utf-8")
+    with pytest.raises(MarketLabelError, match="one label per recorded window"):
+        market_labels.check(run)
+    (run / "market_labels.json").write_text(written, encoding="utf-8")
+    assert market_labels.check(run) == {"checked": True, "items": 2}
+
+
+def test_two_windows_of_one_kind_with_different_filing_dates_are_both_kept(tmp_path):
+    """Two earnings releases before the filing: the 24th of April (-0.02, worked in
+    `test_each_window_is_labelled_on_its_own`) and Friday the 1st of May, closes
+    100.00 then 102.00, 102.00, 102.00 against a flat market and sector, beta
+    1.0: +0.02, 0, 0, a window of +0.02. Both are labelled, keyed by their filing
+    dates, and the file passes its check with three labels per item."""
+    found = table(("earnings_release", EARNINGS_DAYS, [-0.02, 0.0, 0.0], -0.02,
+                   NO_SHORT_INTEREST),
+                  ("earnings_release", ["2026-05-01", "2026-05-04", "2026-05-05"],
+                   [0.02, 0.0, 0.0], 0.02, NO_SHORT_INTEREST),
+                  ("filing", FILING_DAYS, [0.02, 0.0, 0.01], 0.03, NO_SHORT_INTEREST))
+    run = plant(tmp_path, market=found)
+    assert market_labels.write(run)["items"] == 2
+    written = json.loads((run / "market_labels.json").read_text(encoding="utf-8"))
+    assert [(one["window"], one["filing_date"]) for one in written["windows"]] == [
+        ("earnings_release", "2026-04-24"), ("earnings_release", "2026-05-01"),
+        ("filing", "2026-05-08")]
+    assert labelled(written, UP) == ["opposite_direction", "priced_in", "priced_in"]
+    assert market_labels.check(run) == {"checked": True, "items": 2}

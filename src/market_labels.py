@@ -64,6 +64,7 @@ import json
 import math
 import re
 import sys
+from collections import Counter
 from pathlib import Path
 
 try:
@@ -255,7 +256,7 @@ def windows(table: dict, *, run_cutoff: str | None = None) -> list[dict]:
     if not any(window.get("kind") == "filing" for window in recorded_windows):
         raise MarketLabelError(
             "the table has no filing window, so nothing ties it to the run's filing")
-    latest_day_two = None
+    latest_day_two, instants = None, []
     for window in recorded_windows:
         kind, days = window.get("kind"), [str(d) for d in window.get("days") or []]
         if not days:
@@ -299,13 +300,26 @@ def windows(table: dict, *, run_cutoff: str | None = None) -> list[dict]:
                 f"the {kind} window is for a filing dated {filed}, after the run's cutoff "
                 f"{run_cutoff}: every window but the filing's is an earlier filing's, and "
                 "a later one is not an input")
+        instants.append((kind, window["accepted"], when))
         latest_day_two = max(latest_day_two or expected[2], expected[2])
     if latest_day_two is not None and cutoff != latest_day_two:
         raise MarketLabelError(
             f"the table's cutoff {cutoff} is not reaction day two of its latest window "
             f"{latest_day_two}")
+    # every other window is an earlier filing's by the instant EDGAR accepted it,
+    # not by its date: an 8-K accepted later on the day of the 10-Q is a later filing
+    filings = [(stamp, when) for kind, stamp, when in instants if kind == "filing"]
+    if len(filings) > 1:
+        raise MarketLabelError(f"the table holds {len(filings)} filing windows, and a run "
+                               "has one filing")
+    filing_stamp, filing_when = filings[0]
+    for kind, stamp, when in instants:
+        if kind != "filing" and when >= filing_when:
+            raise MarketLabelError(
+                f"the {kind} window was accepted at {stamp}, after the filing at "
+                f"{filing_stamp}: every other window is an earlier filing's")
     found = []
-    for window in table.get("windows") or []:
+    for window in recorded_windows:
         kind, days = window.get("kind"), window.get("days") or []
         if not days:
             raise MarketLabelError(f"the {kind} window names no days")
@@ -318,8 +332,8 @@ def windows(table: dict, *, run_cutoff: str | None = None) -> list[dict]:
                 raise MarketLabelError(
                     f"the {kind} window's abnormal return {moved!r} is not the sum of "
                     f"its days' rows {parts!r}")
-        found.append({"window": kind, "day_zero": days[0], "days": list(days),
-                      "abnormal_return": moved,
+        found.append({"window": kind, "filing_date": str(window.get("filing_date")),
+                      "day_zero": days[0], "days": list(days), "abnormal_return": moved,
                       "short_interest": short_interest(table, days[0])})
     return found
 
@@ -341,11 +355,12 @@ def item_labels(item: dict, report: str, recorded: list[dict], *,
         labelled = []
         for window in recorded:
             said, why = label(direction, window["abnormal_return"], band=band)
-            labelled.append({"window": window["window"],
+            labelled.append({"window": window["window"], "filing_date": window["filing_date"],
                              "abnormal_return": window["abnormal_return"],
                              "label": said, "reason": why})
     else:
-        labelled = [{"window": None, "abnormal_return": None, "label": NOT_PRICED,
+        labelled = [{"window": None, "filing_date": None, "abnormal_return": None,
+                     "label": NOT_PRICED,
                      "reason": "the market table records no reaction window"}]
     return {"id": f"{identifier}{VERSUS_MARKET}", "upstream_item_id": identifier,
             "report": report, "expected_direction": direction, "labels": labelled}
@@ -439,10 +454,14 @@ def check(run) -> dict:
     every entry under `items`, the report it names is a reader report, the
     `upstream_item_id` is the gate's `item_id` of an item in the run-root copy
     of that report that the drop list does not name, and the entry's own id is
-    that id with `_versus_market`; and for every label under it, the word is one
-    of the three, the window is one the market table records, and the abnormal
-    return written beside it is that window's `reaction_window` re-read from
-    `input_market.json`. Every entry that fails is named, and the run is
+    that id with `_versus_market`. Every standing item has exactly one entry, and
+    every entry has exactly one label per window the market table records, the
+    windows keyed by (kind, filing date) and never by kind alone. For every
+    label, the window is one the table records, the abnormal return written
+    beside it is that window's `reaction_window` re-read from `input_market.json`,
+    and the word is what `label` -- the same function `labels` used, never a
+    copy of its rule -- gives for the item's `expected_direction`, that return
+    and the band the file names. Every entry that fails is named, and the run is
     refused. Returns `{"checked": True, "items": n}`, or `{"checked": False,
     "reason": ...}` for a run with no market table and so no labels file; a run
     with a table and no labels file is refused.
@@ -464,16 +483,30 @@ def check(run) -> dict:
         table = json.loads(_load(run, MARKET_TABLE))
     except ValueError as exc:
         raise MarketLabelError(f"{MARKET_TABLE} does not read as JSON: {exc}") from exc
-    moved_by_window = {window.get("kind"): _number(window.get("reaction_window"))
-                       for window in (table.get("windows") if isinstance(table, dict) else None)
-                       or [] if isinstance(window, dict)}
+    if not isinstance(table, dict):
+        raise MarketLabelError(f"{MARKET_TABLE} is not an object")
+    recorded: dict[tuple[str, str], float | None] = {}
+    for window in table.get("windows") or []:
+        if not isinstance(window, dict):
+            continue
+        key = (str(window.get("kind")), str(window.get("filing_date")))
+        if key in recorded:
+            raise MarketLabelError(f"the market table records the {key[0]} window of "
+                                   f"{key[1]} twice")
+        recorded[key] = _number(window.get("reaction_window"))
+    band = _number(document.get("near_zero_band"))
+    if band is None:
+        raise MarketLabelError(f"{LABELS_FILE} names no near-zero band to recompute its "
+                               "labels under")
     _, dropped = gate_record(run)
-    standing = {}
+    standing: dict[str, dict[str, dict]] = {}
     for report in READER_REPORTS:
-        named = {quote_gate.item_id(item) for item in report_items(_load(run, report))}
-        standing[report] = {one for one in named if one is not None
-                            and (report, one) not in dropped}
-    problems = []
+        standing[report] = {}
+        for item in report_items(_load(run, report)):
+            identifier = quote_gate.item_id(item)
+            if identifier is not None and (report, identifier) not in dropped:
+                standing[report][identifier] = item
+    problems, entries = [], Counter()
     for entry in document["items"]:
         if not isinstance(entry, dict):
             problems.append(f"{entry!r} is not a label entry")
@@ -482,35 +515,64 @@ def check(run) -> dict:
         upstream = entry.get("upstream_item_id")
         if report not in standing:
             problems.append(f"{label_id}: names {report!r}, which is not a reader report")
-        elif upstream not in standing[report]:
+            continue
+        if upstream not in standing[report]:
             problems.append(f"{label_id}: cites {upstream!r}, which is not a standing "
                             f"item of {report}")
-        elif label_id != f"{upstream}{VERSUS_MARKET}":
+            continue
+        entries[(report, upstream)] += 1
+        if label_id != f"{upstream}{VERSUS_MARKET}":
             problems.append(f"{label_id}: is not named {upstream}{VERSUS_MARKET} after "
                             "the item it cites")
-        for labelled in entry.get("labels") if isinstance(entry.get("labels"), list) else []:
-            if not isinstance(labelled, dict):
-                problems.append(f"{label_id}: {labelled!r} is not a label")
+        direction = standing[report][upstream].get("expected_direction")
+        if entry.get("expected_direction") != direction:
+            problems.append(f"{label_id}: says expected_direction "
+                            f"{entry.get('expected_direction')!r}, and the item says "
+                            f"{direction!r}")
+        labelled = entry.get("labels") if isinstance(entry.get("labels"), list) else []
+        keys = Counter()
+        for one in labelled:
+            if not isinstance(one, dict):
+                problems.append(f"{label_id}: {one!r} is not a label")
                 continue
-            word, window = labelled.get("label"), labelled.get("window")
+            key = (str(one.get("window")), str(one.get("filing_date")))
+            keys[key] += 1
+            word = one.get("label")
             if word not in LABELS:
                 problems.append(f"{label_id}: the label {word!r} is not one of "
                                 f"{', '.join(LABELS)}")
-            if window not in moved_by_window:
-                problems.append(f"{label_id}: the window {window!r} is not one the market "
-                                "table records")
+            if key not in recorded:
+                problems.append(f"{label_id}: the {key[0]} window of {key[1]} is not one the "
+                                "market table records")
                 continue
-            written, recorded = _number(labelled.get("abnormal_return")), moved_by_window[window]
-            same = (written is None and recorded is None) or (
-                written is not None and recorded is not None
-                and math.isclose(written, recorded, rel_tol=1e-9, abs_tol=1e-12))
+            written, moved = _number(one.get("abnormal_return")), recorded[key]
+            same = (written is None and moved is None) or (
+                written is not None and moved is not None
+                and math.isclose(written, moved, rel_tol=1e-9, abs_tol=1e-12))
             if not same:
-                problems.append(f"{label_id}: the {window} window's abnormal return is written "
-                                f"{labelled.get('abnormal_return')!r}, and the market table "
-                                f"records {recorded!r}")
+                problems.append(f"{label_id}: the {key[0]} window's abnormal return is written "
+                                f"{one.get('abnormal_return')!r}, and the market table "
+                                f"records {moved!r}")
+            recomputed, _ = label(direction, moved, band=band)
+            if word != recomputed:
+                problems.append(f"{label_id}: the {key[0]} window's label {word} recomputes "
+                                f"as {recomputed}")
+        if keys != Counter(recorded.keys()):
+            problems.append(f"{label_id}: carries labels for {sorted(keys.elements())}, and "
+                            f"the market table records {sorted(recorded)}: one label per "
+                            "recorded window")
+    for report, items in standing.items():
+        for identifier in items:
+            count = entries[(report, identifier)]
+            if count == 0:
+                problems.append(f"{identifier}{VERSUS_MARKET}: no entry, and {identifier} "
+                                f"stands in {report}")
+            elif count > 1:
+                problems.append(f"{identifier}{VERSUS_MARKET}: {count} entries for one item "
+                                f"of {report}")
     if problems:
         raise MarketLabelError(
-            f"{LABELS_FILE} cites what does not stand ({len(problems)}): " + "; ".join(problems))
+            f"{LABELS_FILE} fails its re-check ({len(problems)}): " + "; ".join(problems))
     return {"checked": True, "items": len(document["items"])}
 
 
