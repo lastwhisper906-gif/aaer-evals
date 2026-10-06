@@ -699,7 +699,8 @@ def market_table_problems(table: dict, cutoff: dt.date, accepted=None,
     table carries a filing window, whose filing date is the run's cutoff and is
     the acceptance day or (accepted after half past five) EDGAR's next business
     day; every other window is an earlier filing's; the table's cutoff is day two
-    of its latest window; no row lies past it, and every row is a trading day.
+    of its latest window; no row lies past it, and every row is a trading day;
+    the beta estimation window ends before the filing date.
     The filing window's acceptance stamp is held to `accepted`, the run's own
     record of when EDGAR accepted the filing (the manifest's), and every other
     window's to `recorded`, the acceptance stamps the manifest's document rows
@@ -762,6 +763,18 @@ def market_table_problems(table: dict, cutoff: dt.date, accepted=None,
     limit = latest or table_cutoff
     problems += [f"row {d} is past reaction day two {limit} of the table's latest window"
                  for d in rows if limit and d > limit]
+    # beta is estimated over trading days that end before the filing date
+    # (src/market.py): a window reaching the cutoff or past it read the reaction
+    estimation = table.get("beta_estimation_window")
+    if windows and not isinstance(estimation, dict):
+        problems.append("the table names no beta estimation window")
+    elif isinstance(estimation, dict):
+        first, last = str(estimation.get("first")), str(estimation.get("last"))
+        if not (first < last):
+            problems.append(f"the beta estimation window runs {first} to {last}")
+        if last >= cutoff.isoformat():
+            problems.append(f"the beta estimation window ends {last}, not before the filing "
+                            f"date {cutoff}")
     for d in rows:
         try:
             if not is_trading_day(dt.date.fromisoformat(d)):

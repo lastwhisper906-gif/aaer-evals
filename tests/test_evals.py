@@ -357,6 +357,8 @@ def test_a_document_after_the_cutoff_fails_nothing_after_cutoff(run):
 # is day two, the 22nd.
 def _market_table(**changes):
     table = {"cutoff": "2026-05-22",
+             "beta_estimation_window": {"trading_days": 250, "first": "2025-05-19",
+                                        "last": "2026-05-18"},
              "windows": [{"kind": "filing", "filing_date": "2026-05-19",
                           "accepted": "2026-05-19T16:35:00-04:00", "day_zero": "2026-05-20",
                           "days": ["2026-05-20", "2026-05-21", "2026-05-22"]}],
@@ -514,21 +516,21 @@ def test_a_market_window_over_a_holiday_passes_nothing_after_cutoff():
     Monday the 6th, after Good Friday; one accepted Wednesday 2025-01-08 at 16:35 has
     day zero on Friday the 10th, after the day of mourning."""
     import datetime as dt
-    memorial = {"cutoff": "2026-05-28",
+    memorial = {"cutoff": "2026-05-28", "beta_estimation_window": {"first": "2025-05-22", "last": "2026-05-21"},
                 "windows": [{"kind": "filing", "filing_date": "2026-05-22",
                              "accepted": "2026-05-22T16:35:00-04:00", "day_zero": "2026-05-26",
                              "days": ["2026-05-26", "2026-05-27", "2026-05-28"]}],
                 "rows": [{"date": d} for d in ("2026-05-21", "2026-05-22", "2026-05-26",
                                                "2026-05-27", "2026-05-28")]}
     assert mechanical.market_table_problems(memorial, dt.date(2026, 5, 22), '2026-05-22T16:35:00-04:00') == []
-    good_friday = {"cutoff": "2026-04-08",
+    good_friday = {"cutoff": "2026-04-08", "beta_estimation_window": {"first": "2025-04-02", "last": "2026-04-01"},
                    "windows": [{"kind": "filing", "filing_date": "2026-04-02",
                                 "accepted": "2026-04-02T16:35:00-04:00", "day_zero": "2026-04-06",
                                 "days": ["2026-04-06", "2026-04-07", "2026-04-08"]}],
                    "rows": [{"date": d} for d in ("2026-04-01", "2026-04-02", "2026-04-06",
                                                   "2026-04-07", "2026-04-08")]}
     assert mechanical.market_table_problems(good_friday, dt.date(2026, 4, 2), '2026-04-02T16:35:00-04:00') == []
-    mourning = {"cutoff": "2025-01-14",
+    mourning = {"cutoff": "2025-01-14", "beta_estimation_window": {"first": "2024-01-08", "last": "2025-01-07"},
                 "windows": [{"kind": "filing", "filing_date": "2025-01-08",
                              "accepted": "2025-01-08T16:35:00-05:00", "day_zero": "2025-01-10",
                              "days": ["2025-01-10", "2025-01-13", "2025-01-14"]}],
@@ -542,7 +544,7 @@ def test_a_market_window_on_an_early_close_day_counts_from_the_next_trading_day(
     after that day's one o'clock close: day zero is Monday the 30th."""
     import datetime as dt
     stamp = "2026-11-27T14:00:00-05:00"
-    table = {"cutoff": "2026-12-02",
+    table = {"cutoff": "2026-12-02", "beta_estimation_window": {"first": "2025-11-27", "last": "2026-11-25"},
              "windows": [{"kind": "filing", "filing_date": "2026-11-27", "accepted": stamp,
                           "day_zero": "2026-11-30",
                           "days": ["2026-11-30", "2026-12-01", "2026-12-02"]}],
@@ -627,6 +629,25 @@ def test_a_late_row_handed_to_the_single_agent_control_fails_nothing_after_cutof
     assert _status(results, "mechanical.nothing_after_cutoff") == FAIL
     assert any(d.startswith(mechanical.CONTROL_DIR) for d in
                next(r.failures for r in results if r.grader == "mechanical.nothing_after_cutoff"))
+
+
+def test_a_beta_estimated_over_the_reaction_fails_nothing_after_cutoff():
+    """Beta is on every row; a window estimated over days at or past the filing
+    date read the reaction it is meant to be independent of."""
+    import datetime as dt
+    cutoff = dt.date(2026, 5, 19)
+    late = _market_table(beta_estimation_window={"trading_days": 250, "first": "2025-05-20",
+                                                 "last": "2026-05-22"})
+    assert mechanical.market_table_problems(late, cutoff, ACCEPTED) == [
+        "the beta estimation window ends 2026-05-22, not before the filing date 2026-05-19"]
+    on_the_day = _market_table(beta_estimation_window={"first": "2025-05-19", "last": "2026-05-19"})
+    assert mechanical.market_table_problems(on_the_day, cutoff, ACCEPTED) == [
+        "the beta estimation window ends 2026-05-19, not before the filing date 2026-05-19"]
+    none = _market_table()
+    del none["beta_estimation_window"]
+    assert mechanical.market_table_problems(none, cutoff, ACCEPTED) == [
+        "the table names no beta estimation window"]
+    assert mechanical.market_table_problems(_market_table(), cutoff, ACCEPTED) == []
 
 
 def test_a_market_table_with_no_acceptance_stamp_fails_nothing_after_cutoff():
@@ -828,7 +849,7 @@ def test_outcomes_with_a_market_table_start_after_its_latest_day_two(tmp_path):
     import datetime as dt
     run = tmp_path / "CSCO" / CLEAN.name
     shutil.copytree(CLEAN, run, ignore=shutil.ignore_patterns("agents", "control-*"))
-    table = {"cutoff": "2026-05-29", "rows": [],
+    table = {"cutoff": "2026-05-29", "rows": [], "beta_estimation_window": {"first": "2025-05-19", "last": "2026-05-18"},
              "windows": [{"kind": "filing", "filing_date": "2026-05-19",
                           "accepted": "2026-05-19T09:00:00-04:00",
                           "days": ["2026-05-19", "2026-05-20", "2026-05-21"]}]}
