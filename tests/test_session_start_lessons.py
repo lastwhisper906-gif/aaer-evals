@@ -4,6 +4,14 @@ The lessons files are planted by this file, and the expected printout is worked
 out by hand from the planted shape: a four-line header leaves fifty-six lines,
 one of which says how many older lessons were left out, so a hundred lessons
 print as the header, that line, and lessons 46 to 100.
+
+A lesson is a dated line plus its continuation lines: a line after the first
+lesson that does not start with a date belongs to the lesson before it. With
+lesson 80 wrapped onto a second line, the fifty-five lines after the note hold
+lessons 100 down to 81 (twenty lines), lesson 80 (two) and lessons 79 down to
+47 (thirty-three), so the note says 46 older lessons, not 45. With every lesson
+two lines long, fifty-five lines hold twenty-seven whole lessons (fifty-four
+lines) and a lesson is never split, so the printout is fifty-nine lines.
 """
 
 from __future__ import annotations
@@ -20,10 +28,18 @@ def lesson(n: int) -> str:
     return f"2026-09-{1 + n % 28:02d} lesson number {n}, written in the order it was learned."
 
 
-def plant(tmp_path: Path, count: int) -> Path:
+def wrapped(n: int) -> str:
+    return f"  and this is the rest of lesson number {n}, wrapped onto a second line."
+
+
+def plant(tmp_path: Path, count: int, wrap: set[int] = frozenset()) -> Path:
     path = tmp_path / "lessons.md"
-    path.write_text("\n".join(HEADER + [lesson(n) for n in range(1, count + 1)]) + "\n",
-                    encoding="utf-8")
+    lines = list(HEADER)
+    for n in range(1, count + 1):
+        lines.append(lesson(n))
+        if n in wrap:
+            lines.append(wrapped(n))
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return path
 
 
@@ -47,6 +63,39 @@ def test_a_short_file_prints_whole_with_no_note(tmp_path):
 
     assert result.returncode == 0
     assert result.stdout.splitlines() == HEADER + [lesson(n) for n in range(1, 11)]
+
+
+def test_a_wrapped_lesson_prints_both_of_its_lines_and_the_count_says_so(tmp_path):
+    result = printed(plant(tmp_path, 100, wrap={80}))
+
+    assert result.returncode == 0
+    lines = result.stdout.splitlines()
+    assert len(lines) == 60
+    assert lines[4] == f"(46 older lessons are in {tmp_path / 'lessons.md'} and not printed here.)"
+    assert lines[5:] == ([lesson(n) for n in range(47, 80)]
+                         + [lesson(80), wrapped(80)]
+                         + [lesson(n) for n in range(81, 101)])
+
+
+def test_a_wrapped_lesson_in_a_short_file_is_printed_whole(tmp_path):
+    result = printed(plant(tmp_path, 10, wrap={3, 10}))
+
+    assert result.returncode == 0
+    assert result.stdout.splitlines() == (
+        HEADER + [lesson(1), lesson(2), lesson(3), wrapped(3)]
+        + [lesson(n) for n in range(4, 10)] + [lesson(10), wrapped(10)])
+
+
+def test_the_cap_holds_with_wrapped_lessons_and_no_lesson_is_split(tmp_path):
+    result = printed(plant(tmp_path, 100, wrap=set(range(1, 101))))
+
+    assert result.returncode == 0
+    lines = result.stdout.splitlines()
+    assert len(lines) <= 60
+    assert len(lines) == 59
+    assert lines[4] == f"(73 older lessons are in {tmp_path / 'lessons.md'} and not printed here.)"
+    assert lines[5] == lesson(74)
+    assert lines[5:] == [line for n in range(74, 101) for line in (lesson(n), wrapped(n))]
 
 
 def test_a_file_that_cannot_be_read_is_not_an_empty_one(tmp_path):

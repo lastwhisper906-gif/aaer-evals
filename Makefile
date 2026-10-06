@@ -35,8 +35,9 @@ archive-check:
 	$(PYTHON) -m src.archive_check --baseline $(BASELINE)
 
 # Rules CLAUDE.md states in prose, each held by a script that reads the files:
-# every open item names a judge, every inbox row names its default, and
-# CLAUDE.md stays within its 22 lines.
+# every open item names a judge, every inbox row names its default, CLAUDE.md
+# stays within its 22 lines, and every lesson in lessons.md and its archive
+# starts with its date, so the session-start hook can tell it from the header.
 rule-checks:
 	$(PYTHON) -m src.task_judge_check
 	$(PYTHON) -m src.owner_inbox_check

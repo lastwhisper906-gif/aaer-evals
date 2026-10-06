@@ -7,15 +7,23 @@ is deleted. This is what that did to the three files a session reads first.
 
 ## Line counts
 
+Every number is what a command printed on the file as committed, run from the
+repository root on this branch. "Before" is `git show origin/main:<file> | wc -l`,
+the base this branch starts from; for `lessons.md` that is the pre-cut file, the
+one the hook used to `cat`, and the same command gives it. "After" is
+`wc -l <file>` on this branch. A lesson count is
+`grep -c '^[0-9]\{4\}-[0-9][0-9]-[0-9][0-9] '` on the same input, and the
+hook's line is `sh tools/session_start_lessons.sh | wc -l`.
+
 | File | Before | After |
 |---|---|---|
 | `CLAUDE.md` | 22 | 22 |
-| `docs/HOW_WE_WORK.md` | 462 | 418 |
-| `lessons.md` | 320 (314 lessons) | 200 (192 lessons: 190 kept, 2 written this session) |
-| what the SessionStart hook prints | 320 (`cat lessons.md`) | 60 (`sh tools/session_start_lessons.sh`) |
+| `docs/HOW_WE_WORK.md` | 477 | 436 |
+| `lessons.md` | 320 (314 lessons) | 203 (193 lessons: 190 kept, 3 written this session) |
+| what the SessionStart hook prints | 320 (`git show origin/main:lessons.md \| wc -l`, which `cat lessons.md` printed) | 60 (`sh tools/session_start_lessons.sh \| wc -l`) |
 
-Session-start context is `CLAUDE.md` plus the hook's printout: 342 lines before,
-82 after.
+Session-start context is `CLAUDE.md` plus the hook's printout: 342 lines before
+(22 + 320), 82 after (22 + 60).
 
 ## Rules that became scripts
 
@@ -27,8 +35,14 @@ and one that it does not, and each runs in `make check`.
 | Work with no judge is not a task | `CLAUDE.md`; `docs/HOW_WE_WORK.md` §1 principle 2 and §2 | `src/task_judge_check.py` — every open row of `docs/next_cycle_tasks.md` names a judge, every open row of `queue.md` an eval command | `tests/test_task_judge_check.py` |
 | Never create a state that waits for the owner's signature; everything has a default | `CLAUDE.md`; `docs/HOW_WE_WORK.md` §1 principles 2 and 3 | `src/owner_inbox_check.py` — every open row of `docs/needs_judgment.md` names its default, every settled row says `default:`, and no file outside `archive/` is named as a sign-off queue | `tests/test_owner_inbox_check.py` |
 | `CLAUDE.md` is capped at 22 lines | `docs/HOW_WE_WORK.md` §4, the fold-lessons routine | `src/instruction_length_check.py` | `tests/test_instruction_length_check.py` |
+| Every lesson starts with its date, YYYY-MM-DD and a space | nowhere: the hook told a lesson from the header by its date and nothing said so | `src/instruction_length_check.py --lessons` — after the header, every line of `lessons.md` and `archive/lessons_enforced.md` that is not blank and not indented starts with a date; an indented line is the lesson's note or wrapped line | `tests/test_instruction_length_check.py` |
 | The old repo is archived, not rewritten | `docs/HOW_WE_WORK.md` §1 principle 10 and §8 | `src/archive_check.py` — a file already under `archive/` on the baseline is never changed or deleted; a new one passes | `tests/test_archive_check.py` |
-| The session-start hook prints the lessons | `CLAUDE.md`; `docs/HOW_WE_WORK.md` §4 hooks | `tools/session_start_lessons.sh` — the header and the newest lessons, newest last, at most sixty lines | `tests/test_session_start_lessons.py` |
+| The session-start hook prints the lessons | `CLAUDE.md`; `docs/HOW_WE_WORK.md` §4 hooks | `tools/session_start_lessons.sh` — the header and the newest lessons, newest last, at most sixty lines; a lesson is a dated line plus its wrapped lines, printed whole or not at all | `tests/test_session_start_lessons.py` |
+
+The evals rule in `CLAUDE.md` names `src/eval_guard.py` in CI and the deny rules
+in `.claude/settings.json` as its judge; both land with the evals pull request,
+which this branch follows on main, so the parenthesis is true once that merge
+is in.
 
 ## Rules an existing script already enforced, now named beside the rule
 
@@ -100,8 +114,19 @@ where an enforced lesson goes and what prints the rest. §6 is unchanged.
 124 of the 314 lessons moved to `archive/lessons_enforced.md`, each verbatim,
 with its old line number and one line naming what enforces it (113) or why it is
 obsolete (11). The 190 left are the ones no script or test holds, and they stay
-in their original order. A count of every dated line before and after matched:
-nothing was lost.
+in their original order; three were written this session, after them. A count of
+every dated line before and after matched: nothing was lost.
+
+The date is now a rule the gate holds. `src/instruction_length_check.py` reads
+both files and refuses a line after the header that is neither dated, blank nor
+indented. The archive's note under each lesson is indented, which is why
+"indented" is the shape of a line that belongs to the lesson above it; a strict
+reading, every non-blank line after the header dated, would refuse 124
+committed archive lines, the first being line 10:
+
+    (was line 7) enforced by: `src/interpreter_pin.py`: every entry point refuses an interpreter other than 3.12 (`tests/test_interpreter_pin.py`).
+
+That file is not changed; the rule is written to the shape its header describes.
 
 The SessionStart hook in `.claude/settings.json` now runs
 `sh tools/session_start_lessons.sh` in place of `cat lessons.md`.

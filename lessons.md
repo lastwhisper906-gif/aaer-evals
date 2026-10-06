@@ -1,10 +1,12 @@
 # Lessons
 
-One line per mistake, newest last. No judgment, no narrative. Only lessons that no
-script or test enforces stay here. When one gets a script, or stops applying, it
-moves to `archive/lessons_enforced.md` with one line naming what enforces it or why
-it is obsolete. At session start `tools/session_start_lessons.sh` prints this
-header and the newest lessons, at most sixty lines.
+One line per mistake, newest last, each starting with its date, YYYY-MM-DD and a
+space (`src/instruction_length_check.py` in `make check` refuses one that does not).
+No judgment, no narrative. Only lessons that no script or test enforces stay here.
+When one gets a script, or stops applying, it moves to `archive/lessons_enforced.md`
+with one line naming what enforces it or why it is obsolete. At session start
+`tools/session_start_lessons.sh` prints this header and the newest lessons, at most
+sixty lines; a line under a lesson that has no date is that lesson's wrapped line.
 
 2026-09-06 built a command line in a shell variable and ran it unquoted; zsh does not word-split, so a two-word command was passed as one filename and reported a false failure — run commands literally, not out of variables.
 2026-09-06 chained mkdir with a heredoc in one command inside an isolated worktree and had it refused as unverifiable; split file creation into plain single-purpose commands.
@@ -198,3 +200,4 @@ header and the newest lessons, at most sixty lines.
 2026-09-29 launched twelve full runs four at a time without checking the analysts' model limit, and the limit failed eight of them mid-run, three times over; a batch is sized to the limit that serves it, and a failed agent call that ends in two seconds with zero tokens is read as the limit before anything else.
 2026-10-06 chained a heredoc with a git command, and separately changed into the shared checkout before a git call, inside an isolated worktree, and had both refused; the 2026-09-08 line already says one command does one thing there -- this is its fourth occurrence.
 2026-10-06 a PreToolUse hook added to the shared checkout's settings as `python3 .claude/hooks/guard_evals.py`, a path relative to the working directory, failed with exit 2 in a worktree branched before the file existed and so blocked every shell call there, `make check` included; a hook names its file from the project root, or tests for it first as the post-write hook does.
+2026-10-06 wrote a report's line counts (462 and 418 for docs/HOW_WE_WORK.md) by hand and the second lens found wc -l says 477 and 432; a number in a report comes from a command run on the file as committed, and the report names the command.

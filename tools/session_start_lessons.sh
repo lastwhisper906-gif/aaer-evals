@@ -8,10 +8,15 @@
 # test already enforces moved to archive/lessons_enforced.md, and this prints
 # the rest from the newest backwards, so the cap costs the oldest lessons first.
 #
-# A lesson is a line that starts with a date, YYYY-MM-DD and a space. Everything
-# above the first lesson is the header and is always printed. When the lessons
-# do not all fit, one line says how many older ones were left out and where they
-# are, and that line counts toward the sixty.
+# A lesson starts with a date, YYYY-MM-DD and a space; a line after the first
+# lesson that does not start with a date is a continuation of the lesson before
+# it (a wrapped line), printed with it and counted within it, never dropped.
+# Everything above the first lesson is the header and is always printed. A
+# lesson prints whole or not at all. When the lessons do not all fit, one line
+# says how many older ones were left out and where they are, and that line
+# counts toward the sixty. That a lesson line carries its date is not this
+# script's judgment: src/instruction_length_check.py refuses one that does not,
+# in `make check`, so an undated lesson is refused there rather than hidden here.
 #
 # Invoked as `sh tools/session_start_lessons.sh [file]` from the repository
 # root, so a missing execute bit cannot silence it. Exit 2 when the file cannot
@@ -29,16 +34,23 @@ if [ ! -r "$file" ]; then
 fi
 
 awk -v limit="$limit" -v file="$file" '
-  /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] / { lesson[++n] = $0; started = 1; next }
-  !started { header[++h] = $0 }
+  /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] / { lesson[++n] = $0; size[n] = 1; started = 1; next }
+  started { lesson[n] = lesson[n] "\n" $0; size[n]++; next }
+  { header[++h] = $0 }
   END {
     for (i = 1; i <= h; i++) print header[i]
-    if (h + n <= limit) {
+    total = h
+    for (i = 1; i <= n; i++) total += size[i]
+    if (total <= limit) {
       first = 1
     } else {
       room = limit - h - 1
-      if (room < 0) room = 0
-      first = n - room + 1
+      first = n + 1
+      used = 0
+      while (first > 1 && used + size[first - 1] <= room) {
+        first--
+        used += size[first]
+      }
       older = first - 1
       print "(" older " older lessons are in " file " and not printed here.)"
     }

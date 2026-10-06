@@ -182,11 +182,15 @@ Every routine below is a **scheduled task**, not a loop run.
 Configured in `.claude/settings.json`, not written by hand each session.
 
 - **session start** — `sh tools/session_start_lessons.sh`: the header of
-  `lessons.md` and its newest lessons, at most sixty lines
-  (`tests/test_session_start_lessons.py`). **`CLAUDE.md` is capped at 22
-  lines** (`src/instruction_length_check.py`, `make check`), so a rule that
-  cannot fit replaces a line rather than appending one — the file is read in
-  full at the start of every session.
+  `lessons.md` and its newest lessons, at most sixty lines; a lesson is a
+  dated line plus its wrapped lines, printed whole
+  (`tests/test_session_start_lessons.py`). **Every lesson starts with its
+  date**, YYYY-MM-DD and a space, in `lessons.md` and
+  `archive/lessons_enforced.md`, so the hook can tell it from the header; an
+  undated one is refused (`src/instruction_length_check.py`, `make check`), not
+  hidden. **`CLAUDE.md` is capped at 22 lines** (the same check), so a rule
+  that cannot fit replaces a line rather than appending one — the file is read
+  in full at the start of every session.
 - **after a compaction** — re-inject the cutoff line from `CLAUDE.md`. Of every
   rule here it is the one whose violation is silent, so it is the one that must
   not fall out of context.
