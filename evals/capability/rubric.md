@@ -52,8 +52,8 @@ evidence:
 
 ## The score
 
-- An anomaly scores 1 when supported, 0.5 when unclear, and 0 when unsupported or a
-  dealbreaker.
+- An anomaly scores 1 when supported, 0.5 when unclear, and 0 when unsupported or
+  when a dealbreaker names its `id`.
 - The run's score is the severity-weighted mean, with high weighing 3, medium 2 and
   low 1.
 - The three whole-run questions are reported beside the score, not folded into it.
@@ -67,7 +67,8 @@ evidence:
 {
   "run": "<ticker>/<run directory>",
   "rubric": "evals/capability/rubric.md",
-  "dealbreakers": [{"kind": "number_not_from_calculator", "where": "anomalies[3].what", "why": "..."}],
+  "dealbreakers": [{"kind": "number_not_from_calculator", "id": "<the anomaly id it strikes, or null for a whole-run answer>",
+                    "where": "anomalies[3].what", "why": "..."}],
   "items": [{"id": "<anomaly id>", "frame": "accounting", "verdict": "supported",
              "severity": "high", "why": "one line, citing the paragraph id or calculator path"}],
   "coverage": {"answer": "yes", "why": "..."},

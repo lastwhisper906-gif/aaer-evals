@@ -2,7 +2,7 @@
 
 The grader writes a `score`; nothing should rest on a number the grader both chose
 and computed. This recomputes it from `items` and `dealbreakers` (rubric.md): an item
-scores 1 supported, 0.5 unclear, 0 unsupported or under a dealbreaker; the run's
+scores 1 supported, 0.5 unclear, 0 unsupported or when a dealbreaker names its id; the run's
 score is the mean weighted 3 for high severity, 2 medium, 1 low. `make eval` reports
 the recomputed score, and says where the grader's own differs.
 """
@@ -14,10 +14,8 @@ WEIGHT = {"high": 3, "medium": 2, "low": 1}
 
 
 def recompute(grade: dict) -> float | None:
-    broken = set()
-    for item in grade.get("dealbreakers") or []:
-        where = str(item.get("where") or "")
-        broken.add(item.get("id") or where)
+    broken = {item.get("id") for item in grade.get("dealbreakers") or []
+              if isinstance(item, dict) and item.get("id")}
     total = weight = 0.0
     for item in grade.get("items") or []:
         if not isinstance(item, dict) or item.get("verdict") not in VERDICT \

@@ -29,7 +29,7 @@ You never see how an analyst worked, only what it published.
 3. Decide **supported**, **unsupported** or **unclear**, and a severity, as the rubric
    says.
 4. A dealbreaker in the rubric scores the item zero, whatever else is true. Record it
-   under `dealbreakers` with the place and one line of why.
+   under `dealbreakers` with the anomaly's `id`, the place and one line of why.
 5. Answer the three whole-run questions (coverage, calibration, valuation reading),
    yes or no, each with one line of evidence.
 6. Compute the score with the rubric's formula. It is the one number you may write.

@@ -4,16 +4,19 @@ Each check reads files a run published and nothing about how they were made:
 - `files_present`: the files every analysed run publishes.
 - `agents_written`: every agent the manifest records wrote its file, and the run
   records no analysis failure.
-- `quotes_resolve`: every quote a reader kept is in that reader's own committed
-  input, and every quote an analysis kept is in the filing inputs or reader reports
-  that analyst was handed, character for character after the whitespace fold; a
-  `quote_from` naming a file the analyst was not handed fails.
+- `quotes_resolve`: every quote a reader kept is in the paragraph its
+  `paragraph_id` names, in that reader's own committed input; every quote an
+  analysis kept is in the inputs that analyst was handed, character for character
+  after the whitespace fold; a `quote_from` naming a file the analyst was not
+  handed fails, and so does a run with no record of what an agent was handed.
 - `cited_items_exist`: every evidence id an analysis cites is an item a reader
   report kept.
 - `cited_numbers_exist`: every number an analysis cites names a field of the
   calculator file that analyst saw.
-- `nothing_after_cutoff`: no input document, calculator fact or price is dated
-  after the run's cutoff.
+- `nothing_after_cutoff`: no input document is filed after the run's cutoff, no
+  source without a filing date was read past it (`rows_used_through`), and no fact
+  or price in any calculator file is dated after it. The rule is CLAUDE.md's,
+  dates only: an acceptance time is not on the record.
 - `calculator_finite`: every numeric value in calculator.json is finite.
 - `dcf_recomputes`: every scenario's enterprise value and value per share, and the
   simple free cash flow, recompute from the run's own drivers with this file's own
@@ -67,11 +70,6 @@ def report_items(path: Path) -> list[dict]:
     return items
 
 
-def inputs_text(run: Path) -> dict[str, str]:
-    return {p.name: fold(p.read_text(encoding="utf-8", errors="replace"))
-            for p in sorted(run.glob("input_*")) if p.is_file()}
-
-
 READER_DIR = {"report_numbers.md": "numbers-reader", "report_notes_text.md": "notes-text-reader"}
 # What a quote may stand on: the filing as the run committed it (input_*) and the
 # reader reports upstream of the analyst (report_*), never the calculator. The
@@ -86,15 +84,83 @@ QUOTABLE_FOR = {"assumptions.json": QUOTABLE + ("analysis_accounting.json",
                                                        "analysis_financial.json")}
 
 
-def agent_saw(run: Path, agent: str, *, quotable=QUOTABLE) -> dict[str, str]:
-    """The quotable files an agent was handed, folded; the run's own inputs where
-    the run kept no directory for that agent."""
+def agent_saw(run: Path, agent: str, *, quotable=QUOTABLE) -> dict[str, str] | None:
+    """The quotable files an agent was handed, as written (the fold is applied where
+    a quote is compared, because the paragraph index needs the line breaks), or None
+    when the run kept no directory for that agent: what it was handed is then not
+    on record, and a quote cannot be held to it."""
     directory = run / "agents" / agent
-    files = [p for p in sorted(directory.iterdir()) if p.is_file()
-             and p.name.startswith(quotable)] if directory.is_dir() else []
-    if not files:
-        return inputs_text(run)
-    return {p.name: fold(p.read_text(encoding="utf-8", errors="replace")) for p in files}
+    if not directory.is_dir():
+        return None
+    return {p.name: p.read_text(encoding="utf-8", errors="replace")
+            for p in sorted(directory.iterdir()) if p.is_file() and p.name.startswith(quotable)}
+
+
+ID_LINE = re.compile(r"^\[(\d{10}-\d{2}-\d{6}:[a-z0-9_]+:[^\]]+)\]\s*$", re.M)
+
+
+def paragraphs_of(text: str) -> dict[str, str]:
+    """The `[id]` blocks of a prose input: each id owns the text up to the next id."""
+    out = {}
+    matches = list(ID_LINE.finditer(text))
+    for this, following in zip(matches, matches[1:] + [None]):
+        end = following.start() if following else len(text)
+        out[this.group(1)] = text[this.end():end]
+    return out
+
+
+def _enclosing_object(text: str, at: int) -> str | None:
+    depth, start = 0, None
+    for index in range(at, -1, -1):
+        ch = text[index]
+        if ch == "}":
+            depth += 1
+        elif ch == "{":
+            if depth == 0:
+                start = index
+                break
+            depth -= 1
+    if start is None:
+        return None
+    depth = 0
+    for index in range(start, len(text)):
+        ch = text[index]
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                return text[start:index + 1]
+    return None
+
+
+def json_objects_printing(text: str, identifier: str) -> list[str]:
+    """Every innermost JSON object in a pretty-printed file whose text holds the
+    quoted id: the rows that print it. A filing that states one fact at two
+    precisions prints the one id over two rows, and a quote of either stands."""
+    out, at = [], text.find(f'"{identifier}"')
+    while at >= 0:
+        row = _enclosing_object(text, at)
+        if row is not None and row not in out:
+            out.append(row)
+        at = text.find(f'"{identifier}"', at + 1)
+    return out
+
+
+def paragraph_text(seen: dict[str, str], identifier: str) -> str | None:
+    """The committed text one paragraph id owns, out of the files an agent saw:
+    an `[id]` block of a prose file, or the JSON row of a computed file that
+    prints the id. None when no file the agent saw carries the id."""
+    for name, text in seen.items():
+        if name.endswith(".md"):
+            block = paragraphs_of(text).get(identifier)
+            if block is not None:
+                return fold(block)
+        elif name.endswith(".json"):
+            rows = json_objects_printing(text, identifier)
+            if rows:
+                return fold("\n".join(rows))
+    return None
 
 
 def quoted(node, where=""):
@@ -133,26 +199,39 @@ def check_agents_written(run: Path) -> Result:
 def check_quotes_resolve(run: Path) -> Result:
     failures, count = [], 0
     for report, reader in READER_DIR.items():
-        seen = "\n".join(agent_saw(run, reader, quotable=("input_",)).values())
+        seen = agent_saw(run, reader, quotable=("input_",))
+        if seen is None:
+            failures.append(f"{report}: no agents/{reader} directory, so what the reader was "
+                            "handed is not on record")
+            continue
         for item in report_items(run / report):
             quote = item.get("quote")
             if not isinstance(quote, str) or not quote.strip():
                 continue
             count += 1
-            if fold(quote) not in seen:
-                failures.append(f"{report}:{item.get('id')}")
+            paragraph = paragraph_text(seen, str(item.get("paragraph_id")))
+            if paragraph is None:
+                failures.append(f"{report}:{item.get('id')}: paragraph {item.get('paragraph_id')} "
+                                "is not in the reader's input")
+            elif fold(quote) not in paragraph:
+                failures.append(f"{report}:{item.get('id')}: the quote is not in the paragraph "
+                                "it names")
     for name in ANALYSES:
         tree = load(run / name)
         if tree is None:
             continue
         seen = agent_saw(run, AGENT_DIR[name], quotable=QUOTABLE_FOR.get(name, QUOTABLE))
-        everything = "\n".join(seen.values())
+        if seen is None:
+            failures.append(f"{name}: no agents/{AGENT_DIR[name]} directory, so what the analyst "
+                            "was handed is not on record")
+            continue
+        everything = fold("\n".join(seen.values()))
         for where, node in quoted(tree):
             count += 1
             source = node.get("quote_from")
             if isinstance(source, str) and source not in seen:
                 failures.append(f"{name}:{where}: quote_from {source} is not a file it was handed")
-            elif fold(node["quote"]) not in (seen[source] if isinstance(source, str)
+            elif fold(node["quote"]) not in (fold(seen[source]) if isinstance(source, str)
                                              else everything):
                 failures.append(f"{name}:{where}")
     return Result("mechanical.quotes_resolve", run_name(run), FAIL if failures else PASS,
@@ -239,17 +318,27 @@ def check_nothing_after_cutoff(run: Path) -> Result:
     late = []
     for document in manifest.get("documents") or []:
         filed = document.get("filing_date")
-        if filed and dt.date.fromisoformat(filed) > cutoff:
-            late.append(f"document {document.get('accession')} filed {filed}")
-    calculator = load(run / "calculator.json") or {}
-    for filed in _dates_in(calculator, "filed"):
-        if dt.date.fromisoformat(filed[:10]) > cutoff:
-            late.append(f"calculator fact filed {filed}")
-    market = calculator.get("cost_of_capital") or {}
-    for key in ("price_date", "date", "window_last"):
-        for value in _dates_in(market, key):
-            if re.fullmatch(r"\d{4}-\d{2}-\d{2}", value) and dt.date.fromisoformat(value) > cutoff:
-                late.append(f"market {key} {value}")
+        through = document.get("rows_used_through")
+        if filed:
+            if dt.date.fromisoformat(filed) > cutoff:
+                late.append(f"document {document.get('accession')} filed {filed}")
+        elif through:
+            if dt.date.fromisoformat(through) > cutoff:
+                late.append(f"{document.get('role')} rows used through {through}")
+        else:
+            late.append(f"{document.get('role') or document.get('path')}: neither a filing "
+                        "date nor rows_used_through, so nothing holds it to the cutoff")
+    for path in sorted(run.glob("calculator*.json")):
+        calculator = load(path) or {}
+        for filed in _dates_in(calculator, "filed"):
+            if dt.date.fromisoformat(filed[:10]) > cutoff:
+                late.append(f"{path.name}: fact filed {filed}")
+        market = calculator.get("cost_of_capital") or {}
+        for key in ("price_date", "date", "window_last"):
+            for value in _dates_in(market, key):
+                if re.fullmatch(r"\d{4}-\d{2}-\d{2}", value) \
+                        and dt.date.fromisoformat(value) > cutoff:
+                    late.append(f"{path.name}: market {key} {value}")
     return Result("mechanical.nothing_after_cutoff", run_name(run), FAIL if late else PASS,
                   f"cutoff {cutoff}" + (f"; {len(late)} late" if late else ""), late)
 
@@ -391,10 +480,13 @@ def valuation_quotes_from_filings(run: Path) -> float | None:
         if tree is None:
             continue
         seen = agent_saw(run, AGENT_DIR[name])
-        everything = "\n".join(seen.values())
+        if seen is None:
+            continue
+        everything = fold("\n".join(seen.values()))
         for _, node in quoted(tree):
             total += 1
             source = node.get("quote_from")
-            text = seen.get(source) if isinstance(source, str) else everything
-            filings += bool(text) and fold(node["quote"]) in text
+            text = fold(seen[source]) if isinstance(source, str) and source in seen \
+                else everything
+            filings += fold(node["quote"]) in text
     return filings / total if total else None

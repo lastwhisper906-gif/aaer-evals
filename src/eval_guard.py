@@ -1,8 +1,10 @@
 """The CI guard on evals/: a pull request that touches the owner's graders, or the
 guard itself, needs the owner's label.
 
-Guarded: everything under `evals/`, and the files that decide whether the graders
-run -- this file and `.claude/hooks/guard_evals.py`. CI runs this file and the
+Guarded: everything under `evals/`; the files that decide whether the graders run
+(this file, `.claude/hooks/guard_evals.py`, `.claude/settings.json`); and the model
+grader's instructions and what it is shown (`.claude/agents/analysis-grader.md`,
+`src/grade_run.py`). CI runs this file and the
 graders from main's copies, never the branch's (`.github/workflows/ci.yml`).
 
 It passes when:
@@ -26,7 +28,8 @@ from pathlib import Path
 
 LABEL = "owner-approved-eval"
 SCOREBOARD = "evals/scoreboard.jsonl"
-GUARDED = ("evals/", "src/eval_guard.py", ".claude/hooks/guard_evals.py")
+GUARDED = ("evals/", "src/eval_guard.py", ".claude/hooks/guard_evals.py",
+           ".claude/agents/analysis-grader.md", "src/grade_run.py", ".claude/settings.json")
 
 
 def _git(*args: str) -> str:

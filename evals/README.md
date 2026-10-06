@@ -2,8 +2,10 @@
 
 This directory is the owner's. Claude reads it and never writes it. A pull request
 that touches it cannot merge without the label `owner-approved-eval`, which only the
-owner adds. Appending lines to `scoreboard.jsonl` is the one exception: `make eval`
-does that.
+owner adds. The same label guards the files that decide whether the graders run and
+what the model grader sees: `src/eval_guard.py`, `.claude/hooks/guard_evals.py`,
+`.claude/settings.json`, `.claude/agents/analysis-grader.md` and `src/grade_run.py`.
+Appending lines to `scoreboard.jsonl` is the one exception: `make eval` does that.
 
 The graders read **run directories** (`runs/<ticker>/<run>/`): what a run published,
 never how an agent got there. `tests/` keeps grading the code; `evals/` grades the
@@ -25,9 +27,10 @@ is always graded by the owner's current graders.
 |---|---|
 | files_present | the run published its manifest, the calculator files, the three analyses, both reader reports and the memo |
 | agents_written | every agent the manifest lists wrote its file, and no analysis failure is recorded |
-| quotes_resolve | every quote a report or an analysis kept is, character for character after the whitespace fold, in the files that agent was handed |
+| quotes_resolve | every quote a reader kept is in the paragraph its `paragraph_id` names, in that reader's own input; every quote an analysis kept is in the inputs that analyst was handed; both character for character after the whitespace fold. A `quote_from` naming a file the analyst was not handed fails, and so does a run with no record of what an agent was handed |
+| cited_items_exist | every evidence id an analysis cites is an item a reader report kept |
 | cited_numbers_exist | every `{path}` an analysis writes, and every `fields` entry, names a field of the calculator file that analyst saw |
-| nothing_after_cutoff | no input document, calculator fact or market date is after the run's cutoff |
+| nothing_after_cutoff | no input document is filed after the run's cutoff, no source without a filing date was read past it, and no fact or market date in any calculator file is after it |
 | calculator_finite | every numeric value in calculator.json is finite |
 | dcf_recomputes | each scenario's enterprise value and value a share, and the simple free cash flow, recompute from the run's own drivers with this file's own arithmetic |
 
@@ -53,9 +56,9 @@ an area that is simply absent fails it. How many areas were *answered* is capabi
 
 | grader | what it measures |
 |---|---|
-| coverage rates | the share of accounting areas and financial sections answered rather than dropped; value range computed; implied growth beside three- and five-year history |
+| coverage rates | the share of accounting areas and financial sections answered rather than dropped; value range computed; implied growth beside three- and five-year history; the share of the valuation analyst's quotes that stand on a filing or a reader report rather than on another analyst's words |
 | golden.py | **Against approved golden cases: found, missed and extra.** An item counts as found when an anomaly in the case's frame reaches one of its filing paragraphs, or uses every word of one of its keywords. The score per run is (found − extra) ÷ must_find. |
-| rubric.md + analysis-grader | Opus reads one run and the rubric and writes `grade.json`. Dealbreakers score zero; other items are weighted by severity. The score is reported and never gated until grader agreement passes the owner's floor. |
+| rubric.md + analysis-grader | Opus reads one run and the rubric and writes `grade.json`. Dealbreakers score zero; other items are weighted by severity. `make eval` recomputes the score from the grader's own items with the rubric's formula and says where the grader's number differs. The score is reported and never gated until grader agreement passes the owner's floor. |
 | grader_agreement.py | on golden filings, how often the analysis-grader's verdict on an anomaly matches the owner's case |
 | consistency.py | golden filings run three times: overlap of the anomaly sets and spread of the value range (pass^k) |
 | outcomes.py | runs at least 60 trading days old: anomalies by frame, events after the cutoff, and the abnormal return when a price series is committed; younger runs are "pending" |

@@ -39,7 +39,9 @@ class GradeError(RuntimeError):
 
 def grader_sees(run: Path) -> list[Path]:
     files = [run / name for name in SEES if (run / name).is_file()]
-    files += sorted(p for p in run.glob("input_*.md") if p.is_file())
+    # every committed input, the numbers and trends files included: a numbers-reader
+    # quote comes from those, and the rubric asks the grader to follow it there
+    files += sorted(p for p in run.glob("input_*") if p.is_file() and p.name not in SEES)
     return files
 
 

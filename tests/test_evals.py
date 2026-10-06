@@ -20,6 +20,12 @@ from evals.regression import coverage, mechanical
 
 REPO = Path(__file__).resolve().parent.parent
 CLEAN = REPO / "runs" / "CSCO" / "0000858877-26-000078"
+# Read off the published run by hand: the accounting anomaly
+# earnings_versus_cash_operating_cash_flow_falls_while_net_income_rises cites the
+# reader item liquidity_and_capital_operating_cash_flow_nine_months, whose
+# paragraph_id in report_numbers.md is the nine-month operating cash flow fact.
+NINE_MONTH_CASH_FLOW = ("0000858877-26-000078:facts:NetCashProvidedByUsedInOperatingActivities:"
+                        "2025-07-27..2026-04-25")
 
 
 @pytest.fixture
@@ -56,6 +62,42 @@ def test_an_altered_quote_fails_quotes_resolve(run):
     _edit(run / "analysis_valuation.json",
           lambda d: d["most_sensitive"][0].update(quote="a sentence no filing printed"))
     assert _status(mechanical.grade(run), "mechanical.quotes_resolve") == FAIL
+
+
+def test_a_reader_quote_attached_to_the_wrong_paragraph_fails_quotes_resolve(run):
+    """The quote still exists in the input, under another id; the check holds it
+    to the paragraph the item names."""
+    report = run / "report_numbers.md"
+    text = report.read_text(encoding="utf-8")
+    assert NINE_MONTH_CASH_FLOW in text
+    report.write_text(text.replace(NINE_MONTH_CASH_FLOW,
+                                   "0000858877-26-000078:facts:EntityPublicFloat:2025-01-24", 1),
+                      encoding="utf-8")
+    result = _status(mechanical.grade(run), "mechanical.quotes_resolve")
+    assert result == FAIL
+
+
+def test_a_run_with_no_record_of_what_an_agent_saw_fails_quotes_resolve(run):
+    shutil.rmtree(run / "agents" / "numbers-reader")
+    assert _status(mechanical.grade(run), "mechanical.quotes_resolve") == FAIL
+
+
+def test_a_source_read_past_the_cutoff_fails_nothing_after_cutoff(run):
+    def late(d):
+        for doc in d["documents"]:
+            if doc.get("rows_used_through"):
+                doc["rows_used_through"] = "2099-01-01"
+    _edit(run / "input_manifest.json", late)
+    assert _status(mechanical.grade(run), "mechanical.nothing_after_cutoff") == FAIL
+
+
+def test_a_late_fact_in_a_calculator_stage_file_fails_nothing_after_cutoff(run):
+    path = run / "calculator_filings_only.json"
+    text = path.read_text(encoding="utf-8")
+    data = json.loads(text)
+    data["terms"]["balances_now"]["assets"]["filed"] = "2099-01-01"
+    path.write_text(json.dumps(data), encoding="utf-8")
+    assert _status(mechanical.grade(run), "mechanical.nothing_after_cutoff") == FAIL
 
 
 def test_a_path_the_calculator_lacks_fails_cited_numbers_exist(run):
@@ -186,14 +228,19 @@ def test_the_case_format_reads_the_template_and_refuses_what_it_cannot_read():
 
 
 def test_golden_credits_a_filing_paragraph_reached_through_a_reader_item():
-    """CSCO's earnings-versus-cash anomaly cites reader items; one of them quotes the
-    filing paragraph named here, so the item is found without any keyword."""
-    anomalies = golden.anomalies(CLEAN, "accounting")
-    reached = set().union(*(a["paragraphs"] for a in anomalies))
-    paragraph = sorted(p for p in reached if p.startswith("0000858877-26-000078:"))[0]
-    case = dict(CASE, must_find=[{"what": "by paragraph", "paragraph_ids": [paragraph]}],
+    case = dict(CASE, must_find=[{"what": "by paragraph", "paragraph_ids": [NINE_MONTH_CASH_FLOW]}],
                 must_not_claim=[])
     assert golden.score_run(case, CLEAN)["score"] == pytest.approx(1.0)
+    # a paragraph no reader item cites reaches nothing
+    case = dict(case, must_find=[{"what": "x", "paragraph_ids": ["0000858877-26-000078:notes:1"]}])
+    assert golden.score_run(case, CLEAN)["score"] == pytest.approx(0.0)
+
+
+def test_golden_keywords_are_whole_words():
+    anomaly = {"id": "a", "name": "an improbable shortfall to resell", "what": ""}
+    for word in ("probable", "falls", "sell"):
+        assert not golden.matches(anomaly, {"keywords": [word]}), word
+    assert golden.matches(anomaly, {"keywords": ["improbable resell"]})
 
 
 def test_golden_credits_nothing_to_evidence_that_resolves_to_no_reader_item():
@@ -270,5 +317,53 @@ def test_the_grader_score_is_recomputed_from_its_items():
              "score": 0.9}
     out = rubric_score.check(grade)
     assert out["score"] == pytest.approx(4 / 6) and out["agrees"] is False
-    grade["dealbreakers"] = [{"id": "a", "kind": "number_not_from_calculator"}]
+    grade["dealbreakers"] = [{"kind": "number_not_from_calculator", "id": "a",
+                              "where": "anomalies[0].what", "why": "a bare figure"}]
     assert rubric_score.recompute(grade) == pytest.approx(1 / 6)
+    # a whole-run dealbreaker with no id strikes no item
+    grade["dealbreakers"] = [{"kind": "post_cutoff_fact", "id": None, "where": "memo", "why": "x"}]
+    assert rubric_score.recompute(grade) == pytest.approx(4 / 6)
+
+
+# --- the eval runner: exit status, floors, the scoreboard and --quick ----------------------
+
+from evals import __main__ as runner  # noqa: E402
+
+
+def _isolated(monkeypatch, tmp_path, runs):
+    monkeypatch.setattr(runner, "SCOREBOARD", tmp_path / "scoreboard.jsonl")
+    monkeypatch.setattr(runner, "THRESHOLDS", tmp_path / "thresholds.json")
+    monkeypatch.setattr(runner, "find_runs", lambda paths=None: runs)
+    monkeypatch.setattr(runner, "changed_runs", lambda base="origin/main": runs)
+
+
+def test_make_eval_exits_zero_on_the_clean_run_and_appends_one_scoreboard_line(run, monkeypatch, tmp_path):
+    _isolated(monkeypatch, tmp_path, [run])
+    assert runner.main([]) == 0
+    assert runner.main([]) == 0
+    lines = (tmp_path / "scoreboard.jsonl").read_text().splitlines()
+    assert len(lines) == 2
+    assert json.loads(lines[0])["regression"]["fail"] == 0
+
+
+def test_make_eval_exits_one_on_a_regression_failure(run, monkeypatch, tmp_path):
+    _isolated(monkeypatch, tmp_path, [run])
+    (run / "memo_ko.md").unlink()
+    assert runner.main(["--no-scoreboard"]) == 1
+
+
+def test_make_eval_exits_one_below_a_floor_the_owner_set(run, monkeypatch, tmp_path):
+    _isolated(monkeypatch, tmp_path, [run])
+    (tmp_path / "thresholds.json").write_text(json.dumps(
+        {"capability": {"coverage.accounting_areas_answered": 1.01}}))
+    assert runner.main(["--no-scoreboard"]) == 1
+    (tmp_path / "thresholds.json").write_text("{}")
+    assert runner.main(["--no-scoreboard"]) == 0
+
+
+def test_eval_quick_grades_only_the_changed_runs_and_writes_no_scoreboard(run, monkeypatch, tmp_path):
+    _isolated(monkeypatch, tmp_path, [run])
+    assert runner.main(["--quick"]) == 0
+    assert not (tmp_path / "scoreboard.jsonl").exists()
+    monkeypatch.setattr(runner, "changed_runs", lambda base="origin/main": [])
+    assert runner.main(["--quick"]) == 0

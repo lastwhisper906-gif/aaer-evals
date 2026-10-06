@@ -20,6 +20,7 @@ analysis_valuation.json. Drafts are never counted.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from evals.common import REPO, find_runs, load, run_name
@@ -77,7 +78,8 @@ def matches(anomaly: dict, rule: dict) -> bool:
     text = _text(anomaly)
     for entry in rule.get("keywords") or []:
         words = [w for w in str(entry).lower().split() if w]
-        if words and all(w in text for w in words):
+        if words and all(re.search(r"(?<![a-z0-9])" + re.escape(w) + r"(?![a-z0-9])", text)
+                         for w in words):
             return True
     return False
 
