@@ -67,10 +67,12 @@ import sys
 from pathlib import Path
 
 try:
-    from src import agent_inputs, cutoff_guard, exchange_calendar, interpreter_pin, market
+    from src import (agent_inputs, cutoff_guard, exchange_calendar, interpreter_pin, market,
+                     quote_gate)
 except ImportError:  # invoked as a plain script: python3.12 src/market_labels.py
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from src import agent_inputs, cutoff_guard, exchange_calendar, interpreter_pin, market
+    from src import (agent_inputs, cutoff_guard, exchange_calendar, interpreter_pin, market,
+                     quote_gate)
 
 BAD_INPUT = 2
 
@@ -200,7 +202,10 @@ def windows(table: dict, *, run_cutoff: str | None = None) -> list[dict]:
     EDGAR's next business day, which skips the federal holidays; the table's
     cutoff is day two of the latest window; no row lies past it; and every row
     is a trading day. A window with no acceptance stamp cannot say its day zero
-    and is refused.
+    and is refused. The table carries a window of kind `filing`, or nothing ties
+    it to the run's filing and it is refused; and every window's kind is one
+    `market.WINDOW_KINDS` names, or it is refused, because a kind the market
+    module never writes is a window nobody defined.
 
     `market.reaction_day_zero` and `market.filing_dates_for` are not used here,
     on purpose. The first walks the calendar it is handed, and the only one a
@@ -239,8 +244,17 @@ def windows(table: dict, *, run_cutoff: str | None = None) -> list[dict]:
             raise MarketLabelError(
                 f"the market table's row {day} is not a trading day on the exchange calendar")
     on_record = set(dates)
+    recorded_windows = [w for w in table.get("windows") or [] if isinstance(w, dict)]
+    for window in recorded_windows:
+        if window.get("kind") not in market.WINDOW_KINDS:
+            raise MarketLabelError(
+                f"the window kind {window.get('kind')!r} is not one the market module "
+                f"writes: {', '.join(market.WINDOW_KINDS)}")
+    if not any(window.get("kind") == "filing" for window in recorded_windows):
+        raise MarketLabelError(
+            "the table has no filing window, so nothing ties it to the run's filing")
     latest_day_two = None
-    for window in table.get("windows") or []:
+    for window in recorded_windows:
         kind, days = window.get("kind"), [str(d) for d in window.get("days") or []]
         if not days:
             raise MarketLabelError(f"the {kind} window names no days")
@@ -311,7 +325,14 @@ def windows(table: dict, *, run_cutoff: str | None = None) -> list[dict]:
 
 def item_labels(item: dict, report: str, recorded: list[dict], *,
                 band: float = NEAR_ZERO_BAND) -> dict:
-    """One reader item, labelled once per window, or once for having none."""
+    """One reader item, labelled once per window, or once for having none.
+
+    The item is named by the quote gate's own `item_id`, so what this cites is
+    what the gate held to the name rule and nothing else; an item the gate
+    finds no id on is not one this labels, and is refused here."""
+    identifier = quote_gate.item_id(item)
+    if identifier is None:
+        raise MarketLabelError("an item with no id reached the labeller; nothing can cite it")
     direction = item.get("expected_direction")
     if recorded:
         labelled = []
@@ -323,37 +344,50 @@ def item_labels(item: dict, report: str, recorded: list[dict], *,
     else:
         labelled = [{"window": None, "abnormal_return": None, "label": NOT_PRICED,
                      "reason": "the market table records no reaction window"}]
-    return {"id": f"{item['id']}{VERSUS_MARKET}", "upstream_item_id": item["id"],
+    return {"id": f"{identifier}{VERSUS_MARKET}", "upstream_item_id": identifier,
             "report": report, "expected_direction": direction, "labels": labelled}
 
 
+DROPPED_NO_ID = "dropped by the quote gate, which found no id on it; nothing cites it"
+DROPPED = "dropped by the quote gate; nothing cites it"
+NO_ID = "the item carries no id to cite"
+
+
 def labels(reports: dict[str, list[dict]], table: dict, *,
-           band: float = NEAR_ZERO_BAND, dropped: set[str] | None = None,
+           band: float = NEAR_ZERO_BAND,
+           dropped: set[tuple[str, str | None]] | None = None,
            run_cutoff: str | None = None) -> dict:
     """The labels document for one run, from its reader items and its market table.
 
-    `dropped` is the quote gate's drop list (`input_manifest.json`, `dropped_items`):
-    an item the gate dropped keeps its place in a list block of the run-root report,
-    so it is read here and set aside by id, never labelled, because a label cites
-    the item and nothing downstream may cite an item that failed its quote.
+    `dropped` is the quote gate's drop list (`input_manifest.json`, `dropped_items`)
+    as pairs of (report, item id), the way the gate records each drop; the id is
+    None for an item the gate found no id on, and that pair counts too. An item
+    the gate dropped keeps its place in a list block of the run-root report, so it
+    is read here and set aside by its report and id, never labelled, because a
+    label cites the item and nothing downstream may cite an item that failed its
+    quote. Items are named by the gate's own `item_id`, so an id that is blank
+    after stripping is no id here either. `gate_dropped` is the count of the drop
+    list, so what the gate set aside is counted beside what was labelled.
     """
     if not isinstance(table, dict):
         raise MarketLabelError("the market table is not an object")
+    dropped = set(dropped or ())
     recorded = windows(table, run_cutoff=run_cutoff)
     items, unlabelled = [], []
     for report in READER_REPORTS:
         for item in reports.get(report) or []:
-            if not (isinstance(item.get("id"), str) and item["id"]):
-                unlabelled.append({"report": report,
-                                   "reason": "the item carries no id to cite"})
-            elif item["id"] in (dropped or set()):
-                unlabelled.append({"report": report, "id": item["id"],
-                                   "reason": "dropped by the quote gate; nothing cites it"})
+            identifier = quote_gate.item_id(item)
+            if identifier is None:
+                unlabelled.append({"report": report, "reason": (
+                    DROPPED_NO_ID if (report, None) in dropped else NO_ID)})
+            elif (report, identifier) in dropped:
+                unlabelled.append({"report": report, "id": identifier, "reason": DROPPED})
             else:
                 items.append(item_labels(item, report, recorded, band=band))
     return {"ticker": table.get("ticker"), "cutoff": table.get("cutoff"),
             "near_zero_band": band, "near_zero_band_source": NEAR_ZERO_BAND_SOURCE,
-            "windows": recorded, "items": items, "not_labelled": unlabelled}
+            "windows": recorded, "items": items, "not_labelled": unlabelled,
+            "gate_dropped": len(dropped)}
 
 
 # --- the run directory ---------------------------------------------------------
@@ -363,6 +397,88 @@ def _load(run: Path, name: str) -> str:
         return cutoff_guard.load_bundle_file(run, name)
     except cutoff_guard.CutoffGuardError as exc:
         raise MarketLabelError(str(exc)) from exc
+
+
+def gate_record(run: Path) -> tuple[dict, set[tuple[str, str | None]]]:
+    """The manifest and the quote gate's drop list as (report, item id) pairs.
+
+    The gate writes each drop with its `report` and its `item_id`, which is None
+    for an item it found no id on; that row is kept, as (report, None), and never
+    thrown away. A run with no manifest, a manifest with no `dropped_items` list,
+    or a drop row that names no report, has no usable record that the gate ran,
+    and is refused.
+    """
+    manifest_path = Path(run) / MANIFEST
+    if not manifest_path.is_file():
+        raise MarketLabelError(NO_GATE_RECORD.format(what=f"the run holds no {MANIFEST}"))
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except ValueError as exc:
+        raise MarketLabelError(f"{MANIFEST} does not read as JSON: {exc}") from exc
+    if not isinstance(manifest, dict) or not isinstance(manifest.get("dropped_items"), list):
+        raise MarketLabelError(NO_GATE_RECORD.format(
+            what=f"{MANIFEST} carries no dropped_items list"))
+    dropped = set()
+    for row in manifest["dropped_items"]:
+        if not isinstance(row, dict) or not isinstance(row.get("report"), str):
+            raise MarketLabelError(
+                f"{MANIFEST}: a dropped_items row names no report, so it cannot be "
+                f"matched to the item it set aside: {row!r}")
+        identifier = row.get("item_id")
+        dropped.add((row["report"], identifier if isinstance(identifier, str) else None))
+    return manifest, dropped
+
+
+def check(run) -> dict:
+    """`market_labels.json` re-checked after it is written: every label cites a standing item.
+
+    The gate's own re-check does not cover the labels file, so this does: for
+    every entry under `items`, the report it names is a reader report, the
+    `upstream_item_id` is the gate's `item_id` of an item in the run-root copy
+    of that report that the drop list does not name, and the entry's own id is
+    that id with `_versus_market`. The first entry that fails is named with the
+    rest, and the run is refused. Returns `{"checked": True, "items": n}`, or
+    `{"checked": False, "reason": ...}` for a run with no market table and so
+    no labels file; a run with a table and no labels file is refused.
+    """
+    run = Path(run)
+    target = run / LABELS_FILE
+    if not target.is_file():
+        if not (run / MARKET_TABLE).is_file():
+            return {"checked": False, "reason": NO_MARKET_TABLE}
+        raise MarketLabelError(f"the run holds {MARKET_TABLE} and no {LABELS_FILE}; "
+                               "nothing was written to check")
+    try:
+        document = json.loads(target.read_text(encoding="utf-8"))
+    except ValueError as exc:
+        raise MarketLabelError(f"{LABELS_FILE} does not read as JSON: {exc}") from exc
+    if not isinstance(document, dict) or not isinstance(document.get("items"), list):
+        raise MarketLabelError(f"{LABELS_FILE} carries no items list")
+    _, dropped = gate_record(run)
+    standing = {}
+    for report in READER_REPORTS:
+        named = {quote_gate.item_id(item) for item in report_items(_load(run, report))}
+        standing[report] = {one for one in named if one is not None
+                            and (report, one) not in dropped}
+    problems = []
+    for entry in document["items"]:
+        if not isinstance(entry, dict):
+            problems.append(f"{entry!r} is not a label entry")
+            continue
+        label_id, report = entry.get("id"), entry.get("report")
+        upstream = entry.get("upstream_item_id")
+        if report not in standing:
+            problems.append(f"{label_id}: names {report!r}, which is not a reader report")
+        elif upstream not in standing[report]:
+            problems.append(f"{label_id}: cites {upstream!r}, which is not a standing "
+                            f"item of {report}")
+        elif label_id != f"{upstream}{VERSUS_MARKET}":
+            problems.append(f"{label_id}: is not named {upstream}{VERSUS_MARKET} after "
+                            "the item it cites")
+    if problems:
+        raise MarketLabelError(
+            f"{LABELS_FILE} cites what does not stand ({len(problems)}): " + "; ".join(problems))
+    return {"checked": True, "items": len(document["items"])}
 
 
 def write(run) -> dict:
@@ -390,18 +506,7 @@ def write(run) -> dict:
     except ValueError as exc:
         raise MarketLabelError(f"{MARKET_TABLE} does not read as JSON: {exc}") from exc
     reports = {name: report_items(_load(run, name)) for name in READER_REPORTS}
-    manifest_path = run / MANIFEST
-    if not manifest_path.is_file():
-        raise MarketLabelError(NO_GATE_RECORD.format(what=f"the run holds no {MANIFEST}"))
-    try:
-        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    except ValueError as exc:
-        raise MarketLabelError(f"{MANIFEST} does not read as JSON: {exc}") from exc
-    if not isinstance(manifest, dict) or not isinstance(manifest.get("dropped_items"), list):
-        raise MarketLabelError(NO_GATE_RECORD.format(
-            what=f"{MANIFEST} carries no dropped_items list"))
-    dropped = {row.get("item_id") for row in manifest["dropped_items"]
-               if isinstance(row, dict) and row.get("item_id")}
+    manifest, dropped = gate_record(run)
     document = labels(reports, table, dropped=dropped, run_cutoff=manifest.get("cutoff"))
     text = json.dumps(document, indent=2, sort_keys=True) + "\n"
     target = run / LABELS_FILE

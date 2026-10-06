@@ -332,8 +332,11 @@ def run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: s
         return finish(run, agents, stages, "a reader failed twice", model)
     stages["quote_gate"] = {"dropped": len(gate_readers(run).get("dropped", []))}
     # the market labels: Python, on the gated reports; with no market table the
-    # record says so and nothing is written
+    # record says so and nothing is written. The file is re-checked as soon as
+    # it is written: every label cites an item standing in its own report.
     stages["market_labels"] = market_labels.write(run)
+    if stages["market_labels"]["written"]:
+        stages["market_labels_check"] = market_labels.check(run)
 
     # calculate, then the two analysts, never merged, on the view with no price
     base = calculate(BEFORE_ANALYSTS)

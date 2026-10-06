@@ -196,10 +196,14 @@ def test_each_window_is_labelled_on_its_own():
 
 # --- no window, no direction ---------------------------------------------------
 
-def test_a_table_with_no_window_labels_every_item_not_priced():
+def test_a_table_with_no_window_is_refused_and_an_item_with_none_is_not_priced():
+    """A table with no filing window ties nothing to the run's filing and is
+    refused. An item handed no window at all -- the case `item_labels` keeps for
+    itself -- is not priced, with the reason."""
     found = {"ticker": "ZZZZ", "cutoff": None, "windows": [], "rows": []}
-    document = labelled_numbers(found, item(UP, "up"))
-    entry = document["items"][0]
+    with pytest.raises(MarketLabelError, match="no filing window"):
+        labelled_numbers(found, item(UP, "up"))
+    entry = market_labels.item_labels(item(UP, "up"), "report_numbers.md", [])
     assert entry["labels"] == [{"window": None, "abnormal_return": None,
                                 "label": "not_priced",
                                 "reason": "the market table records no reaction window"}]
@@ -364,11 +368,17 @@ def test_the_command_reports_a_run_it_cannot_label(tmp_path, capsys):
 # --- the gate's drop list, and the run's own cutoff ------------------------------------
 
 def test_an_item_the_quote_gate_dropped_is_set_aside_not_labelled():
-    document = market_labels.labels({"report_numbers.md": [item(UP, "up"), item("gone", "up")]},
-                                    rose(), dropped={"gone"})
+    """A drop is matched by (report, id), as the gate records it: `gone` dropped from
+    the numbers report is set aside; the same id dropped from the notes report is
+    a different item, and `gone` in the numbers report then stands."""
+    reports = {"report_numbers.md": [item(UP, "up"), item("gone", "up")]}
+    document = market_labels.labels(reports, rose(), dropped={("report_numbers.md", "gone")})
     assert [one["upstream_item_id"] for one in document["items"]] == [UP]
     assert document["not_labelled"] == [{"report": "report_numbers.md", "id": "gone",
                                          "reason": "dropped by the quote gate; nothing cites it"}]
+    assert document["gate_dropped"] == 1
+    other = market_labels.labels(reports, rose(), dropped={("report_notes_text.md", "gone")})
+    assert [one["upstream_item_id"] for one in other["items"]] == [UP, "gone"]
 
 
 def test_a_table_with_no_cutoff_is_refused():
@@ -552,8 +562,108 @@ def test_a_run_with_no_manifest_is_refused_and_the_command_says_so(tmp_path, cap
 def test_a_dropped_item_in_the_manifest_is_set_aside_by_write(tmp_path):
     run = plant(tmp_path, market=rose(),
                 manifest={"cutoff": "2026-05-08",
-                          "dropped_items": [{"item_id": DOWN, "reason": "quote not found"}]})
+                          "dropped_items": [{"report": "report_notes_text.md", "item_id": DOWN,
+                                             "reason": "quote not found"}]})
     assert market_labels.write(run)["items"] == 1
     written = json.loads((run / "market_labels.json").read_text(encoding="utf-8"))
     assert [one["upstream_item_id"] for one in written["items"]] == [UP]
     assert written["not_labelled"][0]["id"] == DOWN
+    assert written["gate_dropped"] == 1
+    assert market_labels.check(run) == {"checked": True, "items": 1}
+
+
+def test_a_drop_row_that_names_no_report_is_refused(tmp_path):
+    run = plant(tmp_path, market=rose(),
+                manifest={"cutoff": "2026-05-08",
+                          "dropped_items": [{"item_id": DOWN, "reason": "quote not found"}]})
+    with pytest.raises(MarketLabelError, match="names no report"):
+        market_labels.write(run)
+
+
+# --- a blank id is no id, and a drop with no id is still a drop ---------------------------
+
+def test_an_item_whose_id_is_blank_is_the_gates_drop_and_never_cited(tmp_path):
+    """The gate's `item_id` strips, so an id of two spaces is none; the gate drops
+    that item with `item_id: null` and its report. The run-root copy still holds
+    it, and it is set aside, counted, and never an `upstream_item_id`."""
+    run = plant(tmp_path, market=rose(),
+                manifest={"cutoff": "2026-05-08",
+                          "dropped_items": [{"report": "report_numbers.md", "item_id": None,
+                                             "reason": "the item carries no id"}]})
+    (run / "report_numbers.md").write_text(fenced(item(UP, "up"), item("  ", "up")),
+                                           encoding="utf-8")
+    assert market_labels.write(run)["items"] == 2
+    written = json.loads((run / "market_labels.json").read_text(encoding="utf-8"))
+    assert [one["upstream_item_id"] for one in written["items"]] == [UP, DOWN]
+    assert "  " not in [one["upstream_item_id"] for one in written["items"]]
+    assert written["not_labelled"] == [{"report": "report_numbers.md",
+                                        "reason": market_labels.DROPPED_NO_ID}]
+    assert written["gate_dropped"] == 1
+    assert market_labels.check(run) == {"checked": True, "items": 2}
+
+
+def test_an_item_with_a_blank_id_the_gate_did_not_record_is_still_not_cited():
+    document = market_labels.labels({"report_numbers.md": [item("  ", "up"), item(UP, "up")]},
+                                    rose())
+    assert [one["upstream_item_id"] for one in document["items"]] == [UP]
+    assert document["not_labelled"] == [{"report": "report_numbers.md",
+                                         "reason": market_labels.NO_ID}]
+
+
+# --- the labels file is re-checked after it is written ------------------------------------
+
+def test_a_labels_file_citing_standing_items_passes_the_check(tmp_path):
+    run = plant(tmp_path, market=rose())
+    market_labels.write(run)
+    assert market_labels.check(run) == {"checked": True, "items": 2}
+
+
+def test_a_labels_file_citing_a_dropped_item_fails_the_check(tmp_path):
+    """Written clean, then the drop list grows to name DOWN: the file on record now
+    cites an item that does not stand, and the check names the label."""
+    run = plant(tmp_path, market=rose())
+    market_labels.write(run)
+    (run / "input_manifest.json").write_text(json.dumps(
+        {"cutoff": "2026-05-08",
+         "dropped_items": [{"report": "report_notes_text.md", "item_id": DOWN,
+                            "reason": "quote not found"}]}), encoding="utf-8")
+    with pytest.raises(MarketLabelError, match=f"{DOWN}_versus_market: cites") as caught:
+        market_labels.check(run)
+    assert "not a standing item of report_notes_text.md" in str(caught.value)
+
+
+def test_a_labels_file_citing_an_id_from_the_other_report_fails_the_check(tmp_path):
+    """UP stands in the numbers report; a label that says it is the notes report's
+    cites an item that report does not hold."""
+    run = plant(tmp_path, market=rose())
+    market_labels.write(run)
+    document = json.loads((run / "market_labels.json").read_text(encoding="utf-8"))
+    entry = next(one for one in document["items"] if one["upstream_item_id"] == UP)
+    entry["report"] = "report_notes_text.md"
+    (run / "market_labels.json").write_text(json.dumps(document), encoding="utf-8")
+    with pytest.raises(MarketLabelError, match=f"{UP}_versus_market: cites '{UP}'"):
+        market_labels.check(run)
+
+
+def test_the_check_refuses_a_table_with_no_labels_and_passes_a_run_with_no_table(tmp_path):
+    with_table = plant(tmp_path / "table", market=rose())
+    with pytest.raises(MarketLabelError, match="no market_labels.json"):
+        market_labels.check(with_table)
+    without = plant(tmp_path / "none", market=None)
+    assert market_labels.check(without)["checked"] is False
+
+
+# --- a filing window, and known kinds ----------------------------------------------------
+
+def test_a_table_with_only_an_earnings_release_window_is_refused():
+    found = table(("earnings_release", EARNINGS_DAYS, [-0.02, 0.0, 0.0], -0.02,
+                   NO_SHORT_INTEREST))
+    with pytest.raises(MarketLabelError, match="no filing window"):
+        market_labels.labels({"report_numbers.md": []}, found, run_cutoff="2026-05-08")
+
+
+def test_a_window_of_a_kind_the_market_module_never_writes_is_refused():
+    found = table(("filling", FILING_DAYS, [0.02, 0.0, 0.01], 0.03, NO_SHORT_INTEREST))
+    with pytest.raises(MarketLabelError, match="'filling' is not one the market module writes"):
+        market_labels.labels({"report_numbers.md": []}, found)
+    market_labels.labels({"report_numbers.md": []}, rose())   # the usual table stands
