@@ -19,8 +19,9 @@ Each check reads files a run published and nothing about how they were made:
   was filed after it, and no date written anywhere in any calculator file -- a
   fact's filing, a price, a window, a period -- is after it, and a market table
   holds exactly reaction days zero to two of each window, read off the window's
-  acceptance stamp, with nothing past day two of the latest. The documents' rule
-  is CLAUDE.md's, dates only; the market table's is `docs/HOW_WE_WORK.md` §4's.
+  acceptance stamp on the exchange calendar, with nothing past day two of the
+  latest. The documents' rule is CLAUDE.md's, dates only; the market table's is
+  `docs/HOW_WE_WORK.md` §4's.
 - `calculator_finite`: every numeric value in calculator.json is finite.
 - `dcf_recomputes`: every scenario's enterprise value and value per share, and the
   simple free cash flow, recompute from the run's own drivers with this file's own
@@ -342,7 +343,9 @@ def check_quotes_resolve(run: Path) -> Result:
 
 def check_cited_items_exist(run: Path) -> Result:
     """Every evidence id an analysis cites is an item a reader report kept."""
-    kept = {item.get("id") for report in READER_DIR for item in report_items(run / report)}
+    # an item with no id is kept by nobody: a citation of null resolves to nothing
+    kept = {item["id"] for report in READER_DIR for item in report_items(run / report)
+            if isinstance(item.get("id"), str)}
     failures, count = [], 0
     for name in ("analysis_accounting.json", "analysis_financial.json", "analysis_valuation.json"):
         tree = load(run / name) or {}
@@ -433,14 +436,15 @@ def check_nothing_after_cutoff(run: Path) -> Result:
         else:
             late.append(f"{document.get('role') or document.get('path')}: neither a filing "
                         "date nor rows_used_through, so nothing holds it to the cutoff")
-    for path in sorted(run.glob("calculator*.json")):
+    # every calculator file: the run's own and the copies the agents were handed
+    for path in sorted(run.glob("calculator*.json")) + sorted(run.glob("agents/*/calculator*.json")):
         for where, value in walk_strings(load(path) or {}):
             match = ISO_DATE.fullmatch(value)
             if not match:
                 continue
             for text in (match.group(1), match.group(2)):
                 if text and dt.date.fromisoformat(text) > cutoff:
-                    late.append(f"{path.name}: {where} = {value}")
+                    late.append(f"{path.relative_to(run)}: {where} = {value}")
     # the inputs themselves, as the run holds them and as each agent was handed
     # them: every row's own filing date, read rather than trusted to the manifest
     inputs = sorted(run.glob("input_*.json")) + sorted(run.glob("agents/*/input_*.json"))
@@ -463,10 +467,104 @@ def check_nothing_after_cutoff(run: Path) -> Result:
 
 
 # --- the market table: reaction days zero to two, and nothing past them ----------------
+#
+# The exchange calendar, by rule, so the grader does not read the table's rows as
+# the calendar the table is checked against (a table missing a row would then pass
+# one trading day late). The New York Stock Exchange closes on weekends and on the
+# holidays below; closures outside the rules are listed by hand, and the owner
+# extends that list. EDGAR's business days are the federal holidays, which differ
+# from the exchange's on three days a year.
 
 EASTERN = ZoneInfo("America/New_York")
 MARKET_CLOSE = dt.time(16, 0)
 EDGAR_CLOSE = dt.time(17, 30)
+# days the exchange closed outside its holiday rules: national days of mourning
+SPECIAL_CLOSURES = frozenset({dt.date(2018, 12, 5), dt.date(2025, 1, 9)})
+
+
+def _nth_weekday(year: int, month: int, weekday: int, n: int) -> dt.date:
+    first = dt.date(year, month, 1)
+    return first + dt.timedelta(days=(weekday - first.weekday()) % 7 + 7 * (n - 1))
+
+
+def _last_weekday(year: int, month: int, weekday: int) -> dt.date:
+    last = (dt.date(year, month, 28) + dt.timedelta(days=4)).replace(day=1) - dt.timedelta(days=1)
+    return last - dt.timedelta(days=(last.weekday() - weekday) % 7)
+
+
+def _easter(year: int) -> dt.date:
+    """Gregorian Easter Sunday (the anonymous algorithm); 2026-04-05 by hand."""
+    a, b, c = year % 19, year // 100, year % 100
+    d, e, f = b // 4, b % 4, (b + 8) // 25
+    g = (b - f + 1) // 3
+    h = (19 * a + b - d - g + 15) % 30
+    i, k = c // 4, c % 4
+    ll = (32 + 2 * e + 2 * i - h - k) % 7
+    m = (a + 11 * h + 22 * ll) // 451
+    month = (h + ll - 7 * m + 114) // 31
+    day = (h + ll - 7 * m + 114) % 31 + 1
+    return dt.date(year, month, day)
+
+
+def _observed(day: dt.date) -> dt.date:
+    """A fixed-date holiday on a Saturday is observed the Friday before, on a
+    Sunday the Monday after."""
+    if day.weekday() == 5:
+        return day - dt.timedelta(days=1)
+    if day.weekday() == 6:
+        return day + dt.timedelta(days=1)
+    return day
+
+
+def _shared_holidays(year: int) -> set[dt.date]:
+    out = set()
+    new_year = dt.date(year, 1, 1)
+    if new_year.weekday() == 6:
+        out.add(new_year + dt.timedelta(days=1))
+    elif new_year.weekday() < 5:
+        out.add(new_year)      # on a Saturday it is not observed on the Friday
+    out.add(_nth_weekday(year, 1, 0, 3))        # Martin Luther King Jr. Day
+    out.add(_nth_weekday(year, 2, 0, 3))        # Presidents' Day
+    out.add(_last_weekday(year, 5, 0))          # Memorial Day
+    if year >= 2022:
+        out.add(_observed(dt.date(year, 6, 19)))    # Juneteenth
+    out.add(_observed(dt.date(year, 7, 4)))     # Independence Day
+    out.add(_nth_weekday(year, 9, 0, 1))        # Labor Day
+    out.add(_nth_weekday(year, 11, 3, 4))       # Thanksgiving
+    out.add(_observed(dt.date(year, 12, 25)))   # Christmas
+    return out
+
+
+def exchange_holidays(year: int) -> set[dt.date]:
+    return _shared_holidays(year) | {_easter(year) - dt.timedelta(days=2)}   # Good Friday
+
+
+def federal_holidays(year: int) -> set[dt.date]:
+    return _shared_holidays(year) | {_nth_weekday(year, 10, 0, 2),          # Columbus Day
+                                     _observed(dt.date(year, 11, 11))}      # Veterans Day
+
+
+def is_trading_day(day: dt.date) -> bool:
+    return day.weekday() < 5 and day not in exchange_holidays(day.year) \
+        and day not in SPECIAL_CLOSURES
+
+
+def trading_days_from(day: dt.date, count: int) -> list[dt.date]:
+    """The first `count` trading days on or after `day`."""
+    out = []
+    while len(out) < count:
+        if is_trading_day(day):
+            out.append(day)
+        day += dt.timedelta(days=1)
+    return out
+
+
+def next_business_day(day: dt.date) -> dt.date:
+    """EDGAR's next business day after `day`: not a weekend, not a federal holiday."""
+    day += dt.timedelta(days=1)
+    while day.weekday() >= 5 or day in federal_holidays(day.year):
+        day += dt.timedelta(days=1)
+    return day
 
 
 def _eastern(stamp: str) -> dt.datetime:
@@ -476,22 +574,25 @@ def _eastern(stamp: str) -> dt.datetime:
 
 def market_table_problems(table: dict, cutoff: dt.date) -> list[str]:
     """Why a market table reaches past what an input may see, or []. The rule is
-    CLAUDE.md's and `docs/HOW_WE_WORK.md` §4's, written out here so the grader does
-    not move when `src/market.py` does: day zero is the acceptance day when EDGAR
-    accepted before the four o'clock close in New York and the next trading row
-    when after it; days one and two are the next two rows; the filing window's
-    filing date is the run's cutoff, and is the acceptance day or (accepted after
-    half past five) the business day after; the table's cutoff is day two of its
-    latest window; no row lies past it; every other window is an earlier filing's."""
+    CLAUDE.md's and `docs/HOW_WE_WORK.md` §4's, written out here against the
+    exchange calendar above so the grader moves neither with `src/market.py` nor
+    with the table's own rows: day zero is the acceptance day when EDGAR accepted
+    before the four o'clock close in New York and the next trading day when
+    after it; days one and two are the next two trading days; each is a row; the
+    table carries a filing window, whose filing date is the run's cutoff and is
+    the acceptance day or (accepted after half past five) EDGAR's next business
+    day; every other window is an earlier filing's; the table's cutoff is day two
+    of its latest window; no row lies past it, and every row is a trading day."""
     problems = []
     rows = sorted(str(r.get("date")) for r in table.get("rows") or [] if isinstance(r, dict))
     table_cutoff = table.get("cutoff")
     if rows and not isinstance(table_cutoff, str):
         return ["the table names no cutoff"]
-    problems += [f"row {d} is past the table's cutoff {table_cutoff}" for d in rows
-                 if table_cutoff and d > table_cutoff]
+    windows = [w for w in table.get("windows") or [] if isinstance(w, dict)]
+    if not any(w.get("kind") == "filing" for w in windows):
+        problems.append("the table has no filing window, so nothing ties it to the run's filing")
     latest = None
-    for window in table.get("windows") or []:
+    for window in windows:
         kind, days = window.get("kind"), [str(d) for d in window.get("days") or []]
         stamp = window.get("accepted")
         if not isinstance(stamp, str):
@@ -502,44 +603,24 @@ def market_table_problems(table: dict, cutoff: dt.date) -> list[str]:
         except ValueError:
             problems.append(f"the {kind} window's acceptance stamp {stamp!r} is not a time")
             continue
-        accepted_on = when.date().isoformat()
-        before_close = when.time() < MARKET_CLOSE
-        after = [d for d in rows if (d >= accepted_on if before_close else d > accepted_on)]
-        expected = after[:3]
-        if len(expected) < 3:
-            problems.append(f"the {kind} window: the rows end before reaction day two")
-            continue
-        # The rows are the only calendar on the record, so a table missing its own
-        # day-zero row would otherwise be checked against itself and pass with the
-        # window one trading day late. Before the close on a weekday the acceptance
-        # day is day zero and has to be a row; after it, day zero is within the
-        # four calendar days that a weekend and one holiday can take, which is the
-        # slack this leaves: a row missing on a Monday after a Friday close reads
-        # as a holiday here, and only the market module's own calendar can tell.
-        gap = (dt.date.fromisoformat(expected[0]) - when.date()).days
-        if before_close and when.date().weekday() < 5 and expected[0] != accepted_on:
-            problems.append(f"the {kind} window: no row for its acceptance day {accepted_on}, "
-                            f"so its day zero {expected[0]} is a trading day late")
-        elif not before_close and gap > 4:
-            problems.append(f"the {kind} window: day zero {expected[0]} is {gap} days after "
-                            f"the acceptance {stamp}, more than a weekend and a holiday")
+        accepted_on = when.date()
+        start = accepted_on if when.time() < MARKET_CLOSE else accepted_on + dt.timedelta(days=1)
+        expected = [d.isoformat() for d in trading_days_from(start, 3)]
         if days != expected:
             problems.append(f"the {kind} window's days {days} are not reaction days zero to "
-                            f"two {expected} of its acceptance {stamp}")
+                            f"two {expected} of its acceptance {stamp} on the exchange calendar")
+        problems += [f"the {kind} window: no row for {d}" for d in expected if d not in rows]
         filed = str(window.get("filing_date"))
-        permitted = {accepted_on}
+        permitted = {accepted_on.isoformat()}
         if when.time() >= EDGAR_CLOSE:
-            nxt = when.date() + dt.timedelta(days=1)
-            while nxt.weekday() >= 5:
-                nxt += dt.timedelta(days=1)
-            permitted.add(nxt.isoformat())
+            permitted.add(next_business_day(accepted_on).isoformat())
         if filed not in permitted:
             problems.append(f"the {kind} window's filing date {filed} is not one EDGAR puts "
                             f"on an acceptance at {stamp}")
         if kind == "filing" and filed != cutoff.isoformat():
             problems.append(f"the filing window is for a filing dated {filed}, not the run's "
                             f"cutoff {cutoff}")
-        elif filed > cutoff.isoformat():
+        elif kind != "filing" and filed > cutoff.isoformat():
             # any other window is an earlier filing's: a later one is not an input
             problems.append(f"the {kind} window is for a filing dated {filed}, after the "
                             f"run's cutoff {cutoff}")
@@ -547,6 +628,15 @@ def market_table_problems(table: dict, cutoff: dt.date) -> list[str]:
     if latest is not None and table_cutoff != latest:
         problems.append(f"the table's cutoff {table_cutoff} is not reaction day two of its "
                         f"latest window {latest}")
+    limit = latest or table_cutoff
+    problems += [f"row {d} is past reaction day two {limit} of the table's latest window"
+                 for d in rows if limit and d > limit]
+    for d in rows:
+        try:
+            if not is_trading_day(dt.date.fromisoformat(d)):
+                problems.append(f"row {d} is not a trading day")
+        except ValueError:
+            problems.append(f"row {d!r} is not a date")
     return problems
 
 

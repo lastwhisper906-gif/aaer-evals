@@ -20,6 +20,10 @@ def test_the_graders_and_the_guard_that_run_are_mains_copies():
     # branch puts at its root or installs can stand in for a module the graders import
     assert "git archive origin/main evals | tar -x -C \"$RUNNER_TEMP/graders\"" in eval_job
     assert "python -I -c" in eval_job and "runpy.run_module('evals'" in eval_job
+    # the graders go on the path before site-packages, where the branch's
+    # requirements install, and after the standard library: never appended
+    assert "sys.path[site:site] = ['$RUNNER_TEMP/graders', '$GITHUB_WORKSPACE']" in eval_job
+    assert "'site-packages' in p" in eval_job and "sys.path.append" not in eval_job
     assert 'AAER_REPO="$GITHUB_WORKSPACE"' in eval_job
     assert "python -m evals" not in eval_job and "make eval" not in eval_job
     assert "git checkout origin/main -- evals" not in eval_job

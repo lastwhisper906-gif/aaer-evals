@@ -119,6 +119,17 @@ def test_a_fenced_block_that_is_not_json_fails_quotes_resolve(run):
     assert _status(mechanical.grade(run), "mechanical.quotes_resolve") == FAIL
 
 
+def test_a_late_fact_in_the_calculator_copy_an_agent_was_handed_fails_nothing_after_cutoff(run):
+    path = run / "agents" / "valuation-analyst" / "calculator_before_drivers.json"
+    data = json.loads(path.read_text(encoding="utf-8"))
+    data["market"]["price"]["date"] = "2099-01-01"
+    path.write_text(json.dumps(data), encoding="utf-8")
+    results = mechanical.grade(run)
+    assert _status(results, "mechanical.nothing_after_cutoff") == FAIL
+    assert any(d.startswith("agents/valuation-analyst/calculator_before_drivers.json") for d in
+               next(r.failures for r in results if r.grader == "mechanical.nothing_after_cutoff"))
+
+
 def test_a_late_fact_in_a_calculator_stage_file_fails_nothing_after_cutoff(run):
     path = run / "calculator_filings_only.json"
     text = path.read_text(encoding="utf-8")
@@ -131,6 +142,18 @@ def test_a_late_fact_in_a_calculator_stage_file_fails_nothing_after_cutoff(run):
 def test_an_evidence_id_no_reader_kept_fails_cited_items_exist(run):
     _edit(run / "analysis_accounting.json",
           lambda d: d["anomalies"][0].update(evidence=["an_item_no_reader_wrote"]))
+    assert _status(mechanical.grade(run), "mechanical.cited_items_exist") == FAIL
+
+
+def test_a_citation_of_null_resolves_to_no_reader_item(run):
+    """A reader item with no id is kept by nobody, so an analysis citing null cites
+    nothing, even when such an item sits in the report."""
+    report = run / "report_numbers.md"
+    report.write_text(report.read_text(encoding="utf-8")
+                      + '\n```json\n{"what": "an item with no id", "quote": "x"}\n```\n',
+                      encoding="utf-8")
+    _edit(run / "analysis_accounting.json",
+          lambda d: d["anomalies"][0].update(evidence=[None]))
     assert _status(mechanical.grade(run), "mechanical.cited_items_exist") == FAIL
 
 
@@ -236,14 +259,15 @@ def test_a_market_table_of_reaction_days_zero_to_two_passes_nothing_after_cutoff
 def test_a_market_table_reaching_past_reaction_day_two_fails_nothing_after_cutoff(run):
     import datetime as dt
     cutoff = dt.date(2026, 5, 19)
-    # a row past the table's cutoff
+    # a row past day two of the latest window
     late = _market_table(rows=_market_table()["rows"] + [{"date": "2026-05-26"}])
     assert mechanical.market_table_problems(late, cutoff) == [
-        "row 2026-05-26 is past the table's cutoff 2026-05-22"]
+        "row 2026-05-26 is past reaction day two 2026-05-22 of the table's latest window"]
     # a cutoff set past day two of the latest window, with the rows following it
     stretched = _market_table(cutoff="2026-05-26", rows=late["rows"])
     assert mechanical.market_table_problems(stretched, cutoff) == [
-        "the table's cutoff 2026-05-26 is not reaction day two of its latest window 2026-05-22"]
+        "the table's cutoff 2026-05-26 is not reaction day two of its latest window 2026-05-22",
+        "row 2026-05-26 is past reaction day two 2026-05-22 of the table's latest window"]
     # days that are not reaction days zero to two of the acceptance stamp: here the
     # window counts from the acceptance day although EDGAR accepted after the close
     shifted = _market_table()
@@ -265,39 +289,90 @@ def test_a_market_table_reaching_past_reaction_day_two_fails_nothing_after_cutof
         r.failures for r in results if r.grader == "mechanical.nothing_after_cutoff"))
 
 
-def test_a_market_table_missing_its_own_day_zero_row_fails_nothing_after_cutoff():
-    """The rows are the table's only calendar: without this rule a table missing the
-    row for the real day zero is checked against itself and passes one day late."""
+def test_a_market_table_with_no_filing_window_fails_nothing_after_cutoff(run):
+    """Without a filing window nothing ties the table to the run: a table whose
+    cutoff and rows run to 2099 would otherwise be checked against itself alone."""
+    import datetime as dt
+    loose = {"cutoff": "2099-01-05", "windows": [],
+             "rows": [{"date": d} for d in ("2026-05-19", "2099-01-02", "2099-01-05")]}
+    assert mechanical.market_table_problems(loose, dt.date(2026, 5, 19)) == [
+        "the table has no filing window, so nothing ties it to the run's filing"]
+    (run / "input_market.json").write_text(json.dumps(loose))
+    assert _status(mechanical.grade(run), "mechanical.nothing_after_cutoff") == FAIL
+
+
+def test_a_market_table_missing_a_row_of_the_window_fails_nothing_after_cutoff():
+    """The rows are not the calendar the table is checked against: a table missing
+    the row for the real day zero, or a row inside the window, is a day late."""
     import datetime as dt
     cutoff = dt.date(2026, 5, 19)
     # accepted Tuesday 09:00, before the close: the 19th is day zero and has to be a row
     early = _market_table(cutoff="2026-05-22")
     early["windows"][0].update(accepted="2026-05-19T09:00:00-04:00", day_zero="2026-05-20")
     early["rows"] = [{"date": d} for d in ("2026-05-18", "2026-05-20", "2026-05-21", "2026-05-22")]
-    assert mechanical.market_table_problems(early, cutoff) == [
-        "the filing window: no row for its acceptance day 2026-05-19, "
-        "so its day zero 2026-05-20 is a trading day late"]
-    # accepted Friday 2026-05-15 after the close: Monday the 18th is day zero; a table
-    # whose first row after it is Wednesday the 20th is five days out
-    late = _market_table(cutoff="2026-05-22")
-    late["windows"][0].update(filing_date="2026-05-15", accepted="2026-05-15T16:35:00-04:00",
-                              day_zero="2026-05-20",
-                              days=["2026-05-20", "2026-05-21", "2026-05-22"])
-    late["rows"] = [{"date": d} for d in ("2026-05-14", "2026-05-15", "2026-05-20",
-                                          "2026-05-21", "2026-05-22")]
-    assert [p for p in mechanical.market_table_problems(late, dt.date(2026, 5, 15))
-            if "day zero" in p] == [
-        "the filing window: day zero 2026-05-20 is 5 days after the acceptance "
-        "2026-05-15T16:35:00-04:00, more than a weekend and a holiday"]
-    # the same Friday acceptance with Monday a holiday: Tuesday the 19th is four days
-    # out, which this rule leaves to the market module's calendar
-    holiday = _market_table(cutoff="2026-05-21")
-    holiday["windows"][0].update(filing_date="2026-05-15", accepted="2026-05-15T16:35:00-04:00",
-                                 day_zero="2026-05-19",
-                                 days=["2026-05-19", "2026-05-20", "2026-05-21"])
-    holiday["rows"] = [{"date": d} for d in ("2026-05-14", "2026-05-15", "2026-05-19",
-                                             "2026-05-20", "2026-05-21")]
-    assert mechanical.market_table_problems(holiday, dt.date(2026, 5, 15)) == []
+    problems = mechanical.market_table_problems(early, cutoff)
+    assert "the filing window: no row for 2026-05-19" in problems
+    assert any("are not reaction days zero to two ['2026-05-19', '2026-05-20', '2026-05-21']"
+               in p for p in problems)
+    # Wednesday's row missing inside the window
+    inside = _market_table(cutoff="2026-05-22")
+    inside["windows"][0].update(accepted="2026-05-19T09:00:00-04:00", day_zero="2026-05-19",
+                                days=["2026-05-19", "2026-05-21", "2026-05-22"])
+    inside["rows"] = [{"date": d} for d in ("2026-05-18", "2026-05-19", "2026-05-21", "2026-05-22")]
+    assert "the filing window: no row for 2026-05-20" in mechanical.market_table_problems(inside,
+                                                                                         cutoff)
+    # a row on a Saturday
+    weekend = _market_table(rows=_market_table()["rows"] + [{"date": "2026-05-16"}])
+    assert mechanical.market_table_problems(weekend, cutoff) == ["row 2026-05-16 is not a trading day"]
+
+
+def test_the_exchange_calendar_is_worked_by_hand():
+    """Memorial Day 2026 is Monday the 25th of May; Good Friday 2026 is the 3rd of
+    April (Easter the 5th); Juneteenth 2027 falls on a Saturday and is observed the
+    Friday before; New Year's Day 2028 is a Saturday and is not observed; the exchange
+    closed on 2025-01-09 outside its rules. EDGAR's next business day skips Columbus
+    Day 2026, Monday the 12th of October, which the exchange does not close for."""
+    import datetime as dt
+    assert mechanical._easter(2026) == dt.date(2026, 4, 5)
+    assert dt.date(2026, 5, 25) in mechanical.exchange_holidays(2026)
+    assert dt.date(2026, 4, 3) in mechanical.exchange_holidays(2026)
+    assert dt.date(2027, 6, 18) in mechanical.exchange_holidays(2027)
+    assert dt.date(2028, 1, 1) not in mechanical.exchange_holidays(2028)
+    assert dt.date(2027, 12, 31) not in mechanical.exchange_holidays(2027)
+    assert not mechanical.is_trading_day(dt.date(2025, 1, 9))
+    assert mechanical.is_trading_day(dt.date(2026, 10, 12))
+    assert mechanical.next_business_day(dt.date(2026, 10, 9)) == dt.date(2026, 10, 13)
+    assert mechanical.trading_days_from(dt.date(2026, 5, 22), 3) == [
+        dt.date(2026, 5, 22), dt.date(2026, 5, 26), dt.date(2026, 5, 27)]
+
+
+def test_a_market_window_over_a_holiday_passes_nothing_after_cutoff():
+    """A filing accepted Friday 2026-05-22 at 16:35 has day zero on Tuesday the 26th,
+    after Memorial Day; one accepted Thursday 2026-04-02 at 16:35 has day zero on
+    Monday the 6th, after Good Friday; one accepted Wednesday 2025-01-08 at 16:35 has
+    day zero on Friday the 10th, after the day of mourning."""
+    import datetime as dt
+    memorial = {"cutoff": "2026-05-28",
+                "windows": [{"kind": "filing", "filing_date": "2026-05-22",
+                             "accepted": "2026-05-22T16:35:00-04:00", "day_zero": "2026-05-26",
+                             "days": ["2026-05-26", "2026-05-27", "2026-05-28"]}],
+                "rows": [{"date": d} for d in ("2026-05-21", "2026-05-22", "2026-05-26",
+                                               "2026-05-27", "2026-05-28")]}
+    assert mechanical.market_table_problems(memorial, dt.date(2026, 5, 22)) == []
+    good_friday = {"cutoff": "2026-04-08",
+                   "windows": [{"kind": "filing", "filing_date": "2026-04-02",
+                                "accepted": "2026-04-02T16:35:00-04:00", "day_zero": "2026-04-06",
+                                "days": ["2026-04-06", "2026-04-07", "2026-04-08"]}],
+                   "rows": [{"date": d} for d in ("2026-04-01", "2026-04-02", "2026-04-06",
+                                                  "2026-04-07", "2026-04-08")]}
+    assert mechanical.market_table_problems(good_friday, dt.date(2026, 4, 2)) == []
+    mourning = {"cutoff": "2025-01-14",
+                "windows": [{"kind": "filing", "filing_date": "2025-01-08",
+                             "accepted": "2025-01-08T16:35:00-05:00", "day_zero": "2025-01-10",
+                             "days": ["2025-01-10", "2025-01-13", "2025-01-14"]}],
+                "rows": [{"date": d} for d in ("2025-01-07", "2025-01-08", "2025-01-10",
+                                               "2025-01-13", "2025-01-14")]}
+    assert mechanical.market_table_problems(mourning, dt.date(2025, 1, 8)) == []
 
 
 def test_a_market_window_for_a_later_filing_fails_nothing_after_cutoff():
