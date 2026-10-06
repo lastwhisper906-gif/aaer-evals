@@ -30,6 +30,7 @@ import json
 from pathlib import Path
 
 from evals.common import REPO, load, run_name
+from evals.regression.mechanical import market_reaction_day_two
 
 TRADING_DAYS = 60
 # Without a market table: reaction day two is at most the second weekday after the
@@ -48,14 +49,14 @@ def _weekdays_after(day: dt.date, count: int) -> dt.date:
 
 
 def last_day_an_input_may_see(run: Path, cutoff: dt.date) -> dt.date:
-    """Reaction day two: the market table's cutoff where the run holds one, else the
-    fourth weekday after the filing date (see WEEKDAYS_AN_INPUT_MAY_SEE)."""
-    table = load(run / "input_market.json")
-    if isinstance(table, dict) and isinstance(table.get("cutoff"), str):
-        try:
-            return dt.date.fromisoformat(table["cutoff"][:10])
-        except ValueError:
-            pass
+    """Reaction day two: day two of the market table's latest window where the run
+    holds one, else the fourth weekday after the filing date (see
+    WEEKDAYS_AN_INPUT_MAY_SEE)."""
+    # the table's latest day two, as its windows record it -- never its self-declared
+    # cutoff, which the regression check holds to the same windows
+    day_two = market_reaction_day_two(load(run / "input_market.json"))
+    if day_two is not None:
+        return day_two
     return _weekdays_after(cutoff, WEEKDAYS_AN_INPUT_MAY_SEE)
 
 

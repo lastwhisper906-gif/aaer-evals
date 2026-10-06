@@ -16,8 +16,10 @@ outputs.
     .venv/bin/python -m evals --runs runs/NVDA     the runs under a path
 
 `make eval` exits non-zero on any regression failure, or on a capability score below
-a floor in `thresholds.json`. CI runs it with **main's copy of evals/**, so a branch
-is always graded by the owner's current graders.
+a floor in `thresholds.json`. CI runs it with **main's copy of evals/**, unpacked
+outside the tree and run with `python -I` so nothing the branch adds at its root can
+stand in for a module the graders import (`AAER_REPO` names the tree being graded),
+so a branch is always graded by the owner's current graders.
 
 ## Regression: must stay at 100%; any failure blocks a merge
 
@@ -30,7 +32,7 @@ is always graded by the owner's current graders.
 | quotes_resolve | every quote a reader kept is in the paragraph its `paragraph_id` names, in that reader's own input, and a quote of a computed row carries something the row says, never a key name or the id alone; every quote an analysis kept is in one of the files that analyst was handed, never a span across two; both character for character after the whitespace fold. A `quote_from` naming a file the analyst was not handed fails, and so does a run with no record of what an agent was handed |
 | cited_items_exist | every evidence id an analysis cites is an item a reader report kept |
 | cited_numbers_exist | every `{path}` an analysis writes, and every `fields` entry, names a field of the calculator file that analyst saw |
-| nothing_after_cutoff | no input document is filed after the run's cutoff, no source without a filing date was read past it, and no date written anywhere in any calculator file is after it |
+| nothing_after_cutoff | no input document is filed after the run's cutoff, no source without a filing date was read past it, no date written anywhere in any calculator file is after it, every input row's own filing date is at or before it, and the market table holds exactly reaction days zero to two of each window (read off the window's acceptance stamp: day zero is the acceptance day before the four o'clock close, the next trading row after it) with no row past day two of the latest window, its own day-zero row present, and every other window an earlier filing's |
 | calculator_finite | every numeric value in calculator.json is finite |
 | dcf_recomputes | each scenario's enterprise value and value a share, and the simple free cash flow, recompute from the run's own drivers with this file's own arithmetic |
 
@@ -58,10 +60,10 @@ an area that is simply absent fails it. How many areas were *answered* is capabi
 |---|---|
 | coverage rates | the share of accounting areas and financial sections answered rather than dropped; value range computed; implied growth beside three- and five-year history; the share of the valuation analyst's quotes that stand on a filing or a reader report rather than on another analyst's words |
 | golden.py | **Against approved golden cases: found, missed and extra.** An item counts as found when an anomaly in the case's frame reaches one of its filing paragraphs, or uses every word of one of its keywords. The score per run is (found − extra) ÷ must_find. |
-| rubric.md + analysis-grader | Opus reads one run and the rubric and writes `grade.json`. Dealbreakers score zero; other items are weighted by severity. `make eval` recomputes the score from the grader's own items with the rubric's formula and says where the grader's number differs. The score is reported and never gated until grader agreement passes the owner's floor. |
+| rubric.md + analysis-grader | Opus reads one run and the rubric and writes `grade.json`. Dealbreakers score zero; other items are weighted by severity. `make eval` recomputes the score from the grader's own items with the rubric's formula and says where the grader's number differs; a grade that leaves out an anomaly the run lists, or grades one it does not, scores nothing. The score is reported and never gated until grader agreement passes the owner's floor. |
 | grader_agreement.py | on golden filings, how often the analysis-grader's verdict on an anomaly matches the owner's case |
 | consistency.py | golden filings run three times: overlap of the anomaly sets and spread of the value range (pass^k) |
-| outcomes.py | runs at least 60 trading days old, counted from the first weekday after the filing date: anomalies by frame, company event rows (`ticker`, `date`, `event`) after the cutoff, and the abnormal return when a price series is committed; younger runs are "pending". The ledger's process rows never count as events |
+| outcomes.py | runs at least 60 trading days old, counted from the day after reaction day two of the market table's latest window (read off its days), or without a table the fourth weekday after the filing date: anomalies by frame, company event rows (`ticker`, `date`, `event`) after the cutoff, and the abnormal return when a price series is committed; younger runs are "pending". The ledger's process rows never count as events |
 | memorization.py | forward runs (filed after every serving model's training cutoff) are clean; the others need an anonymized re-run probe, reported beside the score; a model with no cutoff on record is "unknown" |
 
 ## Golden cases

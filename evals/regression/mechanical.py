@@ -17,8 +17,10 @@ Each check reads files a run published and nothing about how they were made:
   source without a filing date was read past it (`rows_used_through`), no row of
   the JSON inputs -- as the run holds them and as each agent was handed them --
   was filed after it, and no date written anywhere in any calculator file -- a
-  fact's filing, a price, a window, a period -- is after it. The rule is
-  CLAUDE.md's, dates only: an acceptance time is not on the record.
+  fact's filing, a price, a window, a period -- is after it, and a market table
+  holds exactly reaction days zero to two of each window, read off the window's
+  acceptance stamp, with nothing past day two of the latest. The documents' rule
+  is CLAUDE.md's, dates only; the market table's is `docs/HOW_WE_WORK.md` §4's.
 - `calculator_finite`: every numeric value in calculator.json is finite.
 - `dcf_recomputes`: every scenario's enterprise value and value per share, and the
   simple free cash flow, recompute from the run's own drivers with this file's own
@@ -31,6 +33,7 @@ import datetime as dt
 import json
 import re
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from evals.common import (FAIL, NOT_APPLICABLE, PASS, PLACEHOLDER, Result, finite, fold, load,
                           number_at, resolve, run_name, walk_strings)
@@ -445,6 +448,10 @@ def check_nothing_after_cutoff(run: Path) -> Result:
         if path.name == "input_manifest.json":
             continue
         tree = load(path)
+        if path.name == "input_market.json":
+            late += [f"{path.relative_to(run)}: {p}" for p in market_table_problems(tree or {},
+                                                                                    cutoff)]
+            continue
         for key in ("filed", "filing_date", "filed_at"):
             for value in _dates_in(tree, key):
                 if re.match(r"\d{4}-\d{2}-\d{2}", value) \
@@ -453,6 +460,105 @@ def check_nothing_after_cutoff(run: Path) -> Result:
                     break
     return Result("mechanical.nothing_after_cutoff", run_name(run), FAIL if late else PASS,
                   f"cutoff {cutoff}" + (f"; {len(late)} late" if late else ""), late)
+
+
+# --- the market table: reaction days zero to two, and nothing past them ----------------
+
+EASTERN = ZoneInfo("America/New_York")
+MARKET_CLOSE = dt.time(16, 0)
+EDGAR_CLOSE = dt.time(17, 30)
+
+
+def _eastern(stamp: str) -> dt.datetime:
+    when = dt.datetime.fromisoformat(stamp)
+    return when.astimezone(EASTERN) if when.tzinfo else when.replace(tzinfo=EASTERN)
+
+
+def market_table_problems(table: dict, cutoff: dt.date) -> list[str]:
+    """Why a market table reaches past what an input may see, or []. The rule is
+    CLAUDE.md's and `docs/HOW_WE_WORK.md` §4's, written out here so the grader does
+    not move when `src/market.py` does: day zero is the acceptance day when EDGAR
+    accepted before the four o'clock close in New York and the next trading row
+    when after it; days one and two are the next two rows; the filing window's
+    filing date is the run's cutoff, and is the acceptance day or (accepted after
+    half past five) the business day after; the table's cutoff is day two of its
+    latest window; no row lies past it; every other window is an earlier filing's."""
+    problems = []
+    rows = sorted(str(r.get("date")) for r in table.get("rows") or [] if isinstance(r, dict))
+    table_cutoff = table.get("cutoff")
+    if rows and not isinstance(table_cutoff, str):
+        return ["the table names no cutoff"]
+    problems += [f"row {d} is past the table's cutoff {table_cutoff}" for d in rows
+                 if table_cutoff and d > table_cutoff]
+    latest = None
+    for window in table.get("windows") or []:
+        kind, days = window.get("kind"), [str(d) for d in window.get("days") or []]
+        stamp = window.get("accepted")
+        if not isinstance(stamp, str):
+            problems.append(f"the {kind} window carries no acceptance stamp")
+            continue
+        try:
+            when = _eastern(stamp)
+        except ValueError:
+            problems.append(f"the {kind} window's acceptance stamp {stamp!r} is not a time")
+            continue
+        accepted_on = when.date().isoformat()
+        before_close = when.time() < MARKET_CLOSE
+        after = [d for d in rows if (d >= accepted_on if before_close else d > accepted_on)]
+        expected = after[:3]
+        if len(expected) < 3:
+            problems.append(f"the {kind} window: the rows end before reaction day two")
+            continue
+        # The rows are the only calendar on the record, so a table missing its own
+        # day-zero row would otherwise be checked against itself and pass with the
+        # window one trading day late. Before the close on a weekday the acceptance
+        # day is day zero and has to be a row; after it, day zero is within the
+        # four calendar days that a weekend and one holiday can take, which is the
+        # slack this leaves: a row missing on a Monday after a Friday close reads
+        # as a holiday here, and only the market module's own calendar can tell.
+        gap = (dt.date.fromisoformat(expected[0]) - when.date()).days
+        if before_close and when.date().weekday() < 5 and expected[0] != accepted_on:
+            problems.append(f"the {kind} window: no row for its acceptance day {accepted_on}, "
+                            f"so its day zero {expected[0]} is a trading day late")
+        elif not before_close and gap > 4:
+            problems.append(f"the {kind} window: day zero {expected[0]} is {gap} days after "
+                            f"the acceptance {stamp}, more than a weekend and a holiday")
+        if days != expected:
+            problems.append(f"the {kind} window's days {days} are not reaction days zero to "
+                            f"two {expected} of its acceptance {stamp}")
+        filed = str(window.get("filing_date"))
+        permitted = {accepted_on}
+        if when.time() >= EDGAR_CLOSE:
+            nxt = when.date() + dt.timedelta(days=1)
+            while nxt.weekday() >= 5:
+                nxt += dt.timedelta(days=1)
+            permitted.add(nxt.isoformat())
+        if filed not in permitted:
+            problems.append(f"the {kind} window's filing date {filed} is not one EDGAR puts "
+                            f"on an acceptance at {stamp}")
+        if kind == "filing" and filed != cutoff.isoformat():
+            problems.append(f"the filing window is for a filing dated {filed}, not the run's "
+                            f"cutoff {cutoff}")
+        elif filed > cutoff.isoformat():
+            # any other window is an earlier filing's: a later one is not an input
+            problems.append(f"the {kind} window is for a filing dated {filed}, after the "
+                            f"run's cutoff {cutoff}")
+        latest = max(latest or expected[2], expected[2])
+    if latest is not None and table_cutoff != latest:
+        problems.append(f"the table's cutoff {table_cutoff} is not reaction day two of its "
+                        f"latest window {latest}")
+    return problems
+
+
+def market_reaction_day_two(table) -> dt.date | None:
+    """Day two of the table's latest window, read off its windows, or None."""
+    if not isinstance(table, dict):
+        return None
+    days = [str(d) for w in table.get("windows") or [] for d in (w.get("days") or [])[-1:]]
+    try:
+        return max(dt.date.fromisoformat(d) for d in days) if days else None
+    except ValueError:
+        return None
 
 
 def check_calculator_finite(run: Path) -> Result:

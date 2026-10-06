@@ -13,9 +13,13 @@ VERDICT = {"supported": 1.0, "unclear": 0.5, "unsupported": 0.0}
 WEIGHT = {"high": 3, "medium": 2, "low": 1}
 
 
-def unreadable(grade: dict) -> list[str]:
-    """Every item the rubric's formula cannot score: no id, verdict or severity it names."""
+def unreadable(grade: dict, anomalies: set[str] | None = None) -> list[str]:
+    """Every reason the rubric's formula cannot score this grade: an item with no id,
+    verdict or severity it names; and, given the run's anomaly ids, an item naming
+    no anomaly of the run or an anomaly the grader left out -- a grader that drops
+    what it would have called unsupported would otherwise score itself up."""
     out = []
+    ids = set()
     for index, item in enumerate(grade.get("items") or []):
         if not isinstance(item, dict):
             out.append(f"items[{index}]: not an object")
@@ -25,14 +29,19 @@ def unreadable(grade: dict) -> list[str]:
             out.append(f"items[{index}]: verdict {item.get('verdict')!r}")
         elif item.get("severity") not in WEIGHT:
             out.append(f"items[{index}]: severity {item.get('severity')!r}")
+        else:
+            ids.add(item["id"])
     if not isinstance(grade.get("items"), list):
         out.append("no items list")
+    if anomalies is not None:
+        out += [f"no anomaly {i} in the run" for i in sorted(ids - anomalies)]
+        out += [f"anomaly {i} has no item" for i in sorted(anomalies - ids)]
     return out
 
 
-def recompute(grade: dict) -> float | None:
+def recompute(grade: dict, anomalies: set[str] | None = None) -> float | None:
     """None when any item cannot be scored: a grade the formula cannot read is no grade."""
-    if unreadable(grade):
+    if unreadable(grade, anomalies):
         return None
     broken = {item.get("id") for item in grade.get("dealbreakers") or []
               if isinstance(item, dict) and item.get("id")}
@@ -45,10 +54,10 @@ def recompute(grade: dict) -> float | None:
     return total / weight if weight else None
 
 
-def check(grade: dict) -> dict:
-    mine = recompute(grade)
+def check(grade: dict, anomalies: set[str] | None = None) -> dict:
+    mine = recompute(grade, anomalies)
     theirs = grade.get("score")
     agrees = (mine is None and theirs is None) or (
         isinstance(theirs, (int, float)) and mine is not None and abs(mine - theirs) < 1e-6)
     return {"score": mine, "grader_wrote": theirs, "agrees": agrees,
-            "unreadable": unreadable(grade)}
+            "unreadable": unreadable(grade, anomalies)}

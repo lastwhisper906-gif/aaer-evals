@@ -52,15 +52,21 @@ jobs:
         run: pip install -r requirements.txt
       - name: fetch the baseline branch
         run: git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+      # main's evals/ is copied out of the tree and run with the standard library
+      # ahead of everything, so neither a module the branch adds at its root nor a
+      # package it installs can stand in for one the graders import; the branch's
+      # src/ is still what the hand-worked DCF case runs against, by name.
       - name: grade with main's evals/
         run: |
+          mkdir -p "$RUNNER_TEMP/graders"
           if git cat-file -e origin/main:evals 2>/dev/null; then
-            rm -rf evals && git checkout origin/main -- evals/
+            git archive origin/main evals | tar -x -C "$RUNNER_TEMP/graders"
             echo "graded with evals/ from origin/main"
           else
+            cp -r evals "$RUNNER_TEMP/graders/evals"
             echo "origin/main has no evals/ yet: graded with this branch's, the one that creates it"
           fi
-          python -m evals
+          AAER_REPO="$GITHUB_WORKSPACE" python -I -c "import sys, runpy; sys.path.append('$RUNNER_TEMP/graders'); sys.path.append('$GITHUB_WORKSPACE'); runpy.run_module('evals', run_name='__main__', alter_sys=True)"
 
   check:
     needs: [guard, eval]

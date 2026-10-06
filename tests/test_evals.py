@@ -7,6 +7,7 @@ passes every grader. The DCF case is the hand-worked one in tests/test_calculato
 
 from __future__ import annotations
 
+import datetime
 import json
 import shutil
 from pathlib import Path
@@ -205,6 +206,132 @@ def test_a_document_after_the_cutoff_fails_nothing_after_cutoff(run):
     assert _status(mechanical.grade(run), "mechanical.nothing_after_cutoff") == FAIL
 
 
+# A market table as src/market.py records one, worked by hand for CSCO's filing
+# accepted Tuesday 2026-05-19 at 16:35 New York: after the close, so day zero is
+# Wednesday the 20th and days one and two the 21st and 22nd; before EDGAR's half
+# past five, so the filing date is the 19th, the run's cutoff; the table's cutoff
+# is day two, the 22nd.
+def _market_table(**changes):
+    table = {"cutoff": "2026-05-22",
+             "windows": [{"kind": "filing", "filing_date": "2026-05-19",
+                          "accepted": "2026-05-19T16:35:00-04:00", "day_zero": "2026-05-20",
+                          "days": ["2026-05-20", "2026-05-21", "2026-05-22"]}],
+             "rows": [{"date": d} for d in ("2026-05-18", "2026-05-19", "2026-05-20",
+                                            "2026-05-21", "2026-05-22")]}
+    table.update(changes)
+    return table
+
+
+def test_a_market_table_of_reaction_days_zero_to_two_passes_nothing_after_cutoff(run):
+    (run / "input_market.json").write_text(json.dumps(_market_table()))
+    assert _status(mechanical.grade(run), "mechanical.nothing_after_cutoff") == PASS
+    # accepted before the close, day zero is the acceptance day itself
+    early = _market_table(cutoff="2026-05-21")
+    early["windows"][0].update(accepted="2026-05-19T09:00:00-04:00", day_zero="2026-05-19",
+                               days=["2026-05-19", "2026-05-20", "2026-05-21"])
+    early["rows"] = early["rows"][:4]
+    assert mechanical.market_table_problems(early, datetime.date(2026, 5, 19)) == []
+
+
+def test_a_market_table_reaching_past_reaction_day_two_fails_nothing_after_cutoff(run):
+    import datetime as dt
+    cutoff = dt.date(2026, 5, 19)
+    # a row past the table's cutoff
+    late = _market_table(rows=_market_table()["rows"] + [{"date": "2026-05-26"}])
+    assert mechanical.market_table_problems(late, cutoff) == [
+        "row 2026-05-26 is past the table's cutoff 2026-05-22"]
+    # a cutoff set past day two of the latest window, with the rows following it
+    stretched = _market_table(cutoff="2026-05-26", rows=late["rows"])
+    assert mechanical.market_table_problems(stretched, cutoff) == [
+        "the table's cutoff 2026-05-26 is not reaction day two of its latest window 2026-05-22"]
+    # days that are not reaction days zero to two of the acceptance stamp: here the
+    # window counts from the acceptance day although EDGAR accepted after the close
+    shifted = _market_table()
+    shifted["windows"][0]["days"] = ["2026-05-19", "2026-05-20", "2026-05-21"]
+    assert any("not reaction days zero to two" in p
+               for p in mechanical.market_table_problems(shifted, cutoff))
+    # a filing window for a filing that is not the run's cutoff
+    other = _market_table()
+    other["windows"][0]["filing_date"] = "2026-05-20"
+    assert mechanical.market_table_problems(other, cutoff) == [
+        "the filing window's filing date 2026-05-20 is not one EDGAR puts on an acceptance at "
+        "2026-05-19T16:35:00-04:00",
+        "the filing window is for a filing dated 2026-05-20, not the run's cutoff 2026-05-19"]
+    # and the regression check reads the run's own table
+    (run / "input_market.json").write_text(json.dumps(stretched))
+    results = mechanical.grade(run)
+    assert _status(results, "mechanical.nothing_after_cutoff") == FAIL
+    assert any("input_market.json" in d for d in next(
+        r.failures for r in results if r.grader == "mechanical.nothing_after_cutoff"))
+
+
+def test_a_market_table_missing_its_own_day_zero_row_fails_nothing_after_cutoff():
+    """The rows are the table's only calendar: without this rule a table missing the
+    row for the real day zero is checked against itself and passes one day late."""
+    import datetime as dt
+    cutoff = dt.date(2026, 5, 19)
+    # accepted Tuesday 09:00, before the close: the 19th is day zero and has to be a row
+    early = _market_table(cutoff="2026-05-22")
+    early["windows"][0].update(accepted="2026-05-19T09:00:00-04:00", day_zero="2026-05-20")
+    early["rows"] = [{"date": d} for d in ("2026-05-18", "2026-05-20", "2026-05-21", "2026-05-22")]
+    assert mechanical.market_table_problems(early, cutoff) == [
+        "the filing window: no row for its acceptance day 2026-05-19, "
+        "so its day zero 2026-05-20 is a trading day late"]
+    # accepted Friday 2026-05-15 after the close: Monday the 18th is day zero; a table
+    # whose first row after it is Wednesday the 20th is five days out
+    late = _market_table(cutoff="2026-05-22")
+    late["windows"][0].update(filing_date="2026-05-15", accepted="2026-05-15T16:35:00-04:00",
+                              day_zero="2026-05-20",
+                              days=["2026-05-20", "2026-05-21", "2026-05-22"])
+    late["rows"] = [{"date": d} for d in ("2026-05-14", "2026-05-15", "2026-05-20",
+                                          "2026-05-21", "2026-05-22")]
+    assert [p for p in mechanical.market_table_problems(late, dt.date(2026, 5, 15))
+            if "day zero" in p] == [
+        "the filing window: day zero 2026-05-20 is 5 days after the acceptance "
+        "2026-05-15T16:35:00-04:00, more than a weekend and a holiday"]
+    # the same Friday acceptance with Monday a holiday: Tuesday the 19th is four days
+    # out, which this rule leaves to the market module's calendar
+    holiday = _market_table(cutoff="2026-05-21")
+    holiday["windows"][0].update(filing_date="2026-05-15", accepted="2026-05-15T16:35:00-04:00",
+                                 day_zero="2026-05-19",
+                                 days=["2026-05-19", "2026-05-20", "2026-05-21"])
+    holiday["rows"] = [{"date": d} for d in ("2026-05-14", "2026-05-15", "2026-05-19",
+                                             "2026-05-20", "2026-05-21")]
+    assert mechanical.market_table_problems(holiday, dt.date(2026, 5, 15)) == []
+
+
+def test_a_market_window_for_a_later_filing_fails_nothing_after_cutoff():
+    """A window of another kind is an earlier filing's, say the earnings release
+    before the 10-Q; one dated after the run's cutoff is not an input, and would
+    otherwise carry the table's cutoff and late-row limit out to its own day two."""
+    import datetime as dt
+    table = _market_table(cutoff="2026-05-28")
+    table["windows"].append({"kind": "earnings_release", "filing_date": "2026-05-22",
+                             "accepted": "2026-05-22T16:35:00-04:00", "day_zero": "2026-05-26",
+                             "days": ["2026-05-26", "2026-05-27", "2026-05-28"]})
+    table["rows"] += [{"date": d} for d in ("2026-05-26", "2026-05-27", "2026-05-28")]
+    assert mechanical.market_table_problems(table, dt.date(2026, 5, 19)) == [
+        "the earnings_release window is for a filing dated 2026-05-22, after the run's "
+        "cutoff 2026-05-19"]
+    # the same window a week earlier is the release before the filing, and stands
+    earlier = _market_table()
+    earlier["windows"].insert(0, {"kind": "earnings_release", "filing_date": "2026-05-13",
+                                  "accepted": "2026-05-13T16:35:00-04:00",
+                                  "day_zero": "2026-05-14",
+                                  "days": ["2026-05-14", "2026-05-15", "2026-05-18"]})
+    earlier["rows"] = [{"date": d} for d in ("2026-05-13", "2026-05-14", "2026-05-15")] \
+        + earlier["rows"]
+    assert mechanical.market_table_problems(earlier, dt.date(2026, 5, 19)) == []
+
+
+def test_a_market_table_with_no_acceptance_stamp_fails_nothing_after_cutoff():
+    import datetime as dt
+    unstamped = _market_table()
+    del unstamped["windows"][0]["accepted"]
+    assert mechanical.market_table_problems(unstamped, dt.date(2026, 5, 19)) == [
+        "the filing window carries no acceptance stamp"]
+
+
 def test_a_non_finite_value_fails_calculator_finite(run):
     text = (run / "calculator.json").read_text(encoding="utf-8")
     data = json.loads(text)
@@ -388,15 +515,24 @@ def test_outcomes_without_a_market_table_leave_four_weekdays_to_the_inputs():
     assert late["first_outcome_day"] == "2026-05-26"
 
 
-def test_outcomes_with_a_market_table_start_after_its_cutoff(tmp_path):
-    """The table's cutoff is reaction day two (src/market.py): a table ending
-    Thursday 2026-05-21 opens the window on Friday the 22nd."""
+def test_outcomes_with_a_market_table_start_after_its_latest_day_two(tmp_path):
+    """The outcome window opens the day after reaction day two of the table's latest
+    window, read off the window's days and never off the table's own `cutoff`
+    field: a filing accepted Tuesday 2026-05-19 before the close has day two on
+    Thursday the 21st, and the window opens Friday the 22nd, whatever the field says."""
     import datetime as dt
     run = tmp_path / "CSCO" / CLEAN.name
     shutil.copytree(CLEAN, run, ignore=shutil.ignore_patterns("agents", "control-*"))
-    (run / "input_market.json").write_text(json.dumps({"cutoff": "2026-05-21", "rows": []}))
+    table = {"cutoff": "2026-05-29", "rows": [],
+             "windows": [{"kind": "filing", "filing_date": "2026-05-19",
+                          "accepted": "2026-05-19T09:00:00-04:00",
+                          "days": ["2026-05-19", "2026-05-20", "2026-05-21"]}]}
+    (run / "input_market.json").write_text(json.dumps(table))
     assert outcomes.last_day_an_input_may_see(run, dt.date(2026, 5, 19)) == dt.date(2026, 5, 21)
     assert outcomes.first_outcome_day(run, dt.date(2026, 5, 19)) == dt.date(2026, 5, 22)
+    # a table with no windows says nothing about day two: the four weekdays stand
+    (run / "input_market.json").write_text(json.dumps({"cutoff": "2026-05-21", "rows": []}))
+    assert outcomes.last_day_an_input_may_see(run, dt.date(2026, 5, 19)) == dt.date(2026, 5, 25)
 
 
 def test_outcomes_count_company_events_and_never_the_ledgers_process_rows(tmp_path):
@@ -502,6 +638,48 @@ def test_a_grade_the_formula_cannot_read_scores_nothing_and_says_which_item():
     out = rubric_score.check(grade)
     assert out["score"] is None
     assert out["unreadable"] == ["items[1]: verdict 'maybe'", "items[2]: severity None"]
+
+
+def test_a_grade_must_cover_every_anomaly_of_the_run_and_nothing_else():
+    """A grader that left out the item it would have called unsupported would score
+    the rest alone; one that graded an anomaly the run does not list graded nothing."""
+    grade = {"items": [{"id": "a", "verdict": "supported", "severity": "high"},
+                       {"id": "b", "verdict": "unsupported", "severity": "low"}], "score": 0.75}
+    assert rubric_score.check(grade, {"a", "b"})["unreadable"] == []
+    assert rubric_score.recompute(grade, {"a", "b"}) == pytest.approx(0.75)
+    assert rubric_score.unreadable(grade, {"a", "b", "c"}) == ["anomaly c has no item"]
+    assert rubric_score.recompute(grade, {"a", "b", "c"}) is None
+    assert rubric_score.unreadable(grade, {"a"}) == ["no anomaly b in the run"]
+    assert rubric_score.check(grade, {"a"})["score"] is None
+    # without the run's anomalies the items alone are read, as before
+    assert rubric_score.unreadable(grade) == []
+
+
+def test_the_runner_reads_the_anomaly_ids_off_both_frames():
+    ids = runner.anomaly_ids(CLEAN)
+    accounting = json.loads((CLEAN / "analysis_accounting.json").read_text())["anomalies"]
+    financial = json.loads((CLEAN / "analysis_financial.json").read_text())["anomalies"]
+    assert ids == {a["id"] for a in accounting} | {a["id"] for a in financial} and ids
+
+
+def test_the_graders_read_the_tree_aaer_repo_names(tmp_path):
+    """CI runs main's evals/ from outside the tree it grades: the environment names
+    the tree, and without it the graders read the tree they sit in."""
+    import os
+    import subprocess
+    import sys
+    elsewhere = tmp_path / "elsewhere"
+    elsewhere.mkdir()
+    # -I ignores PYTHONPATH, as it does in CI: the tree is put on the path by name
+    code = f"import sys; sys.path.append({str(REPO)!r}); import evals.common as c; print(c.REPO)"
+    env = {**os.environ, "AAER_REPO": str(elsewhere)}
+    named = subprocess.run([sys.executable, "-I", "-c", code], env=env, cwd=tmp_path,
+                           capture_output=True, text=True, check=True)
+    assert Path(named.stdout.strip()) == elsewhere.resolve()
+    env.pop("AAER_REPO")
+    own = subprocess.run([sys.executable, "-I", "-c", code], env=env, cwd=tmp_path,
+                         capture_output=True, text=True, check=True)
+    assert Path(own.stdout.strip()) == REPO.resolve()
 
 
 def test_changed_runs_reads_the_branch_against_origin_main(tmp_path, monkeypatch):

@@ -53,8 +53,8 @@ def capability(runs: list[Path]) -> dict:
     means = {}
     for key in next(iter(per_run.values()), {}):
         means[f"coverage.{key}"] = sum(r[key] for r in per_run.values()) / len(per_run)
-    grades = [rubric_score.check(g) for g in (load(run / "grade.json") for run in runs)
-              if isinstance(g, dict)]
+    grades = [rubric_score.check(g, anomaly_ids(run))
+              for run in runs for g in [load(run / "grade.json")] if isinstance(g, dict)]
     graded = [g["score"] for g in grades if g["score"] is not None]
     disagreeing = sum(not g["agrees"] for g in grades)
     unreadable = sum(bool(g["unreadable"]) for g in grades)
@@ -75,6 +75,16 @@ def capability(runs: list[Path]) -> dict:
         "outcomes": outcomes.grade(runs),
         "memorization": memorization.grade(runs),
     }
+
+
+def anomaly_ids(run: Path) -> set[str]:
+    """Every anomaly id the two frames' analyses list: what a grade must cover."""
+    out = set()
+    for name in ("analysis_accounting.json", "analysis_financial.json"):
+        for a in (load(run / name) or {}).get("anomalies") or []:
+            if isinstance(a, dict) and isinstance(a.get("id"), str):
+                out.add(a["id"])
+    return out
 
 
 def floors_failed(scores: dict) -> list[str]:

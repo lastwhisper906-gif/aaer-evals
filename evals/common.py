@@ -4,11 +4,15 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
-REPO = Path(__file__).resolve().parent.parent
+# The repository the graders read. CI runs main's copy of evals/ from outside the
+# tree, with the standard library ahead of the branch on sys.path, and names the
+# tree through AAER_REPO; everywhere else the graders sit inside the tree they read.
+REPO = Path(os.environ.get("AAER_REPO") or Path(__file__).resolve().parent.parent).resolve()
 RUNS = REPO / "runs"
 
 PASS, FAIL, NOT_APPLICABLE = "pass", "fail", "not_applicable"

@@ -15,8 +15,14 @@ def _job(name: str) -> str:
 
 
 def test_the_graders_and_the_guard_that_run_are_mains_copies():
-    assert "git checkout origin/main -- evals/" in _job("eval")
-    assert "python -m evals" in _job("eval") and "make eval" not in _job("eval")
+    eval_job = _job("eval")
+    # main's evals/ is unpacked outside the tree and run with -I, so nothing the
+    # branch puts at its root or installs can stand in for a module the graders import
+    assert "git archive origin/main evals | tar -x -C \"$RUNNER_TEMP/graders\"" in eval_job
+    assert "python -I -c" in eval_job and "runpy.run_module('evals'" in eval_job
+    assert 'AAER_REPO="$GITHUB_WORKSPACE"' in eval_job
+    assert "python -m evals" not in eval_job and "make eval" not in eval_job
+    assert "git checkout origin/main -- evals" not in eval_job
     assert "origin/main:src/eval_guard.py" in _job("guard")
     assert '--action "${{ github.event.action }}"' in _job("guard")
 
