@@ -183,8 +183,7 @@ Configured in `.claude/settings.json`, not written by hand each session.
 
 - **session start** — `sh tools/session_start_lessons.sh`: the header of
   `lessons.md` and its newest lessons, at most sixty lines
-  (`tests/test_session_start_lessons.py`); until `.claude/settings.json` names
-  it, the hook runs `cat lessons.md`. **`CLAUDE.md` is capped at 22
+  (`tests/test_session_start_lessons.py`). **`CLAUDE.md` is capped at 22
   lines** (`src/instruction_length_check.py`, `make check`), so a rule that
   cannot fit replaces a line rather than appending one — the file is read in
   full at the start of every session.
@@ -296,8 +295,8 @@ with the removal checked, because a planted one that survives `rm -rf` answers
 from exactly where the pinned one would have; and the fallback is started
 `--restricted`, with its agent definition passed inline, because a session
 started in the worktree is handed that tree's `CLAUDE.md`, `AGENTS.md`, its
-`.claude/` settings and agents, and — through the SessionStart hook `cat
-lessons.md` — the lessons file verbatim. A sentinel line in `lessons.md` came
+`.claude/` settings and agents, and — through the SessionStart hook — the
+newest sixty lines of the lessons file verbatim. A sentinel line in `lessons.md` came
 back to the model in one turn with no tool call; the same probe answered
 `ABSENT` once the flag was added.
 

@@ -103,7 +103,5 @@ obsolete (11). The 190 left are the ones no script or test holds, and they stay
 in their original order. A count of every dated line before and after matched:
 nothing was lost.
 
-The SessionStart hook in `.claude/settings.json` still runs `cat lessons.md`;
-this change does not edit that file. The command to set is:
-
-    sh tools/session_start_lessons.sh
+The SessionStart hook in `.claude/settings.json` now runs
+`sh tools/session_start_lessons.sh` in place of `cat lessons.md`.
