@@ -333,6 +333,7 @@ def windows(table: dict, *, run_cutoff: str | None = None) -> list[dict]:
                     f"the {kind} window's abnormal return {moved!r} is not the sum of "
                     f"its days' rows {parts!r}")
         found.append({"window": kind, "filing_date": str(window.get("filing_date")),
+                      "accepted": str(window.get("accepted")),
                       "day_zero": days[0], "days": list(days), "abnormal_return": moved,
                       "short_interest": short_interest(table, days[0])})
     return found
@@ -374,7 +375,7 @@ NO_ID = "the item carries no id to cite"
 def labels(reports: dict[str, list[dict]], table: dict, *,
            band: float = NEAR_ZERO_BAND,
            dropped: set[tuple[str, str | None]] | None = None,
-           run_cutoff: str | None = None) -> dict:
+           run_cutoff: str | None = None, gate_dropped: int | None = None) -> dict:
     """The labels document for one run, from its reader items and its market table.
 
     `dropped` is the quote gate's drop list (`input_manifest.json`, `dropped_items`)
@@ -384,12 +385,16 @@ def labels(reports: dict[str, list[dict]], table: dict, *,
     is read here and set aside by its report and id, never labelled, because a
     label cites the item and nothing downstream may cite an item that failed its
     quote. Items are named by the gate's own `item_id`, so an id that is blank
-    after stripping is no id here either. `gate_dropped` is the count of the drop
-    list, so what the gate set aside is counted beside what was labelled.
+    after stripping is no id here either. `gate_dropped` is the number of rows
+    in the gate's drop list -- two id-less drops from one report are one pair
+    and two rows, and the rows are what is counted -- so what the gate set aside
+    is counted beside what was labelled; given no count, the pairs are counted.
     """
     if not isinstance(table, dict):
         raise MarketLabelError("the market table is not an object")
     dropped = set(dropped or ())
+    if gate_dropped is None:
+        gate_dropped = len(dropped)
     recorded = windows(table, run_cutoff=run_cutoff)
     items, unlabelled = [], []
     for report in READER_REPORTS:
@@ -405,7 +410,7 @@ def labels(reports: dict[str, list[dict]], table: dict, *,
     return {"ticker": table.get("ticker"), "cutoff": table.get("cutoff"),
             "near_zero_band": band, "near_zero_band_source": NEAR_ZERO_BAND_SOURCE,
             "windows": recorded, "items": items, "not_labelled": unlabelled,
-            "gate_dropped": len(dropped)}
+            "gate_dropped": gate_dropped}
 
 
 # --- the run directory ---------------------------------------------------------
@@ -461,8 +466,14 @@ def check(run) -> dict:
     beside it is that window's `reaction_window` re-read from `input_market.json`,
     and the word is what `label` -- the same function `labels` used, never a
     copy of its rule -- gives for the item's `expected_direction`, that return
-    and the band the file names. Every entry that fails is named, and the run is
-    refused. Returns `{"checked": True, "items": n}`, or `{"checked": False,
+    and the band the file names. The document's `windows` block is re-made by
+    `windows` from the re-read table under the run's cutoff -- which re-runs
+    every check on the table (cutoff, trading days, acceptance, the filing
+    window) and recomputes each window's short interest through the function
+    `write` used -- and every field of every written window (`day_zero`,
+    `days`, `filing_date`, `accepted`, `abnormal_return`, `short_interest`)
+    must equal it. `gate_dropped` must be the number of rows in the manifest's
+    drop list. Every entry that fails is named, and the run is refused. Returns `{"checked": True, "items": n}`, or `{"checked": False,
     "reason": ...}` for a run with no market table and so no labels file; a run
     with a table and no labels file is refused.
     """
@@ -498,7 +509,11 @@ def check(run) -> dict:
     if band is None:
         raise MarketLabelError(f"{LABELS_FILE} names no near-zero band to recompute its "
                                "labels under")
-    _, dropped = gate_record(run)
+    manifest, dropped = gate_record(run)
+    run_cutoff = manifest.get("cutoff")
+    if not (isinstance(run_cutoff, str) and run_cutoff):
+        raise MarketLabelError(f"{MANIFEST} names no cutoff, so the table cannot be re-checked "
+                               "against this run's filing")
     standing: dict[str, dict[str, dict]] = {}
     for report in READER_REPORTS:
         standing[report] = {}
@@ -507,6 +522,25 @@ def check(run) -> dict:
             if identifier is not None and (report, identifier) not in dropped:
                 standing[report][identifier] = item
     problems, entries = [], Counter()
+    if document.get("gate_dropped") != len(manifest["dropped_items"]):
+        problems.append(f"gate_dropped is written {document.get('gate_dropped')!r}, and the "
+                        f"manifest's drop list holds {len(manifest['dropped_items'])} rows")
+    # the windows block, re-made from the re-read table: this re-runs every check
+    # on the table and recomputes each window's short interest the way write did
+    remade = windows(table, run_cutoff=run_cutoff)
+    written_windows = document.get("windows") if isinstance(document.get("windows"), list) else []
+    if len(written_windows) != len(remade):
+        problems.append(f"the file carries {len(written_windows)} windows, and the market "
+                        f"table gives {len(remade)}")
+    for written, expected in zip(written_windows, remade):
+        name = f"the {expected['window']} window of {expected['filing_date']}"
+        if not isinstance(written, dict):
+            problems.append(f"{name}: {written!r} is not a window")
+            continue
+        for field, value in expected.items():
+            if written.get(field) != value:
+                problems.append(f"{name}: {field} is written {written.get(field)!r}, and the "
+                                f"table gives {value!r}")
     for entry in document["items"]:
         if not isinstance(entry, dict):
             problems.append(f"{entry!r} is not a label entry")
@@ -607,7 +641,8 @@ def write(run) -> dict:
         raise MarketLabelError(
             f"{MANIFEST} names no cutoff, so nothing ties the table's filing window to "
             "this run's filing or holds its other windows before it. Nothing is written")
-    document = labels(reports, table, dropped=dropped, run_cutoff=run_cutoff)
+    document = labels(reports, table, dropped=dropped, run_cutoff=run_cutoff,
+                      gate_dropped=len(manifest["dropped_items"]))
     text = json.dumps(document, indent=2, sort_keys=True) + "\n"
     target = run / LABELS_FILE
     if target.is_symlink():

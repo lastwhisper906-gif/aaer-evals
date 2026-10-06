@@ -833,3 +833,66 @@ def test_two_windows_of_one_kind_with_different_filing_dates_are_both_kept(tmp_p
         ("filing", "2026-05-08")]
     assert labelled(written, UP) == ["opposite_direction", "priced_in", "priced_in"]
     assert market_labels.check(run) == {"checked": True, "items": 2}
+
+
+# --- the count of the drop list is the count of its rows -----------------------------------
+
+def test_two_id_less_drops_from_one_report_count_two_and_the_file_passes(tmp_path):
+    """Two items the gate found no id on, both dropped from the numbers report: one
+    (report, None) pair, two rows, and `gate_dropped` counts the rows. The check
+    holds the count to the manifest's list, so a file saying one is refused."""
+    run = plant(tmp_path, market=rose(),
+                manifest={"cutoff": "2026-05-08",
+                          "dropped_items": [{"report": "report_numbers.md", "item_id": None,
+                                             "reason": "the item carries no id"},
+                                            {"report": "report_numbers.md", "item_id": None,
+                                             "reason": "the item carries no id"}]})
+    (run / "report_numbers.md").write_text(
+        fenced(item(UP, "up"), item("  ", "up"), item("", "down")), encoding="utf-8")
+    market_labels.write(run)
+    written = (run / "market_labels.json").read_text(encoding="utf-8")
+    document = json.loads(written)
+    assert document["gate_dropped"] == 2
+    assert [one["reason"] for one in document["not_labelled"]] == [
+        market_labels.DROPPED_NO_ID, market_labels.DROPPED_NO_ID]
+    assert market_labels.check(run)["checked"] is True
+    document["gate_dropped"] = 1
+    (run / "market_labels.json").write_text(json.dumps(document), encoding="utf-8")
+    with pytest.raises(MarketLabelError, match="gate_dropped is written 1, and the manifest's "
+                                               "drop list holds 2 rows"):
+        market_labels.check(run)
+
+
+# --- the windows block is re-made from the table on re-check -----------------------------
+
+def test_an_edited_window_or_short_interest_fails_the_check_and_the_written_file_passes(
+        tmp_path):
+    """Short interest 50,000,000 against the median worked above: above is True. The
+    written file passes; its `days` edited to end a day early, or its
+    `above_two_year_median` flipped, is not what the table gives."""
+    found = table(("filing", FILING_DAYS, [0.02, 0.0, 0.01], 0.03,
+                   short_interest(50_000_000, True)))
+    run = plant(tmp_path, market=found)
+    market_labels.write(run)
+    assert market_labels.check(run) == {"checked": True, "items": 2}
+    written = (run / "market_labels.json").read_text(encoding="utf-8")
+
+    def edited(change) -> str:
+        document = json.loads(written)
+        change(document["windows"][0])
+        (run / "market_labels.json").write_text(json.dumps(document), encoding="utf-8")
+        with pytest.raises(MarketLabelError) as caught:
+            market_labels.check(run)
+        return str(caught.value)
+
+    def days(window):
+        window["days"] = ["2026-05-08", "2026-05-11"]
+    assert ("the filing window of 2026-05-08: days is written ['2026-05-08', '2026-05-11'], "
+            "and the table gives ['2026-05-08', '2026-05-11', '2026-05-12']" in edited(days))
+
+    def flag(window):
+        window["short_interest"]["above_two_year_median"] = False
+    assert "the filing window of 2026-05-08: short_interest is written" in edited(flag)
+
+    (run / "market_labels.json").write_text(written, encoding="utf-8")
+    assert market_labels.check(run) == {"checked": True, "items": 2}

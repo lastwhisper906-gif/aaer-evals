@@ -332,6 +332,15 @@ def test_a_run_with_a_market_table_is_labelled_by_python_and_never_marked_unavai
                                         store=run_analysis.cutoff_guard.FIXTURES,
                                         prices=None)
     assert manifest["analysis_stages"]["market_labels"]["written"] is True
+    assert manifest["analysis_stages"]["market_labels_check"]["checked"] is True
     assert manifest.get("market_table") != "unavailable"
+    # the table and the labels are the run's, and reach no agent: not the readers,
+    # not the analysts, not the valuation analyst, not the single-agent control
+    assert agent_inputs.isolation_violations(run) == []
+    agent_files = {path.name for path in (run / "agents").rglob("*") if path.is_file()}
+    assert "input_market.json" not in agent_files and "market_labels.json" not in agent_files
+    control = run / run_analysis.CONTROL_DIRNAME
+    control_files = {path.name for path in control.rglob("*") if path.is_file()} if control.is_dir() else set()
+    assert "input_market.json" not in control_files and "market_labels.json" not in control_files
     labels = json.loads((run / "market_labels.json").read_text())
     assert [one["labels"][0]["label"] for one in labels["items"]] == ["priced_in"]

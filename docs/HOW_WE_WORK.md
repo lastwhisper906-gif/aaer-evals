@@ -105,8 +105,10 @@ input, then record a failure. A retry never changes the input.
 
 `detect filing` runs daily; the rest of a full run does not. It waits for
 reaction day two so the market labels get a whole window. A light run on an
-8-K 2.02 wakes both readers only; its label on the earnings-release window is
-Python's.
+8-K 2.02 wakes both readers only; its market table is refused by the labeller
+("no filing window") until `src/market.py` writes the 8-K's own window as the
+light run's `filing` window, so today nothing is labelled on a light run
+(`docs/needs_judgment.md` holds the question and the default).
 
 **Publish merges itself.** `main` requires the CI check and nothing else — no
 reviewer, no approval. Every pull request from the pipeline or a routine sets
