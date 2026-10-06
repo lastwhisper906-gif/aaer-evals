@@ -44,15 +44,28 @@ def _show(ref: str, path: str) -> str | None:
     return done.stdout if done.returncode == 0 else None
 
 
+LABEL_COUNTS_ON = ("labeled", "opened", "reopened")
+
+
 def decide(changes: list[tuple[str, str]], labels: set[str], base_has_evals: bool,
-           scoreboard_before: str | None, scoreboard_after: str | None) -> tuple[bool, str]:
-    """(passes, why). `changes` is (status, path) for every guarded path changed."""
+           scoreboard_before: str | None, scoreboard_after: str | None,
+           action: str = "labeled") -> tuple[bool, str]:
+    """(passes, why). `changes` is (status, path) for every guarded path changed.
+
+    The label counts on the run the owner's labelling starts, and on a pull request
+    opened with it; it does not count on a `synchronize` run, the one a later push
+    starts, so a commit pushed after the owner labelled is red until the owner
+    labels again (remove and re-add). The approval covers the head it was given on.
+    """
     if not changes:
         return True, "nothing guarded changed"
     if not base_has_evals:
         return True, "the base has no evals/: this is the pull request that creates it"
-    if LABEL in labels:
+    if LABEL in labels and action in LABEL_COUNTS_ON:
         return True, f"labelled {LABEL} by the owner"
+    if LABEL in labels:
+        return False, (f"labelled {LABEL}, but this run was started by a push after the "
+                       "label ({action}); the owner labels again to approve this head")
     others = [(status, path) for status, path in changes if path != SCOREBOARD]
     if not others:
         before, after = scoreboard_before or "", scoreboard_after or ""
@@ -68,6 +81,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--base", default="origin/main")
     parser.add_argument("--head", default="HEAD")
     parser.add_argument("--labels", default="", help="comma-separated pull request labels")
+    parser.add_argument("--action", default="labeled",
+                        help="the pull_request event's action (opened, synchronize, labeled)")
     args = parser.parse_args(argv)
     merge_base = _git("merge-base", args.base, args.head).strip()
     lines = _git("diff", "--name-status", "--no-renames", merge_base, args.head, "--",
@@ -77,7 +92,8 @@ def main(argv: list[str] | None = None) -> int:
     # evals/ existed must not take the creating pull request's exemption.
     base_has_evals = bool(_git("ls-tree", "--name-only", args.base, "evals/").strip())
     ok, why = decide(changes, {l.strip() for l in args.labels.split(",") if l.strip()},
-                     base_has_evals, _show(merge_base, SCOREBOARD), _show(args.head, SCOREBOARD))
+                     base_has_evals, _show(merge_base, SCOREBOARD), _show(args.head, SCOREBOARD),
+                     action=args.action)
     print(f"eval_guard: {'pass' if ok else 'FAIL'}: {why}")
     return 0 if ok else 1
 

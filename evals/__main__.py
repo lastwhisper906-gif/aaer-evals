@@ -57,6 +57,7 @@ def capability(runs: list[Path]) -> dict:
               if isinstance(g, dict)]
     graded = [g["score"] for g in grades if g["score"] is not None]
     disagreeing = sum(not g["agrees"] for g in grades)
+    unreadable = sum(bool(g["unreadable"]) for g in grades)
     filings = [v for v in (mechanical.valuation_quotes_from_filings(run) for run in runs)
                if v is not None]
     means["valuation_quotes_from_filings"] = sum(filings) / len(filings) if filings else None
@@ -66,7 +67,8 @@ def capability(runs: list[Path]) -> dict:
         "grader_agreement": grader_agreement.grade(runs),
         "analysis_grader": {"status": f"{len(graded)} of {len(runs)} runs graded; "
                                       f"{disagreeing} where the grader's own score differs "
-                                      "from the rubric's formula",
+                                      f"from the rubric's formula; {unreadable} grade.json the "
+                                      "formula cannot read",
                             "score": sum(graded) / len(graded) if graded else None,
                             "gated": False},
         "consistency": consistency.grade(runs),

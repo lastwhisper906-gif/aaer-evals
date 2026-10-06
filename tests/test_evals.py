@@ -145,6 +145,16 @@ def test_a_quote_from_a_file_the_analyst_was_not_handed_fails_quotes_resolve(run
     assert _status(mechanical.grade(run), "mechanical.quotes_resolve") == FAIL
 
 
+def test_a_quote_of_the_rows_unit_or_namespace_alone_fails_quotes_resolve(run):
+    report = run / "report_numbers.md"
+    text = report.read_text(encoding="utf-8")
+    escaped = '\\"value\\": \\"8791000000\\"'
+    assert escaped in text
+    report.write_text(text.replace(escaped, '\\"prefix\\": \\"us-gaap\\", \\"unit\\": \\"iso4217:USD\\"', 1),
+                      encoding="utf-8")
+    assert _status(mechanical.grade(run), "mechanical.quotes_resolve") == FAIL
+
+
 def test_a_quote_of_a_key_name_or_the_id_is_not_a_quote_of_the_row(run):
     """The nine-month cash flow row prints the tag and the key "value"; a quote of
     either carries nothing the filing said."""
@@ -158,6 +168,14 @@ def test_a_quote_of_a_key_name_or_the_id_is_not_a_quote_of_the_row(run):
     assert mechanical.says_something('"missing": "no row for inventory_reserve: the', {"missing"}, "x")
     assert not mechanical.says_something('"value"', {"value"}, "x")
     assert not mechanical.says_something('"x", "tag":', {"value", "tag"}, "x")
+    # the row's metadata is about the row, not the company; the tag is the filer's
+    # own choice of concept, and a tag that changed between years is a finding
+    metadata = {'"us-gaap"', '"iso4217:USD"', '"0000858877-26-000078:f-304"'}
+    assert not mechanical.says_something('"prefix": "us-gaap", "unit": "iso4217:USD"',
+                                         {"prefix", "unit"}, "x", metadata)
+    assert not mechanical.says_something('"id": "0000858877-26-000078:f-304"', {"id"}, "x", metadata)
+    assert mechanical.says_something('"tag": "NetCashProvidedByUsedInOperatingActivities"',
+                                     {"tag", "value"}, "x", metadata)
 
 
 def test_a_quote_spanning_two_files_fails_quotes_resolve(run):
@@ -354,19 +372,31 @@ def test_grader_agreement_counts_where_the_grader_matches_the_owner(tmp_path, mo
     assert grader_agreement.grade([run])["score"] == pytest.approx(0.0)
 
 
-def test_outcomes_wait_sixty_trading_days_counted_after_reaction_day_two():
-    """CSCO's cutoff is 2026-05-19, a Tuesday. Reaction days zero to two are Tuesday,
-    Wednesday and Thursday the 21st, which an input could have seen, so the window
-    starts Friday the 22nd. Counted by hand: May 22-29 is 6 weekdays, June 22, July
-    23, August 3-13 is 9: the sixtieth is 2026-08-13."""
+def test_outcomes_without_a_market_table_leave_four_weekdays_to_the_inputs():
+    """CSCO's cutoff is 2026-05-19, a Tuesday, and the run holds no market table. Four
+    weekdays after it is Monday the 25th (Memorial Day, which weekday counting does
+    not know; the fourth weekday is the slack for it). The window opens Tuesday the
+    26th. Counted by hand from the 26th: May 26-29 is 4 weekdays, June 22, July 23,
+    August 3-14 is 10, so the fifty-ninth is 2026-08-14 and the sixtieth the 17th."""
     import datetime as dt
-    assert outcomes.window_start(dt.date(2026, 5, 19)) == dt.date(2026, 5, 21)
-    assert outcomes.window_start(dt.date(2026, 5, 22)) == dt.date(2026, 5, 26)   # over a weekend
-    early = outcomes.grade([CLEAN], today=dt.date(2026, 8, 12))["runs"][0]
-    late = outcomes.grade([CLEAN], today=dt.date(2026, 8, 13))["runs"][0]
+    assert outcomes.last_day_an_input_may_see(CLEAN, dt.date(2026, 5, 19)) == dt.date(2026, 5, 25)
+    assert outcomes.first_outcome_day(CLEAN, dt.date(2026, 5, 19)) == dt.date(2026, 5, 26)
+    early = outcomes.grade([CLEAN], today=dt.date(2026, 8, 14))["runs"][0]
+    late = outcomes.grade([CLEAN], today=dt.date(2026, 8, 17))["runs"][0]
     assert early["status"] == "pending" and early["trading_days_in_window"] == 59
     assert late["status"] == "aged" and late["trading_days_in_window"] == 60
-    assert late["window_from"] == "2026-05-21"
+    assert late["first_outcome_day"] == "2026-05-26"
+
+
+def test_outcomes_with_a_market_table_start_after_its_cutoff(tmp_path):
+    """The table's cutoff is reaction day two (src/market.py): a table ending
+    Thursday 2026-05-21 opens the window on Friday the 22nd."""
+    import datetime as dt
+    run = tmp_path / "CSCO" / CLEAN.name
+    shutil.copytree(CLEAN, run, ignore=shutil.ignore_patterns("agents", "control-*"))
+    (run / "input_market.json").write_text(json.dumps({"cutoff": "2026-05-21", "rows": []}))
+    assert outcomes.last_day_an_input_may_see(run, dt.date(2026, 5, 19)) == dt.date(2026, 5, 21)
+    assert outcomes.first_outcome_day(run, dt.date(2026, 5, 19)) == dt.date(2026, 5, 22)
 
 
 def test_outcomes_count_company_events_and_never_the_ledgers_process_rows(tmp_path):
@@ -374,7 +404,7 @@ def test_outcomes_count_company_events_and_never_the_ledgers_process_rows(tmp_pa
     ledger = tmp_path / "ledger.jsonl"
     ledger.write_text("\n".join([
         json.dumps({"ticker": "CSCO", "date": "2026-06-01", "event": "restatement"}),
-        json.dumps({"ticker": "CSCO", "date": "2026-05-21", "event": "on reaction day two"}),
+        json.dumps({"ticker": "CSCO", "date": "2026-05-25", "event": "a day an input may see"}),
         json.dumps({"ticker": "CSCO", "at": "2026-06-01T00:00:00+00:00", "accession": "x",
                     "layers_that_ran": ["detect filing"]}),
         json.dumps({"at": "2026-06-02T00:00:00+00:00", "lens": "codex", "verdict": "pass"}),
@@ -412,6 +442,7 @@ def test_the_grader_score_is_recomputed_from_its_items():
              "score": 0.9}
     out = rubric_score.check(grade)
     assert out["score"] == pytest.approx(4 / 6) and out["agrees"] is False
+    assert out["unreadable"] == []
     grade["dealbreakers"] = [{"kind": "number_not_from_calculator", "id": "a",
                               "where": "anomalies[0].what", "why": "a bare figure"}]
     assert rubric_score.recompute(grade) == pytest.approx(1 / 6)
@@ -462,3 +493,34 @@ def test_eval_quick_grades_only_the_changed_runs_and_writes_no_scoreboard(run, m
     assert not (tmp_path / "scoreboard.jsonl").exists()
     monkeypatch.setattr(runner, "changed_runs", lambda base="origin/main": [])
     assert runner.main(["--quick"]) == 0
+
+
+def test_a_grade_the_formula_cannot_read_scores_nothing_and_says_which_item():
+    grade = {"items": [{"id": "a", "verdict": "supported", "severity": "high"},
+                       {"id": "b", "verdict": "maybe", "severity": "high"},
+                       {"id": "c", "verdict": "supported"}], "score": 1.0}
+    out = rubric_score.check(grade)
+    assert out["score"] is None
+    assert out["unreadable"] == ["items[1]: verdict 'maybe'", "items[2]: severity None"]
+
+
+def test_changed_runs_reads_the_branch_against_origin_main(tmp_path, monkeypatch):
+    import subprocess
+    git = lambda *a: subprocess.run(["git", *a], cwd=tmp_path, check=True, capture_output=True)  # noqa: E731
+    git("init", "-q", "-b", "work")
+    git("config", "user.email", "t@t")
+    git("config", "user.name", "t")
+    for ticker in ("AAA", "BBB"):
+        run = tmp_path / "runs" / ticker / "1"
+        run.mkdir(parents=True)
+        (run / "input_manifest.json").write_text("{}")
+        (run / "calculator.json").write_text("{}")
+    git("add", ".")
+    git("commit", "-q", "-m", "base")
+    git("update-ref", "refs/remotes/origin/main", "HEAD")
+    monkeypatch.setattr(runner, "REPO", tmp_path)
+    assert runner.changed_runs() == []
+    (tmp_path / "runs" / "BBB" / "1" / "calculator.json").write_text('{"changed": 1}')
+    git("commit", "-q", "-am", "change BBB")
+    assert [r.name for r in runner.changed_runs()] == ["1"]
+    assert [r.parent.name for r in runner.changed_runs()] == ["BBB"]

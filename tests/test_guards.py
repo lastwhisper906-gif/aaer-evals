@@ -202,3 +202,11 @@ def test_the_ci_guard_lets_the_creating_branch_through_when_main_has_no_evals(tm
 def test_the_ci_guard_guards_itself(tmp_path, monkeypatch):
     ok, _ = eval_guard.decide([("M", "src/eval_guard.py")], set(), True, None, None)
     assert not ok
+
+
+def test_the_ci_guard_counts_the_label_on_the_labelling_run_and_not_on_a_later_push():
+    change = [("M", "evals/thresholds.json")]
+    assert eval_guard.decide(change, {"owner-approved-eval"}, True, "", "", action="labeled")[0]
+    assert eval_guard.decide(change, {"owner-approved-eval"}, True, "", "", action="opened")[0]
+    ok, why = eval_guard.decide(change, {"owner-approved-eval"}, True, "", "", action="synchronize")
+    assert not ok and "labels again" in why

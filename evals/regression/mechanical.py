@@ -195,13 +195,49 @@ def row_keys(row_text: str) -> set[str]:
     return out
 
 
-def says_something(quote: str, keys: set[str], identifier: str) -> bool:
+# What a computed row carries about itself rather than about the company: the
+# namespace, the unit, the form, the ids, the dates. A quote made of these alone
+# says nothing the filing said. The tag is not among them: the concept a filer
+# tagged a line with is the filer's own choice, and CIEN's numbers reader quoted a
+# bad-debt allowance that moved from one tag to another between years, which is a
+# fact about the filing.
+ROW_METADATA_KEYS = ("prefix", "namespace", "unit", "form", "id", "paragraph_id",
+                     "source_accession", "accession", "context_ref", "decimals",
+                     "filing_date", "filed", "period", "start", "end", "instant")
+
+
+def row_metadata(row_text: str) -> set[str]:
+    """Every value a row prints under a metadata key, as printed."""
+    try:
+        row = json.loads(row_text)
+    except ValueError:
+        return set()
+    out = set()
+
+    def walk(node):
+        if isinstance(node, dict):
+            for key, value in node.items():
+                if key in ROW_METADATA_KEYS and isinstance(value, (str, int, float)):
+                    out.add(json.dumps(value))
+                walk(value)
+        elif isinstance(node, list):
+            for value in node:
+                walk(value)
+
+    walk(row)
+    return out
+
+
+def says_something(quote: str, keys: set[str], identifier: str,
+                   metadata: set[str] = frozenset()) -> bool:
     """Whether a quote of a JSON row carries anything beyond the row's key names,
-    the id and JSON punctuation: a key name or the id alone is not a quote of
-    anything the filing said; a value, or a piece of one, is."""
+    its metadata values, the id and JSON punctuation: those alone are not a quote
+    of anything the filing said; a value, or a piece of one, is."""
     rest = quote.replace(f'"{identifier}"', " ")
     for key in sorted(keys, key=len, reverse=True):
         rest = rest.replace(f'"{key}"', " ")
+    for value in sorted(metadata, key=len, reverse=True):
+        rest = rest.replace(value, " ")
     return bool(re.sub(r"[\s:,{}\[\]\"]+", "", rest))
 
 
@@ -213,11 +249,12 @@ def quote_stands(seen: dict[str, str], identifier: str, quote: str) -> str | Non
     if fold(quote) not in paragraph:
         return "the quote is not in the paragraph it names"
     if paragraph.lstrip().startswith("{"):
-        keys = set().union(*(row_keys(row) for text in seen.values()
-                             if text.lstrip().startswith("{")
-                             for row in json_objects_printing(text, identifier)))
-        if not says_something(quote, keys, identifier):
-            return "the quote carries only a key name or the id, nothing the row says"
+        rows = [row for text in seen.values() if text.lstrip().startswith("{")
+                for row in json_objects_printing(text, identifier)]
+        keys = set().union(*(row_keys(row) for row in rows))
+        metadata = set().union(*(row_metadata(row) for row in rows))
+        if not says_something(quote, keys, identifier, metadata):
+            return "the quote carries only key names, the row's metadata or the id, nothing the row says"
     return None
 
 
