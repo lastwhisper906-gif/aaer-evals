@@ -24,6 +24,8 @@ def test_the_graders_and_the_guard_that_run_are_mains_copies():
     # and no .pth of theirs runs at start; the graders come after the standard library
     assert "sys.path += ['$RUNNER_TEMP/graders', '$GITHUB_WORKSPACE']" in eval_job
     assert "site-packages" not in eval_job
+    # and the job installs nothing: no build script of the branch's requirements runs
+    assert "pip install" not in eval_job and "requirements.txt" not in eval_job
     assert 'AAER_REPO="$GITHUB_WORKSPACE"' in eval_job
     assert "python -m evals" not in eval_job and "make eval" not in eval_job
     assert "git checkout origin/main -- evals" not in eval_job

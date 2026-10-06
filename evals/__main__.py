@@ -22,6 +22,7 @@ from pathlib import Path
 from evals.capability import (consistency, golden, grader_agreement, memorization, outcomes,
                               rubric_score)
 from evals.common import EVALS, FAIL, PASS, REPO, Result, find_runs, load, run_name
+from evals.golden_format import GoldenFormatError
 from evals.regression import coverage, mechanical
 
 SCOREBOARD = REPO / "evals" / "scoreboard.jsonl"
@@ -42,13 +43,15 @@ def changed_runs(base: str = "origin/main") -> list[Path]:
 
 
 def regression(runs: list[Path]) -> list[Result]:
-    results = list(mechanical.check_hand_worked_cases())
+    # the run checks first; the hand-worked case, which runs the branch's
+    # calculator in a process of its own, last
+    results = []
     for run in runs:
         results += mechanical.grade(run) + coverage.grade(run)
-    return results
+    return results + list(mechanical.check_hand_worked_cases())
 
 
-def capability(runs: list[Path]) -> dict:
+def capability(runs: list[Path], cases: list | None = None) -> dict:
     per_run = {run_name(run): coverage.rates(run) for run in runs}
     means = {}
     for key in next(iter(per_run.values()), {}):
@@ -63,15 +66,15 @@ def capability(runs: list[Path]) -> dict:
     means["valuation_quotes_from_filings"] = sum(filings) / len(filings) if filings else None
     return {
         "coverage": {"per_run": per_run, "means": means},
-        "golden": golden.grade(runs),
-        "grader_agreement": grader_agreement.grade(runs),
+        "golden": golden.grade(runs, cases=cases),
+        "grader_agreement": grader_agreement.grade(runs, cases=cases),
         "analysis_grader": {"status": f"{len(graded)} of {len(runs)} runs graded; "
                                       f"{disagreeing} where the grader's own score differs "
                                       f"from the rubric's formula; {unreadable} grade.json the "
                                       "formula cannot read",
                             "score": sum(graded) / len(graded) if graded else None,
                             "gated": False},
-        "consistency": consistency.grade(runs),
+        "consistency": consistency.grade(runs, cases=cases),
         "outcomes": outcomes.grade(runs),
         "memorization": memorization.grade(runs),
     }
@@ -87,8 +90,10 @@ def anomaly_ids(run: Path) -> set[str]:
     return out
 
 
-def floors_failed(scores: dict) -> list[str]:
-    thresholds = load(THRESHOLDS) or {}
+def floors_failed(scores: dict, thresholds: dict | None = None) -> list[str]:
+    """`thresholds` is what main() read before any branch code ran; read here only
+    when called on its own."""
+    thresholds = load(THRESHOLDS) or {} if thresholds is None else thresholds
     failed = []
     for name, floor in (thresholds.get("capability") or {}).items():
         value = scores.get(name)
@@ -120,6 +125,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--json", action="store_true", help="print the full result as JSON")
     args = parser.parse_args(argv)
 
+    # The owner's floors and approved cases are read into memory before anything
+    # of the tree under judgment runs (the hand-worked case runs its calculator),
+    # so nothing that code does to the files on disk reaches this grading.
+    thresholds = load(THRESHOLDS) or {}
+    try:
+        cases = golden.approved_cases()
+    except GoldenFormatError as exc:
+        cases = exc
     if args.quick:
         runs = changed_runs()
     else:
@@ -136,7 +149,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.quick:
         return 1 if failed else 0
 
-    cap = capability(runs)
+    cap = capability(runs, cases)
     scores = flat_scores(cap)
     print("capability (reported; gated only where evals/thresholds.json sets a floor):")
     for name, value in scores.items():
@@ -144,7 +157,7 @@ def main(argv: list[str] | None = None) -> int:
     for name in ("golden", "grader_agreement", "analysis_grader", "consistency", "outcomes",
                  "memorization"):
         print(f"  {name}: {cap[name]['status']}")
-    below = floors_failed(scores)
+    below = floors_failed(scores, thresholds)
     for line in below:
         print(f"  BELOW FLOOR {line}")
     if args.json:

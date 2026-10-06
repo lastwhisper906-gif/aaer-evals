@@ -43,9 +43,12 @@ def base_value(run: Path):
     return scenario.get("value_per_share")
 
 
-def grade(runs: list[Path] | None = None) -> dict:
+def grade(runs: list[Path] | None = None, cases=None) -> dict:
     rows = []
-    for path, case in golden.approved_cases():
+    cases = golden.approved_cases() if cases is None else cases
+    if isinstance(cases, Exception):
+        return {"status": "error", "detail": str(cases), "score": None, "rows": []}
+    for path, case in cases:
         found = golden.runs_of(case["filing"]["accession"], runs)
         row = {"case": path.name, "runs": [run_name(r) for r in found]}
         if len(found) >= 2:

@@ -98,9 +98,13 @@ def score_run(case: dict, run: Path) -> dict:
             "score": max(0.0, (len(found) - len(extra)) / total)}
 
 
-def grade(runs: list[Path] | None = None) -> dict:
+def grade(runs: list[Path] | None = None, cases=None) -> dict:
+    """`cases` is what the runner read before any branch code ran (a list, or the
+    GoldenFormatError it met); read here only when called on its own."""
     try:
-        cases = approved_cases()
+        cases = approved_cases() if cases is None else cases
+        if isinstance(cases, GoldenFormatError):
+            raise cases
     except GoldenFormatError as exc:
         return {"status": "error", "detail": str(exc), "score": None, "cases": []}
     if not cases:

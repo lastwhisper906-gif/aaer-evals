@@ -36,6 +36,7 @@ from __future__ import annotations
 
 import datetime as dt
 import json
+import os
 import re
 import subprocess
 import sys
@@ -554,6 +555,22 @@ def check_nothing_after_cutoff(run: Path) -> Result:
                         if isinstance(d, dict) and isinstance(d.get("accepted"), str)}
             late += [f"{path.relative_to(run)}: {p}" for p in
                      market_table_problems(tree or {}, cutoff, manifest.get("accepted"), recorded)]
+            # every other dated thing in the table is held to reaction day two of
+            # its latest window, whatever src/market.py writes there next
+            table = tree if isinstance(tree, dict) else {}
+            day_two = market_reaction_day_two(table) or cutoff
+            rest = {k: v for k, v in table.items() if k not in ("rows", "windows")}
+            for key in ROW_DATE_KEYS:
+                for value in _dates_in(rest, key):
+                    try:
+                        late_one = bool(re.match(r"\d{4}-\d{2}-\d{2}", value)) \
+                            and dt.date.fromisoformat(value[:10]) > day_two
+                    except ValueError:
+                        late_one = False
+                    if late_one:
+                        late.append(f"{path.relative_to(run)}: {key} {value} is past reaction "
+                                    f"day two {day_two}")
+                        break
             continue
         for key in ROW_DATE_KEYS:
             for value in _dates_in(tree, key):
@@ -892,8 +909,11 @@ def calculator_hand_values(repo: Path = REPO) -> tuple[dict, str | None]:
     from `repo`; (values, None) or ({}, why it gave none)."""
     cases = {name: drivers for name, drivers, _, _ in HAND_WORKED}
     try:
+        # a cleared environment: the branch's code learns nothing of where the
+        # graders or their temporary directory are
         done = subprocess.run([sys.executable, "-I", "-c", CALCULATOR_PROBE, json.dumps(cases),
-                               str(repo)], cwd=repo, capture_output=True, text=True, timeout=120)
+                               str(repo)], cwd=repo, capture_output=True, text=True, timeout=120,
+                              env={"PATH": os.environ.get("PATH", "")})
     except (OSError, subprocess.TimeoutExpired) as exc:
         return {}, f"src.calculator could not be run: {exc}"
     if done.returncode:

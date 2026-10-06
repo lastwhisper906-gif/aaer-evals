@@ -26,8 +26,10 @@ def verdicts(run: Path) -> dict[str, str]:
             if isinstance(item, dict)}
 
 
-def grade(runs: list[Path] | None = None) -> dict:
-    cases = golden.approved_cases()
+def grade(runs: list[Path] | None = None, cases=None) -> dict:
+    cases = golden.approved_cases() if cases is None else cases
+    if isinstance(cases, Exception):
+        return {"status": "error", "detail": str(cases), "score": None, "rows": []}
     agree = total = 0
     rows = []
     for path, case in cases:

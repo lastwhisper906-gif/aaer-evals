@@ -61,6 +61,44 @@ def test_the_graders_read_their_own_floors_and_cases_never_the_branchs(tmp_path,
     assert not str(runner.THRESHOLDS).startswith(str(tmp_path))
 
 
+def test_the_floors_and_cases_are_read_before_any_branch_code_runs(run, monkeypatch, tmp_path):
+    """A branch's src/ could rewrite the floors on disk while the hand-worked case
+    runs it; the runner read them first, so the floor it set still fails the run."""
+    floors = tmp_path / "thresholds.json"
+    floors.write_text(json.dumps({"capability": {"coverage.value_range_computed": 2.0}}))
+    monkeypatch.setattr(runner, "THRESHOLDS", floors)
+    monkeypatch.setattr(runner, "SCOREBOARD", tmp_path / "scoreboard.jsonl")
+
+    def rewrite_and_pass():
+        floors.write_text("{}")
+        return []
+    monkeypatch.setattr(mechanical, "check_hand_worked_cases", rewrite_and_pass)
+    assert runner.main(["--runs", str(run.parent), "--no-scoreboard"]) == 1
+    # the same rewrite with no floor set: nothing to fail
+    floors.write_text("{}")
+    assert runner.main(["--runs", str(run.parent), "--no-scoreboard"]) == 0
+
+
+def test_the_calculator_probe_sees_none_of_the_graders_environment(tmp_path, monkeypatch):
+    import textwrap
+    tree = tmp_path / "branch"
+    (tree / "src").mkdir(parents=True)
+    (tree / "src" / "__init__.py").write_text(textwrap.dedent("""
+        import os, pathlib
+        pathlib.Path(os.environ.get("PROBE_OUT", "/dev/null")).write_text("reached")
+        (pathlib.Path(__file__).parent / "seen.txt").write_text(
+            repr(sorted(k for k in os.environ if k in ("RUNNER_TEMP", "AAER_REPO", "PROBE_OUT"))))
+        """))
+    (tree / "src" / "calculator.py").write_text("def forecast(*a):\n    return {'enterprise_value': 1.0}\n"
+                                                "def bridge(*a):\n    return {'value_per_share': 1.0}\n")
+    monkeypatch.setenv("RUNNER_TEMP", str(tmp_path / "graders"))
+    monkeypatch.setenv("AAER_REPO", str(tree))
+    monkeypatch.setenv("PROBE_OUT", str(tmp_path / "reached.txt"))
+    mechanical.check_hand_worked_cases(tree)
+    assert (tree / "src" / "seen.txt").read_text() == "[]"
+    assert not (tmp_path / "reached.txt").exists()
+
+
 def test_the_hand_worked_cases_reproduce():
     assert all(r.status == PASS for r in mechanical.check_hand_worked_cases())
 
@@ -689,6 +727,21 @@ def test_a_beta_estimated_over_the_reaction_fails_nothing_after_cutoff():
     assert mechanical.market_table_problems(none, cutoff, ACCEPTED) == [
         "the table names no beta estimation window"]
     assert mechanical.market_table_problems(_market_table(), cutoff, ACCEPTED) == []
+
+
+def test_another_dated_series_in_the_market_table_is_held_to_reaction_day_two(run):
+    """src/market.py writes no such key today; the grader does not depend on that."""
+    _with_acceptance(run)
+    table = _market_table(short_interest_history=[{"date": "2026-05-15", "ratio": 1.0},
+                                                  {"date": "2026-05-26", "ratio": 2.0}])
+    (run / "input_market.json").write_text(json.dumps(table))
+    results = mechanical.grade(run)
+    assert _status(results, "mechanical.nothing_after_cutoff") == FAIL
+    assert any("date 2026-05-26 is past reaction day two 2026-05-22" in f for f in
+               next(r.failures for r in results if r.grader == "mechanical.nothing_after_cutoff"))
+    table["short_interest_history"].pop()
+    (run / "input_market.json").write_text(json.dumps(table))
+    assert _status(mechanical.grade(run), "mechanical.nothing_after_cutoff") == PASS
 
 
 def test_a_market_table_with_no_acceptance_stamp_fails_nothing_after_cutoff():
