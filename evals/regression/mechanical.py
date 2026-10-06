@@ -106,6 +106,8 @@ def read_report_blocks(text: str) -> tuple[list[dict], int]:
 
 
 READER_DIR = {"report_numbers.md": "numbers-reader", "report_notes_text.md": "notes-text-reader"}
+# the single-agent control's directory: what it was handed is an input like any
+CONTROL_DIR = "control-single-agent-analyses"
 # What a quote may stand on: the filing as the run committed it (input_*) and the
 # reader reports upstream of the analyst (report_*), never the calculator. The
 # valuation analyst is also handed both gated analyses (#101), so its quote of one
@@ -507,7 +509,8 @@ def check_nothing_after_cutoff(run: Path) -> Result:
             late.append(f"{document.get('role') or document.get('path')}: neither a filing "
                         "date nor rows_used_through, so nothing holds it to the cutoff")
     # every calculator file: the run's own and the copies the agents were handed
-    for path in sorted(run.glob("calculator*.json")) + sorted(run.glob("agents/*/calculator*.json")):
+    for path in sorted(run.glob("calculator*.json")) + sorted(run.glob("agents/*/calculator*.json")) \
+            + sorted(run.glob(f"{CONTROL_DIR}/calculator*.json")):
         tree = load(path) or {}
         for where, value in list(walk_strings(tree)) + list(walk_keys(tree)):
             match = ISO_DATE.fullmatch(value)
@@ -522,14 +525,17 @@ def check_nothing_after_cutoff(run: Path) -> Result:
                     late.append(f"{path.relative_to(run)}: {where} = {value}")
     # the inputs themselves, as the run holds them and as each agent was handed
     # them: every row's own filing date, read rather than trusted to the manifest
-    inputs = sorted(run.glob("input_*.json")) + sorted(run.glob("agents/*/input_*.json"))
+    inputs = sorted(run.glob("input_*.json")) + sorted(run.glob("agents/*/input_*.json")) \
+        + sorted(run.glob(f"{CONTROL_DIR}/input_*.json"))
     for path in inputs:
         if path.name == "input_manifest.json":
             continue
         tree = load(path)
         if path.name == "input_market.json":
+            recorded = {d.get("accepted") for d in manifest.get("documents") or []
+                        if isinstance(d, dict) and isinstance(d.get("accepted"), str)}
             late += [f"{path.relative_to(run)}: {p}" for p in
-                     market_table_problems(tree or {}, cutoff, manifest.get("accepted"))]
+                     market_table_problems(tree or {}, cutoff, manifest.get("accepted"), recorded)]
             continue
         for key in ROW_DATE_KEYS:
             for value in _dates_in(tree, key):
@@ -664,12 +670,23 @@ def next_business_day(day: dt.date) -> dt.date:
     return day
 
 
+STAMP = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?([+-]\d{2}:\d{2})?$")
+
+
 def _eastern(stamp: str) -> dt.datetime:
+    """The acceptance instant on the exchange's clock. A stamp is a date, a `T`, a
+    time, and either an explicit offset or nothing (EDGAR stamps Eastern wall-clock
+    time); a date alone would read as midnight, before any close, and a `Z` would
+    read 16:30 as half past twelve in New York -- both are refused, as
+    `src/market.py` refuses them."""
+    if not STAMP.match(stamp):
+        raise ValueError(f"not an acceptance stamp: {stamp!r}")
     when = dt.datetime.fromisoformat(stamp)
     return when.astimezone(EASTERN) if when.tzinfo else when.replace(tzinfo=EASTERN)
 
 
-def market_table_problems(table: dict, cutoff: dt.date, accepted=None) -> list[str]:
+def market_table_problems(table: dict, cutoff: dt.date, accepted=None,
+                          recorded: set[str] = frozenset()) -> list[str]:
     """Why a market table reaches past what an input may see, or []. The rule is
     CLAUDE.md's and `docs/HOW_WE_WORK.md` §4's, written out here against the
     exchange calendar above so the grader moves neither with `src/market.py` nor
@@ -682,8 +699,9 @@ def market_table_problems(table: dict, cutoff: dt.date, accepted=None) -> list[s
     day; every other window is an earlier filing's; the table's cutoff is day two
     of its latest window; no row lies past it, and every row is a trading day.
     The filing window's acceptance stamp is held to `accepted`, the run's own
-    record of when EDGAR accepted the filing (the manifest's): the stamp decides
-    day zero, so a table is not believed about it."""
+    record of when EDGAR accepted the filing (the manifest's), and every other
+    window's to `recorded`, the acceptance stamps the manifest's document rows
+    carry: the stamp decides day zero, so a table is not believed about any."""
     problems = []
     if not isinstance(accepted, str):
         problems.append("the manifest records no acceptance stamp for the filing, so the "
@@ -725,6 +743,9 @@ def market_table_problems(table: dict, cutoff: dt.date, accepted=None) -> list[s
         if kind == "filing" and isinstance(accepted, str) and stamp != accepted:
             problems.append(f"the filing window's acceptance stamp {stamp} is not the "
                             f"manifest's {accepted}")
+        elif kind != "filing" and stamp not in recorded:
+            problems.append(f"the {kind} window's acceptance stamp {stamp} is not one the "
+                            "manifest's document rows record")
         if kind == "filing" and filed != cutoff.isoformat():
             problems.append(f"the filing window is for a filing dated {filed}, not the run's "
                             f"cutoff {cutoff}")

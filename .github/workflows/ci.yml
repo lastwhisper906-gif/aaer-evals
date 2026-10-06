@@ -52,12 +52,11 @@ jobs:
         run: pip install -r requirements.txt
       - name: fetch the baseline branch
         run: git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
-      # main's evals/ is copied out of the tree and run with the standard library
-      # ahead of everything, then the graders, then the branch's tree, then what the
-      # branch installed (site-packages): neither a module the branch adds at its
-      # root nor a package its requirements install can stand in for one the
-      # graders import; the branch's src/ is still what the hand-worked DCF case
-      # runs against, by name.
+      # main's evals/ is copied out of the tree and run with -I -S: no site
+      # module, so nothing the branch's requirements installed is on the path and
+      # no .pth of theirs runs at start; the graders are standard library only and
+      # sit after it, the branch's tree after them. The hand-worked DCF case runs
+      # the branch's src/calculator.py in a process of its own.
       - name: grade with main's evals/
         run: |
           mkdir -p "$RUNNER_TEMP/graders"
@@ -68,7 +67,7 @@ jobs:
             cp -r evals "$RUNNER_TEMP/graders/evals"
             echo "origin/main has no evals/ yet: graded with this branch's, the one that creates it"
           fi
-          AAER_REPO="$GITHUB_WORKSPACE" python -I -c "import sys, runpy; site = next((n for n, p in enumerate(sys.path) if 'site-packages' in p), len(sys.path)); sys.path[site:site] = ['$RUNNER_TEMP/graders', '$GITHUB_WORKSPACE']; runpy.run_module('evals', run_name='__main__', alter_sys=True)"
+          AAER_REPO="$GITHUB_WORKSPACE" python -I -S -c "import sys, runpy; sys.path += ['$RUNNER_TEMP/graders', '$GITHUB_WORKSPACE']; runpy.run_module('evals', run_name='__main__', alter_sys=True)"
 
   check:
     needs: [guard, eval]

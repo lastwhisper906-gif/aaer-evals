@@ -550,7 +550,8 @@ def test_a_market_window_for_a_later_filing_fails_nothing_after_cutoff():
                              "accepted": "2026-05-22T16:35:00-04:00", "day_zero": "2026-05-26",
                              "days": ["2026-05-26", "2026-05-27", "2026-05-28"]})
     table["rows"] += [{"date": d} for d in ("2026-05-26", "2026-05-27", "2026-05-28")]
-    assert mechanical.market_table_problems(table, dt.date(2026, 5, 19), ACCEPTED) == [
+    assert mechanical.market_table_problems(table, dt.date(2026, 5, 19), ACCEPTED,
+                                            {"2026-05-22T16:35:00-04:00"}) == [
         "the earnings_release window is for a filing dated 2026-05-22, after the run's "
         "cutoff 2026-05-19"]
     # the same window a week earlier is the release before the filing, and stands
@@ -561,7 +562,55 @@ def test_a_market_window_for_a_later_filing_fails_nothing_after_cutoff():
                                   "days": ["2026-05-14", "2026-05-15", "2026-05-18"]})
     earlier["rows"] = [{"date": d} for d in ("2026-05-13", "2026-05-14", "2026-05-15")] \
         + earlier["rows"]
-    assert mechanical.market_table_problems(earlier, dt.date(2026, 5, 19), ACCEPTED) == []
+    assert mechanical.market_table_problems(earlier, dt.date(2026, 5, 19), ACCEPTED,
+                                            {"2026-05-13T16:35:00-04:00"}) == []
+
+
+def test_a_date_only_or_zulu_acceptance_stamp_is_refused():
+    """A date alone would read as midnight, before any close; `16:30Z` would read as
+    half past twelve in New York; EDGAR means 16:30 Eastern. Both shapes are refused
+    on the window and on the manifest alike, as src/market.py refuses them."""
+    import datetime as dt
+    for stamp in ("2026-05-19", "2026-05-19T16:30:00Z", "2026-05-19 16:30"):
+        table = _market_table()
+        table["windows"][0]["accepted"] = stamp
+        problems = mechanical.market_table_problems(table, dt.date(2026, 5, 19), stamp)
+        assert problems == [f"the filing window's acceptance stamp {stamp!r} is not a time"], stamp
+    plain = _market_table()
+    plain["windows"][0]["accepted"] = "2026-05-19T16:35:00"      # Eastern wall clock, no offset
+    assert mechanical.market_table_problems(plain, dt.date(2026, 5, 19), "2026-05-19T16:35:00") == []
+
+
+def test_another_windows_stamp_must_be_one_the_manifest_records():
+    """The earnings-release window's stamp decides its days and can move the table's
+    cutoff: it is held to the manifest's document rows, never believed."""
+    import datetime as dt
+    earlier = _market_table()
+    release = {"kind": "earnings_release", "filing_date": "2026-05-13",
+               "accepted": "2026-05-13T16:35:00-04:00", "day_zero": "2026-05-14",
+               "days": ["2026-05-14", "2026-05-15", "2026-05-18"]}
+    earlier["windows"].insert(0, release)
+    earlier["rows"] = [{"date": d} for d in ("2026-05-13", "2026-05-14", "2026-05-15")] \
+        + earlier["rows"]
+    assert mechanical.market_table_problems(earlier, dt.date(2026, 5, 19), ACCEPTED) == [
+        "the earnings_release window's acceptance stamp 2026-05-13T16:35:00-04:00 is not one "
+        "the manifest's document rows record"]
+    assert mechanical.market_table_problems(earlier, dt.date(2026, 5, 19), ACCEPTED,
+                                            {"2026-05-13T16:35:00-04:00"}) == []
+
+
+def test_a_late_row_handed_to_the_single_agent_control_fails_nothing_after_cutoff(tmp_path):
+    """The control's directory is an agent's directory: what it was handed is held to
+    the cutoff like every other copy."""
+    run = tmp_path / "CSCO" / CLEAN.name
+    shutil.copytree(CLEAN, run)
+    assert _status(mechanical.grade(run), "mechanical.nothing_after_cutoff") == PASS
+    _edit(run / mechanical.CONTROL_DIR / "calculator_before_analysts.json",
+          lambda d: d["market"]["price"].update(date="2099-01-01"))
+    results = mechanical.grade(run)
+    assert _status(results, "mechanical.nothing_after_cutoff") == FAIL
+    assert any(d.startswith(mechanical.CONTROL_DIR) for d in
+               next(r.failures for r in results if r.grader == "mechanical.nothing_after_cutoff"))
 
 
 def test_a_market_table_with_no_acceptance_stamp_fails_nothing_after_cutoff():

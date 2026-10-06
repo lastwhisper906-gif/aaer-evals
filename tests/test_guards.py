@@ -40,6 +40,9 @@ def _hook():
     "git checkout old -- evals/regression/coverage.py",
     "git restore evals/",
     "cd evals && echo x > thresholds.json",
+    "make eval PYTHON='cp patched.py evals/regression/mechanical.py'",
+    'make eval-quick PYTHON="rm -rf evals"',
+    "make eval PYTHON=.venv/bin/python EXTRA='tee evals/thresholds.json'",
 ])
 def test_the_bash_hook_refuses_a_command_writing_under_evals(command):
     assert _hook().refused(command)
@@ -48,7 +51,8 @@ def test_the_bash_hook_refuses_a_command_writing_under_evals(command):
 @pytest.mark.parametrize("command", [
     "make eval",
     "make eval-quick",
-    ".venv/bin/python -m evals --runs runs/NVDA",
+    "make eval-quick PYTHON=.venv/bin/python",
+    "make eval PYTHON=/usr/bin/python3.12",
     "cat evals/README.md",
     "grep -rn dealbreaker evals/capability/rubric.md",
     "ls evals/golden/drafts",

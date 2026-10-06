@@ -32,7 +32,11 @@ WRITES = [
     re.compile(r"\bcd\s+['\"]?" + TARGET + r"[^;&|]*[;&|]+[^;&|]*(?:>|\btee\b|\brm\b|\bmv\b"
                r"|\bcp\b|\bsed\s+-i)"),
 ]
-ALLOWED = re.compile(r"^\s*make\s+eval(?:-quick)?\b[^;&|>]*$")
+# `make eval` or `make eval-quick`, bare or with the interpreter the Makefile takes
+# (`PYTHON=<path ending in python or python3.x>`, no spaces, no quotes): a make
+# variable is a command line, so `PYTHON='cp x evals/y'` would be a write.
+ALLOWED = re.compile(r"^\s*make\s+eval(?:-quick)?"
+                     r"(?:\s+PYTHON=[A-Za-z0-9_./-]*python3?(?:\.\d+)?)?\s*$")
 
 
 def refused(command: str) -> str | None:
