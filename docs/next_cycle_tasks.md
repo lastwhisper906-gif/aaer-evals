@@ -124,6 +124,8 @@ got a pull request.
 
 [ ] queue item one: a missing interest expense falls back to interest paid, then the risk-free rate plus one point, labelled; a bare year in an analyst's words is a year · `src/trends.py`, `src/calculator.py`, `src/analysis_check.py`, `queue.md` · `.venv/bin/python -m pytest tests/test_calculator.py tests/test_trends.py tests/test_analysis_check.py -q` · the valuation failures on GNRC, LFUS and AAPL in the stage-5 runs: no interest expense term, so no cost of debt and no value range; `queue.md` item one of 2026-10-06 · PR:
 
+[ ] Fable, used efficiently: trimmed valuation inputs, at most two reruns of a failed Fable call, a stop at the limit with exit 3, the control on golden filings only, a fixed message order, and the batch sized from the record · `src/run_analysis.py`, `src/agent_inputs.py`, `src/fable_batch.py` · `.venv/bin/python -m pytest tests/test_run_analysis.py tests/test_agent_inputs.py tests/test_fable_batch.py -q` · the owner's decision of 2026-10-06 (`docs/structure_changes.md`); the rules are `docs/HOW_WE_WORK.md` §6 · PR:
+
 ## Next cycle
 
 Moved here untouched. Nothing on this list is launched this cycle.

@@ -36,8 +36,16 @@ record says the model it asked for, and the manifest's `model_override` says why
 The owner's decision of 2026-09-30 runs the analysts on Opus while the Fable
 limit holds (`docs/structure_changes.md`).
 
-**A failed call is retried once with identical input**, then recorded as failed.
-A retry never changes the input. The run goes on past a failed analyst, so what
+**Fable, used efficiently** (the owner's decision of 2026-10-06, `docs/HOW_WE_WORK.md`
+§6). A Fable call whose output passed is never run again. A failed Fable call --
+no file, a file that is not JSON, or a non-zero exit -- is run again with identical
+input at most twice; an Opus call once. A call that answers "reached your ... limit"
+is not run again at all: the run stops where it stands, publishes what finished,
+names the agent in the manifest under `fable_limit_reached`, and exits 3 so the
+batch stops too and writes what is pending into `queue.md`. No analyst ever falls
+back to Opus. The single-agent control runs on the golden filings only, where it is
+scored against the owner (`--control auto`); the message every agent is sent lists
+the shared files first, in a fixed order, so the prompt cache serves them. The run goes on past a failed analyst, so what
 did write still reaches the memo, but the manifest's `analysis_failure` names
 every agent that did not write and the command exits non-zero: a run missing an
 analysis is never reported as finished.
@@ -49,7 +57,7 @@ rather than estimated.
 
     python3.12 -m src.run_analysis --run runs/NVDA/0001045810-26-000075 \\
         --ticker NVDA --form 10-Q --cutoff 2026-08-26 --period-end 2026-07-26 \\
-        [--store tests/fixtures] [--prices <directory>] [--model opus]
+        [--store tests/fixtures] [--prices <directory>] [--model opus] [--control auto]
 """
 
 from __future__ import annotations
@@ -77,6 +85,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFINITIONS = REPO_ROOT / ".claude" / "agents"
 BAD_INPUT = 2
 FAILED = 1
+LIMIT_REACHED = 3
 
 # The pins: the family the definition names, and the effort it runs at.
 # `docs/HOW_WE_WORK.md` §6 -- readers on Opus at xhigh; the analysts inherit the
@@ -84,7 +93,12 @@ FAILED = 1
 # as the analysts, because a control on another model measures the model.
 EFFORT = "xhigh"
 CALL_TIMEOUT_SECONDS = 3600
-RETRIES = 1
+RETRIES = 1                 # an Opus call: one more try
+FABLE_RETRIES = 2           # a Fable call: at most two more
+LIMIT = re.compile(r"reached your \w+ limit", re.IGNORECASE)
+# The files most sessions share, named first so the prompt cache serves them.
+SHARED_FIRST = ("calculator_filings_only.json", "calculator_before_drivers.json",
+                "calculator.json", "report_numbers.md", "report_notes_text.md")
 
 INSTRUCTION = ("Your directory holds: {files}. Read every one of them in full, following "
                "your instructions, and write {writes} in your directory. Nothing else, "
@@ -167,7 +181,8 @@ def ask(directory: Path, *, agent: str, writes: tuple[str, ...], message: str,
         spec: dict, log: Path) -> dict:
     """One restricted session in `directory`; the usage record, or a failure."""
     record: dict = {"agent": agent, "writes": list(writes)}
-    for attempt in range(1, RETRIES + 2):
+    retries = FABLE_RETRIES if spec.get("model") == "fable" else RETRIES
+    for attempt in range(1, retries + 2):
         started = time.monotonic()
         command = ["claude", "-p", "--restricted", "--permission-mode", "acceptEdits",
                    "--agent", agent, "--agents", json.dumps({agent: spec}),
@@ -184,15 +199,34 @@ def ask(directory: Path, *, agent: str, writes: tuple[str, ...], message: str,
         record.update(usage_record(result, requested=spec["model"], seconds=seconds,
                                    attempt=attempt))
         written = all((directory / name).is_file() for name in writes)
-        if done.returncode == 0 and written and not result.get("is_error"):
+        unreadable = [name for name in writes if written and name.endswith(".json")
+                      and not _is_json(directory / name)]
+        if done.returncode == 0 and written and not unreadable and not result.get("is_error"):
             record["result"] = "written"
             return record
         record["result"] = "failed"
         record["reason"] = (f"exit {done.returncode}; wrote "
-                            f"{[n for n in writes if (directory / n).is_file()]}")
+                            f"{[n for n in writes if (directory / n).is_file()]}"
+                            + (f"; not JSON: {unreadable}" if unreadable else ""))
         for name in writes:        # identical input on the retry: nothing it wrote survives
             (directory / name).unlink(missing_ok=True)
+        if LIMIT.search(str(result.get("result") or "")):
+            record["limit_reached"] = True
+            record["reason"] = str(result.get("result"))[:200]
+            return record          # a limit is not a failure a retry can answer
     return record
+
+
+def _is_json(path: Path) -> bool:
+    try:
+        json.loads(path.read_text(encoding="utf-8"))
+        return True
+    except (OSError, ValueError):
+        return False
+
+
+def limit_hit(agents: dict) -> list[str]:
+    return [name for name, record in agents.items() if record.get("limit_reached")]
 
 
 def definition_for(prompt: str, model: str | None) -> dict:
@@ -201,12 +235,20 @@ def definition_for(prompt: str, model: str | None) -> dict:
     return dict(spec, model=model) if model else spec
 
 
+def message_files(names) -> list[str]:
+    """The directory listing an agent is sent: the shared files first, in one fixed
+    order, then the rest alphabetically, so two sessions over the same inputs are
+    sent the same prefix."""
+    names = set(names)
+    return [n for n in SHARED_FIRST if n in names] + sorted(names - set(SHARED_FIRST))
+
+
 def run_agent(run: Path, name: str, logs: Path, model: str | None = None) -> dict:
     agent_inputs.build(run, name)
     directory = agent_inputs.session_root(run, name)
     spec = agent_inputs.AGENTS[name]
-    files = sorted(path.name for path in directory.iterdir() if path.name != spec.writes)
-    message = INSTRUCTION.format(files=", ".join(files), writes=spec.writes)
+    names = {path.name for path in directory.iterdir() if path.name != spec.writes}
+    message = INSTRUCTION.format(files=", ".join(message_files(names)), writes=spec.writes)
     return ask(directory, agent=spec.prompt, writes=(spec.writes,), message=message,
                spec=definition_for(spec.prompt, model), log=logs / f"{name}.log")
 
@@ -297,8 +339,28 @@ NO_MARKET_TABLE = ("this run builds no market table: the table needs short inter
                    "label is absent; prices reach the calculator only")
 
 
+def is_golden_filing(accession: str | None) -> bool:
+    """Whether an approved golden case names this filing (evals/golden/cases/)."""
+    cases = REPO_ROOT / "evals" / "golden" / "cases"
+    if not accession or not cases.is_dir():
+        return False
+    try:
+        from evals.golden_format import GoldenFormatError, load_case
+    except ImportError:
+        return False
+    for path in sorted(cases.glob("*.yaml")):
+        try:
+            case = load_case(path)
+        except GoldenFormatError:
+            continue
+        if case.get("approved_by_owner") is True and case["filing"].get("accession") == accession:
+            return True
+    return False
+
+
 def run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: str,
-                store: Path, prices: Path | None, model: str | None = None) -> dict:
+                store: Path, prices: Path | None, model: str | None = None,
+                control: str = "auto") -> dict:
     run = Path(run)
     logs = run.parent / f".{run.name}.logs"          # outside the record, beside it
     logs.mkdir(exist_ok=True)
@@ -328,6 +390,8 @@ def run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: s
 
     # read
     agents.update(parallel(run, ("numbers-reader", "notes-text-reader"), logs, model))
+    if limit_hit(agents):
+        return finish(run, agents, stages, "the limit was reached", model)
     if any(agents[name]["result"] != "written" for name in ("numbers-reader", "notes-text-reader")):
         return finish(run, agents, stages, "a reader failed twice", model)
     stages["quote_gate"] = {"dropped": len(gate_readers(run).get("dropped", []))}
@@ -342,6 +406,8 @@ def run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: s
     base = calculate(BEFORE_ANALYSTS)
     write_json(run / calculator.FILINGS_ONLY, calculator.filings_only(base))
     agents.update(parallel(run, ("accounting-analyst", "financial-analyst"), logs, model))
+    if limit_hit(agents):
+        return finish(run, agents, stages, "the limit was reached", model)
     for name, kind in (("accounting-analyst", "accounting"), ("financial-analyst", "financial")):
         if agents[name]["result"] == "written":
             checked = check_analysis(run, name, kind)
@@ -353,6 +419,8 @@ def run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: s
     calculate(BEFORE_DRIVERS, accounting=accounting)
     if (run / "analysis_accounting.json").is_file() and (run / "analysis_financial.json").is_file():
         agents["valuation-analyst"] = run_agent(run, "valuation-analyst", logs, model)
+        if limit_hit(agents):
+            return finish(run, agents, stages, "the limit was reached", model)
         if agents["valuation-analyst"]["result"] == "written":
             assumptions = check_analysis(run, "valuation-analyst", "assumptions")
             write_json(run / "assumptions.json", assumptions)
@@ -360,6 +428,8 @@ def run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: s
             calculate(FINAL, accounting=accounting, assumptions=assumptions)
             agents["valuation-analyst-second-pass"] = run_agent(
                 run, "valuation-analyst-second-pass", logs, model)
+            if limit_hit(agents):
+                return finish(run, agents, stages, "the limit was reached", model)
             if agents["valuation-analyst-second-pass"]["result"] == "written":
                 checked = check_analysis(run, "valuation-analyst-second-pass", "valuation")
                 write_json(run / "analysis_valuation.json", checked)
@@ -384,9 +454,16 @@ def run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: s
         financial=_load(run / "analysis_financial.json"),
         valuation=_load(run / "analysis_valuation.json"),
         baselines=_load(run / "baselines.json")), encoding="utf-8")
-    agents["control-single-agent"] = run_control(run, logs, model)
-    if agents["control-single-agent"]["result"] == "written":
-        stages["control"] = check_control(run)
+    if control == "always" or (control == "auto" and is_golden_filing(manifest.get("accession"))):
+        agents["control-single-agent"] = run_control(run, logs, model)
+        if limit_hit(agents):
+            return finish(run, agents, stages, "the limit was reached", model)
+        if agents["control-single-agent"]["result"] == "written":
+            stages["control"] = check_control(run)
+    else:
+        stages["control"] = ("skipped: the control runs on the golden filings only, and no "
+                             "approved golden case names this one" if control == "auto"
+                             else "skipped: --control never")
     silent = [name for name, record in agents.items() if record.get("result") != "written"]
     return finish(run, agents, stages,
                   f"did not write: {', '.join(silent)}" if silent else None, model)
@@ -458,6 +535,12 @@ def finish(run: Path, agents: dict, stages: dict, failure: str | None,
                           for name, record in agents.items()}
     manifest["analysis_stages"] = stages
     manifest["analysis_failure"] = failure
+    hit = limit_hit(agents)
+    if hit:
+        manifest["fable_limit_reached"] = hit
+        manifest["analysis_failure"] = (f"the limit was reached at {', '.join(hit)}: the run "
+                                        "stopped there, nothing fell back to another model, "
+                                        "and the batch stops (docs/needs_judgment.md)")
     if model:
         manifest["model_override"] = {
             "model": model, "applies_to": "every agent and the control",
@@ -479,6 +562,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--prices", default=None)
     parser.add_argument("--model", default=None,
                         help="one model for every agent, in place of each definition's own")
+    parser.add_argument("--control", default="auto", choices=["auto", "always", "never"],
+                        help="the single-agent control: auto runs it on golden filings only")
     args = parser.parse_args(argv)
     code = interpreter_pin.enforce()
     if code:
@@ -488,7 +573,7 @@ def main(argv: list[str] | None = None) -> int:
                                cutoff=args.cutoff, period_end=args.period_end,
                                store=Path(args.store),
                                prices=Path(args.prices) if args.prices else None,
-                               model=args.model)
+                               model=args.model, control=args.control)
     except (RunError, agent_inputs.AgentInputError, calculator.CalculatorInputError,
             cutoff_guard.CutoffGuardError, decide.DecideError,
             market_labels.MarketLabelError, OSError, ValueError) as exc:
@@ -498,6 +583,8 @@ def main(argv: list[str] | None = None) -> int:
                                                         "input_tokens", "output_tokens",
                                                         "cost_usd")}
                       for name, record in manifest["agents"].items()}, indent=1))
+    if manifest.get("fable_limit_reached"):
+        return LIMIT_REACHED
     return FAILED if manifest.get("analysis_failure") else 0
 
 

@@ -376,6 +376,47 @@ def _probability_leak(text: str) -> str | None:
     return found.group(0) if found else None
 
 
+# The valuation analyst reads the MD&A and the earnings release only where the
+# notes reader flagged a paragraph: Fable, used efficiently (the owner's decision
+# of 2026-10-06, `docs/HOW_WE_WORK.md` §6). The file keeps its name and its `[id]`
+# blocks byte for byte, so a quote of one still string-matches; one line at the
+# top says how much was left out. A paragraph the notes reader did not flag is not
+# placed, and no agent can quote what it was not handed.
+TRIMMED_FOR_VALUATION = ("input_mdna.md", "input_8k.md")
+ID_LINE = re.compile(r"^\[(\d{10}-\d{2}-\d{6}:[a-z0-9_]+:[^\]]+)\]\s*$", re.M)
+FENCED_JSON = re.compile(r"```json\s*(.*?)```", re.S)
+
+
+def flagged_paragraphs(run: Path) -> set[str]:
+    """Every paragraph id the notes reader's kept items cite."""
+    report = run / "report_notes_text.md"
+    if not report.is_file():
+        return set()
+    found = set()
+    for block in FENCED_JSON.findall(report.read_text(encoding="utf-8", errors="replace")):
+        try:
+            data = json.loads(block)
+        except ValueError:
+            continue
+        for item in data if isinstance(data, list) else [data]:
+            if isinstance(item, dict) and isinstance(item.get("paragraph_id"), str):
+                found.add(item["paragraph_id"])
+    return found
+
+
+def trimmed(text: str, keep: set[str]) -> str:
+    """The prose file with only the `[id]` blocks in `keep`, each verbatim."""
+    marks = list(ID_LINE.finditer(text))
+    preamble = text[:marks[0].start()] if marks else text
+    kept, total = [], len(marks)
+    for this, following in zip(marks, marks[1:] + [None]):
+        if this.group(1) in keep:
+            kept.append(text[this.start():following.start() if following else len(text)])
+    note = (f"(trimmed for the valuation analyst: {len(kept)} of {total} paragraphs, "
+            "the ones the notes reader flagged; the rest were not placed)\n\n")
+    return preamble + note + "".join(kept)
+
+
 def _place(source: Path, target: Path) -> None:
     """Copy the bytes. Never link: a link's ancestors are the bundle's.
 
@@ -395,7 +436,10 @@ def _place(source: Path, target: Path) -> None:
         raise AgentInputError(
             f"{target} is a symlink to {target.readlink()}. An agent's file is "
             "copied, never linked: a link's ancestors are the bundle's.")
-    data = source.read_bytes()
+    _place_bytes(source.read_bytes(), target)
+
+
+def _place_bytes(data: bytes, target: Path) -> None:
     if target.exists():
         if target.read_bytes() != data:
             raise AgentInputError(
@@ -461,12 +505,19 @@ def build(run: Path, agent: str, *, light: bool = False) -> dict:
             "and reused.")
 
     placed, absent = [], []
+    flagged = flagged_paragraphs(run) if spec.layer == "valuation" else None
     for name in spec.sees:
         source = run / name
         if not source.is_file():
             absent.append(name)
             continue
-        _place(source, root / name)
+        if flagged is not None and name in TRIMMED_FOR_VALUATION:
+            if (root / name).is_symlink():
+                raise AgentInputError(f"{root / name} is a symlink; an agent's file is copied")
+            _place_bytes(trimmed(source.read_text(encoding="utf-8", errors="replace"),
+                                 flagged).encode("utf-8"), root / name)
+        else:
+            _place(source, root / name)
         placed.append(name)
     return {"agent": agent, "layer": spec.layer, "root": root,
             "files": placed, "absent": absent}
@@ -498,14 +549,26 @@ def escapes(root: Path) -> list[str]:
     return found
 
 
-def _differs(placed: Path, source: Path) -> bool:
-    """Whether a routed file is not the run's copy of it, byte for byte.
+def expected_bytes(run: Path, spec: Agent, name: str) -> bytes | None:
+    """What a routed file should hold: the run's copy, byte for byte, except the
+    valuation analyst's prose, which holds the run's copy trimmed to the paragraphs
+    the notes reader flagged, each of those byte for byte."""
+    source = run / name
+    if not source.is_file():
+        return None
+    if spec.layer == "valuation" and name in TRIMMED_FOR_VALUATION:
+        return trimmed(source.read_text(encoding="utf-8", errors="replace"),
+                       flagged_paragraphs(run)).encode("utf-8")
+    return source.read_bytes()
+
+
+def _differs(placed: Path, expected: bytes | None) -> bool:
+    """Whether a routed file is not what the run routed to it, byte for byte.
 
     The one thing a check on names cannot see: a hardlink to another file
     resolves inside the root and answers to the right name.
     """
-    return (placed.is_file() and source.is_file()
-            and placed.read_bytes() != source.read_bytes())
+    return placed.is_file() and expected is not None and placed.read_bytes() != expected
 
 
 # Every agent a run on record may hold a directory for: the live six and the
@@ -613,7 +676,7 @@ def isolation_violations(run: Path) -> list[str]:
                 reason = ("which its layer never sees"
                           if path.name in spec.never_sees else "which nobody routed")
                 found.append(f"{name}: holds {path.name}, {reason}")
-            elif _differs(path, run / path.name):
+            elif _differs(path, expected_bytes(run, spec, path.name)):
                 found.append(f"{name}: holds a {path.name} that is not the "
                              "run's — the right name over other bytes")
         found.extend(f"{name}: {line}" for line in escapes(root))

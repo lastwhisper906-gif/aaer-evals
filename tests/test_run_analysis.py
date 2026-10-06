@@ -162,7 +162,7 @@ def finished(tmp_path_factory):
         manifest = run_analysis.run_company(run=run, ticker="NVDA", form="10-Q",
                                             cutoff="2026-08-26", period_end="2026-07-26",
                                             store=run_analysis.cutoff_guard.FIXTURES,
-                                            prices=None)
+                                            prices=None, control="always")
     finally:
         run_analysis.ask = original
     return run, manifest, seen
@@ -281,7 +281,7 @@ def test_a_named_model_reaches_every_agent_and_the_manifest_says_so(tmp_path, mo
     manifest = run_analysis.run_company(run=run, ticker="NVDA", form="10-Q",
                                         cutoff="2026-08-26", period_end="2026-07-26",
                                         store=run_analysis.cutoff_guard.FIXTURES,
-                                        prices=None, model="opus")
+                                        prices=None, model="opus", control="always")
     # both valuation passes run the one committed valuation-analyst definition
     assert sorted(agent for agent, _ in asked) == sorted([
         "numbers-reader", "notes-text-reader", "accounting-analyst", "financial-analyst",
@@ -344,3 +344,145 @@ def test_a_run_with_a_market_table_is_labelled_by_python_and_never_marked_unavai
     assert "input_market.json" not in control_files and "market_labels.json" not in control_files
     labels = json.loads((run / "market_labels.json").read_text())
     assert [one["labels"][0]["label"] for one in labels["items"]] == ["priced_in"]
+
+
+# --- Fable, used efficiently (the owner's decision of 2026-10-06) ---------------------------
+
+class _Done:
+    def __init__(self, returncode, stdout, stderr=""):
+        self.returncode, self.stdout, self.stderr = returncode, stdout, stderr
+
+
+def _cli(answers):
+    """A stand-in for the claude CLI: each call pops the next (exit, json, files) answer."""
+    calls = []
+
+    def run(command, cwd, capture_output, text, timeout):
+        exit_code, payload, files = answers.pop(0)
+        for name, content in (files or {}).items():
+            (cwd / name).write_text(content)
+        calls.append(command)
+        return _Done(exit_code, json.dumps(payload))
+    return run, calls
+
+
+def _ask(tmp_path, monkeypatch, answers, model):
+    run, calls = _cli(answers)
+    monkeypatch.setattr(run_analysis.subprocess, "run", run)
+    record = run_analysis.ask(tmp_path, agent="x", writes=("out.json",), message="m",
+                              spec={"model": model, "description": "d", "prompt": "p",
+                                    "tools": ["Read"]}, log=tmp_path / "x.log")
+    return record, calls
+
+
+def test_a_failed_fable_call_is_run_again_at_most_twice(tmp_path, monkeypatch):
+    failing = (1, {"is_error": True, "result": "crashed"}, None)
+    record, calls = _ask(tmp_path, monkeypatch, [failing] * 5, "fable")
+    assert record["result"] == "failed" and len(calls) == 3
+
+
+def test_a_failed_opus_call_is_run_again_once(tmp_path, monkeypatch):
+    failing = (1, {"is_error": True, "result": "crashed"}, None)
+    record, calls = _ask(tmp_path, monkeypatch, [failing] * 5, "opus")
+    assert record["result"] == "failed" and len(calls) == 2
+
+
+def test_a_call_whose_output_passed_is_never_run_again(tmp_path, monkeypatch):
+    good = (0, {"is_error": False, "result": "ok"}, {"out.json": "{}"})
+    record, calls = _ask(tmp_path, monkeypatch, [good] * 3, "fable")
+    assert record["result"] == "written" and len(calls) == 1
+
+
+def test_a_file_that_is_not_json_counts_as_a_failed_call(tmp_path, monkeypatch):
+    bad = (0, {"is_error": False, "result": "ok"}, {"out.json": "not json"})
+    good = (0, {"is_error": False, "result": "ok"}, {"out.json": "{}"})
+    record, calls = _ask(tmp_path, monkeypatch, [bad, good], "fable")
+    assert record["result"] == "written" and len(calls) == 2
+
+
+def test_the_limit_stops_the_call_at_once_and_says_so(tmp_path, monkeypatch):
+    limit = (1, {"is_error": True,
+                 "result": "You've reached your Fable limit. Switch to another model to continue."},
+             None)
+    record, calls = _ask(tmp_path, monkeypatch, [limit] * 3, "fable")
+    assert record["limit_reached"] is True and len(calls) == 1
+    assert "Fable limit" in record["reason"]
+
+
+def test_the_limit_stops_the_run_where_it_stands_and_exits_three(tmp_path, monkeypatch):
+    run = tmp_path / "NVDA" / NVDA_ACCESSION
+    bundle = assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,
+                                   prior_runs=run.parent.parent)
+    assemble_bundle.write(bundle, run)
+    written = _fake_ask({})
+
+    def ask(directory, *, agent, writes, message, spec, log):
+        if agent == "accounting-analyst":
+            return {"agent": agent, "result": "failed", "limit_reached": True,
+                    "reason": "You've reached your Fable limit."}
+        return written(directory, agent=agent, writes=writes, message=message,
+                       spec=spec, log=log)
+
+    monkeypatch.setattr(run_analysis, "ask", ask)
+    manifest = run_analysis.run_company(run=run, ticker="NVDA", form="10-Q",
+                                        cutoff="2026-08-26", period_end="2026-07-26",
+                                        store=run_analysis.cutoff_guard.FIXTURES,
+                                        prices=None, control="always")
+    assert manifest["fable_limit_reached"] == ["accounting-analyst"]
+    assert "stopped there" in manifest["analysis_failure"]
+    assert "valuation-analyst" not in manifest["agents"]       # nothing ran past it
+    assert "control-single-agent" not in manifest["agents"]
+    monkeypatch.setattr(run_analysis, "run_company", lambda **kw: manifest)
+    monkeypatch.setattr(run_analysis.interpreter_pin, "enforce", lambda: 0)
+    assert run_analysis.main(["--run", str(run), "--ticker", "NVDA", "--form", "10-Q",
+                              "--cutoff", "2026-08-26", "--period-end", "2026-07-26"]) \
+        == run_analysis.LIMIT_REACHED
+
+
+def _run_with_control(tmp_path, monkeypatch, control, golden):
+    run = tmp_path / "NVDA" / NVDA_ACCESSION
+    bundle = assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,
+                                   prior_runs=run.parent.parent)
+    assemble_bundle.write(bundle, run)
+    monkeypatch.setattr(run_analysis, "ask", _fake_ask({}))
+    monkeypatch.setattr(run_analysis, "is_golden_filing", lambda accession: golden)
+    return run_analysis.run_company(run=run, ticker="NVDA", form="10-Q",
+                                    cutoff="2026-08-26", period_end="2026-07-26",
+                                    store=run_analysis.cutoff_guard.FIXTURES,
+                                    prices=None, control=control)
+
+
+def test_the_control_runs_on_a_golden_filing_and_skips_the_rest(tmp_path, monkeypatch):
+    skipped = _run_with_control(tmp_path, monkeypatch, "auto", golden=False)
+    assert "control-single-agent" not in skipped["agents"]
+    assert skipped["analysis_stages"]["control"].startswith("skipped")
+    assert skipped["analysis_failure"] is None
+    ran = _run_with_control(tmp_path / "g", monkeypatch, "auto", golden=True)
+    assert ran["agents"]["control-single-agent"]["result"] == "written"
+
+
+def test_no_approved_golden_case_names_the_fixture_filing():
+    assert run_analysis.is_golden_filing(NVDA_ACCESSION) is False
+    assert run_analysis.is_golden_filing(None) is False
+
+
+def test_the_message_names_the_shared_files_first_in_a_fixed_order():
+    names = {"input_mdna.md", "report_numbers.md", "calculator.json", "analysis_accounting.json",
+             "report_notes_text.md", "assumptions.json"}
+    assert run_analysis.message_files(names) == [
+        "calculator.json", "report_numbers.md", "report_notes_text.md",
+        "analysis_accounting.json", "assumptions.json", "input_mdna.md"]
+    assert run_analysis.message_files({"input_notes.md", "input_8k.md"}) == \
+        ["input_8k.md", "input_notes.md"]
+
+
+def test_the_valuation_analyst_is_handed_only_the_paragraphs_the_notes_reader_flagged(finished):
+    """The stubbed notes reader wrote no items, so no MD&A paragraph was flagged: the
+    valuation analyst's MD&A holds the trim line and no paragraph, while the notes
+    reader's own copy holds them all."""
+    run, _, _ = finished
+    valuation = (run / "agents" / "valuation-analyst" / "input_mdna.md").read_text()
+    reader = (run / "agents" / "notes-text-reader" / "input_mdna.md").read_text()
+    assert "trimmed for the valuation analyst: 0 of" in valuation
+    assert not run_analysis.agent_inputs.ID_LINE.search(valuation)
+    assert run_analysis.agent_inputs.ID_LINE.search(reader)

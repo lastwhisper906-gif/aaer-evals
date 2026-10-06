@@ -284,8 +284,15 @@ def test_every_routed_file_arrives_verbatim(tmp_path):
     agent_inputs.build_all(run)
     for agent in agent_inputs.AGENTS:
         root = agent_inputs.session_root(run, agent)
+        spec = agent_inputs.AGENTS[agent]
         for name in _names(root):
-            assert (root / name).read_bytes() == (run / name).read_bytes()
+            if spec.layer == "valuation" and name in agent_inputs.TRIMMED_FOR_VALUATION:
+                # the one exception since 2026-10-06: the valuation analyst's prose is
+                # the run's copy trimmed to the flagged paragraphs, each verbatim
+                assert (root / name).read_bytes() == agent_inputs.trimmed(
+                    (run / name).read_text(), agent_inputs.flagged_paragraphs(run)).encode()
+            else:
+                assert (root / name).read_bytes() == (run / name).read_bytes()
 
 
 def test_no_file_reaches_an_agent_that_nobody_routed(tmp_path):
@@ -717,3 +724,33 @@ def test_a_clean_retired_agent_s_directory_is_not_a_violation(tmp_path):
     broken = agent_inputs.isolation_violations(run)
     assert any(line.startswith("notes-vs-market:") and "not at its session root" in line
                for line in broken)
+
+
+# --- the valuation analyst's trimmed prose (the owner's decision of 2026-10-06) -------------
+
+MDNA = ("# T mdna\n\n[0000000000-00-000001:mdna:1]\nOne\u00a0paragraph, kept.\n\n"
+        "[0000000000-00-000001:mdna:2]\nAnother, not flagged.\n\n"
+        "[0000000000-00-000001:mdna:3]\nA third, kept.\n")
+
+
+def test_a_flagged_paragraph_is_placed_verbatim_and_an_unflagged_one_is_not():
+    out = agent_inputs.trimmed(MDNA, {"0000000000-00-000001:mdna:1", "0000000000-00-000001:mdna:3"})
+    assert "[0000000000-00-000001:mdna:1]\nOne\u00a0paragraph, kept.\n\n" in out   # byte for byte
+    assert "[0000000000-00-000001:mdna:3]\nA third, kept.\n" in out
+    assert "mdna:2" not in out and "not flagged" not in out
+    assert out.startswith("# T mdna\n\n(trimmed for the valuation analyst: 2 of 3 paragraphs")
+
+
+def test_with_nothing_flagged_the_file_keeps_its_title_and_says_so():
+    out = agent_inputs.trimmed(MDNA, set())
+    assert "0 of 3 paragraphs" in out and "mdna:1" not in out
+
+
+def test_flagged_paragraphs_are_the_notes_readers_kept_items(tmp_path):
+    (tmp_path / "report_notes_text.md").write_text(
+        "```json\n{\"id\": \"a\", \"paragraph_id\": \"0000000000-00-000001:mdna:3\", "
+        "\"quote\": \"A third\"}\n```\n```json\n[{\"id\": \"b\", "
+        "\"paragraph_id\": \"0000000000-00-000001:8k_2_02:9\"}]\n```\n")
+    assert agent_inputs.flagged_paragraphs(tmp_path) == {"0000000000-00-000001:mdna:3",
+                                                         "0000000000-00-000001:8k_2_02:9"}
+    assert agent_inputs.flagged_paragraphs(tmp_path / "none") == set()
