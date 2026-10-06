@@ -7,7 +7,7 @@ and writes the calculation into the morning report. Every published run's
 the input, cache-write, cache-read and output tokens of every agent that a Fable
 model served. A filing with no Fable agent on record counts for nothing.
 
-    python3.12 -m src.fable_batch --available 3000000 [--runs runs]
+    python3.12 -m src.fable_batch --available 3000000 --root runs
 """
 
 from __future__ import annotations
@@ -34,10 +34,12 @@ def fable_tokens(manifest: dict) -> int:
                if str(record.get("model_served") or "").startswith("claude-fable"))
 
 
-def on_record(runs: Path) -> dict[str, int]:
-    """Fable tokens per published filing that cost any."""
+def on_record(root: Path) -> dict[str, int]:
+    """Fable tokens per published filing that cost any, under a directory of
+    `<ticker>/<accession>` runs the caller names, as `src/analysis_scorecard.py`
+    reads them: manifests are the run's own record, not a gated document."""
     out = {}
-    for path in sorted(runs.glob("*/*/input_manifest.json")):
+    for path in sorted(Path(root).glob("*/*/input_manifest.json")):
         try:
             manifest = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, ValueError):
@@ -64,13 +66,13 @@ def size(available: int, record: dict[str, int]) -> dict:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="size tonight's Fable batch from the record")
     parser.add_argument("--available", type=int, required=True, help="Fable tokens left tonight")
-    parser.add_argument("--runs", default="runs")
+    parser.add_argument("--root", required=True, help="a directory of <ticker>/<accession> runs")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
     code = interpreter_pin.enforce()
     if code:
         return code
-    out = size(args.available, on_record(Path(args.runs)))
+    out = size(args.available, on_record(Path(args.root)))
     print(json.dumps(out, indent=1) if args.json else out["calculation"])
     return 0
 

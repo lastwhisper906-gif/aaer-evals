@@ -562,12 +562,15 @@ def expected_bytes(run: Path, spec: Agent, name: str) -> bytes | None:
     return source.read_bytes()
 
 
-def _differs(placed: Path, expected: bytes | None) -> bool:
-    """Whether a routed file is not what the run routed to it, byte for byte.
+def _differs(placed: Path, expected) -> bool:
+    """Whether a routed file is not what the run routed to it, byte for byte:
+    `expected` is the bytes, or the run's own file to read them from.
 
     The one thing a check on names cannot see: a hardlink to another file
     resolves inside the root and answers to the right name.
     """
+    if isinstance(expected, Path):
+        expected = expected.read_bytes() if expected.is_file() else None
     return placed.is_file() and expected is not None and placed.read_bytes() != expected
 
 
