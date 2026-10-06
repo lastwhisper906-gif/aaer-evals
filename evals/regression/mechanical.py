@@ -17,7 +17,11 @@ Each check reads files a run published and nothing about how they were made:
   source without a filing date was read past it (`rows_used_through`), no row of
   the JSON inputs -- as the run holds them and as each agent was handed them --
   was filed after it, and no date written anywhere in any calculator file -- a
-  fact's filing, a price, a window, a period -- is after it, and a market table
+  fact's filing, a price, a window, a period -- is after it: every string value
+  or key that is a date, a date pair or a date-time stamp in every calculator
+  file, and every row of every input dated by one of ROW_DATE_KEYS. A date
+  inside prose (a maturity, a guidance year) is a fact of the filing and is not
+  held to the cutoff. And a market table
   holds exactly reaction days zero to two of each window, read off the window's
   acceptance stamp on the exchange calendar, with nothing past day two of the
   latest. The documents' rule is CLAUDE.md's, dates only; the market table's is
@@ -33,11 +37,13 @@ from __future__ import annotations
 import datetime as dt
 import json
 import re
+import subprocess
+import sys
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from evals.common import (FAIL, NOT_APPLICABLE, PASS, PLACEHOLDER, Result, finite, fold, load,
-                          number_at, resolve, run_name, walk_strings)
+from evals.common import (FAIL, NOT_APPLICABLE, PASS, PLACEHOLDER, REPO, Result, finite, fold,
+                          load, number_at, resolve, run_name, walk_strings)
 
 REQUIRED = ("input_manifest.json", "calculator.json", "calculator_filings_only.json",
             "analysis_accounting.json", "analysis_financial.json", "analysis_valuation.json",
@@ -59,7 +65,13 @@ AGENT_DIR = {"analysis_accounting.json": "accounting-analyst",
 
 FENCE = re.compile(r"```json\s*\n(.*?)\n```", re.S)
 # A date, or a period written as two dates, anywhere in a calculator file.
-ISO_DATE = re.compile(r"(\d{4}-\d{2}-\d{2})(?:\.\.(\d{4}-\d{2}-\d{2}))?")
+# a date, a date..date pair, or a date-time stamp; a date inside prose is not one
+ISO_DATE = re.compile(r"(\d{4}-\d{2}-\d{2})(?:[T ][0-9:.+\-Z]*)?(?:\.\.(\d{4}-\d{2}-\d{2}))?")
+# The keys that say when a row of an input arrived. The period a fact covers
+# (`start`, `end`) is not one: a 10-K filed in February carries facts for the
+# fiscal year it is in, whose period ends after the cutoff, and that is the filing's
+# content, not a late arrival.
+ROW_DATE_KEYS = ("filed", "filing_date", "filed_at", "accepted", "date", "as_of")
 FOLLOWS_PATHS = ("fields",)          # list entries that are calculator paths
 
 
@@ -404,6 +416,18 @@ def check_cited_numbers_exist(run: Path) -> Result:
                   f"{count - len(failures)} of {count} cited paths exist", failures)
 
 
+def walk_keys(node, where: str = ""):
+    """Every dict key in a JSON tree, with where it sits: a date can be a key."""
+    if isinstance(node, dict):
+        for key, value in node.items():
+            here = f"{where}.{key}" if where else key
+            yield here, str(key)
+            yield from walk_keys(value, here)
+    elif isinstance(node, list):
+        for index, value in enumerate(node):
+            yield from walk_keys(value, f"{where}[{index}]")
+
+
 def _dates_in(node, key: str):
     if isinstance(node, dict):
         for k, v in node.items():
@@ -438,12 +462,17 @@ def check_nothing_after_cutoff(run: Path) -> Result:
                         "date nor rows_used_through, so nothing holds it to the cutoff")
     # every calculator file: the run's own and the copies the agents were handed
     for path in sorted(run.glob("calculator*.json")) + sorted(run.glob("agents/*/calculator*.json")):
-        for where, value in walk_strings(load(path) or {}):
+        tree = load(path) or {}
+        for where, value in list(walk_strings(tree)) + list(walk_keys(tree)):
             match = ISO_DATE.fullmatch(value)
             if not match:
                 continue
             for text in (match.group(1), match.group(2)):
-                if text and dt.date.fromisoformat(text) > cutoff:
+                try:
+                    late_one = text and dt.date.fromisoformat(text) > cutoff
+                except ValueError:
+                    late_one = False
+                if late_one:
                     late.append(f"{path.relative_to(run)}: {where} = {value}")
     # the inputs themselves, as the run holds them and as each agent was handed
     # them: every row's own filing date, read rather than trusted to the manifest
@@ -453,13 +482,17 @@ def check_nothing_after_cutoff(run: Path) -> Result:
             continue
         tree = load(path)
         if path.name == "input_market.json":
-            late += [f"{path.relative_to(run)}: {p}" for p in market_table_problems(tree or {},
-                                                                                    cutoff)]
+            late += [f"{path.relative_to(run)}: {p}" for p in
+                     market_table_problems(tree or {}, cutoff, manifest.get("accepted"))]
             continue
-        for key in ("filed", "filing_date", "filed_at"):
+        for key in ROW_DATE_KEYS:
             for value in _dates_in(tree, key):
-                if re.match(r"\d{4}-\d{2}-\d{2}", value) \
-                        and dt.date.fromisoformat(value[:10]) > cutoff:
+                try:
+                    late_one = bool(re.match(r"\d{4}-\d{2}-\d{2}", value)) \
+                        and dt.date.fromisoformat(value[:10]) > cutoff
+                except ValueError:
+                    late_one = False
+                if late_one:
                     late.append(f"{path.relative_to(run)}: {key} {value}")
                     break
     return Result("mechanical.nothing_after_cutoff", run_name(run), FAIL if late else PASS,
@@ -572,7 +605,7 @@ def _eastern(stamp: str) -> dt.datetime:
     return when.astimezone(EASTERN) if when.tzinfo else when.replace(tzinfo=EASTERN)
 
 
-def market_table_problems(table: dict, cutoff: dt.date) -> list[str]:
+def market_table_problems(table: dict, cutoff: dt.date, accepted=None) -> list[str]:
     """Why a market table reaches past what an input may see, or []. The rule is
     CLAUDE.md's and `docs/HOW_WE_WORK.md` §4's, written out here against the
     exchange calendar above so the grader moves neither with `src/market.py` nor
@@ -582,8 +615,14 @@ def market_table_problems(table: dict, cutoff: dt.date) -> list[str]:
     table carries a filing window, whose filing date is the run's cutoff and is
     the acceptance day or (accepted after half past five) EDGAR's next business
     day; every other window is an earlier filing's; the table's cutoff is day two
-    of its latest window; no row lies past it, and every row is a trading day."""
+    of its latest window; no row lies past it, and every row is a trading day.
+    The filing window's acceptance stamp is held to `accepted`, the run's own
+    record of when EDGAR accepted the filing (the manifest's): the stamp decides
+    day zero, so a table is not believed about it."""
     problems = []
+    if not isinstance(accepted, str):
+        problems.append("the manifest records no acceptance stamp for the filing, so the "
+                        "filing window's stamp would stand on trust")
     rows = sorted(str(r.get("date")) for r in table.get("rows") or [] if isinstance(r, dict))
     table_cutoff = table.get("cutoff")
     if rows and not isinstance(table_cutoff, str):
@@ -617,6 +656,9 @@ def market_table_problems(table: dict, cutoff: dt.date) -> list[str]:
         if filed not in permitted:
             problems.append(f"the {kind} window's filing date {filed} is not one EDGAR puts "
                             f"on an acceptance at {stamp}")
+        if kind == "filing" and isinstance(accepted, str) and stamp != accepted:
+            problems.append(f"the filing window's acceptance stamp {stamp} is not the "
+                            f"manifest's {accepted}")
         if kind == "filing" and filed != cutoff.isoformat():
             problems.append(f"the filing window is for a filing dated {filed}, not the run's "
                             f"cutoff {cutoff}")
@@ -710,27 +752,60 @@ FADE = dict(GORDON, revenue_growth_year_one=0.12)
 HAND_WORKED = (("gordon", GORDON, 1545.0, 140.0), ("fade", FADE, 2240.8020, 209.5802))
 
 
-def check_hand_worked_cases() -> list[Result]:
+# The calculator under judgment runs in a process of its own, with -I, so no code
+# of the branch being graded ever runs inside the grading process: imported here,
+# its src/__init__.py could rebind any check before a run was graded.
+CALCULATOR_PROBE = """
+import json, sys
+sys.path.insert(0, sys.argv[2])      # -I puts no directory on the path by itself
+from src import calculator
+out = {}
+for name, drivers in json.loads(sys.argv[1]).items():
+    run = calculator.forecast(1000.0, drivers, 0.25, 0.09)
+    out[name] = {"enterprise_value": run["enterprise_value"],
+                 "value_per_share": calculator.bridge(run["enterprise_value"], 100.0, 45.0,
+                                                      10.0)["value_per_share"]}
+print(json.dumps(out))
+"""
+
+
+def calculator_hand_values(repo: Path = REPO) -> tuple[dict, str | None]:
+    """src.calculator's answers to the hand-worked cases, computed in its own process
+    from `repo`; (values, None) or ({}, why it gave none)."""
+    cases = {name: drivers for name, drivers, _, _ in HAND_WORKED}
+    try:
+        done = subprocess.run([sys.executable, "-I", "-c", CALCULATOR_PROBE, json.dumps(cases),
+                               str(repo)], cwd=repo, capture_output=True, text=True, timeout=120)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return {}, f"src.calculator could not be run: {exc}"
+    if done.returncode:
+        return {}, f"src.calculator exited {done.returncode}: {done.stderr.strip()[-300:]}"
+    try:
+        values = json.loads(done.stdout)
+    except ValueError:
+        return {}, f"src.calculator printed no JSON: {done.stdout.strip()[-300:]}"
+    return values if isinstance(values, dict) else {}, None
+
+
+def check_hand_worked_cases(repo: Path = REPO) -> list[Result]:
     """This file's arithmetic and the calculator's both reproduce the hand-worked cases."""
     results = []
-    try:
-        from src import calculator
-    except ImportError as exc:                       # pragma: no cover
-        calculator, why = None, str(exc)
+    theirs, why = calculator_hand_values(repo)
     for name, drivers, enterprise, per_share in HAND_WORKED:
         own = forecast(1000.0, drivers, 0.25, 0.09)["enterprise_value"]
         problems = []
         if abs(own - enterprise) > 1e-3:
             problems.append(f"the grader's own arithmetic gives {own}, the hand case {enterprise}")
-        if calculator is None:
-            problems.append(f"src.calculator does not import: {why}")
+        if why:
+            problems.append(why)
+        elif not isinstance(theirs.get(name), dict):
+            problems.append(f"src.calculator gave no answer for {name}")
         else:
-            run = calculator.forecast(1000.0, drivers, 0.25, 0.09)
-            share = calculator.bridge(run["enterprise_value"], 100.0, 45.0, 10.0)["value_per_share"]
-            if abs(run["enterprise_value"] - enterprise) > 1e-3:
-                problems.append(f"src.calculator gives {run['enterprise_value']}, the hand case {enterprise}")
-            if abs(share - per_share) > 1e-4:
-                problems.append(f"src.calculator gives {share} a share, the hand case {per_share}")
+            got = theirs[name]
+            if not finite(got.get("enterprise_value")) or abs(got["enterprise_value"] - enterprise) > 1e-3:
+                problems.append(f"src.calculator gives {got.get('enterprise_value')}, the hand case {enterprise}")
+            if not finite(got.get("value_per_share")) or abs(got["value_per_share"] - per_share) > 1e-4:
+                problems.append(f"src.calculator gives {got.get('value_per_share')} a share, the hand case {per_share}")
         results.append(Result(f"mechanical.hand_worked_{name}", "code",
                               FAIL if problems else PASS, "; ".join(problems) or
                               f"enterprise value {enterprise}, {per_share} a share", problems))

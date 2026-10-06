@@ -85,7 +85,7 @@ def test_the_ci_guard_fails_a_rewritten_scoreboard():
 
 def test_the_ci_guard_passes_the_owners_label():
     ok, _ = eval_guard.decide([("M", "evals/thresholds.json")], {"owner-approved-eval"},
-                              True, "", "")
+                              True, "", "", action="labeled", label_added="owner-approved-eval")
     assert ok
 
 
@@ -204,9 +204,13 @@ def test_the_ci_guard_guards_itself(tmp_path, monkeypatch):
     assert not ok
 
 
-def test_the_ci_guard_counts_the_label_on_the_labelling_run_and_not_on_a_later_push():
+def test_the_ci_guard_counts_the_label_only_on_the_run_that_adding_it_starts():
+    """The owner labels, the author pushes (red), then reopens the pull request or
+    anyone adds an unrelated label: the approval must not come back."""
     change = [("M", "evals/thresholds.json")]
-    assert eval_guard.decide(change, {"owner-approved-eval"}, True, "", "", action="labeled")[0]
-    assert eval_guard.decide(change, {"owner-approved-eval"}, True, "", "", action="opened")[0]
-    ok, why = eval_guard.decide(change, {"owner-approved-eval"}, True, "", "", action="synchronize")
-    assert not ok and "labels again" in why
+    approve = dict(action="labeled", label_added="owner-approved-eval")
+    assert eval_guard.decide(change, {"owner-approved-eval"}, True, "", "", **approve)[0]
+    for later in (dict(action="synchronize"), dict(action="reopened"), dict(action="opened"),
+                  dict(action="labeled", label_added="needs-review"), dict(action="labeled")):
+        ok, why = eval_guard.decide(change, {"owner-approved-eval"}, True, "", "", **later)
+        assert not ok and "labels again" in why, later

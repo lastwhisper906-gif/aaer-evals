@@ -16,7 +16,8 @@ It passes when:
 
 Anything else under `evals/` fails it: a file added, changed, renamed or deleted.
 
-    python3.12 -m src.eval_guard --base origin/main --head HEAD --labels "a,b"
+    python3.12 -m src.eval_guard --base origin/main --head HEAD --labels "a,b" \\
+        --action labeled --label-added owner-approved-eval
 """
 
 from __future__ import annotations
@@ -44,28 +45,28 @@ def _show(ref: str, path: str) -> str | None:
     return done.stdout if done.returncode == 0 else None
 
 
-LABEL_COUNTS_ON = ("labeled", "opened", "reopened")
-
-
 def decide(changes: list[tuple[str, str]], labels: set[str], base_has_evals: bool,
            scoreboard_before: str | None, scoreboard_after: str | None,
-           action: str = "labeled") -> tuple[bool, str]:
+           action: str = "labeled", label_added: str | None = None) -> tuple[bool, str]:
     """(passes, why). `changes` is (status, path) for every guarded path changed.
 
-    The label counts on the run the owner's labelling starts, and on a pull request
-    opened with it; it does not count on a `synchronize` run, the one a later push
-    starts, so a commit pushed after the owner labelled is red until the owner
-    labels again (remove and re-add). The approval covers the head it was given on.
+    The label counts on exactly one run: the `labeled` run that adding it starts
+    (`label_added` is the label that event added). It does not count on a
+    `synchronize` run, the one a later push starts, nor on `opened`, `reopened` or
+    the adding of any other label, so a commit pushed after the owner labelled is
+    red until the owner labels again (remove and re-add), and no later event
+    revives the approval. The approval covers the head it was given on.
     """
     if not changes:
         return True, "nothing guarded changed"
     if not base_has_evals:
         return True, "the base has no evals/: this is the pull request that creates it"
-    if LABEL in labels and action in LABEL_COUNTS_ON:
+    if LABEL in labels and action == "labeled" and label_added == LABEL:
         return True, f"labelled {LABEL} by the owner"
     if LABEL in labels:
-        return False, (f"labelled {LABEL}, but this run was started by a push after the "
-                       "label ({action}); the owner labels again to approve this head")
+        return False, (f"labelled {LABEL}, but this run was not started by adding it "
+                       f"({action}{': ' + label_added if label_added else ''}); the owner "
+                       "labels again to approve this head")
     others = [(status, path) for status, path in changes if path != SCOREBOARD]
     if not others:
         before, after = scoreboard_before or "", scoreboard_after or ""
@@ -83,6 +84,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--labels", default="", help="comma-separated pull request labels")
     parser.add_argument("--action", default="labeled",
                         help="the pull_request event's action (opened, synchronize, labeled)")
+    parser.add_argument("--label-added", default=None,
+                        help="on a labeled event, the label that was added")
     args = parser.parse_args(argv)
     merge_base = _git("merge-base", args.base, args.head).strip()
     lines = _git("diff", "--name-status", "--no-renames", merge_base, args.head, "--",
@@ -93,7 +96,7 @@ def main(argv: list[str] | None = None) -> int:
     base_has_evals = bool(_git("ls-tree", "--name-only", args.base, "evals/").strip())
     ok, why = decide(changes, {l.strip() for l in args.labels.split(",") if l.strip()},
                      base_has_evals, _show(merge_base, SCOREBOARD), _show(args.head, SCOREBOARD),
-                     action=args.action)
+                     action=args.action, label_added=args.label_added)
     print(f"eval_guard: {'pass' if ok else 'FAIL'}: {why}")
     return 0 if ok else 1
 
