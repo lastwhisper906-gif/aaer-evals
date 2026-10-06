@@ -152,6 +152,22 @@ def test_a_late_row_in_a_readers_own_input_fails_nothing_after_cutoff(run):
     assert _status(mechanical.grade(run), "mechanical.nothing_after_cutoff") == FAIL
 
 
+def test_a_one_line_fenced_item_is_read_as_the_pipeline_reads_it(run):
+    """The pipeline keeps a block written on one line, or closed without a newline
+    before the fence; the grader reads the same fence, so such an item is checked
+    (here: its quote is not in the reader's input, and the check fails)."""
+    report = run / "report_numbers.md"
+    one_line = ('\n```json {"id": "revenue_recognition_planted_one_line", "paragraph_id": "x", '
+                '"quote": "words the reader was never handed"}```\n')
+    report.write_text(report.read_text(encoding="utf-8") + one_line, encoding="utf-8")
+    assert any(i.get("id") == "revenue_recognition_planted_one_line"
+               for i in mechanical.report_items(report))
+    results = mechanical.grade(run)
+    assert _status(results, "mechanical.quotes_resolve") == FAIL
+    assert any("planted_one_line" in f for f in
+               next(r.failures for r in results if r.grader == "mechanical.quotes_resolve"))
+
+
 def test_a_fenced_block_that_is_not_json_fails_quotes_resolve(run):
     report = run / "report_numbers.md"
     report.write_text(report.read_text(encoding="utf-8") + "\n```json\n{not json\n```\n",

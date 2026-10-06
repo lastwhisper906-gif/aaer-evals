@@ -63,7 +63,9 @@ AGENT_DIR = {"analysis_accounting.json": "accounting-analyst",
              "assumptions.json": "valuation-analyst",
              "analysis_valuation.json": "valuation-analyst-second-pass"}
 
-FENCE = re.compile(r"```json\s*\n(.*?)\n```", re.S)
+# the same fence the pipeline reads (src/run_analysis.py): a block on one line, or
+# one whose closing brace sits against the closing fence, is an item it keeps
+FENCE = re.compile(r"```json\s*(.*?)```", re.S)
 # A date, or a period written as two dates, anywhere in a calculator file.
 # a date, a date..date pair, or a date-time stamp; a date inside prose is not one
 ISO_DATE = re.compile(r"(\d{4}-\d{2}-\d{2})(?:[T ][0-9:.+\-Z]*)?(?:\.\.(\d{4}-\d{2}-\d{2}))?")
