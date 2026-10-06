@@ -667,3 +667,53 @@ def test_the_command_refuses_a_run_directory_that_is_not_there(tmp_path, capsys)
     assert agent_inputs.main(
         ["--run", str(tmp_path / "no-such-run")]) == agent_inputs.BAD_INPUT
     assert "not a run directory" in capsys.readouterr().err
+
+
+# --- the retired four, on a run on record ---------------------------------------
+
+def test_a_leak_into_a_retired_agent_s_directory_is_a_broken_boundary(tmp_path):
+    """A pilot run on record holds a supervisor's or a comparer's directory. The
+    agent is retired -- nothing builds or runs one -- but its directory is the
+    record of what it saw, and it is held to its layer as `RETIRED_AGENTS` keeps
+    it: a supervisor never sees the market table, a comparer never sees a filing."""
+    run = _run_directory(tmp_path)
+    agent_inputs.build_all(run)
+    supervisor = agent_inputs.agents_root(run) / "supervisor-pressure"
+    supervisor.mkdir()
+    (supervisor / PRICE_FILE).write_bytes((run / PRICE_FILE).read_bytes())
+    comparer = agent_inputs.agents_root(run) / "numbers-vs-market"
+    comparer.mkdir()
+    (comparer / "input_notes.md").write_bytes((run / "input_notes.md").read_bytes())
+
+    broken = agent_inputs.isolation_violations(run)
+    assert any(line.startswith("supervisor-pressure:") and PRICE_FILE in line
+               and "never sees" in line for line in broken)
+    assert any(line.startswith("numbers-vs-market:") and "input_notes.md" in line
+               and "never sees" in line for line in broken)
+
+
+def test_a_clean_retired_agent_s_directory_is_not_a_violation(tmp_path):
+    """The same two directories holding what their layers saw, and the file each
+    wrote, are the record and are clean. Sitting anywhere but under `agents/`,
+    or holding a file nobody routed, they are not."""
+    run = _run_directory(tmp_path)
+    agent_inputs.build_all(run)
+    supervisor = agent_inputs.agents_root(run) / "supervisor-pressure"
+    supervisor.mkdir()
+    for name in agent_inputs.RETIRED_AGENTS["supervisor-pressure"].sees:
+        if (run / name).is_file():
+            (supervisor / name).write_bytes((run / name).read_bytes())
+    (supervisor / "prediction_pressure.json").write_text("{}\n", encoding="utf-8")
+    comparer = agent_inputs.agents_root(run) / "numbers-vs-market"
+    comparer.mkdir()
+    for name in agent_inputs.RETIRED_AGENTS["numbers-vs-market"].sees:
+        if (run / name).is_file():
+            (comparer / name).write_bytes((run / name).read_bytes())
+    (comparer / "report_numbers_vs_market.md").write_text("x\n", encoding="utf-8")
+    assert agent_inputs.isolation_violations(run) == []
+
+    beside = run / "notes-vs-market"
+    beside.mkdir()
+    broken = agent_inputs.isolation_violations(run)
+    assert any(line.startswith("notes-vs-market:") and "not at its session root" in line
+               for line in broken)

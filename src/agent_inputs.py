@@ -508,18 +508,40 @@ def _differs(placed: Path, source: Path) -> bool:
             and placed.read_bytes() != source.read_bytes())
 
 
+# Every agent a run on record may hold a directory for: the live six and the
+# retired four. A retired agent's directory on a pilot run is still the record
+# of what that agent saw, and is judged against its layer as it was.
+KNOWN_AGENTS: dict[str, Agent] = {**AGENTS, **RETIRED_AGENTS}
+
+
+def recorded_root(run: Path, agent: str) -> Path:
+    """Where an agent's directory belongs on a run on record, live or retired.
+
+    `session_root` is the live pipeline's and refuses a retired name, because
+    nothing builds a directory for one any more; the boundary check reads a
+    run that was built when the agent was live, and holds that directory to
+    the same place.
+    """
+    if agent not in KNOWN_AGENTS:
+        raise AgentInputError(f"{agent!r} is not an agent; "
+                              f"one of {', '.join(KNOWN_AGENTS)}")
+    return agents_root(run) / agent
+
+
 def agent_directories(run: Path) -> dict[Path, str]:
-    """Every directory under `run` named for an agent, wherever it sits.
+    """Every directory under `run` named for an agent, live or retired, wherever it sits.
 
     Found rather than assumed. A layout that groups the six by layer —
     `agents/readers/numbers-reader` beside `agents/readers/notes-text-reader` —
     holds each agent's right files and puts the other reader one step out of the
     root, and a check that looked only where it expected the directory to be
-    would report that layout clean.
+    would report that layout clean. The retired four are found too: a pilot run
+    on record holds their directories, and a leak into one of those is a leak
+    into what the record says that agent saw.
     """
     return {path: path.name
             for path in sorted(Path(run).rglob("*"))
-            if path.name in AGENTS and path.is_dir()}
+            if path.name in KNOWN_AGENTS and path.is_dir()}
 
 
 def input_tree_holding(path) -> Path | None:
@@ -538,11 +560,11 @@ def input_tree_holding(path) -> Path | None:
     """
     resolved = Path(path).resolve()
     for place in (resolved, *resolved.parents):
-        if place.name in AGENTS:
+        if place.name in KNOWN_AGENTS:
             return place
         if place.name == AGENTS_DIRNAME and (
                 (place.parent / "input_manifest.json").is_file()
-                or any((place / name).is_dir() for name in AGENTS)):
+                or any((place / name).is_dir() for name in KNOWN_AGENTS)):
             return place
     return None
 
@@ -569,16 +591,21 @@ def isolation_violations(run: Path) -> list[str]:
        so that one step out of a root yields no file. This is what keeps the
        roots out of the run directory itself, where the bundle is: a reader
        whose root sat beside it would have the market table one `..` away.
+
+    Every directory named for an agent is judged, the retired four included: a
+    pilot run on record holds a comparer's or a supervisor's directory, and
+    that directory is held to the layer the agent had, as `RETIRED_AGENTS`
+    records it, because it is the record of what the agent saw.
     """
     run = Path(run)
     live = agent_directories(run)
     found = []
 
     for root, name in live.items():
-        spec = AGENTS[name]
-        if root != session_root(run, name):
+        spec = KNOWN_AGENTS[name]
+        if root != recorded_root(run, name):
             found.append(f"{name}: its directory sits at {root}, not at its "
-                         f"session root {session_root(run, name)}")
+                         f"session root {recorded_root(run, name)}")
         for path in sorted(root.iterdir()):
             if path.name == spec.writes:
                 continue  # the one file this agent writes, into its only root

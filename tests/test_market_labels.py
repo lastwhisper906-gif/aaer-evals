@@ -381,14 +381,14 @@ def test_a_table_with_no_cutoff_is_refused():
 def test_a_window_is_held_to_its_own_acceptance_stamp():
     """Rows 2026-05-08, 05-11 and 05-12. Accepted Friday the 8th at 09:00: day zero
     is the 8th and the window is the 8th, 11th and 12th. Accepted the 8th at 16:30,
-    after the close: day zero is the next trading row, the 11th, so a window that
-    starts on the 8th is not that acceptance's window."""
+    after the close: day zero is the next trading day, Monday the 11th, so a window
+    that starts on the 8th is not that acceptance's window."""
     good = rose()
     market_labels.labels({"report_numbers.md": [item(UP, "up")]}, good)
     wrong = table(("filing", FILING_DAYS, [0.02, 0.01, 0.0], 0.03, NO_SHORT_INTEREST),
                   accepted="2026-05-08T16:30:00-04:00")
-    # day zero moves to the 11th, and the three rows then end before day two
-    with pytest.raises(MarketLabelError, match="rows end before reaction day two"):
+    # day zero moves to the 11th, and day two is then the 13th, which has no row
+    with pytest.raises(MarketLabelError, match="no row for 2026-05-13"):
         market_labels.labels({"report_numbers.md": []}, wrong)
     shifted = table(("filing", ["2026-05-11", "2026-05-12", "2026-05-13"], [0.02, 0.01, 0.0],
                      0.03, NO_SHORT_INTEREST), accepted="2026-05-08T16:30:00-04:00")
@@ -430,11 +430,11 @@ def test_an_after_close_acceptance_may_carry_the_next_days_filing_date():
 
 
 def test_a_table_whose_rows_end_before_reaction_day_two_is_refused():
-    """Cut the table off at day one, the 11th: the window cannot reach its day two."""
+    """Cut the table off at day one, the 11th: day two, the 12th, has no row."""
     found = rose()
     found["cutoff"] = "2026-05-11"
     found["rows"] = [row for row in found["rows"] if row["date"] <= "2026-05-11"]
-    with pytest.raises(MarketLabelError, match="rows end before reaction day two"):
+    with pytest.raises(MarketLabelError, match="no row for 2026-05-12"):
         market_labels.labels({"report_numbers.md": []}, found)
 
 
@@ -450,7 +450,7 @@ def test_the_tables_cutoff_is_day_two_of_its_latest_window():
         market_labels.labels({"report_numbers.md": []}, found)
 
 
-# --- the rows are the only calendar: the acceptance is held to the calendar it implies --
+# --- the rows are not the calendar: each window is held to the exchange calendar ------
 
 def test_a_table_missing_the_row_for_its_own_day_zero_is_refused():
     """Accepted Friday the 8th at 09:00, before the close: the 8th is day zero and
@@ -461,28 +461,51 @@ def test_a_table_missing_the_row_for_its_own_day_zero_is_refused():
     late = table(("filing", ["2026-05-11", "2026-05-12", "2026-05-13"], [0.02, 0.0, 0.01],
                   0.03, NO_SHORT_INTEREST),
                  accepted="2026-05-08T09:00:00-04:00", filing_date="2026-05-08")
-    with pytest.raises(MarketLabelError, match="no row for its acceptance day 2026-05-08"):
+    with pytest.raises(MarketLabelError, match="no row for 2026-05-08"):
         market_labels.labels({"report_numbers.md": []}, late)
 
 
-def test_after_the_close_day_zero_may_be_a_weekend_and_a_holiday_away_and_no_more():
-    """Accepted Friday the 8th at 16:35, after the close: day zero is the next
-    trading row. Rows for Tuesday the 12th on, four calendar days out, read as
-    Monday the 11th being a holiday and stand -- the slack the rows leave. Rows
-    for Wednesday the 13th on are five days out, more than a weekend and a
-    holiday, and are refused. EDGAR's own close is half past five, so the filing
-    date is the 8th either way."""
-    holiday = table(("filing", ["2026-05-12", "2026-05-13", "2026-05-14"], [0.02, 0.0, 0.01],
-                     0.03, NO_SHORT_INTEREST),
-                    accepted="2026-05-08T16:35:00-04:00", filing_date="2026-05-08")
-    document = market_labels.labels({"report_numbers.md": [item(UP, "up")]}, holiday,
-                                    run_cutoff="2026-05-08")
-    assert document["windows"][0]["day_zero"] == "2026-05-12"
-    five_out = table(("filing", ["2026-05-13", "2026-05-14", "2026-05-15"], [0.02, 0.0, 0.01],
+def test_a_skipped_trading_day_after_the_close_is_refused():
+    """Accepted Thursday the 7th at 16:35, after the close: day zero is Friday the
+    8th, a trading day. A table with rows for Monday the 11th on would read its
+    own day zero as the 11th and pass one trading day late; the exchange calendar
+    says the 8th was open, and the table has no row for it."""
+    friday_missing = table(("filing", ["2026-05-11", "2026-05-12", "2026-05-13"],
+                            [0.02, 0.0, 0.01], 0.03, NO_SHORT_INTEREST),
+                           accepted="2026-05-07T16:35:00-04:00", filing_date="2026-05-07")
+    with pytest.raises(MarketLabelError, match="no row for 2026-05-08"):
+        market_labels.labels({"report_numbers.md": []}, friday_missing)
+
+
+def test_a_window_over_an_exchange_holiday_stands():
+    """Accepted Friday 2026-05-22 at 16:35: Monday the 25th is Memorial Day, so day
+    zero is Tuesday the 26th and the window runs the 26th, 27th and 28th. Accepted
+    Thursday 2026-04-02 at 16:35: Friday the 3rd is Good Friday (Easter the 5th),
+    so day zero is Monday the 6th. Both windows are `rose`'s +0.03 by the same
+    arithmetic on other days, and an item pointing up is priced in. EDGAR's own
+    close is half past five, so each filing date is the acceptance day."""
+    memorial = table(("filing", ["2026-05-26", "2026-05-27", "2026-05-28"], [0.02, 0.0, 0.01],
                       0.03, NO_SHORT_INTEREST),
-                     accepted="2026-05-08T16:35:00-04:00", filing_date="2026-05-08")
-    with pytest.raises(MarketLabelError, match="5 days after the acceptance"):
-        market_labels.labels({"report_numbers.md": []}, five_out)
+                     accepted="2026-05-22T16:35:00-04:00", filing_date="2026-05-22")
+    document = market_labels.labels({"report_numbers.md": [item(UP, "up")]}, memorial,
+                                    run_cutoff="2026-05-22")
+    assert document["windows"][0]["day_zero"] == "2026-05-26"
+    assert labelled(document, UP) == ["priced_in"]
+    good_friday = table(("filing", ["2026-04-06", "2026-04-07", "2026-04-08"], [0.02, 0.0, 0.01],
+                         0.03, NO_SHORT_INTEREST),
+                        accepted="2026-04-02T16:35:00-04:00", filing_date="2026-04-02")
+    document = market_labels.labels({"report_numbers.md": [item(UP, "up")]}, good_friday,
+                                    run_cutoff="2026-04-02")
+    assert document["windows"][0]["day_zero"] == "2026-04-06"
+    assert labelled(document, UP) == ["priced_in"]
+
+
+def test_a_row_on_a_day_the_exchange_was_closed_is_refused():
+    """A row dated Saturday the 9th, inside the cutoff, is not a trading day."""
+    found = rose()
+    found["rows"].append(dict(found["rows"][0], date="2026-05-09"))
+    with pytest.raises(MarketLabelError, match="2026-05-09 is not a trading day"):
+        market_labels.labels({"report_numbers.md": []}, found)
 
 
 # --- every window but the filing's is an earlier filing's -------------------------------

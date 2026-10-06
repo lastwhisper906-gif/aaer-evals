@@ -67,10 +67,10 @@ import sys
 from pathlib import Path
 
 try:
-    from src import agent_inputs, cutoff_guard, interpreter_pin, market
+    from src import agent_inputs, cutoff_guard, exchange_calendar, interpreter_pin, market
 except ImportError:  # invoked as a plain script: python3.12 src/market_labels.py
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from src import agent_inputs, cutoff_guard, interpreter_pin, market
+    from src import agent_inputs, cutoff_guard, exchange_calendar, interpreter_pin, market
 
 BAD_INPUT = 2
 
@@ -90,11 +90,6 @@ NEAR_ZERO_BAND_SOURCE = (
 
 # What each reader direction points the abnormal return to.
 DIRECTION_SIGN = {"up": 1, "down": -1}
-
-# After the close, day zero is the next trading day: at most a weekend and one
-# holiday away, four calendar days. The slack `windows` leaves, since the rows
-# are the only calendar it has (see its docstring).
-MOST_DAYS_TO_DAY_ZERO = 4
 
 MARKET_TABLE = agent_inputs.MARKET_TABLE
 READER_REPORTS = agent_inputs.READER_REPORTS
@@ -195,26 +190,28 @@ def short_interest(table: dict, day: str) -> dict:
 def windows(table: dict, *, run_cutoff: str | None = None) -> list[dict]:
     """Each recorded window: its kind, its day zero, its abnormal return, its short interest.
 
-    Every window is held to `src/market.py`'s own definition of its days, read off
-    the window's acceptance stamp and the table's rows (the trading calendar the
-    table carries): day zero is the acceptance day when EDGAR accepted before the
-    close and the next trading day when after it (`market.reaction_day_zero`), days
-    one and two are the next two rows, the window's `filing_date` is one EDGAR can
-    put on that acceptance (`market.filing_dates_for`), the table's cutoff is day
-    two of the latest window, and no row lies past it. A window with no acceptance
-    stamp cannot say its day zero and is refused.
+    Every window is held to the rule `src/market.py` states for its days, worked
+    here against the exchange calendar `src/exchange_calendar.py` keeps by rule
+    and not against the table's own rows: day zero is the acceptance day when
+    EDGAR accepted before the four o'clock close in New York and the next
+    trading day when after it; days one and two are the next two trading days;
+    each of the three is a row; the window's `filing_date` is one EDGAR can put
+    on that acceptance -- the acceptance day, or, accepted after half past five,
+    EDGAR's next business day, which skips the federal holidays; the table's
+    cutoff is day two of the latest window; no row lies past it; and every row
+    is a trading day. A window with no acceptance stamp cannot say its day zero
+    and is refused.
 
-    The rows are the only calendar on the record, so a table missing the row for
-    its own day zero would otherwise be checked against itself: day zero would
-    move to the next row the table does have, and the window would reach one
-    trading day past the real reaction day two and pass. Beside the day zero
-    read off the rows, then, the acceptance is held to the calendar it implies:
-    when EDGAR accepted before the four o'clock close on a weekday, the
-    acceptance day is day zero and has to be a row; when after the close, day
-    zero has to lie within four calendar days of the acceptance, which is what a
-    weekend and one holiday can take. The four days are the slack this leaves:
-    a row missing on a Monday after a Friday close reads as a holiday here, and
-    only the market module's own calendar can tell the two apart.
+    `market.reaction_day_zero` and `market.filing_dates_for` are not used here,
+    on purpose. The first walks the calendar it is handed, and the only one a
+    table carries is its rows, so a table missing the row for its real day zero
+    would be checked against itself: day zero would move to the next row the
+    table had, the window would reach one trading day past the real reaction
+    day two, and the label would be read off that late window. The second
+    counts weekdays, and EDGAR's next business day after a Friday before
+    Columbus Day is the Tuesday. The acceptance stamp is still read on the
+    exchange's clock the way `src/market.py` reads it (`market._acceptance`),
+    so one instant gives one day zero in both.
 
     Given the run's own cutoff (the filing date), the filing window's
     `filing_date` must be it: a table counted for some other filing is refused.
@@ -233,7 +230,15 @@ def windows(table: dict, *, run_cutoff: str | None = None) -> list[dict]:
     if late:
         raise MarketLabelError(
             f"the market table holds rows past its cutoff {cutoff}: {', '.join(late)}")
-    calendar = [dt.date.fromisoformat(day) for day in dates]
+    for day in dates:
+        try:
+            trading = exchange_calendar.is_trading_day(dt.date.fromisoformat(day))
+        except ValueError as exc:
+            raise MarketLabelError(f"the market table's row {day!r} is not a date") from exc
+        if not trading:
+            raise MarketLabelError(
+                f"the market table's row {day} is not a trading day on the exchange calendar")
+    on_record = set(dates)
     latest_day_two = None
     for window in table.get("windows") or []:
         kind, days = window.get("kind"), [str(d) for d in window.get("days") or []]
@@ -243,32 +248,28 @@ def windows(table: dict, *, run_cutoff: str | None = None) -> list[dict]:
             raise MarketLabelError(f"the {kind} window carries no acceptance stamp, so "
                                    "nothing says which day is its day zero")
         try:
-            day_zero = market.reaction_day_zero(window["accepted"], calendar)
-            permitted = market.filing_dates_for(window["accepted"])
             when = market._acceptance(window["accepted"])   # the exchange's clock
         except market.MarketError as exc:
             raise MarketLabelError(f"the {kind} window: {exc}") from exc
-        # the row check beside the day zero read off the rows: see the docstring
-        before_close = when.time() < market.MARKET_CLOSE
-        gap = (day_zero - when.date()).days
-        if before_close and when.date().weekday() < 5 and day_zero != when.date():
+        accepted_on = when.date()
+        start = (accepted_on if when.time() < market.MARKET_CLOSE
+                 else accepted_on + dt.timedelta(days=1))
+        expected = [day.isoformat() for day in exchange_calendar.trading_days_from(start, 3)]
+        missing = [day for day in expected if day not in on_record]
+        if missing:
             raise MarketLabelError(
-                f"the {kind} window: no row for its acceptance day {when.date()}, so its "
-                f"day zero {day_zero} is a trading day late")
-        if not before_close and gap > MOST_DAYS_TO_DAY_ZERO:
-            raise MarketLabelError(
-                f"the {kind} window: day zero {day_zero} is {gap} days after the "
-                f"acceptance {window['accepted']}, more than a weekend and a holiday")
-        at = calendar.index(day_zero)
-        expected = [day.isoformat() for day in calendar[at:at + 3]]
-        if len(expected) < 3:
-            raise MarketLabelError(f"the {kind} window: the rows end before reaction day two")
+                f"the {kind} window: no row for {', '.join(missing)}; reaction days zero "
+                f"to two of its acceptance {window['accepted']} are {expected} on the "
+                "exchange calendar")
         if days != expected or str(window.get("day_zero")) != expected[0]:
             raise MarketLabelError(
                 f"the {kind} window's days {days} are not reaction days zero to two "
-                f"{expected} of its acceptance {window['accepted']}")
+                f"{expected} of its acceptance {window['accepted']} on the exchange calendar")
         filed = str(window.get("filing_date"))
-        if filed not in {d.isoformat() for d in permitted}:
+        permitted = {accepted_on.isoformat()}
+        if when.time() >= market.EDGAR_ACCEPTANCE_CLOSE:
+            permitted.add(exchange_calendar.next_business_day(accepted_on).isoformat())
+        if filed not in permitted:
             raise MarketLabelError(
                 f"the {kind} window's filing date {filed} is not one EDGAR puts on an "
                 f"acceptance at {window['accepted']}")
