@@ -54,7 +54,8 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 CHECKLIST = REPO_ROOT / "docs" / "CHECKLIST.md"
 INPUT_SPEC = REPO_ROOT / "docs" / "INPUT_SPEC.md"
 HOW_WE_WORK = REPO_ROOT / "docs" / "HOW_WE_WORK.md"
-SUPERVISOR_PROMPT = REPO_ROOT / ".claude" / "agents" / "supervisor-accounting.md"
+# Archived with the other retired definitions on 2026-10-06.
+SUPERVISOR_PROMPT = REPO_ROOT / "archive" / "agents" / "supervisor-accounting.md"
 FIXTURES = REPO_ROOT / "tests" / "fixtures"
 
 # Apple's 10-K, and the date `tests/fixtures/AAPL/manifest.json` records it as

@@ -240,7 +240,7 @@ def test_each_supervisor_writes_the_register_on_its_own_axis(prompt, axis):
     """The two supervisors write §7, so each prompt names every field of the
     register and every closed value, pins its own axis, says an empty register
     is an honest answer -- and says nothing of a tier any more."""
-    text = " ".join((REPO_ROOT / ".claude" / "agents" / prompt)
+    text = " ".join((REPO_ROOT / "archive" / "agents" / prompt)
                     .read_text(encoding="utf-8").split())
     for word in (BY_HAND_ANOMALY + BY_HAND_NUMBERS_VS_PROSE + BY_HAND_MARKET_LABELS):
         assert f"`{word}`" in text, word

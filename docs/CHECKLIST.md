@@ -149,6 +149,13 @@ that trigger. One indicator, one key.
 The comparers, and only the comparers, put a filing's findings next to what the
 market did. Every item a comparer touches gets exactly one label.
 
+**Since 2026-10-06 the comparers are Python** (the owner's decision of that
+day): `src/market_labels.py` gives each reader item one label per reaction
+window from the sign of the window's abnormal return against the item's
+`expected_direction`, with a near-zero band named in that file, and writes
+short interest above its two-year median beside each window as a separate
+field. The crowded-signal rule below therefore no longer moves a label.
+
 | Label | Means |
 |---|---|
 | `priced_in` | the reaction window already moved in the direction the item implies |

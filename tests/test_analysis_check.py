@@ -276,7 +276,14 @@ def test_the_memo_keeps_the_three_analyses_apart_and_adds_nothing_up():
     text = memo.memo(ticker="TEST", form="10-Q", period_end="2026-06-30", cutoff="2026-07-30",
                      fields=FIELDS, accounting=checked, financial=None, valuation=None,
                      baselines=None)
-    assert text.index("## 1. 회계 분석") < text.index("## 2. 재무 분석") < text.index("## 3. 가치평가")
+    # Two top-level sections, 회계 and 재무, by the owner's decision of 2026-10-06;
+    # the financial analysis and the valuation are the two subsections of 재무.
+    assert (text.index("\n## 1. 회계\n") < text.index("\n### 1.1 회계 분석")
+            < text.index("\n## 2. 재무\n") < text.index("\n### 2.1 재무 분석")
+            < text.index("\n### 2.2 가치평가"))
+    analyses = text[:text.index("\n## 참고")]
+    assert [line for line in analyses.splitlines() if line.startswith("## ")] == [
+        "## 1. 회계", "## 2. 재무"]
     assert "no price" in text
     for word in ("종합 점수", "순위", "매수", "매도"):
         assert word not in text.replace("회사 간 순위는 없습니다", "")

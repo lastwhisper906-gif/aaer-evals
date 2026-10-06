@@ -8,6 +8,10 @@ this file's. **One section per analysis, kept apart, and no combined verdict** �
 there is no line anywhere in the memo that adds the three up, ranks the company,
 or says what to do with its shares.
 
+Two top-level sections, by the owner's decision of 2026-10-06: **회계**
+(accounting) and **재무** (finance). The financial analysis and the valuation
+are the two subsections of 재무; nothing in either is merged with the other.
+
 A sentence the gate dropped is not rewritten here; the memo says it was dropped.
 
     python3.12 -m src.memo --run <run directory> --out memo_ko.md
@@ -190,7 +194,8 @@ def _entry(summary: dict, key: str, analysis: dict, block: str | None, fields: d
 
 def accounting_section(analysis: dict | None, fields: dict, *, adjusted: dict | None = None
                        ) -> list[str]:
-    out = ["## 1. 회계 분석 — 보고된 이익과 현금이 경제적 실질을 반영하는가", ""]
+    out = ["## 1. 회계", "",
+           "### 1.1 회계 분석 — 보고된 이익과 현금이 경제적 실질을 반영하는가", ""]
     if analysis is None:
         return out + ["회계 분석이 실행되지 않았습니다.", ""]
     summary = analysis.get("summary_ko") or {}
@@ -219,7 +224,7 @@ def accounting_section(analysis: dict | None, fields: dict, *, adjusted: dict | 
 
 
 def financial_section(analysis: dict | None, fields: dict) -> list[str]:
-    out = ["## 2. 재무 분석 — 이 회사는 얼마나 건강한가", ""]
+    out = ["### 2.1 재무 분석 — 이 회사는 얼마나 건강한가", ""]
     if analysis is None:
         return out + ["재무 분석이 실행되지 않았습니다.", ""]
     summary = analysis.get("summary_ko") or {}
@@ -236,7 +241,7 @@ def financial_section(analysis: dict | None, fields: dict) -> list[str]:
 
 
 def valuation_section(analysis: dict | None, fields: dict) -> list[str]:
-    out = ["## 3. 가치평가 — 이 회사의 가치는 얼마이고, 주가는 무엇을 이미 가정하는가", ""]
+    out = ["### 2.2 가치평가 — 이 회사의 가치는 얼마이고, 주가는 무엇을 이미 가정하는가", ""]
     value = fields.get("valuation") or {}
     if "missing" in value:
         out += [f"Python이 가치를 계산하지 못했습니다. 이유: {value['missing']}", ""]
@@ -287,6 +292,7 @@ def memo(*, ticker: str, form: str, period_end: str, cutoff: str, fields: dict,
              "숫자는 모두 Python이 공시된 값에서 계산했고, 분석가는 숫자를 직접 쓰지 않았습니다.",
              ""]
     lines += accounting_section(accounting, seen, adjusted=fields)
+    lines += ["## 2. 재무", ""]
     lines += financial_section(financial, seen)
     lines += valuation_section(valuation, fields)
     lines += baselines_section(baselines)

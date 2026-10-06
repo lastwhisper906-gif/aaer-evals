@@ -203,69 +203,15 @@ def test_a_run_that_has_a_market_cannot_say_it_has_none(tmp_path, present):
     assert "comparer_labels" not in manifest(run)
 
 
-@pytest.mark.parametrize("comparer", ["numbers-vs-market", "notes-vs-market"])
-def test_a_run_whose_comparer_was_built_is_not_labelled_absent(tmp_path, comparer):
-    """A comparer's directory is built over a market table. A run holding one
-    had a comparer, whether or not its report has reached the run yet, so
-    labelling that comparer `absent` would be false."""
+def test_a_run_holding_market_labels_cannot_say_it_has_no_market(tmp_path):
+    """Since 2026-10-06 the comparers are `src/market_labels.py`, which writes
+    its labels only off a market table. A run holding them had a market, so
+    labelling either comparison `absent` would be false."""
     run = plant(tmp_path)
-    agent_inputs.session_root(run, comparer).mkdir(parents=True)
+    (run / "market_labels.json").write_text("{}\n", encoding="utf-8")
     with pytest.raises(DecideError, match="two things"):
         decide.mark_market_unavailable(run)
     assert "comparer_labels" not in manifest(run)
-
-
-def test_a_supervisor_runs_on_the_two_reader_reports_and_its_rules(tmp_path):
-    """The owner's judge: the supervisors run when the market table is
-    unavailable, with the comparer reports absent."""
-    run = plant(tmp_path)
-    decide.write_rules(run)
-    decide.mark_market_unavailable(run)
-    for agent in decide.QUESTIONS:
-        built = agent_inputs.build(run, agent)
-        assert sorted(built["files"]) == sorted(agent_inputs.READER_REPORTS
-                                                + agent_inputs.RULES_FILES)
-        assert sorted(built["absent"]) == sorted(agent_inputs.COMPARER_REPORTS)
-    assert agent_inputs.isolation_violations(run) == []
-
-
-def test_the_supervisors_hold_exactly_the_two_reader_reports_and_the_comparers_refuse(tmp_path):
-    """The brief's judge: a run with two reader reports and no market table.
-    Each supervisor's directory holds those two reports byte for byte and no
-    comparer report, and both comparer steps refuse and build nothing."""
-    run = plant(tmp_path)
-    decide.write_rules(run)
-    decide.mark_market_unavailable(run)
-    assert not (run / "input_market.json").exists()
-    for comparer in ("numbers-vs-market", "notes-vs-market"):
-        with pytest.raises(AgentInputError, match="nothing to compare"):
-            agent_inputs.build(run, comparer)
-        assert not agent_inputs.session_root(run, comparer).exists()
-    for agent in ("supervisor-accounting", "supervisor-pressure"):
-        agent_inputs.build(run, agent)
-        root = agent_inputs.session_root(run, agent)
-        assert sorted(path.name for path in root.iterdir()) == [
-            "report_notes_text.md", "report_numbers.md",
-            "rules_checklist_keys.md", "rules_output_schema.md"]
-        for name in ("report_notes_text.md", "report_numbers.md"):
-            assert (root / name).read_bytes() == (run / name).read_bytes()
-
-
-def test_a_comparer_report_already_in_a_supervisors_directory_is_refused(tmp_path):
-    """The prompts tell both supervisors the comparer reports "are not in your
-    directory" when there is no market table. That has to hold for what is
-    already there, not only for what the builder places: a comparer report
-    planted in the session root, with no copy in the run to compare it
-    against, is refused as stray. Raised by the second lens on #84."""
-    run = plant(tmp_path)
-    decide.write_rules(run)
-    decide.mark_market_unavailable(run)
-    for agent in ("supervisor-accounting", "supervisor-pressure"):
-        root = agent_inputs.session_root(run, agent)
-        root.mkdir(parents=True)
-        (root / "report_notes_vs_market.md").write_text("# planted\n", encoding="utf-8")
-        with pytest.raises(AgentInputError, match="report_notes_vs_market.md"):
-            agent_inputs.build(run, agent)
 
 
 def test_the_missing_comparers_labels_are_written_absent(tmp_path):
@@ -298,12 +244,13 @@ def test_a_manifest_saying_no_market_with_any_other_labels_is_refused(tmp_path, 
     with pytest.raises(AgentInputError, match="absent"):
         agent_inputs.market_unavailable(run)
     with pytest.raises(AgentInputError, match="absent"):
-        agent_inputs.build(run, "supervisor-accounting")
-    assert not agent_inputs.session_root(run, "supervisor-accounting").exists()
+        agent_inputs.build(run, "accounting-analyst")
+    assert not agent_inputs.session_root(run, "accounting-analyst").exists()
 
 
 def _prompt(agent: str) -> str:
-    return (Path(__file__).resolve().parent.parent / ".claude" / "agents"
+    """A retired supervisor's definition, where it was archived on 2026-10-06."""
+    return (Path(__file__).resolve().parent.parent / "archive" / "agents"
             / f"{agent}.md").read_text(encoding="utf-8")
 
 
@@ -352,31 +299,6 @@ def test_the_checklist_says_absent_is_no_comparers_label():
     table = [line for line in section.splitlines() if line.startswith("| `")]
     assert [line.split("`")[1] for line in table] == [
         "priced_in", "not_priced", "opposite_direction"]
-
-
-def test_without_the_manifest_saying_so_a_supervisor_still_waits_for_the_comparers(tmp_path):
-    run = plant(tmp_path)
-    decide.write_rules(run)
-    with pytest.raises(AgentInputError, match="report_numbers_vs_market.md"):
-        agent_inputs.build(run, "supervisor-accounting")
-
-
-@pytest.mark.parametrize("comparer", ["numbers-vs-market", "notes-vs-market"])
-def test_no_comparer_is_built_when_there_is_no_market_table(tmp_path, comparer):
-    run = plant(tmp_path)
-    decide.mark_market_unavailable(run)
-    with pytest.raises(AgentInputError, match="nothing to compare"):
-        agent_inputs.build(run, comparer)
-    assert not agent_inputs.session_root(run, comparer).exists()
-
-
-def test_a_run_saying_no_market_and_holding_a_comparer_report_is_refused(tmp_path):
-    run = plant(tmp_path)
-    decide.write_rules(run)
-    decide.mark_market_unavailable(run)
-    (run / "report_notes_vs_market.md").write_text("# a comparer's\n", encoding="utf-8")
-    with pytest.raises(AgentInputError, match="two things"):
-        agent_inputs.build(run, "supervisor-pressure")
 
 
 @pytest.mark.parametrize("said, reason", [("available", "no price source"),

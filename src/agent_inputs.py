@@ -6,15 +6,18 @@ turned into directories:
 | Layer | Sees | Never sees |
 |---|---|---|
 | readers | the filing bundle for one company | prices, short interest, any other company |
-| comparers | both reader reports plus the market table | any filing |
-| supervisor | the four reports, and the rules version's checklist keys and output schema | any filing, the market table |
+| accounting and financial analysts | the two reader reports and `calculator_filings_only.json` | any filing, any price, the market table |
+| valuation analyst | the calculator with the price at the cutoff, both checked analyses, the MD&A and the earnings release | a price after the cutoff, the market table |
 
-A comparer holds **both** reader reports because the layer's directory is one
-directory; it labels only the items of its own report, and that is a rule its
-prompt carries, not something a directory can enforce. The spec's header says
-the same and so do `.claude/agents/numbers-vs-market.md` and
-`.claude/agents/notes-vs-market.md`; they agree today, and the moment they stop
-agreeing the isolation test is judging one of two rules.
+**The comparers are Python, and no directory is built for them.** The owner's
+decision of 2026-10-06 turned the two comparers into `src/market_labels.py`,
+which reads the two reader reports and the market table in the run directory
+and writes `market_labels.json`; a function needs no session root. The two
+comparer definitions and the two supervisor definitions moved to
+`archive/agents/`. They are kept below in `RETIRED_AGENTS`, as the record of
+what each of them saw and wrote on the pilot runs, so the quote gate can still
+re-check what they wrote; nothing builds a directory for one, and nothing runs
+one.
 
 Two files are named in the spec so they are routed to somebody:
 `input_notes_history.md` goes to the notes-text reader, and
@@ -27,7 +30,7 @@ the next prediction unfalsifiable.
 Layout, under the run directory the bundle already occupies::
 
     runs/{ticker}/{accession}/            the committed bundle -- the record
-    runs/{ticker}/{accession}/agents/     nothing but the six directories
+    runs/{ticker}/{accession}/agents/     nothing but the agents' directories
     runs/{ticker}/{accession}/agents/numbers-reader/   a session root
 
 The agent directories do not sit directly beside the bundle files on purpose.
@@ -37,11 +40,11 @@ market table. The run directory above that holds the whole bundle, because it
 is the record of what was fetched.
 
 **What a tree can promise and what it cannot.** A filesystem cannot make a
-sibling unreachable: six directories that must coexist under one run share an
+sibling unreachable: directories that must coexist under one run share an
 ancestor, and from that ancestor everything hangs. What this file guarantees is
 the part a tree can carry -- each session root holds exactly its layer's files,
 nothing inside a root resolves outside it (no symlink, no `..`, no path into the
-bundle), no root sits inside another, and the directory that holds the six holds
+bundle), no root sits inside another, and the directory that holds them holds
 nothing else. The last step, the one out of the root, is the one the session
 root itself forbids, and that is why `docs/INPUT_SPEC.md` says the root is the
 enforcement and the prompt is a statement of intent.
@@ -59,33 +62,25 @@ Item 9A, and the 10-Q's Item 4 -- to reach the notes-text reader.
 `src/assemble_bundle.py` records that conflict and writes the file; this routes
 it where §1 sends it.
 
-**A supervisor gets the four reports and the rules version's two files.** Its
-prompt says its directory holds, alongside the reports, "the rules version's
-checklist keys and output schema", and tells it to write its prediction "against
-the schema in `docs/CHECKLIST.md`" -- a document a session rooted at the
-supervisor's own directory cannot reach. Until 2026-09-23 nothing was routed
-and the default was the four reports, which left the committed prompt asking
-for a §7 prediction it could not show. `src/decide.py` now writes
-`rules_output_schema.md` and `rules_checklist_keys.md` into the run directory,
-out of the checklist's §7 block and the key columns of §1 and §2, and they are
-routed here to the two supervisors and to nobody else. They are rules and not
-evidence. `docs/INPUT_SPEC.md`'s layer table says so, and
-`docs/needs_judgment.md` keeps the question of whether the supervisor may see
-more of the checklist than that.
+**The retired supervisors' rules files.** `src/decide.py` wrote
+`rules_output_schema.md` and `rules_checklist_keys.md` into the run directory
+for the two supervisors, and they stay in the catalogue because the pilot runs
+on record hold them. No live agent is routed either.
 
 **A run with no market table.** `input_manifest.json` says so with
 `market_table: "unavailable"` and a `market_table_reason`, which
-`src/decide.py` writes, and then no comparer directory is built -- there is
-nothing to compare -- and each supervisor is built over the two reader reports.
-A run that says its market table is unavailable and holds a comparer report is
-saying two things and is refused, and so is one whose manifest labels either
-comparer anything but `absent`. The owner's decisions of 2026-09-13 and
-2026-09-23: the first predictions publish on filings alone.
+`src/decide.py` writes, together with the label of each of the two market
+comparisons -- numbers versus market, notes versus market -- written `absent`.
+A manifest that says its market table is unavailable and labels either
+comparison anything but `absent` is refused before any analyst's directory is
+built. The owner's decisions of 2026-09-13 and 2026-09-23: the first analyses
+publish on filings alone.
 
 **Where an agent's own output lands.** Each prompt names exactly one file to
-write — `report_numbers.md`, `report_notes_text.md`, the two comparer reports,
-the two predictions — and each agent has `Write` and a session rooted at its own
-directory, so that file can land nowhere else. It is the agent's `writes`: never
+write — `report_numbers.md`, `report_notes_text.md`, the two analyses, the
+valuation analyst's drivers and its reading — and each agent has `Write` and a
+session rooted at its own directory, so that file can land nowhere else. It is
+the agent's `writes`: never
 placed by this file, allowed in the root afterwards, and not read as a leak. A
 boundary check that called an agent's own report a stray would report every
 completed run as broken, which is the same as reporting nothing.
@@ -113,7 +108,7 @@ except ImportError:  # invoked as a plain script: python3.12 src/agent_inputs.py
 
 BAD_INPUT = 2
 
-# The directory that holds the six. It holds nothing else, ever. The run
+# The directory that holds the agents' directories. It holds nothing else, ever. The run
 # directory is named by `src/assemble_bundle.py`, which owns where a run lands;
 # this file is handed one and never invents a path under `runs/`.
 AGENTS_DIRNAME = "agents"
@@ -141,6 +136,7 @@ BUNDLE_CATALOGUE = (
     "report_notes_text.md",
     "report_numbers_vs_market.md",
     "report_notes_vs_market.md",
+    "market_labels.json",
     "prediction_accounting.json",
     "prediction_pressure.json",
     "explanations.json",
@@ -165,8 +161,8 @@ BUNDLE_CATALOGUE = (
 # The three §6 names no builder in this repository writes yet. They are routed
 # when they exist and their absence is recorded rather than refused, because a
 # run that has not got them is early, not broken. Everything else an agent is
-# given must be there: a comparer directory assembled before the readers ran
-# holds the market table and no reports, and that is a broken run wearing the
+# given must be there: an analyst directory assembled before the readers ran
+# holds the calculator and no reports, and that is a broken run wearing the
 # right shape.
 NOT_BUILT_YET = ("input_companyfacts.json", "input_exhibits.md",
                  "input_risk_factors.md")
@@ -198,8 +194,8 @@ VALUATION_READS = ("analysis_accounting.json", "analysis_financial.json",
 MARKET_TABLE = "input_market.json"
 MANIFEST = "input_manifest.json"
 
-# The rules version's checklist keys and output schema, which both supervisor
-# prompts say their directory holds. Written by `src/decide.py`.
+# The rules version's checklist keys and output schema, which both retired
+# supervisor prompts said their directory held. Written by `src/decide.py`.
 RULES_FILES = ("rules_checklist_keys.md", "rules_output_schema.md")
 
 # How a run's manifest says it has no market table, and why.
@@ -246,32 +242,16 @@ class Agent:
         return tuple(name for name in BUNDLE_CATALOGUE
                      if name not in self.may_hold)
 
-    def required(self, *, light: bool = False, no_market: bool = False) -> tuple[str, ...]:
-        """The files that have to be on record before this directory is built.
-
-        `no_market` is a run whose manifest says its market table is
-        unavailable: no comparer ran, so no supervisor waits for a comparer's
-        report.
-        """
-        absent = set(NOT_BUILT_YET)
-        if light:
-            absent |= set(LIGHT_RUN_ABSENT)
-        if no_market:
-            absent |= set(COMPARER_REPORTS)
-        return tuple(name for name in self.sees if name not in absent)
+    def required(self) -> tuple[str, ...]:
+        """The files that have to be on record before this directory is built."""
+        return tuple(name for name in self.sees if name not in NOT_BUILT_YET)
 
 
-# A light run on an 8-K 2.02 produces three reports, not four: both readers, the
-# numbers-versus-market comparer and supervisor-pressure. `docs/INPUT_SPEC.md`
-# §1 says why — the notes are not public yet, so the notes-versus-market
-# comparer never runs and its report is the one a supervisor does without.
-#
-# That allowance belongs to the light run and to nothing else. Granted to every
-# run, it would build a supervisor over three reports on a full 10-K whose
-# fourth comparer had simply not run yet, and call an unfinished run complete.
-LIGHT_RUN = ("numbers-reader", "notes-text-reader", "numbers-vs-market",
-             "supervisor-pressure")
-LIGHT_RUN_ABSENT = ("report_notes_vs_market.md",)
+# A light run on an 8-K 2.02 wakes the two readers on the earnings release. Its
+# comparer and its supervisor were retired on 2026-10-06: the market label on
+# the earnings-release window is `src/market_labels.py`'s, and which analyst a
+# light run wakes is not decided, so it wakes none.
+LIGHT_RUN = ("numbers-reader", "notes-text-reader")
 
 AGENTS: dict[str, Agent] = {
     agent.name: agent for agent in (
@@ -287,17 +267,6 @@ AGENTS: dict[str, Agent] = {
                "input_risk_factors.md", "input_8k.md",
                "input_prior_predictions.md"),
               writes="report_notes_text.md"),
-        # comparers: both reader reports plus the market table, and never a filing.
-        Agent("numbers-vs-market", "comparer", READER_REPORTS + (MARKET_TABLE,),
-              writes="report_numbers_vs_market.md"),
-        Agent("notes-vs-market", "comparer", READER_REPORTS + (MARKET_TABLE,),
-              writes="report_notes_vs_market.md"),
-        # supervisors: the four reports and the rules version's two files, and
-        # neither a filing nor the market table.
-        Agent("supervisor-accounting", "supervisor", ALL_REPORTS + RULES_FILES,
-              writes="prediction_accounting.json"),
-        Agent("supervisor-pressure", "supervisor", ALL_REPORTS + RULES_FILES,
-              writes="prediction_pressure.json"),
         # analysts: the two reader reports and what Python computed from the
         # filings alone -- never a filing, never a price. The owner's decision of
         # 2026-09-28; the three analyses are never merged.
@@ -320,20 +289,47 @@ AGENTS: dict[str, Agent] = {
     )
 }
 
-# A run with no market table runs no comparer, and its manifest writes each
-# comparer's label as `absent`: not `not_priced`, which is a reading of a market.
-COMPARERS = tuple(name for name, agent in AGENTS.items() if agent.layer == "comparer")
+# The pilot layer, retired from the live pipeline: the two comparers on
+# 2026-10-06, when their label became `src/market_labels.py`, and the two
+# supervisors, which the analysts replaced on 2026-09-28. Their definitions are
+# in `archive/agents/`. Nothing builds a directory for one and nothing runs one:
+# `session_root` refuses each name. They stay here as the record of what each
+# saw and wrote, because the pilot runs on record hold their reports and the
+# quote gate re-checks those.
+RETIRED_AGENTS: dict[str, Agent] = {
+    agent.name: agent for agent in (
+        Agent("numbers-vs-market", "comparer", READER_REPORTS + (MARKET_TABLE,),
+              writes="report_numbers_vs_market.md"),
+        Agent("notes-vs-market", "comparer", READER_REPORTS + (MARKET_TABLE,),
+              writes="report_notes_vs_market.md"),
+        Agent("supervisor-accounting", "supervisor", ALL_REPORTS + RULES_FILES,
+              writes="prediction_accounting.json"),
+        Agent("supervisor-pressure", "supervisor", ALL_REPORTS + RULES_FILES,
+              writes="prediction_pressure.json"),
+    )
+}
+
+# The two market comparisons, numbers versus market and notes versus market.
+# Python's now, and still two: a run's manifest names each one's label, and a
+# run with no market table writes each as `absent` -- not `not_priced`, which is
+# a reading of a market. The names are the ones the pilot manifests on record
+# carry, so a manifest written today reads the same as one written then.
+COMPARERS = ("numbers-vs-market", "notes-vs-market")
 COMPARER_LABELS_KEY = "comparer_labels"
 ABSENT = "absent"
 
 
 def agents_root(run: Path) -> Path:
-    """The one directory that holds the six. Naming it does not make it."""
+    """The one directory that holds the agents'. Naming it does not make it."""
     return Path(run) / AGENTS_DIRNAME
 
 
 def session_root(run: Path, agent: str) -> Path:
     """Where an agent's session is rooted. Its own directory, never the run's."""
+    if agent in RETIRED_AGENTS:
+        raise AgentInputError(f"{agent!r} was retired from the live pipeline; its "
+                              "definition is in archive/agents/ and nothing builds "
+                              "a directory for it")
     if agent not in AGENTS:
         raise AgentInputError(f"{agent!r} is not an agent; "
                               f"one of {', '.join(AGENTS)}")
@@ -347,7 +343,7 @@ def market_unavailable(run) -> str | None:
     whose market table is expected like any other input. One that names it
     `unavailable` and gives no reason is refused: the reason is what the
     owner's decision puts on the record. So is one whose comparer labels are
-    anything but `absent` for every comparer: no comparer ran.
+    anything but `absent` for both comparisons: no market was read.
     """
     path = Path(run) / MANIFEST
     if not path.is_file():
@@ -417,8 +413,9 @@ def build(run: Path, agent: str, *, light: bool = False) -> dict:
     under it; nothing else is created, and `runs/` is never made as a side
     effect of naming it.
 
-    `light` is the 8-K 2.02 run, where the notes-versus-market comparer does not
-    run at all. Only there is a supervisor built over three reports.
+    `light` is the 8-K 2.02 run. It changes nothing a directory holds since its
+    comparer and its supervisor were retired; it is kept so the command's
+    `--light` still names the agents a light run wakes.
     """
     run = Path(run)
     root = session_root(run, agent)  # refuses a name that is not an agent
@@ -426,25 +423,12 @@ def build(run: Path, agent: str, *, light: bool = False) -> dict:
     if not run.is_dir():
         raise AgentInputError(f"{run} is not a run directory")
 
-    # A reader's directory does not depend on the market, so only the two
-    # layers that do read the manifest for it.
-    no_market = market_unavailable(run) if spec.layer != "reader" else None
-    if no_market is not None:
-        if spec.layer == "comparer":
-            raise AgentInputError(
-                f"{agent}: the run's market table is unavailable ({no_market}), "
-                "so a comparer has nothing to compare and is not built; the run "
-                "publishes on filings alone")
-        held = [name for name in COMPARER_REPORTS if (run / name).is_file()]
-        if spec.layer == "supervisor" and held:
-            raise AgentInputError(
-                f"{agent}: the run's manifest says its market table is "
-                f"unavailable ({no_market}) and the run holds {', '.join(held)}. "
-                "A comparer report is a reading of a market table, so the run is "
-                "saying two things")
+    # A reader's directory does not depend on the market. Every other layer
+    # reads the manifest, which refuses one that says two things about it.
+    if spec.layer != "reader":
+        market_unavailable(run)
 
-    missing = [name for name in spec.required(light=light,
-                                              no_market=no_market is not None)
+    missing = [name for name in spec.required()
                if not (run / name).is_file()]
     if missing:
         raise AgentInputError(
@@ -466,14 +450,8 @@ def build(run: Path, agent: str, *, light: bool = False) -> dict:
 
     root.mkdir(parents=True, exist_ok=True)
     # `may_hold`, not `sees`: rebuilding after the agent has run must not read
-    # the report the agent itself wrote here as somebody else's file. With no
-    # market table no comparer ran, so a comparer report already sitting in a
-    # supervisor's directory is a file that run never produced, and it is
-    # refused as stray rather than passed over because the run holds no copy
-    # of it to compare against.
+    # the report the agent itself wrote here as somebody else's file.
     may_hold = set(spec.may_hold)
-    if no_market is not None:
-        may_hold -= set(COMPARER_REPORTS)
     stray = sorted(path.name for path in root.iterdir()
                    if path.name not in may_hold)
     if stray:
@@ -545,7 +523,7 @@ def agent_directories(run: Path) -> dict[Path, str]:
 
 
 def input_tree_holding(path) -> Path | None:
-    """The agent directory, or the directory the six sit in, that holds `path`.
+    """The agent directory, or the directory the agents' sit in, that holds `path`.
 
     None when no run's input tree holds it. The boundary is those directories,
     so a writer that is not an agent -- a control, a stage runner -- asks this
@@ -633,9 +611,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--run", required=True,
                         help="the run directory the bundle occupies")
     parser.add_argument("--agent", default=None, choices=list(AGENTS),
-                        help="one agent; the default is all six")
+                        help="one agent; the default is every one")
     parser.add_argument("--light", action="store_true",
-                        help="an 8-K 2.02 light run: three reports, not four")
+                        help="an 8-K 2.02 light run: the two readers")
     args = parser.parse_args(argv)
 
     if args.agent and args.light:
@@ -652,8 +630,8 @@ def main(argv: list[str] | None = None) -> int:
 
     broken = isolation_violations(run)
     for record in built:
-        # "absent", not "not built yet": on a light run the missing file is one
-        # a comparer that never ran was never going to write.
+        # "absent", not "not built yet": a file no builder writes yet is
+        # recorded as missing from this run, not as late.
         absent = f", {len(record['absent'])} absent" if record["absent"] else ""
         print(f"agent_inputs: {record['agent']} ({record['layer']}) "
               f"{len(record['files'])} files{absent} → {record['root']}")

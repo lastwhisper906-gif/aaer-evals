@@ -11,6 +11,7 @@ outside it is refused, which was checked before this file was written.
 
     extract (done)  ->  numbers reader, notes-text reader   (parallel)
                     ->  quote gate on both reports
+                    ->  market_labels.json, by Python, when the run holds a market table
                     ->  calculator.json, and calculator_filings_only.json without any price
                     ->  accounting analyst, financial analyst   (parallel, never merged;
                         they see the filings-only view)
@@ -66,11 +67,11 @@ from pathlib import Path
 
 try:
     from src import (agent_inputs, analysis_check, baselines, calculator, cutoff_guard, decide,
-                     interpreter_pin, memo, quote_gate, trends)
+                     interpreter_pin, market_labels, memo, quote_gate, trends)
 except ImportError:  # invoked as a plain script
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
     from src import (agent_inputs, analysis_check, baselines, calculator, cutoff_guard, decide,
-                     interpreter_pin, memo, quote_gate, trends)
+                     interpreter_pin, market_labels, memo, quote_gate, trends)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFINITIONS = REPO_ROOT / ".claude" / "agents"
@@ -219,16 +220,8 @@ def parallel(run: Path, names: tuple[str, ...], logs: Path,
 
 # --- the gates -----------------------------------------------------------------------------
 
-def report_items(text: str) -> list[dict]:
-    items = []
-    for block in re.findall(r"```json\s*(.*?)```", text, re.S):
-        try:
-            item = json.loads(block)
-        except ValueError:
-            continue
-        items += [one for one in (item if isinstance(item, list) else [item])
-                  if isinstance(one, dict)]
-    return items
+# One reading of a report's items, shared with the market labels.
+report_items = market_labels.report_items
 
 
 def gate_readers(run: Path) -> dict:
@@ -335,6 +328,9 @@ def run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: s
     if any(agents[name]["result"] != "written" for name in ("numbers-reader", "notes-text-reader")):
         return finish(run, agents, stages, "a reader failed twice", model)
     stages["quote_gate"] = {"dropped": len(gate_readers(run).get("dropped", []))}
+    # the market labels: Python, on the gated reports; with no market table the
+    # record says so and nothing is written
+    stages["market_labels"] = market_labels.write(run)
 
     # calculate, then the two analysts, never merged, on the view with no price
     base = calculate(BEFORE_ANALYSTS)
@@ -488,7 +484,8 @@ def main(argv: list[str] | None = None) -> int:
                                prices=Path(args.prices) if args.prices else None,
                                model=args.model)
     except (RunError, agent_inputs.AgentInputError, calculator.CalculatorInputError,
-            cutoff_guard.CutoffGuardError, decide.DecideError, OSError, ValueError) as exc:
+            cutoff_guard.CutoffGuardError, decide.DecideError,
+            market_labels.MarketLabelError, OSError, ValueError) as exc:
         print(f"run_analysis: {exc}", file=sys.stderr)
         return BAD_INPUT
     print(json.dumps({name: {k: record.get(k) for k in ("result", "model_served",
