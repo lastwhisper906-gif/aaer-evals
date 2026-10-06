@@ -103,6 +103,21 @@ def test_a_kept_reader_item_without_a_quote_fails_quotes_resolve(run):
     assert _status(mechanical.grade(run), "mechanical.quotes_resolve") == FAIL
 
 
+def test_a_late_row_in_a_readers_own_input_fails_nothing_after_cutoff(run):
+    path = run / "agents" / "numbers-reader" / "input_numbers.json"
+    data = json.loads(path.read_text(encoding="utf-8"))
+    data["facts"][0]["filing_date"] = "2099-01-01"
+    path.write_text(json.dumps(data), encoding="utf-8")
+    assert _status(mechanical.grade(run), "mechanical.nothing_after_cutoff") == FAIL
+
+
+def test_a_fenced_block_that_is_not_json_fails_quotes_resolve(run):
+    report = run / "report_numbers.md"
+    report.write_text(report.read_text(encoding="utf-8") + "\n```json\n{not json\n```\n",
+                      encoding="utf-8")
+    assert _status(mechanical.grade(run), "mechanical.quotes_resolve") == FAIL
+
+
 def test_a_late_fact_in_a_calculator_stage_file_fails_nothing_after_cutoff(run):
     path = run / "calculator_filings_only.json"
     text = path.read_text(encoding="utf-8")
@@ -339,16 +354,19 @@ def test_grader_agreement_counts_where_the_grader_matches_the_owner(tmp_path, mo
     assert grader_agreement.grade([run])["score"] == pytest.approx(0.0)
 
 
-def test_outcomes_wait_sixty_trading_days_counted_from_the_day_after_the_filing():
-    """CSCO's cutoff is 2026-05-19, a Tuesday. The filing day is not counted, so
-    the first counted day is Wednesday the 20th and the sixtieth is 2026-08-11."""
+def test_outcomes_wait_sixty_trading_days_counted_after_reaction_day_two():
+    """CSCO's cutoff is 2026-05-19, a Tuesday. Reaction days zero to two are Tuesday,
+    Wednesday and Thursday the 21st, which an input could have seen, so the window
+    starts Friday the 22nd. Counted by hand: May 22-29 is 6 weekdays, June 22, July
+    23, August 3-13 is 9: the sixtieth is 2026-08-13."""
     import datetime as dt
-    assert outcomes.weekdays_between(dt.date(2026, 5, 19), dt.date(2026, 5, 19)) == 0
-    assert outcomes.weekdays_between(dt.date(2026, 5, 19), dt.date(2026, 5, 20)) == 1
-    early = outcomes.grade([CLEAN], today=dt.date(2026, 8, 10))["runs"][0]
-    late = outcomes.grade([CLEAN], today=dt.date(2026, 8, 11))["runs"][0]
-    assert early["status"] == "pending" and early["trading_days_since"] == 59
-    assert late["status"] == "aged" and late["trading_days_since"] == 60
+    assert outcomes.window_start(dt.date(2026, 5, 19)) == dt.date(2026, 5, 21)
+    assert outcomes.window_start(dt.date(2026, 5, 22)) == dt.date(2026, 5, 26)   # over a weekend
+    early = outcomes.grade([CLEAN], today=dt.date(2026, 8, 12))["runs"][0]
+    late = outcomes.grade([CLEAN], today=dt.date(2026, 8, 13))["runs"][0]
+    assert early["status"] == "pending" and early["trading_days_in_window"] == 59
+    assert late["status"] == "aged" and late["trading_days_in_window"] == 60
+    assert late["window_from"] == "2026-05-21"
 
 
 def test_outcomes_count_company_events_and_never_the_ledgers_process_rows(tmp_path):
@@ -356,7 +374,7 @@ def test_outcomes_count_company_events_and_never_the_ledgers_process_rows(tmp_pa
     ledger = tmp_path / "ledger.jsonl"
     ledger.write_text("\n".join([
         json.dumps({"ticker": "CSCO", "date": "2026-06-01", "event": "restatement"}),
-        json.dumps({"ticker": "CSCO", "date": "2026-05-01", "event": "earlier"}),
+        json.dumps({"ticker": "CSCO", "date": "2026-05-21", "event": "on reaction day two"}),
         json.dumps({"ticker": "CSCO", "at": "2026-06-01T00:00:00+00:00", "accession": "x",
                     "layers_that_ran": ["detect filing"]}),
         json.dumps({"at": "2026-06-02T00:00:00+00:00", "lens": "codex", "verdict": "pass"}),

@@ -14,10 +14,11 @@ Each check reads files a run published and nothing about how they were made:
 - `cited_numbers_exist`: every number an analysis cites names a field of the
   calculator file that analyst saw.
 - `nothing_after_cutoff`: no input document is filed after the run's cutoff, no
-  source without a filing date was read past it (`rows_used_through`), and no date
-  written anywhere in any calculator file -- a fact's filing, a price, a window, a
-  period -- is after it. The rule is CLAUDE.md's, dates only: an acceptance time is
-  not on the record.
+  source without a filing date was read past it (`rows_used_through`), no row of
+  the JSON inputs -- as the run holds them and as each agent was handed them --
+  was filed after it, and no date written anywhere in any calculator file -- a
+  fact's filing, a price, a window, a period -- is after it. The rule is
+  CLAUDE.md's, dates only: an acceptance time is not on the record.
 - `calculator_finite`: every numeric value in calculator.json is finite.
 - `dcf_recomputes`: every scenario's enterprise value and value per share, and the
   simple free cash flow, recompute from the run's own drivers with this file's own
@@ -59,18 +60,25 @@ FOLLOWS_PATHS = ("fields",)          # list entries that are calculator paths
 
 
 def report_items(path: Path) -> list[dict]:
+    return read_report(path)[0]
+
+
+def read_report(path: Path) -> tuple[list[dict], int]:
+    """A report's items, and how many fenced blocks were not JSON: a block that
+    cannot be read holds items nobody can check, and is counted, never skipped."""
     if not path.is_file():
-        return []
-    items = []
+        return [], 0
+    items, malformed = [], 0
     for block in FENCE.findall(path.read_text(encoding="utf-8")):
         try:
             data = json.loads(block)
         except ValueError:
+            malformed += 1
             continue
         for item in data if isinstance(data, list) else [data]:
             if isinstance(item, dict):
                 items.append(item)
-    return items
+    return items, malformed
 
 
 READER_DIR = {"report_numbers.md": "numbers-reader", "report_notes_text.md": "notes-text-reader"}
@@ -254,7 +262,11 @@ def check_quotes_resolve(run: Path) -> Result:
             failures.append(f"{report}: no agents/{reader} directory, so what the reader was "
                             "handed is not on record")
             continue
-        for item in report_items(run / report):
+        items, malformed = read_report(run / report)
+        if malformed:
+            count += malformed
+            failures.append(f"{report}: {malformed} fenced block(s) that are not JSON")
+        for item in items:
             quote = item.get("quote")
             count += 1
             if not isinstance(quote, str) or not quote.strip():
@@ -389,6 +401,19 @@ def check_nothing_after_cutoff(run: Path) -> Result:
             for text in (match.group(1), match.group(2)):
                 if text and dt.date.fromisoformat(text) > cutoff:
                     late.append(f"{path.name}: {where} = {value}")
+    # the inputs themselves, as the run holds them and as each agent was handed
+    # them: every row's own filing date, read rather than trusted to the manifest
+    inputs = sorted(run.glob("input_*.json")) + sorted(run.glob("agents/*/input_*.json"))
+    for path in inputs:
+        if path.name == "input_manifest.json":
+            continue
+        tree = load(path)
+        for key in ("filed", "filing_date", "filed_at"):
+            for value in _dates_in(tree, key):
+                if re.match(r"\d{4}-\d{2}-\d{2}", value) \
+                        and dt.date.fromisoformat(value[:10]) > cutoff:
+                    late.append(f"{path.relative_to(run)}: {key} {value}")
+                    break
     return Result("mechanical.nothing_after_cutoff", run_name(run), FAIL if late else PASS,
                   f"cutoff {cutoff}" + (f"; {len(late)} late" if late else ""), late)
 

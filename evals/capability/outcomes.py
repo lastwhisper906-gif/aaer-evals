@@ -2,10 +2,11 @@
 
 For each run whose cutoff is at least sixty trading days before today (weekdays,
 which counts market holidays as trading days, so a run is called old a few days
-early at most). The window starts on the first weekday after the cutoff: the cutoff
-is the filing date, an acceptance time is not on the record, and a filing accepted
-after the close is first traded on the next day, so the filing day itself is never
-counted. It records:
+early at most). The window starts after reaction day two: the inputs may carry
+market rows through the cutoff plus two trading days (`docs/HOW_WE_WORK.md` §4, the
+cutoff re-check), so the outcome window begins on the third weekday after the
+cutoff, and no day an input could have seen is ever scored as an outcome. It
+records:
 - the anomalies listed, by frame (accounting; finance);
 - events: company event rows of events/ledger.jsonl for the run's ticker dated
   after the cutoff. A company event row carries `ticker`, `date` and `event`; the
@@ -27,6 +28,17 @@ from pathlib import Path
 from evals.common import REPO, load, run_name
 
 TRADING_DAYS = 60
+REACTION_DAYS = 2          # the inputs may see market rows through the cutoff plus two
+
+
+def window_start(cutoff: dt.date) -> dt.date:
+    """The last weekday an input could have seen: the window counts from the next."""
+    day, counted = cutoff, 0
+    while counted < REACTION_DAYS:
+        day += dt.timedelta(days=1)
+        if day.weekday() < 5:
+            counted += 1
+    return day
 LEDGER = REPO / "events" / "ledger.jsonl"
 
 
@@ -77,8 +89,10 @@ def grade(runs: list[Path], today: dt.date | None = None, ledger: Path = LEDGER)
     for run in runs:
         manifest = load(run / "input_manifest.json") or {}
         cutoff = dt.date.fromisoformat(manifest["cutoff"])
-        age = weekdays_between(cutoff, today)
-        row = {"run": run_name(run), "cutoff": str(cutoff), "trading_days_since": age}
+        start = window_start(cutoff)
+        age = weekdays_between(start, today)
+        row = {"run": run_name(run), "cutoff": str(cutoff), "window_from": str(start),
+               "trading_days_in_window": age}
         if age < TRADING_DAYS:
             row["status"] = "pending"
         else:
@@ -87,7 +101,7 @@ def grade(runs: list[Path], today: dt.date | None = None, ledger: Path = LEDGER)
                         "finance": len((load(run / "analysis_financial.json") or {})
                                        .get("anomalies") or [])}
             row.update(status="aged", anomalies=by_frame,
-                       events=len(events_for(manifest.get("ticker"), cutoff, ledger)),
+                       events=len(events_for(manifest.get("ticker"), start, ledger)),
                        abnormal_return="unavailable: no price series past the cutoff is "
                                        "committed in the repository")
         rows.append(row)

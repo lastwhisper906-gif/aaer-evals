@@ -73,7 +73,11 @@ jobs:
         run: |
           echo "guard: ${{ needs.guard.result }}; eval: ${{ needs.eval.result }}"
           test "${{ needs.eval.result }}" = "success"
-          test "${{ needs.guard.result }}" = "success" -o "${{ needs.guard.result }}" = "skipped" -a "${{ github.event_name }}" != "pull_request"
+          # the guard runs on pull requests only; on a push it is skipped, and that is fine
+          guard_ok=no
+          if [ "${{ needs.guard.result }}" = "success" ]; then guard_ok=yes; fi
+          if [ "${{ needs.guard.result }}" = "skipped" ] && [ "${{ github.event_name }}" != "pull_request" ]; then guard_ok=yes; fi
+          if [ "$guard_ok" != "yes" ]; then echo "the evals guard did not pass"; exit 1; fi
 
       # Action versions are pinned by commit SHA; tags are mutable.
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
