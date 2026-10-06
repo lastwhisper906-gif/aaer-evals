@@ -59,6 +59,7 @@ Exit 0 when the file was written or there was no market table to write it from,
 from __future__ import annotations
 
 import argparse
+import datetime as dt
 import json
 import math
 import re
@@ -182,19 +183,55 @@ def short_interest(table: dict, day: str) -> dict:
             "ratio": ratio, "two_year_median": median}
 
 
-def windows(table: dict) -> list[dict]:
+REACTION_DAYS_AFTER_FILING = 3     # day zero may be the next trading day, then days one and two
+
+
+def _next_weekday(day: str) -> str:
+    date = dt.date.fromisoformat(day) + dt.timedelta(days=1)
+    while date.weekday() >= 5:
+        date += dt.timedelta(days=1)
+    return date.isoformat()
+
+
+def windows(table: dict, *, run_cutoff: str | None = None) -> list[dict]:
     """Each recorded window: its kind, its day zero, its abnormal return, its short interest.
 
-    A table whose window sum disagrees with the rows it sums, or that holds a
-    row past its own cutoff, is refused: the first is two answers to one
-    question, and the second is a market day no layer may see.
+    A table is refused when it names no cutoff, when its window sum disagrees with
+    the rows it sums, or when it holds a row past its own cutoff: the first leaves
+    nothing to hold its rows to, the second is two answers to one question, and
+    the third is a market day no layer may see. Given the run's own cutoff (the
+    filing date), the table is also held to it: the table's cutoff is reaction day
+    two (`src/market.py`), so it is never before the filing date, at most three
+    trading days of rows follow the filing date (day zero may be the next trading
+    day when the filing was accepted after the close), and the first of them is the
+    next weekday -- a later start would be a window on some other day.
     """
     cutoff = table.get("cutoff")
-    late = [row.get("date") for row in table.get("rows") or []
-            if isinstance(row, dict) and cutoff and str(row.get("date")) > cutoff]
+    dates = sorted(str(row.get("date")) for row in table.get("rows") or [] if isinstance(row, dict))
+    if dates and not (isinstance(cutoff, str) and cutoff):
+        raise MarketLabelError("the market table names no cutoff, so nothing holds its rows")
+    late = [day for day in dates if cutoff and day > cutoff]
     if late:
         raise MarketLabelError(
             f"the market table holds rows past its cutoff {cutoff}: {', '.join(late)}")
+    if run_cutoff is not None and dates:
+        if cutoff < run_cutoff:
+            raise MarketLabelError(f"the market table ends at {cutoff}, before the run's "
+                                   f"cutoff {run_cutoff}: it is some other filing's table")
+        after = [day for day in dates if day > run_cutoff]
+        if len(after) > REACTION_DAYS_AFTER_FILING:
+            raise MarketLabelError(
+                f"the market table holds {len(after)} trading days past the run's cutoff "
+                f"{run_cutoff}; reaction days zero to two allow at most "
+                f"{REACTION_DAYS_AFTER_FILING}, and a row past day two is a market day no "
+                "layer may see")
+        # the next weekday, or the one after it when that one is a market holiday
+        soon = {_next_weekday(run_cutoff), _next_weekday(_next_weekday(run_cutoff))}
+        if after and after[0] not in soon:
+            raise MarketLabelError(
+                f"the first market row after the run's cutoff {run_cutoff} is {after[0]}, "
+                f"not one of the next two weekdays {sorted(soon)}: the window is not this "
+                "filing's reaction days")
     found = []
     for window in table.get("windows") or []:
         kind, days = window.get("kind"), window.get("days") or []
@@ -236,19 +273,29 @@ def item_labels(item: dict, report: str, recorded: list[dict], *,
 
 
 def labels(reports: dict[str, list[dict]], table: dict, *,
-           band: float = NEAR_ZERO_BAND) -> dict:
-    """The labels document for one run, from its reader items and its market table."""
+           band: float = NEAR_ZERO_BAND, dropped: set[str] | None = None,
+           run_cutoff: str | None = None) -> dict:
+    """The labels document for one run, from its reader items and its market table.
+
+    `dropped` is the quote gate's drop list (`input_manifest.json`, `dropped_items`):
+    an item the gate dropped keeps its place in a list block of the run-root report,
+    so it is read here and set aside by id, never labelled, because a label cites
+    the item and nothing downstream may cite an item that failed its quote.
+    """
     if not isinstance(table, dict):
         raise MarketLabelError("the market table is not an object")
-    recorded = windows(table)
+    recorded = windows(table, run_cutoff=run_cutoff)
     items, unlabelled = [], []
     for report in READER_REPORTS:
         for item in reports.get(report) or []:
-            if isinstance(item.get("id"), str) and item["id"]:
-                items.append(item_labels(item, report, recorded, band=band))
-            else:
+            if not (isinstance(item.get("id"), str) and item["id"]):
                 unlabelled.append({"report": report,
                                    "reason": "the item carries no id to cite"})
+            elif item["id"] in (dropped or set()):
+                unlabelled.append({"report": report, "id": item["id"],
+                                   "reason": "dropped by the quote gate; nothing cites it"})
+            else:
+                items.append(item_labels(item, report, recorded, band=band))
     return {"ticker": table.get("ticker"), "cutoff": table.get("cutoff"),
             "near_zero_band": band, "near_zero_band_source": NEAR_ZERO_BAND_SOURCE,
             "windows": recorded, "items": items, "not_labelled": unlabelled}
@@ -280,7 +327,15 @@ def write(run) -> dict:
     except ValueError as exc:
         raise MarketLabelError(f"{MARKET_TABLE} does not read as JSON: {exc}") from exc
     reports = {name: report_items(_load(run, name)) for name in READER_REPORTS}
-    document = labels(reports, table)
+    manifest_path = run / "input_manifest.json"
+    try:
+        manifest = (json.loads(manifest_path.read_text(encoding="utf-8"))
+                    if manifest_path.is_file() else {})
+    except ValueError as exc:
+        raise MarketLabelError(f"input_manifest.json does not read as JSON: {exc}") from exc
+    dropped = {row.get("item_id") for row in manifest.get("dropped_items") or []
+               if isinstance(row, dict) and row.get("item_id")}
+    document = labels(reports, table, dropped=dropped, run_cutoff=manifest.get("cutoff"))
     text = json.dumps(document, indent=2, sort_keys=True) + "\n"
     target = run / LABELS_FILE
     if target.is_symlink():

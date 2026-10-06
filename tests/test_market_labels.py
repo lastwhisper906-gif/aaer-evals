@@ -345,3 +345,46 @@ def test_the_command_reports_a_run_it_cannot_label(tmp_path, capsys):
     assert market_labels.main(["--run", str(run)]) == market_labels.BAD_INPUT
     assert "report_notes_text.md" in capsys.readouterr().err
     assert market_labels.main(["--run", str(tmp_path / "nowhere")]) == market_labels.BAD_INPUT
+
+
+# --- the gate's drop list, and the run's own cutoff ------------------------------------
+
+def test_an_item_the_quote_gate_dropped_is_set_aside_not_labelled():
+    document = market_labels.labels({"report_numbers.md": [item(UP, "up"), item("gone", "up")]},
+                                    rose(), dropped={"gone"})
+    assert [one["upstream_item_id"] for one in document["items"]] == [UP]
+    assert document["not_labelled"] == [{"report": "report_numbers.md", "id": "gone",
+                                         "reason": "dropped by the quote gate; nothing cites it"}]
+
+
+def test_a_table_with_no_cutoff_is_refused():
+    found = rose()
+    found["cutoff"] = None
+    with pytest.raises(MarketLabelError, match="names no cutoff"):
+        labelled_numbers(found, item(UP, "up"))
+
+
+def test_the_table_is_held_to_the_runs_cutoff():
+    """The filing window is 2026-05-08, 05-11 and 05-12. Filed on the 8th: two rows
+    follow the cutoff and the first is the next weekday, the 11th. Filed on the 7th
+    (accepted after the close, day zero the 8th): three rows follow. Filed on the
+    6th: the 7th may be a market holiday, so a first row on the 8th stands. Filed on
+    the 5th: the first row after it is the 8th, two weekdays late, so this is not
+    that filing's window. Filed on the 13th: the table ends before the filing."""
+    found = rose()
+    market_labels.labels({"report_numbers.md": [item(UP, "up")]}, found, run_cutoff="2026-05-08")
+    market_labels.labels({"report_numbers.md": [item(UP, "up")]}, found, run_cutoff="2026-05-07")
+    # filed Wednesday the 6th: the 7th may be a market holiday, so the 8th still stands
+    market_labels.labels({"report_numbers.md": []}, found, run_cutoff="2026-05-06")
+    with pytest.raises(MarketLabelError, match="not one of the next two weekdays"):
+        market_labels.labels({"report_numbers.md": []}, found, run_cutoff="2026-05-05")
+    with pytest.raises(MarketLabelError, match="before the run's cutoff"):
+        market_labels.labels({"report_numbers.md": []}, found, run_cutoff="2026-05-13")
+
+
+def test_more_than_three_trading_days_past_the_filing_are_refused():
+    found = rose()
+    found["rows"].append(dict(found["rows"][-1], date="2026-05-13"))
+    found["cutoff"] = "2026-05-13"
+    with pytest.raises(MarketLabelError, match="at most 3"):
+        market_labels.labels({"report_numbers.md": []}, found, run_cutoff="2026-05-07")

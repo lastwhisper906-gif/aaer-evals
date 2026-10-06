@@ -287,3 +287,30 @@ def test_a_named_model_reaches_every_agent_and_the_manifest_says_so(tmp_path, mo
 def test_with_no_model_named_each_agent_asks_for_its_own(finished):
     _, manifest, _ = finished
     assert "model_override" not in manifest
+
+
+def test_a_run_with_a_market_table_is_labelled_by_python_and_never_marked_unavailable(tmp_path, monkeypatch):
+    """NVDA's cutoff is 2026-08-26, a Wednesday: reaction days zero to two are the 26th,
+    27th and 28th. Abnormal returns 0.02, 0.01 and 0.00 sum to 0.03."""
+    run = tmp_path / "NVDA" / NVDA_ACCESSION
+    bundle = assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,
+                                   prior_runs=run.parent.parent)
+    assemble_bundle.write(bundle, run)
+    days = ["2026-08-26", "2026-08-27", "2026-08-28"]
+    rows = [{"ticker": "NVDA", "date": d, "abnormal_return": a, "window": "filing",
+             "reaction_window": 0.03, "short_interest_ratio": None,
+             "short_interest_two_year_median": None, "short_interest_above_median": None}
+            for d, a in zip(days, [0.02, 0.01, 0.0])]
+    (run / "input_market.json").write_text(json.dumps(
+        {"ticker": "NVDA", "cutoff": "2026-08-28", "rows": rows,
+         "windows": [{"kind": "filing", "day_zero": days[0], "days": days,
+                      "reaction_window": 0.03}]}))
+    monkeypatch.setattr(run_analysis, "ask", _fake_ask({}))
+    manifest = run_analysis.run_company(run=run, ticker="NVDA", form="10-Q",
+                                        cutoff="2026-08-26", period_end="2026-07-26",
+                                        store=run_analysis.cutoff_guard.FIXTURES,
+                                        prices=None)
+    assert manifest["analysis_stages"]["market_labels"]["written"] is True
+    assert manifest.get("market_table") != "unavailable"
+    labels = json.loads((run / "market_labels.json").read_text())
+    assert [one["labels"][0]["label"] for one in labels["items"]] == ["priced_in"]

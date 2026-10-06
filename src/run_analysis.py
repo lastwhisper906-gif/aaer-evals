@@ -311,7 +311,10 @@ def run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: s
 
     market_data = calculator.market_inputs(ticker, cutoff_guard.parse_date(cutoff, "cutoff"),
                                            prices)
-    decide.mark_market_unavailable(run, market_data.get("missing") or NO_MARKET_TABLE)
+    # a run with a market table is labelled by Python after the quote gate; one
+    # without says so in its manifest, once
+    if not (run / agent_inputs.MARKET_TABLE).is_file():
+        decide.mark_market_unavailable(run, market_data.get("missing") or NO_MARKET_TABLE)
 
     def calculate(name: str, **extra) -> dict:
         payload = calculator.calculate(ticker=ticker, cutoff=cutoff, period_end=period_end,
