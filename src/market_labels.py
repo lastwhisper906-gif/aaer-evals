@@ -195,8 +195,10 @@ def windows(table: dict, *, run_cutoff: str | None = None) -> list[dict]:
     Every window is held to the rule `src/market.py` states for its days, worked
     here against the exchange calendar `src/exchange_calendar.py` keeps by rule
     and not against the table's own rows: day zero is the acceptance day when
-    EDGAR accepted before the four o'clock close in New York and the next
-    trading day when after it; days one and two are the next two trading days;
+    EDGAR accepted before the exchange's close that day in New York -- four
+    o'clock, or one o'clock on an early-close day (`exchange_calendar.close_time`)
+    -- and the next trading day when at or after it; days one and two are the
+    next two trading days;
     each of the three is a row; the window's `filing_date` is one EDGAR can put
     on that acceptance -- the acceptance day, or, accepted after half past five,
     EDGAR's next business day, which skips the federal holidays; the table's
@@ -266,7 +268,8 @@ def windows(table: dict, *, run_cutoff: str | None = None) -> list[dict]:
         except market.MarketError as exc:
             raise MarketLabelError(f"the {kind} window: {exc}") from exc
         accepted_on = when.date()
-        start = (accepted_on if when.time() < market.MARKET_CLOSE
+        # the close that day: one o'clock on the exchange's early-close days
+        start = (accepted_on if when.time() < exchange_calendar.close_time(accepted_on)
                  else accepted_on + dt.timedelta(days=1))
         expected = [day.isoformat() for day in exchange_calendar.trading_days_from(start, 3)]
         missing = [day for day in expected if day not in on_record]
@@ -436,10 +439,13 @@ def check(run) -> dict:
     every entry under `items`, the report it names is a reader report, the
     `upstream_item_id` is the gate's `item_id` of an item in the run-root copy
     of that report that the drop list does not name, and the entry's own id is
-    that id with `_versus_market`. The first entry that fails is named with the
-    rest, and the run is refused. Returns `{"checked": True, "items": n}`, or
-    `{"checked": False, "reason": ...}` for a run with no market table and so
-    no labels file; a run with a table and no labels file is refused.
+    that id with `_versus_market`; and for every label under it, the word is one
+    of the three, the window is one the market table records, and the abnormal
+    return written beside it is that window's `reaction_window` re-read from
+    `input_market.json`. Every entry that fails is named, and the run is
+    refused. Returns `{"checked": True, "items": n}`, or `{"checked": False,
+    "reason": ...}` for a run with no market table and so no labels file; a run
+    with a table and no labels file is refused.
     """
     run = Path(run)
     target = run / LABELS_FILE
@@ -454,6 +460,13 @@ def check(run) -> dict:
         raise MarketLabelError(f"{LABELS_FILE} does not read as JSON: {exc}") from exc
     if not isinstance(document, dict) or not isinstance(document.get("items"), list):
         raise MarketLabelError(f"{LABELS_FILE} carries no items list")
+    try:
+        table = json.loads(_load(run, MARKET_TABLE))
+    except ValueError as exc:
+        raise MarketLabelError(f"{MARKET_TABLE} does not read as JSON: {exc}") from exc
+    moved_by_window = {window.get("kind"): _number(window.get("reaction_window"))
+                       for window in (table.get("windows") if isinstance(table, dict) else None)
+                       or [] if isinstance(window, dict)}
     _, dropped = gate_record(run)
     standing = {}
     for report in READER_REPORTS:
@@ -475,6 +488,26 @@ def check(run) -> dict:
         elif label_id != f"{upstream}{VERSUS_MARKET}":
             problems.append(f"{label_id}: is not named {upstream}{VERSUS_MARKET} after "
                             "the item it cites")
+        for labelled in entry.get("labels") if isinstance(entry.get("labels"), list) else []:
+            if not isinstance(labelled, dict):
+                problems.append(f"{label_id}: {labelled!r} is not a label")
+                continue
+            word, window = labelled.get("label"), labelled.get("window")
+            if word not in LABELS:
+                problems.append(f"{label_id}: the label {word!r} is not one of "
+                                f"{', '.join(LABELS)}")
+            if window not in moved_by_window:
+                problems.append(f"{label_id}: the window {window!r} is not one the market "
+                                "table records")
+                continue
+            written, recorded = _number(labelled.get("abnormal_return")), moved_by_window[window]
+            same = (written is None and recorded is None) or (
+                written is not None and recorded is not None
+                and math.isclose(written, recorded, rel_tol=1e-9, abs_tol=1e-12))
+            if not same:
+                problems.append(f"{label_id}: the {window} window's abnormal return is written "
+                                f"{labelled.get('abnormal_return')!r}, and the market table "
+                                f"records {recorded!r}")
     if problems:
         raise MarketLabelError(
             f"{LABELS_FILE} cites what does not stand ({len(problems)}): " + "; ".join(problems))
@@ -507,7 +540,12 @@ def write(run) -> dict:
         raise MarketLabelError(f"{MARKET_TABLE} does not read as JSON: {exc}") from exc
     reports = {name: report_items(_load(run, name)) for name in READER_REPORTS}
     manifest, dropped = gate_record(run)
-    document = labels(reports, table, dropped=dropped, run_cutoff=manifest.get("cutoff"))
+    run_cutoff = manifest.get("cutoff")
+    if not (isinstance(run_cutoff, str) and run_cutoff):
+        raise MarketLabelError(
+            f"{MANIFEST} names no cutoff, so nothing ties the table's filing window to "
+            "this run's filing or holds its other windows before it. Nothing is written")
+    document = labels(reports, table, dropped=dropped, run_cutoff=run_cutoff)
     text = json.dumps(document, indent=2, sort_keys=True) + "\n"
     target = run / LABELS_FILE
     if target.is_symlink():

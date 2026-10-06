@@ -82,13 +82,40 @@ def exchange_holidays(year: int) -> set[dt.date]:
 
 
 def federal_holidays(year: int) -> set[dt.date]:
-    return _shared_holidays(year) | {_nth_weekday(year, 10, 0, 2),          # Columbus Day
-                                     _observed(dt.date(year, 11, 11))}      # Veterans Day
+    """EDGAR's closed days: the shared holidays, Columbus Day, Veterans Day, and
+    -- unlike the exchange -- a Saturday New Year's Day observed on the Friday
+    before, which is the 31st of December of the year before it."""
+    found = _shared_holidays(year) | {_nth_weekday(year, 10, 0, 2),          # Columbus Day
+                                      _observed(dt.date(year, 11, 11))}      # Veterans Day
+    if dt.date(year + 1, 1, 1).weekday() == 5:
+        found.add(dt.date(year, 12, 31))
+    return found
 
 
 def is_trading_day(day: dt.date) -> bool:
     return day.weekday() < 5 and day not in exchange_holidays(day.year) \
         and day not in SPECIAL_CLOSURES
+
+
+# The exchange's close: four o'clock, and one o'clock on its early-close days.
+MARKET_CLOSE = dt.time(16, 0)
+EARLY_CLOSE = dt.time(13, 0)
+
+
+def is_early_close(day: dt.date) -> bool:
+    """Whether the exchange closes at one o'clock on `day`, by rule: the day after
+    Thanksgiving; the 3rd of July and the 24th of December when each is a trading
+    day. When the 4th of July or Christmas falls on a Saturday the day before is
+    the observed holiday, not an early close, and `is_trading_day` already says so."""
+    if not is_trading_day(day):
+        return False
+    thanksgiving = _nth_weekday(day.year, 11, 3, 4)
+    return day == thanksgiving + dt.timedelta(days=1) or (day.month, day.day) in {(7, 3), (12, 24)}
+
+
+def close_time(day: dt.date) -> dt.time:
+    """When the exchange closed on `day`: one o'clock on an early-close day, else four."""
+    return EARLY_CLOSE if is_early_close(day) else MARKET_CLOSE
 
 
 def trading_days_from(day: dt.date, count: int) -> list[dt.date]:

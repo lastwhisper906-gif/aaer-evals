@@ -542,12 +542,28 @@ def test_a_window_for_a_filing_after_the_runs_cutoff_is_refused():
 # --- the gate's record is required ------------------------------------------------------
 
 def test_a_manifest_with_an_empty_drop_list_labels_and_one_without_the_key_refuses(tmp_path):
-    with_record = plant(tmp_path / "ran", market=rose(), manifest={"dropped_items": []})
+    with_record = plant(tmp_path / "ran", market=rose(),
+                        manifest={"cutoff": "2026-05-08", "dropped_items": []})
     assert market_labels.write(with_record)["written"] is True
     no_key = plant(tmp_path / "no_key", market=rose(), manifest={"cutoff": "2026-05-08"})
     with pytest.raises(MarketLabelError, match="no dropped_items list"):
         market_labels.write(no_key)
     assert not (no_key / "market_labels.json").exists()
+
+
+def test_a_manifest_with_no_cutoff_is_refused_and_the_command_says_so(tmp_path, capsys):
+    """Without the run's cutoff nothing ties the filing window to this run's filing
+    or holds its other windows before it, so the labeller refuses, as it refuses a
+    missing drop list. The same manifest with its cutoff labels."""
+    run = plant(tmp_path / "none", market=rose(), manifest={"dropped_items": []})
+    with pytest.raises(MarketLabelError, match="names no cutoff"):
+        market_labels.write(run)
+    assert market_labels.main(["--run", str(run)]) == market_labels.BAD_INPUT
+    assert "names no cutoff" in capsys.readouterr().err
+    assert not (run / "market_labels.json").exists()
+    with_cutoff = plant(tmp_path / "dated", market=rose(),
+                        manifest={"cutoff": "2026-05-08", "dropped_items": []})
+    assert market_labels.write(with_cutoff)["written"] is True
 
 
 def test_a_run_with_no_manifest_is_refused_and_the_command_says_so(tmp_path, capsys):
@@ -667,3 +683,59 @@ def test_a_window_of_a_kind_the_market_module_never_writes_is_refused():
     with pytest.raises(MarketLabelError, match="'filling' is not one the market module writes"):
         market_labels.labels({"report_numbers.md": []}, found)
     market_labels.labels({"report_numbers.md": []}, rose())   # the usual table stands
+
+
+# --- an early close -------------------------------------------------------------------------
+
+def test_after_a_one_oclock_close_an_afternoon_acceptance_takes_the_next_trading_day():
+    """Friday 2026-11-27, the day after Thanksgiving, closes at one. A filing
+    accepted at 14:00 that day came after the close, so day zero is Monday the
+    30th and the window runs the 30th, the 1st and the 2nd of December; a window
+    that starts on the 27th is not that acceptance's. EDGAR's own close is half
+    past five, so the filing date is the 27th."""
+    friday = table(("filing", ["2026-11-27", "2026-11-30", "2026-12-01"], [0.02, 0.0, 0.01],
+                    0.03, NO_SHORT_INTEREST),
+                   accepted="2026-11-27T14:00:00-05:00", filing_date="2026-11-27")
+    with pytest.raises(MarketLabelError, match="no row for 2026-12-02"):
+        market_labels.labels({"report_numbers.md": []}, friday, run_cutoff="2026-11-27")
+    monday = table(("filing", ["2026-11-30", "2026-12-01", "2026-12-02"], [0.02, 0.0, 0.01],
+                    0.03, NO_SHORT_INTEREST),
+                   accepted="2026-11-27T14:00:00-05:00", filing_date="2026-11-27")
+    document = market_labels.labels({"report_numbers.md": [item(UP, "up")]}, monday,
+                                    run_cutoff="2026-11-27")
+    assert document["windows"][0]["day_zero"] == "2026-11-30"
+    # the same hour on an ordinary Friday is before the close, and day zero is that day
+    ordinary = table(("filing", FILING_DAYS, [0.02, 0.0, 0.01], 0.03, NO_SHORT_INTEREST),
+                     accepted="2026-05-08T14:00:00-04:00")
+    assert market_labels.labels({"report_numbers.md": []}, ordinary)["windows"][0][
+        "day_zero"] == "2026-05-08"
+
+
+# --- the check reads each label, not only its citation -------------------------------------
+
+def test_an_edited_label_word_window_or_return_fails_the_check_and_the_written_file_passes(
+        tmp_path):
+    run = plant(tmp_path, market=rose())
+    market_labels.write(run)
+    assert market_labels.check(run) == {"checked": True, "items": 2}
+    written = (run / "market_labels.json").read_text(encoding="utf-8")
+
+    def edited(change) -> str:
+        document = json.loads(written)
+        change(next(one for one in document["items"] if one["upstream_item_id"] == UP))
+        (run / "market_labels.json").write_text(json.dumps(document), encoding="utf-8")
+        with pytest.raises(MarketLabelError) as caught:
+            market_labels.check(run)
+        return str(caught.value)
+
+    def word(entry):
+        entry["labels"][0]["label"] = "priced"
+    assert "'priced' is not one of priced_in, not_priced, opposite_direction" in edited(word)
+
+    def window(entry):
+        entry["labels"][0]["window"] = "earnings_release"
+    assert "'earnings_release' is not one the market table records" in edited(window)
+
+    def moved(entry):
+        entry["labels"][0]["abnormal_return"] = -0.03
+    assert "written -0.03, and the market table records 0.03" in edited(moved)

@@ -63,3 +63,31 @@ def test_weekends_are_not_trading_days():
     assert not calendar.is_trading_day(dt.date(2026, 5, 9))     # Saturday
     assert not calendar.is_trading_day(dt.date(2026, 5, 10))    # Sunday
     assert calendar.trading_days_from(dt.date(2026, 5, 9), 1) == [dt.date(2026, 5, 11)]
+
+
+def test_the_federal_calendar_observes_a_saturday_new_year_on_the_friday_before():
+    """New Year's Day 2028 is a Saturday: the federal calendar observes it on Friday
+    2027-12-31, so EDGAR's next business day after Thursday 2027-12-30 is Monday
+    2028-01-03. The exchange does not observe it, and the 31st is open there."""
+    assert dt.date(2027, 12, 31) in calendar.federal_holidays(2027)
+    assert dt.date(2021, 12, 31) in calendar.federal_holidays(2021)
+    assert calendar.next_business_day(dt.date(2027, 12, 30)) == dt.date(2028, 1, 3)
+    assert dt.date(2027, 12, 31) not in calendar.exchange_holidays(2027)
+    assert calendar.is_trading_day(dt.date(2027, 12, 31))
+    # an ordinary year: 2026-12-31 is a Thursday and New Year 2027 a Friday
+    assert dt.date(2026, 12, 31) not in calendar.federal_holidays(2026)
+
+
+def test_the_early_closes_are_worked_by_hand():
+    """Thanksgiving 2026 is Thursday the 26th of November, so Friday the 27th
+    closes at one. Christmas Eve 2026 is a Thursday and closes at one. The 4th of
+    July 2026 is a Saturday, so Friday the 3rd is the observed holiday, not an
+    early close, and is not a trading day; the 3rd of July 2025 is a Thursday and
+    closes at one. An ordinary day closes at four."""
+    assert calendar.close_time(dt.date(2026, 11, 27)) == dt.time(13, 0)
+    assert calendar.close_time(dt.date(2026, 12, 24)) == dt.time(13, 0)
+    assert not calendar.is_trading_day(dt.date(2026, 7, 3))
+    assert not calendar.is_early_close(dt.date(2026, 7, 3))
+    assert calendar.close_time(dt.date(2025, 7, 3)) == dt.time(13, 0)
+    assert calendar.close_time(dt.date(2026, 5, 8)) == dt.time(16, 0)
+    assert calendar.close_time(dt.date(2026, 11, 26)) == dt.time(16, 0)   # closed anyway
