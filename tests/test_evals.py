@@ -112,6 +112,48 @@ def test_a_late_fact_in_a_calculator_stage_file_fails_nothing_after_cutoff(run):
     assert _status(mechanical.grade(run), "mechanical.nothing_after_cutoff") == FAIL
 
 
+def test_an_evidence_id_no_reader_kept_fails_cited_items_exist(run):
+    _edit(run / "analysis_accounting.json",
+          lambda d: d["anomalies"][0].update(evidence=["an_item_no_reader_wrote"]))
+    assert _status(mechanical.grade(run), "mechanical.cited_items_exist") == FAIL
+
+
+def test_evidence_that_is_not_a_list_fails_cited_items_exist(run):
+    _edit(run / "analysis_accounting.json",
+          lambda d: d["anomalies"][0].update(evidence=NINE_MONTH_CASH_FLOW))
+    assert _status(mechanical.grade(run), "mechanical.cited_items_exist") == FAIL
+
+
+def test_a_quote_from_a_file_the_analyst_was_not_handed_fails_quotes_resolve(run):
+    _edit(run / "analysis_accounting.json", lambda d: d["anomalies"][0].update(
+        quote="Revenue", quote_from="input_mdna.md"))        # the accounting analyst sees no filing
+    assert _status(mechanical.grade(run), "mechanical.quotes_resolve") == FAIL
+
+
+def test_a_quote_of_a_key_name_or_the_id_is_not_a_quote_of_the_row(run):
+    """The nine-month cash flow row prints the tag and the key "value"; a quote of
+    either carries nothing the filing said."""
+    report = run / "report_numbers.md"
+    text = report.read_text(encoding="utf-8")
+    escaped = '\\"value\\": \\"8791000000\\"'       # as the fenced JSON prints the quote
+    assert escaped in text
+    report.write_text(text.replace(escaped, '\\"value\\"', 1), encoding="utf-8")
+    assert _status(mechanical.grade(run), "mechanical.quotes_resolve") == FAIL
+    assert mechanical.says_something('"value": "8791000000"', {"value", "tag"}, "x")
+    assert mechanical.says_something('"missing": "no row for inventory_reserve: the', {"missing"}, "x")
+    assert not mechanical.says_something('"value"', {"value"}, "x")
+    assert not mechanical.says_something('"x", "tag":', {"value", "tag"}, "x")
+
+
+def test_a_quote_spanning_two_files_fails_quotes_resolve(run):
+    directory = run / "agents" / "accounting-analyst"
+    end = (directory / "report_notes_text.md").read_text(encoding="utf-8")[-30:]
+    start = (directory / "report_numbers.md").read_text(encoding="utf-8")[:30]
+    _edit(run / "analysis_accounting.json",
+          lambda d: d["anomalies"][0].update(quote=end + "\n" + start))
+    assert _status(mechanical.grade(run), "mechanical.quotes_resolve") == FAIL
+
+
 def test_a_path_the_calculator_lacks_fails_cited_numbers_exist(run):
     _edit(run / "analysis_accounting.json", lambda d: d["areas"]["cost_deferral"].update(
         finding="Capitalized software is {terms.balances_now.no_such_balance}."))
@@ -297,13 +339,33 @@ def test_grader_agreement_counts_where_the_grader_matches_the_owner(tmp_path, mo
     assert grader_agreement.grade([run])["score"] == pytest.approx(0.0)
 
 
-def test_outcomes_wait_sixty_trading_days():
-    """CSCO's cutoff is 2026-05-19, a Tuesday. Sixty weekdays later is 2026-08-11."""
+def test_outcomes_wait_sixty_trading_days_counted_from_the_day_after_the_filing():
+    """CSCO's cutoff is 2026-05-19, a Tuesday. The filing day is not counted, so
+    the first counted day is Wednesday the 20th and the sixtieth is 2026-08-11."""
     import datetime as dt
+    assert outcomes.weekdays_between(dt.date(2026, 5, 19), dt.date(2026, 5, 19)) == 0
+    assert outcomes.weekdays_between(dt.date(2026, 5, 19), dt.date(2026, 5, 20)) == 1
     early = outcomes.grade([CLEAN], today=dt.date(2026, 8, 10))["runs"][0]
     late = outcomes.grade([CLEAN], today=dt.date(2026, 8, 11))["runs"][0]
     assert early["status"] == "pending" and early["trading_days_since"] == 59
     assert late["status"] == "aged" and late["trading_days_since"] == 60
+
+
+def test_outcomes_count_company_events_and_never_the_ledgers_process_rows(tmp_path):
+    import datetime as dt
+    ledger = tmp_path / "ledger.jsonl"
+    ledger.write_text("\n".join([
+        json.dumps({"ticker": "CSCO", "date": "2026-06-01", "event": "restatement"}),
+        json.dumps({"ticker": "CSCO", "date": "2026-05-01", "event": "earlier"}),
+        json.dumps({"ticker": "CSCO", "at": "2026-06-01T00:00:00+00:00", "accession": "x",
+                    "layers_that_ran": ["detect filing"]}),
+        json.dumps({"at": "2026-06-02T00:00:00+00:00", "lens": "codex", "verdict": "pass"}),
+    ]) + "\n")
+    out = outcomes.grade([CLEAN], today=dt.date(2026, 9, 1), ledger=ledger)
+    assert out["runs"][0]["events"] == 1
+    assert "no company event row" not in out["status"]
+    assert "no company event row" in outcomes.grade([CLEAN], today=dt.date(2026, 9, 1),
+                                                    ledger=tmp_path / "none")["status"]
 
 
 def test_memorization_never_calls_a_run_clean_without_a_cutoff_on_record(monkeypatch):
