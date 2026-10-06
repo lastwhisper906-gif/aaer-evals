@@ -1,0 +1,109 @@
+# Prose rules: every one gets a script or is deleted — 2026-10-06
+
+The owner's research finding of 2026-10-06 (`docs/structure_changes.md`): prose
+rules are followed inconsistently and only scripts enforce, so instructions stay
+near a hundred lines. The owner's instruction: every prose rule gets a script or
+is deleted. This is what that did to the three files a session reads first.
+
+## Line counts
+
+| File | Before | After |
+|---|---|---|
+| `CLAUDE.md` | 22 | 22 |
+| `docs/HOW_WE_WORK.md` | 462 | 418 |
+| `lessons.md` | 320 (314 lessons) | 200 (192 lessons: 190 kept, 2 written this session) |
+| what the SessionStart hook prints | 320 (`cat lessons.md`) | 60 (`sh tools/session_start_lessons.sh`) |
+
+Session-start context is `CLAUDE.md` plus the hook's printout: 342 lines before,
+82 after.
+
+## Rules that became scripts
+
+Each is a check that reads files and exits non-zero, with a test that it fires
+and one that it does not, and each runs in `make check`.
+
+| Rule | Where it was prose | Script | Test |
+|---|---|---|---|
+| Work with no judge is not a task | `CLAUDE.md`; `docs/HOW_WE_WORK.md` §1 principle 2 and §2 | `src/task_judge_check.py` — every open row of `docs/next_cycle_tasks.md` names a judge, every open row of `queue.md` an eval command | `tests/test_task_judge_check.py` |
+| Never create a state that waits for the owner's signature; everything has a default | `CLAUDE.md`; `docs/HOW_WE_WORK.md` §1 principles 2 and 3 | `src/owner_inbox_check.py` — every open row of `docs/needs_judgment.md` names its default, every settled row says `default:`, and no file outside `archive/` is named as a sign-off queue | `tests/test_owner_inbox_check.py` |
+| `CLAUDE.md` is capped at 22 lines | `docs/HOW_WE_WORK.md` §4, the fold-lessons routine | `src/instruction_length_check.py` | `tests/test_instruction_length_check.py` |
+| The old repo is archived, not rewritten | `docs/HOW_WE_WORK.md` §1 principle 10 and §8 | `src/archive_check.py` — a file already under `archive/` on the baseline is never changed or deleted; a new one passes | `tests/test_archive_check.py` |
+| The session-start hook prints the lessons | `CLAUDE.md`; `docs/HOW_WE_WORK.md` §4 hooks | `tools/session_start_lessons.sh` — the header and the newest lessons, newest last, at most sixty lines | `tests/test_session_start_lessons.py` |
+
+## Rules an existing script already enforced, now named beside the rule
+
+In `CLAUDE.md`, by a parenthesis on the rule's own line; in `docs/HOW_WE_WORK.md`,
+by one line under it.
+
+- Plain names: `src/plain_name_check.py`; item ids: `src/quote_gate.py`.
+- Append-only under `runs/`, `rules/`, `events/`, `history/`: `src/append_check.py`.
+- Verbatim text, every item verified, failures dropped and counted: `src/quote_gate.py`; the committed inputs: `src/agent_inputs.py`.
+- Python does the arithmetic: `src/analysis_check.py`.
+- Layers: `src/agent_inputs.py`, `tests/test_agent_inputs.py`.
+- Expected values come from the source: `tests/expected_values.py`.
+- Cutoff: `src/cutoff_guard.py`, with the bypass scan in `tests/test_cutoff_guard.py`.
+- Ground truth is the first-reported value: `src/parse_8k.py`, `src/restatement_trace.py`.
+- Scored against its own rules version: `src/scorecard.py`; `rules/` is append-only.
+- Retry once with identical input (`docs/HOW_WE_WORK.md` §3): `src/run_analysis.py`.
+- No prior run's probability in an agent's input (§8): `src/agent_inputs.py`.
+- No rule or threshold changed after its results (§8): `src/append_check.py` on `rules/`.
+- Daily prediction-tamper check (§4): `src/append_check.py` in CI; missing-filing check: `src/nightly.py`.
+
+## Rules kept with no script
+
+Judgments no script can hold, kept because they are the owner's:
+
+- Never soften an adverse result (`CLAUDE.md`, §1 principle 11, §8's year-one line).
+- The twelve companies test the pipeline, not the signal (`CLAUDE.md`, §8).
+- No composite score and no rank across companies (`CLAUDE.md`; the owner's decision of 2026-09-28 in §2).
+- Write this session's mistakes to `lessons.md` at session end. §4 already says why no hook can do it.
+- Start long runs under `caffeinate -s`. It is about the owner's Mac.
+- §8: no new identifier families, ledgers, approval procedures or document systems; no "finds alpha".
+
+## Rules deleted
+
+From `CLAUDE.md`: none. Every line either names its script or is in the list above.
+
+From `docs/HOW_WE_WORK.md`:
+
+| Deleted | Why |
+|---|---|
+| §2 "An item with no judge is 'needs judgment' and is never launched" | duplicate of §1 principle 2; `src/task_judge_check.py` enforces it |
+| §3 "Scheduled-task sessions start from a clone, sparse-checked-out to that company's `runs/` only" | superseded by `docs/routines/nightly-worker.md`, which works from a full clone |
+| §3 "if the served model differs from the pin the run is recorded as a failure" | the old model pin, replaced by §6 on 2026-10-06 |
+| §4 daily cutoff, quote, layer-isolation, rules-precedence and event-gap re-checks | no script ran them; the nightly worker's `make check` and `make eval` are the nightly check now, and the rules they re-checked are held at build time by `src/cutoff_guard.py`, `src/quote_gate.py` and `src/agent_inputs.py` |
+| §4 weekly extraction drift (re-extract the twelve, open an issue) | replaced by the drift check `src/nightly.py` runs on every new bundle |
+| §4 weekly schema and hash, unreferenced code, dependencies, document numbers, broken links | no script ran them; superseded by `docs/routines/weekly-gardener.md` |
+| §4 weekly "a readable result" | duplicate of §1 principle 13 |
+| §4 weekly "fold lessons" | superseded: a lesson a script comes to enforce moves to `archive/lessons_enforced.md`, and the 22-line cap is `src/instruction_length_check.py` |
+| §4 "Every five minutes" pull-request babysit | no routine does it |
+| §4 "On red CI" | superseded by `docs/routines/nightly-worker.md`: a red main is the night's only item |
+| §4 monthly seeded-defect canary and monthly scorecard | superseded by `docs/routines/monthly-ablation.md` |
+| §4 "Routines do not run the pipeline, do not build parsers, and do not judge" | obsolete: the nightly worker builds items and runs filings |
+| §5 the canary in "Kept" | superseded by the monthly ablation |
+| §5 "Every other pull request merges on green CI … readable result was produced" | duplicate of §1 principle 13 |
+| §7 step 4's expected-value sentence; "Never wait for owner confirmation" | duplicates of `CLAUDE.md` and §1 principle 3 |
+| §8 "Rewrite or refactor the archived repo" | duplicate of §1 principle 10, which now names `src/archive_check.py` |
+| §8 "Hand summaries to the predictor" | duplicate of §1 principle 4 |
+| §8 "Let anything cross a layer" | duplicate of §1 principle 6 (`src/agent_inputs.py`) |
+| §8 "Write a prompt at run time" | duplicate of §6, which is not touched |
+| §8 "Change or delete existing content under `runs/`, `rules/` or `events/`" | duplicate of §1 principle 7 |
+| §8 "Combine indicators into a composite rank" | duplicate of §2 and `CLAUDE.md` |
+| §8 "Stop and wait for the owner" | duplicate of §1 principle 3 |
+| §8 "Spend more than one day on infrastructure changes" | duplicate of §1 principle 10 |
+
+§1 principle 12 had "a weekly routine folds rules into `CLAUDE.md`"; it now says
+where an enforced lesson goes and what prints the rest. §6 is unchanged.
+
+## lessons.md
+
+124 of the 314 lessons moved to `archive/lessons_enforced.md`, each verbatim,
+with its old line number and one line naming what enforces it (113) or why it is
+obsolete (11). The 190 left are the ones no script or test holds, and they stay
+in their original order. A count of every dated line before and after matched:
+nothing was lost.
+
+The SessionStart hook in `.claude/settings.json` still runs `cat lessons.md`;
+this change does not edit that file. The command to set is:
+
+    sh tools/session_start_lessons.sh

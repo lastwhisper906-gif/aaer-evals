@@ -5,41 +5,51 @@
 1. **Plain names.** No letter-number codes. A code in a report, ledger, issue
    title, filename or commit message is a bug. Machine keys are readable slugs
    like `receivables_outrun_revenue`.
+   Enforced for files and file names by `src/plain_name_check.py` (`make check`).
 2. **The owner's signature is never a bottleneck.** No sign-off queue, no
    pending-decisions file, no "owner decision required" state. Work with no
    judge — no test, no schema, no check — is not defined as a task. It is left
    in `docs/next_cycle_tasks.md` as "needs judgment", and the owner reads those
    in one sitting at the next rules version.
+   Enforced by `src/owner_inbox_check.py` and `src/task_judge_check.py` (`make check`).
 3. **Everything has a default.** If the owner has not decided, proceed with the
    default. The only stop is one the owner placed personally.
+   Enforced by `src/owner_inbox_check.py`: every inbox row names its default.
 4. **Text goes through verbatim.** A model may select paragraphs; it never
    rewrites or summarizes text for the predictor. Commit exactly the text the
    predictor saw. Every quote is string-matched against the committed input,
    with every whitespace character read as an ordinary space, one for one, and
    every quote that stood only through that counted.
+   Enforced by `src/quote_gate.py`.
 5. **Python does the arithmetic.** Ratios, trends, diffs, baselines — all
    deterministic code. The model judges text only.
+   Enforced by `src/analysis_check.py`.
 6. **Layers see only their own input.** A reader sees filings; a comparer sees
    reader reports and the market table; a supervisor sees reports. The per-run,
    per-agent input directory is the boundary, and it is committed as what that
    agent saw.
+   Enforced by `src/agent_inputs.py` (`tests/test_agent_inputs.py`).
 7. **Append-only under `runs/`, `rules/`, `events/` and `history/`:** existing content is
    never changed or deleted; appending to the end of a ledger file is allowed.
    A correction is a new file plus one ledger line.
+   Enforced by `src/append_check.py` (`make check`).
 8. **The seal is nothing more than** auto-commit, pull request, auto-merge on
    green CI, and one timestamp command. No manifest, no signature gate, no seal
    window, no launch approval.
 9. **Rules are versioned.** Each prediction is scored against its own rules
    version. Improvements apply from the next version; nothing is retroactive.
+   Enforced by `src/scorecard.py`, which places each run by its own rules version.
 10. **Infrastructure changes are capped at one day.** Past that, build the
     parsers in an interactive session. No new methodology, no new governance
     layer, no new document system. The old repo is archived, not rewritten —
     this is a thin layer on top.
+    The archive half is enforced by `src/archive_check.py` (`make check`).
 11. **Never soften an adverse result.** If no event happened, say so. If the
     model underperformed the baseline, say so.
 12. **Mistakes compound.** When a session ends, its mistakes go into
-    `lessons.md`, one line each. A weekly routine folds rules into `CLAUDE.md`
-    and procedures into skills.
+    `lessons.md`, one line each. A lesson that a script or a test comes to
+    enforce moves to `archive/lessons_enforced.md` with one line naming it;
+    `tools/session_start_lessons.sh` prints the newest of the rest.
 13. **Less process.** A second lens reads only a change to `rules/`, scoring,
     an agent prompt or a calculator formula; every other pull request merges on
     green CI. A branch is merged or closed within a day. The weekly test is
@@ -66,8 +76,7 @@ market table, and runs only for the reaction-window labels.
 analyse → controls → publish → record events → score.
 
 **Task-list states**, in `docs/next_cycle_tasks.md`: unchecked → has a pull
-request → merged. An item with no judge is "needs judgment" and is never
-launched.
+request → merged.
 
 **Finding weight**: severe / moderate / minor.
 **Finding kind**: threatens the prediction record / quality / cosmetic / needs
@@ -102,6 +111,7 @@ market labels, the calculator, the gates, the memo -- is Python.
 
 On a failure of an agent call in `read` or `analyse`, retry once with identical
 input, then record a failure. A retry never changes the input.
+`src/run_analysis.py` does this: `RETRIES = 1`, and nothing the failed call wrote survives the retry.
 
 `detect filing` runs daily; the rest of a full run does not. It waits for
 reaction day two so the market labels get a whole window. A light run on an
@@ -116,10 +126,7 @@ reviewer, no approval. Every pull request from the pipeline or a routine sets
 goes green and nobody clicks anything. A pull request sitting open waiting for
 the owner is the bottleneck the rules forbid, not a safety measure.
 
-Scheduled-task sessions start from a clone, sparse-checked-out to that company's
-`runs/` only. A model fallback is possible, so the served model is recorded; if
-it differs from the pin the run is recorded as a failure. There is no metered
-billing path — subscription authentication only.
+There is no metered billing path — subscription authentication only.
 
 ---
 
@@ -138,21 +145,13 @@ Every routine below is a **scheduled task**, not a loop run.
 
 ### Daily
 
-- **cutoff re-check** — every date and accession in published inputs, including
-  that no market row past the cutoff plus two trading days reached an agent
-- **quote re-check** — every reader quote against its committed input, and every
-  comparer and supervisor citation against the upstream report
-- **layer-isolation re-check** — each agent input directory against the layer
-  rule
-- **missing-filing check** — the EDGAR list against `runs/`
-- **prediction-tamper check** — any change to existing content, or deletion, of
-  a `runs/`, `rules/` or `events/` file that exists on `origin/main` fails CI and
-  blocks the merge; appending to the end of a ledger file passes. Everything
-  under those three prefixes is a record — documentation about them lives in
-  `docs/`
-- **rules-precedence check** — the rules-version commit is an ancestor of the
-  prediction commit
-- **event-gap check** — EDGAR events against the ledger
+- **nightly worker** — the queue's next items, then `make check` and `make eval`
+  on main, and a report. `docs/routines/nightly-worker.md`
+- **missing-filing check** — `src/nightly.py`, run by
+  `.github/workflows/nightly.yml`: a filing with no directory under `runs/` is
+  extracted, and `src/extraction_checks.py` holds each new bundle to ±20% of
+  the recorded counts
+- **prediction-tamper check** — `src/append_check.py`, in CI on every push
 - **daily summary** — one notification at eight in the morning, local: where the
   pipeline stands, what moved in the ledger since yesterday, which pull requests
   are open, and the `docs/needs_judgment.md` rows. Status only. It never asks a
@@ -165,55 +164,30 @@ Every routine below is a **scheduled task**, not a loop run.
 
 ### Weekly
 
-- **extraction drift** — re-extract the latest filing for each of the twelve;
-  paragraph, note or number counts outside ±20% open an issue
-- **schema and hash**
-- **unreferenced code**
-- **dependencies** — update, hash-lock, test, pull request
-- **document numbers recomputed**
-- **broken links and paragraph ids**
+- **weekly gardener** — grader bugs, rules nobody follows and stale
+  instructions, each from evidence. `docs/routines/weekly-gardener.md`
 - **re-lens** — every row the second lens read on the same-family fallback, and
   every pull request labelled `one-lens`, re-read at the commit it merged at
   once the Codex quota is back. `docs/routines/weekly-relens.md`. A pass moves
   the row to done; a fail opens an issue marked "needs judgment" naming the
   merged pull request, and fixes nothing itself
-- **a readable result** — the weekly test: did the week produce a result a
-  person can read, such as an analysis of a filing or a scorecard page? A week
-  that produced only process has failed it, and says so in the summary
-- **fold lessons** — `lessons.md` into `CLAUDE.md` for rules and into skills for
-  procedures; merge duplicates; strengthen anything seen three or more times;
-  open a pull request. **`CLAUDE.md` is capped at 22 lines**, so a fold that
-  cannot fit replaces a line rather than appending one — the file is read in
-  full at the start of every session, and a rules file nobody finishes is a
-  rules file nobody follows
-
-### Every five minutes, while a pull request is open
-
-- **pull-request babysit** — rebase on a conflict, fix red CI at its root, and
-  confirm auto-merge is armed. Three attempts, never touching `runs/`, `rules/`
-  or `events/`, never changing a test expectation; after the third, an issue.
-  It does nothing at all when no pull request is open.
-
-### On red CI
-
-A fix pull request, at most three attempts. Never touch `runs/`, `rules/` or
-`events/`. Never change a test expectation. After three failures, open an issue
-marked "needs judgment" — not a signature request.
 
 ### Monthly
 
-- **seeded-defect canary** — plant one known defect on a branch, run the
-  `refute-check` subagent against it, and append hit or miss to
-  `events/ledger.jsonl`. A verification layer that has never been shown to catch
-  a defect is not known to work. This is the one piece of the old harness kept
-  as a routine.
-- **monthly scorecard** — the evaluation metric tables, with no judgment added.
+- **ablation** — remove one harness component and see whether anything the
+  owner measures gets worse. `docs/routines/monthly-ablation.md`
 
 ### Hooks
 
 Configured in `.claude/settings.json`, not written by hand each session.
 
-- **session start** — read `lessons.md`.
+- **session start** — `sh tools/session_start_lessons.sh`: the header of
+  `lessons.md` and its newest lessons, at most sixty lines
+  (`tests/test_session_start_lessons.py`); until `.claude/settings.json` names
+  it, the hook runs `cat lessons.md`. **`CLAUDE.md` is capped at 22
+  lines** (`src/instruction_length_check.py`, `make check`), so a rule that
+  cannot fit replaces a line rather than appending one — the file is read in
+  full at the start of every session.
 - **after a compaction** — re-inject the cutoff line from `CLAUDE.md`. Of every
   rule here it is the one whose violation is silent, so it is the one that must
   not fall out of context.
@@ -227,16 +201,14 @@ Writing this session's mistakes into `lessons.md` is not a hook and cannot be
 one: only the session knows what it got wrong. It is a rule in `CLAUDE.md`, and
 the Stop hook running green is not evidence that it happened.
 
-Routines do not run the pipeline, do not build parsers, and do not judge.
-
 ---
 
 ## 5. The loop
 
 The custom harness is gone. **Kept**, because nothing native does them:
-`src/append_check.py`, in CI on every push; the **refute protocol** — an
+`src/append_check.py`, in CI on every push; and the **refute protocol** — an
 expected value comes from the source, never from the first run of the code it
-judges; and the **seeded-defect canary**, monthly, as a scheduled task.
+judges (`tests/expected_values.py` refuses an unsourced value).
 
 **Dropped, and what does the job now:**
 
@@ -258,9 +230,7 @@ scoring (`src/scorecard.py`, `src/scorecard_template.md`), an agent prompt
 `src/calculator.py`, which writes `calculator.json`, or in `src/trends.py`,
 `src/articulation.py`, `src/baselines.py`, `src/fourth_quarter.py` or
 `src/market.py`. A change elsewhere in those files (a fetch, a refusal, a
-docstring) is not a formula. Every other pull request merges on green CI, with
-no lens. A branch is merged or closed within a
-day. The weekly test is whether a readable result was produced.
+docstring) is not a formula.
 
 **The two lenses, on the pull requests that need them.** Such a change is read
 twice before its pull request opens: `refute-check` (Claude), then
@@ -399,10 +369,8 @@ recorded as a failure. A pin that exists only in this table is not a pin.
    companyfacts fetcher, the `TextBlock` extractor, the section splitters, the
    8-K parser, the paragraph diff and its alignment, the note change history,
    the trend table, the articulation checks, the exhibits, the market module,
-   and the extraction pass checks. Every expected value comes from companyfacts,
-   the source document or a hand computation — never from a run of the parser
-   it judges. Done when every item has a merged pull request or is marked "needs
-   judgment". Two weeks.
+   and the extraction pass checks. Done when every item has a merged pull
+   request or is marked "needs judgment". Two weeks.
 5. **Detect-filing and extract scheduled tasks, plus CI.** Done when the first
    automatic extraction lands in `runs/` as a pull request.
 6. **Report shapes, agent definitions, then the baselines and the control.**
@@ -448,30 +416,18 @@ recorded as a failure. A pin that exists only in this table is not a pin.
     own table and in §4. The consensus exclusion is about consensus. The day a
     paid month is used, §4 is what has to be amended.
 
-Each step starts when the previous step's condition is met. Never wait for owner
-confirmation.
+Each step starts when the previous step's condition is met.
 
 ---
 
 ## 8. Do not
 
-- Rewrite or refactor the archived repo. It is an archive.
 - Create new identifier families, new ledgers, new approval procedures, new
   document systems.
-- Hand summaries to the predictor.
-- **Let anything cross a layer.** A reader never sees prices. A supervisor never
-  sees a filing. Market data enters only through the market table, and only the
-  comparers read it.
 - Put a prior run's probability into any agent's input.
-- **Write a prompt at run time** in the read, compare or decide stages. The
-  prompts are committed files.
-- Change or delete existing content under `runs/`, `rules/` or `events/`.
-  Appending to the end of a ledger file is fine.
+  Enforced by `src/agent_inputs.py`, which refuses a prior-predictions file that still carries one.
 - Change a cycle's rules or thresholds after seeing its results.
-- Combine indicators into a composite rank across companies. The formula
-  baselines are baselines, never inputs.
-- Stop and wait for the owner. Take the default and leave one line.
-- Spend more than one day on infrastructure changes.
+  `rules/` is append-only, so a published rules file cannot change (`src/append_check.py`).
 - **Record any observation about signal from the twelve companies**, anywhere.
   They are the most-read filings on earth and the models already know how the
   period ended. What the twelve produce is a pipeline check.
