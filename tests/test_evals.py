@@ -289,6 +289,30 @@ def test_an_item_the_gate_dropped_but_left_in_a_mixed_block_is_kept_by_nobody(ru
     assert _status(mechanical.grade(run), "mechanical.cited_items_exist") == PASS
 
 
+def test_a_dropped_item_in_a_mixed_block_is_no_unit_for_an_analyst_and_no_failure_for_its_reader(run):
+    """The gate dropped it and the manifest says so: a reader's dropped item is not
+    held to its paragraph (it was set aside, and is counted), and an analyst's quote
+    of its text stands on nothing."""
+    report = run / "report_numbers.md"
+    planted = {"id": "revenue_recognition_planted_dropped", "paragraph_id": "nowhere",
+               "quote": "words the reader was never handed, planted here"}
+    report.write_text(report.read_text(encoding="utf-8")
+                      + "\n```json\n" + json.dumps(planted) + "\n```\n", encoding="utf-8")
+    # unrecorded, the planted item fails the reader's check
+    assert _status(mechanical.grade(run), "mechanical.quotes_resolve") == FAIL
+    _edit(run / "input_manifest.json",
+          lambda d: d.update(dropped_items=[{"report": "report_numbers.md",
+                                             "item_id": planted["id"], "reason": "planted"}]))
+    results = mechanical.grade(run)
+    assert _status(results, "mechanical.quotes_resolve") == PASS
+    assert "1 reader item(s) the gate dropped" in next(
+        r.detail for r in results if r.grader == "mechanical.quotes_resolve")
+    # an analyst quoting the dropped item's words stands on nothing
+    _edit(run / "analysis_accounting.json",
+          lambda d: d["anomalies"][0].update(quote="planted here", quote_from="report_numbers.md"))
+    assert _status(mechanical.grade(run), "mechanical.quotes_resolve") == FAIL
+
+
 def test_an_id_a_report_carries_twice_is_kept_by_nobody(run):
     report = run / "report_numbers.md"
     first = mechanical.report_items(report)[0]
@@ -676,6 +700,60 @@ def test_a_date_only_or_zulu_acceptance_stamp_is_refused():
     plain = _market_table()
     plain["windows"][0]["accepted"] = "2026-05-19T16:35:00"      # Eastern wall clock, no offset
     assert mechanical.market_table_problems(plain, dt.date(2026, 5, 19), "2026-05-19T16:35:00") == []
+
+
+def test_a_same_day_window_accepted_after_the_filing_is_refused():
+    """A 10-Q accepted at 08:00 has days D, D+1, D+2; an 8-K accepted at 16:05 the
+    same day would run D+1 to D+3 and carry the table's cutoff a day out."""
+    import datetime as dt
+    morning = "2026-05-19T08:00:00-04:00"
+    table = {"cutoff": "2026-05-21",
+             "beta_estimation_window": {"first": "2025-05-19", "last": "2026-05-18"},
+             "windows": [{"kind": "filing", "filing_date": "2026-05-19", "accepted": morning,
+                          "day_zero": "2026-05-19",
+                          "days": ["2026-05-19", "2026-05-20", "2026-05-21"]}],
+             "rows": [{"date": d} for d in ("2026-05-18", "2026-05-19", "2026-05-20",
+                                            "2026-05-21")]}
+    assert mechanical.market_table_problems(table, dt.date(2026, 5, 19), morning) == []
+    later = {"kind": "earnings_release", "filing_date": "2026-05-19",
+             "accepted": "2026-05-19T16:05:00-04:00", "day_zero": "2026-05-20",
+             "days": ["2026-05-20", "2026-05-21", "2026-05-22"]}
+    same_day = dict(table, cutoff="2026-05-22", windows=[later] + table["windows"],
+                    rows=table["rows"] + [{"date": "2026-05-22"}])
+    problems = mechanical.market_table_problems(same_day, dt.date(2026, 5, 19), morning,
+                                                {"2026-05-19T16:05:00-04:00"})
+    assert ("the earnings_release window was accepted at 2026-05-19T16:05:00-04:00, not before "
+            "the filing at 2026-05-19T08:00:00-04:00") in problems
+    before = dict(later, accepted="2026-05-18T16:05:00-04:00", filing_date="2026-05-18",
+                  day_zero="2026-05-19", days=["2026-05-19", "2026-05-20", "2026-05-21"])
+    day_before = dict(table, windows=[before] + table["windows"])
+    assert mechanical.market_table_problems(day_before, dt.date(2026, 5, 19), morning,
+                                            {"2026-05-18T16:05:00-04:00"}) == []
+
+
+def test_a_document_filed_on_the_cutoff_day_must_be_shown_accepted_before_the_trigger(run):
+    """CARR, CIEN and LFUS hold an 8-K filed the day of the 10-Q: EDGAR's accession
+    sequence under the filer agent orders them. A document with no stamp and no
+    shared sequence, or a later sequence, or a later stamp, is not an input."""
+    trigger = "0000858877-26-000078"
+    earlier = {"accession": "0000858877-26-000070", "filing_date": "2026-05-19"}
+    assert mechanical.accepted_before_trigger(earlier, trigger, None) is None
+    later = {"accession": "0000858877-26-000079", "filing_date": "2026-05-19"}
+    assert "follows the triggering report" in mechanical.accepted_before_trigger(later, trigger, None)
+    other_agent = {"accession": "0001628280-26-000001", "filing_date": "2026-05-19"}
+    assert "nothing shows" in mechanical.accepted_before_trigger(other_agent, trigger, None)
+    stamped = dict(other_agent, accepted="2026-05-19T09:00:00-04:00")
+    assert mechanical.accepted_before_trigger(stamped, trigger, "2026-05-19T16:35:00-04:00") is None
+    assert "after the triggering report" in mechanical.accepted_before_trigger(
+        dict(stamped, accepted="2026-05-19T17:00:00-04:00"), trigger, "2026-05-19T16:35:00-04:00")
+    # and the check reads the manifest: a same-day document that follows the trigger fails
+    _edit(run / "input_manifest.json",
+          lambda d: d["documents"].append({"role": "exhibit_99_1", "accession": "0000858877-26-000079",
+                                           "filing_date": "2026-05-19", "form": "8-K"}))
+    assert _status(mechanical.grade(run), "mechanical.nothing_after_cutoff") == FAIL
+    _edit(run / "input_manifest.json",
+          lambda d: d["documents"][-1].update(accession="0000858877-26-000070"))
+    assert _status(mechanical.grade(run), "mechanical.nothing_after_cutoff") == PASS
 
 
 def test_another_windows_stamp_must_be_one_the_manifest_records():

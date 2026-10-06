@@ -287,7 +287,7 @@ def quote_stands(seen: dict[str, str], identifier: str, quote: str) -> str | Non
     return None
 
 
-def units_of(name: str, text: str) -> list[tuple[str, set[str], set[str]]]:
+def units_of(name: str, text: str, kept: dict | None = None) -> list[tuple[str, set[str], set[str]]]:
     """The units an analyst's quote can stand in, as (text, keys, metadata): one
     paragraph of a prose input; one string value of a JSON file; one item of a
     reader report, with its key names and metadata so that a quote made only of
@@ -297,6 +297,9 @@ def units_of(name: str, text: str) -> list[tuple[str, set[str], set[str]]]:
     if name.startswith("report_"):
         out = []
         for item in read_report_text(text):
+            # an item the gate dropped can still sit in a mixed block: it is no unit
+            if kept is not None and item.get("id") not in kept.get(name, ()):
+                continue
             values = " \u241f ".join(fold(v) for _, v in walk_strings(item))
             printed = json.dumps(item)
             out.append((values, row_keys(printed), row_metadata(printed)))
@@ -310,12 +313,12 @@ def units_of(name: str, text: str) -> list[tuple[str, set[str], set[str]]]:
     return [(fold(text), set(), set())]
 
 
-def analysis_quote_stands(seen: dict[str, str], quote: str) -> str | None:
+def analysis_quote_stands(seen: dict[str, str], quote: str, kept: dict | None = None) -> str | None:
     """Why an analyst's quote stands in no unit of the files it was handed, or None."""
     wanted = fold(quote)
     found = False
     for name, text in seen.items():
-        for body, keys, metadata in units_of(name, text):
+        for body, keys, metadata in units_of(name, text, kept):
             if wanted in body:
                 found = True
                 if says_something(quote, keys, "", metadata):
@@ -359,7 +362,11 @@ def check_agents_written(run: Path) -> Result:
 
 
 def check_quotes_resolve(run: Path) -> Result:
-    failures, count = [], 0
+    failures, count, dropped = [], 0, 0
+    kept = kept_items(run)
+    manifest = load(run / "input_manifest.json") or {}
+    drop_record = {(row.get("report"), row.get("item_id"))
+                   for row in manifest.get("dropped_items") or [] if isinstance(row, dict)}
     for report, reader in READER_DIR.items():
         seen = agent_saw(run, reader, quotable=("input_",))
         if seen is None:
@@ -371,6 +378,9 @@ def check_quotes_resolve(run: Path) -> Result:
             count += malformed
             failures.append(f"{report}: {malformed} fenced block(s) that are not JSON")
         for item in items:
+            if (report, item.get("id")) in drop_record:
+                dropped += 1        # the gate set it aside and the manifest says so
+                continue
             quote = item.get("quote")
             count += 1
             if not isinstance(quote, str) or not quote.strip():
@@ -396,11 +406,12 @@ def check_quotes_resolve(run: Path) -> Result:
                 failures.append(f"{name}:{where}: quote_from {source} is not a file it was handed")
                 continue
             candidates = {source: seen[source]} if isinstance(source, str) else seen
-            why = analysis_quote_stands(candidates, quote)
+            why = analysis_quote_stands(candidates, quote, kept)
             if why:
                 failures.append(f"{name}:{where}: {why}")
     return Result("mechanical.quotes_resolve", run_name(run), FAIL if failures else PASS,
-                  f"{count - len(failures)} of {count} quotes found in what the agent was handed",
+                  f"{count - len(failures)} of {count} quotes found in what the agent was handed"
+                  + (f"; {dropped} reader item(s) the gate dropped, as recorded" if dropped else ""),
                   failures)
 
 
@@ -507,6 +518,33 @@ def _dates_in(node, key: str):
             yield from _dates_in(v, key)
 
 
+ACCESSION = re.compile(r"(\d{10})-(\d{2})-(\d{6})$")
+
+
+def accepted_before_trigger(document: dict, trigger: str, trigger_accepted) -> str | None:
+    """Why a document filed on the cutoff day is not shown to have been accepted
+    before the triggering report, or None. Two records can show it: the manifest's
+    acceptance stamps (the document's at or before the trigger's), or EDGAR's
+    accession numbers, which a filer agent takes in sequence, so a lower sequence
+    under the same agent prefix and year was accepted earlier."""
+    stamp = document.get("accepted")
+    if isinstance(stamp, str) and isinstance(trigger_accepted, str):
+        try:
+            if _eastern(stamp) <= _eastern(trigger_accepted):
+                return None
+            return f"accepted at {stamp}, after the triggering report at {trigger_accepted}"
+        except ValueError:
+            return f"its acceptance stamp {stamp!r} is not a time"
+    mine, theirs = ACCESSION.match(str(document.get("accession"))), ACCESSION.match(trigger)
+    if mine and theirs and mine.group(1, 2) == theirs.group(1, 2):
+        if int(mine.group(3)) < int(theirs.group(3)):
+            return None
+        return (f"accession {document.get('accession')} follows the triggering report's "
+                f"{trigger} in the agent's sequence, so it was accepted after it")
+    return ("no acceptance stamp on record and no shared accession sequence, so nothing "
+            "shows it was accepted before the triggering report")
+
+
 def check_nothing_after_cutoff(run: Path) -> Result:
     manifest = load(run / "input_manifest.json") or {}
     try:
@@ -515,12 +553,18 @@ def check_nothing_after_cutoff(run: Path) -> Result:
         return Result("mechanical.nothing_after_cutoff", run_name(run), FAIL,
                       "the manifest names no cutoff")
     late = []
+    trigger = str(manifest.get("accession") or "")
     for document in manifest.get("documents") or []:
         filed = document.get("filing_date")
         through = document.get("rows_used_through")
         if filed:
             if dt.date.fromisoformat(filed) > cutoff:
                 late.append(f"document {document.get('accession')} filed {filed}")
+            elif dt.date.fromisoformat(filed) == cutoff and document.get("accession") != trigger:
+                why = accepted_before_trigger(document, trigger, manifest.get("accepted"))
+                if why:
+                    late.append(f"document {document.get('accession')} filed {filed}, the "
+                                f"cutoff day: {why}")
         elif through:
             if dt.date.fromisoformat(through) > cutoff:
                 late.append(f"{document.get('role')} rows used through {through}")
@@ -750,6 +794,11 @@ def market_table_problems(table: dict, cutoff: dt.date, accepted=None,
     if not any(w.get("kind") == "filing" for w in windows):
         problems.append("the table has no filing window, so nothing ties it to the run's filing")
     latest = None
+    filing_stamps = [w.get("accepted") for w in windows if w.get("kind") == "filing"]
+    try:
+        filing_at = _eastern(accepted if isinstance(accepted, str) else str(filing_stamps[0]))
+    except (ValueError, IndexError):
+        filing_at = None
     for window in windows:
         kind, days = window.get("kind"), [str(d) for d in window.get("days") or []]
         stamp = window.get("accepted")
@@ -789,6 +838,11 @@ def market_table_problems(table: dict, cutoff: dt.date, accepted=None,
             # any other window is an earlier filing's: a later one is not an input
             problems.append(f"the {kind} window is for a filing dated {filed}, after the "
                             f"run's cutoff {cutoff}")
+        elif kind != "filing" and filing_at is not None and when >= filing_at:
+            # earlier by the instant, not the date: a same-day window accepted after
+            # the filing would carry day two, the cutoff and the row limit a day out
+            problems.append(f"the {kind} window was accepted at {stamp}, not before the "
+                            f"filing at {filing_at.isoformat()}")
         latest = max(latest or expected[2], expected[2])
     if latest is not None and table_cutoff != latest:
         problems.append(f"the table's cutoff {table_cutoff} is not reaction day two of its "
