@@ -19,10 +19,10 @@ from pathlib import Path
 
 from evals.common import load, run_name
 
-# model id -> last month of training data, and where the date comes from
-TRAINING_CUTOFF = {
-    "claude-opus-5-5": ("2026-06", "the model's own system card line: knowledge cutoff June 2026"),
-}
+# model id -> (last month of training data, the source the owner holds for it).
+# Empty until the owner fills it from a published source (docs/needs_judgment.md):
+# a date taken from a model's description of itself is not a source.
+TRAINING_CUTOFF: dict[str, tuple[str, str]] = {}
 
 
 def classify(run: Path) -> dict:
@@ -30,15 +30,15 @@ def classify(run: Path) -> dict:
     filed = manifest.get("filing_date") or manifest.get("cutoff")
     models = sorted({r.get("model_served") for r in (manifest.get("agents") or {}).values()
                      if r.get("model_served")})
-    unknown = [m for m in models if m not in TRAINING_CUTOFF]
     row = {"run": run_name(run), "filed": filed, "models": models}
-    if unknown:
+    unknown = [m for m in models if m not in TRAINING_CUTOFF]
+    if not filed or not models or unknown:
         row["status"] = "unknown"
-        row["detail"] = f"no training cutoff on record for {unknown}"
+        row["detail"] = ("no filing date" if not filed else "no served model on record"
+                         if not models else f"no training cutoff on record for {unknown}")
     else:
-        last = max(TRAINING_CUTOFF[m][0] for m in models) if models else None
-        historical = last is not None and filed[:7] <= last
-        row["status"] = "historical" if historical else "forward"
+        last = max(TRAINING_CUTOFF[m][0] for m in models)
+        row["status"] = "historical" if filed[:7] <= last else "forward"
     if row["status"] != "forward":
         probe = load(run / "memorization_probe.json")
         row["probe"] = probe.get("result") if isinstance(probe, dict) else "not run"

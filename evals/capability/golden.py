@@ -58,9 +58,10 @@ def anomalies(run: Path, frame: str) -> list[dict]:
         analysis = load(run / name) or {}
         for a in analysis.get("anomalies") or []:
             if isinstance(a, dict):
-                cited = set(a.get("evidence") or [])
-                out.append(dict(a, paragraphs=cited | {paragraph_of[c] for c in cited
-                                                       if c in paragraph_of}))
+                # Only evidence that resolves to a kept reader item reaches a filing
+                # paragraph; an id that resolves to nothing is credited with nothing.
+                out.append(dict(a, paragraphs={paragraph_of[c] for c in a.get("evidence") or []
+                                               if c in paragraph_of}))
     return out
 
 
@@ -71,8 +72,7 @@ def _text(anomaly: dict) -> str:
 def matches(anomaly: dict, rule: dict) -> bool:
     if rule.get("area") and anomaly.get("area") != rule["area"]:
         return False
-    if set(anomaly.get("paragraphs") or anomaly.get("evidence") or []) \
-            & set(rule.get("paragraph_ids") or []):
+    if set(anomaly.get("paragraphs") or []) & set(rule.get("paragraph_ids") or []):
         return True
     text = _text(anomaly)
     for entry in rule.get("keywords") or []:

@@ -183,3 +183,92 @@ def test_the_case_format_reads_the_template_and_refuses_what_it_cannot_read():
     for bad in ("a:\n\tb: 1\n", 'a: "open\n', "a: 1\na: 2\n", "a: {b: 1}\n"):
         with pytest.raises(GoldenFormatError):
             loads(bad)
+
+
+def test_golden_credits_a_filing_paragraph_reached_through_a_reader_item():
+    """CSCO's earnings-versus-cash anomaly cites reader items; one of them quotes the
+    filing paragraph named here, so the item is found without any keyword."""
+    anomalies = golden.anomalies(CLEAN, "accounting")
+    reached = set().union(*(a["paragraphs"] for a in anomalies))
+    paragraph = sorted(p for p in reached if p.startswith("0000858877-26-000078:"))[0]
+    case = dict(CASE, must_find=[{"what": "by paragraph", "paragraph_ids": [paragraph]}],
+                must_not_claim=[])
+    assert golden.score_run(case, CLEAN)["score"] == pytest.approx(1.0)
+
+
+def test_golden_credits_nothing_to_evidence_that_resolves_to_no_reader_item():
+    anomaly = {"id": "a", "area": "x", "evidence": ["0000858877-26-000078:notes:1"],
+               "paragraphs": set()}
+    assert not golden.matches(anomaly, {"paragraph_ids": ["0000858877-26-000078:notes:1"]})
+
+
+# --- the capability graders that read more than one run -----------------------------------
+
+from evals.capability import consistency, grader_agreement, memorization, outcomes, rubric_score  # noqa: E402
+
+
+def test_consistency_is_one_for_identical_runs_and_less_when_they_differ(tmp_path, monkeypatch):
+    first = tmp_path / "CSCO" / "a"
+    second = tmp_path / "CSCO" / "b"
+    for target in (first, second):
+        shutil.copytree(CLEAN, target, ignore=shutil.ignore_patterns("agents", "control-*"))
+    monkeypatch.setattr(golden, "approved_cases", lambda: [(Path("case.yaml"), CASE)])
+    same = consistency.grade([first, second])
+    assert same["cases"][0]["anomaly_overlap"] == pytest.approx(1.0)
+    assert same["cases"][0]["value_spread"] == pytest.approx(0.0)
+    _edit(second / "analysis_accounting.json", lambda d: d.update(anomalies=d["anomalies"][:1]))
+    differ = consistency.grade([first, second])
+    assert differ["cases"][0]["anomaly_overlap"] < 1.0
+
+
+def test_grader_agreement_counts_where_the_grader_matches_the_owner(tmp_path, monkeypatch):
+    run = tmp_path / "CSCO" / CLEAN.name
+    shutil.copytree(CLEAN, run, ignore=shutil.ignore_patterns("agents", "control-*"))
+    found = [a["id"] for a in golden.anomalies(run, "accounting")
+             if golden.matches(a, CASE["must_find"][0])]
+    (run / "grade.json").write_text(json.dumps({"items": [
+        {"id": found[0], "verdict": "supported", "severity": "high"}]}))
+    monkeypatch.setattr(golden, "approved_cases", lambda: [(Path("case.yaml"), CASE)])
+    assert grader_agreement.grade([run])["score"] == pytest.approx(1.0)
+    (run / "grade.json").write_text(json.dumps({"items": [
+        {"id": found[0], "verdict": "unsupported", "severity": "high"}]}))
+    assert grader_agreement.grade([run])["score"] == pytest.approx(0.0)
+
+
+def test_outcomes_wait_sixty_trading_days():
+    """CSCO's cutoff is 2026-05-19, a Tuesday. Sixty weekdays later is 2026-08-11."""
+    import datetime as dt
+    early = outcomes.grade([CLEAN], today=dt.date(2026, 8, 10))["runs"][0]
+    late = outcomes.grade([CLEAN], today=dt.date(2026, 8, 11))["runs"][0]
+    assert early["status"] == "pending" and early["trading_days_since"] == 59
+    assert late["status"] == "aged" and late["trading_days_since"] == 60
+
+
+def test_memorization_never_calls_a_run_clean_without_a_cutoff_on_record(monkeypatch):
+    assert memorization.classify(CLEAN)["status"] == "unknown"
+    monkeypatch.setattr(memorization, "TRAINING_CUTOFF",
+                        {"claude-fable-5-1": ("2026-01", "s"), "claude-opus-5-5": ("2026-01", "s")})
+    assert memorization.classify(CLEAN)["status"] == "forward"       # filed 2026-05
+    monkeypatch.setattr(memorization, "TRAINING_CUTOFF",
+                        {"claude-fable-5-1": ("2026-06", "s"), "claude-opus-5-5": ("2026-01", "s")})
+    assert memorization.classify(CLEAN)["status"] == "historical"
+
+
+def test_memorization_calls_a_run_with_no_served_model_unknown(tmp_path):
+    run = tmp_path / "CSCO" / CLEAN.name
+    shutil.copytree(CLEAN, run, ignore=shutil.ignore_patterns("agents", "control-*"))
+    _edit(run / "input_manifest.json", lambda d: d.update(agents={}))
+    assert memorization.classify(run)["status"] == "unknown"
+
+
+def test_the_grader_score_is_recomputed_from_its_items():
+    """High supported (3 x 1) + medium unclear (2 x 0.5) + low unsupported (1 x 0),
+    over weight 6: 4 / 6. A dealbreaker on the first item takes its 3 away: 1 / 6."""
+    grade = {"items": [{"id": "a", "verdict": "supported", "severity": "high"},
+                       {"id": "b", "verdict": "unclear", "severity": "medium"},
+                       {"id": "c", "verdict": "unsupported", "severity": "low"}],
+             "score": 0.9}
+    out = rubric_score.check(grade)
+    assert out["score"] == pytest.approx(4 / 6) and out["agrees"] is False
+    grade["dealbreakers"] = [{"id": "a", "kind": "number_not_from_calculator"}]
+    assert rubric_score.recompute(grade) == pytest.approx(1 / 6)

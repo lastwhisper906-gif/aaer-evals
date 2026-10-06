@@ -158,3 +158,47 @@ def test_the_cutoff_guard_refuses_a_document_filed_after_the_cutoff():
 
 def test_the_cutoff_guard_admits_a_document_filed_on_the_cutoff():
     assert cutoff_guard.check(AAPL_10K, AAPL_10K_FILED)["filing_date"] == "2025-10-31"
+
+
+# --- the CI guard's git plumbing ---------------------------------------------------------------
+
+def _git_repo(tmp_path, monkeypatch, *, main_has_evals: bool, branch_forked_before: bool):
+    """main, and a branch that changes evals/thresholds.json; the branch is forked
+    either before or after evals/ reached main."""
+    monkeypatch.chdir(tmp_path)
+    run = lambda *a: subprocess.run(["git", *a], check=True, capture_output=True)  # noqa: E731
+    run("init", "-q", "-b", "main")
+    run("config", "user.email", "t@t")
+    run("config", "user.name", "t")
+    (tmp_path / "README").write_text("x\n")
+    run("add", ".")
+    run("commit", "-q", "-m", "start")
+    if branch_forked_before:
+        run("branch", "work")
+    if main_has_evals:
+        (tmp_path / "evals").mkdir()
+        (tmp_path / "evals" / "thresholds.json").write_text("{}\n")
+        run("add", ".")
+        run("commit", "-q", "-m", "evals")
+    if not branch_forked_before:
+        run("branch", "work")
+    run("checkout", "-q", "work")
+    (tmp_path / "evals").mkdir(exist_ok=True)
+    (tmp_path / "evals" / "thresholds.json").write_text('{"capability": {"golden": 0.0}}\n')
+    run("add", ".")
+    run("commit", "-q", "-m", "lower the floor")
+
+
+def test_the_ci_guard_refuses_a_branch_forked_before_evals_reached_main(tmp_path, monkeypatch):
+    _git_repo(tmp_path, monkeypatch, main_has_evals=True, branch_forked_before=True)
+    assert eval_guard.main(["--base", "main", "--head", "work", "--labels", ""]) == 1
+
+
+def test_the_ci_guard_lets_the_creating_branch_through_when_main_has_no_evals(tmp_path, monkeypatch):
+    _git_repo(tmp_path, monkeypatch, main_has_evals=False, branch_forked_before=False)
+    assert eval_guard.main(["--base", "main", "--head", "work", "--labels", ""]) == 0
+
+
+def test_the_ci_guard_guards_itself(tmp_path, monkeypatch):
+    ok, _ = eval_guard.decide([("M", "src/eval_guard.py")], set(), True, None, None)
+    assert not ok

@@ -4,8 +4,12 @@ Each check reads files a run published and nothing about how they were made:
 - `files_present`: the files every analysed run publishes.
 - `agents_written`: every agent the manifest records wrote its file, and the run
   records no analysis failure.
-- `quotes_resolve`: every quote a report or an analysis kept is in the run's
-  committed inputs, character for character after the whitespace fold.
+- `quotes_resolve`: every quote a reader kept is in that reader's own committed
+  input, and every quote an analysis kept is in the filing inputs or reader reports
+  that analyst was handed, character for character after the whitespace fold; a
+  `quote_from` naming a file the analyst was not handed fails.
+- `cited_items_exist`: every evidence id an analysis cites is an item a reader
+  report kept.
 - `cited_numbers_exist`: every number an analysis cites names a field of the
   calculator file that analyst saw.
 - `nothing_after_cutoff`: no input document, calculator fact or price is dated
@@ -68,15 +72,29 @@ def inputs_text(run: Path) -> dict[str, str]:
             for p in sorted(run.glob("input_*")) if p.is_file()}
 
 
-def agent_saw(run: Path, analysis: str) -> dict[str, str]:
-    """The text files an analysis's agent was handed, folded; the run's own inputs
-    where the run kept no agent directory."""
-    directory = run / "agents" / AGENT_DIR[analysis]
-    files = [p for p in sorted(directory.iterdir()) if p.is_file()] if directory.is_dir() else []
+READER_DIR = {"report_numbers.md": "numbers-reader", "report_notes_text.md": "notes-text-reader"}
+# What a quote may stand on: the filing as the run committed it (input_*) and the
+# reader reports upstream of the analyst (report_*), never the calculator. The
+# valuation analyst is also handed both gated analyses (#101), so its quote of one
+# is a citation of an upstream layer; how many of its quotes rest on an analyst's
+# words rather than a filing is reported as a capability score
+# (`valuation_quotes_from_filings`), not passed silently.
+QUOTABLE = ("input_", "report_")
+QUOTABLE_FOR = {"assumptions.json": QUOTABLE + ("analysis_accounting.json",
+                                                "analysis_financial.json"),
+                "analysis_valuation.json": QUOTABLE + ("analysis_accounting.json",
+                                                       "analysis_financial.json")}
+
+
+def agent_saw(run: Path, agent: str, *, quotable=QUOTABLE) -> dict[str, str]:
+    """The quotable files an agent was handed, folded; the run's own inputs where
+    the run kept no directory for that agent."""
+    directory = run / "agents" / agent
+    files = [p for p in sorted(directory.iterdir()) if p.is_file()
+             and p.name.startswith(quotable)] if directory.is_dir() else []
     if not files:
         return inputs_text(run)
-    return {p.name: fold(p.read_text(encoding="utf-8", errors="replace")) for p in files
-            if p.name != analysis}
+    return {p.name: fold(p.read_text(encoding="utf-8", errors="replace")) for p in files}
 
 
 def quoted(node, where=""):
@@ -113,32 +131,64 @@ def check_agents_written(run: Path) -> Result:
 
 
 def check_quotes_resolve(run: Path) -> Result:
-    sources = inputs_text(run)
-    everything = "\n".join(sources.values())
     failures, count = [], 0
-    for report in ("report_numbers.md", "report_notes_text.md"):
+    for report, reader in READER_DIR.items():
+        seen = "\n".join(agent_saw(run, reader, quotable=("input_",)).values())
         for item in report_items(run / report):
             quote = item.get("quote")
             if not isinstance(quote, str) or not quote.strip():
                 continue
             count += 1
-            if fold(quote) not in everything:
+            if fold(quote) not in seen:
                 failures.append(f"{report}:{item.get('id')}")
     for name in ANALYSES:
         tree = load(run / name)
         if tree is None:
             continue
-        seen = agent_saw(run, name)
-        seen_everything = "\n".join(seen.values())
+        seen = agent_saw(run, AGENT_DIR[name], quotable=QUOTABLE_FOR.get(name, QUOTABLE))
+        everything = "\n".join(seen.values())
         for where, node in quoted(tree):
             count += 1
             source = node.get("quote_from")
-            haystack = seen.get(source, seen_everything) if isinstance(source, str) \
-                else seen_everything
-            if fold(node["quote"]) not in haystack:
+            if isinstance(source, str) and source not in seen:
+                failures.append(f"{name}:{where}: quote_from {source} is not a file it was handed")
+            elif fold(node["quote"]) not in (seen[source] if isinstance(source, str)
+                                             else everything):
                 failures.append(f"{name}:{where}")
     return Result("mechanical.quotes_resolve", run_name(run), FAIL if failures else PASS,
-                  f"{count - len(failures)} of {count} quotes found in the run's inputs", failures)
+                  f"{count - len(failures)} of {count} quotes found in what the agent was handed",
+                  failures)
+
+
+def check_cited_items_exist(run: Path) -> Result:
+    """Every evidence id an analysis cites is an item a reader report kept."""
+    kept = {item.get("id") for report in READER_DIR for item in report_items(run / report)}
+    failures, count = [], 0
+    for name in ("analysis_accounting.json", "analysis_financial.json", "analysis_valuation.json"):
+        tree = load(run / name) or {}
+
+        def walk(node, where):
+            nonlocal count
+            if isinstance(node, dict):
+                for key, value in node.items():
+                    if key == "dropped_items":
+                        continue
+                    here = f"{where}.{key}" if where else key
+                    if key == "evidence" and isinstance(value, list):
+                        for cited in value:
+                            count += 1
+                            if cited not in kept:
+                                failures.append(f"{name}:{here}: {cited}")
+                    else:
+                        walk(value, here)
+            elif isinstance(node, list):
+                for index, value in enumerate(node):
+                    walk(value, f"{where}[{index}]")
+
+        walk(tree, "")
+    return Result("mechanical.cited_items_exist", run_name(run), FAIL if failures else PASS,
+                  f"{count - len(failures)} of {count} evidence ids are kept reader items",
+                  failures)
 
 
 def check_cited_numbers_exist(run: Path) -> Result:
@@ -324,9 +374,27 @@ def check_dcf_recomputes(run: Path) -> Result:
 
 
 RUN_CHECKS = (check_files_present, check_agents_written, check_quotes_resolve,
-              check_cited_numbers_exist, check_nothing_after_cutoff, check_calculator_finite,
+              check_cited_items_exist, check_cited_numbers_exist, check_nothing_after_cutoff, check_calculator_finite,
               check_dcf_recomputes)
 
 
 def grade(run: Path) -> list[Result]:
     return [check(run) for check in RUN_CHECKS]
+
+
+def valuation_quotes_from_filings(run: Path) -> float | None:
+    """Capability: the share of the valuation analyst's quotes that stand on the
+    filing or a reader report rather than on another analyst's words."""
+    total = filings = 0
+    for name in ("assumptions.json", "analysis_valuation.json"):
+        tree = load(run / name)
+        if tree is None:
+            continue
+        seen = agent_saw(run, AGENT_DIR[name])
+        everything = "\n".join(seen.values())
+        for _, node in quoted(tree):
+            total += 1
+            source = node.get("quote_from")
+            text = seen.get(source) if isinstance(source, str) else everything
+            filings += bool(text) and fold(node["quote"]) in text
+    return filings / total if total else None

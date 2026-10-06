@@ -88,6 +88,10 @@ force.
 
 [ ] **the golden cases** · three drafts in `evals/golden/drafts/`, none counted; `evals/golden/cases/` is empty until the owner approves a case · deciding corrects a draft, sets `approved_by_owner: true` and moves it into `cases/`, in a pull request labelled `owner-approved-eval`.
 
+[ ] **the workflow file is the one guard a branch can still edit** · CI runs main's copies of `evals/` and of `src/eval_guard.py`, and changes to either need the owner's label; `.github/workflows/ci.yml` itself comes from the branch, so a branch that rewrites it can skip both jobs, and only a person reading that file's diff catches it · deciding turns on a repository ruleset that requires the `check` workflow from the default branch (Settings → Rules → Rulesets → Require workflows), which no file in the tree can do.
+
+[ ] **the models' training cutoffs, for the memorization grader** · none on record, so every run is "unknown" rather than forward or historical (`evals/capability/memorization.py`); a date a model states about itself is not a source · deciding writes each serving model's training cutoff, with the published source the owner holds, into `TRAINING_CUTOFF`, in a pull request labelled `owner-approved-eval`.
+
 ## Settled by default
 
 Every other row that was open on 2026-09-28. Nothing waits on any of them: the

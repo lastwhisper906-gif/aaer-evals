@@ -19,7 +19,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-from evals.capability import consistency, golden, grader_agreement, memorization, outcomes
+from evals.capability import (consistency, golden, grader_agreement, memorization, outcomes,
+                              rubric_score)
 from evals.common import FAIL, PASS, REPO, Result, find_runs, load, run_name
 from evals.regression import coverage, mechanical
 
@@ -52,14 +53,20 @@ def capability(runs: list[Path]) -> dict:
     means = {}
     for key in next(iter(per_run.values()), {}):
         means[f"coverage.{key}"] = sum(r[key] for r in per_run.values()) / len(per_run)
-    grades = [load(run / "grade.json") for run in runs]
-    graded = [g.get("score") for g in grades if isinstance(g, dict)
-              and isinstance(g.get("score"), (int, float))]
+    grades = [rubric_score.check(g) for g in (load(run / "grade.json") for run in runs)
+              if isinstance(g, dict)]
+    graded = [g["score"] for g in grades if g["score"] is not None]
+    disagreeing = sum(not g["agrees"] for g in grades)
+    filings = [v for v in (mechanical.valuation_quotes_from_filings(run) for run in runs)
+               if v is not None]
+    means["valuation_quotes_from_filings"] = sum(filings) / len(filings) if filings else None
     return {
         "coverage": {"per_run": per_run, "means": means},
         "golden": golden.grade(runs),
         "grader_agreement": grader_agreement.grade(runs),
-        "analysis_grader": {"status": f"{len(graded)} of {len(runs)} runs graded",
+        "analysis_grader": {"status": f"{len(graded)} of {len(runs)} runs graded; "
+                                      f"{disagreeing} where the grader's own score differs "
+                                      "from the rubric's formula",
                             "score": sum(graded) / len(graded) if graded else None,
                             "gated": False},
         "consistency": consistency.grade(runs),
@@ -122,7 +129,8 @@ def main(argv: list[str] | None = None) -> int:
     print("capability (reported; gated only where evals/thresholds.json sets a floor):")
     for name, value in scores.items():
         print(f"  {name}: {'n/a' if value is None else round(value, 3)}")
-    for name in ("golden", "grader_agreement", "consistency", "outcomes", "memorization"):
+    for name in ("golden", "grader_agreement", "analysis_grader", "consistency", "outcomes",
+                 "memorization"):
         print(f"  {name}: {cap[name]['status']}")
     below = floors_failed(scores)
     for line in below:

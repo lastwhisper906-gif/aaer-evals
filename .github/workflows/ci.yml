@@ -23,13 +23,22 @@ jobs:
           python-version: "3.12"
       - name: fetch the baseline branch
         run: git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+      # The guard that runs is main's copy, never the branch's: a branch cannot
+      # rewrite the check that judges it.
       - name: evals guard
         env:
           LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
-        run: python -m src.eval_guard --base origin/main --head HEAD --labels "$LABELS"
+        run: |
+          if git cat-file -e origin/main:src/eval_guard.py 2>/dev/null; then
+            git show origin/main:src/eval_guard.py > "$RUNNER_TEMP/eval_guard.py"
+          else
+            cp src/eval_guard.py "$RUNNER_TEMP/eval_guard.py"
+          fi
+          python "$RUNNER_TEMP/eval_guard.py" --base origin/main --head HEAD --labels "$LABELS"
 
-  # The owner's graders over every run, always with main's copy of evals/, so a
-  # branch is graded by the owner's current graders and never by its own.
+  # The owner's graders over every run, always with main's copy of evals/, run
+  # directly rather than through the branch's Makefile, so a branch is graded by the
+  # owner's current graders and never by its own.
   eval:
     runs-on: ubuntu-latest
     steps:
@@ -51,7 +60,7 @@ jobs:
           else
             echo "origin/main has no evals/ yet: graded with this branch's, the one that creates it"
           fi
-          make eval PYTHON=python
+          python -m evals
 
   check:
     needs: [guard, eval]
