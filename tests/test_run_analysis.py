@@ -290,21 +290,24 @@ def test_with_no_model_named_each_agent_asks_for_its_own(finished):
 
 
 def test_a_run_with_a_market_table_is_labelled_by_python_and_never_marked_unavailable(tmp_path, monkeypatch):
-    """NVDA's cutoff is 2026-08-26, a Wednesday: reaction days zero to two are the 26th,
-    27th and 28th. Abnormal returns 0.02, 0.01 and 0.00 sum to 0.03."""
+    """NVDA's 10-Q was filed on 2026-08-26, a Wednesday, and accepted after the close
+    (NVDA files with its earnings release, after four), so day zero is Thursday the
+    27th and the window runs to Monday the 31st. Abnormal returns 0.02, 0.01 and
+    0.00 sum to 0.03."""
     run = tmp_path / "NVDA" / NVDA_ACCESSION
     bundle = assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,
                                    prior_runs=run.parent.parent)
     assemble_bundle.write(bundle, run)
-    days = ["2026-08-26", "2026-08-27", "2026-08-28"]
+    days = ["2026-08-27", "2026-08-28", "2026-08-31"]
     rows = [{"ticker": "NVDA", "date": d, "abnormal_return": a, "window": "filing",
              "reaction_window": 0.03, "short_interest_ratio": None,
              "short_interest_two_year_median": None, "short_interest_above_median": None}
             for d, a in zip(days, [0.02, 0.01, 0.0])]
     (run / "input_market.json").write_text(json.dumps(
-        {"ticker": "NVDA", "cutoff": "2026-08-28", "rows": rows,
-         "windows": [{"kind": "filing", "day_zero": days[0], "days": days,
-                      "reaction_window": 0.03}]}))
+        {"ticker": "NVDA", "cutoff": "2026-08-31", "rows": rows,
+         "windows": [{"kind": "filing", "filing_date": "2026-08-26",
+                      "accepted": "2026-08-26T16:35:00-04:00", "day_zero": days[0],
+                      "days": days, "reaction_window": 0.03}]}))
     monkeypatch.setattr(run_analysis, "ask", _fake_ask({}))
     manifest = run_analysis.run_company(run=run, ticker="NVDA", form="10-Q",
                                         cutoff="2026-08-26", period_end="2026-07-26",

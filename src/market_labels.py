@@ -67,10 +67,10 @@ import sys
 from pathlib import Path
 
 try:
-    from src import agent_inputs, cutoff_guard, interpreter_pin
+    from src import agent_inputs, cutoff_guard, interpreter_pin, market
 except ImportError:  # invoked as a plain script: python3.12 src/market_labels.py
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from src import agent_inputs, cutoff_guard, interpreter_pin
+    from src import agent_inputs, cutoff_guard, interpreter_pin, market
 
 BAD_INPUT = 2
 
@@ -183,28 +183,20 @@ def short_interest(table: dict, day: str) -> dict:
             "ratio": ratio, "two_year_median": median}
 
 
-REACTION_DAYS_AFTER_FILING = 3     # day zero may be the next trading day, then days one and two
-
-
-def _next_weekday(day: str) -> str:
-    date = dt.date.fromisoformat(day) + dt.timedelta(days=1)
-    while date.weekday() >= 5:
-        date += dt.timedelta(days=1)
-    return date.isoformat()
-
-
 def windows(table: dict, *, run_cutoff: str | None = None) -> list[dict]:
     """Each recorded window: its kind, its day zero, its abnormal return, its short interest.
 
-    A table is refused when it names no cutoff, when its window sum disagrees with
-    the rows it sums, or when it holds a row past its own cutoff: the first leaves
-    nothing to hold its rows to, the second is two answers to one question, and
-    the third is a market day no layer may see. Given the run's own cutoff (the
-    filing date), the table is also held to it: the table's cutoff is reaction day
-    two (`src/market.py`), so it is never before the filing date, at most three
-    trading days of rows follow the filing date (day zero may be the next trading
-    day when the filing was accepted after the close), and the first of them is the
-    next weekday -- a later start would be a window on some other day.
+    Every window is held to `src/market.py`'s own definition of its days, read off
+    the window's acceptance stamp and the table's rows (the trading calendar the
+    table carries): day zero is the acceptance day when EDGAR accepted before the
+    close and the next trading day when after it (`market.reaction_day_zero`), days
+    one and two are the next two rows, the window's `filing_date` is one EDGAR can
+    put on that acceptance (`market.filing_dates_for`), the table's cutoff is day
+    two of the latest window, and no row lies past it. A window with no acceptance
+    stamp cannot say its day zero and is refused. Given the run's own cutoff (the
+    filing date), the filing window's `filing_date` must be it: a table counted
+    for some other filing is refused. A table whose window sum disagrees with the
+    rows it sums is refused too: that is two answers to one question.
     """
     cutoff = table.get("cutoff")
     dates = sorted(str(row.get("date")) for row in table.get("rows") or [] if isinstance(row, dict))
@@ -214,24 +206,42 @@ def windows(table: dict, *, run_cutoff: str | None = None) -> list[dict]:
     if late:
         raise MarketLabelError(
             f"the market table holds rows past its cutoff {cutoff}: {', '.join(late)}")
-    if run_cutoff is not None and dates:
-        if cutoff < run_cutoff:
-            raise MarketLabelError(f"the market table ends at {cutoff}, before the run's "
-                                   f"cutoff {run_cutoff}: it is some other filing's table")
-        after = [day for day in dates if day > run_cutoff]
-        if len(after) > REACTION_DAYS_AFTER_FILING:
+    calendar = [dt.date.fromisoformat(day) for day in dates]
+    latest_day_two = None
+    for window in table.get("windows") or []:
+        kind, days = window.get("kind"), [str(d) for d in window.get("days") or []]
+        if not days:
+            raise MarketLabelError(f"the {kind} window names no days")
+        if not window.get("accepted"):
+            raise MarketLabelError(f"the {kind} window carries no acceptance stamp, so "
+                                   "nothing says which day is its day zero")
+        try:
+            day_zero = market.reaction_day_zero(window["accepted"], calendar)
+            permitted = market.filing_dates_for(window["accepted"])
+        except market.MarketError as exc:
+            raise MarketLabelError(f"the {kind} window: {exc}") from exc
+        at = calendar.index(day_zero)
+        expected = [day.isoformat() for day in calendar[at:at + 3]]
+        if len(expected) < 3:
+            raise MarketLabelError(f"the {kind} window: the rows end before reaction day two")
+        if days != expected or str(window.get("day_zero")) != expected[0]:
             raise MarketLabelError(
-                f"the market table holds {len(after)} trading days past the run's cutoff "
-                f"{run_cutoff}; reaction days zero to two allow at most "
-                f"{REACTION_DAYS_AFTER_FILING}, and a row past day two is a market day no "
-                "layer may see")
-        # the next weekday, or the one after it when that one is a market holiday
-        soon = {_next_weekday(run_cutoff), _next_weekday(_next_weekday(run_cutoff))}
-        if after and after[0] not in soon:
+                f"the {kind} window's days {days} are not reaction days zero to two "
+                f"{expected} of its acceptance {window['accepted']}")
+        filed = str(window.get("filing_date"))
+        if filed not in {d.isoformat() for d in permitted}:
             raise MarketLabelError(
-                f"the first market row after the run's cutoff {run_cutoff} is {after[0]}, "
-                f"not one of the next two weekdays {sorted(soon)}: the window is not this "
-                "filing's reaction days")
+                f"the {kind} window's filing date {filed} is not one EDGAR puts on an "
+                f"acceptance at {window['accepted']}")
+        if run_cutoff is not None and kind == "filing" and filed != run_cutoff:
+            raise MarketLabelError(
+                f"the filing window is for a filing dated {filed}, not this run's cutoff "
+                f"{run_cutoff}: it is some other filing's table")
+        latest_day_two = max(latest_day_two or expected[2], expected[2])
+    if latest_day_two is not None and cutoff != latest_day_two:
+        raise MarketLabelError(
+            f"the table's cutoff {cutoff} is not reaction day two of its latest window "
+            f"{latest_day_two}")
     found = []
     for window in table.get("windows") or []:
         kind, days = window.get("kind"), window.get("days") or []

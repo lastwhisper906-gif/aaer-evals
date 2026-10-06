@@ -55,11 +55,16 @@ def rows(days: list[str], abnormal: list[float], kind: str, window_sum: float,
             for day, value in zip(days, abnormal)]
 
 
-def table(*windows_and_rows) -> dict:
-    """A market table in the shape `src/market.py` writes, from hand-worked windows."""
+def table(*windows_and_rows, accepted: str | None = None, filing_date: str | None = None) -> dict:
+    """A market table in the shape `src/market.py` writes, from hand-worked windows.
+
+    Each window is accepted at nine in the morning of its day zero unless `accepted`
+    says otherwise, so day zero is the acceptance day and the filing date is it."""
     windows, all_rows = [], []
     for kind, days, abnormal, window_sum, short in windows_and_rows:
         windows.append({"kind": kind, "day_zero": days[0], "days": days,
+                        "accepted": accepted or f"{days[0]}T09:00:00-04:00",
+                        "filing_date": filing_date or days[0],
                         "reaction_window": window_sum})
         all_rows += rows(days, abnormal, kind, window_sum, short)
     cutoff = max((row["date"] for row in all_rows), default=None)
@@ -364,27 +369,60 @@ def test_a_table_with_no_cutoff_is_refused():
         labelled_numbers(found, item(UP, "up"))
 
 
-def test_the_table_is_held_to_the_runs_cutoff():
-    """The filing window is 2026-05-08, 05-11 and 05-12. Filed on the 8th: two rows
-    follow the cutoff and the first is the next weekday, the 11th. Filed on the 7th
-    (accepted after the close, day zero the 8th): three rows follow. Filed on the
-    6th: the 7th may be a market holiday, so a first row on the 8th stands. Filed on
-    the 5th: the first row after it is the 8th, two weekdays late, so this is not
-    that filing's window. Filed on the 13th: the table ends before the filing."""
+def test_a_window_is_held_to_its_own_acceptance_stamp():
+    """Rows 2026-05-08, 05-11 and 05-12. Accepted Friday the 8th at 09:00: day zero
+    is the 8th and the window is the 8th, 11th and 12th. Accepted the 8th at 16:30,
+    after the close: day zero is the next trading row, the 11th, so a window that
+    starts on the 8th is not that acceptance's window."""
+    good = rose()
+    market_labels.labels({"report_numbers.md": [item(UP, "up")]}, good)
+    wrong = table(("filing", FILING_DAYS, [0.02, 0.01, 0.0], 0.03, NO_SHORT_INTEREST),
+                  accepted="2026-05-08T16:30:00-04:00")
+    # day zero moves to the 11th, and the three rows then end before day two
+    with pytest.raises(MarketLabelError, match="rows end before reaction day two"):
+        market_labels.labels({"report_numbers.md": []}, wrong)
+    shifted = table(("filing", ["2026-05-11", "2026-05-12", "2026-05-13"], [0.02, 0.01, 0.0],
+                     0.03, NO_SHORT_INTEREST), accepted="2026-05-08T16:30:00-04:00")
+    shifted["rows"].insert(0, dict(shifted["rows"][0], date="2026-05-08", abnormal_return=0.5))
+    shifted["windows"][0]["days"] = ["2026-05-08", "2026-05-11", "2026-05-12"]
+    shifted["windows"][0]["day_zero"] = "2026-05-08"
+    with pytest.raises(MarketLabelError, match="not reaction days zero to two"):
+        market_labels.labels({"report_numbers.md": []}, shifted)
+
+
+def test_a_window_with_no_acceptance_stamp_is_refused():
+    found = rose()
+    del found["windows"][0]["accepted"]
+    with pytest.raises(MarketLabelError, match="no acceptance stamp"):
+        market_labels.labels({"report_numbers.md": []}, found)
+
+
+def test_the_filing_window_is_held_to_the_runs_cutoff():
+    """Filed on the 8th, accepted the 8th at 09:00: the run's cutoff is the 8th.
+    A run whose cutoff is the 7th is some other filing."""
     found = rose()
     market_labels.labels({"report_numbers.md": [item(UP, "up")]}, found, run_cutoff="2026-05-08")
-    market_labels.labels({"report_numbers.md": [item(UP, "up")]}, found, run_cutoff="2026-05-07")
-    # filed Wednesday the 6th: the 7th may be a market holiday, so the 8th still stands
-    market_labels.labels({"report_numbers.md": []}, found, run_cutoff="2026-05-06")
-    with pytest.raises(MarketLabelError, match="not one of the next two weekdays"):
-        market_labels.labels({"report_numbers.md": []}, found, run_cutoff="2026-05-05")
-    with pytest.raises(MarketLabelError, match="before the run's cutoff"):
-        market_labels.labels({"report_numbers.md": []}, found, run_cutoff="2026-05-13")
-
-
-def test_more_than_three_trading_days_past_the_filing_are_refused():
-    found = rose()
-    found["rows"].append(dict(found["rows"][-1], date="2026-05-13"))
-    found["cutoff"] = "2026-05-13"
-    with pytest.raises(MarketLabelError, match="at most 3"):
+    with pytest.raises(MarketLabelError, match="some other filing"):
         market_labels.labels({"report_numbers.md": []}, found, run_cutoff="2026-05-07")
+
+
+def test_an_after_close_acceptance_may_carry_the_next_days_filing_date():
+    """Accepted Thursday the 7th at 18:00, past EDGAR's half past five: EDGAR may
+    date the filing the 7th or the 8th, and day zero is the next trading row, the
+    8th, either way."""
+    for filed in ("2026-05-07", "2026-05-08"):
+        found = table(("filing", FILING_DAYS, [0.02, 0.01, 0.0], 0.03, NO_SHORT_INTEREST),
+                      accepted="2026-05-07T18:00:00-04:00", filing_date=filed)
+        market_labels.labels({"report_numbers.md": []}, found, run_cutoff=filed)
+    found = table(("filing", FILING_DAYS, [0.02, 0.01, 0.0], 0.03, NO_SHORT_INTEREST),
+                  accepted="2026-05-07T18:00:00-04:00", filing_date="2026-05-06")
+    with pytest.raises(MarketLabelError, match="not one EDGAR puts"):
+        market_labels.labels({"report_numbers.md": []}, found)
+
+
+def test_the_tables_cutoff_is_day_two_of_its_latest_window():
+    found = rose()
+    found["cutoff"] = "2026-05-11"
+    found["rows"] = [row for row in found["rows"] if row["date"] <= "2026-05-11"]
+    with pytest.raises(MarketLabelError, match="rows end before reaction day two"):
+        market_labels.labels({"report_numbers.md": []}, found)
