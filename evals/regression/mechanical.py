@@ -206,9 +206,10 @@ def check_quotes_resolve(run: Path) -> Result:
             continue
         for item in report_items(run / report):
             quote = item.get("quote")
-            if not isinstance(quote, str) or not quote.strip():
-                continue
             count += 1
+            if not isinstance(quote, str) or not quote.strip():
+                failures.append(f"{report}:{item.get('id')}: a kept item with no quote")
+                continue
             paragraph = paragraph_text(seen, str(item.get("paragraph_id")))
             if paragraph is None:
                 failures.append(f"{report}:{item.get('id')}: paragraph {item.get('paragraph_id')} "
@@ -333,12 +334,13 @@ def check_nothing_after_cutoff(run: Path) -> Result:
         for filed in _dates_in(calculator, "filed"):
             if dt.date.fromisoformat(filed[:10]) > cutoff:
                 late.append(f"{path.name}: fact filed {filed}")
-        market = calculator.get("cost_of_capital") or {}
-        for key in ("price_date", "date", "window_last"):
-            for value in _dates_in(market, key):
+        # every dated market field, wherever the file keeps it: the price and the
+        # beta window sit under `market`, the cost of capital repeats the price
+        for key in ("price_date", "date", "window_last", "window_first", "as_of"):
+            for value in _dates_in(calculator, key):
                 if re.fullmatch(r"\d{4}-\d{2}-\d{2}", value) \
                         and dt.date.fromisoformat(value) > cutoff:
-                    late.append(f"{path.name}: market {key} {value}")
+                    late.append(f"{path.name}: {key} {value}")
     return Result("mechanical.nothing_after_cutoff", run_name(run), FAIL if late else PASS,
                   f"cutoff {cutoff}" + (f"; {len(late)} late" if late else ""), late)
 

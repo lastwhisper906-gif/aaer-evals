@@ -91,6 +91,18 @@ def test_a_source_read_past_the_cutoff_fails_nothing_after_cutoff(run):
     assert _status(mechanical.grade(run), "mechanical.nothing_after_cutoff") == FAIL
 
 
+def test_a_price_dated_after_the_cutoff_fails_nothing_after_cutoff(run):
+    _edit(run / "calculator.json", lambda d: d["market"]["price"].update(date="2099-01-01"))
+    assert _status(mechanical.grade(run), "mechanical.nothing_after_cutoff") == FAIL
+
+
+def test_a_kept_reader_item_without_a_quote_fails_quotes_resolve(run):
+    report = run / "report_numbers.md"
+    text = report.read_text(encoding="utf-8")
+    report.write_text(text.replace('"quote": "', '"quote": "", "was": "', 1), encoding="utf-8")
+    assert _status(mechanical.grade(run), "mechanical.quotes_resolve") == FAIL
+
+
 def test_a_late_fact_in_a_calculator_stage_file_fails_nothing_after_cutoff(run):
     path = run / "calculator_filings_only.json"
     text = path.read_text(encoding="utf-8")
@@ -268,17 +280,20 @@ def test_consistency_is_one_for_identical_runs_and_less_when_they_differ(tmp_pat
     assert differ["cases"][0]["anomaly_overlap"] < 1.0
 
 
+# Read off the published run by hand: the one accounting anomaly whose name holds
+# the words "operating cash flow falls" is this one.
+CASH_FALLS = "earnings_versus_cash_operating_cash_flow_falls_while_net_income_rises"
+
+
 def test_grader_agreement_counts_where_the_grader_matches_the_owner(tmp_path, monkeypatch):
     run = tmp_path / "CSCO" / CLEAN.name
     shutil.copytree(CLEAN, run, ignore=shutil.ignore_patterns("agents", "control-*"))
-    found = [a["id"] for a in golden.anomalies(run, "accounting")
-             if golden.matches(a, CASE["must_find"][0])]
     (run / "grade.json").write_text(json.dumps({"items": [
-        {"id": found[0], "verdict": "supported", "severity": "high"}]}))
+        {"id": CASH_FALLS, "verdict": "supported", "severity": "high"}]}))
     monkeypatch.setattr(golden, "approved_cases", lambda: [(Path("case.yaml"), CASE)])
     assert grader_agreement.grade([run])["score"] == pytest.approx(1.0)
     (run / "grade.json").write_text(json.dumps({"items": [
-        {"id": found[0], "verdict": "unsupported", "severity": "high"}]}))
+        {"id": CASH_FALLS, "verdict": "unsupported", "severity": "high"}]}))
     assert grader_agreement.grade([run])["score"] == pytest.approx(0.0)
 
 
