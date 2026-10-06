@@ -232,6 +232,47 @@ def test_an_evidence_id_no_reader_kept_fails_cited_items_exist(run):
     assert _status(mechanical.grade(run), "mechanical.cited_items_exist") == FAIL
 
 
+def test_an_item_the_gate_dropped_but_left_in_a_mixed_block_is_kept_by_nobody(run):
+    """The pipeline removes a fenced block only when every item in it was dropped,
+    so a dropped item can sit in the report the analysts read; the manifest's
+    `dropped_items` rows are the record, and a citation of such an item fails."""
+    first = mechanical.report_items(run / "report_numbers.md")[0]["id"]
+    cited = json.loads((run / "analysis_accounting.json").read_text())["anomalies"][0]["evidence"][0]
+    _edit(run / "input_manifest.json",
+          lambda d: d.update(dropped_items=[{"report": "report_numbers.md", "item_id": cited,
+                                             "reason": "planted"}]))
+    assert cited not in mechanical.kept_items(run)["report_numbers.md"]
+    assert _status(mechanical.grade(run), "mechanical.cited_items_exist") == FAIL
+    # a drop recorded for the other report does not touch this one's item
+    _edit(run / "input_manifest.json",
+          lambda d: d.update(dropped_items=[{"report": "report_notes_text.md", "item_id": first,
+                                             "reason": "planted"}]))
+    assert first in mechanical.kept_items(run)["report_numbers.md"]
+    assert _status(mechanical.grade(run), "mechanical.cited_items_exist") == PASS
+
+
+def test_an_id_a_report_carries_twice_is_kept_by_nobody(run):
+    report = run / "report_numbers.md"
+    first = mechanical.report_items(report)[0]
+    twin = json.dumps(dict(first, quote="x"))
+    report.write_text(report.read_text(encoding="utf-8") + f"\n```json\n{twin}\n```\n",
+                      encoding="utf-8")
+    assert first["id"] not in mechanical.kept_items(run)["report_numbers.md"]
+
+
+def test_golden_credits_nothing_through_an_item_the_gate_dropped(run):
+    cited = json.loads((run / "analysis_accounting.json").read_text())["anomalies"][0]["evidence"][0]
+    before = golden.anomalies(run, "accounting")[0]["paragraphs"]
+    assert before
+    _edit(run / "input_manifest.json",
+          lambda d: d.update(dropped_items=[{"report": "report_numbers.md", "item_id": cited,
+                                             "reason": "planted"},
+                                            {"report": "report_notes_text.md", "item_id": cited,
+                                             "reason": "planted"}]))
+    after = golden.anomalies(run, "accounting")[0]["paragraphs"]
+    assert after < before
+
+
 def test_a_citation_of_null_resolves_to_no_reader_item(run):
     """A reader item with no id is kept by nobody, so an analysis citing null cites
     nothing, even when such an item sits in the report."""

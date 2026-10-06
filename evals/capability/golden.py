@@ -24,7 +24,7 @@ import re
 from pathlib import Path
 
 from evals.common import EVALS, find_runs, load, run_name
-from evals.regression.mechanical import report_items
+from evals.regression.mechanical import kept_items, report_items
 from evals.golden_format import GoldenFormatError, load_case
 
 CASES = EVALS / "golden" / "cases"      # the running graders' own approved cases
@@ -50,9 +50,10 @@ def anomalies(run: Path, frame: str) -> list[dict]:
     """The frame's anomalies, each with `paragraphs`: the filing paragraph ids its
     evidence reaches through the run's reader reports."""
     paragraph_of = {}
+    kept = kept_items(run)
     for report in ("report_numbers.md", "report_notes_text.md"):
         for item in report_items(run / report):
-            if item.get("id") and item.get("paragraph_id"):
+            if item.get("id") in kept.get(report, ()) and item.get("paragraph_id"):
                 paragraph_of[item["id"]] = item["paragraph_id"]
     out = []
     for name in FRAME_FILES[frame]:

@@ -403,11 +403,27 @@ def check_quotes_resolve(run: Path) -> Result:
                   failures)
 
 
+def kept_items(run: Path) -> dict[str, set[str]]:
+    """Per reader report, the ids of the items the quote gate kept: every fenced item
+    of the run-root report, less the drops the manifest records for that report and
+    less any id the report carries twice. The pipeline's gate removes a fenced block
+    only when every item in it was dropped, so a dropped item can still sit in the
+    copy the analysts read; the manifest's `dropped_items` rows (report, item_id)
+    are the record of what it set aside. An item with no id is kept by nobody."""
+    manifest = load(run / "input_manifest.json") or {}
+    dropped = {(row.get("report"), row.get("item_id"))
+               for row in manifest.get("dropped_items") or [] if isinstance(row, dict)}
+    out = {}
+    for report in READER_DIR:
+        ids = [item["id"] for item in report_items(run / report)
+               if isinstance(item.get("id"), str) and item["id"].strip()]
+        out[report] = {i for i in ids if ids.count(i) == 1 and (report, i) not in dropped}
+    return out
+
+
 def check_cited_items_exist(run: Path) -> Result:
     """Every evidence id an analysis cites is an item a reader report kept."""
-    # an item with no id is kept by nobody: a citation of null resolves to nothing
-    kept = {item["id"] for report in READER_DIR for item in report_items(run / report)
-            if isinstance(item.get("id"), str)}
+    kept = set().union(*kept_items(run).values())
     failures, count = [], 0
     for name in ("analysis_accounting.json", "analysis_financial.json", "analysis_valuation.json"):
         tree = load(run / name) or {}
