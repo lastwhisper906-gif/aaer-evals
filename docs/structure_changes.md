@@ -263,3 +263,18 @@ What follows from them:
 | LLM forecasts on historical data are inflated by memorization; the effect vanishes after the training cutoff (Gao, Jiang & Yan, *A Test of Lookahead Bias in LLM Forecasts*; Lopez-Lira et al.) | The forward track is the clean result. Historical runs carry a memorization probe and are reported separately |
 
 The table is the owner's research brief of 2026-10-06, recorded as given; the sources are the owner's citations, not ones this session retrieved.
+
+2026-10-06 · **evals/: the owner's graders.**
+- **What it grades.** `evals/` grades the run directories; `tests/` keeps grading the code.
+  - Regression must stay at 100% and gates merges: mechanical checks and coverage.
+  - Capability is tracked and gated only by the owner's floors in `evals/thresholds.json`, which are empty today. It covers golden cases, the analysis-grader's rubric score, grader agreement, consistency, outcomes and memorization.
+- **Who runs it.**
+  - `make eval` grades every run and appends to `evals/scoreboard.jsonl`, which is now under the append check.
+  - `make eval-quick` grades the runs a branch changed, and the Stop hook runs it after `make check`.
+  - CI grades every branch with main's copy of `evals/`.
+- **The guards.**
+  - **CI guard.** `src/eval_guard.py` fails a pull request that touches `evals/` without the owner's label `owner-approved-eval`. It exempts appended scoreboard lines, and the pull request that creates `evals/`. The `check` job main requires now waits on the guard and the graders, and fails when either does.
+  - **Session guards.** `.claude/settings.json` denies Edit and Write under `evals/`, and a PreToolUse hook (`.claude/hooks/guard_evals.py`) refuses shell commands that write there.
+- **The model grader.** The analysis-grader (`.claude/agents/analysis-grader.md`, run by `src/grade_run.py`) runs on Opus, never the analysts' model.
+- **Two-sided tests.** Every guard has a test that it fires and one that it does not (`tests/test_guards.py`), and every grader the same (`tests/test_evals.py`).
+- **One choice made in writing the graders.** "No buy or sell" is read where a recommendation would sit: the valuation analysis, its assumptions and the memo. In the accounting and financial analyses the words describe what companies do, and three published runs use them that way ("an agreement to buy", "a plan to sell shares"). That is the line the analysis gate has drawn since #101.

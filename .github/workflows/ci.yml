@@ -3,14 +3,69 @@ name: ci
 on:
   push:
   pull_request:
+    # labeled and unlabeled re-run the evals guard when the owner adds its label
+    types: [opened, synchronize, reopened, labeled, unlabeled]
 
 permissions:
   contents: read
 
 jobs:
-  check:
+  # A pull request that touches evals/ needs the owner's label (src/eval_guard.py).
+  guard:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5
+        with:
+          python-version: "3.12"
+      - name: fetch the baseline branch
+        run: git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+      - name: evals guard
+        env:
+          LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+        run: python -m src.eval_guard --base origin/main --head HEAD --labels "$LABELS"
+
+  # The owner's graders over every run, always with main's copy of evals/, so a
+  # branch is graded by the owner's current graders and never by its own.
+  eval:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5
+        with:
+          python-version: "3.12"
+      - name: install
+        run: pip install -r requirements.txt
+      - name: fetch the baseline branch
+        run: git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+      - name: grade with main's evals/
+        run: |
+          if git cat-file -e origin/main:evals 2>/dev/null; then
+            rm -rf evals && git checkout origin/main -- evals/
+            echo "graded with evals/ from origin/main"
+          else
+            echo "origin/main has no evals/ yet: graded with this branch's, the one that creates it"
+          fi
+          make eval PYTHON=python
+
+  check:
+    needs: [guard, eval]
+    # Runs whatever happened above, and fails when either did; it is the job main
+    # requires, so the guard and the graders block a merge through it.
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: the evals guard and the graders passed
+        run: |
+          echo "guard: ${{ needs.guard.result }}; eval: ${{ needs.eval.result }}"
+          test "${{ needs.eval.result }}" = "success"
+          test "${{ needs.guard.result }}" = "success" -o "${{ needs.guard.result }}" = "skipped" -a "${{ github.event_name }}" != "pull_request"
+
       # Action versions are pinned by commit SHA; tags are mutable.
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
         with:

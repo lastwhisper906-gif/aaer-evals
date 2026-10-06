@@ -235,11 +235,13 @@ def test_the_router_knows_no_file_the_bundle_does_not_name():
 
 def test_the_six_agents_are_the_six_prompts_committed():
     prompts = {path.stem for path in PROMPTS.glob("*.md")}
-    # refute-check and reproduce-check are verification subagents, not layers.
+    # refute-check and reproduce-check are verification subagents, not layers, and
+    # analysis-grader is the owner's model grader (evals/), run on published outputs
+    # by src/grade_run.py: none of the three feeds a later stage.
     # One definition may run in two directories -- the valuation analyst's two
     # passes -- so the rule is on the definitions the directories run.
     assert {agent.prompt for agent in agent_inputs.AGENTS.values()} == \
-        prompts - {"refute-check", "reproduce-check"}
+        prompts - {"refute-check", "reproduce-check", "analysis-grader"}
 
 
 @pytest.mark.parametrize("agent", COMPARERS)

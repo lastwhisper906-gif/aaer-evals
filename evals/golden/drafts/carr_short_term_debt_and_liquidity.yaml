@@ -1,0 +1,24 @@
+# DRAFT, proposed by Claude on 2026-10-06 from the run published in #103. Not counted.
+filing:
+  ticker: CARR
+  accession: "0001783180-26-000032"
+  form: 10-Q
+  filed: "2026-07-28"
+frame: finance
+must_find:
+  - area: liquidity_and_capital
+    what: "Debt due within a year jumped, on commercial paper issued in the half year."
+    paragraph_ids: ["0001783180-26-000032:facts:CommercialPaper:2026-06-30", "0001783180-26-000032:facts:DebtCurrent:2026-06-30"]
+    keywords: ["commercial paper"]
+  - area: liquidity_and_capital
+    what: "Current and quick ratios are thin."
+    keywords: ["current ratio", "quick ratio"]
+must_not_claim:
+  - what: "That the company cannot meet its obligations."
+    keywords: ["cannot meet", "insolvent"]
+why: "Short-term funding rose while the release's free-cash-flow measure starts from a line its own definition excludes; the finance frame must see the funding shift and say how far it is from distress."
+check_before_approving:
+  - "Confirm the commercial paper balance and current debt against the 10-Q balance sheet and debt note."
+  - "The second item has no paragraph id because the ratios are computed: keep it only if the owner accepts Python's ratios as evidence, or add the balance-sheet paragraph."
+  - "The release's free-cash-flow definition (0001783180-26-000030:8k_2_02:78) belongs to the accounting frame: a separate case if the owner wants it."
+approved_by_owner: false

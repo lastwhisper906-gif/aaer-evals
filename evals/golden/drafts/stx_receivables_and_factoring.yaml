@@ -1,0 +1,34 @@
+# DRAFT, proposed by Claude on 2026-10-06 from the run published in #103. Not counted.
+# The owner checks every paragraph id and claim below against the filing before
+# approving; see "check before approving" at the end.
+filing:
+  ticker: STX
+  accession: "0001137789-26-000159"
+  form: 10-K
+  filed: "2026-08-04"
+frame: accounting
+must_find:
+  - area: revenue_recognition
+    what: "Receivables and days sales outstanding rose against revenue for the fiscal year, to the second highest of the five filled years."
+    paragraph_ids: ["0001137789-26-000159:trends:receivables_over_revenue:2025-06-28..2026-07-03", "0001137789-26-000159:trends:days_sales_outstanding:2025-06-28..2026-07-03"]
+    keywords: ["receivables revenue", "days sales outstanding"]
+  - area: cash_flow_engineering_and_off_balance_sheet
+    what: "No receivables were sold to a third party in fiscal 2026, so factoring that lifted operating cash flow in earlier years no longer does."
+    paragraph_ids: ["0001137789-26-000159:notes:70"]
+    keywords: ["factoring", "receivables sold"]
+  - area: cash_flow_engineering_and_off_balance_sheet
+    what: "A supplier finance obligation sits inside accounts payable, and the MD&A's payables explanation does not mention it."
+    paragraph_ids: ["0001137789-26-000159:mdna:60"]
+    keywords: ["supplier finance"]
+  - area: industry_lens
+    what: "Receivables are concentrated in three customers."
+    paragraph_ids: ["0001137789-26-000159:notes:54"]
+    keywords: ["concentration", "three customers"]
+must_not_claim: []
+why: "Receivables outran revenue in the year factoring stopped, while a supplier finance programme grew inside payables: both move operating cash flow without moving earnings."
+check_before_approving:
+  - "notes:70 says no receivables were sold in fiscal 2026: does an earlier filing show factoring in fiscal 2025 or before? If not, the second item is about a programme that never ran, and should be removed."
+  - "mdna:60 explains the payables increase by capital expenditures: confirm the supplier finance amount (notes:89 and notes:91 in the run's notes input) is material against that increase."
+  - "The two trends ids point at computed history, not filing text: keep them only if the owner accepts Python's trend table as evidence."
+  - "There is no must_not_claim yet. Keyword matching cannot see a negation: a claim that receivables were factored in fiscal 2026 shares every word with the correct finding that none were. The owner may add one whose words a correct analysis would not use."
+approved_by_owner: false

@@ -8,7 +8,7 @@
 PYTHON ?= .venv/bin/python
 BASELINE ?= origin/main
 
-.PHONY: check append-check plain-name-check secret-check test
+.PHONY: check append-check plain-name-check secret-check test eval eval-quick
 
 # The whole gate. Run this before opening a pull request. CI runs this same
 # target, so the gate is defined once -- the same rule written in two files is
@@ -32,3 +32,14 @@ secret-check:
 
 test:
 	$(PYTHON) -m pytest tests -q
+
+# The owner's graders over the run directories (evals/README.md). `eval` grades every
+# run, regression and capability, and appends one line to evals/scoreboard.jsonl; it
+# exits non-zero on any regression failure or a capability score below a floor in
+# evals/thresholds.json. `eval-quick` is regression on the runs this branch changed,
+# for the Stop hook. CI runs `eval` with main's copy of evals/.
+eval:
+	$(PYTHON) -m evals
+
+eval-quick:
+	$(PYTHON) -m evals --quick
