@@ -686,10 +686,11 @@ def test_the_valuation_analyst_may_state_a_missing_cost_of_debt_with_a_quote():
     assert chosen["wacc"]["value"] == pytest.approx(0.09395)
 
 
-def _wacc_with(ttm: dict, rf: float = 0.04) -> dict:
+def _wacc_with(ttm: dict, rf: float = 0.04, debt_ago: dict | None = None) -> dict:
     cell = lambda v: {"value": v, "id": "x", "tag": "t", "period": "p"}
     terms = {"trailing_four_quarters": ttm, "debt_now": {"value": 100.0},
-             "debt_a_year_earlier": {"value": 100.0}, "shares_outstanding": cell(100.0)}
+             "debt_a_year_earlier": debt_ago or {"value": 100.0},
+             "shares_outstanding": cell(100.0)}
     original = calculator.risk_free_rate, calculator.equity_risk_premium
     try:
         calculator.risk_free_rate = lambda cutoff: {"value": rf}
@@ -720,6 +721,47 @@ def test_the_risk_free_fallback_is_one_point_over_the_rate_and_says_so():
     assert debt["value"] == pytest.approx(0.0566)
     assert "risk-free rate plus one point" in debt["fallback"]
     assert debt["needs_judgment"].startswith("docs/needs_judgment.md")
+
+
+def test_the_fallback_label_says_which_input_was_missing():
+    """Two-sided, after the second lens's finding of 2026-10-06. Interest paid 4 is
+    on record and the year-earlier debt is not, so average debt is missing: the
+    cost of debt is still the risk-free rate plus one point, 0.04 + 0.01 = 0.05,
+    and the label says interest paid is on record and the debt is not. With
+    neither interest expense nor interest paid on record the label says that, and
+    not the other. Both reach WACC = 0.9 x 0.10 + 0.1 x 0.05 x 0.79 = 0.09395."""
+    paid = {"value": 4.0, "id": "x", "tag": "InterestPaidNet", "period": "p"}
+    only_debt_missing = _wacc_with({"interest_expense": {"missing": "no row"},
+                                    "interest_paid": paid},
+                                   debt_ago={"missing": "no debt a year earlier"})
+    debt = only_debt_missing["pre_tax_cost_of_debt"]
+    assert debt["value"] == pytest.approx(0.05)
+    assert ("interest paid is on record but average debt is missing/zero, so the cost "
+            "of debt is the risk-free rate plus one point") in debt["fallback"]
+    assert "no debt a year earlier" in debt["fallback"]
+    assert "neither interest expense nor interest paid" not in debt["fallback"]
+    assert only_debt_missing["wacc"]["value"] == pytest.approx(0.09395)
+
+    neither = _wacc_with({"interest_expense": {"missing": "no row"},
+                          "interest_paid": {"missing": "no row"}})
+    debt = neither["pre_tax_cost_of_debt"]
+    assert debt["value"] == pytest.approx(0.05)
+    assert "neither interest expense nor interest paid is on record" in debt["fallback"]
+    assert "interest paid is on record but" not in debt["fallback"]
+    assert neither["wacc"]["value"] == pytest.approx(0.09395)
+
+
+def test_a_zero_average_debt_is_labelled_like_a_missing_one():
+    """The fallback called as cost_of_capital calls it, with debt on record at zero
+    both now and a year earlier: average debt is zero, interest paid 4 is on
+    record, and the label says so."""
+    paid = {"value": 4.0, "id": "x", "tag": "InterestPaidNet", "period": "p"}
+    out = calculator.cost_of_debt_fallback(
+        {"interest_expense": {"missing": "no row"}, "interest_paid": paid},
+        {"value": 0.0}, {"value": 0.0}, {"value": 0.04}, "interest_expense: no row")
+    assert out["value"] == pytest.approx(0.05)
+    assert "interest paid is on record but average debt is missing/zero" in out["fallback"]
+    assert "average_debt is zero" in out["fallback"]
 
 
 def test_tagged_interest_expense_is_never_replaced_by_a_fallback():

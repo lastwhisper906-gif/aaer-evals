@@ -1397,3 +1397,124 @@ def test_every_cell_prints_an_id_and_no_two_cells_print_the_same_one(ticker):
                for cell in row["ratios"].values()]
     assert printed and all(isinstance(one, str) for one in printed)
     assert len(printed) == len(set(printed))
+
+
+# --- interest paid, the cost of debt's fallback term (queue item one) ------------------
+
+def _trigger_periods(ticker: str):
+    """The record at the 10-Q trigger's cutoff, and the spans the calculator builds
+    its trailing four quarters from, by the calculator's own route."""
+    from src import calculator
+    record = calculator.Record(trends.read_record(ticker, cutoff(ticker)))
+    periods = calculator.trigger_periods(record.usd, trigger(ticker)["report_date"], "10-Q")
+    return record, periods
+
+
+def test_ciena_interest_paid_over_the_trailing_four_quarters_is_the_hand_sum():
+    """CIEN's trigger is the 10-Q 0001628280-26-040767, period of report 2026-05-02,
+    filed 2026-06-04, which is the cutoff. Ciena states cash interest paid under
+    us-gaap:InterestPaidNet year to date only, so the four quarters are read off
+    these facts of the committed record, each the latest filing at or before the
+    cutoff for its period:
+
+      2024-11-03..2025-05-03   43,200,000  10-Q 0001628280-26-040767 filed 2026-06-04
+                                           (first stated by 10-Q 0000936395-25-000025,
+                                           filed 2025-06-05, at the same value)
+      2024-11-03..2025-08-02   68,243,000  10-Q 0000936395-25-000041 filed 2025-09-04
+      2024-11-03..2025-11-01   85,217,000  10-K 0001628280-25-056698 filed 2025-12-12
+      2025-11-02..2026-01-31   16,879,000  10-Q 0001628280-26-015152 filed 2026-03-05
+      2025-11-02..2026-05-02   40,979,000  10-Q 0001628280-26-040767 filed 2026-06-04
+
+    The four quarters, by hand:
+      Q3 fiscal 2025  2025-05-04..2025-08-02   68,243,000 - 43,200,000 = 25,043,000
+      Q4 fiscal 2025  2025-08-03..2025-11-01   85,217,000 - 68,243,000 = 16,974,000
+      Q1 fiscal 2026  2025-11-02..2026-01-31                            16,879,000
+      Q2 fiscal 2026  2026-02-01..2026-05-02   40,979,000 - 16,879,000 = 24,100,000
+      sum                                                               82,996,000
+
+    The calculator's formula is the prior fiscal year plus this year to date less
+    the prior year to date: 85,217,000 + 40,979,000 - 43,200,000 = 82,996,000, the
+    same figure. Written before the code ran."""
+    from src import calculator
+    tag = "InterestPaidNet"
+    assert cutoff("CIEN") == "2026-06-04"
+    # the five facts, by the second reader that imports nothing from src/
+    assert source.one_value("CIEN", tag, "2024-11-03..2025-05-03", "2026-06-04") == 43_200_000
+    assert source.one_value("CIEN", tag, "2024-11-03..2025-08-02", "2026-06-04") == 68_243_000
+    assert source.one_value("CIEN", tag, "2024-11-03..2025-11-01", "2026-06-04") == 85_217_000
+    assert source.one_value("CIEN", tag, "2025-11-02..2026-01-31", "2026-06-04") == 16_879_000
+    assert source.one_value("CIEN", tag, "2025-11-02..2026-05-02", "2026-06-04") == 40_979_000
+
+    record, periods = _trigger_periods("CIEN")
+    assert periods["current_to_date"] == ("2025-11-02", "2026-05-02")
+    assert periods["prior_to_date"] == ("2024-11-03", "2025-05-03")
+    assert periods["prior_year"] == ("2024-11-03", "2025-11-01")
+
+    ttm = calculator.trailing(record, "interest_paid", periods)
+    assert ttm["value"] == 82_996_000
+    parts = ttm["parts"]
+    assert parts["prior_fiscal_year"]["id"] == (
+        "0001628280-25-056698:facts:InterestPaidNet:2024-11-03..2025-11-01")
+    assert parts["this_year_to_date"]["id"] == (
+        "0001628280-26-040767:facts:InterestPaidNet:2025-11-02..2026-05-02")
+    assert parts["prior_year_to_date"]["id"] == (
+        "0001628280-26-040767:facts:InterestPaidNet:2024-11-03..2025-05-03")
+    assert "tags_differ" not in ttm
+
+    # and the same cell is what gather() hands the cost of capital
+    gathered = calculator.gather(record, periods)["trailing_four_quarters"]["interest_paid"]
+    assert gathered == ttm
+
+
+def test_seagate_interest_paid_is_missing_when_the_facts_end_before_the_trigger():
+    """STX's trigger is the 10-Q 0001137789-26-000088, period of report 2026-04-03,
+    filed 2026-04-29, the cutoff. Seagate states us-gaap:InterestPaidNet in its
+    10-K alone: the committed record's newest row at or before the cutoff is the
+    fiscal year 2024-06-29..2025-06-27, 324,000,000, from the 10-K
+    0001137789-25-000157 filed 2025-08-01. The facts end there, ten months before
+    the cutoff, so this year to date, 2025-06-28..2026-04-03, is not on record and
+    the term is missing, with the reason naming the part that is absent and the
+    tags looked for. Nothing is filled with a zero."""
+    from src import calculator
+    tag = "InterestPaidNet"
+    assert cutoff("STX") == "2026-04-29"
+    assert source.reported("STX", tag, "2025-06-28..2026-04-03", "2026-04-29") == []
+    newest = max(row["end"] for row in source.inside(source.rows("STX", tag), "2026-04-29"))
+    assert newest == "2025-06-27"
+    assert source.one_value("STX", tag, "2024-06-29..2025-06-27", "2026-04-29") == 324_000_000
+
+    record, periods = _trigger_periods("STX")
+    assert periods["current_to_date"] == ("2025-06-28", "2026-04-03")
+    ttm = calculator.trailing(record, "interest_paid", periods)
+    assert "value" not in ttm
+    assert "this year to date" in ttm["missing"]
+    assert "InterestPaidNet" in ttm["missing"] and "InterestPaid" in ttm["missing"]
+    assert calculator.gather(record, periods)["trailing_four_quarters"]["interest_paid"] == ttm
+
+
+def test_littelfuse_two_values_for_one_period_in_one_filing_settle_on_neither():
+    """LFUS's trigger is the 10-Q 0001628280-26-050481, period of report 2026-06-27,
+    filed 2026-07-29, the cutoff. The committed companyfacts record holds no row of
+    that filing at all -- its newest row was filed 2026-05-06 -- so on the record
+    alone the calculator cannot even build the trigger's periods. The run bundle
+    committed for the trigger carries the filing's own XBRL facts, which
+    `calculator.supplemented` adds for an accession the record lacks, and that
+    10-Q states us-gaap:InterestPaidNet for
+    2025-12-28..2026-06-27 twice: 13,091,000 (f-273, decimals -3, the cash flow
+    statement) and 13,100,000 (f-910, decimals -5, a note). `trends.as_filed`'s
+    rule, docs/INPUT_SPEC.md §1: the latest filing before the cutoff wins, and
+    if that filing states two values for one period there is nothing to choose
+    between them. So neither fact wins, the term is refused naming both values,
+    and no one of them reaches the cost of debt."""
+    import pathlib
+    from src import calculator
+    bundle = pathlib.Path(__file__).resolve().parent.parent / "runs" / "LFUS" / "0001628280-26-050481"
+    document, added = calculator.supplemented(
+        trends.read_record("LFUS", "2026-07-29"), bundle, dt.date(2026, 7, 29))
+    assert added == ["0001628280-26-050481"]
+    record = calculator.Record(document)
+    periods = calculator.trigger_periods(record.usd, "2026-06-27", "10-Q")
+    ttm = calculator.trailing(record, "interest_paid", periods)
+    assert "value" not in ttm
+    assert "[13091000.0, 13100000.0]" in ttm["missing"]
+    assert "two values for one period" in ttm["missing"]

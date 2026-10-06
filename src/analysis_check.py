@@ -86,16 +86,48 @@ FORBIDDEN_IN_VALUATION = (r"\bbuy\b", r"\bsell\b", r"\balpha\b",
 PLACEHOLDER = re.compile(r"\{([a-z0-9_.-]+)(?:\|(pct))?\}")
 # What a digit may be, outside a placeholder and a quote: a name the filing
 # itself uses -- a form, a date, a year named as a year, an item, a note, a
-# standard, a fiscal quarter -- and never a quantity. A bare four-digit number is
-# not a year unless the words around it say it is one: "inventory of 2048
-# million" is a number. Bounded by anything that is not a Latin letter or digit,
-# so a form name followed by a Korean particle ("8-K의") is still a form name.
+# standard, a fiscal quarter -- and never a quantity. Bounded by anything that is
+# not a Latin letter or digit, so a form name followed by a Korean particle
+# ("8-K의") is still a form name.
+#
+# A bare four-digit number, 1950 to 2049, is a year only when the words around it
+# say so. Before it, a year-context word or phrase: "in", "through", "since",
+# "until", "by", "year", "during", "early", "late", "mid", "due", "as of",
+# "end of", "year-end", "first half of", "second half of", "half of", "start of",
+# "beginning of", "six months of", "first-quarter", "회계연도", a month name, or
+# another year joined by a range dash ("2024–2026") or in a list ("2021, 2022
+# and 2023"); "fiscal", "calendar", "FY" and "Q1".."Q4" are the alternatives
+# above. After it: "fiscal year", "guidance", "outlook", a possessive ("2022's"),
+# a month name, or the Korean 년, 회계연도, 상반기, 하반기, 분기, 말, 기준. "of"
+# alone is not a year context -- "inventory of 2048" is a count -- so it counts
+# only inside those phrases, and "to" is not one -- "rose to 2030 orders" is a
+# count -- so "to 2040" is not a year either. And a year is never written after a
+# currency sign, a sign, a decimal point or a digit, never before a decimal, and
+# never before a quantity word, which keeps "in 2048 units" and "by 1950 basis
+# points" numbers whatever word stands before them. "2026 stores", "€2026",
+# "USD 2026", "2026 Million", "2026 bn" and "-2026" have no year context and are
+# numbers.
+YEAR = r"(?:19[5-9]\d|20[0-4]\d)"
+DATE = r"(?:19|20)\d{2}-\d{2}-\d{2}"
+MONTH = (r"(?:January|February|March|April|May|June|July|August|September|October"
+         r"|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sept|Sep|Oct|Nov|Dec)")
+YEAR_CONTEXT_BEFORE = (
+    r"(?:in|through|since|until|by|year|during|early|late|mid|due|as of|회계연도"
+    r"|(?:year|quarter|period)[- ]end(?: of)?|end of"
+    r"|(?:(?:first|second|1st|2nd)[- ])?half of|start of|beginning of|close of"
+    r"|(?:months?|weeks?|quarters?) of|(?:first|second|third|fourth)[- ]quarter"
+    r"|" + MONTH + r")")
+YEAR_CONTEXT_AFTER = (r"(?:fiscal year|guidance|outlook|['’]s|" + MONTH
+                      + r"|년|회계연도|상반기|하반기|분기|말|기준)")
+QUANTITY_WORD = (r"(?:million|billion|trillion|thousand|percent|per\s*cent|%|units|basis"
+                 r"|points|bps|shares|dollars|employees|customers|days|times|bn|mn|mm)")
+NOT_A_QUANTITY = r"(?![.,]\d)(?!\s*(?i:" + QUANTITY_WORD + r"))"
+NOT_A_YEAR_HERE = r"(?<![$€£¥₩+\-−.,\d])" + YEAR + NOT_A_QUANTITY
 ALLOWED_DIGITS = re.compile(
     r"(?<![A-Za-z0-9])(?:"
     r"10-K|10-Q|8-K|COVID-19"
     r"|(?:19|20)\d{2}-\d{2}-\d{2}"
-    r"|(?:[Ff]iscal|[Cc]alendar|FY)\s*(?:19|20)\d{2}"
-    r"|(?:19|20)\d{2}(?=\s*(?:년|회계연도|fiscal year))"
+    r"|(?:[Ff]iscal|[Cc]alendar|FY)[\s-]*(?:19|20)\d{2}"
     r"|(?:January|February|March|April|May|June|July|August|September|October|November"
     r"|December)\s+\d{1,2},?\s+(?:19|20)\d{2}"
     r"|Items? \d{1,2}(?:\.\d{2})?[A-C]?(?!\s*(?:million|billion|thousand|percent|%|units))"
@@ -104,13 +136,18 @@ ALLOWED_DIGITS = re.compile(
     r"|Notes? \d{1,2}(?![\d.,])(?!\s*(?:million|billion|thousand|percent|%|units))"
     r"|Q[1-4](?:\s+(?:of\s+)?(?:fiscal\s+)?(?:19|20)\d{2})?"
     r"|FY\d{2,4}"
-    # A bare year, 1950 to 2049, as in "the second half of 2026" or "through 2027":
-    # never after a dollar sign or a decimal point, never followed by a decimal or a
-    # quantity word, which keeps "2048 million" and "1950 basis points" numbers.
-    r"|(?<![$.,\d])(?:19[5-9]\d|20[0-4]\d)(?![.,]\d)"
-    r"(?!\s*(?:million|billion|thousand|percent|per\s*cent|%|units|basis|points|bps|shares"
-    r"|dollars|employees|customers|days|times))"
-    r")(?![A-Za-z0-9])")
+    # A year after a year-context word, joined by whitespace or a hyphen: "in 2026",
+    # "the second half of 2026", "mid-2026". A date or a range after the word is read
+    # whole, so "in 2024-09-29..2025-09-27" leaves no "-09-29" behind.
+    + r"|(?i:" + YEAR_CONTEXT_BEFORE + r")(?:\s+|-)(?:" + DATE + "|" + YEAR
+    + r"(?:\s*[-–—]\s*" + YEAR + r")?)" + NOT_A_QUANTITY
+    # Two years joined by a range dash, or a list of years: "2024–2026",
+    # "2021, 2022 and 2023".
+    + r"|" + NOT_A_YEAR_HERE + r"\s*[-–—]\s*" + YEAR + NOT_A_QUANTITY
+    + r"|" + NOT_A_YEAR_HERE + r"(?:\s*(?:,|,?\s*(?i:and|or))\s+" + YEAR + r")+" + NOT_A_QUANTITY
+    # A year before a year-context word: "2026 guidance", "2026년".
+    + r"|" + NOT_A_YEAR_HERE + r"(?=\s*(?i:" + YEAR_CONTEXT_AFTER + r"))"
+    + r")(?![A-Za-z0-9])")
 # A brace that is not a whole placeholder is a placeholder written wrong, and is
 # printed literally if it stands.
 BRACE = re.compile(r"[{}]")

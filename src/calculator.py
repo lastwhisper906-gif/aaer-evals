@@ -1536,8 +1536,12 @@ FALLBACK_SPREAD_OVER_RISK_FREE = 0.01
 def cost_of_debt_fallback(ttm: dict, debt_now: dict, debt_ago: dict, rf: dict,
                           why: str) -> dict:
     """Interest paid over average debt, or else the risk-free rate plus one point,
-    each labelled a fallback. Never silent: the cell says what it stands in for."""
+    each labelled a fallback. Never silent: the cell says what it stands in for,
+    and the label says why -- interest paid absent, or interest paid on record
+    over an average debt that is missing or zero -- because the two are different
+    facts about the company."""
     paid = ttm.get("interest_paid") or {"missing": "interest_paid is not gathered"}
+    because = f"neither interest expense nor interest paid is on record: {why}"
     if "missing" not in paid:
         cell = measure("interest_paid / average debt",
                        {"interest_paid": paid, "average_debt": average(debt_now, debt_ago)},
@@ -1547,6 +1551,8 @@ def cost_of_debt_fallback(ttm: dict, debt_now: dict, debt_ago: dict, rf: dict,
             cell["fallback"] = ("interest paid in cash in place of interest expense, which "
                                 f"is not on record: {why}")
             return cell
+        because = ("interest paid is on record but average debt is missing/zero, so the "
+                   f"cost of debt is the risk-free rate plus one point: {cell['missing']}")
     if "missing" in rf:
         return {"missing": f"{why}; and no risk-free rate for the fallback: {rf['missing']}"}
     return {"value": rf["value"] + FALLBACK_SPREAD_OVER_RISK_FREE,
@@ -1554,8 +1560,7 @@ def cost_of_debt_fallback(ttm: dict, debt_now: dict, debt_ago: dict, rf: dict,
             "parts": {"risk_free_rate": rf,
                       "spread": {"value": FALLBACK_SPREAD_OVER_RISK_FREE,
                                  "note": "one point, the default of docs/needs_judgment.md"}},
-            "fallback": ("the risk-free rate plus one point, because neither interest "
-                         f"expense nor interest paid is on record: {why}"),
+            "fallback": f"the risk-free rate plus one point, because {because}",
             "needs_judgment": "docs/needs_judgment.md: AAPL's pre-tax cost of debt"}
 
 

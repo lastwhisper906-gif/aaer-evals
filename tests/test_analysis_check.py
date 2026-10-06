@@ -12,6 +12,7 @@ the calculator's number where the analyst put the path.
 from __future__ import annotations
 
 import copy
+import json
 
 import pytest
 
@@ -342,7 +343,19 @@ def test_a_bare_year_in_a_reason_is_a_year_not_a_number():
     """GNRC's and LFUS's scenarios of 2026-09-29 were dropped for these words
     (their assumptions.json dropped_items)."""
     for text in ("the second half of 2026", "through 2027, then flat", "laps in December 2026",
-                 "the June 2026 quarter", "year-end 2025"):
+                 "the June 2026 quarter", "year-end 2025",
+                 # the second lens's cases of 2026-10-06: a year-context word before or
+                 # after, a range dash, a fiscal prefix, a Korean year suffix
+                 "in 2026", "fiscal 2027 guidance", "through 2030", "2026년", "2024–2026",
+                 "December 2026", "FY2026", "the second half of 2026", "2026 outlook",
+                 "mid-2026", "as of 2026", "2026 하반기",
+                 # phrasings the eight published analyses of 2026-09-29 use
+                 "the first six months of 2026", "a first-quarter 2026 amendment",
+                 "the margins of 2021, 2022 and 2023", "notes due 2030", "far above 2022's",
+                 "회계연도 2025 수준", "the fiscal-2025 figure",
+                 # a date or a range after a context word is read whole (AAPL's valuation
+                 # analyst quoted "no row for interest_expense in 2024-09-29..2025-09-27")
+                 "no row in 2024-09-29..2025-09-27", "in 2024-2026", "in 2024–2026"):
         payload = accounting()
         payload["anomalies"][0]["what"] = text
         assert analysis_check.check("accounting", payload, fields=FIELDS,
@@ -356,6 +369,23 @@ def test_a_number_that_looks_like_a_year_is_still_a_number():
         payload["anomalies"][0]["what"] = text
         assert analysis_check.check("accounting", payload, fields=FIELDS,
                                     sources=SOURCES)["anomalies"] == [], text
+
+
+def test_a_quantity_with_no_unit_word_is_still_a_number():
+    """The second lens's finding of 2026-10-06: none of these carries a unit word on
+    any list, and none has a year-context word around it, so each is a number the
+    analyst wrote. "inventory of 2048" is the case the comment in
+    `src/analysis_check.py` has always named."""
+    for text in ("inventory of 2048", "backlog rose to 2030 orders", "2026 stores", "€2026",
+                 "USD 2026", "2026 Million", "2026 bn", "-2026", "margin 2026",
+                 "from 2026 onward", "leases to 2040", "2021 and 2022 units", "(2025)",
+                 "due 2030 shares"):
+        payload = accounting()
+        payload["anomalies"][0]["what"] = text
+        out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
+        assert out["anomalies"] == [], text
+        assert "a number written in the analyst's own words" in json.dumps(
+            out["dropped_items"], ensure_ascii=False), text
 
 
 def test_a_quantity_after_a_year_word_or_a_notes_word_is_still_a_number():
