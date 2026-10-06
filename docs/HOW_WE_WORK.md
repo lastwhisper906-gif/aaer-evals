@@ -275,18 +275,33 @@ blocks, so a hook that keeps failing stops blocking. CI is the judge.
 
 ## 6. Which model does what
 
+The owner's decision of 2026-10-06 (`docs/structure_changes.md`) sets this table.
+
 | Role | Model | Why |
 |---|---|---|
-| numbers reader, notes-text reader, both comparers | Opus, effort xhigh | reading a filing and reading a report against a market table are the two places where a missed detail is not recoverable downstream |
-| **accounting-analyst, financial-analyst, valuation-analyst** (the supervisors until 2026-09-28, which keep the pin) | **Fable, pinned for one year together with rules v0.1** | keeping the pin matters more than raw capability — a track record only means something as quarter-to-quarter comparison under the same model and the same rules. Check subscription-path stability from the served-model record on the first run; if fallbacks are frequent, drop the pin to Opus. |
-| single-agent baseline control | the same model as the supervisor | a control on a different model would measure the model, not the structure. Its prompt lives inside the control's run script, not in `.claude/agents/` — it is a control, not a layer, and it must not become something a session can invoke by name |
-| refute verification, claim-strength review | Fable | heavy judgment, where a mistake is expensive |
-| second lens, cross-vendor | Codex, read-only, on the subscription login | the builder and the refute lens are both Claude, so a blind spot in the family is a blind spot in both. Codex reviews and never builds; it runs the same five rules in the same order from `tools/lens_prompt.md`, and its automatic stop-time gate stays off because the Stop hook already runs every turn |
-| second lens, fallback | Fable, in a fresh context, when Codex cannot run | a different vendor is the stronger check and a different context is the one still available when the quota is out. It is recorded as the weaker check it is — `confirmed - same-family fallback` — and re-read by the weekly routine when the quota returns. The alias `fable` resolves to `claude-fable-5-1` here |
-| reproduce verification, full review | Opus, effort xhigh | the existing pins |
-| when a model change is needed | run both models in parallel for one quarter, then switch | a switch without a bridge quarter contaminates the record |
-| paragraph classifier | Haiku class | labels only |
-| routines | Haiku to Sonnet class | reads script output and opens pull requests |
+| numbers reader, notes-text reader | Opus, effort xhigh | long inputs and most of the tokens; reading a filing is where a missed detail is not recoverable downstream |
+| **accounting-analyst, financial-analyst, valuation-analyst (both passes)** | **Fable**, used efficiently | judgment over short, cited inputs; the efficiency rules are below |
+| single-agent control | Fable, **on the golden filings only** | there it is scored against the owner's cases; on other filings it measured format as much as judgment |
+| analysis-grader (`evals/`) | Opus | never the analysts' model, so it does not grade its own kind |
+| market labels (were the two comparers) | Python, `src/market_labels.py` | the label is mechanical: the sign of the abnormal return against the expected direction |
+| second lens, builder sessions, the three routines | Opus | the lens fallback runs with `LENS_FALLBACK_MODEL=opus` |
+| when a model change is needed | the owner decides; `--model` on `src/run_analysis.py` is the run-time override, recorded as `model_override` in the manifest | a run set on two models compares models as well as companies |
+
+**Fable, used efficiently.**
+- **Trimmed inputs.** The analysts get the two reader reports, `calculator.json` and
+  nothing they will not cite. The valuation analyst gets only the MD&A and guidance
+  paragraphs the notes reader flagged.
+- **Shared inputs first, in a fixed order,** so the prompt cache serves them.
+- **No repeat of a passed call.** A Fable call whose output passed the gate is never
+  run again. A failed call reruns only that agent, at most twice.
+- **"Fable limit reached" stops the batch.** What finished is published, what is
+  pending is written into `queue.md`, and the batch continues the next night. An
+  analyst never falls back to Opus.
+- **Tokens are counted.** Input, cache-write, cache-read and output tokens, and wall
+  time, are recorded per agent per filing in `input_manifest.json`.
+- **The batch is sized from the record.** The nightly batch is Fable tokens available ÷
+  the median Fable tokens per filing on record, and the calculation goes into the
+  morning report.
 
 Agent prompts are committed under `.claude/agents/` and versioned with the
 rules. **Nothing in the read, compare or decide stages writes a prompt at run

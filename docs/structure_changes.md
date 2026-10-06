@@ -216,3 +216,50 @@ English: the priority now is agents doing accounting analysis and financial anal
 English: not Fable; for now, Opus only.
 
 The analysts' model had failed every call since 2026-09-29 with "You've reached your Fable limit", which left ESE, QCOM, NVDA and TTMI without a run. A model change for the predictors is the owner's to make, and this is that decision. "For now" makes it a run-time choice, not an edit to the committed definitions: `src/run_analysis.py` takes `--model`, which asks for the named model in place of each definition's own for every agent and the control, and writes `model_override` into the run's `input_manifest.json`. The definitions under `.claude/agents/` still name `fable`, so dropping the flag restores them. The eight runs published on 2026-09-29 (#103) ran their analysts and control on `claude-fable-5-1`. Runs from today on name `claude-opus-5-5` in every agent record, so a comparison across the two sets compares models as well as companies.
+
+2026-10-06 · **four owner decisions, recorded verbatim before any code changed.** The quotes are the owner's own words; the English line under each is the translation this repository works from.
+
+> 회계와 파이낸스 두 축으로 나눠서 회사들의 raw info 를 끌어모아서 모두 분석하게 할거야 큰 두 틀로
+
+English: two big frames, accounting and finance, over all of each company's raw information.
+
+> 백그라운드로 돌리되, 프론티어가 하듯 loops 와 goal 은 클로드 에게 맞기고 평가는 내가 코드로 작성하는 방식이 좋을거 같은데
+
+English: run in the background; Claude owns loops and goals; the owner owns evaluation, written as code.
+
+> 다시 fable 쓰는 방향으로 바꿔주고 (fable 은 최대한 효율적으로 사용했으면 좋겠음. 지금은 Opus 만 사용하게 되어있어서
+
+English: return to Fable for the analysts, as efficiently as possible. This supersedes the decision of 2026-09-30, "Opus only for now".
+
+> 현재 프론티어 구조가 어떤 구조인지 깊게 search 해보고 다시 보완해줄래?
+
+English: the harness follows current frontier practice, with the table below as the record.
+
+What follows from them:
+- **Two frames.**
+  - The accounting frame is the accounting analyst: can these numbers be trusted?
+  - The finance frame is the financial analyst and the valuation analyst: how healthy is the company, and what is it worth?
+  - The one bridge between them is the accounting analyst's `adjustments`, which Python applies to quality-adjusted free cash flow. There is no combined score.
+- **The owner's evaluation code.** `evals/` holds it. Claude reads it and never writes it after the pull request that creates it.
+- **The live work list.** `queue.md` is now the list, with one eval command per item. `docs/next_cycle_tasks.md` stays as the history of the cycles before it.
+- **Background routines.** The nightly, weekly and monthly routine prompts are under `docs/routines/`.
+
+**Why the harness looks the way it does: the research record.**
+
+| Finding (source) | What this repository does |
+|---|---|
+| The agent that does the work praises its own work; separating the doer from the judge is "a strong lever" (Anthropic, *Harness design for long-running apps*, 2026) | Analysts never grade themselves. Graders are code, plus one model grader on a different model, calibrated against the owner |
+| /goal's evaluator is a small fast model that reads only the conversation and runs nothing (Claude Code docs, /goal) | A goal is met only by printed `make eval` output. A Stop hook runs the real check as a deterministic backstop |
+| Three grader types: code (fast, objective), model (flexible, needs calibration), human (best, used to calibrate) (Anthropic, *Demystifying evals for AI agents*, 2026) | `evals/` has all three: code graders, a rubric grader agent, and the owner's golden cases |
+| Capability evals start low and climb; regression evals stay near 100%; capability graduates into regression (same source) | `evals/regression` gates merges; `evals/capability` is tracked, not gated, until the owner sets a floor |
+| pass^k: 75% per trial is only 42% for three in a row (same source) | Golden filings are run three times to measure how stable the analysts' findings are |
+| Read transcripts: a 42% score became 95% once grader bugs were found (same source) | A weekly routine samples transcripts and grader failures |
+| Grade the output, not the path; give partial credit (same source) | Graders read run files only, never how the agent got there |
+| Rubrics with dealbreakers plus severity-weighted partial credit (Vals AI, *Finance Agent v2*) | The rubric grader uses the same shape. Dealbreakers score zero |
+| The best models score about 65% on finance-analyst tasks, and only 34% on financial modelling: precise numbers are where they fail (Vals AI, Oct 2026) | Python keeps every number. Agents choose and explain |
+| Prose rules are followed inconsistently; only scripts enforce. Keep instructions to about 100 lines (Marmelab, *State of harness engineering 2026*; OpenAI) | Every rule either has a script or is deleted. Session-start context is trimmed |
+| Handoffs beyond four stages almost always fail; adding a reviewer agent can lower success (same survey) | The comparer agents become Python (one fewer stage). A second lens is kept only for rule changes |
+| Every harness component encodes an assumption about what the model can't do, and those assumptions rot as models improve (Anthropic) | A monthly routine removes one component and checks whether evals drop |
+| LLM forecasts on historical data are inflated by memorization; the effect vanishes after the training cutoff (Gao, Jiang & Yan, *A Test of Lookahead Bias in LLM Forecasts*; Lopez-Lira et al.) | The forward track is the clean result. Historical runs carry a memorization probe and are reported separately |
+
+The table is the owner's research brief of 2026-10-06, recorded as given; the sources are the owner's citations, not ones this session retrieved.

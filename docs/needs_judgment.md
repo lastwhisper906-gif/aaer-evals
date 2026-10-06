@@ -48,7 +48,9 @@ nobody ever questioned.
 
 [x] **whether the shuffled control holds a half's manifest `cutoff` to its filing date, and in which row** — *superseded by owner decision, 2026-09-23: the shuffled-report control is retired and kept under `archive/controls/shuffled/`, and no company is paired with another* · it does not: the shuffled control reads a half's `input_manifest.json` for `accession`, which says which run the half is and is now held to the half's own reports, and reads the numbers half's `filing_date`, which is held to the record; it never reads `cutoff`. So a run whose manifest declares a later cutoff than its own filing date is crossed and written, with `scored_filing_date_from` naming the run's own manifest. The single-agent control refuses the same shape through `cutoff_on_record`. The second lens on "say where a control's files may be written, and what makes two bundles the same run" raised this as its one open question and could not break that item's own rules · deciding either adds the refusal to the row "bind the cutoff and resolve the citations in the shuffled control", which already carries the shuffled control's cutoff, or folds it into the output-boundary item before it merges
 
-[x] **the analysts' model while the Fable limit holds** — *decided 2026-09-30, recorded in `docs/structure_changes.md` the same day* · **Opus only, for now.** Runs pass `--model opus` to `src/run_analysis.py`, which puts Opus in place of each committed definition's model for every agent and the control and records `model_override` in the manifest; the definitions still name `fable`. The eight runs of 2026-09-29 ran the analysts on Fable, and every run after them names Opus in each agent record.
+[x] **the analysts' model while the Fable limit holds** — *decided 2026-09-30, superseded 2026-10-06 by the row below* · **Opus only, for now.** Runs pass `--model opus` to `src/run_analysis.py`, which puts Opus in place of each committed definition's model for every agent and the control and records `model_override` in the manifest; the definitions still name `fable`. The eight runs of 2026-09-29 ran the analysts on Fable, and every run after them names Opus in each agent record.
+
+[x] **the analysts' model** — *decided 2026-10-06, recorded in `docs/structure_changes.md` the same day* · **Fable again for the three analysts, used as efficiently as possible**; the readers, the analysis grader, the lenses, the builder and the routines run on Opus, and the single-agent control runs on Fable on the golden filings only. `--model` stays as the owner's run-time override and is recorded in the manifest.
 
 ## Open
 
@@ -73,6 +75,18 @@ force.
 [ ] **the seal: `ots stamp` cannot reach a calendar from the cloud session** · the OpenTimestamps calendars answer 403 at this environment's network proxy, so the stage-5 runs of 2026-09-28 are sealed by their merge commit on `main` alone · deciding either runs the publish step's `ots stamp input_manifest.json` (`docs/HOW_WE_WORK.md`, the publish row) on each of those runs from the Mac, adding the `.ots` file beside the manifest as a new file, or opens the calendars in the cloud environment's network policy.
 
 [ ] **the drift check refuses a fresh store for four of the twelve** · CSCO, PANW, CIEN and TTMI ran from the committed fixture store, whose triggering filing is the one the baseline was drawn on, because the drift check refused a freshly fetched store against the committed baseline; so those four read the filing the fixtures hold (CSCO 2026-05-19, PANW 2026-06-03, CIEN 2026-06-04, TTMI 2026-08-05), not necessarily the latest; the other eight ran from a store fetched on 2026-09-28 and gated at each cutoff · deciding either re-draws the drift baseline from the fresh stores (a new baseline file, the old one kept) or keeps the fixture stores for these four until their next filing.
+
+[ ] **what a batch does when the Fable limit is reached** · it stops: what finished is published, what is pending is written into `queue.md`, and the batch continues the next night. An analyst never falls back to Opus, because a run set on two models compares models as well as companies · deciding may allow a named fallback for a named run, recorded in its manifest.
+
+[ ] **AAPL's pre-tax cost of debt, which has no interest-expense row** · once queue item one lands: interest paid (`InterestPaidNet`) over average debt, and when that is missing too, the risk-free rate plus one point, labelled `fallback` in `calculator.json` and in the memo · deciding may name another source, such as the rate on the company's own notes from the debt footnote, quoted by the valuation analyst.
+
+[ ] **where a second run of a filing already published lives** · `runs/<ticker>/<accession>-rerun-<date>/`, beside the first and never inside it, with its own `input_manifest.json`; the first run is never touched, and a reader of prior runs counts one run per accession, the newest · deciding may choose another layout before the first rerun is published.
+
+[ ] **where the SEC bulk data lives, since the Mac has 19 GB free** · a compact subset for the twelve under `data/`, each file under 50 MB, and nothing downloaded until the owner says so · deciding names a place outside the repository, or a size budget for `data/`.
+
+[ ] **the floors in `evals/thresholds.json`** · none: every capability score is reported and none gates a merge, and the analysis grader's score is reported, never gated, until its agreement with the owner on the golden filings passes a floor the owner sets · deciding writes floors into `evals/thresholds.json` through a pull request labelled `owner-approved-eval`.
+
+[ ] **the golden cases** · three drafts in `evals/golden/drafts/`, none counted; `evals/golden/cases/` is empty until the owner approves a case · deciding corrects a draft, sets `approved_by_owner: true` and moves it into `cases/`, in a pull request labelled `owner-approved-eval`.
 
 ## Settled by default
 
