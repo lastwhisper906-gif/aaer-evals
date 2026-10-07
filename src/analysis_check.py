@@ -26,13 +26,25 @@ skipped and a dropped area must still say that it was dropped. The `limits`
 sentence must be the rules version's own, character for character.
 
     python3.12 -m src.analysis_check --kind accounting --agent-dir <dir> \\
-        --calculator <calculator.json> --out analysis_accounting.json
+        --written <the file the analyst wrote> --calculator <calculator.json> \\
+        --out analysis_accounting.json --run <run directory>
+
+`--run` names the run directory the agent directory belongs to: the manifest's
+drop rows are read from it, keyed by report, so a citation of an id the quote
+gate dropped is refused here as in the pipeline, and for the valuation kinds
+the run's full `input_mdna.md` and `input_8k.md` are read as `filing`, the
+other side a quote is held to. A valuation or assumptions kind without `--run`
+is refused: the valuation analyst's copies are trimmed, and the trimmed copy
+alone cannot tell a quote across a seam from one the filing printed. The
+accounting and financial kinds run without it, and say that no drop row was
+read.
 """
 
 from __future__ import annotations
 
 import argparse
 import copy
+from collections.abc import Mapping
 import json
 import re
 import sys
@@ -290,7 +302,18 @@ def field_cited(fields: dict, path) -> bool:
     return isinstance(node, dict) and any(key in node for key in ("missing", "reason", "note"))
 
 
-def quote_problem(item: dict, sources: dict[str, str]) -> str | None:
+def quote_problem(item: dict, sources: dict[str, str],
+                  filing: dict[str, str] | None = None) -> str | None:
+    """Why the item's quote fails, or None.
+
+    The quote is held to the file the analyst saw, under the name it gives. For
+    the valuation analyst's MD&A and earnings release, `filing` holds the run's
+    full file under the same name, and the quote is held to that too: the copy
+    the analyst saw is cut down to the flagged paragraphs with a seam line
+    between two that were not adjacent (`src/agent_inputs.py`), so a quote that
+    runs off one kept paragraph into the next string-matches the copy and
+    nothing the filing printed.
+    """
     quote = item.get("quote")
     if quote in (None, ""):
         return None
@@ -299,12 +322,24 @@ def quote_problem(item: dict, sources: dict[str, str]) -> str | None:
         return f"quote_from {named!r} is not a file this analyst saw"
     if fold(quote) not in fold(sources[named]):
         return f"the quote does not string-match {named}"
+    if filing and named in filing and fold(quote) not in fold(filing[named]):
+        return (f"the quote string-matches the trimmed {named} and not the filing: it runs "
+                "across a seam between two paragraphs that were not adjacent")
     return None
 
 
 def item_problem(item, fields: dict, sources: dict[str, str], upstream: set[str], *,
-                 forbidden: tuple[str, ...]) -> str | None:
-    """Why one item, of any analysis, is dropped; None when it stands."""
+                 forbidden: tuple[str, ...], filing: dict[str, str] | None = None,
+                 fallen: frozenset[str] | set[str] = frozenset()) -> str | None:
+    """Why one item, of any analysis, is dropped; None when it stands.
+
+    `fallen` is every id the quote gate dropped from any report this analyst
+    saw. A bare citation names an item by id alone, and a dropped item may
+    still be printed in its report beside a kept one, so by id alone such a
+    citation would name two printed items, one of which fell -- the gate's
+    own reason for dropping a twin. It is refused, whatever else carries the id;
+    a reconciliation row names the report and is held to that report's items.
+    """
     if not isinstance(item, dict):
         return "the item is not an object"
     for key in PROSE_KEYS:
@@ -315,9 +350,12 @@ def item_problem(item, fields: dict, sources: dict[str, str], upstream: set[str]
         if not field_cited(fields, path):
             return f"fields: {path!r} is not a field of calculator.json"
     for identifier in item.get("evidence") or []:
+        if identifier in fallen:
+            return (f"evidence: {identifier!r} is an id the quote gate dropped from a report "
+                    "this analyst saw, so by id alone it does not name one standing item")
         if identifier not in upstream:
             return f"evidence: {identifier!r} is not an item of a report this analyst saw"
-    problem = quote_problem(item, sources)
+    problem = quote_problem(item, sources, filing)
     if problem:
         return problem
     return None
@@ -326,7 +364,7 @@ def item_problem(item, fields: dict, sources: dict[str, str], upstream: set[str]
 # --- the three analyses -------------------------------------------------------------------
 
 def _check_block(payload: dict, key: str, names, fields, sources, upstream, dropped,
-                 *, forbidden, required: bool) -> None:
+                 *, forbidden, required: bool, filing=None, fallen=frozenset()) -> None:
     """A dict of named sections: a failing one keeps its name and loses its words."""
     block = payload.get(key)
     if not isinstance(block, dict):
@@ -338,7 +376,8 @@ def _check_block(payload: dict, key: str, names, fields, sources, upstream, drop
                 block[name] = {"dropped": "the analyst wrote nothing for it"}
                 dropped.append({"where": f"{key}.{name}", "reason": "missing"})
             continue
-        problem = item_problem(entry, fields, sources, upstream, forbidden=forbidden)
+        problem = item_problem(entry, fields, sources, upstream, forbidden=forbidden,
+                               filing=filing, fallen=fallen)
         if problem:
             block[name] = {"dropped": problem}
             dropped.append({"where": f"{key}.{name}", "reason": problem})
@@ -346,10 +385,11 @@ def _check_block(payload: dict, key: str, names, fields, sources, upstream, drop
 
 
 def _check_list(payload: dict, key: str, fields, sources, upstream, dropped, *, forbidden,
-                extra=None) -> None:
+                extra=None, filing=None, fallen=frozenset()) -> None:
     kept = []
     for position, item in enumerate(payload.get(key) or []):
-        problem = item_problem(item, fields, sources, upstream, forbidden=forbidden)
+        problem = item_problem(item, fields, sources, upstream, forbidden=forbidden,
+                               filing=filing, fallen=fallen)
         if problem is None and extra is not None:
             problem = extra(item)
         if problem:
@@ -437,18 +477,38 @@ def paragraph_ids(sources: dict[str, str]) -> set[str]:
 
 
 def check(kind: str, payload: dict, *, fields: dict, sources: dict[str, str],
-          excluded: set[str] | frozenset = frozenset(), paragraph_ids: bool = False) -> dict:
+          excluded: set[str] | frozenset | Mapping[str, set[str]] = frozenset(),
+          paragraph_ids: bool = False, filing: dict[str, str] | None = None) -> dict:
     """The analysis with every failing item dropped, and the list of drops.
 
-    `excluded` is the ids the quote gate dropped from the reports: they are still
-    printed in the report files the analyst read, and a citation of one is a
-    citation of an item that did not stand.
+    `excluded` is the ids the quote gate dropped from the reports: they may still
+    be printed in the report files the analyst read, beside a kept item, and a
+    citation of one is a citation of an item that did not stand. The gate keys
+    its drops by report, and so does this: a mapping of report name to ids takes
+    each id out of that report's items alone, which a reconciliation row, naming
+    the report, is held to; a bare `evidence` citation names an id with no
+    report, and an id dropped from either report is refused there, because the
+    dropped item may still be printed beside a kept one and by id alone the
+    citation would name both. A plain set takes its ids out of both reports.
+    `filing` is the run's full MD&A and earnings release by
+    name, for the valuation analyst, whose copies are trimmed: a quote is held
+    to both (`quote_problem`).
     """
     if not isinstance(payload, dict):
         raise AnalysisInputError(f"the {kind} analysis is not a JSON object")
     payload = copy.deepcopy(payload)
-    notes_ids = report_ids(sources.get("report_notes_text.md", "")) - set(excluded)
-    numbers_ids = report_ids(sources.get("report_numbers.md", "")) - set(excluded)
+
+    def left_out(report: str) -> set[str]:
+        if isinstance(excluded, Mapping):
+            return set(excluded.get(report) or ())
+        return set(excluded)
+
+    notes_ids = report_ids(sources.get("report_notes_text.md", "")) - left_out("report_notes_text.md")
+    numbers_ids = report_ids(sources.get("report_numbers.md", "")) - left_out("report_numbers.md")
+    # a bare citation is by id alone: an id dropped from either report is refused
+    # whatever else carries it (`item_problem`); a reconciliation row names the
+    # report and is held to that report's standing items alone
+    fallen = frozenset(left_out("report_notes_text.md") | left_out("report_numbers.md"))
     if paragraph_ids:
         # The single-agent control has no upstream report: it cites the
         # paragraphs of its own input, and each is verified by its quote.
@@ -458,38 +518,40 @@ def check(kind: str, payload: dict, *, fields: dict, sources: dict[str, str],
     forbidden = FORBIDDEN_EVERYWHERE + (FORBIDDEN_IN_VALUATION if kind == "valuation" else ())
     if kind == "accounting":
         _check_block(payload, "areas", ACCOUNTING_AREAS, fields, sources, upstream, dropped,
-                     forbidden=forbidden, required=True)
+                     forbidden=forbidden, fallen=fallen, required=True, filing=filing)
         _check_list(payload, "reconciliation", fields, sources, upstream, dropped,
-                    forbidden=forbidden, extra=reconciliation_problem(notes_ids, numbers_ids))
+                    forbidden=forbidden, fallen=fallen, extra=reconciliation_problem(notes_ids, numbers_ids), filing=filing)
         _check_list(payload, "anomalies", fields, sources, upstream, dropped,
-                    forbidden=forbidden, extra=anomaly_problem(ACCOUNTING_AREAS))
+                    forbidden=forbidden, fallen=fallen, extra=anomaly_problem(ACCOUNTING_AREAS), filing=filing)
         _check_list(payload, "adjustments", fields, sources, upstream, dropped,
-                    forbidden=forbidden, extra=adjustment_problem(fields))
+                    forbidden=forbidden, fallen=fallen, extra=adjustment_problem(fields), filing=filing)
     elif kind == "financial":
         _check_block(payload, "sections", FINANCIAL_SECTIONS, fields, sources, upstream,
-                     dropped, forbidden=forbidden, required=True)
+                     dropped, forbidden=forbidden, fallen=fallen, required=True, filing=filing)
         for key in ("dupont", "path_to_distress"):
             entry = payload.get(key)
             problem = ("the analyst wrote nothing for it" if entry is None else
-                       item_problem(entry, fields, sources, upstream, forbidden=forbidden))
+                       item_problem(entry, fields, sources, upstream, forbidden=forbidden, fallen=fallen,
+                                    filing=filing))
             if problem:
                 payload[key] = {"dropped": problem}
                 dropped.append({"where": key, "reason": problem})
         _check_list(payload, "anomalies", fields, sources, upstream, dropped,
-                    forbidden=forbidden, extra=anomaly_problem(FINANCIAL_AREAS))
+                    forbidden=forbidden, fallen=fallen, extra=anomaly_problem(FINANCIAL_AREAS), filing=filing)
     elif kind == "valuation":
         _check_block(payload, "readings", (), fields, sources, upstream, dropped,
-                     forbidden=forbidden, required=False)
+                     forbidden=forbidden, fallen=fallen, required=False, filing=filing)
         payload.pop("readings", None)
         for key in VALUATION_KEYS:
             entry = payload.get(key)
             problem = ("the analyst wrote nothing for it" if entry is None else
-                       item_problem(entry, fields, sources, upstream, forbidden=forbidden))
+                       item_problem(entry, fields, sources, upstream, forbidden=forbidden, fallen=fallen,
+                                    filing=filing))
             if problem:
                 payload[key] = {"dropped": problem}
                 dropped.append({"where": key, "reason": problem})
         _check_list(payload, "most_sensitive", fields, sources, upstream, dropped,
-                    forbidden=forbidden)
+                    forbidden=forbidden, fallen=fallen, filing=filing)
     else:
         raise AnalysisInputError(f"no analysis is called {kind!r}")
     _check_summary(payload, fields, dropped, forbidden=forbidden)
@@ -502,11 +564,14 @@ def check(kind: str, payload: dict, *, fields: dict, sources: dict[str, str],
 
 # --- the valuation analyst's first pass --------------------------------------------------
 
-def check_assumptions(payload: dict, *, fields: dict, sources: dict[str, str]) -> dict:
+def check_assumptions(payload: dict, *, fields: dict, sources: dict[str, str],
+                      filing: dict[str, str] | None = None) -> dict:
     """Every driver a number, every driver with a reason and a quote or a field.
 
     A scenario whose drivers fail is dropped whole and counted: the DCF runs on
     the six drivers together or not at all, and Python never fills one in.
+    `filing` is as in `check`: the run's full prose files, which a quote of the
+    trimmed copy is held to as well.
     """
     if not isinstance(payload, dict):
         raise AnalysisInputError("assumptions.json is not a JSON object")
@@ -533,7 +598,8 @@ def check_assumptions(payload: dict, *, fields: dict, sources: dict[str, str]) -
                     problem = f"{driver} carries neither a quote nor a calculator field"
                     break
                 problem = item_problem(reason, fields, sources, set(),
-                                       forbidden=FORBIDDEN_EVERYWHERE + FORBIDDEN_IN_VALUATION)
+                                       forbidden=FORBIDDEN_EVERYWHERE + FORBIDDEN_IN_VALUATION,
+                                       filing=filing)
                 if problem:
                     problem = f"{driver}: {problem}"
                     break
@@ -549,7 +615,7 @@ def check_assumptions(payload: dict, *, fields: dict, sources: dict[str, str]) -
         elif not isinstance(chosen, dict) or not isinstance(chosen.get("value"), (int, float)):
             problem = "no value"
         else:
-            problem = quote_problem(chosen, sources) or (None if chosen.get("quote")
+            problem = quote_problem(chosen, sources, filing) or (None if chosen.get("quote")
                                                          else "no quote")
         if problem:
             dropped.append({"where": f"wacc_overrides.{name}", "reason": problem})
@@ -608,10 +674,19 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--written", required=True, help="the file the analyst wrote")
     parser.add_argument("--calculator", required=True)
     parser.add_argument("--out", required=True)
+    parser.add_argument("--run", default=None,
+                        help="the run directory: its manifest's drop rows, and for the "
+                             "valuation kinds its full input_mdna.md and input_8k.md")
     args = parser.parse_args(argv)
     code = interpreter_pin.enforce()
     if code:
         return code
+    if args.kind in ("valuation", "assumptions") and not args.run:
+        print(f"analysis_check: --kind {args.kind} needs --run <run directory>: the "
+              "valuation analyst's input_mdna.md and input_8k.md are trimmed copies, and "
+              "the trimmed copy alone cannot hold a quote across a seam to what the filing "
+              "printed; the run's full files are the other side", file=sys.stderr)
+        return BAD_INPUT
     try:
         payload = json.loads(Path(args.written).read_text(encoding="utf-8"))
         fields = json.loads(Path(args.calculator).read_text(encoding="utf-8"))
@@ -619,10 +694,27 @@ def main(argv: list[str] | None = None) -> int:
         print(f"analysis_check: {exc}", file=sys.stderr)
         return BAD_INPUT
     sources = read_sources(Path(args.agent_dir), SOURCES[args.kind])
+    filing: dict[str, str] | None = None
+    excluded: dict[str, set[str]] = {}
+    if args.run:
+        from src import run_analysis          # lazy: that module imports this one
+        run = Path(args.run)
+        try:
+            excluded = run_analysis.excluded_by_report(run)
+        except (OSError, ValueError) as exc:
+            print(f"analysis_check: {run}: the manifest's drop rows cannot be read: {exc}",
+                  file=sys.stderr)
+            return BAD_INPUT
+        filing = {name: (run / name).read_text(encoding="utf-8")
+                  for name in ("input_mdna.md", "input_8k.md") if (run / name).is_file()}
+    else:
+        print("analysis_check: no --run: the gate's drop rows were not read, so a citation "
+              "of an id the quote gate dropped is not refused here", file=sys.stderr)
     try:
-        out = (check_assumptions(payload, fields=fields, sources=sources)
+        out = (check_assumptions(payload, fields=fields, sources=sources, filing=filing)
                if args.kind == "assumptions" else
-               check(args.kind, payload, fields=fields, sources=sources))
+               check(args.kind, payload, fields=fields, sources=sources, excluded=excluded,
+                     filing=filing))
     except AnalysisInputError as exc:
         print(f"analysis_check: {exc}", file=sys.stderr)
         return BAD_INPUT

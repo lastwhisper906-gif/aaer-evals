@@ -23,6 +23,7 @@ pytest's `tmp_path`.
 
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 
@@ -44,7 +45,7 @@ LAYER_TABLE = (
     "| prices, short interest, any other company |",
     "| comparers | both reader reports plus the market table — run only for the reaction-window labels | any filing |",
     "| accounting and financial analysts | the two reader reports and `calculator_filings_only.json` | any filing, any price, the market table |",
-    "| valuation analyst | the calculator with the price at the cutoff (before its drivers, then with the DCF run on them), both checked analyses, the MD&A and the earnings release verbatim | a price after the cutoff, the market table |",
+    "| valuation analyst | the calculator with the price at the cutoff (before its drivers, then with the DCF run on them), both checked analyses, and of the MD&A and the earnings release only the paragraphs the notes reader flagged, each verbatim, the manifest recording the trim | a price after the cutoff, the market table |",
     "| supervisor (retired from the live pipeline on 2026-09-28; its runs stay on record) | the four reports, and the rules version's checklist keys and output schema | any filing, the market table |",
 )
 
@@ -158,9 +159,12 @@ def _run_directory(tmp_path: Path, *, skip: tuple[str, ...] = ()) -> Path:
         (run / name).write_text(f"this is {name}\n", encoding="utf-8")
     # The manifest is routed to no agent, and a comparer or a supervisor reads
     # it for whether the run has a market table, so it is the JSON a run's is.
+    # It carries the quote gate's drop list, empty: the valuation analyst's
+    # directory is built after the gate, and the router refuses a run with no
+    # record that the gate ran.
     if "input_manifest.json" not in skip:
         (run / "input_manifest.json").write_text(
-            '{"accession": "0000320193-25-000073", "ticker": "AAPL"}\n',
+            '{"accession": "0000320193-25-000073", "ticker": "AAPL", "dropped_items": []}\n',
             encoding="utf-8")
     return run
 
@@ -284,8 +288,15 @@ def test_every_routed_file_arrives_verbatim(tmp_path):
     agent_inputs.build_all(run)
     for agent in agent_inputs.AGENTS:
         root = agent_inputs.session_root(run, agent)
+        spec = agent_inputs.AGENTS[agent]
         for name in _names(root):
-            assert (root / name).read_bytes() == (run / name).read_bytes()
+            # The valuation analyst's prose is the run's copy trimmed to the
+            # flagged paragraphs (2026-10-06), and the planted file holds no
+            # `[id]` paragraph, so the trim is the whole file, written out here
+            # by hand rather than through the trim; the trim itself is judged
+            # against a hand-written file below.
+            assert (root / name).read_bytes() == (run / name).read_bytes() \
+                == f"this is {name}\n".encode()
 
 
 def test_no_file_reaches_an_agent_that_nobody_routed(tmp_path):
@@ -717,3 +728,279 @@ def test_a_clean_retired_agent_s_directory_is_not_a_violation(tmp_path):
     broken = agent_inputs.isolation_violations(run)
     assert any(line.startswith("notes-vs-market:") and "not at its session root" in line
                for line in broken)
+
+
+# --- the valuation analyst's trimmed prose (the owner's decision of 2026-10-06) -------------
+#
+# The expected files are written out by hand. Four paragraphs; the notes reader
+# flags the second and the fourth, and a third item flagging the third is on the
+# manifest's drop list, so it flags nothing. Two kept blocks that were not adjacent
+# are parted by one line holding their own two markers, which the filing prints;
+# the file carries no note of its own, that is the manifest's.
+
+ONE, TWO, THREE, FOUR = (f"0000000000-00-000001:mdna:{n}" for n in (1, 2, 3, 4))
+MDNA = (f"# T mdna\n\n[{ONE}]\nFirst, not flagged.\n\n"
+        f"[{TWO}]\nSecond,\u00a0flagged.\n\n"
+        f"[{THREE}]\nThird, flagged by an item the gate dropped.\n\n"
+        f"[{FOUR}]\nFourth, flagged.\n")
+NOTES_REPORT = ("# notes\n```json\n"
+                f'[{{"id": "a", "paragraph_id": "{TWO}", "quote": "Second"}},\n'
+                f' {{"id": "c", "paragraph_id": "{THREE}", "quote": "Third"}}]\n'
+                "```\n```json\n"
+                f'{{"id": "b", "paragraph_id": "{FOUR}", "quote": "Fourth"}}\n'
+                "```\n")
+MANIFEST = ('{"accession": "0000320193-25-000073", "ticker": "AAPL", "dropped_items": '
+            '[{"item_id": "c", "report": "report_notes_text.md", "reason": "planted"}]}\n')
+TRIMMED = (f"# T mdna\n\n"
+           f"[{TWO}]\nSecond,\u00a0flagged.\n\n"
+           f"[{TWO}] [{FOUR}]\n\n"
+           f"[{FOUR}]\nFourth, flagged.\n")
+RECORD = {"kept": [TWO, FOUR], "of": 4,
+          "note": "2 of 4 paragraphs, the ones the notes reader flagged; the rest were not placed"}
+EMPTY_8K = {"kept": [], "of": 0,
+            "note": "0 of 0 paragraphs, the ones the notes reader flagged; the rest were not placed"}
+
+
+def _trimmed_run(tmp_path: Path) -> Path:
+    run = _run_directory(tmp_path)
+    (run / "input_mdna.md").write_text(MDNA, encoding="utf-8")
+    (run / "report_notes_text.md").write_text(NOTES_REPORT, encoding="utf-8")
+    (run / "input_manifest.json").write_text(MANIFEST, encoding="utf-8")
+    return run
+
+
+def test_the_valuation_analyst_is_handed_the_hand_written_trim_and_the_manifest_records_it(tmp_path):
+    run = _trimmed_run(tmp_path)
+    built = agent_inputs.build(run, "valuation-analyst")
+    placed = agent_inputs.session_root(run, "valuation-analyst") / "input_mdna.md"
+    assert placed.read_bytes() == TRIMMED.encode("utf-8")
+    assert built["trimmed"]["input_mdna.md"] == RECORD
+    manifest = json.loads((run / "input_manifest.json").read_text(encoding="utf-8"))
+    assert manifest["agents"]["valuation-analyst"]["trimmed"]["input_mdna.md"] == RECORD
+    assert manifest["dropped_items"][0]["item_id"] == "c"      # every other key left alone
+    # The notes reader's own copy is the whole file, byte for byte.
+    agent_inputs.build(run, "notes-text-reader")
+    assert (agent_inputs.session_root(run, "notes-text-reader") / "input_mdna.md").read_bytes() \
+        == MDNA.encode("utf-8")
+
+
+def test_the_trimmed_file_holds_no_word_the_filing_does_not():
+    assert set(TRIMMED.split()) <= set(MDNA.split())
+    assert "trimmed" not in TRIMMED and "placed" not in TRIMMED
+
+
+def test_two_adjacent_kept_blocks_meet_with_no_seam_and_non_adjacent_ones_with_one():
+    assert agent_inputs.trimmed(MDNA, {THREE, FOUR}) == (
+        f"# T mdna\n\n[{THREE}]\nThird, flagged by an item the gate dropped.\n\n"
+        f"[{FOUR}]\nFourth, flagged.\n")
+    assert agent_inputs.trimmed(MDNA, {ONE, FOUR}) == (
+        f"# T mdna\n\n[{ONE}]\nFirst, not flagged.\n\n[{ONE}] [{FOUR}]\n\n"
+        f"[{FOUR}]\nFourth, flagged.\n")
+    assert agent_inputs.trimmed(MDNA, set()) == "# T mdna\n\n"
+
+
+def test_a_dropped_item_flags_nothing_and_a_run_with_no_gate_record_is_refused(tmp_path):
+    run = _trimmed_run(tmp_path)
+    assert agent_inputs.flagged_paragraphs(run) == {TWO, FOUR}          # not THREE: c fell
+    (run / "input_manifest.json").write_text(
+        '{"accession": "0000320193-25-000073", "dropped_items": []}\n', encoding="utf-8")
+    assert agent_inputs.flagged_paragraphs(run) == {TWO, THREE, FOUR}   # nothing fell
+    (run / "input_manifest.json").write_text('{"accession": "0000320193-25-000073"}\n',
+                                             encoding="utf-8")
+    with pytest.raises(AgentInputError, match="no record that the quote gate ran"):
+        agent_inputs.flagged_paragraphs(run)
+    # no gated report at the run root: refused, never read as "none flagged"
+    with pytest.raises(AgentInputError, match="holds no report_notes_text.md"):
+        agent_inputs.flagged_paragraphs(tmp_path / "none")
+
+
+def test_a_valuation_build_on_a_run_with_no_gated_notes_report_is_refused(tmp_path):
+    """The valuation layer's `sees` does not name the notes report, so `required`
+    does not refuse the build; the flagged set does, before anything is created,
+    and the manifest records no trim. With the report back, the build goes
+    through and records the hand-written trim."""
+    run = _trimmed_run(tmp_path)
+    (run / "report_notes_text.md").unlink()
+    with pytest.raises(AgentInputError, match="holds no report_notes_text.md"):
+        agent_inputs.build(run, "valuation-analyst")
+    assert not agent_inputs.session_root(run, "valuation-analyst").exists()
+    assert "agents" not in json.loads((run / "input_manifest.json").read_text(encoding="utf-8"))
+    (run / "report_notes_text.md").write_text(NOTES_REPORT, encoding="utf-8")
+    built = agent_inputs.build(run, "valuation-analyst")
+    assert built["trimmed"]["input_mdna.md"] == RECORD
+    assert agent_inputs.isolation_violations(run) == []
+
+
+# The owner's decision that the valuation analyst reads only the flagged
+# paragraphs is dated 2026-10-06; the eight published runs were analysed on
+# 2026-09-29 (their manifests' `analysed_utc`) and hold the full file by right.
+ANALYSED_BEFORE_THE_RULE = "2026-09-29T00:51:54Z"
+ANALYSED_ON_THE_RULE_DAY = "2026-10-06T00:00:00Z"
+
+
+def _valuation_directory(tmp_path: Path, *, holds: str, record: dict | None,
+                         analysed: str | None = ANALYSED_BEFORE_THE_RULE) -> Path:
+    """A run on record whose valuation analyst's directory holds `holds` as its
+    MD&A, with the manifest recording `record` as the trim, or no trim, and
+    `analysed` as when the analyses ran (None: the manifest does not say)."""
+    run = _trimmed_run(tmp_path)
+    manifest = json.loads(MANIFEST)
+    if analysed is not None:
+        manifest[agent_inputs.ANALYSED_KEY] = analysed
+    if record is not None:
+        # as `build` records it: every file it trims, the 8-K's placeholder here
+        # holding no paragraph at all
+        manifest["agents"] = {"valuation-analyst": {"result": "written",
+                                                    "trimmed": {"input_mdna.md": record,
+                                                                "input_8k.md": EMPTY_8K}}}
+    (run / "input_manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    root = agent_inputs.session_root(run, "valuation-analyst")
+    root.mkdir(parents=True)
+    for name in agent_inputs.AGENTS["valuation-analyst"].sees:
+        if name != "input_mdna.md":
+            (root / name).write_bytes((run / name).read_bytes())
+    (root / "input_mdna.md").write_text(holds, encoding="utf-8")
+    return run
+
+
+def test_a_directory_the_manifest_records_no_trim_for_is_held_to_the_full_file(tmp_path):
+    """The eight runs published before the trim hold the full MD&A in their
+    valuation directories, and the manifest's silence, with a run analysed
+    before the rule's day, is the record of that."""
+    assert agent_inputs.isolation_violations(
+        _valuation_directory(tmp_path / "full", holds=MDNA, record=None)) == []
+    broken = agent_inputs.isolation_violations(
+        _valuation_directory(tmp_path / "cut", holds=TRIMMED, record=None))
+    assert any("input_mdna.md" in line and "other bytes" in line for line in broken)
+
+
+def test_no_trim_on_record_is_named_for_a_run_analysed_from_the_rule_s_day(tmp_path):
+    """The same full-file directory with no trim on record: clean on a run
+    analysed the day before the rule, named on one analysed the day the rule
+    came in, and named on one the manifest does not date."""
+    assert agent_inputs.isolation_violations(_valuation_directory(
+        tmp_path / "before", holds=MDNA, record=None, analysed="2026-10-05T23:59:59Z")) == []
+    broken = agent_inputs.isolation_violations(_valuation_directory(
+        tmp_path / "on", holds=MDNA, record=None, analysed=ANALYSED_ON_THE_RULE_DAY))
+    assert broken == ["valuation-analyst: no trim on record for a run analysed after the trim "
+                      "rule (analysed_utc 2026-10-06T00:00:00Z, the rule is from 2026-10-06)"]
+    broken = agent_inputs.isolation_violations(_valuation_directory(
+        tmp_path / "undated", holds=MDNA, record=None, analysed=None))
+    assert len(broken) == 1 and broken[0].startswith(
+        "valuation-analyst: no trim on record and no analysed_utc in the manifest")
+    # with a trim on record the date is not read: the record is what is checked
+    assert agent_inputs.isolation_violations(_valuation_directory(
+        tmp_path / "recorded", holds=TRIMMED, record=RECORD, analysed=ANALYSED_ON_THE_RULE_DAY)) == []
+
+
+def test_a_directory_the_manifest_records_a_trim_for_is_held_to_that_record(tmp_path):
+    assert agent_inputs.isolation_violations(
+        _valuation_directory(tmp_path / "cut", holds=TRIMMED, record=RECORD)) == []
+    broken = agent_inputs.isolation_violations(
+        _valuation_directory(tmp_path / "full", holds=MDNA, record=RECORD))
+    assert any("input_mdna.md" in line and "other bytes" in line for line in broken)
+    # A record that does not fit the run's file is not a record of it.
+    broken = agent_inputs.isolation_violations(_valuation_directory(
+        tmp_path / "odd", holds=TRIMMED, record={"kept": [TWO, "0000000000-00-000001:mdna:9"], "of": 4}))
+    assert any("no block for" in line for line in broken)
+    broken = agent_inputs.isolation_violations(_valuation_directory(
+        tmp_path / "count", holds=TRIMMED, record={"kept": [TWO, FOUR], "of": 5}))
+    assert any("says 5 paragraphs" in line for line in broken)
+
+
+def test_the_boundary_check_re_derives_the_trim_from_the_record_and_not_from_the_trim(
+        tmp_path, monkeypatch):
+    """`handed` is the independent reading: the run's file cut by a list of ids.
+    Neither it nor the boundary check calls `trimmed`, so a wrong trim and the
+    check do not move together."""
+    monkeypatch.setattr(agent_inputs, "trimmed", lambda *args: (_ for _ in ()).throw(
+        AssertionError("the boundary check called the trim")))
+    assert agent_inputs.handed(MDNA, RECORD) == TRIMMED
+    assert agent_inputs.handed(MDNA, {"kept": [], "of": 4}) == "# T mdna\n\n"
+    assert agent_inputs.isolation_violations(
+        _valuation_directory(tmp_path / "cut", holds=TRIMMED, record=RECORD)) == []
+
+
+# The flagged set, derived again by the boundary check from the gated report and
+# the drop list: {TWO, FOUR}. A record is held to that set, whatever it says.
+KEEPS_THREE = {"kept": [TWO, THREE, FOUR], "of": 4}
+CUT_TO_THREE = (f"# T mdna\n\n"
+                f"[{TWO}]\nSecond,\u00a0flagged.\n\n"
+                f"[{THREE}]\nThird, flagged by an item the gate dropped.\n\n"
+                f"[{FOUR}]\nFourth, flagged.\n")
+KEEPS_EVERY = {"kept": [ONE, TWO, THREE, FOUR], "of": 4}
+KEEPS_TWO_ONLY = {"kept": [TWO], "of": 4}
+CUT_TO_TWO = f"# T mdna\n\n[{TWO}]\nSecond,\u00a0flagged.\n\n"
+
+
+def test_a_record_keeping_a_paragraph_no_standing_item_flagged_is_a_broken_boundary(tmp_path):
+    """The third paragraph was flagged only by item c, which the gate dropped. A
+    record keeping it, over a copy cut to match the record, is reported naming
+    the third paragraph and the bytes; a record keeping every paragraph over the
+    full file names the first and the third."""
+    broken = agent_inputs.isolation_violations(
+        _valuation_directory(tmp_path / "three", holds=CUT_TO_THREE, record=KEEPS_THREE))
+    assert broken == [
+        f"valuation-analyst: input_mdna.md: the manifest's trimmed record keeps {THREE}, "
+        "which no standing item of report_notes_text.md flagged",
+        "valuation-analyst: holds a input_mdna.md that is not the run's — the right name "
+        "over other bytes"]
+    broken = agent_inputs.isolation_violations(
+        _valuation_directory(tmp_path / "every", holds=MDNA, record=KEEPS_EVERY))
+    assert broken[0] == (f"valuation-analyst: input_mdna.md: the manifest's trimmed record "
+                         f"keeps {ONE}, {THREE}, which no standing item of "
+                         "report_notes_text.md flagged")
+    assert len(broken) == 2 and "other bytes" in broken[1]
+    # the other side: a record leaving out a paragraph a standing item flagged
+    broken = agent_inputs.isolation_violations(
+        _valuation_directory(tmp_path / "fewer", holds=CUT_TO_TWO, record=KEEPS_TWO_ONLY))
+    assert broken[0] == (f"valuation-analyst: input_mdna.md: the manifest's trimmed record "
+                         f"leaves out {FOUR}, which a standing item of report_notes_text.md "
+                         "flagged")
+    assert len(broken) == 2 and "other bytes" in broken[1]
+    # and the clean run: the record is the set and the file is the cut by it
+    assert agent_inputs.isolation_violations(
+        _valuation_directory(tmp_path / "clean", holds=TRIMMED, record=RECORD)) == []
+
+
+def test_a_trimmed_file_the_record_leaves_out_is_named(tmp_path):
+    """A record naming the MD&A and not the 8-K, the 8-K placed whole: named,
+    whatever the 8-K holds, because the router records every file it trims and
+    a file the record leaves out would be handed whole. Both named: clean."""
+    run = _valuation_directory(tmp_path / "half", holds=TRIMMED, record=RECORD)
+    manifest = json.loads((run / "input_manifest.json").read_text(encoding="utf-8"))
+    del manifest["agents"]["valuation-analyst"]["trimmed"]["input_8k.md"]
+    (run / "input_manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    broken = agent_inputs.isolation_violations(run)
+    assert broken == ["valuation-analyst: input_8k.md: placed with no trim of its own on "
+                      "record, though the manifest records a trim for input_mdna.md; the "
+                      "router records every file it trims"]
+    assert agent_inputs.isolation_violations(
+        _valuation_directory(tmp_path / "both", holds=TRIMMED, record=RECORD)) == []
+
+
+def test_a_trim_built_from_a_wrong_set_is_reported_even_under_a_matching_record(tmp_path):
+    """The record and the file agree with each other and both keep the third
+    paragraph: the check does not take the record's word for the set."""
+    run = _valuation_directory(tmp_path / "wrong", holds=CUT_TO_THREE, record=KEEPS_THREE)
+    assert agent_inputs.handed(MDNA, KEEPS_THREE) == CUT_TO_THREE      # they agree
+    broken = agent_inputs.isolation_violations(run)
+    assert any(THREE in line and "no standing item" in line for line in broken)
+    assert any("other bytes" in line for line in broken)
+    # when the drop list is emptied, c stands, THREE is flagged, and the same
+    # directory is clean: the set is read off the run's own record of the gate
+    manifest = json.loads((run / "input_manifest.json").read_text(encoding="utf-8"))
+    manifest["dropped_items"] = []
+    (run / "input_manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    assert agent_inputs.isolation_violations(run) == []
+
+
+def test_a_trim_on_a_run_with_no_gate_record_is_a_broken_boundary(tmp_path):
+    run = _valuation_directory(tmp_path / "nogate", holds=TRIMMED, record=RECORD)
+    manifest = json.loads((run / "input_manifest.json").read_text(encoding="utf-8"))
+    del manifest["dropped_items"]
+    (run / "input_manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    broken = agent_inputs.isolation_violations(run)
+    assert len(broken) == 1 and broken[0].startswith(
+        "valuation-analyst: the manifest records a trim, but ")
+    assert "no record that the quote gate ran" in broken[0]

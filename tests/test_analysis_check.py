@@ -76,6 +76,54 @@ def accounting(**changes):
     return payload
 
 
+def test_an_exclusion_keyed_by_report_takes_the_id_out_of_that_report_alone():
+    """One id printed in both reports, dropped from the notes report only (a
+    resumed night's twin): a bare citation of it is refused, because by id alone
+    it would name the dropped notes item as well as the standing numbers one;
+    a reconciliation row naming it as the notes item is refused, naming it as
+    the numbers item stands on that side; the same id as a plain set is out of
+    both; and with nothing dropped the bare citation stands."""
+    shared = "revenue_recognition_payment_terms_extended"
+    numbers = NUMBERS + f'''
+```json
+{{ "id": "{shared}", "what_changed": "z", "quote": "q", "paragraph_id": "p" }}
+```'''
+    sources = {"report_numbers.md": numbers, "report_notes_text.md": NOTES}
+    payload = accounting(reconciliation=[
+        {"notes_item": shared, "numbers_items": [], "outcome": "unresolved", "why": "a"},
+        {"notes_item": "revenue_recognition_payment_terms_extended_twin_free",
+         "numbers_items": [shared], "outcome": "unresolved", "why": "b"}])
+    payload["anomalies"][0]["evidence"] = [shared]
+    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=sources,
+                               excluded={"report_notes_text.md": {shared}})
+    assert out["anomalies"] == []
+    assert [row["where"] for row in out["dropped_items"]] == [
+        "reconciliation[0]", "reconciliation[1]", "anomalies[0]"]
+    assert out["dropped_items"][0]["reason"] == (
+        f"notes_item {shared!r} is not an item of report_notes_text.md")
+    assert "twin_free" in out["dropped_items"][1]["reason"]          # its own notes side
+    assert out["dropped_items"][2]["reason"] == (
+        f"evidence: {shared!r} is an id the quote gate dropped from a report this analyst "
+        "saw, so by id alone it does not name one standing item")
+    # the same id as a plain set: out of both reports, every citation falls
+    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=sources,
+                               excluded={shared})
+    assert out["anomalies"] == []
+    assert [row["where"] for row in out["dropped_items"]] == [
+        "reconciliation[0]", "reconciliation[1]", "anomalies[0]"]
+    # dropped from the numbers report alone: the notes-side row stands, the bare
+    # citation still falls
+    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=sources,
+                               excluded={"report_numbers.md": {shared}})
+    assert [row["where"] for row in out["dropped_items"]] == ["reconciliation[1]",
+                                                               "anomalies[0]"]
+    # the other side: nothing dropped, the bare citation names the one item
+    # printed in each report under that id and stands, as do both rows' sides
+    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=sources)
+    assert [a["id"] for a in out["anomalies"]] == ["revenue_recognition_receivables_outrun_revenue"]
+    assert [row["where"] for row in out["dropped_items"]] == ["reconciliation[1]"]
+
+
 def test_a_clean_analysis_stands_whole():
     out = analysis_check.check("accounting", accounting(), fields=FIELDS, sources=SOURCES)
     assert out["dropped_count"] == 0
@@ -243,6 +291,145 @@ def test_an_assumption_scenario_without_a_reason_is_dropped_whole():
                                            fields=FIELDS, sources={})
     assert set(out["scenarios"]) == {"base", "bull"}
     assert out["dropped_count"] == 1
+
+
+def test_a_quote_across_a_seam_of_the_trimmed_prose_fails_the_gate():
+    """The valuation analyst's MD&A is cut to the flagged paragraphs with one line
+    holding the two markers between kept blocks that were not adjacent. A quote
+    inside a kept block string-matches the copy and the filing; one running off
+    the end of the second paragraph into the start of the fourth string-matches
+    the copy, and nothing the filing printed."""
+    two, four = "0000000000-00-000001:mdna:2", "0000000000-00-000001:mdna:4"
+    filing = (f"# T mdna\n\n[0000000000-00-000001:mdna:1]\nFirst.\n\n[{two}]\nSecond, kept.\n\n"
+              f"[0000000000-00-000001:mdna:3]\nThird.\n\n[{four}]\nFourth, kept.\n")
+    copy_seen = (f"# T mdna\n\n[{two}]\nSecond, kept.\n\n[{two}] [{four}]\n\n"
+                 f"[{four}]\nFourth, kept.\n")
+    sources, full = {"input_mdna.md": copy_seen}, {"input_mdna.md": filing}
+    inside = {"quote": "Second, kept.", "quote_from": "input_mdna.md"}
+    across = {"quote": f"Second, kept.\n\n[{two}] [{four}]\n\n[{four}]\nFourth, kept.",
+              "quote_from": "input_mdna.md"}
+    assert across["quote"] in copy_seen and across["quote"] not in filing
+    assert analysis_check.quote_problem(inside, sources, full) is None
+    assert analysis_check.quote_problem(across, sources) is None     # the copy alone: passes
+    problem = analysis_check.quote_problem(across, sources, full)
+    assert problem is not None and "across a seam" in problem
+    # And through the first pass's gate: the scenario quoting across the seam is dropped.
+    scenario = {name: 0.02 for name in ("revenue_growth_year_one", "terminal_growth",
+                                         "operating_margin_year_one",
+                                         "operating_margin_year_ten",
+                                         "reinvestment_rate_year_one",
+                                         "reinvestment_rate_year_ten")}
+    good = dict(scenario, reasons={name: dict(inside, reason="r") for name in scenario})
+    bad = dict(scenario, reasons={name: dict(across, reason="r") for name in scenario})
+    out = analysis_check.check_assumptions({"scenarios": {"bear": bad, "base": good, "bull": good}},
+                                           fields=FIELDS, sources=sources, filing=full)
+    assert set(out["scenarios"]) == {"base", "bull"}
+    assert "across a seam" in out["dropped_items"][0]["reason"]
+    without = analysis_check.check_assumptions({"scenarios": {"bear": bad, "base": good, "bull": good}},
+                                               fields=FIELDS, sources=sources)
+    assert set(without["scenarios"]) == {"bear", "base", "bull"}  # the copy alone cannot tell
+
+
+# --- the module's own command ------------------------------------------------------------
+
+SEAM_TWO, SEAM_FOUR = "0000000000-00-000001:mdna:2", "0000000000-00-000001:mdna:4"
+SEAM_FILING = (f"# T mdna\n\n[0000000000-00-000001:mdna:1]\nFirst.\n\n[{SEAM_TWO}]\nSecond, kept.\n\n"
+               f"[0000000000-00-000001:mdna:3]\nThird.\n\n[{SEAM_FOUR}]\nFourth, kept.\n")
+SEAM_COPY = (f"# T mdna\n\n[{SEAM_TWO}]\nSecond, kept.\n\n[{SEAM_TWO}] [{SEAM_FOUR}]\n\n"
+             f"[{SEAM_FOUR}]\nFourth, kept.\n")
+DRIVERS = ("revenue_growth_year_one", "terminal_growth", "operating_margin_year_one",
+           "operating_margin_year_ten", "reinvestment_rate_year_one", "reinvestment_rate_year_ten")
+
+
+def _scenarios(reason: dict) -> dict:
+    scenario = {name: 0.02 for name in DRIVERS}
+    return dict(scenario, reasons={name: dict(reason, reason="r") for name in DRIVERS})
+
+
+def _command(tmp_path, *, kind: str, written: dict, agent_files: dict[str, str],
+             run_files: dict[str, str] | None, dropped: list[dict] = ()) -> list[str]:
+    """A run directory and an agent directory on disk, and the command over them;
+    `run_files` None leaves `--run` off."""
+    agent = tmp_path / "agents" / "valuation-analyst"
+    agent.mkdir(parents=True, exist_ok=True)
+    for name, text in agent_files.items():
+        (agent / name).write_text(text, encoding="utf-8")
+    (tmp_path / "written.json").write_text(json.dumps(written), encoding="utf-8")
+    (tmp_path / "calculator.json").write_text(json.dumps(FIELDS), encoding="utf-8")
+    command = ["--kind", kind, "--agent-dir", str(agent), "--written", str(tmp_path / "written.json"),
+               "--calculator", str(tmp_path / "calculator.json"), "--out", str(tmp_path / "out.json")]
+    if run_files is not None:
+        for name, text in run_files.items():
+            (tmp_path / name).write_text(text, encoding="utf-8")
+        (tmp_path / "input_manifest.json").write_text(
+            json.dumps({"accession": "0000000000-00-000001", "dropped_items": list(dropped)}),
+            encoding="utf-8")
+        command += ["--run", str(tmp_path)]
+    return command
+
+
+def test_the_command_holds_a_valuation_quote_to_the_filing_and_refuses_to_run_without_it(
+        tmp_path, monkeypatch, capsys):
+    """Through the command with --run, the scenario quoting across the seam of the
+    trimmed copy is dropped, as in the pipeline; a quote the filing printed
+    passes; and the assumptions kind without --run is refused with the reason."""
+    monkeypatch.setattr(analysis_check.interpreter_pin, "enforce", lambda: 0)
+    inside = {"quote": "Second, kept.", "quote_from": "input_mdna.md"}
+    across = {"quote": f"Second, kept.\n\n[{SEAM_TWO}] [{SEAM_FOUR}]\n\n[{SEAM_FOUR}]\nFourth, kept.",
+              "quote_from": "input_mdna.md"}
+    written = {"scenarios": {"bear": _scenarios(across), "base": _scenarios(inside),
+                             "bull": _scenarios(inside)}}
+    command = _command(tmp_path / "seam", kind="assumptions", written=written,
+                       agent_files={"input_mdna.md": SEAM_COPY},
+                       run_files={"input_mdna.md": SEAM_FILING})
+    assert analysis_check.main(command) == 0
+    out = json.loads((tmp_path / "seam" / "out.json").read_text(encoding="utf-8"))
+    assert set(out["scenarios"]) == {"base", "bull"}
+    assert "across a seam" in out["dropped_items"][0]["reason"]
+    assert "assumptions -- 1 dropped" in capsys.readouterr().err
+    # the other side: every quote the filing printed, nothing dropped
+    written = {"scenarios": {name: _scenarios(inside) for name in ("bear", "base", "bull")}}
+    command = _command(tmp_path / "printed", kind="assumptions", written=written,
+                       agent_files={"input_mdna.md": SEAM_COPY},
+                       run_files={"input_mdna.md": SEAM_FILING})
+    assert analysis_check.main(command) == 0
+    out = json.loads((tmp_path / "printed" / "out.json").read_text(encoding="utf-8"))
+    assert set(out["scenarios"]) == {"bear", "base", "bull"} and out["dropped_count"] == 0
+    # without --run the valuation kinds are refused, before anything is read
+    command = _command(tmp_path / "norun", kind="assumptions", written=written,
+                       agent_files={"input_mdna.md": SEAM_COPY}, run_files=None)
+    assert analysis_check.main(command) == analysis_check.BAD_INPUT
+    err = capsys.readouterr().err
+    assert "needs --run" in err and "across a seam" in err
+    assert not (tmp_path / "norun" / "out.json").exists()
+    command = _command(tmp_path / "norun_valuation", kind="valuation", written={},
+                       agent_files={}, run_files=None)
+    assert analysis_check.main(command) == analysis_check.BAD_INPUT
+
+
+def test_the_command_refuses_a_citation_of_a_dropped_id_with_the_runs_drop_rows(
+        tmp_path, monkeypatch, capsys):
+    """An accounting analysis citing an id the manifest's drop rows name for the
+    notes report: through the command with --run the citation is refused, as in
+    the pipeline; without --run the rows are not read, the command says so, and
+    the citation stands -- the copy alone cannot tell."""
+    monkeypatch.setattr(analysis_check.interpreter_pin, "enforce", lambda: 0)
+    dropped = [{"report": "report_notes_text.md", "reason": "planted",
+                "item_id": "revenue_recognition_payment_terms_extended"}]
+    command = _command(tmp_path / "rows", kind="accounting", written=accounting(),
+                       agent_files=SOURCES, run_files={}, dropped=dropped)
+    assert analysis_check.main(command) == 0
+    out = json.loads((tmp_path / "rows" / "out.json").read_text(encoding="utf-8"))
+    assert out["anomalies"] == []
+    reasons = [row["reason"] for row in out["dropped_items"]]
+    assert any("an id the quote gate dropped from a report this analyst saw" in r for r in reasons)
+    capsys.readouterr()
+    command = _command(tmp_path / "norows", kind="accounting", written=accounting(),
+                       agent_files=SOURCES, run_files=None)
+    assert analysis_check.main(command) == 0
+    out = json.loads((tmp_path / "norows" / "out.json").read_text(encoding="utf-8"))
+    assert [a["id"] for a in out["anomalies"]] == ["revenue_recognition_receivables_outrun_revenue"]
+    assert "no --run: the gate's drop rows were not read" in capsys.readouterr().err
 
 
 # --- the memo ---------------------------------------------------------------------------

@@ -67,6 +67,9 @@ LIMITS_KO = {
 }
 # A dropped sentence is named, never quoted: the reason the gate wrote can carry
 # the very digit or word it dropped, and the memo prints nothing the gate refused.
+ABSENT_KO = {"accounting": "회계 분석이 실행되지 않았습니다.",
+             "financial": "재무 분석이 실행되지 않았습니다.",
+             "valuation": "가치평가 분석가의 해석이 없습니다."}
 DROPPED_KO = "(검증을 통과하지 못해 제외된 문장입니다. 이유는 분석 파일의 dropped_items에 있습니다.)"
 
 RATIO_WORDS = ("margin", "growth", "rate", "ratio", "over", "return", "turnover",
@@ -192,12 +195,19 @@ def _entry(summary: dict, key: str, analysis: dict, block: str | None, fields: d
     return fill(text, fields)
 
 
-def accounting_section(analysis: dict | None, fields: dict, *, adjusted: dict | None = None
-                       ) -> list[str]:
+def _absent(frame: str, missing: dict | None) -> str:
+    """The one line a missing frame prints: that it is missing, and the reason the
+    run recorded for it when it recorded one."""
+    reason = (missing or {}).get(frame)
+    return ABSENT_KO[frame] + (f" 이유: {reason}" if reason else "")
+
+
+def accounting_section(analysis: dict | None, fields: dict, *, adjusted: dict | None = None,
+                       missing: dict | None = None) -> list[str]:
     out = ["## 1. 회계", "",
            "### 1.1 회계 분석 — 보고된 이익과 현금이 경제적 실질을 반영하는가", ""]
     if analysis is None:
-        return out + ["회계 분석이 실행되지 않았습니다.", ""]
+        return out + [_absent("accounting", missing), ""]
     summary = analysis.get("summary_ko") or {}
     for key, name in ACCOUNTING_KO.items():
         out.append(f"- **{name}**: {_entry(summary, key, analysis, 'areas', fields)}")
@@ -223,10 +233,11 @@ def accounting_section(analysis: dict | None, fields: dict, *, adjusted: dict | 
     return out + ["", f"_한계: {LIMITS_KO['accounting']}_", ""]
 
 
-def financial_section(analysis: dict | None, fields: dict) -> list[str]:
+def financial_section(analysis: dict | None, fields: dict,
+                      missing: dict | None = None) -> list[str]:
     out = ["### 2.1 재무 분석 — 이 회사는 얼마나 건강한가", ""]
     if analysis is None:
-        return out + ["재무 분석이 실행되지 않았습니다.", ""]
+        return out + [_absent("financial", missing), ""]
     summary = analysis.get("summary_ko") or {}
     for key, name in FINANCIAL_KO.items():
         block = "sections" if key in analysis_check.FINANCIAL_SECTIONS else None
@@ -240,7 +251,8 @@ def financial_section(analysis: dict | None, fields: dict) -> list[str]:
     return out + ["", f"_한계: {LIMITS_KO['financial']}_", ""]
 
 
-def valuation_section(analysis: dict | None, fields: dict) -> list[str]:
+def valuation_section(analysis: dict | None, fields: dict,
+                      missing: dict | None = None) -> list[str]:
     out = ["### 2.2 가치평가 — 이 회사의 가치는 얼마이고, 주가는 무엇을 이미 가정하는가", ""]
     value = fields.get("valuation") or {}
     if "missing" in value:
@@ -260,7 +272,7 @@ def valuation_section(analysis: dict | None, fields: dict) -> list[str]:
                 ""]
     out += cost_of_debt_fallback_line(fields)
     if analysis is None:
-        return out + ["가치평가 분석가의 해석이 없습니다.", "",
+        return out + [_absent("valuation", missing), "",
                       f"_한계: {LIMITS_KO['valuation']}_", ""]
     summary = analysis.get("summary_ko") or {}
     for key, name in VALUATION_KO.items():
@@ -298,19 +310,24 @@ def baselines_section(baselines: dict | None) -> list[str]:
 
 def memo(*, ticker: str, form: str, period_end: str, cutoff: str, fields: dict,
          accounting: dict | None, financial: dict | None, valuation: dict | None,
-         baselines: dict | None, filings_only: dict | None = None) -> str:
+         baselines: dict | None, filings_only: dict | None = None,
+         missing: dict[str, str] | None = None) -> str:
     """`fields` is the final calculator; `filings_only` the view the accounting and
     financial analysts read. Each section's paths are filled from the file its
-    analyst was handed, so no sentence prints a number its writer did not see."""
+    analyst was handed, so no sentence prints a number its writer did not see.
+    `missing` is the reason, by frame (accounting, financial, valuation), that a
+    frame handed as None is absent -- the Fable limit, a failed call -- and the
+    memo says it where the frame would be, so a memo written from what finished
+    says what did not."""
     seen = filings_only if filings_only is not None else fields
     lines = [f"# {ticker} — {form}, {period_end} 기간 (제출일 {cutoff}) 분석 메모", "",
              "세 분석은 따로 적습니다. 세 분석을 합친 점수나 결론, 회사 간 순위는 없습니다. "
              "숫자는 모두 Python이 공시된 값에서 계산했고, 분석가는 숫자를 직접 쓰지 않았습니다.",
              ""]
-    lines += accounting_section(accounting, seen, adjusted=fields)
+    lines += accounting_section(accounting, seen, adjusted=fields, missing=missing)
     lines += ["## 2. 재무", ""]
-    lines += financial_section(financial, seen)
-    lines += valuation_section(valuation, fields)
+    lines += financial_section(financial, seen, missing=missing)
+    lines += valuation_section(valuation, fields, missing=missing)
     lines += baselines_section(baselines)
     missing = fields.get("missing") or []
     if missing:

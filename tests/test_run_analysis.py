@@ -10,8 +10,10 @@ only the items the quote gate kept.
 from __future__ import annotations
 
 import json
+import re
+import shutil
 
-from src import agent_inputs, run_analysis
+from src import agent_inputs, fable_batch, run_analysis
 
 
 def test_every_analyst_runs_its_committed_definition():
@@ -120,18 +122,25 @@ DRIVERS = {"revenue_growth_year_one": 0.2, "terminal_growth": 0.03,
            "reinvestment_rate_year_one": 0.3, "reinvestment_rate_year_ten": 0.2}
 
 
-def _fake_ask(seen: dict):
+def _fake_ask(seen: dict, notes_report: str = "no items\n", assumptions: dict | None = None,
+              numbers_report: str = NUMBERS_REPORT, accounting_analysis: dict | None = None):
+    """`notes_report` and `numbers_report` are what the stubbed readers write;
+    `assumptions` the valuation analyst's first pass, by default three scenarios
+    citing one field."""
     def ask(directory, *, agent, writes, message, spec, log):
         seen[directory.name] = sorted(path.name for path in directory.iterdir())
         for name in writes:
             if name == "report_numbers.md":
-                text = NUMBERS_REPORT
+                text = numbers_report
             elif name == "report_notes_text.md":
-                text = "no items\n"
+                text = notes_report
             elif name == "analysis_accounting.json":
-                text = json.dumps(_analysis("accounting", "earnings_quality_accruals_rising"))
+                text = json.dumps(accounting_analysis if accounting_analysis is not None
+                                  else _analysis("accounting", "earnings_quality_accruals_rising"))
             elif name == "analysis_financial.json":
                 text = json.dumps(_analysis("financial", "earnings_quality_accruals_rising"))
+            elif name == "assumptions.json" and assumptions is not None:
+                text = json.dumps(assumptions)
             elif name in ("assumptions.json", "control_assumptions.json"):
                 reason = {"reason": "a reason", "fields": ["ratios.profitability.gross_margin"]}
                 text = json.dumps({"scenarios": {s: dict(DRIVERS, reasons={d: reason for d in DRIVERS})
@@ -162,7 +171,7 @@ def finished(tmp_path_factory):
         manifest = run_analysis.run_company(run=run, ticker="NVDA", form="10-Q",
                                             cutoff="2026-08-26", period_end="2026-07-26",
                                             store=run_analysis.cutoff_guard.FIXTURES,
-                                            prices=None)
+                                            prices=None, control="always")
     finally:
         run_analysis.ask = original
     return run, manifest, seen
@@ -281,13 +290,17 @@ def test_a_named_model_reaches_every_agent_and_the_manifest_says_so(tmp_path, mo
     manifest = run_analysis.run_company(run=run, ticker="NVDA", form="10-Q",
                                         cutoff="2026-08-26", period_end="2026-07-26",
                                         store=run_analysis.cutoff_guard.FIXTURES,
-                                        prices=None, model="opus")
+                                        prices=None, model="opus", control="always")
     # both valuation passes run the one committed valuation-analyst definition
     assert sorted(agent for agent, _ in asked) == sorted([
         "numbers-reader", "notes-text-reader", "accounting-analyst", "financial-analyst",
         "valuation-analyst", "valuation-analyst", "control-single-agent"])
     assert {model for _, model in asked} == {"opus"}
     assert manifest["model_override"]["model"] == "opus"
+    # applies_to names the agents this invocation called: all seven, here
+    assert manifest["model_override"]["applies_to"] == [
+        "numbers-reader", "notes-text-reader", "accounting-analyst", "financial-analyst",
+        "valuation-analyst", "valuation-analyst-second-pass", "control-single-agent"]
     assert run_analysis.definition("accounting-analyst")["model"] == "fable"
 
 
@@ -330,7 +343,7 @@ def test_a_run_with_a_market_table_is_labelled_by_python_and_never_marked_unavai
     manifest = run_analysis.run_company(run=run, ticker="NVDA", form="10-Q",
                                         cutoff="2026-08-26", period_end="2026-07-26",
                                         store=run_analysis.cutoff_guard.FIXTURES,
-                                        prices=None)
+                                        prices=None, control="always")
     assert manifest["analysis_stages"]["market_labels"]["written"] is True
     assert manifest["analysis_stages"]["market_labels_check"]["checked"] is True
     assert manifest.get("market_table") != "unavailable"
@@ -340,7 +353,1170 @@ def test_a_run_with_a_market_table_is_labelled_by_python_and_never_marked_unavai
     agent_files = {path.name for path in (run / "agents").rglob("*") if path.is_file()}
     assert "input_market.json" not in agent_files and "market_labels.json" not in agent_files
     control = run / run_analysis.CONTROL_DIRNAME
-    control_files = {path.name for path in control.rglob("*") if path.is_file()} if control.is_dir() else set()
+    assert control.is_dir()                                     # the control ran
+    control_files = {path.name for path in control.rglob("*") if path.is_file()}
+    assert "input_numbers.json" in control_files                # and holds the bundle
     assert "input_market.json" not in control_files and "market_labels.json" not in control_files
     labels = json.loads((run / "market_labels.json").read_text())
     assert [one["labels"][0]["label"] for one in labels["items"]] == ["priced_in"]
+
+
+# --- Fable, used efficiently (the owner's decision of 2026-10-06) ---------------------------
+
+class _Done:
+    def __init__(self, returncode, stdout, stderr=""):
+        self.returncode, self.stdout, self.stderr = returncode, stdout, stderr
+
+
+def _cli(answers):
+    """A stand-in for the claude CLI: each call pops the next (exit, json, files) answer."""
+    calls = []
+
+    def run(command, cwd, capture_output, text, timeout):
+        exit_code, payload, files = answers.pop(0)
+        for name, content in (files or {}).items():
+            (cwd / name).write_text(content)
+        calls.append(command)
+        return _Done(exit_code, json.dumps(payload))
+    return run, calls
+
+
+def _ask(tmp_path, monkeypatch, answers, model):
+    run, calls = _cli(answers)
+    monkeypatch.setattr(run_analysis.subprocess, "run", run)
+    record = run_analysis.ask(tmp_path, agent="x", writes=("out.json",), message="m",
+                              spec={"model": model, "description": "d", "prompt": "p",
+                                    "tools": ["Read"]}, log=tmp_path / "x.log")
+    return record, calls
+
+
+# A call that crashed after spending tokens: a plain failure, which a retry answers.
+SPENT = {"input_tokens": 5, "output_tokens": 1}
+FAILING = (1, {"is_error": True, "result": "crashed", "usage": SPENT}, None)
+
+
+def test_a_failed_fable_call_is_run_again_at_most_twice(tmp_path, monkeypatch):
+    record, calls = _ask(tmp_path, monkeypatch, [FAILING] * 5, "fable")
+    assert record["result"] == "failed" and len(calls) == 3
+    assert "limit_reached" not in record
+
+
+# A call that passed: tokens spent, served by Fable, the file written.
+PASSING = (0, {"usage": {"input_tokens": 7, "output_tokens": 2}, "total_cost_usd": 0.5,
+               "modelUsage": {"claude-fable-5-1": {"outputTokens": 2}}}, {"out.json": "{}"})
+
+
+def test_every_attempt_is_on_record_and_the_tokens_are_their_sum(tmp_path, monkeypatch):
+    """Two failures then a pass: three attempts listed, each with its own usage
+    and outcome, and the record's token fields the sum over them -- 5+5+7 in,
+    1+1+2 out -- under the names a reader of the record already knows. A call
+    that passed first lists one attempt, and its fields are that attempt's."""
+    record, calls = _ask(tmp_path, monkeypatch, [FAILING, FAILING, PASSING], "fable")
+    assert record["result"] == "written" and len(calls) == 3
+    assert [row["attempt"] for row in record["attempts"]] == [1, 2, 3]
+    assert [row["outcome"] for row in record["attempts"]] == ["failed", "failed", "written"]
+    assert [row["input_tokens"] for row in record["attempts"]] == [5, 5, 7]
+    assert record["attempts"][2]["model_served"] == "claude-fable-5-1"
+    assert all(isinstance(row["duration_s"], float) for row in record["attempts"])
+    assert record["input_tokens"] == 17 and record["output_tokens"] == 4
+    assert record["cost_usd"] == 0.5                            # the one attempt that cost
+    assert record["attempt"] == 3 and record["model_served"] == "claude-fable-5-1"
+    record, _ = _ask(tmp_path, monkeypatch, [PASSING], "fable")
+    assert len(record["attempts"]) == 1 and record["input_tokens"] == 7
+    # the other outcome: a limit ends the list where it stands
+    _two_second_clock(monkeypatch)
+    record, _ = _ask(tmp_path, monkeypatch, [ZERO_TOKEN_FAILURE] * 3, "fable")
+    assert [row["outcome"] for row in record["attempts"]] == ["limit"]
+
+
+def test_a_failed_opus_call_is_run_again_once(tmp_path, monkeypatch):
+    record, calls = _ask(tmp_path, monkeypatch, [FAILING] * 5, "opus")
+    assert record["result"] == "failed" and len(calls) == 2
+
+
+def test_a_call_whose_output_passed_is_never_run_again(tmp_path, monkeypatch):
+    good = (0, {"is_error": False, "result": "ok"}, {"out.json": "{}"})
+    record, calls = _ask(tmp_path, monkeypatch, [good] * 3, "fable")
+    assert record["result"] == "written" and len(calls) == 1
+
+
+def test_a_file_that_is_not_json_counts_as_a_failed_call(tmp_path, monkeypatch):
+    bad = (0, {"is_error": False, "result": "ok", "usage": SPENT}, {"out.json": "not json"})
+    good = (0, {"is_error": False, "result": "ok"}, {"out.json": "{}"})
+    record, calls = _ask(tmp_path, monkeypatch, [bad, good], "fable")
+    assert record["result"] == "written" and len(calls) == 2
+
+
+def test_a_call_never_sees_its_own_earlier_output_and_a_session_that_writes_nothing_is_not_written(
+        tmp_path, monkeypatch):
+    (tmp_path / "out.json").write_text('{"stale": true}')
+    silent = (0, {"is_error": False, "result": "ok", "usage": SPENT}, None)
+    record, calls = _ask(tmp_path, monkeypatch, [silent] * 5, "fable")
+    assert record["result"] == "failed" and len(calls) == 3
+    assert "wrote []" in record["reason"]
+    assert not (tmp_path / "out.json").exists()
+    (tmp_path / "out.json").write_text('{"stale": true}')
+    good = (0, {"is_error": False, "result": "ok"}, {"out.json": '{"fresh": true}'})
+    record, calls = _ask(tmp_path, monkeypatch, [good], "fable")
+    assert record["result"] == "written" and len(calls) == 1
+    assert (tmp_path / "out.json").read_text() == '{"fresh": true}'
+
+
+def test_one_predicate_says_what_is_fable_and_a_full_id_gets_the_fable_budget(
+        tmp_path, monkeypatch):
+    assert run_analysis.is_fable("fable") and run_analysis.is_fable("claude-fable-5-1")
+    assert not run_analysis.is_fable("opus") and not run_analysis.is_fable("claude-opus-5-5")
+    assert not run_analysis.is_fable(None)
+    record, calls = _ask(tmp_path, monkeypatch, [FAILING] * 5, "claude-fable-5-1")
+    assert record["result"] == "failed" and len(calls) == 3
+    (tmp_path / "o").mkdir()
+    record, calls = _ask(tmp_path / "o", monkeypatch, [FAILING] * 5, "claude-opus-5-5")
+    assert record["result"] == "failed" and len(calls) == 2
+    from src import fable_batch
+    assert fable_batch.fable_tokens({"agents": {"a": {"model_served": "claude-fable-5-1",
+                                                       "input_tokens": 7}}}) == 7
+    assert fable_batch.fable_tokens({"agents": {"a": {"model_served": "claude-opus-5-5",
+                                                       "input_tokens": 7}}}) == 0
+
+
+def _two_second_clock(monkeypatch):
+    """Each read of the clock moves it two seconds on, and a call reads it once
+    before and once after the stubbed subprocess, so every call takes two seconds."""
+    clock = [0.0]
+
+    def monotonic():
+        clock[0] += 2.0
+        return clock[0]
+    monkeypatch.setattr(run_analysis.time, "monotonic", monotonic)
+
+
+ZERO_TOKEN_FAILURE = (1, {"is_error": True, "result": "",
+                          "usage": {"input_tokens": 0, "output_tokens": 0}}, None)
+
+
+def test_a_fable_call_failing_with_no_token_spent_in_two_seconds_is_the_limit(
+        tmp_path, monkeypatch):
+    """lessons.md 2026-09-29: the limit showed up as a failed call ending in about two
+    seconds with zero tokens, and is read as the limit before anything else."""
+    _two_second_clock(monkeypatch)
+    record, calls = _ask(tmp_path, monkeypatch, [ZERO_TOKEN_FAILURE] * 3, "fable")
+    assert record["limit_reached"] is True and len(calls) == 1
+    assert "no token spent" in record["reason"] and "2.0s" in record["reason"]
+    # The other sides: tokens spent is a plain failure, retried; an Opus call is
+    # not read this way; a slow zero-token failure is not either.
+    for name in ("spent", "opus", "slow"):
+        (tmp_path / name).mkdir()
+    record, calls = _ask(tmp_path / "spent", monkeypatch, [FAILING] * 3, "fable")
+    assert "limit_reached" not in record and len(calls) == 3
+    record, calls = _ask(tmp_path / "opus", monkeypatch, [ZERO_TOKEN_FAILURE] * 3, "opus")
+    assert "limit_reached" not in record and len(calls) == 2
+    slow = [0.0]
+
+    def slow_clock():
+        slow[0] += run_analysis.LIMIT_SECONDS
+        return slow[0]
+    monkeypatch.setattr(run_analysis.time, "monotonic", slow_clock)
+    record, calls = _ask(tmp_path / "slow", monkeypatch, [ZERO_TOKEN_FAILURE] * 3, "fable")
+    assert "limit_reached" not in record and len(calls) == 3
+
+
+def _run_with_accounting_analyst_answering(tmp_path, monkeypatch, answers):
+    """A whole run where the accounting analyst's calls go through the real `ask`
+    over a stubbed CLI answering `answers`, and every other agent writes."""
+    run = tmp_path / "NVDA" / NVDA_ACCESSION
+    bundle = assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,
+                                   prior_runs=run.parent.parent)
+    assemble_bundle.write(bundle, run)
+    written, real_ask = _fake_ask({}), run_analysis.ask
+    cli, calls = _cli(list(answers))
+
+    def ask(directory, *, agent, writes, message, spec, log):
+        if agent == "accounting-analyst":
+            monkeypatch.setattr(run_analysis.subprocess, "run", cli)
+            assert spec["model"] == "fable"
+            return real_ask(directory, agent=agent, writes=writes, message=message,
+                            spec=spec, log=log)
+        return written(directory, agent=agent, writes=writes, message=message,
+                       spec=spec, log=log)
+
+    monkeypatch.setattr(run_analysis, "ask", ask)
+    manifest = run_analysis.run_company(run=run, ticker="NVDA", form="10-Q",
+                                        cutoff="2026-08-26", period_end="2026-07-26",
+                                        store=run_analysis.cutoff_guard.FIXTURES,
+                                        prices=None, control="never")
+    return run, manifest, calls
+
+
+def test_a_zero_token_two_second_failure_stops_the_run_and_exits_four(tmp_path, monkeypatch):
+    _two_second_clock(monkeypatch)
+    run, manifest, calls = _run_with_accounting_analyst_answering(
+        tmp_path, monkeypatch, [ZERO_TOKEN_FAILURE] * 3)
+    assert len(calls) == 1
+    assert manifest["fable_limit_reached"] == ["accounting-analyst"]
+    assert "no token spent" in manifest["agents"]["accounting-analyst"]["reason"]
+    assert (run / "analysis_financial.json").is_file() and (run / "memo_ko.md").is_file()
+    monkeypatch.setattr(run_analysis, "run_company", lambda **kw: manifest)
+    monkeypatch.setattr(run_analysis.interpreter_pin, "enforce", lambda: 0)
+    assert run_analysis.main(["--run", str(run), "--ticker", "NVDA", "--form", "10-Q",
+                              "--cutoff", "2026-08-26", "--period-end", "2026-07-26"]) == 4
+
+
+def test_a_failure_after_tokens_were_spent_is_retried_and_then_exits_one(tmp_path, monkeypatch):
+    _two_second_clock(monkeypatch)
+    run, manifest, calls = _run_with_accounting_analyst_answering(
+        tmp_path, monkeypatch, [FAILING] * 5)
+    assert len(calls) == 3
+    assert "fable_limit_reached" not in manifest
+    assert manifest["analysis_failure"] == "did not write: accounting-analyst"
+    monkeypatch.setattr(run_analysis, "run_company", lambda **kw: manifest)
+    monkeypatch.setattr(run_analysis.interpreter_pin, "enforce", lambda: 0)
+    assert run_analysis.main(["--run", str(run), "--ticker", "NVDA", "--form", "10-Q",
+                              "--cutoff", "2026-08-26", "--period-end", "2026-07-26"]) \
+        == run_analysis.FAILED == 1
+
+
+# --- a stopped run, continued the next night ------------------------------------------------
+
+def _stopped_at_accounting_analyst(tmp_path, monkeypatch):
+    """The limit at accounting-analyst, as the limit test above builds it."""
+    run = tmp_path / "NVDA" / NVDA_ACCESSION
+    bundle = assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,
+                                   prior_runs=run.parent.parent)
+    assemble_bundle.write(bundle, run)
+    written = _fake_ask({})
+
+    def ask(directory, *, agent, writes, message, spec, log):
+        if agent == "accounting-analyst":
+            return {"agent": agent, "result": "failed", "limit_reached": True,
+                    "reason": "You've reached your Fable limit."}
+        return written(directory, agent=agent, writes=writes, message=message,
+                       spec=spec, log=log)
+
+    monkeypatch.setattr(run_analysis, "ask", ask)
+    stopped = run_analysis.run_company(run=run, ticker="NVDA", form="10-Q",
+                                       cutoff="2026-08-26", period_end="2026-07-26",
+                                       store=run_analysis.cutoff_guard.FIXTURES,
+                                       prices=None, control="never")
+    assert stopped["fable_limit_reached"] == ["accounting-analyst"]
+    return run, stopped
+
+
+def _counting_ask(seen: dict, **reports):
+    """Every agent writes; the directories called are listed in order."""
+    written, called = _fake_ask(seen, **reports), []
+
+    def ask(directory, *, agent, writes, message, spec, log):
+        called.append(directory.name)
+        return written(directory, agent=agent, writes=writes, message=message,
+                       spec=spec, log=log)
+    return ask, called
+
+
+@pytest.mark.parametrize("explicit", [False, True])
+def test_a_stopped_run_resumes_in_place_and_calls_only_what_had_not_finished(
+        tmp_path, monkeypatch, explicit):
+    run, stopped = _stopped_at_accounting_analyst(tmp_path, monkeypatch)
+    readers_before = {name: stopped["agents"][name] for name in ("numbers-reader",
+                                                                   "notes-text-reader")}
+    ask, called = _counting_ask({})
+    monkeypatch.setattr(run_analysis, "ask", ask)
+    manifest = run_analysis.run_company(run=run, ticker="NVDA", form="10-Q",
+                                        cutoff="2026-08-26", period_end="2026-07-26",
+                                        store=run_analysis.cutoff_guard.FIXTURES,
+                                        prices=None, control="never", resume=explicit)
+    # only the stopped agent and those after it were called, each once
+    assert called == ["accounting-analyst", "valuation-analyst", "valuation-analyst-second-pass"]
+    assert manifest["resume_skipped"] == ["numbers-reader", "notes-text-reader",
+                                          "financial-analyst"]
+    assert manifest["resumed_at"].endswith("Z")
+    assert "fable_limit_reached" not in manifest
+    assert manifest["analysis_failure"] is None
+    assert {name: manifest["agents"][name] for name in readers_before} == readers_before
+    assert all(manifest["agents"][name]["result"] == "written" for name in (
+        "numbers-reader", "notes-text-reader", "accounting-analyst", "financial-analyst",
+        "valuation-analyst", "valuation-analyst-second-pass"))
+    for name in ("analysis_accounting.json", "analysis_financial.json", "assumptions.json",
+                 "analysis_valuation.json", run_analysis.BEFORE_DRIVERS, run_analysis.FINAL,
+                 "memo_ko.md", "baselines.json"):
+        assert (run / name).is_file(), name
+    assert manifest["analysis_stages"]["quote_gate"] == stopped["analysis_stages"]["quote_gate"]
+    assert "analysis_accounting" in manifest["analysis_stages"]
+    memo = (run / "memo_ko.md").read_text(encoding="utf-8")
+    assert "실행되지 않았습니다" not in memo and "해석이 없습니다" not in memo
+    assert agent_inputs.isolation_violations(run) == []
+    # Resumed again: nothing is missing now.
+    with pytest.raises(run_analysis.NothingToResume, match="nothing to resume"):
+        run_analysis.run_company(run=run, ticker="NVDA", form="10-Q", cutoff="2026-08-26",
+                                 period_end="2026-07-26",
+                                 store=run_analysis.cutoff_guard.FIXTURES, prices=None,
+                                 control="never", resume=True)
+
+
+def _crashing_financial_analyst(seen: dict):
+    """Every agent writes; the financial analyst's first answer is a JSON list,
+    which `ask` reads as written (it is JSON) and the analysis gate refuses."""
+    written, state = _fake_ask(seen), {"financial_calls": 0}
+
+    def ask(directory, *, agent, writes, message, spec, log):
+        if agent == "financial-analyst":
+            state["financial_calls"] += 1
+            if state["financial_calls"] == 1:
+                (directory / "analysis_financial.json").write_text("[]")
+                return {"agent": agent, "result": "written", "input_tokens": 1,
+                        "output_tokens": 1, "model_served": "claude-fable-5-1",
+                        "attempts": [{"attempt": 1, "model_served": "claude-fable-5-1",
+                                      "input_tokens": 1, "output_tokens": 1,
+                                      "outcome": "written"}]}
+        return written(directory, agent=agent, writes=writes, message=message,
+                       spec=spec, log=log)
+    return ask
+
+
+def _fable_served_ask(seen: dict):
+    """Every agent writes, served by Fable, as the real `ask` records it."""
+    written, called = _fake_ask(seen), []
+
+    def ask(directory, *, agent, writes, message, spec, log):
+        called.append(directory.name)
+        return dict(written(directory, agent=agent, writes=writes, message=message,
+                            spec=spec, log=log), model_served="claude-fable-5-1")
+    return ask, called
+
+
+def _run_keyword(control: str = "never") -> dict:
+    return dict(ticker="NVDA", form="10-Q", cutoff="2026-08-26", period_end="2026-07-26",
+                store=run_analysis.cutoff_guard.FIXTURES, prices=None, control=control)
+
+
+def test_a_crash_at_the_analysis_gate_leaves_the_passed_analyst_on_record_and_resumes(
+        tmp_path, monkeypatch):
+    """The accounting analyst passed, the financial analyst wrote a JSON list,
+    and the gate raised before `finish`. The record of every call that returned
+    is already in the manifest, with what the run stopped on and no finish
+    marker; the next invocation resumes it, calling the financial analyst and
+    what comes after and never the accounting analyst again. Then the finished
+    run is refused on resume."""
+    run = tmp_path / "NVDA" / NVDA_ACCESSION
+    assemble_bundle.write(assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,
+                                                prior_runs=run.parent.parent), run)
+    monkeypatch.setattr(run_analysis, "ask", _crashing_financial_analyst({}))
+    with pytest.raises(run_analysis.analysis_check.AnalysisInputError,
+                       match="the financial analysis is not a JSON object"):
+        run_analysis.run_company(run=run, **_run_keyword())
+    manifest = json.loads((run / "input_manifest.json").read_text(encoding="utf-8"))
+    assert run_analysis.FINISH_MARKER not in manifest and "fable_limit_reached" not in manifest
+    assert manifest["stopped_on"] == ("AnalysisInputError: the financial analysis is not a "
+                                      "JSON object")
+    assert {name: record["result"] for name, record in manifest["agents"].items()} == {
+        "numbers-reader": "written", "notes-text-reader": "written",
+        "accounting-analyst": "written", "financial-analyst": "written"}
+    assert (run / "analysis_accounting.json").is_file()
+    assert not (run / "analysis_financial.json").exists()           # the gate refused it
+    # the command: the gate's refusal is a stop like any other, exit 2 and a line
+    monkeypatch.setattr(run_analysis.interpreter_pin, "enforce", lambda: 0)
+    monkeypatch.setattr(run_analysis, "run_company", lambda **kw: (_ for _ in ()).throw(
+        run_analysis.analysis_check.AnalysisInputError("the financial analysis is not a JSON object")))
+    assert run_analysis.main(_main_command(run)) == run_analysis.BAD_INPUT == 2
+    monkeypatch.undo()
+    # resumed, by default: the record says what passed, and only the rest runs
+    ask, called = _fable_served_ask({})
+    monkeypatch.setattr(run_analysis, "ask", ask)
+    manifest = run_analysis.run_company(run=run, **_run_keyword())
+    assert called == ["financial-analyst", "valuation-analyst", "valuation-analyst-second-pass"]
+    # the first financial-analyst call was paid for: its attempt stays on record
+    # in front of the resume's own, numbered through, the tokens summed over both
+    financial = manifest["agents"]["financial-analyst"]
+    assert [row["attempt"] for row in financial["attempts"]] == [1, 2]
+    assert [row["outcome"] for row in financial["attempts"]] == ["written", "written"]
+    assert financial["input_tokens"] == 2 and financial["output_tokens"] == 2
+    assert financial["attempt"] == 2 and financial["result"] == "written"
+    assert fable_batch.agent_tokens(financial) == 4
+    # the other side: an agent called for the first time holds only its own
+    # attempt (the stub writes the older one-call shape; the real `ask` lists it)
+    valuation = manifest["agents"]["valuation-analyst"]
+    assert len(run_analysis.attempts_of(valuation)) == 1 and valuation["input_tokens"] == 1
+    # and the batch is sized from the total the filing cost: the financial
+    # analyst's two calls and the two valuation passes, each Fable-served
+    assert fable_batch.on_record(run.parent.parent) == {f"NVDA/{NVDA_ACCESSION}": 8}
+    assert manifest["resume_skipped"] == ["numbers-reader", "notes-text-reader",
+                                          "accounting-analyst"]
+    assert manifest["resumed_from"] == ("stopped on AnalysisInputError: the financial analysis "
+                                        "is not a JSON object")
+    assert "stopped_on" not in manifest and run_analysis.FINISH_MARKER in manifest
+    assert manifest["analysis_failure"] is None
+    assert (run / "analysis_financial.json").is_file() and (run / "memo_ko.md").is_file()
+    assert agent_inputs.isolation_violations(run) == []
+    # the finished run: --resume says nothing to resume, and without it the
+    # run on record is refused
+    monkeypatch.setattr(run_analysis, "ask",
+                        lambda *a, **k: (_ for _ in ()).throw(AssertionError("an agent ran")))
+    with pytest.raises(run_analysis.NothingToResume):
+        run_analysis.run_company(run=run, resume=True, **_run_keyword())
+    with pytest.raises(run_analysis.RunError, match="did not stop at the limit"):
+        run_analysis.run_company(run=run, **_run_keyword())
+
+
+def test_a_crash_in_the_calculator_after_both_analysts_leaves_both_on_record_and_resumes(
+        tmp_path, monkeypatch):
+    """`calculate(BEFORE_DRIVERS)` refuses an input after both analysts passed:
+    both are on record, the run stops on the calculator's error, and the resume
+    calls the valuation analyst and nothing before it."""
+    run = tmp_path / "NVDA" / NVDA_ACCESSION
+    assemble_bundle.write(assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,
+                                                prior_runs=run.parent.parent), run)
+    monkeypatch.setattr(run_analysis, "ask", _fake_ask({}))
+    real_calculate, state = run_analysis.calculator.calculate, {"raised": False}
+
+    def calculate(**keyword):
+        if "accounting" in keyword and "assumptions" not in keyword and not state["raised"]:
+            state["raised"] = True
+            raise run_analysis.calculator.CalculatorInputError("planted: an input is not there")
+        return real_calculate(**keyword)
+
+    monkeypatch.setattr(run_analysis.calculator, "calculate", calculate)
+    with pytest.raises(run_analysis.calculator.CalculatorInputError, match="planted"):
+        run_analysis.run_company(run=run, **_run_keyword())
+    manifest = json.loads((run / "input_manifest.json").read_text(encoding="utf-8"))
+    assert manifest["stopped_on"] == "CalculatorInputError: planted: an input is not there"
+    assert run_analysis.FINISH_MARKER not in manifest
+    assert all(manifest["agents"][name]["result"] == "written" for name in (
+        "accounting-analyst", "financial-analyst"))
+    assert (run / "analysis_accounting.json").is_file() and (run / "analysis_financial.json").is_file()
+    assert not (run / run_analysis.BEFORE_DRIVERS).exists()
+    ask, called = _counting_ask({})
+    monkeypatch.setattr(run_analysis, "ask", ask)
+    manifest = run_analysis.run_company(run=run, **_run_keyword())
+    assert called == ["valuation-analyst", "valuation-analyst-second-pass"]
+    assert manifest["resume_skipped"] == ["numbers-reader", "notes-text-reader",
+                                          "accounting-analyst", "financial-analyst"]
+    assert manifest["resumed_from"].startswith("stopped on CalculatorInputError: planted")
+    assert "stopped_on" not in manifest and manifest["analysis_failure"] is None
+    assert (run / run_analysis.BEFORE_DRIVERS).is_file() and (run / run_analysis.FINAL).is_file()
+
+
+def _stopped_at(tmp_path, monkeypatch, stopped_agent: str, control: str,
+                model: str | None = None, numbers_report: str = NUMBERS_REPORT):
+    """The limit at `stopped_agent`; every other agent writes."""
+    run = tmp_path / "NVDA" / NVDA_ACCESSION
+    bundle = assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,
+                                   prior_runs=run.parent.parent)
+    assemble_bundle.write(bundle, run)
+    written = _fake_ask({}, numbers_report=numbers_report)
+
+    def ask(directory, *, agent, writes, message, spec, log):
+        if agent == stopped_agent:
+            return {"agent": agent, "result": "failed", "limit_reached": True,
+                    "reason": "You've reached your Fable limit."}
+        return written(directory, agent=agent, writes=writes, message=message,
+                       spec=spec, log=log)
+
+    monkeypatch.setattr(run_analysis, "ask", ask)
+    stopped = run_analysis.run_company(run=run, ticker="NVDA", form="10-Q",
+                                       cutoff="2026-08-26", period_end="2026-07-26",
+                                       store=run_analysis.cutoff_guard.FIXTURES,
+                                       prices=None, control=control, model=model)
+    assert stopped["fable_limit_reached"] == [stopped_agent]
+    return run, stopped
+
+
+def _resumed(run, monkeypatch, control: str, model: str | None = None, **reports):
+    """`reports`: what the stubbed agents write, as `_fake_ask` takes them."""
+    ask, called = _counting_ask({}, **reports)
+    monkeypatch.setattr(run_analysis, "ask", ask)
+    manifest = run_analysis.run_company(run=run, ticker="NVDA", form="10-Q",
+                                        cutoff="2026-08-26", period_end="2026-07-26",
+                                        store=run_analysis.cutoff_guard.FIXTURES,
+                                        prices=None, control=control, model=model)
+    return manifest, called
+
+
+def _main_command(run, *extra: str) -> list[str]:
+    return ["--run", str(run), "--ticker", "NVDA", "--form", "10-Q", "--cutoff",
+            "2026-08-26", "--period-end", "2026-07-26", "--control", "never", *extra]
+
+
+def test_a_resume_under_another_model_than_the_stopped_run_s_is_refused(tmp_path, monkeypatch):
+    """Stopped under the definitions' own models (no --model), resumed with
+    `--model opus`: refused before any agent is called, exit 2, and the stopped
+    run's record stands as it was."""
+    run, stopped = _stopped_at_accounting_analyst(tmp_path, monkeypatch)
+    assert "model_override" not in stopped
+    before = (run / "input_manifest.json").read_bytes()
+    with pytest.raises(run_analysis.RunError, match="the run stopped under the definitions' "
+                       "own models; a resume under opus would mix models, which the record "
+                       "cannot compare"):
+        _resumed(run, monkeypatch, "never", model="opus")
+    monkeypatch.setattr(run_analysis.interpreter_pin, "enforce", lambda: 0)
+    monkeypatch.setattr(run_analysis, "ask",
+                        lambda *a, **k: (_ for _ in ()).throw(AssertionError("an agent ran")))
+    assert run_analysis.main(_main_command(run, "--model", "opus")) == run_analysis.BAD_INPUT == 2
+    assert (run / "input_manifest.json").read_bytes() == before
+    # the same resume under the stopped run's models runs
+    manifest, called = _resumed(run, monkeypatch, "never")
+    assert called == ["accounting-analyst", "valuation-analyst", "valuation-analyst-second-pass"]
+    assert "model_override" not in manifest and manifest["analysis_failure"] is None
+
+
+def test_a_resume_names_the_stopped_run_s_model_or_is_refused_and_the_override_names_what_ran(
+        tmp_path, monkeypatch):
+    """Stopped with `--model claude-fable-5-1`: a resume naming none is refused,
+    one naming the same runs, and the manifest's `model_override.applies_to`
+    lists only the agents called on resume -- the stopped run's own override,
+    which named the four it called, is not carried forward."""
+    run, stopped = _stopped_at(tmp_path, monkeypatch, "accounting-analyst", "never",
+                               model="claude-fable-5-1")
+    assert stopped["model_override"]["model"] == "claude-fable-5-1"
+    assert stopped["model_override"]["applies_to"] == [
+        "numbers-reader", "notes-text-reader", "accounting-analyst", "financial-analyst"]
+    with pytest.raises(run_analysis.RunError, match="the run stopped under claude-fable-5-1; "
+                       "a resume under the definitions' own models would mix models, which "
+                       "the record cannot compare"):
+        _resumed(run, monkeypatch, "never")
+    with pytest.raises(run_analysis.RunError, match="a resume under opus would mix models"):
+        _resumed(run, monkeypatch, "never", model="opus")
+    monkeypatch.setattr(run_analysis.interpreter_pin, "enforce", lambda: 0)
+    monkeypatch.setattr(run_analysis, "ask",
+                        lambda *a, **k: (_ for _ in ()).throw(AssertionError("an agent ran")))
+    assert run_analysis.main(_main_command(run, "--resume")) == run_analysis.BAD_INPUT == 2
+    assert json.loads((run / "input_manifest.json").read_text())["fable_limit_reached"] == [
+        "accounting-analyst"]
+    manifest, called = _resumed(run, monkeypatch, "never", model="claude-fable-5-1")
+    assert called == ["accounting-analyst", "valuation-analyst", "valuation-analyst-second-pass"]
+    assert manifest["model_override"]["model"] == "claude-fable-5-1"
+    assert manifest["model_override"]["applies_to"] == called
+    assert manifest["resume_skipped"] == ["numbers-reader", "notes-text-reader",
+                                          "financial-analyst"]
+    assert "fable_limit_reached" not in manifest and manifest["analysis_failure"] is None
+    # an agent on record whose own record asked for another model is a mixed record
+    edited = json.loads((run / "input_manifest.json").read_text())
+    edited["fable_limit_reached"] = ["valuation-analyst-second-pass"]
+    edited["agents"]["financial-analyst"]["model_requested"] = "opus"
+    (run / "input_manifest.json").write_text(json.dumps(edited))
+    with pytest.raises(run_analysis.RunError, match="financial-analyst on record asked for opus"):
+        _resumed(run, monkeypatch, "never", model="claude-fable-5-1")
+
+
+def _stopped_recording_models(tmp_path, monkeypatch, stopped_agent: str):
+    """The limit at `stopped_agent`; every other agent writes and records the
+    model it asked for, as the real `ask` does."""
+    run = tmp_path / "NVDA" / NVDA_ACCESSION
+    assemble_bundle.write(assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,
+                                                prior_runs=run.parent.parent), run)
+    written = _fake_ask({})
+
+    def ask(directory, *, agent, writes, message, spec, log):
+        if agent == stopped_agent:
+            return {"agent": agent, "result": "failed", "limit_reached": True,
+                    "reason": "You've reached your Fable limit.", "model_requested": spec["model"]}
+        return dict(written(directory, agent=agent, writes=writes, message=message,
+                            spec=spec, log=log), model_requested=spec["model"])
+
+    monkeypatch.setattr(run_analysis, "ask", ask)
+    stopped = run_analysis.run_company(run=run, **_run_keyword())
+    assert stopped["fable_limit_reached"] == [stopped_agent]
+    return run, stopped
+
+
+def _definitions_with(tmp_path, monkeypatch, edits: dict[str, str]) -> Path:
+    """A copy of the committed definitions with `model:` lines edited, in place
+    of the committed ones for the rest of the test."""
+    copy = tmp_path / "definitions"
+    if not copy.is_dir():
+        shutil.copytree(run_analysis.DEFINITIONS, copy)
+    for name, model in edits.items():
+        path = copy / f"{name}.md"
+        text, count = re.subn(r"^model: .*$", f"model: {model}", path.read_text(encoding="utf-8"),
+                              count=1, flags=re.M)
+        assert count == 1, name
+        path.write_text(text, encoding="utf-8")
+    monkeypatch.setattr(run_analysis, "DEFINITIONS", copy)
+    return copy
+
+
+def test_a_definition_edited_between_the_nights_is_refused_on_resume(tmp_path, monkeypatch):
+    """Stopped under the definitions' own models at the accounting analyst, with
+    the financial analyst on record asking for fable. The accounting analyst's
+    definition edited to opus before the resume: refused, exit 2, naming the
+    model the record ran under and the one the definition asks for now. The same
+    for the valuation analyst's, which has no record of its own but is in the
+    analysts' layer. Unchanged, the run resumes."""
+    run, stopped = _stopped_recording_models(tmp_path, monkeypatch, "accounting-analyst")
+    assert stopped["agents"]["financial-analyst"]["model_requested"] == "fable"
+    assert "model_override" not in stopped
+    before = (run / "input_manifest.json").read_bytes()
+    _definitions_with(tmp_path, monkeypatch, {"accounting-analyst": "opus"})
+    monkeypatch.setattr(run_analysis, "ask",
+                        lambda *a, **k: (_ for _ in ()).throw(AssertionError("an agent ran")))
+    with pytest.raises(run_analysis.RunError, match="the run stopped under fable; the definition "
+                       "of accounting-analyst now asks for opus, which the record cannot compare"):
+        run_analysis.run_company(run=run, **_run_keyword())
+    monkeypatch.setattr(run_analysis.interpreter_pin, "enforce", lambda: 0)
+    assert run_analysis.main(_main_command(run)) == run_analysis.BAD_INPUT == 2
+    assert (run / "input_manifest.json").read_bytes() == before
+    _definitions_with(tmp_path, monkeypatch, {"accounting-analyst": "fable",
+                                              "valuation-analyst": "opus"})
+    with pytest.raises(run_analysis.RunError, match="the definition of valuation-analyst now "
+                       "asks for opus"):
+        run_analysis.run_company(run=run, **_run_keyword())
+    # unchanged definitions: the resume runs, and only what had not finished
+    _definitions_with(tmp_path, monkeypatch, {"valuation-analyst": "fable"})
+    ask, called = _counting_ask({})
+    monkeypatch.setattr(run_analysis, "ask", ask)
+    manifest = run_analysis.run_company(run=run, **_run_keyword())
+    assert called == ["accounting-analyst", "valuation-analyst", "valuation-analyst-second-pass"]
+    assert manifest["analysis_failure"] is None and "stopped_on" not in manifest
+
+
+def test_a_stale_override_is_never_carried_forward_by_finish(tmp_path):
+    run = tmp_path / "run"
+    run.mkdir()
+    (run / "input_manifest.json").write_text(json.dumps({
+        "model_override": {"model": "opus", "applies_to": ["numbers-reader"]},
+        "agents": {"numbers-reader": {"result": "written", "model_requested": "opus"}}}))
+    agents = {"numbers-reader": {"result": "written", "model_requested": "opus"},
+              "notes-text-reader": {"result": "written"}}
+    manifest = run_analysis.finish(run, agents, {}, None, None, skipped=["numbers-reader"])
+    assert "model_override" not in manifest
+    manifest = run_analysis.finish(run, agents, {}, None, "opus", skipped=["numbers-reader"])
+    assert manifest["model_override"]["applies_to"] == ["notes-text-reader"]
+
+
+def test_a_run_stopped_at_the_control_resumes_and_calls_the_control_only(tmp_path, monkeypatch):
+    run, stopped = _stopped_at(tmp_path, monkeypatch, "control-single-agent", "always")
+    assert (run / run_analysis.CONTROL_DIRNAME).is_dir()        # built the night it stopped
+    assert not any((run / name).is_file() for name in run_analysis.CONTROL_WRITES)
+    manifest, called = _resumed(run, monkeypatch, "always")
+    assert called == [run_analysis.CONTROL_DIRNAME]            # the control's directory
+    assert manifest["resume_skipped"] == ["numbers-reader", "notes-text-reader",
+                                          "accounting-analyst", "financial-analyst",
+                                          "valuation-analyst", "valuation-analyst-second-pass"]
+    assert "fable_limit_reached" not in manifest and manifest["analysis_failure"] is None
+    assert manifest["agents"]["control-single-agent"]["result"] == "written"
+    assert all((run / name).is_file() for name in run_analysis.CONTROL_WRITES)
+    assert set(manifest["analysis_stages"]["control"]) == {"accounting", "financial",
+                                                           "assumptions"}
+    assert agent_inputs.isolation_violations(run) == []
+    # The other side: a control directory on a run that is not resumed is built once.
+    with pytest.raises(run_analysis.RunError, match="built once"):
+        run_analysis.run_control(run, run.parent / "logs")
+
+
+def test_a_limit_at_one_reader_leaves_the_other_on_record_and_never_calls_it_again(
+        tmp_path, monkeypatch):
+    run, stopped = _stopped_at(tmp_path, monkeypatch, "notes-text-reader", "never")
+    # the finished reader's report was gated into the run root the night it stopped
+    assert (run / "report_numbers.md").is_file()
+    assert not (run / "report_notes_text.md").exists()
+    assert stopped["agents"]["numbers-reader"]["result"] == "written"
+    assert "quote_gate" not in stopped["analysis_stages"]
+    numbers_before = (run / "report_numbers.md").read_bytes()
+    manifest, called = _resumed(run, monkeypatch, "never")
+    assert called[0] == "notes-text-reader" and "numbers-reader" not in called
+    assert sorted(called) == ["accounting-analyst", "financial-analyst", "notes-text-reader",
+                              "valuation-analyst", "valuation-analyst-second-pass"]
+    assert manifest["resume_skipped"] == ["numbers-reader"]
+    assert (run / "report_numbers.md").read_bytes() == numbers_before
+    assert manifest["agents"]["numbers-reader"] == stopped["agents"]["numbers-reader"]
+    assert "fable_limit_reached" not in manifest and manifest["analysis_failure"] is None
+    assert manifest["analysis_stages"]["quote_gate"] == {"dropped": 0}
+    assert (run / "report_notes_text.md").is_file() and (run / "memo_ko.md").is_file()
+    assert agent_inputs.isolation_violations(run) == []
+
+
+# One id on an item of each reader. The numbers reader's second item quotes a
+# value the trends row does not print, so its row is on the drop list the night
+# the numbers reader is gated; the notes reader's item quotes the MD&A's first
+# paragraph, as FLAGGING_TWO does, under the numbers item's id.
+SHARED_ID = "earnings_quality_accruals_rising"
+NUMBERS_WITH_A_BAD_QUOTE = NUMBERS_REPORT + '''```json
+{ "id": "earnings_quality_planted_bad_quote", "what_changed": "x", "account": "a",
+  "expected_direction": "up", "horizon": "h",
+  "quote": "\\"value\\": 1.0",
+  "paragraph_id": "0001045810-26-000075:trends:days_sales_outstanding:2026-04-27..2026-07-26" }
+```
+'''
+NOTES_SHARING_THE_ID = '''```json
+[{ "id": "earnings_quality_accruals_rising", "paragraph_id": "0001045810-26-000075:mdna:1",
+   "quote": "Analysis of Financial Condition" }]
+```
+'''
+
+
+def test_a_resume_gates_only_the_reader_it_called_and_appends_its_rows(tmp_path, monkeypatch):
+    """The limit at the notes reader, the numbers reader gated alone that night
+    with one row dropped. Resumed, the notes reader writes an item under the
+    numbers item's id: the run-root report_numbers.md and the night's drop row
+    stand byte for byte, the notes report is gated alone and held to the ids
+    standing in the report already gated, so its item under the shared id is
+    dropped as a twin and its row appended after the earlier one -- the one
+    id names the numbers item, as it would have on a fresh run."""
+    run, stopped = _stopped_at(tmp_path, monkeypatch, "notes-text-reader", "never",
+                               numbers_report=NUMBERS_WITH_A_BAD_QUOTE)
+    assert [(row["report"], row["item_id"]) for row in stopped["dropped_items"]] == [
+        ("report_numbers.md", "earnings_quality_planted_bad_quote")]
+    assert "does not string-match" in stopped["dropped_items"][0]["reason"]
+    numbers_before = (run / "report_numbers.md").read_bytes()
+    assert SHARED_ID in numbers_before.decode("utf-8")
+    twin_citing = _analysis("accounting", SHARED_ID)
+    twin_citing["anomalies"].append(dict(twin_citing["anomalies"][0],
+                                         id="earnings_versus_cash_cites_a_fallen_item",
+                                         evidence=["earnings_quality_planted_bad_quote"]))
+    # a reconciliation row naming the shared id as the notes item it fell from,
+    # and one naming it as the numbers item it stands as (with no standing
+    # notes item to pair it with, that row falls on its notes side alone)
+    twin_citing["reconciliation"] = [
+        {"notes_item": SHARED_ID, "numbers_items": [], "outcome": "unresolved", "why": "x"},
+        {"notes_item": "earnings_quality_no_such_item", "numbers_items": [SHARED_ID],
+         "outcome": "unresolved", "why": "y"}]
+    manifest, called = _resumed(run, monkeypatch, "never", notes_report=NOTES_SHARING_THE_ID,
+                                numbers_report=NUMBERS_WITH_A_BAD_QUOTE,
+                                accounting_analysis=twin_citing)
+    assert "numbers-reader" not in called
+    # The analysis gate: a bare citation of the shared id is refused, as a fresh
+    # run would have refused it -- the notes twin fell and may still be printed,
+    # so by id alone the citation does not name one standing item -- and so is
+    # the citation of the id dropped from the one report it stood in; the
+    # reconciliation row naming the shared id as the notes item it fell from is
+    # refused on that side, the row naming it as the numbers item it stands as
+    # falls on its own notes side alone.
+    accounting = json.loads((run / "analysis_accounting.json").read_text(encoding="utf-8"))
+    assert accounting["anomalies"] == []
+    assert [row["where"] for row in accounting["dropped_items"]] == [
+        "reconciliation[0]", "reconciliation[1]", "anomalies[0]", "anomalies[1]"]
+    assert accounting["dropped_items"][0]["reason"] == (
+        f"notes_item {SHARED_ID!r} is not an item of report_notes_text.md")
+    assert accounting["dropped_items"][1]["reason"] == (
+        "notes_item 'earnings_quality_no_such_item' is not an item of report_notes_text.md")
+    assert accounting["dropped_items"][2]["reason"] == (
+        f"evidence: {SHARED_ID!r} is an id the quote gate dropped from a report this "
+        "analyst saw, so by id alone it does not name one standing item")
+    assert "earnings_quality_planted_bad_quote" in accounting["dropped_items"][3]["reason"]
+    assert run_analysis.excluded_by_report(run) == {
+        "report_numbers.md": {"earnings_quality_planted_bad_quote"},
+        "report_notes_text.md": {SHARED_ID}}
+    assert (run / "report_numbers.md").read_bytes() == numbers_before
+    assert manifest["dropped_items"][:1] == stopped["dropped_items"]        # appended after
+    assert [(row["report"], row["item_id"]) for row in manifest["dropped_items"]] == [
+        ("report_numbers.md", "earnings_quality_planted_bad_quote"),
+        ("report_notes_text.md", SHARED_ID)]
+    assert ("on more than one item in this run: it is on an item of report_numbers.md"
+            in manifest["dropped_items"][1]["reason"])
+    assert manifest["counts"]["dropped_items"] == 2
+    assert manifest["analysis_stages"]["quote_gate"] == {"dropped": 1}      # this night's
+    notes = (run / "report_notes_text.md").read_text(encoding="utf-8")
+    assert SHARED_ID not in notes and "removed 1 item(s)" in notes
+    assert manifest["analysis_failure"] is None
+    assert agent_inputs.isolation_violations(run) == []
+    # The other side: a fresh run gates both readers in one call, and the shared
+    # id is dropped from both, as the gate's rule says.
+    fresh = tmp_path / "fresh" / "NVDA" / NVDA_ACCESSION
+    assemble_bundle.write(assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,
+                                                prior_runs=fresh.parent.parent), fresh)
+    monkeypatch.setattr(run_analysis, "ask", _fake_ask(
+        {}, notes_report=NOTES_SHARING_THE_ID, numbers_report=NUMBERS_WITH_A_BAD_QUOTE))
+    manifest = run_analysis.run_company(run=fresh, ticker="NVDA", form="10-Q",
+                                        cutoff="2026-08-26", period_end="2026-07-26",
+                                        store=run_analysis.cutoff_guard.FIXTURES,
+                                        prices=None, control="never")
+    assert [(row["report"], row["item_id"]) for row in manifest["dropped_items"]] == [
+        ("report_numbers.md", SHARED_ID),
+        ("report_numbers.md", "earnings_quality_planted_bad_quote"),
+        ("report_notes_text.md", SHARED_ID)]
+    assert all("on more than one item" in row["reason"]
+               for row in manifest["dropped_items"] if row["item_id"] == SHARED_ID)
+    assert manifest["analysis_stages"]["quote_gate"] == {"dropped": 3}
+    assert SHARED_ID not in (fresh / "report_numbers.md").read_text(encoding="utf-8")
+    assert SHARED_ID not in (fresh / "report_notes_text.md").read_text(encoding="utf-8")
+
+
+def test_a_run_that_did_not_stop_is_not_resumed(tmp_path, monkeypatch, finished, capsys):
+    run, _, _ = finished
+    keyword = dict(ticker="NVDA", form="10-Q", cutoff="2026-08-26", period_end="2026-07-26",
+                   store=run_analysis.cutoff_guard.FIXTURES, prices=None, control="never")
+    # a finished run: `--resume` says nothing to resume and exits 0, without it the
+    # run on record is refused, and nothing is called either way
+    monkeypatch.setattr(run_analysis, "ask",
+                        lambda *a, **k: (_ for _ in ()).throw(AssertionError("an agent ran")))
+    with pytest.raises(run_analysis.NothingToResume):
+        run_analysis.run_company(run=run, resume=True, **keyword)
+    with pytest.raises(run_analysis.RunError, match="did not stop at the limit"):
+        run_analysis.run_company(run=run, **keyword)
+    monkeypatch.setattr(run_analysis.interpreter_pin, "enforce", lambda: 0)
+    command = ["--run", str(run), "--ticker", "NVDA", "--form", "10-Q", "--cutoff",
+               "2026-08-26", "--period-end", "2026-07-26", "--control", "never"]
+    assert run_analysis.main(command + ["--resume"]) == 0
+    assert "nothing to resume" in capsys.readouterr().out
+    assert run_analysis.main(command) == run_analysis.BAD_INPUT
+    # a run that failed some other way is not resumed either
+    failed = tmp_path / "NVDA" / NVDA_ACCESSION
+    assemble_bundle.write(assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,
+                                                prior_runs=failed.parent.parent), failed)
+    with pytest.raises(run_analysis.RunError, match="no agent has run"):
+        run_analysis.run_company(run=failed, resume=True, **keyword)
+    manifest = json.loads((failed / "input_manifest.json").read_text())
+    manifest["agents"] = {"numbers-reader": {"result": "failed", "reason": "exit 1"}}
+    manifest["analysis_failure"] = "a reader failed twice"
+    manifest[run_analysis.FINISH_MARKER] = "2026-10-07T00:00:00Z"   # finish wrote it
+    (failed / "input_manifest.json").write_text(json.dumps(manifest))
+    with pytest.raises(run_analysis.RunError, match="did not stop at the limit"):
+        run_analysis.run_company(run=failed, resume=True, **keyword)
+    # without the marker the same manifest is a run that stopped before finish
+    # with nothing on record: --resume is refused as such, and nothing is run over
+    del manifest[run_analysis.FINISH_MARKER]
+    (failed / "input_manifest.json").write_text(json.dumps(manifest))
+    with pytest.raises(run_analysis.RunError, match="no agent's gated output is on record"):
+        run_analysis.run_company(run=failed, resume=True, **keyword)
+
+
+def test_the_limit_stops_the_call_at_once_and_says_so(tmp_path, monkeypatch):
+    limit = (1, {"is_error": True,
+                 "result": "You've reached your Fable limit. Switch to another model to continue."},
+             None)
+    record, calls = _ask(tmp_path, monkeypatch, [limit] * 3, "fable")
+    assert record["limit_reached"] is True and len(calls) == 1
+    assert "Fable limit" in record["reason"]
+
+
+def test_the_limit_stops_the_run_where_it_stands_publishes_what_finished_and_exits_four(
+        tmp_path, monkeypatch):
+    run = tmp_path / "NVDA" / NVDA_ACCESSION
+    bundle = assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,
+                                   prior_runs=run.parent.parent)
+    assemble_bundle.write(bundle, run)
+    written = _fake_ask({})
+
+    def ask(directory, *, agent, writes, message, spec, log):
+        if agent == "accounting-analyst":
+            return {"agent": agent, "result": "failed", "limit_reached": True,
+                    "reason": "You've reached your Fable limit."}
+        return written(directory, agent=agent, writes=writes, message=message,
+                       spec=spec, log=log)
+
+    monkeypatch.setattr(run_analysis, "ask", ask)
+    manifest = run_analysis.run_company(run=run, ticker="NVDA", form="10-Q",
+                                        cutoff="2026-08-26", period_end="2026-07-26",
+                                        store=run_analysis.cutoff_guard.FIXTURES,
+                                        prices=None, control="always")
+    assert manifest["fable_limit_reached"] == ["accounting-analyst"]
+    assert "stopped there" in manifest["analysis_failure"]
+    assert "valuation-analyst" not in manifest["agents"]       # nothing ran past it
+    assert "control-single-agent" not in manifest["agents"]
+    assert not (run / run_analysis.BEFORE_DRIVERS).exists()
+    assert not (run / "analysis_accounting.json").exists()
+    # What finished is published: the financial analyst's output gated into its
+    # file, and the memo and baselines written from what exists.
+    assert (run / "analysis_financial.json").is_file()
+    assert "analysis_financial" in manifest["analysis_stages"]
+    assert "analysis_accounting" not in manifest["analysis_stages"]
+    assert (run / run_analysis.FINAL).is_file()
+    assert manifest["analysis_stages"]["baselines"] == "written"
+    assert (run / "baselines.json").is_file()
+    memo = (run / "memo_ko.md").read_text(encoding="utf-8")
+    assert ("회계 분석이 실행되지 않았습니다. 이유: accounting-analyst answered the Fable limit "
+            "(You've reached your Fable limit.); nothing fell back to another model") in memo
+    assert "재무 분석이 실행되지 않았습니다" not in memo
+    assert ("가치평가 분석가의 해석이 없습니다. 이유: valuation-analyst did not run: the Fable "
+            "limit was reached at accounting-analyst and the run stopped there") in memo
+    # The limit's exit code is its own, and not the interpreter pin's: main()
+    # returns the pin's before the run starts, the limit's after it.
+    assert run_analysis.LIMIT_REACHED == 4
+    assert run_analysis.interpreter_pin.WRONG_INTERPRETER == 3
+    assert run_analysis.LIMIT_REACHED != run_analysis.interpreter_pin.WRONG_INTERPRETER
+    command = ["--run", str(run), "--ticker", "NVDA", "--form", "10-Q",
+               "--cutoff", "2026-08-26", "--period-end", "2026-07-26"]
+    monkeypatch.setattr(run_analysis, "run_company", lambda **kw: manifest)
+    monkeypatch.setattr(run_analysis.interpreter_pin, "enforce", lambda: 0)
+    assert run_analysis.main(command) == run_analysis.LIMIT_REACHED
+    monkeypatch.setattr(run_analysis, "run_company",
+                        lambda **kw: (_ for _ in ()).throw(AssertionError("the run started")))
+    monkeypatch.setattr(run_analysis.interpreter_pin, "enforce",
+                        lambda: run_analysis.interpreter_pin.WRONG_INTERPRETER)
+    assert run_analysis.main(command) == run_analysis.interpreter_pin.WRONG_INTERPRETER
+
+
+def test_the_limit_at_the_valuation_analyst_still_publishes_both_analyses_and_the_memo(
+        tmp_path, monkeypatch):
+    run = tmp_path / "NVDA" / NVDA_ACCESSION
+    bundle = assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,
+                                   prior_runs=run.parent.parent)
+    assemble_bundle.write(bundle, run)
+    written = _fake_ask({})
+
+    def ask(directory, *, agent, writes, message, spec, log):
+        if agent == "valuation-analyst":
+            return {"agent": agent, "result": "failed", "limit_reached": True,
+                    "reason": "You've reached your Fable limit."}
+        return written(directory, agent=agent, writes=writes, message=message,
+                       spec=spec, log=log)
+
+    monkeypatch.setattr(run_analysis, "ask", ask)
+    manifest = run_analysis.run_company(run=run, ticker="NVDA", form="10-Q",
+                                        cutoff="2026-08-26", period_end="2026-07-26",
+                                        store=run_analysis.cutoff_guard.FIXTURES,
+                                        prices=None, control="always")
+    assert manifest["fable_limit_reached"] == ["valuation-analyst"]
+    assert "valuation-analyst-second-pass" not in manifest["agents"]
+    assert "control-single-agent" not in manifest["agents"]
+    for name in ("analysis_accounting.json", "analysis_financial.json", run_analysis.FINAL,
+                 "memo_ko.md", "baselines.json"):
+        assert (run / name).is_file(), name
+    assert not (run / "assumptions.json").exists()
+    memo = (run / "memo_ko.md").read_text(encoding="utf-8")
+    assert "가치평가 분석가의 해석이 없습니다. 이유: valuation-analyst answered the Fable limit" in memo
+    assert "회계 분석이 실행되지 않았습니다" not in memo
+
+
+def _run_with_control(tmp_path, monkeypatch, control, golden=None):
+    """`golden` plants the answer of `is_golden_filing`; None leaves the real one,
+    which reads this tree."""
+    run = tmp_path / "NVDA" / NVDA_ACCESSION
+    bundle = assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,
+                                   prior_runs=run.parent.parent)
+    assemble_bundle.write(bundle, run)
+    monkeypatch.setattr(run_analysis, "ask", _fake_ask({}))
+    if golden is not None:
+        monkeypatch.setattr(run_analysis, "is_golden_filing",
+                            lambda accession: (golden, f"planted: {golden}"))
+    return run_analysis.run_company(run=run, ticker="NVDA", form="10-Q",
+                                    cutoff="2026-08-26", period_end="2026-07-26",
+                                    store=run_analysis.cutoff_guard.FIXTURES,
+                                    prices=None, control=control)
+
+
+def test_the_control_runs_on_a_golden_filing_and_skips_the_rest(tmp_path, monkeypatch):
+    skipped = _run_with_control(tmp_path, monkeypatch, "auto", golden=False)
+    assert "control-single-agent" not in skipped["agents"]
+    assert skipped["analysis_stages"]["control"] == "skipped: planted: False"
+    assert skipped["control_reason"] == "planted: False"
+    assert skipped["analysis_failure"] is None
+    ran = _run_with_control(tmp_path / "g", monkeypatch, "auto", golden=True)
+    assert ran["agents"]["control-single-agent"]["result"] == "written"
+    assert ran["control_reason"] == "planted: True"
+
+
+def test_this_tree_holds_the_cases_directory_with_no_approved_case_and_the_manifest_says_so(
+        tmp_path, monkeypatch):
+    """The evals branch landed: this tree holds `evals/golden/cases` and its
+    reader, and no approved case yet. Under --control auto the control does not
+    run, and the manifest names the accession no case names -- not that the tree
+    has no cases directory, which is the other side, read on a tree without one."""
+    assert run_analysis.GOLDEN_CASES.is_dir() and run_analysis.GOLDEN_FORMAT.is_file()
+    assert list(run_analysis.GOLDEN_CASES.glob("*.yaml")) == []
+    no_case = f"no approved golden case under evals/golden/cases names {NVDA_ACCESSION}"
+    assert run_analysis.is_golden_filing(NVDA_ACCESSION) == (False, no_case)
+    assert run_analysis.is_golden_filing(None) == (
+        False, "the run's manifest names no accession, so no golden case can name it")
+    manifest = _run_with_control(tmp_path, monkeypatch, "auto")
+    assert "control-single-agent" not in manifest["agents"]
+    assert manifest["control_reason"] == no_case
+    assert manifest["analysis_stages"]["control"] == f"skipped: {no_case}"
+    assert manifest["analysis_failure"] is None
+    # the other side: a tree with no cases directory says so, before any reading
+    monkeypatch.setattr(run_analysis, "GOLDEN_CASES", tmp_path / "no-such-tree" / "cases")
+    assert run_analysis.is_golden_filing(NVDA_ACCESSION) == (False, run_analysis.NO_GOLDEN_CASES)
+    assert run_analysis.is_golden_filing(None) == (False, run_analysis.NO_GOLDEN_CASES)
+
+
+# A planted reader with the real reader's two names, `load_case` and
+# `GoldenFormatError`, over the two-level `key: value` subset a case needs here.
+GOLDEN_FORMAT_STUB = '''
+from pathlib import Path
+
+
+class GoldenFormatError(ValueError):
+    pass
+
+
+def _scalar(value):
+    value = value.strip()
+    if value in ("true", "false"):
+        return value == "true"
+    return value.strip('"')
+
+
+def load_case(path):
+    case, current = {}, None
+    for number, line in enumerate(Path(path).read_text(encoding="utf-8").splitlines(), 1):
+        if not line.strip():
+            continue
+        key, colon, value = line.strip().partition(":")
+        if not colon:
+            raise GoldenFormatError(f"line {number}: expected key: value")
+        if line.startswith("  "):
+            case[current][key] = _scalar(value)
+        else:
+            current = key
+            case[key] = _scalar(value) if value.strip() else {}
+    return case
+'''
+
+
+def _golden_tree(tmp_path, monkeypatch, cases: dict[str, str]) -> Path:
+    """A planted owner's tree: the cases directory and the reader beside it, the
+    two paths `is_golden_filing` reads pointed at them."""
+    tree = tmp_path / "golden_tree"
+    cases_dir = tree / "golden" / "cases"
+    cases_dir.mkdir(parents=True)
+    (tree / "golden_format.py").write_text(GOLDEN_FORMAT_STUB, encoding="utf-8")
+    for name, text in cases.items():
+        (cases_dir / name).write_text(text, encoding="utf-8")
+    monkeypatch.setattr(run_analysis, "GOLDEN_CASES", cases_dir)
+    monkeypatch.setattr(run_analysis, "GOLDEN_FORMAT", tree / "golden_format.py")
+    return tree
+
+
+def test_an_approved_golden_case_naming_the_filing_runs_the_control(tmp_path, monkeypatch):
+    """The positive path, through the YAML read: `approved_by_owner` true and
+    `filing.accession` this one, in a planted tree."""
+    approved = (f'filing:\n  ticker: NVDA\n  accession: "{NVDA_ACCESSION}"\n'
+                "frame: accounting\napproved_by_owner: true\n")
+    draft = approved.replace("approved_by_owner: true", "approved_by_owner: false")
+    other = approved.replace(NVDA_ACCESSION, "0001045810-25-000001")
+    broken = "no colon on this line\n"
+    tree = _golden_tree(tmp_path, monkeypatch, {"approved.yaml": approved, "broken.yaml": broken,
+                                                "draft.yaml": draft, "other.yaml": other})
+    assert run_analysis.is_golden_filing(NVDA_ACCESSION) == (
+        True, f"the approved golden case approved.yaml names {NVDA_ACCESSION}")
+    assert run_analysis.is_golden_filing("0001045810-25-000001") == (
+        True, "the approved golden case other.yaml names 0001045810-25-000001")
+    assert run_analysis.is_golden_filing(None) == (
+        False, "the run's manifest names no accession, so no golden case can name it")
+    (tree / "golden" / "cases" / "approved.yaml").unlink()
+    assert run_analysis.is_golden_filing(NVDA_ACCESSION) == (
+        False, f"no approved golden case under evals/golden/cases names {NVDA_ACCESSION} "
+               "(1 case file(s) could not be read: broken.yaml)")
+    (tree / "golden_format.py").unlink()
+    assert run_analysis.is_golden_filing(NVDA_ACCESSION) == (False, run_analysis.NO_GOLDEN_FORMAT)
+
+
+def test_the_message_names_the_shared_files_first_in_a_fixed_order():
+    names = {"input_mdna.md", "report_numbers.md", "calculator.json", "analysis_accounting.json",
+             "report_notes_text.md", "assumptions.json"}
+    assert run_analysis.message_files(names) == [
+        "calculator.json", "report_numbers.md", "report_notes_text.md",
+        "analysis_accounting.json", "assumptions.json", "input_mdna.md"]
+    assert run_analysis.message_files({"input_notes.md", "input_8k.md"}) == \
+        ["input_8k.md", "input_notes.md"]
+
+
+# Two of the fixture's 112 MD&A paragraphs, flagged by the stubbed notes reader:
+# the first and the third, which are not adjacent. Their blocks are copied here
+# from the fixture's input_mdna.md by hand (the apostrophe in "Management's" is
+# the filing's own U+2019), and the expected trimmed copy is the file's preamble,
+# the first block, one line holding the two markers, and the third block.
+MDNA_ONE = "0001045810-26-000075:mdna:1"
+MDNA_THREE = "0001045810-26-000075:mdna:3"
+FLAGGING_TWO = '''```json
+[{ "id": "earnings_quality_mdna_heading", "paragraph_id": "0001045810-26-000075:mdna:1",
+   "quote": "Analysis of Financial Condition" },
+ { "id": "earnings_quality_third_paragraph_unchanged", "paragraph_id": "0001045810-26-000075:mdna:3",
+   "quote": "same as prior period" }]
+```
+'''
+TRIMMED_TWO = (
+    "# NVDA MD&A \u2014 0001045810-26-000075\n\n\n## mdna\n\n"
+    "[0001045810-26-000075:mdna:1]\nItem 2. Management\u2019s Discussion and Analysis of "
+    "Financial Condition and Results of Operations\n\n"
+    "[0001045810-26-000075:mdna:1] [0001045810-26-000075:mdna:3]\n\n"
+    "[0001045810-26-000075:mdna:3]\n[same as prior period, unchanged from "
+    "0001045810-26-000052:mdna:3]\n\n")
+INSIDE = {"reason": "a reason", "quote": "Analysis of Financial Condition",
+          "quote_from": "input_mdna.md"}
+ACROSS = {"reason": "a reason", "quote_from": "input_mdna.md",
+          "quote": "Results of Operations\n\n[0001045810-26-000075:mdna:1] "
+                   "[0001045810-26-000075:mdna:3]\n\n[0001045810-26-000075:mdna:3]\n[same as"}
+
+
+def test_a_whole_run_with_two_paragraphs_flagged_hands_the_valuation_analyst_those_two(
+        tmp_path, monkeypatch):
+    """The trimmed copy, the manifest's `trimmed` record, the boundary check and the
+    seam rule of the first pass's gate, all on one run and all agreeing."""
+    run = tmp_path / "NVDA" / NVDA_ACCESSION
+    bundle = assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,
+                                   prior_runs=run.parent.parent)
+    assemble_bundle.write(bundle, run)
+    assumptions = {"scenarios": {
+        "bear": dict(DRIVERS, reasons={d: ACROSS for d in DRIVERS}),
+        "base": dict(DRIVERS, reasons={d: INSIDE for d in DRIVERS}),
+        "bull": dict(DRIVERS, reasons={d: INSIDE for d in DRIVERS})}}
+    monkeypatch.setattr(run_analysis, "ask",
+                        _fake_ask({}, notes_report=FLAGGING_TWO, assumptions=assumptions))
+    manifest = run_analysis.run_company(run=run, ticker="NVDA", form="10-Q",
+                                        cutoff="2026-08-26", period_end="2026-07-26",
+                                        store=run_analysis.cutoff_guard.FIXTURES,
+                                        prices=None, control="never")
+    assert manifest["analysis_failure"] is None
+    assert manifest["dropped_items"] == []                      # both items stood the gate
+    for name in ("valuation-analyst", "valuation-analyst-second-pass"):
+        copy = run / "agents" / name / "input_mdna.md"
+        assert copy.read_bytes() == TRIMMED_TWO.encode("utf-8")
+        record = manifest["agents"][name]["trimmed"]
+        assert record["input_mdna.md"] == {
+            "kept": [MDNA_ONE, MDNA_THREE], "of": 112,
+            "note": "2 of 112 paragraphs, the ones the notes reader flagged; the rest were "
+                    "not placed"}
+        assert record["input_8k.md"]["kept"] == []               # nothing of the 8-K flagged
+    assert agent_inputs.isolation_violations(run) == []
+    # The boundary check derives the flagged set again from the gated report and
+    # the drop list: the record edited to keep every paragraph, over the full
+    # file, is reported by the paragraphs no standing item flagged, and the
+    # directory's file by its bytes.
+    full = (run / "input_mdna.md").read_text(encoding="utf-8")
+    every = agent_inputs.paragraph_ids(full)
+    assert len(every) == 112 and every[0] == MDNA_ONE and every[2] == MDNA_THREE
+    edited = json.loads((run / "input_manifest.json").read_text(encoding="utf-8"))
+    edited["agents"]["valuation-analyst"]["trimmed"]["input_mdna.md"]["kept"] = every
+    (run / "input_manifest.json").write_text(json.dumps(edited), encoding="utf-8")
+    (run / "agents" / "valuation-analyst" / "input_mdna.md").write_text(full, encoding="utf-8")
+    broken = agent_inputs.isolation_violations(run)
+    assert len(broken) == 2 and all(line.startswith("valuation-analyst: ") for line in broken)
+    unflagged = [identifier for identifier in every if identifier not in (MDNA_ONE, MDNA_THREE)]
+    assert broken[0] == ("valuation-analyst: input_mdna.md: the manifest's trimmed record "
+                         f"keeps {', '.join(unflagged)}, which no standing item of "
+                         "report_notes_text.md flagged")
+    assert "other bytes" in broken[1]
+    # the record put back as it was over the full file: the bytes alone are reported
+    edited["agents"]["valuation-analyst"]["trimmed"]["input_mdna.md"]["kept"] = [
+        MDNA_ONE, MDNA_THREE]
+    (run / "input_manifest.json").write_text(json.dumps(edited), encoding="utf-8")
+    broken = agent_inputs.isolation_violations(run)
+    assert len(broken) == 1 and "other bytes" in broken[0]
+    (run / "agents" / "valuation-analyst" / "input_mdna.md").write_bytes(
+        TRIMMED_TWO.encode("utf-8"))
+    assert agent_inputs.isolation_violations(run) == []
+    # the seam rule: the bear scenario quotes across the two blocks' seam, which
+    # string-matches the copy the analyst saw and nothing the filing printed
+    copy = (run / "agents" / "valuation-analyst" / "input_mdna.md").read_text(encoding="utf-8")
+    full = (run / "input_mdna.md").read_text(encoding="utf-8")
+    assert ACROSS["quote"] in copy and ACROSS["quote"] not in full
+    assert INSIDE["quote"] in copy and INSIDE["quote"] in full
+    published = json.loads((run / "assumptions.json").read_text(encoding="utf-8"))
+    assert set(published["scenarios"]) == {"base", "bull"}
+    assert published["dropped_items"] == [{"where": "scenarios.bear", "reason":
+        "revenue_growth_year_one: the quote string-matches the trimmed input_mdna.md and "
+        "not the filing: it runs across a seam between two paragraphs that were not adjacent"}]
+    assert manifest["analysis_stages"]["assumptions"] == {"dropped": 1}
+
+
+def test_the_valuation_analyst_is_handed_only_the_paragraphs_the_notes_reader_flagged(finished):
+    """The stubbed notes reader wrote no items, so no MD&A paragraph was flagged: the
+    valuation analyst's MD&A holds the file's preamble and no paragraph, the manifest
+    records the trim beside the agent's usage, and the notes reader's own copy holds
+    every paragraph."""
+    run, manifest, _ = finished
+    valuation = (run / "agents" / "valuation-analyst" / "input_mdna.md").read_text()
+    reader = (run / "agents" / "notes-text-reader" / "input_mdna.md").read_text()
+    assert valuation == reader[:reader.index("[0001045810-26-000075:mdna:")]
+    assert "trimmed" not in valuation
+    assert "[0001045810-" not in valuation                        # no marker survives
+    # 112 paragraphs: counted by hand on the fixture's MD&A, built once outside
+    # the tests, with `grep -c '^\[0001045810-' input_mdna.md` (112), and the
+    # same 112 for `grep -c '\[0001045810-'`, so no marker sits off a line start.
+    assert reader.count("\n[0001045810-26-000075:mdna:") == 112
+    assert reader.count("[0001045810-") == 112
+    for name in ("valuation-analyst", "valuation-analyst-second-pass"):
+        record = manifest["agents"][name]
+        assert record["result"] == "written"                      # the usage record stayed
+        assert record["trimmed"]["input_mdna.md"]["kept"] == []
+        assert record["trimmed"]["input_mdna.md"]["of"] == 112
+        assert record["trimmed"]["input_mdna.md"]["note"].startswith("0 of 112 paragraphs")

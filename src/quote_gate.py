@@ -550,18 +550,29 @@ def citation_drop_reason(item, upstream_ids) -> str | None:
 # --- the gate over a whole run -----------------------------------------------
 
 def _write_counts(bundle_root, manifest: dict, dropped: list[dict],
-                  normalized: list[dict]) -> None:
+                  normalized: list[dict], gated: set[str]) -> None:
     """The drop count and the fold count into `input_manifest.json`.
 
-    Every other key is left alone.
+    Every other key is left alone -- and so is every row of a report this call
+    did not gate. A run's manifest holds the rows of every report gated in the
+    run; one call replaces the rows of the reports it gated (`gated`, by file
+    name) and appends them after the rows that stand, so a report gated on one
+    night and another gated on the next, when the limit stopped the run between
+    them, each keep their rows: the run directory is append-only, and a resume
+    appends its own rows.
     """
+    def standing(key: str) -> list[dict]:
+        return [dict(row) for row in manifest.get(key) or []
+                if isinstance(row, dict)
+                and Path(str(row.get("report"))).name not in gated]
     manifest = dict(manifest)
-    manifest["dropped_items"] = [dict(row) for row in dropped]
-    manifest["normalized_quotes"] = [dict(row) for row in normalized]
+    manifest["dropped_items"] = standing("dropped_items") + [dict(row) for row in dropped]
+    manifest["normalized_quotes"] = (standing("normalized_quotes")
+                                     + [dict(row) for row in normalized])
     counts = manifest.get("counts")
     manifest["counts"] = dict(counts) if isinstance(counts, dict) else {}
-    manifest["counts"]["dropped_items"] = len(dropped)
-    manifest["counts"]["normalized_quotes"] = len(normalized)
+    manifest["counts"]["dropped_items"] = len(manifest["dropped_items"])
+    manifest["counts"]["normalized_quotes"] = len(manifest["normalized_quotes"])
     (Path(bundle_root) / MANIFEST).write_text(
         json.dumps(manifest, indent=INDENT, sort_keys=True) + "\n", encoding="utf-8")
 
@@ -572,6 +583,38 @@ def _repeated_ids(reports: list[dict]) -> set[str]:
                       for item in entry.get("items") or [])
     return {identifier for identifier, count in counted.items()
             if identifier is not None and count > 1}
+
+
+def _ids_elsewhere(bundle_root, handed: set[str]) -> dict[str, str]:
+    """Every id on an item of a report already gated in this run that this call
+    was not handed, keyed to that report's name.
+
+    One id names one item in the run, across the nights the run took, and the
+    same way on both: a fresh run counts an id over every item the readers
+    wrote (`_repeated_ids`), dropped or not, so a call gating one report on a
+    later night counts the ids over every item the other reader wrote too --
+    read off the reader's own written copy in its directory, as the gate was
+    handed it, or off the run-root copy when that is all there is. Neither is
+    written. An item dropped on the earlier night counts: it was written under
+    the id, it may still be printed in the run-root copy beside a kept item,
+    and on a fresh run its twin would have fallen with it.
+    """
+    from src import market_labels      # lazy: that module imports this one
+    found: dict[str, str] = {}
+    for name in REPORT_SIDES:
+        if name in handed:
+            continue
+        written = [agent_inputs.agents_root(bundle_root) / agent / name
+                   for agent, spec in agent_inputs.KNOWN_AGENTS.items() if spec.writes == name]
+        copies = [path for path in (*written, Path(bundle_root) / name) if path.is_file()]
+        if not copies:
+            continue
+        for item in market_labels.report_items(copies[0].read_text(encoding="utf-8",
+                                                                   errors="replace")):
+            identifier = item_id(item)
+            if identifier is not None:
+                found.setdefault(identifier, name)
+    return found
 
 
 def gate(reports: list[dict], bundle_root) -> dict:
@@ -599,6 +642,9 @@ def gate(reports: list[dict], bundle_root) -> dict:
             f"{MANIFEST} names no accession, and a computed row's id begins with one")
     known_areas = areas()
     repeated = _repeated_ids(reports)
+    elsewhere = _ids_elsewhere(
+        bundle_root,
+        {Path(entry["report"]).name for entry in reports if isinstance(entry.get("report"), str)})
 
     kept: dict[str, list[dict]] = {}
     kept_ids: dict[str, set[str]] = {}
@@ -648,6 +694,10 @@ def gate(reports: list[dict], bundle_root) -> dict:
             if why is None and identifier in repeated:
                 why = (f"the item id {identifier} is on more than one item in this "
                        "run, so a citation naming it would not name one item")
+            if why is None and identifier in elsewhere:
+                why = (f"the item id {identifier} is on more than one item in this "
+                       f"run: it is on an item of {elsewhere[identifier]}, gated already, "
+                       "so a citation naming it would not name one item")
             if why is None:
                 why = (quote_drop_reason(item, index) if index is not None
                        else citation_drop_reason(item, upstream_ids))
@@ -664,5 +714,5 @@ def gate(reports: list[dict], bundle_root) -> dict:
                 dropped.append({"report": name, "item_id": identifier, "reason": why})
         kept[name], kept_ids[name] = standing, standing_ids
 
-    _write_counts(bundle_root, manifest, dropped, normalized)
+    _write_counts(bundle_root, manifest, dropped, normalized, gated)
     return {"kept": kept, "dropped": dropped, "normalized": normalized}

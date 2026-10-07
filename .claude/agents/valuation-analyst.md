@@ -16,8 +16,9 @@ second pass and write `analysis_valuation.json`. Below, "the calculator" is
 whichever of the two your directory holds; the field paths are the same in both.
 
 **You see** the calculator, `analysis_accounting.json`,
-`analysis_financial.json`, the MD&A and the earnings release verbatim
-(`input_mdna.md`, `input_8k.md`), and — inside the calculator, under
+`analysis_financial.json`, of the MD&A and the earnings release only the
+paragraphs the notes reader flagged, each verbatim (`input_mdna.md`,
+`input_8k.md`; the manifest records the trim), and — inside the calculator, under
 `market.price` and `cost_of_capital.price_at_cutoff` — the price at the cutoff.
 In the second pass, your own `assumptions.json` too.
 

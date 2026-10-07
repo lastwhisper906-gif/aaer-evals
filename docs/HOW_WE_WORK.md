@@ -278,9 +278,30 @@ The owner's decision of 2026-10-06 (`docs/structure_changes.md`) sets this table
 - **Shared inputs first, in a fixed order,** so the prompt cache serves them.
 - **No repeat of a passed call.** A Fable call whose output passed the gate is never
   run again. A failed call reruns only that agent, at most twice.
-- **"Fable limit reached" stops the batch.** What finished is published, what is
-  pending is written into `queue.md`, and the batch continues the next night. An
-  analyst never falls back to Opus.
+- **"Fable limit reached" stops the batch.** What finished is published -- the
+  other analyst's gated analysis, `memo_ko.md` and `baselines.json` from what
+  exists, the memo saying which frame is missing and why -- the manifest names the
+  agent under `fable_limit_reached`, and `src/run_analysis.py` exits 4
+  (`LIMIT_REACHED`; 3 is the interpreter pin's, and the batch tells the two apart).
+  What is pending is written into `queue.md`, and the batch continues the next
+  night: the stopped run is continued in place (`--resume`, or by default when the
+  manifest records `fable_limit_reached`), every agent whose gated output is on
+  record is skipped and never called again, only the stopped agent and those after
+  it run, and the manifest records `resumed_at` and `resume_skipped`. A limit is
+  read off the message, and for a Fable call off its shape too: a failed call that
+  spent no token and ended in under ten seconds. A Fable call whose output is not
+  JSON at all carries no usage record, so it spent no token by that reading, and
+  one that fails that way in under ten seconds is read as the limit too -- a
+  mis-installed CLI or a bad flag included -- because that is the shape the limit
+  took on 2026-09-29 (lessons.md) and the owner's reading is that it is the limit
+  before anything else: stopping the batch on it costs one night, running eleven
+  more filings into it costs the night and the record. An analyst never falls back to
+  Opus, and a resume runs under the model the stopped run did: `--model` must be
+  the stopped run's `model_override`, and absent when it had none, or the resume
+  is refused (exit 2), since a run on two models mixes what the record cannot
+  compare; `model_override.applies_to` names the agents the invocation that wrote
+  it called, and the boundary check holds the valuation analyst's trimmed prose
+  to the flagged set it derives again from the gated report and the drop list.
 - **Tokens are counted.** Input, cache-write, cache-read and output tokens, and wall
   time, are recorded per agent per filing in `input_manifest.json`.
 - **The batch is sized from the record.** The nightly batch is Fable tokens available ÷
