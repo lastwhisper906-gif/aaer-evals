@@ -1212,6 +1212,13 @@ def compound_revenue_growth(rows: list, years: int) -> dict:
     `rows` is the history, newest first, so the year `years` back is `rows[years]`;
     with fewer fiscal years on record than that, or a revenue that is not a
     positive number at either end, the cell says so and holds no number.
+
+    The rows must be consecutive fiscal years: a record that lacks one would put
+    a year that is `years + 1` years back under the exponent 1/`years`, and the
+    rate would be wrong under the very key the owner's coverage grader reads.
+    So the span from the earlier row's fiscal-year end to the newest's has to be
+    `years` fiscal years of 350 to 380 days each (`trends.YEAR_DAYS`), and
+    otherwise the cell is missing with the gap named.
     """
     # revenue_growth_n_year_compound
     #     = (revenue of the newest fiscal year / revenue n fiscal years earlier) ** (1/n) - 1
@@ -1221,6 +1228,9 @@ def compound_revenue_growth(rows: list, years: int) -> dict:
         return {"missing": f"{len(rows)} fiscal years on record, and {years}-year compound "
                            f"growth needs {years + 1}", "formula": formula}
     newest, earlier = rows[0], rows[years]
+    gap = fiscal_year_gap(rows[:years + 1])
+    if gap:
+        return {"missing": gap, "formula": formula}
     for label, row in (("the newest fiscal year", newest),
                        (f"{years} fiscal years earlier", earlier)):
         if not row["revenue"] or row["revenue"] <= 0:
@@ -1235,6 +1245,33 @@ def compound_revenue_growth(rows: list, years: int) -> dict:
             "formula": formula, "unit": "ratio", "years": years,
             "fiscal_years": f"{earlier['fiscal_year']} to {newest['fiscal_year']}",
             "inputs": inputs}
+
+
+def _fiscal_year_end(row: dict) -> dt.date:
+    """The end date of a history row's `fiscal_year`, written `start..end`."""
+    return _date(row["fiscal_year"].split("..")[-1])
+
+
+def fiscal_year_gap(rows: list) -> str | None:
+    """Why `rows` (newest first) are not consecutive fiscal years, or None.
+
+    Each step from one row's fiscal-year end to the next's has to be one fiscal
+    year, 350 to 380 days (`trends.YEAR_DAYS`); a longer step is a fiscal year
+    the record lacks, and the whole span then covers more years than the rows
+    count. The sentence names the step so a reader can see which year is absent.
+    """
+    years = len(rows) - 1
+    low, high = trends.YEAR_DAYS
+    for later, earlier in zip(rows, rows[1:]):
+        step = (_fiscal_year_end(later) - _fiscal_year_end(earlier)).days
+        if not low <= step <= high:
+            span = (_fiscal_year_end(rows[0]) - _fiscal_year_end(rows[-1])).days
+            return (f"the {years + 1} newest fiscal years on record span {span} days, not "
+                    f"{years} fiscal years of {low} to {high} days each: {step} days from the "
+                    f"fiscal year ending {_fiscal_year_end(earlier)} to the one ending "
+                    f"{_fiscal_year_end(later)}, so a fiscal year between them is absent "
+                    f"from the record")
+    return None
 
 
 # --- the four free-cash-flow measures -------------------------------------------------

@@ -583,6 +583,45 @@ def test_the_memo_prints_the_free_cash_flow_yield_wacc_components_and_growth_bes
         assert word not in without
 
 
+def test_the_memo_prints_one_growth_beside_history_line_with_a_computed_valuation():
+    """Two-sided, after the second lens's second reading, through the branch a
+    published calculator.json takes: a valuation with a value range and a reverse
+    DCF with a value. Without the block the memo prints the line it always printed
+    -- the reverse DCF's 0.04 beside the history's three-year 0.095 -- and no
+    five-year figure; with the block it prints the block's line -- 0.03, 9.5%,
+    6.2% -- and not the old one; never both."""
+    priced = copy.deepcopy(FIELDS)
+    priced["valuation"] = {"value_range_per_share": {"low": 50.0, "high": 70.0},
+                           "price_at_cutoff": 60.0, "price_position": "inside the range",
+                           "reverse_dcf": {"value": 0.04, "price": 60.0}}
+    priced["earnings_versus_cash"]["history"]["revenue_growth_three_year_compound"] = 0.095
+
+    def growth_lines(text: str) -> list[str]:
+        return [line for line in text.splitlines()
+                if line.startswith(f"- {memo.GROWTH_BESIDE_HISTORY_KO}")]
+
+    without = memo.memo(ticker="TEST", form="10-Q", period_end="2026-06-30", cutoff="2026-07-30",
+                        fields=priced, accounting=None, financial=None, valuation=None,
+                        baselines=None)
+    assert "주당 50.00달러 ~ 주당 70.00달러" in without
+    assert growth_lines(without) == [
+        f"- {memo.GROWTH_BESIDE_HISTORY_KO}: 4.0% · 과거 3년 연평균: 9.5%"]
+    assert "과거 5년" not in without
+
+    with_block = copy.deepcopy(priced)
+    with_block["implied_growth_beside_history"] = {
+        "implied_ten_year_revenue_growth": {"value": 0.03},
+        "revenue_growth_three_year_compound": {"value": 0.095},
+        "revenue_growth_five_year_compound": {"value": 0.062}}
+    text = memo.memo(ticker="TEST", form="10-Q", period_end="2026-06-30", cutoff="2026-07-30",
+                     fields=with_block, accounting=None, financial=None, valuation=None,
+                     baselines=None)
+    assert "주당 50.00달러 ~ 주당 70.00달러" in text
+    assert growth_lines(text) == [
+        f"- {memo.GROWTH_BESIDE_HISTORY_KO}: 3.0% · 과거 3년 연평균: 9.5% · 과거 5년 연평균: 6.2%"]
+    assert "4.0%" not in text
+
+
 def test_the_control_cites_the_paragraphs_of_its_own_input():
     sources = {"input_notes.md": "[acc:notes:1] We extended payment terms to certain customers.\n"}
     payload = accounting()

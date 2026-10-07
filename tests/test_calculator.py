@@ -1187,16 +1187,83 @@ def test_the_reverse_dcf_finds_the_growth_beside_history_at_two_hand_prices():
         CIEN_GORDON_NEXT_YEAR_CASH / (wacc - 0.03), rel=1e-12)
 
 
+def _history(ends: list[str], revenues: list[float]) -> list[dict]:
+    """History rows, newest first, one per fiscal-year end, each a year long."""
+    return [{"fiscal_year": f"{(dt.date.fromisoformat(end) - dt.timedelta(days=364)).isoformat()}..{end}",
+             "revenue": revenue, "revenue_id": None}
+            for end, revenue in zip(ends, revenues)]
+
+
 def test_growth_beside_history_with_fewer_fiscal_years_is_absent_with_the_count():
-    """Four years of 400, 300, 200, 100 newest first: three-year compound (400/100)**(1/3) - 1;
-    five-year needs six years and says it has four; a revenue that is not a number is named."""
-    rows = [{"fiscal_year": f"year {i}", "revenue": 100.0 * (4 - i), "revenue_id": None}
-            for i in range(4)]
+    """Four consecutive years ending each 31 October, 400, 300, 200, 100 newest first:
+    three-year compound (400/100)**(1/3) - 1; five-year needs six years and says it
+    has four; a revenue that is not a number is named."""
+    rows = _history(["2025-10-31", "2024-10-31", "2023-10-31", "2022-10-31"],
+                    [400.0, 300.0, 200.0, 100.0])
     assert calculator.compound_revenue_growth(rows, 3)["value"] == pytest.approx(4 ** (1 / 3) - 1)
     five = calculator.compound_revenue_growth(rows, 5)
     assert five["missing"] == "4 fiscal years on record, and 5-year compound growth needs 6"
     rows[3]["revenue"] = None
     assert "not a positive number" in calculator.compound_revenue_growth(rows, 3)["missing"]
+
+
+def test_growth_beside_history_over_a_gap_in_the_fiscal_years_is_absent_with_the_gap_named():
+    """Two-sided, after the second lens's second reading. Six fiscal years ending
+    each 31 October with 2021 absent -- 2025, 2024, 2023, 2022, 2020, 2019 -- and
+    revenue 320, 300, 280, 260, 220, 200 newest first:
+      the four newest are consecutive (365, 366, 365 days apart), so the three-year
+      rate is (320 / 260) ** (1/3) - 1 = 1.230769 ** (1/3) - 1 = 0.0717;
+      the six span 2025-10-31 less 2019-10-31 = 2,192 days (six years, two of them
+      leap years), not five fiscal years, because 2022-10-31 less 2020-10-31 is
+      730 days (no leap day between them), so the five-year rate is
+      absent and the sentence names that step -- (320 / 200) ** (1/5) - 1 under the
+      exponent 1/5 would have been a six-year rate called a five-year one.
+    With 2021 on record (revenue 240) the five-year rate is (320 / 200) ** (1/5) - 1 = 0.0986."""
+    with_gap = _history(["2025-10-31", "2024-10-31", "2023-10-31", "2022-10-31", "2020-10-31",
+                         "2019-10-31"], [320.0, 300.0, 280.0, 260.0, 220.0, 200.0])
+    three = calculator.compound_revenue_growth(with_gap, 3)
+    assert three["value"] == pytest.approx((320 / 260) ** (1 / 3) - 1)
+    assert three["value"] == pytest.approx(0.0717, abs=5e-5)
+    five = calculator.compound_revenue_growth(with_gap, 5)
+    assert "value" not in five
+    assert five["missing"] == (
+        "the 6 newest fiscal years on record span 2192 days, not 5 fiscal years of 350 to "
+        "380 days each: 730 days from the fiscal year ending 2020-10-31 to the one ending "
+        "2022-10-31, so a fiscal year between them is absent from the record")
+    assert calculator.fiscal_year_gap(with_gap[:4]) is None
+    consecutive = _history(["2025-10-31", "2024-10-31", "2023-10-31", "2022-10-31", "2021-10-31",
+                            "2020-10-31"], [320.0, 300.0, 280.0, 260.0, 240.0, 200.0])
+    assert calculator.compound_revenue_growth(consecutive, 5)["value"] == pytest.approx(
+        (320 / 200) ** (1 / 5) - 1)
+    assert calculator.compound_revenue_growth(consecutive, 5)["value"] == pytest.approx(
+        0.0986, abs=5e-5)
+    # The same gap under the three-year key, whose rows[3] read predates this item;
+    # 2022-10-31 to 2024-10-31 is 731 days, with 2024's leap day between them.
+    gap_in_three = _history(["2025-10-31", "2024-10-31", "2022-10-31", "2021-10-31"],
+                            [320.0, 300.0, 260.0, 240.0])
+    assert "731 days from the fiscal year ending 2022-10-31 to the one ending 2024-10-31" in \
+        calculator.compound_revenue_growth(gap_in_three, 3)["missing"]
+
+
+def test_the_history_the_grader_reads_carries_no_rate_across_a_growth_beside_history_gap():
+    """Through annual_history, on a planted record of 10-K revenues for the fiscal
+    years ending each 31 October 2019 to 2025 with 2021 absent: the flat three-year
+    key is (320 / 260) ** (1/3) - 1 and the flat five-year key is not written at all,
+    rather than a six-year rate under its name."""
+    ends = ["2019-10-31", "2020-10-31", "2022-10-31", "2023-10-31", "2024-10-31", "2025-10-31"]
+    revenues = [200.0, 220.0, 260.0, 280.0, 300.0, 320.0]
+    record = calculator.Record(_rows(Revenues=[
+        {"start": (dt.date.fromisoformat(end) - dt.timedelta(days=364)).isoformat(),
+         "end": end, "val": revenue} for end, revenue in zip(ends, revenues)]))
+    spans = calculator.durations(record.usd)
+    periods = {"fiscal_years": calculator.fiscal_years(spans, dt.date(2025, 10, 31))}
+    assert [span[1] for span in periods["fiscal_years"]] == list(reversed(ends))
+    history = calculator.annual_history(record, periods)
+    assert history["revenue_growth_three_year_compound"] == pytest.approx((320 / 260) ** (1 / 3) - 1)
+    assert "revenue_growth_five_year_compound" not in history
+    beside = calculator.implied_growth_beside_history({"missing": "no assumptions"}, history)
+    assert ("730 days from the fiscal year ending 2020-10-31 to the one ending 2022-10-31"
+            in beside["revenue_growth_five_year_compound"]["missing"])
 
 
 def test_free_cash_flow_yield_and_wacc_components_without_a_price_are_absent_with_the_reason(nvda):
