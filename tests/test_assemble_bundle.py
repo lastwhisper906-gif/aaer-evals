@@ -483,6 +483,8 @@ UNDER_DROPPED_BUNDLE = {
     ("SMCI", "10-K"): "the disclaimer's heading carried; 97 read, 98 built",
     ("SNDK", "10-K"): "12 page numerals and the disclaimer's heading carried; "
                       "71 read, 84 built",
+    ("FFIV", "10-Q"): "the disclaimer's heading and its page-broken second half "
+                      "carried; 66 read, 68 built",
 }
 
 EIGHT_K_CASES = [

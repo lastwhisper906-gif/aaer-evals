@@ -180,6 +180,8 @@ UNDER_DROPPED = {
     "SMCI": "the disclaimer's heading is carried; 2 read, 1 dropped",
     "SNDK": "12 of 13 bare page numerals and the disclaimer's heading are carried; "
             "15 read, 2 dropped",
+    "FFIV": "the disclaimer's heading and its page-broken second half are carried; "
+            "3 read, 1 dropped",
 }
 
 

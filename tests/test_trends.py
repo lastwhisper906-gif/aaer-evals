@@ -1334,7 +1334,28 @@ def test_an_empty_record_still_lists_all_thirteen_periods():
 
 # --- the table's own words are plain names -------------------------------------
 
-@pytest.mark.parametrize("ticker", TICKERS)
+# One company of the next eight added on 2026-10-07 is named with the shape
+# itself. The table copies the record's `entity_name`, and FFIV's companyfacts
+# record names the filer "F5, INC." -- the name its 10-K's cover page prints
+# as "F5, Inc.", not a code this project minted -- so line 15 of FFIV's table
+# carries `F5`, which `src/plain_name_check.py` reads as a code. Its kept words
+# are added "when one actually turns up", and this one has, but `F5` is also a
+# code the archived project wrote (its guidance family, among 191 occurrences
+# under `archive/`), so whether the filer's name joins them is left to the
+# owner; the default meanwhile is this mark. A run quoting the name is exempt
+# already, because FFIV's own filings print it. Strict, so a kept word, or a
+# table that stops copying the name, turns it red.
+NAMED_WITH_THE_SHAPE = {
+    "FFIV": "the record's entity_name 'F5, INC.' is written into the table; "
+            "1 token, line 15",
+}
+
+
+@pytest.mark.parametrize("ticker", [
+    pytest.param(ticker, marks=pytest.mark.xfail(
+        strict=True, reason=f"{ticker}: {NAMED_WITH_THE_SHAPE[ticker]}"))
+    if ticker in NAMED_WITH_THE_SHAPE else ticker
+    for ticker in TICKERS])
 def test_nothing_the_table_writes_is_a_letter_number_code(ticker):
     """A reader quotes this table, and its report is read by the plain-name check.
 
