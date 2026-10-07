@@ -182,6 +182,8 @@ UNDER_DROPPED = {
             "15 read, 2 dropped",
     "FFIV": "the disclaimer's heading and its page-broken second half are carried; "
             "3 read, 1 dropped",
+    "LOGI": "the page-broken second half of the disclaimer is carried; "
+            "2 read, 1 dropped",
 }
 
 

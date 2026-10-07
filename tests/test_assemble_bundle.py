@@ -485,6 +485,8 @@ UNDER_DROPPED_BUNDLE = {
                       "71 read, 84 built",
     ("FFIV", "10-Q"): "the disclaimer's heading and its page-broken second half "
                       "carried; 66 read, 68 built",
+    ("LOGI", "10-Q"): "the page-broken second half of the disclaimer carried; "
+                      "61 read, 62 built",
 }
 
 EIGHT_K_CASES = [
