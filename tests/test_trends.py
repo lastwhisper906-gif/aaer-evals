@@ -1085,7 +1085,11 @@ def test_the_two_records_older_than_their_trigger_are_the_ones_the_fixtures_hold
     quietly different table. Both sides come from the committed manifests."""
     stale = {ticker for ticker in TICKERS
              if record_newest_filing(ticker) < cutoff(ticker)}
-    assert stale == {"CARR", "LFUS"}
+    # Of the eight added on 2026-10-07, JCI's and FELE's 10-Qs of 2026-07-29
+    # were in no companyfacts row when their records were fetched
+    # (`tests/test_fetch_companyfacts.py`'s NOT_YET_IN_COMPANYFACTS), so their
+    # records are older than their triggers too.
+    assert stale == {"CARR", "LFUS", "JCI", "FELE"}
 
 
 @pytest.mark.parametrize("ticker", TICKERS)

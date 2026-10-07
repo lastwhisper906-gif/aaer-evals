@@ -72,6 +72,7 @@ removed.
 | 10-Q | Item 4 controls | HTML section split | notes-text reader |
 | 10-K, 10-Q | Item 1A risk factors, **diff only** | HTML section split, then the prior-period diff | notes-text reader |
 | 10-K | Exhibit 21, subsidiaries, every 10-K, diffed | exhibit type from the submission's SGML header, never the filename | notes-text reader |
+| 10-K | a 10-K whose submission header names no document of the EX-21 family is read as "no subsidiary exhibit in this filing", named as such in `input_exhibits.md` and diffed against nothing | the header names none and the record holds none; a header that names one the record lacks is refused | notes-text reader |
 | Exhibit 10 | credit-agreement amendments and waivers, **on trigger only** — an 8-K 1.01, or the debt note naming one | exhibit type from the SGML header | notes-text reader |
 | 8-K, all | item codes and dates | the `items` field of the submissions index | both, and events |
 | 8-K 2.02 Ex. 99.1 | earnings release — guidance and outlook, non-GAAP reconciliation | HTML exhibit, then paragraphs and tables | notes-text reader, numbers reader |

@@ -141,6 +141,17 @@ class ExhibitError(Exception):
     """The exhibit cannot be read from what the submission and the record say."""
 
 
+# What a 10-K whose submission names no document of the EX-21 family is read as.
+# Western Digital's and Arista's 10-Ks for 2026 file no subsidiary exhibit at
+# all: their SGML headers name the report, the certifications, the consents and
+# the taxonomy and nothing of the EX-21 family. That is a fact about the filing,
+# not a broken record, so it is recorded by name here and in `input_exhibits.md`
+# rather than refused — and it is only read that way when the header names
+# none; a header that names an exhibit the record does not hold is still refused.
+NO_SUBSIDIARY_EXHIBIT = ("no subsidiary exhibit in this filing: the submission "
+                         "header names no document of the EX-21 family")
+
+
 # --- the submission header ---------------------------------------------------
 
 def document_types(header: str) -> list[dict]:
@@ -278,7 +289,27 @@ def filings(ticker: str, *, cutoff, fixtures_root=cutoff_guard.FIXTURES) -> list
                                         fixtures_root=fixtures_root)
         exhibit = cutoff_guard.documents(ticker, form="10-K", role=exhibit_role,
                                          fixtures_root=fixtures_root)
-        if not header or not exhibit:
+        if not header:
+            continue
+        if not exhibit:
+            # A header on record with no exhibit beside it: the filing either
+            # named none, which is the absence read below, or named one the
+            # record does not hold, which is a record to refuse.
+            if len(header) != 1:
+                raise ExhibitError(f"{ticker}: {header_role} names {len(header)} "
+                                   f"documents, and one submission has one")
+            if header[0]["filing_date"] > limit:
+                continue
+            header_text = cutoff_guard.load_document(
+                header[0]["full_path"], cutoff, fixtures_root=fixtures_root)
+            named = [entry for entry in document_types(header_text)
+                     if is_subsidiary_exhibit(entry["type"])]
+            if named:
+                raise ExhibitError(
+                    f"{ticker}: {header[0]['accession']} names "
+                    f"{named[0]['filename']} as its {named[0]['type']} and the "
+                    f"record holds no {exhibit_role} for it")
+            found.append({"header": header[0], "exhibit": None})
             continue
         if len(header) != 1 or len(exhibit) != 1:
             raise ExhibitError(
@@ -306,6 +337,11 @@ def read_exhibit(pair: dict, *, cutoff, fixtures_root=cutoff_guard.FIXTURES) -> 
     rather than of the day the fixture was fetched — a stored document that is
     not the one the header names is refused instead of parsed.
     """
+    if pair["exhibit"] is None:
+        return {"accession": pair["header"]["accession"],
+                "filing_date": pair["header"]["filing_date"],
+                "type": None, "sequence": None, "filename": None,
+                "subsidiaries": None, "absent": NO_SUBSIDIARY_EXHIBIT}
     header_text = cutoff_guard.load_document(pair["header"]["full_path"], cutoff,
                                              fixtures_root=fixtures_root)
     named = named_exhibit(header_text)
@@ -336,13 +372,16 @@ def extract(ticker: str, *, cutoff=None, fixtures_root=cutoff_guard.FIXTURES) ->
     current = read_exhibit(on_record[0], cutoff=cutoff, fixtures_root=fixtures_root)
     prior = (read_exhibit(on_record[1], cutoff=cutoff, fixtures_root=fixtures_root)
              if len(on_record) > 1 else None)
+    # `docs/INPUT_SPEC.md` §2: the first filing for a company is read whole. A
+    # 10-K that filed no subsidiary exhibit has nothing to diff on either side.
+    diffable = (prior is not None and current["subsidiaries"] is not None
+                and prior["subsidiaries"] is not None)
     return {
         "ticker": ticker,
         "cutoff": str(cutoff),
         "exhibit": current,
         "prior_exhibit": prior,
-        # `docs/INPUT_SPEC.md` §2: the first filing for a company is read whole.
-        "diff": diff(current["subsidiaries"], prior["subsidiaries"]) if prior else None,
+        "diff": diff(current["subsidiaries"], prior["subsidiaries"]) if diffable else None,
     }
 
 
@@ -366,6 +405,8 @@ def sections(payload: dict) -> list[tuple[str, list[str]]]:
     ids are numbered once and the file has one shape.
     """
     changes = payload["diff"]
+    if payload["exhibit"]["subsidiaries"] is None:
+        return [(f"{NO_SUBSIDIARY_EXHIBIT}; nothing to diff", [])]
     if changes is None:
         # `docs/INPUT_SPEC.md` §2: the first filing on record is read whole.
         return [("subsidiaries in this 10-K, carried whole",
@@ -384,6 +425,12 @@ def sections(payload: dict) -> list[tuple[str, list[str]]]:
 def counts(payload: dict) -> str:
     """The one arithmetic line. Python does it; nobody downstream re-counts."""
     changes = payload["diff"]
+    if payload["exhibit"]["subsidiaries"] is None:
+        prior = payload["prior_exhibit"]
+        before = (f"the prior 10-K lists {len(prior['subsidiaries'])} subsidiaries, "
+                  "not diffed" if prior and prior["subsidiaries"] is not None
+                  else "no earlier 10-K's list on record")
+        return f"no subsidiary exhibit in this 10-K; {before}"
     if changes is None:
         return (f"{len(payload['exhibit']['subsidiaries'])} subsidiaries in this "
                 "10-K, and no earlier 10-K to diff against")
@@ -396,6 +443,9 @@ def counts(payload: dict) -> str:
 
 def names_line(label: str, exhibit: dict) -> str:
     """What the submission header said, for one of the two 10-Ks."""
+    if exhibit["subsidiaries"] is None:
+        return (f"- {label} {exhibit['accession']} filed {exhibit['filing_date']}: "
+                f"{exhibit['absent']}")
     return (f"- {label} {exhibit['accession']} filed {exhibit['filing_date']}: "
             f"type {exhibit['type']}, document {exhibit['sequence']}, "
             f"file {exhibit['filename']}")
@@ -661,9 +711,12 @@ def main(argv: list[str] | None = None) -> int:
     tail = (f"{len(changes['added'])} added, {len(changes['removed'])} dropped, "
             f"{len(changes['jurisdiction_changed'])} moved"
             if changes else "no earlier 10-K to diff against")
-    print(f"exhibits: {ticker} {current['type']} {current['filename']} "
-          f"({current['accession']}), {len(current['subsidiaries'])} subsidiaries, "
-          f"{tail}; exhibit 10 on trigger — {trigger_counts(triggered)} → {args.out}")
+    opening = (f"{current['accession']}, {current['absent']}"
+               if current["subsidiaries"] is None else
+               f"{current['type']} {current['filename']} ({current['accession']}), "
+               f"{len(current['subsidiaries'])} subsidiaries, {tail}")
+    print(f"exhibits: {ticker} {opening}; exhibit 10 on trigger — "
+          f"{trigger_counts(triggered)} → {args.out}")
     return 0
 
 

@@ -149,6 +149,22 @@ UNDER_DROPPED = {
             "and 'does not undertake to update'; 1 read, 0 dropped",
     "NVDA": "a page break splits the forward-looking paragraph and only the half "
             "carrying 'within the meaning of' is dropped; 2 read, 1 dropped",
+    # The eight added on 2026-10-07, read the same way; POWL's one safe-harbour
+    # paragraph is dropped and its pages carry no numerals, so it is not here.
+    "DELL": "9 of 16 bare page numerals and 5 of the 6 blocks of the 'Special Note "
+            "on Forward-Looking Statements' are carried; 22 read, 8 dropped",
+    "WDC": "13 of 14 bare page numerals and the disclaimer's heading are carried; "
+           "16 read, 2 dropped",
+    "ANET": "3 of 8 bare page numerals and both blocks of the disclaimer are carried; "
+            "10 read, 5 dropped",
+    "FTNT": "the disclaimer's heading and its opening paragraph are carried, and a "
+            "one-sentence pointer inside the guidance is dropped instead; "
+            "3 read, 2 dropped",
+    "JCI": "all 20 bare page numerals and the disclaimer's heading are carried; "
+           "22 read, 1 dropped",
+    "FELE": "the heading and the page-broken second half of the safe-harbour "
+            "paragraph are carried; 3 read, 1 dropped",
+    "FN": "the disclaimer's heading is carried; 2 read, 1 dropped",
 }
 
 
@@ -312,12 +328,26 @@ def test_only_the_four_named_items_go_in_verbatim(tmp_path):
     assert "9.01" not in parse_8k.VERBATIM_ITEMS
 
 
+# Read off the submissions index by hand. Fabrinet's stored 8-K, accession
+# 0001408710-26-000026 filed 2026-08-17, is the one row of
+# tests/fixtures/FN/submissions.json with that accession and carries items
+# "1.01,2.02,2.03,5.02,9.01"; 1.01 (the credit-facility amendment and term loan)
+# and 5.02 (the executive incentive plan) are two of the four items
+# docs/INPUT_SPEC.md carries verbatim, 2.02 is the release, and 2.03 and 9.01 are
+# not carried. No other company's stored 8-K carries a verbatim item: the twelve's
+# rows all read "2.02,9.01" and POWL's "2.02,8.01,9.01".
+VERBATIM_ON_RECORD = {"FN": ["1.01", "5.02"]}
+
+
 @pytest.mark.parametrize("ticker", TICKERS)
-def test_no_fixture_8k_carries_a_verbatim_item(ticker):
-    """Stated as a test so the day one does, this fails and is looked at."""
+def test_the_fixture_8ks_carry_the_verbatim_items_their_index_rows_name(ticker):
+    """Stated as a test so the day a new one does, this fails and is looked at."""
     payload = parse_8k.extract(ticker)
-    assert payload["verbatim_items"] == {}, \
+    assert sorted(payload["verbatim_items"]) == VERBATIM_ON_RECORD.get(ticker, []), \
         f"{ticker} now files {sorted(payload['verbatim_items'])} — check the rendering"
+    for code, item in payload["verbatim_items"].items():
+        assert code in parse_8k.VERBATIM_ITEMS
+        assert item["paragraphs"][0].startswith(f"Item {code}")
 
 
 @pytest.mark.parametrize("ticker", TICKERS)
