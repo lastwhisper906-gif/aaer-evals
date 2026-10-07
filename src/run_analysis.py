@@ -459,8 +459,9 @@ def is_golden_filing(accession: str | None) -> tuple[bool, str]:
     A case is a YAML file under `evals/golden/cases/`, read by
     `evals/golden_format.py`'s `load_case`, and it names the filing when its
     `approved_by_owner` is true and its `filing.accession` is this one. A tree
-    with no cases directory -- this one, until the evals branch lands -- says so
-    rather than answering False as if it had looked.
+    with no cases directory says so rather than answering False as if it had
+    looked; this tree holds the directory, empty until the owner approves a case,
+    and the answer then names the accession no case names.
     """
     if not GOLDEN_CASES.is_dir():
         return False, NO_GOLDEN_CASES

@@ -1009,18 +1009,27 @@ def test_the_control_runs_on_a_golden_filing_and_skips_the_rest(tmp_path, monkey
     assert ran["control_reason"] == "planted: True"
 
 
-def test_this_tree_has_no_golden_cases_and_the_manifest_says_so(tmp_path, monkeypatch):
-    """The cases directory and its reader come with the evals branch; until it
-    lands, the control does not run under --control auto, and the run's manifest
-    says that rather than that no case names the filing."""
-    assert not run_analysis.GOLDEN_CASES.exists()
-    assert run_analysis.is_golden_filing(NVDA_ACCESSION) == (False, run_analysis.NO_GOLDEN_CASES)
-    assert run_analysis.is_golden_filing(None) == (False, run_analysis.NO_GOLDEN_CASES)
+def test_this_tree_holds_the_cases_directory_with_no_approved_case_and_the_manifest_says_so(
+        tmp_path, monkeypatch):
+    """The evals branch landed: this tree holds `evals/golden/cases` and its
+    reader, and no approved case yet. Under --control auto the control does not
+    run, and the manifest names the accession no case names -- not that the tree
+    has no cases directory, which is the other side, read on a tree without one."""
+    assert run_analysis.GOLDEN_CASES.is_dir() and run_analysis.GOLDEN_FORMAT.is_file()
+    assert list(run_analysis.GOLDEN_CASES.glob("*.yaml")) == []
+    no_case = f"no approved golden case under evals/golden/cases names {NVDA_ACCESSION}"
+    assert run_analysis.is_golden_filing(NVDA_ACCESSION) == (False, no_case)
+    assert run_analysis.is_golden_filing(None) == (
+        False, "the run's manifest names no accession, so no golden case can name it")
     manifest = _run_with_control(tmp_path, monkeypatch, "auto")
     assert "control-single-agent" not in manifest["agents"]
-    assert manifest["control_reason"] == run_analysis.NO_GOLDEN_CASES
-    assert manifest["analysis_stages"]["control"] == f"skipped: {run_analysis.NO_GOLDEN_CASES}"
+    assert manifest["control_reason"] == no_case
+    assert manifest["analysis_stages"]["control"] == f"skipped: {no_case}"
     assert manifest["analysis_failure"] is None
+    # the other side: a tree with no cases directory says so, before any reading
+    monkeypatch.setattr(run_analysis, "GOLDEN_CASES", tmp_path / "no-such-tree" / "cases")
+    assert run_analysis.is_golden_filing(NVDA_ACCESSION) == (False, run_analysis.NO_GOLDEN_CASES)
+    assert run_analysis.is_golden_filing(None) == (False, run_analysis.NO_GOLDEN_CASES)
 
 
 # A planted reader with the real reader's two names, `load_case` and
