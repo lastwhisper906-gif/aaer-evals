@@ -719,15 +719,16 @@ CASH_FLOW_AND_BALANCE = {
 # (`NOT_IN_COMPANYFACTS`), and ESCO's quarterly states the whole of working
 # capital as one line
 # (`test_one_working_capital_line_for_everything_is_refused`).
+# In sorted order, which is how the assertion below reads it. FELE and JCI are
+# of the eight added on 2026-10-07: the two 10-Qs filed 2026-07-29 that
+# companyfacts had not loaded when the records were fetched
+# (`tests/test_fetch_companyfacts.py`'s NOT_YET_IN_COMPANYFACTS), read the same
+# way off the record as the three before them.
 NOTHING_TO_READ = ["CARR 10-Q 0001783180-26-000032",
                    "ESE 10-Q 0001104659-26-093266",
-                   "LFUS 10-Q 0001628280-26-050481",
-                   # Of the eight added on 2026-10-07, the two 10-Qs filed
-                   # 2026-07-29 that companyfacts had not loaded when the records
-                   # were fetched (`tests/test_fetch_companyfacts.py`'s
-                   # NOT_YET_IN_COMPANYFACTS), read the same way off the record.
+                   "FELE 10-Q 0000038725-26-000055",
                    "JCI 10-Q 0000833444-26-000087",
-                   "FELE 10-Q 0000038725-26-000055"]
+                   "LFUS 10-Q 0001628280-26-050481"]
 
 
 @functools.lru_cache(maxsize=None)
