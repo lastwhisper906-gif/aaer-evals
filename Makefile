@@ -13,7 +13,10 @@ BASELINE ?= origin/main
 # The whole gate. Run this before opening a pull request. CI runs this same
 # target, so the gate is defined once -- the same rule written in two files is
 # two rules until something reads both.
-check: append-check archive-check plain-name-check secret-check rule-checks test
+# `test` runs before `rule-checks` so CI shows the suite's result before a rule
+# check that is red by merge order (a judge CLAUDE.md names that lands on a
+# branch ahead of this one); make stops at the first failing target.
+check: append-check archive-check plain-name-check secret-check test rule-checks
 
 # The prediction record is append-only. A violation here is not a finding to
 # triage later -- it stops the cycle.

@@ -1,4 +1,11 @@
-"""archive_check has to catch a rewrite of an archived file, and let a new one through."""
+"""archive_check has to catch a rewrite of an archived file, and let a new one or an append through.
+
+The baseline's archived file is `# the old method\n`, one line ending in a
+newline. An append keeps those bytes and adds a line after them, the way
+`archive/lessons_enforced.md` takes a lesson a script comes to enforce; a
+rewrite changes the line; an append onto a baseline with no final newline
+would finish that last line differently, so it is a rewrite too.
+"""
 
 from __future__ import annotations
 
@@ -48,6 +55,40 @@ def test_a_new_archived_file_and_a_live_edit_are_clean(repo):
 
     assert archive_check.violations("baseline") == []
     assert archive_check.main(["--baseline", "baseline"]) == 0
+
+
+def test_appending_to_an_archived_file_passes(repo):
+    with (repo / "archive" / "docs" / "method.md").open("a") as f:
+        f.write("2026-10-07 a lesson a script now enforces.\n  enforced by: src/x.py\n")
+    commit_all(repo)
+
+    assert archive_check.violations("baseline") == []
+    assert archive_check.main(["--baseline", "baseline"]) == 0
+
+
+def test_rewriting_a_line_and_appending_fails(repo):
+    (repo / "archive" / "docs" / "method.md").write_text("# the old method, rewritten\nappended\n")
+    commit_all(repo)
+
+    assert archive_check.violations("baseline") == ["modified: archive/docs/method.md"]
+
+
+def test_inserting_above_the_end_fails(repo):
+    (repo / "archive" / "docs" / "method.md").write_text("inserted\n# the old method\n")
+    commit_all(repo)
+
+    assert archive_check.violations("baseline") == ["modified: archive/docs/method.md"]
+
+
+def test_appending_onto_a_baseline_with_no_final_newline_fails(repo):
+    path = repo / "archive" / "docs" / "method.md"
+    path.write_text("# the old method")
+    commit_all(repo, "no final newline")
+    git(repo, "branch", "-f", "unterminated")
+    path.write_text("# the old method\nappended\n")
+    commit_all(repo)
+
+    assert archive_check.violations("unterminated") == ["modified: archive/docs/method.md"]
 
 
 def test_editing_an_archived_file_fails(repo):
