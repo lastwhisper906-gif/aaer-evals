@@ -1,6 +1,16 @@
 """The decide stage's Python half: the rules a supervisor is handed, the market
 table it is not, and what of its answer stands.
 
+**A retired module, with one live function.** The two supervisors left the live
+pipeline on 2026-09-28 and their definitions moved to `archive/agents/` on
+2026-10-06; nothing runs them. Everything here that serves them -- `write_rules`,
+`check`, `gate_items`, `published`, `write_prediction`, `record` -- is kept
+because the pilot runs on record were produced by it and are scored under that
+rules version. `mark_market_unavailable` is the one live function:
+`src/run_analysis.py` calls it on every run with no market table. Since
+2026-10-06 the label it writes `absent` belongs to the two market comparisons
+`src/market_labels.py` computes, not to an agent.
+
 `docs/HOW_WE_WORK.md` gives `decide` two calls, supervisor-accounting and
 supervisor-pressure, and three checks: the output schema is valid, every
 citation resolves to an upstream report, and the served model equals the pin.
@@ -34,10 +44,10 @@ alone. Of 2026-09-23: the supervisors then run on the two reader reports,
 `input_manifest.json` as `market_table: "unavailable"` beside
 `market_table_reason`, with each comparer's label written `absent` under
 `comparer_labels` -- not `not_priced`, which is a reading of a market, and not a
-guess -- and refuses a run that holds a market table or a
+guess -- and refuses a run that holds a market table, market labels or a
 comparer report, because such a run would be saying two things about its
-market. `src/agent_inputs.py` reads the key, builds no comparer, and builds
-each supervisor over the two reader reports. `published` writes the
+market. `src/agent_inputs.py` reads the key before it builds any directory
+that is not a reader's. `published` writes the
 abstention whatever the supervisor said, and `record` keeps what it said in
 the manifest beside the reason, so the override is on the record and the
 supervisor's own words are not lost.
@@ -64,10 +74,10 @@ import sys
 from pathlib import Path
 
 try:
-    from src import agent_inputs, cutoff_guard, prediction_schema
+    from src import agent_inputs, cutoff_guard, market_labels, prediction_schema
 except ImportError:  # invoked as a plain script
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from src import agent_inputs, cutoff_guard, prediction_schema
+    from src import agent_inputs, cutoff_guard, market_labels, prediction_schema
 
 CHECKLIST = Path(__file__).resolve().parent.parent / "docs" / "CHECKLIST.md"
 MANIFEST = agent_inputs.MANIFEST
@@ -81,7 +91,7 @@ QUESTIONS = {
     "supervisor-accounting": "accounting_reliability",
     "supervisor-pressure": "financial_pressure",
 }
-PREDICTION_FILES = {question: agent_inputs.AGENTS[agent].writes
+PREDICTION_FILES = {question: agent_inputs.RETIRED_AGENTS[agent].writes
                     for agent, question in QUESTIONS.items()}
 
 # `docs/CHECKLIST.md`'s own headings for the two key tables, and the section
@@ -110,6 +120,8 @@ OVERRIDE_KEY = "market_direction_written_insufficient"
 ABSENT = agent_inputs.ABSENT
 COMPARER_LABELS_KEY = agent_inputs.COMPARER_LABELS_KEY
 COMPARERS = agent_inputs.COMPARERS
+# What the market labels are written to, by `src/market_labels.py`.
+MARKET_LABELS = market_labels.LABELS_FILE
 
 
 class DecideError(Exception):
@@ -148,12 +160,10 @@ def mark_market_unavailable(run, reason: str = NO_PRICE_SOURCE) -> dict:
     run = Path(run)
     if not isinstance(reason, str) or not reason.strip():
         raise DecideError("a run with no market table says why, and no reason was given")
-    present = [name for name in (agent_inputs.MARKET_TABLE,) + agent_inputs.COMPARER_REPORTS
-               if (run / name).is_file()]
-    # A comparer's directory is built over a market table, so one that exists
-    # ran, or is about to, whether or not its report has reached the run.
-    present += [f"{agent_inputs.AGENTS_DIRNAME}/{name}/" for name in COMPARERS
-                if agent_inputs.session_root(run, name).exists()]
+    # The market labels are read off a market table, so a run holding them had
+    # one; and so did a run holding a retired comparer's report.
+    present = [name for name in (agent_inputs.MARKET_TABLE, MARKET_LABELS)
+               + agent_inputs.COMPARER_REPORTS if (run / name).is_file()]
     if present:
         raise DecideError(
             f"{run} holds {', '.join(present)}, so it has a market table or a "

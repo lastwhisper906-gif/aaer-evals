@@ -35,6 +35,8 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 INPUT_SPEC = REPO_ROOT / "docs" / "INPUT_SPEC.md"
 CHECKLIST = REPO_ROOT / "docs" / "CHECKLIST.md"
 PROMPTS = REPO_ROOT / ".claude" / "agents"
+# Where the two comparer and two supervisor definitions went on 2026-10-06.
+ARCHIVED_PROMPTS = REPO_ROOT / "archive" / "agents"
 
 # docs/INPUT_SPEC.md, the rows of the layer table, verbatim.
 LAYER_TABLE = (
@@ -72,32 +74,6 @@ EXPECTED = {
         "input_prior_predictions.md",
         "input_risk_factors.md",
     ),
-    "numbers-vs-market": (
-        "input_market.json",
-        "report_notes_text.md",
-        "report_numbers.md",
-    ),
-    "notes-vs-market": (
-        "input_market.json",
-        "report_notes_text.md",
-        "report_numbers.md",
-    ),
-    "supervisor-accounting": (
-        "report_notes_text.md",
-        "report_notes_vs_market.md",
-        "report_numbers.md",
-        "report_numbers_vs_market.md",
-        "rules_checklist_keys.md",
-        "rules_output_schema.md",
-    ),
-    "supervisor-pressure": (
-        "report_notes_text.md",
-        "report_notes_vs_market.md",
-        "report_numbers.md",
-        "report_numbers_vs_market.md",
-        "rules_checklist_keys.md",
-        "rules_output_schema.md",
-    ),
     # docs/INPUT_SPEC.md's layer table, the owner's decision of 2026-09-28.
     "accounting-analyst": (
         "calculator_filings_only.json",
@@ -127,8 +103,9 @@ EXPECTED = {
 }
 
 READERS = ("numbers-reader", "notes-text-reader")
+ANALYSTS = ("accounting-analyst", "financial-analyst")
+# Retired from the live pipeline on 2026-10-06; their definitions are archived.
 COMPARERS = ("numbers-vs-market", "notes-vs-market")
-SUPERVISORS = ("supervisor-accounting", "supervisor-pressure")
 
 # The price file. "prices, short interest" is one file in the bundle: the
 # market table §4 describes, whose last three columns are the short interest.
@@ -148,10 +125,6 @@ PREDICTION_PROBABILITY_KEYS = ("confidence", "p_within_horizon",
 WRITES = {
     "numbers-reader": "report_numbers.md",
     "notes-text-reader": "report_notes_text.md",
-    "numbers-vs-market": "report_numbers_vs_market.md",
-    "notes-vs-market": "report_notes_vs_market.md",
-    "supervisor-accounting": "prediction_accounting.json",
-    "supervisor-pressure": "prediction_pressure.json",
     "accounting-analyst": "analysis_accounting.json",
     "financial-analyst": "analysis_financial.json",
     "valuation-analyst": "assumptions.json",
@@ -252,7 +225,7 @@ def test_a_comparer_prompt_says_it_holds_both_reader_reports(agent):
     both reader reports beside comparer prompts saying each sees one, so a
     directory the table calls correct was one its own prompt called broken.
     """
-    prompt = (PROMPTS / f"{agent}.md").read_text(encoding="utf-8")
+    prompt = (ARCHIVED_PROMPTS / f"{agent}.md").read_text(encoding="utf-8")
     for report in ("report_numbers.md", "report_notes_text.md"):
         assert report in prompt
 
@@ -293,32 +266,16 @@ def test_a_reader_directory_holds_the_filing_bundle_and_no_price_file(agent, tmp
     assert [name for name in _names(root) if name.startswith("prediction_")] == []
 
 
-@pytest.mark.parametrize("agent", COMPARERS)
-def test_a_comparer_directory_holds_both_reader_reports_and_no_filing(agent, tmp_path):
+@pytest.mark.parametrize("agent", sorted(agent_inputs.RETIRED_AGENTS))
+def test_a_retired_agent_gets_no_directory(agent, tmp_path):
+    """The comparers are Python and the supervisors are archived: nothing builds
+    a directory for either, and the refusal says why."""
     run = _run_directory(tmp_path)
-    agent_inputs.build(run, agent)
-    root = agent_inputs.session_root(run, agent)
-
-    assert _names(root) == list(EXPECTED[agent])
-    assert (root / "report_numbers.md").is_file()
-    assert (root / "report_notes_text.md").is_file()
-    # A filing is everything the extract stage wrote out of the documents. The
-    # market table is the one `input_` file that is not one of them.
-    filings = [name for name in _names(root)
-               if name.startswith("input_") and name != PRICE_FILE]
-    assert filings == []
-
-
-@pytest.mark.parametrize("agent", SUPERVISORS)
-def test_a_supervisor_directory_holds_neither_a_filing_nor_the_market_table(
-        agent, tmp_path):
-    run = _run_directory(tmp_path)
-    agent_inputs.build(run, agent)
-    root = agent_inputs.session_root(run, agent)
-
-    assert _names(root) == list(EXPECTED[agent])
-    assert PRICE_FILE not in _names(root)
-    assert [name for name in _names(root) if name.startswith("input_")] == []
+    with pytest.raises(AgentInputError, match="retired"):
+        agent_inputs.build(run, agent)
+    assert not agent_inputs.agents_root(run).exists()
+    assert not (PROMPTS / f"{agent}.md").exists()
+    assert (ARCHIVED_PROMPTS / f"{agent}.md").is_file()
 
 
 def test_every_routed_file_arrives_verbatim(tmp_path):
@@ -458,9 +415,9 @@ def test_grouping_the_six_by_layer_puts_a_sibling_one_step_out(tmp_path):
 def test_one_agent_s_directory_inside_another_s_is_a_broken_boundary(tmp_path):
     run = _run_directory(tmp_path)
     agent_inputs.build_all(run)
-    nested = agent_inputs.session_root(run, "numbers-vs-market") / "supervisor-pressure"
+    nested = agent_inputs.session_root(run, "accounting-analyst") / "financial-analyst"
     nested.mkdir()
-    for name in EXPECTED["supervisor-pressure"]:
+    for name in EXPECTED["financial-analyst"]:
         (nested / name).write_bytes((run / name).read_bytes())
 
     broken = agent_inputs.isolation_violations(run)
@@ -489,7 +446,7 @@ def test_a_session_root_beside_the_bundle_is_a_broken_boundary(tmp_path):
 def test_a_file_the_layer_never_sees_is_a_broken_boundary(tmp_path):
     run = _run_directory(tmp_path)
     agent_inputs.build_all(run)
-    root = agent_inputs.session_root(run, "supervisor-accounting")
+    root = agent_inputs.session_root(run, "accounting-analyst")
     (root / PRICE_FILE).write_bytes((run / PRICE_FILE).read_bytes())
 
     broken = agent_inputs.isolation_violations(run)
@@ -532,9 +489,9 @@ def test_a_named_baseline_is_not_read_as_a_probability(tmp_path):
         run / "input_prior_predictions.md").read_bytes()
 
 
-@pytest.mark.parametrize("agent", COMPARERS + SUPERVISORS)
+@pytest.mark.parametrize("agent", ANALYSTS)
 def test_a_directory_assembled_before_its_inputs_exist_is_refused(agent, tmp_path):
-    """A comparer built before the readers ran holds the right shape, wrong run."""
+    """An analyst built before the readers ran holds the right shape, wrong run."""
     run = _run_directory(tmp_path, skip=("report_numbers.md", "report_notes_text.md",
                                          "report_numbers_vs_market.md",
                                          "report_notes_vs_market.md"))
@@ -611,11 +568,11 @@ def test_another_agent_s_report_is_a_leak_even_where_its_own_is_not(tmp_path):
     """`writes` is one file, not a licence for the layer's whole vocabulary."""
     run = _run_directory(tmp_path)
     agent_inputs.build_all(run)
-    root = agent_inputs.session_root(run, "supervisor-accounting")
-    (root / "prediction_pressure.json").write_text("{}\n", encoding="utf-8")
+    root = agent_inputs.session_root(run, "accounting-analyst")
+    (root / "analysis_financial.json").write_text("{}\n", encoding="utf-8")
 
     broken = agent_inputs.isolation_violations(run)
-    assert any("prediction_pressure.json" in line and "never sees" in line
+    assert any("analysis_financial.json" in line and "never sees" in line
                for line in broken)
 
 
@@ -627,7 +584,7 @@ def test_a_routed_name_over_other_bytes_is_a_broken_boundary(tmp_path):
     """
     run = _run_directory(tmp_path)
     agent_inputs.build_all(run)
-    root = agent_inputs.session_root(run, "numbers-vs-market")
+    root = agent_inputs.session_root(run, "accounting-analyst")
     smuggled = root / "report_numbers.md"
     smuggled.unlink()
     smuggled.hardlink_to(run / PRICE_FILE)
@@ -657,37 +614,14 @@ def test_naming_a_session_root_does_not_create_one(tmp_path):
     assert not (tmp_path / "runs").exists()
 
 
-def test_the_light_run_wakes_four_agents_and_not_the_other_two(tmp_path):
-    """An 8-K 2.02 produces three reports, so supervisor-accounting does not run."""
-    run = _run_directory(tmp_path, skip=agent_inputs.LIGHT_RUN_ABSENT)
+def test_the_light_run_wakes_the_two_readers_and_nothing_else(tmp_path):
+    """An 8-K 2.02 wakes both readers. Its comparer is Python now and its
+    supervisor is archived, and which analyst it wakes is not decided."""
+    run = _run_directory(tmp_path)
     built = agent_inputs.build_all(run, agent_inputs.LIGHT_RUN, light=True)
-    assert [record["agent"] for record in built] == list(agent_inputs.LIGHT_RUN)
-    assert not agent_inputs.session_root(run, "supervisor-accounting").exists()
-    assert not agent_inputs.session_root(run, "notes-vs-market").exists()
-
-
-@pytest.mark.parametrize("agent", SUPERVISORS)
-def test_a_supervisor_over_three_reports_is_the_light_run_and_nothing_else(
-        agent, tmp_path):
-    """The same directory: allowed on an 8-K 2.02, refused on a full run.
-
-    `report_notes_vs_market.md` is absent on a light run because that comparer
-    never runs, and absent on a full run because it has not run *yet*. The two
-    look identical on disk and only one of them is a finished run, so the
-    allowance is the light run's and the full run is refused rather than built
-    over three reports and reported complete.
-    """
-    run = _run_directory(tmp_path, skip=agent_inputs.LIGHT_RUN_ABSENT)
-
-    with pytest.raises(AgentInputError) as caught:
-        agent_inputs.build(run, agent)
-    assert "report_notes_vs_market.md" in str(caught.value)
-
-    record = agent_inputs.build(run, agent, light=True)
-    assert record["absent"] == list(agent_inputs.LIGHT_RUN_ABSENT)
-    assert _names(agent_inputs.session_root(run, agent)) == [
-        name for name in EXPECTED[agent]
-        if name not in agent_inputs.LIGHT_RUN_ABSENT]
+    assert [record["agent"] for record in built] == list(READERS)
+    assert sorted(path.name for path in agent_inputs.agents_root(run).iterdir()) \
+        == sorted(READERS)
 
 
 # --- the command --------------------------------------------------------------
@@ -701,11 +635,12 @@ def test_the_command_builds_the_six_and_reports_them(tmp_path, capsys):
     assert agent_inputs.isolation_violations(run) == []
 
 
-def test_the_command_builds_a_light_run_over_three_reports(tmp_path, capsys):
-    run = _run_directory(tmp_path, skip=agent_inputs.LIGHT_RUN_ABSENT)
+def test_the_command_builds_a_light_run_of_the_two_readers(tmp_path, capsys):
+    run = _run_directory(tmp_path)
     assert agent_inputs.main(["--run", str(run), "--light"]) == 0
-    assert "1 absent" in capsys.readouterr().out
-    assert not agent_inputs.session_root(run, "notes-vs-market").exists()
+    printed = capsys.readouterr().out
+    assert all(agent in printed for agent in READERS)
+    assert "accounting-analyst" not in printed
 
 
 def test_the_command_reports_a_broken_boundary_it_did_not_build(tmp_path, capsys):
@@ -732,3 +667,53 @@ def test_the_command_refuses_a_run_directory_that_is_not_there(tmp_path, capsys)
     assert agent_inputs.main(
         ["--run", str(tmp_path / "no-such-run")]) == agent_inputs.BAD_INPUT
     assert "not a run directory" in capsys.readouterr().err
+
+
+# --- the retired four, on a run on record ---------------------------------------
+
+def test_a_leak_into_a_retired_agent_s_directory_is_a_broken_boundary(tmp_path):
+    """A pilot run on record holds a supervisor's or a comparer's directory. The
+    agent is retired -- nothing builds or runs one -- but its directory is the
+    record of what it saw, and it is held to its layer as `RETIRED_AGENTS` keeps
+    it: a supervisor never sees the market table, a comparer never sees a filing."""
+    run = _run_directory(tmp_path)
+    agent_inputs.build_all(run)
+    supervisor = agent_inputs.agents_root(run) / "supervisor-pressure"
+    supervisor.mkdir()
+    (supervisor / PRICE_FILE).write_bytes((run / PRICE_FILE).read_bytes())
+    comparer = agent_inputs.agents_root(run) / "numbers-vs-market"
+    comparer.mkdir()
+    (comparer / "input_notes.md").write_bytes((run / "input_notes.md").read_bytes())
+
+    broken = agent_inputs.isolation_violations(run)
+    assert any(line.startswith("supervisor-pressure:") and PRICE_FILE in line
+               and "never sees" in line for line in broken)
+    assert any(line.startswith("numbers-vs-market:") and "input_notes.md" in line
+               and "never sees" in line for line in broken)
+
+
+def test_a_clean_retired_agent_s_directory_is_not_a_violation(tmp_path):
+    """The same two directories holding what their layers saw, and the file each
+    wrote, are the record and are clean. Sitting anywhere but under `agents/`,
+    or holding a file nobody routed, they are not."""
+    run = _run_directory(tmp_path)
+    agent_inputs.build_all(run)
+    supervisor = agent_inputs.agents_root(run) / "supervisor-pressure"
+    supervisor.mkdir()
+    for name in agent_inputs.RETIRED_AGENTS["supervisor-pressure"].sees:
+        if (run / name).is_file():
+            (supervisor / name).write_bytes((run / name).read_bytes())
+    (supervisor / "prediction_pressure.json").write_text("{}\n", encoding="utf-8")
+    comparer = agent_inputs.agents_root(run) / "numbers-vs-market"
+    comparer.mkdir()
+    for name in agent_inputs.RETIRED_AGENTS["numbers-vs-market"].sees:
+        if (run / name).is_file():
+            (comparer / name).write_bytes((run / name).read_bytes())
+    (comparer / "report_numbers_vs_market.md").write_text("x\n", encoding="utf-8")
+    assert agent_inputs.isolation_violations(run) == []
+
+    beside = run / "notes-vs-market"
+    beside.mkdir()
+    broken = agent_inputs.isolation_violations(run)
+    assert any(line.startswith("notes-vs-market:") and "not at its session root" in line
+               for line in broken)

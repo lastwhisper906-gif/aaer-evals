@@ -75,6 +75,13 @@ import pytest
 from src import assemble_bundle
 
 NVDA_ACCESSION = "0001045810-26-000075"
+# A planted acceptance stamp for that 10-Q, after the four o'clock close. The
+# fixture carries no acceptance time. EDGAR's submissions API gives
+# `filings.recent.acceptanceDateTime` = 2026-08-26T20:36:00.000Z for the
+# accession (read 2026-10-06); whether that Z is decorative on an Eastern wall
+# clock (the src/market.py reading, 20:36 Eastern) or marks UTC (16:36 Eastern)
+# is a row in docs/needs_judgment.md, and the test below says what it holds.
+NVDA_ACCEPTED = "2026-08-26T20:36:00"
 
 NUMBERS_REPORT = '''```json
 { "id": "earnings_quality_accruals_rising", "what_changed": "x", "account": "a",
@@ -287,3 +294,53 @@ def test_a_named_model_reaches_every_agent_and_the_manifest_says_so(tmp_path, mo
 def test_with_no_model_named_each_agent_asks_for_its_own(finished):
     _, manifest, _ = finished
     assert "model_override" not in manifest
+
+
+def test_a_run_with_a_market_table_is_labelled_by_python_and_never_marked_unavailable(tmp_path, monkeypatch):
+    """NVDA's 10-Q was filed on 2026-08-26, a Wednesday. The acceptance stamp here is
+    planted: the fixture under tests/fixtures/NVDA holds no acceptance time (the
+    fetch projects the index to filing dates, and every fixture file is held to
+    the manifest's hash, so none can be written onto a row by hand; queue.md
+    carries the item that makes the fetch keep it). EDGAR's submissions API gives
+    2026-08-26T20:36:00.000Z for this accession. Read as Eastern, the
+    src/market.py convention, that is 20:36, after EDGAR's half past five, and
+    EDGAR would then date the filing the 27th -- while the fixture dates it the
+    26th; read as UTC it is 16:36 Eastern and the 26th stands. So either the
+    convention or the fixture's date is wrong, and docs/needs_judgment.md holds
+    the question. This test holds only the window arithmetic for a stamp after
+    the four o'clock close: under either reading day zero is Thursday the 27th
+    and the window runs to Monday the 31st. Abnormal returns 0.02, 0.01 and 0.00
+    sum to 0.03."""
+    accepted = NVDA_ACCEPTED
+    run = tmp_path / "NVDA" / NVDA_ACCESSION
+    bundle = assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,
+                                   prior_runs=run.parent.parent)
+    assemble_bundle.write(bundle, run)
+    days = ["2026-08-27", "2026-08-28", "2026-08-31"]
+    rows = [{"ticker": "NVDA", "date": d, "abnormal_return": a, "window": "filing",
+             "reaction_window": 0.03, "short_interest_ratio": None,
+             "short_interest_two_year_median": None, "short_interest_above_median": None}
+            for d, a in zip(days, [0.02, 0.01, 0.0])]
+    (run / "input_market.json").write_text(json.dumps(
+        {"ticker": "NVDA", "cutoff": "2026-08-31", "rows": rows,
+         "windows": [{"kind": "filing", "filing_date": "2026-08-26",
+                      "accepted": accepted, "day_zero": days[0],
+                      "days": days, "reaction_window": 0.03}]}))
+    monkeypatch.setattr(run_analysis, "ask", _fake_ask({}))
+    manifest = run_analysis.run_company(run=run, ticker="NVDA", form="10-Q",
+                                        cutoff="2026-08-26", period_end="2026-07-26",
+                                        store=run_analysis.cutoff_guard.FIXTURES,
+                                        prices=None)
+    assert manifest["analysis_stages"]["market_labels"]["written"] is True
+    assert manifest["analysis_stages"]["market_labels_check"]["checked"] is True
+    assert manifest.get("market_table") != "unavailable"
+    # the table and the labels are the run's, and reach no agent: not the readers,
+    # not the analysts, not the valuation analyst, not the single-agent control
+    assert agent_inputs.isolation_violations(run) == []
+    agent_files = {path.name for path in (run / "agents").rglob("*") if path.is_file()}
+    assert "input_market.json" not in agent_files and "market_labels.json" not in agent_files
+    control = run / run_analysis.CONTROL_DIRNAME
+    control_files = {path.name for path in control.rglob("*") if path.is_file()} if control.is_dir() else set()
+    assert "input_market.json" not in control_files and "market_labels.json" not in control_files
+    labels = json.loads((run / "market_labels.json").read_text())
+    assert [one["labels"][0]["label"] for one in labels["items"]] == ["priced_in"]

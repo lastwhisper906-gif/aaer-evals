@@ -28,10 +28,13 @@ them stay on record.
 | valuation analyst | the calculator with the price at the cutoff (before its drivers, then with the DCF run on them), both checked analyses, the MD&A and the earnings release verbatim | a price after the cutoff, the market table |
 | supervisor (retired from the live pipeline on 2026-09-28; its runs stay on record) | the four reports, and the rules version's checklist keys and output schema | any filing, the market table |
 
-A comparer holds both reader reports because the layer's directory is one
-directory, but it **labels only the items of its own report** — numbers versus
-market labels `report_numbers.md`, notes versus market labels
-`report_notes_text.md`. Labelling an item from the other report is a broken run.
+**Since 2026-10-06 the comparer is Python**, the owner's decision of that day:
+`src/market_labels.py` reads the two reader reports and the market table and
+writes `market_labels.json`, one label per reader item per reaction window, from
+the sign of the window's abnormal return against the item's
+`expected_direction`. It runs no model and gets no agent directory; the two
+comparer definitions are in `archive/agents/`. Numbers versus market still
+labels `report_numbers.md` and notes versus market `report_notes_text.md`.
 
 The supervisor's two rules files are what both supervisor prompts already say
 its directory holds: `rules_output_schema.md`, the §7 block of
@@ -371,8 +374,9 @@ input_manifest.json           paragraph ids, exclusion reasons, dropped-item
                               counts, rules version, cutoff, served models
 report_numbers.md             the numbers reader
 report_notes_text.md          the notes-text reader
-report_numbers_vs_market.md   the numbers-versus-market comparer
-report_notes_vs_market.md     the notes-versus-market comparer
+report_numbers_vs_market.md   the numbers-versus-market comparer (retired; pilot runs)
+report_notes_vs_market.md     the notes-versus-market comparer (retired; pilot runs)
+market_labels.json            every reader item labelled against each reaction window, by Python
 rules_checklist_keys.md       the checklist's key names — supervisors only
 rules_output_schema.md        the prediction schema, the run's rules version — supervisors only
 prediction_accounting.json    the accounting reliability output

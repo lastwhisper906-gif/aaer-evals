@@ -997,7 +997,9 @@ def test_each_reader_prompt_names_every_area_as_the_gate_reads_it(reader):
 
 @pytest.mark.parametrize("comparer", ["numbers-vs-market", "notes-vs-market"])
 def test_each_comparer_prompt_gives_the_versus_market_convention(comparer):
-    prompt = (PROMPTS / f"{comparer}.md").read_text(encoding="utf-8")
+    """The two comparer definitions, archived on 2026-10-06 when the label became
+    `src/market_labels.py`, which names its items by the same convention."""
+    prompt = (REPO_ROOT / "archive" / "agents" / f"{comparer}.md").read_text(encoding="utf-8")
     assert "`_versus_market`" in prompt
     assert f"`{EXAMPLE_VERSUS_MARKET}`" in prompt
 

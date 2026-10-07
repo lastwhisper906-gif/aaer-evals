@@ -175,18 +175,21 @@ AREAS = Path(__file__).resolve().parent.parent / "rules" / "pilot" / "areas.json
 PLAIN_NAME = re.compile(r"[a-z]+(?:_[a-z]+)*")
 
 # Each report name the gate will take, and the side its items stand on: a
-# reader's quote the committed input, everyone else's cite. The six agents'
-# files come from the layer table; the single-agent control's two files quote
-# the input directly and are named in the same catalogue.
+# reader's quote the committed input, everyone else's cite. The agents' files
+# come from the layer table, the retired comparers' and supervisors' included,
+# because the pilot runs on record hold their reports and this gate is what
+# re-checks them; the single-agent control's two files quote the input directly
+# and are named in the same catalogue.
 QUOTES = "input"
 CITES = "cites"
+LAYER_TABLE = (*agent_inputs.AGENTS.values(), *agent_inputs.RETIRED_AGENTS.values())
 REPORT_SIDES = {agent.writes: QUOTES if agent.layer == "reader" else CITES
-                for agent in agent_inputs.AGENTS.values()}
+                for agent in LAYER_TABLE}
 REPORT_SIDES.update({name: QUOTES for name in agent_inputs.BUNDLE_CATALOGUE
                      if name.startswith("control_single_agent_")})
 
 # The four reports whose item ids are held to the name rule.
-NAMED_ITEMS = frozenset(agent.writes for agent in agent_inputs.AGENTS.values()
+NAMED_ITEMS = frozenset(agent.writes for agent in LAYER_TABLE
                         if agent.layer in ("reader", "comparer"))
 
 # The indent every committed JSON input is written under.

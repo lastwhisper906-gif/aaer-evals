@@ -12,8 +12,9 @@ merged into the pipeline's number."
 **The model is read off the supervisor's own prompt, not restated here.**
 `docs/HOW_WE_WORK.md` §6: "a control on a different model would measure the
 model, not the structure". `supervisor_model()` reads the `model:` line of
-`.claude/agents/supervisor-accounting.md` and `.claude/agents/supervisor-pressure.md`
-and refuses if the two disagree, so the control cannot drift off the supervisor
+`archive/agents/supervisor-accounting.md` and `archive/agents/supervisor-pressure.md`
+-- where the two retired supervisor definitions have sat since 2026-10-06, read
+for their pin and never run -- and refuses if the two disagree, so the control cannot drift off the supervisor
 by a copy nobody updated. The prompt, by the same paragraph, "lives inside the
 control's run script, not in `.claude/agents/` -- it is a control, not a layer,
 and it must not become something a session can invoke by name", so it is
@@ -164,7 +165,10 @@ except ImportError:  # invoked as a plain script
                      prediction_schema, quote_gate)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-AGENT_PROMPTS = REPO_ROOT / ".claude" / "agents"
+# The retired supervisors' definitions, whose model line this control borrows.
+# Archived on 2026-10-06 with the supervisors themselves; this control is the
+# retired two-question one, kept beside them for the pilot runs on record.
+AGENT_PROMPTS = REPO_ROOT / "archive" / "agents"
 
 MANIFEST = "input_manifest.json"
 PRIOR_PREDICTIONS = "input_prior_predictions.md"

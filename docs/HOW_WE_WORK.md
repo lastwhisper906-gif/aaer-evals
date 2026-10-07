@@ -80,28 +80,35 @@ judgment.
 Prediction is a routine, not a loop. There is no iterative improvement pass over
 a prediction.
 
+**The agent stages are three: reader → analyst → valuation**, with three
+handoffs, each through a Python gate: the quote-gated reader reports to the
+accounting and financial analysts, the checked analyses to the valuation
+analyst, and its checked reading to the memo. Everything between them -- the
+market labels, the calculator, the gates, the memo -- is Python.
+
 | Stage | Does | Passes when |
 |---|---|---|
 | detect filing | daily: new filings for the twelve, from the EDGAR submissions index — `src/detect_filing.py`, one lookup per `universe.json` row | 12 of 12 lookups succeed |
 | extract | the input spec, plus the diff, the trend table, the articulation checks and the histories | schema passes, paragraph counts in the normal range, zero cutoff violations, at least one `TextBlock` found |
 | market | the market table — abnormal returns, both reaction windows, the short-interest ratio and its two-year median | every trading day from the prior filing to reaction day two has a row, and nothing past reaction day two exists in it |
 | read | two calls: the numbers reader and the notes-text reader, each seeing only its own input directory. **Waits until reaction day two has closed** | every item carries a verbatim quote that string-matches that reader's committed input; unverifiable items are dropped and counted |
-| compare | two calls: numbers versus market, notes versus market. Neither sees a filing | every item cites an upstream item id that resolves, and carries exactly one of the three labels |
+| compare | Python, no model: `src/market_labels.py` labels each reader item against each reaction window -- `priced_in`, `not_priced` or `opposite_direction`, from the sign of the abnormal return against the item's `expected_direction` -- and writes short interest above its two-year median as a separate field; with no market table it writes nothing (the owner's decision of 2026-10-06) | every label cites a reader item, and carries exactly one of the three labels |
 | calculate | `src/calculator.py`: ratios, the four free-cash-flow measures, WACC and, once drivers exist, the DCF, reverse DCF and sensitivity grid — Python only, from the as-filed rows at the cutoff | every core input on record or named as missing; exit status says which |
-| analyse | `src/run_analysis.py`: the accounting and financial analysts (two calls, never merged, on the reader reports and the filings-only calculator), then the valuation analyst in two passes (drivers, then the reading of what Python computed from them), then the plain-Korean memo. The supervisors' decide stage left the live pipeline on 2026-09-28 | every item passes `src/analysis_check.py` — numbers only as calculator paths, citations and quotes verbatim — or is dropped and counted; every agent's model, tokens and cost in `input_manifest.json` |
+| analyse | `src/run_analysis.py`: the accounting and financial analysts (two calls, never merged, on the reader reports and the filings-only calculator), then the valuation analyst in two passes (drivers, then the reading of what Python computed from them), then the plain-Korean memo. The supervisors' decide stage left the live pipeline on 2026-09-28; their definitions and the comparers' are in `archive/agents/` since 2026-10-06 | every item passes `src/analysis_check.py` — numbers only as calculator paths, citations and quotes verbatim — or is dropped and counted; every agent's model, tokens and cost in `input_manifest.json` |
 | controls | the formula baselines (Python) and the single-agent control answering the same three analyses from the whole bundle and the calculator | every baseline computed, the control wrote its files, none merged into the analyses; `src/analysis_scorecard.py` sets them side by side |
 | publish | commit → pull request → auto-merge on green CI → `ots stamp input_manifest.json` | the merge succeeded and the `.ots` file exists |
 | record events | 8-K 4.01 / 4.02 / 1.01 / 5.02, late filings, amendments, comment letters, material-weakness language, quiet restatements, explanation materialization → `events/ledger.jsonl` | the append succeeded |
 | score | on horizon expiry or event occurrence, recompute the metrics and regenerate the results document | deterministic match |
 
-On a failure in `read`, `compare` or `decide`, retry once with identical input,
-then record a failure. A retry never changes the input.
+On a failure of an agent call in `read` or `analyse`, retry once with identical
+input, then record a failure. A retry never changes the input.
 
 `detect filing` runs daily; the rest of a full run does not. It waits for
-reaction day two so the comparers get a whole window. A light run on an
-8-K 2.02 wakes both readers, the numbers-versus-market comparer and
-`supervisor-pressure` only — `docs/INPUT_SPEC.md` says which reports it
-produces.
+reaction day two so the market labels get a whole window. A light run on an
+8-K 2.02 wakes both readers only; its market table is refused by the labeller
+("no filing window") until `src/market.py` writes the 8-K's own window as the
+light run's `filing` window, so today nothing is labelled on a light run
+(`docs/needs_judgment.md` holds the question and the default).
 
 **Publish merges itself.** `main` requires the CI check and nothing else — no
 reviewer, no approval. Every pull request from the pipeline or a routine sets
