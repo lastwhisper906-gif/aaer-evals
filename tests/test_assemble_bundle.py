@@ -480,6 +480,7 @@ UNDER_DROPPED_BUNDLE = {
                       "89 read, 91 built",
     ("AVGO", "10-Q"): "5 page numerals and 4 blocks of the cautionary note carried; "
                       "64 read, 73 built",
+    ("SMCI", "10-K"): "the disclaimer's heading carried; 97 read, 98 built",
 }
 
 EIGHT_K_CASES = [
