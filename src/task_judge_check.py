@@ -14,13 +14,18 @@ own headers, and this reads each row against it:
   backticks. Its own header says it: "An item with no eval command is not an
   item".
 
+A list that is there but yields no row under the headings this reads is refused,
+not passed: a renamed section (`## This cycle (wave 3)`, `## Blocked`) would
+otherwise read as history and the gate would pass having examined nothing.
+
 What it cannot see: whether the judge named is a good one. It says that a judge
 is named, which is the line between a task and a wish.
 
     python3.12 -m src.task_judge_check [--tasks docs/next_cycle_tasks.md] [--queue queue.md]
 
 Exit 0 and no output when clean, 1 when it found a row (one line each on stderr,
-`path:line: reason`), 2 when neither list is there, 3 on the wrong interpreter.
+`path:line: reason`), 2 when neither list is there or a list yields no row, 3 on
+the wrong interpreter.
 """
 
 from __future__ import annotations
@@ -46,26 +51,35 @@ QUEUE_SECTION = "## Open"
 COMMAND = re.compile(r"`[^`]+`")
 
 
-def _rows(path: Path, sections: frozenset[str]):
+def rows(path: Path, sections: frozenset[str]) -> list[tuple[int, list[str]]]:
+    """Every open row under one of `sections`, as (line number, its ` · ` parts)."""
+    found = []
     section = ""
     for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
         if line.startswith("## "):
             section = line.strip()
         elif section in sections and line.startswith(OPEN_ROW):
-            yield number, line.split(FIELD)
+            found.append((number, line.split(FIELD)))
+    return found
+
+
+def no_rows(path: Path, sections: frozenset[str]) -> str:
+    """The refusal for a list that yields nothing under the headings read."""
+    headings = " or ".join(sorted(sections))
+    return f"{path}: no rows under {headings}; a renamed section is not an empty list"
 
 
 def task_findings(tasks: Path) -> list[str]:
     """One line per open task-list row whose judge is missing."""
     return [f"{tasks}:{number}: an open item names no judge"
-            for number, parts in _rows(tasks, TASK_SECTIONS)
+            for number, parts in rows(tasks, TASK_SECTIONS)
             if len(parts) < 3 or not parts[2].strip()]
 
 
 def queue_findings(queue: Path) -> list[str]:
     """One line per open queue row with no eval command."""
     return [f"{queue}:{number}: an open item names no eval command"
-            for number, parts in _rows(queue, frozenset({QUEUE_SECTION}))
+            for number, parts in rows(queue, frozenset({QUEUE_SECTION}))
             if len(parts) < 2 or COMMAND.search(parts[1]) is None]
 
 
@@ -80,11 +94,16 @@ def main(argv: list[str] | None = None) -> int:
               "list that cannot be read is not a clean list", file=sys.stderr)
         return CANNOT_RUN
 
-    found = []
-    if args.tasks.is_file():
-        found += task_findings(args.tasks)
-    if args.queue.is_file():
-        found += queue_findings(args.queue)
+    lists = [(args.tasks, TASK_SECTIONS, task_findings),
+             (args.queue, frozenset({QUEUE_SECTION}), queue_findings)]
+    empty = [no_rows(path, sections) for path, sections, _ in lists
+             if path.is_file() and not rows(path, sections)]
+    if empty:
+        for line in empty:
+            print(line, file=sys.stderr)
+        return CANNOT_RUN
+
+    found = [line for path, _, findings in lists if path.is_file() for line in findings(path)]
     for line in found:
         print(line, file=sys.stderr)
     return FOUND if found else 0

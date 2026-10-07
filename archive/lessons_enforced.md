@@ -35,9 +35,11 @@ copied verbatim, oldest first, with its line number in `lessons.md` at commit
 
 2026-09-07 the new signature-queue detector fired on every report the old loop ever wrote; a rule about how work is done now must be floored at the cycle it starts, or it turns frozen records into violations.
   (was line 19) obsolete: the signature-queue detector belonged to the archived harness, which `docs/HOW_WE_WORK.md` §5 lists as dropped.
+  moved back to lessons.md on 2026-10-07: the note retires the artefact the lesson was learned on, not the lesson.
 
 2026-09-07 the documentation-bloat ratio was measuring archive/ — 3,847 frozen files pinned it where nothing the loop does could move it; a metric over a frozen tree is not a metric.
   (was line 20) obsolete: the documentation-bloat penalty was dropped (`docs/HOW_WE_WORK.md` §5: it measured a frozen tree).
+  moved back to lessons.md on 2026-10-07: the note retires the artefact the lesson was learned on, not the lesson.
 
 2026-09-07 the harness test command was specified as "python3.12 src/append_check.py && python3.12 -m pytest -q" and both halves were broken — the script form could not import its own package, and bare pytest collected the archive; run a command before writing it into a config.
   (was line 21) obsolete: the harness and its test command are gone; the gate is `make check`, defined once in `Makefile` and run by CI.
@@ -65,6 +67,7 @@ copied verbatim, oldest first, with its line number in `lessons.md` at commit
 
 2026-09-08 added seven indicators and moved the threshold that counts them in the same edit; caught it on re-read and put the threshold back — a threshold moved inside the change that adds its inputs is a threshold moved invisibly, and silence in the brief means the existing value stands.
   (was line 33) obsolete: the count of flags against a threshold was removed by the owner's decision of 2026-09-23: the prediction is an anomaly register with no count cut.
+  moved back to lessons.md on 2026-10-07: the note retires the artefact the lesson was learned on, not the lesson.
 
 2026-09-08 the repository's own .venv runs Python 3.14 while the pin is 3.12 and Homebrew's 3.12 has no pytest, so `make check` cannot pass on this machine as written; the Stop hook that runs it is therefore inert here until requirements are installed into a 3.12 environment.
   (was line 37) obsolete: the project's `.venv` is Python 3.12 now and is the `Makefile` default; `src/interpreter_pin.py` refuses 3.14.

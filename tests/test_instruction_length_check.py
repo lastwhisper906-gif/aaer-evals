@@ -104,6 +104,57 @@ def test_this_repository_s_lessons_files_are_dated():
         assert instruction_length_check.undated_lessons(path) == []
 
 
+# The planted CLAUDE.md for the path rule: twenty-two lines, two of which name
+# paths. Line 3 names a script and a directory that the test plants; line 7
+# names a script and a directory that it does not.
+PRESENT = "- plain names (src/present_check.py, make check; the record: runs/)"
+ABSENT = "- evals/ is the owner's (src/absent_guard.py in CI; the tools are denied)"
+
+
+def plant_with_paths(tmp_path: Path, present: bool) -> Path:
+    lines = [f"- rule {n}" for n in range(1, 23)]
+    lines[2] = PRESENT
+    if not present:
+        lines[6] = ABSENT
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / "present_check.py").write_text("", encoding="utf-8")
+    (tmp_path / "runs").mkdir()
+    path = tmp_path / "CLAUDE.md"
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return path
+
+
+def test_paths_that_exist_pass(tmp_path, capsys):
+    lessons = plant_lessons(tmp_path, DATED_LESSONS)
+    path = plant_with_paths(tmp_path, present=True)
+
+    assert instruction_length_check.named_paths(path) == [(3, "src/present_check.py"), (3, "runs/")]
+    assert instruction_length_check.main(["--file", str(path), "--lessons", str(lessons)]) == 0
+    assert capsys.readouterr().err == ""
+
+
+def test_a_path_that_is_not_in_the_tree_is_named(tmp_path, capsys):
+    lessons = plant_lessons(tmp_path, DATED_LESSONS)
+    path = plant_with_paths(tmp_path, present=False)
+
+    assert instruction_length_check.main(
+        ["--file", str(path), "--lessons", str(lessons)]) == instruction_length_check.FOUND
+    assert capsys.readouterr().err.splitlines() == [
+        f"{path}:7: names evals/, which is not in the tree; a rule naming a file that is not "
+        "there names nothing",
+        f"{path}:7: names src/absent_guard.py, which is not in the tree; a rule naming a file "
+        "that is not there names nothing"]
+
+
+def test_no_paths_turns_the_path_rule_off(tmp_path, capsys):
+    lessons = plant_lessons(tmp_path, DATED_LESSONS)
+    path = plant_with_paths(tmp_path, present=False)
+
+    assert instruction_length_check.main(
+        ["--file", str(path), "--lessons", str(lessons), "--no-paths"]) == 0
+    assert capsys.readouterr().err == ""
+
+
 def test_the_gate_runs_the_check():
     printed = subprocess.run(
         ("make", "-n", "check", f"PYTHON={sys.executable}", "BASELINE=origin/main"),

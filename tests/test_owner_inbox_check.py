@@ -82,6 +82,22 @@ def test_a_sign_off_file_outside_the_archive_is_named(tmp_path, capsys):
         "DECISIONS_PENDING.md:0: a file named as a sign-off queue"]
 
 
+def test_an_inbox_whose_rows_sit_under_another_heading_is_refused(tmp_path, capsys):
+    inbox = plant(tmp_path, "# Needs judgment\n\n## Blocked\n\n" + NOTE
+                  + "\n## Settled elsewhere\n\n- **the sector map** · default: one fund.\n")
+
+    assert run(tmp_path, inbox) == owner_inbox_check.CANNOT_RUN
+    assert capsys.readouterr().err.splitlines() == [
+        f"{inbox}: no rows under any heading as `[ ] ` or under ## Settled by default as "
+        "`- `; a renamed section is not an empty list"]
+
+
+def test_this_repository_s_inbox_yields_rows():
+    kinds = [kind for _, kind, _ in owner_inbox_check.rows(REPO_ROOT / "docs" / "needs_judgment.md")]
+    assert kinds.count("open") > 0
+    assert kinds.count("settled") > 0
+
+
 def test_an_inbox_that_is_not_there_is_not_a_clean_inbox(tmp_path, capsys):
     assert run(tmp_path, tmp_path / "docs" / "needs_judgment.md") == owner_inbox_check.CANNOT_RUN
     assert "is not there" in capsys.readouterr().err

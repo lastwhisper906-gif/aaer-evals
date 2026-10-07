@@ -25,14 +25,19 @@ So the check reads two things there, and one thing in the tree:
    `ownerqueue`, `signoff` or `approvalqueue`. The archived project had
    `DECISIONS_PENDING.md` and `OWNER_QUEUE.md`; they stay where they are.
 
+An inbox that is there but yields no row at all -- no `[ ] ` row under any
+heading and no `- ` row under `## Settled by default` -- is refused, not passed:
+a renamed section (`## Blocked`) would otherwise read as prose and the gate
+would pass having examined nothing.
+
 What it cannot see: whether a session actually stopped and waited. A file can
 only show the states somebody wrote down, and that is what this reads.
 
     python3.12 -m src.owner_inbox_check [--inbox docs/needs_judgment.md] [--root .]
 
 Exit 0 and no output when clean, 1 when it found a row or a file (one line each
-on stderr, `path:line: reason`), 2 when the inbox is not there, 3 on the wrong
-interpreter.
+on stderr, `path:line: reason`), 2 when the inbox is not there or yields no row,
+3 on the wrong interpreter.
 """
 
 from __future__ import annotations
@@ -64,21 +69,37 @@ SKIP_DIRECTORIES = frozenset({".git", ".venv", "__pycache__", ".pytest_cache",
                               "node_modules", "archive", "worktrees", "fixtures"})
 
 
-def inbox_findings(inbox: Path) -> list[str]:
-    """One line per inbox row that names no default."""
+def rows(inbox: Path) -> list[tuple[int, str, str]]:
+    """Every row the check reads, as (line number, "open" or "settled", the line)."""
     found = []
     section = ""
     for number, line in enumerate(inbox.read_text(encoding="utf-8").splitlines(), 1):
         if line.startswith("## "):
             section = line.strip()
-            continue
-        if line.startswith(OPEN_ROW):
+        elif line.startswith(OPEN_ROW):
+            found.append((number, "open", line))
+        elif section == SETTLED_HEADING and line.startswith(SETTLED_ROW):
+            found.append((number, "settled", line))
+    return found
+
+
+def no_rows(inbox: Path) -> str:
+    """The refusal for an inbox that yields nothing under the headings read."""
+    return (f"{inbox}: no rows under any heading as `{OPEN_ROW.strip()} ` or under "
+            f"{SETTLED_HEADING} as `{SETTLED_ROW.strip()} `; a renamed section is not an "
+            "empty list")
+
+
+def inbox_findings(inbox: Path) -> list[str]:
+    """One line per inbox row that names no default."""
+    found = []
+    for number, kind, line in rows(inbox):
+        if kind == "open":
             parts = line.split(FIELD)
             if len(parts) < 3 or not parts[1].strip():
                 found.append(f"{inbox}:{number}: an open row names no default in force")
-        elif section == SETTLED_HEADING and line.startswith(SETTLED_ROW):
-            if DEFAULT_MARK.search(line) is None:
-                found.append(f"{inbox}:{number}: a settled row does not say its default")
+        elif DEFAULT_MARK.search(line) is None:
+            found.append(f"{inbox}:{number}: a settled row does not say its default")
     return found
 
 
@@ -104,6 +125,10 @@ def main(argv: list[str] | None = None) -> int:
     if not args.inbox.is_file():
         print(f"owner_inbox_check: {args.inbox} is not there -- an inbox that cannot be "
               "read is not a clean inbox", file=sys.stderr)
+        return CANNOT_RUN
+
+    if not rows(args.inbox):
+        print(no_rows(args.inbox), file=sys.stderr)
         return CANNOT_RUN
 
     found = inbox_findings(args.inbox) + sign_off_files(args.root)

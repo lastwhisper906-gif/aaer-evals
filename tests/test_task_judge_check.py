@@ -73,6 +73,24 @@ def test_a_queue_row_with_no_command_is_named(tmp_path, capsys):
         f"{queue}:4: an open item names no eval command"]
 
 
+def test_a_list_whose_open_rows_sit_under_another_heading_is_refused(tmp_path, capsys):
+    tasks = plant(tmp_path / "docs" / "next_cycle_tasks.md", "## Blocked\n\n" + JUDGED)
+    queue = plant(tmp_path / "queue.md", "## Blocked\n\n" + QUEUED)
+
+    assert run(tasks, queue) == task_judge_check.CANNOT_RUN
+    assert capsys.readouterr().err.splitlines() == [
+        f"{tasks}: no rows under ## Next cycle or ## This cycle; a renamed section is not "
+        "an empty list",
+        f"{queue}: no rows under ## Open; a renamed section is not an empty list"]
+
+
+def test_this_repository_s_lists_yield_rows():
+    assert len(task_judge_check.rows(REPO_ROOT / "docs" / "next_cycle_tasks.md",
+                                     task_judge_check.TASK_SECTIONS)) > 0
+    assert len(task_judge_check.rows(REPO_ROOT / "queue.md",
+                                     frozenset({task_judge_check.QUEUE_SECTION}))) > 0
+
+
 def test_no_list_at_all_is_not_a_clean_list(tmp_path, capsys):
     assert (run(tmp_path / "docs" / "next_cycle_tasks.md", tmp_path / "queue.md")
             == task_judge_check.CANNOT_RUN)
