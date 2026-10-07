@@ -8,12 +8,15 @@
 PYTHON ?= .venv/bin/python
 BASELINE ?= origin/main
 
-.PHONY: check append-check plain-name-check secret-check test eval eval-quick
+.PHONY: check append-check archive-check plain-name-check secret-check rule-checks test eval eval-quick
 
 # The whole gate. Run this before opening a pull request. CI runs this same
 # target, so the gate is defined once -- the same rule written in two files is
 # two rules until something reads both.
-check: append-check plain-name-check secret-check test
+# `test` runs before `rule-checks` so CI shows the suite's result before a rule
+# check that is red by merge order (a judge CLAUDE.md names that lands on a
+# branch ahead of this one); make stops at the first failing target.
+check: append-check archive-check plain-name-check secret-check test rule-checks
 
 # The prediction record is append-only. A violation here is not a finding to
 # triage later -- it stops the cycle.
@@ -29,6 +32,21 @@ plain-name-check:
 # environment, and this is what says so out loud rather than in a sentence.
 secret-check:
 	$(PYTHON) -m src.secret_scan --changed --baseline $(BASELINE)
+
+# The archived project is added to, never rewritten.
+archive-check:
+	$(PYTHON) -m src.archive_check --baseline $(BASELINE)
+
+# Rules CLAUDE.md states in prose, each held by a script that reads the files:
+# every open item names a judge, every inbox row names its default (and a list
+# that yields no row is refused, not passed), CLAUDE.md stays within its 22
+# lines and every path its parentheses name is in the tree, and every lesson in
+# lessons.md and its archive starts with its date, so the session-start hook can
+# tell it from the header.
+rule-checks:
+	$(PYTHON) -m src.task_judge_check
+	$(PYTHON) -m src.owner_inbox_check
+	$(PYTHON) -m src.instruction_length_check --paths
 
 test:
 	$(PYTHON) -m pytest tests -q
