@@ -245,6 +245,43 @@ def test_an_assumption_scenario_without_a_reason_is_dropped_whole():
     assert out["dropped_count"] == 1
 
 
+def test_a_quote_across_a_seam_of_the_trimmed_prose_fails_the_gate():
+    """The valuation analyst's MD&A is cut to the flagged paragraphs with one line
+    holding the two markers between kept blocks that were not adjacent. A quote
+    inside a kept block string-matches the copy and the filing; one running off
+    the end of the second paragraph into the start of the fourth string-matches
+    the copy, and nothing the filing printed."""
+    two, four = "0000000000-00-000001:mdna:2", "0000000000-00-000001:mdna:4"
+    filing = (f"# T mdna\n\n[0000000000-00-000001:mdna:1]\nFirst.\n\n[{two}]\nSecond, kept.\n\n"
+              f"[0000000000-00-000001:mdna:3]\nThird.\n\n[{four}]\nFourth, kept.\n")
+    copy_seen = (f"# T mdna\n\n[{two}]\nSecond, kept.\n\n[{two}] [{four}]\n\n"
+                 f"[{four}]\nFourth, kept.\n")
+    sources, full = {"input_mdna.md": copy_seen}, {"input_mdna.md": filing}
+    inside = {"quote": "Second, kept.", "quote_from": "input_mdna.md"}
+    across = {"quote": f"Second, kept.\n\n[{two}] [{four}]\n\n[{four}]\nFourth, kept.",
+              "quote_from": "input_mdna.md"}
+    assert across["quote"] in copy_seen and across["quote"] not in filing
+    assert analysis_check.quote_problem(inside, sources, full) is None
+    assert analysis_check.quote_problem(across, sources) is None     # the copy alone: passes
+    problem = analysis_check.quote_problem(across, sources, full)
+    assert problem is not None and "across a seam" in problem
+    # And through the first pass's gate: the scenario quoting across the seam is dropped.
+    scenario = {name: 0.02 for name in ("revenue_growth_year_one", "terminal_growth",
+                                         "operating_margin_year_one",
+                                         "operating_margin_year_ten",
+                                         "reinvestment_rate_year_one",
+                                         "reinvestment_rate_year_ten")}
+    good = dict(scenario, reasons={name: dict(inside, reason="r") for name in scenario})
+    bad = dict(scenario, reasons={name: dict(across, reason="r") for name in scenario})
+    out = analysis_check.check_assumptions({"scenarios": {"bear": bad, "base": good, "bull": good}},
+                                           fields=FIELDS, sources=sources, filing=full)
+    assert set(out["scenarios"]) == {"base", "bull"}
+    assert "across a seam" in out["dropped_items"][0]["reason"]
+    without = analysis_check.check_assumptions({"scenarios": {"bear": bad, "base": good, "bull": good}},
+                                               fields=FIELDS, sources=sources)
+    assert set(without["scenarios"]) == {"bear", "base", "bull"}  # the copy alone cannot tell
+
+
 # --- the memo ---------------------------------------------------------------------------
 
 def test_the_memo_puts_the_calculators_number_where_the_path_was():

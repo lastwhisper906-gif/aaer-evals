@@ -409,7 +409,8 @@ def test_the_limit_stops_the_call_at_once_and_says_so(tmp_path, monkeypatch):
     assert "Fable limit" in record["reason"]
 
 
-def test_the_limit_stops_the_run_where_it_stands_and_exits_three(tmp_path, monkeypatch):
+def test_the_limit_stops_the_run_where_it_stands_publishes_what_finished_and_exits_four(
+        tmp_path, monkeypatch):
     run = tmp_path / "NVDA" / NVDA_ACCESSION
     bundle = assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,
                                    prior_runs=run.parent.parent)
@@ -432,20 +433,82 @@ def test_the_limit_stops_the_run_where_it_stands_and_exits_three(tmp_path, monke
     assert "stopped there" in manifest["analysis_failure"]
     assert "valuation-analyst" not in manifest["agents"]       # nothing ran past it
     assert "control-single-agent" not in manifest["agents"]
+    assert not (run / run_analysis.BEFORE_DRIVERS).exists()
+    assert not (run / "analysis_accounting.json").exists()
+    # What finished is published: the financial analyst's output gated into its
+    # file, and the memo and baselines written from what exists.
+    assert (run / "analysis_financial.json").is_file()
+    assert "analysis_financial" in manifest["analysis_stages"]
+    assert "analysis_accounting" not in manifest["analysis_stages"]
+    assert (run / run_analysis.FINAL).is_file()
+    assert manifest["analysis_stages"]["baselines"] == "written"
+    assert (run / "baselines.json").is_file()
+    memo = (run / "memo_ko.md").read_text(encoding="utf-8")
+    assert ("회계 분석이 실행되지 않았습니다. 이유: accounting-analyst answered the Fable limit "
+            "(You've reached your Fable limit.); nothing fell back to another model") in memo
+    assert "재무 분석이 실행되지 않았습니다" not in memo
+    assert ("가치평가 분석가의 해석이 없습니다. 이유: valuation-analyst did not run: the Fable "
+            "limit was reached at accounting-analyst and the run stopped there") in memo
+    # The limit's exit code is its own, and not the interpreter pin's: main()
+    # returns the pin's before the run starts, the limit's after it.
+    assert run_analysis.LIMIT_REACHED == 4
+    assert run_analysis.interpreter_pin.WRONG_INTERPRETER == 3
+    assert run_analysis.LIMIT_REACHED != run_analysis.interpreter_pin.WRONG_INTERPRETER
+    command = ["--run", str(run), "--ticker", "NVDA", "--form", "10-Q",
+               "--cutoff", "2026-08-26", "--period-end", "2026-07-26"]
     monkeypatch.setattr(run_analysis, "run_company", lambda **kw: manifest)
     monkeypatch.setattr(run_analysis.interpreter_pin, "enforce", lambda: 0)
-    assert run_analysis.main(["--run", str(run), "--ticker", "NVDA", "--form", "10-Q",
-                              "--cutoff", "2026-08-26", "--period-end", "2026-07-26"]) \
-        == run_analysis.LIMIT_REACHED
+    assert run_analysis.main(command) == run_analysis.LIMIT_REACHED
+    monkeypatch.setattr(run_analysis, "run_company",
+                        lambda **kw: (_ for _ in ()).throw(AssertionError("the run started")))
+    monkeypatch.setattr(run_analysis.interpreter_pin, "enforce",
+                        lambda: run_analysis.interpreter_pin.WRONG_INTERPRETER)
+    assert run_analysis.main(command) == run_analysis.interpreter_pin.WRONG_INTERPRETER
 
 
-def _run_with_control(tmp_path, monkeypatch, control, golden):
+def test_the_limit_at_the_valuation_analyst_still_publishes_both_analyses_and_the_memo(
+        tmp_path, monkeypatch):
+    run = tmp_path / "NVDA" / NVDA_ACCESSION
+    bundle = assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,
+                                   prior_runs=run.parent.parent)
+    assemble_bundle.write(bundle, run)
+    written = _fake_ask({})
+
+    def ask(directory, *, agent, writes, message, spec, log):
+        if agent == "valuation-analyst":
+            return {"agent": agent, "result": "failed", "limit_reached": True,
+                    "reason": "You've reached your Fable limit."}
+        return written(directory, agent=agent, writes=writes, message=message,
+                       spec=spec, log=log)
+
+    monkeypatch.setattr(run_analysis, "ask", ask)
+    manifest = run_analysis.run_company(run=run, ticker="NVDA", form="10-Q",
+                                        cutoff="2026-08-26", period_end="2026-07-26",
+                                        store=run_analysis.cutoff_guard.FIXTURES,
+                                        prices=None, control="always")
+    assert manifest["fable_limit_reached"] == ["valuation-analyst"]
+    assert "valuation-analyst-second-pass" not in manifest["agents"]
+    assert "control-single-agent" not in manifest["agents"]
+    for name in ("analysis_accounting.json", "analysis_financial.json", run_analysis.FINAL,
+                 "memo_ko.md", "baselines.json"):
+        assert (run / name).is_file(), name
+    assert not (run / "assumptions.json").exists()
+    memo = (run / "memo_ko.md").read_text(encoding="utf-8")
+    assert "가치평가 분석가의 해석이 없습니다. 이유: valuation-analyst answered the Fable limit" in memo
+    assert "회계 분석이 실행되지 않았습니다" not in memo
+
+
+def _run_with_control(tmp_path, monkeypatch, control, golden=None):
+    """`golden` plants the answer of `is_golden_filing`; None leaves the real one,
+    which reads this tree."""
     run = tmp_path / "NVDA" / NVDA_ACCESSION
     bundle = assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,
                                    prior_runs=run.parent.parent)
     assemble_bundle.write(bundle, run)
     monkeypatch.setattr(run_analysis, "ask", _fake_ask({}))
-    monkeypatch.setattr(run_analysis, "is_golden_filing", lambda accession: golden)
+    if golden is not None:
+        monkeypatch.setattr(run_analysis, "is_golden_filing",
+                            lambda accession: (golden, f"planted: {golden}"))
     return run_analysis.run_company(run=run, ticker="NVDA", form="10-Q",
                                     cutoff="2026-08-26", period_end="2026-07-26",
                                     store=run_analysis.cutoff_guard.FIXTURES,
@@ -455,15 +518,98 @@ def _run_with_control(tmp_path, monkeypatch, control, golden):
 def test_the_control_runs_on_a_golden_filing_and_skips_the_rest(tmp_path, monkeypatch):
     skipped = _run_with_control(tmp_path, monkeypatch, "auto", golden=False)
     assert "control-single-agent" not in skipped["agents"]
-    assert skipped["analysis_stages"]["control"].startswith("skipped")
+    assert skipped["analysis_stages"]["control"] == "skipped: planted: False"
+    assert skipped["control_reason"] == "planted: False"
     assert skipped["analysis_failure"] is None
     ran = _run_with_control(tmp_path / "g", monkeypatch, "auto", golden=True)
     assert ran["agents"]["control-single-agent"]["result"] == "written"
+    assert ran["control_reason"] == "planted: True"
 
 
-def test_no_approved_golden_case_names_the_fixture_filing():
-    assert run_analysis.is_golden_filing(NVDA_ACCESSION) is False
-    assert run_analysis.is_golden_filing(None) is False
+def test_this_tree_has_no_golden_cases_and_the_manifest_says_so(tmp_path, monkeypatch):
+    """The cases directory and its reader come with the evals branch; until it
+    lands, the control does not run under --control auto, and the run's manifest
+    says that rather than that no case names the filing."""
+    assert not run_analysis.GOLDEN_CASES.exists()
+    assert run_analysis.is_golden_filing(NVDA_ACCESSION) == (False, run_analysis.NO_GOLDEN_CASES)
+    assert run_analysis.is_golden_filing(None) == (False, run_analysis.NO_GOLDEN_CASES)
+    manifest = _run_with_control(tmp_path, monkeypatch, "auto")
+    assert "control-single-agent" not in manifest["agents"]
+    assert manifest["control_reason"] == run_analysis.NO_GOLDEN_CASES
+    assert manifest["analysis_stages"]["control"] == f"skipped: {run_analysis.NO_GOLDEN_CASES}"
+    assert manifest["analysis_failure"] is None
+
+
+# A planted reader with the real reader's two names, `load_case` and
+# `GoldenFormatError`, over the two-level `key: value` subset a case needs here.
+GOLDEN_FORMAT_STUB = '''
+from pathlib import Path
+
+
+class GoldenFormatError(ValueError):
+    pass
+
+
+def _scalar(value):
+    value = value.strip()
+    if value in ("true", "false"):
+        return value == "true"
+    return value.strip('"')
+
+
+def load_case(path):
+    case, current = {}, None
+    for number, line in enumerate(Path(path).read_text(encoding="utf-8").splitlines(), 1):
+        if not line.strip():
+            continue
+        key, colon, value = line.strip().partition(":")
+        if not colon:
+            raise GoldenFormatError(f"line {number}: expected key: value")
+        if line.startswith("  "):
+            case[current][key] = _scalar(value)
+        else:
+            current = key
+            case[key] = _scalar(value) if value.strip() else {}
+    return case
+'''
+
+
+def _golden_tree(tmp_path, monkeypatch, cases: dict[str, str]) -> Path:
+    """A planted owner's tree: the cases directory and the reader beside it, the
+    two paths `is_golden_filing` reads pointed at them."""
+    tree = tmp_path / "golden_tree"
+    cases_dir = tree / "golden" / "cases"
+    cases_dir.mkdir(parents=True)
+    (tree / "golden_format.py").write_text(GOLDEN_FORMAT_STUB, encoding="utf-8")
+    for name, text in cases.items():
+        (cases_dir / name).write_text(text, encoding="utf-8")
+    monkeypatch.setattr(run_analysis, "GOLDEN_CASES", cases_dir)
+    monkeypatch.setattr(run_analysis, "GOLDEN_FORMAT", tree / "golden_format.py")
+    return tree
+
+
+def test_an_approved_golden_case_naming_the_filing_runs_the_control(tmp_path, monkeypatch):
+    """The positive path, through the YAML read: `approved_by_owner` true and
+    `filing.accession` this one, in a planted tree."""
+    approved = (f'filing:\n  ticker: NVDA\n  accession: "{NVDA_ACCESSION}"\n'
+                "frame: accounting\napproved_by_owner: true\n")
+    draft = approved.replace("approved_by_owner: true", "approved_by_owner: false")
+    other = approved.replace(NVDA_ACCESSION, "0001045810-25-000001")
+    broken = "no colon on this line\n"
+    tree = _golden_tree(tmp_path, monkeypatch, {"approved.yaml": approved, "broken.yaml": broken,
+                                                "draft.yaml": draft, "other.yaml": other})
+    assert run_analysis.is_golden_filing(NVDA_ACCESSION) == (
+        True, f"the approved golden case approved.yaml names {NVDA_ACCESSION}")
+    assert run_analysis.is_golden_filing("0001045810-25-000001") == (
+        True, "the approved golden case other.yaml names 0001045810-25-000001")
+    assert run_analysis.is_golden_filing(None) == (
+        False, "the run's manifest names no accession, so no golden case can name it")
+    (tree / "golden" / "cases" / "approved.yaml").unlink()
+    assert run_analysis.is_golden_filing(NVDA_ACCESSION) == (
+        False, f"no approved golden case under evals/golden/cases names {NVDA_ACCESSION} "
+               "(1 case file(s) could not be read: broken.yaml)")
+    (tree / "golden_format.py").unlink()
+    assert run_analysis.is_golden_filing(NVDA_ACCESSION) == (False, run_analysis.NO_GOLDEN_FORMAT)
 
 
 def test_the_message_names_the_shared_files_first_in_a_fixed_order():
@@ -478,11 +624,20 @@ def test_the_message_names_the_shared_files_first_in_a_fixed_order():
 
 def test_the_valuation_analyst_is_handed_only_the_paragraphs_the_notes_reader_flagged(finished):
     """The stubbed notes reader wrote no items, so no MD&A paragraph was flagged: the
-    valuation analyst's MD&A holds the trim line and no paragraph, while the notes
-    reader's own copy holds them all."""
-    run, _, _ = finished
+    valuation analyst's MD&A holds the file's preamble and no paragraph, the manifest
+    records the trim beside the agent's usage, and the notes reader's own copy holds
+    every paragraph."""
+    run, manifest, _ = finished
     valuation = (run / "agents" / "valuation-analyst" / "input_mdna.md").read_text()
     reader = (run / "agents" / "notes-text-reader" / "input_mdna.md").read_text()
-    assert "trimmed for the valuation analyst: 0 of" in valuation
+    assert valuation == reader[:reader.index("[0001045810-26-000075:mdna:")]
+    assert "trimmed" not in valuation
     assert not run_analysis.agent_inputs.ID_LINE.search(valuation)
-    assert run_analysis.agent_inputs.ID_LINE.search(reader)
+    paragraphs = len(run_analysis.agent_inputs.ID_LINE.findall(reader))
+    assert paragraphs > 0
+    for name in ("valuation-analyst", "valuation-analyst-second-pass"):
+        record = manifest["agents"][name]
+        assert record["result"] == "written"                      # the usage record stayed
+        assert record["trimmed"]["input_mdna.md"]["kept"] == []
+        assert record["trimmed"]["input_mdna.md"]["of"] == paragraphs
+        assert record["trimmed"]["input_mdna.md"]["note"].startswith(f"0 of {paragraphs} paragraphs")

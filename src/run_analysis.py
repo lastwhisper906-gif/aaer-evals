@@ -40,15 +40,21 @@ limit holds (`docs/structure_changes.md`).
 §6). A Fable call whose output passed is never run again. A failed Fable call --
 no file, a file that is not JSON, or a non-zero exit -- is run again with identical
 input at most twice; an Opus call once. A call that answers "reached your ... limit"
-is not run again at all: the run stops where it stands, publishes what finished,
-names the agent in the manifest under `fable_limit_reached`, and exits 3 so the
-batch stops too and writes what is pending into `queue.md`. No analyst ever falls
-back to Opus. The single-agent control runs on the golden filings only, where it is
-scored against the owner (`--control auto`); the message every agent is sent lists
-the shared files first, in a fixed order, so the prompt cache serves them. The run goes on past a failed analyst, so what
-did write still reaches the memo, but the manifest's `analysis_failure` names
-every agent that did not write and the command exits non-zero: a run missing an
-analysis is never reported as finished.
+is not run again at all: the run stops where it stands, publishes what finished --
+the other analyst's output gated into its analysis file, `memo_ko.md` and
+`baselines.json` written from what exists, the memo saying which frame is missing
+and why -- names the agent in the manifest under `fable_limit_reached`, and exits
+`LIMIT_REACHED`, 4, so the batch stops too and writes what is pending into
+`queue.md`. Not 3: that is `interpreter_pin.WRONG_INTERPRETER`, which `main`
+returns before the run starts, and the batch has to tell the two apart. No
+analyst ever falls back to Opus. The single-agent control runs on the golden
+filings only, where it is scored against the owner (`--control auto`), and the
+manifest's `control_reason` says why it ran or did not, including that this tree
+holds no `evals/golden/cases`; the message every agent is sent lists the shared
+files first, in a fixed order, so the prompt cache serves them. The run goes on
+past a failed analyst, so what did write still reaches the memo, but the
+manifest's `analysis_failure` names every agent that did not write and the
+command exits non-zero: a run missing an analysis is never reported as finished.
 
 **Every agent's usage is recorded** in `input_manifest.json` under `agents`: the
 model asked for, the model that served, input, cache and output tokens, turns,
@@ -65,6 +71,7 @@ from __future__ import annotations
 import argparse
 import concurrent.futures
 import datetime as dt
+import importlib.util
 import json
 import re
 import shutil
@@ -85,7 +92,9 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFINITIONS = REPO_ROOT / ".claude" / "agents"
 BAD_INPUT = 2
 FAILED = 1
-LIMIT_REACHED = 3
+# The limit's own code: not interpreter_pin.WRONG_INTERPRETER (3), which main()
+# returns before the run starts, so the batch can tell the two apart.
+LIMIT_REACHED = 4
 
 # The pins: the family the definition names, and the effort it runs at.
 # `docs/HOW_WE_WORK.md` §6 -- readers on Opus at xhigh; the analysts inherit the
@@ -314,12 +323,19 @@ def check_analysis(run: Path, name: str, kind: str) -> dict:
                 if (directory / name).is_file())
     fields = json.loads(seen.read_text(encoding="utf-8"))
     sources = analysis_check.read_sources(directory, analysis_check.SOURCES[kind])
+    # the valuation analyst's prose is trimmed: a quote is held to the run's full
+    # file as well, so none runs across a seam (analysis_check.quote_problem)
+    filing = {name: (run / name).read_text(encoding="utf-8")
+              for name in agent_inputs.TRIMMED_FOR_VALUATION
+              if name in sources and (run / name).is_file()}
     if kind == "assumptions":
-        return analysis_check.check_assumptions(payload, fields=fields, sources=sources)
+        return analysis_check.check_assumptions(payload, fields=fields, sources=sources,
+                                                filing=filing)
     manifest = json.loads((run / "input_manifest.json").read_text(encoding="utf-8"))
     dropped = {row.get("item_id") for row in manifest.get("dropped_items") or []
                if row.get("item_id")}
-    return analysis_check.check(kind, payload, fields=fields, sources=sources, excluded=dropped)
+    return analysis_check.check(kind, payload, fields=fields, sources=sources, excluded=dropped,
+                                filing=filing)
 
 
 def write_json(path: Path, payload: dict) -> None:
@@ -338,24 +354,87 @@ NO_MARKET_TABLE = ("this run builds no market table: the table needs short inter
                    "no source here serves, so no comparer runs and every reaction-window "
                    "label is absent; prices reach the calculator only")
 
+# The owner's golden cases and their reader, under `evals/`: the owner's, read and
+# never written. Both are named here so a tree without them says so.
+GOLDEN_CASES = REPO_ROOT / "evals" / "golden" / "cases"
+GOLDEN_FORMAT = REPO_ROOT / "evals" / "golden_format.py"
+NO_GOLDEN_CASES = ("no evals/golden/cases on this tree: the control does not run under "
+                   "--control auto")
+NO_GOLDEN_FORMAT = ("no evals/golden_format.py on this tree, so no golden case can be read: "
+                    "the control does not run under --control auto")
 
-def is_golden_filing(accession: str | None) -> bool:
-    """Whether an approved golden case names this filing (evals/golden/cases/)."""
-    cases = REPO_ROOT / "evals" / "golden" / "cases"
-    if not accession or not cases.is_dir():
-        return False
-    try:
-        from evals.golden_format import GoldenFormatError, load_case
-    except ImportError:
-        return False
-    for path in sorted(cases.glob("*.yaml")):
+# The frames of the memo, each the agent(s) that write it, in order, and the file
+# the run publishes for it.
+FRAMES = {"accounting": (("accounting-analyst",), "analysis_accounting.json"),
+          "financial": (("financial-analyst",), "analysis_financial.json"),
+          "valuation": (("valuation-analyst", "valuation-analyst-second-pass"),
+                        "analysis_valuation.json")}
+
+
+def _module_at(path: Path):
+    spec = importlib.util.spec_from_file_location(path.stem, path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def is_golden_filing(accession: str | None) -> tuple[bool, str]:
+    """Whether an approved golden case names this filing, and the one line that
+    says why: the manifest records it as `control_reason`.
+
+    A case is a YAML file under `evals/golden/cases/`, read by
+    `evals/golden_format.py`'s `load_case`, and it names the filing when its
+    `approved_by_owner` is true and its `filing.accession` is this one. A tree
+    with no cases directory -- this one, until the evals branch lands -- says so
+    rather than answering False as if it had looked.
+    """
+    if not GOLDEN_CASES.is_dir():
+        return False, NO_GOLDEN_CASES
+    if not GOLDEN_FORMAT.is_file():
+        return False, NO_GOLDEN_FORMAT
+    if not accession:
+        return False, "the run's manifest names no accession, so no golden case can name it"
+    golden_format = _module_at(GOLDEN_FORMAT)
+    unreadable = []
+    for path in sorted(GOLDEN_CASES.glob("*.yaml")):
         try:
-            case = load_case(path)
-        except GoldenFormatError:
+            case = golden_format.load_case(path)
+        except golden_format.GoldenFormatError:
+            unreadable.append(path.name)
             continue
-        if case.get("approved_by_owner") is True and case["filing"].get("accession") == accession:
-            return True
-    return False
+        if (case.get("approved_by_owner") is True
+                and (case.get("filing") or {}).get("accession") == accession):
+            return True, f"the approved golden case {path.name} names {accession}"
+    return False, (f"no approved golden case under evals/golden/cases names {accession}"
+                   + (f" ({len(unreadable)} case file(s) could not be read: "
+                      f"{', '.join(unreadable)})" if unreadable else ""))
+
+
+def missing_frames(run: Path, agents: dict) -> dict[str, str]:
+    """Why each frame the run has no analysis file for is missing, from the agents'
+    records: the limit, a failed call, or a stage the run never reached."""
+    hit = limit_hit(agents)
+    out = {}
+    for frame, (names, written) in FRAMES.items():
+        if (run / written).is_file():
+            continue
+        for name in names:
+            record = agents.get(name)
+            if record is None:
+                out[frame] = (f"{name} did not run: the Fable limit was reached at "
+                              f"{', '.join(hit)} and the run stopped there" if hit else
+                              f"{name} did not run: the stage before it did not finish")
+                break
+            if record.get("limit_reached"):
+                out[frame] = (f"{name} answered the Fable limit ({record.get('reason')}); "
+                              "nothing fell back to another model")
+                break
+            if record.get("result") != "written":
+                out[frame] = f"{name} did not write: {record.get('reason')}"
+                break
+        else:
+            out[frame] = f"{written} was not published"
+    return out
 
 
 def run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: str,
@@ -402,12 +481,12 @@ def run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: s
     if stages["market_labels"]["written"]:
         stages["market_labels_check"] = market_labels.check(run)
 
-    # calculate, then the two analysts, never merged, on the view with no price
+    # calculate, then the two analysts, never merged, on the view with no price.
+    # What finished is gated and published whether or not the other analyst
+    # answered the limit: a limit stops what comes after it, not what stood.
     base = calculate(BEFORE_ANALYSTS)
     write_json(run / calculator.FILINGS_ONLY, calculator.filings_only(base))
     agents.update(parallel(run, ("accounting-analyst", "financial-analyst"), logs, model))
-    if limit_hit(agents):
-        return finish(run, agents, stages, "the limit was reached", model)
     for name, kind in (("accounting-analyst", "accounting"), ("financial-analyst", "financial")):
         if agents[name]["result"] == "written":
             checked = check_analysis(run, name, kind)
@@ -415,25 +494,24 @@ def run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: s
             stages[f"analysis_{kind}"] = {"dropped": checked["dropped_count"]}
     accounting = _load(run / "analysis_accounting.json")
 
-    # value: adjustments first, then drivers, then the reading
-    calculate(BEFORE_DRIVERS, accounting=accounting)
-    if (run / "analysis_accounting.json").is_file() and (run / "analysis_financial.json").is_file():
-        agents["valuation-analyst"] = run_agent(run, "valuation-analyst", logs, model)
-        if limit_hit(agents):
-            return finish(run, agents, stages, "the limit was reached", model)
-        if agents["valuation-analyst"]["result"] == "written":
-            assumptions = check_analysis(run, "valuation-analyst", "assumptions")
-            write_json(run / "assumptions.json", assumptions)
-            stages["assumptions"] = {"dropped": assumptions["dropped_count"]}
-            calculate(FINAL, accounting=accounting, assumptions=assumptions)
-            agents["valuation-analyst-second-pass"] = run_agent(
-                run, "valuation-analyst-second-pass", logs, model)
-            if limit_hit(agents):
-                return finish(run, agents, stages, "the limit was reached", model)
-            if agents["valuation-analyst-second-pass"]["result"] == "written":
-                checked = check_analysis(run, "valuation-analyst-second-pass", "valuation")
-                write_json(run / "analysis_valuation.json", checked)
-                stages["analysis_valuation"] = {"dropped": checked["dropped_count"]}
+    # value: adjustments first, then drivers, then the reading -- unless the
+    # limit stopped the run at the analysts, in which case nothing runs after it
+    if not limit_hit(agents):
+        calculate(BEFORE_DRIVERS, accounting=accounting)
+        if ((run / "analysis_accounting.json").is_file()
+                and (run / "analysis_financial.json").is_file()):
+            agents["valuation-analyst"] = run_agent(run, "valuation-analyst", logs, model)
+            if agents["valuation-analyst"]["result"] == "written":
+                assumptions = check_analysis(run, "valuation-analyst", "assumptions")
+                write_json(run / "assumptions.json", assumptions)
+                stages["assumptions"] = {"dropped": assumptions["dropped_count"]}
+                calculate(FINAL, accounting=accounting, assumptions=assumptions)
+                agents["valuation-analyst-second-pass"] = run_agent(
+                    run, "valuation-analyst-second-pass", logs, model)
+                if agents["valuation-analyst-second-pass"]["result"] == "written":
+                    checked = check_analysis(run, "valuation-analyst-second-pass", "valuation")
+                    write_json(run / "analysis_valuation.json", checked)
+                    stages["analysis_valuation"] = {"dropped": checked["dropped_count"]}
     if not (run / FINAL).exists():
         calculate(FINAL, accounting=accounting)
 
@@ -446,27 +524,35 @@ def run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: s
             cutoff_guard.CutoffGuardError, OSError, ValueError) as exc:
         stages["baselines"] = f"not written: {exc}"
 
-    # the memo -- each section filled from the calculator its analyst read -- then the control
+    # the memo, from what exists, saying which frame is missing and why -- then
+    # the control, unless the limit stopped the run
     (run / "memo_ko.md").write_text(memo.memo(
         ticker=ticker, form=form, period_end=period_end, cutoff=cutoff,
         fields=_load(run / FINAL), filings_only=_load(run / calculator.FILINGS_ONLY),
         accounting=_load(run / "analysis_accounting.json"),
         financial=_load(run / "analysis_financial.json"),
         valuation=_load(run / "analysis_valuation.json"),
-        baselines=_load(run / "baselines.json")), encoding="utf-8")
-    if control == "always" or (control == "auto" and is_golden_filing(manifest.get("accession"))):
+        baselines=_load(run / "baselines.json"),
+        missing=missing_frames(run, agents)), encoding="utf-8")
+    if limit_hit(agents):
+        return finish(run, agents, stages, "the limit was reached", model)
+    if control == "auto":
+        golden, control_reason = is_golden_filing(manifest.get("accession"))
+    else:
+        golden, control_reason = control == "always", f"--control {control}"
+    if golden:
         agents["control-single-agent"] = run_control(run, logs, model)
         if limit_hit(agents):
-            return finish(run, agents, stages, "the limit was reached", model)
+            return finish(run, agents, stages, "the limit was reached", model,
+                          control_reason=control_reason)
         if agents["control-single-agent"]["result"] == "written":
             stages["control"] = check_control(run)
     else:
-        stages["control"] = ("skipped: the control runs on the golden filings only, and no "
-                             "approved golden case names this one" if control == "auto"
-                             else "skipped: --control never")
+        stages["control"] = f"skipped: {control_reason}"
     silent = [name for name, record in agents.items() if record.get("result") != "written"]
     return finish(run, agents, stages,
-                  f"did not write: {', '.join(silent)}" if silent else None, model)
+                  f"did not write: {', '.join(silent)}" if silent else None, model,
+                  control_reason=control_reason)
 
 
 def control_sees(run: Path) -> list[str]:
@@ -527,14 +613,24 @@ def _load(path: Path) -> dict | None:
 
 
 def finish(run: Path, agents: dict, stages: dict, failure: str | None,
-           model: str | None = None) -> dict:
-    # Read again: the quote gate and the market marker wrote to it since the start.
+           model: str | None = None, control_reason: str | None = None) -> dict:
+    # Read again: the quote gate, the market marker and the router wrote to it
+    # since the start. The router's record of what it trimmed for the valuation
+    # analyst (`agents.<name>.trimmed`, src/agent_inputs.py) is kept beside the
+    # usage record; the boundary check reads it.
     manifest = json.loads((run / "input_manifest.json").read_text(encoding="utf-8"))
-    manifest["agents"] = {name: {key: value for key, value in record.items()
-                                 if key not in ("writes",)}
-                          for name, record in agents.items()}
+    routed = manifest.get("agents") if isinstance(manifest.get("agents"), dict) else {}
+    manifest["agents"] = {}
+    for name, record in agents.items():
+        entry = {key: value for key, value in record.items() if key not in ("writes",)}
+        earlier = routed.get(name)
+        if isinstance(earlier, dict) and agent_inputs.TRIMMED_KEY in earlier:
+            entry[agent_inputs.TRIMMED_KEY] = earlier[agent_inputs.TRIMMED_KEY]
+        manifest["agents"][name] = entry
     manifest["analysis_stages"] = stages
     manifest["analysis_failure"] = failure
+    if control_reason is not None:
+        manifest["control_reason"] = control_reason
     hit = limit_hit(agents)
     if hit:
         manifest["fable_limit_reached"] = hit

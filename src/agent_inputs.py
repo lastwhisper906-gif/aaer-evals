@@ -379,19 +379,45 @@ def _probability_leak(text: str) -> str | None:
 # The valuation analyst reads the MD&A and the earnings release only where the
 # notes reader flagged a paragraph: Fable, used efficiently (the owner's decision
 # of 2026-10-06, `docs/HOW_WE_WORK.md` §6). The file keeps its name and its `[id]`
-# blocks byte for byte, so a quote of one still string-matches; one line at the
-# top says how much was left out. A paragraph the notes reader did not flag is not
-# placed, and no agent can quote what it was not handed.
+# blocks byte for byte, so a quote of one still string-matches, and it holds no
+# text the filing does not: where two kept blocks were not adjacent in the
+# filing, one line holding only their two `[id]` markers stands between them, so
+# a quote running off the end of one into the start of the next carries a line
+# the filing never printed and matches nothing there. How much was left out is
+# the manifest's to say, under `agents.<name>.trimmed`, written when the file is
+# routed; the boundary check reads that record, never this trim, to say what the
+# directory should hold. A paragraph the notes reader did not flag is not placed,
+# and no agent can quote what it was not handed.
 TRIMMED_FOR_VALUATION = ("input_mdna.md", "input_8k.md")
+NOTES_REPORT = "report_notes_text.md"
+TRIMMED_KEY = "trimmed"
 ID_LINE = re.compile(r"^\[(\d{10}-\d{2}-\d{6}:[a-z0-9_]+:[^\]]+)\]\s*$", re.M)
 FENCED_JSON = re.compile(r"```json\s*(.*?)```", re.S)
 
 
 def flagged_paragraphs(run: Path) -> set[str]:
-    """Every paragraph id the notes reader's kept items cite."""
-    report = run / "report_notes_text.md"
+    """Every paragraph id the notes reader's standing items cite.
+
+    The copy at the run root is the gated one, but the gate takes a fenced block
+    out only when every item in it was dropped, and a reader writes its items as
+    one list: a dropped item standing in a block beside a kept one is still in
+    the file. The manifest's drop list is what says it fell -- read through
+    `src.market_labels.gate_record`, the one reading of that list, keyed the way
+    the gate keys it, (report, `quote_gate.item_id`) -- and an item it names
+    flags nothing: it was dropped and counted, not passed through. A run with no
+    record that the gate ran is refused, as the market labels refuse it.
+    """
+    # here, not at the top: both of these import this module when they load
+    from src import market_labels, quote_gate
+    report = Path(run) / NOTES_REPORT
     if not report.is_file():
         return set()
+    try:
+        _, dropped = market_labels.gate_record(run)
+    except market_labels.MarketLabelError as exc:
+        raise AgentInputError(
+            f"{run}: no record that the quote gate ran over {NOTES_REPORT}, so no "
+            f"paragraph can be read as flagged: {exc}") from exc
     found = set()
     for block in FENCED_JSON.findall(report.read_text(encoding="utf-8", errors="replace")):
         try:
@@ -399,22 +425,111 @@ def flagged_paragraphs(run: Path) -> set[str]:
         except ValueError:
             continue
         for item in data if isinstance(data, list) else [data]:
-            if isinstance(item, dict) and isinstance(item.get("paragraph_id"), str):
+            if (isinstance(item, dict) and isinstance(item.get("paragraph_id"), str)
+                    and (NOTES_REPORT, quote_gate.item_id(item)) not in dropped):
                 found.add(item["paragraph_id"])
     return found
 
 
+def paragraph_ids(text: str) -> list[str]:
+    """The `[id]` markers of a prose file, in the file's order."""
+    return [mark.group(1) for mark in ID_LINE.finditer(text)]
+
+
+def seam(before: str, after: str) -> str:
+    """The one line that stands between two kept blocks that were not adjacent in
+    the filing: their own two markers and nothing else."""
+    return f"[{before}] [{after}]\n\n"
+
+
 def trimmed(text: str, keep: set[str]) -> str:
-    """The prose file with only the `[id]` blocks in `keep`, each verbatim."""
+    """The prose file with only the `[id]` blocks in `keep`, each verbatim, and a
+    seam line between two kept blocks that were not adjacent. Nothing else: the
+    note on how much was left out is the manifest's."""
     marks = list(ID_LINE.finditer(text))
     preamble = text[:marks[0].start()] if marks else text
-    kept, total = [], len(marks)
-    for this, following in zip(marks, marks[1:] + [None]):
-        if this.group(1) in keep:
-            kept.append(text[this.start():following.start() if following else len(text)])
-    note = (f"(trimmed for the valuation analyst: {len(kept)} of {total} paragraphs, "
-            "the ones the notes reader flagged; the rest were not placed)\n\n")
-    return preamble + note + "".join(kept)
+    parts, previous = [], None
+    for index, (this, following) in enumerate(zip(marks, marks[1:] + [None])):
+        if this.group(1) not in keep:
+            continue
+        if previous is not None and index != previous + 1:
+            parts.append(seam(marks[previous].group(1), this.group(1)))
+        parts.append(text[this.start():following.start() if following else len(text)])
+        previous = index
+    return preamble + "".join(parts)
+
+
+def trim_record(text: str, keep: set[str]) -> dict:
+    """What the manifest records of one trimmed file: the ids kept, in the file's
+    order, out of how many, and why."""
+    ids = paragraph_ids(text)
+    kept = [identifier for identifier in ids if identifier in keep]
+    return {"kept": kept, "of": len(ids),
+            "note": f"{len(kept)} of {len(ids)} paragraphs, the ones the notes reader "
+                    "flagged; the rest were not placed"}
+
+
+def handed(text: str, record: dict) -> str:
+    """What a trimmed file should hold, re-derived from the run's own file and the
+    manifest's record of the trim, and not from the trim: the preamble, then the
+    block of each id the record lists, cut out of the file by its marker, in the
+    order listed, with the seam line between two that were not adjacent.
+
+    A record that does not fit the file -- an id the file has no block for, a
+    count that is not the file's, an order that is not the file's -- is refused:
+    it is not a record of this file.
+    """
+    marks = list(ID_LINE.finditer(text))
+    cuts = [mark.start() for mark in marks] + [len(text)]
+    blocks = {mark.group(1): (index, text[cuts[index]:cuts[index + 1]])
+              for index, mark in enumerate(marks)}
+    kept, total = record.get("kept"), record.get("of")
+    if not isinstance(kept, list) or total != len(marks):
+        raise AgentInputError(f"the manifest's trimmed record says {total!r} paragraphs "
+                              f"and the run's file holds {len(marks)}")
+    out, previous = [text[:marks[0].start()] if marks else text], None
+    for identifier in kept:
+        if identifier not in blocks:
+            raise AgentInputError(f"the manifest's trimmed record keeps {identifier!r}, "
+                                  "which the run's file has no block for")
+        index, block = blocks[identifier]
+        if previous is not None and index <= previous:
+            raise AgentInputError(f"the manifest's trimmed record lists {identifier!r} "
+                                  "out of the file's order")
+        if previous is not None and index != previous + 1:
+            out.append(seam(marks[previous].group(1), identifier))
+        out.append(block)
+        previous = index
+    return "".join(out)
+
+
+def record_trim(run: Path, agent: str, record: dict[str, dict]) -> None:
+    """`agents.<agent>.trimmed` into the run's manifest, every other key left alone,
+    the convention the quote gate writes its counts by."""
+    path = Path(run) / MANIFEST
+    manifest = json.loads(path.read_text(encoding="utf-8"))
+    agents = manifest.setdefault("agents", {})
+    entry = agents.get(agent)
+    if not isinstance(entry, dict):
+        entry = agents[agent] = {}
+    entry[TRIMMED_KEY] = record
+    path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def recorded_trim(run: Path, agent: str) -> dict | None:
+    """The manifest's record of what was trimmed for this agent's directory, or
+    None when it records no trim: a directory built before the trim holds the
+    full file, and the manifest's silence is the record of that."""
+    path = Path(run) / MANIFEST
+    if not path.is_file():
+        return None
+    try:
+        manifest = json.loads(path.read_text(encoding="utf-8"))
+    except ValueError:
+        return None
+    entry = (manifest.get("agents") or {}).get(agent) if isinstance(manifest, dict) else None
+    record = entry.get(TRIMMED_KEY) if isinstance(entry, dict) else None
+    return record if isinstance(record, dict) else None
 
 
 def _place(source: Path, target: Path) -> None:
@@ -504,7 +619,7 @@ def build(run: Path, agent: str, *, light: bool = False) -> dict:
             "never sees. The directory is the boundary; it is not cleaned out "
             "and reused.")
 
-    placed, absent = [], []
+    placed, absent, trims = [], [], {}
     flagged = flagged_paragraphs(run) if spec.layer == "valuation" else None
     for name in spec.sees:
         source = run / name
@@ -514,13 +629,18 @@ def build(run: Path, agent: str, *, light: bool = False) -> dict:
         if flagged is not None and name in TRIMMED_FOR_VALUATION:
             if (root / name).is_symlink():
                 raise AgentInputError(f"{root / name} is a symlink; an agent's file is copied")
-            _place_bytes(trimmed(source.read_text(encoding="utf-8", errors="replace"),
-                                 flagged).encode("utf-8"), root / name)
+            text = source.read_text(encoding="utf-8", errors="replace")
+            _place_bytes(trimmed(text, flagged).encode("utf-8"), root / name)
+            trims[name] = trim_record(text, flagged)
         else:
             _place(source, root / name)
         placed.append(name)
+    if trims:
+        # the record of what was handed, written as it is handed; the boundary
+        # check reads this, not the trim, to say what the directory should hold
+        record_trim(run, agent, trims)
     return {"agent": agent, "layer": spec.layer, "root": root,
-            "files": placed, "absent": absent}
+            "files": placed, "absent": absent, TRIMMED_KEY: trims}
 
 
 def build_all(run: Path, agents: tuple[str, ...] | None = None, *,
@@ -549,16 +669,23 @@ def escapes(root: Path) -> list[str]:
     return found
 
 
-def expected_bytes(run: Path, spec: Agent, name: str) -> bytes | None:
-    """What a routed file should hold: the run's copy, byte for byte, except the
-    valuation analyst's prose, which holds the run's copy trimmed to the paragraphs
-    the notes reader flagged, each of those byte for byte."""
+def expected_bytes(run: Path, spec: Agent, name: str, trim: dict | None = None) -> bytes | None:
+    """What a routed file should hold: the run's copy, byte for byte -- or, when
+    the manifest records a trim of it for this agent (`trim`, the file's entry
+    under `agents.<name>.trimmed`), the run's copy cut down by that record.
+
+    The record, not the trim: `handed` re-derives the bytes from the run's file
+    and the ids the manifest says were kept, so a wrong trim and this check do
+    not move together. A valuation directory the manifest records no trim for
+    was built before the trim and holds the full file, and that is what it is
+    held to: a check that called every run on record broken could not tell a
+    leak from the date a run was built.
+    """
     source = run / name
     if not source.is_file():
         return None
-    if spec.layer == "valuation" and name in TRIMMED_FOR_VALUATION:
-        return trimmed(source.read_text(encoding="utf-8", errors="replace"),
-                       flagged_paragraphs(run)).encode("utf-8")
+    if trim is not None and spec.layer == "valuation" and name in TRIMMED_FOR_VALUATION:
+        return handed(source.read_text(encoding="utf-8", errors="replace"), trim).encode("utf-8")
     return source.read_bytes()
 
 
@@ -647,7 +774,9 @@ def isolation_violations(run: Path) -> list[str]:
        so a completed run holds it and is clean;
     3. a routed name over bytes that are not the run's — the leak that wears the
        right name, and the one a check on names alone cannot see, a hardlink
-       included;
+       included. The valuation analyst's prose is held to the run's file cut
+       down by what the manifest records under `agents.<name>.trimmed`, and to
+       the full file when the manifest records no trim for that directory;
     4. something inside one that resolves outside it — a symlink or a `..` into
        the bundle, whose own ancestors are the run directory and every other
        agent's directory hanging off it;
@@ -672,6 +801,7 @@ def isolation_violations(run: Path) -> list[str]:
         if root != recorded_root(run, name):
             found.append(f"{name}: its directory sits at {root}, not at its "
                          f"session root {recorded_root(run, name)}")
+        trims = recorded_trim(run, name) or {}
         for path in sorted(root.iterdir()):
             if path.name == spec.writes:
                 continue  # the one file this agent writes, into its only root
@@ -679,7 +809,13 @@ def isolation_violations(run: Path) -> list[str]:
                 reason = ("which its layer never sees"
                           if path.name in spec.never_sees else "which nobody routed")
                 found.append(f"{name}: holds {path.name}, {reason}")
-            elif _differs(path, expected_bytes(run, spec, path.name)):
+                continue
+            try:
+                expected = expected_bytes(run, spec, path.name, trims.get(path.name))
+            except AgentInputError as exc:
+                found.append(f"{name}: {path.name}: {exc}")
+                continue
+            if _differs(path, expected):
                 found.append(f"{name}: holds a {path.name} that is not the "
                              "run's — the right name over other bytes")
         found.extend(f"{name}: {line}" for line in escapes(root))

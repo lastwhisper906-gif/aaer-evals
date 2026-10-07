@@ -31,9 +31,11 @@ Then loop, at most **four items** a night (the item budget):
    pull request.
 
 Stop the loop early when:
-- **Fable is out.** A Fable call answers "You've reached your Fable limit". Stop the
-  batch, publish what finished, and write into `queue.md` what is pending, under its
-  item. Never rerun an analyst on Opus: mixed models break comparison.
+- **Fable is out.** A Fable call answers "You've reached your Fable limit", and
+  `src/run_analysis.py` exits 4 (`LIMIT_REACHED`; exit 3 is the interpreter pin,
+  not the limit). Stop the batch, publish what finished, and write into `queue.md`
+  what is pending, under its item. Never rerun an analyst on Opus: mixed models
+  break comparison.
 - **The item budget is spent.**
 - **Two items in a row fail** their goal.
 

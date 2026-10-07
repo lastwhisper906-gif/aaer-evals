@@ -278,9 +278,13 @@ The owner's decision of 2026-10-06 (`docs/structure_changes.md`) sets this table
 - **Shared inputs first, in a fixed order,** so the prompt cache serves them.
 - **No repeat of a passed call.** A Fable call whose output passed the gate is never
   run again. A failed call reruns only that agent, at most twice.
-- **"Fable limit reached" stops the batch.** What finished is published, what is
-  pending is written into `queue.md`, and the batch continues the next night. An
-  analyst never falls back to Opus.
+- **"Fable limit reached" stops the batch.** What finished is published -- the
+  other analyst's gated analysis, `memo_ko.md` and `baselines.json` from what
+  exists, the memo saying which frame is missing and why -- the manifest names the
+  agent under `fable_limit_reached`, and `src/run_analysis.py` exits 4
+  (`LIMIT_REACHED`; 3 is the interpreter pin's, and the batch tells the two apart).
+  What is pending is written into `queue.md`, and the batch continues the next
+  night. An analyst never falls back to Opus.
 - **Tokens are counted.** Input, cache-write, cache-read and output tokens, and wall
   time, are recorded per agent per filing in `input_manifest.json`.
 - **The batch is sized from the record.** The nightly batch is Fable tokens available ÷

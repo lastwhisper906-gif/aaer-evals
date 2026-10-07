@@ -32,6 +32,27 @@ def test_the_batch_is_available_over_the_median_on_record(tmp_path):
     assert "÷ median 200" in out["calculation"]
 
 
-def test_with_nothing_on_record_the_batch_is_stated_not_guessed():
+def test_with_nothing_on_record_the_batch_is_one_and_the_text_says_so():
     out = fable_batch.size(1000, {})
-    assert out["batch"] == 0 and "no filing on record" in out["calculation"]
+    assert out["batch"] == 1 and out["filings_on_record"] == 0
+    assert "the batch is one filing" in out["calculation"]
+    assert fable_batch.size(1000, {"A/1": 400})["batch"] == 2
+
+
+def test_only_a_published_filing_is_on_record(tmp_path):
+    """A run the limit stopped, or an analyst failed, is not a published filing:
+    its tokens are a part of a filing's and would pull the median down."""
+    _manifest(tmp_path / "A" / "1", {"a": FABLE})                            # no failure key
+    (tmp_path / "B" / "1").mkdir(parents=True)
+    (tmp_path / "B" / "1" / "input_manifest.json").write_text(json.dumps(
+        {"agents": {"a": dict(FABLE, output_tokens=240)}, "analysis_failure": None}))
+    (tmp_path / "C" / "1").mkdir(parents=True)
+    (tmp_path / "C" / "1" / "input_manifest.json").write_text(json.dumps(
+        {"agents": {"a": FABLE}, "analysis_failure": "the limit was reached at a: ...",
+         "fable_limit_reached": ["a"]}))
+    (tmp_path / "D" / "1").mkdir(parents=True)
+    (tmp_path / "D" / "1" / "input_manifest.json").write_text(json.dumps(
+        {"agents": {"a": FABLE}, "analysis_failure": "did not write: a"}))
+    assert fable_batch.on_record(tmp_path) == {"A/1": 100, "B/1": 300}
+    assert fable_batch.published({"analysis_failure": None}) is True
+    assert fable_batch.published({"fable_limit_reached": ["a"]}) is False
