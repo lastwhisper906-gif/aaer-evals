@@ -375,15 +375,19 @@ def _ask(tmp_path, monkeypatch, answers, model):
     return record, calls
 
 
+# A call that crashed after spending tokens: a plain failure, which a retry answers.
+SPENT = {"input_tokens": 5, "output_tokens": 1}
+FAILING = (1, {"is_error": True, "result": "crashed", "usage": SPENT}, None)
+
+
 def test_a_failed_fable_call_is_run_again_at_most_twice(tmp_path, monkeypatch):
-    failing = (1, {"is_error": True, "result": "crashed"}, None)
-    record, calls = _ask(tmp_path, monkeypatch, [failing] * 5, "fable")
+    record, calls = _ask(tmp_path, monkeypatch, [FAILING] * 5, "fable")
     assert record["result"] == "failed" and len(calls) == 3
+    assert "limit_reached" not in record
 
 
 def test_a_failed_opus_call_is_run_again_once(tmp_path, monkeypatch):
-    failing = (1, {"is_error": True, "result": "crashed"}, None)
-    record, calls = _ask(tmp_path, monkeypatch, [failing] * 5, "opus")
+    record, calls = _ask(tmp_path, monkeypatch, [FAILING] * 5, "opus")
     assert record["result"] == "failed" and len(calls) == 2
 
 
@@ -394,10 +398,232 @@ def test_a_call_whose_output_passed_is_never_run_again(tmp_path, monkeypatch):
 
 
 def test_a_file_that_is_not_json_counts_as_a_failed_call(tmp_path, monkeypatch):
-    bad = (0, {"is_error": False, "result": "ok"}, {"out.json": "not json"})
+    bad = (0, {"is_error": False, "result": "ok", "usage": SPENT}, {"out.json": "not json"})
     good = (0, {"is_error": False, "result": "ok"}, {"out.json": "{}"})
     record, calls = _ask(tmp_path, monkeypatch, [bad, good], "fable")
     assert record["result"] == "written" and len(calls) == 2
+
+
+def test_one_predicate_says_what_is_fable_and_a_full_id_gets_the_fable_budget(
+        tmp_path, monkeypatch):
+    assert run_analysis.is_fable("fable") and run_analysis.is_fable("claude-fable-5-1")
+    assert not run_analysis.is_fable("opus") and not run_analysis.is_fable("claude-opus-5-5")
+    assert not run_analysis.is_fable(None)
+    record, calls = _ask(tmp_path, monkeypatch, [FAILING] * 5, "claude-fable-5-1")
+    assert record["result"] == "failed" and len(calls) == 3
+    (tmp_path / "o").mkdir()
+    record, calls = _ask(tmp_path / "o", monkeypatch, [FAILING] * 5, "claude-opus-5-5")
+    assert record["result"] == "failed" and len(calls) == 2
+    from src import fable_batch
+    assert fable_batch.fable_tokens({"agents": {"a": {"model_served": "claude-fable-5-1",
+                                                       "input_tokens": 7}}}) == 7
+    assert fable_batch.fable_tokens({"agents": {"a": {"model_served": "claude-opus-5-5",
+                                                       "input_tokens": 7}}}) == 0
+
+
+def _two_second_clock(monkeypatch):
+    """Each read of the clock moves it two seconds on, and a call reads it once
+    before and once after the stubbed subprocess, so every call takes two seconds."""
+    clock = [0.0]
+
+    def monotonic():
+        clock[0] += 2.0
+        return clock[0]
+    monkeypatch.setattr(run_analysis.time, "monotonic", monotonic)
+
+
+ZERO_TOKEN_FAILURE = (1, {"is_error": True, "result": "",
+                          "usage": {"input_tokens": 0, "output_tokens": 0}}, None)
+
+
+def test_a_fable_call_failing_with_no_token_spent_in_two_seconds_is_the_limit(
+        tmp_path, monkeypatch):
+    """lessons.md 2026-09-29: the limit showed up as a failed call ending in about two
+    seconds with zero tokens, and is read as the limit before anything else."""
+    _two_second_clock(monkeypatch)
+    record, calls = _ask(tmp_path, monkeypatch, [ZERO_TOKEN_FAILURE] * 3, "fable")
+    assert record["limit_reached"] is True and len(calls) == 1
+    assert "no token spent" in record["reason"] and "2.0s" in record["reason"]
+    # The other sides: tokens spent is a plain failure, retried; an Opus call is
+    # not read this way; a slow zero-token failure is not either.
+    for name in ("spent", "opus", "slow"):
+        (tmp_path / name).mkdir()
+    record, calls = _ask(tmp_path / "spent", monkeypatch, [FAILING] * 3, "fable")
+    assert "limit_reached" not in record and len(calls) == 3
+    record, calls = _ask(tmp_path / "opus", monkeypatch, [ZERO_TOKEN_FAILURE] * 3, "opus")
+    assert "limit_reached" not in record and len(calls) == 2
+    slow = [0.0]
+
+    def slow_clock():
+        slow[0] += run_analysis.LIMIT_SECONDS
+        return slow[0]
+    monkeypatch.setattr(run_analysis.time, "monotonic", slow_clock)
+    record, calls = _ask(tmp_path / "slow", monkeypatch, [ZERO_TOKEN_FAILURE] * 3, "fable")
+    assert "limit_reached" not in record and len(calls) == 3
+
+
+def _run_with_accounting_analyst_answering(tmp_path, monkeypatch, answers):
+    """A whole run where the accounting analyst's calls go through the real `ask`
+    over a stubbed CLI answering `answers`, and every other agent writes."""
+    run = tmp_path / "NVDA" / NVDA_ACCESSION
+    bundle = assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,
+                                   prior_runs=run.parent.parent)
+    assemble_bundle.write(bundle, run)
+    written, real_ask = _fake_ask({}), run_analysis.ask
+    cli, calls = _cli(list(answers))
+
+    def ask(directory, *, agent, writes, message, spec, log):
+        if agent == "accounting-analyst":
+            monkeypatch.setattr(run_analysis.subprocess, "run", cli)
+            assert spec["model"] == "fable"
+            return real_ask(directory, agent=agent, writes=writes, message=message,
+                            spec=spec, log=log)
+        return written(directory, agent=agent, writes=writes, message=message,
+                       spec=spec, log=log)
+
+    monkeypatch.setattr(run_analysis, "ask", ask)
+    manifest = run_analysis.run_company(run=run, ticker="NVDA", form="10-Q",
+                                        cutoff="2026-08-26", period_end="2026-07-26",
+                                        store=run_analysis.cutoff_guard.FIXTURES,
+                                        prices=None, control="never")
+    return run, manifest, calls
+
+
+def test_a_zero_token_two_second_failure_stops_the_run_and_exits_four(tmp_path, monkeypatch):
+    _two_second_clock(monkeypatch)
+    run, manifest, calls = _run_with_accounting_analyst_answering(
+        tmp_path, monkeypatch, [ZERO_TOKEN_FAILURE] * 3)
+    assert len(calls) == 1
+    assert manifest["fable_limit_reached"] == ["accounting-analyst"]
+    assert "no token spent" in manifest["agents"]["accounting-analyst"]["reason"]
+    assert (run / "analysis_financial.json").is_file() and (run / "memo_ko.md").is_file()
+    monkeypatch.setattr(run_analysis, "run_company", lambda **kw: manifest)
+    monkeypatch.setattr(run_analysis.interpreter_pin, "enforce", lambda: 0)
+    assert run_analysis.main(["--run", str(run), "--ticker", "NVDA", "--form", "10-Q",
+                              "--cutoff", "2026-08-26", "--period-end", "2026-07-26"]) == 4
+
+
+def test_a_failure_after_tokens_were_spent_is_retried_and_then_exits_one(tmp_path, monkeypatch):
+    _two_second_clock(monkeypatch)
+    run, manifest, calls = _run_with_accounting_analyst_answering(
+        tmp_path, monkeypatch, [FAILING] * 5)
+    assert len(calls) == 3
+    assert "fable_limit_reached" not in manifest
+    assert manifest["analysis_failure"] == "did not write: accounting-analyst"
+    monkeypatch.setattr(run_analysis, "run_company", lambda **kw: manifest)
+    monkeypatch.setattr(run_analysis.interpreter_pin, "enforce", lambda: 0)
+    assert run_analysis.main(["--run", str(run), "--ticker", "NVDA", "--form", "10-Q",
+                              "--cutoff", "2026-08-26", "--period-end", "2026-07-26"]) \
+        == run_analysis.FAILED == 1
+
+
+# --- a stopped run, continued the next night ------------------------------------------------
+
+def _stopped_at_accounting_analyst(tmp_path, monkeypatch):
+    """The limit at accounting-analyst, as the limit test above builds it."""
+    run = tmp_path / "NVDA" / NVDA_ACCESSION
+    bundle = assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,
+                                   prior_runs=run.parent.parent)
+    assemble_bundle.write(bundle, run)
+    written = _fake_ask({})
+
+    def ask(directory, *, agent, writes, message, spec, log):
+        if agent == "accounting-analyst":
+            return {"agent": agent, "result": "failed", "limit_reached": True,
+                    "reason": "You've reached your Fable limit."}
+        return written(directory, agent=agent, writes=writes, message=message,
+                       spec=spec, log=log)
+
+    monkeypatch.setattr(run_analysis, "ask", ask)
+    stopped = run_analysis.run_company(run=run, ticker="NVDA", form="10-Q",
+                                       cutoff="2026-08-26", period_end="2026-07-26",
+                                       store=run_analysis.cutoff_guard.FIXTURES,
+                                       prices=None, control="never")
+    assert stopped["fable_limit_reached"] == ["accounting-analyst"]
+    return run, stopped
+
+
+def _counting_ask(seen: dict):
+    """Every agent writes; the directories called are listed in order."""
+    written, called = _fake_ask(seen), []
+
+    def ask(directory, *, agent, writes, message, spec, log):
+        called.append(directory.name)
+        return written(directory, agent=agent, writes=writes, message=message,
+                       spec=spec, log=log)
+    return ask, called
+
+
+@pytest.mark.parametrize("explicit", [False, True])
+def test_a_stopped_run_resumes_in_place_and_calls_only_what_had_not_finished(
+        tmp_path, monkeypatch, explicit):
+    run, stopped = _stopped_at_accounting_analyst(tmp_path, monkeypatch)
+    readers_before = {name: stopped["agents"][name] for name in ("numbers-reader",
+                                                                   "notes-text-reader")}
+    ask, called = _counting_ask({})
+    monkeypatch.setattr(run_analysis, "ask", ask)
+    manifest = run_analysis.run_company(run=run, ticker="NVDA", form="10-Q",
+                                        cutoff="2026-08-26", period_end="2026-07-26",
+                                        store=run_analysis.cutoff_guard.FIXTURES,
+                                        prices=None, control="never", resume=explicit)
+    # only the stopped agent and those after it were called, each once
+    assert called == ["accounting-analyst", "valuation-analyst", "valuation-analyst-second-pass"]
+    assert manifest["resume_skipped"] == ["numbers-reader", "notes-text-reader",
+                                          "financial-analyst"]
+    assert manifest["resumed_at"].endswith("Z")
+    assert "fable_limit_reached" not in manifest
+    assert manifest["analysis_failure"] is None
+    assert {name: manifest["agents"][name] for name in readers_before} == readers_before
+    assert all(manifest["agents"][name]["result"] == "written" for name in (
+        "numbers-reader", "notes-text-reader", "accounting-analyst", "financial-analyst",
+        "valuation-analyst", "valuation-analyst-second-pass"))
+    for name in ("analysis_accounting.json", "analysis_financial.json", "assumptions.json",
+                 "analysis_valuation.json", run_analysis.BEFORE_DRIVERS, run_analysis.FINAL,
+                 "memo_ko.md", "baselines.json"):
+        assert (run / name).is_file(), name
+    assert manifest["analysis_stages"]["quote_gate"] == stopped["analysis_stages"]["quote_gate"]
+    assert "analysis_accounting" in manifest["analysis_stages"]
+    memo = (run / "memo_ko.md").read_text(encoding="utf-8")
+    assert "실행되지 않았습니다" not in memo and "해석이 없습니다" not in memo
+    assert agent_inputs.isolation_violations(run) == []
+    # Resumed again: nothing is missing now.
+    with pytest.raises(run_analysis.NothingToResume, match="nothing to resume"):
+        run_analysis.run_company(run=run, ticker="NVDA", form="10-Q", cutoff="2026-08-26",
+                                 period_end="2026-07-26",
+                                 store=run_analysis.cutoff_guard.FIXTURES, prices=None,
+                                 control="never", resume=True)
+
+
+def test_a_run_that_did_not_stop_is_not_resumed(tmp_path, monkeypatch, finished, capsys):
+    run, _, _ = finished
+    keyword = dict(ticker="NVDA", form="10-Q", cutoff="2026-08-26", period_end="2026-07-26",
+                   store=run_analysis.cutoff_guard.FIXTURES, prices=None, control="never")
+    # a finished run: `--resume` says nothing to resume and exits 0, without it the
+    # run on record is refused, and nothing is called either way
+    monkeypatch.setattr(run_analysis, "ask",
+                        lambda *a, **k: (_ for _ in ()).throw(AssertionError("an agent ran")))
+    with pytest.raises(run_analysis.NothingToResume):
+        run_analysis.run_company(run=run, resume=True, **keyword)
+    with pytest.raises(run_analysis.RunError, match="did not stop at the limit"):
+        run_analysis.run_company(run=run, **keyword)
+    monkeypatch.setattr(run_analysis.interpreter_pin, "enforce", lambda: 0)
+    command = ["--run", str(run), "--ticker", "NVDA", "--form", "10-Q", "--cutoff",
+               "2026-08-26", "--period-end", "2026-07-26", "--control", "never"]
+    assert run_analysis.main(command + ["--resume"]) == 0
+    assert "nothing to resume" in capsys.readouterr().out
+    assert run_analysis.main(command) == run_analysis.BAD_INPUT
+    # a run that failed some other way is not resumed either
+    failed = tmp_path / "NVDA" / NVDA_ACCESSION
+    assemble_bundle.write(assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,
+                                                prior_runs=failed.parent.parent), failed)
+    with pytest.raises(run_analysis.RunError, match="no agent has run"):
+        run_analysis.run_company(run=failed, resume=True, **keyword)
+    manifest = json.loads((failed / "input_manifest.json").read_text())
+    manifest["agents"] = {"numbers-reader": {"result": "failed", "reason": "exit 1"}}
+    manifest["analysis_failure"] = "a reader failed twice"
+    (failed / "input_manifest.json").write_text(json.dumps(manifest))
+    with pytest.raises(run_analysis.RunError, match="did not stop at the limit"):
+        run_analysis.run_company(run=failed, resume=True, **keyword)
 
 
 def test_the_limit_stops_the_call_at_once_and_says_so(tmp_path, monkeypatch):
@@ -632,12 +858,15 @@ def test_the_valuation_analyst_is_handed_only_the_paragraphs_the_notes_reader_fl
     reader = (run / "agents" / "notes-text-reader" / "input_mdna.md").read_text()
     assert valuation == reader[:reader.index("[0001045810-26-000075:mdna:")]
     assert "trimmed" not in valuation
-    assert not run_analysis.agent_inputs.ID_LINE.search(valuation)
-    paragraphs = len(run_analysis.agent_inputs.ID_LINE.findall(reader))
-    assert paragraphs > 0
+    assert "[0001045810-" not in valuation                        # no marker survives
+    # 112 paragraphs: counted by hand on the fixture's MD&A, built once outside
+    # the tests, with `grep -c '^\[0001045810-' input_mdna.md` (112), and the
+    # same 112 for `grep -c '\[0001045810-'`, so no marker sits off a line start.
+    assert reader.count("\n[0001045810-26-000075:mdna:") == 112
+    assert reader.count("[0001045810-") == 112
     for name in ("valuation-analyst", "valuation-analyst-second-pass"):
         record = manifest["agents"][name]
         assert record["result"] == "written"                      # the usage record stayed
         assert record["trimmed"]["input_mdna.md"]["kept"] == []
-        assert record["trimmed"]["input_mdna.md"]["of"] == paragraphs
-        assert record["trimmed"]["input_mdna.md"]["note"].startswith(f"0 of {paragraphs} paragraphs")
+        assert record["trimmed"]["input_mdna.md"]["of"] == 112
+        assert record["trimmed"]["input_mdna.md"]["note"].startswith("0 of 112 paragraphs")

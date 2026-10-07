@@ -22,19 +22,21 @@ import sys
 from pathlib import Path
 
 try:
-    from src import interpreter_pin
+    from src import interpreter_pin, run_analysis
 except ImportError:  # invoked as a plain script
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from src import interpreter_pin
+    from src import interpreter_pin, run_analysis
 
 TOKEN_KEYS = ("input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens",
               "output_tokens")
 
 
 def fable_tokens(manifest: dict) -> int:
+    """The tokens of every agent a Fable model served, read by the one predicate
+    the runner uses for its retry budget and its limit reading."""
     return sum(sum(record.get(key) or 0 for key in TOKEN_KEYS)
                for record in (manifest.get("agents") or {}).values()
-               if str(record.get("model_served") or "").startswith("claude-fable"))
+               if isinstance(record, dict) and run_analysis.is_fable(record.get("model_served")))
 
 
 def published(manifest: dict) -> bool:

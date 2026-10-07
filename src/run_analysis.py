@@ -46,8 +46,19 @@ the other analyst's output gated into its analysis file, `memo_ko.md` and
 and why -- names the agent in the manifest under `fable_limit_reached`, and exits
 `LIMIT_REACHED`, 4, so the batch stops too and writes what is pending into
 `queue.md`. Not 3: that is `interpreter_pin.WRONG_INTERPRETER`, which `main`
-returns before the run starts, and the batch has to tell the two apart. No
-analyst ever falls back to Opus. The single-agent control runs on the golden
+returns before the run starts, and the batch has to tell the two apart. A limit
+is read off the message ("reached your ... limit") and, for a Fable call, off the
+shape lessons.md records for 2026-09-29: a failed call that spent no token and
+ended in under ten seconds is the limit, whatever it said. The next night the
+stopped run is continued in place -- by default when the manifest records
+`fable_limit_reached`, or with `--resume` -- and every agent whose gated output
+is already on record is skipped, never called again; only the stopped agent and
+those after it run, the calculator stages re-use a file that is already there
+with the same content, and the manifest records `resumed_at` and
+`resume_skipped`. A run that did not stop is not resumed: `--resume` on a
+finished run says "nothing to resume" and exits 0, and on a run that failed
+some other way is refused, a correction being a new run. No analyst ever falls
+back to Opus. The single-agent control runs on the golden
 filings only, where it is scored against the owner (`--control auto`), and the
 manifest's `control_reason` says why it ran or did not, including that this tree
 holds no `evals/golden/cases`; the message every agent is sent lists the shared
@@ -105,6 +116,28 @@ CALL_TIMEOUT_SECONDS = 3600
 RETRIES = 1                 # an Opus call: one more try
 FABLE_RETRIES = 2           # a Fable call: at most two more
 LIMIT = re.compile(r"reached your \w+ limit", re.IGNORECASE)
+# The other shape the limit takes (lessons.md, 2026-09-29): a Fable call that
+# fails having spent no token, in about two seconds. Under this many seconds,
+# with no token in or out, a failed Fable call is read as the limit first.
+LIMIT_SECONDS = 10
+# Each agent's gated output at the run root, which is what says the agent is on
+# record and need not be called again on a resumed run.
+OUTPUT_ON_RECORD = {"numbers-reader": ("report_numbers.md",),
+                    "notes-text-reader": ("report_notes_text.md",),
+                    "accounting-analyst": ("analysis_accounting.json",),
+                    "financial-analyst": ("analysis_financial.json",),
+                    "valuation-analyst": ("assumptions.json",),
+                    "valuation-analyst-second-pass": ("analysis_valuation.json",),
+                    "control-single-agent": ("control_analysis_accounting.json",
+                                             "control_analysis_financial.json",
+                                             "control_assumptions.json")}
+
+
+def is_fable(model) -> bool:
+    """The one reading of "is this Fable": the definition's own word, or a full id
+    the owner passed with --model. `src/fable_batch.py` reads a served model the
+    same way."""
+    return isinstance(model, str) and (model == "fable" or model.startswith("claude-fable"))
 # The files most sessions share, named first so the prompt cache serves them.
 SHARED_FIRST = ("calculator_filings_only.json", "calculator_before_drivers.json",
                 "calculator.json", "report_numbers.md", "report_notes_text.md")
@@ -152,6 +185,10 @@ class RunError(Exception):
     """A stage could not run. The run is recorded as failed, never patched."""
 
 
+class NothingToResume(Exception):
+    """`--resume` on a run that finished: nothing is missing, nothing runs, exit 0."""
+
+
 # --- one agent call ----------------------------------------------------------------------
 
 def definition(name: str) -> dict:
@@ -190,7 +227,8 @@ def ask(directory: Path, *, agent: str, writes: tuple[str, ...], message: str,
         spec: dict, log: Path) -> dict:
     """One restricted session in `directory`; the usage record, or a failure."""
     record: dict = {"agent": agent, "writes": list(writes)}
-    retries = FABLE_RETRIES if spec.get("model") == "fable" else RETRIES
+    fable = is_fable(spec.get("model"))
+    retries = FABLE_RETRIES if fable else RETRIES
     for attempt in range(1, retries + 2):
         started = time.monotonic()
         command = ["claude", "-p", "--restricted", "--permission-mode", "acceptEdits",
@@ -223,7 +261,18 @@ def ask(directory: Path, *, agent: str, writes: tuple[str, ...], message: str,
             record["limit_reached"] = True
             record["reason"] = str(result.get("result"))[:200]
             return record          # a limit is not a failure a retry can answer
+        if fable and not tokens_spent(result) and seconds < LIMIT_SECONDS:
+            record["limit_reached"] = True
+            record["reason"] = (f"read as the limit: the Fable call failed in {seconds:.1f}s "
+                                f"with no token spent (lessons.md 2026-09-29); it said "
+                                f"{str(result.get('result') or '')[:120]!r}")
+            return record
     return record
+
+
+def tokens_spent(result: dict) -> int:
+    usage = result.get("usage") or {}
+    return sum(usage.get(key) or 0 for key in ("input_tokens", "output_tokens"))
 
 
 def _is_json(path: Path) -> bool:
@@ -437,9 +486,43 @@ def missing_frames(run: Path, agents: dict) -> dict[str, str]:
     return out
 
 
+def on_record(run: Path, name: str, record) -> bool:
+    """Whether an agent's gated output is on record in this run: its manifest record
+    says written, and the file the run publishes for it is there."""
+    return (isinstance(record, dict) and record.get("result") == "written"
+            and all((Path(run) / written).is_file() for written in OUTPUT_ON_RECORD[name]))
+
+
+def resume_plan(run: Path, manifest: dict, resume: bool) -> dict | None:
+    """What a resumed run starts from, or None for a run that has not run.
+
+    The run is resumed when its manifest records `fable_limit_reached` (the
+    default) or when `--resume` names it. `--resume` on a run that finished
+    raises NothingToResume; on one that failed some other way, or a run with no
+    agent on record, it is refused. A run on record that did not stop is never
+    run over: a correction is a new run.
+    """
+    recorded = manifest.get("agents")
+    if not isinstance(recorded, dict) or not recorded:
+        if resume:
+            raise RunError(f"{run}: nothing to resume, no agent has run in this directory")
+        return None
+    stopped = manifest.get("fable_limit_reached")
+    if not stopped:
+        if resume and manifest.get("analysis_failure") is None:
+            raise NothingToResume(f"{run}: nothing to resume, the run on record finished")
+        raise RunError(f"{run}: the run on record did not stop at the limit "
+                       f"(analysis_failure: {manifest.get('analysis_failure')!r}), so there "
+                       "is nothing to resume; a correction is a new run")
+    agents = {name: dict(record) for name, record in recorded.items()
+              if on_record(run, name, record)}
+    return {"agents": agents, "skipped": list(agents),
+            "stages": dict(manifest.get("analysis_stages") or {}), "stopped": list(stopped)}
+
+
 def run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: str,
                 store: Path, prices: Path | None, model: str | None = None,
-                control: str = "auto") -> dict:
+                control: str = "auto", resume: bool = False) -> dict:
     run = Path(run)
     logs = run.parent / f".{run.name}.logs"          # outside the record, beside it
     logs.mkdir(exist_ok=True)
@@ -447,8 +530,14 @@ def run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: s
     if manifest.get("cutoff") != cutoff:
         raise RunError(f"--cutoff {cutoff} is not the bundle's own cutoff "
                        f"{manifest.get('cutoff')}; a later date admits later rows")
-    stages: dict = {}
-    agents: dict = {}
+    plan = resume_plan(run, manifest, resume)
+    stages: dict = plan["stages"] if plan else {}
+    agents: dict = plan["agents"] if plan else {}
+    skipped: list[str] | None = plan["skipped"] if plan else None
+
+    def pending(*names: str) -> tuple[str, ...]:
+        """The agents of a stage not already on record: the ones this run calls."""
+        return tuple(name for name in names if name not in agents)
 
     market_data = calculator.market_inputs(ticker, cutoff_guard.parse_date(cutoff, "cutoff"),
                                            prices)
@@ -458,37 +547,52 @@ def run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: s
         decide.mark_market_unavailable(run, market_data.get("missing") or NO_MARKET_TABLE)
 
     def calculate(name: str, **extra) -> dict:
+        """One calculator stage, written once. On a resumed run a stage file that
+        is already there with the same content is re-used; `calculator.json`,
+        which the stopped run wrote from what had finished, is written again
+        from what has finished now; any other difference is refused."""
         payload = calculator.calculate(ticker=ticker, cutoff=cutoff, period_end=period_end,
                                        form=form, accession=manifest.get("accession"),
                                        fixtures_root=store, bundle=run,
                                        market_data=market_data, **extra)
-        if (run / name).exists():
-            raise RunError(f"{name} is already in the run; each stage is written once")
-        write_json(run / name, payload)
+        target = run / name
+        if target.exists():
+            if _same_json(target, payload):
+                return payload
+            if plan is None or name != FINAL:
+                raise RunError(f"{name} is already in the run with other content; each "
+                               "stage is written once")
+        write_json(target, payload)
         return payload
 
-    # read
-    agents.update(parallel(run, ("numbers-reader", "notes-text-reader"), logs, model))
+    # read: a reader on record from the stopped run is not called again
+    readers = pending("numbers-reader", "notes-text-reader")
+    if readers:
+        agents.update(parallel(run, readers, logs, model))
     if limit_hit(agents):
-        return finish(run, agents, stages, "the limit was reached", model)
+        return finish(run, agents, stages, "the limit was reached", model, skipped=skipped)
     if any(agents[name]["result"] != "written" for name in ("numbers-reader", "notes-text-reader")):
-        return finish(run, agents, stages, "a reader failed twice", model)
-    stages["quote_gate"] = {"dropped": len(gate_readers(run).get("dropped", []))}
-    # the market labels: Python, on the gated reports; with no market table the
-    # record says so and nothing is written. The file is re-checked as soon as
-    # it is written: every label cites an item standing in its own report.
-    stages["market_labels"] = market_labels.write(run)
-    if stages["market_labels"]["written"]:
-        stages["market_labels_check"] = market_labels.check(run)
+        return finish(run, agents, stages, "a reader failed twice", model, skipped=skipped)
+    if readers:
+        stages["quote_gate"] = {"dropped": len(gate_readers(run).get("dropped", []))}
+        # the market labels: Python, on the gated reports; with no market table
+        # the record says so and nothing is written. The file is re-checked as
+        # soon as it is written: every label cites an item standing in its own
+        # report.
+        stages["market_labels"] = market_labels.write(run)
+        if stages["market_labels"]["written"]:
+            stages["market_labels_check"] = market_labels.check(run)
 
     # calculate, then the two analysts, never merged, on the view with no price.
     # What finished is gated and published whether or not the other analyst
     # answered the limit: a limit stops what comes after it, not what stood.
     base = calculate(BEFORE_ANALYSTS)
     write_json(run / calculator.FILINGS_ONLY, calculator.filings_only(base))
-    agents.update(parallel(run, ("accounting-analyst", "financial-analyst"), logs, model))
+    analysts = pending("accounting-analyst", "financial-analyst")
+    if analysts:
+        agents.update(parallel(run, analysts, logs, model))
     for name, kind in (("accounting-analyst", "accounting"), ("financial-analyst", "financial")):
-        if agents[name]["result"] == "written":
+        if agents[name]["result"] == "written" and not (run / f"analysis_{kind}.json").is_file():
             checked = check_analysis(run, name, kind)
             write_json(run / f"analysis_{kind}.json", checked)
             stages[f"analysis_{kind}"] = {"dropped": checked["dropped_count"]}
@@ -496,23 +600,30 @@ def run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: s
 
     # value: adjustments first, then drivers, then the reading -- unless the
     # limit stopped the run at the analysts, in which case nothing runs after it
+    final_written = False
     if not limit_hit(agents):
         calculate(BEFORE_DRIVERS, accounting=accounting)
         if ((run / "analysis_accounting.json").is_file()
                 and (run / "analysis_financial.json").is_file()):
-            agents["valuation-analyst"] = run_agent(run, "valuation-analyst", logs, model)
+            if pending("valuation-analyst"):
+                agents["valuation-analyst"] = run_agent(run, "valuation-analyst", logs, model)
             if agents["valuation-analyst"]["result"] == "written":
-                assumptions = check_analysis(run, "valuation-analyst", "assumptions")
-                write_json(run / "assumptions.json", assumptions)
-                stages["assumptions"] = {"dropped": assumptions["dropped_count"]}
+                if not (run / "assumptions.json").is_file():
+                    assumptions = check_analysis(run, "valuation-analyst", "assumptions")
+                    write_json(run / "assumptions.json", assumptions)
+                    stages["assumptions"] = {"dropped": assumptions["dropped_count"]}
+                assumptions = _load(run / "assumptions.json")
                 calculate(FINAL, accounting=accounting, assumptions=assumptions)
-                agents["valuation-analyst-second-pass"] = run_agent(
-                    run, "valuation-analyst-second-pass", logs, model)
-                if agents["valuation-analyst-second-pass"]["result"] == "written":
+                final_written = True
+                if pending("valuation-analyst-second-pass"):
+                    agents["valuation-analyst-second-pass"] = run_agent(
+                        run, "valuation-analyst-second-pass", logs, model)
+                if (agents["valuation-analyst-second-pass"]["result"] == "written"
+                        and not (run / "analysis_valuation.json").is_file()):
                     checked = check_analysis(run, "valuation-analyst-second-pass", "valuation")
                     write_json(run / "analysis_valuation.json", checked)
                     stages["analysis_valuation"] = {"dropped": checked["dropped_count"]}
-    if not (run / FINAL).exists():
+    if not final_written:
         calculate(FINAL, accounting=accounting)
 
     # the formula baselines, Python only, beside the analyses and never merged
@@ -535,24 +646,34 @@ def run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: s
         baselines=_load(run / "baselines.json"),
         missing=missing_frames(run, agents)), encoding="utf-8")
     if limit_hit(agents):
-        return finish(run, agents, stages, "the limit was reached", model)
+        return finish(run, agents, stages, "the limit was reached", model, skipped=skipped)
     if control == "auto":
         golden, control_reason = is_golden_filing(manifest.get("accession"))
     else:
         golden, control_reason = control == "always", f"--control {control}"
-    if golden:
+    if golden and pending("control-single-agent"):
         agents["control-single-agent"] = run_control(run, logs, model)
         if limit_hit(agents):
             return finish(run, agents, stages, "the limit was reached", model,
-                          control_reason=control_reason)
+                          control_reason=control_reason, skipped=skipped)
         if agents["control-single-agent"]["result"] == "written":
             stages["control"] = check_control(run)
-    else:
+    elif not golden:
         stages["control"] = f"skipped: {control_reason}"
     silent = [name for name, record in agents.items() if record.get("result") != "written"]
     return finish(run, agents, stages,
                   f"did not write: {', '.join(silent)}" if silent else None, model,
-                  control_reason=control_reason)
+                  control_reason=control_reason, skipped=skipped)
+
+
+def _same_json(path: Path, payload) -> bool:
+    """Whether the file holds this payload: compared as JSON text with sorted keys,
+    so a NaN, which is never equal to itself, still reads as the same number."""
+    try:
+        existing = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return False
+    return json.dumps(existing, sort_keys=True) == json.dumps(payload, sort_keys=True)
 
 
 def control_sees(run: Path) -> list[str]:
@@ -613,7 +734,8 @@ def _load(path: Path) -> dict | None:
 
 
 def finish(run: Path, agents: dict, stages: dict, failure: str | None,
-           model: str | None = None, control_reason: str | None = None) -> dict:
+           model: str | None = None, control_reason: str | None = None,
+           skipped: list[str] | None = None) -> dict:
     # Read again: the quote gate, the market marker and the router wrote to it
     # since the start. The router's record of what it trimmed for the valuation
     # analyst (`agents.<name>.trimmed`, src/agent_inputs.py) is kept beside the
@@ -631,7 +753,12 @@ def finish(run: Path, agents: dict, stages: dict, failure: str | None,
     manifest["analysis_failure"] = failure
     if control_reason is not None:
         manifest["control_reason"] = control_reason
+    if skipped is not None:
+        # a resumed run: the agents on record from the stopped run were not called
+        manifest["resumed_at"] = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        manifest["resume_skipped"] = skipped
     hit = limit_hit(agents)
+    manifest.pop("fable_limit_reached", None)      # the stopped run's; set again below if hit
     if hit:
         manifest["fable_limit_reached"] = hit
         manifest["analysis_failure"] = (f"the limit was reached at {', '.join(hit)}: the run "
@@ -660,6 +787,10 @@ def main(argv: list[str] | None = None) -> int:
                         help="one model for every agent, in place of each definition's own")
     parser.add_argument("--control", default="auto", choices=["auto", "always", "never"],
                         help="the single-agent control: auto runs it on golden filings only")
+    parser.add_argument("--resume", action="store_true",
+                        help="continue a run the limit stopped: agents on record are not "
+                             "called again (the default when the manifest records "
+                             "fable_limit_reached)")
     args = parser.parse_args(argv)
     code = interpreter_pin.enforce()
     if code:
@@ -669,7 +800,10 @@ def main(argv: list[str] | None = None) -> int:
                                cutoff=args.cutoff, period_end=args.period_end,
                                store=Path(args.store),
                                prices=Path(args.prices) if args.prices else None,
-                               model=args.model, control=args.control)
+                               model=args.model, control=args.control, resume=args.resume)
+    except NothingToResume as exc:
+        print(f"run_analysis: {exc}")
+        return 0
     except (RunError, agent_inputs.AgentInputError, calculator.CalculatorInputError,
             cutoff_guard.CutoffGuardError, decide.DecideError,
             market_labels.MarketLabelError, OSError, ValueError) as exc:

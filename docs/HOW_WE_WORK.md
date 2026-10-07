@@ -284,7 +284,13 @@ The owner's decision of 2026-10-06 (`docs/structure_changes.md`) sets this table
   agent under `fable_limit_reached`, and `src/run_analysis.py` exits 4
   (`LIMIT_REACHED`; 3 is the interpreter pin's, and the batch tells the two apart).
   What is pending is written into `queue.md`, and the batch continues the next
-  night. An analyst never falls back to Opus.
+  night: the stopped run is continued in place (`--resume`, or by default when the
+  manifest records `fable_limit_reached`), every agent whose gated output is on
+  record is skipped and never called again, only the stopped agent and those after
+  it run, and the manifest records `resumed_at` and `resume_skipped`. A limit is
+  read off the message, and for a Fable call off its shape too: a failed call that
+  spent no token and ended in under ten seconds. An analyst never falls back to
+  Opus.
 - **Tokens are counted.** Input, cache-write, cache-read and output tokens, and wall
   time, are recorded per agent per filing in `input_manifest.json`.
 - **The batch is sized from the record.** The nightly batch is Fable tokens available ÷
