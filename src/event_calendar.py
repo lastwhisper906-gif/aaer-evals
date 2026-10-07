@@ -352,6 +352,8 @@ def read_through(root: Path) -> dt.date | None:
 
     A quarterly index read before its line recorded that day stands for the
     week before the day it was read: reading a day twice appends nothing twice.
+    A daily index that was not read (a holiday, a refusal) names no day and
+    stands for none, whenever its line was written.
     """
     days = []
     for line in sources(root):
@@ -359,7 +361,7 @@ def read_through(root: Path) -> dt.date | None:
             continue
         if line.get("through"):
             days.append(dt.date.fromisoformat(line["through"]))
-        elif line.get("at"):
+        elif line.get("at") and line["source"] == "full_index":
             days.append(dt.date.fromisoformat(line["at"][:10]) - dt.timedelta(days=7))
     return max(days) if days else None
 
