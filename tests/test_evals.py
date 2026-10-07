@@ -1083,6 +1083,40 @@ def test_a_report_or_calculator_copy_that_is_not_the_runs_fails_inputs_on_record
     assert _status(results, "mechanical.cited_numbers_exist") == FAIL
 
 
+def test_a_sentence_in_a_stray_file_is_not_a_placeholder(run):
+    """A placeholder is one word; "shares fell sharply after the report" in a
+    reader's directory is market news in words, and is refused."""
+    directory = run / "agents" / "numbers-reader"
+    (directory / "note.txt").write_text("shares fell sharply after the report", encoding="utf-8")
+    results = mechanical.grade(run)
+    assert _status(results, "mechanical.layers_hold") == FAIL
+    assert _status(results, "mechanical.inputs_on_record") == FAIL
+    (directory / "note.txt").write_text("placeholder\n", encoding="utf-8")
+    assert _status(mechanical.grade(run), "mechanical.layers_hold") == PASS
+
+
+def test_a_price_or_return_in_the_prior_predictions_fails_nothing_after_cutoff(run):
+    """The readers are handed the prior predictions; a figure with a currency or a
+    percent sign in it is a price or a return, and never reaches them."""
+    import hashlib
+    for planted in ("the shares fell 12% after the last report", "closed at $51.20",
+                    "an abnormal return of 340 bps"):
+        root = run / "input_prior_predictions.md"
+        data = (root.read_text(encoding="utf-8") + planted + "\n").encode("utf-8")
+        root.write_bytes(data)
+        for copy in run.glob("agents/*/input_prior_predictions.md"):
+            copy.write_bytes(data)
+        _edit(run / "input_manifest.json",
+              lambda d: d["files"]["input_prior_predictions.md"].update(
+                  sha256=hashlib.sha256(data).hexdigest(), bytes=len(data)))
+        results = mechanical.grade(run)
+        assert _status(results, "mechanical.nothing_after_cutoff") == FAIL, planted
+        assert _status(results, "mechanical.inputs_on_record") == PASS
+    assert mechanical.prior_predictions_problems("flag: receivables grew faster than revenue; "
+                                                 "management said the ERP cutover; outcome: "
+                                                 "the reserve was raised in the next quarter") == []
+
+
 def test_a_stray_file_nobody_routed_is_noted_unless_it_could_be_an_input(run):
     """GNRC's notes reader left an eleven-byte "placeholder" in its directory: a
     few bytes with no digit, noted, not a failure. Anything more -- a price list

@@ -26,15 +26,22 @@ jobs:
       # The guard that runs is main's copy, never the branch's: a branch cannot
       # rewrite the check that judges it.
       - name: evals guard
+        # everything the event supplies goes through the environment, never into
+        # the command line: a label named to close the quote would otherwise end
+        # the step as a success before the guard ran
         env:
           LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+          ACTION: ${{ github.event.action }}
+          LABEL_ADDED: ${{ github.event.label.name }}
+          LABELED_BY: ${{ github.event.sender.login }}
+          OWNER: ${{ github.repository_owner }}
         run: |
           if git cat-file -e origin/main:src/eval_guard.py 2>/dev/null; then
             git show origin/main:src/eval_guard.py > "$RUNNER_TEMP/eval_guard.py"
           else
             cp src/eval_guard.py "$RUNNER_TEMP/eval_guard.py"
           fi
-          python "$RUNNER_TEMP/eval_guard.py" --base origin/main --head HEAD --labels "$LABELS" --action "${{ github.event.action }}" --label-added "${{ github.event.label.name }}" --labeled-by "${{ github.event.sender.login }}" --owner "${{ github.repository_owner }}"
+          python "$RUNNER_TEMP/eval_guard.py" --base origin/main --head HEAD --labels "$LABELS" --action "$ACTION" --label-added "$LABEL_ADDED" --labeled-by "$LABELED_BY" --owner "$OWNER"
 
   # The owner's graders over every run, always with main's copy of evals/, run
   # directly rather than through the branch's Makefile, so a branch is graded by the

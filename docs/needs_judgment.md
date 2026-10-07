@@ -98,6 +98,8 @@ force.
 
 [ ] **what the owner's label guards, beyond evals/ and the grader's own files** · `src/eval_guard.py` GUARDED holds evals/, the guard, the hook, the analysis-grader agent, `src/grade_run.py` (which now carries the grader's whole instruction) and `.claude/settings.json`; the transport the grader is called through (`src/run_analysis.py` ask and definition), the Makefile and `.github/workflows/ci.yml` are not guarded, so a branch can change how the grader is called without the label · default: not guarded; a change there shows in the pull request's diff and CI's required `check` runs main's graders on the branch; deciding adds any of them to GUARDED in a pull request labelled `owner-approved-eval`.
 
+[ ] **what the prior-predictions file may carry to the readers** · `input_prior_predictions.md` is handed to both readers and the control and says it carries earlier runs' flags, the management's explanations and outcomes; an outcome written as a price or a return would put market data in front of a reader · default: the file carries the outcome's direction in words and no price or return figure, and `evals/regression/mechanical.py` refuses a currency sign, a percent sign or basis points in it; deciding either keeps that rule or moves outcomes out of the readers' file into one the valuation analyst alone is handed.
+
 ## Settled by default
 
 Every other row that was open on 2026-09-28. Nothing waits on any of them: the

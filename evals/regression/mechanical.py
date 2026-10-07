@@ -651,10 +651,14 @@ RECORD_NAMES = ("input_", "report_", "analysis_", "calculator", "assumptions")
 PLACEHOLDER_BYTES = 64
 
 
+ONE_WORD = re.compile(r"[A-Za-z_-]{1,64}\s*")
+
+
 def is_placeholder(data: bytes) -> bool:
-    """A few bytes with no digit in them: a word an agent wrote to test its pen
-    (GNRC's notes reader left "placeholder"), which no price, date or figure fits."""
-    return len(data) <= PLACEHOLDER_BYTES and not any(48 <= b <= 57 for b in data)
+    """One word of letters and nothing else: what an agent wrote to test its pen
+    (GNRC's notes reader left "placeholder"). A sentence, a figure, a date or a
+    second word is not one: "shares fell after the report" is market news in words."""
+    return bool(ONE_WORD.fullmatch(data.decode("utf-8", "replace")))
 
 
 def looks_like_an_input(name: str, data: bytes) -> bool:
@@ -763,6 +767,19 @@ def idless_prose_problems(text: str, cutoff: dt.date, documents: set[str],
 
 
 ACCESSION_ANYWHERE = re.compile(r"\b\d{10}-\d{2}-\d{6}\b")
+# a price or a return is written with a currency sign or a percent sign; the
+# prior-predictions file, which every reader is handed, carries flags, the
+# management's explanations and the outcome's direction in words, never such a figure
+MARKET_FIGURE = re.compile(r"[$€£¥₩]\s?\d|\d\s?%|\bbps\b|basis points", re.IGNORECASE)
+
+
+def prior_predictions_problems(text: str) -> list[str]:
+    """Why the prior-predictions file, handed to the readers, carries market data
+    (docs/needs_judgment.md holds the default): a price or a return figure."""
+    return [f"line {number}: a price or return figure in what the readers are handed: "
+            f"{match.group()!r}"
+            for number, line in enumerate(text.splitlines(), 1)
+            for match in [MARKET_FIGURE.search(line)] if match]
 
 
 def check_nothing_after_cutoff(run: Path) -> Result:
@@ -839,6 +856,9 @@ def check_nothing_after_cutoff(run: Path) -> Result:
                 late += [f"{path.relative_to(run)}: {why}"
                          for why in idless_prose_problems(text, cutoff, documents, trigger,
                                                           manifest.get("accepted"))]
+            if path.name == "input_prior_predictions.md":
+                late += [f"{path.relative_to(run)}: {why}"
+                         for why in prior_predictions_problems(text)]
             continue
         tree = load(path)
         if path.name == "input_market.json":

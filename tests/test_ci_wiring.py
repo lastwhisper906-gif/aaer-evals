@@ -30,10 +30,16 @@ def test_the_graders_and_the_guard_that_run_are_mains_copies():
     assert "python -m evals" not in eval_job and "make eval" not in eval_job
     assert "git checkout origin/main -- evals" not in eval_job
     assert "origin/main:src/eval_guard.py" in _job("guard")
-    assert '--action "${{ github.event.action }}"' in _job("guard")
-    assert '--label-added "${{ github.event.label.name }}"' in _job("guard")
-    assert '--labeled-by "${{ github.event.sender.login }}"' in _job("guard")
-    assert '--owner "${{ github.repository_owner }}"' in _job("guard")
+    guard = _job("guard")
+    # the event's strings reach the guard through the environment only: no
+    # ${{ }} of the event sits on the command line, where a crafted label could
+    # end the step before the guard ran
+    assert '--action "$ACTION" --label-added "$LABEL_ADDED" --labeled-by "$LABELED_BY" --owner "$OWNER"' in guard
+    run_lines = [l for l in guard.splitlines() if "eval_guard.py" in l and "python" in l]
+    assert run_lines and all("${{" not in l for l in run_lines)
+    for key, expr in (("ACTION", "github.event.action"), ("LABEL_ADDED", "github.event.label.name"),
+                      ("LABELED_BY", "github.event.sender.login"), ("OWNER", "github.repository_owner")):
+        assert f"{key}: ${{{{ {expr} }}}}" in guard
 
 
 def test_the_required_job_waits_on_the_guard_and_the_graders_and_fails_with_either():
