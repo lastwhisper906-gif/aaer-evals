@@ -434,6 +434,26 @@ def test_an_analysis_quote_of_key_names_or_across_report_items_fails_quotes_reso
     assert _status(mechanical.grade(run), "mechanical.quotes_resolve") == PASS
 
 
+def test_a_valuation_quote_of_an_anomaly_id_or_evidence_id_fails_quotes_resolve(run):
+    """The valuation analyst is handed both analyses: a quote of an anomaly id, an
+    evidence id or an area slug from them says nothing the analysis said; a quote
+    of an anomaly's words stands."""
+    accounting = json.loads((run / "analysis_accounting.json").read_text(encoding="utf-8"))
+    anomaly = accounting["anomalies"][0]
+    for planted in (anomaly["id"], anomaly["evidence"][0], anomaly.get("area") or "revenue_recognition"):
+        _edit(run / "analysis_valuation.json",
+              lambda d, q=planted: d.setdefault("notes", []).append(
+                  {"quote": q, "quote_from": "analysis_accounting.json"}))
+        assert _status(mechanical.grade(run), "mechanical.quotes_resolve") == FAIL, planted
+        _edit(run / "analysis_valuation.json", lambda d: d["notes"].pop())
+    words = (anomaly.get("what") or anomaly.get("name") or "")[:40]
+    assert words
+    _edit(run / "analysis_valuation.json",
+          lambda d: d.setdefault("notes", []).append({"quote": words,
+                                                      "quote_from": "analysis_accounting.json"}))
+    assert _status(mechanical.grade(run), "mechanical.quotes_resolve") == PASS
+
+
 def test_an_analysis_quote_across_two_paragraphs_of_a_filing_fails_quotes_resolve(run):
     """The valuation analyst quotes MD&A: a quote is of one paragraph, not of the
     text running from the end of one paragraph through the next id line."""

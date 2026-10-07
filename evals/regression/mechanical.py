@@ -311,12 +311,43 @@ def units_of(name: str, text: str, kept: dict | None = None) -> list[tuple[str, 
         return [(fold(block), set(), set()) for block in re.split(r"\n\s*\n", text)
                 if block.strip()]
     if name.endswith(".json"):
+        # a string value of the file, less its key names, ids, areas and the other
+        # labels it carries about itself: a quote of an anomaly id or an evidence id
+        # from an analysis says nothing the analysis said
         try:
             tree = json.loads(text)
         except ValueError:
             return []
-        return [(fold(value), set(), set()) for _, value in walk_strings(tree)]
+        printed = json.dumps(tree)
+        labels = row_metadata(printed) | json_labels(tree)
+        return [(fold(value), row_keys(printed), labels) for _, value in walk_strings(tree)]
     return [(fold(text), set(), set())]
+
+
+LABEL_KEYS = ("id", "area", "evidence", "quote_from", "paragraph_id", "frame", "severity",
+              "upstream_item_id", "label", "window", "kind")
+
+
+def json_labels(tree) -> set[str]:
+    """Every string an analysis carries under a label key, lists included, as
+    printed: what it says about itself, not what it says."""
+    out = set()
+
+    def walk(node):
+        if isinstance(node, dict):
+            for key, value in node.items():
+                if key in LABEL_KEYS:
+                    for item in (value if isinstance(value, list) else [value]):
+                        if isinstance(item, str):
+                            out.add(json.dumps(item))
+                            out.add(item)
+                walk(value)
+        elif isinstance(node, list):
+            for value in node:
+                walk(value)
+
+    walk(tree)
+    return out
 
 
 def analysis_quote_stands(seen: dict[str, str], quote: str, kept: dict | None = None) -> str | None:
