@@ -271,8 +271,15 @@ def says_something(quote: str, keys: set[str], identifier: str,
     return bool(re.sub(r"[\s:,{}\[\]\"]+", "", rest))
 
 
+PARAGRAPH_ID = re.compile(r"\d{10}-\d{2}-\d{6}:[a-z0-9_]+:.+")
+
+
 def quote_stands(seen: dict[str, str], identifier: str, quote: str) -> str | None:
     """Why a reader's quote does not stand on the paragraph it names, or None."""
+    # a paragraph id is an accession, a namespace and a name; a common value such
+    # as "iso4217:USD" prints in thousands of rows and names none of them
+    if not PARAGRAPH_ID.fullmatch(identifier):
+        return f"{identifier!r} is not a paragraph id (accession:namespace:name)"
     paragraph = paragraph_text(seen, identifier)
     if paragraph is None:
         return f"paragraph {identifier} is not in the reader's input"
@@ -682,13 +689,14 @@ RECORD_NAMES = ("input_", "report_", "analysis_", "calculator", "assumptions")
 PLACEHOLDER_BYTES = 64
 
 
-ONE_WORD = re.compile(r"[A-Za-z_-]{1,64}\s*")
+ONE_WORD = re.compile(r"[A-Za-z]{1,64}\s*")
 
 
 def is_placeholder(data: bytes) -> bool:
     """One word of letters and nothing else: what an agent wrote to test its pen
-    (GNRC's notes reader left "placeholder"). A sentence, a figure, a date or a
-    second word is not one: "shares fell after the report" is market news in words."""
+    (GNRC's notes reader left "placeholder"). A sentence, a figure, a date, a second
+    word or a hyphenated or underscored chain of words is not one: "shares fell after
+    the report" and "shares-fell-after-the-report" are market news in words."""
     return bool(ONE_WORD.fullmatch(data.decode("utf-8", "replace")))
 
 
@@ -1397,6 +1405,11 @@ def check_layers_hold(run: Path) -> Result:
             problems.append(f"{directory.relative_to(run)}: no layer the grader knows")
             continue
         for path in sorted(directory.iterdir()):
+            if path.is_dir():
+                # nothing routes a nested file, and the agent can read it all the same
+                problems.append(f"{path.relative_to(run)}: a directory inside an agent's, "
+                                "which nothing routed")
+                continue
             if not path.is_file():
                 continue
             count += 1

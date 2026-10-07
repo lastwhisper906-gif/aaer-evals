@@ -169,6 +169,43 @@ def test_an_altered_quote_fails_quotes_resolve(run):
     assert _status(mechanical.grade(run), "mechanical.quotes_resolve") == FAIL
 
 
+def test_a_reader_paragraph_id_that_is_not_an_id_fails_quotes_resolve(run):
+    """"iso4217:USD" prints in thousands of CSCO's rows: a paragraph_id has the
+    shape accession:namespace:name, or it names nothing."""
+    report = run / "report_numbers.md"
+    item = mechanical.report_items(report)[0]
+    text = report.read_text(encoding="utf-8")
+    report.write_text(text.replace(item["paragraph_id"], "iso4217:USD", 1), encoding="utf-8")
+    results = mechanical.grade(run)
+    assert _status(results, "mechanical.quotes_resolve") == FAIL
+    assert any("is not a paragraph id" in f for f in
+               next(r.failures for r in results if r.grader == "mechanical.quotes_resolve"))
+
+
+def test_a_directory_inside_an_agents_directory_fails_layers_hold(run):
+    nested = run / "agents" / "numbers-reader" / "x"
+    nested.mkdir()
+    (nested / "input_market.json").write_text("{}", encoding="utf-8")
+    results = mechanical.grade(run)
+    assert _status(results, "mechanical.layers_hold") == FAIL
+    assert any("a directory inside an agent's" in f for f in
+               next(r.failures for r in results if r.grader == "mechanical.layers_hold"))
+
+
+def test_a_hyphenated_chain_of_words_is_not_a_placeholder(run):
+    directory = run / "agents" / "numbers-reader"
+    for planted in ("shares-fell-sharply-after-the-report", "stock_dropped_on_the_miss"):
+        (directory / "note.txt").write_text(planted, encoding="utf-8")
+        assert _status(mechanical.grade(run), "mechanical.layers_hold") == FAIL, planted
+    (directory / "note.txt").unlink()
+
+
+def test_a_forbidden_word_under_a_key_that_is_not_quote_fails_forbidden_words(run):
+    _edit(run / "analysis_accounting.json",
+          lambda d: d["anomalies"][0].update(my_quote="this looks like fraud"))
+    assert _status(coverage.grade(run), "coverage.forbidden_words") == FAIL
+
+
 def test_a_reader_quote_attached_to_the_wrong_paragraph_fails_quotes_resolve(run):
     """The quote still exists in the input, under another id; the check holds it
     to the paragraph the item names."""

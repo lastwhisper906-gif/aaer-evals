@@ -119,8 +119,9 @@ def check_forbidden_words(run: Path) -> Result:
         tree = load(run / name) or {}
         for where, text in walk_strings({k: v for k, v in tree.items()
                                          if k not in ("dropped_items",)}):
-            if where.endswith(".dropped") or where.endswith("quote"):
-                continue        # a verbatim quote is the filer's words, not the analyst's
+            if where.endswith(".dropped") or where == "quote" or where.endswith(".quote"):
+                continue        # a verbatim quote (the key `quote`, which quotes_resolve
+                                # verifies) is the filer's words, not the analyst's
             patterns = (ACCUSATION, RECOMMENDATION) if name in RECOMMENDATION_FILES \
                 else (ACCUSATION,)
             for pattern in patterns:
