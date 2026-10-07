@@ -16,8 +16,6 @@ branch changed. A run item is done when its run directory is published and
 
 ## Open
 
-[ ] DCF sanity: a free-cash-flow-yield cross-check, a WACC components table, and reverse-DCF growth beside three- and five-year revenue history, in `calculator.json` and the memo, each with a hand-worked test · `.venv/bin/python -m pytest tests/test_calculator.py tests/test_analysis_check.py -q -k "free_cash_flow_yield or wacc_components or growth_beside_history"` · none
-
 [ ] new Fable runs for AAPL, GNRC and LFUS, each in `runs/<ticker>/<accession>-rerun-<date>/` · `.venv/bin/python -m evals --runs runs/AAPL runs/GNRC runs/LFUS` · items one to three
 
 [ ] the nightly crew: collects newest first; writes its ledger line to main through an auto-merging pull request instead of a `nightly/*` branch; reads the `TIINGO_TOKEN` secret; and `lessons.md` records why the 2006–2011 filings answered 404 · `.venv/bin/python -m pytest tests/test_nightly.py tests/test_collect_history.py -q` · none
@@ -43,6 +41,8 @@ branch changed. A run item is done when its run directory is published and
 [ ] the first CRSP fetch through WRDS: `.venv/bin/python -m src.probe_price_sources` prints a served crsp line with rows for Lehman Brothers Holdings (LEH, delisted 2008-09-17) carrying dlret · eval: `.venv/bin/python -m src.probe_price_sources` -- that command's crsp line reads served and the row count is printed · depends on: the owner's two environment steps (`docs/needs_judgment.md`, "CRSP through WRDS from the cloud session")
 
 ## Done
+
+[x] DCF sanity: a free-cash-flow-yield cross-check, a WACC components table, and reverse-DCF growth beside three- and five-year revenue history, in `calculator.json` and the memo, each with a hand-worked test · `.venv/bin/python -m pytest tests/test_calculator.py tests/test_analysis_check.py -q -k "free_cash_flow_yield or wacc_components or growth_beside_history"` · none · PR: this one
 
 [x] the memo names a cost-of-debt fallback where calculator.json labels one (`pre_tax_cost_of_debt.fallback`), in the finance frame's valuation section (created and done in this change) · `.venv/bin/python -m pytest tests/test_analysis_check.py -q -k cost_of_debt_fallback` · items one and three · PR: this one
 

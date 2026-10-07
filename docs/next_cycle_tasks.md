@@ -126,6 +126,8 @@ got a pull request.
 
 [ ] Fable, used efficiently: the valuation analyst reads only the flagged paragraphs, a passed call is never rerun, a failed agent retries alone, the limit stops the batch and the next night resumes in place, tokens on record · `src/run_analysis.py`, `src/agent_inputs.py`, `src/fable_batch.py` · `.venv/bin/python -m pytest tests/test_run_analysis.py tests/test_agent_inputs.py tests/test_fable_batch.py -q` · the owner's decision of 2026-10-06 (`docs/structure_changes.md`); the rules are `docs/HOW_WE_WORK.md` §6 · PR:
 
+[ ] DCF sanity: a free-cash-flow-yield cross-check, a WACC components table, and reverse-DCF growth beside three- and five-year revenue history, in `calculator.json` and the memo, each with a hand-worked test · `src/calculator.py` (`free_cash_flow_yield`, `wacc_components`, `implied_growth_beside_history`, three priced sections, and `revenue_growth_five_year_compound` in the history), `src/memo.py` (the valuation section prints the three), `queue.md` · `.venv/bin/python -m pytest tests/test_calculator.py tests/test_analysis_check.py -q -k "free_cash_flow_yield or wacc_components or growth_beside_history"` · Ciena's companyfacts rows for the 10-Q filed 2026-06-04, each quoted by concept, period and value in `tests/test_calculator.py`, with the arithmetic written out and the market-wide inputs planted by the test and labelled so; the memo's numbers written by hand into `tests/test_analysis_check.py`; `queue.md` item two of 2026-10-06 · PR: this one
+
 ## Next cycle
 
 Moved here untouched. Nothing on this list is launched this cycle.

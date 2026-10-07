@@ -541,6 +541,87 @@ def test_the_memo_names_a_cost_of_debt_fallback_where_the_calculator_labels_one(
     assert memo.cost_of_debt_fallback_line(FIELDS) == []
 
 
+def test_the_memo_prints_the_free_cash_flow_yield_wacc_components_and_growth_beside_history():
+    """The three blocks beside the DCF, with numbers written here by hand, each
+    printed in the valuation section the way the section prints its other lines:
+    a rate as a percentage to one decimal (0.0371 is 3.7%, 0.03 is 3.0%), a dollar
+    amount in 억 (1,531,119,000 is 15.3억 달러), a beta to three decimals, a source
+    after a dash, and a row with no value naming the calculator's reason. A
+    calculator.json without the blocks prints none of these lines."""
+    fields = copy.deepcopy(FIELDS)
+    fields["free_cash_flow_yield"] = {
+        "free_cash_flow_to_firm_over_enterprise_value": {"value": 0.0371, "unit": "ratio"},
+        "free_cash_flow_to_equity_over_market_value_of_equity": {"value": 0.058, "unit": "ratio"}}
+    fields["wacc_components"] = {"rows": [
+        {"input": "risk_free_rate", "value": 0.04, "source": "DGS10 on 2026-06-04; planted"},
+        {"input": "beta", "value": 1.2, "source": "against SPY, 250 trading days"},
+        {"input": "total_debt", "value": 1_531_119_000.0, "source": "debt_current + debt_noncurrent"},
+        {"input": "wacc", "value": None, "missing": "the cost of equity needs a beta and a price"}]}
+    fields["implied_growth_beside_history"] = {
+        "implied_ten_year_revenue_growth": {"value": 0.03},
+        "revenue_growth_three_year_compound": {"value": 0.095},
+        "revenue_growth_five_year_compound": {"missing": "4 fiscal years on record, and "
+                                                         "5-year compound growth needs 6"}}
+    text = memo.memo(ticker="TEST", form="10-Q", period_end="2026-06-30", cutoff="2026-07-30",
+                     fields=fields, accounting=None, financial=None, valuation=None,
+                     baselines=None)
+    valuation = text[text.index("### 2.2 가치평가"):text.index("## 참고")]
+    assert (f"- {memo.GROWTH_BESIDE_HISTORY_KO}: 3.0% · 과거 3년 연평균: 9.5% · 과거 5년 연평균: "
+            "(4 fiscal years on record, and 5-year compound growth needs 6)") in valuation
+    assert (f"- {memo.YIELD_KO}: 기업 잉여현금흐름 / 기업가치 3.7% · "
+            "주주 잉여현금흐름 / 시가총액 5.8%") in valuation
+    assert f"- {memo.WACC_COMPONENTS_KO}:" in valuation
+    assert "  - 무위험이자율: 4.0% — DGS10 on 2026-06-04; planted" in valuation
+    assert "  - 베타: 1.200 — against SPY, 250 trading days" in valuation
+    assert "  - 총차입금: 15.3억 달러 — debt_current + debt_noncurrent" in valuation
+    assert "  - WACC: (계산 안 됨: the cost of equity needs a beta and a price)" in valuation
+    assert memo.beside_the_dcf_lines(FIELDS) == []
+    without = memo.memo(ticker="TEST", form="10-Q", period_end="2026-06-30", cutoff="2026-07-30",
+                        fields=FIELDS, accounting=None, financial=None, valuation=None,
+                        baselines=None)
+    for word in (memo.GROWTH_BESIDE_HISTORY_KO, memo.YIELD_KO, memo.WACC_COMPONENTS_KO):
+        assert word not in without
+
+
+def test_the_memo_prints_one_growth_beside_history_line_with_a_computed_valuation():
+    """Two-sided, after the second lens's second reading, through the branch a
+    published calculator.json takes: a valuation with a value range and a reverse
+    DCF with a value. Without the block the memo prints the line it always printed
+    -- the reverse DCF's 0.04 beside the history's three-year 0.095 -- and no
+    five-year figure; with the block it prints the block's line -- 0.03, 9.5%,
+    6.2% -- and not the old one; never both."""
+    priced = copy.deepcopy(FIELDS)
+    priced["valuation"] = {"value_range_per_share": {"low": 50.0, "high": 70.0},
+                           "price_at_cutoff": 60.0, "price_position": "inside the range",
+                           "reverse_dcf": {"value": 0.04, "price": 60.0}}
+    priced["earnings_versus_cash"]["history"]["revenue_growth_three_year_compound"] = 0.095
+
+    def growth_lines(text: str) -> list[str]:
+        return [line for line in text.splitlines()
+                if line.startswith(f"- {memo.GROWTH_BESIDE_HISTORY_KO}")]
+
+    without = memo.memo(ticker="TEST", form="10-Q", period_end="2026-06-30", cutoff="2026-07-30",
+                        fields=priced, accounting=None, financial=None, valuation=None,
+                        baselines=None)
+    assert "주당 50.00달러 ~ 주당 70.00달러" in without
+    assert growth_lines(without) == [
+        f"- {memo.GROWTH_BESIDE_HISTORY_KO}: 4.0% · 과거 3년 연평균: 9.5%"]
+    assert "과거 5년" not in without
+
+    with_block = copy.deepcopy(priced)
+    with_block["implied_growth_beside_history"] = {
+        "implied_ten_year_revenue_growth": {"value": 0.03},
+        "revenue_growth_three_year_compound": {"value": 0.095},
+        "revenue_growth_five_year_compound": {"value": 0.062}}
+    text = memo.memo(ticker="TEST", form="10-Q", period_end="2026-06-30", cutoff="2026-07-30",
+                     fields=with_block, accounting=None, financial=None, valuation=None,
+                     baselines=None)
+    assert "주당 50.00달러 ~ 주당 70.00달러" in text
+    assert growth_lines(text) == [
+        f"- {memo.GROWTH_BESIDE_HISTORY_KO}: 3.0% · 과거 3년 연평균: 9.5% · 과거 5년 연평균: 6.2%"]
+    assert "4.0%" not in text
+
+
 def test_the_control_cites_the_paragraphs_of_its_own_input():
     sources = {"input_notes.md": "[acc:notes:1] We extended payment terms to certain customers.\n"}
     payload = accounting()
