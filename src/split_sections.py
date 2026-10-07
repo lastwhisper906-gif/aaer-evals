@@ -274,12 +274,39 @@ class CriticalAuditMatterCountUnclear(Exception):
     """The count and the report's own singular/plural sentence disagree."""
 
 
+# The section's own heading, as a line: `Critical Audit Matter` or `Critical
+# Audit Matters`. Fortinet's 10-K for 2025 (Deloitte) heads the section with the
+# singular, describes one matter under one `Critical Audit Matter Description`,
+# and then carries the firm's plural template sentence, "The critical audit
+# matters communicated below are matters arising from the current-period
+# audit". The sentence alone would refuse that report; the heading is the
+# report's other statement of how many, and the count says which of the two the
+# report means. A plural heading over a singular sentence (PricewaterhouseCoopers
+# writes every report that way) needs no such tie-break and is read as before.
+_CAM_HEADING_ONE = re.compile(r"^critical audit matter$")
+_CAM_HEADING_MANY = re.compile(r"^critical audit matters$")
+
+
+def critical_audit_matter_heading(section_text: str) -> str:
+    """What the section heading says of the number: one, many, or unstated."""
+    for start, end in html_text.lines(section_text):
+        line = html_text.normalized(section_text[start:end])
+        if _CAM_HEADING_ONE.match(line):
+            return "one"
+        if _CAM_HEADING_MANY.match(line):
+            return "many"
+    return "unstated"
+
+
 def critical_audit_matters(section_text: str) -> dict:
     """How many critical audit matters the report states, and how that is known.
 
     The report says in its own words whether there is one matter or several.
     That sentence is not used to produce the count; it is used to check it, and
-    a disagreement raises rather than resolving itself quietly.
+    a disagreement raises rather than resolving itself quietly. Where the
+    sentence and the section heading disagree with each other, the one the
+    count agrees with is what the report states, and `heading` records the
+    heading's own word so the disagreement is on the record.
     """
     flat = html_text.normalized(section_text)
     addressed = len(_CAM_ADDRESSED.findall(flat))
@@ -288,6 +315,9 @@ def critical_audit_matters(section_text: str) -> dict:
     stated = ("none" if _CAM_NONE.search(flat) else
               "many" if _CAM_MANY.search(flat) else
               "one" if _CAM_ONE.search(flat) else "unstated")
+    heading = critical_audit_matter_heading(section_text)
+    if stated == "many" and heading == "one" and count == 1:
+        stated = "one"
 
     if stated == "none" and count:
         raise CriticalAuditMatterCountUnclear(
@@ -300,6 +330,7 @@ def critical_audit_matters(section_text: str) -> dict:
             f"the report states several critical audit matters, found {count}")
     return {"count": 0 if stated == "none" else count,
             "stated": stated,
+            "heading": heading,
             "matched_by": "addressed_headings" if addressed >= identified else
                           "identification_sentences"}
 
