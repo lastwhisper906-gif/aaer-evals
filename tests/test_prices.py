@@ -778,3 +778,194 @@ def test_a_token_across_the_cut_is_taken_out_before_the_message_is_cut(monkeypat
         eodhd.history(TICKER, environ={"EODHD_TOKEN": token})
     assert "plant" not in str(caught.value)
 
+
+
+# --- the variables route, and the host checked before the package ------------
+#
+# A cloud session holds its secrets as environment variables and never as a
+# file, and its network policy allows named hosts only. The refusal texts below
+# are written out by hand from the brief of 2026-10-07, not read off a run; the
+# stand-in values are this file's own and no credential anyone was issued. No
+# test here reaches the network: the WRDS host is answered by a stand-in
+# `reachable`, and the two tests of `reachable` itself open a loopback socket.
+
+STAND_IN_USER = "stand-in-user"
+STAND_IN_PASSWORD = "stand-in-pw"
+STAND_IN = {"WRDS_USERNAME": STAND_IN_USER, "WRDS_PASSWORD": STAND_IN_PASSWORD}
+
+UNREACHABLE = (
+    "wrds-pgdata.wharton.upenn.edu:9737 is unreachable from this environment: add "
+    "it to the environment's Allowed domains (claude.ai/code, the environment's "
+    "settings), then set WRDS_USERNAME and WRDS_PASSWORD as environment secrets")
+
+
+def _the_host_answers(monkeypatch, answer: bool) -> list[tuple]:
+    """A stand-in `reachable` that answers `answer` and records what it was asked."""
+    asked: list[tuple] = []
+
+    def reachable(host, port, timeout=None):
+        asked.append((host, port))
+        return answer
+
+    monkeypatch.setattr(crsp, "reachable", reachable)
+    return asked
+
+
+def _the_process_holds_other_variables(monkeypatch, tmp_path):
+    _the_process_says_otherwise(monkeypatch, tmp_path)
+    monkeypatch.setenv("WRDS_USERNAME", "process-user")
+    monkeypatch.setenv("WRDS_PASSWORD", "process-pw")
+
+
+def test_crsp_logs_in_from_the_two_variables_when_no_pgpass_exists(
+        monkeypatch, tmp_path):
+    _the_process_holds_other_variables(monkeypatch, tmp_path)
+    asked = _the_host_answers(monkeypatch, True)
+    seen = stand_in_wrds(monkeypatch, CRSP_FRAME_RECORDS)
+    rows = crsp.history(TICKER, dt.date(2008, 9, 1), dt.date(2008, 9, 30),
+                        pgpass=tmp_path / "nothing", environ=STAND_IN)
+    assert seen["connected_with"] == {
+        "wrds_hostname": "wrds-pgdata.wharton.upenn.edu", "wrds_port": 9737,
+        "wrds_dbname": "wrds", "wrds_username": STAND_IN_USER,
+        "wrds_password": STAND_IN_PASSWORD}
+    assert asked == [("wrds-pgdata.wharton.upenn.edu", 9737)]
+    assert [entry["date"] for entry in rows] == [
+        dt.date(2008, 9, 15), dt.date(2008, 9, 16), dt.date(2008, 9, 17)]
+
+
+def test_the_variables_are_read_from_the_mapping_handed_in_and_never_the_process(
+        monkeypatch, tmp_path):
+    _the_process_holds_other_variables(monkeypatch, tmp_path)
+    nothing = tmp_path / "nothing"
+    assert crsp.login(nothing, STAND_IN)["wrds_username"] == STAND_IN_USER
+    # Nothing handed in is nothing to log in with, not the process's variables.
+    for environ in (None, {}):
+        with pytest.raises(prices.Unconfigured) as caught:
+            crsp.login(nothing, environ)
+        assert "process-user" not in str(caught.value)
+        assert "process-pw" not in str(caught.value)
+
+
+@pytest.mark.parametrize("set_variable, missing", [
+    ("WRDS_USERNAME", "WRDS_PASSWORD"),
+    ("WRDS_PASSWORD", "WRDS_USERNAME"),
+])
+def test_one_variable_missing_is_unconfigured_and_names_it_without_the_other_s_value(
+        monkeypatch, tmp_path, set_variable, missing):
+    asked = _the_host_answers(monkeypatch, True)
+    seen = stand_in_wrds(monkeypatch, CRSP_FRAME_RECORDS)
+    environ = {set_variable: STAND_IN[set_variable]}
+    with pytest.raises(prices.Unconfigured, match=f"{missing} is not set") as caught:
+        crsp.history(TICKER, pgpass=tmp_path / "nothing", environ=environ)
+    assert STAND_IN[set_variable] not in str(caught.value)
+    assert seen == {}, "the package was never asked"
+    assert asked == [], "the host was never checked for a login that cannot be made"
+
+
+def test_neither_route_configured_names_both_routes(tmp_path):
+    with pytest.raises(prices.Unconfigured) as caught:
+        crsp.login(tmp_path / "nothing", {})
+    reason = str(caught.value)
+    assert f"{tmp_path / 'nothing'} does not exist" in reason
+    assert "WRDS_USERNAME and WRDS_PASSWORD are not set" in reason
+    assert ".pgpass line for wrds-pgdata.wharton.upenn.edu:9737:wrds" in reason
+    assert "WRDS_USERNAME and WRDS_PASSWORD set as environment secrets" in reason
+
+
+def test_a_blank_variable_is_an_unset_one(tmp_path):
+    with pytest.raises(prices.Unconfigured, match="WRDS_USERNAME is not set"):
+        crsp.login(tmp_path / "nothing",
+                   {"WRDS_USERNAME": "   ", "WRDS_PASSWORD": STAND_IN_PASSWORD})
+
+
+def test_the_pgpass_wins_over_the_variables_when_it_exists(monkeypatch, tmp_path):
+    """The file route is read as before, and it is not the route that checks
+    the host."""
+    pgpass = tmp_path / ".pgpass"
+    pgpass.write_text(WRDS_LINE, encoding="utf-8")
+    pgpass.chmod(0o600)
+    asked = _the_host_answers(monkeypatch, False)
+    seen = stand_in_wrds(monkeypatch, CRSP_FRAME_RECORDS)
+    crsp.history(TICKER, pgpass=pgpass, environ=STAND_IN)
+    assert seen["connected_with"]["wrds_username"] == "handed-in-user"
+    assert seen["connected_with"]["wrds_password"] == "handed-in-pw"
+    assert asked == []
+
+
+def test_an_unreachable_host_is_refused_before_the_package_is_asked(
+        monkeypatch, tmp_path):
+    asked = _the_host_answers(monkeypatch, False)
+    seen = stand_in_wrds(monkeypatch, CRSP_FRAME_RECORDS)
+    with pytest.raises(prices.PriceError) as caught:
+        crsp.history(TICKER, pgpass=tmp_path / "nothing", environ=STAND_IN)
+    assert str(caught.value) == UNREACHABLE
+    assert isinstance(caught.value, crsp.Unreachable)
+    assert STAND_IN_PASSWORD not in str(caught.value)
+    assert STAND_IN_USER not in str(caught.value)
+    assert asked == [("wrds-pgdata.wharton.upenn.edu", 9737)]
+    assert seen == {}, "wrds.Connection was never constructed"
+
+
+def test_a_reachable_host_is_not_refused(monkeypatch, tmp_path):
+    _the_host_answers(monkeypatch, True)
+    assert crsp.unreachable() is None
+    _the_host_answers(monkeypatch, False)
+    assert crsp.unreachable() == UNREACHABLE
+
+
+def test_no_credential_is_unconfigured_even_where_the_host_is_blocked(
+        monkeypatch, tmp_path):
+    """The login comes first: with nothing to log in with there is nothing to
+    connect, and the probe is what says the host is blocked besides."""
+    _the_host_answers(monkeypatch, False)
+    with pytest.raises(prices.Unconfigured):
+        crsp.history(TICKER, pgpass=tmp_path / "nothing", environ={})
+
+
+def test_reachable_is_a_plain_connection_judged_by_the_operating_system():
+    """The expected values are the operating system's: a loopback port nothing
+    listens on refuses the connection, and one with a listener accepts it."""
+    import socket
+
+    with socket.socket() as listener:
+        listener.bind(("127.0.0.1", 0))
+        listener.listen(1)
+        port = listener.getsockname()[1]
+        assert crsp.reachable("127.0.0.1", port, timeout=1.0) is True
+    # Closed now: the listener is gone and the port is free.
+    assert crsp.reachable("127.0.0.1", port, timeout=1.0) is False
+
+
+def test_a_refused_login_is_its_own_state_and_still_unconfigured(
+        monkeypatch, tmp_path):
+    import sys
+    import types
+
+    class Connection:
+        def __init__(self, **arguments):
+            raise EOFError
+
+    module = types.ModuleType("wrds")
+    module.Connection = Connection
+    monkeypatch.setitem(sys.modules, "wrds", module)
+    _the_host_answers(monkeypatch, True)
+    with pytest.raises(crsp.Refused, match="refused the login") as caught:
+        crsp.history(TICKER, pgpass=tmp_path / "nothing", environ=STAND_IN)
+    assert isinstance(caught.value, prices.Unconfigured)
+    assert STAND_IN_PASSWORD not in str(caught.value)
+    assert caught.value.__cause__ is None and caught.value.__suppress_context__
+
+
+def test_the_wrds_package_is_a_requirement_and_its_import_stays_lazy():
+    import subprocess
+    import sys
+
+    root = Path(__file__).resolve().parent.parent
+    requirements = (root / "requirements.txt").read_text(encoding="utf-8")
+    assert "wrds" in [line.strip() for line in requirements.splitlines()]
+    # A fresh interpreter, so what this process already imported does not count.
+    result = subprocess.run(
+        [sys.executable, "-c",
+         "import sys; import src.prices.crsp; print('wrds' in sys.modules)"],
+        capture_output=True, text=True, cwd=root, check=True)
+    assert result.stdout.strip() == "False", "importing the module imported the package"

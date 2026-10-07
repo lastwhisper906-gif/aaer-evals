@@ -58,11 +58,13 @@ Credentials
 -----------
 
 From the environment, never from a file in this tree: `$TIINGO_TOKEN`,
-`$EODHD_TOKEN`, and for CRSP the `wrds` package's own `~/.pgpass`. A backend
-with no credential raises `Unconfigured`, which is a state the caller reports
-and not an error it hides -- the whole forward track is switched off by that
-exception today and says so. `src/secret_scan.py` fails the gate if a token
-string ever reaches a file here.
+`$EODHD_TOKEN`, and for CRSP the `wrds` package's own `~/.pgpass` or, where
+no such file exists (a cloud session holds its secrets as environment
+variables), `$WRDS_USERNAME` and `$WRDS_PASSWORD`. A backend with no
+credential raises `Unconfigured`, which is a state the caller reports and not
+an error it hides -- the whole forward track is switched off by that exception
+today and says so. `src/secret_scan.py` fails the gate if a token string ever
+reaches a file here.
 """
 
 from __future__ import annotations
@@ -198,11 +200,13 @@ def credentials(name: str, environ) -> dict[str, Any]:
     Read out of `environ`, the mapping the caller hands in, and out of nothing
     else. Tiingo and EODHD take the environment itself and read their token
     variable from it. CRSP's credential is a `.pgpass` in the `HOME` that
-    mapping names, and `crsp.login` reads the WRDS line out of that file and
-    hands it to the connection, so the process's own `.pgpass`, `PGPASSFILE`,
-    `PGHOST` and `PGUSER` are never what logs in. A mapping naming no `HOME`
-    leaves CRSP with no file to look for, and that is `Unconfigured`, not a
-    fall back to the process's.
+    mapping names, or, where that file does not exist, `WRDS_USERNAME` and
+    `WRDS_PASSWORD` in the same mapping; `crsp.login` reads the WRDS line out
+    of that file or the two variables out of that mapping and hands them to
+    the connection, so the process's own `.pgpass`, `PGPASSFILE`, `PGHOST`,
+    `PGUSER` and environment are never what logs in. A mapping naming no
+    `HOME` leaves CRSP with no file to look for, and that is `Unconfigured`,
+    not a fall back to the process's.
     """
     if name not in BACKENDS:
         raise PriceError(f"{name!r} is not one of {', '.join(BACKENDS)}")
@@ -214,7 +218,7 @@ def credentials(name: str, environ) -> dict[str, Any]:
                 "~/.pgpass for the crsp backend to look for")
         from pathlib import Path
 
-        return {"pgpass": Path(home) / ".pgpass"}
+        return {"pgpass": Path(home) / ".pgpass", "environ": dict(environ)}
     return {"environ": dict(environ)}
 
 
