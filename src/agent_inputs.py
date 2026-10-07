@@ -376,6 +376,19 @@ def _probability_leak(text: str) -> str | None:
     return found.group(0) if found else None
 
 
+# A price or a return is written with a currency sign or a percent sign: the
+# prior-predictions file every reader is handed carries flags, explanations and
+# an outcome's direction in words, never such a figure. The owner's grader holds
+# it to this (`evals/regression/mechanical.py` MARKET_FIGURE,
+# `prior_predictions_problems`); a test holds the two patterns equal.
+MARKET_FIGURE = re.compile(r"[$€£¥₩]\s?\d|\d\s?%|\bbps\b|basis points", re.IGNORECASE)
+
+
+def _market_figure(text: str) -> str | None:
+    found = MARKET_FIGURE.search(text)
+    return found.group(0) if found else None
+
+
 # The valuation analyst reads the MD&A and the earnings release only where the
 # notes reader flagged a paragraph: Fable, used efficiently (the owner's decision
 # of 2026-10-06, `docs/HOW_WE_WORK.md` §6). The file keeps its name, its text
@@ -741,11 +754,17 @@ def build(run: Path, agent: str, *, light: bool = False) -> dict:
     # that says they were.
     prior = run / "input_prior_predictions.md"
     if "input_prior_predictions.md" in spec.sees and prior.is_file():
-        leak = _probability_leak(prior.read_text(encoding="utf-8", errors="replace"))
+        text = prior.read_text(encoding="utf-8", errors="replace")
+        leak = _probability_leak(text)
         if leak is not None:
             raise AgentInputError(
                 f"{prior} still carries a probability ({leak}); a prior run's "
                 f"probability may not reach {agent}.")
+        figure = _market_figure(text)
+        if figure is not None:
+            raise AgentInputError(
+                f"{prior} carries a price or return figure ({figure!r}); market data "
+                f"may not reach {agent}.")
 
     # Before anything is created, too: the valuation layer's flagged set is
     # read off the gated notes report, and a run with none is refused here
@@ -764,11 +783,17 @@ def build(run: Path, agent: str, *, light: bool = False) -> dict:
             "never sees. The directory is the boundary; it is not cleaned out "
             "and reused.")
 
-    placed, absent, trims = [], [], {}
+    placed, absent, trims, withheld = [], [], {}, []
     for name in spec.sees:
         source = run / name
         if not source.is_file():
             absent.append(name)
+            continue
+        if name in NOT_BUILT_YET:
+            # §6 names it for this layer and the owner's grader does not
+            # (`evals/regression/mechanical.py` LAYER_SEES): it is not routed
+            # until the owner's table names it (docs/needs_judgment.md)
+            withheld.append(name)
             continue
         if flagged is not None and name in TRIMMED_FOR_VALUATION:
             if (root / name).is_symlink():
@@ -787,7 +812,7 @@ def build(run: Path, agent: str, *, light: bool = False) -> dict:
         # check reads this, not the trim, to say what the directory should hold
         record_trim(run, agent, trims)
     return {"agent": agent, "layer": spec.layer, "root": root,
-            "files": placed, "absent": absent, TRIMMED_KEY: trims}
+            "files": placed, "absent": absent, "withheld": withheld, TRIMMED_KEY: trims}
 
 
 def build_all(run: Path, agents: tuple[str, ...] | None = None, *,
@@ -1013,6 +1038,10 @@ def isolation_violations(run: Path) -> list[str]:
                 reason = ("which its layer never sees"
                           if path.name in spec.never_sees else "which nobody routed")
                 found.append(f"{name}: holds {path.name}, {reason}")
+                continue
+            if path.name in NOT_BUILT_YET and name in AGENTS:
+                found.append(f"{name}: holds {path.name}, which is not routed until the "
+                             "owner's layer table names it")
                 continue
             try:
                 expected = expected_bytes(run, spec, path.name, trims.get(path.name), flagged)

@@ -261,10 +261,15 @@ def test_the_prediction_schema_still_names_every_probability_the_gate_covers():
 @pytest.mark.parametrize("agent", READERS)
 def test_a_reader_directory_holds_the_filing_bundle_and_no_price_file(agent, tmp_path):
     run = _run_directory(tmp_path)
-    agent_inputs.build(run, agent)
+    record = agent_inputs.build(run, agent)
     root = agent_inputs.session_root(run, agent)
 
-    assert _names(root) == list(EXPECTED[agent])
+    # §6 names three files no builder writes yet and the owner's layer table
+    # (evals/regression/mechanical.py LAYER_SEES) does not: placed, they fail the
+    # owner's layers_hold, so they are withheld until that table names them
+    assert _names(root) == [name for name in EXPECTED[agent]
+                            if name not in agent_inputs.NOT_BUILT_YET]
+    assert sorted(record["withheld"]) == sorted(set(EXPECTED[agent]) & set(agent_inputs.NOT_BUILT_YET))
     assert PRICE_FILE not in _names(root)
     assert [name for name in _names(root) if name.startswith("report_")] == []
     assert [name for name in _names(root) if name.startswith("prediction_")] == []
@@ -307,7 +312,8 @@ def test_no_file_reaches_an_agent_that_nobody_routed(tmp_path):
     # input_manifest.json, the predictions, the baselines, the explanations and
     # the four controls are the run's record. No layer reads them.
     assert "input_manifest.json" not in routed
-    assert routed == set().union(*(set(names) for names in EXPECTED.values()))
+    assert routed == set().union(*(set(names) for names in EXPECTED.values())) \
+        - set(agent_inputs.NOT_BUILT_YET)
 
 
 # --- the session root ---------------------------------------------------------

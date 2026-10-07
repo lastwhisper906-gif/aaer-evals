@@ -31,6 +31,7 @@ import json
 import re
 import sys
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 try:
     from src import assemble_bundle, cutoff_guard, interpreter_pin
@@ -179,6 +180,48 @@ def _date(value, what: str) -> dt.date:
     return dt.date.fromisoformat(str(value))
 
 
+# EDGAR stamps Eastern wall-clock time; a stamp is a date, a `T`, a time and an
+# explicit offset or nothing. The owner's grader reads stamps this way
+# (`evals/regression/mechanical.py`, `_eastern`), and so does `src/market.py`.
+STAMP = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?([+-]\d{2}:\d{2})?$")
+EASTERN = ZoneInfo("America/New_York")
+ACCESSION = re.compile(r"(\d{10})-(\d{2})-(\d{6})$")
+
+
+def _eastern(stamp: str) -> dt.datetime:
+    if not STAMP.match(stamp):
+        raise ValueError(f"not an acceptance stamp: {stamp!r}")
+    when = dt.datetime.fromisoformat(stamp)
+    return when.astimezone(EASTERN) if when.tzinfo else when.replace(tzinfo=EASTERN)
+
+
+def accepted_before_trigger(document: dict, trigger: str, trigger_accepted) -> str | None:
+    """Why a document filed on the cutoff day is not shown to have been accepted
+    at or before the triggering report, or None: the owner's rule for a same-day
+    filing (`evals/regression/mechanical.py`, `accepted_before_trigger`), written
+    out here. The manifest's acceptance stamps show it; without them, a lower
+    accession under the same filer-agent prefix and year stands in as a proxy
+    (docs/needs_judgment.md). CLAUDE.md's rule is by date; the same day is
+    ordered by this, or the bundle is refused."""
+    stamp = document.get("accepted")
+    if isinstance(stamp, str) and isinstance(trigger_accepted, str):
+        try:
+            if _eastern(stamp) <= _eastern(trigger_accepted):
+                return None
+            return f"accepted at {stamp}, after the triggering report at {trigger_accepted}"
+        except ValueError:
+            return f"its acceptance stamp {stamp!r} is not a time"
+    mine, theirs = ACCESSION.match(str(document.get("accession"))), ACCESSION.match(trigger)
+    if mine and theirs and mine.group(1, 2) == theirs.group(1, 2):
+        if int(mine.group(3)) < int(theirs.group(3)):
+            return None
+        return (f"accession {document.get('accession')} follows the triggering report's "
+                f"{trigger} in the agent's sequence, so it was assembled after it (no "
+                "acceptance stamp on record)")
+    return ("no acceptance stamp on record and no shared accession sequence, so nothing "
+            "shows it was accepted before the triggering report")
+
+
 def check_cutoff(manifest: dict | None) -> Result:
     """Fail-closed, the same rule as the loader: no date is a violation."""
     result = Result("cutoff")
@@ -220,6 +263,14 @@ def check_cutoff(manifest: dict | None) -> Result:
             continue
         if filed > cutoff:
             result.fail(f"{named} was filed {filed}, after the cutoff {cutoff}")
+        elif filed == cutoff and row.get("accession") != manifest.get("accession"):
+            # the cutoff day itself: another filing that day is inside the date
+            # rule, and the owner's grader still asks whether it was accepted at or
+            # before the triggering report
+            why = accepted_before_trigger(row, str(manifest.get("accession") or ""),
+                                          manifest.get("accepted"))
+            if why:
+                result.fail(f"{named} was filed {filed}, the cutoff day: {why}")
 
     # The cutoff **is** the triggering report's filing date — `CLAUDE.md` and
     # `docs/INPUT_SPEC.md` §1. Comparing documents to `manifest.cutoff` and

@@ -174,6 +174,7 @@ import datetime as dt
 import importlib.util
 import json
 import os
+import math
 import re
 import shutil
 import subprocess
@@ -744,7 +745,7 @@ def record_agent(run: Path, name: str, record: dict) -> None:
 
 
 def run_agent(run: Path, name: str, logs: Path, model: str | None = None,
-              policy: LimitPolicy | None = None) -> dict:
+              policy: LimitPolicy | None = None, *, check: bool = True) -> dict:
     agent_inputs.build(run, name)
     directory = agent_inputs.session_root(run, name)
     spec = agent_inputs.AGENTS[name]
@@ -756,15 +757,32 @@ def run_agent(run: Path, name: str, logs: Path, model: str | None = None,
                   policy=policy or LimitPolicy())
     record = carried_forward(earlier, record)
     record_agent(run, name, record)
+    if check:
+        # not from inside `parallel`: the other call's directory is still being built
+        boundary_holds(run, f"after {name} returned")
     return record
+
+
+def boundary_holds(run: Path, when: str) -> None:
+    """The boundary check over the whole run, which only the tests and the
+    router's command called before: a file an agent left in its directory, a
+    copy that is not the run's, a trim the owner would refuse -- each fails the
+    owner's layers_hold or inputs_on_record, so the run stops here, on record
+    (`stopped_on`), rather than publishing."""
+    broken = agent_inputs.isolation_violations(run)
+    if broken:
+        raise agent_inputs.AgentInputError(
+            f"the boundary is broken {when} ({len(broken)}): " + "; ".join(broken))
 
 
 def parallel(run: Path, names: tuple[str, ...], logs: Path, model: str | None = None,
              policy: LimitPolicy | None = None) -> dict[str, dict]:
     with concurrent.futures.ThreadPoolExecutor(max_workers=len(names)) as pool:
-        futures = {name: pool.submit(run_agent, run, name, logs, model, policy)
+        futures = {name: pool.submit(run_agent, run, name, logs, model, policy, check=False)
                    for name in names}
-        return {name: future.result() for name, future in futures.items()}
+        records = {name: future.result() for name, future in futures.items()}
+    boundary_holds(run, f"after {', '.join(names)} returned")
+    return records
 
 
 # --- the gates -----------------------------------------------------------------------------
@@ -1292,6 +1310,11 @@ def _run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: 
                                        form=form, accession=manifest.get("accession"),
                                        fixtures_root=store, bundle=run,
                                        market_data=market_data, **extra)
+        problems = calculator_problems(payload, cutoff)
+        if problems:
+            raise calculator.CalculatorInputError(
+                f"{name} would carry what the cutoff and the finite-number rule refuse "
+                f"({len(problems)}): " + "; ".join(problems[:5]))
         target = run / name
         if target.exists():
             if _same_json(target, payload):
@@ -1393,6 +1416,7 @@ def _run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: 
         valuation=_load(run / "analysis_valuation.json"),
         baselines=_load(run / "baselines.json"),
         missing=missing_frames(run, agents)), encoding="utf-8")
+    memo_words_hold(run / "memo_ko.md")
     if limit_hit(agents):
         return finish(run, agents, stages, "the limit was reached", model, skipped=skipped,
                       resumed_from=resumed, fallback=policy.fallback)
@@ -1418,6 +1442,72 @@ def _run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: 
                   fallback=policy.fallback)
 
 
+def memo_words_hold(path: Path) -> None:
+    """No line of the memo carries a ruled-out word, accusation or recommendation,
+    whichever analysis the line came from: the owner's forbidden_words reads the
+    memo line by line with both (`evals/regression/coverage.py`). The analysis
+    gate already holds what the memo prints to both; this is the memo as written,
+    and a hit stops the run rather than publishing it."""
+    for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+        for pattern in (analysis_check.ACCUSATION, analysis_check.RECOMMENDATION):
+            hit = pattern.search(line)
+            if hit:
+                raise analysis_check.AnalysisInputError(
+                    f"{path.name}:{number} carries a ruled-out word ({hit.group(0)!r})")
+
+
+# A date, a date pair or a date-time stamp, as a whole string value or key of a
+# calculator file: the owner's ISO_DATE (`evals/regression/mechanical.py`), which
+# its nothing_after_cutoff holds to the cutoff. A date inside prose is not one.
+ISO_DATE = re.compile(r"(\d{4}-\d{2}-\d{2})(?:[T ][0-9:.+\-Z]*)?(?:\.\.(\d{4}-\d{2}-\d{2}))?")
+
+
+def calculator_problems(payload, cutoff: str) -> list[str]:
+    """Why a calculator stage would fail the owner's graders before it is written:
+    a date after the cutoff as any whole string value or key (nothing_after_cutoff
+    reads every calculator file, the agents' copies included), and a number that
+    is not finite, or a `value` that is neither a finite number, text, a container
+    nor null (calculator_finite)."""
+    limit = dt.date.fromisoformat(cutoff)
+    out: list[str] = []
+
+    def late(text: str, where: str) -> None:
+        match = ISO_DATE.fullmatch(text)
+        for day in (match.group(1), match.group(2)) if match else ():
+            try:
+                after = bool(day) and dt.date.fromisoformat(day) > limit
+            except ValueError:
+                after = False
+            if after:
+                out.append(f"{where} = {text} is after the cutoff {cutoff}")
+                return
+
+    def walk(node, where: str) -> None:
+        if isinstance(node, dict):
+            for key, value in node.items():
+                here = f"{where}.{key}" if where else str(key)
+                late(str(key), here)
+                if key == "value" and value is not None \
+                        and not isinstance(value, (str, list, dict)) and not _finite(value):
+                    out.append(f"{here} = {value!r} is not a finite number")
+                walk(value, here)
+        elif isinstance(node, list):
+            for index, value in enumerate(node):
+                walk(value, f"{where}[{index}]")
+        elif isinstance(node, str):
+            late(node, where)
+        elif isinstance(node, float) and not math.isfinite(node):
+            out.append(f"{where} = {node!r} is not a finite number")
+
+    walk(payload, "")
+    return list(dict.fromkeys(out))         # a `value` that is a float is met twice
+
+
+def _finite(value) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool) \
+        and math.isfinite(value)
+
+
 def _same_json(path: Path, payload) -> bool:
     """Whether the file holds this payload: compared as JSON text with sorted keys,
     so a NaN, which is never equal to itself, still reads as the same number."""
@@ -1433,11 +1523,14 @@ def control_sees(run: Path) -> list[str]:
 
     Not the market table and not the manifest, as the retired control; and not a
     calculator that carries an analyst's adjustment or a valuation driver, because
-    a control that reads what the layers wrote cannot say what they add.
+    a control that reads what the layers wrote cannot say what they add. Not the
+    three files no builder writes yet either, which the owner's layer table does
+    not name for the control (`agent_inputs.NOT_BUILT_YET`).
     """
     return sorted([name for name in agent_inputs.BUNDLE_CATALOGUE
                    if name.startswith("input_") and name != agent_inputs.MANIFEST
-                   and name != agent_inputs.MARKET_TABLE and (run / name).is_file()]
+                   and name != agent_inputs.MARKET_TABLE
+                   and name not in agent_inputs.NOT_BUILT_YET and (run / name).is_file()]
                   + [BEFORE_ANALYSTS])
 
 
@@ -1459,9 +1552,13 @@ def run_control(run: Path, logs: Path, model: str | None = None, *,
     sees = control_sees(run)
     prior = run / "input_prior_predictions.md"
     if prior.is_file():
-        leak = agent_inputs._probability_leak(prior.read_text(encoding="utf-8"))
+        text = prior.read_text(encoding="utf-8")
+        leak = agent_inputs._probability_leak(text)
         if leak is not None:
             raise RunError(f"{prior} still carries a probability ({leak})")
+        figure = agent_inputs._market_figure(text)
+        if figure is not None:
+            raise RunError(f"{prior} carries a price or return figure ({figure!r})")
     for name in sees:
         shutil.copyfile(run / name, directory / name)
     spec = definition_for("accounting-analyst", model)
@@ -1473,6 +1570,7 @@ def run_control(run: Path, logs: Path, model: str | None = None, *,
                   log=logs / "control-single-agent.log", policy=policy or LimitPolicy())
     record = carried_forward(earlier, record)
     record_agent(run, "control-single-agent", record)
+    boundary_holds(run, "after the control returned")
     return record
 
 
@@ -1508,6 +1606,7 @@ def finish(run: Path, agents: dict, stages: dict, failure: str | None,
     # src/agent_inputs.py) is kept beside the usage record; the boundary check
     # reads it. `analysed_utc` is written here and nowhere else: it is what says
     # the run finished, and a resume never runs over a manifest that carries it.
+    boundary_holds(run, "before the run was recorded as finished")
     manifest = json.loads((run / "input_manifest.json").read_text(encoding="utf-8"))
     routed = manifest.get("agents") if isinstance(manifest.get("agents"), dict) else {}
     manifest["agents"] = {name: agent_entry(record, routed.get(name))

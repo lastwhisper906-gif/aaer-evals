@@ -82,7 +82,10 @@ def test_an_exclusion_keyed_by_report_takes_the_id_out_of_that_report_alone():
     it would name the dropped notes item as well as the standing numbers one;
     a reconciliation row naming it as the notes item is refused, naming it as
     the numbers item stands on that side; the same id as a plain set is out of
-    both; and with nothing dropped the bare citation stands."""
+    both; and with nothing dropped the bare citation stands. The adjustment
+    quotes the notes item that fell: a dropped item is no unit a quote can stand
+    in (the owner's `units_of`), so it falls with it wherever the notes item is
+    dropped, and stands where it stood."""
     shared = "revenue_recognition_payment_terms_extended"
     numbers = NUMBERS + f'''
 ```json
@@ -98,7 +101,10 @@ def test_an_exclusion_keyed_by_report_takes_the_id_out_of_that_report_alone():
                                excluded={"report_notes_text.md": {shared}})
     assert out["anomalies"] == []
     assert [row["where"] for row in out["dropped_items"]] == [
-        "reconciliation[0]", "reconciliation[1]", "anomalies[0]"]
+        "reconciliation[0]", "reconciliation[1]", "anomalies[0]", "adjustments[0]"]
+    assert out["dropped_items"][3]["reason"] == (
+        "adjustments[0]: the quote is in no one paragraph, value or kept report item of the "
+        "file it names")
     assert out["dropped_items"][0]["reason"] == (
         f"notes_item {shared!r} is not an item of report_notes_text.md")
     assert "twin_free" in out["dropped_items"][1]["reason"]          # its own notes side
@@ -110,7 +116,7 @@ def test_an_exclusion_keyed_by_report_takes_the_id_out_of_that_report_alone():
                                excluded={shared})
     assert out["anomalies"] == []
     assert [row["where"] for row in out["dropped_items"]] == [
-        "reconciliation[0]", "reconciliation[1]", "anomalies[0]"]
+        "reconciliation[0]", "reconciliation[1]", "anomalies[0]", "adjustments[0]"]
     # dropped from the numbers report alone: the notes-side row stands, the bare
     # citation still falls
     out = analysis_check.check("accounting", payload, fields=FIELDS, sources=sources,
@@ -294,11 +300,13 @@ def test_an_assumption_scenario_without_a_reason_is_dropped_whole():
 
 
 def test_a_quote_across_a_seam_of_the_trimmed_prose_fails_the_gate():
-    """The valuation analyst's MD&A is cut to the flagged paragraphs with one line
-    holding the two markers between kept blocks that were not adjacent. A quote
-    inside a kept block string-matches the copy and the filing; one running off
-    the end of the second paragraph into the start of the fourth string-matches
-    the copy, and nothing the filing printed."""
+    """A copy cut to the flagged paragraphs with one line holding the two markers
+    between kept blocks that were not adjacent -- the trim's shape until
+    2026-10-07, kept here as the hardest case. A quote inside a kept block
+    string-matches the copy and the filing; one running off the end of the
+    second paragraph into the start of the fourth string-matches the copy, and
+    nothing the filing printed. The copy alone now tells too: the quote stands
+    in no one paragraph of it, which is the owner's rule."""
     two, four = "0000000000-00-000001:mdna:2", "0000000000-00-000001:mdna:4"
     filing = (f"# T mdna\n\n[0000000000-00-000001:mdna:1]\nFirst.\n\n[{two}]\nSecond, kept.\n\n"
               f"[0000000000-00-000001:mdna:3]\nThird.\n\n[{four}]\nFourth, kept.\n")
@@ -327,7 +335,8 @@ def test_a_quote_across_a_seam_of_the_trimmed_prose_fails_the_gate():
     assert "across a seam" in out["dropped_items"][0]["reason"]
     without = analysis_check.check_assumptions({"scenarios": {"bear": bad, "base": good, "bull": good}},
                                                fields=FIELDS, sources=sources)
-    assert set(without["scenarios"]) == {"bear", "base", "bull"}  # the copy alone cannot tell
+    assert set(without["scenarios"]) == {"base", "bull"}    # one paragraph of the copy alone
+    assert "in no one paragraph" in without["dropped_items"][0]["reason"]
 
 
 # --- the module's own command ------------------------------------------------------------
