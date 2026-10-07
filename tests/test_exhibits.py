@@ -297,12 +297,15 @@ def test_the_header_read_a_second_way_names_the_same_one_document(ticker, role, 
 def test_both_types_are_in_the_fixture_set_so_the_rule_is_the_family():
     """A match on the literal `EX-21.1` would find nine of the twelve, and
     Franklin Electric, of the eight added on 2026-10-07, files the bare type
-    too; the two that filed no exhibit at all record no type."""
+    too, as does Motorola Solutions of the next eight; Flex files `EX-21.01`,
+    a third spelling of the family; the two that filed no exhibit at all
+    record no type."""
     recorded = {ticker: expected_values.value(ticker, "exhibits.10-K.exhibit_type")
                 for ticker in TICKERS if ticker not in NAMES_NO_SUBSIDIARY_EXHIBIT}
     assert sorted(t for t, kind in recorded.items() if kind == "EX-21") == \
-        ["CARR", "ESE", "FELE", "QCOM"]
-    assert {kind for kind in recorded.values()} == {"EX-21", "EX-21.1"}
+        ["CARR", "ESE", "FELE", "MSI", "QCOM"]
+    assert sorted(t for t, kind in recorded.items() if kind == "EX-21.01") == ["FLEX"]
+    assert {kind for kind in recorded.values()} == {"EX-21", "EX-21.1", "EX-21.01"}
 
 
 # --- what a filename rule does instead ----------------------------------------
@@ -341,10 +344,11 @@ def test_a_filename_rule_has_more_than_one_candidate_almost_everywhere():
                                 if "21" in entry.group("filename")]
                for ticker in TICKERS
                for role in ("submission_header", "prior_year_submission_header")}
-    # Two headers per company, over the twelve and the eight added on
-    # 2026-10-07: 20 × 2. Every one of the eight's sixteen headers lists an
-    # `R21.htm` among its XML files, so none of them is alone either.
-    assert len(counted) == 40
+    # Two headers per company, over the twelve, the eight added on 2026-10-07
+    # and the next eight added the same day: 28 × 2. Every one of the eight's
+    # sixteen headers lists an `R21.htm` among its XML files, and so does every
+    # one of the next eight's sixteen, so none of them is alone either.
+    assert len(counted) == 56
     alone = sorted(key for key, found in counted.items() if len(found) < 2)
     assert alone == [("GNRC", "prior_year_submission_header"),
                      ("GNRC", "submission_header")]

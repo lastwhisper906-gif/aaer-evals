@@ -4,7 +4,8 @@
 picked. Asserting that its report agrees with its own reading of the record
 proves nothing about either, so this module opens the committed
 `tests/fixtures/{ticker}/companyfacts.json.gz` itself — `gzip`, `json`, and
-nothing else — and **imports nothing from `src/`**. It is the same device
+nothing else — and **imports nothing from `src/`**. (`companyfacts.json`, where
+the record is small enough to be stored as it came.) It is the same device
 `tests/independent_text.py` is for the HTML strippers.
 
 It knows three things, each of them stated by `docs/INPUT_SPEC.md` rather than
@@ -44,9 +45,18 @@ UNIT = "USD"
 
 @functools.lru_cache(maxsize=None)
 def record(ticker: str) -> dict:
-    """The committed companyfacts document, every row of it, ungated."""
-    path = FIXTURES / ticker / "companyfacts.json.gz"
-    return json.loads(gzip.decompress(path.read_bytes()))
+    """The committed companyfacts document, every row of it, ungated.
+
+    Stored the way `src/fetch_companyfacts.py` stores it: gzipped past 2 MB, as
+    it came below that. Sandisk's record, a year and a half of filings, is
+    1,052,349 bytes and is the one stored as it came; its manifest row says
+    `"stored": "identity"`. Read off the manifest with `json`, not guessed from
+    the name.
+    """
+    manifest = json.loads((FIXTURES / ticker / "manifest.json").read_text(encoding="utf-8"))
+    entry, = [row for row in manifest["documents"] if row["form"] == "companyfacts"]
+    raw = (FIXTURES / ticker / entry["path"]).read_bytes()
+    return json.loads(gzip.decompress(raw) if entry["stored"] == "gzip" else raw)
 
 
 def rows(ticker: str, tag: str, *, namespace: str = NAMESPACE,

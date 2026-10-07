@@ -72,6 +72,14 @@ HEADER_ACCEPTED = re.compile(r"^<ACCEPTANCE-DATETIME>(\d{14})$", re.MULTILINE)
 HEADER_FILED = re.compile(r"^<FILING-DATE>(\d{8})$", re.MULTILINE)
 HEADERS = sorted(FIXTURES.glob("*/*/*/*-index-headers.html"))
 EDGAR_CLOSE = dt.time(17, 30)
+# Regulation S-T Rule 13 dates a direct transmission by when it began, not by when
+# EDGAR accepted it, so an acceptance a few seconds past the close can still carry
+# the day. One committed header does, read off it: ACCEPTANCE-DATETIME
+# 20241118173003 and FILING-DATE 20241118, three seconds past half past five and
+# dated that day. Each such header is named here by accession, with its seconds,
+# rather than the rule widened for every header: an acceptance minutes past the
+# close that keeps the day would be a different question, and fails below.
+ACCEPTED_SECONDS_PAST_THE_CLOSE_SAME_DAY = {"0001048695-24-000185": 3}
 
 
 def _header(path: Path) -> tuple[dt.datetime, dt.date]:
@@ -89,15 +97,23 @@ def test_the_committed_headers_keep_edgars_eastern_clock():
     accepted after half past five would be early-afternoon Eastern (ANET's
     19:50:17 on 2025-02-18 is 14:50:17 standard time) and dated a day late."""
     assert len(HEADERS) >= 43           # the twenty companies' headers on 2026-10-07
-    late = []
+    late, boundary = [], []
     for path in HEADERS:
         accepted, filed = _header(path)
+        accession = path.parts[-2]
         if accepted.time() < EDGAR_CLOSE:
             assert filed == accepted.date(), path
+        elif accession in ACCEPTED_SECONDS_PAST_THE_CLOSE_SAME_DAY:
+            seconds = (accepted - dt.datetime.combine(accepted.date(), EDGAR_CLOSE)).seconds
+            assert filed == accepted.date(), path
+            assert seconds == ACCEPTED_SECONDS_PAST_THE_CLOSE_SAME_DAY[accession], path
+            boundary.append(accession)
         else:
             assert filed > accepted.date(), path
             late.append(path.parts[-4])
     assert len(late) >= 5 and {"ANET", "FTNT", "TTMI", "WDC"} <= set(late)
+    # every header the list names is committed and was read, so the list cannot go stale
+    assert sorted(boundary) == sorted(ACCEPTED_SECONDS_PAST_THE_CLOSE_SAME_DAY)
 
 
 # NVDA's two 10-Ks, from their committed headers. Each is Eastern standard time

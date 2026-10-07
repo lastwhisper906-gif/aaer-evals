@@ -535,6 +535,24 @@ def test_one_working_capital_line_for_everything_is_refused(accession, account):
     assert "IncreaseDecreaseInOperatingCapital" in entry["reason"]
 
 
+# Flex, of the next eight added on 2026-10-07, does the same in both quarterlies:
+# the 10-Q for the quarter ended 2026-06-26 prints one line, "Changes in working
+# capital and other, net (149) 65", where its 10-K prints receivables,
+# inventories and payables apart, and tags it `IncreaseDecreaseInOperatingCapital`.
+@pytest.mark.parametrize("accession", ["0000866374-26-000005", "0000866374-26-000030"])
+@pytest.mark.parametrize("account", ["receivables", "inventory", "payables"])
+def test_flexs_quarterlies_state_one_working_capital_line_too(accession, account):
+    stated = tags_in("FLEX", accession)
+    assert "IncreaseDecreaseInOperatingCapital" in stated
+    assert not stated & {"IncreaseDecreaseInAccountsReceivable",
+                         "IncreaseDecreaseInReceivables",
+                         "IncreaseDecreaseInInventories",
+                         "IncreaseDecreaseInAccountsPayable"}
+    entry = coverage("FLEX", accession, account)
+    assert entry["status"] == "stated_wider"
+    assert "IncreaseDecreaseInOperatingCapital" in entry["reason"]
+
+
 @pytest.mark.parametrize("accession,on_the_balance_sheet", [
     ("0001327567-25-000027", True),    # the 10-K carries an inventory balance
     ("0001327567-26-000005", False),   # the quarterlies carry no inventory at all
@@ -723,10 +741,14 @@ CASH_FLOW_AND_BALANCE = {
 # of the eight added on 2026-10-07: the two 10-Qs filed 2026-07-29 that
 # companyfacts had not loaded when the records were fetched
 # (`tests/test_fetch_companyfacts.py`'s NOT_YET_IN_COMPANYFACTS), read the same
-# way off the record as the three before them.
+# way off the record as the three before them. FLEX is of the next eight: its
+# quarterly states working capital as one line, as ESCO's does
+# (`test_flexs_quarterlies_state_one_working_capital_line_too`); the other
+# fifteen triggers of the next eight, Flex's 10-K among them, each hold a row.
 NOTHING_TO_READ = ["CARR 10-Q 0001783180-26-000032",
                    "ESE 10-Q 0001104659-26-093266",
                    "FELE 10-Q 0000038725-26-000055",
+                   "FLEX 10-Q 0000866374-26-000030",
                    "JCI 10-Q 0000833444-26-000087",
                    "LFUS 10-Q 0001628280-26-050481"]
 
@@ -842,14 +864,15 @@ def test_every_trigger_whose_record_holds_the_rows_produces_one():
             produces.append(named)
 
     # Two triggers per company, one 10-K and one 10-Q primary document in each
-    # manifest: twelve companies and the eight added on 2026-10-07, 20 × 2.
-    assert len(triggers()) == 2 * len(TICKERS) == 40
+    # manifest: twelve companies, the eight added on 2026-10-07 and the next
+    # eight added the same day, 28 × 2.
+    assert len(triggers()) == 2 * len(TICKERS) == 56
     assert sorted(set(f"{ticker} {form} {accession}"
                       for ticker, form, accession, _ in triggers())
                   - set(holds)) == NOTHING_TO_READ
     assert produces == holds
-    # Forty triggers less the five whose record holds no row: 40 - 5.
-    assert len(produces) == len(triggers()) - len(NOTHING_TO_READ) == 35
+    # Fifty-six triggers less the six whose record holds no row: 56 - 6.
+    assert len(produces) == len(triggers()) - len(NOTHING_TO_READ) == 50
     assert len([named for named in produces if " 10-K " in named]) == len(TICKERS)
 
 
