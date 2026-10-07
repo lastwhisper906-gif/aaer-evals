@@ -42,22 +42,24 @@ and one that it does not, and each runs in `make check`.
 | The session-start hook prints the lessons | `CLAUDE.md`; `docs/HOW_WE_WORK.md` §4 hooks | `tools/session_start_lessons.sh` — the header and the newest lessons, newest last, at most sixty lines; a lesson is a dated line plus its wrapped lines, printed whole or not at all | `tests/test_session_start_lessons.py` |
 
 The evals rule in `CLAUDE.md` names `src/eval_guard.py` in CI and the deny rules
-in `.claude/settings.json` as its judge; both land with the evals pull request,
-which this branch follows on main, so the parenthesis is true once that merge
-is in. On this branch `src/eval_guard.py` and `evals/` do not exist yet, so
-`src/instruction_length_check.py --paths` (and with it `make rule-checks`) fails
-here by design, naming both; the branch merges after the evals pull request and
-is rebased on main first, where it passes. The deny half of the same line fails
-here the same way: `--paths` reads `.claude/settings.json` and requires its
-`permissions.deny` to hold `Edit(evals/**)` and `Write(evals/**)`, and at this
-commit the file has no `permissions` key, so a third line names that. The evals
-pull request's settings carry both entries, so that refusal clears on the same
-rebase; a settings file that merely exists would have passed the earlier
-reading, and that was the second lens's finding. The fourth refusal is
+in `.claude/settings.json` as its judge; both landed with the evals pull request
+(#106, head `20b1a70`), which this branch follows on main. Before that merge
+`src/eval_guard.py` and `evals/` did not exist on this branch, so
+`src/instruction_length_check.py --paths` (and with it `make rule-checks`)
+failed here by design, naming both. The deny half of the same line failed the
+same way: `--paths` reads `.claude/settings.json` and requires its
+`permissions.deny` to hold `Edit(evals/**)` and `Write(evals/**)`, and before
+the rebase the file had no `permissions` key, so a third line named that; a
+settings file that merely existed would have passed the earlier reading, and
+that was the second lens's finding. The fourth refusal was
 `evals/scoreboard.jsonl` on `CLAUDE.md` line 7: `.jsonl` joined the path
 suffixes after the sixth reading found the ledger named there unchecked, and
 the ledger lands with the same `evals/` directory. Four lines, then, from
-`make rule-checks` on this branch, all by merge order, none after the rebase.
+`make rule-checks`, all by merge order. On 2026-10-07 the branch was rebased
+onto `20b1a70`, where all four paths and both deny entries are in the tree, and
+`make rule-checks` printed no refusal: the three checks ran and exited 0. The
+one conflict on the rebase was the Makefile's `.PHONY` line, resolved by
+keeping both sides' targets.
 
 ## Rules an existing script already enforced, now named beside the rule
 
