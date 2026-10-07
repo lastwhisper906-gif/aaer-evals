@@ -92,66 +92,68 @@ PLACEHOLDER = re.compile(r"\{([a-z0-9_.-]+)(?:\|(pct))?\}")
 #
 # A bare four-digit number, 19xx or 20xx, is a year only when the words around it
 # say so; its value never decides, because a net-zero target "by 2050" and a
-# comparison "since 1929" are years the same way "in 2026" is. Three kinds of
+# comparison "since 1929" are years the same way "in 2026" is. Two kinds of
 # words say so.
 #
-# A period phrase before it names a stretch of time, so the number after it is a
-# year whatever word follows: "first half of", "second half of", "first quarter
-# of" .. "fourth quarter of", "year-end", "quarter-end", "end of", "start of",
-# "beginning of", "close of", "due", or a month name. "the second half of 2025
-# loss-making", "the first half of 2027 turns", "the first quarter of 2026
-# carried", "the year-end 2025 balance", "ended April 2026 printed" and "notes
-# due 2030 assumed" are years. Only a quantity word vetoes it: "the second half
-# of 2048 units" and "due 2030 shares" are numbers.
+# A year-context word or phrase before it: a period phrase ("first half of",
+# "second half of", "first quarter of" .. "fourth quarter of", "year-end",
+# "quarter-end", "end of", "start of", "beginning of", "close of", "due", a month
+# name) or a context word ("in", "for", "through", "since", "until", "year",
+# "during", "early", "late", "mid", "as of", "half of" with no ordinal, "months
+# of", "weeks of", "quarters of", "회계연도"). Each opens a counted noun phrase as
+# readily as a date -- "in 2030 orders", "the second half of 2048 stores", "due
+# 2030 vendors" are counts; "in 2030.", "the second half of 2026," years -- so
+# after any of them the number is a year only when a year-terminator follows:
+# the end of the text, punctuation or any character outside the Latin alphabet,
+# a connector ("and", "or", "to", "through", a dash, ".."), another year, a
+# year-context-after word, a month, a function word or time word ("the", "was",
+# "quarter", "amendment"), or one of the few verbs the published analyses write
+# directly after a year ("turns", "recur", "carries", "carried", "printed",
+# "assumed", "extended", "reverses", "continues", "holds"), which cannot open a counted
+# noun phrase -- never a noun or an adjective, hyphenated or not, that can:
+# "in 2030 orders", "sold in 2048 high-margin units", "the second half of 2025
+# loss-making" and "the year-end 2025 balance" are counts to the rule, while
+# "for 2027, a backlog", "the first half of 2027 turns", "in 2030." and "in 2030
+# and 2031" are years. "of" alone is not a year context -- "inventory of 2048"
+# is a count -- so it counts only inside the phrases above; "to" is not one --
+# "rose to 2030 orders" is a count; and "by" is not one at all, because it names
+# an amount as often as a date ("cut headcount by 2030.", "reduced inventory by
+# 2048,", "up by 1999") and no word around it tells the two apart -- an analyst
+# who means the date writes "by the end of 2030" or "in 2030", which the words
+# above read. "fiscal", "calendar", "FY" and "Q1".."Q4" are the alternatives
+# above.
 #
-# A context word before it opens a counted noun phrase as readily as a date --
-# "in 2030 orders" is a count, "in 2030." a year -- so after "in", "for",
-# "through", "since", "until", "year", "during", "early", "late", "mid", "as
-# of", "half of" with no ordinal, "months of", "weeks of", "quarters of" or
-# "회계연도" the number is a year only when a year-terminator follows: the end
-# of the text, punctuation or any character outside the Latin alphabet, a
-# connector ("and", "or", "to", "through", a dash, ".."), another year, a
-# year-context-after word, a month, or a function word or time word ("the",
-# "was", "quarter", "amendment") -- never a noun or an adjective that can open a
-# counted noun phrase, so "in 2030 orders", "sold in 2048 high-margin units"
-# and "an increase in 2048 of its stores" are counts while "for 2027, a
-# backlog", "in 2030." and "in 2030 and 2031" are years. "of" alone is not a
-# year context -- "inventory of 2048" is a count -- so it counts only inside the
-# phrases above; "to" is not one -- "rose to 2030 orders" is a count; and "by"
-# is not one at all, because it names an amount as often as a date ("cut
-# headcount by 2030.", "reduced inventory by 2048,", "up by 1999") and no word
-# around it tells the two apart -- an analyst who means the date writes "by the
-# end of 2030" or "in 2030", which the phrases above read. "fiscal", "calendar",
-# "FY" and "Q1".."Q4" are the alternatives above.
-#
-# A year-context-after word: "fiscal year", "guidance", "outlook", a possessive
-# ("2022's"), a month name, or the Korean 년, 회계연도, 상반기, 하반기, 분기, 말,
-# 기준 -- "2050년" and "2055 fiscal year" are years whatever their value.
+# A year-context-after word, whole: "fiscal year", "year-end", "guidance",
+# "outlook", a possessive ("2022's"), a month name, or the Korean 년, 회계연도, 상반기, 하반기,
+# 분기, 말, 기준 -- "2050년", "2055 fiscal year" and "2026 December" are years
+# whatever the value, while a word that merely starts like a month's short form
+# is no context: "2048 marketing staff", "2030 novel products", "inventory of
+# 2048 declined" are counts.
 #
 # A range or a list of four-digit numbers is years only when a member has a
-# year-context word of its own: "in 2030 and 2031" and "2021 and 2022 guidance"
-# are years, "inventory of 2021 and 2022" and a bare "2024–2026" are numbers. A
-# year is never written after a currency sign, a sign, a decimal point or a
-# digit, never before a decimal, and never before a quantity word, which keeps
-# "in 2048 units" and "by 1950 basis points" numbers whatever word stands before
-# them. A Korean unit written against the number -- 억, 만, 천, 원, 개, 명, 주,
-# 건, 대 -- is a quantity word too: "2025억" and "2048개" are counts, "2025년"
-# a year; written apart it is a word of its own ("회계연도 2025 대비"). "2026
-# stores", "€2026", "USD 2026", "2026 Million", "2026 bn" and "-2026" have no
-# year context and are numbers.
+# year-context word of its own and the terminator follows the list: "in 2030
+# and 2031" and "2021 and 2022 guidance" are years, "inventory of 2021 and
+# 2022", "the second half of 2025 and 2048 stores" and a bare "2024–2026" are
+# numbers. A year is never written after a currency sign, a sign, a decimal
+# point or a digit, never before a decimal, and never before a quantity word,
+# which keeps "in 2048 units" and "by 1950 basis points" numbers whatever word
+# stands before them. A Korean unit written against the number -- 억, 만, 천,
+# 원, 개, 명, 주, 건, 대 -- is a quantity word too: "2025억" and "2048개" are
+# counts, "2025년" a year; written apart it is a word of its own ("회계연도
+# 2025 대비"). "2026 stores", "€2026", "USD 2026", "2026 Million", "2026 bn"
+# and "-2026" have no year context and are numbers.
 YEAR = r"(?:19|20)\d{2}"
 DATE = r"(?:19|20)\d{2}-\d{2}-\d{2}"
 MONTH = (r"(?:January|February|March|April|May|June|July|August|September|October"
          r"|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sept|Sep|Oct|Nov|Dec)")
-PERIOD_PHRASE = (
+YEAR_CONTEXT_BEFORE = (
     r"(?:(?:first|second|1st|2nd)[- ]half(?:\s+of)?"
     r"|(?:first|second|third|fourth|1st|2nd|3rd|4th)[- ]quarter(?:\s+of)?"
     r"|(?:year|quarter|period)[- ]end(?:\s+of)?|end of|start of|beginning of|close of"
-    r"|due|" + MONTH + r")")
-YEAR_CONTEXT_WORD = (
-    r"(?:in|for|through|since|until|year|during|early|late|mid|as of|회계연도"
+    r"|due|" + MONTH
+    + r"|in|for|through|since|until|year|during|early|late|mid|as of|회계연도"
     r"|half of|(?:months?|weeks?|quarters?) of)")
-YEAR_CONTEXT_AFTER = (r"(?:fiscal year|guidance|outlook|['’]s|" + MONTH
+YEAR_CONTEXT_AFTER = (r"(?:fiscal year|year-end|guidance|outlook|['’]s|" + MONTH
                       + r"|년|회계연도|상반기|하반기|분기|말|기준)")
 CONNECTOR = r"(?:and|or|to|through)"
 FUNCTION_OR_TIME_WORD = (
@@ -161,6 +163,10 @@ FUNCTION_OR_TIME_WORD = (
     r"|opened|under|against|after|before|over|into|onto|by|until|through|during|alone"
     r"|only|also|still|then|now|quarter|half|period|fiscal|annual|filing|report|results"
     r"|release|amendment|figure|figures|trough|window|date|dates)")
+# Verbs the eight published analyses write directly after a year; a verb cannot
+# open a counted noun phrase. No wider.
+VERB_AFTER_A_YEAR = (r"(?:turns|recur|recurs|carries|carried|printed|assumed|extended|reverses"
+                     r"|continues|holds)")
 QUANTITY_WORD = (r"(?:million|billion|trillion|thousand|percent|per\s*cent|%|units|basis"
                  r"|points|bps|shares|dollars|employees|customers|days|times|bn|mn|mm)")
 KOREAN_UNIT = r"(?:억|만|천|원|개|명|주|건|대)"
@@ -168,7 +174,8 @@ NOT_A_QUANTITY = (r"(?![.,]\d)(?!\s*(?i:" + QUANTITY_WORD + r"))(?!" + KOREAN_UN
 LIST_SEPARATOR = r"(?:\s*[-–—]\s*|\s*,\s*|\s*,?\s*(?i:" + CONNECTOR + r")\s+)"
 YEARS = YEAR + r"(?:" + LIST_SEPARATOR + YEAR + r")*"
 YEAR_TERMINATOR = (r"(?=\s*(?:$|[^\sA-Za-z0-9]|" + YEAR + r"|(?i:" + CONNECTOR + "|"
-                   + FUNCTION_OR_TIME_WORD + "|" + YEAR_CONTEXT_AFTER + r")(?![A-Za-z0-9])))")
+                   + FUNCTION_OR_TIME_WORD + "|" + YEAR_CONTEXT_AFTER + "|" + VERB_AFTER_A_YEAR
+                   + r")(?![A-Za-z0-9])))")
 ALLOWED_DIGITS = re.compile(
     r"(?<![A-Za-z0-9])(?:"
     r"10-K|10-Q|8-K|COVID-19"
@@ -182,18 +189,16 @@ ALLOWED_DIGITS = re.compile(
     r"|Notes? \d{1,2}(?![\d.,])(?!\s*(?:million|billion|thousand|percent|%|units))"
     r"|Q[1-4](?:\s+(?:of\s+)?(?:fiscal\s+)?(?:19|20)\d{2})?"
     r"|FY\d{2,4}"
-    # A year, a date, a range or a list of years after a period phrase, joined by
-    # whitespace or a hyphen: "the second half of 2025 loss-making", "year-end 2025
-    # balance", "second-half-2025", "December 2026", "due 2030 assumed".
-    + r"|(?i:" + PERIOD_PHRASE + r")(?:\s+|-)(?:" + DATE + "|" + YEARS + r")" + NOT_A_QUANTITY
-    # The same after a context word, and followed by a year-terminator: "in 2026",
-    # "for 2027, a backlog", "mid-2026", "in 2024-09-29..2025-09-27", "in 2030 and 2031".
-    + r"|(?i:" + YEAR_CONTEXT_WORD + r")(?:\s+|-)(?:" + DATE + "|" + YEARS + r")"
+    # A year, a date, a range or a list of years after a year-context word or
+    # phrase, joined by whitespace or a hyphen, and followed by a year-terminator:
+    # "in 2026", "the second half of 2026,", "for 2027, a backlog", "mid-2026",
+    # "second-half-2025 and", "in 2024-09-29..2025-09-27", "in 2030 and 2031".
+    + r"|(?i:" + YEAR_CONTEXT_BEFORE + r")(?:\s+|-)(?:" + DATE + "|" + YEARS + r")"
     + NOT_A_QUANTITY + YEAR_TERMINATOR
-    # A year, or a list of years, before a year-context word: "2026 guidance",
-    # "2026년", "2050년", "2021 and 2022 guidance".
+    # A year, or a list of years, before a whole year-context-after word: "2026
+    # guidance", "2026년", "2050년", "2026 December", "2021 and 2022 guidance".
     + r"|" + r"(?<![$€£¥₩+\-−.,\d])" + YEARS + NOT_A_QUANTITY
-    + r"(?=\s*(?i:" + YEAR_CONTEXT_AFTER + r"))"
+    + r"(?=\s*(?i:" + YEAR_CONTEXT_AFTER + r")(?![A-Za-z0-9]))"
     + r")(?![A-Za-z0-9])")
 # A brace that is not a whole placeholder is a placeholder written wrong, and is
 # printed literally if it stands.
