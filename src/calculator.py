@@ -821,7 +821,7 @@ def gather(record: Record, periods: dict) -> dict:
     now, year_ago = periods["balance_now"], periods["balance_year_ago"]
     flows = ("revenue", "cost_of_revenue", "net_income", "operating_cash_flow",
              "operating_income", "pretax_income", "income_tax_expense", "interest_expense",
-             "depreciation_and_amortization", "share_based_compensation",
+             "interest_paid", "depreciation_and_amortization", "share_based_compensation",
              "capital_expenditure", "dividends_paid", "share_repurchases",
              "proceeds_from_sale_of_receivables", "inventory_write_down",
              "change_in_receivables", "change_in_inventory", "change_in_payables",
@@ -1528,6 +1528,64 @@ def raw_close(path: Path, cutoff: dt.date) -> dict:
             "source": path.name}
 
 
+# The fallback when no interest expense is tagged: the default of
+# docs/needs_judgment.md until the owner names another source.
+FALLBACK_SPREAD_OVER_RISK_FREE = 0.01
+# The row in docs/needs_judgment.md the fallback answers to, named by its question.
+COST_OF_DEBT_QUESTION = ("docs/needs_judgment.md: the pre-tax cost of debt when the record "
+                         "carries no interest expense")
+
+
+def cost_of_debt_fallback(ttm: dict, debt_now: dict, debt_ago: dict, rf: dict,
+                          why: str) -> dict:
+    """The ladder under a missing interest expense over average debt: interest paid
+    over average debt, or else the risk-free rate plus one point, each labelled a
+    fallback. Never silent: the cell says what it stands in for, and the label
+    says which input was missing and how -- interest expense on record but no
+    average debt; interest expense or interest paid on record but refused (one
+    filing's two values for one period, trends.TWO_VALUES); interest paid on
+    record but no average debt; or no fact at all, the only case that says
+    "neither" -- because each is a different fact about the company."""
+    expense = ttm.get("interest_expense") or {"missing": "interest_expense is not gathered"}
+    paid = ttm.get("interest_paid") or {"missing": "interest_paid is not gathered"}
+    # A refused term -- one filing's two values for one period -- is on record,
+    # and the label says so before the ladder steps down from it.
+    expense_refused = "missing" in expense and trends.TWO_VALUES in expense["missing"]
+    paid_refused = "missing" in paid and trends.TWO_VALUES in paid["missing"]
+    expense_words = (f"interest expense is on record but refused: {expense['missing']}"
+                     if expense_refused else
+                     f"interest expense, which is not on record: {why}")
+    if "missing" not in expense:
+        because = f"interest expense is on record but average debt is missing/zero: {why}"
+    elif "missing" not in paid:
+        cell = measure("interest_paid / average debt",
+                       {"interest_paid": paid, "average_debt": average(debt_now, debt_ago)},
+                       lambda v: v["interest_paid"] / v["average_debt"],
+                       denominator="average_debt")
+        if "missing" not in cell:
+            cell["fallback"] = f"interest paid in cash in place of {expense_words}"
+            return cell
+        because = ("interest paid is on record but average debt is missing/zero, so the "
+                   f"cost of debt is the risk-free rate plus one point: {cell['missing']}")
+        if expense_refused:
+            because = f"{expense_words}; {because}"
+    elif paid_refused or expense_refused:
+        paid_words = (f"interest paid is on record but refused: {paid['missing']}"
+                      if paid_refused else f"interest paid is not on record: {paid['missing']}")
+        because = f"{expense_words}; {paid_words}" if expense_refused else paid_words
+    else:
+        because = f"neither interest expense nor interest paid is on record: {why}"
+    if "missing" in rf:
+        return {"missing": f"{why}; and no risk-free rate for the fallback: {rf['missing']}"}
+    return {"value": rf["value"] + FALLBACK_SPREAD_OVER_RISK_FREE,
+            "formula": "risk_free_rate + 0.01",
+            "parts": {"risk_free_rate": rf,
+                      "spread": {"value": FALLBACK_SPREAD_OVER_RISK_FREE,
+                                 "note": "one point, the default of docs/needs_judgment.md"}},
+            "fallback": f"the risk-free rate plus one point, because {because}",
+            "needs_judgment": COST_OF_DEBT_QUESTION}
+
+
 def cost_of_capital(terms: dict, sections: dict, market_data: dict, cutoff: dt.date,
                     overrides: dict | None) -> dict:
     ttm = terms["trailing_four_quarters"]
@@ -1539,15 +1597,20 @@ def cost_of_capital(terms: dict, sections: dict, market_data: dict, cutoff: dt.d
     overrides = overrides or {}
 
     if "missing" in debt_now:
-        cost_of_debt = {"missing": debt_now["missing"]}
+        cost_of_debt = cost_of_debt_fallback(ttm, debt_now, debt_ago, rf,
+                                             f"average_debt: {debt_now['missing']}")
     elif debt_now["value"] == 0 and ("missing" in debt_ago or debt_ago["value"] == 0):
         cost_of_debt = {"value": 0.0, "note": "no debt on the balance sheet, so it carries no weight"}
     else:
+        # The primary, and under it the ladder, whatever the reason it is missing.
         cost_of_debt = measure("interest_expense / average debt",
                                {"interest_expense": ttm["interest_expense"],
                                 "average_debt": average(debt_now, debt_ago)},
                                lambda v: v["interest_expense"] / v["average_debt"],
                                denominator="average_debt")
+        if "missing" in cost_of_debt:
+            cost_of_debt = cost_of_debt_fallback(ttm, debt_now, debt_ago, rf,
+                                                 cost_of_debt["missing"])
     if "pre_tax_cost_of_debt" in overrides:
         chosen = overrides["pre_tax_cost_of_debt"]
         if isinstance(chosen.get("value"), (int, float)) and chosen.get("quote"):
