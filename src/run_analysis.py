@@ -230,6 +230,11 @@ def ask(directory: Path, *, agent: str, writes: tuple[str, ...], message: str,
     fable = is_fable(spec.get("model"))
     retries = FABLE_RETRIES if fable else RETRIES
     for attempt in range(1, retries + 2):
+        for name in writes:
+            # nothing earlier under the agent's own name: a call never sees its
+            # own output from before, and a session that writes nothing is not
+            # read as written because a stale file stood there
+            (directory / name).unlink(missing_ok=True)
         started = time.monotonic()
         command = ["claude", "-p", "--restricted", "--permission-mode", "acceptEdits",
                    "--agent", agent, "--agents", json.dumps({agent: spec}),
@@ -324,16 +329,19 @@ def parallel(run: Path, names: tuple[str, ...], logs: Path,
 report_items = market_labels.report_items
 
 
-def gate_readers(run: Path) -> dict:
-    """The quote gate over both reader reports, and the reports downstream sees.
+def gate_readers(run: Path, names: tuple[str, ...] = ("numbers-reader", "notes-text-reader")
+                 ) -> dict:
+    """The quote gate over the reader reports named, and the reports downstream sees.
 
     Each reader's own report stays in its directory as what it wrote. The copy at
     the run root -- the one the analysts are handed -- carries only the items
     that stood, with a line saying how many the gate removed and that the
     manifest lists them, so no analyst builds on an item that failed its quote.
+    `names` is both readers; when the limit stopped one, it is the other alone,
+    so what finished is on record and is never called again.
     """
     reports = []
-    for name in ("numbers-reader", "notes-text-reader"):
+    for name in names:
         directory = agent_inputs.session_root(run, name)
         writes = agent_inputs.AGENTS[name].writes
         written = directory / writes
@@ -344,7 +352,7 @@ def gate_readers(run: Path) -> dict:
     result = quote_gate.gate(reports, run)
     manifest = json.loads((run / "input_manifest.json").read_text(encoding="utf-8"))
     dropped = {row.get("item_id") for row in manifest.get("dropped_items") or []}
-    for name in ("numbers-reader", "notes-text-reader"):
+    for name in names:
         writes = agent_inputs.AGENTS[name].writes
         text = (agent_inputs.session_root(run, name) / writes).read_text(encoding="utf-8")
         removed = 0
@@ -570,6 +578,11 @@ def run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: s
     if readers:
         agents.update(parallel(run, readers, logs, model))
     if limit_hit(agents):
+        # what finished is gated into the run root, so it is on record and the
+        # resumed run never calls it again
+        finished = tuple(name for name in readers if agents[name]["result"] == "written")
+        if finished:
+            gate_readers(run, finished)
         return finish(run, agents, stages, "the limit was reached", model, skipped=skipped)
     if any(agents[name]["result"] != "written" for name in ("numbers-reader", "notes-text-reader")):
         return finish(run, agents, stages, "a reader failed twice", model, skipped=skipped)
@@ -652,7 +665,7 @@ def run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: s
     else:
         golden, control_reason = control == "always", f"--control {control}"
     if golden and pending("control-single-agent"):
-        agents["control-single-agent"] = run_control(run, logs, model)
+        agents["control-single-agent"] = run_control(run, logs, model, rebuild=plan is not None)
         if limit_hit(agents):
             return finish(run, agents, stages, "the limit was reached", model,
                           control_reason=control_reason, skipped=skipped)
@@ -689,11 +702,20 @@ def control_sees(run: Path) -> list[str]:
                   + [BEFORE_ANALYSTS])
 
 
-def run_control(run: Path, logs: Path, model: str | None = None) -> dict:
-    """The single-agent control: the whole bundle and the base calculator, one call."""
+def run_control(run: Path, logs: Path, model: str | None = None, *,
+                rebuild: bool = False) -> dict:
+    """The single-agent control: the whole bundle and the base calculator, one call.
+
+    The directory is built once. On a resumed run (`rebuild`) the control is
+    the stopped agent -- its directory stands from the night the limit hit it,
+    and none of its three files reached the run root -- so the directory is
+    cleared and built again, like any other agent's rerun with identical input.
+    """
     directory = run / CONTROL_DIRNAME
     if directory.exists():
-        raise RunError(f"{directory} already exists; the control's directory is built once")
+        if not rebuild or any((run / name).is_file() for name in CONTROL_WRITES):
+            raise RunError(f"{directory} already exists; the control's directory is built once")
+        shutil.rmtree(directory)
     directory.mkdir()
     sees = control_sees(run)
     prior = run / "input_prior_predictions.md"

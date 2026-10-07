@@ -120,18 +120,22 @@ DRIVERS = {"revenue_growth_year_one": 0.2, "terminal_growth": 0.03,
            "reinvestment_rate_year_one": 0.3, "reinvestment_rate_year_ten": 0.2}
 
 
-def _fake_ask(seen: dict):
+def _fake_ask(seen: dict, notes_report: str = "no items\n", assumptions: dict | None = None):
+    """`notes_report` is what the stubbed notes reader writes; `assumptions` the
+    valuation analyst's first pass, by default three scenarios citing one field."""
     def ask(directory, *, agent, writes, message, spec, log):
         seen[directory.name] = sorted(path.name for path in directory.iterdir())
         for name in writes:
             if name == "report_numbers.md":
                 text = NUMBERS_REPORT
             elif name == "report_notes_text.md":
-                text = "no items\n"
+                text = notes_report
             elif name == "analysis_accounting.json":
                 text = json.dumps(_analysis("accounting", "earnings_quality_accruals_rising"))
             elif name == "analysis_financial.json":
                 text = json.dumps(_analysis("financial", "earnings_quality_accruals_rising"))
+            elif name == "assumptions.json" and assumptions is not None:
+                text = json.dumps(assumptions)
             elif name in ("assumptions.json", "control_assumptions.json"):
                 reason = {"reason": "a reason", "fields": ["ratios.profitability.gross_margin"]}
                 text = json.dumps({"scenarios": {s: dict(DRIVERS, reasons={d: reason for d in DRIVERS})
@@ -404,6 +408,21 @@ def test_a_file_that_is_not_json_counts_as_a_failed_call(tmp_path, monkeypatch):
     assert record["result"] == "written" and len(calls) == 2
 
 
+def test_a_call_never_sees_its_own_earlier_output_and_a_session_that_writes_nothing_is_not_written(
+        tmp_path, monkeypatch):
+    (tmp_path / "out.json").write_text('{"stale": true}')
+    silent = (0, {"is_error": False, "result": "ok", "usage": SPENT}, None)
+    record, calls = _ask(tmp_path, monkeypatch, [silent] * 5, "fable")
+    assert record["result"] == "failed" and len(calls) == 3
+    assert "wrote []" in record["reason"]
+    assert not (tmp_path / "out.json").exists()
+    (tmp_path / "out.json").write_text('{"stale": true}')
+    good = (0, {"is_error": False, "result": "ok"}, {"out.json": '{"fresh": true}'})
+    record, calls = _ask(tmp_path, monkeypatch, [good], "fable")
+    assert record["result"] == "written" and len(calls) == 1
+    assert (tmp_path / "out.json").read_text() == '{"fresh": true}'
+
+
 def test_one_predicate_says_what_is_fable_and_a_full_id_gets_the_fable_budget(
         tmp_path, monkeypatch):
     assert run_analysis.is_fable("fable") and run_analysis.is_fable("claude-fable-5-1")
@@ -592,6 +611,82 @@ def test_a_stopped_run_resumes_in_place_and_calls_only_what_had_not_finished(
                                  period_end="2026-07-26",
                                  store=run_analysis.cutoff_guard.FIXTURES, prices=None,
                                  control="never", resume=True)
+
+
+def _stopped_at(tmp_path, monkeypatch, stopped_agent: str, control: str):
+    """The limit at `stopped_agent`; every other agent writes."""
+    run = tmp_path / "NVDA" / NVDA_ACCESSION
+    bundle = assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,
+                                   prior_runs=run.parent.parent)
+    assemble_bundle.write(bundle, run)
+    written = _fake_ask({})
+
+    def ask(directory, *, agent, writes, message, spec, log):
+        if agent == stopped_agent:
+            return {"agent": agent, "result": "failed", "limit_reached": True,
+                    "reason": "You've reached your Fable limit."}
+        return written(directory, agent=agent, writes=writes, message=message,
+                       spec=spec, log=log)
+
+    monkeypatch.setattr(run_analysis, "ask", ask)
+    stopped = run_analysis.run_company(run=run, ticker="NVDA", form="10-Q",
+                                       cutoff="2026-08-26", period_end="2026-07-26",
+                                       store=run_analysis.cutoff_guard.FIXTURES,
+                                       prices=None, control=control)
+    assert stopped["fable_limit_reached"] == [stopped_agent]
+    return run, stopped
+
+
+def _resumed(run, monkeypatch, control: str):
+    ask, called = _counting_ask({})
+    monkeypatch.setattr(run_analysis, "ask", ask)
+    manifest = run_analysis.run_company(run=run, ticker="NVDA", form="10-Q",
+                                        cutoff="2026-08-26", period_end="2026-07-26",
+                                        store=run_analysis.cutoff_guard.FIXTURES,
+                                        prices=None, control=control)
+    return manifest, called
+
+
+def test_a_run_stopped_at_the_control_resumes_and_calls_the_control_only(tmp_path, monkeypatch):
+    run, stopped = _stopped_at(tmp_path, monkeypatch, "control-single-agent", "always")
+    assert (run / run_analysis.CONTROL_DIRNAME).is_dir()        # built the night it stopped
+    assert not any((run / name).is_file() for name in run_analysis.CONTROL_WRITES)
+    manifest, called = _resumed(run, monkeypatch, "always")
+    assert called == [run_analysis.CONTROL_DIRNAME]            # the control's directory
+    assert manifest["resume_skipped"] == ["numbers-reader", "notes-text-reader",
+                                          "accounting-analyst", "financial-analyst",
+                                          "valuation-analyst", "valuation-analyst-second-pass"]
+    assert "fable_limit_reached" not in manifest and manifest["analysis_failure"] is None
+    assert manifest["agents"]["control-single-agent"]["result"] == "written"
+    assert all((run / name).is_file() for name in run_analysis.CONTROL_WRITES)
+    assert set(manifest["analysis_stages"]["control"]) == {"accounting", "financial",
+                                                           "assumptions"}
+    assert agent_inputs.isolation_violations(run) == []
+    # The other side: a control directory on a run that is not resumed is built once.
+    with pytest.raises(run_analysis.RunError, match="built once"):
+        run_analysis.run_control(run, run.parent / "logs")
+
+
+def test_a_limit_at_one_reader_leaves_the_other_on_record_and_never_calls_it_again(
+        tmp_path, monkeypatch):
+    run, stopped = _stopped_at(tmp_path, monkeypatch, "notes-text-reader", "never")
+    # the finished reader's report was gated into the run root the night it stopped
+    assert (run / "report_numbers.md").is_file()
+    assert not (run / "report_notes_text.md").exists()
+    assert stopped["agents"]["numbers-reader"]["result"] == "written"
+    assert "quote_gate" not in stopped["analysis_stages"]
+    numbers_before = (run / "report_numbers.md").read_bytes()
+    manifest, called = _resumed(run, monkeypatch, "never")
+    assert called[0] == "notes-text-reader" and "numbers-reader" not in called
+    assert sorted(called) == ["accounting-analyst", "financial-analyst", "notes-text-reader",
+                              "valuation-analyst", "valuation-analyst-second-pass"]
+    assert manifest["resume_skipped"] == ["numbers-reader"]
+    assert (run / "report_numbers.md").read_bytes() == numbers_before
+    assert manifest["agents"]["numbers-reader"] == stopped["agents"]["numbers-reader"]
+    assert "fable_limit_reached" not in manifest and manifest["analysis_failure"] is None
+    assert manifest["analysis_stages"]["quote_gate"] == {"dropped": 0}
+    assert (run / "report_notes_text.md").is_file() and (run / "memo_ko.md").is_file()
+    assert agent_inputs.isolation_violations(run) == []
 
 
 def test_a_run_that_did_not_stop_is_not_resumed(tmp_path, monkeypatch, finished, capsys):
@@ -846,6 +941,78 @@ def test_the_message_names_the_shared_files_first_in_a_fixed_order():
         "analysis_accounting.json", "assumptions.json", "input_mdna.md"]
     assert run_analysis.message_files({"input_notes.md", "input_8k.md"}) == \
         ["input_8k.md", "input_notes.md"]
+
+
+# Two of the fixture's 112 MD&A paragraphs, flagged by the stubbed notes reader:
+# the first and the third, which are not adjacent. Their blocks are copied here
+# from the fixture's input_mdna.md by hand (the apostrophe in "Management's" is
+# the filing's own U+2019), and the expected trimmed copy is the file's preamble,
+# the first block, one line holding the two markers, and the third block.
+MDNA_ONE = "0001045810-26-000075:mdna:1"
+MDNA_THREE = "0001045810-26-000075:mdna:3"
+FLAGGING_TWO = '''```json
+[{ "id": "earnings_quality_mdna_heading", "paragraph_id": "0001045810-26-000075:mdna:1",
+   "quote": "Analysis of Financial Condition" },
+ { "id": "earnings_quality_third_paragraph_unchanged", "paragraph_id": "0001045810-26-000075:mdna:3",
+   "quote": "same as prior period" }]
+```
+'''
+TRIMMED_TWO = (
+    "# NVDA MD&A \u2014 0001045810-26-000075\n\n\n## mdna\n\n"
+    "[0001045810-26-000075:mdna:1]\nItem 2. Management\u2019s Discussion and Analysis of "
+    "Financial Condition and Results of Operations\n\n"
+    "[0001045810-26-000075:mdna:1] [0001045810-26-000075:mdna:3]\n\n"
+    "[0001045810-26-000075:mdna:3]\n[same as prior period, unchanged from "
+    "0001045810-26-000052:mdna:3]\n\n")
+INSIDE = {"reason": "a reason", "quote": "Analysis of Financial Condition",
+          "quote_from": "input_mdna.md"}
+ACROSS = {"reason": "a reason", "quote_from": "input_mdna.md",
+          "quote": "Results of Operations\n\n[0001045810-26-000075:mdna:1] "
+                   "[0001045810-26-000075:mdna:3]\n\n[0001045810-26-000075:mdna:3]\n[same as"}
+
+
+def test_a_whole_run_with_two_paragraphs_flagged_hands_the_valuation_analyst_those_two(
+        tmp_path, monkeypatch):
+    """The trimmed copy, the manifest's `trimmed` record, the boundary check and the
+    seam rule of the first pass's gate, all on one run and all agreeing."""
+    run = tmp_path / "NVDA" / NVDA_ACCESSION
+    bundle = assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,
+                                   prior_runs=run.parent.parent)
+    assemble_bundle.write(bundle, run)
+    assumptions = {"scenarios": {
+        "bear": dict(DRIVERS, reasons={d: ACROSS for d in DRIVERS}),
+        "base": dict(DRIVERS, reasons={d: INSIDE for d in DRIVERS}),
+        "bull": dict(DRIVERS, reasons={d: INSIDE for d in DRIVERS})}}
+    monkeypatch.setattr(run_analysis, "ask",
+                        _fake_ask({}, notes_report=FLAGGING_TWO, assumptions=assumptions))
+    manifest = run_analysis.run_company(run=run, ticker="NVDA", form="10-Q",
+                                        cutoff="2026-08-26", period_end="2026-07-26",
+                                        store=run_analysis.cutoff_guard.FIXTURES,
+                                        prices=None, control="never")
+    assert manifest["analysis_failure"] is None
+    assert manifest["dropped_items"] == []                      # both items stood the gate
+    for name in ("valuation-analyst", "valuation-analyst-second-pass"):
+        copy = run / "agents" / name / "input_mdna.md"
+        assert copy.read_bytes() == TRIMMED_TWO.encode("utf-8")
+        record = manifest["agents"][name]["trimmed"]
+        assert record["input_mdna.md"] == {
+            "kept": [MDNA_ONE, MDNA_THREE], "of": 112,
+            "note": "2 of 112 paragraphs, the ones the notes reader flagged; the rest were "
+                    "not placed"}
+        assert record["input_8k.md"]["kept"] == []               # nothing of the 8-K flagged
+    assert agent_inputs.isolation_violations(run) == []
+    # the seam rule: the bear scenario quotes across the two blocks' seam, which
+    # string-matches the copy the analyst saw and nothing the filing printed
+    copy = (run / "agents" / "valuation-analyst" / "input_mdna.md").read_text(encoding="utf-8")
+    full = (run / "input_mdna.md").read_text(encoding="utf-8")
+    assert ACROSS["quote"] in copy and ACROSS["quote"] not in full
+    assert INSIDE["quote"] in copy and INSIDE["quote"] in full
+    published = json.loads((run / "assumptions.json").read_text(encoding="utf-8"))
+    assert set(published["scenarios"]) == {"base", "bull"}
+    assert published["dropped_items"] == [{"where": "scenarios.bear", "reason":
+        "revenue_growth_year_one: the quote string-matches the trimmed input_mdna.md and "
+        "not the filing: it runs across a seam between two paragraphs that were not adjacent"}]
+    assert manifest["analysis_stages"]["assumptions"] == {"dropped": 1}
 
 
 def test_the_valuation_analyst_is_handed_only_the_paragraphs_the_notes_reader_flagged(finished):
