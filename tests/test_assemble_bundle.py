@@ -454,6 +454,23 @@ UNDER_DROPPED_BUNDLE = {
     ("ESE", "10-Q"): "one safe-harbour paragraph carried; 97 read, 98 built",
     ("NVDA", "10-Q"): "half a page-broken forward-looking paragraph carried; "
                       "75 read, 76 built",
+    # The eight added on 2026-10-07: the release is in the 10-Q bundle where the
+    # 8-K was filed on or before the 10-Q and in the 10-K bundle where it was
+    # filed on or before the 10-K (WDC, FN). POWL's bundle holds what its exhibit
+    # was read to hold, so it is not here.
+    ("DELL", "10-Q"): "9 page numerals and 5 forward-looking blocks carried; "
+                      "117 read, 131 built",
+    ("WDC", "10-K"): "13 page numerals and the disclaimer's heading carried; "
+                     "89 read, 103 built",
+    ("ANET", "10-Q"): "3 page numerals and both disclaimer blocks carried; "
+                      "56 read, 61 built",
+    ("FTNT", "10-Q"): "the disclaimer's heading and paragraph carried and a guidance "
+                      "pointer dropped instead; 95 read, 96 built",
+    ("JCI", "10-Q"): "20 page numerals and the disclaimer's heading carried; "
+                     "144 read, 165 built",
+    ("FELE", "10-Q"): "the safe-harbour heading and its page-broken second half "
+                      "carried; 49 read, 51 built",
+    ("FN", "10-K"): "the disclaimer's heading carried; 149 read, 150 built",
 }
 
 EIGHT_K_CASES = [

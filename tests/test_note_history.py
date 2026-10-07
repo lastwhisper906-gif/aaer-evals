@@ -235,6 +235,18 @@ BROAD_DEBT_MATCH = {
     "CIEN": "InvestmentsInDebtAndMarketableEquitySecurities…; 8 read, 9 paired",
     "NVDA": "DebtSecuritiesAvailableForSaleTable and InvestmentsInDebtAndMarketable"
             "EquitySecurities…; 4 read, 6 paired",
+    # Four of the eight added on 2026-10-07 reach the same rule. Dell's is not an
+    # investments note: its own extension tag names the Financial Services note
+    # -- the leases and loans Dell Financial Services is owed -- and carries
+    # 'Debt' among the five things it covers.
+    "DELL": "dell:CreditLossFinancialInstrumentLeasesDebtVariableInterestEntities"
+            "AndCustomerReceivablesSales…, the Financial Services note; "
+            "8 read, 9 paired",
+    "ANET": "DebtSecuritiesAvailableForSaleUnrealizedLossPositionFairValueTable; "
+            "2 read, 3 paired",
+    "FTNT": "DebtSecuritiesAvailableForSaleUnrealizedLossPositionFairValueTable; "
+            "6 read, 7 paired",
+    "FN": "DebtSecuritiesAvailableForSaleTable; 6 read, 7 paired",
 }
 
 

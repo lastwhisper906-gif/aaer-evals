@@ -721,7 +721,13 @@ CASH_FLOW_AND_BALANCE = {
 # (`test_one_working_capital_line_for_everything_is_refused`).
 NOTHING_TO_READ = ["CARR 10-Q 0001783180-26-000032",
                    "ESE 10-Q 0001104659-26-093266",
-                   "LFUS 10-Q 0001628280-26-050481"]
+                   "LFUS 10-Q 0001628280-26-050481",
+                   # Of the eight added on 2026-10-07, the two 10-Qs filed
+                   # 2026-07-29 that companyfacts had not loaded when the records
+                   # were fetched (`tests/test_fetch_companyfacts.py`'s
+                   # NOT_YET_IN_COMPANYFACTS), read the same way off the record.
+                   "JCI 10-Q 0000833444-26-000087",
+                   "FELE 10-Q 0000038725-26-000055"]
 
 
 @functools.lru_cache(maxsize=None)
@@ -834,12 +840,15 @@ def test_every_trigger_whose_record_holds_the_rows_produces_one():
         if [entry for entry in found["rows"] if entry["accession"] == accession]:
             produces.append(named)
 
-    assert len(triggers()) == 2 * len(TICKERS) == 24
+    # Two triggers per company, one 10-K and one 10-Q primary document in each
+    # manifest: twelve companies and the eight added on 2026-10-07, 20 × 2.
+    assert len(triggers()) == 2 * len(TICKERS) == 40
     assert sorted(set(f"{ticker} {form} {accession}"
                       for ticker, form, accession, _ in triggers())
                   - set(holds)) == NOTHING_TO_READ
     assert produces == holds
-    assert len(produces) == len(triggers()) - len(NOTHING_TO_READ) == 21
+    # Forty triggers less the five whose record holds no row: 40 - 5.
+    assert len(produces) == len(triggers()) - len(NOTHING_TO_READ) == 35
     assert len([named for named in produces if " 10-K " in named]) == len(TICKERS)
 
 
