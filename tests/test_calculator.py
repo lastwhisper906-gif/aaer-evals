@@ -29,6 +29,7 @@ import copy
 import datetime as dt
 import gzip
 import json
+import math
 
 import pytest
 
@@ -1030,24 +1031,90 @@ def test_cienas_wacc_components_table_names_each_input_and_its_source(cien_at_10
     assert all("source" in row and "missing" not in row for row in table["rows"])
 
 
-# The base scenario is the Gordon case of the DCF tests above: growth 3% from year
-# one to the terminal rate, margin 20%, reinvestment 40%, so the ten years and the
-# terminal value add up to next year's free cash flow to the firm over (WACC - 0.03):
-#     A = 5,569,150,000 x 1.03 x 0.20 x (1 - 0.0884929) x 0.60 = 627,433,105.82
-# and the base value a share is (A / (WACC - 0.03) - N) / S, with N = net debt +
-# leases = 372,677,000 and S = 146,314,000 diluted shares. The WACC moves with
-# the price through E = price x 141,552,922 shares outstanding, so the price at
-# which the value is the price itself -- where the growth the price implies is
-# exactly the 3% the base case assumes -- solves
-#     (a P + b) (S P + N) = A (D + n P),   a = n x (0.10 - 0.03),  b = D x (0.0516158 - 0.03)
-# a quadratic in P, a S P^2 + (a N + b S - A n) P + (b N - A D) = 0, with
-#     a = 9,908,704.54,  b = 33,096,343.75,
-#     a S = 1.44978 x 10^15,  a N + b S - A n = -8.02798 x 10^16,  b N - A D = -9.48341 x 10^17
-# whose positive root is P = 65.3788514. Check at that price:
-#     E = 65.3788514 x 141,552,922 = 9,254,567,449;  D + E = 10,785,686,449
-#     WACC = 0.8580416 x 0.10 + 0.1419584 x 0.0516158 = 0.0931315
-#     A / (0.0931315 - 0.03) = 9,938,518,260;  less N = 9,565,841,260;  over S = 65.3788514
-CIEN_PRICE_AT_ITS_GORDON_VALUE = 65.37885137299392
+# --- the implied growth, anchored to prices worked from the quoted facts -----------------------
+#
+# The reverse DCF holds the base scenario's margins, reinvestment and terminal
+# growth and finds the constant growth g for years one to ten at which the base
+# case a share equals the price. The base scenario here is the Gordon case of the
+# DCF tests above (margin 20%, reinvestment 40%, terminal growth 3%), so year t's
+# free cash flow to the firm is R x (1+g)^t x 0.20 x (1 - tax) x 0.60, and with
+#     F1 = R x (1+g) x 0.20 x (1 - tax) x 0.60      (next year's cash flow)
+#     q  = (1+g) / (1+W)                              (one year's growth over one year's discount)
+# the ten explicit years, end-of-year discounted, are the geometric series
+#     F1/(1+W) + F1 (1+g)/(1+W)^2 + ... + F1 (1+g)^9/(1+W)^10 = F1/(1+W) x (1 - q^10)/(1 - q)
+# and the terminal value, year ten's cash flow grown once at 3% over (W - 0.03),
+# discounted ten years, is
+#     F1 (1+g)^9 x 1.03 / (W - 0.03) / (1+W)^10.
+# When g is the terminal rate the two collapse to F1 / (W - g) exactly: 1 - q is
+# (W - g)/(1+W), so the series is F1 (1 - q^10)/(W - g), and (1+g)^10/(1+W)^10 is
+# q^10, so the terminal is F1 q^10/(W - g); together F1/(W - g), the Gordon value.
+# A share: (enterprise value - N) / S, with N = net debt + leases = 328,285,000 +
+# 44,392,000 = 372,677,000 and S = 146,314,000 diluted shares.
+#
+# The helpers below are that arithmetic in plain Python on the quoted facts, and
+# import nothing from src/: a reader reruns them by hand and gets the constants
+# the assertions use, at the precision the assertions use.
+CIEN_REVENUE = 5_569_150 * 1000
+CIEN_NET_DEBT_AND_LEASES = (328_285 + 44_392) * 1000
+GORDON_TERMINAL_GROWTH = GORDON["terminal_growth"]
+
+
+def _hand_wacc(price: float) -> float:
+    """E/(D+E) x 0.10 + D/(D+E) x the after-tax cost of debt, E = price x shares outstanding."""
+    equity = price * CIEN_SHARES_OUTSTANDING
+    return (equity / (equity + CIEN_TOTAL_DEBT) * 0.10
+            + CIEN_TOTAL_DEBT / (equity + CIEN_TOTAL_DEBT) * CIEN_COST_OF_DEBT_AFTER_TAX)
+
+
+def _hand_enterprise_value(growth: float, wacc: float) -> float:
+    """The geometric series and the terminal value written above."""
+    next_year = CIEN_REVENUE * (1 + growth) * 0.20 * (1 - CIEN_TAX_RATE) * 0.60
+    q = (1 + growth) / (1 + wacc)
+    explicit = next_year / (1 + wacc) * (1 - q ** 10) / (1 - q)
+    terminal = (next_year * (1 + growth) ** 9 * (1 + GORDON_TERMINAL_GROWTH)
+                / (wacc - GORDON_TERMINAL_GROWTH) / (1 + wacc) ** 10)
+    return explicit + terminal
+
+
+def _hand_price(growth: float, wacc: float) -> float:
+    return (_hand_enterprise_value(growth, wacc) - CIEN_NET_DEBT_AND_LEASES) / CIEN_DILUTED_SHARES
+
+
+# Through the whole file the WACC moves with the price, because E is the price
+# times the shares outstanding, so the price at which the base case is worth the
+# price itself -- where the growth the price implies is the base case's 3% -- is
+# a fixed point. At g = 0.03 the value is the Gordon form, so with
+#     A = F1 at g = 0.03,  a = n x (0.10 - 0.03),  b = D x (after-tax cost of debt - 0.03)
+# (n = shares outstanding, D = total debt) the condition (A / (W(P) - 0.03) - N) / S = P
+# multiplies out to
+#     (a P + b) (S P + N) = A (D + n P),  that is  a S P^2 + (a N + b S - A n) P + (b N - A D) = 0,
+# a quadratic in P whose positive root is the price. The coefficients are written
+# as the expressions, not as rounded figures; rounded, a = 9,908,704.54,
+# b = 33,096,343.75, a S = 1.44978 x 10^15, a N + b S - A n = -8.02798 x 10^16,
+# b N - A D = -9.48341 x 10^17, and the root is 65.3788514.
+CIEN_GORDON_NEXT_YEAR_CASH = (CIEN_REVENUE * (1 + GORDON_TERMINAL_GROWTH) * 0.20
+                              * (1 - CIEN_TAX_RATE) * 0.60)
+_a = CIEN_SHARES_OUTSTANDING * (0.10 - GORDON_TERMINAL_GROWTH)
+_b = CIEN_TOTAL_DEBT * (CIEN_COST_OF_DEBT_AFTER_TAX - GORDON_TERMINAL_GROWTH)
+_quadratic = (_a * CIEN_DILUTED_SHARES,
+              _a * CIEN_NET_DEBT_AND_LEASES + _b * CIEN_DILUTED_SHARES
+              - CIEN_GORDON_NEXT_YEAR_CASH * CIEN_SHARES_OUTSTANDING,
+              _b * CIEN_NET_DEBT_AND_LEASES - CIEN_GORDON_NEXT_YEAR_CASH * CIEN_TOTAL_DEBT)
+CIEN_PRICE_AT_ITS_GORDON_VALUE = (
+    (-_quadratic[1] + math.sqrt(_quadratic[1] ** 2 - 4 * _quadratic[0] * _quadratic[2]))
+    / (2 * _quadratic[0]))
+
+
+def test_the_hand_price_for_the_growth_beside_history_is_the_fixed_point_it_claims_to_be():
+    """The lines above, rerun: the root is 65.3788514, and at that price the hand
+    WACC is 0.0931315 and the hand Gordon value a share is the price again --
+    the written arithmetic produces the constant to the precision asserted below."""
+    price = CIEN_PRICE_AT_ITS_GORDON_VALUE
+    assert price == pytest.approx(65.3788514, abs=5e-8)
+    assert _hand_wacc(price) == pytest.approx(0.0931315, abs=5e-8)
+    assert (CIEN_GORDON_NEXT_YEAR_CASH / (_hand_wacc(price) - GORDON_TERMINAL_GROWTH)
+            - CIEN_NET_DEBT_AND_LEASES) / CIEN_DILUTED_SHARES == pytest.approx(price, abs=1e-9)
+    assert _hand_price(GORDON_TERMINAL_GROWTH, _hand_wacc(price)) == pytest.approx(price, abs=1e-9)
 
 
 @pytest.fixture(scope="module")
@@ -1065,8 +1132,8 @@ def test_cienas_growth_beside_history_is_the_three_and_five_year_compound_and_th
                                           2021-12-17 and 2022-12-16)
       three-year compound  (4,769,507 / 3,632,661) ** (1/3) - 1 = 1.3129513 ** (1/3) - 1 = 0.0950053
       five-year compound   (4,769,507 / 3,532,157) ** (1/5) - 1 = 1.3503100 ** (1/5) - 1 = 0.0619075
-    and the implied ten-year growth at the price worked above is the base case's
-    own 3%, printed beside them.
+    and beside them the implied ten-year growth at the fixed-point price worked
+    above, 0.03, found by a bisection that stops at 1e-10.
     """
     out = cien_at_its_gordon_value["implied_growth_beside_history"]
     three = out["revenue_growth_three_year_compound"]
@@ -1080,15 +1147,44 @@ def test_cienas_growth_beside_history_is_the_three_and_five_year_compound_and_th
     assert five["fiscal_years"] == "2019-11-03..2020-10-31 to 2024-11-03..2025-11-01"
     assert five["inputs"]["revenue_5_years_earlier"]["value"] == 3_532_157 * 1000
     implied = out["implied_ten_year_revenue_growth"]
-    assert implied["value"] == pytest.approx(0.03, abs=1e-6)
+    assert implied["value"] == pytest.approx(GORDON_TERMINAL_GROWTH, abs=1e-8)
     assert implied["price"] == CIEN_PRICE_AT_ITS_GORDON_VALUE
     base = cien_at_its_gordon_value["valuation"]["scenarios"]["base"]
     assert base["value_per_share"] == pytest.approx(CIEN_PRICE_AT_ITS_GORDON_VALUE, abs=1e-6)
-    assert cien_at_its_gordon_value["cost_of_capital"]["value"] == pytest.approx(0.0931315, abs=5e-8)
+    assert cien_at_its_gordon_value["cost_of_capital"]["value"] == pytest.approx(
+        _hand_wacc(CIEN_PRICE_AT_ITS_GORDON_VALUE), abs=1e-12)
     # The flat keys the owner's coverage grader reads carry the same two rates.
     history = cien_at_its_gordon_value["earnings_versus_cash"]["history"]
     assert history["revenue_growth_three_year_compound"] == three["value"]
     assert history["revenue_growth_five_year_compound"] == five["value"]
+
+
+def test_the_reverse_dcf_finds_the_growth_beside_history_at_two_hand_prices():
+    """The reverse DCF on Ciena's quoted figures, at the hand WACC for a price of 100
+    (0.0952773, worked in the WACC test above) so that nothing couples the price
+    to the discount rate, against two prices worked by the formulas above:
+      g = 0.03:  F1 = 5,569,150,000 x 1.03 x 0.20 x (1 - 0.0884929) x 0.60 = 627,433,105.82
+                 F1 / (0.0952773 - 0.03) = 9,611,809,406; less N = 9,239,132,406;
+                 over S = 63.1459218 a share
+      g = 0.02:  F1 = 5,569,150,000 x 1.02 x 0.20 x (1 - 0.0884929) x 0.60 = 621,341,522.27
+                 q = 1.02 / 1.0952773 = 0.9312710
+                 series   F1 / 1.0952773 x (1 - q^10) / (1 - q)                = 4,204,294,961
+                 terminal F1 x 1.02^9 x 1.03 / (0.0952773 - 0.03) / 1.0952773^10 = 4,715,914,709
+                 together 8,920,209,671; less N = 8,547,532,671; over S = 58.4191032 a share
+    At each price the growth found is the one the price was worked at, within the
+    bisection's own stop of 1e-10; neither expected growth is read off a run.
+    """
+    wacc = _hand_wacc(100.0)
+    assert wacc == pytest.approx(0.0952773, abs=5e-8)
+    for growth, written in ((0.03, 63.1459218), (0.02, 58.4191032)):
+        price = _hand_price(growth, wacc)
+        assert price == pytest.approx(written, abs=5e-8)
+        out = calculator.reverse_dcf(CIEN_REVENUE, GORDON, CIEN_TAX_RATE, wacc,
+                                     328_285 * 1000, 44_392 * 1000, CIEN_DILUTED_SHARES, price)
+        assert out["value"] == pytest.approx(growth, abs=1e-8), growth
+    # The Gordon form and the series agree where the growth is the terminal rate.
+    assert _hand_enterprise_value(0.03, wacc) == pytest.approx(
+        CIEN_GORDON_NEXT_YEAR_CASH / (wacc - 0.03), rel=1e-12)
 
 
 def test_growth_beside_history_with_fewer_fiscal_years_is_absent_with_the_count():
