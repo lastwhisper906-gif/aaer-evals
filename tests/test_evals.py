@@ -352,28 +352,35 @@ def test_an_item_the_gate_dropped_but_left_in_a_mixed_block_is_kept_by_nobody(ru
     assert _status(mechanical.grade(run), "mechanical.cited_items_exist") == PASS
 
 
-def test_a_dropped_item_in_a_mixed_block_is_no_unit_for_an_analyst_and_no_failure_for_its_reader(run):
-    """The gate dropped it and the manifest says so: a reader's dropped item is not
-    held to its paragraph (it was set aside, and is counted), and an analyst's quote
-    of its text stands on nothing."""
+def test_a_dropped_item_still_in_the_run_root_report_fails_quotes_resolve(run):
+    """The gate dropped it and the manifest says so: a dropped item is out of the
+    report the analysts are handed (CLAUDE.md: a failed item is dropped and
+    counted), so one still there fails, named; an analyst's quote of its text
+    stands on nothing either way."""
     report = run / "report_numbers.md"
     planted = {"id": "revenue_recognition_planted_dropped", "paragraph_id": "nowhere",
                "quote": "words the reader was never handed, planted here"}
     report.write_text(report.read_text(encoding="utf-8")
                       + "\n```json\n" + json.dumps(planted) + "\n```\n", encoding="utf-8")
-    # unrecorded, the planted item fails the reader's check
+    # unrecorded, the planted item fails the reader's check on its paragraph
     assert _status(mechanical.grade(run), "mechanical.quotes_resolve") == FAIL
     _edit(run / "input_manifest.json",
           lambda d: d.update(dropped_items=[{"report": "report_numbers.md",
                                              "item_id": planted["id"], "reason": "planted"}]))
     results = mechanical.grade(run)
-    assert _status(results, "mechanical.quotes_resolve") == PASS
-    assert "1 reader item(s) the gate dropped" in next(
-        r.detail for r in results if r.grader == "mechanical.quotes_resolve")
+    assert _status(results, "mechanical.quotes_resolve") == FAIL
+    assert any("dropped by the gate and still in the report" in f for f in
+               next(r.failures for r in results if r.grader == "mechanical.quotes_resolve"))
     # an analyst quoting the dropped item's words stands on nothing
     _edit(run / "analysis_accounting.json",
           lambda d: d["anomalies"][0].update(quote="planted here", quote_from="report_numbers.md"))
     assert _status(mechanical.grade(run), "mechanical.quotes_resolve") == FAIL
+    # a drop recorded for an item that is indeed gone from the report is clean
+    report.write_text(report.read_text(encoding="utf-8").replace(json.dumps(planted), "{}"),
+                      encoding="utf-8")
+    _edit(run / "analysis_accounting.json",
+          lambda d: d["anomalies"][0].update(quote=d["anomalies"][0].get("what", "")[:30]))
+    assert not any(i.get("id") == planted["id"] for i in mechanical.report_items(report))
 
 
 def test_an_id_a_report_carries_twice_is_kept_by_nobody(run):
@@ -407,6 +414,21 @@ def test_a_citation_of_null_resolves_to_no_reader_item(run):
                       encoding="utf-8")
     _edit(run / "analysis_accounting.json",
           lambda d: d["anomalies"][0].update(evidence=[None]))
+    assert _status(mechanical.grade(run), "mechanical.cited_items_exist") == FAIL
+
+
+def test_a_reconciliation_citing_an_item_nobody_kept_fails_cited_items_exist(run):
+    """CSCO's analysis_accounting.json cites reader items under reconciliation[].notes_item
+    and numbers_items too; every such key is held to the kept items."""
+    accounting = json.loads((run / "analysis_accounting.json").read_text(encoding="utf-8"))
+    assert any("notes_item" in r for r in accounting.get("reconciliation") or [])
+    assert _status(mechanical.grade(run), "mechanical.cited_items_exist") == PASS
+    _edit(run / "analysis_accounting.json",
+          lambda d: d["reconciliation"][0].update(notes_item="revenue_recognition_made_up"))
+    assert _status(mechanical.grade(run), "mechanical.cited_items_exist") == FAIL
+    _edit(run / "analysis_accounting.json",
+          lambda d: d["reconciliation"][0].update(notes_item=None,
+                                                  numbers_items=["revenue_recognition_made_up"]))
     assert _status(mechanical.grade(run), "mechanical.cited_items_exist") == FAIL
 
 

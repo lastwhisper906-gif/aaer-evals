@@ -423,7 +423,12 @@ def check_quotes_resolve(run: Path) -> Result:
             failures.append(f"{report}: {malformed} fenced block(s) that are not JSON")
         for item in items:
             if (report, item.get("id")) in drop_record:
-                dropped += 1        # the gate set it aside and the manifest says so
+                # the gate set it aside and the manifest says so; it must then be out
+                # of the run-root report, which the analysts are handed byte for byte
+                dropped += 1
+                count += 1
+                failures.append(f"{report}:{item.get('id')}: dropped by the gate and still "
+                                "in the report the analysts were handed")
                 continue
             quote = item.get("quote")
             count += 1
@@ -455,7 +460,7 @@ def check_quotes_resolve(run: Path) -> Result:
                 failures.append(f"{name}:{where}: {why}")
     return Result("mechanical.quotes_resolve", run_name(run), FAIL if failures else PASS,
                   f"{count - len(failures)} of {count} quotes found in what the agent was handed"
-                  + (f"; {dropped} reader item(s) the gate dropped, as recorded" if dropped else ""),
+                  + (f"; {dropped} reader item(s) the gate dropped and left in the report" if dropped else ""),
                   failures)
 
 
@@ -475,6 +480,10 @@ def kept_items(run: Path) -> dict[str, set[str]]:
                if isinstance(item.get("id"), str) and item["id"].strip()]
         out[report] = {i for i in ids if ids.count(i) == 1 and (report, i) not in dropped}
     return out
+
+
+# a key that names reader items: `evidence`, `notes_item`, `numbers_items`, `items`
+CITATION_KEY = re.compile(r"(.*_)?items?|(.*_)?evidence")
 
 
 def check_cited_items_exist(run: Path) -> Result:
@@ -497,6 +506,16 @@ def check_cited_items_exist(run: Path) -> Result:
                             failures.append(f"{name}:{here}: evidence is not a list")
                             continue
                         for cited in value:
+                            count += 1
+                            if cited not in kept:
+                                failures.append(f"{name}:{here}: {cited}")
+                    elif CITATION_KEY.fullmatch(key):
+                        # the reconciliation's notes_item / numbers_items and any
+                        # other key that names reader items: held the same way
+                        cited_all = value if isinstance(value, list) else [value]
+                        for cited in cited_all:
+                            if cited is None:
+                                continue
                             count += 1
                             if cited not in kept:
                                 failures.append(f"{name}:{here}: {cited}")
