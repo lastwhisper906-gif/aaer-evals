@@ -1,0 +1,390 @@
+{
+ "run": "STX/analysis-grader-0wczuvws",
+ "rubric": "evals/capability/rubric.md",
+ "dealbreakers": [
+  {
+   "kind": "number_not_from_calculator",
+   "id": "revenue_recognition_fifty_third_week_omitted_from_revenue_explanation",
+   "where": "analysis_accounting.json anomalies[5].what",
+   "why": "Writes 'one more week' and 'a fourteen-week base' in the analyst's own words; no calculator path supplies either figure."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": "controls_audit_and_filing_signals_officer_change_filings_unread",
+   "where": "analysis_accounting.json anomalies[22].what",
+   "why": "'Three Form 8-K officer-or-director-change filings' is a count in the analyst's own words with no calculator path behind it."
+  },
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "controls_audit_and_filing_signals_share_repurchase_count_stated_two_ways",
+   "where": "analysis_accounting.json anomalies[24].numbers_vs_prose",
+   "why": "Marked unresolved and called an inconsistency, but mdna:109 says the MD&A count includes shares withheld for taxes and notes:191 gives the program-only count, so the inputs reconcile the two counts. The anomaly's own text names the reconciling item."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": "liquidity_and_capital_post_year_end_debt_redemptions_draw_on_cash",
+   "where": "analysis_financial.json anomalies[1].what",
+   "why": "'two series of senior notes' is a count in the analyst's own words that no calculator path supplies."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": "profitability_gross_margin_leans_on_pricing_grants_and_an_extra_week",
+   "where": "analysis_financial.json anomalies[4].what",
+   "why": "'fifty-three weeks against fifty-two' is written in the analyst's own words, not quoted, and no calculator path supplies it."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": null,
+   "where": "analysis_accounting.json areas.cross_document_reconciliation.finding",
+   "why": "'Of the forty-nine items in the notes report' is a count in the analyst's own words with no calculator path."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": null,
+   "where": "analysis_accounting.json areas.controls_audit_and_filing_signals.finding",
+   "why": "'Three officer-or-director-change filings on Form 8-K' repeats a count that no calculator path supplies."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": null,
+   "where": "analysis_accounting.json areas.earnings_versus_cash.finding",
+   "why": "'Fiscal 2026 was a fifty-three-week year' gives a period length in the analyst's own words, not from a calculator path."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": null,
+   "where": "analysis_financial.json sections.growth.reading",
+   "why": "'fifty-three weeks against fifty-two' and 'a fourteen-week quarter' are figures in the analyst's own words with no calculator path."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": null,
+   "where": "analysis_financial.json sections.profitability.reading",
+   "why": "'the fifty-three-week fiscal year' gives a period length in the analyst's own words, not from a calculator path."
+  }
+ ],
+ "items": [
+  {
+   "id": "earnings_versus_cash_accruals_swing_negative_against_own_past",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "medium",
+   "why": "earnings_versus_cash.operating_cash_flow_over_net_income and trend_table.years-back-0/1.ratios.accruals_over_total_assets check, but the area finding itself ranks this year 'third highest of five filled years', so the cited evidence does not settle 'a sharp break from the company's own past'."
+  },
+  {
+   "id": "earnings_versus_cash_operating_cash_flow_lifted_by_unpaid_taxes_and_settlements",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "The swing in the release's accrued-expenses line (earnings_quality_release_accrued_expenses_cash_flow_change), the MD&A attribution to taxes and settlements, and the Pillar Two top-up and settlement-timing items all show it; terms.trailing_four_quarters.income_tax_expense checks."
+  },
+  {
+   "id": "earnings_versus_cash_payables_articulation_gap",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "earnings_versus_cash.working_capital.accounts_payable.articulation_gap is non-zero while the receivables and inventory gaps are nil; the MD&A capex attribution in across_documents_payables_explanation_omits_supplier_finance_program leaves the excluded amount unstated."
+  },
+  {
+   "id": "earnings_versus_cash_receivables_absorb_share_of_income",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.working_capital.receivables.balance_sheet_change and share_of_net_income, and free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital, match the cited receivables items."
+  },
+  {
+   "id": "revenue_recognition_days_sales_outstanding_rising_explained_by_revenue_alone",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.years-back-0/1 days_sales_outstanding and receivables_over_revenue both rise against the MD&A revenue-only explanation; liquidity_and_capital_no_receivables_factored supplies the omitted factoring driver."
+  },
+  {
+   "id": "revenue_recognition_fifty_third_week_omitted_from_revenue_explanation",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "low",
+   "why": "Dealbreaker: figures in the analyst's own words ('one more week', 'fourteen-week base') with no calculator path."
+  },
+  {
+   "id": "revenue_recognition_fourth_quarter_step_up_in_revenue_and_margin",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.growth.revenue.this_quarter, year_over_year and quarter_over_quarter, and trend_table.quarters-back-1.ratios.gross_margin, check; the release's fourth-quarter margin and 'exceeded expectations' wording match the cited release items."
+  },
+  {
+   "id": "revenue_recognition_contract_liabilities_not_observable_at_year_end",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "low",
+   "why": "Says the noncurrent concept is reported only to the January quarter. But the 10-K tags ContractWithCustomerLiabilityNoncurrent at the year-end instant (fact 0001137789-26-000159:f-472), and notes:86 discloses the year-end balance, so year end is observable."
+  },
+  {
+   "id": "estimates_and_reserves_valuation_allowance_release_raises_income",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The OBBBA valuation-allowance release and the excess tax benefits appear in the cited tax items; tax_rate.effective_rate checks; no calculator field carries the release amount, as the anomaly states."
+  },
+  {
+   "id": "estimates_and_reserves_unrecognized_tax_benefits_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "estimates_and_discretion_unrecognized_tax_benefits_current_year_position shows the gross increase coming from current-year positions with no prior-year decreases."
+  },
+  {
+   "id": "estimates_and_reserves_warranty_accrual_rising_without_explanation",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "terms.balances_now.warranty_accrual against terms.balances_a_year_earlier.warranty_accrual, and the trend_table warranty_reserve_ratio cells, check; estimates_and_discretion_warranty_accrual_noncurrent shows the noncurrent portion rising faster."
+  },
+  {
+   "id": "estimates_and_reserves_allowance_and_inventory_reserve_unobservable",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The cited reserve-ratio items show no current-year bad-debt allowance and no tagged inventory reserve; trend_table.years-back-1.ratios.bad_debt_reserve_ratio checks."
+  },
+  {
+   "id": "estimates_and_reserves_effective_tax_rate_steps_up_with_unpaid_top_up_tax",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "tax_rate.effective_rate and terms.trailing_four_quarters.income_tax_expense check; the top-up line, the non-current tax payable and the newly disclosed cash taxes paid appear in the cited Pillar Two and tax-disclosure items."
+  },
+  {
+   "id": "cost_deferral_government_grants_offset_costs_omitted_from_margin_explanation",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The grant item credits grants against cost of revenue and opex and states the recapture conditions; the MD&A margin item names pricing and mix only; the trend_table gross_margin paths check."
+  },
+  {
+   "id": "cost_deferral_non_recurring_items_recur",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The cited items show restructuring in both years, debt-transaction losses in each 10-K income-statement year and the announced July redemption loss, all excluded from non-GAAP; terms.trailing_four_quarters.share_based_compensation checks."
+  },
+  {
+   "id": "cost_deferral_non_gaap_gap_not_computable",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "earnings_quality_non_gaap_gap_annual finds no non-GAAP concept in the record; the terms.trailing_four_quarters(_a_year_earlier).net_income paths check."
+  },
+  {
+   "id": "cost_deferral_soft_asset_share_falls",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "trend_table.years-back-0/1.ratios.soft_asset_share and terms.trailing_four_quarters.capital_expenditure check against earnings_quality_soft_asset_share_annual."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_supplier_finance_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "notes:89 places the obligation within accounts payable and notes:91 gives the rollforward. terms.balances_now.supplier_finance_obligation less the prior-year balance exceeds earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change, and the MD&A payables explanation omits the programme."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_factoring_ceased",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "liquidity_and_capital_no_receivables_factored states no sales this year after sales without recourse a year earlier; the operating_cash_flow and receivables paths check."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_purchase_obligations_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.balances_now/a_year_earlier.unconditional_purchase_obligations and operating_lease_liability check; the cited commitments item gives no amount for the market-share-based commitments."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_debt_exchanges_settled_in_shares",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.debt_now, terms.debt_a_year_earlier, terms.cash_flow_families.borrowing_repaid and the stockholders_equity paths check; the cited items show settlement in cash plus shares and the induced conversion expense."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_share_based_compensation_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "terms.trailing_four_quarters.share_based_compensation against earnings_versus_cash.history.years.1.share_based_compensation, and free_cash_flow.free_cash_flow_quality_adjusted, check; the amended plan is in the cited item."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_officer_change_filings_unread",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "low",
+   "why": "Dealbreaker: a filing count in the analyst's own words with no calculator path."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_debt_maturity_sentence_contradicts_current_portion",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "low",
+   "why": "terms.debt_now.parts.debt_current checks, but notes:132 separates the notes' stated maturity from the call, so the MD&A sentence may describe contractual maturity; the evidence does not settle a contradiction."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_share_repurchase_count_stated_two_ways",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "low",
+   "why": "Dealbreaker: left unresolved although mdna:109 and notes:191 reconcile the two counts through shares withheld for taxes."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_early_adoption_of_induced_conversion_standard",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "estimates_and_discretion_induced_conversion_standard_adopted states prospective adoption ahead of the mandatory date; earnings_quality_loss_on_debt_extinguishment shows the loss far above prior years."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_cfo_trading_plan_adopted",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The CFO trading-plan item shows a fourth-quarter adoption and a director's plan terminated; no figure is claimed."
+  },
+  {
+   "id": "cross_document_reconciliation_intangible_amortization_placed_differently",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:98 charges amortization to operating expenses, while 8k_2_02:71 adds it back in reaching non-GAAP gross profit."
+  },
+  {
+   "id": "cross_document_reconciliation_divestiture_loss_only_in_release",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "across_documents_divestiture_loss_in_non_gaap_reconciliation_only shows the add-back in the release, with no matching mention in the 10-K divestiture note."
+  },
+  {
+   "id": "cross_document_reconciliation_release_headline_figures_match_annual_report",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The ratios.growth.*.this_quarter paths, terms.trailing_four_quarters net_income/operating_cash_flow/income_tax_expense and free_cash_flow.free_cash_flow_simple equal the figures in the cited release items."
+  },
+  {
+   "id": "industry_lens_receivables_concentration_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "concentration.facts.0 (prior year) and concentration.facts.1-3 (year end) match estimates_and_discretion_receivables_concentrated_in_three_customers; earnings_versus_cash.working_capital.receivables.balance_sheet_change checks."
+  },
+  {
+   "id": "industry_lens_work_in_process_inventory_build",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "terms.balances_now/a_year_earlier.inventory and the trend_table days_sales_of_inventory cells check; the work-in-process attribution is in the cited MD&A item."
+  },
+  {
+   "id": "industry_lens_market_share_based_purchase_commitments_unquantified",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The cited commitments item gives no amount and MD&A calls the commitments non-cancellable; terms.balances_now.unconditional_purchase_obligations and inventory check."
+  },
+  {
+   "id": "solvency_book_equity_thin_and_liabilities_over_assets_high",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.solvency.liabilities_over_assets, the terms.balances_now/a_year_earlier.stockholders_equity paths, ratios.profitability.dupont.equity_multiplier, debt_over_ebitda and interest_coverage check against liquidity_and_capital_stockholders_equity."
+  },
+  {
+   "id": "liquidity_and_capital_post_year_end_debt_redemptions_draw_on_cash",
+   "frame": "finance",
+   "verdict": "unsupported",
+   "severity": "medium",
+   "why": "Dealbreaker: a count of note series in the analyst's own words with no calculator path."
+  },
+  {
+   "id": "profitability_legal_settlement_charge_and_settlements_payable",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The 10-K tags LossContingencyLossInPeriod for the year, with nil prior-year facts (0001137789-26-000159:f-115, f-116). Preliminary approval and the within-one-year payment timing are in the cited contingency items, and the OCF/NI paths check."
+  },
+  {
+   "id": "profitability_effective_tax_rate_stepping_up_under_pillar_two",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "tax_rate, terms.trailing_four_quarters.income_tax_expense and pretax_income check; Pillar Two, the incentive net of the top-up, the OBBBA release and the excess benefits all appear in the cited tax items."
+  },
+  {
+   "id": "profitability_gross_margin_leans_on_pricing_grants_and_an_extra_week",
+   "frame": "finance",
+   "verdict": "unsupported",
+   "severity": "medium",
+   "why": "Dealbreaker: a week count in the analyst's own words with no calculator path."
+  },
+  {
+   "id": "efficiency_days_sales_outstanding_rising_with_customer_concentration",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.efficiency.days_sales_outstanding, the trend_table DSO, receivables_over_revenue and quarterly DSO cells, and concentration.facts.1-3.value check against the cited items; the factoring cessation is in liquidity_and_capital_no_receivables_factored."
+  },
+  {
+   "id": "efficiency_payables_days_supported_by_supplier_finance_obligation",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.efficiency.days_payables_outstanding and cash_conversion_cycle, the supplier_finance_obligation paths and the accounts_payable articulation paths check; the MD&A payables explanation omits the programme."
+  },
+  {
+   "id": "liquidity_and_capital_operating_cash_flow_lifted_by_accrued_unpaid_taxes_and_settlements",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "The operating_cash_flow, operating_cash_flow_over_net_income and accruals paths check; the release's accrued-expense swing, the Pillar Two cash timing, the newly disclosed cash taxes and the settlement timing are in the cited items."
+  },
+  {
+   "id": "liquidity_and_capital_capital_commitments_and_purchase_obligations_expanding",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The capital_expenditure paths, the unconditional_purchase_obligations paths and terms.balances_now.inventory check; the HAMR capex guidance and the non-cancellable commitments are in the cited items."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_geopolitics_tariffs_and_middle_east_named",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The MD&A geopolitics and trade wording, and the guidance assumptions naming tariffs and the Middle East conflict, are in the cited items; terms.trailing_four_quarters.revenue and the growth path check."
+  }
+ ],
+ "coverage": {
+  "answer": "no",
+  "why": "analysis_financial.json dropped_items shows sections.solvency and path_to_distress as gate-dropped, so two financial sections are unanswered; the accounting analysis answered every area and industry_lens, and its dropped_items list is empty."
+ },
+ "calibration": {
+  "answer": "yes",
+  "why": "Area verdicts follow their anomalies. cash_flow_engineering's 'adverse on one point' rests on the supplier-finance anomaly, controls' 'small open points' on its low-severity items, and estimates_and_reserves' 'cannot be observed' on the allowance and inventory-reserve anomaly."
+ },
+ "valuation_reading": {
+  "answer": "no",
+  "why": "price_position and market_implied_growth were gate-dropped (dropped_items). The price position survives only in summary_ko, and implied growth only inside most_sensitive[0] via valuation.reverse_dcf.value. Both most-sensitive assumptions (growth; WACC via cost_of_capital.beta) do cite calculator paths."
+ },
+ "score": 0.866,
+ "grader": {
+  "model_requested": "opus",
+  "model_served": "claude-opus-5-5",
+  "input_tokens": 76,
+  "output_tokens": 77677,
+  "cost_usd": 12.153079400000001,
+  "seconds": 747.3
+ }
+}

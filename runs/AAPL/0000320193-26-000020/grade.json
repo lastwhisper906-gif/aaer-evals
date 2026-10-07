@@ -1,0 +1,349 @@
+{
+ "run": "AAPL/0000320193-26-000020",
+ "rubric": "evals/capability/rubric.md",
+ "dealbreakers": [
+  {
+   "kind": "number_not_from_calculator",
+   "id": "profitability_record_gross_margin_includes_tariff_refund",
+   "where": "analysis_financial.json: anomalies[0].what",
+   "why": "'about two percentage points' restates 8k_2_02:7 in the analyst's own words, outside a verbatim quote, and no calculator path carries the refund's margin effect."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": "cost_deferral_soft_asset_share_rises_with_intangibles",
+   "where": "analysis_accounting.json: anomalies[12].what",
+   "why": "'nearly doubling' is a multiple the analyst worked out from the 8-K intangible lines; the calculator has no path for intangible assets."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": "cash_flow_engineering_and_off_balance_sheet_marketable_securities_purchases_jump",
+   "where": "analysis_accounting.json: anomalies[15].what",
+   "why": "'roughly tripled' is a multiple the analyst worked out from facts:PaymentsToAcquireAvailableForSaleSecuritiesDebt; no calculator path carries securities purchases."
+  },
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "controls_audit_and_filing_signals_prior_period_other_non_current_assets_re_reported",
+   "where": "analysis_accounting.json: anomalies[17].what and numbers_vs_prose",
+   "why": "In 8k_2_02:33, the fiscal year-end column splits the 10-K's other non-current assets into 'Intangible assets, net' and 'Other non-current assets', and total non-current assets do not change, so the inputs show the re-report is a reclassification. The anomaly still marks it unresolved."
+  },
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "cross_document_reconciliation_intangible_assets_release_versus_tagged_value",
+   "where": "analysis_accounting.json: anomalies[20].what",
+   "why": "notes:38 deducts 'Less: Current portion of intangible assets, net' from 'Total intangible assets, net' (the tagged figure) to reach 'Non-current portion of intangible assets, net', which is the line the 8-K prints, at both dates. Yet the anomaly says 'The input does not say whether the two measure the same thing.'"
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": null,
+   "where": "analysis_accounting.json: areas.estimates_and_reserves.finding",
+   "why": "'about two percentage points of margin and eleven cents of diluted EPS' are figures in the analyst's own words with no calculator path behind them."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": null,
+   "where": "analysis_financial.json: sections.profitability.reading and summary_ko.profitability",
+   "why": "'about two percentage points' and its Korean rendering are written outside a verbatim quote, with no calculator path behind them."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": null,
+   "where": "analysis_valuation.json: most_sensitive[1].reading (same wording in assumptions.json bear operating_margin_year_one reason)",
+   "why": "'the release sizes at about two percentage points' is a figure in the analyst's own words with no calculator path behind it."
+  },
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": null,
+   "where": "analysis_accounting.json: areas.cost_deferral.verdict and areas.controls_audit_and_filing_signals.verdict",
+   "why": "Both verdicts leave the intangible and other-non-current-assets differences open ('does not agree', 'signals the input cannot close'), but notes:38 and 8k_2_02:33 settle them."
+  }
+ ],
+ "items": [
+  {
+   "id": "earnings_versus_cash_cash_conversion_rebounds_from_prior_fiscal_year_low",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.operating_cash_flow_over_net_income is above earnings_versus_cash.history.years.0.operating_cash_flow_over_net_income, which is the lowest value in earnings_versus_cash.history.years. The notes reader finds no paragraph that explains cash conversion."
+  },
+  {
+   "id": "earnings_versus_cash_prior_fiscal_year_accruals_only_positive_year",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.years-back-0.ratios.accruals_over_total_assets is 'highest of the 5 filled years'. earnings_quality_accruals_over_total_assets_trend_annual shows it is the only positive year, and earnings_versus_cash.accruals_over_average_assets is negative."
+  },
+  {
+   "id": "earnings_versus_cash_payables_build_supplies_cash",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change, its share_of_net_income and ratios.efficiency.days_payables_outstanding all resolve. earnings_quality_raw_materials_inventory_build supports the component-buying reading, and no paragraph addresses payables."
+  },
+  {
+   "id": "earnings_versus_cash_other_operating_liabilities_swing_to_source",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "In earnings_quality_other_operating_liabilities_swing, the nine-month line has the opposite sign to the prior-year period. liquidity_and_capital_other_non_current_liabilities_rise shows the non-current line went up. The reader notes that no driver is named."
+  },
+  {
+   "id": "earnings_versus_cash_other_operating_assets_absorb_more_cash",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_quality_other_operating_assets_build (facts:IncreaseDecreaseInOtherOperatingAssets) shows a larger nine-month outflow than the prior year and a rise in other non-current assets. No MD&A or notes paragraph explains it."
+  },
+  {
+   "id": "earnings_versus_cash_income_smoother_than_cash",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.smoothness falls where its formula note says 'below 1 means income moves less than cash'. The cited reader item supplies only the cash-flow context."
+  },
+  {
+   "id": "revenue_recognition_days_sales_outstanding_elevated_against_history",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.quarters-back-0.ratios.days_sales_outstanding is 'second highest of the 6 filled quarters' and trend_table.years-back-0.ratios.days_sales_outstanding is 'highest of the 5 filled years'. Neither input_notes.md nor input_mdna.md mentions extended payment terms."
+  },
+  {
+   "id": "revenue_recognition_single_customer_receivable_share_rises",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:29 states the customer 'accounted for 18% and 12%, respectively', and concentration.facts.11, concentration.facts.3 and concentration.facts.7 resolve to the CustomerOneMember shares. No reason is given anywhere."
+  },
+  {
+   "id": "revenue_recognition_contract_liabilities_below_year_ago_share",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue is below trend_table.quarters-back-4.ratios.contract_liabilities_over_revenue, while revenue_recognition_total_contract_liabilities shows the total went up."
+  },
+  {
+   "id": "estimates_and_reserves_tariff_refund_inside_record_gross_margin",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "trend_table.quarters-back-0.ratios.gross_margin is 'highest of the 6 filled quarters'. mdna:13 books refunds 'as a reduction of products cost of sales', and only 8k_2_02:7 sizes them; no tagged fact isolates the amount."
+  },
+  {
+   "id": "estimates_and_reserves_unrecognized_tax_benefit_change_unquantified",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:60 lists 'the impact of changes in unrecognized tax benefits' among the rate drivers and gives no amount. tax_rate.value is the only rate the calculator holds."
+  },
+  {
+   "id": "estimates_and_reserves_reserve_ratios_untagged_in_every_period",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "low",
+   "why": "The bad-debt and inventory-reserve ratios are unfilled in every period. But the cited warranty item and trend_table.years-back-4.ratios.warranty_reserve_ratio ('the only filled year') show a warranty accrual on record, so 'absent from the record' goes too far, even though no trend can be tested."
+  },
+  {
+   "id": "cost_deferral_soft_asset_share_rises_with_intangibles",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "Scores 0 because of a dealbreaker: 'nearly doubling' is the analyst's own multiple. Apart from that, the evidence shows the soft-asset rise (trend_table.quarters-back-0 against quarters-back-1) and that no acquisition line exists (free_cash_flow.free_cash_flow_quality_adjusted.inputs.acquisitions.cash_spent)."
+  },
+  {
+   "id": "cost_deferral_research_and_development_step_up_fully_expensed",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "terms.trailing_four_quarters.research_and_development_expense resolves. mdna:54 cites 'investments in artificial intelligence, and headcount-related expenses', and input_trends.json leaves capitalized_development_cost missing in every year."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_purchase_commitments_beside_supply_constraints",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.balances_now.unconditional_purchase_obligations resolves, and terms.balances_a_year_earlier.unconditional_purchase_obligations is missing. mdna:66 puts most manufacturing obligations 'payable within 12 months', and mdna:11 says 'The Company expects these trends to intensify'."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_marketable_securities_purchases_jump",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "Scores 0 because of a dealbreaker: 'roughly tripled' is the analyst's own multiple. Apart from that, liquidity_and_capital_marketable_securities_purchases and the debt-paydown item back the claim, and ratios.solvency.net_debt.value resolves."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_share_based_compensation_growing_cost",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "By its formula, free_cash_flow.free_cash_flow_quality_adjusted deducts terms.trailing_four_quarters.share_based_compensation. estimates_and_discretion_unrecognized_share_based_compensation shows a large unrecognized RSU cost and a higher weighted grant-date fair value."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_prior_period_other_non_current_assets_re_reported",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "Scores 0 because of a dealbreaker: in 8k_2_02:33, 'Other non-current assets' plus the new 'Intangible assets, net' line at fiscal year-end equal the 10-K value, and total non-current assets do not change. The inputs settle what the anomaly leaves 'unresolved'."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_officer_change_filings_without_bodies",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "input_8k.md lists item-code-only \"5.02\" filings in the fiscal year, one of them dated inside the quarter. The notes reader records that their bodies are absent."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_new_insider_trading_plans",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:62 and notes:63 record prearranged trading plans that the General Counsel and the CEO adopted inside the quarter. Neither paragraph concerns controls."
+  },
+  {
+   "id": "cross_document_reconciliation_intangible_assets_release_versus_tagged_value",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "high",
+   "why": "Scores 0 because of a dealbreaker: notes:38 shows that the 8-K line is the 'Non-current portion of intangible assets, net' of the tagged total, so the two figures do not contradict each other."
+  },
+  {
+   "id": "cross_document_reconciliation_refund_quantified_only_in_release",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:45 names 'tariff refunds' as a driver and gives no amount. 8k_2_02:7 quantifies the effect on margin and on EPS."
+  },
+  {
+   "id": "industry_lens_raw_materials_inventory_build_days_highest",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.quarters-back-0.ratios.days_sales_of_inventory is 'highest of the 6 filled quarters'. notes:34 shows Components up and Finished goods down, and mdna:11 describes component supply constraints."
+  },
+  {
+   "id": "industry_lens_vendor_non_trade_receivables_two_vendor_concentration",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "concentration.facts.13 and concentration.facts.14 match notes:31 ('which accounted for 47% and 22%'), including its deferred-gain wording. concentration.facts.5 is the fiscal year-end share, not a year earlier as the anomaly says."
+  },
+  {
+   "id": "industry_lens_purchase_obligations_prose_versus_tagged_measure",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The obligations in mdna:66 and mdna:68 have no numeric bridge to terms.balances_now.unconditional_purchase_obligations. The anomaly misses that the categories in notes:55 overlap mdna:68's 'other purchase obligations'."
+  },
+  {
+   "id": "profitability_record_gross_margin_includes_tariff_refund",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "Scores 0 because of a dealbreaker: 'about two percentage points' sits outside a quote. Apart from that, trend_table.quarters-back-0.ratios.gross_margin, mdna:13 and mdna:45 support the claim."
+  },
+  {
+   "id": "profitability_research_and_corporate_spending_step_up",
+   "frame": "finance",
+   "verdict": "unclear",
+   "severity": "medium",
+   "why": "The step-up appears in earnings_quality_research_and_development_step_up and earnings_quality_corporate_unallocated_operating_loss. But mdna:54 explains only the past increase, and no input supports 'management describes the spending as continuing'."
+  },
+  {
+   "id": "efficiency_days_sales_of_inventory_at_quarterly_high",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "Both trend_table days_sales_of_inventory cells and earnings_versus_cash.working_capital.inventory.balance_sheet_change.value resolve. notes:34 places the build in Components, mdna:11 says price increases 'have been' taken, and no inventory reserve is tagged."
+  },
+  {
+   "id": "efficiency_receivables_stretching_with_customer_concentration",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "In the trend table, DSO is 'highest of the 5 filled years' and 'second highest of the 6 filled quarters', and ratios.efficiency.days_sales_outstanding.value resolves. notes:29 and notes:31 back the concentration, and the quarter's allowance is missing."
+  },
+  {
+   "id": "efficiency_other_operating_assets_absorbing_cash",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_quality_other_operating_assets_build and earnings_quality_other_operating_liabilities_swing show the two lines offsetting, and earnings_versus_cash.operating_cash_flow_over_net_income.value shows cash running ahead of earnings."
+  },
+  {
+   "id": "liquidity_and_capital_current_ratio_barely_above_one",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.liquidity.current_ratio, ratios.liquidity.quick_ratio, terms.cash_and_short_term_investments_now and terms.balances_now.current_liabilities resolve as stated. The closing claim about a 'choice to place fresh securities purchases in the non-current bucket' is not shown by any input."
+  },
+  {
+   "id": "liquidity_and_capital_purchase_obligations_due_within_a_year",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:66 ('payable within 12 months') and mdna:68 back the near-term obligations, and ratios.solvency.total_debt.parts.debt_current.value resolves. Because the categories in notes:55 overlap mdna:68, 'on top of' the tagged obligations is not established."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_component_supply_constraints_and_cost_inflation",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "mdna:11 says 'The Company expects these trends to intensify' and that price increases 'may also reduce demand'. mdna:13 cites the Section 301 tariffs and mdna:45 names memory. ratios.profitability.gross_margin.value and ratios.growth.revenue.year_over_year.value resolve."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_ipad_sales_decline",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:35 attributes the decline to 'iPad mini® and iPad Air®'. The numbers reader shows every other category and segment up, and 8k_2_02:6 leaves iPad out of its records list."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_japan_yen_headwind",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:24 says the yen hurt the quarter and nine months, and mdna:22 says the renminbi helped both. However, mdna:20 states the Europe tailwind for the nine months only, and the anomaly applies it to the quarter."
+  },
+  {
+   "id": "results_against_expectations_services_margin_flat_and_costs_rising_without_named_driver",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:48 says the Services margin 'was flat', mdna:56 says SG&A drivers were 'none of which were significant individually or in the aggregate', and mdna:61 gives the higher rate. The 'higher costs' in mdna:47 explain margin dollars, not the flat percentage."
+  },
+  {
+   "id": "solvency_liabilities_over_assets_high_from_shrunken_equity",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.solvency.liabilities_over_assets, ratios.profitability.dupont.equity_multiplier, ratios.solvency.net_debt and ratios.solvency.debt_over_ebitda resolve. The retained-earnings and repurchase items back the equity story, and ratios.solvency.interest_coverage is missing as the anomaly states."
+  },
+  {
+   "id": "growth_revenue_and_operating_income_fell_quarter_over_quarter",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "ratios.growth.revenue.quarter_over_quarter and ratios.growth.operating_income.quarter_over_quarter are negative, while the year-over-year paths exceed earnings_versus_cash.history.revenue_growth_three_year_compound. The calculator paths settle the claim; the cited reader items do not."
+  }
+ ],
+ "coverage": {
+  "answer": "no",
+  "why": "The gate dropped earnings_versus_cash, revenue_recognition and cross_document_reconciliation because each cited a path that 'is not a number in the calculator this analyst saw'. The industry lens and every financial section were answered."
+ },
+ "calibration": {
+  "answer": "no",
+  "why": "The gate-dropped areas still carry anomalies with no verdict to check them against, and the cost_deferral and controls verdicts leave disagreements open ('does not agree', 'signals the input cannot close') that notes:38 and 8k_2_02:33 settle."
+ },
+ "valuation_reading": {
+  "answer": "no",
+  "why": "price_position says 'Where the price sits in the range cannot be read, because there is no range.'; valuation.missing shows that WACC, the reverse DCF and the sensitivity grid were never computed, so the implied growth and the two most sensitive assumptions do not come from the calculator."
+ },
+ "score": 0.8015,
+ "grader": {
+  "model_requested": "opus",
+  "model_served": "claude-opus-5-5",
+  "input_tokens": 56,
+  "output_tokens": 70532,
+  "cost_usd": 8.444931799999999,
+  "seconds": 621.1
+ }
+}

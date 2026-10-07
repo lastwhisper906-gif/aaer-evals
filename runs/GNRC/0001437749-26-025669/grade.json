@@ -1,0 +1,368 @@
+{
+ "run": "GNRC/analysis-grader-rudhjfvw",
+ "rubric": "evals/capability/rubric.md",
+ "dealbreakers": [
+  {
+   "kind": "number_not_from_calculator",
+   "id": "results_against_expectations_residential_full_year_outlook_against_reported_decline",
+   "where": "analysis_financial.json anomalies[1].what",
+   "why": "'guided to rise in the high-single-digit range' restates the release's segment guidance (8k_2_02:35) in the analyst's own words, outside any quote; no calculator path supplies it."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": "narrative_signs_of_operating_pressure_domestic_industrial_distributor_channel_weakening",
+   "where": "analysis_financial.json anomalies[10].what",
+   "why": "'its guided low-thirties growth rate' paraphrases the C&I outlook in 8k_2_02:35 rather than quoting it; no calculator path supplies the figure."
+  },
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "controls_audit_and_filing_signals_xbrl_scale_and_member_inconsistencies",
+   "where": "analysis_accounting.json anomalies[21].what",
+   "why": "Lists the repurchase-authorization context date (Q1 10-Q fact vs Q2 10-Q fact, both in structure_and_disclosure_changes_repurchase_authorization_date) as an unresolved inconsistency. mdna:98 settles it: 'The new program replaces the prior share repurchase program, which had approximately $199.3 million remaining available for repurchase when the new program was approved.'"
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": null,
+   "where": "analysis_valuation.json summary_ko.market_implied_growth",
+   "why": "States the company's sales guidance as '십 퍼센트대 중후반' in the analyst's own words; no calculator path supplies it and it is not a verbatim quote."
+  }
+ ],
+ "items": [
+  {
+   "id": "earnings_versus_cash_quarter_earnings_rest_on_one_time_tariff_credit",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "notes:10 puts the recovery in cost of goods sold, and 8k_2_02:22 says the margin rise was 'primarily driven by tariff refunds'. ratios.growth.net_income.year_over_year, operating_income.year_over_year and trend_table.quarters-back-0.ratios.gross_margin all resolve."
+  },
+  {
+   "id": "earnings_versus_cash_operating_cash_flow_carries_settlement_payment_and_refund_receipts",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_quality_other_accrued_liabilities_build_cash_flow and liquidity_and_capital_other_accrued_liabilities_cash_flow_change show the accrual build and its reversal, and mdna:109 names the refund receipts. earnings_versus_cash.history.years.0.operating_cash_flow_over_net_income resolves."
+  },
+  {
+   "id": "earnings_versus_cash_other_operating_assets_change_and_insurance_receivable_unexplained",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "medium",
+   "why": "The other-assets use (liquidity_and_capital_other_operating_assets_change) sits in the same balance-sheet line as the contract-asset rise (notes:117) and the tariff refund receivable (notes:10), so 'no explanation' overstates. notes:155 does leave the insurance receivable's June status unstated."
+  },
+  {
+   "id": "earnings_versus_cash_inventory_and_payables_articulation_gaps",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The articulation_gap paths resolve, and the acquisition reading holds. However, 'the allocation is preliminary and not shown' is wrong: notes:26 tabulates acquired inventories, receivables and payables."
+  },
+  {
+   "id": "earnings_versus_cash_income_smoother_than_cash",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "earnings_versus_cash.smoothness.value and its quarters_read list match the text. The cited accruals cell is 'insufficient' and adds nothing, and the suggested reasons are untested."
+  },
+  {
+   "id": "revenue_recognition_contract_assets_surge_with_new_cost_to_cost_method",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "notes:117 is new per note_history:37 and gives both contract-asset balances. mdna:117 omits cost-to-cost estimates. trend_table.quarters-back-0.ratios.days_sales_outstanding resolves."
+  },
+  {
+   "id": "revenue_recognition_contract_liabilities_redefined_and_history_not_like_for_like",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "articulation_and_the_filed_history_contract_liability_* items show one balance date carrying two values under different contexts, and notes:99 has a separate current contract liabilities line. The contract_liabilities and trend paths resolve."
+  },
+  {
+   "id": "revenue_recognition_payment_terms_norm_removed_as_over_time_contracts_begin",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "note_history:40 was removed and notes:116 added. Days sales outstanding fell per trend_table.quarters-back-0.ratios.days_sales_outstanding. As the notes reader says, whether notes:73's over-time wording is new cannot be confirmed."
+  },
+  {
+   "id": "estimates_and_reserves_ollnova_reserve_release_unquantified",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:154 says the reserve was cut to an undisclosed settlement amount, and mdna:156 shows the patent-lawsuit line as a credit for the quarter. The cited field ratios.growth.operating_income.year_over_year is not used."
+  },
+  {
+   "id": "estimates_and_reserves_tariff_refund_receivable_recognized_on_probability_judgment",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:9 and notes:10 give the loss-recovery election and the probable-receipt judgment, and mdna:117 omits them. The numbers reader found no tag for the receivable."
+  },
+  {
+   "id": "estimates_and_reserves_goodwill_tested_after_reorganization_without_headroom",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:103 shows the triggering event and the Residential impairment, with no headroom disclosed, and notes:22 keeps every allocation preliminary. trend_table.quarters-back-0.ratios.soft_asset_share reads 'lowest of the 6 filled quarters'."
+  },
+  {
+   "id": "estimates_and_reserves_contingent_consideration_jump_and_earnout_tied_to_ebitda",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:58, notes:61 and note_history:43 show the jump, the EBITDA-based earnout and the restricted-share portion. notes:141 backs the diluted-share clause, and terms.diluted_shares resolves."
+  },
+  {
+   "id": "estimates_and_reserves_critical_estimates_list_omits_new_judgments",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:117 names only goodwill/indefinite-lived intangibles and income taxes. However, 'each carrying a sizable tagged balance' overreaches: the analyst's own tariff-receivable anomaly says that balance has no tag."
+  },
+  {
+   "id": "cost_deferral_tariff_refund_kept_in_adjusted_metrics_while_losses_removed",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "8k_2_02:14 keeps the refund in adjusted metrics, and the reconciliations at 8k_2_02:116 and 8k_2_02:119 have no refund line. mdna:144 ties Adjusted EBITDA to executive pay, and 8k_2_02:36 ties the outlook raise to the refund."
+  },
+  {
+   "id": "cost_deferral_recurring_immaterial_dispositions_and_open_ended_legal_addback",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:129 and mdna:158 give the disposition history, the loss and the goodwill write-off are tagged, and mdna:121 and mdna:135 carry the 'including but not limited to' wording."
+  },
+  {
+   "id": "cost_deferral_tariff_refund_remainder_deferred_in_inventories",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:10 records the remainder in inventories with no amount stated. The side claim that the drop in earnings_versus_cash.working_capital.inventory.balance_sheet_change is 'partly for this reason' is not shown."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_acquisition_consideration_settled_in_shares",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:62, notes:22, notes:58 and notes:139 show the share-settled consideration. terms.cash_flow_families.acquisitions and free_cash_flow.free_cash_flow_quality_adjusted resolve."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_customer_deposits_supplying_operating_cash",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "medium",
+   "why": "notes:118 shows contract liabilities falling from year-end to June, with revenue recognized out of the opening balance. The year-earlier base (terms.balances_a_year_earlier.contract_liabilities) is the one the numbers reader and the analyst's own contract-liability anomaly call not like-for-like."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_factoring_and_supplier_finance_untagged",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "low",
+   "why": "The calculator does mark proceeds_from_sale_of_receivables and supplier_finance_obligation missing. But 'the text carried to the readers names no such programme' passes over the dealer floor-plan financing, with its repurchase undertaking, in notes:148 and mdna:101."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_no_control_change_amid_acquisitions_and_new_revenue_method",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "item_4_controls:5 reports no change, while notes:19, notes:20, notes:117 and notes:9 show the quarter's acquisitions, the new revenue method and the tariff election."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_prior_period_values_refiled_differently",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The refiled-value items (short_term_debt_rate_refiled, allmand_payment_refiled, contract_liability_excluding_extended_warranty) show the differences, and no input explains them. ratios.solvency.debt_over_ebitda is cited but unused."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_xbrl_scale_and_member_inconsistencies",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:144, notes:139 and notes:112 bear out the scale claims, but the item scores zero under the dealbreaker: mdna:98 settles the repurchase-date item, which is left unresolved."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_subsequent_events_note_dropped",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "note_history:42 and note_history:43 are removed with no replacement, and notes:154 dates the Ollnova settlement only as 'Subsequently'. notes:21 dates New Way inside the 10-Q, so listing it among undated items is loose."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_residential_executive_selling_plan_as_segment_sales_fall",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:160 records the plan's adoption within the quarter, and mdna:59 gives the Residential decline. liquidity_and_capital_no_program_repurchases confirms no buybacks."
+  },
+  {
+   "id": "cross_document_reconciliation_gross_margin_contribution_wording",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:22 and mdna:61 differ only by 'growth'. The year-over-year change between trend_table.quarters-back-0 and quarters-back-4 gross_margin is smaller than the stated contribution."
+  },
+  {
+   "id": "cross_document_reconciliation_effective_tax_rate_period_placement_resolved",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:64 and mdna:85 (and notes:146) give the same rate for the quarter and the half, which settles the numbers reader's period question. tax_rate.effective_rate and tax_rate.rule resolve."
+  },
+  {
+   "id": "cross_document_reconciliation_acquisitions_immaterial_yet_credited_for_growth",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:23 calls the effects not material, while mdna:60 and 8k_2_02:28 credit acquisitions with sales. terms.cash_flow_families.acquisitions resolves."
+  },
+  {
+   "id": "cross_document_reconciliation_belvidere_and_hyperscale_terms_only_in_release",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:16 and 8k_2_02:18 carry the hyperscale terms and Belvidere, and no carried 10-Q paragraph does. The property_plant_and_equipment paths resolve."
+  },
+  {
+   "id": "industry_lens_wolter_distributor_and_wallbox_investment_unresolved",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:20 calls Wolter a generator distributor without saying whose products it sells, and notes:43, notes:55 and mdna:63 cover the Wallbox gain. Leaving both open is accurate."
+  },
+  {
+   "id": "results_against_expectations_guidance_raise_rests_on_one_time_tariff_refund",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "8k_2_02:36 attributes the raise 'primarily' to the refund, and 8k_2_02:19 keeps sales guidance. ratios.growth.operating_income.year_over_year and net_income.year_over_year resolve."
+  },
+  {
+   "id": "results_against_expectations_residential_full_year_outlook_against_reported_decline",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:35, mdna:59 and mdna:80 bear out the content, but the item scores zero under the dealbreaker for an unquoted guidance figure."
+  },
+  {
+   "id": "profitability_quarter_gross_margin_peak_rests_on_tariff_refund",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "The trend cell reads 'highest of the 6 filled quarters', and notes:10, 8k_2_02:22 and mdna:61 tie the peak to the refund. ratios.profitability.gross_margin resolves."
+  },
+  {
+   "id": "profitability_disposition_losses_impairment_and_acquisition_amortization",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:129, the goodwill-written-off item and notes:103 show the losses and the impairment. 8k_2_02:23 cites higher amortization without itself tying it to acquisitions."
+  },
+  {
+   "id": "efficiency_working_capital_absorbing_cash_and_unbilled_receivables_outside_the_cycle",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital and the receivables and payables balance_sheet_change paths resolve. mdna:109, notes:117 and note_history:40 back the prose."
+  },
+  {
+   "id": "efficiency_asset_turnover_below_one_as_acquisitions_outpace_sales",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.efficiency.asset_turnover, both asset balances and ratios.growth.revenue.trailing_four_quarters resolve. notes:22 and notes:26 show the acquired assets and the preliminary accounting."
+  },
+  {
+   "id": "liquidity_and_capital_quick_ratio_below_one_with_inventory_heavy_current_assets",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.liquidity.quick_ratio, current_ratio and the cash, receivables and current-liabilities balances resolve. balances_now.short_term_investments is missing, and liquidity_and_capital_revolver_remaining_capacity shows capacity unchanged."
+  },
+  {
+   "id": "liquidity_and_capital_operating_cash_flow_leans_on_tariff_receipts_and_trails_prior_year",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:109 names the refund receipts, and ratios.growth.operating_cash_flow.trailing_four_quarters resolves. Calling it the 'underlying cash engine' passes over the one-time settlement payment in the same window."
+  },
+  {
+   "id": "liquidity_and_capital_open_legal_and_regulatory_matters_after_a_large_settlement",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:151, notes:153 and notes:157 show open matters with no accrual or range. But the prior fourth-quarter portable-generator legal fees and the half's settlement payment are the same Zawaski matter (notes:155), so the 'cash drain' line counts it twice."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_residential_sales_falling_on_storage_and_portables",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:59 and 8k_2_02:31 give the decline and its drivers, mdna:80 had portables higher for the half, and mdna:28 ties storage to the tax-credit phase-out."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_domestic_industrial_distributor_channel_weakening",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The mdna:58 versus mdna:79 wording shift bears out the content, but the item scores zero under the dealbreaker for an unquoted guidance figure."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_underlying_margin_headwind_from_mix_and_input_costs",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:61 and mdna:82 state the mix and input-cost headwind beneath the refund. ratios.profitability.gross_margin resolves."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_remaining_obligations_fell_while_backlog_rose",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "note_history:41 against notes:119 shows the fall in remaining performance obligations, 8k_2_02:20 the backlog, mdna:8 the cancellation rights and notes:118 the year-end-to-June drop in deposits. No input reconciles them."
+  },
+  {
+   "id": "solvency_coverage_and_leverage_flattered_by_the_tariff_credit",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:14 puts the refund in net income and adjusted EBITDA. ratios.solvency.debt_over_ebitda, interest_coverage, ebitda, ebit and terms.debt_a_year_earlier resolve."
+  },
+  {
+   "id": "growth_trailing_earnings_and_cash_flow_down_on_flat_revenue",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The trailing growth paths and earnings_versus_cash.history.revenue_growth_three_year_compound resolve. 'Has not grown its top line over the period the history block covers' overreaches, though: history.years runs back to fiscal_year '2020-01-01..2020-12-31', when revenue was lower."
+  },
+  {
+   "id": "growth_quarter_growth_leans_on_acquisitions_and_a_one_time_credit",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:60 quantifies the acquisition contribution while notes:23 calls it not material, and 8k_2_02:14, notes:146 and mdna:63 back the refund, tax and Wallbox points."
+  }
+ ],
+ "coverage": {
+  "answer": "no",
+  "why": "Accounting areas earnings_versus_cash, revenue_recognition, estimates_and_reserves and industry_lens carry only 'dropped'. Every financial section (profitability, efficiency, liquidity, solvency, growth, free_cash_flow) and path_to_distress is gate-dropped too; only dupont was answered."
+ },
+ "calibration": {
+  "answer": "no",
+  "why": "The dropped areas and all financial sections list anomalies but have no verdict to match. Two surviving verdicts rest on anomalies that the gate dropped (dropped_items): cash_flow_engineering's 'the obligations paragraph is silent on new commitments' and cross_document_reconciliation's 'one contradiction (remaining performance obligations versus backlog)'."
+ },
+ "valuation_reading": {
+  "answer": "no",
+  "why": "value_range, price_position and market_implied_growth were dropped and most_sensitive is empty. valuation.scenarios.base.missing reads 'assumptions.json has no base scenario', and valuation.reverse_dcf.missing reads 'no base scenario'."
+ },
+ "score": 0.896,
+ "grader": {
+  "model_requested": "opus",
+  "model_served": "claude-opus-5-5",
+  "input_tokens": 46,
+  "output_tokens": 73833,
+  "cost_usd": 6.3088686,
+  "seconds": 637.0
+ }
+}
