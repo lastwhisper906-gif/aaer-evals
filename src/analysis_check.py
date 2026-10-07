@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+from collections.abc import Mapping
 import json
 import re
 import sys
@@ -453,21 +454,32 @@ def paragraph_ids(sources: dict[str, str]) -> set[str]:
 
 
 def check(kind: str, payload: dict, *, fields: dict, sources: dict[str, str],
-          excluded: set[str] | frozenset = frozenset(), paragraph_ids: bool = False,
-          filing: dict[str, str] | None = None) -> dict:
+          excluded: set[str] | frozenset | Mapping[str, set[str]] = frozenset(),
+          paragraph_ids: bool = False, filing: dict[str, str] | None = None) -> dict:
     """The analysis with every failing item dropped, and the list of drops.
 
-    `excluded` is the ids the quote gate dropped from the reports: they are still
-    printed in the report files the analyst read, and a citation of one is a
-    citation of an item that did not stand. `filing` is the run's full MD&A and
-    earnings release by name, for the valuation analyst, whose copies are
-    trimmed: a quote is held to both (`quote_problem`).
+    `excluded` is the ids the quote gate dropped from the reports: they may still
+    be printed in the report files the analyst read, beside a kept item, and a
+    citation of one is a citation of an item that did not stand. The gate keys
+    its drops by report, and so does this: a mapping of report name to ids takes
+    each id out of that report's items alone, so an id dropped from one report
+    and standing in the other still names the standing item, and a citation of
+    it as an item of the report it fell from is refused; a plain set takes its
+    ids out of both. `filing` is the run's full MD&A and earnings release by
+    name, for the valuation analyst, whose copies are trimmed: a quote is held
+    to both (`quote_problem`).
     """
     if not isinstance(payload, dict):
         raise AnalysisInputError(f"the {kind} analysis is not a JSON object")
     payload = copy.deepcopy(payload)
-    notes_ids = report_ids(sources.get("report_notes_text.md", "")) - set(excluded)
-    numbers_ids = report_ids(sources.get("report_numbers.md", "")) - set(excluded)
+
+    def left_out(report: str) -> set[str]:
+        if isinstance(excluded, Mapping):
+            return set(excluded.get(report) or ())
+        return set(excluded)
+
+    notes_ids = report_ids(sources.get("report_notes_text.md", "")) - left_out("report_notes_text.md")
+    numbers_ids = report_ids(sources.get("report_numbers.md", "")) - left_out("report_numbers.md")
     if paragraph_ids:
         # The single-agent control has no upstream report: it cites the
         # paragraphs of its own input, and each is verified by its quote.

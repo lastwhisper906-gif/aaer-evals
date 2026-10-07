@@ -76,6 +76,43 @@ def accounting(**changes):
     return payload
 
 
+def test_an_exclusion_keyed_by_report_takes_the_id_out_of_that_report_alone():
+    """One id printed in both reports, dropped from the notes report only (a
+    resumed night's twin): an anomaly citing it stands, because the numbers
+    item does; a reconciliation row naming it as the notes item is refused,
+    naming it as the numbers item stands; and the same id as a plain set is
+    out of both, as before."""
+    shared = "revenue_recognition_payment_terms_extended"
+    numbers = NUMBERS + f'''
+```json
+{{ "id": "{shared}", "what_changed": "z", "quote": "q", "paragraph_id": "p" }}
+```'''
+    sources = {"report_numbers.md": numbers, "report_notes_text.md": NOTES}
+    payload = accounting(reconciliation=[
+        {"notes_item": shared, "numbers_items": [], "outcome": "unresolved", "why": "a"},
+        {"notes_item": "revenue_recognition_payment_terms_extended_twin_free",
+         "numbers_items": [shared], "outcome": "unresolved", "why": "b"}])
+    payload["anomalies"][0]["evidence"] = [shared]
+    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=sources,
+                               excluded={"report_notes_text.md": {shared}})
+    assert [a["id"] for a in out["anomalies"]] == ["revenue_recognition_receivables_outrun_revenue"]
+    assert [row["where"] for row in out["dropped_items"]] == ["reconciliation[0]",
+                                                               "reconciliation[1]"]
+    assert out["dropped_items"][0]["reason"] == (
+        f"notes_item {shared!r} is not an item of report_notes_text.md")
+    assert "twin_free" in out["dropped_items"][1]["reason"]          # its own notes side
+    # the same id as a plain set: out of both reports, the anomaly falls too
+    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=sources,
+                               excluded={shared})
+    assert out["anomalies"] == []
+    assert any(row["where"] == "anomalies[0]" for row in out["dropped_items"])
+    # and dropped from the numbers report alone, the notes-side row stands
+    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=sources,
+                               excluded={"report_numbers.md": {shared}})
+    assert [row["where"] for row in out["dropped_items"]] == ["reconciliation[1]"]
+    assert [a["id"] for a in out["anomalies"]] == ["revenue_recognition_receivables_outrun_revenue"]
+
+
 def test_a_clean_analysis_stands_whole():
     out = analysis_check.check("accounting", accounting(), fields=FIELDS, sources=SOURCES)
     assert out["dropped_count"] == 0

@@ -32,7 +32,7 @@ from pathlib import Path
 
 import pytest
 
-from src import assemble_bundle, cutoff_guard, quote_gate, trends
+from src import agent_inputs, assemble_bundle, cutoff_guard, quote_gate, trends
 from src.cutoff_guard import CutoffGuardError
 from src.fetch_fixtures import TICKERS
 from src.quote_gate import QuoteGateError
@@ -285,13 +285,14 @@ def test_gating_twice_writes_the_same_count(tmp_path):
 
 
 def test_an_id_standing_in_a_report_already_gated_into_the_run_root_is_a_twin(tmp_path):
-    """One id names one item across the nights a run took. The run root holds a
-    numbers report gated on an earlier night with `shared` standing and `fallen`
-    on the drop list; a call handed the notes report alone drops its item under
-    `shared`, keeps the one under `fallen` (its twin fell, so it is not
-    standing) and the one under its own id, appends its row after the earlier
-    one, and leaves the run-root copy byte for byte. Without the run-root
-    report, the same call keeps all three."""
+    """One id names one item across the nights a run took, the same way a fresh
+    run reads it. The run root holds a numbers report gated on an earlier night
+    printing `shared` and `fallen`, `fallen` on the drop list; a call handed the
+    notes report alone drops its items under both -- a fresh gate over the two
+    reports would have dropped both twins, and `fallen` is still printed beside
+    `shared` -- keeps the one under its own id, appends its rows after the
+    earlier one, and leaves the run-root copy byte for byte. Without the
+    run-root report, the same call keeps all three."""
     root = plant(tmp_path)
     quote = "Accounts receivable, net of allowances, rose to $29,508 million"
     items = [{"id": identifier, "paragraph_id": f"{ACCESSION}:notes:1", "quote": quote}
@@ -311,16 +312,32 @@ def test_an_id_standing_in_a_report_already_gated_into_the_run_root_is_a_twin(tm
     result = quote_gate.gate([{"report": "report_notes_text.md", "items": items,
                                "input": root / "notes_reader"}], root)
     assert [item["id"] for item in result["kept"]["report_notes_text.md"]] == [
-        "revenue_recognition_fallen", "revenue_recognition_own"]
-    assert [row["item_id"] for row in result["dropped"]] == ["revenue_recognition_shared"]
-    assert ("on more than one item in this run: it stands in report_numbers.md, gated "
-            "already") in result["dropped"][0]["reason"]
+        "revenue_recognition_own"]
+    assert [row["item_id"] for row in result["dropped"]] == [
+        "revenue_recognition_shared", "revenue_recognition_fallen"]
+    assert all(("on more than one item in this run: it is on an item of report_numbers.md, "
+                "gated already") in row["reason"] for row in result["dropped"])
     manifest = manifest_of(root)
     assert [(row["report"], row["item_id"]) for row in manifest["dropped_items"]] == [
         ("report_numbers.md", "revenue_recognition_fallen"),
-        ("report_notes_text.md", "revenue_recognition_shared")]
-    assert manifest["counts"]["dropped_items"] == 2
+        ("report_notes_text.md", "revenue_recognition_shared"),
+        ("report_notes_text.md", "revenue_recognition_fallen")]
+    assert manifest["counts"]["dropped_items"] == 3
     assert (root / "report_numbers.md").read_text(encoding="utf-8") == earlier
+    # The reader's own written copy, when it is there, is what the ids are read
+    # off, as the gate was handed it: an item whose whole block fell is not in
+    # the run-root copy, and a new item under its id is still its twin.
+    own = agent_inputs.session_root(root, "numbers-reader")
+    own.mkdir(parents=True)
+    (own / "report_numbers.md").write_text(earlier + '```json\n{"id": "revenue_recognition_unprinted", '
+                                           '"quote": "z"}\n```\n', encoding="utf-8")
+    items.append({"id": "revenue_recognition_unprinted", "paragraph_id": f"{ACCESSION}:notes:1",
+                  "quote": quote})
+    result = quote_gate.gate([{"report": "report_notes_text.md", "items": items,
+                               "input": root / "notes_reader"}], root)
+    assert [item["id"] for item in result["kept"]["report_notes_text.md"]] == [
+        "revenue_recognition_own"]
+    assert "revenue_recognition_unprinted" in [row["item_id"] for row in result["dropped"]]
 
 
 def test_a_call_keeps_the_rows_of_the_reports_it_was_not_handed(tmp_path):

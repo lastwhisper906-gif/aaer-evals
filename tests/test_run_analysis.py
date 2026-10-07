@@ -1061,6 +1061,13 @@ def test_a_resume_gates_only_the_reader_it_called_and_appends_its_rows(tmp_path,
     twin_citing["anomalies"].append(dict(twin_citing["anomalies"][0],
                                          id="earnings_versus_cash_cites_a_fallen_item",
                                          evidence=["earnings_quality_planted_bad_quote"]))
+    # a reconciliation row naming the shared id as the notes item it fell from,
+    # and one naming it as the numbers item it stands as (with no standing
+    # notes item to pair it with, that row falls on its notes side alone)
+    twin_citing["reconciliation"] = [
+        {"notes_item": SHARED_ID, "numbers_items": [], "outcome": "unresolved", "why": "x"},
+        {"notes_item": "earnings_quality_no_such_item", "numbers_items": [SHARED_ID],
+         "outcome": "unresolved", "why": "y"}]
     manifest, called = _resumed(run, monkeypatch, "never", notes_report=NOTES_SHARING_THE_ID,
                                 numbers_report=NUMBERS_WITH_A_BAD_QUOTE,
                                 accounting_analysis=twin_citing)
@@ -1071,15 +1078,22 @@ def test_a_resume_gates_only_the_reader_it_called_and_appends_its_rows(tmp_path,
     accounting = json.loads((run / "analysis_accounting.json").read_text(encoding="utf-8"))
     assert [a["id"] for a in accounting["anomalies"]] == ["earnings_versus_cash_cash_lags_income"]
     assert accounting["anomalies"][0]["evidence"] == [SHARED_ID]
-    assert [row["where"] for row in accounting["dropped_items"]] == ["anomalies[1]"]
-    assert "earnings_quality_planted_bad_quote" in accounting["dropped_items"][0]["reason"]
-    assert run_analysis.excluded_ids(run) == {"earnings_quality_planted_bad_quote"}
+    assert [row["where"] for row in accounting["dropped_items"]] == [
+        "reconciliation[0]", "reconciliation[1]", "anomalies[1]"]
+    assert accounting["dropped_items"][0]["reason"] == (
+        f"notes_item {SHARED_ID!r} is not an item of report_notes_text.md")
+    assert accounting["dropped_items"][1]["reason"] == (
+        "notes_item 'earnings_quality_no_such_item' is not an item of report_notes_text.md")
+    assert "earnings_quality_planted_bad_quote" in accounting["dropped_items"][2]["reason"]
+    assert run_analysis.excluded_by_report(run) == {
+        "report_numbers.md": {"earnings_quality_planted_bad_quote"},
+        "report_notes_text.md": {SHARED_ID}}
     assert (run / "report_numbers.md").read_bytes() == numbers_before
     assert manifest["dropped_items"][:1] == stopped["dropped_items"]        # appended after
     assert [(row["report"], row["item_id"]) for row in manifest["dropped_items"]] == [
         ("report_numbers.md", "earnings_quality_planted_bad_quote"),
         ("report_notes_text.md", SHARED_ID)]
-    assert ("on more than one item in this run: it stands in report_numbers.md"
+    assert ("on more than one item in this run: it is on an item of report_numbers.md"
             in manifest["dropped_items"][1]["reason"])
     assert manifest["counts"]["dropped_items"] == 2
     assert manifest["analysis_stages"]["quote_gate"] == {"dropped": 1}      # this night's

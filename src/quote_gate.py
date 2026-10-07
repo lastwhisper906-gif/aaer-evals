@@ -585,31 +585,36 @@ def _repeated_ids(reports: list[dict]) -> set[str]:
             if identifier is not None and count > 1}
 
 
-def _standing_elsewhere(bundle_root, manifest: dict, handed: set[str]) -> dict[str, str]:
-    """Every id standing in a report already gated into the run root that this
-    call was not handed, keyed to that report's name.
+def _ids_elsewhere(bundle_root, handed: set[str]) -> dict[str, str]:
+    """Every id on an item of a report already gated in this run that this call
+    was not handed, keyed to that report's name.
 
-    One id names one item in the run, across the nights the run took: a report
-    gated on the night the limit hit stands at the run root, and a call gating
-    the other report on the next night is held to the ids standing there as it
-    is to its own. The run-root copy is read and never written; an id a drop
-    row names for that report is not standing, so a twin of a dropped item is
-    not dropped for it.
+    One id names one item in the run, across the nights the run took, and the
+    same way on both: a fresh run counts an id over every item the readers
+    wrote (`_repeated_ids`), dropped or not, so a call gating one report on a
+    later night counts the ids over every item the other reader wrote too --
+    read off the reader's own written copy in its directory, as the gate was
+    handed it, or off the run-root copy when that is all there is. Neither is
+    written. An item dropped on the earlier night counts: it was written under
+    the id, it may still be printed in the run-root copy beside a kept item,
+    and on a fresh run its twin would have fallen with it.
     """
     from src import market_labels      # lazy: that module imports this one
-    dropped = {(Path(str(row.get("report"))).name, row.get("item_id"))
-               for row in manifest.get("dropped_items") or [] if isinstance(row, dict)}
-    standing: dict[str, str] = {}
+    found: dict[str, str] = {}
     for name in REPORT_SIDES:
-        path = Path(bundle_root) / name
-        if name in handed or not path.is_file():
+        if name in handed:
             continue
-        for item in market_labels.report_items(path.read_text(encoding="utf-8",
-                                                              errors="replace")):
+        written = [agent_inputs.agents_root(bundle_root) / agent / name
+                   for agent, spec in agent_inputs.KNOWN_AGENTS.items() if spec.writes == name]
+        copies = [path for path in (*written, Path(bundle_root) / name) if path.is_file()]
+        if not copies:
+            continue
+        for item in market_labels.report_items(copies[0].read_text(encoding="utf-8",
+                                                                   errors="replace")):
             identifier = item_id(item)
-            if identifier is not None and (name, identifier) not in dropped:
-                standing.setdefault(identifier, name)
-    return standing
+            if identifier is not None:
+                found.setdefault(identifier, name)
+    return found
 
 
 def gate(reports: list[dict], bundle_root) -> dict:
@@ -637,8 +642,8 @@ def gate(reports: list[dict], bundle_root) -> dict:
             f"{MANIFEST} names no accession, and a computed row's id begins with one")
     known_areas = areas()
     repeated = _repeated_ids(reports)
-    elsewhere = _standing_elsewhere(
-        bundle_root, manifest,
+    elsewhere = _ids_elsewhere(
+        bundle_root,
         {Path(entry["report"]).name for entry in reports if isinstance(entry.get("report"), str)})
 
     kept: dict[str, list[dict]] = {}
@@ -691,8 +696,8 @@ def gate(reports: list[dict], bundle_root) -> dict:
                        "run, so a citation naming it would not name one item")
             if why is None and identifier in elsewhere:
                 why = (f"the item id {identifier} is on more than one item in this "
-                       f"run: it stands in {elsewhere[identifier]}, gated already, so a "
-                       "citation naming it would not name one item")
+                       f"run: it is on an item of {elsewhere[identifier]}, gated already, "
+                       "so a citation naming it would not name one item")
             if why is None:
                 why = (quote_drop_reason(item, index) if index is not None
                        else citation_drop_reason(item, upstream_ids))

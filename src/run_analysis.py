@@ -530,27 +530,23 @@ def check_analysis(run: Path, name: str, kind: str) -> dict:
         return analysis_check.check_assumptions(payload, fields=fields, sources=sources,
                                                 filing=filing)
     return analysis_check.check(kind, payload, fields=fields, sources=sources,
-                                excluded=excluded_ids(run), filing=filing)
+                                excluded=excluded_by_report(run), filing=filing)
 
 
-def excluded_ids(run: Path) -> set[str]:
-    """The ids no analyst may cite: dropped by the gate from every report they
-    stood in. A drop row is keyed (report, item id), and an id dropped from one
-    report as the twin of an item standing in another -- a resumed night's
-    notes item under an id the numbers report already carries -- still names
-    that standing item, so a citation of it resolves and is kept."""
+def excluded_by_report(run: Path) -> dict[str, set[str]]:
+    """The ids the gate dropped, keyed by the report they fell from, as its drop
+    rows key them. The analysis gate takes each id out of that report's items
+    alone: an id dropped from one report as the twin of an item standing in the
+    other -- a resumed night's notes item under an id the numbers report
+    already carries -- still names the standing item, so a citation of it
+    resolves and is kept, while a citation of it as an item of the report it
+    fell from is refused."""
     manifest = json.loads((run / "input_manifest.json").read_text(encoding="utf-8"))
-    rows = [row for row in manifest.get("dropped_items") or []
-            if isinstance(row, dict) and isinstance(row.get("item_id"), str)]
-    standing: set[str] = set()
-    for report in ("report_notes_text.md", "report_numbers.md"):
-        path = run / report
-        if not path.is_file():
-            continue
-        fell = {row["item_id"] for row in rows if Path(str(row.get("report"))).name == report}
-        standing |= {quote_gate.item_id(item)
-                     for item in report_items(path.read_text(encoding="utf-8"))} - fell - {None}
-    return {row["item_id"] for row in rows} - standing
+    out: dict[str, set[str]] = {}
+    for row in manifest.get("dropped_items") or []:
+        if isinstance(row, dict) and isinstance(row.get("item_id"), str):
+            out.setdefault(Path(str(row.get("report"))).name, set()).add(row["item_id"])
+    return out
 
 
 def write_json(path: Path, payload: dict) -> None:
