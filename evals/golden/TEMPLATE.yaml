@@ -1,0 +1,22 @@
+# A golden case: what a careful analyst must find in one filing, and must not claim.
+# The owner writes or corrects it, sets approved_by_owner: true and moves it into
+# evals/golden/cases/. Only approved cases in cases/ are counted (evals/README.md).
+# Format: the strict YAML subset in evals/golden_format.py -- two-space indents,
+# `key: value`, `- ` list items, inline lists in [ ], strings in "double quotes"
+# when they hold a colon or a comma.
+filing:
+  ticker: TICKER
+  accession: "0000000000-00-000000"
+  form: 10-Q
+  filed: "YYYY-MM-DD"
+frame: accounting          # accounting, or finance
+must_find:
+  - area: earnings_versus_cash          # an area slug from rules/pilot/analyst_areas.json
+    what: "one sentence: the finding a careful analyst must make"
+    paragraph_ids: ["0000000000-00-000000:notes:0"]   # filing paragraphs that count
+    keywords: ["word word"]             # or: every word of one entry in the anomaly's text
+must_not_claim:
+  - what: "one sentence: a claim the filing does not support"
+    keywords: ["word word"]
+why: "one paragraph: why this case matters, with the paragraph ids it rests on"
+approved_by_owner: false

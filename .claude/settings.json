@@ -1,6 +1,12 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "$note": "A Stop hook is a safety net, not a judge -- Claude Code ends the turn after eight consecutive blocks, so a hook that keeps failing stops blocking. CI is the judge. The gate runs under .venv/bin/python because the pinned interpreter on this machine has no pytest and a hook that cannot run is worse than no hook: it reports green by saying nothing. A fresh worktree has no .venv of its own, so link one before relying on the hook there: ln -s ../../../.venv .venv. The plain-name check tests for its own file first, so it stays silent on a branch that predates it rather than printing an import error on every edit; the guard exits early instead of trailing `|| true`, because `|| true` discarded the check's exit status as well as the guard's, which is the same shape as a gate hook that reports green by saying nothing. It runs under bare python3.12, so it imports the standard library only. It reads the files this branch changed, names each code on stderr as `path:line: CODE`, and exits 1 when it names one and 2 when it could not run at all -- silence from it means it ran and found nothing. Claude Code treats exit 2 as the blocking error whose output is handed back to the writer and every other non-zero status as a line for the person at the keyboard, so a code named here is reported and does not block. What makes it bite is `make check`, which CI runs: a pull request carrying a code goes red there. Whether the post-write hook should block the writer too is a question left in the task list, not a thing this note settles.",
+  "$note": "A Stop hook is a safety net, not a judge -- Claude Code ends the turn after eight consecutive blocks, so a hook that keeps failing stops blocking. CI is the judge. The gate runs under .venv/bin/python because the pinned interpreter on this machine has no pytest and a hook that cannot run is worse than no hook: it reports green by saying nothing. A fresh worktree has no .venv of its own, so link one before relying on the hook there: ln -s ../../../.venv .venv. The plain-name check tests for its own file first, so it stays silent on a branch that predates it rather than printing an import error on every edit; the guard exits early instead of trailing `|| true`, because `|| true` discarded the check's exit status as well as the guard's, which is the same shape as a gate hook that reports green by saying nothing. It runs under bare python3.12, so it imports the standard library only. It reads the files this branch changed, names each code on stderr as `path:line: CODE`, and exits 1 when it names one and 2 when it could not run at all -- silence from it means it ran and found nothing. Claude Code treats exit 2 as the blocking error whose output is handed back to the writer and every other non-zero status as a line for the person at the keyboard, so a code named here is reported and does not block. What makes it bite is `make check`, which CI runs: a pull request carrying a code goes red there. Whether the post-write hook should block the writer too is a question left in the task list, not a thing this note settles. From 2026-10-06 evals/ is the owner's (CLAUDE.md): the permission rules deny the Edit and Write tools under it, a PreToolUse hook on Bash (.claude/hooks/guard_evals.py) refuses a shell command that writes there and exits 2 so the call is blocked, and the CI guard (src/eval_guard.py) is the backstop no command line reaches. The Stop hook runs make eval-quick after make check: the owner's graders on the runs the branch changed, the deterministic check under /goal, whose own evaluator reads only the conversation.",
+  "permissions": {
+    "deny": [
+      "Edit(evals/**)",
+      "Write(evals/**)"
+    ]
+  },
   "hooks": {
     "SessionStart": [
       {
@@ -46,8 +52,25 @@
           },
           {
             "type": "command",
+            "command": "grep -q '^eval-quick:' Makefile 2>/dev/null || exit 0; make eval-quick PYTHON=.venv/bin/python",
+            "timeout": 300
+          },
+          {
+            "type": "command",
             "command": "sh .claude/hooks/notify_if_shipped.sh",
             "timeout": 30
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=\"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/guard_evals.py\"; test -f \"$f\" || exit 0; python3 \"$f\"",
+            "timeout": 15
           }
         ]
       }

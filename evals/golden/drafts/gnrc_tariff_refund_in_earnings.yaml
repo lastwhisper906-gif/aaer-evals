@@ -1,0 +1,28 @@
+# DRAFT, proposed by Claude on 2026-10-06 from the run published in #103. Not counted.
+filing:
+  ticker: GNRC
+  accession: "0001437749-26-025669"
+  form: 10-Q
+  filed: "2026-08-04"
+frame: accounting
+must_find:
+  - area: earnings_versus_cash
+    what: "The quarter's earnings rest on a one-time tariff refund of about 71 million dollars credited to cost of goods sold."
+    paragraph_ids: ["0001437749-26-025669:notes:10", "0001437749-26-024731:8k_2_02:14"]
+    keywords: ["tariff refund", "tariff credit"]
+  - area: estimates_and_reserves
+    what: "The tariff refund receivable is recognized on a judgment that recovery is probable."
+    paragraph_ids: ["0001437749-26-025669:notes:10"]
+    keywords: ["tariff refund receivable", "probable"]
+  - area: cost_deferral
+    what: "Adjusted metrics keep the one-time tariff credit while adding back losses."
+    paragraph_ids: ["0001437749-26-024731:8k_2_02:14"]
+    keywords: ["adjusted tariff", "non-gaap tariff"]
+must_not_claim:
+  - what: "That the tariff refund is recurring operating margin."
+    keywords: ["recurring tariff margin"]
+why: "A single credit of about 71 million dollars lifts the quarter's gross margin, net income, adjusted EBITDA and the raised outlook; an analyst who reads the margin without it reads a different company."
+check_before_approving:
+  - "notes:10 gives the amount recorded against cost of goods sold: confirm it is the same refund the release's 8k_2_02:14 calls a pre-tax impact of approximately 71 million."
+  - "Confirm the release (8k_2_02:36) ties the raised outlook to the refund, if the owner wants a finance-frame case from the same filing."
+approved_by_owner: false
