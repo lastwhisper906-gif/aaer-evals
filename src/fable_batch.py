@@ -21,8 +21,9 @@ in Fable is a part of what a filing costs, and counted in, every early fallback
 would shrink the median and swell the batch. The median is of the filings Fable
 served whole; `size` names the filings left out beside it, and when every filing
 on record fell back the batch is one filing, as with an empty record. A run that
-carried the batch's fallback from its first call (`--carry-fallback-from`) asked
-Fable for nothing and is named with them. Under
+carried the batch's fallback from its first call -- found by the runner itself
+(`batch_fallback`), or named with `--carry-fallback-from` -- asked Fable for
+nothing and is named with them. Under
 `--on-fable-limit stop` a run that answers the limit exits
 `src.run_analysis.LIMIT_REACHED` (4; 3 is the interpreter pin's), and the batch
 stops there.

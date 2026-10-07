@@ -468,8 +468,16 @@ def limit_hit(agents: dict) -> list[str]:
     return [name for name, record in agents.items() if record.get("limit_reached")]
 
 
+def clock() -> dt.datetime:
+    """The runner's one clock, in UTC: every time it writes -- a row's `at`,
+    `resumed_at`, `analysed_utc` -- is read off it, and so is the time a carry's
+    window is measured against, so a test moves both through this one seam and
+    never edits a stored row."""
+    return dt.datetime.now(dt.timezone.utc)
+
+
 def utc_now() -> str:
-    return dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return clock().strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 class LimitPolicy:
@@ -566,7 +574,7 @@ def carried_fallback(earlier: Path, now: dt.datetime | None = None) -> dict:
     its row carried, so a chain of runs never stretches the window). Refused
     before the run starts unless the manifest records `model_fallback`, the
     limit's message confirmed it, and the limit was noted at most CARRY_HOURS
-    before `now` and not after it: a run is never put on the fallback model
+    before `now` (the runner's `clock()` unless a caller names one) and not after it: a run is never put on the fallback model
     without a limit on record, a fallback a failure's shape alone set off stays
     inside its own run, and a run of another night is not this batch."""
     earlier = Path(earlier)
@@ -589,7 +597,7 @@ def carried_fallback(earlier: Path, now: dt.datetime | None = None) -> dict:
     except ValueError as exc:
         raise RunError(f"--carry-fallback-from {earlier}: its model_fallback names no time "
                        f"the limit was noted at ({limit_at!r})") from exc
-    now = now or dt.datetime.now(dt.timezone.utc)
+    now = now or clock()
     if not dt.timedelta(0) <= now - noted <= dt.timedelta(hours=CARRY_HOURS):
         raise RunError(f"--carry-fallback-from {earlier}: its limit was noted at {limit_at}, "
                        f"not within the {CARRY_HOURS} hours before this run, so it is not "
@@ -1492,7 +1500,7 @@ def finish(run: Path, agents: dict, stages: dict, failure: str | None,
             "why": "named with --model in place of each definition's own, for the agents "
                    "applies_to lists, which this invocation called; the owner's decision "
                    "that names it is in docs/structure_changes.md"}
-    manifest[FINISH_MARKER] = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    manifest[FINISH_MARKER] = utc_now()
     write_json(run / "input_manifest.json", manifest)
     return manifest
 

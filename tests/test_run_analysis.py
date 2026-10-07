@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import datetime as dt
 import json
+import os
 import re
 import shutil
 import threading
@@ -1567,16 +1568,18 @@ def _sequential(run, names, logs, model=None, policy=None):
     return {name: run_analysis.run_agent(run, name, logs, model, policy) for name in names}
 
 
-def _financial_analyst_over_cli(tmp_path, monkeypatch, answers):
+def _financial_analyst_over_cli(tmp_path, monkeypatch, answers, run=None):
     """A run where the financial analyst's calls go through the real `ask` over
     a stubbed CLI answering `answers`, the analysts called in order; every other
     agent writes and records the model it was asked on, as the real `ask` does.
     Returns the run, the CLI commands made, and the models each agent was asked
     on, call by call, keyed by the directory called (the two valuation passes
-    share one definition name)."""
-    run = tmp_path / "NVDA" / NVDA_ACCESSION
-    assemble_bundle.write(assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,
-                                                prior_runs=run.parent.parent), run)
+    share one definition name). `run` names a bundle already in place, which is
+    then used as it stands; by default NVDA's is built under `tmp_path`."""
+    if run is None:
+        run = tmp_path / "NVDA" / NVDA_ACCESSION
+        assemble_bundle.write(assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,
+                                                    prior_runs=run.parent.parent), run)
     written, real_ask = _fake_ask({}), run_analysis.ask
     cli, calls = _cli(list(answers))
     asked: dict[str, list[str]] = {}
@@ -2364,3 +2367,82 @@ def test_two_analysts_in_parallel_the_shape_opens_the_row_and_the_message_confir
     capsys.readouterr()
     assert run_analysis.main(_main_command(run)) == 0
     assert "carries it on its own for 12 hours" in capsys.readouterr().err
+
+
+
+def test_the_row_a_real_fallback_writes_is_utc_now_and_carries_through_the_clock_seam(
+        tmp_path, monkeypatch):
+    """The time on the row is the one the carry window is measured from, so it is
+    checked against a clock the test takes itself. A real fallback -- the stub
+    CLI answering the limit by its message, then writing on Opus -- runs with the
+    process's local time set five hours behind UTC, so a stamp written in local
+    time with a "Z" on it would land five hours off. The `at` the run wrote
+    parses as UTC and lies between `datetime.now(timezone.utc)` read just before
+    the run and just after it. That very row is then carried into a second run of
+    the same batch, under the same root: its Fable agents go to Opus from their
+    first call, the row naming the first run and its `at`. With the runner's
+    clock moved through its one seam, `run_analysis.clock`, to twelve hours and a
+    second after that `at` -- the stored row untouched -- a third run of the
+    batch carries nothing and asks Fable; at twelve hours exactly the carry
+    still holds."""
+    root = tmp_path / "night"
+    answers = [FABLE_LIMIT, _opus_writes("analysis_financial.json",
+                                         _analysis("financial", "earnings_quality_accruals_rising"))]
+    run, calls, asked = _financial_analyst_over_cli(root, monkeypatch, answers)
+    pristine = tmp_path / "bundle"                     # outside the root, never run
+    shutil.copytree(run, pristine)
+    old_tz = os.environ.get("TZ")
+    os.environ["TZ"] = "EST5"
+    time.tzset()
+    try:
+        assert time.timezone == 5 * 3600               # local time is UTC less five hours
+        before = dt.datetime.now(dt.timezone.utc)
+        first = run_analysis.run_company(run=run, **_run_keyword())
+        after = dt.datetime.now(dt.timezone.utc)
+    finally:
+        if old_tz is None:
+            os.environ.pop("TZ", None)
+        else:
+            os.environ["TZ"] = old_tz
+        time.tzset()
+    assert _models_asked(calls) == ["fable", "opus"]
+    row = first["model_fallback"]
+    assert row["reason"] == "fable_limit_reached"
+    written = dt.datetime.strptime(row["at"], "%Y-%m-%dT%H:%M:%SZ").replace(
+        tzinfo=dt.timezone.utc)
+    # the stamp is whole seconds, so the clock read before is taken to its second
+    assert before.replace(microsecond=0) <= written <= after
+    assert after - before < dt.timedelta(minutes=5)
+    stored = (run / "input_manifest.json").read_bytes()
+
+    # a second run of the same batch carries that very row
+    monkeypatch.undo()
+    second = root / "SECOND" / NVDA_ACCESSION
+    shutil.copytree(pristine, second)
+    answers = [_opus_writes("analysis_financial.json",
+                            _analysis("financial", "earnings_quality_accruals_rising"))]
+    _, calls, asked = _financial_analyst_over_cli(None, monkeypatch, answers, run=second)
+    carried = run_analysis.run_company(run=second, **_run_keyword())
+    assert _models_asked(calls) == ["opus"]
+    assert asked["accounting-analyst"] == ["opus"] and asked["valuation-analyst"] == ["opus"]
+    assert carried["model_fallback"]["carried_from"] == f"NVDA/{NVDA_ACCESSION}"
+    assert carried["model_fallback"]["carried_limit_at"] == row["at"]
+    assert carried["analysis_failure"] is None
+
+    # the clock moved past the window, through the seam: a third run carries nothing
+    monkeypatch.undo()
+    third = root / "THIRD" / NVDA_ACCESSION
+    shutil.copytree(pristine, third)
+    window = dt.timedelta(hours=run_analysis.CARRY_HOURS)
+    monkeypatch.setattr(run_analysis, "clock", lambda: written + window)
+    assert run_analysis.batch_fallback(third)["carried_limit_at"] == row["at"]
+    monkeypatch.setattr(run_analysis, "clock", lambda: written + window + dt.timedelta(seconds=1))
+    assert run_analysis.batch_fallback(third) is None
+    answers = [_fable_writes("analysis_financial.json",
+                             _analysis("financial", "earnings_quality_accruals_rising"))]
+    _, calls, asked = _financial_analyst_over_cli(None, monkeypatch, answers, run=third)
+    late = run_analysis.run_company(run=third, **_run_keyword())
+    assert _models_asked(calls) == ["fable"]
+    assert asked["accounting-analyst"] == ["fable"] and asked["valuation-analyst"] == ["fable"]
+    assert "model_fallback" not in late and late["analysis_failure"] is None
+    assert (run / "input_manifest.json").read_bytes() == stored     # the row never moved
