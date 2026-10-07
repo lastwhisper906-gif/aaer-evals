@@ -784,6 +784,16 @@ def gate_readers(run: Path, names: tuple[str, ...] = ("numbers-reader", "notes-t
     `names` is the readers this invocation called: both on a fresh run; when
     the limit stopped one, the other alone, so what finished is on record and
     is never called again; and on the resumed run, the one that had not run.
+
+    The copy is cut item by item, as the gate and the owner's grader read a
+    report: a fenced block holding one dropped item is removed whole; a block
+    holding a list loses each dropped element and is written again with the
+    rest, or removed when none is left; a list with nothing dropped stays byte
+    for byte. A dropped item left in a list beside a kept one (ESE's notes
+    reader wrote its twenty-seven items in one list, and three dropped ones
+    stayed) is an item the analysts read and the owner fails. A fenced block
+    that is not JSON holds items nobody can check: it is removed, and the gate
+    records one drop row for it (item id null), so it is counted, not skipped.
     A run-root copy gated on an earlier night is not written again, and the
     gate keeps the drop rows of a report it is not handed, so the earlier
     night's record stands as it was and this call appends its own rows. The
@@ -798,8 +808,10 @@ def gate_readers(run: Path, names: tuple[str, ...] = ("numbers-reader", "notes-t
         written = directory / writes
         if not written.is_file():
             raise RunError(f"{name} wrote no {writes}")
-        reports.append({"report": writes, "items": report_items(written.read_text("utf-8")),
-                        "input": directory})
+        text = written.read_text("utf-8")
+        reports.append({"report": writes, "items": report_items(text), "input": directory,
+                        "malformed": sum(1 for block in FENCED.findall(text)
+                                         if _parsed(block) is UNREADABLE)})
     result = quote_gate.gate(reports, run)
     manifest = json.loads((run / "input_manifest.json").read_text(encoding="utf-8"))
     # keyed by report too: a row of one report never takes an item out of another
@@ -808,21 +820,58 @@ def gate_readers(run: Path, names: tuple[str, ...] = ("numbers-reader", "notes-t
     for name in names:
         writes = agent_inputs.AGENTS[name].writes
         text = (agent_inputs.session_root(run, name) / writes).read_text(encoding="utf-8")
-        removed = 0
+        removed, unreadable = 0, 0
+
+        def gone(item) -> bool:
+            # keyed by report, as the gate's rows and the owner's grader key a drop
+            return isinstance(item, dict) and (writes, item.get("id")) in dropped
 
         def keep(match: re.Match) -> str:
-            nonlocal removed
-            items = report_items(match.group(0))
-            if items and all((writes, item.get("id")) in dropped for item in items):
-                removed += 1
+            nonlocal removed, unreadable
+            data = _parsed(match.group(1))
+            if data is UNREADABLE:
+                unreadable += 1
                 return ""
-            return match.group(0)
+            if isinstance(data, dict):
+                if gone(data):
+                    removed += 1
+                    return ""
+                return match.group(0)
+            if not isinstance(data, list):
+                return match.group(0)
+            remaining = [item for item in data if not gone(item)]
+            if len(remaining) == len(data):
+                return match.group(0)
+            removed += len(data) - len(remaining)
+            if not remaining:
+                return ""
+            return ("```json\n" + json.dumps(remaining, indent=2, ensure_ascii=False)
+                    + "\n```\n")
 
-        gated = re.sub(r"```json\s*.*?```\n?", keep, text, flags=re.S)
-        note = (f"<!-- the quote gate removed {removed} item(s) from this copy; "
+        gated = FENCED_BLOCK.sub(keep, text)
+        unread = (f" and {unreadable} fenced block(s) that are not JSON" if unreadable else "")
+        note = (f"<!-- the quote gate removed {removed} item(s){unread} from this copy; "
                 f"input_manifest.json lists each with its reason -->\n")
         (run / writes).write_text(note + gated, encoding="utf-8")
     return result
+
+
+# A report's fenced JSON blocks, read as the gate and the owner's grader read them
+# (`market_labels.report_items`, `evals/regression/mechanical.py` FENCE); the
+# second form takes the block's own trailing line break with it when removed.
+FENCED = re.compile(r"```json\s*(.*?)```", re.S)
+FENCED_BLOCK = re.compile(r"```json\s*(.*?)```\n?", re.S)
+
+
+UNREADABLE = object()
+
+
+def _parsed(block: str):
+    """A fenced block's JSON, or UNREADABLE when it does not parse."""
+    try:
+        return json.loads(block)
+    except ValueError:
+        return UNREADABLE
 
 
 def check_analysis(run: Path, name: str, kind: str) -> dict:

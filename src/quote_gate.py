@@ -617,6 +617,10 @@ def _ids_elsewhere(bundle_root, handed: set[str]) -> dict[str, str]:
     return found
 
 
+UNREADABLE_BLOCK = ("a fenced block that is not JSON: no item in it can be checked, so "
+                    "the block is removed from the copy downstream reads")
+
+
 def gate(reports: list[dict], bundle_root) -> dict:
     """Every report in layer order: what stands, what was dropped, and the count on disk.
 
@@ -625,6 +629,9 @@ def gate(reports: list[dict], bundle_root) -> dict:
         {"report": "report_notes_text.md", "items": [...], "input": <directory>}
         {"report": "report_notes_vs_market.md", "items": [...],
          "cites": ["report_notes_text.md"]}
+
+    An entry may say how many of its report's fenced blocks are not JSON
+    (`"malformed": n`); each is recorded as one drop with no item id.
 
     A report naming an `input` is a reader's and its items are quoted against
     that directory; a report naming what it `cites` is a comparer's or a
@@ -712,6 +719,10 @@ def gate(reports: list[dict], bundle_root) -> dict:
                                            "characters": count})
             else:
                 dropped.append({"report": name, "item_id": identifier, "reason": why})
+        # a fenced block that does not parse holds items nobody can check: each is
+        # counted as a drop with no item id, and the runner removes the block
+        for _ in range(int(entry.get("malformed") or 0)):
+            dropped.append({"report": name, "item_id": None, "reason": UNREADABLE_BLOCK})
         kept[name], kept_ids[name] = standing, standing_ids
 
     _write_counts(bundle_root, manifest, dropped, normalized, gated)

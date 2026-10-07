@@ -17,6 +17,8 @@ import shutil
 import threading
 import time
 
+import pytest
+
 from src import agent_inputs, fable_batch, run_analysis
 
 
@@ -66,6 +68,132 @@ def test_the_copy_downstream_sees_holds_only_the_items_that_stood(tmp_path, monk
     assert "b_kept" in notes and "b_dropped" not in notes
     assert "removed 1 item" in notes
     assert "a_kept" in (run / "report_numbers.md").read_text()
+
+
+def _stub_readers(tmp_path, numbers: str, notes: str, dropped: list[dict]):
+    run = tmp_path / "run"
+    for name, text in (("numbers-reader", numbers), ("notes-text-reader", notes)):
+        directory = agent_inputs.session_root(run, name)
+        directory.mkdir(parents=True)
+        (directory / agent_inputs.AGENTS[name].writes).write_text(text)
+    (run / "input_manifest.json").write_text(json.dumps({"dropped_items": dropped}))
+    return run
+
+
+def test_a_dropped_item_inside_a_list_block_is_taken_out_of_the_copy(tmp_path, monkeypatch):
+    """ESE's notes reader wrote its twenty-seven items in one fenced list, and the
+    gate removed a block only when every item in it was dropped: three dropped
+    items stayed in the copy the analysts read, under a note saying it removed 0,
+    and the owner's quotes_resolve failed each one. The list now loses each
+    dropped element and is written again with the rest; the note counts items."""
+    notes = '```json\n[{"id": "b_kept"}, {"id": "b_dropped"}]\n```\n'
+    run = _stub_readers(tmp_path, '```json\n{ "id": "a_kept" }\n```\n', notes,
+                        [{"item_id": "b_dropped", "reason": "x", "report": "report_notes_text.md"}])
+    monkeypatch.setattr(run_analysis.quote_gate, "gate", lambda reports, root: {})
+    run_analysis.gate_readers(run)
+    copy = (run / "report_notes_text.md").read_text()
+    assert run_analysis.report_items(copy) == [{"id": "b_kept"}]
+    assert "removed 1 item(s) from this copy" in copy
+    assert (run / "report_numbers.md").read_text().endswith('```json\n{ "id": "a_kept" }\n```\n')
+    # the reader's own copy keeps what it wrote
+    assert (agent_inputs.session_root(run, "notes-text-reader") / "report_notes_text.md"
+            ).read_text() == notes
+
+
+@pytest.mark.parametrize("case", ["untouched list", "single dropped", "other report",
+                                  "kept element equal", "malformed"])
+def test_the_copy_is_cut_item_by_item_and_nothing_else_moves(tmp_path, monkeypatch, case):
+    """The other side, standing before the fix and after it: a list with nothing
+    dropped stays byte for byte; a single dropped item's block is removed whole;
+    a drop row of one report takes nothing out of the other (the row is keyed by
+    report, as the owner's grader keys it); a kept element reads back as the dict
+    the reader wrote; and a block that is not JSON is never rewritten."""
+    listed = ('```json\n[{ "id": "b_one", "quote": "Raising the lower end",\n'
+              '   "paragraph_id": "0001104659-26-092033:8k_2_02:36" },\n { "id": "b_two" }]\n```\n')
+    rows = {"untouched list": [],
+            "single dropped": [{"item_id": "a_gone", "reason": "x", "report": "report_numbers.md"}],
+            "other report": [{"item_id": "b_one", "reason": "x", "report": "report_numbers.md"}],
+            "kept element equal": [{"item_id": "b_two", "reason": "x",
+                                    "report": "report_notes_text.md"}],
+            "malformed": []}[case]
+    numbers = '```json\n{ "id": "a_gone" }\n```\nprose stays\n'
+    notes = listed if case != "malformed" else '```json\n[{"id": "b_one"},]\n```\n'
+    run = _stub_readers(tmp_path, numbers, notes, rows)
+    monkeypatch.setattr(run_analysis.quote_gate, "gate", lambda reports, root: {})
+    run_analysis.gate_readers(run)
+    copy = (run / "report_notes_text.md").read_text()
+    body = copy.split("\n", 1)[1]
+    if case in ("untouched list", "other report"):
+        assert body == listed
+    elif case == "single dropped":
+        assert (run / "report_numbers.md").read_text().split("\n", 1)[1] == "prose stays\n"
+        assert body == listed
+    elif case == "kept element equal":
+        assert run_analysis.report_items(copy) == [
+            {"id": "b_one", "quote": "Raising the lower end",
+             "paragraph_id": "0001104659-26-092033:8k_2_02:36"}]
+    else:
+        # removed, never rewritten: the gate recorded it as a drop with no id
+        assert "```" not in body and "1 fenced block(s) that are not JSON" in copy
+
+
+# The owner's grader on the real gate's output, the ESE shapes: twin ids on both
+# reports, and an item whose paragraph id is no id, in one notes list. Paragraphs
+# 36 and 37 of ESE's earnings release 0001104659-26-092033, as its input_8k.md
+# printed them (run 0001104659-26-093266, 2026-10-07).
+ESE_ACCESSION = "0001104659-26-093266"
+ESE_SALES = ("Raising the lower end of FY 2026 Sales guidance and now expect Sales to be in the "
+             "range of $1.30 to $1.33 billion (19 to 21 percent growth over the prior year).")
+ESE_EPS = ("Raising full year Adjusted EPS guidance to a range of $8.30 - $8.40 per share (38 to "
+           "39 percent growth)")
+ESE_8K = ("# ESE 8-K\n\n## item 2.02\n\n"
+          f"[0001104659-26-092033:8k_2_02:36]\n|  | · | {ESE_SALES} |\n\n"
+          f"[0001104659-26-092033:8k_2_02:37]\n|  | · | {ESE_EPS}, which reflects a midpoint "
+          "increase of $0.70 per share. |\n")
+
+
+def _ese_item(identifier, quote, paragraph):
+    return {"id": identifier, "quote": quote, "paragraph_id": paragraph}
+
+
+def test_the_owner_finds_no_dropped_item_in_the_copy_the_real_gate_wrote(tmp_path):
+    from evals.common import PASS
+    from evals.regression import mechanical
+    run = tmp_path / "run"
+    run.mkdir()
+    (run / "input_manifest.json").write_text(json.dumps({"accession": ESE_ACCESSION}))
+    twin = "results_against_expectations_sales_guidance_lower_end_raised"
+    sales = "0001104659-26-092033:8k_2_02:36"
+    eps = "0001104659-26-092033:8k_2_02:37"
+    numbers = [_ese_item(twin, ESE_SALES, sales),
+               _ese_item("results_against_expectations_adjusted_eps_guidance_raised", ESE_EPS, eps)]
+    notes = [_ese_item(twin, ESE_SALES, sales),
+             _ese_item("across_documents_eight_k_termination_of_material_agreement_unexplained",
+                       "2026-06-03 0001104659-26-070116 — 1.01, 1.02, 2.03, 9.01",
+                       "input_8k item codes list (2026-06-03 entry)"),
+             _ese_item("results_against_expectations_sales_range_restated", "Sales guidance", sales),
+             _ese_item("results_against_expectations_eps_range_restated", "Adjusted EPS guidance", eps)]
+    for name, text in (("numbers-reader", "".join(f"```json\n{json.dumps(item)}\n```\n"
+                                                  for item in numbers)),
+                       ("notes-text-reader", f"```json\n{json.dumps(notes, indent=1)}\n```\n")):
+        directory = agent_inputs.session_root(run, name)
+        directory.mkdir(parents=True)
+        (directory / "input_8k.md").write_text(ESE_8K, encoding="utf-8")
+        (directory / agent_inputs.AGENTS[name].writes).write_text(text, encoding="utf-8")
+    run_analysis.gate_readers(run)
+    manifest = json.loads((run / "input_manifest.json").read_text())
+    assert {(row["report"], row["item_id"]) for row in manifest["dropped_items"]} == {
+        ("report_numbers.md", twin), ("report_notes_text.md", twin),
+        ("report_notes_text.md",
+         "across_documents_eight_k_termination_of_material_agreement_unexplained")}
+    result = mechanical.check_quotes_resolve(run)
+    assert not any("dropped by the gate and still in the report" in line
+                   for line in result.failures)
+    assert result.status == PASS, result.failures
+    assert mechanical.kept_items(run)["report_notes_text.md"] == {
+        "results_against_expectations_sales_range_restated",
+        "results_against_expectations_eps_range_restated"}
+    assert "removed 2 item(s)" in (run / "report_notes_text.md").read_text()
 
 
 # --- a whole run, with every agent stubbed ------------------------------------------------
@@ -2494,3 +2622,33 @@ def test_the_owner_finds_every_input_copy_of_a_whole_run_on_record(tmp_path, mon
     assert any(line.startswith("valuation-analyst-second-pass: input_mdna.md: paragraph "
                                "0001045810-26-000075:mdna:1")
                for line in agent_inputs.isolation_violations(run))
+
+
+def test_a_fenced_block_that_is_not_json_is_counted_and_taken_out_of_the_copy(tmp_path):
+    """A reader that writes its items as one list loses all of them to one trailing
+    comma: the gate saw none of them and the owner counted "1 fenced block(s)
+    that are not JSON" in the copy the analysts read. The real gate now records
+    the block as a drop with no item id, and the copy holds no such block."""
+    from evals.common import PASS
+    from evals.regression import mechanical
+    run = tmp_path / "run"
+    run.mkdir()
+    (run / "input_manifest.json").write_text(json.dumps({"accession": ESE_ACCESSION}))
+    sales = "0001104659-26-092033:8k_2_02:36"
+    good = _ese_item("results_against_expectations_sales_range_restated", "Sales guidance", sales)
+    texts = {"numbers-reader": f"```json\n{json.dumps(good)}\n```\n",
+             "notes-text-reader": ('```json\n[{"id": "results_against_expectations_eps_range_'
+                                   'restated", "quote": "Adjusted EPS", "paragraph_id": '
+                                   '"0001104659-26-092033:8k_2_02:37"},]\n```\n')}
+    for name, text in texts.items():
+        directory = agent_inputs.session_root(run, name)
+        directory.mkdir(parents=True)
+        (directory / "input_8k.md").write_text(ESE_8K, encoding="utf-8")
+        (directory / agent_inputs.AGENTS[name].writes).write_text(text, encoding="utf-8")
+    run_analysis.gate_readers(run)
+    manifest = json.loads((run / "input_manifest.json").read_text())
+    assert manifest["dropped_items"] == [{"report": "report_notes_text.md", "item_id": None,
+                                          "reason": run_analysis.quote_gate.UNREADABLE_BLOCK}]
+    copy = (run / "report_notes_text.md").read_text()
+    assert mechanical.read_report_blocks(copy)[1] == 0
+    assert mechanical.check_quotes_resolve(run).status == PASS

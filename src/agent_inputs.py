@@ -415,10 +415,11 @@ FENCED_JSON = re.compile(r"```json\s*(.*?)```", re.S)
 def flagged_paragraphs(run: Path) -> set[str]:
     """Every paragraph id the notes reader's standing items cite.
 
-    The copy at the run root is the gated one, but the gate takes a fenced block
-    out only when every item in it was dropped, and a reader writes its items as
-    one list: a dropped item standing in a block beside a kept one is still in
-    the file. The manifest's drop list is what says it fell -- read through
+    The copy at the run root is the gated one. The runner now takes each dropped
+    item out of it, a list block included (`run_analysis.gate_readers`), but a
+    run gated before 2026-10-07 took a block out only when every item in it was
+    dropped, so a dropped item can still stand in a list beside a kept one
+    there. The manifest's drop list is what says it fell -- read through
     `src.market_labels.gate_record`, the one reading of that list, keyed the way
     the gate keys it, (report, `quote_gate.item_id`) -- and an item it names
     flags nothing: it was dropped and counted, not passed through. A run with no
