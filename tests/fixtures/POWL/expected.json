@@ -1,0 +1,21 @@
+{
+  "_what_this_is": "the extraction-drift baseline src/extraction_checks.py reads, not an expected value and not readable as one. Every count here is the pipeline's own output on purpose: \"has this moved since last time?\" is a question you ask of a previous run, and a baseline sourced from anywhere else answers a different one. The expected values, each naming where it came from, are in expected_values.json; where one of them disagrees with the count here, the disagreement is a recorded parser defect and the test that holds it says so.",
+  "bundle": {
+    "10-K": {
+      "controls": 37,
+      "eight_k": 0,
+      "mdna": 88,
+      "note_history": 0,
+      "notes": 212,
+      "paragraphs": 337
+    },
+    "10-Q": {
+      "controls": 7,
+      "eight_k": 49,
+      "mdna": 66,
+      "note_history": 54,
+      "notes": 134,
+      "paragraphs": 310
+    }
+  }
+}
