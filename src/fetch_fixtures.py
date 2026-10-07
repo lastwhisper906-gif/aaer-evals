@@ -18,6 +18,12 @@ the only place they are stated. It is filtered to the cutoff and projected to
 the fields used — see `submissions_record` for why both, and for the one place
 in this file where "the bytes EDGAR served" is deliberately not the rule.
 
+Every submissions row and every filing's manifest row also carries
+`acceptance_datetime`: EDGAR's acceptance instant, written as Eastern wall time
+with its offset (`eastern_stamp` says what the index gives and what it is
+turned into). A store fetched before this field existed carries none, and is
+read as "no stamp on record"; it is never re-fetched to add one.
+
 **Fixtures are records.** A file already on disk is never re-fetched and never
 overwritten: if its bytes no longer match the manifest the script stops with
 exit 4 rather than repairing anything. Adding a company or a form appends;
@@ -68,6 +74,7 @@ import time
 import urllib.error
 import urllib.request
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 try:
     from src import interpreter_pin, universe
@@ -149,19 +156,90 @@ def sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+# The clock the stamp is written on. `src/market.py` reads every acceptance
+# stamp on this clock too (`EXCHANGE_TIMEZONE`), so what the record writes and
+# what the market module reads are one zone named once each.
+EASTERN = ZoneInfo("America/New_York")
+# EDGAR's `acceptanceDateTime`, the only shape it writes: seconds, a fraction,
+# and the universal-time letter.
+ACCEPTANCE_RAW = re.compile(
+    r"(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,6})?Z")
+
+
+def eastern_stamp(raw) -> str | None:
+    """EDGAR's `acceptanceDateTime` as Eastern wall time with its offset, or None.
+
+    The submissions index writes the stamp as `2026-08-26T20:36:00.000Z`, and
+    the Z is real: the instant is universal time, not an Eastern wall clock
+    with a decorative letter. The queue item that added this field, and
+    `src/market.py`'s docstring, take the letter for decoration; the source
+    `docs/needs_judgment.md` named for settling it says otherwise. That source
+    is the filing's own SGML header, whose `<ACCEPTANCE-DATETIME>` is EDGAR's
+    Eastern wall clock with no zone: each of the 43 headers committed under
+    `tests/fixtures/` dates its filing the acceptance day when accepted before
+    half past five and a later day when after, and five of them (ANET's two
+    10-Ks, FTNT's 2026, TTMI's 2026 and WDC's 2025) would break that rule read
+    as universal time. Set beside NVDA's index
+    (`https://data.sec.gov/submissions/CIK0001045810.json`, read 2026-10-07;
+    the rows are kept in
+    `tests/fixtures/acceptance_stamp/nvda_submissions_rows.json`):
+
+    * The 10-K 0001045810-26-000021: header `20260225164219`, index
+      `2026-02-25T21:42:19.000Z`. The 10-K 0001045810-25-000023: header
+      `20250226164833`, index `2025-02-26T21:48:33.000Z`. Each index stamp is
+      its header's Eastern clock plus five hours, the offset of standard time
+      in February: universal time, to the second. Read as an Eastern wall
+      clock, 21:42 is past half past five and EDGAR would have dated the 10-K
+      the 26th; the same index row dates it the 25th.
+    * The index's other rows agree. Seven Form 4s stamped
+      `2026-03-21T00:06:01Z` to `T00:14:03Z` are dated 2026-03-20: as
+      universal time they are 20:06 to 20:14 Eastern on the 20th, inside
+      EDGAR's hours (six in the morning to ten at night Eastern); as a wall
+      clock they fall after midnight, outside them. NVDA's earnings 8-Ks are
+      stamped 20:21 in summer and 21:21 in winter: one 16:21 Eastern release
+      moving with daylight time, which a wall clock would not do.
+    * The 10-Q 0001045810-26-000075, stamped `2026-08-26T20:36:00.000Z` and
+      dated 2026-08-26, is 16:36 Eastern as universal time, before half past
+      five, so the 26th; as a wall clock it would be after, and the 27th.
+
+    So the stamp is converted: `2026-08-26T20:36:00.000Z` becomes
+    `2026-08-26T16:36:00-04:00`, the form `src/market.py` and the cutoff
+    grader read (an offset written out, never a Z, never a bare date). A
+    missing value, or one in any other shape, is None: the record says "no
+    stamp" rather than guess a zone. The fraction is dropped; every one of the
+    thousand stamps in NVDA's index writes it `.000`.
+    """
+    if not isinstance(raw, str):
+        return None
+    match = ACCEPTANCE_RAW.fullmatch(raw)
+    if match is None:
+        return None
+    try:
+        instant = dt.datetime(*(int(part) for part in match.groups()),
+                              tzinfo=dt.timezone.utc)
+    except ValueError:  # a month 13, an hour 25: not a time
+        return None
+    return instant.astimezone(EASTERN).isoformat(timespec="seconds")
+
+
 def recent_filings(fetcher: Fetcher, cik: str) -> list[dict]:
-    """The submissions index as a list of rows, newest first."""
+    """The submissions index as a list of rows, newest first.
+
+    A field the page lacks is None on every row, so an index served without
+    one (an older page, a stand-in) is still a list of rows and the stamp it
+    lacks is "none on record" rather than a crash.
+    """
     data = fetcher.get_json(SUBMISSIONS_URL.format(cik=cik))
     recent = data["filings"]["recent"]
     fields = ("accessionNumber", "filingDate", "reportDate", "form", "items",
-              "primaryDocument", "primaryDocDescription")
-    return [{field: recent[field][i] for field in fields}
+              "primaryDocument", "primaryDocDescription", "acceptanceDateTime")
+    return [{field: (recent[field][i] if field in recent else None) for field in fields}
             for i in range(len(recent["form"]))]
 
 
 OLDER_URL = "https://data.sec.gov/submissions/{name}"
 ROW_FIELDS = ("accessionNumber", "filingDate", "reportDate", "form", "items",
-              "primaryDocument", "primaryDocDescription", "isXBRL")
+              "primaryDocument", "primaryDocDescription", "isXBRL", "acceptanceDateTime")
 
 
 def every_filing(fetcher: Fetcher, cik: str) -> list[dict]:
@@ -211,6 +289,7 @@ def submissions_record(ticker: str, cik: str, as_of: str,
     """
     rows = [{"accession": filing["accessionNumber"],
              "filing_date": filing["filingDate"],
+             "acceptance_datetime": eastern_stamp(filing.get("acceptanceDateTime")),
              "report_date": filing["reportDate"],
              "form": filing["form"],
              "items": filing["items"] or "",
@@ -416,6 +495,7 @@ def fetch_company(fetcher: Fetcher, ticker: str, cik: str, as_of: str,
                 "role": role,
                 "accession": accession,
                 "filing_date": filing["filingDate"],
+                "acceptance_datetime": eastern_stamp(filing.get("acceptanceDateTime")),
                 "report_date": filing["reportDate"],
                 "items": filing["items"] or "",
                 "url": url,
@@ -454,6 +534,7 @@ def fetch_company(fetcher: Fetcher, ticker: str, cik: str, as_of: str,
                 "role": prior_role,
                 "accession": accession,
                 "filing_date": previous["filingDate"],
+                "acceptance_datetime": eastern_stamp(previous.get("acceptanceDateTime")),
                 "report_date": previous["reportDate"],
                 "items": previous["items"] or "",
                 "url": url,

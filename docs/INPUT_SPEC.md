@@ -151,6 +151,12 @@ to the filing date.**
 > that case too: it is the market's first session after the filing arrived, and
 > the earlier of the two boundaries.
 
+The stamp is the record's own: the fetch keeps EDGAR's `acceptanceDateTime` on
+every submissions row and every filing's manifest row as `acceptance_datetime`
+(universal time in the index, written as Eastern wall time with its offset), and
+the bundle manifest copies it as `accepted` beside `filing_date`, for the
+triggering report and each document, whenever the store holds one.
+
 An agent may see market data through **reaction day two**. That is the reaction
 window, and it is already public by the time the run happens. Nothing beyond it
 enters any input.

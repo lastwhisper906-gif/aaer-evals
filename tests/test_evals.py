@@ -1626,3 +1626,63 @@ def test_changed_runs_reads_the_branch_against_origin_main(tmp_path, monkeypatch
     git("commit", "-q", "-am", "change BBB")
     assert [r.name for r in runner.changed_runs()] == ["1"]
     assert [r.parent.name for r in runner.changed_runs()] == ["BBB"]
+
+
+# --- same-day filings ordered by the manifest's acceptance stamps -----------------
+#
+# `src/assemble_bundle.py` writes `accepted` beside `filing_date`, on the
+# manifest and on each document row, when the store recorded EDGAR's stamp.
+# The grader then reads the stamps and not the accession-sequence proxy.
+
+# A same-day 8-K whose sequence (-000080) follows the trigger's (-000078): the
+# proxy would refuse it; its stamp decides instead.
+SAME_DAY = {"role": "exhibit_99_1", "form": "8-K", "accession": "0000858877-26-000080",
+            "filing_date": "2026-05-19"}
+
+
+def _stamped(run, stamp):
+    _edit(run / "input_manifest.json",
+          lambda d: d["documents"].append(dict(SAME_DAY, accepted=stamp)))
+
+
+def _nothing_after_cutoff(run):
+    return next(r for r in mechanical.grade(run) if r.grader == "mechanical.nothing_after_cutoff")
+
+
+def test_a_same_day_document_with_a_stamp_is_ordered_by_it_and_not_the_proxy(run):
+    _with_acceptance(run)                         # the trigger at 16:35
+    _stamped(run, "2026-05-19T16:20:00-04:00")    # accepted fifteen minutes before it
+    result = _nothing_after_cutoff(run)
+    assert (result.status, result.failures) == (PASS, [])
+    assert result.detail == "cutoff 2026-05-19"   # no proxy named: none was used
+
+
+def test_a_same_day_document_stamped_after_the_trigger_is_refused_whatever_its_sequence(run):
+    _with_acceptance(run)
+    _stamped(run, "2026-05-19T16:40:00-04:00")    # five minutes after the trigger
+    result = _nothing_after_cutoff(run)
+    assert result.status == FAIL
+    assert result.failures == [
+        "document 0000858877-26-000080 filed 2026-05-19, the cutoff day: accepted at "
+        "2026-05-19T16:40:00-04:00, after the triggering report at 2026-05-19T16:35:00-04:00"]
+    # a lower sequence, which the proxy would have passed, is refused by its stamp too
+    _edit(run / "input_manifest.json",
+          lambda d: d["documents"][-1].update(accession="0000858877-26-000070"))
+    assert _nothing_after_cutoff(run).failures == [
+        "document 0000858877-26-000070 filed 2026-05-19, the cutoff day: accepted at "
+        "2026-05-19T16:40:00-04:00, after the triggering report at 2026-05-19T16:35:00-04:00"]
+
+
+def test_a_run_with_a_market_table_and_stamps_passes_nothing_after_cutoff(run):
+    """The queue row's own eval, shown on a planted run because no run under
+    runs/ has a market table yet (none holds an input_market.json on
+    2026-10-07): CSCO's published run, its manifest given the stamps
+    src/assemble_bundle.py now writes, a market table of reaction days zero to
+    two of the filing's stamp, and a same-day filing ordered by its stamp --
+    nothing late, and no proxy named."""
+    _with_acceptance(run)
+    _stamped(run, "2026-05-19T16:20:00-04:00")
+    (run / "input_market.json").write_text(json.dumps(_market_table()))
+    result = _nothing_after_cutoff(run)
+    assert (result.status, result.failures) == (PASS, [])
+    assert result.detail == "cutoff 2026-05-19"
