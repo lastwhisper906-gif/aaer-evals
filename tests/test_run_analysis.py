@@ -9,9 +9,13 @@ only the items the quote gate kept.
 
 from __future__ import annotations
 
+import datetime as dt
 import json
+import os
 import re
 import shutil
+import threading
+import time
 
 from src import agent_inputs, fable_batch, run_analysis
 
@@ -520,7 +524,7 @@ def test_a_fable_call_failing_with_no_token_spent_in_two_seconds_is_the_limit(
     assert "limit_reached" not in record and len(calls) == 3
 
 
-def _run_with_accounting_analyst_answering(tmp_path, monkeypatch, answers):
+def _run_with_accounting_analyst_answering(tmp_path, monkeypatch, answers, on_fable_limit="opus"):
     """A whole run where the accounting analyst's calls go through the real `ask`
     over a stubbed CLI answering `answers`, and every other agent writes."""
     run = tmp_path / "NVDA" / NVDA_ACCESSION
@@ -543,22 +547,28 @@ def _run_with_accounting_analyst_answering(tmp_path, monkeypatch, answers):
     manifest = run_analysis.run_company(run=run, ticker="NVDA", form="10-Q",
                                         cutoff="2026-08-26", period_end="2026-07-26",
                                         store=run_analysis.cutoff_guard.FIXTURES,
-                                        prices=None, control="never")
+                                        prices=None, control="never",
+                                        on_fable_limit=on_fable_limit)
     return run, manifest, calls
 
 
 def test_a_zero_token_two_second_failure_stops_the_run_and_exits_four(tmp_path, monkeypatch):
+    """Under `--on-fable-limit stop`, the rule of 2026-10-06 kept as an option;
+    the default, `opus`, is the owner's decision of 2026-10-07 and is tested
+    under its own heading below."""
     _two_second_clock(monkeypatch)
     run, manifest, calls = _run_with_accounting_analyst_answering(
-        tmp_path, monkeypatch, [ZERO_TOKEN_FAILURE] * 3)
+        tmp_path, monkeypatch, [ZERO_TOKEN_FAILURE] * 3, on_fable_limit="stop")
     assert len(calls) == 1
     assert manifest["fable_limit_reached"] == ["accounting-analyst"]
+    assert "model_fallback" not in manifest
     assert "no token spent" in manifest["agents"]["accounting-analyst"]["reason"]
     assert (run / "analysis_financial.json").is_file() and (run / "memo_ko.md").is_file()
     monkeypatch.setattr(run_analysis, "run_company", lambda **kw: manifest)
     monkeypatch.setattr(run_analysis.interpreter_pin, "enforce", lambda: 0)
     assert run_analysis.main(["--run", str(run), "--ticker", "NVDA", "--form", "10-Q",
-                              "--cutoff", "2026-08-26", "--period-end", "2026-07-26"]) == 4
+                              "--cutoff", "2026-08-26", "--period-end", "2026-07-26",
+                              "--on-fable-limit", "stop"]) == 4
 
 
 def test_a_failure_after_tokens_were_spent_is_retried_and_then_exits_one(tmp_path, monkeypatch):
@@ -596,7 +606,8 @@ def _stopped_at_accounting_analyst(tmp_path, monkeypatch):
     stopped = run_analysis.run_company(run=run, ticker="NVDA", form="10-Q",
                                        cutoff="2026-08-26", period_end="2026-07-26",
                                        store=run_analysis.cutoff_guard.FIXTURES,
-                                       prices=None, control="never")
+                                       prices=None, control="never",
+                                       on_fable_limit="stop")
     assert stopped["fable_limit_reached"] == ["accounting-analyst"]
     return run, stopped
 
@@ -814,7 +825,8 @@ def _stopped_at(tmp_path, monkeypatch, stopped_agent: str, control: str,
     stopped = run_analysis.run_company(run=run, ticker="NVDA", form="10-Q",
                                        cutoff="2026-08-26", period_end="2026-07-26",
                                        store=run_analysis.cutoff_guard.FIXTURES,
-                                       prices=None, control=control, model=model)
+                                       prices=None, control=control, model=model,
+                                       on_fable_limit="stop")
     assert stopped["fable_limit_reached"] == [stopped_agent]
     return run, stopped
 
@@ -912,7 +924,7 @@ def _stopped_recording_models(tmp_path, monkeypatch, stopped_agent: str):
                             spec=spec, log=log), model_requested=spec["model"])
 
     monkeypatch.setattr(run_analysis, "ask", ask)
-    stopped = run_analysis.run_company(run=run, **_run_keyword())
+    stopped = run_analysis.run_company(run=run, on_fable_limit="stop", **_run_keyword())
     assert stopped["fable_limit_reached"] == [stopped_agent]
     return run, stopped
 
@@ -1196,7 +1208,8 @@ def test_the_limit_stops_the_run_where_it_stands_publishes_what_finished_and_exi
     manifest = run_analysis.run_company(run=run, ticker="NVDA", form="10-Q",
                                         cutoff="2026-08-26", period_end="2026-07-26",
                                         store=run_analysis.cutoff_guard.FIXTURES,
-                                        prices=None, control="always")
+                                        prices=None, control="always",
+                                        on_fable_limit="stop")
     assert manifest["fable_limit_reached"] == ["accounting-analyst"]
     assert "stopped there" in manifest["analysis_failure"]
     assert "valuation-analyst" not in manifest["agents"]       # nothing ran past it
@@ -1223,7 +1236,8 @@ def test_the_limit_stops_the_run_where_it_stands_publishes_what_finished_and_exi
     assert run_analysis.interpreter_pin.WRONG_INTERPRETER == 3
     assert run_analysis.LIMIT_REACHED != run_analysis.interpreter_pin.WRONG_INTERPRETER
     command = ["--run", str(run), "--ticker", "NVDA", "--form", "10-Q",
-               "--cutoff", "2026-08-26", "--period-end", "2026-07-26"]
+               "--cutoff", "2026-08-26", "--period-end", "2026-07-26",
+               "--on-fable-limit", "stop"]
     monkeypatch.setattr(run_analysis, "run_company", lambda **kw: manifest)
     monkeypatch.setattr(run_analysis.interpreter_pin, "enforce", lambda: 0)
     assert run_analysis.main(command) == run_analysis.LIMIT_REACHED
@@ -1253,7 +1267,8 @@ def test_the_limit_at_the_valuation_analyst_still_publishes_both_analyses_and_th
     manifest = run_analysis.run_company(run=run, ticker="NVDA", form="10-Q",
                                         cutoff="2026-08-26", period_end="2026-07-26",
                                         store=run_analysis.cutoff_guard.FIXTURES,
-                                        prices=None, control="always")
+                                        prices=None, control="always",
+                                        on_fable_limit="stop")
     assert manifest["fable_limit_reached"] == ["valuation-analyst"]
     assert "valuation-analyst-second-pass" not in manifest["agents"]
     assert "control-single-agent" not in manifest["agents"]
@@ -1520,3 +1535,914 @@ def test_the_valuation_analyst_is_handed_only_the_paragraphs_the_notes_reader_fl
         assert record["trimmed"]["input_mdna.md"]["kept"] == []
         assert record["trimmed"]["input_mdna.md"]["of"] == 112
         assert record["trimmed"]["input_mdna.md"]["note"].startswith("0 of 112 paragraphs")
+
+
+# --- the limit falls back to Opus (the owner's decision of 2026-10-07) --------------------
+#
+# "fable 사용량이 max 가 되면 오퍼스로 전환시키도록해": when Fable usage reaches its
+# limit, switch to Opus. Expected values below are the stub CLI's own answers,
+# the hand-written manifest edits, and the module's constants.
+
+# The CLI answering the limit on a Fable call: two tokens in, none out, Fable named.
+FABLE_LIMIT = (1, {"is_error": True,
+                   "result": "You've reached your Fable limit. Switch to another model to continue.",
+                   "usage": {"input_tokens": 2, "output_tokens": 0},
+                   "modelUsage": {"claude-fable-5-1": {"outputTokens": 0}}}, None)
+OPUS_LIMIT = (1, {"is_error": True, "result": "You've reached your Opus limit.",
+                  "usage": {"input_tokens": 3, "output_tokens": 0},
+                  "modelUsage": {"claude-opus-5-5": {"outputTokens": 0}}}, None)
+# What a stubbed agent is served, by the name it asked for.
+SERVED = {"fable": "claude-fable-5-1", "opus": "claude-opus-5-5"}
+
+
+def _opus_writes(name: str, payload: dict):
+    """The CLI, on Opus, writing `name`: seven tokens in, five out."""
+    return (0, {"usage": {"input_tokens": 7, "output_tokens": 5}, "total_cost_usd": 0.25,
+                "modelUsage": {"claude-opus-5-5": {"outputTokens": 5}}},
+            {name: json.dumps(payload)})
+
+
+def _sequential(run, names, logs, model=None, policy=None):
+    """`parallel` in the pipeline's order, so which analyst the limit reaches
+    first is the test's choice and not the scheduler's."""
+    return {name: run_analysis.run_agent(run, name, logs, model, policy) for name in names}
+
+
+def _financial_analyst_over_cli(tmp_path, monkeypatch, answers, run=None):
+    """A run where the financial analyst's calls go through the real `ask` over
+    a stubbed CLI answering `answers`, the analysts called in order; every other
+    agent writes and records the model it was asked on, as the real `ask` does.
+    Returns the run, the CLI commands made, and the models each agent was asked
+    on, call by call, keyed by the directory called (the two valuation passes
+    share one definition name). `run` names a bundle already in place, which is
+    then used as it stands; by default NVDA's is built under `tmp_path`."""
+    if run is None:
+        run = tmp_path / "NVDA" / NVDA_ACCESSION
+        assemble_bundle.write(assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,
+                                                    prior_runs=run.parent.parent), run)
+    written, real_ask = _fake_ask({}), run_analysis.ask
+    cli, calls = _cli(list(answers))
+    asked: dict[str, list[str]] = {}
+
+    def ask(directory, *, agent, writes, message, spec, log):
+        asked.setdefault(directory.name, []).append(spec["model"])
+        if agent == "financial-analyst":
+            monkeypatch.setattr(run_analysis.subprocess, "run", cli)
+            return real_ask(directory, agent=agent, writes=writes, message=message,
+                            spec=spec, log=log)
+        return dict(written(directory, agent=agent, writes=writes, message=message,
+                            spec=spec, log=log),
+                    model_requested=spec["model"], model_served=SERVED[spec["model"]])
+
+    monkeypatch.setattr(run_analysis, "ask", ask)
+    monkeypatch.setattr(run_analysis, "parallel", _sequential)
+    return run, calls, asked
+
+
+def _models_asked(calls) -> list[str]:
+    return [command[command.index("--model") + 1] for command in calls]
+
+
+def test_the_limit_falls_back_to_opus_for_the_agent_and_every_later_fable_agent(
+        tmp_path, monkeypatch, capsys):
+    """The financial analyst's Fable call answers the limit; the stub's next
+    answer, on Opus, writes the analysis. The analyst is called again at once on
+    Opus, the valuation analyst, its second pass and the control -- every later
+    agent whose definition asks for Fable -- run on Opus, each recorded as a
+    fallback by name; the accounting analyst, called before the limit, stays a
+    Fable record; the manifest carries the one `model_fallback` row; the run
+    finishes with no frame missing and exits 0, naming the flag that carries the
+    fallback into the rest of the batch, because the limit's message confirmed
+    it; the batch sizer leaves the filing out of its median and names it."""
+    answers = [FABLE_LIMIT, _opus_writes("analysis_financial.json",
+                                         _analysis("financial", "earnings_quality_accruals_rising"))]
+    run, calls, asked = _financial_analyst_over_cli(tmp_path, monkeypatch, answers)
+    manifest = run_analysis.run_company(run=run, **_run_keyword("always"))
+    assert _models_asked(calls) == ["fable", "opus"]            # the limit, then Opus at once
+    assert asked == {"numbers-reader": ["opus"], "notes-text-reader": ["opus"],
+                     "accounting-analyst": ["fable"], "financial-analyst": ["fable", "opus"],
+                     "valuation-analyst": ["opus"], "valuation-analyst-second-pass": ["opus"],
+                     run_analysis.CONTROL_DIRNAME: ["opus"]}
+    financial = manifest["agents"]["financial-analyst"]
+    assert financial["result"] == "written" and "limit_reached" not in financial
+    assert [(row["attempt"], row["model_requested"], row["model_served"], row["outcome"])
+            for row in financial["attempts"]] == [(1, "fable", "claude-fable-5-1", "limit"),
+                                                  (2, "opus", "claude-opus-5-5", "written")]
+    assert financial["model_requested"] == "fable"
+    assert financial["model_served"] == "claude-opus-5-5"
+    assert financial["fallback_from"] == "fable"
+    assert financial["fallback_reason"] == run_analysis.FALLBACK_REASON == "fable_limit_reached"
+    assert financial["input_tokens"] == 2 + 7 and financial["output_tokens"] == 0 + 5
+    assert financial["attempt"] == 2
+    for name in ("valuation-analyst", "valuation-analyst-second-pass", "control-single-agent"):
+        record = manifest["agents"][name]
+        assert record["model_requested"] == "fable" and record["model_served"] == "claude-opus-5-5"
+        assert record["fallback_from"] == "fable"
+        assert record["fallback_reason"] == "fable_limit_reached", name
+    for name in ("numbers-reader", "notes-text-reader", "accounting-analyst"):
+        assert "fallback_from" not in manifest["agents"][name], name
+    assert manifest["agents"]["accounting-analyst"]["model_served"] == "claude-fable-5-1"
+    fallback = manifest["model_fallback"]
+    assert fallback["from"] == "fable" and fallback["to"] == run_analysis.FALLBACK_MODEL == "opus"
+    assert fallback["first_agent"] == "financial-analyst" and fallback["at"].endswith("Z")
+    assert fallback["reason"] == "fable_limit_reached" and "confirmed_by" not in fallback
+    assert "fable_limit_reached" not in manifest and manifest["analysis_failure"] is None
+    assert run_analysis.FINISH_MARKER in manifest and "model_override" not in manifest
+    for name in ("analysis_accounting.json", "analysis_financial.json", "assumptions.json",
+                 "analysis_valuation.json", run_analysis.FINAL, "memo_ko.md",
+                 *run_analysis.CONTROL_WRITES):
+        assert (run / name).is_file(), name
+    memo = (run / "memo_ko.md").read_text(encoding="utf-8")
+    assert "실행되지 않았습니다" not in memo and "해석이 없습니다" not in memo
+    assert agent_inputs.isolation_violations(run) == []
+    monkeypatch.setattr(run_analysis, "run_company", lambda **kw: manifest)
+    monkeypatch.setattr(run_analysis.interpreter_pin, "enforce", lambda: 0)
+    capsys.readouterr()
+    assert run_analysis.main(_main_command(run)) == 0
+    err = capsys.readouterr().err
+    assert f"every later run under {run.parent.parent} carries it on its own for 12 hours" in err
+    assert f"a run elsewhere names it with --carry-fallback-from {run}" in err
+    # the batch sizer: a published filing, its Fable tokens the accounting
+    # analyst's 1+1 (the stub) and the limit attempt's 2+0, no Opus attempt; it
+    # fell back, so it is left out of the median, and with no other filing on
+    # record the batch is one filing
+    assert fable_batch.published(manifest) is True
+    assert fable_batch.on_record(run.parent.parent) == {f"NVDA/{NVDA_ACCESSION}": 4}
+    assert fable_batch.fell_back(run.parent.parent) == [f"NVDA/{NVDA_ACCESSION}"]
+    sized = fable_batch.size(40, fable_batch.on_record(run.parent.parent),
+                             fable_batch.fell_back(run.parent.parent))
+    assert sized["batch"] == 1 and sized["median_per_filing"] is None
+    assert sized["fell_back"] == 1
+    assert sized["fell_back_filings"] == [f"NVDA/{NVDA_ACCESSION}"]
+    assert (f"1 filing(s) fell back to opus and are left out of the median "
+            f"(NVDA/{NVDA_ACCESSION})") in sized["calculation"]
+
+
+def test_under_stop_the_limit_stops_the_run_with_no_opus_call_and_exits_four(
+        tmp_path, monkeypatch):
+    """The other side: `--on-fable-limit stop` keeps the rule of 2026-10-06. The
+    stub's Opus answer is never taken, nothing after the analyst runs, no
+    fallback is recorded, and the command exits LIMIT_REACHED."""
+    answers = [FABLE_LIMIT, _opus_writes("analysis_financial.json",
+                                         _analysis("financial", "earnings_quality_accruals_rising"))]
+    run, calls, asked = _financial_analyst_over_cli(tmp_path, monkeypatch, answers)
+    manifest = run_analysis.run_company(run=run, on_fable_limit="stop", **_run_keyword("always"))
+    assert _models_asked(calls) == ["fable"]
+    assert asked["financial-analyst"] == ["fable"]
+    assert "valuation-analyst" not in asked and run_analysis.CONTROL_DIRNAME not in asked
+    assert manifest["fable_limit_reached"] == ["financial-analyst"]
+    assert "model_fallback" not in manifest
+    financial = manifest["agents"]["financial-analyst"]
+    assert financial["limit_reached"] is True and "fallback_from" not in financial
+    assert [row["outcome"] for row in financial["attempts"]] == ["limit"]
+    assert "nothing fell back to another model" in manifest["analysis_failure"]
+    assert (run / "analysis_accounting.json").is_file()
+    assert not (run / "analysis_financial.json").exists()
+    assert fable_batch.published(manifest) is False
+    monkeypatch.setattr(run_analysis, "run_company", lambda **kw: manifest)
+    monkeypatch.setattr(run_analysis.interpreter_pin, "enforce", lambda: 0)
+    assert run_analysis.main(_main_command(run, "--on-fable-limit", "stop")) == 4
+    # the switch takes the two values and nothing else; the default is opus
+    with pytest.raises(run_analysis.RunError, match="not one of"):
+        run_analysis.LimitPolicy("neither")
+    assert run_analysis.DEFAULT_ON_FABLE_LIMIT == "opus"
+    assert run_analysis.ON_FABLE_LIMIT == ("stop", "opus")
+
+
+def test_a_limit_on_the_fallback_model_stops_and_an_opus_request_never_falls_back(
+        tmp_path, monkeypatch):
+    """One call under the policy: a Fable limit then an Opus limit is two
+    attempts, both `limit`, and the record still says the limit was reached --
+    there is nowhere further to go. A call that asked for Opus and answers the
+    limit is one attempt, no fallback, nothing noted for the run."""
+    run = tmp_path / "run"
+    (run / "a").mkdir(parents=True)
+    (run / "input_manifest.json").write_text("{}", encoding="utf-8")
+    cli, calls = _cli([FABLE_LIMIT, OPUS_LIMIT])
+    monkeypatch.setattr(run_analysis.subprocess, "run", cli)
+    policy = run_analysis.LimitPolicy("opus")
+    spec = {"model": "fable", "description": "d", "prompt": "p", "tools": ["Read"]}
+    record = run_analysis.call(run, run / "a", agent="x", writes=("out.json",), message="m",
+                               spec=spec, log=run / "x.log", policy=policy)
+    assert _models_asked(calls) == ["fable", "opus"]
+    assert record["limit_reached"] is True and record["fallback_from"] == "fable"
+    assert [(row["model_requested"], row["outcome"]) for row in record["attempts"]] == [
+        ("fable", "limit"), ("opus", "limit")]
+    assert record["input_tokens"] == 2 + 3
+    assert policy.fallback["first_agent"] == "x"
+    assert json.loads((run / "input_manifest.json").read_text())["model_fallback"] == policy.fallback
+    assert run_analysis.limit_hit({"x": record}) == ["x"]
+    cli, calls = _cli([OPUS_LIMIT] * 2)
+    monkeypatch.setattr(run_analysis.subprocess, "run", cli)
+    policy = run_analysis.LimitPolicy("opus")
+    record = run_analysis.call(run, run / "a", agent="y", writes=("out.json",), message="m",
+                               spec=dict(spec, model="opus"), log=run / "y.log", policy=policy)
+    assert _models_asked(calls) == ["opus"]
+    assert record["limit_reached"] is True and "fallback_from" not in record
+    assert policy.fallback is None
+
+
+def test_a_fallback_run_that_stopped_on_an_error_resumes_on_opus_and_stays_labelled(
+        tmp_path, monkeypatch):
+    """The financial analyst fell back, then the calculator refused an input
+    before the valuation analyst (planted as the crash test above plants it):
+    the manifest carries `model_fallback` and `stopped_on`. The plan accepts a
+    resume naming no model and one naming opus, and refuses one naming
+    claude-fable-5-1. A definition edited between the nights is refused under
+    the resume's --model opus as under none, and a resume under
+    `--on-fable-limit stop` is refused before any agent runs. Resumed with no
+    model, the pending valuation passes run on Opus, labelled, and the fallback
+    row stands as first written."""
+    answers = [FABLE_LIMIT, _opus_writes("analysis_financial.json",
+                                         _analysis("financial", "earnings_quality_accruals_rising"))]
+    run, calls, asked = _financial_analyst_over_cli(tmp_path, monkeypatch, answers)
+    real_calculate, state = run_analysis.calculator.calculate, {"raised": False}
+
+    def calculate(**keyword):
+        if "accounting" in keyword and "assumptions" not in keyword and not state["raised"]:
+            state["raised"] = True
+            raise run_analysis.calculator.CalculatorInputError("planted: an input is not there")
+        return real_calculate(**keyword)
+
+    monkeypatch.setattr(run_analysis.calculator, "calculate", calculate)
+    with pytest.raises(run_analysis.calculator.CalculatorInputError, match="planted"):
+        run_analysis.run_company(run=run, **_run_keyword())
+    stopped = json.loads((run / "input_manifest.json").read_text(encoding="utf-8"))
+    assert run_analysis.FINISH_MARKER not in stopped and "stopped_on" in stopped
+    row = stopped["model_fallback"]
+    assert row["first_agent"] == "financial-analyst" and row["to"] == "opus"
+    assert stopped["agents"]["financial-analyst"]["fallback_from"] == "fable"
+    assert "valuation-analyst" not in asked
+    for model in (None, "opus"):
+        plan = run_analysis.resume_plan(run, stopped, False, model)
+        assert plan["fallback"] == row and plan["skipped"] == [
+            "numbers-reader", "notes-text-reader", "accounting-analyst", "financial-analyst"]
+    with pytest.raises(run_analysis.RunError, match="fallen back to opus from financial-analyst; "
+                       "a resume under claude-fable-5-1 would mix models"):
+        run_analysis.resume_plan(run, stopped, False, "claude-fable-5-1")
+    # resumed once under --model opus and stopped again, the manifest then names
+    # opus as its override: the agents that asked for Fable -- the accounting
+    # analyst before the limit, the financial analyst labelled after it -- are
+    # explained by the row, and a resume under opus is accepted again
+    overridden = dict(stopped, model_override={"model": "opus", "applies_to": [],
+                                               "why": "planted"})
+    assert run_analysis.resume_plan(run, overridden, False, "opus")["fallback"] == row
+    # the other side: the same override with no row and no label -- the financial
+    # analyst served by Fable -- refuses the Fable agents on record
+    bare = {key: value for key, value in overridden.items() if key != "model_fallback"}
+    bare["agents"] = dict(overridden["agents"], **{"financial-analyst": dict(
+        {key: value for key, value in overridden["agents"]["financial-analyst"].items()
+         if key not in ("fallback_from", "fallback_reason")},
+        model_served="claude-fable-5-1")})
+    with pytest.raises(run_analysis.RunError, match="the run stopped under opus, but "
+                       "accounting-analyst on record asked for fable"):
+        run_analysis.resume_plan(run, bare, False, "opus")
+    # a definition edited between the nights -- the valuation analyst's, to the
+    # fallback model itself -- is refused whether the resume names opus or no
+    # model: the analysts on record asked for fable, the fallen-back one included
+    _definitions_with(tmp_path, monkeypatch, {"valuation-analyst": "opus"})
+    for model in (None, "opus"):
+        with pytest.raises(run_analysis.RunError, match="the run stopped under fable; the "
+                           "definition of valuation-analyst now asks for opus"):
+            run_analysis.resume_plan(run, stopped, False, model)
+    _definitions_with(tmp_path, monkeypatch, {"valuation-analyst": "fable"})
+    assert run_analysis.resume_plan(run, stopped, False, "opus")["fallback"] == row
+    # under `stop`: a resume of a run that fell back is refused, exit 2, before
+    # any agent runs, and the policy never moves a call to Opus by the row
+    before = (run / "input_manifest.json").read_bytes()
+    with pytest.raises(run_analysis.RunError, match="fell back to opus at financial-analyst; "
+                       "a --on-fable-limit stop resume would call its pending Fable agents "
+                       "on Fable after that, mixing models the other way"):
+        run_analysis.run_company(run=run, on_fable_limit="stop", **_run_keyword())
+    monkeypatch.setattr(run_analysis.interpreter_pin, "enforce", lambda: 0)
+    assert run_analysis.main(_main_command(run, "--on-fable-limit", "stop")) \
+        == run_analysis.BAD_INPUT == 2
+    assert "valuation-analyst" not in asked
+    assert (run / "input_manifest.json").read_bytes() == before
+    assert run_analysis.LimitPolicy("stop", row).model_for("fable") == "fable"
+    assert run_analysis.LimitPolicy("opus", row).model_for("fable") == "opus"
+    resumed = run_analysis.run_company(run=run, **_run_keyword())
+    assert asked["valuation-analyst"] == ["opus"]
+    assert asked["valuation-analyst-second-pass"] == ["opus"]
+    assert asked["financial-analyst"] == ["fable", "opus"]       # not called again
+    assert resumed["model_fallback"] == row
+    for name in ("valuation-analyst", "valuation-analyst-second-pass"):
+        record = resumed["agents"][name]
+        assert record["model_requested"] == "fable" and record["model_served"] == "claude-opus-5-5"
+        assert record["fallback_from"] == "fable" and record["fallback_reason"] == "fable_limit_reached"
+    assert resumed["resume_skipped"] == ["numbers-reader", "notes-text-reader",
+                                         "accounting-analyst", "financial-analyst"]
+    assert resumed["analysis_failure"] is None and "stopped_on" not in resumed
+    assert fable_batch.published(resumed) is True
+
+
+def test_a_mix_the_record_does_not_explain_is_still_refused_on_resume(tmp_path, monkeypatch):
+    """A stopped run whose financial analyst asked for Fable and was served Opus
+    with no `fallback_from` is refused; so is one carrying `fallback_from` under
+    a manifest with no `model_fallback`. With the row recorded, the resume runs
+    and calls the pending Fable agents on Opus."""
+    run, stopped = _stopped_at_accounting_analyst(tmp_path, monkeypatch)
+    path = run / "input_manifest.json"
+    edited = json.loads(path.read_text(encoding="utf-8"))
+    financial = edited["agents"]["financial-analyst"]
+    financial["model_requested"], financial["model_served"] = "fable", "claude-opus-5-5"
+    path.write_text(json.dumps(edited), encoding="utf-8")
+    monkeypatch.setattr(run_analysis, "ask",
+                        lambda *a, **k: (_ for _ in ()).throw(AssertionError("an agent ran")))
+    with pytest.raises(run_analysis.RunError, match="financial-analyst on record asked for fable "
+                       "and was served claude-opus-5-5 with no recorded fallback"):
+        run_analysis.run_company(run=run, **_run_keyword())
+    financial["fallback_from"] = "fable"
+    path.write_text(json.dumps(edited), encoding="utf-8")
+    with pytest.raises(run_analysis.RunError, match="fell back from fable, but the manifest "
+                       "records no model_fallback"):
+        run_analysis.run_company(run=run, **_run_keyword())
+    edited["model_fallback"] = {"from": "fable", "to": "opus", "at": "2026-10-07T00:00:00Z",
+                                "first_agent": "financial-analyst"}
+    path.write_text(json.dumps(edited), encoding="utf-8")
+    written, asked = _fake_ask({}), {}
+
+    def ask(directory, *, agent, writes, message, spec, log):
+        asked.setdefault(directory.name, []).append(spec["model"])
+        return dict(written(directory, agent=agent, writes=writes, message=message,
+                            spec=spec, log=log),
+                    model_requested=spec["model"], model_served=SERVED[spec["model"]])
+
+    monkeypatch.setattr(run_analysis, "ask", ask)
+    manifest = run_analysis.run_company(run=run, **_run_keyword())
+    assert asked == {"accounting-analyst": ["opus"], "valuation-analyst": ["opus"],
+                     "valuation-analyst-second-pass": ["opus"]}
+    assert manifest["model_fallback"] == edited["model_fallback"]
+    assert manifest["agents"]["accounting-analyst"]["fallback_from"] == "fable"
+    assert manifest["analysis_failure"] is None and "fable_limit_reached" not in manifest
+
+
+def test_a_run_with_no_limit_records_no_fallback(finished):
+    run, manifest, _ = finished
+    assert "model_fallback" not in manifest
+    assert not any("fallback_from" in record or "fallback_reason" in record
+                   for record in manifest["agents"].values())
+    assert fable_batch.fell_back(run.parent.parent) == []
+    assert fable_batch.size(1000, {"A/1": 400})["fell_back"] == 0
+
+
+def _fable_writes(name: str, payload: dict):
+    """The CLI, on Fable, writing `name`: three tokens in, two out."""
+    return (0, {"usage": {"input_tokens": 3, "output_tokens": 2}, "total_cost_usd": 0.5,
+                "modelUsage": {"claude-fable-5-1": {"outputTokens": 2}}},
+            {name: json.dumps(payload)})
+
+
+def test_a_limit_the_fallback_model_answers_too_stops_the_run_and_exits_one_not_four(
+        tmp_path, monkeypatch, capsys):
+    """The financial analyst's Fable call answers the limit and its Opus call
+    answers the Opus limit: the run stops there, as it would under `stop`, the
+    manifest naming the analyst under `fable_limit_reached` beside the
+    fallback row, and nothing after the analysts runs. Under `opus` the command
+    exits FAILED, 1: exit 4 is `stop`'s alone. The same manifest under `stop`
+    reads 4, which is the stop test's own exit above. The stderr line says to
+    stop the batch and never names the flag that would carry the fallback on."""
+    run, calls, asked = _financial_analyst_over_cli(tmp_path, monkeypatch,
+                                                    [FABLE_LIMIT, OPUS_LIMIT])
+    manifest = run_analysis.run_company(run=run, **_run_keyword("always"))
+    assert _models_asked(calls) == ["fable", "opus"]
+    assert "valuation-analyst" not in asked and run_analysis.CONTROL_DIRNAME not in asked
+    assert manifest["fable_limit_reached"] == ["financial-analyst"]
+    assert manifest["model_fallback"]["first_agent"] == "financial-analyst"
+    financial = manifest["agents"]["financial-analyst"]
+    assert financial["limit_reached"] is True and financial["fallback_from"] == "fable"
+    assert [(row["model_requested"], row["outcome"]) for row in financial["attempts"]] == [
+        ("fable", "limit"), ("opus", "limit")]
+    assert ("opus answered the limit too at financial-analyst"
+            in manifest["analysis_failure"])
+    assert run_analysis.missing_frames(run, manifest["agents"])["financial"].startswith(
+        "financial-analyst answered the limit on opus too, after the Fable limit")
+    assert fable_batch.published(manifest) is False
+    monkeypatch.setattr(run_analysis, "run_company", lambda **kw: manifest)
+    monkeypatch.setattr(run_analysis.interpreter_pin, "enforce", lambda: 0)
+    capsys.readouterr()
+    assert run_analysis.main(_main_command(run)) == run_analysis.FAILED == 1
+    err = capsys.readouterr().err
+    assert "--carry-fallback-from" not in err
+    assert err.strip() == ("run_analysis: a limit stopped this run at financial-analyst on opus, "
+                           "the model a Fable limit falls back to: stop the batch "
+                           "(fable_limit_reached in the manifest); nothing is carried")
+    assert run_analysis.main(_main_command(run, "--on-fable-limit", "stop")) \
+        == run_analysis.LIMIT_REACHED == 4
+    assert capsys.readouterr().err == ""             # exit 4 says it; nothing is carried
+
+
+def test_the_rest_of_the_batch_carries_the_fallback_from_its_first_call(
+        tmp_path, monkeypatch, capsys):
+    """An earlier run of the batch fell back: its manifest, written here by hand,
+    carries the row. This run, started with `--carry-fallback-from` naming it,
+    never asks Fable: the financial analyst's one call is the stub's one answer,
+    on Opus; every agent whose definition asks for Fable is asked on Opus at its
+    first call and labelled; the row is noted at the first of them, the
+    accounting analyst, and names the earlier run; no limit attempt is on
+    record; the command exits 0 and names the flag for the next run. The other
+    side: a run named that records no fallback, one whose limit was noted more
+    than CARRY_HOURS before (another night's), and the flag under `stop`, are
+    refused before any agent runs. The earlier row's time is written an hour
+    before the clock this test reads, so the window is the test's own."""
+    answers = [_opus_writes("analysis_financial.json",
+                            _analysis("financial", "earnings_quality_accruals_rising"))]
+    run, calls, asked = _financial_analyst_over_cli(tmp_path, monkeypatch, answers)
+    earlier = tmp_path / "AMD" / "0000002488-26-000001"
+    earlier.mkdir(parents=True)
+    (earlier / "input_manifest.json").write_text(json.dumps({"agents": {}}), encoding="utf-8")
+    with pytest.raises(run_analysis.RunError, match="records no model_fallback"):
+        run_analysis.run_company(run=run, carry_fallback_from=earlier, **_run_keyword("always"))
+    monkeypatch.setattr(run_analysis.interpreter_pin, "enforce", lambda: 0)
+    assert run_analysis.main(_main_command(run, "--carry-fallback-from", str(earlier))) \
+        == run_analysis.BAD_INPUT == 2
+    now = dt.datetime.now(dt.timezone.utc)
+    stamp = "%Y-%m-%dT%H:%M:%SZ"
+    old = {"from": "fable", "to": "opus", "first_agent": "financial-analyst",
+           "reason": "fable_limit_reached",
+           "at": (now - dt.timedelta(hours=run_analysis.CARRY_HOURS + 1)).strftime(stamp)}
+    (earlier / "input_manifest.json").write_text(json.dumps({"model_fallback": old}),
+                                                 encoding="utf-8")
+    with pytest.raises(run_analysis.RunError, match=f"its limit was noted at {old['at']}, not "
+                       "within the 12 hours before this run, so it is not this batch's"):
+        run_analysis.run_company(run=run, carry_fallback_from=earlier, **_run_keyword("always"))
+    row = dict(old, at=(now - dt.timedelta(hours=1)).strftime(stamp))
+    (earlier / "input_manifest.json").write_text(json.dumps({"model_fallback": row}),
+                                                 encoding="utf-8")
+    with pytest.raises(run_analysis.RunError, match="--on-fable-limit stop does not fall back"):
+        run_analysis.run_company(run=run, carry_fallback_from=earlier, on_fable_limit="stop",
+                                 **_run_keyword("always"))
+    assert calls == [] and asked == {}                         # nothing ran on a refusal
+    manifest = run_analysis.run_company(run=run, carry_fallback_from=earlier,
+                                        **_run_keyword("always"))
+    assert _models_asked(calls) == ["opus"]
+    assert asked == {"numbers-reader": ["opus"], "notes-text-reader": ["opus"],
+                     "accounting-analyst": ["opus"], "financial-analyst": ["opus"],
+                     "valuation-analyst": ["opus"], "valuation-analyst-second-pass": ["opus"],
+                     run_analysis.CONTROL_DIRNAME: ["opus"]}
+    fallback = manifest["model_fallback"]
+    assert set(fallback) == {"from", "to", "at", "first_agent", "reason", "carried_from",
+                             "carried_limit_at"}
+    assert fallback["reason"] == "fable_limit_reached"
+    assert fallback["carried_limit_at"] == row["at"]
+    assert fallback["from"] == "fable" and fallback["to"] == "opus"
+    assert fallback["first_agent"] == "accounting-analyst"
+    assert fallback["carried_from"] == "AMD/0000002488-26-000001"
+    for name in ("accounting-analyst", "financial-analyst", "valuation-analyst",
+                 "valuation-analyst-second-pass", "control-single-agent"):
+        record = manifest["agents"][name]
+        assert record["model_requested"] == "fable", name
+        assert record["model_served"] == "claude-opus-5-5", name
+        assert record["fallback_from"] == "fable", name
+        assert record["fallback_reason"] == "fable_limit_reached", name
+    for name in ("numbers-reader", "notes-text-reader"):
+        assert "fallback_from" not in manifest["agents"][name], name
+    financial = manifest["agents"]["financial-analyst"]
+    assert [(row["model_requested"], row["outcome"]) for row in financial["attempts"]] == [
+        ("opus", "written")]
+    assert manifest["analysis_failure"] is None and "fable_limit_reached" not in manifest
+    # no attempt Fable served: the filing costs no Fable token and is not on
+    # record, and it is a published fallback run
+    assert fable_batch.on_record(tmp_path) == {}
+    assert fable_batch.fell_back(tmp_path) == [f"NVDA/{NVDA_ACCESSION}"]
+    capsys.readouterr()
+    monkeypatch.setattr(run_analysis, "run_company", lambda **kw: manifest)
+    assert run_analysis.main(_main_command(run, "--carry-fallback-from", str(earlier))) == 0
+    assert "fell back to opus at accounting-analyst" in capsys.readouterr().err
+
+
+def test_a_run_that_fell_back_names_the_flag_for_the_rest_of_the_batch_and_one_that_did_not_is_silent(
+        tmp_path, monkeypatch, capsys):
+    """The stderr line says where the fallback carries -- every later run under
+    the same root on its own, for twelve hours from the limit, and a run
+    elsewhere by the flag: printed for a manifest carrying a confirmed row,
+    never for one without it, and never on stdout, which stays the agents'
+    JSON."""
+    monkeypatch.setattr(run_analysis.interpreter_pin, "enforce", lambda: 0)
+    run = tmp_path / "NVDA" / NVDA_ACCESSION
+    row = {"from": "fable", "to": "opus", "at": "2026-10-07T03:00:00Z",
+           "first_agent": "financial-analyst", "reason": "fable_limit_reached"}
+    finished_clean = {"agents": {}, "analysis_failure": None,
+                      run_analysis.FINISH_MARKER: "2026-10-07T04:00:00Z"}
+    monkeypatch.setattr(run_analysis, "run_company",
+                        lambda **kw: dict(finished_clean, model_fallback=row))
+    assert run_analysis.main(_main_command(run)) == 0
+    out = capsys.readouterr()
+    assert json.loads(out.out) == {}
+    assert out.err.strip() == (
+        f"run_analysis: fell back to opus at financial-analyst (model_fallback in "
+        f"{run / 'input_manifest.json'}); every later run under {tmp_path} carries it on its "
+        f"own for 12 hours from 2026-10-07T03:00:00Z, and a run elsewhere names it with "
+        f"--carry-fallback-from {run}")
+    monkeypatch.setattr(run_analysis, "run_company", lambda **kw: dict(finished_clean))
+    assert run_analysis.main(_main_command(run)) == 0
+    assert capsys.readouterr().err == ""
+
+
+def test_a_row_from_an_attempt_that_started_over_is_not_carried_into_a_run_that_did_not_fall_back(
+        tmp_path, monkeypatch):
+    """A row on disk with no agent on record (an earlier attempt noted the limit
+    and stopped before any call returned): the run starts over, every Fable agent
+    asks Fable, the financial analyst's one call is the stub's Fable answer, and
+    the finished manifest carries no row this run never made."""
+    answers = [_fable_writes("analysis_financial.json",
+                             _analysis("financial", "earnings_quality_accruals_rising"))]
+    run, calls, asked = _financial_analyst_over_cli(tmp_path, monkeypatch, answers)
+    path = run / "input_manifest.json"
+    planted = json.loads(path.read_text(encoding="utf-8"))
+    planted["model_fallback"] = {"from": "fable", "to": "opus", "at": "2026-10-07T03:00:00Z",
+                                 "first_agent": "financial-analyst"}
+    path.write_text(json.dumps(planted), encoding="utf-8")
+    manifest = run_analysis.run_company(run=run, **_run_keyword())
+    assert _models_asked(calls) == ["fable"]
+    assert asked["accounting-analyst"] == ["fable"] and asked["valuation-analyst"] == ["fable"]
+    assert "model_fallback" not in manifest and manifest["analysis_failure"] is None
+    assert manifest["agents"]["financial-analyst"]["model_served"] == "claude-fable-5-1"
+    assert fable_batch.fell_back(run.parent.parent) == []
+
+
+def test_a_limit_read_off_the_shape_falls_back_under_its_own_label_and_stays_in_its_run(
+        tmp_path, monkeypatch, capsys):
+    """Under `opus`, a Fable call that fails in two seconds having spent no token,
+    with no limit message, still falls back (the owner's reading of that shape,
+    lessons.md 2026-09-29), but the label says it was the shape:
+    `fable_failed_like_the_limit` on the agent, on every later Fable agent and on
+    the row. The command exits 0 and its stderr line says the fallback stays in
+    this run; no carry line is printed, and naming this run with
+    `--carry-fallback-from` is refused. The message case is the fallback test
+    above: `fable_limit_reached` and the carry line."""
+    _two_second_clock(monkeypatch)
+    answers = [ZERO_TOKEN_FAILURE, _opus_writes("analysis_financial.json",
+                                                _analysis("financial", "earnings_quality_accruals_rising"))]
+    run, calls, asked = _financial_analyst_over_cli(tmp_path, monkeypatch, answers)
+    manifest = run_analysis.run_company(run=run, **_run_keyword("always"))
+    assert _models_asked(calls) == ["fable", "opus"]
+    financial = manifest["agents"]["financial-analyst"]
+    assert financial["result"] == "written" and financial["fallback_from"] == "fable"
+    assert financial["fallback_reason"] == run_analysis.SHAPE_FALLBACK_REASON \
+        == "fable_failed_like_the_limit"
+    assert [(row["model_requested"], row["outcome"]) for row in financial["attempts"]] == [
+        ("fable", "limit"), ("opus", "written")]
+    for name in ("valuation-analyst", "valuation-analyst-second-pass", "control-single-agent"):
+        record = manifest["agents"][name]
+        assert record["model_served"] == "claude-opus-5-5", name
+        assert record["fallback_reason"] == "fable_failed_like_the_limit", name
+    fallback = manifest["model_fallback"]
+    assert fallback["reason"] == "fable_failed_like_the_limit"
+    assert fallback["first_agent"] == "financial-analyst"
+    assert manifest["analysis_failure"] is None and "fable_limit_reached" not in manifest
+    with pytest.raises(run_analysis.RunError, match="its fallback was set off by a Fable "
+                       "failure shaped like the limit .fable_failed_like_the_limit., not by "
+                       "the limit's message, so it stays inside its own run"):
+        run_analysis.carried_fallback(run)
+    monkeypatch.setattr(run_analysis.interpreter_pin, "enforce", lambda: 0)
+    capsys.readouterr()
+    assert run_analysis.main(_main_command(run, "--carry-fallback-from", str(run))) \
+        == run_analysis.BAD_INPUT
+    assert "so it stays inside its own run" in capsys.readouterr().err
+    monkeypatch.setattr(run_analysis, "run_company", lambda **kw: manifest)
+    assert run_analysis.main(_main_command(run)) == 0
+    err = capsys.readouterr().err
+    assert "carries it on its own" not in err
+    assert err.strip() == (
+        "run_analysis: fell back to opus at financial-analyst on a Fable failure shaped like "
+        "the limit (fable_failed_like_the_limit: no token spent, under 10 seconds, no limit "
+        "message), which does not confirm the limit; the fallback stays inside this run, and "
+        "no later run carries it")
+
+
+def test_a_shape_fallback_whose_opus_call_fails_the_same_way_exits_one_with_every_attempt(
+        tmp_path, monkeypatch):
+    """The Fable call fails like the limit, and the Opus call fails the same way:
+    on Opus that is no limit (the shape is read for a Fable call alone), so it is
+    a plain failure, run once more, and the analyst did not write. Every attempt
+    is on record -- the Fable one and both Opus ones -- the label is the shape's,
+    no limit stopped the run, and the command exits FAILED, 1."""
+    _two_second_clock(monkeypatch)
+    run, calls, asked = _financial_analyst_over_cli(tmp_path, monkeypatch,
+                                                    [ZERO_TOKEN_FAILURE] * 3)
+    manifest = run_analysis.run_company(run=run, **_run_keyword())
+    assert _models_asked(calls) == ["fable", "opus", "opus"]
+    financial = manifest["agents"]["financial-analyst"]
+    assert financial["result"] == "failed" and "limit_reached" not in financial
+    assert financial["fallback_reason"] == "fable_failed_like_the_limit"
+    assert [(row["attempt"], row["model_requested"], row["outcome"])
+            for row in financial["attempts"]] == [(1, "fable", "limit"), (2, "opus", "failed"),
+                                                  (3, "opus", "failed")]
+    assert "fable_limit_reached" not in manifest
+    assert manifest["analysis_failure"] == "did not write: financial-analyst"
+    assert "valuation-analyst" not in asked
+    monkeypatch.setattr(run_analysis, "run_company", lambda **kw: manifest)
+    monkeypatch.setattr(run_analysis.interpreter_pin, "enforce", lambda: 0)
+    assert run_analysis.main(_main_command(run)) == run_analysis.FAILED == 1
+
+
+def test_a_row_the_shape_opened_is_confirmed_by_a_later_limit_message(tmp_path):
+    """Two analysts on Fable in parallel: the first fails like the limit and opens
+    the row under the shape's label; the second answers the limit's message, and
+    the row's reason becomes the limit's, `confirmed_by` naming it, the first
+    agent kept. Another shape answer changes nothing. The other side: a row that
+    names no reason is read as the shape, never as the limit."""
+    run = tmp_path / "run"
+    run.mkdir()
+    (run / "input_manifest.json").write_text("{}", encoding="utf-8")
+    policy = run_analysis.LimitPolicy("opus")
+    row = policy.note(run, "accounting-analyst", run_analysis.SHAPE_FALLBACK_REASON)
+    assert row["reason"] == "fable_failed_like_the_limit" and "confirmed_by" not in row
+    assert run_analysis.fallback_reason(row) == "fable_failed_like_the_limit"
+    policy.note(run, "control-single-agent", run_analysis.SHAPE_FALLBACK_REASON)
+    assert "confirmed_by" not in policy.fallback
+    policy.note(run, "financial-analyst", run_analysis.FALLBACK_REASON)
+    assert policy.fallback["reason"] == "fable_limit_reached"
+    assert policy.fallback["confirmed_by"] == "financial-analyst"
+    assert policy.fallback["first_agent"] == "accounting-analyst"
+    on_disk = json.loads((run / "input_manifest.json").read_text(encoding="utf-8"))
+    assert on_disk["model_fallback"] == policy.fallback
+    assert run_analysis.fallback_reason(policy.fallback) == "fable_limit_reached"
+    assert run_analysis.fallback_reason({"from": "fable", "to": "opus"}) \
+        == "fable_failed_like_the_limit"
+
+
+def test_the_carry_window_is_read_off_the_first_limit_of_a_chain_and_never_the_future(tmp_path):
+    """`carried_fallback` against a clock the test names, 2026-10-07T12:00:00Z,
+    with CARRY_HOURS 12: a limit noted at 00:00 that day is twelve hours before
+    and carried; one at 23:59 the day before is more than twelve and refused; one
+    at 13:00, after the clock, is refused; and a row that itself carried a limit
+    is read by the time it carried (`carried_limit_at`), so a chain of runs never
+    stretches the window past the first limit."""
+    now = dt.datetime(2026, 10, 7, 12, 0, 0, tzinfo=dt.timezone.utc)
+    earlier = tmp_path / "AMD" / "0000002488-26-000001"
+    earlier.mkdir(parents=True)
+
+    def carried(row):
+        (earlier / "input_manifest.json").write_text(json.dumps({"model_fallback": dict(
+            {"from": "fable", "to": "opus", "first_agent": "accounting-analyst",
+             "reason": "fable_limit_reached"}, **row)}), encoding="utf-8")
+        return run_analysis.carried_fallback(earlier, now=now)
+
+    assert run_analysis.CARRY_HOURS == 12
+    assert carried({"at": "2026-10-07T00:00:00Z"}) == {
+        "carried_from": "AMD/0000002488-26-000001", "carried_limit_at": "2026-10-07T00:00:00Z"}
+    for at in ("2026-10-06T23:59:59Z", "2026-10-07T13:00:00Z"):
+        with pytest.raises(run_analysis.RunError, match="not within the 12 hours"):
+            carried({"at": at})
+    assert carried({"at": "2026-10-07T11:00:00Z", "carried_limit_at": "2026-10-07T01:00:00Z"}) \
+        == {"carried_from": "AMD/0000002488-26-000001",
+            "carried_limit_at": "2026-10-07T01:00:00Z"}
+    with pytest.raises(run_analysis.RunError, match="not within the 12 hours"):
+        carried({"at": "2026-10-07T11:00:00Z", "carried_limit_at": "2026-10-06T22:00:00Z"})
+    with pytest.raises(run_analysis.RunError, match="names no time the limit was noted at"):
+        carried({"at": "yesterday"})
+
+
+def test_a_fallback_run_resumed_under_model_opus_labels_every_pending_fable_agent(
+        tmp_path, monkeypatch):
+    """The fallback run the resume test above stops on an error, resumed with
+    `--model opus`: the row already puts every pending Fable agent on Opus, so the
+    flag is read as the fallback carried forward. The valuation passes are asked
+    on Opus and recorded as fallbacks by name -- `model_requested: fable`,
+    `fallback_from`, the row's reason -- and no `model_override` is written for
+    them; the readers, on Opus by their own definitions, are not called again."""
+    answers = [FABLE_LIMIT, _opus_writes("analysis_financial.json",
+                                         _analysis("financial", "earnings_quality_accruals_rising"))]
+    run, calls, asked = _financial_analyst_over_cli(tmp_path, monkeypatch, answers)
+    real_calculate, state = run_analysis.calculator.calculate, {"raised": False}
+
+    def calculate(**keyword):
+        if "accounting" in keyword and "assumptions" not in keyword and not state["raised"]:
+            state["raised"] = True
+            raise run_analysis.calculator.CalculatorInputError("planted: an input is not there")
+        return real_calculate(**keyword)
+
+    monkeypatch.setattr(run_analysis.calculator, "calculate", calculate)
+    with pytest.raises(run_analysis.calculator.CalculatorInputError, match="planted"):
+        run_analysis.run_company(run=run, **_run_keyword())
+    row = json.loads((run / "input_manifest.json").read_text(encoding="utf-8"))["model_fallback"]
+    resumed = run_analysis.run_company(run=run, model="opus", **_run_keyword())
+    assert asked["valuation-analyst"] == ["opus"]
+    assert asked["valuation-analyst-second-pass"] == ["opus"]
+    assert asked["numbers-reader"] == ["opus"] and asked["financial-analyst"] == ["fable", "opus"]
+    for name in ("valuation-analyst", "valuation-analyst-second-pass"):
+        record = resumed["agents"][name]
+        assert record["model_requested"] == "fable", name
+        assert record["model_served"] == "claude-opus-5-5", name
+        assert record["fallback_from"] == "fable", name
+        assert record["fallback_reason"] == "fable_limit_reached", name
+    assert "model_override" not in resumed and resumed["model_fallback"] == row
+    assert resumed["analysis_failure"] is None and fable_batch.published(resumed) is True
+
+
+
+def _plant_row(directory, **row):
+    directory.mkdir(parents=True, exist_ok=True)
+    (directory / "input_manifest.json").write_text(json.dumps({"model_fallback": dict(
+        {"from": "fable", "to": "opus", "first_agent": "financial-analyst",
+         "reason": "fable_limit_reached"}, **row)}), encoding="utf-8")
+
+
+def test_the_runner_finds_the_batch_s_fallback_under_its_own_root(tmp_path):
+    """`batch_fallback` against a clock the test names, 2026-10-07T12:00:00Z: of
+    the runs under the root, the most recent limit a carry would accept is the
+    one carried -- CSCO's at 09:00 over AMD's at 08:00; AAPL's at 11:00 is the
+    shape alone, DELL's the night before is past the window, FTNT's manifest is
+    not JSON, and NVDA, the run itself, is passed over though its row is the
+    newest. With none of them, nothing is carried."""
+    now = dt.datetime(2026, 10, 7, 12, 0, 0, tzinfo=dt.timezone.utc)
+    _plant_row(tmp_path / "AMD" / "1", at="2026-10-07T08:00:00Z")
+    _plant_row(tmp_path / "CSCO" / "1", at="2026-10-07T09:00:00Z")
+    _plant_row(tmp_path / "AAPL" / "1", at="2026-10-07T11:00:00Z",
+               reason="fable_failed_like_the_limit")
+    _plant_row(tmp_path / "DELL" / "1", at="2026-10-06T20:00:00Z")
+    (tmp_path / "FTNT" / "1").mkdir(parents=True)
+    (tmp_path / "FTNT" / "1" / "input_manifest.json").write_text("not json", encoding="utf-8")
+    _plant_row(tmp_path / "NVDA" / "1", at="2026-10-07T11:30:00Z")
+    assert run_analysis.batch_fallback(tmp_path / "NVDA" / "1", now=now) == {
+        "carried_from": "CSCO/1", "carried_limit_at": "2026-10-07T09:00:00Z"}
+    for name in ("AMD", "CSCO"):
+        shutil.rmtree(tmp_path / name)
+    assert run_analysis.batch_fallback(tmp_path / "NVDA" / "1", now=now) is None
+
+
+def test_a_later_run_under_the_root_carries_the_batch_s_fallback_without_a_flag(
+        tmp_path, monkeypatch):
+    """An earlier run under the same root fell back an hour before this test's
+    clock, its limit confirmed by the message. This run, started with no flag,
+    never asks Fable: every agent whose definition asks for Fable is asked on Opus
+    from its first call and labelled, and the row names the earlier run. The
+    other side: the same root under `--on-fable-limit stop` carries nothing, and
+    every Fable agent is asked on Fable."""
+    answers = [_opus_writes("analysis_financial.json",
+                            _analysis("financial", "earnings_quality_accruals_rising"))]
+    run, calls, asked = _financial_analyst_over_cli(tmp_path / "night", monkeypatch, answers)
+    limit_at = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=1)).strftime(
+        "%Y-%m-%dT%H:%M:%SZ")
+    _plant_row(tmp_path / "night" / "AMD" / "0000002488-26-000001", at=limit_at)
+    manifest = run_analysis.run_company(run=run, **_run_keyword())
+    assert _models_asked(calls) == ["opus"]
+    assert asked["accounting-analyst"] == ["opus"] and asked["valuation-analyst"] == ["opus"]
+    fallback = manifest["model_fallback"]
+    assert fallback["carried_from"] == "AMD/0000002488-26-000001"
+    assert fallback["carried_limit_at"] == limit_at
+    assert fallback["first_agent"] == "accounting-analyst"
+    for name in ("accounting-analyst", "financial-analyst", "valuation-analyst"):
+        assert manifest["agents"][name]["fallback_reason"] == "fable_limit_reached", name
+    assert manifest["analysis_failure"] is None
+    monkeypatch.undo()                     # the second run's stubs, not wrapped in the first's
+    answers = [_fable_writes("analysis_financial.json",
+                             _analysis("financial", "earnings_quality_accruals_rising"))]
+    run, calls, asked = _financial_analyst_over_cli(tmp_path / "stop", monkeypatch, answers)
+    _plant_row(tmp_path / "stop" / "AMD" / "0000002488-26-000001", at=limit_at)
+    manifest = run_analysis.run_company(run=run, on_fable_limit="stop", **_run_keyword())
+    assert _models_asked(calls) == ["fable"]
+    assert asked["accounting-analyst"] == ["fable"] and asked["valuation-analyst"] == ["fable"]
+    assert "model_fallback" not in manifest and manifest["analysis_failure"] is None
+
+
+def test_two_analysts_in_parallel_the_shape_opens_the_row_and_the_message_confirms_it(
+        tmp_path, monkeypatch, capsys):
+    """The real `parallel`: the accounting analyst's Fable call fails like the
+    limit and the financial analyst's, already on Fable beside it, answers the
+    limit's message once the row is on record (the stub waits for it, so the
+    order is the test's). Each analyst is called again on Opus and labelled by its
+    own call's reading -- the shape, the message -- the row opened by the shape is
+    raised to the limit's reason with `confirmed_by` naming the financial analyst,
+    a later agent takes the row's reason at its call, and the run, its limit
+    confirmed, prints the carry line."""
+    _two_second_clock(monkeypatch)
+    run = tmp_path / "NVDA" / NVDA_ACCESSION
+    assemble_bundle.write(assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,
+                                                prior_runs=run.parent.parent), run)
+    written, real_ask = _fake_ask({}), run_analysis.ask
+    answers = {"accounting-analyst": [ZERO_TOKEN_FAILURE, _opus_writes(
+                   "analysis_accounting.json",
+                   _analysis("accounting", "earnings_quality_accruals_rising"))],
+               "financial-analyst": [FABLE_LIMIT, _opus_writes(
+                   "analysis_financial.json",
+                   _analysis("financial", "earnings_quality_accruals_rising"))]}
+    models: dict[str, list[str]] = {}
+    lock, financial_on_fable = threading.Lock(), threading.Event()
+
+    def cli(command, cwd, capture_output, text, timeout):
+        agent = command[command.index("--agent") + 1]
+        with lock:
+            models.setdefault(agent, []).append(command[command.index("--model") + 1])
+            exit_code, payload, files = answers[agent].pop(0)
+        if agent == "accounting-analyst" and payload is ZERO_TOKEN_FAILURE[1]:
+            # both on Fable at once: the shape answers once the other call is in
+            financial_on_fable.wait(30)
+        if agent == "financial-analyst" and payload is FABLE_LIMIT[1]:
+            financial_on_fable.set()
+            for _ in range(600):                       # up to thirty seconds
+                if "model_fallback" in (run / "input_manifest.json").read_text(encoding="utf-8"):
+                    break
+                time.sleep(0.05)
+        for name, content in (files or {}).items():
+            (cwd / name).write_text(content)
+        return _Done(exit_code, json.dumps(payload))
+
+    def ask(directory, *, agent, writes, message, spec, log):
+        if agent in answers:
+            return real_ask(directory, agent=agent, writes=writes, message=message,
+                            spec=spec, log=log)
+        return dict(written(directory, agent=agent, writes=writes, message=message,
+                            spec=spec, log=log),
+                    model_requested=spec["model"], model_served=SERVED[spec["model"]])
+
+    monkeypatch.setattr(run_analysis.subprocess, "run", cli)
+    monkeypatch.setattr(run_analysis, "ask", ask)
+    manifest = run_analysis.run_company(run=run, **_run_keyword())
+    assert models == {"accounting-analyst": ["fable", "opus"],
+                      "financial-analyst": ["fable", "opus"]}
+    agents = manifest["agents"]
+    assert agents["accounting-analyst"]["fallback_reason"] == "fable_failed_like_the_limit"
+    assert agents["financial-analyst"]["fallback_reason"] == "fable_limit_reached"
+    assert agents["valuation-analyst"]["fallback_reason"] == "fable_limit_reached"
+    fallback = manifest["model_fallback"]
+    assert fallback["first_agent"] == "accounting-analyst"
+    assert fallback["reason"] == "fable_limit_reached"
+    assert fallback["confirmed_by"] == "financial-analyst"
+    assert manifest["analysis_failure"] is None
+    monkeypatch.setattr(run_analysis, "run_company", lambda **kw: manifest)
+    monkeypatch.setattr(run_analysis.interpreter_pin, "enforce", lambda: 0)
+    capsys.readouterr()
+    assert run_analysis.main(_main_command(run)) == 0
+    assert "carries it on its own for 12 hours" in capsys.readouterr().err
+
+
+
+def test_the_row_a_real_fallback_writes_is_utc_now_and_carries_through_the_clock_seam(
+        tmp_path, monkeypatch):
+    """The time on the row is the one the carry window is measured from, so it is
+    checked against a clock the test takes itself. A real fallback -- the stub
+    CLI answering the limit by its message, then writing on Opus -- runs with the
+    process's local time set five hours behind UTC, so a stamp written in local
+    time with a "Z" on it would land five hours off. The `at` the run wrote
+    parses as UTC and lies between `datetime.now(timezone.utc)` read just before
+    the run and just after it. That very row is then carried into a second run of
+    the same batch, under the same root: its Fable agents go to Opus from their
+    first call, the row naming the first run and its `at`. With the runner's
+    clock moved through its one seam, `run_analysis.clock`, to twelve hours and a
+    second after that `at` -- the stored row untouched -- a third run of the
+    batch carries nothing and asks Fable; at twelve hours exactly the carry
+    still holds."""
+    root = tmp_path / "night"
+    answers = [FABLE_LIMIT, _opus_writes("analysis_financial.json",
+                                         _analysis("financial", "earnings_quality_accruals_rising"))]
+    run, calls, asked = _financial_analyst_over_cli(root, monkeypatch, answers)
+    pristine = tmp_path / "bundle"                     # outside the root, never run
+    shutil.copytree(run, pristine)
+    old_tz = os.environ.get("TZ")
+    os.environ["TZ"] = "EST5"
+    time.tzset()
+    try:
+        assert time.timezone == 5 * 3600               # local time is UTC less five hours
+        before = dt.datetime.now(dt.timezone.utc)
+        first = run_analysis.run_company(run=run, **_run_keyword())
+        after = dt.datetime.now(dt.timezone.utc)
+    finally:
+        if old_tz is None:
+            os.environ.pop("TZ", None)
+        else:
+            os.environ["TZ"] = old_tz
+        time.tzset()
+    assert _models_asked(calls) == ["fable", "opus"]
+    row = first["model_fallback"]
+    assert row["reason"] == "fable_limit_reached"
+    written = dt.datetime.strptime(row["at"], "%Y-%m-%dT%H:%M:%SZ").replace(
+        tzinfo=dt.timezone.utc)
+    # the stamp is whole seconds, so the clock read before is taken to its second
+    assert before.replace(microsecond=0) <= written <= after
+    assert after - before < dt.timedelta(minutes=5)
+    stored = (run / "input_manifest.json").read_bytes()
+
+    # a second run of the same batch carries that very row
+    monkeypatch.undo()
+    second = root / "SECOND" / NVDA_ACCESSION
+    shutil.copytree(pristine, second)
+    answers = [_opus_writes("analysis_financial.json",
+                            _analysis("financial", "earnings_quality_accruals_rising"))]
+    _, calls, asked = _financial_analyst_over_cli(None, monkeypatch, answers, run=second)
+    carried = run_analysis.run_company(run=second, **_run_keyword())
+    assert _models_asked(calls) == ["opus"]
+    assert asked["accounting-analyst"] == ["opus"] and asked["valuation-analyst"] == ["opus"]
+    assert carried["model_fallback"]["carried_from"] == f"NVDA/{NVDA_ACCESSION}"
+    assert carried["model_fallback"]["carried_limit_at"] == row["at"]
+    assert carried["analysis_failure"] is None
+
+    # the clock moved past the window, through the seam: a third run carries nothing
+    monkeypatch.undo()
+    third = root / "THIRD" / NVDA_ACCESSION
+    shutil.copytree(pristine, third)
+    window = dt.timedelta(hours=run_analysis.CARRY_HOURS)
+    monkeypatch.setattr(run_analysis, "clock", lambda: written + window)
+    assert run_analysis.batch_fallback(third)["carried_limit_at"] == row["at"]
+    monkeypatch.setattr(run_analysis, "clock", lambda: written + window + dt.timedelta(seconds=1))
+    assert run_analysis.batch_fallback(third) is None
+    answers = [_fable_writes("analysis_financial.json",
+                             _analysis("financial", "earnings_quality_accruals_rising"))]
+    _, calls, asked = _financial_analyst_over_cli(None, monkeypatch, answers, run=third)
+    late = run_analysis.run_company(run=third, **_run_keyword())
+    assert _models_asked(calls) == ["fable"]
+    assert asked["accounting-analyst"] == ["fable"] and asked["valuation-analyst"] == ["fable"]
+    assert "model_fallback" not in late and late["analysis_failure"] is None
+    assert (run / "input_manifest.json").read_bytes() == stored     # the row never moved

@@ -280,30 +280,76 @@ The owner's decision of 2026-10-06 (`docs/structure_changes.md`) sets this table
 - **Shared inputs first, in a fixed order,** so the prompt cache serves them.
 - **No repeat of a passed call.** A Fable call whose output passed the gate is never
   run again. A failed call reruns only that agent, at most twice.
-- **"Fable limit reached" stops the batch.** What finished is published -- the
-  other analyst's gated analysis, `memo_ko.md` and `baselines.json` from what
-  exists, the memo saying which frame is missing and why -- the manifest names the
-  agent under `fable_limit_reached`, and `src/run_analysis.py` exits 4
-  (`LIMIT_REACHED`; 3 is the interpreter pin's, and the batch tells the two apart).
-  What is pending is written into `queue.md`, and the batch continues the next
+- **"Fable limit reached" falls back to Opus, and the record says so by name.**
+  The owner's decision of 2026-10-07 ("fable 사용량이 max 가 되면 오퍼스로 전환시키도록해":
+  when Fable usage reaches its limit, switch to Opus) supersedes the rule of
+  2026-10-06 that the batch stopped at the limit; the comparison is kept honest by
+  the label, not by stopping. A limit is read off the message, and for a Fable call
+  off its shape too: a failed call that spent no token and ended in under ten
+  seconds. A Fable call whose output is not JSON at all carries no usage record,
+  so it spent no token by that reading, and one that fails that way in under ten
+  seconds is read as the limit too -- a mis-installed CLI or a bad flag included --
+  because that is the shape the limit took on 2026-09-29 (lessons.md) and the
+  owner's reading is that it is the limit before anything else. Under
+  `--on-fable-limit opus`, the default, `src/run_analysis.py` notes the limit once
+  for the run in the manifest's `model_fallback` (`{"from": "fable", "to": "opus",
+  "at": ..., "first_agent": ..., "reason": ...}`), calls the agent that hit it
+  again at once on Opus (`FALLBACK_MODEL`; its `attempts` list the limit attempt,
+  then the Opus attempt), and calls every later agent of the run whose definition
+  asks for Fable on Opus. Each such agent's record carries `model_requested:
+  fable`, `model_served` as the Opus model the CLI reports, `fallback_from: fable`
+  and `fallback_reason`, which says what set that agent's fallback off -- its own
+  call's reading for the agent that hit the limit, the row's `reason` at the time
+  for a later one: `fable_limit_reached` when the limit's message said so, and
+  `fable_failed_like_the_limit` when the shape alone did -- the shape still falls
+  back, but its label does not claim the limit, since a mis-installed CLI fails
+  the same way. A row the shape opened is raised to the limit's reason, with
+  `confirmed_by`, when an analyst already on Fable beside it answers the message.
+  The run exits 0 when it finished. The rest of the batch carries a fallback the
+  message confirmed, and the runner finds it itself: a run under `opus` reads the
+  manifests of the other runs under its root, and the most recent limit it would
+  carry puts every Fable agent on Opus from the first call, never asking Fable
+  again, the row naming that run (`carried_from`) and when its limit was noted
+  (`carried_limit_at`); `--carry-fallback-from <run>` names one for a run
+  elsewhere. A limit is carried only when the message confirmed it and it was
+  noted at most twelve hours before (`CARRY_HOURS`: a batch is one night, and a
+  run of another night is not this batch's), and never under `stop`. A
+  shape-only fallback stays inside its own run, and the stderr line says why. The row is the run's record that the Fable limit was
+  reached; the key `fable_limit_reached` stays the mark of a run a limit stopped.
+  A limit Opus answers too stops the run there, names the agent under
+  `fable_limit_reached` and exits 1, since exit 4 is `stop`'s alone; its stderr
+  line says to stop the batch and names no carry. The batch
+  sizer (`src/fable_batch.py`) leaves every filing that fell back out of the
+  median, which is of the filings Fable served whole, and names them beside it,
+  the default in force (`docs/needs_judgment.md`); the graders read `model_served`
+  per agent as they do today and report fallback runs in the same table with the
+  label, no score split by model until the owner says. A resume of a fallback run
+  carries the fallback forward (every pending Fable agent on Opus, labelled with
+  the row's reason) and may name `--model opus`, the model the run ran under from
+  the agent the row names, which is read as the same fallback carried forward
+  (each pending Fable agent labelled, no `model_override` written); each pending definition is still held to its layer,
+  so one edited between the nights is refused; a resume of it under
+  `--on-fable-limit stop` is refused (exit 2), since it would call Fable after
+  Opus; and a mix the record does not explain -- a Fable request served by
+  another model with no `fallback_from`, or a `fallback_from` under a manifest
+  with no `model_fallback` -- is still refused. `--on-fable-limit stop` keeps the rule of
+  2026-10-06 as an option: what finished is published -- the other analyst's
+  gated analysis, `memo_ko.md` and `baselines.json` from what exists, the memo
+  saying which frame is missing and why -- the manifest names the agent under
+  `fable_limit_reached`, nothing falls back, and `src/run_analysis.py` exits 4
+  (`LIMIT_REACHED`; 3 is the interpreter pin's, and the batch tells the two apart);
+  what is pending is written into `queue.md`, and the batch continues the next
   night: the stopped run is continued in place (`--resume`, or by default when the
   manifest records `fable_limit_reached`), every agent whose gated output is on
   record is skipped and never called again, only the stopped agent and those after
-  it run, and the manifest records `resumed_at` and `resume_skipped`. A limit is
-  read off the message, and for a Fable call off its shape too: a failed call that
-  spent no token and ended in under ten seconds. A Fable call whose output is not
-  JSON at all carries no usage record, so it spent no token by that reading, and
-  one that fails that way in under ten seconds is read as the limit too -- a
-  mis-installed CLI or a bad flag included -- because that is the shape the limit
-  took on 2026-09-29 (lessons.md) and the owner's reading is that it is the limit
-  before anything else: stopping the batch on it costs one night, running eleven
-  more filings into it costs the night and the record. An analyst never falls back to
-  Opus, and a resume runs under the model the stopped run did: `--model` must be
-  the stopped run's `model_override`, and absent when it had none, or the resume
-  is refused (exit 2), since a run on two models mixes what the record cannot
-  compare; `model_override.applies_to` names the agents the invocation that wrote
-  it called, and the boundary check holds the valuation analyst's trimmed prose
-  to the flagged set it derives again from the gated report and the drop list.
+  it run, and the manifest records `resumed_at` and `resume_skipped`. Under either
+  value a resume runs under the model the stopped run did: `--model` must be the
+  stopped run's `model_override` (or, for a fallback run, `opus`), and absent when
+  it had none, or the resume is refused (exit 2), since a run on two models mixes
+  what the record cannot compare; `model_override.applies_to` names the agents
+  the invocation that wrote it called, and the boundary check holds the valuation
+  analyst's trimmed prose to the flagged set it derives again from the gated
+  report and the drop list.
 - **Tokens are counted.** Input, cache-write, cache-read and output tokens, and wall
   time, are recorded per agent per filing in `input_manifest.json`.
 - **The batch is sized from the record.** The nightly batch is Fable tokens available ÷
@@ -382,7 +428,15 @@ are aliases and carry no effort setting, so the pin proper — the dated model i
 and the effort — lives in the rules version and is applied at invocation. The
 run records both the requested pin and the served model in
 `input_manifest.json`, and a run whose served model differs from the pin is
-recorded as a failure. A pin that exists only in this table is not a pin.
+recorded as a failure. In the analysts' pipeline that rule names no judge --
+`src/run_analysis.py` records both and compares neither; the older control,
+`src/control_single_agent.py`, refuses an answer its family did not serve -- so
+there it is a judgment the owner keeps. The Fable limit's fallback (the owner's
+decision of 2026-10-07) is the one difference the pipeline does judge: it is
+recorded by name (`fallback_from`, `fallback_reason`, `model_fallback`), and a
+run that finishes on it carries no `analysis_failure`, which
+`tests/test_run_analysis.py` holds. A pin that exists only in this table is not
+a pin.
 
 ---
 
