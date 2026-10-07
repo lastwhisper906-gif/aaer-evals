@@ -175,6 +175,8 @@ UNDER_DROPPED = {
     "LITE": "the disclaimer's heading is carried; 2 read, 1 dropped",
     "FLEX": "the disclaimer's heading and its second paragraph are carried; "
             "3 read, 1 dropped",
+    "AVGO": "all 5 bare page numerals and 4 of the 5 blocks of the cautionary note "
+            "are carried; 10 read, 1 dropped",
 }
 
 
