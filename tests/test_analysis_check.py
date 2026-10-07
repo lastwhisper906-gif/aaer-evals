@@ -340,7 +340,7 @@ def test_the_memo_names_a_cost_of_debt_fallback_where_the_calculator_labels_one(
     text = memo.memo(ticker="TEST", form="10-Q", period_end="2026-06-30", cutoff="2026-07-30",
                      fields=with_fallback, accounting=None, financial=None, valuation=None,
                      baselines=None)
-    valuation = text[text.index("## 3. 가치평가"):text.index("## 참고")]
+    valuation = text[text.index("### 2.2 가치평가"):text.index("## 참고")]
     assert memo.FALLBACK_KO in valuation
     assert label in valuation
     assert "0.0566" not in text and "5.66" not in text
