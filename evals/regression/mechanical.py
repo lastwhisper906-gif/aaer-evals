@@ -35,6 +35,7 @@ Each check reads files a run published and nothing about how they were made:
 from __future__ import annotations
 
 import datetime as dt
+import hashlib
 import json
 import os
 import re
@@ -292,9 +293,8 @@ def units_of(name: str, text: str, kept: dict | None = None) -> list[tuple[str, 
     paragraph of a prose input; one string value of a JSON file; one item of a
     reader report, with its key names and metadata so that a quote made only of
     those is refused. A quote is of one thing one file said, not of the file."""
-    if name.endswith(".md") and ID_LINE.search(text):
-        return [(fold(body), set(), set()) for body in paragraphs_of(text).values()]
     if name.startswith("report_"):
+        # read first: a report is markdown too, and may carry an [id] line of its own
         out = []
         for item in read_report_text(text):
             # an item the gate dropped can still sit in a mixed block: it is no unit
@@ -304,6 +304,12 @@ def units_of(name: str, text: str, kept: dict | None = None) -> list[tuple[str, 
             printed = json.dumps(item)
             out.append((values, row_keys(printed), row_metadata(printed)))
         return out
+    if name.endswith(".md") and ID_LINE.search(text):
+        return [(fold(body), set(), set()) for body in paragraphs_of(text).values()]
+    if name.endswith(".md"):
+        # no [id] lines: a paragraph is the text between blank lines
+        return [(fold(block), set(), set()) for block in re.split(r"\n\s*\n", text)
+                if block.strip()]
     if name.endswith(".json"):
         try:
             tree = json.loads(text)
@@ -556,6 +562,73 @@ def accepted_before_trigger(document: dict, trigger: str, trigger_accepted) -> s
                 f"{trigger} in the agent's sequence, so it was accepted after it")
     return ("no acceptance stamp on record and no shared accession sequence, so nothing "
             "shows it was accepted before the triggering report")
+
+
+def input_copies(run: Path):
+    """Every input_* file an agent or the control was handed: (directory, path)."""
+    for directory in sorted(run.glob("agents/*")) + [run / CONTROL_DIR]:
+        if directory.is_dir():
+            for path in sorted(directory.iterdir()):
+                if path.is_file() and path.name.startswith("input_"):
+                    yield directory, path
+
+
+def trimmed_copy_problems(copy: str, original: str) -> list[str]:
+    """Why a prose copy is not a cut of the original: a copy holds some of the
+    original's `[id]` paragraphs, each verbatim, and nothing else."""
+    theirs, mine = paragraphs_of(original), paragraphs_of(copy)
+    if not theirs:
+        return ["not the file on record, which has no [id] paragraphs to cut"]
+    if not mine:
+        return ["the copy carries no [id] paragraphs, and is not the file on record"]
+    head = copy[: ID_LINE.search(copy).start()].strip()
+    problems = [f"text before the first paragraph is not the original's: {head[:60]!r}"] \
+        if head and head != original[: ID_LINE.search(original).start()].strip() else []
+    for identifier, body in mine.items():
+        if identifier not in theirs:
+            problems.append(f"paragraph {identifier} is not in the file on record")
+        elif body != theirs[identifier]:
+            problems.append(f"paragraph {identifier} is not the file on record's, word for word")
+    return problems
+
+
+def check_inputs_on_record(run: Path) -> Result:
+    """Every input file is the one the manifest records (sha256 and bytes), and
+    every copy an agent was handed is that file or a cut of its paragraphs. The
+    manifest's documents are held to the cutoff; this ties the bytes in each
+    directory to those documents, so no text from elsewhere stands in."""
+    manifest = load(run / "input_manifest.json") or {}
+    record = manifest.get("files") if isinstance(manifest.get("files"), dict) else {}
+    problems, count = [], 0
+    originals = {}
+    for path in sorted(run.glob("input_*")):
+        if path.name == "input_manifest.json" or not path.is_file():
+            continue
+        count += 1
+        data = path.read_bytes()
+        originals[path.name] = data
+        entry = record.get(path.name)
+        if not isinstance(entry, dict):
+            problems.append(f"{path.name}: not in the manifest's files record")
+        elif entry.get("sha256") != hashlib.sha256(data).hexdigest() \
+                or entry.get("bytes") != len(data):
+            problems.append(f"{path.name}: not the bytes the manifest records")
+    for directory, path in input_copies(run):
+        count += 1
+        where = path.relative_to(run)
+        data = path.read_bytes()
+        if path.name not in originals:
+            problems.append(f"{where}: no such input on record")
+        elif data != originals[path.name]:
+            if path.suffix == ".md":
+                for why in trimmed_copy_problems(data.decode("utf-8", "replace"),
+                                                 originals[path.name].decode("utf-8", "replace")):
+                    problems.append(f"{where}: {why}")
+            else:
+                problems.append(f"{where}: not the file on record")
+    return Result("mechanical.inputs_on_record", run_name(run), FAIL if problems else PASS,
+                  f"{count - len(problems)} of {count} input files on record" if count
+                  else "no input files", problems)
 
 
 def check_nothing_after_cutoff(run: Path) -> Result:
@@ -1061,7 +1134,7 @@ def check_dcf_recomputes(run: Path) -> Result:
                   f"{count - len(failures)} of {count} recompute", failures)
 
 
-RUN_CHECKS = (check_files_present, check_agents_written, check_quotes_resolve,
+RUN_CHECKS = (check_files_present, check_agents_written, check_inputs_on_record, check_quotes_resolve,
               check_cited_items_exist, check_cited_numbers_exist, check_nothing_after_cutoff, check_calculator_finite,
               check_dcf_recomputes)
 

@@ -862,6 +862,55 @@ def test_a_tampered_enterprise_value_fails_dcf_recomputes(run):
     assert _status(mechanical.grade(run), "mechanical.dcf_recomputes") == FAIL
 
 
+def test_an_input_that_is_not_the_one_on_record_fails_inputs_on_record(run):
+    """The manifest's documents are held to the cutoff; the bytes in each directory
+    are held to the manifest, so text from a later filing cannot stand in."""
+    assert _status(mechanical.grade(run), "mechanical.inputs_on_record") == PASS
+    copy = run / "agents" / "notes-text-reader" / "input_8k.md"
+    original = copy.read_text(encoding="utf-8")
+    copy.write_text(original + "\n[0000858877-26-000099:item_2_02:later]\nwords from a later filing\n",
+                    encoding="utf-8")
+    results = mechanical.grade(run)
+    assert _status(results, "mechanical.inputs_on_record") == FAIL
+    assert any("on record" in f for f in
+               next(r.failures for r in results if r.grader == "mechanical.inputs_on_record"))
+    copy.write_text(original, encoding="utf-8")
+    # the run-root file itself, against the manifest's sha256
+    root = run / "input_8k.md"
+    root.write_text(root.read_text(encoding="utf-8") + "\n", encoding="utf-8")
+    assert _status(mechanical.grade(run), "mechanical.inputs_on_record") == FAIL
+
+
+def test_a_copy_cut_to_some_of_the_originals_paragraphs_is_on_record(run):
+    """The valuation analyst may be handed only the paragraphs the notes reader
+    flagged: a cut of the original's [id] paragraphs, each verbatim, stands."""
+    copy = run / "agents" / "valuation-analyst" / "input_mdna.md"
+    text = copy.read_text(encoding="utf-8")
+    paragraphs = mechanical.paragraphs_of(text)
+    assert len(paragraphs) > 2
+    kept = list(paragraphs.items())[:2]
+    copy.write_text("".join(f"[{i}]\n{body}" for i, body in kept), encoding="utf-8")
+    assert _status(mechanical.grade(run), "mechanical.inputs_on_record") == PASS
+    identifier, body = kept[0]
+    copy.write_text(f"[{identifier}]\n{body.replace(body.strip()[:5], 'XXXXX', 1)}", encoding="utf-8")
+    assert _status(mechanical.grade(run), "mechanical.inputs_on_record") == FAIL
+
+
+def test_an_analysis_quote_across_two_paragraphs_of_an_idless_input_fails_quotes_resolve(run):
+    """input_8k.md carries no [id] lines: a paragraph is the text between blank
+    lines, and a quote is of one of them."""
+    text = (run / "agents" / "valuation-analyst" / "input_8k.md").read_text(encoding="utf-8")
+    blocks = [b for b in text.split("\n\n") if b.strip()]
+    assert len(blocks) > 1 and not mechanical.ID_LINE.search(text)
+    across = blocks[0].strip()[-20:] + "\n\n" + blocks[1].strip()[:20]
+    _edit(run / "analysis_valuation.json",
+          lambda d: d.setdefault("notes", []).append({"quote": across, "quote_from": "input_8k.md"}))
+    assert _status(mechanical.grade(run), "mechanical.quotes_resolve") == FAIL
+    _edit(run / "analysis_valuation.json",
+          lambda d: d["notes"].__setitem__(-1, {"quote": blocks[1].strip()[:40], "quote_from": "input_8k.md"}))
+    assert _status(mechanical.grade(run), "mechanical.quotes_resolve") == PASS
+
+
 def test_a_failed_agent_fails_agents_written(run):
     _edit(run / "input_manifest.json",
           lambda d: d["agents"]["financial-analyst"].update(result="failed"))
