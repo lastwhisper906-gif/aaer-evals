@@ -810,6 +810,40 @@ def test_a_refused_interest_paid_is_labelled_on_record_not_absent():
     assert "refused" not in absent["fallback"]
 
 
+def test_a_refused_interest_expense_is_labelled_on_record_before_the_ladder_steps_down():
+    """Two-sided. Interest expense refused the way trends.as_filed refuses one filing's
+    two values for one period: with interest paid 4 on average debt 100 the ladder
+    steps down to 0.04 and the label says interest expense is on record but refused,
+    with the trends module's reason, not "not on record"; with interest paid absent
+    too, the label says the expense is refused and the paid is absent, and the
+    "neither" words appear only when both are absent."""
+    from src import trends
+    reason = ("us-gaap:InterestExpense for 2025-01-01..2025-12-31 is reported as "
+              "[5000000.0, 5100000.0] by the filing of 2026-02-19 "
+              f"(0001628280-26-000001) — {trends.TWO_VALUES}")
+    paid = {"value": 4.0, "id": "x", "tag": "InterestPaidNet", "period": "p"}
+    stepped = calculator.cost_of_debt_fallback(
+        {"interest_expense": {"missing": reason}, "interest_paid": paid},
+        {"value": 100.0}, {"value": 100.0}, {"value": 0.04}, f"interest_expense: {reason}")
+    assert stepped["value"] == pytest.approx(0.04)
+    assert "interest expense is on record but refused: " + reason in stepped["fallback"]
+    assert "not on record" not in stepped["fallback"]
+
+    alone = calculator.cost_of_debt_fallback(
+        {"interest_expense": {"missing": reason}, "interest_paid": {"missing": "no row"}},
+        {"value": 100.0}, {"value": 100.0}, {"value": 0.04}, f"interest_expense: {reason}")
+    assert alone["value"] == pytest.approx(0.05)
+    assert "interest expense is on record but refused: " + reason in alone["fallback"]
+    assert "interest paid is not on record: no row" in alone["fallback"]
+    assert "neither" not in alone["fallback"]
+
+    neither = calculator.cost_of_debt_fallback(
+        {"interest_expense": {"missing": "no row"}, "interest_paid": {"missing": "no row"}},
+        {"value": 100.0}, {"value": 100.0}, {"value": 0.04}, "interest_expense: no row")
+    assert "neither interest expense nor interest paid is on record" in neither["fallback"]
+    assert "refused" not in neither["fallback"]
+
+
 def test_tagged_interest_expense_is_never_replaced_by_a_fallback():
     cell = lambda v: {"value": v, "id": "x", "tag": "t", "period": "p"}
     out = _wacc_with({"interest_expense": cell(5.0), "interest_paid": cell(4.0)})

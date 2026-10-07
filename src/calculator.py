@@ -1542,11 +1542,19 @@ def cost_of_debt_fallback(ttm: dict, debt_now: dict, debt_ago: dict, rf: dict,
     over average debt, or else the risk-free rate plus one point, each labelled a
     fallback. Never silent: the cell says what it stands in for, and the label
     says which input was missing and how -- interest expense on record but no
-    average debt; interest paid on record but no average debt; interest paid on
-    record but refused (two values for one period); or no fact at all -- because
-    each is a different fact about the company."""
+    average debt; interest expense or interest paid on record but refused (one
+    filing's two values for one period, trends.TWO_VALUES); interest paid on
+    record but no average debt; or no fact at all, the only case that says
+    "neither" -- because each is a different fact about the company."""
     expense = ttm.get("interest_expense") or {"missing": "interest_expense is not gathered"}
     paid = ttm.get("interest_paid") or {"missing": "interest_paid is not gathered"}
+    # A refused term -- one filing's two values for one period -- is on record,
+    # and the label says so before the ladder steps down from it.
+    expense_refused = "missing" in expense and trends.TWO_VALUES in expense["missing"]
+    paid_refused = "missing" in paid and trends.TWO_VALUES in paid["missing"]
+    expense_words = (f"interest expense is on record but refused: {expense['missing']}"
+                     if expense_refused else
+                     f"interest expense, which is not on record: {why}")
     if "missing" not in expense:
         because = f"interest expense is on record but average debt is missing/zero: {why}"
     elif "missing" not in paid:
@@ -1555,13 +1563,16 @@ def cost_of_debt_fallback(ttm: dict, debt_now: dict, debt_ago: dict, rf: dict,
                        lambda v: v["interest_paid"] / v["average_debt"],
                        denominator="average_debt")
         if "missing" not in cell:
-            cell["fallback"] = ("interest paid in cash in place of interest expense, which "
-                                f"is not on record: {why}")
+            cell["fallback"] = f"interest paid in cash in place of {expense_words}"
             return cell
         because = ("interest paid is on record but average debt is missing/zero, so the "
                    f"cost of debt is the risk-free rate plus one point: {cell['missing']}")
-    elif trends.TWO_VALUES in paid["missing"]:
-        because = f"interest paid is on record but refused: {paid['missing']}"
+        if expense_refused:
+            because = f"{expense_words}; {because}"
+    elif paid_refused or expense_refused:
+        paid_words = (f"interest paid is on record but refused: {paid['missing']}"
+                      if paid_refused else f"interest paid is not on record: {paid['missing']}")
+        because = f"{expense_words}; {paid_words}" if expense_refused else paid_words
     else:
         because = f"neither interest expense nor interest paid is on record: {why}"
     if "missing" in rf:

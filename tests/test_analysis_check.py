@@ -385,7 +385,7 @@ def test_a_bare_year_in_a_reason_is_a_year_not_a_number():
                  "no row in 2024-09-29..2025-09-27", "in 2024-2026", "in 2024–2026",
                  # the third reading's cases: a year-terminator after the context word's
                  # year, and a list that borrows its context from a member
-                 "by 2030.", "by 2030,", "in 2030 and 2031", "in 2026 the company",
+                 "by the end of 2030", "in 2030.", "in 2030 and 2031", "in 2026 the company",
                  "2021 and 2022 guidance", "the first six months of 2026 ran at"):
         payload = accounting()
         payload["anomalies"][0]["what"] = text
@@ -415,6 +415,11 @@ def test_a_quantity_with_no_unit_word_is_still_a_number():
                  # an amount, and a range or list with no context word of its own
                  "cut headcount by 2030", "grew by 2026", "a rise in 2030 orders",
                  "backlog grew by 2030 orders", "up by 1999", "in 2030 and 2031 orders",
+                 # the fourth reading: "by" is no context at all, and no noun or adjective
+                 # after the year is a terminator
+                 "cut headcount by 2030.", "reduced inventory by 2048,", "by 2030.",
+                 "sold in 2048 high-margin units", "in 2030 low-cost stores",
+                 "an increase in 2048 of its stores",
                  "inventory of 2021 and 2022", "2024–2026",
                  # GNRC's valuation analyst of 2026-09-29 wrote these with "of" alone
                  "the margins of 2021, 2022 and 2023", "the growth of 2021 and 2022"):
