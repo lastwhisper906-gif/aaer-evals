@@ -829,11 +829,22 @@ def test_a_valuation_build_on_a_run_with_no_gated_notes_report_is_refused(tmp_pa
     assert agent_inputs.isolation_violations(run) == []
 
 
-def _valuation_directory(tmp_path: Path, *, holds: str, record: dict | None) -> Path:
+# The owner's decision that the valuation analyst reads only the flagged
+# paragraphs is dated 2026-10-06; the eight published runs were analysed on
+# 2026-09-29 (their manifests' `analysed_utc`) and hold the full file by right.
+ANALYSED_BEFORE_THE_RULE = "2026-09-29T00:51:54Z"
+ANALYSED_ON_THE_RULE_DAY = "2026-10-06T00:00:00Z"
+
+
+def _valuation_directory(tmp_path: Path, *, holds: str, record: dict | None,
+                         analysed: str | None = ANALYSED_BEFORE_THE_RULE) -> Path:
     """A run on record whose valuation analyst's directory holds `holds` as its
-    MD&A, with the manifest recording `record` as the trim, or no trim."""
+    MD&A, with the manifest recording `record` as the trim, or no trim, and
+    `analysed` as when the analyses ran (None: the manifest does not say)."""
     run = _trimmed_run(tmp_path)
     manifest = json.loads(MANIFEST)
+    if analysed is not None:
+        manifest[agent_inputs.ANALYSED_KEY] = analysed
     if record is not None:
         manifest["agents"] = {"valuation-analyst": {"result": "written",
                                                     "trimmed": {"input_mdna.md": record}}}
@@ -849,12 +860,32 @@ def _valuation_directory(tmp_path: Path, *, holds: str, record: dict | None) -> 
 
 def test_a_directory_the_manifest_records_no_trim_for_is_held_to_the_full_file(tmp_path):
     """The eight runs published before the trim hold the full MD&A in their
-    valuation directories, and the manifest's silence is the record of that."""
+    valuation directories, and the manifest's silence, with a run analysed
+    before the rule's day, is the record of that."""
     assert agent_inputs.isolation_violations(
         _valuation_directory(tmp_path / "full", holds=MDNA, record=None)) == []
     broken = agent_inputs.isolation_violations(
         _valuation_directory(tmp_path / "cut", holds=TRIMMED, record=None))
     assert any("input_mdna.md" in line and "other bytes" in line for line in broken)
+
+
+def test_no_trim_on_record_is_named_for_a_run_analysed_from_the_rule_s_day(tmp_path):
+    """The same full-file directory with no trim on record: clean on a run
+    analysed the day before the rule, named on one analysed the day the rule
+    came in, and named on one the manifest does not date."""
+    assert agent_inputs.isolation_violations(_valuation_directory(
+        tmp_path / "before", holds=MDNA, record=None, analysed="2026-10-05T23:59:59Z")) == []
+    broken = agent_inputs.isolation_violations(_valuation_directory(
+        tmp_path / "on", holds=MDNA, record=None, analysed=ANALYSED_ON_THE_RULE_DAY))
+    assert broken == ["valuation-analyst: no trim on record for a run analysed after the trim "
+                      "rule (analysed_utc 2026-10-06T00:00:00Z, the rule is from 2026-10-06)"]
+    broken = agent_inputs.isolation_violations(_valuation_directory(
+        tmp_path / "undated", holds=MDNA, record=None, analysed=None))
+    assert len(broken) == 1 and broken[0].startswith(
+        "valuation-analyst: no trim on record and no analysed_utc in the manifest")
+    # with a trim on record the date is not read: the record is what is checked
+    assert agent_inputs.isolation_violations(_valuation_directory(
+        tmp_path / "recorded", holds=TRIMMED, record=RECORD, analysed=ANALYSED_ON_THE_RULE_DAY)) == []
 
 
 def test_a_directory_the_manifest_records_a_trim_for_is_held_to_that_record(tmp_path):

@@ -391,6 +391,12 @@ def _probability_leak(text: str) -> str | None:
 # reader did not flag is not placed, and no agent can quote what it was not
 # handed.
 TRIMMED_FOR_VALUATION = ("input_mdna.md", "input_8k.md")
+# The owner's decision that the valuation analyst reads only the flagged
+# paragraphs (docs/structure_changes.md, 2026-10-06): a run whose analyses ran
+# on or after this day carries the router's trimmed record, or the boundary
+# check names it. The eight runs published on 2026-09-29 hold the full file.
+TRIM_RULE_FROM = "2026-10-06"
+ANALYSED_KEY = "analysed_utc"
 NOTES_REPORT = "report_notes_text.md"
 TRIMMED_KEY = "trimmed"
 ID_LINE = re.compile(r"^\[(\d{10}-\d{2}-\d{6}:[a-z0-9_]+:[^\]]+)\]\s*$", re.M)
@@ -543,6 +549,33 @@ def record_trim(run: Path, agent: str, record: dict[str, dict]) -> None:
         entry = agents[agent] = {}
     entry[TRIMMED_KEY] = record
     path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def analysed_on(run: Path) -> str | None:
+    """When the run's analyses ran, as `finish` wrote it into the manifest
+    (`analysed_utc`), or None for a manifest that does not say."""
+    path = Path(run) / MANIFEST
+    try:
+        manifest = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    when = manifest.get(ANALYSED_KEY) if isinstance(manifest, dict) else None
+    return when if isinstance(when, str) and when else None
+
+
+def missing_trim(run: Path, name: str) -> str | None:
+    """Why a live valuation directory with no trim on record is not what the
+    rule allows, or None when the run predates the rule and holds the full file
+    by right: the manifest's `analysed_utc` dates the run."""
+    when = analysed_on(run)
+    if when is None:
+        return (f"no trim on record and no {ANALYSED_KEY} in the manifest to date the run by; "
+                f"a valuation directory on a run analysed from {TRIM_RULE_FROM} carries the "
+                "router's trimmed record")
+    if when[:10] >= TRIM_RULE_FROM:
+        return (f"no trim on record for a run analysed after the trim rule ({ANALYSED_KEY} "
+                f"{when}, the rule is from {TRIM_RULE_FROM})")
+    return None
 
 
 def recorded_trim(run: Path, agent: str) -> dict | None:
@@ -825,7 +858,10 @@ def isolation_violations(run: Path) -> list[str]:
        list flag, derived here again through `flagged_paragraphs`; the record's
        `kept` must be that set, so a record edited to keep more, or a trim
        built from a wrong set, is reported by the paragraph. It is held to the
-       full file when the manifest records no trim for that directory;
+       full file when the manifest records no trim for that directory and the
+       run was analysed before the rule (`analysed_utc` before 2026-10-06, the
+       eight runs published on 2026-09-29); a run analysed from that day on, or
+       one the manifest does not date, with no trim on record is named;
     4. something inside one that resolves outside it — a symlink or a `..` into
        the bundle, whose own ancestors are the run directory and every other
        agent's directory hanging off it;
@@ -851,6 +887,10 @@ def isolation_violations(run: Path) -> list[str]:
             found.append(f"{name}: its directory sits at {root}, not at its "
                          f"session root {recorded_root(run, name)}")
         trims = recorded_trim(run, name) or {}
+        if not trims and spec.layer == "valuation" and name in AGENTS:
+            why = missing_trim(run, name)
+            if why:
+                found.append(f"{name}: {why}")
         flagged: set[str] | None = None
         if trims and spec.layer == "valuation":
             try:

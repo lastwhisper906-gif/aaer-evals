@@ -413,6 +413,19 @@ def test_an_acceptance_at_the_close_exactly_is_not_before_it(calendar):
     assert market.reaction_day_zero("2026-05-08T15:59:59", calendar) == FILING_DATE
 
 
+def test_an_acceptance_after_an_early_close_moves_day_zero_to_the_next_trading_day():
+    """The day after Thanksgiving 2025 closed at one. Accepted at two that day:
+    day zero is Monday the first; accepted at half past twelve: that Friday;
+    accepted at two on an ordinary day: that day. The same reading as the
+    labels' (`src/market_labels.py`), so the table and the labels agree."""
+    calendar = [dt.date(2025, 11, 26), dt.date(2025, 11, 28), dt.date(2025, 12, 1),
+                dt.date(2025, 12, 2)]
+    assert market.reaction_day_zero("2025-11-28T14:00:00", calendar) == dt.date(2025, 12, 1)
+    assert market.reaction_day_zero("2025-11-28T12:30:00", calendar) == dt.date(2025, 11, 28)
+    assert market.reaction_day_zero("2025-11-26T14:00:00", calendar) == dt.date(2025, 11, 26)
+    assert market.reaction_day_zero("2025-11-28T13:00:00", calendar) == dt.date(2025, 12, 1)
+
+
 def test_an_acceptance_with_no_time_of_day_is_refused(calendar):
     with pytest.raises(market.MarketError):
         market.reaction_day_zero("2026-05-08", calendar)

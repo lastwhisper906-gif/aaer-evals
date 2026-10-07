@@ -123,6 +123,12 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 try:
+    from src import exchange_calendar
+except ImportError:  # invoked as a plain script
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    from src import exchange_calendar
+
+try:
     from src import interpreter_pin
 except ImportError:  # invoked as a plain script: python3.12 src/market.py
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -139,14 +145,17 @@ MAP_PATH = Path(__file__).resolve().parent / f"sic_to_sector_etf_map_{RULES_VERS
 # dependency either.
 EXCHANGE_TIMEZONE = ZoneInfo("America/New_York")
 
-# New York close. A filing accepted at 16:00:00 exactly was not accepted before
-# the close, so it moves to the next trading day: at the close is not before it.
+# New York close on an ordinary day. A filing accepted at 16:00:00 exactly was
+# not accepted before the close, so it moves to the next trading day: at the
+# close is not before it. The close a given day is `exchange_calendar.close_time`:
+# one o'clock on the exchange's early-close days, this otherwise -- the one
+# reading `src/market_labels.py` holds the windows to as well.
 MARKET_CLOSE = dt.time(16, 0)
 
 # EDGAR's own close, which is a different hour and answers a different question:
 # a submission accepted after it is deemed filed on the next business day. It
 # decides which filing dates can stand beside an acceptance stamp, and never
-# which day the market reacted on -- that is `MARKET_CLOSE` and nothing else.
+# which day the market reacted on -- that is the exchange's close that day.
 EDGAR_ACCEPTANCE_CLOSE = dt.time(17, 30)
 
 BETA_TRADING_DAYS = 250
@@ -371,7 +380,8 @@ def reaction_day_zero(accepted, calendar: list[dt.date]) -> dt.date:
     """
     when = _acceptance(accepted)
     accepted_on = when.date()
-    if when.time() < MARKET_CLOSE:
+    # the close that day: one o'clock on an early-close day, else four
+    if when.time() < exchange_calendar.close_time(accepted_on):
         return _on_or_after(calendar, accepted_on)
     return next_trading_day(calendar, accepted_on)
 

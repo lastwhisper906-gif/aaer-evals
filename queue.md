@@ -42,8 +42,6 @@ branch changed. A run item is done when its run directory is published and
 
 [ ] the SessionStart hook runs `sh tools/session_start_lessons.sh` in place of `cat lessons.md`: a pull request of that one line in `.claude/settings.json`, a guarded path, merged with the owner's label `owner-approved-eval` · eval: `.venv/bin/python -m pytest tests/test_session_start_lessons.py tests/test_guards.py -q` passes and the guard job is green on the labeled run · depends on: the owner's label
 
-[ ] `src/market.py`'s `reaction_day_zero` reads the exchange's close for the day from `src/exchange_calendar.py` (`close_time`: one o'clock on an early-close day) instead of the flat four o'clock `MARKET_CLOSE`, so the market table and `src/market_labels.py` put a filing accepted between one and four on the day after Thanksgiving, 3 July or 24 December on the same day zero; two-sided test with one filing on each side of the one o'clock close · `.venv/bin/python -m pytest tests/test_market.py tests/test_market_labels.py tests/test_exchange_calendar.py -q` · none
-
 ## Done
 
 [x] the memo names a cost-of-debt fallback where calculator.json labels one (`pre_tax_cost_of_debt.fallback`), in the finance frame's valuation section (created and done in this change) · `.venv/bin/python -m pytest tests/test_analysis_check.py -q -k cost_of_debt_fallback` · items one and three · PR: this one

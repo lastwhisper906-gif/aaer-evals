@@ -13,7 +13,7 @@ import json
 import re
 import shutil
 
-from src import agent_inputs, run_analysis
+from src import agent_inputs, fable_batch, run_analysis
 
 
 def test_every_analyst_runs_its_committed_definition():
@@ -123,7 +123,7 @@ DRIVERS = {"revenue_growth_year_one": 0.2, "terminal_growth": 0.03,
 
 
 def _fake_ask(seen: dict, notes_report: str = "no items\n", assumptions: dict | None = None,
-              numbers_report: str = NUMBERS_REPORT):
+              numbers_report: str = NUMBERS_REPORT, accounting_analysis: dict | None = None):
     """`notes_report` and `numbers_report` are what the stubbed readers write;
     `assumptions` the valuation analyst's first pass, by default three scenarios
     citing one field."""
@@ -135,7 +135,8 @@ def _fake_ask(seen: dict, notes_report: str = "no items\n", assumptions: dict | 
             elif name == "report_notes_text.md":
                 text = notes_report
             elif name == "analysis_accounting.json":
-                text = json.dumps(_analysis("accounting", "earnings_quality_accruals_rising"))
+                text = json.dumps(accounting_analysis if accounting_analysis is not None
+                                  else _analysis("accounting", "earnings_quality_accruals_rising"))
             elif name == "analysis_financial.json":
                 text = json.dumps(_analysis("financial", "earnings_quality_accruals_rising"))
             elif name == "assumptions.json" and assumptions is not None:
@@ -662,10 +663,24 @@ def _crashing_financial_analyst(seen: dict):
             if state["financial_calls"] == 1:
                 (directory / "analysis_financial.json").write_text("[]")
                 return {"agent": agent, "result": "written", "input_tokens": 1,
-                        "output_tokens": 1}
+                        "output_tokens": 1, "model_served": "claude-fable-5-1",
+                        "attempts": [{"attempt": 1, "model_served": "claude-fable-5-1",
+                                      "input_tokens": 1, "output_tokens": 1,
+                                      "outcome": "written"}]}
         return written(directory, agent=agent, writes=writes, message=message,
                        spec=spec, log=log)
     return ask
+
+
+def _fable_served_ask(seen: dict):
+    """Every agent writes, served by Fable, as the real `ask` records it."""
+    written, called = _fake_ask(seen), []
+
+    def ask(directory, *, agent, writes, message, spec, log):
+        called.append(directory.name)
+        return dict(written(directory, agent=agent, writes=writes, message=message,
+                            spec=spec, log=log), model_served="claude-fable-5-1")
+    return ask, called
 
 
 def _run_keyword(control: str = "never") -> dict:
@@ -704,10 +719,25 @@ def test_a_crash_at_the_analysis_gate_leaves_the_passed_analyst_on_record_and_re
     assert run_analysis.main(_main_command(run)) == run_analysis.BAD_INPUT == 2
     monkeypatch.undo()
     # resumed, by default: the record says what passed, and only the rest runs
-    ask, called = _counting_ask({})
+    ask, called = _fable_served_ask({})
     monkeypatch.setattr(run_analysis, "ask", ask)
     manifest = run_analysis.run_company(run=run, **_run_keyword())
     assert called == ["financial-analyst", "valuation-analyst", "valuation-analyst-second-pass"]
+    # the first financial-analyst call was paid for: its attempt stays on record
+    # in front of the resume's own, numbered through, the tokens summed over both
+    financial = manifest["agents"]["financial-analyst"]
+    assert [row["attempt"] for row in financial["attempts"]] == [1, 2]
+    assert [row["outcome"] for row in financial["attempts"]] == ["written", "written"]
+    assert financial["input_tokens"] == 2 and financial["output_tokens"] == 2
+    assert financial["attempt"] == 2 and financial["result"] == "written"
+    assert fable_batch.agent_tokens(financial) == 4
+    # the other side: an agent called for the first time holds only its own
+    # attempt (the stub writes the older one-call shape; the real `ask` lists it)
+    valuation = manifest["agents"]["valuation-analyst"]
+    assert len(run_analysis.attempts_of(valuation)) == 1 and valuation["input_tokens"] == 1
+    # and the batch is sized from the total the filing cost: the financial
+    # analyst's two calls and the two valuation passes, each Fable-served
+    assert fable_batch.on_record(run.parent.parent) == {f"NVDA/{NVDA_ACCESSION}": 8}
     assert manifest["resume_skipped"] == ["numbers-reader", "notes-text-reader",
                                           "accounting-analyst"]
     assert manifest["resumed_from"] == ("stopped on AnalysisInputError: the financial analysis "
@@ -789,9 +819,9 @@ def _stopped_at(tmp_path, monkeypatch, stopped_agent: str, control: str,
     return run, stopped
 
 
-def _resumed(run, monkeypatch, control: str, model: str | None = None,
-             notes_report: str = "no items\n", numbers_report: str = NUMBERS_REPORT):
-    ask, called = _counting_ask({}, notes_report=notes_report, numbers_report=numbers_report)
+def _resumed(run, monkeypatch, control: str, model: str | None = None, **reports):
+    """`reports`: what the stubbed agents write, as `_fake_ask` takes them."""
+    ask, called = _counting_ask({}, **reports)
     monkeypatch.setattr(run_analysis, "ask", ask)
     manifest = run_analysis.run_company(run=run, ticker="NVDA", form="10-Q",
                                         cutoff="2026-08-26", period_end="2026-07-26",
@@ -1027,9 +1057,23 @@ def test_a_resume_gates_only_the_reader_it_called_and_appends_its_rows(tmp_path,
     assert "does not string-match" in stopped["dropped_items"][0]["reason"]
     numbers_before = (run / "report_numbers.md").read_bytes()
     assert SHARED_ID in numbers_before.decode("utf-8")
+    twin_citing = _analysis("accounting", SHARED_ID)
+    twin_citing["anomalies"].append(dict(twin_citing["anomalies"][0],
+                                         id="earnings_versus_cash_cites_a_fallen_item",
+                                         evidence=["earnings_quality_planted_bad_quote"]))
     manifest, called = _resumed(run, monkeypatch, "never", notes_report=NOTES_SHARING_THE_ID,
-                                numbers_report=NUMBERS_WITH_A_BAD_QUOTE)
+                                numbers_report=NUMBERS_WITH_A_BAD_QUOTE,
+                                accounting_analysis=twin_citing)
     assert "numbers-reader" not in called
+    # The analysis gate: a citation of the shared id names the numbers item still
+    # standing and is kept, though a notes item under that id fell as its twin;
+    # a citation of the id dropped from the one report it stood in is dropped.
+    accounting = json.loads((run / "analysis_accounting.json").read_text(encoding="utf-8"))
+    assert [a["id"] for a in accounting["anomalies"]] == ["earnings_versus_cash_cash_lags_income"]
+    assert accounting["anomalies"][0]["evidence"] == [SHARED_ID]
+    assert [row["where"] for row in accounting["dropped_items"]] == ["anomalies[1]"]
+    assert "earnings_quality_planted_bad_quote" in accounting["dropped_items"][0]["reason"]
+    assert run_analysis.excluded_ids(run) == {"earnings_quality_planted_bad_quote"}
     assert (run / "report_numbers.md").read_bytes() == numbers_before
     assert manifest["dropped_items"][:1] == stopped["dropped_items"]        # appended after
     assert [(row["report"], row["item_id"]) for row in manifest["dropped_items"]] == [

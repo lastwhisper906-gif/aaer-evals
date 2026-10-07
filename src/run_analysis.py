@@ -260,6 +260,32 @@ def _attempt_entry(usage: dict, outcome: str) -> dict:
             "outcome": outcome}
 
 
+def attempts_of(record: dict) -> list[dict]:
+    """An agent record's attempts: its list, or, for a record written before the
+    list existed, its own fields as the one attempt they describe."""
+    attempts = record.get("attempts")
+    if isinstance(attempts, list) and attempts:
+        return [dict(row) for row in attempts]
+    outcome = ("limit" if record.get("limit_reached") else
+               "written" if record.get("result") == "written" else "failed")
+    return [_attempt_entry(dict(record, seconds=record.get("seconds")), outcome)]
+
+
+def carried_forward(earlier, record: dict) -> dict:
+    """The record of a call made again on a resumed run, with every attempt the
+    agent already has on record in front of this call's own, numbered through,
+    and the token and cost fields summed over all of them: a call that was paid
+    for is never dropped from the record because the agent was called again."""
+    if not isinstance(earlier, dict) or earlier.get("result") is None:
+        return record
+    rows = attempts_of(earlier) + attempts_of(record)
+    for number, row in enumerate(rows, start=1):
+        row["attempt"] = number
+    record = with_attempts(record, rows)
+    record["attempt"] = len(rows)
+    return record
+
+
 def with_attempts(record: dict, attempts: list[dict]) -> dict:
     """The record with every attempt listed and its token and cost fields summed
     over them, under the names a reader of the record already knows."""
@@ -368,11 +394,27 @@ _RECORD_LOCK = threading.Lock()
 
 def agent_entry(record: dict, earlier=None) -> dict:
     """An agent's manifest entry: its usage record less the file list it was
-    handed, keeping the router's `trimmed` record if the entry already has one."""
+    handed, merged with what the manifest on disk already holds for the agent:
+    the router's `trimmed` record, and every attempt on record there that this
+    record does not already list in front of its own."""
     entry = {key: value for key, value in record.items() if key != "writes"}
     if isinstance(earlier, dict) and agent_inputs.TRIMMED_KEY in earlier:
         entry[agent_inputs.TRIMMED_KEY] = earlier[agent_inputs.TRIMMED_KEY]
+    if isinstance(earlier, dict) and isinstance(earlier.get("attempts"), list):
+        prior, own = earlier["attempts"], attempts_of(entry)
+        if own[:len(prior)] != prior and entry is not earlier:
+            entry = carried_forward(earlier, entry)
     return entry
+
+
+def recorded_agent(run: Path, name: str) -> dict | None:
+    """What the manifest on disk holds for an agent, or None."""
+    try:
+        manifest = json.loads((Path(run) / "input_manifest.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    entry = (manifest.get("agents") or {}).get(name) if isinstance(manifest, dict) else None
+    return entry if isinstance(entry, dict) else None
 
 
 def record_agent(run: Path, name: str, record: dict) -> None:
@@ -398,8 +440,10 @@ def run_agent(run: Path, name: str, logs: Path, model: str | None = None) -> dic
     spec = agent_inputs.AGENTS[name]
     names = {path.name for path in directory.iterdir() if path.name != spec.writes}
     message = INSTRUCTION.format(files=", ".join(message_files(names)), writes=spec.writes)
+    earlier = recorded_agent(run, name)       # a call made again on a resume
     record = ask(directory, agent=spec.prompt, writes=(spec.writes,), message=message,
                  spec=definition_for(spec.prompt, model), log=logs / f"{name}.log")
+    record = carried_forward(earlier, record)
     record_agent(run, name, record)
     return record
 
@@ -485,11 +529,28 @@ def check_analysis(run: Path, name: str, kind: str) -> dict:
     if kind == "assumptions":
         return analysis_check.check_assumptions(payload, fields=fields, sources=sources,
                                                 filing=filing)
+    return analysis_check.check(kind, payload, fields=fields, sources=sources,
+                                excluded=excluded_ids(run), filing=filing)
+
+
+def excluded_ids(run: Path) -> set[str]:
+    """The ids no analyst may cite: dropped by the gate from every report they
+    stood in. A drop row is keyed (report, item id), and an id dropped from one
+    report as the twin of an item standing in another -- a resumed night's
+    notes item under an id the numbers report already carries -- still names
+    that standing item, so a citation of it resolves and is kept."""
     manifest = json.loads((run / "input_manifest.json").read_text(encoding="utf-8"))
-    dropped = {row.get("item_id") for row in manifest.get("dropped_items") or []
-               if row.get("item_id")}
-    return analysis_check.check(kind, payload, fields=fields, sources=sources, excluded=dropped,
-                                filing=filing)
+    rows = [row for row in manifest.get("dropped_items") or []
+            if isinstance(row, dict) and isinstance(row.get("item_id"), str)]
+    standing: set[str] = set()
+    for report in ("report_notes_text.md", "report_numbers.md"):
+        path = run / report
+        if not path.is_file():
+            continue
+        fell = {row["item_id"] for row in rows if Path(str(row.get("report"))).name == report}
+        standing |= {quote_gate.item_id(item)
+                     for item in report_items(path.read_text(encoding="utf-8"))} - fell - {None}
+    return {row["item_id"] for row in rows} - standing
 
 
 def write_json(path: Path, payload: dict) -> None:
@@ -958,9 +1019,11 @@ def run_control(run: Path, logs: Path, model: str | None = None, *,
     spec = definition_for("accounting-analyst", model)
     control = {"description": "the single-agent control", "prompt": CONTROL_PROMPT.format(
         files=", ".join(sees)), "tools": ["Read", "Write"], "model": spec["model"]}
+    earlier = recorded_agent(run, "control-single-agent")
     record = ask(directory, agent="control-single-agent", writes=CONTROL_WRITES,
                  message="Write the three files.", spec=control,
                  log=logs / "control-single-agent.log")
+    record = carried_forward(earlier, record)
     record_agent(run, "control-single-agent", record)
     return record
 
