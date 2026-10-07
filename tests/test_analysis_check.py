@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import copy
 import json
+from pathlib import Path
 
 import pytest
 
@@ -367,8 +368,9 @@ def test_the_control_cites_the_paragraphs_of_its_own_input():
 
 
 def test_a_bare_year_in_a_reason_is_a_year_not_a_number():
-    """GNRC's and LFUS's scenarios of 2026-09-29 were dropped for these words
-    (their assumptions.json dropped_items)."""
+    """The phrasings, trimmed to the words that decide them; the reasons the eight
+    published runs of 2026-09-29 recorded are below, verbatim, in
+    PUBLISHED_REASONS_READ_AS_YEARS and its two siblings."""
     for text in ("the second half of 2026", "through 2027, then flat", "laps in December 2026",
                  "the June 2026 quarter", "year-end 2025",
                  # the second lens's cases of 2026-10-06: a year-context word before or
@@ -386,11 +388,317 @@ def test_a_bare_year_in_a_reason_is_a_year_not_a_number():
                  # the third reading's cases: a year-terminator after the context word's
                  # year, and a list that borrows its context from a member
                  "by the end of 2030", "in 2030.", "in 2030 and 2031", "in 2026 the company",
-                 "2021 and 2022 guidance", "the first six months of 2026 ran at"):
+                 "2021 and 2022 guidance", "the first six months of 2026 ran at",
+                 # the fourth reading's cases, the words the published runs dropped: "for"
+                 # before a year and a terminator after it; a period phrase -- an ordinal
+                 # half or quarter, a year-end, a month, "due" -- before a year and any
+                 # word after it
+                 "for 2027, a backlog", "the second half of 2025 loss-making",
+                 "the first half of 2027 turns", "the first quarter of 2026 carried",
+                 "the year-end 2025 balance", "ended April 2026 printed",
+                 "notes due 2030 assumed", "second-half-2025 legal",
+                 # a year outside 1950-2049 is a year by the same words: a net-zero
+                 # target, a comparison with the crash
+                 "2050년", "2055 fiscal year", "in 2050", "since 1929",
+                 # a Korean unit written apart from the number is a word of its own
+                 "2025년", "회계연도 2025 대비"):
         payload = accounting()
         payload["anomalies"][0]["what"] = text
         assert analysis_check.check("accounting", payload, fields=FIELDS,
                                     sources=SOURCES)["dropped_count"] == 0, text
+
+
+def test_a_korean_unit_against_a_number_makes_it_a_count():
+    """The fourth reading: 억, 만, 천, 원, 개, 명, 주, 건, 대 written against a four-digit
+    number are quantity words, with or without a context word before it."""
+    for text in ("2025억", "2048개", "2026만", "2030천", "2027원", "2031명", "2029주",
+                 "2032건", "2033대", "회계연도 2025억", "in 2048개", "2,025억 원"):
+        payload = accounting()
+        payload["anomalies"][0]["what"] = text
+        out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
+        assert out["anomalies"] == [], text
+        assert "a number written in the analyst's own words" in json.dumps(
+            out["dropped_items"], ensure_ascii=False), text
+
+
+# Every `dropped_items` reason of the eight published runs of 2026-09-29 (AAPL, CARR,
+# CIEN, CSCO, GNRC, LFUS, PANW, STX; `runs/<ticker>/<accession>/assumptions.json`,
+# `analysis_accounting.json`, `analysis_financial.json`) whose text carries a four-digit
+# year, verbatim as the gate quoted it -- the eighty characters around the first digit
+# that stood, a placeholder folded to a blank -- with the run, the file and the item it
+# came from. Those runs were gated by the rule before this branch, which read no bare
+# year at all. A reason that two items share is listed once. Three lists: the reasons
+# the rule now reads as years; the reasons that are numbers, dropped rightly; and the
+# reasons that are years an analyst wrote with no word the rule can tell from a count,
+# which stay dropped and are marked so below.
+PUBLISHED_REASONS_READ_AS_YEARS = (
+    ('CARR analysis_accounting.json areas.revenue_recognition',
+     'econd highest of five years, above   in 2024 and   in 2023. Contract liabilities'),
+    ('CARR analysis_accounting.json areas.estimates_and_reserves',
+     'he lowest of five years, down from   in 2024 and   in 2023, with the allowance i'),
+    ('CARR analysis_accounting.json areas.cost_deferral',
+     'ailing four quarters against the fiscal-2025 figure, and lower in the six months'),
+    ('CARR analysis_accounting.json anomalies[24]',
+     '  , highest of five years, against   in 2023; driven by lower cash and flat prop'),
+    ('CARR analysis_accounting.json anomalies[25]',
+     'iling R&D expense   is below the fiscal-2025 figure and the six months are below'),
+    ('CARR analysis_accounting.json anomalies[37]',
+     'cer-and-director item was filed in July 2026, four days before the  ; its body i'),
+    ('CARR analysis_financial.json sections.profitability',
+     "below  's  , and the MD&A says the June 2026 quarter's gross margin fell again o"),
+    ('CARR analysis_financial.json sections.efficiency',
+     " history the picture is mixed: the June 2026 quarter's DSO of   days is second l"),
+    ('CARR analysis_financial.json sections.solvency',
+     'ease also shows higher than at year-end 2025. Trailing EBITDA is   and debt over'),
+    ('CARR analysis_financial.json sections.growth',
+     'al fell. The Riello sale closed in July 2026 and Noresco is pending; both are st'),
+    ('CARR analysis_financial.json dupont',
+     "no stockholders' equity row at the June 2026 date, so the product is not compute"),
+    ('CARR analysis_financial.json path_to_distress',
+     'ions is met in the filings for the June 2026 quarter: free cash flow is positive'),
+    ('CARR analysis_financial.json anomalies[4]',
+     'ows total equity lower than at year-end 2025 as treasury stock grew. A large aut'),
+    ('CARR analysis_financial.json anomalies[5]',
+     'alance sheet rose sharply from year-end 2025. Operating cash flow over net incom'),
+    ('CARR analysis_financial.json anomalies[9]',
+     'ighest of five years, and   in the June 2026 quarter.'),
+    ('CARR analysis_financial.json anomalies[11]',
+     ' income is down  . The first quarter of 2026 carried heavy restructuring, and th'),
+    ('CARR analysis_financial.json anomalies[14]',
+     'ighest of five years, and   in the June 2026 quarter, third highest of seven. Da'),
+    ('CARR analysis_financial.json anomalies[15]',
+     "ond highest of five years and the March 2026 quarter's   days the highest of sev"),
+    ('CARR analysis_financial.json anomalies[18]',
+     'erest-expense row for the first half of 2026. Net non-operating interest expense'),
+    ('CARR analysis_financial.json anomalies[19]',
+     'ows total equity lower than at year-end 2025 with treasury stock and accumulated'),
+    ('CIEN analysis_financial.json anomalies[7]',
+     '회계연도 2025 연간 매출총이익률은 오 년 중 최저였고, 분기 회복도 과거 수준에는 미달'),
+    ('CIEN analysis_financial.json summary_ko.solvency',
+     '합니다. 다만 이 여유는 최근 급증한 영업이익에 기대고 있어, 회계연도 2025의 영업이익   수준으로 돌아가면 이자비용   대비 여유가 크게 '),
+    ('CIEN analysis_financial.json summary_ko.path_to_distress',
+     '부담이 위기로 바뀌려면 영업이익이 회계연도 2025 수준인  으로 되돌아가 이자보상배율  배가 얇아지고, 구매약정  이 수요 둔화 속에 재고로 '),
+    ('CSCO analysis_accounting.json areas.controls_audit_and_filing_signals',
+     'ndex lists two filings in April and May 2026 under the item code for officer or '),
+    ('CSCO analysis_accounting.json anomalies[22]',
+     'ranged sale plans in February and March 2026, shortly after the prior  . Routine'),
+    ('GNRC analysis_accounting.json areas.earnings_versus_cash',
+     " and the year before's  , but far above 2022's  ; the annual accruals ratio   si"),
+    ('GNRC analysis_accounting.json areas.revenue_recognition',
+     "six months already exceeds the whole of 2025's, so deposits are converting faste"),
+    ('GNRC analysis_accounting.json areas.estimates_and_reserves',
+     '   a year earlier and   at the start of 2025; the allowance balance is   against'),
+    ('GNRC analysis_accounting.json anomalies[5]',
+     "ludes the loss-making fourth quarter of 2025 with its legal fees. The release's "),
+    ('GNRC analysis_accounting.json anomalies[10]',
+     '   a year earlier and   at the start of 2025; the balance fell to   from   while'),
+    ('GNRC analysis_accounting.json anomalies[35]',
+     'tomer above ten percent of sales (  for 2025) and one customer at   of receivabl'),
+    ('GNRC analysis_financial.json sections.profitability',
+     'ailing four quarters to the end of June 2026, gross margin is  , operating margi'),
+    ('GNRC analysis_financial.json sections.liquidity',
+     'he legal settlement accrued at year-end 2025 was paid, which took other accrued '),
+    ('GNRC analysis_financial.json sections.solvency',
+     'ility Python carries is  , the year-end 2025 balance, because the June filing do'),
+    ('GNRC analysis_financial.json sections.growth',
+     'wn (  and  ) because the second half of 2025 carried heavy legal charges. Operat'),
+    ('GNRC analysis_financial.json sections.free_cash_flow',
+     'ing window nets a settlement accrued in 2025 and paid in 2026 against tariff-ref'),
+    ('GNRC analysis_financial.json path_to_distress',
+     'ling level: a repeat of the second-half-2025 legal charges, the loss of the tari'),
+    ('GNRC analysis_financial.json anomalies[9]',
+     'he legal settlement accrued at year-end 2025 was paid in the half, which is why '),
+    ('GNRC assumptions.json scenarios.bear',
+     'ry charges that made the second half of 2025 loss-making recur in some form, and'),
+    ('GNRC assumptions.json scenarios.base',
+     ' twelve months blend the second half of 2026, for which the unchanged full-year '),
+    ('GNRC assumptions.json scenarios.bull',
+     'th; the committed hyperscale volume for 2027, a data-center backlog that has gro'),
+    ('LFUS analysis_accounting.json areas.revenue_recognition',
+     ' its high point in the third quarter of 2025; receivables of   grew with revenue'),
+    ('LFUS analysis_accounting.json areas.estimates_and_reserves',
+     'd   at its high in the third quarter of 2025; the reserve balance of   fell whil'),
+    ('LFUS analysis_accounting.json areas.cross_document_reconciliation',
+     'to have moved from the third quarter of 2026 to the first quarter of 2027.'),
+    ('LFUS analysis_accounting.json reconciliation[8]',
+     ' period moved from the third quarter of 2026 to the first quarter of 2027, the c'),
+    ('LFUS analysis_accounting.json anomalies[4]',
+     'rly accrual ratio, the first quarter of 2026, is  , the highest of the two fille'),
+    ('LFUS analysis_financial.json sections.liquidity',
+     'ility was upsized and extended in March 2026. Financing in the six months was ne'),
+    ('LFUS analysis_financial.json sections.solvency',
+     " that is the balance at fiscal year-end 2025, the newest filed; the quarter's ba"),
+    ('LFUS analysis_financial.json anomalies[12]',
+     'ent was amended in the first quarter of 2026 so that restructuring and business-'),
+    ('LFUS assumptions.json scenarios.bear',
+     'ide and Basler carry the second half of 2026, but the first half of 2027 turns d'),
+    ('LFUS assumptions.json scenarios.base',
+     'ler acquisition, which laps in December 2026, and the third-quarter guide of rou'),
+    ('LFUS assumptions.json scenarios.bull',
+     "ustrial organic growth persists through 2027, and that Basler's grid and power-g"),
+    ('PANW analysis_accounting.json anomalies[28]',
+     'The   index lists an April 2026 filing reporting a material definitive agreement'),
+    ('PANW analysis_financial.json sections.liquidity',
+     'tible notes were settled in cash in May 2026, Portkey closed in May 2026 for cas'),
+    ('PANW analysis_financial.json sections.solvency',
+     'e CyberArk convertible senior notes due 2030 assumed in the quarter and carried '),
+    ('PANW analysis_financial.json anomalies[0]',
+     'The quarter ended April 2026 printed an operating loss and a net loss against pr'),
+    ('PANW analysis_financial.json anomalies[10]',
+     'ised the buyback authorization in March 2026.'),
+    ('PANW analysis_financial.json anomalies[11]',
+     'onvertible notes settled in cash in May 2026; the Portkey acquisition completed '),
+    ('PANW analysis_financial.json anomalies[15]',
+     'e CyberArk convertible senior notes due 2030 assumed in the quarter, carried at '),
+    ('PANW analysis_financial.json anomalies[17]',
+     'ar-end, after three amendments in April 2026 extended the Santa Clara headquarte'),
+    ('PANW analysis_financial.json anomalies[18]',
+     'otes-text report finds an   dated April 2026 listing a material definitive agree'),
+    ('STX analysis_financial.json sections.solvency',
+     'ssuance ( ); the exchangeable notes due 2028 were largely retired for cash and o'),
+    ('STX analysis_financial.json path_to_distress',
+     'every quarter and steps down after July 2027; the covenant is on net leverage, w'),
+    ('STX analysis_financial.json anomalies[2]',
+     'eps down for quarters ending after July 2027. The company states compliance and '),
+    ('STX analysis_financial.json anomalies[3]',
+     'exchanges of the exchangeable notes due 2028, recognized under a newly adopted s'),
+)
+PUBLISHED_REASONS_THAT_ARE_NUMBERS = (
+    ('LFUS analysis_accounting.json areas.industry_lens',
+     'ile finished goods fell ("raw materials 198883000 against 186662000, work in pro'),
+    ('LFUS analysis_accounting.json anomalies[1]',
+     '-price allocation brought in "inventory 20703000, receivables 14739000" and curr'),
+    ('LFUS analysis_accounting.json anomalies[12]',
+     'ttlement charge in the first quarter of 2027 estimated between $6 million and $8'),
+    ('LFUS analysis_accounting.json anomalies[13]',
+     't "Current employee-related liabilities 107717000 at   against 114662000 at  ." '),
+)
+PUBLISHED_REASONS_THE_RULE_CANNOT_READ = (
+    ('AAPL assumptions.json scenarios.base',
+     'ing, and above the flat stretch of   to 2025, on the view that a growing install',
+     '"to" is no year context: "leases to 2040" is a count'),
+    ('AAPL assumptions.json scenarios.bull',
+     'year in the record that grew faster was 2021 at  .',
+     'no word around the year says it is one'),
+    ('CARR analysis_accounting.json areas.earnings_versus_cash',
+     "ve the company's own fiscal years of   (2025),   (2023) and   (2021), and far ab",
+     'a parenthesised number has no year context: "(2025)" is a count'),
+    ('CARR analysis_accounting.json areas.controls_audit_and_filing_signals',
+     'pt differs from the annual one, and the 2021 net-income concept differs from lat',
+     '"the" is no year context'),
+    ('CARR analysis_accounting.json areas.industry_lens',
+     " above the year-ago quarter's   and the 2024 annual  ; days sales of inventory c",
+     '"the" is no year context'),
+    ('CARR analysis_accounting.json anomalies[6]',
+     'the earnings series is lumpy because of 2024 discontinued-operations gains and a',
+     '"of" alone is no year context: "inventory of 2048" is a count'),
+    ('CARR analysis_accounting.json anomalies[40]',
+     'ept differs from the annual one and the 2021 net-income concept differs from lat',
+     '"the" is no year context'),
+    ('GNRC analysis_accounting.json areas.industry_lens',
+     "ears against   the year before, after a 2025 inventory build; the  's reserve ro",
+     '"a" is no year context'),
+    ('GNRC analysis_accounting.json anomalies[7]',
+     'd calls nearly seven hundred million of 2027 volume committed. Different dates, ',
+     '"of" alone is no year context'),
+    ('GNRC analysis_accounting.json anomalies[12]',
+     ' legal add-back includes a release of a 2022 clean-energy warranty provision, un',
+     '"a" is no year context'),
+    ('GNRC analysis_accounting.json anomalies[17]',
+     ' concept; the   shows it rising through 2025 with a charge to expense, and no 20',
+     'the window cuts "no 2026" to "no 20", and "no" is no year context'),
+    ('GNRC analysis_accounting.json anomalies[23]',
+     'rscale supply agreements with committed 2027 volume, and the release describes a',
+     '"committed" is no year context'),
+    ('GNRC analysis_accounting.json anomalies[34]',
+     "arter's  . The  's reserve rose through 2025, no 2026 reserve exists, the tariff",
+     '"no" is no year context'),
+    ('GNRC analysis_financial.json sections.efficiency',
+     'lowest, after an inventory build in the 2025 cash flow and a larger inventory va',
+     '"the" is no year context'),
+    ('GNRC analysis_financial.json anomalies[3]',
+     'ar average of   only because the strong 2026 half offsets the 2025 second half, ',
+     '"the strong" and "the" are no year context'),
+    ('LFUS analysis_accounting.json anomalies[35]',
+     'The release states "2026 included the reversal of an indemnification receivable ',
+     'a year that opens a quotation has no word before it'),
+    ('LFUS analysis_financial.json dupont',
+     'rating margin collapsing from the   and 2023 levels to a fraction of the three-y',
+     'a list member with no year context of its own, and "levels" after it'),
+    ('LFUS analysis_financial.json anomalies[1]',
+     'ating margin at a fraction of the   and 2023 levels because of an unallocated co',
+     'a list member with no year context of its own, and "levels" after it'),
+    ('PANW analysis_accounting.json areas.cash_flow_engineering_and_off_balance_sheet',
+     'he headquarters leases were extended to 2040 and right-of-use assets and noncurr',
+     '"to" is no year context: "leases to 2040" is a count'),
+)
+
+
+@pytest.mark.parametrize("text", [row[1] for row in PUBLISHED_REASONS_READ_AS_YEARS],
+                         ids=[row[0] for row in PUBLISHED_REASONS_READ_AS_YEARS])
+def test_a_published_dropped_reason_the_rule_reads_as_a_year_passes_the_gate(text):
+    payload = accounting()
+    payload["anomalies"][0]["what"] = text
+    assert analysis_check.check("accounting", payload, fields=FIELDS,
+                                sources=SOURCES)["dropped_count"] == 0, text
+
+
+@pytest.mark.parametrize("text", [row[1] for row in PUBLISHED_REASONS_THAT_ARE_NUMBERS],
+                         ids=[row[0] for row in PUBLISHED_REASONS_THAT_ARE_NUMBERS])
+def test_a_published_dropped_reason_that_is_a_number_stays_dropped(text):
+    payload = accounting()
+    payload["anomalies"][0]["what"] = text
+    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
+    assert out["anomalies"] == [], text
+    assert "a number written in the analyst's own words" in json.dumps(
+        out["dropped_items"], ensure_ascii=False), text
+
+
+@pytest.mark.parametrize("text",
+                         [pytest.param(row[1], id=row[0],
+                                       marks=pytest.mark.xfail(strict=True, reason=row[2]))
+                          for row in PUBLISHED_REASONS_THE_RULE_CANNOT_READ])
+def test_a_published_dropped_reason_the_rule_cannot_read_is_a_year_still_dropped(text):
+    """Each of these is a year in the analyst's meaning that the rule cannot tell from a
+    count, so it fails the gate; the mark records that and the reason, and is not a pass."""
+    payload = accounting()
+    payload["anomalies"][0]["what"] = text
+    assert analysis_check.check("accounting", payload, fields=FIELDS,
+                                sources=SOURCES)["dropped_count"] == 0, text
+
+
+RUNS = Path(__file__).resolve().parents[1] / "runs"
+PUBLISHED_SCENARIOS = (
+    pytest.param("AAPL", "0000320193-26-000020", id="AAPL",
+                 marks=pytest.mark.xfail(strict=True, reason=(
+                     'the base scenario writes "the flat stretch of {..} to 2025" and the '
+                     'bull "grew faster was 2021 at": "to" is no year context and a bare '
+                     '"was 2021" has none, so both stay dropped'))),
+    pytest.param("GNRC", "0001437749-26-025669", id="GNRC",
+                 marks=pytest.mark.xfail(strict=True, reason=(
+                     'the three scenarios\' histories write "the margin of 2023", "the '
+                     'growth of 2022" and "the growth of 2021 and 2022": "of" alone is no '
+                     'year context ("inventory of 2048" is a count), so all three stay '
+                     'dropped although their reasons now pass'))),
+    pytest.param("LFUS", "0001628280-26-050481", id="LFUS"),
+)
+
+
+@pytest.mark.parametrize("ticker, accession", PUBLISHED_SCENARIOS)
+def test_the_published_scenarios_of_the_valuation_analyst_pass_the_gate_whole(ticker,
+                                                                             accession):
+    """The gate comparison of queue item one, on the published run itself: the
+    valuation analyst's scenarios as written (`agents/valuation-analyst/assumptions.json`),
+    gated against the calculator and the sources that analyst saw, drop nothing. LFUS's
+    three pass; GNRC's and AAPL's are marked for the words that still drop them."""
+    agent_dir = RUNS / ticker / accession / "agents" / "valuation-analyst"
+    payload = json.loads((agent_dir / "assumptions.json").read_text(encoding="utf-8"))
+    fields = json.loads((agent_dir / "calculator_before_drivers.json").read_text(
+        encoding="utf-8"))
+    sources = analysis_check.read_sources(agent_dir, analysis_check.SOURCES["assumptions"])
+    out = analysis_check.check_assumptions(payload, fields=fields, sources=sources)
+    assert out["dropped_items"] == [], out["dropped_items"]
+    assert set(out["scenarios"]) == {"bear", "base", "bull"}
 
 
 def test_a_number_that_looks_like_a_year_is_still_a_number():
@@ -422,7 +730,11 @@ def test_a_quantity_with_no_unit_word_is_still_a_number():
                  "an increase in 2048 of its stores",
                  "inventory of 2021 and 2022", "2024–2026",
                  # GNRC's valuation analyst of 2026-09-29 wrote these with "of" alone
-                 "the margins of 2021, 2022 and 2023", "the growth of 2021 and 2022"):
+                 "the margins of 2021, 2022 and 2023", "the growth of 2021 and 2022",
+                 # the fourth reading: "for" and "in" need a terminator, "by" is out
+                 # whatever the value, and "half of" with no ordinal is a share of a count
+                 "for 2027 stores", "in 2050 stores", "by 2050", "by 2050.",
+                 "half of 2048 stores"):
         payload = accounting()
         payload["anomalies"][0]["what"] = text
         out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
@@ -433,7 +745,9 @@ def test_a_quantity_with_no_unit_word_is_still_a_number():
 
 def test_a_quantity_after_a_year_word_or_a_notes_word_is_still_a_number():
     for text in ("grew by 1950 basis points", "sold in 2048 units", "senior notes 25 million",
-                 "non-recurring items 12 percent"):
+                 "non-recurring items 12 percent",
+                 # a quantity word vetoes a period phrase too
+                 "for 2027 units", "the second half of 2048 units", "due 2030 shares"):
         payload = accounting()
         payload["anomalies"][0]["what"] = text
         assert analysis_check.check("accounting", payload, fields=FIELDS,
