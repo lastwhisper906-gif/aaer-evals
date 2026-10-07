@@ -35,7 +35,8 @@ and one that it does not, and each runs in `make check`.
 | Work with no judge is not a task | `CLAUDE.md`; `docs/HOW_WE_WORK.md` §1 principle 2 and §2 | `src/task_judge_check.py` — every open row of `docs/next_cycle_tasks.md` names a judge, every open row of `queue.md` an eval command; a list that yields no row under the headings read is refused, not passed | `tests/test_task_judge_check.py` |
 | Never create a state that waits for the owner's signature; everything has a default | `CLAUDE.md`; `docs/HOW_WE_WORK.md` §1 principles 2 and 3 | `src/owner_inbox_check.py` — every open row of `docs/needs_judgment.md` names its default, every settled row says `default:`, and no file outside `archive/` is named as a sign-off queue; an inbox that yields no row is refused, not passed | `tests/test_owner_inbox_check.py` |
 | `CLAUDE.md` is capped at 22 lines | `docs/HOW_WE_WORK.md` §4, the fold-lessons routine | `src/instruction_length_check.py` | `tests/test_instruction_length_check.py` |
-| Every path `CLAUDE.md`'s parentheses name is in the tree | `CLAUDE.md`'s own header: each rule names what enforces it | `src/instruction_length_check.py --paths` — every token containing `/` that ends in `.py`, `.sh`, `.md` or `.json`, or a directory written as `evals/`, exists relative to `CLAUDE.md`; a missing one is named | `tests/test_instruction_length_check.py` |
+| Every path `CLAUDE.md`'s parentheses name is in the tree | `CLAUDE.md`'s own header: each rule names what enforces it | `src/instruction_length_check.py --paths` — every token containing `/` that ends in `.py`, `.sh`, `.md` or `.json`, or a directory written as `evals/`, exists relative to `CLAUDE.md`; the brackets and quotes around a token and the sentence punctuation after it are stripped first, so `tools/session_start_lessons.sh).` on line 19 is checked; a missing one is named, and `--list` prints every path checked with its line | `tests/test_instruction_length_check.py` |
+| Where `CLAUDE.md` says `.claude/settings.json denies` the tools, the file denies them | `CLAUDE.md` line 12 | `src/instruction_length_check.py --paths` — the settings file is read as JSON and `permissions.deny` must hold `Edit(evals/**)` and `Write(evals/**)`; a missing key or entry is named | `tests/test_instruction_length_check.py` |
 | Every lesson starts with its date, YYYY-MM-DD and a space | nowhere: the hook told a lesson from the header by its date and nothing said so | `src/instruction_length_check.py --lessons` — after the header, every line of `lessons.md` and `archive/lessons_enforced.md` that is not blank and not indented starts with a date; an indented line is the lesson's note or wrapped line | `tests/test_instruction_length_check.py` |
 | The old repo is archived, not rewritten | `docs/HOW_WE_WORK.md` §1 principle 10 and §8 | `src/archive_check.py` — a file already under `archive/` on the baseline is never changed or deleted; a new one passes | `tests/test_archive_check.py` |
 | The session-start hook prints the lessons | `CLAUDE.md`; `docs/HOW_WE_WORK.md` §4 hooks | `tools/session_start_lessons.sh` — the header and the newest lessons, newest last, at most sixty lines; a lesson is a dated line plus its wrapped lines, printed whole or not at all | `tests/test_session_start_lessons.py` |
@@ -46,7 +47,13 @@ which this branch follows on main, so the parenthesis is true once that merge
 is in. On this branch `src/eval_guard.py` and `evals/` do not exist yet, so
 `src/instruction_length_check.py --paths` (and with it `make rule-checks`) fails
 here by design, naming both; the branch merges after the evals pull request and
-is rebased on main first, where it passes.
+is rebased on main first, where it passes. The deny half of the same line fails
+here the same way: `--paths` reads `.claude/settings.json` and requires its
+`permissions.deny` to hold `Edit(evals/**)` and `Write(evals/**)`, and at this
+commit the file has no `permissions` key, so a third line names that. The evals
+pull request's settings carry both entries, so that refusal clears on the same
+rebase; a settings file that merely exists would have passed the earlier
+reading, and that was the second lens's finding.
 
 ## Rules an existing script already enforced, now named beside the rule
 

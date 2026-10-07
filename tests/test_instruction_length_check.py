@@ -1,4 +1,4 @@
-"""instruction_length_check has to pass 22 lines and name the 23rd, and name an undated lesson.
+"""instruction_length_check has to pass 22 lines and name the 23rd, name an undated lesson, a missing path and an empty deny list.
 
 The cap is `docs/HOW_WE_WORK.md`'s: "`CLAUDE.md` is capped at 22 lines". The
 files below are planted by this file with a line count written out by hand.
@@ -8,10 +8,19 @@ YYYY-MM-DD and a space. The planted lessons file has a two-line header, three
 dated lessons, one indented line under the second (the shape of
 `archive/lessons_enforced.md`, whose note sits under each lesson), and the
 undated line is planted at a line number written out by hand.
+
+The path rule's second lens, fourth reading: `CLAUDE.md` line 19 writes
+`tools/session_start_lessons.sh).`, and a token stripped of brackets but not of
+the full stop was never checked, so the one path that change added was the one
+the rule could not see. The tests below plant a path before `).` and read the
+real `CLAUDE.md` for that line. The deny half of line 12 is the same reading:
+`.claude/settings.json denies the tools` was true if the file existed, so the
+tests plant settings files with and without the two deny entries.
 """
 
 from __future__ import annotations
 
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -161,3 +170,153 @@ def test_the_gate_runs_the_check():
         cwd=REPO_ROOT, capture_output=True, text=True, check=True,
     ).stdout
     assert [line for line in printed.splitlines() if "src.instruction_length_check" in line]
+
+
+# The sentence-punctuation case: the path is the last word of its sentence, so
+# the token is `tools/planted_hook.sh).` as CLAUDE.md's line 19 writes its own.
+SENTENCED = "- read lessons.md at session start (the hook prints it: tools/planted_hook.sh)."
+
+
+def plant_sentenced(tmp_path: Path, present: bool) -> Path:
+    lines = [f"- rule {n}" for n in range(1, 23)]
+    lines[18] = SENTENCED
+    if present:
+        (tmp_path / "tools").mkdir()
+        (tmp_path / "tools" / "planted_hook.sh").write_text("", encoding="utf-8")
+    path = tmp_path / "CLAUDE.md"
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return path
+
+
+def test_sentence_punctuation_comes_off_the_end_of_a_token_and_not_the_front():
+    assert instruction_length_check.token_of("tools/x.sh).") == "tools/x.sh"
+    assert instruction_length_check.token_of("(tools/x.sh.)") == "tools/x.sh"
+    assert instruction_length_check.token_of("`src/x.py`!") == "src/x.py"
+    assert instruction_length_check.token_of("src/x.py?") == "src/x.py"
+    assert instruction_length_check.token_of("evals/\u2026") == "evals/"
+    assert instruction_length_check.token_of(".claude/settings.json") == ".claude/settings.json"
+    assert instruction_length_check.token_of("(.claude/settings.json).") == ".claude/settings.json"
+
+
+def test_a_path_that_ends_a_sentence_is_still_checked(tmp_path, capsys):
+    lessons = plant_lessons(tmp_path, DATED_LESSONS)
+    path = plant_sentenced(tmp_path, present=False)
+
+    assert instruction_length_check.named_paths(path) == [(19, "tools/planted_hook.sh")]
+    assert instruction_length_check.main(
+        ["--file", str(path), "--lessons", str(lessons)]) == instruction_length_check.FOUND
+    assert capsys.readouterr().err.splitlines() == [
+        f"{path}:19: names tools/planted_hook.sh, which is not in the tree; a rule naming a "
+        "file that is not there names nothing"]
+
+
+def test_a_path_that_ends_a_sentence_passes_when_it_is_there(tmp_path, capsys):
+    lessons = plant_lessons(tmp_path, DATED_LESSONS)
+    path = plant_sentenced(tmp_path, present=True)
+
+    assert instruction_length_check.main(
+        ["--file", str(path), "--lessons", str(lessons), "--list"]) == 0
+    printed = capsys.readouterr()
+    assert printed.err == ""
+    assert printed.out.splitlines() == [f"{path}:19: tools/planted_hook.sh in the tree"]
+
+
+def test_this_repository_s_claude_md_names_the_session_start_hook_and_it_is_there(capsys):
+    """Line 19 of CLAUDE.md ends `tools/session_start_lessons.sh).`; the check has to see it."""
+    path = REPO_ROOT / "CLAUDE.md"
+    hook = "tools/session_start_lessons.sh"
+
+    assert (19, hook) in instruction_length_check.named_paths(path)
+    assert (REPO_ROOT / hook).is_file()
+    instruction_length_check.main(["--file", str(path), "--list"])
+    assert f"{path}:19: {hook} in the tree" in capsys.readouterr().out.splitlines()
+
+
+# The deny half: the planted CLAUDE.md names a settings file as denying the
+# tools, and the settings file planted beside it either holds the two deny
+# entries or does not. Everything else the line names is planted present, so
+# the only finding left is the one about the deny list.
+DENYING = "- evals/ is the owner's (src/eval_guard.py in CI; .claude/settings.json denies the tools)"
+DENY_ENTRIES = ["Edit(evals/**)", "Write(evals/**)"]
+
+
+def plant_denying(tmp_path: Path, settings) -> Path:
+    lines = [f"- rule {n}" for n in range(1, 23)]
+    lines[11] = DENYING
+    (tmp_path / "evals").mkdir()
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / "eval_guard.py").write_text("", encoding="utf-8")
+    (tmp_path / ".claude").mkdir()
+    (tmp_path / ".claude" / "settings.json").write_text(
+        settings if isinstance(settings, str) else json.dumps(settings), encoding="utf-8")
+    path = tmp_path / "CLAUDE.md"
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return path
+
+
+def test_a_settings_file_holding_both_deny_entries_passes(tmp_path, capsys):
+    lessons = plant_lessons(tmp_path, DATED_LESSONS)
+    path = plant_denying(tmp_path, {"hooks": {}, "permissions": {"deny": DENY_ENTRIES}})
+
+    assert instruction_length_check.denying_settings(path) == [(12, ".claude/settings.json")]
+    assert instruction_length_check.main(["--file", str(path), "--lessons", str(lessons)]) == 0
+    assert capsys.readouterr().err == ""
+
+
+def test_a_settings_file_with_no_permissions_key_is_named(tmp_path, capsys):
+    lessons = plant_lessons(tmp_path, DATED_LESSONS)
+    path = plant_denying(tmp_path, {"hooks": {}})
+
+    assert instruction_length_check.main(
+        ["--file", str(path), "--lessons", str(lessons)]) == instruction_length_check.FOUND
+    assert capsys.readouterr().err.splitlines() == [
+        f"{path}:12: says .claude/settings.json denies the tools, but it has no permissions "
+        "key; a settings file that denies nothing enforces nothing"]
+
+
+def test_a_permissions_key_with_no_deny_list_is_named(tmp_path, capsys):
+    lessons = plant_lessons(tmp_path, DATED_LESSONS)
+    path = plant_denying(tmp_path, {"permissions": {"allow": ["Bash(ls)"]}})
+
+    assert instruction_length_check.main(
+        ["--file", str(path), "--lessons", str(lessons)]) == instruction_length_check.FOUND
+    assert capsys.readouterr().err.splitlines() == [
+        f"{path}:12: says .claude/settings.json denies the tools, but it has no "
+        "permissions.deny list; a settings file that denies nothing enforces nothing"]
+
+
+def test_each_missing_deny_entry_is_named(tmp_path, capsys):
+    lessons = plant_lessons(tmp_path, DATED_LESSONS)
+    path = plant_denying(tmp_path, {"permissions": {"deny": ["Edit(evals/**)"]}})
+
+    assert instruction_length_check.main(
+        ["--file", str(path), "--lessons", str(lessons)]) == instruction_length_check.FOUND
+    assert capsys.readouterr().err.splitlines() == [
+        f"{path}:12: says .claude/settings.json denies the tools, but it permissions.deny "
+        "lacks Write(evals/**); a settings file that denies nothing enforces nothing"]
+
+
+def test_a_settings_file_that_is_not_json_is_named(tmp_path, capsys):
+    lessons = plant_lessons(tmp_path, DATED_LESSONS)
+    path = plant_denying(tmp_path, "{not json")
+
+    assert instruction_length_check.main(
+        ["--file", str(path), "--lessons", str(lessons)]) == instruction_length_check.FOUND
+    assert capsys.readouterr().err.splitlines() == [
+        f"{path}:12: says .claude/settings.json denies the tools, but it is not JSON; "
+        "a settings file that denies nothing enforces nothing"]
+
+
+def test_no_paths_turns_the_deny_rule_off_too(tmp_path, capsys):
+    lessons = plant_lessons(tmp_path, DATED_LESSONS)
+    path = plant_denying(tmp_path, {"hooks": {}})
+
+    assert instruction_length_check.main(
+        ["--file", str(path), "--lessons", str(lessons), "--no-paths"]) == 0
+    assert capsys.readouterr().err == ""
+
+
+def test_this_repository_s_claude_md_says_its_settings_file_denies_the_tools():
+    """Line 12 of CLAUDE.md makes the claim, so the deny rule reads .claude/settings.json."""
+    assert instruction_length_check.denying_settings(REPO_ROOT / "CLAUDE.md") == [
+        (12, ".claude/settings.json")]
