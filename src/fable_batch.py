@@ -5,8 +5,10 @@ The nightly worker runs this before it takes run items (docs/routines/nightly-wo
 and writes the calculation into the morning report. Every published run's
 `input_manifest.json` records each agent's tokens; the Fable tokens of a filing are
 the input, cache-write, cache-read and output tokens of every agent that a Fable
-model served. A filing with no Fable agent on record counts for nothing, and a
-run the limit stopped or an analyst failed is not published and is not on record.
+model served, every attempt counted. A filing with no Fable agent on record
+counts for nothing, and a run the limit stopped, an analyst failed, or an error
+left unfinished is not published and is not on record: the nightly crew commits a
+run only when `finish` wrote its record (`docs/needs_judgment.md`).
 A run that answers the limit exits `src.run_analysis.LIMIT_REACHED` (4; 3 is the
 interpreter pin's), and the batch stops there.
 
@@ -31,19 +33,31 @@ TOKEN_KEYS = ("input_tokens", "cache_creation_input_tokens", "cache_read_input_t
               "output_tokens")
 
 
+def agent_tokens(record: dict) -> int:
+    """One agent's tokens: summed over every attempt the record lists, so a call
+    that failed before it passed costs what it cost; an older record with no
+    `attempts` list is read off its own fields."""
+    attempts = record.get("attempts")
+    rows = attempts if isinstance(attempts, list) and attempts else [record]
+    return sum((row.get(key) or 0) for row in rows if isinstance(row, dict)
+               for key in TOKEN_KEYS)
+
+
 def fable_tokens(manifest: dict) -> int:
     """The tokens of every agent a Fable model served, read by the one predicate
     the runner uses for its retry budget and its limit reading."""
-    return sum(sum(record.get(key) or 0 for key in TOKEN_KEYS)
+    return sum(agent_tokens(record)
                for record in (manifest.get("agents") or {}).values()
                if isinstance(record, dict) and run_analysis.is_fable(record.get("model_served")))
 
 
 def published(manifest: dict) -> bool:
-    """Whether the manifest is a finished run's: no `analysis_failure` and no
-    `fable_limit_reached`. A run the limit stopped, or an analyst failed, cost
-    fewer tokens than a filing costs, and would pull the median down."""
-    return (isinstance(manifest, dict) and manifest.get("analysis_failure") is None
+    """Whether the manifest is a finished run's: `finish` wrote it (`analysed_utc`),
+    no `analysis_failure` and no `fable_limit_reached`. A run the limit stopped,
+    an analyst failed, or an error left before `finish`, cost fewer tokens than a
+    filing costs, and would pull the median down."""
+    return (isinstance(manifest, dict) and run_analysis.FINISH_MARKER in manifest
+            and manifest.get("analysis_failure") is None
             and manifest.get("fable_limit_reached") is None)
 
 

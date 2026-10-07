@@ -25,7 +25,7 @@ them stay on record.
 | readers | the filing bundle for one company | prices, short interest, any other company |
 | comparers | both reader reports plus the market table — run only for the reaction-window labels | any filing |
 | accounting and financial analysts | the two reader reports and `calculator_filings_only.json` | any filing, any price, the market table |
-| valuation analyst | the calculator with the price at the cutoff (before its drivers, then with the DCF run on them), both checked analyses, the MD&A and the earnings release verbatim | a price after the cutoff, the market table |
+| valuation analyst | the calculator with the price at the cutoff (before its drivers, then with the DCF run on them), both checked analyses, and of the MD&A and the earnings release only the paragraphs the notes reader flagged, each verbatim, the manifest recording the trim | a price after the cutoff, the market table |
 | supervisor (retired from the live pipeline on 2026-09-28; its runs stay on record) | the four reports, and the rules version's checklist keys and output schema | any filing, the market table |
 
 **Since 2026-10-06 the comparer is Python**, the owner's decision of that day:

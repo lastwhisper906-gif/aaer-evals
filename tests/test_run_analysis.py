@@ -10,6 +10,8 @@ only the items the quote gate kept.
 from __future__ import annotations
 
 import json
+import re
+import shutil
 
 from src import agent_inputs, run_analysis
 
@@ -398,6 +400,34 @@ def test_a_failed_fable_call_is_run_again_at_most_twice(tmp_path, monkeypatch):
     assert "limit_reached" not in record
 
 
+# A call that passed: tokens spent, served by Fable, the file written.
+PASSING = (0, {"usage": {"input_tokens": 7, "output_tokens": 2}, "total_cost_usd": 0.5,
+               "modelUsage": {"claude-fable-5-1": {"outputTokens": 2}}}, {"out.json": "{}"})
+
+
+def test_every_attempt_is_on_record_and_the_tokens_are_their_sum(tmp_path, monkeypatch):
+    """Two failures then a pass: three attempts listed, each with its own usage
+    and outcome, and the record's token fields the sum over them -- 5+5+7 in,
+    1+1+2 out -- under the names a reader of the record already knows. A call
+    that passed first lists one attempt, and its fields are that attempt's."""
+    record, calls = _ask(tmp_path, monkeypatch, [FAILING, FAILING, PASSING], "fable")
+    assert record["result"] == "written" and len(calls) == 3
+    assert [row["attempt"] for row in record["attempts"]] == [1, 2, 3]
+    assert [row["outcome"] for row in record["attempts"]] == ["failed", "failed", "written"]
+    assert [row["input_tokens"] for row in record["attempts"]] == [5, 5, 7]
+    assert record["attempts"][2]["model_served"] == "claude-fable-5-1"
+    assert all(isinstance(row["duration_s"], float) for row in record["attempts"])
+    assert record["input_tokens"] == 17 and record["output_tokens"] == 4
+    assert record["cost_usd"] == 0.5                            # the one attempt that cost
+    assert record["attempt"] == 3 and record["model_served"] == "claude-fable-5-1"
+    record, _ = _ask(tmp_path, monkeypatch, [PASSING], "fable")
+    assert len(record["attempts"]) == 1 and record["input_tokens"] == 7
+    # the other outcome: a limit ends the list where it stands
+    _two_second_clock(monkeypatch)
+    record, _ = _ask(tmp_path, monkeypatch, [ZERO_TOKEN_FAILURE] * 3, "fable")
+    assert [row["outcome"] for row in record["attempts"]] == ["limit"]
+
+
 def test_a_failed_opus_call_is_run_again_once(tmp_path, monkeypatch):
     record, calls = _ask(tmp_path, monkeypatch, [FAILING] * 5, "opus")
     assert record["result"] == "failed" and len(calls) == 2
@@ -621,6 +651,119 @@ def test_a_stopped_run_resumes_in_place_and_calls_only_what_had_not_finished(
                                  control="never", resume=True)
 
 
+def _crashing_financial_analyst(seen: dict):
+    """Every agent writes; the financial analyst's first answer is a JSON list,
+    which `ask` reads as written (it is JSON) and the analysis gate refuses."""
+    written, state = _fake_ask(seen), {"financial_calls": 0}
+
+    def ask(directory, *, agent, writes, message, spec, log):
+        if agent == "financial-analyst":
+            state["financial_calls"] += 1
+            if state["financial_calls"] == 1:
+                (directory / "analysis_financial.json").write_text("[]")
+                return {"agent": agent, "result": "written", "input_tokens": 1,
+                        "output_tokens": 1}
+        return written(directory, agent=agent, writes=writes, message=message,
+                       spec=spec, log=log)
+    return ask
+
+
+def _run_keyword(control: str = "never") -> dict:
+    return dict(ticker="NVDA", form="10-Q", cutoff="2026-08-26", period_end="2026-07-26",
+                store=run_analysis.cutoff_guard.FIXTURES, prices=None, control=control)
+
+
+def test_a_crash_at_the_analysis_gate_leaves_the_passed_analyst_on_record_and_resumes(
+        tmp_path, monkeypatch):
+    """The accounting analyst passed, the financial analyst wrote a JSON list,
+    and the gate raised before `finish`. The record of every call that returned
+    is already in the manifest, with what the run stopped on and no finish
+    marker; the next invocation resumes it, calling the financial analyst and
+    what comes after and never the accounting analyst again. Then the finished
+    run is refused on resume."""
+    run = tmp_path / "NVDA" / NVDA_ACCESSION
+    assemble_bundle.write(assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,
+                                                prior_runs=run.parent.parent), run)
+    monkeypatch.setattr(run_analysis, "ask", _crashing_financial_analyst({}))
+    with pytest.raises(run_analysis.analysis_check.AnalysisInputError,
+                       match="the financial analysis is not a JSON object"):
+        run_analysis.run_company(run=run, **_run_keyword())
+    manifest = json.loads((run / "input_manifest.json").read_text(encoding="utf-8"))
+    assert run_analysis.FINISH_MARKER not in manifest and "fable_limit_reached" not in manifest
+    assert manifest["stopped_on"] == ("AnalysisInputError: the financial analysis is not a "
+                                      "JSON object")
+    assert {name: record["result"] for name, record in manifest["agents"].items()} == {
+        "numbers-reader": "written", "notes-text-reader": "written",
+        "accounting-analyst": "written", "financial-analyst": "written"}
+    assert (run / "analysis_accounting.json").is_file()
+    assert not (run / "analysis_financial.json").exists()           # the gate refused it
+    # the command: the gate's refusal is a stop like any other, exit 2 and a line
+    monkeypatch.setattr(run_analysis.interpreter_pin, "enforce", lambda: 0)
+    monkeypatch.setattr(run_analysis, "run_company", lambda **kw: (_ for _ in ()).throw(
+        run_analysis.analysis_check.AnalysisInputError("the financial analysis is not a JSON object")))
+    assert run_analysis.main(_main_command(run)) == run_analysis.BAD_INPUT == 2
+    monkeypatch.undo()
+    # resumed, by default: the record says what passed, and only the rest runs
+    ask, called = _counting_ask({})
+    monkeypatch.setattr(run_analysis, "ask", ask)
+    manifest = run_analysis.run_company(run=run, **_run_keyword())
+    assert called == ["financial-analyst", "valuation-analyst", "valuation-analyst-second-pass"]
+    assert manifest["resume_skipped"] == ["numbers-reader", "notes-text-reader",
+                                          "accounting-analyst"]
+    assert manifest["resumed_from"] == ("stopped on AnalysisInputError: the financial analysis "
+                                        "is not a JSON object")
+    assert "stopped_on" not in manifest and run_analysis.FINISH_MARKER in manifest
+    assert manifest["analysis_failure"] is None
+    assert (run / "analysis_financial.json").is_file() and (run / "memo_ko.md").is_file()
+    assert agent_inputs.isolation_violations(run) == []
+    # the finished run: --resume says nothing to resume, and without it the
+    # run on record is refused
+    monkeypatch.setattr(run_analysis, "ask",
+                        lambda *a, **k: (_ for _ in ()).throw(AssertionError("an agent ran")))
+    with pytest.raises(run_analysis.NothingToResume):
+        run_analysis.run_company(run=run, resume=True, **_run_keyword())
+    with pytest.raises(run_analysis.RunError, match="did not stop at the limit"):
+        run_analysis.run_company(run=run, **_run_keyword())
+
+
+def test_a_crash_in_the_calculator_after_both_analysts_leaves_both_on_record_and_resumes(
+        tmp_path, monkeypatch):
+    """`calculate(BEFORE_DRIVERS)` refuses an input after both analysts passed:
+    both are on record, the run stops on the calculator's error, and the resume
+    calls the valuation analyst and nothing before it."""
+    run = tmp_path / "NVDA" / NVDA_ACCESSION
+    assemble_bundle.write(assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,
+                                                prior_runs=run.parent.parent), run)
+    monkeypatch.setattr(run_analysis, "ask", _fake_ask({}))
+    real_calculate, state = run_analysis.calculator.calculate, {"raised": False}
+
+    def calculate(**keyword):
+        if "accounting" in keyword and "assumptions" not in keyword and not state["raised"]:
+            state["raised"] = True
+            raise run_analysis.calculator.CalculatorInputError("planted: an input is not there")
+        return real_calculate(**keyword)
+
+    monkeypatch.setattr(run_analysis.calculator, "calculate", calculate)
+    with pytest.raises(run_analysis.calculator.CalculatorInputError, match="planted"):
+        run_analysis.run_company(run=run, **_run_keyword())
+    manifest = json.loads((run / "input_manifest.json").read_text(encoding="utf-8"))
+    assert manifest["stopped_on"] == "CalculatorInputError: planted: an input is not there"
+    assert run_analysis.FINISH_MARKER not in manifest
+    assert all(manifest["agents"][name]["result"] == "written" for name in (
+        "accounting-analyst", "financial-analyst"))
+    assert (run / "analysis_accounting.json").is_file() and (run / "analysis_financial.json").is_file()
+    assert not (run / run_analysis.BEFORE_DRIVERS).exists()
+    ask, called = _counting_ask({})
+    monkeypatch.setattr(run_analysis, "ask", ask)
+    manifest = run_analysis.run_company(run=run, **_run_keyword())
+    assert called == ["valuation-analyst", "valuation-analyst-second-pass"]
+    assert manifest["resume_skipped"] == ["numbers-reader", "notes-text-reader",
+                                          "accounting-analyst", "financial-analyst"]
+    assert manifest["resumed_from"].startswith("stopped on CalculatorInputError: planted")
+    assert "stopped_on" not in manifest and manifest["analysis_failure"] is None
+    assert (run / run_analysis.BEFORE_DRIVERS).is_file() and (run / run_analysis.FINAL).is_file()
+
+
 def _stopped_at(tmp_path, monkeypatch, stopped_agent: str, control: str,
                 model: str | None = None, numbers_report: str = NUMBERS_REPORT):
     """The limit at `stopped_agent`; every other agent writes."""
@@ -721,6 +864,77 @@ def test_a_resume_names_the_stopped_run_s_model_or_is_refused_and_the_override_n
     (run / "input_manifest.json").write_text(json.dumps(edited))
     with pytest.raises(run_analysis.RunError, match="financial-analyst on record asked for opus"):
         _resumed(run, monkeypatch, "never", model="claude-fable-5-1")
+
+
+def _stopped_recording_models(tmp_path, monkeypatch, stopped_agent: str):
+    """The limit at `stopped_agent`; every other agent writes and records the
+    model it asked for, as the real `ask` does."""
+    run = tmp_path / "NVDA" / NVDA_ACCESSION
+    assemble_bundle.write(assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,
+                                                prior_runs=run.parent.parent), run)
+    written = _fake_ask({})
+
+    def ask(directory, *, agent, writes, message, spec, log):
+        if agent == stopped_agent:
+            return {"agent": agent, "result": "failed", "limit_reached": True,
+                    "reason": "You've reached your Fable limit.", "model_requested": spec["model"]}
+        return dict(written(directory, agent=agent, writes=writes, message=message,
+                            spec=spec, log=log), model_requested=spec["model"])
+
+    monkeypatch.setattr(run_analysis, "ask", ask)
+    stopped = run_analysis.run_company(run=run, **_run_keyword())
+    assert stopped["fable_limit_reached"] == [stopped_agent]
+    return run, stopped
+
+
+def _definitions_with(tmp_path, monkeypatch, edits: dict[str, str]) -> Path:
+    """A copy of the committed definitions with `model:` lines edited, in place
+    of the committed ones for the rest of the test."""
+    copy = tmp_path / "definitions"
+    if not copy.is_dir():
+        shutil.copytree(run_analysis.DEFINITIONS, copy)
+    for name, model in edits.items():
+        path = copy / f"{name}.md"
+        text, count = re.subn(r"^model: .*$", f"model: {model}", path.read_text(encoding="utf-8"),
+                              count=1, flags=re.M)
+        assert count == 1, name
+        path.write_text(text, encoding="utf-8")
+    monkeypatch.setattr(run_analysis, "DEFINITIONS", copy)
+    return copy
+
+
+def test_a_definition_edited_between_the_nights_is_refused_on_resume(tmp_path, monkeypatch):
+    """Stopped under the definitions' own models at the accounting analyst, with
+    the financial analyst on record asking for fable. The accounting analyst's
+    definition edited to opus before the resume: refused, exit 2, naming the
+    model the record ran under and the one the definition asks for now. The same
+    for the valuation analyst's, which has no record of its own but is in the
+    analysts' layer. Unchanged, the run resumes."""
+    run, stopped = _stopped_recording_models(tmp_path, monkeypatch, "accounting-analyst")
+    assert stopped["agents"]["financial-analyst"]["model_requested"] == "fable"
+    assert "model_override" not in stopped
+    before = (run / "input_manifest.json").read_bytes()
+    _definitions_with(tmp_path, monkeypatch, {"accounting-analyst": "opus"})
+    monkeypatch.setattr(run_analysis, "ask",
+                        lambda *a, **k: (_ for _ in ()).throw(AssertionError("an agent ran")))
+    with pytest.raises(run_analysis.RunError, match="the run stopped under fable; the definition "
+                       "of accounting-analyst now asks for opus, which the record cannot compare"):
+        run_analysis.run_company(run=run, **_run_keyword())
+    monkeypatch.setattr(run_analysis.interpreter_pin, "enforce", lambda: 0)
+    assert run_analysis.main(_main_command(run)) == run_analysis.BAD_INPUT == 2
+    assert (run / "input_manifest.json").read_bytes() == before
+    _definitions_with(tmp_path, monkeypatch, {"accounting-analyst": "fable",
+                                              "valuation-analyst": "opus"})
+    with pytest.raises(run_analysis.RunError, match="the definition of valuation-analyst now "
+                       "asks for opus"):
+        run_analysis.run_company(run=run, **_run_keyword())
+    # unchanged definitions: the resume runs, and only what had not finished
+    _definitions_with(tmp_path, monkeypatch, {"valuation-analyst": "fable"})
+    ask, called = _counting_ask({})
+    monkeypatch.setattr(run_analysis, "ask", ask)
+    manifest = run_analysis.run_company(run=run, **_run_keyword())
+    assert called == ["accounting-analyst", "valuation-analyst", "valuation-analyst-second-pass"]
+    assert manifest["analysis_failure"] is None and "stopped_on" not in manifest
 
 
 def test_a_stale_override_is_never_carried_forward_by_finish(tmp_path):
@@ -878,8 +1092,15 @@ def test_a_run_that_did_not_stop_is_not_resumed(tmp_path, monkeypatch, finished,
     manifest = json.loads((failed / "input_manifest.json").read_text())
     manifest["agents"] = {"numbers-reader": {"result": "failed", "reason": "exit 1"}}
     manifest["analysis_failure"] = "a reader failed twice"
+    manifest[run_analysis.FINISH_MARKER] = "2026-10-07T00:00:00Z"   # finish wrote it
     (failed / "input_manifest.json").write_text(json.dumps(manifest))
     with pytest.raises(run_analysis.RunError, match="did not stop at the limit"):
+        run_analysis.run_company(run=failed, resume=True, **keyword)
+    # without the marker the same manifest is a run that stopped before finish
+    # with nothing on record: --resume is refused as such, and nothing is run over
+    del manifest[run_analysis.FINISH_MARKER]
+    (failed / "input_manifest.json").write_text(json.dumps(manifest))
+    with pytest.raises(run_analysis.RunError, match="no agent's gated output is on record"):
         run_analysis.run_company(run=failed, resume=True, **keyword)
 
 

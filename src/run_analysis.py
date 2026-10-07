@@ -78,7 +78,20 @@ command exits non-zero: a run missing an analysis is never reported as finished.
 **Every agent's usage is recorded** in `input_manifest.json` under `agents`: the
 model asked for, the model that served, input, cache and output tokens, turns,
 cost and wall time, so the monthly cost of the pipeline is read off the record
-rather than estimated.
+rather than estimated. The record is written the moment each call returns
+(`record_agent`), not at the end, so a crash between an analyst's output and
+`finish` -- the analysis gate refusing a JSON list, the calculator refusing an
+input -- leaves every call that returned on record; `run_company` writes the
+error under `stopped_on`, and the next invocation resumes such a run as it
+resumes one the limit stopped, calling no agent whose gated output is on record.
+`finish` alone writes `analysed_utc`, the mark of a run that finished: a run
+carrying it is never resumed. Each agent's record lists every attempt under
+`attempts` (attempt, model served, tokens, cost, duration, outcome), and its
+token and cost fields are the sums over them, so a retried call costs what the
+record says. Under no `--model`, a resume also reads each pending agent's
+definition: a definition whose `model:` line was edited between the nights,
+so that it now asks for a model other than the one the agents on record in its
+layer ran under, is refused -- the record could not compare them.
 
     python3.12 -m src.run_analysis --run runs/NVDA/0001045810-26-000075 \\
         --ticker NVDA --form 10-Q --cutoff 2026-08-26 --period-end 2026-07-26 \\
@@ -92,10 +105,12 @@ import concurrent.futures
 import datetime as dt
 import importlib.util
 import json
+import os
 import re
 import shutil
 import subprocess
 import sys
+import threading
 import time
 from pathlib import Path
 
@@ -128,6 +143,11 @@ LIMIT = re.compile(r"reached your \w+ limit", re.IGNORECASE)
 # fails having spent no token, in about two seconds. Under this many seconds,
 # with no token in or out, a failed Fable call is read as the limit first.
 LIMIT_SECONDS = 10
+# The one key only `finish` writes: a manifest carrying it is a finished run's.
+FINISH_MARKER = "analysed_utc"
+# The token fields of a usage record, summed over an agent's attempts.
+TOKEN_FIELDS = ("input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens",
+                "output_tokens")
 # Each agent's gated output at the run root, which is what says the agent is on
 # record and need not be called again on a resumed run.
 OUTPUT_ON_RECORD = {"numbers-reader": ("report_numbers.md",),
@@ -231,10 +251,35 @@ def usage_record(result: dict, *, requested: str, seconds: float, attempt: int) 
             "stop_reason": result.get("stop_reason")}
 
 
+def _attempt_entry(usage: dict, outcome: str) -> dict:
+    """One attempt's row under `attempts`: what it was served, what it cost, how
+    long it took and how it ended -- written, failed, or limit."""
+    return {"attempt": usage.get("attempt"), "model_served": usage.get("model_served"),
+            **{key: usage.get(key) for key in TOKEN_FIELDS},
+            "cost_usd": usage.get("cost_usd"), "duration_s": usage.get("seconds"),
+            "outcome": outcome}
+
+
+def with_attempts(record: dict, attempts: list[dict]) -> dict:
+    """The record with every attempt listed and its token and cost fields summed
+    over them, under the names a reader of the record already knows."""
+    record["attempts"] = attempts
+    for key in (*TOKEN_FIELDS, "cost_usd"):
+        values = [row.get(key) for row in attempts if isinstance(row.get(key), (int, float))]
+        record[key] = sum(values) if values else record.get(key)
+    return record
+
+
 def ask(directory: Path, *, agent: str, writes: tuple[str, ...], message: str,
         spec: dict, log: Path) -> dict:
-    """One restricted session in `directory`; the usage record, or a failure."""
+    """One restricted session in `directory`; the usage record, or a failure.
+
+    Every attempt is kept under `attempts`, and the record's token and cost
+    fields are the sums over them: a call that failed twice before it passed
+    cost three calls, and the batch is sized from what calls cost.
+    """
     record: dict = {"agent": agent, "writes": list(writes)}
+    attempts: list[dict] = []
     fable = is_fable(spec.get("model"))
     retries = FABLE_RETRIES if fable else RETRIES
     for attempt in range(1, retries + 2):
@@ -256,14 +301,15 @@ def ask(directory: Path, *, agent: str, writes: tuple[str, ...], message: str,
             result = json.loads(done.stdout)
         except ValueError:
             result = {"is_error": True, "result": done.stdout[-2000:]}
-        record.update(usage_record(result, requested=spec["model"], seconds=seconds,
-                                   attempt=attempt))
+        usage = usage_record(result, requested=spec["model"], seconds=seconds, attempt=attempt)
+        record.update(usage)
         written = all((directory / name).is_file() for name in writes)
         unreadable = [name for name in writes if written and name.endswith(".json")
                       and not _is_json(directory / name)]
         if done.returncode == 0 and written and not unreadable and not result.get("is_error"):
             record["result"] = "written"
-            return record
+            attempts.append(_attempt_entry(usage, "written"))
+            return with_attempts(record, attempts)
         record["result"] = "failed"
         record["reason"] = (f"exit {done.returncode}; wrote "
                             f"{[n for n in writes if (directory / n).is_file()]}"
@@ -273,14 +319,17 @@ def ask(directory: Path, *, agent: str, writes: tuple[str, ...], message: str,
         if LIMIT.search(str(result.get("result") or "")):
             record["limit_reached"] = True
             record["reason"] = str(result.get("result"))[:200]
-            return record          # a limit is not a failure a retry can answer
+            attempts.append(_attempt_entry(usage, "limit"))
+            return with_attempts(record, attempts)   # a limit is not a failure a retry answers
         if fable and not tokens_spent(result) and seconds < LIMIT_SECONDS:
             record["limit_reached"] = True
             record["reason"] = (f"read as the limit: the Fable call failed in {seconds:.1f}s "
                                 f"with no token spent (lessons.md 2026-09-29); it said "
                                 f"{str(result.get('result') or '')[:120]!r}")
-            return record
-    return record
+            attempts.append(_attempt_entry(usage, "limit"))
+            return with_attempts(record, attempts)
+        attempts.append(_attempt_entry(usage, "failed"))
+    return with_attempts(record, attempts)
 
 
 def tokens_spent(result: dict) -> int:
@@ -314,14 +363,45 @@ def message_files(names) -> list[str]:
     return [n for n in SHARED_FIRST if n in names] + sorted(names - set(SHARED_FIRST))
 
 
+_RECORD_LOCK = threading.Lock()
+
+
+def agent_entry(record: dict, earlier=None) -> dict:
+    """An agent's manifest entry: its usage record less the file list it was
+    handed, keeping the router's `trimmed` record if the entry already has one."""
+    entry = {key: value for key, value in record.items() if key != "writes"}
+    if isinstance(earlier, dict) and agent_inputs.TRIMMED_KEY in earlier:
+        entry[agent_inputs.TRIMMED_KEY] = earlier[agent_inputs.TRIMMED_KEY]
+    return entry
+
+
+def record_agent(run: Path, name: str, record: dict) -> None:
+    """One agent's usage record into the manifest's `agents`, the moment its call
+    returned: one key updated, every other left alone, under a lock because the
+    readers and the analysts return in parallel. What raises later in the run
+    then finds this record on disk, and a resume reads it."""
+    with _RECORD_LOCK:
+        path = Path(run) / "input_manifest.json"
+        manifest = json.loads(path.read_text(encoding="utf-8"))
+        agents = manifest.get("agents") if isinstance(manifest.get("agents"), dict) else {}
+        agents[name] = agent_entry(record, agents.get(name))
+        # in the pipeline's order, not the order the parallel calls returned in
+        ordered = {known: agents[known] for known in OUTPUT_ON_RECORD if known in agents}
+        ordered.update({other: entry for other, entry in agents.items() if other not in ordered})
+        manifest["agents"] = ordered
+        write_json(path, manifest)
+
+
 def run_agent(run: Path, name: str, logs: Path, model: str | None = None) -> dict:
     agent_inputs.build(run, name)
     directory = agent_inputs.session_root(run, name)
     spec = agent_inputs.AGENTS[name]
     names = {path.name for path in directory.iterdir() if path.name != spec.writes}
     message = INSTRUCTION.format(files=", ".join(message_files(names)), writes=spec.writes)
-    return ask(directory, agent=spec.prompt, writes=(spec.writes,), message=message,
-               spec=definition_for(spec.prompt, model), log=logs / f"{name}.log")
+    record = ask(directory, agent=spec.prompt, writes=(spec.writes,), message=message,
+                 spec=definition_for(spec.prompt, model), log=logs / f"{name}.log")
+    record_agent(run, name, record)
+    return record
 
 
 def parallel(run: Path, names: tuple[str, ...], logs: Path,
@@ -413,7 +493,13 @@ def check_analysis(run: Path, name: str, kind: str) -> dict:
 
 
 def write_json(path: Path, payload: dict) -> None:
-    path.write_text(json.dumps(payload, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+    """Written whole or not at all: to a file beside it, then moved over it, so a
+    reader never sees a half-written manifest while a parallel call's record is
+    being written (`record_agent`)."""
+    path = Path(path)
+    tmp = path.with_name(f".{path.name}.writing")
+    tmp.write_text(json.dumps(payload, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+    os.replace(tmp, path)
 
 
 # --- the run --------------------------------------------------------------------------------
@@ -534,22 +620,70 @@ def stopped_under(manifest: dict, agents: dict) -> tuple[str | None, str]:
                   + (f" ({', '.join(served)} served)" if served else ""))
 
 
+READERS = ("numbers-reader", "notes-text-reader")
+
+
+def layer_of(name: str) -> str:
+    """The two groups a resume compares models within: the readers, and the
+    analysts with the control, which runs on the analysts' model."""
+    return "readers" if name in READERS else "analysts"
+
+
+def definition_name(name: str) -> str:
+    """The committed definition a pipeline agent runs: its own, or, for the
+    control, the accounting analyst's, whose model it runs on."""
+    return "accounting-analyst" if name == "control-single-agent" else agent_inputs.AGENTS[name].prompt
+
+
+def ran_under(record: dict) -> str | None:
+    """The model an agent on record ran under: what it asked for, else what served."""
+    asked = record.get("model_requested") or record.get("model_served")
+    return asked if isinstance(asked, str) and asked else None
+
+
+def definitions_agree(run: Path, agents: dict) -> None:
+    """Under no override, each pending agent's definition is read through the
+    code that chooses a call's model, and its `model:` must be the model the
+    agents on record in its layer ran under; a definition edited between the
+    nights is refused, because the record could not compare the two."""
+    recorded: dict[str, dict[str, list[str]]] = {}
+    for name, record in agents.items():
+        model = ran_under(record)
+        if model:
+            recorded.setdefault(layer_of(name), {}).setdefault(model, []).append(name)
+    for name in OUTPUT_ON_RECORD:
+        if name in agents or layer_of(name) not in recorded:
+            continue
+        asks = definition_for(definition_name(name), None)["model"]
+        for model, who in recorded[layer_of(name)].items():
+            if asks != model and not (is_fable(asks) and is_fable(model)):
+                raise RunError(f"{run}: the run stopped under {model}; the definition of "
+                               f"{definition_name(name)} now asks for {asks}, which the "
+                               "record cannot compare")
+
+
 def resume_plan(run: Path, manifest: dict, resume: bool,
                 model: str | None = None) -> dict | None:
     """What a resumed run starts from, or None for a run that has not run.
 
-    The run is resumed when its manifest records `fable_limit_reached` (the
-    default) or when `--resume` names it. `--resume` on a run that finished
-    raises NothingToResume; on one that failed some other way, or a run with no
-    agent on record, it is refused. A run on record that did not stop is never
-    run over: a correction is a new run.
+    The record decides. A manifest carrying `analysed_utc` is a finished run's:
+    `--resume` on it raises NothingToResume when it finished clean, and a run
+    that finished with a failure is refused, a correction being a new run. A
+    manifest without it whose agents are on record stopped before `finish`: at
+    the limit (`fable_limit_reached`) or on an error that raised between an
+    agent's return and `finish` (`stopped_on`, written by `run_company`); both
+    are resumed, by default or with `--resume`, and no agent whose gated output
+    is on record is called again. A run with no agent on record has nothing to
+    resume: without `--resume` it starts over, with it the flag is refused.
 
     The resume runs under the model the stopped run did. `model` is this
     invocation's `--model`; it must be the stopped run's `model_override`, and
     absent when the stopped run had none, or the resume is refused: the agents
     on record and the ones this night would call would then be on two models,
     which the record cannot compare. The agents on record are read too: under
-    an override, each one's own record must say it asked for that model.
+    an override, each one's own record must say it asked for that model; under
+    none, each pending agent's definition must still ask for the model the
+    agents on record in its layer ran under (`definitions_agree`).
     """
     recorded = manifest.get("agents")
     if not isinstance(recorded, dict) or not recorded:
@@ -557,7 +691,7 @@ def resume_plan(run: Path, manifest: dict, resume: bool,
             raise RunError(f"{run}: nothing to resume, no agent has run in this directory")
         return None
     stopped = manifest.get("fable_limit_reached")
-    if not stopped:
+    if not stopped and FINISH_MARKER in manifest:
         if resume and manifest.get("analysis_failure") is None:
             raise NothingToResume(f"{run}: nothing to resume, the run on record finished")
         raise RunError(f"{run}: the run on record did not stop at the limit "
@@ -565,6 +699,12 @@ def resume_plan(run: Path, manifest: dict, resume: bool,
                        "is nothing to resume; a correction is a new run")
     agents = {name: dict(record) for name, record in recorded.items()
               if on_record(run, name, record)}
+    if not stopped and not agents:
+        if resume:
+            raise RunError(f"{run}: nothing to resume, no agent's gated output is on record")
+        return None                      # it stopped before anything passed: it starts over
+    reason = (f"the limit at {', '.join(stopped)}" if stopped else
+              f"stopped on {manifest.get('stopped_on') or 'an error before finish wrote the record'}")
     named, under = stopped_under(manifest, agents)
     if (model or None) != named:
         raise RunError(f"{run}: the run stopped under {under}; a resume under "
@@ -577,13 +717,47 @@ def resume_plan(run: Path, manifest: dict, resume: bool,
                 raise RunError(f"{run}: the run stopped under {named}, but {name} on "
                                f"record asked for {asked}; a resume would mix models, "
                                "which the record cannot compare")
-    return {"agents": agents, "skipped": list(agents),
-            "stages": dict(manifest.get("analysis_stages") or {}), "stopped": list(stopped)}
+    else:
+        definitions_agree(run, agents)
+    return {"agents": agents, "skipped": list(agents), "reason": reason,
+            "stages": dict(manifest.get("analysis_stages") or {}), "stopped": list(stopped or [])}
 
 
-def run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: str,
-                store: Path, prices: Path | None, model: str | None = None,
-                control: str = "auto", resume: bool = False) -> dict:
+def note_stop(run: Path, exc: BaseException) -> None:
+    """The error a run stopped on, into its manifest as `stopped_on`, beside the
+    records of every agent that returned before it; `finish` removes it."""
+    path = Path(run) / "input_manifest.json"
+    if not path.is_file():
+        return
+    try:
+        manifest = json.loads(path.read_text(encoding="utf-8"))
+    except ValueError:
+        return
+    manifest["stopped_on"] = f"{type(exc).__name__}: {exc}"
+    write_json(path, manifest)
+
+
+def run_company(**keyword) -> dict:
+    """One run, or one resumed. An error that raises after the run started --
+    the analysis gate refusing an analyst's file, the calculator refusing an
+    input, the router refusing a directory -- is written into the manifest as
+    `stopped_on` beside the agents already on record, and raised; the next
+    invocation resumes from that record. A refusal before the run starts (a
+    RunError) and a run with nothing to resume are not stops and write nothing.
+    """
+    try:
+        return _run_company(**keyword)
+    except (analysis_check.AnalysisInputError, calculator.CalculatorInputError,
+            agent_inputs.AgentInputError, cutoff_guard.CutoffGuardError, decide.DecideError,
+            market_labels.MarketLabelError, quote_gate.QuoteGateError, OSError,
+            ValueError) as exc:
+        note_stop(Path(keyword["run"]), exc)
+        raise
+
+
+def _run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: str,
+                 store: Path, prices: Path | None, model: str | None = None,
+                 control: str = "auto", resume: bool = False) -> dict:
     run = Path(run)
     logs = run.parent / f".{run.name}.logs"          # outside the record, beside it
     logs.mkdir(exist_ok=True)
@@ -595,6 +769,7 @@ def run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: s
     stages: dict = plan["stages"] if plan else {}
     agents: dict = plan["agents"] if plan else {}
     skipped: list[str] | None = plan["skipped"] if plan else None
+    resumed: str | None = plan["reason"] if plan else None
 
     def pending(*names: str) -> tuple[str, ...]:
         """The agents of a stage not already on record: the ones this run calls."""
@@ -636,9 +811,9 @@ def run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: s
         finished = tuple(name for name in readers if agents[name]["result"] == "written")
         if finished:
             gate_readers(run, finished)
-        return finish(run, agents, stages, "the limit was reached", model, skipped=skipped)
+        return finish(run, agents, stages, "the limit was reached", model, skipped=skipped, resumed_from=resumed)
     if any(agents[name]["result"] != "written" for name in ("numbers-reader", "notes-text-reader")):
-        return finish(run, agents, stages, "a reader failed twice", model, skipped=skipped)
+        return finish(run, agents, stages, "a reader failed twice", model, skipped=skipped, resumed_from=resumed)
     if readers:
         # the readers this invocation called, and no other: a report gated on
         # the night the limit hit stays as the run root holds it
@@ -714,7 +889,7 @@ def run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: s
         baselines=_load(run / "baselines.json"),
         missing=missing_frames(run, agents)), encoding="utf-8")
     if limit_hit(agents):
-        return finish(run, agents, stages, "the limit was reached", model, skipped=skipped)
+        return finish(run, agents, stages, "the limit was reached", model, skipped=skipped, resumed_from=resumed)
     if control == "auto":
         golden, control_reason = is_golden_filing(manifest.get("accession"))
     else:
@@ -723,7 +898,7 @@ def run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: s
         agents["control-single-agent"] = run_control(run, logs, model, rebuild=plan is not None)
         if limit_hit(agents):
             return finish(run, agents, stages, "the limit was reached", model,
-                          control_reason=control_reason, skipped=skipped)
+                          control_reason=control_reason, skipped=skipped, resumed_from=resumed)
         if agents["control-single-agent"]["result"] == "written":
             stages["control"] = check_control(run)
     elif not golden:
@@ -731,7 +906,7 @@ def run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: s
     silent = [name for name, record in agents.items() if record.get("result") != "written"]
     return finish(run, agents, stages,
                   f"did not write: {', '.join(silent)}" if silent else None, model,
-                  control_reason=control_reason, skipped=skipped)
+                  control_reason=control_reason, skipped=skipped, resumed_from=resumed)
 
 
 def _same_json(path: Path, payload) -> bool:
@@ -783,9 +958,11 @@ def run_control(run: Path, logs: Path, model: str | None = None, *,
     spec = definition_for("accounting-analyst", model)
     control = {"description": "the single-agent control", "prompt": CONTROL_PROMPT.format(
         files=", ".join(sees)), "tools": ["Read", "Write"], "model": spec["model"]}
-    return ask(directory, agent="control-single-agent", writes=CONTROL_WRITES,
-               message="Write the three files.", spec=control,
-               log=logs / "control-single-agent.log")
+    record = ask(directory, agent="control-single-agent", writes=CONTROL_WRITES,
+                 message="Write the three files.", spec=control,
+                 log=logs / "control-single-agent.log")
+    record_agent(run, "control-single-agent", record)
+    return record
 
 
 def check_control(run: Path) -> dict:
@@ -812,28 +989,27 @@ def _load(path: Path) -> dict | None:
 
 def finish(run: Path, agents: dict, stages: dict, failure: str | None,
            model: str | None = None, control_reason: str | None = None,
-           skipped: list[str] | None = None) -> dict:
-    # Read again: the quote gate, the market marker and the router wrote to it
-    # since the start. The router's record of what it trimmed for the valuation
-    # analyst (`agents.<name>.trimmed`, src/agent_inputs.py) is kept beside the
-    # usage record; the boundary check reads it.
+           skipped: list[str] | None = None, resumed_from: str | None = None) -> dict:
+    # Read again: the quote gate, the market marker, the router and every call's
+    # own record wrote to it since the start. The router's record of what it
+    # trimmed for the valuation analyst (`agents.<name>.trimmed`,
+    # src/agent_inputs.py) is kept beside the usage record; the boundary check
+    # reads it. `analysed_utc` is written here and nowhere else: it is what says
+    # the run finished, and a resume never runs over a manifest that carries it.
     manifest = json.loads((run / "input_manifest.json").read_text(encoding="utf-8"))
     routed = manifest.get("agents") if isinstance(manifest.get("agents"), dict) else {}
-    manifest["agents"] = {}
-    for name, record in agents.items():
-        entry = {key: value for key, value in record.items() if key not in ("writes",)}
-        earlier = routed.get(name)
-        if isinstance(earlier, dict) and agent_inputs.TRIMMED_KEY in earlier:
-            entry[agent_inputs.TRIMMED_KEY] = earlier[agent_inputs.TRIMMED_KEY]
-        manifest["agents"][name] = entry
+    manifest["agents"] = {name: agent_entry(record, routed.get(name))
+                          for name, record in agents.items()}
     manifest["analysis_stages"] = stages
     manifest["analysis_failure"] = failure
+    manifest.pop("stopped_on", None)                # the stopped run's; this one finished
     if control_reason is not None:
         manifest["control_reason"] = control_reason
     if skipped is not None:
         # a resumed run: the agents on record from the stopped run were not called
         manifest["resumed_at"] = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         manifest["resume_skipped"] = skipped
+        manifest["resumed_from"] = resumed_from
     hit = limit_hit(agents)
     manifest.pop("fable_limit_reached", None)      # the stopped run's; set again below if hit
     if hit:
@@ -852,7 +1028,7 @@ def finish(run: Path, agents: dict, stages: dict, failure: str | None,
             "why": "named with --model in place of each definition's own, for the agents "
                    "applies_to lists, which this invocation called; the owner's decision "
                    "that names it is in docs/structure_changes.md"}
-    manifest["analysed_utc"] = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    manifest[FINISH_MARKER] = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     write_json(run / "input_manifest.json", manifest)
     return manifest
 
@@ -887,9 +1063,12 @@ def main(argv: list[str] | None = None) -> int:
     except NothingToResume as exc:
         print(f"run_analysis: {exc}")
         return 0
-    except (RunError, agent_inputs.AgentInputError, calculator.CalculatorInputError,
-            cutoff_guard.CutoffGuardError, decide.DecideError,
-            market_labels.MarketLabelError, OSError, ValueError) as exc:
+    except (RunError, agent_inputs.AgentInputError, analysis_check.AnalysisInputError,
+            calculator.CalculatorInputError, cutoff_guard.CutoffGuardError,
+            decide.DecideError, market_labels.MarketLabelError, quote_gate.QuoteGateError,
+            OSError, ValueError) as exc:
+        # the record of every call that returned is already on disk, and the
+        # manifest says what the run stopped on; the next invocation resumes it
         print(f"run_analysis: {exc}", file=sys.stderr)
         return BAD_INPUT
     print(json.dumps({name: {k: record.get(k) for k in ("result", "model_served",
