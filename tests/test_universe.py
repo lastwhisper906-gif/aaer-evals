@@ -47,6 +47,14 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 THE_TWELVE = ("AAPL", "STX", "CSCO", "PANW", "CARR", "LFUS",
               "GNRC", "CIEN", "QCOM", "ESE", "TTMI", "NVDA")
 
+# The eight the owner's instruction of 2026-10-07 added, in the order of the
+# twelve's SIC codes the selection rule walked (`docs/structure_changes.md`,
+# 2026-10-07). Typed from that line, not imported from the module under test;
+# their fixture sets are pinned to 2026-10-07.
+THE_EIGHT = ("DELL", "WDC", "ANET", "FTNT", "JCI", "POWL", "FELE", "FN")
+
+EVERY_ROW = THE_TWELVE + THE_EIGHT
+
 
 def _manifest(ticker: str) -> dict:
     return json.loads((REPO_ROOT / "tests" / "fixtures" / ticker / "manifest.json")
@@ -88,7 +96,8 @@ def test_the_universe_file_is_at_the_repository_root() -> None:
 
 
 def test_the_file_holds_the_twelve_in_the_order_the_tuple_had() -> None:
-    assert universe.tickers() == THE_TWELVE
+    assert universe.tickers()[:len(THE_TWELVE)] == THE_TWELVE
+    assert universe.tickers() == EVERY_ROW
 
 
 def test_no_module_in_src_still_carries_the_list_as_a_literal() -> None:
@@ -109,14 +118,14 @@ def test_no_module_in_src_still_carries_the_list_as_a_literal() -> None:
     )
 
 
-@pytest.mark.parametrize("ticker", THE_TWELVE)
+@pytest.mark.parametrize("ticker", EVERY_ROW)
 def test_each_rows_cik_is_the_one_in_that_companys_manifest(ticker: str) -> None:
     assert universe.cik(ticker) == _manifest(ticker)["cik"], (
         "the row disagrees with that company's own committed manifest"
     )
 
 
-@pytest.mark.parametrize("ticker", THE_TWELVE)
+@pytest.mark.parametrize("ticker", EVERY_ROW)
 def test_each_rows_cik_and_sic_are_the_ones_its_annual_report_header_prints(
         ticker: str) -> None:
     row = universe._one(ticker)
@@ -145,13 +154,18 @@ def test_a_header_filed_after_the_rows_date_is_not_its_source() -> None:
     assert entry["filing_date"] == "2025-08-01"
 
 
-@pytest.mark.parametrize("ticker", THE_TWELVE)
+@pytest.mark.parametrize("ticker", EVERY_ROW)
 def test_each_row_was_added_on_its_fixture_sets_as_of(ticker: str) -> None:
     assert universe._one(ticker)["added_on"] == _manifest(ticker)["as_of"]
 
 
 def _universe_with_a_thirteenth(tmp_path: Path) -> Path:
-    """The real file with one row appended, written where a run can read it."""
+    """The real file with one row appended, written where a run can read it.
+
+    "Thirteenth" is the row after the twelve this file was written for; with the
+    eight of 2026-10-07 in the file it is the row after every row, counted from
+    EVERY_ROW and never as a literal.
+    """
     root = tmp_path / "repo"
     root.mkdir()
     document = json.loads((REPO_ROOT / "universe.json").read_text(encoding="utf-8"))
@@ -166,7 +180,7 @@ def _universe_with_a_thirteenth(tmp_path: Path) -> Path:
 
 def test_a_thirteenth_row_is_a_thirteenth_company(tmp_path: Path) -> None:
     path = _universe_with_a_thirteenth(tmp_path)
-    assert len(universe.tickers(path)) == 13
+    assert len(universe.tickers(path)) == len(EVERY_ROW) + 1
     assert universe.tickers(path)[-1] == "ZZZZ"
     assert universe.cik("ZZZZ", path) == "0000000013"
 
@@ -201,18 +215,18 @@ def test_the_fetcher_plans_thirteen_when_the_file_carries_thirteen(
 
     code = fetch_fixtures.main(["--out", str(tmp_path / "fixtures")])
 
-    assert planned == list(THE_TWELVE) + ["ZZZZ"], (
+    assert planned == list(EVERY_ROW) + ["ZZZZ"], (
         "the fetcher planned the import-time snapshot, so a row appended to the "
         "file is not a company until something restarts"
     )
-    assert len(planned) == 13
+    assert len(planned) == len(EVERY_ROW) + 1
     # The CIK the fetcher uses is the file's. ZZZZ is in no EDGAR ticker map,
     # so a fetcher that still resolved CIKs there would not have planned it.
     assert ciks["ZZZZ"] == "0000000013"
-    assert all(ciks[t] == _manifest(t)["cik"] for t in THE_TWELVE)
+    assert all(ciks[t] == _manifest(t)["cik"] for t in EVERY_ROW)
     assert code == 0, capsys.readouterr().err
-    assert fetch_fixtures.TICKERS == THE_TWELVE, (
-        "the snapshot is untouched in this process, so the thirteen above came "
+    assert fetch_fixtures.TICKERS == EVERY_ROW, (
+        "the snapshot is untouched in this process, so the rows above came "
         "from the file and not from a mutated module global"
     )
 
