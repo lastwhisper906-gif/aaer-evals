@@ -8,21 +8,40 @@ standard the literature reads because of exactly that. Stony Brook subscribes,
 so it is free here; a student registers at `wrds-www.wharton.upenn.edu/register`
 and the school's representative approves the account.
 
-The credential is a `.pgpass`, Postgres's own credential file, which lives
-outside this tree. There is no token to set and nothing to write down here.
-Until that file exists this backend answers `Unconfigured` and the study does
-not start, which is the state recorded in `docs/needs_judgment.md`.
+The credential comes by one of two routes, and nothing is written down here.
+On a machine that holds files it is a `.pgpass`, Postgres's own credential
+file, outside this tree. A cloud session holds its secrets as environment
+variables and never as a file, so where no `.pgpass` exists the two variables
+`WRDS_USERNAME` and `WRDS_PASSWORD` are read instead. Until one route is
+configured this backend answers `Unconfigured`, naming both routes and the
+variable that is missing, and the study does not start, which is the state
+recorded in `docs/needs_judgment.md`.
 
-**The file handed in is the one the login uses.** Left to itself the `wrds`
-package logs in through Postgres's client library, which reads the process's
-own `PGPASSFILE` or `$HOME/.pgpass`, and `PGHOST` and `PGUSER` besides -- so a
-caller that handed in one home was checked against that home's file and logged
-in with the process's. `login` reads the WRDS line out of the file handed in and
-`history` passes host, port, database, user and password to `wrds.Connection`
-explicitly, which is the one route the package gives that none of those
-variables can override. If that login is refused, the package falls back to
-asking at the terminal; with no terminal that is an end-of-file, which is
-reported as the login refused rather than as anything the process holds.
+**The credential handed in is the one the login uses.** Left to itself the
+`wrds` package logs in through Postgres's client library, which reads the
+process's own `PGPASSFILE` or `$HOME/.pgpass`, and `PGHOST` and `PGUSER`
+besides -- so a caller that handed in one home was checked against that home's
+file and logged in with the process's. `login` reads the WRDS line out of the
+file handed in, or the two variables out of the mapping handed in and never
+out of `os.environ` in its place, and `history` passes host, port, database,
+user and password to `wrds.Connection` explicitly, which is the one route the
+package gives that none of those variables can override. If that login is
+refused, the package falls back to asking at the terminal; with no terminal
+that is an end-of-file, which is reported as `Refused` -- the login refused --
+rather than as anything the process holds.
+
+**The host is checked before the package is asked to connect, on the variables
+route.** A cloud session's network policy allows named hosts only, and the
+`wrds` package, handed a host it cannot reach, waits out the operating system's
+connect timeout and then asks at a terminal there is none of -- which would
+read as a refused login when nothing was refused. So on that route `history`
+first opens a plain TCP connection to `wrds-pgdata.wharton.upenn.edu:9737`
+(`reachable`) and, when it cannot, raises `Unreachable` naming the host and the
+owner's two steps: the allowed-domains entry, then the two secrets. The
+`.pgpass` route is a machine on the owner's own network, where the package's
+own error is the right one and its terminal has a person at it; it is not
+checked, and the fetch tests that drive this module through that route
+(`tests/test_market.py`) never touch the network.
 
 The query
 ---------
@@ -61,14 +80,19 @@ would be refused for a delisting return that "is not finite".
 
 `rows_from` takes the rows the query returned and is what the fixture judges.
 `history` is the wire; `tests/test_prices.py` judges it with a stand-in `wrds`
-module whose frame answers the shape pandas does. Nothing here imports `wrds`
-until it is called -- the package is not in `requirements.txt` and the module
-has to stay importable on a machine that has never had a WRDS account.
+module whose frame answers the shape pandas does, and a stand-in `reachable`.
+`wrds` is a runtime dependency (`requirements.txt`) so the fetch can run where
+the account works; it is still imported only when it is called, so that the
+tests can put a stand-in module in its place and so this module imports on a
+machine that has never installed it.
 """
 
 from __future__ import annotations
 
 import datetime as dt
+import os
+import socket
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
@@ -77,12 +101,40 @@ from src.prices import PriceError, Unconfigured, row
 NAME = "crsp"
 PGPASS = Path.home() / ".pgpass"
 
+# The two variables a cloud session holds the credential in, where no .pgpass
+# exists. `src/secret_scan.py` watches the second.
+USERNAME_VARIABLE = "WRDS_USERNAME"
+PASSWORD_VARIABLE = "WRDS_PASSWORD"
+
 # Where WRDS serves its Postgres, as the `wrds` package's own defaults give it
 # (`wrds/sql.py`, 3.5.0: WRDS_POSTGRES_HOST, _PORT and _DB). A `.pgpass` line
 # names the server it is for, and these are what it is matched against.
 WRDS_HOST = "wrds-pgdata.wharton.upenn.edu"
 WRDS_PORT = "9737"
 WRDS_DATABASE = "wrds"
+
+# A plain TCP connection to WRDS from anywhere it is allowed opens well under a
+# second; one the network policy drops answers nothing at all, and this is how
+# long to wait before saying so.
+REACH_TIMEOUT_SECONDS = 5.0
+
+REGISTER = ("Register at https://wrds-www.wharton.upenn.edu/register/ with the "
+            "school address and wait for the approval")
+
+
+class Unreachable(PriceError):
+    """This environment cannot open a connection to the WRDS host, so it was never asked."""
+
+
+class Refused(Unconfigured):
+    """WRDS refused the login the credential handed in gives.
+
+    An `Unconfigured` because the effect is the same -- the backend was asked
+    and no row came -- and its own class because the owner's step is different:
+    a refused login is a wrong password or an account not yet approved, not a
+    credential that is missing.
+    """
+
 
 DAILY_TABLE = "crsp.dsf"
 DELIST_TABLE = "crsp.dsedelist"
@@ -105,19 +157,49 @@ QUERY = """
 def credential(pgpass: Path | None = None) -> Path:
     """The `~/.pgpass` the `wrds` package reads, or Unconfigured.
 
-    There is no token here. The credential is a file Postgres already owns, in
-    the user's home directory, outside this tree -- which is why this is the one
-    backend whose credential cannot be committed by accident.
+    The file route alone: a file Postgres already owns, in the user's home
+    directory, outside this tree -- which is why this is the one backend whose
+    credential cannot be committed by accident. `login` is what tries the
+    variables route when the file is not there.
     """
     path = PGPASS if pgpass is None else pgpass
     if not path.exists():
         raise Unconfigured(
             f"{path} does not exist, so the {NAME} backend was never asked. "
-            f"Register at https://wrds-www.wharton.upenn.edu/register/ with the "
-            f"school address, wait for the approval, then write the file the "
-            f"`wrds` package asks for on its first connection."
+            f"{REGISTER}, then write the file the `wrds` package asks for on "
+            f"its first connection."
         )
     return path
+
+
+def reachable(host: str, port: int, timeout: float = REACH_TIMEOUT_SECONDS) -> bool:
+    """Whether a plain TCP connection to `host:port` opens from here.
+
+    Nothing is sent. A connection the network policy drops never answers, so
+    `timeout` is how long to wait; a port nothing listens on is refused at
+    once; a name that does not resolve is as unreachable as a host that does
+    not answer.
+    """
+    try:
+        with socket.create_connection((host, port), timeout=timeout):
+            return True
+    except OSError:
+        return False
+
+
+def unreachable() -> str | None:
+    """The refusal for a WRDS host this environment cannot reach, or None.
+
+    Written for the cloud session, whose network policy allows named hosts
+    only: the first step is the host's entry in the environment's allowed
+    domains, the second the two secrets. Both are the owner's.
+    """
+    if reachable(WRDS_HOST, int(WRDS_PORT)):
+        return None
+    return (f"{WRDS_HOST}:{WRDS_PORT} is unreachable from this environment: add "
+            f"it to the environment's Allowed domains (claude.ai/code, the "
+            f"environment's settings), then set {USERNAME_VARIABLE} and "
+            f"{PASSWORD_VARIABLE} as environment secrets")
 
 
 def _fields(line: str) -> list[str]:
@@ -138,25 +220,63 @@ def _fields(line: str) -> list[str]:
     return fields
 
 
-def login(pgpass: Path) -> dict[str, str]:
-    """The `wrds.Connection` arguments the WRDS line of `pgpass` gives, or Unconfigured.
+def login(pgpass: Path, environ: Mapping[str, str] | None = None) -> dict[str, str]:
+    """The `wrds.Connection` arguments the credential handed in gives, or Unconfigured.
 
-    The first line whose host, port and database match WRDS's -- a `*` matches
-    anything, as Postgres reads it -- is the one Postgres itself would use. Two
-    more of Postgres's own readings: it ignores a `.pgpass` that its group or
-    anyone else can read, and so does this; and a `*` in the user field matches
-    any user rather than naming one, so a line whose user is `*` gives no user
-    to log in as and is Unconfigured, not a login as the user `*`.
+    Two routes, the file first. When `pgpass` exists its WRDS line is read as
+    below. When it does not, `WRDS_USERNAME` and `WRDS_PASSWORD` are read out
+    of `environ` -- the mapping handed in, and never `os.environ` in its place:
+    `None` is no environment at all, so a caller that hands in nothing logs in
+    with nothing. With neither route configured the refusal names both and the
+    variable that is missing, and never the value of the one that is set.
+
+    The file route: the first line whose host, port and database match WRDS's
+    -- a `*` matches anything, as Postgres reads it -- is the one Postgres
+    itself would use. Two more of Postgres's own readings: it ignores a
+    `.pgpass` that its group or anyone else can read, and so does this; and a
+    `*` in the user field matches any user rather than naming one, so a line
+    whose user is `*` gives no user to log in as and is Unconfigured, not a
+    login as the user `*`.
 
     What the connection is handed is `wrds.Connection`'s own keywords, read off
     the package's source (`wrds/sql.py`, 3.5.0, `Connection.__init__`):
     `wrds_username`, `wrds_password`, `wrds_hostname`, `wrds_port` and
     `wrds_dbname`, which it puts into the connection address it hands the
-    driver, so the password in the address is the one used. The package is not
-    a requirement, so no test here can run against it; the stand-ins record what
-    they were handed, and the keyword names are the source's.
+    driver, so the password in the address is the one used. The stand-ins in
+    `tests/test_prices.py` record what they were handed, and the keyword names
+    are the source's.
     """
-    path = credential(pgpass)
+    if not pgpass.exists():
+        return _login_from_variables(pgpass, {} if environ is None else environ)
+    return _login_from_pgpass(credential(pgpass))
+
+
+def _arguments(user: str, password: str) -> dict[str, str]:
+    return {"wrds_hostname": WRDS_HOST, "wrds_port": int(WRDS_PORT),
+            "wrds_dbname": WRDS_DATABASE, "wrds_username": user,
+            "wrds_password": password}
+
+
+def _login_from_variables(pgpass: Path, environ: Mapping[str, str]) -> dict[str, str]:
+    """The variables route, taken when `pgpass` does not exist."""
+    user = (environ.get(USERNAME_VARIABLE) or "").strip()
+    password = (environ.get(PASSWORD_VARIABLE) or "").strip()
+    missing = [name for name, value in ((USERNAME_VARIABLE, user),
+                                        (PASSWORD_VARIABLE, password)) if not value]
+    if missing:
+        raise Unconfigured(
+            f"{pgpass} does not exist and {' and '.join(missing)} "
+            f"{'is' if len(missing) == 1 else 'are'} not set, so the {NAME} backend "
+            f"was never asked. Two routes log in: a .pgpass line for "
+            f"{WRDS_HOST}:{WRDS_PORT}:{WRDS_DATABASE} on a machine that holds "
+            f"files, or {USERNAME_VARIABLE} and {PASSWORD_VARIABLE} set as "
+            f"environment secrets in a cloud session. {REGISTER} first."
+        )
+    return _arguments(user, password)
+
+
+def _login_from_pgpass(path: Path) -> dict[str, str]:
+    """The file route: the WRDS line of a `.pgpass` that exists."""
     if path.stat().st_mode & 0o077:
         raise Unconfigured(
             f"{path} can be read by others than its owner, and Postgres ignores "
@@ -174,9 +294,7 @@ def login(pgpass: Path) -> dict[str, str]:
                 raise Unconfigured(
                     f"{path}'s line for {WRDS_HOST} names no user (a `*` matches "
                     f"any), so there is no one for the {NAME} backend to log in as")
-            return {"wrds_hostname": WRDS_HOST, "wrds_port": int(WRDS_PORT),
-                    "wrds_dbname": WRDS_DATABASE, "wrds_username": user,
-                    "wrds_password": password}
+            return _arguments(user, password)
     raise Unconfigured(
         f"{path} has no line for {WRDS_HOST}:{WRDS_PORT}:{WRDS_DATABASE}, so the "
         f"{NAME} backend was never asked")
@@ -267,29 +385,41 @@ def history(
     end: dt.date | None = None,
     *,
     pgpass: Path | None = None,
+    environ: Mapping[str, str] | None = None,
 ) -> list[dict]:
     """The daily history, from WRDS.
 
+    `pgpass` is the file to read, `~/.pgpass` by default; `environ` the mapping
+    the two variables are read from when that file does not exist, the
+    process's environment by default -- the default sits here, at the wire, as
+    it does in the other two backends, and `login` itself is handed a mapping
+    or nothing.
+
     Judged by `tests/test_prices.py` against a stand-in `wrds` module answering
     the frame shape pandas does, NaN included, and recording what the
-    connection was handed. Against the real service it has never been run:
-    nobody here has a WRDS account yet.
+    connection was handed, and a stand-in `reachable`. Against the real service
+    it has never been run: the account was approved on 2026-10-07 and the host
+    is not yet in the cloud session's allowed domains.
     """
-    arguments = login(PGPASS if pgpass is None else pgpass)
+    path = PGPASS if pgpass is None else pgpass
+    arguments = login(path, os.environ if environ is None else environ)
+    if not path.exists():  # the variables route: the cloud session, checked first
+        blocked = unreachable()
+        if blocked:
+            raise Unreachable(blocked)
     try:
         import wrds
-    except ImportError as error:  # the package is deliberately not a requirement
+    except ImportError as error:
         raise Unconfigured(
             "the `wrds` package is not installed, so the crsp backend was never "
-            "asked. It is not in requirements.txt: it is needed by the pattern "
-            "study alone, and every other entry point has to stay importable on a "
-            "machine that has no WRDS account."
+            "asked. It is in requirements.txt: `.venv/bin/pip install -r "
+            "requirements.txt`."
         ) from error
     try:
         connection = wrds.Connection(**arguments)
-    except EOFError as error:
-        raise Unconfigured(
-            f"WRDS refused the login the .pgpass handed in gives, and the "
+    except EOFError:
+        raise Refused(
+            f"WRDS refused the login the credential handed in gives, and the "
             f"package's fallback asked at a terminal there is none of") from None
     try:
         frame = connection.raw_sql(

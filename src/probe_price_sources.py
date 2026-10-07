@@ -3,11 +3,12 @@
 Read-only, and no account is opened. The three candidates are sent no
 credentials; the configured backends are sent whatever credential this
 environment holds. Before a backend's error or reason is shown, every token
-variable `src/secret_scan.py` watches is replaced by that variable's name, and
-any value after a credential's name in a query string by `<redacted>`. The
-password in `~/.pgpass` is read by the `wrds` package and never by this
-script, and that package is not installed here, so what its errors print has
-not been seen.
+variable `src/secret_scan.py` watches is replaced by that variable's name --
+`WRDS_PASSWORD` among them -- and so is `WRDS_USERNAME`, and any value after a
+credential's name in a query string by `<redacted>`. The password in
+`~/.pgpass` is read by the `wrds` package and never by this script. Each
+configured backend's line names its state -- unconfigured, unreachable,
+refused, served -- and never a value.
 
 The market module is built against a frozen price fixture because the price
 source is unchosen, and it is unchosen because the question that decides it has
@@ -691,6 +692,10 @@ def delisting_returns_in(frame: list[dict]) -> list[str]:
 QUERY_CREDENTIAL = re.compile(rf"([?&]{secret_scan.NAMES}=)[^&\s'\"<>]+",
                               re.IGNORECASE)
 
+# The WRDS username is not a credential, so the secret scan does not watch it;
+# it is still a value, and this report prints states, never values.
+REDACTED_VARIABLES = secret_scan.CREDENTIAL_VARIABLES + ("WRDS_USERNAME",)
+
 
 def redacted(text: str, environ: dict[str, str] | None = None) -> str:
     """Text with every credential this environment holds replaced by its name.
@@ -699,14 +704,14 @@ def redacted(text: str, environ: dict[str, str] | None = None) -> str:
     takes its token in the query string, so a connection to it that fails is
     reported by `requests` with the address, token and all. Every value of a
     variable `src/secret_scan.py` watches is replaced by that variable's name,
-    and whatever is left after a credential's name in a query string is replaced
-    too -- `requests` percent-encodes the address, so a token carrying a
-    character it encodes no longer matches its own value there. Both happen
-    before the text is cut short, because half a token is not the value being
-    looked for.
+    the WRDS username with them, and whatever is left after a credential's name
+    in a query string is replaced too -- `requests` percent-encodes the
+    address, so a token carrying a character it encodes no longer matches its
+    own value there. Both happen before the text is cut short, because half a
+    token is not the value being looked for.
     """
     source = os.environ if environ is None else environ
-    for name in secret_scan.CREDENTIAL_VARIABLES:
+    for name in REDACTED_VARIABLES:
         value = source.get(name, "").strip()
         if value:
             text = text.replace(value, f"${name}")
@@ -721,9 +726,10 @@ def never_reached_the_source(error: BaseException) -> bool:
     one is an answer -- the source sent something that is not a price history --
     so the classes are named rather than caught by their common parent.
 
-    What is not told apart: a WRDS connection that fails. The `wrds` package is
-    not installed here, so which class it raises for a host that never answered
-    has not been seen, and whatever it raises is counted as an answer.
+    A WRDS host this machine cannot reach is told apart before the package is
+    asked, by `crsp.unreachable`, and is its own state below; a failure the
+    package itself raises after that check is counted as an answer, because
+    which class it raises for what has not been seen.
     """
     try:
         from requests import exceptions
@@ -737,22 +743,30 @@ def never_reached_the_source(error: BaseException) -> bool:
 def ask_one_backend(module, delisting: Delisting) -> Attempt:
     """One backend, one delisting, and the one line this report has to say.
 
-    Four outcomes, and they are not the same thing:
+    Each line names its state, and the states are not the same thing:
 
     * **unconfigured** -- no credential in this environment, so it was never
       asked. `reached` is False: nothing was learned about the source.
-    * **never reached** -- asked, and no answer came: a timeout or a refused
-      connection on this machine. `reached` is False, because that is a fact
-      about this machine and not about the source.
-    * **answered** -- rows came back, or a refusal did. `reached` is True either
-      way, because a refusal from the source is a fact about the source.
-    * **refused as documented** -- it answered, the history did not come, and
-      its own documentation said it would not. Reported as expected.
+    * **unreachable** -- this machine cannot open a connection to the host, a
+      fact the backend states before it is asked (`crsp.unreachable`), or
+      finds when asked. `reached` is False and `never_reached` True: that is a
+      fact about this machine and not about the source.
+    * **no answer at all** -- asked, and no answer came: a timeout or a refused
+      connection on this machine. `reached` is False, `never_reached` True.
+    * **refused** -- the source answered, and what it answered was not a
+      history: a login refused, a status that is not a success, a shape nobody
+      expected. `reached` is True, because a refusal from the source is a fact
+      about the source. One that its own documentation predicted is reported
+      as expected.
+    * **served** -- rows came back and reach the month the trading stopped;
+      rows that stop short are reported as rows that came back without the
+      history, and no rows as none.
 
     Every error and every reason a backend gives passes through `redacted`
     before it is shown.
     """
     from src import prices
+    from src.prices import crsp
 
     name = module.NAME
     where = f"{name} asked for {delisting.ticker} through {delisting.day}"
@@ -761,27 +775,47 @@ def ask_one_backend(module, delisting: Delisting) -> Attempt:
     about = {"ticker": delisting.ticker, "month": delisting.last_month_traded}
     expected = "" if claims_to_serve(name, delisting.ticker) else (
         f", which is expected: {WHY_NOT_CLAIMED}")
+
+    def unreachable(reason: str) -> Attempt:
+        return Attempt(where, name, f"{where} -- unreachable: {redacted(reason)}",
+                       [], False, **about, never_reached=True)
+
+    # A backend that names its own host says first whether this machine can
+    # reach it, so the owner's first step is on the line even where no
+    # credential is configured yet.
+    blocked = getattr(module, "unreachable", lambda: None)()
+    if blocked:
+        return unreachable(blocked)
     try:
         frame = module.history(delisting.ticker, start, end)
+    except crsp.Refused as reason:
+        return Attempt(where, name, f"{where} -- refused: {redacted(str(reason))}",
+                       [], True, **about)
     except prices.Unconfigured as reason:
         return Attempt(where, name,
                        f"{where} -- unconfigured: {redacted(str(reason))}", [], False,
                        **about)
+    except crsp.Unreachable as reason:
+        return unreachable(str(reason))
     except Exception as error:  # a refusal, a timeout, a shape nobody expected
         said = f"{type(error).__name__}: {redacted(str(error))[:200]}"
         if never_reached_the_source(error):
             return Attempt(where, name, f"{where} -- no answer at all: {said}", [],
                            False, **about, never_reached=True)
-        return Attempt(where, name, f"{where} -- {said}{expected}", [], True,
+        return Attempt(where, name, f"{where} -- refused: {said}{expected}", [], True,
                        **about)
     rows = rows_of(frame)
     returns = delisting_returns_in(frame)
-    answer = f"{where} -- {len(rows)} row(s)"
+    if reached_the_delisting(rows, delisting.last_month_traded):
+        state = "served"
+    else:
+        state = "rows came back and the history did not" if rows else "no rows came back"
+    answer = f"{where} -- {state}: {len(rows)} row(s)"
     if returns:
         answer = f"{answer}, {len(returns)} carrying a delisting return"
     else:
         answer = f"{answer}, none carrying a delisting return"
-    if not reached_the_delisting(rows, delisting.last_month_traded):
+    if state != "served":
         answer = (f"{answer}, none of them in {delisting.last_month_traded}, the "
                   f"month the trading stopped{expected}")
     return Attempt(where, name, answer, rows, True, **about)

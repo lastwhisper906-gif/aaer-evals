@@ -755,3 +755,113 @@ def test_an_unconfigured_reason_is_redacted_too(monkeypatch):
     attempt = probe.ask_one_backend(_Backend("tiingo", reason), _delisting("ATVI"))
     assert "unconfigured" in attempt.answer
     assert _MADE_UP not in attempt.answer
+
+
+# --- each state by its name, never a value -----------------------------------
+#
+# The crsp backend names its own host, and the probe asks whether this machine
+# can reach it before asking for a history. The expected lines are written out
+# by hand from the brief of 2026-10-07; the stand-in `reachable` keeps the
+# network out of this file.
+
+from src.prices import crsp as _crsp
+
+_UNREACHABLE = (
+    "wrds-pgdata.wharton.upenn.edu:9737 is unreachable from this environment: add "
+    "it to the environment's Allowed domains (claude.ai/code, the environment's "
+    "settings), then set WRDS_USERNAME and WRDS_PASSWORD as environment secrets")
+
+
+def _raising(error):
+    def history(*arguments, **keywords):
+        raise error
+    return history
+
+
+def test_the_crsp_line_reads_unreachable_where_the_host_is_blocked(monkeypatch):
+    monkeypatch.setattr(_crsp, "reachable", lambda host, port, timeout=None: False)
+    monkeypatch.setattr(_crsp, "history", _raising(
+        AssertionError("the backend was asked for a history it cannot fetch")))
+    attempt = probe.ask_one_backend(_crsp, _delisting("LEH"))
+    assert attempt.answer == (
+        f"crsp asked for LEH through 2008-09-17 -- unreachable: {_UNREACHABLE}")
+    assert attempt.reached is False, "a blocked host says nothing about the source"
+    assert attempt.never_reached is True
+
+
+def test_a_reachable_host_lets_the_backend_be_asked(monkeypatch):
+    monkeypatch.setattr(_crsp, "reachable", lambda host, port, timeout=None: True)
+    monkeypatch.setattr(_crsp, "history", _raising(
+        _prices.Unconfigured("no credential in this test")))
+    attempt = probe.ask_one_backend(_crsp, _delisting("LEH"))
+    assert "-- unconfigured: no credential in this test" in attempt.answer
+    assert attempt.never_reached is False
+
+
+def test_an_unreachable_host_found_when_asked_reads_the_same(monkeypatch):
+    backend = _Backend("crsp", _crsp.Unreachable(_UNREACHABLE))
+    attempt = probe.ask_one_backend(backend, _delisting("LEH"))
+    assert attempt.answer.endswith(f"-- unreachable: {_UNREACHABLE}")
+    assert attempt.reached is False and attempt.never_reached is True
+
+
+def test_a_refused_login_reads_refused_and_the_source_answered():
+    backend = _Backend("crsp", _crsp.Refused(
+        "WRDS refused the login the credential handed in gives"))
+    attempt = probe.ask_one_backend(backend, _delisting("LEH"))
+    assert "-- refused: WRDS refused the login" in attempt.answer
+    assert "unconfigured" not in attempt.answer
+    assert attempt.reached is True
+
+
+def test_a_source_s_error_reads_refused():
+    backend = _Backend("tiingo", _prices.PriceError("tiingo answered 404"))
+    attempt = probe.ask_one_backend(backend, _delisting("ATVI"))
+    assert "-- refused: PriceError: tiingo answered 404" in attempt.answer
+
+
+def test_rows_reaching_the_month_read_served_with_the_count():
+    served = [_frame("2008-09-15"),
+              _frame("2008-09-17", delisting_return=-0.875, delisting_code="574")]
+    attempt = probe.ask_one_backend(_Backend("crsp", served), _delisting("LEH"))
+    assert attempt.answer == ("crsp asked for LEH through 2008-09-17 -- served: "
+                              "2 row(s), 1 carrying a delisting return")
+
+
+def test_rows_short_of_the_month_do_not_read_served():
+    short = probe.ask_one_backend(_Backend("crsp", [_frame("2008-01-02")]),
+                                  _delisting("LEH"))
+    assert short.answer.startswith(
+        "crsp asked for LEH through 2008-09-17 -- rows came back and the history "
+        "did not: 1 row(s), none carrying a delisting return, none of them in 2008-09")
+    none = probe.ask_one_backend(_Backend("crsp", []), _delisting("LEH"))
+    assert "-- no rows came back: 0 row(s)" in none.answer
+    assert "served" not in short.answer and "served" not in none.answer
+
+
+def test_the_wrds_credential_in_an_error_is_shown_as_its_variable(monkeypatch):
+    monkeypatch.setenv("WRDS_PASSWORD", _MADE_UP)
+    monkeypatch.setenv("WRDS_USERNAME", "example-stand-in-user")
+    error = _prices.PriceError(
+        f"FATAL: password authentication failed for user example-stand-in-user "
+        f"with {_MADE_UP}")
+    attempt = probe.ask_one_backend(_Backend("crsp", error), _delisting("LEH"))
+    assert _MADE_UP not in attempt.answer
+    assert "example-stand-in-user" not in attempt.answer
+    assert "$WRDS_PASSWORD" in attempt.answer
+    assert "$WRDS_USERNAME" in attempt.answer
+
+
+def test_a_backend_that_names_no_host_is_asked_without_a_reachability_check():
+    assert not hasattr(_Backend("tiingo", []), "unreachable")
+    attempt = probe.ask_one_backend(_Backend("tiingo", [_frame("2023-10-13")]),
+                                    _delisting("ATVI"))
+    assert "-- served: 1 row(s)" in attempt.answer
+
+
+def test_an_unreachable_backend_was_asked_and_is_not_unconfigured(monkeypatch):
+    _backends(monkeypatch, crsp=_Backend("crsp", _crsp.Unreachable(_UNREACHABLE)))
+    finding = probe.probe_configured_backends(None)
+    assert finding.answered is False
+    assert finding.served is False
+    assert finding.verdict.startswith("asked: crsp.")

@@ -2,9 +2,10 @@
 
 `src/prices/` reads three credentials and every one of them comes from outside
 the repository: `$TIINGO_TOKEN`, `$EODHD_TOKEN`, and for CRSP the `~/.pgpass`
-the `wrds` package already owns. Nothing here is supposed to hold one. This is
-the check that says so out loud, because "we do not commit tokens" is a
-sentence and this is a gate.
+the `wrds` package already owns or, in a cloud session that holds no file,
+`$WRDS_PASSWORD`. Nothing here is supposed to hold one. This is the check that
+says so out loud, because "we do not commit tokens" is a sentence and this is
+a gate.
 
 It is a sibling of `src/plain_name_check.py` and works the same way: the same
 `--changed` list, the same `path:line:` report shape, the same exit codes. The
@@ -76,7 +77,7 @@ CANNOT_RUN = 2
 # The variables the price backends read. One line each, added when a backend is
 # added -- this list is the check, and a backend whose credential is not on it
 # is a backend nothing watches.
-CREDENTIAL_VARIABLES = ("TIINGO_TOKEN", "EODHD_TOKEN")
+CREDENTIAL_VARIABLES = ("TIINGO_TOKEN", "EODHD_TOKEN", "WRDS_PASSWORD")
 
 # Shorter than this and a literal is not a credential; a real Tiingo token is
 # forty characters and an EODHD one is twenty.

@@ -40,6 +40,8 @@ branch changed. A run item is done when its run directory is published and
 
 [ ] the SessionStart hook runs `sh tools/session_start_lessons.sh` in place of `cat lessons.md`: a pull request of that one line in `.claude/settings.json`, a guarded path, merged with the owner's label `owner-approved-eval` · eval: `.venv/bin/python -m pytest tests/test_session_start_lessons.py tests/test_guards.py -q` passes and the guard job is green on the labeled run · depends on: the owner's label
 
+[ ] the first CRSP fetch through WRDS: `.venv/bin/python -m src.probe_price_sources` prints a served crsp line with rows for Lehman Brothers Holdings (LEH, delisted 2008-09-17) carrying dlret · eval: `.venv/bin/python -m src.probe_price_sources` -- that command's crsp line reads served and the row count is printed · depends on: the owner's two environment steps (`docs/needs_judgment.md`, "CRSP through WRDS from the cloud session")
+
 ## Done
 
 [x] the memo names a cost-of-debt fallback where calculator.json labels one (`pre_tax_cost_of_debt.fallback`), in the finance frame's valuation section (created and done in this change) · `.venv/bin/python -m pytest tests/test_analysis_check.py -q -k cost_of_debt_fallback` · items one and three · PR: this one

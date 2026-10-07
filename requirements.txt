@@ -3,3 +3,5 @@
 pytest
 jsonschema
 requests
+# The CRSP backend's one wire (src/prices/crsp.py): a runtime dependency since 2026-10-07 so the fetch runs wherever the account works; the import stays lazy.
+wrds
