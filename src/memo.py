@@ -264,12 +264,17 @@ def valuation_section(analysis: dict | None, fields: dict,
         out += [f"- 주당 가치 범위: {korean_number(band.get('low'), 'USD per share')} ~ "
                 f"{korean_number(band.get('high'), 'USD per share')}",
                 f"- 기준일 주가: {korean_number(value.get('price_at_cutoff'), 'USD per share')}"
-                f" ({value.get('price_position', '위치 계산 안 됨')})",
+                f" ({value.get('price_position', '위치 계산 안 됨')})"]
+        # A calculator.json written before the block existed prints the line it
+        # always printed; one that carries the block prints the block's line below.
+        if "implied_growth_beside_history" not in fields:
+            out.append(
                 f"- 시장이 가정한 10년 매출 성장률: "
                 f"{korean_number(reverse.get('value'), 'ratio', percent=True) if 'value' in reverse else '(' + str(reverse.get('missing')) + ')'}"
                 f" · 과거 3년 연평균: "
-                f"{korean_number(history.get('revenue_growth_three_year_compound'), 'ratio', percent=True)}",
-                ""]
+                f"{korean_number(history.get('revenue_growth_three_year_compound'), 'ratio', percent=True)}")
+        out.append("")
+    out += beside_the_dcf_lines(fields)
     out += cost_of_debt_fallback_line(fields)
     if analysis is None:
         return out + [_absent("valuation", missing), "",
@@ -293,6 +298,61 @@ def cost_of_debt_fallback_line(fields: dict) -> list[str]:
     if not isinstance(label, str) or not label:
         return []
     return [f"- {FALLBACK_KO}: {label}", ""]
+
+
+# The three checks calculator.json carries beside the DCF, each printed from its
+# own block and only where the block is there: a run written before the blocks
+# existed prints nothing of this file's for them.
+YIELD_KO = "잉여현금흐름 수익률 (기준일 주가 기준)"
+WACC_COMPONENTS_KO = "WACC 구성 (각 입력값과 그 출처)"
+GROWTH_BESIDE_HISTORY_KO = "시장이 가정한 10년 매출 성장률"
+WACC_INPUT_KO = {
+    "risk_free_rate": "무위험이자율", "equity_risk_premium": "주식위험프리미엄", "beta": "베타",
+    "cost_of_equity": "자기자본비용", "pre_tax_cost_of_debt": "세전 타인자본비용",
+    "tax_rate": "세율", "market_value_of_equity": "시가총액", "total_debt": "총차입금",
+    "weight_of_equity": "자기자본 비중", "weight_of_debt": "타인자본 비중", "wacc": "WACC",
+}
+WACC_INPUT_UNIT = {"beta": "ratio", "market_value_of_equity": "USD", "total_debt": "USD"}
+
+
+def _rate_or_reason(cell) -> str:
+    """A rate as a percentage, or the calculator's reason there is none, in brackets."""
+    if isinstance(cell, dict) and isinstance(cell.get("value"), (int, float)):
+        return korean_number(cell["value"], "ratio", percent=True)
+    return "(" + str((cell or {}).get("missing", "계산 안 됨")) + ")"
+
+
+def beside_the_dcf_lines(fields: dict) -> list[str]:
+    out = []
+    growth = fields.get("implied_growth_beside_history")
+    if isinstance(growth, dict):
+        out += [f"- {GROWTH_BESIDE_HISTORY_KO}: "
+                f"{_rate_or_reason(growth.get('implied_ten_year_revenue_growth'))}"
+                f" · 과거 3년 연평균: "
+                f"{_rate_or_reason(growth.get('revenue_growth_three_year_compound'))}"
+                f" · 과거 5년 연평균: "
+                f"{_rate_or_reason(growth.get('revenue_growth_five_year_compound'))}", ""]
+    yields = fields.get("free_cash_flow_yield")
+    if isinstance(yields, dict):
+        out += [f"- {YIELD_KO}: 기업 잉여현금흐름 / 기업가치 "
+                f"{_rate_or_reason(yields.get('free_cash_flow_to_firm_over_enterprise_value'))}"
+                f" · 주주 잉여현금흐름 / 시가총액 "
+                f"{_rate_or_reason(yields.get('free_cash_flow_to_equity_over_market_value_of_equity'))}",
+                ""]
+    components = fields.get("wacc_components")
+    if isinstance(components, dict):
+        out.append(f"- {WACC_COMPONENTS_KO}:")
+        for row in components.get("rows") or []:
+            name = WACC_INPUT_KO.get(row.get("input"), str(row.get("input")))
+            unit = WACC_INPUT_UNIT.get(row.get("input"), "ratio")
+            if isinstance(row.get("value"), (int, float)):
+                shown = korean_number(row["value"], unit, percent=unit == "ratio"
+                                      and row.get("input") != "beta")
+                out.append(f"  - {name}: {shown} — {row.get('source', '')}")
+            else:
+                out.append(f"  - {name}: (계산 안 됨: {row.get('missing', '이유 없음')})")
+        out.append("")
+    return out
 
 
 def baselines_section(baselines: dict | None) -> list[str]:

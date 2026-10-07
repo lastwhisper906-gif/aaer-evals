@@ -857,3 +857,291 @@ def test_cash_runway_is_months_of_cash_at_the_trailing_burn():
     out = calculator.runway_months({"value": 120.0}, {"value": -24.0})
     assert out["value"] == pytest.approx(60.0)
     assert calculator.runway_months({"value": 120.0}, {"value": 5.0})["not_burning_cash"]
+
+
+# --- the three sanity checks beside the DCF, on Ciena's record ---------------------------------
+#
+# Ciena's 10-Q for the quarter ended 2026-05-02 (0001628280-26-040767, filed
+# 2026-06-04) is the trigger. Every fact below is a row of
+# tests/fixtures/CIEN/companyfacts.json.gz, quoted by concept, period and value,
+# in thousands of dollars (the record states dollars), the row read being the
+# latest filing at or before the cutoff that states the period. The market-wide
+# inputs are planted by the tests and labelled so: risk-free rate 4%, equity risk
+# premium 5%, beta 1.2, so the cost of equity is 0.04 + 1.2 x 0.05 = 0.10; the
+# price is named in each test.
+#
+# Trailing four quarters = fiscal 2025 (2024-11-03..2025-11-01, the 10-K filed
+# 2025-12-12) + six months of fiscal 2026 (2025-11-02..2026-05-02) - six months
+# of fiscal 2025 (2024-11-03..2025-05-03), the last two from the 10-Q:
+#   Revenues                                   4,769,507 + 2,997,781 - 2,198,138 = 5,569,150
+#   OperatingIncomeLoss                          197,531 +   427,283 -   113,505 =   511,309
+#   IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest
+#                                                156,287 +   412,175 -    87,610 =   480,852
+#   IncomeTaxExpenseBenefit                       32,949 +    43,672 -    34,069 =    42,552
+#   InterestExpenseNonoperating                   89,403 +    42,176 -    44,615 =    86,964
+#   NetCashProvidedByUsedInOperatingActivities   806,093 +   487,347 -   260,669 = 1,032,771
+#   PaymentsToAcquirePropertyPlantAndEquipment   140,801 +   114,933 -    55,622 =   200,112
+#   RepaymentsOfLongTermDebt                      11,580 +     5,790 -     5,790 =    11,580
+#   Depreciation + AmortizationOfIntangibleAssets, the two lines the record carries
+#   where no total is tagged:
+#                        (104,133 + 25,758) + (67,021 + 8,449) - (49,771 + 13,090) =   142,500
+# Balances at 2026-05-02 (the 10-Q) and at 2025-05-03 (the 10-Q filed 2025-06-05):
+#   AccountsReceivableNetCurrent        1,052,569      929,799
+#   InventoryNet                          808,447      874,326
+#   AccountsPayableCurrent                606,599      419,077
+#   LongTermDebtCurrent                    11,580       11,580
+#   LongTermDebtNoncurrent              1,519,539    1,528,776
+#   CashAndCashEquivalentsAtCarryingValue 1,045,126 at 2026-05-02
+#   ShortTermInvestments                  157,708   at 2026-05-02
+#   OperatingLeaseLiabilityCurrent 12,396 and OperatingLeaseLiabilityNoncurrent 31,996 at 2026-05-02
+# Shares: dei:EntityCommonStockSharesOutstanding at 2026-05-29, the 10-Q's cover,
+# 141,552,922; WeightedAverageNumberOfDilutedSharesOutstanding for the quarter
+# 2026-02-01..2026-05-02, 146,314,000.
+#
+# Worked from those:
+#   tax rate                    42,552 / 480,852 = 0.0884929, inside 0 and 0.21
+#   after-tax operating income  511,309 x (1 - 0.0884929) = 466,061.771
+#   trade working capital       2026-05-02: 1,052,569 + 808,447 - 606,599 = 1,254,417
+#                               2025-05-03:   929,799 + 874,326 - 419,077 = 1,385,048
+#                               change -130,631
+#   free cash flow to the firm  466,061.771 + 142,500 - 200,112 + 130,631 = 539,080.771
+#   free cash flow to equity    1,032,771 - 200,112 - 11,580 = 821,079
+#   total debt                  2026-05-02: 11,580 + 1,519,539 = 1,531,119
+#                               2025-05-03: 11,580 + 1,528,776 = 1,540,356; average 1,535,737.5
+#   net debt                    1,531,119 - (1,045,126 + 157,708) = 328,285
+#   operating lease liability   12,396 + 31,996 = 44,392
+#   pre-tax cost of debt        86,964 / 1,535,737.5 = 0.0566269
+#   after tax                   0.0566269 x (1 - 0.0884929) = 0.0516158
+
+CIEN_CUTOFF, CIEN_PERIOD_END = "2026-06-04", "2026-05-02"
+CIEN_SHARES_OUTSTANDING = 141_552_922
+CIEN_DILUTED_SHARES = 146_314_000
+CIEN_TAX_RATE = 42_552 / 480_852
+CIEN_FREE_CASH_FLOW_TO_FIRM = (511_309 * (1 - CIEN_TAX_RATE) + 142_500 - 200_112 + 130_631) * 1000
+CIEN_FREE_CASH_FLOW_TO_EQUITY = 821_079 * 1000
+CIEN_TOTAL_DEBT = 1_531_119 * 1000
+CIEN_COST_OF_DEBT_AFTER_TAX = 86_964 / 1_535_737.5 * (1 - CIEN_TAX_RATE)
+
+PLANTED_RISK_FREE = {"value": 0.04, "date": "2026-06-04", "series": "DGS10",
+                     "source": "planted by the test"}
+PLANTED_PREMIUM = {"value": 0.05, "month_start": "2026-06-01", "source": "planted by the test"}
+
+
+def _cien(price: float, assumptions: dict | None = None) -> dict:
+    original = calculator.risk_free_rate, calculator.equity_risk_premium
+    try:
+        calculator.risk_free_rate = lambda cutoff: dict(PLANTED_RISK_FREE)
+        calculator.equity_risk_premium = lambda cutoff: dict(PLANTED_PREMIUM)
+        return calculator.calculate(
+            ticker="CIEN", cutoff=CIEN_CUTOFF, period_end=CIEN_PERIOD_END, form="10-Q",
+            accession="0001628280-26-040767",
+            market_data={"beta": {"value": 1.2},
+                         "price": {"value": price, "unit": "USD per share",
+                                   "source": "planted by the test"}},
+            assumptions=assumptions)
+    finally:
+        calculator.risk_free_rate, calculator.equity_risk_premium = original
+
+
+@pytest.fixture(scope="module")
+def cien_at_100():
+    return _cien(100.0)
+
+
+def test_cienas_record_reads_as_the_hand_table_above_for_the_free_cash_flow_yield(cien_at_100):
+    """The inputs the three checks share, each against the hand table."""
+    ttm = cien_at_100["terms"]["trailing_four_quarters"]
+    assert ttm["revenue"]["value"] == 5_569_150 * 1000
+    assert ttm["depreciation_and_amortization"]["value"] == 142_500 * 1000
+    assert cien_at_100["tax_rate"]["value"] == pytest.approx(CIEN_TAX_RATE)
+    free = cien_at_100["free_cash_flow"]
+    assert free["free_cash_flow_to_firm"]["value"] == pytest.approx(CIEN_FREE_CASH_FLOW_TO_FIRM)
+    assert free["free_cash_flow_to_equity"]["value"] == CIEN_FREE_CASH_FLOW_TO_EQUITY
+    assert cien_at_100["terms"]["debt_now"]["value"] == CIEN_TOTAL_DEBT
+    assert cien_at_100["ratios"]["solvency"]["net_debt"]["value"] == 328_285 * 1000
+    assert cien_at_100["ratios"]["solvency"]["operating_lease_liability"]["value"] == 44_392 * 1000
+    assert cien_at_100["terms"]["shares_outstanding"]["value"] == CIEN_SHARES_OUTSTANDING
+    assert cien_at_100["terms"]["diluted_shares"]["value"] == CIEN_DILUTED_SHARES
+
+
+def test_cienas_free_cash_flow_yield_is_worked_from_the_filed_figures(cien_at_100):
+    """At a planted price of 100 a share:
+      market value of equity  100 x 141,552,922 = 14,155,292,200
+      enterprise value        14,155,292,200 + 328,285,000 + 44,392,000 = 14,527,969,200
+      free cash flow to the firm over enterprise value
+                              539,080,771 / 14,527,969,200 = 0.0371064
+      free cash flow to equity over market value of equity
+                              821,079,000 / 14,155,292,200 = 0.0580051
+    """
+    out = cien_at_100["free_cash_flow_yield"]
+    assert out["price_at_cutoff"]["value"] == 100.0
+    assert out["enterprise_value"]["value"] == pytest.approx(14_527_969_200)
+    assert out["enterprise_value"]["formula"] == (
+        "market_value_of_equity + net_debt + operating_lease_liability")
+    to_firm = out["free_cash_flow_to_firm_over_enterprise_value"]
+    to_equity = out["free_cash_flow_to_equity_over_market_value_of_equity"]
+    assert to_firm["value"] == pytest.approx(539_080_771 / 14_527_969_200, abs=1e-9)
+    assert to_firm["value"] == pytest.approx(0.0371064, abs=5e-8)
+    assert to_equity["value"] == pytest.approx(821_079_000 / 14_155_292_200)
+    assert to_equity["value"] == pytest.approx(0.0580051, abs=5e-8)
+
+
+def test_cienas_wacc_components_table_names_each_input_and_its_source(cien_at_100):
+    """At a planted price of 100 a share:
+      E = 14,155,292,200;  D = 1,531,119,000;  D + E = 15,686,411,200
+      E/(D+E) = 0.9023920;  D/(D+E) = 0.0976080
+      WACC = 0.9023920 x 0.10 + 0.0976080 x 0.0516158 = 0.0902392 + 0.0050381 = 0.0952773
+    Each row names its value and its source: the planted series and date for the
+    two market-wide inputs, the record ids for the shares and the debt, the
+    formula for the cost of debt (no fallback: interest expense is on record).
+    """
+    table = cien_at_100["wacc_components"]
+    rows = {row["input"]: row for row in table["rows"]}
+    assert list(rows) == ["risk_free_rate", "equity_risk_premium", "beta", "cost_of_equity",
+                          "pre_tax_cost_of_debt", "tax_rate", "market_value_of_equity",
+                          "total_debt", "weight_of_equity", "weight_of_debt", "wacc"]
+    assert rows["risk_free_rate"]["value"] == 0.04
+    assert rows["risk_free_rate"]["source"] == "DGS10 on 2026-06-04; planted by the test"
+    assert rows["equity_risk_premium"]["value"] == 0.05
+    assert rows["equity_risk_premium"]["source"] == (
+        "the month starting 2026-06-01; planted by the test")
+    assert rows["beta"]["value"] == 1.2
+    assert rows["cost_of_equity"]["value"] == pytest.approx(0.10)
+    assert rows["pre_tax_cost_of_debt"]["value"] == pytest.approx(86_964 / 1_535_737.5)
+    assert rows["pre_tax_cost_of_debt"]["source"].startswith("interest_expense / average debt")
+    assert "fallback" not in rows["pre_tax_cost_of_debt"]["source"]
+    assert rows["tax_rate"]["value"] == pytest.approx(CIEN_TAX_RATE)
+    assert rows["tax_rate"]["source"].startswith("the effective rate, inside the bounds")
+    assert rows["market_value_of_equity"]["value"] == pytest.approx(14_155_292_200)
+    assert rows["market_value_of_equity"]["source"].endswith(
+        "shares_outstanding 0001628280-26-040767:facts:EntityCommonStockSharesOutstanding:2026-05-29")
+    assert rows["total_debt"]["value"] == CIEN_TOTAL_DEBT
+    assert rows["total_debt"]["source"] == (
+        "debt_current + debt_noncurrent; "
+        "0001628280-26-040767:facts:LongTermDebtCurrent:2026-05-02, "
+        "0001628280-26-040767:facts:LongTermDebtNoncurrent:2026-05-02")
+    assert rows["weight_of_equity"]["value"] == pytest.approx(0.9023920, abs=5e-8)
+    assert rows["weight_of_debt"]["value"] == pytest.approx(0.0976080, abs=5e-8)
+    assert rows["wacc"]["value"] == pytest.approx(0.0952773, abs=5e-8)
+    assert rows["wacc"]["value"] == pytest.approx(
+        14_155_292_200 / 15_686_411_200 * 0.10
+        + 1_531_119_000 / 15_686_411_200 * CIEN_COST_OF_DEBT_AFTER_TAX)
+    assert table["formula"] == cien_at_100["cost_of_capital"]["wacc"]["formula"]
+    assert all("source" in row and "missing" not in row for row in table["rows"])
+
+
+# The base scenario is the Gordon case of the DCF tests above: growth 3% from year
+# one to the terminal rate, margin 20%, reinvestment 40%, so the ten years and the
+# terminal value add up to next year's free cash flow to the firm over (WACC - 0.03):
+#     A = 5,569,150,000 x 1.03 x 0.20 x (1 - 0.0884929) x 0.60 = 627,433,105.82
+# and the base value a share is (A / (WACC - 0.03) - N) / S, with N = net debt +
+# leases = 372,677,000 and S = 146,314,000 diluted shares. The WACC moves with
+# the price through E = price x 141,552,922 shares outstanding, so the price at
+# which the value is the price itself -- where the growth the price implies is
+# exactly the 3% the base case assumes -- solves
+#     (a P + b) (S P + N) = A (D + n P),   a = n x (0.10 - 0.03),  b = D x (0.0516158 - 0.03)
+# a quadratic in P, a S P^2 + (a N + b S - A n) P + (b N - A D) = 0, with
+#     a = 9,908,704.54,  b = 33,096,343.75,
+#     a S = 1.44978 x 10^15,  a N + b S - A n = -8.02798 x 10^16,  b N - A D = -9.48341 x 10^17
+# whose positive root is P = 65.3788514. Check at that price:
+#     E = 65.3788514 x 141,552,922 = 9,254,567,449;  D + E = 10,785,686,449
+#     WACC = 0.8580416 x 0.10 + 0.1419584 x 0.0516158 = 0.0931315
+#     A / (0.0931315 - 0.03) = 9,938,518,260;  less N = 9,565,841,260;  over S = 65.3788514
+CIEN_PRICE_AT_ITS_GORDON_VALUE = 65.37885137299392
+
+
+@pytest.fixture(scope="module")
+def cien_at_its_gordon_value():
+    return _cien(CIEN_PRICE_AT_ITS_GORDON_VALUE, {"scenarios": {"base": dict(GORDON)}})
+
+
+def test_cienas_growth_beside_history_is_the_three_and_five_year_compound_and_the_implied_rate(
+        cien_at_its_gordon_value):
+    """Revenues, the fiscal years on record:
+      2024-11-03..2025-11-01  4,769,507  (the 10-K filed 2025-12-12)
+      2021-10-31..2022-10-29  3,632,661  (the same value in the 10-Ks filed 2022-12-16,
+                                          2023-12-15 and 2024-12-20)
+      2019-11-03..2020-10-31  3,532,157  (the same value in the 10-Ks filed 2020-12-18,
+                                          2021-12-17 and 2022-12-16)
+      three-year compound  (4,769,507 / 3,632,661) ** (1/3) - 1 = 1.3129513 ** (1/3) - 1 = 0.0950053
+      five-year compound   (4,769,507 / 3,532,157) ** (1/5) - 1 = 1.3503100 ** (1/5) - 1 = 0.0619075
+    and the implied ten-year growth at the price worked above is the base case's
+    own 3%, printed beside them.
+    """
+    out = cien_at_its_gordon_value["implied_growth_beside_history"]
+    three = out["revenue_growth_three_year_compound"]
+    five = out["revenue_growth_five_year_compound"]
+    assert three["value"] == pytest.approx((4_769_507 / 3_632_661) ** (1 / 3) - 1)
+    assert three["value"] == pytest.approx(0.0950053, abs=5e-8)
+    assert three["fiscal_years"] == "2021-10-31..2022-10-29 to 2024-11-03..2025-11-01"
+    assert three["inputs"]["revenue_3_years_earlier"]["value"] == 3_632_661 * 1000
+    assert five["value"] == pytest.approx((4_769_507 / 3_532_157) ** (1 / 5) - 1)
+    assert five["value"] == pytest.approx(0.0619075, abs=5e-8)
+    assert five["fiscal_years"] == "2019-11-03..2020-10-31 to 2024-11-03..2025-11-01"
+    assert five["inputs"]["revenue_5_years_earlier"]["value"] == 3_532_157 * 1000
+    implied = out["implied_ten_year_revenue_growth"]
+    assert implied["value"] == pytest.approx(0.03, abs=1e-6)
+    assert implied["price"] == CIEN_PRICE_AT_ITS_GORDON_VALUE
+    base = cien_at_its_gordon_value["valuation"]["scenarios"]["base"]
+    assert base["value_per_share"] == pytest.approx(CIEN_PRICE_AT_ITS_GORDON_VALUE, abs=1e-6)
+    assert cien_at_its_gordon_value["cost_of_capital"]["value"] == pytest.approx(0.0931315, abs=5e-8)
+    # The flat keys the owner's coverage grader reads carry the same two rates.
+    history = cien_at_its_gordon_value["earnings_versus_cash"]["history"]
+    assert history["revenue_growth_three_year_compound"] == three["value"]
+    assert history["revenue_growth_five_year_compound"] == five["value"]
+
+
+def test_growth_beside_history_with_fewer_fiscal_years_is_absent_with_the_count():
+    """Four years of 400, 300, 200, 100 newest first: three-year compound (400/100)**(1/3) - 1;
+    five-year needs six years and says it has four; a revenue that is not a number is named."""
+    rows = [{"fiscal_year": f"year {i}", "revenue": 100.0 * (4 - i), "revenue_id": None}
+            for i in range(4)]
+    assert calculator.compound_revenue_growth(rows, 3)["value"] == pytest.approx(4 ** (1 / 3) - 1)
+    five = calculator.compound_revenue_growth(rows, 5)
+    assert five["missing"] == "4 fiscal years on record, and 5-year compound growth needs 6"
+    rows[3]["revenue"] = None
+    assert "not a positive number" in calculator.compound_revenue_growth(rows, 3)["missing"]
+
+
+def test_free_cash_flow_yield_and_wacc_components_without_a_price_are_absent_with_the_reason(nvda):
+    """NVIDIA's run has no price series: the yields, the enterprise value and every
+    WACC row that needs a price say so, and the rows that do not (the two
+    market-wide inputs, the cost of debt, the tax rate, the debt) carry their value."""
+    yields = nvda["free_cash_flow_yield"]
+    for name in ("price_at_cutoff", "enterprise_value",
+                 "free_cash_flow_to_firm_over_enterprise_value",
+                 "free_cash_flow_to_equity_over_market_value_of_equity"):
+        assert "value" not in yields[name] and "Tiingo" in yields[name]["missing"], name
+    rows = {row["input"]: row for row in nvda["wacc_components"]["rows"]}
+    for name in ("beta", "cost_of_equity", "market_value_of_equity", "weight_of_equity",
+                 "weight_of_debt", "wacc"):
+        assert rows[name]["value"] is None and "Tiingo" in rows[name]["missing"], name
+    for name in ("risk_free_rate", "equity_risk_premium", "pre_tax_cost_of_debt",
+                 "tax_rate", "total_debt"):
+        assert rows[name]["value"] is not None and "missing" not in rows[name], name
+    assert rows["risk_free_rate"]["source"].startswith("DGS10 on 2026-08-26; ")
+    implied = nvda["implied_growth_beside_history"]["implied_ten_year_revenue_growth"]
+    assert "value" not in implied and implied["missing"].startswith("no reverse DCF: ")
+
+
+def test_wacc_components_carry_the_cost_of_debt_fallback_label():
+    """With neither interest expense nor interest paid on record the cost-of-debt
+    row's source is the ladder's own label, verbatim, and not a formula; the WACC
+    is the textbook case's 0.09395."""
+    capital = _wacc_with({"interest_expense": {"missing": "no row"},
+                          "interest_paid": {"missing": "no row"}})
+    rows = {row["input"]: row for row in
+            calculator.wacc_components(capital, {"debt_now": {"value": 100.0}})["rows"]}
+    assert rows["pre_tax_cost_of_debt"]["value"] == pytest.approx(0.05)
+    assert rows["pre_tax_cost_of_debt"]["source"] == (
+        "fallback: " + capital["pre_tax_cost_of_debt"]["fallback"])
+    assert rows["wacc"]["value"] == pytest.approx(0.09395)
+
+
+def test_the_free_cash_flow_yield_and_wacc_components_never_reach_the_filings_only_view(cien_at_100):
+    """All three blocks read the price, so the accounting and financial analysts never see them."""
+    view = calculator.filings_only(cien_at_100)
+    for name in ("free_cash_flow_yield", "wacc_components", "implied_growth_beside_history"):
+        assert name not in view
+        assert name in view["sections_removed_for_this_view"]
+        assert name in calculator.PRICED_SECTIONS

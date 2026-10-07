@@ -1190,14 +1190,51 @@ def annual_history(record: Record, periods: dict) -> dict:
         if newer["revenue"] is not None and older["revenue"]:
             newer["revenue_growth"] = newer["revenue"] / older["revenue"] - 1
     out = {"years": rows}
-    if len(rows) >= 4 and rows[0]["revenue"] and rows[3]["revenue"] and rows[3]["revenue"] > 0:
-        out["revenue_growth_three_year_compound"] = (rows[0]["revenue"] / rows[3]["revenue"]) ** (1 / 3) - 1
-        out["revenue_growth_three_year_compound_formula"] = (
-            "(revenue of the newest fiscal year / revenue three fiscal years earlier) ** (1/3) - 1")
+    # These flat keys are what the owner's coverage grader reads
+    # (evals/regression/coverage.py: `revenue_growth_three_year_compound` and
+    # `revenue_growth_five_year_compound` in this history, beside the reverse
+    # DCF's value). `implied_growth_beside_history` below prints the same two
+    # rates with their input rows, beside the implied rate.
+    for years, word in ((3, "three"), (5, "five")):
+        cell = compound_revenue_growth(rows, years)
+        if "value" in cell:
+            out[f"revenue_growth_{word}_year_compound"] = cell["value"]
+            out[f"revenue_growth_{word}_year_compound_formula"] = cell["formula"]
     margins = [row["operating_margin"] for row in rows[:3] if "operating_margin" in row]
     if len(margins) == 3:
         out["operating_margin_three_year_average"] = sum(margins) / 3
     return out
+
+
+def compound_revenue_growth(rows: list, years: int) -> dict:
+    """Compound annual revenue growth over the last `years` fiscal years on record.
+
+    `rows` is the history, newest first, so the year `years` back is `rows[years]`;
+    with fewer fiscal years on record than that, or a revenue that is not a
+    positive number at either end, the cell says so and holds no number.
+    """
+    # revenue_growth_n_year_compound
+    #     = (revenue of the newest fiscal year / revenue n fiscal years earlier) ** (1/n) - 1
+    formula = (f"(revenue of the newest fiscal year / revenue {years} fiscal years earlier) "
+               f"** (1/{years}) - 1")
+    if len(rows) <= years:
+        return {"missing": f"{len(rows)} fiscal years on record, and {years}-year compound "
+                           f"growth needs {years + 1}", "formula": formula}
+    newest, earlier = rows[0], rows[years]
+    for label, row in (("the newest fiscal year", newest),
+                       (f"{years} fiscal years earlier", earlier)):
+        if not row["revenue"] or row["revenue"] <= 0:
+            return {"missing": f"revenue of {label} ({row['fiscal_year']}) is "
+                               f"{row['revenue']}, not a positive number", "formula": formula}
+    inputs = {"revenue_newest": {"value": newest["revenue"], "fiscal_year": newest["fiscal_year"],
+                                 "id": newest.get("revenue_id")},
+              f"revenue_{years}_years_earlier": {"value": earlier["revenue"],
+                                                 "fiscal_year": earlier["fiscal_year"],
+                                                 "id": earlier.get("revenue_id")}}
+    return {"value": (newest["revenue"] / earlier["revenue"]) ** (1 / years) - 1,
+            "formula": formula, "unit": "ratio", "years": years,
+            "fiscal_years": f"{earlier['fiscal_year']} to {newest['fiscal_year']}",
+            "inputs": inputs}
 
 
 # --- the four free-cash-flow measures -------------------------------------------------
@@ -1906,6 +1943,160 @@ def adjusted_value(base_revenue, drivers, tax, wacc, net_debt, leases, shares, b
             "base_value_per_share": base_value}
 
 
+# --- three sanity checks beside the DCF ------------------------------------------------------
+#
+# Each reads only what the sections above computed, and each reads a price, so all
+# three are priced sections: the accounting and financial analysts never see them
+# (`PRICED_SECTIONS`). A number that cannot be computed is written missing with
+# the reason, as everywhere in this file, and never estimated.
+
+def free_cash_flow_yield(free: dict, sections: dict, capital: dict) -> dict:
+    """What the trailing free cash flow earns on the price, as a cross-check on the DCF.
+
+    Two yields, each a cash flow over the claim it belongs to: free cash flow to
+    the firm is every capital provider's, so it is divided by the enterprise
+    value; free cash flow to equity is the shareholders' alone, so it is divided
+    by the market value of equity. Both are at the price at the cutoff; with no
+    price the block says so and holds no number.
+    """
+    solvency = sections["solvency"]
+    equity = capital.get("market_value_of_equity") or {"missing": capital.get("missing")
+                                                        or NO_PRICES}
+    # enterprise_value = market_value_of_equity + net_debt + operating_lease_liability
+    #   -- the DCF's bridge read backwards: `bridge` takes net debt and the
+    #   operating lease liability off the enterprise value to reach equity, so
+    #   the equity value the market states plus those two claims is the
+    #   enterprise value the price implies.
+    enterprise = measure("market_value_of_equity + net_debt + operating_lease_liability",
+                         {"market_value_of_equity": equity, "net_debt": solvency["net_debt"],
+                          "operating_lease_liability": solvency["operating_lease_liability"]},
+                         lambda v: (v["market_value_of_equity"] + v["net_debt"]
+                                    + v["operating_lease_liability"]), unit="USD")
+    # free_cash_flow_to_firm_over_enterprise_value = free_cash_flow_to_firm / enterprise_value
+    to_firm = measure("free_cash_flow_to_firm / enterprise_value",
+                      {"free_cash_flow_to_firm": free["free_cash_flow_to_firm"],
+                       "enterprise_value": enterprise},
+                      lambda v: v["free_cash_flow_to_firm"] / v["enterprise_value"],
+                      denominator="enterprise_value")
+    # free_cash_flow_to_equity_over_market_value_of_equity
+    #     = free_cash_flow_to_equity / market_value_of_equity
+    to_equity = measure("free_cash_flow_to_equity / market_value_of_equity",
+                        {"free_cash_flow_to_equity": free["free_cash_flow_to_equity"],
+                         "market_value_of_equity": equity},
+                        lambda v: v["free_cash_flow_to_equity"] / v["market_value_of_equity"],
+                        denominator="market_value_of_equity")
+    return {"what_this_is": ("the trailing-four-quarter free cash flows over the claims they "
+                             "belong to, at the price at the cutoff; a cross-check on the "
+                             "DCF, not a value"),
+            "price_at_cutoff": capital.get("price_at_cutoff")
+            or {"missing": capital.get("missing") or NO_PRICES},
+            "enterprise_value": enterprise,
+            "free_cash_flow_to_firm_over_enterprise_value": to_firm,
+            "free_cash_flow_to_equity_over_market_value_of_equity": to_equity}
+
+
+# The WACC's inputs in the order the formula reads them, each with the words that
+# say where its value came from. A row's source is the cell's own record: the
+# committed market file and the date read from it, the regression window, the
+# record rows summed, or the fallback label the cost-of-debt ladder wrote.
+WACC_FORMULA = "E/(D+E) * cost_of_equity + D/(D+E) * pre_tax_cost_of_debt * (1 - tax_rate)"
+
+
+def _ids(cell: dict) -> str:
+    """The record ids a cell was summed from, for a source line."""
+    lines = cell.get("lines") or []
+    ids = [line["id"] for line in lines if "id" in line]
+    if not ids and "id" in cell:
+        ids = [cell["id"]]
+    return ", ".join(ids) if ids else "no record id on the cell"
+
+
+def _cost_of_debt_source(cell: dict) -> str:
+    if cell.get("fallback"):
+        return f"fallback: {cell['fallback']}"
+    if cell.get("chosen_by"):
+        return (f"chosen by {cell['chosen_by']}: {cell.get('reason')}; "
+                f"quote: {cell.get('quote')}")
+    if cell.get("note"):
+        return cell["note"]
+    expense = (cell.get("inputs") or {}).get("interest_expense") or {}
+    return f"{cell.get('formula')}; interest_expense {expense.get('formula', 'as read')}"
+
+
+def wacc_components(capital: dict, terms: dict) -> dict:
+    """Every input of the WACC in one table: its name, its value, and its source."""
+    rf, erp = capital.get("risk_free_rate") or {}, capital.get("equity_risk_premium") or {}
+    beta, debt = capital.get("beta") or {}, terms["debt_now"]
+    equity = capital.get("market_value_of_equity") or {}
+    weights = capital.get("weights") or {}
+    shares = (equity.get("inputs") or {}).get("shares_outstanding") or {}
+    sources = {
+        "risk_free_rate": f"{rf.get('series', 'risk-free series')} on {rf.get('date', 'no date')}; "
+                          f"{rf.get('source', 'no source on the cell')}",
+        "equity_risk_premium": f"the month starting {erp.get('month_start', 'no date')}; "
+                               f"{erp.get('source', 'no source on the cell')}",
+        "beta": (f"against {beta['against']}, {beta['trading_days']} trading days "
+                 f"{beta['window_first']}..{beta['window_last']}"
+                 if all(key in beta for key in ("against", "trading_days", "window_first",
+                                                "window_last"))
+                 else "no regression window on the cell"),
+        "cost_of_equity": (capital.get("cost_of_equity") or {}).get(
+            "formula", "risk_free_rate + beta * equity_risk_premium"),
+        "pre_tax_cost_of_debt": _cost_of_debt_source(capital.get("pre_tax_cost_of_debt") or {}),
+        "tax_rate": f"{(capital.get('tax_rate') or {}).get('rule', 'no rule on the cell')}; "
+                    f"{(capital.get('tax_rate') or {}).get('formula', '')}".rstrip("; "),
+        "market_value_of_equity": f"{equity.get('formula', 'price_at_cutoff * shares_outstanding')}; "
+                                  f"shares_outstanding {shares.get('id', 'no record id')}",
+        "total_debt": f"{debt.get('formula', 'debt_current + debt_noncurrent')}; {_ids(debt)}",
+        "weight_of_equity": "E / (D + E), market value of equity over itself plus total debt",
+        "weight_of_debt": "D / (D + E), total debt over itself plus market value of equity",
+        "wacc": WACC_FORMULA,
+    }
+    cells = {
+        "risk_free_rate": rf, "equity_risk_premium": erp, "beta": beta,
+        "cost_of_equity": capital.get("cost_of_equity"),
+        "pre_tax_cost_of_debt": capital.get("pre_tax_cost_of_debt"),
+        "tax_rate": capital.get("tax_rate"), "market_value_of_equity": equity,
+        "total_debt": debt,
+        "weight_of_equity": ({"value": weights["equity"]} if "equity" in weights
+                             else {"missing": "no weights: " + str(capital.get("missing"))}),
+        "weight_of_debt": ({"value": weights["debt"]} if "debt" in weights
+                           else {"missing": "no weights: " + str(capital.get("missing"))}),
+        "wacc": capital.get("wacc"),
+    }
+    rows = []
+    for name, source in sources.items():
+        cell = cells[name]
+        if not isinstance(cell, dict) or "missing" in cell or cell.get("value") is None:
+            reason = cell.get("missing") if isinstance(cell, dict) else None
+            rows.append({"input": name, "value": None,
+                         "missing": reason or capital.get("missing") or "not computed"})
+        else:
+            rows.append({"input": name, "value": cell["value"], "source": source})
+    return {"what_this_is": "each input of the WACC, its value and where it came from",
+            "formula": WACC_FORMULA, "rows": rows}
+
+
+def implied_growth_beside_history(value: dict, history: dict) -> dict:
+    """The constant ten-year revenue growth the price implies, beside the compound
+    growth the company has shown over its last three and five fiscal years."""
+    reverse = value.get("reverse_dcf") if "missing" not in value else None
+    if "missing" in value:
+        implied = {"missing": f"no reverse DCF: {value['missing']}"}
+    elif not isinstance(reverse, dict) or "missing" in reverse:
+        implied = {"missing": (reverse or {}).get("missing", "no reverse DCF")}
+    else:
+        implied = {"value": reverse["value"], "price": reverse.get("price"),
+                   "held": reverse.get("held"), "formula": reverse.get("formula"),
+                   "unit": "ratio"}
+    rows = history.get("years") or []
+    return {"what_this_is": ("the revenue growth the price at the cutoff assumes for ten "
+                             "years, read beside the growth the company has filed"),
+            "implied_ten_year_revenue_growth": implied,
+            "revenue_growth_three_year_compound": compound_revenue_growth(rows, 3),
+            "revenue_growth_five_year_compound": compound_revenue_growth(rows, 5)}
+
+
 # --- the triggering filing's own facts, where companyfacts has not caught up ---------------
 
 FILING_UNITS = {"iso4217:USD": "USD", "shares": "shares"}
@@ -2052,6 +2243,12 @@ def calculate(*, ticker: str, cutoff, period_end: str, form: str, accession: str
                              for item in quality["adjustments_applied"]],
                  "nopat": nopat}
     value = valuation(terms, sections, capital, assumptions, moved)
+    beside_the_dcf = {
+        "free_cash_flow_yield": free_cash_flow_yield(free, sections, capital),
+        "wacc_components": wacc_components(capital, terms),
+        "implied_growth_beside_history": implied_growth_beside_history(
+            value, earnings["history"]),
+    }
 
     missing = [f"{term}: {terms['trailing_four_quarters'][term]['missing']}"
                for term in CORE_TERMS if term in terms["trailing_four_quarters"]
@@ -2098,14 +2295,17 @@ def calculate(*, ticker: str, cutoff, period_end: str, form: str, accession: str
         "market": market_data,
         "cost_of_capital": capital,
         "valuation": value,
+        **beside_the_dcf,
     }
 
 
 # What the accounting and financial analysts may not see: every figure read off a
 # price. `CLAUDE.md` -- they "see reports and calculator.json, never prices; the
 # valuation analyst adds ... the price at the cutoff". So they are handed this
-# view, and the valuation analyst the whole file.
-PRICED_SECTIONS = ("market", "cost_of_capital", "valuation")
+# view, and the valuation analyst the whole file. The three sanity checks beside
+# the DCF each read the price, so they are priced sections too.
+PRICED_SECTIONS = ("market", "cost_of_capital", "valuation", "free_cash_flow_yield",
+                   "wacc_components", "implied_growth_beside_history")
 FILINGS_ONLY = "calculator_filings_only.json"
 
 
