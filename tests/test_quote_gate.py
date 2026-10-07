@@ -284,6 +284,45 @@ def test_gating_twice_writes_the_same_count(tmp_path):
     assert manifest_of(root)["counts"]["dropped_items"] == 3
 
 
+def test_an_id_standing_in_a_report_already_gated_into_the_run_root_is_a_twin(tmp_path):
+    """One id names one item across the nights a run took. The run root holds a
+    numbers report gated on an earlier night with `shared` standing and `fallen`
+    on the drop list; a call handed the notes report alone drops its item under
+    `shared`, keeps the one under `fallen` (its twin fell, so it is not
+    standing) and the one under its own id, appends its row after the earlier
+    one, and leaves the run-root copy byte for byte. Without the run-root
+    report, the same call keeps all three."""
+    root = plant(tmp_path)
+    quote = "Accounts receivable, net of allowances, rose to $29,508 million"
+    items = [{"id": identifier, "paragraph_id": f"{ACCESSION}:notes:1", "quote": quote}
+             for identifier in ("revenue_recognition_shared", "revenue_recognition_fallen",
+                                "revenue_recognition_own")]
+    result = quote_gate.gate([{"report": "report_notes_text.md", "items": items,
+                               "input": root / "notes_reader"}], root)
+    assert result["dropped"] == [] and len(result["kept"]["report_notes_text.md"]) == 3
+    earlier = ('<!-- the quote gate removed 0 item(s) from this copy -->\n```json\n'
+               '[{"id": "revenue_recognition_shared", "quote": "x"},\n'
+               ' {"id": "revenue_recognition_fallen", "quote": "y"}]\n```\n')
+    (root / "report_numbers.md").write_text(earlier, encoding="utf-8")
+    manifest = manifest_of(root)
+    manifest["dropped_items"] = [{"report": "report_numbers.md",
+                                  "item_id": "revenue_recognition_fallen", "reason": "planted"}]
+    (root / MANIFEST).write_text(json.dumps(manifest), encoding="utf-8")
+    result = quote_gate.gate([{"report": "report_notes_text.md", "items": items,
+                               "input": root / "notes_reader"}], root)
+    assert [item["id"] for item in result["kept"]["report_notes_text.md"]] == [
+        "revenue_recognition_fallen", "revenue_recognition_own"]
+    assert [row["item_id"] for row in result["dropped"]] == ["revenue_recognition_shared"]
+    assert ("on more than one item in this run: it stands in report_numbers.md, gated "
+            "already") in result["dropped"][0]["reason"]
+    manifest = manifest_of(root)
+    assert [(row["report"], row["item_id"]) for row in manifest["dropped_items"]] == [
+        ("report_numbers.md", "revenue_recognition_fallen"),
+        ("report_notes_text.md", "revenue_recognition_shared")]
+    assert manifest["counts"]["dropped_items"] == 2
+    assert (root / "report_numbers.md").read_text(encoding="utf-8") == earlier
+
+
 def test_a_call_keeps_the_rows_of_the_reports_it_was_not_handed(tmp_path):
     """Of the three planted rows, two are the notes report's and one the notes
     comparer's. A later call handed the notes report alone replaces the notes

@@ -802,8 +802,10 @@ def test_a_resume_gates_only_the_reader_it_called_and_appends_its_rows(tmp_path,
     """The limit at the notes reader, the numbers reader gated alone that night
     with one row dropped. Resumed, the notes reader writes an item under the
     numbers item's id: the run-root report_numbers.md and the night's drop row
-    stand byte for byte, the notes report is gated alone -- held to its own ids,
-    so the shared id stands there -- and the resume appends no row of its own."""
+    stand byte for byte, the notes report is gated alone and held to the ids
+    standing in the report already gated, so its item under the shared id is
+    dropped as a twin and its row appended after the earlier one -- the one
+    id names the numbers item, as it would have on a fresh run."""
     run, stopped = _stopped_at(tmp_path, monkeypatch, "notes-text-reader", "never",
                                numbers_report=NUMBERS_WITH_A_BAD_QUOTE)
     assert [(row["report"], row["item_id"]) for row in stopped["dropped_items"]] == [
@@ -815,11 +817,16 @@ def test_a_resume_gates_only_the_reader_it_called_and_appends_its_rows(tmp_path,
                                 numbers_report=NUMBERS_WITH_A_BAD_QUOTE)
     assert "numbers-reader" not in called
     assert (run / "report_numbers.md").read_bytes() == numbers_before
-    assert manifest["dropped_items"] == stopped["dropped_items"]
-    assert manifest["counts"]["dropped_items"] == 1
-    assert manifest["analysis_stages"]["quote_gate"] == {"dropped": 0}      # this night's
+    assert manifest["dropped_items"][:1] == stopped["dropped_items"]        # appended after
+    assert [(row["report"], row["item_id"]) for row in manifest["dropped_items"]] == [
+        ("report_numbers.md", "earnings_quality_planted_bad_quote"),
+        ("report_notes_text.md", SHARED_ID)]
+    assert ("on more than one item in this run: it stands in report_numbers.md"
+            in manifest["dropped_items"][1]["reason"])
+    assert manifest["counts"]["dropped_items"] == 2
+    assert manifest["analysis_stages"]["quote_gate"] == {"dropped": 1}      # this night's
     notes = (run / "report_notes_text.md").read_text(encoding="utf-8")
-    assert SHARED_ID in notes and "removed 0 item(s)" in notes
+    assert SHARED_ID not in notes and "removed 1 item(s)" in notes
     assert manifest["analysis_failure"] is None
     assert agent_inputs.isolation_violations(run) == []
     # The other side: a fresh run gates both readers in one call, and the shared

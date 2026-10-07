@@ -351,8 +351,9 @@ def gate_readers(run: Path, names: tuple[str, ...] = ("numbers-reader", "notes-t
     A run-root copy gated on an earlier night is not written again, and the
     gate keeps the drop rows of a report it is not handed, so the earlier
     night's record stands as it was and this call appends its own rows. The
-    gate's repeated-id rule runs over the reports handed to one call: a report
-    gated alone is held to its own ids.
+    gate's one-id-one-item rule holds across the nights: a report gated alone
+    is held to its own ids and to the ids standing in the reports already gated
+    into the run root, which the gate reads and never writes.
     """
     reports = []
     for name in names:

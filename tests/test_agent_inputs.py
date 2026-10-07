@@ -807,7 +807,26 @@ def test_a_dropped_item_flags_nothing_and_a_run_with_no_gate_record_is_refused(t
                                              encoding="utf-8")
     with pytest.raises(AgentInputError, match="no record that the quote gate ran"):
         agent_inputs.flagged_paragraphs(run)
-    assert agent_inputs.flagged_paragraphs(tmp_path / "none") == set()  # no report at all
+    # no gated report at the run root: refused, never read as "none flagged"
+    with pytest.raises(AgentInputError, match="holds no report_notes_text.md"):
+        agent_inputs.flagged_paragraphs(tmp_path / "none")
+
+
+def test_a_valuation_build_on_a_run_with_no_gated_notes_report_is_refused(tmp_path):
+    """The valuation layer's `sees` does not name the notes report, so `required`
+    does not refuse the build; the flagged set does, before anything is created,
+    and the manifest records no trim. With the report back, the build goes
+    through and records the hand-written trim."""
+    run = _trimmed_run(tmp_path)
+    (run / "report_notes_text.md").unlink()
+    with pytest.raises(AgentInputError, match="holds no report_notes_text.md"):
+        agent_inputs.build(run, "valuation-analyst")
+    assert not agent_inputs.session_root(run, "valuation-analyst").exists()
+    assert "agents" not in json.loads((run / "input_manifest.json").read_text(encoding="utf-8"))
+    (run / "report_notes_text.md").write_text(NOTES_REPORT, encoding="utf-8")
+    built = agent_inputs.build(run, "valuation-analyst")
+    assert built["trimmed"]["input_mdna.md"] == RECORD
+    assert agent_inputs.isolation_violations(run) == []
 
 
 def _valuation_directory(tmp_path: Path, *, holds: str, record: dict | None) -> Path:

@@ -585,6 +585,33 @@ def _repeated_ids(reports: list[dict]) -> set[str]:
             if identifier is not None and count > 1}
 
 
+def _standing_elsewhere(bundle_root, manifest: dict, handed: set[str]) -> dict[str, str]:
+    """Every id standing in a report already gated into the run root that this
+    call was not handed, keyed to that report's name.
+
+    One id names one item in the run, across the nights the run took: a report
+    gated on the night the limit hit stands at the run root, and a call gating
+    the other report on the next night is held to the ids standing there as it
+    is to its own. The run-root copy is read and never written; an id a drop
+    row names for that report is not standing, so a twin of a dropped item is
+    not dropped for it.
+    """
+    from src import market_labels      # lazy: that module imports this one
+    dropped = {(Path(str(row.get("report"))).name, row.get("item_id"))
+               for row in manifest.get("dropped_items") or [] if isinstance(row, dict)}
+    standing: dict[str, str] = {}
+    for name in REPORT_SIDES:
+        path = Path(bundle_root) / name
+        if name in handed or not path.is_file():
+            continue
+        for item in market_labels.report_items(path.read_text(encoding="utf-8",
+                                                              errors="replace")):
+            identifier = item_id(item)
+            if identifier is not None and (name, identifier) not in dropped:
+                standing.setdefault(identifier, name)
+    return standing
+
+
 def gate(reports: list[dict], bundle_root) -> dict:
     """Every report in layer order: what stands, what was dropped, and the count on disk.
 
@@ -610,6 +637,9 @@ def gate(reports: list[dict], bundle_root) -> dict:
             f"{MANIFEST} names no accession, and a computed row's id begins with one")
     known_areas = areas()
     repeated = _repeated_ids(reports)
+    elsewhere = _standing_elsewhere(
+        bundle_root, manifest,
+        {Path(entry["report"]).name for entry in reports if isinstance(entry.get("report"), str)})
 
     kept: dict[str, list[dict]] = {}
     kept_ids: dict[str, set[str]] = {}
@@ -659,6 +689,10 @@ def gate(reports: list[dict], bundle_root) -> dict:
             if why is None and identifier in repeated:
                 why = (f"the item id {identifier} is on more than one item in this "
                        "run, so a citation naming it would not name one item")
+            if why is None and identifier in elsewhere:
+                why = (f"the item id {identifier} is on more than one item in this "
+                       f"run: it stands in {elsewhere[identifier]}, gated already, so a "
+                       "citation naming it would not name one item")
             if why is None:
                 why = (quote_drop_reason(item, index) if index is not None
                        else citation_drop_reason(item, upstream_ids))

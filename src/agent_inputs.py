@@ -407,13 +407,18 @@ def flagged_paragraphs(run: Path) -> set[str]:
     `src.market_labels.gate_record`, the one reading of that list, keyed the way
     the gate keys it, (report, `quote_gate.item_id`) -- and an item it names
     flags nothing: it was dropped and counted, not passed through. A run with no
-    record that the gate ran is refused, as the market labels refuse it.
+    record that the gate ran is refused, as the market labels refuse it, and so
+    is a run with no gated report at the run root: with nothing to read, no
+    paragraph can be read as flagged, and "none flagged" would be a false record.
     """
     # here, not at the top: both of these import this module when they load
     from src import market_labels, quote_gate
     report = Path(run) / NOTES_REPORT
     if not report.is_file():
-        return set()
+        raise AgentInputError(
+            f"{run}: the run holds no {NOTES_REPORT}, so no paragraph can be read as "
+            "flagged; a valuation directory is built after the notes reader's report "
+            "is gated into the run root")
     try:
         _, dropped = market_labels.gate_record(run)
     except market_labels.MarketLabelError as exc:
@@ -631,6 +636,11 @@ def build(run: Path, agent: str, *, light: bool = False) -> dict:
                 f"{prior} still carries a probability ({leak}); a prior run's "
                 f"probability may not reach {agent}.")
 
+    # Before anything is created, too: the valuation layer's flagged set is
+    # read off the gated notes report, and a run with none is refused here
+    # rather than recorded as a run whose reader flagged nothing.
+    flagged = flagged_paragraphs(run) if spec.layer == "valuation" else None
+
     root.mkdir(parents=True, exist_ok=True)
     # `may_hold`, not `sees`: rebuilding after the agent has run must not read
     # the report the agent itself wrote here as somebody else's file.
@@ -644,7 +654,6 @@ def build(run: Path, agent: str, *, light: bool = False) -> dict:
             "and reused.")
 
     placed, absent, trims = [], [], {}
-    flagged = flagged_paragraphs(run) if spec.layer == "valuation" else None
     for name in spec.sees:
         source = run / name
         if not source.is_file():

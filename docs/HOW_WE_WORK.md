@@ -289,7 +289,13 @@ The owner's decision of 2026-10-06 (`docs/structure_changes.md`) sets this table
   record is skipped and never called again, only the stopped agent and those after
   it run, and the manifest records `resumed_at` and `resume_skipped`. A limit is
   read off the message, and for a Fable call off its shape too: a failed call that
-  spent no token and ended in under ten seconds. An analyst never falls back to
+  spent no token and ended in under ten seconds. A Fable call whose output is not
+  JSON at all carries no usage record, so it spent no token by that reading, and
+  one that fails that way in under ten seconds is read as the limit too -- a
+  mis-installed CLI or a bad flag included -- because that is the shape the limit
+  took on 2026-09-29 (lessons.md) and the owner's reading is that it is the limit
+  before anything else: stopping the batch on it costs one night, running eleven
+  more filings into it costs the night and the record. An analyst never falls back to
   Opus, and a resume runs under the model the stopped run did: `--model` must be
   the stopped run's `model_override`, and absent when it had none, or the resume
   is refused (exit 2), since a run on two models mixes what the record cannot
