@@ -403,8 +403,9 @@ def test_the_series_are_the_ones_the_market_table_reads_off_the_map():
     # The map's division D, Manufacturing, 2000 to 3999, is XLI; its division K,
     # Nonclassifiable Establishments, 9900 to 9999, is SPY, the broad market's
     # own series, which is asked for once.
-    assert nightly.price_symbols("AAA", "3661") == ["AAA", "SPY", "XLI"]
-    assert nightly.price_symbols("AAA", "9995") == ["AAA", "SPY"]
+    assert nightly.price_series("AAA", "3661") == {"symbols": ["AAA", "SPY", "XLI"],
+                                                   "reason": None}
+    assert nightly.price_series("AAA", "9995") == {"symbols": ["AAA", "SPY"], "reason": None}
 
 
 def test_a_sic_the_map_leaves_unclassified_is_the_runs_reason_and_no_fetch(tmp_path):
@@ -413,7 +414,9 @@ def test_a_sic_the_map_leaves_unclassified_is_the_runs_reason_and_no_fetch(tmp_p
 
     # 1800 to 1999 is one of the classification's unassigned ranges.
     bundle = tmp_path / "runs" / "AAA" / "0000000001-26-000002"
-    out = nightly.prices_for({"ticker": "AAA", "filing_date": "2026-09-23"}, sic="1850",
+    series = nightly.price_series("AAA", "1850")
+    assert series["symbols"] is None
+    out = nightly.prices_for({"ticker": "AAA", "filing_date": "2026-09-23"}, series=series,
                              bundle=bundle, environ={"TIINGO_TOKEN": STAND_IN_TOKEN},
                              fetch=never)
     assert (out["folder"], out["record"]) == (None, None)

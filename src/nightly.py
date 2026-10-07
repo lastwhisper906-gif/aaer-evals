@@ -251,26 +251,32 @@ def price_window(filing_date: str) -> tuple[dt.date, dt.date]:
     return end - dt.timedelta(days=PRICE_DAYS_BEFORE_FILING), end
 
 
-def price_symbols(ticker: str, sic) -> list[str]:
-    """The three series `market.market_table` measures one company against.
+def price_series(ticker: str, sic) -> dict:
+    """The series `market.market_table` measures one company against, or why none.
 
     The company's own, the broad market's and its sector's, the last two read
     off the rules' map (`src/sic_to_sector_etf_map_<version>.json`) and not
     named here: the map moves with the rules. A sector series that is the broad
-    market's (the map's nonclassifiable division) is asked for once.
+    market's (the map's nonclassifiable division) is asked for once. A SIC code
+    the map cannot place is the reason, recorded on the run, not raised through
+    the night.
     """
-    symbols = [ticker, market.broad_market_symbol(), market.sector_symbol(sic)]
-    return list(dict.fromkeys(symbols))
+    try:
+        symbols = [ticker, market.broad_market_symbol(), market.sector_symbol(sic)]
+    except Exception as exc:  # noqa: BLE001 - the extraction stands; the prices say why not
+        return {"symbols": None, "reason": f"{type(exc).__name__}: {exc}"}
+    return {"symbols": list(dict.fromkeys(symbols)), "reason": None}
 
 
-def prices_for(filing: dict, *, sic, bundle: Path, environ, fetch=None) -> dict:
+def prices_for(filing: dict, *, series: dict, bundle: Path, environ, fetch=None) -> dict:
     """The run's price folder and the record of its fetch, or the reason there is none.
 
-    `environ` is the mapping the credential is read from, and the only one:
-    the night hands in `os.environ`, a test hands in a mapping of its own. The
-    token itself is never part of what this returns or writes. `fetch` is
-    `market.fetch_prices` unless a test stands one in, and the source is the
-    one whose token this reads, whatever `PRICE_BACKEND` the mapping names.
+    `series` is `price_series` for the filing's company. `environ` is the
+    mapping the credential is read from, and the only one: the night hands in
+    `os.environ`, a test hands in a mapping of its own. The token itself is
+    never part of what this returns or writes. `fetch` is `market.fetch_prices`
+    unless a test stands one in, and the source is the one whose token this
+    reads, whatever `PRICE_BACKEND` the mapping names.
     """
     fetch = fetch if fetch is not None else market.fetch_prices
     out = {"folder": None, "record": None, "reason": None}
@@ -280,10 +286,14 @@ def prices_for(filing: dict, *, sic, bundle: Path, environ, fetch=None) -> dict:
         out["reason"] = NO_PRICES_UNSET
         market.write_fetch_record({"fetched": False, "reason": NO_PRICES_UNSET}, record_path)
         return out
+    if series["reason"]:
+        out["reason"] = without_token(series["reason"], token)
+        market.write_fetch_record({"fetched": False, "reason": out["reason"]}, record_path)
+        return out
     folder = bundle / PRICE_FOLDER
     try:
         start, end = price_window(filing["filing_date"])
-        record = fetch(symbols=price_symbols(filing["ticker"], sic), start=start, end=end,
+        record = fetch(symbols=series["symbols"], start=start, end=end,
                        into=folder, environ=environ, backend=PRICE_SOURCE)
     except Exception as exc:  # noqa: BLE001 - the extraction stands; the prices say why not
         out["reason"] = without_token(f"{type(exc).__name__}: {exc}", token)
@@ -383,7 +393,7 @@ def night(*, fetcher, since: str, runs_root: Path, work: Path, fixtures: Path,
             record["named_by_hand"] = True
         if record["result"] == "passed":
             record["prices"] = prices_for(
-                entry, sic=sics.get(entry["ticker"]),
+                entry, series=price_series(entry["ticker"], sics.get(entry["ticker"])),
                 bundle=runs_root / entry["ticker"] / entry["accession"],
                 environ=environ, fetch=fetch_prices)
         extractions.append(record)
