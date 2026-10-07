@@ -545,10 +545,10 @@ ACCESSION = re.compile(r"(\d{10})-(\d{2})-(\d{6})$")
 
 def accepted_before_trigger(document: dict, trigger: str, trigger_accepted) -> str | None:
     """Why a document filed on the cutoff day is not shown to have been accepted
-    before the triggering report, or None. Two records can show it: the manifest's
-    acceptance stamps (the document's at or before the trigger's), or EDGAR's
-    accession numbers, which a filer agent takes in sequence, so a lower sequence
-    under the same agent prefix and year was accepted earlier."""
+    before the triggering report, or None. The manifest's acceptance stamps show
+    it (the document's at or before the trigger's); without them the filer agent's
+    accession sequence stands in as a proxy (a lower sequence under the same agent
+    prefix and year was assembled earlier), which docs/needs_judgment.md records."""
     stamp = document.get("accepted")
     if isinstance(stamp, str) and isinstance(trigger_accepted, str):
         try:
@@ -557,12 +557,17 @@ def accepted_before_trigger(document: dict, trigger: str, trigger_accepted) -> s
             return f"accepted at {stamp}, after the triggering report at {trigger_accepted}"
         except ValueError:
             return f"its acceptance stamp {stamp!r} is not a time"
+    # No stamp on record: the filer agent's accession sequence stands in. It is
+    # assigned when the submission is assembled, not when EDGAR accepts it, so a
+    # lower number shows an earlier assembly, a proxy for an earlier acceptance
+    # (docs/needs_judgment.md carries it) until the manifest records the stamps.
     mine, theirs = ACCESSION.match(str(document.get("accession"))), ACCESSION.match(trigger)
     if mine and theirs and mine.group(1, 2) == theirs.group(1, 2):
         if int(mine.group(3)) < int(theirs.group(3)):
             return None
         return (f"accession {document.get('accession')} follows the triggering report's "
-                f"{trigger} in the agent's sequence, so it was accepted after it")
+                f"{trigger} in the agent's sequence, so it was assembled after it (no "
+                "acceptance stamp on record)")
     return ("no acceptance stamp on record and no shared accession sequence, so nothing "
             "shows it was accepted before the triggering report")
 
@@ -714,6 +719,32 @@ def check_inputs_on_record(run: Path) -> Result:
                   detail, problems)
 
 
+ANY_DATE = re.compile(r"\b(\d{4}-\d{2}-\d{2})\b")
+
+
+def idless_prose_problems(text: str, cutoff: dt.date, documents: set[str]) -> list[str]:
+    """Why an id-less prose input reaches past the cutoff, or []: a date after it,
+    or an accession on a line with no date that is not one of the documents."""
+    out = []
+    for number, line in enumerate(text.splitlines(), 1):
+        dates = ANY_DATE.findall(line)
+        for text_date in dates:
+            try:
+                if dt.date.fromisoformat(text_date) > cutoff:
+                    out.append(f"line {number}: {text_date} is after the cutoff {cutoff}")
+            except ValueError:
+                pass
+        if not dates:
+            for accession in ACCESSION_ANYWHERE.findall(line):
+                if accession not in documents:
+                    out.append(f"line {number}: names accession {accession} on a line with no "
+                               "date, and it is not one of the manifest's documents")
+    return out
+
+
+ACCESSION_ANYWHERE = re.compile(r"\b\d{10}-\d{2}-\d{6}\b")
+
+
 def check_nothing_after_cutoff(run: Path) -> Result:
     manifest = load(run / "input_manifest.json") or {}
     try:
@@ -757,10 +788,23 @@ def check_nothing_after_cutoff(run: Path) -> Result:
                     late.append(f"{path.relative_to(run)}: {where} = {value}")
     # the inputs themselves, as the run holds them and as each agent was handed
     # them: every row's own filing date, read rather than trusted to the manifest
-    inputs = sorted(run.glob("input_*.json")) + sorted(run.glob("agents/*/input_*.json")) \
-        + sorted(run.glob(f"{CONTROL_DIR}/input_*.json"))
+    inputs = sorted(run.glob("input_*")) + sorted(run.glob("agents/*/input_*")) \
+        + sorted(run.glob(f"{CONTROL_DIR}/input_*"))
+    inputs = [p for p in inputs if p.is_file() and p.suffix in (".json", ".md")]
+    documents = {d.get("accession") for d in manifest.get("documents") or []
+                 if isinstance(d, dict) and isinstance(d.get("accession"), str)}
     for path in inputs:
         if path.name == "input_manifest.json":
+            continue
+        if path.suffix == ".md":
+            # a prose input with no [id] lines (the 8-K index, the prior
+            # predictions) names filings by date in its own lines: every date in it
+            # is at or before the cutoff, and an accession it names off any dated
+            # line is one of the manifest's documents
+            text = path.read_text(encoding="utf-8", errors="replace")
+            if not ID_LINE.search(text):
+                late += [f"{path.relative_to(run)}: {why}"
+                         for why in idless_prose_problems(text, cutoff, documents)]
             continue
         tree = load(path)
         if path.name == "input_market.json":

@@ -94,6 +94,8 @@ force.
 
 [ ] **the exchange's closures outside its holiday rules, for the market-table grader** · `evals/regression/mechanical.py` works the New York Stock Exchange calendar by rule (weekends, the nine holidays, Good Friday, the three early closes) and lists by hand the days it closed outside them (`SPECIAL_CLOSURES`: 2018-12-05 and 2025-01-09, national days of mourning); a closure the list lacks fails every run whose reaction window crosses it as "no row for" that day · deciding adds the day to the list, with the exchange's notice as the source, in a pull request labelled `owner-approved-eval`; until then the failure stands and is not softened.
 
+[ ] **the order of same-day filings, for the cutoff grader** · no manifest on record carries EDGAR's acceptance stamps, so `evals/regression/mechanical.py` orders a document filed on the cutoff day against the triggering report by the filer agent's accession sequence (CARR, CIEN and LFUS hold an 8-K filed the day of the 10-Q, with a lower sequence); the sequence is assigned when a submission is assembled, not when EDGAR accepts it, so it is a proxy · deciding records the acceptance stamp in the manifest (the `queue.md` item on the Part A branch) and the grader then reads the stamps and refuses a same-day document without one; until then the proxy stands and is named as one in every message.
+
 ## Settled by default
 
 Every other row that was open on 2026-09-28. Nothing waits on any of them: the

@@ -911,6 +911,40 @@ def test_a_row_naming_an_accession_outside_the_documents_fails_inputs_on_record(
     assert _status(mechanical.grade(run), "mechanical.inputs_on_record") == FAIL
 
 
+def test_a_dated_line_after_the_cutoff_in_an_idless_prose_input_fails_nothing_after_cutoff(run):
+    """CSCO's input_8k.md lists every 8-K by date and accession with no [id] lines;
+    a line for an 8-K filed after the trigger is a later filing reaching the readers."""
+    import hashlib
+    root = run / "input_8k.md"
+    text = root.read_text(encoding="utf-8") + "- 2026-05-20 0000858877-26-000080 — 2.02\n"
+    root.write_text(text, encoding="utf-8")
+    data = root.read_bytes()
+    _edit(run / "input_manifest.json",
+          lambda d: d["files"]["input_8k.md"].update(sha256=hashlib.sha256(data).hexdigest(),
+                                                     bytes=len(data)))
+    for copy in list(run.glob("agents/*/input_8k.md")) + [run / mechanical.CONTROL_DIR / "input_8k.md"]:
+        if copy.parent.is_dir():
+            copy.write_bytes(data)
+    results = mechanical.grade(run)
+    assert _status(results, "mechanical.nothing_after_cutoff") == FAIL
+    assert any("2026-05-20 is after the cutoff" in f for f in
+               next(r.failures for r in results if r.grader == "mechanical.nothing_after_cutoff"))
+    assert _status(results, "mechanical.inputs_on_record") == PASS
+
+
+def test_an_accession_on_an_undated_line_of_an_idless_input_must_be_a_document():
+    import datetime as dt
+    documents = {"0000858877-26-000078"}
+    cutoff = dt.date(2026, 5, 19)
+    listed = "- 2026-05-13 0000858877-26-000075 — 2.02, 2.05, 9.01\n"
+    assert mechanical.idless_prose_problems(listed, cutoff, documents) == []
+    undated = "see 0000858877-26-000080 for the release\n"
+    assert mechanical.idless_prose_problems(undated, cutoff, documents) == [
+        "line 1: names accession 0000858877-26-000080 on a line with no date, and it is not "
+        "one of the manifest's documents"]
+    assert mechanical.idless_prose_problems("see 0000858877-26-000078\n", cutoff, documents) == []
+
+
 def test_a_market_table_with_no_acceptance_stamp_fails_nothing_after_cutoff():
     import datetime as dt
     unstamped = _market_table()
