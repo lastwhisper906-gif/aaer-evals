@@ -494,8 +494,9 @@ def test_the_filings_companyfacts_has_not_loaded_are_the_two_on_record():
              for form, accession, _ in comparison(ticker)["unloaded"]}
     assert found == NOT_YET_IN_COMPANYFACTS
     # Three instances per company -- the 10-K's, the 10-Q's and the prior
-    # 10-Q's, each a manifest row -- over the twelve and the eight: 20 × 3.
-    assert sum(comparison(ticker)["instances"] for ticker in TICKERS) == 60
+    # 10-Q's, each a manifest row -- over the twelve, the eight and the next
+    # eight: 28 × 3.
+    assert sum(comparison(ticker)["instances"] for ticker in TICKERS) == 84
 
 
 @pytest.mark.parametrize("ticker", TICKERS)

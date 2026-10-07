@@ -341,10 +341,11 @@ def test_a_filename_rule_has_more_than_one_candidate_almost_everywhere():
                                 if "21" in entry.group("filename")]
                for ticker in TICKERS
                for role in ("submission_header", "prior_year_submission_header")}
-    # Two headers per company, over the twelve and the eight added on
-    # 2026-10-07: 20 × 2. Every one of the eight's sixteen headers lists an
-    # `R21.htm` among its XML files, so none of them is alone either.
-    assert len(counted) == 40
+    # Two headers per company, over the twelve, the eight added on 2026-10-07
+    # and the next eight added the same day: 28 × 2. Every one of the eight's
+    # sixteen headers lists an `R21.htm` among its XML files, and so does every
+    # one of the next eight's sixteen, so none of them is alone either.
+    assert len(counted) == 56
     alone = sorted(key for key, found in counted.items() if len(found) < 2)
     assert alone == [("GNRC", "prior_year_submission_header"),
                      ("GNRC", "submission_header")]
