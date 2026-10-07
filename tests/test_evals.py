@@ -952,6 +952,49 @@ def test_an_input_that_is_not_the_one_on_record_fails_inputs_on_record(run):
     assert _status(mechanical.grade(run), "mechanical.inputs_on_record") == FAIL
 
 
+def test_a_report_or_calculator_copy_that_is_not_the_runs_fails_inputs_on_record(run):
+    """An analyst quotes the report copy in its own directory and cites paths in the
+    calculator copy there: both are held to the run's, byte for byte; the agent's
+    own output (its ungated report or analysis) is the one file that may differ."""
+    copy = run / "agents" / "accounting-analyst" / "report_numbers.md"
+    original = copy.read_text(encoding="utf-8")
+    copy.write_text(original.replace("quote", "quote", 1) + "\nan added line\n", encoding="utf-8")
+    results = mechanical.grade(run)
+    assert _status(results, "mechanical.inputs_on_record") == FAIL
+    assert any("not the run's report_numbers.md" in f for f in
+               next(r.failures for r in results if r.grader == "mechanical.inputs_on_record"))
+    copy.write_text(original, encoding="utf-8")
+    # the reader's own report differs from the gated run-root copy by design
+    own = run / "agents" / "numbers-reader" / "report_numbers.md"
+    assert own.read_bytes() != (run / "report_numbers.md").read_bytes()
+    assert _status(mechanical.grade(run), "mechanical.inputs_on_record") == PASS
+    # a calculator copy: cited_numbers_exist reads the copy the analyst was handed
+    handed = run / "agents" / "valuation-analyst-second-pass" / "calculator.json"
+    assert handed.is_file()
+    _edit(handed, lambda d: d.__setitem__("valuation", {}))
+    results = mechanical.grade(run)
+    assert _status(results, "mechanical.inputs_on_record") == FAIL
+    assert _status(results, "mechanical.cited_numbers_exist") == FAIL
+
+
+def test_a_stray_file_nobody_routed_is_noted_unless_it_could_be_an_input(run):
+    """GNRC's notes reader left an eleven-byte "placeholder" in its directory:
+    nothing can be quoted from it, and it is noted, not a failure. A stray file
+    holding filing-shaped text, or named like an input, is refused."""
+    directory = run / "agents" / "notes-text-reader"
+    (directory / "scratch_check.txt").write_text("placeholder", encoding="utf-8")
+    results = mechanical.grade(run)
+    assert _status(results, "mechanical.inputs_on_record") == PASS
+    assert "scratch_check.txt" in next(
+        r.detail for r in results if r.grader == "mechanical.inputs_on_record")
+    (directory / "scratch_check.txt").write_text(
+        "[0000858877-26-000099:item_2_02:later]\nwords from a later filing\n", encoding="utf-8")
+    assert _status(mechanical.grade(run), "mechanical.inputs_on_record") == FAIL
+    (directory / "scratch_check.txt").unlink()
+    (directory / "input_extra.md").write_text("placeholder", encoding="utf-8")
+    assert _status(mechanical.grade(run), "mechanical.inputs_on_record") == FAIL
+
+
 def test_a_copy_cut_to_some_of_the_originals_paragraphs_is_on_record(run):
     """The valuation analyst may be handed only the paragraphs the notes reader
     flagged: a cut of the original's [id] paragraphs, each verbatim, stands."""

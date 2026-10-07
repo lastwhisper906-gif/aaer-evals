@@ -480,7 +480,10 @@ def check_cited_numbers_exist(run: Path) -> Result:
         tree = load(run / name)
         if tree is None:
             continue
-        calculator = load(run / seen)
+        # the copy the analyst was handed, where the run kept it, else the run's
+        # (inputs_on_record holds the two to the same bytes)
+        handed = run / "agents" / AGENT_DIR[name] / seen
+        calculator = load(handed if handed.is_file() else run / seen)
         if calculator is None:
             failures.append(f"{name}: {seen} is missing")
             continue
@@ -564,12 +567,29 @@ def accepted_before_trigger(document: dict, trigger: str, trigger_accepted) -> s
             "shows it was accepted before the triggering report")
 
 
+# What each agent writes into its own directory: the one file there that is its
+# own and not a copy of the run's (the run-root copy is the gated one). Every other
+# file in the directory was handed to it, and is held to the run root.
+OUTPUT_OF = {"numbers-reader": "report_numbers.md", "notes-text-reader": "report_notes_text.md",
+             "accounting-analyst": "analysis_accounting.json",
+             "financial-analyst": "analysis_financial.json",
+             "valuation-analyst": "assumptions.json",
+             "valuation-analyst-second-pass": "analysis_valuation.json"}
+
+
+def is_own_output(directory: Path, name: str) -> bool:
+    if directory.name == CONTROL_DIR:
+        return name.startswith("control_")
+    return OUTPUT_OF.get(directory.name) == name
+
+
 def input_copies(run: Path):
-    """Every input_* file an agent or the control was handed: (directory, path)."""
+    """Every file an agent or the control was handed, (directory, path): all of a
+    directory but the agent's own output."""
     for directory in sorted(run.glob("agents/*")) + [run / CONTROL_DIR]:
         if directory.is_dir():
             for path in sorted(directory.iterdir()):
-                if path.is_file() and path.name.startswith("input_"):
+                if path.is_file() and not is_own_output(directory, path.name):
                     yield directory, path
 
 
@@ -620,14 +640,29 @@ def foreign_accessions(path: Path, data: bytes, documents: set[str]) -> list[str
     return out
 
 
+RECORD_NAMES = ("input_", "report_", "analysis_", "calculator", "assumptions")
+
+
+def looks_like_an_input(name: str, data: bytes) -> bool:
+    """Whether a file nobody routed could stand in for an input: named like one, or
+    holding filing-shaped text (an [id] paragraph line) or a fenced JSON block."""
+    if name.startswith(RECORD_NAMES):
+        return True
+    text = data.decode("utf-8", "replace")
+    return bool(ID_LINE.search(text) or FENCE.search(text))
+
+
 def check_inputs_on_record(run: Path) -> Result:
-    """Every input file is the one the manifest records (sha256 and bytes), and
-    every copy an agent was handed is that file or a cut of its paragraphs. The
-    manifest's documents are held to the cutoff; this ties the bytes in each
-    directory to those documents, so no text from elsewhere stands in."""
+    """Every input file is the one the manifest records (sha256 and bytes); every
+    input copy an agent was handed is that file or a cut of its paragraphs; every
+    other file in an agent's directory but its own output (a report, an analysis,
+    a calculator) is the run's, byte for byte. The manifest's documents are held
+    to the cutoff; this ties the bytes in each directory to those documents, so no
+    text from elsewhere stands in, and a quote checked against an agent's copy is
+    checked against what the run published."""
     manifest = load(run / "input_manifest.json") or {}
     record = manifest.get("files") if isinstance(manifest.get("files"), dict) else {}
-    problems, count = [], 0
+    problems, count, unrouted = [], 0, []
     originals = {}
     documents = {d.get("accession") for d in manifest.get("documents") or []
                  if isinstance(d, dict) and isinstance(d.get("accession"), str)}
@@ -650,18 +685,33 @@ def check_inputs_on_record(run: Path) -> Result:
         count += 1
         where = path.relative_to(run)
         data = path.read_bytes()
+        if not path.name.startswith("input_"):
+            # a report, an analysis, a calculator: the run-root file, byte for byte
+            root = run / path.name
+            if root.is_file():
+                if data != root.read_bytes():
+                    problems.append(f"{where}: not the run's {path.name}")
+            elif looks_like_an_input(path.name, data):
+                problems.append(f"{where}: no such file on record")
+            else:
+                # the agent's own stray write (GNRC's notes reader left an eleven-byte
+                # "placeholder"): nobody routed it and nothing can be quoted from it
+                unrouted.append(str(where))
+            continue
         if path.name not in originals:
             problems.append(f"{where}: no such input on record")
         elif data != originals[path.name]:
-            if path.suffix == ".md":
+            if path.suffix == ".md" and not path.name.startswith("report_"):
                 for why in trimmed_copy_problems(data.decode("utf-8", "replace"),
                                                  originals[path.name].decode("utf-8", "replace")):
                     problems.append(f"{where}: {why}")
             else:
                 problems.append(f"{where}: not the file on record")
+    detail = f"{count - len(problems)} of {count} input files on record" if count else "no input files"
+    if unrouted:
+        detail += f"; {len(unrouted)} file(s) nobody routed and nothing can quote: {unrouted}"
     return Result("mechanical.inputs_on_record", run_name(run), FAIL if problems else PASS,
-                  f"{count - len(problems)} of {count} input files on record" if count
-                  else "no input files", problems)
+                  detail, problems)
 
 
 def check_nothing_after_cutoff(run: Path) -> Result:
