@@ -35,7 +35,7 @@ and one that it does not, and each runs in `make check`.
 | Work with no judge is not a task | `CLAUDE.md`; `docs/HOW_WE_WORK.md` §1 principle 2 and §2 | `src/task_judge_check.py` — every open row of `docs/next_cycle_tasks.md` names a judge, every open row of `queue.md` an eval command; a list that yields no row under the headings read is refused, not passed | `tests/test_task_judge_check.py` |
 | Never create a state that waits for the owner's signature; everything has a default | `CLAUDE.md`; `docs/HOW_WE_WORK.md` §1 principles 2 and 3 | `src/owner_inbox_check.py` — every open row of `docs/needs_judgment.md` names its default, every settled row says `default:`, and no file outside `archive/` is named as a sign-off queue; an inbox that yields no row is refused, not passed | `tests/test_owner_inbox_check.py` |
 | `CLAUDE.md` is capped at 22 lines | `docs/HOW_WE_WORK.md` §4, the fold-lessons routine | `src/instruction_length_check.py` | `tests/test_instruction_length_check.py` |
-| Every path `CLAUDE.md`'s parentheses name is in the tree | `CLAUDE.md`'s own header: each rule names what enforces it | `src/instruction_length_check.py --paths` — every token containing `/` that ends in `.py`, `.sh`, `.md` or `.json`, or a directory written as `evals/`, exists relative to `CLAUDE.md`; the brackets and quotes around a token and the sentence punctuation after it are stripped first, so `tools/session_start_lessons.sh).` on line 19 is checked; a missing one is named, and `--list` prints every path checked with its line | `tests/test_instruction_length_check.py` |
+| Every path `CLAUDE.md`'s parentheses name is in the tree | `CLAUDE.md`'s own header: each rule names what enforces it | `src/instruction_length_check.py --paths` — every token containing `/` that ends in `.py`, `.sh`, `.md`, `.json` or `.jsonl`, or a directory written as `evals/`, exists relative to `CLAUDE.md`; the brackets and quotes around a token and the sentence punctuation after it are stripped first, so `tools/session_start_lessons.sh).` on line 19 is checked; a missing one is named, and `--list` prints every path checked with its line | `tests/test_instruction_length_check.py` |
 | Where `CLAUDE.md` says `.claude/settings.json denies` the tools, the file denies them | `CLAUDE.md` line 12 | `src/instruction_length_check.py --paths` — the settings file is read as JSON and `permissions.deny` must hold `Edit(evals/**)` and `Write(evals/**)`; a missing key or entry is named | `tests/test_instruction_length_check.py` |
 | Every lesson starts with its date, YYYY-MM-DD and a space | nowhere: the hook told a lesson from the header by its date and nothing said so | `src/instruction_length_check.py --lessons` — after the header, every line of `lessons.md` and `archive/lessons_enforced.md` that is not blank and not indented starts with a date; an indented line is the lesson's note or wrapped line | `tests/test_instruction_length_check.py` |
 | The old repo is archived, not rewritten | `docs/HOW_WE_WORK.md` §1 principle 10 and §8 | `src/archive_check.py` — a file already under `archive/` on the baseline is never rewritten or deleted; it may grow at the end, like the ledgers, when the baseline ends in a newline (`archive/lessons_enforced.md` takes each lesson a script comes to enforce this way); a new one passes | `tests/test_archive_check.py` |
@@ -53,7 +53,11 @@ here the same way: `--paths` reads `.claude/settings.json` and requires its
 commit the file has no `permissions` key, so a third line names that. The evals
 pull request's settings carry both entries, so that refusal clears on the same
 rebase; a settings file that merely exists would have passed the earlier
-reading, and that was the second lens's finding.
+reading, and that was the second lens's finding. The fourth refusal is
+`evals/scoreboard.jsonl` on `CLAUDE.md` line 7: `.jsonl` joined the path
+suffixes after the sixth reading found the ledger named there unchecked, and
+the ledger lands with the same `evals/` directory. Four lines, then, from
+`make rule-checks` on this branch, all by merge order, none after the rebase.
 
 ## Rules an existing script already enforced, now named beside the rule
 
@@ -130,23 +134,28 @@ than enforcing the lesson, and three (old lines 19, 20 and 33) marked obsolete
 because the artefact each was learned on was retired, which retires the
 artefact and not the lesson. On 2026-10-07 those seven went back into
 `lessons.md` in their original order; the archive is a record, so its seven
-rows stay, each with one indented line under it saying so. 117 are archived:
-109 enforced, 8 obsolete. The 197 in `lessons.md` are the ones no script or
-test holds, in their original order; four were written this session, after
-them. Every count here is a `grep -c` on the file as committed:
-`^[0-9]\{4\}-[0-9][0-9]-[0-9][0-9] ` for lessons (314 on
-`origin/main:lessons.md`; 201 in `lessons.md`; 124 in the archive),
-`^  (was line [0-9]*) enforced by` (113), `^  (was line [0-9]*) obsolete` (11)
-and `^  moved back` (7) in the archive, so 113 + 11 − 7 + 197 = 314: nothing
-was lost.
+rows stay as they were, and the move is recorded by appending one dated line
+per lesson under a `## Moved back` heading at the end of the file, never by
+editing a row: `src/archive_check.py` admits an append to an archived file and
+refuses an edit, so a note written under the row would have failed `make check`
+the day after this merged. 117 are archived: 109 enforced, 8 obsolete. The 197
+in `lessons.md` are the ones no script or test holds, in their original order;
+four were written this session, after them. Every count here is a `grep -c` on
+the file as committed: `^[0-9]\{4\}-[0-9][0-9]-[0-9][0-9] ` for dated lines
+(314 on `origin/main:lessons.md`; 201 in `lessons.md`; 131 in the archive, of
+which the 7 under `## Moved back`, `^2026-10-07 (was line`, are the move-back
+records and the other 124 are the archived lessons), `^  (was line [0-9]*)
+enforced by` (113) and `^  (was line [0-9]*) obsolete` (11) in the archive, so
+113 + 11 − 7 + 197 = 314: nothing was lost.
 
 The date is now a rule the gate holds. `src/instruction_length_check.py` reads
-both files and refuses a line after the header that is neither dated, blank nor
-indented. The archive's note under each lesson is indented, which is why
-"indented" is the shape of a line that belongs to the lesson above it; a strict
-reading, every non-blank line after the header dated, would refuse 131
-committed archive lines (the note under each of the 124 lessons and the seven
-moved-back lines), the first being line 10:
+both files and refuses a line after the header that is neither dated, blank,
+indented nor a Markdown heading. The archive's note under each lesson is
+indented, which is why "indented" is the shape of a line that belongs to the
+lesson above it, and `## Moved back` is the heading that opens the archive's
+appended record; a strict reading, every non-blank line after the header
+dated, would refuse 125 committed archive lines (the note under each of the 124
+lessons and that heading), the first being line 14:
 
     (was line 7) enforced by: `src/interpreter_pin.py`: every entry point refuses an interpreter other than 3.12 (`tests/test_interpreter_pin.py`).
 

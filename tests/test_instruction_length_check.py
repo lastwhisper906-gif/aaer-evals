@@ -94,6 +94,27 @@ def test_an_undated_lesson_is_named_with_its_line(tmp_path, capsys):
         "this line does not: a lesson written without its date."]
 
 
+def test_a_heading_after_the_lessons_is_not_a_lesson(tmp_path, capsys):
+    """The archive's `## Moved back` section: a heading, then dated lines."""
+    lessons = plant_lessons(tmp_path, DATED_LESSONS + [
+        "", "## Moved back", "", "2026-10-07 (was line 2) the second lesson went back."])
+
+    assert instruction_length_check.main(
+        ["--file", str(plant(tmp_path, 22)), "--lessons", str(lessons)]) == 0
+    assert capsys.readouterr().err == ""
+
+
+def test_an_undated_line_under_a_heading_is_still_named(tmp_path, capsys):
+    lessons = plant_lessons(tmp_path, DATED_LESSONS + ["", "## Moved back", "", "a line with no date."])
+
+    assert instruction_length_check.main(
+        ["--file", str(plant(tmp_path, 22)), "--lessons", str(lessons)]
+    ) == instruction_length_check.FOUND
+    assert capsys.readouterr().err.splitlines() == [
+        f"{lessons}:10: a lesson starts with its date, YYYY-MM-DD and a space; "
+        "this line does not: a line with no date."]
+
+
 def test_the_header_above_the_first_lesson_is_not_a_lesson(tmp_path, capsys):
     lessons = plant_lessons(tmp_path, ["# Lessons", "", "One line per mistake.", ""] + DATED_LESSONS[2:])
 
@@ -219,6 +240,36 @@ def test_a_path_that_ends_a_sentence_passes_when_it_is_there(tmp_path, capsys):
     printed = capsys.readouterr()
     assert printed.err == ""
     assert printed.out.splitlines() == [f"{path}:19: tools/planted_hook.sh in the tree"]
+
+
+def test_a_ledger_path_is_checked(tmp_path, capsys):
+    """`.jsonl` is a path suffix: CLAUDE.md line 7 names `evals/scoreboard.jsonl`."""
+    lessons = plant_lessons(tmp_path, DATED_LESSONS)
+    lines = [f"- rule {n}" for n in range(1, 23)]
+    lines[6] = "- Append-only under runs/ · evals/scoreboard.jsonl: never changed. (src/append_check.py)"
+    (tmp_path / "runs").mkdir()
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / "append_check.py").write_text("", encoding="utf-8")
+    path = tmp_path / "CLAUDE.md"
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    assert instruction_length_check.named_paths(path) == [
+        (7, "runs/"), (7, "evals/scoreboard.jsonl"), (7, "src/append_check.py")]
+    assert instruction_length_check.main(
+        ["--file", str(path), "--lessons", str(lessons)]) == instruction_length_check.FOUND
+    assert capsys.readouterr().err.splitlines() == [
+        f"{path}:7: names evals/scoreboard.jsonl, which is not in the tree; a rule naming a "
+        "file that is not there names nothing"]
+
+    (tmp_path / "evals").mkdir()
+    (tmp_path / "evals" / "scoreboard.jsonl").write_text("", encoding="utf-8")
+    assert instruction_length_check.main(["--file", str(path), "--lessons", str(lessons)]) == 0
+    assert capsys.readouterr().err == ""
+
+
+def test_this_repository_s_claude_md_names_its_scoreboard_ledger():
+    """Line 7 of CLAUDE.md names `evals/scoreboard.jsonl`; the check has to see it."""
+    assert (7, "evals/scoreboard.jsonl") in instruction_length_check.named_paths(REPO_ROOT / "CLAUDE.md")
 
 
 def test_this_repository_s_claude_md_names_the_session_start_hook_and_it_is_there(capsys):

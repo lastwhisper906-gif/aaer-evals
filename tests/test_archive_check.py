@@ -66,6 +66,55 @@ def test_appending_to_an_archived_file_passes(repo):
     assert archive_check.main(["--baseline", "baseline"]) == 0
 
 
+ARCHIVED_LESSONS = (
+    "# Lessons a script enforces\n"
+    "\n"
+    "2026-09-07 the first archived lesson.\n"
+    "  (was line 19) obsolete: the artefact was retired.\n"
+    "\n"
+    "2026-09-08 the second archived lesson.\n"
+    "  (was line 33) enforced by: `tests/test_x.py`.\n"
+)
+MOVED_BACK = (
+    "\n"
+    "## Moved back\n"
+    "\n"
+    "2026-10-07 (was line 19) \"the first archived lesson ...\" went back to lessons.md: "
+    "the note retires the artefact, not the lesson.\n"
+)
+
+
+@pytest.fixture
+def repo_with_archived_lessons(repo):
+    """The baseline also holds archive/lessons_enforced.md, two lessons with their notes."""
+    (repo / "archive" / "lessons_enforced.md").write_text(ARCHIVED_LESSONS)
+    git(repo, "add", "-A")
+    git(repo, "commit", "-qm", "the archive holds the lessons file")
+    git(repo, "branch", "-f", "baseline")
+    return repo
+
+
+def test_a_move_back_recorded_by_appending_passes(repo_with_archived_lessons):
+    repo = repo_with_archived_lessons
+    (repo / "archive" / "lessons_enforced.md").write_text(ARCHIVED_LESSONS + MOVED_BACK)
+    commit_all(repo)
+
+    assert archive_check.violations("baseline") == []
+    assert archive_check.main(["--baseline", "baseline"]) == 0
+
+
+def test_a_move_back_recorded_under_its_row_fails(repo_with_archived_lessons):
+    repo = repo_with_archived_lessons
+    (repo / "archive" / "lessons_enforced.md").write_text(ARCHIVED_LESSONS.replace(
+        "  (was line 19) obsolete: the artefact was retired.\n",
+        "  (was line 19) obsolete: the artefact was retired.\n"
+        "  moved back to lessons.md on 2026-10-07: the note retires the artefact.\n"))
+    commit_all(repo)
+
+    assert archive_check.violations("baseline") == ["modified: archive/lessons_enforced.md"]
+    assert archive_check.main(["--baseline", "baseline"]) == archive_check.FOUND
+
+
 def test_rewriting_a_line_and_appending_fails(repo):
     (repo / "archive" / "docs" / "method.md").write_text("# the old method, rewritten\nappended\n")
     commit_all(repo)

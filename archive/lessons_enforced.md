@@ -4,7 +4,11 @@ Moved out of `lessons.md` on 2026-10-06, when the session-start hook was cut to 
 lessons nothing enforces (`docs/reports/prose-rules-2026-10-06.md`). Each lesson is
 copied verbatim, oldest first, with its line number in `lessons.md` at commit
 1174ce3, and under it one line naming what enforces it or why it is obsolete.
-`lessons.md` and this file together hold every lesson `lessons.md` held.
+`lessons.md` and this file together hold every lesson `lessons.md` held. This
+file is appended to, never rewritten (`src/archive_check.py`, `make check`): a
+lesson that was archived by mistake goes back into `lessons.md`, its row here
+stays as it was, and the move is recorded by appending one dated line under
+`## Moved back` at the end, never by editing the row.
 
 2026-09-06 read a single test failure on the local Python 3.14 venv as a real regression; the canonical interpreter is 3.12 and it passes there — run the canonical interpreter before drawing a conclusion.
   (was line 7) enforced by: `src/interpreter_pin.py`: every entry point refuses an interpreter other than 3.12 (`tests/test_interpreter_pin.py`).
@@ -35,11 +39,9 @@ copied verbatim, oldest first, with its line number in `lessons.md` at commit
 
 2026-09-07 the new signature-queue detector fired on every report the old loop ever wrote; a rule about how work is done now must be floored at the cycle it starts, or it turns frozen records into violations.
   (was line 19) obsolete: the signature-queue detector belonged to the archived harness, which `docs/HOW_WE_WORK.md` §5 lists as dropped.
-  moved back to lessons.md on 2026-10-07: the note retires the artefact the lesson was learned on, not the lesson.
 
 2026-09-07 the documentation-bloat ratio was measuring archive/ — 3,847 frozen files pinned it where nothing the loop does could move it; a metric over a frozen tree is not a metric.
   (was line 20) obsolete: the documentation-bloat penalty was dropped (`docs/HOW_WE_WORK.md` §5: it measured a frozen tree).
-  moved back to lessons.md on 2026-10-07: the note retires the artefact the lesson was learned on, not the lesson.
 
 2026-09-07 the harness test command was specified as "python3.12 src/append_check.py && python3.12 -m pytest -q" and both halves were broken — the script form could not import its own package, and bare pytest collected the archive; run a command before writing it into a config.
   (was line 21) obsolete: the harness and its test command are gone; the gate is `make check`, defined once in `Makefile` and run by CI.
@@ -67,7 +69,6 @@ copied verbatim, oldest first, with its line number in `lessons.md` at commit
 
 2026-09-08 added seven indicators and moved the threshold that counts them in the same edit; caught it on re-read and put the threshold back — a threshold moved inside the change that adds its inputs is a threshold moved invisibly, and silence in the brief means the existing value stands.
   (was line 33) obsolete: the count of flags against a threshold was removed by the owner's decision of 2026-09-23: the prediction is an anomaly register with no count cut.
-  moved back to lessons.md on 2026-10-07: the note retires the artefact the lesson was learned on, not the lesson.
 
 2026-09-08 the repository's own .venv runs Python 3.14 while the pin is 3.12 and Homebrew's 3.12 has no pytest, so `make check` cannot pass on this machine as written; the Stop hook that runs it is therefore inert here until requirements are installed into a 3.12 environment.
   (was line 37) obsolete: the project's `.venv` is Python 3.12 now and is the `Makefile` default; `src/interpreter_pin.py` refuses 3.14.
@@ -143,19 +144,15 @@ copied verbatim, oldest first, with its line number in `lessons.md` at commit
 
 2026-09-09 The cleaner's page-number and safe-harbour rules read the whole document while every splitter hands it a section, so page tails survive into a diff and a section whose only paragraph is safe-harbour text cleans down to its heading; input_mdna.md has carried both since before the risk-factor splitter existed.
   (was line 95) enforced by: `tests/test_split_risk_factors.py` records what the shared cleaner does when it is handed a section.
-  moved back to lessons.md on 2026-10-07: the test named records the defect, it does not enforce the lesson.
 
 2026-09-09 A rule stated as "X, falling back to Y" is two passes and not one: a single greedy pass let a title match take the prior section a later section was named after by tag, and that later section then fell to the fallback too — run each rule to completion before the next starts.
   (was line 98) enforced by: `tests/test_note_history.py` judges `match_notes` on constructed sections.
-  moved back to lessons.md on 2026-10-07: the test named records the defect, it does not enforce the lesson.
 
 2026-09-09 src/note_history.py::match_notes carries that same rule-order defect and raises ValueError: list.remove(x): x not in list when a prior note claimed by a title match is later named by another current note's tag.
   (was line 99) enforced by: `tests/test_note_history.py` judges `match_notes` on constructed sections.
-  moved back to lessons.md on 2026-10-07: the test named records the defect, it does not enforce the lesson.
 
 2026-09-09 A defect latent on all twelve real pairs still needs a fixture: the pass-order bug changed no company's change count and reported eight on a constructed pair whose construction says zero.
   (was line 100) enforced by: `tests/test_note_history.py` carries the constructed pair.
-  moved back to lessons.md on 2026-10-07: the test named records the defect, it does not enforce the lesson.
 
 2026-09-09 A caller that normalizes upstream hides a case bug in the predicate below it — is_furniture("Total") was False while boilerplate_score("Total"), which lowercases first, was 1.0.
   (was line 101) enforced by: `tests/test_diff_alignment.py` (`test_a_paragraph_is_furniture_or_it_makes_a_claim`).
@@ -384,3 +381,13 @@ copied verbatim, oldest first, with its line number in `lessons.md` at commit
 
 2026-09-29 counted the runs finished by their exit code, which was 0 for four runs whose analysts had failed; a run is finished when every agent's record says written, and the runner now exits non-zero otherwise (#102).
   (was line 320) enforced by: `src/run_analysis.py` exits non-zero unless every agent's record says written (`tests/test_run_analysis.py`, `test_a_failed_analyst_is_named_and_the_run_is_not_finished`).
+
+## Moved back
+
+2026-10-07 (was line 19) "the new signature-queue detector fired on every ..." went back to lessons.md: the note retires the artefact the lesson was learned on, not the lesson.
+2026-10-07 (was line 20) "the documentation-bloat ratio was measuring archive/ — ..." went back to lessons.md: the note retires the artefact the lesson was learned on, not the lesson.
+2026-10-07 (was line 33) "added seven indicators and moved the threshold ..." went back to lessons.md: the note retires the artefact the lesson was learned on, not the lesson.
+2026-10-07 (was line 95) "The cleaner's page-number and safe-harbour rules read ..." went back to lessons.md: the test named records the defect, it does not enforce the lesson.
+2026-10-07 (was line 98) "A rule stated as "X, falling back ..." went back to lessons.md: the test named records the defect, it does not enforce the lesson.
+2026-10-07 (was line 99) "src/note_history.py::match_notes carries that same rule-order defect and ..." went back to lessons.md: the test named records the defect, it does not enforce the lesson.
+2026-10-07 (was line 100) "A defect latent on all twelve real ..." went back to lessons.md: the test named records the defect, it does not enforce the lesson.

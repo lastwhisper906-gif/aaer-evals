@@ -13,19 +13,21 @@ tells a lesson from the header by its date, YYYY-MM-DD and a space, and prints
 the newest ones; a lesson appended without a date would be a continuation of the
 lesson before it there, printed but counted as part of another lesson, and
 nothing would say so. This refuses it instead: after the header (everything
-above the first dated line), every line that is not blank and does not start
-with whitespace must start with a date. A line that starts with whitespace
-belongs to the lesson above it: `archive/lessons_enforced.md` puts under each
-lesson one indented line naming what enforces it, and a wrapped line is written
-the same way.
+above the first dated line), every line that is not blank, does not start
+with whitespace and is not a Markdown heading must start with a date. A line
+that starts with whitespace belongs to the lesson above it:
+`archive/lessons_enforced.md` puts under each lesson one indented line naming
+what enforces it, and a wrapped line is written the same way. A heading
+(`## Moved back`, the archive's append-only record of lessons that went back)
+opens a section and is not a lesson.
 
 The third rule is that `CLAUDE.md`'s parentheses name real files. Its header
 says every rule names what enforces it, and a path that resolves to nothing is
 a rule naming nothing, back in the file the header is about. So every
 path-shaped token in `CLAUDE.md` -- a token containing `/` that ends in `.py`,
-`.sh`, `.md` or `.json`, or a directory written with its trailing slash like
-`evals/` -- must exist in the tree, relative to the directory `CLAUDE.md` is
-in. A token is what is left of a whitespace-separated word once the brackets
+`.sh`, `.md`, `.json` or `.jsonl`, or a directory written with its trailing
+slash like `evals/` -- must exist in the tree, relative to the directory
+`CLAUDE.md` is in. A token is what is left of a whitespace-separated word once the brackets
 and quotes around it and the sentence punctuation after it are stripped, so
 `tools/session_start_lessons.sh).` names `tools/session_start_lessons.sh`;
 the punctuation is stripped from the end only, so `.claude/settings.json`
@@ -74,7 +76,8 @@ CAP = 22
 REPO_ROOT = Path(__file__).resolve().parent.parent
 LESSONS = (REPO_ROOT / "lessons.md", REPO_ROOT / "archive" / "lessons_enforced.md")
 DATED = re.compile(r"^\d{4}-\d{2}-\d{2} ")
-PATH_SUFFIXES = (".py", ".sh", ".md", ".json")
+PATH_SUFFIXES = (".py", ".sh", ".md", ".json", ".jsonl")
+HEADING = "#"
 DIRECTORY = re.compile(r"^[\w.\-]+(/[\w.\-]+)*/$")
 TOKEN_EDGE = "()[]{},;:`'\"<>"
 SENTENCE_END = ".\u2026!?"
@@ -167,7 +170,7 @@ def undated_lessons(path: Path) -> list[tuple[int, str]]:
     for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
         if DATED.match(line):
             started = True
-        elif started and line.strip() and not line[0].isspace():
+        elif started and line.strip() and not line[0].isspace() and not line.startswith(HEADING):
             found.append((number, line))
     return found
 
