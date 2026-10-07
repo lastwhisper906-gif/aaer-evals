@@ -140,15 +140,19 @@ copied verbatim, oldest first, with its line number in `lessons.md` at commit
 
 2026-09-09 The cleaner's page-number and safe-harbour rules read the whole document while every splitter hands it a section, so page tails survive into a diff and a section whose only paragraph is safe-harbour text cleans down to its heading; input_mdna.md has carried both since before the risk-factor splitter existed.
   (was line 95) enforced by: `tests/test_split_risk_factors.py` records what the shared cleaner does when it is handed a section.
+  moved back to lessons.md on 2026-10-07: the test named records the defect, it does not enforce the lesson.
 
 2026-09-09 A rule stated as "X, falling back to Y" is two passes and not one: a single greedy pass let a title match take the prior section a later section was named after by tag, and that later section then fell to the fallback too — run each rule to completion before the next starts.
   (was line 98) enforced by: `tests/test_note_history.py` judges `match_notes` on constructed sections.
+  moved back to lessons.md on 2026-10-07: the test named records the defect, it does not enforce the lesson.
 
 2026-09-09 src/note_history.py::match_notes carries that same rule-order defect and raises ValueError: list.remove(x): x not in list when a prior note claimed by a title match is later named by another current note's tag.
   (was line 99) enforced by: `tests/test_note_history.py` judges `match_notes` on constructed sections.
+  moved back to lessons.md on 2026-10-07: the test named records the defect, it does not enforce the lesson.
 
 2026-09-09 A defect latent on all twelve real pairs still needs a fixture: the pass-order bug changed no company's change count and reported eight on a constructed pair whose construction says zero.
   (was line 100) enforced by: `tests/test_note_history.py` carries the constructed pair.
+  moved back to lessons.md on 2026-10-07: the test named records the defect, it does not enforce the lesson.
 
 2026-09-09 A caller that normalizes upstream hides a case bug in the predicate below it — is_furniture("Total") was False while boilerplate_score("Total"), which lowercases first, was 1.0.
   (was line 101) enforced by: `tests/test_diff_alignment.py` (`test_a_paragraph_is_furniture_or_it_makes_a_claim`).

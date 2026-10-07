@@ -19,7 +19,7 @@ hook's line is `sh tools/session_start_lessons.sh | wc -l`.
 |---|---|---|
 | `CLAUDE.md` | 22 | 22 |
 | `docs/HOW_WE_WORK.md` | 477 | 436 |
-| `lessons.md` | 320 (314 lessons) | 203 (193 lessons: 190 kept, 3 written this session) |
+| `lessons.md` | 320 (314 lessons) | 207 (197 lessons: 194 kept, 3 written this session) |
 | what the SessionStart hook prints | 320 (`git show origin/main:lessons.md \| wc -l`, which `cat lessons.md` printed) | 60 (`sh tools/session_start_lessons.sh \| wc -l`) |
 
 Session-start context is `CLAUDE.md` plus the hook's printout: 342 lines before
@@ -112,17 +112,27 @@ where an enforced lesson goes and what prints the rest. §6 is unchanged.
 ## lessons.md
 
 124 of the 314 lessons moved to `archive/lessons_enforced.md`, each verbatim,
-with its old line number and one line naming what enforces it (113) or why it is
-obsolete (11). The 190 left are the ones no script or test holds, and they stay
-in their original order; three were written this session, after them. A count of
-every dated line before and after matched: nothing was lost.
+with its old line number and one line naming what enforces it or why it is
+obsolete. The second lens then found four of them (old lines 95, 98, 99 and 100)
+whose named test records the defect rather than enforcing the lesson, and on
+2026-10-07 those four went back into `lessons.md` in their original order; the
+archive is a record, so its four rows stay, each with one indented line under
+it saying so. 120 are archived: 109 enforced, 11 obsolete. The 194 in
+`lessons.md` are the ones no script or test holds, in their original order;
+three were written this session, after them. Every count here is a `grep -c`
+on the file as committed: `^[0-9]\{4\}-[0-9][0-9]-[0-9][0-9] ` for lessons
+(314 on `origin/main:lessons.md`; 197 in `lessons.md`; 124 in the archive),
+`^  (was line [0-9]*) enforced by` (113), `^  (was line [0-9]*) obsolete` (11)
+and `^  moved back` (4) in the archive, so 113 + 11 − 4 + 194 = 314: nothing
+was lost.
 
 The date is now a rule the gate holds. `src/instruction_length_check.py` reads
 both files and refuses a line after the header that is neither dated, blank nor
 indented. The archive's note under each lesson is indented, which is why
 "indented" is the shape of a line that belongs to the lesson above it; a strict
-reading, every non-blank line after the header dated, would refuse 124
-committed archive lines, the first being line 10:
+reading, every non-blank line after the header dated, would refuse 128
+committed archive lines (the note under each of the 124 lessons and the four
+moved-back lines), the first being line 10:
 
     (was line 7) enforced by: `src/interpreter_pin.py`: every entry point refuses an interpreter other than 3.12 (`tests/test_interpreter_pin.py`).
 
