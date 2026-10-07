@@ -298,20 +298,23 @@ The owner's decision of 2026-10-06 (`docs/structure_changes.md`) sets this table
   then the Opus attempt), and calls every later agent of the run whose definition
   asks for Fable on Opus. Each such agent's record carries `model_requested:
   fable`, `model_served` as the Opus model the CLI reports, `fallback_from: fable`
-  and `fallback_reason`, which, like the row's `reason`, says what set the
-  fallback off: `fable_limit_reached` when the limit's message said so, and
+  and `fallback_reason`, which says what set that agent's fallback off -- its own
+  call's reading for the agent that hit the limit, the row's `reason` at the time
+  for a later one: `fable_limit_reached` when the limit's message said so, and
   `fable_failed_like_the_limit` when the shape alone did -- the shape still falls
   back, but its label does not claim the limit, since a mis-installed CLI fails
-  the same way. The run exits 0 when it finished. The rest of the batch carries a
-  fallback the message confirmed: the runner names the flag on stderr, and every
-  later run of the batch is started with `--carry-fallback-from <the run that
-  fell back>`, which calls each Fable agent on Opus from its first call, never
-  asking Fable again, and notes the row with `carried_from` naming that run and
-  `carried_limit_at` when its limit was noted -- refused when the run named
-  records no `model_fallback`, one the shape alone set off, or a limit noted more
-  than twelve hours before (`CARRY_HOURS`: a batch is one night, and a run of
-  another night is not this batch's), and under `stop`. A shape-only fallback
-  stays inside its own run, and the stderr line says why. The row is the run's record that the Fable limit was
+  the same way. A row the shape opened is raised to the limit's reason, with
+  `confirmed_by`, when an analyst already on Fable beside it answers the message.
+  The run exits 0 when it finished. The rest of the batch carries a fallback the
+  message confirmed, and the runner finds it itself: a run under `opus` reads the
+  manifests of the other runs under its root, and the most recent limit it would
+  carry puts every Fable agent on Opus from the first call, never asking Fable
+  again, the row naming that run (`carried_from`) and when its limit was noted
+  (`carried_limit_at`); `--carry-fallback-from <run>` names one for a run
+  elsewhere. A limit is carried only when the message confirmed it and it was
+  noted at most twelve hours before (`CARRY_HOURS`: a batch is one night, and a
+  run of another night is not this batch's), and never under `stop`. A
+  shape-only fallback stays inside its own run, and the stderr line says why. The row is the run's record that the Fable limit was
   reached; the key `fable_limit_reached` stays the mark of a run a limit stopped.
   A limit Opus answers too stops the run there, names the agent under
   `fable_limit_reached` and exits 1, since exit 4 is `stop`'s alone; its stderr
@@ -425,9 +428,15 @@ are aliases and carry no effort setting, so the pin proper — the dated model i
 and the effort — lives in the rules version and is applied at invocation. The
 run records both the requested pin and the served model in
 `input_manifest.json`, and a run whose served model differs from the pin is
-recorded as a failure, unless the record names the difference as the Fable
-limit's fallback (`fallback_from`, the owner's decision of 2026-10-07). A pin
-that exists only in this table is not a pin.
+recorded as a failure. In the analysts' pipeline that rule names no judge --
+`src/run_analysis.py` records both and compares neither; the older control,
+`src/control_single_agent.py`, refuses an answer its family did not serve -- so
+there it is a judgment the owner keeps. The Fable limit's fallback (the owner's
+decision of 2026-10-07) is the one difference the pipeline does judge: it is
+recorded by name (`fallback_from`, `fallback_reason`, `model_fallback`), and a
+run that finishes on it carries no `analysis_failure`, which
+`tests/test_run_analysis.py` holds. A pin that exists only in this table is not
+a pin.
 
 ---
 

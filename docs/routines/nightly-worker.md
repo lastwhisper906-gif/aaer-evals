@@ -36,14 +36,15 @@ the runner falls back to Opus and records it (the owner's decision of 2026-10-07
 agent that hit the limit again on Opus, runs every later Fable agent of the run on
 Opus, writes `model_fallback` into the manifest and `fallback_from: fable` into each
 such agent's record, exits 0 when the run finished, and prints a line on stderr;
-the loop goes on. When the line names the flag for the rest of the batch -- the
-limit's message confirmed the fallback -- start every later run of the batch with
-`--carry-fallback-from <the run that fell back>`, so its Fable agents run on Opus
-from their first call and its `model_fallback` names that run under
-`carried_from`; a fallback is carried only within the night, from a limit noted
-at most twelve hours before. When the line says the fallback stays inside its run -- a Fable
-call failed like the limit, with no limit message (`fable_failed_like_the_limit`)
--- start the next run without the flag. The report names every fallback run. Only `--on-fable-limit stop`
+the loop goes on. When the limit's message confirmed the fallback, every later run
+of the batch under the same `runs/` carries it on its own -- the runner reads the
+other runs' manifests -- so its Fable agents run on Opus from their first call and
+its `model_fallback` names that run under `carried_from`; a fallback is carried
+only within the night, from a limit noted at most twelve hours before, and a run
+outside `runs/` names it with `--carry-fallback-from <the run that fell back>`.
+When the line says the fallback stays inside its run -- a Fable call failed like
+the limit, with no limit message (`fable_failed_like_the_limit`) -- nothing is
+carried. The report names every fallback run. Only `--on-fable-limit stop`
 keeps the old stop (exit 4, `LIMIT_REACHED`; exit 3 is the interpreter pin, not the
 limit), and then what is pending is written into `queue.md` under its item.
 
