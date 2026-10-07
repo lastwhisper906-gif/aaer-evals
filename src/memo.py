@@ -258,6 +258,7 @@ def valuation_section(analysis: dict | None, fields: dict) -> list[str]:
                 f" · 과거 3년 연평균: "
                 f"{korean_number(history.get('revenue_growth_three_year_compound'), 'ratio', percent=True)}",
                 ""]
+    out += cost_of_debt_fallback_line(fields)
     if analysis is None:
         return out + ["가치평가 분석가의 해석이 없습니다.", "",
                       f"_한계: {LIMITS_KO['valuation']}_", ""]
@@ -265,6 +266,21 @@ def valuation_section(analysis: dict | None, fields: dict) -> list[str]:
     for key, name in VALUATION_KO.items():
         out.append(f"- **{name}**: {_entry(summary, key, analysis, None, fields)}")
     return out + ["", f"_한계: {LIMITS_KO['valuation']}_", ""]
+
+
+FALLBACK_KO = "세전 타인자본비용은 대체값이며, WACC와 가치 범위는 이 대체값에 기대고 있습니다"
+
+
+def cost_of_debt_fallback_line(fields: dict) -> list[str]:
+    """One line when calculator.json labels the cost of debt a fallback: the label
+    as the calculator wrote it, verbatim, so the reader sees that the WACC rests
+    on a stand-in (docs/needs_judgment.md, the pre-tax cost of debt). No line
+    otherwise, and no number of this file's."""
+    debt = (fields.get("cost_of_capital") or {}).get("pre_tax_cost_of_debt") or {}
+    label = debt.get("fallback")
+    if not isinstance(label, str) or not label:
+        return []
+    return [f"- {FALLBACK_KO}: {label}", ""]
 
 
 def baselines_section(baselines: dict | None) -> list[str]:

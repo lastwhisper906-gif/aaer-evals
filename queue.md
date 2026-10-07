@@ -42,8 +42,10 @@ branch changed. A run item is done when its run directory is published and
 
 [ ] the SessionStart hook runs `sh tools/session_start_lessons.sh` in place of `cat lessons.md`: a pull request of that one line in `.claude/settings.json`, a guarded path, merged with the owner's label `owner-approved-eval` · eval: `.venv/bin/python -m pytest tests/test_session_start_lessons.py tests/test_guards.py -q` passes and the guard job is green on the labeled run · depends on: the owner's label
 
-[ ] the memo names a cost-of-debt fallback where calculator.json labels one (`pre_tax_cost_of_debt.fallback`), in the finance frame's valuation section · `.venv/bin/python -m pytest tests/test_analysis_check.py -q -k cost_of_debt_fallback` · items one and three
-
 ## Done
 
+[x] the memo names a cost-of-debt fallback where calculator.json labels one (`pre_tax_cost_of_debt.fallback`), in the finance frame's valuation section · `.venv/bin/python -m pytest tests/test_analysis_check.py -q -k cost_of_debt_fallback` · items one and three
+
 [x] valuation failures: AAPL's pre-tax cost of debt falls back to interest paid (`InterestPaidNet`) over average debt, then to the risk-free rate plus one point, labelled `fallback`; GNRC's and LFUS's scenarios stop being dropped for a bare year in a driver's reason (their `assumptions.json` `dropped_items`: "a number written in the analyst's own words" on "the second half of 2026", "through 2027"), which is the analysis gate's year rule, not a field mismatch · `.venv/bin/python -m pytest tests/test_calculator.py tests/test_analysis_check.py -q -k "interest_paid or risk_free_fallback or bare_year"` · none · PR: this one
+
+[x] the memo names a cost-of-debt fallback where calculator.json labels one (`pre_tax_cost_of_debt.fallback`), in the finance frame's valuation section · `.venv/bin/python -m pytest tests/test_analysis_check.py -q -k cost_of_debt_fallback` · items one and three · PR: this one

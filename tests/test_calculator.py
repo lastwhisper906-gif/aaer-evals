@@ -720,7 +720,9 @@ def test_the_risk_free_fallback_is_one_point_over_the_rate_and_says_so():
     debt = out["pre_tax_cost_of_debt"]
     assert debt["value"] == pytest.approx(0.0566)
     assert "risk-free rate plus one point" in debt["fallback"]
-    assert debt["needs_judgment"].startswith("docs/needs_judgment.md")
+    assert "neither interest expense nor interest paid is on record" in debt["fallback"]
+    assert debt["needs_judgment"] == ("docs/needs_judgment.md: the pre-tax cost of debt "
+                                      "when the record carries no interest expense")
 
 
 def test_the_fallback_label_says_which_input_was_missing():
@@ -762,6 +764,50 @@ def test_a_zero_average_debt_is_labelled_like_a_missing_one():
     assert out["value"] == pytest.approx(0.05)
     assert "interest paid is on record but average debt is missing/zero" in out["fallback"]
     assert "average_debt is zero" in out["fallback"]
+
+
+def test_the_ladder_runs_under_a_tagged_interest_expense_with_no_average_debt():
+    """Two-sided, after the second lens's third reading. Interest expense 5 is on
+    record and the year-earlier debt is not, so the primary is missing on its
+    denominator: interest paid over the same average debt is impossible too, so the
+    rate is the risk-free rate plus one point, 0.04 + 0.01 = 0.05, and the label
+    says interest expense is on record and the debt is not. With everything on
+    record there is no fallback at all: 5 / 100 = 0.05 by the primary formula."""
+    cell = lambda v: {"value": v, "id": "x", "tag": "t", "period": "p"}
+    out = _wacc_with({"interest_expense": cell(5.0), "interest_paid": cell(4.0)},
+                     debt_ago={"missing": "no debt a year earlier"})
+    debt = out["pre_tax_cost_of_debt"]
+    assert debt["value"] == pytest.approx(0.05)
+    assert debt["formula"] == "risk_free_rate + 0.01"
+    assert debt["fallback"].endswith("interest expense is on record but average debt is "
+                                     "missing/zero: average_debt: no debt a year earlier")
+    assert "interest paid" not in debt["fallback"]
+    assert out["wacc"]["value"] == pytest.approx(0.09395)
+
+    whole = _wacc_with({"interest_expense": cell(5.0), "interest_paid": cell(4.0)})
+    assert whole["pre_tax_cost_of_debt"]["formula"] == "interest_expense / average debt"
+    assert "fallback" not in whole["pre_tax_cost_of_debt"]
+
+
+def test_a_refused_interest_paid_is_labelled_on_record_not_absent():
+    """A hand-built trailing term refused the way trends.as_filed refuses one filing's
+    two values for one period: the label says interest paid is on record but refused,
+    with the trends module's reason, and not that nothing is on record."""
+    from src import trends
+    reason = ("us-gaap:InterestPaidNet for 2025-12-28..2026-06-27 is reported as "
+              "[13091000.0, 13100000.0] by the filing of 2026-07-29 "
+              f"(0001628280-26-050481) — {trends.TWO_VALUES}")
+    out = calculator.cost_of_debt_fallback(
+        {"interest_expense": {"missing": "no row"}, "interest_paid": {"missing": reason}},
+        {"value": 100.0}, {"value": 100.0}, {"value": 0.04}, "interest_expense: no row")
+    assert out["value"] == pytest.approx(0.05)
+    assert "interest paid is on record but refused: " + reason in out["fallback"]
+    assert "neither interest expense nor interest paid" not in out["fallback"]
+    absent = calculator.cost_of_debt_fallback(
+        {"interest_expense": {"missing": "no row"}, "interest_paid": {"missing": "no row"}},
+        {"value": 100.0}, {"value": 100.0}, {"value": 0.04}, "interest_expense: no row")
+    assert "neither interest expense nor interest paid is on record" in absent["fallback"]
+    assert "refused" not in absent["fallback"]
 
 
 def test_tagged_interest_expense_is_never_replaced_by_a_fallback():

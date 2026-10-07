@@ -78,7 +78,7 @@ force.
 
 [ ] **what a batch does when the Fable limit is reached** · it stops: what finished is published, what is pending is written into `queue.md`, and the batch continues the next night. An analyst never falls back to Opus, because a run set on two models compares models as well as companies · deciding may allow a named fallback for a named run, recorded in its manifest.
 
-[ ] **AAPL's pre-tax cost of debt, which has no interest-expense row** · once queue item one lands: interest paid (`InterestPaidNet`) over average debt, and when that is missing too, the risk-free rate plus one point, labelled `fallback` in `calculator.json` and in the memo · deciding may name another source, such as the rate on the company's own notes from the debt footnote, quoted by the valuation analyst.
+[ ] **the pre-tax cost of debt when the record carries no interest expense** · AAPL is the first case, with no interest-expense row in its record; once queue item one lands: interest paid (`InterestPaidNet`) over average debt, and when that is missing too, the risk-free rate plus one point, labelled `fallback` in `calculator.json` and in the memo · deciding may name another source, such as the rate on the company's own notes from the debt footnote, quoted by the valuation analyst.
 
 [ ] **where a second run of a filing already published lives** · `runs/<ticker>/<accession>-rerun-<date>/`, beside the first and never inside it, with its own `input_manifest.json`; the first run is never touched, and a reader of prior runs counts one run per accession, the newest · deciding may choose another layout before the first rerun is published.
 

@@ -1518,3 +1518,11 @@ def test_littelfuse_two_values_for_one_period_in_one_filing_settle_on_neither():
     assert "value" not in ttm
     assert "[13091000.0, 13100000.0]" in ttm["missing"]
     assert "two values for one period" in ttm["missing"]
+    # and the cost of debt's ladder, handed this refused term under a missing
+    # interest expense, says interest paid is on record and refused, not absent
+    labelled = calculator.cost_of_debt_fallback(
+        {"interest_expense": {"missing": "no row"}, "interest_paid": ttm},
+        {"value": 100.0}, {"value": 100.0}, {"value": 0.04}, "interest_expense: no row")
+    assert labelled["value"] == 0.05
+    assert "interest paid is on record but refused: " + ttm["missing"] in labelled["fallback"]
+    assert "neither interest expense nor interest paid" not in labelled["fallback"]

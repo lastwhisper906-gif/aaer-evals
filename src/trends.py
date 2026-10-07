@@ -457,6 +457,11 @@ def filed_after(document: dict, cutoff: dt.date) -> list[str]:
     return sorted(found)
 
 
+# The words of a refusal: a term with these words in its reason is on record and
+# refused, not absent, and `src/calculator.py` labels the two apart.
+TWO_VALUES = "two values for one period is not a number to divide by"
+
+
 def as_filed(rows: list[dict], named: str) -> dict:
     """One period's value under one tag: the latest filing at or before the cutoff.
 
@@ -476,8 +481,7 @@ def as_filed(rows: list[dict], named: str) -> dict:
     accessions = sorted({row["accn"] for row in newest})
     if len(values) != 1:
         return {"missing": f"{named} is reported as {values} by the filing of "
-                           f"{latest} ({', '.join(accessions)}) — two values for "
-                           f"one period is not a number to divide by"}
+                           f"{latest} ({', '.join(accessions)}) — {TWO_VALUES}"}
     return {"value": float(values[0]), "filed": latest, "accession": accessions[0]}
 
 

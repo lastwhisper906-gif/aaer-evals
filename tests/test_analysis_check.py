@@ -326,6 +326,33 @@ def test_the_memo_never_prints_what_the_gate_dropped():
     assert "제외된 문장" in text
 
 
+def test_the_memo_names_a_cost_of_debt_fallback_where_the_calculator_labels_one():
+    """The decision of docs/needs_judgment.md: the fallback is labelled in
+    calculator.json and in the memo. With `cost_of_capital.pre_tax_cost_of_debt.fallback`
+    the valuation section carries one line with the label verbatim; without it, no
+    such line, and the memo prints no number of its own either way."""
+    label = ("the risk-free rate plus one point, because neither interest expense nor "
+             "interest paid is on record: interest_expense: no row")
+    with_fallback = copy.deepcopy(FIELDS)
+    with_fallback["cost_of_capital"] = {"pre_tax_cost_of_debt": {"value": 0.0566,
+                                                                   "fallback": label}}
+    text = memo.memo(ticker="TEST", form="10-Q", period_end="2026-06-30", cutoff="2026-07-30",
+                     fields=with_fallback, accounting=None, financial=None, valuation=None,
+                     baselines=None)
+    valuation = text[text.index("## 3. 가치평가"):text.index("## 참고")]
+    assert memo.FALLBACK_KO in valuation
+    assert label in valuation
+    assert "0.0566" not in text and "5.66" not in text
+
+    without = copy.deepcopy(FIELDS)
+    without["cost_of_capital"] = {"pre_tax_cost_of_debt": {"value": 0.05}}
+    text = memo.memo(ticker="TEST", form="10-Q", period_end="2026-06-30", cutoff="2026-07-30",
+                     fields=without, accounting=None, financial=None, valuation=None,
+                     baselines=None)
+    assert memo.FALLBACK_KO not in text and "risk-free" not in text
+    assert memo.cost_of_debt_fallback_line(FIELDS) == []
+
+
 def test_the_control_cites_the_paragraphs_of_its_own_input():
     sources = {"input_notes.md": "[acc:notes:1] We extended payment terms to certain customers.\n"}
     payload = accounting()
@@ -346,16 +373,20 @@ def test_a_bare_year_in_a_reason_is_a_year_not_a_number():
                  "the June 2026 quarter", "year-end 2025",
                  # the second lens's cases of 2026-10-06: a year-context word before or
                  # after, a range dash, a fiscal prefix, a Korean year suffix
-                 "in 2026", "fiscal 2027 guidance", "through 2030", "2026년", "2024–2026",
+                 "in 2026", "fiscal 2027 guidance", "through 2030", "2026년",
                  "December 2026", "FY2026", "the second half of 2026", "2026 outlook",
                  "mid-2026", "as of 2026", "2026 하반기",
                  # phrasings the eight published analyses of 2026-09-29 use
                  "the first six months of 2026", "a first-quarter 2026 amendment",
-                 "the margins of 2021, 2022 and 2023", "notes due 2030", "far above 2022's",
+                 "notes due 2030", "far above 2022's",
                  "회계연도 2025 수준", "the fiscal-2025 figure",
                  # a date or a range after a context word is read whole (AAPL's valuation
                  # analyst quoted "no row for interest_expense in 2024-09-29..2025-09-27")
-                 "no row in 2024-09-29..2025-09-27", "in 2024-2026", "in 2024–2026"):
+                 "no row in 2024-09-29..2025-09-27", "in 2024-2026", "in 2024–2026",
+                 # the third reading's cases: a year-terminator after the context word's
+                 # year, and a list that borrows its context from a member
+                 "by 2030.", "by 2030,", "in 2030 and 2031", "in 2026 the company",
+                 "2021 and 2022 guidance", "the first six months of 2026 ran at"):
         payload = accounting()
         payload["anomalies"][0]["what"] = text
         assert analysis_check.check("accounting", payload, fields=FIELDS,
@@ -379,7 +410,14 @@ def test_a_quantity_with_no_unit_word_is_still_a_number():
     for text in ("inventory of 2048", "backlog rose to 2030 orders", "2026 stores", "€2026",
                  "USD 2026", "2026 Million", "2026 bn", "-2026", "margin 2026",
                  "from 2026 onward", "leases to 2040", "2021 and 2022 units", "(2025)",
-                 "due 2030 shares"):
+                 "due 2030 shares",
+                 # the second lens's third reading: a bare noun after the year, "by" with
+                 # an amount, and a range or list with no context word of its own
+                 "cut headcount by 2030", "grew by 2026", "a rise in 2030 orders",
+                 "backlog grew by 2030 orders", "up by 1999", "in 2030 and 2031 orders",
+                 "inventory of 2021 and 2022", "2024–2026",
+                 # GNRC's valuation analyst of 2026-09-29 wrote these with "of" alone
+                 "the margins of 2021, 2022 and 2023", "the growth of 2021 and 2022"):
         payload = accounting()
         payload["anomalies"][0]["what"] = text
         out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)

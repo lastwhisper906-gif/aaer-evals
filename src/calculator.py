@@ -1531,18 +1531,25 @@ def raw_close(path: Path, cutoff: dt.date) -> dict:
 # The fallback when no interest expense is tagged: the default of
 # docs/needs_judgment.md until the owner names another source.
 FALLBACK_SPREAD_OVER_RISK_FREE = 0.01
+# The row in docs/needs_judgment.md the fallback answers to, named by its question.
+COST_OF_DEBT_QUESTION = ("docs/needs_judgment.md: the pre-tax cost of debt when the record "
+                         "carries no interest expense")
 
 
 def cost_of_debt_fallback(ttm: dict, debt_now: dict, debt_ago: dict, rf: dict,
                           why: str) -> dict:
-    """Interest paid over average debt, or else the risk-free rate plus one point,
-    each labelled a fallback. Never silent: the cell says what it stands in for,
-    and the label says why -- interest paid absent, or interest paid on record
-    over an average debt that is missing or zero -- because the two are different
-    facts about the company."""
+    """The ladder under a missing interest expense over average debt: interest paid
+    over average debt, or else the risk-free rate plus one point, each labelled a
+    fallback. Never silent: the cell says what it stands in for, and the label
+    says which input was missing and how -- interest expense on record but no
+    average debt; interest paid on record but no average debt; interest paid on
+    record but refused (two values for one period); or no fact at all -- because
+    each is a different fact about the company."""
+    expense = ttm.get("interest_expense") or {"missing": "interest_expense is not gathered"}
     paid = ttm.get("interest_paid") or {"missing": "interest_paid is not gathered"}
-    because = f"neither interest expense nor interest paid is on record: {why}"
-    if "missing" not in paid:
+    if "missing" not in expense:
+        because = f"interest expense is on record but average debt is missing/zero: {why}"
+    elif "missing" not in paid:
         cell = measure("interest_paid / average debt",
                        {"interest_paid": paid, "average_debt": average(debt_now, debt_ago)},
                        lambda v: v["interest_paid"] / v["average_debt"],
@@ -1553,6 +1560,10 @@ def cost_of_debt_fallback(ttm: dict, debt_now: dict, debt_ago: dict, rf: dict,
             return cell
         because = ("interest paid is on record but average debt is missing/zero, so the "
                    f"cost of debt is the risk-free rate plus one point: {cell['missing']}")
+    elif trends.TWO_VALUES in paid["missing"]:
+        because = f"interest paid is on record but refused: {paid['missing']}"
+    else:
+        because = f"neither interest expense nor interest paid is on record: {why}"
     if "missing" in rf:
         return {"missing": f"{why}; and no risk-free rate for the fallback: {rf['missing']}"}
     return {"value": rf["value"] + FALLBACK_SPREAD_OVER_RISK_FREE,
@@ -1561,7 +1572,7 @@ def cost_of_debt_fallback(ttm: dict, debt_now: dict, debt_ago: dict, rf: dict,
                       "spread": {"value": FALLBACK_SPREAD_OVER_RISK_FREE,
                                  "note": "one point, the default of docs/needs_judgment.md"}},
             "fallback": f"the risk-free rate plus one point, because {because}",
-            "needs_judgment": "docs/needs_judgment.md: AAPL's pre-tax cost of debt"}
+            "needs_judgment": COST_OF_DEBT_QUESTION}
 
 
 def cost_of_capital(terms: dict, sections: dict, market_data: dict, cutoff: dt.date,
@@ -1575,16 +1586,18 @@ def cost_of_capital(terms: dict, sections: dict, market_data: dict, cutoff: dt.d
     overrides = overrides or {}
 
     if "missing" in debt_now:
-        cost_of_debt = {"missing": debt_now["missing"]}
+        cost_of_debt = cost_of_debt_fallback(ttm, debt_now, debt_ago, rf,
+                                             f"average_debt: {debt_now['missing']}")
     elif debt_now["value"] == 0 and ("missing" in debt_ago or debt_ago["value"] == 0):
         cost_of_debt = {"value": 0.0, "note": "no debt on the balance sheet, so it carries no weight"}
     else:
+        # The primary, and under it the ladder, whatever the reason it is missing.
         cost_of_debt = measure("interest_expense / average debt",
                                {"interest_expense": ttm["interest_expense"],
                                 "average_debt": average(debt_now, debt_ago)},
                                lambda v: v["interest_expense"] / v["average_debt"],
                                denominator="average_debt")
-        if "missing" in cost_of_debt and "missing" in ttm["interest_expense"]:
+        if "missing" in cost_of_debt:
             cost_of_debt = cost_of_debt_fallback(ttm, debt_now, debt_ago, rf,
                                                  cost_of_debt["missing"])
     if "pre_tax_cost_of_debt" in overrides:
