@@ -722,18 +722,30 @@ def check_inputs_on_record(run: Path) -> Result:
 ANY_DATE = re.compile(r"\b(\d{4}-\d{2}-\d{2})\b")
 
 
-def idless_prose_problems(text: str, cutoff: dt.date, documents: set[str]) -> list[str]:
-    """Why an id-less prose input reaches past the cutoff, or []: a date after it,
-    or an accession on a line with no date that is not one of the documents."""
+def idless_prose_problems(text: str, cutoff: dt.date, documents: set[str],
+                          trigger: str = "", trigger_accepted=None) -> list[str]:
+    """Why an id-less prose input reaches past the cutoff, or []: a date after it;
+    an accession on a line dated the cutoff day that is not shown accepted before
+    the triggering report; or an accession on a line with no date that is not one
+    of the documents."""
     out = []
     for number, line in enumerate(text.splitlines(), 1):
         dates = ANY_DATE.findall(line)
         for text_date in dates:
             try:
-                if dt.date.fromisoformat(text_date) > cutoff:
-                    out.append(f"line {number}: {text_date} is after the cutoff {cutoff}")
+                day = dt.date.fromisoformat(text_date)
             except ValueError:
-                pass
+                continue
+            if day > cutoff:
+                out.append(f"line {number}: {text_date} is after the cutoff {cutoff}")
+            elif day == cutoff:
+                for accession in ACCESSION_ANYWHERE.findall(line):
+                    if accession == trigger or accession in documents:
+                        continue
+                    why = accepted_before_trigger({"accession": accession}, trigger,
+                                                  trigger_accepted)
+                    if why:
+                        out.append(f"line {number}: {accession} on the cutoff day: {why}")
         if not dates:
             for accession in ACCESSION_ANYWHERE.findall(line):
                 if accession not in documents:
@@ -752,8 +764,19 @@ def check_nothing_after_cutoff(run: Path) -> Result:
     except (KeyError, TypeError, ValueError):
         return Result("mechanical.nothing_after_cutoff", run_name(run), FAIL,
                       "the manifest names no cutoff")
-    late = []
+    late, by_proxy = [], 0
     trigger = str(manifest.get("accession") or "")
+    # the cutoff is the triggering report's own filing date, as the manifest
+    # records it at the top and on the trigger's document rows: a cutoff written
+    # late would move every check below with it
+    if manifest.get("filing_date") != manifest["cutoff"]:
+        late.append(f"the cutoff {manifest['cutoff']} is not the manifest's filing date "
+                    f"{manifest.get('filing_date')}")
+    for document in manifest.get("documents") or []:
+        if isinstance(document, dict) and document.get("accession") == trigger \
+                and document.get("filing_date") != manifest["cutoff"]:
+            late.append(f"the cutoff {manifest['cutoff']} is not the triggering report's "
+                        f"filing date {document.get('filing_date')} ({document.get('role')})")
     for document in manifest.get("documents") or []:
         filed = document.get("filing_date")
         through = document.get("rows_used_through")
@@ -765,6 +788,8 @@ def check_nothing_after_cutoff(run: Path) -> Result:
                 if why:
                     late.append(f"document {document.get('accession')} filed {filed}, the "
                                 f"cutoff day: {why}")
+                elif not isinstance(document.get("accepted"), str):
+                    by_proxy += 1
         elif through:
             if dt.date.fromisoformat(through) > cutoff:
                 late.append(f"{document.get('role')} rows used through {through}")
@@ -804,7 +829,8 @@ def check_nothing_after_cutoff(run: Path) -> Result:
             text = path.read_text(encoding="utf-8", errors="replace")
             if not ID_LINE.search(text):
                 late += [f"{path.relative_to(run)}: {why}"
-                         for why in idless_prose_problems(text, cutoff, documents)]
+                         for why in idless_prose_problems(text, cutoff, documents, trigger,
+                                                          manifest.get("accepted"))]
             continue
         tree = load(path)
         if path.name == "input_market.json":
@@ -850,8 +876,15 @@ def check_nothing_after_cutoff(run: Path) -> Result:
                         late.append(f"{path.relative_to(run)}: {key} {value} from {source}, "
                                     f"the cutoff day: {why}")
                         break
+                    if not isinstance(row.get("accepted"), str):
+                        by_proxy += 1
+    detail = f"cutoff {cutoff}" + (f"; {len(late)} late" if late else "")
+    if by_proxy:
+        # named, not hidden: the order of these rests on the accession sequence
+        detail += (f"; {by_proxy} same-day filing(s) ordered by the accession-sequence proxy, "
+                   "no acceptance stamp on record (docs/needs_judgment.md)")
     return Result("mechanical.nothing_after_cutoff", run_name(run), FAIL if late else PASS,
-                  f"cutoff {cutoff}" + (f"; {len(late)} late" if late else ""), late)
+                  detail, late)
 
 
 # --- the market table: reaction days zero to two, and nothing past them ----------------
@@ -1266,7 +1299,60 @@ def check_dcf_recomputes(run: Path) -> Result:
                   f"{count - len(failures)} of {count} recompute", failures)
 
 
-RUN_CHECKS = (check_files_present, check_agents_written, check_inputs_on_record, check_quotes_resolve,
+# What each layer may be handed (CLAUDE.md: readers see filings; the accounting
+# and financial analysts see reports and the filings-only calculator, never a
+# price; the valuation analyst adds MD&A, the 8-K and the price at the cutoff; the
+# control sees the bundle and the calculator before the analysts). The market
+# table is handed to no one. Written out here so the grader does not move with
+# src/agent_inputs.py.
+LAYER_SEES = {
+    "numbers-reader": {"input_8k.md", "input_numbers.json", "input_prior_predictions.md",
+                       "input_trends.json"},
+    "notes-text-reader": {"input_8k.md", "input_controls.md", "input_mdna.md", "input_notes.md",
+                          "input_notes_history.md", "input_prior_predictions.md"},
+    "accounting-analyst": {"report_numbers.md", "report_notes_text.md",
+                           "calculator_filings_only.json"},
+    "financial-analyst": {"report_numbers.md", "report_notes_text.md",
+                          "calculator_filings_only.json"},
+    "valuation-analyst": {"analysis_accounting.json", "analysis_financial.json",
+                          "calculator_before_drivers.json", "input_8k.md", "input_mdna.md"},
+    "valuation-analyst-second-pass": {"analysis_accounting.json", "analysis_financial.json",
+                                      "assumptions.json", "calculator.json", "input_8k.md",
+                                      "input_mdna.md"},
+    CONTROL_DIR: {"input_8k.md", "input_controls.md", "input_mdna.md", "input_notes.md",
+                  "input_notes_history.md", "input_numbers.json", "input_prior_predictions.md",
+                  "input_trends.json", "calculator_before_analysts.json"},
+}
+
+
+def check_layers_hold(run: Path) -> Result:
+    """Every file in an agent's directory is one its layer may see, or the agent's
+    own output; a directory the grader has no layer for is refused. A stray file
+    that could not be an input is noted by inputs_on_record, not here."""
+    problems, count = [], 0
+    for directory in sorted(run.glob("agents/*")) + [run / CONTROL_DIR]:
+        if not directory.is_dir():
+            continue
+        allowed = LAYER_SEES.get(directory.name)
+        if allowed is None:
+            problems.append(f"{directory.relative_to(run)}: no layer the grader knows")
+            continue
+        for path in sorted(directory.iterdir()):
+            if not path.is_file():
+                continue
+            count += 1
+            if path.name in allowed or is_own_output(directory, path.name):
+                continue
+            if looks_like_an_input(path.name, path.read_bytes()):
+                problems.append(f"{path.relative_to(run)}: not a file the "
+                                f"{directory.name} layer sees")
+    return Result("mechanical.layers_hold", run_name(run), FAIL if problems else PASS,
+                  f"{count - len(problems)} of {count} files within their layer" if count
+                  else "no agent directories", problems)
+
+
+RUN_CHECKS = (check_files_present, check_agents_written, check_inputs_on_record, check_layers_hold,
+              check_quotes_resolve,
               check_cited_items_exist, check_cited_numbers_exist, check_nothing_after_cutoff, check_calculator_finite,
               check_dcf_recomputes)
 

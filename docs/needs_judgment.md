@@ -96,6 +96,8 @@ force.
 
 [ ] **the order of same-day filings, for the cutoff grader** · no manifest on record carries EDGAR's acceptance stamps, so `evals/regression/mechanical.py` orders a document filed on the cutoff day against the triggering report by the filer agent's accession sequence (CARR, CIEN and LFUS hold an 8-K filed the day of the 10-Q, with a lower sequence); the sequence is assigned when a submission is assembled, not when EDGAR accepts it, so it is a proxy · deciding records the acceptance stamp in the manifest (the `queue.md` item on the Part A branch) and the grader then reads the stamps and refuses a same-day document without one; until then the proxy stands and is named as one in every message.
 
+[ ] **what the owner's label guards, beyond evals/ and the grader's own files** · `src/eval_guard.py` GUARDED holds evals/, the guard, the hook, the analysis-grader agent, `src/grade_run.py` (which now carries the grader's whole instruction) and `.claude/settings.json`; the transport the grader is called through (`src/run_analysis.py` ask and definition), the Makefile and `.github/workflows/ci.yml` are not guarded, so a branch can change how the grader is called without the label · default: not guarded; a change there shows in the pull request's diff and CI's required `check` runs main's graders on the branch; deciding adds any of them to GUARDED in a pull request labelled `owner-approved-eval`.
+
 ## Settled by default
 
 Every other row that was open on 2026-09-28. Nothing waits on any of them: the

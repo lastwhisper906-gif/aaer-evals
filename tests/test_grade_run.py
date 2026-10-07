@@ -44,3 +44,15 @@ def test_a_run_is_graded_once(run):
     (run / "grade.json").write_text("{}")
     with pytest.raises(grade_run.GradeError):
         grade_run.grade(run, ask=lambda *a, **k: {"result": "written"})
+
+
+def test_the_graders_instruction_lives_in_the_guarded_file():
+    """What the model grader is told is in src/grade_run.py, which the owner's label
+    guards, and in .claude/agents/analysis-grader.md; src/run_analysis.py, which a
+    branch may change without the label, supplies the transport only."""
+    import inspect
+    from src import eval_guard
+    assert "src/grade_run.py" in eval_guard.GUARDED
+    assert ".claude/agents/analysis-grader.md" in eval_guard.GUARDED
+    assert "{files}" in grade_run.INSTRUCTION and "{writes}" in grade_run.INSTRUCTION
+    assert "run_analysis.INSTRUCTION" not in inspect.getsource(grade_run)

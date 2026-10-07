@@ -26,6 +26,11 @@ except ImportError:  # invoked as a plain script
     from src import interpreter_pin, run_analysis
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+# The grader's whole message, here where the owner's label guards it (src/eval_guard.py
+# GUARDED), not in src/run_analysis.py, which a branch may change without the label.
+INSTRUCTION = ("Your directory holds: {files}. Read every one of them in full, following "
+               "your instructions, and write {writes} in your directory. Nothing else, "
+               "anywhere.")
 RUBRIC = REPO_ROOT / "evals" / "capability" / "rubric.md"
 SEES = ("analysis_accounting.json", "analysis_financial.json", "analysis_valuation.json",
         "assumptions.json", "report_numbers.md", "report_notes_text.md", "calculator.json",
@@ -57,8 +62,7 @@ def grade(run: Path, *, ask=None) -> dict:
         files = sorted(p.name for p in directory.iterdir())
         spec = run_analysis.definition("analysis-grader")
         record = ask(directory, agent="analysis-grader", writes=(WRITES,),
-                     message=run_analysis.INSTRUCTION.format(files=", ".join(files),
-                                                             writes=WRITES),
+                     message=INSTRUCTION.format(files=", ".join(files), writes=WRITES),
                      spec=spec, log=directory / "grader.log")
         if record.get("result") != "written":
             return record

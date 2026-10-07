@@ -945,6 +945,64 @@ def test_an_accession_on_an_undated_line_of_an_idless_input_must_be_a_document()
     assert mechanical.idless_prose_problems("see 0000858877-26-000078\n", cutoff, documents) == []
 
 
+def test_a_cutoff_that_is_not_the_triggers_filing_date_fails_nothing_after_cutoff(run):
+    _edit(run / "input_manifest.json", lambda d: d.update(cutoff="2026-05-20"))
+    results = mechanical.grade(run)
+    assert _status(results, "mechanical.nothing_after_cutoff") == FAIL
+    assert any("is not the manifest's filing date" in f for f in
+               next(r.failures for r in results if r.grader == "mechanical.nothing_after_cutoff"))
+    _edit(run / "input_manifest.json", lambda d: d.update(cutoff="2026-05-19"))
+    _edit(run / "input_manifest.json",
+          lambda d: [doc.update(filing_date="2026-05-18") for doc in d["documents"]
+                     if doc.get("accession") == d["accession"]])
+    assert _status(mechanical.grade(run), "mechanical.nothing_after_cutoff") == FAIL
+
+
+def test_a_same_day_line_of_the_8k_index_is_ordered_against_the_trigger():
+    """CARR's index holds '2026-07-28 0001783180-26-000030' on the day of its 10-Q
+    (-000032): the lower sequence stands as the proxy; a higher one is refused."""
+    import datetime as dt
+    cutoff, trigger = dt.date(2026, 5, 19), "0000858877-26-000078"
+    lower = "- 2026-05-19 0000858877-26-000070 — 2.02\n"
+    assert mechanical.idless_prose_problems(lower, cutoff, set(), trigger, None) == []
+    higher = "- 2026-05-19 0000858877-26-000080 — 4.02\n"
+    assert mechanical.idless_prose_problems(higher, cutoff, set(), trigger, None) == [
+        "line 1: 0000858877-26-000080 on the cutoff day: accession 0000858877-26-000080 follows "
+        "the triggering report's 0000858877-26-000078 in the agent's sequence, so it was "
+        "assembled after it (no acceptance stamp on record)"]
+
+
+def test_the_proxy_is_named_in_the_detail_when_it_orders_a_same_day_filing(run):
+    _edit(run / "input_manifest.json",
+          lambda d: d["documents"].append({"role": "exhibit_99_1", "accession": "0000858877-26-000070",
+                                           "filing_date": "2026-05-19", "form": "8-K"}))
+    results = mechanical.grade(run)
+    assert _status(results, "mechanical.nothing_after_cutoff") == PASS
+    assert "1 same-day filing(s) ordered by the accession-sequence proxy" in next(
+        r.detail for r in results if r.grader == "mechanical.nothing_after_cutoff")
+
+
+def test_a_file_outside_its_layer_fails_layers_hold(run):
+    """A reader handed the market table, or an accounting analyst handed the
+    calculator with the price in it, saw across a layer."""
+    assert _status(mechanical.grade(run), "mechanical.layers_hold") == PASS
+    (run / "agents" / "numbers-reader" / "input_market.json").write_text(
+        json.dumps({"cutoff": "2026-05-22", "rows": []}), encoding="utf-8")
+    results = mechanical.grade(run)
+    assert _status(results, "mechanical.layers_hold") == FAIL
+    (run / "agents" / "numbers-reader" / "input_market.json").unlink()
+    import shutil as sh
+    sh.copyfile(run / "calculator.json", run / "agents" / "accounting-analyst" / "calculator.json")
+    results = mechanical.grade(run)
+    assert _status(results, "mechanical.layers_hold") == FAIL
+    assert any("accounting-analyst layer" in f for f in
+               next(r.failures for r in results if r.grader == "mechanical.layers_hold"))
+    (run / "agents" / "accounting-analyst" / "calculator.json").unlink()
+    (run / "agents" / "scratch-helper").mkdir()
+    (run / "agents" / "scratch-helper" / "notes.txt").write_text("x", encoding="utf-8")
+    assert _status(mechanical.grade(run), "mechanical.layers_hold") == FAIL
+
+
 def test_a_market_table_with_no_acceptance_stamp_fails_nothing_after_cutoff():
     import datetime as dt
     unstamped = _market_table()
