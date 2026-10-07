@@ -471,6 +471,10 @@ UNDER_DROPPED_BUNDLE = {
     ("FELE", "10-Q"): "the safe-harbour heading and its page-broken second half "
                       "carried; 49 read, 51 built",
     ("FN", "10-K"): "the disclaimer's heading carried; 149 read, 150 built",
+    # The next eight, by the same dates: the release is in the 10-K bundle
+    # for LITE, SMCI and SNDK and in the 10-Q bundle for the other five.
+    ("MSI", "10-Q"): "17 page numerals, the disclaimer's heading and its continuation "
+                     "carried; 138 read, 157 built",
 }
 
 EIGHT_K_CASES = [

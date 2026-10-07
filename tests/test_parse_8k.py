@@ -165,6 +165,13 @@ UNDER_DROPPED = {
     "FELE": "the heading and the page-broken second half of the safe-harbour "
             "paragraph are carried; 3 read, 1 dropped",
     "FN": "the disclaimer's heading is carried; 2 read, 1 dropped",
+    # The next eight, added the same day under the continued rule, read the
+    # same way. Every one of them is here: five print no page numerals, and the
+    # cleaner keeps part of their disclaimer -- its heading, its second
+    # paragraph or its page-broken second half; Motorola, Broadcom and Sandisk
+    # print runs of numerals too, and the cleaner keeps most or all of them.
+    "MSI": "17 of 19 bare page numerals, the disclaimer's heading and its page-broken "
+           "continuation are carried; 22 read, 3 dropped",
 }
 
 
