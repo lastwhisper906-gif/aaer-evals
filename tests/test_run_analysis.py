@@ -120,14 +120,16 @@ DRIVERS = {"revenue_growth_year_one": 0.2, "terminal_growth": 0.03,
            "reinvestment_rate_year_one": 0.3, "reinvestment_rate_year_ten": 0.2}
 
 
-def _fake_ask(seen: dict, notes_report: str = "no items\n", assumptions: dict | None = None):
-    """`notes_report` is what the stubbed notes reader writes; `assumptions` the
-    valuation analyst's first pass, by default three scenarios citing one field."""
+def _fake_ask(seen: dict, notes_report: str = "no items\n", assumptions: dict | None = None,
+              numbers_report: str = NUMBERS_REPORT):
+    """`notes_report` and `numbers_report` are what the stubbed readers write;
+    `assumptions` the valuation analyst's first pass, by default three scenarios
+    citing one field."""
     def ask(directory, *, agent, writes, message, spec, log):
         seen[directory.name] = sorted(path.name for path in directory.iterdir())
         for name in writes:
             if name == "report_numbers.md":
-                text = NUMBERS_REPORT
+                text = numbers_report
             elif name == "report_notes_text.md":
                 text = notes_report
             elif name == "analysis_accounting.json":
@@ -338,7 +340,7 @@ def test_a_run_with_a_market_table_is_labelled_by_python_and_never_marked_unavai
     manifest = run_analysis.run_company(run=run, ticker="NVDA", form="10-Q",
                                         cutoff="2026-08-26", period_end="2026-07-26",
                                         store=run_analysis.cutoff_guard.FIXTURES,
-                                        prices=None)
+                                        prices=None, control="always")
     assert manifest["analysis_stages"]["market_labels"]["written"] is True
     assert manifest["analysis_stages"]["market_labels_check"]["checked"] is True
     assert manifest.get("market_table") != "unavailable"
@@ -348,7 +350,9 @@ def test_a_run_with_a_market_table_is_labelled_by_python_and_never_marked_unavai
     agent_files = {path.name for path in (run / "agents").rglob("*") if path.is_file()}
     assert "input_market.json" not in agent_files and "market_labels.json" not in agent_files
     control = run / run_analysis.CONTROL_DIRNAME
-    control_files = {path.name for path in control.rglob("*") if path.is_file()} if control.is_dir() else set()
+    assert control.is_dir()                                     # the control ran
+    control_files = {path.name for path in control.rglob("*") if path.is_file()}
+    assert "input_numbers.json" in control_files                # and holds the bundle
     assert "input_market.json" not in control_files and "market_labels.json" not in control_files
     labels = json.loads((run / "market_labels.json").read_text())
     assert [one["labels"][0]["label"] for one in labels["items"]] == ["priced_in"]
@@ -566,9 +570,9 @@ def _stopped_at_accounting_analyst(tmp_path, monkeypatch):
     return run, stopped
 
 
-def _counting_ask(seen: dict):
+def _counting_ask(seen: dict, **reports):
     """Every agent writes; the directories called are listed in order."""
-    written, called = _fake_ask(seen), []
+    written, called = _fake_ask(seen, **reports), []
 
     def ask(directory, *, agent, writes, message, spec, log):
         called.append(directory.name)
@@ -618,13 +622,13 @@ def test_a_stopped_run_resumes_in_place_and_calls_only_what_had_not_finished(
 
 
 def _stopped_at(tmp_path, monkeypatch, stopped_agent: str, control: str,
-                model: str | None = None):
+                model: str | None = None, numbers_report: str = NUMBERS_REPORT):
     """The limit at `stopped_agent`; every other agent writes."""
     run = tmp_path / "NVDA" / NVDA_ACCESSION
     bundle = assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,
                                    prior_runs=run.parent.parent)
     assemble_bundle.write(bundle, run)
-    written = _fake_ask({})
+    written = _fake_ask({}, numbers_report=numbers_report)
 
     def ask(directory, *, agent, writes, message, spec, log):
         if agent == stopped_agent:
@@ -642,8 +646,9 @@ def _stopped_at(tmp_path, monkeypatch, stopped_agent: str, control: str,
     return run, stopped
 
 
-def _resumed(run, monkeypatch, control: str, model: str | None = None):
-    ask, called = _counting_ask({})
+def _resumed(run, monkeypatch, control: str, model: str | None = None,
+             notes_report: str = "no items\n", numbers_report: str = NUMBERS_REPORT):
+    ask, called = _counting_ask({}, notes_report=notes_report, numbers_report=numbers_report)
     monkeypatch.setattr(run_analysis, "ask", ask)
     manifest = run_analysis.run_company(run=run, ticker="NVDA", form="10-Q",
                                         cutoff="2026-08-26", period_end="2026-07-26",
@@ -772,6 +777,71 @@ def test_a_limit_at_one_reader_leaves_the_other_on_record_and_never_calls_it_aga
     assert manifest["analysis_stages"]["quote_gate"] == {"dropped": 0}
     assert (run / "report_notes_text.md").is_file() and (run / "memo_ko.md").is_file()
     assert agent_inputs.isolation_violations(run) == []
+
+
+# One id on an item of each reader. The numbers reader's second item quotes a
+# value the trends row does not print, so its row is on the drop list the night
+# the numbers reader is gated; the notes reader's item quotes the MD&A's first
+# paragraph, as FLAGGING_TWO does, under the numbers item's id.
+SHARED_ID = "earnings_quality_accruals_rising"
+NUMBERS_WITH_A_BAD_QUOTE = NUMBERS_REPORT + '''```json
+{ "id": "earnings_quality_planted_bad_quote", "what_changed": "x", "account": "a",
+  "expected_direction": "up", "horizon": "h",
+  "quote": "\\"value\\": 1.0",
+  "paragraph_id": "0001045810-26-000075:trends:days_sales_outstanding:2026-04-27..2026-07-26" }
+```
+'''
+NOTES_SHARING_THE_ID = '''```json
+[{ "id": "earnings_quality_accruals_rising", "paragraph_id": "0001045810-26-000075:mdna:1",
+   "quote": "Analysis of Financial Condition" }]
+```
+'''
+
+
+def test_a_resume_gates_only_the_reader_it_called_and_appends_its_rows(tmp_path, monkeypatch):
+    """The limit at the notes reader, the numbers reader gated alone that night
+    with one row dropped. Resumed, the notes reader writes an item under the
+    numbers item's id: the run-root report_numbers.md and the night's drop row
+    stand byte for byte, the notes report is gated alone -- held to its own ids,
+    so the shared id stands there -- and the resume appends no row of its own."""
+    run, stopped = _stopped_at(tmp_path, monkeypatch, "notes-text-reader", "never",
+                               numbers_report=NUMBERS_WITH_A_BAD_QUOTE)
+    assert [(row["report"], row["item_id"]) for row in stopped["dropped_items"]] == [
+        ("report_numbers.md", "earnings_quality_planted_bad_quote")]
+    assert "does not string-match" in stopped["dropped_items"][0]["reason"]
+    numbers_before = (run / "report_numbers.md").read_bytes()
+    assert SHARED_ID in numbers_before.decode("utf-8")
+    manifest, called = _resumed(run, monkeypatch, "never", notes_report=NOTES_SHARING_THE_ID,
+                                numbers_report=NUMBERS_WITH_A_BAD_QUOTE)
+    assert "numbers-reader" not in called
+    assert (run / "report_numbers.md").read_bytes() == numbers_before
+    assert manifest["dropped_items"] == stopped["dropped_items"]
+    assert manifest["counts"]["dropped_items"] == 1
+    assert manifest["analysis_stages"]["quote_gate"] == {"dropped": 0}      # this night's
+    notes = (run / "report_notes_text.md").read_text(encoding="utf-8")
+    assert SHARED_ID in notes and "removed 0 item(s)" in notes
+    assert manifest["analysis_failure"] is None
+    assert agent_inputs.isolation_violations(run) == []
+    # The other side: a fresh run gates both readers in one call, and the shared
+    # id is dropped from both, as the gate's rule says.
+    fresh = tmp_path / "fresh" / "NVDA" / NVDA_ACCESSION
+    assemble_bundle.write(assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,
+                                                prior_runs=fresh.parent.parent), fresh)
+    monkeypatch.setattr(run_analysis, "ask", _fake_ask(
+        {}, notes_report=NOTES_SHARING_THE_ID, numbers_report=NUMBERS_WITH_A_BAD_QUOTE))
+    manifest = run_analysis.run_company(run=fresh, ticker="NVDA", form="10-Q",
+                                        cutoff="2026-08-26", period_end="2026-07-26",
+                                        store=run_analysis.cutoff_guard.FIXTURES,
+                                        prices=None, control="never")
+    assert [(row["report"], row["item_id"]) for row in manifest["dropped_items"]] == [
+        ("report_numbers.md", SHARED_ID),
+        ("report_numbers.md", "earnings_quality_planted_bad_quote"),
+        ("report_notes_text.md", SHARED_ID)]
+    assert all("on more than one item" in row["reason"]
+               for row in manifest["dropped_items"] if row["item_id"] == SHARED_ID)
+    assert manifest["analysis_stages"]["quote_gate"] == {"dropped": 3}
+    assert SHARED_ID not in (fresh / "report_numbers.md").read_text(encoding="utf-8")
+    assert SHARED_ID not in (fresh / "report_notes_text.md").read_text(encoding="utf-8")
 
 
 def test_a_run_that_did_not_stop_is_not_resumed(tmp_path, monkeypatch, finished, capsys):

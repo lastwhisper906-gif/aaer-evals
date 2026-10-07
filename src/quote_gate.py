@@ -550,18 +550,29 @@ def citation_drop_reason(item, upstream_ids) -> str | None:
 # --- the gate over a whole run -----------------------------------------------
 
 def _write_counts(bundle_root, manifest: dict, dropped: list[dict],
-                  normalized: list[dict]) -> None:
+                  normalized: list[dict], gated: set[str]) -> None:
     """The drop count and the fold count into `input_manifest.json`.
 
-    Every other key is left alone.
+    Every other key is left alone -- and so is every row of a report this call
+    did not gate. A run's manifest holds the rows of every report gated in the
+    run; one call replaces the rows of the reports it gated (`gated`, by file
+    name) and appends them after the rows that stand, so a report gated on one
+    night and another gated on the next, when the limit stopped the run between
+    them, each keep their rows: the run directory is append-only, and a resume
+    appends its own rows.
     """
+    def standing(key: str) -> list[dict]:
+        return [dict(row) for row in manifest.get(key) or []
+                if isinstance(row, dict)
+                and Path(str(row.get("report"))).name not in gated]
     manifest = dict(manifest)
-    manifest["dropped_items"] = [dict(row) for row in dropped]
-    manifest["normalized_quotes"] = [dict(row) for row in normalized]
+    manifest["dropped_items"] = standing("dropped_items") + [dict(row) for row in dropped]
+    manifest["normalized_quotes"] = (standing("normalized_quotes")
+                                     + [dict(row) for row in normalized])
     counts = manifest.get("counts")
     manifest["counts"] = dict(counts) if isinstance(counts, dict) else {}
-    manifest["counts"]["dropped_items"] = len(dropped)
-    manifest["counts"]["normalized_quotes"] = len(normalized)
+    manifest["counts"]["dropped_items"] = len(manifest["dropped_items"])
+    manifest["counts"]["normalized_quotes"] = len(manifest["normalized_quotes"])
     (Path(bundle_root) / MANIFEST).write_text(
         json.dumps(manifest, indent=INDENT, sort_keys=True) + "\n", encoding="utf-8")
 
@@ -664,5 +675,5 @@ def gate(reports: list[dict], bundle_root) -> dict:
                 dropped.append({"report": name, "item_id": identifier, "reason": why})
         kept[name], kept_ids[name] = standing, standing_ids
 
-    _write_counts(bundle_root, manifest, dropped, normalized)
+    _write_counts(bundle_root, manifest, dropped, normalized, gated)
     return {"kept": kept, "dropped": dropped, "normalized": normalized}

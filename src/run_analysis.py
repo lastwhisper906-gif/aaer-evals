@@ -345,8 +345,14 @@ def gate_readers(run: Path, names: tuple[str, ...] = ("numbers-reader", "notes-t
     the run root -- the one the analysts are handed -- carries only the items
     that stood, with a line saying how many the gate removed and that the
     manifest lists them, so no analyst builds on an item that failed its quote.
-    `names` is both readers; when the limit stopped one, it is the other alone,
-    so what finished is on record and is never called again.
+    `names` is the readers this invocation called: both on a fresh run; when
+    the limit stopped one, the other alone, so what finished is on record and
+    is never called again; and on the resumed run, the one that had not run.
+    A run-root copy gated on an earlier night is not written again, and the
+    gate keeps the drop rows of a report it is not handed, so the earlier
+    night's record stands as it was and this call appends its own rows. The
+    gate's repeated-id rule runs over the reports handed to one call: a report
+    gated alone is held to its own ids.
     """
     reports = []
     for name in names:
@@ -359,7 +365,9 @@ def gate_readers(run: Path, names: tuple[str, ...] = ("numbers-reader", "notes-t
                         "input": directory})
     result = quote_gate.gate(reports, run)
     manifest = json.loads((run / "input_manifest.json").read_text(encoding="utf-8"))
-    dropped = {row.get("item_id") for row in manifest.get("dropped_items") or []}
+    # keyed by report too: a row of one report never takes an item out of another
+    dropped = {(row.get("report"), row.get("item_id"))
+               for row in manifest.get("dropped_items") or []}
     for name in names:
         writes = agent_inputs.AGENTS[name].writes
         text = (agent_inputs.session_root(run, name) / writes).read_text(encoding="utf-8")
@@ -368,7 +376,7 @@ def gate_readers(run: Path, names: tuple[str, ...] = ("numbers-reader", "notes-t
         def keep(match: re.Match) -> str:
             nonlocal removed
             items = report_items(match.group(0))
-            if items and all(item.get("id") in dropped for item in items):
+            if items and all((writes, item.get("id")) in dropped for item in items):
                 removed += 1
                 return ""
             return match.group(0)
@@ -630,7 +638,9 @@ def run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: s
     if any(agents[name]["result"] != "written" for name in ("numbers-reader", "notes-text-reader")):
         return finish(run, agents, stages, "a reader failed twice", model, skipped=skipped)
     if readers:
-        stages["quote_gate"] = {"dropped": len(gate_readers(run).get("dropped", []))}
+        # the readers this invocation called, and no other: a report gated on
+        # the night the limit hit stays as the run root holds it
+        stages["quote_gate"] = {"dropped": len(gate_readers(run, readers).get("dropped", []))}
         # the market labels: Python, on the gated reports; with no market table
         # the record says so and nothing is written. The file is re-checked as
         # soon as it is written: every label cites an item standing in its own

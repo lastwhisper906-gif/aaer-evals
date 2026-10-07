@@ -284,6 +284,31 @@ def test_gating_twice_writes_the_same_count(tmp_path):
     assert manifest_of(root)["counts"]["dropped_items"] == 3
 
 
+def test_a_call_keeps_the_rows_of_the_reports_it_was_not_handed(tmp_path):
+    """Of the three planted rows, two are the notes report's and one the notes
+    comparer's. A later call handed the notes report alone replaces the notes
+    rows with its own -- none, for a standing item; one, for a planted one --
+    and the comparer's row stands in front of them."""
+    root = plant(tmp_path)
+    quote_gate.gate(three_layers(root), root)
+    standing = {"id": "revenue_recognition_receivables_rising",
+                "paragraph_id": f"{ACCESSION}:notes:1",
+                "quote": "Accounts receivable, net of allowances, rose to $29,508 million"}
+    gate_one(root, standing)
+    manifest = manifest_of(root)
+    assert [row["item_id"] for row in manifest["dropped_items"]] == [
+        "estimates_and_discretion_allowance_reduced_early_versus_market"]
+    assert manifest["counts"]["dropped_items"] == 1
+    planted = dict(standing, id="revenue_recognition_receivables_record_increase",
+                   quote="the largest quarterly increase ever recorded")
+    gate_one(root, planted)
+    manifest = manifest_of(root)
+    assert [row["item_id"] for row in manifest["dropped_items"]] == [
+        "estimates_and_discretion_allowance_reduced_early_versus_market",
+        "revenue_recognition_receivables_record_increase"]
+    assert manifest["counts"]["dropped_items"] == 2
+
+
 # --- string-match means string-match -----------------------------------------
 
 def test_the_whole_paragraph_is_quotable(tmp_path):
