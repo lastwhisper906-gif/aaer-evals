@@ -378,18 +378,27 @@ def _probability_leak(text: str) -> str | None:
 
 # The valuation analyst reads the MD&A and the earnings release only where the
 # notes reader flagged a paragraph: Fable, used efficiently (the owner's decision
-# of 2026-10-06, `docs/HOW_WE_WORK.md` §6). The file keeps its name and its `[id]`
-# blocks byte for byte, so a quote of one still string-matches, and it holds no
-# text the filing does not: where two kept blocks were not adjacent in the
-# filing, one line holding only their two `[id]` markers stands between them, so
-# a quote running off the end of one into the start of the next carries a line
-# the filing never printed and matches nothing there. How much was left out is
-# the manifest's to say, under `agents.<name>.trimmed`, written when the file is
-# routed. The boundary check never reads this trim: it derives the flagged set
-# again from the gated report and the drop list, holds the record to that set
-# and the directory's file to the run's file cut by it. A paragraph the notes
-# reader did not flag is not placed, and no agent can quote what it was not
-# handed.
+# of 2026-10-06, `docs/HOW_WE_WORK.md` §6). The file keeps its name, its text
+# before the first `[id]` line, and the `[id]` blocks kept, each cut out of the
+# run's file from its own `[id]` line to the next one, byte for byte, and written
+# one after the other with nothing between them and nothing after the last: the
+# owner reads a copy as some of the original's `[id]` paragraphs, each verbatim,
+# and nothing else (`evals/regression/mechanical.py`, `trimmed_copy_problems`),
+# and everything after an `[id]` line up to the next one is that paragraph's
+# body, so no gap line or note can live anywhere in the file. Where two kept
+# blocks were not adjacent in the filing, the next block's own `[id]` line is the
+# junction: the filing never printed that line after the earlier block's text,
+# so a quote running off the end of one into the start of the next matches the
+# copy and nothing the filing printed, and the gate refuses it
+# (`analysis_check.quote_problem`). How much was left out is the manifest's to
+# say, under `agents.<name>.trimmed`, written when the file is routed; a file
+# with `[id]` paragraphs none of which was flagged is not placed at all, and its
+# record says 0 of them. The boundary check never reads this trim: it derives
+# the flagged set again from the gated report and the drop list, holds the
+# record to that set and the directory's file to the run's file cut by it, and
+# holds the copy to the owner's shape rule written out on its own
+# (`copy_shape_problems`). A paragraph the notes reader did not flag is not
+# placed, and no agent can quote what it was not handed.
 TRIMMED_FOR_VALUATION = ("input_mdna.md", "input_8k.md")
 # The owner's decision that the valuation analyst reads only the flagged
 # paragraphs (docs/structure_changes.md, 2026-10-06): a run whose analyses ran
@@ -449,27 +458,44 @@ def paragraph_ids(text: str) -> list[str]:
     return [mark.group(1) for mark in ID_LINE.finditer(text)]
 
 
-def seam(before: str, after: str) -> str:
-    """The one line that stands between two kept blocks that were not adjacent in
-    the filing: their own two markers and nothing else."""
-    return f"[{before}] [{after}]\n\n"
+def prose_text(path: Path) -> str:
+    """A prose input's characters as the run committed them: its bytes decoded as
+    UTF-8, with no newline translation. Text mode reads a `\\r\\n` as `\\n`, and a
+    copy cut from that would not be the run's file byte for byte (`_place` says
+    why that matters). A file that is not UTF-8 is refused rather than read with
+    replacement characters: the bundle writes UTF-8, so such a file is a broken
+    bundle, and a replacement character in the copy is a character the filing
+    never printed."""
+    try:
+        return Path(path).read_bytes().decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise AgentInputError(f"{path} is not UTF-8 ({exc}); the bundle writes UTF-8, "
+                              "so this is a broken bundle and nothing is cut from it") from exc
 
 
-def trimmed(text: str, keep: set[str]) -> str:
-    """The prose file with only the `[id]` blocks in `keep`, each verbatim, and a
-    seam line between two kept blocks that were not adjacent. Nothing else: the
-    note on how much was left out is the manifest's."""
+def _cuts(text: str) -> tuple[list[re.Match], list[int]]:
+    """The `[id]` lines of a prose file and where each block starts, with the
+    file's end last: a block runs from its own `[id]` line to the next one."""
     marks = list(ID_LINE.finditer(text))
-    preamble = text[:marks[0].start()] if marks else text
-    parts, previous = [], None
-    for index, (this, following) in enumerate(zip(marks, marks[1:] + [None])):
-        if this.group(1) not in keep:
-            continue
-        if previous is not None and index != previous + 1:
-            parts.append(seam(marks[previous].group(1), this.group(1)))
-        parts.append(text[this.start():following.start() if following else len(text)])
-        previous = index
-    return preamble + "".join(parts)
+    return marks, [mark.start() for mark in marks] + [len(text)]
+
+
+def trimmed(text: str, keep: set[str]) -> str | None:
+    """The prose file with only the `[id]` blocks in `keep`: the text before the
+    first `[id]` line, then each kept block, verbatim, from its `[id]` line to the
+    start of the next one in the file, with nothing between two blocks and
+    nothing after the last. A file with no `[id]` line is returned whole. None
+    when the file has `[id]` paragraphs and none of them is in `keep`: such a
+    file is not placed, because a copy holding no paragraph is not some of the
+    original's paragraphs. The note on how much was left out is the manifest's."""
+    marks, cuts = _cuts(text)
+    if not marks:
+        return text
+    blocks = [text[cuts[index]:cuts[index + 1]] for index, mark in enumerate(marks)
+              if mark.group(1) in keep]
+    if not blocks:
+        return None
+    return text[:cuts[0]] + "".join(blocks)
 
 
 def trim_record(text: str, keep: set[str]) -> dict:
@@ -477,30 +503,39 @@ def trim_record(text: str, keep: set[str]) -> dict:
     order, out of how many, and why."""
     ids = paragraph_ids(text)
     kept = [identifier for identifier in ids if identifier in keep]
+    if ids and not kept:
+        return {"kept": [], "of": len(ids),
+                "note": f"0 of {len(ids)} paragraphs: the notes reader flagged none of "
+                        "them, so the file was not placed"}
     return {"kept": kept, "of": len(ids),
             "note": f"{len(kept)} of {len(ids)} paragraphs, the ones the notes reader "
                     "flagged; the rest were not placed"}
 
 
-def handed(text: str, record: dict) -> str:
+def handed(text: str, record: dict) -> str | None:
     """What a trimmed file should hold, re-derived from the run's own file and the
-    manifest's record of the trim, and not from the trim: the preamble, then the
-    block of each id the record lists, cut out of the file by its marker, in the
-    order listed, with the seam line between two that were not adjacent.
+    manifest's record of the trim, and not from the trim: the text before the
+    first `[id]` line, then the block of each id the record lists, cut out of the
+    file from its marker to the next, in the order listed, with nothing between
+    or after them. None -- the file is absent -- for a record that keeps none of
+    a file's paragraphs; a file with no paragraph at all is handed whole.
 
     A record that does not fit the file -- an id the file has no block for, a
     count that is not the file's, an order that is not the file's -- is refused:
     it is not a record of this file.
     """
-    marks = list(ID_LINE.finditer(text))
-    cuts = [mark.start() for mark in marks] + [len(text)]
+    marks, cuts = _cuts(text)
     blocks = {mark.group(1): (index, text[cuts[index]:cuts[index + 1]])
               for index, mark in enumerate(marks)}
     kept, total = record.get("kept"), record.get("of")
     if not isinstance(kept, list) or total != len(marks):
         raise AgentInputError(f"the manifest's trimmed record says {total!r} paragraphs "
                               f"and the run's file holds {len(marks)}")
-    out, previous = [text[:marks[0].start()] if marks else text], None
+    if not marks:
+        return text
+    if not kept:
+        return None
+    out, previous = [text[:cuts[0]]], None
     for identifier in kept:
         if identifier not in blocks:
             raise AgentInputError(f"the manifest's trimmed record keeps {identifier!r}, "
@@ -509,11 +544,53 @@ def handed(text: str, record: dict) -> str:
         if previous is not None and index <= previous:
             raise AgentInputError(f"the manifest's trimmed record lists {identifier!r} "
                                   "out of the file's order")
-        if previous is not None and index != previous + 1:
-            out.append(seam(marks[previous].group(1), identifier))
         out.append(block)
         previous = index
     return "".join(out)
+
+
+def _bodies(text: str) -> tuple[dict[str, str], list[str]]:
+    """Each `[id]`'s body, the text after its line up to the next `[id]` line or
+    the end -- the owner's reading of a prose file -- and every id written twice."""
+    marks, cuts = _cuts(text)
+    bodies, twice = {}, []
+    for index, mark in enumerate(marks):
+        if mark.group(1) in bodies:
+            twice.append(mark.group(1))
+        bodies[mark.group(1)] = text[mark.end():cuts[index + 1]]
+    return bodies, twice
+
+
+def copy_shape_problems(copy: str, original: str) -> list[str]:
+    """Why a trimmed copy is not some of the original's `[id]` paragraphs, each
+    verbatim, and nothing else: the owner's rule for a cut of a prose input
+    (`evals/regression/mechanical.py`, `trimmed_copy_problems`), written out
+    here on its own and sharing nothing with `trimmed` or `handed`, so a shape
+    error in the trim and this check do not move together. Every `[id]` body of
+    the copy is the run file's body for that id; the text before the copy's
+    first `[id]` line is the run file's, byte for byte; and the copy holds at
+    least one `[id]` paragraph. Each departure is named by the paragraph. Held
+    stricter than the owner where the two can differ (the head byte for byte,
+    an id written twice), never looser."""
+    theirs, _ = _bodies(original)
+    mine, twice = _bodies(copy)
+    if not mine:
+        return ["the copy carries no [id] paragraph; a file none of whose paragraphs "
+                "was flagged is not placed"]
+    problems = []
+    first_mine, first_theirs = ID_LINE.search(copy), ID_LINE.search(original)
+    head = copy[:first_mine.start()]
+    if first_theirs is None or head != original[:first_theirs.start()]:
+        problems.append(f"the text before the first paragraph is not the run file's, byte "
+                        f"for byte: {head[:60]!r}")
+    for identifier in twice:
+        problems.append(f"paragraph {identifier} is written twice")
+    for identifier, body in mine.items():
+        if identifier not in theirs:
+            problems.append(f"paragraph {identifier} is not in the run's file")
+        elif body != theirs[identifier]:
+            problems.append(f"paragraph {identifier} is not the run file's, word for word")
+    return problems
 
 
 def trim_differences(record: dict, text: str, flagged: set[str]) -> list[str]:
@@ -695,9 +772,12 @@ def build(run: Path, agent: str, *, light: bool = False) -> dict:
         if flagged is not None and name in TRIMMED_FOR_VALUATION:
             if (root / name).is_symlink():
                 raise AgentInputError(f"{root / name} is a symlink; an agent's file is copied")
-            text = source.read_text(encoding="utf-8", errors="replace")
-            _place_bytes(trimmed(text, flagged).encode("utf-8"), root / name)
+            text = prose_text(source)
             trims[name] = trim_record(text, flagged)
+            cut = trimmed(text, flagged)
+            if cut is None:
+                continue        # none of its paragraphs flagged: not placed, on record
+            _place_bytes(cut.encode("utf-8"), root / name)
         else:
             _place(source, root / name)
         placed.append(name)
@@ -752,18 +832,19 @@ def expected_bytes(run: Path, spec: Agent, name: str, trim: dict | None = None,
     A valuation directory the manifest records no trim for was built before the
     trim and holds the full file, and that is what it is held to: a check that
     called every run on record broken could not tell a leak from the date a run
-    was built.
+    was built. None, too, for a trimmed file that should not be there: a record
+    keeping none of its paragraphs (the caller names a file placed under one).
     """
     source = run / name
     if not source.is_file():
         return None
     if trim is not None and spec.layer == "valuation" and name in TRIMMED_FOR_VALUATION:
-        text = source.read_text(encoding="utf-8", errors="replace")
+        text = prose_text(source)
         cut = handed(text, trim)
         if flagged is not None:
             ids = paragraph_ids(text)
             cut = handed(text, {"kept": [i for i in ids if i in flagged], "of": len(ids)})
-        return cut.encode("utf-8")
+        return None if cut is None else cut.encode("utf-8")
     return source.read_bytes()
 
 
@@ -840,6 +921,29 @@ def input_tree_holding(path) -> Path | None:
     return None
 
 
+def _trimmed_copy_problems(run: Path, path: Path, record: dict) -> list[str]:
+    """A trimmed valuation file held to the owner's shape rule, apart from what
+    the record and the flagged set say it should hold: placed under a record
+    that keeps none of the run file's paragraphs, or not some of the run file's
+    `[id]` paragraphs, each verbatim, and nothing else (`copy_shape_problems`)."""
+    source = run / path.name
+    if not source.is_file():
+        return []
+    try:
+        original = prose_text(source)
+        copy = prose_text(path)
+    except AgentInputError as exc:
+        return [str(exc)]
+    total = len(paragraph_ids(original))
+    if not total:
+        return []                       # an id-less file is handed whole, held by bytes
+    out = []
+    if record.get("kept") == []:
+        out.append(f"placed under a record that keeps none of its {total} paragraphs; a "
+                   "file none of whose paragraphs was flagged is not placed")
+    return out + copy_shape_problems(copy, original)
+
+
 def isolation_violations(run: Path) -> list[str]:
     """Every way an agent could reach what its layer never sees. Empty is clean.
 
@@ -858,7 +962,10 @@ def isolation_violations(run: Path) -> list[str]:
        list flag, derived here again through `flagged_paragraphs`; the record's
        `kept` must be that set, so a record edited to keep more, or a trim
        built from a wrong set, is reported by the paragraph, and a trimmed file
-       placed with no entry of its own beside one that has one is named. It is held to the
+       placed with no entry of its own beside one that has one is named. Each
+       trimmed copy is also held to the owner's shape rule on its own -- some of
+       the run file's `[id]` paragraphs, each verbatim, and nothing else -- and
+       one placed under a record that keeps none of its paragraphs is named. It is held to the
        full file when the manifest records no trim for that directory and the
        run was analysed before the rule (`analysed_utc` before 2026-10-06, the
        eight runs published on 2026-09-29); a run analysed from that day on, or
@@ -915,6 +1022,10 @@ def isolation_violations(run: Path) -> list[str]:
                 found.extend(f"{name}: {path.name}: {line}" for line in trim_differences(
                     trims[path.name], (run / path.name).read_text(encoding="utf-8",
                                                                   errors="replace"), flagged))
+            if (path.name in trims and spec.layer == "valuation"
+                    and path.name in TRIMMED_FOR_VALUATION):
+                found.extend(f"{name}: {path.name}: {line}"
+                             for line in _trimmed_copy_problems(run, path, trims[path.name]))
             if (trims and spec.layer == "valuation" and name in AGENTS
                     and path.name in TRIMMED_FOR_VALUATION and path.name not in trims):
                 # the record names the other file and not this one: a file the

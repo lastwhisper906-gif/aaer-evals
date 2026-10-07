@@ -833,8 +833,10 @@ def check_analysis(run: Path, name: str, kind: str) -> dict:
                 if (directory / name).is_file())
     fields = json.loads(seen.read_text(encoding="utf-8"))
     sources = analysis_check.read_sources(directory, analysis_check.SOURCES[kind])
-    # the valuation analyst's prose is trimmed: a quote is held to the run's full
-    # file as well, so none runs across a seam (analysis_check.quote_problem)
+    # the valuation analyst's prose is trimmed to the flagged paragraphs, written
+    # one after the other: a quote is held to the run's full file as well, so none
+    # runs across the junction of two blocks that were not adjacent in the filing
+    # (analysis_check.quote_problem)
     filing = {name: (run / name).read_text(encoding="utf-8")
               for name in agent_inputs.TRIMMED_FOR_VALUATION
               if name in sources and (run / name).is_file()}

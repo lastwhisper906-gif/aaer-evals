@@ -1418,7 +1418,8 @@ def test_the_message_names_the_shared_files_first_in_a_fixed_order():
 # the first and the third, which are not adjacent. Their blocks are copied here
 # from the fixture's input_mdna.md by hand (the apostrophe in "Management's" is
 # the filing's own U+2019), and the expected trimmed copy is the file's preamble,
-# the first block, one line holding the two markers, and the third block.
+# the first block and the third block, one after the other with nothing between
+# them: the third block's own [id] line is the junction.
 MDNA_ONE = "0001045810-26-000075:mdna:1"
 MDNA_THREE = "0001045810-26-000075:mdna:3"
 FLAGGING_TWO = '''```json
@@ -1432,14 +1433,12 @@ TRIMMED_TWO = (
     "# NVDA MD&A \u2014 0001045810-26-000075\n\n\n## mdna\n\n"
     "[0001045810-26-000075:mdna:1]\nItem 2. Management\u2019s Discussion and Analysis of "
     "Financial Condition and Results of Operations\n\n"
-    "[0001045810-26-000075:mdna:1] [0001045810-26-000075:mdna:3]\n\n"
     "[0001045810-26-000075:mdna:3]\n[same as prior period, unchanged from "
     "0001045810-26-000052:mdna:3]\n\n")
 INSIDE = {"reason": "a reason", "quote": "Analysis of Financial Condition",
           "quote_from": "input_mdna.md"}
 ACROSS = {"reason": "a reason", "quote_from": "input_mdna.md",
-          "quote": "Results of Operations\n\n[0001045810-26-000075:mdna:1] "
-                   "[0001045810-26-000075:mdna:3]\n\n[0001045810-26-000075:mdna:3]\n[same as"}
+          "quote": "Results of Operations\n\n[0001045810-26-000075:mdna:3]\n[same as"}
 
 
 def test_a_whole_run_with_two_paragraphs_flagged_hands_the_valuation_analyst_those_two(
@@ -1499,7 +1498,8 @@ def test_a_whole_run_with_two_paragraphs_flagged_hands_the_valuation_analyst_tho
     (run / "agents" / "valuation-analyst" / "input_mdna.md").write_bytes(
         TRIMMED_TWO.encode("utf-8"))
     assert agent_inputs.isolation_violations(run) == []
-    # the seam rule: the bear scenario quotes across the two blocks' seam, which
+    # the seam rule: the bear scenario quotes across the junction of the two
+    # blocks, the third's own [id] line after the first's text, which
     # string-matches the copy the analyst saw and nothing the filing printed
     copy = (run / "agents" / "valuation-analyst" / "input_mdna.md").read_text(encoding="utf-8")
     full = (run / "input_mdna.md").read_text(encoding="utf-8")
@@ -1515,15 +1515,15 @@ def test_a_whole_run_with_two_paragraphs_flagged_hands_the_valuation_analyst_tho
 
 def test_the_valuation_analyst_is_handed_only_the_paragraphs_the_notes_reader_flagged(finished):
     """The stubbed notes reader wrote no items, so no MD&A paragraph was flagged: the
-    valuation analyst's MD&A holds the file's preamble and no paragraph, the manifest
-    records the trim beside the agent's usage, and the notes reader's own copy holds
-    every paragraph."""
+    valuation analyst is handed no MD&A at all -- a copy holding no paragraph is not
+    some of the original's paragraphs, which the owner refuses ("the copy carries no
+    [id] paragraphs") -- the manifest records the trim, 0 of 112, beside the agent's
+    usage, and the notes reader's own copy holds every paragraph."""
     run, manifest, _ = finished
-    valuation = (run / "agents" / "valuation-analyst" / "input_mdna.md").read_text()
+    for name in ("valuation-analyst", "valuation-analyst-second-pass"):
+        assert not (run / "agents" / name / "input_mdna.md").exists()
+        assert not (run / "agents" / name / "input_8k.md").exists()
     reader = (run / "agents" / "notes-text-reader" / "input_mdna.md").read_text()
-    assert valuation == reader[:reader.index("[0001045810-26-000075:mdna:")]
-    assert "trimmed" not in valuation
-    assert "[0001045810-" not in valuation                        # no marker survives
     # 112 paragraphs: counted by hand on the fixture's MD&A, built once outside
     # the tests, with `grep -c '^\[0001045810-' input_mdna.md` (112), and the
     # same 112 for `grep -c '\[0001045810-'`, so no marker sits off a line start.
@@ -2446,3 +2446,51 @@ def test_the_row_a_real_fallback_writes_is_utc_now_and_carries_through_the_clock
     assert asked["accounting-analyst"] == ["fable"] and asked["valuation-analyst"] == ["fable"]
     assert "model_fallback" not in late and late["analysis_failure"] is None
     assert (run / "input_manifest.json").read_bytes() == stored     # the row never moved
+
+
+def _flagging_two_run(tmp_path, monkeypatch, **fake):
+    run = tmp_path / "NVDA" / NVDA_ACCESSION
+    bundle = assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,
+                                   prior_runs=run.parent.parent)
+    assemble_bundle.write(bundle, run)
+    monkeypatch.setattr(run_analysis, "ask", _fake_ask({}, **fake))
+    manifest = run_analysis.run_company(run=run, ticker="NVDA", form="10-Q",
+                                        cutoff="2026-08-26", period_end="2026-07-26",
+                                        store=run_analysis.cutoff_guard.FIXTURES,
+                                        prices=None, control="never")
+    return run, manifest
+
+
+def test_the_owner_finds_every_input_copy_of_a_whole_run_on_record(tmp_path, monkeypatch):
+    """The owner's `inputs_on_record` over a whole stubbed run, both valuation
+    passes graded: the MD&A cut to two paragraphs that were not adjacent, and
+    the 8-K, none of whose 76 paragraphs was flagged, not placed. Under the seam
+    trim it said "fail 31 of 35": the 8-K "carries no [id] paragraphs" and the
+    MD&A "paragraph 0001045810-26-000075:mdna:1 ... word for word", in both
+    passes. A seam-bearing copy put back in the second pass's directory is
+    refused by the owner and by the boundary check."""
+    from evals.common import PASS
+    from evals.regression import mechanical
+    run, manifest = _flagging_two_run(tmp_path, monkeypatch, notes_report=FLAGGING_TWO)
+    assert manifest["analysis_failure"] is None
+    for name in ("valuation-analyst", "valuation-analyst-second-pass"):
+        record = manifest["agents"][name]["trimmed"]
+        assert record["input_8k.md"]["kept"] == [] and record["input_8k.md"]["of"] == 76
+        assert not (run / "agents" / name / "input_8k.md").exists()
+    result = mechanical.check_inputs_on_record(run)
+    assert result.status == PASS, result.failures
+    assert agent_inputs.isolation_violations(run) == []
+    seam = TRIMMED_TWO.replace(
+        "Results of Operations\n\n",
+        "Results of Operations\n\n[0001045810-26-000075:mdna:1] [0001045810-26-000075:mdna:3]\n\n")
+    copy = run / "agents" / "valuation-analyst-second-pass" / "input_mdna.md"
+    copy.unlink()
+    copy.write_bytes(seam.encode("utf-8"))
+    result = mechanical.check_inputs_on_record(run)
+    assert result.status != PASS
+    assert result.failures == ["agents/valuation-analyst-second-pass/input_mdna.md: paragraph "
+                               "0001045810-26-000075:mdna:1 is not the file on record's, word "
+                               "for word"]
+    assert any(line.startswith("valuation-analyst-second-pass: input_mdna.md: paragraph "
+                               "0001045810-26-000075:mdna:1")
+               for line in agent_inputs.isolation_violations(run))

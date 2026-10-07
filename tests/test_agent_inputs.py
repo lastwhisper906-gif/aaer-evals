@@ -735,8 +735,11 @@ def test_a_clean_retired_agent_s_directory_is_not_a_violation(tmp_path):
 # The expected files are written out by hand. Four paragraphs; the notes reader
 # flags the second and the fourth, and a third item flagging the third is on the
 # manifest's drop list, so it flags nothing. Two kept blocks that were not adjacent
-# are parted by one line holding their own two markers, which the filing prints;
-# the file carries no note of its own, that is the manifest's.
+# are written one after the other with nothing between them: the owner reads
+# everything after an `[id]` line up to the next one as that paragraph's body
+# (evals/regression/mechanical.py, `paragraphs_of`), so a line between them would
+# be read as the tail of the second paragraph. The file carries no note of its
+# own, that is the manifest's.
 
 ONE, TWO, THREE, FOUR = (f"0000000000-00-000001:mdna:{n}" for n in (1, 2, 3, 4))
 MDNA = (f"# T mdna\n\n[{ONE}]\nFirst, not flagged.\n\n"
@@ -753,7 +756,6 @@ MANIFEST = ('{"accession": "0000320193-25-000073", "ticker": "AAPL", "dropped_it
             '[{"item_id": "c", "report": "report_notes_text.md", "reason": "planted"}]}\n')
 TRIMMED = (f"# T mdna\n\n"
            f"[{TWO}]\nSecond,\u00a0flagged.\n\n"
-           f"[{TWO}] [{FOUR}]\n\n"
            f"[{FOUR}]\nFourth, flagged.\n")
 RECORD = {"kept": [TWO, FOUR], "of": 4,
           "note": "2 of 4 paragraphs, the ones the notes reader flagged; the rest were not placed"}
@@ -789,14 +791,17 @@ def test_the_trimmed_file_holds_no_word_the_filing_does_not():
     assert "trimmed" not in TRIMMED and "placed" not in TRIMMED
 
 
-def test_two_adjacent_kept_blocks_meet_with_no_seam_and_non_adjacent_ones_with_one():
+def test_kept_blocks_meet_with_nothing_between_them_adjacent_or_not():
     assert agent_inputs.trimmed(MDNA, {THREE, FOUR}) == (
         f"# T mdna\n\n[{THREE}]\nThird, flagged by an item the gate dropped.\n\n"
         f"[{FOUR}]\nFourth, flagged.\n")
     assert agent_inputs.trimmed(MDNA, {ONE, FOUR}) == (
-        f"# T mdna\n\n[{ONE}]\nFirst, not flagged.\n\n[{ONE}] [{FOUR}]\n\n"
+        f"# T mdna\n\n[{ONE}]\nFirst, not flagged.\n\n"
         f"[{FOUR}]\nFourth, flagged.\n")
-    assert agent_inputs.trimmed(MDNA, set()) == "# T mdna\n\n"
+    # none of the file's paragraphs kept: nothing is placed, never the head alone
+    assert agent_inputs.trimmed(MDNA, set()) is None
+    # a file with no [id] paragraph at all is handed whole
+    assert agent_inputs.trimmed("this is input_8k.md\n", set()) == "this is input_8k.md\n"
 
 
 def test_a_dropped_item_flags_nothing_and_a_run_with_no_gate_record_is_refused(tmp_path):
@@ -916,7 +921,7 @@ def test_the_boundary_check_re_derives_the_trim_from_the_record_and_not_from_the
     monkeypatch.setattr(agent_inputs, "trimmed", lambda *args: (_ for _ in ()).throw(
         AssertionError("the boundary check called the trim")))
     assert agent_inputs.handed(MDNA, RECORD) == TRIMMED
-    assert agent_inputs.handed(MDNA, {"kept": [], "of": 4}) == "# T mdna\n\n"
+    assert agent_inputs.handed(MDNA, {"kept": [], "of": 4}) is None      # absent
     assert agent_inputs.isolation_violations(
         _valuation_directory(tmp_path / "cut", holds=TRIMMED, record=RECORD)) == []
 
@@ -1004,3 +1009,183 @@ def test_a_trim_on_a_run_with_no_gate_record_is_a_broken_boundary(tmp_path):
     assert len(broken) == 1 and broken[0].startswith(
         "valuation-analyst: the manifest records a trim, but ")
     assert "no record that the quote gate ran" in broken[0]
+
+
+# --- the trim held to the owner's own reading of a copy --------------------------------------
+#
+# The owner's grader (`evals/regression/mechanical.py`, read and imported here,
+# never written) reads a trimmed copy as some of the original's `[id]`
+# paragraphs, each verbatim, and nothing else: everything after an `[id]` line up
+# to the next one is that paragraph's body (`paragraphs_of`), compared exactly
+# (`trimmed_copy_problems`). The first four Opus runs (ESE, QCOM, TTMI and NVDA,
+# 2026-10-07) failed it in every trimmed copy, both passes, because the trim
+# wrote a line naming two ids between two kept blocks that were not adjacent:
+# ESE's input_8k.md read
+#   [0001104659-26-092033:8k_2_02:15]
+#   |  | · | Q3 2026 entered orders were $410 million, ... |
+#
+#   [0001104659-26-092033:8k_2_02:15] [0001104659-26-092033:8k_2_02:22]
+#
+#   [0001104659-26-092033:8k_2_02:22]
+# and the owner read the middle line as the tail of paragraph 15. Every test
+# below runs over both passes, which are handed the same two files.
+
+from evals.regression import mechanical  # noqa: E402  (the owner's, read-only)
+
+PASSES = ("valuation-analyst", "valuation-analyst-second-pass")
+HEAD = "# T mdna\n\n"
+BLOCK_TWO = f"[{TWO}]\nSecond, flagged.\n\n"
+BLOCK_FOUR = f"[{FOUR}]\nFourth, flagged.\n"
+# Every shape a copy can take that the owner refuses, as the trim or a softer
+# variant of it could write it. The seam is ESE's shape on these four paragraphs.
+REFUSED_SHAPES = {
+    "the seam line": HEAD + BLOCK_TWO + f"[{TWO}] [{FOUR}]\n\n" + BLOCK_FOUR,
+    "a blank line between blocks": HEAD + BLOCK_TWO + "\n" + BLOCK_FOUR,
+    "a note before the first paragraph": HEAD + "2 of 4 paragraphs\n\n" + BLOCK_TWO + BLOCK_FOUR,
+    "text after the last block": HEAD + BLOCK_TWO + BLOCK_FOUR + "\n[the rest were not placed]\n",
+    "the last block rstripped": (HEAD + BLOCK_TWO + BLOCK_FOUR).rstrip(),
+    "the preamble alone": HEAD,
+}
+
+
+def _both_passes(run: Path) -> None:
+    for name in PASSES:
+        agent_inputs.build(run, name)
+
+
+def _replace(run: Path, agent: str, name: str, data: bytes) -> None:
+    placed = agent_inputs.session_root(run, agent) / name
+    if placed.exists():
+        placed.unlink()
+    placed.write_bytes(data)
+
+
+def test_the_trimmed_copy_is_what_the_owner_reads_as_a_cut_of_the_run_file(tmp_path):
+    """The trimmer's real output, both passes: the owner's rule finds nothing, every
+    paragraph the copy holds is the run file's own (id, body) pair, the text
+    before the first paragraph is the run file's byte for byte, and the boundary
+    check is clean. On the seam trim the owner said "paragraph ...:mdna:2 is not
+    the file on record's, word for word"."""
+    run = _trimmed_run(tmp_path)
+    _both_passes(run)
+    original = (run / "input_mdna.md").read_bytes().decode("utf-8")
+    for name in PASSES:
+        copy = (agent_inputs.session_root(run, name) / "input_mdna.md").read_bytes().decode("utf-8")
+        assert copy == TRIMMED
+        assert mechanical.trimmed_copy_problems(copy, original) == []
+        assert set(mechanical.paragraphs_of(copy).items()) <= set(
+            mechanical.paragraphs_of(original).items())
+        assert set(mechanical.paragraphs_of(copy)) == {TWO, FOUR}      # the last one too
+        assert copy[:copy.index("[")] == original[:original.index("[")]
+        assert agent_inputs.copy_shape_problems(copy, original) == []
+    assert agent_inputs.isolation_violations(run) == []
+
+
+@pytest.mark.parametrize("shape", sorted(REFUSED_SHAPES))
+@pytest.mark.parametrize("agent", PASSES)
+def test_a_copy_the_owner_refuses_the_boundary_check_names(tmp_path, shape, agent):
+    """One direction, not an equivalence: whatever shape the owner refuses, the
+    boundary check names too, under the trim record the router wrote. On the
+    seam line and the preamble alone the boundary check named nothing before."""
+    run = _trimmed_run(tmp_path)
+    _both_passes(run)
+    copy = REFUSED_SHAPES[shape]
+    assert mechanical.trimmed_copy_problems(copy, MDNA) != []
+    assert agent_inputs.copy_shape_problems(copy, MDNA) != []
+    _replace(run, agent, "input_mdna.md", copy.encode("utf-8"))
+    broken = agent_inputs.isolation_violations(run)
+    assert broken and all(line.startswith(f"{agent}: input_mdna.md") or
+                          line.startswith(f"{agent}: holds a input_mdna.md") for line in broken)
+    other = PASSES[1 - PASSES.index(agent)]
+    assert not any(line.startswith(f"{other}: ") for line in broken)
+
+
+def test_the_seam_line_is_named_by_the_paragraph_it_lands_in(tmp_path):
+    """The seam is read as the tail of the paragraph before it, by both rules."""
+    run = _trimmed_run(tmp_path)
+    _both_passes(run)
+    seam = REFUSED_SHAPES["the seam line"]
+    assert mechanical.trimmed_copy_problems(seam, MDNA) == [
+        f"paragraph {TWO} is not the file on record's, word for word"]
+    _replace(run, "valuation-analyst-second-pass", "input_mdna.md", seam.encode("utf-8"))
+    assert (f"valuation-analyst-second-pass: input_mdna.md: paragraph {TWO} is not the run "
+            "file's, word for word") in agent_inputs.isolation_violations(run)
+
+
+def test_the_full_file_under_a_trim_record_is_refused_by_the_gate_and_not_by_the_owner(tmp_path):
+    """Why the agreement above runs one way: the full file is some of the
+    original's paragraphs, each verbatim, so the owner passes it, and the trim
+    rule refuses it, because a paragraph no one flagged was handed."""
+    run = _trimmed_run(tmp_path)
+    _both_passes(run)
+    assert mechanical.trimmed_copy_problems(MDNA, MDNA) == []
+    _replace(run, "valuation-analyst", "input_mdna.md", MDNA.encode("utf-8"))
+    assert any("other bytes" in line for line in agent_inputs.isolation_violations(run))
+
+
+NO_ITEMS_MANIFEST = '{"accession": "0000320193-25-000073", "ticker": "AAPL", "dropped_items": []}\n'
+
+
+def test_a_file_none_of_whose_paragraphs_was_flagged_is_not_placed(tmp_path):
+    """A notes report holding no item flags nothing: both passes record 0 of 4
+    for the MD&A and hold no copy of it, and the boundary check is clean. The
+    head alone, placed by hand under that record, is what the owner refuses
+    ("the copy carries no [id] paragraphs") and the boundary check names. The
+    8-K here has no paragraph at all, so it is handed whole, as TTMI's was."""
+    run = _trimmed_run(tmp_path)
+    (run / "report_notes_text.md").write_text("no items\n", encoding="utf-8")
+    (run / "input_manifest.json").write_text(NO_ITEMS_MANIFEST, encoding="utf-8")
+    for name in PASSES:
+        built = agent_inputs.build(run, name)
+        assert built["trimmed"]["input_mdna.md"] == {
+            "kept": [], "of": 4,
+            "note": "0 of 4 paragraphs: the notes reader flagged none of them, so the file "
+                    "was not placed"}
+        assert "input_mdna.md" not in built["files"]
+        assert not (agent_inputs.session_root(run, name) / "input_mdna.md").exists()
+        assert (agent_inputs.session_root(run, name) / "input_8k.md").read_bytes() == \
+            (run / "input_8k.md").read_bytes()
+    assert agent_inputs.handed(MDNA, {"kept": [], "of": 4}) is None
+    assert agent_inputs.isolation_violations(run) == []
+    assert mechanical.trimmed_copy_problems(HEAD, MDNA) == [
+        "the copy carries no [id] paragraphs, and is not the file on record"]
+    for name in PASSES:
+        _replace(run, name, "input_mdna.md", HEAD.encode("utf-8"))
+    broken = agent_inputs.isolation_violations(run)
+    for name in PASSES:
+        assert (f"{name}: input_mdna.md: placed under a record that keeps none of its 4 "
+                "paragraphs; a file none of whose paragraphs was flagged is not placed") in broken
+
+
+CRLF_MDNA = MDNA.replace("\n", "\r\n")
+
+
+def test_a_run_file_with_carriage_returns_is_cut_from_its_bytes(tmp_path):
+    """The trim used to read the run's file in text mode, which turns `\\r\\n` into
+    `\\n`: the copy then held no CR and the owner, decoding both from bytes, read
+    the head and every paragraph as changed while the boundary check, reading
+    the same way as the trim, passed it. Now the copy keeps the run file's CRs.
+    The LF copy is refused by both."""
+    run = _trimmed_run(tmp_path)
+    (run / "input_mdna.md").write_bytes(CRLF_MDNA.encode("utf-8"))
+    _both_passes(run)
+    original = (run / "input_mdna.md").read_bytes()
+    for name in PASSES:
+        copy = (agent_inputs.session_root(run, name) / "input_mdna.md").read_bytes()
+        assert b"\r\n" in copy
+        assert copy == TRIMMED.replace("\n", "\r\n").encode("utf-8")
+        assert mechanical.trimmed_copy_problems(copy.decode(), original.decode()) == []
+    assert agent_inputs.isolation_violations(run) == []
+    lf = TRIMMED.encode("utf-8")
+    assert mechanical.trimmed_copy_problems(lf.decode(), original.decode()) != []
+    _replace(run, "valuation-analyst", "input_mdna.md", lf)
+    broken = agent_inputs.isolation_violations(run)
+    assert any(line.startswith("valuation-analyst: input_mdna.md: the text before the first "
+                               "paragraph") for line in broken)
+
+
+def test_a_prose_file_that_is_not_utf8_is_refused_and_not_replaced(tmp_path):
+    run = _trimmed_run(tmp_path)
+    (run / "input_mdna.md").write_bytes(MDNA.encode("utf-8").replace(b"Second", b"Sec\xffond"))
+    with pytest.raises(AgentInputError, match="is not UTF-8"):
+        agent_inputs.build(run, "valuation-analyst")

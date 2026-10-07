@@ -34,8 +34,10 @@ drop rows are read from it, keyed by report, so a citation of an id the quote
 gate dropped is refused here as in the pipeline, and for the valuation kinds
 the run's full `input_mdna.md` and `input_8k.md` are read as `filing`, the
 other side a quote is held to. A valuation or assumptions kind without `--run`
-is refused: the valuation analyst's copies are trimmed, and the trimmed copy
-alone cannot tell a quote across a seam from one the filing printed. The
+is refused: the valuation analyst's copies are trimmed to the flagged
+paragraphs, written one after the other, and the trimmed copy alone cannot tell
+a quote running across the junction of two blocks that were not adjacent from
+one the filing printed. The
 accounting and financial kinds run without it, and say that no drop row was
 read.
 """
@@ -360,10 +362,11 @@ def quote_problem(item: dict, sources: dict[str, str],
     The quote is held to the file the analyst saw, under the name it gives. For
     the valuation analyst's MD&A and earnings release, `filing` holds the run's
     full file under the same name, and the quote is held to that too: the copy
-    the analyst saw is cut down to the flagged paragraphs with a seam line
-    between two that were not adjacent (`src/agent_inputs.py`), so a quote that
-    runs off one kept paragraph into the next string-matches the copy and
-    nothing the filing printed.
+    the analyst saw is cut down to the flagged paragraphs, written one after
+    the other with nothing between them (`src/agent_inputs.py`), so a quote
+    that runs off one kept paragraph across the next one's `[id]` line, where
+    the two were not adjacent in the filing, string-matches the copy and
+    nothing the filing printed. The reason still says "seam": that junction.
     """
     quote = item.get("quote")
     if quote in (None, ""):
@@ -735,8 +738,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.kind in ("valuation", "assumptions") and not args.run:
         print(f"analysis_check: --kind {args.kind} needs --run <run directory>: the "
               "valuation analyst's input_mdna.md and input_8k.md are trimmed copies, and "
-              "the trimmed copy alone cannot hold a quote across a seam to what the filing "
-              "printed; the run's full files are the other side", file=sys.stderr)
+              "the trimmed copy alone cannot hold a quote across a seam between two kept "
+              "paragraphs to what the filing printed; the run's full files are the other "
+              "side", file=sys.stderr)
         return BAD_INPUT
     try:
         payload = json.loads(Path(args.written).read_text(encoding="utf-8"))
