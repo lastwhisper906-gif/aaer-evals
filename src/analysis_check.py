@@ -119,21 +119,34 @@ PLACEHOLDER = re.compile(r"\{([a-z0-9_.-]+)(?:\|(pct))?\}")
 # the end of the text, punctuation or any character outside the Latin alphabet,
 # a connector ("and", "or", "to", "through", a dash, ".."), another year, a
 # year-context-after word, a month, a function word or time word ("the", "was",
-# "quarter", "amendment"), or one of the few verbs the published analyses write
+# "quarter", "amendment"), one of the few verbs the published analyses write
 # directly after a year ("turns", "recur", "carries", "carried", "printed",
 # "assumed", "extended", "reverses", "continues", "holds"), which cannot open a counted
-# noun phrase -- never a noun or an adjective, hyphenated or not, that can:
-# "in 2030 orders", "sold in 2048 high-margin units", "the second half of 2025
-# loss-making" and "the year-end 2025 balance" are counts to the rule, while
-# "for 2027, a backlog", "the first half of 2027 turns", "in 2030." and "in 2030
-# and 2031" are years. "of" alone is not a year context -- "inventory of 2048"
-# is a count -- so it counts only inside the phrases above; "to" is not one --
-# "rose to 2030 orders" is a count; and "by" is not one at all, because it names
-# an amount as often as a date ("cut headcount by 2030.", "reduced inventory by
-# 2048,", "up by 1999") and no word around it tells the two apart -- an analyst
-# who means the date writes "by the end of 2030" or "in 2030", which the words
-# above read. "fiscal", "calendar", "FY" and "Q1".."Q4" are the alternatives
-# above.
+# noun phrase, or a hyphenated adjective that is itself followed by the end of
+# the text, a full stop, a function word or one of those verbs ("the second half
+# of 2025 loss-making recur", GNRC's bear case) -- never a noun or an adjective
+# that can open one: "in 2030 orders", "sold in 2048 high-margin units", "in
+# 2030 low-cost stores" and "the year-end 2025 balance" are counts to the rule,
+# while "for 2027, a backlog", "the first half of 2027 turns", "in 2030." and
+# "in 2030 and 2031" are years. "of" alone is not a year context -- "inventory
+# of 2048" is a count -- so it counts only inside the phrases above and after a
+# noun that names a year's measure: "margin of", "margins of", "growth of",
+# "surge of", which the GNRC valuation analyst wrote ("the margin of 2023", "the
+# growth of 2021 and 2022", "the pandemic-era surge of 2021"), and the elided
+# "and of" that continues one of them ("the margin of the year before last and
+# of 2022"); "revenue of 2048" and "inventory of 2048" stay counts. "to" is not
+# one -- "rose to 2030 orders" is a count -- but after a fiscal year it is the
+# connector of a range, and the range takes the terminator ("the flat stretch
+# of fiscal 2022 to 2025,", AAPL's base case; "fiscal 2022 to 2048 units" keeps
+# its count). "was" is not one either -- "the headcount was 2048" is a count --
+# unless the clause's subject is a year: "year" written earlier in the same
+# clause, no punctuation between ("the only fiscal year in the record that grew
+# faster was 2021 at", AAPL's bull case), where "year-end" is not "year". And
+# "by" is not one at all, because it names an amount as often as a date ("cut
+# headcount by 2030.", "reduced inventory by 2048,", "up by 1999") and no word
+# around it tells the two apart -- an analyst who means the date writes "by the
+# end of 2030" or "in 2030", which the words above read. "fiscal", "calendar",
+# "FY" and "Q1".."Q4" are the alternatives above.
 #
 # A year-context-after word, whole: "fiscal year", "year-end", "guidance",
 # "outlook", a possessive ("2022's"), a month name, or the Korean 년, 회계연도, 상반기, 하반기,
@@ -160,16 +173,32 @@ YEAR = r"(?:19|20)\d{2}"
 DATE = r"(?:19|20)\d{2}-\d{2}-\d{2}"
 MONTH = (r"(?:January|February|March|April|May|June|July|August|September|October"
          r"|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sept|Sep|Oct|Nov|Dec)")
+# A clause: no full stop, semicolon, colon, comma or digit crossed, so a count
+# between the context word and the number is never hidden under it.
+WITHIN_A_CLAUSE = r"[^.;:,\d]*?"
 YEAR_CONTEXT_BEFORE = (
     r"(?:(?:first|second|1st|2nd)[- ]half(?:\s+of)?"
     r"|(?:first|second|third|fourth|1st|2nd|3rd|4th)[- ]quarter(?:\s+of)?"
     r"|(?:year|quarter|period)[- ]end(?:\s+of)?|end of|start of|beginning of|close of"
     r"|due|" + MONTH
     + r"|in|for|through|since|until|year|during|early|late|mid|as of|회계연도"
-    r"|half of|(?:months?|weeks?|quarters?) of)")
+    r"|half of|(?:months?|weeks?|quarters?) of"
+    # A noun that names a year's measure before "of", and the elided "and of" that
+    # continues it: GNRC's valuation analyst wrote "below the margin of 2023", "the
+    # margins of 2021, 2022 and", "below the growth of 2021 and 2022", "the
+    # pandemic-era surge of 2021" and "the margin of the year before last and of
+    # 2022". "inventory of 2048" has no such noun and stays a count.
+    r"|(?:margins?|growth|surge) of(?:\s" + WITHIN_A_CLAUSE + r"\sand of)?"
+    # "was" after a subject that is a year, "year" earlier in the same clause: AAPL's
+    # valuation analyst wrote "the only fiscal year in the record that grew faster
+    # was 2021 at". "year-end" is not "year", and "the headcount was 2048" has no
+    # year in its subject.
+    r"|year(?![-A-Za-z0-9])" + WITHIN_A_CLAUSE + r"\swas)")
 # A month after a year is a month only capitalised, whatever case the group around
 # it reads in: "may" and "march" the verbs are not months.
-YEAR_CONTEXT_AFTER = (r"(?:fiscal year|year-end|guidance|outlook|['’]s|(?-i:" + MONTH + r")"
+# "peak" names a year's high as "guidance" names its forecast: "that window starts
+# at the 2022 peak" (GNRC's base case); a peak count is written "the peak of 2048".
+YEAR_CONTEXT_AFTER = (r"(?:fiscal year|year-end|guidance|outlook|peak|['’]s|(?-i:" + MONTH + r")"
                       r"|년|회계연도|상반기|하반기|분기|말|기준)")
 CONNECTOR = r"(?:and|or|to|through)"
 FUNCTION_OR_TIME_WORD = (
@@ -178,25 +207,47 @@ FUNCTION_OR_TIME_WORD = (
     r"|will|would|could|should|may|might|can|did|does|do|ran|saw|ended|began|closed"
     r"|opened|under|against|after|before|over|into|onto|by|until|through|during|alone"
     r"|only|also|still|then|now|quarter|half|period|fiscal|annual|filing|report|results"
-    r"|release|amendment|figure|figures|trough|window|date|dates)")
+    r"|release|amendment|figure|figures|trough|window|date|dates"
+    # "once" the conjunction: "the first half of 2026 once the refund is removed"
+    # (GNRC's bull case).
+    r"|once)")
 # Verbs the eight published analyses write directly after a year; a verb cannot
 # open a counted noun phrase. No wider.
 VERB_AFTER_A_YEAR = (r"(?:turns|recur|recurs|carries|carried|printed|assumed|extended|reverses"
-                     r"|continues|holds)")
+                     r"|continues|holds"
+                     # "the level the first half of 2026 earned" (GNRC's base case)
+                     r"|earned)")
 QUANTITY_WORD = (r"(?:million|billion|trillion|thousand|percent|per\s*cent|%|units|basis"
                  r"|points|bps|shares|dollars|employees|customers|days|times|bn|mn|mm)")
 KOREAN_UNIT = r"(?:억|만|천|원|개|명|주|건|대)"
 NOT_A_QUANTITY = (r"(?![.,]\d)(?!\s*(?i:" + QUANTITY_WORD + r"))(?!" + KOREAN_UNIT + r")")
 LIST_SEPARATOR = r"(?:\s*[-–—]\s*|\s*,\s*|\s*,?\s*(?i:" + CONNECTOR + r")\s+)"
 YEARS = YEAR + r"(?:" + LIST_SEPARATOR + YEAR + r")*"
+# A hyphenated adjective after a year is a terminator only when what follows it
+# cannot be the noun it modifies -- the end of the text, a full stop, a function
+# word or a verb from the list above: "the second half of 2025 loss-making recur"
+# (GNRC's bear case) is a year, "sold in 2048 high-margin units" a count. A
+# connector is not enough, because "high-margin and low-cost units" is one
+# adjective phrase; nor is a comma. A terminator word ends at a hyphen as at a
+# letter, or "once" would read the start of "once-off" in "the first half of
+# 2048 once-off units".
+HYPHENATED_ADJECTIVE = r"[A-Za-z]+(?:-[A-Za-z]+)+"
+AFTER_A_HYPHENATED_ADJECTIVE = (r"(?:$|[.;:]|(?i:" + FUNCTION_OR_TIME_WORD + "|"
+                                + VERB_AFTER_A_YEAR + r")(?![A-Za-z0-9-]))")
 YEAR_TERMINATOR = (r"(?=\s*(?:$|[^\sA-Za-z0-9]|" + YEAR + r"|(?i:" + CONNECTOR + "|"
                    + FUNCTION_OR_TIME_WORD + "|" + YEAR_CONTEXT_AFTER + "|" + VERB_AFTER_A_YEAR
-                   + r")(?![A-Za-z0-9])))")
+                   + r")(?![A-Za-z0-9-])"
+                   + r"|" + HYPHENATED_ADJECTIVE + r"(?![A-Za-z0-9])\s*"
+                   + AFTER_A_HYPHENATED_ADJECTIVE + r"))")
 ALLOWED_DIGITS = re.compile(
     r"(?<![A-Za-z0-9])(?:"
     r"10-K|10-Q|8-K|COVID-19"
     r"|(?:19|20)\d{2}-\d{2}-\d{2}"
-    r"|(?:[Ff]iscal|[Cc]alendar|FY)[\s-]*(?:19|20)\d{2}"
+    # A fiscal year, or a range or list of years opening with one and followed by a
+    # year-terminator: "fiscal 2025", "the flat stretch of fiscal 2022 to 2025," (AAPL's
+    # base case). "fiscal 2022 to 2048 units" reads "fiscal 2022" and leaves the count.
+    r"|(?:[Ff]iscal|[Cc]alendar|FY)[\s-]*(?:" + YEARS + NOT_A_QUANTITY + YEAR_TERMINATOR
+    + r"|(?:19|20)\d{2})"
     r"|(?:January|February|March|April|May|June|July|August|September|October|November"
     r"|December)\s+\d{1,2},?\s+(?:19|20)\d{2}"
     r"|Items? \d{1,2}(?:\.\d{2})?[A-C]?(?!\s*(?:million|billion|thousand|percent|%|units))"
@@ -214,7 +265,7 @@ ALLOWED_DIGITS = re.compile(
     # A year, or a list of years, before a whole year-context-after word: "2026
     # guidance", "2026년", "2050년", "2026 December", "2021 and 2022 guidance".
     + r"|" + r"(?<![$€£¥₩+\-−.,\d])" + YEARS + NOT_A_QUANTITY
-    + r"(?=\s*(?i:" + YEAR_CONTEXT_AFTER + r")(?![A-Za-z0-9]))"
+    + r"(?=\s*(?i:" + YEAR_CONTEXT_AFTER + r")(?![A-Za-z0-9-]))"
     + r")(?![A-Za-z0-9])")
 # A brace that is not a whole placeholder is a placeholder written wrong, and is
 # printed literally if it stands.
