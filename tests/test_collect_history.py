@@ -204,3 +204,32 @@ def test_a_403_is_backed_off_before_it_is_believed(monkeypatch):
     assert fetch_fixtures.Fetcher("test agent test@example.invalid").get(
         "https://data.sec.gov/x") == b"served"
     assert [w for w in waited if w >= 1] == [1, 2]
+
+
+def test_a_fetch_that_raises_names_the_address_that_answered(tmp_path, monkeypatch):
+    """The 59 lines of 2009-2012 say `HTTP Error 404` and not which document.
+
+    An `HTTPError` carries the address it was raised for; the line now carries
+    it too. An error with no address stays as it was.
+    """
+    import urllib.error
+    address = "https://www.sec.gov/Archives/edgar/data/1/000000000111000001/index.json"
+    filing = {"accessionNumber": "0000000001-11-000001", "form": "10-Q",
+              "filingDate": "2011-05-01", "reportDate": "2011-03-31", "items": "",
+              "primaryDocument": "x.htm"}
+    company = {"ticker": "AAA", "cik": "0000000001"}
+
+    def not_found(*args, **kwargs):
+        raise urllib.error.HTTPError(address, 404, "Not Found", {}, None)
+    monkeypatch.setattr(collect_history.fetch_fixtures, "fetch_company", not_found)
+    out = collect_history.extract(StandIn(), company, filing, [], work=tmp_path / "w",
+                                  history_root=tmp_path / "h")
+    assert (out["result"], out["stage"]) == ("failed", "collect")
+    assert out["reason"] == f"HTTPError: HTTP Error 404: Not Found at {address}"
+
+    def malformed(*args, **kwargs):
+        raise ValueError("a row with no filingDate")
+    monkeypatch.setattr(collect_history.fetch_fixtures, "fetch_company", malformed)
+    out = collect_history.extract(StandIn(), company, filing, [], work=tmp_path / "w",
+                                  history_root=tmp_path / "h")
+    assert out["reason"] == "ValueError: a row with no filingDate"

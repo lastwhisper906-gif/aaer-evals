@@ -10,11 +10,14 @@ not reach sec.gov and every EDGAR request happens here.
    directory under `runs/` yet. `since` is the date of the last night whose
    lookups all succeeded, read out of the summary ledger, so a night that did
    not run is covered by the next one rather than skipped.
-2. **Extract** each new 10-K and 10-Q: a store fetched up to it
-   (`src/fetch_fixtures.py --accession`, `src/fetch_companyfacts.py --as-of` its
-   filing date), then `src/assemble_bundle.py --accession`, which builds that
-   filing or refuses. A new 8-K carrying item 2.02 is named and not extracted:
-   extract builds bundles for the two triggering reports only.
+2. **Extract** each new 10-K and 10-Q, **newest filing first**: a store fetched
+   up to it (`src/fetch_fixtures.py --accession`, `src/fetch_companyfacts.py
+   --as-of` its filing date), then `src/assemble_bundle.py --accession`, which
+   builds that filing or refuses. A new 8-K carrying item 2.02 is named and not
+   extracted: extract builds bundles for the two triggering reports only. The
+   order is the filing dates', latest first and the later accession first on
+   one date, whatever order the index lists them in; a filing retried from an
+   earlier night takes its place by its own date.
 3. **The four extraction checks** -- `src/extraction_checks.py` on the bundle,
    with the drift baseline read from the committed fixtures' `expected.json`.
    The assembler writes the bundle to `runs/{ticker}/{accession}/`, and a
@@ -24,23 +27,46 @@ not reach sec.gov and every EDGAR request happens here.
    again: every 10-K or 10-Q a summary line records as failed, and that still
    has no run directory, is extracted again whether or not it is new, until it
    passes.
-4. **Historical collection**, `src/collect_history.py`: the next batch of the
+4. **The price folder**, for each bundle that passed: `src/market.fetch_prices`
+   writes, from Tiingo, the three daily series `market.market_table` measures
+   the company against -- its own, the broad market's and its sector's, the
+   last two read off the rules' SIC map -- for the 400 days before the filing
+   date through the filing date, which is as far as a night can see (reaction
+   days one and two have not traded yet), into
+   `runs/{ticker}/{accession}/prices/`, and its record of the fetch into
+   `price_fetch.json` beside it -- which backend, when, how many rows. Both sit
+   outside the run's `agents/`, where a raw series would be a document past
+   reaction day two in front of a reader. The credential is the `TIINGO_TOKEN`
+   the workflow hands this process; it is read out of the environment, never
+   written, and a night without it records `no price series: TIINGO_TOKEN
+   unset` for the run and goes on. A fetch that fails is recorded by its reason
+   and does not undo the extraction.
+5. **Historical collection**, `src/collect_history.py`: the next batch of the
    twelve's past filings, oldest first, each hashed and, for a 10-K or 10-Q,
    carried through the same extract and the same four checks. Its failures are
    the checks' results on old filings and are counted in the summary's
    `history`, not listed as the night's failures; a company whose index could
    not be listed is a failure of the night.
-5. **One summary line**, appended to `history/nightly.jsonl`: lookups, new
-   filings, each extraction's result, historical progress, and every failure
-   with its reason. The morning report reads it, failures first.
+6. **One summary line**, appended to `history/nightly.jsonl`: lookups, new
+   filings, each extraction's result and its price folder, historical progress,
+   and every failure with its reason. The morning report reads it, failures
+   first.
+7. **Publish**, with `--publish`: the night's run directories and the ledger
+   line are committed on a branch `nightly-<date>` (`nightly-<date>-2` for a
+   second run on a date whose branch is still on the remote), pushed, and a
+   pull request into `main` is opened with auto-merge on (`gh pr create`, then
+   `gh pr merge --auto --merge`, the repository's merge method). Nothing is
+   ever pushed to `main` from here; `main` takes the line when CI is green. A
+   night with nothing to commit opens no pull request and says so.
 
-Read, compare and decide are not run: the price source is unresolved, and the
-target of this stage (`docs/HOW_WE_WORK.md` §7 step 5) is extraction.
+Read, compare and decide are not run: the target of this stage
+(`docs/HOW_WE_WORK.md` §7 step 5) is extraction.
 
-    python3.12 -m src.nightly --work /tmp/nightly [--ticker CIEN --accession ...]
+    python3.12 -m src.nightly --work /tmp/nightly [--ticker CIEN --accession ...] [--publish]
 
-Exit 0 when nothing failed, 1 when the summary records a failure, 2 when the
-summary could not be written, 3 the wrong interpreter.
+Exit 0 when nothing failed, 1 when the summary records a failure or the
+publish step did not open its pull request, 2 when the summary could not be
+written, 3 the wrong interpreter.
 """
 
 from __future__ import annotations
@@ -56,11 +82,13 @@ from pathlib import Path
 
 try:
     from src import (collect_history, detect_filing, fetch_fixtures, interpreter_pin,
-                     universe)
+                     market, universe)
+    from src.prices import tiingo
 except ImportError:  # invoked as a plain script
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
     from src import (collect_history, detect_filing, fetch_fixtures, interpreter_pin,
-                     universe)
+                     market, universe)
+    from src.prices import tiingo
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SUMMARY = Path("history") / "nightly.jsonl"
@@ -72,6 +100,26 @@ NOT_WRITTEN = 2
 # How much of a failing step's standard error the summary keeps: the last lines
 # are where every entry point here prints its reason.
 REASON_LINES = 6
+
+# The price folder: the window before the filing date, the folder and the record
+# inside the run, and the source and the variable its credential is read from.
+# The symbols are not here: they are the ones `market.market_table` measures
+# against, read off the rules' map. The window is 400 calendar days because the
+# beta is estimated over the 250 trading days before the filing date
+# (`market.BETA_TRADING_DAYS`), a little under a calendar year, and each of
+# those days' returns needs the close before it. The reason a night without the
+# credential records is a fixed string, so the morning report and the tests can
+# look for it by name.
+PRICE_DAYS_BEFORE_FILING = 400
+PRICE_FOLDER = "prices"
+PRICE_RECORD = market.FETCH_RECORD
+PRICE_SOURCE = tiingo.NAME
+TOKEN_VARIABLE = tiingo.TOKEN_VARIABLE
+NO_PRICES_UNSET = f"no price series: {TOKEN_VARIABLE} unset"
+TOKEN_STAND_IN = f"<{TOKEN_VARIABLE}>"
+
+# What the publish step commits: the two trees the night writes under.
+PUBLISHED = ("history", "runs")
 
 
 def now() -> str:
@@ -112,6 +160,16 @@ def to_retry(summary: Path) -> list[dict]:
                         "accession": record["accession"],
                         "filing_date": record["filing_date"]})
     return sorted(found.values(), key=lambda entry: (entry["filing_date"], entry["accession"]))
+
+
+def newest_first(filings: list[dict]) -> list[dict]:
+    """The filings to extract, the latest filing date first, then the later accession.
+
+    Two filings of one day are ordered by accession, the later one first, so the
+    order is a function of the rows and not of the index's own order.
+    """
+    return sorted(filings, key=lambda entry: (entry["filing_date"] or "", entry["accession"]),
+                  reverse=True)
 
 
 def step(name: str, argv: list[str]) -> dict:
@@ -178,6 +236,74 @@ def extract(filing: dict, *, work: Path, runs_root: Path, fixtures: Path) -> dic
     return record
 
 
+def without_token(text: str, token: str) -> str:
+    """The text with the credential, wherever it appears, replaced by its name.
+
+    A source's refusal can echo the request that carried the token; what is
+    written into the ledger is the refusal with the token's name in its place.
+    """
+    return text.replace(token, TOKEN_STAND_IN) if token else text
+
+
+def price_window(filing_date: str) -> tuple[dt.date, dt.date]:
+    """The 400 days before the filing date, through the filing date."""
+    end = dt.date.fromisoformat(filing_date)
+    return end - dt.timedelta(days=PRICE_DAYS_BEFORE_FILING), end
+
+
+def price_series(ticker: str, sic) -> dict:
+    """The series `market.market_table` measures one company against, or why none.
+
+    The company's own, the broad market's and its sector's, the last two read
+    off the rules' map (`src/sic_to_sector_etf_map_<version>.json`) and not
+    named here: the map moves with the rules. A sector series that is the broad
+    market's (the map's nonclassifiable division) is asked for once. A SIC code
+    the map cannot place is the reason, recorded on the run, not raised through
+    the night.
+    """
+    try:
+        symbols = [ticker, market.broad_market_symbol(), market.sector_symbol(sic)]
+    except Exception as exc:  # noqa: BLE001 - the extraction stands; the prices say why not
+        return {"symbols": None, "reason": f"{type(exc).__name__}: {exc}"}
+    return {"symbols": list(dict.fromkeys(symbols)), "reason": None}
+
+
+def prices_for(filing: dict, *, series: dict, bundle: Path, environ, fetch=None) -> dict:
+    """The run's price folder and the record of its fetch, or the reason there is none.
+
+    `series` is `price_series` for the filing's company. `environ` is the
+    mapping the credential is read from, and the only one: the night hands in
+    `os.environ`, a test hands in a mapping of its own. The token itself is
+    never part of what this returns or writes. `fetch` is `market.fetch_prices`
+    unless a test stands one in, and the source is the one whose token this
+    reads, whatever `PRICE_BACKEND` the mapping names.
+    """
+    fetch = fetch if fetch is not None else market.fetch_prices
+    out = {"folder": None, "record": None, "reason": None}
+    record_path = bundle / PRICE_RECORD
+    token = (environ.get(TOKEN_VARIABLE) or "").strip()
+    if not token:
+        out["reason"] = NO_PRICES_UNSET
+        market.write_fetch_record({"fetched": False, "reason": NO_PRICES_UNSET}, record_path)
+        return out
+    if series["reason"]:
+        out["reason"] = without_token(series["reason"], token)
+        market.write_fetch_record({"fetched": False, "reason": out["reason"]}, record_path)
+        return out
+    folder = bundle / PRICE_FOLDER
+    try:
+        start, end = price_window(filing["filing_date"])
+        record = fetch(symbols=series["symbols"], start=start, end=end,
+                       into=folder, environ=environ, backend=PRICE_SOURCE)
+    except Exception as exc:  # noqa: BLE001 - the extraction stands; the prices say why not
+        out["reason"] = without_token(f"{type(exc).__name__}: {exc}", token)
+        market.write_fetch_record({"fetched": False, "reason": out["reason"]}, record_path)
+        return out
+    market.write_fetch_record(record, record_path)
+    out.update(folder=str(folder), record=str(record_path))
+    return out
+
+
 def forced(ticker: str, accession: str, fetcher, ciks: dict) -> dict:
     """A filing named by hand, looked up in the index like any other.
 
@@ -206,8 +332,18 @@ def label(kind: str) -> str:
 def night(*, fetcher, since: str, runs_root: Path, work: Path, fixtures: Path,
           companies=None, hand: tuple[str, str] | None = None,
           run_url: str | None = None, today: dt.date | None = None,
-          retry: list[dict] | None = None) -> dict:
+          retry: list[dict] | None = None, environ=None, fetch_prices=None) -> dict:
+    """One night's detect, extract, check and price folder, as the summary line.
+
+    `environ` is the mapping the price credential is read from; a caller that
+    hands none in hands in an empty one, which is a night with no token, never
+    the process's own environment by default.
+    """
     today = today or dt.datetime.now(dt.timezone.utc).date()
+    environ = environ if environ is not None else {}
+    companies = companies if companies is not None else universe.rows()
+    # Each company's SIC code names the sector series its price folder holds.
+    sics = {company["ticker"]: company.get("sic") for company in companies}
     started = now()
     failures: list[str] = []
     found = detect_filing.detect(fetcher, since=since, companies=companies,
@@ -249,12 +385,17 @@ def night(*, fetcher, since: str, runs_root: Path, work: Path, fixtures: Path,
         if (not (runs_root / entry["ticker"] / entry["accession"]).exists()
                 and not any(held["accession"] == entry["accession"] for held in to_extract)):
             to_extract.append(dict(entry, retried=True))
-    for entry in to_extract:
+    for entry in newest_first(to_extract):
         record = extract(entry, work=work, runs_root=runs_root, fixtures=fixtures)
         if entry.get("retried"):
             record["retried"] = True
         if entry.get("named_by_hand"):
             record["named_by_hand"] = True
+        if record["result"] == "passed":
+            record["prices"] = prices_for(
+                entry, series=price_series(entry["ticker"], sics.get(entry["ticker"])),
+                bundle=runs_root / entry["ticker"] / entry["accession"],
+                environ=environ, fetch=fetch_prices)
         extractions.append(record)
     for record in extractions:
         if record["result"] != "passed":
@@ -318,6 +459,86 @@ def append(summary: Path, line: dict) -> None:
         out.write(json.dumps(line, sort_keys=True) + "\n")
 
 
+def run_command(argv: list[str]) -> subprocess.CompletedProcess:
+    """One git or gh command at the repository root; the publish step's runner."""
+    return subprocess.run(argv, cwd=REPO_ROOT, capture_output=True, text=True)
+
+
+def publish(*, date: str, run_url: str | None, root: Path = REPO_ROOT,
+            runner=None) -> dict:
+    """Commit the night's lines on `nightly-<date>`, open the pull request, auto-merge on.
+
+    Every command goes through `runner`, which is `run_command` unless a test
+    stands one in. None of them pushes to `main`: the branch is pushed, the pull
+    request is opened against `main` with `gh pr create`, and `gh pr merge
+    --auto --merge` (the repository's merge method) lands it when CI is green.
+    The record says which step stopped it, or that there was nothing to commit.
+
+    A second run on one date -- a filing named by hand after the scheduled
+    night -- finds `nightly-<date>` taken when the first night's branch is
+    still on the remote, and a push onto it would be refused and the run's
+    directories lost with the runner; it takes `nightly-<date>-2`, then `-3`.
+    """
+    run = runner if runner is not None else run_command
+    title = f"the nightly crew's night of {date}"
+    out = {"branch": None, "pull_request": None, "auto_merge": False, "reason": None}
+
+    def failed(name: str, done: subprocess.CompletedProcess) -> dict:
+        tail = [line for line in (done.stderr or "").splitlines() if line.strip()]
+        out["reason"] = f"{name}: exit {done.returncode}: " + " | ".join(tail[-REASON_LINES:])
+        return out
+
+    listed = run(["git", "ls-remote", "--heads", "origin"])
+    if listed.returncode:
+        return failed("git ls-remote", listed)
+    taken = {line.split("refs/heads/", 1)[1].strip()
+             for line in (listed.stdout or "").splitlines() if "refs/heads/" in line}
+    branch, again = f"nightly-{date}", 2
+    while branch in taken:
+        branch, again = f"nightly-{date}-{again}", again + 1
+    out["branch"] = branch
+
+    done = run(["git", "checkout", "-b", branch])
+    if done.returncode:
+        return failed("git checkout", done)
+    # `git add` refuses every path when one does not exist, and a night that
+    # found nothing new has no runs/ to add.
+    written = [name for name in PUBLISHED if (root / name).exists()]
+    if written:
+        done = run(["git", "add", "--", *written])
+        if done.returncode:
+            return failed("git add", done)
+    staged = run(["git", "diff", "--cached", "--quiet"])
+    if staged.returncode == 0:
+        out["reason"] = "nothing to publish: the night committed no line and no run"
+        return out
+    if staged.returncode != 1:
+        return failed("git diff --cached", staged)
+    message = f"{title}: detect, extract, check, price, collect"
+    if run_url:
+        message += f"\n\nRun: {run_url}"
+    for name, argv in (
+            ("git commit", ["git", "commit", "-q", "-m", message]),
+            ("git push", ["git", "push", "-u", "origin", branch]),
+    ):
+        done = run(argv)
+        if done.returncode:
+            return failed(name, done)
+    body = f"Run: {run_url}" if run_url else "the night's run directories and its ledger line"
+    done = run(["gh", "pr", "create", "--base", "main", "--head", branch,
+                "--title", title, "--body", body])
+    if done.returncode:
+        return failed("gh pr create", done)
+    # `gh pr create` prints the pull request's address last.
+    printed = [line for line in (done.stdout or "").splitlines() if line.strip()]
+    out["pull_request"] = printed[-1] if printed else None
+    done = run(["gh", "pr", "merge", "--auto", "--merge", branch])
+    if done.returncode:
+        return failed("gh pr merge --auto", done)
+    out["auto_merge"] = True
+    return out
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="one night of the nightly crew")
     parser.add_argument("--summary", default=str(SUMMARY))
@@ -333,6 +554,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--history-batch", type=int, default=0,
                         help="past filings to collect tonight; 0 collects none")
     parser.add_argument("--history", default=str(collect_history.HISTORY))
+    parser.add_argument("--publish", action="store_true",
+                        help="commit the night on nightly-<date> and open its "
+                             "auto-merging pull request")
     args = parser.parse_args(argv)
 
     summary = Path(args.summary)
@@ -355,7 +579,8 @@ def main(argv: list[str] | None = None) -> int:
         since = since or since_from(summary, today)
         line = night(fetcher=fetcher, since=since, runs_root=Path(args.runs),
                      work=Path(args.work), fixtures=Path(args.fixtures), hand=hand,
-                     run_url=args.run_url, today=today, retry=to_retry(summary))
+                     run_url=args.run_url, today=today, retry=to_retry(summary),
+                     environ=os.environ)
     except Exception as exc:  # noqa: BLE001 - a night that crashed still leaves a line
         line = crashed(today, since, args.run_url, exc)
     line["failures"] = refused + line["failures"]
@@ -367,7 +592,17 @@ def main(argv: list[str] | None = None) -> int:
         print(f"nightly: the summary could not be written: {exc}", file=sys.stderr)
         return NOT_WRITTEN
     print(json.dumps(line, indent=2))
-    return FAILED if line["failures"] else 0
+    code = FAILED if line["failures"] else 0
+    if args.publish:
+        published = publish(date=line["date"], run_url=args.run_url)
+        print(json.dumps({"publish": published}, indent=2))
+        # A night with nothing to commit is not a failure; a step that stopped
+        # short of auto-merge is, because the line is then waiting for a click.
+        if published["reason"] and not published["reason"].startswith("nothing to publish"):
+            print(f"nightly: the night was not published: {published['reason']}",
+                  file=sys.stderr)
+            code = FAILED
+    return code
 
 
 if __name__ == "__main__":

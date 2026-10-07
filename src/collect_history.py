@@ -181,7 +181,14 @@ def extract(fetcher, company: dict, filing: dict, filings: list[dict], *,
         out.update(result="passed")
         return out
     except Exception as exc:  # noqa: BLE001 - one filing's failure is its own line
-        out.update(stage=out["stage"] or "collect", reason=f"{type(exc).__name__}: {exc}")
+        # An HTTP error names its status and not its address, and the store
+        # fetches several documents after the primary one: the 59 lines of
+        # 2009-2012 that say `HTTP Error 404` and nothing else (lessons.md,
+        # 2026-10-07) are why the address goes on the line when there is one.
+        reason = f"{type(exc).__name__}: {exc}"
+        if getattr(exc, "url", None):
+            reason += f" at {exc.url}"
+        out.update(stage=out["stage"] or "collect", reason=reason)
         return out
     finally:
         shutil.rmtree(store, ignore_errors=True)

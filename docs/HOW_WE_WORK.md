@@ -159,9 +159,11 @@ Every routine below is a **scheduled task**, not a loop run.
   question and never waits for an answer; `tools/daily_summary.sh` writes it and
   the notifier speaks it
 - **morning report** — the nightly crew's results, failures first, as the final
-  message of a cloud scheduled task at 07:30 US Eastern; it also opens the
-  night's pull request. `docs/routines/morning-report.md`. The night itself is
-  `.github/workflows/nightly.yml`, Python with no model
+  message of a cloud scheduled task at 07:30 US Eastern; it reads the night's
+  pull request, which the night opened itself with auto-merge on, and reopens
+  it when no CI ran. `docs/routines/morning-report.md`. The night itself is
+  `.github/workflows/nightly.yml`, Python with no model: it opens its own
+  pull request from `nightly-<date>` and never pushes to `main`
 
 ### Weekly
 

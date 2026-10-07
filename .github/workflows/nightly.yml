@@ -5,9 +5,18 @@ name: nightly
 # here, because the cloud session that writes the morning report may not reach
 # sec.gov.
 #
-# It pushes one branch a night and opens no pull request. A pull request opened
-# with GITHUB_TOKEN does not start CI, so its auto-merge would never fire; the
-# morning routine opens it through its own GitHub connection, which does.
+# The night publishes itself: `src/nightly.py --publish` commits the run
+# directories and the ledger line on `nightly-<date>`, opens the pull request
+# into main and turns auto-merge on. Nothing here pushes to main. A pull
+# request opened with the Actions token starts no CI, so `GH_TOKEN` is the
+# `NIGHTLY_GH_TOKEN` secret (a token of the owner's with `repo` scope) when
+# the repository holds one, and the Actions token otherwise -- a pull request
+# opened with that one waits with no CI until the morning routine reopens it,
+# which starts CI (`docs/routines/morning-report.md` §3).
+#
+# `TIINGO_TOKEN` is read by the price step out of this step's environment and
+# is never printed or written; a night without it records
+# `no price series: TIINGO_TOKEN unset` for each run and goes on.
 
 on:
   # 07:00 UTC is 03:00 US Eastern while daylight time is in force and 02:00
@@ -35,7 +44,7 @@ on:
 
 permissions:
   contents: write
-  pull-requests: read
+  pull-requests: write
 
 concurrency:
   group: nightly
@@ -58,34 +67,18 @@ jobs:
       - name: install
         run: pip install -r requirements.txt
 
-      # Start from main. If the last night's branch has not merged -- the
-      # morning routine did not run, or its pull request is red -- start from
-      # that branch instead, so tonight carries last night's lines rather than
-      # forking beside them.
-      - name: the night's branch
-        env:
-          GH_TOKEN: ${{ github.token }}
+      # The branch the publish step makes starts from main as checked out; the
+      # identity is the one every night's commit carries.
+      - name: the night's git identity
         run: |
           git config user.name "aaer-evals nightly"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          branch="nightly/$(date -u +%F)-${GITHUB_RUN_ID}"
-          git checkout -b "$branch" origin/main
-          previous="$(git ls-remote --heads origin 'refs/heads/nightly/*' \
-                      | awk '{print $2}' | sed 's#^refs/heads/##' | sort | tail -1)"
-          if [ -n "$previous" ]; then
-            merged="$(gh pr list --head "$previous" --state merged --json number --jq length)"
-            if [ "$merged" = "0" ]; then
-              echo "last night's branch $previous has not merged; building on it"
-              git fetch --no-tags origin "+refs/heads/$previous:refs/remotes/origin/$previous"
-              if ! git merge --no-edit "origin/$previous"; then
-                git merge --abort
-                echo "carried=$previous did not merge cleanly onto main" >> "$GITHUB_ENV"
-              fi
-            fi
-          fi
-          echo "branch=$branch" >> "$GITHUB_ENV"
 
-      - name: detect, extract, check
+      # Whatever the night found, its summary line is published: a night that
+      # failed and left nothing is the failure nobody notices. The publish is
+      # inside the Python so that it runs after the line is written, whatever
+      # the night's exit status.
+      - name: detect, extract, check, price, collect, publish
         id: night
         env:
           HAND_TICKER: ${{ inputs.ticker }}
@@ -93,38 +86,21 @@ jobs:
           SINCE: ${{ inputs.since }}
           HISTORY_BATCH: ${{ inputs.history_batch || '30' }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          TIINGO_TOKEN: ${{ secrets.TIINGO_TOKEN }}
+          GH_TOKEN: ${{ secrets.NIGHTLY_GH_TOKEN || github.token }}
         run: |
           set +e
+          # SET or UNSET, never the value.
+          if [ -n "$TIINGO_TOKEN" ]; then echo "TIINGO_TOKEN: SET"; else echo "TIINGO_TOKEN: UNSET"; fi
           # An array, so an input holding a space stays one argument.
           args=(--work "$RUNNER_TEMP/nightly" --run-url "$RUN_URL"
-                --history-batch "$HISTORY_BATCH")
+                --history-batch "$HISTORY_BATCH" --publish)
           if [ -n "$SINCE" ]; then args+=(--since "$SINCE"); fi
           if [ -n "$HAND_TICKER" ]; then args+=(--ticker "$HAND_TICKER"); fi
           if [ -n "$HAND_ACCESSION" ]; then args+=(--accession "$HAND_ACCESSION"); fi
           python -m src.nightly "${args[@]}"
           echo "code=$?" >> "$GITHUB_OUTPUT"
 
-      # Whatever the night found, its summary line is pushed: a night that
-      # failed and left nothing is the failure nobody notices.
-      - name: push the night's branch
-        if: always()
-        run: |
-          # `git add` refuses every path when one does not exist, and a night
-          # that found nothing new has no runs/ to add.
-          for written in history runs; do
-            if [ -e "$written" ]; then git add "$written"; fi
-          done
-          if git diff --cached --quiet; then
-            echo "nothing to commit"
-          else
-            git commit -q -m "the nightly crew's night of $(date -u +%F): detect, extract, check, collect
-
-          Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-          fi
-          git push origin "$branch"
-
       - name: the night's result
         if: always()
-        run: |
-          if [ -n "${carried:-}" ]; then echo "$carried"; exit 1; fi
-          exit "${{ steps.night.outputs.code || 1 }}"
+        run: exit "${{ steps.night.outputs.code || 1 }}"

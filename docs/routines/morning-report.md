@@ -3,7 +3,7 @@
 The owner's decision of 2026-09-24 (`docs/structure_changes.md`): results
 arrive as one morning report, and a model only reads and triages them. The night
 itself is `.github/workflows/nightly.yml`, Python with no model. This routine
-reads what it left, opens its pull request, and writes the report.
+reads what it left on its pull request and writes the report.
 
 A Claude Code cloud scheduled task, daily at 07:30 US Eastern. Its final message
 is the report, and the final message is the notification: there is no
@@ -39,34 +39,42 @@ it. A run from yesterday is not last night's, however recent it is.
 
 ## 2. Read what the night left
 
-The night pushes one branch, `nightly/<date>-<run id>`, and opens no pull
-request: a pull request opened with the Actions token starts no CI, so its
-auto-merge would never fire. Fetch the branch whose name ends in last
-night's run id and read the last line of `history/nightly.jsonl` on it. That
-line is the night's summary -- `lookups`, `new`, `not_extracted`,
-`extractions`, `failures`, and, once historical collection runs, `history` --
-**only if its `run` is last night's run URL.** The push step runs whatever
-happened before it, so a night whose Python never ran pushes a branch whose
-last line is an earlier night's; reporting that line would report yesterday as
-today. A line whose `run` is another run's is the failure line `the night left
-no summary line`, and nothing on that branch is reported as last night's.
+The night commits its run directories and its ledger line on one branch,
+`nightly-<date>` (`nightly-<date>-2` for a second run on a date whose branch
+is still on the remote), and opens a pull request from it into `main` with
+auto-merge on (`src/nightly.py --publish`: `gh pr create`, then `gh pr merge
+--auto --merge`). Nothing is pushed to `main` from the night; `main` takes the
+line when CI is green. Find last night's pull request by its title, `the
+nightly crew's night of <date>` (GitHub `list_pull_requests`, open and merged),
+and read the last line of `history/nightly.jsonl` on its branch -- or on `main`,
+once it has merged. That line is the night's summary -- `lookups`, `new`,
+`not_extracted`, `extractions` (each passed one with its `prices`: the folder
+and `price_fetch.json`, or the reason there is none, `no price series:
+TIINGO_TOKEN unset` when the secret is not set), `failures`, and `history` --
+**only if its `run` is last night's run URL.** A line whose `run` is another
+run's is the failure line `the night left no summary line`, and nothing on
+that branch is reported as last night's.
 
-If the run happened and the branch is missing, that is a failure line too.
+If the run happened and there is no pull request of that title, the night's
+log says which step stopped the publish (`nightly: the night was not
+published: ...`); that is a failure line. A night with nothing to commit opens
+no pull request and its log says `nothing to publish`; that is not one.
 
-## 3. Open its pull request
+## 3. See that its pull request will merge
 
-Open a pull request from the night's branch into `main` with the GitHub tools,
-title `the nightly crew's night of <date>`, and turn auto-merge on (squash). A
-pull request opened through this connection starts CI, and auto-merge lands it
-once CI is green. If an older `nightly/*` pull request is still open, the new
-branch already carries its lines (the workflow builds on an unmerged night), so
-close the older one with a one-line comment naming the one that replaces it --
-**only when the older branch's head is an ancestor of the new branch's**
-(`git merge-base --is-ancestor`). When the older night did not merge cleanly
-onto `main`, the workflow started from `main` instead and says so in its last
-step (`... did not merge cleanly onto main`); the new branch then does not carry
-the older lines, the older pull request stays open, and that is a failure line
-in the report.
+A pull request opened with the Actions token starts no CI, so its auto-merge
+never fires; the workflow opens it with the `NIGHTLY_GH_TOKEN` secret when
+the repository holds one, and with the Actions token otherwise. If last
+night's pull request is open with no CI run on its head, close it and reopen
+it with the GitHub tools: `reopened` starts CI. Then turn auto-merge on again
+(`enable_pr_auto_merge`, merge method `MERGE`), because closing a pull request
+can turn it off; auto-merge lands it once CI is green. If it is open and CI is
+red, that is a failure line, with the step that failed. Two nights' lines
+appended to `history/nightly.jsonl` on two branches cut from the same `main`
+conflict: once one of the two pull requests merges, the other cannot. That
+happens only when a night's pull request is still open when the next night
+runs; it is a failure line naming both pull requests, and this routine does
+not resolve it.
 
 ## 4. The report
 
@@ -74,8 +82,9 @@ Readable on a phone in one minute. Plain text, short lines, in this order:
 
 1. **Failures and anomalies.** `LAST NIGHT DID NOT RUN` if it did not. Then
    every entry of the summary's `failures`, one line each, then the run's own
-   failure if its conclusion was not `success`, then a red CI on any open
-   `nightly/*` pull request. If there are none, say `no failures`.
+   failure if its conclusion was not `success`, then a red CI or a conflict on
+   any open `nightly-<date>` pull request, then every run whose `prices`
+   carries a reason instead of a folder. If there are none, say `no failures`.
 2. **New filings and what extract did with each**: `lookups 12 of 12`, then one
    line per new filing -- ticker, form, accession, and passed or the stage it
    failed at. `no new filings` if there were none.
