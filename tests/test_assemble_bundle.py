@@ -1560,3 +1560,86 @@ def test_a_store_fetched_up_to_a_filing_builds_that_filing(tmp_path, monkeypatch
     manifest = json.loads((out / "input_manifest.json").read_text(encoding="utf-8"))
     assert (manifest["accession"], manifest["filing_date"]) == STORE_HOLDS
     assert manifest["cutoff"] == STORE_HOLDS[1]
+
+
+# --- the acceptance stamp: from the store to the bundle manifest ---------------
+#
+# The fetcher keeps EDGAR's `acceptanceDateTime` as `acceptance_datetime` on
+# every filing's manifest row (`src/fetch_fixtures.py`); the bundle copies it
+# beside `filing_date` as `accepted`, the name the cutoff grader and
+# `src/market.py` read. A store fetched before the field existed carries none,
+# and its bundle carries no key at all.
+
+# Stamps for the four CIEN filings the committed store holds, as EDGAR's index
+# writes them (universal time, a Z), with the Eastern form of each by hand: four
+# hours behind from 2026-03-08 to 2026-11-01, five outside it. The 10-K's is its
+# committed SGML header's (10-K/0001628280-25-056698/...-index-headers.html,
+# ACCEPTANCE-DATETIME 20251212134226, Eastern: 13:42:26 + 5 h = 18:42:26
+# universal). The other three are planted, since no header for them is on
+# record: the 8-K and the 10-Q share the filing day, and the 8-K is stamped
+# first, as its lower accession sequence also suggests.
+CIEN_STAMPS = {
+    "0001628280-26-040767": ("2026-06-04T20:05:00.000Z", "2026-06-04T16:05:00-04:00"),  # 10-Q
+    "0001628280-26-040614": ("2026-06-04T20:01:00.000Z", "2026-06-04T16:01:00-04:00"),  # 8-K
+    "0001628280-26-015152": ("2026-03-05T21:10:00.000Z", "2026-03-05T16:10:00-05:00"),  # prior 10-Q
+    "0001628280-25-056698": ("2025-12-12T18:42:26.000Z", "2025-12-12T13:42:26-05:00"),  # 10-K
+}
+
+
+class _StampedEdgar(_CommittedEdgar):
+    """The committed CIEN record, with the index serving an acceptance stamp
+    per row: the planted ones above, nothing on every other row."""
+
+    def __init__(self):
+        super().__init__()
+        recent = self.index["filings"]["recent"]
+        recent["acceptanceDateTime"] = [CIEN_STAMPS.get(accession, (None,))[0]
+                                        for accession in recent["accessionNumber"]]
+
+
+def test_a_bundle_from_a_store_with_no_stamp_carries_no_accepted_key():
+    """The committed stores were fetched before the fetcher kept the stamp."""
+    manifest = built("CSCO")["manifest"]
+    assert "accepted" not in manifest
+    assert all("accepted" not in row for row in manifest["documents"])
+    assert all("accepted" not in row for row in manifest["on_record_at_cutoff"])
+
+
+def test_a_store_with_stamps_hands_the_bundle_accepted_beside_filing_date(tmp_path, monkeypatch):
+    """Fetch against the stamped record, build, and read the manifest: the
+    trigger's stamp at the top beside `filing_date`, each filing's on its rows,
+    and none on the two catalogues. Then the cutoff grader, which orders the
+    same-day 8-K by its stamp and names no proxy."""
+    from evals.common import PASS
+    from evals.regression import mechanical
+    from src import fetch_fixtures
+    monkeypatch.setattr(fetch_fixtures, "Fetcher", lambda _agent: _StampedEdgar())
+    monkeypatch.setattr(fetch_fixtures, "MIN_SECONDS_BETWEEN_REQUESTS", 0)
+    store = tmp_path / "store"
+    assert fetch_fixtures.main(["--ticker", "CIEN", "--accession", STORE_HOLDS[0],
+                                "--out", str(store)]) == 0
+    fetched = json.loads((store / "CIEN" / "manifest.json").read_text(encoding="utf-8"))
+    assert {row["accession"]: row["acceptance_datetime"] for row in fetched["documents"]
+            if row["accession"]} == {acc: eastern for acc, (_, eastern) in CIEN_STAMPS.items()}
+
+    out = tmp_path / "bundle"
+    assert assemble_bundle.main(["--ticker", "CIEN", "--form", "10-Q",
+                                 "--accession", STORE_HOLDS[0], "--fixtures", str(store),
+                                 "--prior-runs", str(tmp_path / "runs"),
+                                 "--out", str(out)]) == 0
+    manifest = json.loads((out / "input_manifest.json").read_text(encoding="utf-8"))
+    assert (manifest["filing_date"], manifest["accepted"]) == (
+        STORE_HOLDS[1], CIEN_STAMPS[STORE_HOLDS[0]][1])
+    for rows in (manifest["documents"], manifest["on_record_at_cutoff"]):
+        assert rows
+        for row in rows:
+            if row["role"] in CATALOGUES:
+                assert "accepted" not in row, row
+            else:
+                assert row["accepted"] == CIEN_STAMPS[row["accession"]][1], row
+                assert row["accepted"][:10] == row["filing_date"], row
+    # the same-day 8-K is ordered by its stamp, 16:01 before the 10-Q's 16:05
+    assert any(row["accession"] == "0001628280-26-040614" for row in manifest["documents"])
+    result = mechanical.check_nothing_after_cutoff(out)
+    assert (result.status, result.failures) == (PASS, [])
+    assert result.detail == f"cutoff {STORE_HOLDS[1]}"

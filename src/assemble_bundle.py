@@ -163,15 +163,38 @@ def paragraph_blocks(text: str) -> list[tuple[str, str]]:
 
 # --- the pieces --------------------------------------------------------------
 
+# The fixture store's name for EDGAR's acceptance stamp, and the bundle's. The
+# store writes `acceptance_datetime` (`src/fetch_fixtures.py`, Eastern with the
+# offset written out); the bundle manifest writes the same value as `accepted`,
+# the name the cutoff grader reads on the manifest and its document rows
+# (`evals/regression/mechanical.py`, `accepted_before_trigger` and
+# `market_table_problems`) and the one `src/market.py` writes on each window of
+# a market table, which the grader holds to the manifest's.
+STORE_STAMP = "acceptance_datetime"
+BUNDLE_STAMP = "accepted"
+
+
+def with_stamp(entry: dict, row: dict) -> dict:
+    """`entry` with the record's acceptance stamp under the bundle's name, when
+    the store holds one. A store fetched before the fetcher kept the stamp holds
+    none, and its rows carry nothing: no key, never a guessed time. The grader
+    then orders a same-day filing by the accession-sequence proxy, as before."""
+    stamp = row.get(STORE_STAMP)
+    if isinstance(stamp, str) and stamp:
+        entry[BUNDLE_STAMP] = stamp
+    return entry
+
+
 def documents_on_record(ticker: str, cutoff, fixtures_root) -> list[dict]:
     """Every fixture document filed at or before the cutoff, as the record has
     it. A document filed later is not in the bundle and not in the manifest."""
     rows = []
     for row in cutoff_guard.documents(ticker, fixtures_root=fixtures_root):
         if row["filing_date"] <= str(cutoff):
-            rows.append({"form": row["form"], "role": row["role"],
-                         "accession": row["accession"], "path": row["path"],
-                         "filing_date": row["filing_date"], "sha256": row["sha256"]})
+            rows.append(with_stamp(
+                {"form": row["form"], "role": row["role"],
+                 "accession": row["accession"], "path": row["path"],
+                 "filing_date": row["filing_date"], "sha256": row["sha256"]}, row))
     rows.sort(key=lambda row: (row["filing_date"], row["accession"], row["role"]))
     return rows
 
@@ -236,6 +259,8 @@ def documents_used(opened: dict, cutoff, fixtures_root) -> list[dict]:
         if is_catalogue:
             entry["date_basis"] = row.get("date_basis")
             entry["rows_used_through"] = str(cutoff)
+        else:
+            with_stamp(entry, row)
         rows.append(entry)
     rows.sort(key=lambda row: (row["filing_date"] or "9999-12-31",
                                row["accession"], row["role"]))
@@ -653,7 +678,11 @@ def build(ticker: str, form: str, *, cutoff=None, fixtures_root=cutoff_guard.FIX
                                "source": "input_controls.md",
                                "reason": entry["reason"], "text": ""})
 
-    manifest = {
+    # `accepted`, the triggering report's own acceptance stamp, sits beside
+    # `filing_date` when the store recorded one (`with_stamp`): the cutoff
+    # grader orders a same-day document by it, and the market table's filing
+    # window is held to it.
+    manifest = with_stamp({
         "ticker": ticker,
         "form": form,
         "accession": trigger["accession"],
@@ -684,7 +713,7 @@ def build(ticker: str, form: str, *, cutoff=None, fixtures_root=cutoff_guard.FIX
         "files": {name: {"sha256": _sha256(text.encode("utf-8")),
                          "bytes": len(text.encode("utf-8"))}
                   for name, text in sorted(texts.items())},
-    }
+    }, trigger)
     if rules_version == PILOT:
         manifest["run_kind"] = PIPELINE_CHECK
     texts["input_manifest.json"] = json.dumps(manifest, indent=2, sort_keys=True) + "\n"
