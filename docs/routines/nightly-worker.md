@@ -35,11 +35,14 @@ the runner falls back to Opus and records it (the owner's decision of 2026-10-07
 "fable 사용량이 max 가 되면 오퍼스로 전환시키도록해"). `src/run_analysis.py` calls the
 agent that hit the limit again on Opus, runs every later Fable agent of the run on
 Opus, writes `model_fallback` into the manifest and `fallback_from: fable` into each
-such agent's record, exits 0 when the run finished, and prints on stderr the flag
-for the rest of the batch; the loop goes on. Start every later run of the batch
-with `--carry-fallback-from <the run that fell back>`, so its Fable agents run on
-Opus from their first call and its `model_fallback` names that run under
-`carried_from`. The report names every fallback run. Only `--on-fable-limit stop`
+such agent's record, exits 0 when the run finished, and prints a line on stderr;
+the loop goes on. When the line names the flag for the rest of the batch -- the
+limit's message confirmed the fallback -- start every later run of the batch with
+`--carry-fallback-from <the run that fell back>`, so its Fable agents run on Opus
+from their first call and its `model_fallback` names that run under
+`carried_from`. When the line says the fallback stays inside its run -- a Fable
+call failed like the limit, with no limit message (`fable_failed_like_the_limit`)
+-- start the next run without the flag. The report names every fallback run. Only `--on-fable-limit stop`
 keeps the old stop (exit 4, `LIMIT_REACHED`; exit 3 is the interpreter pin, not the
 limit), and then what is pending is written into `queue.md` under its item.
 
@@ -54,8 +57,9 @@ Run items (a filing run on the analysts) follow the efficiency rules:
 - One filing per item.
 - Size the night's batch from the record: Fable tokens left tonight ÷ the median Fable
   tokens per filing recorded in the published manifests' `agents` blocks, counting
-  the attempts Fable served and no fallback attempt (`src/fable_batch.py`). Write the
-  calculation into the report, with how many filings of the record fell back.
+  the attempts Fable served, over the filings Fable served whole: a filing that fell
+  back is left out of the median and named (`src/fable_batch.py`). Write the
+  calculation into the report, with the filings left out.
 - Never rerun a Fable call whose output passed the gate.
 
 After the loop:
@@ -65,7 +69,7 @@ After the loop:
    - **failed, and why**: the eval command's last lines
    - **score changes**: the scoreboard's last line against the one before it, grader by grader
    - **Fable tokens used**: per filing and in total, from the manifests, with the batch-size calculation
-   - **fallback runs**: every run whose manifest carries `model_fallback`, with the agent it fell back at and the agents served by Opus, from the manifests
+   - **fallback runs**: every run whose manifest carries `model_fallback`, with the agent it fell back at, its `reason` (the limit's message, or the shape alone) and the agents served by Opus, from the manifests
    - **needs the owner**: rows added to `docs/needs_judgment.md`, each with its default in force
 
 Rules that do not bend:

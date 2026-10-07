@@ -293,30 +293,39 @@ The owner's decision of 2026-10-06 (`docs/structure_changes.md`) sets this table
   owner's reading is that it is the limit before anything else. Under
   `--on-fable-limit opus`, the default, `src/run_analysis.py` notes the limit once
   for the run in the manifest's `model_fallback` (`{"from": "fable", "to": "opus",
-  "at": ..., "first_agent": ...}`), calls the agent that hit it again at once on
-  Opus (`FALLBACK_MODEL`; its `attempts` list the limit attempt, then the Opus
-  attempt), and calls every later agent of the run whose definition asks for
-  Fable on Opus. The rest of the batch carries it: the runner names the flag on
-  stderr, and every later run of the batch is started with
-  `--carry-fallback-from <the run that fell back>`, which calls each Fable agent
-  on Opus from its first call, never asking Fable again, and notes the row with
-  `carried_from` naming that run -- refused when the run named records no
-  `model_fallback`, and under `stop`. Each such agent's record carries
-  `model_requested: fable`, `model_served` as the Opus model the CLI reports,
-  `fallback_from: fable` and `fallback_reason: fable_limit_reached`, and the run
-  exits 0 when it finished. The row is the run's record that the Fable limit was
+  "at": ..., "first_agent": ..., "reason": ...}`), calls the agent that hit it
+  again at once on Opus (`FALLBACK_MODEL`; its `attempts` list the limit attempt,
+  then the Opus attempt), and calls every later agent of the run whose definition
+  asks for Fable on Opus. Each such agent's record carries `model_requested:
+  fable`, `model_served` as the Opus model the CLI reports, `fallback_from: fable`
+  and `fallback_reason`, which, like the row's `reason`, says what set the
+  fallback off: `fable_limit_reached` when the limit's message said so, and
+  `fable_failed_like_the_limit` when the shape alone did -- the shape still falls
+  back, but its label does not claim the limit, since a mis-installed CLI fails
+  the same way. The run exits 0 when it finished. The rest of the batch carries a
+  fallback the message confirmed: the runner names the flag on stderr, and every
+  later run of the batch is started with `--carry-fallback-from <the run that
+  fell back>`, which calls each Fable agent on Opus from its first call, never
+  asking Fable again, and notes the row with `carried_from` naming that run --
+  refused when the run named records no `model_fallback` or one the shape alone
+  set off, and under `stop`. A shape-only fallback stays inside its own run, and
+  the stderr line says why. The row is the run's record that the Fable limit was
   reached; the key `fable_limit_reached` stays the mark of a run a limit stopped.
   A limit Opus answers too stops the run there, names the agent under
-  `fable_limit_reached` and exits 1, since exit 4 is `stop`'s alone. The batch sizer (`src/fable_batch.py`) counts only the
-  attempts Fable served toward the median and reports how many filings of the
-  record fell back; the graders read `model_served` per agent as they do today and
-  report fallback runs in the same table with the label, no score split by model
-  until the owner says (`docs/needs_judgment.md`). A resume of a fallback run
-  carries the fallback forward (every pending Fable agent on Opus, labelled) and
-  may name `--model opus`, the model the run ran under from the agent the row
-  names; a mix the record does not explain -- a Fable request served by another
-  model with no `fallback_from`, or a `fallback_from` under a manifest with no
-  `model_fallback` -- is still refused. `--on-fable-limit stop` keeps the rule of
+  `fable_limit_reached` and exits 1, since exit 4 is `stop`'s alone. The batch
+  sizer (`src/fable_batch.py`) leaves every filing that fell back out of the
+  median, which is of the filings Fable served whole, and names them beside it,
+  the default in force (`docs/needs_judgment.md`); the graders read `model_served`
+  per agent as they do today and report fallback runs in the same table with the
+  label, no score split by model until the owner says. A resume of a fallback run
+  carries the fallback forward (every pending Fable agent on Opus, labelled with
+  the row's reason) and may name `--model opus`, the model the run ran under from
+  the agent the row names; each pending definition is still held to its layer,
+  so one edited between the nights is refused; a resume of it under
+  `--on-fable-limit stop` is refused (exit 2), since it would call Fable after
+  Opus; and a mix the record does not explain -- a Fable request served by
+  another model with no `fallback_from`, or a `fallback_from` under a manifest
+  with no `model_fallback` -- is still refused. `--on-fable-limit stop` keeps the rule of
   2026-10-06 as an option: what finished is published -- the other analyst's
   gated analysis, `memo_ko.md` and `baselines.json` from what exists, the memo
   saying which frame is missing and why -- the manifest names the agent under

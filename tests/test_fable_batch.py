@@ -140,30 +140,48 @@ def test_a_fallback_agent_counts_its_fable_served_attempts_only():
     assert fable_batch.fable_served({}, {"model_requested": "opus"}) is False
 
 
-def test_the_batch_names_how_many_filings_on_record_fell_back(tmp_path):
-    """Three published filings: one on Fable throughout (100), one that fell back
-    (its Fable-served attempt, 100), and one served by Opus alone with the row
-    planted -- a run that carried the batch's fallback from its first call
-    (`--carry-fallback-from`) -- with no Fable token, so not on record. Median
-    100; 1,000 available: ten filings, one of the two on record a fallback, and
-    the words say so."""
-    _manifest(tmp_path / "A" / "1", {"a": FABLE})
+def test_a_filing_that_fell_back_is_left_out_of_the_median_and_named(tmp_path):
+    """The default in force (docs/needs_judgment.md): the median is of the
+    filings Fable served whole. Three published filings: A/1 on Fable throughout,
+    the retried analyst's 300; B/1, which fell back, 100 (its limit attempt; the
+    Opus attempt's 2,000 is not Fable); C/1, served by Opus alone with the row --
+    a run that carried the batch's fallback from its first call -- no Fable token,
+    so not on record. B/1 and C/1 are left out and named: the median is A/1's
+    300, and 1,000 available is 1,000 // 300 = 3 filings. Counted in, B/1 would
+    have made the median (300 + 100) / 2 = 200 and the batch 1,000 // 200 = 5,
+    which is the bias this rule refuses."""
+    _manifest(tmp_path / "A" / "1", {"a": RETRIED})
     _manifest(tmp_path / "B" / "1", {"a": FALLEN_BACK}, fallback=True)
     _manifest(tmp_path / "C" / "1", {"r": OPUS}, fallback=True)
     record = fable_batch.on_record(tmp_path)
-    assert record == {"A/1": 100, "B/1": 100}
+    assert record == {"A/1": 300, "B/1": 100}
     assert fable_batch.fell_back(tmp_path) == ["B/1", "C/1"]
     sized = fable_batch.size(1000, record, fable_batch.fell_back(tmp_path))
-    assert sized["batch"] == 10 and sized["median_per_filing"] == 100
-    assert sized["fell_back"] == 1 and sized["fell_back_filings"] == ["B/1"]
-    assert ("= 10 filing(s); 1 of them fell back to opus at the limit (B/1) and count their "
-            "Fable-served attempts only") in sized["calculation"]
-    # the other side: no fallback named, none reported, and the words end at the count
+    assert sized["median_per_filing"] == 300 and sized["batch"] == 3
+    assert sized["filings_on_record"] == 1
+    assert sized["fell_back"] == 2 and sized["fell_back_filings"] == ["B/1", "C/1"]
+    assert sized["calculation"] == (
+        "1,000 Fable tokens available ÷ median 300 per filing over 1 filing(s) on record "
+        "= 3 filing(s); 2 filing(s) fell back to opus and are left out of the median "
+        "(B/1, C/1)")
+    # the other side: nothing named as fallen back, both filings count, and the
+    # words end at the count
     plain = fable_batch.size(1000, record)
+    assert plain["median_per_filing"] == 200 and plain["batch"] == 5
     assert plain["fell_back"] == 0 and plain["fell_back_filings"] == []
-    assert plain["calculation"].endswith("= 10 filing(s)")
-    empty = fable_batch.size(1000, {}, ["B/1"])
+    assert plain["calculation"].endswith("= 5 filing(s)")
+    # every filing on record fell back: one filing, as with an empty record,
+    # and the words name what was left out
+    every = fable_batch.size(1000, {"B/1": 100}, ["B/1", "C/1"])
+    assert every["batch"] == 1 and every["median_per_filing"] is None
+    assert every["filings_on_record"] == 0
+    assert every["fell_back"] == 2 and every["fell_back_filings"] == ["B/1", "C/1"]
+    assert "the batch is one filing" in every["calculation"]
+    assert every["calculation"].endswith(
+        "; 2 filing(s) fell back to opus and are left out of the median (B/1, C/1)")
+    empty = fable_batch.size(1000, {})
     assert empty["fell_back"] == 0 and empty["fell_back_filings"] == []
+    assert empty["calculation"].endswith("sizes the next night")
     # a stopped run with the row is not published, so it is not a fallback on record
     (tmp_path / "D" / "1").mkdir(parents=True)
     (tmp_path / "D" / "1" / "input_manifest.json").write_text(json.dumps(
