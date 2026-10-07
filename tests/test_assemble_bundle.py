@@ -476,6 +476,8 @@ UNDER_DROPPED_BUNDLE = {
     ("MSI", "10-Q"): "17 page numerals, the disclaimer's heading and its continuation "
                      "carried; 138 read, 157 built",
     ("LITE", "10-K"): "the disclaimer's heading carried; 82 read, 83 built",
+    ("FLEX", "10-Q"): "the disclaimer's heading and second paragraph carried; "
+                      "89 read, 91 built",
 }
 
 EIGHT_K_CASES = [

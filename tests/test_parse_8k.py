@@ -173,6 +173,8 @@ UNDER_DROPPED = {
     "MSI": "17 of 19 bare page numerals, the disclaimer's heading and its page-broken "
            "continuation are carried; 22 read, 3 dropped",
     "LITE": "the disclaimer's heading is carried; 2 read, 1 dropped",
+    "FLEX": "the disclaimer's heading and its second paragraph are carried; "
+            "3 read, 1 dropped",
 }
 
 

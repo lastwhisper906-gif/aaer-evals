@@ -297,13 +297,15 @@ def test_the_header_read_a_second_way_names_the_same_one_document(ticker, role, 
 def test_both_types_are_in_the_fixture_set_so_the_rule_is_the_family():
     """A match on the literal `EX-21.1` would find nine of the twelve, and
     Franklin Electric, of the eight added on 2026-10-07, files the bare type
-    too, as does Motorola Solutions of the next eight; the two that filed no
-    exhibit at all record no type."""
+    too, as does Motorola Solutions of the next eight; Flex files `EX-21.01`,
+    a third spelling of the family; the two that filed no exhibit at all
+    record no type."""
     recorded = {ticker: expected_values.value(ticker, "exhibits.10-K.exhibit_type")
                 for ticker in TICKERS if ticker not in NAMES_NO_SUBSIDIARY_EXHIBIT}
     assert sorted(t for t, kind in recorded.items() if kind == "EX-21") == \
         ["CARR", "ESE", "FELE", "MSI", "QCOM"]
-    assert {kind for kind in recorded.values()} == {"EX-21", "EX-21.1"}
+    assert sorted(t for t, kind in recorded.items() if kind == "EX-21.01") == ["FLEX"]
+    assert {kind for kind in recorded.values()} == {"EX-21", "EX-21.1", "EX-21.01"}
 
 
 # --- what a filename rule does instead ----------------------------------------
