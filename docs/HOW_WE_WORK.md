@@ -49,7 +49,8 @@
 12. **Mistakes compound.** When a session ends, its mistakes go into
     `lessons.md`, one line each. A lesson that a script or a test comes to
     enforce moves to `archive/lessons_enforced.md` with one line naming it;
-    `tools/session_start_lessons.sh` prints the newest of the rest.
+    `tools/session_start_lessons.sh` prints the newest of the rest once the
+    owner's label puts it in the hook (`docs/needs_judgment.md`).
 13. **Less process.** A second lens reads only a change to `rules/`, scoring,
     an agent prompt or a calculator formula; every other pull request merges on
     green CI. A branch is merged or closed within a day. The weekly test is
@@ -181,7 +182,10 @@ Every routine below is a **scheduled task**, not a loop run.
 
 Configured in `.claude/settings.json`, not written by hand each session.
 
-- **session start** — `sh tools/session_start_lessons.sh`: the header of
+- **session start** — `cat lessons.md` today. `.claude/settings.json` is a
+  guarded path (`src/eval_guard.py`), so the one-line change to
+  `sh tools/session_start_lessons.sh` waits for the owner's label on a pull
+  request of its own; the script is in the tree and tested: the header of
   `lessons.md` and its newest lessons, at most sixty lines; a lesson is a
   dated line plus its wrapped lines, printed whole
   (`tests/test_session_start_lessons.py`). **Every lesson starts with its
@@ -300,7 +304,7 @@ from exactly where the pinned one would have; and the fallback is started
 `--restricted`, with its agent definition passed inline, because a session
 started in the worktree is handed that tree's `CLAUDE.md`, `AGENTS.md`, its
 `.claude/` settings and agents, and — through the SessionStart hook — the
-newest sixty lines of the lessons file verbatim. A sentinel line in `lessons.md` came
+lessons file verbatim. A sentinel line in `lessons.md` came
 back to the model in one turn with no tool call; the same probe answered
 `ABSENT` once the flag was added.
 

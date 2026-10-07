@@ -19,11 +19,12 @@ hook's line is `sh tools/session_start_lessons.sh | wc -l`.
 |---|---|---|
 | `CLAUDE.md` | 22 | 22 |
 | `docs/HOW_WE_WORK.md` | 477 | 436 |
-| `lessons.md` | 320 (314 lessons) | 211 (201 lessons: 197 kept, 4 written this session) |
-| what the SessionStart hook prints | 320 (`git show origin/main:lessons.md \| wc -l`, which `cat lessons.md` printed) | 60 (`sh tools/session_start_lessons.sh \| wc -l`) |
+| `lessons.md` | 320 (314 lessons) | 212 (202 lessons: 197 kept, 5 written this session) |
+| what the SessionStart hook prints | 320 (`git show origin/main:lessons.md \| wc -l`, which `cat lessons.md` printed) | 212 (`cat lessons.md`, the hook as it stands); 60 (`sh tools/session_start_lessons.sh \| wc -l`) once the owner labels the hook change |
 
 Session-start context is `CLAUDE.md` plus the hook's printout: 342 lines before
-(22 + 320), 82 after (22 + 60).
+(22 + 320), 234 after as the hook stands (22 + 212), 82 once the owner labels the
+hook change (22 + 60).
 
 ## Rules that became scripts
 
@@ -163,5 +164,11 @@ lessons and that heading), the first being line 14:
 
 That file is not changed; the rule is written to the shape its header describes.
 
-The SessionStart hook in `.claude/settings.json` now runs
-`sh tools/session_start_lessons.sh` in place of `cat lessons.md`.
+The SessionStart hook in `.claude/settings.json` still runs `cat lessons.md`.
+`.claude/settings.json` is a guarded path (`src/eval_guard.py` GUARDED), so this
+branch cannot change it: the CI guard failed on the first push, which carried the
+one-line change to `sh tools/session_start_lessons.sh`, and the change was taken
+out. It is a row in `docs/needs_judgment.md` and an item in `queue.md`: a pull
+request of that one line, merged with the owner's label `owner-approved-eval`.
+Until then the hook prints the whole cut file, 212 lines, and the script prints
+60 when run by hand.

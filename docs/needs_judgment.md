@@ -102,6 +102,8 @@ force.
 
 [ ] **what ties a row of input_numbers.json or input_trends.json to the company** · a row names its source accession and filing date, never the company's CIK, and an accession's prefix is the filer agent's (CIEN's rows come under 0000936395 and 0001628280, STX's under 0001193125), so `evals/regression/mechanical.py` cannot tell a row of another company's filing, filed before the cutoff, from the company's own; the fetch ties rows to one CIK by construction (companyfacts is fetched per CIK) · default: the fetch records the company's CIK in the manifest and on every row (`cik`), and the grader then refuses a row whose CIK is not the manifest's; until then the grader holds rows to their own filing dates and accessions only and this row stands open.
 
+[ ] **the SessionStart hook's one-line change** · `.claude/settings.json` is a guarded path (`src/eval_guard.py` GUARDED: a change merges only on a pull request the owner labels `owner-approved-eval`), and the prose-rules branch carried the hook from `cat lessons.md` to `sh tools/session_start_lessons.sh` (the header and the newest lessons, sixty lines, `tests/test_session_start_lessons.py`); the CI guard failed on it and the line was taken out · default: the hook runs `cat lessons.md`, the whole cut file (212 lines), and the script prints sixty when run by hand; the `queue.md` item opens a pull request of that one line and the owner labels it or leaves the hook as it is.
+
 ## Settled by default
 
 Every other row that was open on 2026-09-28. Nothing waits on any of them: the
