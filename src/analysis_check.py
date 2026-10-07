@@ -26,7 +26,18 @@ skipped and a dropped area must still say that it was dropped. The `limits`
 sentence must be the rules version's own, character for character.
 
     python3.12 -m src.analysis_check --kind accounting --agent-dir <dir> \\
-        --calculator <calculator.json> --out analysis_accounting.json
+        --written <the file the analyst wrote> --calculator <calculator.json> \\
+        --out analysis_accounting.json --run <run directory>
+
+`--run` names the run directory the agent directory belongs to: the manifest's
+drop rows are read from it, keyed by report, so a citation of an id the quote
+gate dropped is refused here as in the pipeline, and for the valuation kinds
+the run's full `input_mdna.md` and `input_8k.md` are read as `filing`, the
+other side a quote is held to. A valuation or assumptions kind without `--run`
+is refused: the valuation analyst's copies are trimmed, and the trimmed copy
+alone cannot tell a quote across a seam from one the filing printed. The
+accounting and financial kinds run without it, and say that no drop row was
+read.
 """
 
 from __future__ import annotations
@@ -663,10 +674,19 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--written", required=True, help="the file the analyst wrote")
     parser.add_argument("--calculator", required=True)
     parser.add_argument("--out", required=True)
+    parser.add_argument("--run", default=None,
+                        help="the run directory: its manifest's drop rows, and for the "
+                             "valuation kinds its full input_mdna.md and input_8k.md")
     args = parser.parse_args(argv)
     code = interpreter_pin.enforce()
     if code:
         return code
+    if args.kind in ("valuation", "assumptions") and not args.run:
+        print(f"analysis_check: --kind {args.kind} needs --run <run directory>: the "
+              "valuation analyst's input_mdna.md and input_8k.md are trimmed copies, and "
+              "the trimmed copy alone cannot hold a quote across a seam to what the filing "
+              "printed; the run's full files are the other side", file=sys.stderr)
+        return BAD_INPUT
     try:
         payload = json.loads(Path(args.written).read_text(encoding="utf-8"))
         fields = json.loads(Path(args.calculator).read_text(encoding="utf-8"))
@@ -674,10 +694,27 @@ def main(argv: list[str] | None = None) -> int:
         print(f"analysis_check: {exc}", file=sys.stderr)
         return BAD_INPUT
     sources = read_sources(Path(args.agent_dir), SOURCES[args.kind])
+    filing: dict[str, str] | None = None
+    excluded: dict[str, set[str]] = {}
+    if args.run:
+        from src import run_analysis          # lazy: that module imports this one
+        run = Path(args.run)
+        try:
+            excluded = run_analysis.excluded_by_report(run)
+        except (OSError, ValueError) as exc:
+            print(f"analysis_check: {run}: the manifest's drop rows cannot be read: {exc}",
+                  file=sys.stderr)
+            return BAD_INPUT
+        filing = {name: (run / name).read_text(encoding="utf-8")
+                  for name in ("input_mdna.md", "input_8k.md") if (run / name).is_file()}
+    else:
+        print("analysis_check: no --run: the gate's drop rows were not read, so a citation "
+              "of an id the quote gate dropped is not refused here", file=sys.stderr)
     try:
-        out = (check_assumptions(payload, fields=fields, sources=sources)
+        out = (check_assumptions(payload, fields=fields, sources=sources, filing=filing)
                if args.kind == "assumptions" else
-               check(args.kind, payload, fields=fields, sources=sources))
+               check(args.kind, payload, fields=fields, sources=sources, excluded=excluded,
+                     filing=filing))
     except AnalysisInputError as exc:
         print(f"analysis_check: {exc}", file=sys.stderr)
         return BAD_INPUT
