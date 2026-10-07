@@ -1092,6 +1092,18 @@ def test_the_two_records_older_than_their_trigger_are_the_ones_the_fixtures_hold
     assert stale == {"CARR", "LFUS", "JCI", "FELE"}
 
 
+# Sandisk, of the next eight added on 2026-10-07, has filed only since its
+# separation from Western Digital ("On February 21, 2025, Sandisk Corporation
+# (the “Company”) completed its separation from Western Digital Corporation",
+# its fourth-quarter release): the first filing its record holds is the 10-Q of
+# 2025-03-07, and the oldest fiscal year any of them reports is the year ended
+# 2023-06-30, the first of the three its first 10-K prints. The window's two
+# oldest years, ending near 2022-07-01 and 2021-07-02, are in no filing on
+# record, so those two slots are missing and say so; every other company's
+# record reaches all five. Read off the record by `fiscal_year_ends` below.
+FIRST_YEAR_ON_RECORD = {"SNDK": "2023-06-30"}
+
+
 @pytest.mark.parametrize("ticker", TICKERS)
 def test_the_only_window_the_record_cannot_fill_is_the_fourth_quarters(ticker):
     """Why the row exists, and the exact size of what is still missing.
@@ -1109,14 +1121,29 @@ def test_the_only_window_the_record_cannot_fill_is_the_fourth_quarters(ticker):
       the filing that first states it — true of two of these twelve, and the
       slot says so.
 
-    So the count is a consequence and not a floor chosen after the fact.
+    So the count is a consequence and not a floor chosen after the fact. The
+    one company whose filings begin inside the window is named above, and its
+    two oldest years are asserted missing for that reason and no other.
     """
     payload = table(ticker)
     assert len(payload["coverage"]["years"]) == 5
-    assert all(entry["status"] == "filled" for entry in payload["coverage"]["years"])
-
     ends = [dt.date.fromisoformat(end) for end in fiscal_year_ends(ticker)]
     assert ends, f"{ticker}: the record labels no fiscal year at all"
+    before_the_record = []
+    if ticker in FIRST_YEAR_ON_RECORD:
+        first = dt.date.fromisoformat(FIRST_YEAR_ON_RECORD[ticker])
+        assert min(ends) == first
+        before_the_record = [entry for entry in payload["coverage"]["years"]
+                             if dt.date.fromisoformat(entry["target_end"])
+                             < first - dt.timedelta(days=20)]
+        assert len(before_the_record) == 2
+        for entry in before_the_record:
+            assert entry["status"] == "missing"
+            assert entry["reason"] == (f"no year ending within 20 days of "
+                                       f"{entry['target_end']} is in the companyfacts record")
+    assert all(entry["status"] == "filled" for entry in payload["coverage"]["years"]
+               if entry not in before_the_record)
+
     newest = dt.date.fromisoformat(record_newest_filing(ticker))
     empty = [entry for entry in payload["coverage"]["quarters"]
              if entry["status"] != "filled"]
@@ -1130,7 +1157,8 @@ def test_the_only_window_the_record_cannot_fill_is_the_fourth_quarters(ticker):
             f"{ticker} {entry['label']}: empty for neither of the two reasons"
         assert "fetched before the triggering report" in entry["reason"]
     assert len(empty) <= 3
-    assert payload["coverage"]["periods_with_at_least_one_ratio"] == 13 - len(empty)
+    assert payload["coverage"]["periods_with_at_least_one_ratio"] == \
+        13 - len(empty) - len(before_the_record)
 
 
 @pytest.mark.parametrize("ticker", TICKERS)

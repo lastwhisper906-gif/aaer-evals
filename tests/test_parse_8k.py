@@ -178,6 +178,8 @@ UNDER_DROPPED = {
     "AVGO": "all 5 bare page numerals and 4 of the 5 blocks of the cautionary note "
             "are carried; 10 read, 1 dropped",
     "SMCI": "the disclaimer's heading is carried; 2 read, 1 dropped",
+    "SNDK": "12 of 13 bare page numerals and the disclaimer's heading are carried; "
+            "15 read, 2 dropped",
 }
 
 

@@ -62,6 +62,8 @@ branch changed. A run item is done when its run directory is published and
 
 [ ] SMCI's 10-Q filed 2026-05-11 on Fable · `.venv/bin/python -m evals --runs runs/SMCI` · none
 
+[ ] SNDK's 10-Q filed 2026-05-01 on Fable · `.venv/bin/python -m evals --runs runs/SNDK` · none
+
 ## Done
 
 [x] the manifest records the triggering filing's EDGAR acceptance stamp, Eastern, no Z: the fetch projects `acceptanceDateTime` onto the submissions rows and the manifest document rows (the two field tuples in `src/fetch_fixtures.py` and `submissions_record`), `src/assemble_bundle.py` writes it beside `filing_date`, and the hand-written `acceptance_datetime` on NVDA's 10-Q row in `tests/fixtures/NVDA/submissions.json` is then the fetcher's · eval: `python -m evals --runs <run>` passes nothing_after_cutoff on a run with a market table · depends on: nothing · 2026-10-07: the index's Z is universal time, not decoration (NVDA's committed 10-K headers against the index's rows for the same accessions, `docs/needs_judgment.md`), so the fetch converts the stamp rather than dropping the letter; NVDA's hand-written value is the constant `NVDA_ACCEPTED` in `tests/test_run_analysis.py`, not a field of the hash-held fixture, and stays as written; the eval is shown on a planted run, since no published run has a market table · PR: this one
