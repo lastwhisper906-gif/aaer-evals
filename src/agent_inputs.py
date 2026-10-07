@@ -857,7 +857,8 @@ def isolation_violations(run: Path) -> list[str]:
        to the paragraphs the run's own gated `report_notes_text.md` and drop
        list flag, derived here again through `flagged_paragraphs`; the record's
        `kept` must be that set, so a record edited to keep more, or a trim
-       built from a wrong set, is reported by the paragraph. It is held to the
+       built from a wrong set, is reported by the paragraph, and a trimmed file
+       placed with no entry of its own beside one that has one is named. It is held to the
        full file when the manifest records no trim for that directory and the
        run was analysed before the rule (`analysed_utc` before 2026-10-06, the
        eight runs published on 2026-09-29); a run analysed from that day on, or
@@ -914,6 +915,14 @@ def isolation_violations(run: Path) -> list[str]:
                 found.extend(f"{name}: {path.name}: {line}" for line in trim_differences(
                     trims[path.name], (run / path.name).read_text(encoding="utf-8",
                                                                   errors="replace"), flagged))
+            if (trims and spec.layer == "valuation" and name in AGENTS
+                    and path.name in TRIMMED_FOR_VALUATION and path.name not in trims):
+                # the record names the other file and not this one: a file the
+                # record leaves out would be handed whole, and the check would
+                # hold it to the whole file by the record's own silence
+                found.append(f"{name}: {path.name}: placed with no trim of its own on record, "
+                             f"though the manifest records a trim for {', '.join(sorted(trims))}; "
+                             "the router records every file it trims")
             if _differs(path, expected):
                 found.append(f"{name}: holds a {path.name} that is not the "
                              "run's — the right name over other bytes")

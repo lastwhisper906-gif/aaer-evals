@@ -757,6 +757,8 @@ TRIMMED = (f"# T mdna\n\n"
            f"[{FOUR}]\nFourth, flagged.\n")
 RECORD = {"kept": [TWO, FOUR], "of": 4,
           "note": "2 of 4 paragraphs, the ones the notes reader flagged; the rest were not placed"}
+EMPTY_8K = {"kept": [], "of": 0,
+            "note": "0 of 0 paragraphs, the ones the notes reader flagged; the rest were not placed"}
 
 
 def _trimmed_run(tmp_path: Path) -> Path:
@@ -846,8 +848,11 @@ def _valuation_directory(tmp_path: Path, *, holds: str, record: dict | None,
     if analysed is not None:
         manifest[agent_inputs.ANALYSED_KEY] = analysed
     if record is not None:
+        # as `build` records it: every file it trims, the 8-K's placeholder here
+        # holding no paragraph at all
         manifest["agents"] = {"valuation-analyst": {"result": "written",
-                                                    "trimmed": {"input_mdna.md": record}}}
+                                                    "trimmed": {"input_mdna.md": record,
+                                                                "input_8k.md": EMPTY_8K}}}
     (run / "input_manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
     root = agent_inputs.session_root(run, "valuation-analyst")
     root.mkdir(parents=True)
@@ -956,6 +961,22 @@ def test_a_record_keeping_a_paragraph_no_standing_item_flagged_is_a_broken_bound
     # and the clean run: the record is the set and the file is the cut by it
     assert agent_inputs.isolation_violations(
         _valuation_directory(tmp_path / "clean", holds=TRIMMED, record=RECORD)) == []
+
+
+def test_a_trimmed_file_the_record_leaves_out_is_named(tmp_path):
+    """A record naming the MD&A and not the 8-K, the 8-K placed whole: named,
+    whatever the 8-K holds, because the router records every file it trims and
+    a file the record leaves out would be handed whole. Both named: clean."""
+    run = _valuation_directory(tmp_path / "half", holds=TRIMMED, record=RECORD)
+    manifest = json.loads((run / "input_manifest.json").read_text(encoding="utf-8"))
+    del manifest["agents"]["valuation-analyst"]["trimmed"]["input_8k.md"]
+    (run / "input_manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    broken = agent_inputs.isolation_violations(run)
+    assert broken == ["valuation-analyst: input_8k.md: placed with no trim of its own on "
+                      "record, though the manifest records a trim for input_mdna.md; the "
+                      "router records every file it trims"]
+    assert agent_inputs.isolation_violations(
+        _valuation_directory(tmp_path / "both", holds=TRIMMED, record=RECORD)) == []
 
 
 def test_a_trim_built_from_a_wrong_set_is_reported_even_under_a_matching_record(tmp_path):
