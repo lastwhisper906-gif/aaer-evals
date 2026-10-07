@@ -219,7 +219,10 @@ Python only. No model touches this stage.
    would name two facts it says more: a fact reported against a dimension
    adds `:{dimension}={member}` (members joined by commas, a typed member's
    value in place of a member), and an amount in a currency other than the
-   dollar ends in `:unit={unit}`.
+   dollar ends in `:unit={unit}`, as does each fact where one filing states a
+   concept in one context in two units that rule leaves unnamed (Lumentum's
+   conversion threshold, 30 in `lite:day` and 30 in `lite:trading_day`), and
+   only there.
 3. **Prior-period diff.** Match paragraphs against the previous report of the
    same kind: replace numbers with placeholders, then compare similarity. A new
    or changed paragraph goes in verbatim. An unchanged one is replaced by a

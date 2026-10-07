@@ -247,6 +247,10 @@ BROAD_DEBT_MATCH = {
     "FTNT": "DebtSecuritiesAvailableForSaleUnrealizedLossPositionFairValueTable; "
             "6 read, 7 paired",
     "FN": "DebtSecuritiesAvailableForSaleTable; 6 read, 7 paired",
+    # One of the next eight reaches it: Lumentum's investments note, in both
+    # quarters, beside the convertible notes it owes.
+    "LITE": "DebtSecuritiesAvailableForSaleUnrealizedLossPositionFairValueTable; "
+            "8 read, 9 paired",
 }
 
 

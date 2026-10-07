@@ -209,6 +209,30 @@ def facts_from_instance(xml_bytes: bytes, *, accession: str, filing_date: str,
             "source_accession": accession,
             "filing_date": filing_date,
         })
+    return units_apart(facts)
+
+
+def units_apart(facts: list[dict]) -> list[dict]:
+    """Name the unit wherever one printed id would name facts in two units.
+
+    `paragraph_id` names a unit only for a currency other than the dollar, and
+    every other unit is left to the concept: a count of shares is in shares, a
+    ratio is pure. A filing can still state one concept in one context in two
+    units of its own. Lumentum's 10-Qs give the conversion threshold of its
+    2026 notes, us-gaap:DebtInstrumentConvertibleThresholdConsecutiveTradingDays1
+    for December 2019, as 30 in `lite:day` and again as 30 in
+    `lite:trading_day`; a day and a trading day are different units, so those
+    are two facts, and under one id `src/quote_gate.py` refuses the whole
+    bundle. Where the ids the rule above prints would collide across units,
+    each of those facts ends in `unit={unit}`; every other id is as printed,
+    so no fact one unit states alone changes its name.
+    """
+    seen: dict[str, set[str]] = {}
+    for fact in facts:
+        seen.setdefault(fact["paragraph_id"], set()).add(fact["unit"])
+    for fact in facts:
+        if len(seen[fact["paragraph_id"]]) > 1:
+            fact["paragraph_id"] = f"{fact['paragraph_id']}:unit={fact['unit']}"
     return facts
 
 

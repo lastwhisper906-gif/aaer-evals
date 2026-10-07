@@ -475,6 +475,7 @@ UNDER_DROPPED_BUNDLE = {
     # for LITE, SMCI and SNDK and in the 10-Q bundle for the other five.
     ("MSI", "10-Q"): "17 page numerals, the disclaimer's heading and its continuation "
                      "carried; 138 read, 157 built",
+    ("LITE", "10-K"): "the disclaimer's heading carried; 82 read, 83 built",
 }
 
 EIGHT_K_CASES = [
@@ -1248,9 +1249,11 @@ def test_every_row_the_numbers_reader_can_cite_prints_its_id(ticker):
     own `start..end`. A fact's is its own filing's accession, its tag and its
     period, then each dimension as `{dimension}={member}` (a typed member's
     value in place of a member) joined by commas, then `unit={unit}` when the
-    amount is in a currency other than the dollar. The numbers reader copies
-    these off the row, so each is checked against the row's printed fields and
-    not against the code that wrote it."""
+    amount is in a currency other than the dollar, or when another row the
+    file prints spells the same id in a different unit (Lumentum's threshold,
+    in days and in trading days). The numbers reader copies these off the row,
+    so each is checked against the row's printed fields and not against the
+    code that wrote it."""
     bundle = built(ticker)
     accession = bundle["manifest"]["accession"]
     table = json.loads(bundle["texts"]["input_trends.json"])
@@ -1260,7 +1263,9 @@ def test_every_row_the_numbers_reader_can_cite_prints_its_id(ticker):
     for row, metric, cell in cells:
         assert cell["paragraph_id"] == \
             f"{accession}:trends:{metric}:{row['start']}..{row['end']}"
-    for fact in json.loads(bundle["texts"]["input_numbers.json"])["facts"]:
+    facts = json.loads(bundle["texts"]["input_numbers.json"])["facts"]
+    spellings = []
+    for fact in facts:
         context = fact["context"]
         period = context.get("instant") or f"{context['start']}..{context['end']}"
         spelled = [f"{fact['source_accession']}:facts:{fact['tag']}:{period}"]
@@ -1274,7 +1279,14 @@ def test_every_row_the_numbers_reader_can_cite_prints_its_id(ticker):
                       if measure.startswith("iso4217:")]
         if any(currency != "iso4217:USD" for currency in currencies):
             spelled.append(f"unit={fact['unit']}")
-        assert fact["paragraph_id"] == ":".join(spelled)
+        spellings.append(":".join(spelled))
+    units_under: dict[str, set] = {}
+    for fact, spelled in zip(facts, spellings):
+        units_under.setdefault(spelled, set()).add(fact["unit"])
+    for fact, spelled in zip(facts, spellings):
+        if len(units_under[spelled]) > 1:
+            spelled = f"{spelled}:unit={fact['unit']}"
+        assert fact["paragraph_id"] == spelled
 
 
 def test_a_cutoff_equal_to_the_triggering_reports_own_date_is_the_default():

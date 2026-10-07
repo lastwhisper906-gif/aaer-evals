@@ -172,6 +172,7 @@ UNDER_DROPPED = {
     # print runs of numerals too, and the cleaner keeps most or all of them.
     "MSI": "17 of 19 bare page numerals, the disclaimer's heading and its page-broken "
            "continuation are carried; 22 read, 3 dropped",
+    "LITE": "the disclaimer's heading is carried; 2 read, 1 dropped",
 }
 
 
