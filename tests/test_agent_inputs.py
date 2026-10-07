@@ -853,11 +853,83 @@ def test_a_directory_the_manifest_records_a_trim_for_is_held_to_that_record(tmp_
     assert any("says 5 paragraphs" in line for line in broken)
 
 
-def test_the_boundary_check_re_derives_the_trim_from_the_record_and_not_from_the_trim(monkeypatch):
-    """`handed` is the independent reading: the run's file cut by the manifest's
-    list of kept ids. It never calls `trimmed`, so a wrong trim and the check do
-    not move together."""
+def test_the_boundary_check_re_derives_the_trim_from_the_record_and_not_from_the_trim(
+        tmp_path, monkeypatch):
+    """`handed` is the independent reading: the run's file cut by a list of ids.
+    Neither it nor the boundary check calls `trimmed`, so a wrong trim and the
+    check do not move together."""
     monkeypatch.setattr(agent_inputs, "trimmed", lambda *args: (_ for _ in ()).throw(
         AssertionError("the boundary check called the trim")))
     assert agent_inputs.handed(MDNA, RECORD) == TRIMMED
     assert agent_inputs.handed(MDNA, {"kept": [], "of": 4}) == "# T mdna\n\n"
+    assert agent_inputs.isolation_violations(
+        _valuation_directory(tmp_path / "cut", holds=TRIMMED, record=RECORD)) == []
+
+
+# The flagged set, derived again by the boundary check from the gated report and
+# the drop list: {TWO, FOUR}. A record is held to that set, whatever it says.
+KEEPS_THREE = {"kept": [TWO, THREE, FOUR], "of": 4}
+CUT_TO_THREE = (f"# T mdna\n\n"
+                f"[{TWO}]\nSecond,\u00a0flagged.\n\n"
+                f"[{THREE}]\nThird, flagged by an item the gate dropped.\n\n"
+                f"[{FOUR}]\nFourth, flagged.\n")
+KEEPS_EVERY = {"kept": [ONE, TWO, THREE, FOUR], "of": 4}
+KEEPS_TWO_ONLY = {"kept": [TWO], "of": 4}
+CUT_TO_TWO = f"# T mdna\n\n[{TWO}]\nSecond,\u00a0flagged.\n\n"
+
+
+def test_a_record_keeping_a_paragraph_no_standing_item_flagged_is_a_broken_boundary(tmp_path):
+    """The third paragraph was flagged only by item c, which the gate dropped. A
+    record keeping it, over a copy cut to match the record, is reported naming
+    the third paragraph and the bytes; a record keeping every paragraph over the
+    full file names the first and the third."""
+    broken = agent_inputs.isolation_violations(
+        _valuation_directory(tmp_path / "three", holds=CUT_TO_THREE, record=KEEPS_THREE))
+    assert broken == [
+        f"valuation-analyst: input_mdna.md: the manifest's trimmed record keeps {THREE}, "
+        "which no standing item of report_notes_text.md flagged",
+        "valuation-analyst: holds a input_mdna.md that is not the run's — the right name "
+        "over other bytes"]
+    broken = agent_inputs.isolation_violations(
+        _valuation_directory(tmp_path / "every", holds=MDNA, record=KEEPS_EVERY))
+    assert broken[0] == (f"valuation-analyst: input_mdna.md: the manifest's trimmed record "
+                         f"keeps {ONE}, {THREE}, which no standing item of "
+                         "report_notes_text.md flagged")
+    assert len(broken) == 2 and "other bytes" in broken[1]
+    # the other side: a record leaving out a paragraph a standing item flagged
+    broken = agent_inputs.isolation_violations(
+        _valuation_directory(tmp_path / "fewer", holds=CUT_TO_TWO, record=KEEPS_TWO_ONLY))
+    assert broken[0] == (f"valuation-analyst: input_mdna.md: the manifest's trimmed record "
+                         f"leaves out {FOUR}, which a standing item of report_notes_text.md "
+                         "flagged")
+    assert len(broken) == 2 and "other bytes" in broken[1]
+    # and the clean run: the record is the set and the file is the cut by it
+    assert agent_inputs.isolation_violations(
+        _valuation_directory(tmp_path / "clean", holds=TRIMMED, record=RECORD)) == []
+
+
+def test_a_trim_built_from_a_wrong_set_is_reported_even_under_a_matching_record(tmp_path):
+    """The record and the file agree with each other and both keep the third
+    paragraph: the check does not take the record's word for the set."""
+    run = _valuation_directory(tmp_path / "wrong", holds=CUT_TO_THREE, record=KEEPS_THREE)
+    assert agent_inputs.handed(MDNA, KEEPS_THREE) == CUT_TO_THREE      # they agree
+    broken = agent_inputs.isolation_violations(run)
+    assert any(THREE in line and "no standing item" in line for line in broken)
+    assert any("other bytes" in line for line in broken)
+    # when the drop list is emptied, c stands, THREE is flagged, and the same
+    # directory is clean: the set is read off the run's own record of the gate
+    manifest = json.loads((run / "input_manifest.json").read_text(encoding="utf-8"))
+    manifest["dropped_items"] = []
+    (run / "input_manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    assert agent_inputs.isolation_violations(run) == []
+
+
+def test_a_trim_on_a_run_with_no_gate_record_is_a_broken_boundary(tmp_path):
+    run = _valuation_directory(tmp_path / "nogate", holds=TRIMMED, record=RECORD)
+    manifest = json.loads((run / "input_manifest.json").read_text(encoding="utf-8"))
+    del manifest["dropped_items"]
+    (run / "input_manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    broken = agent_inputs.isolation_violations(run)
+    assert len(broken) == 1 and broken[0].startswith(
+        "valuation-analyst: the manifest records a trim, but ")
+    assert "no record that the quote gate ran" in broken[0]

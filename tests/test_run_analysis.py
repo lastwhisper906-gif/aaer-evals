@@ -292,6 +292,10 @@ def test_a_named_model_reaches_every_agent_and_the_manifest_says_so(tmp_path, mo
         "valuation-analyst", "valuation-analyst", "control-single-agent"])
     assert {model for _, model in asked} == {"opus"}
     assert manifest["model_override"]["model"] == "opus"
+    # applies_to names the agents this invocation called: all seven, here
+    assert manifest["model_override"]["applies_to"] == [
+        "numbers-reader", "notes-text-reader", "accounting-analyst", "financial-analyst",
+        "valuation-analyst", "valuation-analyst-second-pass", "control-single-agent"]
     assert run_analysis.definition("accounting-analyst")["model"] == "fable"
 
 
@@ -613,7 +617,8 @@ def test_a_stopped_run_resumes_in_place_and_calls_only_what_had_not_finished(
                                  control="never", resume=True)
 
 
-def _stopped_at(tmp_path, monkeypatch, stopped_agent: str, control: str):
+def _stopped_at(tmp_path, monkeypatch, stopped_agent: str, control: str,
+                model: str | None = None):
     """The limit at `stopped_agent`; every other agent writes."""
     run = tmp_path / "NVDA" / NVDA_ACCESSION
     bundle = assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,
@@ -632,19 +637,99 @@ def _stopped_at(tmp_path, monkeypatch, stopped_agent: str, control: str):
     stopped = run_analysis.run_company(run=run, ticker="NVDA", form="10-Q",
                                        cutoff="2026-08-26", period_end="2026-07-26",
                                        store=run_analysis.cutoff_guard.FIXTURES,
-                                       prices=None, control=control)
+                                       prices=None, control=control, model=model)
     assert stopped["fable_limit_reached"] == [stopped_agent]
     return run, stopped
 
 
-def _resumed(run, monkeypatch, control: str):
+def _resumed(run, monkeypatch, control: str, model: str | None = None):
     ask, called = _counting_ask({})
     monkeypatch.setattr(run_analysis, "ask", ask)
     manifest = run_analysis.run_company(run=run, ticker="NVDA", form="10-Q",
                                         cutoff="2026-08-26", period_end="2026-07-26",
                                         store=run_analysis.cutoff_guard.FIXTURES,
-                                        prices=None, control=control)
+                                        prices=None, control=control, model=model)
     return manifest, called
+
+
+def _main_command(run, *extra: str) -> list[str]:
+    return ["--run", str(run), "--ticker", "NVDA", "--form", "10-Q", "--cutoff",
+            "2026-08-26", "--period-end", "2026-07-26", "--control", "never", *extra]
+
+
+def test_a_resume_under_another_model_than_the_stopped_run_s_is_refused(tmp_path, monkeypatch):
+    """Stopped under the definitions' own models (no --model), resumed with
+    `--model opus`: refused before any agent is called, exit 2, and the stopped
+    run's record stands as it was."""
+    run, stopped = _stopped_at_accounting_analyst(tmp_path, monkeypatch)
+    assert "model_override" not in stopped
+    before = (run / "input_manifest.json").read_bytes()
+    with pytest.raises(run_analysis.RunError, match="the run stopped under the definitions' "
+                       "own models; a resume under opus would mix models, which the record "
+                       "cannot compare"):
+        _resumed(run, monkeypatch, "never", model="opus")
+    monkeypatch.setattr(run_analysis.interpreter_pin, "enforce", lambda: 0)
+    monkeypatch.setattr(run_analysis, "ask",
+                        lambda *a, **k: (_ for _ in ()).throw(AssertionError("an agent ran")))
+    assert run_analysis.main(_main_command(run, "--model", "opus")) == run_analysis.BAD_INPUT == 2
+    assert (run / "input_manifest.json").read_bytes() == before
+    # the same resume under the stopped run's models runs
+    manifest, called = _resumed(run, monkeypatch, "never")
+    assert called == ["accounting-analyst", "valuation-analyst", "valuation-analyst-second-pass"]
+    assert "model_override" not in manifest and manifest["analysis_failure"] is None
+
+
+def test_a_resume_names_the_stopped_run_s_model_or_is_refused_and_the_override_names_what_ran(
+        tmp_path, monkeypatch):
+    """Stopped with `--model claude-fable-5-1`: a resume naming none is refused,
+    one naming the same runs, and the manifest's `model_override.applies_to`
+    lists only the agents called on resume -- the stopped run's own override,
+    which named the four it called, is not carried forward."""
+    run, stopped = _stopped_at(tmp_path, monkeypatch, "accounting-analyst", "never",
+                               model="claude-fable-5-1")
+    assert stopped["model_override"]["model"] == "claude-fable-5-1"
+    assert stopped["model_override"]["applies_to"] == [
+        "numbers-reader", "notes-text-reader", "accounting-analyst", "financial-analyst"]
+    with pytest.raises(run_analysis.RunError, match="the run stopped under claude-fable-5-1; "
+                       "a resume under the definitions' own models would mix models, which "
+                       "the record cannot compare"):
+        _resumed(run, monkeypatch, "never")
+    with pytest.raises(run_analysis.RunError, match="a resume under opus would mix models"):
+        _resumed(run, monkeypatch, "never", model="opus")
+    monkeypatch.setattr(run_analysis.interpreter_pin, "enforce", lambda: 0)
+    monkeypatch.setattr(run_analysis, "ask",
+                        lambda *a, **k: (_ for _ in ()).throw(AssertionError("an agent ran")))
+    assert run_analysis.main(_main_command(run, "--resume")) == run_analysis.BAD_INPUT == 2
+    assert json.loads((run / "input_manifest.json").read_text())["fable_limit_reached"] == [
+        "accounting-analyst"]
+    manifest, called = _resumed(run, monkeypatch, "never", model="claude-fable-5-1")
+    assert called == ["accounting-analyst", "valuation-analyst", "valuation-analyst-second-pass"]
+    assert manifest["model_override"]["model"] == "claude-fable-5-1"
+    assert manifest["model_override"]["applies_to"] == called
+    assert manifest["resume_skipped"] == ["numbers-reader", "notes-text-reader",
+                                          "financial-analyst"]
+    assert "fable_limit_reached" not in manifest and manifest["analysis_failure"] is None
+    # an agent on record whose own record asked for another model is a mixed record
+    edited = json.loads((run / "input_manifest.json").read_text())
+    edited["fable_limit_reached"] = ["valuation-analyst-second-pass"]
+    edited["agents"]["financial-analyst"]["model_requested"] = "opus"
+    (run / "input_manifest.json").write_text(json.dumps(edited))
+    with pytest.raises(run_analysis.RunError, match="financial-analyst on record asked for opus"):
+        _resumed(run, monkeypatch, "never", model="claude-fable-5-1")
+
+
+def test_a_stale_override_is_never_carried_forward_by_finish(tmp_path):
+    run = tmp_path / "run"
+    run.mkdir()
+    (run / "input_manifest.json").write_text(json.dumps({
+        "model_override": {"model": "opus", "applies_to": ["numbers-reader"]},
+        "agents": {"numbers-reader": {"result": "written", "model_requested": "opus"}}}))
+    agents = {"numbers-reader": {"result": "written", "model_requested": "opus"},
+              "notes-text-reader": {"result": "written"}}
+    manifest = run_analysis.finish(run, agents, {}, None, None, skipped=["numbers-reader"])
+    assert "model_override" not in manifest
+    manifest = run_analysis.finish(run, agents, {}, None, "opus", skipped=["numbers-reader"])
+    assert manifest["model_override"]["applies_to"] == ["notes-text-reader"]
 
 
 def test_a_run_stopped_at_the_control_resumes_and_calls_the_control_only(tmp_path, monkeypatch):
@@ -1000,6 +1085,33 @@ def test_a_whole_run_with_two_paragraphs_flagged_hands_the_valuation_analyst_tho
             "note": "2 of 112 paragraphs, the ones the notes reader flagged; the rest were "
                     "not placed"}
         assert record["input_8k.md"]["kept"] == []               # nothing of the 8-K flagged
+    assert agent_inputs.isolation_violations(run) == []
+    # The boundary check derives the flagged set again from the gated report and
+    # the drop list: the record edited to keep every paragraph, over the full
+    # file, is reported by the paragraphs no standing item flagged, and the
+    # directory's file by its bytes.
+    full = (run / "input_mdna.md").read_text(encoding="utf-8")
+    every = agent_inputs.paragraph_ids(full)
+    assert len(every) == 112 and every[0] == MDNA_ONE and every[2] == MDNA_THREE
+    edited = json.loads((run / "input_manifest.json").read_text(encoding="utf-8"))
+    edited["agents"]["valuation-analyst"]["trimmed"]["input_mdna.md"]["kept"] = every
+    (run / "input_manifest.json").write_text(json.dumps(edited), encoding="utf-8")
+    (run / "agents" / "valuation-analyst" / "input_mdna.md").write_text(full, encoding="utf-8")
+    broken = agent_inputs.isolation_violations(run)
+    assert len(broken) == 2 and all(line.startswith("valuation-analyst: ") for line in broken)
+    unflagged = [identifier for identifier in every if identifier not in (MDNA_ONE, MDNA_THREE)]
+    assert broken[0] == ("valuation-analyst: input_mdna.md: the manifest's trimmed record "
+                         f"keeps {', '.join(unflagged)}, which no standing item of "
+                         "report_notes_text.md flagged")
+    assert "other bytes" in broken[1]
+    # the record put back as it was over the full file: the bytes alone are reported
+    edited["agents"]["valuation-analyst"]["trimmed"]["input_mdna.md"]["kept"] = [
+        MDNA_ONE, MDNA_THREE]
+    (run / "input_manifest.json").write_text(json.dumps(edited), encoding="utf-8")
+    broken = agent_inputs.isolation_violations(run)
+    assert len(broken) == 1 and "other bytes" in broken[0]
+    (run / "agents" / "valuation-analyst" / "input_mdna.md").write_bytes(
+        TRIMMED_TWO.encode("utf-8"))
     assert agent_inputs.isolation_violations(run) == []
     # the seam rule: the bear scenario quotes across the two blocks' seam, which
     # string-matches the copy the analyst saw and nothing the filing printed

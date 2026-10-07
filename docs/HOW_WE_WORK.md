@@ -290,7 +290,12 @@ The owner's decision of 2026-10-06 (`docs/structure_changes.md`) sets this table
   it run, and the manifest records `resumed_at` and `resume_skipped`. A limit is
   read off the message, and for a Fable call off its shape too: a failed call that
   spent no token and ended in under ten seconds. An analyst never falls back to
-  Opus.
+  Opus, and a resume runs under the model the stopped run did: `--model` must be
+  the stopped run's `model_override`, and absent when it had none, or the resume
+  is refused (exit 2), since a run on two models mixes what the record cannot
+  compare; `model_override.applies_to` names the agents the invocation that wrote
+  it called, and the boundary check holds the valuation analyst's trimmed prose
+  to the flagged set it derives again from the gated report and the drop list.
 - **Tokens are counted.** Input, cache-write, cache-read and output tokens, and wall
   time, are recorded per agent per filing in `input_manifest.json`.
 - **The batch is sized from the record.** The nightly batch is Fable tokens available ÷

@@ -32,7 +32,8 @@ and must not become something a session can invoke by name.
 **One model for every agent, when the owner names one.** `--model` puts the named
 model in place of the one each committed definition carries, for every agent and
 the control alike; the definitions themselves are not touched, each agent's
-record says the model it asked for, and the manifest's `model_override` says why.
+record says the model it asked for, and the manifest's `model_override` says why,
+its `applies_to` naming the agents the invocation that wrote it called.
 The owner's decision of 2026-09-30 runs the analysts on Opus while the Fable
 limit holds (`docs/structure_changes.md`).
 
@@ -58,7 +59,14 @@ with the same content, and the manifest records `resumed_at` and
 `resume_skipped`. A run that did not stop is not resumed: `--resume` on a
 finished run says "nothing to resume" and exits 0, and on a run that failed
 some other way is refused, a correction being a new run. No analyst ever falls
-back to Opus. The single-agent control runs on the golden
+back to Opus, and a resumed run runs under the model the stopped run did: a
+resume whose `--model` is not the stopped run's `model_override`, or names one
+when the stopped run had none, or names none when it had one, is refused with
+exit 2, because a run on two models mixes what the record cannot compare
+(`docs/routines/nightly-worker.md`); the manifest's `model_override.applies_to`
+names only the agents the invocation that wrote it called, each agent on record
+saying for itself what it asked for, and a stale override is never carried
+forward. The single-agent control runs on the golden
 filings only, where it is scored against the owner (`--control auto`), and the
 manifest's `control_reason` says why it ran or did not, including that this tree
 holds no `evals/golden/cases`; the message every agent is sent lists the shared
@@ -501,7 +509,23 @@ def on_record(run: Path, name: str, record) -> bool:
             and all((Path(run) / written).is_file() for written in OUTPUT_ON_RECORD[name]))
 
 
-def resume_plan(run: Path, manifest: dict, resume: bool) -> dict | None:
+def stopped_under(manifest: dict, agents: dict) -> tuple[str | None, str]:
+    """The model a stopped run ran under: the one its manifest's `model_override`
+    names, or None for each definition's own -- and the words for it, which name
+    the models served to the agents on record when there was no override."""
+    override = manifest.get("model_override")
+    named = override.get("model") if isinstance(override, dict) else None
+    if isinstance(named, str) and named:
+        return named, named
+    served = sorted({str(record.get("model_served") or record.get("model_requested"))
+                     for record in agents.values()
+                     if record.get("model_served") or record.get("model_requested")})
+    return None, ("the definitions' own models"
+                  + (f" ({', '.join(served)} served)" if served else ""))
+
+
+def resume_plan(run: Path, manifest: dict, resume: bool,
+                model: str | None = None) -> dict | None:
     """What a resumed run starts from, or None for a run that has not run.
 
     The run is resumed when its manifest records `fable_limit_reached` (the
@@ -509,6 +533,13 @@ def resume_plan(run: Path, manifest: dict, resume: bool) -> dict | None:
     raises NothingToResume; on one that failed some other way, or a run with no
     agent on record, it is refused. A run on record that did not stop is never
     run over: a correction is a new run.
+
+    The resume runs under the model the stopped run did. `model` is this
+    invocation's `--model`; it must be the stopped run's `model_override`, and
+    absent when the stopped run had none, or the resume is refused: the agents
+    on record and the ones this night would call would then be on two models,
+    which the record cannot compare. The agents on record are read too: under
+    an override, each one's own record must say it asked for that model.
     """
     recorded = manifest.get("agents")
     if not isinstance(recorded, dict) or not recorded:
@@ -524,6 +555,18 @@ def resume_plan(run: Path, manifest: dict, resume: bool) -> dict | None:
                        "is nothing to resume; a correction is a new run")
     agents = {name: dict(record) for name, record in recorded.items()
               if on_record(run, name, record)}
+    named, under = stopped_under(manifest, agents)
+    if (model or None) != named:
+        raise RunError(f"{run}: the run stopped under {under}; a resume under "
+                       f"{model or 'the definitions\' own models'} would mix models, "
+                       "which the record cannot compare")
+    if named:
+        for name, record in agents.items():
+            asked = record.get("model_requested")
+            if isinstance(asked, str) and asked != named:
+                raise RunError(f"{run}: the run stopped under {named}, but {name} on "
+                               f"record asked for {asked}; a resume would mix models, "
+                               "which the record cannot compare")
     return {"agents": agents, "skipped": list(agents),
             "stages": dict(manifest.get("analysis_stages") or {}), "stopped": list(stopped)}
 
@@ -538,7 +581,7 @@ def run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: s
     if manifest.get("cutoff") != cutoff:
         raise RunError(f"--cutoff {cutoff} is not the bundle's own cutoff "
                        f"{manifest.get('cutoff')}; a later date admits later rows")
-    plan = resume_plan(run, manifest, resume)
+    plan = resume_plan(run, manifest, resume, model)
     stages: dict = plan["stages"] if plan else {}
     agents: dict = plan["agents"] if plan else {}
     skipped: list[str] | None = plan["skipped"] if plan else None
@@ -786,11 +829,17 @@ def finish(run: Path, agents: dict, stages: dict, failure: str | None,
         manifest["analysis_failure"] = (f"the limit was reached at {', '.join(hit)}: the run "
                                         "stopped there, nothing fell back to another model, "
                                         "and the batch stops (docs/needs_judgment.md)")
+    # the override is this invocation's record, never the stopped run's carried
+    # forward: it names the agents this invocation called, and an agent on record
+    # from the stopped run says in its own record what it asked for
+    manifest.pop("model_override", None)
     if model:
         manifest["model_override"] = {
-            "model": model, "applies_to": "every agent and the control",
-            "why": "named with --model in place of each definition's own; the owner's "
-                   "decision that names it is in docs/structure_changes.md"}
+            "model": model,
+            "applies_to": [name for name in agents if name not in (skipped or ())],
+            "why": "named with --model in place of each definition's own, for the agents "
+                   "applies_to lists, which this invocation called; the owner's decision "
+                   "that names it is in docs/structure_changes.md"}
     manifest["analysed_utc"] = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     write_json(run / "input_manifest.json", manifest)
     return manifest
