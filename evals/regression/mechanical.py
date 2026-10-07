@@ -592,6 +592,34 @@ def trimmed_copy_problems(copy: str, original: str) -> list[str]:
     return problems
 
 
+def foreign_accessions(path: Path, data: bytes, documents: set[str]) -> list[str]:
+    """Every accession an input names that is not one of the manifest's documents:
+    the prefix of each `[id]` paragraph line of a prose input, and the
+    `source_accession` / `accession` of each row of a JSON input."""
+    out = []
+    if path.suffix == ".md":
+        text = data.decode("utf-8", "replace")
+        named = {match.group(1).split(":", 1)[0] for match in ID_LINE.finditer(text)}
+    elif path.suffix == ".json":
+        # a row of a JSON input may come from an older filing the companyfacts
+        # history holds (input_trends.json carries years of them); such a row
+        # carries its own filing date, which nothing_after_cutoff holds. A row
+        # naming an accession outside the documents with no filing date of its own
+        # is held by nothing, and is refused.
+        try:
+            tree = json.loads(data)
+        except ValueError:
+            return ["not JSON"]
+        named = {value for key in ("source_accession", "accession")
+                 for value, row in _dated_rows(tree, key)
+                 if not any(isinstance(row.get(k), str) for k in ("filing_date", "filed", "filed_at"))}
+    else:
+        return []
+    for accession in sorted(named - documents):
+        out.append(f"names accession {accession}, which is not one of the manifest's documents")
+    return out
+
+
 def check_inputs_on_record(run: Path) -> Result:
     """Every input file is the one the manifest records (sha256 and bytes), and
     every copy an agent was handed is that file or a cut of its paragraphs. The
@@ -601,6 +629,8 @@ def check_inputs_on_record(run: Path) -> Result:
     record = manifest.get("files") if isinstance(manifest.get("files"), dict) else {}
     problems, count = [], 0
     originals = {}
+    documents = {d.get("accession") for d in manifest.get("documents") or []
+                 if isinstance(d, dict) and isinstance(d.get("accession"), str)}
     for path in sorted(run.glob("input_*")):
         if path.name == "input_manifest.json" or not path.is_file():
             continue
@@ -613,6 +643,9 @@ def check_inputs_on_record(run: Path) -> Result:
         elif entry.get("sha256") != hashlib.sha256(data).hexdigest() \
                 or entry.get("bytes") != len(data):
             problems.append(f"{path.name}: not the bytes the manifest records")
+        # and the text is the documents': every [id] paragraph and every row names
+        # an accession the manifest's documents hold, which are what the cutoff holds
+        problems += [f"{path.name}: {why}" for why in foreign_accessions(path, data, documents)]
     for directory, path in input_copies(run):
         count += 1
         where = path.relative_to(run)
@@ -890,7 +923,7 @@ def market_table_problems(table: dict, cutoff: dt.date, accepted=None,
     windows = [w for w in table.get("windows") or [] if isinstance(w, dict)]
     if not any(w.get("kind") == "filing" for w in windows):
         problems.append("the table has no filing window, so nothing ties it to the run's filing")
-    latest = None
+    latest, filing_day_zero = None, None
     filing_stamps = [w.get("accepted") for w in windows if w.get("kind") == "filing"]
     try:
         filing_at = _eastern(accepted if isinstance(accepted, str) else str(filing_stamps[0]))
@@ -941,14 +974,18 @@ def market_table_problems(table: dict, cutoff: dt.date, accepted=None,
             problems.append(f"the {kind} window was accepted at {stamp}, not before the "
                             f"filing at {filing_at.isoformat()}")
         latest = max(latest or expected[2], expected[2])
+        if kind == "filing":
+            filing_day_zero = expected[0]
     if latest is not None and table_cutoff != latest:
         problems.append(f"the table's cutoff {table_cutoff} is not reaction day two of its "
                         f"latest window {latest}")
     limit = latest or table_cutoff
     problems += [f"row {d} is past reaction day two {limit} of the table's latest window"
                  for d in rows if limit and d > limit]
-    # beta is estimated over trading days that end before the filing date
-    # (src/market.py): a window reaching the cutoff or past it read the reaction
+    # beta is estimated over trading days that end before the reaction: before the
+    # filing window's day zero, which can precede the filing date (a filing
+    # accepted after half past five before a day EDGAR closes and the exchange
+    # does not), and never at or past the filing date
     estimation = table.get("beta_estimation_window")
     if windows and not isinstance(estimation, dict):
         problems.append("the table names no beta estimation window")
@@ -956,9 +993,10 @@ def market_table_problems(table: dict, cutoff: dt.date, accepted=None,
         first, last = str(estimation.get("first")), str(estimation.get("last"))
         if not (first < last):
             problems.append(f"the beta estimation window runs {first} to {last}")
-        if last >= cutoff.isoformat():
+        bound = min(filing_day_zero or cutoff.isoformat(), cutoff.isoformat())
+        if last >= bound:
             problems.append(f"the beta estimation window ends {last}, not before the filing "
-                            f"date {cutoff}")
+                            f"window's day zero {bound}")
     for d in rows:
         try:
             if not is_trading_day(dt.date.fromisoformat(d)):

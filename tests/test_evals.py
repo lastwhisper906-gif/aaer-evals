@@ -74,6 +74,18 @@ def test_the_floors_and_cases_are_read_before_any_branch_code_runs(run, monkeypa
         return []
     monkeypatch.setattr(mechanical, "check_hand_worked_cases", rewrite_and_pass)
     assert runner.main(["--runs", str(run.parent), "--no-scoreboard"]) == 1
+    # and the run files too: a calculator that blanks an analysis while it runs
+    # changes nothing the capability scores already read
+    analysis = run / "analysis_accounting.json"
+    kept = analysis.read_text(encoding="utf-8")
+
+    def blank_and_pass():
+        analysis.write_text("{}", encoding="utf-8")
+        return []
+    floors.write_text(json.dumps({"capability": {"coverage.accounting_areas_answered": 0.1}}))
+    monkeypatch.setattr(mechanical, "check_hand_worked_cases", blank_and_pass)
+    assert runner.main(["--runs", str(run.parent), "--no-scoreboard"]) == 0
+    analysis.write_text(kept, encoding="utf-8")
     # the same rewrite with no floor set: nothing to fail
     floors.write_text("{}")
     assert runner.main(["--runs", str(run.parent), "--no-scoreboard"]) == 0
@@ -814,10 +826,10 @@ def test_a_beta_estimated_over_the_reaction_fails_nothing_after_cutoff():
     late = _market_table(beta_estimation_window={"trading_days": 250, "first": "2025-05-20",
                                                  "last": "2026-05-22"})
     assert mechanical.market_table_problems(late, cutoff, ACCEPTED) == [
-        "the beta estimation window ends 2026-05-22, not before the filing date 2026-05-19"]
+        "the beta estimation window ends 2026-05-22, not before the filing window's day zero 2026-05-19"]
     on_the_day = _market_table(beta_estimation_window={"first": "2025-05-19", "last": "2026-05-19"})
     assert mechanical.market_table_problems(on_the_day, cutoff, ACCEPTED) == [
-        "the beta estimation window ends 2026-05-19, not before the filing date 2026-05-19"]
+        "the beta estimation window ends 2026-05-19, not before the filing window's day zero 2026-05-19"]
     none = _market_table()
     del none["beta_estimation_window"]
     assert mechanical.market_table_problems(none, cutoff, ACCEPTED) == [
@@ -838,6 +850,65 @@ def test_another_dated_series_in_the_market_table_is_held_to_reaction_day_two(ru
     table["short_interest_history"].pop()
     (run / "input_market.json").write_text(json.dumps(table))
     assert _status(mechanical.grade(run), "mechanical.nothing_after_cutoff") == PASS
+
+
+def test_a_beta_window_reaching_a_day_zero_before_the_filing_date_fails():
+    """Accepted Friday 2026-10-09 at 18:00: EDGAR dates the filing Tuesday the 13th
+    (Columbus Day is a federal holiday), but the exchange is open Monday the 12th,
+    which is day zero. A beta window ending the 12th read the reaction."""
+    import datetime as dt
+    stamp = "2026-10-09T18:00:00-04:00"
+    table = {"cutoff": "2026-10-14",
+             "beta_estimation_window": {"first": "2025-10-09", "last": "2026-10-12"},
+             "windows": [{"kind": "filing", "filing_date": "2026-10-13", "accepted": stamp,
+                          "day_zero": "2026-10-12",
+                          "days": ["2026-10-12", "2026-10-13", "2026-10-14"]}],
+             "rows": [{"date": d} for d in ("2026-10-08", "2026-10-09", "2026-10-12",
+                                            "2026-10-13", "2026-10-14")]}
+    assert mechanical.market_table_problems(table, dt.date(2026, 10, 13), stamp) == [
+        "the beta estimation window ends 2026-10-12, not before the filing window's day zero "
+        "2026-10-12"]
+    table["beta_estimation_window"]["last"] = "2026-10-09"
+    assert mechanical.market_table_problems(table, dt.date(2026, 10, 13), stamp) == []
+
+
+def test_an_input_naming_an_accession_outside_the_documents_fails_inputs_on_record(run):
+    """The manifest's documents are what the cutoff holds; a paragraph or a row from
+    any other filing is not an input, whatever the file's hash says."""
+    import hashlib
+    root = run / "input_mdna.md"
+    text = root.read_text(encoding="utf-8") + "\n[0000858877-26-000099:mdna:later]\nwords\n"
+    root.write_text(text, encoding="utf-8")
+    data = root.read_bytes()
+    _edit(run / "input_manifest.json",
+          lambda d: d["files"]["input_mdna.md"].update(sha256=hashlib.sha256(data).hexdigest(),
+                                                       bytes=len(data)))
+    for copy in run.glob("agents/*/input_mdna.md"):
+        copy.write_bytes(data)
+    results = mechanical.grade(run)
+    assert _status(results, "mechanical.inputs_on_record") == FAIL
+    assert any("0000858877-26-000099" in f for f in
+               next(r.failures for r in results if r.grader == "mechanical.inputs_on_record"))
+
+
+def test_a_row_naming_an_accession_outside_the_documents_fails_inputs_on_record(run):
+    """A row from an older filing in the companyfacts history carries its own
+    filing date, which the cutoff check holds (AAPL's input_trends.json names
+    10-Ks from 2018 on); a row with a foreign accession and no filing date is held
+    by nothing."""
+    import hashlib
+    path = run / "input_numbers.json"
+    data = json.loads(path.read_text(encoding="utf-8"))
+    data["facts"][0]["source_accession"] = "0000858877-26-000099"
+    data["facts"][0].pop("filing_date", None)
+    raw = json.dumps(data).encode("utf-8")
+    path.write_bytes(raw)
+    _edit(run / "input_manifest.json",
+          lambda d: d["files"]["input_numbers.json"].update(sha256=hashlib.sha256(raw).hexdigest(),
+                                                            bytes=len(raw)))
+    for copy in run.glob("agents/*/input_numbers.json"):
+        copy.write_bytes(raw)
+    assert _status(mechanical.grade(run), "mechanical.inputs_on_record") == FAIL
 
 
 def test_a_market_table_with_no_acceptance_stamp_fails_nothing_after_cutoff():

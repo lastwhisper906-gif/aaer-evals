@@ -48,7 +48,7 @@ def regression(runs: list[Path]) -> list[Result]:
     results = []
     for run in runs:
         results += mechanical.grade(run) + coverage.grade(run)
-    return results + list(mechanical.check_hand_worked_cases())
+    return results
 
 
 def capability(runs: list[Path], cases: list | None = None) -> dict:
@@ -138,6 +138,13 @@ def main(argv: list[str] | None = None) -> int:
     else:
         runs = find_runs([Path(p) for p in args.runs] if args.runs else None)
     results = regression(runs)
+    if args.quick:
+        results += mechanical.check_hand_worked_cases()
+    else:
+        # every run file is read into the capability scores before the branch's
+        # calculator runs: nothing that code does on disk reaches this grading
+        cap = capability(runs, cases)
+        results += mechanical.check_hand_worked_cases()
     failed = [r for r in results if r.status == FAIL]
     passed = sum(r.status == PASS for r in results)
     print(f"regression: {passed} pass, {len(failed)} fail, "
@@ -149,7 +156,6 @@ def main(argv: list[str] | None = None) -> int:
     if args.quick:
         return 1 if failed else 0
 
-    cap = capability(runs, cases)
     scores = flat_scores(cap)
     print("capability (reported; gated only where evals/thresholds.json sets a floor):")
     for name, value in scores.items():
