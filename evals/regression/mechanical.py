@@ -506,6 +506,19 @@ def walk_keys(node, where: str = ""):
             yield from walk_keys(value, f"{where}[{index}]")
 
 
+def _dated_rows(node, key: str):
+    """Every (value, row) where a dict `row` carries `key` as a string."""
+    if isinstance(node, dict):
+        for k, v in node.items():
+            if k == key and isinstance(v, str):
+                yield v, node
+            else:
+                yield from _dated_rows(v, key)
+    elif isinstance(node, list):
+        for v in node:
+            yield from _dated_rows(v, key)
+
+
 def _dates_in(node, key: str):
     if isinstance(node, dict):
         for k, v in node.items():
@@ -617,15 +630,26 @@ def check_nothing_after_cutoff(run: Path) -> Result:
                         break
             continue
         for key in ROW_DATE_KEYS:
-            for value in _dates_in(tree, key):
+            for value, row in _dated_rows(tree, key):
                 try:
-                    late_one = bool(re.match(r"\d{4}-\d{2}-\d{2}", value)) \
-                        and dt.date.fromisoformat(value[:10]) > cutoff
+                    day = dt.date.fromisoformat(value[:10]) \
+                        if re.match(r"\d{4}-\d{2}-\d{2}", value) else None
                 except ValueError:
-                    late_one = False
-                if late_one:
+                    day = None
+                if day is not None and day > cutoff:
                     late.append(f"{path.relative_to(run)}: {key} {value}")
                     break
+                # a row of the cutoff day from another filing: shown accepted before
+                # the triggering report, as the manifest's documents are, or refused
+                source = row.get("source_accession") or row.get("accession")
+                if day == cutoff and isinstance(source, str) and source != trigger:
+                    why = accepted_before_trigger(
+                        {"accession": source, "accepted": row.get("accepted")}, trigger,
+                        manifest.get("accepted"))
+                    if why:
+                        late.append(f"{path.relative_to(run)}: {key} {value} from {source}, "
+                                    f"the cutoff day: {why}")
+                        break
     return Result("mechanical.nothing_after_cutoff", run_name(run), FAIL if late else PASS,
                   f"cutoff {cutoff}" + (f"; {len(late)} late" if late else ""), late)
 

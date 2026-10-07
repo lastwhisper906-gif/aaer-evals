@@ -756,6 +756,24 @@ def test_a_document_filed_on_the_cutoff_day_must_be_shown_accepted_before_the_tr
     assert _status(mechanical.grade(run), "mechanical.nothing_after_cutoff") == PASS
 
 
+def test_a_row_of_the_cutoff_day_from_a_later_filing_fails_nothing_after_cutoff(run):
+    """CSCO's input_numbers.json holds 1,726 rows filed on the cutoff day, the
+    trigger's own; a row filed that day from an accession that follows the trigger
+    in the agent's sequence came after it, and is not an input."""
+    path = run / "input_numbers.json"
+    data = json.loads(path.read_text(encoding="utf-8"))
+    row = next(f for f in data["facts"] if f.get("filing_date") == "2026-05-19")
+    row["source_accession"] = "0000858877-26-000079"
+    path.write_text(json.dumps(data), encoding="utf-8")
+    results = mechanical.grade(run)
+    assert _status(results, "mechanical.nothing_after_cutoff") == FAIL
+    assert any("follows the triggering report" in f for f in
+               next(r.failures for r in results if r.grader == "mechanical.nothing_after_cutoff"))
+    row["source_accession"] = "0000858877-26-000070"
+    path.write_text(json.dumps(data), encoding="utf-8")
+    assert _status(mechanical.grade(run), "mechanical.nothing_after_cutoff") == PASS
+
+
 def test_another_windows_stamp_must_be_one_the_manifest_records():
     """The earnings-release window's stamp decides its days and can move the table's
     cutoff: it is held to the manifest's document rows, never believed."""
