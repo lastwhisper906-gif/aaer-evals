@@ -590,7 +590,13 @@ def test_a_bare_year_in_a_reason_is_a_year_not_a_number():
                  # target, a comparison with the crash
                  "2050년", "2055 fiscal year", "in 2050", "since 1929",
                  # a Korean unit written apart from the number is a word of its own
-                 "2025년", "회계연도 2025 대비"):
+                 "2025년", "회계연도 2025 대비",
+                 # queue item one's last reading: the words GNRC's and AAPL's valuation
+                 # analysts wrote, read by eye as years in PUBLISHED_ITEMS, which the
+                 # rule now reads with them (each side's counts are in
+                 # test_each_named_year_context_reads_its_year_and_drops_the_count_beside_it)
+                 "the margins of 2021, 2022 and 2023", "the growth of 2021 and 2022",
+                 "the second half of 2025 loss-making recur"):
         payload = accounting()
         payload["anomalies"][0]["what"] = text
         assert analysis_check.check("accounting", payload, fields=FIELDS,
@@ -634,7 +640,7 @@ PUBLISHED_WINDOWS = (
     ('AAPL assumptions.json scenarios.bull',
      'year in the record that grew faster was 2021 at  .',
      'year',
-     'no word around the year says it is one'),
+     None),
     ('CARR analysis_accounting.json areas.earnings_versus_cash',
      "ve the company's own fiscal years of   (2025),   (2023) and   (2021), and far ab",
      'year',
@@ -842,7 +848,7 @@ PUBLISHED_WINDOWS = (
     ('GNRC assumptions.json scenarios.bear',
      'ry charges that made the second half of 2025 loss-making recur in some form, and',
      'year',
-     'a hyphenated adjective after the year can open a counted noun phrase, as "high-margin" in "sold in 2048 high-margin units"'),
+     None),
     ('GNRC assumptions.json scenarios.base',
      ' twelve months blend the second half of 2026, for which the unchanged full-year ',
      'year',
@@ -988,13 +994,13 @@ PUBLISHED_ITEMS = (
      'assumptions.json',
      'scenarios.base',
      'year',
-     '"to" is no year context: "leases to 2040" is a count'),
+     None),
     ('AAPL',
      '0000320193-26-000020',
      'assumptions.json',
      'scenarios.bull',
      'year',
-     'no word around the year says it is one'),
+     None),
     ('CARR',
      '0001783180-26-000032',
      'analysis_accounting.json',
@@ -1066,7 +1072,7 @@ PUBLISHED_ITEMS = (
      'analysis_financial.json',
      'sections.profitability',
      'year',
-     'a hyphenated adjective after the year can open a counted noun phrase, as "high-margin" in "sold in 2048 high-margin units"'),
+     None),
     ('CARR',
      '0001783180-26-000032',
      'analysis_financial.json',
@@ -1324,19 +1330,19 @@ PUBLISHED_ITEMS = (
      'assumptions.json',
      'scenarios.bear',
      'year',
-     'a hyphenated adjective after the year can open a counted noun phrase, as "high-margin" in "sold in 2048 high-margin units"'),
+     None),
     ('GNRC',
      '0001437749-26-025669',
      'assumptions.json',
      'scenarios.base',
      'year',
-     '"of" alone is no year context: "inventory of 2048" is a count'),
+     None),
     ('GNRC',
      '0001437749-26-025669',
      'assumptions.json',
      'scenarios.bull',
      'year',
-     '"of" alone is no year context: "inventory of 2048" is a count'),
+     None),
     ('LFUS',
      '0001628280-26-050481',
      'analysis_accounting.json',
@@ -1579,18 +1585,8 @@ def test_the_rule_reads_each_published_item_whole_as_the_hand_did(row):
 
 
 PUBLISHED_SCENARIOS = (
-    pytest.param("AAPL", "0000320193-26-000020", id="AAPL",
-                 marks=pytest.mark.xfail(strict=True, reason=(
-                     'the base scenario writes "the flat stretch of {..} to 2025" and the '
-                     'bull "grew faster was 2021 at": "to" is no year context and a bare '
-                     '"was 2021" has none, so both stay dropped'))),
-    pytest.param("GNRC", "0001437749-26-025669", id="GNRC",
-                 marks=pytest.mark.xfail(strict=True, reason=(
-                     'the bear\'s reason writes "the second half of 2025 loss-making" (a '
-                     'hyphenated adjective after the year can open a counted noun phrase) '
-                     'and the three histories "the margin of 2023", "the growth of 2022" '
-                     'and "the growth of 2021 and 2022" ("of" alone is no year context, '
-                     '"inventory of 2048" is a count), so all three stay dropped'))),
+    pytest.param("AAPL", "0000320193-26-000020", id="AAPL"),
+    pytest.param("GNRC", "0001437749-26-025669", id="GNRC"),
     pytest.param("LFUS", "0001628280-26-050481", id="LFUS"),
 )
 
@@ -1601,7 +1597,10 @@ def test_the_published_scenarios_of_the_valuation_analyst_pass_the_gate_whole(ti
     """The gate comparison of queue item one, on the published run itself: the
     valuation analyst's scenarios as written (`agents/valuation-analyst/assumptions.json`),
     gated against the calculator and the sources that analyst saw, drop nothing. LFUS's
-    three pass; GNRC's and AAPL's are marked for the words that still drop them."""
+    three passed first; AAPL's two and GNRC's three pass since the rule read "fiscal 2022
+    to 2025", "the only fiscal year ... was 2021 at", "the second half of 2025 loss-making
+    recur", "the margin of 2023", "the growth of 2021 and 2022", "the 2022 peak", "the
+    first half of 2026 once" and "the first half of 2026 earned" as the hand did."""
     agent_dir = RUNS / ticker / accession / "agents" / "valuation-analyst"
     payload = json.loads((agent_dir / "assumptions.json").read_text(encoding="utf-8"))
     fields = json.loads((agent_dir / "calculator_before_drivers.json").read_text(
@@ -1640,8 +1639,6 @@ def test_a_quantity_with_no_unit_word_is_still_a_number():
                  "sold in 2048 high-margin units", "in 2030 low-cost stores",
                  "an increase in 2048 of its stores",
                  "inventory of 2021 and 2022", "2024–2026",
-                 # GNRC's valuation analyst of 2026-09-29 wrote these with "of" alone
-                 "the margins of 2021, 2022 and 2023", "the growth of 2021 and 2022",
                  # the fourth reading: "for" and "in" need a terminator, "by" is out
                  # whatever the value, and "half of" with no ordinal is a share of a count
                  "for 2027 stores", "in 2050 stores", "by 2050", "by 2050.",
@@ -1656,11 +1653,11 @@ def test_a_quantity_with_no_unit_word_is_still_a_number():
                  # the sixth reading: a month after a year is a month only capitalised
                  "inventory of 2048 may fall", "a backlog of 2030 may shrink",
                  "headcount of 2026 may decline", "2048 march",
-                 # counts to the rule as written -- a noun or an adjective, hyphenated or
-                 # not, after the year -- though the published analysts meant years;
-                 # PUBLISHED_WINDOWS marks those rows xfail with this reason
-                 "the second half of 2025 loss-making recur", "the year-end 2025 balance",
-                 "second-half-2025 legal", "dated April 2026 listing"):
+                 # counts to the rule as written -- a noun or an adjective, not
+                 # hyphenated, after the year -- though the published analysts meant
+                 # years; PUBLISHED_WINDOWS marks those rows xfail with this reason
+                 "the year-end 2025 balance", "second-half-2025 legal",
+                 "dated April 2026 listing"):
         payload = accounting()
         payload["anomalies"][0]["what"] = text
         out = analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
@@ -1679,6 +1676,51 @@ def test_a_quantity_after_a_year_word_or_a_notes_word_is_still_a_number():
         payload["anomalies"][0]["what"] = text
         assert analysis_check.check("accounting", payload, fields=FIELDS,
                                     sources=SOURCES)["anomalies"] == [], text
+
+
+def test_each_named_year_context_reads_its_year_and_drops_the_count_beside_it():
+    """Queue item one's last reading, two-sided for each word the rule learnt: the
+    published phrase (GNRC's and AAPL's valuation analysts of 2026-09-29, their
+    `assumptions.json`) or one in its shape stands, and the count written with the
+    same word is dropped."""
+    def gated(text):
+        payload = accounting()
+        payload["anomalies"][0]["what"] = text
+        return analysis_check.check("accounting", payload, fields=FIELDS, sources=SOURCES)
+    for year, count in (
+            # "margin of", "margins of", "growth of", "surge of", and the elided "and of"
+            ("below the margin of 2023;", "inventory of 2048"),
+            ("the margins of 2021, 2022 and the year before last", "revenue of 2048"),
+            ("below the growth of 2021 and 2022, which came", "the margin of 2048 units"),
+            ("the pandemic-era surge of 2021, so even", "the margins of 2048 stores"),
+            ("the margin of the year before last and of 2022, both years",
+             "inventory of 2021 and 2022"),
+            # a range opening with a fiscal year
+            ("the flat stretch of fiscal 2022 to 2025, on the view", "fiscal 2022 to 2048 units"),
+            ("the flat stretch of fiscal 2022 to 2025 to have been", "leases to 2040"),
+            ("fiscal 2022 to 2025", "rose to 2030 orders"),
+            # "was" after a subject that is a year
+            ("the only fiscal year in the record that grew faster was 2021 at",
+             "the headcount was 2048"),
+            ("the year that grew faster was 2021.", "the year-end headcount was 2048"),
+            ("the fiscal year that grew faster was 2021", "the headcount for the year was 2048 units"),
+            # a hyphenated adjective, then a word that cannot be the noun it modifies
+            ("the second half of 2025 loss-making recur in some form",
+             "sold in 2048 high-margin units"),
+            ("the second half of 2025 loss-making.", "in 2030 low-cost stores"),
+            ("at the June 2026 balance-sheet date", "in 2048 high-margin and low-cost units"),
+            ("the second half of 2025 loss-making", "in 2048 high-margin, low-volume units"),
+            # "peak" after a year, "once" and "earned" after a year
+            ("that window starts at the 2022 peak;", "the peak of 2048"),
+            ("above the first half of 2026 once the refund is removed",
+             "the first half of 2048 once-off units"),
+            ("the level the first half of 2026 earned once the refund is taken out",
+             "the second half of 2048 stores earned")):
+        assert gated(year)["dropped_count"] == 0, year
+        out = gated(count)
+        assert out["anomalies"] == [], count
+        assert "a number written in the analyst's own words" in json.dumps(
+            out["dropped_items"], ensure_ascii=False), count
 
 
 def test_innocent_korean_words_are_not_the_ruled_out_ones():
