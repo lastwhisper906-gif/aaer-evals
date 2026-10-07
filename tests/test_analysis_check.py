@@ -78,10 +78,11 @@ def accounting(**changes):
 
 def test_an_exclusion_keyed_by_report_takes_the_id_out_of_that_report_alone():
     """One id printed in both reports, dropped from the notes report only (a
-    resumed night's twin): an anomaly citing it stands, because the numbers
-    item does; a reconciliation row naming it as the notes item is refused,
-    naming it as the numbers item stands; and the same id as a plain set is
-    out of both, as before."""
+    resumed night's twin): a bare citation of it is refused, because by id alone
+    it would name the dropped notes item as well as the standing numbers one;
+    a reconciliation row naming it as the notes item is refused, naming it as
+    the numbers item stands on that side; the same id as a plain set is out of
+    both; and with nothing dropped the bare citation stands."""
     shared = "revenue_recognition_payment_terms_extended"
     numbers = NUMBERS + f'''
 ```json
@@ -95,22 +96,32 @@ def test_an_exclusion_keyed_by_report_takes_the_id_out_of_that_report_alone():
     payload["anomalies"][0]["evidence"] = [shared]
     out = analysis_check.check("accounting", payload, fields=FIELDS, sources=sources,
                                excluded={"report_notes_text.md": {shared}})
-    assert [a["id"] for a in out["anomalies"]] == ["revenue_recognition_receivables_outrun_revenue"]
-    assert [row["where"] for row in out["dropped_items"]] == ["reconciliation[0]",
-                                                               "reconciliation[1]"]
+    assert out["anomalies"] == []
+    assert [row["where"] for row in out["dropped_items"]] == [
+        "reconciliation[0]", "reconciliation[1]", "anomalies[0]"]
     assert out["dropped_items"][0]["reason"] == (
         f"notes_item {shared!r} is not an item of report_notes_text.md")
     assert "twin_free" in out["dropped_items"][1]["reason"]          # its own notes side
-    # the same id as a plain set: out of both reports, the anomaly falls too
+    assert out["dropped_items"][2]["reason"] == (
+        f"evidence: {shared!r} is an id the quote gate dropped from a report this analyst "
+        "saw, so by id alone it does not name one standing item")
+    # the same id as a plain set: out of both reports, every citation falls
     out = analysis_check.check("accounting", payload, fields=FIELDS, sources=sources,
                                excluded={shared})
     assert out["anomalies"] == []
-    assert any(row["where"] == "anomalies[0]" for row in out["dropped_items"])
-    # and dropped from the numbers report alone, the notes-side row stands
+    assert [row["where"] for row in out["dropped_items"]] == [
+        "reconciliation[0]", "reconciliation[1]", "anomalies[0]"]
+    # dropped from the numbers report alone: the notes-side row stands, the bare
+    # citation still falls
     out = analysis_check.check("accounting", payload, fields=FIELDS, sources=sources,
                                excluded={"report_numbers.md": {shared}})
-    assert [row["where"] for row in out["dropped_items"]] == ["reconciliation[1]"]
+    assert [row["where"] for row in out["dropped_items"]] == ["reconciliation[1]",
+                                                               "anomalies[0]"]
+    # the other side: nothing dropped, the bare citation names the one item
+    # printed in each report under that id and stands, as do both rows' sides
+    out = analysis_check.check("accounting", payload, fields=FIELDS, sources=sources)
     assert [a["id"] for a in out["anomalies"]] == ["revenue_recognition_receivables_outrun_revenue"]
+    assert [row["where"] for row in out["dropped_items"]] == ["reconciliation[1]"]
 
 
 def test_a_clean_analysis_stands_whole():

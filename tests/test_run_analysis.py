@@ -1072,19 +1072,25 @@ def test_a_resume_gates_only_the_reader_it_called_and_appends_its_rows(tmp_path,
                                 numbers_report=NUMBERS_WITH_A_BAD_QUOTE,
                                 accounting_analysis=twin_citing)
     assert "numbers-reader" not in called
-    # The analysis gate: a citation of the shared id names the numbers item still
-    # standing and is kept, though a notes item under that id fell as its twin;
-    # a citation of the id dropped from the one report it stood in is dropped.
+    # The analysis gate: a bare citation of the shared id is refused, as a fresh
+    # run would have refused it -- the notes twin fell and may still be printed,
+    # so by id alone the citation does not name one standing item -- and so is
+    # the citation of the id dropped from the one report it stood in; the
+    # reconciliation row naming the shared id as the notes item it fell from is
+    # refused on that side, the row naming it as the numbers item it stands as
+    # falls on its own notes side alone.
     accounting = json.loads((run / "analysis_accounting.json").read_text(encoding="utf-8"))
-    assert [a["id"] for a in accounting["anomalies"]] == ["earnings_versus_cash_cash_lags_income"]
-    assert accounting["anomalies"][0]["evidence"] == [SHARED_ID]
+    assert accounting["anomalies"] == []
     assert [row["where"] for row in accounting["dropped_items"]] == [
-        "reconciliation[0]", "reconciliation[1]", "anomalies[1]"]
+        "reconciliation[0]", "reconciliation[1]", "anomalies[0]", "anomalies[1]"]
     assert accounting["dropped_items"][0]["reason"] == (
         f"notes_item {SHARED_ID!r} is not an item of report_notes_text.md")
     assert accounting["dropped_items"][1]["reason"] == (
         "notes_item 'earnings_quality_no_such_item' is not an item of report_notes_text.md")
-    assert "earnings_quality_planted_bad_quote" in accounting["dropped_items"][2]["reason"]
+    assert accounting["dropped_items"][2]["reason"] == (
+        f"evidence: {SHARED_ID!r} is an id the quote gate dropped from a report this "
+        "analyst saw, so by id alone it does not name one standing item")
+    assert "earnings_quality_planted_bad_quote" in accounting["dropped_items"][3]["reason"]
     assert run_analysis.excluded_by_report(run) == {
         "report_numbers.md": {"earnings_quality_planted_bad_quote"},
         "report_notes_text.md": {SHARED_ID}}

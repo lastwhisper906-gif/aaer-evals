@@ -536,11 +536,11 @@ def check_analysis(run: Path, name: str, kind: str) -> dict:
 def excluded_by_report(run: Path) -> dict[str, set[str]]:
     """The ids the gate dropped, keyed by the report they fell from, as its drop
     rows key them. The analysis gate takes each id out of that report's items
-    alone: an id dropped from one report as the twin of an item standing in the
-    other -- a resumed night's notes item under an id the numbers report
-    already carries -- still names the standing item, so a citation of it
-    resolves and is kept, while a citation of it as an item of the report it
-    fell from is refused."""
+    alone for a reconciliation row, which names the report; a bare citation of
+    an id dropped from either report is refused, because the dropped item may
+    still be printed beside a kept one and by id alone the citation would name
+    both -- the gate's own reason for dropping a twin, and what a fresh run,
+    which drops both twins, would have answered."""
     manifest = json.loads((run / "input_manifest.json").read_text(encoding="utf-8"))
     out: dict[str, set[str]] = {}
     for row in manifest.get("dropped_items") or []:
