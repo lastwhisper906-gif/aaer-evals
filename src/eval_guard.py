@@ -47,11 +47,13 @@ def _show(ref: str, path: str) -> str | None:
 
 def decide(changes: list[tuple[str, str]], labels: set[str], base_has_evals: bool,
            scoreboard_before: str | None, scoreboard_after: str | None,
-           action: str = "labeled", label_added: str | None = None) -> tuple[bool, str]:
+           action: str = "labeled", label_added: str | None = None,
+           labeled_by: str | None = None, owner: str | None = None) -> tuple[bool, str]:
     """(passes, why). `changes` is (status, path) for every guarded path changed.
 
     The label counts on exactly one run: the `labeled` run that adding it starts
-    (`label_added` is the label that event added). It does not count on a
+    (`label_added` is the label that event added, `labeled_by` who added it, and it
+    counts only when that is `owner`, the repository's owner). It does not count on a
     `synchronize` run, the one a later push starts, nor on `opened`, `reopened` or
     the adding of any other label, so a commit pushed after the owner labelled is
     red until the owner labels again (remove and re-add), and no later event
@@ -62,7 +64,12 @@ def decide(changes: list[tuple[str, str]], labels: set[str], base_has_evals: boo
     if not base_has_evals:
         return True, "the base has no evals/: this is the pull request that creates it"
     if LABEL in labels and action == "labeled" and label_added == LABEL:
-        return True, f"labelled {LABEL} by the owner"
+        # GitHub lets anyone with triage access add a label; only the repository's
+        # owner adding it is the owner's approval
+        if owner and labeled_by == owner:
+            return True, f"labelled {LABEL} by the owner {owner}"
+        return False, (f"labelled {LABEL} by {labeled_by or 'nobody named'}, who is not the "
+                       f"repository's owner {owner or '(no owner given)'}; the owner labels to approve")
     if LABEL in labels:
         return False, (f"labelled {LABEL}, but this run was not started by adding it "
                        f"({action}{': ' + label_added if label_added else ''}); the owner "
@@ -86,6 +93,8 @@ def main(argv: list[str] | None = None) -> int:
                         help="the pull_request event's action (opened, synchronize, labeled)")
     parser.add_argument("--label-added", default=None,
                         help="on a labeled event, the label that was added")
+    parser.add_argument("--labeled-by", default=None, help="the login that added it")
+    parser.add_argument("--owner", default=None, help="the repository owner's login")
     args = parser.parse_args(argv)
     merge_base = _git("merge-base", args.base, args.head).strip()
     lines = _git("diff", "--name-status", "--no-renames", merge_base, args.head, "--",
@@ -96,7 +105,8 @@ def main(argv: list[str] | None = None) -> int:
     base_has_evals = bool(_git("ls-tree", "--name-only", args.base, "evals/").strip())
     ok, why = decide(changes, {l.strip() for l in args.labels.split(",") if l.strip()},
                      base_has_evals, _show(merge_base, SCOREBOARD), _show(args.head, SCOREBOARD),
-                     action=args.action, label_added=args.label_added)
+                     action=args.action, label_added=args.label_added,
+                     labeled_by=args.labeled_by, owner=args.owner)
     print(f"eval_guard: {'pass' if ok else 'FAIL'}: {why}")
     return 0 if ok else 1
 

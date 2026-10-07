@@ -34,7 +34,7 @@ jobs:
           else
             cp src/eval_guard.py "$RUNNER_TEMP/eval_guard.py"
           fi
-          python "$RUNNER_TEMP/eval_guard.py" --base origin/main --head HEAD --labels "$LABELS" --action "${{ github.event.action }}" --label-added "${{ github.event.label.name }}"
+          python "$RUNNER_TEMP/eval_guard.py" --base origin/main --head HEAD --labels "$LABELS" --action "${{ github.event.action }}" --label-added "${{ github.event.label.name }}" --labeled-by "${{ github.event.sender.login }}" --owner "${{ github.repository_owner }}"
 
   # The owner's graders over every run, always with main's copy of evals/, run
   # directly rather than through the branch's Makefile, so a branch is graded by the

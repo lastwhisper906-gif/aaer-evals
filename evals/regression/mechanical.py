@@ -648,13 +648,21 @@ def foreign_accessions(path: Path, data: bytes, documents: set[str]) -> list[str
 RECORD_NAMES = ("input_", "report_", "analysis_", "calculator", "assumptions")
 
 
+PLACEHOLDER_BYTES = 64
+
+
+def is_placeholder(data: bytes) -> bool:
+    """A few bytes with no digit in them: a word an agent wrote to test its pen
+    (GNRC's notes reader left "placeholder"), which no price, date or figure fits."""
+    return len(data) <= PLACEHOLDER_BYTES and not any(48 <= b <= 57 for b in data)
+
+
 def looks_like_an_input(name: str, data: bytes) -> bool:
-    """Whether a file nobody routed could stand in for an input: named like one, or
-    holding filing-shaped text (an [id] paragraph line) or a fenced JSON block."""
-    if name.startswith(RECORD_NAMES):
-        return True
-    text = data.decode("utf-8", "replace")
-    return bool(ID_LINE.search(text) or FENCE.search(text))
+    """Whether a file nobody routed could stand in for an input: anything named like
+    one, and anything that is more than a placeholder -- a price list under a
+    neutral name, a filing's text, a table -- since what an agent could read is
+    not bounded by what it could quote."""
+    return name.startswith(RECORD_NAMES) or not is_placeholder(data)
 
 
 def check_inputs_on_record(run: Path) -> Result:

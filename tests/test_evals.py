@@ -111,6 +111,20 @@ def test_the_calculator_probe_sees_none_of_the_graders_environment(tmp_path, mon
     assert not (tmp_path / "reached.txt").exists()
 
 
+def test_the_graders_whitespace_fold_is_unicodes_white_space_list():
+    """The twenty-five code points with the White_Space property, copied by hand
+    from the Unicode Character Database's PropList.txt: the grader folds exactly
+    these to one space each, as the gate does (tests/test_quote_gate.py holds the
+    gate's copy to the same list)."""
+    import evals.common as common
+    hand = ([chr(c) for c in range(0x0009, 0x000D + 1)] + [" ", "\u0085", "\u00A0", "\u1680"]
+            + [chr(c) for c in range(0x2000, 0x200A + 1)]
+            + ["\u2028", "\u2029", "\u202F", "\u205F", "\u3000"])
+    assert len(hand) == len(set(hand)) == 25
+    assert set(common.WHITE_SPACE) == set(hand)
+    assert common.fold("a\u00A0b\u2009c") == "a b c"
+
+
 def test_the_hand_worked_cases_reproduce():
     assert all(r.status == PASS for r in mechanical.check_hand_worked_cases())
 
@@ -1070,9 +1084,15 @@ def test_a_report_or_calculator_copy_that_is_not_the_runs_fails_inputs_on_record
 
 
 def test_a_stray_file_nobody_routed_is_noted_unless_it_could_be_an_input(run):
-    """GNRC's notes reader left an eleven-byte "placeholder" in its directory:
-    nothing can be quoted from it, and it is noted, not a failure. A stray file
-    holding filing-shaped text, or named like an input, is refused."""
+    """GNRC's notes reader left an eleven-byte "placeholder" in its directory: a
+    few bytes with no digit, noted, not a failure. Anything more -- a price list
+    under a neutral name, filing-shaped text, a name like an input's -- is refused."""
+    directory = run / "agents" / "numbers-reader"
+    (directory / "prices.csv").write_text("2026-05-20,51.20\n", encoding="utf-8")
+    results = mechanical.grade(run)
+    assert _status(results, "mechanical.inputs_on_record") == FAIL
+    assert _status(results, "mechanical.layers_hold") == FAIL
+    (directory / "prices.csv").unlink()
     directory = run / "agents" / "notes-text-reader"
     (directory / "scratch_check.txt").write_text("placeholder", encoding="utf-8")
     results = mechanical.grade(run)

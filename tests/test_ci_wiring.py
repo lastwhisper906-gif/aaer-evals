@@ -32,6 +32,8 @@ def test_the_graders_and_the_guard_that_run_are_mains_copies():
     assert "origin/main:src/eval_guard.py" in _job("guard")
     assert '--action "${{ github.event.action }}"' in _job("guard")
     assert '--label-added "${{ github.event.label.name }}"' in _job("guard")
+    assert '--labeled-by "${{ github.event.sender.login }}"' in _job("guard")
+    assert '--owner "${{ github.repository_owner }}"' in _job("guard")
 
 
 def test_the_required_job_waits_on_the_guard_and_the_graders_and_fails_with_either():

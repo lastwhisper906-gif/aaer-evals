@@ -89,8 +89,23 @@ def test_the_ci_guard_fails_a_rewritten_scoreboard():
 
 def test_the_ci_guard_passes_the_owners_label():
     ok, _ = eval_guard.decide([("M", "evals/thresholds.json")], {"owner-approved-eval"},
-                              True, "", "", action="labeled", label_added="owner-approved-eval")
+                              True, "", "", action="labeled", label_added="owner-approved-eval",
+                              labeled_by="the-owner", owner="the-owner")
     assert ok
+
+
+def test_the_ci_guard_counts_the_label_only_when_the_repository_owner_added_it():
+    """Anyone with triage access can add a label, a session on the repository's
+    credential included; only the owner's hand is the owner's approval."""
+    change = [("M", "evals/thresholds.json")]
+    for who in ("someone-else", None):
+        ok, why = eval_guard.decide(change, {"owner-approved-eval"}, True, "", "",
+                                    action="labeled", label_added="owner-approved-eval",
+                                    labeled_by=who, owner="the-owner")
+        assert not ok and "not the repository's owner" in why
+    ok, _ = eval_guard.decide(change, {"owner-approved-eval"}, True, "", "", action="labeled",
+                              label_added="owner-approved-eval", labeled_by="the-owner", owner=None)
+    assert not ok
 
 
 def test_the_ci_guard_passes_a_scoreboard_append_and_an_untouched_evals():
@@ -212,7 +227,7 @@ def test_the_ci_guard_counts_the_label_only_on_the_run_that_adding_it_starts():
     """The owner labels, the author pushes (red), then reopens the pull request or
     anyone adds an unrelated label: the approval must not come back."""
     change = [("M", "evals/thresholds.json")]
-    approve = dict(action="labeled", label_added="owner-approved-eval")
+    approve = dict(action="labeled", label_added="owner-approved-eval", labeled_by="o", owner="o")
     assert eval_guard.decide(change, {"owner-approved-eval"}, True, "", "", **approve)[0]
     for later in (dict(action="synchronize"), dict(action="reopened"), dict(action="opened"),
                   dict(action="labeled", label_added="needs-review"), dict(action="labeled")):
