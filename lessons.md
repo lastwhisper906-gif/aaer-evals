@@ -225,3 +225,6 @@ sixty lines; a line under a lesson that has no date is that lesson's wrapped lin
 2026-10-06 ran multi-line heredoc edit scripts through Bash in an isolated worktree and the guard refused them as unverifiable; write the script to the scratchpad and run it by path.
 2026-10-06 wrote an exact-match edit assuming the catalogue's file order without reading it, and the assertion caught it; read the neighbouring lines before anchoring an edit on them.
 2026-10-06 registered a PreToolUse hook by a relative path, and every worktree of an older branch was blocked by a file it did not have; a hook names its file from the project root and exits 0 where the file is absent.
+2026-10-07 resolved a rebase conflict in lessons.md "both sides, base first" and re-added a line that #108 had already moved to archive/lessons_enforced.md; after a rebase that touches lessons.md, hold every kept line against the archive before pushing.
+2026-10-07 merged Part A (#107) without moving its queue row to Done, so the row sat open for three pull requests; a pull request that finishes a queue item moves the row in the same change.
+2026-10-07 tried to carry the scoreboard row that make eval wrote into a branch with a shell append and the guard hook refused it; the row is committed from the checkout where make eval wrote it, by git alone, and the guard passes a pure append.
