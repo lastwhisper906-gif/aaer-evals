@@ -75,9 +75,11 @@ of 2026-10-07 (`docs/structure_changes.md`: "fable 사용량이 max 가 되면 �
   started with it calls every Fable agent on Opus from its first call, never
   asking Fable again, labelled `fable_limit_reached`, its row noted at its first
   Fable agent with `carried_from` naming the run whose manifest records the
-  limit -- refused, before anything runs, when that manifest records no
-  `model_fallback` or one the shape alone set off, and under `stop`, which does
-  not fall back. A shape-only fallback stays inside its own run, and its stderr
+  limit and `carried_limit_at` when it was noted -- refused, before anything
+  runs, when that manifest records no `model_fallback`, one the shape alone set
+  off, or a limit noted more than `CARRY_HOURS` (12) before this run, which is
+  another night's and not this batch's, and under `stop`, which does not fall
+  back. A shape-only fallback stays inside its own run, and its stderr
   line says why; a row the shape opened is confirmed, `confirmed_by` naming the
   agent, when an analyst already on Fable in parallel answers the limit's
   message. The comparison
@@ -87,7 +89,7 @@ of 2026-10-07 (`docs/structure_changes.md`: "fable 사용량이 max 가 되면 �
   it finished. A limit the fallback model answers too has nowhere to go: the
   run stops there as it does under `stop`, the agent named under
   `fable_limit_reached`, but the command exits `FAILED`, 1, because exit 4 is
-  `stop`'s alone.
+  `stop`'s alone; its stderr line says to stop the batch and carries nothing.
 * `stop` -- the rule of 2026-10-06, kept as an option. The run stops where it
   stands, publishes what finished -- the other analyst's output gated into its
   analysis file, `memo_ko.md` and `baselines.json` written from what exists, the
@@ -113,8 +115,11 @@ two models mixes what the record cannot compare
 that is the recorded fallback: a run whose manifest carries `model_fallback` ran
 under Opus from the agent it names, so a resume of it with `--model opus` is
 accepted, and a resume without `--model` carries the fallback forward, calling
-every pending Fable agent on Opus and labelling it with the row's reason. Under
-either, each pending agent's definition is still held to its layer, so a
+every pending Fable agent on Opus and labelling it with the row's reason. A
+resume naming `--model opus` does the same: the row already puts those agents on
+Opus, so the flag is read as the fallback carried forward and the run continues
+under the stopped run's own choice of model, each pending Fable agent labelled,
+with no `model_override` written for it. Under either, each pending agent's definition is still held to its layer, so a
 definition edited between the nights is refused; and a resume of it under
 `--on-fable-limit stop` is refused, since it would call the pending Fable agents
 on Fable after Opus, mixing models the other way. A mix the record does not
@@ -205,6 +210,11 @@ DEFAULT_ON_FABLE_LIMIT = "opus"
 # or a bad flag fails the same way, and it never carries into another run.
 FALLBACK_REASON = "fable_limit_reached"
 SHAPE_FALLBACK_REASON = "fable_failed_like_the_limit"
+# A batch is one night (docs/routines/nightly-worker.md: four items at most): a
+# fallback is carried into a run only from a limit noted within this many hours
+# before it, so a run of another night, after the limit has reset, is never put
+# on Opus by an old row.
+CARRY_HOURS = 12
 
 # The pins: the family the definition names, and the effort it runs at.
 # `docs/HOW_WE_WORK.md` §6 -- readers on Opus at xhigh; the analysts inherit the
@@ -466,11 +476,12 @@ class LimitPolicy:
     lock and written once). A resumed run starts from the row its manifest
     already carries, so the fallback is carried forward, never repeated.
 
-    `carried_from` is the rest of the batch: the run, as `<ticker>/<accession>`,
-    whose manifest records that Fable answered the limit earlier in the batch
-    (`--carry-fallback-from`). A run carrying it has fallen back before its first
-    call: every Fable request is made on the fallback model, and the row is noted
-    at the first one, naming that run.
+    `carried` is the rest of the batch (`carried_fallback`): `carried_from`, the
+    run, as `<ticker>/<accession>`, whose manifest records that Fable answered the
+    limit earlier in the batch (`--carry-fallback-from`), and `carried_limit_at`,
+    when it did. A run carrying it has fallen back before its first call: every
+    Fable request is made on the fallback model, and the row is noted at the first
+    one, naming that run and that time.
 
     Under `stop` nothing falls back, a recorded fallback included: the row is
     kept, so `finish` still writes it, but no call is moved to the fallback model
@@ -478,15 +489,16 @@ class LimitPolicy:
     refused before this is built (`_run_company`)."""
 
     def __init__(self, on_limit: str = DEFAULT_ON_FABLE_LIMIT, fallback: dict | None = None,
-                 carried_from: str | None = None):
+                 carried: dict | None = None):
         if on_limit not in ON_FABLE_LIMIT:
             raise RunError(f"--on-fable-limit {on_limit!r} is not one of {ON_FABLE_LIMIT}")
-        if carried_from and on_limit != "opus":
-            raise RunError(f"--carry-fallback-from {carried_from} carries a fallback to "
-                           f"{FALLBACK_MODEL}, and --on-fable-limit {on_limit} does not fall back")
+        if carried and on_limit != "opus":
+            raise RunError(f"--carry-fallback-from {carried.get('carried_from')} carries a "
+                           f"fallback to {FALLBACK_MODEL}, and --on-fable-limit {on_limit} "
+                           "does not fall back")
         self.on_limit = on_limit
         self.fallback = dict(fallback) if isinstance(fallback, dict) else None
-        self.carried_from = carried_from
+        self.carried = dict(carried) if carried else None
         self._lock = threading.Lock()
 
     def falls_back(self, requested) -> bool:
@@ -497,7 +509,7 @@ class LimitPolicy:
         """The model a call is made on: the fallback model, for a Fable request,
         once the run -- or the batch it carries -- has fallen back under `opus`;
         otherwise what was asked for."""
-        fallen = self.on_limit == "opus" and (self.fallback or self.carried_from)
+        fallen = self.on_limit == "opus" and (self.fallback or self.carried)
         return FALLBACK_MODEL if fallen and is_fable(requested) else requested
 
     def begin(self, run: Path, agent: str) -> dict:
@@ -529,8 +541,8 @@ class LimitPolicy:
     def _open(self, run: Path, agent: str, reason: str) -> None:
         self.fallback = {"from": "fable", "to": FALLBACK_MODEL, "at": utc_now(),
                          "first_agent": agent, "reason": reason}
-        if self.carried_from:
-            self.fallback["carried_from"] = self.carried_from
+        if self.carried:
+            self.fallback.update(self.carried)
         record_fallback(run, self.fallback)
 
 
@@ -543,12 +555,16 @@ def fallback_reason(row) -> str:
     return FALLBACK_REASON if confirmed else SHAPE_FALLBACK_REASON
 
 
-def carried_fallback(earlier: Path) -> str:
-    """The run a fallback is carried from, as `<ticker>/<accession>`: the earlier
-    run of the batch whose manifest records `model_fallback`, confirmed by the
-    limit's message. Anything else is refused before the run starts, so a run is
-    never put on the fallback model without a limit on record, and a fallback a
-    failure's shape alone set off stays inside its own run."""
+def carried_fallback(earlier: Path, now: dt.datetime | None = None) -> dict:
+    """The fallback a run carries from an earlier run of the batch: that run, as
+    `<ticker>/<accession>` (`carried_from`), and when the limit was noted
+    (`carried_limit_at`: its row's own, or, when that run carried it too, the time
+    its row carried, so a chain of runs never stretches the window). Refused
+    before the run starts unless the manifest records `model_fallback`, the
+    limit's message confirmed it, and the limit was noted at most CARRY_HOURS
+    before `now` and not after it: a run is never put on the fallback model
+    without a limit on record, a fallback a failure's shape alone set off stays
+    inside its own run, and a run of another night is not this batch."""
     earlier = Path(earlier)
     try:
         manifest = json.loads((earlier / "input_manifest.json").read_text(encoding="utf-8"))
@@ -562,7 +578,20 @@ def carried_fallback(earlier: Path) -> str:
         raise RunError(f"--carry-fallback-from {earlier}: its fallback was set off by a "
                        f"Fable failure shaped like the limit ({SHAPE_FALLBACK_REASON}), not "
                        "by the limit's message, so it stays inside its own run")
-    return f"{earlier.parent.name}/{earlier.name}"
+    limit_at = row.get("carried_limit_at") or row.get("at")
+    try:
+        noted = dt.datetime.strptime(str(limit_at), "%Y-%m-%dT%H:%M:%SZ").replace(
+            tzinfo=dt.timezone.utc)
+    except ValueError as exc:
+        raise RunError(f"--carry-fallback-from {earlier}: its model_fallback names no time "
+                       f"the limit was noted at ({limit_at!r})") from exc
+    now = now or dt.datetime.now(dt.timezone.utc)
+    if not dt.timedelta(0) <= now - noted <= dt.timedelta(hours=CARRY_HOURS):
+        raise RunError(f"--carry-fallback-from {earlier}: its limit was noted at {limit_at}, "
+                       f"not within the {CARRY_HOURS} hours before this run, so it is not "
+                       "this batch's")
+    return {"carried_from": f"{earlier.parent.name}/{earlier.name}",
+            "carried_limit_at": limit_at}
 
 
 def record_fallback(run: Path, fallback: dict) -> None:
@@ -1083,7 +1112,7 @@ def resume_plan(run: Path, manifest: dict, resume: bool,
         # no override on record: each pending definition is held to its layer,
         # under no --model and under a fallback run's --model opus alike
         definitions_agree(run, agents)
-    return {"agents": agents, "skipped": list(agents), "reason": reason,
+    return {"agents": agents, "skipped": list(agents), "reason": reason, "override": named,
             "stages": dict(manifest.get("analysis_stages") or {}), "stopped": list(stopped or []),
             "fallback": fallback}
 
@@ -1145,6 +1174,14 @@ def _run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: 
                        f"{row.get('first_agent')}; a --on-fable-limit stop resume would call "
                        "its pending Fable agents on Fable after that, mixing models the other "
                        "way, which the record cannot compare")
+    if plan and plan["fallback"] and model and model == plan["fallback"].get("to") \
+            and plan["override"] != model:
+        # a fallback run resumed under --model opus: the row already puts every
+        # pending Fable agent on Opus, so the flag is read as the fallback carried
+        # forward, the run continuing under the stopped run's own choice of model
+        # -- its override, or the definitions' -- with each such agent labelled,
+        # rather than as an override that would record them as asking for Opus
+        model = plan["override"]
     # the limit policy, starting from the fallback a resumed run already recorded,
     # or from the batch's when this run carries it
     policy = LimitPolicy(on_fable_limit, plan["fallback"] if plan else None, carried)
@@ -1488,7 +1525,16 @@ def main(argv: list[str] | None = None) -> int:
                                                         "cost_usd")}
                       for name, record in manifest["agents"].items()}, indent=1))
     fallback = recorded_fallback(manifest)
-    if fallback and fallback_reason(fallback) == FALLBACK_REASON:
+    stopped = manifest.get("fable_limit_reached")
+    if stopped:
+        # a limit stopped the run: nothing is carried. Under `opus` it was the
+        # model a Fable limit falls back to, and the batch stops
+        # (docs/routines/nightly-worker.md); under `stop`, exit 4 says so
+        if args.on_fable_limit == "opus":
+            print(f"run_analysis: a limit stopped this run at {', '.join(stopped)} on "
+                  f"{FALLBACK_MODEL}, the model a Fable limit falls back to: stop the batch "
+                  "(fable_limit_reached in the manifest); nothing is carried", file=sys.stderr)
+    elif fallback and fallback_reason(fallback) == FALLBACK_REASON:
         # the rest of the batch carries it: the flag for every later run, on
         # stderr so the JSON above stays the whole of stdout
         print(f"run_analysis: fell back to {fallback['to']} at {fallback.get('first_agent')} "

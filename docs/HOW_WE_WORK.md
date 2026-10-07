@@ -306,13 +306,16 @@ The owner's decision of 2026-10-06 (`docs/structure_changes.md`) sets this table
   fallback the message confirmed: the runner names the flag on stderr, and every
   later run of the batch is started with `--carry-fallback-from <the run that
   fell back>`, which calls each Fable agent on Opus from its first call, never
-  asking Fable again, and notes the row with `carried_from` naming that run --
-  refused when the run named records no `model_fallback` or one the shape alone
-  set off, and under `stop`. A shape-only fallback stays inside its own run, and
-  the stderr line says why. The row is the run's record that the Fable limit was
+  asking Fable again, and notes the row with `carried_from` naming that run and
+  `carried_limit_at` when its limit was noted -- refused when the run named
+  records no `model_fallback`, one the shape alone set off, or a limit noted more
+  than twelve hours before (`CARRY_HOURS`: a batch is one night, and a run of
+  another night is not this batch's), and under `stop`. A shape-only fallback
+  stays inside its own run, and the stderr line says why. The row is the run's record that the Fable limit was
   reached; the key `fable_limit_reached` stays the mark of a run a limit stopped.
   A limit Opus answers too stops the run there, names the agent under
-  `fable_limit_reached` and exits 1, since exit 4 is `stop`'s alone. The batch
+  `fable_limit_reached` and exits 1, since exit 4 is `stop`'s alone; its stderr
+  line says to stop the batch and names no carry. The batch
   sizer (`src/fable_batch.py`) leaves every filing that fell back out of the
   median, which is of the filings Fable served whole, and names them beside it,
   the default in force (`docs/needs_judgment.md`); the graders read `model_served`
@@ -320,7 +323,8 @@ The owner's decision of 2026-10-06 (`docs/structure_changes.md`) sets this table
   label, no score split by model until the owner says. A resume of a fallback run
   carries the fallback forward (every pending Fable agent on Opus, labelled with
   the row's reason) and may name `--model opus`, the model the run ran under from
-  the agent the row names; each pending definition is still held to its layer,
+  the agent the row names, which is read as the same fallback carried forward
+  (each pending Fable agent labelled, no `model_override` written); each pending definition is still held to its layer,
   so one edited between the nights is refused; a resume of it under
   `--on-fable-limit stop` is refused (exit 2), since it would call Fable after
   Opus; and a mix the record does not explain -- a Fable request served by

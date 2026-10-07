@@ -9,6 +9,7 @@ only the items the quote gate kept.
 
 from __future__ import annotations
 
+import datetime as dt
 import json
 import re
 import shutil
@@ -1886,13 +1887,14 @@ def _fable_writes(name: str, payload: dict):
 
 
 def test_a_limit_the_fallback_model_answers_too_stops_the_run_and_exits_one_not_four(
-        tmp_path, monkeypatch):
+        tmp_path, monkeypatch, capsys):
     """The financial analyst's Fable call answers the limit and its Opus call
     answers the Opus limit: the run stops there, as it would under `stop`, the
     manifest naming the analyst under `fable_limit_reached` beside the
     fallback row, and nothing after the analysts runs. Under `opus` the command
     exits FAILED, 1: exit 4 is `stop`'s alone. The same manifest under `stop`
-    reads 4, which is the stop test's own exit above."""
+    reads 4, which is the stop test's own exit above. The stderr line says to
+    stop the batch and never names the flag that would carry the fallback on."""
     run, calls, asked = _financial_analyst_over_cli(tmp_path, monkeypatch,
                                                     [FABLE_LIMIT, OPUS_LIMIT])
     manifest = run_analysis.run_company(run=run, **_run_keyword("always"))
@@ -1911,9 +1913,16 @@ def test_a_limit_the_fallback_model_answers_too_stops_the_run_and_exits_one_not_
     assert fable_batch.published(manifest) is False
     monkeypatch.setattr(run_analysis, "run_company", lambda **kw: manifest)
     monkeypatch.setattr(run_analysis.interpreter_pin, "enforce", lambda: 0)
+    capsys.readouterr()
     assert run_analysis.main(_main_command(run)) == run_analysis.FAILED == 1
+    err = capsys.readouterr().err
+    assert "--carry-fallback-from" not in err
+    assert err.strip() == ("run_analysis: a limit stopped this run at financial-analyst on opus, "
+                           "the model a Fable limit falls back to: stop the batch "
+                           "(fable_limit_reached in the manifest); nothing is carried")
     assert run_analysis.main(_main_command(run, "--on-fable-limit", "stop")) \
         == run_analysis.LIMIT_REACHED == 4
+    assert capsys.readouterr().err == ""             # exit 4 says it; nothing is carried
 
 
 def test_the_rest_of_the_batch_carries_the_fallback_from_its_first_call(
@@ -1925,8 +1934,10 @@ def test_the_rest_of_the_batch_carries_the_fallback_from_its_first_call(
     first call and labelled; the row is noted at the first of them, the
     accounting analyst, and names the earlier run; no limit attempt is on
     record; the command exits 0 and names the flag for the next run. The other
-    side: a run named that records no fallback, and the flag under `stop`, are
-    refused before any agent runs."""
+    side: a run named that records no fallback, one whose limit was noted more
+    than CARRY_HOURS before (another night's), and the flag under `stop`, are
+    refused before any agent runs. The earlier row's time is written an hour
+    before the clock this test reads, so the window is the test's own."""
     answers = [_opus_writes("analysis_financial.json",
                             _analysis("financial", "earnings_quality_accruals_rising"))]
     run, calls, asked = _financial_analyst_over_cli(tmp_path, monkeypatch, answers)
@@ -1938,8 +1949,17 @@ def test_the_rest_of_the_batch_carries_the_fallback_from_its_first_call(
     monkeypatch.setattr(run_analysis.interpreter_pin, "enforce", lambda: 0)
     assert run_analysis.main(_main_command(run, "--carry-fallback-from", str(earlier))) \
         == run_analysis.BAD_INPUT == 2
-    row = {"from": "fable", "to": "opus", "at": "2026-10-07T03:00:00Z",
-           "first_agent": "financial-analyst", "reason": "fable_limit_reached"}
+    now = dt.datetime.now(dt.timezone.utc)
+    stamp = "%Y-%m-%dT%H:%M:%SZ"
+    old = {"from": "fable", "to": "opus", "first_agent": "financial-analyst",
+           "reason": "fable_limit_reached",
+           "at": (now - dt.timedelta(hours=run_analysis.CARRY_HOURS + 1)).strftime(stamp)}
+    (earlier / "input_manifest.json").write_text(json.dumps({"model_fallback": old}),
+                                                 encoding="utf-8")
+    with pytest.raises(run_analysis.RunError, match=f"its limit was noted at {old['at']}, not "
+                       "within the 12 hours before this run, so it is not this batch's"):
+        run_analysis.run_company(run=run, carry_fallback_from=earlier, **_run_keyword("always"))
+    row = dict(old, at=(now - dt.timedelta(hours=1)).strftime(stamp))
     (earlier / "input_manifest.json").write_text(json.dumps({"model_fallback": row}),
                                                  encoding="utf-8")
     with pytest.raises(run_analysis.RunError, match="--on-fable-limit stop does not fall back"):
@@ -1954,8 +1974,10 @@ def test_the_rest_of_the_batch_carries_the_fallback_from_its_first_call(
                      "valuation-analyst": ["opus"], "valuation-analyst-second-pass": ["opus"],
                      run_analysis.CONTROL_DIRNAME: ["opus"]}
     fallback = manifest["model_fallback"]
-    assert set(fallback) == {"from", "to", "at", "first_agent", "reason", "carried_from"}
+    assert set(fallback) == {"from", "to", "at", "first_agent", "reason", "carried_from",
+                             "carried_limit_at"}
     assert fallback["reason"] == "fable_limit_reached"
+    assert fallback["carried_limit_at"] == row["at"]
     assert fallback["from"] == "fable" and fallback["to"] == "opus"
     assert fallback["first_agent"] == "accounting-analyst"
     assert fallback["carried_from"] == "AMD/0000002488-26-000001"
@@ -2129,3 +2151,72 @@ def test_a_row_the_shape_opened_is_confirmed_by_a_later_limit_message(tmp_path):
     assert run_analysis.fallback_reason(policy.fallback) == "fable_limit_reached"
     assert run_analysis.fallback_reason({"from": "fable", "to": "opus"}) \
         == "fable_failed_like_the_limit"
+
+
+def test_the_carry_window_is_read_off_the_first_limit_of_a_chain_and_never_the_future(tmp_path):
+    """`carried_fallback` against a clock the test names, 2026-10-07T12:00:00Z,
+    with CARRY_HOURS 12: a limit noted at 00:00 that day is twelve hours before
+    and carried; one at 23:59 the day before is more than twelve and refused; one
+    at 13:00, after the clock, is refused; and a row that itself carried a limit
+    is read by the time it carried (`carried_limit_at`), so a chain of runs never
+    stretches the window past the first limit."""
+    now = dt.datetime(2026, 10, 7, 12, 0, 0, tzinfo=dt.timezone.utc)
+    earlier = tmp_path / "AMD" / "0000002488-26-000001"
+    earlier.mkdir(parents=True)
+
+    def carried(row):
+        (earlier / "input_manifest.json").write_text(json.dumps({"model_fallback": dict(
+            {"from": "fable", "to": "opus", "first_agent": "accounting-analyst",
+             "reason": "fable_limit_reached"}, **row)}), encoding="utf-8")
+        return run_analysis.carried_fallback(earlier, now=now)
+
+    assert run_analysis.CARRY_HOURS == 12
+    assert carried({"at": "2026-10-07T00:00:00Z"}) == {
+        "carried_from": "AMD/0000002488-26-000001", "carried_limit_at": "2026-10-07T00:00:00Z"}
+    for at in ("2026-10-06T23:59:59Z", "2026-10-07T13:00:00Z"):
+        with pytest.raises(run_analysis.RunError, match="not within the 12 hours"):
+            carried({"at": at})
+    assert carried({"at": "2026-10-07T11:00:00Z", "carried_limit_at": "2026-10-07T01:00:00Z"}) \
+        == {"carried_from": "AMD/0000002488-26-000001",
+            "carried_limit_at": "2026-10-07T01:00:00Z"}
+    with pytest.raises(run_analysis.RunError, match="not within the 12 hours"):
+        carried({"at": "2026-10-07T11:00:00Z", "carried_limit_at": "2026-10-06T22:00:00Z"})
+    with pytest.raises(run_analysis.RunError, match="names no time the limit was noted at"):
+        carried({"at": "yesterday"})
+
+
+def test_a_fallback_run_resumed_under_model_opus_labels_every_pending_fable_agent(
+        tmp_path, monkeypatch):
+    """The fallback run the resume test above stops on an error, resumed with
+    `--model opus`: the row already puts every pending Fable agent on Opus, so the
+    flag is read as the fallback carried forward. The valuation passes are asked
+    on Opus and recorded as fallbacks by name -- `model_requested: fable`,
+    `fallback_from`, the row's reason -- and no `model_override` is written for
+    them; the readers, on Opus by their own definitions, are not called again."""
+    answers = [FABLE_LIMIT, _opus_writes("analysis_financial.json",
+                                         _analysis("financial", "earnings_quality_accruals_rising"))]
+    run, calls, asked = _financial_analyst_over_cli(tmp_path, monkeypatch, answers)
+    real_calculate, state = run_analysis.calculator.calculate, {"raised": False}
+
+    def calculate(**keyword):
+        if "accounting" in keyword and "assumptions" not in keyword and not state["raised"]:
+            state["raised"] = True
+            raise run_analysis.calculator.CalculatorInputError("planted: an input is not there")
+        return real_calculate(**keyword)
+
+    monkeypatch.setattr(run_analysis.calculator, "calculate", calculate)
+    with pytest.raises(run_analysis.calculator.CalculatorInputError, match="planted"):
+        run_analysis.run_company(run=run, **_run_keyword())
+    row = json.loads((run / "input_manifest.json").read_text(encoding="utf-8"))["model_fallback"]
+    resumed = run_analysis.run_company(run=run, model="opus", **_run_keyword())
+    assert asked["valuation-analyst"] == ["opus"]
+    assert asked["valuation-analyst-second-pass"] == ["opus"]
+    assert asked["numbers-reader"] == ["opus"] and asked["financial-analyst"] == ["fable", "opus"]
+    for name in ("valuation-analyst", "valuation-analyst-second-pass"):
+        record = resumed["agents"][name]
+        assert record["model_requested"] == "fable", name
+        assert record["model_served"] == "claude-opus-5-5", name
+        assert record["fallback_from"] == "fable", name
+        assert record["fallback_reason"] == "fable_limit_reached", name
+    assert "model_override" not in resumed and resumed["model_fallback"] == row
+    assert resumed["analysis_failure"] is None and fable_batch.published(resumed) is True

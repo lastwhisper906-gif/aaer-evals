@@ -40,16 +40,18 @@ the loop goes on. When the line names the flag for the rest of the batch -- the
 limit's message confirmed the fallback -- start every later run of the batch with
 `--carry-fallback-from <the run that fell back>`, so its Fable agents run on Opus
 from their first call and its `model_fallback` names that run under
-`carried_from`. When the line says the fallback stays inside its run -- a Fable
+`carried_from`; a fallback is carried only within the night, from a limit noted
+at most twelve hours before. When the line says the fallback stays inside its run -- a Fable
 call failed like the limit, with no limit message (`fable_failed_like_the_limit`)
 -- start the next run without the flag. The report names every fallback run. Only `--on-fable-limit stop`
 keeps the old stop (exit 4, `LIMIT_REACHED`; exit 3 is the interpreter pin, not the
 limit), and then what is pending is written into `queue.md` under its item.
 
 Stop the loop early when:
-- **Opus is out too.** A run exits 1 and its manifest records `fable_limit_reached`:
-  under the fallback, the limit was Opus's own. Stop the batch, publish what
-  finished, and write what is pending into `queue.md`, under its item.
+- **Opus is out too.** A run exits 1, its manifest records `fable_limit_reached`,
+  and its stderr line says "stop the batch": under the fallback, the limit was
+  Opus's own. Stop the batch, publish what finished, and write what is pending into
+  `queue.md`, under its item.
 - **The item budget is spent.**
 - **Two items in a row fail** their goal.
 
