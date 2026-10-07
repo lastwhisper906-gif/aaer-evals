@@ -53,7 +53,14 @@ THE_TWELVE = ("AAPL", "STX", "CSCO", "PANW", "CARR", "LFUS",
 # their fixture sets are pinned to 2026-10-07.
 THE_EIGHT = ("DELL", "WDC", "ANET", "FTNT", "JCI", "POWL", "FELE", "FN")
 
-EVERY_ROW = THE_TWELVE + THE_EIGHT
+# The next eight, by the continuation of that rule recorded on the same day
+# (`docs/structure_changes.md`, 2026-10-07): the four SIC codes the first pass
+# never reached, in the order 3663, 3669, 3672, 3674, then the second-largest
+# filer under 3571, 3572, 3576 and 3577. Typed from that line, not imported
+# from the module under test; their fixture sets are pinned to 2026-10-07.
+THE_NEXT_EIGHT = ("MSI", "LITE", "FLEX", "AVGO", "SMCI", "SNDK", "FFIV", "LOGI")
+
+EVERY_ROW = THE_TWELVE + THE_EIGHT + THE_NEXT_EIGHT
 
 
 def _manifest(ticker: str) -> dict:

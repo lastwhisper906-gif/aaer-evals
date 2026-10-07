@@ -365,6 +365,74 @@ def test_a_fact_the_filing_printed_twice_prints_one_id_twice():
     assert facts[0]["paragraph_id"] == facts[4]["paragraph_id"]
 
 
+# --- one concept, one context, two units of the filer's own -------------------
+#
+# Lumentum's 10-Qs state the conversion threshold of its 2026 notes twice in one
+# context, 30 in `lite:day` and 30 in `lite:trading_day`. A day is not a trading
+# day, so those are two facts, and under the one id the shape gives them the
+# quote gate refused Lumentum's whole 10-Q bundle. Both sides of the rule that
+# names the unit there, planted, and then the filing itself.
+
+TWO_UNITS = b"""<xbrl xmlns="http://www.xbrl.org/2003/instance"
+          xmlns:us-gaap="http://fasb.org/us-gaap/2025">
+      <context id="notes"><period><startDate>2019-12-01</startDate>
+        <endDate>2019-12-31</endDate></period></context>
+      <unit id="day"><measure>lite:day</measure></unit>
+      <unit id="trading_day"><measure>lite:trading_day</measure></unit>
+      <us-gaap:DebtInstrumentConvertibleThresholdConsecutiveTradingDays1
+        contextRef="notes" unitRef="day" id="a" decimals="INF"
+        >30</us-gaap:DebtInstrumentConvertibleThresholdConsecutiveTradingDays1>
+      <us-gaap:DebtInstrumentConvertibleThresholdConsecutiveTradingDays1
+        contextRef="notes" unitRef="trading_day" id="b" decimals="INF"
+        >30</us-gaap:DebtInstrumentConvertibleThresholdConsecutiveTradingDays1>
+      <us-gaap:DebtInstrumentConvertibleThresholdTradingDays
+        contextRef="notes" unitRef="trading_day" id="c" decimals="INF"
+        >20</us-gaap:DebtInstrumentConvertibleThresholdTradingDays>
+    </xbrl>"""
+BARE = "0001628280-26-030777:facts:{tag}:2019-12-01..2019-12-31"
+
+
+def test_one_concept_in_one_context_in_two_units_prints_one_id_per_unit():
+    day, trading_day, _ = extract_numbers.facts_from_instance(
+        TWO_UNITS, accession="0001628280-26-030777", filing_date="2026-05-06")
+    tag = "DebtInstrumentConvertibleThresholdConsecutiveTradingDays1"
+    assert day["paragraph_id"] == BARE.format(tag=tag) + ":unit=lite:day"
+    assert trading_day["paragraph_id"] == BARE.format(tag=tag) + ":unit=lite:trading_day"
+
+
+def test_a_unit_the_concept_is_stated_in_alone_keeps_the_bare_id():
+    """The other side: the threshold's twenty trading days are stated once, in
+    one unit, and print the spec's shape with nothing added; and the thirty,
+    stated twice in the one unit, are one fact printed twice under one id."""
+    *_, alone = extract_numbers.facts_from_instance(
+        TWO_UNITS, accession="0001628280-26-030777", filing_date="2026-05-06")
+    assert alone["paragraph_id"] == \
+        BARE.format(tag="DebtInstrumentConvertibleThresholdTradingDays")
+    one_unit = TWO_UNITS.replace(b'unitRef="trading_day" id="b"', b'unitRef="day" id="b"')
+    day, also_day, _ = extract_numbers.facts_from_instance(
+        one_unit, accession="0001628280-26-030777", filing_date="2026-05-06")
+    assert day["paragraph_id"] == also_day["paragraph_id"] == BARE.format(
+        tag="DebtInstrumentConvertibleThresholdConsecutiveTradingDays1")
+
+
+def test_lumentums_threshold_prints_one_id_per_unit_in_both_quarters():
+    """Read from the instances: context c-282 of the March 10-Q is the 2026
+    notes over 2019-12-01..2019-12-31, and the threshold is stated there as
+    f-1039 and f-1130 in unit `day` (`lite:day`) and as f-1104 and f-1112 in
+    unit `trading_day` (`lite:trading_day`), 30 each; the December 10-Q states
+    it the same way, so two ids per quarter and four in all."""
+    facts = [fact for fact in extract_numbers.extract("LITE", ("10-Q",))["facts"]
+             if fact["tag"] == "DebtInstrumentConvertibleThresholdConsecutiveTradingDays1"
+             and fact["context"].get("start") == "2019-12-01"]
+    by_element = {fact["id"]: fact for fact in facts}
+    for element, unit in (("f-1039", "lite:day"), ("f-1130", "lite:day"),
+                          ("f-1104", "lite:trading_day"), ("f-1112", "lite:trading_day")):
+        fact = by_element[f"0001628280-26-030777:{element}"]
+        assert fact["unit"] == unit and fact["value"] == "30"
+        assert fact["paragraph_id"].endswith(f":unit={unit}")
+    assert len({fact["paragraph_id"] for fact in facts}) == 4
+
+
 @pytest.mark.parametrize("ticker", TICKERS)
 def test_one_printed_id_names_one_fact(ticker):
     """Every fact prints an id, and two facts printing the same one are the same
