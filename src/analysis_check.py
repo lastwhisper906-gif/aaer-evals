@@ -127,8 +127,10 @@ PLACEHOLDER = re.compile(r"\{([a-z0-9_.-]+)(?:\|(pct))?\}")
 # "outlook", a possessive ("2022's"), a month name, or the Korean 년, 회계연도, 상반기, 하반기,
 # 분기, 말, 기준 -- "2050년", "2055 fiscal year" and "2026 December" are years
 # whatever the value, while a word that merely starts like a month's short form
-# is no context: "2048 marketing staff", "2030 novel products", "inventory of
-# 2048 declined" are counts.
+# is no context, nor is a verb spelled like a month in lower case: "2048
+# marketing staff", "2030 novel products", "inventory of 2048 declined",
+# "inventory of 2048 may fall" and "2048 march" are counts; "2026 May" and "in
+# 2026 May" are years.
 #
 # A range or a list of four-digit numbers is years only when a member has a
 # year-context word of its own and the terminator follows the list: "in 2030
@@ -153,8 +155,10 @@ YEAR_CONTEXT_BEFORE = (
     r"|due|" + MONTH
     + r"|in|for|through|since|until|year|during|early|late|mid|as of|회계연도"
     r"|half of|(?:months?|weeks?|quarters?) of)")
-YEAR_CONTEXT_AFTER = (r"(?:fiscal year|year-end|guidance|outlook|['’]s|" + MONTH
-                      + r"|년|회계연도|상반기|하반기|분기|말|기준)")
+# A month after a year is a month only capitalised, whatever case the group around
+# it reads in: "may" and "march" the verbs are not months.
+YEAR_CONTEXT_AFTER = (r"(?:fiscal year|year-end|guidance|outlook|['’]s|(?-i:" + MONTH + r")"
+                      r"|년|회계연도|상반기|하반기|분기|말|기준)")
 CONNECTOR = r"(?:and|or|to|through)"
 FUNCTION_OR_TIME_WORD = (
     r"(?:the|an?|its?|this|that|these|those|which|when|where|while|as|at|with|than|from"

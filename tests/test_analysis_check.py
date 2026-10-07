@@ -398,6 +398,7 @@ def test_a_bare_year_in_a_reason_is_a_year_not_a_number():
                  "the first quarter of 2026 carried", "ended April 2026 printed",
                  "notes due 2030 assumed", "the first half of 2026 carries",
                  "second-half-2025 and 2026", "at the 2025 year-end", "2026 December",
+                 "2026 May", "in 2026 May", "March 2026",
                  # a year outside 1950-2049 is a year by the same words: a net-zero
                  # target, a comparison with the crash
                  "2050년", "2055 fiscal year", "in 2050", "since 1929",
@@ -1465,6 +1466,9 @@ def test_a_quantity_with_no_unit_word_is_still_a_number():
                  "due 2030 vendors", "the second half of 2025 and 2048 stores",
                  "inventory of 2048 declined", "2048 marketing staff", "2030 novel products",
                  "2048 octane", "2048 junior engineers", "2030 mayors",
+                 # the sixth reading: a month after a year is a month only capitalised
+                 "inventory of 2048 may fall", "a backlog of 2030 may shrink",
+                 "headcount of 2026 may decline", "2048 march",
                  # counts to the rule as written -- a noun or an adjective, hyphenated or
                  # not, after the year -- though the published analysts meant years;
                  # PUBLISHED_WINDOWS marks those rows xfail with this reason
