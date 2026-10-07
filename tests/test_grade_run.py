@@ -64,6 +64,10 @@ def test_the_grader_is_never_handed_the_market_table(tmp_path):
     target = tmp_path / "CSCO" / CLEAN.name
     shutil.copytree(CLEAN, target, ignore=shutil.ignore_patterns("agents", "control-*"))
     (target / "input_market.json").write_text(json.dumps({"cutoff": "2026-05-22", "rows": []}))
+    (target / "input_outcomes.json").write_text(json.dumps({"abnormal_return": 0.1}))
+    (target / "input_prices.csv").write_text("2026-05-20,51.20\n")
     names = [p.name for p in grade_run.grader_sees(target)]
     assert "input_market.json" not in names
+    assert "input_outcomes.json" not in names and "input_prices.csv" not in names
     assert "input_numbers.json" in names and "input_mdna.md" in names
+    assert set(names) <= set(grade_run.SEES) | set(grade_run.FILING_INPUTS)

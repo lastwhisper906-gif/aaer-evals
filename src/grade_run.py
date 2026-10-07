@@ -32,6 +32,11 @@ INSTRUCTION = ("Your directory holds: {files}. Read every one of them in full, f
                "your instructions, and write {writes} in your directory. Nothing else, "
                "anywhere.")
 RUBRIC = REPO_ROOT / "evals" / "capability" / "rubric.md"
+# the filing bundle as the readers and the control are handed it (evals/README.md,
+# layers_hold); never input_market.json, never a file of another name
+FILING_INPUTS = ("input_8k.md", "input_controls.md", "input_mdna.md", "input_notes.md",
+                 "input_notes_history.md", "input_numbers.json", "input_prior_predictions.md",
+                 "input_trends.json")
 SEES = ("analysis_accounting.json", "analysis_financial.json", "analysis_valuation.json",
         "assumptions.json", "report_numbers.md", "report_notes_text.md", "calculator.json",
         "calculator_filings_only.json", "input_manifest.json", "memo_ko.md")
@@ -46,10 +51,10 @@ def grader_sees(run: Path) -> list[Path]:
     files = [run / name for name in SEES if (run / name).is_file()]
     # every committed input, the numbers and trends files included: a numbers-reader
     # quote comes from those, and the rubric asks the grader to follow it there
-    # never the market table: a grader that saw the price reaction would grade
-    # the analyses with hindsight (the table is handed to no agent, evals/README.md)
-    files += sorted(p for p in run.glob("input_*")
-                    if p.is_file() and p.name not in SEES and p.name != "input_market.json")
+    # the filing inputs by name, and nothing else a run may carry under input_*: a
+    # grader that saw the price reaction, or an outcome, would grade with hindsight
+    # (the market table is handed to no agent, evals/README.md)
+    files += [run / name for name in FILING_INPUTS if (run / name).is_file()]
     return files
 
 
