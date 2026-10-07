@@ -1760,6 +1760,23 @@ def test_a_fallback_run_that_stopped_on_an_error_resumes_on_opus_and_stays_label
     with pytest.raises(run_analysis.RunError, match="fallen back to opus from financial-analyst; "
                        "a resume under claude-fable-5-1 would mix models"):
         run_analysis.resume_plan(run, stopped, False, "claude-fable-5-1")
+    # resumed once under --model opus and stopped again, the manifest then names
+    # opus as its override: the agents that asked for Fable -- the accounting
+    # analyst before the limit, the financial analyst labelled after it -- are
+    # explained by the row, and a resume under opus is accepted again
+    overridden = dict(stopped, model_override={"model": "opus", "applies_to": [],
+                                               "why": "planted"})
+    assert run_analysis.resume_plan(run, overridden, False, "opus")["fallback"] == row
+    # the other side: the same override with no row and no label -- the financial
+    # analyst served by Fable -- refuses the Fable agents on record
+    bare = {key: value for key, value in overridden.items() if key != "model_fallback"}
+    bare["agents"] = dict(overridden["agents"], **{"financial-analyst": dict(
+        {key: value for key, value in overridden["agents"]["financial-analyst"].items()
+         if key not in ("fallback_from", "fallback_reason")},
+        model_served="claude-fable-5-1")})
+    with pytest.raises(run_analysis.RunError, match="the run stopped under opus, but "
+                       "accounting-analyst on record asked for fable"):
+        run_analysis.resume_plan(run, bare, False, "opus")
     resumed = run_analysis.run_company(run=run, **_run_keyword())
     assert asked["valuation-analyst"] == ["opus"]
     assert asked["valuation-analyst-second-pass"] == ["opus"]

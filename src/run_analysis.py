@@ -962,8 +962,10 @@ def resume_plan(run: Path, manifest: dict, resume: bool,
     A run that fell back (`model_fallback` in the manifest) ran under Opus from
     the agent the row names: a resume of it may name `FALLBACK_MODEL` as well,
     and one naming no model carries the fallback forward (`plan["fallback"]`),
-    so every pending Fable agent is called on Opus and labelled. A mix the record
-    does not explain is still refused (`unexplained_mix`).
+    so every pending Fable agent is called on Opus and labelled; once resumed
+    under `--model opus`, its override names opus, and the agents on record that
+    asked for Fable stay explained by the row. A mix the record does not explain
+    is still refused (`unexplained_mix`).
     """
     recorded = manifest.get("agents")
     if not isinstance(recorded, dict) or not recorded:
@@ -1000,6 +1002,11 @@ def resume_plan(run: Path, manifest: dict, resume: bool,
     if named:
         for name, record in agents.items():
             asked = record.get("model_requested")
+            if fallback and named == fallback["to"] and is_fable(asked):
+                # a fallback run resumed once under --model opus: an agent that
+                # asked for Fable ran on it before the limit, or is labelled
+                # after it (unexplained_mix above holds the label)
+                continue
             if isinstance(asked, str) and asked != named:
                 raise RunError(f"{run}: the run stopped under {named}, but {name} on "
                                f"record asked for {asked}; a resume would mix models, "
