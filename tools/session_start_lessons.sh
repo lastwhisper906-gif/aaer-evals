@@ -11,10 +11,14 @@
 # A lesson starts with a date, YYYY-MM-DD and a space; a line after the first
 # lesson that does not start with a date is a continuation of the lesson before
 # it (a wrapped line), printed with it and counted within it, never dropped.
-# Everything above the first lesson is the header and is always printed. A
-# lesson prints whole or not at all. When the lessons do not all fit, one line
-# says how many older ones were left out and where they are, and that line
-# counts toward the sixty. That a lesson line carries its date is not this
+# Everything above the first lesson is the header, printed before any lesson.
+# A lesson prints whole or not at all. When the lessons do not all fit, one
+# line says how many older ones were left out and where they are, and that
+# line counts toward the sixty. When the header alone leaves no room for that
+# line, the first fifty-nine header lines print and the sixtieth says how many
+# header lines and lessons were left out, so the cap holds through this script
+# and not only through the shape of the file it is given. That a lesson line
+# carries its date is not this
 # script's judgment: src/instruction_length_check.py refuses one that does not,
 # in `make check`, so an undated lesson is refused there rather than hidden here.
 #
@@ -38,6 +42,11 @@ awk -v limit="$limit" -v file="$file" '
   started { lesson[n] = lesson[n] "\n" $0; size[n]++; next }
   { header[++h] = $0 }
   END {
+    if (h + (n > 0) > limit) {
+      for (i = 1; i < limit; i++) print header[i]
+      print "(" h - limit + 1 " header lines and " n " lessons are in " file " and not printed here.)"
+      exit
+    }
     for (i = 1; i <= h; i++) print header[i]
     total = h
     for (i = 1; i <= n; i++) total += size[i]

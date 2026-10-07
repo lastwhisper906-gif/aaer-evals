@@ -19,7 +19,10 @@ that starts with whitespace belongs to the lesson above it:
 `archive/lessons_enforced.md` puts under each lesson one indented line naming
 what enforces it, and a wrapped line is written the same way. A heading
 (`## Moved back`, the archive's append-only record of lessons that went back)
-opens a section and is not a lesson.
+opens a section and is not a lesson. A lessons file with no dated line at all
+is refused rather than passed: the rule starts at the first lesson, so a file
+that yields none has been examined by nothing, the way `src/task_judge_check.py`
+and `src/owner_inbox_check.py` refuse a list that yields no row.
 
 The third rule is that `CLAUDE.md`'s parentheses name real files. Its header
 says every rule names what enforces it, and a path that resolves to nothing is
@@ -51,8 +54,8 @@ hold the entries. A missing key or entry is named.
 
 Exit 0 and no output when within the cap, every lesson is dated, every path
 named exists and every settings file named as denying holds its deny entries,
-1 when not (one line on stderr per finding), 2 when a file is not there, 3 on
-the wrong interpreter. The lessons paths default to the repository's own two
+1 when not (one line on stderr per finding), 2 when a file is not there or a
+lessons file holds no dated lesson, 3 on the wrong interpreter. The lessons paths default to the repository's own two
 files, so the gate reads them from wherever it is run.
 """
 
@@ -163,6 +166,11 @@ def line_count(path: Path) -> int:
     return len(path.read_text(encoding="utf-8").splitlines())
 
 
+def has_lesson(path: Path) -> bool:
+    """Whether any line of the file starts with a date: the first one starts the lessons."""
+    return any(DATED.match(line) for line in path.read_text(encoding="utf-8").splitlines())
+
+
 def undated_lessons(path: Path) -> list[tuple[int, str]]:
     """Every (line number, line) after the header that starts a lesson without a date."""
     found = []
@@ -201,6 +209,10 @@ def main(argv: list[str] | None = None) -> int:
               "replace a line rather than append one", file=sys.stderr)
         status = FOUND
     for path in args.lessons:
+        if not has_lesson(path):
+            print(f"{path}: no dated lesson; a lessons file that yields no lesson is not an "
+                  "empty one", file=sys.stderr)
+            return CANNOT_RUN
         for number, line in undated_lessons(path):
             print(f"{path}:{number}: a lesson starts with its date, YYYY-MM-DD and a space; "
                   f"this line does not: {line}", file=sys.stderr)

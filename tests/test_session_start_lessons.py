@@ -12,6 +12,12 @@ lessons 100 down to 81 (twenty lines), lesson 80 (two) and lessons 79 down to
 47 (thirty-three), so the note says 46 older lessons, not 45. With every lesson
 two lines long, fifty-five lines hold twenty-seven whole lessons (fifty-four
 lines) and a lesson is never split, so the printout is fifty-nine lines.
+
+The header is capped by the script too: a seventy-line header with five
+lessons leaves no room for the note, so the first fifty-nine header lines
+print and the sixtieth says eleven header lines and five lessons were left
+out; a fifty-five-line header with three lessons prints whole, fifty-eight
+lines, and a sixty-line header with no lessons prints whole, sixty lines.
 """
 
 from __future__ import annotations
@@ -96,6 +102,55 @@ def test_the_cap_holds_with_wrapped_lessons_and_no_lesson_is_split(tmp_path):
     assert lines[4] == f"(73 older lessons are in {tmp_path / 'lessons.md'} and not printed here.)"
     assert lines[5] == lesson(74)
     assert lines[5:] == [line for n in range(74, 101) for line in (lesson(n), wrapped(n))]
+
+
+def plant_with_header(tmp_path: Path, header_lines: int, count: int) -> Path:
+    path = tmp_path / "lessons.md"
+    lines = ["# Lessons"] + [f"header line {n}" for n in range(2, header_lines + 1)]
+    lines += [lesson(n) for n in range(1, count + 1)]
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return path
+
+
+def test_a_header_longer_than_the_cap_is_cut_and_the_sixtieth_line_says_so(tmp_path):
+    path = plant_with_header(tmp_path, 70, 5)
+    result = printed(path)
+
+    assert result.returncode == 0
+    lines = result.stdout.splitlines()
+    assert len(lines) == 60
+    assert lines[:59] == ["# Lessons"] + [f"header line {n}" for n in range(2, 60)]
+    assert lines[59] == f"(11 header lines and 5 lessons are in {path} and not printed here.)"
+
+
+def test_a_header_within_the_cap_prints_whole_with_its_lessons(tmp_path):
+    result = printed(plant_with_header(tmp_path, 55, 3))
+
+    assert result.returncode == 0
+    lines = result.stdout.splitlines()
+    assert len(lines) == 58
+    assert lines[:55] == ["# Lessons"] + [f"header line {n}" for n in range(2, 56)]
+    assert lines[55:] == [lesson(1), lesson(2), lesson(3)]
+
+
+def test_a_sixty_line_header_with_no_lessons_prints_whole(tmp_path):
+    result = printed(plant_with_header(tmp_path, 60, 0))
+
+    assert result.returncode == 0
+    lines = result.stdout.splitlines()
+    assert len(lines) == 60
+    assert lines == ["# Lessons"] + [f"header line {n}" for n in range(2, 61)]
+
+
+def test_a_sixty_line_header_with_a_lesson_still_holds_the_cap(tmp_path):
+    """Sixty header lines and one lesson: fifty-nine print, so 60 - 59 = 1 header line is left out."""
+    path = plant_with_header(tmp_path, 60, 1)
+    result = printed(path)
+
+    assert result.returncode == 0
+    lines = result.stdout.splitlines()
+    assert len(lines) == 60
+    assert lines[59] == f"(1 header lines and 1 lessons are in {path} and not printed here.)"
 
 
 def test_a_file_that_cannot_be_read_is_not_an_empty_one(tmp_path):

@@ -123,6 +123,24 @@ def test_the_header_above_the_first_lesson_is_not_a_lesson(tmp_path, capsys):
     assert capsys.readouterr().err == ""
 
 
+def test_a_lessons_file_with_no_dated_line_is_refused_not_passed(tmp_path, capsys):
+    lessons = plant_lessons(tmp_path, ["# Lessons", "", "One line per mistake.", ""])
+
+    assert instruction_length_check.main(
+        ["--file", str(plant(tmp_path, 22)), "--lessons", str(lessons)]
+    ) == instruction_length_check.CANNOT_RUN
+    assert capsys.readouterr().err.splitlines() == [
+        f"{lessons}: no dated lesson; a lessons file that yields no lesson is not an empty one"]
+
+
+def test_a_lessons_file_with_one_dated_line_is_judged(tmp_path, capsys):
+    lessons = plant_lessons(tmp_path, ["# Lessons", "", "2026-09-06 the only lesson."])
+
+    assert instruction_length_check.main(
+        ["--file", str(plant(tmp_path, 22)), "--lessons", str(lessons)]) == 0
+    assert capsys.readouterr().err == ""
+
+
 def test_a_lessons_file_that_is_not_there_cannot_be_judged(tmp_path):
     assert instruction_length_check.main(
         ["--file", str(plant(tmp_path, 22)), "--lessons", str(tmp_path / "lessons.md")]
