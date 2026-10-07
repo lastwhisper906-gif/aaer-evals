@@ -1270,17 +1270,20 @@ def test_grader_agreement_counts_where_the_grader_matches_the_owner(tmp_path, mo
     assert grader_agreement.grade([run])["score"] == pytest.approx(0.0)
 
 
-def test_outcomes_without_a_market_table_leave_four_weekdays_to_the_inputs():
-    """CSCO's cutoff is 2026-05-19, a Tuesday, and the run holds no market table. Four
-    weekdays after it is Monday the 25th (Memorial Day, which weekday counting does
-    not know; the fourth weekday is the slack for it). The window opens Tuesday the
-    26th. Counted by hand from the 26th: May 26-29 is 4 weekdays, June 22, July 23,
-    August 3-14 is 10, so the fifty-ninth is 2026-08-14 and the sixtieth the 17th."""
+def test_outcomes_without_a_market_table_count_on_the_exchange_calendar():
+    """CSCO's cutoff is 2026-05-19, a Tuesday, and the run holds no market table, so
+    day zero at its latest is Wednesday the 20th and day two Friday the 22nd. The
+    next trading day is Tuesday the 26th (Monday is Memorial Day): the window opens
+    there. Counted by hand from the 26th: May 26-29 is 4; June has 22 weekdays less
+    Juneteenth (Friday the 19th), 21, so 25; July has 23 weekdays less the observed
+    Independence Day (Friday the 3rd), 22, so 47; August 3-7 makes 52, 10-14 makes
+    57, and the 17th, 18th and 19th make 58, 59 and 60: the sixtieth trading day is
+    Wednesday 2026-08-19."""
     import datetime as dt
-    assert outcomes.last_day_an_input_may_see(CLEAN, dt.date(2026, 5, 19)) == dt.date(2026, 5, 25)
+    assert outcomes.last_day_an_input_may_see(CLEAN, dt.date(2026, 5, 19)) == dt.date(2026, 5, 22)
     assert outcomes.first_outcome_day(CLEAN, dt.date(2026, 5, 19)) == dt.date(2026, 5, 26)
-    early = outcomes.grade([CLEAN], today=dt.date(2026, 8, 14))["runs"][0]
-    late = outcomes.grade([CLEAN], today=dt.date(2026, 8, 17))["runs"][0]
+    early = outcomes.grade([CLEAN], today=dt.date(2026, 8, 18))["runs"][0]
+    late = outcomes.grade([CLEAN], today=dt.date(2026, 8, 19))["runs"][0]
     assert early["status"] == "pending" and early["trading_days_in_window"] == 59
     assert late["status"] == "aged" and late["trading_days_in_window"] == 60
     assert late["first_outcome_day"] == "2026-05-26"
@@ -1301,9 +1304,9 @@ def test_outcomes_with_a_market_table_start_after_its_latest_day_two(tmp_path):
     (run / "input_market.json").write_text(json.dumps(table))
     assert outcomes.last_day_an_input_may_see(run, dt.date(2026, 5, 19)) == dt.date(2026, 5, 21)
     assert outcomes.first_outcome_day(run, dt.date(2026, 5, 19)) == dt.date(2026, 5, 22)
-    # a table with no windows says nothing about day two: the four weekdays stand
+    # a table with no windows says nothing about day two: the calendar's latest stands
     (run / "input_market.json").write_text(json.dumps({"cutoff": "2026-05-21", "rows": []}))
-    assert outcomes.last_day_an_input_may_see(run, dt.date(2026, 5, 19)) == dt.date(2026, 5, 25)
+    assert outcomes.last_day_an_input_may_see(run, dt.date(2026, 5, 19)) == dt.date(2026, 5, 22)
 
 
 def test_outcomes_count_company_events_and_never_the_ledgers_process_rows(tmp_path):
@@ -1311,7 +1314,9 @@ def test_outcomes_count_company_events_and_never_the_ledgers_process_rows(tmp_pa
     ledger = tmp_path / "ledger.jsonl"
     ledger.write_text("\n".join([
         json.dumps({"ticker": "CSCO", "date": "2026-06-01", "event": "restatement"}),
-        json.dumps({"ticker": "CSCO", "date": "2026-05-25", "event": "a day an input may see"}),
+        # reaction day two at its latest is Friday 2026-05-22: an event that day is
+        # one the inputs may have seen, and does not count
+        json.dumps({"ticker": "CSCO", "date": "2026-05-22", "event": "a day an input may see"}),
         json.dumps({"ticker": "CSCO", "at": "2026-06-01T00:00:00+00:00", "accession": "x",
                     "layers_that_ran": ["detect filing"]}),
         json.dumps({"at": "2026-06-02T00:00:00+00:00", "lens": "codex", "verdict": "pass"}),

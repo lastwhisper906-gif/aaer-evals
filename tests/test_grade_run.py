@@ -56,3 +56,14 @@ def test_the_graders_instruction_lives_in_the_guarded_file():
     assert ".claude/agents/analysis-grader.md" in eval_guard.GUARDED
     assert "{files}" in grade_run.INSTRUCTION and "{writes}" in grade_run.INSTRUCTION
     assert "run_analysis.INSTRUCTION" not in inspect.getsource(grade_run)
+
+
+def test_the_grader_is_never_handed_the_market_table(tmp_path):
+    """A grader that saw the price reaction would grade with hindsight."""
+    import json
+    target = tmp_path / "CSCO" / CLEAN.name
+    shutil.copytree(CLEAN, target, ignore=shutil.ignore_patterns("agents", "control-*"))
+    (target / "input_market.json").write_text(json.dumps({"cutoff": "2026-05-22", "rows": []}))
+    names = [p.name for p in grade_run.grader_sees(target)]
+    assert "input_market.json" not in names
+    assert "input_numbers.json" in names and "input_mdna.md" in names

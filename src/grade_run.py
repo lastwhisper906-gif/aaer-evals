@@ -46,7 +46,10 @@ def grader_sees(run: Path) -> list[Path]:
     files = [run / name for name in SEES if (run / name).is_file()]
     # every committed input, the numbers and trends files included: a numbers-reader
     # quote comes from those, and the rubric asks the grader to follow it there
-    files += sorted(p for p in run.glob("input_*") if p.is_file() and p.name not in SEES)
+    # never the market table: a grader that saw the price reaction would grade
+    # the analyses with hindsight (the table is handed to no agent, evals/README.md)
+    files += sorted(p for p in run.glob("input_*")
+                    if p.is_file() and p.name not in SEES and p.name != "input_market.json")
     return files
 
 
