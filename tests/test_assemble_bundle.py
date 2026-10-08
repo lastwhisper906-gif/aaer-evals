@@ -874,7 +874,7 @@ def controls_case(ticker: str, form: str, **named):
 
 
 # The cases in the order and with the ids the two stacked parametrisations gave
-# them, form first: `10-K-AAPL` ... `10-Q-OMCL`.
+# them, form first: `10-K-AAPL` ... `10-Q-ADTN`.
 CONTROLS_CASES = [controls_case(ticker, form, id=f"{form}-{ticker}")
                   for form in ("10-K", "10-Q") for ticker in TICKERS]
 

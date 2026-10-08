@@ -165,7 +165,7 @@ def marked(ticker: str, section: str, *values, **named):
 
 
 # The cases in the order and with the ids the two stacked parametrisations gave
-# them, section first: `auditors_report-AAPL` ... `item_9a-OMCL`.
+# them, section first: `auditors_report-AAPL` ... `item_9a-ADTN`.
 SECTION_CASES = [marked(ticker, section, ticker, section, id=f"{section}-{ticker}")
                  for section in sorted(SPEC) for ticker in TICKERS]
 
@@ -191,7 +191,7 @@ RECOUNT_FINDS_NO_HEADING = {
 }
 
 # The cases in the order and with the ids the two stacked parametrisations gave
-# them, section first: `auditors_report-AAPL` ... `item_9a-OMCL`.
+# them, section first: `auditors_report-AAPL` ... `item_9a-ADTN`.
 RECOUNT_CASES = [
     pytest.param(ticker, section, id=f"{section}-{ticker}", marks=[pytest.mark.xfail(
         strict=True,
@@ -431,7 +431,7 @@ def foreign_headings(form: str, section: str) -> list[re.Pattern]:
 
 @pytest.mark.parametrize("ticker,form,section", [
     # In the order and with the ids the two stacked parametrisations gave them,
-    # the section first: `10-K-auditors_report-AAPL` ... `10-Q-item_4_controls-OMCL`.
+    # the section first: `10-K-auditors_report-AAPL` ... `10-Q-item_4_controls-ADTN`.
     marked(ticker, section, ticker, form, section, id=f"{form}-{section}-{ticker}")
     for form, section in (("10-K", "auditors_report"),
                           ("10-K", "item_9a"),
