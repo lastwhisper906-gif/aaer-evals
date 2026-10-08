@@ -242,6 +242,94 @@ def test_an_item_the_gate_finds_no_id_on_leaves_the_copy(tmp_path, shape, identi
             ).read_text(encoding="utf-8") == notes
 
 
+# A kept item whose own text holds three backticks, written in the reader's JSON as
+# \u0060 escapes, in a list that loses an item the gate found no id on (the critic's
+# probe of 2026-10-08, on ESE's paragraph 36 above). The reader's report reads clean to
+# the owner. Written again by `json.dumps`, the escapes came back as backticks, which
+# close the owner's fence early: the copy the analysts read held one block that is not
+# JSON and no item, and quotes_resolve failed "1 fenced block(s) that are not JSON".
+# No reader report on record carries a backtick.
+def _notes_list_losing_one(run: Path, what_changed: str) -> tuple[dict, str, str]:
+    """The kept item, its element as the reader wrote it, and the reader's report."""
+    run.mkdir()
+    (run / "input_manifest.json").write_text(json.dumps({"accession": ESE_ACCESSION}))
+    sales = "0001104659-26-092033:8k_2_02:36"
+    kept = dict(_ese_item("results_against_expectations_sales_range_restated",
+                          "Sales guidance", sales), what_changed=what_changed)
+    element = json.dumps(kept, indent=2).replace("`", "\\u0060")
+    nameless = json.dumps({"quote": "words the filing never printed", "paragraph_id": sales})
+    notes = f"# notes\n\n```json\n[\n{element},\n{nameless}\n]\n```\n"
+    for name, text in (("numbers-reader", "no items\n"), ("notes-text-reader", notes)):
+        directory = agent_inputs.session_root(run, name)
+        directory.mkdir(parents=True)
+        (directory / "input_8k.md").write_text(ESE_8K, encoding="utf-8")
+        (directory / agent_inputs.AGENTS[name].writes).write_text(text, encoding="utf-8")
+    return kept, element, notes
+
+
+@pytest.mark.parametrize("what_changed", ["the release prints ``` in its table",
+                                          "four ```` and three ``` again"])
+def test_a_kept_element_holding_three_backticks_leaves_the_owner_s_fence_where_it_was(
+        tmp_path, what_changed):
+    from evals.common import PASS
+    from evals.regression import mechanical
+    run = tmp_path / "run"
+    kept, element, notes = _notes_list_losing_one(run, what_changed)
+    assert mechanical.read_report_blocks(notes)[1] == 0
+    run_analysis.gate_readers(run)
+    copy = (run / "report_notes_text.md").read_text(encoding="utf-8")
+    assert mechanical.read_report_blocks(copy) == ([kept], 0)
+    assert element in copy                  # the element that stood, as the reader wrote it
+    assert "removed 1 item(s)" in copy
+    result = mechanical.check_quotes_resolve(run)
+    assert result.status == PASS, result.failures
+
+
+@pytest.mark.parametrize("what_changed", ["a `code` word and a `` pair", "no backtick at all"])
+def test_a_kept_element_with_fewer_than_three_backticks_reads_the_same(tmp_path, what_changed):
+    """The other side, standing before the fix and after it."""
+    from evals.common import PASS
+    from evals.regression import mechanical
+    run = tmp_path / "run"
+    kept, _, _ = _notes_list_losing_one(run, what_changed)
+    run_analysis.gate_readers(run)
+    copy = (run / "report_notes_text.md").read_text(encoding="utf-8")
+    assert mechanical.read_report_blocks(copy) == ([kept], 0)
+    assert mechanical.check_quotes_resolve(run).status == PASS
+
+
+def test_a_copy_that_does_not_read_as_the_items_that_stood_is_never_written(
+        tmp_path, monkeypatch):
+    """The copy is read again, as the owner reads it, before it is written: a cut
+    that went wrong stops the gate rather than handing the analysts a block the
+    owner cannot read or an item that did not stand."""
+    run = tmp_path / "run"
+    _notes_list_losing_one(run, "plain words")
+    monkeypatch.setattr(run_analysis, "_array_elements",
+                        lambda block: ['{"id": "results_against_expectations_sales_range_',
+                                       '"restated"}'])
+    with pytest.raises(run_analysis.quote_gate.QuoteGateError,
+                       match="does not read as the items that stood: 1 fenced block"):
+        run_analysis.gate_readers(run)
+    assert not (run / "report_notes_text.md").exists()
+
+
+@pytest.mark.parametrize("block", [
+    '[]', ' [ ] \n', '[1, "two", null, true, {"a": [1, {"b": "]"}]}]',
+    '[\n  {"id": "x", "quote": "a \\"quoted\\" ], comma"},\n  {"id": "y"}\n]\n',
+    '[NaN, Infinity, -0.0, 1e400, "\\u0060\\u0060\\u0060"]', '[[1, 2], [], [[3]]]'])
+def test_the_elements_of_a_list_block_read_back_as_the_list(block):
+    written = run_analysis._array_elements(block)
+    assert [run_analysis._canonical(json.loads(one)) for one in written] == [
+        run_analysis._canonical(one) for one in json.loads(block)]
+    assert all(one in block for one in written)
+
+
+@pytest.mark.parametrize("block", ['{"id": "x"}', '"[1]"', '[1, 2', '[1,]', '[1] [2]', ''])
+def test_a_block_that_is_not_one_list_has_no_elements(block):
+    assert run_analysis._array_elements(block) is None
+
+
 # --- a whole run, with every agent stubbed ------------------------------------------------
 #
 # The model is the one thing replaced. Everything else is the run as it is: the

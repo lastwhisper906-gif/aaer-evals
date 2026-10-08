@@ -814,11 +814,14 @@ def gate_readers(run: Path, names: tuple[str, ...] = ("numbers-reader", "notes-t
     The copy is cut item by item, as the gate and the owner's grader read a
     report: a fenced block holding one dropped item is removed whole; a block
     holding a list loses each dropped element and is written again with the
-    rest, or removed when none is left; a list with nothing dropped stays byte
-    for byte. A dropped item left in a list beside a kept one (ESE's notes
-    reader wrote its twenty-seven items in one list, and three dropped ones
-    stayed) is an item the analysts read and the owner fails. An item is matched
-    to its drop row as the gate wrote the row: by report and by the gate's own
+    rest, each as the reader wrote it, or removed when none is left; a list
+    with nothing dropped stays byte for byte. Before it is written the copy is
+    read again as the owner reads it -- every block JSON, the items that stood
+    and no other -- and a copy that does not read so stops the run. A dropped
+    item left in a list beside a kept one (ESE's notes reader wrote its
+    twenty-seven items in one list, and three dropped ones stayed) is an item
+    the analysts read and the owner fails. An item is matched to its drop row
+    as the gate wrote the row: by report and by the gate's own
     `quote_gate.item_id`, which is None for an id that is missing, blank or not
     a string; the gate drops every such item, and it leaves the copy with the
     rest. A fenced block that is not JSON holds items nobody can check: it is
@@ -881,14 +884,34 @@ def gate_readers(run: Path, names: tuple[str, ...] = ("numbers-reader", "notes-t
             removed += len(data) - len(remaining)
             if not remaining:
                 return ""
-            return ("```json\n" + json.dumps(remaining, indent=2, ensure_ascii=False)
-                    + "\n```\n")
+            # each element that stood as the reader wrote it, cut out of the block:
+            # written again by `json.dumps`, a kept item's own text could come back
+            # holding three backticks (written \u0060 in the report), which close
+            # the owner's fence early; the block as written holds none, since the
+            # fence ends at the first three
+            written = _array_elements(match.group(1))
+            if written is None or len(written) != len(data):
+                raise quote_gate.QuoteGateError(
+                    f"{writes}: a list block the gate cut does not read as the list it parsed")
+            return ("```json\n[\n" + ",\n".join(element for element, item in zip(written, data)
+                                                if not gone(item)) + "\n]\n```\n")
 
         gated = FENCED_BLOCK.sub(keep, text)
         unread = (f" and {unreadable} fenced block(s) that are not JSON" if unreadable else "")
         note = (f"<!-- the quote gate removed {removed} item(s){unread} from this copy; "
                 f"input_manifest.json lists each with its reason -->\n")
-        (run / writes).write_text(note + gated, encoding="utf-8")
+        copy = note + gated
+        # the copy read again as the owner reads the one the analysts are handed:
+        # every block JSON, and the items the reader wrote less those that fell
+        stood = [_canonical(item) for item in report_items(text) if not gone(item)]
+        read = [_canonical(item) for item in report_items(copy)]
+        broken = sum(1 for block in FENCED.findall(copy) if _parsed(block) is UNREADABLE)
+        if broken or read != stood:
+            raise quote_gate.QuoteGateError(
+                f"the copy of {writes} the analysts would be handed does not read as the "
+                f"items that stood: {broken} fenced block(s) that are not JSON, {len(read)} "
+                f"item(s) read against {len(stood)} that stood")
+        (run / writes).write_text(copy, encoding="utf-8")
     return result
 
 
@@ -908,6 +931,43 @@ def _parsed(block: str):
         return json.loads(block)
     except ValueError:
         return UNREADABLE
+
+
+# What JSON reads as space between its tokens (the `json` module's own set).
+JSON_SPACE = re.compile(r"[ \t\n\r]*")
+
+
+def _array_elements(block: str) -> list[str] | None:
+    """Each element of the JSON array a fenced block holds, as written in it, or
+    None when the block is not one array. Read with the decoder `json.loads`
+    uses, so each element reads back as the value the block parsed to."""
+    decoder = json.JSONDecoder()
+    at = JSON_SPACE.match(block).end()
+    if block[at:at + 1] != "[":
+        return None
+    at = JSON_SPACE.match(block, at + 1).end()
+    elements: list[str] = []
+    if block[at:at + 1] == "]":
+        return elements if JSON_SPACE.match(block, at + 1).end() == len(block) else None
+    while True:
+        try:
+            _, end = decoder.raw_decode(block, at)
+        except ValueError:
+            return None
+        elements.append(block[at:end])
+        at = JSON_SPACE.match(block, end).end()
+        if block[at:at + 1] == ",":
+            at = JSON_SPACE.match(block, at + 1).end()
+            continue
+        if block[at:at + 1] == "]" and JSON_SPACE.match(block, at + 1).end() == len(block):
+            return elements
+        return None
+
+
+def _canonical(item) -> str:
+    """An item as one string, so two readings of it compare equal even where the
+    item holds a NaN, which is never equal to itself."""
+    return json.dumps(item, sort_keys=True, ensure_ascii=False)
 
 
 def check_analysis(run: Path, name: str, kind: str) -> dict:
