@@ -1,0 +1,224 @@
+{
+ "run": "LFUS/0001628280-26-050481",
+ "rubric": "evals/capability/rubric.md",
+ "dealbreakers": [
+  {
+   "kind": "number_not_from_calculator",
+   "id": "narrative_signs_of_operating_pressure_industrial_margin_diluted_by_basler_amortization",
+   "where": "analysis_financial.json anomalies[5].what",
+   "why": "'even as segment sales rose by half' gives a segment growth figure in the analyst's own words. No calculator path holds segment sales, and the filer's figure appears only unquoted, at 0001628280-26-050481:mdna:62 and in the report_numbers industrial-margin item."
+  }
+ ],
+ "items": [
+  {
+   "id": "earnings_versus_cash_income_more_volatile_than_cash",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.smoothness shows income moving more than cash. Its net_income series turns negative only in the fiscal fourth quarters, and the cited Dortmund Fab and annual goodwill-impairment items account for those losses."
+  },
+  {
+   "id": "revenue_recognition_annual_days_sales_outstanding_at_five_year_high",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.years-back-0 days_sales_outstanding and receivables_over_revenue both read \"highest of the 5 filled years\", and quarters-back-0 days_sales_outstanding reads \"lowest of the 6 filled quarters\". This matches the cited annual and quarterly DSO report items."
+  },
+  {
+   "id": "cost_deferral_soft_asset_share_near_its_high",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The soft_asset_share positions match the calculator: \"third highest of the 6 filled quarters\" now and \"highest of the 6 filled quarters\" at quarters-back-1. The Basler purchase-accounting and goodwill items show acquired goodwill and intangibles arriving in the same window."
+  },
+  {
+   "id": "cost_deferral_covenant_ebitda_now_adds_back_restructuring",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The quote is verbatim at 0001628280-26-050382:8k_2_02:84. 8k_2_02:82 reports \"0.8x\" against the trigger at 8k_2_02:83 (\"exceeds 3.50:1.00\"), so 'definition, not compliance' holds."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_commitments_and_guarantees_untagged",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "high",
+   "why": "calculator.json does confirm the tags are missing. But 0001628280-26-050481:notes:196 (also mdna:118 and note_history:1) says \"the Company was not liable for guarantees of indebtedness owed by third parties\" and that it has no off-balance sheet arrangements. So 'the text carried does not mention any of them' is wrong. The cited debt-maturity and revolver items say nothing about commitments."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_share_based_compensation_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "terms.trailing_four_quarters.share_based_compensation is above each earnings_versus_cash.history.years value cited. The quality-adjusted formula subtracts share-based compensation, and notes:167 names \"excess tax benefits for share based compensation\"."
+  },
+  {
+   "id": "cross_document_reconciliation_passenger_vehicle_decline_attribution_differs",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "low",
+   "why": "Both quotes resolve (8k_2_02:27, mdna:55). But mdna:55 explains only the automotive-sensor piece, and the release's own table at 8k_2_02:75 already places the organic decline in auto sensor products. The inputs therefore narrow the 'market or choice' question more than the anomaly allows."
+  },
+  {
+   "id": "cross_document_reconciliation_pension_charge_timing_moved_between_filings",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The quote resolves in report_numbers.md. input_numbers.json holds 0001628280-26-031041:facts:PensionExpense:2026-06-28..2026-09-26 (forecast, subsequent event, minimum and maximum), while notes:156 now says \"first quarter of 2027\" and gives no reason for the change."
+  },
+  {
+   "id": "cross_document_reconciliation_record_bookings_only_in_release",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The quote is verbatim at 8k_2_02:16. No MD&A or notes paragraph carried in the input mentions bookings, and neither reader report lists a bookings or backlog fact."
+  },
+  {
+   "id": "industry_lens_distributor_and_china_concentration",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The concentration.facts indices map correctly: Arrow and China for the fiscal years named, non-US for the latest year. The geographic item shows China sales rising, and the quarterly bad-debt item's direction is \"down\"."
+  },
+  {
+   "id": "industry_lens_purchase_commitments_untagged",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "calculator.json says the record \"tags none of us-gaap:UnrecordedUnconditionalPurchaseObligationBalanceSheetAmount, us-gaap:PurchaseObligation in any period\". terms.balances_now.inventory exceeds terms.balances_a_year_earlier.inventory, and notes:85 names the site closures."
+  },
+  {
+   "id": "profitability_trailing_net_margin_negative_after_impairments",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.trailing_four_quarters.net_income and the net-margin, return-on-assets and return-on-equity paths are all negative. The goodwill, Dortmund Fab and covenant items (8k_2_02:82 \"Impairment charges\") tie the loss to the fiscal-year write-downs."
+  },
+  {
+   "id": "profitability_restructuring_and_site_closure_charges_rising",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The charge row at 8k_2_02:53 and the tagged restructuring item show the quarter far above the year-ago quarter. notes:85 gives the site-closure cause, and notes:150 says the assets were \"classified within Level 3 of the fair value hierarchy\". Both written paths exist."
+  },
+  {
+   "id": "profitability_sga_growing_faster_than_sales_on_incentive_and_acquired_costs",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:28 names the incentive and Basler drivers, and the tagged SG&A item rises faster than ratios.growth.revenue.year_over_year. The quarter's gross_margin path reads \"highest of the 6 filled quarters\"."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_transportation_profit_falling_on_commercial_vehicle_costs",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:61 shows Transportation operating income falling on slightly higher sales. mdna:58 and 8k_2_02:28 give the commercial-vehicle cause, and notes:85 names the reorganization."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_passenger_car_and_automotive_sensor_volume_decline",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The release (8k_2_02:27) and MD&A (mdna:55, mdna:77) are paraphrased accurately. The auto-sensor sales fact falls year over year, and the report item records Automotive Sensors goodwill remaining after an earlier impairment."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_industrial_margin_diluted_by_basler_amortization",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The content matches mdna:65 and notes:35, but the item scores zero because of the number_not_from_calculator dealbreaker listed above ('segment sales rose by half')."
+  },
+  {
+   "id": "efficiency_receivables_building_and_absorbing_operating_cash",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.working_capital.receivables.balance_sheet_change is positive, and 8k_2_02:57 shows a larger receivables outflow. The DSO paths read \"highest of the 5 filled years\" and \"lowest of the 6 filled quarters\"."
+  },
+  {
+   "id": "efficiency_inventory_build_absorbing_operating_cash",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:57 shows the inventory line switching from releasing cash to using it. The balance and cash-flow paths match, and quarters-back-0 days_sales_of_inventory reads \"lowest of the 6 filled quarters\". Small overreach: the calculator does not rank the trailing-window figure."
+  },
+  {
+   "id": "efficiency_cash_conversion_cycle_supported_by_payables_growth",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The cycle and payables paths exist, and 8k_2_02:57 shows payables supplying cash where they used it a year earlier. mdna:110 credits \"higher cash earnings\" and does not name working capital."
+  },
+  {
+   "id": "liquidity_and_capital_debt_maturing_inside_a_year_rose_sharply",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "ratios.solvency.total_debt.parts.debt_current exceeds terms.debt_a_year_earlier.parts.debt_current, and the maturity and revolver items match. However, current debt is only part of the rise in current liabilities, which the text puts down to it alone."
+  },
+  {
+   "id": "liquidity_and_capital_quality_adjusted_free_cash_flow_thin_after_acquisition_and_dividends",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "In calculator_filings_only.json, the file the memo renders this frame from, free_cash_flow.free_cash_flow_quality_adjusted equals simple free cash flow less share-based compensation and acquisitions, as written. The cash paths and the dividend items (mdna:105, 8k_2_02:33) match."
+  },
+  {
+   "id": "solvency_interest_coverage_depressed_by_trailing_charges",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.solvency.interest_coverage is ebit over terms.trailing_four_quarters.interest_expense. The credit-facility item shows interest expense lower year to date, notes:132 expects swap gains, and ratios.solvency.debt_over_ebitda is missing for the reason given."
+  },
+  {
+   "id": "solvency_goodwill_heavy_assets_with_thin_headroom_in_one_unit",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The soft-asset, liabilities_over_assets and equity_multiplier paths exist. The headroom item puts Industrial Controls at the bottom of the reporting-unit range at the test date, and the goodwill roll-forward shows the Basler adjustment."
+  },
+  {
+   "id": "growth_trailing_four_quarter_operating_and_net_income_down_on_impairment_window",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "Both trailing growth paths are negative, while the year-over-year paths and ratios.growth.operating_cash_flow.trailing_four_quarters are positive. The smoothness net_income series puts the latest fiscal fourth-quarter loss in the current window only."
+  },
+  {
+   "id": "growth_three_year_revenue_compound_negative_and_part_of_current_growth_acquired",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.history.revenue_growth_three_year_compound is negative, and the history years show the declines and recovery described. 8k_2_02:73 and the pro forma item support the Basler share. Minor flaw: 'not separable in the file' understates the release's own organic split."
+  },
+  {
+   "id": "results_against_expectations_beat_partly_carried_by_items_below_operating_income",
+   "frame": "finance",
+   "verdict": "unclear",
+   "severity": "medium",
+   "why": "The foreign-exchange swing (8k_2_02:53) and the lower tax rate (notes:167) are real. But the cited Polytronics item itself reads \"Other non-operating income is 2919000 in the quarter against 4452000.\", so the gain did not widen the gap, and notes:167 never calls the tax items discrete."
+  }
+ ],
+ "coverage": {
+  "answer": "no",
+  "why": "Every accounting area, industry_lens included, holds only a gate drop. In the financial analysis the liquidity, solvency and dupont readings were dropped; only profitability, efficiency, growth, free_cash_flow and path_to_distress were answered."
+ },
+ "calibration": {
+  "answer": "no",
+  "why": "No accounting area has a surviving verdict to compare with the anomalies filed under it. The liquidity and solvency sections have anomalies but no reading, and summary_ko for controls_audit_and_filing_signals describes findings whose anomalies were dropped."
+ },
+ "valuation_reading": {
+  "answer": "no",
+  "why": "value_range, price_position and market_implied_growth were dropped and most_sensitive is empty. calculator.json valuation.reverse_dcf and valuation.sensitivity both read \"no base scenario\", and the summary infers the sensitive drivers from the inputs rather than reading them from the calculator."
+ },
+ "score": 0.867,
+ "grader": {
+  "model_requested": "opus",
+  "model_served": "claude-opus-5-5",
+  "input_tokens": 58,
+  "output_tokens": 65178,
+  "cost_usd": 7.078608200000001,
+  "seconds": 582.4
+ }
+}

@@ -1,0 +1,486 @@
+{
+ "run": "CARR/analysis-grader-hu14rg76",
+ "rubric": "evals/capability/rubric.md",
+ "dealbreakers": [
+  {
+   "kind": "number_not_from_calculator",
+   "id": "revenue_recognition_related_party_receivables_outrun_related_party_revenue",
+   "where": "anomalies[6].name",
+   "why": "'nearly double' is a ratio the analyst worked out from notes:123; no calculator path supplies related-party receivables."
+  },
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "revenue_recognition_americas_commercial_decline_percent_differs_between_documents",
+   "where": "anomalies[9].what",
+   "why": "The release footnote 8k_2_02:32 ('1 Excludes NORESCO') explains why its percentage differs from mdna:93, which covers the whole commercial business; the analyst cites the exclusion yet leaves the difference unresolved."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": "estimates_and_reserves_swiss_valuation_allowance_release_inside_adjusted_earnings",
+   "where": "anomalies[15].what",
+   "why": "'a rate under half the prior year's' is the analyst's own arithmetic on the six-month tax rates; no calculator path supplies it."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": "cost_deferral_restructuring_recurs_every_period",
+   "where": "anomalies[21].what",
+   "why": "'roughly doubling' compares six-month restructuring charges that no calculator path supplies."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": "controls_audit_and_filing_signals_related_party_growth",
+   "where": "anomalies[34].what",
+   "why": "'nearly doubled' is a ratio the analyst worked out from notes:123; no calculator path supplies it."
+  }
+ ],
+ "items": [
+  {
+   "id": "earnings_versus_cash_receivables_articulation_gap",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "medium",
+   "why": "The gap matches earnings_versus_cash.working_capital.receivables.articulation_gap.value, but the cited disposal-group item (notes:105, 'Accounts receivable, net' in assets held for sale) sizes much of the bridge the anomaly calls unquantified."
+  },
+  {
+   "id": "earnings_versus_cash_inventory_articulation_gap",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "medium",
+   "why": "The gap matches earnings_versus_cash.working_capital.inventory.articulation_gap.value; notes:105 lists 'Inventories, net' inside assets held for sale, so most of the bridge called unquantified is in the cited evidence."
+  },
+  {
+   "id": "earnings_versus_cash_operating_cash_improvement_from_payables_accruals_and_other",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:93 shows the payables/accruals and 'Other operating activities, net' lines lifting continuing operating cash while ratios.growth.operating_income.year_over_year.value is negative; six-month equity-method distributions fell, so naming them as a six-month source overreaches."
+  },
+  {
+   "id": "earnings_versus_cash_weak_first_quarter_then_cash_surge",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "low",
+   "why": "trend_table.quarters-back-1.ratios.accruals_over_total_assets is 'highest of the 2 filled quarters', and the numbers reader calls that 'insufficient for a trend claim', so the 'peak' rests on two points."
+  },
+  {
+   "id": "earnings_versus_cash_total_operating_cash_falls_while_continuing_rises",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:93 shows total operating cash below and continuing above the prior six months; the difference is the discontinued line that 8k_2_02:119 starts from."
+  },
+  {
+   "id": "earnings_versus_cash_deferred_tax_benefit_non_cash_income",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The 'Deferred income tax provision' line in 8k_2_02:93 is a larger benefit than a year earlier, and notes:95 names the Swiss valuation-allowance release."
+  },
+  {
+   "id": "revenue_recognition_related_party_receivables_outrun_related_party_revenue",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:121 and notes:123 support flat six-month sales to equity investees against higher receivables, but it scores zero because 'nearly double' is not a calculator figure."
+  },
+  {
+   "id": "revenue_recognition_contract_liabilities_at_record_share_of_revenue",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "trend_table.years-back-0.ratios.contract_liabilities_over_revenue is 'highest of the 5 filled years' and quarters-back-0 is 'second highest of the 7 filled quarters'."
+  },
+  {
+   "id": "revenue_recognition_annual_days_sales_outstanding_drifting_up",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "trend_table years-back-2, years-back-1 and years-back-0 days_sales_outstanding rise in order, and quarters-back-0 is 'second lowest of the 7 filled quarters'."
+  },
+  {
+   "id": "revenue_recognition_americas_commercial_decline_percent_differs_between_documents",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "low",
+   "why": "It scores zero: 8k_2_02:32 shows the release measures commercial excluding NORESCO and mdna:93 does not, so the percentages measure different things."
+  },
+  {
+   "id": "revenue_recognition_americas_growth_driver_price_versus_volume",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:27 says 'revenue growth mainly related to price' while mdna:93 says growth 'was driven by volume growth within certain end-markets'; no input splits the two."
+  },
+  {
+   "id": "revenue_recognition_delivery_timing_claim_untested",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:93 and 8k_2_02:26 blame delivery timing; terms.balances_now.contract_liabilities.value is up from year-end per notes:81, and nothing in the record reaches the next quarter."
+  },
+  {
+   "id": "estimates_and_reserves_bad_debt_allowance_ratio_at_five_year_low",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.years-back-0.ratios.bad_debt_reserve_ratio is 'lowest of the 5 filled years' because the allowance fell; but input_trends.json shows year-end receivables roughly flat, not rising as the anomaly says."
+  },
+  {
+   "id": "estimates_and_reserves_inventory_reserve_falls_while_inventory_rises",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:14 gives the lower reserve and notes:13 the higher inventory; trend_table.quarters-back-0.ratios.inventory_reserve_ratio is below quarters-back-1, and the note gives no cause."
+  },
+  {
+   "id": "estimates_and_reserves_warranty_preexisting_estimate_released",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The tagged pre-existing-estimate fact (the 'Other (1)' row of notes:65) changes sign while mdna:138 cites 'higher warranty-related expenses'; terms.balances_now.warranty_accrual.value exceeds the year-earlier path."
+  },
+  {
+   "id": "estimates_and_reserves_swiss_valuation_allowance_release_inside_adjusted_earnings",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "notes:95, 8k_2_02:111 and 8k_2_02:116 show the discrete benefits staying in adjusted results, but it scores zero because 'a rate under half the prior year's' is not a calculator figure."
+  },
+  {
+   "id": "estimates_and_reserves_riello_impairment_with_unchanged_expected_proceeds",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:102 carries both the impairment and the unchanged 'expected gross proceeds of approximately $430 million', with no reason beyond the measurement basis."
+  },
+  {
+   "id": "estimates_and_reserves_restructuring_reserve_other_adjustment_unexplained",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "medium",
+   "why": "notes:92 labels the line 'Utilization, foreign exchange and other', so the larger outflow is mostly reserve usage after larger charges, not an unexplained translation adjustment."
+  },
+  {
+   "id": "estimates_and_reserves_europe_legal_reserve_release_unquantified",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:138 says 'Amounts reported in other represent the benefit of a legal reserve no longer required' with no amount, and the three-month bridge in mdna:102 has no Other row."
+  },
+  {
+   "id": "estimates_and_reserves_effective_tax_rate_swings_between_quarters",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "Reader item estimates_and_discretion_negative_interim_tax_rate gives the negative first-quarter rate, notes:94 the quarter's drivers and notes:95 the six-month fall; nothing says whether the German effect recurs."
+  },
+  {
+   "id": "estimates_and_reserves_goodwill_moves_only_on_currency_with_no_test_disclosed",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:17 shows goodwill moving mainly on 'Foreign currency translation' with no impairment row, and the 10-Q gives no impairment-test assumptions."
+  },
+  {
+   "id": "cost_deferral_restructuring_recurs_every_period",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:89 and the reader items show restructuring in every period and moving into cost of sales, but it scores zero for 'roughly doubling'; also, the scare-quoted 'Non-recurring' appears in no input file."
+  },
+  {
+   "id": "cost_deferral_non_gaap_gap_widens",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:111 and 8k_2_02:116 show adjusted earnings above GAAP in both years, with a wider quarterly gap this year; the trend-table non_gaap_gap is missing, as the anomaly says."
+  },
+  {
+   "id": "cost_deferral_new_factory_costs_only_in_release",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:12 is the only mention of 'new U.S. factory costs'; terms.trailing_four_quarters.capital_expenditure.value exceeds terms.trailing_four_quarters_a_year_earlier.capital_expenditure.value."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_free_cash_flow_starts_from_total_including_discontinued",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "8k_2_02:78 defines free cash flow from 'continuing operating activities', while 8k_2_02:44 and 8k_2_02:119 start from the total line that 8k_2_02:93 shows includes discontinued cash."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_payables_and_accrued_liabilities_supply_operating_cash",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The payables/accruals line in 8k_2_02:93 and the 8k_2_02:88 balances support it; earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change.value confirms the year-over-year balance is flat."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_other_operating_activities_swing",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "'Other operating activities, net' in 8k_2_02:93 swings to an inflow in both the quarter and the six months, and no MD&A paragraph explains it."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_equity_method_distributions_exceed_prior_pattern",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:93 shows quarterly distributions far above the prior-year quarter and six-month distributions below it, against lower equity earnings in notes:115."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_short_term_borrowings_fund_buybacks",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:179 says outflows were 'partially offset by short-term borrowings of $361 million'; terms.cash_flow_families.borrowing_short_term_net.cash_effect, terms.trailing_four_quarters.share_repurchases.value and ratios.solvency.net_debt.value all resolve."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_factoring_and_supplier_finance_not_in_record",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "calculator.json and calculator_filings_only.json both mark proceeds_from_sale_of_receivables and supplier_finance_obligation as missing, and no notes paragraph covers either."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_purchase_obligations_guarantees_and_leases_not_stated",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "low",
+   "why": "The purchase-obligation and guarantee fields are missing in the calculator, but 8k_2_02:88 prints 'Operating lease liabilities' at the quarter end, and the cited long-term-debt item does not address leases."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_afff_cash_commitment_and_unrecorded_recoveries",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:140 states '$615 million in cash over five years' and that no expected insurance proceeds are recorded; notes:141 and note_history:3 support the rest."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_held_for_sale_debt_rows_unexplained",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:105 shows debt rows at the quarter end against a dash at year-end, and no prose names the group; the fall in 'Other debt (including project financing obligations and finance leases)' in note_history:14 hints at the type but does not state it."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_noncontrolling_interest_dividends_jump",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "'Dividends paid to non-controlling interest' in 8k_2_02:93 jumps, almost all of it in the quarter, and no paragraph explains it."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_related_party_growth",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:121 and notes:123 support rising related-party sales and receivables, but it scores zero because 'nearly doubled' is not a calculator figure."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_noresco_absent_from_mdna_text",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "Noresco appears in notes:103 and 8k_2_02:49, while the MD&A paragraphs in the record (mdna:13, mdna:167) discuss only Riello."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_guidance_headwind_restated",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:48 shows the Riello headwind lowered from the prior-guidance column and a NORESCO headwind added."
+  },
+  {
+   "id": "cross_document_reconciliation_headline_figures_agree",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The numbers reader's comparison of 8k_2_02:84 and 8k_2_02:88 with the filed facts finds no disagreement, and ratios.growth.revenue.this_quarter.value matches."
+  },
+  {
+   "id": "cross_document_reconciliation_riello_impairment_segment_attribution",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "low",
+   "why": "8k_2_02:77 defines segment operating profit to exclude 'other significant items of a nonoperational nature', and notes:89 assigns excluded restructuring to segments the same way, so mdna:34 does not contradict the reconciliations."
+  },
+  {
+   "id": "cross_document_reconciliation_repurchase_amount_differs_between_note_and_cash_flow",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:70 gives 'an aggregate purchase price of $748 million' while mdna:179 gives 'repurchases of our common stock totaling $745 million'; no text explains the gap."
+  },
+  {
+   "id": "cross_document_reconciliation_tax_specific_adjustment_line_dropped",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:116 carries 'Tax specific adjustments' but 8k_2_02:111 has only 'Tax effect on adjustments above', consistent with the discrete benefits in notes:95 staying in adjusted results."
+  },
+  {
+   "id": "cross_document_reconciliation_europe_price_cost_favorable_versus_promotions",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:31 says 'favorable price / cost' while mdna:100 and mdna:103 cite promotions; the anomaly itself notes that the definition in 8k_2_02:79 may reconcile the two."
+  },
+  {
+   "id": "cross_document_reconciliation_americas_demand_improved_versus_reduced",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:54 credits 'improved end-market demand' in the Americas while mdna:127 cites 'reduced end-market demand', and mdna:93 gives the commercial decline a timing cause."
+  },
+  {
+   "id": "cross_document_reconciliation_land_sale_gain_and_middle_east_conflict_named_in_one_document_only",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:110 and mdna:145 put 'a gain on sale of land' inside segment profit, which 8k_2_02:37 omits; only the release names the Middle East conflict."
+  },
+  {
+   "id": "industry_lens_inventory_build_with_falling_reserve",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.balances_now.inventory.value is up from year-end (notes:13) while terms.balances_now.inventory_reserve.value fell (notes:14); the quarters-back-0 ratio sits above quarters-back-4, as stated."
+  },
+  {
+   "id": "industry_lens_joint_venture_customers_are_also_investees",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:120 says the company sells to its equity-method investees, which are related parties; notes:2 says those transactions are not eliminated; notes:123 shows the receivable build."
+  },
+  {
+   "id": "industry_lens_no_customer_concentration_facts_filed",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "concentration.facts is empty in calculator.json, and notes:85 discusses only country significance, not customer share."
+  },
+  {
+   "id": "industry_lens_purchase_commitments_not_in_record",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "terms.balances_now.unconditional_purchase_obligations is missing in both calculator files, and no notes paragraph discusses commitments."
+  },
+  {
+   "id": "industry_lens_project_financing_vendor_finance_being_divested",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "medium",
+   "why": "notes:33 does not tie project financing to Noresco and notes:103 says nothing of debt; the link to the held-for-sale debt rows in notes:105 is inferred, not shown by the cited items."
+  },
+  {
+   "id": "results_against_expectations_earnings_per_share_and_net_income_down_year_over_year",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:13 claims 'better than expected' with no expectation figure in the inputs; ratios.growth.net_income.year_over_year and ratios.growth.operating_income.year_over_year are negative, and 8k_2_02:22 shows both EPS measures lower."
+  },
+  {
+   "id": "results_against_expectations_free_cash_flow_guidance_held_while_profit_guidance_raised",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:48 shows 'Free Cash Flow* | ~$2 billion | ~$2 billion' while the other guidance lines rose; but ratios.growth.operating_cash_flow.year_over_year is the quarter's total, not 'the first half's' gain."
+  },
+  {
+   "id": "liquidity_and_capital_current_and_quick_ratios_thin",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.liquidity.current_ratio and ratios.liquidity.quick_ratio resolve, terms.balances_now.current_liabilities exceeds the year-earlier path, and mdna:156 says 'approximately 95% was held by our foreign subsidiaries'."
+  },
+  {
+   "id": "liquidity_and_capital_debt_due_within_a_year_jumped_on_commercial_paper",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.debt_now.parts.debt_current against terms.debt_a_year_earlier.parts.debt_current and notes:26 support it, though notes:24 shows the reclassified 'Current portion of long-term debt' drove more of the rise than commercial paper did."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_margins_squeezed_by_input_costs_tariffs_and_mix",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "Both quotes are verbatim (mdna:27, 8k_2_02:27); ratios.profitability.operating_margin is below earnings_versus_cash.history.years.0.operating_margin, and mdna:8 records no tariff-refund benefit."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_all_four_segments_report_lower_profit",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:97 shows every segment's profit lower in both the quarter and the six months, notes:115 shows segment SG&A higher, and the ratios.growth.operating_income paths resolve."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_china_truck_trailer_and_joint_venture_weakness",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The mdna:107 quote is verbatim, mdna:114 and mdna:33 support the rest, and 8k_2_02:93 shows six-month distributions lower."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_divestiture_impairment_and_revenue_headwinds",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:102, notes:103, notes:105 and 8k_2_02:48 support each clause, and ratios.growth.revenue.trailing_four_quarters resolves."
+  },
+  {
+   "id": "profitability_gross_margin_falling_but_not_computable",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "ratios.profitability.gross_margin is missing for want of a cost-of-revenue row; trend_table years-back-1 gross_margin is below years-back-2, and mdna:26 and mdna:57 report further declines."
+  },
+  {
+   "id": "efficiency_low_asset_turnover_on_a_goodwill_heavy_balance_sheet",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.efficiency.asset_turnover resolves; trend_table.quarters-back-0.ratios.soft_asset_share is 'highest of the 7 filled quarters' and years-back-0 is 'highest of the 5 filled years'."
+  },
+  {
+   "id": "growth_trailing_revenue_shrinking_while_the_quarter_returned_to_growth",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The ratios.growth.revenue and history revenue_growth paths resolve, and 8k_2_02:27, mdna:93 and 8k_2_02:78 support the narrative, though 8k_2_02:14 calls only backlog, not orders, a record."
+  },
+  {
+   "id": "growth_profit_falling_on_every_year_over_year_measure",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "All growth paths resolve; earnings_versus_cash.history.years.1.net_income far exceeds years.1.operating_income, and the first-quarter restructuring and the CCR gain that did not recur are in the reader items."
+  }
+ ],
+ "coverage": {
+  "answer": "no",
+  "why": "The gate dropped earnings_versus_cash, revenue_recognition, estimates_and_reserves, cost_deferral, controls_audit_and_filing_signals and industry_lens, and in the financial frame every section except free_cash_flow, plus dupont and path_to_distress."
+ },
+ "calibration": {
+  "answer": "yes",
+  "why": "The surviving verdicts track their anomalies: 'questionable' rests on the free-cash-flow contradiction, payables and factoring items, and cross-document 'agree on the numbers' rests on the headline-agree and contradicts items; the dropped areas carry no verdict to test."
+ },
+ "valuation_reading": {
+  "answer": "no",
+  "why": "price_position was dropped by the gate, so only summary_ko says where valuation.price_at_cutoff sits; growth rests on valuation.reverse_dcf.value and WACC on valuation.sensitivity.grid, but year-ten margin is ranked by comparing scenarios, not by a calculator sensitivity."
+ },
+ "score": 0.827,
+ "grader": {
+  "model_requested": "opus",
+  "model_served": "claude-opus-5-5",
+  "input_tokens": 50,
+  "output_tokens": 89910,
+  "cost_usd": 7.760226799999999,
+  "seconds": 782.9
+ }
+}
