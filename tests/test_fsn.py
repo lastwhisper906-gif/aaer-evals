@@ -463,3 +463,117 @@ def test_a_download_is_hashed_as_it_arrives(tmp_path, monkeypatch):
     assert fsn.download("https://x/z.zip", tmp_path / "z.zip", "ua") == (
         hashlib.sha256(b"payload").hexdigest(), 7)
     assert (tmp_path / "z.zip").read_bytes() == b"payload"
+
+
+def test_size_of_is_the_length_a_head_request_promises_or_none(monkeypatch):
+    asked = []
+
+    def answer(response):
+        def urlopen(request, timeout):
+            asked.append(request.get_method())
+            if isinstance(response, Exception):
+                raise response
+            return response
+        return urlopen
+    monkeypatch.setattr(fsn.urllib.request, "urlopen", answer(Response(b"", 59_459_810)))
+    assert fsn.size_of("https://x/2011q2_notes.zip", "ua") == 59_459_810
+    monkeypatch.setattr(fsn.urllib.request, "urlopen", answer(Response(b"", None)))
+    assert fsn.size_of("https://x/2011q2_notes.zip", "ua") is None
+    monkeypatch.setattr(fsn.urllib.request, "urlopen",
+                        answer(fsn.urllib.error.URLError("refused")))
+    assert fsn.size_of("https://x/2011q2_notes.zip", "ua") is None
+    assert asked == ["HEAD", "HEAD", "HEAD"]
+
+
+# -- taking one zip in -------------------------------------------------------------
+
+ENTRY = {"period": "2011q2", "name": "2011q2_notes.zip",
+         "url": "https://www.sec.gov/files/dera/data/financial-statement-notes-data-sets/"
+                "2011q2_notes.zip"}
+
+
+def serving(source):
+    """A `download` that hands over the planted zip, hashed as `hashlib` hashes it."""
+    def download(url, dest, user_agent):
+        assert url == ENTRY["url"]
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_bytes(source.read_bytes())
+        return hashlib.sha256(source.read_bytes()).hexdigest(), source.stat().st_size
+    return download
+
+
+def test_take_in_asks_the_floor_before_it_downloads(tmp_path, monkeypatch):
+    # 2011q2 is 59,459,810 bytes; 10 GB free leaves less than the 10 GB floor.
+    monkeypatch.setattr(fsn, "download", lambda *a, **k: pytest.fail("downloaded anyway"))
+    with pytest.raises(fsn.FloorReached, match="under the 10 GB floor"):
+        fsn.take_in(dict(ENTRY, bytes=59_459_810), work=tmp_path / "work", user_agent="ua",
+                    index_dir=tmp_path / "index", free=lambda _: 10 * 10**9)
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_take_in_does_not_download_a_zip_whose_size_is_not_stated(tmp_path, monkeypatch):
+    monkeypatch.setattr(fsn, "size_of", lambda url, user_agent: None)
+    monkeypatch.setattr(fsn, "download", lambda *a, **k: pytest.fail("downloaded anyway"))
+    with pytest.raises(fsn.FloorReached, match="stated no size"):
+        fsn.take_in(ENTRY, work=tmp_path / "work", user_agent="ua",
+                    index_dir=tmp_path / "index", free=lambda _: 10**13)
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_take_in_indexes_the_zip_hands_it_to_the_scan_and_deletes_it(tmp_path, monkeypatch):
+    source = planted_zip(tmp_path / "served.zip")
+    monkeypatch.setattr(fsn, "size_of", lambda url, user_agent: source.stat().st_size)
+    monkeypatch.setattr(fsn, "download", serving(source))
+    seen = []
+
+    def scan(path, line):
+        seen.append((path.is_file(), line["period"]))
+        return {"going_concern_filings": 0}
+    work, index = tmp_path / "work", tmp_path / "index"
+    line = fsn.take_in(ENTRY, work=work, user_agent="ua", index_dir=index, scan=scan,
+                       free=lambda _: 10**13)
+    assert (line["bytes"], line["sha256"]) == (
+        source.stat().st_size, hashlib.sha256(source.read_bytes()).hexdigest())
+    # The planted tables' rows, header excluded, counted off `members` above.
+    assert line["rows"] == {"sub": 2, "num": 4, "pre": 1, "tag": 1, "txt": 1, "dim": 1,
+                            "ren": 1}
+    assert [value["accession"] for value in line["candidates"]] == [EXTRA_SPACE, CELGENE]
+    assert seen == [(True, "2011q2")] and line["scanned"] == {"going_concern_filings": 0}
+    assert fsn.read_index(index) == [line]
+    assert list(work.iterdir()) == []
+
+
+class Listing:
+    """The fetcher `main` builds, serving the SEC's page with one zip linked."""
+
+    def __init__(self, user_agent):
+        self.user_agent = user_agent
+
+    def get(self, url):
+        assert url == fsn.PAGE_URL
+        return ('<a href="/files/dera/data/financial-statement-notes-data-sets/'
+                '2011q2_notes.zip">2011 Q2</a>').encode()
+
+
+def test_main_index_takes_in_what_the_index_lacks_and_then_nothing(tmp_path, monkeypatch,
+                                                                   capsys):
+    source = planted_zip(tmp_path / "served.zip")
+    monkeypatch.setattr(fsn.fetch_fixtures, "Fetcher", Listing)
+    monkeypatch.setattr(fsn, "size_of", lambda url, user_agent: source.stat().st_size)
+    monkeypatch.setattr(fsn, "download", serving(source))
+    monkeypatch.setattr(fsn, "free_bytes", lambda _: 10**13)
+    arguments = ["index", "--root", str(tmp_path / "data"), "--index-dir",
+                 str(tmp_path / "index"), "--no-calendar"]
+    assert fsn.main(arguments) == 0
+    assert json.loads(capsys.readouterr().out) == {"indexed": ["2011q2"]}
+    assert [line["period"] for line in fsn.read_index(tmp_path / "index")] == ["2011q2"]
+    assert list((tmp_path / "data" / "tmp" / "fsn").iterdir()) == []
+    monkeypatch.setattr(fsn, "download", lambda *a, **k: pytest.fail("downloaded again"))
+    assert fsn.main(arguments) == 0
+    assert json.loads(capsys.readouterr().out) == {"indexed": []}
+
+
+def test_main_list_prints_each_period_and_its_address(monkeypatch, capsys):
+    monkeypatch.setattr(fsn.fetch_fixtures, "Fetcher", Listing)
+    assert fsn.main(["list"]) == 0
+    assert capsys.readouterr().out == f"2011q2 {ENTRY['url']}\n"

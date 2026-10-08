@@ -345,9 +345,14 @@ def take_in(entry: dict, *, work: Path, user_agent: str, index_dir: Path = INDEX
 
     `scan(zip_path, line)` is the calendar's reader; its return value goes on the
     line under `scanned`. With `keep`, the zip is moved there instead of deleted,
-    under the retained floor.
+    under the retained floor. A zip whose size the server does not state is not
+    downloaded: the floor below it could not be checked.
     """
-    expected = entry.get("bytes") or size_of(entry["url"], user_agent) or 0
+    expected = entry.get("bytes") or size_of(entry["url"], user_agent)
+    if expected is None:
+        raise FloorReached(f"{entry['url']}: the server stated no size, so the "
+                           f"{TRANSIENT_FLOOR_BYTES / 1e9:.0f} GB floor below it cannot be "
+                           "checked; nothing was written")
     room_for(work, expected, TRANSIENT_FLOOR_BYTES, free=free)
     path = work / entry["name"]
     try:
