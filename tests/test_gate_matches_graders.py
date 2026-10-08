@@ -291,10 +291,11 @@ def test_a_quote_on_a_block_or_on_the_analysis_itself_is_held_and_the_block_stay
     ([{"overall_rank": "first"}], coverage.check_no_combined_score, "overall_rank")])
 def test_a_dropped_items_key_below_the_top_is_the_analyst_s_words(tmp_path, nested, grader,
                                                                   owner_says):
-    """Only the top-level `dropped_items` is the gate's own record, and the owner
-    leaves only that one out of forbidden_words, cited_numbers_exist and
-    no_combined_score: one an analyst writes inside an item is read like any
-    other key. The gate used to pass over it at every depth."""
+    """Only the top-level `dropped_items` is the gate's own record. The owner's
+    forbidden_words and cited_numbers_exist leave only that one out, and
+    no_combined_score leaves out none, the top one included, which the gate
+    writes over with its own rows: one an analyst writes inside an item is read
+    like any other key. The gate used to pass over it at every depth."""
     run = _run(tmp_path)
     payload = accounting()
     payload["anomalies"][0]["dropped_items"] = nested

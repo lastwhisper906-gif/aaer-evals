@@ -743,10 +743,12 @@ def owner_problems(payload: dict, *, kind: str, fields: dict, sources: dict[str,
                 here = path + (key,)
                 # a `dropped_items` below the top is the analyst's, not the gate's,
                 # and the owner reads it as its graders do: its words, its
-                # placeholders and its keys like any other (forbidden_words,
-                # cited_numbers_exist and no_combined_score leave out only the top
-                # one), its quotes and its citations not at all (`quoted` and
-                # cited_items_exist pass over one at any depth)
+                # placeholders and its keys like any other (forbidden_words and
+                # cited_numbers_exist leave out only the top one, and
+                # no_combined_score none, the top one being the gate's own rows,
+                # written over what the analyst put there), its quotes and its
+                # citations not at all (`quoted` and cited_items_exist pass over
+                # one at any depth)
                 inner = cited and key != "dropped_items"
                 key_rules(key, value, here, inner)
                 walk(value, here, inner)
