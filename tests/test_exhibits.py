@@ -136,6 +136,77 @@ def document(ticker: str, role: str) -> str:
 # name rather than a refusal. Every other company's current 10-K names one.
 NAMES_NO_SUBSIDIARY_EXHIBIT = ("WDC", "ANET")
 
+# Celestica's Exhibit 21, in both years, is a list with no table: one '<div>'
+# line per subsidiary, 'Name, a <jurisdiction> corporation'.
+# 10-K/0001030894-26-000011/exhibit2112025.htm (EX-21.1, document 3 of its
+# header) names five, from 'Celestica Cayman Holdings 1 Limited, a Cayman
+# Islands corporation' to 'Celestica Holdings Pte Limited, a Singapore
+# corporation'; 10-K/0001030894-25-000014/exhibit2112024.htm (EX-21.1, document
+# 10) names seven, the same five with '2480333 Ontario Inc., an Ontario, Canada
+# corporation' and 'Celestica International LP, an Ontario, Canada limited
+# partnership'. `src/exhibits.py` reads table rows only, so it reads none in
+# either year, and `input_exhibits.md` tells the reader '0 subsidiaries in this
+# 10-K against 0 in the prior' where the exhibits list five against seven, two
+# of them dropped; a test that plants a row finds no table to plant it in. The
+# lists themselves are the expected values below (LISTED_AS_LINES), and the
+# tests that read a list hold it to at least one subsidiary before they assert
+# anything of its members, so none of them passes on Celestica's two empty
+# ones. The second reader in this file reads table rows too, so the two readers
+# agree at none; a parser that learns lines needs that reader to learn them
+# as well before the second-way test can pass. Strict, so a reading rule for a
+# list written as lines turns these red and the marks come off.
+LIST_WITHOUT_A_TABLE = {
+    "CLS": "the exhibit lists 'Celestica LLC, a Delaware, U.S. limited liability "
+           "company' and its siblings one <div> line each, with no table; 5 read this "
+           "year and 7 the year before, none parsed",
+}
+
+# Celestica's two lists, each line as its exhibit prints it, in order, between
+# the heading 'Subsidiaries of the Registrant*' and the footnote '* Subsidiaries
+# that, in aggregate, would not be a “significant subsidiary” as defined in Rule
+# 1-02(w) of Regulation S-X, have been omitted.' -- the current 10-K's
+# exhibit2112025.htm and the prior year's exhibit2112024.htm.
+LISTED_AS_LINES = {
+    ("CLS", "exhibit_21"): (
+        "Celestica Cayman Holdings 1 Limited, a Cayman Islands corporation",
+        "Celestica LLC, a Delaware, U.S. limited liability company",
+        "Celestica (Thailand) Limited, a Thailand corporation",
+        "Celestica (USA) Inc., a Delaware, U.S. corporation",
+        "Celestica Holdings Pte Limited, a Singapore corporation",
+    ),
+    ("CLS", "prior_year_exhibit_21"): (
+        "Celestica Cayman Holdings 1 Limited, a Cayman Islands corporation",
+        "Celestica LLC, a Delaware, U.S. limited liability company",
+        "Celestica (Thailand) Limited, a Thailand corporation",
+        "Celestica (USA) Inc., a Delaware, U.S. corporation",
+        "2480333 Ontario Inc., an Ontario, Canada corporation",
+        "Celestica Holdings Pte Limited, a Singapore corporation",
+        "Celestica International LP, an Ontario, Canada limited partnership",
+    ),
+}
+
+
+def listed_without_a_table(ticker: str):
+    """One ticker case, carrying the strict mark where LIST_WITHOUT_A_TABLE names it."""
+    if ticker not in LIST_WITHOUT_A_TABLE:
+        return ticker
+    return pytest.param(ticker, marks=pytest.mark.xfail(
+        strict=True, reason=f"{ticker}: {LIST_WITHOUT_A_TABLE[ticker]}"))
+
+
+def list_case(ticker: str, role: str):
+    """One (ticker, role) case, carrying the strict mark for its company's defect:
+    HEADING_ROW_KEPT for the document it names, LIST_WITHOUT_A_TABLE for both of
+    a company's years."""
+    if (ticker, role) in HEADING_ROW_KEPT:
+        reason = HEADING_ROW_KEPT[(ticker, role)]
+    elif ticker in LIST_WITHOUT_A_TABLE:
+        reason = LIST_WITHOUT_A_TABLE[ticker]
+    else:
+        return pytest.param(ticker, role)
+    return pytest.param(ticker, role, marks=pytest.mark.xfail(
+        strict=True, reason=f"{ticker} {role}: {reason}"))
+
 
 @functools.lru_cache(maxsize=None)
 def no_subsidiary_exhibit(ticker: str) -> bool:
@@ -224,7 +295,7 @@ def test_the_stored_documents_came_from_the_urls_this_module_names(ticker):
             name=Path(exhibit["path"]).name)
 
 
-@pytest.mark.parametrize("ticker", TICKERS)
+@pytest.mark.parametrize("ticker", [listed_without_a_table(ticker) for ticker in TICKERS])
 def test_a_ten_k_that_names_no_exhibit_21_is_read_as_the_absence_by_name(ticker):
     """Both sides: where the header names no document of the EX-21 family the
     record holds none, the expected values are null, and the module names the
@@ -299,27 +370,42 @@ def test_both_types_are_in_the_fixture_set_so_the_rule_is_the_family():
     Franklin Electric, of the eight added on 2026-10-07, files the bare type
     too, as does Motorola Solutions of the next eight; Flex files `EX-21.01`,
     a third spelling of the family; the two that filed no exhibit at all
-    record no type."""
+    record no type.
+
+    Of the third eight, AMD files the bare type in both years ('<TYPE>EX-21
+    <SEQUENCE>5 <FILENAME>exh_21-10kfy25.htm' and '<TYPE>EX-21 <SEQUENCE>4
+    <FILENAME>ex21-10kfy2412_28.htm' in its two headers), and NAPCO a fourth
+    spelling, `EX-21.0`, in both ('<TYPE>EX-21.0 <SEQUENCE>3
+    <FILENAME>nssc-20260630xex21d0.htm' and '<TYPE>EX-21.0 <SEQUENCE>3
+    <FILENAME>nssc-20250630xex21d0.htm')."""
     recorded = {ticker: expected_values.value(ticker, "exhibits.10-K.exhibit_type")
                 for ticker in TICKERS if ticker not in NAMES_NO_SUBSIDIARY_EXHIBIT}
     assert sorted(t for t, kind in recorded.items() if kind == "EX-21") == \
-        ["CARR", "ESE", "FELE", "MSI", "QCOM"]
+        ["AMD", "CARR", "ESE", "FELE", "MSI", "QCOM"]
     assert sorted(t for t, kind in recorded.items() if kind == "EX-21.01") == ["FLEX"]
-    assert {kind for kind in recorded.values()} == {"EX-21", "EX-21.1", "EX-21.01"}
+    assert sorted(t for t, kind in recorded.items() if kind == "EX-21.0") == ["NSSC"]
+    assert {kind for kind in recorded.values()} == \
+        {"EX-21", "EX-21.1", "EX-21.01", "EX-21.0"}
 
 
 # --- what a filename rule does instead ----------------------------------------
 
 def test_two_of_the_twelve_name_the_exhibit_without_a_21_in_it():
-    """Generac's `ex_873991.htm` and NVIDIA's `subsidiariesofregistrantfy.htm`."""
+    """Generac's `ex_873991.htm` and NVIDIA's `subsidiariesofregistrantfy.htm`.
+
+    And, of the third eight, American Superconductor's: its header pairs
+    '<TYPE>EX-21.1 <SEQUENCE>2' with '<FILENAME>ex_919730.htm', and the prior
+    year's '<TYPE>EX-21.1 <SEQUENCE>3' with '<FILENAME>ex_774519.htm' -- serial
+    names from the same filer agent as Generac's, whose accessions both begin
+    0001437749."""
     blind = [ticker for ticker in TICKERS
              if ticker not in NAMES_NO_SUBSIDIARY_EXHIBIT
              and "21" not in expected_values.value(ticker,
                                                    "exhibits.10-K.exhibit_filename")]
-    assert blind == ["GNRC", "NVDA"]
+    assert blind == ["GNRC", "NVDA", "AMSC"]
 
 
-@pytest.mark.parametrize("ticker", ("GNRC", "NVDA"))
+@pytest.mark.parametrize("ticker", ("GNRC", "NVDA", "AMSC"))
 @pytest.mark.parametrize("role,key", [
     ("submission_header", "exhibits.10-K.exhibit_filename"),
     ("prior_year_submission_header", "exhibits.10-K.prior_year_exhibit_filename")])
@@ -344,13 +430,21 @@ def test_a_filename_rule_has_more_than_one_candidate_almost_everywhere():
                                 if "21" in entry.group("filename")]
                for ticker in TICKERS
                for role in ("submission_header", "prior_year_submission_header")}
-    # Two headers per company, over the twelve, the eight added on 2026-10-07
-    # and the next eight added the same day: 28 × 2. Every one of the eight's
-    # sixteen headers lists an `R21.htm` among its XML files, and so does every
-    # one of the next eight's sixteen, so none of them is alone either.
-    assert len(counted) == 56
+    # Two headers per company, over the twelve, the eight added on 2026-10-07,
+    # the next eight and the third eight added the same day: 36 × 2. Every one
+    # of the eight's sixteen headers lists an `R21.htm` among its XML files, and
+    # so does every one of the next eight's sixteen, so none of them is alone
+    # either. The third eight's sixteen list an `R21.htm` too, and fifteen of
+    # them a second name with 21 in it: the exhibit itself, an `EX-32.1` or an
+    # `EX-10.21` (NetApp's 'ntap-ex10_21.htm'), or American Superconductor's
+    # prior-year `EX-31.1` 'ex_774521.htm'. American Superconductor's current
+    # header, 0001437749-26-018542, is the sixteenth: its exhibit is
+    # 'ex_919730.htm' and its certifications carry serial names too, so
+    # 'R21.htm' is the one candidate, and not an exhibit at all.
+    assert len(counted) == 72
     alone = sorted(key for key, found in counted.items() if len(found) < 2)
-    assert alone == [("GNRC", "prior_year_submission_header"),
+    assert alone == [("AMSC", "submission_header"),
+                     ("GNRC", "prior_year_submission_header"),
                      ("GNRC", "submission_header")]
     for key in alone:
         assert not [kind for kind in counted[key] if kind.upper().startswith("EX-")]
@@ -412,31 +506,69 @@ HEADING_ROW_KEPT = {
 
 
 @pytest.mark.parametrize("ticker,role", [
-    pytest.param(ticker, role, marks=pytest.mark.xfail(
-        strict=True, reason=f"{ticker} {role}: {HEADING_ROW_KEPT[(ticker, role)]}"))
-    if (ticker, role) in HEADING_ROW_KEPT else pytest.param(ticker, role)
+    list_case(ticker, role)
     for ticker in TICKERS for role in ("exhibit_21", "prior_year_exhibit_21")])
 def test_the_subsidiary_list_read_a_second_way_is_the_same_list(ticker, role):
     """Both readers over both years: one list per document on record, and the
-    recorded absence where a 10-K filed none."""
+    recorded absence where a 10-K filed none. Two readers that both read
+    nothing agree about nothing, so the list has to hold a subsidiary first;
+    every exhibit on record lists at least one."""
     if role == "exhibit_21" and no_subsidiary_exhibit(ticker):
         assert built(ticker)["exhibit"]["subsidiaries"] is None
         return
     source = document(ticker, role)
     mine = [(flat(entry["name"]), flat(entry["jurisdiction"]))
             for entry in exhibits.subsidiaries(source)]
+    assert mine, f"{ticker} {role}: no subsidiary read"
     assert mine == recount(source)
 
 
-@pytest.mark.parametrize("ticker", TICKERS)
+@pytest.mark.parametrize("ticker", [listed_without_a_table(ticker) for ticker in TICKERS])
 def test_every_subsidiary_is_the_exhibits_own_text(ticker):
     if no_subsidiary_exhibit(ticker):
         assert built(ticker)["exhibit"]["absent"] == exhibits.NO_SUBSIDIARY_EXHIBIT
         return
     source = independent_text.Source(document(ticker, "exhibit_21"))
-    for entry in built(ticker)["exhibit"]["subsidiaries"]:
+    subsidiaries = built(ticker)["exhibit"]["subsidiaries"]
+    assert subsidiaries, f"{ticker}: no subsidiary read, so none was checked"
+    for entry in subsidiaries:
         assert source.contains(entry["name"]), entry
         assert source.contains(entry["jurisdiction"]), entry
+
+
+# The expected lists the parser is held to where no table holds them, read off
+# the two documents a second way first: the lines recorded in LISTED_AS_LINES
+# are the exhibit's own blocks, by this file's block reader, exactly the ones
+# between its heading and its footnote, and the exhibit holds no table, so the
+# table reader rightly has none to read.
+
+@pytest.mark.parametrize("ticker,role", sorted(LISTED_AS_LINES))
+def test_a_list_written_as_lines_is_the_exhibits_own_lines(ticker, role):
+    source = document(ticker, role)
+    assert "<table" not in source.lower(), f"{ticker} {role}: the exhibit holds a table"
+    blocks = [flat(block) for block in independent_text.block_paragraphs(source)
+              if flat(block)]
+    first = blocks.index("Subsidiaries of the Registrant*") + 1
+    last = next(index for index, block in enumerate(blocks)
+                if block.startswith("* Subsidiaries that"))
+    assert tuple(blocks[first:last]) == LISTED_AS_LINES[(ticker, role)]
+
+
+@pytest.mark.parametrize("ticker,role", [
+    pytest.param(ticker, role, marks=pytest.mark.xfail(
+        strict=True, reason=f"{ticker} {role}: {LIST_WITHOUT_A_TABLE[ticker]}"))
+    if ticker in LIST_WITHOUT_A_TABLE else pytest.param(ticker, role)
+    for ticker, role in sorted(LISTED_AS_LINES)])
+def test_a_list_written_as_lines_is_read_as_its_lines(ticker, role):
+    """One subsidiary per recorded line: as many entries as lines, each named by
+    its line's opening words up to ', a' or ', an', and placed in a
+    jurisdiction its line names."""
+    lines = LISTED_AS_LINES[(ticker, role)]
+    found = exhibits.subsidiaries(document(ticker, role))
+    assert len(found) == len(lines), f"{ticker} {role}: {len(found)} read"
+    for entry, line in zip(found, lines):
+        assert line.startswith(entry["name"] + ", a"), (entry, line)
+        assert entry["jurisdiction"] and entry["jurisdiction"] in line, (entry, line)
 
 
 def test_a_heading_row_goes_and_a_subsidiary_that_reads_like_one_stays():
@@ -480,7 +612,7 @@ def test_spacer_cells_do_not_make_a_row_three_columns_wide():
 
 # --- the diff -----------------------------------------------------------------
 
-@pytest.mark.parametrize("ticker", TICKERS)
+@pytest.mark.parametrize("ticker", [listed_without_a_table(ticker) for ticker in TICKERS])
 def test_a_subsidiary_planted_in_a_copy_of_the_exhibit_is_reported_as_added(
         ticker, tmp_path):
     """The judge's second expected value: a name this test wrote into a copy of
@@ -512,7 +644,7 @@ def test_a_subsidiary_planted_in_a_copy_of_the_exhibit_is_reported_as_added(
     assert after["prior_count"] == before["prior_count"]
 
 
-@pytest.mark.parametrize("ticker", TICKERS)
+@pytest.mark.parametrize("ticker", [listed_without_a_table(ticker) for ticker in TICKERS])
 def test_a_subsidiary_planted_in_the_prior_year_is_reported_as_dropped(
         ticker, tmp_path):
     """The same plant on the other side of the pair. A diff that reported every
@@ -542,7 +674,7 @@ def test_a_subsidiary_planted_in_the_prior_year_is_reported_as_dropped(
     assert after["prior_count"] == before["prior_count"] + 1
 
 
-@pytest.mark.parametrize("ticker", TICKERS)
+@pytest.mark.parametrize("ticker", [listed_without_a_table(ticker) for ticker in TICKERS])
 def test_the_planted_subsidiary_reaches_the_file_the_reader_sees(ticker, tmp_path):
     """`input_exhibits.md` is what the notes-text reader is handed, so the plant
     has to be in it, on its own paragraph id, and not merely in the payload."""
@@ -598,13 +730,16 @@ def test_a_jurisdiction_that_moved_is_neither_an_addition_nor_a_removal():
          "jurisdiction": "United Kingdom"}]
 
 
-@pytest.mark.parametrize("ticker", TICKERS)
+@pytest.mark.parametrize("ticker", [listed_without_a_table(ticker) for ticker in TICKERS])
 def test_the_counts_add_up_to_both_years_lists(ticker):
-    """Every subsidiary of either year is in exactly one of the four buckets."""
+    """Every subsidiary of either year is in exactly one of the four buckets,
+    and each year holds one: two empty lists add up to anything."""
     changes = built(ticker)["diff"]
     if no_subsidiary_exhibit(ticker):
         assert changes is None
         return
+    assert changes["current_count"] and changes["prior_count"], \
+        f"{ticker}: {changes['current_count']} and {changes['prior_count']} subsidiaries"
     moved = len(changes["jurisdiction_changed"])
     assert changes["current_count"] == \
         len(changes["added"]) + moved + changes["unchanged"]

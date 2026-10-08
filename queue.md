@@ -66,6 +66,22 @@ branch changed. A run item is done when its run directory is published and
 
 [ ] LOGI's 10-Q filed 2026-07-29 on Fable · `.venv/bin/python -m evals --runs runs/LOGI` · none
 
+[ ] LII's 10-Q filed 2026-07-29 on Fable · `.venv/bin/python -m evals --runs runs/LII` · none
+
+[ ] AMSC's 10-Q filed 2026-08-05 on Fable · `.venv/bin/python -m evals --runs runs/AMSC` · none
+
+[ ] UI's 10-Q filed 2026-05-08 on Fable · `.venv/bin/python -m evals --runs runs/UI` · none
+
+[ ] NSSC's 10-Q filed 2026-05-05 on Fable · `.venv/bin/python -m evals --runs runs/NSSC` · none
+
+[ ] CLS's 10-Q filed 2026-07-27 on Fable · `.venv/bin/python -m evals --runs runs/CLS` · none
+
+[ ] AMD's 10-Q filed 2026-08-05 on Fable · `.venv/bin/python -m evals --runs runs/AMD` · none
+
+[ ] OMCL's 10-Q filed 2026-08-05 on Fable · `.venv/bin/python -m evals --runs runs/OMCL` · none
+
+[ ] NTAP's 10-Q filed 2026-09-02 on Fable · `.venv/bin/python -m evals --runs runs/NTAP` · none
+
 ## Done
 
 [x] `data/notes-and-calendar`: merge the code (`src/event_calendar.py`, `src/fsn.py` and their tests), download nothing; the bulk-data location is a row in `docs/needs_judgment.md` · `.venv/bin/python -m pytest tests/test_event_calendar.py tests/test_fsn.py -q` · none · 2026-10-07: 67 passed, also with every proxy variable at a closed port and every socket connection refused; nothing was downloaded and no `make fetch` ran; the five needs-judgment rows are in the Open list; one test had started failing by the calendar date (a daily index not read stood for the week before it was written) and `read_through` now skips such a line; `src/fsn_index/`, which the rows and `make fetch` name, was never committed on the branch, so `make fetch` has nothing to fetch until the index is built again · 2026-10-08, after main's #123 was merged in and the three lenses read the merge: 79 passed, also with every proxy variable at a closed port and every socket connection refused (no connection attempted); with no index line `make fetch` now stops at once and says so (run once, with a scratch home and the proxy at a closed port: the first step exited 1 and nothing was written or downloaded), and the storage row says the index was never committed and what comes before `make fetch`; `load` and the calendar's bulk read write nothing before their floor checks; a zip whose size is not stated is not downloaded; the counts key is `the_universe`; each of these changes and the read-through fix has a test the branch's code fails, and the download path, which had none, has tests; the loader's tests fail rather than skip without duckdb · PR: this one

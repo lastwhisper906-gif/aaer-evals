@@ -251,7 +251,45 @@ BROAD_DEBT_MATCH = {
     # quarters, beside the convertible notes it owes.
     "LITE": "DebtSecuritiesAvailableForSaleUnrealizedLossPositionFairValueTable; "
             "8 read, 9 paired",
+    # One of the third eight: NAPCO's 'NOTE 5 – Marketable Securities', in both
+    # quarters, beside 'NOTE 9 - Debt', the revolving credit line it owes.
+    "NSSC": "InvestmentsInDebtAndMarketableEquitySecurities…, 'NOTE 5 – Marketable "
+            "Securities'; 8 read, 9 paired",
 }
+
+# The patterns read tag names only, so they miss the other way too: a key note
+# filed under a name with no word of its topic in it is paired as no key note at
+# all. AMD files two, in both quarters (10-Q/amd-20260627_htm.xml and
+# 10-Q/amd-20260328_htm.xml).
+#
+# `amd:FinancialInstrumentsNotRecordedAtFairValueOnRecurringBasisTableTextBlock`
+# is whole 'The carrying amounts and estimated fair values of the Company’s current
+# and long-term debt are as follows:' and the two rows 'Current portion of
+# long-term debt, net' and 'Long-term debt'. It sits in 'NOTE 8 – Financial
+# Instruments', as the same table sits in STX's, JCI's, OMCL's and FLEX's
+# fair-value notes under `us-gaap:ScheduleOfCarryingValuesAndEstimatedFairValues
+# OfDebtInstrumentsTableTextBlock`, which their readings count as debt and the
+# pattern pairs by its name.
+#
+# `us-gaap:EquityMethodInvestmentsDisclosureTextBlock` is AMD's related-party
+# note: headed 'NOTE 7 – Related Party — Equity Joint Ventures' in the prior
+# quarter, and in the current one 'NOTE 7 – Equity Method Investments', opening
+# 'The Company has investments accounted for under the equity method, which are
+# considered related parties.' and stating 'Purchases from related parties' and
+# 'Amounts payable to related parties'. CARR's reading counts its own note on its
+# equity-method investees, headed 'RELATED PARTIES' and 'Equity Method
+# Investments', as the related-party note, under a tag the pattern pairs by name.
+#
+# Strict, so a pattern that reads a note by what it holds turns this red and the
+# mark comes off.
+TOPIC_NOT_IN_THE_NAME = {
+    "AMD": "amd:FinancialInstrumentsNotRecordedAtFairValueOnRecurringBasisTable…, "
+           "'The carrying amounts and estimated fair values of the Company’s current "
+           "and long-term debt', and us-gaap:EquityMethodInvestmentsDisclosure…, "
+           "'NOTE 7 – Related Party — Equity Joint Ventures'; 7 read, 5 paired",
+}
+
+KEY_NOTE_DEFECTS = {**BROAD_DEBT_MATCH, **TOPIC_NOT_IN_THE_NAME}
 
 
 def key_tags(ticker: str, role: str | None = None) -> list[str]:
@@ -261,8 +299,8 @@ def key_tags(ticker: str, role: str | None = None) -> list[str]:
 
 @pytest.mark.parametrize("ticker", [
     pytest.param(ticker, marks=pytest.mark.xfail(
-        strict=True, reason=f"{ticker}: {BROAD_DEBT_MATCH[ticker]}"))
-    if ticker in BROAD_DEBT_MATCH else ticker
+        strict=True, reason=f"{ticker}: {KEY_NOTE_DEFECTS[ticker]}"))
+    if ticker in KEY_NOTE_DEFECTS else ticker
     for ticker in TICKERS])
 def test_the_key_notes_are_the_tags_the_two_instances_hold(ticker):
     """Which notes are key notes, and what that makes the pairing.
@@ -289,6 +327,67 @@ def test_the_key_notes_are_the_tags_the_two_instances_hold(ticker):
 
     # Pair by tag name, which is all the two lists can say; the title fallback
     # fires for none of the twelve, because none renamed an extension tag.
+    shared = [tag for tag in current if tag in prior]
+    rules = {"tag_name": len(shared)}
+    if len(current) > len(shared):
+        rules[note_history.NO_PRIOR_NOTE] = len(current) - len(shared)
+    if len(prior) > len(shared):
+        rules[note_history.NO_CURRENT_NOTE] = len(prior) - len(shared)
+
+    payload = note_history.history(ticker)
+    assert payload["key_notes"] == len(current) + len(prior) - len(shared)
+    assert {rule: count for rule, count in payload["match_rules"].items() if count} \
+        == rules
+
+
+# The case above stops at its first assertion, the current quarter's list, so
+# for a company it marks the prior quarter's list and the pairing are asserted
+# by nothing it leaves standing. For the third eight's two marked companies they
+# are asserted here, unmarked, against the reading's two lists and the tags each
+# mark names, as each instance names them, read with ElementTree in both
+# quarters: NAPCO's investments note, 'NOTE 5 – Marketable Securities', opening
+# 'A summary of the fair value of the Company’s investment in marketable
+# securities', which the pattern pairs beyond the reading
+# (10-Q/nssc-20260331x10q_htm.xml and 10-Q/nssc-20251231x10q_htm.xml); and AMD's
+# debt table, 'The carrying amounts and estimated fair values of the Company’s
+# current and long-term debt are as follows:', and its related-party note,
+# headed 'Equity Method Investments' this quarter, where it says 'The Company has
+# investments accounted for under the equity method, which are considered
+# related parties.', and 'Related Party — Equity Joint Ventures' the quarter
+# before, both of which the patterns miss (10-Q/amd-20260627_htm.xml and
+# 10-Q/amd-20260328_htm.xml).
+PAIRED_BEYOND_THE_READING = {
+    "NSSC": ("us-gaap:InvestmentsInDebtAndMarketableEquitySecuritiesAndCertainTrading"
+             "AssetsDisclosureTextBlock",),
+}
+MISSED_BY_THE_PATTERNS = {
+    "AMD": ("amd:FinancialInstrumentsNotRecordedAtFairValueOnRecurringBasisTable"
+            "TextBlock",
+            "us-gaap:EquityMethodInvestmentsDisclosureTextBlock"),
+}
+
+
+@pytest.mark.parametrize("ticker", sorted(set(PAIRED_BEYOND_THE_READING)
+                                          | set(MISSED_BY_THE_PATTERNS)))
+def test_a_marked_companys_key_notes_are_the_readings_but_the_tags_its_mark_names(
+        ticker):
+    """What the mark above hides for the companies these two lists name: each
+    quarter's list is the reading's, less the tags the patterns miss and with
+    the tags they pair beyond it, in both quarters, and the pairing is what
+    those two lists make."""
+    beyond = set(PAIRED_BEYOND_THE_READING.get(ticker, ()))
+    missed = set(MISSED_BY_THE_PATTERNS.get(ticker, ()))
+    lists = []
+    for key, role in (("note_history.10-Q.key_note_tags", None),
+                      ("note_history.10-Q.prior_key_note_tags",
+                       "prior_period_xbrl_instance")):
+        read = set(value(ticker, key))
+        assert missed <= read and not beyond & read, f"{ticker} {key}"
+        held = sorted((read - missed) | beyond)
+        assert key_tags(ticker, role) == held, f"{ticker} {key}"
+        lists.append(held)
+    current, prior = lists
+
     shared = [tag for tag in current if tag in prior]
     rules = {"tag_name": len(shared)}
     if len(current) > len(shared):
