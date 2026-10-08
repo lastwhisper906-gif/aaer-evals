@@ -457,12 +457,17 @@ def uncompressed(path: Path) -> int:
 
 def load(*, db: Path, zips: Path, index_dir: Path = INDEX_DIR, periods=None,
          free=None) -> list[str]:
-    """Every fetched and verified zip into `db`, skipping what is loaded already."""
+    """Every fetched and verified zip into `db`, skipping what is loaded already.
+
+    A store that is not there yet is made only once the first data set's floor
+    check has passed, and the work directory beside it likewise, so a load the
+    floor stops has written nothing.
+    """
     problems = []
-    connection = _connect(db)
-    done = {row[0] for row in connection.execute("SELECT dataset FROM loaded").fetchall()}
+    connection = _connect(db) if db.is_file() else None
+    done = ({row[0] for row in connection.execute("SELECT dataset FROM loaded").fetchall()}
+            if connection is not None else set())
     work = db.parent / "tmp"
-    work.mkdir(parents=True, exist_ok=True)
     try:
         for period, line in latest(read_index(index_dir)).items():
             if (periods and period not in periods) or period in done:
@@ -473,10 +478,14 @@ def load(*, db: Path, zips: Path, index_dir: Path = INDEX_DIR, periods=None,
                 continue
             # The member files are written out beside the store while they load.
             room_for(db, 2 * uncompressed(path), FLOOR_BYTES, free=free)
+            if connection is None:
+                connection = _connect(db)
+            work.mkdir(parents=True, exist_ok=True)
             counts = load_one(connection, path, line, work=work)
             print(f"  {period} loaded {counts}", file=sys.stderr)
     finally:
-        connection.close()
+        if connection is not None:
+            connection.close()
     return problems
 
 

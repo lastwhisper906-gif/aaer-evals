@@ -553,8 +553,8 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"listed": len(found), "added": dict(added)}))
         return 0
     from src import fsn  # the streaming download lives there
+    # The download makes the work directory, after the floor check has passed.
     work = Path(args.work)
-    work.mkdir(parents=True, exist_ok=True)
     path = Path(args.zip) if args.zip else work / "submissions.zip"
     try:
         if not args.zip:

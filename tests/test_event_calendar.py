@@ -397,3 +397,16 @@ def test_daily_reads_each_business_day_after_the_last_one_read(tmp_path):
 
 def test_daily_before_any_index_was_read_says_so(tmp_path):
     assert calendar.daily(Served({}), root=tmp_path, today=dt.date(2026, 9, 29))["days"] == 0
+
+
+# -- the disk floor ----------------------------------------------------------------
+
+def test_a_submissions_read_the_floor_stops_has_written_nothing(tmp_path, monkeypatch):
+    from src import fsn
+    # 2 GB held for the bulk file on a disk with 9 GB free leaves 7, under the 10 GB floor.
+    monkeypatch.setattr(fsn, "free_bytes", lambda _: 9 * 10**9)
+    monkeypatch.setattr(fsn, "download", lambda *a, **k: pytest.fail("downloaded anyway"))
+    assert calendar.main(["submissions", "--root", str(tmp_path / "calendar"),
+                          "--work", str(tmp_path / "data" / "tmp" / "calendar")]) == \
+        calendar.FAILED
+    assert list(tmp_path.iterdir()) == []

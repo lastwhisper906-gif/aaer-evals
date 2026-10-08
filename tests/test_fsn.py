@@ -181,6 +181,23 @@ def test_fetch_refuses_bytes_that_are_not_the_indexed_ones(tmp_path, monkeypatch
     assert not (tmp_path / "zips" / "2011q2_notes.zip").exists()
 
 
+def test_a_load_the_floor_stops_has_written_nothing(tmp_path):
+    # The zip is fetched and verified, and the disk is the Mac's of 2026-09-28:
+    # the store and its work directory are not made before the floor is asked.
+    root = tmp_path / "data"
+    zips = root / "fsn" / "zips"
+    zips.mkdir(parents=True)
+    path = planted_zip(zips / "2011q2_notes.zip")
+    with zipfile.ZipFile(path) as archive:
+        counts = fsn.count_rows(archive)
+    fsn.append_index({"period": "2011q2", "name": path.name, "sha256": fsn.file_sha256(path),
+                      "rows": counts}, tmp_path / "index")
+    with pytest.raises(fsn.FloorReached, match="nothing was written"):
+        fsn.load(db=root / "fsn.duckdb", zips=zips, index_dir=tmp_path / "index",
+                 free=lambda _: 23 * 10**9)
+    assert sorted(child.name for child in root.iterdir()) == ["fsn"]
+
+
 # -- reading a zip ---------------------------------------------------------------
 
 def test_count_rows_counts_every_table_and_a_last_row_with_no_newline(tmp_path):
