@@ -811,9 +811,13 @@ def gate_readers(run: Path, names: tuple[str, ...] = ("numbers-reader", "notes-t
     rest, or removed when none is left; a list with nothing dropped stays byte
     for byte. A dropped item left in a list beside a kept one (ESE's notes
     reader wrote its twenty-seven items in one list, and three dropped ones
-    stayed) is an item the analysts read and the owner fails. A fenced block
-    that is not JSON holds items nobody can check: it is removed, and the gate
-    records one drop row for it (item id null), so it is counted, not skipped.
+    stayed) is an item the analysts read and the owner fails. An item is matched
+    to its drop row as the gate wrote the row: by report and by the gate's own
+    `quote_gate.item_id`, which is None for an id that is missing, blank or not
+    a string; the gate drops every such item, and it leaves the copy with the
+    rest. A fenced block that is not JSON holds items nobody can check: it is
+    removed, and the gate records one drop row for it (item id null), so it is
+    counted, not skipped.
     A run-root copy gated on an earlier night is not written again, and the
     gate keeps the drop rows of a report it is not handed, so the earlier
     night's record stands as it was and this call appends its own rows. The
@@ -843,8 +847,14 @@ def gate_readers(run: Path, names: tuple[str, ...] = ("numbers-reader", "notes-t
         removed, unreadable = 0, 0
 
         def gone(item) -> bool:
-            # keyed by report, as the gate's rows and the owner's grader key a drop
-            return isinstance(item, dict) and (writes, item.get("id")) in dropped
+            # keyed as the gate keys its rows: by report, so a row of one report
+            # never takes an item out of another, and by `quote_gate.item_id`, not
+            # the id as written. An id of "", of spaces, 7 or a list is no id to the
+            # gate, which drops the item under a row with no item id; matched by
+            # the id as written, the item stayed in the copy (and a list or an
+            # object as an id could not be looked up at all), and the owner, whose
+            # drop rows are the gate's, held its quote as a kept item's
+            return isinstance(item, dict) and (writes, quote_gate.item_id(item)) in dropped
 
         def keep(match: re.Match) -> str:
             nonlocal removed, unreadable

@@ -196,6 +196,52 @@ def test_the_owner_finds_no_dropped_item_in_the_copy_the_real_gate_wrote(tmp_pat
     assert "removed 2 item(s)" in (run / "report_notes_text.md").read_text()
 
 
+# An item the gate finds no id on -- an id of "", of spaces, a number, true, a list,
+# an object, null, or none written -- is dropped under a row with no item id
+# (`quote_gate.item_id`). The runner matched the copy to the rows by the id as
+# written, so the first four stayed in the copy the analysts read and the owner,
+# whose drop rows are the gate's, held their quotes as kept items' (the critic's
+# probe of 2026-10-08, on ESE's paragraph 36 above); a list or an object as an id
+# stopped gate_readers (unhashable). The last two passed before, and are the other
+# side. No reader report on record has such an id.
+@pytest.mark.parametrize("shape", ["one list", "a block each"])
+@pytest.mark.parametrize("identifier", ["", "  ", 7, True, ["x"], {"a": 1}, None, "unwritten"])
+def test_an_item_the_gate_finds_no_id_on_leaves_the_copy(tmp_path, shape, identifier):
+    from evals.common import PASS
+    from evals.regression import mechanical
+    run = tmp_path / "run"
+    run.mkdir()
+    (run / "input_manifest.json").write_text(json.dumps({"accession": ESE_ACCESSION}))
+    sales = "0001104659-26-092033:8k_2_02:36"
+    kept = _ese_item("results_against_expectations_sales_range_restated", "Sales guidance",
+                     sales)
+    nameless = {"quote": "words the filing never printed", "paragraph_id": sales}
+    if identifier != "unwritten":
+        nameless["id"] = identifier
+    notes = (f"```json\n{json.dumps([kept, nameless], indent=1)}\n```\n" if shape == "one list"
+             else "".join(f"```json\n{json.dumps(item)}\n```\n" for item in (kept, nameless)))
+    for name, text in (("numbers-reader", "no items\n"), ("notes-text-reader", notes)):
+        directory = agent_inputs.session_root(run, name)
+        directory.mkdir(parents=True)
+        (directory / "input_8k.md").write_text(ESE_8K, encoding="utf-8")
+        (directory / agent_inputs.AGENTS[name].writes).write_text(text, encoding="utf-8")
+    run_analysis.gate_readers(run)
+    manifest = json.loads((run / "input_manifest.json").read_text())
+    assert [(row["report"], row["item_id"]) for row in manifest["dropped_items"]] == [
+        ("report_notes_text.md", None)]
+    copy = (run / "report_notes_text.md").read_text(encoding="utf-8")
+    assert run_analysis.report_items(copy) == [kept]
+    assert "removed 1 item(s)" in copy
+    if shape == "a block each":
+        assert copy.endswith(f"```json\n{json.dumps(kept)}\n```\n")
+    result = mechanical.check_quotes_resolve(run)
+    assert result.status == PASS, result.failures
+    assert mechanical.kept_items(run)["report_notes_text.md"] == {kept["id"]}
+    # the reader's own copy keeps what it wrote
+    assert (agent_inputs.session_root(run, "notes-text-reader") / "report_notes_text.md"
+            ).read_text(encoding="utf-8") == notes
+
+
 # --- a whole run, with every agent stubbed ------------------------------------------------
 #
 # The model is the one thing replaced. Everything else is the run as it is: the
