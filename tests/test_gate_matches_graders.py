@@ -412,6 +412,51 @@ def test_an_evidence_that_is_not_a_list_or_a_citation_key_naming_no_kept_item_dr
     assert gated.status == PASS
 
 
+def _null_under(payload: dict, place: str, value) -> None:
+    """`value` written where an analyst could write it below the schema's items:
+    under a point of an area, at the top of the analysis, under an anomaly's
+    support -- the three places the critic's probe of 2026-10-08 put a null."""
+    if place == "point":
+        payload["areas"]["revenue_recognition"]["points"] = [value]
+    elif place == "top":
+        payload.update(value)
+    else:
+        payload["anomalies"][0]["support"] = value
+
+
+@pytest.mark.parametrize("place, value, owner_says", [
+    ("point", {"evidence": [None]}, "areas.revenue_recognition.points[0].evidence: None"),
+    ("top", {"evidence": [None]}, "evidence: None"),
+    ("support", {"evidence": [EPS_ITEM, None]}, "anomalies[0].support.evidence: None")])
+def test_a_null_in_an_evidence_list_below_the_schema_s_items_is_dropped(tmp_path, place, value,
+                                                                       owner_says):
+    """The owner's cited_items_exist passes a null under every citation key but
+    `evidence`, whose every entry it holds to the kept items. The gate passed a
+    null under each, so one in an `evidence` list the schema's own checks do not
+    reach was published and failed (the critic's probe of 2026-10-08)."""
+    run = _run(tmp_path)
+    payload = accounting()
+    _null_under(payload, place, value)
+    raw, gated, out = _both(run, payload, mechanical.check_cited_items_exist)
+    assert raw.failures == [f"analysis_accounting.json:{owner_says}"]
+    assert gated.status == PASS, gated.failures
+    assert out["dropped_count"] == 1
+
+
+@pytest.mark.parametrize("place, value", [
+    ("point", {"numbers_items": [None], "notes_item": None}),
+    ("top", {"line_items": [None]}),
+    ("support", {"evidence": [EPS_ITEM], "notes_item": None})])
+def test_a_null_under_any_other_citation_key_is_passed_by_both(tmp_path, place, value):
+    """The other side, standing before the fix and after it."""
+    run = _run(tmp_path)
+    payload = accounting()
+    _null_under(payload, place, value)
+    raw, gated, out = _both(run, payload, mechanical.check_cited_items_exist)
+    assert raw.status == PASS and gated.status == PASS
+    assert out["dropped_items"] == []
+
+
 # --- cited_numbers_exist ----------------------------------------------------------------
 
 def test_a_placeholder_under_a_key_that_is_not_prose_is_resolved(tmp_path):

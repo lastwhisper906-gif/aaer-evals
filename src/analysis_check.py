@@ -717,9 +717,9 @@ def owner_problems(payload: dict, *, kind: str, fields: dict, sources: dict[str,
             if not isinstance(value, list):
                 found.append((here, f"{_where(here)}: evidence is not a list"))
             else:
-                cite(value, here)
+                cite(value, here, nulls=False)
         elif cited and citable is not None and CITATION_KEY.fullmatch(str(key)):
-            cite(value if isinstance(value, list) else [value], here)
+            cite(value if isinstance(value, list) else [value], here, nulls=True)
 
     def walk(node, path: tuple, cited: bool = True):
         where = _where(path)
@@ -744,9 +744,12 @@ def owner_problems(payload: dict, *, kind: str, fields: dict, sources: dict[str,
         elif isinstance(node, str):
             text(node, path)
 
-    def cite(values, path):
+    def cite(values, path, *, nulls: bool):
+        """`nulls`: whether a null is passed over, as the owner's cited_items_exist
+        passes one under every citation key but `evidence`, whose every entry it
+        counts and holds to the kept items."""
         for cited in values:
-            if cited is None:
+            if cited is None and nulls:
                 continue
             if not isinstance(cited, str) or cited not in citable:
                 found.append((path, f"{_where(path)}: {cited!r} is not an item that stood "
