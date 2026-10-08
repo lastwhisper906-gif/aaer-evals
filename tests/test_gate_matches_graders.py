@@ -536,6 +536,186 @@ def test_the_reason_a_cell_states_for_having_no_value_is_a_field_an_analyst_cite
         assert out["most_sensitive"] == []
 
 
+# The words calculator.json prints where the second passes on record cited them, as
+# each run printed them: CSCO's run 0000858877-26-000078 (the price's position, the
+# price and what the reverse DCF holds) and CIEN's run 0001628280-26-040767 (the
+# beta's window, and its one accounting adjustment's name and mechanism).
+HELD = "base margins, base reinvestment, base terminal growth"
+PRICED = {
+    "valuation": {
+        "price_at_cutoff": 115.38, "price_position": "above the range",
+        "reverse_dcf": {"value": 0.14635827622259967, "held": HELD},
+        "accounting_adjustments": {"each": [{
+            "name": "accounts payable build from supplier payment timing",
+            "mechanism": "one-time: value lowered by the amount over diluted shares",
+            "moved_per_share": -1.28164085460038}]}},
+    "cost_of_capital": {"value": None,
+                        "beta": {"value": 2.6820943351306967, "window_first": "2025-06-05",
+                                 "window_last": "2026-06-03"}},
+}
+# What each unit cited, in the analysts' own sentences, trimmed: CSCO's
+# price_position, market_implied_growth and summary_ko.price_position; CIEN's
+# most_sensitive[1] and accounting_adjustments.
+WORDS_CITED = {"price_position": "valuation.price_position",
+               "market_implied_growth": "valuation.reverse_dcf.held",
+               "most_sensitive": "cost_of_capital.beta.window_first",
+               "accounting_adjustments": "valuation.accounting_adjustments.each.0.name"}
+# The same cells, at a key they do not carry or into the words they print.
+NOTHING_CITED = {"price_position": "valuation.price_position.0",
+                 "market_implied_growth": "valuation.reverse_dcf.holds",
+                 "most_sensitive": "cost_of_capital.beta.window_middle",
+                 "accounting_adjustments": "valuation.accounting_adjustments.each.1.name"}
+
+
+def _cites(cited: dict) -> dict:
+    return {
+        "value_range": {"reading": "Python ran three scenarios.", "fields": []},
+        "price_position": {
+            "reading": "The price at the cutoff, {valuation.price_at_cutoff}, is "
+                       f"{{{cited['price_position']}}}.",
+            "fields": ["valuation.price_at_cutoff", cited["price_position"]]},
+        "market_implied_growth": {
+            "reading": f"Holding {{{cited['market_implied_growth']}}}, Python finds by "
+                       "bisection that the base case is worth the price only if revenue "
+                       "grows at a constant {valuation.reverse_dcf.value|pct} a year.",
+            "fields": [cited["market_implied_growth"], "valuation.reverse_dcf.value"]},
+        "most_sensitive": [{
+            "assumption": "the discount rate (WACC), which is beta-driven",
+            "reading": f"The beta is measured over the window {{{cited['most_sensitive']}}} "
+                       "to {cost_of_capital.beta.window_last}.",
+            "fields": [cited["most_sensitive"], "cost_of_capital.beta.window_last"]}],
+        "accounting_adjustments": {
+            "reading": f"One adjustment was applied: '{{{cited['accounting_adjustments']}}}', "
+                       "carried from the accounting analysis as a one-time reduction to cash "
+                       "flow ({valuation.accounting_adjustments.each.0.mechanism}).",
+            "fields": [cited["accounting_adjustments"]]},
+        "summary_ko": {"price_position": "기준일 주가 {valuation.price_at_cutoff}는 파이썬이 "
+                                         f"'{{{cited['price_position']}}}'로 판정한 대로 산출 "
+                                         "범위 위에 있습니다."},
+        "limits": analysis_check.LIMITS["valuation"]}
+
+
+@pytest.mark.parametrize("cited, stands", [(WORDS_CITED, True), (NOTHING_CITED, False)])
+def test_words_the_calculator_prints_are_a_field_and_a_placeholder_an_analyst_cites(
+        tmp_path, cited, stands):
+    """Every priced second pass on record cited words calculator.json prints --
+    the price's position ("above the range"), what the reverse DCF holds, the
+    beta's window, the accounting adjustment's name -- in `fields` and as
+    `{path}`. The owner's cited_numbers_exist resolves each path and passes them
+    as written; the gate took a field to be a number or a reason and a
+    placeholder to be a number, and CARR, CIEN, CSCO, PANW and STX published
+    thirteen units as drop notes, the memo printing its dropped sentence in
+    their place. Now each stands, and the memo prints the words verbatim, the
+    analyst's own words after them as written. The other side, before and
+    after: a key the cell does not carry, an index past the list, or a path
+    into the words names nothing, and both refuse it."""
+    run = tmp_path / "run"
+    _write(run / "calculator.json", json.dumps(PRICED))
+    payload = _cites(cited)
+    _publish(run, "analysis_valuation.json", payload)
+    raw = mechanical.check_cited_numbers_exist(run)
+    out = analysis_check.check("valuation", copy.deepcopy(payload), fields=PRICED, sources={})
+    _publish(run, "analysis_valuation.json", out)
+    assert mechanical.check_cited_numbers_exist(run).status == PASS
+    units = ("price_position", "market_implied_growth", "most_sensitive",
+             "accounting_adjustments", "summary_ko")
+    if stands:
+        assert raw.status == PASS, raw.failures
+        assert out["dropped_items"] == [], out["dropped_items"]
+        assert {key: out[key] for key in units} == {key: payload[key] for key in units}
+        assert memo.fill(out["summary_ko"]["price_position"], PRICED) == (
+            "기준일 주가 주당 115.38달러는 파이썬이 'above the range'로 판정한 대로 산출 범위 "
+            "위에 있습니다.")
+        assert memo.fill("{valuation.accounting_adjustments.each.0.mechanism}, over "
+                         "{cost_of_capital.beta.window_first}..{cost_of_capital.beta.window_last}",
+                         PRICED) == ("one-time: value lowered by the amount over diluted shares, "
+                                     "over 2025-06-05..2026-06-03")
+    else:
+        # the owner holds a `fields` entry under a list item as no path (its
+        # FOLLOWS_PATHS reads the place before the first index), and every
+        # `{path}` wherever it sits
+        place = "analysis_valuation.json"
+        assert raw.failures == [
+            f"{place}:price_position.reading:{cited['price_position']}",
+            f"{place}:price_position.fields[1]:{cited['price_position']}",
+            f"{place}:market_implied_growth.reading:{cited['market_implied_growth']}",
+            f"{place}:market_implied_growth.fields[0]:{cited['market_implied_growth']}",
+            f"{place}:most_sensitive[0].reading:{cited['most_sensitive']}",
+            f"{place}:accounting_adjustments.reading:{cited['accounting_adjustments']}",
+            f"{place}:accounting_adjustments.fields[0]:{cited['accounting_adjustments']}",
+            f"{place}:summary_ko.price_position:{cited['price_position']}"]
+        assert sorted(row["where"] for row in out["dropped_items"]) == [
+            "accounting_adjustments", "market_implied_growth", "most_sensitive[0]",
+            "price_position", "summary_ko.price_position"]
+        assert out["most_sensitive"] == [] and out["summary_ko"]["price_position"] is None
+        for key in ("price_position", "market_implied_growth", "accounting_adjustments"):
+            assert cited[key] in out[key]["dropped"]
+
+
+@pytest.mark.parametrize("path, value", [
+    # QCOM's cost_of_capital, as its run 0000804328-26-000086 printed it: a cell whose
+    # value is null; and the cell itself
+    ("cost_of_capital.value", None), ("cost_of_capital", {"value": None, "missing": NO_WACC}),
+    # words carrying a ruled-out word: none of the calculator files on record holds one
+    ("valuation.price_position", "buy below the range")])
+def test_a_placeholder_the_memo_cannot_print_is_the_gate_s_own_refusal(tmp_path, path, value):
+    """The pipeline's own rule, standing before and after: a `{path}` stands only
+    for a number or for words the memo can print. A null, or a cell with no
+    number, the owner's cited_numbers_exist resolves and passes, and the memo has
+    nothing to print for it. Words carrying a ruled-out word the owner passes
+    there too, and its forbidden_words passes the analysis, where the word is
+    not; the memo would print them verbatim, on a line forbidden_words reads.
+    The gate drops the sentence; the owner passes what it publishes."""
+    fields = copy.deepcopy(PRICELESS)
+    *heads, last = path.split(".")
+    node = fields
+    for part in heads:
+        node = node.setdefault(part, {})
+    node[last] = value
+    run = tmp_path / "run"
+    _write(run / "calculator.json", json.dumps(fields))
+    payload = {key: {"reading": "Not computed.", "fields": ["valuation.missing"]}
+               for key in analysis_check.VALUATION_KEYS}
+    payload.update(most_sensitive=[], limits=analysis_check.LIMITS["valuation"],
+                   summary_ko={"price_position": f"주가의 위치는 {{{path}}}입니다."})
+    _publish(run, "analysis_valuation.json", payload)
+    assert mechanical.check_cited_numbers_exist(run).status == PASS
+    assert coverage.check_forbidden_words(run).status == PASS
+    out = analysis_check.check("valuation", copy.deepcopy(payload), fields=fields, sources={})
+    assert [row["where"] for row in out["dropped_items"]] == ["summary_ko.price_position"]
+    assert out["summary_ko"]["price_position"] is None
+    _publish(run, "analysis_valuation.json", out)
+    assert mechanical.check_cited_numbers_exist(run).status == PASS
+
+
+@pytest.mark.parametrize("path", [
+    "valuation.price_position", "valuation.reverse_dcf", "valuation.reverse_dcf.held",
+    "cost_of_capital.value", "valuation.accounting_adjustments.each.0.name",
+    "valuation.accounting_adjustments.each.-1.name", "valuation.accounting_adjustments.each.+0",
+    "valuation.accounting_adjustments.each. 0", "valuation.accounting_adjustments.each.0_0",
+    "valuation.accounting_adjustments.each.²", "valuation.accounting_adjustments.each.1",
+    "valuation.price_position.0", "valuation.price_at_cutoff.value", "valuation..held", "",
+    "valuation.reverse_dcf.value.real", "missing"])
+def test_the_gate_reads_a_path_as_the_owner_s_grader_reads_it(path):
+    """One reading of a calculator path, the owner's (`evals.common.resolve`),
+    written out in the gate as the grader writes it: a `fields` entry stands
+    exactly when the owner resolves it, and a `{path}` is refused whenever it
+    names nothing to the owner."""
+    from evals import common
+    try:
+        owner = ("names", common.resolve(PRICED, path))
+    except KeyError:
+        owner = ("nothing", None)
+    assert analysis_check.field_cited(PRICED, path) is (owner[0] == "names")
+    try:
+        gate = ("names", analysis_check.resolve(PRICED, path))
+    except KeyError:
+        gate = ("nothing", None)
+    assert gate == owner
+    if owner[0] == "nothing":
+        assert analysis_check.placeholder_problem(PRICED, path) is not None
+
+
 # --- forbidden_words and no_combined_score ------------------------------------------------
 
 def test_the_gate_holds_the_owner_s_patterns():

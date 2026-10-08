@@ -4,27 +4,29 @@ The owner's decision of 2026-09-28: agents read and judge, Python calculates,
 and every number in any output comes from `calculator.json` or companyfacts. An
 analyst writes no digit of its own. It writes the path of a `calculator.json`
 field in braces, `{ratios.liquidity.current_ratio}`, and this file checks the
-path resolves to a number before the memo puts the number there. The rule for
+path names a number, or words Python printed there ("above the range"), before
+the memo puts the number or the words there. The rule for
 the three analyses is the same rule the quote gate applies to reports:
 **every item carries something Python verifies, and a failed item is dropped
 and counted.** An item stands only when
 
-- every `{path}` in its words resolves to a number in `calculator.json`;
+- every `{path}` in its words names a number in `calculator.json`, or words
+  the memo can print verbatim (`placeholder_problem`);
 - its words carry no digit outside a `{path}`, a verbatim quote, an id, a form
   name (10-K, 10-Q, 8-K) or a four-digit year;
 - every `evidence` id is an item id of one of the reports the analyst saw;
 - every `quote` string-matches the file it names in `quote_from`, which the
   analyst saw, whitespace folded as the quote gate folds it;
-- every `fields` entry resolves to a number, or to a cell that states why it
-  has none, or to the reason it states (`field_cited`);
+- every `fields` entry names something in `calculator.json`, read as the
+  owner's cited_numbers_exist reads a path (`field_cited`);
 - no word of it is one the owner ruled out: "fraud", "manipulation" in any
   analysis, and "buy", "sell", "alpha" as well;
 - its enumerated values are the enumerated values;
 - and, anywhere in the file and not only in the items above, the owner's
   graders' own rules hold: a quote stands in one paragraph, one kept report
-  item or one string value of the file it names; every `{path}` is a number;
-  every `evidence` is a list of items that stood; no ruled-out word sits inside
-  another; no key scores or ranks (`owner_problems`).
+  item or one string value of the file it names; every `{path}` stands as
+  above; every `evidence` is a list of items that stood; no ruled-out word sits
+  inside another; no key scores or ranks (`owner_problems`).
 
 A section or an area that fails keeps its key and loses its words, which are
 replaced by the reason, because an area of the accounting analysis is never
@@ -313,6 +315,77 @@ def report_ids(text: str) -> set[str]:
     return found
 
 
+# --- a calculator path ------------------------------------------------------------------
+
+def resolve(tree, path: str):
+    """The node a dotted path names in a calculator file, or KeyError: the owner's
+    reading (`evals.common.resolve`, which cited_numbers_exist holds every path
+    to), written out here as the grader writes it, since src imports nothing from
+    evals. A list is indexed by the integer `int` reads in the part, a dict by
+    its key; a cell is the dictionary itself."""
+    node = tree
+    for part in path.split("."):
+        if isinstance(node, list):
+            try:
+                node = node[int(part)]
+            except (ValueError, IndexError):
+                raise KeyError(path) from None
+        elif isinstance(node, dict) and part in node:
+            node = node[part]
+        else:
+            raise KeyError(path)
+    return node
+
+
+def placeholder_value(fields: dict, path: str):
+    """What the memo prints for `{path}`: the number the path names (the node, or
+    a cell's `value`), finite; else the words calculator.json prints there when
+    the node is a string ("above the range", a window's first day, an
+    adjustment's name), verbatim; else None. One reading, the gate's and the
+    memo's."""
+    try:
+        node = resolve(fields, path)
+    except KeyError:
+        return None
+    number = node.get("value") if isinstance(node, dict) else node
+    if isinstance(number, (int, float)) and not isinstance(number, bool) \
+            and math.isfinite(number):
+        return float(number)
+    return node if isinstance(node, str) else None
+
+
+def placeholder_problem(fields: dict, path: str) -> str | None:
+    """Why `{path}` cannot stand in an analyst's words, or None.
+
+    It stands when the path names a number, which the memo prints as a number,
+    or a string Python printed in calculator.json, which the memo prints
+    verbatim (`placeholder_value`): the owner's cited_numbers_exist resolves
+    the path and passes both, and the second passes on record cite
+    `valuation.price_position`, `valuation.reverse_dcf.held` and the beta's
+    window that way. A path that names nothing is refused, as the owner refuses
+    it. Two refusals are the pipeline's own, which the owner's
+    cited_numbers_exist passes: a node with neither a number nor words of its
+    own (a null, a list, a cell holding no number), for which the memo has
+    nothing to print; and words carrying a ruled-out word, accusation or
+    recommendation, which the memo would print on a line the owner's
+    forbidden_words reads for both. No placeholder on record names either."""
+    try:
+        resolve(fields, path)
+    except KeyError:
+        return f"{{{path}}} names nothing in the calculator this analyst saw"
+    value = placeholder_value(fields, path)
+    if value is None:
+        return (f"{{{path}}} is neither a number nor words in the calculator this "
+                "analyst saw")
+    if isinstance(value, str):
+        for pattern in (ACCUSATION, RECOMMENDATION):
+            hit = pattern.search(value)
+            if hit:
+                return (f"{{{path}}} would print a ruled-out word ({hit.group(0)!r}) from "
+                        "the calculator into the memo")
+    return None
+
+
 # --- one string -----------------------------------------------------------------------
 
 def words_problem(text, fields: dict, *, forbidden: tuple[str, ...]) -> str | None:
@@ -322,8 +395,9 @@ def words_problem(text, fields: dict, *, forbidden: tuple[str, ...]) -> str | No
     if not isinstance(text, str):
         return f"{text!r} is not text"
     for path, _ in PLACEHOLDER.findall(text):
-        if calculator.field_value(fields, path) is None:
-            return f"{{{path}}} is not a number in the calculator this analyst saw"
+        problem = placeholder_problem(fields, path)
+        if problem:
+            return problem
     bare = PLACEHOLDER.sub(" ", text)
     if BRACE.search(bare):
         return "a brace that is not a whole {path} placeholder"
@@ -339,38 +413,25 @@ def words_problem(text, fields: dict, *, forbidden: tuple[str, ...]) -> str | No
     return None
 
 
-# The keys under which a calculator cell states why it holds no number.
-REASON_KEYS = ("missing", "reason", "note")
-
-
 def field_cited(fields: dict, path) -> bool:
-    """A cited field stands when it is a number, a cell that states why it has
-    none, or the reason the cell states.
-
-    A citation may point at a figure Python declined to compute -- a cash
-    runway is not computed when free cash flow is positive, and the cell says
-    so -- because citing the stated reason is reading the calculator: the cell
-    (`valuation`) or the reason it prints (`valuation.missing`), which the
-    valuation analyst's prompt has it quote when there is no price or WACC, and
-    which the owner's cited_numbers_exist resolves as any other field. A number
-    written into a sentence is held to more: `{path}` must be a number.
+    """A cited field stands when its path names something in calculator.json, as
+    the owner's cited_numbers_exist reads a path (`resolve`), whatever it names:
+    a number, a cell, the reason a cell states for having none
+    (`valuation.missing`, which the valuation analyst's prompt has it quote when
+    there is no price or WACC), or a string Python printed
+    (`valuation.price_position`, "above the range"). A citation is a pointer
+    into the calculator, which the memo never prints, and reading what Python
+    wrote there is reading the calculator. A path that names nothing is
+    refused. Words written into a sentence are held to more: `{path}` must name
+    a number or words the memo can print (`placeholder_problem`).
     """
     if not isinstance(path, str):
         return False
-    if calculator.field_value(fields, path) is not None:
-        return True
-    node, cell, last = fields, None, None
-    for part in path.split("."):
-        cell, last = node, part
-        if isinstance(node, dict) and part in node:
-            node = node[part]
-        elif isinstance(node, list) and part.isdigit() and int(part) < len(node):
-            node = node[int(part)]
-        else:
-            return False
-    if isinstance(node, dict):
-        return any(key in node for key in REASON_KEYS)
-    return isinstance(cell, dict) and last in REASON_KEYS and isinstance(node, str)
+    try:
+        resolve(fields, path)
+    except KeyError:
+        return False
+    return True
 
 
 def quote_problem(item: dict, sources: dict[str, str],
@@ -699,8 +760,9 @@ def owner_problems(payload: dict, *, kind: str, fields: dict, sources: dict[str,
                    citable: set[str] | None) -> list[tuple[tuple, str]]:
     """Every departure from the owner's rules anywhere in the payload, as (the
     path to it, why): a quote that does not stand in one unit of the file it
-    names; a `{path}` that is not a number, or a `fields` entry that is no field,
-    in any string; a ruled-out word in any string but a quote; a key that scores
+    names; a `{path}` that names no number and no words the memo can print, or a
+    `fields` entry that names nothing, in any string (`placeholder_problem`,
+    `field_cited`); a ruled-out word in any string but a quote; a key that scores
     or ranks; and, when `citable` is given, an `evidence` that is not a list or
     any key naming reader items (the owner's CITATION_KEY) that names an id not
     in it -- the ids that stood in either report, read together as the owner
@@ -783,9 +845,9 @@ def owner_problems(payload: dict, *, kind: str, fields: dict, sources: dict[str,
         if not (where == "dropped" or where.endswith(".dropped")):
             paths = PLACEHOLDER.findall(value)
             for name, _ in paths:
-                if calculator.field_value(fields, name) is None:
-                    found.append((path, f"{where}: {{{name}}} is not a number in the "
-                                        "calculator this analyst saw"))
+                problem = placeholder_problem(fields, name)
+                if problem:
+                    found.append((path, f"{where}: {problem}"))
                     return
             if where.split("[")[0].endswith(FOLLOWS_PATHS) and not paths \
                     and not field_cited(fields, value):

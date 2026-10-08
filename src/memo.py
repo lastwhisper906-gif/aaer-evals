@@ -3,10 +3,11 @@
 The owner asked for a memo a finance student can read. It is assembled here from
 the three checked analyses and from `calculator.json`, and from nothing else:
 every sentence is either an analyst's own `summary_ko` sentence with its
-`{field}` paths replaced by the numbers Python computed, or a fixed sentence of
-this file's. **One section per analysis, kept apart, and no combined verdict** —
-there is no line anywhere in the memo that adds the three up, ranks the company,
-or says what to do with its shares.
+`{field}` paths replaced by the numbers Python computed, or by the words Python
+printed there, verbatim, or a fixed sentence of this file's. **One section per
+analysis, kept apart, and no combined verdict** — there is no line anywhere in
+the memo that adds the three up, ranks the company, or says what to do with its
+shares.
 
 Two top-level sections, by the owner's decision of 2026-10-06: **회계**
 (accounting) and **재무** (finance). The financial analysis and the valuation
@@ -27,10 +28,10 @@ import sys
 from pathlib import Path
 
 try:
-    from src import analysis_check, calculator, interpreter_pin
+    from src import analysis_check, interpreter_pin
 except ImportError:  # invoked as a plain script
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from src import analysis_check, calculator, interpreter_pin
+    from src import analysis_check, interpreter_pin
 
 BAD_INPUT = 2
 
@@ -80,15 +81,12 @@ USD_WORDS = ("revenue", "income", "cash", "flow", "debt", "value", "expenditure"
 
 
 def field_node(fields: dict, path: str):
-    node = fields
-    for part in path.split("."):
-        if isinstance(node, dict) and part in node:
-            node = node[part]
-        elif isinstance(node, list) and part.isdigit() and int(part) < len(node):
-            node = node[int(part)]
-        else:
-            return None
-    return node
+    """The node a path names, read as the gate reads it (`analysis_check.resolve`),
+    or None."""
+    try:
+        return analysis_check.resolve(fields, path)
+    except KeyError:
+        return None
 
 
 def unit_of(path: str, node) -> str:
@@ -161,13 +159,22 @@ def _particle(rendered: str, particle: str) -> str:
 
 
 def fill(text: str | None, fields: dict) -> str:
-    """An analyst's sentence with each `{path}` replaced by its number."""
+    """An analyst's sentence with each `{path}` replaced by its number, or by the
+    words calculator.json prints there (`valuation.price_position`, "above the
+    range"), verbatim, with the analyst's own words after them as written: the
+    analyst read those words in the calculator, so no unit or particle is
+    chosen for them. What a path stands for is the gate's reading
+    (`analysis_check.placeholder_value`)."""
     if not text:
         return "(작성되지 않음)"
     out, last = [], 0
     for match in analysis_check.PLACEHOLDER.finditer(text):
         path, how = match.group(1), match.group(2)
-        value = calculator.field_value(fields, path)
+        value = analysis_check.placeholder_value(fields, path)
+        if isinstance(value, str):
+            out.append(text[last:match.start()] + value)
+            last = match.end()
+            continue
         node = field_node(fields, path)
         rendered = korean_number(value, unit_of(path, node), percent=how == "pct")
         at = match.end()
