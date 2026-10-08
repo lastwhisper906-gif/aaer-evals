@@ -1425,14 +1425,17 @@ ADJUSTMENT_ROOTS = ("terms.", "earnings_versus_cash.")
 
 def adjustment_amount(fields: dict, path) -> float | None:
     """The dollar amount at a path an adjustment names, or None. One rule, read by
-    the analysis gate and by the calculator alike."""
+    the analysis gate and by the calculator alike. A list is indexed by a part
+    of ASCII digits alone. '²' and '①' are digits to `str.isdigit` and not to
+    `int`: reading one raised ValueError, which stopped the run at the analysis
+    gate; such a part names nothing, and the gate drops the adjustment."""
     if not isinstance(path, str) or not path.startswith(ADJUSTMENT_ROOTS):
         return None
     node = fields
     for part in path.split("."):
         if isinstance(node, dict) and part in node:
             node = node[part]
-        elif isinstance(node, list) and part.isdigit() and int(part) < len(node):
+        elif isinstance(node, list) and part.isascii() and part.isdigit() and int(part) < len(node):
             node = node[int(part)]
         else:
             return None
@@ -1442,14 +1445,15 @@ def adjustment_amount(fields: dict, path) -> float | None:
 
 
 def field_value(fields: dict, path: str | None) -> float | None:
-    """The number at a dotted path of calculator.json, or None."""
+    """The number at a dotted path of calculator.json, or None. A list is indexed
+    by a part of ASCII digits alone, as `adjustment_amount` reads one."""
     if not path or not isinstance(path, str):
         return None
     node = fields
     for part in path.split("."):
         if isinstance(node, dict) and part in node:
             node = node[part]
-        elif isinstance(node, list) and part.isdigit() and int(part) < len(node):
+        elif isinstance(node, list) and part.isascii() and part.isdigit() and int(part) < len(node):
             node = node[int(part)]
         else:
             return None

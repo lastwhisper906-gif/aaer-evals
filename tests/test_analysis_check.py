@@ -1827,6 +1827,41 @@ def test_an_adjustment_amount_is_a_dollar_cell_and_nothing_else():
                                 sources=SOURCES)["adjustments"] == []
 
 
+# CARR's current debt, the first of the lines the calculator of its run
+# 0001783180-26-000032 printed under terms.debt_now.lines: a list of dollar cells.
+DEBT_LINE = {"tag": "DebtCurrent", "namespace": "us-gaap", "unit": "USD", "period": "2026-06-30",
+             "value": 1638000000.0, "accession": "0001783180-26-000032", "filed": "2026-07-28",
+             "id": "0001783180-26-000032:facts:DebtCurrent:2026-06-30"}
+
+
+@pytest.mark.parametrize("field, stands", [
+    ("terms.debt_now.lines.0", True), ("terms.debt_now.lines.²", False),
+    ("terms.debt_now.lines.①", False), ("earnings_versus_cash.history.years.²", False)],
+    ids=["ascii_zero", "superscript_two", "circled_one", "superscript_two_in_the_history"])
+def test_an_adjustment_indexes_a_list_by_ascii_digits_alone(field, stands):
+    """'²' and '①' are digits to `str.isdigit` and not to `int`: the calculator's
+    reading of an adjustment's calculator_field raised ValueError on such an
+    index, which stops the run (`run_analysis.STOPS`) where one adjustment
+    should have been dropped. Such a part names nothing, so the adjustment is
+    dropped and counted, with the reason, and nothing raises. The other side,
+    before and after: an index of ASCII digits names its dollar cell, and the
+    adjustment stands."""
+    fields = copy.deepcopy(FIELDS)
+    fields["terms"]["debt_now"] = {"value": 1638000000.0, "lines": [DEBT_LINE]}
+    payload = accounting()
+    payload["adjustments"][0]["calculator_field"] = field
+    out = analysis_check.check("accounting", payload, fields=fields, sources=SOURCES)
+    if stands:
+        assert out["dropped_count"] == 0, out["dropped_items"]
+        assert out["adjustments"] == payload["adjustments"]
+    else:
+        assert out["adjustments"] == [] and out["dropped_count"] == 1
+        assert out["dropped_items"] == [{
+            "where": "adjustments[0]", "id": None,
+            "reason": f"calculator_field {field!r} is not a dollar amount under terms. or "
+                      "earnings_versus_cash."}]
+
+
 def test_a_quarter_of_a_year_stands_and_a_labelled_quantity_does_not():
     payload = accounting()
     payload["anomalies"][0]["what"] = "Q4 2026 guidance, Q2 of fiscal 2027"
