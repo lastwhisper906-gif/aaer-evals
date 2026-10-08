@@ -827,6 +827,31 @@ def test_a_same_day_filing_is_held_to_the_owner_s_order(tmp_path, eight_k, stand
     assert extraction_checks.check_cutoff(manifest).passed is stands
 
 
+@pytest.mark.parametrize("where, filed, stands", [
+    ("row", "2026-06-03", False),
+    ("row", "20260604", False),
+    ("top", "20260604", False),
+    ("row", "2026-06-04", True)])
+def test_each_document_of_the_triggering_report_is_held_to_the_cutoff(tmp_path, where, filed,
+                                                                      stands):
+    """The owner's nothing_after_cutoff holds each document row of the triggering
+    report, and the manifest's own filing date, to the cutoff as written. The
+    bundle's cutoff gate held only the top-level date, and as a date, so CIEN's
+    10-Q row dated 2026-06-03 under a cutoff of 2026-06-04 passed it (the
+    critic's probe of 2026-10-08), and so did a date written 20260604, which
+    Python reads as the same day and the owner, comparing text, does not."""
+    manifest = _manifest({"accession": "0001628280-26-040614"})
+    if where == "row":
+        manifest["documents"][0]["filing_date"] = filed
+    else:
+        manifest["filing_date"] = filed
+    run = tmp_path / "run"
+    _write(run / "input_manifest.json", json.dumps(manifest))
+    owner = mechanical.check_nothing_after_cutoff(run)
+    assert (owner.status == PASS) is stands, owner.failures
+    assert extraction_checks.check_cutoff(manifest).passed is stands
+
+
 FOREIGN = "0001193125-26-040699"      # another filer agent's prefix, no stamp
 
 

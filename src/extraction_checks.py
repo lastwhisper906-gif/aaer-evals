@@ -343,9 +343,10 @@ def check_cutoff(manifest: dict | None, texts: dict | None = None) -> Result:
     """Fail-closed, the same rule as the loader: no date is a violation.
 
     Held where the owner's `nothing_after_cutoff` holds a run: the documents by
-    date, a document filed on the cutoff day by its acceptance against the
-    triggering report's, and, given the bundle's `texts`, every dated row and
-    every id-less prose line of its inputs (`input_problems`)."""
+    date, each document of the triggering report to the report's filing date, a
+    document filed on the cutoff day by its acceptance against the triggering
+    report's, and, given the bundle's `texts`, every dated row and every id-less
+    prose line of its inputs (`input_problems`)."""
     result = Result("cutoff")
     if manifest is None:
         result.fail("no manifest to check")
@@ -385,6 +386,15 @@ def check_cutoff(manifest: dict | None, texts: dict | None = None) -> Result:
             continue
         if filed > cutoff:
             result.fail(f"{named} was filed {filed}, after the cutoff {cutoff}")
+        elif (row.get("accession") == manifest.get("accession")
+              and row.get("filing_date") != manifest.get("filing_date")):
+            # a document of the triggering report: the cutoff is the report's
+            # filing date, which the manifest records at the top and on each of
+            # its rows, and the owner's grader holds every such row to it
+            result.fail(f"{named} is a document of the triggering report and says it "
+                        f"was filed {row.get('filing_date')}, while the manifest gives "
+                        f"the report's filing date as {manifest.get('filing_date')} -- the "
+                        "cutoff is that date, on every document of the report")
         elif filed == cutoff and row.get("accession") != manifest.get("accession"):
             # the cutoff day itself: another filing that day is inside the date
             # rule, and the owner's grader still asks whether it was accepted at or
@@ -405,7 +415,8 @@ def check_cutoff(manifest: dict | None, texts: dict | None = None) -> Result:
         result.fail(f"the manifest records no filing date for the report that "
                     f"triggered it: {exc}")
         return result
-    if filed != cutoff:
+    # as dates, and as the strings the owner's grader compares
+    if filed != cutoff or manifest.get("filing_date") != manifest.get("cutoff"):
         result.fail(f"the cutoff is {cutoff} and {manifest.get('form')} "
                     f"{manifest.get('accession')} was filed {filed} — the cutoff "
                     f"is the triggering report's own filing date")
