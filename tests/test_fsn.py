@@ -247,9 +247,11 @@ def test_a_filing_value_is_its_lowest_ranked_eligible_row(tmp_path):
 
 # -- the loader ------------------------------------------------------------------
 
+# No skip when duckdb is missing: requirements.txt names it, and these tests are
+# that line's judge, so an install without it fails them where a skip would pass.
+
 @pytest.fixture
 def loaded(tmp_path):
-    pytest.importorskip("duckdb")
     path = planted_zip(tmp_path / "2011q2_notes.zip")
     with zipfile.ZipFile(path) as archive:
         counts = fsn.count_rows(archive)
@@ -296,7 +298,6 @@ def test_the_loaded_ledger_names_the_zip(loaded):
 
 
 def test_a_data_set_whose_loaded_rows_differ_from_its_count_loads_nothing(tmp_path):
-    pytest.importorskip("duckdb")
     # A num row whose accession has no sub row cannot be given a filed date.
     orphan = NUM_ROWS[0].replace(CELGENE, "0000000000-11-000000")
     path = planted_zip(tmp_path / "2011q2_notes.zip", num_rows=NUM_ROWS + [orphan])
@@ -315,7 +316,6 @@ def test_a_data_set_whose_loaded_rows_differ_from_its_count_loads_nothing(tmp_pa
 
 
 def test_load_skips_a_data_set_already_loaded_and_refuses_an_unverified_zip(tmp_path):
-    pytest.importorskip("duckdb")
     zips = tmp_path / "zips"
     zips.mkdir()
     path = planted_zip(zips / "2011q2_notes.zip")
