@@ -318,6 +318,48 @@ def test_a_dropped_items_key_below_the_top_is_not_held_as_a_quote_or_a_citation(
     assert [item["id"] for item in out["anomalies"]] == [ANOMALY_ID]
 
 
+@pytest.mark.parametrize("key, value", [
+    ("dropped", "the antifraud review was skipped"),
+    # a key named "" puts a nested `dropped` at the place string "dropped" too
+    ("", {"dropped": "the antifraud review was skipped"})])
+def test_a_dropped_key_at_the_top_is_the_analyst_s_words(tmp_path, key, value):
+    """The gate writes its note on what it dropped inside an entry, never at the
+    top, and the owner's forbidden_words leaves out only a `.dropped` below the
+    top (and a quote): a `dropped` an analyst writes at the top is read for
+    ruled-out words like any other key. The gate left out every string whose
+    last key was `dropped`, and kept it (the critic's probe, 2026-10-08)."""
+    run = _run(tmp_path)
+    payload = accounting()
+    payload[key] = value
+    raw, gated, out = _both(run, payload, coverage.check_forbidden_words)
+    assert raw.failures == ["analysis_accounting.json:dropped: fraud"]
+    assert key not in out and gated.status == PASS
+
+
+@pytest.mark.parametrize("place, value, grader", [
+    ("top", "see {nothing.here}", mechanical.check_cited_numbers_exist),
+    ("area", "the antifraud review was not read", coverage.check_forbidden_words)])
+def test_a_dropped_key_the_owner_leaves_out_is_kept(tmp_path, place, value, grader):
+    """The other side, standing before and after: cited_numbers_exist leaves out
+    a `dropped` at the top as well as below it, and forbidden_words one below
+    the top, so the gate holds neither there and keeps what carries it."""
+    run = _run(tmp_path)
+    payload = accounting()
+    if place == "top":
+        payload["dropped"] = value
+    else:
+        payload["areas"]["revenue_recognition"] = {"dropped": value}
+    _publish(run, "analysis_accounting.json", payload)
+    assert grader(run).status == PASS
+    out = _gate(run, payload)
+    if place == "top":
+        assert out["dropped"] == value
+    else:
+        assert out["areas"]["revenue_recognition"] == {"dropped": value}
+    _publish(run, "analysis_accounting.json", out)
+    assert grader(run).status == PASS
+
+
 @pytest.mark.parametrize("key, value, owner_says", [
     ("line_items", ["no_such_item"], "analysis_accounting.json:line_items: no_such_item"),
     ("evidence", None, "analysis_accounting.json:evidence: evidence is not a list")])

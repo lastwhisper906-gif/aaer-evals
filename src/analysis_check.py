@@ -756,20 +756,26 @@ def owner_problems(payload: dict, *, kind: str, fields: dict, sources: dict[str,
     def text(value: str, path: tuple):
         where = _where(path)
         last = next((part for part in reversed(path) if isinstance(part, str)), "")
-        if path and path[-1] == "dropped":
-            return                      # the gate's own note on what it dropped
-        paths = PLACEHOLDER.findall(value)
-        for name, _ in paths:
-            if calculator.field_value(fields, name) is None:
-                found.append((path, f"{where}: {{{name}}} is not a number in the calculator "
-                                    "this analyst saw"))
+        # Each grader leaves out its own places, read off the place string it
+        # writes (`where`, the same string): cited_numbers_exist a `dropped` at
+        # any depth, the top included; forbidden_words a `.dropped` below the top
+        # and a quote. The gate writes its own note inside an entry, never at the
+        # top, so a top-level `dropped` is the analyst's, and the owner reads its
+        # words like any other key's. Leaving out every last key `dropped`, the
+        # gate passed a ruled-out word there that forbidden_words fails.
+        if not (where == "dropped" or where.endswith(".dropped")):
+            paths = PLACEHOLDER.findall(value)
+            for name, _ in paths:
+                if calculator.field_value(fields, name) is None:
+                    found.append((path, f"{where}: {{{name}}} is not a number in the "
+                                        "calculator this analyst saw"))
+                    return
+            if where.split("[")[0].endswith(FOLLOWS_PATHS) and not paths \
+                    and not field_cited(fields, value):
+                found.append((path, f"{where}: {value!r} is not a field of the calculator"))
                 return
-        if where.split("[")[0].endswith(FOLLOWS_PATHS) and not paths \
-                and not field_cited(fields, value):
-            found.append((path, f"{where}: {value!r} is not a field of the calculator"))
-            return
-        if path and path[-1] == "quote":
-            return                      # the filer's words, which the quote rule holds
+        if where.endswith(".dropped") or where == "quote" or where.endswith(".quote"):
+            return          # the gate's own note, or the filer's words the quote rule holds
         patterns = [ACCUSATION]
         if recommend_everywhere or path[:1] == ("summary_ko",) or (
                 path[:1] and path[0] in MEMO_LISTS and last in MEMO_NAMES):
