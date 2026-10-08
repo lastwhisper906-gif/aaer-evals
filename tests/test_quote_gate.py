@@ -529,8 +529,12 @@ def test_a_fact_printed_by_two_elements_is_quotable_out_of_either_row(tmp_path):
     index = quote_gate.quotable(root / "numbers_reader", ACCESSION)
     first, second = quote_gate.rows_of(index, FACT_ROW_ID)
     assert first == FACT_ROW and first in text and second in text
-    for quote in (f'"id": "{ACCESSION}:receivables_net_current",',
-                  f'"id": "{ACCESSION}:receivables_net_current_again",'):
+    # each quote runs from the row's own id down to its tag, which says something
+    # the filing said; the id line alone is metadata, which the owner refuses
+    tail = f',\n      "paragraph_id": "{FACT_ROW_ID}",\n      "tag": "AccountsReceivableNetCurrent"'
+    for quote in (f'"id": "{ACCESSION}:receivables_net_current"' + tail,
+                  f'"id": "{ACCESSION}:receivables_net_current_again"' + tail):
+        assert quote in text
         assert quote_gate.quote_drop_reason(
             {"id": "receivables_balance", "paragraph_id": FACT_ROW_ID,
              "quote": quote}, index) is None
@@ -1611,3 +1615,217 @@ def test_a_character_outside_white_space_is_not_folded(character):
 def test_nothing_but_whitespace_is_folded(quote, text):
     assert quote_gate.folded_characters(quote, text) is None
     assert quote_gate.folded_characters(text, quote) is None
+
+
+
+# --- the gate held to the owner's grader (evals/regression/mechanical.py, read-only) --------
+#
+# ESE's numbers reader (run 0001104659-26-093266, 2026-10-07) kept an item whose
+# quote was the row's `context_ref` line and nothing else. The gate kept it, as a
+# genuine substring of the row; the owner's quotes_resolve refused it: "the quote
+# carries only key names, the row's metadata or the id, nothing the row says".
+# The row below is that fact as ESE's input_numbers.json printed it.
+
+from evals.regression import mechanical  # noqa: E402
+
+ESE_MEGGER_ID = ("0001104659-26-058482:facts:BusinessCombinationConsiderationTransferred1:"
+                 "2026-08-15..2026-08-15:us-gaap:BusinessAcquisitionAxis=ese:"
+                 "MeggerGroupLimitedMember,us-gaap:SubsequentEventTypeAxis=us-gaap:"
+                 "SubsequentEventMember")
+ESE_CONTEXT_REF = ("Duration_8_15_2026_To_8_15_2026_us-gaap_BusinessAcquisitionAxis_ese_"
+                   "MeggerGroupLimitedMember_us-gaap_SubsequentEventTypeAxis_us-gaap_"
+                   "SubsequentEventMember_HQOS068G3E28pw7u_1U4Ww")
+ESE_MEGGER = {
+    "id": "0001104659-26-058482:Narr_27-_y04iZ0iP1U6ME-D0JQ",
+    "paragraph_id": ESE_MEGGER_ID,
+    "tag": "BusinessCombinationConsiderationTransferred1",
+    "prefix": "us-gaap", "namespace": "http://fasb.org/us-gaap/2025",
+    "context": {"start": "2026-08-15", "end": "2026-08-15", "segment": [
+        {"dimension": "us-gaap:BusinessAcquisitionAxis", "member": "ese:MeggerGroupLimitedMember"},
+        {"dimension": "us-gaap:SubsequentEventTypeAxis",
+         "member": "us-gaap:SubsequentEventMember"}]},
+    "context_ref": ESE_CONTEXT_REF, "unit": "iso4217:USD", "decimals": "-7",
+    "value": "2350000000", "number": 2350000000.0, "nil": False, "form": "10-Q",
+    "source_accession": "0001104659-26-058482", "filing_date": "2026-05-11"}
+NVDA_TENQ = "0001045810-26-000075"
+
+
+@pytest.fixture(scope="module")
+def numbers_run(tmp_path_factory):
+    """A run whose numbers reader holds NVIDIA's committed input_numbers.json, as
+    `src/assemble_bundle.py` writes it, with ESE's Megger row planted beside its
+    facts; and NVIDIA's first committed fact row."""
+    built = tmp_path_factory.mktemp("nvda")
+    assemble_bundle.write(assemble_bundle.build("NVDA", "10-Q", accession=NVDA_TENQ), built)
+    payload = json.loads((built / "input_numbers.json").read_text(encoding="utf-8"))
+    payload["facts"].append(ESE_MEGGER)
+    run = tmp_path_factory.mktemp("run")
+    (run / MANIFEST).write_text(json.dumps({"accession": NVDA_TENQ}), encoding="utf-8")
+    reader = agent_inputs.session_root(run, "numbers-reader")
+    reader.mkdir(parents=True)
+    (reader / "input_numbers.json").write_text(json.dumps(payload, indent=2) + "\n",
+                                               encoding="utf-8")
+    return run, payload["facts"][0]
+
+
+def _metadata_quotes(fact: dict) -> list[str]:
+    return [f'"context_ref": "{fact["context_ref"]}"', f'"unit": "{fact["unit"]}"',
+            f'"decimals": "{fact["decimals"]}"', f'"filing_date": "{fact["filing_date"]}"',
+            f'"paragraph_id": "{fact["paragraph_id"]}"', '"value": ']
+
+
+def _standing_quotes(fact: dict) -> list[str]:
+    return [f'"value": "{fact["value"]}"', f'"tag": "{fact["tag"]}"']
+
+
+def test_the_gate_keeps_the_owner_s_row_metadata_keys():
+    assert quote_gate.ROW_METADATA_KEYS == mechanical.ROW_METADATA_KEYS
+
+
+@pytest.mark.parametrize("row", ["ese", "nvda"])
+def test_a_quote_of_a_row_s_key_names_and_metadata_alone_is_dropped(numbers_run, row):
+    """Each quote below is a substring of the row; the gate and the owner agree on
+    every one: the metadata quotes fall, the value and the tag stand."""
+    run, first = numbers_run
+    fact = ESE_MEGGER if row == "ese" else first
+    reader = agent_inputs.session_root(run, "numbers-reader")
+    index = quote_gate.quotable(reader, NVDA_TENQ)
+    seen = mechanical.agent_saw(run, "numbers-reader", quotable=("input_",))
+    for quote in _metadata_quotes(fact):
+        assert quote in (reader / "input_numbers.json").read_text(encoding="utf-8")
+        item = {"id": "structure_and_disclosure_changes_megger_consideration_context",
+                "paragraph_id": fact["paragraph_id"], "quote": quote}
+        assert quote_gate.quote_drop_reason(item, index) == quote_gate.KEY_NAMES_ONLY, quote
+        assert mechanical.quote_stands(seen, fact["paragraph_id"], quote) is not None, quote
+    for quote in _standing_quotes(fact):
+        item = {"id": "structure_and_disclosure_changes_megger_consideration",
+                "paragraph_id": fact["paragraph_id"], "quote": quote}
+        assert quote_gate.quote_drop_reason(item, index) is None, quote
+        assert mechanical.quote_stands(seen, fact["paragraph_id"], quote) is None, quote
+
+
+def test_the_gate_drops_the_context_ref_item_and_the_owner_passes_what_it_kept(numbers_run,
+                                                                                tmp_path):
+    """The real gate over a numbers report holding ESE's context_ref-only item and
+    a value item, through the runner: the manifest names the first, and the
+    owner's quotes_resolve passes the copy."""
+    import shutil
+    from evals.common import PASS
+    from src import run_analysis
+    source, _ = numbers_run
+    run = tmp_path / "run"
+    shutil.copytree(source, run)
+    items = [{"id": "structure_and_disclosure_changes_megger_consideration_context",
+              "paragraph_id": ESE_MEGGER_ID, "quote": f'"context_ref": "{ESE_CONTEXT_REF}"'},
+             {"id": "structure_and_disclosure_changes_megger_consideration",
+              "paragraph_id": ESE_MEGGER_ID, "quote": '"value": "2350000000"'}]
+    reader = agent_inputs.session_root(run, "numbers-reader")
+    (reader / "report_numbers.md").write_text(
+        "".join(f"```json\n{json.dumps(item)}\n```\n" for item in items), encoding="utf-8")
+    notes = agent_inputs.session_root(run, "notes-text-reader")
+    notes.mkdir(parents=True)
+    (notes / "input_notes.md").write_text(NOTES, encoding="utf-8")
+    (notes / "report_notes_text.md").write_text("no items\n", encoding="utf-8")
+    run_analysis.gate_readers(run)
+    manifest = json.loads((run / MANIFEST).read_text(encoding="utf-8"))
+    assert [(row["item_id"], row["reason"]) for row in manifest["dropped_items"]] == [
+        ("structure_and_disclosure_changes_megger_consideration_context",
+         quote_gate.KEY_NAMES_ONLY)]
+    result = mechanical.check_quotes_resolve(run)
+    assert result.status == PASS, result.failures
+    assert not any("carries only key names" in line for line in result.failures)
+
+
+# CSCO's notes history (run 0000858877-26-000078) prints a `##` heading between the
+# last sentence of one paragraph and the `- changed` line of the next. The gate's
+# own reading leaves headings out of a paragraph; the owner's keeps every line up
+# to the next [id] line, so a quote spanning the heading is in no paragraph there.
+CSCO_HISTORY = (
+    "# CSCO notes history\n\n"
+    "- removed (2026-05-19):\n"
+    "[0000858877-26-000021:note_history:12]\n"
+    "We have certain funding commitments, primarily related to our privately held "
+    "investments. The funding commitments were $0.7 billion and $0.3 billion as of January "
+    "24, 2026 and July 26, 2025, respectively.\n\n\n"
+    "## us-gaap:CommitmentsAndContingenciesPolicyTextBlock (contingencies) — matched_by: "
+    "tag_name, score: 1.0\n\n"
+    "- changed (2026-05-19):\n"
+    "[0000858877-26-000078:note_history:13]\n"
+    "Purchase Commitments with Contract Manufacturers and Suppliers\n")
+CSCO_TENQ = "0000858877-26-000078"
+
+
+def _notes_run(tmp_path: Path, report: str = "no items\n") -> Path:
+    run = tmp_path / "run"
+    reader = agent_inputs.session_root(run, "notes-text-reader")
+    reader.mkdir(parents=True)
+    (run / MANIFEST).write_text(json.dumps({"accession": CSCO_TENQ}), encoding="utf-8")
+    (reader / "input_notes_history.md").write_text(CSCO_HISTORY, encoding="utf-8")
+    (reader / "report_notes_text.md").write_text(report, encoding="utf-8")
+    return run
+
+
+@pytest.mark.parametrize("quote, stands", [
+    ("respectively.\n\n\n\n- changed (2026-05-19):", False),     # spans the heading
+    ("July 26, 2025, respectively.", True)])
+def test_a_quote_spanning_a_heading_stands_only_where_the_owner_reads_it(tmp_path, quote, stands):
+    run = _notes_run(tmp_path)
+    reader = agent_inputs.session_root(run, "notes-text-reader")
+    index = quote_gate.quotable(reader, CSCO_TENQ)
+    pid = "0000858877-26-000021:note_history:12"
+    item = {"id": "related_parties_contingencies_and_subsequent_events_funding",
+            "paragraph_id": pid, "quote": quote}
+    seen = mechanical.agent_saw(run, "notes-text-reader", quotable=("input_",))
+    assert (quote_gate.quote_drop_reason(item, index) is None) is stands
+    assert (mechanical.quote_stands(seen, pid, quote) is None) is stands
+
+
+def test_an_id_line_in_the_reader_s_own_report_is_not_a_paragraph_it_was_handed(tmp_path):
+    """The reader's report sits in its directory: an [id] line it writes there,
+    with text under it, is in no committed input, and both rules say so."""
+    pid = "0000858877-26-000075:eightk:1"
+    sentence = "The Company announced a restructuring plan on May 13, 2026."
+    run = _notes_run(tmp_path, report=f"no items\n\n[{pid}]\n{sentence}\n")
+    reader = agent_inputs.session_root(run, "notes-text-reader")
+    index = quote_gate.quotable(reader, CSCO_TENQ)
+    item = {"id": "across_documents_restructuring_plan", "paragraph_id": pid, "quote": sentence}
+    assert quote_gate.quote_drop_reason(item, index) is not None
+    seen = mechanical.agent_saw(run, "notes-text-reader", quotable=("input_",))
+    assert mechanical.quote_stands(seen, pid, sentence) is not None
+
+
+# A quote of whitespace alone. The gate refused only an empty quote, and one of
+# spaces, a line break or a no-break space folds to spaces, which any paragraph
+# with a space in it holds, so it stood; the owner's quotes_resolve refuses a
+# quote that strips to nothing, "a kept item with no quote" (the critic's probe
+# of 2026-10-08 on ESE's earnings-release paragraph 36; any prose paragraph will
+# do, CSCO's notes history here). No reader report on record has one.
+@pytest.mark.parametrize("quote, blank", [
+    (" ", True), ("\n", True), (" ", True), ("　", True), (" \t\r\n ", True),
+    ("\u001c", True),          # `str.strip` takes a file separator, and the owner strips
+    ("July 26, 2025, respectively.", False), (" funding commitments ", False)])
+def test_a_quote_of_whitespace_alone_is_dropped_as_the_owner_refuses_it(tmp_path, quote, blank):
+    from evals.common import PASS
+    from src import run_analysis
+    pid = "0000858877-26-000021:note_history:12"
+    item = {"id": "related_parties_contingencies_and_subsequent_events_funding",
+            "paragraph_id": pid, "quote": quote}
+    report = f"```json\n{json.dumps(item)}\n```\n"
+    run = _notes_run(tmp_path, report=report)
+    numbers = agent_inputs.session_root(run, "numbers-reader")
+    numbers.mkdir(parents=True)
+    (numbers / "report_numbers.md").write_text("no items\n", encoding="utf-8")
+    reader = agent_inputs.session_root(run, "notes-text-reader")
+    reason = quote_gate.quote_drop_reason(item, quote_gate.quotable(reader, CSCO_TENQ))
+    assert (reason is not None) is blank, reason
+    # the owner on the report as the reader wrote it, handed on with no gate
+    (run / "report_notes_text.md").write_text(report, encoding="utf-8")
+    (run / "report_numbers.md").write_text("no items\n", encoding="utf-8")
+    assert mechanical.check_quotes_resolve(run).failures == (
+        [f"report_notes_text.md:{item['id']}: a kept item with no quote"] if blank else [])
+    # the owner on what the real gate let through
+    run_analysis.gate_readers(run)
+    rows = json.loads((run / MANIFEST).read_text(encoding="utf-8"))["dropped_items"]
+    assert [row["item_id"] for row in rows] == ([item["id"]] if blank else [])
+    assert all("empty quote" in row["reason"] for row in rows)
+    assert mechanical.check_quotes_resolve(run).status == PASS

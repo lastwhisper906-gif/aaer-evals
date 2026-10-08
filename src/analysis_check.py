@@ -4,21 +4,29 @@ The owner's decision of 2026-09-28: agents read and judge, Python calculates,
 and every number in any output comes from `calculator.json` or companyfacts. An
 analyst writes no digit of its own. It writes the path of a `calculator.json`
 field in braces, `{ratios.liquidity.current_ratio}`, and this file checks the
-path resolves to a number before the memo puts the number there. The rule for
+path names a number, or words Python printed there ("above the range"), before
+the memo puts the number or the words there. The rule for
 the three analyses is the same rule the quote gate applies to reports:
 **every item carries something Python verifies, and a failed item is dropped
 and counted.** An item stands only when
 
-- every `{path}` in its words resolves to a number in `calculator.json`;
+- every `{path}` in its words names a number in `calculator.json`, or words
+  the memo can print verbatim (`placeholder_problem`);
 - its words carry no digit outside a `{path}`, a verbatim quote, an id, a form
   name (10-K, 10-Q, 8-K) or a four-digit year;
 - every `evidence` id is an item id of one of the reports the analyst saw;
 - every `quote` string-matches the file it names in `quote_from`, which the
   analyst saw, whitespace folded as the quote gate folds it;
-- every `fields` entry resolves to a number;
+- every `fields` entry names something in `calculator.json`, read as the
+  owner's cited_numbers_exist reads a path (`field_cited`);
 - no word of it is one the owner ruled out: "fraud", "manipulation" in any
   analysis, and "buy", "sell", "alpha" as well;
-- its enumerated values are the enumerated values.
+- its enumerated values are the enumerated values;
+- and, anywhere in the file and not only in the items above, the owner's
+  graders' own rules hold: a quote stands in one paragraph, one kept report
+  item or one string value of the file it names; every `{path}` stands as
+  above; every `evidence` is a list of items that stood; no ruled-out word sits
+  inside another; no key scores or ranks (`owner_problems`).
 
 A section or an area that fails keeps its key and loses its words, which are
 replaced by the reason, because an area of the accounting analysis is never
@@ -34,8 +42,10 @@ drop rows are read from it, keyed by report, so a citation of an id the quote
 gate dropped is refused here as in the pipeline, and for the valuation kinds
 the run's full `input_mdna.md` and `input_8k.md` are read as `filing`, the
 other side a quote is held to. A valuation or assumptions kind without `--run`
-is refused: the valuation analyst's copies are trimmed, and the trimmed copy
-alone cannot tell a quote across a seam from one the filing printed. The
+is refused: the valuation analyst's copies are trimmed to the flagged
+paragraphs, written one after the other, and the trimmed copy alone cannot tell
+a quote running across the junction of two blocks that were not adjacent from
+one the filing printed. The
 accounting and financial kinds run without it, and say that no drop row was
 read.
 """
@@ -46,15 +56,16 @@ import argparse
 import copy
 from collections.abc import Mapping
 import json
+import math
 import re
 import sys
 from pathlib import Path
 
 try:
-    from src import calculator, interpreter_pin, quote_gate
+    from src import agent_inputs, calculator, interpreter_pin, quote_gate
 except ImportError:  # invoked as a plain script
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from src import calculator, interpreter_pin, quote_gate
+    from src import agent_inputs, calculator, interpreter_pin, quote_gate
 
 BAD_INPUT = 2
 
@@ -304,6 +315,85 @@ def report_ids(text: str) -> set[str]:
     return found
 
 
+# --- a calculator path ------------------------------------------------------------------
+
+def resolve(tree, path: str):
+    """The node a dotted path names in a calculator file, or KeyError: the owner's
+    reading (`evals.common.resolve`, which cited_numbers_exist holds every path
+    to), written out here as the grader writes it, since src imports nothing from
+    evals. A list is indexed by the integer `int` reads in the part, a dict by
+    its key; a cell is the dictionary itself."""
+    node = tree
+    for part in path.split("."):
+        if isinstance(node, list):
+            try:
+                node = node[int(part)]
+            except (ValueError, IndexError):
+                raise KeyError(path) from None
+        elif isinstance(node, dict) and part in node:
+            node = node[part]
+        else:
+            raise KeyError(path)
+    return node
+
+
+def placeholder_value(fields: dict, path: str):
+    """What the memo prints for `{path}`: the number the path names (the node, or
+    a cell's `value`), finite; else the words calculator.json prints there when
+    the node is a string ("above the range", a window's first day, an
+    adjustment's name), verbatim; else None. One reading, the gate's and the
+    memo's."""
+    try:
+        node = resolve(fields, path)
+    except KeyError:
+        return None
+    number = node.get("value") if isinstance(node, dict) else node
+    if isinstance(number, (int, float)) and not isinstance(number, bool) \
+            and math.isfinite(number):
+        return float(number)
+    return node if isinstance(node, str) else None
+
+
+def placeholder_problem(fields: dict, path: str) -> str | None:
+    """Why `{path}` cannot stand in an analyst's words, or None.
+
+    It stands when the path names a number, which the memo prints as a number,
+    or a string Python printed in calculator.json, which the memo prints
+    verbatim (`placeholder_value`): the owner's cited_numbers_exist resolves
+    the path and passes both, and the second passes on record cite
+    `valuation.price_position`, `valuation.reverse_dcf.held` and the beta's
+    window that way. A path that names nothing is refused, as the owner refuses
+    it. Three refusals are the pipeline's own, which the owner's
+    cited_numbers_exist passes: a node with neither a number nor words of its
+    own (a null, a list, a cell holding no number), for which the memo has
+    nothing to print; words carrying a ruled-out word, accusation or
+    recommendation, which the memo would print on a line the owner's
+    forbidden_words reads for both; and words holding a `{path}` of their own,
+    which the memo would print as written, the path unexpanded. Python copies
+    the first-pass valuation analyst's reason into the calculator, and CARR's
+    `cost_of_capital.pre_tax_cost_of_debt.reason` (run 0001783180-26-000032)
+    holds two. No placeholder on record names any of the three."""
+    try:
+        resolve(fields, path)
+    except KeyError:
+        return f"{{{path}}} names nothing in the calculator this analyst saw"
+    value = placeholder_value(fields, path)
+    if value is None:
+        return (f"{{{path}}} is neither a number nor words in the calculator this "
+                "analyst saw")
+    if isinstance(value, str):
+        for pattern in (ACCUSATION, RECOMMENDATION):
+            hit = pattern.search(value)
+            if hit:
+                return (f"{{{path}}} would print a ruled-out word ({hit.group(0)!r}) from "
+                        "the calculator into the memo")
+        nested = PLACEHOLDER.search(value)
+        if nested:
+            return (f"{{{path}}} names words holding a placeholder of their own "
+                    f"({nested.group(0)!r}), which the memo would print unexpanded")
+    return None
+
+
 # --- one string -----------------------------------------------------------------------
 
 def words_problem(text, fields: dict, *, forbidden: tuple[str, ...]) -> str | None:
@@ -313,8 +403,9 @@ def words_problem(text, fields: dict, *, forbidden: tuple[str, ...]) -> str | No
     if not isinstance(text, str):
         return f"{text!r} is not text"
     for path, _ in PLACEHOLDER.findall(text):
-        if calculator.field_value(fields, path) is None:
-            return f"{{{path}}} is not a number in the calculator this analyst saw"
+        problem = placeholder_problem(fields, path)
+        if problem:
+            return problem
     bare = PLACEHOLDER.sub(" ", text)
     if BRACE.search(bare):
         return "a brace that is not a whole {path} placeholder"
@@ -331,26 +422,24 @@ def words_problem(text, fields: dict, *, forbidden: tuple[str, ...]) -> str | No
 
 
 def field_cited(fields: dict, path) -> bool:
-    """A cited field stands when it is a number, or a cell that states why it has none.
-
-    A citation may point at a figure Python declined to compute -- a cash
-    runway is not computed when free cash flow is positive, and the cell says
-    so -- because citing the stated reason is reading the calculator. A number
-    written into a sentence is held to more: `{path}` must be a number.
+    """A cited field stands when its path names something in calculator.json, as
+    the owner's cited_numbers_exist reads a path (`resolve`), whatever it names:
+    a number, a cell, the reason a cell states for having none
+    (`valuation.missing`, which the valuation analyst's prompt has it quote when
+    there is no price or WACC), or a string Python printed
+    (`valuation.price_position`, "above the range"). A citation is a pointer
+    into the calculator, which the memo never prints, and reading what Python
+    wrote there is reading the calculator. A path that names nothing is
+    refused. Words written into a sentence are held to more: `{path}` must name
+    a number or words the memo can print (`placeholder_problem`).
     """
     if not isinstance(path, str):
         return False
-    if calculator.field_value(fields, path) is not None:
-        return True
-    node = fields
-    for part in path.split("."):
-        if isinstance(node, dict) and part in node:
-            node = node[part]
-        elif isinstance(node, list) and part.isdigit() and int(part) < len(node):
-            node = node[int(part)]
-        else:
-            return False
-    return isinstance(node, dict) and any(key in node for key in ("missing", "reason", "note"))
+    try:
+        resolve(fields, path)
+    except KeyError:
+        return False
+    return True
 
 
 def quote_problem(item: dict, sources: dict[str, str],
@@ -360,16 +449,19 @@ def quote_problem(item: dict, sources: dict[str, str],
     The quote is held to the file the analyst saw, under the name it gives. For
     the valuation analyst's MD&A and earnings release, `filing` holds the run's
     full file under the same name, and the quote is held to that too: the copy
-    the analyst saw is cut down to the flagged paragraphs with a seam line
-    between two that were not adjacent (`src/agent_inputs.py`), so a quote that
-    runs off one kept paragraph into the next string-matches the copy and
-    nothing the filing printed.
+    the analyst saw is cut down to the flagged paragraphs, written one after
+    the other with nothing between them (`src/agent_inputs.py`), so a quote
+    that runs off one kept paragraph across the next one's `[id]` line, where
+    the two were not adjacent in the filing, string-matches the copy and
+    nothing the filing printed. The reason still says "seam": that junction.
     """
     quote = item.get("quote")
-    if quote in (None, ""):
+    if quote is None or quote == "":
         return None
+    if not isinstance(quote, str):
+        return f"the quote is {type(quote).__name__}, not text"
     named = item.get("quote_from")
-    if named not in sources:
+    if not isinstance(named, str) or named not in sources:
         return f"quote_from {named!r} is not a file this analyst saw"
     if fold(quote) not in fold(sources[named]):
         return f"the quote does not string-match {named}"
@@ -527,6 +619,371 @@ def paragraph_ids(sources: dict[str, str]) -> set[str]:
     return found
 
 
+# --- the owner's rules over the whole payload ------------------------------------------
+#
+# The checks above walk the items the schema names. The owner's graders walk every
+# key and every string of the published file (`evals/regression/mechanical.py`
+# quotes_resolve, cited_items_exist and cited_numbers_exist; `coverage.py`
+# forbidden_words and no_combined_score), so a quote nested under an item, a
+# placeholder under a key that is not prose, an evidence that is not a list, a
+# ruled-out word inside another word or a key that scores were published past
+# this gate and failed there. Each rule is written out here as the grader writes
+# it -- src imports nothing from evals -- and `tests/test_gate_matches_graders.py`
+# holds every copy equal to the grader's and the two to the same verdict. A
+# departure anywhere drops the unit that holds it: a list item is removed, an
+# area, a section or a single block keeps its key and says why it was dropped, a
+# scenario or an override is removed, a summary sentence is emptied, and a key the
+# schema does not name is removed.
+
+ACCUSATION = re.compile(r"fraud\w*|manipulat\w*|분식|회계\s*부정|사기\s*행위|사기적|사기죄|조작",
+                        re.IGNORECASE)
+RECOMMENDATION = re.compile(r"\balpha\b|\bbuy\b(?!-)|\bsell\b(?!-)"
+                            r"|매수\s*(추천|의견|권)|매도\s*(추천|의견|권)", re.IGNORECASE)
+SCORE_KEY = re.compile(r"(^|_)(score|composite|rank|ranking|overall)($|_)")
+CITATION_KEY = re.compile(r"(.*_)?items?|(.*_)?evidence")
+LABEL_KEYS = ("id", "area", "evidence", "quote_from", "paragraph_id", "frame", "severity",
+              "upstream_item_id", "label", "window", "kind")
+FOLLOWS_PATHS = ("fields",)
+# what the gate writes about itself, never an analyst's words
+BOOKKEEPING = ("dropped_items", "dropped_count", "normalized_quotes")
+# the blocks of named entries, and what a departure inside one entry does to it
+BLOCKS = {"areas": "replace", "sections": "replace", "readings": "replace",
+          "scenarios": "remove", "wacc_overrides": "remove", "summary_ko": "empty"}
+SINGLE_ITEMS = ("dupont", "path_to_distress") + VALUATION_KEYS
+# what the memo prints of an analysis, which is held to the recommendation words
+# whatever the analysis (`src/memo.py`): the summary sentences, an anomaly's name,
+# an adjustment's name
+MEMO_LISTS = ("anomalies", "adjustments")
+MEMO_NAMES = ("name", "name_ko")
+
+
+def walk_strings(node, where: str = ""):
+    """Every string of a JSON tree, with where it sits, written as the owner's
+    grader writes the place (`evals/common.py`)."""
+    if isinstance(node, str):
+        yield where, node
+    elif isinstance(node, dict):
+        for key, value in node.items():
+            yield from walk_strings(value, f"{where}.{key}" if where else key)
+    elif isinstance(node, list):
+        for index, value in enumerate(node):
+            yield from walk_strings(value, f"{where}[{index}]")
+
+
+def _items_of(text: str) -> list[dict]:
+    """A report's fenced items, a list block's elements each, as the grader reads them."""
+    items = []
+    for block in re.findall(r"```json\s*(.*?)```", text, re.S):
+        try:
+            data = json.loads(block)
+        except ValueError:
+            continue
+        items += [one for one in (data if isinstance(data, list) else [data])
+                  if isinstance(one, dict)]
+    return items
+
+
+def json_labels(tree) -> set[str]:
+    """Every string an analysis carries under a label key, as printed and bare."""
+    out = set()
+
+    def walk(node):
+        if isinstance(node, dict):
+            for key, value in node.items():
+                if key in LABEL_KEYS:
+                    for one in (value if isinstance(value, list) else [value]):
+                        if isinstance(one, str):
+                            out.add(json.dumps(one))
+                            out.add(one)
+                walk(value)
+        elif isinstance(node, list):
+            for value in node:
+                walk(value)
+
+    walk(tree)
+    return out
+
+
+def quote_units(name: str, text: str, kept: dict | None = None):
+    """The units a quote can stand in, as (text, keys, metadata): one `[id]`
+    paragraph of a prose input (the text before the first is no unit), one kept
+    item of a reader report (its string values; prose outside the fences and an
+    item the gate dropped are no unit), one string value of a JSON file. A quote
+    is of one thing one file said, not of the file."""
+    if name.startswith("report_"):
+        out = []
+        for item in _items_of(text):
+            if kept is not None and item.get("id") not in kept.get(name, ()):
+                continue
+            printed = json.dumps(item)
+            out.append((" ␟ ".join(fold(value) for _, value in walk_strings(item)),
+                        quote_gate.row_keys(printed), quote_gate.row_metadata(printed)))
+        return out
+    if name.endswith(".md") and agent_inputs.ID_LINE.search(text):
+        return [(fold(body), set(), set())
+                for body in quote_gate.owner_paragraphs(text).values()]
+    if name.endswith(".md"):
+        return [(fold(block), set(), set()) for block in re.split(r"\n\s*\n", text)
+                if block.strip()]
+    if name.endswith(".json"):
+        try:
+            tree = json.loads(text)
+        except ValueError:
+            return []
+        printed = json.dumps(tree)
+        labels = quote_gate.row_metadata(printed) | json_labels(tree)
+        return [(fold(value), quote_gate.row_keys(printed), labels)
+                for _, value in walk_strings(tree)]
+    return [(fold(text), set(), set())]
+
+
+def unit_problem(seen: dict[str, str], quote: str, kept: dict | None = None) -> str | None:
+    """Why an analyst's quote stands in no one unit of the files it names, or None."""
+    wanted, found = fold(quote), False
+    for name, text in seen.items():
+        for body, keys, metadata in quote_units(name, text, kept):
+            if wanted in body:
+                found = True
+                if quote_gate.says_something(quote, keys, "", metadata):
+                    return None
+    if found:
+        return "the quote carries only key names, the item's metadata or the id, nothing it says"
+    return "the quote is in no one paragraph, value or kept report item of the file it names"
+
+
+def kept_report_items(sources: dict[str, str], left_out) -> dict[str, set[str]]:
+    """Per reader report the analyst saw, the ids that stood: every item id of the
+    report less the gate's drops for it and less any id the report carries twice
+    (`left_out(report)` names the drops), the owner's `kept_items`."""
+    out = {}
+    for report in ("report_numbers.md", "report_notes_text.md"):
+        ids = [item["id"] for item in _items_of(sources.get(report, ""))
+               if isinstance(item.get("id"), str) and item["id"].strip()]
+        out[report] = {i for i in ids if ids.count(i) == 1 and i not in left_out(report)}
+    return out
+
+
+def owner_problems(payload: dict, *, kind: str, fields: dict, sources: dict[str, str],
+                   filing: dict[str, str] | None, kept: dict | None,
+                   citable: set[str] | None) -> list[tuple[tuple, str]]:
+    """Every departure from the owner's rules anywhere in the payload, as (the
+    path to it, why): a quote that does not stand in one unit of the file it
+    names; a `{path}` that names no number and no words the memo can print, or a
+    `fields` entry that names nothing, in any string (`placeholder_problem`,
+    `field_cited`); a ruled-out word in any string but a quote; a key that scores
+    or ranks; and, when `citable` is given, an `evidence` that is not a list or
+    any key naming reader items (the owner's CITATION_KEY) that names an id not
+    in it -- the ids that stood in either report, read together as the owner
+    reads them."""
+    found: list[tuple[tuple, str]] = []
+    recommend_everywhere = kind in ("valuation", "assumptions")
+
+    def held_quote(node: dict) -> str | None:
+        """Why a quote written on this object does not stand, or None."""
+        quote = node.get("quote")
+        if not isinstance(quote, str) or not quote.strip():
+            return None
+        why = quote_problem(node, sources, filing)
+        if why is None:
+            why = unit_problem({node["quote_from"]: sources[node["quote_from"]]}, quote, kept)
+        return why
+
+    def key_rules(key, value, here: tuple, cited: bool) -> None:
+        """What a key says by itself: one that scores or ranks, and one that
+        names reader items (an `evidence` that is not a list, any CITATION_KEY
+        naming an id that did not stand)."""
+        if SCORE_KEY.search(str(key).lower()):
+            found.append((here, f"{_where(here)}: a key that adds the frames together "
+                                "or ranks, which no analysis carries"))
+        if cited and citable is not None and key == "evidence":
+            if not isinstance(value, list):
+                found.append((here, f"{_where(here)}: evidence is not a list"))
+            else:
+                cite(value, here, nulls=False)
+        elif cited and citable is not None and CITATION_KEY.fullmatch(str(key)):
+            cite(value if isinstance(value, list) else [value], here, nulls=True)
+
+    def walk(node, path: tuple, cited: bool = True):
+        where = _where(path)
+        if isinstance(node, dict):
+            why = held_quote(node) if cited else None
+            if why:
+                found.append((path, f"{where or 'quote'}: {why}"))
+            for key, value in node.items():
+                here = path + (key,)
+                # a `dropped_items` below the top is the analyst's, not the gate's,
+                # and the owner reads it as its graders do: its words, its
+                # placeholders and its keys like any other (forbidden_words and
+                # cited_numbers_exist leave out only the top one, and
+                # no_combined_score none, the top one being the gate's own rows,
+                # written over what the analyst put there), its quotes and its
+                # citations not at all (`quoted` and cited_items_exist pass over
+                # one at any depth)
+                inner = cited and key != "dropped_items"
+                key_rules(key, value, here, inner)
+                walk(value, here, inner)
+        elif isinstance(node, list):
+            for index, value in enumerate(node):
+                walk(value, path + (index,), cited)
+        elif isinstance(node, str):
+            text(node, path)
+
+    def cite(values, path, *, nulls: bool):
+        """`nulls`: whether a null is passed over, as the owner's cited_items_exist
+        passes one under every citation key but `evidence`, whose every entry it
+        counts and holds to the kept items."""
+        for cited in values:
+            if cited is None and nulls:
+                continue
+            if not isinstance(cited, str) or cited not in citable:
+                found.append((path, f"{_where(path)}: {cited!r} is not an item that stood "
+                                    "in a report this analyst saw"))
+                return
+
+    def text(value: str, path: tuple):
+        where = _where(path)
+        last = next((part for part in reversed(path) if isinstance(part, str)), "")
+        # Each grader leaves out its own places, read off the place string it
+        # writes (`where`, the same string): cited_numbers_exist a `dropped` at
+        # any depth, the top included; forbidden_words a `.dropped` below the top
+        # and a quote. The gate writes its own note inside an entry, never at the
+        # top, so a top-level `dropped` is the analyst's, and the owner reads its
+        # words like any other key's. Leaving out every last key `dropped`, the
+        # gate passed a ruled-out word there that forbidden_words fails.
+        if not (where == "dropped" or where.endswith(".dropped")):
+            paths = PLACEHOLDER.findall(value)
+            for name, _ in paths:
+                problem = placeholder_problem(fields, name)
+                if problem:
+                    found.append((path, f"{where}: {problem}"))
+                    return
+            if where.split("[")[0].endswith(FOLLOWS_PATHS) and not paths \
+                    and not field_cited(fields, value):
+                found.append((path, f"{where}: {value!r} is not a field of the calculator"))
+                return
+        if where.endswith(".dropped") or where == "quote" or where.endswith(".quote"):
+            return          # the gate's own note, or the filer's words the quote rule holds
+        patterns = [ACCUSATION]
+        if recommend_everywhere or path[:1] == ("summary_ko",) or (
+                path[:1] and path[0] in MEMO_LISTS and last in MEMO_NAMES):
+            patterns.append(RECOMMENDATION)
+        for pattern in patterns:
+            hit = pattern.search(value)
+            if hit:
+                found.append((path, f"{where}: a ruled-out word ({hit.group(0)!r})"))
+                return
+
+    # what the gate writes over once this walk is done, so it is never published as
+    # the analyst wrote it: the bookkeeping and the rules version's limits sentence
+    # in an analysis; only the drop list and its count in the assumptions, whose
+    # every other key is published as written and read by the owner
+    overwritten = (("dropped_items", "dropped_count") if kind == "assumptions"
+                   else BOOKKEEPING + ("limits",))
+    # the analysis object itself is held as any object in it is: a quote written
+    # on it (the owner's `quoted` yields the root too), and each top-level key
+    why = held_quote(payload)
+    if why:
+        found.append((("quote",), f"quote: {why}"))
+    for key, value in payload.items():
+        if key in overwritten:
+            continue
+        if SCORE_KEY.search(str(key).lower()):
+            found.append(((key,), f"{key}: a key that adds the frames together or ranks, "
+                                  "which no analysis carries"))
+            continue
+        key_rules(key, value, (key,), True)
+        walk(value, (key,))
+    return found
+
+
+def _where(path: tuple) -> str:
+    out = ""
+    for part in path:
+        out += f"[{part}]" if isinstance(part, int) else (f".{part}" if out else str(part))
+    return out
+
+
+def drop_departures(payload: dict, problems: list[tuple[tuple, str]], dropped: list) -> None:
+    """Drop the unit that holds each departure, once, and record why."""
+    units: dict[tuple, str] = {}
+    for path, why in problems:
+        top = payload.get(path[0])
+        if len(path) > 1 and (isinstance(top, list) or (isinstance(top, dict)
+                                                        and path[0] in BLOCKS)):
+            unit = path[:2]
+        else:
+            unit = path[:1]
+        units.setdefault(unit, why)
+    removals: dict[str, list[int]] = {}
+    for unit, why in units.items():
+        key = unit[0]
+        if len(unit) == 2 and isinstance(payload.get(key), list):
+            removals.setdefault(key, []).append(unit[1])
+            item = payload[key][unit[1]]
+            dropped.append({"where": f"{key}[{unit[1]}]",
+                            "id": item.get("id") if isinstance(item, dict) else None,
+                            "reason": why})
+            continue
+        dropped.append({"where": _where(unit), "reason": why})
+        if len(unit) == 2:
+            block, name = payload[key], unit[1]
+            if BLOCKS[key] == "remove" or SCORE_KEY.search(str(name).lower()):
+                block.pop(name, None)
+            elif BLOCKS[key] == "empty":
+                block[name] = None
+            else:
+                block[name] = {"dropped": why}
+        elif key in BLOCKS and isinstance(payload.get(key), dict):
+            # the one departure that sits on a block object itself is a quote
+            # written there, beside its entries: the quote goes, the entries stay
+            payload[key].pop("quote", None)
+            payload[key].pop("quote_from", None)
+        elif key in SINGLE_ITEMS and not SCORE_KEY.search(key.lower()):
+            payload[key] = {"dropped": why}
+        else:
+            payload.pop(key, None)
+    for key, indices in removals.items():
+        payload[key] = [item for index, item in enumerate(payload[key])
+                        if index not in set(indices)]
+
+
+def unanswered(payload: dict, kind: str, dropped: list) -> None:
+    """An area, a section, the DuPont reading or the value range that carries no
+    words of its own -- no non-empty `finding` or `reading` -- answers nothing,
+    and the owner reads it as absent (`coverage.answered`). It keeps its key and
+    says so. So does one whose whole block is missing or is not an object, since
+    the owner reads every area of such a block as absent too."""
+    def answered(entry) -> bool:
+        if not isinstance(entry, dict):
+            return False
+        if isinstance(entry.get("dropped"), str) and entry["dropped"].strip():
+            return True
+        return any(isinstance(entry.get(key), str) and entry[key].strip()
+                   for key in ("finding", "reading"))
+
+    def hold(container: dict, name: str, where: str) -> None:
+        if not answered(container.get(name)):
+            why = ("the analyst wrote no finding or reading for it" if name in container
+                   else "nothing stood for it")
+            container[name] = {"dropped": why}
+            dropped.append({"where": where, "reason": why})
+
+    def block(key: str) -> dict:
+        if not isinstance(payload.get(key), dict):
+            payload[key] = {}
+        return payload[key]
+
+    if kind == "accounting":
+        for name in ACCOUNTING_AREAS:
+            hold(block("areas"), name, f"areas.{name}")
+    elif kind == "financial":
+        for name in FINANCIAL_SECTIONS:
+            hold(block("sections"), name, f"sections.{name}")
+        hold(payload, "dupont", "dupont")
+    elif kind == "valuation":
+        hold(payload, "value_range", "value_range")
+
+
 def check(kind: str, payload: dict, *, fields: dict, sources: dict[str, str],
           excluded: set[str] | frozenset | Mapping[str, set[str]] = frozenset(),
           paragraph_ids: bool = False, filing: dict[str, str] | None = None) -> dict:
@@ -606,6 +1063,13 @@ def check(kind: str, payload: dict, *, fields: dict, sources: dict[str, str],
     else:
         raise AnalysisInputError(f"no analysis is called {kind!r}")
     _check_summary(payload, fields, dropped, forbidden=forbidden)
+    # the owner's rules, over every key and string the checks above did not walk
+    kept = kept_report_items(sources, left_out)
+    citable = upstream if paragraph_ids else set().union(*kept.values())
+    drop_departures(payload, owner_problems(
+        payload, kind=kind, fields=fields, sources=sources, filing=filing,
+        kept=kept, citable=citable), dropped)
+    unanswered(payload, kind, dropped)
     _limits(payload, kind, dropped)
     payload["normalized_quotes"] = normalized_quotes(payload, sources)
     payload["dropped_items"] = dropped
@@ -638,8 +1102,9 @@ def check_assumptions(payload: dict, *, fields: dict, sources: dict[str, str],
             reasons = scenario.get("reasons") or {}
             for driver in calculator.DRIVERS:
                 value = scenario.get(driver)
-                if isinstance(value, bool) or not isinstance(value, (int, float)):
-                    problem = f"{driver} is not a number"
+                if isinstance(value, bool) or not isinstance(value, (int, float)) \
+                        or not math.isfinite(value):
+                    problem = f"{driver} is not a finite number"
                     break
                 reason = reasons.get(driver)
                 if not isinstance(reason, dict) or not reason.get("reason"):
@@ -663,8 +1128,10 @@ def check_assumptions(payload: dict, *, fields: dict, sources: dict[str, str],
         problem = None
         if name != "pre_tax_cost_of_debt":
             problem = "only the pre-tax cost of debt may be chosen"
-        elif not isinstance(chosen, dict) or not isinstance(chosen.get("value"), (int, float)):
-            problem = "no value"
+        elif not isinstance(chosen, dict) or isinstance(chosen.get("value"), bool) \
+                or not isinstance(chosen.get("value"), (int, float)) \
+                or not math.isfinite(chosen["value"]):
+            problem = "no value, or one that is not a finite number"
         else:
             problem = quote_problem(chosen, sources, filing) or (None if chosen.get("quote")
                                                          else "no quote")
@@ -672,6 +1139,15 @@ def check_assumptions(payload: dict, *, fields: dict, sources: dict[str, str],
             dropped.append({"where": f"wacc_overrides.{name}", "reason": problem})
             overrides.pop(name)
     payload["wacc_overrides"] = overrides
+    # a scenario the calculator does not run is checked by nobody here and read by
+    # the owner's grader: it is removed, as a scenario that failed is
+    for name in [name for name in scenarios if name not in calculator.SCENARIOS]:
+        scenarios.pop(name)
+        dropped.append({"where": f"scenarios.{name}",
+                        "reason": f"not one of {', '.join(calculator.SCENARIOS)}"})
+    drop_departures(payload, owner_problems(
+        payload, kind="assumptions", fields=fields, sources=sources, filing=filing,
+        kept=None, citable=None), dropped)
     payload["dropped_items"] = dropped
     payload["dropped_count"] = len(dropped)
     return payload
@@ -735,8 +1211,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.kind in ("valuation", "assumptions") and not args.run:
         print(f"analysis_check: --kind {args.kind} needs --run <run directory>: the "
               "valuation analyst's input_mdna.md and input_8k.md are trimmed copies, and "
-              "the trimmed copy alone cannot hold a quote across a seam to what the filing "
-              "printed; the run's full files are the other side", file=sys.stderr)
+              "the trimmed copy alone cannot hold a quote across a seam between two kept "
+              "paragraphs to what the filing printed; the run's full files are the other "
+              "side", file=sys.stderr)
         return BAD_INPUT
     try:
         payload = json.loads(Path(args.written).read_text(encoding="utf-8"))

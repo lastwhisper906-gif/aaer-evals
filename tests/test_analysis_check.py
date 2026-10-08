@@ -82,7 +82,10 @@ def test_an_exclusion_keyed_by_report_takes_the_id_out_of_that_report_alone():
     it would name the dropped notes item as well as the standing numbers one;
     a reconciliation row naming it as the notes item is refused, naming it as
     the numbers item stands on that side; the same id as a plain set is out of
-    both; and with nothing dropped the bare citation stands."""
+    both; and with nothing dropped the bare citation stands. The adjustment
+    quotes the notes item that fell: a dropped item is no unit a quote can stand
+    in (the owner's `units_of`), so it falls with it wherever the notes item is
+    dropped, and stands where it stood."""
     shared = "revenue_recognition_payment_terms_extended"
     numbers = NUMBERS + f'''
 ```json
@@ -98,7 +101,10 @@ def test_an_exclusion_keyed_by_report_takes_the_id_out_of_that_report_alone():
                                excluded={"report_notes_text.md": {shared}})
     assert out["anomalies"] == []
     assert [row["where"] for row in out["dropped_items"]] == [
-        "reconciliation[0]", "reconciliation[1]", "anomalies[0]"]
+        "reconciliation[0]", "reconciliation[1]", "anomalies[0]", "adjustments[0]"]
+    assert out["dropped_items"][3]["reason"] == (
+        "adjustments[0]: the quote is in no one paragraph, value or kept report item of the "
+        "file it names")
     assert out["dropped_items"][0]["reason"] == (
         f"notes_item {shared!r} is not an item of report_notes_text.md")
     assert "twin_free" in out["dropped_items"][1]["reason"]          # its own notes side
@@ -110,7 +116,7 @@ def test_an_exclusion_keyed_by_report_takes_the_id_out_of_that_report_alone():
                                excluded={shared})
     assert out["anomalies"] == []
     assert [row["where"] for row in out["dropped_items"]] == [
-        "reconciliation[0]", "reconciliation[1]", "anomalies[0]"]
+        "reconciliation[0]", "reconciliation[1]", "anomalies[0]", "adjustments[0]"]
     # dropped from the numbers report alone: the notes-side row stands, the bare
     # citation still falls
     out = analysis_check.check("accounting", payload, fields=FIELDS, sources=sources,
@@ -294,11 +300,13 @@ def test_an_assumption_scenario_without_a_reason_is_dropped_whole():
 
 
 def test_a_quote_across_a_seam_of_the_trimmed_prose_fails_the_gate():
-    """The valuation analyst's MD&A is cut to the flagged paragraphs with one line
-    holding the two markers between kept blocks that were not adjacent. A quote
-    inside a kept block string-matches the copy and the filing; one running off
-    the end of the second paragraph into the start of the fourth string-matches
-    the copy, and nothing the filing printed."""
+    """A copy cut to the flagged paragraphs with one line holding the two markers
+    between kept blocks that were not adjacent -- the trim's shape until
+    2026-10-07, kept here as the hardest case. A quote inside a kept block
+    string-matches the copy and the filing; one running off the end of the
+    second paragraph into the start of the fourth string-matches the copy, and
+    nothing the filing printed. The copy alone now tells too: the quote stands
+    in no one paragraph of it, which is the owner's rule."""
     two, four = "0000000000-00-000001:mdna:2", "0000000000-00-000001:mdna:4"
     filing = (f"# T mdna\n\n[0000000000-00-000001:mdna:1]\nFirst.\n\n[{two}]\nSecond, kept.\n\n"
               f"[0000000000-00-000001:mdna:3]\nThird.\n\n[{four}]\nFourth, kept.\n")
@@ -327,7 +335,8 @@ def test_a_quote_across_a_seam_of_the_trimmed_prose_fails_the_gate():
     assert "across a seam" in out["dropped_items"][0]["reason"]
     without = analysis_check.check_assumptions({"scenarios": {"bear": bad, "base": good, "bull": good}},
                                                fields=FIELDS, sources=sources)
-    assert set(without["scenarios"]) == {"bear", "base", "bull"}  # the copy alone cannot tell
+    assert set(without["scenarios"]) == {"base", "bull"}    # one paragraph of the copy alone
+    assert "in no one paragraph" in without["dropped_items"][0]["reason"]
 
 
 # --- the module's own command ------------------------------------------------------------
@@ -1816,6 +1825,41 @@ def test_an_adjustment_amount_is_a_dollar_cell_and_nothing_else():
     payload["adjustments"][0]["calculator_field"] = "ratios.efficiency.days_sales_outstanding"
     assert analysis_check.check("accounting", payload, fields=FIELDS,
                                 sources=SOURCES)["adjustments"] == []
+
+
+# CARR's current debt, the first of the lines the calculator of its run
+# 0001783180-26-000032 printed under terms.debt_now.lines: a list of dollar cells.
+DEBT_LINE = {"tag": "DebtCurrent", "namespace": "us-gaap", "unit": "USD", "period": "2026-06-30",
+             "value": 1638000000.0, "accession": "0001783180-26-000032", "filed": "2026-07-28",
+             "id": "0001783180-26-000032:facts:DebtCurrent:2026-06-30"}
+
+
+@pytest.mark.parametrize("field, stands", [
+    ("terms.debt_now.lines.0", True), ("terms.debt_now.lines.²", False),
+    ("terms.debt_now.lines.①", False), ("earnings_versus_cash.history.years.²", False)],
+    ids=["ascii_zero", "superscript_two", "circled_one", "superscript_two_in_the_history"])
+def test_an_adjustment_indexes_a_list_by_ascii_digits_alone(field, stands):
+    """'²' and '①' are digits to `str.isdigit` and not to `int`: the calculator's
+    reading of an adjustment's calculator_field raised ValueError on such an
+    index, which stops the run (`run_analysis.STOPS`) where one adjustment
+    should have been dropped. Such a part names nothing, so the adjustment is
+    dropped and counted, with the reason, and nothing raises. The other side,
+    before and after: an index of ASCII digits names its dollar cell, and the
+    adjustment stands."""
+    fields = copy.deepcopy(FIELDS)
+    fields["terms"]["debt_now"] = {"value": 1638000000.0, "lines": [DEBT_LINE]}
+    payload = accounting()
+    payload["adjustments"][0]["calculator_field"] = field
+    out = analysis_check.check("accounting", payload, fields=fields, sources=SOURCES)
+    if stands:
+        assert out["dropped_count"] == 0, out["dropped_items"]
+        assert out["adjustments"] == payload["adjustments"]
+    else:
+        assert out["adjustments"] == [] and out["dropped_count"] == 1
+        assert out["dropped_items"] == [{
+            "where": "adjustments[0]", "id": None,
+            "reason": f"calculator_field {field!r} is not a dollar amount under terms. or "
+                      "earnings_versus_cash."}]
 
 
 def test_a_quarter_of_a_year_stands_and_a_labelled_quantity_does_not():

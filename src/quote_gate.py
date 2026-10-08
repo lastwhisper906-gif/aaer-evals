@@ -130,7 +130,10 @@ nothing in an item checks that word.
 **Fail closed.** A paragraph id that resolves to nothing, an item with no id, an
 empty quote, a citation that is not a string -- each is a drop and never a pass.
 An empty quote is a substring of every text, so it is the one alteration a
-substring test cannot see, and it is refused before the test is reached.
+substring test cannot see, and it is refused before the test is reached; so is
+a quote of whitespace alone, which the fold reads as spaces that any paragraph
+with a space in it holds, and which the owner's quotes_resolve refuses as "a
+kept item with no quote" (blank as `str.strip` reads it, the owner's own test).
 
 **Where the count goes.** `docs/INPUT_SPEC.md` §6 gives `input_manifest.json`
 the dropped-item counts. The gate runs inside `read`, `compare` and `decide`,
@@ -334,13 +337,35 @@ def _computed_rows(folder: Path, accession: str):
                         yield identifier, row, TRENDS
 
 
+class Quotable(dict):
+    """Paragraph id → committed text, as `quotable` builds it, carrying beside it
+    the prose paragraphs as the owner's grader reads them (`prose`): each `[id]`
+    line owns everything up to the next `[id]` line, headings included
+    (`evals/regression/mechanical.py`, `paragraphs_of`). A quote of a prose
+    paragraph has to stand in both readings, so a quote that spans a heading
+    the gate's own reading leaves out is dropped, as the owner refuses it."""
+
+    prose: dict[str, str]
+
+
+def owner_paragraphs(text: str) -> dict[str, str]:
+    """Each `[id]` paragraph of a prose input as the owner reads it: the text after
+    its `[id]` line up to the next one, headings and blank lines included."""
+    marks = list(agent_inputs.ID_LINE.finditer(text))
+    return {mark.group(1): text[mark.end():following.start() if following else len(text)]
+            for mark, following in zip(marks, marks[1:] + [None])}
+
+
 def quotable(input_dir, accession: str) -> dict[str, str | tuple[str, ...]]:
     """Paragraph id → the committed text it owns, for one agent's input directory.
 
     The prose files by their `[id]` lines, and the computed rows by the ids
     they print. A file that declares no ids of its own — the market table, the
     manifest, anything else that lands in the directory — offers nothing here
-    for a quote to be matched against.
+    for a quote to be matched against, and neither does a markdown file that is
+    not a committed input (`input_*.md`): the reader's own report sits in the
+    same directory, and an `[id]` line it writes is not a paragraph it was
+    handed.
 
     One id names one paragraph, with one exception: a filing can state one fact
     more than once -- NVIDIA's 10-Q 0001045810-26-000075 prints its inventory
@@ -374,14 +399,21 @@ def quotable(input_dir, accession: str) -> dict[str, str | tuple[str, ...]]:
         if where == NUMBERS:
             facts.add(identifier)
 
-    for name in cutoff_guard.bundle_files(folder, "*.md"):
-        for identifier, body in assemble_bundle.paragraph_blocks(
-                cutoff_guard.load_bundle_file(folder, name)):
+    # the committed inputs only: a reader's own report, which lands in the same
+    # directory, is not its input, and an `[id]` line it writes names nothing
+    # the reader was handed
+    prose: dict[str, str] = {}
+    for name in cutoff_guard.bundle_files(folder, "input_*.md"):
+        text = cutoff_guard.load_bundle_file(folder, name)
+        for identifier, body in assemble_bundle.paragraph_blocks(text):
             record(identifier, body, name)
+        prose.update(owner_paragraphs(text))
 
     for identifier, row, where in _computed_rows(folder, accession):
         record(identifier, row, where)
-    return index
+    out = Quotable(index)
+    out.prose = prose
+    return out
 
 
 def rows_of(index: dict, paragraph_id: str) -> tuple[str, ...]:
@@ -449,20 +481,105 @@ def folded_in(index: dict, paragraph_id: str, quote: str) -> int | None:
     return min(counts) if counts else None
 
 
+# What a computed row carries about itself rather than about the company, as the
+# owner's grader lists it (`evals/regression/mechanical.py` ROW_METADATA_KEYS; a
+# test holds the two equal). The tag is not among them: the concept a filer
+# tagged a line with is the filer's choice, and a fact about the filing.
+ROW_METADATA_KEYS = ("prefix", "namespace", "unit", "form", "id", "paragraph_id",
+                     "source_accession", "accession", "context_ref", "decimals",
+                     "filing_date", "filed", "period", "start", "end", "instant")
+KEY_NAMES_ONLY = ("the quote carries only key names, the row's metadata or the id, "
+                  "nothing the row says")
+# a paragraph id is an accession, a namespace and a name (the owner's PARAGRAPH_ID)
+PARAGRAPH_ID = re.compile(r"\d{10}-\d{2}-\d{6}:[a-z0-9_]+:.+")
+
+
+def _walk_pairs(node):
+    """Every (key, value) of a JSON tree, at any depth."""
+    if isinstance(node, dict):
+        for key, value in node.items():
+            yield key, value
+            yield from _walk_pairs(value)
+    elif isinstance(node, list):
+        for value in node:
+            yield from _walk_pairs(value)
+
+
+def row_keys(row_text: str) -> set[str]:
+    """Every key name a printed JSON row carries, at any depth."""
+    try:
+        return {key for key, _ in _walk_pairs(json.loads(row_text))}
+    except ValueError:
+        return set()
+
+
+def row_metadata(row_text: str) -> set[str]:
+    """Every value a printed row carries under a metadata key, as JSON prints it."""
+    try:
+        tree = json.loads(row_text)
+    except ValueError:
+        return set()
+    return {json.dumps(value) for key, value in _walk_pairs(tree)
+            if key in ROW_METADATA_KEYS and isinstance(value, (str, int, float))}
+
+
+def says_something(quote: str, keys: set[str], identifier: str,
+                   metadata: set[str] = frozenset()) -> bool:
+    """Whether a quote of a JSON row carries anything beyond its key names, its
+    metadata values, the id and JSON punctuation: a value, or a piece of one.
+    `"context_ref": "Duration_8_15_2026_..."` (ESE's numbers reader, 2026-10-07)
+    is a substring of the row and says nothing the filing said."""
+    rest = quote.replace(f'"{identifier}"', " ")
+    for key in sorted(keys, key=len, reverse=True):
+        rest = rest.replace(f'"{key}"', " ")
+    for value in sorted(metadata, key=len, reverse=True):
+        rest = rest.replace(value, " ")
+    return bool(re.sub(r'[\s:,{}\[\]"]+', "", rest))
+
+
 def quote_drop_reason(item, index: dict) -> str | None:
-    """Why this reader item is dropped, or None when it stands."""
+    """Why this reader item is dropped, or None when it stands.
+
+    Beyond the string match: a quote is not blank; a paragraph id has the shape
+    accession, namespace, name; a quote of a prose paragraph stands in that
+    paragraph as the owner reads it too (`Quotable.prose`), headings included;
+    and a quote of a computed row must carry something the row says, not only
+    its key names, its metadata or its id -- the owner's grader refuses each of
+    these."""
     if item_id(item) is None:
         return "the item carries no id, so nothing downstream could cite it"
     paragraph_id = item.get("paragraph_id")
     if not isinstance(paragraph_id, str) or not paragraph_id:
         return "the item names no paragraph id"
     quote = item.get("quote")
-    if not isinstance(quote, str) or not quote:
-        return "the item carries no quote, and an empty quote matches every text"
+    # blank as the owner's quotes_resolve reads it (`quote.strip()`): one of
+    # whitespace alone folds to spaces, which any paragraph with a space holds
+    if not isinstance(quote, str) or not quote.strip():
+        return ("the item carries no quote, and an empty quote, or one of whitespace "
+                "alone, matches every text")
     if paragraph_id not in index:
         return f"paragraph id {paragraph_id} is not in this reader's committed input"
     if folded_in(index, paragraph_id, quote) is None:
         return f"the quote does not string-match {paragraph_id} in the committed input"
+    if not PARAGRAPH_ID.fullmatch(paragraph_id):
+        return f"{paragraph_id!r} is not a paragraph id (accession:namespace:name)"
+    rows = rows_of(index, paragraph_id)
+    if all(row.lstrip().startswith("{") for row in rows):
+        keys = set().union(*(row_keys(row) for row in rows))
+        metadata = set().union(*(row_metadata(row) for row in rows))
+        if not says_something(quote, keys, paragraph_id, metadata):
+            return KEY_NAMES_ONLY
+        return None
+    prose = getattr(index, "prose", None)
+    if prose is not None:
+        body = prose.get(paragraph_id)
+        if body is None:
+            return (f"paragraph id {paragraph_id} is not an [id] paragraph of this "
+                    "reader's committed input")
+        if folded(quote) not in folded(body):
+            return (f"the quote is not in {paragraph_id} as the committed input prints it, "
+                    "every line up to the next [id] line included: it spans a line the "
+                    "paragraph does not hold there")
     return None
 
 
@@ -617,6 +734,10 @@ def _ids_elsewhere(bundle_root, handed: set[str]) -> dict[str, str]:
     return found
 
 
+UNREADABLE_BLOCK = ("a fenced block that is not JSON: no item in it can be checked, so "
+                    "the block is removed from the copy downstream reads")
+
+
 def gate(reports: list[dict], bundle_root) -> dict:
     """Every report in layer order: what stands, what was dropped, and the count on disk.
 
@@ -625,6 +746,9 @@ def gate(reports: list[dict], bundle_root) -> dict:
         {"report": "report_notes_text.md", "items": [...], "input": <directory>}
         {"report": "report_notes_vs_market.md", "items": [...],
          "cites": ["report_notes_text.md"]}
+
+    An entry may say how many of its report's fenced blocks are not JSON
+    (`"malformed": n`); each is recorded as one drop with no item id.
 
     A report naming an `input` is a reader's and its items are quoted against
     that directory; a report naming what it `cites` is a comparer's or a
@@ -712,6 +836,10 @@ def gate(reports: list[dict], bundle_root) -> dict:
                                            "characters": count})
             else:
                 dropped.append({"report": name, "item_id": identifier, "reason": why})
+        # a fenced block that does not parse holds items nobody can check: each is
+        # counted as a drop with no item id, and the runner removes the block
+        for _ in range(int(entry.get("malformed") or 0)):
+            dropped.append({"report": name, "item_id": None, "reason": UNREADABLE_BLOCK})
         kept[name], kept_ids[name] = standing, standing_ids
 
     _write_counts(bundle_root, manifest, dropped, normalized, gated)
