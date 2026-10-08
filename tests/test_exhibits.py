@@ -435,12 +435,11 @@ def test_a_filename_rule_has_more_than_one_candidate_almost_everywhere():
     # of the eight's sixteen headers lists an `R21.htm` among its XML files, and
     # so does every one of the next eight's sixteen, so none of them is alone
     # either. The third eight's sixteen list an `R21.htm` too, and fifteen of
-    # them a second name with 21 in it: the exhibit itself, an `EX-32.1` or an
-    # `EX-10.21` (NetApp's 'ntap-ex10_21.htm'), or American Superconductor's
-    # prior-year `EX-31.1` 'ex_774521.htm'. American Superconductor's current
-    # header, 0001437749-26-018542, is the sixteenth: its exhibit is
-    # 'ex_919730.htm' and its certifications carry serial names too, so
-    # 'R21.htm' is the one candidate, and not an exhibit at all.
+    # them a second name with 21 in it: the exhibit itself, an `EX-32.1`, or
+    # American Superconductor's prior-year `EX-31.1` 'ex_774521.htm'. American
+    # Superconductor's current header, 0001437749-26-018542, is the sixteenth:
+    # its exhibit is 'ex_919730.htm' and its certifications carry serial names
+    # too, so 'R21.htm' is the one candidate, and not an exhibit at all.
     assert len(counted) == 72
     alone = sorted(key for key, found in counted.items() if len(found) < 2)
     assert alone == [("AMSC", "submission_header"),

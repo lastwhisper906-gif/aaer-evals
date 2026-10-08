@@ -506,8 +506,6 @@ UNDER_DROPPED_BUNDLE = {
                      "'Cautionary Statement' carried; 81 read, 93 built",
     ("OMCL", "10-Q"): "5 page numerals, the heading 'Forward-Looking Statements' and "
                       "two of its paragraphs carried; 92 read, 100 built",
-    ("NTAP", "10-Q"): "the paragraph 'Actual results may differ materially from these "
-                      "statements' carried; 126 read, 127 built",
 }
 
 EIGHT_K_CASES = [
@@ -876,7 +874,7 @@ def controls_case(ticker: str, form: str, **named):
 
 
 # The cases in the order and with the ids the two stacked parametrisations gave
-# them, form first: `10-K-AAPL` ... `10-Q-NTAP`.
+# them, form first: `10-K-AAPL` ... `10-Q-OMCL`.
 CONTROLS_CASES = [controls_case(ticker, form, id=f"{form}-{ticker}")
                   for form in ("10-K", "10-Q") for ticker in TICKERS]
 

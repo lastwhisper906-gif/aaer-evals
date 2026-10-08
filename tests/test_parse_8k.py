@@ -291,8 +291,6 @@ UNDER_DROPPED = {
             "the paragraphs 'Such statements include, but are not limited to' and "
             "'Actual results and other events may differ significantly' are carried; "
             "18 read, 10 dropped",
-    "NTAP": "the second paragraph 'Actual results may differ materially from these "
-            "statements' is carried; 3 read, 2 dropped",
 }
 
 # What a reader can see, written here rather than read from the cleaner: a
@@ -584,8 +582,8 @@ def test_only_the_four_named_items_go_in_verbatim(tmp_path):
 # off each stored 8-K's submissions row the same way: AMSC's
 # 0001437749-26-025921 reads "2.02,5.07,9.01", UI's 0001511737-26-000057
 # "2.02,8.01,9.01", NSSC's 0001104659-26-100077 and AMD's 0000002488-26-000121
-# "2.02,7.01,9.01", and LII's, CLS's, OMCL's and NTAP's "2.02,9.01"; a vote
-# (5.07), Regulation FD (7.01) and other events (8.01) are not carried verbatim.
+# "2.02,7.01,9.01", and LII's, CLS's and OMCL's "2.02,9.01"; a vote (5.07),
+# Regulation FD (7.01) and other events (8.01) are not carried verbatim.
 VERBATIM_ON_RECORD = {"FN": ["1.01", "5.02"]}
 
 
