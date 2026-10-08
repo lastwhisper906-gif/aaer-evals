@@ -581,6 +581,34 @@ def test_a_completed_run_holds_each_agent_s_own_report_and_is_clean(tmp_path):
             encoding="utf-8") == f"{agent} wrote this\n"
 
 
+@pytest.mark.parametrize("data, rebuilt", [
+    (b"placeholder", True),                         # GNRC's notes reader's eleven bytes
+    (b"the shares fell after the report\n", False),
+    (b'{"items": []}', False)])
+def test_a_resumed_build_passes_one_stray_word_and_refuses_anything_more(tmp_path, data,
+                                                                         rebuilt):
+    """GNRC's notes reader left "placeholder" in scratch_check.txt beside its
+    report (runs/GNRC/0001437749-26-025669), which the owner's graders pass. A
+    run stopped after a reader left one is resumed by building the reader's
+    directory again, and the build refused it as a file a reader never sees, so
+    the run could not be resumed; it passes the word the owner passes, and the
+    boundary check with it. A sentence or a JSON object is still refused: it
+    could stand in for an input."""
+    run = _run_directory(tmp_path)
+    agent_inputs.build(run, "notes-text-reader")
+    root = agent_inputs.session_root(run, "notes-text-reader")
+    (root / "report_notes_text.md").write_text("the reader wrote this\n", encoding="utf-8")
+    (root / "scratch_check.txt").write_bytes(data)
+    if rebuilt:
+        agent_inputs.build(run, "notes-text-reader")
+        assert agent_inputs.isolation_violations(run) == []
+    else:
+        with pytest.raises(AgentInputError, match="already holds scratch_check.txt"):
+            agent_inputs.build(run, "notes-text-reader")
+        assert any("scratch_check.txt" in line
+                   for line in agent_inputs.isolation_violations(run))
+
+
 def test_another_agent_s_report_is_a_leak_even_where_its_own_is_not(tmp_path):
     """`writes` is one file, not a licence for the layer's whole vocabulary."""
     run = _run_directory(tmp_path)

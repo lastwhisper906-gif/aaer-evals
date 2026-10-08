@@ -627,6 +627,70 @@ def test_the_control_s_directory_is_held_at_the_boundary(tmp_path, damage, owner
         run_analysis.boundary_holds(run, "in the test")
 
 
+# GNRC's notes reader left an eleven-byte "placeholder" beside its report
+# (runs/GNRC/0001437749-26-025669/agents/notes-text-reader/scratch_check.txt). Each
+# stray here is (name, bytes, the run's own file of that name or None), and whether
+# the owner passes it: one word of letters, under a name no record carries, that no
+# run file of the same name contradicts.
+STRAYS = [
+    ("scratch_check.txt", b"placeholder", None, True),
+    ("note.txt", b"placeholder\n", None, True),
+    ("memo_ko.md", b"placeholder", None, True),
+    ("memo_ko.md", b"placeholder", b"placeholder", True),
+    ("memo_ko.md", b"placeholder", "# ESE memo\n".encode(), False),
+    ("draft.json", b'{"items": []}', None, False),
+    ("note.txt", b"shares fell sharply after the report", None, False),
+    ("note.txt", b"shares-fell-after-the-report", None, False),
+    ("note.txt", b"x" * 65, None, False),
+    ("note.txt", b"", None, False),
+    ("note.txt", "naïve".encode(), None, False),
+    ("report_draft.md", b"placeholder", None, False),
+    ("calculator_notes.txt", b"placeholder", None, False),
+]
+
+
+@pytest.mark.parametrize("place", ["agents/notes-text-reader", run_analysis.CONTROL_DIRNAME])
+@pytest.mark.parametrize("name, data, run_file, owner_passes", STRAYS)
+def test_the_boundary_passes_a_stray_word_as_the_owner_does_and_nothing_else(
+        tmp_path, place, name, data, run_file, owner_passes):
+    """The runner's boundary check named every file nobody routed, so it stopped a
+    run on GNRC's "placeholder", which the owner's layers_hold and
+    inputs_on_record pass and note; and a run stopped there could not be resumed,
+    because the router refused to rebuild the reader's directory over it. Both
+    sides now read a stray file one way: what the owner refuses, the boundary
+    names, and what the owner passes, it passes."""
+    run = _control_run(tmp_path)
+    if run_file is not None:
+        (run / name).write_bytes(run_file)
+    assert run_analysis.control_violations(run) == []
+    assert agent_inputs.isolation_violations(run) == []
+    (run / place / name).write_bytes(data)
+    where = f"{place.split('/')[-1]}/{name}"
+    owner = [line for line in mechanical.check_layers_hold(run).failures
+             + mechanical.check_inputs_on_record(run).failures if where in line]
+    boundary = [line for line in agent_inputs.isolation_violations(run)
+                + run_analysis.control_violations(run) if name in line]
+    assert (owner == []) is owner_passes, owner
+    assert (boundary == []) is owner_passes, boundary
+
+
+@pytest.mark.parametrize("place", ["agents/notes-text-reader", run_analysis.CONTROL_DIRNAME])
+def test_a_directory_left_in_an_agent_s_directory_is_refused_by_both(tmp_path, place):
+    run = _control_run(tmp_path)
+    (run / place / "scratch").mkdir()
+    assert any("scratch" in line for line in mechanical.check_layers_hold(run).failures)
+    assert any("scratch" in line for line in agent_inputs.isolation_violations(run)
+               + run_analysis.control_violations(run))
+
+
+def test_the_boundary_reads_a_stray_word_with_the_owner_s_own_rule():
+    assert agent_inputs.RECORD_NAMES == mechanical.RECORD_NAMES
+    assert agent_inputs.ONE_WORD.pattern == mechanical.ONE_WORD.pattern
+    assert agent_inputs.ONE_WORD.flags == mechanical.ONE_WORD.flags
+    for _, data, _, _ in STRAYS:
+        assert agent_inputs.is_placeholder(data) == mechanical.is_placeholder(data), data
+
+
 def test_the_router_hands_each_layer_what_the_owner_s_table_names(tmp_path):
     """The owner's layer table, written out in the grader, against the router's:
     every file a live agent is handed, and every file the control is handed, is

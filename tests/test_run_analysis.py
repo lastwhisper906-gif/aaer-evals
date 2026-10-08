@@ -2698,3 +2698,71 @@ def test_a_fenced_block_that_is_not_json_is_counted_and_taken_out_of_the_copy(tm
     copy = (run / "report_notes_text.md").read_text()
     assert mechanical.read_report_blocks(copy)[1] == 0
     assert mechanical.check_quotes_resolve(run).status == PASS
+
+
+# --- what the runner stops on, run through the runner ------------------------------------------
+#
+# The whole stubbed NVDA run, each agent named in `leaves` writing the files named there
+# beside its own output, as an agent with `Write` and a session rooted in its directory
+# could. Each test says where the run stops, or that it finishes, and holds the run on
+# disk to the owner's grader that answers for it (`evals/regression/`, read-only).
+
+@pytest.fixture(scope="module")
+def nvda_bundle(tmp_path_factory):
+    """NVDA's 10-Q bundle, built once; each run below starts from a copy."""
+    run = tmp_path_factory.mktemp("bundle") / "NVDA" / NVDA_ACCESSION
+    assemble_bundle.write(assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,
+                                                prior_runs=run.parent.parent), run)
+    return run
+
+
+def _run_leaving(tmp_path, monkeypatch, bundle, leaves=None, *, control="never", **fake):
+    """The run, the directories asked in order, the manifest on disk, and the error
+    the run stopped on (None when it finished)."""
+    run = tmp_path / "NVDA" / NVDA_ACCESSION
+    shutil.copytree(bundle, run)
+    asked: list[str] = []
+    answer = _fake_ask({}, **fake)
+
+    def ask(directory, **keyword):
+        asked.append(directory.name)
+        record = answer(directory, **keyword)
+        for name, data in (leaves or {}).get(directory.name, {}).items():
+            (directory / name).write_bytes(data)
+        return record
+
+    monkeypatch.setattr(run_analysis, "ask", ask)
+    stopped = None
+    try:
+        run_analysis.run_company(run=run, ticker="NVDA", form="10-Q", cutoff="2026-08-26",
+                                 period_end="2026-07-26",
+                                 store=run_analysis.cutoff_guard.FIXTURES, prices=None,
+                                 control=control)
+    except (agent_inputs.AgentInputError, run_analysis.analysis_check.AnalysisInputError,
+            run_analysis.calculator.CalculatorInputError) as exc:
+        stopped = exc
+    manifest = json.loads((run / "input_manifest.json").read_text(encoding="utf-8"))
+    return run, asked, manifest, stopped
+
+
+def test_one_stray_word_a_reader_leaves_publishes_as_the_owner_passes_it(
+        tmp_path, monkeypatch, nvda_bundle):
+    """GNRC's notes reader left an eleven-byte "placeholder" beside its report
+    (runs/GNRC/0001437749-26-025669/agents/notes-text-reader/scratch_check.txt), and
+    the owner's layers_hold and inputs_on_record pass that published run and note
+    the file. The runner's boundary check named it, so the run stopped once the
+    readers returned, and the resume could not rebuild the reader's directory over
+    it: a run the owner accepts was never published. It now finishes, and the
+    owner passes it as it passed GNRC's."""
+    from evals.common import PASS
+    from evals.regression import mechanical
+    run, asked, manifest, stopped = _run_leaving(
+        tmp_path, monkeypatch, nvda_bundle,
+        {"notes-text-reader": {"scratch_check.txt": b"placeholder"}})
+    assert stopped is None, stopped
+    assert manifest["analysis_failure"] is None and manifest.get(agent_inputs.ANALYSED_KEY)
+    assert "valuation-analyst-second-pass" in asked
+    layers, inputs = mechanical.check_layers_hold(run), mechanical.check_inputs_on_record(run)
+    assert layers.status == PASS, layers.failures
+    assert inputs.status == PASS, inputs.failures
+    assert "['agents/notes-text-reader/scratch_check.txt']" in inputs.detail

@@ -773,10 +773,13 @@ def build(run: Path, agent: str, *, light: bool = False) -> dict:
 
     root.mkdir(parents=True, exist_ok=True)
     # `may_hold`, not `sees`: rebuilding after the agent has run must not read
-    # the report the agent itself wrote here as somebody else's file.
+    # the report the agent itself wrote here as somebody else's file -- nor the
+    # one stray word the owner's graders pass (`owner_passes_stray`, GNRC's
+    # "placeholder"), or a run stopped after the agent left one could not be
+    # resumed over the directory it stands in.
     may_hold = set(spec.may_hold)
     stray = sorted(path.name for path in root.iterdir()
-                   if path.name not in may_hold)
+                   if path.name not in may_hold and not owner_passes_stray(run, path))
     if stray:
         raise AgentInputError(
             f"{root} already holds {', '.join(stray)}, which a {spec.layer} "
@@ -886,6 +889,45 @@ def _differs(placed: Path, expected) -> bool:
     return placed.is_file() and expected is not None and placed.read_bytes() != expected
 
 
+# What the owner's graders pass in an agent's directory though nobody routed it.
+# GNRC's notes reader left an eleven-byte "placeholder" there
+# (runs/GNRC/0001437749-26-025669/agents/notes-text-reader/scratch_check.txt), and
+# the owner passes that run: layers_hold refuses a file nobody routed only when it
+# could stand in for an input -- named like a record, or anything more than one
+# word of letters -- and inputs_on_record notes such a file, holding it to the
+# run's file of the same name when the run has one (`evals/regression/
+# mechanical.py` RECORD_NAMES, ONE_WORD, is_placeholder, looks_like_an_input,
+# check_inputs_on_record). The boundary check, the router's rebuild and the
+# runner's check of the control's directory pass it on the same terms, so a run
+# the owner would publish is not stopped for it, and a run stopped for something
+# else can be resumed over it. Written out here -- src imports nothing from evals
+# -- and held equal to the grader's in tests/test_gate_matches_graders.py.
+RECORD_NAMES = ("input_", "report_", "analysis_", "calculator", "assumptions")
+ONE_WORD = re.compile(r"[A-Za-z]{1,64}\s*")
+
+
+def is_placeholder(data: bytes) -> bool:
+    """One word of letters and nothing else: the owner's reading of a stray file."""
+    return bool(ONE_WORD.fullmatch(data.decode("utf-8", "replace")))
+
+
+def owner_passes_stray(run: Path, path: Path) -> bool:
+    """Whether `path`, a file nobody routed into an agent's directory or the
+    control's, is one the owner's graders pass: a plain file holding one word of
+    letters, under a name no record carries, that no file of the run's under the
+    same name contradicts. A sentence, a figure, a second word, a record's name,
+    a directory and a link are not; nor is the word under the name of a file the
+    run writes later with other bytes (a stray `memo_ko.md` once the memo is
+    written), which the check before a run is recorded as finished meets."""
+    if path.is_symlink() or not path.is_file():
+        return False
+    data = path.read_bytes()
+    if path.name.startswith(RECORD_NAMES) or not is_placeholder(data):
+        return False
+    same_name = Path(run) / path.name
+    return not same_name.is_file() or same_name.read_bytes() == data
+
+
 # Every agent a run on record may hold a directory for: the live six and the
 # retired four. A retired agent's directory on a pilot run is still the record
 # of what that agent saw, and is judged against its layer as it was.
@@ -979,7 +1021,9 @@ def isolation_violations(run: Path) -> list[str]:
     2. a file in one that the layer never sees, or that nobody routed at all.
        The agent's own output is not one of those: a reader with `Write` and a
        session rooted here can put `report_numbers.md` in no other directory,
-       so a completed run holds it and is clean;
+       so a completed run holds it and is clean. Nor is one stray word the
+       owner's graders pass and note (`owner_passes_stray`: GNRC's notes reader
+       left "placeholder"), which could stand in for no input;
     3. a routed name over bytes that are not the run's — the leak that wears the
        right name, and the one a check on names alone cannot see, a hardlink
        included. The valuation analyst's prose, where the manifest records a
@@ -1035,6 +1079,8 @@ def isolation_violations(run: Path) -> list[str]:
             if path.name == spec.writes:
                 continue  # the one file this agent writes, into its only root
             if path.name not in spec.sees:
+                if owner_passes_stray(run, path):
+                    continue  # one stray word, which the owner notes and passes
                 reason = ("which its layer never sees"
                           if path.name in spec.never_sees else "which nobody routed")
                 found.append(f"{name}: holds {path.name}, {reason}")

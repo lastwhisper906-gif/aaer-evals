@@ -768,7 +768,10 @@ def boundary_holds(run: Path, when: str) -> None:
     router's command called before: a file an agent left in its directory, a
     copy that is not the run's, a trim the owner would refuse -- each fails the
     owner's layers_hold or inputs_on_record, so the run stops here, on record
-    (`stopped_on`), rather than publishing. The control's directory, which sits
+    (`stopped_on`), rather than publishing. One stray word an agent left, which
+    the owner notes and passes (GNRC's notes reader left "placeholder";
+    `agent_inputs.owner_passes_stray`), is passed here too: a run the owner
+    would publish is not stopped for it. The control's directory, which sits
     beside `agents/` and which the router's check does not walk, is held too
     (`control_violations`)."""
     broken = agent_inputs.isolation_violations(run) + control_violations(run)
@@ -1552,7 +1555,9 @@ def control_violations(run: Path) -> list[str]:
     control's directory beside the agents'): every file in it is one
     `control_sees` routes, byte for byte the run's, or one the control wrote
     (`control_*`, the owner's `is_own_output`), and nothing in it is a directory
-    or a link. A stray file the control leaves fails both of the owner's checks."""
+    or a link. A stray file the control leaves fails the owner's checks, unless
+    it is one word the owner notes and passes (`agent_inputs.owner_passes_stray`),
+    which is passed here on the same terms."""
     directory = run / CONTROL_DIRNAME
     if not directory.is_dir():
         return []
@@ -1566,6 +1571,8 @@ def control_violations(run: Path) -> list[str]:
         elif path.name.startswith("control_"):
             continue                    # what the control writes
         elif path.name not in routed:
+            if agent_inputs.owner_passes_stray(run, path):
+                continue                # one stray word, which the owner notes and passes
             found.append(f"{where}: not a file the control is handed")
         elif path.read_bytes() != (run / path.name).read_bytes():
             found.append(f"{where}: not the run's {path.name}, byte for byte")
