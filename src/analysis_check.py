@@ -15,7 +15,8 @@ and counted.** An item stands only when
 - every `evidence` id is an item id of one of the reports the analyst saw;
 - every `quote` string-matches the file it names in `quote_from`, which the
   analyst saw, whitespace folded as the quote gate folds it;
-- every `fields` entry resolves to a number;
+- every `fields` entry resolves to a number, or to a cell that states why it
+  has none, or to the reason it states (`field_cited`);
 - no word of it is one the owner ruled out: "fraud", "manipulation" in any
   analysis, and "buy", "sell", "alpha" as well;
 - its enumerated values are the enumerated values;
@@ -338,27 +339,38 @@ def words_problem(text, fields: dict, *, forbidden: tuple[str, ...]) -> str | No
     return None
 
 
+# The keys under which a calculator cell states why it holds no number.
+REASON_KEYS = ("missing", "reason", "note")
+
+
 def field_cited(fields: dict, path) -> bool:
-    """A cited field stands when it is a number, or a cell that states why it has none.
+    """A cited field stands when it is a number, a cell that states why it has
+    none, or the reason the cell states.
 
     A citation may point at a figure Python declined to compute -- a cash
     runway is not computed when free cash flow is positive, and the cell says
-    so -- because citing the stated reason is reading the calculator. A number
+    so -- because citing the stated reason is reading the calculator: the cell
+    (`valuation`) or the reason it prints (`valuation.missing`), which the
+    valuation analyst's prompt has it quote when there is no price or WACC, and
+    which the owner's cited_numbers_exist resolves as any other field. A number
     written into a sentence is held to more: `{path}` must be a number.
     """
     if not isinstance(path, str):
         return False
     if calculator.field_value(fields, path) is not None:
         return True
-    node = fields
+    node, cell, last = fields, None, None
     for part in path.split("."):
+        cell, last = node, part
         if isinstance(node, dict) and part in node:
             node = node[part]
         elif isinstance(node, list) and part.isdigit() and int(part) < len(node):
             node = node[int(part)]
         else:
             return False
-    return isinstance(node, dict) and any(key in node for key in ("missing", "reason", "note"))
+    if isinstance(node, dict):
+        return any(key in node for key in REASON_KEYS)
+    return isinstance(cell, dict) and last in REASON_KEYS and isinstance(node, str)
 
 
 def quote_problem(item: dict, sources: dict[str, str],

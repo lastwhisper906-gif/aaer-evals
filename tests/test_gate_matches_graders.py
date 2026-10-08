@@ -471,6 +471,70 @@ def test_a_placeholder_under_a_key_that_is_not_prose_is_resolved(tmp_path):
     assert out["anomalies"] == [] and gated.status == PASS
 
 
+# The four cells QCOM's second pass cited for the reason each states, as the
+# calculator.json of its run 0000804328-26-000086 (2026-10-07) printed them, and
+# one cell with a number, written here.
+NO_PRICE = ("no price series was given: the forward track's price source is Tiingo, and "
+            "without its token no series is fetched")
+NO_WACC = f"the cost of equity needs a beta and a price: {NO_PRICE}"
+PRICELESS = {
+    "valuation": {"missing": f"WACC is not computed: {NO_WACC}"},
+    "market": {"missing": NO_PRICE},
+    "cost_of_capital": {"value": None, "missing": NO_WACC},
+    "implied_growth_beside_history": {"implied_ten_year_revenue_growth": {
+        "missing": f"no reverse DCF: WACC is not computed: {NO_WACC}"}},
+    "ratios": {"liquidity": {"current_ratio": {"value": 2.5, "unit": "ratio"}}},
+}
+
+
+@pytest.mark.parametrize("value_range, price_position, growth, stands", [
+    (["valuation.missing", "cost_of_capital.missing"], ["market.missing"],
+     ["implied_growth_beside_history.implied_ten_year_revenue_growth.missing"], True),
+    (["valuation.reason"], ["ratios.liquidity.current_ratio.missing"],
+     ["implied_growth_beside_history.implied_ten_year_revenue_growth.missing.text"], False)])
+def test_the_reason_a_cell_states_for_having_no_value_is_a_field_an_analyst_cites(
+        tmp_path, value_range, price_position, growth, stands):
+    """QCOM's and NVDA's second passes, with no price on record, cited the reason
+    calculator.json prints under `valuation.missing`, as the valuation analyst's
+    prompt has them quote it. The owner's cited_numbers_exist resolves each path
+    and passed both analyses as written; the gate took a cited field to be a
+    number or a cell, and published value_range, price_position,
+    market_implied_growth and (QCOM's) most_sensitive[1] as drop notes. The
+    other side: a reason key the cell does not carry, or a path into the
+    reason's words, names nothing in the calculator, and both refuse it."""
+    run = tmp_path / "run"
+    _write(run / "calculator.json", json.dumps(PRICELESS))
+    payload = {"value_range": {"reading": "Not computed: there is no price.",
+                               "fields": value_range},
+               "price_position": {"reading": "Not computed.", "fields": price_position},
+               "market_implied_growth": {"reading": "Not computed.", "fields": growth},
+               "most_sensitive": [{"assumption": "the cost of capital",
+                                   "reading": "Not measured.", "fields": value_range[-1:]}],
+               "accounting_adjustments": {"reading": "None were applied.", "fields": []},
+               "summary_ko": {}, "limits": analysis_check.LIMITS["valuation"]}
+    _publish(run, "analysis_valuation.json", payload)
+    raw = mechanical.check_cited_numbers_exist(run)
+    out = analysis_check.check("valuation", copy.deepcopy(payload), fields=PRICELESS,
+                               sources={})
+    _publish(run, "analysis_valuation.json", out)
+    assert mechanical.check_cited_numbers_exist(run).status == PASS
+    read = ("value_range", "price_position", "market_implied_growth", "most_sensitive")
+    if stands:
+        assert raw.status == PASS, raw.failures
+        assert out["dropped_items"] == [], out["dropped_items"]
+        assert {key: out[key] for key in read} == {key: payload[key] for key in read}
+    else:
+        assert raw.failures == [
+            f"analysis_valuation.json:{key}.fields[0]:{path}" for key, path in (
+                ("value_range", value_range[0]), ("price_position", price_position[0]),
+                ("market_implied_growth", growth[0]))]
+        assert [row["where"] for row in out["dropped_items"]] == list(read[:3]) + [
+            "most_sensitive[0]"]
+        assert out["value_range"] == {
+            "dropped": f"fields: {value_range[0]!r} is not a field of calculator.json"}
+        assert out["most_sensitive"] == []
+
+
 # --- forbidden_words and no_combined_score ------------------------------------------------
 
 def test_the_gate_holds_the_owner_s_patterns():
