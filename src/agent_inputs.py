@@ -1012,7 +1012,7 @@ def _trimmed_copy_problems(run: Path, path: Path, record: dict) -> list[str]:
     return out + copy_shape_problems(copy, original)
 
 
-def isolation_violations(run: Path) -> list[str]:
+def isolation_violations(run: Path, *, live_run: bool = False) -> list[str]:
     """Every way an agent could reach what its layer never sees. Empty is clean.
 
     Six kinds, in the order they matter:
@@ -1054,12 +1054,23 @@ def isolation_violations(run: Path) -> list[str]:
     pilot run on record holds a comparer's or a supervisor's directory, and
     that directory is held to the layer the agent had, as `RETIRED_AGENTS`
     records it, because it is the record of what the agent saw.
+
+    `live_run` is the runner's: a run the live pipeline is building holds a
+    directory for the six live agents and for no other, so a retired agent's
+    directory in one is named whatever it holds -- nothing builds or runs a
+    retired agent, and the owner's layers_hold refuses any directory under
+    `agents/` its layer table does not name ("no layer the grader knows").
     """
     run = Path(run)
     live = agent_directories(run)
     found = []
 
     for root, name in live.items():
+        if live_run and name not in AGENTS:
+            found.append(f"{name}: a retired agent's directory in a run the live pipeline is "
+                         "building, which no live layer has and the owner's layer table "
+                         "does not name")
+            continue
         spec = KNOWN_AGENTS[name]
         if root != recorded_root(run, name):
             found.append(f"{name}: its directory sits at {root}, not at its "

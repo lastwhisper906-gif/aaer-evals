@@ -2716,9 +2716,11 @@ def nvda_bundle(tmp_path_factory):
     return run
 
 
-def _run_leaving(tmp_path, monkeypatch, bundle, leaves=None, *, control="never", **fake):
+def _run_leaving(tmp_path, monkeypatch, bundle, leaves=None, *, then=None, control="never",
+                 **fake):
     """The run, the directories asked in order, the manifest on disk, and the error
-    the run stopped on (None when it finished)."""
+    the run stopped on (None when it finished). `then` maps a directory to what
+    the agent does besides, after it wrote its files."""
     run = tmp_path / "NVDA" / NVDA_ACCESSION
     shutil.copytree(bundle, run)
     asked: list[str] = []
@@ -2729,6 +2731,8 @@ def _run_leaving(tmp_path, monkeypatch, bundle, leaves=None, *, control="never",
         record = answer(directory, **keyword)
         for name, data in (leaves or {}).get(directory.name, {}).items():
             (directory / name).write_bytes(data)
+        if directory.name in (then or {}):
+            then[directory.name](directory)
         return record
 
     monkeypatch.setattr(run_analysis, "ask", ask)
@@ -2766,3 +2770,23 @@ def test_one_stray_word_a_reader_leaves_publishes_as_the_owner_passes_it(
     assert layers.status == PASS, layers.failures
     assert inputs.status == PASS, inputs.failures
     assert "['agents/notes-text-reader/scratch_check.txt']" in inputs.detail
+
+
+def test_a_retired_agent_s_directory_made_during_a_call_stops_the_run(
+        tmp_path, monkeypatch, nvda_bundle):
+    """A directory under `agents/` named for a retired agent -- a comparer, a
+    supervisor -- passed the boundary the runner checks, which judged it by the
+    layer the agent had on the pilot runs, and the owner's layers_hold refuses it
+    ("no layer the grader knows"). Made while the analysts run, it now stops the
+    run once they return, before the valuation analyst is asked."""
+    from evals.regression import mechanical
+    run, asked, manifest, stopped = _run_leaving(
+        tmp_path, monkeypatch, nvda_bundle,
+        then={"financial-analyst": lambda directory: (
+            directory.parent / "numbers-vs-market").mkdir()})
+    assert isinstance(stopped, agent_inputs.AgentInputError), stopped
+    assert "after accounting-analyst, financial-analyst returned" in str(stopped)
+    assert "numbers-vs-market: a retired agent's directory" in manifest["stopped_on"]
+    assert "valuation-analyst" not in asked and agent_inputs.ANALYSED_KEY not in manifest
+    assert "agents/numbers-vs-market: no layer the grader knows" \
+        in mechanical.check_layers_hold(run).failures

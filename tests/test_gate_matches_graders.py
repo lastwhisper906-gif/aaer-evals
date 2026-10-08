@@ -691,6 +691,32 @@ def test_the_boundary_reads_a_stray_word_with_the_owner_s_own_rule():
         assert agent_inputs.is_placeholder(data) == mechanical.is_placeholder(data), data
 
 
+@pytest.mark.parametrize("retired, holds", [
+    ("numbers-vs-market", None),
+    ("numbers-vs-market", "report_numbers.md"),
+    ("supervisor-accounting", "report_notes_text.md")])
+def test_a_retired_agent_s_directory_on_a_live_run_is_refused_by_both(tmp_path, retired, holds):
+    """The boundary check judged a directory named for a retired agent by the
+    layer the agent had on the pilot runs, and counted it among the agents'
+    directories, so the boundary the runner checks passed one holding nothing or
+    a copy of what the comparer or supervisor saw; the owner's layers_hold
+    refuses any directory under `agents/` its table does not name. A run on
+    record keeps the old reading (a pilot run's directory is the record of what
+    the agent saw); a run the live pipeline is building does not."""
+    run = _run(tmp_path)
+    directory = run / "agents" / retired
+    directory.mkdir()
+    if holds:
+        (directory / holds).write_bytes((run / holds).read_bytes())
+    assert f"agents/{retired}: no layer the grader knows" \
+        in mechanical.check_layers_hold(run).failures
+    assert agent_inputs.isolation_violations(run) == []
+    with pytest.raises(agent_inputs.AgentInputError, match=retired):
+        run_analysis.boundary_holds(run, "in the test")
+    assert any(line.startswith(f"{retired}: a retired agent's directory")
+               for line in agent_inputs.isolation_violations(run, live_run=True))
+
+
 def test_the_router_hands_each_layer_what_the_owner_s_table_names(tmp_path):
     """The owner's layer table, written out in the grader, against the router's:
     every file a live agent is handed, and every file the control is handed, is

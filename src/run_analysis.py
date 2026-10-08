@@ -771,10 +771,13 @@ def boundary_holds(run: Path, when: str) -> None:
     (`stopped_on`), rather than publishing. One stray word an agent left, which
     the owner notes and passes (GNRC's notes reader left "placeholder";
     `agent_inputs.owner_passes_stray`), is passed here too: a run the owner
-    would publish is not stopped for it. The control's directory, which sits
-    beside `agents/` and which the router's check does not walk, is held too
-    (`control_violations`)."""
-    broken = agent_inputs.isolation_violations(run) + control_violations(run)
+    would publish is not stopped for it. The run is one the live pipeline is
+    building, so a retired agent's directory in it is named, whatever it holds,
+    as the owner's layers_hold names one (`live_run`). The control's directory,
+    which sits beside `agents/` and which the router's check does not walk, is
+    held too (`control_violations`)."""
+    broken = (agent_inputs.isolation_violations(run, live_run=True)
+              + control_violations(run))
     if broken:
         raise agent_inputs.AgentInputError(
             f"the boundary is broken {when} ({len(broken)}): " + "; ".join(broken))
