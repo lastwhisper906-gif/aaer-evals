@@ -1,0 +1,262 @@
+{
+  "scenarios": {
+    "bear": {
+      "revenue_growth_year_one": 0.03,
+      "terminal_growth": 0.025,
+      "operating_margin_year_one": 0.135,
+      "operating_margin_year_ten": 0.13,
+      "reinvestment_rate_year_one": 0.40,
+      "reinvestment_rate_year_ten": 0.35,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "A slowdown year rather than a contraction. The Maritime contribution laps from the fourth quarter; NRG orders are falling on the expiry of renewables tax credits; the Test segment's Asian operations declined in the quarter and the nine months; aerospace and defense order intake fell steeply against a year-ago quarter that held acquired backlog; and the forward-looking statement names government funding timing, contract terminations for convenience and supply-route closures as risks. Record backlog keeps the year positive, but conversion can slip. Megger is excluded, as in every scenario: its revenue, debt and share issuance arrive together at closing and none is in the calculator.",
+          "quote": "NRG orders decreased $5.0 million (27 percent) to $13.5 million, related to the expiration of U.S. renewables tax credits.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.growth.revenue.year_over_year",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.years.2.revenue_growth",
+            "earnings_versus_cash.history.years.4.revenue_growth"
+          ],
+          "history": "Well below the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and the quarter's year-over-year growth of {ratios.growth.revenue.year_over_year|pct}, but above the company's own weak years: fiscal 2023 grew {earnings_versus_cash.history.years.2.revenue_growth|pct} and fiscal 2021 {earnings_versus_cash.history.years.4.revenue_growth|pct}, so a near-flat year is inside the record, and the bear case sits between those years and the organic pace the release reports."
+        },
+        "terminal_growth": {
+          "reason": "Inflation-like growth for a mature industrial whose renewables business is shrinking on policy and whose defense revenue depends on appropriations; well below the risk-free rate, which is the ceiling the framework sets.",
+          "quote": "the NRG renewables business and the Test segment's Asian operations are the areas of decline",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "cost_of_capital.risk_free_rate",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound"
+          ],
+          "history": "Far below the five-year compound rate of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, which includes acquisitions, and below the risk-free rate of {cost_of_capital.risk_free_rate|pct}; it treats the two flat-to-negative fiscal years in the record as the shape of a mature cycle rather than as exceptions."
+        },
+        "operating_margin_year_one": {
+          "reason": "Near the fiscal 2023 operating margin. Megger deal costs recur in Corporate SG&A until closing, restructuring has appeared in both years and the release now names it in three segments, acquired-intangible amortization is higher after Maritime, USG margin fell on lower NRG volumes, MD&A names inflationary pressure and unfavorable mix in aerospace and defense, and share-based compensation is rising at Corporate. The quarter's gross margin slipped from the prior quarter.",
+          "quote": "The increase in Corporate costs in the third quarter and first nine months of 2026 compared to the corresponding periods of 2025 was mainly due to an increase in acquisition related amortization due to the Maritime acquisition, and an increase in share-based compensation costs and acquisition related costs related to the pending Megger acquisition.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "earnings_versus_cash.history.years.2.operating_margin",
+            "earnings_versus_cash.history.operating_margin_three_year_average",
+            "trend_table.quarters-back-0.ratios.gross_margin",
+            "trend_table.quarters-back-1.ratios.gross_margin"
+          ],
+          "history": "Below the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct} and near fiscal 2023's {earnings_versus_cash.history.years.2.operating_margin|pct}, the lowest filled year; the quarter's gross margin of {trend_table.quarters-back-0.ratios.gross_margin|pct} is down on the prior quarter's {trend_table.quarters-back-1.ratios.gross_margin|pct}, and the bear case reads that slip as the start of a drift rather than as noise."
+        },
+        "operating_margin_year_ten": {
+          "reason": "Slight erosion over the decade: no SG&A leverage without volume, inflation and mix persisting, NRG continuing to shrink inside USG, and the acquisitive model adding new amortization as old amortization runs off, so the non-cash weight on GAAP operating margin never lifts.",
+          "quote": "It is a non-cash weight on GAAP margins that will grow again if Megger closes.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "earnings_versus_cash.history.years.0.operating_margin",
+            "earnings_versus_cash.history.years.2.operating_margin",
+            "earnings_versus_cash.history.operating_margin_three_year_average",
+            "terms.trailing_four_quarters.depreciation_and_amortization"
+          ],
+          "history": "Below every filled fiscal year that has an operating income row, fiscal 2023's {earnings_versus_cash.history.years.2.operating_margin|pct} being the lowest; it assumes the two-year rise to fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct} reverses rather than holds."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "Working capital absorbs cash: contract assets have risen for a second quarter on a timing explanation, inventories are up on work-in-process and raw materials, other current assets have nearly doubled without a breakdown, and the customer advances that funded the trailing period unwind as revenue is recognized. Payables supplied as much cash as receivables absorbed over the year, with no supplier-finance programme tagged to explain it, and the bear case assumes that source does not repeat.",
+          "quote": "Contract assets increased $36.9 million primarily within the A&D segment (Maritime) due to timing. Contract liabilities increased $71.5 million primarily within the A&D segment (Globe and Maritime) due to timing of payments received from customers.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "earnings_versus_cash.working_capital.receivables.balance_sheet_change",
+            "earnings_versus_cash.working_capital.inventory.balance_sheet_change",
+            "earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change",
+            "ratios.efficiency.cash_conversion_cycle",
+            "terms.balances_now.contract_liabilities",
+            "terms.balances_a_year_earlier.contract_liabilities",
+            "terms.trailing_four_quarters.capital_expenditure"
+          ],
+          "history": "Above anything the recent record shows: free cash flow rose each year through fiscal 2025 and the trailing period reinvested little because advances and payables supplied cash. The bear case reads the cash conversion cycle of {ratios.efficiency.cash_conversion_cycle} days, long by the company's own standard, as the normal state once the timing effects reverse, with receivables up {earnings_versus_cash.working_capital.receivables.balance_sheet_change} and payables up {earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change} over the year and contract liabilities of {terms.balances_now.contract_liabilities} to be worked off."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "At the bear terminal growth rate, this reinvestment share implies a return on new capital in the high single digits, close to what today's goodwill-heavy invested capital earns; growth bought at those returns adds little value, which is the bear reading of an acquisitive model.",
+          "quote": "the material off-balance-sheet item is a committed acquisition nearly the size of the company, funded by debt that is not yet drawn",
+          "quote_from": "analysis_accounting.json",
+          "fields": [
+            "ratios.profitability.return_on_invested_capital.invested_capital",
+            "earnings_versus_cash.history.years.0.operating_income",
+            "trend_table.years-back-0.ratios.soft_asset_share"
+          ],
+          "history": "Fiscal 2025 operating income of {earnings_versus_cash.history.years.0.operating_income} on invested capital of {ratios.profitability.return_on_invested_capital.invested_capital} is the return the blended book earns today; the bear terminal rate assumes new capital earns no better, with the soft-asset share at the fiscal 2025 year-end of {trend_table.years-back-0.ratios.soft_asset_share|pct} the highest of the filled years."
+        }
+      }
+    },
+    "base": {
+      "revenue_growth_year_one": 0.08,
+      "terminal_growth": 0.035,
+      "operating_margin_year_one": 0.15,
+      "operating_margin_year_ten": 0.165,
+      "reinvestment_rate_year_one": 0.30,
+      "reinvestment_rate_year_ten": 0.25,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "The release separates the quarter's growth into an organic part and the Maritime part, and the organic part is the pace the standalone business is running at; Maritime enters the comparison base from the fourth quarter, so the acquired contribution drops out of the growth line. Record aerospace and defense backlog with a book-to-bill above one, record Test backlog on data-center orders, rising Doble orders and a larger twelve-month share of remaining performance obligations support a year at the organic pace. Megger is excluded: its revenue, its debt and its share issuance all arrive together at closing, none is in the calculator, and a framework that funds growth from reinvested operating income cannot carry a purchase nearly the size of the company.",
+          "quote": "Q3 2026 organic sales increased $20 million (8 percent), and Maritime contributed $23 million of revenue growth in the quarter.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.growth.revenue.year_over_year",
+            "ratios.growth.revenue.trailing_four_quarters",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound",
+            "terms.trailing_four_quarters.revenue"
+          ],
+          "history": "Well below the trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters|pct} and the quarter's year-over-year growth of {ratios.growth.revenue.year_over_year|pct}, both of which carry acquired Maritime revenue; slightly below the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and the five-year rate of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, which themselves include acquisitions; and equal to the organic rate the release states for the quarter. The fiscal 2026 sales guidance, with three quarters already filed, leaves a fourth quarter growing at an organic rather than an acquired pace."
+        },
+        "terminal_growth": {
+          "reason": "Below the risk-free rate, as the framework requires, and below the company's own five-year compound growth, which includes acquisitions. The end markets, defense programs, utility grid testing and electromagnetic test equipment, are long-cycle and funded by government and regulated-utility budgets, so a terminal rate a little above inflation is the reading for a standalone business of this kind once backlog conversion normalizes.",
+          "quote": "from the fourth quarter the comparison period also contains Maritime, so the acquired contribution drops out",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "cost_of_capital.risk_free_rate",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound"
+          ],
+          "history": "Below the five-year compound rate of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct} and the three-year rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, and below the risk-free rate of {cost_of_capital.risk_free_rate|pct}; the record includes two fiscal years of flat or negative revenue, which is why the terminal rate sits closer to inflation than to the company's acquisitive average."
+        },
+        "operating_margin_year_one": {
+          "reason": "Set at the fiscal 2025 operating margin and the three-year average, which the financial analysis calls the better guide to what the business earns on sales. Year one carries real drag: Megger deal costs in Corporate SG&A, restructuring in Test and USG, and higher acquired-intangible amortization from Maritime, all of which sit inside GAAP operating income; against that, SG&A fell as a share of sales on volume leverage and price. The debt-financing costs for Megger sit in interest expense, not in operating income, so they do not pull this driver down.",
+          "quote": "For the first nine months of 2026, SG&A expenses were $195.0 million (20.8% of net sales) compared to $171.3 million (23.1% of net sales) for the first nine months of 2025.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "earnings_versus_cash.history.years.0.operating_margin",
+            "earnings_versus_cash.history.operating_margin_three_year_average",
+            "ratios.profitability.gross_margin",
+            "trend_table.quarters-back-0.ratios.gross_margin",
+            "trend_table.years-back-0.ratios.gross_margin"
+          ],
+          "history": "Level with the fiscal 2025 operating margin of {earnings_versus_cash.history.years.0.operating_margin|pct} and the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}; the trailing operating margin itself is not computed because the operating income row is missing for the current year to date, and the trailing gross margin of {ratios.profitability.gross_margin|pct} is in line with fiscal 2025's {trend_table.years-back-0.ratios.gross_margin|pct}, so nothing in the filed numbers argues for a different starting point."
+        },
+        "operating_margin_year_ten": {
+          "reason": "A modest rise over ten years. Amortization of the Maritime intangibles, a non-cash charge inside operating income, runs off over the period; SG&A has shown leverage on volume; the aerospace and defense segment, the largest, is expanding its own margin on volume and price. Against that, MD&A names inflationary pressure and unfavorable mix, USG margin fell on lower NRG volumes, and restructuring has recurred, so the rise is held to a modest amount rather than the full run-off of amortization.",
+          "quote": "The increase in EBIT in the third quarter and first nine months of 2026 compared to the corresponding periods of 2025 was mainly driven by leverage on higher sales volumes as mentioned above, and price increases, partially offset by inflationary pressures and unfavorable mix.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "earnings_versus_cash.history.years.0.operating_margin",
+            "earnings_versus_cash.history.years.1.operating_margin",
+            "earnings_versus_cash.history.years.2.operating_margin",
+            "terms.trailing_four_quarters.depreciation_and_amortization",
+            "terms.trailing_four_quarters.capital_expenditure"
+          ],
+          "history": "Above the best filled fiscal year, {earnings_versus_cash.history.years.1.operating_margin|pct} in fiscal 2024, and above fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct}; the margin rose from fiscal 2023's {earnings_versus_cash.history.years.2.operating_margin|pct} over two years, and trailing depreciation and amortization of {terms.trailing_four_quarters.depreciation_and_amortization} against capital expenditure of {terms.trailing_four_quarters.capital_expenditure} shows how much of the charge inside operating income is acquisition amortization rather than wear on plant."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "The share of after-tax operating income that goes back into the business. Capital expenditure runs well below depreciation and amortization because most of the charge is acquisition amortization, which points to a low rate; but working capital is building, with inventories, contract assets and other current assets all up since the fiscal year-end, and the customer advances that supplied cash over the trailing period are worked off as revenue is recognized, which the accounting analysis reads as cash borrowed from future quarters. A rate near a third of after-tax operating income covers capital expenditure, the working-capital build, and bolt-on acquisition payments of the kind paid for Maritime this year.",
+          "quote": "the advances supply operating cash now and are worked off as revenue is recognized, so part of the cash-flow strength is borrowed from future quarters",
+          "quote_from": "analysis_accounting.json",
+          "fields": [
+            "terms.trailing_four_quarters.capital_expenditure",
+            "terms.trailing_four_quarters.depreciation_and_amortization",
+            "free_cash_flow.free_cash_flow_simple",
+            "earnings_versus_cash.working_capital.receivables.balance_sheet_change",
+            "earnings_versus_cash.working_capital.inventory.balance_sheet_change",
+            "terms.cash_flow_families.acquisitions",
+            "terms.balances_now.contract_liabilities",
+            "terms.balances_a_year_earlier.contract_liabilities"
+          ],
+          "history": "Higher than the trailing period implies: simple free cash flow of {free_cash_flow.free_cash_flow_simple} was lifted by contract liabilities rising from {terms.balances_a_year_earlier.contract_liabilities} to {terms.balances_now.contract_liabilities} and by depreciation and amortization of {terms.trailing_four_quarters.depreciation_and_amortization} far exceeding capital expenditure of {terms.trailing_four_quarters.capital_expenditure}, which is a reinvestment rate near zero or below on the trailing period and not sustainable as the advances unwind. Fiscal 2024 and fiscal 2023, read from the history's free cash flow against operating income, reinvested a positive but modest share; the rate here sits above those years for the same reason."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "At the terminal growth rate, a quarter of after-tax operating income reinvested implies a return on new capital in the mid-teens, consistent with the operating margin the business earns and with a balance sheet whose invested capital is mostly goodwill from past deals. A lower rate would imply returns on new capital the company's own history does not show; a higher rate would imply growth bought at the returns that today's goodwill-laden invested capital earns.",
+          "quote": "Cash generation is healthy; the headline-to-cash gap is a one-off, not a pattern.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "ratios.profitability.return_on_invested_capital.invested_capital",
+            "earnings_versus_cash.history.years.0.operating_income",
+            "trend_table.quarters-back-0.ratios.soft_asset_share",
+            "earnings_versus_cash.history.years.0.free_cash_flow_simple",
+            "earnings_versus_cash.history.years.1.free_cash_flow_simple"
+          ],
+          "history": "Invested capital of {ratios.profitability.return_on_invested_capital.invested_capital} against fiscal 2025 operating income of {earnings_versus_cash.history.years.0.operating_income} says the return on capital already deployed is modest because the soft-asset share of {trend_table.quarters-back-0.ratios.soft_asset_share|pct} is near a record; the terminal rate assumes new capital earns better than the blended book, as organic capital expenditure and working capital do, but not the returns of a capital-light business."
+        }
+      }
+    },
+    "bull": {
+      "revenue_growth_year_one": 0.12,
+      "terminal_growth": 0.04,
+      "operating_margin_year_one": 0.16,
+      "operating_margin_year_ten": 0.19,
+      "reinvestment_rate_year_one": 0.25,
+      "reinvestment_rate_year_ten": 0.20,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "Backlog conversion accelerates: record aerospace and defense backlog with a book-to-bill above one, record Test backlog on data-center shielding and EMI filters, Doble orders rising on broad-based utility demand, and management raising the twelve-month share of remaining performance obligations. The upper end of sales guidance and the organic pace plus faster backlog conversion give a year above the organic rate but still well below the trailing acquired growth. Megger remains excluded for the same reason as in the base case.",
+          "quote": "Orders strength in the quarter was driven by industrial shielding projects and electromagnetic interference (EMI) filters for U.S. data centers.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.growth.revenue.year_over_year",
+            "ratios.growth.revenue.trailing_four_quarters",
+            "ratios.growth.revenue.quarter_over_quarter",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.years.3.revenue_growth",
+            "earnings_versus_cash.history.years.0.revenue_growth"
+          ],
+          "history": "Above the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} but below the quarter's year-over-year growth of {ratios.growth.revenue.year_over_year|pct} and far below the trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters|pct}, both of which carry Maritime; the record holds two fiscal years well above it, fiscal 2022 at {earnings_versus_cash.history.years.3.revenue_growth|pct} and fiscal 2025 at {earnings_versus_cash.history.years.0.revenue_growth|pct}, though both carried acquisitions, so the bull rate is the top of the organic range rather than the top of the record."
+        },
+        "terminal_growth": {
+          "reason": "Just below the risk-free rate. Defense programs with multi-year visibility, utility grid investment and data-center demand are structural; the bull case lets the terminal rate sit near nominal economic growth.",
+          "quote": "Doble orders increased $26.4 million (30 percent) to $113.3 million as the business continues to experience broad based increases in demand from utility customers.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "cost_of_capital.risk_free_rate",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound"
+          ],
+          "history": "Below the five-year compound rate of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct} and below the risk-free rate of {cost_of_capital.risk_free_rate|pct}, the ceiling the framework sets; it is the highest rate consistent with that ceiling for a company that has grown faster than this on average for five years."
+        },
+        "operating_margin_year_one": {
+          "reason": "Slightly above the fiscal 2025 operating margin. SG&A as a share of sales has fallen on volume leverage, price increases are flowing through, and the aerospace and defense segment's margin is rising; the items depressing GAAP operating income this year, Megger deal costs and restructuring, are one-time in the bull reading. The financial analysis finds the pressure in the quality of headline figures, not in the underlying margin.",
+          "quote": "Read against its own history the company is solidly profitable; the pressure is in the quality of the headline figures, not in the underlying margin.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "earnings_versus_cash.history.years.0.operating_margin",
+            "earnings_versus_cash.history.years.1.operating_margin",
+            "ratios.profitability.gross_margin",
+            "trend_table.quarters-back-1.ratios.gross_margin"
+          ],
+          "history": "Just above fiscal 2024's {earnings_versus_cash.history.years.1.operating_margin|pct}, the best filled year, and above fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct}; the trailing gross margin of {ratios.profitability.gross_margin|pct} and the prior quarter's {trend_table.quarters-back-1.ratios.gross_margin|pct}, second highest of the filled quarters, show the gross line can support it if SG&A leverage holds."
+        },
+        "operating_margin_year_ten": {
+          "reason": "The acquired-intangible amortization from Maritime runs off, SG&A leverage continues as sales grow faster than fixed cost, and mix shifts toward the aerospace and defense segment and Doble, both higher-margin than the consolidated line. That combination takes the GAAP operating margin several points above anything in the record.",
+          "quote": "The increase in EBIT in the third quarter and first nine months of 2026 compared to the corresponding periods of 2025 was mainly driven by leverage on higher sales volumes as mentioned above, and price increases, partially offset by inflationary pressures and unfavorable mix.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "earnings_versus_cash.history.years.1.operating_margin",
+            "earnings_versus_cash.history.operating_margin_three_year_average",
+            "terms.trailing_four_quarters.depreciation_and_amortization",
+            "terms.trailing_four_quarters.capital_expenditure",
+            "ratios.profitability.gross_margin"
+          ],
+          "history": "Well above the best filled year, fiscal 2024's {earnings_versus_cash.history.years.1.operating_margin|pct}, and above the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}; the gap between trailing depreciation and amortization of {terms.trailing_four_quarters.depreciation_and_amortization} and capital expenditure of {terms.trailing_four_quarters.capital_expenditure} is the room that amortization run-off alone could open, and the rest comes from leverage and mix; it is outside the company's record."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "Capital expenditure is a small fraction of after-tax operating income, depreciation and amortization far exceeds it, and the working-capital build is in step with order volume with the days measures improving; MD&A says continuing operating cash flow rose on lower working capital requirements. A quarter of after-tax operating income funds capital expenditure, modest working capital and small bolt-on payments.",
+          "quote": "The increase in net cash provided by operating activities in the first nine months of 2026 as compared to the first nine months of 2025 was mainly driven by lower working capital requirements and higher earnings.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "terms.trailing_four_quarters.capital_expenditure",
+            "terms.trailing_four_quarters.depreciation_and_amortization",
+            "free_cash_flow.free_cash_flow_simple",
+            "ratios.efficiency.days_sales_outstanding",
+            "ratios.efficiency.days_sales_of_inventory",
+            "trend_table.quarters-back-0.ratios.days_sales_outstanding",
+            "trend_table.quarters-back-0.ratios.days_sales_of_inventory"
+          ],
+          "history": "Still above the trailing period, where simple free cash flow of {free_cash_flow.free_cash_flow_simple} ran ahead of earnings because advances supplied cash; the quarter's days sales outstanding of {trend_table.quarters-back-0.ratios.days_sales_outstanding} and days sales of inventory of {trend_table.quarters-back-0.ratios.days_sales_of_inventory} are the lowest of the filled quarters, which the bull case reads as efficiency that persists rather than timing that reverses."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "At the bull terminal growth rate, a fifth of after-tax operating income reinvested implies a return on new capital around twenty per cent, the kind of return organic capital expenditure and working capital earn in a business with these gross margins; it excludes further large acquisitions, whose returns are those of goodwill.",
+          "quote": "this is a build in step with order volume",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "ratios.profitability.gross_margin",
+            "ratios.profitability.return_on_invested_capital.invested_capital",
+            "earnings_versus_cash.history.years.0.free_cash_flow_simple",
+            "earnings_versus_cash.history.years.0.operating_income"
+          ],
+          "history": "Fiscal 2025 simple free cash flow of {earnings_versus_cash.history.years.0.free_cash_flow_simple} against operating income of {earnings_versus_cash.history.years.0.operating_income} shows the business can convert more than its operating income to cash in a year when advances flow in; the bull terminal rate extends a gentler version of that pattern, which the record supports only for the years without a large acquisition."
+        }
+      }
+    }
+  },
+  "wacc_overrides": {}
+}

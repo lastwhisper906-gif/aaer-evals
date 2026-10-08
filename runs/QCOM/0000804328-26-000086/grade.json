@@ -1,0 +1,534 @@
+{
+ "run": "QCOM/0000804328-26-000086",
+ "rubric": "evals/capability/rubric.md",
+ "dealbreakers": [
+  {
+   "kind": "number_not_from_calculator",
+   "id": "earnings_versus_cash_inventory_and_payables_articulation_gaps_small",
+   "where": "analysis_accounting.json anomalies[4].what",
+   "why": "'Alphawave and seven other businesses' gives a count of acquisitions in the analyst's own words; no calculator path supplies it and it is not inside a quote (it comes from notes:76)."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": "estimates_and_reserves_goodwill_growth_and_modular_expense_split_pending",
+   "where": "analysis_accounting.json anomalies[16].what",
+   "why": "'Goodwill rose with Alphawave and seven other businesses' gives the acquisition count in the analyst's own words; no calculator path supplies it."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": "efficiency_asset_turnover_weighed_by_acquired_goodwill_and_soft_assets",
+   "where": "analysis_financial.json anomalies[10].what",
+   "why": "'Alphawave and seven other acquisitions' gives the acquisition count in the analyst's own words; no calculator path supplies it."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": "liquidity_and_capital_cash_and_marketable_securities_lower_than_a_year_earlier",
+   "where": "analysis_financial.json anomalies[12].what",
+   "why": "'restricted cash was released to zero' gives a balance in the analyst's own words; no calculator path carries restricted cash."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": "liquidity_and_capital_acquisition_cash_outside_the_quality_adjusted_measure",
+   "where": "analysis_financial.json anomalies[15].what",
+   "why": "'seven businesses were bought in the period' gives the acquisition count in the analyst's own words; only the zero acquisitions deduction has a calculator path (free_cash_flow.free_cash_flow_quality_adjusted.inputs.acquisitions.cash_spent)."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": "narrative_signs_of_operating_pressure_restructuring_and_severance_charges",
+   "where": "analysis_financial.json anomalies[21].what",
+   "why": "'the year-ago quarter's other operating line was zero' gives an amount in the analyst's own words; no calculator path supplies that line."
+  }
+ ],
+ "items": [
+  {
+   "id": "earnings_versus_cash_quarter_operating_cash_flow_far_below_net_income",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "ratios.growth.operating_cash_flow.this_quarter is well below ratios.growth.net_income.this_quarter and is the lowest quarter the earnings_versus_cash.smoothness series reads. The trailing earnings_versus_cash.operating_cash_flow_over_net_income is within the history years. The inventory attribution is in narrative_signs_of_operating_pressure_inventory_build_memory_supply_constraints."
+  },
+  {
+   "id": "earnings_versus_cash_inventory_build_absorbs_net_income",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.working_capital.inventory.balance_sheet_change, .share_of_net_income and .cash_flow_statement_change resolve. They agree with earnings_quality_inventory_balance_build_on_balance_sheet and liquidity_and_capital_inventory_build_absorbs_operating_cash."
+  },
+  {
+   "id": "earnings_versus_cash_unrealized_investment_gains_inside_net_income",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "notes:28 describes the marketable-securities gains as primarily unrealized, and the lock-up is in estimates_and_discretion_qsi_ipo_holdings_under_lockup. ratios.growth.net_income.year_over_year falls far less than ratios.growth.operating_income.year_over_year, which fits the stated gap."
+  },
+  {
+   "id": "earnings_versus_cash_income_more_volatile_than_cash",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.smoothness is above one. earnings_versus_cash.history.years.0.operating_cash_flow_over_net_income and the trailing ratio bracket the valuation-allowance charge and its release, as shown in estimates_and_discretion_federal_valuation_allowance_release."
+  },
+  {
+   "id": "earnings_versus_cash_inventory_and_payables_articulation_gaps_small",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The evidence supports it: earnings_versus_cash.working_capital.inventory.articulation_gap and accounts_payable.articulation_gap are small against the moves. It still scores zero because a dealbreaker names it (acquisition count written without a calculator path)."
+  },
+  {
+   "id": "revenue_recognition_receivables_rising_against_falling_revenue",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.trailing_four_quarters.change_in_receivables is a build while ratios.growth.revenue.year_over_year and quarter_over_quarter are negative. revenue_recognition_receivables_cash_flow_build shows the year-to-date reversal against the prior year."
+  },
+  {
+   "id": "revenue_recognition_contract_liabilities_drawing_down",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "terms.balances_now.contract_liabilities is below terms.balances_a_year_earlier.contract_liabilities. trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue is below quarters-back-1, and the anomaly itself says the balances are small."
+  },
+  {
+   "id": "revenue_recognition_iot_categories_redefined_without_reclassification_statement",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "structure_and_disclosure_changes_iot_category_redefined records the replaced categories with no reclassification statement, and IoT is tagged only in total."
+  },
+  {
+   "id": "revenue_recognition_royalty_revenue_rests_on_estimated_licensee_sales",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "revenue_recognition_qtl_lower_estimated_cellular_sales and revenue_recognition_revenue_from_obligations_satisfied_earlier show the estimate-driven bridge. 'revises' and the unbilled-royalties remark go a step beyond the cited items."
+  },
+  {
+   "id": "revenue_recognition_acquired_revenue_in_data_center",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "earnings_quality_data_center_revenue_from_acquisition credits the increase mainly to Alphawave, and the numbers report carries no Data Center revenue fact."
+  },
+  {
+   "id": "estimates_and_reserves_valuation_allowance_built_then_released",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "estimates_and_discretion_federal_valuation_allowance_release and the year-to-date tax-benefit items show the build and the release. trend_table.years-back-0.ratios.accruals_over_total_assets, the trailing tax terms and tax_rate resolve."
+  },
+  {
+   "id": "estimates_and_reserves_reserve_ratios_not_observable",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The bad-debt, inventory-reserve and warranty-reserve grid items are unfilled in every period. trend_table.quarters-back-0.ratios.days_sales_of_inventory is the highest of the filled quarters."
+  },
+  {
+   "id": "estimates_and_reserves_alphawave_goodwill_revised_without_explanation",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "articulation_and_the_filed_history_alphawave_goodwill_restated_by_later_filing shows the superseded goodwill fact. The notes:71 allocation table carries the revised goodwill, and no text explains the change."
+  },
+  {
+   "id": "estimates_and_reserves_remeasurement_gains_on_unquoted_holdings",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "estimates_and_discretion_observable_price_change_gains names gains from observable price changes on non-marketable investments. Calling the equity-method earnings remeasurements is loose, but the core point holds."
+  },
+  {
+   "id": "estimates_and_reserves_unrecognized_tax_benefits_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "estimates_and_discretion_unrecognized_tax_benefits_may_change_within_twelve_months and liquidity_and_capital_accrued_income_taxes_lower show what is stated."
+  },
+  {
+   "id": "estimates_and_reserves_customer_incentive_accrual_rising_with_payment_timing",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:11 and estimates_and_discretion_accrued_customer_incentives_and_payment_timing show the accrual rising, with payment timing cited. The current-liability terms resolve, and the anomaly correctly says they include the new current debt."
+  },
+  {
+   "id": "estimates_and_reserves_goodwill_growth_and_modular_expense_split_pending",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The evidence supports it: the goodwill items and earnings_quality_modular_executive_shares_compensation_expense show the pending split, and trend_table.quarters-back-0.ratios.soft_asset_share resolves. It still scores zero because a dealbreaker names it."
+  },
+  {
+   "id": "estimates_and_reserves_effective_tax_rate_rise_and_fddei_reduction",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "estimates_and_discretion_effective_tax_rate_rise_in_latest_quarter and estimates_and_discretion_fddei_benefit_reduced_by_research_expensing state both points, and tax_rate resolves."
+  },
+  {
+   "id": "cost_deferral_soft_asset_share_at_six_quarter_high",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "trend_table.quarters-back-0.ratios.soft_asset_share is the highest of the filled quarters, above quarters-back-1, quarters-back-4 and years-back-0."
+  },
+  {
+   "id": "cost_deferral_non_gaap_gap_unmeasured_and_tax_method_changed",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "earnings_quality_non_gaap_gap_trend_quarterly_grid is unfilled, and structure_and_disclosure_changes_non_gaap_fixed_tax_rate_method records the method change without a recast."
+  },
+  {
+   "id": "cost_deferral_research_and_development_stated_net_of_reimbursements",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_quality_research_and_development_lower_engineering_reimbursements attributes the increase mainly to lower reimbursements, and terms.trailing_four_quarters.research_and_development_expense resolves."
+  },
+  {
+   "id": "cost_deferral_share_based_compensation_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.trailing_four_quarters.share_based_compensation is above earnings_versus_cash.history.years.0 and years.1 share_based_compensation. The Modular addition is in earnings_quality_modular_executive_shares_compensation_expense."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_acquisition_cash_not_captured",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "In calculator_filings_only.json, free_cash_flow.free_cash_flow_quality_adjusted.inputs.acquisitions.cash_spent is zero. Yet the 8-K cash-flow statement prints 'Acquisitions and other investments, net of cash acquired', and the MD&A lists acquisitions among the uses of cash."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_share_funded_acquisitions_offset_by_repurchases",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "medium",
+   "why": "notes:69 puts only part of the Alphawave purchase price in exchangeable shares, so 'paid largely in shares' is not shown for Alphawave. The repurchase offset in liquidity_and_capital_repurchases_offsetting_acquisition_share_issuance is real but does not settle that repurchases carry acquisition cost."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_assumed_debt_repaid_in_financing",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "terms.cash_flow_families.borrowing_repaid matches the resolved quote 'Repayment of debt of an acquired company is 174000000.' 'The only borrowing repayment' holds only within the calculator family, because the 8-K also prints 'Repayment of short-term debt'."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_returns_exceed_free_cash_flow_funded_by_cash_and_paper",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.trailing_four_quarters.share_repurchases against free_cash_flow.free_cash_flow_simple, the cash and debt terms and ratios.solvency.net_debt all resolve. The commercial-paper and restricted-cash items show the bridge."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_purchase_commitments_not_quantified",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:10 refers to advance payments under capacity purchase commitments, and no purchase obligation is tagged at the June date in report_numbers.md."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_capital_expenditure_stepped_up",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.trailing_four_quarters.capital_expenditure is well above terms.trailing_four_quarters_a_year_earlier.capital_expenditure, and liquidity_and_capital_capital_expenditures_higher agrees."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_commercial_paper_context_changed",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "structure_and_disclosure_changes_commercial_paper_context_dimension_dropped and structure_and_disclosure_changes_short_term_debt_schedule_added show the tagging change."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_non_gaap_tax_method_changed_without_recast",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "structure_and_disclosure_changes_non_gaap_fixed_tax_rate_method and earnings_quality_fixed_non_gaap_tax_rate_adjustment both record that prior periods were not updated."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_litigation_without_accrual_and_trial_pending",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The three related_parties_contingencies_and_subsequent_events items show the Arm and ParkerVision steps with no accrual. The trial date is stated in the filing, not a post-cutoff fact."
+  },
+  {
+   "id": "cross_document_reconciliation_restructuring_amount_differs_between_release_and_note",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:78 and notes:26 give different amounts for the quarter's restructuring, and the analyst reports it as a contradiction, as the inputs show."
+  },
+  {
+   "id": "cross_document_reconciliation_marketable_securities_gains_labelled_realized_but_described_unrealized",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:28 describes the gains as primarily unrealized while the 10-Q uses a realized-gain concept. The 10-K uses the same concept for this line, a standing tagging choice the anomaly does not mention."
+  },
+  {
+   "id": "cross_document_reconciliation_pricing_actions_in_release_absent_from_mdna",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "across_documents_pricing_actions_in_release_not_in_mdna shows the release text with no MD&A counterpart, and trend_table.quarters-back-0.ratios.gross_margin resolves."
+  },
+  {
+   "id": "cross_document_reconciliation_release_headlines_versus_handset_decline",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "across_documents_release_headlines_feature_non_handset_growth and results_against_expectations_automotive_revenue_growth show both sides, and ratios.growth.revenue.year_over_year is negative."
+  },
+  {
+   "id": "cross_document_reconciliation_high_end_of_guidance_claim_unverifiable",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "No prior-quarter guidance range is in the inputs, and input_prior_predictions.md has 'None on record', so the claim cannot be tested. ratios.growth.revenue.quarter_over_quarter is negative."
+  },
+  {
+   "id": "industry_lens_inventory_days_at_six_quarter_high_with_reserves_unobservable",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.quarters-back-0.ratios.days_sales_of_inventory is the highest of the filled quarters. terms.balances_now.inventory is above terms.balances_a_year_earlier.inventory, and no reserve is tagged."
+  },
+  {
+   "id": "industry_lens_inventory_mix_led_by_work_in_process_and_raw_materials",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "medium",
+   "why": "The component items show every component up, but finished goods rose by more in absolute terms than raw materials. The 'committed purchases' reading is an inference the cited evidence does not settle."
+  },
+  {
+   "id": "industry_lens_customer_concentration_rising_in_largest_customer",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "concentration.facts.39.value is above facts.21 and facts.40 is above facts.22, and revenue_recognition_largest_customer_concentration_rise agrees."
+  },
+  {
+   "id": "industry_lens_third_customer_no_longer_tagged",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "concentration.facts.25.value and facts.26.value resolve for the year-ago periods. notes:24 shows that customer marked with an asterisk in the current periods, with no current fact."
+  },
+  {
+   "id": "industry_lens_channel_signals_receivables_and_incentives_up_while_revenue_down",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.trailing_four_quarters.change_in_receivables, the incentive item notes:11 and revenue_recognition_current_contract_liabilities_lower show the signals. The anomaly calibrates it as a signal to watch."
+  },
+  {
+   "id": "industry_lens_purchase_commitments_against_rising_inventory",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "liquidity_and_capital_advance_supply_payments_utilized and the supplier-cost items show the commitments, and no commitment amount is tagged at the June date."
+  },
+  {
+   "id": "industry_lens_strategic_investment_gains_large_share_of_pretax_income",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_quality_strategic_investments_segment_pretax_contribution shows QSI pretax income as a large part of the quarter's consolidated pretax income, and the release excludes it from non-GAAP."
+  },
+  {
+   "id": "industry_lens_gross_margin_at_low_with_input_cost_pressure",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.quarters-back-0.ratios.gross_margin is the lowest of the filled quarters and years-back-0 the lowest filled year. across_documents_input_cost_pressure_beside_lowest_gross_margin gives the stated cause."
+  },
+  {
+   "id": "results_against_expectations_revenue_down_quarter_over_quarter_and_year_over_year",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.growth.revenue.quarter_over_quarter and year_over_year are negative while trailing_four_quarters is positive, and results_against_expectations_revenue_decline_against_prior_year agrees."
+  },
+  {
+   "id": "results_against_expectations_operating_income_fell_far_faster_than_revenue",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "ratios.growth.operating_income.year_over_year falls far more than ratios.growth.revenue.year_over_year, and narrative_signs_of_operating_pressure_chip_segment_pretax_decline shows QCT earnings before tax down."
+  },
+  {
+   "id": "results_against_expectations_net_income_and_diluted_eps_down_in_latest_quarter",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.growth.net_income.year_over_year and quarter_over_quarter are negative, and results_against_expectations_diluted_earnings_per_share shows EPS lower."
+  },
+  {
+   "id": "results_against_expectations_next_quarter_guidance_below_latest_quarter_earnings",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "results_against_expectations_gaap_eps_guidance_range and revenue_guidance_range show the ranges against the quarter. The input-cost statement is in narrative_signs_of_operating_pressure_input_costs_in_results_and_guidance."
+  },
+  {
+   "id": "profitability_gross_margin_at_the_low_of_filed_history",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.quarters-back-0.ratios.gross_margin is the lowest filled quarter and trend_table.years-back-0.ratios.gross_margin the lowest filled year. The cause items agree."
+  },
+  {
+   "id": "profitability_operating_margin_below_its_own_three_year_average",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.profitability.operating_margin is below earnings_versus_cash.history.operating_margin_three_year_average, and ratios.growth.operating_income.trailing_four_quarters is negative."
+  },
+  {
+   "id": "profitability_operating_expenses_rising_while_revenue_falls",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "narrative_signs_of_operating_pressure_research_and_development_growth and selling_general_and_administrative_growth show both lines up while ratios.growth.revenue.year_over_year is negative."
+  },
+  {
+   "id": "profitability_net_income_leans_on_tax_benefit_and_investment_gains",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "terms.trailing_four_quarters.income_tax_expense against pretax_income and earnings_versus_cash.smoothness resolve. The valuation-allowance and QSI items show that the tax and investment items, not operations, drive net income."
+  },
+  {
+   "id": "efficiency_days_sales_of_inventory_at_a_six_quarter_high",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.quarters-back-0.ratios.days_sales_of_inventory is the highest filled quarter, and the inventory balance_sheet_change and share_of_net_income paths resolve."
+  },
+  {
+   "id": "efficiency_receivables_building_while_revenue_falls_and_days_sales_outstanding_unreadable",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.working_capital.receivables.cash_flow_statement_change is a build. articulation_and_the_filed_history_receivables_tagged_with_broader_concept_in_quarterly_filings explains why days sales outstanding is missing."
+  },
+  {
+   "id": "efficiency_asset_turnover_weighed_by_acquired_goodwill_and_soft_assets",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The evidence supports it: ratios.efficiency.asset_turnover, the asset terms and trend_table.quarters-back-0.ratios.soft_asset_share resolve. It still scores zero because a dealbreaker names it."
+  },
+  {
+   "id": "liquidity_and_capital_operating_cash_flow_collapsed_in_the_latest_quarter",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "ratios.growth.operating_cash_flow.this_quarter and its quarter_over_quarter and year_over_year changes resolve. The attribution follows liquidity_and_capital_inventory_build_absorbs_operating_cash, though it pairs a trailing inventory path with a year-to-date explanation."
+  },
+  {
+   "id": "liquidity_and_capital_cash_and_marketable_securities_lower_than_a_year_earlier",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The evidence supports it: the cash and short-term investment terms resolve and liquidity_and_capital_cash_balance_lower agrees. It still scores zero because a dealbreaker names it."
+  },
+  {
+   "id": "liquidity_and_capital_shareholder_returns_exceed_quality_adjusted_free_cash_flow",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.trailing_four_quarters.share_repurchases exceeds free_cash_flow.free_cash_flow_quality_adjusted in both calculator files and is below free_cash_flow.free_cash_flow_simple."
+  },
+  {
+   "id": "liquidity_and_capital_capital_expenditure_well_above_a_year_earlier",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.trailing_four_quarters.capital_expenditure is well above the year-earlier term while trailing operating cash flow slipped, and liquidity_and_capital_capital_expenditures_higher agrees."
+  },
+  {
+   "id": "liquidity_and_capital_acquisition_cash_outside_the_quality_adjusted_measure",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "The evidence supports it: free_cash_flow.free_cash_flow_quality_adjusted.inputs.acquisitions.cash_spent is zero while the MD&A lists acquisitions among the uses of cash. It still scores zero because a dealbreaker names it."
+  },
+  {
+   "id": "solvency_net_debt_rising_as_cash_falls_and_debt_rises",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.solvency.total_debt is above terms.debt_a_year_earlier, and ratios.solvency.net_debt and the coverage ratios resolve. The double-count caveat is left open, though the MD&A's total debt agrees with ratios.solvency.total_debt."
+  },
+  {
+   "id": "growth_revenue_flat_over_three_fiscal_years",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.history.revenue_growth_three_year_compound is flat against revenue_growth_five_year_compound, and the trailing and year_over_year revenue paths resolve."
+  },
+  {
+   "id": "growth_profit_and_cash_flow_shrinking_on_a_flat_top_line",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The trailing_four_quarters growth of operating income, net income and operating cash flow is negative while revenue's is positive. The quarterly declines are steeper."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_input_costs_and_supply_constraints_on_margins_and_revenue",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The supplier-cost, supply-constraint and memory-environment items state the pressure, and trend_table.quarters-back-0.ratios.gross_margin is the lowest filled quarter."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_chip_segment_margin_down_with_causes_not_visible",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "narrative_signs_of_operating_pressure_qct_ebt_margin_decline_drivers_not_visible confirms that the quarter's cause bullets are not in the input. ratios.growth.operating_income.year_over_year is negative."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_restructuring_and_severance_charges",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The evidence supports it: notes:26 and 8k_2_02:78 show the severance charges and the differing amounts. It still scores zero because a dealbreaker names it."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_largest_customer_share_rising_as_revenue_falls",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "revenue_recognition_largest_customer_concentration_rise shows customer X's share up while ratios.growth.revenue.year_over_year is negative. The licence-expiry dates come from the filing."
+  }
+ ],
+ "coverage": {
+  "answer": "no",
+  "why": "analysis_accounting.json drops revenue_recognition, cost_deferral and controls_audit_and_filing_signals at the gate, and analysis_financial.json drops liquidity and solvency, so those count as unanswered."
+ },
+ "calibration": {
+  "answer": "yes",
+  "why": "Each answered area's verdict matches its anomalies. For example, cross_document_reconciliation's 'two small contradictions' matches its two anomalies marked contradicts, and earnings_versus_cash's 'weakening' matches its quarter-conversion and inventory anomalies."
+ },
+ "valuation_reading": {
+  "answer": "no",
+  "why": "value_range, price_position and market_implied_growth each read 'Not computed' because the calculator has no price, WACC or reverse DCF. most_sensitive is ranked by 'the spread of the assumptions, not on a computed change in value'."
+ },
+ "score": 0.893,
+ "grader": {
+  "model_requested": "opus",
+  "model_served": "claude-opus-5-5",
+  "input_tokens": 84,
+  "output_tokens": 78009,
+  "cost_usd": 12.036512199999997,
+  "seconds": 760.0
+ }
+}
