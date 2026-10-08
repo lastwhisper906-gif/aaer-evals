@@ -1792,3 +1792,40 @@ def test_an_id_line_in_the_reader_s_own_report_is_not_a_paragraph_it_was_handed(
     assert quote_gate.quote_drop_reason(item, index) is not None
     seen = mechanical.agent_saw(run, "notes-text-reader", quotable=("input_",))
     assert mechanical.quote_stands(seen, pid, sentence) is not None
+
+
+# A quote of whitespace alone. The gate refused only an empty quote, and one of
+# spaces, a line break or a no-break space folds to spaces, which any paragraph
+# with a space in it holds, so it stood; the owner's quotes_resolve refuses a
+# quote that strips to nothing, "a kept item with no quote" (the critic's probe
+# of 2026-10-08 on ESE's earnings-release paragraph 36; any prose paragraph will
+# do, CSCO's notes history here). No reader report on record has one.
+@pytest.mark.parametrize("quote, blank", [
+    (" ", True), ("\n", True), (" ", True), ("　", True), (" \t\r\n ", True),
+    ("\u001c", True),          # `str.strip` takes a file separator, and the owner strips
+    ("July 26, 2025, respectively.", False), (" funding commitments ", False)])
+def test_a_quote_of_whitespace_alone_is_dropped_as_the_owner_refuses_it(tmp_path, quote, blank):
+    from evals.common import PASS
+    from src import run_analysis
+    pid = "0000858877-26-000021:note_history:12"
+    item = {"id": "related_parties_contingencies_and_subsequent_events_funding",
+            "paragraph_id": pid, "quote": quote}
+    report = f"```json\n{json.dumps(item)}\n```\n"
+    run = _notes_run(tmp_path, report=report)
+    numbers = agent_inputs.session_root(run, "numbers-reader")
+    numbers.mkdir(parents=True)
+    (numbers / "report_numbers.md").write_text("no items\n", encoding="utf-8")
+    reader = agent_inputs.session_root(run, "notes-text-reader")
+    reason = quote_gate.quote_drop_reason(item, quote_gate.quotable(reader, CSCO_TENQ))
+    assert (reason is not None) is blank, reason
+    # the owner on the report as the reader wrote it, handed on with no gate
+    (run / "report_notes_text.md").write_text(report, encoding="utf-8")
+    (run / "report_numbers.md").write_text("no items\n", encoding="utf-8")
+    assert mechanical.check_quotes_resolve(run).failures == (
+        [f"report_notes_text.md:{item['id']}: a kept item with no quote"] if blank else [])
+    # the owner on what the real gate let through
+    run_analysis.gate_readers(run)
+    rows = json.loads((run / MANIFEST).read_text(encoding="utf-8"))["dropped_items"]
+    assert [row["item_id"] for row in rows] == ([item["id"]] if blank else [])
+    assert all("empty quote" in row["reason"] for row in rows)
+    assert mechanical.check_quotes_resolve(run).status == PASS

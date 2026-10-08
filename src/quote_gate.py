@@ -130,7 +130,10 @@ nothing in an item checks that word.
 **Fail closed.** A paragraph id that resolves to nothing, an item with no id, an
 empty quote, a citation that is not a string -- each is a drop and never a pass.
 An empty quote is a substring of every text, so it is the one alteration a
-substring test cannot see, and it is refused before the test is reached.
+substring test cannot see, and it is refused before the test is reached; so is
+a quote of whitespace alone, which the fold reads as spaces that any paragraph
+with a space in it holds, and which the owner's quotes_resolve refuses as "a
+kept item with no quote" (blank as `str.strip` reads it, the owner's own test).
 
 **Where the count goes.** `docs/INPUT_SPEC.md` §6 gives `input_manifest.json`
 the dropped-item counts. The gate runs inside `read`, `compare` and `decide`,
@@ -537,19 +540,23 @@ def says_something(quote: str, keys: set[str], identifier: str,
 def quote_drop_reason(item, index: dict) -> str | None:
     """Why this reader item is dropped, or None when it stands.
 
-    Beyond the string match: a paragraph id has the shape accession, namespace,
-    name; a quote of a prose paragraph stands in that paragraph as the owner
-    reads it too (`Quotable.prose`), headings included; and a quote of a
-    computed row must carry something the row says, not only its key names,
-    its metadata or its id -- the owner's grader refuses each of these."""
+    Beyond the string match: a quote is not blank; a paragraph id has the shape
+    accession, namespace, name; a quote of a prose paragraph stands in that
+    paragraph as the owner reads it too (`Quotable.prose`), headings included;
+    and a quote of a computed row must carry something the row says, not only
+    its key names, its metadata or its id -- the owner's grader refuses each of
+    these."""
     if item_id(item) is None:
         return "the item carries no id, so nothing downstream could cite it"
     paragraph_id = item.get("paragraph_id")
     if not isinstance(paragraph_id, str) or not paragraph_id:
         return "the item names no paragraph id"
     quote = item.get("quote")
-    if not isinstance(quote, str) or not quote:
-        return "the item carries no quote, and an empty quote matches every text"
+    # blank as the owner's quotes_resolve reads it (`quote.strip()`): one of
+    # whitespace alone folds to spaces, which any paragraph with a space holds
+    if not isinstance(quote, str) or not quote.strip():
+        return ("the item carries no quote, and an empty quote, or one of whitespace "
+                "alone, matches every text")
     if paragraph_id not in index:
         return f"paragraph id {paragraph_id} is not in this reader's committed input"
     if folded_in(index, paragraph_id, quote) is None:
