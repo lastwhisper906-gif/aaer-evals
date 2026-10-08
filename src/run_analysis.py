@@ -845,14 +845,34 @@ ANALYSTS = {"accounting-analyst": "accounting", "financial-analyst": "financial"
 
 def gate_analysts(run: Path, names, stages: dict | None = None) -> None:
     """Each analyst named through the analysis gate into the run root, unless its
-    analysis is already there (gated on the night a resumed run stopped);
-    `stages` takes how many items each dropped."""
+    analysis is already there (gated on the night a resumed run stopped).
+    How many items each dropped goes into `stages` and, the moment its file is
+    written, into the manifest's `analysis_stages` (`record_stage`): a run that
+    stops after it -- on the boundary the other analyst broke (`put_on_record`,
+    which hands no `stages`), or on a refusal later in the run -- keeps the
+    count, and the resume, which never gates that analysis again, reads it from
+    the manifest and carries it into the finished record."""
     for name, kind in ANALYSTS.items():
         if name in names and not (run / f"analysis_{kind}.json").is_file():
             checked = check_analysis(run, name, kind)
             write_json(run / f"analysis_{kind}.json", checked)
+            count = {"dropped": checked["dropped_count"]}
+            record_stage(run, f"analysis_{kind}", count)
             if stages is not None:
-                stages[f"analysis_{kind}"] = {"dropped": checked["dropped_count"]}
+                stages[f"analysis_{kind}"] = count
+
+
+def record_stage(run: Path, stage: str, outcome) -> None:
+    """One stage's outcome into the manifest's `analysis_stages`, every other key
+    left alone, under the lock the agents' records are written under."""
+    with _RECORD_LOCK:
+        path = Path(run) / "input_manifest.json"
+        manifest = json.loads(path.read_text(encoding="utf-8"))
+        stages = manifest.get("analysis_stages")
+        stages = dict(stages) if isinstance(stages, dict) else {}
+        stages[stage] = outcome
+        manifest["analysis_stages"] = stages
+        write_json(path, manifest)
 
 
 # --- the gates -----------------------------------------------------------------------------

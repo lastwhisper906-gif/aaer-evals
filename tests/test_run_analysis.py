@@ -2965,6 +2965,33 @@ def test_a_boundary_stop_after_two_agents_puts_the_one_that_left_nothing_on_reco
     assert clean in manifest["resume_skipped"]
 
 
+@pytest.mark.parametrize("analysis, gated", [("analysis_financial", "at the stop"),
+                                             ("analysis_accounting", "on the resume")])
+def test_the_count_of_an_analysis_gated_at_a_boundary_stop_reaches_the_finished_record(
+        tmp_path, monkeypatch, nvda_bundle, analysis, gated):
+    """The accounting analyst leaves a file; the financial analysis is gated into
+    the run root before the run stops (`put_on_record`), and the resume, once the
+    file is removed, never gates it again. How many items the gate dropped from
+    it is in the stopped manifest's `analysis_stages` and in the finished one.
+    put_on_record handed the gate no stages, so the finished record carried no
+    count for the analysis gated at the stop (the second lens, 2026-10-08). The
+    other side, before and after: the accounting analysis, gated on the resumed
+    night, is counted there."""
+    run, _, stopped_manifest, stopped = _run_leaving(tmp_path, monkeypatch, nvda_bundle,
+                                                     {"accounting-analyst": DRAFT})
+    assert isinstance(stopped, agent_inputs.AgentInputError), stopped
+    if gated == "at the stop":
+        written = json.loads((run / f"{analysis}.json").read_text(encoding="utf-8"))
+        assert (stopped_manifest.get("analysis_stages") or {}).get(analysis) == {
+            "dropped": written["dropped_count"]}
+    (run / "agents" / "accounting-analyst" / "draft.json").unlink()
+    called, manifest, error = _night(run, monkeypatch)
+    assert error is None, error
+    assert "financial-analyst" not in called
+    written = json.loads((run / f"{analysis}.json").read_text(encoding="utf-8"))
+    assert manifest["analysis_stages"].get(analysis) == {"dropped": written["dropped_count"]}
+
+
 def test_no_agent_is_called_while_the_boundary_stands_broken(tmp_path, monkeypatch, nvda_bundle):
     """A retired agent's directory made while the analysts ran sits in neither
     analyst's directory: both are gated into the run root before the run stops.
