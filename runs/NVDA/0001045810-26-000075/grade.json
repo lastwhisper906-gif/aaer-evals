@@ -1,0 +1,590 @@
+{
+ "run": "NVDA/0001045810-26-000075",
+ "rubric": "evals/capability/rubric.md",
+ "dealbreakers": [
+  {
+   "kind": "number_not_from_calculator",
+   "id": "revenue_recognition_extended_terms_up_to_one_year_without_financing_component_disclosure",
+   "where": "analysis_accounting.json anomalies[7].name; anomalies[7].what",
+   "why": "'Terms up to one year' and 'ninety days to one year' are figures in the analyst's own words; notes:54 is not quoted and no calculator path supplies them."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": "estimates_and_reserves_bad_debt_allowance_not_visible",
+   "where": "analysis_accounting.json anomalies[14].what",
+   "why": "'terms up to one year' is the analyst's own figure; no calculator path carries the payment terms and the item quotes nothing."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": "cost_deferral_other_assets_doubled_with_deferred_warrant_benefit",
+   "where": "analysis_accounting.json anomalies[23].name; anomalies[23].what",
+   "why": "'nearly doubled' for other non-current assets is the analyst's own arithmetic; no calculator path supplies that multiple."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": "cash_flow_engineering_and_off_balance_sheet_supply_commitments_more_than_doubled_in_a_quarter",
+   "where": "analysis_accounting.json anomalies[25].name; anomalies[25].what",
+   "why": "'more than doubled' comes from comparing the supply-and-capacity commitment facts; the calculator's purchase-obligation field is missing for this date, so no path supplies it."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": "cash_flow_engineering_and_off_balance_sheet_uncommenced_leases_for_own_use_and_third_parties",
+   "where": "analysis_accounting.json anomalies[27].what",
+   "why": "'two new commitment members' and 'terms up to twenty years' are written outside any quote; notes:101 holds the lease term but is not quoted and no calculator path carries either figure."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": "cash_flow_engineering_and_off_balance_sheet_tax_payment_timing_shifted_cash_between_quarters",
+   "where": "analysis_accounting.json anomalies[29].what",
+   "why": "'Two federal tax payments' paraphrases mdna:91 without quoting it; no calculator path supplies the count."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": "cross_document_reconciliation_china_revenue_line_versus_minimal_shipments",
+   "where": "analysis_accounting.json anomalies[40].what",
+   "why": "'roughly doubled' is the analyst's own comparison of the China-including-Hong-Kong facts, and 'under one percent' paraphrases mdna:36 without quoting it; neither is a calculator path."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": "industry_lens_inventory_days_highest_of_six_quarters_raw_materials_tripled",
+   "where": "analysis_accounting.json anomalies[43].name; anomalies[43].what",
+   "why": "'raw materials tripled' and 'roughly tripled' are the analyst's own arithmetic on the raw-materials facts; no calculator path carries raw materials."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": "industry_lens_purchase_commitments_versus_need_cancellability_softened",
+   "where": "analysis_accounting.json anomalies[44].what",
+   "why": "'more than doubled in a quarter' has no calculator path; terms.balances_now.unconditional_purchase_obligations is missing."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": "industry_lens_channel_stuffing_markers_mixed",
+   "where": "analysis_accounting.json anomalies[46].what",
+   "why": "'terms run up to one year' is the analyst's own figure; no calculator path supplies it and the item quotes nothing."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": "liquidity_and_capital_purchase_commitments_far_exceed_cash",
+   "where": "analysis_financial.json anomalies[1].what",
+   "why": "'more than doubled in one quarter', 'mostly due within two years' and 'more than double trailing free cash flow' are the analyst's arithmetic on commitment facts; no calculator path supplies these figures."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": "solvency_off_balance_sheet_guarantees_exceed_total_debt",
+   "where": "analysis_financial.json anomalies[5].what",
+   "why": "'roughly half of stockholders' equity' is the analyst's own ratio of terms.balances_now.guarantee_maximum_exposure to terms.balances_now.stockholders_equity; no calculator path supplies it."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": "solvency_unrecognized_tax_benefits_under_examination",
+   "where": "analysis_financial.json anomalies[6].what",
+   "why": "'two fiscal years' paraphrases mdna:108 without quoting it; no calculator path supplies the count."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": "narrative_signs_of_operating_pressure_company_financing_its_own_customers",
+   "where": "analysis_financial.json anomalies[10].what",
+   "why": "'extended payment terms up to a year' is the analyst's own figure; no calculator path carries it and notes:54 is not quoted."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": "narrative_signs_of_operating_pressure_supply_constraints_and_demand_estimate_risk",
+   "where": "analysis_financial.json anomalies[11].what",
+   "why": "'supply commitments were more than doubled' has no calculator path; the purchase-obligation field is missing for this date."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": "narrative_signs_of_operating_pressure_china_and_consumer_softness",
+   "where": "analysis_financial.json anomalies[12].what",
+   "why": "'under a hundredth of data-center revenue' paraphrases mdna:36 without quoting it; no calculator path supplies it."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": null,
+   "where": "analysis_financial.json sections.liquidity.reading",
+   "why": "'a quarter of the quick assets is receivables' is an own-words figure with no calculator path, and it is wrong: on the calculator terms.balances_now.receivables exceeds terms.cash_and_short_term_investments_now."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": null,
+   "where": "analysis_financial.json sections.solvency.reading; sections.free_cash_flow.reading; sections.efficiency.reading",
+   "why": "'seven tranches', 'roughly quadrupled', 'roughly half of simple free cash flow' and 'the balance sheet more than doubled' are own-words figures that no calculator path supplies."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": null,
+   "where": "analysis_accounting.json areas.revenue_recognition.finding; areas.estimates_and_reserves.finding; areas.cost_deferral.finding; areas.cash_flow_engineering_and_off_balance_sheet.finding; areas.industry_lens.finding",
+   "why": "The figures that strike the anomalies recur unquoted in the area findings: 'ninety days up to one year', 'terms up to one year', 'nearly doubled', 'more than doubling within one quarter', 'roughly tripled'."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": null,
+   "where": "analysis_valuation.json value_range.reading; market_implied_growth.reading; most_sensitive[0].reading; most_sensitive[1].reading",
+   "why": "The scenario drivers are spelled out in words ('forty per cent', 'sixty, sixty-four and sixty-six per cent', 'thirty to fifty-eight per cent'); valuation.missing holds no scenario, so no calculator path supplies them and they come from assumptions.json."
+  }
+ ],
+ "items": [
+  {
+   "id": "earnings_versus_cash_cash_conversion_lowest_on_record",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "earnings_versus_cash.operating_cash_flow_over_net_income sits below every earnings_versus_cash.history.years.*.operating_cash_flow_over_net_income; mdna:84 and mdna:91 give the extended terms and tax payments as the causes."
+  },
+  {
+   "id": "earnings_versus_cash_quarterly_cash_flow_halved_while_income_rose",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "8k_2_02:71 prints the quarter's operating cash flow equal to ratios.growth.operating_cash_flow.this_quarter; ratios.growth.operating_cash_flow.quarter_over_quarter is negative while ratios.growth.net_income.quarter_over_quarter is positive."
+  },
+  {
+   "id": "earnings_versus_cash_receivables_build_absorbs_large_share_of_net_income",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "earnings_versus_cash.working_capital.receivables.balance_sheet_change and .share_of_net_income read as written; the reader item liquidity_and_capital_customer_financing_arrangements_affect_cash_timing (mdna:110) says the terms will keep affecting cash timing."
+  },
+  {
+   "id": "earnings_versus_cash_payables_articulation_gap",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "earnings_versus_cash.working_capital.accounts_payable.articulation_gap is large next to the receivables and inventory gaps; the capital-expenditures-incurred-not-paid fact is tagged and no bridge is given."
+  },
+  {
+   "id": "earnings_versus_cash_income_smoother_than_cash",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.smoothness and its quarters_read field support the reading; no prose paragraph addresses the pattern."
+  },
+  {
+   "id": "earnings_versus_cash_non_cash_investment_gains_in_net_income",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "mdna:73 calls the gains primarily unrealized and the GainLossOnInvestments fact sits in income; no calculator_filings_only path carries the amount, as the item says."
+  },
+  {
+   "id": "revenue_recognition_days_sales_outstanding_highest_of_six_quarters",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.quarters-back-0.ratios.days_sales_outstanding has position_in_history 'highest of the 6 filled quarters'; notes:54 holds the new extended-terms sentence."
+  },
+  {
+   "id": "revenue_recognition_extended_terms_up_to_one_year_without_financing_component_disclosure",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "notes:54 gives the terms and says nothing on a financing component, but the item scores zero under the number_not_from_calculator dealbreaker."
+  },
+  {
+   "id": "revenue_recognition_contract_liabilities_and_customer_advances_surge",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.balances_now.contract_liabilities and trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue match; notes:61 and notes:69 give amounts but do not say what the advances secure."
+  },
+  {
+   "id": "revenue_recognition_procure_and_commit_arrangements_revenue_share_undisclosed",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:108 and mdna:20 describe the procure-and-commit arrangements and the AI cloud commitment fact is tagged; no paragraph gives the partners' revenue share."
+  },
+  {
+   "id": "revenue_recognition_warrant_benefit_deferred_destination_unstated",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:84 says the benefit is substantially deferred without naming where it will be recognized; the public-company warrants fact is tagged from nil."
+  },
+  {
+   "id": "revenue_recognition_customer_reclassified_with_prior_periods_recast",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "low",
+   "why": "mdna:33 confirms the move, but mdna:31 prints the recast prior-quarter platform figures, so the size of the shift can be seen in the inputs even though the numbers reader did not carry it."
+  },
+  {
+   "id": "revenue_recognition_unbilled_receivables_tagged_for_first_time",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "low",
+   "why": "The UnbilledContractsReceivable reader item shows no earlier value, but notes:73 describes the unbilled amount, so 'no prose explaining it' overstates."
+  },
+  {
+   "id": "estimates_and_reserves_warranty_reserve_ratio_thinning_into_product_ramp",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The warranty_reserve_ratio cell reads 'second lowest of the 6 filled quarters'; notes:118 shows the accrual flat while issuances and payments rose, and mdna:14 warns of higher warranty costs."
+  },
+  {
+   "id": "estimates_and_reserves_bad_debt_allowance_not_visible",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The bad_debt_reserve_ratio cell is unfilled in every period, as stated, but the item scores zero under the number_not_from_calculator dealbreaker."
+  },
+  {
+   "id": "estimates_and_reserves_inventory_reserve_not_tagged_and_releases_raise_income",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The inventory_reserve_ratio cell is unfilled in every period and mdna:65 reports releases from selling reserved inventory; terms.trailing_four_quarters.inventory_write_down is cited correctly."
+  },
+  {
+   "id": "estimates_and_reserves_upward_valuation_adjustments_on_private_holdings",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "The upward price adjustment fact for the quarter and half is far above the year-ago amounts; notes:45 and notes:47 give the inputs and mdna:73 calls the gains primarily unrealized."
+  },
+  {
+   "id": "estimates_and_reserves_no_critical_estimate_change_claimed_despite_new_judgments",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "mdna:43 reads 'There have been no material changes to our Critical Accounting Policies and Estimates.' while notes:84, notes:52 and notes:83 introduce warrant, VIE and guarantee judgments."
+  },
+  {
+   "id": "estimates_and_reserves_guarantee_fair_value_called_not_significant",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:83 calls the guarantees' fair value not significant and no fair value fact is tagged."
+  },
+  {
+   "id": "estimates_and_reserves_effective_tax_rate_rose",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "tax_rate.effective_rate and the EffectiveIncomeTaxRateContinuingOperations reader item show the quarterly rate above the year-ago quarter."
+  },
+  {
+   "id": "cost_deferral_soft_asset_share_near_record",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The soft_asset_share cells read 'second highest of the 6 filled quarters' and 'highest of the 5 filled years'; the equity investment facts are the drivers."
+  },
+  {
+   "id": "cost_deferral_recurring_inventory_and_export_charges",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:74 footnotes the export charges and releases, mdna:24 gives the licensed China Hopper charge, and InventoryWriteDown is tagged in every period read."
+  },
+  {
+   "id": "cost_deferral_non_gaap_gap_not_computable",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The non_gaap_gap cell is unfilled in every period; 8k_2_02:75 states the definition change."
+  },
+  {
+   "id": "cost_deferral_other_assets_doubled_with_deferred_warrant_benefit",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:84 and the prepaid-and-other-assets cash-flow item support the direction, but the item scores zero under the number_not_from_calculator dealbreaker."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_guarantee_exposure_multiplied",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "terms.balances_now.guarantee_maximum_exposure matches the tagged total; notes:113 to notes:115 describe the SB Energy guarantee for an OpenAI affiliate, and the 10-K printed a far smaller amount."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_supply_commitments_more_than_doubled_in_a_quarter",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "mdna:16 and the supply-and-capacity commitment fact bear out the increase, but the item scores zero under the number_not_from_calculator dealbreaker."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_groq_license_payment_in_financing",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:72 carries the Groq line under financing, mdna:86 names it and notes:63 describes the license; no calculator path holds it."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_uncommenced_leases_for_own_use_and_third_parties",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:101 and notes:110 support the leases and the reassignment, but the item scores zero under the number_not_from_calculator dealbreaker."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_debt_funded_shareholder_returns",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.cash_flow_families.borrowing_issued, free_cash_flow.free_cash_flow_to_equity, terms.trailing_four_quarters.share_repurchases and dividends_paid read as written; mdna:100 gives general corporate purposes."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_tax_payment_timing_shifted_cash_between_quarters",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:91 and the TaxesPayableCurrent item support the timing, but the item scores zero under the number_not_from_calculator dealbreaker."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_variable_interest_entities_not_consolidated",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:52 states the primary-beneficiary conclusion and the VIE maximum-loss-exposure fact is tagged."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_factoring_and_supplier_finance_not_visible",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "terms.trailing_four_quarters.proceeds_from_sale_of_receivables and terms.balances_now.supplier_finance_obligation are missing on the calculator."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_share_based_compensation_real_cost",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "terms.trailing_four_quarters.share_based_compensation is subtracted in free_cash_flow.free_cash_flow_quality_adjusted; 8k_2_02:75 records the non-GAAP change."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_erp_upgrade_in_progress",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "item_4_controls:7 describes the phased ERP upgrade and reports no change in internal control."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_release_omits_guarantee_cap_and_residual_value_support",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:30 calls SB Energy a partnership and 8k_2_02:28 the platforms strategic partnerships, against notes:113 and mdna:21; a later 8-K in the input_8k.md item list has no body here, so the omission rests on the earnings release alone."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_repurchase_authorization_release_differs_from_filing",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:8 prints an approximate remaining authorization and mdna:94 a different figure; the item reports the gap as printed."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_prior_period_revenue_recast_between_platforms",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "low",
+   "why": "mdna:31 prints the recast prior-quarter Hyperscale and ACIE figures, which differ from the prior 10-Q figures in revenue_recognition_hyperscale_platform_revenue_filed_fact, so the recast amounts are visible in the inputs."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_litigation_petition_sentence_dropped",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "note_history:26 holds the petition sentence that the current note no longer carries; the loss contingency accrual is tagged at nil."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_irs_examination_and_rising_tax_accrual",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:108 discloses the examination, and estimates_and_discretion_accrued_income_taxes_noncurrent_filed_fact shows the non-current accrual up from the fiscal year end."
+  },
+  {
+   "id": "cross_document_reconciliation_quarterly_operating_cash_flow_matches_release",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:71 equals ratios.growth.operating_cash_flow.this_quarter."
+  },
+  {
+   "id": "cross_document_reconciliation_china_revenue_line_versus_minimal_shipments",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The China-including-Hong-Kong fact and mdna:36 bear out the tension, but the item scores zero under the number_not_from_calculator dealbreaker."
+  },
+  {
+   "id": "cross_document_reconciliation_provision_release_direction_versus_gross_margin",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "medium",
+   "why": "mdna:65 gives the provisions' net effect as an unfavorable impact on gross margin and mdna:64 attributes the rise to mix, so prose and numbers agree; the item's own words 'a drag the product mix more than absorbed' concede there is no contradiction."
+  },
+  {
+   "id": "cross_document_reconciliation_locked_up_equity_counted_as_liquidity",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:36 gives the lock-ups and mdna:88 counts marketable equity as liquidity; the restricted public equity fact is most of the release's marketable equity line."
+  },
+  {
+   "id": "industry_lens_inventory_days_highest_of_six_quarters_raw_materials_tripled",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The days_sales_of_inventory cell and the raw-materials fact bear out the build, but the item scores zero under the number_not_from_calculator dealbreaker."
+  },
+  {
+   "id": "industry_lens_purchase_commitments_versus_need_cancellability_softened",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The commitment facts and the cancellability wording (notes:99 against note_history:29) support it, but the item scores zero under the number_not_from_calculator dealbreaker."
+  },
+  {
+   "id": "industry_lens_receivables_concentration_widened_to_five_customers",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "concentration.facts.39 to concentration.facts.43 are the quarter-end receivables customers, against concentration.facts.23 to concentration.facts.25 at the year end and concentration.facts.26 at the prior quarter; notes:53 states them."
+  },
+  {
+   "id": "industry_lens_channel_stuffing_markers_mixed",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The days-sales-outstanding and contract-liability paths are correct, but the item scores zero under the number_not_from_calculator dealbreaker."
+  },
+  {
+   "id": "industry_lens_circular_ecosystem_financing",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "Each arrangement is in the inputs: notes:108 and mdna:20 procure-and-commit, notes:52 VIEs, notes:113 the guarantee, notes:110 leases to reassign, notes:84 warrants, mdna:21 residual-value support; terms.balances_now.guarantee_maximum_exposure matches."
+  },
+  {
+   "id": "industry_lens_indirect_customer_and_guarantee_counterparty_possibly_same",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:60 describes the unnamed indirect AI company and notes:113 names an OpenAI affiliate; neither says whether they are the same, and concentration.facts.35 covers direct customers only."
+  },
+  {
+   "id": "liquidity_and_capital_operating_cash_flow_fell_while_earnings_rose",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "ratios.growth.operating_cash_flow.quarter_over_quarter against ratios.growth.operating_income.quarter_over_quarter, and earnings_versus_cash.operating_cash_flow_over_net_income against history.years.0 and years.1, read as written; mdna:84 and mdna:91 give the causes."
+  },
+  {
+   "id": "liquidity_and_capital_purchase_commitments_far_exceed_cash",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "The commitment facts show the increase and their scale against terms.cash_and_short_term_investments_now, but the item scores zero under the number_not_from_calculator dealbreaker."
+  },
+  {
+   "id": "liquidity_and_capital_shareholder_returns_funded_alongside_new_debt",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.trailing_four_quarters.share_repurchases, dividends_paid and terms.cash_flow_families.borrowing_issued read as written and mdna:96 raises the dividend; 'first debt issuance' overstates, since notes:89 lists notes outstanding before the new issue."
+  },
+  {
+   "id": "liquidity_and_capital_marketable_equity_liquidity_locked_up",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:36 gives the lock-ups and mdna:88 lists marketable equity as liquidity; terms.balances_now.short_term_investments and the soft_asset_share path read as written."
+  },
+  {
+   "id": "liquidity_and_capital_license_consideration_outside_free_cash_flow",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:72 puts the Groq line in financing; free_cash_flow.free_cash_flow_quality_adjusted.inputs.acquisitions.cash_spent is the only acquisition deduction."
+  },
+  {
+   "id": "solvency_off_balance_sheet_guarantees_exceed_total_debt",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "The guarantee total and SB Energy facts (notes:113 to notes:115) exceed ratios.solvency.total_debt, but the item scores zero under the number_not_from_calculator dealbreaker."
+  },
+  {
+   "id": "solvency_unrecognized_tax_benefits_under_examination",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:108 and the AccruedIncomeTaxesNoncurrent item support it, but the item scores zero under the number_not_from_calculator dealbreaker."
+  },
+  {
+   "id": "profitability_net_income_leans_on_unrealized_investment_gains",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:73 shows the prior quarter's equity gains above this quarter's, and terms.trailing_four_quarters.pretax_income exceeds operating_income; notes:84 says the warrant benefit was deferred, so listing it among the gains is loose."
+  },
+  {
+   "id": "profitability_gross_margin_cost_pressures_and_lower_guidance",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:16 guides below trend_table.quarters-back-0.ratios.gross_margin.value, mdna:24 gives the licensed-product charge and the tariff, and the warranty payments fact rose."
+  },
+  {
+   "id": "results_against_expectations_gross_margin_guided_below_quarter",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:15 and 8k_2_02:16 give the outlook; trend_table.quarters-back-0.ratios.gross_margin.value is cited correctly."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_company_financing_its_own_customers",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "mdna:17, notes:54 and the guarantee facts bear it out, but the item scores zero under the number_not_from_calculator dealbreaker."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_supply_constraints_and_demand_estimate_risk",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:14 and the commitment facts bear it out, but the item scores zero under the number_not_from_calculator dealbreaker."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_china_and_consumer_softness",
+   "frame": "financial",
+   "verdict": "unclear",
+   "severity": "low",
+   "why": "The China-including-Hong-Kong item shows the half below the year-ago half but the quarter far above its year-ago quarter, so 'fell sharply' is not settled; the item also scores zero under the dealbreaker."
+  },
+  {
+   "id": "growth_cash_flow_growth_lags_earnings_growth",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.growth.operating_cash_flow.trailing_four_quarters lags ratios.growth.net_income.trailing_four_quarters on the calculator; the receivables cash-flow item accounts for the gap."
+  }
+ ],
+ "coverage": {
+  "answer": "no",
+  "why": "analysis_accounting.json dropped_items shows areas.controls_audit_and_filing_signals removed by the gate, so that area is unanswered; the financial sections are present, though summary_ko for profitability, efficiency, liquidity, solvency and path_to_distress was dropped."
+ },
+ "calibration": {
+  "answer": "no",
+  "why": "The cross_document_reconciliation verdict says its contradictions 'all run in the direction of a smoother story than the facts support', yet mdna:64 and mdna:65 settle the gross-margin case and the area's own anomaly calls the provisions 'a drag the product mix more than absorbed'; the controls anomalies sit under an area whose verdict was dropped."
+ },
+ "valuation_reading": {
+  "answer": "no",
+  "why": "market.missing, implied_growth_beside_history.implied_ten_year_revenue_growth.missing and valuation.missing leave no price position, implied growth or sensitivity grid; the reading says so honestly and ranks the sensitive assumptions 'from the spread of the drivers and from the model's mechanics, not from a grid'."
+ },
+ "score": 0.69,
+ "grader": {
+  "model_requested": "opus",
+  "model_served": "claude-opus-5-5",
+  "input_tokens": 100,
+  "output_tokens": 72076,
+  "cost_usd": 13.162118399999999,
+  "seconds": 883.8
+ }
+}

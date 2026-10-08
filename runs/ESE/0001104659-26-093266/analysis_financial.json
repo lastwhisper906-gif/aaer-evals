@@ -1,0 +1,631 @@
+{
+ "question": "how healthy is this company?",
+ "sections": {
+  "profitability": {
+   "reading": "Gross margin over the trailing four quarters is {ratios.profitability.gross_margin|pct}. The latest quarter's gross margin is {trend_table.quarters-back-0.ratios.gross_margin|pct}, down on the prior quarter's {trend_table.quarters-back-1.ratios.gross_margin|pct} but up on the year-ago quarter's {trend_table.quarters-back-4.ratios.gross_margin|pct}; the trend table ranks it third lowest of the six filled quarters, and it sits close to fiscal 2025's annual {trend_table.years-back-0.ratios.gross_margin|pct}. Net margin is {ratios.profitability.net_margin|pct}, return on assets {ratios.profitability.return_on_assets|pct} and return on equity {ratios.profitability.return_on_equity|pct}. Those three overstate ongoing profitability: trailing net income of {terms.trailing_four_quarters.net_income} carries the fiscal 2025 fourth quarter, whose net income in the smoothness series stands far above every other quarter, and the fiscal 2025 accruals cell — the highest of five years — notes that net income included discontinued operations. The history's three-year average operating margin of {earnings_versus_cash.history.operating_margin_three_year_average|pct} is the better guide to the margin the business earns. Operating margin and return on invested capital are not computed: the record has no operating income row for the current year-to-date period, and the calculator will not substitute pretax income plus interest; invested capital itself is {ratios.profitability.return_on_invested_capital.invested_capital}. Inside the quarter, GAAP earnings carry Megger debt-financing and deal costs, rising acquired-intangible amortization and restructuring charges, while a lower effective tax rate from a return-to-provision adjustment supported them; the calculator's trailing effective rate is {tax_rate.effective_rate|pct}. Read against its own history the company is solidly profitable; the pressure is in the quality of the headline figures, not in the underlying margin.",
+   "fields": [
+    "ratios.profitability.gross_margin",
+    "ratios.profitability.operating_margin",
+    "ratios.profitability.net_margin",
+    "ratios.profitability.return_on_assets",
+    "ratios.profitability.return_on_equity",
+    "ratios.profitability.return_on_invested_capital",
+    "ratios.profitability.return_on_invested_capital.invested_capital",
+    "trend_table.quarters-back-0.ratios.gross_margin",
+    "trend_table.quarters-back-1.ratios.gross_margin",
+    "trend_table.quarters-back-4.ratios.gross_margin",
+    "trend_table.years-back-0.ratios.gross_margin",
+    "trend_table.years-back-0.ratios.accruals_over_total_assets",
+    "terms.trailing_four_quarters.net_income",
+    "earnings_versus_cash.history.operating_margin_three_year_average",
+    "earnings_versus_cash.smoothness",
+    "tax_rate.effective_rate"
+   ],
+   "evidence": [
+    "earnings_quality_gross_margin_quarter_cell",
+    "earnings_quality_gross_margin_year_cell",
+    "earnings_quality_accruals_over_total_assets_year_cell",
+    "earnings_quality_discontinued_operations_income_year_to_date",
+    "earnings_quality_effective_tax_rate_quarter",
+    "earnings_quality_amortization_of_intangibles_year_to_date",
+    "earnings_quality_megger_debt_financing_costs_in_interest_expense",
+    "earnings_quality_continuing_restructuring_acoustics_exit_and_usg_severance",
+    "earnings_quality_utility_solutions_segment_operating_income_quarter"
+   ]
+  },
+  "efficiency": {
+   "reading": "Days sales outstanding on trailing revenue and average receivables is {ratios.efficiency.days_sales_outstanding} days; the quarter cell is {trend_table.quarters-back-0.ratios.days_sales_outstanding} days, the lowest of the six filled quarters and below fiscal 2025's annual {trend_table.years-back-0.ratios.days_sales_outstanding} days. Days sales of inventory is {ratios.efficiency.days_sales_of_inventory} days, with the quarter cell at {trend_table.quarters-back-0.ratios.days_sales_of_inventory} days, also the lowest of the six filled quarters and below the fiscal 2025 annual {trend_table.years-back-0.ratios.days_sales_of_inventory} days. Days payables outstanding is {ratios.efficiency.days_payables_outstanding} days, so the cash conversion cycle is {ratios.efficiency.cash_conversion_cycle} days — long, as it has been through the history, but shortening on the quarter cells. Asset turnover is {ratios.efficiency.asset_turnover}, held down by a balance sheet that is mostly goodwill and intangibles (the soft-asset share is second highest of the six quarters). The balances still grew with volume: receivables rose {earnings_versus_cash.working_capital.receivables.balance_sheet_change} and inventory {earnings_versus_cash.working_capital.inventory.balance_sheet_change} over the year, payables rose {earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change}, and trade working capital is {free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now} against {free_cash_flow.free_cash_flow_to_firm.trade_working_capital.a_year_earlier} a year earlier. Since the fiscal year-end, contract assets, work-in-process inventory and other current assets have all risen, which MD&A attributes to the timing of manufacturing existing orders and to Maritime billing; contract liabilities of {terms.balances_now.contract_liabilities}, against {terms.balances_a_year_earlier.contract_liabilities} a year earlier, fund part of that build. The cash-flow-statement changes in receivables, inventory and payables are not tagged for the current period, so the articulation gaps are not computed. Efficiency is improving against the company's own past; the one pressure point is the working-capital build that MD&A calls timing.",
+   "fields": [
+    "ratios.efficiency.days_sales_outstanding",
+    "ratios.efficiency.days_sales_of_inventory",
+    "ratios.efficiency.days_payables_outstanding",
+    "ratios.efficiency.cash_conversion_cycle",
+    "ratios.efficiency.asset_turnover",
+    "trend_table.quarters-back-0.ratios.days_sales_outstanding",
+    "trend_table.quarters-back-0.ratios.days_sales_of_inventory",
+    "trend_table.quarters-back-0.ratios.soft_asset_share",
+    "trend_table.years-back-0.ratios.days_sales_outstanding",
+    "trend_table.years-back-0.ratios.days_sales_of_inventory",
+    "earnings_versus_cash.working_capital.receivables.balance_sheet_change",
+    "earnings_versus_cash.working_capital.inventory.balance_sheet_change",
+    "earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change",
+    "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now",
+    "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.a_year_earlier",
+    "terms.balances_now.contract_liabilities",
+    "terms.balances_a_year_earlier.contract_liabilities"
+   ],
+   "evidence": [
+    "revenue_recognition_days_sales_outstanding_quarter_cell",
+    "revenue_recognition_receivables_over_revenue_quarter_cell",
+    "earnings_quality_days_sales_of_inventory_quarter_cell",
+    "revenue_recognition_days_sales_outstanding_year_cell",
+    "earnings_quality_days_sales_of_inventory_year_cell",
+    "earnings_quality_soft_asset_share_quarter_cell",
+    "revenue_recognition_contract_assets_balance",
+    "earnings_quality_work_in_process_inventory_balance",
+    "earnings_quality_other_current_assets_balance",
+    "earnings_quality_accounts_payable_balance",
+    "liquidity_and_capital_inventory_build_timing_of_existing_orders",
+    "liquidity_and_capital_contract_assets_maritime_timing",
+    "liquidity_and_capital_contract_liabilities_customer_payment_timing"
+   ]
+  },
+  "liquidity": {
+   "reading": "Current ratio is {ratios.liquidity.current_ratio} and quick ratio {ratios.liquidity.quick_ratio}. The quick ratio is below one: cash of {terms.cash_and_short_term_investments_now} plus receivables of {terms.balances_now.receivables} do not cover current liabilities of {terms.balances_now.current_liabilities}; but those liabilities include contract liabilities of {terms.balances_now.contract_liabilities}, customer advances that are worked off by delivering orders rather than by paying cash, which MD&A calls a timing effect. Cash is the only cash line on record (no short-term investments), and it is down from {terms.balances_a_year_earlier.cash} a year earlier and lower at each balance-sheet date since the fiscal year-end. The cash runway is not computed: trailing free cash flow of {free_cash_flow.free_cash_flow_simple} is positive, so there is no burn to divide by. Nine-month total operating cash flow was held back by a discontinued-operations outflow and by income taxes paid far above the prior year as the fiscal year-end income tax payable was settled, while continuing-operations operating cash flow rose strongly per the filing's own line. Debt maturing inside a year is {terms.debt_now.parts.debt_current}, well inside cash on hand; trailing dividends paid were {terms.trailing_four_quarters.dividends_paid}; undrawn availability under the existing facility sits beside the cash. The liquidity event ahead is the Megger closing: its cash consideration far exceeds the cash balance and is to be funded from cash on hand and a new senior secured facility that takes effect only at closing, which the MD&A liquidity paragraph does not yet mention. The calculator holds no figure for the consideration or the facility. On today's filed numbers liquidity is adequate; it is not generous.",
+   "fields": [
+    "ratios.liquidity.current_ratio",
+    "ratios.liquidity.quick_ratio",
+    "ratios.liquidity.cash_runway_months",
+    "terms.cash_and_short_term_investments_now",
+    "terms.balances_a_year_earlier.cash",
+    "terms.balances_now.receivables",
+    "terms.balances_now.current_liabilities",
+    "terms.balances_now.contract_liabilities",
+    "terms.debt_now.parts.debt_current",
+    "terms.trailing_four_quarters.dividends_paid",
+    "free_cash_flow.free_cash_flow_simple"
+   ],
+   "evidence": [
+    "liquidity_and_capital_cash_balance_decline",
+    "liquidity_and_capital_current_borrowing_capacity",
+    "liquidity_and_capital_discontinued_operations_operating_cash_outflow",
+    "liquidity_and_capital_income_taxes_paid_year_to_date",
+    "liquidity_and_capital_current_income_tax_payable_balance",
+    "earnings_quality_continuing_operations_operating_cash_flow_year_to_date",
+    "earnings_quality_total_operating_cash_flow_year_to_date",
+    "revenue_recognition_contract_liabilities_over_revenue_quarter_cell",
+    "liquidity_and_capital_contract_liabilities_customer_payment_timing",
+    "related_parties_contingencies_and_subsequent_events_megger_cash_consideration",
+    "liquidity_and_capital_new_secured_credit_facility_for_megger",
+    "across_documents_mdna_liquidity_paragraph_silent_on_new_credit_facility"
+   ]
+  },
+  "solvency": {
+   "reading": "Total debt is {ratios.solvency.total_debt}, of which {terms.debt_now.parts.debt_current} is current, down from {terms.debt_a_year_earlier} a year earlier after trailing repayments of {terms.cash_flow_families.borrowing_repaid} against issuance of {terms.cash_flow_families.borrowing_issued}; net debt is {ratios.solvency.net_debt}. Within the quarter the delayed-draw term loan was paid down further while revolver borrowings rose from the fiscal year-end level. Liabilities over assets is {ratios.solvency.liabilities_over_assets|pct}, with total liabilities of {terms.balances_now.total_liabilities} against {terms.balances_a_year_earlier.total_liabilities} a year earlier, and equity up to {terms.balances_now.stockholders_equity} from {terms.balances_a_year_earlier.stockholders_equity}. Operating lease liabilities are {ratios.solvency.operating_lease_liability}. Debt over EBITDA and interest coverage are not computed because EBIT is missing for the current year-to-date period; what the record does hold is trailing pretax income of {terms.trailing_four_quarters.pretax_income} beside interest paid of {terms.trailing_four_quarters.interest_paid}, and trailing depreciation and amortization of {terms.trailing_four_quarters.depreciation_and_amortization}. On the filed balance sheet the company is lightly levered and well able to carry what it owes. The pressure is prospective: the Megger agreement carries a large cash consideration to be funded by a new senior secured facility — a revolver, a term loan A and a term loan B — that replaces the existing facility at closing, expected in the first quarter of fiscal 2027; third-quarter interest expense already carries debt-financing costs for it, and the equity portion of the consideration will enlarge the share count. The calculator holds no figure for the facility, the amount to be drawn or post-closing leverage.",
+   "fields": [
+    "ratios.solvency.total_debt",
+    "ratios.solvency.net_debt",
+    "ratios.solvency.ebitda",
+    "ratios.solvency.debt_over_ebitda",
+    "ratios.solvency.interest_coverage",
+    "ratios.solvency.liabilities_over_assets",
+    "ratios.solvency.operating_lease_liability",
+    "terms.debt_now",
+    "terms.debt_now.parts.debt_current",
+    "terms.debt_a_year_earlier",
+    "terms.cash_flow_families.borrowing_repaid",
+    "terms.cash_flow_families.borrowing_issued",
+    "terms.balances_now.total_liabilities",
+    "terms.balances_a_year_earlier.total_liabilities",
+    "terms.balances_now.stockholders_equity",
+    "terms.balances_a_year_earlier.stockholders_equity",
+    "terms.trailing_four_quarters.pretax_income",
+    "terms.trailing_four_quarters.interest_paid",
+    "terms.trailing_four_quarters.depreciation_and_amortization"
+   ],
+   "evidence": [
+    "liquidity_and_capital_long_term_debt_noncurrent_balance",
+    "liquidity_and_capital_delayed_draw_term_loan_balance",
+    "liquidity_and_capital_revolving_credit_balance",
+    "liquidity_and_capital_senior_secured_term_loan_commitment",
+    "liquidity_and_capital_term_loan_b_commitment",
+    "liquidity_and_capital_new_secured_credit_facility_for_megger",
+    "related_parties_contingencies_and_subsequent_events_megger_consideration",
+    "related_parties_contingencies_and_subsequent_events_megger_equity_consideration",
+    "earnings_quality_interest_expense_quarter",
+    "earnings_quality_megger_debt_financing_costs_in_interest_expense",
+    "estimates_and_discretion_operating_lease_discount_rate"
+   ]
+  },
+  "growth": {
+   "reading": "Revenue grew {ratios.growth.revenue.quarter_over_quarter|pct} quarter over quarter, {ratios.growth.revenue.year_over_year|pct} year over year and {ratios.growth.revenue.trailing_four_quarters|pct} on a trailing-four-quarter basis, against a three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and a five-year rate of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}; the release splits the quarter's growth into organic growth and the Maritime contribution, which laps from the fourth quarter. Operating income growth is not computed for any horizon, as no operating income row exists for the year-to-date period. Net income changed {ratios.growth.net_income.quarter_over_quarter|pct} quarter over quarter — a decline while revenue rose, with Megger deal and financing costs, restructuring and higher amortization in the quarter — and rose {ratios.growth.net_income.year_over_year|pct} year over year; the trailing figure of {ratios.growth.net_income.trailing_four_quarters|pct} is flattered by the fiscal 2025 fourth-quarter spike. Operating cash flow rose {ratios.growth.operating_cash_flow.quarter_over_quarter|pct} from a very weak prior quarter, changed {ratios.growth.operating_cash_flow.year_over_year|pct} against the year-ago quarter — a decline — and is up {ratios.growth.operating_cash_flow.trailing_four_quarters|pct} on a trailing basis. Forward indicators are strong on the company's own account: remaining performance obligations are a record with a larger share expected within twelve months, Doble and Test orders rose, A&D book-to-bill stayed above one, and sales and adjusted EPS guidance were raised; the NRG renewables business and the Test segment's Asian operations are the areas of decline.",
+   "fields": [
+    "ratios.growth.revenue.quarter_over_quarter",
+    "ratios.growth.revenue.year_over_year",
+    "ratios.growth.revenue.trailing_four_quarters",
+    "ratios.growth.revenue.this_quarter",
+    "ratios.growth.operating_income.quarter_over_quarter",
+    "ratios.growth.operating_income.year_over_year",
+    "ratios.growth.operating_income.trailing_four_quarters",
+    "ratios.growth.net_income.quarter_over_quarter",
+    "ratios.growth.net_income.year_over_year",
+    "ratios.growth.net_income.trailing_four_quarters",
+    "ratios.growth.operating_cash_flow.quarter_over_quarter",
+    "ratios.growth.operating_cash_flow.year_over_year",
+    "ratios.growth.operating_cash_flow.trailing_four_quarters",
+    "earnings_versus_cash.history.revenue_growth_three_year_compound",
+    "earnings_versus_cash.history.revenue_growth_five_year_compound"
+   ],
+   "evidence": [
+    "results_against_expectations_maritime_contribution_laps",
+    "results_against_expectations_aerospace_defense_orders_comparison_release_figures",
+    "results_against_expectations_aerospace_defense_aerospace_orders_record_backlog",
+    "results_against_expectations_doble_utility_demand_orders",
+    "results_against_expectations_test_orders_data_center_emi_filters",
+    "narrative_signs_of_operating_pressure_nrg_renewables_orders_release_figures",
+    "narrative_signs_of_operating_pressure_test_asian_operations_decrease",
+    "revenue_recognition_remaining_performance_obligation_balance",
+    "revenue_recognition_remaining_performance_obligations_twelve_month_share",
+    "results_against_expectations_full_year_sales_guidance_release_figures",
+    "results_against_expectations_full_year_adjusted_eps_guidance_release_figures",
+    "earnings_quality_adjusted_eps_exclusions_quarter_release_figures"
+   ]
+  },
+  "free_cash_flow": {
+   "reading": "Simple free cash flow over the trailing four quarters is {free_cash_flow.free_cash_flow_simple}: operating cash flow of {terms.trailing_four_quarters.operating_cash_flow} less capital expenditure of {terms.trailing_four_quarters.capital_expenditure}, in line with a fiscal-year history in which free cash flow rose each year through fiscal 2025. Free cash flow to the firm is missing: it needs EBIT, and the record has no operating income row for the current year-to-date period, which the calculator will not replace with pretax income plus interest. Free cash flow to equity is {free_cash_flow.free_cash_flow_to_equity}, negative only because net borrowing was {free_cash_flow.free_cash_flow_to_equity.net_borrowing} — the company repaid far more than it drew, which is deleveraging, not a shortfall. Quality-adjusted free cash flow is {free_cash_flow.free_cash_flow_quality_adjusted} after deducting share-based compensation of {terms.trailing_four_quarters.share_based_compensation} and acquisition payments of {terms.cash_flow_families.acquisitions} (the Maritime working-capital settlement and tax-relief payment), with no further adjustments applied or refused. Operating cash flow over net income is {earnings_versus_cash.operating_cash_flow_over_net_income}, below one because trailing net income holds the fiscal 2025 fourth-quarter gain; accruals over average assets are {earnings_versus_cash.accruals_over_average_assets|pct}; and the smoothness ratio of {earnings_versus_cash.smoothness} says net income has moved more than cash across the nine quarters read, again because of that one quarter. Nine-month total operating cash flow was held back by the discontinued-operations outflow and by income taxes paid, while the filing's own continuing-operations line rose strongly on lower working-capital requirements and higher earnings. Cash generation is healthy; the headline-to-cash gap is a one-off, not a pattern.",
+   "fields": [
+    "free_cash_flow.free_cash_flow_simple",
+    "free_cash_flow.free_cash_flow_to_firm",
+    "free_cash_flow.free_cash_flow_to_equity",
+    "free_cash_flow.free_cash_flow_to_equity.net_borrowing",
+    "free_cash_flow.free_cash_flow_quality_adjusted",
+    "terms.trailing_four_quarters.operating_cash_flow",
+    "terms.trailing_four_quarters.capital_expenditure",
+    "terms.trailing_four_quarters.share_based_compensation",
+    "terms.cash_flow_families.acquisitions",
+    "earnings_versus_cash.operating_cash_flow_over_net_income",
+    "earnings_versus_cash.accruals_over_average_assets",
+    "earnings_versus_cash.smoothness"
+   ],
+   "evidence": [
+    "earnings_quality_total_operating_cash_flow_year_to_date",
+    "earnings_quality_continuing_operations_operating_cash_flow_year_to_date",
+    "liquidity_and_capital_discontinued_operations_operating_cash_outflow",
+    "liquidity_and_capital_income_taxes_paid_year_to_date",
+    "earnings_quality_accruals_over_total_assets_year_cell",
+    "earnings_quality_accruals_over_total_assets_quarter_cell_insufficient",
+    "earnings_quality_share_based_compensation_year_to_date",
+    "liquidity_and_capital_maritime_post_closing_payments",
+    "liquidity_and_capital_long_term_debt_noncurrent_balance",
+    "liquidity_and_capital_operating_cash_flow_lower_working_capital_requirements",
+    "earnings_quality_working_capital_change_year_to_date"
+   ]
+  }
+ },
+ "dupont": {
+  "reading": "Return on equity of {ratios.profitability.dupont.product|pct} is the product of net margin {ratios.profitability.dupont.net_margin|pct}, asset turnover {ratios.profitability.dupont.asset_turnover} and equity multiplier {ratios.profitability.dupont.equity_multiplier}. Net margin carries it: turnover is low and the multiplier modest, so the return comes almost entirely from the margin — and that margin is inflated by the fiscal 2025 fourth-quarter net income, which included discontinued operations; the history's three-year average operating margin of {earnings_versus_cash.history.operating_margin_three_year_average|pct} is the better guide to what the business earns on sales. Whether it has moved: the calculator gives one DuPont point, but its inputs show the direction. Debt fell from {terms.debt_a_year_earlier} to {terms.debt_now} while equity rose from {terms.balances_a_year_earlier.stockholders_equity} to {terms.balances_now.stockholders_equity} on assets that were almost unchanged, so the equity multiplier has been falling and leverage contributes less than a year ago; asset turnover is held down by the goodwill-heavy balance sheet after Maritime. The Megger closing would move all three legs at once — a large debt draw raises the multiplier, the equity issuance lowers it, and the added assets lower turnover until the acquired revenue arrives.",
+  "fields": [
+   "ratios.profitability.dupont.net_margin",
+   "ratios.profitability.dupont.asset_turnover",
+   "ratios.profitability.dupont.equity_multiplier",
+   "ratios.profitability.dupont.product",
+   "ratios.profitability.return_on_equity",
+   "earnings_versus_cash.history.operating_margin_three_year_average",
+   "terms.debt_now",
+   "terms.debt_a_year_earlier",
+   "terms.balances_now.stockholders_equity",
+   "terms.balances_a_year_earlier.stockholders_equity"
+  ]
+ },
+ "anomalies": [
+  {
+   "id": "results_against_expectations_adjusted_earnings_exclusions_widened",
+   "name": "Guidance is raised on an adjusted basis whose exclusions from GAAP earnings widened",
+   "name_ko": "조정 기준 가이던스는 상향됐지만 GAAP 이익에서 제외되는 항목이 늘어남",
+   "area": "results_against_expectations",
+   "what": "Sales and adjusted EPS guidance were raised again and an explicit fourth-quarter adjusted range was given, but the adjusted figure excludes Megger debt-financing and acquisition costs, restructuring and acquired-intangible amortization, and the release's own comparison puts the per-share exclusions for the quarter and the nine months above the year-ago amounts. On the GAAP line, net income changed {ratios.growth.net_income.quarter_over_quarter|pct} quarter over quarter while revenue rose {ratios.growth.revenue.quarter_over_quarter|pct}. The non-GAAP gap is not computed in the trend table, so the release figures are the only measure of it in the record.",
+   "evidence": [
+    "results_against_expectations_full_year_adjusted_eps_guidance_release_figures",
+    "results_against_expectations_adjusted_eps_guidance_raised_again",
+    "results_against_expectations_fourth_quarter_adjusted_eps_range",
+    "earnings_quality_adjusted_eps_exclusions_quarter_release_figures",
+    "earnings_quality_adjusted_eps_excludes_megger_financing_and_deal_costs",
+    "earnings_quality_non_gaap_gap_quarter_cell_insufficient"
+   ],
+   "fields": [
+    "ratios.growth.net_income.quarter_over_quarter",
+    "ratios.growth.revenue.quarter_over_quarter",
+    "ratios.growth.net_income.year_over_year"
+   ]
+  },
+  {
+   "id": "liquidity_and_capital_cash_balance_declining_through_the_year",
+   "name": "Cash balance lower at each balance-sheet date through the fiscal year",
+   "name_ko": "회계연도 내내 현금 잔액이 매 결산일마다 감소",
+   "area": "liquidity_and_capital",
+   "what": "Cash is {terms.cash_and_short_term_investments_now}, below {terms.balances_a_year_earlier.cash} a year earlier and below the fiscal year-end and prior-quarter balances the numbers reader prints, with the nine-month net change in cash negative. The decline came with heavy debt repayment — {terms.cash_flow_families.borrowing_repaid} repaid over the trailing four quarters against {terms.cash_flow_families.borrowing_issued} drawn — not with negative free cash flow, which is {free_cash_flow.free_cash_flow_simple}. But the balance is the only cash line on record, with no short-term investments, and it sits far below the Megger cash consideration.",
+   "evidence": [
+    "liquidity_and_capital_cash_balance_decline",
+    "liquidity_and_capital_long_term_debt_noncurrent_balance",
+    "related_parties_contingencies_and_subsequent_events_megger_cash_consideration"
+   ],
+   "fields": [
+    "terms.cash_and_short_term_investments_now",
+    "terms.balances_a_year_earlier.cash",
+    "terms.cash_flow_families.borrowing_repaid",
+    "terms.cash_flow_families.borrowing_issued",
+    "free_cash_flow.free_cash_flow_simple"
+   ]
+  },
+  {
+   "id": "liquidity_and_capital_quick_ratio_below_one",
+   "name": "Quick ratio below one; cash and receivables do not cover current liabilities",
+   "name_ko": "당좌비율이 낮아 현금과 매출채권만으로는 유동부채를 덮지 못함",
+   "area": "liquidity_and_capital",
+   "what": "Quick ratio is {ratios.liquidity.quick_ratio}: cash of {terms.cash_and_short_term_investments_now} plus receivables of {terms.balances_now.receivables} fall short of current liabilities of {terms.balances_now.current_liabilities}. The current ratio of {ratios.liquidity.current_ratio} is carried by inventory of {terms.balances_now.inventory} and contract assets. Current liabilities include contract liabilities of {terms.balances_now.contract_liabilities} — customer advances worked off by delivering orders, which MD&A calls a timing effect — so the shortfall is less acute than the ratio alone says, but near-term liquidity depends on converting inventory and unbilled work into cash.",
+   "evidence": [
+    "revenue_recognition_contract_liabilities_over_revenue_quarter_cell",
+    "liquidity_and_capital_contract_liabilities_customer_payment_timing",
+    "revenue_recognition_contract_assets_balance"
+   ],
+   "fields": [
+    "ratios.liquidity.quick_ratio",
+    "ratios.liquidity.current_ratio",
+    "terms.balances_now.current_liabilities",
+    "terms.balances_now.contract_liabilities",
+    "terms.balances_now.receivables",
+    "terms.balances_now.inventory",
+    "terms.cash_and_short_term_investments_now"
+   ]
+  },
+  {
+   "id": "liquidity_and_capital_megger_cash_consideration_far_exceeds_cash_on_hand",
+   "name": "Megger cash consideration far exceeds cash on hand and depends on a facility effective only at closing",
+   "name_ko": "Megger 현금 대가가 보유 현금을 크게 넘어 종결 시점에만 발효되는 신용시설에 의존",
+   "area": "liquidity_and_capital",
+   "what": "The Megger agreement tags a cash consideration that far exceeds cash of {terms.cash_and_short_term_investments_now} and trailing free cash flow of {free_cash_flow.free_cash_flow_simple}; the filing says it will be funded from cash on hand and incremental debt under a new senior secured facility that takes effect only at closing, expected in the first quarter of fiscal 2027 and still subject to regulatory approval. The MD&A liquidity paragraph updates availability and cash but does not mention the new facility. The calculator holds no figure for the consideration, the facility or the amount to be drawn; those amounts are in the cited report items only.",
+   "evidence": [
+    "related_parties_contingencies_and_subsequent_events_megger_cash_consideration",
+    "related_parties_contingencies_and_subsequent_events_megger_consideration",
+    "liquidity_and_capital_new_secured_credit_facility_for_megger",
+    "structure_and_disclosure_changes_megger_moved_from_subsequent_event_to_acquisition_note",
+    "related_parties_contingencies_and_subsequent_events_megger_regulatory_filings_underway",
+    "across_documents_mdna_liquidity_paragraph_silent_on_new_credit_facility",
+    "liquidity_and_capital_current_borrowing_capacity"
+   ],
+   "fields": [
+    "terms.cash_and_short_term_investments_now",
+    "free_cash_flow.free_cash_flow_simple",
+    "ratios.solvency.net_debt"
+   ]
+  },
+  {
+   "id": "liquidity_and_capital_tax_payments_and_discontinued_outflow_weighed_on_operating_cash",
+   "name": "Income tax payments and a discontinued-operations outflow held total operating cash flow flat",
+   "name_ko": "법인세 납부와 중단사업 현금유출이 총영업현금흐름을 눌러 전년 수준에 머묾",
+   "area": "liquidity_and_capital",
+   "what": "Total operating cash flow for the nine months was close to the prior year's even though the filing's continuing-operations operating cash flow rose strongly, because discontinued operations used cash and income taxes paid were far above the prior year as the fiscal year-end income tax payable was settled. On the trailing basis operating cash flow is {terms.trailing_four_quarters.operating_cash_flow}, up {ratios.growth.operating_cash_flow.trailing_four_quarters|pct}; the quarter's operating cash flow changed {ratios.growth.operating_cash_flow.year_over_year|pct} against the year-ago quarter, a decline.",
+   "evidence": [
+    "earnings_quality_total_operating_cash_flow_year_to_date",
+    "earnings_quality_continuing_operations_operating_cash_flow_year_to_date",
+    "liquidity_and_capital_discontinued_operations_operating_cash_outflow",
+    "liquidity_and_capital_income_taxes_paid_year_to_date",
+    "liquidity_and_capital_current_income_tax_payable_balance"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.operating_cash_flow",
+    "ratios.growth.operating_cash_flow.year_over_year",
+    "ratios.growth.operating_cash_flow.trailing_four_quarters"
+   ]
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_nrg_renewables_orders_and_sales_falling",
+   "name": "NRG renewables orders and sales falling on tax-credit expiration",
+   "name_ko": "재생에너지 세액공제 만료로 NRG 수주와 매출 감소",
+   "area": "narrative_signs_of_operating_pressure",
+   "what": "The release ties the fall in NRG orders to the expiration of U.S. renewables tax credits, and MD&A ties lower NRG sales to lower shipments of solar and wind products on weakness in the renewables market; lower NRG EBIT mostly offset Doble's gains at the USG level. It is a policy-driven decline in one business, offset so far by Doble demand, and it does not show in consolidated revenue growth of {ratios.growth.revenue.year_over_year|pct} on quarterly revenue of {ratios.growth.revenue.this_quarter}.",
+   "evidence": [
+    "narrative_signs_of_operating_pressure_nrg_renewables_orders_release_figures",
+    "narrative_signs_of_operating_pressure_nrg_renewables_tax_credit_expiration",
+    "results_against_expectations_doble_utility_demand_orders"
+   ],
+   "fields": [
+    "ratios.growth.revenue.year_over_year",
+    "ratios.growth.revenue.this_quarter"
+   ]
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_utility_solutions_margin_compression",
+   "name": "Utility Solutions adjusted margin fell while its sales rose",
+   "name_ko": "USG 부문 매출은 늘었으나 조정 EBIT 마진은 하락",
+   "area": "narrative_signs_of_operating_pressure",
+   "what": "USG adjusted EBIT margin fell against the year-ago quarter even as USG sales rose, while A&D and Test margins rose; the segment's filed operating income was little changed on higher revenue, which the release attributes to lower NRG volumes. The consolidated quarter gross margin is {trend_table.quarters-back-0.ratios.gross_margin|pct} against a trailing {ratios.profitability.gross_margin|pct}.",
+   "evidence": [
+    "narrative_signs_of_operating_pressure_utility_solutions_adjusted_margin_release_figures",
+    "earnings_quality_utility_solutions_segment_operating_income_quarter"
+   ],
+   "fields": [
+    "trend_table.quarters-back-0.ratios.gross_margin",
+    "ratios.profitability.gross_margin"
+   ]
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_test_asian_operations_decline",
+   "name": "Test segment's Asian operations declined in the quarter and the nine months",
+   "name_ko": "Test 부문 아시아 사업이 분기와 누적 기간 모두 감소",
+   "area": "narrative_signs_of_operating_pressure",
+   "what": "MD&A names a decrease from the Test segment's Asian operations in the quarter and a smaller one in the nine months, offsetting gains in the U.S. and Europe; the release does not mention Asia. Test orders and backlog are described as records on data-center EMI filters and shielding, so the pressure is regional rather than segment-wide. Consolidated revenue grew {ratios.growth.revenue.year_over_year|pct} year over year.",
+   "evidence": [
+    "narrative_signs_of_operating_pressure_test_asian_operations_decrease",
+    "results_against_expectations_test_orders_data_center_emi_filters"
+   ],
+   "fields": [
+    "ratios.growth.revenue.year_over_year"
+   ]
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_aerospace_defense_inflation_and_unfavorable_mix",
+   "name": "Inflation and unfavorable mix partly offset A&D volume and price gains",
+   "name_ko": "A&D 부문에서 인플레이션과 불리한 제품 믹스가 물량·가격 효과를 일부 상쇄",
+   "area": "narrative_signs_of_operating_pressure",
+   "what": "MD&A and the release say inflationary pressures and unfavorable mix partly offset volume leverage and price in A&D EBIT for both the quarter and the nine months, without putting a number on the mix effect. It sits beside a quarter gross margin of {trend_table.quarters-back-0.ratios.gross_margin|pct}, below the prior quarter's {trend_table.quarters-back-1.ratios.gross_margin|pct}.",
+   "evidence": [
+    "narrative_signs_of_operating_pressure_aerospace_defense_inflation_and_unfavorable_mix",
+    "earnings_quality_gross_margin_quarter_cell"
+   ],
+   "fields": [
+    "trend_table.quarters-back-0.ratios.gross_margin",
+    "trend_table.quarters-back-1.ratios.gross_margin"
+   ]
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_restructuring_charges_in_test_and_usg",
+   "name": "Restructuring charges for the acoustics exit and USG severance",
+   "name_ko": "음향 제품군 철수와 USG 인력 감축에 따른 구조조정 비용",
+   "area": "narrative_signs_of_operating_pressure",
+   "what": "Other expenses in the quarter include Test restructuring for exiting the acoustics product line, mostly asset write-offs, and USG restructuring, mostly severance; the release's year-to-date footnote also names A&D, which the MD&A paragraphs do not. The prose does not say whether more charges are planned. The charges are excluded from adjusted EPS but sit in GAAP net income, which changed {ratios.growth.net_income.quarter_over_quarter|pct} quarter over quarter.",
+   "evidence": [
+    "earnings_quality_continuing_restructuring_acoustics_exit_and_usg_severance",
+    "across_documents_aerospace_defense_restructuring_named_only_in_press_release"
+   ],
+   "fields": [
+    "ratios.growth.net_income.quarter_over_quarter"
+   ]
+  },
+  {
+   "id": "profitability_net_margin_and_returns_carry_a_one_off_quarter",
+   "name": "Net margin, returns and trailing net income growth carry a one-off fiscal 2025 fourth quarter",
+   "name_ko": "순이익률·수익률·순이익 성장률이 지난 회계연도 마지막 분기의 일회성 이익에 의존",
+   "area": "profitability",
+   "what": "Net margin {ratios.profitability.net_margin|pct}, return on assets {ratios.profitability.return_on_assets|pct}, return on equity {ratios.profitability.return_on_equity|pct} and trailing net income growth of {ratios.growth.net_income.trailing_four_quarters|pct} all rest on trailing net income of {terms.trailing_four_quarters.net_income}, which includes the fiscal 2025 fourth quarter; in the smoothness series that quarter's net income stands far above every other quarter, and the fiscal 2025 accruals cell of {trend_table.years-back-0.ratios.accruals_over_total_assets|pct} — the highest of five years — notes that net income included discontinued operations. Operating cash flow over net income is {earnings_versus_cash.operating_cash_flow_over_net_income} and the smoothness ratio is {earnings_versus_cash.smoothness}, both signs that reported income moved more than cash. The ongoing margin is better read from the history's three-year average operating margin of {earnings_versus_cash.history.operating_margin_three_year_average|pct}; the trailing operating margin itself is not computable.",
+   "evidence": [
+    "earnings_quality_accruals_over_total_assets_year_cell",
+    "earnings_quality_discontinued_operations_income_year_to_date"
+   ],
+   "fields": [
+    "ratios.profitability.net_margin",
+    "ratios.profitability.return_on_assets",
+    "ratios.profitability.return_on_equity",
+    "ratios.growth.net_income.trailing_four_quarters",
+    "terms.trailing_four_quarters.net_income",
+    "earnings_versus_cash.operating_cash_flow_over_net_income",
+    "earnings_versus_cash.smoothness",
+    "earnings_versus_cash.history.operating_margin_three_year_average",
+    "trend_table.years-back-0.ratios.accruals_over_total_assets"
+   ]
+  },
+  {
+   "id": "profitability_gross_margin_slipped_from_prior_quarter",
+   "name": "Gross margin slipped from the prior quarter",
+   "name_ko": "매출총이익률이 전분기보다 소폭 하락",
+   "area": "profitability",
+   "what": "Quarter gross margin is {trend_table.quarters-back-0.ratios.gross_margin|pct}, down from {trend_table.quarters-back-1.ratios.gross_margin|pct} in the prior quarter and third lowest of the six filled quarters, though above the year-ago quarter's {trend_table.quarters-back-4.ratios.gross_margin|pct}; the trailing figure is {ratios.profitability.gross_margin|pct} against fiscal 2025's {trend_table.years-back-0.ratios.gross_margin|pct} and fiscal 2024's {trend_table.years-back-1.ratios.gross_margin|pct}. The slip is small and within the company's own range, with inflation and mix named in A&D and lower NRG volumes in USG.",
+   "evidence": [
+    "earnings_quality_gross_margin_quarter_cell",
+    "earnings_quality_gross_margin_year_cell",
+    "narrative_signs_of_operating_pressure_aerospace_defense_inflation_and_unfavorable_mix"
+   ],
+   "fields": [
+    "trend_table.quarters-back-0.ratios.gross_margin",
+    "trend_table.quarters-back-1.ratios.gross_margin",
+    "trend_table.quarters-back-4.ratios.gross_margin",
+    "ratios.profitability.gross_margin",
+    "trend_table.years-back-0.ratios.gross_margin",
+    "trend_table.years-back-1.ratios.gross_margin"
+   ]
+  },
+  {
+   "id": "profitability_megger_financing_and_deal_costs_depress_gaap_earnings",
+   "name": "Megger debt-financing and deal costs sit in GAAP interest expense and SG&A before closing",
+   "name_ko": "Megger 인수 관련 금융비용과 거래비용이 종결 전부터 GAAP 이자비용과 판관비에 반영",
+   "area": "profitability",
+   "what": "Quarter interest expense rose against the year-ago quarter despite lower debt and a lower rate, because MD&A says debt-financing costs for the pending Megger acquisition were incurred before any Megger debt was drawn; the release's as-adjusted interest line is a fraction of the GAAP line. Corporate SG&A also rose on Megger acquisition costs and higher share-based compensation. These costs recur until closing and are excluded from the adjusted basis on which guidance is set. Trailing interest paid is {terms.trailing_four_quarters.interest_paid} and trailing share-based compensation {terms.trailing_four_quarters.share_based_compensation}; quarter net income changed {ratios.growth.net_income.quarter_over_quarter|pct} sequentially.",
+   "evidence": [
+    "earnings_quality_megger_debt_financing_costs_in_interest_expense",
+    "earnings_quality_interest_expense_quarter",
+    "earnings_quality_adjusted_interest_expense_excludes_debt_financing_release_figures",
+    "earnings_quality_megger_acquisition_costs_in_corporate_sga",
+    "earnings_quality_share_based_compensation_increase_at_corporate",
+    "earnings_quality_share_based_compensation_year_to_date"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.interest_paid",
+    "terms.trailing_four_quarters.share_based_compensation",
+    "ratios.growth.net_income.quarter_over_quarter"
+   ]
+  },
+  {
+   "id": "profitability_acquired_intangible_amortization_rising",
+   "name": "Acquired-intangible amortization rising after Maritime",
+   "name_ko": "Maritime 인수 이후 취득 무형자산 상각비 증가",
+   "area": "profitability",
+   "what": "Amortization of acquired intangibles for the nine months is well above the prior year after the Maritime purchase, and the quarter's charge is above the year-ago quarter; the release excludes it from adjusted EPS. Trailing depreciation and amortization is {terms.trailing_four_quarters.depreciation_and_amortization} against capital expenditure of {terms.trailing_four_quarters.capital_expenditure}, and the soft-asset share of the balance sheet, {trend_table.quarters-back-0.ratios.soft_asset_share|pct}, is second highest of the six quarters. It is a non-cash weight on GAAP margins that will grow again if Megger closes.",
+   "evidence": [
+    "earnings_quality_amortization_of_intangibles_year_to_date",
+    "estimates_and_discretion_other_intangibles_accumulated_amortization",
+    "earnings_quality_soft_asset_share_quarter_cell"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.depreciation_and_amortization",
+    "terms.trailing_four_quarters.capital_expenditure",
+    "trend_table.quarters-back-0.ratios.soft_asset_share"
+   ]
+  },
+  {
+   "id": "profitability_lower_tax_rate_from_one_off_return_to_provision_adjustment",
+   "name": "Lower effective tax rate from a one-off return-to-provision adjustment supported EPS",
+   "name_ko": "일회성 세무조정으로 낮아진 실효세율이 주당이익을 뒷받침",
+   "area": "profitability",
+   "what": "The quarter's effective tax rate on continuing operations fell against the year-ago quarter because of return-to-provision adjustments recognized when the prior federal return was finalized, including a larger research credit; the prose does not say it will recur. The lower rate supported reported EPS in a quarter when pretax costs rose. The calculator's trailing effective rate is {tax_rate.effective_rate|pct}, held to the statutory {tax_rate|pct} for its own after-tax formulas.",
+   "evidence": [
+    "earnings_quality_effective_tax_rate_quarter",
+    "estimates_and_discretion_tax_return_to_provision_research_credit"
+   ],
+   "fields": [
+    "tax_rate.effective_rate",
+    "tax_rate"
+   ]
+  },
+  {
+   "id": "efficiency_contract_assets_and_inventory_build_absorb_cash",
+   "name": "Contract assets, work-in-process and other current assets built up since year-end",
+   "name_ko": "연초 이후 계약자산·재공품·기타유동자산이 늘어 현금을 흡수",
+   "area": "efficiency",
+   "what": "Since the fiscal year-end, contract assets, work-in-process and raw-materials inventory, and other current assets have all risen, which MD&A attributes to the timing of manufacturing existing orders and to Maritime billing timing; over the year receivables rose {earnings_versus_cash.working_capital.receivables.balance_sheet_change} and inventory {earnings_versus_cash.working_capital.inventory.balance_sheet_change}, partly funded by payables up {earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change} and by contract liabilities. Trade working capital is {free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now}. The days measures nonetheless improved — days sales of inventory {ratios.efficiency.days_sales_of_inventory} days and days sales outstanding {ratios.efficiency.days_sales_outstanding} days, with the quarter cells lowest of the six filled quarters — so this is a build in step with order volume, and the cash conversion cycle of {ratios.efficiency.cash_conversion_cycle} days is long but not lengthening.",
+   "evidence": [
+    "liquidity_and_capital_inventory_build_timing_of_existing_orders",
+    "liquidity_and_capital_contract_assets_maritime_timing",
+    "revenue_recognition_contract_assets_balance",
+    "earnings_quality_work_in_process_inventory_balance",
+    "earnings_quality_other_current_assets_balance",
+    "earnings_quality_days_sales_of_inventory_quarter_cell",
+    "revenue_recognition_days_sales_outstanding_quarter_cell"
+   ],
+   "fields": [
+    "earnings_versus_cash.working_capital.receivables.balance_sheet_change",
+    "earnings_versus_cash.working_capital.inventory.balance_sheet_change",
+    "earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change",
+    "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now",
+    "ratios.efficiency.days_sales_of_inventory",
+    "ratios.efficiency.days_sales_outstanding",
+    "ratios.efficiency.cash_conversion_cycle"
+   ]
+  },
+  {
+   "id": "solvency_pending_megger_financing_will_raise_debt_and_interest",
+   "name": "Pending Megger financing will raise debt and interest from a lightly levered base",
+   "name_ko": "Megger 인수 자금조달로 가벼운 현재 재무구조에서 차입금과 이자가 크게 늘어날 예정",
+   "area": "solvency",
+   "what": "Total debt today is {ratios.solvency.total_debt} and net debt {ratios.solvency.net_debt}, with liabilities over assets at {ratios.solvency.liabilities_over_assets|pct} — a lightly levered balance sheet after trailing repayments of {terms.cash_flow_families.borrowing_repaid}. The Megger agreement reverses that direction: its cash consideration is to be funded by a new senior secured facility of a revolver, a term loan A and a term loan B that replaces the existing facility at closing, and the equity consideration will enlarge the share count. Interest coverage and debt over EBITDA are not computable today because EBIT is missing for the year-to-date period, so post-closing coverage cannot be read from this record; what is on record is trailing pretax income of {terms.trailing_four_quarters.pretax_income} against interest paid of {terms.trailing_four_quarters.interest_paid}.",
+   "evidence": [
+    "liquidity_and_capital_senior_secured_term_loan_commitment",
+    "liquidity_and_capital_term_loan_b_commitment",
+    "liquidity_and_capital_new_secured_credit_facility_for_megger",
+    "related_parties_contingencies_and_subsequent_events_megger_cash_consideration",
+    "related_parties_contingencies_and_subsequent_events_megger_equity_consideration",
+    "earnings_quality_interest_expense_quarter"
+   ],
+   "fields": [
+    "ratios.solvency.total_debt",
+    "ratios.solvency.net_debt",
+    "ratios.solvency.liabilities_over_assets",
+    "ratios.solvency.interest_coverage",
+    "ratios.solvency.debt_over_ebitda",
+    "terms.cash_flow_families.borrowing_repaid",
+    "terms.trailing_four_quarters.pretax_income",
+    "terms.trailing_four_quarters.interest_paid"
+   ]
+  },
+  {
+   "id": "growth_net_income_fell_quarter_over_quarter_while_revenue_rose",
+   "name": "Net income fell quarter over quarter while revenue rose",
+   "name_ko": "매출은 늘었지만 분기 순이익은 전분기 대비 감소",
+   "area": "growth",
+   "what": "Revenue rose {ratios.growth.revenue.quarter_over_quarter|pct} from the prior quarter to {ratios.growth.revenue.this_quarter}, but net income of {ratios.growth.net_income.this_quarter} changed {ratios.growth.net_income.quarter_over_quarter|pct}, a decline; the quarter carried Megger financing and deal costs, restructuring and higher amortization, partly offset by the lower tax rate. Year over year net income is up {ratios.growth.net_income.year_over_year|pct}.",
+   "evidence": [
+    "earnings_quality_adjusted_eps_exclusions_quarter_release_figures",
+    "earnings_quality_megger_debt_financing_costs_in_interest_expense",
+    "earnings_quality_continuing_restructuring_acoustics_exit_and_usg_severance"
+   ],
+   "fields": [
+    "ratios.growth.revenue.quarter_over_quarter",
+    "ratios.growth.revenue.this_quarter",
+    "ratios.growth.net_income.quarter_over_quarter",
+    "ratios.growth.net_income.this_quarter",
+    "ratios.growth.net_income.year_over_year"
+   ]
+  },
+  {
+   "id": "growth_operating_cash_flow_fell_year_over_year_in_the_quarter",
+   "name": "Quarterly operating cash flow fell against the year-ago quarter",
+   "name_ko": "분기 영업현금흐름이 전년 동기 대비 감소",
+   "area": "growth",
+   "what": "The quarter's operating cash flow of {ratios.growth.operating_cash_flow.this_quarter} (nine-month less six-month totals) changed {ratios.growth.operating_cash_flow.year_over_year|pct} against the year-ago quarter, a decline, even though it rose {ratios.growth.operating_cash_flow.quarter_over_quarter|pct} from a very weak prior quarter; the trailing figure is up {ratios.growth.operating_cash_flow.trailing_four_quarters|pct}. Nine-month total operating cash flow was held back by the discontinued-operations outflow and by income taxes paid; the quarterly accruals cell cannot be filled because no three-month operating cash flow is tagged.",
+   "evidence": [
+    "earnings_quality_total_operating_cash_flow_year_to_date",
+    "liquidity_and_capital_income_taxes_paid_year_to_date",
+    "earnings_quality_accruals_over_total_assets_quarter_cell_insufficient",
+    "liquidity_and_capital_operating_cash_flow_lower_working_capital_requirements"
+   ],
+   "fields": [
+    "ratios.growth.operating_cash_flow.this_quarter",
+    "ratios.growth.operating_cash_flow.year_over_year",
+    "ratios.growth.operating_cash_flow.quarter_over_quarter",
+    "ratios.growth.operating_cash_flow.trailing_four_quarters"
+   ]
+  },
+  {
+   "id": "growth_acquired_maritime_contribution_laps_from_next_quarter",
+   "name": "Acquired Maritime contribution to growth laps from the fourth quarter",
+   "name_ko": "Maritime 인수 효과가 다음 분기부터 비교 기간에 포함되어 성장률이 낮아질 전망",
+   "area": "growth",
+   "what": "Trailing revenue growth of {ratios.growth.revenue.trailing_four_quarters|pct} and the quarter's year-over-year growth of {ratios.growth.revenue.year_over_year|pct} include the Maritime acquisition, which the release places in the year-ago third quarter; the release splits the quarter's growth into organic growth and the Maritime contribution, and from the fourth quarter the comparison period also contains Maritime, so the acquired contribution drops out. The A&D order comparison already shows the effect: entered orders fell steeply against a year-ago quarter that held acquired backlog, although book-to-bill stayed above one and backlog is a record. The history's three-year compound revenue growth is {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and five-year {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}.",
+   "evidence": [
+    "results_against_expectations_maritime_contribution_laps",
+    "results_against_expectations_aerospace_defense_orders_comparison_release_figures",
+    "results_against_expectations_aerospace_defense_aerospace_orders_record_backlog",
+    "revenue_recognition_remaining_performance_obligation_balance"
+   ],
+   "fields": [
+    "ratios.growth.revenue.trailing_four_quarters",
+    "ratios.growth.revenue.year_over_year",
+    "earnings_versus_cash.history.revenue_growth_three_year_compound",
+    "earnings_versus_cash.history.revenue_growth_five_year_compound"
+   ]
+  }
+ ],
+ "path_to_distress": {
+  "reading": "On the filed numbers the company is not near distress: total debt is {ratios.solvency.total_debt}, net debt {ratios.solvency.net_debt}, debt due inside a year {terms.debt_now.parts.debt_current} against cash of {terms.cash_and_short_term_investments_now}, trailing free cash flow of {free_cash_flow.free_cash_flow_simple} is positive so no cash runway is computed, and liabilities over assets is {ratios.solvency.liabilities_over_assets|pct}. Pressure would become distress only through the Megger closing and what follows it. The conditions, each tied to a field: first, the new facility is drawn so that total debt rises far above {ratios.solvency.total_debt} and net debt far above {ratios.solvency.net_debt}, while the interest coverage and debt-over-EBITDA fields — missing today for want of an operating income row — cannot be read, so the first filing after closing must be checked for them. Second, operating cash flow, {terms.trailing_four_quarters.operating_cash_flow} on a trailing basis, fails to rise with the added interest, so that free cash flow after Megger interest turns negative and the cash runway field, now not computed, starts counting down from a cash balance that is already below a year earlier's {terms.balances_a_year_earlier.cash}. Third, the quick ratio of {ratios.liquidity.quick_ratio}, already below one, worsens if contract liabilities of {terms.balances_now.contract_liabilities} are worked off as revenue without new customer advances while inventory and contract assets keep building. Fourth, gross margin falls well below the quarter's {trend_table.quarters-back-0.ratios.gross_margin|pct} and the history's three-year average operating margin of {earnings_versus_cash.history.operating_margin_three_year_average|pct} — if the NRG decline spreads beyond renewables or inflation and mix in A&D deepen — at the same time as the Megger debt is being serviced. Fifth, the closing fails or slips after financing and deal costs have been incurred, which would leave the company lightly levered but with costs sunk: a profit problem, not a solvency one. None of these conditions is present in the filed numbers today.",
+  "fields": [
+   "ratios.solvency.total_debt",
+   "ratios.solvency.net_debt",
+   "ratios.solvency.interest_coverage",
+   "ratios.solvency.debt_over_ebitda",
+   "ratios.solvency.liabilities_over_assets",
+   "terms.debt_now.parts.debt_current",
+   "terms.cash_and_short_term_investments_now",
+   "terms.balances_a_year_earlier.cash",
+   "free_cash_flow.free_cash_flow_simple",
+   "ratios.liquidity.cash_runway_months",
+   "ratios.liquidity.quick_ratio",
+   "terms.balances_now.contract_liabilities",
+   "terms.trailing_four_quarters.operating_cash_flow",
+   "trend_table.quarters-back-0.ratios.gross_margin",
+   "earnings_versus_cash.history.operating_margin_three_year_average"
+  ]
+ },
+ "summary_ko": {
+  "profitability": "최근 네 분기 기준 매출총이익률은 {ratios.profitability.gross_margin|pct}, 순이익률은 {ratios.profitability.net_margin|pct}, 총자산이익률은 {ratios.profitability.return_on_assets|pct}, 자기자본이익률은 {ratios.profitability.return_on_equity|pct}입니다. 다만 순이익에는 지난 회계연도 마지막 분기의 중단사업 관련 일회성 이익이 들어 있어 순이익 기반 지표는 실제 영업 수익성보다 높게 보이며, 영업이익률과 투하자본이익률은 이번 누적 기간의 영업이익 행이 없어 계산되지 않았습니다.",
+  "efficiency": "매출채권회수기간은 {ratios.efficiency.days_sales_outstanding}일, 재고자산회전기간은 {ratios.efficiency.days_sales_of_inventory}일, 매입채무지급기간은 {ratios.efficiency.days_payables_outstanding}일로 현금전환주기는 {ratios.efficiency.cash_conversion_cycle}일입니다. 주기는 길지만 분기 기준 회수기간과 재고기간은 최근 여섯 분기 중 가장 짧아 회사 자체 이력 대비 개선되고 있으며, 자산회전율 {ratios.efficiency.asset_turnover}는 영업권 비중이 큰 자산 구조 때문에 낮습니다.",
+  "liquidity": "유동비율은 {ratios.liquidity.current_ratio}, 당좌비율은 {ratios.liquidity.quick_ratio}로 현금과 매출채권만으로는 유동부채를 다 덮지 못하지만, 유동부채에는 고객 선수금 성격의 계약부채 {terms.balances_now.contract_liabilities}가 포함되어 있습니다. 현금은 {terms.cash_and_short_term_investments_now}로 일 년 전보다 줄었고, 잉여현금흐름이 양수여서 현금 소진 기간은 계산되지 않았습니다.",
+  "solvency": "총차입금은 {ratios.solvency.total_debt}, 순차입금은 {ratios.solvency.net_debt}, 총부채 대비 총자산 비율은 {ratios.solvency.liabilities_over_assets|pct}로 일 년 전 차입금 {terms.debt_a_year_earlier}에서 크게 줄어 현재 재무구조는 가볍습니다. 그러나 이자보상배율과 차입금 대비 EBITDA는 영업이익 행이 없어 계산되지 않았고, Megger 인수가 종결되면 새 담보부 신용시설로 차입금과 이자비용이 크게 늘어날 예정입니다.",
+  "growth": "매출은 전분기 대비 {ratios.growth.revenue.quarter_over_quarter|pct}, 전년 동기 대비 {ratios.growth.revenue.year_over_year|pct}, 최근 네 분기 기준 {ratios.growth.revenue.trailing_four_quarters|pct} 성장했지만 Maritime 인수 효과가 다음 분기부터 비교 기간에 들어갑니다. 분기 순이익은 전분기 대비 {ratios.growth.net_income.quarter_over_quarter|pct} 변동해 감소했고, 분기 영업현금흐름은 전년 동기 대비 {ratios.growth.operating_cash_flow.year_over_year|pct} 변동해 감소했으며, 영업이익 성장률은 계산되지 않았습니다.",
+  "free_cash_flow": "단순 잉여현금흐름은 {free_cash_flow.free_cash_flow_simple}, 품질조정 잉여현금흐름은 {free_cash_flow.free_cash_flow_quality_adjusted}로 양호합니다. 기업잉여현금흐름은 영업이익이 없어 계산되지 않았고, 주주잉여현금흐름은 {free_cash_flow.free_cash_flow_to_equity}로 음수이지만 이는 차입금을 대규모로 상환했기 때문이며, 순이익 대비 영업현금흐름 비율 {earnings_versus_cash.operating_cash_flow_over_net_income}는 일회성 이익 때문에 낮게 나타납니다.",
+  "dupont": "자기자본이익률 {ratios.profitability.dupont.product|pct}는 순이익률 {ratios.profitability.dupont.net_margin|pct}, 자산회전율 {ratios.profitability.dupont.asset_turnover}, 재무레버리지 {ratios.profitability.dupont.equity_multiplier}의 곱이며, 순이익률이 수익률을 거의 전부 설명합니다. 차입금이 줄고 자본이 늘어 레버리지의 기여는 낮아지는 방향이고, 순이익률 자체는 일회성 이익으로 부풀려져 있습니다.",
+  "path_to_distress": "현재 제출된 숫자상 회사는 부실과 거리가 멀며, 총차입금 {ratios.solvency.total_debt}와 일 년 내 만기 차입금 {terms.debt_now.parts.debt_current}는 현금 {terms.cash_and_short_term_investments_now}로 감당됩니다. 부실로 가는 길은 Megger 인수 종결 후 차입금이 급증한 상태에서 영업현금흐름 {terms.trailing_four_quarters.operating_cash_flow}가 늘어난 이자를 따라가지 못하고, 이미 낮은 당좌비율 {ratios.liquidity.quick_ratio}가 더 나빠지며, 매출총이익률이 {trend_table.quarters-back-0.ratios.gross_margin|pct}에서 크게 떨어지는 경우에만 열립니다."
+ },
+ "limits": "This analysis reads the company's health from its own filed numbers against its own past. It forecasts nothing, and it cannot see what is not in the filings.",
+ "normalized_quotes": 0,
+ "dropped_items": [],
+ "dropped_count": 0
+}

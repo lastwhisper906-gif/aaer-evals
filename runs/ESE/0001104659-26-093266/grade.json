@@ -1,0 +1,368 @@
+{
+ "run": "ESE/0001104659-26-093266",
+ "rubric": "evals/capability/rubric.md",
+ "dealbreakers": [
+  {
+   "kind": "number_not_from_calculator",
+   "id": null,
+   "where": "areas.earnings_versus_cash.finding",
+   "why": "The accounting gate dropped the area finding for a figure written in the analyst's own words that no calculator path supplies, so the area has no published answer."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": null,
+   "where": "areas.estimates_and_reserves.finding",
+   "why": "The accounting gate dropped the area finding for a figure written in the analyst's own words ('provision adjustments on finalizing the 2025 federal return, including a larger '), which no calculator path supplies."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": "earnings_versus_cash_net_income_more_volatile_than_cash_flow",
+   "where": "anomalies[3].what",
+   "why": "The gate struck the anomaly for a raw figure written into the text (' dominated by the fiscal fourth-quarter 2025 net income of   against ordinary qu') instead of a calculator path such as earnings_versus_cash.smoothness.net_income.3."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": "estimates_and_reserves_effective_tax_rate_fell_on_return_to_provision_true_up",
+   "where": "anomalies[10].what",
+   "why": "The gate struck the anomaly for a figure written in the analyst's own words (' return-to-provision adjustments on the 2025 federal return, including a larger '); no calculator path stands behind it."
+  }
+ ],
+ "items": [
+  {
+   "id": "earnings_versus_cash_operating_cash_flow_over_net_income_below_own_history",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.operating_cash_flow_over_net_income sits below history.years.0 and history.years.1, and earnings_versus_cash.smoothness.net_income.3 is the outlier quarter the text names as carrying discontinued operations."
+  },
+  {
+   "id": "earnings_versus_cash_discontinued_operations_outflow_splits_total_and_continuing_cash_flow",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "In 8k_2_02:83, continuing operating cash flow rises, a discontinued-operations outflow offsets it, and the total ties to terms.trailing_four_quarters.operating_cash_flow.parts.this_year_to_date against prior_year_to_date. In 8k_2_02:79, current income tax payable collapses."
+  },
+  {
+   "id": "earnings_versus_cash_articulation_gap_not_computable",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "earnings_versus_cash.working_capital.receivables, inventory and accounts_payable cash_flow_statement_change are all missing in the calculator, and 8k_2_02:83 prints only the aggregate 'Changes in assets and liabilities' line."
+  },
+  {
+   "id": "earnings_versus_cash_payables_growth_offsets_receivables_growth",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change roughly equals receivables.balance_sheet_change, and ratios.efficiency.days_payables_outstanding and the supplier-finance gap (terms.balances_now.supplier_finance_obligation missing) are as stated."
+  },
+  {
+   "id": "earnings_versus_cash_interest_expense_up_while_debt_fell",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.debt_now is below terms.debt_a_year_earlier. 8k_2_02:53 shows quarterly interest expense up on the year-ago quarter, and 8k_2_02:63 puts as-adjusted interest far below GAAP. The calculator's interest_expense is missing, so the rise rests on the release and the reader items, which agree."
+  },
+  {
+   "id": "revenue_recognition_contract_assets_rising_for_a_second_quarter_on_timing",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "Reader item revenue_recognition_contract_assets_balance and 8k_2_02:79 show contract assets up since September and again since March. trend_table.quarters-back-0.ratios.days_sales_outstanding is the 'lowest of the 6 filled quarters', as stated."
+  },
+  {
+   "id": "revenue_recognition_contract_liabilities_elevated_against_revenue",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue is 'third highest of the 6 filled quarters' and trend_table.years-back-0 is 'highest of the 5 filled years'. terms.balances_now.contract_liabilities is above balances_a_year_earlier."
+  },
+  {
+   "id": "revenue_recognition_twelve_month_share_of_backlog_estimate_raised",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "In input_numbers.json, RevenueRemainingPerformanceObligationPercentage is higher in the current 10-Q than in the prior one. The tagged obligation ties to the ending backlog in 8k_2_02:87."
+  },
+  {
+   "id": "estimates_and_reserves_bad_debt_allowance_thinning_while_receivables_rise",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.quarters-back-0.ratios.bad_debt_reserve_ratio is the 'lowest of the 6 filled quarters', below quarters-back-1 and quarters-back-4. terms.balances_now.bad_debt_allowance is below balances_a_year_earlier.bad_debt_allowance while receivables rose."
+  },
+  {
+   "id": "estimates_and_reserves_inventory_and_warranty_reserves_not_tagged",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "terms.balances_now.inventory_reserve and terms.balances_now.warranty_accrual are both missing in the calculator, as the anomaly says; terms.balances_now.inventory is cited correctly."
+  },
+  {
+   "id": "cost_deferral_soft_asset_share_near_record",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.quarters-back-0.ratios.soft_asset_share is 'second highest of the 6 filled quarters' and above quarters-back-1, and trend_table.years-back-0 is 'highest of the 5 filled years'."
+  },
+  {
+   "id": "cost_deferral_non_gaap_exclusions_widening_with_recurring_items",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "8k_2_02:54, 8k_2_02:59 and 8k_2_02:96 show per-share exclusions above the year-ago periods, with restructuring and acquisition amortization in both years and Megger costs new. The wording loosely calls terms.trailing_four_quarters.depreciation_and_amortization a nine-month amortization figure, but the path is the calculator's."
+  },
+  {
+   "id": "cost_deferral_other_current_assets_rising_without_breakdown",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:79 and the OtherAssetsCurrent facts from the prior 10-Q in input_numbers.json show the balance rising since September and again since March. terms.balances_now.current_assets is cited correctly."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_megger_commitment_near_size_of_company",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "In input_numbers.json, BusinessCombinationConsiderationTransferred1 for Megger is close to terms.balances_now.assets and far above terms.balances_now.cash and ratios.solvency.net_debt. 8k_2_02:33 confirms the deal is still pending."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_factoring_supplier_finance_and_commitments_not_tagged",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "terms.trailing_four_quarters.proceeds_from_sale_of_receivables, terms.balances_now.supplier_finance_obligation, unconditional_purchase_obligations and guarantee_maximum_exposure are all missing in the calculator, as stated."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_share_based_compensation_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "terms.trailing_four_quarters.share_based_compensation.parts.this_year_to_date exceeds prior_year_to_date, and free_cash_flow.free_cash_flow_quality_adjusted deducts the trailing amount."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_related_party_revenue_pace_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "In input_numbers.json, the current 10-Q's related-party revenue facts for the quarter and the nine months approach the prior fiscal year's full-year fact. The amounts are small against ratios.growth.revenue.this_quarter."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_translation_adjustment_printed_differently_under_two_tags",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "In input_numbers.json, the prior-year translation adjustment under the equity-statement tag and under the comprehensive-income tag differs by a rounding unit, while the current-period values agree."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_mdna_liquidity_paragraph_silent_on_tagged_new_facility",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The current 10-Q in input_numbers.json tags the new revolver and term loans at their May date (LineOfCreditFacilityMaximumBorrowingCapacity, DebtInstrumentFaceAmount), while reader item across_documents_mdna_liquidity_paragraph_silent_on_new_credit_facility shows the MD&A covering only the existing facility."
+  },
+  {
+   "id": "cross_document_reconciliation_release_headlines_continuing_cash_flow",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:16 headlines the continuing-operations figure, and the total in 8k_2_02:83 ties to terms.trailing_four_quarters.operating_cash_flow.parts.this_year_to_date against prior_year_to_date."
+  },
+  {
+   "id": "cross_document_reconciliation_aerospace_defense_restructuring_named_only_in_release",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:59, 8k_2_02:72 and 8k_2_02:96 name A&D restructuring, while the quarter footnote 8k_2_02:54 and the MD&A name only Test and USG. The analyst did not cite 8k_2_02:71, whose A&D GAAP-to-adjusted EBIT gap bears on the point without isolating restructuring."
+  },
+  {
+   "id": "industry_lens_acoustics_product_line_exit_write_offs_with_no_reserve_visible",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "terms.balances_now.inventory_reserve is missing and trend_table.quarters-back-0.ratios.days_sales_of_inventory is the 'lowest of the 6 filled quarters'. The reader item on the acoustics exit describes mostly asset write-offs."
+  },
+  {
+   "id": "industry_lens_customer_concentration_not_in_record",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "low",
+   "why": "concentration.facts is empty in the calculator, as stated. However, input_numbers.json tags revenue under srt:MajorCustomersAxis=ese:USGovernmentMember for the quarter and the nine months, so 'cannot be tested' and 'the only named counterparties' overstate the gap."
+  },
+  {
+   "id": "earnings_versus_cash_net_income_more_volatile_than_cash_flow",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "medium",
+   "why": "The gate withheld the text for a figure in the analyst's own words (dropped_items, anomalies[3]), so no checkable claim was published; the dealbreaker scores it zero."
+  },
+  {
+   "id": "estimates_and_reserves_effective_tax_rate_fell_on_return_to_provision_true_up",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "medium",
+   "why": "The gate withheld the text for a figure in the analyst's own words (dropped_items, anomalies[10]), so no checkable claim was published; the dealbreaker scores it zero."
+  },
+  {
+   "id": "results_against_expectations_adjusted_earnings_exclusions_widened",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "8k_2_02:36 through 8k_2_02:38 raise guidance on the adjusted basis, and 8k_2_02:54 and 8k_2_02:59 put per-share exclusions above the year-ago amounts. ratios.growth.net_income.quarter_over_quarter is negative while ratios.growth.revenue.quarter_over_quarter is positive."
+  },
+  {
+   "id": "liquidity_and_capital_cash_balance_declining_through_the_year",
+   "frame": "financial",
+   "verdict": "unclear",
+   "severity": "medium",
+   "why": "terms.cash_and_short_term_investments_now is below terms.balances_a_year_earlier.cash and below the September (8k_2_02:79) and March balances. But input_trends.json puts the December balance above September, so the name's 'lower at each balance-sheet date' overstates it."
+  },
+  {
+   "id": "liquidity_and_capital_quick_ratio_below_one",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.liquidity.quick_ratio is below one on terms.cash_and_short_term_investments_now, terms.balances_now.receivables and terms.balances_now.current_liabilities. Contract liabilities sit inside current liabilities (8k_2_02:79)."
+  },
+  {
+   "id": "liquidity_and_capital_megger_cash_consideration_far_exceeds_cash_on_hand",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "In input_numbers.json, PaymentsToAcquireBusinessesGross for Megger is far above terms.cash_and_short_term_investments_now and free_cash_flow.free_cash_flow_simple. The new facilities are tagged at the May date, and 8k_2_02:33 gives the expected closing."
+  },
+  {
+   "id": "liquidity_and_capital_tax_payments_and_discontinued_outflow_weighed_on_operating_cash",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:83 shows the discontinued-operations outflow and 8k_2_02:79 the drop in tax payable. ratios.growth.operating_cash_flow.year_over_year is negative and trailing_four_quarters positive, as written."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_nrg_renewables_orders_and_sales_falling",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:25 shows NRG sales down. 8k_2_02:27 shows NRG orders down 'related to the expiration of U.S. renewables tax credits', offset by Doble."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_utility_solutions_margin_compression",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:26 shows the USG adjusted EBIT margin lower on higher sales, while 8k_2_02:22 and 8k_2_02:30 show the A&D and Test margins higher."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_test_asian_operations_decline",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The MD&A reader item names the Asian decrease, and the release paragraph 8k_2_02:29 does not mention Asia. In input_numbers.json, Test segment non-US revenue is below the year-ago quarter, which fits the prose."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_aerospace_defense_inflation_and_unfavorable_mix",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:22 reads 'partially offset by inflationary pressures and unfavorable mix', and trend_table.quarters-back-0.ratios.gross_margin is below quarters-back-1."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_restructuring_charges_in_test_and_usg",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:54 names Test and USG restructuring for the quarter, and 8k_2_02:59 adds A&D for the nine months. ratios.growth.net_income.quarter_over_quarter is cited correctly."
+  },
+  {
+   "id": "profitability_net_margin_and_returns_carry_a_one_off_quarter",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "earnings_versus_cash.smoothness.net_income.3 stands far above the other quarters and sits inside terms.trailing_four_quarters.net_income, and trend_table.years-back-0.ratios.accruals_over_total_assets is 'highest of the 5 filled years'."
+  },
+  {
+   "id": "profitability_gross_margin_slipped_from_prior_quarter",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "trend_table.quarters-back-0.ratios.gross_margin is below quarters-back-1, is 'third lowest of the 6 filled quarters', and is above quarters-back-4."
+  },
+  {
+   "id": "profitability_megger_financing_and_deal_costs_depress_gaap_earnings",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:63 shows as-adjusted interest far below GAAP interest and a wide Corporate EBIT gap, and 8k_2_02:54 lists the Megger debt-financing and acquisition costs."
+  },
+  {
+   "id": "profitability_acquired_intangible_amortization_rising",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:53 and 8k_2_02:58 show amortization of intangibles above the year-ago quarter and nine months, and trend_table.quarters-back-0.ratios.soft_asset_share is 'second highest of the 6 filled quarters'."
+  },
+  {
+   "id": "profitability_lower_tax_rate_from_one_off_return_to_provision_adjustment",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "In input_numbers.json, EffectiveIncomeTaxRateContinuingOperations for the quarter and the nine months is below the year-ago periods. tax_rate.effective_rate and tax_rate are cited correctly."
+  },
+  {
+   "id": "efficiency_contract_assets_and_inventory_build_absorb_cash",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:79 shows contract assets, inventories and other current assets above September. The earnings_versus_cash.working_capital balance_sheet_change paths and ratios.efficiency.cash_conversion_cycle are cited correctly."
+  },
+  {
+   "id": "solvency_pending_megger_financing_will_raise_debt_and_interest",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "ratios.solvency.total_debt, net_debt and liabilities_over_assets show a light base. input_numbers.json tags the revolver and term-loan face amounts at the May date, plus the Megger equity consideration. ratios.solvency.interest_coverage is missing, as stated."
+  },
+  {
+   "id": "growth_net_income_fell_quarter_over_quarter_while_revenue_rose",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.growth.net_income.quarter_over_quarter is negative while ratios.growth.revenue.quarter_over_quarter is positive. 8k_2_02:54 lists the quarter's Megger, restructuring and amortization charges."
+  },
+  {
+   "id": "growth_operating_cash_flow_fell_year_over_year_in_the_quarter",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.growth.operating_cash_flow.year_over_year is negative and quarter_over_quarter is positive from a weak prior quarter, both built from year-to-date totals as the calculator's formula states."
+  },
+  {
+   "id": "growth_acquired_maritime_contribution_laps_from_next_quarter",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:13 splits organic and Maritime growth, and 8k_2_02:23 shows A&D orders down against the acquired backlog. ratios.growth.revenue.year_over_year and the history compound-growth paths are cited correctly."
+  }
+ ],
+ "coverage": {
+  "answer": "no",
+  "why": "The gate dropped areas.earnings_versus_cash and areas.estimates_and_reserves, so those areas have no answer. The other accounting areas, the industry lens and every financial section are answered."
+ },
+ "calibration": {
+  "answer": "no",
+  "why": "areas.controls_audit_and_filing_signals.verdict is 'clean' while anomalies are listed under that area. revenue_recognition calls customer advances clean while its own anomaly says part of the cash-flow strength is 'borrowed from future quarters'. The gate-dropped areas list anomalies with no verdict."
+ },
+ "valuation_reading": {
+  "answer": "no",
+  "why": "calculator.json carries no market, valuation or implied_growth_beside_history value, so analysis_valuation.json gives no price position and no implied growth. Its sensitivities come from formula structure, not a calculator grid; the gaps are stated, not filled."
+ },
+ "score": 0.93125,
+ "grader": {
+  "model_requested": "opus",
+  "model_served": "claude-opus-5-5",
+  "input_tokens": 162,
+  "output_tokens": 54161,
+  "cost_usd": 24.449898800000003,
+  "seconds": 828.4
+ }
+}
