@@ -16,7 +16,9 @@ CLEAN = Path(__file__).resolve().parent.parent / "runs" / "CSCO" / "0000858877-2
 @pytest.fixture
 def run(tmp_path):
     target = tmp_path / "CSCO" / CLEAN.name
-    shutil.copytree(CLEAN, target, ignore=shutil.ignore_patterns("agents", "control-*"))
+    # the published run carries its own grade.json since the first grades of
+    # 2026-10-07; the copy leaves it out, so the fixture is a run not yet graded
+    shutil.copytree(CLEAN, target, ignore=shutil.ignore_patterns("agents", "control-*", "grade.json"))
     return target
 
 
