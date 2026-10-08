@@ -150,6 +150,10 @@ rather than estimated. The record is written the moment each call returns
 input -- leaves every call that returned on record; `run_company` writes the
 error under `stopped_on`, and the next invocation resumes such a run as it
 resumes one the limit stopped, calling no agent whose gated output is on record.
+A boundary found broken when the two readers or the two analysts return stops
+the run once each of them whose own directory it names nothing in is gated into
+the run root (`parallel`), so the resume calls only the one that broke it; and
+no invocation calls an agent while the boundary is broken, since no call mends it.
 `finish` alone writes `analysed_utc`, the mark of a run that finished: a run
 carrying it is never resumed. Each agent's record lists every attempt under
 `attempts` (attempt, model served, tokens, cost, duration, outcome), and its
@@ -174,6 +178,7 @@ import datetime as dt
 import importlib.util
 import json
 import os
+import math
 import re
 import shutil
 import subprocess
@@ -744,7 +749,7 @@ def record_agent(run: Path, name: str, record: dict) -> None:
 
 
 def run_agent(run: Path, name: str, logs: Path, model: str | None = None,
-              policy: LimitPolicy | None = None) -> dict:
+              policy: LimitPolicy | None = None, *, check: bool = True) -> dict:
     agent_inputs.build(run, name)
     directory = agent_inputs.session_root(run, name)
     spec = agent_inputs.AGENTS[name]
@@ -756,15 +761,118 @@ def run_agent(run: Path, name: str, logs: Path, model: str | None = None,
                   policy=policy or LimitPolicy())
     record = carried_forward(earlier, record)
     record_agent(run, name, record)
+    if check:
+        # not from inside `parallel`: the other call's directory is still being built
+        boundary_holds(run, f"after {name} returned")
     return record
+
+
+def boundary_holds(run: Path, when: str) -> None:
+    """The boundary check over the whole run, which only the tests and the
+    router's command called before: a file an agent left in its directory, a
+    copy that is not the run's, a trim the owner would refuse -- each fails the
+    owner's layers_hold or inputs_on_record, so the run stops here, on record
+    (`stopped_on`), rather than publishing. One stray word an agent left, which
+    the owner notes and passes (GNRC's notes reader left "placeholder";
+    `agent_inputs.owner_passes_stray`), is passed here too: a run the owner
+    would publish is not stopped for it. The run is one the live pipeline is
+    building, so a retired agent's directory in it is named, whatever it holds,
+    as the owner's layers_hold names one (`live_run`). The control's directory,
+    which sits beside `agents/` and which the router's check does not walk, is
+    held too (`control_violations`)."""
+    broken = boundary_violations(run)
+    if broken:
+        raise boundary_broken(broken, when)
+
+
+def boundary_violations(run: Path) -> list[str]:
+    """Every line the boundary check names. A line about one agent's own directory
+    begins with the agent's name and a colon (`isolation_violations`); the
+    control's begin with its directory's name."""
+    return agent_inputs.isolation_violations(run, live_run=True) + control_violations(run)
+
+
+def boundary_broken(broken: list[str], when: str) -> agent_inputs.AgentInputError:
+    return agent_inputs.AgentInputError(
+        f"the boundary is broken {when} ({len(broken)}): " + "; ".join(broken))
 
 
 def parallel(run: Path, names: tuple[str, ...], logs: Path, model: str | None = None,
              policy: LimitPolicy | None = None) -> dict[str, dict]:
+    """The agents of one stage, called at once, and the boundary checked once all
+    have returned -- not from inside the pool, where the other call's directory
+    is still being built.
+
+    A broken boundary stops the run, and each agent of the stage that wrote and
+    whose own directory the check names nothing in is first put on record, its
+    output gated into the run root as the stage's gate writes it
+    (`put_on_record`). A resumed run then calls only the agent that broke the
+    boundary, once its directory is mended by hand: with nothing of the stage
+    on record, the resume called the other again too, a reader's call over the
+    whole filing or an analyst's, every night the stray stood and once more
+    after it was removed."""
     with concurrent.futures.ThreadPoolExecutor(max_workers=len(names)) as pool:
-        futures = {name: pool.submit(run_agent, run, name, logs, model, policy)
+        futures = {name: pool.submit(run_agent, run, name, logs, model, policy, check=False)
                    for name in names}
-        return {name: future.result() for name, future in futures.items()}
+        records = {name: future.result() for name, future in futures.items()}
+    broken = boundary_violations(run)
+    if broken:
+        stop = boundary_broken(broken, f"after {', '.join(names)} returned")
+        clean = tuple(name for name in names if records[name].get("result") == "written"
+                      and not any(line.startswith(f"{name}: ") for line in broken))
+        try:
+            put_on_record(run, clean)
+        except STOPS as exc:
+            raise stop from exc
+        raise stop
+    return records
+
+
+def put_on_record(run: Path, names: tuple[str, ...]) -> None:
+    """The output of each agent named gated into the run root, as its stage's gate
+    writes it -- a reader's report through the quote gate, an analysis through
+    the analysis gate -- so it is on record (`on_record`) and a resumed run never
+    calls the agent again."""
+    readers = tuple(name for name in names if name in READERS)
+    if readers:
+        gate_readers(run, readers)
+    gate_analysts(run, names)
+
+
+# The two analysts that run side by side, and the analysis each writes.
+ANALYSTS = {"accounting-analyst": "accounting", "financial-analyst": "financial"}
+
+
+def gate_analysts(run: Path, names, stages: dict | None = None) -> None:
+    """Each analyst named through the analysis gate into the run root, unless its
+    analysis is already there (gated on the night a resumed run stopped).
+    How many items each dropped goes into `stages` and, the moment its file is
+    written, into the manifest's `analysis_stages` (`record_stage`): a run that
+    stops after it -- on the boundary the other analyst broke (`put_on_record`,
+    which hands no `stages`), or on a refusal later in the run -- keeps the
+    count, and the resume, which never gates that analysis again, reads it from
+    the manifest and carries it into the finished record."""
+    for name, kind in ANALYSTS.items():
+        if name in names and not (run / f"analysis_{kind}.json").is_file():
+            checked = check_analysis(run, name, kind)
+            write_json(run / f"analysis_{kind}.json", checked)
+            count = {"dropped": checked["dropped_count"]}
+            record_stage(run, f"analysis_{kind}", count)
+            if stages is not None:
+                stages[f"analysis_{kind}"] = count
+
+
+def record_stage(run: Path, stage: str, outcome) -> None:
+    """One stage's outcome into the manifest's `analysis_stages`, every other key
+    left alone, under the lock the agents' records are written under."""
+    with _RECORD_LOCK:
+        path = Path(run) / "input_manifest.json"
+        manifest = json.loads(path.read_text(encoding="utf-8"))
+        stages = manifest.get("analysis_stages")
+        stages = dict(stages) if isinstance(stages, dict) else {}
+        stages[stage] = outcome
+        manifest["analysis_stages"] = stages
+        write_json(path, manifest)
 
 
 # --- the gates -----------------------------------------------------------------------------
@@ -784,6 +892,23 @@ def gate_readers(run: Path, names: tuple[str, ...] = ("numbers-reader", "notes-t
     `names` is the readers this invocation called: both on a fresh run; when
     the limit stopped one, the other alone, so what finished is on record and
     is never called again; and on the resumed run, the one that had not run.
+
+    The copy is cut item by item, as the gate and the owner's grader read a
+    report: a fenced block holding one dropped item is removed whole; a block
+    holding a list loses each dropped element and is written again with the
+    rest, each as the reader wrote it, or removed when none is left; a list
+    with nothing dropped stays byte for byte. Before it is written the copy is
+    read again as the owner reads it -- every block JSON, the items that stood
+    and no other -- and a copy that does not read so stops the run. A dropped
+    item left in a list beside a kept one (ESE's notes reader wrote its
+    twenty-seven items in one list, and three dropped ones stayed) is an item
+    the analysts read and the owner fails. An item is matched to its drop row
+    as the gate wrote the row: by report and by the gate's own
+    `quote_gate.item_id`, which is None for an id that is missing, blank or not
+    a string; the gate drops every such item, and it leaves the copy with the
+    rest. A fenced block that is not JSON holds items nobody can check: it is
+    removed, and the gate records one drop row for it (item id null), so it is
+    counted, not skipped.
     A run-root copy gated on an earlier night is not written again, and the
     gate keeps the drop rows of a report it is not handed, so the earlier
     night's record stands as it was and this call appends its own rows. The
@@ -798,8 +923,10 @@ def gate_readers(run: Path, names: tuple[str, ...] = ("numbers-reader", "notes-t
         written = directory / writes
         if not written.is_file():
             raise RunError(f"{name} wrote no {writes}")
-        reports.append({"report": writes, "items": report_items(written.read_text("utf-8")),
-                        "input": directory})
+        text = written.read_text("utf-8")
+        reports.append({"report": writes, "items": report_items(text), "input": directory,
+                        "malformed": sum(1 for block in FENCED.findall(text)
+                                         if _parsed(block) is UNREADABLE)})
     result = quote_gate.gate(reports, run)
     manifest = json.loads((run / "input_manifest.json").read_text(encoding="utf-8"))
     # keyed by report too: a row of one report never takes an item out of another
@@ -808,21 +935,121 @@ def gate_readers(run: Path, names: tuple[str, ...] = ("numbers-reader", "notes-t
     for name in names:
         writes = agent_inputs.AGENTS[name].writes
         text = (agent_inputs.session_root(run, name) / writes).read_text(encoding="utf-8")
-        removed = 0
+        removed, unreadable = 0, 0
+
+        def gone(item) -> bool:
+            # keyed as the gate keys its rows: by report, so a row of one report
+            # never takes an item out of another, and by `quote_gate.item_id`, not
+            # the id as written. An id of "", of spaces, 7 or a list is no id to the
+            # gate, which drops the item under a row with no item id; matched by
+            # the id as written, the item stayed in the copy (and a list or an
+            # object as an id could not be looked up at all), and the owner, whose
+            # drop rows are the gate's, held its quote as a kept item's
+            return isinstance(item, dict) and (writes, quote_gate.item_id(item)) in dropped
 
         def keep(match: re.Match) -> str:
-            nonlocal removed
-            items = report_items(match.group(0))
-            if items and all((writes, item.get("id")) in dropped for item in items):
-                removed += 1
+            nonlocal removed, unreadable
+            data = _parsed(match.group(1))
+            if data is UNREADABLE:
+                unreadable += 1
                 return ""
-            return match.group(0)
+            if isinstance(data, dict):
+                if gone(data):
+                    removed += 1
+                    return ""
+                return match.group(0)
+            if not isinstance(data, list):
+                return match.group(0)
+            remaining = [item for item in data if not gone(item)]
+            if len(remaining) == len(data):
+                return match.group(0)
+            removed += len(data) - len(remaining)
+            if not remaining:
+                return ""
+            # each element that stood as the reader wrote it, cut out of the block:
+            # written again by `json.dumps`, a kept item's own text could come back
+            # holding three backticks (written \u0060 in the report), which close
+            # the owner's fence early; the block as written holds none, since the
+            # fence ends at the first three
+            written = _array_elements(match.group(1))
+            if written is None or len(written) != len(data):
+                raise quote_gate.QuoteGateError(
+                    f"{writes}: a list block the gate cut does not read as the list it parsed")
+            return ("```json\n[\n" + ",\n".join(element for element, item in zip(written, data)
+                                                if not gone(item)) + "\n]\n```\n")
 
-        gated = re.sub(r"```json\s*.*?```\n?", keep, text, flags=re.S)
-        note = (f"<!-- the quote gate removed {removed} item(s) from this copy; "
+        gated = FENCED_BLOCK.sub(keep, text)
+        unread = (f" and {unreadable} fenced block(s) that are not JSON" if unreadable else "")
+        note = (f"<!-- the quote gate removed {removed} item(s){unread} from this copy; "
                 f"input_manifest.json lists each with its reason -->\n")
-        (run / writes).write_text(note + gated, encoding="utf-8")
+        copy = note + gated
+        # the copy read again as the owner reads the one the analysts are handed:
+        # every block JSON, and the items the reader wrote less those that fell
+        stood = [_canonical(item) for item in report_items(text) if not gone(item)]
+        read = [_canonical(item) for item in report_items(copy)]
+        broken = sum(1 for block in FENCED.findall(copy) if _parsed(block) is UNREADABLE)
+        if broken or read != stood:
+            raise quote_gate.QuoteGateError(
+                f"the copy of {writes} the analysts would be handed does not read as the "
+                f"items that stood: {broken} fenced block(s) that are not JSON, {len(read)} "
+                f"item(s) read against {len(stood)} that stood")
+        (run / writes).write_text(copy, encoding="utf-8")
     return result
+
+
+# A report's fenced JSON blocks, read as the gate and the owner's grader read them
+# (`market_labels.report_items`, `evals/regression/mechanical.py` FENCE); the
+# second form takes the block's own trailing line break with it when removed.
+FENCED = re.compile(r"```json\s*(.*?)```", re.S)
+FENCED_BLOCK = re.compile(r"```json\s*(.*?)```\n?", re.S)
+
+
+UNREADABLE = object()
+
+
+def _parsed(block: str):
+    """A fenced block's JSON, or UNREADABLE when it does not parse."""
+    try:
+        return json.loads(block)
+    except ValueError:
+        return UNREADABLE
+
+
+# What JSON reads as space between its tokens (the `json` module's own set).
+JSON_SPACE = re.compile(r"[ \t\n\r]*")
+
+
+def _array_elements(block: str) -> list[str] | None:
+    """Each element of the JSON array a fenced block holds, as written in it, or
+    None when the block is not one array. Read with the decoder `json.loads`
+    uses, so each element reads back as the value the block parsed to."""
+    decoder = json.JSONDecoder()
+    at = JSON_SPACE.match(block).end()
+    if block[at:at + 1] != "[":
+        return None
+    at = JSON_SPACE.match(block, at + 1).end()
+    elements: list[str] = []
+    if block[at:at + 1] == "]":
+        return elements if JSON_SPACE.match(block, at + 1).end() == len(block) else None
+    while True:
+        try:
+            _, end = decoder.raw_decode(block, at)
+        except ValueError:
+            return None
+        elements.append(block[at:end])
+        at = JSON_SPACE.match(block, end).end()
+        if block[at:at + 1] == ",":
+            at = JSON_SPACE.match(block, at + 1).end()
+            continue
+        if block[at:at + 1] == "]" and JSON_SPACE.match(block, at + 1).end() == len(block):
+            return elements
+        return None
+
+
+def _canonical(item) -> str:
+    """An item as one string, so two readings of it compare equal even where the
+    item holds a NaN, which is never equal to itself."""
+    return json.dumps(item, sort_keys=True, ensure_ascii=False)
 
 
 def check_analysis(run: Path, name: str, kind: str) -> dict:
@@ -833,8 +1060,10 @@ def check_analysis(run: Path, name: str, kind: str) -> dict:
                 if (directory / name).is_file())
     fields = json.loads(seen.read_text(encoding="utf-8"))
     sources = analysis_check.read_sources(directory, analysis_check.SOURCES[kind])
-    # the valuation analyst's prose is trimmed: a quote is held to the run's full
-    # file as well, so none runs across a seam (analysis_check.quote_problem)
+    # the valuation analyst's prose is trimmed to the flagged paragraphs, written
+    # one after the other: a quote is held to the run's full file as well, so none
+    # runs across the junction of two blocks that were not adjacent in the filing
+    # (analysis_check.quote_problem)
     filing = {name: (run / name).read_text(encoding="utf-8")
               for name in agent_inputs.TRIMMED_FOR_VALUATION
               if name in sources and (run / name).is_file()}
@@ -1164,6 +1393,13 @@ def note_stop(run: Path, exc: BaseException) -> None:
     write_json(path, manifest)
 
 
+# What stops a run that has started: written into its manifest as `stopped_on`,
+# and the next invocation resumes from the record.
+STOPS = (analysis_check.AnalysisInputError, calculator.CalculatorInputError,
+         agent_inputs.AgentInputError, cutoff_guard.CutoffGuardError, decide.DecideError,
+         market_labels.MarketLabelError, quote_gate.QuoteGateError, OSError, ValueError)
+
+
 def run_company(**keyword) -> dict:
     """One run, or one resumed. An error that raises after the run started --
     the analysis gate refusing an analyst's file, the calculator refusing an
@@ -1174,10 +1410,7 @@ def run_company(**keyword) -> dict:
     """
     try:
         return _run_company(**keyword)
-    except (analysis_check.AnalysisInputError, calculator.CalculatorInputError,
-            agent_inputs.AgentInputError, cutoff_guard.CutoffGuardError, decide.DecideError,
-            market_labels.MarketLabelError, quote_gate.QuoteGateError, OSError,
-            ValueError) as exc:
+    except STOPS as exc:
         note_stop(Path(keyword["run"]), exc)
         raise
 
@@ -1220,6 +1453,11 @@ def _run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: 
     # the limit policy, starting from the fallback a resumed run already recorded,
     # or from the batch's when this run carries it
     policy = LimitPolicy(on_fable_limit, plan["fallback"] if plan else None, carried)
+    # No agent is called over a boundary already broken -- a file an agent left
+    # in its directory on the night the run stopped, a retired agent's
+    # directory. No call mends it, and a call made over it, the next stage's
+    # on a resumed run, is paid for and then stopped on it.
+    boundary_holds(run, "before this invocation called an agent")
 
     def pending(*names: str) -> tuple[str, ...]:
         """The agents of a stage not already on record: the ones this run calls."""
@@ -1241,6 +1479,11 @@ def _run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: 
                                        form=form, accession=manifest.get("accession"),
                                        fixtures_root=store, bundle=run,
                                        market_data=market_data, **extra)
+        problems = calculator_problems(payload, cutoff)
+        if problems:
+            raise calculator.CalculatorInputError(
+                f"{name} would carry what the cutoff and the finite-number rule refuse "
+                f"({len(problems)}): " + "; ".join(problems[:5]))
         target = run / name
         if target.exists():
             if _same_json(target, payload):
@@ -1287,11 +1530,8 @@ def _run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: 
     analysts = pending("accounting-analyst", "financial-analyst")
     if analysts:
         agents.update(parallel(run, analysts, logs, model, policy))
-    for name, kind in (("accounting-analyst", "accounting"), ("financial-analyst", "financial")):
-        if agents[name]["result"] == "written" and not (run / f"analysis_{kind}.json").is_file():
-            checked = check_analysis(run, name, kind)
-            write_json(run / f"analysis_{kind}.json", checked)
-            stages[f"analysis_{kind}"] = {"dropped": checked["dropped_count"]}
+    gate_analysts(run, tuple(name for name in ANALYSTS if agents[name]["result"] == "written"),
+                  stages)
     accounting = _load(run / "analysis_accounting.json")
 
     # value: adjustments first, then drivers, then the reading -- unless the
@@ -1342,6 +1582,7 @@ def _run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: 
         valuation=_load(run / "analysis_valuation.json"),
         baselines=_load(run / "baselines.json"),
         missing=missing_frames(run, agents)), encoding="utf-8")
+    memo_words_hold(run / "memo_ko.md")
     if limit_hit(agents):
         return finish(run, agents, stages, "the limit was reached", model, skipped=skipped,
                       resumed_from=resumed, fallback=policy.fallback)
@@ -1367,6 +1608,72 @@ def _run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: 
                   fallback=policy.fallback)
 
 
+def memo_words_hold(path: Path) -> None:
+    """No line of the memo carries a ruled-out word, accusation or recommendation,
+    whichever analysis the line came from: the owner's forbidden_words reads the
+    memo line by line with both (`evals/regression/coverage.py`). The analysis
+    gate already holds what the memo prints to both; this is the memo as written,
+    and a hit stops the run rather than publishing it."""
+    for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+        for pattern in (analysis_check.ACCUSATION, analysis_check.RECOMMENDATION):
+            hit = pattern.search(line)
+            if hit:
+                raise analysis_check.AnalysisInputError(
+                    f"{path.name}:{number} carries a ruled-out word ({hit.group(0)!r})")
+
+
+# A date, a date pair or a date-time stamp, as a whole string value or key of a
+# calculator file: the owner's ISO_DATE (`evals/regression/mechanical.py`), which
+# its nothing_after_cutoff holds to the cutoff. A date inside prose is not one.
+ISO_DATE = re.compile(r"(\d{4}-\d{2}-\d{2})(?:[T ][0-9:.+\-Z]*)?(?:\.\.(\d{4}-\d{2}-\d{2}))?")
+
+
+def calculator_problems(payload, cutoff: str) -> list[str]:
+    """Why a calculator stage would fail the owner's graders before it is written:
+    a date after the cutoff as any whole string value or key (nothing_after_cutoff
+    reads every calculator file, the agents' copies included), and a number that
+    is not finite, or a `value` that is neither a finite number, text, a container
+    nor null (calculator_finite)."""
+    limit = dt.date.fromisoformat(cutoff)
+    out: list[str] = []
+
+    def late(text: str, where: str) -> None:
+        match = ISO_DATE.fullmatch(text)
+        for day in (match.group(1), match.group(2)) if match else ():
+            try:
+                after = bool(day) and dt.date.fromisoformat(day) > limit
+            except ValueError:
+                after = False
+            if after:
+                out.append(f"{where} = {text} is after the cutoff {cutoff}")
+                return
+
+    def walk(node, where: str) -> None:
+        if isinstance(node, dict):
+            for key, value in node.items():
+                here = f"{where}.{key}" if where else str(key)
+                late(str(key), here)
+                if key == "value" and value is not None \
+                        and not isinstance(value, (str, list, dict)) and not _finite(value):
+                    out.append(f"{here} = {value!r} is not a finite number")
+                walk(value, here)
+        elif isinstance(node, list):
+            for index, value in enumerate(node):
+                walk(value, f"{where}[{index}]")
+        elif isinstance(node, str):
+            late(node, where)
+        elif isinstance(node, float) and not math.isfinite(node):
+            out.append(f"{where} = {node!r} is not a finite number")
+
+    walk(payload, "")
+    return list(dict.fromkeys(out))         # a `value` that is a float is met twice
+
+
+def _finite(value) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool) \
+        and math.isfinite(value)
+
+
 def _same_json(path: Path, payload) -> bool:
     """Whether the file holds this payload: compared as JSON text with sorted keys,
     so a NaN, which is never equal to itself, still reads as the same number."""
@@ -1382,12 +1689,45 @@ def control_sees(run: Path) -> list[str]:
 
     Not the market table and not the manifest, as the retired control; and not a
     calculator that carries an analyst's adjustment or a valuation driver, because
-    a control that reads what the layers wrote cannot say what they add.
+    a control that reads what the layers wrote cannot say what they add. Not the
+    three files no builder writes yet either, which the owner's layer table does
+    not name for the control (`agent_inputs.NOT_BUILT_YET`).
     """
     return sorted([name for name in agent_inputs.BUNDLE_CATALOGUE
                    if name.startswith("input_") and name != agent_inputs.MANIFEST
-                   and name != agent_inputs.MARKET_TABLE and (run / name).is_file()]
+                   and name != agent_inputs.MARKET_TABLE
+                   and name not in agent_inputs.NOT_BUILT_YET and (run / name).is_file()]
                   + [BEFORE_ANALYSTS])
+
+
+def control_violations(run: Path) -> list[str]:
+    """The single-agent control's directory held as the owner's layers_hold and
+    inputs_on_record hold it (`evals/regression/mechanical.py`, which walks the
+    control's directory beside the agents'): every file in it is one
+    `control_sees` routes, byte for byte the run's, or one the control wrote
+    (`control_*`, the owner's `is_own_output`), and nothing in it is a directory
+    or a link. A stray file the control leaves fails the owner's checks, unless
+    it is one word the owner notes and passes (`agent_inputs.owner_passes_stray`),
+    which is passed here on the same terms."""
+    directory = run / CONTROL_DIRNAME
+    if not directory.is_dir():
+        return []
+    routed = set(control_sees(run))
+    found = []
+    for path in sorted(directory.iterdir()):
+        where = f"{CONTROL_DIRNAME}/{path.name}"
+        if path.is_symlink() or not path.is_file():
+            found.append(f"{where}: a directory or a link inside the control's, which nothing "
+                         "routed")
+        elif path.name.startswith("control_"):
+            continue                    # what the control writes
+        elif path.name not in routed:
+            if agent_inputs.owner_passes_stray(run, path):
+                continue                # one stray word, which the owner notes and passes
+            found.append(f"{where}: not a file the control is handed")
+        elif path.read_bytes() != (run / path.name).read_bytes():
+            found.append(f"{where}: not the run's {path.name}, byte for byte")
+    return found
 
 
 def run_control(run: Path, logs: Path, model: str | None = None, *,
@@ -1408,9 +1748,13 @@ def run_control(run: Path, logs: Path, model: str | None = None, *,
     sees = control_sees(run)
     prior = run / "input_prior_predictions.md"
     if prior.is_file():
-        leak = agent_inputs._probability_leak(prior.read_text(encoding="utf-8"))
+        text = prior.read_text(encoding="utf-8")
+        leak = agent_inputs._probability_leak(text)
         if leak is not None:
             raise RunError(f"{prior} still carries a probability ({leak})")
+        figure = agent_inputs._market_figure(text)
+        if figure is not None:
+            raise RunError(f"{prior} carries a price or return figure ({figure!r})")
     for name in sees:
         shutil.copyfile(run / name, directory / name)
     spec = definition_for("accounting-analyst", model)
@@ -1422,6 +1766,7 @@ def run_control(run: Path, logs: Path, model: str | None = None, *,
                   log=logs / "control-single-agent.log", policy=policy or LimitPolicy())
     record = carried_forward(earlier, record)
     record_agent(run, "control-single-agent", record)
+    boundary_holds(run, "after the control returned")
     return record
 
 
@@ -1457,6 +1802,7 @@ def finish(run: Path, agents: dict, stages: dict, failure: str | None,
     # src/agent_inputs.py) is kept beside the usage record; the boundary check
     # reads it. `analysed_utc` is written here and nowhere else: it is what says
     # the run finished, and a resume never runs over a manifest that carries it.
+    boundary_holds(run, "before the run was recorded as finished")
     manifest = json.loads((run / "input_manifest.json").read_text(encoding="utf-8"))
     routed = manifest.get("agents") if isinstance(manifest.get("agents"), dict) else {}
     manifest["agents"] = {name: agent_entry(record, routed.get(name))

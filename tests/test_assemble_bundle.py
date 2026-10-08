@@ -108,6 +108,28 @@ def test_the_same_holds_for_a_ten_k_bundle():
     assert listed
 
 
+@pytest.mark.parametrize("ticker,form", [(ticker, "10-Q") for ticker in TICKERS]
+                         + [("AAPL", "10-K")])
+def test_the_quote_gate_reads_every_prose_paragraph_as_the_owner_does(ticker, form):
+    """A reader's prose quote is held to its paragraph twice: as the bundle cuts
+    it (`paragraph_blocks`, which the quote gate indexes) and as the owner's
+    grader reads it, every line up to the next `[id]` line, headings included
+    (`quote_gate.owner_paragraphs`; `evals/regression/mechanical.py`
+    `paragraphs_of`, imported read-only). Over every prose input of every
+    committed bundle the gate's second reading is the owner's, and every
+    paragraph the owner reads is one the gate indexes. A quote spanning a
+    heading of CSCO's notes history, which the first reading leaves out, is the
+    shape tests/test_quote_gate.py refuses in both."""
+    from evals.regression import mechanical
+    from src import quote_gate
+    texts = built(ticker, form)["texts"]
+    for name in assemble_bundle.PARAGRAPH_FILES:
+        owner = mechanical.paragraphs_of(texts[name])
+        assert quote_gate.owner_paragraphs(texts[name]) == owner, name
+        assert set(owner) <= {identifier for identifier, _ in
+                              assemble_bundle.paragraph_blocks(texts[name])}, name
+
+
 @pytest.mark.parametrize("ticker", TICKERS)
 def test_an_excluded_paragraph_is_not_in_any_file(ticker):
     bundle = built(ticker)

@@ -17,6 +17,8 @@ import shutil
 import threading
 import time
 
+import pytest
+
 from src import agent_inputs, fable_batch, run_analysis
 
 
@@ -66,6 +68,266 @@ def test_the_copy_downstream_sees_holds_only_the_items_that_stood(tmp_path, monk
     assert "b_kept" in notes and "b_dropped" not in notes
     assert "removed 1 item" in notes
     assert "a_kept" in (run / "report_numbers.md").read_text()
+
+
+def _stub_readers(tmp_path, numbers: str, notes: str, dropped: list[dict]):
+    run = tmp_path / "run"
+    for name, text in (("numbers-reader", numbers), ("notes-text-reader", notes)):
+        directory = agent_inputs.session_root(run, name)
+        directory.mkdir(parents=True)
+        (directory / agent_inputs.AGENTS[name].writes).write_text(text)
+    (run / "input_manifest.json").write_text(json.dumps({"dropped_items": dropped}))
+    return run
+
+
+def test_a_dropped_item_inside_a_list_block_is_taken_out_of_the_copy(tmp_path, monkeypatch):
+    """ESE's notes reader wrote its twenty-seven items in one fenced list, and the
+    gate removed a block only when every item in it was dropped: three dropped
+    items stayed in the copy the analysts read, under a note saying it removed 0,
+    and the owner's quotes_resolve failed each one. The list now loses each
+    dropped element and is written again with the rest; the note counts items."""
+    notes = '```json\n[{"id": "b_kept"}, {"id": "b_dropped"}]\n```\n'
+    run = _stub_readers(tmp_path, '```json\n{ "id": "a_kept" }\n```\n', notes,
+                        [{"item_id": "b_dropped", "reason": "x", "report": "report_notes_text.md"}])
+    monkeypatch.setattr(run_analysis.quote_gate, "gate", lambda reports, root: {})
+    run_analysis.gate_readers(run)
+    copy = (run / "report_notes_text.md").read_text()
+    assert run_analysis.report_items(copy) == [{"id": "b_kept"}]
+    assert "removed 1 item(s) from this copy" in copy
+    assert (run / "report_numbers.md").read_text().endswith('```json\n{ "id": "a_kept" }\n```\n')
+    # the reader's own copy keeps what it wrote
+    assert (agent_inputs.session_root(run, "notes-text-reader") / "report_notes_text.md"
+            ).read_text() == notes
+
+
+@pytest.mark.parametrize("case", ["untouched list", "single dropped", "other report",
+                                  "kept element equal", "malformed"])
+def test_the_copy_is_cut_item_by_item_and_nothing_else_moves(tmp_path, monkeypatch, case):
+    """The other side, standing before the fix and after it: a list with nothing
+    dropped stays byte for byte; a single dropped item's block is removed whole;
+    a drop row of one report takes nothing out of the other (the row is keyed by
+    report, as the owner's grader keys it); a kept element reads back as the dict
+    the reader wrote; and a block that is not JSON is never rewritten."""
+    listed = ('```json\n[{ "id": "b_one", "quote": "Raising the lower end",\n'
+              '   "paragraph_id": "0001104659-26-092033:8k_2_02:36" },\n { "id": "b_two" }]\n```\n')
+    rows = {"untouched list": [],
+            "single dropped": [{"item_id": "a_gone", "reason": "x", "report": "report_numbers.md"}],
+            "other report": [{"item_id": "b_one", "reason": "x", "report": "report_numbers.md"}],
+            "kept element equal": [{"item_id": "b_two", "reason": "x",
+                                    "report": "report_notes_text.md"}],
+            "malformed": []}[case]
+    numbers = '```json\n{ "id": "a_gone" }\n```\nprose stays\n'
+    notes = listed if case != "malformed" else '```json\n[{"id": "b_one"},]\n```\n'
+    run = _stub_readers(tmp_path, numbers, notes, rows)
+    monkeypatch.setattr(run_analysis.quote_gate, "gate", lambda reports, root: {})
+    run_analysis.gate_readers(run)
+    copy = (run / "report_notes_text.md").read_text()
+    body = copy.split("\n", 1)[1]
+    if case in ("untouched list", "other report"):
+        assert body == listed
+    elif case == "single dropped":
+        assert (run / "report_numbers.md").read_text().split("\n", 1)[1] == "prose stays\n"
+        assert body == listed
+    elif case == "kept element equal":
+        assert run_analysis.report_items(copy) == [
+            {"id": "b_one", "quote": "Raising the lower end",
+             "paragraph_id": "0001104659-26-092033:8k_2_02:36"}]
+    else:
+        # removed, never rewritten: the gate recorded it as a drop with no id
+        assert "```" not in body and "1 fenced block(s) that are not JSON" in copy
+
+
+# The owner's grader on the real gate's output, the ESE shapes: twin ids on both
+# reports, and an item whose paragraph id is no id, in one notes list. Paragraphs
+# 36 and 37 of ESE's earnings release 0001104659-26-092033, as its input_8k.md
+# printed them (run 0001104659-26-093266, 2026-10-07).
+ESE_ACCESSION = "0001104659-26-093266"
+ESE_SALES = ("Raising the lower end of FY 2026 Sales guidance and now expect Sales to be in the "
+             "range of $1.30 to $1.33 billion (19 to 21 percent growth over the prior year).")
+ESE_EPS = ("Raising full year Adjusted EPS guidance to a range of $8.30 - $8.40 per share (38 to "
+           "39 percent growth)")
+ESE_8K = ("# ESE 8-K\n\n## item 2.02\n\n"
+          f"[0001104659-26-092033:8k_2_02:36]\n|  | · | {ESE_SALES} |\n\n"
+          f"[0001104659-26-092033:8k_2_02:37]\n|  | · | {ESE_EPS}, which reflects a midpoint "
+          "increase of $0.70 per share. |\n")
+
+
+def _ese_item(identifier, quote, paragraph):
+    return {"id": identifier, "quote": quote, "paragraph_id": paragraph}
+
+
+def test_the_owner_finds_no_dropped_item_in_the_copy_the_real_gate_wrote(tmp_path):
+    from evals.common import PASS
+    from evals.regression import mechanical
+    run = tmp_path / "run"
+    run.mkdir()
+    (run / "input_manifest.json").write_text(json.dumps({"accession": ESE_ACCESSION}))
+    twin = "results_against_expectations_sales_guidance_lower_end_raised"
+    sales = "0001104659-26-092033:8k_2_02:36"
+    eps = "0001104659-26-092033:8k_2_02:37"
+    numbers = [_ese_item(twin, ESE_SALES, sales),
+               _ese_item("results_against_expectations_adjusted_eps_guidance_raised", ESE_EPS, eps)]
+    notes = [_ese_item(twin, ESE_SALES, sales),
+             _ese_item("across_documents_eight_k_termination_of_material_agreement_unexplained",
+                       "2026-06-03 0001104659-26-070116 — 1.01, 1.02, 2.03, 9.01",
+                       "input_8k item codes list (2026-06-03 entry)"),
+             _ese_item("results_against_expectations_sales_range_restated", "Sales guidance", sales),
+             _ese_item("results_against_expectations_eps_range_restated", "Adjusted EPS guidance", eps)]
+    for name, text in (("numbers-reader", "".join(f"```json\n{json.dumps(item)}\n```\n"
+                                                  for item in numbers)),
+                       ("notes-text-reader", f"```json\n{json.dumps(notes, indent=1)}\n```\n")):
+        directory = agent_inputs.session_root(run, name)
+        directory.mkdir(parents=True)
+        (directory / "input_8k.md").write_text(ESE_8K, encoding="utf-8")
+        (directory / agent_inputs.AGENTS[name].writes).write_text(text, encoding="utf-8")
+    run_analysis.gate_readers(run)
+    manifest = json.loads((run / "input_manifest.json").read_text())
+    assert {(row["report"], row["item_id"]) for row in manifest["dropped_items"]} == {
+        ("report_numbers.md", twin), ("report_notes_text.md", twin),
+        ("report_notes_text.md",
+         "across_documents_eight_k_termination_of_material_agreement_unexplained")}
+    result = mechanical.check_quotes_resolve(run)
+    assert not any("dropped by the gate and still in the report" in line
+                   for line in result.failures)
+    assert result.status == PASS, result.failures
+    assert mechanical.kept_items(run)["report_notes_text.md"] == {
+        "results_against_expectations_sales_range_restated",
+        "results_against_expectations_eps_range_restated"}
+    assert "removed 2 item(s)" in (run / "report_notes_text.md").read_text()
+
+
+# An item the gate finds no id on -- an id of "", of spaces, a number, true, a list,
+# an object, null, or none written -- is dropped under a row with no item id
+# (`quote_gate.item_id`). The runner matched the copy to the rows by the id as
+# written, so the first four stayed in the copy the analysts read and the owner,
+# whose drop rows are the gate's, held their quotes as kept items' (the critic's
+# probe of 2026-10-08, on ESE's paragraph 36 above); a list or an object as an id
+# stopped gate_readers (unhashable). The last two passed before, and are the other
+# side. No reader report on record has such an id.
+@pytest.mark.parametrize("shape", ["one list", "a block each"])
+@pytest.mark.parametrize("identifier", ["", "  ", 7, True, ["x"], {"a": 1}, None, "unwritten"])
+def test_an_item_the_gate_finds_no_id_on_leaves_the_copy(tmp_path, shape, identifier):
+    from evals.common import PASS
+    from evals.regression import mechanical
+    run = tmp_path / "run"
+    run.mkdir()
+    (run / "input_manifest.json").write_text(json.dumps({"accession": ESE_ACCESSION}))
+    sales = "0001104659-26-092033:8k_2_02:36"
+    kept = _ese_item("results_against_expectations_sales_range_restated", "Sales guidance",
+                     sales)
+    nameless = {"quote": "words the filing never printed", "paragraph_id": sales}
+    if identifier != "unwritten":
+        nameless["id"] = identifier
+    notes = (f"```json\n{json.dumps([kept, nameless], indent=1)}\n```\n" if shape == "one list"
+             else "".join(f"```json\n{json.dumps(item)}\n```\n" for item in (kept, nameless)))
+    for name, text in (("numbers-reader", "no items\n"), ("notes-text-reader", notes)):
+        directory = agent_inputs.session_root(run, name)
+        directory.mkdir(parents=True)
+        (directory / "input_8k.md").write_text(ESE_8K, encoding="utf-8")
+        (directory / agent_inputs.AGENTS[name].writes).write_text(text, encoding="utf-8")
+    run_analysis.gate_readers(run)
+    manifest = json.loads((run / "input_manifest.json").read_text())
+    assert [(row["report"], row["item_id"]) for row in manifest["dropped_items"]] == [
+        ("report_notes_text.md", None)]
+    copy = (run / "report_notes_text.md").read_text(encoding="utf-8")
+    assert run_analysis.report_items(copy) == [kept]
+    assert "removed 1 item(s)" in copy
+    if shape == "a block each":
+        assert copy.endswith(f"```json\n{json.dumps(kept)}\n```\n")
+    result = mechanical.check_quotes_resolve(run)
+    assert result.status == PASS, result.failures
+    assert mechanical.kept_items(run)["report_notes_text.md"] == {kept["id"]}
+    # the reader's own copy keeps what it wrote
+    assert (agent_inputs.session_root(run, "notes-text-reader") / "report_notes_text.md"
+            ).read_text(encoding="utf-8") == notes
+
+
+# A kept item whose own text holds three backticks, written in the reader's JSON as
+# \u0060 escapes, in a list that loses an item the gate found no id on (the critic's
+# probe of 2026-10-08, on ESE's paragraph 36 above). The reader's report reads clean to
+# the owner. Written again by `json.dumps`, the escapes came back as backticks, which
+# close the owner's fence early: the copy the analysts read held one block that is not
+# JSON and no item, and quotes_resolve failed "1 fenced block(s) that are not JSON".
+# No reader report on record carries a backtick.
+def _notes_list_losing_one(run: Path, what_changed: str) -> tuple[dict, str, str]:
+    """The kept item, its element as the reader wrote it, and the reader's report."""
+    run.mkdir()
+    (run / "input_manifest.json").write_text(json.dumps({"accession": ESE_ACCESSION}))
+    sales = "0001104659-26-092033:8k_2_02:36"
+    kept = dict(_ese_item("results_against_expectations_sales_range_restated",
+                          "Sales guidance", sales), what_changed=what_changed)
+    element = json.dumps(kept, indent=2).replace("`", "\\u0060")
+    nameless = json.dumps({"quote": "words the filing never printed", "paragraph_id": sales})
+    notes = f"# notes\n\n```json\n[\n{element},\n{nameless}\n]\n```\n"
+    for name, text in (("numbers-reader", "no items\n"), ("notes-text-reader", notes)):
+        directory = agent_inputs.session_root(run, name)
+        directory.mkdir(parents=True)
+        (directory / "input_8k.md").write_text(ESE_8K, encoding="utf-8")
+        (directory / agent_inputs.AGENTS[name].writes).write_text(text, encoding="utf-8")
+    return kept, element, notes
+
+
+@pytest.mark.parametrize("what_changed", ["the release prints ``` in its table",
+                                          "four ```` and three ``` again"])
+def test_a_kept_element_holding_three_backticks_leaves_the_owner_s_fence_where_it_was(
+        tmp_path, what_changed):
+    from evals.common import PASS
+    from evals.regression import mechanical
+    run = tmp_path / "run"
+    kept, element, notes = _notes_list_losing_one(run, what_changed)
+    assert mechanical.read_report_blocks(notes)[1] == 0
+    run_analysis.gate_readers(run)
+    copy = (run / "report_notes_text.md").read_text(encoding="utf-8")
+    assert mechanical.read_report_blocks(copy) == ([kept], 0)
+    assert element in copy                  # the element that stood, as the reader wrote it
+    assert "removed 1 item(s)" in copy
+    result = mechanical.check_quotes_resolve(run)
+    assert result.status == PASS, result.failures
+
+
+@pytest.mark.parametrize("what_changed", ["a `code` word and a `` pair", "no backtick at all"])
+def test_a_kept_element_with_fewer_than_three_backticks_reads_the_same(tmp_path, what_changed):
+    """The other side, standing before the fix and after it."""
+    from evals.common import PASS
+    from evals.regression import mechanical
+    run = tmp_path / "run"
+    kept, _, _ = _notes_list_losing_one(run, what_changed)
+    run_analysis.gate_readers(run)
+    copy = (run / "report_notes_text.md").read_text(encoding="utf-8")
+    assert mechanical.read_report_blocks(copy) == ([kept], 0)
+    assert mechanical.check_quotes_resolve(run).status == PASS
+
+
+def test_a_copy_that_does_not_read_as_the_items_that_stood_is_never_written(
+        tmp_path, monkeypatch):
+    """The copy is read again, as the owner reads it, before it is written: a cut
+    that went wrong stops the gate rather than handing the analysts a block the
+    owner cannot read or an item that did not stand."""
+    run = tmp_path / "run"
+    _notes_list_losing_one(run, "plain words")
+    monkeypatch.setattr(run_analysis, "_array_elements",
+                        lambda block: ['{"id": "results_against_expectations_sales_range_',
+                                       '"restated"}'])
+    with pytest.raises(run_analysis.quote_gate.QuoteGateError,
+                       match="does not read as the items that stood: 1 fenced block"):
+        run_analysis.gate_readers(run)
+    assert not (run / "report_notes_text.md").exists()
+
+
+@pytest.mark.parametrize("block", [
+    '[]', ' [ ] \n', '[1, "two", null, true, {"a": [1, {"b": "]"}]}]',
+    '[\n  {"id": "x", "quote": "a \\"quoted\\" ], comma"},\n  {"id": "y"}\n]\n',
+    '[NaN, Infinity, -0.0, 1e400, "\\u0060\\u0060\\u0060"]', '[[1, 2], [], [[3]]]'])
+def test_the_elements_of_a_list_block_read_back_as_the_list(block):
+    written = run_analysis._array_elements(block)
+    assert [run_analysis._canonical(json.loads(one)) for one in written] == [
+        run_analysis._canonical(one) for one in json.loads(block)]
+    assert all(one in block for one in written)
+
+
+@pytest.mark.parametrize("block", ['{"id": "x"}', '"[1]"', '[1, 2', '[1,]', '[1] [2]', ''])
+def test_a_block_that_is_not_one_list_has_no_elements(block):
+    assert run_analysis._array_elements(block) is None
 
 
 # --- a whole run, with every agent stubbed ------------------------------------------------
@@ -127,10 +389,12 @@ DRIVERS = {"revenue_growth_year_one": 0.2, "terminal_growth": 0.03,
 
 
 def _fake_ask(seen: dict, notes_report: str = "no items\n", assumptions: dict | None = None,
-              numbers_report: str = NUMBERS_REPORT, accounting_analysis: dict | None = None):
+              numbers_report: str = NUMBERS_REPORT, accounting_analysis: dict | None = None,
+              financial_analysis: dict | None = None):
     """`notes_report` and `numbers_report` are what the stubbed readers write;
     `assumptions` the valuation analyst's first pass, by default three scenarios
-    citing one field."""
+    citing one field; `accounting_analysis` and `financial_analysis` what the two
+    analysts write, by default `_analysis`."""
     def ask(directory, *, agent, writes, message, spec, log):
         seen[directory.name] = sorted(path.name for path in directory.iterdir())
         for name in writes:
@@ -142,7 +406,8 @@ def _fake_ask(seen: dict, notes_report: str = "no items\n", assumptions: dict | 
                 text = json.dumps(accounting_analysis if accounting_analysis is not None
                                   else _analysis("accounting", "earnings_quality_accruals_rising"))
             elif name == "analysis_financial.json":
-                text = json.dumps(_analysis("financial", "earnings_quality_accruals_rising"))
+                text = json.dumps(financial_analysis if financial_analysis is not None
+                                  else _analysis("financial", "earnings_quality_accruals_rising"))
             elif name == "assumptions.json" and assumptions is not None:
                 text = json.dumps(assumptions)
             elif name in ("assumptions.json", "control_assumptions.json"):
@@ -1418,7 +1683,8 @@ def test_the_message_names_the_shared_files_first_in_a_fixed_order():
 # the first and the third, which are not adjacent. Their blocks are copied here
 # from the fixture's input_mdna.md by hand (the apostrophe in "Management's" is
 # the filing's own U+2019), and the expected trimmed copy is the file's preamble,
-# the first block, one line holding the two markers, and the third block.
+# the first block and the third block, one after the other with nothing between
+# them: the third block's own [id] line is the junction.
 MDNA_ONE = "0001045810-26-000075:mdna:1"
 MDNA_THREE = "0001045810-26-000075:mdna:3"
 FLAGGING_TWO = '''```json
@@ -1432,14 +1698,12 @@ TRIMMED_TWO = (
     "# NVDA MD&A \u2014 0001045810-26-000075\n\n\n## mdna\n\n"
     "[0001045810-26-000075:mdna:1]\nItem 2. Management\u2019s Discussion and Analysis of "
     "Financial Condition and Results of Operations\n\n"
-    "[0001045810-26-000075:mdna:1] [0001045810-26-000075:mdna:3]\n\n"
     "[0001045810-26-000075:mdna:3]\n[same as prior period, unchanged from "
     "0001045810-26-000052:mdna:3]\n\n")
 INSIDE = {"reason": "a reason", "quote": "Analysis of Financial Condition",
           "quote_from": "input_mdna.md"}
 ACROSS = {"reason": "a reason", "quote_from": "input_mdna.md",
-          "quote": "Results of Operations\n\n[0001045810-26-000075:mdna:1] "
-                   "[0001045810-26-000075:mdna:3]\n\n[0001045810-26-000075:mdna:3]\n[same as"}
+          "quote": "Results of Operations\n\n[0001045810-26-000075:mdna:3]\n[same as"}
 
 
 def test_a_whole_run_with_two_paragraphs_flagged_hands_the_valuation_analyst_those_two(
@@ -1499,7 +1763,8 @@ def test_a_whole_run_with_two_paragraphs_flagged_hands_the_valuation_analyst_tho
     (run / "agents" / "valuation-analyst" / "input_mdna.md").write_bytes(
         TRIMMED_TWO.encode("utf-8"))
     assert agent_inputs.isolation_violations(run) == []
-    # the seam rule: the bear scenario quotes across the two blocks' seam, which
+    # the seam rule: the bear scenario quotes across the junction of the two
+    # blocks, the third's own [id] line after the first's text, which
     # string-matches the copy the analyst saw and nothing the filing printed
     copy = (run / "agents" / "valuation-analyst" / "input_mdna.md").read_text(encoding="utf-8")
     full = (run / "input_mdna.md").read_text(encoding="utf-8")
@@ -1515,15 +1780,15 @@ def test_a_whole_run_with_two_paragraphs_flagged_hands_the_valuation_analyst_tho
 
 def test_the_valuation_analyst_is_handed_only_the_paragraphs_the_notes_reader_flagged(finished):
     """The stubbed notes reader wrote no items, so no MD&A paragraph was flagged: the
-    valuation analyst's MD&A holds the file's preamble and no paragraph, the manifest
-    records the trim beside the agent's usage, and the notes reader's own copy holds
-    every paragraph."""
+    valuation analyst is handed no MD&A at all -- a copy holding no paragraph is not
+    some of the original's paragraphs, which the owner refuses ("the copy carries no
+    [id] paragraphs") -- the manifest records the trim, 0 of 112, beside the agent's
+    usage, and the notes reader's own copy holds every paragraph."""
     run, manifest, _ = finished
-    valuation = (run / "agents" / "valuation-analyst" / "input_mdna.md").read_text()
+    for name in ("valuation-analyst", "valuation-analyst-second-pass"):
+        assert not (run / "agents" / name / "input_mdna.md").exists()
+        assert not (run / "agents" / name / "input_8k.md").exists()
     reader = (run / "agents" / "notes-text-reader" / "input_mdna.md").read_text()
-    assert valuation == reader[:reader.index("[0001045810-26-000075:mdna:")]
-    assert "trimmed" not in valuation
-    assert "[0001045810-" not in valuation                        # no marker survives
     # 112 paragraphs: counted by hand on the fixture's MD&A, built once outside
     # the tests, with `grep -c '^\[0001045810-' input_mdna.md` (112), and the
     # same 112 for `grep -c '\[0001045810-'`, so no marker sits off a line start.
@@ -2446,3 +2711,456 @@ def test_the_row_a_real_fallback_writes_is_utc_now_and_carries_through_the_clock
     assert asked["accounting-analyst"] == ["fable"] and asked["valuation-analyst"] == ["fable"]
     assert "model_fallback" not in late and late["analysis_failure"] is None
     assert (run / "input_manifest.json").read_bytes() == stored     # the row never moved
+
+
+def _flagging_two_run(tmp_path, monkeypatch, **fake):
+    run = tmp_path / "NVDA" / NVDA_ACCESSION
+    bundle = assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,
+                                   prior_runs=run.parent.parent)
+    assemble_bundle.write(bundle, run)
+    monkeypatch.setattr(run_analysis, "ask", _fake_ask({}, **fake))
+    manifest = run_analysis.run_company(run=run, ticker="NVDA", form="10-Q",
+                                        cutoff="2026-08-26", period_end="2026-07-26",
+                                        store=run_analysis.cutoff_guard.FIXTURES,
+                                        prices=None, control="never")
+    return run, manifest
+
+
+def test_the_owner_finds_every_input_copy_of_a_whole_run_on_record(tmp_path, monkeypatch):
+    """The owner's `inputs_on_record` over a whole stubbed run, both valuation
+    passes graded: the MD&A cut to two paragraphs that were not adjacent, and
+    the 8-K, none of whose 76 paragraphs was flagged, not placed. Under the seam
+    trim it said "fail 31 of 35": the 8-K "carries no [id] paragraphs" and the
+    MD&A "paragraph 0001045810-26-000075:mdna:1 ... word for word", in both
+    passes. A seam-bearing copy put back in the second pass's directory is
+    refused by the owner and by the boundary check."""
+    from evals.common import PASS
+    from evals.regression import mechanical
+    run, manifest = _flagging_two_run(tmp_path, monkeypatch, notes_report=FLAGGING_TWO)
+    assert manifest["analysis_failure"] is None
+    # 76 paragraphs: counted on the fixture's 8-K, built once outside the tests
+    # (2026-10-08), with `grep -c '^\[0001045810-26-000073:8k_2_02:' input_8k.md`
+    # (76), the same 76 for `grep -c '\[0001045810-'`, so no marker sits off a
+    # line start, and 76 distinct ids.
+    for name in ("valuation-analyst", "valuation-analyst-second-pass"):
+        record = manifest["agents"][name]["trimmed"]
+        assert record["input_8k.md"]["kept"] == [] and record["input_8k.md"]["of"] == 76
+        assert not (run / "agents" / name / "input_8k.md").exists()
+    result = mechanical.check_inputs_on_record(run)
+    assert result.status == PASS, result.failures
+    assert agent_inputs.isolation_violations(run) == []
+    seam = TRIMMED_TWO.replace(
+        "Results of Operations\n\n",
+        "Results of Operations\n\n[0001045810-26-000075:mdna:1] [0001045810-26-000075:mdna:3]\n\n")
+    copy = run / "agents" / "valuation-analyst-second-pass" / "input_mdna.md"
+    copy.unlink()
+    copy.write_bytes(seam.encode("utf-8"))
+    result = mechanical.check_inputs_on_record(run)
+    assert result.status != PASS
+    assert result.failures == ["agents/valuation-analyst-second-pass/input_mdna.md: paragraph "
+                               "0001045810-26-000075:mdna:1 is not the file on record's, word "
+                               "for word"]
+    assert any(line.startswith("valuation-analyst-second-pass: input_mdna.md: paragraph "
+                               "0001045810-26-000075:mdna:1")
+               for line in agent_inputs.isolation_violations(run))
+
+
+def test_a_fenced_block_that_is_not_json_is_counted_and_taken_out_of_the_copy(tmp_path):
+    """A reader that writes its items as one list loses all of them to one trailing
+    comma: the gate saw none of them and the owner counted "1 fenced block(s)
+    that are not JSON" in the copy the analysts read. The real gate now records
+    the block as a drop with no item id, and the copy holds no such block."""
+    from evals.common import PASS
+    from evals.regression import mechanical
+    run = tmp_path / "run"
+    run.mkdir()
+    (run / "input_manifest.json").write_text(json.dumps({"accession": ESE_ACCESSION}))
+    sales = "0001104659-26-092033:8k_2_02:36"
+    good = _ese_item("results_against_expectations_sales_range_restated", "Sales guidance", sales)
+    texts = {"numbers-reader": f"```json\n{json.dumps(good)}\n```\n",
+             "notes-text-reader": ('```json\n[{"id": "results_against_expectations_eps_range_'
+                                   'restated", "quote": "Adjusted EPS", "paragraph_id": '
+                                   '"0001104659-26-092033:8k_2_02:37"},]\n```\n')}
+    for name, text in texts.items():
+        directory = agent_inputs.session_root(run, name)
+        directory.mkdir(parents=True)
+        (directory / "input_8k.md").write_text(ESE_8K, encoding="utf-8")
+        (directory / agent_inputs.AGENTS[name].writes).write_text(text, encoding="utf-8")
+    run_analysis.gate_readers(run)
+    manifest = json.loads((run / "input_manifest.json").read_text())
+    assert manifest["dropped_items"] == [{"report": "report_notes_text.md", "item_id": None,
+                                          "reason": run_analysis.quote_gate.UNREADABLE_BLOCK}]
+    copy = (run / "report_notes_text.md").read_text()
+    assert mechanical.read_report_blocks(copy)[1] == 0
+    assert mechanical.check_quotes_resolve(run).status == PASS
+
+
+# --- what the runner stops on, run through the runner ------------------------------------------
+#
+# The whole stubbed NVDA run, each agent named in `leaves` writing the files named there
+# beside its own output, as an agent with `Write` and a session rooted in its directory
+# could. Each test says where the run stops, or that it finishes, and holds the run on
+# disk to the owner's grader that answers for it (`evals/regression/`, read-only).
+
+@pytest.fixture(scope="module")
+def nvda_bundle(tmp_path_factory):
+    """NVDA's 10-Q bundle, built once; each run below starts from a copy."""
+    run = tmp_path_factory.mktemp("bundle") / "NVDA" / NVDA_ACCESSION
+    assemble_bundle.write(assemble_bundle.build("NVDA", "10-Q", accession=NVDA_ACCESSION,
+                                                prior_runs=run.parent.parent), run)
+    return run
+
+
+def _run_leaving(tmp_path, monkeypatch, bundle, leaves=None, *, then=None, control="never",
+                 **fake):
+    """The run, the directories asked in order, the manifest on disk, and the error
+    the run stopped on (None when it finished). `then` maps a directory to what
+    the agent does besides, after it wrote its files."""
+    run = tmp_path / "NVDA" / NVDA_ACCESSION
+    shutil.copytree(bundle, run)
+    asked: list[str] = []
+    answer = _fake_ask({}, **fake)
+
+    def ask(directory, **keyword):
+        asked.append(directory.name)
+        record = answer(directory, **keyword)
+        for name, data in (leaves or {}).get(directory.name, {}).items():
+            (directory / name).write_bytes(data)
+        if directory.name in (then or {}):
+            then[directory.name](directory)
+        return record
+
+    monkeypatch.setattr(run_analysis, "ask", ask)
+    stopped = None
+    try:
+        run_analysis.run_company(run=run, ticker="NVDA", form="10-Q", cutoff="2026-08-26",
+                                 period_end="2026-07-26",
+                                 store=run_analysis.cutoff_guard.FIXTURES, prices=None,
+                                 control=control)
+    except (agent_inputs.AgentInputError, run_analysis.analysis_check.AnalysisInputError,
+            run_analysis.calculator.CalculatorInputError) as exc:
+        stopped = exc
+    manifest = json.loads((run / "input_manifest.json").read_text(encoding="utf-8"))
+    return run, asked, manifest, stopped
+
+
+def test_one_stray_word_a_reader_leaves_publishes_as_the_owner_passes_it(
+        tmp_path, monkeypatch, nvda_bundle):
+    """GNRC's notes reader left an eleven-byte "placeholder" beside its report
+    (runs/GNRC/0001437749-26-025669/agents/notes-text-reader/scratch_check.txt), and
+    the owner's layers_hold and inputs_on_record pass that published run and note
+    the file. The runner's boundary check named it, so the run stopped once the
+    readers returned, and the resume could not rebuild the reader's directory over
+    it: a run the owner accepts was never published. It now finishes, and the
+    owner passes it as it passed GNRC's."""
+    from evals.common import PASS
+    from evals.regression import mechanical
+    run, asked, manifest, stopped = _run_leaving(
+        tmp_path, monkeypatch, nvda_bundle,
+        {"notes-text-reader": {"scratch_check.txt": b"placeholder"}})
+    assert stopped is None, stopped
+    assert manifest["analysis_failure"] is None and manifest.get(agent_inputs.ANALYSED_KEY)
+    assert "valuation-analyst-second-pass" in asked
+    layers, inputs = mechanical.check_layers_hold(run), mechanical.check_inputs_on_record(run)
+    assert layers.status == PASS, layers.failures
+    assert inputs.status == PASS, inputs.failures
+    assert "['agents/notes-text-reader/scratch_check.txt']" in inputs.detail
+
+
+def test_a_retired_agent_s_directory_made_during_a_call_stops_the_run(
+        tmp_path, monkeypatch, nvda_bundle):
+    """A directory under `agents/` named for a retired agent -- a comparer, a
+    supervisor -- passed the boundary the runner checks, which judged it by the
+    layer the agent had on the pilot runs, and the owner's layers_hold refuses it
+    ("no layer the grader knows"). Made while the analysts run, it now stops the
+    run once they return, before the valuation analyst is asked."""
+    from evals.regression import mechanical
+    run, asked, manifest, stopped = _run_leaving(
+        tmp_path, monkeypatch, nvda_bundle,
+        then={"financial-analyst": lambda directory: (
+            directory.parent / "numbers-vs-market").mkdir()})
+    assert isinstance(stopped, agent_inputs.AgentInputError), stopped
+    assert "after accounting-analyst, financial-analyst returned" in str(stopped)
+    assert "numbers-vs-market: a retired agent's directory" in manifest["stopped_on"]
+    assert "valuation-analyst" not in asked and agent_inputs.ANALYSED_KEY not in manifest
+    assert "agents/numbers-vs-market: no layer the grader knows" \
+        in mechanical.check_layers_hold(run).failures
+
+
+# Each stop below is pinned to the call that makes it: the place the run stopped is
+# asserted, so a runner that no longer called the check there stops later, or not
+# at all, and the test fails. What the run leaves on disk is held to the owner's
+# grader that answers for it, which refuses it.
+
+DRAFT = {"draft.json": b'{"items": []}'}
+
+
+def test_a_file_a_reader_leaves_stops_the_run_before_any_analyst_is_asked(
+        tmp_path, monkeypatch, nvda_bundle):
+    from evals.regression import mechanical
+    run, asked, manifest, stopped = _run_leaving(tmp_path, monkeypatch, nvda_bundle,
+                                                 {"notes-text-reader": DRAFT})
+    assert isinstance(stopped, agent_inputs.AgentInputError), stopped
+    assert "after numbers-reader, notes-text-reader returned" in str(stopped)
+    assert "notes-text-reader: holds draft.json" in manifest["stopped_on"]
+    assert sorted(asked) == ["notes-text-reader", "numbers-reader"]
+    assert agent_inputs.ANALYSED_KEY not in manifest
+    assert "agents/notes-text-reader/draft.json: not a file the notes-text-reader layer sees" \
+        in mechanical.check_layers_hold(run).failures
+
+
+def _night(run, monkeypatch, *, fake: dict | None = None, **keyword):
+    """One more invocation over the run on disk, every agent writing as the stub
+    writes (`fake`, what `_fake_ask` takes): the directories asked, in order, and
+    the manifest the run finished with or the error it stopped on."""
+    asked: list[str] = []
+    answer = _fake_ask({}, **(fake or {}))
+
+    def ask(directory, **kw):
+        asked.append(directory.name)
+        return answer(directory, **kw)
+
+    monkeypatch.setattr(run_analysis, "ask", ask)
+    try:
+        return asked, run_analysis.run_company(run=run, **_run_keyword(), **keyword), None
+    except (agent_inputs.AgentInputError, run_analysis.RunError) as exc:
+        return asked, None, exc
+
+
+@pytest.mark.parametrize("left_by, clean", [("notes-text-reader", "numbers-reader"),
+                                            ("accounting-analyst", "financial-analyst")])
+def test_a_boundary_stop_after_two_agents_puts_the_one_that_left_nothing_on_record(
+        tmp_path, monkeypatch, nvda_bundle, left_by, clean):
+    """One of two agents called side by side leaves a file in its directory, and
+    the run stops when both return. The other's output is gated into the run
+    root first, so it is on record: while the file stands no agent is called at
+    all, by default or under --resume, and once it is removed by hand the resume
+    calls the agent that left it and what comes after, never the other. Nothing
+    of the stage was on record before: each night the file stood called the
+    clean reader or analyst again, a paid call, and once more after it was
+    removed (the critic's probe, 2026-10-08: three numbers-reader calls, four
+    financial-analyst calls). The other side, before and after: the agent that
+    left the file is not on record and is called again, and the run finishes
+    once the file is gone."""
+    from evals.common import PASS
+    from evals.regression import mechanical
+    run, asked, manifest, stopped = _run_leaving(tmp_path, monkeypatch, nvda_bundle,
+                                                 {left_by: DRAFT})
+    assert isinstance(stopped, agent_inputs.AgentInputError), stopped
+    assert f"{left_by}: holds draft.json" in manifest["stopped_on"]
+    assert not (run / run_analysis.OUTPUT_ON_RECORD[left_by][0]).exists()
+    assert not run_analysis.on_record(run, left_by, manifest["agents"][left_by])
+    assert run_analysis.on_record(run, clean, manifest["agents"][clean])
+    for resume in (False, True):
+        called, _, error = _night(run, monkeypatch, resume=resume)
+        assert called == [] and isinstance(error, agent_inputs.AgentInputError), (resume, error)
+        assert str(error).startswith("the boundary is broken before this invocation called")
+        assert f"{left_by}: holds draft.json" in str(error)
+    (run / "agents" / left_by / "draft.json").unlink()
+    called, manifest, error = _night(run, monkeypatch)
+    assert error is None, error
+    assert manifest["analysis_failure"] is None and agent_inputs.ANALYSED_KEY in manifest
+    assert mechanical.check_layers_hold(run).status == PASS
+    attempts = {name: len(run_analysis.attempts_of(record))
+                for name, record in manifest["agents"].items()}
+    assert attempts[left_by] == 2
+    assert called[0] == left_by and clean not in called and attempts[clean] == 1
+    assert clean in manifest["resume_skipped"]
+
+
+def _one_unit_dropped(kind: str) -> dict:
+    """The stub analysis and one anomaly more, whose only evidence is an id no
+    report the analyst saw holds: the stub readers' reports hold one item,
+    earnings_quality_accruals_rising, and the gate drops an item citing any
+    other (`analysis_check.item_problem`)."""
+    payload = _analysis(kind, "earnings_quality_accruals_rising")
+    anomaly = payload["anomalies"][0]
+    payload["anomalies"].append(dict(anomaly, id=f"{anomaly['area']}_cited_from_no_report",
+                                     evidence=["an_item_no_report_holds"]))
+    return payload
+
+
+@pytest.mark.parametrize("analysis, gated", [("analysis_financial", "at the stop"),
+                                             ("analysis_accounting", "on the resume")])
+def test_the_count_of_an_analysis_gated_at_a_boundary_stop_reaches_the_finished_record(
+        tmp_path, monkeypatch, nvda_bundle, analysis, gated):
+    """The accounting analyst leaves a file; the financial analysis is gated into
+    the run root before the run stops (`put_on_record`), and the resume, once the
+    file is removed, never gates it again. How many items the gate dropped from
+    it is in the stopped manifest's `analysis_stages` and in the finished one.
+    put_on_record handed the gate no stages, so the finished record carried no
+    count for the analysis gated at the stop (the second lens, 2026-10-08). The
+    other side, before and after: the accounting analysis, gated on the resumed
+    night, is counted there. Each analysis carries one unit the gate drops, and
+    the count is stated here, not read from the gate: the stub alone drops
+    nothing, so the count read from the gate was zero, and a record_stage
+    writing zero passed."""
+    analyses = {"accounting_analysis": _one_unit_dropped("accounting"),
+                "financial_analysis": _one_unit_dropped("financial")}
+    # One: the planted anomaly of each analysis. Every other unit is the stub's,
+    # each citing a calculator path that names a number, the reader item the quote
+    # gate keeps or nothing, with the rules version's limits sentence, so it stands.
+    counted = {"dropped": 1}
+    run, _, stopped_manifest, stopped = _run_leaving(tmp_path, monkeypatch, nvda_bundle,
+                                                     {"accounting-analyst": DRAFT}, **analyses)
+    assert isinstance(stopped, agent_inputs.AgentInputError), stopped
+    if gated == "at the stop":
+        assert (stopped_manifest.get("analysis_stages") or {}).get(analysis) == counted
+    (run / "agents" / "accounting-analyst" / "draft.json").unlink()
+    called, manifest, error = _night(run, monkeypatch, fake=analyses)
+    assert error is None, error
+    assert "financial-analyst" not in called
+    written = json.loads((run / f"{analysis}.json").read_text(encoding="utf-8"))
+    assert [row["where"] for row in written["dropped_items"]] == ["anomalies[1]"]
+    assert manifest["analysis_stages"].get(analysis) == counted
+
+
+def test_no_agent_is_called_while_the_boundary_stands_broken(tmp_path, monkeypatch, nvda_bundle):
+    """A retired agent's directory made while the analysts ran sits in neither
+    analyst's directory: both are gated into the run root before the run stops.
+    While it stands, the next night calls no agent. The earlier runner called
+    both analysts again and stopped after them; with the analysts on record and
+    no check before the first call, the valuation analyst would be called, paid
+    for, and stopped on the same directory. Removed by hand, the resume calls
+    the two valuation passes and nothing before them. The other side, before
+    and after: the owner refuses the run while the directory stands and passes
+    the run that finishes once it is gone."""
+    from evals.common import PASS
+    from evals.regression import mechanical
+    retired = {"financial-analyst": lambda directory: (
+        directory.parent / "numbers-vs-market").mkdir()}
+    run, asked, manifest, stopped = _run_leaving(tmp_path, monkeypatch, nvda_bundle,
+                                                 then=retired)
+    assert isinstance(stopped, agent_inputs.AgentInputError), stopped
+    assert "agents/numbers-vs-market: no layer the grader knows" \
+        in mechanical.check_layers_hold(run).failures
+    assert all(run_analysis.on_record(run, name, manifest["agents"][name])
+               for name in ("accounting-analyst", "financial-analyst"))
+    called, _, error = _night(run, monkeypatch)
+    assert called == [] and isinstance(error, agent_inputs.AgentInputError), error
+    assert "numbers-vs-market: a retired agent's directory" in str(error)
+    (run / "agents" / "numbers-vs-market").rmdir()
+    called, manifest, error = _night(run, monkeypatch)
+    assert error is None, error
+    assert mechanical.check_layers_hold(run).status == PASS
+    assert called == ["valuation-analyst", "valuation-analyst-second-pass"]
+
+
+def test_a_file_the_valuation_analyst_leaves_stops_the_run_before_its_second_pass(
+        tmp_path, monkeypatch, nvda_bundle):
+    from evals.regression import mechanical
+    run, asked, manifest, stopped = _run_leaving(tmp_path, monkeypatch, nvda_bundle,
+                                                 {"valuation-analyst": DRAFT})
+    assert isinstance(stopped, agent_inputs.AgentInputError), stopped
+    assert str(stopped).startswith("the boundary is broken after valuation-analyst returned")
+    assert asked[-1] == "valuation-analyst" and "valuation-analyst-second-pass" not in asked
+    assert agent_inputs.ANALYSED_KEY not in manifest
+    assert "agents/valuation-analyst/draft.json: not a file the valuation-analyst layer sees" \
+        in mechanical.check_layers_hold(run).failures
+
+
+def test_a_file_the_control_leaves_stops_the_run_before_its_files_are_gated(
+        tmp_path, monkeypatch, nvda_bundle):
+    from evals.regression import mechanical
+    control = run_analysis.CONTROL_DIRNAME
+    run, asked, manifest, stopped = _run_leaving(tmp_path, monkeypatch, nvda_bundle,
+                                                 {control: DRAFT}, control="always")
+    assert isinstance(stopped, agent_inputs.AgentInputError), stopped
+    assert str(stopped).startswith("the boundary is broken after the control returned")
+    assert asked[-1] == control
+    assert not any((run / name).exists() for name in run_analysis.CONTROL_WRITES)
+    assert agent_inputs.ANALYSED_KEY not in manifest
+    assert f"{control}/draft.json: not a file the {control} layer sees" \
+        in mechanical.check_layers_hold(run).failures
+
+
+def test_a_stray_word_the_run_s_memo_contradicts_stops_the_run_before_it_is_finished(
+        tmp_path, monkeypatch, nvda_bundle):
+    """One word under the name `memo_ko.md`, left by the notes reader: the owner
+    passes it while the run has no memo, so every check after an agent returned
+    passes it too, and refuses it once the memo is written ("not the run's
+    memo_ko.md"). The check before the run is recorded as finished meets it."""
+    from evals.regression import mechanical
+    run, asked, manifest, stopped = _run_leaving(
+        tmp_path, monkeypatch, nvda_bundle,
+        {"notes-text-reader": {"memo_ko.md": b"placeholder"}})
+    assert isinstance(stopped, agent_inputs.AgentInputError), stopped
+    assert str(stopped).startswith(
+        "the boundary is broken before the run was recorded as finished")
+    assert "valuation-analyst-second-pass" in asked and (run / "memo_ko.md").is_file()
+    assert agent_inputs.ANALYSED_KEY not in manifest
+    assert "agents/notes-text-reader/memo_ko.md: not the run's memo_ko.md" \
+        in mechanical.check_inputs_on_record(run).failures
+
+
+LATE_ADJUSTMENT = {"direction": "reduce", "applies_to": "cash_flow",
+                   "calculator_field": "terms.trailing_four_quarters.revenue",
+                   "quote": "59.63738684902464", "quote_from": "report_numbers.md"}
+
+
+@pytest.mark.parametrize("name, stops", [("2027-06-30", True), ("deferred revenue", False)])
+def test_a_calculator_stage_carrying_a_date_after_the_cutoff_stops_the_run(
+        tmp_path, monkeypatch, nvda_bundle, name, stops):
+    """AAPL's accounting analyst could name an adjustment "2027-06-30": the
+    analysis gate keeps the name (a date is a name it allows), the calculator
+    copies it into the quality-adjusted free cash flow, and the owner's
+    nothing_after_cutoff reads every string of every calculator file. Here the
+    NVDA analyst names it, quoting the numbers reader's kept item: the run stops
+    before calculator_before_drivers.json is written. A name that is no date
+    publishes."""
+    from evals.common import PASS
+    from evals.regression import mechanical
+    analysis = _analysis("accounting", "earnings_quality_accruals_rising")
+    analysis["adjustments"] = [dict(LATE_ADJUSTMENT, name=name)]
+    run, asked, manifest, stopped = _run_leaving(tmp_path, monkeypatch, nvda_bundle,
+                                                 accounting_analysis=analysis)
+    if not stops:
+        assert stopped is None, stopped
+        assert mechanical.check_nothing_after_cutoff(run).status == PASS
+        return
+    assert isinstance(stopped, run_analysis.calculator.CalculatorInputError), stopped
+    assert str(stopped).startswith(
+        "calculator_before_drivers.json would carry what the cutoff and the finite-number "
+        "rule refuse (1): free_cash_flow.free_cash_flow_quality_adjusted."
+        "adjustments_applied[0].name = 2027-06-30 is after the cutoff 2026-08-26")
+    assert not (run / "calculator_before_drivers.json").exists()
+    assert "valuation-analyst" not in asked and agent_inputs.ANALYSED_KEY not in manifest
+
+
+def test_with_the_calculator_check_taken_out_the_late_date_is_published_and_refused(
+        tmp_path, monkeypatch, nvda_bundle):
+    """The other side of the test above: the same run, with the runner's check
+    of each calculator stage taken out, finishes and publishes the date, and the
+    owner's nothing_after_cutoff refuses the run."""
+    from evals.regression import mechanical
+    monkeypatch.setattr(run_analysis, "calculator_problems", lambda payload, cutoff: [])
+    analysis = _analysis("accounting", "earnings_quality_accruals_rising")
+    analysis["adjustments"] = [dict(LATE_ADJUSTMENT, name="2027-06-30")]
+    run, _, manifest, stopped = _run_leaving(tmp_path, monkeypatch, nvda_bundle,
+                                             accounting_analysis=analysis)
+    assert stopped is None and manifest.get(agent_inputs.ANALYSED_KEY)
+    assert "calculator_before_drivers.json: free_cash_flow.free_cash_flow_quality_adjusted." \
+        "adjustments_applied[0].name = 2027-06-30" \
+        in mechanical.check_nothing_after_cutoff(run).failures
+
+
+def test_a_memo_line_carrying_a_ruled_out_word_stops_the_run_before_it_is_finished(
+        tmp_path, monkeypatch, nvda_bundle):
+    """The analysis gate holds every word an analyst writes that the memo prints,
+    so what is held here is the memo itself, whatever it comes to print: a line
+    the memo composes with "매수 추천" in it stops the run once the memo is
+    written, and the owner's forbidden_words refuses the memo left on disk."""
+    from evals.regression import coverage
+    composed = run_analysis.memo.memo
+
+    def memo_with_a_line(**keyword):
+        return composed(**keyword) + "- 매수 추천\n"
+
+    monkeypatch.setattr(run_analysis.memo, "memo", memo_with_a_line)
+    run, asked, manifest, stopped = _run_leaving(tmp_path, monkeypatch, nvda_bundle)
+    assert isinstance(stopped, run_analysis.analysis_check.AnalysisInputError), stopped
+    lines = (run / "memo_ko.md").read_text(encoding="utf-8").splitlines()
+    assert str(stopped) == f"memo_ko.md:{len(lines)} carries a ruled-out word ('매수 추천')"
+    assert "valuation-analyst-second-pass" in asked
+    assert agent_inputs.ANALYSED_KEY not in manifest
+    assert f"memo_ko.md:{len(lines)}: 매수 추천" in coverage.check_forbidden_words(run).failures

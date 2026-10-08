@@ -617,6 +617,18 @@ def test_a_field_path_may_index_a_list():
     assert calculator.field_value({"a": {"b": [{"c": 1.5}]}}, "a.b.3.c") is None
 
 
+@pytest.mark.parametrize("part, value", [
+    ("0", 1.5), ("3", 4.5), ("4", None), ("²", None), ("①", None), ("٣", None)],
+    ids=["zero", "three", "past_the_end", "superscript_two", "circled_one", "arabic_indic_three"])
+def test_a_field_path_indexes_a_list_by_ascii_digits_alone(part, value):
+    """'²' and '①' are digits to `str.isdigit` and not to `int`, which raised
+    ValueError; '٣' is a digit to both and read the fourth element. Each now
+    names nothing. The other side, before and after: ASCII digits name their
+    element, and an index past the end names nothing."""
+    tree = {"a": {"b": [{"c": 1.5}, {"c": 2.5}, {"c": 3.5}, {"c": 4.5}]}}
+    assert calculator.field_value(tree, f"a.b.{part}.c") == value
+
+
 def test_the_filings_only_view_carries_no_price(nvda):
     """The accounting and financial analysts never see a price (CLAUDE.md)."""
     priced = dict(nvda, market={"price": {"value": 170.0}, "beta": {"value": 1.9}})
