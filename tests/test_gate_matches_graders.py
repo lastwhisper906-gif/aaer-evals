@@ -563,7 +563,9 @@ def test_a_block_that_is_not_there_is_dropped_whole_and_accounted_for():
 
 # --- what an agent left in its directory --------------------------------------------------
 
-def test_a_stray_file_in_an_agent_s_directory_stops_the_run(tmp_path):
+def test_a_stray_file_in_an_agent_s_directory_is_named_at_the_boundary(tmp_path):
+    """The check the runner calls after each agent returns; the runner's own stop
+    is held in tests/test_run_analysis.py, by running it."""
     run = _run(tmp_path)
     _write(run / "agents" / "financial-analyst" / "draft.json", '{"items": []}')
     layers = mechanical.check_layers_hold(run)
@@ -613,7 +615,8 @@ def test_the_control_s_directory_is_held_at_the_boundary(tmp_path, damage, owner
     """The owner's layers_hold and inputs_on_record walk the control's directory
     beside the agents', and the router's boundary check does not: a stray file
     the control left, or a copy that is not the run's, stopped no run. The
-    boundary the runner checks after the control returns now holds it."""
+    boundary the runner checks after the control returns now holds it (the
+    runner's stop: tests/test_run_analysis.py, by running it)."""
     assert run_analysis.CONTROL_DIRNAME == mechanical.CONTROL_DIR
     run = _control_run(tmp_path)
     for grader in (mechanical.check_layers_hold, mechanical.check_inputs_on_record):
@@ -814,7 +817,7 @@ def test_the_inputs_rows_and_id_less_lines_are_held_at_the_bundle(tmp_path, name
 
 # --- the calculator ---------------------------------------------------------------------------
 
-def test_a_date_after_the_cutoff_in_a_calculator_stage_stops_the_run():
+def test_a_date_after_the_cutoff_in_a_calculator_stage_is_named():
     """AAPL's accounting analyst could name an adjustment '2027-06-30': the
     calculator copies the name into the quality-adjusted free cash flow, and the
     owner's nothing_after_cutoff reads every string of every calculator file."""
@@ -828,7 +831,7 @@ def test_a_date_after_the_cutoff_in_a_calculator_stage_stops_the_run():
                                             "2026-07-31") == []
 
 
-def test_a_number_that_is_not_finite_stops_the_run(tmp_path):
+def test_a_number_that_is_not_finite_is_named(tmp_path):
     payload = {"valuation": {"scenarios": {"bull": {"value_per_share": math.nan,
                                                     "enterprise_value": {"value": math.inf}}}},
                "flag": {"value": True}}

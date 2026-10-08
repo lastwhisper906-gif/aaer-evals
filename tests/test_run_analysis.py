@@ -2790,3 +2790,145 @@ def test_a_retired_agent_s_directory_made_during_a_call_stops_the_run(
     assert "valuation-analyst" not in asked and agent_inputs.ANALYSED_KEY not in manifest
     assert "agents/numbers-vs-market: no layer the grader knows" \
         in mechanical.check_layers_hold(run).failures
+
+
+# Each stop below is pinned to the call that makes it: the place the run stopped is
+# asserted, so a runner that no longer called the check there stops later, or not
+# at all, and the test fails. What the run leaves on disk is held to the owner's
+# grader that answers for it, which refuses it.
+
+DRAFT = {"draft.json": b'{"items": []}'}
+
+
+def test_a_file_a_reader_leaves_stops_the_run_before_any_analyst_is_asked(
+        tmp_path, monkeypatch, nvda_bundle):
+    from evals.regression import mechanical
+    run, asked, manifest, stopped = _run_leaving(tmp_path, monkeypatch, nvda_bundle,
+                                                 {"notes-text-reader": DRAFT})
+    assert isinstance(stopped, agent_inputs.AgentInputError), stopped
+    assert "after numbers-reader, notes-text-reader returned" in str(stopped)
+    assert "notes-text-reader: holds draft.json" in manifest["stopped_on"]
+    assert sorted(asked) == ["notes-text-reader", "numbers-reader"]
+    assert agent_inputs.ANALYSED_KEY not in manifest
+    assert "agents/notes-text-reader/draft.json: not a file the notes-text-reader layer sees" \
+        in mechanical.check_layers_hold(run).failures
+
+
+def test_a_file_the_valuation_analyst_leaves_stops_the_run_before_its_second_pass(
+        tmp_path, monkeypatch, nvda_bundle):
+    from evals.regression import mechanical
+    run, asked, manifest, stopped = _run_leaving(tmp_path, monkeypatch, nvda_bundle,
+                                                 {"valuation-analyst": DRAFT})
+    assert isinstance(stopped, agent_inputs.AgentInputError), stopped
+    assert str(stopped).startswith("the boundary is broken after valuation-analyst returned")
+    assert asked[-1] == "valuation-analyst" and "valuation-analyst-second-pass" not in asked
+    assert agent_inputs.ANALYSED_KEY not in manifest
+    assert "agents/valuation-analyst/draft.json: not a file the valuation-analyst layer sees" \
+        in mechanical.check_layers_hold(run).failures
+
+
+def test_a_file_the_control_leaves_stops_the_run_before_its_files_are_gated(
+        tmp_path, monkeypatch, nvda_bundle):
+    from evals.regression import mechanical
+    control = run_analysis.CONTROL_DIRNAME
+    run, asked, manifest, stopped = _run_leaving(tmp_path, monkeypatch, nvda_bundle,
+                                                 {control: DRAFT}, control="always")
+    assert isinstance(stopped, agent_inputs.AgentInputError), stopped
+    assert str(stopped).startswith("the boundary is broken after the control returned")
+    assert asked[-1] == control
+    assert not any((run / name).exists() for name in run_analysis.CONTROL_WRITES)
+    assert agent_inputs.ANALYSED_KEY not in manifest
+    assert f"{control}/draft.json: not a file the {control} layer sees" \
+        in mechanical.check_layers_hold(run).failures
+
+
+def test_a_stray_word_the_run_s_memo_contradicts_stops_the_run_before_it_is_finished(
+        tmp_path, monkeypatch, nvda_bundle):
+    """One word under the name `memo_ko.md`, left by the notes reader: the owner
+    passes it while the run has no memo, so every check after an agent returned
+    passes it too, and refuses it once the memo is written ("not the run's
+    memo_ko.md"). The check before the run is recorded as finished meets it."""
+    from evals.regression import mechanical
+    run, asked, manifest, stopped = _run_leaving(
+        tmp_path, monkeypatch, nvda_bundle,
+        {"notes-text-reader": {"memo_ko.md": b"placeholder"}})
+    assert isinstance(stopped, agent_inputs.AgentInputError), stopped
+    assert str(stopped).startswith(
+        "the boundary is broken before the run was recorded as finished")
+    assert "valuation-analyst-second-pass" in asked and (run / "memo_ko.md").is_file()
+    assert agent_inputs.ANALYSED_KEY not in manifest
+    assert "agents/notes-text-reader/memo_ko.md: not the run's memo_ko.md" \
+        in mechanical.check_inputs_on_record(run).failures
+
+
+LATE_ADJUSTMENT = {"direction": "reduce", "applies_to": "cash_flow",
+                   "calculator_field": "terms.trailing_four_quarters.revenue",
+                   "quote": "59.63738684902464", "quote_from": "report_numbers.md"}
+
+
+@pytest.mark.parametrize("name, stops", [("2027-06-30", True), ("deferred revenue", False)])
+def test_a_calculator_stage_carrying_a_date_after_the_cutoff_stops_the_run(
+        tmp_path, monkeypatch, nvda_bundle, name, stops):
+    """AAPL's accounting analyst could name an adjustment "2027-06-30": the
+    analysis gate keeps the name (a date is a name it allows), the calculator
+    copies it into the quality-adjusted free cash flow, and the owner's
+    nothing_after_cutoff reads every string of every calculator file. Here the
+    NVDA analyst names it, quoting the numbers reader's kept item: the run stops
+    before calculator_before_drivers.json is written. A name that is no date
+    publishes."""
+    from evals.common import PASS
+    from evals.regression import mechanical
+    analysis = _analysis("accounting", "earnings_quality_accruals_rising")
+    analysis["adjustments"] = [dict(LATE_ADJUSTMENT, name=name)]
+    run, asked, manifest, stopped = _run_leaving(tmp_path, monkeypatch, nvda_bundle,
+                                                 accounting_analysis=analysis)
+    if not stops:
+        assert stopped is None, stopped
+        assert mechanical.check_nothing_after_cutoff(run).status == PASS
+        return
+    assert isinstance(stopped, run_analysis.calculator.CalculatorInputError), stopped
+    assert str(stopped).startswith(
+        "calculator_before_drivers.json would carry what the cutoff and the finite-number "
+        "rule refuse (1): free_cash_flow.free_cash_flow_quality_adjusted."
+        "adjustments_applied[0].name = 2027-06-30 is after the cutoff 2026-08-26")
+    assert not (run / "calculator_before_drivers.json").exists()
+    assert "valuation-analyst" not in asked and agent_inputs.ANALYSED_KEY not in manifest
+
+
+def test_with_the_calculator_check_taken_out_the_late_date_is_published_and_refused(
+        tmp_path, monkeypatch, nvda_bundle):
+    """The other side of the test above: the same run, with the runner's check
+    of each calculator stage taken out, finishes and publishes the date, and the
+    owner's nothing_after_cutoff refuses the run."""
+    from evals.regression import mechanical
+    monkeypatch.setattr(run_analysis, "calculator_problems", lambda payload, cutoff: [])
+    analysis = _analysis("accounting", "earnings_quality_accruals_rising")
+    analysis["adjustments"] = [dict(LATE_ADJUSTMENT, name="2027-06-30")]
+    run, _, manifest, stopped = _run_leaving(tmp_path, monkeypatch, nvda_bundle,
+                                             accounting_analysis=analysis)
+    assert stopped is None and manifest.get(agent_inputs.ANALYSED_KEY)
+    assert "calculator_before_drivers.json: free_cash_flow.free_cash_flow_quality_adjusted." \
+        "adjustments_applied[0].name = 2027-06-30" \
+        in mechanical.check_nothing_after_cutoff(run).failures
+
+
+def test_a_memo_line_carrying_a_ruled_out_word_stops_the_run_before_it_is_finished(
+        tmp_path, monkeypatch, nvda_bundle):
+    """The analysis gate holds every word an analyst writes that the memo prints,
+    so what is held here is the memo itself, whatever it comes to print: a line
+    the memo composes with "매수 추천" in it stops the run once the memo is
+    written, and the owner's forbidden_words refuses the memo left on disk."""
+    from evals.regression import coverage
+    composed = run_analysis.memo.memo
+
+    def memo_with_a_line(**keyword):
+        return composed(**keyword) + "- 매수 추천\n"
+
+    monkeypatch.setattr(run_analysis.memo, "memo", memo_with_a_line)
+    run, asked, manifest, stopped = _run_leaving(tmp_path, monkeypatch, nvda_bundle)
+    assert isinstance(stopped, run_analysis.analysis_check.AnalysisInputError), stopped
+    lines = (run / "memo_ko.md").read_text(encoding="utf-8").splitlines()
+    assert str(stopped) == f"memo_ko.md:{len(lines)} carries a ruled-out word ('매수 추천')"
+    assert "valuation-analyst-second-pass" in asked
+    assert agent_inputs.ANALYSED_KEY not in manifest
+    assert f"memo_ko.md:{len(lines)}: 매수 추천" in coverage.check_forbidden_words(run).failures
