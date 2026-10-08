@@ -535,8 +535,8 @@ def main(argv: list[str] | None = None) -> int:
     fetcher = fetch_fixtures.Fetcher(
         os.environ.get("EDGAR_USER_AGENT", fetch_fixtures.DEFAULT_USER_AGENT))
     if args.command == "counts":
-        twelve = {int(row["cik"]) for row in universe.rows()}
-        print(json.dumps({"every_filer": counts(root), "the_twelve": counts(root, twelve)},
+        ours = {int(row["cik"]) for row in universe.rows()}
+        print(json.dumps({"every_filer": counts(root), "the_universe": counts(root, ours)},
                          indent=2))
         return 0
     if args.command == "daily":

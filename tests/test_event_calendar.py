@@ -273,6 +273,20 @@ def test_counts_over_every_filer_and_over_the_named_ones(tmp_path):
     assert calendar.counts(tmp_path, {320193})["non_reliance"] == 0
 
 
+def test_the_counts_command_counts_every_filer_and_the_universe_s(tmp_path, capsys):
+    # Apple (CIK 320193) is a row of universe.json; CIK 1 is no one's.
+    calendar.append(tmp_path, [
+        calendar.line_for("auditor_change", cik=320193, accession="a", form="8-K",
+                          filed="2009-02-27", items="4.01", source="submissions"),
+        calendar.line_for("auditor_change", cik=1, accession="b", form="8-K",
+                          filed="2010-02-27", items="4.01", source="submissions")])
+    assert calendar.main(["counts", "--root", str(tmp_path)]) == 0
+    printed = json.loads(capsys.readouterr().out)
+    assert sorted(printed) == ["every_filer", "the_universe"]
+    assert (printed["every_filer"]["auditor_change"],
+            printed["the_universe"]["auditor_change"]) == (2, 1)
+
+
 # -- enforcement releases ----------------------------------------------------------
 
 LIST_PAGE = """<table><thead><tr><th>Date</th><th>Respondents</th></tr></thead><tbody>
@@ -368,6 +382,18 @@ def test_a_quarterly_line_that_names_no_day_stands_for_the_week_before_it_was_re
     (tmp_path / calendar.SOURCES).write_text(json.dumps(
         {"source": "full_index", "at": "2026-09-28T21:00:00Z"}) + "\n")
     assert calendar.read_through(tmp_path) == dt.date(2026, 9, 21)
+
+
+def test_a_daily_line_that_names_no_day_stands_for_none_whenever_it_was_written(tmp_path):
+    # A daily index not served (a holiday, a refusal) leaves a line with no
+    # `through`. Written ten days after the last day read, it would stand, as a
+    # quarterly line does, for 2026-10-01, past days nobody read.
+    (tmp_path / calendar.SOURCES).write_text(
+        json.dumps({"source": "full_index", "through": "2026-09-24",
+                    "at": "2026-09-28T21:00:00Z"}) + "\n"
+        + json.dumps({"source": "daily_index", "day": "2026-09-28",
+                      "unread": "OSError: the index", "at": "2026-10-08T21:00:00Z"}) + "\n")
+    assert calendar.read_through(tmp_path) == dt.date(2026, 9, 24)
 
 
 def test_daily_reads_each_business_day_after_the_last_one_read(tmp_path):
