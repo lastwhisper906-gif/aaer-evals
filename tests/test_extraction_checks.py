@@ -56,6 +56,25 @@ def test_a_ten_k_bundle_passes_too(tmp_path):
     assert code == 0, "\n".join(lines)
 
 
+@pytest.mark.parametrize("ticker", TICKERS)
+def test_the_cutoff_gate_reads_every_real_bundle_as_the_owner_does(ticker, tmp_path):
+    """The cutoff gate holds a bundle's documents, the cutoff day's order, and
+    every dated row and id-less line of its inputs, as the owner's
+    `nothing_after_cutoff` (`evals/regression/mechanical.py`, imported read-only)
+    holds the run built from it: on every committed bundle both pass, and the
+    gate says it read the inputs. Failing shapes are in
+    tests/test_gate_matches_graders.py."""
+    from evals.common import PASS
+    from evals.regression import mechanical
+    bundle = good_bundle(tmp_path, ticker)
+    _, lines = extraction_checks.run(bundle)
+    cutoff = gate_lines(lines, "cutoff")
+    assert len(cutoff) == 1 and cutoff[0].startswith("cutoff: pass — "), cutoff
+    assert "every dated row and id-less line of the inputs" in cutoff[0]
+    owner = mechanical.check_nothing_after_cutoff(bundle)
+    assert owner.status == PASS, owner.failures
+
+
 # --- (b) the command ---------------------------------------------------------
 
 def test_the_command_prints_one_line_per_gate(tmp_path, capsys):

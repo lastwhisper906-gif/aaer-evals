@@ -261,6 +261,97 @@ def test_a_scenario_the_calculator_does_not_run_is_removed(tmp_path):
     assert mechanical.check_quotes_resolve(run).status == PASS
 
 
+def test_a_quote_on_a_block_or_on_the_analysis_itself_is_held_and_the_block_stays(tmp_path):
+    """The owner's `quoted` yields every object carrying a quote, the analysis
+    itself and a block of areas too. A quote written on `areas` beside its
+    entries goes and the eight areas stay answered (the gate used to remove the
+    whole block); one written on the analysis object goes."""
+    run = _run(tmp_path)
+    payload = accounting()
+    payload["areas"]["quote"] = "words the reports never printed"
+    payload["areas"]["quote_from"] = "report_numbers.md"
+    payload["quote"] = "another invented sentence nobody wrote"
+    payload["quote_from"] = "report_numbers.md"
+    raw, gated, out = _both(run, payload, mechanical.check_quotes_resolve)
+    assert sorted(raw.failures) == [
+        "analysis_accounting.json:: in no one paragraph, value or report item it was handed",
+        "analysis_accounting.json:areas: in no one paragraph, value or report item it was "
+        "handed"]
+    assert gated.status == PASS
+    assert "quote" not in out and "quote" not in out["areas"]
+    assert coverage.check_accounting_areas(run).status == PASS
+    assert all(coverage.answered(out["areas"][name]) == "answered"
+               for name in coverage.ACCOUNTING_AREAS)
+
+
+@pytest.mark.parametrize("nested, grader, owner_says", [
+    ([{"reason": "the antifraud review"}], coverage.check_forbidden_words, "fraud"),
+    ([{"reason": "rose to {ratios.liquidity.no_such_ratio}"}],
+     mechanical.check_cited_numbers_exist, "ratios.liquidity.no_such_ratio"),
+    ([{"overall_rank": "first"}], coverage.check_no_combined_score, "overall_rank")])
+def test_a_dropped_items_key_below_the_top_is_the_analyst_s_words(tmp_path, nested, grader,
+                                                                  owner_says):
+    """Only the top-level `dropped_items` is the gate's own record, and the owner
+    leaves only that one out of forbidden_words, cited_numbers_exist and
+    no_combined_score: one an analyst writes inside an item is read like any
+    other key. The gate used to pass over it at every depth."""
+    run = _run(tmp_path)
+    payload = accounting()
+    payload["anomalies"][0]["dropped_items"] = nested
+    raw, gated, out = _both(run, payload, grader)
+    assert raw.status != PASS and any(owner_says in line for line in raw.failures)
+    assert out["anomalies"] == [] and gated.status == PASS
+
+
+def test_a_dropped_items_key_below_the_top_is_not_held_as_a_quote_or_a_citation(tmp_path):
+    """The other side: the owner's `quoted` and cited_items_exist pass over a
+    `dropped_items` at any depth, so a quote or an id written there is no
+    departure, and the gate keeps the item that carries it."""
+    run = _run(tmp_path)
+    payload = accounting()
+    payload["anomalies"][0]["dropped_items"] = [{"id": "no_such_item", "quote": "never printed",
+                                                 "quote_from": "report_numbers.md"}]
+    _publish(run, "analysis_accounting.json", payload)
+    for grader in (mechanical.check_quotes_resolve, mechanical.check_cited_items_exist):
+        assert grader(run).status == PASS, grader
+    out = _gate(run, payload)
+    assert [item["id"] for item in out["anomalies"]] == [ANOMALY_ID]
+
+
+@pytest.mark.parametrize("key, value, owner_says", [
+    ("line_items", ["no_such_item"], "analysis_accounting.json:line_items: no_such_item"),
+    ("evidence", None, "analysis_accounting.json:evidence: evidence is not a list")])
+def test_a_citation_key_at_the_top_of_the_analysis_is_held(tmp_path, key, value, owner_says):
+    run = _run(tmp_path)
+    payload = accounting()
+    payload[key] = value
+    raw, gated, out = _both(run, payload, mechanical.check_cited_items_exist)
+    assert raw.failures == [owner_says]
+    assert key not in out and gated.status == PASS
+
+
+def test_what_the_assumptions_publish_as_written_is_held(tmp_path):
+    """The assumptions gate overwrites only its drop list and count; a `limits`
+    or `normalized_quotes` the valuation analyst writes is published as written
+    and read by the owner (recommendation words, placeholders), so it is held."""
+    run, sources, filing = _valuation_run(tmp_path)
+    good = {"reason": "a reason", "quote": SALES[:40], "quote_from": "input_8k.md"}
+    written = _scenarios(good)
+    written["limits"] = "Investors should buy on weakness."
+    written["normalized_quotes"] = ["see {nothing.here}"]
+    _publish(run, "assumptions.json", written)
+    assert coverage.check_forbidden_words(run).failures == ["assumptions.json:limits: buy"]
+    assert mechanical.check_cited_numbers_exist(run).failures == [
+        "assumptions.json:normalized_quotes[0]:nothing.here"]
+    out = analysis_check.check_assumptions(written, fields=FIELDS, sources=sources,
+                                           filing=filing)
+    _publish(run, "assumptions.json", out)
+    assert "limits" not in out and out["normalized_quotes"] == []
+    assert set(out["scenarios"]) == {"bear", "base", "bull"}
+    assert coverage.check_forbidden_words(run).status == PASS
+    assert mechanical.check_cited_numbers_exist(run).status == PASS
+
+
 # --- cited_items_exist ----------------------------------------------------------------
 
 @pytest.mark.parametrize("key, value, owner_says", [
@@ -307,6 +398,14 @@ def test_the_gate_holds_the_owner_s_patterns():
     assert agent_inputs.MARKET_FIGURE.pattern == mechanical.MARKET_FIGURE.pattern
     assert agent_inputs.MARKET_FIGURE.flags == mechanical.MARKET_FIGURE.flags
     assert extraction_checks.STAMP.pattern == mechanical.STAMP.pattern
+    assert extraction_checks.ACCESSION.pattern == mechanical.ACCESSION.pattern
+    assert extraction_checks.ROW_DATE_KEYS == mechanical.ROW_DATE_KEYS
+    assert extraction_checks.ANY_DATE.pattern == mechanical.ANY_DATE.pattern
+    assert extraction_checks.ACCESSION_ANYWHERE.pattern == mechanical.ACCESSION_ANYWHERE.pattern
+    # the one reading of an [id] line the trim, the boundary check and the quote
+    # gate share, and the owner's
+    assert agent_inputs.ID_LINE.pattern == mechanical.ID_LINE.pattern
+    assert agent_inputs.ID_LINE.flags == mechanical.ID_LINE.flags
 
 
 @pytest.mark.parametrize("words", ["The antifraud program is described unchanged.",
@@ -404,6 +503,22 @@ def test_every_section_dupont_and_the_value_range_is_answered_or_dropped():
     assert coverage.answered(out["value_range"]) == "dropped"
 
 
+def test_a_block_that_is_not_there_is_dropped_whole_and_accounted_for():
+    """What the owner reads as absent when a block is missing or is not an
+    object -- every area or section of it -- is answered with the gate's note."""
+    dropped: list = []
+    financial = {"sections": "liquid", "anomalies": []}
+    analysis_check.unanswered(financial, "financial", dropped)
+    for name in coverage.FINANCIAL_SECTIONS:
+        assert coverage.answered(financial["sections"][name]) == "dropped", name
+    assert coverage.answered(financial["dupont"]) == "dropped"
+    accounting_only = {}
+    analysis_check.unanswered(accounting_only, "accounting", dropped)
+    assert all(coverage.answered(accounting_only["areas"][name]) == "dropped"
+               for name in coverage.ACCOUNTING_AREAS)
+    assert {row["reason"] for row in dropped} == {"nothing stood for it"}
+
+
 # --- what an agent left in its directory --------------------------------------------------
 
 def test_a_stray_file_in_an_agent_s_directory_stops_the_run(tmp_path):
@@ -476,6 +591,39 @@ def test_a_same_day_filing_is_held_to_the_owner_s_order(tmp_path, eight_k, stand
     owner = mechanical.check_nothing_after_cutoff(run)
     assert (owner.status == PASS) is stands, owner.failures
     assert extraction_checks.check_cutoff(manifest).passed is stands
+
+
+FOREIGN = "0001193125-26-040699"      # another filer agent's prefix, no stamp
+
+
+@pytest.mark.parametrize("name, text, stands", [
+    ("input_numbers.json", {"facts": [{"source_accession": FOREIGN, "filing_date": "2026-06-04",
+                                       "value": "1"}]}, False),
+    ("input_numbers.json", {"facts": [{"source_accession": "0001628280-26-040500",
+                                       "filing_date": "2026-06-04", "value": "1"}]}, True),
+    ("input_trends.json", {"years": [{"filed": "2026-06-05", "value": 1}]}, False),
+    ("input_trends.json", {"years": [{"filed": "2026-06-03", "value": 1}]}, True),
+    ("input_8k.md", f"# CIEN 8-K\n\n- 2026-06-04 {FOREIGN} — 2.02, 9.01\n", False),
+    ("input_8k.md", "# CIEN 8-K\n\n- 2026-06-05 0001628280-26-040900 — 8.01\n", False),
+    ("input_8k.md", f"# CIEN 8-K\n\nsee {FOREIGN}\n", False),
+    ("input_8k.md", "# CIEN 8-K\n\n- 2026-06-03 0001628280-26-040500 — 8.01\n", True),
+    ("input_prior_predictions.md", "# prior predictions\n\n- the shares fell 5% after\n", False),
+    ("input_prior_predictions.md", "# prior predictions\n\nNone on record.\n", True)])
+def test_the_inputs_rows_and_id_less_lines_are_held_at_the_bundle(tmp_path, name, text, stands):
+    """The owner's nothing_after_cutoff reads the inputs as well as the documents:
+    a JSON row dated after the cutoff, or the cutoff day from a filing not shown
+    accepted first; an id-less prose line (the 8-K index when the release has no
+    paragraph) naming such a filing, a later date, or an accession no document
+    carries; a price or return in the prior predictions. The bundle's cutoff
+    gate held the documents alone; it now holds these too, the same way."""
+    manifest = _manifest({"accession": "0001628280-26-040614"})
+    run = tmp_path / "run"
+    _write(run / "input_manifest.json", json.dumps(manifest))
+    _write(run / name, text if isinstance(text, str) else json.dumps(text))
+    owner = mechanical.check_nothing_after_cutoff(run)
+    assert (owner.status == PASS) is stands, owner.failures
+    texts = {name: (run / name).read_text(encoding="utf-8")}
+    assert extraction_checks.check_cutoff(manifest, texts).passed is stands
 
 
 # --- the calculator ---------------------------------------------------------------------------

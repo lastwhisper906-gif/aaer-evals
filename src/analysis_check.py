@@ -375,10 +375,12 @@ def quote_problem(item: dict, sources: dict[str, str],
     nothing the filing printed. The reason still says "seam": that junction.
     """
     quote = item.get("quote")
-    if quote in (None, ""):
+    if quote is None or quote == "":
         return None
+    if not isinstance(quote, str):
+        return f"the quote is {type(quote).__name__}, not text"
     named = item.get("quote_from")
-    if named not in sources:
+    if not isinstance(named, str) or named not in sources:
         return f"quote_from {named!r} is not a file this analyst saw"
     if fold(quote) not in fold(sources[named]):
         return f"the quote does not string-match {named}"
@@ -694,35 +696,51 @@ def owner_problems(payload: dict, *, kind: str, fields: dict, sources: dict[str,
     found: list[tuple[tuple, str]] = []
     recommend_everywhere = kind in ("valuation", "assumptions")
 
-    def walk(node, path: tuple):
+    def held_quote(node: dict) -> str | None:
+        """Why a quote written on this object does not stand, or None."""
+        quote = node.get("quote")
+        if not isinstance(quote, str) or not quote.strip():
+            return None
+        why = quote_problem(node, sources, filing)
+        if why is None:
+            why = unit_problem({node["quote_from"]: sources[node["quote_from"]]}, quote, kept)
+        return why
+
+    def key_rules(key, value, here: tuple, cited: bool) -> None:
+        """What a key says by itself: one that scores or ranks, and one that
+        names reader items (an `evidence` that is not a list, any CITATION_KEY
+        naming an id that did not stand)."""
+        if SCORE_KEY.search(str(key).lower()):
+            found.append((here, f"{_where(here)}: a key that adds the frames together "
+                                "or ranks, which no analysis carries"))
+        if cited and citable is not None and key == "evidence":
+            if not isinstance(value, list):
+                found.append((here, f"{_where(here)}: evidence is not a list"))
+            else:
+                cite(value, here)
+        elif cited and citable is not None and CITATION_KEY.fullmatch(str(key)):
+            cite(value if isinstance(value, list) else [value], here)
+
+    def walk(node, path: tuple, cited: bool = True):
         where = _where(path)
         if isinstance(node, dict):
-            quote = node.get("quote")
-            if isinstance(quote, str) and quote.strip():
-                why = quote_problem(node, sources, filing)
-                named = node.get("quote_from")
-                if why is None:
-                    why = unit_problem({named: sources[named]}, quote, kept)
-                if why:
-                    found.append((path, f"{where or 'quote'}: {why}"))
+            why = held_quote(node) if cited else None
+            if why:
+                found.append((path, f"{where or 'quote'}: {why}"))
             for key, value in node.items():
-                if key == "dropped_items":
-                    continue
                 here = path + (key,)
-                if SCORE_KEY.search(str(key).lower()):
-                    found.append((here, f"{_where(here)}: a key that adds the frames together "
-                                        "or ranks, which no analysis carries"))
-                if citable is not None and key == "evidence":
-                    if not isinstance(value, list):
-                        found.append((here, f"{_where(here)}: evidence is not a list"))
-                    else:
-                        cite(value, here)
-                elif citable is not None and CITATION_KEY.fullmatch(str(key)):
-                    cite(value if isinstance(value, list) else [value], here)
-                walk(value, here)
+                # a `dropped_items` below the top is the analyst's, not the gate's,
+                # and the owner reads it as its graders do: its words, its
+                # placeholders and its keys like any other (forbidden_words,
+                # cited_numbers_exist and no_combined_score leave out only the top
+                # one), its quotes and its citations not at all (`quoted` and
+                # cited_items_exist pass over one at any depth)
+                inner = cited and key != "dropped_items"
+                key_rules(key, value, here, inner)
+                walk(value, here, inner)
         elif isinstance(node, list):
             for index, value in enumerate(node):
-                walk(value, path + (index,))
+                walk(value, path + (index,), cited)
         elif isinstance(node, str):
             text(node, path)
 
@@ -762,13 +780,25 @@ def owner_problems(payload: dict, *, kind: str, fields: dict, sources: dict[str,
                 found.append((path, f"{where}: a ruled-out word ({hit.group(0)!r})"))
                 return
 
+    # what the gate writes over once this walk is done, so it is never published as
+    # the analyst wrote it: the bookkeeping and the rules version's limits sentence
+    # in an analysis; only the drop list and its count in the assumptions, whose
+    # every other key is published as written and read by the owner
+    overwritten = (("dropped_items", "dropped_count") if kind == "assumptions"
+                   else BOOKKEEPING + ("limits",))
+    # the analysis object itself is held as any object in it is: a quote written
+    # on it (the owner's `quoted` yields the root too), and each top-level key
+    why = held_quote(payload)
+    if why:
+        found.append((("quote",), f"quote: {why}"))
     for key, value in payload.items():
-        if key in BOOKKEEPING or key == "limits":
+        if key in overwritten:
             continue
         if SCORE_KEY.search(str(key).lower()):
             found.append(((key,), f"{key}: a key that adds the frames together or ranks, "
                                   "which no analysis carries"))
             continue
+        key_rules(key, value, (key,), True)
         walk(value, (key,))
     return found
 
@@ -810,6 +840,11 @@ def drop_departures(payload: dict, problems: list[tuple[tuple, str]], dropped: l
                 block[name] = None
             else:
                 block[name] = {"dropped": why}
+        elif key in BLOCKS and isinstance(payload.get(key), dict):
+            # the one departure that sits on a block object itself is a quote
+            # written there, beside its entries: the quote goes, the entries stay
+            payload[key].pop("quote", None)
+            payload[key].pop("quote_from", None)
         elif key in SINGLE_ITEMS and not SCORE_KEY.search(key.lower()):
             payload[key] = {"dropped": why}
         else:
@@ -823,7 +858,8 @@ def unanswered(payload: dict, kind: str, dropped: list) -> None:
     """An area, a section, the DuPont reading or the value range that carries no
     words of its own -- no non-empty `finding` or `reading` -- answers nothing,
     and the owner reads it as absent (`coverage.answered`). It keeps its key and
-    says so."""
+    says so. So does one whose whole block is missing or is not an object, since
+    the owner reads every area of such a block as absent too."""
     def answered(entry) -> bool:
         if not isinstance(entry, dict):
             return False
@@ -833,17 +869,23 @@ def unanswered(payload: dict, kind: str, dropped: list) -> None:
                    for key in ("finding", "reading"))
 
     def hold(container: dict, name: str, where: str) -> None:
-        if name in container and not answered(container[name]):
-            why = "the analyst wrote no finding or reading for it"
+        if not answered(container.get(name)):
+            why = ("the analyst wrote no finding or reading for it" if name in container
+                   else "nothing stood for it")
             container[name] = {"dropped": why}
             dropped.append({"where": where, "reason": why})
 
+    def block(key: str) -> dict:
+        if not isinstance(payload.get(key), dict):
+            payload[key] = {}
+        return payload[key]
+
     if kind == "accounting":
         for name in ACCOUNTING_AREAS:
-            hold(payload.get("areas") or {}, name, f"areas.{name}")
+            hold(block("areas"), name, f"areas.{name}")
     elif kind == "financial":
         for name in FINANCIAL_SECTIONS:
-            hold(payload.get("sections") or {}, name, f"sections.{name}")
+            hold(block("sections"), name, f"sections.{name}")
         hold(payload, "dupont", "dupont")
     elif kind == "valuation":
         hold(payload, "value_range", "value_range")

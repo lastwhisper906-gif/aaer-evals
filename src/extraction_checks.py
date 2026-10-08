@@ -15,8 +15,10 @@ The four are the ones that decide whether a bundle may be handed to a model:
    runs weekly, in the form the pipeline runs every time. A count the record
    says is zero has to be zero: "±20% of nothing" is not a range.
 3. **Cutoff violations = 0** — every document in the manifest was filed at or
-   before the manifest's cutoff. Fail-closed: a document with no filing date, or
-   a manifest with no cutoff, is a violation and not a pass.
+   before the manifest's cutoff, one filed on the cutoff day is shown accepted
+   at or before the triggering report, and no dated row or id-less prose line
+   of the inputs reaches past either. Fail-closed: a document with no filing
+   date, or a manifest with no cutoff, is a violation and not a pass.
 4. **At least one TextBlock** — a bundle whose notes file has no note in it is
    an extraction failure. No filer has no notes.
 
@@ -34,10 +36,10 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 try:
-    from src import assemble_bundle, cutoff_guard, interpreter_pin
+    from src import agent_inputs, assemble_bundle, cutoff_guard, interpreter_pin
 except ImportError:  # invoked as a plain script
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from src import assemble_bundle, cutoff_guard, interpreter_pin
+    from src import agent_inputs, assemble_bundle, cutoff_guard, interpreter_pin
 
 FAILED = 1
 BAD_INPUT = 2
@@ -222,8 +224,128 @@ def accepted_before_trigger(document: dict, trigger: str, trigger_accepted) -> s
             "shows it was accepted before the triggering report")
 
 
-def check_cutoff(manifest: dict | None) -> Result:
-    """Fail-closed, the same rule as the loader: no date is a violation."""
+# What else the owner's `nothing_after_cutoff` reads in a bundle, beside its
+# documents (`evals/regression/mechanical.py`): every row of a JSON input dated by
+# one of these keys, and every line of a prose input with no `[id]` line -- the
+# 8-K index when the release has no paragraph, the prior predictions. Written out
+# here; `tests/test_gate_matches_graders.py` holds each copy equal to the owner's.
+ROW_DATE_KEYS = ("filed", "filing_date", "filed_at", "accepted", "date", "as_of")
+ANY_DATE = re.compile(r"\b(\d{4}-\d{2}-\d{2})\b")
+ACCESSION_ANYWHERE = re.compile(r"\b\d{10}-\d{2}-\d{6}\b")
+
+
+def _dated_rows(node, key: str):
+    """Every (value, row) where a dict `row` carries `key` as a string."""
+    if isinstance(node, dict):
+        for name, value in node.items():
+            if name == key and isinstance(value, str):
+                yield value, node
+            else:
+                yield from _dated_rows(value, key)
+    elif isinstance(node, list):
+        for value in node:
+            yield from _dated_rows(value, key)
+
+
+def row_problems(tree, cutoff: dt.date, trigger: str, trigger_accepted) -> list[str]:
+    """Why a JSON input's rows reach past the cutoff, or []: a row dated after it,
+    or a row dated the cutoff day from another filing that is not shown accepted
+    at or before the triggering report -- the rule for a document, held to a row."""
+    out = []
+    for key in ROW_DATE_KEYS:
+        for value, row in _dated_rows(tree, key):
+            try:
+                day = (dt.date.fromisoformat(value[:10])
+                       if re.match(r"\d{4}-\d{2}-\d{2}", value) else None)
+            except ValueError:
+                day = None
+            if day is not None and day > cutoff:
+                out.append(f"a row's {key} {value} is after the cutoff {cutoff}")
+                break
+            source = row.get("source_accession") or row.get("accession")
+            if day == cutoff and isinstance(source, str) and source != trigger:
+                why = accepted_before_trigger({"accession": source,
+                                               "accepted": row.get("accepted")},
+                                              trigger, trigger_accepted)
+                if why:
+                    out.append(f"a row's {key} {value} is from {source}, the cutoff day: {why}")
+                    break
+    return out
+
+
+def idless_prose_problems(text: str, cutoff: dt.date, documents: set[str],
+                          trigger: str = "", trigger_accepted=None) -> list[str]:
+    """Why a prose input with no `[id]` line reaches past the cutoff, or []: a date
+    after it; an accession on a line dated the cutoff day that is not shown
+    accepted before the triggering report; or an accession on a line with no date
+    that is not one of the manifest's documents."""
+    out = []
+    for number, line in enumerate(text.splitlines(), 1):
+        dates = ANY_DATE.findall(line)
+        for written in dates:
+            try:
+                day = dt.date.fromisoformat(written)
+            except ValueError:
+                continue
+            if day > cutoff:
+                out.append(f"line {number}: {written} is after the cutoff {cutoff}")
+            elif day == cutoff:
+                for accession in ACCESSION_ANYWHERE.findall(line):
+                    if accession == trigger or accession in documents:
+                        continue
+                    why = accepted_before_trigger({"accession": accession}, trigger,
+                                                  trigger_accepted)
+                    if why:
+                        out.append(f"line {number}: {accession} on the cutoff day: {why}")
+        if not dates:
+            for accession in ACCESSION_ANYWHERE.findall(line):
+                if accession not in documents:
+                    out.append(f"line {number}: names accession {accession} on a line with no "
+                               "date, and it is not one of the manifest's documents")
+    return out
+
+
+def input_problems(texts: dict, manifest: dict, cutoff: dt.date) -> list[str]:
+    """The bundle's inputs held where the owner holds them past the documents:
+    each JSON input's dated rows (`row_problems`), each prose input with no
+    `[id]` line (`idless_prose_problems`), and the prior-predictions file, which
+    carries no price or return figure (`agent_inputs.MARKET_FIGURE`). A file that
+    does not parse is the schema gate's to name; the market table is held to its
+    own windows by `src/market.py` and is not a bundle file."""
+    trigger = str(manifest.get("accession") or "")
+    accepted = manifest.get("accepted")
+    documents = {row.get("accession") for row in manifest.get("documents") or []
+                 if isinstance(row, dict) and isinstance(row.get("accession"), str)}
+    out = []
+    for name in sorted(texts):
+        text = texts[name]
+        if text is None or name in (agent_inputs.MANIFEST, agent_inputs.MARKET_TABLE):
+            continue
+        if name.endswith(".json"):
+            try:
+                tree = json.loads(text)
+            except ValueError:
+                continue
+            out += [f"{name}: {why}" for why in row_problems(tree, cutoff, trigger, accepted)]
+        elif name.endswith(".md"):
+            if not agent_inputs.ID_LINE.search(text):
+                out += [f"{name}: {why}" for why in idless_prose_problems(
+                    text, cutoff, documents, trigger, accepted)]
+            if name == "input_prior_predictions.md":
+                out += [f"{name}: line {number}: a price or return figure ({found.group(0)!r}) "
+                        "in what the readers are handed"
+                        for number, line in enumerate(text.splitlines(), 1)
+                        for found in [agent_inputs.MARKET_FIGURE.search(line)] if found]
+    return out
+
+
+def check_cutoff(manifest: dict | None, texts: dict | None = None) -> Result:
+    """Fail-closed, the same rule as the loader: no date is a violation.
+
+    Held where the owner's `nothing_after_cutoff` holds a run: the documents by
+    date, a document filed on the cutoff day by its acceptance against the
+    triggering report's, and, given the bundle's `texts`, every dated row and
+    every id-less prose line of its inputs (`input_problems`)."""
     result = Result("cutoff")
     if manifest is None:
         result.fail("no manifest to check")
@@ -288,8 +410,17 @@ def check_cutoff(manifest: dict | None) -> Result:
                     f"{manifest.get('accession')} was filed {filed} — the cutoff "
                     f"is the triggering report's own filing date")
 
+    # The inputs' own rows and lines, as the owner reads them: a row the
+    # companyfacts record or the trend table dated after the cutoff, or dated the
+    # cutoff day by another filing not shown accepted first, and an id-less prose
+    # line naming such a filing, reach past the documents' dates.
+    for problem in input_problems(texts or {}, manifest, cutoff):
+        result.fail(problem)
+
     result.detail = (f"{len(documents)} documents, none filed after {cutoff}, "
                      f"which is the {manifest.get('form')}'s own filing date")
+    if texts is not None:
+        result.detail += "; every dated row and id-less line of the inputs at or before it"
     return result
 
 
@@ -314,7 +445,7 @@ def run(root: Path, *, fixtures_root=cutoff_guard.FIXTURES) -> tuple[int, list[s
     manifest = parsed.get("input_manifest.json")
     results = [schema,
                check_counts(manifest, fixtures_root=fixtures_root),
-               check_cutoff(manifest),
+               check_cutoff(manifest, texts),
                check_notes(texts)]
     lines = [line for result in results for line in result.lines()]
     return (0 if all(result.passed for result in results) else FAILED), lines
