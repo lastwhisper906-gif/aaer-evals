@@ -2735,6 +2735,10 @@ def test_the_owner_finds_every_input_copy_of_a_whole_run_on_record(tmp_path, mon
     from evals.regression import mechanical
     run, manifest = _flagging_two_run(tmp_path, monkeypatch, notes_report=FLAGGING_TWO)
     assert manifest["analysis_failure"] is None
+    # 76 paragraphs: counted on the fixture's 8-K, built once outside the tests
+    # (2026-10-08), with `grep -c '^\[0001045810-26-000073:8k_2_02:' input_8k.md`
+    # (76), the same 76 for `grep -c '\[0001045810-'`, so no marker sits off a
+    # line start, and 76 distinct ids.
     for name in ("valuation-analyst", "valuation-analyst-second-pass"):
         record = manifest["agents"][name]["trimmed"]
         assert record["input_8k.md"]["kept"] == [] and record["input_8k.md"]["of"] == 76
