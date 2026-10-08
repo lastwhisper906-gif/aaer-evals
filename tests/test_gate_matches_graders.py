@@ -549,7 +549,7 @@ PRICED = {
             "name": "accounts payable build from supplier payment timing",
             "mechanism": "one-time: value lowered by the amount over diluted shares",
             "moved_per_share": -1.28164085460038}]}},
-    "cost_of_capital": {"value": None,
+    "cost_of_capital": {"value": 0.15472925611257576,
                         "beta": {"value": 2.6820943351306967, "window_first": "2025-06-05",
                                  "window_last": "2026-06-03"}},
 }
@@ -695,25 +695,28 @@ def test_a_placeholder_the_memo_cannot_print_is_the_gate_s_own_refusal(tmp_path,
     "valuation.accounting_adjustments.each. 0", "valuation.accounting_adjustments.each.0_0",
     "valuation.accounting_adjustments.each.²", "valuation.accounting_adjustments.each.1",
     "valuation.price_position.0", "valuation.price_at_cutoff.value", "valuation..held", "",
-    "valuation.reverse_dcf.value.real", "missing"])
+    "valuation.reverse_dcf.value.real", "missing", "valuation.missing"])
 def test_the_gate_reads_a_path_as_the_owner_s_grader_reads_it(path):
     """One reading of a calculator path, the owner's (`evals.common.resolve`),
     written out in the gate as the grader writes it: a `fields` entry stands
     exactly when the owner resolves it, and a `{path}` is refused whenever it
-    names nothing to the owner."""
+    names nothing to the owner -- in CSCO's and CIEN's priced cells and in
+    QCOM's priceless ones, where `cost_of_capital.value` is a null and
+    `valuation.missing` the reason."""
     from evals import common
-    try:
-        owner = ("names", common.resolve(PRICED, path))
-    except KeyError:
-        owner = ("nothing", None)
-    assert analysis_check.field_cited(PRICED, path) is (owner[0] == "names")
-    try:
-        gate = ("names", analysis_check.resolve(PRICED, path))
-    except KeyError:
-        gate = ("nothing", None)
-    assert gate == owner
-    if owner[0] == "nothing":
-        assert analysis_check.placeholder_problem(PRICED, path) is not None
+    for tree in (PRICED, PRICELESS):
+        try:
+            owner = ("names", common.resolve(tree, path))
+        except KeyError:
+            owner = ("nothing", None)
+        assert analysis_check.field_cited(tree, path) is (owner[0] == "names")
+        try:
+            gate = ("names", analysis_check.resolve(tree, path))
+        except KeyError:
+            gate = ("nothing", None)
+        assert gate == owner
+        if owner[0] == "nothing":
+            assert analysis_check.placeholder_problem(tree, path) is not None
 
 
 # --- forbidden_words and no_combined_score ------------------------------------------------
