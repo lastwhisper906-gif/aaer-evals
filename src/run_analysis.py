@@ -768,8 +768,10 @@ def boundary_holds(run: Path, when: str) -> None:
     router's command called before: a file an agent left in its directory, a
     copy that is not the run's, a trim the owner would refuse -- each fails the
     owner's layers_hold or inputs_on_record, so the run stops here, on record
-    (`stopped_on`), rather than publishing."""
-    broken = agent_inputs.isolation_violations(run)
+    (`stopped_on`), rather than publishing. The control's directory, which sits
+    beside `agents/` and which the router's check does not walk, is held too
+    (`control_violations`)."""
+    broken = agent_inputs.isolation_violations(run) + control_violations(run)
     if broken:
         raise agent_inputs.AgentInputError(
             f"the boundary is broken {when} ({len(broken)}): " + "; ".join(broken))
@@ -1532,6 +1534,32 @@ def control_sees(run: Path) -> list[str]:
                    and name != agent_inputs.MARKET_TABLE
                    and name not in agent_inputs.NOT_BUILT_YET and (run / name).is_file()]
                   + [BEFORE_ANALYSTS])
+
+
+def control_violations(run: Path) -> list[str]:
+    """The single-agent control's directory held as the owner's layers_hold and
+    inputs_on_record hold it (`evals/regression/mechanical.py`, which walks the
+    control's directory beside the agents'): every file in it is one
+    `control_sees` routes, byte for byte the run's, or one the control wrote
+    (`control_*`, the owner's `is_own_output`), and nothing in it is a directory
+    or a link. A stray file the control leaves fails both of the owner's checks."""
+    directory = run / CONTROL_DIRNAME
+    if not directory.is_dir():
+        return []
+    routed = set(control_sees(run))
+    found = []
+    for path in sorted(directory.iterdir()):
+        where = f"{CONTROL_DIRNAME}/{path.name}"
+        if path.is_symlink() or not path.is_file():
+            found.append(f"{where}: a directory or a link inside the control's, which nothing "
+                         "routed")
+        elif path.name.startswith("control_"):
+            continue                    # what the control writes
+        elif path.name not in routed:
+            found.append(f"{where}: not a file the control is handed")
+        elif path.read_bytes() != (run / path.name).read_bytes():
+            found.append(f"{where}: not the run's {path.name}, byte for byte")
+    return found
 
 
 def run_control(run: Path, logs: Path, model: str | None = None, *,

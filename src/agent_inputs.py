@@ -1048,6 +1048,13 @@ def isolation_violations(run: Path) -> list[str]:
             except AgentInputError as exc:
                 found.append(f"{name}: {path.name}: {exc}")
                 continue
+            if expected is None and name in AGENTS and not (run / path.name).is_file():
+                # a routed name the run does not hold: the router copies only what
+                # the run holds, so an agent wrote it, and the owner's
+                # inputs_on_record finds no such input on record
+                found.append(f"{name}: holds {path.name}, which the run does not hold, so "
+                             "nobody routed it")
+                continue
             if flagged is not None and path.name in trims:
                 found.extend(f"{name}: {path.name}: {line}" for line in trim_differences(
                     trims[path.name], (run / path.name).read_text(encoding="utf-8",

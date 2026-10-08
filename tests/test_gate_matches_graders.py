@@ -531,6 +531,60 @@ def test_a_stray_file_in_an_agent_s_directory_stops_the_run(tmp_path):
         run_analysis.boundary_holds(run, "in the test")
 
 
+def test_a_routed_name_the_run_does_not_hold_is_named(tmp_path):
+    """A file an agent writes under the name of one of its own inputs, which the
+    run does not hold: the owner's layers_hold passes the name, and its
+    inputs_on_record finds no such input on record. The boundary check held a
+    routed name only to bytes the run has, and named nothing."""
+    run = _run(tmp_path)
+    _write(run / "agents" / "numbers-reader" / "input_numbers.json", '{"facts": []}\n')
+    assert mechanical.check_layers_hold(run).status == PASS
+    assert "agents/numbers-reader/input_numbers.json: no such input on record" \
+        in mechanical.check_inputs_on_record(run).failures
+    with pytest.raises(agent_inputs.AgentInputError,
+                       match="input_numbers.json, which the run does not hold"):
+        run_analysis.boundary_holds(run, "in the test")
+
+
+def _control_run(tmp_path: Path) -> Path:
+    """A run whose single-agent control was handed what `control_sees` routes and
+    wrote its three files, as `run_control` builds the directory."""
+    run = _run(tmp_path)
+    _write(run / run_analysis.BEFORE_ANALYSTS, json.dumps(FIELDS))
+    directory = run / run_analysis.CONTROL_DIRNAME
+    for name in run_analysis.control_sees(run):
+        _write(directory / name, (run / name).read_text(encoding="utf-8"))
+    for name in run_analysis.CONTROL_WRITES:
+        _write(directory / name, "{}")
+    return run
+
+
+@pytest.mark.parametrize("damage, owner_says", [
+    (lambda directory: _write(directory / "draft.json", '{"items": []}'),
+     "control-single-agent-analyses/draft.json: not a file the control-single-agent-analyses "
+     "layer sees"),
+    (lambda directory: _write(directory / run_analysis.BEFORE_ANALYSTS, json.dumps(
+        dict(FIELDS, cutoff="2026-08-11"))),
+     "control-single-agent-analyses/calculator_before_analysts.json: not the run's "
+     "calculator_before_analysts.json")])
+def test_the_control_s_directory_is_held_at_the_boundary(tmp_path, damage, owner_says):
+    """The owner's layers_hold and inputs_on_record walk the control's directory
+    beside the agents', and the router's boundary check does not: a stray file
+    the control left, or a copy that is not the run's, stopped no run. The
+    boundary the runner checks after the control returns now holds it."""
+    assert run_analysis.CONTROL_DIRNAME == mechanical.CONTROL_DIR
+    run = _control_run(tmp_path)
+    for grader in (mechanical.check_layers_hold, mechanical.check_inputs_on_record):
+        assert not any(line.startswith(mechanical.CONTROL_DIR) for line in grader(run).failures)
+    run_analysis.boundary_holds(run, "in the test")
+    damage(run / run_analysis.CONTROL_DIRNAME)
+    failures = (mechanical.check_layers_hold(run).failures
+                + mechanical.check_inputs_on_record(run).failures)
+    assert owner_says in failures
+    with pytest.raises(agent_inputs.AgentInputError, match=owner_says.split(":")[0]):
+        run_analysis.boundary_holds(run, "in the test")
+
+
 def test_the_router_hands_each_layer_what_the_owner_s_table_names(tmp_path):
     """The owner's layer table, written out in the grader, against the router's:
     every file a live agent is handed, and every file the control is handed, is
