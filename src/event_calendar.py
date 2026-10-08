@@ -50,8 +50,8 @@ counterparty's (a lender writing that a borrower's auditors doubted it), and
 no wording rule separated them without a judgment. So that judgment is in
 `docs/needs_judgment.md`, and the tag is where to look: the sentences are not
 copied into the repository -- they are the filer's text, tens of thousands of
-filings of it -- and the notes data set indexed in `src/fsn_index/` holds each
-one at the accession and tag the line names.
+filings of it -- and the SEC's notes data set the line names (`dataset`) holds
+each one at the accession and tag the line gives.
 
 **Enforcement releases.** The list gives a date, the respondents as the SEC
 wrote them, the release numbers and the document; it gives no CIK, so the line

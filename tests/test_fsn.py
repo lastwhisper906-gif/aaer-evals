@@ -166,6 +166,19 @@ def test_main_exits_four_at_the_floor(tmp_path, monkeypatch):
                      "--index-dir", str(tmp_path / "index")]) == fsn.FLOOR
 
 
+@pytest.mark.parametrize("command", ["fetch", "load"])
+def test_with_no_index_line_fetch_and_load_stop_and_say_so(tmp_path, monkeypatch, capsys,
+                                                           command):
+    # The index of 2026-09-28 was never committed. Exit 0 here would read as
+    # every indexed zip fetched and loaded; the data root is left as it was.
+    (tmp_path / "data").mkdir()
+    monkeypatch.setattr(fsn, "download", lambda *a, **k: pytest.fail("downloaded anyway"))
+    assert fsn.main([command, "--root", str(tmp_path / "data"),
+                     "--index-dir", str(tmp_path / "index")]) == fsn.FAILED
+    assert "holds no index line" in capsys.readouterr().err
+    assert list((tmp_path / "data").iterdir()) == []
+
+
 def test_fetch_refuses_bytes_that_are_not_the_indexed_ones(tmp_path, monkeypatch):
     fsn.append_index({"period": "2011q2", "name": "2011q2_notes.zip", "url": "https://x/",
                       "bytes": 5, "sha256": rank("indexed")}, tmp_path / "index")

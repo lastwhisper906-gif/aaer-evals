@@ -4,9 +4,12 @@ The owner's instruction of 2026-09-28: every monthly or quarterly zip the SEC
 publishes at `PAGE_URL`, loaded into `~/aaer-data/fsn.duckdb` -- the `sub`,
 `num`, `pre`, `tag`, `txt`, `dim` and `ren` tables -- with the accession and
 the filed date on every row, so that every query can be asked as of a date.
-The raw data lives outside the repository. The repository holds the index
-only: one line per zip, sharded by year under `src/fsn_index/`, each line
+The raw data lives outside the repository. The repository is to hold the
+index only: one line per zip, sharded by year under `src/fsn_index/`, each line
 naming the URL, the period, the bytes and the sha256 of what the SEC served.
+It holds none yet: the index written on 2026-09-28 was never committed
+(`docs/needs_judgment.md`), and with no index line `fetch` and `load` stop
+and say so.
 
 The disk floor
 --------------
@@ -591,6 +594,13 @@ def main(argv: list[str] | None = None) -> int:
                       f"{line.get('scanned')}", file=sys.stderr)
             print(json.dumps({"indexed": [entry["period"] for entry in todo]}))
             return 0
+        if args.command in ("fetch", "load") and not read_index(index_dir):
+            # With no index there is no zip to name: say so, rather than exit 0
+            # having fetched and loaded nothing.
+            print(f"fsn: {index_dir} holds no index line, so there is no zip to "
+                  f"{args.command}; `index` builds it, downloading every zip",
+                  file=sys.stderr)
+            return FAILED
         if args.command == "fetch":
             problems = fetch(zips=root / "fsn" / "zips", user_agent=user_agent,
                              index_dir=index_dir, periods=args.period)
