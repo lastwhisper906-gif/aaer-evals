@@ -389,10 +389,12 @@ DRIVERS = {"revenue_growth_year_one": 0.2, "terminal_growth": 0.03,
 
 
 def _fake_ask(seen: dict, notes_report: str = "no items\n", assumptions: dict | None = None,
-              numbers_report: str = NUMBERS_REPORT, accounting_analysis: dict | None = None):
+              numbers_report: str = NUMBERS_REPORT, accounting_analysis: dict | None = None,
+              financial_analysis: dict | None = None):
     """`notes_report` and `numbers_report` are what the stubbed readers write;
     `assumptions` the valuation analyst's first pass, by default three scenarios
-    citing one field."""
+    citing one field; `accounting_analysis` and `financial_analysis` what the two
+    analysts write, by default `_analysis`."""
     def ask(directory, *, agent, writes, message, spec, log):
         seen[directory.name] = sorted(path.name for path in directory.iterdir())
         for name in writes:
@@ -404,7 +406,8 @@ def _fake_ask(seen: dict, notes_report: str = "no items\n", assumptions: dict | 
                 text = json.dumps(accounting_analysis if accounting_analysis is not None
                                   else _analysis("accounting", "earnings_quality_accruals_rising"))
             elif name == "analysis_financial.json":
-                text = json.dumps(_analysis("financial", "earnings_quality_accruals_rising"))
+                text = json.dumps(financial_analysis if financial_analysis is not None
+                                  else _analysis("financial", "earnings_quality_accruals_rising"))
             elif name == "assumptions.json" and assumptions is not None:
                 text = json.dumps(assumptions)
             elif name in ("assumptions.json", "control_assumptions.json"):
@@ -2906,12 +2909,12 @@ def test_a_file_a_reader_leaves_stops_the_run_before_any_analyst_is_asked(
         in mechanical.check_layers_hold(run).failures
 
 
-def _night(run, monkeypatch, **keyword):
+def _night(run, monkeypatch, *, fake: dict | None = None, **keyword):
     """One more invocation over the run on disk, every agent writing as the stub
-    writes: the directories asked, in order, and the manifest the run finished
-    with or the error it stopped on."""
+    writes (`fake`, what `_fake_ask` takes): the directories asked, in order, and
+    the manifest the run finished with or the error it stopped on."""
     asked: list[str] = []
-    answer = _fake_ask({})
+    answer = _fake_ask({}, **(fake or {}))
 
     def ask(directory, **kw):
         asked.append(directory.name)
@@ -2965,6 +2968,18 @@ def test_a_boundary_stop_after_two_agents_puts_the_one_that_left_nothing_on_reco
     assert clean in manifest["resume_skipped"]
 
 
+def _one_unit_dropped(kind: str) -> dict:
+    """The stub analysis and one anomaly more, whose only evidence is an id no
+    report the analyst saw holds: the stub readers' reports hold one item,
+    earnings_quality_accruals_rising, and the gate drops an item citing any
+    other (`analysis_check.item_problem`)."""
+    payload = _analysis(kind, "earnings_quality_accruals_rising")
+    anomaly = payload["anomalies"][0]
+    payload["anomalies"].append(dict(anomaly, id=f"{anomaly['area']}_cited_from_no_report",
+                                     evidence=["an_item_no_report_holds"]))
+    return payload
+
+
 @pytest.mark.parametrize("analysis, gated", [("analysis_financial", "at the stop"),
                                              ("analysis_accounting", "on the resume")])
 def test_the_count_of_an_analysis_gated_at_a_boundary_stop_reaches_the_finished_record(
@@ -2976,20 +2991,28 @@ def test_the_count_of_an_analysis_gated_at_a_boundary_stop_reaches_the_finished_
     put_on_record handed the gate no stages, so the finished record carried no
     count for the analysis gated at the stop (the second lens, 2026-10-08). The
     other side, before and after: the accounting analysis, gated on the resumed
-    night, is counted there."""
+    night, is counted there. Each analysis carries one unit the gate drops, and
+    the count is stated here, not read from the gate: the stub alone drops
+    nothing, so the count read from the gate was zero, and a record_stage
+    writing zero passed."""
+    analyses = {"accounting_analysis": _one_unit_dropped("accounting"),
+                "financial_analysis": _one_unit_dropped("financial")}
+    # One: the planted anomaly of each analysis. Every other unit is the stub's,
+    # each citing a calculator path that names a number, the reader item the quote
+    # gate keeps or nothing, with the rules version's limits sentence, so it stands.
+    counted = {"dropped": 1}
     run, _, stopped_manifest, stopped = _run_leaving(tmp_path, monkeypatch, nvda_bundle,
-                                                     {"accounting-analyst": DRAFT})
+                                                     {"accounting-analyst": DRAFT}, **analyses)
     assert isinstance(stopped, agent_inputs.AgentInputError), stopped
     if gated == "at the stop":
-        written = json.loads((run / f"{analysis}.json").read_text(encoding="utf-8"))
-        assert (stopped_manifest.get("analysis_stages") or {}).get(analysis) == {
-            "dropped": written["dropped_count"]}
+        assert (stopped_manifest.get("analysis_stages") or {}).get(analysis) == counted
     (run / "agents" / "accounting-analyst" / "draft.json").unlink()
-    called, manifest, error = _night(run, monkeypatch)
+    called, manifest, error = _night(run, monkeypatch, fake=analyses)
     assert error is None, error
     assert "financial-analyst" not in called
     written = json.loads((run / f"{analysis}.json").read_text(encoding="utf-8"))
-    assert manifest["analysis_stages"].get(analysis) == {"dropped": written["dropped_count"]}
+    assert [row["where"] for row in written["dropped_items"]] == ["anomalies[1]"]
+    assert manifest["analysis_stages"].get(analysis) == counted
 
 
 def test_no_agent_is_called_while_the_boundary_stands_broken(tmp_path, monkeypatch, nvda_bundle):
