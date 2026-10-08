@@ -688,6 +688,68 @@ def test_a_placeholder_the_memo_cannot_print_is_the_gate_s_own_refusal(tmp_path,
     assert mechanical.check_cited_numbers_exist(run).status == PASS
 
 
+# CARR's pre-tax cost of debt as the calculator.json of its run 0001783180-26-000032
+# printed it: the first-pass valuation analyst chose the notes' rate, and Python
+# copied the analyst's reason into the cell, two `{path}`s of the analyst's own in it.
+CARR_RUN = Path(__file__).resolve().parents[1] / "runs" / "CARR" / "0001783180-26-000032"
+CARR_REASON = (
+    "The calculator prints pre_tax_cost_of_debt as missing because interest expense is not "
+    "tagged for the year-to-date period. The MD&A states the weighted-average interest rate "
+    "on the long-term notes, which make up most of total debt of {terms.debt_now.value}; "
+    "commercial paper within current debt of {terms.debt_now.parts.debt_current.value} "
+    "carries a rate not stated in these inputs, and the quarter's interest expense rose "
+    "because of it, so the true blended rate may sit a little above the notes' rate. The "
+    "notes' stated rate is the only figure in the inputs and is used as the pre-tax cost of "
+    "debt.")
+
+
+@pytest.mark.parametrize("sentence, printed", [
+    ("세전 타인자본비용은 장기 사채의 이자율이며, 그 근거는 "
+     "{cost_of_capital.pre_tax_cost_of_debt.reason}", None),
+    # CARR's terms.debt_now.value, 11,952,000,000, in hundreds of millions to one
+    # decimal, as the memo prints dollars: 119.5억 달러
+    ("세전 타인자본비용은 총차입금 {terms.debt_now.value} 가운데 "
+     "대부분을 차지하는 장기 사채의 이자율입니다.",
+     "세전 타인자본비용은 총차입금 119.5억 달러 가운데 "
+     "대부분을 차지하는 장기 사채의 이자율입니다.")], ids=["the_reason", "the_debt"])
+def test_words_holding_a_placeholder_of_their_own_are_the_gate_s_own_refusal(
+        tmp_path, sentence, printed):
+    """The memo prints the words a `{path}` names as written, so a sentence citing
+    CARR's reason would print `{terms.debt_now.value}` and
+    `{terms.debt_now.parts.debt_current.value}` in the memo, unexpanded: the
+    owner's cited_numbers_exist resolves the path and passes it, and so did the
+    gate. The gate drops the sentence, and the memo says it was dropped. The
+    other side, before and after: the reason cited in `fields` stands in every
+    unit, and a sentence citing the analyst's own path is printed with the
+    number."""
+    fields = json.loads((CARR_RUN / "calculator.json").read_text(encoding="utf-8"))
+    assert fields["cost_of_capital"]["pre_tax_cost_of_debt"]["reason"] == CARR_REASON
+    run = tmp_path / "run"
+    _write(run / "calculator.json", json.dumps(fields))
+    reason = ["cost_of_capital.pre_tax_cost_of_debt.reason"]
+    payload = {key: {"reading": "Read.", "fields": reason}
+               for key in analysis_check.VALUATION_KEYS}
+    payload.update(most_sensitive=[], limits=analysis_check.LIMITS["valuation"],
+                   summary_ko={"most_sensitive": sentence})
+    _publish(run, "analysis_valuation.json", payload)
+    assert mechanical.check_cited_numbers_exist(run).status == PASS
+    out = analysis_check.check("valuation", copy.deepcopy(payload), fields=fields, sources={})
+    _publish(run, "analysis_valuation.json", out)
+    assert mechanical.check_cited_numbers_exist(run).status == PASS
+    units = analysis_check.VALUATION_KEYS
+    assert {key: out[key] for key in units} == {key: payload[key] for key in units}
+    lines = memo.valuation_section(out, fields)
+    assert not analysis_check.PLACEHOLDER.search("\n".join(lines))
+    if printed:
+        assert out["dropped_items"] == []
+        assert f"- **가장 민감한 가정**: {printed}" in lines
+    else:
+        assert [row["where"] for row in out["dropped_items"]] == ["summary_ko.most_sensitive"]
+        assert "'{terms.debt_now.value}'" in out["dropped_items"][0]["reason"]
+        assert out["summary_ko"]["most_sensitive"] is None
+        assert f"- **가장 민감한 가정**: {memo.DROPPED_KO}" in lines
+
+
 @pytest.mark.parametrize("path", [
     "valuation.price_position", "valuation.reverse_dcf", "valuation.reverse_dcf.held",
     "cost_of_capital.value", "valuation.accounting_adjustments.each.0.name",

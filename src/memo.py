@@ -164,7 +164,11 @@ def fill(text: str | None, fields: dict) -> str:
     range"), verbatim, with the analyst's own words after them as written: the
     analyst read those words in the calculator, so no unit or particle is
     chosen for them. What a path stands for is the gate's reading
-    (`analysis_check.placeholder_value`)."""
+    (`analysis_check.placeholder_value`). Words that hold a `{path}` of their
+    own (an analyst's reason Python copied into the calculator) are never
+    expanded here: the gate refuses a path naming them
+    (`analysis_check.placeholder_problem`), so the sentence is dropped rather
+    than printed with the path in it."""
     if not text:
         return "(작성되지 않음)"
     out, last = [], 0

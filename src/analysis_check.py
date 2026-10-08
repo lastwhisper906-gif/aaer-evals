@@ -363,12 +363,16 @@ def placeholder_problem(fields: dict, path: str) -> str | None:
     the path and passes both, and the second passes on record cite
     `valuation.price_position`, `valuation.reverse_dcf.held` and the beta's
     window that way. A path that names nothing is refused, as the owner refuses
-    it. Two refusals are the pipeline's own, which the owner's
+    it. Three refusals are the pipeline's own, which the owner's
     cited_numbers_exist passes: a node with neither a number nor words of its
     own (a null, a list, a cell holding no number), for which the memo has
-    nothing to print; and words carrying a ruled-out word, accusation or
+    nothing to print; words carrying a ruled-out word, accusation or
     recommendation, which the memo would print on a line the owner's
-    forbidden_words reads for both. No placeholder on record names either."""
+    forbidden_words reads for both; and words holding a `{path}` of their own,
+    which the memo would print as written, the path unexpanded. Python copies
+    the first-pass valuation analyst's reason into the calculator, and CARR's
+    `cost_of_capital.pre_tax_cost_of_debt.reason` (run 0001783180-26-000032)
+    holds two. No placeholder on record names any of the three."""
     try:
         resolve(fields, path)
     except KeyError:
@@ -383,6 +387,10 @@ def placeholder_problem(fields: dict, path: str) -> str | None:
             if hit:
                 return (f"{{{path}}} would print a ruled-out word ({hit.group(0)!r}) from "
                         "the calculator into the memo")
+        nested = PLACEHOLDER.search(value)
+        if nested:
+            return (f"{{{path}}} names words holding a placeholder of their own "
+                    f"({nested.group(0)!r}), which the memo would print unexpanded")
     return None
 
 
