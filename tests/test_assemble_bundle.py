@@ -506,6 +506,8 @@ UNDER_DROPPED_BUNDLE = {
                      "'Cautionary Statement' carried; 81 read, 93 built",
     ("OMCL", "10-Q"): "5 page numerals, the heading 'Forward-Looking Statements' and "
                       "two of its paragraphs carried; 92 read, 100 built",
+    ("ADTN", "10-Q"): "the heading 'Cautionary note regarding forward-looking "
+                      "statements' carried; 126 read, 127 built",
 }
 
 EIGHT_K_CASES = [

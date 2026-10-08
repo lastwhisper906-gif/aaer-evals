@@ -374,14 +374,17 @@ def test_both_types_are_in_the_fixture_set_so_the_rule_is_the_family():
 
     Of the third eight, AMD files the bare type in both years ('<TYPE>EX-21
     <SEQUENCE>5 <FILENAME>exh_21-10kfy25.htm' and '<TYPE>EX-21 <SEQUENCE>4
-    <FILENAME>ex21-10kfy2412_28.htm' in its two headers), and NAPCO a fourth
+    <FILENAME>ex21-10kfy2412_28.htm' in its two headers), as does ADTRAN
+    ('<TYPE>EX-21 <SEQUENCE>9 <FILENAME>adtn-ex21.htm' in its 10-K of 2026-02-26,
+    0001193125-26-073878, and '<TYPE>EX-21 <SEQUENCE>7 <FILENAME>adtn-ex21.htm'
+    in its 10-K of 2025-03-03, 0000950170-25-031056), and NAPCO a fourth
     spelling, `EX-21.0`, in both ('<TYPE>EX-21.0 <SEQUENCE>3
     <FILENAME>nssc-20260630xex21d0.htm' and '<TYPE>EX-21.0 <SEQUENCE>3
     <FILENAME>nssc-20250630xex21d0.htm')."""
     recorded = {ticker: expected_values.value(ticker, "exhibits.10-K.exhibit_type")
                 for ticker in TICKERS if ticker not in NAMES_NO_SUBSIDIARY_EXHIBIT}
     assert sorted(t for t, kind in recorded.items() if kind == "EX-21") == \
-        ["AMD", "CARR", "ESE", "FELE", "MSI", "QCOM"]
+        ["ADTN", "AMD", "CARR", "ESE", "FELE", "MSI", "QCOM"]
     assert sorted(t for t, kind in recorded.items() if kind == "EX-21.01") == ["FLEX"]
     assert sorted(t for t, kind in recorded.items() if kind == "EX-21.0") == ["NSSC"]
     assert {kind for kind in recorded.values()} == \

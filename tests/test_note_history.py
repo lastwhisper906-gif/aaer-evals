@@ -251,10 +251,18 @@ BROAD_DEBT_MATCH = {
     # quarters, beside the convertible notes it owes.
     "LITE": "DebtSecuritiesAvailableForSaleUnrealizedLossPositionFairValueTable; "
             "8 read, 9 paired",
-    # One of the third eight: NAPCO's 'NOTE 5 – Marketable Securities', in both
-    # quarters, beside 'NOTE 9 - Debt', the revolving credit line it owes.
+    # Two of the third eight: NAPCO's 'NOTE 5 – Marketable Securities', in both
+    # quarters, beside 'NOTE 9 - Debt', the revolving credit line it owes; and
+    # ADTRAN's '5. INVESTMENTS', opening 'The Company has cash equivalents and
+    # investments which are held at fair value as follows' -- money market funds,
+    # marketable equity securities and deferred compensation plan assets -- in
+    # both quarters, beside '10. CREDIT AGREEMENTS' and '11. CONVERTIBLE SENIOR
+    # NOTES AND CAPPED CALLS', what it owes. The patterns miss two tables of
+    # ADTRAN's debt notes as well (TOPIC_NOT_IN_THE_NAME below), so its counts are
+    # written on that row, which closes its one mark's reason.
     "NSSC": "InvestmentsInDebtAndMarketableEquitySecurities…, 'NOTE 5 – Marketable "
             "Securities'; 8 read, 9 paired",
+    "ADTN": "InvestmentsInDebtAndMarketableEquitySecurities…, '5. INVESTMENTS'",
 }
 
 # The patterns read tag names only, so they miss the other way too: a key note
@@ -280,6 +288,21 @@ BROAD_DEBT_MATCH = {
 # equity-method investees, headed 'RELATED PARTIES' and 'Equity Method
 # Investments', as the related-party note, under a tag the pattern pairs by name.
 #
+# ADTRAN files two as well, in both quarters (10-Q/adtn-20260630_htm.xml.gz and
+# 10-Q/adtn-20260331_htm.xml.gz), each a table of one of its debt notes under a
+# name of its own with no debt word in it.
+# `adtn:CarryingAmountOfRevolvingAgreementTableTextBlock` is whole 'The carrying
+# amounts of the Company's non-current revolving credit facility in its Condensed
+# Consolidated Balance Sheets were as follows:' and the rows 'Wells Fargo credit
+# agreement' and 'Total non-current revolving credit facility', inside '10. CREDIT
+# AGREEMENTS'; `adtn:SummaryOfInterestExpenseTableTextBlock` is 'The following is
+# a summary of interest expense for the 2030 Notes:' and its table, inside
+# '11. CONVERTIBLE SENIOR NOTES AND CAPPED CALLS' -- read as OMCL's reading reads
+# its `omcl:ScheduleOfInterestExpenseDebtTableTextBlock`, which the pattern pairs
+# by the 'Debt' in its name. The debt pattern pairs ADTRAN's investments note
+# too (BROAD_DEBT_MATCH above): 10 read and 9 paired in the current quarter, and
+# 9 and 8 in the prior one.
+#
 # Strict, so a pattern that reads a note by what it holds turns this red and the
 # mark comes off.
 TOPIC_NOT_IN_THE_NAME = {
@@ -287,9 +310,20 @@ TOPIC_NOT_IN_THE_NAME = {
            "'The carrying amounts and estimated fair values of the Company’s current "
            "and long-term debt', and us-gaap:EquityMethodInvestmentsDisclosure…, "
            "'NOTE 7 – Related Party — Equity Joint Ventures'; 7 read, 5 paired",
+    "ADTN": "adtn:CarryingAmountOfRevolvingAgreementTable…, 'The carrying amounts of "
+            "the Company's non-current revolving credit facility', and "
+            "adtn:SummaryOfInterestExpenseTable…, 'The following is a summary of "
+            "interest expense for the 2030 Notes:'; 10 read, 9 paired",
 }
 
-KEY_NOTE_DEFECTS = {**BROAD_DEBT_MATCH, **TOPIC_NOT_IN_THE_NAME}
+# One mark per company. Where both rules reach one, as they reach ADTRAN, its
+# reason is the two rows, the debt pattern's first; every other company's is its
+# one row as written.
+KEY_NOTE_DEFECTS = {
+    ticker: "; and ".join(rules[ticker]
+                          for rules in (BROAD_DEBT_MATCH, TOPIC_NOT_IN_THE_NAME)
+                          if ticker in rules)
+    for ticker in {**BROAD_DEBT_MATCH, **TOPIC_NOT_IN_THE_NAME}}
 
 
 def key_tags(ticker: str, role: str | None = None) -> list[str]:
@@ -342,28 +376,40 @@ def test_the_key_notes_are_the_tags_the_two_instances_hold(ticker):
 
 # The case above stops at its first assertion, the current quarter's list, so
 # for a company it marks the prior quarter's list and the pairing are asserted
-# by nothing it leaves standing. For the third eight's two marked companies they
-# are asserted here, unmarked, against the reading's two lists and the tags each
-# mark names, as each instance names them, read with ElementTree in both
+# by nothing it leaves standing. For the third eight's three marked companies
+# they are asserted here, unmarked, against the reading's two lists and the tags
+# each mark names, as each instance names them, read with ElementTree in both
 # quarters: NAPCO's investments note, 'NOTE 5 – Marketable Securities', opening
 # 'A summary of the fair value of the Company’s investment in marketable
 # securities', which the pattern pairs beyond the reading
-# (10-Q/nssc-20260331x10q_htm.xml and 10-Q/nssc-20251231x10q_htm.xml); and AMD's
+# (10-Q/nssc-20260331x10q_htm.xml and 10-Q/nssc-20251231x10q_htm.xml); AMD's
 # debt table, 'The carrying amounts and estimated fair values of the Company’s
 # current and long-term debt are as follows:', and its related-party note,
 # headed 'Equity Method Investments' this quarter, where it says 'The Company has
 # investments accounted for under the equity method, which are considered
 # related parties.', and 'Related Party — Equity Joint Ventures' the quarter
 # before, both of which the patterns miss (10-Q/amd-20260627_htm.xml and
-# 10-Q/amd-20260328_htm.xml).
+# 10-Q/amd-20260328_htm.xml); and ADTRAN's investments note, '5. INVESTMENTS',
+# opening 'The Company has cash equivalents and investments which are held at
+# fair value as follows', which the pattern pairs beyond the reading, and the two
+# tables of its debt notes, 'The carrying amounts of the Company's non-current
+# revolving credit facility in its Condensed Consolidated Balance Sheets were as
+# follows:' in '10. CREDIT AGREEMENTS' and 'The following is a summary of
+# interest expense for the 2030 Notes:' in '11. CONVERTIBLE SENIOR NOTES AND
+# CAPPED CALLS', which the patterns miss (10-Q/adtn-20260630_htm.xml.gz and
+# 10-Q/adtn-20260331_htm.xml.gz).
 PAIRED_BEYOND_THE_READING = {
     "NSSC": ("us-gaap:InvestmentsInDebtAndMarketableEquitySecuritiesAndCertainTrading"
+             "AssetsDisclosureTextBlock",),
+    "ADTN": ("us-gaap:InvestmentsInDebtAndMarketableEquitySecuritiesAndCertainTrading"
              "AssetsDisclosureTextBlock",),
 }
 MISSED_BY_THE_PATTERNS = {
     "AMD": ("amd:FinancialInstrumentsNotRecordedAtFairValueOnRecurringBasisTable"
             "TextBlock",
             "us-gaap:EquityMethodInvestmentsDisclosureTextBlock"),
+    "ADTN": ("adtn:CarryingAmountOfRevolvingAgreementTableTextBlock",
+             "adtn:SummaryOfInterestExpenseTableTextBlock"),
 }
 
 
