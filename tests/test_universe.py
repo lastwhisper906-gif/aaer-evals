@@ -60,7 +60,16 @@ THE_EIGHT = ("DELL", "WDC", "ANET", "FTNT", "JCI", "POWL", "FELE", "FN")
 # from the module under test; their fixture sets are pinned to 2026-10-07.
 THE_NEXT_EIGHT = ("MSI", "LITE", "FLEX", "AVGO", "SMCI", "SNDK", "FFIV", "LOGI")
 
-EVERY_ROW = THE_TWELVE + THE_EIGHT + THE_NEXT_EIGHT
+# The eight after the twenty-eight, by the continuation of the owner's rule of
+# 2026-10-07, in universe.json's order: seven in the order the commit that added
+# them walked the codes, 3585, 3621, 3663, 3669, 3672, 3674, 3571, then ADTRAN
+# under 3661, in the row NetApp held. That commit took NetApp under 3572 as the
+# eighth because it found no current filer under 3661; ADTRAN is one, so the
+# rule stops at eight before 3572. Typed from those two commits, not imported
+# from the module under test; their fixture sets are pinned to 2026-10-07.
+THE_THIRD_EIGHT = ("LII", "AMSC", "UI", "NSSC", "CLS", "AMD", "OMCL", "ADTN")
+
+EVERY_ROW = THE_TWELVE + THE_EIGHT + THE_NEXT_EIGHT + THE_THIRD_EIGHT
 
 
 def _manifest(ticker: str) -> dict:

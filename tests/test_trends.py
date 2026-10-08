@@ -1088,8 +1088,11 @@ def test_the_two_records_older_than_their_trigger_are_the_ones_the_fixtures_hold
     # Of the eight added on 2026-10-07, JCI's and FELE's 10-Qs of 2026-07-29
     # were in no companyfacts row when their records were fetched
     # (`tests/test_fetch_companyfacts.py`'s NOT_YET_IN_COMPANYFACTS), so their
-    # records are older than their triggers too.
-    assert stale == {"CARR", "LFUS", "JCI", "FELE"}
+    # records are older than their triggers too. Of the third eight, so is
+    # Lennox's: its 10-Q 0001069202-26-000087, filed the same 2026-07-29, is in
+    # no row of the record fetched on 2026-10-07, whose newest rows are the prior
+    # 10-Q's, 0001069202-26-000054, filed 2026-04-29.
+    assert stale == {"CARR", "LFUS", "JCI", "FELE", "LII"}
 
 
 # Sandisk, of the next eight added on 2026-10-07, has filed only since its
@@ -1099,9 +1102,32 @@ def test_the_two_records_older_than_their_trigger_are_the_ones_the_fixtures_hold
 # 2025-03-07, and the oldest fiscal year any of them reports is the year ended
 # 2023-06-30, the first of the three its first 10-K prints. The window's two
 # oldest years, ending near 2022-07-01 and 2021-07-02, are in no filing on
-# record, so those two slots are missing and say so; every other company's
-# record reaches all five. Read off the record by `fiscal_year_ends` below.
-FIRST_YEAR_ON_RECORD = {"SNDK": "2023-06-30"}
+# record, so those two slots are missing and say so.
+#
+# Celestica, of the third eight, filed its annual reports on Form 20-F, under
+# IFRS, through fiscal 2023 -- the last, 0001030894-24-000009, filed 2024-03-11
+# for 2023-12-31 -- and its first 10-K, 0001030894-25-000014, on 2025-03-03 for
+# 2024-12-31 (its submissions index). The oldest us-gaap fiscal year in its
+# record is the first of the three that 10-K prints, 2022-01-01..2022-12-31
+# (RevenueFromContractWithCustomerExcludingAssessedTax 7,250,000,000 and
+# NetIncomeLoss 180,100,000); the years before it are under `ifrs-full`, which
+# the table does not read, and the current 10-K says why: 'In 2025, we recorded
+# other charges of $1.4 related to our transition as a U.S. domestic filer'. The
+# window's oldest year, ending near 2022-01-05, is in no us-gaap row, so that
+# one slot is missing and says so.
+#
+# Every other company's record reaches all five. Read off the record by
+# `fiscal_year_ends` below.
+FIRST_YEAR_ON_RECORD = {"SNDK": "2023-06-30", "CLS": "2022-12-31"}
+
+# How many of the window's five years end before that first year, counted off
+# the window's target ends against the first year end less the 20 days the table
+# allows. Sandisk's two oldest, years-back-3 and years-back-4, end near
+# 2022-07-01 and 2021-07-02, before 2023-06-10: two. Celestica's window steps 364
+# days back from 2025-12-31 to 2025-01-01, 2024-01-03, 2023-01-04 and 2022-01-05;
+# years-back-3, 2023-01-04, is 4 days after 2022-12-31 and filled, and
+# years-back-4, 2022-01-05, is before 2022-12-11: one.
+YEARS_BEFORE_THE_RECORD = {"SNDK": 2, "CLS": 1}
 
 
 @pytest.mark.parametrize("ticker", TICKERS)
@@ -1123,7 +1149,8 @@ def test_the_only_window_the_record_cannot_fill_is_the_fourth_quarters(ticker):
 
     So the count is a consequence and not a floor chosen after the fact. The
     one company whose filings begin inside the window is named above, and its
-    two oldest years are asserted missing for that reason and no other.
+    two oldest years are asserted missing for that reason and no other; so is
+    the one whose us-gaap filings do, Celestica, and its one oldest year.
     """
     payload = table(ticker)
     assert len(payload["coverage"]["years"]) == 5
@@ -1136,7 +1163,7 @@ def test_the_only_window_the_record_cannot_fill_is_the_fourth_quarters(ticker):
         before_the_record = [entry for entry in payload["coverage"]["years"]
                              if dt.date.fromisoformat(entry["target_end"])
                              < first - dt.timedelta(days=20)]
-        assert len(before_the_record) == 2
+        assert len(before_the_record) == YEARS_BEFORE_THE_RECORD[ticker]
         for entry in before_the_record:
             assert entry["status"] == "missing"
             assert entry["reason"] == (f"no year ending within 20 days of "

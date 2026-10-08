@@ -50,8 +50,10 @@ def record(ticker: str) -> dict:
     Stored the way `src/fetch_companyfacts.py` stores it: gzipped past 2 MB, as
     it came below that. Sandisk's record, a year and a half of filings, is
     1,052,349 bytes and is the one stored as it came; its manifest row says
-    `"stored": "identity"`. Read off the manifest with `json`, not guessed from
-    the name.
+    `"stored": "identity"`. Celestica's, of the third eight, is the second:
+    1,772,392 bytes, its us-gaap rows beginning with the first 10-K it filed in
+    2025, and its manifest row says `"stored": "identity"` too. Read off the
+    manifest with `json`, not guessed from the name.
     """
     manifest = json.loads((FIXTURES / ticker / "manifest.json").read_text(encoding="utf-8"))
     entry, = [row for row in manifest["documents"] if row["form"] == "companyfacts"]
