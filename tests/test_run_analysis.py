@@ -2902,6 +2902,96 @@ def test_a_file_a_reader_leaves_stops_the_run_before_any_analyst_is_asked(
         in mechanical.check_layers_hold(run).failures
 
 
+def _night(run, monkeypatch, **keyword):
+    """One more invocation over the run on disk, every agent writing as the stub
+    writes: the directories asked, in order, and the manifest the run finished
+    with or the error it stopped on."""
+    asked: list[str] = []
+    answer = _fake_ask({})
+
+    def ask(directory, **kw):
+        asked.append(directory.name)
+        return answer(directory, **kw)
+
+    monkeypatch.setattr(run_analysis, "ask", ask)
+    try:
+        return asked, run_analysis.run_company(run=run, **_run_keyword(), **keyword), None
+    except (agent_inputs.AgentInputError, run_analysis.RunError) as exc:
+        return asked, None, exc
+
+
+@pytest.mark.parametrize("left_by, clean", [("notes-text-reader", "numbers-reader"),
+                                            ("accounting-analyst", "financial-analyst")])
+def test_a_boundary_stop_after_two_agents_puts_the_one_that_left_nothing_on_record(
+        tmp_path, monkeypatch, nvda_bundle, left_by, clean):
+    """One of two agents called side by side leaves a file in its directory, and
+    the run stops when both return. The other's output is gated into the run
+    root first, so it is on record: while the file stands no agent is called at
+    all, by default or under --resume, and once it is removed by hand the resume
+    calls the agent that left it and what comes after, never the other. Nothing
+    of the stage was on record before: each night the file stood called the
+    clean reader or analyst again, a paid call, and once more after it was
+    removed (the critic's probe, 2026-10-08: three numbers-reader calls, four
+    financial-analyst calls). The other side, before and after: the agent that
+    left the file is not on record and is called again, and the run finishes
+    once the file is gone."""
+    from evals.common import PASS
+    from evals.regression import mechanical
+    run, asked, manifest, stopped = _run_leaving(tmp_path, monkeypatch, nvda_bundle,
+                                                 {left_by: DRAFT})
+    assert isinstance(stopped, agent_inputs.AgentInputError), stopped
+    assert f"{left_by}: holds draft.json" in manifest["stopped_on"]
+    assert not (run / run_analysis.OUTPUT_ON_RECORD[left_by][0]).exists()
+    assert not run_analysis.on_record(run, left_by, manifest["agents"][left_by])
+    assert run_analysis.on_record(run, clean, manifest["agents"][clean])
+    for resume in (False, True):
+        called, _, error = _night(run, monkeypatch, resume=resume)
+        assert called == [] and isinstance(error, agent_inputs.AgentInputError), (resume, error)
+        assert str(error).startswith("the boundary is broken before this invocation called")
+        assert f"{left_by}: holds draft.json" in str(error)
+    (run / "agents" / left_by / "draft.json").unlink()
+    called, manifest, error = _night(run, monkeypatch)
+    assert error is None, error
+    assert manifest["analysis_failure"] is None and agent_inputs.ANALYSED_KEY in manifest
+    assert mechanical.check_layers_hold(run).status == PASS
+    attempts = {name: len(run_analysis.attempts_of(record))
+                for name, record in manifest["agents"].items()}
+    assert attempts[left_by] == 2
+    assert called[0] == left_by and clean not in called and attempts[clean] == 1
+    assert clean in manifest["resume_skipped"]
+
+
+def test_no_agent_is_called_while_the_boundary_stands_broken(tmp_path, monkeypatch, nvda_bundle):
+    """A retired agent's directory made while the analysts ran sits in neither
+    analyst's directory: both are gated into the run root before the run stops.
+    While it stands, the next night calls no agent. The earlier runner called
+    both analysts again and stopped after them; with the analysts on record and
+    no check before the first call, the valuation analyst would be called, paid
+    for, and stopped on the same directory. Removed by hand, the resume calls
+    the two valuation passes and nothing before them. The other side, before
+    and after: the owner refuses the run while the directory stands and passes
+    the run that finishes once it is gone."""
+    from evals.common import PASS
+    from evals.regression import mechanical
+    retired = {"financial-analyst": lambda directory: (
+        directory.parent / "numbers-vs-market").mkdir()}
+    run, asked, manifest, stopped = _run_leaving(tmp_path, monkeypatch, nvda_bundle,
+                                                 then=retired)
+    assert isinstance(stopped, agent_inputs.AgentInputError), stopped
+    assert "agents/numbers-vs-market: no layer the grader knows" \
+        in mechanical.check_layers_hold(run).failures
+    assert all(run_analysis.on_record(run, name, manifest["agents"][name])
+               for name in ("accounting-analyst", "financial-analyst"))
+    called, _, error = _night(run, monkeypatch)
+    assert called == [] and isinstance(error, agent_inputs.AgentInputError), error
+    assert "numbers-vs-market: a retired agent's directory" in str(error)
+    (run / "agents" / "numbers-vs-market").rmdir()
+    called, manifest, error = _night(run, monkeypatch)
+    assert error is None, error
+    assert mechanical.check_layers_hold(run).status == PASS
+    assert called == ["valuation-analyst", "valuation-analyst-second-pass"]
+
+
 def test_a_file_the_valuation_analyst_leaves_stops_the_run_before_its_second_pass(
         tmp_path, monkeypatch, nvda_bundle):
     from evals.regression import mechanical

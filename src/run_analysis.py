@@ -150,6 +150,10 @@ rather than estimated. The record is written the moment each call returns
 input -- leaves every call that returned on record; `run_company` writes the
 error under `stopped_on`, and the next invocation resumes such a run as it
 resumes one the limit stopped, calling no agent whose gated output is on record.
+A boundary found broken when the two readers or the two analysts return stops
+the run once each of them whose own directory it names nothing in is gated into
+the run root (`parallel`), so the resume calls only the one that broke it; and
+no invocation calls an agent while the boundary is broken, since no call mends it.
 `finish` alone writes `analysed_utc`, the mark of a run that finished: a run
 carrying it is never resumed. Each agent's record lists every attempt under
 `attempts` (attempt, model served, tokens, cost, duration, outcome), and its
@@ -776,21 +780,79 @@ def boundary_holds(run: Path, when: str) -> None:
     as the owner's layers_hold names one (`live_run`). The control's directory,
     which sits beside `agents/` and which the router's check does not walk, is
     held too (`control_violations`)."""
-    broken = (agent_inputs.isolation_violations(run, live_run=True)
-              + control_violations(run))
+    broken = boundary_violations(run)
     if broken:
-        raise agent_inputs.AgentInputError(
-            f"the boundary is broken {when} ({len(broken)}): " + "; ".join(broken))
+        raise boundary_broken(broken, when)
+
+
+def boundary_violations(run: Path) -> list[str]:
+    """Every line the boundary check names. A line about one agent's own directory
+    begins with the agent's name and a colon (`isolation_violations`); the
+    control's begin with its directory's name."""
+    return agent_inputs.isolation_violations(run, live_run=True) + control_violations(run)
+
+
+def boundary_broken(broken: list[str], when: str) -> agent_inputs.AgentInputError:
+    return agent_inputs.AgentInputError(
+        f"the boundary is broken {when} ({len(broken)}): " + "; ".join(broken))
 
 
 def parallel(run: Path, names: tuple[str, ...], logs: Path, model: str | None = None,
              policy: LimitPolicy | None = None) -> dict[str, dict]:
+    """The agents of one stage, called at once, and the boundary checked once all
+    have returned -- not from inside the pool, where the other call's directory
+    is still being built.
+
+    A broken boundary stops the run, and each agent of the stage that wrote and
+    whose own directory the check names nothing in is first put on record, its
+    output gated into the run root as the stage's gate writes it
+    (`put_on_record`). A resumed run then calls only the agent that broke the
+    boundary, once its directory is mended by hand: with nothing of the stage
+    on record, the resume called the other again too, a reader's call over the
+    whole filing or an analyst's, every night the stray stood and once more
+    after it was removed."""
     with concurrent.futures.ThreadPoolExecutor(max_workers=len(names)) as pool:
         futures = {name: pool.submit(run_agent, run, name, logs, model, policy, check=False)
                    for name in names}
         records = {name: future.result() for name, future in futures.items()}
-    boundary_holds(run, f"after {', '.join(names)} returned")
+    broken = boundary_violations(run)
+    if broken:
+        stop = boundary_broken(broken, f"after {', '.join(names)} returned")
+        clean = tuple(name for name in names if records[name].get("result") == "written"
+                      and not any(line.startswith(f"{name}: ") for line in broken))
+        try:
+            put_on_record(run, clean)
+        except STOPS as exc:
+            raise stop from exc
+        raise stop
     return records
+
+
+def put_on_record(run: Path, names: tuple[str, ...]) -> None:
+    """The output of each agent named gated into the run root, as its stage's gate
+    writes it -- a reader's report through the quote gate, an analysis through
+    the analysis gate -- so it is on record (`on_record`) and a resumed run never
+    calls the agent again."""
+    readers = tuple(name for name in names if name in READERS)
+    if readers:
+        gate_readers(run, readers)
+    gate_analysts(run, names)
+
+
+# The two analysts that run side by side, and the analysis each writes.
+ANALYSTS = {"accounting-analyst": "accounting", "financial-analyst": "financial"}
+
+
+def gate_analysts(run: Path, names, stages: dict | None = None) -> None:
+    """Each analyst named through the analysis gate into the run root, unless its
+    analysis is already there (gated on the night a resumed run stopped);
+    `stages` takes how many items each dropped."""
+    for name, kind in ANALYSTS.items():
+        if name in names and not (run / f"analysis_{kind}.json").is_file():
+            checked = check_analysis(run, name, kind)
+            write_json(run / f"analysis_{kind}.json", checked)
+            if stages is not None:
+                stages[f"analysis_{kind}"] = {"dropped": checked["dropped_count"]}
 
 
 # --- the gates -----------------------------------------------------------------------------
@@ -1311,6 +1373,13 @@ def note_stop(run: Path, exc: BaseException) -> None:
     write_json(path, manifest)
 
 
+# What stops a run that has started: written into its manifest as `stopped_on`,
+# and the next invocation resumes from the record.
+STOPS = (analysis_check.AnalysisInputError, calculator.CalculatorInputError,
+         agent_inputs.AgentInputError, cutoff_guard.CutoffGuardError, decide.DecideError,
+         market_labels.MarketLabelError, quote_gate.QuoteGateError, OSError, ValueError)
+
+
 def run_company(**keyword) -> dict:
     """One run, or one resumed. An error that raises after the run started --
     the analysis gate refusing an analyst's file, the calculator refusing an
@@ -1321,10 +1390,7 @@ def run_company(**keyword) -> dict:
     """
     try:
         return _run_company(**keyword)
-    except (analysis_check.AnalysisInputError, calculator.CalculatorInputError,
-            agent_inputs.AgentInputError, cutoff_guard.CutoffGuardError, decide.DecideError,
-            market_labels.MarketLabelError, quote_gate.QuoteGateError, OSError,
-            ValueError) as exc:
+    except STOPS as exc:
         note_stop(Path(keyword["run"]), exc)
         raise
 
@@ -1367,6 +1433,11 @@ def _run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: 
     # the limit policy, starting from the fallback a resumed run already recorded,
     # or from the batch's when this run carries it
     policy = LimitPolicy(on_fable_limit, plan["fallback"] if plan else None, carried)
+    # No agent is called over a boundary already broken -- a file an agent left
+    # in its directory on the night the run stopped, a retired agent's
+    # directory. No call mends it, and a call made over it, the next stage's
+    # on a resumed run, is paid for and then stopped on it.
+    boundary_holds(run, "before this invocation called an agent")
 
     def pending(*names: str) -> tuple[str, ...]:
         """The agents of a stage not already on record: the ones this run calls."""
@@ -1439,11 +1510,8 @@ def _run_company(*, run: Path, ticker: str, form: str, cutoff: str, period_end: 
     analysts = pending("accounting-analyst", "financial-analyst")
     if analysts:
         agents.update(parallel(run, analysts, logs, model, policy))
-    for name, kind in (("accounting-analyst", "accounting"), ("financial-analyst", "financial")):
-        if agents[name]["result"] == "written" and not (run / f"analysis_{kind}.json").is_file():
-            checked = check_analysis(run, name, kind)
-            write_json(run / f"analysis_{kind}.json", checked)
-            stages[f"analysis_{kind}"] = {"dropped": checked["dropped_count"]}
+    gate_analysts(run, tuple(name for name in ANALYSTS if agents[name]["result"] == "written"),
+                  stages)
     accounting = _load(run / "analysis_accounting.json")
 
     # value: adjustments first, then drivers, then the reading -- unless the
