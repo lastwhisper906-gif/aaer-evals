@@ -1,0 +1,299 @@
+{
+ "question": "how healthy is this company?",
+ "sections": {
+  "profitability": {
+   "dropped": "reading: a number written in the analyst's own words: 'on our retained interest in Sandisk of $6.50 billion in the current year\", and t'"
+  },
+  "efficiency": {
+   "dropped": "reading: a number written in the analyst's own words: ' suppliers\". The fiscal year \"comprised 53 weeks, with the first quarter consist'"
+  },
+  "liquidity": {
+   "dropped": "reading: a number written in the analyst's own words: 'includes the June revolver draw, \"with $350 million remaining outstanding as of '"
+  },
+  "solvency": {
+   "reading": "Solvency is strong and much stronger than a year ago. Total debt is {ratios.solvency.total_debt.value} against {terms.debt_a_year_earlier.value} a year earlier; long-term debt went from {terms.debt_a_year_earlier.parts.debt_noncurrent.value} to {terms.debt_now.parts.debt_noncurrent.value}, and net debt is {ratios.solvency.net_debt.value}, so cash exceeds debt. Debt is {ratios.solvency.debt_over_ebitda.value} times EBITDA of {ratios.solvency.ebitda.value}, and operating income covers interest expense of {terms.trailing_four_quarters.interest_expense.value} {ratios.solvency.interest_coverage.value} times. Liabilities are {ratios.solvency.liabilities_over_assets.value|pct} of assets, with total liabilities down to {terms.balances_now.total_liabilities.value} from {terms.balances_a_year_earlier.total_liabilities.value}. Operating lease liabilities are small at {ratios.solvency.operating_lease_liability.value}. The company obtained investment-grade ratings during the year, the revolver's guarantee and collateral were released, and MD&A ties lower interest expense to the debt reduction. Unconditional purchase obligations rose to {terms.balances_now.unconditional_purchase_obligations.value} from {terms.balances_a_year_earlier.unconditional_purchase_obligations.value}, modest against cash. The exposure the filings leave unsized is tax: the auditor's critical audit matter covers management's conclusion that the separation and the exchanges \"qualified as tax-free transactions\".",
+   "fields": [
+    "ratios.solvency.total_debt.value",
+    "terms.debt_a_year_earlier.value",
+    "terms.debt_a_year_earlier.parts.debt_noncurrent.value",
+    "terms.debt_now.parts.debt_noncurrent.value",
+    "ratios.solvency.net_debt.value",
+    "ratios.solvency.ebitda.value",
+    "ratios.solvency.debt_over_ebitda.value",
+    "ratios.solvency.interest_coverage.value",
+    "terms.trailing_four_quarters.interest_expense.value",
+    "ratios.solvency.liabilities_over_assets.value",
+    "terms.balances_now.total_liabilities.value",
+    "terms.balances_a_year_earlier.total_liabilities.value",
+    "ratios.solvency.operating_lease_liability.value",
+    "terms.balances_now.unconditional_purchase_obligations.value",
+    "terms.balances_a_year_earlier.unconditional_purchase_obligations.value"
+   ],
+   "evidence": [
+    "liquidity_and_capital_long_term_debt_eliminated",
+    "liquidity_and_capital_investment_grade_ratings_collateral_released",
+    "liquidity_and_capital_interest_expense_lower_with_debt_reduction",
+    "liquidity_and_capital_february_bridge_loan_and_debt_for_equity_exchange",
+    "liquidity_and_capital_june_exchange_agreements_shares_issued",
+    "controls_audit_and_filings_critical_audit_matter_tax_free_exchanges"
+   ]
+  },
+  "growth": {
+   "dropped": "reading: a number written in the analyst's own words: 'nvironment\". The fiscal year \"comprised 53 weeks, with the first quarter consist'"
+  },
+  "free_cash_flow": {
+   "dropped": "reading: a number written in the analyst's own words: ' capital expenditures to be higher than 2026\".'"
+  }
+ },
+ "dupont": {
+  "reading": "Return on equity of {ratios.profitability.dupont.product.value|pct} is net margin {ratios.profitability.dupont.net_margin.value|pct} × asset turnover {ratios.profitability.dupont.asset_turnover.value} × equity multiplier {ratios.profitability.dupont.equity_multiplier.value}. Net margin carries it: turnover and leverage are moderate, while a net margin above the operating margin of {ratios.profitability.operating_margin.value|pct} is something only the non-operating, tax-free Sandisk gain could produce. No prior-year decomposition is in the input, but the direction of each factor can be read from the filed figures. Net income grew {ratios.growth.net_income.trailing_four_quarters.value|pct} against revenue growth of {ratios.growth.revenue.trailing_four_quarters.value|pct}, so the net-margin factor rose sharply. Revenue grew while total assets were roughly flat at {terms.balances_now.assets.value} against {terms.balances_a_year_earlier.assets.value}, so turnover rose. Equity grew from {terms.balances_a_year_earlier.stockholders_equity.value} to {terms.balances_now.stockholders_equity.value} as debt was retired and convertible notes were settled partly in shares, so the equity multiplier is shrinking. Leverage is a fading contributor, and without the gain the return would rest on operating profit alone.",
+  "fields": [
+   "ratios.profitability.dupont.product.value",
+   "ratios.profitability.dupont.net_margin.value",
+   "ratios.profitability.dupont.asset_turnover.value",
+   "ratios.profitability.dupont.equity_multiplier.value",
+   "ratios.profitability.operating_margin.value",
+   "ratios.growth.net_income.trailing_four_quarters.value",
+   "ratios.growth.revenue.trailing_four_quarters.value",
+   "terms.balances_now.assets.value",
+   "terms.balances_a_year_earlier.assets.value",
+   "terms.balances_now.stockholders_equity.value",
+   "terms.balances_a_year_earlier.stockholders_equity.value"
+  ]
+ },
+ "anomalies": [
+  {
+   "id": "profitability_effective_tax_rate_held_down_by_items_that_are_ending",
+   "name": "Effective tax rate held down by items that are ending",
+   "name_ko": "끝나가는 요인들로 낮아진 유효세율",
+   "area": "profitability",
+   "what": "The effective tax rate is {tax_rate.value|pct}: tax expense of {terms.trailing_four_quarters.income_tax_expense.value} on pretax income of {terms.trailing_four_quarters.pretax_income.value}, held down by \"the gain on the retained interest in Sandisk being tax-free due to the Separation\". That driver cannot recur. A Thailand tax holiday \"is scheduled to expire on August 31, 2026\", its benefit was already \"reduced for GMT in Thailand\", and stock-compensation windfalls that lowered the provision depend on the share price at vesting. Return on invested capital of {ratios.profitability.return_on_invested_capital.value|pct} and free cash flow to the firm of {free_cash_flow.free_cash_flow_to_firm.value} are both computed at the depressed rate.",
+   "evidence": [
+    "earnings_quality_effective_tax_rate_lowered_by_tax_free_gain",
+    "estimates_and_discretion_thailand_tax_holiday_expiry",
+    "earnings_quality_tax_holiday_benefit_reduced_by_global_minimum_tax",
+    "earnings_quality_stock_compensation_tax_windfall"
+   ],
+   "fields": [
+    "tax_rate.value",
+    "terms.trailing_four_quarters.income_tax_expense.value",
+    "terms.trailing_four_quarters.pretax_income.value",
+    "ratios.profitability.return_on_invested_capital.value",
+    "free_cash_flow.free_cash_flow_to_firm.value"
+   ]
+  },
+  {
+   "id": "efficiency_year_end_receivable_and_inventory_days_lengthened",
+   "name": "Year-end receivable and inventory days lengthened",
+   "name_ko": "연말 매출채권·재고 일수 증가",
+   "area": "efficiency",
+   "what": "On year-end balances days sales outstanding rose to {trend_table.years-back-0.ratios.days_sales_outstanding.value} from {trend_table.years-back-1.ratios.days_sales_outstanding.value} and days of inventory to {trend_table.years-back-0.ratios.days_sales_of_inventory.value} from {trend_table.years-back-1.ratios.days_sales_of_inventory.value}. Receivables grew by {terms.trailing_four_quarters.change_in_receivables.value}, which MD&A ties to shipment growth, and inventory by {terms.trailing_four_quarters.change_in_inventory.value}, tied to a production ramp in the same words used for the prior year. Quarterly receivable days rose through the year from {trend_table.quarters-back-3.ratios.days_sales_outstanding.value} to {trend_table.quarters-back-1.ratios.days_sales_outstanding.value}, while quarterly inventory days fell to {trend_table.quarters-back-1.ratios.days_sales_of_inventory.value}. Both annual measures remain far below fiscal 2023's {trend_table.years-back-3.ratios.days_sales_outstanding.value} and {trend_table.years-back-3.ratios.days_sales_of_inventory.value}, so this is a mild lengthening, not a collection or stock problem.",
+   "evidence": [
+    "revenue_recognition_days_sales_outstanding_annual",
+    "estimates_and_discretion_days_sales_of_inventory_annual",
+    "revenue_recognition_receivables_build_in_cash_flow",
+    "revenue_recognition_accounts_receivable_growth_explained_by_shipments",
+    "earnings_quality_inventory_build_explained_by_production_ramp",
+    "revenue_recognition_days_sales_outstanding_quarterly",
+    "estimates_and_discretion_days_sales_of_inventory_quarterly"
+   ],
+   "fields": [
+    "trend_table.years-back-0.ratios.days_sales_outstanding.value",
+    "trend_table.years-back-1.ratios.days_sales_outstanding.value",
+    "trend_table.years-back-3.ratios.days_sales_outstanding.value",
+    "trend_table.years-back-0.ratios.days_sales_of_inventory.value",
+    "trend_table.years-back-1.ratios.days_sales_of_inventory.value",
+    "trend_table.years-back-3.ratios.days_sales_of_inventory.value",
+    "trend_table.quarters-back-3.ratios.days_sales_outstanding.value",
+    "trend_table.quarters-back-1.ratios.days_sales_outstanding.value",
+    "trend_table.quarters-back-1.ratios.days_sales_of_inventory.value",
+    "terms.trailing_four_quarters.change_in_receivables.value",
+    "terms.trailing_four_quarters.change_in_inventory.value"
+   ]
+  },
+  {
+   "id": "efficiency_payables_lengthened_by_supplier_terms",
+   "name": "Payable days lengthened by supplier terms",
+   "name_ko": "공급업체 결제조건으로 늘어난 매입채무 일수",
+   "area": "efficiency",
+   "what": "Payable days of {ratios.efficiency.days_payables_outstanding.value} exceed inventory days of {ratios.efficiency.days_sales_of_inventory.value}, which holds the cash conversion cycle at {ratios.efficiency.cash_conversion_cycle.value} days. MD&A puts part of the payables increase on \"more favorable payment terms with suppliers\", and the 10-K's tagged supplier-finance obligation rose over the year (the calculator carries no supplier-finance field). Payables stretched by terms rather than by volume unwind if terms tighten. The balance-sheet rise in payables, {earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change.value}, exceeds the cash-flow statement's {earnings_versus_cash.working_capital.accounts_payable.cash_flow_statement_change.value} by {earnings_versus_cash.working_capital.accounts_payable.articulation_gap.value}, which the input does not explain.",
+   "evidence": [
+    "liquidity_and_capital_payables_extended_by_supplier_terms",
+    "liquidity_and_capital_supplier_finance_obligation"
+   ],
+   "fields": [
+    "ratios.efficiency.days_payables_outstanding.value",
+    "ratios.efficiency.days_sales_of_inventory.value",
+    "ratios.efficiency.cash_conversion_cycle.value",
+    "earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change.value",
+    "earnings_versus_cash.working_capital.accounts_payable.cash_flow_statement_change.value",
+    "earnings_versus_cash.working_capital.accounts_payable.articulation_gap.value"
+   ]
+  },
+  {
+   "id": "liquidity_and_capital_quick_assets_short_of_current_liabilities",
+   "name": "Quick assets short of current liabilities",
+   "name_ko": "유동부채에 못 미치는 당좌자산",
+   "area": "liquidity_and_capital",
+   "what": "The quick ratio is {ratios.liquidity.quick_ratio.value}: cash of {terms.balances_now.cash.value} plus receivables of {terms.balances_now.receivables.value} fall short of current liabilities of {terms.balances_now.current_liabilities.value}. Cash is down from {terms.balances_a_year_earlier.cash.value} a year earlier, and current liabilities include all remaining debt, {terms.debt_now.parts.debt_current.value}. With inventory counted, the current ratio of {ratios.liquidity.current_ratio.value} covers current liabilities, so this is a thin cushion rather than a gap.",
+   "evidence": [
+    "liquidity_and_capital_buybacks_and_convertible_settlement",
+    "liquidity_and_capital_long_term_debt_eliminated"
+   ],
+   "fields": [
+    "ratios.liquidity.quick_ratio.value",
+    "ratios.liquidity.current_ratio.value",
+    "terms.balances_now.cash.value",
+    "terms.balances_a_year_earlier.cash.value",
+    "terms.balances_now.receivables.value",
+    "terms.balances_now.current_liabilities.value",
+    "terms.debt_now.parts.debt_current.value"
+   ]
+  },
+  {
+   "id": "solvency_unquantified_tax_exposure_on_tax_free_exchanges",
+   "name": "Unsized tax exposure if the tax-free treatment fails",
+   "name_ko": "비과세 판단이 뒤집힐 경우의 금액 미제시 세금 위험",
+   "area": "solvency",
+   "what": "Management concluded that the separation, the debt-for-equity exchange and the equity-for-equity exchanges \"qualified as tax-free transactions\", and the auditor made that conclusion a critical audit matter. The filings do not size the tax that would arise if the treatment failed. The balance sheet otherwise carries total liabilities of {terms.balances_now.total_liabilities.value}, {ratios.solvency.liabilities_over_assets.value|pct} of assets, and net debt of {ratios.solvency.net_debt.value}; an unsized tax claim is the item that could change that picture, and the reported tax rate of {tax_rate.value|pct} already rests on the gain being tax-free.",
+   "evidence": [
+    "controls_audit_and_filings_critical_audit_matter_tax_free_exchanges",
+    "earnings_quality_effective_tax_rate_lowered_by_tax_free_gain"
+   ],
+   "fields": [
+    "terms.balances_now.total_liabilities.value",
+    "ratios.solvency.liabilities_over_assets.value",
+    "ratios.solvency.net_debt.value",
+    "tax_rate.value"
+   ]
+  },
+  {
+   "id": "growth_net_income_growth_rests_on_gain_that_cannot_recur",
+   "name": "Net income growth rests on a gain that cannot recur",
+   "name_ko": "반복될 수 없는 이익에 기댄 순이익 성장",
+   "area": "growth",
+   "what": "Net income grew {ratios.growth.net_income.trailing_four_quarters.value|pct} for the year and {ratios.growth.net_income.year_over_year.value|pct} for the fourth quarter, far faster than operating income at {ratios.growth.operating_income.trailing_four_quarters.value|pct} and {ratios.growth.operating_income.year_over_year.value|pct}, and it slipped {ratios.growth.net_income.quarter_over_quarter.value|pct} from the third quarter while operating income rose {ratios.growth.operating_income.quarter_over_quarter.value|pct}. The difference is the Sandisk gain, which the release's cash-flow statement shows in both the quarter and the year. With the shares disposed, fiscal 2026 net income is a base that includes a gain that cannot repeat, so net income growth measured against it carries that gap.",
+   "evidence": [
+    "earnings_quality_retained_interest_gain_in_net_income",
+    "earnings_quality_sandisk_mark_to_market_gain_not_recurring",
+    "structure_and_disclosure_changes_sandisk_retained_interest_fully_disposed"
+   ],
+   "fields": [
+    "ratios.growth.net_income.trailing_four_quarters.value",
+    "ratios.growth.net_income.year_over_year.value",
+    "ratios.growth.net_income.quarter_over_quarter.value",
+    "ratios.growth.operating_income.trailing_four_quarters.value",
+    "ratios.growth.operating_income.year_over_year.value",
+    "ratios.growth.operating_income.quarter_over_quarter.value"
+   ]
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_realignment_and_cancelled_facility_projects",
+   "name": "Realignment and cancelled facility projects",
+   "name_ko": "구조조정과 설비 프로젝트 취소",
+   "area": "narrative_signs_of_operating_pressure",
+   "what": "In a year of record margins the company ran a realignment: \"In 2026, the Company canceled certain facility projects and impaired related construction in progress assets\", with business realignment charges through the year, a non-cash impairment booked in the fourth quarter, and cash termination benefits in the realignment table while MD&A cites higher headcount. Management frames it as optimizing capacity for growth. The charges are small against operating income of {ebit.value} and an operating margin of {ratios.profitability.operating_margin.value|pct}; the cancelled projects are the narrative sign that capacity plans were cut back during the year.",
+   "evidence": [
+    "earnings_quality_business_realignment_capacity_project_cancellations",
+    "estimates_and_discretion_business_realignment_charges",
+    "estimates_and_discretion_non_cash_asset_impairment",
+    "across_documents_termination_benefits_alongside_headcount_growth"
+   ],
+   "fields": [
+    "ebit.value",
+    "ratios.profitability.operating_margin.value"
+   ]
+  }
+ ],
+ "path_to_distress": {
+  "dropped": "reading: a number written in the analyst's own words: 'le the revolver that matures in January 2027 went unrenewed, a path made shorter'"
+ },
+ "summary_ko": {
+  "profitability": "매출총이익률 {ratios.profitability.gross_margin.value|pct}와 영업이익률 {ratios.profitability.operating_margin.value|pct}은 공시된 과거 기록 가운데 가장 높습니다. 그러나 순이익률 {ratios.profitability.net_margin.value|pct}과 ROE {ratios.profitability.return_on_equity.value|pct}는 다시 생길 수 없는 비과세 샌디스크 지분 평가이익으로 부풀려져 있어, 본업 수익성은 영업이익을 바탕으로 한 ROIC {ratios.profitability.return_on_invested_capital.value|pct}로 보는 편이 정확합니다.",
+  "efficiency": "평균 잔액 기준 매출채권 회수기간은 {ratios.efficiency.days_sales_outstanding.value}일, 재고 보유기간은 {ratios.efficiency.days_sales_of_inventory.value}일, 매입채무 지급기간은 {ratios.efficiency.days_payables_outstanding.value}일로 현금전환주기는 {ratios.efficiency.cash_conversion_cycle.value}일입니다. 연말 기준 매출채권·재고 일수는 전년보다 조금 늘었지만 2023 회계연도보다 훨씬 짧고, 매입채무 일수는 공급업체에 유리해진 결제조건의 도움을 일부 받고 있습니다.",
+  "liquidity": "유동비율은 {ratios.liquidity.current_ratio.value}이지만 당좌비율은 {ratios.liquidity.quick_ratio.value}로 현금과 매출채권만으로는 유동부채를 모두 갚지 못하며, 남은 차입금 {terms.debt_now.parts.debt_current.value} 전부가 단기 부채로 분류되어 있습니다. 현금은 자사주 매입과 부채 상환으로 {terms.balances_a_year_earlier.cash.value}에서 {terms.balances_now.cash.value}로 줄었고, 잉여현금흐름이 플러스라서 현금 소진 기간(runway)은 계산되지 않습니다.",
+  "solvency": "현금이 차입금보다 많아 순차입금은 {ratios.solvency.net_debt.value}이고, 이자보상배율 {ratios.solvency.interest_coverage.value}, EBITDA 대비 차입금 {ratios.solvency.debt_over_ebitda.value}, 자산 대비 부채 {ratios.solvency.liabilities_over_assets.value|pct}로 지급능력은 매우 튼튼합니다. 다만 분할과 지분 교환 거래의 비과세 판단이 뒤집힐 경우의 세금 부담은 공시에 금액이 나와 있지 않습니다.",
+  "growth": "회계연도 마지막 분기 매출은 직전 분기 대비 {ratios.growth.revenue.quarter_over_quarter.value|pct}, 전년 동기 대비 {ratios.growth.revenue.year_over_year.value|pct} 늘었고 연간으로는 {ratios.growth.revenue.trailing_four_quarters.value|pct} 늘었으며, 영업이익({ratios.growth.operating_income.trailing_four_quarters.value|pct})과 영업현금흐름({ratios.growth.operating_cash_flow.trailing_four_quarters.value|pct})은 더 빨리 늘었습니다. 다만 연간 수치에는 평소보다 길었던 회계연도 효과가, 순이익 성장률 {ratios.growth.net_income.trailing_four_quarters.value|pct}에는 반복되지 않는 샌디스크 평가이익이 섞여 있습니다.",
+  "free_cash_flow": "단순 잉여현금흐름은 {free_cash_flow.free_cash_flow_simple.value}로 공시 기록상 가장 크고, 기업 잉여현금흐름 {free_cash_flow.free_cash_flow_to_firm.value}, 주주 잉여현금흐름 {free_cash_flow.free_cash_flow_to_equity.value}, 주식보상비용을 뺀 품질조정 잉여현금흐름 {free_cash_flow.free_cash_flow_quality_adjusted.value}까지 빠진 항목 없이 모두 계산되었습니다. 영업현금흐름이 순이익의 {earnings_versus_cash.operating_cash_flow_over_net_income.value|pct}에 그친 것은 현금이 들어오지 않은 샌디스크 평가이익 때문입니다.",
+  "dupont": "ROE {ratios.profitability.dupont.product.value|pct}는 순이익률 {ratios.profitability.dupont.net_margin.value|pct} × 총자산회전율 {ratios.profitability.dupont.asset_turnover.value} × 자기자본승수 {ratios.profitability.dupont.equity_multiplier.value}로 나뉘며, ROE를 떠받치는 것은 일회성 비과세 이익으로 부풀려진 순이익률입니다. 부채 상환과 주식 발행으로 자기자본이 늘어 레버리지(자기자본승수)의 기여는 줄어드는 방향입니다.",
+  "path_to_distress": null
+ },
+ "limits": "This analysis reads the company's health from its own filed numbers against its own past. It forecasts nothing, and it cannot see what is not in the filings.",
+ "normalized_quotes": 0,
+ "dropped_items": [
+  {
+   "where": "sections.profitability",
+   "reason": "reading: a number written in the analyst's own words: 'on our retained interest in Sandisk of $6.50 billion in the current year\", and t'"
+  },
+  {
+   "where": "sections.efficiency",
+   "reason": "reading: a number written in the analyst's own words: ' suppliers\". The fiscal year \"comprised 53 weeks, with the first quarter consist'"
+  },
+  {
+   "where": "sections.liquidity",
+   "reason": "reading: a number written in the analyst's own words: 'includes the June revolver draw, \"with $350 million remaining outstanding as of '"
+  },
+  {
+   "where": "sections.growth",
+   "reason": "reading: a number written in the analyst's own words: 'nvironment\". The fiscal year \"comprised 53 weeks, with the first quarter consist'"
+  },
+  {
+   "where": "sections.free_cash_flow",
+   "reason": "reading: a number written in the analyst's own words: ' capital expenditures to be higher than 2026\".'"
+  },
+  {
+   "where": "path_to_distress",
+   "reason": "reading: a number written in the analyst's own words: 'le the revolver that matures in January 2027 went unrenewed, a path made shorter'"
+  },
+  {
+   "where": "anomalies[0]",
+   "id": "profitability_net_income_carried_by_non_recurring_sandisk_gain",
+   "reason": "what: a number written in the analyst's own words: 'on our retained interest in Sandisk of $6.50 billion in the current year\". The r'"
+  },
+  {
+   "where": "anomalies[2]",
+   "id": "profitability_capital_transaction_costs_below_operating_income",
+   "reason": "what: a number written in the analyst's own words: 'capital transactions cost real money: \"$545 million of costs incurred in connect'"
+  },
+  {
+   "where": "anomalies[5]",
+   "id": "efficiency_receivables_concentrated_in_few_customers",
+   "reason": "what: a number written in the analyst's own words: ': \"As of  , two customers accounted for 25% and 17%, respectively\". No allowance'"
+  },
+  {
+   "where": "anomalies[7]",
+   "id": "liquidity_and_capital_all_debt_current_with_revolver_maturing",
+   "reason": "what: a number written in the analyst's own words: 'includes the June revolver draw, \"with $350 million remaining outstanding as of '"
+  },
+  {
+   "where": "anomalies[8]",
+   "id": "liquidity_and_capital_buybacks_and_note_settlements_drew_down_cash",
+   "reason": "what: a number written in the analyst's own words: 't having \"elected to use an additional $328 million of cash to settle the conver'"
+  },
+  {
+   "where": "anomalies[9]",
+   "id": "liquidity_and_capital_tax_cash_due_inside_a_year",
+   "reason": "what: a number written in the analyst's own words: 'ayments are coming due: \"approximately $349 million, including interest and pena'"
+  },
+  {
+   "where": "anomalies[12]",
+   "id": "growth_full_year_lifted_by_extra_week",
+   "reason": "what: a number written in the analyst's own words: '  \"comprised 53 weeks, with the first quarter consisting of 14 weeks\", so full-y'"
+  },
+  {
+   "where": "anomalies[13]",
+   "id": "results_against_expectations_guide_set_against_a_longer_comparison_quarter",
+   "reason": "what: a number written in the analyst's own words: 'n be read. The company\\'s own guide is \"Q1FY27 revenue expected to be up 42% to 4'"
+  },
+  {
+   "where": "anomalies[15]",
+   "id": "narrative_signs_of_operating_pressure_revenue_concentrated_in_few_cloud_buyers",
+   "reason": "what: a number written in the analyst's own words: 'ated: \" , three customers accounted for 16%, 15%, and 13%, respectively\", and th'"
+  },
+  {
+   "where": "summary_ko.path_to_distress",
+   "reason": "a number written in the analyst's own words: ' 위기와 거리가 멉니다(순차입금  , 이자보상배율  ). 위기가 되려면 2023·  회계연도처럼 가격이나 수요가 꺾여 영업이익과 잉여현금흐름이 '"
+  }
+ ],
+ "dropped_count": 16
+}

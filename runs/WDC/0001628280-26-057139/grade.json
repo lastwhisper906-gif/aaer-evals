@@ -1,0 +1,328 @@
+{
+ "run": "WDC/0001628280-26-057139",
+ "rubric": "evals/capability/rubric.md",
+ "dealbreakers": [
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "cross_document_reconciliation_debt_for_equity_exchange_cost_components",
+   "where": "analysis_accounting.json anomalies[24].numbers_vs_prose",
+   "why": "notes:162 gives '$539 million recorded in Costs in connection with debt-for-equity exchange' and a separate write-off that 'wrote off $6 million of remaining unamortized issuance costs'. Together these make up mdna:47's '$545 million of costs incurred in connection with our debt-for-equity exchange', so the inputs settle the difference the anomaly leaves unresolved."
+  },
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "cross_document_reconciliation_litigation_reversal_amounts",
+   "where": "analysis_accounting.json anomalies[26].numbers_vs_prose",
+   "why": "note_history:3 says the company 'reversed $201 million and $198 million, respectively' for the three- and nine-month periods, which explains why the release figure and the tagged gain differ. The analyst cites this wording in the area finding but still labels the item unresolved."
+  }
+ ],
+ "items": [
+  {
+   "id": "earnings_versus_cash_operating_cash_flow_far_below_net_income",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "earnings_versus_cash.operating_cash_flow_over_net_income is far below history.years.1. trend_table.years-back-0 accruals is 'highest of the 5 filled years'. 8k_2_02:60 shows the Sandisk gain as the reconciling line, and notes:119 confirms the stake is gone."
+  },
+  {
+   "id": "earnings_versus_cash_payables_articulation_gap",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "medium",
+   "why": "The gap matches earnings_versus_cash.working_capital.accounts_payable.articulation_gap. But notes:128 states that 'Purchases of property, plant and equipment included in accounts payable and accrued expense' rose year on year by close to the gap, so the inputs contradict 'no prose explains it'."
+  },
+  {
+   "id": "earnings_versus_cash_earnings_more_volatile_than_cash",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "earnings_versus_cash.smoothness is above one by its own formula note, and its quarterly net_income series moves with the Sandisk marks shown at 8k_2_02:60."
+  },
+  {
+   "id": "revenue_recognition_extra_week_absent_from_revenue_explanation",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:19 says 'the first quarter consisting of 14 weeks', and mdna:33 explains growth by exabytes and ASPs only. ratios.growth.revenue.trailing_four_quarters checks."
+  },
+  {
+   "id": "revenue_recognition_sales_incentive_share_falling",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:38 says 'these programs represented 9%, 10% and 11%, respectively, of gross revenue', and auditors_report:16-18 is the variable-consideration critical audit matter."
+  },
+  {
+   "id": "revenue_recognition_longer_arrangements_with_immaterial_obligations",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:8 cites longer 'commercial arrangements', while notes:49-50 call remaining obligations and contract balances not material. terms.balances_now.contract_liabilities is missing."
+  },
+  {
+   "id": "revenue_recognition_receivables_concentration_above_revenue_share",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "concentration.facts.46 against .42, and .18 against .14, match notes:104 and notes:103. No customer exceeds the .42 revenue share, so the gap holds whichever customer holds the receivables. facts.40 checks."
+  },
+  {
+   "id": "revenue_recognition_annual_days_sales_outstanding_up",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "trend_table years-back-0 and years-back-1 days_sales_outstanding show a small rise, with receivables_over_revenue nearly flat. mdna:61 ties the rise to shipments."
+  },
+  {
+   "id": "revenue_recognition_client_and_consumer_explanation_generic",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:35 and mdna:36 repeat the sentence 'driven by dynamics largely consistent with our other end markets', and in both segments stated ASP growth exceeds exabyte growth."
+  },
+  {
+   "id": "estimates_and_reserves_effective_tax_rate_on_discrete_items",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "tax_rate matches. mdna:51 names the tax-free gain, and notes:215 shows 'Tax-free disposition of retained interest in Sandisk' as the largest reconciling line. notes:217 and notes:227 support the rest. 'None recurs' overstates the case: windfalls can recur, and MD&A also names the FDDEI deduction."
+  },
+  {
+   "id": "estimates_and_reserves_derivative_remeasurement_turned_to_cost",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "note_history:16 reported 'an immaterial gain' in Other income (expense), net. notes:172 records the derivative 'remeasured to a fair value of $106 million' in convertible-note transaction costs."
+  },
+  {
+   "id": "estimates_and_reserves_no_hedge_reclassification_from_other_comprehensive_income",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:141 says 'There were no amounts reclassified out of Accumulated other comprehensive income (loss) during 2026', and notes:76 says 'All contract maturity dates are 12 months or less'. No reason is given."
+  },
+  {
+   "id": "estimates_and_reserves_realignment_and_impairment_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:44 and notes:249 show realignment charges against a prior-year credit. 8k_2_02:60 shows the impairment, and notes:247 the cancelled facility projects."
+  },
+  {
+   "id": "cost_deferral_gaap_above_non_gaap",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:8 says 'GAAP diluted EPS of $8.21; non-GAAP diluted EPS of $3.56', and 8k_2_02:81 shows non-GAAP excludes the Sandisk gain. trend_table non_gaap_gap is missing."
+  },
+  {
+   "id": "cost_deferral_recurring_and_new_non_gaap_exclusions",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:65 excludes realignment charges, and mdna:27 shows them in every year. 8k_2_02:72 revises prior-period shares, and 8k_2_02:97 assumes no capped-call benefit. 'New category' is only partly shown, because 8k_2_02:65 already carries that line for the prior year."
+  },
+  {
+   "id": "cost_deferral_soft_asset_share_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "trend_table.years-back-0 soft_asset_share is above years-back-1 and is 'second lowest of the 5 filled years'. The balance-sheet paths show cash down and receivables and inventory up."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_supplier_finance_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:343 puts supplier-finance obligations of '$76 million and $39 million' inside Accounts payable, and mdna:61 cites 'more favorable payment terms with suppliers'. ratios.efficiency.days_payables_outstanding checks."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_purchase_obligations_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.balances_now and terms.balances_a_year_earlier unconditional_purchase_obligations show the jump. mdna:93-94 and notes:196-197 describe the commitments without explaining the rise. The cited reader item (mdna:93 capex) is only tangential."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_prior_year_cash_flow_reclassified",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:25 says 'Certain prior year amounts have been reclassified in the Consolidated Statements of Cash Flows' but gives no line or amount. The id for history.years.1.operating_cash_flow is this 10-K."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_stock_award_withholding_in_financing",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:65 reports '$376 million for taxes paid on vested stock awards' in financing, which exceeds terms.trailing_four_quarters.share_based_compensation. free_cash_flow.free_cash_flow_simple does not carry it."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_tax_cash_timing",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:61 cites 'a $627 million decrease in taxes payable resulting from the timing of payments'. mdna:103 says GMT is 'not expected to be paid until the second quarter of 2028', and notes:239 has payments 'within the next twelve months'."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_tax_critical_audit_matter_widened",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "auditors_report:25-26 extends the tax-free critical audit matter to this year's debt-for-equity and equity-for-equity exchanges and calls it 'especially subjective auditor judgment'. No input sizes the exposure."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_non_gaap_prior_periods_revised",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:72: 'Calculations of amounts presented for prior periods have been revised to conform to the new presentation.'"
+  },
+  {
+   "id": "controls_audit_and_filing_signals_insider_sale_plans_near_year_end",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:351-353 show three plans, from 'adopted a Rule 10b5-1 Plan on May 28, 2026' to 'adopted a Rule 10b5-1 Plan on June 5, 2026', each for a small share count."
+  },
+  {
+   "id": "cross_document_reconciliation_debt_for_equity_exchange_cost_components",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "low",
+   "why": "Dealbreaker: notes:162's cost and issuance-cost write-off together make up mdna:47's caption total, so the inputs settle a difference left as unresolved."
+  },
+  {
+   "id": "cross_document_reconciliation_convertible_notes_cost_components",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "low",
+   "why": "notes:172 '$106 million' plus notes:173 'an immaterial induced conversion expense' sit under mdna:47's '$108 million of costs in connection with our convertible notes transactions'. The residual is called only immaterial, so the tie is close but not stated."
+  },
+  {
+   "id": "cross_document_reconciliation_litigation_reversal_amounts",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "low",
+   "why": "Dealbreaker: note_history:3 ('reversed $201 million and $198 million, respectively') explains the release-versus-tag difference, yet the item is left unresolved."
+  },
+  {
+   "id": "cross_document_reconciliation_capped_call_benefit_in_shares_versus_guidance",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "low",
+   "why": "8k_2_02:72 and 8k_2_02:97 say what the anomaly says. But 8k_2_02:70 shows the capped-call benefit row already down to a small figure in the latest quarter, so the guidance fits the trend rather than marking an unexplained change."
+  },
+  {
+   "id": "cross_document_reconciliation_termination_benefits_beside_headcount_growth",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:42 cites 'increased headcount', while notes:247 and notes:249 show employee termination benefits for cost reduction. mdna:45 is only a cross-reference."
+  },
+  {
+   "id": "cross_document_reconciliation_conversion_premium_value_untied",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:173 says 'for the conversion premium of $12.5 billion', and no other paragraph or calculator field restates it."
+  },
+  {
+   "id": "cross_document_reconciliation_guidance_against_longer_comparison_quarter",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:19 says 'the first quarter consisting of 14 weeks', and 8k_2_02:10 says 'Q1FY27 revenue expected to be up 42% to 49% year-over-year'. The release carries no week-count caveat."
+  },
+  {
+   "id": "cross_document_reconciliation_revolver_draw_versus_current_debt_decline",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "low",
+   "why": "notes:159's debt table puts the revolver balance inside the year-end current portion, next to the remaining convertible notes. The fall from terms.debt_a_year_earlier.parts.debt_current comes from the notes settled in June (notes:172-173), so the inputs show no tension."
+  },
+  {
+   "id": "industry_lens_customer_concentration_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "concentration.facts.0, .17 and .45 rise across three years, and facts .42-.44 match notes:103."
+  },
+  {
+   "id": "industry_lens_inventory_days_up_on_year",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "trend_table.years-back-0 days_sales_of_inventory is above years-back-1, and quarters-back-1 is 'lowest of the 6 filled quarters'. mdna:61 names the production ramp, and inventory_reserve is missing."
+  },
+  {
+   "id": "profitability_effective_tax_rate_held_down_by_items_that_are_ending",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "tax_rate and its inputs match. The quotes resolve at mdna:51, notes:227 and notes:228. The formulas for ratios.profitability.return_on_invested_capital and free_cash_flow.free_cash_flow_to_firm both use tax_rate."
+  },
+  {
+   "id": "efficiency_year_end_receivable_and_inventory_days_lengthened",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The trend cells years-back-0/-1/-3 and quarters-back-3/-1 match. mdna:61 uses 'as we ramped production in response to growing demand' for both years."
+  },
+  {
+   "id": "efficiency_payables_lengthened_by_supplier_terms",
+   "frame": "finance",
+   "verdict": "unclear",
+   "severity": "medium",
+   "why": "Supplier terms (mdna:61) and the rising supplier-finance obligation (notes:343) are shown. But notes:128 puts rising capital-expenditure payables in accounts payable and accrued expense, which explains most of the gap called unexplained and inflates days_payables_outstanding. No prior-year path shows the claimed lengthening."
+  },
+  {
+   "id": "liquidity_and_capital_quick_assets_short_of_current_liabilities",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.liquidity.quick_ratio and current_ratio and their inputs match. terms.debt_now.parts.debt_noncurrent is zero, so all debt is current."
+  },
+  {
+   "id": "solvency_unquantified_tax_exposure_on_tax_free_exchanges",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "The auditors_report:25 quote resolves, and no input sizes the tax at risk. terms.balances_now.total_liabilities, ratios.solvency.liabilities_over_assets and ratios.solvency.net_debt match."
+  },
+  {
+   "id": "growth_net_income_growth_rests_on_gain_that_cannot_recur",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "The ratios.growth.net_income and ratios.growth.operating_income paths match. 8k_2_02:60 shows the Sandisk gain in both the quarter and year columns, and notes:119 confirms the stake is gone."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_realignment_and_cancelled_facility_projects",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The notes:247 quote resolves. 8k_2_02:44, 8k_2_02:60 and 8k_2_02:65 show the charges and the fourth-quarter impairment, notes:249 the termination benefits and mdna:42 the headcount. ebit and operating_margin match."
+  }
+ ],
+ "coverage": {
+  "answer": "no",
+  "why": "The accounting frame answers all seven areas and the industry lens. In the financial frame, the gate dropped profitability, efficiency, liquidity, growth, free_cash_flow and path_to_distress (sections.*.dropped), leaving only solvency and dupont."
+ },
+ "calibration": {
+  "answer": "no",
+  "why": "The cross_document_reconciliation verdict says the release and the 10-K 'agree on every figure both carry', yet its own anomaly cross_document_reconciliation_litigation_reversal_amounts reports a release-versus-tag difference. Most financial anomalies sit under sections whose readings were dropped."
+ },
+ "valuation_reading": {
+  "answer": "no",
+  "why": "market.missing and implied_growth_beside_history.implied_ten_year_revenue_growth.missing leave no price position and no implied growth. most_sensitive is empty because the gate dropped both entries. The reading states these gaps rather than answering."
+ },
+ "score": 0.896,
+ "grader": {
+  "model_requested": "opus",
+  "model_served": "claude-opus-5-5",
+  "input_tokens": 66,
+  "output_tokens": 65284,
+  "cost_usd": 8.676584599999998,
+  "seconds": 586.5
+ }
+}

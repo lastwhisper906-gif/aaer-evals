@@ -1,0 +1,1002 @@
+{
+ "question": "do reported earnings and cash reflect economic reality?",
+ "areas": {
+  "earnings_versus_cash": {
+   "finding": "Operating cash flow covered only {earnings_versus_cash.operating_cash_flow_over_net_income} of net income this year. It covered {earnings_versus_cash.history.years.1.operating_cash_flow_over_net_income} last year, and {earnings_versus_cash.history.years.4.operating_cash_flow_over_net_income} and {earnings_versus_cash.history.years.5.operating_cash_flow_over_net_income} in the earlier profitable years. The two loss years in between cannot be compared, because income and cash were both negative. Accruals over average assets are {earnings_versus_cash.accruals_over_average_assets}. On the trend table's year-end basis they are {trend_table.years-back-0.ratios.accruals_over_total_assets}, the highest of five filled years, against {trend_table.years-back-1.ratios.accruals_over_total_assets} a year earlier. The reconciling item is a non-cash, non-operating mark-to-market gain on the retained Sandisk interest. The release adds it back in its cash-flow statement and MD&A names it. The stake is now fully disposed, so the gain cannot recur, and net income of {terms.trailing_four_quarters.net_income} is not a run-rate. The gain's amount is not a field in calculator_filings_only.json, so no earnings adjustment can be written for it. Below the gain, the core business converts to cash. Operating income of {terms.trailing_four_quarters.operating_income} grew {ratios.growth.operating_income.trailing_four_quarters|pct}, and operating cash flow of {terms.trailing_four_quarters.operating_cash_flow} grew {ratios.growth.operating_cash_flow.trailing_four_quarters|pct}. Operating cash flow is still below operating income, as it was a year earlier ({earnings_versus_cash.history.years.1.operating_cash_flow} against {earnings_versus_cash.history.years.1.operating_income}). MD&A attributes part of this year's drag to tax payments made on a timing basis. Working capital absorbed only a little of earnings. Receivables rose {earnings_versus_cash.working_capital.receivables.balance_sheet_change} ({earnings_versus_cash.working_capital.receivables.share_of_net_income|pct} of net income) and inventory rose {earnings_versus_cash.working_capital.inventory.balance_sheet_change} ({earnings_versus_cash.working_capital.inventory.share_of_net_income|pct}). Payables supplied {earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change} ({earnings_versus_cash.working_capital.accounts_payable.share_of_net_income|pct}). On articulation, receivables (gap {earnings_versus_cash.working_capital.receivables.articulation_gap}) and inventory (gap {earnings_versus_cash.working_capital.inventory.articulation_gap}) tie to the cash-flow lines. Accounts payable does not: the balance-sheet rise exceeds the cash-flow statement's payables line by {earnings_versus_cash.working_capital.accounts_payable.articulation_gap}, and no prose explains the difference. Non-operating payables such as capital-expenditure accruals, or the unexplained prior-year reclassification, are possible readings, but neither is stated. Smoothness is {earnings_versus_cash.smoothness}, which is above one. Income moves more than cash, so earnings are not smoothed relative to cash; the volatility comes from the Sandisk marks. Only two quarters have quarterly accruals filled, so no quarterly accrual trend exists.",
+   "verdict": "Reported net income overstates recurring, cash-backed earnings by a large one-time non-cash investment gain. Operating earnings convert to cash at a reasonable rate. One gap is unexplained: payables do not tie between the balance sheet and the cash-flow statement.",
+   "evidence": [
+    "earnings_quality_accruals_over_total_assets_annual",
+    "earnings_quality_retained_interest_gain_in_net_income",
+    "liquidity_and_capital_retained_sandisk_interest_fully_disposed",
+    "earnings_quality_sandisk_mark_to_market_gain_not_recurring",
+    "liquidity_and_capital_taxes_payable_decrease_timing_of_payments",
+    "revenue_recognition_receivables_build_in_cash_flow",
+    "liquidity_and_capital_payables_extended_by_supplier_terms",
+    "earnings_quality_accruals_over_total_assets_quarterly_two_periods",
+    "structure_and_disclosure_changes_cash_flow_reclassification"
+   ],
+   "fields": [
+    "earnings_versus_cash.operating_cash_flow_over_net_income",
+    "earnings_versus_cash.accruals_over_average_assets",
+    "earnings_versus_cash.history.years.1.operating_cash_flow_over_net_income",
+    "trend_table.years-back-0.ratios.accruals_over_total_assets",
+    "trend_table.years-back-1.ratios.accruals_over_total_assets",
+    "earnings_versus_cash.working_capital.receivables.balance_sheet_change",
+    "earnings_versus_cash.working_capital.inventory.balance_sheet_change",
+    "earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change",
+    "earnings_versus_cash.working_capital.accounts_payable.articulation_gap",
+    "earnings_versus_cash.smoothness",
+    "terms.trailing_four_quarters.operating_income",
+    "terms.trailing_four_quarters.operating_cash_flow"
+   ]
+  },
+  "revenue_recognition": {
+   "finding": "Receivables grew with revenue, not ahead of it. On the trend table's year-end basis, days sales outstanding are {trend_table.years-back-0.ratios.days_sales_outstanding} against {trend_table.years-back-1.ratios.days_sales_outstanding}. That is third highest of five years and far below the peak of {trend_table.years-back-3.ratios.days_sales_outstanding}. Receivables over revenue barely moved ({trend_table.years-back-0.ratios.receivables_over_revenue} against {trend_table.years-back-1.ratios.receivables_over_revenue}). On average balances the figure is {ratios.efficiency.days_sales_outstanding}. The year-end figure is measured over a year one week longer than last year's, which lifts it mechanically. At the third quarter, days sales outstanding were {trend_table.quarters-back-1.ratios.days_sales_outstanding}, third lowest of seven, up from {trend_table.quarters-back-3.ratios.days_sales_outstanding} in the first quarter. No fourth-quarter ratio exists, because the derived fourth quarter has no trend cells. MD&A ties the receivables increase to shipments, and the cash-flow line matches the quoted amount. Fourth-quarter revenue of {ratios.growth.revenue.this_quarter} rose {ratios.growth.revenue.quarter_over_quarter|pct} on the third quarter and {ratios.growth.revenue.year_over_year|pct} on the year-ago quarter. That follows the sequential trend; it is not a year-end spike. Four points of judgment remain. (a) The first quarter was one week longer than usual. MD&A's revenue explanation does not mention this, so part of the {ratios.growth.revenue.trailing_four_quarters|pct} growth is calendar and is not quantified. (b) Sales incentive and price protection programmes, the subject of a standing variable-consideration critical audit matter, took a smaller share of gross revenue each year. That lifts net revenue relative to gross, and the only explanation given is the pricing environment. (c) MD&A says customers are extending the duration of their commercial arrangements. The notes call remaining performance obligations and contract balances not material, and contract liabilities are untagged. So what the longer arrangements contain economically cannot be seen. (d) The largest customer holds {concentration.facts.46.value|pct} of receivables against {concentration.facts.42.value|pct} of revenue. That gap is wider than last year's {concentration.facts.18.value|pct} against {concentration.facts.14.value|pct}. No bill-and-hold or extended payment terms are disclosed in the inputs, and the notes describe terms as typically short. Client and Consumer revenue growth is explained only by a generic sentence.",
+   "verdict": "Revenue recognition looks clean on receivables. The softer points are an extra week that is not quantified, a falling share of gross revenue taken by incentives, and receivables concentrated in the largest customer.",
+   "evidence": [
+    "revenue_recognition_days_sales_outstanding_annual",
+    "revenue_recognition_receivables_over_revenue_annual",
+    "revenue_recognition_days_sales_outstanding_quarterly",
+    "revenue_recognition_receivables_over_revenue_quarterly",
+    "revenue_recognition_receivables_build_in_cash_flow",
+    "revenue_recognition_accounts_receivable_growth_explained_by_shipments",
+    "structure_and_disclosure_changes_fifty_three_week_fiscal_year",
+    "across_documents_revenue_explanation_silent_on_extra_week",
+    "revenue_recognition_sales_incentive_programs_share_of_gross_revenue",
+    "across_documents_longer_commercial_arrangements_versus_immaterial_remaining_obligations",
+    "revenue_recognition_contract_liabilities_over_revenue_annual",
+    "earnings_quality_receivables_concentration_two_customers",
+    "results_against_expectations_client_consumer_explanation_generic"
+   ],
+   "fields": [
+    "trend_table.years-back-0.ratios.days_sales_outstanding",
+    "trend_table.years-back-1.ratios.days_sales_outstanding",
+    "trend_table.years-back-0.ratios.receivables_over_revenue",
+    "trend_table.years-back-1.ratios.receivables_over_revenue",
+    "ratios.efficiency.days_sales_outstanding",
+    "trend_table.quarters-back-1.ratios.days_sales_outstanding",
+    "ratios.growth.revenue.quarter_over_quarter",
+    "ratios.growth.revenue.trailing_four_quarters",
+    "concentration.facts.46.value",
+    "concentration.facts.42.value"
+   ]
+  },
+  "estimates_and_reserves": {
+   "finding": "The allowance for credit losses, the inventory reserve and inventory write-downs are not tagged in any period, so those ratios cannot be tested. The notes describe credit-loss reserves as not material. The warranty reserve did not thin. The accrual rose from {terms.balances_a_year_earlier.warranty_accrual} to {terms.balances_now.warranty_accrual}, and warranty over revenue is {trend_table.years-back-0.ratios.warranty_reserve_ratio} against {trend_table.years-back-1.ratios.warranty_reserve_ratio}. The effective tax rate is {tax_rate|pct}, far below statutory. The prose names discrete drivers: the Sandisk gain being tax-free, stock-compensation windfalls that are newly material, and a Thailand tax holiday that a global minimum tax now reduces and that expires shortly after year end. Each driver is one-time or fading, so the rate is not a run-rate. The tax-free status of the exchanges is itself a judgment that the auditor calls especially subjective, and the exposure is not quantified. Other estimate movements: business realignment charges and an impairment of construction in progress rose from a prior-year credit. The third-quarter 10-Q described a bifurcated derivative's remeasurement as an immaterial gain; it ended the year as a cost in convertible-note transaction costs. Hedge maturities are within a year, yet nothing was reclassified out of accumulated other comprehensive income, and this is not explained. The inputs carry no goodwill headroom, discount-rate or valuation-allowance release item. No estimate change that raises operating income was found.",
+   "verdict": "Operating reserves look stable where they can be seen. The tax line is flattered by discrete items that will not recur.",
+   "evidence": [
+    "estimates_and_discretion_warranty_reserve_ratio_annual",
+    "estimates_and_discretion_warranty_reserve_ratio_quarterly",
+    "estimates_and_discretion_bad_debt_reserve_ratio_annual",
+    "estimates_and_discretion_inventory_reserve_ratio_annual",
+    "earnings_quality_effective_tax_rate_lowered_by_tax_free_gain",
+    "earnings_quality_stock_compensation_tax_windfall",
+    "earnings_quality_tax_holiday_benefit_reduced_by_global_minimum_tax",
+    "estimates_and_discretion_thailand_tax_holiday_expiry",
+    "controls_audit_and_filings_critical_audit_matter_tax_free_exchanges",
+    "estimates_and_discretion_business_realignment_charges",
+    "estimates_and_discretion_non_cash_asset_impairment",
+    "earnings_quality_tendered_notes_derivative_remeasurement_cost",
+    "estimates_and_discretion_hedge_amounts_not_reclassified"
+   ],
+   "fields": [
+    "terms.balances_now.warranty_accrual",
+    "terms.balances_a_year_earlier.warranty_accrual",
+    "trend_table.years-back-0.ratios.warranty_reserve_ratio",
+    "trend_table.years-back-1.ratios.warranty_reserve_ratio",
+    "tax_rate"
+   ]
+  },
+  "cost_deferral": {
+   "finding": "Research and development expense and capitalised software are not tagged in companyfacts, so capitalised cost cannot be tested against expensed cost. The release shows research and development rising, all of it expensed. Soft assets rose to {trend_table.years-back-0.ratios.soft_asset_share} of assets from {trend_table.years-back-1.ratios.soft_asset_share}, still second lowest of five years. The rise came from lower cash and higher receivables and inventory while the retained Sandisk stake left the balance sheet; it did not come from a capitalised cost. Capital expenditure of {terms.trailing_four_quarters.capital_expenditure} is close to depreciation and amortisation of {terms.trailing_four_quarters.depreciation_and_amortization} and to last year's {terms.trailing_four_quarters_a_year_earlier.capital_expenditure}. Interest paid ({terms.trailing_four_quarters.interest_paid}) is close to interest expense ({terms.trailing_four_quarters.interest_expense}), so there is no sign of capitalised interest building up. The non-GAAP gap cannot be computed, because no non-GAAP measure is tagged. The release shows GAAP EPS above non-GAAP, because non-GAAP excludes the Sandisk gain; that is the reverse of the usual direction. Even so, non-GAAP also excludes business realignment charges that appear in every year shown, a credit last year and charges this year. It adds a new exclusion category for costs of debt and equity transactions. It also changed its diluted share count to include the capped-call benefit and revised prior periods to match, while next-quarter share guidance assumes no such benefit. These recurring exclusions and method changes flatter non-GAAP results, not GAAP results.",
+   "verdict": "No evidence of cost deferral through capitalisation. The non-GAAP presentation has exclusions that recur and a share-count method that has been revised.",
+   "evidence": [
+    "across_documents_research_and_development_untagged",
+    "earnings_quality_soft_asset_share_annual",
+    "earnings_quality_soft_asset_share_quarterly",
+    "earnings_quality_non_gaap_gap_annual",
+    "earnings_quality_gaap_above_non_gaap_per_share",
+    "estimates_and_discretion_business_realignment_charges",
+    "earnings_quality_non_gaap_excludes_exchange_discount_costs",
+    "structure_and_disclosure_changes_non_gaap_share_count_revision",
+    "structure_and_disclosure_changes_non_gaap_share_count_includes_capped_call",
+    "across_documents_capped_call_benefit_excluded_from_share_guidance"
+   ],
+   "fields": [
+    "trend_table.years-back-0.ratios.soft_asset_share",
+    "trend_table.years-back-1.ratios.soft_asset_share",
+    "terms.trailing_four_quarters.capital_expenditure",
+    "terms.trailing_four_quarters.depreciation_and_amortization",
+    "terms.trailing_four_quarters.interest_paid",
+    "terms.trailing_four_quarters.interest_expense"
+   ]
+  },
+  "cash_flow_engineering_and_off_balance_sheet": {
+   "finding": "Factoring: the receivables-sale tags exist in the company's record for earlier periods but carry no value this year, so no factoring proceeds are visible in operating cash flow. The inputs do not say whether a programme ended or is simply untagged this year. Supplier finance: the calculator's supplier-finance field is missing, because the company tags only the current obligation. The numbers reader shows that current obligation rising from a year earlier, and MD&A credits part of the payables increase to 'more favorable payment terms with suppliers'. Days payables outstanding are {ratios.efficiency.days_payables_outstanding}, above days sales outstanding of {ratios.efficiency.days_sales_outstanding}. So part of this year's operating cash flow comes from paying suppliers later. No field separates the part driven by terms, and the full payables change would overstate it, so no adjustment is written. Classification: prior-year cash-flow amounts were reclassified, with no line or amount given. The prior-year operating cash flow in the calculator ({earnings_versus_cash.history.years.1.operating_cash_flow}) comes from this 10-K, so any reclassification is already inside it and cannot be seen. Taxes: cash tax timing moves both ways. The decrease in taxes payable held down this year's cash, accrued global minimum tax is not due until fiscal 2028, and payments on uncertain tax positions are expected within twelve months. Purchase obligations rose from {terms.balances_a_year_earlier.unconditional_purchase_obligations} to {terms.balances_now.unconditional_purchase_obligations}, far faster than revenue, and no prose in the inputs explains this. Operating leases are flat ({terms.balances_a_year_earlier.operating_lease_liability} to {terms.balances_now.operating_lease_liability}). Guarantees are untagged, and the revolver guarantee and collateral were released. No variable-interest entity appears in the inputs. Share-based compensation of {terms.trailing_four_quarters.share_based_compensation}, down from {earnings_versus_cash.history.years.1.share_based_compensation}, is already subtracted in {free_cash_flow.free_cash_flow_quality_adjusted}. On top of that, MD&A reports taxes paid on vested stock awards, classified in financing, that are larger than the expense. This is a real cash cost of stock pay that free cash flow does not carry. Repurchases of {terms.trailing_four_quarters.share_repurchases} offset dilution.",
+   "verdict": "Supplier terms and a growing supplier-finance programme help operating cash flow modestly. The cash cost of stock pay sits in financing. No factoring is visible this year, and purchase commitments jumped without explanation.",
+   "evidence": [
+    "liquidity_and_capital_supplier_finance_obligation",
+    "liquidity_and_capital_payables_extended_by_supplier_terms",
+    "structure_and_disclosure_changes_cash_flow_reclassification",
+    "liquidity_and_capital_taxes_payable_decrease_timing_of_payments",
+    "liquidity_and_capital_global_minimum_tax_payment_deferred",
+    "liquidity_and_capital_unrecognized_tax_benefit_payments_within_twelve_months",
+    "liquidity_and_capital_investment_grade_ratings_collateral_released",
+    "liquidity_and_capital_taxes_paid_on_vested_stock_awards",
+    "liquidity_and_capital_buybacks_and_convertible_settlement",
+    "liquidity_and_capital_share_repurchase_authorization_expanded"
+   ],
+   "fields": [
+    "ratios.efficiency.days_payables_outstanding",
+    "terms.balances_now.unconditional_purchase_obligations",
+    "terms.balances_a_year_earlier.unconditional_purchase_obligations",
+    "terms.balances_now.operating_lease_liability",
+    "terms.trailing_four_quarters.share_based_compensation",
+    "free_cash_flow.free_cash_flow_quality_adjusted",
+    "terms.trailing_four_quarters.share_repurchases",
+    "earnings_versus_cash.history.years.1.operating_cash_flow"
+   ]
+  },
+  "controls_audit_and_filing_signals": {
+   "finding": "The auditor is unchanged (KPMG) and its opinions are unqualified. Disclosure controls and internal control over financial reporting are reported effective, no change in internal control is reported, and there is no material weakness. The tax critical audit matter widened: it now covers the debt-for-equity and equity-for-equity exchanges as well as the separation, and it is described as especially subjective. The variable-consideration matter is a standing one. An 8-K with a director or officer change item was filed in May 2026, but its body is not in the inputs, so a finance-officer departure can be neither confirmed nor ruled out. An 8-K on unregistered share sales was amended. The filing list carries a late-filing notice (NT 10-Q) for a quarter ended in December 2023. It is old, but it is a filing signal. No restatement is traced. Superseded 10-Q facts were not compared. The non-GAAP per-share figures were revised for a method change, which is not a GAAP restatement. The annual note now states the litigation reversal as a single amount, where the third-quarter 10-Q gave two. Three insiders (the chief product officer, a director and the chief sales officer) adopted share-sale plans within about a week near year end. The risk-factor diff, the subsidiary-list diff and any SEC comment letters are not in the inputs, so those cannot be tested. No related-party item is in the inputs.",
+   "verdict": "The control opinions are clean. The signals are a widened tax judgment, an officer-change 8-K whose body is not in the inputs, and an old late filing.",
+   "evidence": [
+    "controls_audit_and_filings_critical_audit_matter_tax_free_exchanges",
+    "structure_and_disclosure_changes_non_gaap_share_count_revision",
+    "articulation_and_the_filed_history_litigation_reversal_wording",
+    "related_parties_contingencies_and_subsequent_events_trading_plan_chief_product_officer",
+    "related_parties_contingencies_and_subsequent_events_trading_plan_director",
+    "related_parties_contingencies_and_subsequent_events_trading_plan_chief_sales_officer",
+    "related_parties_contingencies_and_subsequent_events_spex_damages_awarded",
+    "related_parties_contingencies_and_subsequent_events_ip_litigation_settlement_gain"
+   ],
+   "fields": []
+  },
+  "cross_document_reconciliation": {
+   "finding": "For the notes items with an expected direction, the numbers confirm the receivables build, the inventory build, the payables increase, the Sandisk disposal and the end of its gain, the debt reduction, the fall in cash, the realignment charges, the gross-margin and pricing direction, and the revenue rise in the longer year. None is contradicted. Most tax, share-count and forward-looking items are unresolved, because no field carries them (see reconciliation). The 8-K release matches the 10-K wherever both are in the inputs: net income {terms.trailing_four_quarters.net_income}, operating cash flow {terms.trailing_four_quarters.operating_cash_flow}, the receivables change {earnings_versus_cash.working_capital.receivables.cash_flow_statement_change}, repurchases {terms.trailing_four_quarters.share_repurchases}, the convertible repayment {terms.cash_flow_families.borrowing_repaid.lines_not_added.0.value}, current debt {terms.debt_now.parts.debt_current} and non-current debt {terms.debt_now.parts.debt_noncurrent}. Several items do not reconcile. MD&A's debt-for-equity exchange cost and its convertible-note transaction cost each differ from the components the notes quote, and the notes do not state the caption of the issuance-cost write-offs. The prior-year litigation credit in the release differs from the settlement gain the 10-K tags; this fits the third-quarter 10-Q's two-figure wording, which the annual note dropped. The conversion premium settled in shares has no field to tie to. Non-GAAP shares include a capped-call benefit that next-quarter guidance excludes. Realignment termination benefits sit beside MD&A's headcount growth. Next-quarter growth guidance is measured against a first quarter one week longer than usual, and the release does not say so.",
+   "verdict": "No contradictions. The release and the 10-K agree on every figure both carry. Several transaction-cost and share figures cannot be tied from the inputs.",
+   "evidence": [
+    "earnings_quality_retained_interest_gain_in_net_income",
+    "revenue_recognition_receivables_build_in_cash_flow",
+    "liquidity_and_capital_buybacks_and_convertible_settlement",
+    "liquidity_and_capital_long_term_debt_eliminated",
+    "articulation_and_the_filed_history_debt_for_equity_exchange_cost_amounts",
+    "articulation_and_the_filed_history_convertible_notes_transaction_cost_components",
+    "articulation_and_the_filed_history_litigation_reversal_wording",
+    "related_parties_contingencies_and_subsequent_events_ip_litigation_settlement_gain",
+    "articulation_and_the_filed_history_stated_conversion_premium_value",
+    "across_documents_capped_call_benefit_excluded_from_share_guidance",
+    "across_documents_termination_benefits_alongside_headcount_growth",
+    "results_against_expectations_first_quarter_guidance_against_fourteen_week_quarter"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.net_income",
+    "terms.trailing_four_quarters.operating_cash_flow",
+    "earnings_versus_cash.working_capital.receivables.cash_flow_statement_change",
+    "terms.trailing_four_quarters.share_repurchases",
+    "terms.cash_flow_families.borrowing_repaid.lines_not_added.0.value",
+    "terms.debt_now.parts.debt_current",
+    "terms.debt_now.parts.debt_noncurrent"
+   ]
+  },
+  "industry_lens": {
+   "finding": "Inventory obsolescence: no reserve or write-down is tagged, so the reserve cannot be tested. Year-end inventory days are {trend_table.years-back-0.ratios.days_sales_of_inventory} against {trend_table.years-back-1.ratios.days_sales_of_inventory}. That is up, but still second lowest of five years and far below {trend_table.years-back-3.ratios.days_sales_of_inventory}. Third-quarter inventory days of {trend_table.quarters-back-1.ratios.days_sales_of_inventory} were the lowest of six quarters, and gross margin is the highest on record ({trend_table.years-back-0.ratios.gross_margin|pct}). No obsolescence signal. Purchase commitments: obligations rose from {terms.balances_a_year_earlier.unconditional_purchase_obligations} to {terms.balances_now.unconditional_purchase_obligations}, against revenue growth of {ratios.growth.revenue.trailing_four_quarters|pct}. With demand and margin rising, the likely reading is a production ramp. Commitments in excess of need would show here first, though, and no prose explains the rise. Customer concentration is rising. The top ten customers took {concentration.facts.45.value|pct} of revenue, against {concentration.facts.17.value|pct} last year and {concentration.facts.0.value|pct} two years ago. Three customers took {concentration.facts.42.value|pct}, {concentration.facts.43.value|pct} and {concentration.facts.44.value|pct}, and two customers hold {concentration.facts.46.value|pct} and {concentration.facts.47.value|pct} of receivables. Channel stuffing: nothing found. Receivables track revenue, the incentive share of gross revenue fell rather than rose, and fourth-quarter revenue follows the sequential trend. The caveat is that no fourth-quarter days sales outstanding exists. Circular or vendor-financed deals: nothing found. The only equity stake was the retained interest in Sandisk, now disposed through exchanges with debt holders and the company's own shareholders. No investment in a customer appears in the inputs, although the inputs carry no related-party note.",
+   "verdict": "Inventory and channel look clean. Customer concentration is rising and purchase commitments jumped, both consistent with a demand ramp but neither explained in the prose.",
+   "evidence": [
+    "estimates_and_discretion_days_sales_of_inventory_annual",
+    "estimates_and_discretion_days_sales_of_inventory_quarterly",
+    "estimates_and_discretion_inventory_reserve_ratio_annual",
+    "earnings_quality_gross_margin_annual",
+    "earnings_quality_inventory_build_explained_by_production_ramp",
+    "earnings_quality_customer_concentration_three_customers",
+    "earnings_quality_receivables_concentration_two_customers",
+    "revenue_recognition_sales_incentive_programs_share_of_gross_revenue",
+    "structure_and_disclosure_changes_sandisk_retained_interest_fully_disposed"
+   ],
+   "fields": [
+    "trend_table.years-back-0.ratios.days_sales_of_inventory",
+    "trend_table.years-back-1.ratios.days_sales_of_inventory",
+    "trend_table.quarters-back-1.ratios.days_sales_of_inventory",
+    "terms.balances_now.unconditional_purchase_obligations",
+    "terms.balances_a_year_earlier.unconditional_purchase_obligations",
+    "concentration.facts.45.value",
+    "concentration.facts.17.value",
+    "concentration.facts.0.value",
+    "concentration.facts.46.value",
+    "concentration.facts.47.value"
+   ]
+  }
+ },
+ "reconciliation": [
+  {
+   "notes_item": "structure_and_disclosure_changes_fifty_three_week_fiscal_year",
+   "numbers_items": [
+    "revenue_recognition_days_sales_outstanding_annual"
+   ],
+   "outcome": "confirms",
+   "why": "Revenue grew {ratios.growth.revenue.trailing_four_quarters|pct} over a year one week longer than the last. The direction is confirmed, but no field isolates the extra week's share."
+  },
+  {
+   "notes_item": "results_against_expectations_first_quarter_guidance_against_fourteen_week_quarter",
+   "numbers_items": [
+    "results_against_expectations_next_quarter_revenue_guide"
+   ],
+   "outcome": "unresolved",
+   "why": "The guided quarter has not been reported. The latest year-over-year quarterly growth is {ratios.growth.revenue.year_over_year|pct}, and the guidance compares against a longer quarter."
+  },
+  {
+   "notes_item": "results_against_expectations_guidance_margin_expansion",
+   "numbers_items": [
+    "earnings_quality_gross_margin_quarterly"
+   ],
+   "outcome": "unresolved",
+   "why": "Gross margin was already the highest of six filled quarters at {trend_table.quarters-back-1.ratios.gross_margin|pct}. The guided quarter has not been reported, and the guide is non-GAAP."
+  },
+  {
+   "notes_item": "results_against_expectations_management_cites_increasing_visibility",
+   "numbers_items": [
+    "revenue_recognition_contract_liabilities_over_revenue_annual"
+   ],
+   "outcome": "unresolved",
+   "why": "No contract-liability or backlog field exists. Purchase obligations rose to {terms.balances_now.unconditional_purchase_obligations}, which fits the claim but does not test visibility."
+  },
+  {
+   "notes_item": "revenue_recognition_accounts_receivable_growth_explained_by_shipments",
+   "numbers_items": [
+    "revenue_recognition_receivables_build_in_cash_flow",
+    "revenue_recognition_days_sales_outstanding_annual",
+    "revenue_recognition_receivables_over_revenue_annual"
+   ],
+   "outcome": "confirms",
+   "why": "The cash-flow line {earnings_versus_cash.working_capital.receivables.cash_flow_statement_change} matches the quote, and the balance-sheet change is {earnings_versus_cash.working_capital.receivables.balance_sheet_change}. Receivables over revenue barely moved ({trend_table.years-back-0.ratios.receivables_over_revenue} against {trend_table.years-back-1.ratios.receivables_over_revenue})."
+  },
+  {
+   "notes_item": "earnings_quality_inventory_build_explained_by_production_ramp",
+   "numbers_items": [
+    "estimates_and_discretion_days_sales_of_inventory_annual",
+    "estimates_and_discretion_days_sales_of_inventory_quarterly"
+   ],
+   "outcome": "confirms",
+   "why": "The cash-flow line {earnings_versus_cash.working_capital.inventory.cash_flow_statement_change} matches the quote. Year-end inventory days rose to {trend_table.years-back-0.ratios.days_sales_of_inventory} from {trend_table.years-back-1.ratios.days_sales_of_inventory} but remain second lowest of five years."
+  },
+  {
+   "notes_item": "liquidity_and_capital_payables_extended_by_supplier_terms",
+   "numbers_items": [
+    "liquidity_and_capital_supplier_finance_obligation"
+   ],
+   "outcome": "confirms",
+   "why": "The cash-flow line {earnings_versus_cash.working_capital.accounts_payable.cash_flow_statement_change} matches the quote, and the supplier-finance obligation rose. The balance-sheet change {earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change} exceeds the cash-flow line by {earnings_versus_cash.working_capital.accounts_payable.articulation_gap}, and no prose explains the difference."
+  },
+  {
+   "notes_item": "liquidity_and_capital_taxes_payable_decrease_timing_of_payments",
+   "numbers_items": [],
+   "outcome": "unresolved",
+   "why": "No taxes-payable field is in the calculator."
+  },
+  {
+   "notes_item": "earnings_quality_accrued_compensation_variable_plans",
+   "numbers_items": [],
+   "outcome": "unresolved",
+   "why": "No accrued-compensation field exists. Share-based compensation, a different line, fell to {terms.trailing_four_quarters.share_based_compensation} from {earnings_versus_cash.history.years.1.share_based_compensation}."
+  },
+  {
+   "notes_item": "structure_and_disclosure_changes_sandisk_retained_interest_fully_disposed",
+   "numbers_items": [
+    "liquidity_and_capital_retained_sandisk_interest_fully_disposed"
+   ],
+   "outcome": "confirms",
+   "why": "The fair-value equity securities line is zero at year end, against a positive balance a year earlier."
+  },
+  {
+   "notes_item": "earnings_quality_sandisk_mark_to_market_gain_not_recurring",
+   "numbers_items": [
+    "earnings_quality_retained_interest_gain_in_net_income",
+    "liquidity_and_capital_retained_sandisk_interest_fully_disposed"
+   ],
+   "outcome": "confirms",
+   "why": "The gain is the reconciling line between net income and operating cash flow. With the stake at zero there is nothing left to mark, so operating cash flow over net income of {earnings_versus_cash.operating_cash_flow_over_net_income} cannot repeat for this reason."
+  },
+  {
+   "notes_item": "liquidity_and_capital_interest_expense_lower_with_debt_reduction",
+   "numbers_items": [
+    "liquidity_and_capital_long_term_debt_eliminated"
+   ],
+   "outcome": "confirms",
+   "why": "Total debt fell to {terms.debt_now} from {terms.debt_a_year_earlier}, and interest coverage is {ratios.solvency.interest_coverage}. Prior-year interest expense is not a calculator field, so the cause is tested but the size of the fall is not."
+  },
+  {
+   "notes_item": "liquidity_and_capital_revolving_credit_facility_drawn_in_june",
+   "numbers_items": [
+    "liquidity_and_capital_long_term_debt_eliminated"
+   ],
+   "outcome": "unresolved",
+   "why": "The current portion of debt fell year over year, to {terms.debt_now.parts.debt_current} from {terms.debt_a_year_earlier.parts.debt_current}. The third-quarter balance is not in the calculator, so the rise within the quarter cannot be tested. The draw did not raise debt over the year."
+  },
+  {
+   "notes_item": "liquidity_and_capital_investment_grade_ratings_collateral_released",
+   "numbers_items": [],
+   "outcome": "unresolved",
+   "why": "This is forward-looking, and no rate or fee field exists."
+  },
+  {
+   "notes_item": "liquidity_and_capital_remaining_convertible_notes_expected_cash_settlement",
+   "numbers_items": [],
+   "outcome": "unresolved",
+   "why": "The settlement has not yet happened. Year-end cash is {terms.balances_now.cash}, against current debt of {terms.debt_now.parts.debt_current}."
+  },
+  {
+   "notes_item": "liquidity_and_capital_conversion_premium_settled_in_shares",
+   "numbers_items": [],
+   "outcome": "unresolved",
+   "why": "Shares outstanding at the cover date are {terms.shares_outstanding}. No prior share-count field exists to test the direction."
+  },
+  {
+   "notes_item": "liquidity_and_capital_cash_election_for_tendered_notes_premium",
+   "numbers_items": [],
+   "outcome": "confirms",
+   "why": "Cash fell to {terms.balances_now.cash} from {terms.balances_a_year_earlier.cash}. The premium is one of several uses of cash, and no field isolates it."
+  },
+  {
+   "notes_item": "earnings_quality_tendered_notes_derivative_remeasurement_cost",
+   "numbers_items": [],
+   "outcome": "unresolved",
+   "why": "No field carries convertible-note transaction costs."
+  },
+  {
+   "notes_item": "liquidity_and_capital_june_exchange_agreements_shares_issued",
+   "numbers_items": [
+    "liquidity_and_capital_buybacks_and_convertible_settlement"
+   ],
+   "outcome": "unresolved",
+   "why": "The convertible repayment of {terms.cash_flow_families.borrowing_repaid.lines_not_added.0.value} confirms the cash leg. No share-count history field exists to test the share leg."
+  },
+  {
+   "notes_item": "related_parties_contingencies_and_subsequent_events_capped_call_shares_after_year_end",
+   "numbers_items": [],
+   "outcome": "unresolved",
+   "why": "This falls after year end and is not in the record."
+  },
+  {
+   "notes_item": "structure_and_disclosure_changes_non_gaap_share_count_includes_capped_call",
+   "numbers_items": [
+    "structure_and_disclosure_changes_non_gaap_share_count_revision",
+    "earnings_quality_gaap_above_non_gaap_per_share"
+   ],
+   "outcome": "unresolved",
+   "why": "The release confirms the method change. Non-GAAP shares and EPS are not calculator fields, so the size of the effect is not measured."
+  },
+  {
+   "notes_item": "structure_and_disclosure_changes_preferred_stock_converted_and_eliminated",
+   "numbers_items": [],
+   "outcome": "unresolved",
+   "why": "No preferred-stock field is in the calculator."
+  },
+  {
+   "notes_item": "liquidity_and_capital_share_repurchase_authorization_expanded",
+   "numbers_items": [
+    "liquidity_and_capital_buybacks_and_convertible_settlement"
+   ],
+   "outcome": "unresolved",
+   "why": "Repurchases of {terms.trailing_four_quarters.share_repurchases} match the quoted cost, and cash fell. The share-count direction cannot be tested, and the notes record share issuances in the June exchanges and the preferred conversion that push the other way."
+  },
+  {
+   "notes_item": "earnings_quality_effective_tax_rate_lowered_by_tax_free_gain",
+   "numbers_items": [],
+   "outcome": "unresolved",
+   "why": "This year's rate of {tax_rate|pct} fits a large tax-free gain inside pretax income of {terms.trailing_four_quarters.pretax_income}. The rise the item expects falls in a quarter not yet reported."
+  },
+  {
+   "notes_item": "estimates_and_discretion_tax_legislation_research_expensing",
+   "numbers_items": [],
+   "outcome": "unresolved",
+   "why": "This is forward-looking, and no cash-tax field exists."
+  },
+  {
+   "notes_item": "earnings_quality_tax_holiday_benefit_reduced_by_global_minimum_tax",
+   "numbers_items": [],
+   "outcome": "unresolved",
+   "why": "No tax-holiday benefit field exists."
+  },
+  {
+   "notes_item": "estimates_and_discretion_thailand_tax_holiday_expiry",
+   "numbers_items": [],
+   "outcome": "unresolved",
+   "why": "The expiry falls after year end, and no field carries it."
+  },
+  {
+   "notes_item": "earnings_quality_deferred_tax_assets_decrease_from_interest_carryforward_use",
+   "numbers_items": [],
+   "outcome": "unresolved",
+   "why": "No deferred-tax-asset field exists."
+  },
+  {
+   "notes_item": "earnings_quality_stock_compensation_tax_windfall",
+   "numbers_items": [],
+   "outcome": "unresolved",
+   "why": "The low rate of {tax_rate|pct} fits the claim, but no field separates the windfall from the tax-free gain."
+  },
+  {
+   "notes_item": "liquidity_and_capital_unrecognized_tax_benefit_payments_within_twelve_months",
+   "numbers_items": [],
+   "outcome": "unresolved",
+   "why": "The payments are future, and no field carries uncertain tax positions."
+  },
+  {
+   "notes_item": "liquidity_and_capital_tax_receivables_netted_against_payments",
+   "numbers_items": [],
+   "outcome": "unresolved",
+   "why": "No other-current-assets field exists."
+  },
+  {
+   "notes_item": "earnings_quality_business_realignment_capacity_project_cancellations",
+   "numbers_items": [
+    "estimates_and_discretion_business_realignment_charges",
+    "estimates_and_discretion_non_cash_asset_impairment"
+   ],
+   "outcome": "confirms",
+   "why": "Realignment charges and a non-cash impairment both rose from almost nothing a year earlier. Property, plant and equipment still rose, to {terms.balances_now.property_plant_and_equipment} from {terms.balances_a_year_earlier.property_plant_and_equipment}."
+  },
+  {
+   "notes_item": "results_against_expectations_cloud_pricing_environment",
+   "numbers_items": [
+    "earnings_quality_gross_margin_annual"
+   ],
+   "outcome": "confirms",
+   "why": "Segment figures are not fields. At company level, revenue rose {ratios.growth.revenue.trailing_four_quarters|pct} and gross margin reached {ratios.profitability.gross_margin|pct}, the highest of five years, which fits better pricing."
+  },
+  {
+   "notes_item": "results_against_expectations_gross_margin_drivers",
+   "numbers_items": [
+    "earnings_quality_gross_margin_annual",
+    "earnings_quality_gross_margin_quarterly"
+   ],
+   "outcome": "confirms",
+   "why": "Gross margin was {ratios.profitability.gross_margin|pct}, against {trend_table.years-back-1.ratios.gross_margin|pct} a year earlier. The individual drivers cannot be separated."
+  },
+  {
+   "notes_item": "results_against_expectations_selling_general_administrative_lower_after_separation",
+   "numbers_items": [],
+   "outcome": "unresolved",
+   "why": "Selling, general and administrative expense is not a calculator field."
+  },
+  {
+   "notes_item": "liquidity_and_capital_capital_expenditures_higher_next_year",
+   "numbers_items": [],
+   "outcome": "unresolved",
+   "why": "Capital expenditure was {terms.trailing_four_quarters.capital_expenditure}, against {terms.trailing_four_quarters_a_year_earlier.capital_expenditure} a year earlier. Next year has not been reported."
+  },
+  {
+   "notes_item": "liquidity_and_capital_taxes_paid_on_vested_stock_awards",
+   "numbers_items": [],
+   "outcome": "unresolved",
+   "why": "No field carries withholding taxes on vested awards."
+  }
+ ],
+ "anomalies": [
+  {
+   "id": "earnings_versus_cash_operating_cash_flow_far_below_net_income",
+   "name": "Operating cash flow far below net income; accruals at a five-year high",
+   "name_ko": "순이익에 크게 못 미치는 영업현금흐름과 다섯 해 중 최고 수준의 발생액",
+   "area": "earnings_versus_cash",
+   "what": "Operating cash flow covered {earnings_versus_cash.operating_cash_flow_over_net_income} of net income, against {earnings_versus_cash.history.years.1.operating_cash_flow_over_net_income} a year earlier. Accruals over assets reached {trend_table.years-back-0.ratios.accruals_over_total_assets}, the highest of five years. The cause is a non-cash mark-to-market gain on the retained Sandisk interest, which has now been disposed of, so this level of net income is not recurring.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "earnings_quality_accruals_over_total_assets_annual",
+    "earnings_quality_retained_interest_gain_in_net_income",
+    "earnings_quality_sandisk_mark_to_market_gain_not_recurring"
+   ],
+   "fields": [
+    "earnings_versus_cash.operating_cash_flow_over_net_income",
+    "earnings_versus_cash.history.years.1.operating_cash_flow_over_net_income",
+    "trend_table.years-back-0.ratios.accruals_over_total_assets"
+   ]
+  },
+  {
+   "id": "earnings_versus_cash_payables_articulation_gap",
+   "name": "Payables change on the balance sheet exceeds the cash-flow statement line",
+   "name_ko": "재무상태표 매입채무 증가와 현금흐름표 금액의 불일치",
+   "area": "earnings_versus_cash",
+   "what": "Accounts payable rose {earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change} on the balance sheet, but the cash-flow statement shows {earnings_versus_cash.working_capital.accounts_payable.cash_flow_statement_change}. The gap is {earnings_versus_cash.working_capital.accounts_payable.articulation_gap}, and no prose explains it.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "liquidity_and_capital_payables_extended_by_supplier_terms",
+    "structure_and_disclosure_changes_cash_flow_reclassification"
+   ],
+   "fields": [
+    "earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change",
+    "earnings_versus_cash.working_capital.accounts_payable.cash_flow_statement_change",
+    "earnings_versus_cash.working_capital.accounts_payable.articulation_gap"
+   ]
+  },
+  {
+   "id": "earnings_versus_cash_earnings_more_volatile_than_cash",
+   "name": "Earnings move more than cash",
+   "name_ko": "현금보다 크게 움직이는 이익",
+   "area": "earnings_versus_cash",
+   "what": "Smoothness is {earnings_versus_cash.smoothness}, which is above one. Quarterly income swings more than quarterly cash, because of the Sandisk marks. This is the opposite of smoothing.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "earnings_quality_retained_interest_gain_in_net_income"
+   ],
+   "fields": [
+    "earnings_versus_cash.smoothness"
+   ]
+  },
+  {
+   "id": "revenue_recognition_extra_week_absent_from_revenue_explanation",
+   "name": "Extra week not mentioned in the revenue explanation",
+   "name_ko": "매출 증가 설명에서 빠진 추가 한 주",
+   "area": "revenue_recognition",
+   "what": "The year had a first quarter one week longer than usual. MD&A attributes revenue growth of {ratios.growth.revenue.trailing_four_quarters|pct} to volume and price only, without mentioning the extra week.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "structure_and_disclosure_changes_fifty_three_week_fiscal_year",
+    "across_documents_revenue_explanation_silent_on_extra_week"
+   ],
+   "fields": [
+    "ratios.growth.revenue.trailing_four_quarters"
+   ]
+  },
+  {
+   "id": "revenue_recognition_sales_incentive_share_falling",
+   "name": "Incentive programmes take a falling share of gross revenue",
+   "name_ko": "총매출 대비 판매장려금 비중 하락",
+   "area": "revenue_recognition",
+   "what": "Sales incentive and price protection programmes, which are covered by a variable-consideration critical audit matter, took a smaller share of gross revenue in each of the last three years. That raises net revenue relative to gross. No field carries the amounts.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "revenue_recognition_sales_incentive_programs_share_of_gross_revenue"
+   ],
+   "fields": []
+  },
+  {
+   "id": "revenue_recognition_longer_arrangements_with_immaterial_obligations",
+   "name": "Longer customer arrangements but immaterial remaining obligations",
+   "name_ko": "장기화된 고객 계약과 중요하지 않은 잔여 수행의무의 괴리",
+   "area": "revenue_recognition",
+   "what": "MD&A says customers are extending their commercial arrangements. The notes call remaining performance obligations and contract balances not material, and contract liabilities are untagged.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "across_documents_longer_commercial_arrangements_versus_immaterial_remaining_obligations",
+    "revenue_recognition_contract_liabilities_over_revenue_annual"
+   ],
+   "fields": []
+  },
+  {
+   "id": "revenue_recognition_receivables_concentration_above_revenue_share",
+   "name": "Largest customer's share of receivables well above its share of revenue",
+   "name_ko": "최대 고객의 매출채권 비중이 매출 비중을 크게 상회",
+   "area": "revenue_recognition",
+   "what": "The largest customer holds {concentration.facts.46.value|pct} of receivables but {concentration.facts.42.value|pct} of revenue. A year earlier the figures were {concentration.facts.18.value|pct} against {concentration.facts.14.value|pct}, and at the third quarter the receivables share was {concentration.facts.40.value|pct}.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "earnings_quality_receivables_concentration_two_customers",
+    "earnings_quality_customer_concentration_three_customers"
+   ],
+   "fields": [
+    "concentration.facts.46.value",
+    "concentration.facts.42.value",
+    "concentration.facts.18.value",
+    "concentration.facts.14.value",
+    "concentration.facts.40.value"
+   ]
+  },
+  {
+   "id": "revenue_recognition_annual_days_sales_outstanding_up",
+   "name": "Year-end days sales outstanding up slightly",
+   "name_ko": "연말 매출채권회전일수 소폭 상승",
+   "area": "revenue_recognition",
+   "what": "Year-end days sales outstanding rose to {trend_table.years-back-0.ratios.days_sales_outstanding} from {trend_table.years-back-1.ratios.days_sales_outstanding}. MD&A explains this by growth in shipments, and receivables over revenue are flat.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "revenue_recognition_days_sales_outstanding_annual",
+    "revenue_recognition_accounts_receivable_growth_explained_by_shipments"
+   ],
+   "fields": [
+    "trend_table.years-back-0.ratios.days_sales_outstanding",
+    "trend_table.years-back-1.ratios.days_sales_outstanding"
+   ]
+  },
+  {
+   "id": "revenue_recognition_client_and_consumer_explanation_generic",
+   "name": "Client and Consumer growth explained by one generic sentence",
+   "name_ko": "클라이언트·소비자 부문 매출 증가에 대한 일반적인 설명",
+   "area": "revenue_recognition",
+   "what": "The same generic sentence explains both Client and Consumer revenue growth, which is mostly price-driven. Segment figures are not fields.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "results_against_expectations_client_consumer_explanation_generic"
+   ],
+   "fields": []
+  },
+  {
+   "id": "estimates_and_reserves_effective_tax_rate_on_discrete_items",
+   "name": "Effective tax rate far below statutory on discrete items",
+   "name_ko": "일회성 항목으로 낮아진 유효세율",
+   "area": "estimates_and_reserves",
+   "what": "The effective tax rate is {tax_rate|pct}. The prose attributes it to the tax-free Sandisk gain, stock-compensation windfalls and a Thailand holiday that is expiring. None of these recurs.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "earnings_quality_effective_tax_rate_lowered_by_tax_free_gain",
+    "earnings_quality_stock_compensation_tax_windfall",
+    "estimates_and_discretion_thailand_tax_holiday_expiry"
+   ],
+   "fields": [
+    "tax_rate"
+   ]
+  },
+  {
+   "id": "estimates_and_reserves_derivative_remeasurement_turned_to_cost",
+   "name": "Derivative remeasurement went from an immaterial gain to a cost",
+   "name_ko": "파생상품 재측정이 미미한 이익에서 비용으로 전환",
+   "area": "estimates_and_reserves",
+   "what": "The third-quarter 10-Q reported an immaterial remeasurement gain on the bifurcated derivative. The annual note records its fair value as a cost in convertible-note transaction costs. No field carries it.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "earnings_quality_tendered_notes_derivative_remeasurement_cost"
+   ],
+   "fields": []
+  },
+  {
+   "id": "estimates_and_reserves_no_hedge_reclassification_from_other_comprehensive_income",
+   "name": "Nothing reclassified out of other comprehensive income",
+   "name_ko": "기타포괄손익에서 재분류된 금액 없음",
+   "area": "estimates_and_reserves",
+   "what": "Hedge maturities are within a year, yet nothing was reclassified out of accumulated other comprehensive income in the year. The prose does not say why.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "estimates_and_discretion_hedge_amounts_not_reclassified"
+   ],
+   "fields": []
+  },
+  {
+   "id": "estimates_and_reserves_realignment_and_impairment_rising",
+   "name": "Realignment charges and construction-in-progress impairment rising",
+   "name_ko": "사업재편 비용과 건설중인자산 손상 증가",
+   "area": "estimates_and_reserves",
+   "what": "Business realignment charges and a non-cash impairment rose from a credit and almost nothing a year earlier. Facility projects were cancelled.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "estimates_and_discretion_business_realignment_charges",
+    "estimates_and_discretion_non_cash_asset_impairment",
+    "earnings_quality_business_realignment_capacity_project_cancellations"
+   ],
+   "fields": [
+    "terms.balances_now.property_plant_and_equipment"
+   ]
+  },
+  {
+   "id": "cost_deferral_gaap_above_non_gaap",
+   "name": "GAAP earnings above non-GAAP",
+   "name_ko": "GAAP 이익이 비GAAP 이익을 상회",
+   "area": "cost_deferral",
+   "what": "Fourth-quarter GAAP diluted EPS is above non-GAAP, because non-GAAP excludes the Sandisk gain. This reverses the usual gap. The trend table cannot compute the gap.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "earnings_quality_gaap_above_non_gaap_per_share",
+    "earnings_quality_non_gaap_gap_annual",
+    "earnings_quality_sandisk_mark_to_market_gain_not_recurring"
+   ],
+   "fields": []
+  },
+  {
+   "id": "cost_deferral_recurring_and_new_non_gaap_exclusions",
+   "name": "Recurring and new non-GAAP exclusions, revised share method",
+   "name_ko": "반복되는 비GAAP 제외 항목과 새 제외 범주, 주식수 산정 방식 변경",
+   "area": "cost_deferral",
+   "what": "Realignment charges, which appear in every year shown, are excluded from non-GAAP. A new exclusion category covers costs of debt and equity transactions. Non-GAAP diluted shares now include the capped-call benefit, with prior periods revised, while next-quarter share guidance excludes that benefit.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "estimates_and_discretion_business_realignment_charges",
+    "earnings_quality_non_gaap_excludes_exchange_discount_costs",
+    "structure_and_disclosure_changes_non_gaap_share_count_revision",
+    "across_documents_capped_call_benefit_excluded_from_share_guidance"
+   ],
+   "fields": []
+  },
+  {
+   "id": "cost_deferral_soft_asset_share_rising",
+   "name": "Soft-asset share up on the year",
+   "name_ko": "연간 연성자산 비중 상승",
+   "area": "cost_deferral",
+   "what": "Soft assets rose to {trend_table.years-back-0.ratios.soft_asset_share} of assets from {trend_table.years-back-1.ratios.soft_asset_share}, as cash fell and receivables and inventory grew. This is still second lowest of five years.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "earnings_quality_soft_asset_share_annual",
+    "earnings_quality_soft_asset_share_quarterly"
+   ],
+   "fields": [
+    "trend_table.years-back-0.ratios.soft_asset_share",
+    "trend_table.years-back-1.ratios.soft_asset_share"
+   ]
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_supplier_finance_rising",
+   "name": "Supplier-finance obligation and supplier terms lift payables",
+   "name_ko": "공급망 금융 잔액 증가와 유리한 지급조건에 따른 매입채무 확대",
+   "area": "cash_flow_engineering_and_off_balance_sheet",
+   "what": "The current supplier-finance obligation rose on the year, and MD&A credits part of the payables increase to more favourable supplier terms. Days payables outstanding are {ratios.efficiency.days_payables_outstanding}. The calculator's supplier-finance field is missing, so no adjustment is written.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "liquidity_and_capital_supplier_finance_obligation",
+    "liquidity_and_capital_payables_extended_by_supplier_terms"
+   ],
+   "fields": [
+    "ratios.efficiency.days_payables_outstanding",
+    "earnings_versus_cash.working_capital.accounts_payable.cash_flow_statement_change"
+   ]
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_purchase_obligations_rising",
+   "name": "Purchase obligations jumped",
+   "name_ko": "구매 약정 급증",
+   "area": "cash_flow_engineering_and_off_balance_sheet",
+   "what": "Unconditional purchase obligations rose to {terms.balances_now.unconditional_purchase_obligations} from {terms.balances_a_year_earlier.unconditional_purchase_obligations}, far faster than revenue growth of {ratios.growth.revenue.trailing_four_quarters|pct}. No prose in the inputs explains this. The prior-year figure comes from the prior 10-K.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "liquidity_and_capital_capital_expenditures_higher_next_year"
+   ],
+   "fields": [
+    "terms.balances_now.unconditional_purchase_obligations",
+    "terms.balances_a_year_earlier.unconditional_purchase_obligations"
+   ]
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_prior_year_cash_flow_reclassified",
+   "name": "Prior-year cash flows reclassified without detail",
+   "name_ko": "세부 내용 없는 전년도 현금흐름 재분류",
+   "area": "cash_flow_engineering_and_off_balance_sheet",
+   "what": "Prior-year cash-flow amounts were reclassified to the current presentation, with no line or amount stated. Prior-year operating cash flow of {earnings_versus_cash.history.years.1.operating_cash_flow} comes from this 10-K.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "structure_and_disclosure_changes_cash_flow_reclassification"
+   ],
+   "fields": [
+    "earnings_versus_cash.history.years.1.operating_cash_flow"
+   ]
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_stock_award_withholding_in_financing",
+   "name": "Cash taxes on vested stock awards in financing exceed the expense",
+   "name_ko": "재무활동에 분류된 주식보상 원천세 납부가 보상비용을 상회",
+   "area": "cash_flow_engineering_and_off_balance_sheet",
+   "what": "MD&A reports taxes paid on vested stock awards, classified in financing, that are larger than share-based compensation expense of {terms.trailing_four_quarters.share_based_compensation}. This cash cost of stock pay is outside free cash flow, and no field carries it.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "liquidity_and_capital_taxes_paid_on_vested_stock_awards"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.share_based_compensation"
+   ]
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_tax_cash_timing",
+   "name": "Tax cash timing moves operating cash flow both ways",
+   "name_ko": "세금 납부 시점이 영업현금흐름을 양방향으로 움직임",
+   "area": "cash_flow_engineering_and_off_balance_sheet",
+   "what": "Taxes payable fell on payment timing, which held down this year's cash. Accrued global minimum tax is deferred to fiscal 2028, and payments on uncertain tax positions are expected within twelve months. No field carries these amounts.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "liquidity_and_capital_taxes_payable_decrease_timing_of_payments",
+    "liquidity_and_capital_global_minimum_tax_payment_deferred",
+    "liquidity_and_capital_unrecognized_tax_benefit_payments_within_twelve_months",
+    "liquidity_and_capital_tax_receivables_netted_against_payments"
+   ],
+   "fields": []
+  },
+  {
+   "id": "controls_audit_and_filing_signals_tax_critical_audit_matter_widened",
+   "name": "Tax critical audit matter widened to the exchanges",
+   "name_ko": "교환 거래까지 확대된 세무 핵심감사사항",
+   "area": "controls_audit_and_filing_signals",
+   "what": "The critical audit matter on tax-free treatment now covers the debt-for-equity and equity-for-equity exchanges as well as the separation, and is described as especially subjective. The exposure is not quantified.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "controls_audit_and_filings_critical_audit_matter_tax_free_exchanges"
+   ],
+   "fields": []
+  },
+  {
+   "id": "controls_audit_and_filing_signals_non_gaap_prior_periods_revised",
+   "name": "Non-GAAP prior periods revised",
+   "name_ko": "비GAAP 과거 수치 수정",
+   "area": "controls_audit_and_filing_signals",
+   "what": "Prior-period non-GAAP per-share amounts were revised for a share-count method change. This is not a GAAP restatement.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "structure_and_disclosure_changes_non_gaap_share_count_revision",
+    "structure_and_disclosure_changes_non_gaap_share_count_includes_capped_call"
+   ],
+   "fields": []
+  },
+  {
+   "id": "controls_audit_and_filing_signals_insider_sale_plans_near_year_end",
+   "name": "Three insider sale plans adopted near year end",
+   "name_ko": "연말 무렵 채택된 내부자 매도 계획 세 건",
+   "area": "controls_audit_and_filing_signals",
+   "what": "The chief product officer, a director and the chief sales officer each adopted a share-sale plan within about a week near year end. The share amounts are small.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "related_parties_contingencies_and_subsequent_events_trading_plan_chief_product_officer",
+    "related_parties_contingencies_and_subsequent_events_trading_plan_director",
+    "related_parties_contingencies_and_subsequent_events_trading_plan_chief_sales_officer"
+   ],
+   "fields": []
+  },
+  {
+   "id": "cross_document_reconciliation_debt_for_equity_exchange_cost_components",
+   "name": "Debt-for-equity exchange cost differs between MD&A and notes",
+   "name_ko": "MD&A와 주석 간 부채-지분 교환 비용 차이",
+   "area": "cross_document_reconciliation",
+   "what": "MD&A's exchange cost differs from the cost the note records. The note also mentions an issuance-cost write-off without naming its caption.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "articulation_and_the_filed_history_debt_for_equity_exchange_cost_amounts",
+    "liquidity_and_capital_february_bridge_loan_and_debt_for_equity_exchange"
+   ],
+   "fields": []
+  },
+  {
+   "id": "cross_document_reconciliation_convertible_notes_cost_components",
+   "name": "Convertible-note transaction cost components do not tie",
+   "name_ko": "전환사채 거래 비용 구성요소 불일치",
+   "area": "cross_document_reconciliation",
+   "what": "MD&A's convertible-note transaction cost differs from the derivative remeasurement, the induced conversion expense and the write-off the notes describe. The write-off's caption is not stated.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "articulation_and_the_filed_history_convertible_notes_transaction_cost_components",
+    "earnings_quality_tendered_notes_derivative_remeasurement_cost"
+   ],
+   "fields": []
+  },
+  {
+   "id": "cross_document_reconciliation_litigation_reversal_amounts",
+   "name": "Litigation reversal amount differs between release and tagged gain",
+   "name_ko": "보도자료와 태그된 소송 환입 금액 차이",
+   "area": "cross_document_reconciliation",
+   "what": "The release's prior-year litigation credit differs from the settlement gain the 10-K tags. The third-quarter 10-Q gave two figures, and the annual note now gives one.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "related_parties_contingencies_and_subsequent_events_ip_litigation_settlement_gain",
+    "articulation_and_the_filed_history_litigation_reversal_wording"
+   ],
+   "fields": []
+  },
+  {
+   "id": "cross_document_reconciliation_capped_call_benefit_in_shares_versus_guidance",
+   "name": "Capped-call benefit in reported non-GAAP shares but not in guidance",
+   "name_ko": "보고 비GAAP 주식수에는 포함되나 가이던스에는 빠진 캡드콜 효과",
+   "area": "cross_document_reconciliation",
+   "what": "Reported non-GAAP diluted shares include the capped-call benefit, while next-quarter guidance assumes none, even though capped-call shares are being received. The change is not explained.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "across_documents_capped_call_benefit_excluded_from_share_guidance",
+    "related_parties_contingencies_and_subsequent_events_capped_call_shares_after_year_end"
+   ],
+   "fields": []
+  },
+  {
+   "id": "cross_document_reconciliation_termination_benefits_beside_headcount_growth",
+   "name": "Termination benefits beside headcount growth",
+   "name_ko": "인력 증가와 동시에 발생한 해고 급여",
+   "area": "cross_document_reconciliation",
+   "what": "MD&A cites higher headcount behind research and development costs, while the realignment note shows cash termination benefits for cost reduction. MD&A gives no prose on the programme.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "across_documents_termination_benefits_alongside_headcount_growth"
+   ],
+   "fields": []
+  },
+  {
+   "id": "cross_document_reconciliation_conversion_premium_value_untied",
+   "name": "Conversion premium settled in shares cannot be tied",
+   "name_ko": "주식으로 결제된 전환 프리미엄 금액 대사 불가",
+   "area": "cross_document_reconciliation",
+   "what": "The note gives a dollar value for the conversion premium settled in shares. No other paragraph or field restates it.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "articulation_and_the_filed_history_stated_conversion_premium_value",
+    "liquidity_and_capital_june_exchange_agreements_shares_issued"
+   ],
+   "fields": []
+  },
+  {
+   "id": "cross_document_reconciliation_guidance_against_longer_comparison_quarter",
+   "name": "Growth guidance measured against a longer quarter",
+   "name_ko": "더 긴 비교 분기를 기준으로 한 성장 가이던스",
+   "area": "cross_document_reconciliation",
+   "what": "Next-quarter revenue growth guidance compares against a first quarter one week longer than usual, and the release does not mention this.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "results_against_expectations_first_quarter_guidance_against_fourteen_week_quarter",
+    "results_against_expectations_next_quarter_revenue_guide"
+   ],
+   "fields": []
+  },
+  {
+   "id": "cross_document_reconciliation_revolver_draw_versus_current_debt_decline",
+   "name": "Revolver draw beside a lower current debt balance",
+   "name_ko": "리볼버 인출에도 감소한 유동성 장기부채",
+   "area": "cross_document_reconciliation",
+   "what": "The note describes a revolver draw in June, while the current portion of debt fell year over year to {terms.debt_now.parts.debt_current} from {terms.debt_a_year_earlier.parts.debt_current}. The quarterly balance is not a field.",
+   "numbers_vs_prose": "unresolved",
+   "evidence": [
+    "liquidity_and_capital_revolving_credit_facility_drawn_in_june",
+    "liquidity_and_capital_long_term_debt_eliminated"
+   ],
+   "fields": [
+    "terms.debt_now.parts.debt_current",
+    "terms.debt_a_year_earlier.parts.debt_current"
+   ]
+  },
+  {
+   "id": "industry_lens_customer_concentration_rising",
+   "name": "Customer concentration rising",
+   "name_ko": "고객 집중도 상승",
+   "area": "industry_lens",
+   "what": "The top ten customers took {concentration.facts.45.value|pct} of revenue, against {concentration.facts.17.value|pct} last year and {concentration.facts.0.value|pct} two years ago. Three customers individually took {concentration.facts.42.value|pct}, {concentration.facts.43.value|pct} and {concentration.facts.44.value|pct}, matching the note.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "earnings_quality_customer_concentration_three_customers",
+    "earnings_quality_receivables_concentration_two_customers"
+   ],
+   "fields": [
+    "concentration.facts.45.value",
+    "concentration.facts.17.value",
+    "concentration.facts.0.value",
+    "concentration.facts.42.value",
+    "concentration.facts.43.value",
+    "concentration.facts.44.value"
+   ]
+  },
+  {
+   "id": "industry_lens_inventory_days_up_on_year",
+   "name": "Year-end inventory days up, reserve untagged",
+   "name_ko": "연말 재고일수 상승, 재고충당금 미태그",
+   "area": "industry_lens",
+   "what": "Year-end inventory days rose to {trend_table.years-back-0.ratios.days_sales_of_inventory} from {trend_table.years-back-1.ratios.days_sales_of_inventory}. MD&A explains this by a production ramp, and the quarterly figure is at its lowest. No inventory reserve is tagged.",
+   "numbers_vs_prose": "confirms",
+   "evidence": [
+    "estimates_and_discretion_days_sales_of_inventory_annual",
+    "estimates_and_discretion_days_sales_of_inventory_quarterly",
+    "earnings_quality_inventory_build_explained_by_production_ramp",
+    "estimates_and_discretion_inventory_reserve_ratio_annual"
+   ],
+   "fields": [
+    "trend_table.years-back-0.ratios.days_sales_of_inventory",
+    "trend_table.years-back-1.ratios.days_sales_of_inventory"
+   ]
+  }
+ ],
+ "adjustments": [],
+ "summary_ko": {
+  "earnings_versus_cash": "올해 영업현금흐름은 순이익의 {earnings_versus_cash.operating_cash_flow_over_net_income}에 그쳐 전년 {earnings_versus_cash.history.years.1.operating_cash_flow_over_net_income}보다 크게 낮았습니다. 그 차이는 대부분 이미 전량 처분한 Sandisk 잔여 지분의 비현금 평가이익에서 나왔기 때문에 반복되지 않습니다. 영업이익의 현금 전환은 양호하지만, 매입채무의 재무상태표 증가가 현금흐름표 금액보다 {earnings_versus_cash.working_capital.accounts_payable.articulation_gap} 크고 이에 대한 설명이 없습니다.",
+  "revenue_recognition": "매출채권은 매출과 함께 늘었고, 연말 매출채권회전일수는 {trend_table.years-back-0.ratios.days_sales_outstanding}로 전년 {trend_table.years-back-1.ratios.days_sales_outstanding}과 비슷합니다. 다만 한 주 더 긴 회계연도의 효과가 매출 설명에 빠져 있고, 판매장려금 비중이 낮아졌으며, 최대 고객이 매출채권의 {concentration.facts.46.value|pct}를 차지합니다.",
+  "estimates_and_reserves": "보증충당금 비율은 {trend_table.years-back-0.ratios.warranty_reserve_ratio}로 안정적이지만, 대손충당금과 재고충당금은 태그되지 않아 검증할 수 없습니다. 유효세율 {tax_rate|pct}는 비과세 Sandisk 이익과 같은 일회성 요인 때문에 낮은 것이어서 앞으로 유지되지 않습니다.",
+  "cost_deferral": "연구개발비 자본화 여부는 태그가 없어 확인할 수 없지만, 설비투자 {terms.trailing_four_quarters.capital_expenditure}는 감가상각비 {terms.trailing_four_quarters.depreciation_and_amortization}와 비슷해 비용 이연의 징후는 없습니다. 비GAAP 지표는 매년 반복되는 사업재편 비용을 제외하고 새로운 제외 범주와 주식수 산정 방식 변경을 도입했습니다.",
+  "cash_flow_engineering_and_off_balance_sheet": "올해 매출채권 매각은 보이지 않지만, 유리한 공급업체 지급조건과 늘어난 공급망 금융이 영업현금흐름을 다소 높였습니다. 구매 약정이 {terms.balances_a_year_earlier.unconditional_purchase_obligations}에서 {terms.balances_now.unconditional_purchase_obligations}로 급증했고, 주식보상 관련 원천세 납부는 재무활동으로 분류되어 잉여현금흐름에 반영되지 않습니다.",
+  "controls_audit_and_filing_signals": "감사인은 바뀌지 않았고 내부통제는 유효하다는 의견을 받았으며 중요한 취약점도 없습니다. 다만 비과세 교환 거래에 대한 세무 핵심감사사항이 확대되었고, 본문을 확인할 수 없는 임원 변동 8-K와 과거 지연 제출 통지가 있습니다.",
+  "cross_document_reconciliation": "8-K 보도자료의 순이익 {terms.trailing_four_quarters.net_income}과 영업현금흐름 {terms.trailing_four_quarters.operating_cash_flow}은 10-K와 일치하며, 숫자가 주석의 설명과 반대되는 경우는 없었습니다. 그러나 교환 거래 비용, 전환사채 비용, 소송 환입 금액은 문서 사이에서 맞춰지지 않습니다.",
+  "industry_lens": "재고일수 {trend_table.years-back-0.ratios.days_sales_of_inventory}와 사상 최고 수준의 매출총이익률로 볼 때 재고 진부화나 밀어내기 매출의 징후는 없습니다. 반면 상위 열 개 고객의 매출 비중이 {concentration.facts.45.value|pct}로 높아졌고 구매 약정도 급증했습니다."
+ },
+ "limits": "This analysis finds where the numbers and the explanations disagree, and where the company differs from its own past. It does not judge intent, and it cannot see evidence outside the filings, such as invoices or contracts.",
+ "normalized_quotes": 0,
+ "dropped_items": [
+  {
+   "where": "anomalies[18]",
+   "id": "cash_flow_engineering_and_off_balance_sheet_receivables_sale_tag_absent_this_year",
+   "reason": "the anomaly cites no report item and no calculator field, so it rests on nothing Python can check"
+  },
+  {
+   "where": "anomalies[23]",
+   "id": "controls_audit_and_filing_signals_officer_change_filing_unread",
+   "reason": "the anomaly cites no report item and no calculator field, so it rests on nothing Python can check"
+  },
+  {
+   "where": "anomalies[24]",
+   "id": "controls_audit_and_filing_signals_late_filing_notice_on_record",
+   "reason": "the anomaly cites no report item and no calculator field, so it rests on nothing Python can check"
+  }
+ ],
+ "dropped_count": 3
+}
