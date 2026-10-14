@@ -18,6 +18,7 @@ from __future__ import annotations
 import datetime as dt
 import json
 import re
+import urllib.error
 from pathlib import Path
 
 import pytest
@@ -338,3 +339,100 @@ def test_a_filing_the_index_stamped_unreadably_is_recorded_with_none(tmp_path):
     assert stamps[("10-Q", "primary_html")] is None
     assert stamps[("10-Q", "prior_period")] == PRIOR[3]
 
+
+
+# --- filings older than the header page, and older than inline XBRL ----------
+#
+# Expected values, each from the source and none from the fetcher:
+# * The two documents of QCOM's 8-K 0001234452-13-000291 (filed 2013-07-24),
+#   read by eye off EDGAR's filing index page for it,
+#   https://www.sec.gov/Archives/edgar/data/804328/000123445213000291/0001234452-13-000291-index.htm
+#   (sha256 f25068478855c7e7ae7d3f0e6a941c54f799098b0e90c55bc49657ec9e54061f on
+#   2026-10-14): row 1, Type `8-K`, Document `qcom63013er8-k.htm`; row 2, Type
+#   `EX-99.1`, Document `qcom63013erex991.htm`. The header page for that filing
+#   answered 404 the same day, and the complete submission text file 200.
+# * `tests/fixtures/submission_text/0001234452-13-000291_head.txt` is the first
+#   63 lines of that text file as EDGAR served it (the whole file, 1,090,454
+#   bytes, sha256 dfbb0dcb839bf510aab1a29c525a1cf5e2beba4bc5e7b18cb2c0b2be69c4b9fd),
+#   cut after the second document's <FILENAME> line so the fixture carries the
+#   header and no exhibit text.
+# * The names of AAPL's 10-K 0001193125-14-383437 (filed 2014-10-27), read off
+#   https://www.sec.gov/Archives/edgar/data/320193/000119312514383437/index.json
+#   on 2026-10-14, with the 79 report pages R1.htm to R79.htm and the two images
+#   left out as the test's own abbreviation. The instance is aapl-20140927.xml:
+#   the one .xml beside a .xsd of the same stem.
+
+SUBMISSION_TEXT_HEAD = (FIXTURES / "submission_text" / "0001234452-13-000291_head.txt")
+QCOM_2013_RELEASE = "0001234452-13-000291"
+AAPL_2014_NAMES = (
+    "0001193125-14-383437-index-headers.html", "0001193125-14-383437-index.html",
+    "0001193125-14-383437.txt", "0001193125-14-383437-xbrl.zip",
+    "aapl-20140927.xml", "aapl-20140927.xsd", "aapl-20140927_cal.xml",
+    "aapl-20140927_def.xml", "aapl-20140927_lab.xml", "aapl-20140927_pre.xml",
+    "d783162d10k.htm", "d783162dex1011.htm", "d783162dex1012.htm",
+    "d783162dex1013.htm", "d783162dex121.htm", "d783162dex211.htm",
+    "d783162dex231.htm", "d783162dex311.htm", "d783162dex312.htm",
+    "d783162dex321.htm", "FilingSummary.xml", "Financial_Report.xls",
+    "Financial_Report.xlsx", "report.css", "Show.js")
+
+
+class _ArchiveWithoutHeaderPage:
+    """EDGAR for a 2013 filing: the header page is not there, the text file is."""
+
+    def __init__(self, status: int = 404) -> None:
+        self.status = status
+        self.asked: list[str] = []
+
+    def get(self, url):
+        self.asked.append(url)
+        if url.endswith("-index-headers.html"):
+            raise urllib.error.HTTPError(url, self.status, "Not Found", {}, None)
+        assert url.endswith(f"{QCOM_2013_RELEASE}.txt"), url
+        return SUBMISSION_TEXT_HEAD.read_bytes()
+
+
+def test_a_header_page_edgar_does_not_publish_is_read_off_the_submission_text():
+    archive = _ArchiveWithoutHeaderPage()
+    types = fetch_fixtures.document_types(archive, "0000804328", QCOM_2013_RELEASE)
+    assert types == [("8-K", "qcom63013er8-k.htm"), ("EX-99.1", "qcom63013erex991.htm")]
+    assert archive.asked == [
+        "https://www.sec.gov/Archives/edgar/data/804328/000123445213000291/"
+        "0001234452-13-000291-index-headers.html",
+        "https://www.sec.gov/Archives/edgar/data/804328/000123445213000291/"
+        "0001234452-13-000291.txt"]
+
+
+def test_the_fixture_is_the_head_of_the_text_file_through_the_second_filename():
+    lines = SUBMISSION_TEXT_HEAD.read_text(encoding="utf-8").splitlines()
+    assert len(lines) == 63
+    assert lines[0] == "<SEC-DOCUMENT>0001234452-13-000291.txt : 20130724"
+    assert lines[-1] == "<FILENAME>qcom63013erex991.htm"
+
+
+def test_a_refusal_other_than_404_on_the_header_page_is_still_raised():
+    archive = _ArchiveWithoutHeaderPage(status=500)
+    with pytest.raises(urllib.error.HTTPError):
+        fetch_fixtures.document_types(archive, "0000804328", QCOM_2013_RELEASE)
+    assert len(archive.asked) == 1
+
+
+def test_an_instance_older_than_inline_xbrl_is_the_xml_beside_its_schema():
+    filing = {"primaryDocument": "d783162d10k.htm", "accessionNumber": "0001193125-14-383437"}
+    wanted, missing = fetch_fixtures.wanted_documents("10-K", filing, list(AAPL_2014_NAMES), [])
+    assert missing == []
+    assert wanted == [("primary_html", "d783162d10k.htm"), ("xbrl_instance", "aapl-20140927.xml")]
+
+
+def test_a_filing_with_no_schema_still_has_no_instance():
+    filing = {"primaryDocument": "d783162d10k.htm", "accessionNumber": "0001193125-14-383437"}
+    names = [n for n in AAPL_2014_NAMES if n != "aapl-20140927.xsd"]
+    wanted, missing = fetch_fixtures.wanted_documents("10-K", filing, names, [])
+    assert wanted == [("primary_html", "d783162d10k.htm")]
+    assert [role for role, _ in missing] == ["xbrl_instance"]
+
+
+def test_an_inline_instance_is_still_taken_first():
+    filing = {"primaryDocument": "doc.htm", "accessionNumber": "0001193125-14-383437"}
+    wanted, _ = fetch_fixtures.wanted_documents(
+        "10-K", filing, ["doc.htm", "doc_htm.xml", "old-20140927.xml", "old-20140927.xsd"], [])
+    assert wanted == [("primary_html", "doc.htm"), ("xbrl_instance", "doc_htm.xml")]

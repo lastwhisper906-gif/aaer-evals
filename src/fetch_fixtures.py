@@ -107,6 +107,11 @@ MIN_SECONDS_BETWEEN_REQUESTS = 0.17
 # -- q2fy27pr.htm, ex_994826.htm, a99-q22026earningsexhibit.htm are all EX-99.1
 # -- so a filename heuristic picks the wrong document or none.
 HEADER_URL = "https://www.sec.gov/Archives/edgar/data/{cik_int}/{accession}/{acc_dashed}-index-headers.html"
+# EDGAR publishes that header page for filings from 2014 on and answers 404
+# before (QCOM's July 10-Qs, read 2026-10-14: 2012 and 2013 404, 2014 on 200).
+# The same SGML header, with the same <TYPE> and <FILENAME> lines, opens the
+# complete submission text file, which EDGAR serves for every filing.
+SUBMISSION_TEXT_URL = "https://www.sec.gov/Archives/edgar/data/{cik_int}/{accession}/{acc_dashed}.txt"
 DOCUMENT_TYPE = re.compile(
     r"(?:<|&lt;)TYPE(?:>|&gt;)\s*(\S+).*?(?:<|&lt;)FILENAME(?:>|&gt;)\s*(\S+)",
     re.IGNORECASE | re.DOTALL)
@@ -356,7 +361,16 @@ def document_types(fetcher: Fetcher, cik: str, accession: str) -> list[tuple[str
     """(type, filename) for every document in the submission, in sequence order."""
     url = HEADER_URL.format(cik_int=int(cik), accession=accession.replace("-", ""),
                             acc_dashed=accession)
-    header = fetcher.get(url).decode("utf-8", "replace")
+    try:
+        header = fetcher.get(url).decode("utf-8", "replace")
+    except urllib.error.HTTPError as exc:
+        if exc.code != 404:
+            raise
+        # A filing older than the header page: the same header opens the
+        # complete submission text file. Any other refusal is still raised.
+        url = SUBMISSION_TEXT_URL.format(cik_int=int(cik), accession=accession.replace("-", ""),
+                                         acc_dashed=accession)
+        header = fetcher.get(url).decode("utf-8", "replace")
     return [(t.upper(), name) for t, name in DOCUMENT_TYPE.findall(header)]
 
 
@@ -372,6 +386,13 @@ def wanted_documents(form: str, filing: dict, names: list[str],
         instance = f"{stem}_htm.xml"
         if instance not in names:
             candidates = [n for n in names if n.endswith("_htm.xml")]
+            if not candidates:
+                # Before inline XBRL the instance is a file of its own, named
+                # with the schema it shares a stem with: aapl-20140927.xml beside
+                # aapl-20140927.xsd (and _cal, _def, _lab and _pre linkbases,
+                # which end otherwise). Nothing else in the filing has an .xsd.
+                candidates = [n for n in names
+                              if n.endswith(".xml") and n[:-4] + ".xsd" in names]
             instance = candidates[0] if candidates else ""
         if instance:
             wanted.append(("xbrl_instance", instance))
