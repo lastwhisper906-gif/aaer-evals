@@ -750,7 +750,8 @@ NOTHING_TO_READ = ["CARR 10-Q 0001783180-26-000032",
                    "FELE 10-Q 0000038725-26-000055",
                    "FLEX 10-Q 0000866374-26-000030",
                    "JCI 10-Q 0000833444-26-000087",
-                   "LFUS 10-Q 0001628280-26-050481"]
+                   "LFUS 10-Q 0001628280-26-050481",
+                   "LII 10-Q 0001069202-26-000087"]
 
 
 @functools.lru_cache(maxsize=None)
@@ -864,15 +865,15 @@ def test_every_trigger_whose_record_holds_the_rows_produces_one():
             produces.append(named)
 
     # Two triggers per company, one 10-K and one 10-Q primary document in each
-    # manifest: twelve companies, the eight added on 2026-10-07 and the next
-    # eight added the same day, 28 × 2.
-    assert len(triggers()) == 2 * len(TICKERS) == 56
+    # manifest: twelve companies, the eight added on 2026-10-07, the next
+    # eight added the same day and the seven added on 2026-10-14, 35 × 2.
+    assert len(triggers()) == 2 * len(TICKERS) == 70
     assert sorted(set(f"{ticker} {form} {accession}"
                       for ticker, form, accession, _ in triggers())
                   - set(holds)) == NOTHING_TO_READ
     assert produces == holds
-    # Fifty-six triggers less the six whose record holds no row: 56 - 6.
-    assert len(produces) == len(triggers()) - len(NOTHING_TO_READ) == 50
+    # Seventy triggers less the seven whose record holds no row: 70 - 7.
+    assert len(produces) == len(triggers()) - len(NOTHING_TO_READ) == 63
     assert len([named for named in produces if " 10-K " in named]) == len(TICKERS)
 
 

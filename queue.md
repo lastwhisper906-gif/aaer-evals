@@ -56,6 +56,7 @@ branch changed. A run item is done when its run directory is published and
 [ ] FFIV's 10-Q filed 2026-08-06 on Fable · `.venv/bin/python -m evals --runs runs/FFIV` · none
 
 [ ] LOGI's 10-Q filed 2026-07-29 on Fable · `.venv/bin/python -m evals --runs runs/LOGI` · none
+    pending, 2026-10-14: a first attempt stopped at the readers when the Opus limit was reached and was set aside; the fresh run finished, readers on Opus and the three analysts on Fable with no fallback, and is not published, because the numbers reader wrote the filer's fiscal year as a capital and two digits, the same refusal as DELL's (`docs/needs_judgment.md`); the run is kept outside the tree, and the default in force gives the filing one more run.
 
 [ ] WDC's 10-K filed 2026-08-14 on Fable, the default in force for the five whose fixture 8-K postdates their fixture 10-Q (`docs/needs_judgment.md`) · `.venv/bin/python -m evals --runs runs/WDC` · none
 
@@ -66,6 +67,14 @@ branch changed. A run item is done when its run directory is published and
 [ ] SMCI's 10-K filed 2026-08-31 on Fable, the same default · `.venv/bin/python -m evals --runs runs/SMCI` · none
 
 [ ] SNDK's 10-K filed 2026-08-17 on Fable, the same default · `.venv/bin/python -m evals --runs runs/SNDK` · none
+
+[ ] UI, Ubiquiti, joins `universe.json` with the fixture set and expected values fetched and written on 2026-10-14 (kept outside the tree, `docs/structure_changes.md`), once the same-day 8-K row in `docs/needs_judgment.md` is decided · `.venv/bin/python -m pytest tests -q -k "UI"` passes with every defect a strict expected failure · the owner's decision on that row
+
+[ ] NSSC, Napco Security Technologies, joins `universe.json` the same way, once the three-gap row in `docs/needs_judgment.md` is decided · `.venv/bin/python -m pytest tests -q -k "NSSC"` passes with every defect a strict expected failure · the owner's decision on that row
+
+[ ] CLS, Celestica, joins `universe.json` the same way, once the Exhibit 21 and IFRS row in `docs/needs_judgment.md` is decided · `.venv/bin/python -m pytest tests -q -k "CLS"` passes with every defect a strict expected failure · the owner's decision on that row
+
+[ ] MU, Micron Technology, the reading's pick under 3674 (`docs/structure_changes.md`, 2026-10-14): fixtures as of the day it is fetched, the two 10-K headers and Exhibit 21 documents by hand, expected values with the 43 keys, and its row · `.venv/bin/python -m pytest tests -q -k "MU"` passes with every defect a strict expected failure · none
 
 ## Done
 

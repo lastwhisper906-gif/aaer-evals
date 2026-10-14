@@ -184,6 +184,22 @@ UNDER_DROPPED = {
             "3 read, 1 dropped",
     "LOGI": "the page-broken second half of the disclaimer is carried; "
             "2 read, 1 dropped",
+    # The seven added on 2026-10-14, read the same way.
+    "OMCL": "5 of 13 bare page numerals, the disclaimer's heading and two of its "
+            "paragraphs are carried; 18 read, 10 dropped",
+    "NTAP": "the second safe-harbour paragraph, which writes 'Actual results may "
+            "differ materially' and 'We disclaim any obligation to update', is "
+            "carried; 3 read, 2 dropped",
+    "EXTR": "the disclaimer's heading, its second paragraph and that paragraph's "
+            "page-broken second half are carried, and a one-sentence pointer inside "
+            "the outlook is dropped instead; 4 read, 2 dropped",
+    "EVLV": "the disclaimer's heading and its page-broken continuation are carried; "
+            "4 read, 2 dropped",
+    "LII": "the disclaimer's heading and its second paragraph, which writes "
+           "'disclaims any intention or obligation to update', are carried; "
+           "3 read, 1 dropped",
+    "AMSC": "the disclaimer's heading is carried; 2 read, 1 dropped",
+    "ADTN": "the disclaimer's heading is carried; 2 read, 1 dropped",
 }
 
 

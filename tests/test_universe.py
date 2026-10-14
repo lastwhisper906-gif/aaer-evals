@@ -60,7 +60,14 @@ THE_EIGHT = ("DELL", "WDC", "ANET", "FTNT", "JCI", "POWL", "FELE", "FN")
 # from the module under test; their fixture sets are pinned to 2026-10-07.
 THE_NEXT_EIGHT = ("MSI", "LITE", "FLEX", "AVGO", "SMCI", "SNDK", "FFIV", "LOGI")
 
-EVERY_ROW = THE_TWELVE + THE_EIGHT + THE_NEXT_EIGHT
+# The seven added on 2026-10-14, by the same rule continued past the twenty-eight
+# (`docs/structure_changes.md`, 2026-10-14): the next-largest current filer under
+# 3571, 3572, 3576, 3577, 3585, 3621 and 3661, in that order. Typed from that
+# line, not imported from the module under test; their fixture sets are pinned
+# to 2026-10-14.
+THE_SEVEN = ("OMCL", "NTAP", "EXTR", "EVLV", "LII", "AMSC", "ADTN")
+
+EVERY_ROW = THE_TWELVE + THE_EIGHT + THE_NEXT_EIGHT + THE_SEVEN
 
 
 def _manifest(ticker: str) -> dict:

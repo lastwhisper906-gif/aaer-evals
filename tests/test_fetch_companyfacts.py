@@ -86,6 +86,9 @@ NOT_YET_IN_COMPANYFACTS = {
     # filed 2026-07-29, were in no row either: the same gap, ten weeks later.
     ("JCI", "10-Q", "0000833444-26-000087"),    # filed 2026-07-29
     ("FELE", "10-Q", "0000038725-26-000055"),   # filed 2026-07-29
+    # Lennox's record was fetched 2026-10-14, and its 10-Q of the same
+    # 2026-07-29 was in no row either: the gap outlasts the quarter.
+    ("LII", "10-Q", "0001069202-26-000087"),    # filed 2026-07-29
 }
 
 
@@ -421,6 +424,10 @@ TWO_ROUNDINGS = {
             "millions), and income before income taxes as '194,650' and '$ 194.7'; "
             "2,131,250,000 and 194,650,000 round half to even to 2,131,200,000 and "
             "194,600,000, not to the figures the filing prints at decimals -5",
+    "EXTR": "the 10-Q filed 2026-01-29 states goodwill at 2025-12-31 as '399,850' in "
+            "the balance sheet (in thousands) and as '$399.9 million' in its goodwill "
+            "note; 399,850,000 at decimals -5 rounds half to even to 399,800,000, not "
+            "to the 399,900,000 the filing prints",
 }
 
 
@@ -494,9 +501,9 @@ def test_the_filings_companyfacts_has_not_loaded_are_the_two_on_record():
              for form, accession, _ in comparison(ticker)["unloaded"]}
     assert found == NOT_YET_IN_COMPANYFACTS
     # Three instances per company -- the 10-K's, the 10-Q's and the prior
-    # 10-Q's, each a manifest row -- over the twelve, the eight and the next
-    # eight: 28 × 3.
-    assert sum(comparison(ticker)["instances"] for ticker in TICKERS) == 84
+    # 10-Q's, each a manifest row -- over the twelve, the eight, the next
+    # eight and the seven added on 2026-10-14: 35 × 3.
+    assert sum(comparison(ticker)["instances"] for ticker in TICKERS) == 105
 
 
 @pytest.mark.parametrize("ticker", TICKERS)

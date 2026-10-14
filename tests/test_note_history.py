@@ -251,6 +251,14 @@ BROAD_DEBT_MATCH = {
     # quarters, beside the convertible notes it owes.
     "LITE": "DebtSecuritiesAvailableForSaleUnrealizedLossPositionFairValueTable; "
             "8 read, 9 paired",
+    "EVLV": "DebtSecuritiesAvailableForSaleTable and InvestmentsInDebtAndMarketable"
+            "EquitySecurities…; 8 read, 10 paired",
+    # Both directions at once: the investments note paired, and the two tables on
+    # the filer's own tags inside the credit-agreements and convertible-notes
+    # notes (CarryingAmountOfRevolvingAgreementTable…, SummaryOfInterestExpense"
+    # Table…) not paired, so narrowing the pattern alone does not turn it green.
+    "ADTN": "InvestmentsInDebtAndMarketableEquitySecuritiesAndCertainTradingAssets…, "
+            "the investments note; 10 read, 9 paired",
 }
 
 

@@ -1088,8 +1088,9 @@ def test_the_two_records_older_than_their_trigger_are_the_ones_the_fixtures_hold
     # Of the eight added on 2026-10-07, JCI's and FELE's 10-Qs of 2026-07-29
     # were in no companyfacts row when their records were fetched
     # (`tests/test_fetch_companyfacts.py`'s NOT_YET_IN_COMPANYFACTS), so their
-    # records are older than their triggers too.
-    assert stale == {"CARR", "LFUS", "JCI", "FELE"}
+    # records are older than their triggers too, and so is Lennox's of the
+    # seven added on 2026-10-14, its 10-Q of the same 2026-07-29 still in no row.
+    assert stale == {"CARR", "LFUS", "JCI", "FELE", "LII"}
 
 
 # Sandisk, of the next eight added on 2026-10-07, has filed only since its

@@ -509,6 +509,17 @@ UNDER_DROPPED_BUNDLE = {
                       "carried; 66 read, 68 built",
     ("LOGI", "10-Q"): "the page-broken second half of the disclaimer carried; "
                       "61 read, 62 built",
+    ("OMCL", "10-Q"): "5 page numerals and 3 forward-looking blocks carried; "
+                      "92 read, 100 built",
+    ("NTAP", "10-Q"): "the second safe-harbour paragraph carried; 126 read, 127 built",
+    ("EXTR", "10-K"): "the disclaimer's heading, its second paragraph and its "
+                      "page-broken second half carried; 122 read, 124 built",
+    ("EVLV", "10-Q"): "the disclaimer's heading and its page-broken continuation "
+                      "carried; 83 read, 85 built",
+    ("LII", "10-Q"): "the disclaimer's heading and its second paragraph carried; "
+                     "64 read, 66 built",
+    ("AMSC", "10-Q"): "the disclaimer's heading carried; 55 read, 56 built",
+    ("ADTN", "10-Q"): "the disclaimer's heading carried; 126 read, 127 built",
 }
 
 EIGHT_K_CASES = [
