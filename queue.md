@@ -32,8 +32,6 @@ branch changed. A run item is done when its run directory is published and
 
 [ ] WDC's 10-Q filed 2026-05-01 on Fable · `.venv/bin/python -m evals --runs runs/WDC` · item one
 
-[ ] POWL's 10-Q filed 2026-08-04 on Fable · `.venv/bin/python -m evals --runs runs/POWL` · item one
-
 [ ] FELE's 10-Q filed 2026-07-29 on Fable · `.venv/bin/python -m evals --runs runs/FELE` · item one
 
 [ ] FN's 10-Q filed 2026-05-05 on Fable · `.venv/bin/python -m evals --runs runs/FN` · item one
@@ -71,6 +69,8 @@ branch changed. A run item is done when its run directory is published and
 [ ] MU, Micron Technology, the reading's pick under 3674 (`docs/structure_changes.md`, 2026-10-14): fixtures as of the day it is fetched, the two 10-K headers and Exhibit 21 documents by hand, expected values with the 43 keys, and its row · `.venv/bin/python -m pytest tests -q -k "MU"` passes with every defect a strict expected failure · none
 
 ## Done
+
+[x] POWL's 10-Q filed 2026-08-04 on Fable · `.venv/bin/python -m evals --runs runs/POWL` · item one · 2026-10-14: run on Opus by the owner's decision of the evening (`--model opus`, recorded as `model_override`; every agent served claude-opus-5-5, no fallback); regression 18 pass, 0 fail; analysis-grader 0.974 with 0 dealbreakers, the grader's stated score differing from the rubric's formula as the open row records; an earlier attempt on Fable stopped at the readers by the session limit and was set aside · PR: this one
 
 [x] JCI's 10-Q filed 2026-07-29 on Fable · `.venv/bin/python -m evals --runs runs/JCI` · item one · 2026-10-14: run on Opus by the owner's decision of the evening (`--model opus`, recorded as `model_override` in the manifest; every agent served claude-opus-5-5, no fallback); regression 18 pass, 0 fail; analysis-grader 0.848 with 2 dealbreakers, the grader's stated score differing from the rubric's formula as the open row records; earlier attempts on Fable stopped at the session limit and at the plain-name check and were set aside, and the filing was extracted again for this run · PR: this one
 

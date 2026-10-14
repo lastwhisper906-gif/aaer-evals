@@ -1,0 +1,242 @@
+{
+  "scenarios": {
+    "bear": {
+      "revenue_growth_year_one": 0.03,
+      "terminal_growth": 0.02,
+      "operating_margin_year_one": 0.17,
+      "operating_margin_year_ten": 0.10,
+      "reinvestment_rate_year_one": 0.30,
+      "reinvestment_rate_year_ten": 0.20,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "In the weak case the backlog converts slowly. Projects slip, the new backlog rests on a handful of very large orders, capacity is tight enough that liquidated damages are rising, petrochemical revenue keeps running off, and macroeconomic or trade-policy shocks delay customer awards. Revenue barely grows in year one.",
+          "quote": "But the backlog rests on a few very large orders, a data-center project among them, and the company itself cautions that backlog can be cancelled or modified.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "ratios.growth.revenue.trailing_four_quarters",
+            "earnings_versus_cash.history.years.0.revenue_growth",
+            "earnings_versus_cash.history.years.4.revenue_growth"
+          ],
+          "history": "Below trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters|pct} and fiscal 2025 growth of {earnings_versus_cash.history.years.0.revenue_growth|pct}. It stays above the fall of fiscal 2021 ({earnings_versus_cash.history.years.4.revenue_growth|pct}), because the backlog on hand makes an outright decline next year unlikely even in a weak case."
+        },
+        "terminal_growth": {
+          "reason": "In the weak case the data-center and LNG investment cycle ends, and the company grows with mature industrial capital spending, below nominal economic growth.",
+          "quote": "Notwithstanding this momentum, we continue to monitor macroeconomic conditions and geopolitical developments that could affect customer spending behavior or the timing of project awards.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "cost_of_capital.risk_free_rate",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound"
+          ],
+          "history": "Well below the risk-free rate of {cost_of_capital.risk_free_rate|pct} and the five-year compound growth of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}. The record includes a year of falling revenue, fiscal 2021 ({earnings_versus_cash.history.years.4.revenue_growth|pct}), and a terminal rate for a cyclical business has to average over years like that."
+        },
+        "operating_margin_year_one": {
+          "reason": "Mix shifts toward less custom data-center equipment, tariffs and commodity costs bite, liquidated damages grow, and the favourable contract-estimate revisions that helped past margins keep fading. The latest quarter's own revision was already unfavourable.",
+          "quote": "We could potentially face the challenge of increased costs of raw materials and engineered components as well as negative impacts on our margins",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.profitability.operating_margin",
+            "earnings_versus_cash.history.operating_margin_three_year_average",
+            "trend_table.quarters-back-0.ratios.gross_margin",
+            "trend_table.quarters-back-4.ratios.gross_margin"
+          ],
+          "history": "Below the trailing operating margin of {ratios.profitability.operating_margin|pct} but still above the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}. The quarter's gross margin of {trend_table.quarters-back-0.ratios.gross_margin|pct} already sits just under the year-earlier {trend_table.quarters-back-4.ratios.gross_margin|pct}."
+        },
+        "operating_margin_year_ten": {
+          "reason": "The cycle turns. Today's margin rests on volume and a strong pricing environment. As competitors add capacity, pricing power fades and the company is left carrying its expanded fixed capacity, so the margin settles near the levels of the recovery years rather than the peak.",
+          "quote": "The increases in gross profit were primarily driven by higher volume levels and a continued strong and stable pricing environment.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "earnings_versus_cash.history.years.2.operating_margin",
+            "earnings_versus_cash.history.years.3.operating_margin",
+            "earnings_versus_cash.history.operating_margin_three_year_average"
+          ],
+          "history": "Below the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct} and close to fiscal 2023's {earnings_versus_cash.history.years.2.operating_margin|pct}, though well above the near-zero fiscal 2022 margin of {earnings_versus_cash.history.years.3.operating_margin|pct}."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "If bookings slow, the customer advances that funded working capital run off as the prepaid work is delivered. The receivables build still has to be collected, and the yard expansion is already committed. Reinvestment as a share of a smaller operating income therefore jumps.",
+          "quote": "A slowdown in bookings would reverse the advance-billing tailwind, and cash would fall as the prepaid work is delivered.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "terms.balances_now.contract_liabilities",
+            "earnings_versus_cash.working_capital.receivables.balance_sheet_change",
+            "terms.trailing_four_quarters.capital_expenditure"
+          ],
+          "history": "Far above the recent record of near-zero net reinvestment. That record rested on contract liabilities of {terms.balances_now.contract_liabilities}, while receivables alone rose by {earnings_versus_cash.working_capital.receivables.balance_sheet_change} over the year."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "In a mature, competitive market, returns on new capital fall toward the cost of capital, so each unit of growth needs more capital. Customer prepayments no longer fund growth. At the weak-case terminal growth, this share implies new investment that earns only modestly above a normal cost of capital.",
+          "quote": "Operating cash flow held up only because customer prepayments rose faster, and that offset lasts only while bookings and milestone billings stay strong.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "terms.trailing_four_quarters.capital_expenditure",
+            "terms.trailing_four_quarters.depreciation_and_amortization",
+            "ratios.profitability.return_on_invested_capital"
+          ],
+          "history": "Above the recent record, in which trailing capital spending of {terms.trailing_four_quarters.capital_expenditure} barely exceeded depreciation of {terms.trailing_four_quarters.depreciation_and_amortization}. The weak case assumes that record does not survive a downturn."
+        }
+      }
+    },
+    "base": {
+      "revenue_growth_year_one": 0.13,
+      "terminal_growth": 0.03,
+      "operating_margin_year_one": 0.195,
+      "operating_margin_year_ten": 0.16,
+      "reinvestment_rate_year_one": 0.20,
+      "reinvestment_rate_year_ten": 0.15,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "The backlog is growing much faster than revenue. Bookings over the nine months more than doubled, the third fiscal quarter's bookings ran far ahead of its revenue, and the Jacintoport yard adds capacity from the close of Fiscal 2026. Year-one growth is set above the trailing pace because that backlog has to convert. It is set well below the recent compound rate because capacity, project scheduling and the petrochemical runoff limit how fast it converts.",
+          "quote": "Bookings, net of cancellations and scope reductions, increased 112% to $1.9 billion during the nine months ended June 30, 2026, compared to $879.7 million during the nine months ended June 30, 2025.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.growth.revenue.trailing_four_quarters",
+            "ratios.growth.revenue.year_over_year",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound",
+            "earnings_versus_cash.history.years.1.revenue_growth"
+          ],
+          "history": "Above trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters|pct} and the quarter's year-over-year {ratios.growth.revenue.year_over_year|pct}. Below the five-year compound rate of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, and far below the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}. The three-year rate starts from the fiscal 2022 trough and includes the fiscal 2024 surge ({earnings_versus_cash.history.years.1.revenue_growth|pct}), so it is not a rate to carry forward."
+        },
+        "terminal_growth": {
+          "reason": "In the long run, an engineered-equipment maker in a cyclical, capital-intensive market grows with nominal spending on power distribution. The utility, grid and data-center demand the company names supports a rate near nominal economic growth. It is kept below the risk-free rate.",
+          "quote": "The markets in which we participate are capital-intensive and cyclical in nature.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "cost_of_capital.risk_free_rate",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound",
+            "earnings_versus_cash.history.years.4.revenue_growth"
+          ],
+          "history": "Below the risk-free rate of {cost_of_capital.risk_free_rate|pct}, and far below every multi-year growth rate on record (five-year compound {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}), as a terminal rate must be. The record also holds a year of falling revenue, fiscal 2021 ({earnings_versus_cash.history.years.4.revenue_growth|pct}), which a perpetual rate has to average over."
+        },
+        "operating_margin_year_one": {
+          "reason": "Management guides gross margin to hold at trailing-twelve-month levels while capacity is added. Overhead is rising with compensation, the Remsdaq acquisition and infrastructure, and research spending is growing. Year one is therefore set a touch below the trailing operating margin, with no expansion assumed from volume.",
+          "quote": "We expect that gross margins will maintain levels consistent to the trailing twelve months, while prudently adding capacity to support the acceleration in our backlog(3).",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.profitability.operating_margin",
+            "ratios.profitability.gross_margin",
+            "earnings_versus_cash.history.years.0.operating_margin",
+            "earnings_versus_cash.history.operating_margin_three_year_average",
+            "terms.trailing_four_quarters.research_and_development_expense"
+          ],
+          "history": "A touch below the trailing operating margin of {ratios.profitability.operating_margin|pct} and the fiscal 2025 margin of {earnings_versus_cash.history.years.0.operating_margin|pct}, the best on record. Well above the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}."
+        },
+        "operating_margin_year_ten": {
+          "reason": "The business is cyclical, and nearly all revenue rests on cost-to-complete estimates. The company itself warns that data-center work needs less custom engineered-to-order content, and that tariffs and input costs may press margins. High returns also attract competing capacity. Over ten years the margin fades toward the three-year average but stays above it, because the move into utility and data-center markets looks durable.",
+          "quote": "(i) our product mix may shift, as such projects will likely require less custom engineered-to-order equipment and systems than other end markets",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.profitability.operating_margin",
+            "earnings_versus_cash.history.operating_margin_three_year_average",
+            "earnings_versus_cash.history.years.2.operating_margin",
+            "earnings_versus_cash.history.years.3.operating_margin"
+          ],
+          "history": "Below the trailing {ratios.profitability.operating_margin|pct} and just above the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}. Far above fiscal 2023 ({earnings_versus_cash.history.years.2.operating_margin|pct}) and fiscal 2022 ({earnings_versus_cash.history.years.3.operating_margin|pct}), the levels before the current upcycle."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "Recent reinvestment has been tiny: customer advances funded working capital, and capital spending barely exceeded depreciation. That will not last. The Jacintoport yard is being completed, greenfield expansion is under evaluation, and the receivables build already absorbs cash that advances offset only while bookings stay strong. Year one is set well above the recent record to fund capacity and a less generous advance position.",
+          "quote": "We are also evaluating greenfield capacity expansions incremental to our added leased capacity in Houston and Ohio, while prioritizing adequate returns and ensuring the optimal manufacturing footprint for Powell over the long term.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "terms.trailing_four_quarters.capital_expenditure",
+            "terms.trailing_four_quarters.depreciation_and_amortization",
+            "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital",
+            "terms.balances_now.contract_liabilities",
+            "terms.balances_a_year_earlier.contract_liabilities"
+          ],
+          "history": "Well above the company's recent record. Trailing capital spending was {terms.trailing_four_quarters.capital_expenditure} against depreciation of {terms.trailing_four_quarters.depreciation_and_amortization}. The trade working-capital build of {free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital} was more than covered by contract liabilities, which rose to {terms.balances_now.contract_liabilities} from {terms.balances_a_year_earlier.contract_liabilities}."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "At the base terminal growth, this share of after-tax operating income reinvested implies a return on new capital comfortably above a normal cost of capital. That return is far below today's printed return on invested capital, which is computed on equity net of a large cash balance. The rate also assumes customer advances stop growing relative to revenue, so working capital no longer comes free.",
+          "quote": "The advance unwinds as the work is performed.",
+          "quote_from": "analysis_accounting.json",
+          "fields": [
+            "ratios.profitability.return_on_invested_capital",
+            "ratios.profitability.return_on_invested_capital.invested_capital",
+            "trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue"
+          ],
+          "history": "Above the recent record of near-zero net reinvestment, and below year one. The printed return on invested capital of {ratios.profitability.return_on_invested_capital|pct} rests on invested capital of only {ratios.profitability.return_on_invested_capital.invested_capital}, so it is not carried forward."
+        }
+      }
+    },
+    "bull": {
+      "revenue_growth_year_one": 0.21,
+      "terminal_growth": 0.035,
+      "operating_margin_year_one": 0.21,
+      "operating_margin_year_ten": 0.19,
+      "reinvestment_rate_year_one": 0.25,
+      "reinvestment_rate_year_ten": 0.12,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "In the strong case the backlog converts quickly. Jacintoport and the added leased capacity come on stream, the data-center, utility and LNG awards ship on schedule, and bookings keep running ahead of revenue.",
+          "quote": "The expansion of our Jacintoport fabrication yard is expected to be completed by the close of Fiscal 2026, and we anticipate production to ramp up as we leverage this additional capacity to support recent core industrial project awards.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.growth.revenue.trailing_four_quarters",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.years.1.revenue_growth"
+          ],
+          "history": "Well above trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters|pct} and the five-year compound {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}. Still below the three-year compound {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and the fiscal 2024 jump of {earnings_versus_cash.history.years.1.revenue_growth|pct}, which came when the last wave of large orders converted."
+        },
+        "terminal_growth": {
+          "reason": "Electrification, grid strengthening and data-center demand keep the market for power-distribution equipment growing a little faster than the broad economy. The rate stays under the risk-free rate.",
+          "quote": "The outlook for each of our core end markets are highly favorable, supported by durable and diverse demand drivers",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "cost_of_capital.risk_free_rate",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound"
+          ],
+          "history": "Below the risk-free rate of {cost_of_capital.risk_free_rate|pct}, and far below the five-year compound growth of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}."
+        },
+        "operating_margin_year_one": {
+          "reason": "Volume on a larger backlog spreads fixed overhead, while gross margin holds at the guided trailing level as the stable pricing environment continues. The latest quarter's gross margin already ran above the trailing figure, and operating income grew faster than revenue sequentially.",
+          "quote": "The increases in gross profit were primarily driven by higher volume levels and a continued strong and stable pricing environment.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.profitability.operating_margin",
+            "earnings_versus_cash.history.years.0.operating_margin",
+            "trend_table.quarters-back-0.ratios.gross_margin",
+            "ratios.profitability.gross_margin",
+            "ratios.growth.operating_income.quarter_over_quarter",
+            "ratios.growth.revenue.quarter_over_quarter"
+          ],
+          "history": "Above the trailing operating margin of {ratios.profitability.operating_margin|pct} and the fiscal 2025 record of {earnings_versus_cash.history.years.0.operating_margin|pct}. The quarter's gross margin of {trend_table.quarters-back-0.ratios.gross_margin|pct} sits above the trailing {ratios.profitability.gross_margin|pct}, and sequential operating-income growth of {ratios.growth.operating_income.quarter_over_quarter|pct} outpaced revenue growth of {ratios.growth.revenue.quarter_over_quarter|pct}."
+        },
+        "operating_margin_year_ten": {
+          "reason": "The move into utility, data-center and commercial markets proves structural, pricing discipline holds, and the new capacity runs full. Over ten years the margin gives back only a little of the peak, despite the mix shift toward less custom equipment.",
+          "quote": "In response to the rising cost environment and persistent supply chain challenges, we are taking strategic measures to effectively manage our product pricing",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.profitability.operating_margin",
+            "earnings_versus_cash.history.operating_margin_three_year_average"
+          ],
+          "history": "Just below the trailing {ratios.profitability.operating_margin|pct} and well above the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}. The record holds no full cycle at this level, so this is the most generous margin path of the three."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "Faster growth needs more capacity. The greenfield expansions under evaluation go ahead alongside Jacintoport, and receivables grow with the larger volume, though customer advances keep funding much of the working capital.",
+          "quote": "The real pressure is execution capacity, and no filing yet sizes the spending ahead.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "terms.trailing_four_quarters.capital_expenditure",
+            "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital",
+            "terms.balances_now.contract_liabilities"
+          ],
+          "history": "Far above the recent record of trailing capital spending of {terms.trailing_four_quarters.capital_expenditure}, and above the base case, because the strong-case growth path cannot be delivered from today's footprint."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "Once the capacity build is done, a business whose working capital is funded by customer milestone payments needs little capital to grow at a mature rate. At the strong-case terminal growth, this share implies high returns on new capital. That fits the company's record of growing on very little invested capital.",
+          "quote": "The increase in operating cash flow was primarily driven by improved earnings and higher milestone payments associated with strong booking activity.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "free_cash_flow.free_cash_flow_to_firm.net_working_capital_broad_not_used.now",
+            "ratios.profitability.return_on_invested_capital.invested_capital",
+            "terms.trailing_four_quarters.capital_expenditure"
+          ],
+          "history": "Still above the recent record, in which broad net working capital stood at {free_cash_flow.free_cash_flow_to_firm.net_working_capital_broad_not_used.now} and invested capital net of cash was only {ratios.profitability.return_on_invested_capital.invested_capital}. It is the lowest year-ten rate of the three scenarios."
+        }
+      }
+    }
+  },
+  "wacc_overrides": {}
+}

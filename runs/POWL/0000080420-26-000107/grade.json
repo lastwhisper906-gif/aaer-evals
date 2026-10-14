@@ -1,0 +1,273 @@
+{
+ "run": "POWL/analysis-grader-rum0x2zu",
+ "rubric": "evals/capability/rubric.md",
+ "dealbreakers": [],
+ "items": [
+  {
+   "id": "earnings_versus_cash_operating_cash_far_ahead_of_income_on_customer_advances",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.operating_cash_flow_over_net_income sits above history.years.0 and history.years.1; ratios.growth.operating_cash_flow.trailing_four_quarters far exceeds ratios.growth.net_income.trailing_four_quarters; terms.balances_now.contract_liabilities is above balances_a_year_earlier; mdna:59 credits 'higher milestone payments associated with strong booking activity'."
+  },
+  {
+   "id": "earnings_versus_cash_receivables_absorb_most_of_net_income",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "earnings_versus_cash.working_capital.receivables.balance_sheet_change and share_of_net_income resolve; revenue_recognition_receivables_build_in_operating_cash_flow shows the prior-year nine-month IncreaseDecreaseInAccountsReceivable negative; neither reader report explains the build."
+  },
+  {
+   "id": "earnings_versus_cash_payables_and_inventory_articulation_gaps",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "low",
+   "why": "The gaps at earnings_versus_cash.working_capital.accounts_payable.articulation_gap and inventory.articulation_gap are real, but the claim 'Both gaps run in the direction that does not inflate operating cash' fails for inventory: inventory.balance_sheet_change exceeds inventory.cash_flow_statement_change, so the statement absorbed less cash than the balance implies. The Remsdaq-in-window reading (estimates_and_discretion_contingent_consideration_remeasured) is plausible but unsettled."
+  },
+  {
+   "id": "earnings_versus_cash_income_smoother_than_cash",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.smoothness resolves, and its formula reads 'below 1 means income moves less than cash'; its operating_cash_flow series holds a negative quarter beside positive net_income; concentration.facts.16.value matches notes:35."
+  },
+  {
+   "id": "revenue_recognition_days_sales_outstanding_highest_in_record",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "trend_table.quarters-back-0.ratios.days_sales_outstanding is 'highest of the 6 filled quarters on the same concepts', and quarters-back-1, quarters-back-4 and ratios.growth.revenue.year_over_year resolve. Contract assets fell from fiscal year-end (revenue_recognition_contract_assets_balance), though note_history:19 shows them slightly up from March, so 'same span' is loose."
+  },
+  {
+   "id": "revenue_recognition_contract_liabilities_at_record_against_revenue",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue is 'highest of the 6 filled quarters on the same concepts' against quarters-back-1; RPO rose across the 10-K, prior 10-Q and this 10-Q (revenue_recognition_remaining_performance_obligations); 'strong bookings and favorable contract billing milestones' is verbatim in notes:57."
+  },
+  {
+   "id": "revenue_recognition_over_time_share_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "concentration.facts.16.value against facts.6.value, and facts.18.value against facts.8.value, match notes:35 and notes:36; neither note gives a reason for the mix."
+  },
+  {
+   "id": "revenue_recognition_retention_figures_unchanged_across_quarter_ends",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "0000080420-26-000070:note_history:21 against 0000080420-26-000107:note_history:21 shows the same retention amounts with only the date changed; receivables rose from quarters-back-1 (revenue_recognition_receivables_build_in_operating_cash_flow); report_numbers has no March retention fact."
+  },
+  {
+   "id": "estimates_and_reserves_bad_debt_coverage_lowest_while_receivables_peak",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.quarters-back-0.ratios.bad_debt_reserve_ratio is 'lowest of the 8 filled quarters' while receivables_over_revenue is at its high; terms.balances_now.bad_debt_allowance is above balances_a_year_earlier; ProvisionForDoubtfulAccounts in input_numbers flips from a release to a charge."
+  },
+  {
+   "id": "estimates_and_reserves_contract_estimate_benefit_reversed_in_quarter_and_unnamed",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:45 'positively impacted by $12.8 million and $15.1 million' against the prior six-month 'positively impacted by $14.2 million and $8.8 million' (0000080420-26-000070:note_history:17), on the same beginning-of-period project base, shows a net unfavorable third quarter. mdna:25, mdna:39 and 8k_2_02:20 never name these changes. The analyst reported this correctly as contradicts."
+  },
+  {
+   "id": "estimates_and_reserves_deferred_tax_swing",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "earnings_quality_deferred_tax_and_tax_accrual_swing: DeferredIncomeTaxExpenseBenefit flips from benefit to expense and IncreaseDecreaseInAccruedIncomeTaxesPayable deepens (both confirmed in input_numbers); notes:131 shows the nine-month rate unchanged; tax_rate.effective_rate resolves."
+  },
+  {
+   "id": "estimates_and_reserves_contingent_consideration_remeasured",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "estimates_and_discretion_contingent_consideration_remeasured shows the Level 3 liability below its acquisition-date value at the 10-K year-end, higher at the prior 10-Q and lower at this quarter-end (notes:102); no remeasurement inputs are given."
+  },
+  {
+   "id": "estimates_and_reserves_record_margins_on_estimate_based_revenue",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.years-back-0.ratios.gross_margin is 'highest of the 5 filled years'; years-back-4 and ratios.profitability.gross_margin resolve; quarters-back-0 is 'second highest of the 6 filled quarters'; 8k_2_02:20 and mdna:39 credit volume, pricing and execution."
+  },
+  {
+   "id": "cost_deferral_construction_in_progress_build_against_lower_cash_capex",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "Construction in process rose since fiscal year-end (notes:26; liquidity_and_capital_construction_in_progress); terms.trailing_four_quarters.capital_expenditure is below trailing_four_quarters_a_year_earlier; mdna:61 and 8k_2_02:28 link spending to Jacintoport. 'Tie the build' is slightly strong."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_fourth_quarter_revenue_tagged_on_other_concept",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The structure_and_disclosure_changes_revenue_concept_* items show quarters-back-3 and quarters-back-7 resting on RevenueFromContractWithCustomerIncludingAssessedTax from the 10-K, with comparisons refused; earnings_quality_gross_margin_unfilled_where_only_annual_cost_is_filed confirms the missing fourth-quarter cost."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_split_and_treasury_tagging_inconsistencies",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "report_numbers shows CommonStockSharesAuthorized alternating across instants, the par transfer under StockIssuedDuringPeriodValueNewIssues, and TreasuryStockValue retagged as TreasuryStockCommonValue at an unchanged value; notes:13 describes the reclassification."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_director_grant_split_basis_unstated",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:94 states the February director grant without a split basis; 8k_2_02:45 says amounts were retroactively adjusted; no input settles which basis the note uses."
+  },
+  {
+   "id": "cross_document_reconciliation_ohio_leased_capacity_not_in_lease_note",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "'our added leased capacity in Houston and Ohio' is verbatim in 8k_2_02:28; notes:117 names only the Canada and Houston-adjacent leases; terms.balances_now.operating_lease_liability resolves."
+  },
+  {
+   "id": "cross_document_reconciliation_petrochemical_recovery_versus_subdued",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "'a recovery of the petrochemical market' is verbatim in mdna:48, against mdna:11's 'has remained subdued over the past several quarters'; petrochemical revenue fell (narrative_signs_of_operating_pressure_petrochemical_revenue); no filed bookings by market settle it."
+  },
+  {
+   "id": "cross_document_reconciliation_release_outlook_versus_mdna_caution",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The quoted outlook is verbatim in 8k_2_02:27; mdna:10 and mdna:18 carry the macro, trade-policy and award-timing cautions; numbers cannot settle a tone."
+  },
+  {
+   "id": "cross_document_reconciliation_gross_margin_guidance_versus_mix_shift_risk",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The guidance quote is verbatim in 8k_2_02:28; mdna:15 carries the mix-shift risk; ratios.profitability.gross_margin and trend_table.quarters-back-0.ratios.gross_margin resolve."
+  },
+  {
+   "id": "cross_document_reconciliation_release_orders_and_expense_lines_not_tied",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "low",
+   "why": "'New orders and book-to-bill appear only in the release' is wrong for orders: mdna:34 states 'increased 158% in the third quarter of Fiscal 2026 to $934.2 million', and the analyst cites mdna:10's bookings elsewhere. The release SG&A ties to the filed SellingGeneralAndAdministrativeExpense quarter fact in input_numbers and to mdna:27's 'to $26.7 million in the third quarter of Fiscal 2026'. Only book-to-bill is release-only."
+  },
+  {
+   "id": "cross_document_reconciliation_cash_increase_attributed_to_earnings_versus_milestones",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "'The increase was primarily driven by our strong earnings performance' is verbatim in mdna:51, and mdna:59 adds milestone payments; ratios.growth.operating_cash_flow.trailing_four_quarters against ratios.growth.net_income.trailing_four_quarters, plus the contract-liability build, support advances driving the step-up; the rest is honestly left open."
+  },
+  {
+   "id": "industry_lens_end_market_shift_from_petrochemical_and_canada",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:62 and notes:63 show petrochemical and Canada down for the quarter and nine months, and commercial, electric utility, Asia/Pacific and Middle East and Africa up; mdna:38 gives the backlog-runoff cause."
+  },
+  {
+   "id": "efficiency_receivables_build_and_days_sales_outstanding_at_high",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "terms.balances_now.receivables against balances_a_year_earlier, earnings_versus_cash.working_capital.receivables.share_of_net_income and ratios.growth.revenue.trailing_four_quarters resolve; quarters-back-0 DSO and receivables_over_revenue are 'highest of the 6 filled quarters on the same concepts'; the reserve ratio is 'lowest of the 8 filled quarters'; notes:57 gives the bookings-and-milestones cause."
+  },
+  {
+   "id": "efficiency_trade_working_capital_build_lowers_free_cash_flow_to_firm",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now and a_year_earlier, plus inputs.change_in_trade_working_capital, resolve; free_cash_flow_to_firm sits far below free_cash_flow_simple; the contract-liability rise (terms.balances_now against balances_a_year_earlier) exceeds the trade working-capital change."
+  },
+  {
+   "id": "liquidity_and_capital_cash_resting_on_customer_advances",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.balances_now.cash and contract_liabilities resolve; trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue is at its high against quarters-back-4; the mdna:59 quote is verbatim; mdna:51 names earnings only; earnings_versus_cash.smoothness resolves."
+  },
+  {
+   "id": "liquidity_and_capital_revolver_headroom_and_surety_exposure",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "Prior against current note_history:6 and note_history:1 show letters of credit up, revolver availability down, surety bonds up and bonding capacity down; notes:82 carries the collateral warning and notes:83 the cross-default; ratios.solvency.total_debt resolves."
+  },
+  {
+   "id": "liquidity_and_capital_capacity_expansion_commitments",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:26 (construction in process), mdna:61 (Jacintoport), notes:117 (leases not yet commenced) and 8k_2_02:28 (greenfield) all bear the claims out; the capex, lease and cash paths resolve; the anomaly itself concedes future spending is unsized."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_liquidated_damages_rising",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "Prior against current note_history:4 shows the probable, possible and recorded liquidated-damages amounts all higher; related_parties_contingencies_and_subsequent_events_loss_contingency_estimate rose across the three filings and equals the note's possible figure; the notes:87 quote is verbatim; ebit resolves."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_petrochemical_canada_and_international_declines",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The mdna:38 quote is verbatim; notes:62 and notes:63 show petrochemical, Canada and light rail down; mdna:23 has international slightly down and domestic up; ratios.growth.revenue.year_over_year resolves."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_input_costs_tariffs_and_mix",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The mdna:18 quote is verbatim; mdna:15 carries the mix-shift language; ratios.profitability.gross_margin is above every fiscal-year gross_margin in trend_table.years-back-*, so 'record for now' holds."
+  },
+  {
+   "id": "profitability_favorable_estimate_revisions_fading",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:45 against 0000080420-26-000070:note_history:17 puts the nine-month benefit below both the prior-year nine months and the prior six months; the anomaly correctly notes the filing prints no three-month figure; the quarters-back-0 and quarters-back-4 gross_margin paths resolve."
+  },
+  {
+   "id": "growth_operating_income_lagging_revenue_year_over_year",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.growth.operating_income.year_over_year is below ratios.growth.revenue.year_over_year, and the order reverses quarter over quarter; mdna:27 and mdna:41 give the cost drivers; ratios.profitability.operating_margin is marginally below earnings_versus_cash.history.years.0.operating_margin."
+  },
+  {
+   "id": "results_against_expectations_margin_guidance_held_flat_against_named_risks",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The 8k_2_02:27 and 8k_2_02:28 quotes are verbatim; mdna:10, mdna:15 and mdna:18 carry the cautions; the gross-margin paths resolve; the record holds no consensus to miss."
+  }
+ ],
+ "coverage": {
+  "answer": "no",
+  "why": "The gate dropped earnings_versus_cash, estimates_and_reserves, cash_flow_engineering_and_off_balance_sheet, controls_audit_and_filing_signals and industry_lens, so only revenue_recognition, cost_deferral and cross_document_reconciliation were answered; the financial analysis answered every section, losing only summary_ko.path_to_distress."
+ },
+ "calibration": {
+  "answer": "yes",
+  "why": "Where verdicts survived, they match their anomalies: revenue_recognition 'stays flagged' over unresolved DSO and retention items; cost_deferral is 'Clean.' over a construction-in-progress anomaly marked confirms; cross_document_reconciliation's 'several narrative claims rest on figures that are not filed' sits over its unresolved items; the financial readings match their anomalies."
+ },
+ "valuation_reading": {
+  "answer": "no",
+  "why": "valuation.missing, market.missing and implied_growth_beside_history.implied_ten_year_revenue_growth.missing leave no price, implied growth or sensitivity grid. The reading says so ('There is no price position to read.', 'No market-implied growth was computed.', 'The sensitivity grid was not computed') and names margin and year-one growth from the spread of past results, not from any computed sensitivity."
+ },
+ "score": 0.974,
+ "grader": {
+  "model_requested": "opus",
+  "model_served": "claude-opus-5-5",
+  "input_tokens": 46,
+  "output_tokens": 73829,
+  "cost_usd": 6.2887325999999995,
+  "seconds": 639.4
+ }
+}
