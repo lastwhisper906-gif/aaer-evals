@@ -1,0 +1,271 @@
+{
+  "scenarios": {
+    "bear": {
+      "revenue_growth_year_one": 0.08,
+      "terminal_growth": 0.03,
+      "operating_margin_year_one": 0.30,
+      "operating_margin_year_ten": 0.28,
+      "reinvestment_rate_year_one": 0.28,
+      "reinvestment_rate_year_ten": 0.15,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "The hardware refresh reverses. Product revenue, which the reported quarter grew on unit shipments and pricing actions, flattens or falls against that base in the first half of 2027, as refresh cycles in this industry have done before. Service revenue keeps growing but slows: current contract liabilities over quarterly revenue are at a six-quarter low because growth has leaned on hardware, and installment billings, which management names among the factors billings depend on, defer invoicing. Three distributors carry over half of revenue, and trade-policy changes could hit hardware sales to U.S. customers. The year-one rate is roughly the service line growing in the low teens with product revenue slightly down.",
+          "quote": "Growth is therefore leaning more on the hardware line that carries component-cost exposure and lower margin, and less on the prepaid subscription base that gives the balance sheet its cash cushion. Not weakness, but a change in the quality of the growth.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "ratios.growth.revenue.year_over_year.value",
+            "trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue.value",
+            "trend_table.quarters-back-5.ratios.contract_liabilities_over_revenue.value",
+            "concentration.facts.30.value",
+            "earnings_versus_cash.history.years.1.revenue_growth"
+          ],
+          "history": "Below every fiscal year on record — the slowest, 2024, grew {earnings_versus_cash.history.years.1.revenue_growth|pct} — and about half the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}. It assumes the refresh that made this year's growth unwinds, and the record shows what that looks like in the fall from 2022's {earnings_versus_cash.history.years.3.revenue_growth|pct} to 2024's {earnings_versus_cash.history.years.1.revenue_growth|pct}."
+        },
+        "terminal_growth": {
+          "reason": "Below the risk-free cap of {cost_of_capital.risk_free_rate.value|pct}. The bear case ends the company as a mature hardware-plus-subscription vendor whose growth settles around inflation as the market consolidates, cloud-native competitors take share and the list of things billings depend on — competition, pricing, macroeconomic events, tariffs, conflicts — leans against it.",
+          "quote": "Additional increases in billings may depend on a number of factors, including demand for and availability of our products and services, competition, pricing actions, market or industry changes, macroeconomic events such as rising inflation and changing interest rates, economic strength, supply chain capacity and disruptions, tariffs and other trade restrictions, international conflicts, including the war in Ukraine, tensions between China and Taiwan or conflicts in the Middle East, an increase in installment billings, and our ability to execute.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "cost_of_capital.risk_free_rate.value",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound"
+          ],
+          "history": "A small fraction of any growth rate the company has filed; the lowest fiscal year on record is 2024's {earnings_versus_cash.history.years.1.revenue_growth|pct}. A terminal rate describes the company after ten years of fading, not the company today."
+        },
+        "operating_margin_year_one": {
+          "reason": "The gross margin pressure management already flags — product gross margin may decline on component costs, service gross margin declines on data-center expansion, tariff changes could hurt hardware margin — arrives while sales and marketing headcount, research and development and general and administrative expense all rise in absolute dollars as guided; with revenue growth slowing, the operating leverage that added points in the quarter reverses. The quarter's gross margin was already the lowest of six quarters and the inventory reserve ratio the thinnest of six, so a reserve rebuild or an excess-commitment charge on the doubled purchase commitments would fall into cost of revenue.",
+          "quote": "Our product gross margin may decline for the full year 2026 as compared to 2025 primarily due to continued higher hardware component costs.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "trend_table.quarters-back-0.ratios.gross_margin.value",
+            "trend_table.quarters-back-0.ratios.inventory_reserve_ratio.value",
+            "trend_table.quarters-back-5.ratios.inventory_reserve_ratio.value",
+            "ratios.profitability.operating_margin.value",
+            "earnings_versus_cash.history.years.0.operating_margin"
+          ],
+          "history": "Below the trailing four-quarter margin of {ratios.profitability.operating_margin.value|pct} and a little below fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct} and fiscal 2024's {earnings_versus_cash.history.years.1.operating_margin|pct}, contradicting management's expectation of a slight increase for the year; still above the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}."
+        },
+        "operating_margin_year_ten": {
+          "reason": "Margin drifts back toward the three-year average as hardware mix, component inflation, data-center and hosting costs for cloud-delivered services and competitive pricing in SASE erode gross margin, and the sales investment needed to hold share in a slower market is never leveraged.",
+          "quote": "The quarter's gross margin of {trend_table.quarters-back-0.ratios.gross_margin|pct} is the lowest of the six filled quarters in the trend table, against {trend_table.quarters-back-7.ratios.gross_margin|pct} at the top of that window; the trailing figure of {ratios.profitability.gross_margin|pct} sits just under fiscal 2025 ({trend_table.years-back-0.ratios.gross_margin|pct}) and fiscal 2024 ({trend_table.years-back-1.ratios.gross_margin|pct}).",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "earnings_versus_cash.history.operating_margin_three_year_average",
+            "earnings_versus_cash.history.years.2.operating_margin",
+            "earnings_versus_cash.history.years.3.operating_margin",
+            "trend_table.quarters-back-0.ratios.gross_margin.value",
+            "trend_table.quarters-back-7.ratios.gross_margin.value"
+          ],
+          "history": "At the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}, above fiscal 2023's {earnings_versus_cash.history.years.2.operating_margin|pct} and fiscal 2022's {earnings_versus_cash.history.years.3.operating_margin|pct}; a reversal of roughly half the margin gained since 2023, not a return to 2021."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "Capital expenditure at the high end of the full-year range for data centers, real estate and the processor collaboration with Intel, and the non-cancelable inventory purchase commitments that more than doubled from the year-end landing as inventory into slowing hardware demand, with the liability for commitments above forecast demand having fallen rather than risen. Working capital absorbs far more than the trailing build, and a share of it is written down against a reserve already at a six-quarter low.",
+          "quote": "These inventory purchase commitments as of June 30, 2026 totaled $1.67 billion, an increase of $856.5 million compared to $810.6 million as of December 31, 2025, as we continued to work with contract manufacturers and suppliers to optimize our inventory and purchase commitments position based on growth trends in customer demand, product lead times and increasing components cost.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "terms.trailing_four_quarters.cost_of_revenue.value",
+            "terms.balances_now.inventory.value",
+            "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital.value",
+            "terms.trailing_four_quarters.capital_expenditure.value",
+            "terms.trailing_four_quarters_a_year_earlier.capital_expenditure.value",
+            "trend_table.quarters-back-0.ratios.inventory_reserve_ratio.value"
+          ],
+          "history": "Well above the trailing share implied by free cash flow to the firm of {free_cash_flow.free_cash_flow_to_firm.value} against after-tax operating income, and above fiscal 2024, when capital expenditure of {earnings_versus_cash.history.years.1.capital_expenditure} was the highest on record. The stated commitments exceed trailing cost of revenue of {terms.trailing_four_quarters.cost_of_revenue.value} against an inventory balance of {terms.balances_now.inventory.value}, a scale the record gives no precedent for."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "Even with growth at the terminal rate, the bear case keeps reinvestment elevated: cloud-delivered services need continuing data-center and hosting capacity that hardware never did, so capital intensity rises structurally as the mix shifts, and the company keeps acquiring real estate and warehouse capacity.",
+          "quote": "We expect to continue to increase our data center, PoP, office and warehouse capacity to support growth and the expansion of existing services or introduction of new services.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "terms.trailing_four_quarters.capital_expenditure.value",
+            "terms.trailing_four_quarters.depreciation_and_amortization.value",
+            "earnings_versus_cash.history.years.1.capital_expenditure",
+            "earnings_versus_cash.history.years.2.capital_expenditure"
+          ],
+          "history": "Near the trailing share, which the base and bull cases let fall; it assumes capital intensity stays where it is. The record from 2023, when capital expenditure was {earnings_versus_cash.history.years.2.capital_expenditure}, to 2024, when it was {earnings_versus_cash.history.years.1.capital_expenditure}, shows spending can rise even as growth slows."
+        }
+      }
+    },
+    "base": {
+      "revenue_growth_year_one": 0.14,
+      "terminal_growth": 0.04,
+      "operating_margin_year_one": 0.32,
+      "operating_margin_year_ten": 0.34,
+      "reinvestment_rate_year_one": 0.22,
+      "reinvestment_rate_year_ten": 0.10,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "The next twelve months blend the second half of 2026, which the full-year revenue guidance implies grows well below the first half's pace, with a first half of 2027 that laps this year's hardware-led acceleration. The reported quarter grew {ratios.growth.revenue.year_over_year.value|pct} year over year on product revenue driven by unit shipments and pricing actions, a refresh-type wave that fades as it is lapped, while service revenue, the larger line, grows in the low teens off a deferred revenue balance that rose to {terms.balances_now.contract_liabilities.value} from {terms.balances_a_year_earlier.contract_liabilities.value}. The third-quarter revenue guidance range brackets the quarter just reported, so sequential growth is already flattening. The year-one rate weights the service line's pace and a product line that slows sharply once the pricing-action and refresh comparison base arrives.",
+          "quote": "Revenue in the range of $8.020 billion to $8.180 billion",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.growth.revenue.year_over_year.value",
+            "ratios.growth.revenue.quarter_over_quarter.value",
+            "ratios.growth.revenue.trailing_four_quarters.value",
+            "ratios.growth.revenue.this_quarter.value",
+            "earnings_versus_cash.history.years.0.revenue",
+            "terms.balances_now.contract_liabilities.value",
+            "terms.balances_a_year_earlier.contract_liabilities.value",
+            "trend_table.quarters-back-0.ratios.contract_liabilities_over_revenue.value"
+          ],
+          "history": "Below the trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters.value|pct} and the five-year compound of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, a little below the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, and between fiscal 2024's {earnings_versus_cash.history.years.1.revenue_growth|pct} and fiscal 2025's {earnings_versus_cash.history.years.0.revenue_growth|pct}. The trailing figure is inflated by a hardware refresh and pricing actions that the company's own second-half guidance already shows decelerating; the three-year compound spans the last refresh cycle and its hangover, which is the better guide to a year that includes the lapping."
+        },
+        "terminal_growth": {
+          "reason": "Capped by the risk-free rate of {cost_of_capital.risk_free_rate.value|pct}, which Python refuses to exceed. Network security spending is structural and the company's service revenue is contracted and prepaid, so a terminal rate a little under the risk-free rate, roughly nominal economic growth, is the best reading; it does not credit the company with out-growing the economy forever.",
+          "quote": "We expect these and other investments to support long-term revenue growth and market expansion.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "cost_of_capital.risk_free_rate.value",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound"
+          ],
+          "history": "Far below every growth rate on the company's record — the slowest fiscal year was 2024 at {earnings_versus_cash.history.years.1.revenue_growth|pct} — because a terminal rate describes the company after ten years of fading, not the company today."
+        },
+        "operating_margin_year_one": {
+          "reason": "Management expects the full-year 2026 GAAP operating margin to increase slightly over 2025, and the trailing margin of {ratios.profitability.operating_margin.value|pct} is already above fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct}. The non-GAAP guidance range sits above GAAP by the stock-based compensation of {terms.trailing_four_quarters.share_based_compensation.value} and the acquired-intangible amortization it adds back. Against that, the quarter's gross margin of {trend_table.quarters-back-0.ratios.gross_margin.value|pct} is the lowest of six quarters on hardware mix and component costs, both product and service gross margins are guided lower for the year, and sales and marketing headcount, product development and data-center spending are all guided up in absolute dollars. Year one is set a shade under the trailing figure, because the quarter's margin was lifted by revenue outrunning expense in a hardware surge that will not repeat at the same pace.",
+          "quote": "For the full year 2026, we expect our operating margin to increase slightly compared to 2025, benefiting from operating leverage and measured investments.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.profitability.operating_margin.value",
+            "earnings_versus_cash.history.years.0.operating_margin",
+            "trend_table.quarters-back-0.ratios.gross_margin.value",
+            "ratios.profitability.gross_margin.value",
+            "terms.trailing_four_quarters.share_based_compensation.value",
+            "ratios.growth.operating_income.year_over_year.value"
+          ],
+          "history": "Just below the trailing four-quarter margin of {ratios.profitability.operating_margin.value|pct}, above fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct} and fiscal 2024's {earnings_versus_cash.history.years.1.operating_margin|pct}, and well above the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}. The margin has climbed every year since 2021's {earnings_versus_cash.history.years.4.operating_margin|pct}; this driver keeps the company at roughly the level it has reached rather than the level of its past."
+        },
+        "operating_margin_year_ten": {
+          "reason": "A modest further expansion over ten years. The service line, which carries the higher gross margin and grows off prepaid contracts, keeps taking share of revenue as the hardware refresh fades; scale economies in general and administrative cost continue; and stock-based compensation, which the non-GAAP measure excludes, becomes a smaller share of a larger revenue base. Offsetting this, management is expanding data-center, colocation and hosting capacity for SASE and SecOps, which lowers service gross margin, and hardware component and memory-chip costs plus possible tariff changes weigh on product gross margin. The net is a couple of points of expansion, not a return to the slope of the last five years.",
+          "quote": "We also expect service gross margin to decline slightly for the full year 2026 as compared to 2025, primarily due to continued expansion of our data center footprint and colocation and cloud hosting capacity to support the growth in our unified SASE and SecOps offerings.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.profitability.operating_margin.value",
+            "earnings_versus_cash.history.operating_margin_three_year_average",
+            "earnings_versus_cash.history.years.0.operating_margin",
+            "earnings_versus_cash.history.years.4.operating_margin",
+            "trend_table.quarters-back-0.ratios.gross_margin.value",
+            "terms.trailing_four_quarters.share_based_compensation.value"
+          ],
+          "history": "Above the trailing {ratios.profitability.operating_margin.value|pct} and every fiscal year on record, but the step from fiscal 2021's {earnings_versus_cash.history.years.4.operating_margin|pct} to fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct} was far larger than the step assumed here over twice the time; the base case treats most of the operating leverage as already spent."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "Reinvestment here is net capital expenditure plus the trade working-capital build as a share of after-tax operating income. Over the trailing four quarters capital expenditure of {terms.trailing_four_quarters.capital_expenditure.value} ran only modestly above depreciation and amortization of {terms.trailing_four_quarters.depreciation_and_amortization.value}, while trade working capital rose {free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital.value}, so the trailing share of after-tax operating income is smallish. Year one is set above that trailing share because the full-year capital expenditure estimate implies a second-half step-up the numbers do not yet show, management expects to keep adding data-center, PoP, office and warehouse capacity, and non-cancelable inventory purchase commitments more than doubled from the year-end, which will land as inventory against a reserve already at a six-quarter low.",
+          "quote": "We estimate the full year capital expenditures to be between approximately $350 million and $550 million in 2026.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "terms.trailing_four_quarters.capital_expenditure.value",
+            "terms.trailing_four_quarters.depreciation_and_amortization.value",
+            "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital.value",
+            "free_cash_flow.free_cash_flow_to_firm.value",
+            "terms.trailing_four_quarters.operating_income.value",
+            "tax_rate.value",
+            "terms.trailing_four_quarters_a_year_earlier.capital_expenditure.value",
+            "terms.balances_now.inventory.value",
+            "trend_table.quarters-back-0.ratios.inventory_reserve_ratio.value"
+          ],
+          "history": "Above the trailing share implied by free cash flow to the firm of {free_cash_flow.free_cash_flow_to_firm.value} against after-tax operating income, and above fiscal 2025, when capital expenditure was {earnings_versus_cash.history.years.0.capital_expenditure}. This formula leaves out the deferred-revenue inflow, which is why simple free cash flow of {free_cash_flow.free_cash_flow_simple.value} is nearly twice free cash flow to the firm and operating cash flow is {earnings_versus_cash.operating_cash_flow_over_net_income.value} times net income; a positive reinvestment rate is therefore conservative for a business its customers fund in advance, and the driver is set with that understatement in mind rather than pushed lower to offset it."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "By year ten growth has faded to the terminal rate and the capacity build for data centers and the current hardware cycle is behind the company. Invested capital is negative, {ratios.profitability.return_on_invested_capital.invested_capital.value}, because cash exceeds debt, equity and leases together — customers prepay — so the capital the business must add for a point of growth is small; depreciation covers most maintenance spending and working capital grows only with revenue. A tenth of after-tax operating income funds terminal growth with room to spare.",
+          "quote": "That is not an operating loss — operating margin is {ratios.profitability.operating_margin|pct} — but a sign artifact: invested capital, defined as debt plus equity plus operating leases less cash, is {ratios.profitability.return_on_invested_capital.invested_capital}, because cash of {terms.balances_now.cash} exceeds debt of {ratios.solvency.total_debt}, equity of {terms.balances_now.stockholders_equity} and lease liabilities of {ratios.solvency.operating_lease_liability} together.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "ratios.profitability.return_on_invested_capital.invested_capital.value",
+            "terms.trailing_four_quarters.depreciation_and_amortization.value",
+            "terms.trailing_four_quarters.capital_expenditure.value",
+            "earnings_versus_cash.history.years.2.capital_expenditure",
+            "earnings_versus_cash.history.years.2.revenue_growth"
+          ],
+          "history": "Below the trailing share and below any fiscal year on record; the lowest capital expenditure year in the history, 2023 at {earnings_versus_cash.history.years.2.capital_expenditure}, came with growth of {earnings_versus_cash.history.years.2.revenue_growth|pct}, several times the terminal rate, which shows how little capital this model needs."
+        }
+      }
+    },
+    "bull": {
+      "revenue_growth_year_one": 0.19,
+      "terminal_growth": 0.045,
+      "operating_margin_year_one": 0.34,
+      "operating_margin_year_ten": 0.37,
+      "reinvestment_rate_year_one": 0.18,
+      "reinvestment_rate_year_ten": 0.08,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "Takes management's full-year revenue guidance at its midpoint pace and assumes it carries through the first half of 2027: the hardware refresh, AI-infrastructure deployments and technology upgrades continue, pricing actions hold, and service revenue accelerates as the billings guidance, which runs well above the revenue guidance, converts into recognized subscription and support revenue. Management expects product revenue to keep growing for the rest of 2026 and service revenue likewise, and the non-current deferred revenue build named in the operating cash flow explanation is revenue not yet recognized.",
+          "quote": "Billings in the range of $9.350 billion to $9.550 billion",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.growth.revenue.trailing_four_quarters.value",
+            "ratios.growth.revenue.year_over_year.value",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound",
+            "terms.balances_now.contract_liabilities.value",
+            "terms.balances_a_year_earlier.contract_liabilities.value"
+          ],
+          "history": "At the trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters.value|pct}, above the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and every fiscal year since 2023's {earnings_versus_cash.history.years.2.revenue_growth|pct}, but below the five-year compound of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct} and the quarter's {ratios.growth.revenue.year_over_year.value|pct}; the bull case asks the company to hold its recent pace, not to repeat 2021 and 2022."
+        },
+        "terminal_growth": {
+          "reason": "Just under the risk-free cap of {cost_of_capital.risk_free_rate.value|pct}. The bull case lets the company grow with the economy plus a small premium for a security market that keeps expanding with attack surface, cloud delivery and AI infrastructure.",
+          "quote": "We expect these and other investments to support long-term revenue growth and market expansion.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "cost_of_capital.risk_free_rate.value"
+          ],
+          "history": "Still a fraction of any growth rate the company has filed, including the slowest year, 2024's {earnings_versus_cash.history.years.1.revenue_growth|pct}; the cap is what binds here, not the history."
+        },
+        "operating_margin_year_one": {
+          "reason": "Holds the reported quarter's level, where operating income rose {ratios.growth.operating_income.year_over_year.value|pct} year over year on revenue outrunning expense, and assumes pricing actions keep product gross margin up as they did in the quarter while operating leverage on sales and marketing continues. Consistent with the top of the non-GAAP operating margin guidance after the stock-based compensation and amortization it adds back.",
+          "quote": "Non-GAAP operating margin in the range of 35.0% to 37.0%",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.growth.operating_income.year_over_year.value",
+            "ratios.profitability.operating_margin.value",
+            "earnings_versus_cash.history.years.0.operating_margin",
+            "terms.trailing_four_quarters.share_based_compensation.value",
+            "ratios.growth.operating_income.this_quarter.value",
+            "ratios.growth.revenue.this_quarter.value"
+          ],
+          "history": "Above the trailing {ratios.profitability.operating_margin.value|pct} and every fiscal year on record, including fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct}; it treats the latest quarter, not the trailing year, as the run-rate."
+        },
+        "operating_margin_year_ten": {
+          "reason": "Service mix, scale on general and administrative and research and development, and stock-based compensation shrinking as a share of revenue lift the GAAP margin to about where the non-GAAP guidance sits today. Requires that data-center expansion costs for SASE and SecOps are absorbed and that component and tariff pressure on hardware stays contained.",
+          "quote": "Operating margin increased 5.6 and 3.8 percentage points during the three and six months ended June 30, 2026, respectively, driven by revenue growth exceeding expense growth, resulting in improved operating leverage, partially offset by lower total gross margin.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.profitability.operating_margin.value",
+            "earnings_versus_cash.history.years.4.operating_margin",
+            "earnings_versus_cash.history.operating_margin_three_year_average",
+            "terms.trailing_four_quarters.share_based_compensation.value"
+          ],
+          "history": "Continues the climb from fiscal 2021's {earnings_versus_cash.history.years.4.operating_margin|pct} to the trailing {ratios.profitability.operating_margin.value|pct}, at a slower slope; a level the company has never reported on a GAAP basis."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "Capital expenditure at the low end of the full-year range, with the real estate already bought in the first half, and working capital that grows no faster than revenue: days sales outstanding fell in the quarter, the largest distributor's receivable share fell from the year-end, and inventory turned faster. A rate near the trailing share.",
+          "quote": "Receivables are not stretching: the quarter's days sales outstanding of {trend_table.quarters-back-0.ratios.days_sales_outstanding} came down from {trend_table.quarters-back-1.ratios.days_sales_outstanding} in the prior quarter, which was the highest of the six filled quarters, and the quarter's receivables over revenue is the third lowest of six.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "terms.trailing_four_quarters.capital_expenditure.value",
+            "terms.trailing_four_quarters.depreciation_and_amortization.value",
+            "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital.value",
+            "free_cash_flow.free_cash_flow_to_firm.value",
+            "trend_table.quarters-back-0.ratios.days_sales_outstanding.value",
+            "trend_table.quarters-back-0.ratios.days_sales_of_inventory.value",
+            "concentration.facts.36.value",
+            "concentration.facts.22.value"
+          ],
+          "history": "Roughly the trailing share implied by free cash flow to the firm of {free_cash_flow.free_cash_flow_to_firm.value} against after-tax operating income, and below fiscal 2025, when capital expenditure of {earnings_versus_cash.history.years.0.capital_expenditure} was higher than the trailing {terms.trailing_four_quarters.capital_expenditure.value}."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "With growth at the terminal rate, invested capital negative because customers prepay, and depreciation covering maintenance, the bull case needs little more than working capital growing with revenue.",
+          "quote": "Free cash flow to the firm is {free_cash_flow.free_cash_flow_to_firm}, far lower, because it is rebuilt from after-tax operating income, subtracts the trade working-capital build of {free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital}, and leaves out the deferred-revenue inflow that lifts operating cash flow; for a business paid in advance that formula understates the cash the operations throw off, and the gap between the two measures is the size of that prepayment effect.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "ratios.profitability.return_on_invested_capital.invested_capital.value",
+            "terms.trailing_four_quarters.depreciation_and_amortization.value",
+            "free_cash_flow.free_cash_flow_simple.value",
+            "free_cash_flow.free_cash_flow_to_firm.value"
+          ],
+          "history": "Below any share the company has shown; the lowest recent capital expenditure year, 2023 at {earnings_versus_cash.history.years.2.capital_expenditure}, still funded growth of {earnings_versus_cash.history.years.2.revenue_growth|pct}, and simple free cash flow of {free_cash_flow.free_cash_flow_simple.value} shows the deferred-revenue inflow the formula leaves out."
+        }
+      }
+    }
+  },
+  "wacc_overrides": {}
+}

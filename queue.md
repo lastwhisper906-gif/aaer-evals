@@ -31,8 +31,6 @@ branch changed. A run item is done when its run directory is published and
 
 [ ] WDC's 10-Q filed 2026-05-01 on Fable · `.venv/bin/python -m evals --runs runs/WDC` · item one
 
-[ ] FTNT's 10-Q filed 2026-07-30 on Fable · `.venv/bin/python -m evals --runs runs/FTNT` · item one
-
 [ ] JCI's 10-Q filed 2026-07-29 on Fable · `.venv/bin/python -m evals --runs runs/JCI` · item one
 
 [ ] POWL's 10-Q filed 2026-08-04 on Fable · `.venv/bin/python -m evals --runs runs/POWL` · item one
@@ -77,6 +75,8 @@ branch changed. A run item is done when its run directory is published and
 [ ] MU, Micron Technology, the reading's pick under 3674 (`docs/structure_changes.md`, 2026-10-14): fixtures as of the day it is fetched, the two 10-K headers and Exhibit 21 documents by hand, expected values with the 43 keys, and its row · `.venv/bin/python -m pytest tests -q -k "MU"` passes with every defect a strict expected failure · none
 
 ## Done
+
+[x] FTNT's 10-Q filed 2026-07-30 on Fable · `.venv/bin/python -m evals --runs runs/FTNT` · item one · 2026-10-14: regression 18 pass, 0 fail; the analysts served by claude-fable-5-1, no fallback, the readers on Opus, as their definitions say (it ran before the owner's decision of the evening that every run is on Opus); analysis-grader 0.779 with 5 dealbreakers, the grader's stated score differing from the rubric's formula as the open row records; a first attempt stopped at the valuation analyst when the Fable session limit was reached and was set aside, and the filing was extracted again for this run · PR: this one
 
 [x] ANET's 10-Q filed 2026-08-05 on Fable · `.venv/bin/python -m evals --runs runs/ANET` · item one · 2026-10-14: regression 18 pass, 0 fail; the analysts served by claude-fable-5-1, no fallback; the readers on Opus, as their definitions say; analysis-grader 0.917 with 0 dealbreakers, the grader's stated score differing from the rubric's formula as the open row in `docs/needs_judgment.md` records; extracted by hand the same day, the store fetched up to the filing · PR: this one
 

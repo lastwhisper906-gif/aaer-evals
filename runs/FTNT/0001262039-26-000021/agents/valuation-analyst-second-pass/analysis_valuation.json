@@ -1,0 +1,85 @@
+{
+  "question": "what is this company worth, and what does the price already assume?",
+  "value_range": {
+    "reading": "Python computed no value range. The calculator prints under valuation.missing: \"WACC is not computed: the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\", and under cost_of_capital.missing: \"the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\". No scenario has an enterprise value, an equity value or a value per share. There is a second gap on my side: assumptions.json carries no scenarios, because each of the three — bear, base and bull — was dropped in the first pass for a number written in the analyst's own words in its reason or history text, so even with a cost of capital there would have been no drivers to run. What the calculator does hold is the starting point a DCF would work from: trailing-four-quarter revenue of {terms.trailing_four_quarters.revenue.value}, a trailing operating margin of {ratios.profitability.operating_margin.value|pct}, simple free cash flow of {free_cash_flow.free_cash_flow_simple.value} beside a free cash flow to the firm of {free_cash_flow.free_cash_flow_to_firm.value}, net debt of {ratios.solvency.net_debt.value} (a net cash position), and shares outstanding of {terms.shares_outstanding.value}. None of these is a value, and no value is estimated here.",
+    "fields": [
+      "valuation.missing",
+      "cost_of_capital.missing",
+      "terms.trailing_four_quarters.revenue.value",
+      "ratios.profitability.operating_margin.value",
+      "free_cash_flow.free_cash_flow_simple.value",
+      "free_cash_flow.free_cash_flow_to_firm.value",
+      "ratios.solvency.net_debt.value",
+      "terms.shares_outstanding.value"
+    ]
+  },
+  "price_position": {
+    "reading": "No price at the cutoff is in the calculator: market prints \"no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\", and neither market.price nor cost_of_capital.price_at_cutoff is present. With no price and no value range, there is no position to read, and valuation.price_position was not computed. The free-cash-flow-yield cross-check is missing for the same reason, since it needs a market value of equity. What can be said without a price is only what the claims on the firm look like: total debt of {ratios.solvency.total_debt.value} against cash of {terms.balances_now.cash.value}, so net debt of {ratios.solvency.net_debt.value} is negative and the enterprise-value formula the calculator prints would subtract from, not add to, whatever market value of equity a price gave.",
+    "fields": [
+      "market.missing",
+      "free_cash_flow_yield.price_at_cutoff.missing",
+      "ratios.solvency.total_debt.value",
+      "terms.balances_now.cash.value",
+      "ratios.solvency.net_debt.value"
+    ]
+  },
+  "market_implied_growth": {
+    "reading": "No reverse DCF was run: implied_growth_beside_history prints \"no reverse DCF: WACC is not computed: the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\", so the constant ten-year revenue growth at which the base case would be worth the price does not exist, and the base case itself was dropped. The history that figure would have been read against is intact: revenue compounded at {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} a year over the last three fiscal years and {earnings_versus_cash.history.revenue_growth_five_year_compound|pct} over five; growth in the latest fiscal year was {earnings_versus_cash.history.years.0.revenue_growth|pct}, the year before {earnings_versus_cash.history.years.1.revenue_growth|pct}, and the year before that {earnings_versus_cash.history.years.2.revenue_growth|pct}; the trailing four quarters grew {ratios.growth.revenue.trailing_four_quarters.value|pct} and the latest quarter {ratios.growth.revenue.year_over_year.value|pct} year over year. Growth has therefore re-accelerated above the three-year compound rate and above each of the last two fiscal years, though it remains below the five-year compound rate that carries the older, faster years. The guidance points the same way: the release's full-year revenue range sits above trailing-four-quarter revenue of {terms.trailing_four_quarters.revenue.value}, and MD&A expects both product revenue and service revenue to keep growing year over year for the remainder of the year, with product revenue led by hardware unit shipments and pricing actions. What the price assumes against that record cannot be read without a price and a cost of capital.",
+    "fields": [
+      "implied_growth_beside_history.implied_ten_year_revenue_growth.missing",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound",
+      "earnings_versus_cash.history.revenue_growth_five_year_compound",
+      "earnings_versus_cash.history.years.0.revenue_growth",
+      "earnings_versus_cash.history.years.1.revenue_growth",
+      "earnings_versus_cash.history.years.2.revenue_growth",
+      "ratios.growth.revenue.trailing_four_quarters.value",
+      "ratios.growth.revenue.year_over_year.value",
+      "terms.trailing_four_quarters.revenue.value"
+    ],
+    "quote": "Revenue in the range of $8.020 billion to $8.180 billion",
+    "quote_from": "input_8k.md"
+  },
+  "most_sensitive": [
+    {
+      "assumption": "cost of capital — the discount rate, which was not computed",
+      "reading": "No sensitivity grid exists, because valuation.sensitivity was never built: the cost of capital has no beta, no market value of equity and no cost of equity, each missing for the same reason — \"no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\". The components that are present are the risk-free rate of {cost_of_capital.risk_free_rate.value|pct}, the equity risk premium of {cost_of_capital.equity_risk_premium.value|pct}, a pre-tax cost of debt of {cost_of_capital.pre_tax_cost_of_debt.value|pct} and a tax rate of {cost_of_capital.tax_rate.value|pct}; with debt of {ratios.solvency.total_debt.value} small beside the cash balance, the WACC would rest almost entirely on the cost of equity, which is the piece that is missing. This is the assumption whose absence stops the whole calculation, and nothing about how value responds to it can be read until it exists.",
+      "fields": [
+        "cost_of_capital.missing",
+        "cost_of_capital.beta.missing",
+        "cost_of_capital.risk_free_rate.value",
+        "cost_of_capital.equity_risk_premium.value",
+        "cost_of_capital.pre_tax_cost_of_debt.value",
+        "cost_of_capital.tax_rate.value",
+        "ratios.solvency.total_debt.value"
+      ]
+    },
+    {
+      "assumption": "revenue growth and operating margin — the drivers that were not run",
+      "reading": "The scenario spread does not exist: assumptions.json holds no bear, base or bull, each dropped in the first pass for a number written in the analyst's own words, so there is no spread between scenarios to read and no driver of mine to set against history. The record those drivers would have been anchored to is this: the trailing operating margin of {ratios.profitability.operating_margin.value|pct} is above the latest fiscal year's {earnings_versus_cash.history.years.0.operating_margin|pct}, above the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}, and far above the oldest year on record at {earnings_versus_cash.history.years.5.operating_margin|pct}; the margin has risen in each of the last four fiscal years, and MD&A guides it to increase slightly for the full year while warning that product and service gross margins may decline on component costs and data-center expansion. Reinvestment is light: trailing capital expenditure of {terms.trailing_four_quarters.capital_expenditure.value} against operating cash flow of {terms.trailing_four_quarters.operating_cash_flow.value}, with MD&A pointing capital expenditure higher for the year. In a DCF built on these drivers, a margin already above every fiscal year on record and a growth rate above the three-year compound rate would be the places where a different reader's choices would move value most; that is a structural reading, not a figure off a grid.",
+      "fields": [
+        "ratios.profitability.operating_margin.value",
+        "earnings_versus_cash.history.years.0.operating_margin",
+        "earnings_versus_cash.history.operating_margin_three_year_average",
+        "earnings_versus_cash.history.years.5.operating_margin",
+        "terms.trailing_four_quarters.capital_expenditure.value",
+        "terms.trailing_four_quarters.operating_cash_flow.value"
+      ]
+    }
+  ],
+  "accounting_adjustments": {
+    "reading": "There were none. valuation.accounting_adjustments does not exist because no valuation was computed, and the accounting analysis itself wrote no adjustment: its adjustments list is empty, and the calculator's quality-adjusted free cash flow shows no adjustment applied and none refused. The items the accounting analysis watched — an inventory reserve ratio at a six-quarter low with no stated cause, an unexplained inventory articulation gap, purchase commitments that more than doubled while the liability for commitments above forecast demand fell, and a release measure that adds real-estate purchases back to free cash flow — were each left unadjusted, either because no calculator field carries the movement or because the calculator's own free cash flow already keeps the outflow. The only difference between the cash-flow measures a DCF would start from is therefore mechanical: quality-adjusted free cash flow of {free_cash_flow.free_cash_flow_quality_adjusted.value} is simple free cash flow of {free_cash_flow.free_cash_flow_simple.value} less share-based compensation of {terms.trailing_four_quarters.share_based_compensation.value}, with no acquisition spend in the window. Nothing moved value, because there was no value to move.",
+    "fields": [
+      "free_cash_flow.free_cash_flow_quality_adjusted.value",
+      "free_cash_flow.free_cash_flow_simple.value",
+      "terms.trailing_four_quarters.share_based_compensation.value"
+    ]
+  },
+  "summary_ko": {
+    "value_range": "이번에는 가치 범위가 계산되지 않았습니다. 계산기가 주가와 베타를 받지 못해 자본비용을 구하지 못했고, 제가 첫 단계에서 쓴 세 가지 시나리오도 모두 검증에서 탈락해 돌릴 드라이버가 없었기 때문이며, 계산기에 남아 있는 것은 최근 네 분기 매출 {terms.trailing_four_quarters.revenue.value}, 영업이익률 {ratios.profitability.operating_margin.value|pct}, 단순 잉여현금흐름 {free_cash_flow.free_cash_flow_simple.value} 같은 출발점일 뿐 가치가 아닙니다.",
+    "price_position": "기준일의 주가가 계산기에 없어서 가격이 가치 범위의 어디에 놓이는지 읽을 수 없습니다. 주가 없이 말할 수 있는 것은 차입금 {ratios.solvency.total_debt.value}보다 현금 {terms.balances_now.cash.value}이 훨씬 많아 순차입금 {ratios.solvency.net_debt.value}이 음수라는 점뿐입니다.",
+    "market_implied_growth": "역산 DCF가 돌아가지 않아 주가가 전제하는 성장률은 없습니다. 회사의 기록은 삼 년 연평균 매출 성장률 {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, 오 년 연평균 {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, 최근 네 분기 {ratios.growth.revenue.trailing_four_quarters.value|pct}로 성장이 다시 빨라지는 모습이고, 보도자료의 연간 매출 가이던스도 같은 방향을 가리킵니다.",
+    "most_sensitive": "민감도 표도 시나리오 간 차이도 계산되지 않았습니다. 빠진 것은 베타와 주가가 없어 구하지 못한 자본비용이고 돌리지 못한 것은 성장률과 영업이익률 드라이버이며, 현재 영업이익률 {ratios.profitability.operating_margin.value|pct}은 삼 년 평균 {earnings_versus_cash.history.operating_margin_three_year_average|pct}보다 높아 회사 기록상 가장 높은 수준입니다.",
+    "accounting_adjustments": "회계 조정은 하나도 없었습니다. 회계 분석가가 조정을 쓰지 않았고 가치 자체가 계산되지 않아 움직일 값도 없었으며, 품질조정 잉여현금흐름 {free_cash_flow.free_cash_flow_quality_adjusted.value}과 단순 잉여현금흐름 {free_cash_flow.free_cash_flow_simple.value}의 차이는 주식보상비용 {terms.trailing_four_quarters.share_based_compensation.value}뿐입니다."
+  },
+  "limits": "This valuation is a set of stated assumptions run through a stated formula. It states no recommendation to trade, and a different reader choosing different drivers would reach a different value."
+}
