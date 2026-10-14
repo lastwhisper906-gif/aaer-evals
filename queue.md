@@ -28,10 +28,9 @@ branch changed. A run item is done when its run directory is published and
 
 [ ] DELL's 10-Q filed 2026-09-08 on Fable · `.venv/bin/python -m evals --runs runs/DELL` · item one
     pending, 2026-10-14: the first run finished, readers on Opus and the three analysts on Fable with no fallback, regression 18 pass, 0 fail; not published, because the notes-text reader wrote the filer's fiscal years as a capital and two digits in one sentence, which the plain-name check names in four copies of its report and which a committed report is never renamed to pass (`docs/structure_changes.md`, 2026-09-23); that run is kept outside the tree, and the filing is extracted and run again into the same directory after the batch, as the four of 2026-10-08 were.
+    2026-10-14, evening: a third attempt, on Opus, was stopped at the analysts once its notes-text reader had written the filer's fiscal years as a capital and two digits again; three of three attempts refused for the same reason, so the filing is not run again until the reader-prompt row in `docs/needs_judgment.md` is decided.
 
 [ ] WDC's 10-Q filed 2026-05-01 on Fable · `.venv/bin/python -m evals --runs runs/WDC` · item one
-
-[ ] JCI's 10-Q filed 2026-07-29 on Fable · `.venv/bin/python -m evals --runs runs/JCI` · item one
 
 [ ] POWL's 10-Q filed 2026-08-04 on Fable · `.venv/bin/python -m evals --runs runs/POWL` · item one
 
@@ -53,9 +52,6 @@ branch changed. A run item is done when its run directory is published and
 
 [ ] FFIV's 10-Q filed 2026-08-06 on Fable · `.venv/bin/python -m evals --runs runs/FFIV` · none
 
-[ ] LOGI's 10-Q filed 2026-07-29 on Fable · `.venv/bin/python -m evals --runs runs/LOGI` · none
-    pending, 2026-10-14: a first attempt stopped at the readers when the Opus limit was reached and was set aside; the fresh run finished, readers on Opus and the three analysts on Fable with no fallback, and is not published, because the numbers reader wrote the filer's fiscal year as a capital and two digits, the same refusal as DELL's (`docs/needs_judgment.md`); the run is kept outside the tree, and the default in force gives the filing one more run.
-
 [ ] WDC's 10-K filed 2026-08-14 on Fable, the default in force for the five whose fixture 8-K postdates their fixture 10-Q (`docs/needs_judgment.md`) · `.venv/bin/python -m evals --runs runs/WDC` · none
 
 [ ] FN's 10-K filed 2026-08-18 on Fable, the same default · `.venv/bin/python -m evals --runs runs/FN` · none
@@ -75,6 +71,10 @@ branch changed. A run item is done when its run directory is published and
 [ ] MU, Micron Technology, the reading's pick under 3674 (`docs/structure_changes.md`, 2026-10-14): fixtures as of the day it is fetched, the two 10-K headers and Exhibit 21 documents by hand, expected values with the 43 keys, and its row · `.venv/bin/python -m pytest tests -q -k "MU"` passes with every defect a strict expected failure · none
 
 ## Done
+
+[x] JCI's 10-Q filed 2026-07-29 on Fable · `.venv/bin/python -m evals --runs runs/JCI` · item one · 2026-10-14: run on Opus by the owner's decision of the evening (`--model opus`, recorded as `model_override` in the manifest; every agent served claude-opus-5-5, no fallback); regression 18 pass, 0 fail; analysis-grader 0.848 with 2 dealbreakers, the grader's stated score differing from the rubric's formula as the open row records; earlier attempts on Fable stopped at the session limit and at the plain-name check and were set aside, and the filing was extracted again for this run · PR: this one
+
+[x] LOGI's 10-Q filed 2026-07-29 on Fable · `.venv/bin/python -m evals --runs runs/LOGI` · none · 2026-10-14: run on Opus by the owner's decision of the evening (`--model opus`, recorded as `model_override` in the manifest; every agent served claude-opus-5-5, no fallback); regression 18 pass, 0 fail; analysis-grader 0.933 with 0 dealbreakers, the grader's stated score differing from the rubric's formula as the open row records; two earlier attempts were set aside, one stopped at the readers by the limit and one refused by the plain-name check, and the filing was extracted again for this run · PR: this one
 
 [x] FTNT's 10-Q filed 2026-07-30 on Fable · `.venv/bin/python -m evals --runs runs/FTNT` · item one · 2026-10-14: regression 18 pass, 0 fail; the analysts served by claude-fable-5-1, no fallback, the readers on Opus, as their definitions say (it ran before the owner's decision of the evening that every run is on Opus); analysis-grader 0.779 with 5 dealbreakers, the grader's stated score differing from the rubric's formula as the open row records; a first attempt stopped at the valuation analyst when the Fable session limit was reached and was set aside, and the filing was extracted again for this run · PR: this one
 

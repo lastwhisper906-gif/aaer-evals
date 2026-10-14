@@ -1,0 +1,245 @@
+{
+ "scenarios": {
+  "bear": {
+   "revenue_growth_year_one": -0.02,
+   "terminal_growth": 0.015,
+   "operating_margin_year_one": 0.13,
+   "operating_margin_year_ten": 0.125,
+   "reinvestment_rate_year_one": 0.1,
+   "reinvestment_rate_year_ten": 0.125,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "The semiconductor supplier incident takes the full amount of net sales the release names in the third fiscal quarter and spills past it. Component shortages limit what can be shipped, and EMEA keeps shrinking on the Middle East conflict and a weak market. Webcams, headsets, tablet accessories and other products already bring in less revenue than a year earlier, so the growing lines stop covering for them.",
+     "quote": "Sales in the EMEA region were negatively impacted by the conflict in the Middle East and an overall market decline.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "ratios.growth.revenue.trailing_four_quarters",
+      "earnings_versus_cash.history.years.2.revenue_growth",
+      "earnings_versus_cash.history.years.3.revenue_growth"
+     ],
+     "history": "A decline, against trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters|pct}. It is milder than the falls of fiscal 2024 ({earnings_versus_cash.history.years.2.revenue_growth|pct}) and fiscal 2023 ({earnings_versus_cash.history.years.3.revenue_growth|pct}), so it stays inside the company's own record."
+    },
+    "terminal_growth": {
+     "reason": "Peripherals demand grows below inflation once the hybrid-work and gaming cycles mature, and tariffs and competition take away pricing power.",
+     "quote": "Several product lines and EMEA are shrinking",
+     "quote_from": "analysis_financial.json",
+     "fields": [
+      "earnings_versus_cash.history.revenue_growth_five_year_compound",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound",
+      "cost_of_capital.risk_free_rate"
+     ],
+     "history": "Above the five-year compound rate of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, below the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, and well under the risk-free rate of {cost_of_capital.risk_free_rate|pct}."
+    },
+    "operating_margin_year_one": {
+     "reason": "The tariff refund booked against cost of goods sold does not recur. The supplier incident removes high-margin sales from the peak quarter while operating expenses stay fixed. Component prices rise with the AI and data-center build-out, new tariffs take effect, and promotions keep growing.",
+     "quote": "leading to shortages and rising prices for such components",
+     "quote_from": "analysis_financial.json",
+     "fields": [
+      "ratios.profitability.operating_margin",
+      "earnings_versus_cash.history.years.2.operating_margin",
+      "earnings_versus_cash.history.years.3.operating_margin",
+      "earnings_versus_cash.history.operating_margin_three_year_average"
+     ],
+     "history": "Below the trailing margin of {ratios.profitability.operating_margin|pct}, below the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct} and below fiscal 2024's {earnings_versus_cash.history.years.2.operating_margin|pct}. Above fiscal 2023's trough of {earnings_versus_cash.history.years.3.operating_margin|pct}."
+    },
+    "operating_margin_year_ten": {
+     "reason": "Competition and promotions keep gross margin from recovering, and tariff and component costs are only partly passed on, so margin settles back to post-pandemic levels.",
+     "quote": "partially offset by investment in strategic promotions",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "earnings_versus_cash.history.years.3.operating_margin",
+      "earnings_versus_cash.history.years.4.operating_margin",
+      "earnings_versus_cash.history.operating_margin_three_year_average"
+     ],
+     "history": "Below the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct} and below fiscal 2022's {earnings_versus_cash.history.years.4.operating_margin|pct}. Above fiscal 2023's {earnings_versus_cash.history.years.3.operating_margin|pct}."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "To protect supply, the company builds inventory at shortage prices. Payables stop funding growth, and receivables concentrate in the three largest customers, so working capital absorbs cash instead of releasing it.",
+     "quote": "Commitments signed at shortage prices are a forward risk.",
+     "quote_from": "analysis_accounting.json",
+     "fields": [
+      "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital",
+      "terms.trailing_four_quarters.change_in_payables.parts.this_year_to_date.value",
+      "terms.trailing_four_quarters.change_in_payables.parts.prior_year_to_date.value",
+      "terms.balances_now.inventory"
+     ],
+     "history": "Well above the trailing year, when trade working capital changed by {free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital} and released cash. Payables supplied {terms.trailing_four_quarters.change_in_payables.parts.this_year_to_date.value} this quarter against {terms.trailing_four_quarters.change_in_payables.parts.prior_year_to_date.value} a year earlier, so that source is already shrinking."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "To hold share, the company has to spend more on products and acquisitions, and new capital earns a much lower return. Reaching even low terminal growth then takes a larger share of after-tax operating income.",
+     "quote": "",
+     "quote_from": "",
+     "fields": [
+      "ratios.profitability.return_on_invested_capital",
+      "terms.trailing_four_quarters.capital_expenditure",
+      "terms.trailing_four_quarters.depreciation_and_amortization"
+     ],
+     "history": "Far above the trailing year, when capital expenditure of {terms.trailing_four_quarters.capital_expenditure} ran below depreciation and amortization of {terms.trailing_four_quarters.depreciation_and_amortization}. It implies a return on new capital far below the trailing return on invested capital of {ratios.profitability.return_on_invested_capital|pct}."
+    }
+   }
+  },
+  "base": {
+   "revenue_growth_year_one": 0.015,
+   "terminal_growth": 0.025,
+   "operating_margin_year_one": 0.15,
+   "operating_margin_year_ten": 0.155,
+   "reinvestment_rate_year_one": 0.05,
+   "reinvestment_rate_year_ten": 0.1,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "The semiconductor supplier incident falls inside the next four quarters. The release guides the second fiscal quarter to roughly flat-to-low growth with a supplier headwind already in that guidance. It puts the third-quarter loss of net sales at up to the amount quoted and expects the incident to be largely resolved by the fourth quarter. Demand momentum from the first quarter is expected to continue, and part of the lost demand should come back. So I take low positive growth, neither the recent pace nor a decline.",
+     "quote": "For Q3, based on limited available information, the negative impact of the supplier incident is estimated to be up to $200 million in net sales. The incident is estimated to be largely resolved by Q4, which would mean little to no impact to Q4 results.",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "ratios.growth.revenue.trailing_four_quarters",
+      "earnings_versus_cash.history.years.0.revenue_growth",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound",
+      "earnings_versus_cash.history.revenue_growth_five_year_compound",
+      "terms.trailing_four_quarters.revenue"
+     ],
+     "history": "Below the trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters|pct}, below fiscal 2026's {earnings_versus_cash.history.years.0.revenue_growth|pct} and below the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, because the supplier loss lands in the seasonal peak quarter. Above the five-year compound rate of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, which still includes the post-pandemic fall."
+    },
+    "terminal_growth": {
+     "reason": "This is a mature, debt-free peripherals maker whose revenue is still below its pandemic peak and whose five-year record is flat. I set long-run growth near nominal inflation, under the risk-free rate.",
+     "quote": "Revenue still below its earlier peak",
+     "quote_from": "analysis_financial.json",
+     "fields": [
+      "cost_of_capital.risk_free_rate",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound",
+      "earnings_versus_cash.history.revenue_growth_five_year_compound"
+     ],
+     "history": "Slightly above the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, above the five-year compound rate of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, and below the risk-free rate of {cost_of_capital.risk_free_rate|pct}."
+    },
+    "operating_margin_year_one": {
+     "reason": "The trailing GAAP margin includes the one-time tariff refund booked against cost of goods sold, and that refund is not in the next four quarters. The supplier incident takes high-margin sales out of the peak quarter, components are getting more expensive, and promotions are rising. The company expects full-year non-GAAP margin near the top of its long-term range. That measure leaves out share-based compensation and still counts the refund, so GAAP margin without the refund comes in below the last fiscal year.",
+     "quote": "As for profitability, the Company continues to expect full-year non-GAAP operating margin to track near the high end of the 15–18 percent long-term target range, helped by strong operating performance and this quarter's tariff refunds.",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "ratios.profitability.operating_margin",
+      "earnings_versus_cash.history.years.0.operating_margin",
+      "earnings_versus_cash.history.operating_margin_three_year_average",
+      "terms.trailing_four_quarters.share_based_compensation"
+     ],
+     "history": "Below the trailing margin of {ratios.profitability.operating_margin|pct}, which includes the refund, and below fiscal 2026's {earnings_versus_cash.history.years.0.operating_margin|pct}. Slightly above the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}. Share-based compensation of {terms.trailing_four_quarters.share_based_compensation} stays inside this margin as a cost."
+    },
+    "operating_margin_year_ten": {
+     "reason": "Once the supplier incident and the refund are behind it, margin settles near what the company has earned on a clean basis since the post-pandemic trough. Premium mix and product cost reduction push it up; tariffs, component prices and promotions push it down. The long-term non-GAAP target range, net of share-based compensation, keeps GAAP margin around this level.",
+     "quote": "A continued mix shift to premium products in our portfolio contributed to sales growth in this category.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "earnings_versus_cash.history.years.0.operating_margin",
+      "earnings_versus_cash.history.years.1.operating_margin",
+      "earnings_versus_cash.history.years.2.operating_margin",
+      "earnings_versus_cash.history.years.5.operating_margin",
+      "earnings_versus_cash.history.operating_margin_three_year_average"
+     ],
+     "history": "Below fiscal 2026's {earnings_versus_cash.history.years.0.operating_margin|pct}, above fiscal 2025's {earnings_versus_cash.history.years.1.operating_margin|pct} and fiscal 2024's {earnings_versus_cash.history.years.2.operating_margin|pct}, and above the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}. Far below fiscal 2021's pandemic {earnings_versus_cash.history.years.5.operating_margin|pct}."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "Over the trailing year, capital expenditure ran below depreciation and amortization and trade working capital released cash, much of it through payables. That source is slowing: payables supplied less cash this quarter than a year earlier. The company is also managing inventory to component availability during a shortage. So I take a small positive reinvestment rate instead of the trailing negative one.",
+     "quote": "managing inventory levels to align with demand and component availability",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "free_cash_flow.free_cash_flow_to_firm",
+      "terms.trailing_four_quarters.capital_expenditure",
+      "terms.trailing_four_quarters.depreciation_and_amortization",
+      "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital",
+      "terms.trailing_four_quarters.change_in_payables.parts.this_year_to_date.value",
+      "terms.trailing_four_quarters.change_in_payables.parts.prior_year_to_date.value"
+     ],
+     "history": "Above the trailing record. Capital expenditure of {terms.trailing_four_quarters.capital_expenditure} sat below depreciation and amortization of {terms.trailing_four_quarters.depreciation_and_amortization}, and trade working capital changed by {free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital}, which put free cash flow to the firm of {free_cash_flow.free_cash_flow_to_firm} above after-tax operating income. Payables supplied {terms.trailing_four_quarters.change_in_payables.parts.this_year_to_date.value} this quarter against {terms.trailing_four_quarters.change_in_payables.parts.prior_year_to_date.value} a year earlier."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "In steady state the business has to reinvest enough to grow at the terminal rate. The trailing return on invested capital is very high because a large cash balance is netted out of a small capital base. I assume new capital earns well above the cost of capital but far below that ratio, which puts the reinvestment needed for terminal growth near this share.",
+     "quote": "",
+     "quote_from": "",
+     "fields": [
+      "ratios.profitability.return_on_invested_capital",
+      "ratios.profitability.return_on_invested_capital.invested_capital",
+      "terms.balances_now.cash"
+     ],
+     "history": "Above the trailing year's negative reinvestment. The trailing return on invested capital of {ratios.profitability.return_on_invested_capital|pct}, on invested capital of {ratios.profitability.return_on_invested_capital.invested_capital} after netting cash of {terms.balances_now.cash}, would justify less. That ratio is not a rate new capital can be expected to earn."
+    }
+   }
+  },
+  "bull": {
+   "revenue_growth_year_one": 0.045,
+   "terminal_growth": 0.03,
+   "operating_margin_year_one": 0.165,
+   "operating_margin_year_ten": 0.175,
+   "reinvestment_rate_year_one": 0.03,
+   "reinvestment_rate_year_ten": 0.08,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "Mitigation plans hold the supplier incident well below the upper bound the release names, and first-quarter demand momentum carries through the year. Price increases on certain products add to revenue, and premium mix keeps lifting gaming, pointing devices and video collaboration.",
+     "quote": "While Logitech is not issuing a formal full-year FY27 outlook, demand momentum from Q1 is expected to carry into the remainder of the year.",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "ratios.growth.revenue.year_over_year",
+      "earnings_versus_cash.history.years.0.revenue_growth",
+      "earnings_versus_cash.history.years.1.revenue_growth",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound"
+     ],
+     "history": "Below the latest quarter's growth of {ratios.growth.revenue.year_over_year|pct}, fiscal 2026's {earnings_versus_cash.history.years.0.revenue_growth|pct} and fiscal 2025's {earnings_versus_cash.history.years.1.revenue_growth|pct}, because even this case keeps part of the supplier loss. Well above the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}."
+    },
+    "terminal_growth": {
+     "reason": "New products keep expanding the base in work, gaming and video collaboration, so long-run growth holds a little above inflation and stays under the risk-free rate.",
+     "quote": "continued release of new products to increase the value proposition of our portfolio",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "cost_of_capital.risk_free_rate",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound",
+      "earnings_versus_cash.history.years.0.revenue_growth"
+     ],
+     "history": "Above the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, below fiscal 2026's {earnings_versus_cash.history.years.0.revenue_growth|pct}, and below the risk-free rate of {cost_of_capital.risk_free_rate|pct}."
+    },
+    "operating_margin_year_one": {
+     "reason": "Price increases and product cost reduction offset component inflation, and the supplier loss is small. Under the realized-or-realizable policy a further tariff refund is possible, and falling intangible amortization lifts GAAP operating income a little more.",
+     "quote": "The new policy recognizes a refund when it is realized or realizable, so another non-recurring credit to cost of goods sold may follow.",
+     "quote_from": "analysis_accounting.json",
+     "fields": [
+      "ratios.profitability.operating_margin",
+      "earnings_versus_cash.history.years.0.operating_margin"
+     ],
+     "history": "Above fiscal 2026's {earnings_versus_cash.history.years.0.operating_margin|pct}, and below the trailing {ratios.profitability.operating_margin|pct}, which includes this quarter's refund."
+    },
+    "operating_margin_year_ten": {
+     "reason": "The shift to premium products and expense discipline give operating leverage, holding GAAP margin above the company's long-term non-GAAP range net of share-based compensation.",
+     "quote": "Strong gross margin resilience allowed us to exceed our operating income outlook and generate robust cash flow while funding our growth investments.",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "ratios.profitability.operating_margin",
+      "earnings_versus_cash.history.years.0.operating_margin",
+      "earnings_versus_cash.history.years.5.operating_margin"
+     ],
+     "history": "Just below the trailing margin of {ratios.profitability.operating_margin|pct}, which includes the refund, and above fiscal 2026's {earnings_versus_cash.history.years.0.operating_margin|pct}. Well below fiscal 2021's pandemic peak of {earnings_versus_cash.history.years.5.operating_margin|pct}."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "Capital expenditure stays light and close to depreciation, and working-capital needs stay small because payables keep pace with inventory purchases.",
+     "quote": "The increase in accounts payable was driven by higher inventory purchases to align with demand, as well as the timing of purchases during the quarter.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "terms.trailing_four_quarters.capital_expenditure",
+      "terms.trailing_four_quarters.depreciation_and_amortization",
+      "free_cash_flow.free_cash_flow_to_firm"
+     ],
+     "history": "Close to the trailing year's negative reinvestment but above it. Over that year capital expenditure of {terms.trailing_four_quarters.capital_expenditure} ran below depreciation and amortization of {terms.trailing_four_quarters.depreciation_and_amortization}, and free cash flow to the firm was {free_cash_flow.free_cash_flow_to_firm}."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "The asset-light model keeps earning a high return on new capital, so terminal growth needs only a modest share of after-tax operating income.",
+     "quote": "",
+     "quote_from": "",
+     "fields": [
+      "ratios.profitability.return_on_invested_capital",
+      "terms.balances_now.property_plant_and_equipment",
+      "terms.balances_now.assets"
+     ],
+     "history": "Above the trailing year's negative reinvestment. It implies a return on new capital still well below the trailing return on invested capital of {ratios.profitability.return_on_invested_capital|pct}, on a business whose property, plant and equipment of {terms.balances_now.property_plant_and_equipment} is a small part of assets of {terms.balances_now.assets}."
+    }
+   }
+  }
+ },
+ "wacc_overrides": {},
+ "dropped_items": [],
+ "dropped_count": 0
+}

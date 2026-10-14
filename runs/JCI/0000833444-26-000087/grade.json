@@ -1,0 +1,391 @@
+{
+ "run": "JCI/analysis-grader-lxrjlf3k",
+ "rubric": "evals/capability/rubric.md",
+ "dealbreakers": [
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "profitability_bottom_line_lifted_by_discontinued_and_one_off_items",
+   "where": "analysis_financial.json anomalies[8].what",
+   "why": "It says 'MD&A and the notes state different recovery amounts' and stops there. But the numbers item it cites (related_parties_contingencies_and_subsequent_events_afff_insurance_recoveries) prints the recovery level for both years, and the year-over-year differences equal the MD&A amounts in mdna:30 and mdna:31. The inputs settle it, and the accounting analysis resolved the same pair."
+  },
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "cross_document_reconciliation_adt_united_kingdom_held_for_sale_amounts_exceed_noncurrent_line",
+   "where": "analysis_accounting.json anomalies[30].what",
+   "why": "Marked unresolved because 'neither report shows' the current part. But the 8-K balance sheet at 8k_2_02:77 prints current assets and current liabilities held for sale, and together with the noncurrent lines they equal exactly what notes:20 attributes to ADT United Kingdom."
+  }
+ ],
+ "items": [
+  {
+   "id": "earnings_versus_cash_quarter_cash_flow_leans_on_payables_accrued_liabilities_and_taxes",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "8k_2_02:81 shows payables, accrued liabilities and accrued income taxes as far larger sources than a year earlier, while receivables used more. ratios.growth.operating_cash_flow.this_quarter and earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change resolve as written."
+  },
+  {
+   "id": "earnings_versus_cash_afff_insurance_recoveries_lift_income_and_cash",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "notes:194 and 8k_2_02:137 show year-to-date recoveries far above last year's. The sign reading of the AFFF line in 8k_2_02:133 is right: notes:171 says the company 'made its final required payment of $415 million in December 2024 and has now paid the full settlement amount'."
+  },
+  {
+   "id": "earnings_versus_cash_divestiture_gains_inside_operating_expenses",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:81 prints the divestiture gain. notes:25 puts the ADT Mexico gain in SG&A, notes:23 records no gain on ADT Spain, and 8k_2_02:137 excludes only the ADT Mexico gain. No input names the source of the quarter's gain."
+  },
+  {
+   "id": "earnings_versus_cash_receivables_and_inventory_articulation_gaps",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "earnings_versus_cash.working_capital.receivables.articulation_gap and inventory.articulation_gap are negative, so the statement records more cash used than the balance-sheet change and does not flatter operating cash flow. The payables cash_flow_statement_change is missing in the calculator, as stated."
+  },
+  {
+   "id": "revenue_recognition_receivables_outrunning_revenue_against_year_ago_quarter",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.quarters-back-0 days_sales_outstanding and receivables_over_revenue sit above quarters-back-4, which is 'lowest of the 6 filled quarters', and below quarters-back-1 and -2. mdna:96 names the increase without giving a cause."
+  },
+  {
+   "id": "revenue_recognition_change_orders_new_variable_consideration_judgment",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "medium",
+   "why": "mdna:14 lists 'asserting contractual rights through change orders', but the notes reader says the prior wording is not in the input, so 'new' is not shown. The area finding also says the record does not split out contract assets, yet notes:40 does. That table still does not isolate change orders."
+  },
+  {
+   "id": "revenue_recognition_deferred_revenue_above_own_history",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "terms.balances_now.contract_liabilities against balances_a_year_earlier, and trend_table quarters-back-0 against quarters-back-4 contract_liabilities_over_revenue, resolve as written. years-back-0 prints 'highest of the 5 filled years'."
+  },
+  {
+   "id": "estimates_and_reserves_bad_debt_allowance_thinning_while_receivables_rise",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.quarters-back-0.ratios.bad_debt_reserve_ratio is 'lowest of the 6 filled quarters'. terms.balances_now.bad_debt_allowance is below the year-earlier balance while terms.balances_now.receivables rose. No input gives a cause."
+  },
+  {
+   "id": "estimates_and_reserves_environmental_accrual_falls_as_pfas_standards_tighten",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "high",
+   "why": "The accrual fell (notes:144). But the anomaly says the prior quarter-end balance is not in the record, and 0000833444-26-000050:note_history:1 prints it. The quarter's decline is smaller than the stipulated payment in notes:158 ('paid $10 million to a statewide PFAS fund'), and notes:147 shows the federal limits the state is adopting were already final. No contradiction is shown."
+  },
+  {
+   "id": "estimates_and_reserves_new_afff_proceedings_without_accrual",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "note_history:16 changes 'Four AFFF property damage proceedings' to 'Five AFFF property damage proceedings'. note_history:12-13 add the Val D'Or case naming the parent, notes:194 gives no estimate, and note_history:11 shows the shortened scope paragraph."
+  },
+  {
+   "id": "estimates_and_reserves_held_for_sale_no_write_down_and_depreciation_stop",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:21 records no write-down because fair value less costs to sell exceeded carrying value. notes:23 shows the earlier ADT Spain impairment, notes:53 the goodwill allocation, and notes:20 the close date ('expected to close in fiscal 2027'). The PP&E paths resolve."
+  },
+  {
+   "id": "estimates_and_reserves_depreciation_and_amortization_falling_without_explanation",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.trailing_four_quarters.depreciation_and_amortization is below its prior_fiscal_year part, and 8k_2_02:81 shows the quarter and year to date lower. notes:56 gives amortization amounts, but no input explains the fall."
+  },
+  {
+   "id": "estimates_and_reserves_warranty_ratio_off_its_quarterly_high",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "trend_table quarters-back-0 warranty_reserve_ratio is below quarters-back-1 ('highest of the 6 filled quarters') and above quarters-back-4 ('lowest of the 6 filled quarters'). terms.balances_now.warranty_accrual exceeds the year-earlier balance."
+  },
+  {
+   "id": "estimates_and_reserves_equity_compensation_expense_lower",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "terms.trailing_four_quarters.share_based_compensation.parts.this_year_to_date is below prior_year_to_date, and 8k_2_02:81 shows the quarter lower, while 8k_2_02:40 cites higher incentive accruals. No cause is given."
+  },
+  {
+   "id": "estimates_and_reserves_effective_tax_rate_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "tax_rate.effective_rate and the income_tax_expense parts resolve. 8k_2_02:153 shows discrete tax items turning from a benefit to a cost, and 8k_2_02:110 names valuation-allowance and uncertain-position estimate changes."
+  },
+  {
+   "id": "estimates_and_reserves_accrued_compensation_down_while_incentive_accruals_said_up",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:77 prints accrued compensation and benefits below the fiscal year-end level, while 8k_2_02:40 cites higher incentive accruals. The anomaly correctly leaves the cause open."
+  },
+  {
+   "id": "cost_deferral_soft_asset_share_at_its_high",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "trend_table.quarters-back-0.ratios.soft_asset_share is 'highest of the 6 filled quarters' and years-back-0 is 'highest of the 5 filled years'. notes:17 records goodwill and developed technology from the quarter's acquisitions."
+  },
+  {
+   "id": "cost_deferral_restructuring_and_transformation_costs_recur",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:72 and 8k_2_02:162 show restructuring and impairment costs higher. 8k_2_02:137 and 8k_2_02:141 show transformation costs higher and concentrated in Americas, and 8k_2_02:150 shows adjusted results above GAAP. The trend table's non_gaap_gap is missing."
+  },
+  {
+   "id": "cost_deferral_adjusted_free_cash_flow_exclusions",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:93-97 list the exclusions. 8k_2_02:133 shows nine-month adjusted conversion below last year's, and 8k_2_02:54 reads 'Adjusted free cash flow conversion of ~100% (unchanged)'."
+  },
+  {
+   "id": "cost_deferral_services_cost_of_sales_down_while_services_sales_up",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "low",
+   "why": "8k_2_02:72 shows services cost of sales down while services sales rose. But 8k_2_02:126 shows divestitures removed part of the services base, and notes:47 shows contract cost assets below their fiscal year-end level. The evidence does not settle a cost shift either way."
+  },
+  {
+   "id": "cost_deferral_timing_of_corporate_expenses",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:40 names 'the timing of certain corporate expenses' as a driver of higher corporate expense. Reading that as cost moved into the quarter is consistent."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_supplier_finance_balance_missing_while_payables_rise",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "medium",
+   "why": "The anomaly rests on the current supplier-finance balance being missing, but notes:60 states it: 'Accounts payable included in the SCF programs were approximately $901 million and $835 million as of June 30, 2026 and September 30, 2025, respectively.' Set against terms.balances_a_year_earlier.supplier_finance_obligation and the payables balance_sheet_change, the programme moved little, so the inputs answer the open question."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_divestiture_purchase_price_payment_outside_free_cash_flow",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:32 and 8k_2_02:81 place the R&LC true-up in discontinued-operations investing cash flow, outside free_cash_flow.free_cash_flow_simple."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_prior_year_cash_flow_presentation_error_revised",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:8 says the amounts 'were incorrectly presented on a net basis'. item_4_controls:4 and :6 report effective controls and no significant change. The terms.cash_flow_families.borrowing_issued and borrowing_repaid prior_year_to_date paths resolve, and the first-filed values are not in the inputs."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_disclosures_narrowed",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "0000833444-26-000050:note_history:22 and :6 are removed with no replacement, and note_history:11 drops both lists. notes:80 lists only the euro designation, where notes:81 shows the yen one at fiscal year-end."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_risk_factor_update_not_visible",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:18 says risk factors were 'updated and supplemented in Part II, Item 1A', and that text is not among the inputs."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_tag_changes_across_filings",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The numbers items show the 10-Q tagging 0000833444-26-000087:facts:ProductWarrantyAccrual:2025-09-30 where the 10-K used StandardProductWarrantyAccrual, and show the fiscal-2021 operating-cash-flow concept change. terms.balances_now.warranty_accrual resolves."
+  },
+  {
+   "id": "cross_document_reconciliation_afff_recovery_amounts_mdna_versus_note",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:30 and mdna:31 explain a year-over-year SG&A decrease. The level rows in 8k_2_02:137 differ year over year by exactly the MD&A amounts, so reading them as the change is correct."
+  },
+  {
+   "id": "cross_document_reconciliation_orders_growth_against_unrestated_prior_orders",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:18 reads 'Orders prior to Q1 2026 exclude certain equipment-only sales for longer cycle projects. Backlog has been restated to include this new category.' The footnote at mdna:78 does not mention it."
+  },
+  {
+   "id": "cross_document_reconciliation_quarter_other_impairments_cause_not_stated",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:36 shows an other-impairments line for the quarter and 8k_2_02:81 shows higher noncash charges. mdna:37 points to notes that give no cause for this quarter (notes:21, notes:23)."
+  },
+  {
+   "id": "cross_document_reconciliation_adt_united_kingdom_held_for_sale_amounts_exceed_noncurrent_line",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "low",
+   "why": "Not an anomaly: the current held-for-sale lines at 8k_2_02:77 close the gap with notes:20. Scored zero under the dealbreaker."
+  },
+  {
+   "id": "cross_document_reconciliation_middle_east_cost_pressure_against_gross_margin_high",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:13 states the cost pressure, trend_table.quarters-back-0.ratios.gross_margin is 'highest of the 6 filled quarters', and mdna:14 names pricing actions."
+  },
+  {
+   "id": "industry_lens_jc_capital_customer_financing_turned_to_loss",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:133 prints the JC Capital net (income) loss line turning to a loss in the quarter and nine months. 8k_2_02:93 describes finance and lease receivables."
+  },
+  {
+   "id": "industry_lens_days_inventory_at_low_with_no_reserve_data",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "trend_table.quarters-back-0.ratios.days_sales_of_inventory is 'lowest of the 6 filled quarters', and inventory_reserve_ratio is missing in every period."
+  },
+  {
+   "id": "results_against_expectations_operating_leverage_guidance_widened_below_prior_point",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:52 reads 'Operating leverage of 45% to 50% (previously ~50%)'. The link to restructuring and transformation costs is weak, because 8k_2_02:114 defines leverage on adjusted EBIT, which excludes them."
+  },
+  {
+   "id": "liquidity_and_capital_cash_below_debt_due_within_a_year",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.balances_now.cash is below terms.debt_now.parts.debt_current, and ratios.liquidity.current_ratio and quick_ratio resolve. terms.balances_a_year_earlier.current_liabilities exceeds current_assets, and mdna:13 cites capital-market volatility."
+  },
+  {
+   "id": "liquidity_and_capital_shareholder_returns_exceed_free_cash_flow",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.trailing_four_quarters.share_repurchases exceeds free_cash_flow.free_cash_flow_simple, and its prior_fiscal_year part carries most of it. mdna:105 confirms open-market buying resumed after the ASR, and 8k_2_02:81 shows the quarter's repurchases up."
+  },
+  {
+   "id": "liquidity_and_capital_non_operating_cash_calls_this_year",
+   "frame": "finance",
+   "verdict": "unsupported",
+   "severity": "medium",
+   "why": "The acquisitions and the R&LC true-up are shown, but the AFFF direction is reversed. The rows in 8k_2_02:133 are added to free cash flow to reach adjusted free cash flow, and notes:171 says the last settlement payment came 'in December 2024 and has now paid the full settlement amount'. So the nine months were a net AFFF inflow and the prior year the outflow."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_emea_constrained_by_middle_east_conflicts",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:29, mdna:54 and mdna:58 say growth was 'constrained by continued pressure in the region due to the conflicts in the Middle East'. 8k_2_02:120 shows divestitures in the EMEA base."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_energy_supply_and_tariff_costs",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:13, mdna:14 and mdna:12 state the cost pressure, the pricing and change-order actions and the IEEPA refunds. trend_table.quarters-back-0.ratios.gross_margin is 'highest of the 6 filled quarters'."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_americas_services_backlog_decrease",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:86 ('partially offset by a 1% decrease in Services') and mdna:81 show Services backlog down while Services orders grew. mdna:87 and mdna:88 report no other decrease."
+  },
+  {
+   "id": "profitability_restructuring_impairment_and_transformation_costs_rising",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:72 and 8k_2_02:137 show restructuring and impairment and transformation costs higher, and 8k_2_02:162 shows the ERP accelerated depreciation. across_documents_pretax_income_agrees_with_release shows continuing pretax income up, and terms.trailing_four_quarters.pretax_income resolves."
+  },
+  {
+   "id": "profitability_bottom_line_lifted_by_discontinued_and_one_off_items",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "Discontinued income and one-off items are shown (8k_2_02:72, 8k_2_02:137; terms.trailing_four_quarters.net_income above pretax_income). Scored zero under the dealbreaker for leaving the MD&A and note recovery amounts unreconciled."
+  },
+  {
+   "id": "profitability_effective_tax_rate_higher",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:110 reads 'higher than the statutory tax rate of 12.5% primarily due to tax rate differentials', with notes:111 and 8k_2_02:164 in support. tax_rate.effective_rate and terms.trailing_four_quarters.income_tax_expense resolve."
+  },
+  {
+   "id": "profitability_jc_capital_swing_to_loss",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:133 shows the JC Capital net (income) loss line turning to a loss and its operating cash line changing sign. The amounts are small beside group earnings."
+  },
+  {
+   "id": "efficiency_receivables_rising_while_allowance_falls",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.working_capital.receivables.balance_sheet_change and quarters-back-0 versus quarters-back-4 days_sales_outstanding resolve. terms.balances_now.bad_debt_allowance is below the year-earlier figure, bad_debt_reserve_ratio is 'lowest of the 6 filled quarters', and mdna:96 gives no cause."
+  },
+  {
+   "id": "efficiency_quarter_cash_flow_leaning_on_payables_and_tax_accruals",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "8k_2_02:81 shows payables, accrued liabilities and accrued income taxes as much larger sources, and the paths resolve. One aside is wrong: it says the supplier-finance balance is 'not in the record', but notes:60 states it."
+  },
+  {
+   "id": "solvency_afff_and_pfas_litigation_exposure_not_estimable",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "notes:194 ('unable to predict the outcome or ultimate financial exposure'), notes:172, note_history:16 and notes:175 support the exposure. ratios.solvency.net_debt and terms.balances_now.stockholders_equity resolve."
+  },
+  {
+   "id": "growth_orders_growth_measured_against_narrower_prior_definition",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:18 says prior orders exclude the new equipment-only category while backlog was restated, and mdna:78 does not say so."
+  },
+  {
+   "id": "growth_quarter_net_income_lagging_revenue",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.growth.net_income.year_over_year is below ratios.growth.revenue.year_over_year. 8k_2_02:72 shows the year-ago quarter's discontinued income and the heavier tax charge, with continuing pretax income up."
+  }
+ ],
+ "coverage": {
+  "answer": "no",
+  "why": "The gate dropped earnings_versus_cash and estimates_and_reserves, so two of the seven accounting areas are unanswered. The other five, the industry lens and all six financial sections are answered."
+ },
+ "calibration": {
+  "answer": "no",
+  "why": "The two dropped areas list anomalies but have no verdict to match them. Where verdicts exist they track their anomalies, but the cross-document verdict rests on the environmental-reserve contradiction, which 0000833444-26-000050:note_history:1 and the payment in notes:158 do not bear out."
+ },
+ "valuation_reading": {
+  "answer": "no",
+  "why": "price_position and market_implied_growth are 'Not computed', following market.missing ('no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched') and implied_growth_beside_history.implied_ten_year_revenue_growth.missing. The two sensitive assumptions are named by judgement, not from a grid. Declining to estimate is right, but none of the three elements comes from the calculator."
+ },
+ "score": 0.848,
+ "grader": {
+  "model_requested": "opus",
+  "model_served": "claude-opus-5-5",
+  "input_tokens": 50,
+  "output_tokens": 69340,
+  "cost_usd": 6.8541564,
+  "seconds": 615.1
+ }
+}

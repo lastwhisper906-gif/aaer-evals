@@ -1,0 +1,287 @@
+{
+ "run": "LOGI/0001032975-26-000050",
+ "rubric": "evals/capability/rubric.md",
+ "dealbreakers": [],
+ "items": [
+  {
+   "id": "earnings_versus_cash_quarterly_income_ahead_of_cash",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.quarters-back-0.ratios.accruals_over_total_assets sits above quarters-back-4 and ratios.growth.net_income.year_over_year exceeds ratios.growth.operating_cash_flow.year_over_year; notes:15 puts the unpaid refund in other current assets and mdna:167 ties receivables to sales timing."
+  },
+  {
+   "id": "earnings_versus_cash_trailing_cash_cover_below_last_fiscal_year",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.operating_cash_flow_over_net_income is below history.years.0 and above history.years.1, as written; the swapped-in quarter holds the refund receivable named at notes:15."
+  },
+  {
+   "id": "earnings_versus_cash_smoothness_below_one",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "earnings_versus_cash.smoothness is under parity and smoothness.operating_cash_flow.2 far exceeds smoothness.net_income.2; but mdna:41 does address the pattern ('Cash flow is usually correspondingly lower in the first half of our fiscal year'), so 'No prose addresses it' overstates."
+  },
+  {
+   "id": "earnings_versus_cash_working_capital_articulation_gaps",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The three earnings_versus_cash.working_capital.*.articulation_gap paths resolve as written; the gaps are small in absolute terms, though the inventory gap is not small against its own cash_flow_statement_change."
+  },
+  {
+   "id": "earnings_versus_cash_accrued_liabilities_flow_against_balance",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "liquidity_and_capital_accrued_liabilities_change shows an increase on the cash-flow line while AccruedLiabilitiesCurrent and the notes:49 personnel and other-current lines fell over the quarter; nothing in the inputs reconciles them."
+  },
+  {
+   "id": "earnings_versus_cash_payables_supplied_less_cash",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "terms.trailing_four_quarters.change_in_payables.parts.this_year_to_date.value is below prior_year_to_date.value; mdna:167 explains why the balance rose, not why the inflow was smaller."
+  },
+  {
+   "id": "revenue_recognition_contract_liabilities_at_high_share_of_revenue",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The position_in_history strings at trend_table.quarters-back-0 and years-back-0 contract_liabilities_over_revenue read 'highest of the 6 filled quarters' and 'highest of the 4 filled years', and terms.balances_now.contract_liabilities exceeds balances_a_year_earlier; no reader item explains the rise."
+  },
+  {
+   "id": "revenue_recognition_year_end_days_sales_outstanding_up",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "trend_table.years-back-0 days_sales_outstanding and receivables_over_revenue are above years-back-1, both 'second lowest of the 5 filled years'; quarters-back-0 DSO is below quarters-back-4."
+  },
+  {
+   "id": "revenue_recognition_sales_incentive_allowances_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:47 shows the pricing, customer-incentive and cooperative-marketing allowances and gross receivables all higher at quarter end than at the March year end; mdna:45 names strategic promotions; terms.balances_now.bad_debt_allowance is missing."
+  },
+  {
+   "id": "estimates_and_reserves_one_time_tariff_refund_in_cost_of_goods_sold",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "notes:15: 'The $61 million refund was recorded as a reduction of costs of goods sold'; ratios.growth.operating_income.year_over_year far exceeds ratios.growth.revenue.year_over_year, and 8k_2_02:17 gives a lower ex-refund growth rate."
+  },
+  {
+   "id": "estimates_and_reserves_refund_gain_recognized_before_cash",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:15 books the approved but unpaid refund in other current assets under the realized-or-realizable sentence; notes:47 shows other current assets rose; mdna:111 confirms receipt after quarter end."
+  },
+  {
+   "id": "estimates_and_reserves_interest_income_from_tariff_refunds",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:133: 'primarily driven by interest income associated with IEEPA tariff refunds'; ratios.growth.net_income.year_over_year exceeds ratios.growth.operating_income.year_over_year."
+  },
+  {
+   "id": "estimates_and_reserves_effective_tax_rate_lowered_by_share_based_compensation",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:41 cites 'higher tax benefits from share-based compensation'; the tagged quarterly rate in earnings_quality_effective_tax_rate fell; tax_rate.effective_rate is the trailing figure; 8k_2_02:44 shows withholding up."
+  },
+  {
+   "id": "estimates_and_reserves_warranty_reserve_thinning",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table quarters-back-0 and years-back-0 warranty_reserve_ratio are below quarters-back-4 and years-back-1; terms.balances_now.warranty_accrual is below balances_a_year_earlier; notes:88 settlements exceed the provision."
+  },
+  {
+   "id": "estimates_and_reserves_credit_allowance_unmeasurable_after_expedient",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:20 states adoption with no material impact; terms.balances_now.bad_debt_allowance is missing and notes:47 shows allowances only by program type."
+  },
+  {
+   "id": "estimates_and_reserves_further_refund_possible_under_new_policy",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "medium",
+   "why": "notes:16 confirms the temporary tariffs 'remained in effect pending appeal' and notes:15 gives the realized-or-realizable rule, but no input says the company paid those tariffs, so a further gain is possible but not shown."
+  },
+  {
+   "id": "cost_deferral_non_gaap_keeps_one_time_refund",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "8k_2_02:12: 'These numbers include $61 million in tariff refunds.'; the 8k_2_02:31 exclusion list and the 8k_2_02:48 reconciliation take out share-based compensation, amortization and restructuring but not the refund."
+  },
+  {
+   "id": "cost_deferral_restructuring_charges_after_completion",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:129 ties this quarter's charges to the plan 'which was substantially completed in fiscal 2026', and 8k_2_02:48 excludes them from non-GAAP; the word 'substantially' makes the tension mild."
+  },
+  {
+   "id": "cost_deferral_prepaid_and_other_current_assets_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:47 prepaid expenses and other assets rose over the quarter and notes:15 does not name the line; trend_table.quarters-back-0.ratios.soft_asset_share fell year over year but rose from years-back-0, so 'while ... fell' mixes two windows."
+  },
+  {
+   "id": "cost_deferral_intangible_amortization_falling",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "terms.trailing_four_quarters.depreciation_and_amortization.parts.this_year_to_date.parts.1.value is below prior_year_to_date.parts.1.value; mdna:127: 'driven by full amortization of certain intangible assets'."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_refund_cash_lands_next_quarter",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:111: 'of which $15 million was received in cash within the quarter and $46 million was received subsequent to quarter end'."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_share_settlement_withholding_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:44 puts the withholding in financing, above the prior-year quarter; free_cash_flow.free_cash_flow_quality_adjusted already subtracts terms.trailing_four_quarters.share_based_compensation."
+  },
+  {
+   "id": "cross_document_reconciliation_operating_pressure_against_total_sales_growth",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "medium",
+   "why": "notes:14 only says the business 'has continued to be impacted' by these conditions and does not point net sales down this quarter; mdna:74 ties the Middle East conflict to EMEA alone, which did fall, so nothing contradicts ratios.growth.revenue.year_over_year."
+  },
+  {
+   "id": "cross_document_reconciliation_supplier_incident_sized_only_in_release",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:24 and 8k_2_02:25 size the second- and third-quarter effects and 8k_2_02:23 names mitigation plans; notes:17 and mdna:29 describe the closure with no amount."
+  },
+  {
+   "id": "cross_document_reconciliation_gross_margin_only_in_release",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "low",
+   "why": "The 10-Q's own MD&A prints the gross margin (mdna:45, mdna:109), and the release's gross profit matches the tagged GrossProfit (across_documents_preliminary_release_against_filed_quarter); only the DPO and ITO explanations at mdna:161 and mdna:162 lack a cost fact (ratios.efficiency.days_payables_outstanding missing)."
+  },
+  {
+   "id": "cross_document_reconciliation_completed_repurchase_program_without_activity",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:100 ('The 2023 share repurchase program was completed in May 2026.') sits against a dash in notes:104, and terms.trailing_four_quarters.share_repurchases.parts.this_year_to_date.value exceeds the notes:104 cost; notes:31 ('generally issued from shares held in treasury stock') explains the lower treasury count, so 'Nothing reconciles these' overstates."
+  },
+  {
+   "id": "industry_lens_receivables_concentrating_in_top_customers",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "concentration.facts.29, .30 and .31 (customers A, B, C receivables) each exceed .16, .17 and .18, while revenue shares .26, .27 and .28 sit near .13, .14 and .15; no reader item explains it."
+  },
+  {
+   "id": "industry_lens_component_shortage_and_supplier_closure",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:17 says the company 'has also been affected' and describes the supplier closure; inventory_reserve, inventory_write_down and unconditional_purchase_obligations are missing in the calculator, though mdna:183 and notes:49 disclose commitments and a loss liability in prose."
+  },
+  {
+   "id": "results_against_expectations_no_formal_full_year_outlook",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "8k_2_02:22 gives no formal full-year outlook, 8k_2_02:23 says the incident is likely to limit supply, and 8k_2_02:26 says the margin view is 'helped by strong operating performance and this quarter' refunds; ratios.profitability.operating_margin includes the refund quarter."
+  },
+  {
+   "id": "results_against_expectations_sales_growth_partly_currency",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:43 credits 'favorable changes in foreign currency exchange rates', and mdna:65 gives a constant-currency rate below ratios.growth.revenue.year_over_year."
+  },
+  {
+   "id": "liquidity_and_capital_receivables_concentrated_in_few_customers",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "concentration.facts.26 to .31 match the text and each receivable share exceeds .16, .17 and .18; the cited reader items concern gross receivables, not concentration, but the fields carry the claim."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_component_shortages_and_rising_prices",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The quote matches notes:17 verbatim; 0001032975-26-000011:note_history:15 said the company 'may also be affected'; mdna:38 lists pricing increases and inventory managed to component availability."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_emea_conflict_and_energy_prices",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The quote matches mdna:74 verbatim; notes:14 now names energy prices and the Middle East; the region items show EMEA lower and the Americas and Asia Pacific higher."
+  },
+  {
+   "id": "profitability_promotions_and_incentive_allowances_rising",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:45: 'partially offset by investment in strategic promotions'; notes:47 shows the three program allowances and gross receivables higher at quarter end than at the March year end; terms.balances_now.receivables resolves."
+  },
+  {
+   "id": "efficiency_year_end_days_sales_outstanding_rose",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "trend_table.years-back-0 DSO and receivables_over_revenue are above years-back-1 and quarters-back-0 DSO is below quarters-back-4; mdna:160: 'primarily due to timing of sales and collections within the quarter'."
+  },
+  {
+   "id": "growth_revenue_still_below_earlier_peak",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.trailing_four_quarters.revenue is below earnings_versus_cash.history.years.4.revenue and years.5.revenue; history.years.2 and years.3 revenue_growth are negative; the 8k_2_02:8 streak is fairly left unchecked."
+  },
+  {
+   "id": "growth_several_categories_and_emea_shrinking",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:119 and notes:123 show webcams, tablet accessories, headsets, other and EMEA below the prior-year quarter; mdna:100: 'primarily due to a large education deal in the prior year'."
+  }
+ ],
+ "coverage": {
+  "answer": "no",
+  "why": "Every accounting area except industry_lens carries 'dropped' for a number in the analyst's own words, and the financial profitability, efficiency and liquidity sections were dropped the same way."
+ },
+ "calibration": {
+  "answer": "no",
+  "why": "Only the industry_lens verdict survived, and it matches its two anomalies; the other accounting anomalies, including both high-severity tariff-refund items, sit under areas with no verdict to calibrate against."
+ },
+ "valuation_reading": {
+  "answer": "no",
+  "why": "market.missing, implied_growth_beside_history.implied_ten_year_revenue_growth.missing and valuation.missing leave no price position, implied growth or sensitivity grid. The reading reports each gap from the calculator and names operating margin and terminal growth only as the drivers its scenarios differ on most, not as measured sensitivities."
+ },
+ "score": 0.933,
+ "grader": {
+  "model_requested": "opus",
+  "model_served": "claude-opus-5-5",
+  "input_tokens": 32,
+  "output_tokens": 49380,
+  "cost_usd": 4.6528668,
+  "seconds": 438.6
+ }
+}
