@@ -27,6 +27,7 @@ branch changed. A run item is done when its run directory is published and
 [ ] the first CRSP fetch through WRDS: `.venv/bin/python -m src.probe_price_sources` prints a served crsp line with rows for Lehman Brothers Holdings (LEH, delisted 2008-09-17) carrying dlret · eval: `.venv/bin/python -m src.probe_price_sources` -- that command's crsp line reads served and the row count is printed · depends on: the owner's two environment steps (`docs/needs_judgment.md`, "CRSP through WRDS from the cloud session")
 
 [ ] DELL's 10-Q filed 2026-09-08 on Fable · `.venv/bin/python -m evals --runs runs/DELL` · item one
+    pending, 2026-10-14: the first run finished, readers on Opus and the three analysts on Fable with no fallback, regression 18 pass, 0 fail; not published, because the notes-text reader wrote the filer's fiscal years as a capital and two digits in one sentence, which the plain-name check names in four copies of its report and which a committed report is never renamed to pass (`docs/structure_changes.md`, 2026-09-23); that run is kept outside the tree, and the filing is extracted and run again into the same directory after the batch, as the four of 2026-10-08 were.
 
 [ ] WDC's 10-Q filed 2026-05-01 on Fable · `.venv/bin/python -m evals --runs runs/WDC` · item one
 
