@@ -30,8 +30,6 @@ branch changed. A run item is done when its run directory is published and
 
 [ ] WDC's 10-Q filed 2026-05-01 on Fable · `.venv/bin/python -m evals --runs runs/WDC` · item one
 
-[ ] ANET's 10-Q filed 2026-08-05 on Fable · `.venv/bin/python -m evals --runs runs/ANET` · item one
-
 [ ] FTNT's 10-Q filed 2026-07-30 on Fable · `.venv/bin/python -m evals --runs runs/FTNT` · item one
 
 [ ] JCI's 10-Q filed 2026-07-29 on Fable · `.venv/bin/python -m evals --runs runs/JCI` · item one
@@ -69,6 +67,8 @@ branch changed. A run item is done when its run directory is published and
 [ ] SNDK's 10-K filed 2026-08-17 on Fable, the same default · `.venv/bin/python -m evals --runs runs/SNDK` · none
 
 ## Done
+
+[x] ANET's 10-Q filed 2026-08-05 on Fable · `.venv/bin/python -m evals --runs runs/ANET` · item one · 2026-10-14: regression 18 pass, 0 fail; the analysts served by claude-fable-5-1, no fallback; the readers on Opus, as their definitions say; analysis-grader 0.917 with 0 dealbreakers, the grader's stated score differing from the rubric's formula as the open row in `docs/needs_judgment.md` records; extracted by hand the same day, the store fetched up to the filing · PR: this one
 
 [x] the store fetch reads a submission header EDGAR does not publish out of the complete submission text file: `src/fetch_fixtures.document_types` and the header documents the store records fall back, on a 404 of `{accession}-index-headers.html`, to `{accession}.txt`, whose SGML header carries the same `<TYPE>` and `<FILENAME>` blocks, so the 10-Ks and 10-Qs of 2009 to 2013 collect · `.venv/bin/python -m pytest tests/test_fetch_fixtures.py -q -k header_fallback` passes on a planted header whose (type, filename) pairs are read by eye off the filing index page of QCOM's 10-Q 0001234452-13-000292 (six documents, `qcom6301310-q.htm` first) and never off the parser · none · 2026-10-14: done on this branch, with the second gap the same filings showed once the header was read, the instance named `{stem}.xml` beside its `.xsd` before inline XBRL; `tests/test_fetch_fixtures.py` 35 passed, the judge's `-k` reading six of them; the first batch after built FN's and WDC's 10-Qs of May 2014 · PR: this one
 
