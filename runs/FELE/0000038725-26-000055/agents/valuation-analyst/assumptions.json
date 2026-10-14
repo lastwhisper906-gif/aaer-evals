@@ -1,0 +1,250 @@
+{
+  "scenarios": {
+    "bear": {
+      "revenue_growth_year_one": 0.02,
+      "terminal_growth": 0.02,
+      "operating_margin_year_one": 0.115,
+      "operating_margin_year_ten": 0.11,
+      "reinvestment_rate_year_one": 0.40,
+      "reinvestment_rate_year_ten": 0.30,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "In this case growth comes mostly from the acquired businesses. Organic sales outside the U.S. and Canada are falling, U.S. and Canada sales of large dewatering equipment fell in both the quarter and the six months, and the first-half currency tailwind, which includes hyperinflation pricing in Argentina and Turkey, can reverse. If guidance lands at the bottom of its range or below it, growth sits close to the company's three-year record.",
+          "quote": "These sales increases were partially offset by lower sales of large dewatering equipment of 10 percent compared to 2025.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.years.0.revenue_growth",
+            "earnings_versus_cash.history.years.1.revenue_growth"
+          ],
+          "history": "Close to the three-year compound growth of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and below fiscal 2025 growth of {earnings_versus_cash.history.years.0.revenue_growth|pct}. Fiscal 2024 shows that sales can shrink: growth was {earnings_versus_cash.history.years.1.revenue_growth|pct}."
+        },
+        "terminal_growth": {
+          "reason": "Mature end markets, with organic declines in Latin America and Europe, grow more slowly than nominal output over the long run once acquisitions stop adding to growth. The rate is well below the risk-free rate of {cost_of_capital.risk_free_rate.value|pct}.",
+          "quote": "Reported growth outside the U.S. and Canada came from acquisitions and exchange rates.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "cost_of_capital.risk_free_rate.value",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound"
+          ],
+          "history": "Slightly above the three-year compound growth of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and far below the five-year compound of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, which carries the 2021 and 2022 surge."
+        },
+        "operating_margin_year_one": {
+          "reason": "The tariff refunds that lifted the June quarter end. Inflation in sourced materials and logistics persists, and the unfavourable product and geographic mix continues. The bad-debt allowance and the warranty reserve, both at the lowest ratios in the record, are rebuilt through operating income. Restructuring keeps recurring.",
+          "quote": "we continue to manage closely the inflationary price pressures",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "earnings_versus_cash.history.years.1.operating_margin",
+            "earnings_versus_cash.history.years.4.operating_margin",
+            "trend_table.quarters-back-1.ratios.gross_margin.value",
+            "trend_table.quarters-back-0.ratios.bad_debt_reserve_ratio.value",
+            "trend_table.years-back-0.ratios.warranty_reserve_ratio.value"
+          ],
+          "history": "Below fiscal 2024's {earnings_versus_cash.history.years.1.operating_margin|pct}, the weakest of the last four years, and above 2021's {earnings_versus_cash.history.years.4.operating_margin|pct}. The March 2026 quarter's gross margin of {trend_table.quarters-back-1.ratios.gross_margin.value|pct} was already the lowest of the filled quarters. Both the June bad-debt reserve ratio of {trend_table.quarters-back-0.ratios.bad_debt_reserve_ratio.value|pct} and the fiscal 2025 warranty reserve ratio of {trend_table.years-back-0.ratios.warranty_reserve_ratio.value|pct} are the lowest in the record, so bringing them back to normal would cost margin."
+        },
+        "operating_margin_year_ten": {
+          "reason": "Cost pressure and weak international markets push margin back toward its level before 2022. Restructuring charges that adjusted results leave out keep showing up as an ordinary cost of running the business.",
+          "quote": "A charge that shows up every period is part of the cost of running the business.",
+          "quote_from": "analysis_accounting.json",
+          "fields": [
+            "earnings_versus_cash.history.years.4.operating_margin",
+            "earnings_versus_cash.history.years.5.operating_margin",
+            "earnings_versus_cash.history.operating_margin_three_year_average"
+          ],
+          "history": "Near 2021's {earnings_versus_cash.history.years.4.operating_margin|pct} and above 2020's {earnings_versus_cash.history.years.5.operating_margin|pct}. Below every year from 2022 to 2025 and below the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "Growth leans on acquisitions at full prices and on working capital, so each unit of growth takes more capital. Receivables and inventory are absorbing the cash that operating income produces, and trade working capital rose over the year.",
+          "quote": "is not showing up in cash to the same degree, because receivables and inventory are absorbing it",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "terms.cash_flow_families.acquisitions.parts.prior_fiscal_year.value",
+            "terms.cash_flow_families.acquisitions.value",
+            "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now.value",
+            "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.a_year_earlier.value",
+            "ratios.growth.operating_cash_flow.trailing_four_quarters.value"
+          ],
+          "history": "Above the base case. It matches fiscal 2025, when acquisition payments of {terms.cash_flow_families.acquisitions.parts.prior_fiscal_year.value} took a large share of after-tax operating income. Over the trailing four quarters, trade working capital rose from {free_cash_flow.free_cash_flow_to_firm.trade_working_capital.a_year_earlier.value} to {free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now.value}, and operating cash flow grew only {ratios.growth.operating_cash_flow.trailing_four_quarters.value|pct}."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "Returns on new capital stay low: acquired businesses are booked at values that rest on unobservable estimates and do not earn more than the existing ones. Even slow growth therefore needs a sizeable share of income reinvested.",
+          "quote": "the Wood Bros allocation is preliminary and rests on level-three income-approach valuations",
+          "quote_from": "analysis_accounting.json",
+          "fields": [
+            "terms.cash_flow_families.acquisitions.value",
+            "free_cash_flow.free_cash_flow_quality_adjusted.value"
+          ],
+          "history": "Above the base case's year-ten rate. Set against the bear terminal growth, it implies a low return on new capital, below what the company earns on its existing base."
+        }
+      }
+    },
+    "base": {
+      "revenue_growth_year_one": 0.05,
+      "terminal_growth": 0.03,
+      "operating_margin_year_one": 0.125,
+      "operating_margin_year_ten": 0.13,
+      "reinvestment_rate_year_one": 0.35,
+      "reinvestment_rate_year_ten": 0.25,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "Management raised its full-year 2026 net sales guidance. The whole range sits above fiscal 2025 revenue of {earnings_versus_cash.history.years.0.revenue}, which means mid-single-digit growth for the year. Benson Pump and Wood Brothers closed in the June quarter, so acquired sales keep adding to growth in the first part of the forecast year. Against that, MD&A gives acquisitions more of the June quarter's increase than price and volume. The first half also had a currency tailwind that includes hyperinflation pricing in Argentina and Turkey, and organic sales outside the U.S. and Canada fell. I take growth near the middle of the guided range, not the faster first-half pace.",
+          "quote": "The Company is raising its guidance for full year 2026 net sales to be in the range of $2.21 billion to $2.29 billion and full year 2026 Adjusted Diluted EPS to be in the range of $4.50 to $4.70.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "earnings_versus_cash.history.years.0.revenue",
+            "earnings_versus_cash.history.years.0.revenue_growth",
+            "earnings_versus_cash.history.years.1.revenue_growth",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound"
+          ],
+          "history": "Above the three-year compound growth of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, which the fiscal 2024 decline of {earnings_versus_cash.history.years.1.revenue_growth|pct} holds down. Close to fiscal 2025 growth of {earnings_versus_cash.history.years.0.revenue_growth|pct}. Far below the five-year compound of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, which carries the 2021 and 2022 surge of {earnings_versus_cash.history.years.4.revenue_growth|pct} and {earnings_versus_cash.history.years.3.revenue_growth|pct}; I do not expect that surge to repeat."
+        },
+        "terminal_growth": {
+          "reason": "Over the long run a mature maker of water and fuelling equipment grows roughly with nominal output, once acquisitions stop adding a premium. Organic growth abroad is mixed: Asia Pacific grows while Latin America and Europe decline. That argues against a long-run rate above nominal output. The rate is below the risk-free rate of {cost_of_capital.risk_free_rate.value|pct}.",
+          "quote": "Excluding the impact of foreign currency translation and acquisitions, in both the second quarter and first six months of 2026, the sales growth in the Asia Pacific regions was more than offset by sales declines in the Latin America and European regions.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "cost_of_capital.risk_free_rate.value",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound"
+          ],
+          "history": "Between the three-year compound growth of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and the five-year compound of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}. It sits nearer the organic record of recent years than the surge years driven by acquisitions and inflation."
+        },
+        "operating_margin_year_one": {
+          "reason": "Trailing operating income of {ebit.value} grew {ratios.growth.operating_income.trailing_four_quarters.value|pct}. But MD&A credits the June quarter's gross margin to tariff refunds that will not recur. The equity swap gain in SG&A will not recur either, and neither will the legal settlement that held Energy Systems back. Inflation in sourced materials and an unfavourable mix weighed on the first half, and restructuring behaves as a recurring cost. I therefore hold year one at about the fiscal 2025 level rather than above it.",
+          "quote": "The gross profit margin was favorably impacted in the second quarter by tariff refunds while the first six months of 2026 was impacted by an unfavorable product and geographic sales mix shift.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ebit.value",
+            "ratios.growth.operating_income.trailing_four_quarters.value",
+            "earnings_versus_cash.history.years.0.operating_margin",
+            "earnings_versus_cash.history.operating_margin_three_year_average",
+            "trend_table.quarters-back-1.ratios.gross_margin.value"
+          ],
+          "history": "Level with fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct} and the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}. The March 2026 quarter's gross margin of {trend_table.quarters-back-1.ratios.gross_margin.value|pct} was the lowest of the filled quarters, so I do not take the June quarter's refund-assisted margin as the run rate."
+        },
+        "operating_margin_year_ten": {
+          "reason": "I allow a small rise over ten years. Gross margin in fiscal 2024 and fiscal 2025 was the highest of the five filled years. The manufacturing realignment and the integration of the two acquisitions should add a little. Water Systems' June-quarter margin barely moved against a year earlier, however, and annual operating margin has been flat for four years, so the step up stays small.",
+          "quote": "The second quarter operating income margin was 18.2 percent, an increase of 10 basis points from 18.1 percent in the second quarter of 2025.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "earnings_versus_cash.history.years.0.operating_margin",
+            "earnings_versus_cash.history.years.2.operating_margin",
+            "earnings_versus_cash.history.years.5.operating_margin",
+            "earnings_versus_cash.history.operating_margin_three_year_average",
+            "trend_table.years-back-0.ratios.gross_margin.value",
+            "trend_table.years-back-1.ratios.gross_margin.value"
+          ],
+          "history": "A small step above the best annual margin on record, fiscal 2023's {earnings_versus_cash.history.years.2.operating_margin|pct}, and above the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}. Margin rose from {earnings_versus_cash.history.years.5.operating_margin|pct} in 2020 to {earnings_versus_cash.history.years.0.operating_margin|pct} in fiscal 2025, but nearly all of that rise came before 2022."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "Part of the company's growth is bought. MD&A attributes the largest share of the June quarter's sales increase to acquisitions, and the base growth assumes that pattern continues for a while. Acquisition payments took {terms.cash_flow_families.acquisitions.value} over the trailing four quarters and {terms.cash_flow_families.acquisitions.parts.prior_fiscal_year.value} in fiscal 2025. Trade working capital rose from {free_cash_flow.free_cash_flow_to_firm.trade_working_capital.a_year_earlier.value} to {free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now.value}. Capital expenditure of {terms.trailing_four_quarters.capital_expenditure.value} is small next to after-tax operating income. The rate is set to cover the acquired share of growth plus the working capital that more sales require.",
+          "quote": "The sales increase for the second quarter three months was primarily due to incremental sales impact from recent acquisitions of 3 percent, price and volume increases of 2 percent, and the positive impact of foreign exchange rates of 1 percent.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "terms.cash_flow_families.acquisitions.value",
+            "terms.cash_flow_families.acquisitions.parts.prior_fiscal_year.value",
+            "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now.value",
+            "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.a_year_earlier.value",
+            "terms.trailing_four_quarters.capital_expenditure.value",
+            "free_cash_flow.free_cash_flow_simple.value",
+            "free_cash_flow.free_cash_flow_quality_adjusted.value"
+          ],
+          "history": "The record does not compute free cash flow to the firm, because depreciation is stated at two values, so the past rate cannot be read directly. Simple free cash flow is {free_cash_flow.free_cash_flow_simple.value} and quality-adjusted free cash flow is {free_cash_flow.free_cash_flow_quality_adjusted.value}. The gap between them is mostly acquisitions, which shows that a large share of operating cash has been going back into the business. The rate is in line with that recent pattern."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "As growth fades to the terminal rate, less capital is needed. The rise in soft assets has come from acquisitions, not from capitalized internal cost, so reinvestment can taper as the acquisition pace slows. Set against base terminal growth, the year-ten rate implies a return on new capital in the low teens. That is close to what the existing business earns, not a premium.",
+          "quote": "The rise follows acquisitions, not internal deferral: goodwill and intangibles grew with Wood Bros and Benson Pump",
+          "quote_from": "analysis_accounting.json",
+          "fields": [
+            "earnings_versus_cash.history.years.0.capital_expenditure",
+            "terms.trailing_four_quarters.capital_expenditure.value",
+            "tax_rate.value",
+            "ebit.value"
+          ],
+          "history": "Below the year-one rate and below the recent acquisition-heavy pattern. Capital expenditure has run close to fiscal 2025's {earnings_versus_cash.history.years.0.capital_expenditure} for several years, so organic capital needs are modest."
+        }
+      }
+    },
+    "bull": {
+      "revenue_growth_year_one": 0.08,
+      "terminal_growth": 0.035,
+      "operating_margin_year_one": 0.13,
+      "operating_margin_year_ten": 0.145,
+      "reinvestment_rate_year_one": 0.35,
+      "reinvestment_rate_year_ten": 0.22,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "The first six months grew at about this pace. The two acquisitions add sales into the first part of the forecast year, and guidance was raised. In the June quarter, U.S. and Canada sales of groundwater pumping equipment, water treatment products and surface pumping equipment all grew. In this case the CEO's organic volume initiatives carry growth after the acquired sales are lapped.",
+          "quote": "Net sales in the second quarter and first six months of 2026 were $622.9 million and $1.1 billion, respectively, and increased 6 percent and 8 percent, respectively, as compared to the prior-year periods.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "earnings_versus_cash.history.years.0.revenue_growth",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound"
+          ],
+          "history": "Above fiscal 2025 growth of {earnings_versus_cash.history.years.0.revenue_growth|pct} and well above the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}. Below the five-year compound of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, which includes the 2021 and 2022 surge."
+        },
+        "terminal_growth": {
+          "reason": "Demand for groundwater, water treatment and pressure-boosting equipment in faster-growing regions keeps long-run growth a little above nominal output. The rate is still below the risk-free rate of {cost_of_capital.risk_free_rate.value|pct}.",
+          "quote": "These results reflect the progress of our organic volume growth initiatives",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "cost_of_capital.risk_free_rate.value",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound"
+          ],
+          "history": "Above the three-year compound growth of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and well below the five-year compound of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}."
+        },
+        "operating_margin_year_one": {
+          "reason": "Trailing operating income of {ebit.value} grew {ratios.growth.operating_income.trailing_four_quarters.value|pct}, faster than sales. Energy Systems keeps its high margin once the legal settlement that held back the June quarter is gone. Pricing covers the inflation in sourced materials. Year one therefore opens above fiscal 2025.",
+          "quote": "The decrease in margin was primarily due to $4.5 million legal settlement recorded in the second quarter of 2026.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ebit.value",
+            "ratios.growth.operating_income.trailing_four_quarters.value",
+            "earnings_versus_cash.history.years.0.operating_margin",
+            "earnings_versus_cash.history.years.2.operating_margin",
+            "earnings_versus_cash.history.operating_margin_three_year_average"
+          ],
+          "history": "Just above fiscal 2023's {earnings_versus_cash.history.years.2.operating_margin|pct}, the best year on record, and above the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct} and fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct}."
+        },
+        "operating_margin_year_ten": {
+          "reason": "The manufacturing realignment, pricing and integration of the acquired distribution and water-treatment businesses lift margin steadily. Gross margin holds at its fiscal 2024 and fiscal 2025 high, and Water Systems operating income keeps rising with sales.",
+          "quote": "Water Systems operating income in the second quarter and first six months of 2026 was $65.2 million and $109.7 million, respectively, increases of $3.4 million and $4.4 million, respectively, as compared to the prior-year periods.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "earnings_versus_cash.history.years.2.operating_margin",
+            "earnings_versus_cash.history.years.5.operating_margin",
+            "trend_table.years-back-0.ratios.gross_margin.value",
+            "trend_table.years-back-1.ratios.gross_margin.value"
+          ],
+          "history": "Above every year on record; the highest annual margin is fiscal 2023's {earnings_versus_cash.history.years.2.operating_margin|pct}. Margin rose from {earnings_versus_cash.history.years.5.operating_margin|pct} in 2020, and the bull case extends that climb rather than the flat years since 2022."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "Acquisitions continue at the same pace as in the base case. Acquired distributors and organic volume grow on existing plants, so each unit of capital yields more growth than in the base case.",
+          "quote": "In April of 2026, the Company acquired Benson Pump Corporation",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "free_cash_flow.free_cash_flow_simple.value",
+            "free_cash_flow.free_cash_flow_quality_adjusted.value",
+            "terms.cash_flow_families.acquisitions.value"
+          ],
+          "history": "Equal to the base case in year one. This assumes acquisition spending stays at its recent scale, shown by the gap between simple free cash flow of {free_cash_flow.free_cash_flow_simple.value} and quality-adjusted free cash flow of {free_cash_flow.free_cash_flow_quality_adjusted.value}."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "Higher returns on new capital let the company sustain bull terminal growth with less reinvestment. Organic capital spending has been steady, and on the annual record cash has run ahead of earnings.",
+          "quote": "On the annual record cash has run ahead of earnings",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "earnings_versus_cash.history.years.0.capital_expenditure",
+            "earnings_versus_cash.history.years.0.operating_cash_flow_over_net_income"
+          ],
+          "history": "Below the base and bear year-ten rates. Capital expenditure has stayed near fiscal 2025's {earnings_versus_cash.history.years.0.capital_expenditure} a year, and fiscal 2025 operating cash flow was {earnings_versus_cash.history.years.0.operating_cash_flow_over_net_income} times net income, so organic reinvestment needs are small."
+        }
+      }
+    }
+  },
+  "wacc_overrides": {}
+}

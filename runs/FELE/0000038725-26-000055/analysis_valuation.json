@@ -1,0 +1,73 @@
+{
+ "question": "what is this company worth, and what does the price already assume?",
+ "value_range": {
+  "reading": "Python computed no value range and no scenario values. Under valuation.missing the calculator prints: \"WACC is not computed: the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\". Under cost_of_capital.missing it prints: \"the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\". The second gap is mine. None of my first-pass scenarios survived. Bear, base and bull were each dropped because one reason or history note wrote a number in my own words. The scenarios block in assumptions.json is therefore empty, so even with a discount rate there would have been no drivers to run. The calculator also prints trailing revenue as missing, because the quarterly report gives six-month revenue at two values. What the calculator does hold is trailing operating income of {terms.trailing_four_quarters.operating_income.value}, trailing simple free cash flow of {free_cash_flow.free_cash_flow_simple.value} and shares outstanding of {terms.shares_outstanding.value}. No value per share is stated here, because none was computed.",
+  "fields": [
+   "terms.trailing_four_quarters.operating_income.value",
+   "free_cash_flow.free_cash_flow_simple.value",
+   "terms.shares_outstanding.value"
+  ]
+ },
+ "price_position": {
+  "reading": "No price position can be read. The calculator holds no price at the cutoff. Under market it prints \"no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\", and the free-cash-flow yield block prints its price at the cutoff as missing for the same reason. With no price and no value range, there is no range to place a price in, and none is supplied here.",
+  "fields": []
+ },
+ "market_implied_growth": {
+  "reading": "Python ran no reverse DCF. Under implied_growth_beside_history the calculator prints: \"no reverse DCF: WACC is not computed: the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\". The growth the price assumes is therefore unknown, and I do not estimate it. What can be read is the record it would have been set against. Three-year compound revenue growth is {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}. The five-year compound is {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, but it carries the two fast years at the start of that window, {earnings_versus_cash.history.years.4.revenue_growth|pct} and {earnings_versus_cash.history.years.3.revenue_growth|pct}. Annual growth since then has been {earnings_versus_cash.history.years.2.revenue_growth|pct}, {earnings_versus_cash.history.years.1.revenue_growth|pct} and, in the latest fiscal year, {earnings_versus_cash.history.years.0.revenue_growth|pct}. Trailing revenue growth is not in the calculator, because six-month revenue is reported at two values. The guidance points above the slow three-year pace: the release raises full-year net sales guidance to a range whose low end already sits above the latest fiscal year's revenue of {earnings_versus_cash.history.years.0.revenue}. Part of that growth is bought, not organic. MD&A attributes the six-month sales increase to volume and price, exchange rates and acquisitions, and for the quarter it lists acquisitions first. The release's currency row also carries local-currency price increases in Argentina and Turkey.",
+  "fields": [
+   "earnings_versus_cash.history.revenue_growth_three_year_compound",
+   "earnings_versus_cash.history.revenue_growth_five_year_compound",
+   "earnings_versus_cash.history.years.4.revenue_growth",
+   "earnings_versus_cash.history.years.3.revenue_growth",
+   "earnings_versus_cash.history.years.2.revenue_growth",
+   "earnings_versus_cash.history.years.1.revenue_growth",
+   "earnings_versus_cash.history.years.0.revenue_growth",
+   "earnings_versus_cash.history.years.0.revenue"
+  ],
+  "quote": "The Company is raising its guidance for full year 2026 net sales to be in the range of $2.21 billion to $2.29 billion and full year 2026 Adjusted Diluted EPS to be in the range of $4.50 to $4.70.",
+  "quote_from": "input_8k.md"
+ },
+ "most_sensitive": [
+  {
+   "assumption": "the discount rate (WACC)",
+   "reading": "Python computed no sensitivity grid and no scenario spread, so neither assumption here is read off them. Both are named from what the record shows. The discount rate comes first because it is the missing input, and no value can exist without it. Of its parts, Python has the risk-free rate at {cost_of_capital.risk_free_rate.value|pct}, the equity risk premium at {cost_of_capital.equity_risk_premium.value|pct} and the tax rate at {cost_of_capital.tax_rate.value|pct}, held at statutory because the effective rate is {cost_of_capital.tax_rate.effective_rate|pct}. The pre-tax cost of debt of {cost_of_capital.pre_tax_cost_of_debt.value|pct} is a fallback, the risk-free rate plus one point, because interest expense is reported at two values. Beta, the market value of equity and total debt are all missing, so neither the cost of equity nor the capital weights exist. MD&A puts the rise in interest expense down to a higher average debt balance but states no rate, so no quoted cost of debt was available to override the fallback.",
+   "fields": [
+    "cost_of_capital.risk_free_rate.value",
+    "cost_of_capital.equity_risk_premium.value",
+    "cost_of_capital.tax_rate.value",
+    "cost_of_capital.tax_rate.effective_rate",
+    "cost_of_capital.pre_tax_cost_of_debt.value"
+   ]
+  },
+  {
+   "assumption": "revenue growth",
+   "reading": "Among the operating drivers, revenue growth moves most in the company's own record. Annual growth has run from {earnings_versus_cash.history.years.1.revenue_growth|pct} to {earnings_versus_cash.history.years.4.revenue_growth|pct} across the filled years. The annual operating margin has stayed in a narrow band, from {earnings_versus_cash.history.years.5.operating_margin|pct} to {earnings_versus_cash.history.years.2.operating_margin|pct}, with a three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}. On that record the growth path is where reasonable readers would differ most. Three things make its base hardest to read: the guidance raise, the two acquisitions closed in the quarter, and the hyperinflation pricing carried in the currency row. This is a reading of history, not a computed sensitivity. With no grid, how far value moves for each step in either driver is not known.",
+   "fields": [
+    "earnings_versus_cash.history.years.1.revenue_growth",
+    "earnings_versus_cash.history.years.4.revenue_growth",
+    "earnings_versus_cash.history.years.5.operating_margin",
+    "earnings_versus_cash.history.years.2.operating_margin",
+    "earnings_versus_cash.history.operating_margin_three_year_average"
+   ]
+  }
+ ],
+ "accounting_adjustments": {
+  "reading": "There were none. The accounting reader wrote no adjustment, and its adjustments list is empty. The quality-adjusted free cash flow shows no adjustment applied and none refused. A computed valuation would therefore have carried no accounting adjustment, and valuation.accounting_adjustments does not exist because the valuation was not computed. The accounting reader did flag items that bear on a margin driver without being written as adjustments. Three of them lean toward a reported margin above its run rate: tariff refunds of unstated size that lifted the quarter's gross margin, an equity swap gain in operating expense that was a loss a year earlier, and a credit-loss allowance that fell to the lowest ratio in the record while receivables rose, with no cause given. The Esso settlement charge leans the other way, and restructuring, though recurring, is already inside reported operating income. A base margin set above the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct} would therefore need its own reason. Quality-adjusted free cash flow, after share-based compensation and acquisitions, is {free_cash_flow.free_cash_flow_quality_adjusted.value}, against simple free cash flow of {free_cash_flow.free_cash_flow_simple.value}.",
+  "fields": [
+   "earnings_versus_cash.history.operating_margin_three_year_average",
+   "free_cash_flow.free_cash_flow_quality_adjusted.value",
+   "free_cash_flow.free_cash_flow_simple.value"
+  ]
+ },
+ "summary_ko": {
+  "value_range": "주가 자료가 없어 베타, 자기자본비용, 가중평균자본비용(WACC)이 계산되지 않았으므로 가치 범위와 시나리오별 주당 가치는 산출되지 않았습니다. 게다가 첫 단계에서 제가 세운 약세·기본·강세 시나리오가 모두 탈락해, 할인율이 있었더라도 돌릴 가정이 없었습니다.",
+  "price_position": "기준일 주가 자체가 계산기에 없으므로, 주가가 가치 범위의 어디에 놓이는지는 말할 수 없습니다.",
+  "market_implied_growth": "역DCF가 실행되지 않아 주가에 담긴 성장률은 알 수 없습니다. 비교 기준인 회사의 삼 년 복합 매출 성장률은 {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}로 낮은데, 회사가 올린 올해 매출 가이던스는 하단마저 직전 회계연도 매출 {earnings_versus_cash.history.years.0.revenue}를 웃돌며, 그 성장의 일부는 인수와 환율에서 나옵니다.",
+  "most_sensitive": "민감도 표가 계산되지 않아 가장 민감한 가정을 표에서 읽을 수는 없으며, 빠져 있는 것은 할인율 자체입니다. 회사의 과거 기록에서 가장 크게 흔들린 가정은 매출 성장률({earnings_versus_cash.history.years.1.revenue_growth|pct}에서 {earnings_versus_cash.history.years.4.revenue_growth|pct}까지)이고, 영업이익률은 좁은 범위에 머물렀습니다.",
+  "accounting_adjustments": "회계 분석가가 적은 조정은 없고 가치평가도 계산되지 않았으므로, 조정이 가치를 움직인 크기는 없습니다. 다만 규모가 밝혀지지 않은 관세 환급, 스왑 이익, 얇아진 대손충당금은 보고된 이익률을 지속 가능한 수준보다 높였을 수 있어, 이익률 가정을 세울 때 따져 보아야 합니다."
+ },
+ "limits": "This valuation is a set of stated assumptions run through a stated formula. It states no recommendation to trade, and a different reader choosing different drivers would reach a different value.",
+ "normalized_quotes": 0,
+ "dropped_items": [],
+ "dropped_count": 0
+}

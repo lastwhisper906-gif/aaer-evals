@@ -1,0 +1,778 @@
+{
+  "question": "do reported earnings and cash reflect economic reality?",
+  "areas": {
+    "earnings_versus_cash": {
+      "finding": "The calculator does not carry the trailing ratio of operating cash flow to net income, accruals over average assets, or the share of net income that working capital absorbs. The 10-Q reports six-month net income at two precisions, and Python would not divide by either value. The test therefore rests on the company's own history. Operating cash flow over net income was {earnings_versus_cash.history.years.0.operating_cash_flow_over_net_income} in fiscal 2025, against {earnings_versus_cash.history.years.1.operating_cash_flow_over_net_income} in 2024 and {earnings_versus_cash.history.years.2.operating_cash_flow_over_net_income} in 2023. The weak years were 2022 at {earnings_versus_cash.history.years.3.operating_cash_flow_over_net_income} and 2021 at {earnings_versus_cash.history.years.4.operating_cash_flow_over_net_income}, when days of inventory were at their highest. Annual accruals over total assets were {trend_table.years-back-0.ratios.accruals_over_total_assets.value} in fiscal 2025: negative, and the second lowest of the five filled years, against {trend_table.years-back-3.ratios.accruals_over_total_assets.value} at the 2022 peak. Part of the fiscal 2025 conversion comes from the denominator. The numbers reader finds a pension settlement loss inside fiscal 2025 net income, and net income fell from {earnings_versus_cash.history.years.1.net_income} to {earnings_versus_cash.history.years.0.net_income} while operating income rose from {earnings_versus_cash.history.years.1.operating_income} to {earnings_versus_cash.history.years.0.operating_income}. In the current year, first-quarter accruals over total assets were {trend_table.quarters-back-1.ratios.accruals_over_total_assets.value}, the higher of the two filled first quarters, against {trend_table.quarters-back-5.ratios.accruals_over_total_assets.value} a year earlier; first-quarter operating cash flow was {ratios.growth.operating_cash_flow.quarter_over_quarter.inputs.before.value}. The June quarter recovered, with operating cash flow of {ratios.growth.operating_cash_flow.this_quarter.value} against {ratios.growth.operating_cash_flow.year_over_year.inputs.before.value} a year earlier. Six-month operating cash flow is {terms.trailing_four_quarters.operating_cash_flow.parts.this_year_to_date.value} against {terms.trailing_four_quarters.operating_cash_flow.parts.prior_year_to_date.value}. Over four quarters it is {terms.trailing_four_quarters.operating_cash_flow.value} against {terms.trailing_four_quarters_a_year_earlier.operating_cash_flow.value}, a change of {ratios.growth.operating_cash_flow.trailing_four_quarters.value|pct}. Working capital, six months: receivables absorbed {terms.trailing_four_quarters.change_in_receivables.parts.this_year_to_date.value} against {terms.trailing_four_quarters.change_in_receivables.parts.prior_year_to_date.value} a year earlier, and inventory absorbed {terms.trailing_four_quarters.change_in_inventory.parts.this_year_to_date.value} against {terms.trailing_four_quarters.change_in_inventory.parts.prior_year_to_date.value}. The numbers reader's payables item shows payables and accrued liabilities supplying more cash than a year earlier, and that line now includes the unpaid settlement accrual. Year over year, receivables rose by {earnings_versus_cash.working_capital.receivables.balance_sheet_change.value}, inventory by {earnings_versus_cash.working_capital.inventory.balance_sheet_change.value}, and accounts payable moved by {earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change.value}. Trade working capital stands at {free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now.value} against {free_cash_flow.free_cash_flow_to_firm.trade_working_capital.a_year_earlier.value}. So the better cash flow rests on a slower inventory build and on the timing of liabilities, while receivables took more cash than before. Articulation: the balance-sheet rise in receivables exceeds the cash-flow statement's four-quarter change by {earnings_versus_cash.working_capital.receivables.articulation_gap.value}; for inventory the gap is {earnings_versus_cash.working_capital.inventory.articulation_gap.value}. Both gaps point the way acquired balances and currency translation would push them. Four-quarter acquisition spending is {terms.cash_flow_families.acquisitions.value}, the goodwill rollforward shows currency translation, and the receivables line now also holds a share swap asset. The Wood Bros allocation lists the receivables and inventory it brought in, but Benson Pump's allocation is not tabulated, so the gaps cannot be fully assigned. The payables articulation cannot be tested: the company tags its payables change together with accrued liabilities, and the calculator does not read that tag. Smoothness is not in the calculator, because no run of five consecutive quarters is on record. Across the six fiscal years in the history, the cash-to-income ratio ranges from {earnings_versus_cash.history.years.3.operating_cash_flow_over_net_income} to {earnings_versus_cash.history.years.5.operating_cash_flow_over_net_income}. Cash has been the more volatile series, which fits the inventory swings in the trend table; nothing here shows income being held smoother than cash.",
+      "verdict": "On the company's own annual history, cash backs earnings, and June-quarter cash flow was strong. The caution is receivables: they absorbed more cash than a year earlier, and their rise over the year does not fully articulate with the cash-flow statement. Sound overall, with receivables to watch.",
+      "evidence": [
+        "earnings_quality_accruals_over_total_assets_annual",
+        "earnings_quality_accruals_over_total_assets_quarterly",
+        "liquidity_and_capital_operating_cash_flow",
+        "revenue_recognition_receivables_cash_absorption",
+        "revenue_recognition_receivables_balance_build",
+        "earnings_quality_inventory_balance_build",
+        "liquidity_and_capital_accounts_payable_balance",
+        "structure_and_disclosure_changes_wood_bros_acquisition",
+        "structure_and_disclosure_changes_share_swap_asset_in_receivables",
+        "liquidity_and_capital_operating_cash_flow_attribution_names_no_working_capital_line"
+      ],
+      "fields": [
+        "earnings_versus_cash.history.years.0.operating_cash_flow_over_net_income",
+        "earnings_versus_cash.history.years.1.operating_cash_flow_over_net_income",
+        "earnings_versus_cash.history.years.2.operating_cash_flow_over_net_income",
+        "earnings_versus_cash.history.years.3.operating_cash_flow_over_net_income",
+        "earnings_versus_cash.history.years.4.operating_cash_flow_over_net_income",
+        "earnings_versus_cash.history.years.5.operating_cash_flow_over_net_income",
+        "earnings_versus_cash.history.years.0.net_income",
+        "earnings_versus_cash.history.years.1.net_income",
+        "earnings_versus_cash.history.years.0.operating_income",
+        "earnings_versus_cash.history.years.1.operating_income",
+        "trend_table.years-back-0.ratios.accruals_over_total_assets.value",
+        "trend_table.years-back-3.ratios.accruals_over_total_assets.value",
+        "trend_table.quarters-back-1.ratios.accruals_over_total_assets.value",
+        "trend_table.quarters-back-5.ratios.accruals_over_total_assets.value",
+        "ratios.growth.operating_cash_flow.this_quarter.value",
+        "ratios.growth.operating_cash_flow.year_over_year.inputs.before.value",
+        "ratios.growth.operating_cash_flow.quarter_over_quarter.inputs.before.value",
+        "ratios.growth.operating_cash_flow.trailing_four_quarters.value",
+        "terms.trailing_four_quarters.operating_cash_flow.value",
+        "terms.trailing_four_quarters_a_year_earlier.operating_cash_flow.value",
+        "terms.trailing_four_quarters.operating_cash_flow.parts.this_year_to_date.value",
+        "terms.trailing_four_quarters.operating_cash_flow.parts.prior_year_to_date.value",
+        "terms.trailing_four_quarters.change_in_receivables.parts.this_year_to_date.value",
+        "terms.trailing_four_quarters.change_in_receivables.parts.prior_year_to_date.value",
+        "terms.trailing_four_quarters.change_in_inventory.parts.this_year_to_date.value",
+        "terms.trailing_four_quarters.change_in_inventory.parts.prior_year_to_date.value",
+        "earnings_versus_cash.working_capital.receivables.balance_sheet_change.value",
+        "earnings_versus_cash.working_capital.receivables.articulation_gap.value",
+        "earnings_versus_cash.working_capital.inventory.balance_sheet_change.value",
+        "earnings_versus_cash.working_capital.inventory.articulation_gap.value",
+        "earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change.value",
+        "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now.value",
+        "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.a_year_earlier.value",
+        "terms.cash_flow_families.acquisitions.value"
+      ]
+    },
+    "revenue_recognition": {
+      "finding": "June-quarter days sales outstanding and receivables over revenue are not in the calculator, because the 10-Q reports the quarter's revenue at two precisions. The trailing DSO is missing for the same reason. On the history that exists, annual DSO rose from {trend_table.years-back-2.ratios.days_sales_outstanding.value} days in 2023 to {trend_table.years-back-1.ratios.days_sales_outstanding.value} in 2024 and {trend_table.years-back-0.ratios.days_sales_outstanding.value} in fiscal 2025, the second highest of five filled years. Annual receivables over revenue moved from {trend_table.years-back-1.ratios.receivables_over_revenue.value} to {trend_table.years-back-0.ratios.receivables_over_revenue.value}. First-quarter DSO was {trend_table.quarters-back-1.ratios.days_sales_outstanding.value} against {trend_table.quarters-back-5.ratios.days_sales_outstanding.value} a year earlier, which is flat. The September quarter sits lower at {trend_table.quarters-back-3.ratios.days_sales_outstanding.value}, so receivables peak seasonally in the first half. At June, receivables are {terms.balances_now.receivables.value} against {terms.balances_a_year_earlier.receivables.value} a year earlier, and above both the December and March balances. Two things blur the test. Wood Bros and Benson Pump brought receivables with them, and the share swap asset is now recorded inside the receivables line. Contract liabilities are untagged in every period, so their movement against revenue cannot be tested. The notes reader found no change in revenue-policy wording and no new judgment area such as variable consideration, principal versus agent or standalone selling price. It also found no mention of extended payment terms or bill-and-hold. Fourth-quarter concentration cannot be tested, because the fourth quarters have no trend cells. On revenue composition: the release's sales bridge puts local-currency price increases in Argentina and Turkey inside the currency row. The volume-and-price row therefore understates pricing, and MD&A's regional trends excluding currency leave that pricing out.",
+      "verdict": "The prose shows no revenue-recognition signal. Receivables built up at June, but the record cannot set that build against June-quarter revenue, and annual DSO has risen two years running. Unresolved, with mild caution.",
+      "evidence": [
+        "revenue_recognition_days_sales_outstanding_annual",
+        "revenue_recognition_receivables_over_revenue_annual",
+        "revenue_recognition_days_sales_outstanding_quarterly",
+        "revenue_recognition_receivables_over_revenue_quarterly",
+        "revenue_recognition_receivables_balance_build",
+        "revenue_recognition_contract_liabilities_over_revenue_annual",
+        "revenue_recognition_net_sales_reported",
+        "structure_and_disclosure_changes_share_swap_asset_in_receivables",
+        "across_documents_currency_row_includes_hyperinflation_price_increases"
+      ],
+      "fields": [
+        "trend_table.years-back-2.ratios.days_sales_outstanding.value",
+        "trend_table.years-back-1.ratios.days_sales_outstanding.value",
+        "trend_table.years-back-0.ratios.days_sales_outstanding.value",
+        "trend_table.years-back-1.ratios.receivables_over_revenue.value",
+        "trend_table.years-back-0.ratios.receivables_over_revenue.value",
+        "trend_table.quarters-back-1.ratios.days_sales_outstanding.value",
+        "trend_table.quarters-back-5.ratios.days_sales_outstanding.value",
+        "trend_table.quarters-back-3.ratios.days_sales_outstanding.value",
+        "terms.balances_now.receivables.value",
+        "terms.balances_a_year_earlier.receivables.value"
+      ]
+    },
+    "estimates_and_reserves": {
+      "finding": "The credit-loss allowance thinned sharply. The bad-debt reserve ratio is {trend_table.quarters-back-0.ratios.bad_debt_reserve_ratio.value|pct} at June, the lowest of the six filled quarters. It was {trend_table.quarters-back-1.ratios.bad_debt_reserve_ratio.value|pct} at March, the highest of the six, and {trend_table.quarters-back-4.ratios.bad_debt_reserve_ratio.value|pct} a year earlier. The allowance is {terms.balances_now.bad_debt_allowance.value} against {terms.balances_a_year_earlier.bad_debt_allowance.value} a year earlier, while receivables rose. The fiscal 2025 ratio, {trend_table.years-back-0.ratios.bad_debt_reserve_ratio.value|pct}, was already the lowest of five filled years, against {trend_table.years-back-4.ratios.bad_debt_reserve_ratio.value|pct} in 2021. The company adopted the credit-loss practical expedient this year and says the adoption had no material impact; nothing in either report explains the fall. The record cannot show whether the fall came from a release through income or from write-offs against the allowance. No calculator field carries the movement, so no earnings adjustment can be written, although the risk is that income was helped. Warranty: the annual warranty reserve ratio was {trend_table.years-back-0.ratios.warranty_reserve_ratio.value|pct} in fiscal 2025, the lowest of five years, against {trend_table.years-back-4.ratios.warranty_reserve_ratio.value|pct} in 2021. The first-quarter ratio was {trend_table.quarters-back-1.ratios.warranty_reserve_ratio.value|pct} against {trend_table.quarters-back-5.ratios.warranty_reserve_ratio.value|pct} a year earlier. The accrual at June is {terms.balances_now.warranty_accrual.value} against {terms.balances_a_year_earlier.warranty_accrual.value} a year earlier while sales grew, and in the six months payments exceeded new warranties issued. That is a slow thinning, not a break. The inventory reserve is untagged in every period, so obsolescence reserving cannot be tested. Litigation: the company accrued its agreed portion of the Esso settlement and charged it to Energy Systems. The amount is below the expert's total-damages figure, which the first-quarter 10-Q tagged in euros. The note has now dropped that figure, along with the warning that payments could be material. The agreement is preliminary and subject to court approval, and the 10-Q still tags the case as pending, so the accrual stays an estimate until the court rules. Acquisitions: the Wood Bros allocation is preliminary and rests on level-three income-approach valuations. Benson Pump's allocation is not tabulated, and for a distributor the note lists 'potential future technologies' as an element of goodwill. Barnes de Colombia goodwill printed lower at March than at December while recorded purchase-accounting adjustments were positive, and no cause is given. Tax: the effective rate rose in the quarter and the six months on unfavourable discrete events the company does not identify. The four-quarter effective rate is {tax_rate.effective_rate|pct}. That lowers income, and no valuation-allowance release appears. Goodwill headroom, discount-rate and growth assumptions: neither report carries an impairment-test disclosure, so there is nothing to test.",
+      "verdict": "Adverse on the credit-loss allowance: it fell to the lowest level in the record while receivables rose, and nothing explains it. The warranty reserve is thin against history. The other estimates either reduce income (tax, litigation) or are acquisition-accounting judgments that are still open.",
+      "evidence": [
+        "estimates_and_discretion_doubtful_accounts_allowance",
+        "estimates_and_discretion_bad_debt_reserve_ratio_quarterly",
+        "estimates_and_discretion_bad_debt_reserve_ratio_annual",
+        "estimates_and_discretion_credit_loss_practical_expedient_adopted",
+        "estimates_and_discretion_warranty_reserve_ratio_annual",
+        "estimates_and_discretion_warranty_reserve_ratio_quarterly",
+        "estimates_and_discretion_warranty_accrual_balance",
+        "estimates_and_discretion_inventory_reserve_ratio_annual",
+        "related_parties_contingencies_and_subsequent_events_esso_preliminary_settlement_accrued",
+        "related_parties_contingencies_and_subsequent_events_esso_expert_damages_and_warning_removed",
+        "related_parties_contingencies_and_subsequent_events_esso_damages_sought",
+        "related_parties_contingencies_and_subsequent_events_esso_loss_contingency_recognized",
+        "estimates_and_discretion_wood_brothers_preliminary_valuation",
+        "estimates_and_discretion_wood_brothers_intangible_lives_and_level_three_inputs",
+        "estimates_and_discretion_benson_pump_allocation_not_tabulated",
+        "estimates_and_discretion_purchase_accounting_goodwill_adjustment",
+        "earnings_quality_effective_tax_rate",
+        "earnings_quality_unfavorable_discrete_tax_events_not_described"
+      ],
+      "fields": [
+        "trend_table.quarters-back-0.ratios.bad_debt_reserve_ratio.value",
+        "trend_table.quarters-back-1.ratios.bad_debt_reserve_ratio.value",
+        "trend_table.quarters-back-4.ratios.bad_debt_reserve_ratio.value",
+        "trend_table.years-back-0.ratios.bad_debt_reserve_ratio.value",
+        "trend_table.years-back-4.ratios.bad_debt_reserve_ratio.value",
+        "terms.balances_now.bad_debt_allowance.value",
+        "terms.balances_a_year_earlier.bad_debt_allowance.value",
+        "trend_table.years-back-0.ratios.warranty_reserve_ratio.value",
+        "trend_table.years-back-4.ratios.warranty_reserve_ratio.value",
+        "trend_table.quarters-back-1.ratios.warranty_reserve_ratio.value",
+        "trend_table.quarters-back-5.ratios.warranty_reserve_ratio.value",
+        "terms.balances_now.warranty_accrual.value",
+        "terms.balances_a_year_earlier.warranty_accrual.value",
+        "tax_rate.effective_rate"
+      ]
+    },
+    "cost_deferral": {
+      "finding": "Capitalized software is untagged and current-year research-and-development expense is not in the calculator, so capitalized cost cannot be tested against its expensed equivalent. Neither report mentions a change in capitalization policy. Soft-asset share rose from {trend_table.years-back-1.ratios.soft_asset_share.value|pct} in fiscal 2024, the lowest of five years, to {trend_table.years-back-0.ratios.soft_asset_share.value|pct} in fiscal 2025. The first-quarter share was {trend_table.quarters-back-1.ratios.soft_asset_share.value|pct} against {trend_table.quarters-back-5.ratios.soft_asset_share.value|pct} a year earlier. The June share is missing because total assets are reported at two precisions. The rise follows acquisitions, not internal deferral: goodwill and intangibles grew with Wood Bros and Benson Pump, and four-quarter acquisition spending is {terms.cash_flow_families.acquisitions.value}. Items presented as outside the run rate keep coming back. Six-month restructuring is far above a year earlier, and MD&A repeats 'continued manufacturing realignment'. The 10-K had already flagged expected restructuring cost as a subsequent event, and the release again leaves restructuring out of adjusted results. The non-GAAP gap is not in the trend table. The release takes the legal settlement and restructuring out of adjusted EPS but keeps two benefits in. One is the tariff refunds that MD&A says lifted the quarter's gross margin, for which no amount is given. The other is the equity swap gain booked in SG&A, which was a loss a year earlier. The settlement add-back is labelled 'gross of tax', and the computed numbers cannot show whether the per-share amount is before or after tax.",
+      "verdict": "No capitalization signal. Adjusted earnings are built asymmetrically: charges come out, while an unquantified refund and a swap gain stay in. Restructuring behaves as a recurring cost. Mildly adverse for adjusted earnings, neutral for GAAP earnings.",
+      "evidence": [
+        "earnings_quality_soft_asset_share_annual",
+        "earnings_quality_soft_asset_share_quarterly",
+        "structure_and_disclosure_changes_goodwill_balance",
+        "earnings_quality_restructuring_charges",
+        "results_against_expectations_non_gaap_gap_annual",
+        "results_against_expectations_non_gaap_gap_quarterly",
+        "earnings_quality_tariff_refunds_lift_gross_margin",
+        "earnings_quality_equity_swap_gain_in_selling_expense",
+        "earnings_quality_adjusted_eps_settlement_add_back_gross_of_tax"
+      ],
+      "fields": [
+        "trend_table.years-back-1.ratios.soft_asset_share.value",
+        "trend_table.years-back-0.ratios.soft_asset_share.value",
+        "trend_table.quarters-back-1.ratios.soft_asset_share.value",
+        "trend_table.quarters-back-5.ratios.soft_asset_share.value",
+        "terms.cash_flow_families.acquisitions.value"
+      ]
+    },
+    "cash_flow_engineering_and_off_balance_sheet": {
+      "finding": "Sales of receivables are untagged and neither report mentions factoring. Supplier finance is untagged and not mentioned either. Nothing is found, though this rests on missing tags rather than on a statement by the company. Payables show no sign of a stretch: accounts payable moved by {earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change.value} over the year, and days payables outstanding are {ratios.efficiency.days_payables_outstanding.value}. The six-month improvement in operating cash flow does rely on payables and accrued liabilities. That includes the unpaid Esso accrual, which reverses when the court-approved payment is made. No shift between operating and investing classification is visible. Purchase obligations are untagged; MD&A discloses a small firm copper commitment to be fulfilled within a year. The operating lease liability is {terms.balances_now.operating_lease_liability.value} against {terms.balances_a_year_earlier.operating_lease_liability.value} a year earlier. Guarantees are untagged, and letters of credit are unchanged. No variable-interest entity is disclosed. A dividend to a noncontrolling interest appears for the first time, and its cash-flow line is not shown. Share-based compensation of {terms.trailing_four_quarters.share_based_compensation.value} over four quarters is a real cost. Python has already subtracted it, together with acquisitions, to reach quality-adjusted free cash flow of {free_cash_flow.free_cash_flow_quality_adjusted.value} against simple free cash flow of {free_cash_flow.free_cash_flow_simple.value}. Financing: revolver borrowing rose and remaining capacity fell. MD&A credits the financing change to lower repurchases, {terms.trailing_four_quarters.share_repurchases.parts.this_year_to_date.value} against {terms.trailing_four_quarters.share_repurchases.parts.prior_year_to_date.value}, and does not name the borrowing. Non-designated currency forwards had no notional outstanding at June. One defect sits in the computed record. The company tags repayments under a combined debt-and-lease concept, so the calculator found no repayment line. As a result, free cash flow to equity of {free_cash_flow.free_cash_flow_to_equity.value} treats gross issuance of {free_cash_flow.free_cash_flow_to_equity.net_borrowing} as net borrowing, even though the numbers reader's revolver item prints six-month repayments. That figure should not be used.",
+      "verdict": "Nothing the filings tag or say shows factoring, supplier finance or classification shifting, and off-balance-sheet exposures are small. Operating cash flow includes some liability timing that will reverse. The computed free cash flow to equity overstates net borrowing.",
+      "evidence": [
+        "liquidity_and_capital_accounts_payable_balance",
+        "related_parties_contingencies_and_subsequent_events_esso_settlement_awaits_court_approval",
+        "liquidity_and_capital_copper_purchase_commitment",
+        "liquidity_and_capital_revolver_borrowing",
+        "liquidity_and_capital_revolver_remaining_capacity",
+        "liquidity_and_capital_current_debt",
+        "liquidity_and_capital_share_repurchases",
+        "liquidity_and_capital_mdna_credits_lower_share_repurchases",
+        "structure_and_disclosure_changes_dividend_to_noncontrolling_interest",
+        "earnings_quality_foreign_exchange_loss"
+      ],
+      "fields": [
+        "earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change.value",
+        "ratios.efficiency.days_payables_outstanding.value",
+        "terms.balances_now.operating_lease_liability.value",
+        "terms.balances_a_year_earlier.operating_lease_liability.value",
+        "terms.trailing_four_quarters.share_based_compensation.value",
+        "free_cash_flow.free_cash_flow_quality_adjusted.value",
+        "free_cash_flow.free_cash_flow_simple.value",
+        "terms.trailing_four_quarters.share_repurchases.parts.this_year_to_date.value",
+        "terms.trailing_four_quarters.share_repurchases.parts.prior_year_to_date.value",
+        "free_cash_flow.free_cash_flow_to_equity.value",
+        "free_cash_flow.free_cash_flow_to_equity.net_borrowing"
+      ]
+    },
+    "controls_audit_and_filing_signals": {
+      "finding": "The controls item says disclosure controls are effective and internal control over financial reporting did not change. The readers' inputs did not include the auditor's report, the risk-factor comparison, the subsidiary-exhibit comparison or any material-contract exhibit. Critical audit matters, officer departures, subsidiary-list changes and comment letters therefore cannot be assessed. The 8-K index shows no auditor-change or non-reliance filing and no late-filing notice through the cutoff. The numbers reader found no restated prior-period value; the differences it saw were rounding. One filing signal: the 10-Q tags its headline facts (revenue, net income, total assets, current debt, interest expense, depreciation) at two precisions for the same period. That blocked the calculator's central ratios, but it is a tagging pattern, not a restatement. MD&A contains a drafting slip, 'second quarter three months'. The two acquisitions bring in new legal entities (Piertek, Vistar and Benson Pump), but the subsidiary list was not in the input. Neither report raises a related-party matter.",
+      "verdict": "Clean on what is visible, but coverage is incomplete: the auditor's report and several exhibits were not in the input.",
+      "evidence": [
+        "revenue_recognition_net_sales_reported",
+        "liquidity_and_capital_current_debt",
+        "results_against_expectations_acquisitions_lead_sales_growth_attribution",
+        "structure_and_disclosure_changes_wood_brothers_acquired_legal_entities",
+        "structure_and_disclosure_changes_benson_pump_purchase_price_after_working_capital"
+      ],
+      "fields": []
+    },
+    "cross_document_reconciliation": {
+      "finding": "The numbers contradict none of the directional items in the notes. These are confirmed: the Esso accrual and its placement in Energy Systems; the settlement's part in the Energy margin decline; the add-back that lifts adjusted EPS; the acquisitions, with their legal entities, prices and intangible allocations; the higher effective tax rate; the fall in repurchases; and the swap gain behind the new swap asset. These stay unresolved, either because the computed record lacks a June-quarter margin, segment or regional figures, or because their horizon is later: tariff refunds, product and geographic mix, inflation in sourced materials, the dewatering, Latin American and European declines, the guidance raise, the interest-expense driver, the noncontrolling-interest dividend and the settlement payment. The 8-K and the 10-Q agree on GAAP figures: net sales, GAAP diluted EPS, the receivables change and Energy Systems operating income match. They differ in five places. First, the release prints adjusted diluted EPS once with an extra digit, which the notes reader reads as a footnote marker. Second, the release calls the Esso charge a legal settlement, while the 10-Q tags pending litigation and its note describes a preliminary agreement awaiting court approval. Third, MD&A credits tariff refunds that the release never mentions. Fourth, the CEO's organic-volume claim sits beside MD&A drivers that name no Water Systems volume for the quarter. Fifth, the CEO's 'solid demand' in dewatering for mining sits beside MD&A's lower dewatering sales. Within the 10-Q, MD&A puts higher interest expense down to higher average debt and does not name the higher revolver rate the numbers show. Current debt is reported at two precisions, so the calculator cannot state total debt now, and the period-end comparison with the year-earlier {terms.debt_a_year_earlier.value} cannot be made.",
+      "verdict": "The numbers contradict none of the prose, and several explanations stay unresolved for lack of June-quarter ratios. The release and the 10-Q agree on GAAP figures but put the emphasis in different places: tariff refunds, organic volume, dewatering demand and the status of the settlement.",
+      "evidence": [
+        "across_documents_adjusted_eps_printed_two_ways",
+        "across_documents_legal_settlement_against_pending_litigation_tag",
+        "across_documents_tariff_refunds_in_mdna_absent_from_release",
+        "across_documents_organic_volume_claim_against_water_systems_drivers",
+        "across_documents_dewatering_demand_claim_against_mdna_decline",
+        "across_documents_currency_row_includes_hyperinflation_price_increases",
+        "liquidity_and_capital_interest_expense_attributed_to_higher_average_debt",
+        "liquidity_and_capital_interest_expense",
+        "liquidity_and_capital_revolver_borrowing",
+        "results_against_expectations_diluted_eps_reported",
+        "revenue_recognition_net_sales_reported",
+        "narrative_signs_of_operating_pressure_energy_segment_operating_income_lower"
+      ],
+      "fields": [
+        "terms.debt_a_year_earlier.value"
+      ]
+    },
+    "industry_lens": {
+      "finding": "Inventory obsolescence: the inventory reserve and write-downs are untagged, so obsolescence cannot be measured. June-quarter days sales of inventory are {trend_table.quarters-back-0.ratios.days_sales_of_inventory.value}, the lowest of six filled quarters, against {trend_table.quarters-back-4.ratios.days_sales_of_inventory.value} a year earlier; the figure on four-quarter averages is {ratios.efficiency.days_sales_of_inventory.value}. Annual DSI for fiscal 2025, however, rose to {trend_table.years-back-0.ratios.days_sales_of_inventory.value} from {trend_table.years-back-1.ratios.days_sales_of_inventory.value}. Inventory is {terms.balances_now.inventory.value} against {terms.balances_a_year_earlier.inventory.value} a year earlier, including acquired inventory. Nothing is found beyond a reserve that cannot be tested. Purchase commitments in excess of need: nothing found. The unconditional purchase obligation is untagged, and MD&A names only a small copper commitment to be fulfilled within the next year. Customer concentration: nothing found, because the filings tag none; the calculator's concentration facts are empty, with no customer or benchmark fact. Channel stuffing: not found, and not ruled out. The company sells through distributors and owns a Distribution segment. A June rise in receivables with a thinning allowance is the pattern channel loading would leave. But there is no June-quarter DSO and no data on distributor inventory, and the receivables line also holds acquired balances and a swap asset. Circular or vendor-financed deals: nothing found, and no investment in a customer is disclosed. The company bought a groundwater distributor (Benson Pump) and a wholesale supplier to water-treatment dealers (Wood Bros), and placed the wholesaler in Water Systems. The filings do not say whether either bought from the company before the acquisition.",
+      "verdict": "On the available record, nothing is found on obsolescence, purchase commitments, customer concentration or circular deals. Without a June-quarter DSO, channel loading can be neither confirmed nor ruled out.",
+      "evidence": [
+        "earnings_quality_days_sales_of_inventory_quarterly",
+        "earnings_quality_days_sales_of_inventory_annual",
+        "estimates_and_discretion_inventory_reserve_ratio_annual",
+        "estimates_and_discretion_inventory_reserve_ratio_quarterly",
+        "earnings_quality_inventory_balance_build",
+        "liquidity_and_capital_copper_purchase_commitment",
+        "estimates_and_discretion_doubtful_accounts_allowance",
+        "structure_and_disclosure_changes_benson_pump_and_wood_brothers_acquisitions",
+        "structure_and_disclosure_changes_wood_brothers_wholesale_business_in_water_systems"
+      ],
+      "fields": [
+        "trend_table.quarters-back-0.ratios.days_sales_of_inventory.value",
+        "trend_table.quarters-back-4.ratios.days_sales_of_inventory.value",
+        "ratios.efficiency.days_sales_of_inventory.value",
+        "trend_table.years-back-0.ratios.days_sales_of_inventory.value",
+        "trend_table.years-back-1.ratios.days_sales_of_inventory.value",
+        "terms.balances_now.inventory.value",
+        "terms.balances_a_year_earlier.inventory.value"
+      ]
+    }
+  },
+  "reconciliation": [
+    {
+      "notes_item": "related_parties_contingencies_and_subsequent_events_esso_preliminary_settlement_accrued",
+      "numbers_items": ["related_parties_contingencies_and_subsequent_events_esso_loss_contingency_recognized", "related_parties_contingencies_and_subsequent_events_litigation_settlement_loss_tagged"],
+      "outcome": "confirms",
+      "why": "The 10-Q recognizes a loss in the period for the Esso case and adds a new litigation-settlement line to the income statement, which matches the accrual the note describes."
+    },
+    {
+      "notes_item": "related_parties_contingencies_and_subsequent_events_esso_settlement_awaits_court_approval",
+      "numbers_items": ["related_parties_contingencies_and_subsequent_events_esso_loss_contingency_recognized", "across_documents_legal_settlement_against_pending_litigation_tag"],
+      "outcome": "unresolved",
+      "why": "The cash payment falls in a later period. At June the case is still tagged as pending litigation, which fits an unpaid accrual awaiting court approval, but the outflow itself cannot be seen yet."
+    },
+    {
+      "notes_item": "related_parties_contingencies_and_subsequent_events_esso_expert_damages_and_warning_removed",
+      "numbers_items": ["related_parties_contingencies_and_subsequent_events_esso_damages_sought", "related_parties_contingencies_and_subsequent_events_esso_loss_contingency_recognized"],
+      "outcome": "unresolved",
+      "why": "The removed expert figure is the same damages amount the first-quarter 10-Q tagged in euros, and the recognized loss is the company's agreed portion in dollars. The numbers do not say whether the rest of the claim stays open, so the removal of the warning cannot be tested."
+    },
+    {
+      "notes_item": "structure_and_disclosure_changes_legal_settlement_line_in_accrued_expenses",
+      "numbers_items": ["related_parties_contingencies_and_subsequent_events_esso_loss_contingency_recognized", "liquidity_and_capital_current_debt"],
+      "outcome": "confirms",
+      "why": "A loss that is recognized but not yet paid has to sit in a liability, and total current liabilities at June are above December. The accrued-expense row itself is not among the numbers reader's items."
+    },
+    {
+      "notes_item": "structure_and_disclosure_changes_legal_settlement_section_charged_to_energy",
+      "numbers_items": ["related_parties_contingencies_and_subsequent_events_litigation_settlement_loss_tagged", "narrative_signs_of_operating_pressure_energy_segment_operating_income_lower"],
+      "outcome": "confirms",
+      "why": "The segment table puts the settlement charge in Energy Systems."
+    },
+    {
+      "notes_item": "results_against_expectations_energy_margin_decline_attributed_to_settlement",
+      "numbers_items": ["narrative_signs_of_operating_pressure_energy_segment_operating_income_lower", "related_parties_contingencies_and_subsequent_events_litigation_settlement_loss_tagged"],
+      "outcome": "confirms",
+      "why": "Energy Systems operating income is below a year earlier on higher sales, while the release's adjusted figure, which excludes the charge, is above a year earlier. The charge accounts for the decline."
+    },
+    {
+      "notes_item": "earnings_quality_adjusted_eps_settlement_add_back_gross_of_tax",
+      "numbers_items": ["across_documents_legal_settlement_against_pending_litigation_tag", "across_documents_adjusted_eps_printed_two_ways", "results_against_expectations_diluted_eps_reported"],
+      "outcome": "confirms",
+      "why": "The release takes the settlement out of adjusted EPS, and adjusted EPS is printed above GAAP diluted EPS, which matches the 10-Q. With no non-GAAP gap computed, the 'gross of tax' label cannot be tested."
+    },
+    {
+      "notes_item": "earnings_quality_tariff_refunds_lift_gross_margin",
+      "numbers_items": ["earnings_quality_gross_profit_reported", "earnings_quality_gross_margin_quarterly"],
+      "outcome": "unresolved",
+      "why": "Gross profit rose against the year-ago quarter. But the June-quarter gross margin is not computed, because revenue is reported at two precisions, and no tariff-refund amount is tagged. The first-quarter margin was the lowest of the filled quarters."
+    },
+    {
+      "notes_item": "across_documents_tariff_refunds_in_mdna_absent_from_release",
+      "numbers_items": ["earnings_quality_gross_profit_reported", "narrative_signs_of_operating_pressure_sourced_materials_logistics_inflation"],
+      "outcome": "unresolved",
+      "why": "Water Systems operating income for the quarter is not among the numbers reader's items, and the refunds are not quantified. The expected drop once the refunds stop would fall in a later quarter."
+    },
+    {
+      "notes_item": "narrative_signs_of_operating_pressure_unfavorable_product_and_geographic_mix",
+      "numbers_items": ["earnings_quality_gross_margin_quarterly", "earnings_quality_gross_margin_annual"],
+      "outcome": "unresolved",
+      "why": "The first-quarter gross margin fell against a year earlier and is the lowest of the filled quarters, which fits. Neither a six-month gross margin nor a six-month Water Systems operating margin is computed."
+    },
+    {
+      "notes_item": "narrative_signs_of_operating_pressure_inflation_in_sourced_materials_and_logistics",
+      "numbers_items": ["narrative_signs_of_operating_pressure_sourced_materials_logistics_inflation", "earnings_quality_gross_profit_reported", "earnings_quality_gross_margin_quarterly"],
+      "outcome": "unresolved",
+      "why": "Cost of goods sold rose with sales in the quarter, which does not isolate inflation, and the item's horizon is the next quarter."
+    },
+    {
+      "notes_item": "results_against_expectations_full_year_guidance_raised_in_release",
+      "numbers_items": ["results_against_expectations_full_year_guidance_range_raised", "results_against_expectations_diluted_eps_reported"],
+      "outcome": "unresolved",
+      "why": "Neither report holds the previous ranges, so the size of the raise cannot be stated. Six-month GAAP diluted EPS is above a year earlier, which fits but does not test a full-year figure."
+    },
+    {
+      "notes_item": "across_documents_organic_volume_claim_against_water_systems_drivers",
+      "numbers_items": ["revenue_recognition_net_sales_reported"],
+      "outcome": "unresolved",
+      "why": "The release's bridge combines volume with price and puts acquisitions slightly ahead of them. 'Balanced' between organic and inorganic fits the bridge, but organic volume on its own cannot be separated out."
+    },
+    {
+      "notes_item": "across_documents_dewatering_demand_claim_against_mdna_decline",
+      "numbers_items": [],
+      "outcome": "unresolved",
+      "why": "No product-line or regional sales figure is tagged, so neither the CEO's demand claim nor MD&A's decline can be tested."
+    },
+    {
+      "notes_item": "narrative_signs_of_operating_pressure_large_dewatering_equipment_decline",
+      "numbers_items": ["revenue_recognition_net_sales_reported"],
+      "outcome": "unresolved",
+      "why": "No product-line figure is tagged. Consolidated net sales rose, which says nothing about dewatering equipment."
+    },
+    {
+      "notes_item": "narrative_signs_of_operating_pressure_latin_america_and_europe_organic_declines",
+      "numbers_items": ["revenue_recognition_net_sales_reported"],
+      "outcome": "unresolved",
+      "why": "The numbers hold no regional sales figure, and the release's sales bridge is consolidated."
+    },
+    {
+      "notes_item": "across_documents_currency_row_includes_hyperinflation_price_increases",
+      "numbers_items": ["revenue_recognition_net_sales_reported"],
+      "outcome": "unresolved",
+      "why": "By the company's own footnote, the bridge's currency contribution includes pricing in Argentina and Turkey, and the numbers cannot split it out."
+    },
+    {
+      "notes_item": "narrative_signs_of_operating_pressure_water_systems_drivers_omit_volume",
+      "numbers_items": ["revenue_recognition_net_sales_reported"],
+      "outcome": "unresolved",
+      "why": "Water Systems volume is not tagged, and the consolidated bridge combines volume with price."
+    },
+    {
+      "notes_item": "results_against_expectations_acquisitions_lead_sales_growth_attribution",
+      "numbers_items": ["revenue_recognition_net_sales_reported"],
+      "outcome": "confirms",
+      "why": "As the numbers reader prints it, the release's bridge attributes slightly more of the quarter's sales increase to acquisitions than to volume and price, and the least to currency. That is the same order MD&A gives."
+    },
+    {
+      "notes_item": "structure_and_disclosure_changes_benson_pump_and_wood_brothers_acquisitions",
+      "numbers_items": ["structure_and_disclosure_changes_wood_bros_acquisition", "structure_and_disclosure_changes_benson_pump_acquisition", "structure_and_disclosure_changes_goodwill_balance", "revenue_recognition_net_sales_reported"],
+      "outcome": "confirms",
+      "why": "Both acquisitions were paid for in the quarter, goodwill rose by acquired goodwill in Water and Distribution, and the bridge's acquisition contribution matches MD&A's incremental-sales figure."
+    },
+    {
+      "notes_item": "structure_and_disclosure_changes_wood_brothers_acquired_legal_entities",
+      "numbers_items": ["structure_and_disclosure_changes_wood_bros_acquisition", "structure_and_disclosure_changes_goodwill_balance"],
+      "outcome": "confirms",
+      "why": "The tagged Wood Bros payment matches the note's price net of cash, and its goodwill appears in Water Systems."
+    },
+    {
+      "notes_item": "estimates_and_discretion_wood_brothers_preliminary_valuation",
+      "numbers_items": ["structure_and_disclosure_changes_wood_bros_acquisition", "estimates_and_discretion_purchase_accounting_goodwill_adjustment"],
+      "outcome": "confirms",
+      "why": "The allocation is tabulated at June, and the six months already carry purchase-accounting adjustments to goodwill, which fits a measurement period that is still open."
+    },
+    {
+      "notes_item": "estimates_and_discretion_wood_brothers_intangible_lives_and_level_three_inputs",
+      "numbers_items": ["structure_and_disclosure_changes_wood_bros_acquisition", "structure_and_disclosure_changes_goodwill_balance"],
+      "outcome": "confirms",
+      "why": "The tagged customer-relationship and trade-name amounts match the note, and intangibles net of goodwill rose after December. The amortization effect falls in later quarters."
+    },
+    {
+      "notes_item": "structure_and_disclosure_changes_wood_brothers_wholesale_business_in_water_systems",
+      "numbers_items": ["structure_and_disclosure_changes_goodwill_balance", "structure_and_disclosure_changes_wood_bros_acquisition"],
+      "outcome": "confirms",
+      "why": "The goodwill rollforward puts the Wood Bros goodwill amount in Water, not Distribution."
+    },
+    {
+      "notes_item": "structure_and_disclosure_changes_benson_pump_purchase_price_after_working_capital",
+      "numbers_items": ["structure_and_disclosure_changes_benson_pump_acquisition"],
+      "outcome": "confirms",
+      "why": "The tagged Benson Pump payment matches the note. It is above the expected price the first-quarter 10-Q carried as a subsequent event, which fits a working-capital adjustment."
+    },
+    {
+      "notes_item": "estimates_and_discretion_benson_pump_allocation_not_tabulated",
+      "numbers_items": ["structure_and_disclosure_changes_goodwill_balance", "structure_and_disclosure_changes_benson_pump_acquisition"],
+      "outcome": "unresolved",
+      "why": "Goodwill acquired in Distribution covers only part of the Benson Pump price. The rest of the allocation, including any intangibles, is not tagged, so 'primarily allocated to goodwill and other intangible assets' cannot be tested."
+    },
+    {
+      "notes_item": "estimates_and_discretion_credit_loss_practical_expedient_adopted",
+      "numbers_items": ["estimates_and_discretion_doubtful_accounts_allowance", "estimates_and_discretion_bad_debt_reserve_ratio_quarterly"],
+      "outcome": "unresolved",
+      "why": "In the year of adoption the allowance fell to its lowest ratio in the record. The note says adoption had no material impact and gives no other cause, so whether the two are linked cannot be tested."
+    },
+    {
+      "notes_item": "structure_and_disclosure_changes_environmental_credits_standard_added",
+      "numbers_items": [],
+      "outcome": "unresolved",
+      "why": "The standard is not yet effective, and no number bears on it."
+    },
+    {
+      "notes_item": "earnings_quality_unfavorable_discrete_tax_events_not_described",
+      "numbers_items": ["earnings_quality_effective_tax_rate"],
+      "outcome": "confirms",
+      "why": "The tagged effective rate is above a year earlier for both the quarter and the six months. The discrete events themselves are not identified."
+    },
+    {
+      "notes_item": "liquidity_and_capital_interest_expense_attributed_to_higher_average_debt",
+      "numbers_items": ["liquidity_and_capital_interest_expense", "liquidity_and_capital_revolver_borrowing", "liquidity_and_capital_current_debt"],
+      "outcome": "unresolved",
+      "why": "Interest expense rose, and revolver borrowings rose after December. But average debt is not computed and total debt now is not in the calculator, so the claim cannot be set against a year earlier. The revolver rate also rose, a driver MD&A does not name."
+    },
+    {
+      "notes_item": "liquidity_and_capital_copper_purchase_commitment",
+      "numbers_items": [],
+      "outcome": "unresolved",
+      "why": "Purchase obligations are untagged, so the commitment cannot be checked against a number."
+    },
+    {
+      "notes_item": "liquidity_and_capital_operating_cash_flow_attribution_names_no_working_capital_line",
+      "numbers_items": ["liquidity_and_capital_operating_cash_flow", "revenue_recognition_receivables_cash_absorption", "earnings_quality_inventory_balance_build", "liquidity_and_capital_accounts_payable_balance"],
+      "outcome": "unresolved",
+      "why": "Operating cash flow rose. Line by line, receivables absorbed more cash than a year earlier, inventory less, and payables and accrued liabilities supplied more. The prose names none of these lines, and no six-month net income figure is computed, so its attribution cannot be tested."
+    },
+    {
+      "notes_item": "liquidity_and_capital_mdna_credits_lower_share_repurchases",
+      "numbers_items": ["liquidity_and_capital_share_repurchases", "liquidity_and_capital_revolver_borrowing"],
+      "outcome": "confirms",
+      "why": "Repurchase payments fell sharply against a year earlier. The prose leaves out the debt proceeds and repayments that the numbers show."
+    },
+    {
+      "notes_item": "structure_and_disclosure_changes_share_swap_asset_in_receivables",
+      "numbers_items": ["earnings_quality_equity_swap_gain_in_selling_expense", "revenue_recognition_receivables_balance_build"],
+      "outcome": "confirms",
+      "why": "After a first-quarter loss, the swap produced a gain in SG&A in the quarter, which fits an asset at June. The asset's amount inside receivables is not shown separately in the numbers."
+    },
+    {
+      "notes_item": "structure_and_disclosure_changes_dividend_to_noncontrolling_interest",
+      "numbers_items": [],
+      "outcome": "unresolved",
+      "why": "None of the numbers reader's items carries a dividend to the noncontrolling interest."
+    }
+  ],
+  "anomalies": [
+    {
+      "id": "earnings_versus_cash_receivables_absorption_above_prior_year",
+      "name": "Receivables absorbed more cash than a year earlier",
+      "name_ko": "매출채권의 현금 흡수 확대",
+      "area": "earnings_versus_cash",
+      "what": "In the six months, receivables absorbed {terms.trailing_four_quarters.change_in_receivables.parts.this_year_to_date.value} against {terms.trailing_four_quarters.change_in_receivables.parts.prior_year_to_date.value} a year earlier, and the June balance is {earnings_versus_cash.working_capital.receivables.balance_sheet_change.value} above a year earlier. MD&A credits the change in operating cash flow to net income and working capital without naming receivables. The benign reading is that the first half is the company's seasonal peak for receivables and that acquisitions added balances.",
+      "numbers_vs_prose": "unresolved",
+      "evidence": ["revenue_recognition_receivables_cash_absorption", "revenue_recognition_receivables_balance_build", "liquidity_and_capital_operating_cash_flow_attribution_names_no_working_capital_line"],
+      "fields": ["terms.trailing_four_quarters.change_in_receivables.parts.this_year_to_date.value", "terms.trailing_four_quarters.change_in_receivables.parts.prior_year_to_date.value", "earnings_versus_cash.working_capital.receivables.balance_sheet_change.value"]
+    },
+    {
+      "id": "earnings_versus_cash_receivables_articulation_gap",
+      "name": "Receivables balance-sheet change exceeds the cash-flow statement's change",
+      "name_ko": "매출채권 대차대조표 변동과 현금흐름표 변동의 불일치",
+      "area": "earnings_versus_cash",
+      "what": "Receivables rose {earnings_versus_cash.working_capital.receivables.balance_sheet_change.value} over the year, more than the cash-flow statement's four-quarter change of {earnings_versus_cash.working_capital.receivables.cash_flow_statement_change.value}, leaving a gap of {earnings_versus_cash.working_capital.receivables.articulation_gap.value}. Acquired receivables, currency translation and the new share swap asset inside the receivables line would each produce a gap in this direction. Benson Pump's acquired receivables are not tabulated, so the gap cannot be fully assigned.",
+      "numbers_vs_prose": "unresolved",
+      "evidence": ["revenue_recognition_receivables_balance_build", "structure_and_disclosure_changes_wood_bros_acquisition", "structure_and_disclosure_changes_share_swap_asset_in_receivables", "estimates_and_discretion_benson_pump_allocation_not_tabulated"],
+      "fields": ["earnings_versus_cash.working_capital.receivables.balance_sheet_change.value", "earnings_versus_cash.working_capital.receivables.cash_flow_statement_change.value", "earnings_versus_cash.working_capital.receivables.articulation_gap.value"]
+    },
+    {
+      "id": "earnings_versus_cash_inventory_articulation_gap",
+      "name": "Inventory balance-sheet change exceeds the cash-flow statement's change",
+      "name_ko": "재고자산 대차대조표 변동과 현금흐름표 변동의 불일치",
+      "area": "earnings_versus_cash",
+      "what": "Inventory rose {earnings_versus_cash.working_capital.inventory.balance_sheet_change.value} over the year against a four-quarter cash-flow change of {earnings_versus_cash.working_capital.inventory.cash_flow_statement_change.value}, a gap of {earnings_versus_cash.working_capital.inventory.articulation_gap.value}. Wood Bros brought in inventory and currency translation would add more, but the record cannot assign the remainder.",
+      "numbers_vs_prose": "unresolved",
+      "evidence": ["earnings_quality_inventory_balance_build", "structure_and_disclosure_changes_wood_bros_acquisition"],
+      "fields": ["earnings_versus_cash.working_capital.inventory.balance_sheet_change.value", "earnings_versus_cash.working_capital.inventory.cash_flow_statement_change.value", "earnings_versus_cash.working_capital.inventory.articulation_gap.value"]
+    },
+    {
+      "id": "earnings_versus_cash_first_quarter_accruals_above_prior_year",
+      "name": "First-quarter accruals higher than a year earlier",
+      "name_ko": "첫 분기 발생액 비율의 전년 대비 상승",
+      "area": "earnings_versus_cash",
+      "what": "First-quarter accruals over total assets were {trend_table.quarters-back-1.ratios.accruals_over_total_assets.value}, above {trend_table.quarters-back-5.ratios.accruals_over_total_assets.value} a year earlier, on first-quarter operating cash flow of {ratios.growth.operating_cash_flow.quarter_over_quarter.inputs.before.value}. June-quarter operating cash flow of {ratios.growth.operating_cash_flow.this_quarter.value} reversed much of this. Only two first quarters are filled, which is too few for a trend claim.",
+      "numbers_vs_prose": "unresolved",
+      "evidence": ["earnings_quality_accruals_over_total_assets_quarterly", "liquidity_and_capital_operating_cash_flow"],
+      "fields": ["trend_table.quarters-back-1.ratios.accruals_over_total_assets.value", "trend_table.quarters-back-5.ratios.accruals_over_total_assets.value", "ratios.growth.operating_cash_flow.quarter_over_quarter.inputs.before.value", "ratios.growth.operating_cash_flow.this_quarter.value"]
+    },
+    {
+      "id": "earnings_versus_cash_pension_settlement_inside_fiscal_year_net_income",
+      "name": "Fiscal 2025 cash conversion lifted by a non-cash pension settlement loss",
+      "name_ko": "비현금성 연금 정산손실로 부풀려진 2025 회계연도 현금전환율",
+      "area": "earnings_versus_cash",
+      "what": "Net income fell from {earnings_versus_cash.history.years.1.net_income} to {earnings_versus_cash.history.years.0.net_income} while operating income rose from {earnings_versus_cash.history.years.1.operating_income} to {earnings_versus_cash.history.years.0.operating_income}. The numbers reader finds a pension settlement loss inside fiscal 2025 net income. That loss shrinks the denominator, so the fiscal 2025 cash-to-income ratio of {earnings_versus_cash.history.years.0.operating_cash_flow_over_net_income} flatters underlying conversion when set against {earnings_versus_cash.history.years.1.operating_cash_flow_over_net_income} in 2024.",
+      "numbers_vs_prose": "unresolved",
+      "evidence": ["earnings_quality_accruals_over_total_assets_annual"],
+      "fields": ["earnings_versus_cash.history.years.0.net_income", "earnings_versus_cash.history.years.1.net_income", "earnings_versus_cash.history.years.0.operating_income", "earnings_versus_cash.history.years.1.operating_income", "earnings_versus_cash.history.years.0.operating_cash_flow_over_net_income", "earnings_versus_cash.history.years.1.operating_cash_flow_over_net_income"]
+    },
+    {
+      "id": "earnings_versus_cash_liability_timing_supports_operating_cash_flow",
+      "name": "Payables and accrued liabilities carried part of the cash-flow improvement",
+      "name_ko": "매입채무·미지급비용이 떠받친 영업현금흐름 개선",
+      "area": "earnings_versus_cash",
+      "what": "The numbers reader's payables item shows payables and accrued liabilities supplying more cash in the six months than a year earlier. Inventory absorbed less: {terms.trailing_four_quarters.change_in_inventory.parts.this_year_to_date.value} against {terms.trailing_four_quarters.change_in_inventory.parts.prior_year_to_date.value}. The accrued side now includes the unpaid Esso accrual, which reverses when the court approves payment. Over the year, accounts payable moved by {earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change.value}, so this support is seasonal timing, not a lasting stretch.",
+      "numbers_vs_prose": "unresolved",
+      "evidence": ["liquidity_and_capital_accounts_payable_balance", "related_parties_contingencies_and_subsequent_events_esso_settlement_awaits_court_approval", "earnings_quality_inventory_balance_build", "liquidity_and_capital_operating_cash_flow_attribution_names_no_working_capital_line"],
+      "fields": ["terms.trailing_four_quarters.change_in_inventory.parts.this_year_to_date.value", "terms.trailing_four_quarters.change_in_inventory.parts.prior_year_to_date.value", "earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change.value"]
+    },
+    {
+      "id": "revenue_recognition_annual_days_sales_outstanding_rising",
+      "name": "Annual DSO up two years running, and June DSO cannot be computed",
+      "name_ko": "연간 매출채권회전일수 2년 연속 상승, 이번 분기 수치는 산출 불가",
+      "area": "revenue_recognition",
+      "what": "Annual DSO moved from {trend_table.years-back-2.ratios.days_sales_outstanding.value} to {trend_table.years-back-1.ratios.days_sales_outstanding.value} to {trend_table.years-back-0.ratios.days_sales_outstanding.value}, the second highest of five filled years. Annual receivables over revenue moved from {trend_table.years-back-1.ratios.receivables_over_revenue.value} to {trend_table.years-back-0.ratios.receivables_over_revenue.value}. June-quarter DSO is missing because revenue is reported at two precisions, so the receivables build at June cannot be set against the quarter's sales.",
+      "numbers_vs_prose": "unresolved",
+      "evidence": ["revenue_recognition_days_sales_outstanding_annual", "revenue_recognition_receivables_over_revenue_annual", "revenue_recognition_days_sales_outstanding_quarterly", "revenue_recognition_receivables_balance_build"],
+      "fields": ["trend_table.years-back-2.ratios.days_sales_outstanding.value", "trend_table.years-back-1.ratios.days_sales_outstanding.value", "trend_table.years-back-0.ratios.days_sales_outstanding.value", "trend_table.years-back-1.ratios.receivables_over_revenue.value", "trend_table.years-back-0.ratios.receivables_over_revenue.value"]
+    },
+    {
+      "id": "revenue_recognition_share_swap_asset_inside_receivables_line",
+      "name": "A share swap asset now sits inside reported receivables",
+      "name_ko": "보고된 매출채권에 포함된 주식스왑 자산",
+      "area": "revenue_recognition",
+      "what": "The note says the share swap asset is recorded within the receivables line, where no such row existed at December, and the swap produced a gain in SG&A in the quarter. Receivables of {terms.balances_now.receivables.value} therefore include a non-trade asset whose amount is not in the numbers. That blurs DSO and the allowance ratio against the company's own history.",
+      "numbers_vs_prose": "confirms",
+      "evidence": ["structure_and_disclosure_changes_share_swap_asset_in_receivables", "earnings_quality_equity_swap_gain_in_selling_expense", "revenue_recognition_receivables_balance_build"],
+      "fields": ["terms.balances_now.receivables.value"]
+    },
+    {
+      "id": "estimates_and_reserves_bad_debt_allowance_lowest_in_record",
+      "name": "Credit-loss allowance at its lowest ratio in the record while receivables rose",
+      "name_ko": "매출채권 증가 속 대손충당금 비율 사상 최저",
+      "area": "estimates_and_reserves",
+      "what": "The bad-debt reserve ratio is {trend_table.quarters-back-0.ratios.bad_debt_reserve_ratio.value|pct} at June, the lowest of six filled quarters. It was {trend_table.quarters-back-1.ratios.bad_debt_reserve_ratio.value|pct} at March, the highest, and {trend_table.quarters-back-4.ratios.bad_debt_reserve_ratio.value|pct} a year earlier. The allowance is {terms.balances_now.bad_debt_allowance.value} against {terms.balances_a_year_earlier.bad_debt_allowance.value}, and the fiscal 2025 ratio of {trend_table.years-back-0.ratios.bad_debt_reserve_ratio.value|pct} was the lowest of five years. The only related prose is the adoption of the credit-loss practical expedient, described as having no material impact. No cause for the fall is given, and the record cannot tell a release through income from write-offs.",
+      "numbers_vs_prose": "unresolved",
+      "evidence": ["estimates_and_discretion_doubtful_accounts_allowance", "estimates_and_discretion_bad_debt_reserve_ratio_quarterly", "estimates_and_discretion_bad_debt_reserve_ratio_annual", "estimates_and_discretion_credit_loss_practical_expedient_adopted"],
+      "fields": ["trend_table.quarters-back-0.ratios.bad_debt_reserve_ratio.value", "trend_table.quarters-back-1.ratios.bad_debt_reserve_ratio.value", "trend_table.quarters-back-4.ratios.bad_debt_reserve_ratio.value", "terms.balances_now.bad_debt_allowance.value", "terms.balances_a_year_earlier.bad_debt_allowance.value", "trend_table.years-back-0.ratios.bad_debt_reserve_ratio.value"]
+    },
+    {
+      "id": "estimates_and_reserves_warranty_reserve_thinning",
+      "name": "Warranty reserve thin against the company's history",
+      "name_ko": "과거 대비 얇아진 제품보증충당금",
+      "area": "estimates_and_reserves",
+      "what": "The fiscal 2025 warranty reserve ratio was {trend_table.years-back-0.ratios.warranty_reserve_ratio.value|pct}, the lowest of five years, down from {trend_table.years-back-4.ratios.warranty_reserve_ratio.value|pct} in 2021. The first-quarter ratio was {trend_table.quarters-back-1.ratios.warranty_reserve_ratio.value|pct} against {trend_table.quarters-back-5.ratios.warranty_reserve_ratio.value|pct}. The June accrual is {terms.balances_now.warranty_accrual.value} against {terms.balances_a_year_earlier.warranty_accrual.value} while sales grew, and in the six months payments exceeded new warranties issued.",
+      "numbers_vs_prose": "unresolved",
+      "evidence": ["estimates_and_discretion_warranty_reserve_ratio_annual", "estimates_and_discretion_warranty_reserve_ratio_quarterly", "estimates_and_discretion_warranty_accrual_balance"],
+      "fields": ["trend_table.years-back-0.ratios.warranty_reserve_ratio.value", "trend_table.years-back-4.ratios.warranty_reserve_ratio.value", "trend_table.quarters-back-1.ratios.warranty_reserve_ratio.value", "trend_table.quarters-back-5.ratios.warranty_reserve_ratio.value", "terms.balances_now.warranty_accrual.value", "terms.balances_a_year_earlier.warranty_accrual.value"]
+    },
+    {
+      "id": "estimates_and_reserves_esso_settlement_portion_and_removed_warning",
+      "name": "Esso accrual set at the company's portion, with the damages figure and the warning removed and court approval pending",
+      "name_ko": "에쏘 소송 합의금 충당: 회사 몫만 계상, 손해액·경고 문구 삭제, 법원 승인 대기",
+      "area": "estimates_and_reserves",
+      "what": "The company accrued its agreed portion of the Esso settlement. The first-quarter 10-Q tagged the total damages sought in this case in euros. The June note drops that figure, the statement that the outcome could not be predicted, and the warning that payments could be material. The agreement is preliminary and awaits court approval, and the case is still tagged as pending. The note does not say whether any part of the remaining claim stays with the company.",
+      "numbers_vs_prose": "unresolved",
+      "evidence": ["related_parties_contingencies_and_subsequent_events_esso_preliminary_settlement_accrued", "related_parties_contingencies_and_subsequent_events_esso_expert_damages_and_warning_removed", "related_parties_contingencies_and_subsequent_events_esso_settlement_awaits_court_approval", "related_parties_contingencies_and_subsequent_events_esso_damages_sought", "related_parties_contingencies_and_subsequent_events_esso_loss_contingency_recognized"],
+      "fields": []
+    },
+    {
+      "id": "estimates_and_reserves_open_acquisition_accounting_and_colombia_goodwill",
+      "name": "Preliminary acquisition accounting on level-three inputs, and an unexplained goodwill movement",
+      "name_ko": "3단계 투입변수에 의존한 잠정 인수회계와 설명 없는 영업권 변동",
+      "area": "estimates_and_reserves",
+      "what": "Wood Bros intangibles rest on level-three income-approach valuations, and the allocation is preliminary. Benson Pump's allocation is not tabulated, and for a distributor it names 'potential future technologies' as an element of goodwill. Barnes de Colombia goodwill printed lower at March than at December, while the six months' recorded purchase-accounting adjustments were positive; neither report explains the movement. Four-quarter acquisition spending is {terms.cash_flow_families.acquisitions.value}.",
+      "numbers_vs_prose": "unresolved",
+      "evidence": ["estimates_and_discretion_wood_brothers_preliminary_valuation", "estimates_and_discretion_wood_brothers_intangible_lives_and_level_three_inputs", "estimates_and_discretion_benson_pump_allocation_not_tabulated", "estimates_and_discretion_purchase_accounting_goodwill_adjustment", "structure_and_disclosure_changes_goodwill_balance"],
+      "fields": ["terms.cash_flow_families.acquisitions.value"]
+    },
+    {
+      "id": "estimates_and_reserves_effective_tax_rate_up_on_unidentified_discrete_items",
+      "name": "Effective tax rate up on discrete events the company does not identify",
+      "name_ko": "밝혀지지 않은 일회성 항목에 따른 유효세율 상승",
+      "area": "estimates_and_reserves",
+      "what": "The effective tax rate rose in the quarter and the six months, and the note puts this down to unfavourable discrete events it does not identify. Because this lowers income, it is not an income-raising estimate, but the items go unexplained. The four-quarter effective rate is {tax_rate.effective_rate|pct}.",
+      "numbers_vs_prose": "confirms",
+      "evidence": ["earnings_quality_effective_tax_rate", "earnings_quality_unfavorable_discrete_tax_events_not_described"],
+      "fields": ["tax_rate.effective_rate"]
+    },
+    {
+      "id": "cost_deferral_restructuring_recurs",
+      "name": "Restructuring excluded from adjusted results keeps recurring",
+      "name_ko": "조정 실적에서 제외되지만 반복되는 구조조정 비용",
+      "area": "cost_deferral",
+      "what": "Six-month restructuring is far above a year earlier and sits in Water Systems. The 10-K had flagged expected restructuring cost as a subsequent event, MD&A repeats 'continued manufacturing realignment', and the release again leaves restructuring out of adjusted EPS. A charge that shows up every period is part of the cost of running the business.",
+      "numbers_vs_prose": "confirms",
+      "evidence": ["earnings_quality_restructuring_charges"],
+      "fields": []
+    },
+    {
+      "id": "cost_deferral_adjusted_earnings_keep_tariff_refunds_and_swap_gain",
+      "name": "Adjusted earnings remove charges but keep a tariff refund and a swap gain",
+      "name_ko": "비용은 빼고 관세 환급과 스왑 이익은 남긴 조정 이익",
+      "area": "cost_deferral",
+      "what": "The release adds back the settlement and restructuring, but two benefits stay in. One is the tariff refunds that MD&A says lifted the quarter's gross margin, with no amount disclosed. The other is the gain on the non-designated equity swap recorded in SG&A, which was a loss a year earlier and in the first quarter. The non-GAAP gap itself is not in the trend table.",
+      "numbers_vs_prose": "unresolved",
+      "evidence": ["earnings_quality_tariff_refunds_lift_gross_margin", "earnings_quality_equity_swap_gain_in_selling_expense", "earnings_quality_adjusted_eps_settlement_add_back_gross_of_tax", "results_against_expectations_non_gaap_gap_quarterly"],
+      "fields": []
+    },
+    {
+      "id": "cost_deferral_settlement_add_back_tax_label",
+      "name": "Settlement add-back labelled gross of tax",
+      "name_ko": "세전 금액으로 표시된 합의금 가산 조정",
+      "area": "cost_deferral",
+      "what": "The adjusted EPS reconciliation labels the settlement row 'gross of tax', while the restructuring row carries no tax label. The computed numbers cannot show whether the per-share amount removed is before or after tax. If it is gross, the tax effect lifts adjusted EPS as well.",
+      "numbers_vs_prose": "unresolved",
+      "evidence": ["earnings_quality_adjusted_eps_settlement_add_back_gross_of_tax", "across_documents_legal_settlement_against_pending_litigation_tag"],
+      "fields": []
+    },
+    {
+      "id": "cost_deferral_soft_asset_share_rising_with_acquisitions",
+      "name": "Soft-asset share up from its low, driven by acquisitions",
+      "name_ko": "인수로 인한 무형·연성자산 비중 상승",
+      "area": "cost_deferral",
+      "what": "Soft-asset share rose from {trend_table.years-back-1.ratios.soft_asset_share.value|pct} in fiscal 2024, the lowest of five years, to {trend_table.years-back-0.ratios.soft_asset_share.value|pct} in fiscal 2025. The first-quarter share was {trend_table.quarters-back-1.ratios.soft_asset_share.value|pct} against {trend_table.quarters-back-5.ratios.soft_asset_share.value|pct}. The movement follows goodwill and intangibles from acquisitions, not capitalized internal cost.",
+      "numbers_vs_prose": "confirms",
+      "evidence": ["earnings_quality_soft_asset_share_annual", "earnings_quality_soft_asset_share_quarterly", "structure_and_disclosure_changes_goodwill_balance"],
+      "fields": ["trend_table.years-back-1.ratios.soft_asset_share.value", "trend_table.years-back-0.ratios.soft_asset_share.value", "trend_table.quarters-back-1.ratios.soft_asset_share.value", "trend_table.quarters-back-5.ratios.soft_asset_share.value"]
+    },
+    {
+      "id": "cash_flow_engineering_and_off_balance_sheet_borrowing_absent_from_financing_prose",
+      "name": "MD&A credits lower repurchases and leaves out revolver borrowing",
+      "name_ko": "자사주 매입 감소만 언급하고 리볼버 차입은 빠진 MD&A",
+      "area": "cash_flow_engineering_and_off_balance_sheet",
+      "what": "As MD&A says, repurchases fell, from {terms.trailing_four_quarters.share_repurchases.parts.prior_year_to_date.value} to {terms.trailing_four_quarters.share_repurchases.parts.this_year_to_date.value}. What the prose leaves out is the rise in revolver borrowing, the move of debt into current maturities and the drop in remaining capacity, all of which the numbers show.",
+      "numbers_vs_prose": "confirms",
+      "evidence": ["liquidity_and_capital_mdna_credits_lower_share_repurchases", "liquidity_and_capital_share_repurchases", "liquidity_and_capital_revolver_borrowing", "liquidity_and_capital_revolver_remaining_capacity", "liquidity_and_capital_current_debt"],
+      "fields": ["terms.trailing_four_quarters.share_repurchases.parts.prior_year_to_date.value", "terms.trailing_four_quarters.share_repurchases.parts.this_year_to_date.value"]
+    },
+    {
+      "id": "cash_flow_engineering_and_off_balance_sheet_computed_net_borrowing_omits_repayments",
+      "name": "Computed free cash flow to equity counts gross debt issuance as net",
+      "name_ko": "총 차입액을 순차입으로 계산한 주주잉여현금흐름",
+      "area": "cash_flow_engineering_and_off_balance_sheet",
+      "what": "The company tags repayments under a combined debt-and-lease concept, so the calculator found no repayment line. Free cash flow to equity of {free_cash_flow.free_cash_flow_to_equity.value} therefore adds gross issuance of {free_cash_flow.free_cash_flow_to_equity.net_borrowing}. The numbers reader's revolver item prints six-month repayments next to six-month proceeds of {terms.cash_flow_families.borrowing_issued.parts.this_year_to_date.value}. The computed figure is overstated and should not be used.",
+      "numbers_vs_prose": "contradicts",
+      "evidence": ["liquidity_and_capital_revolver_borrowing"],
+      "fields": ["free_cash_flow.free_cash_flow_to_equity.value", "free_cash_flow.free_cash_flow_to_equity.net_borrowing", "terms.cash_flow_families.borrowing_issued.parts.this_year_to_date.value"]
+    },
+    {
+      "id": "cash_flow_engineering_and_off_balance_sheet_noncontrolling_interest_dividend_new",
+      "name": "First dividend to a noncontrolling interest",
+      "name_ko": "처음 나타난 비지배지분 배당",
+      "area": "cash_flow_engineering_and_off_balance_sheet",
+      "what": "A dividend to a noncontrolling interest appears in the equity roll-forward for the first time. The numbers carry no fact for it, and its cash-flow line is not shown. It points to a partly owned subsidiary whose cash leaves the group.",
+      "numbers_vs_prose": "unresolved",
+      "evidence": ["structure_and_disclosure_changes_dividend_to_noncontrolling_interest"],
+      "fields": []
+    },
+    {
+      "id": "cash_flow_engineering_and_off_balance_sheet_currency_forward_notional_zero",
+      "name": "No currency forwards outstanding at June",
+      "name_ko": "유월 말 통화선도 잔액 없음",
+      "area": "cash_flow_engineering_and_off_balance_sheet",
+      "what": "Non-designated currency forwards gained less in the quarter than a year earlier, and their notional at June is zero, while currency transaction losses continue. Neither report explains why the forward position ended.",
+      "numbers_vs_prose": "unresolved",
+      "evidence": ["earnings_quality_foreign_exchange_loss"],
+      "fields": []
+    },
+    {
+      "id": "controls_audit_and_filing_signals_facts_tagged_at_two_precisions",
+      "name": "Headline facts tagged at two precisions",
+      "name_ko": "주요 수치의 이중 정밀도 태그",
+      "area": "controls_audit_and_filing_signals",
+      "what": "The 10-Q reports revenue, net income, total assets, current debt, interest expense and depreciation for the same period at two precisions. As a result, the calculator could not produce the trailing cash-to-income ratio, accruals, DSO, gross margin or total debt. The numbers reader found the differences to be rounding only, not a restatement.",
+      "numbers_vs_prose": "unresolved",
+      "evidence": ["revenue_recognition_net_sales_reported", "liquidity_and_capital_current_debt"],
+      "fields": []
+    },
+    {
+      "id": "controls_audit_and_filing_signals_mdna_drafting_slip",
+      "name": "Drafting slip in MD&A sales attribution",
+      "name_ko": "MD&A 매출 증감 설명의 문안 오류",
+      "area": "controls_audit_and_filing_signals",
+      "what": "MD&A's sales attribution for the quarter reads 'second quarter three months'. The attribution itself agrees with the release's sales bridge.",
+      "numbers_vs_prose": "confirms",
+      "evidence": ["results_against_expectations_acquisitions_lead_sales_growth_attribution", "revenue_recognition_net_sales_reported"],
+      "fields": []
+    },
+    {
+      "id": "cross_document_reconciliation_adjusted_eps_printed_two_ways",
+      "name": "Adjusted diluted EPS printed two ways in the release",
+      "name_ko": "실적 발표문 내 조정 희석 EPS의 두 가지 표기",
+      "area": "cross_document_reconciliation",
+      "what": "The release's highlight prints adjusted diluted EPS with an extra trailing digit, while its body and reconciliation table print the rounded figure. The notes reader reads the extra digit as the footnote marker. GAAP diluted EPS agrees between the release and the 10-Q.",
+      "numbers_vs_prose": "unresolved",
+      "evidence": ["across_documents_adjusted_eps_printed_two_ways", "results_against_expectations_diluted_eps_reported"],
+      "fields": []
+    },
+    {
+      "id": "cross_document_reconciliation_settlement_wording_against_pending_tag",
+      "name": "Release calls the Esso charge a settlement; the 10-Q tags pending litigation",
+      "name_ko": "발표문은 합의, 10-Q 태그는 계류 중인 소송",
+      "area": "cross_document_reconciliation",
+      "what": "The release calls the Esso charge a legal settlement expense and leaves it out of adjusted results. The 10-Q tags the case as pending litigation, and its note describes a preliminary agreement subject to finalization and court approval. The amounts agree, but the status is not final until the court rules.",
+      "numbers_vs_prose": "unresolved",
+      "evidence": ["across_documents_legal_settlement_against_pending_litigation_tag", "related_parties_contingencies_and_subsequent_events_esso_settlement_awaits_court_approval", "related_parties_contingencies_and_subsequent_events_esso_loss_contingency_recognized"],
+      "fields": []
+    },
+    {
+      "id": "cross_document_reconciliation_tariff_refunds_absent_from_release",
+      "name": "Tariff refunds credited in MD&A but absent from the release",
+      "name_ko": "MD&A에는 있고 발표문에는 없는 관세 환급",
+      "area": "cross_document_reconciliation",
+      "what": "MD&A says tariff refunds lifted the quarter's gross margin and Water Systems operating income. The release does not mention them; the CEO speaks of inflationary pressure instead. The first-quarter gross margin was {trend_table.quarters-back-1.ratios.gross_margin.value|pct}, the lowest of the filled quarters, against {trend_table.quarters-back-5.ratios.gross_margin.value|pct} a year earlier. The June-quarter margin is not computed and no refund amount is tagged, so it is unknown how much of the quarter's margin came from refunds that will not repeat.",
+      "numbers_vs_prose": "unresolved",
+      "evidence": ["across_documents_tariff_refunds_in_mdna_absent_from_release", "earnings_quality_tariff_refunds_lift_gross_margin", "earnings_quality_gross_margin_quarterly", "narrative_signs_of_operating_pressure_sourced_materials_logistics_inflation"],
+      "fields": ["trend_table.quarters-back-1.ratios.gross_margin.value", "trend_table.quarters-back-5.ratios.gross_margin.value"]
+    },
+    {
+      "id": "cross_document_reconciliation_organic_volume_claim_against_drivers",
+      "name": "CEO's organic-volume claim against MD&A's drivers",
+      "name_ko": "CEO의 유기적 물량 성장 주장과 MD&A 설명의 차이",
+      "area": "cross_document_reconciliation",
+      "what": "The CEO credits organic volume initiatives and calls growth balanced between organic and inorganic. MD&A names price, currency and acquisitions as the Water Systems drivers for the quarter, lists acquisitions first for the company as a whole, and says growth in Asia Pacific was more than offset by declines in Latin America and Europe. The release's bridge combines volume with price, so organic volume cannot be isolated.",
+      "numbers_vs_prose": "unresolved",
+      "evidence": ["across_documents_organic_volume_claim_against_water_systems_drivers", "narrative_signs_of_operating_pressure_water_systems_drivers_omit_volume", "results_against_expectations_acquisitions_lead_sales_growth_attribution", "revenue_recognition_net_sales_reported"],
+      "fields": []
+    },
+    {
+      "id": "cross_document_reconciliation_dewatering_demand_against_decline",
+      "name": "CEO's dewatering demand against MD&A's dewatering decline",
+      "name_ko": "CEO의 탈수 수요 언급과 MD&A의 탈수장비 매출 감소",
+      "area": "cross_document_reconciliation",
+      "what": "The CEO cites solid demand in dewatering for mining, while MD&A reports lower U.S. and Canada sales of large dewatering equipment in both the quarter and the six months. Neither document reconciles the two, and no product-line figure is tagged.",
+      "numbers_vs_prose": "unresolved",
+      "evidence": ["across_documents_dewatering_demand_claim_against_mdna_decline", "narrative_signs_of_operating_pressure_large_dewatering_equipment_decline"],
+      "fields": []
+    },
+    {
+      "id": "cross_document_reconciliation_currency_row_holds_hyperinflation_pricing",
+      "name": "Currency row in the sales bridge holds hyperinflation price increases",
+      "name_ko": "환율 항목에 포함된 초인플레이션 국가 가격 인상",
+      "area": "cross_document_reconciliation",
+      "what": "A footnote in the release says price increases in Argentina and Turkey are shown in the currency row, while MD&A calls the international currency contribution a favourable exchange-rate impact. Regional trends excluding currency therefore leave that pricing out, and the volume-and-price row understates price.",
+      "numbers_vs_prose": "unresolved",
+      "evidence": ["across_documents_currency_row_includes_hyperinflation_price_increases", "narrative_signs_of_operating_pressure_latin_america_and_europe_organic_declines"],
+      "fields": []
+    },
+    {
+      "id": "cross_document_reconciliation_interest_expense_driver_omits_rate",
+      "name": "Interest expense put down to higher average debt; the higher revolver rate goes unnamed",
+      "name_ko": "이자비용 증가를 평균 차입 증가로만 설명, 금리 상승은 미언급",
+      "area": "cross_document_reconciliation",
+      "what": "MD&A attributes higher interest expense to higher average debt. The numbers show revolver borrowing up since December and a revolver rate above 2025, which MD&A does not name. Average debt is not computed and total debt now is not in the calculator, so the claim cannot be tested against the year-earlier period-end debt of {terms.debt_a_year_earlier.value}.",
+      "numbers_vs_prose": "unresolved",
+      "evidence": ["liquidity_and_capital_interest_expense_attributed_to_higher_average_debt", "liquidity_and_capital_interest_expense", "liquidity_and_capital_revolver_borrowing", "liquidity_and_capital_current_debt"],
+      "fields": ["terms.debt_a_year_earlier.value"]
+    },
+    {
+      "id": "cross_document_reconciliation_wood_bros_wholesale_in_water_systems",
+      "name": "Wholesale acquisition placed in the manufacturing segment",
+      "name_ko": "도매업체 인수를 제조 부문에 편입",
+      "area": "cross_document_reconciliation",
+      "what": "The note describes Wood Bros as a wholesale supplier to water-treatment dealers, yet, as the goodwill rollforward confirms, its goodwill sits in Water Systems rather than Distribution. MD&A's U.S. and Canada water-treatment growth does not say whether it includes the acquired sales.",
+      "numbers_vs_prose": "confirms",
+      "evidence": ["structure_and_disclosure_changes_wood_brothers_wholesale_business_in_water_systems", "structure_and_disclosure_changes_goodwill_balance"],
+      "fields": []
+    },
+    {
+      "id": "industry_lens_annual_inventory_days_up_with_reserve_untagged",
+      "name": "Annual inventory days up, with the inventory reserve untagged",
+      "name_ko": "연간 재고일수 상승, 재고충당금 정보 없음",
+      "area": "industry_lens",
+      "what": "Annual DSI for fiscal 2025 rose to {trend_table.years-back-0.ratios.days_sales_of_inventory.value} from {trend_table.years-back-1.ratios.days_sales_of_inventory.value}. The inventory reserve and write-downs are untagged, so the reserve cannot be tested against the build. June-quarter DSI of {trend_table.quarters-back-0.ratios.days_sales_of_inventory.value} is the lowest of six filled quarters, which points the other way.",
+      "numbers_vs_prose": "unresolved",
+      "evidence": ["earnings_quality_days_sales_of_inventory_annual", "earnings_quality_days_sales_of_inventory_quarterly", "estimates_and_discretion_inventory_reserve_ratio_annual", "earnings_quality_inventory_balance_build"],
+      "fields": ["trend_table.years-back-0.ratios.days_sales_of_inventory.value", "trend_table.years-back-1.ratios.days_sales_of_inventory.value", "trend_table.quarters-back-0.ratios.days_sales_of_inventory.value"]
+    }
+  ],
+  "adjustments": [],
+  "summary_ko": {
+    "earnings_versus_cash": "회사 자체의 연간 이력을 보면 2025 회계연도 영업현금흐름 대 순이익 비율이 {earnings_versus_cash.history.years.0.operating_cash_flow_over_net_income}로 이익이 현금으로 뒷받침되고, 이번 분기 영업현금흐름도 {ratios.growth.operating_cash_flow.this_quarter.value}로 전년 동기 {ratios.growth.operating_cash_flow.year_over_year.inputs.before.value}보다 많았습니다. 다만 상반기 매출채권이 흡수한 현금이 {terms.trailing_four_quarters.change_in_receivables.parts.this_year_to_date.value}로 전년 {terms.trailing_four_quarters.change_in_receivables.parts.prior_year_to_date.value}보다 컸고, 대차대조표와 현금흐름표의 매출채권 변동 사이에는 {earnings_versus_cash.working_capital.receivables.articulation_gap.value}의 차이가 남아 있습니다.",
+    "revenue_recognition": "이번 분기 매출이 두 가지 정밀도로 보고되는 바람에 이번 분기 매출채권회전일수(DSO)는 계산되지 않았습니다. 연간 DSO는 {trend_table.years-back-1.ratios.days_sales_outstanding.value}일에서 2025 회계연도 {trend_table.years-back-0.ratios.days_sales_outstanding.value}일로 올라 다섯 해 가운데 두 번째로 높으며, 수익인식 정책 변경이나 결제조건 연장, 미인도청구 판매에 대한 언급은 없습니다.",
+    "estimates_and_reserves": "대손충당금 비율이 이번 분기 말 {trend_table.quarters-back-0.ratios.bad_debt_reserve_ratio.value|pct}로 기록상 가장 낮아졌습니다. 직전 분기 {trend_table.quarters-back-1.ratios.bad_debt_reserve_ratio.value|pct}에서 급감하는 동안 매출채권은 늘었는데 회사는 이유를 설명하지 않으며, 제품보증충당금 비율도 2025 회계연도 {trend_table.years-back-0.ratios.warranty_reserve_ratio.value|pct}로 다섯 해 중 가장 낮습니다.",
+    "cost_deferral": "소프트웨어 자본화처럼 비용을 이연했는지 시험할 수치는 없으며, 연성자산 비중이 오른 것은 인수({terms.cash_flow_families.acquisitions.value}) 때문입니다. 조정 EPS는 소송 합의금과 구조조정 비용을 빼면서도 금액이 공개되지 않은 관세 환급과 판관비에 잡힌 주식스왑 이익은 그대로 두어 비대칭적으로 구성되어 있습니다.",
+    "cash_flow_engineering_and_off_balance_sheet": "공시에도 태그에도 매출채권 매각(팩토링)이나 공급망 금융의 흔적은 없으며, 매입채무의 전년 대비 변동도 {earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change.value}에 그칩니다. 다만 계산기가 산출한 주주잉여현금흐름 {free_cash_flow.free_cash_flow_to_equity.value}는 차입금 상환액을 빼지 못해 과대계상되었으므로 사용해서는 안 됩니다.",
+    "controls_audit_and_filing_signals": "통제 항목은 공시통제가 유효하고 내부통제에 변화가 없다고 밝히며, 감사인 교체나 재작성, 지연 제출의 신호는 없습니다. 다만 감사보고서와 여러 첨부서류가 입력에 없어 점검 범위가 제한되고, 주요 수치가 두 가지 정밀도로 태그되어 핵심 비율을 계산하지 못했습니다.",
+    "cross_document_reconciliation": "주석과 경영진 설명 가운데 수치와 모순되는 항목은 없으며, 인수, 소송 합의, 세율, 자사주 매입에 관한 설명은 수치로 확인됩니다. 실적 발표문과 10-Q의 GAAP 수치는 일치하지만, 발표문은 MD&A가 언급한 관세 환급을 다루지 않고 유기적 물량 성장을 강조해 둘의 강조점이 다릅니다.",
+    "industry_lens": "재고충당금이 태그되지 않아 재고 진부화는 측정할 수 없지만, 이번 분기 재고일수는 {trend_table.quarters-back-0.ratios.days_sales_of_inventory.value}일로 여섯 분기 가운데 가장 낮습니다. 고객 집중 정보는 없고 구매약정은 소규모 구리 계약뿐이며, 채널 밀어내기는 이번 분기 DSO가 없어 확인할 수도 배제할 수도 없습니다."
+  },
+  "limits": "This analysis finds where the numbers and the explanations disagree, and where the company differs from its own past. It does not judge intent, and it cannot see evidence outside the filings, such as invoices or contracts."
+}

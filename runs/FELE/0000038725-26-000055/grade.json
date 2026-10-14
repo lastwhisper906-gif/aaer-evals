@@ -1,0 +1,397 @@
+{
+ "run": "FELE/0000038725-26-000055",
+ "rubric": "evals/capability/rubric.md",
+ "dealbreakers": [
+  {
+   "kind": "number_not_from_calculator",
+   "id": "cash_flow_engineering_and_off_balance_sheet_currency_forward_notional_zero",
+   "where": "analysis_accounting.json anomalies[18].what",
+   "why": "'their notional at June is zero' states a value in the analyst's own words that no calculator path supplies; the calculator carries no derivative-notional field."
+  },
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "cross_document_reconciliation_adjusted_eps_printed_two_ways",
+   "where": "analysis_accounting.json anomalies[21].numbers_vs_prose",
+   "why": "8k_2_02:12-13 define the '1' after the figure as footnote marker '1 – Adjusted diluted EPS is a non-GAAP measure' and 8k_2_02:49 prints '$1.55'. The analyst cites this reading but still labels the item unresolved."
+  },
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "cross_document_reconciliation_settlement_wording_against_pending_tag",
+   "where": "analysis_accounting.json anomalies[22].numbers_vs_prose",
+   "why": "notes:52 settles the apparent clash: a 'preliminary agreement' that is 'subject to finalization between the parties and approval by the Court' is both a settlement charge and pending litigation. The analyst says the amounts agree but still labels the item unresolved."
+  }
+ ],
+ "items": [
+  {
+   "id": "earnings_versus_cash_receivables_absorption_above_prior_year",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.trailing_four_quarters.change_in_receivables.parts.this_year_to_date/prior_year_to_date and earnings_versus_cash.working_capital.receivables.balance_sheet_change match the IncreaseDecreaseInAccountsReceivable and AccountsReceivableNetCurrent facts. mdna:68 names no working-capital line. Quarters-back-3 DSO below quarters-back-1/-5 supports the seasonal reading."
+  },
+  {
+   "id": "earnings_versus_cash_receivables_articulation_gap",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.working_capital.receivables.balance_sheet_change, cash_flow_statement_change and articulation_gap resolve as written. notes:14 (acquired receivables) and notes:83 (swap asset 'recorded within the \"Receivables\" line') explain the gap's direction, and the item says it cannot be fully assigned."
+  },
+  {
+   "id": "earnings_versus_cash_inventory_articulation_gap",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.working_capital.inventory paths resolve. notes:14 shows Wood Bros inventories acquired, and the item leaves the remainder unassigned."
+  },
+  {
+   "id": "earnings_versus_cash_first_quarter_accruals_above_prior_year",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "trend_table.quarters-back-1 and -5 accruals_over_total_assets resolve ('highest of the 2 filled quarters'). ratios.growth.operating_cash_flow.quarter_over_quarter.inputs.before and this_quarter match the Q1 and six-month operating cash flow facts."
+  },
+  {
+   "id": "earnings_versus_cash_pension_settlement_inside_fiscal_year_net_income",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "input_numbers fact 0000038725-26-000009:facts:DefinedBenefitPlanRecognizedNetGainLossDueToSettlementsAndCurtailments1:2025-01-01..2025-12-31 sits among the 10-K's non-cash reconciling items. earnings_versus_cash.history.years.0/1 net_income, operating_income and operating_cash_flow_over_net_income move as described."
+  },
+  {
+   "id": "earnings_versus_cash_liability_timing_supports_operating_cash_flow",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The liquidity_and_capital_accounts_payable_balance item prints a payables-and-accrued change above a year earlier. terms.trailing_four_quarters.change_in_inventory parts and earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change resolve. notes:39 and notes:52 show the unpaid Esso accrual."
+  },
+  {
+   "id": "revenue_recognition_share_swap_asset_inside_receivables_line",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:83 says verbatim that the swap asset sits in Receivables, and notes:82 has no such row at December. The swap row in notes:82 is small next to terms.balances_now.receivables, so the claimed blurring of DSO is slight."
+  },
+  {
+   "id": "estimates_and_reserves_bad_debt_allowance_lowest_in_record",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "trend_table.quarters-back-0.ratios.bad_debt_reserve_ratio is 'lowest of the 6 filled quarters', quarters-back-1 is 'highest of the 6 filled quarters' and years-back-0 is 'lowest of the 5 filled years'. terms.balances_now.bad_debt_allowance falls against balances_a_year_earlier while receivables rise. notes:3 is the only related prose."
+  },
+  {
+   "id": "estimates_and_reserves_warranty_reserve_thinning",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "years-back-0 warranty_reserve_ratio is 'lowest of the 5 filled years' against years-back-4, quarters-back-1 is below quarters-back-5, and the warranty_accrual paths resolve. notes:56 shows payments above new accruals for the six months."
+  },
+  {
+   "id": "estimates_and_reserves_esso_settlement_portion_and_removed_warning",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:52 accrues for 'the Company's portion of the litigation' subject to court approval. The removed note_history:5 held the expert damages figure, 'cannot predict' and 'material effect' language. The pending tag comes from the numbers reader's LossContingencyLossInPeriod item."
+  },
+  {
+   "id": "estimates_and_reserves_effective_tax_rate_up_on_unidentified_discrete_items",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:68 puts the rise down to 'increased unfavorable discrete events in 2026' and does not identify them. tax_rate.effective_rate resolves."
+  },
+  {
+   "id": "cost_deferral_restructuring_recurs",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The earnings_quality_restructuring_charges item shows six-month charges far above a year earlier, mostly in Water Systems. mdna:31 repeats 'continued manufacturing realignment activities', and 8k_2_02:49 takes restructuring out of adjusted EPS."
+  },
+  {
+   "id": "cost_deferral_adjusted_earnings_keep_tariff_refunds_and_swap_gain",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "medium",
+   "why": "The tariff half holds: mdna:25 and mdna:37 credit refunds that the release omits. But notes:74 says swap gains and losses 'were largely offset by gains and losses on the fair value of the deferred compensation stock liability' within SG&A, so the swap gain is not clearly a retained benefit."
+  },
+  {
+   "id": "cost_deferral_settlement_add_back_tax_label",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:49 labels only the settlement row 'gross of tax'. trend_table non_gaap_gap is missing in every period, so the calculator cannot test the label, as the item says."
+  },
+  {
+   "id": "cost_deferral_soft_asset_share_rising_with_acquisitions",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "low",
+   "why": "The soft_asset_share paths resolve (years-back-1 is 'lowest of the 5 filled years'). But the cited items do not show that the annual rise came from acquired goodwill rather than from the lower cash balance between the two year-ends, which also lifts the ratio."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_borrowing_absent_from_financing_prose",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:74 credits only lower repurchases. The repurchase parts resolve, and the revolver, current-debt and capacity items show the increases the prose omits. However, 8k_2_02:42's 'Net change in debt' is below a year earlier, so the omission does not misstate the financing change."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_computed_net_borrowing_omits_repayments",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "free_cash_flow.free_cash_flow_to_equity.net_borrowing equals terms.cash_flow_families.borrowing_issued, while borrowing_repaid is 'no line on record'. The revolver item prints RepaymentsOfDebtAndCapitalLeaseObligations and 8k_2_02:42 prints 'Net change in debt', so the computed figure is overstated."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_noncontrolling_interest_dividend_new",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:58 and notes:59 add a 'Dividend to noncontrolling interest' row with no prior-year counterpart. 8k_2_02:42 shows no separate cash-flow line for it."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_currency_forward_notional_zero",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "low",
+   "why": "The gain and transaction-loss comparison holds (earnings_quality_foreign_exchange_loss). But notes:75 says 'As of June 30, 2026 and December 31, 2025, the Company had no foreign currency contracts outstanding', so no position newly ended. Also struck by a dealbreaker."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_facts_tagged_at_two_precisions",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "calculator.json missing[] shows each named fact as 'reported as' two values by the same filing. The numbers reader calls the differences rounding only."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_mdna_drafting_slip",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:10 reads 'second quarter three months'. Its acquisition, price-and-volume and currency shares match the % Change rows of 8k_2_02:44."
+  },
+  {
+   "id": "cross_document_reconciliation_adjusted_eps_printed_two_ways",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:10 prints '$1.551' and 8k_2_02:49 prints '$1.55', as stated. The inputs settle the difference as a footnote marker, so a dealbreaker zeroes the item."
+  },
+  {
+   "id": "cross_document_reconciliation_settlement_wording_against_pending_tag",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:19, the pending tag and notes:52 are each described accurately. notes:52 reconciles them, so a dealbreaker zeroes the item."
+  },
+  {
+   "id": "cross_document_reconciliation_tariff_refunds_absent_from_release",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:25 and mdna:37 credit tariff refunds, and 8k_2_02:14, :15 and :17 never mention them. trend_table.quarters-back-1.ratios.gross_margin is 'lowest of the 4 filled quarters'."
+  },
+  {
+   "id": "cross_document_reconciliation_organic_volume_claim_against_drivers",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The CEO's claim at 8k_2_02:14 sits against mdna:14 (no Water Systems volume driver), mdna:10 (acquisitions first) and the combined Volume/Price row in 8k_2_02:44, which keeps volume unresolved."
+  },
+  {
+   "id": "cross_document_reconciliation_dewatering_demand_against_decline",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:14 has 'solid demand in areas such as dewatering for mining', against mdna:15's lower large-dewatering sales. Neither document reconciles them."
+  },
+  {
+   "id": "cross_document_reconciliation_currency_row_holds_hyperinflation_pricing",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The 8k_2_02:45 footnote puts Argentina and Turkey price increases in the currency row, while mdna:15 calls that contribution favorable foreign exchange."
+  },
+  {
+   "id": "cross_document_reconciliation_wood_bros_wholesale_in_water_systems",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:11 says 'water treatment wholesale supplier' and notes:16 says 'is included in the Water Systems segment'. The notes:37 rollforward places its goodwill in Water Systems."
+  },
+  {
+   "id": "industry_lens_annual_inventory_days_up_with_reserve_untagged",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "years-back-0 and years-back-1 days_sales_of_inventory resolve, and quarters-back-0 is 'lowest of the 6 filled quarters', as stated. The inventory reserve is missing in every calculator period."
+  },
+  {
+   "id": "results_against_expectations_sales_growth_led_by_acquisitions",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:10 lists acquisitions first for the quarter and volume and price first for the six months, and mdna:14 names no Water Systems volume driver. terms.cash_flow_families.acquisitions and history.revenue_growth_three_year_compound resolve."
+  },
+  {
+   "id": "results_against_expectations_energy_systems_income_below_prior_year",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:19 and mdna:39 show segment income down on higher sales and name the settlement as the cause. ratios.growth.operating_income.year_over_year resolves."
+  },
+  {
+   "id": "results_against_expectations_adjusted_eps_keeps_one_time_benefits",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:49 adds back only the settlement and restructuring, while mdna:25 and mdna:37 credit refunds the release omits. The 'two different ways' clause is the footnote marker that 8k_2_02:12-13 settles, a minor overstatement."
+  },
+  {
+   "id": "results_against_expectations_operating_income_helped_by_equity_swap_swing",
+   "frame": "finance",
+   "verdict": "unsupported",
+   "severity": "medium",
+   "why": "notes:74 says swap gains and losses 'were largely offset by gains and losses on the fair value of the deferred compensation stock liability', with both recorded in SG&A. So the swing does not itself account for the growth in ratios.growth.operating_income.year_over_year."
+  },
+  {
+   "id": "liquidity_and_capital_quick_ratio_below_one",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.liquidity.quick_ratio and current_ratio resolve from terms.balances_now inputs, and cash is below terms.balances_a_year_earlier.cash. The calculator holds no quick-ratio history, as stated."
+  },
+  {
+   "id": "liquidity_and_capital_esso_settlement_cash_payment_pending",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:52 says the accrual is payable 'upon approval by the Court', and notes:39 adds the accrued-expense row. The warning was removed per note_history:5, and terms.balances_now.cash resolves."
+  },
+  {
+   "id": "liquidity_and_capital_acquisitions_absorb_free_cash_flow",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The terms.cash_flow_families.acquisitions parts resolve, and free_cash_flow.free_cash_flow_quality_adjusted is simple FCF less share-based pay and acquisitions. notes:12 and notes:19 call both valuations preliminary."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_sourced_materials_and_logistics_inflation",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The CEO quote at 8k_2_02:15 is verbatim. trend_table.quarters-back-1.ratios.gross_margin is 'lowest of the 4 filled quarters', and the June-quarter margin is missing in the calculator."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_unfavorable_product_and_geographic_mix",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:37 and mdna:25 give the mix shift, and quarters-back-1 gross_margin is below quarters-back-5."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_large_dewatering_equipment_decline",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:15 says verbatim that large dewatering equipment sales were lower in both periods, and the contrast with the CEO at 8k_2_02:14 holds."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_latin_america_and_europe_organic_declines",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:15 says 'more than offset by sales declines in the Latin America and European regions', and the 8k_2_02:45 footnote covers the currency row."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_water_systems_growth_without_volume",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:14 and 8k_2_02:17 name only price, currency and acquisitions for the quarter, against the CEO's claim at 8k_2_02:14."
+  },
+  {
+   "id": "profitability_gross_margin_at_low_end_of_recent_quarters",
+   "frame": "finance",
+   "verdict": "unclear",
+   "severity": "medium",
+   "why": "The quarters-back-1/-3/-5 and years-back-0/-1 gross_margin paths resolve as described. But the cited gross-profit item and mdna:25 ('The gross profit margin ratio was 37.0 percent ... in the second quarter') put the June quarter above a year earlier, so the headline is not settled."
+  },
+  {
+   "id": "profitability_june_quarter_margin_helped_by_tariff_refunds",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:25 and mdna:37 are verbatim and give no amount or cash status, and the release is silent on the refunds. ratios.growth.operating_income.this_quarter resolves."
+  },
+  {
+   "id": "profitability_restructuring_charges_rising",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The earnings_quality_restructuring_charges item and mdna:31 support it, and terms.trailing_four_quarters.operating_income resolves."
+  },
+  {
+   "id": "profitability_effective_tax_rate_higher",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:68 and mdna:51 support it, and tax_rate.effective_rate is above tax_rate.value under the calculator's stated cap rule."
+  },
+  {
+   "id": "efficiency_receivables_build_with_thinner_allowance",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "The same allowance, receivables and bad_debt_reserve_ratio paths resolve as in the accounting item. notes:14 and notes:83 account for the acquired and swap balances, and mdna:68 names no working-capital line."
+  },
+  {
+   "id": "efficiency_inventory_days_long_against_annual_history",
+   "frame": "finance",
+   "verdict": "unclear",
+   "severity": "medium",
+   "why": "The paths resolve, but years-back-0 days_sales_of_inventory is only 'third highest of the 5 filled years', with years-back-3 and -4 higher, and quarters-back-0 is 'lowest of the 6 filled quarters'. So 'long against earlier years' holds only against fiscal 2023 and 2024."
+  },
+  {
+   "id": "efficiency_trade_working_capital_up_while_payables_flat",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now/a_year_earlier, earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change and ratios.efficiency.days_payables_outstanding resolve. cash_conversion_cycle is missing."
+  },
+  {
+   "id": "solvency_acquired_goodwill_and_intangibles_rising",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The notes:37 rollforward covers acquisitions and currency, notes:12 and notes:19 are preliminary, and notes:15 is Level 3. The soft_asset_share paths resolve, and quarters-back-0 soft_asset_share is missing, as stated."
+  },
+  {
+   "id": "growth_operating_cash_flow_flat_against_history",
+   "frame": "finance",
+   "verdict": "unclear",
+   "severity": "medium",
+   "why": "ratios.growth.operating_cash_flow.trailing_four_quarters and history.years operating_cash_flow resolve. But the cited items do not tie the shortfall to receivables and inventory, and mdna:68 credits net income and working capital without naming lines."
+  }
+ ],
+ "coverage": {
+  "answer": "no",
+  "why": "areas.earnings_versus_cash, sections.profitability and sections.growth each carry a gate 'dropped' reason instead of an answer, so one accounting area and two financial sections are unanswered."
+ },
+ "calibration": {
+  "answer": "yes",
+  "why": "Each surviving area verdict matches the anomalies under it. For example, estimates_and_reserves is 'Adverse on the credit-loss allowance' over the lowest-in-record allowance item, and cross_document says the numbers 'contradict none' while its items are all unresolved or confirms. earnings_versus_cash cannot be checked because its verdict was dropped."
+ },
+ "valuation_reading": {
+  "answer": "no",
+  "why": "calculator market and free_cash_flow_yield.price_at_cutoff are missing (no price series), and implied_growth_beside_history.implied_ten_year_revenue_growth is missing (no reverse DCF). most_sensitive names WACC and revenue growth from history and says 'Python computed no sensitivity grid'."
+ },
+ "score": 0.88,
+ "grader": {
+  "model_requested": "opus",
+  "model_served": "claude-opus-5-5",
+  "input_tokens": 52,
+  "output_tokens": 63389,
+  "cost_usd": 6.6412341999999995,
+  "seconds": 561.5
+ }
+}
