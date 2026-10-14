@@ -58,6 +58,18 @@ branch changed. A run item is done when its run directory is published and
 
 [ ] LOGI's 10-Q filed 2026-07-29 on Fable · `.venv/bin/python -m evals --runs runs/LOGI` · none
 
+[ ] WDC's 10-K filed 2026-08-14 on Fable, the default in force for the five whose fixture 8-K postdates their fixture 10-Q (`docs/needs_judgment.md`) · `.venv/bin/python -m evals --runs runs/WDC` · none
+
+[ ] FN's 10-K filed 2026-08-18 on Fable, the same default · `.venv/bin/python -m evals --runs runs/FN` · none
+
+[ ] LITE's 10-K filed 2026-08-17 on Fable, the same default · `.venv/bin/python -m evals --runs runs/LITE` · none
+
+[ ] SMCI's 10-K filed 2026-08-31 on Fable, the same default · `.venv/bin/python -m evals --runs runs/SMCI` · none
+
+[ ] SNDK's 10-K filed 2026-08-17 on Fable, the same default · `.venv/bin/python -m evals --runs runs/SNDK` · none
+
+[ ] the store fetch reads a submission header EDGAR does not publish out of the complete submission text file: `src/fetch_fixtures.document_types` and the header documents the store records fall back, on a 404 of `{accession}-index-headers.html`, to `{accession}.txt`, whose SGML header carries the same `<TYPE>` and `<FILENAME>` blocks, so the 10-Ks and 10-Qs of 2009 to 2013 collect · `.venv/bin/python -m pytest tests/test_fetch_fixtures.py -q -k header_fallback` passes on a planted header whose (type, filename) pairs are read by eye off the filing index page of QCOM's 10-Q 0001234452-13-000292 (six documents, `qcom6301310-q.htm` first) and never off the parser · none
+
 ## Done
 
 [x] NVDA's 10-Q filed 2026-08-26 on Fable · `.venv/bin/python -m evals --runs runs/NVDA` · item one · 2026-10-08: regression 18 pass, 0 fail; the analysts served by claude-fable-5-1, no fallback; the readers on Opus, as their definitions say; analysis-grader 0.69 with 20 dealbreakers; the run the graders refused on 2026-10-07 is not published, and this one ran after the gates were held to the graders (#125) · PR: this one
