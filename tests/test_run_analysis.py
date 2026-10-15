@@ -395,7 +395,7 @@ def _fake_ask(seen: dict, notes_report: str = "no items\n", assumptions: dict | 
     `assumptions` the valuation analyst's first pass, by default three scenarios
     citing one field; `accounting_analysis` and `financial_analysis` what the two
     analysts write, by default `_analysis`."""
-    def ask(directory, *, agent, writes, message, spec, log):
+    def ask(directory, *, agent, writes, message, spec, log, settings=None):
         seen[directory.name] = sorted(path.name for path in directory.iterdir())
         for name in writes:
             if name == "report_numbers.md":
@@ -522,7 +522,7 @@ def test_a_failed_analyst_is_named_and_the_run_is_not_finished(tmp_path, monkeyp
     assemble_bundle.write(bundle, run)
     written = _fake_ask({})
 
-    def ask(directory, *, agent, writes, message, spec, log):
+    def ask(directory, *, agent, writes, message, spec, log, settings=None):
         if agent == "accounting-analyst":
             return {"agent": agent, "result": "failed", "reason": "exit 1; wrote []"}
         return written(directory, agent=agent, writes=writes, message=message,
@@ -550,7 +550,7 @@ def test_a_named_model_reaches_every_agent_and_the_manifest_says_so(tmp_path, mo
     assemble_bundle.write(bundle, run)
     written, asked = _fake_ask({}), []
 
-    def ask(directory, *, agent, writes, message, spec, log):
+    def ask(directory, *, agent, writes, message, spec, log, settings=None):
         asked.append((agent, spec["model"]))
         return dict(written(directory, agent=agent, writes=writes, message=message,
                             spec=spec, log=log), model_requested=spec["model"])
@@ -799,7 +799,7 @@ def _run_with_accounting_analyst_answering(tmp_path, monkeypatch, answers, on_fa
     written, real_ask = _fake_ask({}), run_analysis.ask
     cli, calls = _cli(list(answers))
 
-    def ask(directory, *, agent, writes, message, spec, log):
+    def ask(directory, *, agent, writes, message, spec, log, settings=None):
         if agent == "accounting-analyst":
             monkeypatch.setattr(run_analysis.subprocess, "run", cli)
             assert spec["model"] == "fable"
@@ -860,7 +860,7 @@ def _stopped_at_accounting_analyst(tmp_path, monkeypatch):
     assemble_bundle.write(bundle, run)
     written = _fake_ask({})
 
-    def ask(directory, *, agent, writes, message, spec, log):
+    def ask(directory, *, agent, writes, message, spec, log, settings=None):
         if agent == "accounting-analyst":
             return {"agent": agent, "result": "failed", "limit_reached": True,
                     "reason": "You've reached your Fable limit."}
@@ -881,7 +881,7 @@ def _counting_ask(seen: dict, **reports):
     """Every agent writes; the directories called are listed in order."""
     written, called = _fake_ask(seen, **reports), []
 
-    def ask(directory, *, agent, writes, message, spec, log):
+    def ask(directory, *, agent, writes, message, spec, log, settings=None):
         called.append(directory.name)
         return written(directory, agent=agent, writes=writes, message=message,
                        spec=spec, log=log)
@@ -933,7 +933,7 @@ def _crashing_financial_analyst(seen: dict):
     which `ask` reads as written (it is JSON) and the analysis gate refuses."""
     written, state = _fake_ask(seen), {"financial_calls": 0}
 
-    def ask(directory, *, agent, writes, message, spec, log):
+    def ask(directory, *, agent, writes, message, spec, log, settings=None):
         if agent == "financial-analyst":
             state["financial_calls"] += 1
             if state["financial_calls"] == 1:
@@ -952,7 +952,7 @@ def _fable_served_ask(seen: dict):
     """Every agent writes, served by Fable, as the real `ask` records it."""
     written, called = _fake_ask(seen), []
 
-    def ask(directory, *, agent, writes, message, spec, log):
+    def ask(directory, *, agent, writes, message, spec, log, settings=None):
         called.append(directory.name)
         return dict(written(directory, agent=agent, writes=writes, message=message,
                             spec=spec, log=log), model_served="claude-fable-5-1")
@@ -1079,7 +1079,7 @@ def _stopped_at(tmp_path, monkeypatch, stopped_agent: str, control: str,
     assemble_bundle.write(bundle, run)
     written = _fake_ask({}, numbers_report=numbers_report)
 
-    def ask(directory, *, agent, writes, message, spec, log):
+    def ask(directory, *, agent, writes, message, spec, log, settings=None):
         if agent == stopped_agent:
             return {"agent": agent, "result": "failed", "limit_reached": True,
                     "reason": "You've reached your Fable limit."}
@@ -1181,7 +1181,7 @@ def _stopped_recording_models(tmp_path, monkeypatch, stopped_agent: str):
                                                 prior_runs=run.parent.parent), run)
     written = _fake_ask({})
 
-    def ask(directory, *, agent, writes, message, spec, log):
+    def ask(directory, *, agent, writes, message, spec, log, settings=None):
         if agent == stopped_agent:
             return {"agent": agent, "result": "failed", "limit_reached": True,
                     "reason": "You've reached your Fable limit.", "model_requested": spec["model"]}
@@ -1462,7 +1462,7 @@ def test_the_limit_stops_the_run_where_it_stands_publishes_what_finished_and_exi
     assemble_bundle.write(bundle, run)
     written = _fake_ask({})
 
-    def ask(directory, *, agent, writes, message, spec, log):
+    def ask(directory, *, agent, writes, message, spec, log, settings=None):
         if agent == "accounting-analyst":
             return {"agent": agent, "result": "failed", "limit_reached": True,
                     "reason": "You've reached your Fable limit."}
@@ -1521,7 +1521,7 @@ def test_the_limit_at_the_valuation_analyst_still_publishes_both_analyses_and_th
     assemble_bundle.write(bundle, run)
     written = _fake_ask({})
 
-    def ask(directory, *, agent, writes, message, spec, log):
+    def ask(directory, *, agent, writes, message, spec, log, settings=None):
         if agent == "valuation-analyst":
             return {"agent": agent, "result": "failed", "limit_reached": True,
                     "reason": "You've reached your Fable limit."}
@@ -1849,7 +1849,7 @@ def _financial_analyst_over_cli(tmp_path, monkeypatch, answers, run=None):
     cli, calls = _cli(list(answers))
     asked: dict[str, list[str]] = {}
 
-    def ask(directory, *, agent, writes, message, spec, log):
+    def ask(directory, *, agent, writes, message, spec, log, settings=None):
         asked.setdefault(directory.name, []).append(spec["model"])
         if agent == "financial-analyst":
             monkeypatch.setattr(run_analysis.subprocess, "run", cli)
@@ -2127,7 +2127,7 @@ def test_a_mix_the_record_does_not_explain_is_still_refused_on_resume(tmp_path, 
     path.write_text(json.dumps(edited), encoding="utf-8")
     written, asked = _fake_ask({}), {}
 
-    def ask(directory, *, agent, writes, message, spec, log):
+    def ask(directory, *, agent, writes, message, spec, log, settings=None):
         asked.setdefault(directory.name, []).append(spec["model"])
         return dict(written(directory, agent=agent, writes=writes, message=message,
                             spec=spec, log=log),
@@ -2605,7 +2605,7 @@ def test_two_analysts_in_parallel_the_shape_opens_the_row_and_the_message_confir
             (cwd / name).write_text(content)
         return _Done(exit_code, json.dumps(payload))
 
-    def ask(directory, *, agent, writes, message, spec, log):
+    def ask(directory, *, agent, writes, message, spec, log, settings=None):
         if agent in answers:
             return real_ask(directory, agent=agent, writes=writes, message=message,
                             spec=spec, log=log)

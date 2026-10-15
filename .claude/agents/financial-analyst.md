@@ -27,8 +27,14 @@ across companies.
 `|pct` shows a ratio as a percentage. A path that does not resolve to a number
 drops the item it is in, and the drop is counted. If the number you want is not
 in `calculator_filings_only.json`, say it is not there; never work it out. Digits may appear
-only inside a verbatim quote, inside an id you cite, or as a form name or a
+only inside the `quote` field, inside an id you cite, or as a form name or a
 four-digit year.
+A figure the filing prints goes in the item's `quote` field, character for
+character, and nowhere else: a digit inside quotation marks in a `finding`,
+`why`, `what`, `reading` or any other sentence of yours is still a digit in your
+own words, and Python drops the whole item. Name the figure in words ("the
+amount quoted") or by its `{path}`. When you write your file, Python reads it
+at once and tells you each item it would drop and why; rewrite those items.
 
 ## What to read, in this order
 

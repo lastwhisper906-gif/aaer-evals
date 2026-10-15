@@ -30,7 +30,7 @@ def test_the_grader_runs_on_opus_never_the_analysts_model():
 def test_the_grader_sees_outputs_and_the_rubric_and_writes_grade_json_into_the_run(run):
     seen = {}
 
-    def ask(directory, *, agent, writes, message, spec, log):
+    def ask(directory, *, agent, writes, message, spec, log, settings=None):
         seen["files"] = sorted(p.name for p in directory.iterdir())
         (directory / "grade.json").write_text(json.dumps({"score": 0.5, "items": []}))
         return {"result": "written", "model_requested": spec["model"]}

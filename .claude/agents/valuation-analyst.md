@@ -37,8 +37,14 @@ number, write the calculator's field path in braces —
 `{valuation.value_range_per_share.low}`, `{valuation.reverse_dcf.value|pct}`,
 `{earnings_versus_cash.history.revenue_growth_three_year_compound|pct}` — and
 Python puts the value there. A path that does not resolve drops the item it is
-in. Digits may otherwise appear only inside a verbatim quote, an id, a form name
+in. Digits may otherwise appear only inside the `quote` field, an id, a form name
 or a four-digit year.
+A figure the filing prints goes in the item's `quote` field, character for
+character, and nowhere else: a digit inside quotation marks in a `finding`,
+`why`, `what`, `reading`, `reason` or any other sentence of yours is still a digit in your
+own words, and Python drops the whole item. Name the figure in words ("the
+amount quoted") or by its `{path}`. When you write your file, Python reads it
+at once and tells you each item it would drop and why; rewrite those items.
 
 ## First pass — `assumptions.json`
 

@@ -180,6 +180,7 @@ import json
 import os
 import math
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -188,12 +189,14 @@ import time
 from pathlib import Path
 
 try:
-    from src import (agent_inputs, analysis_check, baselines, calculator, cutoff_guard, decide,
-                     interpreter_pin, market_labels, memo, quote_gate, trends)
+    from src import (agent_inputs, analysis_check, analysis_hook, baselines, calculator,
+                     cutoff_guard, decide, interpreter_pin, market_labels, memo, quote_gate,
+                     trends)
 except ImportError:  # invoked as a plain script
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from src import (agent_inputs, analysis_check, baselines, calculator, cutoff_guard, decide,
-                     interpreter_pin, market_labels, memo, quote_gate, trends)
+    from src import (agent_inputs, analysis_check, analysis_hook, baselines, calculator,
+                     cutoff_guard, decide, interpreter_pin, market_labels, memo, quote_gate,
+                     trends)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFINITIONS = REPO_ROOT / ".claude" / "agents"
@@ -231,6 +234,7 @@ CARRY_HOURS = 12
 # as the analysts, because a control on another model measures the model.
 EFFORT = "xhigh"
 CALL_TIMEOUT_SECONDS = 3600
+HOOK_TIMEOUT_SECONDS = 120          # one gate run over one analyst's file
 RETRIES = 1                 # an Opus call: one more try
 FABLE_RETRIES = 2           # a Fable call: at most two more
 LIMIT = re.compile(r"reached your \w+ limit", re.IGNORECASE)
@@ -393,7 +397,7 @@ def with_attempts(record: dict, attempts: list[dict]) -> dict:
 
 
 def ask(directory: Path, *, agent: str, writes: tuple[str, ...], message: str,
-        spec: dict, log: Path) -> dict:
+        spec: dict, log: Path, settings: str | None = None) -> dict:
     """One restricted session in `directory`; the usage record, or a failure.
 
     Every attempt is kept under `attempts`, and the record's token and cost
@@ -415,6 +419,8 @@ def ask(directory: Path, *, agent: str, writes: tuple[str, ...], message: str,
                    "--agent", agent, "--agents", json.dumps({agent: spec}),
                    "--model", spec["model"], "--effort", EFFORT,
                    "--output-format", "json", message]
+        if settings:
+            command[-1:-1] = ["--settings", settings]
         done = subprocess.run(command, cwd=directory, capture_output=True, text=True,
                               timeout=CALL_TIMEOUT_SECONDS)
         seconds = time.monotonic() - started
@@ -667,7 +673,7 @@ def fallen_back(limit: dict, again: dict) -> dict:
 
 
 def call(run: Path, directory: Path, *, agent: str, writes: tuple[str, ...], message: str,
-         spec: dict, log: Path, policy: LimitPolicy) -> dict:
+         spec: dict, log: Path, policy: LimitPolicy, settings: str | None = None) -> dict:
     """One agent's call under the limit policy: on the model the policy gives it,
     and, when a Fable call answers the limit under `opus`, again at once on the
     fallback model, the run noted as fallen back for every later Fable agent. A
@@ -678,13 +684,13 @@ def call(run: Path, directory: Path, *, agent: str, writes: tuple[str, ...], mes
     served_on = policy.model_for(requested)
     reason = fallback_reason(policy.begin(run, agent)) if served_on != requested else None
     record = ask(directory, agent=agent, writes=writes, message=message,
-                 spec=dict(spec, model=served_on), log=log)
+                 spec=dict(spec, model=served_on), log=log, settings=settings)
     if served_on == requested and record.get("limit_reached") and policy.falls_back(requested):
         reason = (FALLBACK_REASON if record.get("limit_read_from") == "message"
                   else SHAPE_FALLBACK_REASON)
         policy.note(run, agent, reason)
         again = ask(directory, agent=agent, writes=writes, message=message,
-                    spec=dict(spec, model=FALLBACK_MODEL), log=log)
+                    spec=dict(spec, model=FALLBACK_MODEL), log=log, settings=settings)
         record, served_on = fallen_back(record, again), FALLBACK_MODEL
     return as_fallback(record, requested, reason) if served_on != requested else record
 
@@ -756,15 +762,36 @@ def run_agent(run: Path, name: str, logs: Path, model: str | None = None,
     names = {path.name for path in directory.iterdir() if path.name != spec.writes}
     message = INSTRUCTION.format(files=", ".join(message_files(names)), writes=spec.writes)
     earlier = recorded_agent(run, name)       # a call made again on a resume
+    feedback = logs / f"{name}.gate_feedback.jsonl"
+    feedback.unlink(missing_ok=True)
     record = call(run, directory, agent=spec.prompt, writes=(spec.writes,), message=message,
                   spec=definition_for(spec.prompt, model), log=logs / f"{name}.log",
-                  policy=policy or LimitPolicy())
+                  policy=policy or LimitPolicy(), settings=gate_hook(run, name, feedback))
+    if feedback.is_file():
+        # what the gate told the session is text the model saw: on the record
+        record["gate_feedback"] = [json.loads(line) for line in
+                                   feedback.read_text(encoding="utf-8").splitlines() if line]
     record = carried_forward(earlier, record)
     record_agent(run, name, record)
     if check:
         # not from inside `parallel`: the other call's directory is still being built
         boundary_holds(run, f"after {name} returned")
     return record
+
+
+def gate_hook(run: Path, name: str, feedback: Path) -> str | None:
+    """The `--settings` JSON that runs the analysis gate on an analyst's file the
+    moment its session writes it (`src/analysis_hook.py`), or None for an agent
+    the gate does not read. A restricted session reads no project settings;
+    `--settings` still applies."""
+    if name not in analysis_hook.GATED:
+        return None
+    command = " ".join(shlex.quote(part) for part in (
+        sys.executable, "-m", "src.analysis_hook", "--run", str(Path(run).resolve()),
+        "--agent", name, "--feedback", str(Path(feedback).resolve())))
+    return json.dumps({"hooks": {"PostToolUse": [{"matcher": "Write|Edit", "hooks": [
+        {"type": "command", "command": f"cd {shlex.quote(str(REPO_ROOT))} && {command}",
+         "timeout": HOOK_TIMEOUT_SECONDS}]}]}})
 
 
 def boundary_holds(run: Path, when: str) -> None:
