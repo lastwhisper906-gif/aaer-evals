@@ -1,0 +1,254 @@
+{
+  "scenarios": {
+    "bear": {
+      "revenue_growth_year_one": 0.20,
+      "terminal_growth": 0.025,
+      "operating_margin_year_one": 0.44,
+      "operating_margin_year_ten": 0.38,
+      "reinvestment_rate_year_one": 0.15,
+      "reinvestment_rate_year_ten": 0.15,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "The guided quarter arrives, then AI orders pause. MD&A says meeting AI demand requires customers to raise significant capital, and the AI XPV platform exists because the frontier labs' own cash flows fall short of their investment. If that funding tightens, the following quarters fall back toward earlier levels and growth over the trailing four quarters {terms.trailing_four_quarters.revenue} is modest. Software growth also slows once the move to upfront licence recognition stops lifting reported revenue. The largest customer already took {concentration.facts.3.value|pct} of fiscal 2025 revenue, so a pause by a few customers is a large pause.",
+          "quote": "However, deploying AI infrastructure to meet this demand requires our customers to access significant capital.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "terms.trailing_four_quarters.revenue",
+            "ratios.growth.revenue.trailing_four_quarters",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.years.0.revenue_growth",
+            "earnings_versus_cash.history.years.2.revenue_growth",
+            "concentration.facts.3.value"
+          ],
+          "history": "Below the three-year compound rate {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and fiscal 2025 growth {earnings_versus_cash.history.years.0.revenue_growth|pct}, and far below the trailing four-quarter rate {ratios.growth.revenue.trailing_four_quarters|pct}. The record holds slower years than this: fiscal 2023 grew {earnings_versus_cash.history.years.2.revenue_growth|pct}, before VMware revenue was added."
+        },
+        "terminal_growth": {
+          "reason": "Lower than the base. By then revenue rests on a few customers' replacement cycles and a maturing software base, and the loss of any large customer would reset the level. Well below the risk-free rate {cost_of_capital.risk_free_rate}.",
+          "quote": "We expect to continue to experience significant customer concentration in future periods.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "cost_of_capital.risk_free_rate",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound"
+          ],
+          "history": "Far below every multi-year rate on record, the three-year compound {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and the five-year {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}; the record holds no mature decade for this company, so the rate rests on the economy, not on the company's past."
+        },
+        "operating_margin_year_one": {
+          "reason": "A revenue pause after the guided quarter leaves research and development {terms.trailing_four_quarters.research_and_development_expense}, share-based compensation and acquisition amortization spread over less revenue. Purchase obligations of {terms.balances_now.unconditional_purchase_obligations}, committed ahead of expected demand, and inventory of {terms.balances_now.inventory} built for expected shipments risk inventory charges. The margin falls back below the trailing level.",
+          "quote": "The company must make these purchases whether or not the expected AI demand arrives, and other commitments add to them.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "ratios.profitability.operating_margin",
+            "terms.trailing_four_quarters.research_and_development_expense",
+            "terms.balances_now.unconditional_purchase_obligations",
+            "terms.balances_now.inventory"
+          ],
+          "history": "Below the trailing margin {ratios.profitability.operating_margin|pct}, the highest in the record, but above fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct}, because amortization of acquired intangibles keeps falling even in a downturn."
+        },
+        "operating_margin_year_ten": {
+          "reason": "AI hardware dominates the mix at a lower gross margin than software, and a handful of customers who depend on outside capital to fund their purchases push price down. The margin settles near the company's longer record rather than at its peak.",
+          "quote": "our ability to maintain or improve gross margin",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "earnings_versus_cash.history.years.0.operating_margin",
+            "earnings_versus_cash.history.operating_margin_three_year_average",
+            "earnings_versus_cash.history.years.2.operating_margin",
+            "concentration.facts.3.value"
+          ],
+          "history": "Just below fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct} and just above the three-year average {earnings_versus_cash.history.operating_margin_three_year_average|pct}; below fiscal 2023's {earnings_versus_cash.history.years.2.operating_margin|pct}, the best filed year, and below the trailing record {ratios.profitability.operating_margin|pct}."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "In the bear case the company's own balance sheet carries part of the customers' funding gap: the backstop, whose maximum exposure is {terms.balances_now.guarantee_maximum_exposure}; customer convertible notes it may take on; and unconditional purchases {terms.balances_now.unconditional_purchase_obligations} that turn into inventory if shipments slip. Cash spent on these is capital tied up to keep revenue, so a larger share of after-tax operating income is reinvested than the trailing near-nil share.",
+          "quote": "Demand rests partly on the company's own credit.",
+          "quote_from": "analysis_accounting.json",
+          "fields": [
+            "terms.balances_now.guarantee_maximum_exposure",
+            "terms.balances_now.unconditional_purchase_obligations",
+            "free_cash_flow.free_cash_flow_to_firm",
+            "terms.trailing_four_quarters.depreciation_and_amortization",
+            "terms.trailing_four_quarters.capital_expenditure",
+            "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital"
+          ],
+          "history": "Well above the trailing share, which is near nil because depreciation and amortization {terms.trailing_four_quarters.depreciation_and_amortization} offset capital spending {terms.trailing_four_quarters.capital_expenditure} and the working-capital build {free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital}; free cash flow to the firm {free_cash_flow.free_cash_flow_to_firm} sits close to after-tax operating income. No filed year carried customer financing to compare against."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "The financing model persists: MD&A now lists potential financing arrangements among cash requirements and says the company may keep entering them. New capital also earns less when customers need financing to place orders. With the amortization offset gone by year ten, the share stays at the year-one level.",
+          "quote": "(vii) business acquisitions and investments we may make from time to time, and (viii) potential financing arrangements.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "terms.balances_now.guarantee_maximum_exposure",
+            "terms.balances_now.property_plant_and_equipment",
+            "terms.trailing_four_quarters.depreciation_and_amortization"
+          ],
+          "history": "Above any share in the filed record. The record never carried customer financing, and its near-nil reinvestment leans on an amortization add-back {terms.trailing_four_quarters.depreciation_and_amortization} that does not last a decade."
+        }
+      }
+    },
+    "base": {
+      "revenue_growth_year_one": 0.40,
+      "terminal_growth": 0.03,
+      "operating_margin_year_one": 0.52,
+      "operating_margin_year_ten": 0.50,
+      "reinvestment_rate_year_one": 0.05,
+      "reinvestment_rate_year_ten": 0.10,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "The guided fourth fiscal quarter, and an AI semiconductor business guided to keep accelerating, put next year's revenue well above the trailing four quarters {terms.trailing_four_quarters.revenue}. Purchase obligations of {terms.balances_now.unconditional_purchase_obligations}, against {terms.balances_a_year_earlier.unconditional_purchase_obligations} a year earlier, show supply committed for that growth. But Python carries this rate down a straight line for nine more years, so it is chosen for the whole ten-year path, not for next year alone. Starting at the guided pace would compound into a revenue path that a customer base this concentrated, and this reliant on outside capital, does not support. Part of the reported growth also comes from software licences now recognized upfront. So year one is set below what the guided quarter alone implies.",
+          "quote": "Fourth quarter fiscal year 2026 revenue guidance of approximately $34.8 billion, an increase of 93 percent from the prior year period",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "terms.trailing_four_quarters.revenue",
+            "ratios.growth.revenue.trailing_four_quarters",
+            "ratios.growth.revenue.year_over_year",
+            "earnings_versus_cash.history.years.0.revenue_growth",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound",
+            "terms.balances_now.unconditional_purchase_obligations",
+            "terms.balances_a_year_earlier.unconditional_purchase_obligations"
+          ],
+          "history": "Below the trailing four-quarter growth {ratios.growth.revenue.trailing_four_quarters|pct} and far below the latest quarter's year-over-year growth {ratios.growth.revenue.year_over_year|pct}, but well above fiscal 2025 growth {earnings_versus_cash.history.years.0.revenue_growth|pct}, the three-year compound rate {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and the five-year rate {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}. It starts above the longer record because the AI ramp is under way and guided to accelerate. It starts below the current pace because that pace is the steepest in the record, and the straight-line fade would carry it for most of a decade."
+        },
+        "terminal_growth": {
+          "reason": "A long-run nominal rate for a company whose largest business is cyclical semiconductors, beside a slower-growing software segment. It sits below the risk-free rate {cost_of_capital.risk_free_rate}, as Python requires, with room to spare, because by year ten the AI build-out the guidance describes will be a mature market driven by replacement.",
+          "quote": "cyclicality in the semiconductor industry undergoing profound change due to AI",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "cost_of_capital.risk_free_rate",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound"
+          ],
+          "history": "Far below every multi-year rate on record, the three-year compound {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and the five-year {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}; the record holds no mature decade for this company, so the rate rests on the economy, not on the company's past."
+        },
+        "operating_margin_year_one": {
+          "reason": "The latest quarter's operating income {ratios.growth.operating_income.this_quarter} on revenue {ratios.growth.revenue.this_quarter} runs above the trailing margin {ratios.profitability.operating_margin|pct}, because share-based compensation, acquisition amortization and research costs are spread over fast-rising revenue. The company guides its non-GAAP margin flat on a year ago while revenue nearly doubles. The shift toward semiconductors, which MD&A says carry a lower gross margin than software, absorbs that operating leverage; quarterly gross margin already slipped from {trend_table.quarters-back-1.ratios.gross_margin|pct} to {trend_table.quarters-back-0.ratios.gross_margin|pct}. Year one is set between the trailing margin and the latest quarter's.",
+          "quote": "Q4 consolidated revenue growth is forecasted to increase 93% year-over-year to $34.8 billion, and we expect to maintain our non-GAAP operating margin at 66%, flat from a year ago.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.profitability.operating_margin",
+            "ratios.growth.operating_income.this_quarter",
+            "ratios.growth.revenue.this_quarter",
+            "trend_table.quarters-back-0.ratios.gross_margin",
+            "trend_table.quarters-back-1.ratios.gross_margin"
+          ],
+          "history": "Above the trailing margin {ratios.profitability.operating_margin|pct}, already the highest in the record, and above every filed fiscal year, the best of which was fiscal 2023 at {earnings_versus_cash.history.years.2.operating_margin|pct}; the three-year average is {earnings_versus_cash.history.operating_margin_three_year_average|pct}. A new high is assumed because the latest quarter has already passed it."
+        },
+        "operating_margin_year_ten": {
+          "reason": "Two forces pull against each other. Amortization of acquired intangibles, inside operating income and most of depreciation and amortization {terms.trailing_four_quarters.depreciation_and_amortization}, runs off, and share-based compensation {terms.trailing_four_quarters.share_based_compensation} shrinks against a far larger revenue base; both lift the GAAP margin. Against them, AI hardware becomes most of revenue at a lower gross margin than software, and a few very large customers gain power over price; the largest already took {concentration.facts.3.value|pct} of fiscal 2025 revenue. I let the second force win slightly, so the margin eases from year one but stays above the trailing record. The calculator's tax rate {tax_rate.effective_rate|pct} is light, one more reason not to push the operating margin higher.",
+          "quote": "The increases were primarily due to the gross margin benefit from our net revenue growth, partially offset by a higher mix of semiconductor solutions net revenue, which has a lower gross margin than infrastructure software.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "terms.trailing_four_quarters.depreciation_and_amortization",
+            "terms.trailing_four_quarters.share_based_compensation",
+            "ratios.profitability.operating_margin",
+            "concentration.facts.3.value",
+            "tax_rate.effective_rate"
+          ],
+          "history": "Above the trailing margin {ratios.profitability.operating_margin|pct} and well above the three-year average {earnings_versus_cash.history.operating_margin_three_year_average|pct}, which carries the heavier amortization and restructuring of the VMware years (fiscal 2024 at {earnings_versus_cash.history.years.1.operating_margin|pct}). Before VMware, fiscal 2023 reached {earnings_versus_cash.history.years.2.operating_margin|pct}; the base holds above that because the business is far larger and the VMware amortization will have run off."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "Over the trailing four quarters almost none of after-tax operating income was reinvested on net. Free cash flow to the firm {free_cash_flow.free_cash_flow_to_firm} is close to after-tax operating income: capital spending {terms.trailing_four_quarters.capital_expenditure} and the trade working-capital build {free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital} were offset by depreciation and amortization {terms.trailing_four_quarters.depreciation_and_amortization}, mostly amortization of acquired intangibles. Next year receivables and inventory keep growing with AI shipments on trade working capital already at {free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now}, capital spending is rising, and the amortization offset shrinks, so a small positive share is reinvested. The share also leaves room for the potential financing arrangements MD&A now lists among cash requirements.",
+          "quote": "Inventory increased to $4,523 million at August 2, 2026 from $2,270 million at November 2, 2025 primarily to support higher expected shipments for AI-related semiconductor solutions.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "free_cash_flow.free_cash_flow_to_firm",
+            "terms.trailing_four_quarters.capital_expenditure",
+            "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital",
+            "terms.trailing_four_quarters.depreciation_and_amortization",
+            "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now"
+          ],
+          "history": "Above the trailing share, which is near nil because depreciation and amortization offset capital spending and the working-capital build. Capital spending has always been small beside operating cash flow (fiscal 2025: {earnings_versus_cash.history.years.0.capital_expenditure} against {earnings_versus_cash.history.years.0.operating_cash_flow}), though it is rising: {terms.trailing_four_quarters.capital_expenditure} over the trailing four quarters against {terms.trailing_four_quarters_a_year_earlier.capital_expenditure} a year earlier."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "By year ten the amortization of acquired intangibles has run off, so reinvestment is capital spending net of depreciation, plus working capital. Reinvesting this share at the base terminal growth implies a high return on new capital, which fits a chip designer that relies on contract manufacturing and carries little plant {terms.balances_now.property_plant_and_equipment}. It sits above the year-one share because the amortization offset is gone and because the company says it may keep entering financing arrangements for customers.",
+          "quote": "In addition, we have provided a backstop and may continue to enter into similar financing arrangements, which increases our exposure to counterparty credit risk.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "terms.balances_now.property_plant_and_equipment",
+            "terms.trailing_four_quarters.capital_expenditure",
+            "terms.trailing_four_quarters.depreciation_and_amortization",
+            "terms.balances_now.guarantee_maximum_exposure"
+          ],
+          "history": "Above anything in the filed record, where reinvestment net of amortization has been near nil; the difference is that the record's amortization add-back {terms.trailing_four_quarters.depreciation_and_amortization} does not last a decade."
+        }
+      }
+    },
+    "bull": {
+      "revenue_growth_year_one": 0.55,
+      "terminal_growth": 0.035,
+      "operating_margin_year_one": 0.55,
+      "operating_margin_year_ten": 0.56,
+      "reinvestment_rate_year_one": 0.04,
+      "reinvestment_rate_year_ten": 0.08,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "The guided quarter's run-rate holds and grows. The chief executive expects AI semiconductor revenue to keep accelerating, the AI XPV platform is sized to deliver far more compute through 2028, and purchase obligations of {terms.balances_now.unconditional_purchase_obligations} show supply committed for it. Year one is set near what the guided quarter alone implies over the trailing four quarters {terms.trailing_four_quarters.revenue}, still below the guided year-over-year pace.",
+          "quote": "In Q4 the momentum continues, and we expect AI semiconductor revenue to accelerate to $21.7 billion, up 236% year-over-year.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "terms.trailing_four_quarters.revenue",
+            "ratios.growth.revenue.year_over_year",
+            "ratios.growth.revenue.quarter_over_quarter",
+            "terms.balances_now.unconditional_purchase_obligations",
+            "earnings_versus_cash.history.years.1.revenue_growth"
+          ],
+          "history": "Above the trailing four-quarter rate {ratios.growth.revenue.trailing_four_quarters|pct} and far above the three-year compound rate {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and fiscal 2025 growth {earnings_versus_cash.history.years.0.revenue_growth|pct}, but below the latest quarter's year-over-year growth {ratios.growth.revenue.year_over_year|pct}. The fastest annual growth on record, fiscal 2024's {earnings_versus_cash.history.years.1.revenue_growth|pct}, came with the VMware acquisition, so this would be the fastest organic year in the record."
+        },
+        "terminal_growth": {
+          "reason": "AI compute keeps taking a growing share of the economy's investment, so the company grows somewhat faster than the base for good; still below the risk-free rate {cost_of_capital.risk_free_rate}.",
+          "quote": "We see unprecedented demand for our custom AI accelerators or XPUs and AI networking solutions from our customers, including the leading frontier AI labs, due to the demand for AI compute.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "cost_of_capital.risk_free_rate",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound"
+          ],
+          "history": "Far below every multi-year rate on record, the three-year compound {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and the five-year {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}; the record holds no mature decade to test it against."
+        },
+        "operating_margin_year_one": {
+          "reason": "Revenue is guided sharply higher on a cost base that MD&A says is shrinking in headcount. Share-based compensation is falling as awards fully vest, and amortization is fixed in amount. So the GAAP margin rises past the latest quarter's, whose operating income was {ratios.growth.operating_income.this_quarter} on revenue of {ratios.growth.revenue.this_quarter}.",
+          "quote": "The decrease was primarily due to the impact of certain fully vested equity awards and headcount reduction.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.growth.operating_income.this_quarter",
+            "ratios.growth.revenue.this_quarter",
+            "ratios.profitability.operating_margin",
+            "terms.trailing_four_quarters.share_based_compensation"
+          ],
+          "history": "Above the trailing record {ratios.profitability.operating_margin|pct} and every filed fiscal year, the best of which was fiscal 2023 at {earnings_versus_cash.history.years.2.operating_margin|pct}."
+        },
+        "operating_margin_year_ten": {
+          "reason": "Amortization of acquired intangibles runs off and share-based compensation {terms.trailing_four_quarters.share_based_compensation} becomes small against revenue, while the custom-accelerator franchise holds its price. The GAAP margin then closes much of the gap to the guided non-GAAP margin, which excludes those charges, without reaching it.",
+          "quote": "Fourth quarter fiscal year 2026 Non-GAAP operating income guidance of approximately 66 percent of projected revenue (1)",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "terms.trailing_four_quarters.share_based_compensation",
+            "terms.trailing_four_quarters.depreciation_and_amortization",
+            "ratios.profitability.operating_margin"
+          ],
+          "history": "Above the trailing record {ratios.profitability.operating_margin|pct} and every filed fiscal year (fiscal 2023, the best, at {earnings_versus_cash.history.years.2.operating_margin|pct}); below the guided non-GAAP margin, because share-based compensation stays a cost."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "Fast growth adds receivables and inventory, and capital spending {terms.trailing_four_quarters.capital_expenditure} is rising. But the amortization offset is still large, and the financial partners, not the company, fund the racks, so the share reinvested stays small.",
+          "quote": "Through the AI XPV platform, the financial partners fund and we provide the technology to the leading frontier AI labs to allow them to deploy AI infrastructure at a scale that meets their increasing demand.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "free_cash_flow.free_cash_flow_to_firm",
+            "terms.trailing_four_quarters.capital_expenditure",
+            "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital",
+            "terms.trailing_four_quarters.depreciation_and_amortization"
+          ],
+          "history": "Slightly above the trailing near-nil share, where depreciation and amortization {terms.trailing_four_quarters.depreciation_and_amortization} offset capital spending and the working-capital build {free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital}."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "With high returns on a small fixed-asset base {terms.balances_now.property_plant_and_equipment}, little income is needed to grow at the bull terminal rate. The residual value guarantees MD&A mentions stay contingent and unpaid.",
+          "quote": "Where necessary, we may provide residual value guarantees, which are contingent liabilities we believe would have a low probability of occurring, supported by the strong profitability trajectory of the leading frontier AI labs and the sustaining value of the underlying assets.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "terms.balances_now.property_plant_and_equipment",
+            "terms.trailing_four_quarters.depreciation_and_amortization"
+          ],
+          "history": "Above the trailing near-nil share because the amortization offset is gone by year ten, and below the base because no customer financing is drawn."
+        }
+      }
+    }
+  },
+  "wacc_overrides": {}
+}
