@@ -1,0 +1,518 @@
+{
+ "run": "LITE/analysis-grader-r022kpk1",
+ "rubric": "evals/capability/rubric.md",
+ "dealbreakers": [
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "controls_audit_and_filing_signals_receivables_tagged_as_contract_assets",
+   "where": "analysis_accounting.json anomalies[30].what (numbers_vs_prose 'unresolved')",
+   "why": "The analyst saw the 8-K line 'Accounts receivable, net' and the ContractWithCustomerAssetNet tag disagree, and left 'Either the tag is wrong, or unbilled revenue is larger than the label implies' open. The 10-K settles it: notes:78 says 'We record accounts receivable when we have an unconditional right to consideration', and the contract-balances table notes:533 and mdna:53 show no contract-asset line."
+  }
+ ],
+ "items": [
+  {
+   "id": "earnings_versus_cash_accruals_lowest_in_history_on_non_cash_loss",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.years-back-0.ratios.accruals_over_total_assets is 'lowest of the 5 filled years', and 8k_2_02:72 and notes:287 describe the non-cash extinguishment loss behind it."
+  },
+  {
+   "id": "earnings_versus_cash_payables_articulation_gap",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.working_capital.accounts_payable.articulation_gap resolves, and mdna:185 explains only the statement line. The capex-accrual link (liquidity_and_capital_capex_accrued_not_paid) is labelled as inferred."
+  },
+  {
+   "id": "earnings_versus_cash_inventory_articulation_gap",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "earnings_versus_cash.working_capital.inventory.articulation_gap resolves. mdna:185 explains the inventory build but not the gap."
+  },
+  {
+   "id": "earnings_versus_cash_receivables_articulation_untestable",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "earnings_versus_cash.working_capital.receivables.articulation_gap is missing because the balance carries the ContractWithCustomerAssetNet tag. This is true of the calculator, though mdna:53 prints the balance change in prose."
+  },
+  {
+   "id": "earnings_versus_cash_income_far_more_volatile_than_cash",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.smoothness and its net_income.0 and operating_cash_flow.0 entries resolve. 8k_2_02:14 ties the quarter's loss to the extinguishment."
+  },
+  {
+   "id": "earnings_versus_cash_incentive_pay_shift_from_equity_to_cash",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:102 and mdna:105 state the move to a cash incentive, and mdna:185 shows the accrued bonus. terms.trailing_four_quarters.share_based_compensation sits below earnings_versus_cash.history.years.1.share_based_compensation."
+  },
+  {
+   "id": "revenue_recognition_receivables_concentrating_faster_than_revenue",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "concentration.facts.128, 162, 183 and 95 are CustomerOneMember receivable shares, and 181 and 93 are CustomerAMember revenue shares. notes:114 and notes:521 agree; neither note says whether the customers are the same."
+  },
+  {
+   "id": "revenue_recognition_receivable_days_untestable_after_large_increase",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "trend_table days_sales_outstanding, receivables_over_revenue and bad_debt_reserve_ratio are missing in every period, and mdna:185 attributes the increase to higher revenue."
+  },
+  {
+   "id": "revenue_recognition_contract_liabilities_rise_includes_acquired_liability",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "trend_table.years-back-0.ratios.contract_liabilities_over_revenue is 'highest of the 2 filled years on the same concepts', and notes:534 puts the below-market liability in current liabilities."
+  },
+  {
+   "id": "revenue_recognition_tariff_billings_recorded_as_revenue",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:74 says billed tariff charges are recorded as revenue. No tagged amount or prior-year text exists."
+  },
+  {
+   "id": "revenue_recognition_greensboro_agent_net_basis",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:175 states the agent, net-basis judgment, and terms.cash_flow_families.acquisitions matches the price in notes:32."
+  },
+  {
+   "id": "revenue_recognition_fourth_quarter_revenue_highest_with_cash_rising_faster",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.growth.revenue.this_quarter equals the release figure in 8k_2_02:22, and ratios.growth.operating_cash_flow.quarter_over_quarter exceeds ratios.growth.revenue.quarter_over_quarter."
+  },
+  {
+   "id": "estimates_and_reserves_credit_loss_allowance_flat_against_receivable_growth",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.balances_now.bad_debt_allowance equals terms.balances_a_year_earlier.bad_debt_allowance (notes:210). Schedule II (notes:539) and mdna:105 show the lower provision."
+  },
+  {
+   "id": "estimates_and_reserves_us_valuation_allowance_release_despite_cumulative_loss",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "mdna:60 states the release despite a cumulative U.S. loss, note_history:35 carries the opposite third-quarter judgment, notes:307 shows the equity credit, and auditors_report:14 names the only CAM."
+  },
+  {
+   "id": "estimates_and_reserves_valuation_allowance_amounts_differ_across_disclosures",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:60, notes:392, notes:540 and notes:402 print different release and decrease amounts and reconcile none of them. notes:402 does name the foreign allowances behind the year-end balance."
+  },
+  {
+   "id": "estimates_and_reserves_tax_benefits_in_consecutive_years",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.history.years.1.net_income is positive against a negative years.1.operating_income. The prior-year benefit is in the facts:IncomeTaxExpenseBenefit row for 2024-06-30..2025-06-28 and in mdna:61."
+  },
+  {
+   "id": "estimates_and_reserves_warranty_cover_below_prior_year_with_acquired_provision",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "trend_table warranty_reserve_ratio resolves for years-back-0, 1 and 2. note_history:3 footnotes the Cloud Light provision, and the 10-K table (notes:498) drops the footnote."
+  },
+  {
+   "id": "estimates_and_reserves_goodwill_reporting_units_changed_qualitative_test_only",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:97 describes the reorganization and qualitative-only tests, and notes:254 is a heading with no text."
+  },
+  {
+   "id": "estimates_and_reserves_thailand_exemption_reaching_back_a_year",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:405 says the exemption conclusion covers prior-year projects. The prose gives the small effect, but no tag does."
+  },
+  {
+   "id": "estimates_and_reserves_unrecognized_tax_benefits_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:408 and notes:410 show the balance and the accrued interest rising, and notes:404 confirms the China incentives expired."
+  },
+  {
+   "id": "cost_deferral_non_gaap_exclusions_expanded_gap_not_computable",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:58, 8k_2_02:74 and 8k_2_02:75 list the exclusions, the unidentified legal fees and the capped-call share cut. notes:172 shows GAAP treats the capped call as anti-dilutive, and the trend_table non_gaap_gap is missing."
+  },
+  {
+   "id": "cost_deferral_other_charges_recur_every_period",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:83 prints an 'Other charges (income), net' amount in every column, and notes:381 to notes:383 carry restructuring in each year."
+  },
+  {
+   "id": "cost_deferral_soft_asset_share_lowest_of_comparable_years",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "trend_table soft_asset_share is 'lowest of the 3 filled years on the same concepts', and 8k_2_02:55 shows cash, plant and the deferred tax asset up. Goodwill also rose slightly, so 'the one' is loose."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_capital_spending_incurred_but_unpaid_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The input_numbers.json fact facts:CapitalExpendituresIncurredButNotYetPaid (PropertyPlantAndEquipmentMember) rises year on year as the reader states. The payables articulation_gap is offered only as the closest calculator field."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_share_withholding_taxes_in_financing",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "facts:PaymentsRelatedToTaxWithholdingForShareBasedCompensation rose year on year, and mdna:187 places it in financing."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_convertible_proceeds_outside_tagged_issuance_total",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.cash_flow_families.borrowing_issued.lines_not_added.0.value is excluded by the calculator's total rule, and mdna:187 prints both proceeds lines. The cited reader item covers face amounts only."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_conversion_settlement_election_widened",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "medium",
+   "why": "note_history:87 against notes:283 shows the requests sentence changed. But note_history:86 already gave the cash-or-shares election in the third quarter, so the inputs do not settle whether settlement exposure widened."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_subsequent_events_note_placeholder",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:1 reads 'TBD', while notes:283 and mdna:147 describe post-year-end conversion requests."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_drafting_errors_in_filed_notes",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:254, notes:530 and notes:531, notes:151, notes:152, notes:162 and notes:163, and mdna:160 against notes:356 and notes:357 each show the stated defect."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_single_segment_text_against_segment_tags",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:24 states a single segment. The 10-K's own facts:NumberOfReportableSegments for the year, its OperatingSegmentsMember revenue facts and the third-quarter 10-Q tags contradict it."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_receivables_tagged_as_contract_assets",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "low",
+   "why": "The ContractWithCustomerAssetNet tag is shown in input_numbers.json, but the open either/or is settled by notes:78 and notes:533. The item scores zero under the dealbreaker."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_tagging_choices_block_margin_and_inventory_tests",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The cost-of-sales concept in structure_and_disclosure_changes_cost_of_sales_tag_outside_trend_concepts sits outside the concepts read, and ratios.profitability.gross_margin and ratios.efficiency.days_sales_of_inventory are missing. The concept switches are itemized in report_numbers.md."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_current_debt_tagged_under_two_concepts",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.debt_now.parts.debt_current.lines.0.value equals lines.1.value, as at the earlier year end, and the sum exceeds terms.balances_now.current_liabilities. notes:272 prints a single current debt figure."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_greensboro_allocation_changed_without_reason",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The 10-K Greensboro goodwill and assumed-liability facts exceed the superseded 10-Q facts in input_numbers.json, and notes:176 still calls the allocation preliminary."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_contingent_consideration_sign_flip",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The 10-K Cloud Light-member fact and the superseded 10-Q fact carry opposite signs. notes:181, 8k_2_02:49 and the litigation-settlement tag give the differing presentations."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_no_audit_matter_on_largest_judgments",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "auditors_report:11 to auditors_report:14 name inventory valuation as the only critical audit matter."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_cfo_trading_plan_modified",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:536 shows the CFO's modification, and notes:535 and notes:537 show the others. The 8-K item-code list shows officer-change filings with no bodies."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_going_concern_language_removed",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "note_history:16 carries the doubt language that the third-quarter 10-Q removed, and mdna:166 states liquidity is sufficient. terms.cash_and_short_term_investments_now exceeds terms.debt_now.parts.debt_current.lines.0.value."
+  },
+  {
+   "id": "cross_document_reconciliation_segment_revenue_members_swapped",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The 10-K SystemsMember operating-segment fact carries the amount that 8k_2_02:27 and notes:526 assign to Components, and the ComponentsMember fact carries the Systems amount. concentration.facts.186 and 187 agree with the release."
+  },
+  {
+   "id": "cross_document_reconciliation_other_charges_differ_within_release",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "For the prior year, 8k_2_02:83 prints '12.1' where 8k_2_02:65 and 8k_2_02:66 print '12.3'. The other columns match."
+  },
+  {
+   "id": "cross_document_reconciliation_held_for_sale_charge_amount_and_label",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:143, 8k_2_02:74, notes:219 and mdna:105 give differing amounts and labels, and no tag decides between them."
+  },
+  {
+   "id": "cross_document_reconciliation_escrow_settlement_presentation",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:181 and mdna:114 say other income, 8k_2_02:49 shows a separate line, notes:188 omits it, and mdna:125 credits it to investment income."
+  },
+  {
+   "id": "industry_lens_inventory_build_with_untagged_reserve",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.working_capital.inventory.balance_sheet_change resolves, while terms.trailing_four_quarters.inventory_write_down and the inventory_reserve_ratio cells are missing. auditors_report:14 names the inventory CAM."
+  },
+  {
+   "id": "industry_lens_purchase_commitments_rising_with_softer_cancellation",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:493 against note_history:1 shows the higher amount and 'may allow' replacing 'generally allow'. mdna:156 shows a portion due after one year."
+  },
+  {
+   "id": "industry_lens_customer_concentration_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "concentration.facts.181, 93, 11, 124, 158, 182 and 94 are the CustomerAMember and CustomerBMember revenue shares, matching notes:519. mdna:100 names concentration as a margin pressure."
+  },
+  {
+   "id": "industry_lens_nvidia_preferred_investor_customer_status_undisclosed",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:416 records NVIDIA's cash purchase, and terms.balances_now.stockholders_equity exceeds the year-earlier balance. The inputs hold no related-party note and no customer names."
+  },
+  {
+   "id": "industry_lens_contract_manufacturer_flows",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "low",
+   "why": "Per notes:524 and notes:525, concentration.facts.185 and 97 measure inventory purchases from a contract manufacturer, which the anomaly does not say. mdna:185 puts contract-manufacturer receivables in prepayments, so whether any of it is revenue stays open."
+  },
+  {
+   "id": "profitability_operating_recovery_is_recent_and_utilization_driven",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.history.years shows operating losses before this year, and earnings_versus_cash.history.operating_margin_three_year_average resolves. mdna:99 gives utilization the largest share of the gross-margin gain."
+  },
+  {
+   "id": "profitability_tax_benefit_rests_on_valuation_allowance_release",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "terms.trailing_four_quarters.income_tax_expense is a benefit, earnings_quality_income_tax_benefit_second_year shows the prior-year benefit, and mdna:60 states the release despite a cumulative U.S. loss."
+  },
+  {
+   "id": "profitability_china_tax_incentives_expired",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:404 says the incentives expired and gave no benefit this year, and tax_rate is missing in the calculator."
+  },
+  {
+   "id": "profitability_depreciation_rising_with_capacity_build",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.balances_now.property_plant_and_equipment exceeds the year-earlier balance, and notes:217 expects construction in progress in service within the next year."
+  },
+  {
+   "id": "efficiency_working_capital_absorbing_cash",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.trailing_four_quarters.change_in_receivables, change_in_inventory and the accounts_payable.balance_sheet_change resolve, and the days-based ratios are missing as stated."
+  },
+  {
+   "id": "efficiency_receivables_concentrated_in_one_customer_with_flat_allowance",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:114 and notes:521 show the largest customer's receivable share rising, and notes:210 and notes:539 show the flat allowance and smaller provision."
+  },
+  {
+   "id": "liquidity_and_capital_fourth_quarter_cash_decline",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:16 states the decrease from the third quarter, and ratios.growth.operating_cash_flow.this_quarter is positive. notes:283 against note_history:87 places nearly all cash note settlements in the fourth quarter."
+  },
+  {
+   "id": "liquidity_and_capital_net_share_settlement_tax_payments",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "facts:PaymentsRelatedToTaxWithholdingForShareBasedCompensation sits close to free_cash_flow.free_cash_flow_simple, and mdna:187 places it in financing."
+  },
+  {
+   "id": "liquidity_and_capital_capex_accrued_not_paid_flatters_free_cash_flow",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "facts:CapitalExpendituresIncurredButNotYetPaid rises as stated, and earnings_versus_cash.working_capital.accounts_payable.articulation_gap and free_cash_flow.free_cash_flow_simple resolve."
+  },
+  {
+   "id": "liquidity_and_capital_purchase_commitments_rising",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:493 against note_history:1 shows the higher amount and softer wording, and terms.balances_now.unconditional_purchase_obligations is missing as stated."
+  },
+  {
+   "id": "solvency_debt_due_within_a_year_and_overstated_leverage_ratios",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "terms.debt_now.parts.debt_current adds two equal lines and exceeds terms.balances_now.current_liabilities, so ratios.solvency.total_debt and net_debt carry the duplicate. notes:273 classifies the notes as current because they are convertible."
+  },
+  {
+   "id": "solvency_unrecognized_tax_benefits_rising",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:408, notes:409 and notes:410 show unrecognized tax benefits and accrued interest rising, mostly rate-affecting."
+  },
+  {
+   "id": "growth_net_income_swing_to_loss",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The ratios.growth.net_income fields and earnings_versus_cash.smoothness resolve, and 8k_2_02:14 ties the quarter's loss to the extinguishment."
+  },
+  {
+   "id": "growth_revenue_concentrated_in_one_customer",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "concentration.facts.181, 93 and 11, matching notes:519, show Customer A's share rising against ratios.growth.revenue.trailing_four_quarters. mdna:100 names customer concentration."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_gross_margin_downward_pressure_warning",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:100 carries the warning, and ratios.profitability.gross_margin is missing as stated."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_transceiver_lower_selling_prices",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:89 states lower transceiver selling prices, and mdna:88 a slight laser chip price rise."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_demand_outpacing_supply_allocation",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:14 says demand outpaces supply and capacity is being added internally and at contract manufacturers."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_rare_earth_trade_restrictions",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:25 names rare-earth trade restrictions, and notes:26 keeps the tariff-regulation wording."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_reduction_in_force",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:381 attributes the year's restructuring to reductions in force."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_legal_matters_and_government_inquiry",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:74 shows the unidentified legal fees, and notes:502 and notes:504 carry the accrual statement and the BIS/DOJ inquiry."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_acquired_product_warranty_costs",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:498 shows provisions up, 8k_2_02:69 attributes part of them to Cloud Light, and trend_table warranty_reserve_ratio is 'third highest of the 5 filled years'."
+  },
+  {
+   "id": "results_against_expectations_headline_results_on_non_gaap_basis",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:66 sets non-GAAP income against GAAP losses, and 8k_2_02:34 gives no GAAP reconciliation for the outlook. input_prior_predictions.md holds no flags."
+  }
+ ],
+ "coverage": {
+  "answer": "no",
+  "why": "analysis_accounting.json drops the cost_deferral and cash_flow_engineering_and_off_balance_sheet findings at the gate, and analysis_financial.json drops the profitability reading, so those count as unanswered."
+ },
+ "calibration": {
+  "answer": "yes",
+  "why": "Each surviving verdict matches its anomalies: earnings_versus_cash names the payables gap and bonus timing, revenue_recognition the untestable receivable days and concentration, estimates_and_reserves the valuation-allowance release and flat credit-loss cover. The dropped areas have no verdict to test."
+ },
+ "valuation_reading": {
+  "answer": "no",
+  "why": "calculator.json has no market, valuation or implied_growth_beside_history.implied_ten_year_revenue_growth, so the reading states no price position and no implied growth. Its most_sensitive assumptions are chosen by judgment because no valuation.sensitivity exists."
+ },
+ "score": 0.977,
+ "grader": {
+  "model_requested": "opus",
+  "model_served": "claude-opus-5-5",
+  "input_tokens": 92,
+  "output_tokens": 96075,
+  "cost_usd": 12.105736200000004,
+  "seconds": 821.5
+ }
+}
