@@ -1,0 +1,496 @@
+{
+ "question": "how healthy is this company?",
+ "sections": {
+  "profitability": {
+   "dropped": "reading: a number written in the analyst's own words: 'f sales, which the release sizes as \"a $60 million benefit, or 190 bps, from IEE'"
+  },
+  "efficiency": {
+   "reading": "On trailing revenue and average balances, customers take {ratios.efficiency.days_sales_outstanding} days to pay and inventory sits for {ratios.efficiency.days_sales_of_inventory} days. The company takes {ratios.efficiency.days_payables_outstanding} days to pay its suppliers, which gives a cash conversion cycle of {ratios.efficiency.cash_conversion_cycle} days. Inventory is the part that has moved against the company. On quarter-end balances, inventory days are {trend_table.quarters-back-0.ratios.days_sales_of_inventory}, the highest of the six filled quarters, against {trend_table.quarters-back-4.ratios.days_sales_of_inventory} a year earlier. Meanwhile the inventory reserve ratio, {trend_table.quarters-back-0.ratios.inventory_reserve_ratio|pct}, is the lowest of the six filled quarters. Inventory itself rose from {terms.balances_a_year_earlier.inventory} to {terms.balances_now.inventory}. Management says it is holding the stock on purpose, against volatility in memory costs and tariffs, and expects inventory to stay elevated. Receivable days at quarter end, {trend_table.quarters-back-0.ratios.days_sales_outstanding}, fell from {trend_table.quarters-back-1.ratios.days_sales_outstanding} in the first quarter. The fiscal 2025 figure, {trend_table.years-back-0.ratios.days_sales_outstanding}, is still the highest of the five filled years. Payables grew by only {earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change} over the year, so suppliers are not funding the build. Asset turnover is {ratios.efficiency.asset_turnover}. The asset base grew from {terms.balances_a_year_earlier.assets} to {terms.balances_now.assets}. The share of assets that are neither cash nor plant, {trend_table.quarters-back-0.ratios.soft_asset_share|pct}, is the highest of the six filled quarters, which reflects acquired goodwill and intangibles.",
+   "fields": [
+    "ratios.efficiency.days_sales_outstanding",
+    "ratios.efficiency.days_sales_of_inventory",
+    "ratios.efficiency.days_payables_outstanding",
+    "ratios.efficiency.cash_conversion_cycle",
+    "trend_table.quarters-back-0.ratios.days_sales_of_inventory",
+    "trend_table.quarters-back-4.ratios.days_sales_of_inventory",
+    "trend_table.quarters-back-0.ratios.inventory_reserve_ratio",
+    "terms.balances_a_year_earlier.inventory",
+    "terms.balances_now.inventory",
+    "trend_table.quarters-back-0.ratios.days_sales_outstanding",
+    "trend_table.quarters-back-1.ratios.days_sales_outstanding",
+    "trend_table.years-back-0.ratios.days_sales_outstanding",
+    "earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change",
+    "ratios.efficiency.asset_turnover",
+    "terms.balances_a_year_earlier.assets",
+    "terms.balances_now.assets",
+    "trend_table.quarters-back-0.ratios.soft_asset_share"
+   ],
+   "evidence": [
+    "earnings_quality_days_sales_of_inventory_quarterly_trend",
+    "estimates_and_discretion_inventory_reserve_ratio_quarterly_trend",
+    "liquidity_and_capital_inventory_balance_fact",
+    "narrative_signs_of_operating_pressure_inventory_held_elevated",
+    "revenue_recognition_days_sales_outstanding_quarterly_trend",
+    "revenue_recognition_days_sales_outstanding_annual_trend",
+    "earnings_quality_soft_asset_share_quarterly_trend",
+    "earnings_quality_goodwill_balance_fact"
+   ]
+  },
+  "liquidity": {
+   "reading": "Liquidity is thin, though not strained. Current assets cover current liabilities {ratios.liquidity.current_ratio} times, and cash plus receivables cover them {ratios.liquidity.quick_ratio} times. A year earlier, current assets of {terms.balances_a_year_earlier.current_assets} stood against current liabilities of {terms.balances_a_year_earlier.current_liabilities}. Now the figures are {terms.balances_now.current_assets} against {terms.balances_now.current_liabilities}. Cash fell from {terms.balances_a_year_earlier.cash} to {terms.balances_now.cash}, and the 10-Q shows it also fell during the first half of 2026. Part of current liabilities is contract liabilities of {terms.balances_now.contract_liabilities}. These are customer prepayments, settled by delivering work rather than by paying cash, so the low quick ratio overstates the call on cash. No cash runway is computed, because free cash flow over the trailing four quarters, {free_cash_flow.free_cash_flow_simple}, is positive and there is no burn. The pressure is in what is coming. Short-term borrowings are {terms.debt_now.parts.debt_current}, against current debt of {terms.debt_a_year_earlier.parts.debt_current} a year earlier. They now include newly issued commercial paper and a term loan facility of which only part was extended. The company has also agreed to buy D-Fend and the Bell Mobility services business, and it has locked Treasury rates on forecasted debt.",
+   "fields": [
+    "ratios.liquidity.current_ratio",
+    "ratios.liquidity.quick_ratio",
+    "terms.balances_a_year_earlier.current_assets",
+    "terms.balances_a_year_earlier.current_liabilities",
+    "terms.balances_now.current_assets",
+    "terms.balances_now.current_liabilities",
+    "terms.balances_a_year_earlier.cash",
+    "terms.balances_now.cash",
+    "terms.balances_now.contract_liabilities",
+    "free_cash_flow.free_cash_flow_simple",
+    "terms.debt_now.parts.debt_current",
+    "terms.debt_a_year_earlier.parts.debt_current"
+   ],
+   "evidence": [
+    "liquidity_and_capital_cash_balance_fact",
+    "revenue_recognition_contract_liabilities_over_revenue_quarterly_trend",
+    "liquidity_and_capital_commercial_paper_outstanding",
+    "liquidity_and_capital_term_loan_partial_maturity_extension",
+    "structure_and_disclosure_changes_dfend_acquisition_agreement",
+    "structure_and_disclosure_changes_bell_mobility_segment_sentence_removed",
+    "liquidity_and_capital_treasury_rate_lock_forecasted_debt"
+   ]
+  },
+  "solvency": {
+   "reading": "Total debt is {ratios.solvency.total_debt}, up from {terms.debt_a_year_earlier} a year earlier, and net of cash it is {ratios.solvency.net_debt}. Against trailing EBITDA of {ratios.solvency.ebitda}, debt is {ratios.solvency.debt_over_ebitda} times earnings before interest, tax, depreciation and amortization, a moderate load for a business that generates this much cash. Over the trailing four quarters, operating income covers interest expense {ratios.solvency.interest_coverage} times, which is still comfortable. But interest expense is growing much faster than operating income. First-half interest expense was {terms.trailing_four_quarters.interest_expense.parts.this_year_to_date}, against {terms.trailing_four_quarters.interest_expense.parts.prior_year_to_date} a year earlier, while first-half operating income moved from {terms.trailing_four_quarters.operating_income.parts.prior_year_to_date} to {terms.trailing_four_quarters.operating_income.parts.this_year_to_date}. Operating lease liabilities add {ratios.solvency.operating_lease_liability}. Liabilities over assets is not in the calculator, because the companyfacts record tags no total-liabilities line. The equity beneath the debt is small, with stockholders' equity of {terms.balances_now.stockholders_equity}. The notes do not say how the agreed acquisitions will be funded. The Treasury rate locks on forecasted debt transactions point to new borrowing, which would lift every leverage measure here.",
+   "fields": [
+    "ratios.solvency.total_debt",
+    "terms.debt_a_year_earlier",
+    "ratios.solvency.net_debt",
+    "ratios.solvency.ebitda",
+    "ratios.solvency.debt_over_ebitda",
+    "ratios.solvency.interest_coverage",
+    "terms.trailing_four_quarters.interest_expense.parts.this_year_to_date",
+    "terms.trailing_four_quarters.interest_expense.parts.prior_year_to_date",
+    "terms.trailing_four_quarters.operating_income.parts.prior_year_to_date",
+    "terms.trailing_four_quarters.operating_income.parts.this_year_to_date",
+    "ratios.solvency.operating_lease_liability",
+    "terms.balances_now.stockholders_equity"
+   ],
+   "evidence": [
+    "liquidity_and_capital_interest_expense_fact",
+    "liquidity_and_capital_interest_paid_fact",
+    "liquidity_and_capital_commercial_paper_outstanding",
+    "liquidity_and_capital_treasury_rate_lock_forecasted_debt",
+    "structure_and_disclosure_changes_dfend_acquisition_agreement",
+    "related_parties_contingencies_and_subsequent_events_dfend_agreement_release_figure"
+   ]
+  },
+  "growth": {
+   "dropped": "reading: a number written in the analyst's own words: 'first quarter was also the low point of 2025, so this rate reflects seasonality '"
+  },
+  "free_cash_flow": {
+   "reading": "All four free cash flow measures are present, and all four are positive; none is missing. Simple free cash flow, which is operating cash flow less capital spending, is {free_cash_flow.free_cash_flow_simple} over the trailing four quarters. Operating cash flow runs at {earnings_versus_cash.operating_cash_flow_over_net_income} times net income, and accruals over average assets are {earnings_versus_cash.accruals_over_average_assets|pct}, so cash backs earnings. Free cash flow to the firm is lower, at {free_cash_flow.free_cash_flow_to_firm}. It taxes operating income at the held rate of {tax_rate|pct} and charges the full year-over-year rise in receivables plus inventory less payables, {free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital}. That rise is a balance-sheet change, and it likely includes some working capital that came with acquisitions. The inventory balance rose more than the cash-flow statement's inventory line, by {earnings_versus_cash.working_capital.inventory.articulation_gap}. Free cash flow to equity is {free_cash_flow.free_cash_flow_to_equity}, raised by net borrowing of {free_cash_flow.free_cash_flow_to_equity.net_borrowing}. It does not capture commercial-paper flows, because the statement prints no net short-term borrowing line. Quality-adjusted free cash flow, {free_cash_flow.free_cash_flow_quality_adjusted}, deducts share-based compensation of {terms.trailing_four_quarters.share_based_compensation}. It deducts nothing for acquisitions, because the calculator found no acquisition-payments line on record. So none of the four measures shows the cash spent buying businesses; the fall in cash and the rise in goodwill show it. Simple free cash flow covers trailing dividends of {terms.trailing_four_quarters.dividends_paid} and buybacks of {terms.trailing_four_quarters.share_repurchases}. Lower tax payments helped the quarter's operating cash flow, and inventory investment held it back. The retirement-plan match is now paid in shares, which keeps cash in the company but is still a cost.",
+   "fields": [
+    "free_cash_flow.free_cash_flow_simple",
+    "earnings_versus_cash.operating_cash_flow_over_net_income",
+    "earnings_versus_cash.accruals_over_average_assets",
+    "free_cash_flow.free_cash_flow_to_firm",
+    "tax_rate",
+    "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital",
+    "earnings_versus_cash.working_capital.inventory.articulation_gap",
+    "free_cash_flow.free_cash_flow_to_equity",
+    "free_cash_flow.free_cash_flow_to_equity.net_borrowing",
+    "free_cash_flow.free_cash_flow_quality_adjusted",
+    "terms.trailing_four_quarters.share_based_compensation",
+    "terms.trailing_four_quarters.dividends_paid",
+    "terms.trailing_four_quarters.share_repurchases"
+   ],
+   "evidence": [
+    "liquidity_and_capital_operating_cash_flow_fact",
+    "earnings_quality_accruals_over_total_assets_annual_trend",
+    "earnings_quality_share_based_compensation_fact",
+    "liquidity_and_capital_share_repurchase_payments_fact",
+    "liquidity_and_capital_quarterly_cash_flow_lower_tax_payments",
+    "liquidity_and_capital_operating_cash_flow_inventory_and_interest_offsets",
+    "liquidity_and_capital_retirement_plan_match_paid_in_stock",
+    "liquidity_and_capital_cash_balance_fact",
+    "earnings_quality_goodwill_balance_fact"
+   ]
+  }
+ },
+ "dupont": {
+  "reading": "Return on equity of {ratios.profitability.dupont.product|pct} is net margin {ratios.profitability.dupont.net_margin|pct}, times asset turnover {ratios.profitability.dupont.asset_turnover}, times an equity multiplier of {ratios.profitability.dupont.equity_multiplier}. The multiplier carries it. Average assets are many times average equity, because stockholders' equity is thin: {terms.balances_now.stockholders_equity} now, against {terms.balances_a_year_earlier.stockholders_equity} a year earlier, beneath assets of {terms.balances_now.assets}. The margin is healthy and turnover is modest. Without the leverage, the return on the asset base is {ratios.profitability.return_on_assets|pct}. The calculator prints only the current trailing decomposition, so whether the mix has moved cannot be read directly. Its inputs show that net income was almost flat while revenue grew, so the margin leg has narrowed. They also show that equity and assets both grew over the year, with the asset growth coming largely from acquisitions. High return on equity here is a leverage story, not an operating one.",
+  "fields": [
+   "ratios.profitability.dupont.product",
+   "ratios.profitability.dupont.net_margin",
+   "ratios.profitability.dupont.asset_turnover",
+   "ratios.profitability.dupont.equity_multiplier",
+   "terms.balances_now.stockholders_equity",
+   "terms.balances_a_year_earlier.stockholders_equity",
+   "terms.balances_now.assets",
+   "ratios.profitability.return_on_assets",
+   "ratios.growth.net_income.trailing_four_quarters",
+   "ratios.growth.revenue.trailing_four_quarters"
+  ]
+ },
+ "anomalies": [
+  {
+   "id": "liquidity_and_capital_cash_balance_drawn_down",
+   "name": "Cash balance drawn down to a thin cushion",
+   "name_ko": "현금 잔고 급감",
+   "area": "liquidity_and_capital",
+   "what": "Cash fell from {terms.balances_a_year_earlier.cash} a year earlier to {terms.balances_now.cash}, and the 10-Q shows a further decline over the first half of 2026. A year earlier, current assets of {terms.balances_a_year_earlier.current_assets} comfortably exceeded current liabilities of {terms.balances_a_year_earlier.current_liabilities}. Now current assets are {terms.balances_now.current_assets} against current liabilities of {terms.balances_now.current_liabilities}, which gives a current ratio of {ratios.liquidity.current_ratio} and a quick ratio of {ratios.liquidity.quick_ratio}. Free cash flow covered dividends and buybacks, so the drop reflects spending that the free cash flow measures do not record. The rise in goodwill shows that spending was on acquisitions. Customer prepayments of {terms.balances_now.contract_liabilities} sit inside current liabilities, which softens the point but does not remove it.",
+   "evidence": [
+    "liquidity_and_capital_cash_balance_fact",
+    "earnings_quality_goodwill_balance_fact",
+    "revenue_recognition_contract_liabilities_over_revenue_quarterly_trend"
+   ],
+   "fields": [
+    "terms.balances_a_year_earlier.cash",
+    "terms.balances_now.cash",
+    "terms.balances_a_year_earlier.current_assets",
+    "terms.balances_a_year_earlier.current_liabilities",
+    "terms.balances_now.current_assets",
+    "terms.balances_now.current_liabilities",
+    "ratios.liquidity.current_ratio",
+    "ratios.liquidity.quick_ratio",
+    "terms.balances_now.contract_liabilities"
+   ]
+  },
+  {
+   "id": "liquidity_and_capital_short_term_borrowings_rising",
+   "name": "Short-term borrowings up, including new commercial paper",
+   "name_ko": "신규 기업어음을 포함한 단기차입금 증가",
+   "area": "liquidity_and_capital",
+   "what": "Debt due inside a year is {terms.debt_now.parts.debt_current}, against current debt of {terms.debt_a_year_earlier.parts.debt_current} a year earlier, and it is now close to cash of {terms.balances_now.cash}. The notes report commercial paper outstanding where there was none at the end of the first quarter. Only part of the term loan facility's principal had its maturity extended by a year, and the notes do not say what happens to the rest. With cash this low, the company depends on rolling over short-term funding.",
+   "evidence": [
+    "liquidity_and_capital_commercial_paper_outstanding",
+    "liquidity_and_capital_term_loan_partial_maturity_extension",
+    "related_parties_contingencies_and_subsequent_events_dfend_agreement_release_figure"
+   ],
+   "fields": [
+    "terms.debt_now.parts.debt_current",
+    "terms.debt_a_year_earlier.parts.debt_current",
+    "terms.balances_now.cash"
+   ]
+  },
+  {
+   "id": "liquidity_and_capital_inventory_build_absorbing_cash",
+   "name": "Inventory build absorbing operating cash",
+   "name_ko": "재고 증가로 영업현금 흡수",
+   "area": "liquidity_and_capital",
+   "what": "Inventory rose by {earnings_versus_cash.working_capital.inventory.balance_sheet_change} over the year, equal to {earnings_versus_cash.working_capital.inventory.share_of_net_income|pct} of trailing net income. The cash-flow statement's own inventory line for the trailing four quarters is {terms.trailing_four_quarters.change_in_inventory}. The first-half build is far larger than the year before, and the release's quarterly cash-flow statement shows it continuing in the latest quarter. MD&A names the inventory investment and higher interest payments as the offsets to operating cash flow, and management expects inventory to stay elevated.",
+   "evidence": [
+    "liquidity_and_capital_inventory_increase_cash_flow_fact",
+    "liquidity_and_capital_inventory_balance_fact",
+    "across_documents_quarterly_inventory_cash_use_release_figure",
+    "liquidity_and_capital_operating_cash_flow_inventory_and_interest_offsets",
+    "narrative_signs_of_operating_pressure_inventory_held_elevated"
+   ],
+   "fields": [
+    "earnings_versus_cash.working_capital.inventory.balance_sheet_change",
+    "earnings_versus_cash.working_capital.inventory.share_of_net_income",
+    "terms.trailing_four_quarters.change_in_inventory"
+   ]
+  },
+  {
+   "id": "liquidity_and_capital_customer_financing_commitments_rising",
+   "name": "Commitments to finance customers rising",
+   "name_ko": "고객 금융 제공 약정 증가",
+   "area": "liquidity_and_capital",
+   "what": "The notes report larger outstanding commitments to provide long-term financing to third parties than at the end of 2025. Once funded, these become long-term receivables and use cash. Against cash of {terms.balances_now.cash}, this is a further claim on liquidity. Partly offsetting it, the company sells receivables, and proceeds from the sale and collection of receivables were {terms.trailing_four_quarters.proceeds_from_sale_of_receivables} over the trailing four quarters.",
+   "evidence": [
+    "related_parties_contingencies_and_subsequent_events_customer_financing_commitments",
+    "earnings_quality_accounts_receivable_sales_proceeds"
+   ],
+   "fields": [
+    "terms.balances_now.cash",
+    "terms.trailing_four_quarters.proceeds_from_sale_of_receivables"
+   ]
+  },
+  {
+   "id": "solvency_debt_rising_on_thin_equity",
+   "name": "Debt rising on a thin equity base",
+   "name_ko": "얇은 자기자본 위에서 늘어나는 차입금",
+   "area": "solvency",
+   "what": "Total debt rose from {terms.debt_a_year_earlier} to {ratios.solvency.total_debt}. Net debt is {ratios.solvency.net_debt}, and debt is {ratios.solvency.debt_over_ebitda} times trailing EBITDA. Stockholders' equity of {terms.balances_now.stockholders_equity} is small beside the debt, which is why the equity multiplier is {ratios.profitability.dupont.equity_multiplier}. Liabilities over assets cannot be computed, because the record tags no total-liabilities line. If the agreed acquisitions are funded with debt, as the Treasury rate locks suggest, all of these measures would rise.",
+   "evidence": [
+    "liquidity_and_capital_commercial_paper_outstanding",
+    "liquidity_and_capital_treasury_rate_lock_forecasted_debt",
+    "structure_and_disclosure_changes_dfend_acquisition_agreement"
+   ],
+   "fields": [
+    "terms.debt_a_year_earlier",
+    "ratios.solvency.total_debt",
+    "ratios.solvency.net_debt",
+    "ratios.solvency.debt_over_ebitda",
+    "terms.balances_now.stockholders_equity",
+    "ratios.profitability.dupont.equity_multiplier"
+   ]
+  },
+  {
+   "id": "solvency_interest_cost_outpacing_operating_income",
+   "name": "Interest cost rising faster than operating income",
+   "name_ko": "영업이익보다 빠르게 늘어나는 이자비용",
+   "area": "solvency",
+   "what": "First-half interest expense was {terms.trailing_four_quarters.interest_expense.parts.this_year_to_date}, against {terms.trailing_four_quarters.interest_expense.parts.prior_year_to_date} a year earlier, and interest paid in cash over the trailing four quarters is {terms.trailing_four_quarters.interest_paid}. Over the same half, operating income moved only from {terms.trailing_four_quarters.operating_income.parts.prior_year_to_date} to {terms.trailing_four_quarters.operating_income.parts.this_year_to_date}. Coverage is still comfortable at {ratios.solvency.interest_coverage} times on trailing figures, and trailing interest expense is {terms.trailing_four_quarters.interest_expense}. MD&A names higher interest payments as a drag on operating cash flow, and any new acquisition debt would add to them.",
+   "evidence": [
+    "liquidity_and_capital_interest_expense_fact",
+    "liquidity_and_capital_interest_paid_fact",
+    "liquidity_and_capital_operating_cash_flow_inventory_and_interest_offsets"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.interest_expense.parts.this_year_to_date",
+    "terms.trailing_four_quarters.interest_expense.parts.prior_year_to_date",
+    "terms.trailing_four_quarters.interest_paid",
+    "terms.trailing_four_quarters.operating_income.parts.prior_year_to_date",
+    "terms.trailing_four_quarters.operating_income.parts.this_year_to_date",
+    "ratios.solvency.interest_coverage",
+    "terms.trailing_four_quarters.interest_expense"
+   ]
+  },
+  {
+   "id": "profitability_net_income_squeezed_below_operating_line",
+   "name": "Acquisition costs and interest squeezing net income",
+   "name_ko": "인수 관련 비용과 이자로 압박받는 순이익",
+   "area": "profitability",
+   "what": "First-half operating income rose from {terms.trailing_four_quarters.operating_income.parts.prior_year_to_date} to {terms.trailing_four_quarters.operating_income.parts.this_year_to_date}. It did so despite much higher amortization of acquired intangibles and a charge to raise the fair value of the Silvus earnout, both of which sit inside it. Below the operating line, higher interest expense pushed first-half pretax income down from {terms.trailing_four_quarters.pretax_income.parts.prior_year_to_date} to {terms.trailing_four_quarters.pretax_income.parts.this_year_to_date}, and net income down from {terms.trailing_four_quarters.net_income.parts.prior_year_to_date} to {terms.trailing_four_quarters.net_income.parts.this_year_to_date}. Trailing net margin is {ratios.profitability.net_margin|pct}. If its targets are met, the earnout will be settled in shares, which would dilute shareholders rather than use cash.",
+   "evidence": [
+    "earnings_quality_intangibles_amortization_release_figure",
+    "estimates_and_discretion_contingent_consideration_remeasurement_fact",
+    "estimates_and_discretion_silvus_earnout_fair_value_remeasurement",
+    "results_against_expectations_silvus_earnout_targets_and_share_settlement",
+    "liquidity_and_capital_interest_expense_fact"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.operating_income.parts.prior_year_to_date",
+    "terms.trailing_four_quarters.operating_income.parts.this_year_to_date",
+    "terms.trailing_four_quarters.pretax_income.parts.prior_year_to_date",
+    "terms.trailing_four_quarters.pretax_income.parts.this_year_to_date",
+    "terms.trailing_four_quarters.net_income.parts.prior_year_to_date",
+    "terms.trailing_four_quarters.net_income.parts.this_year_to_date",
+    "ratios.profitability.net_margin"
+   ]
+  },
+  {
+   "id": "profitability_unrecognized_tax_benefits_lift_quarter_tax_rate",
+   "name": "Unrecognized tax benefits up, lifting the quarter's tax rate",
+   "name_ko": "미인식 세무 효익 증가로 분기 세율 상승",
+   "area": "profitability",
+   "what": "The notes attribute the quarter's higher effective tax rate to a net increase in unrecognized tax benefits, and give no amount or jurisdiction. The trailing effective rate is {tax_rate.effective_rate|pct}. The effect on the quarter is small, and the first-half rate was lower than a year earlier. This is a minor pressure, listed for completeness.",
+   "evidence": [
+    "estimates_and_discretion_unrecognized_tax_benefits_increase",
+    "earnings_quality_effective_tax_rate_release_figure",
+    "across_documents_tax_rate_explanations_gaap_and_non_gaap"
+   ],
+   "fields": [
+    "tax_rate.effective_rate"
+   ]
+  },
+  {
+   "id": "efficiency_inventory_days_at_high_with_thinner_reserve",
+   "name": "Inventory days at a six-quarter high while the reserve ratio sits at a low",
+   "name_ko": "재고일수는 최고, 재고충당금 비율은 최저",
+   "area": "efficiency",
+   "what": "Quarter-end inventory days are {trend_table.quarters-back-0.ratios.days_sales_of_inventory}, the highest of the six filled quarters, against {trend_table.quarters-back-4.ratios.days_sales_of_inventory} a year earlier, and trailing inventory days are {ratios.efficiency.days_sales_of_inventory}. Over the same span the inventory valuation reserve fell as a share of inventory, from {trend_table.quarters-back-4.ratios.inventory_reserve_ratio|pct} to {trend_table.quarters-back-0.ratios.inventory_reserve_ratio|pct}, the lowest of the six filled quarters. The reserve now stands at {terms.balances_now.inventory_reserve}. More stock with proportionally less reserve means more exposure to write-downs if memory and component prices turn or demand softens.",
+   "evidence": [
+    "earnings_quality_days_sales_of_inventory_quarterly_trend",
+    "estimates_and_discretion_inventory_reserve_ratio_quarterly_trend",
+    "earnings_quality_days_sales_of_inventory_annual_trend",
+    "narrative_signs_of_operating_pressure_inventory_expected_elevated_release_figure"
+   ],
+   "fields": [
+    "trend_table.quarters-back-0.ratios.days_sales_of_inventory",
+    "trend_table.quarters-back-4.ratios.days_sales_of_inventory",
+    "ratios.efficiency.days_sales_of_inventory",
+    "trend_table.quarters-back-4.ratios.inventory_reserve_ratio",
+    "trend_table.quarters-back-0.ratios.inventory_reserve_ratio",
+    "terms.balances_now.inventory_reserve"
+   ]
+  },
+  {
+   "id": "efficiency_receivable_days_elevated_with_thinner_allowance",
+   "name": "Receivable days high against history, allowance at a low",
+   "name_ko": "과거 대비 높은 매출채권 회수일수와 최저 수준의 대손충당금",
+   "area": "efficiency",
+   "what": "Fiscal 2025 receivable days, {trend_table.years-back-0.ratios.days_sales_outstanding}, are the highest of the five filled years. The quarter's {trend_table.quarters-back-0.ratios.days_sales_outstanding} is the second highest of the six filled quarters, although it improved from {trend_table.quarters-back-1.ratios.days_sales_outstanding} in the first quarter. The allowance for doubtful accounts as a share of receivables, {trend_table.quarters-back-0.ratios.bad_debt_reserve_ratio|pct}, is the lowest of the six filled quarters. Receivables rose by {earnings_versus_cash.working_capital.receivables.balance_sheet_change} over the year. The company also sells receivables, which brings cash in early and makes collection look faster than customers' own payment habits would.",
+   "evidence": [
+    "revenue_recognition_days_sales_outstanding_annual_trend",
+    "revenue_recognition_days_sales_outstanding_quarterly_trend",
+    "estimates_and_discretion_bad_debt_reserve_ratio_quarterly_trend",
+    "earnings_quality_accounts_receivable_sales_proceeds"
+   ],
+   "fields": [
+    "trend_table.years-back-0.ratios.days_sales_outstanding",
+    "trend_table.quarters-back-0.ratios.days_sales_outstanding",
+    "trend_table.quarters-back-1.ratios.days_sales_outstanding",
+    "trend_table.quarters-back-0.ratios.bad_debt_reserve_ratio",
+    "earnings_versus_cash.working_capital.receivables.balance_sheet_change"
+   ]
+  },
+  {
+   "id": "efficiency_trade_working_capital_absorbing_cash",
+   "name": "Trade working capital growing while payables lag",
+   "name_ko": "매입채무가 따라가지 못하는 운전자본 증가",
+   "area": "efficiency",
+   "what": "Receivables plus inventory less payables rose from {free_cash_flow.free_cash_flow_to_firm.trade_working_capital.a_year_earlier} to {free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now}, an increase of {free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital}. Payables grew by only {earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change}. The cash conversion cycle is {ratios.efficiency.cash_conversion_cycle} days. Accounts payable and accrued liabilities are both lower than at the end of 2025, which used cash in the first half.",
+   "evidence": [
+    "liquidity_and_capital_accounts_payable_fact",
+    "liquidity_and_capital_accrued_liabilities_fact",
+    "liquidity_and_capital_inventory_balance_fact"
+   ],
+   "fields": [
+    "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.a_year_earlier",
+    "free_cash_flow.free_cash_flow_to_firm.trade_working_capital.now",
+    "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital",
+    "earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change",
+    "ratios.efficiency.cash_conversion_cycle"
+   ]
+  },
+  {
+   "id": "efficiency_asset_base_weighted_to_acquired_intangibles",
+   "name": "Asset base weighted toward acquired goodwill and intangibles",
+   "name_ko": "인수로 생긴 영업권·무형자산 비중이 커진 자산 구성",
+   "area": "efficiency",
+   "what": "The share of assets that are neither cash nor plant is {trend_table.quarters-back-0.ratios.soft_asset_share|pct}, the highest of the six filled quarters, against {trend_table.quarters-back-4.ratios.soft_asset_share|pct} a year earlier. Goodwill is far above its level at the end of 2024, and purchase accounting for the Silvus acquisition is not yet complete. Asset turnover is {ratios.efficiency.asset_turnover}. These assets earn a return only if the acquired businesses perform. If they fall short, the result would be an impairment against an equity base of {terms.balances_now.stockholders_equity}.",
+   "evidence": [
+    "earnings_quality_soft_asset_share_quarterly_trend",
+    "earnings_quality_goodwill_balance_fact",
+    "articulation_and_the_filed_history_silvus_goodwill_measurement_period_adjustment"
+   ],
+   "fields": [
+    "trend_table.quarters-back-0.ratios.soft_asset_share",
+    "trend_table.quarters-back-4.ratios.soft_asset_share",
+    "ratios.efficiency.asset_turnover",
+    "terms.balances_now.stockholders_equity"
+   ]
+  },
+  {
+   "id": "growth_net_income_flat_over_trailing_year",
+   "name": "Net income flat over the trailing year despite revenue growth",
+   "name_ko": "매출 성장에도 정체된 순이익",
+   "area": "growth",
+   "what": "Trailing net income grew {ratios.growth.net_income.trailing_four_quarters|pct}, while trailing revenue grew {ratios.growth.revenue.trailing_four_quarters|pct} and trailing operating income grew {ratios.growth.operating_income.trailing_four_quarters|pct}. In the quarter, net income grew {ratios.growth.net_income.year_over_year|pct} against revenue growth of {ratios.growth.revenue.year_over_year|pct}. Growth is not reaching the bottom line, because amortization of acquired intangibles and interest on the larger debt load absorb it.",
+   "evidence": [
+    "earnings_quality_intangibles_amortization_release_figure",
+    "liquidity_and_capital_interest_expense_fact"
+   ],
+   "fields": [
+    "ratios.growth.net_income.trailing_four_quarters",
+    "ratios.growth.revenue.trailing_four_quarters",
+    "ratios.growth.operating_income.trailing_four_quarters",
+    "ratios.growth.net_income.year_over_year",
+    "ratios.growth.revenue.year_over_year"
+   ]
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_memory_and_component_cost_inflation",
+   "name": "Memory and component cost inflation",
+   "name_ko": "메모리·부품 원가 상승",
+   "area": "narrative_signs_of_operating_pressure",
+   "what": "Management reports \"higher costs for memory in our products which is a result of substantial demand in the market driven by AI\" and says material and component costs have risen. MD&A cites higher direct material costs as an offset to the products segment's margin. These costs will continue after the one-time tariff refund is gone. The trailing gross margin is {ratios.profitability.gross_margin|pct}.",
+   "evidence": [
+    "narrative_signs_of_operating_pressure_memory_cost_inflation",
+    "narrative_signs_of_operating_pressure_memory_costs_release_figure",
+    "narrative_signs_of_operating_pressure_products_margin_flat_despite_refund"
+   ],
+   "fields": [
+    "ratios.profitability.gross_margin"
+   ]
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_products_segment_earnings_decline",
+   "name": "Products and Systems Integration operating earnings down for the half",
+   "name_ko": "제품·시스템통합 부문 상반기 영업이익 감소",
+   "area": "narrative_signs_of_operating_pressure",
+   "what": "MD&A reports a first-half decrease in Products and Systems Integration operating earnings. It names higher intangible amortization, the Silvus earnout charge, costs of acquired businesses and higher direct material costs as the drivers. It also says the segment's first-half gross margin \"remained flat\" even with the tariff refund. Consolidated first-half operating income still rose, from {terms.trailing_four_quarters.operating_income.parts.prior_year_to_date} to {terms.trailing_four_quarters.operating_income.parts.this_year_to_date}, so the pressure is concentrated in this segment.",
+   "evidence": [
+    "narrative_signs_of_operating_pressure_products_segment_half_year_earnings_decrease",
+    "narrative_signs_of_operating_pressure_products_margin_flat_despite_refund"
+   ],
+   "fields": [
+    "terms.trailing_four_quarters.operating_income.parts.prior_year_to_date",
+    "terms.trailing_four_quarters.operating_income.parts.this_year_to_date"
+   ]
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_north_america_products_flat",
+   "name": "North America products sales flat",
+   "name_ko": "북미 제품 매출 정체",
+   "area": "narrative_signs_of_operating_pressure",
+   "what": "MD&A says the products segment's first-half growth came from the International region, \"while the North America region remained flat\". It also says North America partly offset the half's mission-critical networks growth. The products business is not growing in its home market, and its growth comes from abroad and from acquisitions. Trailing revenue growth is {ratios.growth.revenue.trailing_four_quarters|pct}.",
+   "evidence": [
+    "narrative_signs_of_operating_pressure_north_america_products_flat_half_year",
+    "narrative_signs_of_operating_pressure_north_america_mission_critical_products_offset"
+   ],
+   "fields": [
+    "ratios.growth.revenue.trailing_four_quarters"
+   ]
+  }
+ ],
+ "path_to_distress": {
+  "reading": "Today the company is not near distress. Free cash flow is positive at {free_cash_flow.free_cash_flow_simple}, so no cash runway is computed. Operating income covers interest {ratios.solvency.interest_coverage} times, and debt is {ratios.solvency.debt_over_ebitda} times EBITDA. Pressure would become distress only if several of these conditions turned together. First, free cash flow would have to turn negative, so that a runway appeared beside cash of {terms.balances_now.cash}. That could come from a deeper inventory build, from memory and material costs eroding margins once the tariff refund is gone, or from slower collections. Second, the debt due inside a year, {terms.debt_now.parts.debt_current}, including its commercial paper, would have to become hard to roll over, since cash only just covers it. Third, new debt for the agreed acquisitions would have to raise interest expense, now {terms.trailing_four_quarters.interest_expense} over the trailing four quarters, much faster than operating income of {ebit}. That would pull interest coverage down toward the point where operating income barely pays the interest. Fourth, an impairment of acquired goodwill would have to eat into stockholders' equity of only {terms.balances_now.stockholders_equity}, against total debt of {ratios.solvency.total_debt}. Finally, the current ratio, {ratios.liquidity.current_ratio}, would have to fall to the point where current liabilities exceed current assets. None of these conditions holds now.",
+  "fields": [
+   "free_cash_flow.free_cash_flow_simple",
+   "ratios.solvency.interest_coverage",
+   "ratios.solvency.debt_over_ebitda",
+   "terms.balances_now.cash",
+   "terms.debt_now.parts.debt_current",
+   "terms.trailing_four_quarters.interest_expense",
+   "ebit",
+   "terms.balances_now.stockholders_equity",
+   "ratios.solvency.total_debt",
+   "ratios.liquidity.current_ratio"
+  ]
+ },
+ "summary_ko": {
+  "profitability": "최근 네 분기 기준 매출총이익률은 {ratios.profitability.gross_margin|pct}, 영업이익률은 {ratios.profitability.operating_margin|pct}로, 영업이익률이 과거 평균({earnings_versus_cash.history.operating_margin_three_year_average|pct})과 비슷해 본업 수익성은 견조합니다. 다만 이번 분기 마진에는 일회성 관세 환급이 들어 있고, 이자비용이 늘어 상반기 순이익은 {terms.trailing_four_quarters.net_income.parts.this_year_to_date}로 전년 같은 기간의 {terms.trailing_four_quarters.net_income.parts.prior_year_to_date}보다 줄었습니다.",
+  "efficiency": "분기말 재고일수({trend_table.quarters-back-0.ratios.days_sales_of_inventory}일)는 최근 여섯 분기 중 가장 높은데 재고충당금 비율은 가장 낮아, 부품 가격이나 수요가 바뀌면 손실 위험이 커집니다. 매출채권 회수일수는 {ratios.efficiency.days_sales_outstanding}일, 현금전환주기는 {ratios.efficiency.cash_conversion_cycle}일입니다.",
+  "liquidity": "유동비율 {ratios.liquidity.current_ratio}, 당좌비율 {ratios.liquidity.quick_ratio}로 유동성이 얇고, 현금은 한 해 전 {terms.balances_a_year_earlier.cash}에서 {terms.balances_now.cash}로 크게 줄었습니다. 잉여현금흐름이 플러스라 현금 소진 기간은 계산되지 않지만, 단기차입금과 이미 합의한 인수 대금이 부담입니다.",
+  "solvency": "총차입금은 {ratios.solvency.total_debt}로 한 해 전 {terms.debt_a_year_earlier}보다 늘었지만, EBITDA 대비 {ratios.solvency.debt_over_ebitda}배, 이자보상배율 {ratios.solvency.interest_coverage}배로 아직 감당할 수 있는 수준입니다. 그러나 자기자본이 {terms.balances_now.stockholders_equity}에 불과해, 인수 자금을 빚으로 조달하면 레버리지가 더 높아집니다.",
+  "growth": "분기 매출은 전년 동기 대비 {ratios.growth.revenue.year_over_year|pct}, 최근 네 분기 기준 {ratios.growth.revenue.trailing_four_quarters|pct} 늘었지만 상당 부분이 인수 효과입니다. 같은 기간 순이익 증가율은 {ratios.growth.net_income.trailing_four_quarters|pct}로 사실상 정체입니다.",
+  "free_cash_flow": "최근 네 분기 단순 잉여현금흐름은 {free_cash_flow.free_cash_flow_simple}로 배당과 자사주 매입을 감당하며, 네 가지 측정치가 모두 계산되었고 모두 플러스입니다. 다만 인수 지출 항목이 기록에 없어, 어느 측정치도 기업 인수에 쓴 현금을 반영하지 않습니다.",
+  "dupont": "자기자본이익률 {ratios.profitability.dupont.product|pct}은 순이익률 {ratios.profitability.dupont.net_margin|pct} × 총자산회전율 {ratios.profitability.dupont.asset_turnover} × 자기자본승수 {ratios.profitability.dupont.equity_multiplier}로 분해되며, 높은 수익률을 만드는 것은 얇은 자기자본에서 오는 자기자본승수입니다. 순이익이 정체된 가운데 매출이 늘어 순이익률 쪽은 좁아졌습니다.",
+  "path_to_distress": "현재는 부실과 거리가 있습니다. 잉여현금흐름이 플러스이고 이자보상배율이 {ratios.solvency.interest_coverage}배이기 때문입니다. 부실로 가려면 잉여현금흐름이 마이너스로 돌아서거나, 일 년 안에 갚아야 할 차입금 {terms.debt_now.parts.debt_current}의 차환이 막히거나, 인수용 신규 차입으로 이자비용이 영업이익보다 훨씬 빨리 늘어 이자보상배율이 크게 떨어져야 합니다."
+ },
+ "limits": "This analysis reads the company's health from its own filed numbers against its own past. It forecasts nothing, and it cannot see what is not in the filings.",
+ "normalized_quotes": 0,
+ "dropped_items": [
+  {
+   "where": "sections.profitability",
+   "reason": "reading: a number written in the analyst's own words: 'f sales, which the release sizes as \"a $60 million benefit, or 190 bps, from IEE'"
+  },
+  {
+   "where": "sections.growth",
+   "reason": "reading: a number written in the analyst's own words: 'first quarter was also the low point of 2025, so this rate reflects seasonality '"
+  },
+  {
+   "where": "anomalies[2]",
+   "id": "liquidity_and_capital_pending_acquisitions_against_thin_cash",
+   "reason": "what: a number written in the analyst's own words: ' company has signed to buy D-Fend \"for $1.5 billion, subject to customary adjust'"
+  },
+  {
+   "where": "anomalies[7]",
+   "id": "profitability_quarter_margin_lifted_by_one_time_tariff_refund",
+   "reason": "what: a number written in the analyst's own words: ' probable\". The release sizes it as \"a $60 million benefit, or 190 bps, from IEE'"
+  },
+  {
+   "where": "anomalies[14]",
+   "id": "growth_reported_revenue_carried_by_acquisitions",
+   "reason": "what: a number written in the analyst's own words: 'se says \"Revenue from acquisitions was $243 million and foreign currency tailwin'"
+  },
+  {
+   "where": "anomalies[16]",
+   "id": "results_against_expectations_raised_outlook_includes_one_time_refund",
+   "reason": "what: a number written in the analyst's own words: 'n the footnote\\'s words \"Inclusive of a $60M (pre-tax) benefit, or $0.25 per shar'"
+  },
+  {
+   "where": "anomalies[20]",
+   "id": "narrative_signs_of_operating_pressure_severance_actions",
+   "reason": "what: a number written in the analyst's own words: 'The restructuring note says \"The 2026 additional charges of $33 million represen'"
+  }
+ ],
+ "dropped_count": 7
+}

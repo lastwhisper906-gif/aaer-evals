@@ -1,0 +1,259 @@
+{
+  "scenarios": {
+    "bear": {
+      "revenue_growth_year_one": 0.15,
+      "terminal_growth": 0.025,
+      "operating_margin_year_one": 0.088,
+      "operating_margin_year_ten": 0.080,
+      "reinvestment_rate_year_one": 1.00,
+      "reinvestment_rate_year_ten": 0.25,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "The guided first quarter holds, but the quarters after it stall. The former largest customer keeps shrinking in the mix, from {concentration.facts.1|pct} of sales in fiscal 2024 to {concentration.facts.42|pct} in fiscal 2025 and {concentration.facts.87|pct} in fiscal 2026. The newer relationships with Nokia and Amazon take time to fill that gap, and the inventory staged for next-quarter demand turns out to be ahead of orders, which the industry's short-term customer commitments allow.",
+          "quote": "NVIDIA's share of net sales fell again, as it did in fiscal 2025, and NVIDIA dropped below the major-customer threshold in receivables.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "concentration.facts.1",
+            "concentration.facts.42",
+            "concentration.facts.87",
+            "ratios.growth.revenue.trailing_four_quarters",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.years.3.revenue_growth",
+            "earnings_versus_cash.history.years.2.revenue_growth"
+          ],
+          "history": "Below the trailing year's {ratios.growth.revenue.trailing_four_quarters|pct} and the three-year compound {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, and a little below fiscal 2023's {earnings_versus_cash.history.years.3.revenue_growth|pct}. It is a slowdown of the kind fiscal 2024 showed, when growth fell to {earnings_versus_cash.history.years.2.revenue_growth|pct} after the fiscal 2022 inventory build."
+        },
+        "terminal_growth": {
+          "reason": "In the bear case the company ends as a mature supplier in markets marked by rapid technological change and short customer commitments, and grows a little slower than the nominal economy. The rate is set below the risk-free rate {cost_of_capital.risk_free_rate|pct}.",
+          "quote": "Our industry is characterized by rapid technological change, short-term customer commitments, and rapid changes in demand.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "cost_of_capital.risk_free_rate",
+            "earnings_versus_cash.history.years.2.revenue_growth"
+          ],
+          "history": "Far below every year of the record, including the slowest year, fiscal 2024, at {earnings_versus_cash.history.years.2.revenue_growth|pct}."
+        },
+        "operating_margin_year_one": {
+          "reason": "Gross margin is already the lowest in the trend table at {ratios.profitability.gross_margin|pct}, a hedge loss is due to pass into cost of revenue, and SG&A is set to rise. If volume stalls, the expense growth MD&A plans for meets slower revenue and reverses the operating leverage of fiscal 2026. The new inventory write-down of {terms.trailing_four_quarters.inventory_write_down} would grow if the staged inventory does not ship.",
+          "quote": "A hedge loss sitting in other comprehensive income is due to be reclassified into earnings within a year, mainly into cost of revenue, and current derivative liabilities rose.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "ratios.profitability.gross_margin",
+            "terms.trailing_four_quarters.inventory_write_down",
+            "ratios.profitability.operating_margin",
+            "earnings_versus_cash.history.years.4.operating_margin",
+            "earnings_versus_cash.history.years.5.operating_margin"
+          ],
+          "history": "Below every year from fiscal 2022 on, between fiscal 2021's {earnings_versus_cash.history.years.5.operating_margin|pct} and fiscal 2022's {earnings_versus_cash.history.years.4.operating_margin|pct}, and well under fiscal 2026's {ratios.profitability.operating_margin|pct}."
+        },
+        "operating_margin_year_ten": {
+          "reason": "Customer concentration and price concessions such as the Amazon warrant push margin back to where it stood before the data center ramp. Gross margin keeps the slow drift the trend table shows down from its high of {trend_table.years-back-3.ratios.gross_margin|pct}.",
+          "quote": "Gross margin is the soft spot",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "trend_table.years-back-3.ratios.gross_margin",
+            "ratios.profitability.gross_margin",
+            "earnings_versus_cash.history.years.5.operating_margin",
+            "earnings_versus_cash.history.operating_margin_three_year_average"
+          ],
+          "history": "About level with fiscal 2021's {earnings_versus_cash.history.years.5.operating_margin|pct}, the lowest in the history, and below the three-year average {earnings_versus_cash.history.operating_margin_three_year_average|pct}."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "Capital already committed still has to be paid: the California building acquired after year end, the Pathum Thani campus, equipment, and the remaining balance on the Chonburi building. If demand falls short of the staged inventory, working capital stays heavy instead of releasing. Reinvestment then absorbs all of after-tax operating income, which it more than did in fiscal 2026.",
+          "quote": "Weak cash backing: earnings ran far ahead of operating cash, the widest gap the company's history shows, and the gap is working capital, mainly inventory.",
+          "quote_from": "analysis_accounting.json",
+          "fields": [
+            "free_cash_flow.free_cash_flow_to_firm",
+            "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital",
+            "earnings_versus_cash.working_capital.inventory.share_of_net_income",
+            "trend_table.years-back-0.ratios.days_sales_of_inventory",
+            "trend_table.years-back-1.ratios.days_sales_of_inventory",
+            "terms.trailing_four_quarters.capital_expenditure"
+          ],
+          "history": "Below fiscal 2026, when free cash flow to the firm was {free_cash_flow.free_cash_flow_to_firm} and the inventory increase equalled {earnings_versus_cash.working_capital.inventory.share_of_net_income|pct} of net income, but far above any year before it. Inventory days stay near the year-end {trend_table.years-back-0.ratios.days_sales_of_inventory} instead of falling back to fiscal 2025's {trend_table.years-back-1.ratios.days_sales_of_inventory}."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "Technology turns quickly, so equipment has to be replaced just to keep the same customers, and growth costs more capital. Against the bear terminal growth, this rate implies a return on new capital far below today's {ratios.profitability.return_on_invested_capital|pct}, near the point where growth adds little value.",
+          "quote": "ongoing investments in equipment to support the expansion of our manufacturing capacity",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.profitability.return_on_invested_capital",
+            "free_cash_flow.free_cash_flow_to_firm"
+          ],
+          "history": "Below every recent year, because fiscal 2026 reinvestment ran above after-tax operating income, with free cash flow to the firm at {free_cash_flow.free_cash_flow_to_firm}. It is above the base case because each unit of growth is assumed to need more capital."
+        }
+      }
+    },
+    "base": {
+      "revenue_growth_year_one": 0.28,
+      "terminal_growth": 0.03,
+      "operating_margin_year_one": 0.097,
+      "operating_margin_year_ten": 0.095,
+      "reinvestment_rate_year_one": 0.90,
+      "reinvestment_rate_year_ten": 0.20,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "The company guides the first quarter of fiscal 2027 to a range above the fourth quarter's revenue of {ratios.growth.revenue.this_quarter}. That fourth quarter grew {ratios.growth.revenue.quarter_over_quarter|pct} on the third and {ratios.growth.revenue.year_over_year|pct} on a year earlier, so fiscal 2027 opens from a run rate well above fiscal 2026's average quarter. The base case lets sequential growth continue but slow from that pace. Meanwhile the customer mix moves from NVIDIA toward Cisco, Nokia and Amazon, and data center is {concentration.facts.97|pct} of revenue.",
+          "quote": "Fabrinet expects first quarter revenue to be in the range of $1.375 billion to $1.425 billion.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.growth.revenue.this_quarter",
+            "ratios.growth.revenue.quarter_over_quarter",
+            "ratios.growth.revenue.year_over_year",
+            "ratios.growth.revenue.trailing_four_quarters",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound",
+            "concentration.facts.97"
+          ],
+          "history": "Below the trailing year's {ratios.growth.revenue.trailing_four_quarters|pct} and the fourth quarter's year-on-year {ratios.growth.revenue.year_over_year|pct}, because each quarter of fiscal 2027 faces a harder comparison and inventory was staged ahead of demand. Above the three-year compound {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and the five-year compound {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, because the guided first quarter already sits above a fourth quarter that grew {ratios.growth.revenue.year_over_year|pct} on a year earlier."
+        },
+        "terminal_growth": {
+          "reason": "After ten years a contract manufacturer grows with the optical and communications markets it serves, close to the nominal economy. The company's own visibility is short: its forecasts rest on customers' short- and medium-term indications. The rate is set below the risk-free rate {cost_of_capital.risk_free_rate|pct}.",
+          "quote": "Based on the short- and medium-term indications and forecasts from our customers",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "cost_of_capital.risk_free_rate",
+            "earnings_versus_cash.history.years.2.revenue_growth"
+          ],
+          "history": "Far below every year of the record. Even the slowest year, fiscal 2024, grew {earnings_versus_cash.history.years.2.revenue_growth|pct}. The terminal rate describes a mature business, not the company as it is today."
+        },
+        "operating_margin_year_one": {
+          "reason": "Management expects SG&A to rise in fiscal 2027 on research and development, IT hardware and compensation. Gross margin is at its low of {ratios.profitability.gross_margin|pct}, and a hedge loss is queued for cost of revenue. Against that, revenue growth spreads fixed costs. The base holds margin at the three-year average {earnings_versus_cash.history.operating_margin_three_year_average|pct}, a little under fiscal 2026's record.",
+          "quote": "In fiscal year 2027, we expect our SG&A expenses will increase compared with our fiscal year 2026 SG&A expenses, mainly due to increases in research and development expenses, investments in information technology hardware, and compensation-related expenses.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.profitability.operating_margin",
+            "ratios.profitability.gross_margin",
+            "earnings_versus_cash.history.operating_margin_three_year_average",
+            "trend_table.years-back-3.ratios.gross_margin"
+          ],
+          "history": "Slightly below fiscal 2026's {ratios.profitability.operating_margin|pct}, the highest in the history, and level with the three-year average {earnings_versus_cash.history.operating_margin_three_year_average|pct}. Fiscal 2026's rise came from operating expenses growing slower than revenue while gross margin slipped from its high of {trend_table.years-back-3.ratios.gross_margin|pct}, and MD&A's outlook points to that support narrowing."
+        },
+        "operating_margin_year_ten": {
+          "reason": "In contract manufacturing, margin is set by customer bargaining power. Four customers each pass the major-customer threshold, NVIDIA's share fell to {concentration.facts.87|pct}, and the Amazon relationship carries warrants charged against revenue. The base lets margin settle in the band of fiscal 2023 to fiscal 2025. The tax rate is not one of my drivers: the calculator's {tax_rate.effective_rate|pct} carries Pillar Two but not the end of the Chonburi exemption, so after-tax value may be overstated on that count in every scenario.",
+          "quote": "That spreads the risk, but growth now rests on newer relationships, and one of them, Amazon, is secured partly with warrants charged against revenue.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "concentration.facts.87",
+            "tax_rate.effective_rate",
+            "earnings_versus_cash.history.years.1.operating_margin",
+            "earnings_versus_cash.history.years.2.operating_margin",
+            "earnings_versus_cash.history.years.3.operating_margin",
+            "earnings_versus_cash.history.years.5.operating_margin"
+          ],
+          "history": "Within the band of fiscal 2023's {earnings_versus_cash.history.years.3.operating_margin|pct}, fiscal 2024's {earnings_versus_cash.history.years.2.operating_margin|pct} and fiscal 2025's {earnings_versus_cash.history.years.1.operating_margin|pct}. Below fiscal 2026's peak and above fiscal 2021's {earnings_versus_cash.history.years.5.operating_margin|pct}."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "Capital spending rose to {terms.trailing_four_quarters.capital_expenditure} from {terms.trailing_four_quarters_a_year_earlier.capital_expenditure}, and MD&A expects it to rise again in fiscal 2027 for a California building, the Pathum Thani campus and equipment. Faster revenue also needs more receivables and inventory. Part of this year's inventory build was staged for next-quarter demand and should turn into revenue. So the base sets reinvestment just below after-tax operating income, not above it as in fiscal 2026.",
+          "quote": "We expect our capital expenditures for fiscal year 2027 to increase compared to fiscal year 2026, mainly due to the purchase of a new manufacturing building in California, continued investment in our manufacturing facilities at our Pathum Thani campus, and ongoing investments in equipment to support the expansion of our manufacturing capacity.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "terms.trailing_four_quarters.capital_expenditure",
+            "terms.trailing_four_quarters_a_year_earlier.capital_expenditure",
+            "terms.trailing_four_quarters.depreciation_and_amortization",
+            "free_cash_flow.free_cash_flow_to_firm",
+            "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital",
+            "earnings_versus_cash.history.years.2.capital_expenditure",
+            "earnings_versus_cash.history.years.2.free_cash_flow_simple"
+          ],
+          "history": "Below fiscal 2026, when reinvestment exceeded after-tax operating income, free cash flow to the firm was {free_cash_flow.free_cash_flow_to_firm} and trade working capital rose {free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital}. Well above fiscal 2024, when capital spending was {earnings_versus_cash.history.years.2.capital_expenditure} and free cash flow was {earnings_versus_cash.history.years.2.free_cash_flow_simple}."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "At terminal growth, reinvestment only has to fund the growth of a mature business. Against the base terminal growth, this rate implies a return on new capital well below today's return on invested capital {ratios.profitability.return_on_invested_capital|pct}. That allows for competition and for capacity that has to be rebuilt as the technology turns.",
+          "quote": "These investments are intended to support future growth and increase production capacity.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.profitability.return_on_invested_capital",
+            "free_cash_flow.free_cash_flow_to_firm",
+            "earnings_versus_cash.history.years.2.operating_cash_flow_over_net_income",
+            "earnings_versus_cash.history.years.2.capital_expenditure"
+          ],
+          "history": "Far below fiscal 2026's level, when free cash flow to the firm was {free_cash_flow.free_cash_flow_to_firm}. Closer to light-capital years such as fiscal 2024, when operating cash flow covered net income {earnings_versus_cash.history.years.2.operating_cash_flow_over_net_income} times and capital spending was {earnings_versus_cash.history.years.2.capital_expenditure}."
+        }
+      }
+    },
+    "bull": {
+      "revenue_growth_year_one": 0.38,
+      "terminal_growth": 0.035,
+      "operating_margin_year_one": 0.102,
+      "operating_margin_year_ten": 0.105,
+      "reinvestment_rate_year_one": 0.90,
+      "reinvestment_rate_year_ten": 0.15,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "The fourth quarter beat its guidance and grew {ratios.growth.revenue.quarter_over_quarter|pct} on the third. In the bull case the company meets the top of the first-quarter range and keeps that sequential pace through fiscal 2027. Data center demand drives it, at {concentration.facts.97|pct} of revenue against {concentration.facts.50|pct} a year earlier, with new major customers Nokia and Amazon adding to Cisco.",
+          "quote": "Record Fourth Quarter Revenue Exceeds Guidance Range",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.growth.revenue.quarter_over_quarter",
+            "ratios.growth.revenue.year_over_year",
+            "ratios.growth.revenue.trailing_four_quarters",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.years.1.revenue_growth",
+            "earnings_versus_cash.history.years.2.revenue_growth",
+            "concentration.facts.97",
+            "concentration.facts.50"
+          ],
+          "history": "Above the trailing year's {ratios.growth.revenue.trailing_four_quarters|pct} and well above the three-year compound {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, though below the fourth quarter's year-on-year {ratios.growth.revenue.year_over_year|pct}. It needs the acceleration to continue, and the record from fiscal 2024's {earnings_versus_cash.history.years.2.revenue_growth|pct} to fiscal 2025's {earnings_versus_cash.history.years.1.revenue_growth|pct} and on to fiscal 2026 shows that is possible."
+        },
+        "terminal_growth": {
+          "reason": "In the bull case the company keeps a larger share of optical and data center markets that outgrow the economy for longer, so its mature growth sits at the top of a sensible range. It is still below the risk-free rate {cost_of_capital.risk_free_rate|pct}.",
+          "quote": "Growing fast and accelerating.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "cost_of_capital.risk_free_rate",
+            "earnings_versus_cash.history.years.2.revenue_growth"
+          ],
+          "history": "Far below every year of the record, including the slowest year, fiscal 2024, at {earnings_versus_cash.history.years.2.revenue_growth|pct}."
+        },
+        "operating_margin_year_one": {
+          "reason": "In fiscal 2026 operating expenses grew slower than revenue even while gross margin slipped. At the bull pace of revenue growth, the SG&A increase MD&A plans for is spread over a larger base and margin keeps rising.",
+          "quote": "Operating margin rose even as gross margin slipped, so operating expenses took a smaller share of revenue.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "ratios.profitability.operating_margin",
+            "ratios.profitability.gross_margin",
+            "earnings_versus_cash.history.years.5.operating_margin"
+          ],
+          "history": "Above fiscal 2026's {ratios.profitability.operating_margin|pct}, the highest in the history, continuing the climb from fiscal 2021's {earnings_versus_cash.history.years.5.operating_margin|pct}."
+        },
+        "operating_margin_year_ten": {
+          "reason": "The Stretch PSUs pay only if fiscal 2027 and fiscal 2028 non-GAAP operating margin beats its target, so management is paid to lift margin. In the bull case, scale and a richer data center mix carry GAAP operating margin above its record and hold it there.",
+          "quote": "50% on achievement of a cumulative fiscal 2027 and fiscal 2028 non-GAAP operating margin goal that is 5% higher than the PSU Operating Margin Target",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.profitability.operating_margin",
+            "ratios.profitability.gross_margin",
+            "trend_table.years-back-3.ratios.gross_margin"
+          ],
+          "history": "Above every year in the history, the best of which is fiscal 2026's {ratios.profitability.operating_margin|pct}. For this to hold, gross margin has to stop drifting down from {trend_table.years-back-3.ratios.gross_margin|pct} toward today's {ratios.profitability.gross_margin|pct}."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "MD&A says current capacity covers anticipated production for at least the next few quarters, and the inventory staged for next-quarter demand turns into revenue. So faster growth needs no more reinvestment, relative to after-tax operating income, than the base does.",
+          "quote": "We also believe that our current manufacturing capacity is sufficient to meet our anticipated production requirements for at least the next few quarters.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "free_cash_flow.free_cash_flow_to_firm",
+            "trend_table.years-back-0.ratios.days_sales_of_inventory",
+            "trend_table.years-back-1.ratios.days_sales_of_inventory",
+            "trend_table.years-back-2.ratios.days_sales_of_inventory",
+            "trend_table.years-back-4.ratios.days_sales_of_inventory"
+          ],
+          "history": "Below fiscal 2026, when free cash flow to the firm was {free_cash_flow.free_cash_flow_to_firm}. Inventory days fall back from {trend_table.years-back-0.ratios.days_sales_of_inventory} toward fiscal 2025's {trend_table.years-back-1.ratios.days_sales_of_inventory}, as they fell from fiscal 2022's {trend_table.years-back-4.ratios.days_sales_of_inventory} to fiscal 2024's {trend_table.years-back-2.ratios.days_sales_of_inventory}."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "If returns stay high, a mature business needs less of its income to grow. Against the bull terminal growth, this rate implies a return on new capital close to today's return on invested capital {ratios.profitability.return_on_invested_capital|pct}, and working-capital builds reverse as they did in the fiscal 2022 to fiscal 2024 cycle.",
+          "quote": "The explanation matches the direction of the numbers and the fiscal 2022 to fiscal 2024 cycle shows such a build reversing",
+          "quote_from": "analysis_accounting.json",
+          "fields": [
+            "ratios.profitability.return_on_invested_capital",
+            "free_cash_flow.free_cash_flow_to_firm",
+            "earnings_versus_cash.history.years.2.operating_cash_flow_over_net_income"
+          ],
+          "history": "Far below fiscal 2026's level, when free cash flow to the firm was {free_cash_flow.free_cash_flow_to_firm}. In line with cash-rich years such as fiscal 2024, when operating cash flow covered net income {earnings_versus_cash.history.years.2.operating_cash_flow_over_net_income} times."
+        }
+      }
+    }
+  },
+  "wacc_overrides": {}
+}

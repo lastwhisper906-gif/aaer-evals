@@ -1,0 +1,469 @@
+{
+ "run": "FN/analysis-grader-mfcsq3r5",
+ "rubric": "evals/capability/rubric.md",
+ "dealbreakers": [
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "cross_document_reconciliation_prior_year_margin_percentages_differ",
+   "where": "anomalies[32].what (same call repeated in reconciliation entry for across_documents_prior_year_margin_percentages_stated_differently)",
+   "why": "The analyst prints earnings_versus_cash.history.years.1.operating_margin, which rounds to the release's prior-year figure (8k_2_02:62) and not MD&A's (mdna:111, mdna:98), so the inputs settle the operating-margin half, yet the anomaly says 'the text-to-text mismatch is not settled here'."
+  }
+ ],
+ "items": [
+  {
+   "id": "earnings_versus_cash_operating_cash_flow_over_net_income_lowest_on_record",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "earnings_versus_cash.operating_cash_flow_over_net_income is the lowest value across earnings_versus_cash.history.years, below years.4; mdna:142 names the inventory and receivables increases."
+  },
+  {
+   "id": "earnings_versus_cash_accruals_over_total_assets_highest_in_trend_table",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.years-back-0.ratios.accruals_over_total_assets carries 'highest of the 5 filled years', far above years-back-1; quarterly cells are mostly missing (trends:accruals_over_total_assets:2025-12-27..2026-03-27)."
+  },
+  {
+   "id": "earnings_versus_cash_inventory_build_absorbs_most_of_net_income",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "earnings_versus_cash.working_capital.inventory.balance_sheet_change and share_of_net_income tie to the InventoryNet fact and notes:222; receivables and payables shares and free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital tie."
+  },
+  {
+   "id": "earnings_versus_cash_payables_articulation_gap_unexplained",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "earnings_versus_cash.working_capital.accounts_payable.articulation_gap is negative (cash-flow line larger); inventory.articulation_gap equals terms.trailing_four_quarters.inventory_write_down; no input explains the payables gap."
+  },
+  {
+   "id": "earnings_versus_cash_income_smoother_than_cash",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.smoothness formula reads 'below 1 means income moves less than cash'; smoothness.net_income rises each quarter of the year while smoothness.operating_cash_flow peaks in the first quarter; only one smoothness value exists."
+  },
+  {
+   "id": "earnings_versus_cash_free_cash_flow_collapse",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "free_cash_flow.free_cash_flow_simple sits far below history.years.1 and years.2 free_cash_flow_simple as terms.trailing_four_quarters.capital_expenditure rose; 8k_2_02:69 prints a negative fourth-quarter free cash flow."
+  },
+  {
+   "id": "revenue_recognition_days_sales_outstanding_high_against_older_years",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.years-back-0 days_sales_outstanding is 'second highest of the 5 filled years', just under years-back-1 and above years-back-4; receivables_over_revenue moves the same way, so a volume reading of mdna:142 holds."
+  },
+  {
+   "id": "revenue_recognition_customer_advances_spike_then_run_down",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.quarters-back-1.ratios.contract_liabilities_over_revenue is 'highest of the 6 filled quarters' and terms.balances_now.contract_liabilities sits below balances_a_year_earlier; notes:128 with note_history:27 confirm the run-down went to revenue."
+  },
+  {
+   "id": "revenue_recognition_fourth_quarter_growth_above_full_year",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.growth.revenue.year_over_year exceeds trailing_four_quarters and this_quarter ties to 8k_2_02:11; 8k_2_02:5 claims the beat without the prior range in the inputs; auditors_report:19 covers cut-off."
+  },
+  {
+   "id": "revenue_recognition_receivables_weighted_toward_nokia_and_amazon",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "concentration.facts.91 and .92 (receivable shares) exceed .88 and .89 (sales shares), Nokia up from .44, Cisco's .90 below .86, exactly as notes:343 and notes:346 print."
+  },
+  {
+   "id": "estimates_and_reserves_raytek_remeasurement_gain_in_earnings",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "notes:187 describes the ESB-price remeasurement with a marketability discount booked in other income; 8k_2_02:66 strips it from non-GAAP; terms.trailing_four_quarters.pretax_income sits above operating_income."
+  },
+  {
+   "id": "estimates_and_reserves_credit_loss_allowance_thinnest_in_trend_table",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.years-back-0.ratios.bad_debt_reserve_ratio is 'lowest of the 5 filled years'; terms.balances_now.bad_debt_allowance fell from balances_a_year_earlier while receivables rose; notes:220 gives no prose cause."
+  },
+  {
+   "id": "estimates_and_reserves_performance_units_judged_not_to_vest",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "low",
+   "why": "notes:173 confirms the EPS exclusion, but notes:276 lists the whole outstanding PSU balance as expected to vest, so the implied hold-down of terms.trailing_four_quarters.share_based_compensation is not shown either way."
+  },
+  {
+   "id": "estimates_and_reserves_effective_tax_rate_up_on_pillar_two",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.trailing_four_quarters.income_tax_expense and tax_rate.effective_rate rise on the Pillar Two line of notes:151; notes:160 and notes:169 show additions and no releases."
+  },
+  {
+   "id": "estimates_and_reserves_chonburi_tax_exemption_ended",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:142 says the Chonburi exemption ran 'through June 2026'; tax_rate.effective_rate covers the year just ended, so it cannot yet carry the expiry."
+  },
+  {
+   "id": "estimates_and_reserves_casix_retrial_without_accrual",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:325 records the retrial acceptance and notes:326 says the liability cannot be quantified; the damages-sought fact is tagged and no accrual appears in the inputs."
+  },
+  {
+   "id": "estimates_and_reserves_warranty_allowance_first_quantified",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:95 quantifies the allowance for the first time and calls earlier years immaterial; terms.balances_now.warranty_accrual is missing in the calculator."
+  },
+  {
+   "id": "estimates_and_reserves_tariff_refund_not_recognized",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:328 quote resolves verbatim; with no receivable booked, any refund would be an unrecorded gain."
+  },
+  {
+   "id": "cost_deferral_gross_margin_lowest_in_trend_table",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.profitability.gross_margin equals trend_table.years-back-0 gross_margin, 'lowest of the 5 filled years', below years-back-1 and years-back-3; mdna:107-108 give volume and mix, not a cause for the slip."
+  },
+  {
+   "id": "cost_deferral_operating_margin_highest_while_gross_margin_lowest",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.history.years.0.operating_margin is the high of history.years while gross margin is the low; mdna:98 shows SG&A falling as a share of revenue and mdna:42 expects it to rise."
+  },
+  {
+   "id": "cost_deferral_other_assets_jump_unexplained",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "Other current and non-current asset facts and the 8k_2_02:53 cash-flow line all rose; trend_table.years-back-0 soft_asset_share sits just under years-back-1; no note explains the lines."
+  },
+  {
+   "id": "cost_deferral_non_gaap_definition_widened_and_tied_to_pay",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:39 quote resolves verbatim, 8k_2_02:38 ties non-GAAP to incentive pay, and 8k_body:24 and 8k_body:76 pay on non-GAAP operating margin; non_gaap_gap is missing in the trend table."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_unpaid_tax_lifts_operating_cash_flow",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "notes:147 current tax far exceeds notes:149 cash taxes, 8k_2_02:53 carries the income tax payable change inside terms.trailing_four_quarters.operating_cash_flow, and mdna:73 puts the Pillar Two liability in income tax payable."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_unpaid_capital_spending_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The CapitalExpendituresIncurredButNotYetPaid fact and 8k_2_02:56 rose; mdna:151-152 capital expenditures including accruals exceed terms.trailing_four_quarters.capital_expenditure."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_customer_warrant_non_cash_add_back",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:53 adds back 'Customer warrant' as non-cash; free_cash_flow.free_cash_flow_quality_adjusted deducts only share-based compensation and its adjustments_applied is empty."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_guaranteed_debt_after_year_end",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.debt_now has no line on record; 8k_body:3 says 'The Term Loan is guaranteed by the Company.' and 8k_body:4 carries the bank-opinion default; notes:315 omits the guarantee; guarantee_maximum_exposure is missing."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_casix_appeal_left_out_of_quarterly_report",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "note_history:9-11 show the third-quarter 10-Q removed the litigation section, while notes:325 dates 'In April 2026, the Plaintiffs appealed', before that filing per the manifest."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_no_policy_change_statement_beside_new_policy",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:77 quote resolves verbatim; notes:115-118 and mdna:91-93 add the non-marketable equity policy; 8k_2_02:47 shows the holding is new."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_revenue_timing_critical_audit_matter",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "auditors_report:17 quote resolves verbatim; auditors_report:19 includes cut-off sampling; no prior auditor's report is in the inputs."
+  },
+  {
+   "id": "cross_document_reconciliation_geography_basis_moved_to_ship_to",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:131 quote resolves verbatim; concentration.facts.73 (10-Q nine-month North America) and .94 (10-K ship-to) sit on different bases, as note_history:18 and notes:134 show."
+  },
+  {
+   "id": "cross_document_reconciliation_end_market_categories_recast",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:100 and notes:131 describe the recast; concentration.facts.97 and .50 are data center while .81 is the 10-Q's optical communications share."
+  },
+  {
+   "id": "cross_document_reconciliation_excess_inventory_sales_line_differs",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:83 says revenue on shipment while mdna:34 says 'recognized as an offset against cost of revenue upon shipment'; nothing in the inputs settles which."
+  },
+  {
+   "id": "cross_document_reconciliation_prior_year_margin_percentages_differ",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "low",
+   "why": "Scored zero by dealbreaker: earnings_versus_cash.history.years.1.operating_margin, printed in the anomaly itself, sides with 8k_2_02:62 over mdna:111, so the claim that the mismatch is not settled is shown wrong."
+  },
+  {
+   "id": "cross_document_reconciliation_severance_policy_text_versus_current_portion",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:106 quote resolves verbatim; notes:250 and 8k_2_02:47 show a current portion where the prior year prints a dash, so the policy text is stale."
+  },
+  {
+   "id": "cross_document_reconciliation_floating_rate_borrowing_text_with_no_debt",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:349 quote resolves verbatim; terms.debt_now has no line, terms.trailing_four_quarters.interest_paid is nil and interest_expense small; notes:315 shows the loan came after year end."
+  },
+  {
+   "id": "cross_document_reconciliation_tax_rate_reconciliation_not_comparable",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:150 states prospective adoption; notes:151 and notes:153 use different formats; tax_rate.effective_rate matches the new table's total."
+  },
+  {
+   "id": "industry_lens_customer_concentration_shifting",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "concentration.facts.87, .42 and .1 trace NVIDIA's decline, .86 over .41 Cisco's rise, and .88 and .89 are new, as notes:343 prints."
+  },
+  {
+   "id": "industry_lens_equity_links_with_customer_and_investee",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:280-281 and notes:129 describe the payment-vesting Amazon warrant booked against revenue; notes:185 states no commercial tie for Raytek."
+  },
+  {
+   "id": "growth_operating_cash_flow_falling_while_earnings_rise",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "ratios.growth.operating_cash_flow.trailing_four_quarters is negative beside positive net_income and operating_income growth; history.years.2, years.1 and terms.trailing_four_quarters.operating_cash_flow decline in turn; 8k_2_02:69 ties the quarter."
+  },
+  {
+   "id": "profitability_earnings_outrunning_cash_conversion",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "earnings_versus_cash.operating_cash_flow_over_net_income sits below history.years.1 and years.2; trend_table.years-back-0 accruals is 'highest of the 5 filled years'; mdna:142 and the other-current-assets fact back the attribution."
+  },
+  {
+   "id": "liquidity_and_capital_free_cash_flow_near_zero",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "free_cash_flow.free_cash_flow_simple barely positive against history.years.1; free_cash_flow_to_firm and free_cash_flow_quality_adjusted negative; 8k_2_02:69 prints the negative quarter and the higher quarterly capex."
+  },
+  {
+   "id": "efficiency_inventory_days_lengthening",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.years-back-0 days_sales_of_inventory exceeds years-back-1; the inventory change and share of net income tie to notes:222, where raw materials and work in progress carry the rise; terms.trailing_four_quarters.change_in_inventory ties."
+  },
+  {
+   "id": "efficiency_receivables_build_on_collection_timing",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.working_capital.receivables fields tie; years-back-0 days_sales_outstanding is 'second highest of the 5 filled years' just under years-back-1; notes:346 shows the shift to Cisco, Nokia and Amazon."
+  },
+  {
+   "id": "efficiency_credit_loss_allowance_at_its_thinnest",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.years-back-0.ratios.bad_debt_reserve_ratio is the trend low, below years-back-1, while terms.balances_now.receivables rose; notes:346 gives the concentration."
+  },
+  {
+   "id": "liquidity_and_capital_working_capital_leaning_on_supplier_credit",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.working_capital.accounts_payable.balance_sheet_change ties to terms.balances_now.accounts_payable and ratios.efficiency.days_payables_outstanding; mdna:142 links payables to inventory volume."
+  },
+  {
+   "id": "liquidity_and_capital_cash_cushion_drawn_down",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.cash_and_short_term_investments_now is below the net_working_capital_broad_not_used.a_year_earlier input; short-term investments fell; mdna:112 quote resolves; net income is the history.years high."
+  },
+  {
+   "id": "liquidity_and_capital_capital_spending_and_commitments_rising",
+   "frame": "financial",
+   "verdict": "unclear",
+   "severity": "medium",
+   "why": "Capex, unpaid capex, PP&E and mdna:153 support the spending rise, but the title's commitments rising runs against its own evidence: notes:310 '$108.1 million' versus note_history:3 '$164.7 million' and '$193.7 million'."
+  },
+  {
+   "id": "liquidity_and_capital_inventory_purchase_obligations_growing",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:307 '$3.15 billion' exceeds note_history:2 '$2.74 billion', which exceeds '$1.94 billion'; notes:306 gives the cancel and reschedule terms; unconditional_purchase_obligations is missing in the calculator."
+  },
+  {
+   "id": "liquidity_and_capital_cash_taxes_coming_due",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:147 current tax against notes:149 cash taxes paid, the AccruedIncomeTaxesCurrent fact and mdna:73's liability in income tax payable; terms.balances_now.current_liabilities ties."
+  },
+  {
+   "id": "liquidity_and_capital_customer_advances_run_off",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "Balances and trend_table.quarters-back-1 cell tie; the closing caveat is too cautious, since the cited quarter-end and year-end balances, and notes:128 with note_history:27, show the run-down fell in the fourth quarter."
+  },
+  {
+   "id": "profitability_gross_margin_at_its_low",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.profitability.gross_margin is the trend low; notes:207 'expected to be reclassified into earnings within 12 months as loss' with notes:210 mapping mainly to cost of revenues; derivative liabilities rose; inventory_write_down is new."
+  },
+  {
+   "id": "profitability_tax_burden_rising",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "mdna:72-73 and notes:151 for Pillar Two; 8k_2_02:73 adds back 'Tax provision related to Pillar Two' for the guided quarter; notes:142 Chonburi expiry; notes:169 additions to unrecognized benefits."
+  },
+  {
+   "id": "profitability_net_income_includes_one_time_revaluation_gain",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "ratios.profitability.net_margin above operating_margin because terms.trailing_four_quarters.pretax_income exceeds operating_income; notes:187 and 8k_2_02:66 for the gain; notes:185 versus note_history:33 for the differing stake."
+  },
+  {
+   "id": "solvency_borrowing_begins_after_year_end",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.solvency.total_debt has no line and net_debt is net cash; 8k_body:3-4 give the guaranteed term loan, covenants and bank-opinion default; only the 'carries floating rates' detail rests on notes:349's general sentence."
+  },
+  {
+   "id": "solvency_reopened_litigation_exposure",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:323-326 give the claim, retrial and unquantified liability; note_history:9-11 show the quarterly removal; ratios.solvency.net_debt is the buffer."
+  },
+  {
+   "id": "solvency_operating_liabilities_swelling",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.balances_now.total_liabilities over balances_a_year_earlier with ratios.solvency.liabilities_over_assets; terms.debt_now has no line; 8k_2_02:47 shows the rise in payables, other payables, accrued expenses and tax payable."
+  },
+  {
+   "id": "growth_customer_mix_shifting_away_from_nvidia",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:343 and notes:346 trace NVIDIA down, Cisco up, Nokia and Amazon new; ratios.growth.revenue.trailing_four_quarters; notes:129 for the warrant charged against revenue."
+  },
+  {
+   "id": "growth_revenue_reduced_by_customer_warrant",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:129 reduction grew year on year; notes:284 vested warrant shares rose; notes:172 adds warrant shares to the diluted count; terms.trailing_four_quarters.revenue."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_inventory_staged_ahead_of_demand",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:142 quote; 8k_2_02:53 'Inventory obsolescence impairment' is new; inventory_reserve_ratio is unfilled in every period of the trend table."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_operating_costs_set_to_rise",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:42 quote; 8k_body:26 salary increases, 8k_body:8 bonus cap above target, 8k_body:76 Stretch PSU condition; mdna:109 shows SG&A growing slower than revenue."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_israel_subsidiary_losses",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:163 cites continuing losses and a full allowance; notes:160 shows an addition and no reduction this year."
+  },
+  {
+   "id": "results_against_expectations_next_quarter_bar_set_higher",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.growth.revenue.this_quarter ties to 8k_2_02:11; 8k_2_02:27 guides above it; 8k_2_02:30 'certain non-recurring items' sits beside the 8k_2_02:73 Pillar Two add-back."
+  }
+ ],
+ "coverage": {
+  "answer": "no",
+  "why": "Accounting areas revenue_recognition, estimates_and_reserves, cost_deferral, cash_flow_engineering_and_off_balance_sheet, cross_document_reconciliation and industry_lens, and the financial solvency section, hold only a gate 'dropped' entry; only earnings_versus_cash and controls_audit_and_filing_signals carry a finding and verdict."
+ },
+ "calibration": {
+  "answer": "yes",
+  "why": "earnings_versus_cash's 'Weak cash backing' verdict matches its cash-conversion, accrual, inventory and free-cash-flow anomalies, and controls_audit_and_filing_signals' 'Clean on audit opinion, controls and restatement' matches its disclosure-lapse anomalies; areas without verdicts are counted under coverage."
+ },
+ "valuation_reading": {
+  "answer": "no",
+  "why": "Calculator valuation.missing and market.missing leave no value range, price or reverse DCF, so price_position and market_implied_growth read 'Not computed', and most_sensitive keeps one assumption after the gate dropped most_sensitive[1]."
+ },
+ "score": 0.978,
+ "grader": {
+  "model_requested": "opus",
+  "model_served": "claude-opus-5-5",
+  "input_tokens": 50,
+  "output_tokens": 67034,
+  "cost_usd": 6.616336600000002,
+  "seconds": 606.5
+ }
+}

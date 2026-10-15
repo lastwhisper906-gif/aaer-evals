@@ -1,0 +1,75 @@
+{
+ "question": "what is this company worth, and what does the price already assume?",
+ "value_range": {
+  "reading": "No value range was computed, and no scenario has an enterprise value, an equity value or a value per share. Under valuation the calculator prints: \"WACC is not computed: the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\". Under the cost of capital it prints: \"the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\". The missing pieces are therefore a beta and a share price, and neither is a component the analyst may supply. Separately, the first-pass drivers did not survive. The bear, base and bull scenarios were each dropped because the history note on the revenue-growth driver wrote a number in words, so assumptions.json holds no scenario for Python to run even once a WACC exists. Nothing is estimated in their place. The record does hold the starting point a DCF would use: trailing revenue of {terms.trailing_four_quarters.revenue}, a trailing operating margin of {ratios.profitability.operating_margin|pct}, net debt of {ratios.solvency.net_debt}, operating lease liabilities of {ratios.solvency.operating_lease_liability} and diluted shares of {terms.diluted_shares}.",
+  "fields": [
+   "valuation.missing",
+   "cost_of_capital.missing",
+   "terms.trailing_four_quarters.revenue",
+   "ratios.profitability.operating_margin",
+   "ratios.solvency.net_debt",
+   "ratios.solvency.operating_lease_liability",
+   "terms.diluted_shares"
+  ]
+ },
+ "price_position": {
+  "reading": "Where the price sits in the range cannot be read, because there is neither a range nor a price. Under market the calculator prints: \"no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched\". The price-at-cutoff entry in the free-cash-flow yield block is missing for the same reason, so the yield cross-check on trailing simple free cash flow of {free_cash_flow.free_cash_flow_simple} cannot be formed either. No position is reported.",
+  "fields": [
+   "market.missing",
+   "free_cash_flow_yield.price_at_cutoff.missing",
+   "free_cash_flow.free_cash_flow_simple"
+  ]
+ },
+ "market_implied_growth": {
+  "dropped": "reading: a number written in the analyst's own words: ' Annual growth slowed in each year from 2022, at  , to 2025, at  . Trailing four'"
+ },
+ "most_sensitive": [
+  {
+   "assumption": "The discount rate: not computed, so not ranked",
+   "reading": "The sensitivity grid was not computed, so no assumption can be named from it as the one value is most sensitive to. The grid needs a WACC, and the WACC is missing because there is no beta and no price. These inputs are present: the risk-free rate of {cost_of_capital.risk_free_rate|pct}, which also caps terminal growth, the equity risk premium of {cost_of_capital.equity_risk_premium|pct}, the pre-tax cost of debt of {cost_of_capital.pre_tax_cost_of_debt|pct} and the tax rate of {cost_of_capital.tax_rate|pct}. The weights of debt and equity would rest on the market value of equity, which is missing too. So the thin book equity of {terms.balances_now.stockholders_equity} beneath debt of {ratios.solvency.total_debt} does not tell how heavily debt would weigh in the rate.",
+   "fields": [
+    "valuation.missing",
+    "cost_of_capital.missing",
+    "cost_of_capital.beta.missing",
+    "cost_of_capital.risk_free_rate",
+    "cost_of_capital.equity_risk_premium",
+    "cost_of_capital.pre_tax_cost_of_debt",
+    "cost_of_capital.tax_rate",
+    "terms.balances_now.stockholders_equity",
+    "ratios.solvency.total_debt"
+   ]
+  }
+ ],
+ "accounting_adjustments": {
+  "reading": "No valuation ran, so the calculator holds no measure of how the accounting adjustments moved value. One adjustment reached the calculator: the accounting reader removed receivable sale proceeds of {terms.trailing_four_quarters.proceeds_from_sale_of_receivables} over the trailing four quarters, treated as one-time. Python applied it to quality-adjusted free cash flow, which falls from {free_cash_flow.free_cash_flow_quality_adjusted.adjustments_applied.0.before} to {free_cash_flow.free_cash_flow_quality_adjusted.adjustments_applied.0.after}. That is a change in a cash-flow measure, not in value. The same measure subtracts {free_cash_flow.free_cash_flow_quality_adjusted.inputs.acquisitions.cash_spent} for acquisitions, because no acquisition line is tagged, although the reports describe acquisitions; it therefore reads before acquisition spending. Two items the accounting reader flagged were not made adjustments. One is the one-time IEEPA tariff refund inside the quarter's cost of sales, which lifts the quarter's gross margin to {trend_table.quarters-back-0.ratios.gross_margin|pct}. The other is the recurring Hytera litigation gains inside GAAP operating earnings. Any margin driver resting on trailing earnings would carry both.",
+  "fields": [
+   "valuation.missing",
+   "terms.trailing_four_quarters.proceeds_from_sale_of_receivables",
+   "free_cash_flow.free_cash_flow_quality_adjusted.adjustments_applied.0.before",
+   "free_cash_flow.free_cash_flow_quality_adjusted.adjustments_applied.0.after",
+   "free_cash_flow.free_cash_flow_quality_adjusted.inputs.acquisitions.cash_spent",
+   "trend_table.quarters-back-0.ratios.gross_margin"
+  ]
+ },
+ "summary_ko": {
+  "value_range": "주가 자료와 베타가 없어 할인율(WACC)을 계산하지 못했으므로, 시나리오별 기업가치·주주가치·주당가치와 가치 범위는 모두 계산되지 않았습니다. 첫 단계에서 세운 약세·기본·강세 시나리오 가정도 모두 탈락해, 최근 네 분기 매출 {terms.trailing_four_quarters.revenue}과 영업이익률 {ratios.profitability.operating_margin|pct} 같은 출발점만 기록에 남아 있습니다.",
+  "price_position": "기준일 주가 시계열이 제공되지 않아, 주가가 가치 범위의 어디쯤에 있는지 읽을 수 없습니다. 같은 이유로 잉여현금흐름 수익률 교차 점검도 계산되지 않았습니다.",
+  "market_implied_growth": "역DCF가 계산되지 않아 주가가 가정하는 매출 성장률은 알 수 없습니다. 회사 기록으로는 최근 세 회계연도의 연평균 매출 성장률이 {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}이고 최근 몇 해 동안 해마다 둔화했으며, 회사가 상향한 올해 매출 전망은 인수 효과와 자체 성장을 구분하지 않습니다.",
+  "most_sensitive": "민감도 표가 계산되지 않았고 남은 시나리오도 없어, 가치가 가장 민감하게 반응하는 두 가정을 표에서 읽을 수 없습니다. 할인율에서 빠진 것은 베타와 주가이며, 무위험이자율 {cost_of_capital.risk_free_rate|pct}과 세전 부채비용 {cost_of_capital.pre_tax_cost_of_debt|pct}은 계산되어 있습니다.",
+  "accounting_adjustments": "가치 평가가 돌지 않아 회계 조정이 가치를 얼마나 움직였는지는 계산되지 않았습니다. 유일하게 반영된 조정인 매출채권 매각 대금 {terms.trailing_four_quarters.proceeds_from_sale_of_receivables} 차감은 품질조정 잉여현금흐름을 {free_cash_flow.free_cash_flow_quality_adjusted.adjustments_applied.0.before}에서 {free_cash_flow.free_cash_flow_quality_adjusted.adjustments_applied.0.after}로 낮췄을 뿐입니다."
+ },
+ "limits": "This valuation is a set of stated assumptions run through a stated formula. It states no recommendation to trade, and a different reader choosing different drivers would reach a different value.",
+ "normalized_quotes": 0,
+ "dropped_items": [
+  {
+   "where": "market_implied_growth",
+   "reason": "reading: a number written in the analyst's own words: ' Annual growth slowed in each year from 2022, at  , to 2025, at  . Trailing four'"
+  },
+  {
+   "where": "most_sensitive[1]",
+   "id": null,
+   "reason": "reading: a number written in the analyst's own words: 'The trailing margin of   sits below the 2025 figure. It carries the one-time IEE'"
+  }
+ ],
+ "dropped_count": 2
+}

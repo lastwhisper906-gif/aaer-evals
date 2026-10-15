@@ -1,0 +1,4534 @@
+{
+ "accepted": "2026-08-18T07:12:07-04:00",
+ "accession": "0001408710-26-000028",
+ "agents": {
+  "numbers-reader": {
+   "agent": "numbers-reader",
+   "model_requested": "opus",
+   "model_served": "claude-opus-5-5",
+   "effort": "xhigh",
+   "input_tokens": 136,
+   "cache_creation_input_tokens": 1698376,
+   "cache_read_input_tokens": 28528506,
+   "output_tokens": 76084,
+   "turns": 83,
+   "cost_usd": 21.2361452,
+   "session": "39b56bae-3fc2-4d92-9b4f-73a82f06e923",
+   "seconds": 786.1,
+   "attempt": 1,
+   "is_error": false,
+   "stop_reason": "end_turn",
+   "result": "written",
+   "attempts": [
+    {
+     "attempt": 1,
+     "model_requested": "opus",
+     "model_served": "claude-opus-5-5",
+     "input_tokens": 136,
+     "cache_creation_input_tokens": 1698376,
+     "cache_read_input_tokens": 28528506,
+     "output_tokens": 76084,
+     "cost_usd": 21.2361452,
+     "duration_s": 786.1,
+     "outcome": "written"
+    }
+   ]
+  },
+  "notes-text-reader": {
+   "agent": "notes-text-reader",
+   "model_requested": "opus",
+   "model_served": "claude-opus-5-5",
+   "effort": "xhigh",
+   "input_tokens": 10,
+   "cache_creation_input_tokens": 124464,
+   "cache_read_input_tokens": 401648,
+   "output_tokens": 181122,
+   "turns": 12,
+   "cost_usd": 4.698521599999999,
+   "session": "c82ed2ea-bafb-48d7-9f98-0b8186d31b14",
+   "seconds": 1485.0,
+   "attempt": 1,
+   "is_error": false,
+   "stop_reason": "end_turn",
+   "result": "written",
+   "attempts": [
+    {
+     "attempt": 1,
+     "model_requested": "opus",
+     "model_served": "claude-opus-5-5",
+     "input_tokens": 10,
+     "cache_creation_input_tokens": 124464,
+     "cache_read_input_tokens": 401648,
+     "output_tokens": 181122,
+     "cost_usd": 4.698521599999999,
+     "duration_s": 1485.0,
+     "outcome": "written"
+    }
+   ]
+  },
+  "accounting-analyst": {
+   "agent": "accounting-analyst",
+   "model_requested": "opus",
+   "model_served": "claude-opus-5-5",
+   "effort": "xhigh",
+   "input_tokens": 16,
+   "cache_creation_input_tokens": 290790,
+   "cache_read_input_tokens": 690570,
+   "output_tokens": 171766,
+   "turns": 9,
+   "cost_usd": 5.899818,
+   "session": "14060453-96ac-485b-be22-99e013365543",
+   "seconds": 1313.1,
+   "attempt": 1,
+   "is_error": false,
+   "stop_reason": "end_turn",
+   "result": "written",
+   "attempts": [
+    {
+     "attempt": 1,
+     "model_requested": "opus",
+     "model_served": "claude-opus-5-5",
+     "input_tokens": 16,
+     "cache_creation_input_tokens": 290790,
+     "cache_read_input_tokens": 690570,
+     "output_tokens": 171766,
+     "cost_usd": 5.899818,
+     "duration_s": 1313.1,
+     "outcome": "written"
+    }
+   ]
+  },
+  "financial-analyst": {
+   "agent": "financial-analyst",
+   "model_requested": "opus",
+   "model_served": "claude-opus-5-5",
+   "effort": "xhigh",
+   "input_tokens": 12,
+   "cache_creation_input_tokens": 213879,
+   "cache_read_input_tokens": 426266,
+   "output_tokens": 78960,
+   "turns": 8,
+   "cost_usd": 3.3755332,
+   "session": "e8d206be-62d0-47da-b011-1604c99008b8",
+   "seconds": 616.1,
+   "attempt": 1,
+   "is_error": false,
+   "stop_reason": "end_turn",
+   "result": "written",
+   "attempts": [
+    {
+     "attempt": 1,
+     "model_requested": "opus",
+     "model_served": "claude-opus-5-5",
+     "input_tokens": 12,
+     "cache_creation_input_tokens": 213879,
+     "cache_read_input_tokens": 426266,
+     "output_tokens": 78960,
+     "cost_usd": 3.3755332,
+     "duration_s": 616.1,
+     "outcome": "written"
+    }
+   ]
+  },
+  "valuation-analyst": {
+   "agent": "valuation-analyst",
+   "model_requested": "opus",
+   "model_served": "claude-opus-5-5",
+   "effort": "xhigh",
+   "input_tokens": 14,
+   "cache_creation_input_tokens": 207358,
+   "cache_read_input_tokens": 688075,
+   "output_tokens": 40965,
+   "turns": 11,
+   "cost_usd": 2.615835,
+   "session": "57aa94dd-2a33-4955-a433-b17dfd84d2ab",
+   "seconds": 492.3,
+   "attempt": 1,
+   "is_error": false,
+   "stop_reason": "end_turn",
+   "result": "written",
+   "attempts": [
+    {
+     "attempt": 1,
+     "model_requested": "opus",
+     "model_served": "claude-opus-5-5",
+     "input_tokens": 14,
+     "cache_creation_input_tokens": 207358,
+     "cache_read_input_tokens": 688075,
+     "output_tokens": 40965,
+     "cost_usd": 2.615835,
+     "duration_s": 492.3,
+     "outcome": "written"
+    }
+   ],
+   "trimmed": {
+    "input_8k.md": {
+     "kept": [
+      "0001408710-26-000026:8k_2_02:5",
+      "0001408710-26-000026:8k_2_02:27",
+      "0001408710-26-000026:8k_2_02:30",
+      "0001408710-26-000026:8k_2_02:39",
+      "0001408710-26-000026:8k_body:4",
+      "0001408710-26-000026:8k_body:26",
+      "0001408710-26-000026:8k_body:76"
+     ],
+     "note": "7 of 150 paragraphs, the ones the notes reader flagged; the rest were not placed",
+     "of": 150
+    },
+    "input_mdna.md": {
+     "kept": [
+      "0001408710-26-000028:mdna:30",
+      "0001408710-26-000028:mdna:42",
+      "0001408710-26-000028:mdna:73",
+      "0001408710-26-000028:mdna:77",
+      "0001408710-26-000028:mdna:87",
+      "0001408710-26-000028:mdna:100",
+      "0001408710-26-000028:mdna:112",
+      "0001408710-26-000028:mdna:116",
+      "0001408710-26-000028:mdna:138",
+      "0001408710-26-000028:mdna:142",
+      "0001408710-26-000028:mdna:153"
+     ],
+     "note": "11 of 155 paragraphs, the ones the notes reader flagged; the rest were not placed",
+     "of": 155
+    }
+   }
+  },
+  "valuation-analyst-second-pass": {
+   "agent": "valuation-analyst",
+   "model_requested": "opus",
+   "model_served": "claude-opus-5-5",
+   "effort": "xhigh",
+   "input_tokens": 12,
+   "cache_creation_input_tokens": 200701,
+   "cache_read_input_tokens": 559961,
+   "output_tokens": 27118,
+   "turns": 12,
+   "cost_usd": 2.2600081999999997,
+   "session": "aae7e4c9-9628-4270-8c1b-b0dd74e67547",
+   "seconds": 229.8,
+   "attempt": 1,
+   "is_error": false,
+   "stop_reason": "end_turn",
+   "result": "written",
+   "attempts": [
+    {
+     "attempt": 1,
+     "model_requested": "opus",
+     "model_served": "claude-opus-5-5",
+     "input_tokens": 12,
+     "cache_creation_input_tokens": 200701,
+     "cache_read_input_tokens": 559961,
+     "output_tokens": 27118,
+     "cost_usd": 2.2600081999999997,
+     "duration_s": 229.8,
+     "outcome": "written"
+    }
+   ],
+   "trimmed": {
+    "input_8k.md": {
+     "kept": [
+      "0001408710-26-000026:8k_2_02:5",
+      "0001408710-26-000026:8k_2_02:27",
+      "0001408710-26-000026:8k_2_02:30",
+      "0001408710-26-000026:8k_2_02:39",
+      "0001408710-26-000026:8k_body:4",
+      "0001408710-26-000026:8k_body:26",
+      "0001408710-26-000026:8k_body:76"
+     ],
+     "note": "7 of 150 paragraphs, the ones the notes reader flagged; the rest were not placed",
+     "of": 150
+    },
+    "input_mdna.md": {
+     "kept": [
+      "0001408710-26-000028:mdna:30",
+      "0001408710-26-000028:mdna:42",
+      "0001408710-26-000028:mdna:73",
+      "0001408710-26-000028:mdna:77",
+      "0001408710-26-000028:mdna:87",
+      "0001408710-26-000028:mdna:100",
+      "0001408710-26-000028:mdna:112",
+      "0001408710-26-000028:mdna:116",
+      "0001408710-26-000028:mdna:138",
+      "0001408710-26-000028:mdna:142",
+      "0001408710-26-000028:mdna:153"
+     ],
+     "note": "11 of 155 paragraphs, the ones the notes reader flagged; the rest were not placed",
+     "of": 155
+    }
+   }
+  }
+ },
+ "analysis_stages": {
+  "quote_gate": {
+   "dropped": 0
+  },
+  "market_labels": {
+   "written": false,
+   "reason": "the run holds no input_market.json, so there is no market to label against; nothing is written and every item's label stays absent"
+  },
+  "analysis_accounting": {
+   "dropped": 14
+  },
+  "analysis_financial": {
+   "dropped": 1
+  },
+  "assumptions": {
+   "dropped": 0
+  },
+  "analysis_valuation": {
+   "dropped": 1
+  },
+  "baselines": "written",
+  "control": "skipped: no approved golden case under evals/golden/cases names 0001408710-26-000028"
+ },
+ "comparer_labels": {
+  "notes-vs-market": "absent",
+  "numbers-vs-market": "absent"
+ },
+ "counts": {
+  "controls": 35,
+  "dropped_items": 0,
+  "eight_k": 150,
+  "exclusions": 28,
+  "facts": 3184,
+  "mdna": 155,
+  "normalized_quotes": 11,
+  "note_history": 51,
+  "notes": 353,
+  "paragraphs": 744
+ },
+ "cutoff": "2026-08-18",
+ "documents": [
+  {
+   "accepted": "2026-02-03T06:14:39-05:00",
+   "accession": "0001408710-26-000008",
+   "contributed_to": [
+    "input_notes_history.md",
+    "input_numbers.json"
+   ],
+   "filing_date": "2026-02-03",
+   "form": "10-Q",
+   "path": "10-Q/fn-20251226_htm.xml",
+   "report_date": "2025-12-26",
+   "role": "prior_period_xbrl_instance",
+   "sha256": "4f890cdfd6aef4cfc6b78190a815c2207d4d5e536ce7c45c14d627135569623e",
+   "url": "https://www.sec.gov/Archives/edgar/data/1408710/000140871026000008/fn-20251226_htm.xml"
+  },
+  {
+   "accepted": "2026-05-05T07:14:28-04:00",
+   "accession": "0001408710-26-000016",
+   "contributed_to": [
+    "input_notes_history.md",
+    "input_numbers.json"
+   ],
+   "filing_date": "2026-05-05",
+   "form": "10-Q",
+   "path": "10-Q/fn-20260327_htm.xml",
+   "report_date": "2026-03-27",
+   "role": "xbrl_instance",
+   "sha256": "1bd2fca70c2e39117f68a84e16e8d523114b5c53b4a91aa7a54cfb880ed9986a",
+   "url": "https://www.sec.gov/Archives/edgar/data/1408710/000140871026000016/fn-20260327_htm.xml"
+  },
+  {
+   "accepted": "2026-08-17T16:22:03-04:00",
+   "accession": "0001408710-26-000026",
+   "contributed_to": [
+    "input_8k.md"
+   ],
+   "filing_date": "2026-08-17",
+   "form": "8-K",
+   "path": "8-K/fn-2026811xex991q426.htm",
+   "report_date": "2026-08-11",
+   "role": "exhibit_99_1",
+   "sha256": "415fd79bfb20b2c5c4082b00658675e70c30d99d2a70aff7bbfbe7bc38683ee2",
+   "url": "https://www.sec.gov/Archives/edgar/data/1408710/000140871026000026/fn-2026811xex991q426.htm"
+  },
+  {
+   "accepted": "2026-08-17T16:22:03-04:00",
+   "accession": "0001408710-26-000026",
+   "contributed_to": [
+    "input_8k.md"
+   ],
+   "filing_date": "2026-08-17",
+   "form": "8-K",
+   "path": "8-K/fn-20260811.htm",
+   "report_date": "2026-08-11",
+   "role": "primary_html",
+   "sha256": "c641bd9d701f4635b279c0bcebcf08a14f9e1b161c43ef5850c696f8cf917fde",
+   "url": "https://www.sec.gov/Archives/edgar/data/1408710/000140871026000026/fn-20260811.htm"
+  },
+  {
+   "accepted": "2026-08-18T07:12:07-04:00",
+   "accession": "0001408710-26-000028",
+   "contributed_to": [
+    "input_controls.md",
+    "input_mdna.md",
+    "input_notes.md"
+   ],
+   "filing_date": "2026-08-18",
+   "form": "10-K",
+   "path": "10-K/fn-20260626.htm.gz",
+   "report_date": "2026-06-26",
+   "role": "primary_html",
+   "sha256": "12920b0350c47f6526aee6dd99567f1af94e8526e83d58dbe2030038ab3f93f5",
+   "url": "https://www.sec.gov/Archives/edgar/data/1408710/000140871026000028/fn-20260626.htm"
+  },
+  {
+   "accepted": "2026-08-18T07:12:07-04:00",
+   "accession": "0001408710-26-000028",
+   "contributed_to": [
+    "input_mdna.md",
+    "input_notes.md",
+    "input_numbers.json"
+   ],
+   "filing_date": "2026-08-18",
+   "form": "10-K",
+   "path": "10-K/fn-20260626_htm.xml.gz",
+   "report_date": "2026-06-26",
+   "role": "xbrl_instance",
+   "sha256": "8deb774532cfb6715f18e026e5a71a3d983a82fe1b20f6f0b9050beba292853a",
+   "url": "https://www.sec.gov/Archives/edgar/data/1408710/000140871026000028/fn-20260626_htm.xml"
+  },
+  {
+   "accession": "",
+   "contributed_to": [
+    "input_trends.json"
+   ],
+   "date_basis": "the latest filing whose facts this record contains; companyfacts is a catalogue of facts drawn from many filings and is not itself a filing",
+   "filing_date": null,
+   "form": "companyfacts",
+   "path": "companyfacts.json.gz",
+   "report_date": "",
+   "role": "standard_taxonomy_history",
+   "rows_used_through": "2026-08-18",
+   "sha256": "a2e8e1e056b103298b815a9b78c52fad374ab3aae4ba1e03a38ca90b12f3f8c1",
+   "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001408710.json"
+  },
+  {
+   "accession": "",
+   "contributed_to": [
+    "input_8k.md"
+   ],
+   "date_basis": "the latest filing this index contains; the index is not itself a filing and has no filing date",
+   "filing_date": null,
+   "form": "submissions",
+   "path": "submissions.json",
+   "report_date": "",
+   "role": "submissions_index",
+   "rows_used_through": "2026-08-18",
+   "sha256": "f507eef477edb8f516b531811a325eba72b899565c300eb9c45e8995bdd0fec2",
+   "url": "https://data.sec.gov/submissions/CIK0001408710.json"
+  }
+ ],
+ "dropped_items": [],
+ "exclusions": [
+  {
+   "id": "0001408710-26-000028:mdna_excluded:1",
+   "reason": "forward_looking_boilerplate",
+   "source": "10-K MD&A",
+   "text": "In addition to historical information, this Annual Report on Form 10-K contains forward-looking statements within the meaning of Section 27A of the Securities Act of 1933 and Section 21E of the Securities Exchange Act of 1934. These statements relate to future events or to our future financial performance and involve known and unknown risks, uncertainties and other factors that may cause our or our industry’s actual results, levels of activity, performance or achievements to be materially different from any future results, levels of activity, performance or achievements expressed or implied by these forward-looking statements. Forward-looking statements include, but are not limited to, statements about:"
+  },
+  {
+   "id": "0001408710-26-000028:mdna_excluded:2",
+   "reason": "forward_looking_boilerplate",
+   "source": "10-K MD&A",
+   "text": "These forward-looking statements are subject to certain risks and uncertainties that could cause our actual results to differ materially from those reflected in the forward-looking statements. Factors that could cause or contribute to such differences include, but are not limited to, those discussed in this Annual Report on Form 10-K, in particular, the risks discussed under the heading “Risk Factors” in Item 1A, as well as those discussed in other documents we file with the Securities and Exchange Commission. We undertake no obligation to revise or publicly release the results of any revision to these forward-looking statements. Given these risks and uncertainties, readers are cautioned not to place undue reliance on such forward-looking statements. “We,” “us” and “our” refer to Fabrinet and its subsidiaries."
+  },
+  {
+   "id": "0001408710-26-000028:mdna_excluded:3",
+   "reason": "page_number",
+   "source": "10-K MD&A",
+   "text": "36"
+  },
+  {
+   "id": "0001408710-26-000028:mdna_excluded:4",
+   "reason": "table_of_contents_link",
+   "source": "10-K MD&A",
+   "text": "Table of Contents"
+  },
+  {
+   "id": "0001408710-26-000028:mdna_excluded:5",
+   "reason": "page_number",
+   "source": "10-K MD&A",
+   "text": "37"
+  },
+  {
+   "id": "0001408710-26-000028:mdna_excluded:6",
+   "reason": "table_of_contents_link",
+   "source": "10-K MD&A",
+   "text": "Table of Contents"
+  },
+  {
+   "id": "0001408710-26-000028:mdna_excluded:7",
+   "reason": "page_number",
+   "source": "10-K MD&A",
+   "text": "38"
+  },
+  {
+   "id": "0001408710-26-000028:mdna_excluded:8",
+   "reason": "table_of_contents_link",
+   "source": "10-K MD&A",
+   "text": "Table of Contents"
+  },
+  {
+   "id": "0001408710-26-000028:mdna_excluded:9",
+   "reason": "page_number",
+   "source": "10-K MD&A",
+   "text": "39"
+  },
+  {
+   "id": "0001408710-26-000028:mdna_excluded:10",
+   "reason": "table_of_contents_link",
+   "source": "10-K MD&A",
+   "text": "Table of Contents"
+  },
+  {
+   "id": "0001408710-26-000028:mdna_excluded:11",
+   "reason": "page_number",
+   "source": "10-K MD&A",
+   "text": "40"
+  },
+  {
+   "id": "0001408710-26-000028:mdna_excluded:12",
+   "reason": "table_of_contents_link",
+   "source": "10-K MD&A",
+   "text": "Table of Contents"
+  },
+  {
+   "id": "0001408710-26-000028:mdna_excluded:13",
+   "reason": "page_number",
+   "source": "10-K MD&A",
+   "text": "41"
+  },
+  {
+   "id": "0001408710-26-000028:mdna_excluded:14",
+   "reason": "table_of_contents_link",
+   "source": "10-K MD&A",
+   "text": "Table of Contents"
+  },
+  {
+   "id": "0001408710-26-000028:mdna_excluded:15",
+   "reason": "page_number",
+   "source": "10-K MD&A",
+   "text": "42"
+  },
+  {
+   "id": "0001408710-26-000028:mdna_excluded:16",
+   "reason": "table_of_contents_link",
+   "source": "10-K MD&A",
+   "text": "Table of Contents"
+  },
+  {
+   "id": "0001408710-26-000028:mdna_excluded:17",
+   "reason": "page_number",
+   "source": "10-K MD&A",
+   "text": "43"
+  },
+  {
+   "id": "0001408710-26-000028:mdna_excluded:18",
+   "reason": "table_of_contents_link",
+   "source": "10-K MD&A",
+   "text": "Table of Contents"
+  },
+  {
+   "id": "0001408710-26-000028:mdna_excluded:19",
+   "reason": "table_of_contents_link",
+   "source": "10-K MD&A",
+   "text": "Table of Contents"
+  },
+  {
+   "id": "0001408710-26-000028:mdna_excluded:20",
+   "reason": "page_number",
+   "source": "10-K MD&A",
+   "text": "45"
+  },
+  {
+   "id": "0001408710-26-000028:mdna_excluded:21",
+   "reason": "table_of_contents_link",
+   "source": "10-K MD&A",
+   "text": "Table of Contents"
+  },
+  {
+   "id": "0001408710-26-000028:mdna_excluded:22",
+   "reason": "page_number",
+   "source": "10-K MD&A",
+   "text": "46"
+  },
+  {
+   "id": "0001408710-26-000028:mdna_excluded:23",
+   "reason": "table_of_contents_link",
+   "source": "10-K MD&A",
+   "text": "Table of Contents"
+  },
+  {
+   "id": "0001408710-26-000028:mdna_excluded:24",
+   "reason": "page_number",
+   "source": "10-K MD&A",
+   "text": "47"
+  },
+  {
+   "id": "0001408710-26-000028:mdna_excluded:25",
+   "reason": "table_of_contents_link",
+   "source": "10-K MD&A",
+   "text": "Table of Contents"
+  },
+  {
+   "id": "0001408710-26-000028:mdna_excluded:26",
+   "reason": "page_number",
+   "source": "10-K MD&A",
+   "text": "48"
+  },
+  {
+   "id": "0001408710-26-000028:mdna_excluded:27",
+   "reason": "table_of_contents_link",
+   "source": "10-K MD&A",
+   "text": "Table of Contents"
+  },
+  {
+   "id": "0001408710-26-000026:8k_excluded:1",
+   "reason": "forward_looking_boilerplate",
+   "source": "8-K exhibit 99.1",
+   "text": "This press release contains forward-looking statements within the meaning of the Private Securities Litigation Reform Act of 1995. These statements include (1) our optimism about the strength of our business and durability in the growth trends we are seeing, and (2) all of the statements under the “Business Outlook” section regarding our expected revenue, GAAP and non-GAAP net income per share, and fully diluted shares outstanding for the first quarter of fiscal year 2027. These forward-looking statements involve risks and uncertainties, and actual results could vary materially from these forward-looking statements. Important factors that could cause actual results to differ materially from those in the forward-looking statements include, but are not limited to: changes in general economic conditions, either globally or in our markets, and the risk of recession or an economic downturn; disruption to our supply chain, which could increase our costs and affect our ability to procure parts and materials; less customer demand for our products and services than forecasted; less growth in the data center, communications infrastructure, and automotive, industrial and other markets than we forecast; difficulties expanding into additional markets, such as the semiconductor processing, biotechnology, metrology and materials processing markets; increased competition in the optical manufacturing services markets; difficulties in delivering products and services that compete effectively from a price and performance perspective; our reliance on a small number of customers and suppliers; difficulties in managing our operating costs; difficulties in managing and operating our business across multiple countries (including Thailand, the People’s Republic of China, Israel and the U.S.); and other important factors as described in reports and documents we file from time to time with the Securities and Exchange Commission (SEC), including the factors described under the section captioned “Risk Factors” in our Quarterly Report on Form 10-Q filed with the SEC on May 4, 2026. We disclaim any obligation to update information contained in these forward-looking statements whether as a result of new information, future events, or otherwise."
+  }
+ ],
+ "files": {
+  "input_8k.md": {
+   "bytes": 46554,
+   "sha256": "410d11d1eb632f9ee98c1cbb0cebe3b61c4ae72bfcf3a185ea73ee0749a7d621"
+  },
+  "input_controls.md": {
+   "bytes": 14222,
+   "sha256": "ca29b83dee08786647914689118af59356723b53cafcb67f669f177f2137f957"
+  },
+  "input_mdna.md": {
+   "bytes": 61655,
+   "sha256": "740ba9eb3e51ec4235733a38638fc7b83906642da840f07ccc44f197070a71ac"
+  },
+  "input_notes.md": {
+   "bytes": 133947,
+   "sha256": "423ae61507ddb639e9abe6305e7f133bc3f5fc7c3e766c7b204eb9128993c150"
+  },
+  "input_notes_history.md": {
+   "bytes": 31077,
+   "sha256": "05b9af4077752c8fb863dd9f0a04643ab5a6ff961fb51055739a7fa80da2bbd4"
+  },
+  "input_numbers.json": {
+   "bytes": 2577186,
+   "sha256": "eb2ad22ab17af511b43140c778e576910650eb8806cedc4c6b48715d68b88e82"
+  },
+  "input_prior_predictions.md": {
+   "bytes": 182,
+   "sha256": "850257f32a9f5ea60f9cdcd661bbf4205524b75cca86ff84702dffde31188dbe"
+  },
+  "input_trends.json": {
+   "bytes": 251637,
+   "sha256": "b733be0d601cec8ebb28375d99b08cac5d1657cd30aa4e255d5e3c762c516390"
+  }
+ },
+ "filing_date": "2026-08-18",
+ "form": "10-K",
+ "market_table": "unavailable",
+ "market_table_reason": "no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched",
+ "normalized_quotes": [
+  {
+   "characters": 1,
+   "item_id": "results_against_expectations_first_quarter_revenue_guidance_release",
+   "paragraph_id": "0001408710-26-000026:8k_2_02:27",
+   "report": "report_numbers.md"
+  },
+  {
+   "characters": 1,
+   "item_id": "estimates_and_discretion_raytek_observable_price_remeasurement_gain",
+   "paragraph_id": "0001408710-26-000028:notes:187",
+   "report": "report_notes_text.md"
+  },
+  {
+   "characters": 1,
+   "item_id": "earnings_quality_pillar_two_top_up_tax_recognized",
+   "paragraph_id": "0001408710-26-000028:mdna:73",
+   "report": "report_notes_text.md"
+  },
+  {
+   "characters": 2,
+   "item_id": "estimates_and_discretion_israel_valuation_allowance_added",
+   "paragraph_id": "0001408710-26-000028:notes:163",
+   "report": "report_notes_text.md"
+  },
+  {
+   "characters": 2,
+   "item_id": "estimates_and_discretion_inventory_excess_obsolete_sensitivity",
+   "paragraph_id": "0001408710-26-000028:mdna:87",
+   "report": "report_notes_text.md"
+  },
+  {
+   "characters": 1,
+   "item_id": "liquidity_and_capital_purchase_obligations_stated",
+   "paragraph_id": "0001408710-26-000028:notes:307",
+   "report": "report_notes_text.md"
+  },
+  {
+   "characters": 1,
+   "item_id": "liquidity_and_capital_capital_expenditure_commitments_stated",
+   "paragraph_id": "0001408710-26-000028:notes:310",
+   "report": "report_notes_text.md"
+  },
+  {
+   "characters": 1,
+   "item_id": "related_parties_contingencies_and_subsequent_events_united_states_facility_acquired",
+   "paragraph_id": "0001408710-26-000028:notes:353",
+   "report": "report_notes_text.md"
+  },
+  {
+   "characters": 2,
+   "item_id": "liquidity_and_capital_baht_term_loan_drawn_after_year_end",
+   "paragraph_id": "0001408710-26-000028:notes:315",
+   "report": "report_notes_text.md"
+  },
+  {
+   "characters": 1,
+   "item_id": "estimates_and_discretion_warranty_allowance_now_quantified",
+   "paragraph_id": "0001408710-26-000028:notes:95",
+   "report": "report_notes_text.md"
+  },
+  {
+   "characters": 1,
+   "item_id": "results_against_expectations_first_quarter_revenue_guidance_issued",
+   "paragraph_id": "0001408710-26-000026:8k_2_02:27",
+   "report": "report_notes_text.md"
+  }
+ ],
+ "on_record_at_cutoff": [
+  {
+   "accepted": "2026-02-03T06:14:39-05:00",
+   "accession": "0001408710-26-000008",
+   "filing_date": "2026-02-03",
+   "form": "10-Q",
+   "path": "10-Q/fn-20251226.htm",
+   "role": "prior_period",
+   "sha256": "75a089c25455cc9e367fb83c5a5db898ff0b022da48124c501612b8522ccdd08"
+  },
+  {
+   "accepted": "2026-02-03T06:14:39-05:00",
+   "accession": "0001408710-26-000008",
+   "filing_date": "2026-02-03",
+   "form": "10-Q",
+   "path": "10-Q/fn-20251226_htm.xml",
+   "role": "prior_period_xbrl_instance",
+   "sha256": "4f890cdfd6aef4cfc6b78190a815c2207d4d5e536ce7c45c14d627135569623e"
+  },
+  {
+   "accepted": "2026-05-05T07:14:28-04:00",
+   "accession": "0001408710-26-000016",
+   "filing_date": "2026-05-05",
+   "form": "10-Q",
+   "path": "10-Q/fn-20260327.htm",
+   "role": "primary_html",
+   "sha256": "c0e10b6701cfd4ab24180b570c1de0dd69f25f8dc1edd6797d251850e7617d83"
+  },
+  {
+   "accepted": "2026-05-05T07:14:28-04:00",
+   "accession": "0001408710-26-000016",
+   "filing_date": "2026-05-05",
+   "form": "10-Q",
+   "path": "10-Q/fn-20260327_htm.xml",
+   "role": "xbrl_instance",
+   "sha256": "1bd2fca70c2e39117f68a84e16e8d523114b5c53b4a91aa7a54cfb880ed9986a"
+  },
+  {
+   "accepted": "2026-08-17T16:22:03-04:00",
+   "accession": "0001408710-26-000026",
+   "filing_date": "2026-08-17",
+   "form": "8-K",
+   "path": "8-K/fn-2026811xex991q426.htm",
+   "role": "exhibit_99_1",
+   "sha256": "415fd79bfb20b2c5c4082b00658675e70c30d99d2a70aff7bbfbe7bc38683ee2"
+  },
+  {
+   "accepted": "2026-08-17T16:22:03-04:00",
+   "accession": "0001408710-26-000026",
+   "filing_date": "2026-08-17",
+   "form": "8-K",
+   "path": "8-K/fn-20260811.htm",
+   "role": "primary_html",
+   "sha256": "c641bd9d701f4635b279c0bcebcf08a14f9e1b161c43ef5850c696f8cf917fde"
+  },
+  {
+   "accession": "",
+   "filing_date": "2026-08-18",
+   "form": "companyfacts",
+   "path": "companyfacts.json.gz",
+   "role": "standard_taxonomy_history",
+   "sha256": "a2e8e1e056b103298b815a9b78c52fad374ab3aae4ba1e03a38ca90b12f3f8c1"
+  },
+  {
+   "accession": "",
+   "filing_date": "2026-08-18",
+   "form": "submissions",
+   "path": "submissions.json",
+   "role": "submissions_index",
+   "sha256": "f507eef477edb8f516b531811a325eba72b899565c300eb9c45e8995bdd0fec2"
+  },
+  {
+   "accepted": "2026-08-18T07:12:07-04:00",
+   "accession": "0001408710-26-000028",
+   "filing_date": "2026-08-18",
+   "form": "10-K",
+   "path": "10-K/fn-20260626.htm.gz",
+   "role": "primary_html",
+   "sha256": "12920b0350c47f6526aee6dd99567f1af94e8526e83d58dbe2030038ab3f93f5"
+  },
+  {
+   "accepted": "2026-08-18T07:12:07-04:00",
+   "accession": "0001408710-26-000028",
+   "filing_date": "2026-08-18",
+   "form": "10-K",
+   "path": "10-K/fn-20260626_htm.xml.gz",
+   "role": "xbrl_instance",
+   "sha256": "8deb774532cfb6715f18e026e5a71a3d983a82fe1b20f6f0b9050beba292853a"
+  }
+ ],
+ "paragraphs": [
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:1",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:2",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:3",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:4",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:5",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:6",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:7",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:8",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:9",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:10",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:11",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:12",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:13",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:14",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:15",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:16",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:17",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:18",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:19",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:20",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:21",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:22",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:23",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:24",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:25",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:26",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:27",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:28",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:29",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:30",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:31",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:32",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:33",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:34",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:35",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:36",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:37",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:38",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:39",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:40",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:41",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:42",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:43",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:44",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:45",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:46",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:47",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:48",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:49",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:50",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:51",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:52",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:53",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:54",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:55",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:56",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:57",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:58",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:59",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:60",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:61",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:62",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:63",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:64",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:65",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:66",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:67",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:68",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:69",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:70",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:71",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:72",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:73",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:74",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:75",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:76",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:77",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:78",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:79",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:80",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:81",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:82",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:83",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:84",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:85",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:86",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:87",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:88",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:89",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:90",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:91",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:92",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:93",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:94",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:95",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:96",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:97",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:98",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:99",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:100",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:101",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:102",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:103",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:104",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:105",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:106",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:107",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:108",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:109",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:110",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:111",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:112",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:113",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:114",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:115",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:116",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:117",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:118",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:119",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:120",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:121",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:122",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:123",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:124",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:125",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:126",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:127",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:128",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:129",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:130",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:131",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:132",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:133",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:134",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:135",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:136",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:137",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:138",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:139",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:140",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:141",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:142",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:143",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:144",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:145",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:146",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:147",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:148",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:149",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:150",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:151",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:152",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:153",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:154",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:155",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:156",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:157",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:158",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:159",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:160",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:161",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:162",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:163",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:164",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:165",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:166",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:167",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:168",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:169",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:170",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:171",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:172",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:173",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:174",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:175",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:176",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:177",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:178",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:179",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:180",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:181",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:182",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:183",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:184",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:185",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:186",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:187",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:188",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:189",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:190",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:191",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:192",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:193",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:194",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:195",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:196",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:197",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:198",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:199",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:200",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:201",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:202",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:203",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:204",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:205",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:206",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:207",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:208",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:209",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:210",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:211",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:212",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:213",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:214",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:215",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:216",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:217",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:218",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:219",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:220",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:221",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:222",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:223",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:224",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:225",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:226",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:227",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:228",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:229",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:230",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:231",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:232",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:233",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:234",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:235",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:236",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:237",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:238",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:239",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:240",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:241",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:242",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:243",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:244",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:245",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:246",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:247",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:248",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:249",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:250",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:251",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:252",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:253",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:254",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:255",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:256",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:257",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:258",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:259",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:260",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:261",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:262",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:263",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:264",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:265",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:266",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:267",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:268",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:269",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:270",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:271",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:272",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:273",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:274",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:275",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:276",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:277",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:278",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:279",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:280",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:281",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:282",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:283",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:284",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:285",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:286",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:287",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:288",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:289",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:290",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:291",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:292",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:293",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:294",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:295",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:296",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:297",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:298",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:299",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:300",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:301",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:302",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:303",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:304",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:305",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:306",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:307",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:308",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:309",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:310",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:311",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:312",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:313",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:314",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:315",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:316",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:317",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:318",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:319",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:320",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:321",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:322",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:323",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:324",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:325",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:326",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:327",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:328",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:329",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:330",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:331",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:332",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:333",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:334",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:335",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:336",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:337",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:338",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:339",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:340",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:341",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:342",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:343",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:344",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:345",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:346",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:347",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:348",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:349",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:350",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:351",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:352",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes.md",
+   "id": "0001408710-26-000028:notes:353",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:1",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:2",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:3",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:4",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:5",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:6",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:7",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:8",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:9",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:10",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:11",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:12",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:13",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:14",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:15",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:16",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:17",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:18",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:19",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:20",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:21",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:22",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:23",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:24",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:25",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:26",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:27",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:28",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:29",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:30",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:31",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:32",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:33",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:34",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:35",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:36",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:37",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:38",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:39",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:40",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:41",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:42",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:43",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:44",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:45",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:46",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:47",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:48",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:49",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:50",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:51",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:52",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:53",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:54",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:55",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:56",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:57",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:58",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:59",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:60",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:61",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:62",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:63",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:64",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:65",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:66",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:67",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:68",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:69",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:70",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:71",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:72",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:73",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:74",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:75",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:76",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:77",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:78",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:79",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:80",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:81",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:82",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:83",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:84",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:85",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:86",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:87",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:88",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:89",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:90",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:91",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:92",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:93",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:94",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:95",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:96",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:97",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:98",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:99",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:100",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:101",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:102",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:103",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:104",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:105",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:106",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:107",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:108",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:109",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:110",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:111",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:112",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:113",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:114",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:115",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:116",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:117",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:118",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:119",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:120",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:121",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:122",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:123",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:124",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:125",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:126",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:127",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:128",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:129",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:130",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:131",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:132",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:133",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:134",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:135",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:136",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:137",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:138",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:139",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:140",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:141",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:142",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:143",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:144",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:145",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:146",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:147",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:148",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:149",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:150",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:151",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:152",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:153",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:154",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_mdna.md",
+   "id": "0001408710-26-000028:mdna:155",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000016:note_history:1",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000016:note_history:2",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000008:note_history:2",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000016:note_history:3",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000008:note_history:3",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000016:note_history:4",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000008:note_history:4",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000016:note_history:5",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000008:note_history:5",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000016:note_history:6",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000016:note_history:7",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000008:note_history:8",
+   "kind": "removed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000008:note_history:9",
+   "kind": "removed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000008:note_history:10",
+   "kind": "removed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000008:note_history:11",
+   "kind": "removed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000016:note_history:12",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000008:note_history:12",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000016:note_history:13",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000008:note_history:13",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000016:note_history:14",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000008:note_history:14",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000016:note_history:15",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000008:note_history:15",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000016:note_history:16",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000008:note_history:17",
+   "kind": "removed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000016:note_history:18",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000008:note_history:18",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000016:note_history:19",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000008:note_history:19",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000016:note_history:20",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000008:note_history:20",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000016:note_history:21",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000008:note_history:21",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000016:note_history:22",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000008:note_history:22",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000016:note_history:23",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000016:note_history:24",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000016:note_history:25",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000008:note_history:25",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000016:note_history:26",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000008:note_history:26",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000016:note_history:27",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000016:note_history:28",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000008:note_history:28",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000016:note_history:29",
+   "kind": "changed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000008:note_history:29",
+   "kind": "previous"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000008:note_history:30",
+   "kind": "removed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000008:note_history:31",
+   "kind": "removed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000008:note_history:32",
+   "kind": "removed"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000016:note_history:33",
+   "kind": "added"
+  },
+  {
+   "file": "input_notes_history.md",
+   "id": "0001408710-26-000016:note_history:34",
+   "kind": "added"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001408710-26-000028:auditors_report:1",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001408710-26-000028:auditors_report:2",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001408710-26-000028:auditors_report:3",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001408710-26-000028:auditors_report:4",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001408710-26-000028:auditors_report:5",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001408710-26-000028:auditors_report:6",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001408710-26-000028:auditors_report:7",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001408710-26-000028:auditors_report:8",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001408710-26-000028:auditors_report:9",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001408710-26-000028:auditors_report:10",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001408710-26-000028:auditors_report:11",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001408710-26-000028:auditors_report:12",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001408710-26-000028:auditors_report:13",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001408710-26-000028:auditors_report:14",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001408710-26-000028:auditors_report:15",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001408710-26-000028:auditors_report:16",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001408710-26-000028:auditors_report:17",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001408710-26-000028:auditors_report:18",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001408710-26-000028:auditors_report:19",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001408710-26-000028:auditors_report:20",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001408710-26-000028:auditors_report:21",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001408710-26-000028:auditors_report:22",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001408710-26-000028:auditors_report:23",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001408710-26-000028:auditors_report:24",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001408710-26-000028:auditors_report:25",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001408710-26-000028:item_9a:1",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001408710-26-000028:item_9a:2",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001408710-26-000028:item_9a:3",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001408710-26-000028:item_9a:4",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001408710-26-000028:item_9a:5",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001408710-26-000028:item_9a:6",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001408710-26-000028:item_9a:7",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001408710-26-000028:item_9a:8",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001408710-26-000028:item_9a:9",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_controls.md",
+   "id": "0001408710-26-000028:item_9a:10",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:1",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:2",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:3",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:4",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:5",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:6",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:7",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:8",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:9",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:10",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:11",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:12",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:13",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:14",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:15",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:16",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:17",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:18",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:19",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:20",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:21",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:22",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:23",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:24",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:25",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:26",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:27",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:28",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:29",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:30",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:31",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:32",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:33",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:34",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:35",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:36",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:37",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:38",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:39",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:40",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:41",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:42",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:43",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:44",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:45",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:46",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:47",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:48",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:49",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:50",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:51",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:52",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:53",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:54",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:55",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:56",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:57",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:58",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:59",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:60",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:61",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:62",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:63",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:64",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:65",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:66",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:67",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:68",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:69",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:70",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:71",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:72",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_2_02:73",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:1",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:2",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:3",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:4",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:5",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:6",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:7",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:8",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:9",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:10",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:11",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:12",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:13",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:14",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:15",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:16",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:17",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:18",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:19",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:20",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:21",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:22",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:23",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:24",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:25",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:26",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:27",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:28",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:29",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:30",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:31",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:32",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:33",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:34",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:35",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:36",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:37",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:38",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:39",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:40",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:41",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:42",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:43",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:44",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:45",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:46",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:47",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:48",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:49",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:50",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:51",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:52",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:53",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:54",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:55",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:56",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:57",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:58",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:59",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:60",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:61",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:62",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:63",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:64",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:65",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:66",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:67",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:68",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:69",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:70",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:71",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:72",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:73",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:74",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:75",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:76",
+   "kind": "verbatim"
+  },
+  {
+   "file": "input_8k.md",
+   "id": "0001408710-26-000026:8k_body:77",
+   "kind": "verbatim"
+  }
+ ],
+ "prior_accession": null,
+ "rules_version": null,
+ "rules_version_comment": "null until rules/v0.1 exists; a prediction is scored against its own rules version and guessing one here would decide that scoring by accident",
+ "served_model": null,
+ "served_model_comment": "null until a prediction is served; the pinned-model runner records what it actually served, and nothing else may claim to know it",
+ "ticker": "FN",
+ "analysis_failure": null,
+ "control_reason": "no approved golden case under evals/golden/cases names 0001408710-26-000028",
+ "model_override": {
+  "model": "opus",
+  "applies_to": [
+   "numbers-reader",
+   "notes-text-reader",
+   "accounting-analyst",
+   "financial-analyst",
+   "valuation-analyst",
+   "valuation-analyst-second-pass"
+  ],
+  "why": "named with --model in place of each definition's own, for the agents applies_to lists, which this invocation called; the owner's decision that names it is in docs/structure_changes.md"
+ },
+ "analysed_utc": "2026-10-14T23:57:40Z"
+}

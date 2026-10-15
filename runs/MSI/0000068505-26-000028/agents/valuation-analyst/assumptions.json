@@ -1,0 +1,255 @@
+{
+  "scenarios": {
+    "bear": {
+      "revenue_growth_year_one": 0.04,
+      "terminal_growth": 0.02,
+      "operating_margin_year_one": 0.225,
+      "operating_margin_year_ten": 0.22,
+      "reinvestment_rate_year_one": 0.40,
+      "reinvestment_rate_year_ten": 0.25,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "Reported growth leans on acquired revenue and currency. The release prints organic growth far lower than the quarter's reported {ratios.growth.revenue.year_over_year|pct}, and Products and Systems Integration grew in the first half only outside North America. In the bear, the organic pace stays where the quarter left it, memory-cost inflation squeezes the products business, and the agreed acquisitions add little revenue in the first year.",
+          "quote": "The $269 million, or 8%, increase in net sales within the Products and Systems Integration segment was driven by an increase of 35% in the International region, while the North America region remained flat.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.growth.revenue.year_over_year",
+            "ratios.growth.revenue.trailing_four_quarters",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.years.0.revenue_growth"
+          ],
+          "history": "Below every annual growth rate filed from 2021 to 2025, the slowest of which is {earnings_versus_cash.history.years.0.revenue_growth|pct} in 2025. Far below the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and the trailing {ratios.growth.revenue.trailing_four_quarters|pct}, because those include acquired revenue that the bear assumes largely stops."
+        },
+        "terminal_growth": {
+          "reason": "If product demand stays soft and acquisitions stop adding to the base, long-run growth settles below the base case's rate, at roughly the pace of general price growth. It sits well under the risk-free rate of {cost_of_capital.risk_free_rate|pct}.",
+          "quote": "",
+          "quote_from": "",
+          "fields": [
+            "cost_of_capital.risk_free_rate",
+            "earnings_versus_cash.history.years.0.revenue_growth"
+          ],
+          "history": "Far below every annual growth rate filed from 2021 to 2025, the slowest of which is {earnings_versus_cash.history.years.0.revenue_growth|pct} in 2025. A perpetuity cannot assume the acquired growth in those years."
+        },
+        "operating_margin_year_one": {
+          "reason": "The tariff refund that lifted the latest quarter does not repeat, and memory and component costs keep rising. Products and Systems Integration operating earnings already fell for the half, on higher amortization, the Silvus earnout charge and direct material costs. In this case the trailing margin of {ratios.profitability.operating_margin|pct} overstates the year ahead.",
+          "quote": "The current environment has led to increased costs on materials and components, for which we continue to develop mitigation actions going forward.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.profitability.operating_margin",
+            "earnings_versus_cash.history.operating_margin_three_year_average",
+            "earnings_versus_cash.history.years.2.operating_margin",
+            "trend_table.quarters-back-0.ratios.gross_margin"
+          ],
+          "history": "Below the trailing {ratios.profitability.operating_margin|pct} and the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}, and just below the 2023 margin of {earnings_versus_cash.history.years.2.operating_margin|pct}."
+        },
+        "operating_margin_year_ten": {
+          "reason": "Three things pull the margin slightly lower over the decade. The Hytera litigation gains that run through GAAP operating earnings come to an end. Inventory sits at the highest days of the filed quarters, {trend_table.quarters-back-0.ratios.days_sales_of_inventory}, with reserve coverage at its lowest, {trend_table.quarters-back-0.ratios.inventory_reserve_ratio|pct}, so write-downs follow if memory prices turn. And amortization from continuing acquisitions replaces the amortization that runs off.",
+          "quote": "GAAP operating earnings carry a recurring non-operating gain stream, which non-GAAP removes",
+          "quote_from": "analysis_accounting.json",
+          "fields": [
+            "trend_table.quarters-back-0.ratios.days_sales_of_inventory",
+            "trend_table.quarters-back-0.ratios.inventory_reserve_ratio",
+            "earnings_versus_cash.history.years.2.operating_margin",
+            "earnings_versus_cash.history.years.3.operating_margin",
+            "earnings_versus_cash.history.years.4.operating_margin"
+          ],
+          "history": "Gives back part of the rise since 2022. It is below the 2023 margin of {earnings_versus_cash.history.years.2.operating_margin|pct}, but still above 2021's {earnings_versus_cash.history.years.4.operating_margin|pct} and 2022's {earnings_versus_cash.history.years.3.operating_margin|pct}."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "The agreed acquisitions still have to be paid for, and management expects inventory to stay elevated, but in the bear the acquisitions add little revenue. More capital is spent for less growth than in the base. Cash fell from {terms.balances_a_year_earlier.cash} to {terms.balances_now.cash} over the year, which shows how much acquisition spending the free cash flow measures leave out.",
+          "quote": "We expect inventory levels to remain elevated as we mitigate this dynamic supply chain environment.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "terms.balances_a_year_earlier.cash",
+            "terms.balances_now.cash",
+            "earnings_versus_cash.working_capital.inventory.balance_sheet_change",
+            "free_cash_flow.free_cash_flow_to_firm",
+            "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital"
+          ],
+          "history": "Above the base, and well above the reinvestment implied by free cash flow to the firm of {free_cash_flow.free_cash_flow_to_firm}, which charges a rise in trade working capital of {free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital} but nothing for acquisitions. Inventory alone rose {earnings_versus_cash.working_capital.inventory.balance_sheet_change} over the year."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "In the bear, acquired goodwill and intangibles earn little more than their cost, so the return on new capital falls well below today's return on invested capital of {ratios.profitability.return_on_invested_capital|pct}. Even the bear's low terminal growth then needs a larger share of after-tax operating income reinvested than in the base.",
+          "quote": "These assets earn a return only if the acquired businesses perform.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "ratios.profitability.return_on_invested_capital",
+            "trend_table.quarters-back-0.ratios.soft_asset_share",
+            "terms.trailing_four_quarters.capital_expenditure",
+            "terms.trailing_four_quarters.depreciation_and_amortization"
+          ],
+          "history": "Far above the organic reinvestment the record shows, where capital spending of {terms.trailing_four_quarters.capital_expenditure} runs below depreciation and amortization of {terms.trailing_four_quarters.depreciation_and_amortization}. The difference pays for acquisitions that earn low returns."
+        }
+      }
+    },
+    "base": {
+      "revenue_growth_year_one": 0.08,
+      "terminal_growth": 0.03,
+      "operating_margin_year_one": 0.245,
+      "operating_margin_year_ten": 0.27,
+      "reinvestment_rate_year_one": 0.35,
+      "reinvestment_rate_year_ten": 0.20,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "Management's guide for the third quarter is the nearest statement of the pace once the largest recent acquisition is in the year-earlier figures too. The trailing growth of {ratios.growth.revenue.trailing_four_quarters|pct} and the quarter's {ratios.growth.revenue.year_over_year|pct} carry acquired revenue and currency that will not repeat at the same rate. The raised full-year outlook and the agreed acquisitions keep some acquired growth in the year ahead. The base therefore sits between the organic pace and the reported pace.",
+          "quote": "The company expects revenue growth of approximately 8% compared to the third quarter of 2025",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.growth.revenue.trailing_four_quarters",
+            "ratios.growth.revenue.year_over_year",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound",
+            "earnings_versus_cash.history.years.0.revenue_growth"
+          ],
+          "history": "Below the trailing {ratios.growth.revenue.trailing_four_quarters|pct}, most of which is acquired, and slightly below the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and the five-year compound of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}. About level with 2025, the slowest filed year, at {earnings_versus_cash.history.years.0.revenue_growth|pct}."
+        },
+        "terminal_growth": {
+          "reason": "After ten years the company is a mature supplier of mission-critical networks, video security and command-centre software. Its growth in perpetuity should track nominal growth in its customers' spending, not today's acquisition-led pace. The rate is held below the risk-free rate of {cost_of_capital.risk_free_rate|pct}.",
+          "quote": "",
+          "quote_from": "",
+          "fields": [
+            "cost_of_capital.risk_free_rate",
+            "earnings_versus_cash.history.years.0.revenue_growth",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound"
+          ],
+          "history": "Well below every annual growth rate filed from 2021 to 2025, the slowest of which is {earnings_versus_cash.history.years.0.revenue_growth|pct} in 2025, and below the five-year compound of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}. Those years include acquired revenue that a perpetuity cannot assume."
+        },
+        "operating_margin_year_one": {
+          "reason": "The trailing margin of {ratios.profitability.operating_margin|pct} includes a one-time tariff refund booked in cost of sales in the latest quarter. The refund lifted the quarter's gross margin to {trend_table.quarters-back-0.ratios.gross_margin|pct}, from {trend_table.quarters-back-1.ratios.gross_margin|pct} the quarter before. Taking it out, and allowing for the memory and component cost inflation management describes, puts the year-one margin a little below the trailing figure. Higher amortization of acquired intangibles stays inside operating income.",
+          "quote": "Accordingly, during the quarter ended July 4, 2026, we recognized a favorable adjustment of $60 million recorded within Cost of sales in our Condensed Consolidated Statements of Operations.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.profitability.operating_margin",
+            "earnings_versus_cash.history.operating_margin_three_year_average",
+            "trend_table.quarters-back-0.ratios.gross_margin",
+            "trend_table.quarters-back-1.ratios.gross_margin",
+            "earnings_versus_cash.history.years.0.operating_margin"
+          ],
+          "history": "Just below the trailing {ratios.profitability.operating_margin|pct} and level with the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}. Below 2025's {earnings_versus_cash.history.years.0.operating_margin|pct}, the highest filed year."
+        },
+        "operating_margin_year_ten": {
+          "reason": "Amortization of acquired intangibles holds GAAP operating income down: it pushed trailing depreciation and amortization to {terms.trailing_four_quarters.depreciation_and_amortization}, from {terms.trailing_four_quarters.depreciation_and_amortization.parts.prior_fiscal_year} for 2025. As those intangibles amortize, and as operating leverage on a larger revenue base continues, the margin rises modestly. Three things hold the rise back: further acquisitions add new amortization, the Hytera gains in operating earnings are not assumed to last, and memory costs remain a headwind.",
+          "quote": "The release prints non-GAAP net earnings well above GAAP, with intangibles amortization and share-based compensation both larger than a year earlier, so the gap has widened, mostly from acquisition amortization.",
+          "quote_from": "analysis_accounting.json",
+          "fields": [
+            "terms.trailing_four_quarters.depreciation_and_amortization",
+            "terms.trailing_four_quarters.depreciation_and_amortization.parts.prior_fiscal_year",
+            "ratios.profitability.operating_margin",
+            "earnings_versus_cash.history.operating_margin_three_year_average",
+            "earnings_versus_cash.history.years.3.operating_margin",
+            "earnings_versus_cash.history.years.0.operating_margin"
+          ],
+          "history": "Above the trailing {ratios.profitability.operating_margin|pct} and the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}. It continues, more slowly, the rise from {earnings_versus_cash.history.years.3.operating_margin|pct} in 2022 to {earnings_versus_cash.history.years.0.operating_margin|pct} in 2025."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "Base growth includes acquired revenue, so reinvestment has to include the cash paid for acquisitions, which none of the calculator's free cash flow measures records. Over the year, cash fell from {terms.balances_a_year_earlier.cash} to {terms.balances_now.cash} and total debt rose to {ratios.solvency.total_debt}. Yet free cash flow of {free_cash_flow.free_cash_flow_simple} covered dividends of {terms.trailing_four_quarters.dividends_paid} and share repurchases of {terms.trailing_four_quarters.share_repurchases}. Organic needs are small, since capital spending of {terms.trailing_four_quarters.capital_expenditure} runs below depreciation and amortization. Most of this rate therefore pays for acquisitions and the inventory build.",
+          "quote": "It deducts nothing for acquisitions, because the calculator found no acquisition-payments line on record.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "terms.balances_a_year_earlier.cash",
+            "terms.balances_now.cash",
+            "ratios.solvency.total_debt",
+            "free_cash_flow.free_cash_flow_simple",
+            "terms.trailing_four_quarters.dividends_paid",
+            "terms.trailing_four_quarters.share_repurchases",
+            "terms.trailing_four_quarters.capital_expenditure",
+            "free_cash_flow.free_cash_flow_to_firm",
+            "terms.cash_flow_families.acquisitions"
+          ],
+          "history": "Above the share implied by free cash flow to the firm of {free_cash_flow.free_cash_flow_to_firm}, which leaves acquisitions out. Below the past year's full outlay, when acquisition spending drew cash down, because the largest recent acquisition is not assumed to recur every year."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "By year ten the base grows at its terminal rate, so the reinvestment needed is that growth divided by the return on new capital. That return is set below today's return on invested capital of {ratios.profitability.return_on_invested_capital|pct}, because future growth leans on acquisitions that bring goodwill along with revenue. The rate is therefore above the organic need but well below year one.",
+          "quote": "The cause is acquisition goodwill and intangibles, not capitalized operating cost: goodwill is far above its 2024 year-end balance.",
+          "quote_from": "analysis_accounting.json",
+          "fields": [
+            "ratios.profitability.return_on_invested_capital",
+            "trend_table.quarters-back-0.ratios.soft_asset_share",
+            "terms.trailing_four_quarters.capital_expenditure",
+            "terms.trailing_four_quarters.depreciation_and_amortization"
+          ],
+          "history": "Below year one and closer to the organic reinvestment the record shows, where capital spending of {terms.trailing_four_quarters.capital_expenditure} runs below depreciation and amortization of {terms.trailing_four_quarters.depreciation_and_amortization}."
+        }
+      }
+    },
+    "bull": {
+      "revenue_growth_year_one": 0.11,
+      "terminal_growth": 0.035,
+      "operating_margin_year_one": 0.255,
+      "operating_margin_year_ten": 0.29,
+      "reinvestment_rate_year_one": 0.40,
+      "reinvestment_rate_year_ten": 0.175,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "Management raised its full-year revenue outlook, which requires a second half faster than the first. Backlog is a record, up mainly in software and services, and agreed acquisitions add revenue on top. The bull takes the reported pace, acquisitions included, as the year-one rate.",
+          "quote": "The company now expects revenue of approximately $12.975 billion, up from its prior guidance of $12.8 billion",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.growth.revenue.trailing_four_quarters",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound",
+            "earnings_versus_cash.history.years.3.revenue_growth"
+          ],
+          "history": "Close to the trailing {ratios.growth.revenue.trailing_four_quarters|pct} and above the five-year compound of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}. Among filed years, only 2022 grew faster, at {earnings_versus_cash.history.years.3.revenue_growth|pct}."
+        },
+        "terminal_growth": {
+          "reason": "If the company keeps extending into adjacent markets, such as drones, where it took an equity stake in the quarter, its growth in perpetuity can stay above the base. It remains below the risk-free rate of {cost_of_capital.risk_free_rate|pct}.",
+          "quote": "The company paid for an equity stake in BRINC Drones inside the quarter, carried at cost, with any revaluation gains routed to Other, net.",
+          "quote_from": "analysis_accounting.json",
+          "fields": [
+            "cost_of_capital.risk_free_rate",
+            "earnings_versus_cash.history.years.0.revenue_growth"
+          ],
+          "history": "Above the base, and below every annual growth rate filed from 2021 to 2025, the slowest of which is {earnings_versus_cash.history.years.0.revenue_growth|pct} in 2025."
+        },
+        "operating_margin_year_one": {
+          "reason": "Favourable mix and operating leverage lifted the quarter's operating income faster than revenue: {ratios.growth.operating_income.year_over_year|pct} against {ratios.growth.revenue.year_over_year|pct}. In the bull, mitigation of memory costs and further mix gains replace the one-time refund, so the margin holds at the 2025 level.",
+          "quote": "primarily driven by higher sales, including favorable mix, and IEEPA tariff refunds partially offset by higher direct material costs",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.growth.operating_income.year_over_year",
+            "ratios.growth.revenue.year_over_year",
+            "ratios.profitability.operating_margin",
+            "earnings_versus_cash.history.years.0.operating_margin"
+          ],
+          "history": "Just above the trailing {ratios.profitability.operating_margin|pct} and level with 2025's {earnings_versus_cash.history.years.0.operating_margin|pct}, the highest filed year."
+        },
+        "operating_margin_year_ten": {
+          "reason": "Two things carry the GAAP margin well above today's level. One is operating leverage on a larger base. The other is the running-off of acquired-intangible amortization, which now widens the gap between GAAP and non-GAAP earnings and sits in trailing depreciation and amortization of {terms.trailing_four_quarters.depreciation_and_amortization}. Share-based compensation of {terms.trailing_four_quarters.share_based_compensation} stays a cost inside the margin.",
+          "quote": "partially offset by higher sales, IEEPA tariff refunds, improved operating leverage",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "terms.trailing_four_quarters.depreciation_and_amortization",
+            "terms.trailing_four_quarters.depreciation_and_amortization.parts.prior_fiscal_year",
+            "terms.trailing_four_quarters.share_based_compensation",
+            "earnings_versus_cash.history.years.3.operating_margin",
+            "earnings_versus_cash.history.years.0.operating_margin"
+          ],
+          "history": "Above every filed year. It extends, at a slower pace, the rise from {earnings_versus_cash.history.years.3.operating_margin|pct} in 2022 to {earnings_versus_cash.history.years.0.operating_margin|pct} in 2025."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "Part of the bull's faster growth comes from agreed acquisitions, which have to be paid for, so the rate is above the base. In this case each unit of capital earns more growth than in the base.",
+          "quote": "The notes do not say how the agreed acquisitions will be funded.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "free_cash_flow.free_cash_flow_to_firm",
+            "terms.balances_a_year_earlier.cash",
+            "terms.balances_now.cash"
+          ],
+          "history": "Above the share implied by free cash flow to the firm of {free_cash_flow.free_cash_flow_to_firm}, which leaves acquisitions out. Below the past year, when cash fell from {terms.balances_a_year_earlier.cash} to {terms.balances_now.cash} as acquisitions were paid for."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "In the bull the company keeps earning close to today's return on invested capital, {ratios.profitability.return_on_invested_capital|pct}, on new capital. Its terminal growth therefore needs a smaller share of after-tax operating income reinvested than in the base.",
+          "quote": "",
+          "quote_from": "",
+          "fields": [
+            "ratios.profitability.return_on_invested_capital",
+            "terms.trailing_four_quarters.capital_expenditure",
+            "terms.trailing_four_quarters.depreciation_and_amortization"
+          ],
+          "history": "Below the base, and closer to the organic reinvestment the record shows, where capital spending of {terms.trailing_four_quarters.capital_expenditure} runs below depreciation and amortization of {terms.trailing_four_quarters.depreciation_and_amortization}."
+        }
+      }
+    }
+  },
+  "wacc_overrides": {}
+}

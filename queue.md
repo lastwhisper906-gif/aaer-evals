@@ -34,8 +34,6 @@ branch changed. A run item is done when its run directory is published and
 
 [ ] FN's 10-Q filed 2026-05-05 on Fable · `.venv/bin/python -m evals --runs runs/FN` · item one
 
-[ ] MSI's 10-Q filed 2026-08-05 on Fable · `.venv/bin/python -m evals --runs runs/MSI` · none
-
 [ ] LITE's 10-Q filed 2026-05-06 on Fable · `.venv/bin/python -m evals --runs runs/LITE` · none
 
 [ ] FLEX's 10-Q filed 2026-07-31 on Fable · `.venv/bin/python -m evals --runs runs/FLEX` · none
@@ -47,8 +45,6 @@ branch changed. A run item is done when its run directory is published and
 [ ] SNDK's 10-Q filed 2026-05-01 on Fable · `.venv/bin/python -m evals --runs runs/SNDK` · none
 
 [ ] FFIV's 10-Q filed 2026-08-06 on Fable · `.venv/bin/python -m evals --runs runs/FFIV` · none
-
-[ ] FN's 10-K filed 2026-08-18 on Fable, the same default · `.venv/bin/python -m evals --runs runs/FN` · none
 
 [ ] LITE's 10-K filed 2026-08-17 on Fable, the same default · `.venv/bin/python -m evals --runs runs/LITE` · none
 
@@ -65,6 +61,10 @@ branch changed. A run item is done when its run directory is published and
 [ ] MU, Micron Technology, the reading's pick under 3674 (`docs/structure_changes.md`, 2026-10-14): fixtures as of the day it is fetched, the two 10-K headers and Exhibit 21 documents by hand, expected values with the 43 keys, and its row · `.venv/bin/python -m pytest tests -q -k "MU"` passes with every defect a strict expected failure · none
 
 ## Done
+
+[x] FN's 10-K filed 2026-08-18 on Fable, the same default · `.venv/bin/python -m evals --runs runs/FN` · none · 2026-10-15: run on Opus by the owner's decision of 2026-10-14 (`--model opus`, recorded as `model_override`; every agent served claude-opus-5-5, no fallback); regression 18 pass, 0 fail; analysis-grader 0.978 with 1 dealbreaker, the grader's stated score differing from the rubric's formula as the open row records; earlier attempts were set aside, one stopped by the Fable session limit and one cut off at its readers by the two-hour limit; the 10-Q row it stands in for stays open · PR: this one
+
+[x] MSI's 10-Q filed 2026-08-05 on Fable · `.venv/bin/python -m evals --runs runs/MSI` · none · 2026-10-15: run on Opus by the owner's decision of 2026-10-14 (`--model opus`, recorded as `model_override`; every agent served claude-opus-5-5, no fallback); regression 18 pass, 0 fail; analysis-grader 0.939 with 2 dealbreakers, the grader's stated score differing from the rubric's formula as the open row records; earlier attempts were set aside, one stopped by the Fable session limit and two cut off by the session's two-hour limit for a background command · PR: this one
 
 [x] WDC's 10-K filed 2026-08-14 on Fable, the default in force for the five whose fixture 8-K postdates their fixture 10-Q (`docs/needs_judgment.md`) · `.venv/bin/python -m evals --runs runs/WDC` · none · 2026-10-14: run on Opus by the owner's decision of the evening (`--model opus`, recorded as `model_override`; every agent served claude-opus-5-5, no fallback); regression 18 pass, 0 fail; analysis-grader 0.896 with 2 dealbreakers, the grader's stated score differing from the rubric's formula as the open row records; earlier attempts were set aside, one stopped by the Fable session limit and one cut off at its last agent by the session's two-hour limit for a background command; the 10-Q row it stands in for stays open · PR: this one
 
