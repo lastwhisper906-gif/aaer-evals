@@ -40,8 +40,6 @@ branch changed. A run item is done when its run directory is published and
 
 [ ] SNDK's 10-Q filed 2026-05-01 on Fable · `.venv/bin/python -m evals --runs runs/SNDK` · none
 
-[ ] SMCI's 10-K filed 2026-08-31 on Fable, the same default · `.venv/bin/python -m evals --runs runs/SMCI` · none
-
 [ ] UI, Ubiquiti, joins `universe.json` with the fixture set and expected values fetched and written on 2026-10-14 (kept outside the tree, `docs/structure_changes.md`), once the same-day 8-K row in `docs/needs_judgment.md` is decided · `.venv/bin/python -m pytest tests -q -k "UI"` passes with every defect a strict expected failure · the owner's decision on that row
 
 [ ] NSSC, Napco Security Technologies, joins `universe.json` the same way, once the three-gap row in `docs/needs_judgment.md` is decided · `.venv/bin/python -m pytest tests -q -k "NSSC"` passes with every defect a strict expected failure · the owner's decision on that row
@@ -51,6 +49,8 @@ branch changed. A run item is done when its run directory is published and
 [ ] MU, Micron Technology, the reading's pick under 3674 (`docs/structure_changes.md`, 2026-10-14): fixtures as of the day it is fetched, the two 10-K headers and Exhibit 21 documents by hand, expected values with the 43 keys, and its row · `.venv/bin/python -m pytest tests -q -k "MU"` passes with every defect a strict expected failure · none
 
 ## Done
+
+[x] SMCI's 10-K filed 2026-08-31 on Fable, the same default · `.venv/bin/python -m evals --runs runs/SMCI` · none · 2026-10-15: run on Opus by the owner's decision of 2026-10-14 (`--model opus`, recorded as `model_override`; every agent served claude-opus-5-5, no fallback); regression 18 pass, 0 fail; analysis-grader 0.941 with 5 dealbreakers, a stated score the rubric's formula, which scores a dealbreaker zero, cannot give, as the open row records; earlier attempts were set aside, one stopped by the Fable session limit and one whose accounting analyst failed after 31 minutes and whose retry failed in under three seconds with no token spent; the 10-Q row it stands in for stays open · PR: this one
 
 [x] SNDK's 10-K filed 2026-08-17 on Fable, the same default · `.venv/bin/python -m evals --runs runs/SNDK` · none · 2026-10-15: run on Opus by the owner's decision of 2026-10-14 (`--model opus`, recorded as `model_override`; every agent served claude-opus-5-5, no fallback); regression 18 pass, 0 fail; analysis-grader 0.848 with 2 dealbreakers, the grader's stated score differing from the rubric's formula as the open row records; earlier attempts were set aside, one stopped by the Fable session limit and one whose readers failed twice in under three seconds with no token spent; the 10-Q row it stands in for stays open · PR: this one
 

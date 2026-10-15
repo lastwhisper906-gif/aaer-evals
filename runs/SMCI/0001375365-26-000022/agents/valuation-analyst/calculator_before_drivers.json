@@ -1,0 +1,4992 @@
+{
+ "ticker": "SMCI",
+ "accession": "0001375365-26-000022",
+ "form": "10-K",
+ "cutoff": "2026-08-31",
+ "period_end": "2026-06-30",
+ "missing": [
+  "wacc: the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched",
+  "valuation: no assumptions.json: the valuation analyst has not written drivers yet, and Python never invents one"
+ ],
+ "read_from_the_filing_because_companyfacts_lagged": [],
+ "what_this_is": "every number the three analysts may cite, computed in Python from the as-filed companyfacts rows at the cutoff; each value names its formula and each input names its row id",
+ "periods": {
+  "current_to_date": [
+   "2025-07-01",
+   "2026-06-30"
+  ],
+  "prior_to_date": [
+   "2024-07-01",
+   "2025-06-30"
+  ],
+  "annual_trigger": true,
+  "prior_year": [
+   "2024-07-01",
+   "2025-06-30"
+  ],
+  "two_years_back_to_date": [
+   "2023-07-01",
+   "2024-06-30"
+  ],
+  "two_years_back": [
+   "2023-07-01",
+   "2024-06-30"
+  ],
+  "quarter": null,
+  "prior_quarter_end": "2026-03-31",
+  "year_ago_quarter": null,
+  "balance_now": "2026-06-30",
+  "balance_year_ago": "2025-06-30",
+  "fiscal_years": [
+   [
+    "2025-07-01",
+    "2026-06-30"
+   ],
+   [
+    "2024-07-01",
+    "2025-06-30"
+   ],
+   [
+    "2023-07-01",
+    "2024-06-30"
+   ],
+   [
+    "2022-07-01",
+    "2023-06-30"
+   ],
+   [
+    "2021-07-01",
+    "2022-06-30"
+   ],
+   [
+    "2020-07-01",
+    "2021-06-30"
+   ]
+  ]
+ },
+ "terms": {
+  "trailing_four_quarters": {
+   "revenue": {
+    "value": 39063072000.0,
+    "formula": "the fiscal year",
+    "parts": [
+     {
+      "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+      "unit": "USD",
+      "period": "2025-07-01..2026-06-30",
+      "value": 39063072000.0,
+      "accession": "0001375365-26-000022",
+      "filed": "2026-08-31",
+      "id": "0001375365-26-000022:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2025-07-01..2026-06-30"
+     }
+    ],
+    "unit": "USD"
+   },
+   "cost_of_revenue": {
+    "value": 34835821000.0,
+    "formula": "the fiscal year",
+    "parts": [
+     {
+      "tag": "CostOfRevenue",
+      "unit": "USD",
+      "period": "2025-07-01..2026-06-30",
+      "value": 34835821000.0,
+      "accession": "0001375365-26-000022",
+      "filed": "2026-08-31",
+      "id": "0001375365-26-000022:facts:CostOfRevenue:2025-07-01..2026-06-30"
+     }
+    ],
+    "unit": "USD"
+   },
+   "net_income": {
+    "value": 2230453000.0,
+    "formula": "the fiscal year",
+    "parts": [
+     {
+      "tag": "NetIncomeLoss",
+      "unit": "USD",
+      "period": "2025-07-01..2026-06-30",
+      "value": 2230453000.0,
+      "accession": "0001375365-26-000022",
+      "filed": "2026-08-31",
+      "id": "0001375365-26-000022:facts:NetIncomeLoss:2025-07-01..2026-06-30"
+     }
+    ],
+    "unit": "USD"
+   },
+   "operating_cash_flow": {
+    "value": -6809886000.0,
+    "formula": "the fiscal year",
+    "parts": [
+     {
+      "tag": "NetCashProvidedByUsedInOperatingActivities",
+      "unit": "USD",
+      "period": "2025-07-01..2026-06-30",
+      "value": -6809886000.0,
+      "accession": "0001375365-26-000022",
+      "filed": "2026-08-31",
+      "id": "0001375365-26-000022:facts:NetCashProvidedByUsedInOperatingActivities:2025-07-01..2026-06-30",
+      "direction": "signed"
+     }
+    ],
+    "unit": "USD"
+   },
+   "operating_income": {
+    "value": 2770486000.0,
+    "formula": "the fiscal year",
+    "parts": [
+     {
+      "tag": "OperatingIncomeLoss",
+      "unit": "USD",
+      "period": "2025-07-01..2026-06-30",
+      "value": 2770486000.0,
+      "accession": "0001375365-26-000022",
+      "filed": "2026-08-31",
+      "id": "0001375365-26-000022:facts:OperatingIncomeLoss:2025-07-01..2026-06-30"
+     }
+    ],
+    "unit": "USD"
+   },
+   "pretax_income": {
+    "value": 2789264000.0,
+    "formula": "the fiscal year",
+    "parts": [
+     {
+      "tag": "IncomeLossFromContinuingOperationsBeforeIncomeTaxesMinorityInterestAndIncomeLossFromEquityMethodInvestments",
+      "unit": "USD",
+      "period": "2025-07-01..2026-06-30",
+      "value": 2789264000.0,
+      "accession": "0001375365-26-000022",
+      "filed": "2026-08-31",
+      "id": "0001375365-26-000022:facts:IncomeLossFromContinuingOperationsBeforeIncomeTaxesMinorityInterestAndIncomeLossFromEquityMethodInvestments:2025-07-01..2026-06-30"
+     }
+    ],
+    "unit": "USD"
+   },
+   "income_tax_expense": {
+    "value": 556329000.0,
+    "formula": "the fiscal year",
+    "parts": [
+     {
+      "tag": "IncomeTaxExpenseBenefit",
+      "unit": "USD",
+      "period": "2025-07-01..2026-06-30",
+      "value": 556329000.0,
+      "accession": "0001375365-26-000022",
+      "filed": "2026-08-31",
+      "id": "0001375365-26-000022:facts:IncomeTaxExpenseBenefit:2025-07-01..2026-06-30"
+     }
+    ],
+    "unit": "USD"
+   },
+   "interest_expense": {
+    "value": 194574000.0,
+    "formula": "the fiscal year",
+    "parts": [
+     {
+      "tag": "InterestExpenseNonoperating",
+      "unit": "USD",
+      "period": "2025-07-01..2026-06-30",
+      "value": 194574000.0,
+      "accession": "0001375365-26-000022",
+      "filed": "2026-08-31",
+      "id": "0001375365-26-000022:facts:InterestExpenseNonoperating:2025-07-01..2026-06-30"
+     }
+    ],
+    "unit": "USD"
+   },
+   "interest_paid": {
+    "value": 109306000.0,
+    "formula": "the fiscal year",
+    "parts": [
+     {
+      "tag": "InterestPaidNet",
+      "unit": "USD",
+      "period": "2025-07-01..2026-06-30",
+      "value": 109306000.0,
+      "accession": "0001375365-26-000022",
+      "filed": "2026-08-31",
+      "id": "0001375365-26-000022:facts:InterestPaidNet:2025-07-01..2026-06-30"
+     }
+    ],
+    "unit": "USD"
+   },
+   "depreciation_and_amortization": {
+    "value": 53000000.0,
+    "formula": "the fiscal year",
+    "parts": [
+     {
+      "tag": "DepreciationDepletionAndAmortization",
+      "unit": "USD",
+      "period": "2025-07-01..2026-06-30",
+      "value": 53000000.0,
+      "accession": "0001375365-26-000022",
+      "filed": "2026-08-31",
+      "id": "0001375365-26-000022:facts:DepreciationDepletionAndAmortization:2025-07-01..2026-06-30"
+     }
+    ],
+    "unit": "USD"
+   },
+   "share_based_compensation": {
+    "value": 412115000.0,
+    "formula": "the fiscal year",
+    "parts": [
+     {
+      "tag": "ShareBasedCompensation",
+      "unit": "USD",
+      "period": "2025-07-01..2026-06-30",
+      "value": 412115000.0,
+      "accession": "0001375365-26-000022",
+      "filed": "2026-08-31",
+      "id": "0001375365-26-000022:facts:ShareBasedCompensation:2025-07-01..2026-06-30",
+      "direction": "noncash_addback"
+     }
+    ],
+    "unit": "USD"
+   },
+   "capital_expenditure": {
+    "value": 161999000.0,
+    "formula": "the fiscal year",
+    "parts": [
+     {
+      "tag": "PaymentsToAcquirePropertyPlantAndEquipment",
+      "unit": "USD",
+      "period": "2025-07-01..2026-06-30",
+      "value": 161999000.0,
+      "accession": "0001375365-26-000022",
+      "filed": "2026-08-31",
+      "id": "0001375365-26-000022:facts:PaymentsToAcquirePropertyPlantAndEquipment:2025-07-01..2026-06-30",
+      "direction": "outflow"
+     }
+    ],
+    "unit": "USD"
+   },
+   "dividends_paid": {
+    "missing": "no row for dividends_paid: the companyfacts record tags none of us-gaap:PaymentsOfDividends, us-gaap:PaymentsOfDividendsCommonStock in any period. companyfacts holds the entity-wide fact alone, so this is either a concept the company does not tag or one it states only by segment — the filing says which, and this record cannot"
+   },
+   "share_repurchases": {
+    "missing": "no row for share_repurchases in 2025-07-01..2026-06-30: us-gaap:PaymentsForRepurchaseOfCommonStock is in the record, but not for this period"
+   },
+   "proceeds_from_sale_of_receivables": {
+    "missing": "no row for proceeds_from_sale_of_receivables: the companyfacts record tags none of us-gaap:ProceedsFromSaleAndCollectionOfReceivables, us-gaap:TransferOfFinancialAssetsAccountedForAsSalesCashProceedsReceivedForAssetsDerecognizedAmount in any period. companyfacts holds the entity-wide fact alone, so this is either a concept the company does not tag or one it states only by segment — the filing says which, and this record cannot"
+   },
+   "inventory_write_down": {
+    "value": 188110000.0,
+    "formula": "the fiscal year",
+    "parts": [
+     {
+      "tag": "InventoryWriteDown",
+      "unit": "USD",
+      "period": "2025-07-01..2026-06-30",
+      "value": 188110000.0,
+      "accession": "0001375365-26-000022",
+      "filed": "2026-08-31",
+      "id": "0001375365-26-000022:facts:InventoryWriteDown:2025-07-01..2026-06-30"
+     }
+    ],
+    "unit": "USD"
+   },
+   "change_in_receivables": {
+    "value": 3921872000.0,
+    "formula": "the fiscal year",
+    "parts": [
+     {
+      "tag": "IncreaseDecreaseInAccountsReceivable",
+      "unit": "USD",
+      "period": "2025-07-01..2026-06-30",
+      "value": 3921872000.0,
+      "accession": "0001375365-26-000022",
+      "filed": "2026-08-31",
+      "id": "0001375365-26-000022:facts:IncreaseDecreaseInAccountsReceivable:2025-07-01..2026-06-30",
+      "direction": "increase_in_asset"
+     }
+    ],
+    "unit": "USD"
+   },
+   "change_in_inventory": {
+    "value": 8876747000.0,
+    "formula": "the fiscal year",
+    "parts": [
+     {
+      "tag": "IncreaseDecreaseInInventories",
+      "unit": "USD",
+      "period": "2025-07-01..2026-06-30",
+      "value": 8876747000.0,
+      "accession": "0001375365-26-000022",
+      "filed": "2026-08-31",
+      "id": "0001375365-26-000022:facts:IncreaseDecreaseInInventories:2025-07-01..2026-06-30",
+      "direction": "increase_in_asset"
+     }
+    ],
+    "unit": "USD"
+   },
+   "change_in_payables": {
+    "value": 963258000.0,
+    "formula": "the fiscal year",
+    "parts": [
+     {
+      "tag": "IncreaseDecreaseInAccountsPayable",
+      "unit": "USD",
+      "period": "2025-07-01..2026-06-30",
+      "value": 963258000.0,
+      "accession": "0001375365-26-000022",
+      "filed": "2026-08-31",
+      "id": "0001375365-26-000022:facts:IncreaseDecreaseInAccountsPayable:2025-07-01..2026-06-30",
+      "direction": "increase_in_liability"
+     }
+    ],
+    "unit": "USD"
+   },
+   "research_and_development_expense": {
+    "value": 771232000.0,
+    "formula": "the fiscal year",
+    "parts": [
+     {
+      "tag": "ResearchAndDevelopmentExpense",
+      "unit": "USD",
+      "period": "2025-07-01..2026-06-30",
+      "value": 771232000.0,
+      "accession": "0001375365-26-000022",
+      "filed": "2026-08-31",
+      "id": "0001375365-26-000022:facts:ResearchAndDevelopmentExpense:2025-07-01..2026-06-30"
+     }
+    ],
+    "unit": "USD"
+   }
+  },
+  "trailing_four_quarters_a_year_earlier": {
+   "revenue": {
+    "value": 21972042000.0,
+    "formula": "the fiscal year",
+    "parts": [
+     {
+      "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+      "unit": "USD",
+      "period": "2024-07-01..2025-06-30",
+      "value": 21972042000.0,
+      "accession": "0001375365-26-000022",
+      "filed": "2026-08-31",
+      "id": "0001375365-26-000022:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2024-07-01..2025-06-30"
+     }
+    ],
+    "unit": "USD"
+   },
+   "operating_income": {
+    "value": 1252994000.0,
+    "formula": "the fiscal year",
+    "parts": [
+     {
+      "tag": "OperatingIncomeLoss",
+      "unit": "USD",
+      "period": "2024-07-01..2025-06-30",
+      "value": 1252994000.0,
+      "accession": "0001375365-26-000022",
+      "filed": "2026-08-31",
+      "id": "0001375365-26-000022:facts:OperatingIncomeLoss:2024-07-01..2025-06-30"
+     }
+    ],
+    "unit": "USD"
+   },
+   "net_income": {
+    "value": 1048854000.0,
+    "formula": "the fiscal year",
+    "parts": [
+     {
+      "tag": "NetIncomeLoss",
+      "unit": "USD",
+      "period": "2024-07-01..2025-06-30",
+      "value": 1048854000.0,
+      "accession": "0001375365-26-000022",
+      "filed": "2026-08-31",
+      "id": "0001375365-26-000022:facts:NetIncomeLoss:2024-07-01..2025-06-30"
+     }
+    ],
+    "unit": "USD"
+   },
+   "operating_cash_flow": {
+    "value": 1659524000.0,
+    "formula": "the fiscal year",
+    "parts": [
+     {
+      "tag": "NetCashProvidedByUsedInOperatingActivities",
+      "unit": "USD",
+      "period": "2024-07-01..2025-06-30",
+      "value": 1659524000.0,
+      "accession": "0001375365-26-000022",
+      "filed": "2026-08-31",
+      "id": "0001375365-26-000022:facts:NetCashProvidedByUsedInOperatingActivities:2024-07-01..2025-06-30",
+      "direction": "signed"
+     }
+    ],
+    "unit": "USD"
+   },
+   "capital_expenditure": {
+    "value": 127214000.0,
+    "formula": "the fiscal year",
+    "parts": [
+     {
+      "tag": "PaymentsToAcquirePropertyPlantAndEquipment",
+      "unit": "USD",
+      "period": "2024-07-01..2025-06-30",
+      "value": 127214000.0,
+      "accession": "0001375365-26-000022",
+      "filed": "2026-08-31",
+      "id": "0001375365-26-000022:facts:PaymentsToAcquirePropertyPlantAndEquipment:2024-07-01..2025-06-30",
+      "direction": "outflow"
+     }
+    ],
+    "unit": "USD"
+   }
+  },
+  "balances_now": {
+   "receivables": {
+    "tag": "AccountsReceivableNetCurrent",
+    "unit": "USD",
+    "period": "2026-06-30",
+    "value": 6125414000.0,
+    "accession": "0001375365-26-000022",
+    "filed": "2026-08-31",
+    "id": "0001375365-26-000022:facts:AccountsReceivableNetCurrent:2026-06-30"
+   },
+   "inventory": {
+    "tag": "InventoryNet",
+    "unit": "USD",
+    "period": "2026-06-30",
+    "value": 12895949000.0,
+    "accession": "0001375365-26-000022",
+    "filed": "2026-08-31",
+    "id": "0001375365-26-000022:facts:InventoryNet:2026-06-30"
+   },
+   "assets": {
+    "tag": "Assets",
+    "unit": "USD",
+    "period": "2026-06-30",
+    "value": 29945467000.0,
+    "accession": "0001375365-26-000022",
+    "filed": "2026-08-31",
+    "id": "0001375365-26-000022:facts:Assets:2026-06-30"
+   },
+   "cash": {
+    "tag": "CashAndCashEquivalentsAtCarryingValue",
+    "unit": "USD",
+    "period": "2026-06-30",
+    "value": 7521474000.0,
+    "accession": "0001375365-26-000022",
+    "filed": "2026-08-31",
+    "id": "0001375365-26-000022:facts:CashAndCashEquivalentsAtCarryingValue:2026-06-30"
+   },
+   "contract_liabilities": {
+    "tag": "ContractWithCustomerLiabilityCurrent",
+    "unit": "USD",
+    "period": "2026-06-30",
+    "value": 1578005000.0,
+    "accession": "0001375365-26-000022",
+    "filed": "2026-08-31",
+    "id": "0001375365-26-000022:facts:ContractWithCustomerLiabilityCurrent:2026-06-30"
+   },
+   "stockholders_equity": {
+    "tag": "StockholdersEquity",
+    "unit": "USD",
+    "period": "2026-06-30",
+    "value": 14479452000.0,
+    "accession": "0001375365-26-000022",
+    "filed": "2026-08-31",
+    "id": "0001375365-26-000022:facts:StockholdersEquity:2026-06-30"
+   },
+   "current_assets": {
+    "tag": "AssetsCurrent",
+    "unit": "USD",
+    "period": "2026-06-30",
+    "value": 27726252000.0,
+    "accession": "0001375365-26-000022",
+    "filed": "2026-08-31",
+    "id": "0001375365-26-000022:facts:AssetsCurrent:2026-06-30"
+   },
+   "current_liabilities": {
+    "tag": "LiabilitiesCurrent",
+    "unit": "USD",
+    "period": "2026-06-30",
+    "value": 7160106000.0,
+    "accession": "0001375365-26-000022",
+    "filed": "2026-08-31",
+    "id": "0001375365-26-000022:facts:LiabilitiesCurrent:2026-06-30"
+   },
+   "accounts_payable": {
+    "tag": "AccountsPayableCurrent",
+    "unit": "USD",
+    "period": "2026-06-30",
+    "value": 2247003000.0,
+    "accession": "0001375365-26-000022",
+    "filed": "2026-08-31",
+    "id": "0001375365-26-000022:facts:AccountsPayableCurrent:2026-06-30"
+   },
+   "short_term_investments": {
+    "tag": "MarketableSecuritiesCurrent",
+    "unit": "USD",
+    "period": "2026-06-30",
+    "value": 23110000.0,
+    "accession": "0001375365-26-000022",
+    "filed": "2026-08-31",
+    "id": "0001375365-26-000022:facts:MarketableSecuritiesCurrent:2026-06-30"
+   },
+   "total_liabilities": {
+    "tag": "Liabilities",
+    "unit": "USD",
+    "period": "2026-06-30",
+    "value": 15465851000.0,
+    "accession": "0001375365-26-000022",
+    "filed": "2026-08-31",
+    "id": "0001375365-26-000022:facts:Liabilities:2026-06-30"
+   },
+   "operating_lease_liability": {
+    "tag": "OperatingLeaseLiability",
+    "unit": "USD",
+    "period": "2026-06-30",
+    "value": 539600000.0,
+    "accession": "0001375365-26-000022",
+    "filed": "2026-08-31",
+    "id": "0001375365-26-000022:facts:OperatingLeaseLiability:2026-06-30"
+   },
+   "supplier_finance_obligation": {
+    "missing": "no row for supplier_finance_obligation: the companyfacts record tags none of us-gaap:SupplierFinanceProgramObligation in any period. companyfacts holds the entity-wide fact alone, so this is either a concept the company does not tag or one it states only by segment — the filing says which, and this record cannot"
+   },
+   "unconditional_purchase_obligations": {
+    "tag": "PurchaseObligation",
+    "unit": "USD",
+    "period": "2026-06-30",
+    "value": 34200000000.0,
+    "accession": "0001375365-26-000022",
+    "filed": "2026-08-31",
+    "id": "0001375365-26-000022:facts:PurchaseObligation:2026-06-30"
+   },
+   "guarantee_maximum_exposure": {
+    "missing": "no row for guarantee_maximum_exposure: the companyfacts record tags none of us-gaap:GuaranteeObligationsMaximumExposure in any period. companyfacts holds the entity-wide fact alone, so this is either a concept the company does not tag or one it states only by segment — the filing says which, and this record cannot"
+   },
+   "inventory_reserve": {
+    "missing": "no row for inventory_reserve in 2026-06-30: us-gaap:InventoryValuationReserves is in the record, but not for this period"
+   },
+   "bad_debt_allowance": {
+    "tag": "AllowanceForDoubtfulAccountsReceivableCurrent",
+    "unit": "USD",
+    "period": "2026-06-30",
+    "value": 109000.0,
+    "accession": "0001375365-26-000022",
+    "filed": "2026-08-31",
+    "id": "0001375365-26-000022:facts:AllowanceForDoubtfulAccountsReceivableCurrent:2026-06-30"
+   },
+   "warranty_accrual": {
+    "tag": "StandardProductWarrantyAccrual",
+    "unit": "USD",
+    "period": "2026-06-30",
+    "value": 28354000.0,
+    "accession": "0001375365-26-000022",
+    "filed": "2026-08-31",
+    "id": "0001375365-26-000022:facts:StandardProductWarrantyAccrual:2026-06-30"
+   },
+   "property_plant_and_equipment": {
+    "tag": "PropertyPlantAndEquipmentNet",
+    "unit": "USD",
+    "period": "2026-06-30",
+    "value": 625553000.0,
+    "accession": "0001375365-26-000022",
+    "filed": "2026-08-31",
+    "id": "0001375365-26-000022:facts:PropertyPlantAndEquipmentNet:2026-06-30"
+   }
+  },
+  "balances_a_year_earlier": {
+   "receivables": {
+    "tag": "AccountsReceivableNetCurrent",
+    "unit": "USD",
+    "period": "2025-06-30",
+    "value": 2203942000.0,
+    "accession": "0001375365-26-000022",
+    "filed": "2026-08-31",
+    "id": "0001375365-26-000022:facts:AccountsReceivableNetCurrent:2025-06-30"
+   },
+   "inventory": {
+    "tag": "InventoryNet",
+    "unit": "USD",
+    "period": "2025-06-30",
+    "value": 4680375000.0,
+    "accession": "0001375365-26-000022",
+    "filed": "2026-08-31",
+    "id": "0001375365-26-000022:facts:InventoryNet:2025-06-30"
+   },
+   "assets": {
+    "tag": "Assets",
+    "unit": "USD",
+    "period": "2025-06-30",
+    "value": 14018429000.0,
+    "accession": "0001375365-26-000022",
+    "filed": "2026-08-31",
+    "id": "0001375365-26-000022:facts:Assets:2025-06-30"
+   },
+   "cash": {
+    "tag": "CashAndCashEquivalentsAtCarryingValue",
+    "unit": "USD",
+    "period": "2025-06-30",
+    "value": 5169911000.0,
+    "accession": "0001375365-26-000022",
+    "filed": "2026-08-31",
+    "id": "0001375365-26-000022:facts:CashAndCashEquivalentsAtCarryingValue:2025-06-30"
+   },
+   "contract_liabilities": {
+    "tag": "ContractWithCustomerLiabilityCurrent",
+    "unit": "USD",
+    "period": "2025-06-30",
+    "value": 368737000.0,
+    "accession": "0001375365-26-000022",
+    "filed": "2026-08-31",
+    "id": "0001375365-26-000022:facts:ContractWithCustomerLiabilityCurrent:2025-06-30"
+   },
+   "stockholders_equity": {
+    "tag": "StockholdersEquity",
+    "unit": "USD",
+    "period": "2025-06-30",
+    "value": 6301693000.0,
+    "accession": "0001375365-26-000022",
+    "filed": "2026-08-31",
+    "id": "0001375365-26-000022:facts:StockholdersEquity:2025-06-30"
+   },
+   "current_assets": {
+    "tag": "AssetsCurrent",
+    "unit": "USD",
+    "period": "2025-06-30",
+    "value": 12301654000.0,
+    "accession": "0001375365-26-000022",
+    "filed": "2026-08-31",
+    "id": "0001375365-26-000022:facts:AssetsCurrent:2025-06-30"
+   },
+   "current_liabilities": {
+    "tag": "LiabilitiesCurrent",
+    "unit": "USD",
+    "period": "2025-06-30",
+    "value": 2344792000.0,
+    "accession": "0001375365-26-000022",
+    "filed": "2026-08-31",
+    "id": "0001375365-26-000022:facts:LiabilitiesCurrent:2025-06-30"
+   },
+   "accounts_payable": {
+    "tag": "AccountsPayableCurrent",
+    "unit": "USD",
+    "period": "2025-06-30",
+    "value": 1281977000.0,
+    "accession": "0001375365-26-000022",
+    "filed": "2026-08-31",
+    "id": "0001375365-26-000022:facts:AccountsPayableCurrent:2025-06-30"
+   },
+   "short_term_investments": {
+    "tag": "MarketableSecuritiesCurrent",
+    "unit": "USD",
+    "period": "2025-06-30",
+    "value": 6239000.0,
+    "accession": "0001375365-26-000022",
+    "filed": "2026-08-31",
+    "id": "0001375365-26-000022:facts:MarketableSecuritiesCurrent:2025-06-30"
+   },
+   "total_liabilities": {
+    "tag": "Liabilities",
+    "unit": "USD",
+    "period": "2025-06-30",
+    "value": 7716558000.0,
+    "accession": "0001375365-26-000022",
+    "filed": "2026-08-31",
+    "id": "0001375365-26-000022:facts:Liabilities:2025-06-30"
+   },
+   "operating_lease_liability": {
+    "tag": "OperatingLeaseLiability",
+    "unit": "USD",
+    "period": "2025-06-30",
+    "value": 301557000.0,
+    "accession": "0001375365-26-000022",
+    "filed": "2026-08-31",
+    "id": "0001375365-26-000022:facts:OperatingLeaseLiability:2025-06-30"
+   },
+   "supplier_finance_obligation": {
+    "missing": "no row for supplier_finance_obligation: the companyfacts record tags none of us-gaap:SupplierFinanceProgramObligation in any period. companyfacts holds the entity-wide fact alone, so this is either a concept the company does not tag or one it states only by segment — the filing says which, and this record cannot"
+   },
+   "unconditional_purchase_obligations": {
+    "tag": "PurchaseObligation",
+    "unit": "USD",
+    "period": "2025-06-30",
+    "value": 1600000000.0,
+    "accession": "0001375365-25-000027",
+    "filed": "2025-08-28",
+    "id": "0001375365-25-000027:facts:PurchaseObligation:2025-06-30"
+   },
+   "guarantee_maximum_exposure": {
+    "missing": "no row for guarantee_maximum_exposure: the companyfacts record tags none of us-gaap:GuaranteeObligationsMaximumExposure in any period. companyfacts holds the entity-wide fact alone, so this is either a concept the company does not tag or one it states only by segment — the filing says which, and this record cannot"
+   },
+   "inventory_reserve": {
+    "missing": "no row for inventory_reserve in 2025-06-30: us-gaap:InventoryValuationReserves is in the record, but not for this period"
+   },
+   "bad_debt_allowance": {
+    "tag": "AllowanceForDoubtfulAccountsReceivableCurrent",
+    "unit": "USD",
+    "period": "2025-06-30",
+    "value": 0.0,
+    "accession": "0001375365-26-000022",
+    "filed": "2026-08-31",
+    "id": "0001375365-26-000022:facts:AllowanceForDoubtfulAccountsReceivableCurrent:2025-06-30"
+   },
+   "warranty_accrual": {
+    "tag": "StandardProductWarrantyAccrual",
+    "unit": "USD",
+    "period": "2025-06-30",
+    "value": 16954000.0,
+    "accession": "0001375365-26-000022",
+    "filed": "2026-08-31",
+    "id": "0001375365-26-000022:facts:StandardProductWarrantyAccrual:2025-06-30"
+   },
+   "property_plant_and_equipment": {
+    "tag": "PropertyPlantAndEquipmentNet",
+    "unit": "USD",
+    "period": "2025-06-30",
+    "value": 504488000.0,
+    "accession": "0001375365-26-000022",
+    "filed": "2026-08-31",
+    "id": "0001375365-26-000022:facts:PropertyPlantAndEquipmentNet:2025-06-30"
+   }
+  },
+  "debt_now": {
+   "value": 0,
+   "formula": "debt_current + debt_noncurrent",
+   "parts": {
+    "debt_current": {
+     "value": 0,
+     "lines": [],
+     "rule": "one line per group, the first tag on record in each",
+     "unit": "USD",
+     "formula": "no line on record",
+     "lines_not_added": [],
+     "note": "debt_current: no line on record for this period -- the statement prints none of DebtCurrent, LongTermDebtAndCapitalLeaseObligationsCurrent, LongTermDebtCurrent, ShortTermBorrowings, CommercialPaper"
+    },
+    "debt_noncurrent": {
+     "value": 0,
+     "lines": [],
+     "rule": "one line per group, the first tag on record in each",
+     "unit": "USD",
+     "formula": "no line on record",
+     "lines_not_added": [],
+     "note": "debt_noncurrent: no line on record for this period -- the statement prints none of LongTermDebtAndCapitalLeaseObligations, LongTermDebtNoncurrent, LongTermDebt"
+    }
+   },
+   "lines": []
+  },
+  "debt_a_year_earlier": {
+   "value": 0,
+   "formula": "debt_current + debt_noncurrent",
+   "parts": {
+    "debt_current": {
+     "value": 0,
+     "lines": [],
+     "rule": "one line per group, the first tag on record in each",
+     "unit": "USD",
+     "formula": "no line on record",
+     "lines_not_added": [],
+     "note": "debt_current: no line on record for this period -- the statement prints none of DebtCurrent, LongTermDebtAndCapitalLeaseObligationsCurrent, LongTermDebtCurrent, ShortTermBorrowings, CommercialPaper"
+    },
+    "debt_noncurrent": {
+     "value": 0,
+     "lines": [],
+     "rule": "one line per group, the first tag on record in each",
+     "unit": "USD",
+     "formula": "no line on record",
+     "lines_not_added": [],
+     "note": "debt_noncurrent: no line on record for this period -- the statement prints none of LongTermDebtAndCapitalLeaseObligations, LongTermDebtNoncurrent, LongTermDebt"
+    }
+   },
+   "lines": []
+  },
+  "cash_and_short_term_investments_now": {
+   "value": 7544584000.0,
+   "formula": "cash + short_term_investments",
+   "parts": {
+    "cash": {
+     "tag": "CashAndCashEquivalentsAtCarryingValue",
+     "unit": "USD",
+     "period": "2026-06-30",
+     "value": 7521474000.0,
+     "accession": "0001375365-26-000022",
+     "filed": "2026-08-31",
+     "id": "0001375365-26-000022:facts:CashAndCashEquivalentsAtCarryingValue:2026-06-30"
+    },
+    "short_term_investments": {
+     "tag": "MarketableSecuritiesCurrent",
+     "unit": "USD",
+     "period": "2026-06-30",
+     "value": 23110000.0,
+     "accession": "0001375365-26-000022",
+     "filed": "2026-08-31",
+     "id": "0001375365-26-000022:facts:MarketableSecuritiesCurrent:2026-06-30"
+    }
+   }
+  },
+  "cash_flow_families": {
+   "acquisitions": {
+    "value": 0.0,
+    "lines": [
+     {
+      "tag": "PaymentsToAcquireBusinessesNetOfCashAcquired",
+      "namespace": "us-gaap",
+      "unit": "USD",
+      "period": "2025-07-01..2026-06-30",
+      "value": 0.0,
+      "accession": "0001375365-26-000022",
+      "filed": "2026-08-31",
+      "id": "0001375365-26-000022:facts:PaymentsToAcquireBusinessesNetOfCashAcquired:2025-07-01..2026-06-30",
+      "direction": "outflow"
+     }
+    ],
+    "rule": "one line per group, the first tag on record in each",
+    "unit": "USD",
+    "formula": "PaymentsToAcquireBusinessesNetOfCashAcquired",
+    "lines_not_added": []
+   },
+   "borrowing_issued": {
+    "value": 4468808000.0,
+    "lines": [
+     {
+      "tag": "ProceedsFromIssuanceOfDebt",
+      "namespace": "us-gaap",
+      "unit": "USD",
+      "period": "2025-07-01..2026-06-30",
+      "value": 4468808000.0,
+      "accession": "0001375365-26-000022",
+      "filed": "2026-08-31",
+      "id": "0001375365-26-000022:facts:ProceedsFromIssuanceOfDebt:2025-07-01..2026-06-30",
+      "direction": "inflow"
+     }
+    ],
+    "rule": "ProceedsFromIssuanceOfDebt, the total, which replaces its lines",
+    "unit": "USD",
+    "formula": "ProceedsFromIssuanceOfDebt",
+    "lines_not_added": []
+   },
+   "borrowing_repaid": {
+    "value": 520510000.0,
+    "lines": [
+     {
+      "tag": "RepaymentsOfDebt",
+      "namespace": "us-gaap",
+      "unit": "USD",
+      "period": "2025-07-01..2026-06-30",
+      "value": 520510000.0,
+      "accession": "0001375365-26-000022",
+      "filed": "2026-08-31",
+      "id": "0001375365-26-000022:facts:RepaymentsOfDebt:2025-07-01..2026-06-30",
+      "direction": "outflow"
+     }
+    ],
+    "rule": "RepaymentsOfDebt, the total, which replaces its lines",
+    "unit": "USD",
+    "formula": "RepaymentsOfDebt",
+    "lines_not_added": []
+   },
+   "borrowing_short_term_net": {
+    "value": 0,
+    "lines": [],
+    "rule": "one line per group, the first tag on record in each",
+    "unit": "USD",
+    "formula": "no line on record",
+    "lines_not_added": [],
+    "note": "borrowing_short_term_net: no line on record for this period -- the statement prints none of ProceedsFromRepaymentsOfShortTermDebt, ProceedsFromRepaymentsOfCommercialPaper, ProceedsFromRepaymentsOfShortTermDebtMaturingInThreeMonthsOrLess, ProceedsFromShortTermDebtMaturingInMoreThanThreeMonths, RepaymentsOfShortTermDebtMaturingInMoreThanThreeMonths"
+   }
+  },
+  "diluted_shares": {
+   "tag": "WeightedAverageNumberOfDilutedSharesOutstanding",
+   "namespace": "us-gaap",
+   "unit": "shares",
+   "period": "2025-07-01..2026-06-30",
+   "value": 697348000.0,
+   "accession": "0001375365-26-000022",
+   "filed": "2026-08-31",
+   "id": "0001375365-26-000022:facts:WeightedAverageNumberOfDilutedSharesOutstanding:2025-07-01..2026-06-30"
+  },
+  "shares_outstanding": {
+   "value": 656965384.0,
+   "tag": "EntityCommonStockSharesOutstanding",
+   "namespace": "dei",
+   "unit": "shares",
+   "period": "2026-07-31",
+   "accession": "0001375365-26-000022",
+   "filed": "2026-08-31",
+   "classes_summed": 1,
+   "id": "0001375365-26-000022:facts:EntityCommonStockSharesOutstanding:2026-07-31"
+  }
+ },
+ "ratios": {
+  "profitability": {
+   "gross_margin": {
+    "value": 0.10821604097086886,
+    "formula": "(revenue - cost_of_revenue) / revenue",
+    "unit": "ratio",
+    "inputs": {
+     "revenue": {
+      "value": 39063072000.0,
+      "formula": "the fiscal year",
+      "unit": "USD",
+      "parts": {
+       "0": {
+        "value": 39063072000.0,
+        "id": "0001375365-26-000022:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2025-07-01..2026-06-30",
+        "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+        "period": "2025-07-01..2026-06-30",
+        "unit": "USD"
+       }
+      }
+     },
+     "cost_of_revenue": {
+      "value": 34835821000.0,
+      "formula": "the fiscal year",
+      "unit": "USD",
+      "parts": {
+       "0": {
+        "value": 34835821000.0,
+        "id": "0001375365-26-000022:facts:CostOfRevenue:2025-07-01..2026-06-30",
+        "tag": "CostOfRevenue",
+        "period": "2025-07-01..2026-06-30",
+        "unit": "USD"
+       }
+      }
+     }
+    }
+   },
+   "operating_margin": {
+    "value": 0.07092340305442439,
+    "formula": "ebit / revenue",
+    "unit": "ratio",
+    "inputs": {
+     "ebit": {
+      "value": 2770486000.0,
+      "formula": "the fiscal year",
+      "unit": "USD",
+      "parts": {
+       "0": {
+        "value": 2770486000.0,
+        "id": "0001375365-26-000022:facts:OperatingIncomeLoss:2025-07-01..2026-06-30",
+        "tag": "OperatingIncomeLoss",
+        "period": "2025-07-01..2026-06-30",
+        "unit": "USD"
+       }
+      }
+     },
+     "revenue": {
+      "value": 39063072000.0,
+      "formula": "the fiscal year",
+      "unit": "USD",
+      "parts": {
+       "0": {
+        "value": 39063072000.0,
+        "id": "0001375365-26-000022:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2025-07-01..2026-06-30",
+        "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+        "period": "2025-07-01..2026-06-30",
+        "unit": "USD"
+       }
+      }
+     }
+    }
+   },
+   "net_margin": {
+    "value": 0.05709876069142744,
+    "formula": "net_income / revenue",
+    "unit": "ratio",
+    "inputs": {
+     "net_income": {
+      "value": 2230453000.0,
+      "formula": "the fiscal year",
+      "unit": "USD",
+      "parts": {
+       "0": {
+        "value": 2230453000.0,
+        "id": "0001375365-26-000022:facts:NetIncomeLoss:2025-07-01..2026-06-30",
+        "tag": "NetIncomeLoss",
+        "period": "2025-07-01..2026-06-30",
+        "unit": "USD"
+       }
+      }
+     },
+     "revenue": {
+      "value": 39063072000.0,
+      "formula": "the fiscal year",
+      "unit": "USD",
+      "parts": {
+       "0": {
+        "value": 39063072000.0,
+        "id": "0001375365-26-000022:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2025-07-01..2026-06-30",
+        "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+        "period": "2025-07-01..2026-06-30",
+        "unit": "USD"
+       }
+      }
+     }
+    }
+   },
+   "return_on_assets": {
+    "value": 0.10146748595711354,
+    "formula": "net_income / average assets",
+    "unit": "ratio",
+    "inputs": {
+     "net_income": {
+      "value": 2230453000.0,
+      "formula": "the fiscal year",
+      "unit": "USD",
+      "parts": {
+       "0": {
+        "value": 2230453000.0,
+        "id": "0001375365-26-000022:facts:NetIncomeLoss:2025-07-01..2026-06-30",
+        "tag": "NetIncomeLoss",
+        "period": "2025-07-01..2026-06-30",
+        "unit": "USD"
+       }
+      }
+     },
+     "average_assets": {
+      "value": 21981948000.0,
+      "formula": "(now + a year earlier) / 2",
+      "parts": {
+       "now": {
+        "value": 29945467000.0,
+        "id": "0001375365-26-000022:facts:Assets:2026-06-30",
+        "tag": "Assets",
+        "period": "2026-06-30",
+        "unit": "USD"
+       },
+       "a_year_earlier": {
+        "value": 14018429000.0,
+        "id": "0001375365-26-000022:facts:Assets:2025-06-30",
+        "tag": "Assets",
+        "period": "2025-06-30",
+        "unit": "USD"
+       }
+      }
+     }
+    }
+   },
+   "return_on_equity": {
+    "value": 0.2146612229499385,
+    "formula": "net_income / average stockholders_equity",
+    "unit": "ratio",
+    "inputs": {
+     "net_income": {
+      "value": 2230453000.0,
+      "formula": "the fiscal year",
+      "unit": "USD",
+      "parts": {
+       "0": {
+        "value": 2230453000.0,
+        "id": "0001375365-26-000022:facts:NetIncomeLoss:2025-07-01..2026-06-30",
+        "tag": "NetIncomeLoss",
+        "period": "2025-07-01..2026-06-30",
+        "unit": "USD"
+       }
+      }
+     },
+     "average_equity": {
+      "value": 10390572500.0,
+      "formula": "(now + a year earlier) / 2",
+      "parts": {
+       "now": {
+        "value": 14479452000.0,
+        "id": "0001375365-26-000022:facts:StockholdersEquity:2026-06-30",
+        "tag": "StockholdersEquity",
+        "period": "2026-06-30",
+        "unit": "USD"
+       },
+       "a_year_earlier": {
+        "value": 6301693000.0,
+        "id": "0001375365-26-000022:facts:StockholdersEquity:2025-06-30",
+        "tag": "StockholdersEquity",
+        "period": "2025-06-30",
+        "unit": "USD"
+       }
+      }
+     }
+    }
+   },
+   "dupont": {
+    "net_margin": {
+     "value": 0.05709876069142744,
+     "formula": "net_income / revenue",
+     "unit": "ratio",
+     "inputs": {
+      "net_income": {
+       "value": 2230453000.0,
+       "formula": "the fiscal year",
+       "unit": "USD",
+       "parts": {
+        "0": {
+         "value": 2230453000.0,
+         "id": "0001375365-26-000022:facts:NetIncomeLoss:2025-07-01..2026-06-30",
+         "tag": "NetIncomeLoss",
+         "period": "2025-07-01..2026-06-30",
+         "unit": "USD"
+        }
+       }
+      },
+      "revenue": {
+       "value": 39063072000.0,
+       "formula": "the fiscal year",
+       "unit": "USD",
+       "parts": {
+        "0": {
+         "value": 39063072000.0,
+         "id": "0001375365-26-000022:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2025-07-01..2026-06-30",
+         "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+         "period": "2025-07-01..2026-06-30",
+         "unit": "USD"
+        }
+       }
+      }
+     }
+    },
+    "asset_turnover": {
+     "value": 1.7770523340333624,
+     "formula": "revenue / average assets",
+     "unit": "ratio",
+     "inputs": {
+      "revenue": {
+       "value": 39063072000.0,
+       "formula": "the fiscal year",
+       "unit": "USD",
+       "parts": {
+        "0": {
+         "value": 39063072000.0,
+         "id": "0001375365-26-000022:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2025-07-01..2026-06-30",
+         "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+         "period": "2025-07-01..2026-06-30",
+         "unit": "USD"
+        }
+       }
+      },
+      "average_assets": {
+       "value": 21981948000.0,
+       "formula": "(now + a year earlier) / 2",
+       "parts": {
+        "now": {
+         "value": 29945467000.0,
+         "id": "0001375365-26-000022:facts:Assets:2026-06-30",
+         "tag": "Assets",
+         "period": "2026-06-30",
+         "unit": "USD"
+        },
+        "a_year_earlier": {
+         "value": 14018429000.0,
+         "id": "0001375365-26-000022:facts:Assets:2025-06-30",
+         "tag": "Assets",
+         "period": "2025-06-30",
+         "unit": "USD"
+        }
+       }
+      }
+     }
+    },
+    "equity_multiplier": {
+     "value": 2.1155665869229052,
+     "formula": "average assets / average stockholders_equity",
+     "unit": "ratio",
+     "inputs": {
+      "average_assets": {
+       "value": 21981948000.0,
+       "formula": "(now + a year earlier) / 2",
+       "parts": {
+        "now": {
+         "value": 29945467000.0,
+         "id": "0001375365-26-000022:facts:Assets:2026-06-30",
+         "tag": "Assets",
+         "period": "2026-06-30",
+         "unit": "USD"
+        },
+        "a_year_earlier": {
+         "value": 14018429000.0,
+         "id": "0001375365-26-000022:facts:Assets:2025-06-30",
+         "tag": "Assets",
+         "period": "2025-06-30",
+         "unit": "USD"
+        }
+       }
+      },
+      "average_equity": {
+       "value": 10390572500.0,
+       "formula": "(now + a year earlier) / 2",
+       "parts": {
+        "now": {
+         "value": 14479452000.0,
+         "id": "0001375365-26-000022:facts:StockholdersEquity:2026-06-30",
+         "tag": "StockholdersEquity",
+         "period": "2026-06-30",
+         "unit": "USD"
+        },
+        "a_year_earlier": {
+         "value": 6301693000.0,
+         "id": "0001375365-26-000022:facts:StockholdersEquity:2025-06-30",
+         "tag": "StockholdersEquity",
+         "period": "2025-06-30",
+         "unit": "USD"
+        }
+       }
+      }
+     }
+    },
+    "product": {
+     "value": 0.2146612229499385,
+     "formula": "net_margin * asset_turnover * equity_multiplier, which is return_on_equity by construction"
+    }
+   },
+   "return_on_invested_capital": {
+    "value": 0.29673046180808815,
+    "formula": "ebit * (1 - tax_rate) / invested_capital",
+    "unit": "ratio",
+    "inputs": {
+     "ebit": {
+      "value": 2770486000.0,
+      "formula": "the fiscal year",
+      "unit": "USD",
+      "parts": {
+       "0": {
+        "value": 2770486000.0,
+        "id": "0001375365-26-000022:facts:OperatingIncomeLoss:2025-07-01..2026-06-30",
+        "tag": "OperatingIncomeLoss",
+        "period": "2025-07-01..2026-06-30",
+        "unit": "USD"
+       }
+      }
+     },
+     "tax_rate": {
+      "value": 0.19945369100952795,
+      "formula": "income_tax_expense / pretax_income, held between 0 and 0.21"
+     },
+     "invested_capital": {
+      "value": 7474468000.0,
+      "formula": "debt + stockholders_equity + operating_lease_liability - cash_and_short_term_investments",
+      "unit": "USD"
+     }
+    },
+    "invested_capital": {
+     "value": 7474468000.0,
+     "formula": "debt + stockholders_equity + operating_lease_liability - cash_and_short_term_investments",
+     "unit": "USD",
+     "inputs": {
+      "debt": {
+       "value": 0,
+       "formula": "debt_current + debt_noncurrent",
+       "parts": {
+        "debt_current": {
+         "value": 0,
+         "formula": "no line on record",
+         "unit": "USD",
+         "note": "debt_current: no line on record for this period -- the statement prints none of DebtCurrent, LongTermDebtAndCapitalLeaseObligationsCurrent, LongTermDebtCurrent, ShortTermBorrowings, CommercialPaper",
+         "lines": []
+        },
+        "debt_noncurrent": {
+         "value": 0,
+         "formula": "no line on record",
+         "unit": "USD",
+         "note": "debt_noncurrent: no line on record for this period -- the statement prints none of LongTermDebtAndCapitalLeaseObligations, LongTermDebtNoncurrent, LongTermDebt",
+         "lines": []
+        }
+       },
+       "lines": []
+      },
+      "stockholders_equity": {
+       "value": 14479452000.0,
+       "id": "0001375365-26-000022:facts:StockholdersEquity:2026-06-30",
+       "tag": "StockholdersEquity",
+       "period": "2026-06-30",
+       "unit": "USD"
+      },
+      "operating_lease_liability": {
+       "value": 539600000.0,
+       "id": "0001375365-26-000022:facts:OperatingLeaseLiability:2026-06-30",
+       "tag": "OperatingLeaseLiability",
+       "period": "2026-06-30",
+       "unit": "USD"
+      },
+      "cash_and_short_term_investments": {
+       "value": 7544584000.0,
+       "formula": "cash + short_term_investments",
+       "parts": {
+        "cash": {
+         "value": 7521474000.0,
+         "id": "0001375365-26-000022:facts:CashAndCashEquivalentsAtCarryingValue:2026-06-30",
+         "tag": "CashAndCashEquivalentsAtCarryingValue",
+         "period": "2026-06-30",
+         "unit": "USD"
+        },
+        "short_term_investments": {
+         "value": 23110000.0,
+         "id": "0001375365-26-000022:facts:MarketableSecuritiesCurrent:2026-06-30",
+         "tag": "MarketableSecuritiesCurrent",
+         "period": "2026-06-30",
+         "unit": "USD"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "efficiency": {
+   "days_sales_outstanding": {
+    "value": 38.91418140385887,
+    "formula": "average receivables / revenue * 365",
+    "unit": "days",
+    "inputs": {
+     "average_receivables": {
+      "value": 4164678000.0,
+      "formula": "(now + a year earlier) / 2",
+      "parts": {
+       "now": {
+        "value": 6125414000.0,
+        "id": "0001375365-26-000022:facts:AccountsReceivableNetCurrent:2026-06-30",
+        "tag": "AccountsReceivableNetCurrent",
+        "period": "2026-06-30",
+        "unit": "USD"
+       },
+       "a_year_earlier": {
+        "value": 2203942000.0,
+        "id": "0001375365-26-000022:facts:AccountsReceivableNetCurrent:2025-06-30",
+        "tag": "AccountsReceivableNetCurrent",
+        "period": "2025-06-30",
+        "unit": "USD"
+       }
+      }
+     },
+     "revenue": {
+      "value": 39063072000.0,
+      "formula": "the fiscal year",
+      "unit": "USD",
+      "parts": {
+       "0": {
+        "value": 39063072000.0,
+        "id": "0001375365-26-000022:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2025-07-01..2026-06-30",
+        "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+        "period": "2025-07-01..2026-06-30",
+        "unit": "USD"
+       }
+      }
+     }
+    }
+   },
+   "days_sales_of_inventory": {
+    "value": 92.07990619770379,
+    "formula": "average inventory / cost_of_revenue * 365",
+    "unit": "days",
+    "inputs": {
+     "average_inventory": {
+      "value": 8788162000.0,
+      "formula": "(now + a year earlier) / 2",
+      "parts": {
+       "now": {
+        "value": 12895949000.0,
+        "id": "0001375365-26-000022:facts:InventoryNet:2026-06-30",
+        "tag": "InventoryNet",
+        "period": "2026-06-30",
+        "unit": "USD"
+       },
+       "a_year_earlier": {
+        "value": 4680375000.0,
+        "id": "0001375365-26-000022:facts:InventoryNet:2025-06-30",
+        "tag": "InventoryNet",
+        "period": "2025-06-30",
+        "unit": "USD"
+       }
+      }
+     },
+     "cost_of_revenue": {
+      "value": 34835821000.0,
+      "formula": "the fiscal year",
+      "unit": "USD",
+      "parts": {
+       "0": {
+        "value": 34835821000.0,
+        "id": "0001375365-26-000022:facts:CostOfRevenue:2025-07-01..2026-06-30",
+        "tag": "CostOfRevenue",
+        "period": "2025-07-01..2026-06-30",
+        "unit": "USD"
+       }
+      }
+     }
+    }
+   },
+   "days_payables_outstanding": {
+    "value": 18.487833256463226,
+    "formula": "average accounts_payable / cost_of_revenue * 365",
+    "unit": "days",
+    "inputs": {
+     "average_payables": {
+      "value": 1764490000.0,
+      "formula": "(now + a year earlier) / 2",
+      "parts": {
+       "now": {
+        "value": 2247003000.0,
+        "id": "0001375365-26-000022:facts:AccountsPayableCurrent:2026-06-30",
+        "tag": "AccountsPayableCurrent",
+        "period": "2026-06-30",
+        "unit": "USD"
+       },
+       "a_year_earlier": {
+        "value": 1281977000.0,
+        "id": "0001375365-26-000022:facts:AccountsPayableCurrent:2025-06-30",
+        "tag": "AccountsPayableCurrent",
+        "period": "2025-06-30",
+        "unit": "USD"
+       }
+      }
+     },
+     "cost_of_revenue": {
+      "value": 34835821000.0,
+      "formula": "the fiscal year",
+      "unit": "USD",
+      "parts": {
+       "0": {
+        "value": 34835821000.0,
+        "id": "0001375365-26-000022:facts:CostOfRevenue:2025-07-01..2026-06-30",
+        "tag": "CostOfRevenue",
+        "period": "2025-07-01..2026-06-30",
+        "unit": "USD"
+       }
+      }
+     }
+    }
+   },
+   "cash_conversion_cycle": {
+    "value": 112.50625434509942,
+    "formula": "days_sales_outstanding + days_sales_of_inventory - days_payables_outstanding",
+    "unit": "days",
+    "inputs": {
+     "days_sales_outstanding": {
+      "value": 38.91418140385887,
+      "formula": "average receivables / revenue * 365",
+      "unit": "days"
+     },
+     "days_sales_of_inventory": {
+      "value": 92.07990619770379,
+      "formula": "average inventory / cost_of_revenue * 365",
+      "unit": "days"
+     },
+     "days_payables_outstanding": {
+      "value": 18.487833256463226,
+      "formula": "average accounts_payable / cost_of_revenue * 365",
+      "unit": "days"
+     }
+    }
+   },
+   "asset_turnover": {
+    "value": 1.7770523340333624,
+    "formula": "revenue / average assets",
+    "unit": "ratio",
+    "inputs": {
+     "revenue": {
+      "value": 39063072000.0,
+      "formula": "the fiscal year",
+      "unit": "USD",
+      "parts": {
+       "0": {
+        "value": 39063072000.0,
+        "id": "0001375365-26-000022:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2025-07-01..2026-06-30",
+        "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+        "period": "2025-07-01..2026-06-30",
+        "unit": "USD"
+       }
+      }
+     },
+     "average_assets": {
+      "value": 21981948000.0,
+      "formula": "(now + a year earlier) / 2",
+      "parts": {
+       "now": {
+        "value": 29945467000.0,
+        "id": "0001375365-26-000022:facts:Assets:2026-06-30",
+        "tag": "Assets",
+        "period": "2026-06-30",
+        "unit": "USD"
+       },
+       "a_year_earlier": {
+        "value": 14018429000.0,
+        "id": "0001375365-26-000022:facts:Assets:2025-06-30",
+        "tag": "Assets",
+        "period": "2025-06-30",
+        "unit": "USD"
+       }
+      }
+     }
+    }
+   }
+  },
+  "liquidity": {
+   "current_ratio": {
+    "value": 3.8723242365406323,
+    "formula": "current_assets / current_liabilities",
+    "unit": "ratio",
+    "inputs": {
+     "current_assets": {
+      "value": 27726252000.0,
+      "id": "0001375365-26-000022:facts:AssetsCurrent:2026-06-30",
+      "tag": "AssetsCurrent",
+      "period": "2026-06-30",
+      "unit": "USD"
+     },
+     "current_liabilities": {
+      "value": 7160106000.0,
+      "id": "0001375365-26-000022:facts:LiabilitiesCurrent:2026-06-30",
+      "tag": "LiabilitiesCurrent",
+      "period": "2026-06-30",
+      "unit": "USD"
+     }
+    }
+   },
+   "quick_ratio": {
+    "value": 1.9091893332305416,
+    "formula": "(cash_and_short_term_investments + receivables) / current_liabilities",
+    "unit": "ratio",
+    "inputs": {
+     "cash_and_short_term_investments": {
+      "value": 7544584000.0,
+      "formula": "cash + short_term_investments",
+      "parts": {
+       "cash": {
+        "value": 7521474000.0,
+        "id": "0001375365-26-000022:facts:CashAndCashEquivalentsAtCarryingValue:2026-06-30",
+        "tag": "CashAndCashEquivalentsAtCarryingValue",
+        "period": "2026-06-30",
+        "unit": "USD"
+       },
+       "short_term_investments": {
+        "value": 23110000.0,
+        "id": "0001375365-26-000022:facts:MarketableSecuritiesCurrent:2026-06-30",
+        "tag": "MarketableSecuritiesCurrent",
+        "period": "2026-06-30",
+        "unit": "USD"
+       }
+      }
+     },
+     "receivables": {
+      "value": 6125414000.0,
+      "id": "0001375365-26-000022:facts:AccountsReceivableNetCurrent:2026-06-30",
+      "tag": "AccountsReceivableNetCurrent",
+      "period": "2026-06-30",
+      "unit": "USD"
+     },
+     "current_liabilities": {
+      "value": 7160106000.0,
+      "id": "0001375365-26-000022:facts:LiabilitiesCurrent:2026-06-30",
+      "tag": "LiabilitiesCurrent",
+      "period": "2026-06-30",
+      "unit": "USD"
+     }
+    }
+   },
+   "cash_runway_months": {
+    "value": 12.985728823696892,
+    "unit": "months",
+    "formula": "cash_and_short_term_investments / (-free_cash_flow_simple / 12)",
+    "inputs": {
+     "cash_and_short_term_investments": {
+      "value": 7544584000.0,
+      "formula": "cash + short_term_investments",
+      "parts": {
+       "cash": {
+        "value": 7521474000.0,
+        "id": "0001375365-26-000022:facts:CashAndCashEquivalentsAtCarryingValue:2026-06-30",
+        "tag": "CashAndCashEquivalentsAtCarryingValue",
+        "period": "2026-06-30",
+        "unit": "USD"
+       },
+       "short_term_investments": {
+        "value": 23110000.0,
+        "id": "0001375365-26-000022:facts:MarketableSecuritiesCurrent:2026-06-30",
+        "tag": "MarketableSecuritiesCurrent",
+        "period": "2026-06-30",
+        "unit": "USD"
+       }
+      }
+     },
+     "free_cash_flow_simple": {
+      "value": -6971885000.0,
+      "formula": "operating_cash_flow - capital_expenditure",
+      "unit": "USD"
+     }
+    }
+   }
+  },
+  "solvency": {
+   "total_debt": {
+    "value": 0,
+    "formula": "debt_current + debt_noncurrent",
+    "parts": {
+     "debt_current": {
+      "value": 0,
+      "lines": [],
+      "rule": "one line per group, the first tag on record in each",
+      "unit": "USD",
+      "formula": "no line on record",
+      "lines_not_added": [],
+      "note": "debt_current: no line on record for this period -- the statement prints none of DebtCurrent, LongTermDebtAndCapitalLeaseObligationsCurrent, LongTermDebtCurrent, ShortTermBorrowings, CommercialPaper"
+     },
+     "debt_noncurrent": {
+      "value": 0,
+      "lines": [],
+      "rule": "one line per group, the first tag on record in each",
+      "unit": "USD",
+      "formula": "no line on record",
+      "lines_not_added": [],
+      "note": "debt_noncurrent: no line on record for this period -- the statement prints none of LongTermDebtAndCapitalLeaseObligations, LongTermDebtNoncurrent, LongTermDebt"
+     }
+    },
+    "lines": []
+   },
+   "net_debt": {
+    "value": -7544584000.0,
+    "formula": "total_debt - cash_and_short_term_investments",
+    "unit": "USD",
+    "inputs": {
+     "total_debt": {
+      "value": 0,
+      "formula": "debt_current + debt_noncurrent",
+      "parts": {
+       "debt_current": {
+        "value": 0,
+        "formula": "no line on record",
+        "unit": "USD",
+        "note": "debt_current: no line on record for this period -- the statement prints none of DebtCurrent, LongTermDebtAndCapitalLeaseObligationsCurrent, LongTermDebtCurrent, ShortTermBorrowings, CommercialPaper",
+        "lines": []
+       },
+       "debt_noncurrent": {
+        "value": 0,
+        "formula": "no line on record",
+        "unit": "USD",
+        "note": "debt_noncurrent: no line on record for this period -- the statement prints none of LongTermDebtAndCapitalLeaseObligations, LongTermDebtNoncurrent, LongTermDebt",
+        "lines": []
+       }
+      },
+      "lines": []
+     },
+     "cash_and_short_term_investments": {
+      "value": 7544584000.0,
+      "formula": "cash + short_term_investments",
+      "parts": {
+       "cash": {
+        "value": 7521474000.0,
+        "id": "0001375365-26-000022:facts:CashAndCashEquivalentsAtCarryingValue:2026-06-30",
+        "tag": "CashAndCashEquivalentsAtCarryingValue",
+        "period": "2026-06-30",
+        "unit": "USD"
+       },
+       "short_term_investments": {
+        "value": 23110000.0,
+        "id": "0001375365-26-000022:facts:MarketableSecuritiesCurrent:2026-06-30",
+        "tag": "MarketableSecuritiesCurrent",
+        "period": "2026-06-30",
+        "unit": "USD"
+       }
+      }
+     }
+    }
+   },
+   "ebitda": {
+    "value": 2823486000.0,
+    "formula": "ebit + depreciation_and_amortization",
+    "unit": "USD",
+    "inputs": {
+     "ebit": {
+      "value": 2770486000.0,
+      "formula": "the fiscal year",
+      "unit": "USD",
+      "parts": {
+       "0": {
+        "value": 2770486000.0,
+        "id": "0001375365-26-000022:facts:OperatingIncomeLoss:2025-07-01..2026-06-30",
+        "tag": "OperatingIncomeLoss",
+        "period": "2025-07-01..2026-06-30",
+        "unit": "USD"
+       }
+      }
+     },
+     "depreciation_and_amortization": {
+      "value": 53000000.0,
+      "formula": "the fiscal year",
+      "unit": "USD",
+      "parts": {
+       "0": {
+        "value": 53000000.0,
+        "id": "0001375365-26-000022:facts:DepreciationDepletionAndAmortization:2025-07-01..2026-06-30",
+        "tag": "DepreciationDepletionAndAmortization",
+        "period": "2025-07-01..2026-06-30",
+        "unit": "USD"
+       }
+      }
+     }
+    }
+   },
+   "debt_over_ebitda": {
+    "value": 0.0,
+    "formula": "total_debt / ebitda",
+    "unit": "ratio",
+    "inputs": {
+     "total_debt": {
+      "value": 0,
+      "formula": "debt_current + debt_noncurrent",
+      "parts": {
+       "debt_current": {
+        "value": 0,
+        "formula": "no line on record",
+        "unit": "USD",
+        "note": "debt_current: no line on record for this period -- the statement prints none of DebtCurrent, LongTermDebtAndCapitalLeaseObligationsCurrent, LongTermDebtCurrent, ShortTermBorrowings, CommercialPaper",
+        "lines": []
+       },
+       "debt_noncurrent": {
+        "value": 0,
+        "formula": "no line on record",
+        "unit": "USD",
+        "note": "debt_noncurrent: no line on record for this period -- the statement prints none of LongTermDebtAndCapitalLeaseObligations, LongTermDebtNoncurrent, LongTermDebt",
+        "lines": []
+       }
+      },
+      "lines": []
+     },
+     "ebitda": {
+      "value": 2823486000.0,
+      "formula": "ebit + depreciation_and_amortization",
+      "unit": "USD"
+     }
+    }
+   },
+   "interest_coverage": {
+    "value": 14.23872665412645,
+    "formula": "ebit / interest_expense",
+    "unit": "ratio",
+    "inputs": {
+     "ebit": {
+      "value": 2770486000.0,
+      "formula": "the fiscal year",
+      "unit": "USD",
+      "parts": {
+       "0": {
+        "value": 2770486000.0,
+        "id": "0001375365-26-000022:facts:OperatingIncomeLoss:2025-07-01..2026-06-30",
+        "tag": "OperatingIncomeLoss",
+        "period": "2025-07-01..2026-06-30",
+        "unit": "USD"
+       }
+      }
+     },
+     "interest_expense": {
+      "value": 194574000.0,
+      "formula": "the fiscal year",
+      "unit": "USD",
+      "parts": {
+       "0": {
+        "value": 194574000.0,
+        "id": "0001375365-26-000022:facts:InterestExpenseNonoperating:2025-07-01..2026-06-30",
+        "tag": "InterestExpenseNonoperating",
+        "period": "2025-07-01..2026-06-30",
+        "unit": "USD"
+       }
+      }
+     }
+    }
+   },
+   "liabilities_over_assets": {
+    "value": 0.5164671834972552,
+    "formula": "total_liabilities / assets",
+    "unit": "ratio",
+    "inputs": {
+     "total_liabilities": {
+      "value": 15465851000.0,
+      "id": "0001375365-26-000022:facts:Liabilities:2026-06-30",
+      "tag": "Liabilities",
+      "period": "2026-06-30",
+      "unit": "USD"
+     },
+     "assets": {
+      "value": 29945467000.0,
+      "id": "0001375365-26-000022:facts:Assets:2026-06-30",
+      "tag": "Assets",
+      "period": "2026-06-30",
+      "unit": "USD"
+     }
+    }
+   },
+   "operating_lease_liability": {
+    "tag": "OperatingLeaseLiability",
+    "unit": "USD",
+    "period": "2026-06-30",
+    "value": 539600000.0,
+    "accession": "0001375365-26-000022",
+    "filed": "2026-08-31",
+    "id": "0001375365-26-000022:facts:OperatingLeaseLiability:2026-06-30"
+   }
+  },
+  "growth": {
+   "revenue": {
+    "quarter_over_quarter": {
+     "value": 0.08559619268313018,
+     "formula": "(now - before) / abs(before)",
+     "unit": "ratio",
+     "inputs": {
+      "now": {
+       "value": 11119777000.0,
+       "formula": "2025-07-01..2026-06-30 less 2025-07-01..2026-03-31",
+       "parts": {
+        "0": {
+         "value": 39063072000.0,
+         "id": "0001375365-26-000022:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2025-07-01..2026-06-30",
+         "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+         "period": "2025-07-01..2026-06-30",
+         "unit": "USD"
+        },
+        "1": {
+         "value": 27943295000.0,
+         "id": "0001375365-26-000014:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2025-07-01..2026-03-31",
+         "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+         "period": "2025-07-01..2026-03-31",
+         "unit": "USD"
+        }
+       }
+      },
+      "before": {
+       "value": 10243014000.0,
+       "formula": "the quarter as stated",
+       "parts": {
+        "0": {
+         "value": 10243014000.0,
+         "id": "0001375365-26-000014:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2026-01-01..2026-03-31",
+         "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+         "period": "2026-01-01..2026-03-31",
+         "unit": "USD"
+        }
+       }
+      }
+     }
+    },
+    "year_over_year": {
+     "value": 0.931552702482286,
+     "formula": "(now - before) / abs(before)",
+     "unit": "ratio",
+     "inputs": {
+      "now": {
+       "value": 11119777000.0,
+       "formula": "2025-07-01..2026-06-30 less 2025-07-01..2026-03-31",
+       "parts": {
+        "0": {
+         "value": 39063072000.0,
+         "id": "0001375365-26-000022:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2025-07-01..2026-06-30",
+         "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+         "period": "2025-07-01..2026-06-30",
+         "unit": "USD"
+        },
+        "1": {
+         "value": 27943295000.0,
+         "id": "0001375365-26-000014:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2025-07-01..2026-03-31",
+         "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+         "period": "2025-07-01..2026-03-31",
+         "unit": "USD"
+        }
+       }
+      },
+      "before": {
+       "value": 5756911000.0,
+       "formula": "2024-07-01..2025-06-30 less 2024-07-01..2025-03-31",
+       "parts": {
+        "0": {
+         "value": 21972042000.0,
+         "id": "0001375365-26-000022:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2024-07-01..2025-06-30",
+         "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+         "period": "2024-07-01..2025-06-30",
+         "unit": "USD"
+        },
+        "1": {
+         "value": 16215131000.0,
+         "id": "0001375365-26-000014:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2024-07-01..2025-03-31",
+         "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+         "period": "2024-07-01..2025-03-31",
+         "unit": "USD"
+        }
+       }
+      }
+     }
+    },
+    "trailing_four_quarters": {
+     "value": 0.7778535103837868,
+     "formula": "(now - before) / abs(before)",
+     "unit": "ratio",
+     "inputs": {
+      "now": {
+       "value": 39063072000.0,
+       "formula": "the fiscal year",
+       "unit": "USD",
+       "parts": {
+        "0": {
+         "value": 39063072000.0,
+         "id": "0001375365-26-000022:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2025-07-01..2026-06-30",
+         "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+         "period": "2025-07-01..2026-06-30",
+         "unit": "USD"
+        }
+       }
+      },
+      "before": {
+       "value": 21972042000.0,
+       "formula": "the fiscal year",
+       "unit": "USD",
+       "parts": {
+        "0": {
+         "value": 21972042000.0,
+         "id": "0001375365-26-000022:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2024-07-01..2025-06-30",
+         "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+         "period": "2024-07-01..2025-06-30",
+         "unit": "USD"
+        }
+       }
+      }
+     }
+    },
+    "this_quarter": {
+     "value": 11119777000.0,
+     "formula": "2025-07-01..2026-06-30 less 2025-07-01..2026-03-31",
+     "parts": [
+      {
+       "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+       "unit": "USD",
+       "period": "2025-07-01..2026-06-30",
+       "value": 39063072000.0,
+       "accession": "0001375365-26-000022",
+       "filed": "2026-08-31",
+       "id": "0001375365-26-000022:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2025-07-01..2026-06-30"
+      },
+      {
+       "tag": "RevenueFromContractWithCustomerExcludingAssessedTax",
+       "unit": "USD",
+       "period": "2025-07-01..2026-03-31",
+       "value": 27943295000.0,
+       "accession": "0001375365-26-000014",
+       "filed": "2026-05-11",
+       "id": "0001375365-26-000014:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2025-07-01..2026-03-31"
+      }
+     ],
+     "end": "2026-06-30"
+    }
+   },
+   "operating_income": {
+    "quarter_over_quarter": {
+     "value": 1.3776003885803396,
+     "formula": "(now - before) / abs(before)",
+     "unit": "ratio",
+     "inputs": {
+      "now": {
+       "value": 1488064000.0,
+       "formula": "2025-07-01..2026-06-30 less 2025-07-01..2026-03-31",
+       "parts": {
+        "0": {
+         "value": 2770486000.0,
+         "id": "0001375365-26-000022:facts:OperatingIncomeLoss:2025-07-01..2026-06-30",
+         "tag": "OperatingIncomeLoss",
+         "period": "2025-07-01..2026-06-30",
+         "unit": "USD"
+        },
+        "1": {
+         "value": 1282422000.0,
+         "id": "0001375365-26-000014:facts:OperatingIncomeLoss:2025-07-01..2026-03-31",
+         "tag": "OperatingIncomeLoss",
+         "period": "2025-07-01..2026-03-31",
+         "unit": "USD"
+        }
+       }
+      },
+      "before": {
+       "value": 625868000.0,
+       "formula": "the quarter as stated",
+       "parts": {
+        "0": {
+         "value": 625868000.0,
+         "id": "0001375365-26-000014:facts:OperatingIncomeLoss:2026-01-01..2026-03-31",
+         "tag": "OperatingIncomeLoss",
+         "period": "2026-01-01..2026-03-31",
+         "unit": "USD"
+        }
+       }
+      }
+     }
+    },
+    "year_over_year": {
+     "value": 5.515423112119129,
+     "formula": "(now - before) / abs(before)",
+     "unit": "ratio",
+     "inputs": {
+      "now": {
+       "value": 1488064000.0,
+       "formula": "2025-07-01..2026-06-30 less 2025-07-01..2026-03-31",
+       "parts": {
+        "0": {
+         "value": 2770486000.0,
+         "id": "0001375365-26-000022:facts:OperatingIncomeLoss:2025-07-01..2026-06-30",
+         "tag": "OperatingIncomeLoss",
+         "period": "2025-07-01..2026-06-30",
+         "unit": "USD"
+        },
+        "1": {
+         "value": 1282422000.0,
+         "id": "0001375365-26-000014:facts:OperatingIncomeLoss:2025-07-01..2026-03-31",
+         "tag": "OperatingIncomeLoss",
+         "period": "2025-07-01..2026-03-31",
+         "unit": "USD"
+        }
+       }
+      },
+      "before": {
+       "value": 228391000.0,
+       "formula": "2024-07-01..2025-06-30 less 2024-07-01..2025-03-31",
+       "parts": {
+        "0": {
+         "value": 1252994000.0,
+         "id": "0001375365-26-000022:facts:OperatingIncomeLoss:2024-07-01..2025-06-30",
+         "tag": "OperatingIncomeLoss",
+         "period": "2024-07-01..2025-06-30",
+         "unit": "USD"
+        },
+        "1": {
+         "value": 1024603000.0,
+         "id": "0001375365-26-000014:facts:OperatingIncomeLoss:2024-07-01..2025-03-31",
+         "tag": "OperatingIncomeLoss",
+         "period": "2024-07-01..2025-03-31",
+         "unit": "USD"
+        }
+       }
+      }
+     }
+    },
+    "trailing_four_quarters": {
+     "value": 1.2110927905480793,
+     "formula": "(now - before) / abs(before)",
+     "unit": "ratio",
+     "inputs": {
+      "now": {
+       "value": 2770486000.0,
+       "formula": "the fiscal year",
+       "unit": "USD",
+       "parts": {
+        "0": {
+         "value": 2770486000.0,
+         "id": "0001375365-26-000022:facts:OperatingIncomeLoss:2025-07-01..2026-06-30",
+         "tag": "OperatingIncomeLoss",
+         "period": "2025-07-01..2026-06-30",
+         "unit": "USD"
+        }
+       }
+      },
+      "before": {
+       "value": 1252994000.0,
+       "formula": "the fiscal year",
+       "unit": "USD",
+       "parts": {
+        "0": {
+         "value": 1252994000.0,
+         "id": "0001375365-26-000022:facts:OperatingIncomeLoss:2024-07-01..2025-06-30",
+         "tag": "OperatingIncomeLoss",
+         "period": "2024-07-01..2025-06-30",
+         "unit": "USD"
+        }
+       }
+      }
+     }
+    },
+    "this_quarter": {
+     "value": 1488064000.0,
+     "formula": "2025-07-01..2026-06-30 less 2025-07-01..2026-03-31",
+     "parts": [
+      {
+       "tag": "OperatingIncomeLoss",
+       "unit": "USD",
+       "period": "2025-07-01..2026-06-30",
+       "value": 2770486000.0,
+       "accession": "0001375365-26-000022",
+       "filed": "2026-08-31",
+       "id": "0001375365-26-000022:facts:OperatingIncomeLoss:2025-07-01..2026-06-30"
+      },
+      {
+       "tag": "OperatingIncomeLoss",
+       "unit": "USD",
+       "period": "2025-07-01..2026-03-31",
+       "value": 1282422000.0,
+       "accession": "0001375365-26-000014",
+       "filed": "2026-05-11",
+       "id": "0001375365-26-000014:facts:OperatingIncomeLoss:2025-07-01..2026-03-31"
+      }
+     ],
+     "end": "2026-06-30"
+    }
+   },
+   "net_income": {
+    "quarter_over_quarter": {
+     "value": 1.4374197071911325,
+     "formula": "(now - before) / abs(before)",
+     "unit": "ratio",
+     "inputs": {
+      "now": {
+       "value": 1178217000.0,
+       "formula": "2025-07-01..2026-06-30 less 2025-07-01..2026-03-31",
+       "parts": {
+        "0": {
+         "value": 2230453000.0,
+         "id": "0001375365-26-000022:facts:NetIncomeLoss:2025-07-01..2026-06-30",
+         "tag": "NetIncomeLoss",
+         "period": "2025-07-01..2026-06-30",
+         "unit": "USD"
+        },
+        "1": {
+         "value": 1052236000.0,
+         "id": "0001375365-26-000014:facts:NetIncomeLoss:2025-07-01..2026-03-31",
+         "tag": "NetIncomeLoss",
+         "period": "2025-07-01..2026-03-31",
+         "unit": "USD"
+        }
+       }
+      },
+      "before": {
+       "value": 483387000.0,
+       "formula": "the quarter as stated",
+       "parts": {
+        "0": {
+         "value": 483387000.0,
+         "id": "0001375365-26-000014:facts:NetIncomeLoss:2026-01-01..2026-03-31",
+         "tag": "NetIncomeLoss",
+         "period": "2026-01-01..2026-03-31",
+         "unit": "USD"
+        }
+       }
+      }
+     }
+    },
+    "year_over_year": {
+     "value": 5.037370486897527,
+     "formula": "(now - before) / abs(before)",
+     "unit": "ratio",
+     "inputs": {
+      "now": {
+       "value": 1178217000.0,
+       "formula": "2025-07-01..2026-06-30 less 2025-07-01..2026-03-31",
+       "parts": {
+        "0": {
+         "value": 2230453000.0,
+         "id": "0001375365-26-000022:facts:NetIncomeLoss:2025-07-01..2026-06-30",
+         "tag": "NetIncomeLoss",
+         "period": "2025-07-01..2026-06-30",
+         "unit": "USD"
+        },
+        "1": {
+         "value": 1052236000.0,
+         "id": "0001375365-26-000014:facts:NetIncomeLoss:2025-07-01..2026-03-31",
+         "tag": "NetIncomeLoss",
+         "period": "2025-07-01..2026-03-31",
+         "unit": "USD"
+        }
+       }
+      },
+      "before": {
+       "value": 195154000.0,
+       "formula": "2024-07-01..2025-06-30 less 2024-07-01..2025-03-31",
+       "parts": {
+        "0": {
+         "value": 1048854000.0,
+         "id": "0001375365-26-000022:facts:NetIncomeLoss:2024-07-01..2025-06-30",
+         "tag": "NetIncomeLoss",
+         "period": "2024-07-01..2025-06-30",
+         "unit": "USD"
+        },
+        "1": {
+         "value": 853700000.0,
+         "id": "0001375365-26-000014:facts:NetIncomeLoss:2024-07-01..2025-03-31",
+         "tag": "NetIncomeLoss",
+         "period": "2024-07-01..2025-03-31",
+         "unit": "USD"
+        }
+       }
+      }
+     }
+    },
+    "trailing_four_quarters": {
+     "value": 1.1265619428442852,
+     "formula": "(now - before) / abs(before)",
+     "unit": "ratio",
+     "inputs": {
+      "now": {
+       "value": 2230453000.0,
+       "formula": "the fiscal year",
+       "unit": "USD",
+       "parts": {
+        "0": {
+         "value": 2230453000.0,
+         "id": "0001375365-26-000022:facts:NetIncomeLoss:2025-07-01..2026-06-30",
+         "tag": "NetIncomeLoss",
+         "period": "2025-07-01..2026-06-30",
+         "unit": "USD"
+        }
+       }
+      },
+      "before": {
+       "value": 1048854000.0,
+       "formula": "the fiscal year",
+       "unit": "USD",
+       "parts": {
+        "0": {
+         "value": 1048854000.0,
+         "id": "0001375365-26-000022:facts:NetIncomeLoss:2024-07-01..2025-06-30",
+         "tag": "NetIncomeLoss",
+         "period": "2024-07-01..2025-06-30",
+         "unit": "USD"
+        }
+       }
+      }
+     }
+    },
+    "this_quarter": {
+     "value": 1178217000.0,
+     "formula": "2025-07-01..2026-06-30 less 2025-07-01..2026-03-31",
+     "parts": [
+      {
+       "tag": "NetIncomeLoss",
+       "unit": "USD",
+       "period": "2025-07-01..2026-06-30",
+       "value": 2230453000.0,
+       "accession": "0001375365-26-000022",
+       "filed": "2026-08-31",
+       "id": "0001375365-26-000022:facts:NetIncomeLoss:2025-07-01..2026-06-30"
+      },
+      {
+       "tag": "NetIncomeLoss",
+       "unit": "USD",
+       "period": "2025-07-01..2026-03-31",
+       "value": 1052236000.0,
+       "accession": "0001375365-26-000014",
+       "filed": "2026-05-11",
+       "id": "0001375365-26-000014:facts:NetIncomeLoss:2025-07-01..2026-03-31"
+      }
+     ],
+     "end": "2026-06-30"
+    }
+   },
+   "operating_cash_flow": {
+    "quarter_over_quarter": {
+     "value": 1.1129120029458421,
+     "formula": "(now - before) / abs(before)",
+     "unit": "ratio",
+     "inputs": {
+      "now": {
+       "value": 746961000.0,
+       "formula": "2025-07-01..2026-06-30 less 2025-07-01..2026-03-31",
+       "parts": {
+        "0": {
+         "value": -6809886000.0,
+         "id": "0001375365-26-000022:facts:NetCashProvidedByUsedInOperatingActivities:2025-07-01..2026-06-30",
+         "tag": "NetCashProvidedByUsedInOperatingActivities",
+         "period": "2025-07-01..2026-06-30",
+         "unit": "USD"
+        },
+        "1": {
+         "value": -7556847000.0,
+         "id": "0001375365-26-000014:facts:NetCashProvidedByUsedInOperatingActivities:2025-07-01..2026-03-31",
+         "tag": "NetCashProvidedByUsedInOperatingActivities",
+         "period": "2025-07-01..2026-03-31",
+         "unit": "USD"
+        }
+       }
+      },
+      "before": {
+       "value": -6615426000.0,
+       "formula": "2025-07-01..2026-03-31 less 2025-07-01..2025-12-31",
+       "parts": {
+        "0": {
+         "value": -7556847000.0,
+         "id": "0001375365-26-000014:facts:NetCashProvidedByUsedInOperatingActivities:2025-07-01..2026-03-31",
+         "tag": "NetCashProvidedByUsedInOperatingActivities",
+         "period": "2025-07-01..2026-03-31",
+         "unit": "USD"
+        },
+        "1": {
+         "value": -941421000.0,
+         "id": "0001375365-26-000007:facts:NetCashProvidedByUsedInOperatingActivities:2025-07-01..2025-12-31",
+         "tag": "NetCashProvidedByUsedInOperatingActivities",
+         "period": "2025-07-01..2025-12-31",
+         "unit": "USD"
+        }
+       }
+      }
+     }
+    },
+    "year_over_year": {
+     "value": -0.13507439095983964,
+     "formula": "(now - before) / abs(before)",
+     "unit": "ratio",
+     "inputs": {
+      "now": {
+       "value": 746961000.0,
+       "formula": "2025-07-01..2026-06-30 less 2025-07-01..2026-03-31",
+       "parts": {
+        "0": {
+         "value": -6809886000.0,
+         "id": "0001375365-26-000022:facts:NetCashProvidedByUsedInOperatingActivities:2025-07-01..2026-06-30",
+         "tag": "NetCashProvidedByUsedInOperatingActivities",
+         "period": "2025-07-01..2026-06-30",
+         "unit": "USD"
+        },
+        "1": {
+         "value": -7556847000.0,
+         "id": "0001375365-26-000014:facts:NetCashProvidedByUsedInOperatingActivities:2025-07-01..2026-03-31",
+         "tag": "NetCashProvidedByUsedInOperatingActivities",
+         "period": "2025-07-01..2026-03-31",
+         "unit": "USD"
+        }
+       }
+      },
+      "before": {
+       "value": 863613000.0,
+       "formula": "2024-07-01..2025-06-30 less 2024-07-01..2025-03-31",
+       "parts": {
+        "0": {
+         "value": 1659524000.0,
+         "id": "0001375365-26-000022:facts:NetCashProvidedByUsedInOperatingActivities:2024-07-01..2025-06-30",
+         "tag": "NetCashProvidedByUsedInOperatingActivities",
+         "period": "2024-07-01..2025-06-30",
+         "unit": "USD"
+        },
+        "1": {
+         "value": 795911000.0,
+         "id": "0001375365-26-000014:facts:NetCashProvidedByUsedInOperatingActivities:2024-07-01..2025-03-31",
+         "tag": "NetCashProvidedByUsedInOperatingActivities",
+         "period": "2024-07-01..2025-03-31",
+         "unit": "USD"
+        }
+       }
+      }
+     }
+    },
+    "trailing_four_quarters": {
+     "value": -5.103517635177316,
+     "formula": "(now - before) / abs(before)",
+     "unit": "ratio",
+     "inputs": {
+      "now": {
+       "value": -6809886000.0,
+       "formula": "the fiscal year",
+       "unit": "USD",
+       "parts": {
+        "0": {
+         "value": -6809886000.0,
+         "id": "0001375365-26-000022:facts:NetCashProvidedByUsedInOperatingActivities:2025-07-01..2026-06-30",
+         "tag": "NetCashProvidedByUsedInOperatingActivities",
+         "period": "2025-07-01..2026-06-30",
+         "unit": "USD"
+        }
+       }
+      },
+      "before": {
+       "value": 1659524000.0,
+       "formula": "the fiscal year",
+       "unit": "USD",
+       "parts": {
+        "0": {
+         "value": 1659524000.0,
+         "id": "0001375365-26-000022:facts:NetCashProvidedByUsedInOperatingActivities:2024-07-01..2025-06-30",
+         "tag": "NetCashProvidedByUsedInOperatingActivities",
+         "period": "2024-07-01..2025-06-30",
+         "unit": "USD"
+        }
+       }
+      }
+     }
+    },
+    "this_quarter": {
+     "value": 746961000.0,
+     "formula": "2025-07-01..2026-06-30 less 2025-07-01..2026-03-31",
+     "parts": [
+      {
+       "tag": "NetCashProvidedByUsedInOperatingActivities",
+       "unit": "USD",
+       "period": "2025-07-01..2026-06-30",
+       "value": -6809886000.0,
+       "accession": "0001375365-26-000022",
+       "filed": "2026-08-31",
+       "id": "0001375365-26-000022:facts:NetCashProvidedByUsedInOperatingActivities:2025-07-01..2026-06-30",
+       "direction": "signed"
+      },
+      {
+       "tag": "NetCashProvidedByUsedInOperatingActivities",
+       "unit": "USD",
+       "period": "2025-07-01..2026-03-31",
+       "value": -7556847000.0,
+       "accession": "0001375365-26-000014",
+       "filed": "2026-05-11",
+       "id": "0001375365-26-000014:facts:NetCashProvidedByUsedInOperatingActivities:2025-07-01..2026-03-31",
+       "direction": "signed"
+      }
+     ],
+     "end": "2026-06-30"
+    }
+   }
+  }
+ },
+ "ebit": {
+  "value": 2770486000.0,
+  "formula": "the fiscal year",
+  "parts": [
+   {
+    "tag": "OperatingIncomeLoss",
+    "unit": "USD",
+    "period": "2025-07-01..2026-06-30",
+    "value": 2770486000.0,
+    "accession": "0001375365-26-000022",
+    "filed": "2026-08-31",
+    "id": "0001375365-26-000022:facts:OperatingIncomeLoss:2025-07-01..2026-06-30"
+   }
+  ],
+  "unit": "USD",
+  "basis": "operating_income"
+ },
+ "tax_rate": {
+  "value": 0.19945369100952795,
+  "effective_rate": 0.19945369100952795,
+  "rule": "the effective rate, inside the bounds",
+  "formula": "income_tax_expense / pretax_income, held between 0 and 0.21",
+  "inputs": {
+   "income_tax_expense": {
+    "value": 556329000.0,
+    "formula": "the fiscal year",
+    "unit": "USD",
+    "parts": {
+     "0": {
+      "value": 556329000.0,
+      "id": "0001375365-26-000022:facts:IncomeTaxExpenseBenefit:2025-07-01..2026-06-30",
+      "tag": "IncomeTaxExpenseBenefit",
+      "period": "2025-07-01..2026-06-30",
+      "unit": "USD"
+     }
+    }
+   },
+   "pretax_income": {
+    "value": 2789264000.0,
+    "formula": "the fiscal year",
+    "unit": "USD",
+    "parts": {
+     "0": {
+      "value": 2789264000.0,
+      "id": "0001375365-26-000022:facts:IncomeLossFromContinuingOperationsBeforeIncomeTaxesMinorityInterestAndIncomeLossFromEquityMethodInvestments:2025-07-01..2026-06-30",
+      "tag": "IncomeLossFromContinuingOperationsBeforeIncomeTaxesMinorityInterestAndIncomeLossFromEquityMethodInvestments",
+      "period": "2025-07-01..2026-06-30",
+      "unit": "USD"
+     }
+    }
+   }
+  }
+ },
+ "earnings_versus_cash": {
+  "operating_cash_flow_over_net_income": {
+   "value": -3.0531403262027936,
+   "formula": "operating_cash_flow / net_income",
+   "unit": "ratio",
+   "inputs": {
+    "operating_cash_flow": {
+     "value": -6809886000.0,
+     "formula": "the fiscal year",
+     "unit": "USD",
+     "parts": {
+      "0": {
+       "value": -6809886000.0,
+       "id": "0001375365-26-000022:facts:NetCashProvidedByUsedInOperatingActivities:2025-07-01..2026-06-30",
+       "tag": "NetCashProvidedByUsedInOperatingActivities",
+       "period": "2025-07-01..2026-06-30",
+       "unit": "USD"
+      }
+     }
+    },
+    "net_income": {
+     "value": 2230453000.0,
+     "formula": "the fiscal year",
+     "unit": "USD",
+     "parts": {
+      "0": {
+       "value": 2230453000.0,
+       "id": "0001375365-26-000022:facts:NetIncomeLoss:2025-07-01..2026-06-30",
+       "tag": "NetIncomeLoss",
+       "period": "2025-07-01..2026-06-30",
+       "unit": "USD"
+      }
+     }
+    }
+   }
+  },
+  "accruals_over_average_assets": {
+   "value": 0.41126195913119257,
+   "formula": "(net_income - operating_cash_flow) / average assets",
+   "unit": "ratio",
+   "inputs": {
+    "net_income": {
+     "value": 2230453000.0,
+     "formula": "the fiscal year",
+     "unit": "USD",
+     "parts": {
+      "0": {
+       "value": 2230453000.0,
+       "id": "0001375365-26-000022:facts:NetIncomeLoss:2025-07-01..2026-06-30",
+       "tag": "NetIncomeLoss",
+       "period": "2025-07-01..2026-06-30",
+       "unit": "USD"
+      }
+     }
+    },
+    "operating_cash_flow": {
+     "value": -6809886000.0,
+     "formula": "the fiscal year",
+     "unit": "USD",
+     "parts": {
+      "0": {
+       "value": -6809886000.0,
+       "id": "0001375365-26-000022:facts:NetCashProvidedByUsedInOperatingActivities:2025-07-01..2026-06-30",
+       "tag": "NetCashProvidedByUsedInOperatingActivities",
+       "period": "2025-07-01..2026-06-30",
+       "unit": "USD"
+      }
+     }
+    },
+    "average_assets": {
+     "value": 21981948000.0,
+     "formula": "(now + a year earlier) / 2",
+     "parts": {
+      "now": {
+       "value": 29945467000.0,
+       "id": "0001375365-26-000022:facts:Assets:2026-06-30",
+       "tag": "Assets",
+       "period": "2026-06-30",
+       "unit": "USD"
+      },
+      "a_year_earlier": {
+       "value": 14018429000.0,
+       "id": "0001375365-26-000022:facts:Assets:2025-06-30",
+       "tag": "Assets",
+       "period": "2025-06-30",
+       "unit": "USD"
+      }
+     }
+    }
+   }
+  },
+  "working_capital": {
+   "receivables": {
+    "balance_sheet_change": {
+     "value": 3921472000.0,
+     "formula": "receivables now - receivables a year earlier",
+     "unit": "USD",
+     "inputs": {
+      "now": {
+       "value": 6125414000.0,
+       "id": "0001375365-26-000022:facts:AccountsReceivableNetCurrent:2026-06-30",
+       "tag": "AccountsReceivableNetCurrent",
+       "period": "2026-06-30",
+       "unit": "USD"
+      },
+      "a_year_earlier": {
+       "value": 2203942000.0,
+       "id": "0001375365-26-000022:facts:AccountsReceivableNetCurrent:2025-06-30",
+       "tag": "AccountsReceivableNetCurrent",
+       "period": "2025-06-30",
+       "unit": "USD"
+      }
+     }
+    },
+    "cash_flow_statement_change": {
+     "value": 3921872000.0,
+     "formula": "the fiscal year",
+     "parts": [
+      {
+       "tag": "IncreaseDecreaseInAccountsReceivable",
+       "unit": "USD",
+       "period": "2025-07-01..2026-06-30",
+       "value": 3921872000.0,
+       "accession": "0001375365-26-000022",
+       "filed": "2026-08-31",
+       "id": "0001375365-26-000022:facts:IncreaseDecreaseInAccountsReceivable:2025-07-01..2026-06-30",
+       "direction": "increase_in_asset"
+      }
+     ],
+     "unit": "USD"
+    },
+    "articulation_gap": {
+     "value": -400000.0,
+     "formula": "balance-sheet change in receivables - cash-flow statement's change",
+     "unit": "USD",
+     "inputs": {
+      "balance_sheet_change": {
+       "value": 3921472000.0,
+       "formula": "receivables now - receivables a year earlier",
+       "unit": "USD"
+      },
+      "cash_flow_statement_change": {
+       "value": 3921872000.0,
+       "formula": "the fiscal year",
+       "unit": "USD",
+       "parts": {
+        "0": {
+         "value": 3921872000.0,
+         "id": "0001375365-26-000022:facts:IncreaseDecreaseInAccountsReceivable:2025-07-01..2026-06-30",
+         "tag": "IncreaseDecreaseInAccountsReceivable",
+         "period": "2025-07-01..2026-06-30",
+         "unit": "USD"
+        }
+       }
+      }
+     }
+    },
+    "share_of_net_income": {
+     "value": 1.7581504743655212,
+     "formula": "balance-sheet change in receivables / net_income",
+     "unit": "ratio",
+     "inputs": {
+      "change": {
+       "value": 3921472000.0,
+       "formula": "receivables now - receivables a year earlier",
+       "unit": "USD"
+      },
+      "net_income": {
+       "value": 2230453000.0,
+       "formula": "the fiscal year",
+       "unit": "USD",
+       "parts": {
+        "0": {
+         "value": 2230453000.0,
+         "id": "0001375365-26-000022:facts:NetIncomeLoss:2025-07-01..2026-06-30",
+         "tag": "NetIncomeLoss",
+         "period": "2025-07-01..2026-06-30",
+         "unit": "USD"
+        }
+       }
+      }
+     }
+    },
+    "note": "an increase in an asset absorbs cash and an increase in a liability supplies it; the statement's own line is the increase in the balance as the taxonomy defines it"
+   },
+   "inventory": {
+    "balance_sheet_change": {
+     "value": 8215574000.0,
+     "formula": "inventory now - inventory a year earlier",
+     "unit": "USD",
+     "inputs": {
+      "now": {
+       "value": 12895949000.0,
+       "id": "0001375365-26-000022:facts:InventoryNet:2026-06-30",
+       "tag": "InventoryNet",
+       "period": "2026-06-30",
+       "unit": "USD"
+      },
+      "a_year_earlier": {
+       "value": 4680375000.0,
+       "id": "0001375365-26-000022:facts:InventoryNet:2025-06-30",
+       "tag": "InventoryNet",
+       "period": "2025-06-30",
+       "unit": "USD"
+      }
+     }
+    },
+    "cash_flow_statement_change": {
+     "value": 8876747000.0,
+     "formula": "the fiscal year",
+     "parts": [
+      {
+       "tag": "IncreaseDecreaseInInventories",
+       "unit": "USD",
+       "period": "2025-07-01..2026-06-30",
+       "value": 8876747000.0,
+       "accession": "0001375365-26-000022",
+       "filed": "2026-08-31",
+       "id": "0001375365-26-000022:facts:IncreaseDecreaseInInventories:2025-07-01..2026-06-30",
+       "direction": "increase_in_asset"
+      }
+     ],
+     "unit": "USD"
+    },
+    "articulation_gap": {
+     "value": -661173000.0,
+     "formula": "balance-sheet change in inventory - cash-flow statement's change",
+     "unit": "USD",
+     "inputs": {
+      "balance_sheet_change": {
+       "value": 8215574000.0,
+       "formula": "inventory now - inventory a year earlier",
+       "unit": "USD"
+      },
+      "cash_flow_statement_change": {
+       "value": 8876747000.0,
+       "formula": "the fiscal year",
+       "unit": "USD",
+       "parts": {
+        "0": {
+         "value": 8876747000.0,
+         "id": "0001375365-26-000022:facts:IncreaseDecreaseInInventories:2025-07-01..2026-06-30",
+         "tag": "IncreaseDecreaseInInventories",
+         "period": "2025-07-01..2026-06-30",
+         "unit": "USD"
+        }
+       }
+      }
+     }
+    },
+    "share_of_net_income": {
+     "value": 3.683365666077698,
+     "formula": "balance-sheet change in inventory / net_income",
+     "unit": "ratio",
+     "inputs": {
+      "change": {
+       "value": 8215574000.0,
+       "formula": "inventory now - inventory a year earlier",
+       "unit": "USD"
+      },
+      "net_income": {
+       "value": 2230453000.0,
+       "formula": "the fiscal year",
+       "unit": "USD",
+       "parts": {
+        "0": {
+         "value": 2230453000.0,
+         "id": "0001375365-26-000022:facts:NetIncomeLoss:2025-07-01..2026-06-30",
+         "tag": "NetIncomeLoss",
+         "period": "2025-07-01..2026-06-30",
+         "unit": "USD"
+        }
+       }
+      }
+     }
+    },
+    "note": "an increase in an asset absorbs cash and an increase in a liability supplies it; the statement's own line is the increase in the balance as the taxonomy defines it"
+   },
+   "accounts_payable": {
+    "balance_sheet_change": {
+     "value": 965026000.0,
+     "formula": "accounts_payable now - accounts_payable a year earlier",
+     "unit": "USD",
+     "inputs": {
+      "now": {
+       "value": 2247003000.0,
+       "id": "0001375365-26-000022:facts:AccountsPayableCurrent:2026-06-30",
+       "tag": "AccountsPayableCurrent",
+       "period": "2026-06-30",
+       "unit": "USD"
+      },
+      "a_year_earlier": {
+       "value": 1281977000.0,
+       "id": "0001375365-26-000022:facts:AccountsPayableCurrent:2025-06-30",
+       "tag": "AccountsPayableCurrent",
+       "period": "2025-06-30",
+       "unit": "USD"
+      }
+     }
+    },
+    "cash_flow_statement_change": {
+     "value": 963258000.0,
+     "formula": "the fiscal year",
+     "parts": [
+      {
+       "tag": "IncreaseDecreaseInAccountsPayable",
+       "unit": "USD",
+       "period": "2025-07-01..2026-06-30",
+       "value": 963258000.0,
+       "accession": "0001375365-26-000022",
+       "filed": "2026-08-31",
+       "id": "0001375365-26-000022:facts:IncreaseDecreaseInAccountsPayable:2025-07-01..2026-06-30",
+       "direction": "increase_in_liability"
+      }
+     ],
+     "unit": "USD"
+    },
+    "articulation_gap": {
+     "value": 1768000.0,
+     "formula": "balance-sheet change in accounts_payable - cash-flow statement's change",
+     "unit": "USD",
+     "inputs": {
+      "balance_sheet_change": {
+       "value": 965026000.0,
+       "formula": "accounts_payable now - accounts_payable a year earlier",
+       "unit": "USD"
+      },
+      "cash_flow_statement_change": {
+       "value": 963258000.0,
+       "formula": "the fiscal year",
+       "unit": "USD",
+       "parts": {
+        "0": {
+         "value": 963258000.0,
+         "id": "0001375365-26-000022:facts:IncreaseDecreaseInAccountsPayable:2025-07-01..2026-06-30",
+         "tag": "IncreaseDecreaseInAccountsPayable",
+         "period": "2025-07-01..2026-06-30",
+         "unit": "USD"
+        }
+       }
+      }
+     }
+    },
+    "share_of_net_income": {
+     "value": 0.4326591952397114,
+     "formula": "balance-sheet change in accounts_payable / net_income",
+     "unit": "ratio",
+     "inputs": {
+      "change": {
+       "value": 965026000.0,
+       "formula": "accounts_payable now - accounts_payable a year earlier",
+       "unit": "USD"
+      },
+      "net_income": {
+       "value": 2230453000.0,
+       "formula": "the fiscal year",
+       "unit": "USD",
+       "parts": {
+        "0": {
+         "value": 2230453000.0,
+         "id": "0001375365-26-000022:facts:NetIncomeLoss:2025-07-01..2026-06-30",
+         "tag": "NetIncomeLoss",
+         "period": "2025-07-01..2026-06-30",
+         "unit": "USD"
+        }
+       }
+      }
+     }
+    },
+    "note": "an increase in an asset absorbs cash and an increase in a liability supplies it; the statement's own line is the increase in the balance as the taxonomy defines it"
+   }
+  },
+  "smoothness": {
+   "value": 0.0712486976170099,
+   "formula": "population standard deviation of quarter-to-quarter changes in net income / the same for operating cash flow; below 1 means income moves less than cash",
+   "quarters_read": [
+    "2026-06-30",
+    "2026-03-31",
+    "2025-12-31",
+    "2025-09-30",
+    "2025-06-30",
+    "2025-03-31",
+    "2024-12-31",
+    "2024-09-30",
+    "2024-06-30"
+   ],
+   "net_income": [
+    1178217000.0,
+    483387000.0,
+    400564000.0,
+    168285000.0,
+    195154000.0,
+    108777000.0,
+    320596000.0,
+    424327000.0,
+    297244000.0
+   ],
+   "operating_cash_flow": [
+    746961000.0,
+    -6615426000.0,
+    -23898000.0,
+    -917523000.0,
+    863613000.0,
+    626764000.0,
+    -239757000.0,
+    408904000.0,
+    -647814000.0
+   ]
+  },
+  "history": {
+   "years": [
+    {
+     "fiscal_year": "2025-07-01..2026-06-30",
+     "revenue": 39063072000.0,
+     "revenue_id": "0001375365-26-000022:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2025-07-01..2026-06-30",
+     "operating_income": 2770486000.0,
+     "operating_income_id": "0001375365-26-000022:facts:OperatingIncomeLoss:2025-07-01..2026-06-30",
+     "net_income": 2230453000.0,
+     "net_income_id": "0001375365-26-000022:facts:NetIncomeLoss:2025-07-01..2026-06-30",
+     "operating_cash_flow": -6809886000.0,
+     "operating_cash_flow_id": "0001375365-26-000022:facts:NetCashProvidedByUsedInOperatingActivities:2025-07-01..2026-06-30",
+     "capital_expenditure": 161999000.0,
+     "capital_expenditure_id": "0001375365-26-000022:facts:PaymentsToAcquirePropertyPlantAndEquipment:2025-07-01..2026-06-30",
+     "share_based_compensation": 412115000.0,
+     "share_based_compensation_id": "0001375365-26-000022:facts:ShareBasedCompensation:2025-07-01..2026-06-30",
+     "operating_margin": 0.07092340305442439,
+     "operating_cash_flow_over_net_income": -3.0531403262027936,
+     "free_cash_flow_simple": -6971885000.0,
+     "revenue_growth": 0.7778535103837869
+    },
+    {
+     "fiscal_year": "2024-07-01..2025-06-30",
+     "revenue": 21972042000.0,
+     "revenue_id": "0001375365-26-000022:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2024-07-01..2025-06-30",
+     "operating_income": 1252994000.0,
+     "operating_income_id": "0001375365-26-000022:facts:OperatingIncomeLoss:2024-07-01..2025-06-30",
+     "net_income": 1048854000.0,
+     "net_income_id": "0001375365-26-000022:facts:NetIncomeLoss:2024-07-01..2025-06-30",
+     "operating_cash_flow": 1659524000.0,
+     "operating_cash_flow_id": "0001375365-26-000022:facts:NetCashProvidedByUsedInOperatingActivities:2024-07-01..2025-06-30",
+     "capital_expenditure": 127214000.0,
+     "capital_expenditure_id": "0001375365-26-000022:facts:PaymentsToAcquirePropertyPlantAndEquipment:2024-07-01..2025-06-30",
+     "share_based_compensation": 314452000.0,
+     "share_based_compensation_id": "0001375365-26-000022:facts:ShareBasedCompensation:2024-07-01..2025-06-30",
+     "operating_margin": 0.057026743349571245,
+     "operating_cash_flow_over_net_income": 1.5822259342100997,
+     "free_cash_flow_simple": 1532310000.0,
+     "revenue_growth": 0.46585323042492255
+    },
+    {
+     "fiscal_year": "2023-07-01..2024-06-30",
+     "revenue": 14989251000.0,
+     "revenue_id": "0001375365-26-000022:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2023-07-01..2024-06-30",
+     "operating_income": 1210774000.0,
+     "operating_income_id": "0001375365-26-000022:facts:OperatingIncomeLoss:2023-07-01..2024-06-30",
+     "net_income": 1152666000.0,
+     "net_income_id": "0001375365-26-000022:facts:NetIncomeLoss:2023-07-01..2024-06-30",
+     "operating_cash_flow": -2485972000.0,
+     "operating_cash_flow_id": "0001375365-26-000022:facts:NetCashProvidedByUsedInOperatingActivities:2023-07-01..2024-06-30",
+     "capital_expenditure": 124279000.0,
+     "capital_expenditure_id": "0001375365-26-000022:facts:PaymentsToAcquirePropertyPlantAndEquipment:2023-07-01..2024-06-30",
+     "share_based_compensation": 231507000.0,
+     "share_based_compensation_id": "0001375365-26-000022:facts:ShareBasedCompensation:2023-07-01..2024-06-30",
+     "operating_margin": 0.08077615085637034,
+     "operating_cash_flow_over_net_income": -2.1567149547223567,
+     "free_cash_flow_simple": -2610251000.0,
+     "revenue_growth": 1.1042028322665796
+    },
+    {
+     "fiscal_year": "2022-07-01..2023-06-30",
+     "revenue": 7123482000.0,
+     "revenue_id": "0001375365-25-000027:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2022-07-01..2023-06-30",
+     "operating_income": 761142000.0,
+     "operating_income_id": "0001375365-25-000027:facts:OperatingIncomeLoss:2022-07-01..2023-06-30",
+     "net_income": 639998000.0,
+     "net_income_id": "0001375365-25-000027:facts:NetIncomeLoss:2022-07-01..2023-06-30",
+     "operating_cash_flow": 663580000.0,
+     "operating_cash_flow_id": "0001375365-25-000027:facts:NetCashProvidedByUsedInOperatingActivities:2022-07-01..2023-06-30",
+     "capital_expenditure": 36793000.0,
+     "capital_expenditure_id": "0001375365-25-000027:facts:PaymentsToAcquirePropertyPlantAndEquipment:2022-07-01..2023-06-30",
+     "share_based_compensation": 54433000.0,
+     "share_based_compensation_id": "0001375365-25-000027:facts:ShareBasedCompensation:2022-07-01..2023-06-30",
+     "operating_margin": 0.106849711980742,
+     "operating_cash_flow_over_net_income": 1.0368469901468442,
+     "free_cash_flow_simple": 626787000.0,
+     "revenue_growth": 0.37092884488921407
+    },
+    {
+     "fiscal_year": "2021-07-01..2022-06-30",
+     "revenue": 5196099000.0,
+     "revenue_id": "0001375365-25-000004:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2021-07-01..2022-06-30",
+     "operating_income": 335167000.0,
+     "operating_income_id": "0001375365-25-000004:facts:OperatingIncomeLoss:2021-07-01..2022-06-30",
+     "net_income": 285163000.0,
+     "net_income_id": "0001375365-25-000004:facts:NetIncomeLoss:2021-07-01..2022-06-30",
+     "operating_cash_flow": -440801000.0,
+     "operating_cash_flow_id": "0001375365-25-000004:facts:NetCashProvidedByUsedInOperatingActivities:2021-07-01..2022-06-30",
+     "capital_expenditure": 45182000.0,
+     "capital_expenditure_id": "0001375365-25-000004:facts:PaymentsToAcquirePropertyPlantAndEquipment:2021-07-01..2022-06-30",
+     "share_based_compensation": 32816000.0,
+     "share_based_compensation_id": "0001375365-25-000004:facts:ShareBasedCompensation:2021-07-01..2022-06-30",
+     "operating_margin": 0.06450358239902665,
+     "operating_cash_flow_over_net_income": -1.545786094268892,
+     "free_cash_flow_simple": -485983000.0,
+     "revenue_growth": 0.46063610108668573
+    },
+    {
+     "fiscal_year": "2020-07-01..2021-06-30",
+     "revenue": 3557422000.0,
+     "revenue_id": "0001375365-23-000036:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2020-07-01..2021-06-30",
+     "operating_income": 123947000.0,
+     "operating_income_id": "0001375365-23-000036:facts:OperatingIncomeLoss:2020-07-01..2021-06-30",
+     "net_income": 111865000.0,
+     "net_income_id": "0001375365-23-000036:facts:NetIncomeLoss:2020-07-01..2021-06-30",
+     "operating_cash_flow": 122955000.0,
+     "operating_cash_flow_id": "0001375365-23-000036:facts:NetCashProvidedByUsedInOperatingActivities:2020-07-01..2021-06-30",
+     "capital_expenditure": 58016000.0,
+     "capital_expenditure_id": "0001375365-23-000036:facts:PaymentsToAcquirePropertyPlantAndEquipment:2020-07-01..2021-06-30",
+     "share_based_compensation": 28549000.0,
+     "share_based_compensation_id": "0001375365-23-000036:facts:ShareBasedCompensation:2020-07-01..2021-06-30",
+     "operating_margin": 0.03484180398052297,
+     "operating_cash_flow_over_net_income": 1.0991373530594915,
+     "free_cash_flow_simple": 64939000.0
+    }
+   ],
+   "revenue_growth_three_year_compound": 0.7634291720222148,
+   "revenue_growth_three_year_compound_formula": "(revenue of the newest fiscal year / revenue 3 fiscal years earlier) ** (1/3) - 1",
+   "revenue_growth_five_year_compound": 0.6148277410083174,
+   "revenue_growth_five_year_compound_formula": "(revenue of the newest fiscal year / revenue 5 fiscal years earlier) ** (1/5) - 1",
+   "operating_margin_three_year_average": 0.069575432420122
+  }
+ },
+ "free_cash_flow": {
+  "free_cash_flow_simple": {
+   "value": -6971885000.0,
+   "formula": "operating_cash_flow - capital_expenditure",
+   "unit": "USD",
+   "inputs": {
+    "operating_cash_flow": {
+     "value": -6809886000.0,
+     "formula": "the fiscal year",
+     "unit": "USD",
+     "parts": {
+      "0": {
+       "value": -6809886000.0,
+       "id": "0001375365-26-000022:facts:NetCashProvidedByUsedInOperatingActivities:2025-07-01..2026-06-30",
+       "tag": "NetCashProvidedByUsedInOperatingActivities",
+       "period": "2025-07-01..2026-06-30",
+       "unit": "USD"
+      }
+     }
+    },
+    "capital_expenditure": {
+     "value": 161999000.0,
+     "formula": "the fiscal year",
+     "unit": "USD",
+     "parts": {
+      "0": {
+       "value": 161999000.0,
+       "id": "0001375365-26-000022:facts:PaymentsToAcquirePropertyPlantAndEquipment:2025-07-01..2026-06-30",
+       "tag": "PaymentsToAcquirePropertyPlantAndEquipment",
+       "period": "2025-07-01..2026-06-30",
+       "unit": "USD"
+      }
+     }
+    }
+   }
+  },
+  "free_cash_flow_to_firm": {
+   "value": -9063116658.590223,
+   "formula": "ebit * (1 - tax_rate) + depreciation_and_amortization - capital_expenditure - change_in_trade_working_capital",
+   "unit": "USD",
+   "inputs": {
+    "ebit": {
+     "value": 2770486000.0,
+     "formula": "the fiscal year",
+     "unit": "USD",
+     "parts": {
+      "0": {
+       "value": 2770486000.0,
+       "id": "0001375365-26-000022:facts:OperatingIncomeLoss:2025-07-01..2026-06-30",
+       "tag": "OperatingIncomeLoss",
+       "period": "2025-07-01..2026-06-30",
+       "unit": "USD"
+      }
+     }
+    },
+    "tax_rate": {
+     "value": 0.19945369100952795,
+     "formula": "income_tax_expense / pretax_income, held between 0 and 0.21"
+    },
+    "depreciation_and_amortization": {
+     "value": 53000000.0,
+     "formula": "the fiscal year",
+     "unit": "USD",
+     "parts": {
+      "0": {
+       "value": 53000000.0,
+       "id": "0001375365-26-000022:facts:DepreciationDepletionAndAmortization:2025-07-01..2026-06-30",
+       "tag": "DepreciationDepletionAndAmortization",
+       "period": "2025-07-01..2026-06-30",
+       "unit": "USD"
+      }
+     }
+    },
+    "capital_expenditure": {
+     "value": 161999000.0,
+     "formula": "the fiscal year",
+     "unit": "USD",
+     "parts": {
+      "0": {
+       "value": 161999000.0,
+       "id": "0001375365-26-000022:facts:PaymentsToAcquirePropertyPlantAndEquipment:2025-07-01..2026-06-30",
+       "tag": "PaymentsToAcquirePropertyPlantAndEquipment",
+       "period": "2025-07-01..2026-06-30",
+       "unit": "USD"
+      }
+     }
+    },
+    "change_in_trade_working_capital": {
+     "value": 11172020000.0,
+     "formula": "trade_working_capital now - trade_working_capital a year earlier",
+     "unit": "USD"
+    }
+   },
+   "trade_working_capital": {
+    "now": {
+     "value": 16774360000.0,
+     "formula": "receivables + inventory - accounts_payable",
+     "unit": "USD",
+     "inputs": {
+      "receivables": {
+       "value": 6125414000.0,
+       "id": "0001375365-26-000022:facts:AccountsReceivableNetCurrent:2026-06-30",
+       "tag": "AccountsReceivableNetCurrent",
+       "period": "2026-06-30",
+       "unit": "USD"
+      },
+      "inventory": {
+       "value": 12895949000.0,
+       "id": "0001375365-26-000022:facts:InventoryNet:2026-06-30",
+       "tag": "InventoryNet",
+       "period": "2026-06-30",
+       "unit": "USD"
+      },
+      "accounts_payable": {
+       "value": 2247003000.0,
+       "id": "0001375365-26-000022:facts:AccountsPayableCurrent:2026-06-30",
+       "tag": "AccountsPayableCurrent",
+       "period": "2026-06-30",
+       "unit": "USD"
+      }
+     }
+    },
+    "a_year_earlier": {
+     "value": 5602340000.0,
+     "formula": "receivables + inventory - accounts_payable",
+     "unit": "USD",
+     "inputs": {
+      "receivables": {
+       "value": 2203942000.0,
+       "id": "0001375365-26-000022:facts:AccountsReceivableNetCurrent:2025-06-30",
+       "tag": "AccountsReceivableNetCurrent",
+       "period": "2025-06-30",
+       "unit": "USD"
+      },
+      "inventory": {
+       "value": 4680375000.0,
+       "id": "0001375365-26-000022:facts:InventoryNet:2025-06-30",
+       "tag": "InventoryNet",
+       "period": "2025-06-30",
+       "unit": "USD"
+      },
+      "accounts_payable": {
+       "value": 1281977000.0,
+       "id": "0001375365-26-000022:facts:AccountsPayableCurrent:2025-06-30",
+       "tag": "AccountsPayableCurrent",
+       "period": "2025-06-30",
+       "unit": "USD"
+      }
+     }
+    }
+   },
+   "net_working_capital_broad_not_used": {
+    "now": {
+     "value": 13021562000.0,
+     "formula": "(current_assets - cash_and_short_term_investments) - (current_liabilities - debt_current)",
+     "unit": "USD",
+     "inputs": {
+      "current_assets": {
+       "value": 27726252000.0,
+       "id": "0001375365-26-000022:facts:AssetsCurrent:2026-06-30",
+       "tag": "AssetsCurrent",
+       "period": "2026-06-30",
+       "unit": "USD"
+      },
+      "cash_and_short_term_investments": {
+       "value": 7544584000.0,
+       "formula": "cash + short_term_investments",
+       "parts": {
+        "cash": {
+         "value": 7521474000.0,
+         "id": "0001375365-26-000022:facts:CashAndCashEquivalentsAtCarryingValue:2026-06-30",
+         "tag": "CashAndCashEquivalentsAtCarryingValue",
+         "period": "2026-06-30",
+         "unit": "USD"
+        },
+        "short_term_investments": {
+         "value": 23110000.0,
+         "id": "0001375365-26-000022:facts:MarketableSecuritiesCurrent:2026-06-30",
+         "tag": "MarketableSecuritiesCurrent",
+         "period": "2026-06-30",
+         "unit": "USD"
+        }
+       }
+      },
+      "current_liabilities": {
+       "value": 7160106000.0,
+       "id": "0001375365-26-000022:facts:LiabilitiesCurrent:2026-06-30",
+       "tag": "LiabilitiesCurrent",
+       "period": "2026-06-30",
+       "unit": "USD"
+      },
+      "debt_current": {
+       "value": 0,
+       "formula": "no line on record",
+       "unit": "USD",
+       "note": "debt_current: no line on record for this period -- the statement prints none of DebtCurrent, LongTermDebtAndCapitalLeaseObligationsCurrent, LongTermDebtCurrent, ShortTermBorrowings, CommercialPaper",
+       "lines": []
+      }
+     }
+    },
+    "a_year_earlier": {
+     "value": 4780712000.0,
+     "formula": "(current_assets - cash_and_short_term_investments) - (current_liabilities - debt_current)",
+     "unit": "USD",
+     "inputs": {
+      "current_assets": {
+       "value": 12301654000.0,
+       "id": "0001375365-26-000022:facts:AssetsCurrent:2025-06-30",
+       "tag": "AssetsCurrent",
+       "period": "2025-06-30",
+       "unit": "USD"
+      },
+      "cash_and_short_term_investments": {
+       "value": 5176150000.0,
+       "formula": "cash + short_term_investments",
+       "parts": {
+        "cash": {
+         "value": 5169911000.0,
+         "id": "0001375365-26-000022:facts:CashAndCashEquivalentsAtCarryingValue:2025-06-30",
+         "tag": "CashAndCashEquivalentsAtCarryingValue",
+         "period": "2025-06-30",
+         "unit": "USD"
+        },
+        "short_term_investments": {
+         "value": 6239000.0,
+         "id": "0001375365-26-000022:facts:MarketableSecuritiesCurrent:2025-06-30",
+         "tag": "MarketableSecuritiesCurrent",
+         "period": "2025-06-30",
+         "unit": "USD"
+        }
+       }
+      },
+      "current_liabilities": {
+       "value": 2344792000.0,
+       "id": "0001375365-26-000022:facts:LiabilitiesCurrent:2025-06-30",
+       "tag": "LiabilitiesCurrent",
+       "period": "2025-06-30",
+       "unit": "USD"
+      },
+      "debt_current": {
+       "value": 0,
+       "formula": "no line on record",
+       "unit": "USD",
+       "note": "debt_current: no line on record for this period -- the statement prints none of DebtCurrent, LongTermDebtAndCapitalLeaseObligationsCurrent, LongTermDebtCurrent, ShortTermBorrowings, CommercialPaper",
+       "lines": []
+      }
+     }
+    },
+    "why_not_used": "counts any financial asset filed under current assets -- marketable equity securities, for one -- as operating capital"
+   }
+  },
+  "free_cash_flow_to_equity": {
+   "value": -3023587000.0,
+   "formula": "operating_cash_flow - capital_expenditure + net_borrowing",
+   "unit": "USD",
+   "net_borrowing": 3948298000.0,
+   "inputs": {
+    "free_cash_flow_simple": -6971885000.0,
+    "borrowing_issued": {
+     "cash_effect": 4468808000.0,
+     "formula": "ProceedsFromIssuanceOfDebt",
+     "note": null
+    },
+    "borrowing_repaid": {
+     "cash_effect": -520510000.0,
+     "formula": "RepaymentsOfDebt",
+     "note": null
+    },
+    "borrowing_short_term_net": {
+     "cash_effect": 0,
+     "formula": "no line on record",
+     "note": "borrowing_short_term_net: no line on record for this period -- the statement prints none of ProceedsFromRepaymentsOfShortTermDebt, ProceedsFromRepaymentsOfCommercialPaper, ProceedsFromRepaymentsOfShortTermDebtMaturingInThreeMonthsOrLess, ProceedsFromShortTermDebtMaturingInMoreThanThreeMonths, RepaymentsOfShortTermDebtMaturingInMoreThanThreeMonths"
+    }
+   }
+  },
+  "free_cash_flow_quality_adjusted": {
+   "value": -7384000000.0,
+   "formula": "free_cash_flow_simple - share_based_compensation - acquisitions - (each reducing adjustment) + (each increasing adjustment)",
+   "unit": "USD",
+   "inputs": {
+    "free_cash_flow_simple": -6971885000.0,
+    "share_based_compensation": {
+     "value": 412115000.0,
+     "formula": "the fiscal year",
+     "unit": "USD",
+     "parts": {
+      "0": {
+       "value": 412115000.0,
+       "id": "0001375365-26-000022:facts:ShareBasedCompensation:2025-07-01..2026-06-30",
+       "tag": "ShareBasedCompensation",
+       "period": "2025-07-01..2026-06-30",
+       "unit": "USD"
+      }
+     }
+    },
+    "acquisitions": {
+     "cash_spent": -0.0,
+     "formula": "PaymentsToAcquireBusinessesNetOfCashAcquired",
+     "note": null
+    }
+   },
+   "adjustments_applied": [],
+   "adjustments_refused": [],
+   "rule": "an adjustment's amount is the absolute value of the field it names; its direction is the analyst's"
+  }
+ },
+ "concentration": {
+  "facts": [
+   {
+    "id": "0001375365-26-000022:f-1362",
+    "value": 0.966,
+    "start": "2023-07-01",
+    "end": "2024-06-30",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CompuwareMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "smci:PowerSuppliesPurchasedBenchmarkMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember",
+     "us-gaap:RelatedPartyTransactionsByRelatedPartyAxis": "us-gaap:RelatedPartyMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000022:f-548",
+    "value": 0.654,
+    "start": "2023-07-01",
+    "end": "2024-06-30",
+    "axes": {
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "smci:PurchasesTotalMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:SupplierConcentrationRiskMember",
+     "us-gaap:ShareBasedGoodsAndNonemployeeServicesTransactionBySupplierAxis": "smci:SupplierOneMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000022:f-551",
+    "value": 0.043,
+    "start": "2023-07-01",
+    "end": "2024-06-30",
+    "axes": {
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:CostOfGoodsTotalMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:SupplierConcentrationRiskMember",
+     "us-gaap:RelatedPartyTransactionsByRelatedPartyAxis": "us-gaap:RelatedPartyMember",
+     "us-gaap:ShareBasedGoodsAndNonemployeeServicesTransactionBySupplierAxis": "smci:AblecomAndCompuwareMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000022:f-602",
+    "value": 0.68,
+    "start": "2023-07-01",
+    "end": "2024-06-30",
+    "axes": {
+     "srt:StatementGeographicalAxis": "country:US",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:GeographicConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000022:f-608",
+    "value": 0.2,
+    "start": "2023-07-01",
+    "end": "2024-06-30",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CustomerOneMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000007:f-398",
+    "value": 0.136,
+    "start": "2024-07-01",
+    "end": "2024-12-31",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CustomerCMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:AccountsReceivableMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000007:f-421",
+    "value": 0.678,
+    "start": "2024-10-01",
+    "end": "2024-12-31",
+    "axes": {
+     "srt:StatementGeographicalAxis": "country:US",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:GeographicConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000007:f-425",
+    "value": 0.696,
+    "start": "2024-07-01",
+    "end": "2024-12-31",
+    "axes": {
+     "srt:StatementGeographicalAxis": "country:US",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:GeographicConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000007:f-429",
+    "value": 0.322,
+    "start": "2024-10-01",
+    "end": "2024-12-31",
+    "axes": {
+     "srt:StatementGeographicalAxis": "us-gaap:NonUsMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:GeographicConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000007:f-433",
+    "value": 0.304,
+    "start": "2024-07-01",
+    "end": "2024-12-31",
+    "axes": {
+     "srt:StatementGeographicalAxis": "us-gaap:NonUsMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:GeographicConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000007:f-437",
+    "value": 1.0,
+    "start": "2024-10-01",
+    "end": "2024-12-31",
+    "axes": {
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:GeographicConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000007:f-441",
+    "value": 1.0,
+    "start": "2024-07-01",
+    "end": "2024-12-31",
+    "axes": {
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:GeographicConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000007:f-443",
+    "value": 0.306,
+    "start": "2024-10-01",
+    "end": "2024-12-31",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CustomerAMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000007:f-445",
+    "value": 0.21,
+    "start": "2024-07-01",
+    "end": "2024-12-31",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CustomerAMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000007:f-446",
+    "value": 0.271,
+    "start": "2024-10-01",
+    "end": "2024-12-31",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CustomerBMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000007:f-447",
+    "value": 0.239,
+    "start": "2024-07-01",
+    "end": "2024-12-31",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CustomerBMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000007:f-448",
+    "value": 0.149,
+    "start": "2024-07-01",
+    "end": "2024-12-31",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CustomerCMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000014:f-1088",
+    "value": 0.937,
+    "start": "2025-01-01",
+    "end": "2025-03-31",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CompuwareMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "smci:PowerSuppliesPurchasedBenchmarkMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember",
+     "us-gaap:RelatedPartyTransactionsByRelatedPartyAxis": "us-gaap:RelatedPartyMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000014:f-1090",
+    "value": 0.948,
+    "start": "2024-07-01",
+    "end": "2025-03-31",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CompuwareMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "smci:PowerSuppliesPurchasedBenchmarkMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember",
+     "us-gaap:RelatedPartyTransactionsByRelatedPartyAxis": "us-gaap:RelatedPartyMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000014:f-469",
+    "value": 0.602,
+    "start": "2025-01-01",
+    "end": "2025-03-31",
+    "axes": {
+     "srt:StatementGeographicalAxis": "country:US",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:GeographicConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000014:f-473",
+    "value": 0.67,
+    "start": "2024-07-01",
+    "end": "2025-03-31",
+    "axes": {
+     "srt:StatementGeographicalAxis": "country:US",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:GeographicConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000014:f-477",
+    "value": 0.398,
+    "start": "2025-01-01",
+    "end": "2025-03-31",
+    "axes": {
+     "srt:StatementGeographicalAxis": "us-gaap:NonUsMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:GeographicConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000014:f-481",
+    "value": 0.33,
+    "start": "2024-07-01",
+    "end": "2025-03-31",
+    "axes": {
+     "srt:StatementGeographicalAxis": "us-gaap:NonUsMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:GeographicConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000014:f-485",
+    "value": 1.0,
+    "start": "2025-01-01",
+    "end": "2025-03-31",
+    "axes": {
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:GeographicConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000014:f-489",
+    "value": 1.0,
+    "start": "2024-07-01",
+    "end": "2025-03-31",
+    "axes": {
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:GeographicConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000014:f-492",
+    "value": 0.151,
+    "start": "2024-07-01",
+    "end": "2025-03-31",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CustomerAMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000014:f-493",
+    "value": 0.225,
+    "start": "2025-01-01",
+    "end": "2025-03-31",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CustomerBMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000014:f-494",
+    "value": 0.235,
+    "start": "2024-07-01",
+    "end": "2025-03-31",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CustomerBMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000014:f-495",
+    "value": 0.141,
+    "start": "2025-01-01",
+    "end": "2025-03-31",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CustomerCMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000014:f-497",
+    "value": 0.135,
+    "start": "2024-07-01",
+    "end": "2025-03-31",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CustomerDMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000014:f-448",
+    "value": 0.334,
+    "start": "2024-07-01",
+    "end": "2025-06-30",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CustomerBMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:AccountsReceivableMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000014:f-450",
+    "value": 0.136,
+    "start": "2024-07-01",
+    "end": "2025-06-30",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CustomerCMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:AccountsReceivableMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000022:f-1361",
+    "value": 0.946,
+    "start": "2024-07-01",
+    "end": "2025-06-30",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CompuwareMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "smci:PowerSuppliesPurchasedBenchmarkMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember",
+     "us-gaap:RelatedPartyTransactionsByRelatedPartyAxis": "us-gaap:RelatedPartyMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000022:f-547",
+    "value": 0.644,
+    "start": "2024-07-01",
+    "end": "2025-06-30",
+    "axes": {
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "smci:PurchasesTotalMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:SupplierConcentrationRiskMember",
+     "us-gaap:ShareBasedGoodsAndNonemployeeServicesTransactionBySupplierAxis": "smci:SupplierOneMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000022:f-550",
+    "value": 0.033,
+    "start": "2024-07-01",
+    "end": "2025-06-30",
+    "axes": {
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:CostOfGoodsTotalMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:SupplierConcentrationRiskMember",
+     "us-gaap:RelatedPartyTransactionsByRelatedPartyAxis": "us-gaap:RelatedPartyMember",
+     "us-gaap:ShareBasedGoodsAndNonemployeeServicesTransactionBySupplierAxis": "smci:AblecomAndCompuwareMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000022:f-554",
+    "value": 0.125,
+    "start": "2024-07-01",
+    "end": "2025-06-30",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CustomerThreeMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:AccountsReceivableMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000022:f-555",
+    "value": 0.334,
+    "start": "2024-07-01",
+    "end": "2025-06-30",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CustomerOneMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:AccountsReceivableMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000022:f-556",
+    "value": 0.136,
+    "start": "2024-07-01",
+    "end": "2025-06-30",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CustomerTwoMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:AccountsReceivableMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000022:f-600",
+    "value": 0.594,
+    "start": "2024-07-01",
+    "end": "2025-06-30",
+    "axes": {
+     "srt:StatementGeographicalAxis": "country:US",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:GeographicConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000022:f-601",
+    "value": 0.109,
+    "start": "2024-07-01",
+    "end": "2025-06-30",
+    "axes": {
+     "srt:StatementGeographicalAxis": "country:TH",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:GeographicConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000022:f-604",
+    "value": 0.209,
+    "start": "2024-07-01",
+    "end": "2025-06-30",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CustomerOneMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000022:f-605",
+    "value": 0.115,
+    "start": "2024-07-01",
+    "end": "2025-06-30",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CustomerTwoMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000022:f-606",
+    "value": 0.113,
+    "start": "2024-07-01",
+    "end": "2025-06-30",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CustomerThreeMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000022:f-607",
+    "value": 0.111,
+    "start": "2024-07-01",
+    "end": "2025-06-30",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CustomerFourMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000007:f-395",
+    "value": 0.716,
+    "start": "2025-07-01",
+    "end": "2025-12-31",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CustomerAMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:AccountsReceivableMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000007:f-396",
+    "value": 0.129,
+    "start": "2025-07-01",
+    "end": "2025-12-31",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CustomerBMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:AccountsReceivableMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000007:f-419",
+    "value": 0.862,
+    "start": "2025-10-01",
+    "end": "2025-12-31",
+    "axes": {
+     "srt:StatementGeographicalAxis": "country:US",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:GeographicConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000007:f-423",
+    "value": 0.721,
+    "start": "2025-07-01",
+    "end": "2025-12-31",
+    "axes": {
+     "srt:StatementGeographicalAxis": "country:US",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:GeographicConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000007:f-427",
+    "value": 0.138,
+    "start": "2025-10-01",
+    "end": "2025-12-31",
+    "axes": {
+     "srt:StatementGeographicalAxis": "us-gaap:NonUsMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:GeographicConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000007:f-431",
+    "value": 0.279,
+    "start": "2025-07-01",
+    "end": "2025-12-31",
+    "axes": {
+     "srt:StatementGeographicalAxis": "us-gaap:NonUsMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:GeographicConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000007:f-435",
+    "value": 1.0,
+    "start": "2025-10-01",
+    "end": "2025-12-31",
+    "axes": {
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:GeographicConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000007:f-439",
+    "value": 1.0,
+    "start": "2025-07-01",
+    "end": "2025-12-31",
+    "axes": {
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:GeographicConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000007:f-442",
+    "value": 0.626,
+    "start": "2025-10-01",
+    "end": "2025-12-31",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CustomerAMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000007:f-444",
+    "value": 0.451,
+    "start": "2025-07-01",
+    "end": "2025-12-31",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CustomerAMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000014:f-1087",
+    "value": 0.924,
+    "start": "2026-01-01",
+    "end": "2026-03-31",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CompuwareMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "smci:PowerSuppliesPurchasedBenchmarkMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember",
+     "us-gaap:RelatedPartyTransactionsByRelatedPartyAxis": "us-gaap:RelatedPartyMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000014:f-1089",
+    "value": 0.94,
+    "start": "2025-07-01",
+    "end": "2026-03-31",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CompuwareMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "smci:PowerSuppliesPurchasedBenchmarkMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember",
+     "us-gaap:RelatedPartyTransactionsByRelatedPartyAxis": "us-gaap:RelatedPartyMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000014:f-446",
+    "value": 0.322,
+    "start": "2025-07-01",
+    "end": "2026-03-31",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CustomerAMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:AccountsReceivableMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000014:f-447",
+    "value": 0.168,
+    "start": "2025-07-01",
+    "end": "2026-03-31",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CustomerBMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:AccountsReceivableMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000014:f-449",
+    "value": 0.132,
+    "start": "2025-07-01",
+    "end": "2026-03-31",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CustomerCMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:AccountsReceivableMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000014:f-451",
+    "value": 0.129,
+    "start": "2025-07-01",
+    "end": "2026-03-31",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CustomerDMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:AccountsReceivableMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000014:f-467",
+    "value": 0.687,
+    "start": "2026-01-01",
+    "end": "2026-03-31",
+    "axes": {
+     "srt:StatementGeographicalAxis": "country:US",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:GeographicConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000014:f-471",
+    "value": 0.708,
+    "start": "2025-07-01",
+    "end": "2026-03-31",
+    "axes": {
+     "srt:StatementGeographicalAxis": "country:US",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:GeographicConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000014:f-475",
+    "value": 0.313,
+    "start": "2026-01-01",
+    "end": "2026-03-31",
+    "axes": {
+     "srt:StatementGeographicalAxis": "us-gaap:NonUsMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:GeographicConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000014:f-479",
+    "value": 0.292,
+    "start": "2025-07-01",
+    "end": "2026-03-31",
+    "axes": {
+     "srt:StatementGeographicalAxis": "us-gaap:NonUsMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:GeographicConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000014:f-483",
+    "value": 1.0,
+    "start": "2026-01-01",
+    "end": "2026-03-31",
+    "axes": {
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:GeographicConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000014:f-487",
+    "value": 1.0,
+    "start": "2025-07-01",
+    "end": "2026-03-31",
+    "axes": {
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:GeographicConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000014:f-490",
+    "value": 0.27,
+    "start": "2026-01-01",
+    "end": "2026-03-31",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CustomerAMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000014:f-491",
+    "value": 0.385,
+    "start": "2025-07-01",
+    "end": "2026-03-31",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CustomerAMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000014:f-496",
+    "value": 0.103,
+    "start": "2026-01-01",
+    "end": "2026-03-31",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CustomerDMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000022:f-1360",
+    "value": 0.944,
+    "start": "2025-07-01",
+    "end": "2026-06-30",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CompuwareMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "smci:PowerSuppliesPurchasedBenchmarkMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember",
+     "us-gaap:RelatedPartyTransactionsByRelatedPartyAxis": "us-gaap:RelatedPartyMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000022:f-546",
+    "value": 0.631,
+    "start": "2025-07-01",
+    "end": "2026-06-30",
+    "axes": {
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "smci:PurchasesTotalMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:SupplierConcentrationRiskMember",
+     "us-gaap:ShareBasedGoodsAndNonemployeeServicesTransactionBySupplierAxis": "smci:SupplierOneMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000022:f-549",
+    "value": 0.021,
+    "start": "2025-07-01",
+    "end": "2026-06-30",
+    "axes": {
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:CostOfGoodsTotalMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:SupplierConcentrationRiskMember",
+     "us-gaap:RelatedPartyTransactionsByRelatedPartyAxis": "us-gaap:RelatedPartyMember",
+     "us-gaap:ShareBasedGoodsAndNonemployeeServicesTransactionBySupplierAxis": "smci:AblecomAndCompuwareMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000022:f-552",
+    "value": 0.23,
+    "start": "2025-07-01",
+    "end": "2026-06-30",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CustomerOneMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:AccountsReceivableMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000022:f-553",
+    "value": 0.171,
+    "start": "2025-07-01",
+    "end": "2026-06-30",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CustomerTwoMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:AccountsReceivableMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000022:f-599",
+    "value": 0.709,
+    "start": "2025-07-01",
+    "end": "2026-06-30",
+    "axes": {
+     "srt:StatementGeographicalAxis": "country:US",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:GeographicConcentrationRiskMember"
+    }
+   },
+   {
+    "id": "0001375365-26-000022:f-603",
+    "value": 0.281,
+    "start": "2025-07-01",
+    "end": "2026-06-30",
+    "axes": {
+     "srt:MajorCustomersAxis": "smci:CustomerOneMember",
+     "us-gaap:ConcentrationRiskByBenchmarkAxis": "us-gaap:SalesRevenueNetMember",
+     "us-gaap:ConcentrationRiskByTypeAxis": "us-gaap:CustomerConcentrationRiskMember"
+    }
+   }
+  ],
+  "note": "percentages as the filing states them, 0.25 meaning a quarter; facts a later filing in the bundle superseded are left out"
+ },
+ "trend_table": {
+  "quarters-back-0": {
+   "start": null,
+   "end": null,
+   "ratios": {}
+  },
+  "quarters-back-1": {
+   "start": "2026-01-01",
+   "end": "2026-03-31",
+   "ratios": {
+    "receivables_over_revenue": {
+     "value": 0.8213789417841272,
+     "formula": "receivables / revenue",
+     "position_in_history": "second highest of the 6 filled quarters"
+    },
+    "days_sales_outstanding": {
+     "value": 73.92410476057145,
+     "formula": "receivables / revenue * days_in_period",
+     "position_in_history": "second highest of the 6 filled quarters"
+    },
+    "days_sales_of_inventory": {
+     "value": 108.33344065815483,
+     "formula": "inventory / cost_of_revenue * days_in_period",
+     "position_in_history": "second highest of the 6 filled quarters"
+    },
+    "accruals_over_total_assets": {
+     "missing": "no row for operating_cash_flow in 2026-01-01..2026-03-31: us-gaap:NetCashProvidedByUsedInOperatingActivities, us-gaap:NetCashProvidedByUsedInOperatingActivitiesContinuingOperations is in the record, but not for this period"
+    },
+    "gross_margin": {
+     "value": 0.0994511966887871,
+     "formula": "(revenue - cost_of_revenue) / revenue",
+     "position_in_history": "third highest of the 6 filled quarters"
+    },
+    "bad_debt_reserve_ratio": {
+     "value": 5.799937341660522e-05,
+     "formula": "bad_debt_allowance / (receivables + bad_debt_allowance)",
+     "position_in_history": "second highest of the 6 filled quarters"
+    },
+    "inventory_reserve_ratio": {
+     "missing": "no row for inventory_reserve in 2026-03-31: us-gaap:InventoryValuationReserves is in the record, but not for this period"
+    },
+    "warranty_reserve_ratio": {
+     "value": 0.0023203131422059953,
+     "formula": "warranty_accrual / revenue",
+     "position_in_history": "second lowest of the 6 filled quarters"
+    },
+    "soft_asset_share": {
+     "value": 0.9190695611027941,
+     "formula": "(assets - property_plant_and_equipment - cash) / assets",
+     "position_in_history": "highest of the 6 filled quarters"
+    },
+    "contract_liabilities_over_revenue": {
+     "value": 0.14373064412486403,
+     "formula": "contract_liabilities / revenue",
+     "position_in_history": "highest of the 6 filled quarters"
+    },
+    "non_gaap_gap": {
+     "missing": "no row for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and companyfacts holds us-gaap and dei facts only"
+    }
+   }
+  },
+  "quarters-back-2": {
+   "start": "2025-10-01",
+   "end": "2025-12-31",
+   "ratios": {
+    "receivables_over_revenue": {
+     "value": 0.867662512041207,
+     "formula": "receivables / revenue",
+     "position_in_history": "highest of the 6 filled quarters"
+    },
+    "days_sales_outstanding": {
+     "value": 79.82495110779105,
+     "formula": "receivables / revenue * days_in_period",
+     "position_in_history": "highest of the 6 filled quarters"
+    },
+    "days_sales_of_inventory": {
+     "value": 82.02519773771694,
+     "formula": "inventory / cost_of_revenue * days_in_period",
+     "position_in_history": "second lowest of the 6 filled quarters"
+    },
+    "accruals_over_total_assets": {
+     "missing": "no row for operating_cash_flow in 2025-10-01..2025-12-31: us-gaap:NetCashProvidedByUsedInOperatingActivities, us-gaap:NetCashProvidedByUsedInOperatingActivitiesContinuingOperations is in the record, but not for this period"
+    },
+    "gross_margin": {
+     "value": 0.06296610027162645,
+     "formula": "(revenue - cost_of_revenue) / revenue",
+     "position_in_history": "lowest of the 6 filled quarters"
+    },
+    "bad_debt_reserve_ratio": {
+     "value": 5.197781964677982e-05,
+     "formula": "bad_debt_allowance / (receivables + bad_debt_allowance)",
+     "position_in_history": "third highest of the 6 filled quarters"
+    },
+    "inventory_reserve_ratio": {
+     "missing": "no row for inventory_reserve in 2025-12-31: us-gaap:InventoryValuationReserves is in the record, but not for this period"
+    },
+    "warranty_reserve_ratio": {
+     "value": 0.0018144700437792544,
+     "formula": "warranty_accrual / revenue",
+     "position_in_history": "lowest of the 6 filled quarters"
+    },
+    "soft_asset_share": {
+     "value": 0.8346642568052337,
+     "formula": "(assets - property_plant_and_equipment - cash) / assets",
+     "position_in_history": "second highest of the 6 filled quarters"
+    },
+    "contract_liabilities_over_revenue": {
+     "value": 0.061095726383720676,
+     "formula": "contract_liabilities / revenue",
+     "position_in_history": "third lowest of the 6 filled quarters"
+    },
+    "non_gaap_gap": {
+     "missing": "no row for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and companyfacts holds us-gaap and dei facts only"
+    }
+   }
+  },
+  "quarters-back-3": {
+   "start": "2025-07-01",
+   "end": "2025-09-30",
+   "ratios": {
+    "receivables_over_revenue": {
+     "value": 0.5032173526592384,
+     "formula": "receivables / revenue",
+     "position_in_history": "second lowest of the 6 filled quarters"
+    },
+    "days_sales_outstanding": {
+     "value": 46.29599644464993,
+     "formula": "receivables / revenue * days_in_period",
+     "position_in_history": "second lowest of the 6 filled quarters"
+    },
+    "days_sales_of_inventory": {
+     "value": 115.84876375066285,
+     "formula": "inventory / cost_of_revenue * days_in_period",
+     "position_in_history": "highest of the 6 filled quarters"
+    },
+    "accruals_over_total_assets": {
+     "value": 0.07547651934997804,
+     "formula": "(net_income - operating_cash_flow) / assets",
+     "position_in_history": "highest of the 2 filled quarters"
+    },
+    "gross_margin": {
+     "value": 0.0931431965068287,
+     "formula": "(revenue - cost_of_revenue) / revenue",
+     "position_in_history": "second lowest of the 6 filled quarters"
+    },
+    "bad_debt_reserve_ratio": {
+     "value": 0.0002110413007429604,
+     "formula": "bad_debt_allowance / (receivables + bad_debt_allowance)",
+     "position_in_history": "highest of the 6 filled quarters"
+    },
+    "inventory_reserve_ratio": {
+     "missing": "no row for inventory_reserve in 2025-09-30: us-gaap:InventoryValuationReserves is in the record, but not for this period"
+    },
+    "warranty_reserve_ratio": {
+     "value": 0.004237722184467664,
+     "formula": "warranty_accrual / revenue",
+     "position_in_history": "highest of the 6 filled quarters"
+    },
+    "soft_asset_share": {
+     "value": 0.6720723712861297,
+     "formula": "(assets - property_plant_and_equipment - cash) / assets",
+     "position_in_history": "lowest of the 6 filled quarters"
+    },
+    "contract_liabilities_over_revenue": {
+     "value": 0.11904085264628451,
+     "formula": "contract_liabilities / revenue",
+     "position_in_history": "second highest of the 6 filled quarters"
+    },
+    "non_gaap_gap": {
+     "missing": "no row for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and companyfacts holds us-gaap and dei facts only"
+    }
+   }
+  },
+  "quarters-back-4": {
+   "start": null,
+   "end": null,
+   "ratios": {}
+  },
+  "quarters-back-5": {
+   "start": "2025-01-01",
+   "end": "2025-03-31",
+   "ratios": {
+    "receivables_over_revenue": {
+     "value": 0.5744795608090849,
+     "formula": "receivables / revenue",
+     "position_in_history": "third highest of the 6 filled quarters"
+    },
+    "days_sales_outstanding": {
+     "value": 51.70316047281764,
+     "formula": "receivables / revenue * days_in_period",
+     "position_in_history": "third highest of the 6 filled quarters"
+    },
+    "days_sales_of_inventory": {
+     "value": 83.73735814765266,
+     "formula": "inventory / cost_of_revenue * days_in_period",
+     "position_in_history": "third lowest of the 6 filled quarters"
+    },
+    "accruals_over_total_assets": {
+     "missing": "no row for operating_cash_flow in 2025-01-01..2025-03-31: us-gaap:NetCashProvidedByUsedInOperatingActivities, us-gaap:NetCashProvidedByUsedInOperatingActivitiesContinuingOperations is in the record, but not for this period"
+    },
+    "gross_margin": {
+     "value": 0.0957013752216618,
+     "formula": "(revenue - cost_of_revenue) / revenue",
+     "position_in_history": "third lowest of the 6 filled quarters"
+    },
+    "bad_debt_reserve_ratio": {
+     "value": 2.535359754304719e-05,
+     "formula": "bad_debt_allowance / (receivables + bad_debt_allowance)",
+     "position_in_history": "second lowest of the 6 filled quarters"
+    },
+    "inventory_reserve_ratio": {
+     "missing": "no row for inventory_reserve in 2025-03-31: us-gaap:InventoryValuationReserves is in the record, but not for this period"
+    },
+    "warranty_reserve_ratio": {
+     "value": 0.004114643037813976,
+     "formula": "warranty_accrual / revenue",
+     "position_in_history": "second highest of the 6 filled quarters"
+    },
+    "soft_asset_share": {
+     "value": 0.71796256934728,
+     "formula": "(assets - property_plant_and_equipment - cash) / assets",
+     "position_in_history": "second lowest of the 6 filled quarters"
+    },
+    "contract_liabilities_over_revenue": {
+     "value": 0.07669775493579988,
+     "formula": "contract_liabilities / revenue",
+     "position_in_history": "third highest of the 6 filled quarters"
+    },
+    "non_gaap_gap": {
+     "missing": "no row for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and companyfacts holds us-gaap and dei facts only"
+    }
+   }
+  },
+  "quarters-back-6": {
+   "start": "2024-10-01",
+   "end": "2024-12-31",
+   "ratios": {
+    "receivables_over_revenue": {
+     "value": 0.5388394638780605,
+     "formula": "receivables / revenue",
+     "position_in_history": "third lowest of the 6 filled quarters"
+    },
+    "days_sales_outstanding": {
+     "value": 49.57323067678156,
+     "formula": "receivables / revenue * days_in_period",
+     "position_in_history": "third lowest of the 6 filled quarters"
+    },
+    "days_sales_of_inventory": {
+     "value": 66.06415811691035,
+     "formula": "inventory / cost_of_revenue * days_in_period",
+     "position_in_history": "lowest of the 6 filled quarters"
+    },
+    "accruals_over_total_assets": {
+     "missing": "no row for operating_cash_flow in 2024-10-01..2024-12-31: us-gaap:NetCashProvidedByUsedInOperatingActivities, us-gaap:NetCashProvidedByUsedInOperatingActivitiesContinuingOperations is in the record, but not for this period"
+    },
+    "gross_margin": {
+     "value": 0.11800395987151728,
+     "formula": "(revenue - cost_of_revenue) / revenue",
+     "position_in_history": "second highest of the 6 filled quarters"
+    },
+    "bad_debt_reserve_ratio": {
+     "value": 2.2552122367162278e-05,
+     "formula": "bad_debt_allowance / (receivables + bad_debt_allowance)",
+     "position_in_history": "lowest of the 6 filled quarters"
+    },
+    "inventory_reserve_ratio": {
+     "missing": "no row for inventory_reserve in 2024-12-31: us-gaap:InventoryValuationReserves is in the record, but not for this period"
+    },
+    "warranty_reserve_ratio": {
+     "value": 0.0032208739685119416,
+     "formula": "warranty_accrual / revenue",
+     "position_in_history": "third highest of the 6 filled quarters"
+    },
+    "soft_asset_share": {
+     "value": 0.8039241606077414,
+     "formula": "(assets - property_plant_and_equipment - cash) / assets",
+     "position_in_history": "third highest of the 6 filled quarters"
+    },
+    "contract_liabilities_over_revenue": {
+     "value": 0.054462851283611974,
+     "formula": "contract_liabilities / revenue",
+     "position_in_history": "second lowest of the 6 filled quarters"
+    },
+    "non_gaap_gap": {
+     "missing": "no row for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and companyfacts holds us-gaap and dei facts only"
+    }
+   }
+  },
+  "quarters-back-7": {
+   "start": "2024-07-01",
+   "end": "2024-09-30",
+   "ratios": {
+    "receivables_over_revenue": {
+     "value": 0.46010143406314297,
+     "formula": "receivables / revenue",
+     "position_in_history": "lowest of the 6 filled quarters"
+    },
+    "days_sales_outstanding": {
+     "value": 42.32933193380915,
+     "formula": "receivables / revenue * days_in_period",
+     "position_in_history": "lowest of the 6 filled quarters"
+    },
+    "days_sales_of_inventory": {
+     "value": 87.88178800839107,
+     "formula": "inventory / cost_of_revenue * days_in_period",
+     "position_in_history": "third highest of the 6 filled quarters"
+    },
+    "accruals_over_total_assets": {
+     "value": 0.001421293488581133,
+     "formula": "(net_income - operating_cash_flow) / assets",
+     "position_in_history": "lowest of the 2 filled quarters"
+    },
+    "gross_margin": {
+     "value": 0.13062936817950918,
+     "formula": "(revenue - cost_of_revenue) / revenue",
+     "position_in_history": "highest of the 6 filled quarters"
+    },
+    "bad_debt_reserve_ratio": {
+     "value": 2.5990084965614385e-05,
+     "formula": "bad_debt_allowance / (receivables + bad_debt_allowance)",
+     "position_in_history": "third lowest of the 6 filled quarters"
+    },
+    "inventory_reserve_ratio": {
+     "missing": "no row for inventory_reserve in 2024-09-30: us-gaap:InventoryValuationReserves is in the record, but not for this period"
+    },
+    "warranty_reserve_ratio": {
+     "value": 0.0030237874196430135,
+     "formula": "warranty_accrual / revenue",
+     "position_in_history": "third lowest of the 6 filled quarters"
+    },
+    "soft_asset_share": {
+     "value": 0.7659489117654404,
+     "formula": "(assets - property_plant_and_equipment - cash) / assets",
+     "position_in_history": "third lowest of the 6 filled quarters"
+    },
+    "contract_liabilities_over_revenue": {
+     "value": 0.0515120116094034,
+     "formula": "contract_liabilities / revenue",
+     "position_in_history": "lowest of the 6 filled quarters"
+    },
+    "non_gaap_gap": {
+     "missing": "no row for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and companyfacts holds us-gaap and dei facts only"
+    }
+   }
+  },
+  "years-back-0": {
+   "start": "2025-07-01",
+   "end": "2026-06-30",
+   "ratios": {
+    "receivables_over_revenue": {
+     "value": 0.15680830222466888,
+     "formula": "receivables / revenue",
+     "position_in_history": "second lowest of the 5 filled years"
+    },
+    "days_sales_outstanding": {
+     "value": 57.23503031200414,
+     "formula": "receivables / revenue * days_in_period",
+     "position_in_history": "second lowest of the 5 filled years"
+    },
+    "days_sales_of_inventory": {
+     "value": 135.12015074942542,
+     "formula": "inventory / cost_of_revenue * days_in_period",
+     "position_in_history": "highest of the 5 filled years"
+    },
+    "accruals_over_total_assets": {
+     "value": 0.3018934051020143,
+     "formula": "(net_income - operating_cash_flow) / assets",
+     "position_in_history": "second highest of the 5 filled years"
+    },
+    "gross_margin": {
+     "value": 0.10821604097086886,
+     "formula": "(revenue - cost_of_revenue) / revenue",
+     "position_in_history": "lowest of the 5 filled years"
+    },
+    "bad_debt_reserve_ratio": {
+     "value": 1.779439894356776e-05,
+     "formula": "bad_debt_allowance / (receivables + bad_debt_allowance)",
+     "position_in_history": "second lowest of the 5 filled years"
+    },
+    "inventory_reserve_ratio": {
+     "missing": "no row for inventory_reserve in 2026-06-30: us-gaap:InventoryValuationReserves is in the record, but not for this period"
+    },
+    "warranty_reserve_ratio": {
+     "value": 0.0007258517712073439,
+     "formula": "warranty_accrual / revenue",
+     "position_in_history": "lowest of the 5 filled years"
+    },
+    "soft_asset_share": {
+     "value": 0.7279378878946854,
+     "formula": "(assets - property_plant_and_equipment - cash) / assets",
+     "position_in_history": "second lowest of the 5 filled years"
+    },
+    "contract_liabilities_over_revenue": {
+     "value": 0.04039633646836582,
+     "formula": "contract_liabilities / revenue",
+     "position_in_history": "highest of the 5 filled years"
+    },
+    "non_gaap_gap": {
+     "missing": "no row for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and companyfacts holds us-gaap and dei facts only"
+    }
+   }
+  },
+  "years-back-1": {
+   "start": "2024-07-01",
+   "end": "2025-06-30",
+   "ratios": {
+    "receivables_over_revenue": {
+     "value": 0.10030665333699981,
+     "formula": "receivables / revenue",
+     "position_in_history": "lowest of the 5 filled years"
+    },
+    "days_sales_outstanding": {
+     "value": 36.61192846800493,
+     "formula": "receivables / revenue * days_in_period",
+     "position_in_history": "lowest of the 5 filled years"
+    },
+    "days_sales_of_inventory": {
+     "value": 87.41819592756569,
+     "formula": "inventory / cost_of_revenue * days_in_period",
+     "position_in_history": "lowest of the 5 filled years"
+    },
+    "accruals_over_total_assets": {
+     "value": -0.0435619426399349,
+     "formula": "(net_income - operating_cash_flow) / assets",
+     "position_in_history": "lowest of the 5 filled years"
+    },
+    "gross_margin": {
+     "value": 0.11059154174200105,
+     "formula": "(revenue - cost_of_revenue) / revenue",
+     "position_in_history": "second lowest of the 5 filled years"
+    },
+    "bad_debt_reserve_ratio": {
+     "value": 0.0,
+     "formula": "bad_debt_allowance / (receivables + bad_debt_allowance)",
+     "position_in_history": "lowest of the 5 filled years"
+    },
+    "inventory_reserve_ratio": {
+     "missing": "no row for inventory_reserve in 2025-06-30: us-gaap:InventoryValuationReserves is in the record, but not for this period"
+    },
+    "warranty_reserve_ratio": {
+     "value": 0.0007716169484838961,
+     "formula": "warranty_accrual / revenue",
+     "position_in_history": "second lowest of the 5 filled years"
+    },
+    "soft_asset_share": {
+     "value": 0.595218622571759,
+     "formula": "(assets - property_plant_and_equipment - cash) / assets",
+     "position_in_history": "lowest of the 5 filled years"
+    },
+    "contract_liabilities_over_revenue": {
+     "value": 0.016782099724732002,
+     "formula": "contract_liabilities / revenue",
+     "position_in_history": "second lowest of the 5 filled years"
+    },
+    "non_gaap_gap": {
+     "missing": "no row for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and companyfacts holds us-gaap and dei facts only"
+    }
+   }
+  },
+  "years-back-2": {
+   "start": "2023-07-01",
+   "end": "2024-06-30",
+   "ratios": {
+    "receivables_over_revenue": {
+     "value": 0.18261959853764542,
+     "formula": "receivables / revenue",
+     "position_in_history": "highest of the 5 filled years"
+    },
+    "days_sales_outstanding": {
+     "value": 66.83877306477822,
+     "formula": "receivables / revenue * days_in_period",
+     "position_in_history": "highest of the 5 filled years"
+    },
+    "days_sales_of_inventory": {
+     "value": 122.67234830626397,
+     "formula": "inventory / cost_of_revenue * days_in_period",
+     "position_in_history": "third highest of the 5 filled years"
+    },
+    "accruals_over_total_assets": {
+     "value": 0.37030367718926305,
+     "formula": "(net_income - operating_cash_flow) / assets",
+     "position_in_history": "highest of the 5 filled years"
+    },
+    "gross_margin": {
+     "value": 0.13752588438208152,
+     "formula": "(revenue - cost_of_revenue) / revenue",
+     "position_in_history": "third highest of the 5 filled years"
+    },
+    "bad_debt_reserve_ratio": {
+     "value": 2.6667601859279815e-05,
+     "formula": "bad_debt_allowance / (receivables + bad_debt_allowance)",
+     "position_in_history": "third highest of the 5 filled years"
+    },
+    "inventory_reserve_ratio": {
+     "missing": "no row for inventory_reserve in 2024-06-30: us-gaap:InventoryValuationReserves is in the record, but not for this period"
+    },
+    "warranty_reserve_ratio": {
+     "value": 0.0011885183589226706,
+     "formula": "warranty_accrual / revenue",
+     "position_in_history": "third highest of the 5 filled years"
+    },
+    "soft_asset_share": {
+     "value": 0.7879346132724994,
+     "formula": "(assets - property_plant_and_equipment - cash) / assets",
+     "position_in_history": "third highest of the 5 filled years"
+    },
+    "contract_liabilities_over_revenue": {
+     "value": 0.012879362684633142,
+     "formula": "contract_liabilities / revenue",
+     "position_in_history": "lowest of the 5 filled years"
+    },
+    "non_gaap_gap": {
+     "missing": "no row for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and companyfacts holds us-gaap and dei facts only"
+    }
+   }
+  },
+  "years-back-3": {
+   "start": "2022-07-01",
+   "end": "2023-06-30",
+   "ratios": {
+    "receivables_over_revenue": {
+     "value": 0.16119350059423188,
+     "formula": "receivables / revenue",
+     "position_in_history": "second highest of the 5 filled years"
+    },
+    "days_sales_outstanding": {
+     "value": 58.835627716894635,
+     "formula": "receivables / revenue * days_in_period",
+     "position_in_history": "second highest of the 5 filled years"
+    },
+    "days_sales_of_inventory": {
+     "value": 90.34047944771568,
+     "formula": "inventory / cost_of_revenue * days_in_period",
+     "position_in_history": "second lowest of the 5 filled years"
+    },
+    "accruals_over_total_assets": {
+     "value": -0.006417343972848066,
+     "formula": "(net_income - operating_cash_flow) / assets",
+     "position_in_history": "second lowest of the 5 filled years"
+    },
+    "gross_margin": {
+     "value": 0.18011023260815426,
+     "formula": "(revenue - cost_of_revenue) / revenue",
+     "position_in_history": "highest of the 5 filled years"
+    },
+    "bad_debt_reserve_ratio": {
+     "value": 7.14073607055744e-05,
+     "formula": "bad_debt_allowance / (receivables + bad_debt_allowance)",
+     "position_in_history": "second highest of the 5 filled years"
+    },
+    "inventory_reserve_ratio": {
+     "missing": "no row for inventory_reserve in 2023-06-30: us-gaap:InventoryValuationReserves is in the record, but not for this period"
+    },
+    "warranty_reserve_ratio": {
+     "value": 0.0020859180945498284,
+     "formula": "warranty_accrual / revenue",
+     "position_in_history": "second highest of the 5 filled years"
+    },
+    "soft_asset_share": {
+     "value": 0.8011556770580905,
+     "formula": "(assets - property_plant_and_equipment - cash) / assets",
+     "position_in_history": "second highest of the 5 filled years"
+    },
+    "contract_liabilities_over_revenue": {
+     "value": 0.01890465926635317,
+     "formula": "contract_liabilities / revenue",
+     "position_in_history": "third highest of the 5 filled years"
+    },
+    "non_gaap_gap": {
+     "missing": "no row for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and companyfacts holds us-gaap and dei facts only"
+    }
+   }
+  },
+  "years-back-4": {
+   "start": "2021-07-01",
+   "end": "2022-06-30",
+   "ratios": {
+    "receivables_over_revenue": {
+     "value": 0.16060375293080445,
+     "formula": "receivables / revenue",
+     "position_in_history": "third highest of the 5 filled years"
+    },
+    "days_sales_outstanding": {
+     "value": 58.62036981974362,
+     "formula": "receivables / revenue * days_in_period",
+     "position_in_history": "third highest of the 5 filled years"
+    },
+    "days_sales_of_inventory": {
+     "value": 128.32884753706583,
+     "formula": "inventory / cost_of_revenue * days_in_period",
+     "position_in_history": "second highest of the 5 filled years"
+    },
+    "accruals_over_total_assets": {
+     "value": 0.22650438663408087,
+     "formula": "(net_income - operating_cash_flow) / assets",
+     "position_in_history": "third highest of the 5 filled years"
+    },
+    "gross_margin": {
+     "value": 0.1539618471472541,
+     "formula": "(revenue - cost_of_revenue) / revenue",
+     "position_in_history": "second highest of the 5 filled years"
+    },
+    "bad_debt_reserve_ratio": {
+     "value": 0.0020962229721165275,
+     "formula": "bad_debt_allowance / (receivables + bad_debt_allowance)",
+     "position_in_history": "highest of the 5 filled years"
+    },
+    "inventory_reserve_ratio": {
+     "missing": "no row for inventory_reserve in 2022-06-30: us-gaap:InventoryValuationReserves is in the record, but not for this period"
+    },
+    "warranty_reserve_ratio": {
+     "value": 0.0023357907537943368,
+     "formula": "warranty_accrual / revenue",
+     "position_in_history": "highest of the 5 filled years"
+    },
+    "soft_asset_share": {
+     "value": 0.8273461136815122,
+     "formula": "(assets - property_plant_and_equipment - cash) / assets",
+     "position_in_history": "highest of the 5 filled years"
+    },
+    "contract_liabilities_over_revenue": {
+     "value": 0.021422417086356515,
+     "formula": "contract_liabilities / revenue",
+     "position_in_history": "second highest of the 5 filled years"
+    },
+    "non_gaap_gap": {
+     "missing": "no row for non_gaap_net_income: no us-gaap concept carries a non-GAAP measure, and companyfacts holds us-gaap and dei facts only"
+    }
+   }
+  }
+ },
+ "trend_table_note": "computed on the same record as every figure above, which for an accession listed under read_from_the_filing_because_companyfacts_lagged includes that filing's own facts; the run's input_trends.json is computed on companyfacts alone and can hold fewer periods",
+ "market": {
+  "missing": "no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched"
+ },
+ "cost_of_capital": {
+  "risk_free_rate": {
+   "value": 0.0475,
+   "date": "2026-08-31",
+   "series": "DGS10",
+   "source": "src/cost_of_capital/manifest.json, risk_free_rate",
+   "sha256": "7fb742bb9749aab950d3696c3b55ec45716a51e49dad7833886529192221fd4f"
+  },
+  "equity_risk_premium": {
+   "value": 0.0428,
+   "month_start": "2026-08-01",
+   "column": "the trailing-twelve-month premium with sustainable payout, found by its header ending in 'with sustainable payout'",
+   "source": "src/cost_of_capital/manifest.json, equity_risk_premium",
+   "sha256": "762bee964f6f77e893dd6bbdce05521bee97fbfe4f93875cb378eef0537e8ea2",
+   "rule": "the row whose start-of-month date is strictly before the cutoff. The workbook carries no publication date; each month's premium is computed on the first of the month and posted in its first days, so a cutoff on the first of a month reads the month before rather than a number that may not yet have been posted"
+  },
+  "tax_rate": {
+   "value": 0.19945369100952795,
+   "effective_rate": 0.19945369100952795,
+   "rule": "the effective rate, inside the bounds",
+   "formula": "income_tax_expense / pretax_income, held between 0 and 0.21",
+   "inputs": {
+    "income_tax_expense": {
+     "value": 556329000.0,
+     "formula": "the fiscal year",
+     "unit": "USD",
+     "parts": {
+      "0": {
+       "value": 556329000.0,
+       "id": "0001375365-26-000022:facts:IncomeTaxExpenseBenefit:2025-07-01..2026-06-30",
+       "tag": "IncomeTaxExpenseBenefit",
+       "period": "2025-07-01..2026-06-30",
+       "unit": "USD"
+      }
+     }
+    },
+    "pretax_income": {
+     "value": 2789264000.0,
+     "formula": "the fiscal year",
+     "unit": "USD",
+     "parts": {
+      "0": {
+       "value": 2789264000.0,
+       "id": "0001375365-26-000022:facts:IncomeLossFromContinuingOperationsBeforeIncomeTaxesMinorityInterestAndIncomeLossFromEquityMethodInvestments:2025-07-01..2026-06-30",
+       "tag": "IncomeLossFromContinuingOperationsBeforeIncomeTaxesMinorityInterestAndIncomeLossFromEquityMethodInvestments",
+       "period": "2025-07-01..2026-06-30",
+       "unit": "USD"
+      }
+     }
+    }
+   }
+  },
+  "pre_tax_cost_of_debt": {
+   "value": 0.0,
+   "note": "no debt on the balance sheet, so it carries no weight"
+  },
+  "beta": {
+   "missing": "no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched"
+  },
+  "market_value_of_equity": {
+   "missing": "no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched"
+  },
+  "cost_of_equity": {
+   "missing": "no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched"
+  },
+  "value": null,
+  "missing": "the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched"
+ },
+ "valuation": {
+  "missing": "no assumptions.json: the valuation analyst has not written drivers yet, and Python never invents one"
+ },
+ "free_cash_flow_yield": {
+  "what_this_is": "the trailing-four-quarter free cash flows over the claims they belong to, at the price at the cutoff; a cross-check on the DCF, not a value",
+  "price_at_cutoff": {
+   "missing": "the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched"
+  },
+  "enterprise_value": {
+   "missing": "market_value_of_equity: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched",
+   "formula": "market_value_of_equity + net_debt + operating_lease_liability"
+  },
+  "free_cash_flow_to_firm_over_enterprise_value": {
+   "missing": "enterprise_value: market_value_of_equity: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched",
+   "formula": "free_cash_flow_to_firm / enterprise_value"
+  },
+  "free_cash_flow_to_equity_over_market_value_of_equity": {
+   "missing": "market_value_of_equity: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched",
+   "formula": "free_cash_flow_to_equity / market_value_of_equity"
+  }
+ },
+ "wacc_components": {
+  "what_this_is": "each input of the WACC, its value and where it came from",
+  "formula": "E/(D+E) * cost_of_equity + D/(D+E) * pre_tax_cost_of_debt * (1 - tax_rate)",
+  "rows": [
+   {
+    "input": "risk_free_rate",
+    "value": 0.0475,
+    "source": "DGS10 on 2026-08-31; src/cost_of_capital/manifest.json, risk_free_rate"
+   },
+   {
+    "input": "equity_risk_premium",
+    "value": 0.0428,
+    "source": "the month starting 2026-08-01; src/cost_of_capital/manifest.json, equity_risk_premium"
+   },
+   {
+    "input": "beta",
+    "value": null,
+    "missing": "no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched"
+   },
+   {
+    "input": "cost_of_equity",
+    "value": null,
+    "missing": "no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched"
+   },
+   {
+    "input": "pre_tax_cost_of_debt",
+    "value": 0.0,
+    "source": "no debt on the balance sheet, so it carries no weight"
+   },
+   {
+    "input": "tax_rate",
+    "value": 0.19945369100952795,
+    "source": "the effective rate, inside the bounds; income_tax_expense / pretax_income, held between 0 and 0.21"
+   },
+   {
+    "input": "market_value_of_equity",
+    "value": null,
+    "missing": "no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched"
+   },
+   {
+    "input": "total_debt",
+    "value": 0,
+    "source": "debt_current + debt_noncurrent; no record id on the cell"
+   },
+   {
+    "input": "weight_of_equity",
+    "value": null,
+    "missing": "no weights: the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched"
+   },
+   {
+    "input": "weight_of_debt",
+    "value": null,
+    "missing": "no weights: the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched"
+   },
+   {
+    "input": "wacc",
+    "value": null,
+    "missing": "the cost of equity needs a beta and a price: no price series was given: the forward track's price source is Tiingo, and without its token no series is fetched"
+   }
+  ]
+ },
+ "implied_growth_beside_history": {
+  "what_this_is": "the revenue growth the price at the cutoff assumes for ten years, read beside the growth the company has filed",
+  "implied_ten_year_revenue_growth": {
+   "missing": "no reverse DCF: no assumptions.json: the valuation analyst has not written drivers yet, and Python never invents one"
+  },
+  "revenue_growth_three_year_compound": {
+   "value": 0.7634291720222148,
+   "formula": "(revenue of the newest fiscal year / revenue 3 fiscal years earlier) ** (1/3) - 1",
+   "unit": "ratio",
+   "years": 3,
+   "fiscal_years": "2022-07-01..2023-06-30 to 2025-07-01..2026-06-30",
+   "inputs": {
+    "revenue_newest": {
+     "value": 39063072000.0,
+     "fiscal_year": "2025-07-01..2026-06-30",
+     "id": "0001375365-26-000022:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2025-07-01..2026-06-30"
+    },
+    "revenue_3_years_earlier": {
+     "value": 7123482000.0,
+     "fiscal_year": "2022-07-01..2023-06-30",
+     "id": "0001375365-25-000027:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2022-07-01..2023-06-30"
+    }
+   }
+  },
+  "revenue_growth_five_year_compound": {
+   "value": 0.6148277410083174,
+   "formula": "(revenue of the newest fiscal year / revenue 5 fiscal years earlier) ** (1/5) - 1",
+   "unit": "ratio",
+   "years": 5,
+   "fiscal_years": "2020-07-01..2021-06-30 to 2025-07-01..2026-06-30",
+   "inputs": {
+    "revenue_newest": {
+     "value": 39063072000.0,
+     "fiscal_year": "2025-07-01..2026-06-30",
+     "id": "0001375365-26-000022:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2025-07-01..2026-06-30"
+    },
+    "revenue_5_years_earlier": {
+     "value": 3557422000.0,
+     "fiscal_year": "2020-07-01..2021-06-30",
+     "id": "0001375365-23-000036:facts:RevenueFromContractWithCustomerExcludingAssessedTax:2020-07-01..2021-06-30"
+    }
+   }
+  }
+ }
+}

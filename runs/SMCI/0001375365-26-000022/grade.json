@@ -1,0 +1,444 @@
+{
+ "run": "SMCI/analysis-grader-u5er_4iu",
+ "rubric": "evals/capability/rubric.md",
+ "dealbreakers": [
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "earnings_versus_cash_inventory_articulation_gap",
+   "where": "analysis_accounting.json anomalies[3].what",
+   "why": "The size of earnings_versus_cash.working_capital.inventory.articulation_gap equals, in thousands, 'Inventory valuation adjustment write-down | 188,110' (8k_2_02:54) plus 'Asset held for others | $ | 465,759' (notes:164) plus 'Transfer of inventory to property, plant, and equipment, net | $ | 7,304' (8k_2_02:59). The analyst cited the first two, yet wrote 'Neither report explains the gap'."
+  },
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "cross_document_reconciliation_advertising_expense_description_differs",
+   "where": "analysis_accounting.json anomalies[37].what",
+   "why": "notes:60 says its figure is 'net of reimbursements received under the cooperative marketing arrangements with our vendors'. mdna:87 reports higher 'marketing development funds received from certain business partners related to co-marketing and advertising events' separately from 'standard marketing and advertising activities'. The inputs show these are different measures, and the analyst cited both, yet left it open."
+  },
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": null,
+   "where": "analysis_accounting.json areas.earnings_versus_cash.verdict",
+   "why": "Carries the gap the inputs already reconcile into the area verdict as an open finding: 'the inventory line does not articulate with the balance sheet'."
+  },
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": null,
+   "where": "analysis_valuation.json accounting_adjustments.reading",
+   "why": "Repeats the reconciled inventory gap as 'an inventory line that fails to articulate', citing earnings_versus_cash.working_capital.inventory.articulation_gap."
+  },
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": null,
+   "where": "analysis_accounting.json reconciliation[28]",
+   "why": "Advertising row left 'unresolved' even though notes:60 and mdna:87 together settle that the figures are net and gross measures."
+  }
+ ],
+ "items": [
+  {
+   "id": "earnings_versus_cash_operating_cash_flow_negative_against_rising_income",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "earnings_versus_cash.operating_cash_flow_over_net_income is the most negative entry in earnings_versus_cash.history.years. facts:NetCashProvidedByUsedInOperatingActivities and mdna:138 ('increase in inventory purchases, accounts receivable from customers') back it."
+  },
+  {
+   "id": "earnings_versus_cash_inventory_build_absorbs_earnings",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "The paths earnings_versus_cash.working_capital.inventory.balance_sheet_change and .share_of_net_income resolve. trend_table.years-back-0.ratios.days_sales_of_inventory reads 'highest of the 5 filled years'. mdna:129 and mdna:33 give the stated reason."
+  },
+  {
+   "id": "earnings_versus_cash_receivables_build_absorbs_earnings",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The receivables and accounts_payable balance_sheet_change and share_of_net_income paths and ratios.efficiency.days_payables_outstanding resolve as written. The 'sales tool' reading is the analyst's inference, not something mdna:129 says."
+  },
+  {
+   "id": "earnings_versus_cash_inventory_articulation_gap",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "high",
+   "why": "Dealbreaker: the gap is reconciled in full by 8k_2_02:54, notes:164 and 8k_2_02:59, so 'Neither report explains the gap' leaves a settled difference open."
+  },
+  {
+   "id": "earnings_versus_cash_income_smoother_than_cash",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.smoothness and the quarterly net_income and operating_cash_flow entries .3, .1 and .0 resolve as written. 8k_2_02:13 confirms the fourth-quarter inflow."
+  },
+  {
+   "id": "revenue_recognition_receivables_outrunning_revenue",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table receivables_over_revenue and days_sales_outstanding rise from years-back-1 to years-back-0, and years-back-2 DSO is higher. quarters-back-2 DSO reads 'highest of the 6 filled quarters'."
+  },
+  {
+   "id": "revenue_recognition_extended_payment_terms_and_financing_component",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:45 'we also grant extended payment terms for certain customers' and mdna:100 'financing arrangements with a customer' resolve. No input sizes either."
+  },
+  {
+   "id": "revenue_recognition_receivable_with_deferred_revenue_before_transfer_of_control",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:46 states the policy word for word. The point about collection risk is hedged ('may'), and no input sizes the portion billed in advance."
+  },
+  {
+   "id": "revenue_recognition_contract_liabilities_highest_in_history",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The contract_liabilities balance paths resolve, and trend_table.years-back-0.ratios.contract_liabilities_over_revenue reads 'highest of the 5 filled years'. notes:125 gives the customer-advance driver."
+  },
+  {
+   "id": "revenue_recognition_fourth_quarter_profit_concentration",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "ratios.growth operating_income and net_income this_quarter, set against quarter_over_quarter.inputs.before, resolve. 8k_2_02:14 credits mix, and the MD&A has no fourth-quarter discussion. concentration.facts.67 against .75 supports the share inference."
+  },
+  {
+   "id": "revenue_recognition_backlog_claim_not_quantified",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:14 'booked record backlog entering fiscal 2027' and the notes:127 exclusion 'for products where control has not yet been transferred' resolve. No input measures backlog."
+  },
+  {
+   "id": "estimates_and_reserves_allowance_for_credit_losses_thin",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.balances_now.bad_debt_allowance and trend_table bad_debt_reserve_ratio resolve: years-back-0 reads 'second lowest of the 5 filled years', and years-back-4, quarters-back-3 and quarters-back-1 match. notes:160 shows the year-end balance."
+  },
+  {
+   "id": "estimates_and_reserves_warranty_reserve_ratio_lowest",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.years-back-0.ratios.warranty_reserve_ratio reads 'lowest of the 5 filled years' and years-back-4 reads 'highest of the 5 filled years'. The warranty_accrual paths resolve."
+  },
+  {
+   "id": "estimates_and_reserves_inventory_write_down_falling_while_inventory_ages",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "terms.trailing_four_quarters.inventory_write_down is below the prior year per 8k_2_02:54. The mdna:76 quote is exact. Year-end days of inventory are 'highest of the 5 filled years', and auditors_report:16 confirms the critical audit matter."
+  },
+  {
+   "id": "estimates_and_reserves_purchase_commitment_loss_liability_no_longer_quantified",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "note_history:8 (May 10-Q) says 'we recorded $4.1 million of loss liabilities'. notes:469 keeps only the review sentence. The unconditional_purchase_obligations paths resolve."
+  },
+  {
+   "id": "estimates_and_reserves_malaysia_tax_incentive_assumed_before_approval",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The mdna:115 quote is exact, and the paragraph states both the investment threshold and the rate and cash-tax consequence. tax_rate.effective_rate resolves."
+  },
+  {
+   "id": "estimates_and_reserves_unrecognized_tax_benefits_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:445 shows the balance rising at each year-end, and notes:447 shows the rate-affecting part rising. notes:450 lists the examinations, and mdna:113 leaves OBBBA unquantified."
+  },
+  {
+   "id": "estimates_and_reserves_trade_expansion_act_tariff_receivable_recognized",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The notes:171 footnote gives no recognition criteria, and notes:468 leaves the IEEPA refund unrecognized. The offset to tariff cost is the analyst's inference, and notes:170 does give the receivable's amount."
+  },
+  {
+   "id": "cost_deferral_soft_asset_share_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "trend_table soft_asset_share resolves for years-back-0, years-back-1 and quarters-back-1 ('highest of the 6 filled quarters'). The PP&E and D&A paths support the working-capital reading."
+  },
+  {
+   "id": "cost_deferral_new_prepaid_inventory_and_asset_held_for_others_lines",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:164 shows 'Asset held for others' and 'Prepaid inventory' as new lines, and no prose explains them. The link to revenue cutoff is hedged."
+  },
+  {
+   "id": "cost_deferral_supplier_funds_offsetting_operating_expense",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:87 (funds reduced sales and marketing), mdna:76 (vendor rebates) and notes:60 (advertising 'net of reimbursements') support it. The terms of the funds are not disclosed."
+  },
+  {
+   "id": "cost_deferral_non_gaap_adds_back_rising_share_based_compensation",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:90 adjusts only stock-based compensation for the year. Share-based compensation rises from earnings_versus_cash.history.years.1.share_based_compensation to terms.trailing_four_quarters.share_based_compensation."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_purchase_obligations_surge",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "terms.balances_now.unconditional_purchase_obligations is far above the year-earlier balance and above terms.balances_now.inventory, and close to terms.trailing_four_quarters.cost_of_revenue. notes:469 says 'primarily through the next 12 months'."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_undisclosed_customer_financing_arrangement",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:100 is the only mention of 'financing arrangements with a customer', and notes:148 describes the customer that is also an equity investee. No input gives a size or cash-flow classification."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_operating_lease_liability_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The operating_lease_liability paths resolve. notes:309 puts sublicense rental income 'in other income (expense), net'."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_cash_encumbered_by_lenders",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "medium",
+   "why": "notes:204 (receivables pledged) and notes:197 (lien) support it. But notes:28 classifies the lender-controlled restricted cash 'within other assets', outside terms.balances_now.cash, so the claim about reported cash is not shown."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_external_financing_funds_operating_deficit",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "free_cash_flow.free_cash_flow_simple, the cash_flow_families borrowing paths and free_cash_flow_to_equity.net_borrowing resolve. 8k_2_02:54 shows the preferred and common issuance, and notes:245 and notes:205 show the waiver and the extension."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_share_based_compensation_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The share_based_compensation paths rise, and free_cash_flow.free_cash_flow_quality_adjusted already deducts it, as the anomaly says."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_material_weakness_and_adverse_icfr_opinion",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "The item_9a:11 quote is exact. item_9a:44 gives the adverse opinion, and item_9a:4, item_9a:21 and item_9a:32 match the rest."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_critical_audit_matters_inventory_and_revenue",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "auditors_report:16 and auditors_report:28 describe both matters as stated."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_preliminary_release_before_close",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:29 says the close was incomplete, and the numbers reader matched the release to the 10-K line by line. ratios.growth.operating_cash_flow.this_quarter matches 8k_2_02:13."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_ablecom_resale_redated",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "note_history:64 says 'During the third quarter ended March 31, 2026' and notes:323 says 'During the fourth quarter'. The inputs do not say which is right, so 'unresolved' is fair."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_related_party_disclosure_narrowed",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The February text (0001375365-26-000007:note_history:61) has the Liaw-sibling stakes, and the May text and notes:319 drop them. notes:336 and notes:320 match the other points."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_new_related_party_arrangements",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:330 and notes:327 give the credit lines, and notes:349 shows related-party sales falling while related-party cost of sales rises. concentration.facts.71, .34 and .69 resolve."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_government_inquiries_reach_internal_controls",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "notes:459 says the subpoena covers the 'compliance program and internal controls'. notes:458 lacks the 'too preliminary' sentence that note_history:3 had, and note_history:7 has no 10-K counterpart."
+  },
+  {
+   "id": "cross_document_reconciliation_marketing_development_funds_against_rising_sales_and_marketing",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "medium",
+   "why": "mdna:87 itself says the sales and marketing increase was 'partially offset by' higher marketing development funds, so the prose and the rising figure in 8k_2_02:46 agree. The gross figures the anomaly calls missing are in that same paragraph."
+  },
+  {
+   "id": "cross_document_reconciliation_customer_diversification_claim_against_top_customer_share",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "concentration.facts.75 is above .40, while .52 falls to .66, and notes:120 shows fewer customers above the disclosure threshold. The mdna:15 claim is undirected, so 'unresolved' is fair."
+  },
+  {
+   "id": "cross_document_reconciliation_advertising_expense_description_differs",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "low",
+   "why": "Dealbreaker: notes:60 ('net of reimbursements') and mdna:87 (marketing development funds kept apart from 'standard marketing and advertising activities') settle that these are net and gross measures."
+  },
+  {
+   "id": "cross_document_reconciliation_other_income_explanation_omits_sublease_income",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:99 explains the other-income change without the sublease, and notes:309 puts the sublease in other income. notes:311 does give the sublease amount, which the anomaly says no input shows."
+  },
+  {
+   "id": "industry_lens_inventory_obsolescence_exposure",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "terms.balances_now.inventory resolves, and year-end days of inventory are 'highest of the 5 filled years', above years-back-4. notes:30 says 'finished goods (including GPUs and racks)'."
+  },
+  {
+   "id": "industry_lens_purchase_commitments_against_demand",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "notes:469, the 8k_2_02:22 guidance and the 8k_2_02:14 backlog claim support it. The loss provision is stated in note_history:8 and gone from notes:469."
+  },
+  {
+   "id": "industry_lens_customer_concentration_shifting",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "concentration.facts.75, .40, .4, .52, .66, .67, .44, .72, .73, .70 and .33 match notes:120, notes:89, notes:84 and the 10-Q table at note_history:11."
+  },
+  {
+   "id": "industry_lens_vendor_financed_customer_relationships",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:148, mdna:100, notes:45 and notes:330 support each arrangement. notes:349 shows related-party sales far below the Compuware credit line."
+  },
+  {
+   "id": "liquidity_and_capital_operating_cash_outflow_and_short_runway",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "ratios.liquidity.cash_runway_months resolves on terms.cash_and_short_term_investments_now and free_cash_flow.free_cash_flow_simple. ratios.growth.operating_cash_flow.this_quarter against quarter_over_quarter.inputs.before matches, as does mdna:138."
+  },
+  {
+   "id": "liquidity_and_capital_purchase_obligations_exceed_cash_and_current_assets",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "terms.balances_now.unconditional_purchase_obligations exceeds terms.balances_now.cash and terms.balances_now.current_assets. mdna:154 calls them 'current obligations', and note_history:8 against notes:469 shows the loss amount dropped."
+  },
+  {
+   "id": "liquidity_and_capital_growth_funded_by_outside_capital",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "The cash paths rise while free_cash_flow_simple is negative, and the borrowing and free_cash_flow_to_equity paths resolve. The notes:428 at-the-market timing and the 8k_2_02:54 issuance lines match."
+  },
+  {
+   "id": "liquidity_and_capital_encumbered_cash_and_receivables",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:28, notes:197, notes:204 and notes:184 support each point. terms.trailing_four_quarters.proceeds_from_sale_of_receivables is missing in the calculator, as stated."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_component_supply_and_advance_buying",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The mdna:11 supply-constraint sentence and mdna:33 (ordering ahead, premiums and deposits) support it, and auditors_report:16 confirms the critical audit matter."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_control_weakness_persists",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "The item_9a:11 quote is exact. item_9a:44, item_9a:4, item_9a:32 and item_9a:21 match."
+  },
+  {
+   "id": "profitability_effective_tax_rate_rise_and_unapproved_incentive",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The path tax_rate resolves to the calculator's tax_rate value. mdna:112 gives the stock-price driver, and mdna:115 the investment threshold and its consequence."
+  },
+  {
+   "id": "efficiency_inventory_days_highest_in_filed_history",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "Year-end days of inventory for years-back-0 and years-back-1 resolve, as does ratios.efficiency.days_sales_of_inventory. inventory_reserve is missing in every period, as stated."
+  },
+  {
+   "id": "efficiency_receivable_days_lengthened",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "DSO and receivables_over_revenue resolve for years-back-0 and years-back-1. quarters-back-2 DSO reads 'highest of the 6 filled quarters', and quarters-back-1 and years-back-2 resolve."
+  },
+  {
+   "id": "efficiency_payables_days_short_against_inventory_days",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The ratios.efficiency day counts and cash_conversion_cycle resolve, and the calculator has no prior-year cycle. mdna:33 covers the deposits and premiums."
+  },
+  {
+   "id": "solvency_covenant_waiver_and_repayment_extension",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "The notes:245 and notes:205 quotes are exact, and notes:197 gives the stepping-down covenant. ratios.solvency.total_debt reads zero, so the calculator cannot compute covenant leverage."
+  },
+  {
+   "id": "growth_operating_cash_flow_reversed_while_earnings_grew",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "The growth paths resolve. earnings_versus_cash.history.years.4 and years.2 show negative operating_cash_flow, matching the earlier outflow years the anomaly names."
+  }
+ ],
+ "coverage": {
+  "answer": "no",
+  "why": "Gate drops left accounting areas cash_flow_engineering_and_off_balance_sheet and controls_audit_and_filing_signals, and financial sections profitability, solvency and path_to_distress, unanswered."
+ },
+ "calibration": {
+  "answer": "yes",
+  "why": "Each surviving area verdict matches its anomalies. For example, cross_document_reconciliation names its 'contradicts' item and its unresolved items, and industry_lens names inventory, commitments and concentration. Caveats: the dropped areas have anomalies but no verdict to check, and estimates_and_reserves says inventory reserves 'thinned' although inventory_reserve is missing in every period."
+ },
+ "valuation_reading": {
+  "answer": "no",
+  "why": "price_position and market_implied_growth both read 'Not computed' (market.missing; implied_growth_beside_history.implied_ten_year_revenue_growth.missing). most_sensitive names its assumptions 'Not read off a grid' because of valuation.missing. The gaps are stated plainly, but none of these answers comes from the calculator."
+ },
+ "score": 0.941,
+ "grader": {
+  "model_requested": "opus",
+  "model_served": "claude-opus-5-5",
+  "input_tokens": 64,
+  "output_tokens": 84788,
+  "cost_usd": 9.477645800000001,
+  "seconds": 715.0
+ }
+}

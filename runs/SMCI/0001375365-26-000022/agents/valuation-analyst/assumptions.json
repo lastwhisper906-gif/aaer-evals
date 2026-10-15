@@ -1,0 +1,259 @@
+{
+  "scenarios": {
+    "bear": {
+      "revenue_growth_year_one": 0.10,
+      "terminal_growth": 0.02,
+      "operating_margin_year_one": 0.035,
+      "operating_margin_year_ten": 0.045,
+      "reinvestment_rate_year_one": 1.4,
+      "reinvestment_rate_year_ten": 0.30,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "The bear case is the path on which the AI build-out behind the guidance stalls. Large customers finish their deployments, and the single customer that took {concentration.facts.75.value|pct} of fiscal 2026 sales does not repeat. Competitors take share, and the company's own pricing for share suggests they are pressing. The guided first-quarter sales still ship, but the rest of the year falls back below the pace of the fourth quarter just reported, {ratios.growth.revenue.this_quarter}. Python carries the year-one rate through the decade on a straight-line fade, so a stalled cycle has to be written as a low year-one rate, even one below the pace of the guided first quarter.",
+          "quote": "primarily driven by fulfillment and shipment of orders to support our customers' data center deployment, including large design wins from a few customers",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "concentration.facts.75.value",
+            "ratios.growth.revenue.this_quarter",
+            "earnings_versus_cash.history.years.3.revenue_growth",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound"
+          ],
+          "history": "Below every filled year in the record. The slowest was fiscal 2023 at {earnings_versus_cash.history.years.3.revenue_growth|pct}, and the rate is far below the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}. The filled years hold no year of falling sales, but they cover only a surge, much of it during the AI build-out. The bear case is the down cycle that record has not yet tested."
+        },
+        "terminal_growth": {
+          "reason": "In the bear case server hardware commoditizes, and after year ten the company grows with little more than general price levels. That is below the base case and below the risk-free rate of {cost_of_capital.risk_free_rate|pct}.",
+          "quote": "",
+          "quote_from": "",
+          "fields": [
+            "cost_of_capital.risk_free_rate"
+          ],
+          "history": "Far below every year in the record. It is a perpetual rate for a mature, commoditized business, not a reading of the record's surge."
+        },
+        "operating_margin_year_one": {
+          "reason": "If demand slips, year one carries write-downs on inventory of {terms.balances_now.inventory}. Year-end days of inventory are {trend_table.years-back-0.ratios.days_sales_of_inventory}, the slowest turn on record. Year one also carries losses on purchase commitments of {terms.balances_now.unconditional_purchase_obligations}, whose loss provision the 10-K no longer quantifies. All of this lands on top of the pricing, tariff and rebate pressure that already took full-year gross margin to {trend_table.years-back-0.ratios.gross_margin|pct}, the lowest on record.",
+          "quote": "Fast product cycles in GPU systems make an aging stock of this size the main obsolescence exposure.",
+          "quote_from": "analysis_accounting.json",
+          "fields": [
+            "terms.balances_now.inventory",
+            "trend_table.years-back-0.ratios.days_sales_of_inventory",
+            "terms.balances_now.unconditional_purchase_obligations",
+            "trend_table.years-back-0.ratios.gross_margin",
+            "earnings_versus_cash.history.years.5.operating_margin",
+            "earnings_versus_cash.history.years.1.operating_margin"
+          ],
+          "history": "About the level of fiscal 2021's {earnings_versus_cash.history.years.5.operating_margin|pct}, the lowest in the record. It is well below fiscal 2025's {earnings_versus_cash.history.years.1.operating_margin|pct}, the weakest of the recent years, because a slowdown on this inventory and these commitments would cost more than anything in the record."
+        },
+        "operating_margin_year_ten": {
+          "reason": "Once the write-downs pass, margin recovers only part of the way. The company keeps pricing to hold share against larger competitors, and tariff costs and lower vendor rebates persist. Legal, investigation and compliance costs from the export-control and SEC matters stay high, and share-based compensation keeps rising.",
+          "quote": "a $237.7 million or 228.3% increase in tariff expenses driven by new trade policies enacted during the year and a $312.9 million or 24.9% increase due to a decrease in vendor rebates",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "earnings_versus_cash.history.years.1.operating_margin",
+            "earnings_versus_cash.history.operating_margin_three_year_average",
+            "earnings_versus_cash.history.years.5.operating_margin"
+          ],
+          "history": "Below every year in the record after fiscal 2021, including fiscal 2025's {earnings_versus_cash.history.years.1.operating_margin|pct}, and well below the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}. It is above only fiscal 2021's {earnings_versus_cash.history.years.5.operating_margin|pct}. The bear case assumes the pressure on gross margin in the record continues and scale does not offset it."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "On a stalled path the company still has to pay for purchase commitments of {terms.balances_now.unconditional_purchase_obligations}, most of them due within the year. Meanwhile inventory of {terms.balances_now.inventory} turns slowly and receivables stay on extended terms. Cash goes into stock that moves late or not at all, so reinvestment runs above after-tax operating income even with little growth. The thin bear margin also keeps that income small.",
+          "quote": "If the guided demand arrives, the commitments become working stock. If it slips, they become losses the company has stopped quantifying.",
+          "quote_from": "analysis_accounting.json",
+          "fields": [
+            "terms.balances_now.unconditional_purchase_obligations",
+            "terms.balances_now.inventory",
+            "free_cash_flow.free_cash_flow_to_firm",
+            "terms.trailing_four_quarters.operating_income",
+            "earnings_versus_cash.history.years.1.free_cash_flow_simple"
+          ],
+          "history": "Below fiscal 2026, when free cash flow to the firm was {free_cash_flow.free_cash_flow_to_firm} on operating income of {terms.trailing_four_quarters.operating_income}. Far above fiscal 2025, which released cash, with simple free cash flow of {earnings_versus_cash.history.years.1.free_cash_flow_simple}. In the record, fast growth has repeatedly come with operating cash outflows. The bear case assumes the commitments absorb cash even without the growth."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "In the bear case working capital stays heavy: long inventory days, extended customer terms, and deposits and premiums to secure supply. Thin margins hold the return on new capital near the cost of capital, so even slow terminal growth takes a large share of after-tax income.",
+          "quote": "We may place non-cancellable inventory orders for certain product components in advance of our historical lead times, pay premiums and provide deposits to secure future supply and capacity.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.efficiency.cash_conversion_cycle",
+            "trend_table.years-back-0.ratios.days_sales_of_inventory",
+            "trend_table.years-back-1.ratios.days_sales_of_inventory"
+          ],
+          "history": "Above the base and bull year-ten rates, and far below the record's cash-absorbing growth years. In the year just reported the cash conversion cycle was {ratios.efficiency.cash_conversion_cycle} days, and year-end days of inventory rose from {trend_table.years-back-1.ratios.days_sales_of_inventory} to {trend_table.years-back-0.ratios.days_sales_of_inventory}. The bear case assumes working capital does not return to fiscal 2025's lighter level."
+        }
+      }
+    },
+    "base": {
+      "revenue_growth_year_one": 0.30,
+      "terminal_growth": 0.03,
+      "operating_margin_year_one": 0.06,
+      "operating_margin_year_ten": 0.065,
+      "reinvestment_rate_year_one": 1.25,
+      "reinvestment_rate_year_ten": 0.20,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "The release guides first-quarter fiscal 2027 net sales well above the fourth quarter just reported, {ratios.growth.revenue.this_quarter}. The accounting reader notes that purchase commitments rest on guidance for a much larger fiscal 2027. I set year one well below that guidance, for two reasons. First, Python fades growth in a straight line from this rate to the terminal rate, so the year-one rate also sets growth through the middle of the decade. A rate near the guidance would compound into revenue many times today's {terms.trailing_four_quarters.revenue}, more than an assembler's share of the AI build-out can plausibly carry. At this rate the base case reaches roughly the guided scale a year late and still grows fast for several years. Second, the guidance rests on a backlog the filings do not measure. A single customer took {concentration.facts.75.value|pct} of fiscal 2026 sales, and the fourth quarter's profit is concentrated with no 10-K explanation.",
+          "quote": "The Company expects net sales in the range of $14.5 billion and $15.5 billion for the first quarter of fiscal year 2027 ending September 30, 2026",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.growth.revenue.this_quarter",
+            "terms.trailing_four_quarters.revenue",
+            "concentration.facts.75.value",
+            "ratios.growth.revenue.trailing_four_quarters",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound",
+            "earnings_versus_cash.history.years.3.revenue_growth"
+          ],
+          "history": "Below last year's {ratios.growth.revenue.trailing_four_quarters|pct}, the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and the five-year compound of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}. Also below fiscal 2023's {earnings_versus_cash.history.years.3.revenue_growth|pct}, the slowest filled year. The record is a surge from a far smaller base, much of it during the AI build-out. The base case assumes growth slows as the base grows and the build-out matures, rather than that the record repeats."
+        },
+        "terminal_growth": {
+          "reason": "After year ten the company is assumed to grow with nominal demand for data-center hardware, which over the long run cannot outgrow the economy by much. The rate sits below the risk-free rate of {cost_of_capital.risk_free_rate|pct}, as the method requires. It leaves room for AI infrastructure to stay a growing share of spending without assuming the company compounds faster forever.",
+          "quote": "",
+          "quote_from": "",
+          "fields": [
+            "cost_of_capital.risk_free_rate",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound"
+          ],
+          "history": "Far below every filled year of the record and below the compound rates of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}. Those rates describe a surge from a small base, not a rate a business can hold in perpetuity."
+        },
+        "operating_margin_year_one": {
+          "reason": "Fiscal 2026's operating margin of {ratios.profitability.operating_margin|pct} blends three weaker quarters with a fourth that earned {ratios.growth.operating_income.this_quarter} of operating income, against {ratios.growth.operating_income.quarter_over_quarter.inputs.before} in the third. The release credits a richer enterprise mix, but the 10-K gives no fourth-quarter explanation. The first-quarter guidance pairs per-share earnings with net sales that, at the guided tax rate and share count, point to a margin nearer the full-year level than the fourth quarter's. Full-year gross margin of {trend_table.years-back-0.ratios.gross_margin|pct} is the lowest on record. Management attributes the fall to pricing for share and to mix and manufacturing costs, while MD&A adds tariffs and lower vendor rebates.",
+          "quote": "Gross margin decreased to 10.8% in the fiscal year 2026, from 11.1% in the fiscal year 2025, primarily due to our strategy to offer competitive pricing to gain market share, change in product and customer mix, and higher manufacturing related expenses.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.profitability.operating_margin",
+            "ratios.growth.operating_income.this_quarter",
+            "ratios.growth.operating_income.quarter_over_quarter.inputs.before",
+            "trend_table.years-back-0.ratios.gross_margin",
+            "earnings_versus_cash.history.operating_margin_three_year_average",
+            "earnings_versus_cash.history.years.1.operating_margin"
+          ],
+          "history": "Below fiscal 2026's {ratios.profitability.operating_margin|pct} and the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}, and above fiscal 2025's {earnings_versus_cash.history.years.1.operating_margin|pct}. The base case reads fiscal 2026's margin as lifted by a fourth quarter it does not expect to repeat in full."
+        },
+        "operating_margin_year_ten": {
+          "reason": "Over the decade, scale spreads operating costs that management says will keep rising, and the push into enterprise customers and the building-block architecture could improve the mix. Against that, gross margin has fallen every year since fiscal 2023 and the company prices to gain share. Supplier funds on undisclosed terms carry part of operating expense, and share-based compensation is a rising real cost. The base case lets margin edge up from year one but keeps it below the three-year average.",
+          "quote": "Operating expense depends on supplier funds whose terms neither report gives, so it can rise if those funds fall back.",
+          "quote_from": "analysis_accounting.json",
+          "fields": [
+            "earnings_versus_cash.history.operating_margin_three_year_average",
+            "earnings_versus_cash.history.years.3.operating_margin",
+            "earnings_versus_cash.history.years.4.operating_margin",
+            "trend_table.years-back-3.ratios.gross_margin",
+            "trend_table.years-back-0.ratios.gross_margin"
+          ],
+          "history": "Below the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}, well below fiscal 2023's peak of {earnings_versus_cash.history.years.3.operating_margin|pct}, and about level with fiscal 2022's {earnings_versus_cash.history.years.4.operating_margin|pct}. Gross margin went from {trend_table.years-back-3.ratios.gross_margin|pct} in fiscal 2023 to {trend_table.years-back-0.ratios.gross_margin|pct} in fiscal 2026. The base case does not assume that slide reverses."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "This company pays for growth in working capital. In fiscal 2026 trade working capital rose by {free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital} and free cash flow to the firm was {free_cash_flow.free_cash_flow_to_firm}. Borrowing of {terms.cash_flow_families.borrowing_issued}, plus preferred and common stock, filled the gap. Part of next year's stock is already on the balance sheet in inventory of {terms.balances_now.inventory}, and customer advances help, so year one needs less new capital per dollar of growth than fiscal 2026 did. But purchase commitments of {terms.balances_now.unconditional_purchase_obligations} fall due mostly within the year, and capital spending is guided higher. Because the rate fades in a straight line, it also sets reinvestment through the fastest growth years. A rate above one means the company again reinvests more than it earns after tax and funds the rest from outside. One more point: the release puts bank debt and convertible notes above cash, while the calculator reads total debt as {ratios.solvency.total_debt}. Any equity value bridged from enterprise value on the calculator's debt will therefore not deduct that debt.",
+          "quote": "As of June 30, 2026, total cash and cash equivalents was $7.5 billion and total bank debt and convertible notes were $8.7 billion.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital",
+            "free_cash_flow.free_cash_flow_to_firm",
+            "terms.cash_flow_families.borrowing_issued",
+            "terms.balances_now.inventory",
+            "terms.balances_now.unconditional_purchase_obligations",
+            "ratios.solvency.total_debt",
+            "terms.trailing_four_quarters.operating_income",
+            "earnings_versus_cash.history.years.2.free_cash_flow_simple",
+            "earnings_versus_cash.history.years.1.free_cash_flow_simple"
+          ],
+          "history": "Reinvestment in fiscal 2026 ran far above after-tax operating income: free cash flow to the firm was {free_cash_flow.free_cash_flow_to_firm} on operating income of {terms.trailing_four_quarters.operating_income}. Fiscal 2024 also absorbed cash, with simple free cash flow of {earnings_versus_cash.history.years.2.free_cash_flow_simple}, while fiscal 2025 released cash at {earnings_versus_cash.history.years.1.free_cash_flow_simple}. The base case sits well below fiscal 2026's intensity and above the cash-releasing year, because the inventory built ahead of fiscal 2027 carries part of the year's growth."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "By year ten growth has faded to the terminal rate, and the company needs to reinvest only what that growth requires: the terminal rate divided by the return on new capital. The base case assumes new capital earns well above the cost of capital, but well below the calculator's current return on invested capital of {ratios.profitability.return_on_invested_capital|pct}. That figure leaves the bank debt and convertible notes out of invested capital and so overstates the return. Working capital stays the main use of capital, and capital spending stays small beside it.",
+          "quote": "This year's burn is working capital, not plant",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "ratios.profitability.return_on_invested_capital",
+            "terms.trailing_four_quarters.capital_expenditure",
+            "earnings_versus_cash.history.years.1.operating_cash_flow",
+            "earnings_versus_cash.history.years.1.net_income"
+          ],
+          "history": "Far below the record's growth years, fiscal 2024 and fiscal 2026. Above fiscal 2025, when operating cash flow of {earnings_versus_cash.history.years.1.operating_cash_flow} exceeded net income of {earnings_versus_cash.history.years.1.net_income}. The record holds no year of mature growth to compare against, so this rate rests on the return assumption rather than on any filed year."
+        }
+      }
+    },
+    "bull": {
+      "revenue_growth_year_one": 0.45,
+      "terminal_growth": 0.035,
+      "operating_margin_year_one": 0.08,
+      "operating_margin_year_ten": 0.09,
+      "reinvestment_rate_year_one": 1.2,
+      "reinvestment_rate_year_ten": 0.15,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "In the bull case the order book the release describes converts and the purchase commitments become working stock. Enterprise and channel customers widen the base beyond a few large deployments, and the AI build-out keeps compounding. Year one still sits below the guided scale, only because Python's straight-line fade carries this rate into the following years. Even so, revenue compounds to many times today's {terms.trailing_four_quarters.revenue} by year ten, which is as far as a bull case for a hardware assembler should reach.",
+          "quote": "generated more than $60 billion in new orders, and booked record backlog entering fiscal 2027",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "terms.trailing_four_quarters.revenue",
+            "ratios.growth.revenue.trailing_four_quarters",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.years.1.revenue_growth",
+            "earnings_versus_cash.history.years.3.revenue_growth"
+          ],
+          "history": "Below last year's {ratios.growth.revenue.trailing_four_quarters|pct} and the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}. Close to fiscal 2025's {earnings_versus_cash.history.years.1.revenue_growth|pct}, and above fiscal 2023's {earnings_versus_cash.history.years.3.revenue_growth|pct}. Faded in a straight line, it keeps growth high for much of the decade, which is the bull case's claim: the record's pace slows but does not break."
+        },
+        "terminal_growth": {
+          "reason": "In the bull case AI infrastructure stays a growing share of spending after year ten and the company keeps its place in it. It grows somewhat faster than in the base case, still below the risk-free rate of {cost_of_capital.risk_free_rate|pct}.",
+          "quote": "",
+          "quote_from": "",
+          "fields": [
+            "cost_of_capital.risk_free_rate"
+          ],
+          "history": "Far below every year in the record. It is a perpetual rate, and even the bull case cannot let it approach the record's pace."
+        },
+        "operating_margin_year_one": {
+          "reason": "The bull case treats the fourth quarter as partly durable. Management credits a richer enterprise customer mix and wider adoption of its building-block architecture. Fourth-quarter operating income of {ratios.growth.operating_income.this_quarter} on revenue of {ratios.growth.revenue.this_quarter} shows what that mix can earn. Year one keeps only part of it, because the first-quarter guidance does not repeat it and full-year gross margin of {trend_table.years-back-0.ratios.gross_margin|pct} is the lowest on record.",
+          "quote": "we are improving profitability through a richer enterprise customer mix",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.growth.operating_income.this_quarter",
+            "ratios.growth.revenue.this_quarter",
+            "trend_table.years-back-0.ratios.gross_margin",
+            "ratios.profitability.operating_margin",
+            "earnings_versus_cash.history.operating_margin_three_year_average",
+            "earnings_versus_cash.history.years.2.operating_margin",
+            "earnings_versus_cash.history.years.3.operating_margin"
+          ],
+          "history": "Above fiscal 2026's {ratios.profitability.operating_margin|pct} and the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}. Close to fiscal 2024's {earnings_versus_cash.history.years.2.operating_margin|pct} and below fiscal 2023's {earnings_versus_cash.history.years.3.operating_margin|pct}. The company has earned this margin before, in a year of strong demand."
+        },
+        "operating_margin_year_ten": {
+          "reason": "With scale, a broader enterprise and channel mix, services and software growing from a small base, and operating costs spread over a far larger revenue, margin rises toward the company's earlier peak. It does not reach the peak, because competitors and customer concentration cap pricing.",
+          "quote": "Our services and software net sales increased from $330.5 million, in fiscal year 2025, to $538.3 million, in fiscal year 2026, and contributed to overall growth, although product revenue remained the primary driver.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "earnings_versus_cash.history.years.3.operating_margin",
+            "earnings_versus_cash.history.years.2.operating_margin"
+          ],
+          "history": "Below fiscal 2023's peak of {earnings_versus_cash.history.years.3.operating_margin|pct} and above every other filled year, including fiscal 2024's {earnings_versus_cash.history.years.2.operating_margin|pct}. The bull case assumes the company recovers most of the margin it gave up while it grew."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "Fast growth still absorbs capital, but in the bull case part of that capital is already in place and part comes from customers. Inventory of {terms.balances_now.inventory} was built ahead of the guided year. Current contract liabilities rose to {terms.balances_now.contract_liabilities}, the highest ratio to revenue in the record, on non-refundable customer advances. Reinvestment still exceeds after-tax operating income in year one, but by less per dollar of growth than in the base case.",
+          "quote": "Recent drivers of liquidity changes included an increase in the need for working capital due to higher levels of inventory and accounts receivable required to support future revenue growth.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "terms.balances_now.inventory",
+            "terms.balances_now.contract_liabilities",
+            "trend_table.years-back-0.ratios.contract_liabilities_over_revenue",
+            "free_cash_flow.free_cash_flow_to_firm",
+            "terms.trailing_four_quarters.operating_income",
+            "earnings_versus_cash.history.years.1.free_cash_flow_simple"
+          ],
+          "history": "Below fiscal 2026, when free cash flow to the firm was {free_cash_flow.free_cash_flow_to_firm} on operating income of {terms.trailing_four_quarters.operating_income}. Above fiscal 2025, which released cash, with simple free cash flow of {earnings_versus_cash.history.years.1.free_cash_flow_simple}. Contract liabilities over revenue stand at {trend_table.years-back-0.ratios.contract_liabilities_over_revenue}, the highest in the record, and the bull case assumes customers keep funding part of the build."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "At maturity in the bull case, a higher margin and working capital that turns faster give a high return on new capital, so terminal growth needs only a small share of after-tax income. For a high-volume, low-margin assembler, turns decide the return, and the bull case assumes they recover.",
+          "quote": "This is a high-volume, low-margin assembler: its return on equity depends on moving a large balance sheet quickly and on funding part of it with other people's money.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "trend_table.years-back-1.ratios.days_sales_of_inventory",
+            "trend_table.years-back-0.ratios.days_sales_of_inventory",
+            "ratios.profitability.return_on_invested_capital"
+          ],
+          "history": "The lowest year-ten rate of the three cases. In the year just reported, year-end days of inventory went from {trend_table.years-back-1.ratios.days_sales_of_inventory} to {trend_table.years-back-0.ratios.days_sales_of_inventory}. The bull case assumes turns return toward the earlier level, and that the return on new capital stays high, though below the calculator's {ratios.profitability.return_on_invested_capital|pct}, which leaves out the debt."
+        }
+      }
+    }
+  },
+  "wacc_overrides": {}
+}
