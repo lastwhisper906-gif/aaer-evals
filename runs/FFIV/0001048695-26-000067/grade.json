@@ -1,0 +1,161 @@
+{
+ "run": "FFIV/0001048695-26-000067",
+ "rubric": "evals/capability/rubric.md",
+ "dealbreakers": [],
+ "items": [
+  {
+   "id": "earnings_versus_cash_income_smoother_than_cash",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "earnings_versus_cash.smoothness sits below the formula's own 'below 1 means income moves less than cash' line, and smoothness.operating_cash_flow.2 and .1 are this fiscal year's first and second quarters per quarters_read; revenue_recognition_contract_liability_cash_change fits the billed-ahead reading, and no prose addresses it."
+  },
+  {
+   "id": "earnings_versus_cash_first_quarter_accruals_turned_positive",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "trend_table.quarters-back-2 accruals_over_total_assets is positive against a negative quarters-back-6 cell, the only filled quarterly cells per earnings_quality_accruals_over_total_assets_quarterly ('highest of the 2 filled quarters'); earnings_versus_cash.accruals_over_average_assets stays negative as written."
+  },
+  {
+   "id": "cost_deferral_capital_expenditure_above_own_history_described_as_maintenance",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.trailing_four_quarters.capital_expenditure exceeds every earnings_versus_cash.history.years[].capital_expenditure, whose high is years.5 as stated; 'related to maintaining our operations worldwide' is verbatim in mdna:51, and the property_plant_and_equipment balance paths rise."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_purchase_obligation_fell_to_zero",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "terms.balances_now.unconditional_purchase_obligations is zero against a positive balances_a_year_earlier value; mdna:56 and notes:81 describe a commitment to buy component inventory with none remaining, and notes:50 shows raw materials leading the inventory rise; the link to inventory is fairly hedged as 'appears'."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_distributor_concentration_nine_month_fact_inconsistent",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "concentration.facts.29 (nine months) exceeds both concentration.facts.25 (six months; f-687 of 0001048695-26-000051, not superseded) and concentration.facts.28 (third quarter), so it cannot be their blend, while prior-year facts .11/.14/.15 nest; mdna:29 and notes:121 print the same figure, so the table carries it too."
+  },
+  {
+   "id": "cross_document_reconciliation_purchase_obligation_listed_while_none_remain",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The quote is verbatim at mdna:54; mdna:56 and notes:81 say no purchase commitments remain and none are non-cancelable long-term, and terms.balances_now.unconditional_purchase_obligations agrees, so 'contradicts' is the right outcome."
+  },
+  {
+   "id": "industry_lens_receivables_concentration_widened",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "medium",
+   "why": "concentration.facts.18 to .21 and .6/.7 read as cited, but the prior-year Customer C and D cells are filed as \"value\": \"0\" (f-1149, f-1151), which looks like a below-threshold placeholder, not no exposure; mdna:31 also ties the 10-Q's Customers A to D to these 10-K values, contrary to the anomaly's 'cannot be linked', and shows B, C and D lower at June 30, 2026 than at fiscal year-end."
+  },
+  {
+   "id": "profitability_operating_margin_slipped_as_operating_expenses_outgrew_revenue",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.growth.operating_income.year_over_year and .trailing_four_quarters both trail the matching revenue paths while trend_table.quarters-back-0 gross_margin is 'highest of the 6 filled quarters'; 8k_2_02:13 and mdna:38 to mdna:40 carry the lower release margin and the personnel, technology and cyber cost attributions."
+  },
+  {
+   "id": "profitability_quarter_net_income_lifted_by_lower_tax_rate_and_insurance_recovery",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.growth.net_income.quarter_over_quarter well exceeds operating_income.quarter_over_quarter, with a narrower year-over-year gap; notes:98 ties the quarter's lower rate to unrecognized tax benefits, notes:100 places the IRS close in the same quarter, and notes:96 books the recovery in other income."
+  },
+  {
+   "id": "efficiency_inventory_days_highest_of_filled_quarters",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.quarters-back-0 days_sales_of_inventory is 'highest of the 6 filled quarters', above quarters-back-1 and -4; the inventory balance and working_capital.inventory paths are as cited; notes:50 shows raw materials leading and is a table with no explaining prose."
+  },
+  {
+   "id": "efficiency_receivables_outgrowing_quarterly_revenue_against_year_ago_quarter",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "receivables_over_revenue and days_sales_outstanding at trend_table.quarters-back-0 sit above quarters-back-4; bad_debt_reserve_ratio is 'lowest of the 4 filled quarters on the same concepts'; the 'second lowest of the 6 filled quarters' caveat and the mdna:49 collections claim are reported fairly."
+  },
+  {
+   "id": "liquidity_and_capital_working_capital_and_capital_spending_absorbing_more_cash",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.growth.operating_cash_flow.quarter_over_quarter is negative and .year_over_year positive; liquidity_and_capital_inventory_cash_outflow, liquidity_and_capital_other_current_assets_cash_outflow and revenue_recognition_receivables_cash_flow_change each absorb more than in the prior nine months; the capex and cash paths are as cited."
+  },
+  {
+   "id": "growth_operating_income_and_cash_flow_growing_slower_than_revenue",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "ratios.growth.operating_income, net_income and operating_cash_flow .trailing_four_quarters all sit below revenue.trailing_four_quarters, with operating cash flow lowest, matching the terms.trailing_four_quarters and _a_year_earlier operating_cash_flow paths."
+  },
+  {
+   "id": "growth_asia_pacific_revenue_fell_against_year_ago_quarter",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "revenue_recognition_asia_pacific_revenue and notes:117 show APAC below the year-ago quarter but slightly above it over nine months, while revenue_recognition_emea_revenue shows EMEA and the Americas growing."
+  },
+  {
+   "id": "growth_revenue_mix_leaning_on_systems_hardware",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:27, mdna:24 and notes:119 show systems far ahead of software, with services slowest, in both the quarter and the nine months; mdna:27 names only customer demand as the cause of systems growth."
+  },
+  {
+   "id": "growth_current_deferred_revenue_lowest_against_quarterly_revenue",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.quarters-back-0 contract_liabilities_over_revenue is 'lowest of the 6 filled quarters', below quarters-back-4, while the contract_liabilities balance paths rise; notes:18 against note_history:17 shows the near-term RPO share slipping."
+  },
+  {
+   "id": "growth_revenue_concentration_in_one_distributor_rising",
+   "frame": "financial",
+   "verdict": "unclear",
+   "severity": "medium",
+   "why": "The nine-month rise rests on concentration.facts.29, which cannot blend concentration.facts.25 and .28; the cited quarterly items show that distributor's quarter flat and the other distributor lower, so the evidence does not settle that more revenue now passes through these partners."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_cyber_incident_costs_and_litigation",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:96 and note_history:7 report cyber costs in successive quarters against the 'non-recurring' label at 8k_2_02:37; notes:90, notes:91 and notes:93 support the motion to dismiss, the stay and the absence of an accrual; terms.trailing_four_quarters.operating_income frames the size."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_component_price_increases_and_supply_constraints",
+   "frame": "financial",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:7 lists the factors verbatim, and the notes reader marks the edit insufficient, as the anomaly says; trend_table.quarters-back-0 gross_margin, 'highest of the 6 filled quarters', supports 'a stated risk, not a realized one'."
+  }
+ ],
+ "coverage": {
+  "answer": "no",
+  "why": "analysis_accounting.json answers only earnings_versus_cash; revenue_recognition, estimates_and_reserves, cost_deferral, cash_flow_engineering_and_off_balance_sheet, controls_audit_and_filing_signals, cross_document_reconciliation and industry_lens are all gate drops in dropped_items, though analysis_financial.json answers every section plus DuPont and path to distress."
+ },
+ "calibration": {
+  "answer": "yes",
+  "why": "Where verdicts survive they match: earnings_versus_cash's 'Good' with watch points on smooth income fits its two anomalies, and each financial section's opening reading matches the anomalies under it; the gate left the other accounting areas with no verdict to test."
+ },
+ "valuation_reading": {
+  "answer": "no",
+  "why": "calculator.json prints market.missing, implied_growth_beside_history.implied_ten_year_revenue_growth.missing and valuation.missing, so there is no price position, implied growth or sensitivity grid; the reading rightly says 'Not computed' for each and names two drivers by how the cases differ, not by a calculator ranking."
+ },
+ "score": 0.939,
+ "grader": {
+  "model_requested": "opus",
+  "model_served": "claude-opus-5-5",
+  "input_tokens": 64,
+  "output_tokens": 48381,
+  "cost_usd": 7.347912800000001,
+  "seconds": 451.0
+ }
+}

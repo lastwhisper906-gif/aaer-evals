@@ -1,0 +1,242 @@
+{
+  "scenarios": {
+    "bear": {
+      "revenue_growth_year_one": 0.02,
+      "terminal_growth": 0.02,
+      "operating_margin_year_one": 0.22,
+      "operating_margin_year_ten": 0.19,
+      "reinvestment_rate_year_one": 0.35,
+      "reinvestment_rate_year_ten": 0.25,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "The systems refresh that carried recent growth reverses. Hardware demand is cyclical, services grow at the pace of maintenance renewals and software stays slow, so growth falls back to the low-growth years of the record.",
+          "quote": "Product growth driven by hardware shipments recurs less reliably than subscription or maintenance revenue.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "ratios.growth.revenue.trailing_four_quarters",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.years.1.revenue_growth",
+            "earnings_versus_cash.history.years.2.revenue_growth",
+            "earnings_versus_cash.history.years.3.revenue_growth"
+          ],
+          "history": "Well below the trailing {ratios.growth.revenue.trailing_four_quarters|pct} and the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}. Inside the range of fiscal 2022 to fiscal 2024, which grew {earnings_versus_cash.history.years.3.revenue_growth|pct}, {earnings_versus_cash.history.years.2.revenue_growth|pct} and {earnings_versus_cash.history.years.1.revenue_growth|pct}."
+        },
+        "terminal_growth": {
+          "reason": "Over the long run the business grows at about the pace of its maintenance base as cloud-delivered alternatives take share from installed hardware. This is below the base case.",
+          "quote": "Net service revenues increased 2.7% and 2.7% for the three and nine months ended June 30, 2026, respectively, from the comparable periods in the prior year.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "cost_of_capital.risk_free_rate",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound"
+          ],
+          "history": "Below the three-year compound growth of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and well below the risk-free rate of {cost_of_capital.risk_free_rate|pct}. It equals the bear year-one rate, so the bear case grows at a flat rate throughout."
+        },
+        "operating_margin_year_one": {
+          "reason": "Operating expenses keep growing faster than revenue as growth slows, and cyber-incident costs and litigation continue. The component price increases and inventory obsolescence that MD&A names begin to reach gross margin.",
+          "quote": "In addition, factors such as sales price, product and services mix, inventory obsolescence, returns, component price increases, warranty costs, and global supply chain constraints could significantly impact our gross margins.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.profitability.operating_margin",
+            "earnings_versus_cash.history.operating_margin_three_year_average",
+            "earnings_versus_cash.working_capital.inventory.balance_sheet_change"
+          ],
+          "history": "Below the trailing {ratios.profitability.operating_margin|pct} and near the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}. Inventory grew {earnings_versus_cash.working_capital.inventory.balance_sheet_change} over the year with no reserve tagged, and that is the write-down risk behind this margin."
+        },
+        "operating_margin_year_ten": {
+          "reason": "Revenue barely grows while personnel and technology costs keep rising, so the margin drifts back toward the years before the recent recovery, though not all the way to the low.",
+          "quote": "General and administrative expenses increased $16.9 million, or 21.5% for the three months ended June 30, 2026 and increased $49.5 million, or 21.7% for the nine months ended June 30, 2026 from the comparable periods in the prior year.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "earnings_versus_cash.history.operating_margin_three_year_average",
+            "earnings_versus_cash.history.years.2.operating_margin",
+            "earnings_versus_cash.history.years.3.operating_margin"
+          ],
+          "history": "Below the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct} but above fiscal 2022's {earnings_versus_cash.history.years.3.operating_margin|pct} and fiscal 2023's {earnings_versus_cash.history.years.2.operating_margin|pct}, the low end of the filed record."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "Growth has to be acquired. Acquisitions continue at the trailing pace, capital expenditure stays at its new level and the inventory build ties up more cash.",
+          "quote": "We will continue to evaluate possible acquisitions of, or investments in businesses, products, or technologies that we believe are strategic, which may require the use of cash.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "terms.cash_flow_families.acquisitions",
+            "terms.trailing_four_quarters.capital_expenditure",
+            "earnings_versus_cash.history.years.5.capital_expenditure",
+            "free_cash_flow.free_cash_flow_quality_adjusted"
+          ],
+          "history": "About the trailing year's reinvestment once acquisitions of {terms.cash_flow_families.acquisitions} are counted. Trailing capital expenditure of {terms.trailing_four_quarters.capital_expenditure} is above the earlier high in the record, {earnings_versus_cash.history.years.5.capital_expenditure}."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "Acquisition spending slows but does not stop. At the bear terminal growth rate, this rate implies a return on new capital close to a plausible cost of capital, so growth adds little value.",
+          "quote": "That fits the rising cost base and the working-capital build.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "free_cash_flow.free_cash_flow_quality_adjusted",
+            "free_cash_flow.free_cash_flow_simple",
+            "terms.trailing_four_quarters.share_based_compensation"
+          ],
+          "history": "Below the bear year-one rate and above the base case's terminal rate. Quality-adjusted free cash flow of {free_cash_flow.free_cash_flow_quality_adjusted}, set against simple free cash flow of {free_cash_flow.free_cash_flow_simple}, shows how much acquisitions and share-based pay already take."
+        }
+      }
+    },
+    "base": {
+      "revenue_growth_year_one": 0.07,
+      "terminal_growth": 0.03,
+      "operating_margin_year_one": 0.24,
+      "operating_margin_year_ten": 0.25,
+      "reinvestment_rate_year_one": 0.25,
+      "reinvestment_rate_year_ten": 0.20,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "Year one weights the three revenue lines by size. Services, the largest line, and software are growing slowly. Systems carried the quarter on customer demand, and a hardware refresh that strong is unlikely to keep its pace through a full year that has to grow on top of it. The fourth-quarter revenue guide already implies slower growth on the year than the third quarter showed. The result sits below the trailing rate and the raised full-year guide, and above the company's longer compound record.",
+          "quote": "Systems revenue of $240 million grew 32% from the year-ago period while software revenue of $223 million grew 7%. Services revenue of $402 million grew 3% from the year-ago period.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.growth.revenue.trailing_four_quarters",
+            "ratios.growth.revenue.year_over_year",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound",
+            "earnings_versus_cash.history.years.1.revenue_growth"
+          ],
+          "history": "Below the trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters|pct} and the quarter's {ratios.growth.revenue.year_over_year|pct}, and above the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and the five-year rate of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}. The recent pace rests on systems. Fiscal 2024's {earnings_versus_cash.history.years.1.revenue_growth|pct} shows the business when the hardware cycle is not running, so year one sits between the two. The straight-line fade puts the ten-year average close to the five-year record."
+        },
+        "terminal_growth": {
+          "reason": "This is a mature application-delivery and security vendor. Its recurring base, the maintenance attached to installed systems plus subscription software, keeps growing after the hardware cycle passes. Long-run growth is set near nominal economic growth, below the record and below the risk-free rate.",
+          "quote": "Deferred revenues increased to $2.2 billion as of June 30, 2026 from $2.0 billion as of September 30, 2025 primarily due to an increase in maintenance contracts related to strong systems shipments, in addition to an increase in deferred revenue associated with our subscription offerings.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "cost_of_capital.risk_free_rate",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound"
+          ],
+          "history": "Below the three-year compound growth of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and the five-year rate of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, and below the risk-free rate of {cost_of_capital.risk_free_rate|pct}, which is the ceiling Python enforces."
+        },
+        "operating_margin_year_one": {
+          "reason": "Operating expenses are growing faster than revenue. Research and development and general and administrative costs rose well ahead of revenue on technology, personnel and cyber-incident professional services. The quarter's GAAP operating margin was below the year-ago quarter's even as gross margin hit its high. Year one is set a touch below the trailing margin rather than at the record.",
+          "quote": "Research and development expenses increased $28.3 million, or 20.8% for the three months ended June 30, 2026 and increased $53.4 million, or 13.2% for the nine months ended June 30, 2026 from the comparable periods in the prior year.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.profitability.operating_margin",
+            "earnings_versus_cash.history.years.0.operating_margin",
+            "earnings_versus_cash.history.operating_margin_three_year_average",
+            "ratios.growth.operating_income.trailing_four_quarters",
+            "ratios.growth.revenue.trailing_four_quarters"
+          ],
+          "history": "Slightly below the trailing operating margin of {ratios.profitability.operating_margin|pct} and fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct}, the best year on record, and above the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}. Trailing operating income grew {ratios.growth.operating_income.trailing_four_quarters|pct} against revenue's {ratios.growth.revenue.trailing_four_quarters|pct}, so the margin is already slipping."
+        },
+        "operating_margin_year_ten": {
+          "reason": "Cyber-incident costs fade, and gross margin stays high on subscription software and the maintenance attached to the systems base. Cost growth settles once the current hiring and technology spending is absorbed. That supports a modest recovery to just above the trailing level, but not a repeat of the steep expansion the record shows from fiscal 2022 to fiscal 2025.",
+          "quote": "This is negative operating leverage at a high margin, not a broken margin.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "earnings_versus_cash.history.years.0.operating_margin",
+            "earnings_versus_cash.history.operating_margin_three_year_average",
+            "earnings_versus_cash.history.years.2.operating_margin",
+            "trend_table.quarters-back-0.ratios.gross_margin"
+          ],
+          "history": "Just above fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct}, the best year on record. It is also above the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}, which still includes fiscal 2023's {earnings_versus_cash.history.years.2.operating_margin|pct}. The quarter's gross margin of {trend_table.quarters-back-0.ratios.gross_margin|pct} is the highest of the filled quarters, so this margin depends on cost control below the gross line rather than on further gross-margin gains."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "The trailing year combined acquisition spending, capital expenditure above every fiscal year in the filed history and an inventory build in raw materials, and management says acquisitions remain a use of cash. Year one carries part of that. It is more than the organic reinvestment implied by free cash flow to the firm and less than the trailing year once acquisitions are counted.",
+          "quote": "We will continue to evaluate possible acquisitions of, or investments in businesses, products, or technologies that we believe are strategic, which may require the use of cash.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "terms.cash_flow_families.acquisitions",
+            "terms.trailing_four_quarters.capital_expenditure",
+            "terms.trailing_four_quarters.depreciation_and_amortization",
+            "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital",
+            "free_cash_flow.free_cash_flow_to_firm"
+          ],
+          "history": "Take trailing capital expenditure of {terms.trailing_four_quarters.capital_expenditure}, subtract depreciation and amortization of {terms.trailing_four_quarters.depreciation_and_amortization} and add the trade working capital rise of {free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital}: the result is a small share of after-tax operating income. Adding acquisitions of {terms.cash_flow_families.acquisitions} raises it to about a third. The base sits between those two readings of the trailing year."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "Acquisitions and the capital-expenditure step-up are not assumed to recur at the trailing scale every year. At the base terminal growth rate, this rate implies a return on new capital well above a plausible cost of capital. That return is still below what the capital-light organic business earns today, which allows for competition wearing returns down over a decade.",
+          "quote": "Going forward, we believe the primary driver of cash flows will continue to be net income from operations.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "free_cash_flow.free_cash_flow_to_firm",
+            "terms.trailing_four_quarters.operating_income",
+            "tax_rate.effective_rate"
+          ],
+          "history": "Below the year-one rate. Above the organic-only reinvestment implied by trailing free cash flow to the firm of {free_cash_flow.free_cash_flow_to_firm}, set against operating income of {terms.trailing_four_quarters.operating_income} taxed at {tax_rate.effective_rate|pct}."
+        }
+      }
+    },
+    "bull": {
+      "revenue_growth_year_one": 0.10,
+      "terminal_growth": 0.035,
+      "operating_margin_year_one": 0.25,
+      "operating_margin_year_ten": 0.28,
+      "reinvestment_rate_year_one": 0.20,
+      "reinvestment_rate_year_ten": 0.15,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "The raised full-year guide carries into the next year. Systems demand stays strong as enterprises rebuild application-delivery and security capacity for hybrid and AI-driven traffic, and the maintenance and subscriptions attached to those shipments lift the slower lines.",
+          "quote": "F5 raised its outlook for its fiscal year 2026, guiding for revenue growth of approximately 9% to 10%, up from 7% to 8% previously.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.growth.revenue.year_over_year",
+            "ratios.growth.revenue.trailing_four_quarters",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound",
+            "earnings_versus_cash.history.years.0.revenue_growth",
+            "earnings_versus_cash.history.years.4.revenue_growth"
+          ],
+          "history": "Just below the quarter's year-over-year growth of {ratios.growth.revenue.year_over_year|pct}, above the trailing {ratios.growth.revenue.trailing_four_quarters|pct} and well above the three-year compound rate of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}. The record came near this pace only in fiscal 2021 ({earnings_versus_cash.history.years.4.revenue_growth|pct}) and fiscal 2025 ({earnings_versus_cash.history.years.0.revenue_growth|pct})."
+        },
+        "terminal_growth": {
+          "reason": "A larger subscription and software share leaves a recurring base that grows a little faster over the long run than in the base case. It is still below the risk-free rate.",
+          "quote": "The increase in software revenue was primarily due to increased sales of subscription offerings.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "cost_of_capital.risk_free_rate",
+            "earnings_versus_cash.history.revenue_growth_three_year_compound"
+          ],
+          "history": "Below the three-year compound growth of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and below the risk-free rate of {cost_of_capital.risk_free_rate|pct}."
+        },
+        "operating_margin_year_one": {
+          "reason": "Gross margin is at the high of the filed quarters and the cyber-incident professional-services costs begin to roll off. The margin holds at about the fiscal 2025 level instead of slipping.",
+          "quote": "GAAP gross profit for the third quarter of fiscal year 2026 was $712 million, representing GAAP gross margin of 82.2%. This compares with GAAP gross profit of $632 million in the year-ago period, which represented GAAP gross margin of 81.0%.",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "trend_table.quarters-back-0.ratios.gross_margin",
+            "earnings_versus_cash.history.years.0.operating_margin",
+            "ratios.profitability.operating_margin"
+          ],
+          "history": "At about fiscal 2025's {earnings_versus_cash.history.years.0.operating_margin|pct}, the best year on record, and just above the trailing {ratios.profitability.operating_margin|pct}."
+        },
+        "operating_margin_year_ten": {
+          "reason": "Operating leverage returns. Subscription and maintenance revenue grow on a cost base that grows more slowly, and share-based compensation, which the GAAP margin already deducts, falls as a share of revenue.",
+          "quote": "Profitable, and on margins near its best against its own history.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "earnings_versus_cash.history.years.0.operating_margin",
+            "earnings_versus_cash.history.years.3.operating_margin",
+            "terms.trailing_four_quarters.share_based_compensation"
+          ],
+          "history": "Above every fiscal year in the filed record, the best of which is fiscal 2025 at {earnings_versus_cash.history.years.0.operating_margin|pct}. The record shows the margin rising from {earnings_versus_cash.history.years.3.operating_margin|pct} in fiscal 2022, so further expansion would continue a trend the company has already delivered. Trailing share-based compensation of {terms.trailing_four_quarters.share_based_compensation} is one cost that would have to shrink relative to revenue."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "Growth comes mostly from the installed base, so acquisition spending runs below the trailing year. Capital expenditure stays at its new level for another year.",
+          "quote": "The amount of cash used in investing activities for the nine months ended June 30, 2026 was primarily the result of $47.6 million used in the acquisition of a business and $63.7 million in capital expenditures related to maintaining our operations worldwide.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "terms.trailing_four_quarters.capital_expenditure",
+            "terms.trailing_four_quarters_a_year_earlier.capital_expenditure",
+            "terms.cash_flow_families.acquisitions"
+          ],
+          "history": "Below the base case. Trailing capital expenditure of {terms.trailing_four_quarters.capital_expenditure}, up from {terms.trailing_four_quarters_a_year_earlier.capital_expenditure} a year earlier, is assumed to continue. Acquisitions are assumed to run well below the trailing {terms.cash_flow_families.acquisitions}."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "Returns on new capital stay high. At the bull terminal growth rate, this rate implies a return on new capital above the base case's. That fits a franchise that funds most of its growth through research and sales costs already inside the margin.",
+          "quote": "Cash backs earnings.",
+          "quote_from": "analysis_accounting.json",
+          "fields": [
+            "free_cash_flow.free_cash_flow_to_firm",
+            "free_cash_flow.free_cash_flow_simple"
+          ],
+          "history": "Below the base case. Above the organic-only reinvestment implied by trailing free cash flow to the firm of {free_cash_flow.free_cash_flow_to_firm}, so the bull case still pays for some of its growth with capital."
+        }
+      }
+    }
+  },
+  "wacc_overrides": {}
+}

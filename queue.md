@@ -40,8 +40,6 @@ branch changed. A run item is done when its run directory is published and
 
 [ ] SNDK's 10-Q filed 2026-05-01 on Fable · `.venv/bin/python -m evals --runs runs/SNDK` · none
 
-[ ] FFIV's 10-Q filed 2026-08-06 on Fable · `.venv/bin/python -m evals --runs runs/FFIV` · none
-
 [ ] SMCI's 10-K filed 2026-08-31 on Fable, the same default · `.venv/bin/python -m evals --runs runs/SMCI` · none
 
 [ ] SNDK's 10-K filed 2026-08-17 on Fable, the same default · `.venv/bin/python -m evals --runs runs/SNDK` · none
@@ -55,6 +53,8 @@ branch changed. A run item is done when its run directory is published and
 [ ] MU, Micron Technology, the reading's pick under 3674 (`docs/structure_changes.md`, 2026-10-14): fixtures as of the day it is fetched, the two 10-K headers and Exhibit 21 documents by hand, expected values with the 43 keys, and its row · `.venv/bin/python -m pytest tests -q -k "MU"` passes with every defect a strict expected failure · none
 
 ## Done
+
+[x] FFIV's 10-Q filed 2026-08-06 on Fable · `.venv/bin/python -m evals --runs runs/FFIV` · none · 2026-10-15: run on Opus by the owner's decision of 2026-10-14 (`--model opus`, recorded as `model_override`; every agent served claude-opus-5-5, no fallback); regression 18 pass, 0 fail; analysis-grader 0.939 with 0 dealbreakers, the grader's stated score differing from the rubric's formula as the open row records; an earlier attempt on Fable stopped by the session limit was set aside · PR: this one
 
 [x] AVGO's 10-Q filed 2026-09-10 on Fable · `.venv/bin/python -m evals --runs runs/AVGO` · none · 2026-10-15: run on Opus by the owner's decision of 2026-10-14 (`--model opus`, recorded as `model_override`; every agent served claude-opus-5-5, no fallback); regression 18 pass, 0 fail; analysis-grader 0.951 with 1 dealbreaker, the grader's stated score differing from the rubric's formula as the open row records; an earlier attempt on Fable stopped by the session limit was set aside · PR: this one
 
