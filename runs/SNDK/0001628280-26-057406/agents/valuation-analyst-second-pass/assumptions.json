@@ -1,0 +1,251 @@
+{
+ "scenarios": {
+  "bear": {
+   "revenue_growth_year_one": 0.1,
+   "terminal_growth": 0.02,
+   "operating_margin_year_one": 0.45,
+   "operating_margin_year_ten": 0.1,
+   "reinvestment_rate_year_one": 0.3,
+   "reinvestment_rate_year_ten": 0.25,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "Pricing turns within fiscal 2027: the first quarter lands near guidance, then price per gigabyte falls back as supply catches up, and Consumer volumes keep shrinking. Under the straight-line fade a low starting rate also means slow growth for the decade, which is the bear's reading of a price-led peak followed by a downturn.",
+     "quote": "Consumer revenue increased 29%, or $667 million in 2026 compared to 2025, primarily due to higher pricing partially offset by lower sales. Total products sold decreased by mid-teens percent on an exabyte basis.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "ratios.growth.revenue.trailing_four_quarters",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound",
+      "earnings_versus_cash.history.years.1.revenue_growth",
+      "earnings_versus_cash.history.years.2.revenue_growth"
+     ],
+     "history": "Far below fiscal 2026 growth of {ratios.growth.revenue.trailing_four_quarters|pct} and the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}; close to the pre-upturn growth of {earnings_versus_cash.history.years.1.revenue_growth|pct} and {earnings_versus_cash.history.years.2.revenue_growth|pct}, the rate of this business without a price tailwind."
+    },
+    "terminal_growth": {
+     "reason": "If the price gains reverse and NAND stays a commodity whose price per gigabyte falls steadily, long-run revenue grows only slightly, as bit growth is mostly offset by price. Set below the base and well below the risk-free rate of {cost_of_capital.risk_free_rate|pct}.",
+     "quote": "Growth is a cyclical rebound of unusual size.",
+     "quote_from": "analysis_financial.json",
+     "fields": [
+      "cost_of_capital.risk_free_rate",
+      "earnings_versus_cash.history.years.1.revenue_growth",
+      "earnings_versus_cash.history.years.2.revenue_growth"
+     ],
+     "history": "Below every positive annual growth rate in the filed record, including the pre-upturn years at {earnings_versus_cash.history.years.1.revenue_growth|pct} and {earnings_versus_cash.history.years.2.revenue_growth|pct}, because those were recoveries from a trough rather than steady-state growth."
+    },
+    "operating_margin_year_one": {
+     "reason": "Fiscal 2027 averages a strong first quarter with quarters of falling prices; inventory built for demand then carries write-downs, as MD&A warns, against a reserve whose cover has thinned.",
+     "quote": "If in any period we anticipate a change in those assumptions to be less favorable than our previous estimates, additional inventory write-downs may be required and could materially and negatively impact our gross margin.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "ratios.profitability.operating_margin",
+      "trend_table.quarters-back-3.ratios.gross_margin",
+      "trend_table.years-back-0.ratios.days_sales_of_inventory",
+      "trend_table.years-back-0.ratios.inventory_reserve_ratio",
+      "trend_table.years-back-1.ratios.inventory_reserve_ratio"
+     ],
+     "history": "Below the fiscal 2026 margin of {ratios.profitability.operating_margin|pct}, which itself averaged a weak first quarter, at a gross margin of {trend_table.quarters-back-3.ratios.gross_margin|pct}, with a strong second half; still far above every earlier filed year, all operating losses. Year-end inventory days were {trend_table.years-back-0.ratios.days_sales_of_inventory}, the highest filed, with reserve cover down to {trend_table.years-back-0.ratios.inventory_reserve_ratio|pct} from {trend_table.years-back-1.ratios.inventory_reserve_ratio|pct}."
+    },
+    "operating_margin_year_ten": {
+     "reason": "The cycle returns in full: NBM prices have variable components that reset with the market, tariff exemptions may be lost, and the Flash Ventures fixed costs and purchase obligations of {terms.balances_now.unconditional_purchase_obligations} run regardless of demand. Year ten earns a through-cycle margin close to the record's average, which mixes the peak with loss years.",
+     "quote": "Currently, the majority of our products sold in the U.S. are exempt from tariffs, but additional tariff increases, or the loss of applicable exemptions, would increase the cost of goods sold for our products sold in the U.S., which could negatively impact our margins and financial performance.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "earnings_versus_cash.history.operating_margin_three_year_average",
+      "earnings_versus_cash.history.years.3.operating_margin",
+      "terms.balances_now.unconditional_purchase_obligations"
+     ],
+     "history": "Slightly below the three-year average operating margin of {earnings_versus_cash.history.operating_margin_three_year_average|pct}, which includes the fiscal 2026 peak; well above the trough of {earnings_versus_cash.history.years.3.operating_margin|pct}, because a year-ten margin stands for a whole cycle, not its worst year."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "Node-transition capital spending is planned whatever prices do, funding of the joint-venture capacity continues, and the customer advances and deposits that funded fiscal 2026 working capital unwind as product is delivered and contracts end, while revenue grows little; reinvestment takes a larger share of a smaller after-tax operating income.",
+     "quote": "Earnings are covered by cash on the headline ratio, but the cover rests on non-recurring customer deposits and advances and on tax not yet paid, while receivables absorbed a large share of earnings; underlying cash quality is weaker than the ratio shows.",
+     "quote_from": "analysis_accounting.json",
+     "fields": [
+      "earnings_versus_cash.working_capital.receivables.share_of_net_income",
+      "terms.balances_now.contract_liabilities",
+      "terms.trailing_four_quarters.capital_expenditure"
+     ],
+     "history": "Above the base and far above what capital expenditure of {terms.trailing_four_quarters.capital_expenditure} implies; in fiscal 2026 receivables alone absorbed {earnings_versus_cash.working_capital.receivables.share_of_net_income|pct} of net income, offset by customer money such as current contract liabilities of {terms.balances_now.contract_liabilities}, which the bear assumes does not recur."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "With low mid-cycle returns in the bear, each unit of terminal growth needs more capital, and the fixed commitments around the joint ventures keep absorbing cash; the rate is set so that the low terminal growth earns only a modest return on new capital.",
+     "quote": "None of this is debt, but all of it would keep running if revenue fell.",
+     "quote_from": "analysis_financial.json",
+     "fields": [
+      "ratios.profitability.return_on_invested_capital",
+      "terms.balances_now.unconditional_purchase_obligations",
+      "earnings_versus_cash.history.years.1.operating_margin"
+     ],
+     "history": "Above the base; the return on invested capital of {ratios.profitability.return_on_invested_capital|pct} is a single peak year, and the earlier filed years were operating losses, so the bear assumes a return on new capital near the low end of that record."
+    }
+   }
+  },
+  "base": {
+   "revenue_growth_year_one": 0.18,
+   "terminal_growth": 0.03,
+   "operating_margin_year_one": 0.62,
+   "operating_margin_year_ten": 0.25,
+   "reinvestment_rate_year_one": 0.25,
+   "reinvestment_rate_year_ten": 0.2,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "Fiscal 2027 opens far above fiscal 2026: the release guides first-quarter revenue above the fourth quarter's {ratios.growth.revenue.this_quarter}, which was itself up {ratios.growth.revenue.quarter_over_quarter|pct} on the third. But Python fades this rate in a straight line to the terminal rate at year ten, so the year-one figure sets the decade's whole path, not one year. A rate at the guided jump would compound for ten years into revenue that a memory maker whose growth came mostly from price cannot be assumed to keep. The base sets a year-one rate that keeps the decade's growth moderate, and accepts that this understates fiscal 2027 itself in exchange for a decade path the record can support.",
+     "quote": "Expect first quarter 2027 revenue to be in the range of $10.30 billion to $10.80 billion",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "terms.trailing_four_quarters.revenue",
+      "ratios.growth.revenue.this_quarter",
+      "ratios.growth.revenue.quarter_over_quarter",
+      "ratios.growth.revenue.trailing_four_quarters",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound"
+     ],
+     "history": "Below fiscal 2026 growth of {ratios.growth.revenue.trailing_four_quarters|pct} and below the trailing three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, both measured from loss-making trough years and, for fiscal 2026, over a year with an extra week; above the growth of the two years before the upturn, {earnings_versus_cash.history.years.1.revenue_growth|pct} and {earnings_versus_cash.history.years.2.revenue_growth|pct}. The three-year compound is a rebound from a trough, not a rate a straight-line fade can carry for a decade."
+    },
+    "terminal_growth": {
+     "reason": "Long-run NAND revenue grows with data stored less a steady fall in price per gigabyte. AI storage demand, which management expects to persist, and NBM volume commitments support a rate near nominal economic growth; it stays well below the risk-free rate of {cost_of_capital.risk_free_rate|pct}, the cap Python enforces.",
+     "quote": "We expect AI-driven demand to persist through calendar year 2027 and beyond.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "cost_of_capital.risk_free_rate",
+      "earnings_versus_cash.history.years.1.revenue_growth",
+      "earnings_versus_cash.history.years.2.revenue_growth",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound"
+     ],
+     "history": "Below the growth of the two pre-upturn years, {earnings_versus_cash.history.years.1.revenue_growth|pct} and {earnings_versus_cash.history.years.2.revenue_growth|pct}, which were recoveries from a downturn, and far below the trailing three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}; the filed record holds only four fiscal years, too few to read a steady-state rate from."
+    },
+    "operating_margin_year_one": {
+     "reason": "Year one is fiscal 2027, which begins at the peak: the third quarter's gross margin was {trend_table.quarters-back-1.ratios.gross_margin|pct}, and the fourth quarter earned operating income of {ratios.growth.operating_income.this_quarter} on revenue of {ratios.growth.revenue.this_quarter}. The base sets year one near the fiscal 2026 margin rather than the fourth-quarter run-rate, because Python's straight line carries the year-one margin into the years in which the cycle is expected to turn, and because most of the sequential growth came from price, which can reverse.",
+     "quote": "Sequential revenue growth came approximately one-third from higher volumes and two-thirds from higher pricing.",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "ratios.profitability.operating_margin",
+      "ratios.growth.operating_income.this_quarter",
+      "ratios.growth.revenue.this_quarter",
+      "trend_table.quarters-back-1.ratios.gross_margin",
+      "trend_table.quarters-back-3.ratios.gross_margin"
+     ],
+     "history": "Near the fiscal 2026 operating margin of {ratios.profitability.operating_margin|pct}, the best in the filed record, which averaged a first quarter at a gross margin of {trend_table.quarters-back-3.ratios.gross_margin|pct} with a much stronger second half; every earlier filed year was an operating loss ({earnings_versus_cash.history.years.1.operating_margin|pct}, {earnings_versus_cash.history.years.2.operating_margin|pct}, {earnings_versus_cash.history.years.3.operating_margin|pct})."
+    },
+    "operating_margin_year_ten": {
+     "reason": "A mid-cycle margin for year ten, after at least one price downturn. Well below the peak, because NAND prices have reversed before and the outlook rests on price; well above the loss years, because NBMs commit volumes under financial guarantees, which management says reduce cyclicality. The Flash Ventures fixed costs and purchase obligations of {terms.balances_now.unconditional_purchase_obligations} run whatever demand does, and Python holds the fiscal 2026 effective tax rate of {tax_rate|pct} for every year although MD&A expects the minimum tax from fiscal 2027; the margin is set at the lower end of a mid-cycle range partly to allow for both.",
+     "quote": "While these agreements do not eliminate the risks associated with customer demand, market conditions, or operational execution, we believe they reduce certain elements of industry cyclicality and support our long-term strategic and financial objectives.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "earnings_versus_cash.history.operating_margin_three_year_average",
+      "ratios.profitability.operating_margin",
+      "trend_table.years-back-1.ratios.gross_margin",
+      "trend_table.years-back-2.ratios.gross_margin",
+      "terms.balances_now.unconditional_purchase_obligations",
+      "tax_rate"
+     ],
+     "history": "Above the history table's three-year average operating margin of {earnings_versus_cash.history.operating_margin_three_year_average|pct}, which averages two loss years with the peak, and far below the fiscal 2026 peak of {ratios.profitability.operating_margin|pct}. Gross margin was only {trend_table.years-back-1.ratios.gross_margin|pct} and {trend_table.years-back-2.ratios.gross_margin|pct} in the two years before the upturn, so this margin assumes NBMs hold pricing better through the cycle than the past did."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "Fiscal 2027 needs more reinvestment than fiscal 2026 showed: management plans higher capital spending for node transitions, receivables and inventory grow with revenue, and loans to Flash Forward fund capacity outside reported capital expenditure. Customer advances and deposits under NBMs fund part of the working capital, which keeps the rate from going higher.",
+     "quote": "For fiscal year 2027, we anticipate increased capital investments as we transition to newer nodes to meet the demand and technology needs of our product portfolio.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "terms.trailing_four_quarters.capital_expenditure",
+      "terms.trailing_four_quarters.depreciation_and_amortization",
+      "earnings_versus_cash.working_capital.receivables.balance_sheet_change",
+      "earnings_versus_cash.working_capital.inventory.balance_sheet_change",
+      "terms.balances_now.contract_liabilities"
+     ],
+     "history": "Well above what reported capital spending alone implies: capital expenditure of {terms.trailing_four_quarters.capital_expenditure} sat near depreciation of {terms.trailing_four_quarters.depreciation_and_amortization} under what MD&A calls a conservative strategy. But receivables rose {earnings_versus_cash.working_capital.receivables.balance_sheet_change} and inventory {earnings_versus_cash.working_capital.inventory.balance_sheet_change} in fiscal 2026, a build that customer advances and unpaid tax offset and that the base does not assume will be offset again in full."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "At year ten the rate should equal terminal growth divided by the return on new capital. The peak return on invested capital is earned on a small base from which year-end cash is netted, and capacity funded through the joint ventures sits partly outside the company's own capital spending; the base assumes a mid-cycle return on new capital, not a peak one.",
+     "quote": "These fund capacity the company uses but run through investing lines",
+     "quote_from": "analysis_accounting.json",
+     "fields": [
+      "ratios.profitability.return_on_invested_capital",
+      "ratios.profitability.return_on_invested_capital.invested_capital",
+      "terms.trailing_four_quarters.capital_expenditure"
+     ],
+     "history": "Far above the fiscal 2026 rate implied by reported capital spending near depreciation, because the return on invested capital of {ratios.profitability.return_on_invested_capital|pct} on invested capital of {ratios.profitability.return_on_invested_capital.invested_capital} is a peak-year figure, and the earlier filed years earned operating losses, so no single year of the record is a mid-cycle return."
+    }
+   }
+  },
+  "bull": {
+   "revenue_growth_year_one": 0.3,
+   "terminal_growth": 0.035,
+   "operating_margin_year_one": 0.7,
+   "operating_margin_year_ten": 0.35,
+   "reinvestment_rate_year_one": 0.15,
+   "reinvestment_rate_year_ten": 0.12,
+   "reasons": {
+    "revenue_growth_year_one": {
+     "reason": "Pricing holds through calendar 2027 as management expects, more NBMs are signed with new customers, and Datacenter volume keeps rising with AI storage. The year-one rate is still held below the jump that first-quarter guidance implies, because the straight-line fade carries it through the whole decade and the bull's path already ends far above anything in the filed record.",
+     "quote": "we have signed five additional agreements, including three NBMs with new customers and two deals expanding on previously signed NBMs.",
+     "quote_from": "input_8k.md",
+     "fields": [
+      "ratios.growth.revenue.trailing_four_quarters",
+      "ratios.growth.revenue.quarter_over_quarter",
+      "earnings_versus_cash.history.revenue_growth_three_year_compound",
+      "earnings_versus_cash.history.years.1.revenue_growth"
+     ],
+     "history": "Below fiscal 2026 growth of {ratios.growth.revenue.trailing_four_quarters|pct}, the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and the fourth quarter's sequential growth of {ratios.growth.revenue.quarter_over_quarter|pct}; well above the pre-upturn years at {earnings_versus_cash.history.years.1.revenue_growth|pct} and {earnings_versus_cash.history.years.2.revenue_growth|pct}, because the bull assumes NBMs turn part of the price gain into lasting volume."
+    },
+    "terminal_growth": {
+     "reason": "AI workloads keep storage demand growing faster than the economy for longer, and NBMs give committed volumes; still below the risk-free rate of {cost_of_capital.risk_free_rate|pct}, which caps any perpetual rate.",
+     "quote": "Datacenter revenue increased 437%, or $4,193 million, in 2026 compared to 2025, primarily due to higher sales and higher pricing. Total products sold increased by almost 120% on an exabyte basis.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "cost_of_capital.risk_free_rate",
+      "earnings_versus_cash.history.years.1.revenue_growth",
+      "earnings_versus_cash.history.years.2.revenue_growth"
+     ],
+     "history": "Below the pre-upturn growth of {earnings_versus_cash.history.years.1.revenue_growth|pct} and {earnings_versus_cash.history.years.2.revenue_growth|pct}; above the base because in fiscal 2026 Datacenter grew in volume, not only in price."
+    },
+    "operating_margin_year_one": {
+     "reason": "Prices hold at the level reached in the second half of fiscal 2026 for most of fiscal 2027, as the release's first-quarter guidance and MD&A's pricing outlook suggest, so year one runs close to the fourth-quarter margin; held somewhat below it because the straight line carries the year-one margin into later years.",
+     "quote": "The current demand environment has led to pricing shifts that have positively impacted our business, and we expect these favorable pricing trends to have a positive impact on our revenue and cash flows from operations.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "ratios.profitability.operating_margin",
+      "ratios.growth.operating_income.this_quarter",
+      "ratios.growth.revenue.this_quarter",
+      "trend_table.quarters-back-1.ratios.gross_margin"
+     ],
+     "history": "Above the fiscal 2026 operating margin of {ratios.profitability.operating_margin|pct}, which included a weak first half; below the fourth quarter, when operating income of {ratios.growth.operating_income.this_quarter} came on revenue of {ratios.growth.revenue.this_quarter}, and below the third quarter's gross margin of {trend_table.quarters-back-1.ratios.gross_margin|pct}."
+    },
+    "operating_margin_year_ten": {
+     "reason": "NBMs become the predominant way of doing business, with committed volumes, guarantees and customer prepayments that damp the price cycle, and AI demand keeps supply disciplined; a mid-cycle margin well above the record's average but well below the peak.",
+     "quote": "As NBMs are expected to become our predominant way of doing business, we believe that this business model will contribute to greater predictability of revenue, support production planning, and enhance supply assurance for our customers.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "earnings_versus_cash.history.operating_margin_three_year_average",
+      "ratios.profitability.operating_margin",
+      "ratios.profitability.gross_margin"
+     ],
+     "history": "Far above the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct} and every pre-upturn year, all operating losses; well below the fiscal 2026 peak operating margin of {ratios.profitability.operating_margin|pct} and gross margin of {ratios.profitability.gross_margin|pct}."
+    },
+    "reinvestment_rate_year_one": {
+     "reason": "Customer prepayments and refundable deposits under new NBMs keep funding working capital, and high returns mean the planned node transition takes a small share of after-tax operating income.",
+     "quote": "In connection with entering into long-term agreements with certain customers, we received customer advances that increased our available cash and cash equivalents.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "terms.balances_now.contract_liabilities",
+      "terms.balances_a_year_earlier.contract_liabilities",
+      "earnings_versus_cash.working_capital.receivables.balance_sheet_change"
+     ],
+     "history": "Below the base; in fiscal 2026 current contract liabilities rose to {terms.balances_now.contract_liabilities} from {terms.balances_a_year_earlier.contract_liabilities} on customer advances, which helped fund a receivables build of {earnings_versus_cash.working_capital.receivables.balance_sheet_change}; the bull assumes such funding continues as NBMs spread."
+    },
+    "reinvestment_rate_year_ten": {
+     "reason": "Much of the capacity sits in the joint ventures with Kioxia, keeping the company's own capital base small; with a high return on new capital in the bull, terminal growth needs only a small share of after-tax operating income.",
+     "quote": "In alignment with market conditions, we maintained what we believe to be a conservative capital expenditure strategy for fiscal years 2026 and 2025.",
+     "quote_from": "input_mdna.md",
+     "fields": [
+      "ratios.profitability.return_on_invested_capital",
+      "terms.trailing_four_quarters.capital_expenditure",
+      "terms.trailing_four_quarters_a_year_earlier.capital_expenditure",
+      "terms.trailing_four_quarters.depreciation_and_amortization"
+     ],
+     "history": "Below the base and closer to the light capital spending of the record: capital expenditure of {terms.trailing_four_quarters.capital_expenditure} against {terms.trailing_four_quarters_a_year_earlier.capital_expenditure} a year earlier, near depreciation of {terms.trailing_four_quarters.depreciation_and_amortization}, with return on invested capital at {ratios.profitability.return_on_invested_capital|pct} in the peak year."
+    }
+   }
+  }
+ },
+ "wacc_overrides": {},
+ "dropped_items": [],
+ "dropped_count": 0
+}

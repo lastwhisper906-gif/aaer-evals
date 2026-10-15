@@ -1,0 +1,85 @@
+# SNDK MD&A — 0001628280-26-057406
+
+
+## mdna
+
+[0001628280-26-057406:mdna:6]
+Sandisk is a leading global semiconductor memory company with more than 30 years of innovation in NAND flash technology. We are a vertically integrated solutions provider with ownership of chip-level design and IP, front and back-end manufacturing, as well as systems engineering and design. With a differentiated innovation engine driving advancements in storage and semiconductor technologies, our broad and ever-expanding portfolio delivers powerful flash storage solutions for artificial intelligence (“AI”) workloads in datacenters, edge devices, and consumer applications. Our technologies enable everyone from students, gamers, and home offices to the largest enterprises and public clouds to produce, analyze, and store data. Our solutions include a broad range of solid-state drives (“SSDs”), embedded products, removable cards, universal serial bus drives and wafers and components. Our broad portfolio of technology and products addresses multiple end markets of “Datacenter” (formerly referred to as “Cloud”), “Edge” (formerly referred to as “Client”), and “Consumer.”
+
+[0001628280-26-057406:mdna:8]
+The Company’s fiscal year ends on the Friday nearest to June 30 and typically consists of 52 weeks. Approximately every five to six years, we report a 53-week fiscal year to align the fiscal year with the foregoing policy. Fiscal years 2025 and 2024, which ended on June 27, 2025 and June 28, 2024, respectively, were each comprised of 52 weeks, with each fiscal quarter consisting of 13 weeks. Fiscal year 2026 was comprised of 53 weeks and ended on July 3, 2026, with the first fiscal quarter consisting of 14 weeks. Unless otherwise indicated or the context requires, references herein to specific years and quarters are to fiscal years and fiscal quarters, and references to financial information are on a consolidated basis.
+
+[0001628280-26-057406:mdna:12]
+On June 9, 2025, WDC disposed of 21,314,768, or 14.6%, of our common stock through an exchange of our common stock for WDC debt held by WDC creditors, which shares were sold by affiliates of the WDC creditors in a registered public offering by the Company. On February 18, 2026, WDC disposed of an additional 5,821,135 outstanding shares of the Company through an exchange of Sandisk’s common stock for WDC debt held by WDC creditors, which shares were sold by affiliates of the WDC creditors in a registered public offering by us. All expenses for these offerings were paid for by us. Following this transaction, WDC continued to retain 1,691,884 of the outstanding shares of the Company’s common stock and, as of March 19, 2026, the sale of such shares was no longer subject to restriction, and we were no longer required to pay any expenses associated with WDC’s eventual exchange or distribution of our shares. Subsequent to this date, WDC has disposed of additional outstanding shares of our common stock in exchange for shares of its outstanding common stock and has announced that it expects to monetize all remaining shares of Sandisk common stock held by it by the end of 2026 in one or more subsequent exchanges for its outstanding common stock.
+
+[0001628280-26-057406:mdna:15]
+For the year ended July 3, 2026, there were no goodwill impairment charges recorded.
+
+[0001628280-26-057406:mdna:20]
+On March 4, 2026, the Company settled in full the remaining outstanding principal amounts of the Term Loan Facility, plus accrued interest, using cash on hand. In connection with the early settlement of the Term Loan Facility, the Company recognized a loss on debt extinguishment of $46 million resulting from the write-off of the remaining unamortized issuance costs.
+
+[0001628280-26-057406:mdna:23]
+In 2026, we continued to observe that the rapid growth of AI infrastructure is driving demand for high-performance storage products, and AI adoption is driving the need for NAND storage to support these workloads, leading to increased revenues when compared to prior periods. The current demand environment has led to pricing shifts that have positively impacted our business, and we expect these favorable pricing trends to have a positive impact on our revenue and cash flows from operations. We expect AI-driven demand to persist through calendar year 2027 and beyond. Accordingly, we expect to invest in, and allocate resources to, high-value opportunities for both the short-term and long-term benefit of our customers and us.
+
+[0001628280-26-057406:mdna:25]
+There are pending and ongoing investigations initiated by the United States under Section 232 of the Trade Expansion Act of 1962 and Section 301 of the Trade Act of 1974 that may impact tariff rates for our products. Currently, the majority of our products sold in the U.S. are exempt from tariffs, but additional tariff increases, or the loss of applicable exemptions, would increase the cost of goods sold for our products sold in the U.S., which could negatively impact our margins and financial performance. Increases in the price of our products in response to increased costs may adversely impact demand for those products in the U.S., which could also negatively impact our performance and financial results. Future trade policies and regulations in the U.S. and other countries, the terms of any trade arrangements that may be negotiated between the U.S. and other countries, the scope, amount, or duration of tariffs that may be imposed by any country, and the impact of these factors on our business are uncertain and may contribute to increased costs and reduced demand for our products, each of which could harm our financial performance.
+
+[0001628280-26-057406:mdna:26]
+Commencing in fiscal 2026, we entered into long-term agreements, which we also refer to as New Business Models, or “NBMs,” with several Datacenter and Edge customers. These agreements generally commit us to deliver, and our customers to purchase, a stated volume of products, mostly over multi-year periods. The agreements include pricing mechanisms consisting of fixed and variable components and are supported by financial guarantees that are intended to provide additional protection in the event a customer does not satisfy their contractual purchase obligations. As NBMs are expected to become our predominant way of doing business, we believe that this business model will contribute to greater predictability of revenue, support production planning, and enhance supply assurance for our customers. While these agreements do not eliminate the risks associated with customer demand, market conditions, or operational execution, we believe they reduce certain elements of industry cyclicality and support our long-term strategic and financial objectives.
+
+[0001628280-26-057406:mdna:42]
+Net revenue increased 175%, or $12,893 million, in 2026 compared to 2025, due to a 437% increase in Datacenter revenue, a 195% increase in Edge revenue, and a 29% increase in Consumer revenue. Total products sold increased by mid-teens percent on an exabyte basis.
+
+[0001628280-26-057406:mdna:43]
+Datacenter revenue increased 437%, or $4,193 million, in 2026 compared to 2025, primarily due to higher sales and higher pricing. Total products sold increased by almost 120% on an exabyte basis. Revenue per gigabyte increased by almost 150%.
+
+[0001628280-26-057406:mdna:44]
+Edge revenue increased 195%, or $8,033 million, in 2026 compared to 2025, primarily due to higher sales and higher pricing. Total products sold increased by high single-digits percent on an exabyte basis. Revenue per gigabyte increased by almost 180%.
+
+[0001628280-26-057406:mdna:45]
+Consumer revenue increased 29%, or $667 million in 2026 compared to 2025, primarily due to higher pricing partially offset by lower sales. Total products sold decreased by mid-teens percent on an exabyte basis. Revenue per gigabyte increased by low-fifties percent.
+
+[0001628280-26-057406:mdna:47]
+Consistent with standard industry practice, we offer sales incentives and marketing programs that provide customers with price protection and other incentives or reimbursements that are recorded as reductions of gross revenue. For 2026, 2025 and 2024, these programs represented 11%, 19%, and 19%, respectively, of gross revenues. The amounts attributed to our sales incentive and marketing programs generally vary according to several factors, including industry conditions, list pricing strategies, seasonal demand, competitor actions, channel mix, and overall availability of products. Changes in future customer demand and market conditions may require us to adjust our incentive programs as a percentage of gross revenue.
+
+[0001628280-26-057406:mdna:50]
+Gross profit margin increased 4,100 basis points in 2026 compared to 2025 primarily due to higher sales and higher pricing.
+
+[0001628280-26-057406:mdna:53]
+Research and development (“R&D”) expenses increased $196 million in 2026 compared to 2025, primarily due to a $136 million increase in compensation and benefits due to variable compensation associated with company performance and increased headcount, a $28 million increase in spending for R&D projects as we continue to invest in innovation, and a $24 million increase in stock based compensation.
+
+[0001628280-26-057406:mdna:55]
+Selling, general and administrative expenses increased $103 million in 2026 compared to 2025, primarily due to a $68 million increase in compensation and benefits due to variable compensation associated with company performance and increased headcount, partially offset by a $51 million decrease in materials due to a change in business practice for the launch of new products whereby the Company is distributing fewer free samples and has started entering into contracts to sell certain qualification units to customers. The costs of qualification units are recorded in inventory until sold to customers and recognized as cost of revenue. The change contributed to a decrease in materials and production costs classified as selling expenses when compared to the prior year period, partially offset by a $32 million increase in sales and marketing expenses, and a $15 million increase in outside services.
+
+[0001628280-26-057406:mdna:63]
+Employee termination and other charges decreased $23 million in 2026 compared to 2025 as there were no restructuring actions taken in the current period.
+
+[0001628280-26-057406:mdna:69]
+H.R. 1, more widely known as the One Big Beautiful Bill Act (“OBBBA”), was signed into law on July 4, 2025. It reversed the requirement for capitalization of U.S. research and development expenditures that came into law under the Tax Cuts and Jobs Act of 2017, but the mandatory requirement of capitalization of foreign research and development expenditures remains. The tax rates for income earned by our foreign subsidiaries will also be changed under H.R. 1, which applies to our fiscal years 2027 and onward. Depending on our operating results, these changes can materially impact our effective tax rate and reduce our operating cash flows. During the fiscal year ended July 3, 2026, we recorded a $10 million tax benefit in relation to the OBBBA’s impact on the Company’s 2025 tax provision.
+
+[0001628280-26-057406:mdna:70]
+On August 16, 2022, the Inflation Reduction Act of 2022 was signed into law, which contained significant changes to laws related to tax, climate, energy, and health care. The tax measures include, among other things, a corporate alternative minimum tax (“CAMT”) of 15% on corporations with three-year average annual adjusted financial statement income (“AFSI”) exceeding $1.0 billion. We do not expect to be subject to the CAMT of 15% for fiscal year 2026 as our average annual AFSI did not exceed $1.0 billion for the preceding three-year period. We expect to be subject to CAMT in fiscal year 2027.
+
+[0001628280-26-057406:mdna:71]
+On December 20, 2021, the Organisation for Economic Co-operation and Development G20 Inclusive Framework on Base Erosion and Profit Shifting released Model Global Anti-Base Erosion rules under Pillar Two (“Pillar Two”). Pillar Two is currently effective in most of the jurisdictions in which we operate. Accordingly, these taxes are included in the Company’s Income tax expense for the year ended July 3, 2026.
+
+[0001628280-26-057406:mdna:75]
+The relative mix of earnings and losses by jurisdiction, foreign-derived deduction-eligible income, credits, and tax holidays in Malaysia that will expire at various dates during years 2028 through 2031 resulted in decreases to the effective tax rate below the U.S. statutory rate for the year ended July 3, 2026.
+
+[0001628280-26-057406:mdna:81]
+In alignment with market conditions, we maintained what we believe to be a conservative capital expenditure strategy for fiscal years 2026 and 2025. For fiscal year 2027, we anticipate increased capital investments as we transition to newer nodes to meet the demand and technology needs of our product portfolio.
+
+[0001628280-26-057406:mdna:85]
+Net cash provided by operating activities primarily consists of net income or loss, adjusted for non-cash charges, plus or minus changes in operating assets and liabilities. Net cash used as a result of changes in operating assets and liabilities was $212 million for 2026, compared to $380 million net cash provided for 2025 and to $86 million net cash provided for 2024, reflecting an increase in the volume of our business, as discussed above.
+
+[0001628280-26-057406:mdna:89]
+In 2026, DSO decreased 3 days when compared to the prior year, primarily due to the timing of shipments and continued strong receivables collections. DIO increased 43 days over the prior year, primarily due to inventory builds to meet demand. DPO increased 14 days over the prior year, primarily due to routine variations in the timing of purchases and payments.
+
+[0001628280-26-057406:mdna:120]
+In connection with entering into long-term agreements with certain customers, we received customer advances that increased our available cash and cash equivalents. We record these customer payments as contract liabilities in advance of performance under such contract. As of July 3, 2026, our contract liabilities were $1,242 million, which primarily relate to the remaining performance obligations under these long-term agreements. Our long-term agreements may also require customers to maintain refundable security deposits with the Company or establish and maintain collateral with third-party financial institutions during the contract term. Security deposits are recorded as refund liabilities within the Consolidated Balance Sheets. As of July 3, 2026, our refund liabilities were $1,500 million. See Part II, Item 8., Note 4, Revenue of the Notes to Consolidated Financial Statements included in this Annual Report on Form 10-K for information regarding our contract liabilities.
+
+[0001628280-26-057406:mdna:122]
+On April 30, 2026, we announced that our Board of Directors had approved a $6.0 billion (exclusive of fees and commissions) share repurchase program (the “Initial Repurchase Program”). On August 5, 2026, we announced that our Board of Directors had approved an additional $14.0 billion share repurchase program (exclusive of fees and commissions) (each of the share repurchase programs, collectively and separately, the “Repurchase Program”). The acquisition of shares under the Repurchase Program may be effected from time to time through open market purchases (including under a plan adopted pursuant to Rule 10b5-1 promulgated under the Securities Exchange Act of 1934) or other methods of acquiring shares, in each case on such terms and at such times as shall be permitted by applicable securities laws and determined by our management. We expect shares repurchased under the Repurchase Program to be funded by operating cash flows. The amount and timing of share repurchases will depend on market conditions and other relevant factors. We may suspend or discontinue the Repurchase Program at any time. The approval of the Repurchase Program does not obligate us to repurchase any common shares. During the year ended July 3, 2026, we repurchased 3 million shares of our common stock for an aggregate purchase price of $4.5 billion, and $1.5 billion remained available for future repurchases under the Repurchase Program as of July 3, 2026.
+
+[0001628280-26-057406:mdna:132]
+We periodically perform an excess and obsolete analysis of our inventory based on assumptions, which includes changes in business and economic conditions, changes in technology and projected demand of our products. If in any period we anticipate a change in those assumptions to be less favorable than our previous estimates, additional inventory write-downs may be required and could materially and negatively impact our gross margin. If in any period, we can sell inventories that had been written down to a level below the realized selling price in the previous period, higher gross profit would be recognized in that period. Adjustments to the reserve in 2026 were immaterial.

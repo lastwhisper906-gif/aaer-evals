@@ -1,0 +1,433 @@
+{
+ "run": "SNDK/analysis-grader-t_6l5cam",
+ "rubric": "evals/capability/rubric.md",
+ "dealbreakers": [
+  {
+   "kind": "contradiction_reported_as_unresolved",
+   "id": "cross_document_reconciliation_equity_method_results_line_differs",
+   "where": "analysis_accounting.json anomalies[39].numbers_vs_prose",
+   "why": "notes:52 disagrees with notes:250 and notes:255, but 8k_2_02:78 defines the excluded line as 'ongoing mark-to-market adjustments on the Company’s investments in marketable equity securities, the gains from the sale of equity investments and related impairment charges', and the tagged unrealized gain (earnings_quality_tagged_equity_securities_gain_full_year) equals that line in 8k_2_02:52. The inputs settle that equity-method results are not in it, yet the run left the point unresolved."
+  },
+  {
+   "kind": "number_not_from_calculator",
+   "id": "solvency_fixed_commitments_outside_the_debt_line",
+   "where": "analysis_financial.json anomalies[7].what",
+   "why": "'building-depreciation prepayments are committed through fiscal 2035' paraphrases notes:221 ('payable at varying dates through fiscal year 2035') outside quotation marks; the commitment horizon is a disclosed figure that no calculator path supplies."
+  }
+ ],
+ "items": [
+  {
+   "id": "earnings_versus_cash_cash_cover_depends_on_customer_deposits_and_unpaid_tax",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "earnings_versus_cash.operating_cash_flow_over_net_income and the receivables/inventory share_of_net_income paths resolve; 8k_2_02:67 deducts 'Impact of NBM prepayments and deposits', 8k_2_02:81 calls them 'not indicative of the core underlying cash flows', and 8k_2_02:47 shows current income tax payable rising beside the taxes-paid tag."
+  },
+  {
+   "id": "earnings_versus_cash_accruals_highest_of_filed_years",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.years-back-0.ratios.accruals_over_total_assets is 'highest of the 3 filled years' against the years-back-1/-2 cells; the impairment named in the benign reading is at notes:155."
+  },
+  {
+   "id": "earnings_versus_cash_fourth_quarter_cash_rests_on_agreement_inflows",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "ratios.growth.operating_cash_flow.this_quarter and ratios.growth.net_income.this_quarter resolve; the fourth-quarter columns of 8k_2_02:57 and 8k_2_02:67 hold most of the receivable change, nearly all of the refund-liability change and most of the NBM deduction."
+  },
+  {
+   "id": "earnings_versus_cash_non_cash_fair_value_gain_in_net_income",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "notes:183 records the Nanya gain 'recognized through Consolidated Statements of Operations', and 8k_2_02:67 removes '(Gain) loss on equity securities, net' from non-GAAP; terms.trailing_four_quarters.net_income resolves."
+  },
+  {
+   "id": "revenue_recognition_receivable_days_rise_against_stated_decline",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "high",
+   "why": "'Rise on every computed measure' fails. The anomaly's own trend_table.quarters-back-1.ratios.days_sales_outstanding is 'second lowest of the 5 filled quarters'. mdna:87, the table above the quoted mdna:89, prints DSO on a basis the year-end measure does not test; it fits terms.balances_now.receivables over ratios.growth.revenue.this_quarter. A contradiction is not shown."
+  },
+  {
+   "id": "revenue_recognition_new_agreements_bring_variable_pricing_judgment",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "mdna:26 ('pricing mechanisms consisting of fixed and variable components'), notes:141 ('entirely related to NBMs'), notes:74, notes:138 and notes:140 show each judgment area named."
+  },
+  {
+   "id": "revenue_recognition_price_protection_share_of_gross_revenue_fell",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "mdna:47 prints the programmes' share of gross revenues falling and gives no year-specific cause; the calculator holds no figure, as stated."
+  },
+  {
+   "id": "revenue_recognition_fourth_quarter_carries_the_year",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "medium",
+   "why": "The quarter share and price mix resolve (ratios.growth.revenue.this_quarter, 8k_2_02:6, 8k_2_02:57). The catch-up clause rests on a tag whose values match the contract-liability portion in notes:141 and note_history:67, so part of the claim is not shown."
+  },
+  {
+   "id": "revenue_recognition_rebates_netted_against_receivables",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:74 states the netting policy; terms.balances_now.bad_debt_allowance is missing, so the gross position cannot be seen, as stated."
+  },
+  {
+   "id": "revenue_recognition_contract_liabilities_rise_with_revenue",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table years-back-0/-1 contract_liabilities_over_revenue and terms.balances_now/a_year_earlier.contract_liabilities resolve; notes:137 attributes the rise to NBM advances, and the numbers report places the first current tag in the third-quarter 10-Q."
+  },
+  {
+   "id": "revenue_recognition_extra_week_in_fiscal_year",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:8: 'Fiscal year 2026 was comprised of 53 weeks and ended on July 3, 2026, with the first fiscal quarter consisting of 14 weeks.'"
+  },
+  {
+   "id": "estimates_and_reserves_inventory_reserve_cover_thinning",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.years-back-0.ratios.inventory_reserve_ratio is 'lowest of the 2 filled years'; terms.balances_now/a_year_earlier.inventory_reserve and terms.trailing_four_quarters.inventory_write_down resolve; mdna:132: 'Adjustments to the reserve in 2026 were immaterial.'"
+  },
+  {
+   "id": "estimates_and_reserves_warranty_release_and_lowest_ratio",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.years-back-0.ratios.warranty_reserve_ratio is 'lowest of the 4 filled years'; notes:168 shows a negative 'Changes in estimate related to pre-existing warranties' after a positive prior-year line; terms.balances_now.warranty_accrual sits below the quarters-back-1 input."
+  },
+  {
+   "id": "estimates_and_reserves_catch_up_revenue_from_transaction_price_estimates",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "high",
+   "why": "The tagged values match the contract-liability portion of the remaining obligation, not a revenue adjustment: notes:141 'of which $58.7 billion has not yet been billed and $1.1 billion has been recorded as contract liabilities' and note_history:67 '$0.4 billion has been recorded as contract liabilities'. No input shows catch-up revenue of that size."
+  },
+  {
+   "id": "estimates_and_reserves_credit_loss_allowance_not_visible",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.balances_now.bad_debt_allowance is missing in every period, and concentration.facts.27 against concentration.facts.12 shows a rising single-customer share; notes:131 calls reserves 'not material' without giving a balance."
+  },
+  {
+   "id": "estimates_and_reserves_tax_reserves_and_valuation_allowance_rose",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:386, the notes:385 rollforward and the valuation-allowance row in notes:363 all show higher balances; 8k_2_02:80 mentions 're-measurement of certain unrecognized tax benefits'."
+  },
+  {
+   "id": "estimates_and_reserves_nanya_fair_value_despite_lock_up",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:183 (quoted price, 'subject to a statutory lock-up period of three years') and notes:304 ('a 15% discount to Nanya’s 30-day average trading price') support it; notes:363 shows the new deferred tax liability."
+  },
+  {
+   "id": "cost_deferral_qualification_units_capitalized_in_inventory",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:55: 'The costs of qualification units are recorded in inventory until sold to customers and recognized as cost of revenue.'"
+  },
+  {
+   "id": "cost_deferral_non_gaap_exclusions_include_recurring_categories",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "medium",
+   "why": "8k_2_02:79 and 8k_2_02:77 confirm the excluded categories. Recurrence is not in evidence, and the equity-method premise taken from notes:52 is contradicted by 8k_2_02:78, notes:250 and notes:255."
+  },
+  {
+   "id": "cost_deferral_soft_asset_share_lowest",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "trend_table.years-back-0.ratios.soft_asset_share is 'lowest of the 3 filled years', with terms.balances_now.cash above terms.balances_a_year_earlier.cash."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_refundable_deposits_in_operating_cash",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "notes:138: 'security deposits collected under NBMs that must be refunded at the end of the contract term'. The 8k_2_02:57 refund-liability change sits mostly in the fourth quarter, 8k_2_02:81 deducts these payments, and the adjustment appears in free_cash_flow.free_cash_flow_quality_adjusted.adjustments_applied."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_tax_payable_build_lifts_operating_cash",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "The taxes-paid and current-expense tags (earnings_quality_tagged_income_taxes_paid_against_current_expense) and 8k_2_02:47 'Income tax payable, current' support it; mdna:86 names 'timing of payments for taxes'."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_investee_distributions_moved_to_operating",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:229: 'The distributions received for the year ended July 3, 2026 were classified as cash flow from operating activities while the distributions received for the year ended June 27, 2025 were classified as cash flow from investing activities'."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_purchase_obligations_rose",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "terms.balances_now/a_year_earlier.unconditional_purchase_obligations resolve, and notes:305 to notes:308 add the Nanya commitments; the Kioxia payments sit in Flash Ventures commitments per mdna:101, a minor misplacement."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_customer_collateral_off_balance_sheet",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:140: 'no amounts have been recognized in the Company’s Consolidated Financial Statements related to these collateral balances'."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_related_party_lending_outside_capital_expenditure",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "medium",
+   "why": "Flash Forward loans in investing are shown ('Notes receivable issuances to Flash Ventures' in 8k_2_02:57, notes:230). But notes:229 says the payments to equity-method investees were 'for purchases of flash-based memory wafers and net loans', so most of that tag does not run through investing lines."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_payables_timing_supplied_cash",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "mdna:89 'primarily due to routine variations in the timing of purchases and payments' and mdna:88 on modifying vendor payment timing; earnings_versus_cash.working_capital.accounts_payable.cash_flow_statement_change resolves and is applied."
+  },
+  {
+   "id": "cash_flow_engineering_and_off_balance_sheet_share_based_compensation_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "terms.trailing_four_quarters.share_based_compensation sits above earnings_versus_cash.history.years.1 and years.2 share_based_compensation."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_prior_year_balances_re_presented",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The reader prints of AccruedLiabilitiesCurrent and OtherLiabilitiesNoncurrent differ across filings; notes:24 explains the reclassification, and the separate lines at 8k_2_02:47 account for the differences."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_interim_tax_reserve_series_revised",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The interim and full-year prints quoted in the articulation_and_the_filed_history_tax_reserve items do not build cumulatively; the full-year fact matches notes:385; 8k_2_02:80 mentions re-measurement."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_drafting_errors_in_annual_notes",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:339 'we repurchased $3 million shares'; notes:389 ends 'immaterial for f'; notes:221, notes:329 and notes:207 read as described; notes:249 'over the next five years' against note_history:17 'over the next four years'."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_revenue_critical_audit_matter",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "auditors_report:19: 'We identified the evaluation of the sufficiency of audit evidence over revenue, net, as a critical audit matter.'"
+  },
+  {
+   "id": "controls_audit_and_filing_signals_concentration_fact_on_revenue_axis",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "concentration.facts.29 carries 'us-gaap:RevenueFromContractWithCustomerMember', while notes:131 gives the third share as a share of 'outstanding accounts receivable' and notes:130 says no customer exceeded the revenue threshold."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_refund_balance_under_two_concepts",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The input facts tag the refund balance under both ContractWithCustomerRefundLiability and ContractWithCustomerRefundLiabilityCurrent, and GoodwillImpairmentLoss and AccountsReceivableNetCurrent each print at more than one precision in the annual filing."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_malaysia_pretax_income_equals_holiday_benefit",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The input fact IncomeLossFromContinuingOperationsBeforeIncomeTaxesForeign (country:MY) carries the same value as IncomeTaxReconciliationTaxHolidays (country:MY), in both years matching notes:379's 'increase to the Company’s net earnings'."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_unbilled_receivable_tag_sized_like_backlog",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "The UnbilledContractsReceivable fact equals the 'not yet been billed' amount in notes:141 and exceeds terms.balances_now.assets."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_accounts_payable_untagged",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "terms.balances_now.accounts_payable and ratios.efficiency.days_payables_outstanding are missing ('tags none of us-gaap:AccountsPayableCurrent, us-gaap:AccountsPayableTradeCurrent in any period')."
+  },
+  {
+   "id": "controls_audit_and_filing_signals_officer_change_text_absent",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "input_8k.md gives only an item code for that officer-change 8-K, and report_notes_text.md marks its body as absent; item_9a:8 reports no control change."
+  },
+  {
+   "id": "cross_document_reconciliation_legal_settlements_stated_differently",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:389, the 'Other, net' row at 8k_2_02:67, 8k_2_02:79 and mdna:67 state the amounts as described, and no reconciliation is printed."
+  },
+  {
+   "id": "cross_document_reconciliation_equity_method_results_line_differs",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The text differences are as stated (notes:52 against notes:250 and notes:255), but the item scores zero under the dealbreaker for leaving a settled point unresolved."
+  },
+  {
+   "id": "cross_document_reconciliation_working_capital_attributed_to_volume_while_growth_is_price",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "low",
+   "why": "mdna:85 says 'an increase in the volume of our business', which need not mean unit volume against mdna:42; the evidence does not settle a contradiction."
+  },
+  {
+   "id": "cross_document_reconciliation_new_agreement_counts_use_different_windows",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "8k_2_02:8 counts agreements 'Since announcing five New Business Model (“NBM”) agreements during our April earnings call', while notes:398 counts those 'Subsequent to the balance sheet date'."
+  },
+  {
+   "id": "industry_lens_inventory_days_highest_with_thinner_reserve",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "trend_table.years-back-0.ratios.days_sales_of_inventory is 'highest of the 3 filled years', quarters-back-1 is 'highest of the 5 filled quarters', and inventory_reserve_ratio fell; mdna:89 says 'inventory builds to meet demand'."
+  },
+  {
+   "id": "industry_lens_customer_concentration_rising",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "concentration.facts.26 against concentration.facts.11 and concentration.facts.0, and concentration.facts.27 against concentration.facts.12, match notes:130 and notes:131."
+  },
+  {
+   "id": "industry_lens_hong_kong_and_asia_revenue_surge",
+   "frame": "accounting",
+   "verdict": "supported",
+   "severity": "low",
+   "why": "notes:124 shows the regional rises; notes:125 attributes revenue by 'ship-to location', and channel loading is left open, matching the evidence."
+  },
+  {
+   "id": "industry_lens_investee_customer_receivables",
+   "frame": "accounting",
+   "verdict": "unclear",
+   "severity": "low",
+   "why": "concentration.facts.23, .25, .30 and .31 resolve, but the cited item concerns the equity-method line. notes:256 says Unis revenue 'is recognized upon sell-through to third-party customers', which the vendor-financing concern does not address."
+  },
+  {
+   "id": "industry_lens_related_party_inventory_share",
+   "frame": "accounting",
+   "verdict": "unsupported",
+   "severity": "low",
+   "why": "The tagged related-party amount equals the 'Inventory and prepayments' row of the Flash Ventures exposure table at notes:233, which includes the building-depreciation prepayments of notes:221, so a large related-party share of inventory is not shown."
+  },
+  {
+   "id": "results_against_expectations_outlook_rests_on_pricing_holding",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "8k_2_02:10 guides above ratios.growth.revenue.this_quarter; the mdna:23 and 8k_2_02:6 quotes resolve; the input holds no consensus, as stated."
+  },
+  {
+   "id": "liquidity_and_capital_operating_cash_includes_customer_money",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "Quotes resolve at 8k_2_02:81 and notes:138; terms.balances_now/a_year_earlier.contract_liabilities and terms.trailing_four_quarters.operating_cash_flow resolve; notes:229 shows the reclassified distributions."
+  },
+  {
+   "id": "liquidity_and_capital_income_taxes_accrued_not_yet_paid",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "terms.trailing_four_quarters.income_tax_expense and terms.balances_now.current_liabilities resolve; the current and non-current tax payable lines are at 8k_2_02:47; mdna:112: 'could result in potential cash payments'."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_consumer_exabytes_falling",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The mdna:45 quote resolves; 8k_2_02:22 labels Consumer 'down 32%' and 'down 5%'; mdna:26 limits NBMs to 'several Datacenter and Edge customers'."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_tariff_exemption_loss_risk",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The mdna:25 quote resolves and the filing gives no amount; terms.trailing_four_quarters.cost_of_revenue and ratios.profitability.gross_margin resolve."
+  },
+  {
+   "id": "narrative_signs_of_operating_pressure_supply_agreement_shortfall",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "notes:251 states the year's purchases, the 'minimum annual commitment' and the penalty sentence quoted, and gives no penalty amount; the reimbursement clause ties the penalty to the Company's purchases."
+  },
+  {
+   "id": "profitability_net_income_includes_locked_up_equity_gain",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "high",
+   "why": "terms.trailing_four_quarters.pretax_income exceeds terms.trailing_four_quarters.operating_income; mdna:67 attributes the rise to the Nanya gain; the notes:183 lock-up quote and notes:304 discount resolve."
+  },
+  {
+   "id": "solvency_fixed_commitments_outside_the_debt_line",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "The paths and quotes resolve (notes:224, notes:233, notes:305), but the item scores zero under the dealbreaker for an uncited horizon figure."
+  },
+  {
+   "id": "growth_tied_to_few_large_contracts",
+   "frame": "finance",
+   "verdict": "supported",
+   "severity": "medium",
+   "why": "concentration.facts.26 against concentration.facts.11, the mdna:26 quote, notes:141 'entirely related to NBMs', notes:398 and notes:140 all support it."
+  }
+ ],
+ "coverage": {
+  "answer": "no",
+  "why": "The gate dropped the accounting findings for estimates_and_reserves and industry_lens and the financial solvency reading (dropped_items in both files); a gate drop counts as unanswered."
+ },
+ "calibration": {
+  "answer": "yes",
+  "why": "Each surviving area verdict matches its anomalies, e.g. cost_deferral's 'Low' sits over only unresolved, benign items and earnings_versus_cash's 'weaker than the ratio shows' over the deposit and unpaid-tax items; the areas whose verdicts were dropped are counted under coverage."
+ },
+ "valuation_reading": {
+  "answer": "no",
+  "why": "valuation.missing and implied_growth_beside_history.implied_ten_year_revenue_growth.missing leave no price, value range, reverse DCF or sensitivity grid. The reading cannot place the price or state implied growth, and it calls its sensitive assumptions 'not measured' rather than drawing them from the calculator."
+ },
+ "score": 0.848,
+ "grader": {
+  "model_requested": "opus",
+  "model_served": "claude-opus-5-5",
+  "input_tokens": 80,
+  "output_tokens": 90654,
+  "cost_usd": 10.4910726,
+  "seconds": 794.1
+ }
+}
