@@ -16,8 +16,6 @@ branch changed. A run item is done when its run directory is published and
 
 ## Open
 
-[ ] MU's 10-K filed 2026-10-09 on Opus, the first run of a company added on 2026-10-21 · `.venv/bin/python -m evals --runs runs/MU` · the fixture set of 2026-10-21
-
 [ ] JBL's 10-Q filed 2026-06-30 on Opus, the first run of a company added on 2026-10-21 · `.venv/bin/python -m evals --runs runs/JBL` · the fixture set of 2026-10-21
 
 [ ] AMD's 10-Q filed 2026-08-05 on Opus, the first run of a company added on 2026-10-21 · `.venv/bin/python -m evals --runs runs/AMD` · the fixture set of 2026-10-21
@@ -67,6 +65,8 @@ branch changed. A run item is done when its run directory is published and
 [ ] MU, Micron Technology, the reading's pick under 3674 (`docs/structure_changes.md`, 2026-10-14): fixtures as of the day it is fetched, the two 10-K headers and Exhibit 21 documents by hand, expected values with the 43 keys, and its row · `.venv/bin/python -m pytest tests -q -k "MU"` passes with every defect a strict expected failure · none
 
 ## Done
+
+[x] MU's 10-K filed 2026-10-09 on Opus, the first run of a company added on 2026-10-21 · `.venv/bin/python -m evals --runs runs/MU` · the fixture set of 2026-10-21 · 2026-10-21: `--model opus` recorded as `model_override`, every agent served claude-opus-5-5, no fallback; accounting analyst 0 dropped, 0 of 8 areas empty after 1 hook round, no adjustment; financial analyst 0 dropped after 1 round; regression pass; analysis-grader 0.928 with 5 dealbreakers
 
 [x] ADTN's 10-Q filed 2026-08-04 on Opus · `.venv/bin/python -m evals --runs runs/ADTN` · none · 2026-10-21: `--model opus` recorded as `model_override`, every agent served claude-opus-5-5, no fallback; accounting analyst 0 dropped, 0 of 8 areas empty after 1 hook round, 1 adjustment written; financial analyst 0 dropped after 2 rounds; regression pass; analysis-grader 0.889 with 4 dealbreakers
 

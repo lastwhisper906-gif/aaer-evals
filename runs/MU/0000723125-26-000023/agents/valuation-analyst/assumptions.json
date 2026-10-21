@@ -1,0 +1,232 @@
+{
+  "scenarios": {
+    "bear": {
+      "revenue_growth_year_one": 0.05,
+      "terminal_growth": 0.02,
+      "operating_margin_year_one": 0.65,
+      "operating_margin_year_ten": 0.22,
+      "reinvestment_rate_year_one": 0.55,
+      "reinvestment_rate_year_ten": 0.30,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "The bear reads fiscal 2026 as a price spike that turns early in fiscal 2027. Growth was led by price rather than volume, and the record holds a year in which revenue changed by {earnings_versus_cash.history.years.3.revenue_growth|pct} once prices turned. The guided first quarter keeps fiscal 2027 itself from falling, but for this case to hold the rest of the year would have to drop well below the fourth quarter's {ratios.growth.revenue.this_quarter}. Python fades this rate over ten years, so a rate barely above zero gives a decade in which falling prices mostly offset bit growth.",
+          "quote": "with bit shipments up far less, so most of it would reverse if prices did",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "ratios.growth.revenue.trailing_four_quarters",
+            "earnings_versus_cash.history.years.3.revenue_growth",
+            "ratios.growth.revenue.this_quarter"
+          ],
+          "history": "Far below the trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters|pct}, the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct} and the five-year compound of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, and below fiscal 2022's {earnings_versus_cash.history.years.4.revenue_growth|pct}; above fiscal 2023's {earnings_versus_cash.history.years.3.revenue_growth|pct}. The compound rates run from a trough to this year's peak, so the bear sets them aside."
+        },
+        "terminal_growth": {
+          "reason": "In the bear, memory goes back to being a commodity whose price per bit keeps falling, so long-run revenue grows more slowly than the economy. The rate is well under the risk-free rate of {cost_of_capital.risk_free_rate|pct}, the ceiling Python enforces.",
+          "quote": "",
+          "quote_from": "",
+          "fields": [
+            "cost_of_capital.risk_free_rate",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound"
+          ],
+          "history": "Far below the five-year compound revenue growth of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, which ends in a peak year. A perpetual rate has to carry the troughs too."
+        },
+        "operating_margin_year_one": {
+          "reason": "Prices begin to ease during fiscal 2027, so the year's operating margin falls below fiscal 2026's {ratios.profitability.operating_margin|pct}. The guided first quarter, at a higher margin, holds the year well above anything before fiscal 2026.",
+          "quote": "Read against its own record, profitability is exceptionally healthy and exceptionally dependent on price.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "ratios.profitability.operating_margin",
+            "earnings_versus_cash.history.years.4.operating_margin"
+          ],
+          "history": "Below fiscal 2026's {ratios.profitability.operating_margin|pct}, the record high, but well above fiscal 2022's {earnings_versus_cash.history.years.4.operating_margin|pct}, the best year before it."
+        },
+        "operating_margin_year_ten": {
+          "reason": "The bear assumes the price-band floors either do not hold or cover too little volume, and that capacity added across the industry brings back the old price cycle. The through-cycle operating margin then returns to the pattern of fiscal 2021 to fiscal 2025, with a little lift from contracted volume.",
+          "quote": "The level is healthy; the exposure is that it depends on prices the company does not set alone, and the price-band floors said to protect future margins are not disclosed.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "earnings_versus_cash.history.years.5.operating_margin",
+            "earnings_versus_cash.history.years.4.operating_margin",
+            "earnings_versus_cash.history.years.3.operating_margin",
+            "earnings_versus_cash.history.years.2.operating_margin",
+            "earnings_versus_cash.history.years.1.operating_margin",
+            "earnings_versus_cash.history.operating_margin_three_year_average"
+          ],
+          "history": "Close to fiscal 2021's {earnings_versus_cash.history.years.5.operating_margin|pct} and fiscal 2025's {earnings_versus_cash.history.years.1.operating_margin|pct}; below fiscal 2022's {earnings_versus_cash.history.years.4.operating_margin|pct} and the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}; above fiscal 2023's {earnings_versus_cash.history.years.3.operating_margin|pct} and fiscal 2024's {earnings_versus_cash.history.years.2.operating_margin|pct}. Held for ever, it sits above the old cycle's average once the loss year is counted."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "Capital spending for fiscal 2027 is guided higher and largely under way, so it does not shrink when prices ease. On the bear's thinner after-tax operating income it takes a larger share than in the base.",
+          "quote": "We estimate capital expenditures for property, plant, and equipment, net of proceeds from government incentives, to be approximately $11.5 billion in the first quarter of 2027, approximately $25 billion in the first six months of 2027, and higher in the second half of 2027.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "terms.trailing_four_quarters.capital_expenditure",
+            "earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization",
+            "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital",
+            "terms.balances_now.unconditional_purchase_obligations"
+          ],
+          "history": "This year capital expenditure of {terms.trailing_four_quarters.capital_expenditure} ran at {earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization} times depreciation, and the trade working-capital build of {free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital} came on top, so reinvestment was already heavy. Unconditional purchase obligations of {terms.balances_now.unconditional_purchase_obligations} add to what is committed."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "Staying in a capital-intensive industry still takes heavy spending at the bear's low margins. Against the bear's terminal growth, this share implies that new capital earns little and that growth adds little value, the usual state of memory in a glut.",
+          "quote": "Operating cash flow covers all of this today; these commitments are what would bind if it fell.",
+          "quote_from": "analysis_financial.json",
+          "fields": [
+            "earnings_versus_cash.history.years.3.free_cash_flow_simple",
+            "earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization"
+          ],
+          "history": "Fiscal 2023 shows what the industry demands in a downturn: free cash flow of {earnings_versus_cash.history.years.3.free_cash_flow_simple}, as spending held up while income turned to a loss. The share is lower than the bear's year one and higher than the base's year ten."
+        }
+      }
+    },
+    "base": {
+      "revenue_growth_year_one": 0.22,
+      "terminal_growth": 0.035,
+      "operating_margin_year_one": 0.78,
+      "operating_margin_year_ten": 0.40,
+      "reinvestment_rate_year_one": 0.45,
+      "reinvestment_rate_year_ten": 0.25,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "The quoted guidance for the first quarter of fiscal 2027 sits above the fourth quarter's {ratios.growth.revenue.this_quarter}, so fiscal 2027 alone will likely grow far faster than this. The driver is set lower on purpose. Python fades it in a straight line over ten years, so it sets the path of the whole decade, not of one year. Fiscal 2026 growth was led by price, new fabs in Idaho, Taiwan, Singapore, Hiroshima and New York add supply from calendar 2027, and the record shows that prices reverse. A year-one rate near the guided step-up would compound into a revenue level the industry's history does not support. This rate lets revenue grow faster than the memory market's long-run pace while giving back part of the current spike.",
+          "quote": "$61.5 billion ± $1.5 billion",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.growth.revenue.this_quarter",
+            "ratios.growth.revenue.quarter_over_quarter",
+            "terms.trailing_four_quarters.revenue"
+          ],
+          "history": "Far below the trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters|pct}, the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, the five-year compound of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct} and fiscal 2025's {earnings_versus_cash.history.years.1.revenue_growth|pct}; above fiscal 2022's {earnings_versus_cash.history.years.4.revenue_growth|pct}. The three-year rate starts at the fiscal 2023 trough and both compound rates end at this year's peak, so they overstate what a peak-year base can sustain over a decade."
+        },
+        "terminal_growth": {
+          "reason": "Memory demand keeps rising with data and AI workloads beyond the decade, but price per bit tends to fall. The base therefore sets long-run growth near nominal economic growth, below the risk-free rate of {cost_of_capital.risk_free_rate|pct}.",
+          "quote": "AI-driven memory and storage demand growth is outpacing industry supply.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "cost_of_capital.risk_free_rate",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound"
+          ],
+          "history": "Far below the five-year compound revenue growth of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}, which ends in a peak year. A perpetual rate must hold through troughs as well as peaks."
+        },
+        "operating_margin_year_one": {
+          "reason": "Fiscal 2026 ended at its highest margins: fourth-quarter operating income of {ratios.growth.operating_income.this_quarter} on revenue of {ratios.growth.revenue.this_quarter}. The quoted first-quarter gross-margin guidance is higher still. The base lets prices ease in the second half of fiscal 2027 as the first new supply arrives, leaving the year a little above fiscal 2026's {ratios.profitability.operating_margin|pct}.",
+          "quote": "Approximately 85.95%",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.profitability.operating_margin",
+            "ratios.growth.operating_income.this_quarter",
+            "ratios.growth.revenue.this_quarter",
+            "trend_table.quarters-back-1.ratios.gross_margin"
+          ],
+          "history": "A little above fiscal 2026's {ratios.profitability.operating_margin|pct}, already the highest in the record, and far above fiscal 2025's {earnings_versus_cash.history.years.1.operating_margin|pct}."
+        },
+        "operating_margin_year_ten": {
+          "reason": "Management says floor prices in the strategic agreements still yield gross margins above any past-cycle peak. If that held for all volume, operating margins would stay far above the old cycle. But the floors are not disclosed and cover only contracted volume, and capacity rising across the industry will press on the rest. The base gives the claim partial credit: a through-cycle margin above any year before fiscal 2026, and well below today's.",
+          "quote": "We expect gross margins from our strategic customer agreements with price bands, even at floor pricing levels, to yield gross margins meaningfully above our peak quarterly margins in any past cycle.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "earnings_versus_cash.history.operating_margin_three_year_average",
+            "earnings_versus_cash.history.years.4.operating_margin",
+            "ratios.profitability.operating_margin"
+          ],
+          "history": "Above the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct}, which includes this year's peak, and above fiscal 2022's {earnings_versus_cash.history.years.4.operating_margin|pct}, the best year before fiscal 2026; well below this year's {ratios.profitability.operating_margin|pct}."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "The quote guides capital spending net of government incentives higher through fiscal 2027, against this year's {terms.trailing_four_quarters.capital_expenditure}. Depreciation rises more slowly, because fabs under construction are not depreciated until they enter service, and receivables grow with revenue. Net reinvestment therefore takes a heavy share of after-tax operating income.",
+          "quote": "We estimate capital expenditures for property, plant, and equipment, net of proceeds from government incentives, to be approximately $11.5 billion in the first quarter of 2027, approximately $25 billion in the first six months of 2027, and higher in the second half of 2027.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "terms.trailing_four_quarters.capital_expenditure",
+            "terms.trailing_four_quarters_a_year_earlier.capital_expenditure",
+            "earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization",
+            "free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital",
+            "free_cash_flow.free_cash_flow_over_net_income"
+          ],
+          "history": "Capital expenditure rose to {terms.trailing_four_quarters.capital_expenditure} from {terms.trailing_four_quarters_a_year_earlier.capital_expenditure} and ran at {earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization} times depreciation. With the trade working-capital build of {free_cash_flow.free_cash_flow_to_firm.inputs.change_in_trade_working_capital}, free cash flow came to {free_cash_flow.free_cash_flow_over_net_income|pct} of net income. The base keeps year one comparably heavy."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "Holding bit share means building fabs, as management says, so memory stays capital intensive beyond the decade. At the base's terminal growth this share implies a moderate return on new capital, far below this year's return on invested capital of {ratios.profitability.return_on_invested_capital|pct}, which rests on peak margins.",
+          "quote": "We expect these new fabs to be key to meeting our requirements for additional wafer capacity, in line with industry demand trends and our objective of maintaining stable bit share.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.profitability.return_on_invested_capital",
+            "earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization"
+          ],
+          "history": "Lower than this year's reinvestment, when capital expenditure ran at {earnings_versus_cash.capital_expenditure_over_depreciation_and_amortization} times depreciation, because the decade's fab build-out is assumed largely done by year ten."
+        }
+      }
+    },
+    "bull": {
+      "revenue_growth_year_one": 0.35,
+      "terminal_growth": 0.045,
+      "operating_margin_year_one": 0.82,
+      "operating_margin_year_ten": 0.55,
+      "reinvestment_rate_year_one": 0.40,
+      "reinvestment_rate_year_ten": 0.25,
+      "reasons": {
+        "revenue_growth_year_one": {
+          "reason": "The bull reads the AI build-out and the strategic agreements as a lasting step up in demand. Management expects fiscal 2027 to be stronger still, contracted volumes are binding, and new fabs let shipments grow without breaking prices. Even so, the rate stays below what the guided first quarter implies for fiscal 2027, because Python carries it, fading, through the whole decade.",
+          "quote": "Micron delivered record fiscal 2026 results, and we expect an even stronger fiscal 2027",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.growth.revenue.this_quarter",
+            "ratios.growth.revenue.quarter_over_quarter",
+            "terms.trailing_four_quarters.revenue"
+          ],
+          "history": "Below the trailing four-quarter growth of {ratios.growth.revenue.trailing_four_quarters|pct}, the three-year compound of {earnings_versus_cash.history.revenue_growth_three_year_compound|pct}, fiscal 2025's {earnings_versus_cash.history.years.1.revenue_growth|pct} and fiscal 2024's {earnings_versus_cash.history.years.2.revenue_growth|pct}; close to the five-year compound of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}."
+        },
+        "terminal_growth": {
+          "reason": "Memory becomes a lasting, larger share of computing spend and contracts smooth the cycle. Long-run growth therefore runs a little above nominal economic growth, still below the risk-free rate of {cost_of_capital.risk_free_rate|pct}.",
+          "quote": "Accordingly, we believe these agreements accelerate the transformation of our business model and will significantly enhance the durability and predictability of our financial performance.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "cost_of_capital.risk_free_rate",
+            "earnings_versus_cash.history.revenue_growth_five_year_compound"
+          ],
+          "history": "Below the five-year compound revenue growth of {earnings_versus_cash.history.revenue_growth_five_year_compound|pct}; the highest terminal rate of the three cases."
+        },
+        "operating_margin_year_one": {
+          "reason": "Supply stays short all year, so the quoted first-quarter gross-margin guidance holds through fiscal 2027, with operating expenses small beside revenue.",
+          "quote": "Approximately 85.95%",
+          "quote_from": "input_8k.md",
+          "fields": [
+            "ratios.profitability.operating_margin",
+            "ratios.growth.operating_income.this_quarter",
+            "ratios.growth.revenue.this_quarter",
+            "trend_table.quarters-back-1.ratios.gross_margin"
+          ],
+          "history": "Above fiscal 2026's {ratios.profitability.operating_margin|pct}, the record high, and close to the fourth quarter's operating income of {ratios.growth.operating_income.this_quarter} on revenue of {ratios.growth.revenue.this_quarter}."
+        },
+        "operating_margin_year_ten": {
+          "reason": "Management's floor-price claim holds for most volume: contracted prices keep gross margins above any past-cycle peak, and the through-cycle operating margin settles far above the old cycle's.",
+          "quote": "These agreements provide customers with contracted supply assurance and greater pricing visibility, and provide us with greater visibility and improved stability in our business performance.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "earnings_versus_cash.history.operating_margin_three_year_average",
+            "earnings_versus_cash.history.years.4.operating_margin",
+            "ratios.profitability.operating_margin"
+          ],
+          "history": "Well above the three-year average of {earnings_versus_cash.history.operating_margin_three_year_average|pct} and fiscal 2022's {earnings_versus_cash.history.years.4.operating_margin|pct}, the best year before fiscal 2026; below this year's {ratios.profitability.operating_margin|pct}."
+        },
+        "reinvestment_rate_year_one": {
+          "reason": "The same guided capital spending sits on larger after-tax operating income, so it takes a smaller share than in the base. Fab construction at several sites and receivables growing with revenue keep it heavy.",
+          "quote": "Construction activities for the second Idaho fab began in 2026, and we expect initial wafer output by late calendar 2028.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "terms.trailing_four_quarters.capital_expenditure",
+            "earnings_versus_cash.working_capital.receivables.balance_sheet_change"
+          ],
+          "history": "Capital expenditure of {terms.trailing_four_quarters.capital_expenditure} is the highest in the record, and receivables rose by {earnings_versus_cash.working_capital.receivables.balance_sheet_change} this year. The bull keeps reinvestment heavy, at a lower share than the base because income is higher."
+        },
+        "reinvestment_rate_year_ten": {
+          "reason": "Faster long-run growth needs steady investment in fabs and research. At the bull's higher margins the same share funds it, which implies a higher return on new capital than in the base.",
+          "quote": "In August 2026, we announced the establishment of Micron Research Labs, a long-horizon research institution headquartered in Boise, Idaho, supported by a planned investment of approximately $10 billion over the next decade to advance memory, compute and semiconductor manufacturing technologies.",
+          "quote_from": "input_mdna.md",
+          "fields": [
+            "ratios.profitability.return_on_invested_capital"
+          ],
+          "history": "Lower than this year's heavy reinvestment. The implied return on new capital stays far below this year's return on invested capital of {ratios.profitability.return_on_invested_capital|pct}."
+        }
+      }
+    }
+  },
+  "wacc_overrides": {}
+}
